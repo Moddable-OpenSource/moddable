@@ -244,47 +244,50 @@ LRESULT CALLBACK modSocketWindowProc(HWND window, UINT message, WPARAM wParam, L
 {
 	switch (message) {
 		case WM_CALLBACK: {
-			if (!WSAGETSELECTERROR(lParam)) {
-				xsSocket xss = (xsSocket)GetWindowLongPtr(window, 0);
-				if (NULL == xss)
-					break;
-				xsMachine *the = xss->the;
-				xss->useCount += 1;
-				switch (WSAGETSELECTEVENT(lParam)) {
-					case FD_CONNECT: {
-						xsBeginHost(the);
+			DWORD error = WSAGETSELECTERROR(lParam);
+			xsSocket xss = (xsSocket)GetWindowLongPtr(window, 0);
+			if (NULL == xss)
+				break;
+			xsMachine *the = xss->the;
+			xss->useCount += 1;
+			switch (WSAGETSELECTEVENT(lParam)) {
+				case FD_CONNECT: {
+					xsBeginHost(the);
+					if (!error) {
 						xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgConnect));
-						xsEndHost(the);
-					} break;
-					case FD_CLOSE: {
-						// read any remaining bytes buffered in socket before notifying disconnect
-						int count;
-						do {
-							count = doReadSocket(the, xss);
-						} while (count > 0);
+					} else {
+						xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgError));
+					}
+					xsEndHost(the);
+				} break;
+				case FD_CLOSE: {
+					// read any remaining bytes buffered in socket before notifying disconnect
+					int count;
+					do {
+						count = doReadSocket(the, xss);
+					} while (count > 0);
 
-						if (!xss->done) {
-							xsBeginHost(the);
-							xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
-							xsEndHost(the);
-						}
-					} break;
-					case FD_READ: {
-						doReadSocket(the, xss);
-					} break;
-					case FD_WRITE: {
-						if (xss->unreportedSent) {
-							xss->unreportedSent = 0;
-							xsBeginHost(the);
-							xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
-							xsEndHost(the);
-						}
-						else
-							WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents & ~FD_WRITE);
-					} break;
-				}
-				socketDownUseCount(the, xss);
+					if (!xss->done) {
+						xsBeginHost(the);
+						xsCall1(xss->obj, xsID_callback, xsInteger(kSocketMsgDisconnect));
+						xsEndHost(the);
+					}
+				} break;
+				case FD_READ: {
+					doReadSocket(the, xss);
+				} break;
+				case FD_WRITE: {
+					if (xss->unreportedSent) {
+						xss->unreportedSent = 0;
+						xsBeginHost(the);
+						xsCall2(xss->obj, xsID_callback, xsInteger(kSocketMsgDataSent), xsInteger(sizeof(xss->writeBuf)));
+						xsEndHost(the);
+					}
+					else
+						WSAAsyncSelect(xss->skt, xss->window, WM_CALLBACK, kSocketAsyncSelectEvents & ~FD_WRITE);
+				} break;
 			}
+			socketDownUseCount(the, xss);
 		} break;
 	}
 	return DefWindowProc(window, message, wParam, lParam);
