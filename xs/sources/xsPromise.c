@@ -43,8 +43,6 @@ static void fxAddUnhandledRejection(txMachine* the, txSlot* promise);
 static void fxCombinePromises(txMachine* the, txInteger which);
 static txSlot* fxNewCombinePromisesFunction(txMachine* the, txInteger which, txSlot* already, txSlot* object);
 
-static void fx_Promise_resolveAux(txMachine* the);
-
 enum {
 	XS_PROMISE_COMBINE_NONE = 0,
 	XS_PROMISE_COMBINE_FULFILLED = 1,
@@ -865,6 +863,7 @@ void fx_Promise_resolve(txMachine* the)
 {
 	if (!mxIsReference(mxThis))
 		mxTypeError("this is no object");
+	mxPushUndefined();
 	mxPushSlot(mxThis);
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
@@ -873,12 +872,14 @@ void fx_Promise_resolve(txMachine* the)
 	fx_Promise_resolveAux(the);		
 	mxPop();
 	mxPop();
+	mxPullSlot(mxResult);
 }
 
 void fx_Promise_resolveAux(txMachine* the)
 {
 	txSlot* argument = the->stack;
 	txSlot* constructor = the->stack + 1;
+	txSlot* result = the->stack + 2;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
 // 	if (!mxIsReference(mxThis))
@@ -889,7 +890,8 @@ void fx_Promise_resolveAux(txMachine* the)
 			mxPushReference(promise);
 			mxGetID(mxID(_constructor));
 			if (fxIsSameValue(the, constructor, the->stack, 0)) {
-				*mxResult = *argument;
+				*result = *argument;
+    			mxPop();
 				return;
 			}
 			mxPop();
@@ -899,7 +901,8 @@ void fx_Promise_resolveAux(txMachine* the)
 	mxTemporary(rejectFunction);
 	mxPushSlot(constructor);
 	fxNewPromiseCapability(the, resolveFunction, rejectFunction);
-	mxPullSlot(mxResult);
+	*result = *the->stack;
+    mxPop();
 	/* THIS */
 	mxPushUndefined();
 	/* FUNCTION */
@@ -910,6 +913,8 @@ void fx_Promise_resolveAux(txMachine* the)
 	/* COUNT */
 	mxRunCount(1);
 	mxPop();
+    mxPop(); // rejectFunction
+    mxPop(); // resolveFunction
 }
 
 void fx_Promise_prototype_catch(txMachine* the)
@@ -1013,7 +1018,6 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 	txSlot* function;
 	txSlot* slot;
 	txSlot* home;
-	txSlot* stack;
 	
 	{
 		mxTry(the) {
@@ -1032,14 +1036,12 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 	}
 	argument = the->stack;
 	
-	stack = the->stack;
+	mxPushUndefined();
 	mxPushSlot(constructor);
 	mxPushSlot(argument);
 	fx_Promise_resolveAux(the);
 	mxPop();
 	mxPop();
-	the->stack = stack;
-    mxPushSlot(mxResult);
 	mxDub();
 	mxGetID(mxID(_then));
 	mxCall();
@@ -1055,8 +1057,7 @@ void fx_Promise_prototype_finallyAux(txMachine* the)
 	home = mxFunctionInstanceHome(function);
 	home->value.home.object = object;
 	mxPop();
-	mxPushUndefined();
-	mxRunCount(2);
+	mxRunCount(1);
 	
 	mxPullSlot(mxResult);
 }
