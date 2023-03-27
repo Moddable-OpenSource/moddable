@@ -3,6 +3,10 @@
 		"USE_USB": "1",
 		"UF2_VOLUME_NAME": "MODDABLEnRF"
 	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
 	"modules": {
 		"setup/target": "./setup-target"
 	},
@@ -18,8 +22,8 @@
 	},
 	"defines": {
 		"xdebugger": {
-			"tx": "NRF_GPIO_PIN_MAP(0,30)",
-			"rx": "NRF_GPIO_PIN_MAP(0,31)",
+			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
+			"rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
 			"baud": "NRF_UART_BAUDRATE_115200"
 		},
 		"spi": {

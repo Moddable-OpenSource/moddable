@@ -3,6 +3,10 @@
         "USE_USB": "1",
         "UF2_VOLUME_NAME": "MODDABLEnRF"
     },
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
 	"modules": {
 		"setup/target": "./setup-target"
 	},

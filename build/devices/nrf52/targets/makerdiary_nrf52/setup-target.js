@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,6 +19,37 @@
  */
 
 import config from "mc/config";
+import Digital from "pins/digital";
+import Button from "button";
+import LED from "led";
+
+globalThis.Host = {
+	LED: {
+		Default: class {
+			constructor(options) {
+				return new LED({
+					...options,
+					pin: config.led1_pin,
+				});
+			}
+		}
+	},
+	Button: class {
+		constructor(options) {
+			return new Button({
+				...options,
+				invert: true,
+				pin: config.button1_pin,
+				mode: Digital.InputPullUp,
+			});
+		}
+	},
+	pins: {
+		led: config.led1_pin,
+		button: config.button1_pin,
+	}
+};
+Object.freeze(Host, true);
 
 export default function (done) {
 	// Put startup code in here
