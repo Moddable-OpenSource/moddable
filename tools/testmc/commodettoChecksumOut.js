@@ -73,7 +73,7 @@ export default class ChecksumOut {
 			this.#show?.adaptInvalid(r);
 	}
 	pixelsToBytes(count) {
-		return ((Bitmap.depth(this.pixelFormat) *  this.width) + 7) >> 3;
+		return ((Bitmap.depth(this.pixelFormat) * this.width) + 7) >> 3;
 	}
 	
 	configure(options) {
