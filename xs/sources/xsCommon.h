@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,7 +44,7 @@
 	#define mx_dtoa 1
 #endif
 #if __GNUC__ >= 5
-	#if ESP32
+	#if ESP32 && (__GNUC__ < 11)		// ESP-IDF v5 uses GNUC 11... this is here for ESP-IDF v4
 		#undef __has_builtin
 		#define __has_builtin(x) 1
 	#endif
