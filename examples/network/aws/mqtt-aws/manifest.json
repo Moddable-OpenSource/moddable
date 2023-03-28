@@ -5,10 +5,6 @@
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls.json"
 	],
-	"config": {
-		"ssid": "ModdableWifi",
-		"password": "12345679"
-	},
 	"modules": {
 		"*": [
 			"./main"
