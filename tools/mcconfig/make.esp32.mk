@@ -106,6 +106,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
  	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+ 	$(IDF_PATH)/components/driver/deprecated \
  	$(IDF_PATH)/components/driver/include \
  	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
