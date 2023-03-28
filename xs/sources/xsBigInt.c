@@ -1359,19 +1359,23 @@ static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 
 	for (i = 0; i < an; i++) {
 #ifdef __ets__
-	txU4 r;
+	unsigned int r;
 	if (__builtin_uadd_overflow(ap[i], bp[i], &r)) {
 		rp[i] = r + c;
 		c = 1;
 	}
-	else
-		c = __builtin_uadd_overflow(r, c, &rp[i]);
+	else {
+		c = __builtin_uadd_overflow(r, c, &r);
+		rp[i] = r;
+	}
 #else
 		c = __builtin_uadd_overflow(ap[i], bp[i], &rp[i]) | __builtin_uadd_overflow(rp[i], c, &rp[i]);
 #endif
 	}
 	for (; c && (i < bn); i++) {
-		c = __builtin_uadd_overflow(1, bp[i], &rp[i]);
+		unsigned int r;
+		c = __builtin_uadd_overflow(1, bp[i], &r);
+		rp[i] = r;
 	}
 	for (; i < bn; i++) {
 		rp[i] = bp[i];
