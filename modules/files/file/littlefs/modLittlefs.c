@@ -29,6 +29,7 @@
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/semphr.h"
+	#include "spi_flash/include/spi_flash_mmap.h"
 #endif
 
 #ifndef MODDEF_FILE_PARTITION 
