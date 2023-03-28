@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -197,21 +197,21 @@ void xs_serial_constructor(xsMachine *the)
 		if (hasReadable) {
 			serial->onReadable = onReadable;
 
-			uart_enable_rx_intr(serial->uart_reg);
+			uart_enable_rx_intr(serial->uart);
 			uart_set_rx_timeout(serial->uart, 4);
 		}
 		else {
-			uart_disable_rx_intr(serial->uart_reg);
+			uart_disable_rx_intr(serial->uart);
 			serial->onReadable = NULL;
 		}
 
 		if (hasWritable) {
 			serial->onWritable = onWritable;
 
-			uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
+			uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 		}
 		else {
-			uart_disable_tx_intr(serial->uart_reg);
+			uart_disable_tx_intr(serial->uart);
 			serial->onWritable = NULL;
 		}
 	}
@@ -229,8 +229,8 @@ void xs_serial_destructor(void *data)
 	Serial serial = data;
 	if (!serial) return;
 
-	uart_disable_tx_intr(serial->uart_reg);
-	uart_disable_rx_intr(serial->uart_reg);
+	uart_disable_tx_intr(serial->uart);
+	uart_disable_rx_intr(serial->uart);
 
 //	uart_isr_free(serial->uart);
 
@@ -315,7 +315,7 @@ void xs_serial_read(xsMachine *the)
 	}
 
 	if (serial->onReadable)
-		uart_enable_rx_intr(serial->uart_reg);
+		uart_enable_rx_intr(serial->uart);
 }
 
 void xs_serial_write(xsMachine *the)
@@ -345,7 +345,7 @@ void xs_serial_write(xsMachine *the)
 
 	if (serial->onWritable && !serial->txInterruptEnabled) {
 		serial->txInterruptEnabled = 1;
-		uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
+		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 	}
 }
 
@@ -367,13 +367,13 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 		post |= (0 == serial->isWritable);
 		serial->isWritable = 1;
 		serial->txInterruptEnabled = 0;
-		uart_disable_tx_intr(serial->uart_reg);
+		uart_disable_tx_intr(serial->uart);
 	}
 
 	if ((status & (UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL)) && serial->onReadable) {
 		post |= (0 == serial->isReadable);
 		serial->isReadable = 1;
-		uart_disable_rx_intr(serial->uart_reg);
+		uart_disable_rx_intr(serial->uart);
 	}
 
 	if (post) {
@@ -402,7 +402,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
-		uart_enable_rx_intr(serial->uart_reg);
+		uart_enable_rx_intr(serial->uart);
 	}
 
 	if (serial->isWritable) {
@@ -489,4 +489,3 @@ void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh)
 }
 
 #endif
-
