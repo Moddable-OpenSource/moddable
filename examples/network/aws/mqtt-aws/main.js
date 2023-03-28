@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright 2023 Moddable Tech, Inc.
+ * Revised: March 27, 2023
  *
  *   This file is part of the Moddable SDK.
  * 

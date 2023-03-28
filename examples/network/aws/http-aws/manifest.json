@@ -15,13 +15,9 @@
 	],
 	"resources": {
 		"*": [
-            "./CA1-key",
+			"./CA1-key",
 			"./device",
 			"./private-key"
 		]
-	},
-	"config": {
-		"sntp": "pool.ntp.org"
 	}
 }
-
