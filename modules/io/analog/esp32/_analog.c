@@ -235,17 +235,17 @@ void xs_analog_destructor_(void *data)
 	if (1 == analog->port) {
 		if (0 >= --gADC1_caliCount)
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-			adc_cali_delete_scheme_curve_fitting(&gADC1_cali_handle);
+			adc_cali_delete_scheme_curve_fitting(gADC1_cali_handle);
 #else
-			adc_cali_delete_scheme_line_fitting(&gADC1_cali_handle);
+			adc_cali_delete_scheme_line_fitting(gADC1_cali_handle);
 #endif
 	}
 	else {
 		if (0 >= --gADC2_caliCount)
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-			adc_cali_delete_scheme_curve_fitting(&gADC2_cali_handle);
+			adc_cali_delete_scheme_curve_fitting(gADC2_cali_handle);
 #else
-			adc_cali_delete_scheme_line_fitting(&gADC2_cali_handle);
+			adc_cali_delete_scheme_line_fitting(gADC2_cali_handle);
 #endif
 	}
     builtinFreePin(analog->pin);
