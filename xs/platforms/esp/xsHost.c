@@ -52,13 +52,11 @@
 
 	#define INSTRUMENT_CPULOAD 1
 	#if INSTRUMENT_CPULOAD
-//		#include "driver/timer.h"
 		#include "driver/gptimer.h"
 
 		static uint16_t gCPUCounts[kTargetCPUCount * 2];
 		static TaskHandle_t gIdles[kTargetCPUCount];
-//		static void IRAM_ATTR timer_group0_isr(void *para);
-		static bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx);
+		static bool timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx);
 
 		volatile uint32_t gCPUTime;
 	#endif
@@ -935,8 +933,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 }
 
 #if INSTRUMENT_CPULOAD
-//void IRAM_ATTR timer_group0_isr(void *para)
-static bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx)
+bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx)
 {
 //    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
 //    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
