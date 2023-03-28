@@ -143,7 +143,8 @@ void xs_net_get(xsMachine *the)
 #endif
 			char addrStr[40];
 #if LWIP_IPV4 && LWIP_IPV6
-			ip4addr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
+			ip4_addr_t t = {info.ip.addr};
+			ip4addr_ntoa_r(&t, addrStr, sizeof(addrStr));
 #else
 			ipaddr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
 #endif
