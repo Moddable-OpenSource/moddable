@@ -59,7 +59,9 @@ void xs_setup(void)
 		while (gThe) {
 			modTimersExecute();
 #if CYW43_LWIP
-			cyw43_arch_poll();
+			if (pico_cyw43_inited()) {
+				cyw43_arch_poll();
+			}
 #endif
 			modMessageService(the, modTimersNext());
 
@@ -70,7 +72,9 @@ void xs_setup(void)
 		while (true) {
 			modTimersExecute();
 #if CYW43_LWIP
-			cyw43_arch_poll();
+			if (pico_cyw43_inited()) {
+				cyw43_arch_poll();
+			}
 #endif
 			modMessageService(the, modTimersNext());
 
