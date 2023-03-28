@@ -1,3 +1,26 @@
+/*
+ * Copyright 2023 Moddable Tech, Inc.
+ * Revised: March 27, 2023
+ *
+ *   This file is part of the Moddable SDK.
+ *
+ *   This work is licensed under the
+ *       Creative Commons Attribution 4.0 International License.
+ *   To view a copy of this license, visit
+ *       <https://creativecommons.org/licenses/by/4.0>.
+ *   or send a letter to Creative Commons, PO Box 1866,
+ *   Mountain View, CA 94042, USA.
+ *
+ */
+
+/*
+	SEN0322 - Oxygen Sensors
+	https://www.dfrobot.com/product-2052.html
+	Datasheet: https://wiki.dfrobot.com/Gravity_I2C_Oxygen_Sensor_SKU_SEN0322
+	Reference Driver: https://github.com/DFRobot/DFRobot_OxygenSensor/blob/master/DFRobot_OxygenSensor.cpp
+*/
+
+
 import Timer from "timer";
 
 const Register = Object.freeze({
@@ -13,7 +36,6 @@ class SEN0322
 {
 	#io;
 	#key;
-	#onError;
 
 	constructor(options) {
 		this.#io = new options.sensor.io({
@@ -21,8 +43,6 @@ class SEN0322
 			hz: 100_000,
 			...options.sensor
 		});
-		this.#onError = options.onError
-		
 	}
 
 	configure(options)
@@ -31,20 +51,18 @@ class SEN0322
 		{
 			const vol = options.vol;
 			const mv = options.mv ?? 0;
-			if (vol < 0 || vol > 25)
+			if (0 > vol || vol > 25)
 				throw new RangeError("invalid O2 concentration (must be 0-25)");
+
+			const io = this.#io;
+			let keyValue = vol * 10;
+
+			if (-0.000001 < mv && mv < 0.000001)		
+				io.write(Uint8Array.of(Register.USER_SET, keyValue));
 			else
 			{
-				const io = this.#io;
-				let keyValue = vol * 10;
-
-				if (mv < 0.000001 && mv > (-0.000001))		
-					io.write(Uint8Array.of(Register.USER_SET, keyValue));
-				else
-				{
-					keyValue = (vol / mv) * 1000;
-					io.write(Uint8Array.of(Register.AUTUAL_SET, keyValue));
-				}
+				keyValue = vol / mv * 1000;
+				io.write(Uint8Array.of(Register.AUTUAL_SET, keyValue));
 			}
 		}
 	}
@@ -60,20 +78,18 @@ class SEN0322
 	}
 	close()
 	{
-		this.#io.close();
+		this.#io?.close();
 		this.#io = undefined;
 	}
 	sample()
 	{
 		const io = this.#io;
-		let ret = {};
 		this.#setKey();
 		io.write(Uint8Array.of(Register.OXYGEN_DATA));
 		Timer.delay(100);
 		const rxbuf = new Uint8Array(io.read(3));
-		const oxygenPercent = ((this.#key) * ((rxbuf[0]) + (rxbuf[1] / 10.0) + (rxbuf[2] / 100.0)));
-		ret.O = oxygenPercent * 10000; // O2 concentration in PPM
-		return ret;
+		const oxygenPercent = this.#key * (rxbuf[0] + (rxbuf[1] / 10.0) + (rxbuf[2] / 100.0));
+		return { O: oxygenPercent * 10_000 }; // O2 concentration in PPM
 	}
 	
 }
