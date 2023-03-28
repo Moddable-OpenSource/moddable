@@ -796,7 +796,7 @@ export class MakeFile extends FILE {
 			var source = result.source;
 			
 			if (!tool.getenv("FONTBM"))
-				throw new Error("$(FONTBM) environemnt variable not set");
+				throw new Error("$(FONTBM) environment variable not set. Is fontbm installed?");
 			
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
