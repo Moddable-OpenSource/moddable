@@ -63,6 +63,7 @@ sample code bearing this copyright.
 
 #include "driver/rmt.h"
 #include "driver/gpio.h"
+#include "soc/gpio_periph.h"
 
 #include "xsHost.h"			// esp platform support
 
