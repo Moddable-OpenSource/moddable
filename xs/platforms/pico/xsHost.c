@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,6 +46,7 @@
 #include <stdio.h>
 
 #include "hardware/sync.h"
+#include "pico/cyw43_arch.h"
 
 #ifdef mxInstrument
 	#include "modTimer.h"

@@ -384,7 +384,7 @@ void wlanMakeCallback(uint32_t val)
 {
 	xsWiFi walker;
 	for (walker = gWiFi; NULL != walker; walker = walker->next)
-		modMessagePostToMachine(walker->the, &val, 4, wifiEventPending, walker);
+		modMessagePostToMachine(walker->the, (uint8_t *)&val, sizeof(val), wifiEventPending, walker);
 }
 
 int lastLinkStatus = CYW43_LINK_DOWN;

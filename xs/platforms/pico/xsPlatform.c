@@ -61,7 +61,7 @@ uint8_t gXSBUG[4] = { DEBUG_IP };
 
 
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
-#define kSerialConnection ((void*)0x87654321)
+#define kSerialConnection ((txSocket)0x87654321)
 
 static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
 static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
@@ -110,7 +110,7 @@ void fx_putc(void *refcon, char c)
 
     if (the->inPrintf) {
         if (0 == c) {
-            if ((txSocket)kSerialConnection == the->connection) {
+            if (kSerialConnection == the->connection) {
                 // write xsbug log trailer
                 const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
                 const char *cp = xsbugTrailer;
@@ -130,7 +130,7 @@ void fx_putc(void *refcon, char c)
             return;
 
         the->inPrintf = true;
-        if ((txSocket)kSerialConnection == the->connection) {
+        if (kSerialConnection == the->connection) {
 			mxDebugMutexTake();
 
             // write xsbug log header
@@ -256,7 +256,7 @@ void fxConnect(txMachine* the)
 			once = true;
 		}
 
-		the->connection = (txSocket)kSerialConnection;
+		the->connection = kSerialConnection;
 	}
 }
 
@@ -279,7 +279,7 @@ txBoolean fxIsConnected(txMachine* the)
 
 txBoolean fxIsReadable(txMachine* the)
 {
-	if ((txSocket)kSerialConnection == the->connection) {
+	if (kSerialConnection == the->connection) {
 		fxReceiveLoop();
 //		taskYIELD();
 		return NULL != the->debugFragments;
@@ -293,7 +293,7 @@ void fxReceive(txMachine* the)
 {
 	the->debugOffset = 0;
 
-	if ((txSocket)kSerialConnection == the->connection) {
+	if (kSerialConnection == the->connection) {
 		uint32_t start = the->debugConnectionVerified ? 0 : modMilliseconds();
 
 		while (!the->debugOffset) {
@@ -333,7 +333,7 @@ void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t mess
 	the->debugNotifyOutstanding = false;
 	if ((txSocket)NULL == the->connection)
 		return;
-	else if ((txSocket)kSerialConnection == the->connection) {
+	else if (kSerialConnection == the->connection) {
 		if (!the->debugFragments)
 			return;
 	}
@@ -498,7 +498,7 @@ void fxSend(txMachine* the, txBoolean flags)
 	txBoolean more = 0 != (flags & 1);
 	txBoolean binary = 0 != (flags & 2);
 
-	if ((txSocket)kSerialConnection == the->connection) {
+	if (kSerialConnection == the->connection) {
 		char *c;
 		txInteger count;
 
