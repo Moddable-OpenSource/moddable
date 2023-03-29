@@ -421,6 +421,7 @@ uint32_t pico_get_reset_reason(void);
 
 #if CYW43_LWIP
 int pico_use_cyw43();
+int pico_cyw43_inited();
 void pico_unuse_cyw43();
 #endif
 

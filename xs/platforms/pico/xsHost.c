@@ -724,4 +724,9 @@ void pico_unuse_cyw43() {
 	if (0 == --sCYW43_useCount)
 		cyw43_arch_deinit();
 }
+
+int pico_cyw43_inited() {
+	return (sCYW43_useCount > 0);
+}
+
 #endif

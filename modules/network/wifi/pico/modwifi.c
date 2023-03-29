@@ -350,7 +350,7 @@ static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t
 	xsWiFi wifi = refcon;
 	uint32_t status = *(uint32_t *)message;
 
-	switch (status){
+	switch (status) {
 		case STATION_CONNECTED:
 			gWiFiState = 4;
 			message = "connect";
@@ -400,12 +400,16 @@ void wifiMonitorCallback(modTimer timer, void *refcon, int refconSize)
 				do_disconnect = 1;
 				break;
 			case CYW43_LINK_JOIN:
-				wlanMakeCallback(STATION_CONNECTED);
+				if (gWiFiState == 5)
+					do_disconnect = 1;
+				else
+					wlanMakeCallback(STATION_CONNECTED);
 				break;
 			case CYW43_LINK_NOIP:
 				break;
 			case CYW43_LINK_UP:
-				wlanMakeCallback(STATION_GOT_IP);
+				if (gWiFiState != 5)
+					wlanMakeCallback(STATION_GOT_IP);
 				break;
 			case CYW43_LINK_FAIL:
 				do_disconnect = 1;
