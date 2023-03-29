@@ -62,9 +62,9 @@ class Connection {
 		
 		this.#socket = new from.constructor({
 			from,
-			onReadable: this.#onReadable.bind(this),
-			onWritable: this.#onWritable.bind(this),
-			onError: this.#onError.bind(this)
+			onReadable: count => this.#onReadable(count),
+			onWritable: count => this.#onWritable(count),
+			onError: error => this.#onError(error)
 		});
 		this.#from = undefined;
 	}
@@ -107,7 +107,7 @@ class Connection {
 			}
 		}
 		else if (0 === this.#remaining)
-			this.#timer = Timer.set(this.#reply.bind(this));
+			this.#timer = Timer.set(() => this.#reply());
 
 		return result;
 	}
@@ -316,7 +316,7 @@ class Connection {
 					this.#writePosition = 0;
 					} break;
 
-				case "sendResponseBody":
+				case "sendResponseBody": {
 					if (0 === this.#remaining) {
 						this.#done();
 						return;
@@ -330,6 +330,7 @@ class Connection {
 					}
 					this.#options.onWritable?.call(this, writable);
 					return;
+					}
 
 				case "waitResponse":
 				case "done":
@@ -345,13 +346,12 @@ class Connection {
 		const onError = this.#options.onError; 
 		this.#state = "error";
 		this.close();
-		onError?.call(this);
+		onError?.call(this, msg);
 	}
 	#done() {
-		const onDone = this.#options.onDone; 
 		this.#state = "done";
 		try {
-			onDone?.call(this);
+			this.#options.onDone?.call(this);
 		}
 		catch {
 		}
@@ -390,7 +390,7 @@ class Connection {
 		this.#options.onWritable = route.onWritable; 
 		this.#options.onDone = route.onDone 
 		this.#options.onError = route.onError; 
-		if (this.#state == "receiveHeader") {
+		if (this.#state === "receiveHeader") {
 			this.#options.onRequest?.call(this, {
 				method: this.#options.method,
 				path: this.#options.path,

@@ -9,6 +9,7 @@ import Resource from "Resource";
 import parseRLE from "commodetto/parseRLE";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 

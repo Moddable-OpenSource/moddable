@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: February 3, 2023
+Revised: March 23, 2023
 
 ## About this Document
 
@@ -59,7 +59,7 @@ A few notes:
 ### Arguments
 
 ```text
-mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-t target] [-v] [-l] [-x xsbug_host:xsbug_port] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 ```
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
@@ -67,6 +67,7 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
 - `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below).
+- `-x`: overrides the default host and port (localhost:5002) debug builds use to connect to xsbug.
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
 - `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `sim/moddable_one`, `sim/moddable_two`, `sim/moddable_three`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. 
@@ -94,6 +95,8 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 When the `-t` flag is omitted, the default value is `all`.
 
+When using **mcconfig** with microcontrollers that use a serial port for JavaScript debuggging with xsbug, the `deploy`, `xsbug`, and `all` targets terminate the currently running instance of serial2xsbug, if there is one.
+
 <a id="mcrun"></a>
 ## mcrun
 **mcrun** is a command line tool to build [mods](../xs/mods.md), scripts that users can install on their IoT products to add new features and change existing behaviors. The inputs to build a mod are JavaScript modules, assets, data, and configuration. These are specified in a manifest. The output is an XS archive file (`.xsa` extension) containing JavaScript byte code and resource data.
@@ -107,7 +110,7 @@ There are a few important differences between `mcrun` and `mcconfig`:
 ### Arguments
 
 ```text
-mcrun [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
+mcrun [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r rotation] [-v] [-x xsbug_host:xsbug_port] [ssid="wifi_ssid"] [password="wifi_password"] [screen=screen_driver] [touch=touch_driver]
 ```
 
 The command line arguments to `mcrun` are nearly identical to those for `mcconfig`, except that `mcrun` does not support the `-t` option. See the [`mcconfig` Arguments](#mcconfig-arguments) section for a description of each argument.

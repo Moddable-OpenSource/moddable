@@ -24,41 +24,49 @@ class FT6206  {
 			address: 0x38,
 			...sensor
 		});
-		io.buffer = new Uint8Array(12);		// two touch points
+		
+		try {
+			io.buffer = new Uint8Array(12);		// two touch points
 
-		if (reset) {
-			io.reset = new reset.io({
-				...reset
+			if (reset) {
+				io.reset = new reset.io({
+					...reset
+				});
+
+				io.reset.write(0);
+				Timer.delay(5);
+				io.reset.write(1);
+				Timer.delay(150);
+			}
+
+			const vendor = io.readUint8(0xA8);
+			if ((17 !== vendor) && (1 !== vendor))
+				throw new Error("unexpected vendor");
+
+			const id = io.readUint8(0xA3);
+			if ((6 !== id) && (100 !== id))
+				throw new Error("unexpected chip");
+
+			if (interrupt && onSample) {
+				io.interrupt = new interrupt.io({
+					...interrupt,
+					edge: interrupt.io.Falling,
+					onReadable: onSample.bind(this)
+				});
+			}
+			if (target)
+				this.target = target;
+
+			this.configure({
+				active: false,
+				threshold: 128,
+				timeout: 10
 			});
-
-			io.reset.write(0);
-			Timer.delay(5);
-			io.reset.write(1);
-			Timer.delay(150);
 		}
-
-		if (17 !== io.readUint8(0xA8))
-			throw new Error("unexpected vendor");
-
-		const id = io.readUint8(0xA3);
-		if ((6 !== id) && (100 !== id))
-			throw new Error("unexpected chip");
-
-		if (interrupt && onSample) {
-			io.interrupt = new interrupt.io({
-				...interrupt,
-				edge: interrupt.io.Falling,
-				onReadable: onSample.bind(this)
-			});
+		catch (e) {
+			this.close();
+			throw e;
 		}
-		if (target)
-			this.target = target;
-
-		this.configure({
-			active: false,
-			threshold: 128,
-			timeout: 10
-		});
 	}
 	close() {
 		this.#io?.reset?.close();
@@ -125,7 +133,7 @@ class FT6206  {
 		delete io.none;
 
 		const data = io.buffer;
-		const count = io.readBuffer(0x03, data);
+		io.readBuffer(0x03, data);
 		const result = new Array(length);
 		for (let i = 0; i < length; i++) {
 			const offset = i * 6;

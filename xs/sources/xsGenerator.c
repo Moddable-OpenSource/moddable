@@ -830,14 +830,13 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				mxGetID(mxID(_done));
 				doneFlag->value.boolean = fxToBoolean(the, the->stack);
 
+				mxPushUndefined();
 				mxPush(mxPromiseConstructor);
-				mxDub();
-				mxGetID(mxID(_resolve));
-				mxCall();
 				mxPushSlot(slot);
 				mxGetID(mxID(_value));
-				mxRunCount(1);
-
+				fx_Promise_resolveAux(the);
+				mxPop();
+				mxPop();
 				fxPromiseThen(the, the->stack->value.reference, doneFunction, C_NULL, resolveFunction, rejectFunction);
 			}
 		}

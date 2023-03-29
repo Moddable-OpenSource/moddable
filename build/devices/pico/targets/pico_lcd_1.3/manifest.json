@@ -9,7 +9,19 @@
 	"preload": "setup/target",
 	"config": {
 		"screen": "st7789",
-		"touch": ""
+		"touch": "",
+		"button1_pin": 15,
+		"buttons": {
+			"a_pin": 15,
+			"b_pin": 17,
+			"x_pin": 19,
+			"y_pin": 21,
+			"up_pin": 2,
+			"down_pin": 18,
+			"left_pin": 16,
+			"right_pin": 20,
+			"center_pin": 3
+		}
 	},
 	"defines": {
 		"i2c": {

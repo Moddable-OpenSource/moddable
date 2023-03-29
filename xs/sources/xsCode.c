@@ -3017,9 +3017,6 @@ void fxForInForOfNodeCode(void* it, void* param)
 	result = fxCoderUseTemporaryVariable(param);
 	selector = fxCoderUseTemporaryVariable(coder);
 	fxScopeCodingBlock(self->scope, param);
-	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
-	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
-	coder->returnTarget = fxCoderAliasTargets(param, coder->returnTarget);
 
 	fxScopeCodeDefineNodes(self->scope, param);
 	if (coder->programFlag) {
@@ -3033,6 +3030,9 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, next);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 	
+	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
+	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
+	coder->returnTarget = fxCoderAliasTargets(param, coder->returnTarget);
 	catchTarget = fxCoderCreateTarget(param);
 	normalTarget = fxCoderCreateTarget(param);
 	finallyTarget = fxCoderCreateTarget(param);

@@ -3372,7 +3372,7 @@ void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimensi
 
 	// get started
 	poco->next = (PocoCommand)poco->displayList;
-	poco->flags &= ~(kPocoFlagErrorDisplayListOverflow | kPocoFlagErrorStackProblem);
+	poco->flags &= ~(kPocoFlagErrorDisplayListOverflow | kPocoFlagErrorStackProblem | kPocoFlagGCDisabled);
 	poco->stackDepth = 0;
 	poco->xOrigin = poco->yOrigin = 0;
 

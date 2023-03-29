@@ -232,6 +232,8 @@ void fxAbort(txMachine* the, int status)
 
 	fxReport(the, "XS abort: %s\n", msg);
 	#if defined(mxDebug) && !MODDEF_XS_TEST
+		if ((char *)&the <= the->stackLimit)
+			the->stackLimit = NULL;
 		fxDebugger(the, (char *)__FILE__, __LINE__);
 	#endif
 #endif
@@ -249,7 +251,12 @@ void fxAbort(txMachine* the, int status)
 			c_exit(status);
 	}
 #else
-	c_exit(status);
+	#if ESP32
+		c_exit(status);
+	#else
+		system_restart();
+		esp_yield();
+	#endif
 #endif
 }
 

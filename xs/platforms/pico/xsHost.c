@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,6 +46,7 @@
 #include <stdio.h>
 
 #include "hardware/sync.h"
+#include "pico/cyw43_arch.h"
 
 #ifdef mxInstrument
 	#include "modTimer.h"
@@ -724,4 +725,9 @@ void pico_unuse_cyw43() {
 	if (0 == --sCYW43_useCount)
 		cyw43_arch_deinit();
 }
+
+int pico_cyw43_inited() {
+	return (sCYW43_useCount > 0);
+}
+
 #endif

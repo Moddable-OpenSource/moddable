@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018-2022 Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 import DNS from "dns";
 
 class Serializer {
@@ -116,18 +136,21 @@ class Serializer {
 		this.append(section, record);
 	}
 	append(section, parts) {
-		const byteLength = parts.reduce((byteLength, value) => {
+		let byteLength = 0;
+		for (let i = 0; i < parts.length; i++) {
+			const value = parts[i];
 			const type = typeof value;
 			if ("number" === type)
-				return byteLength + 1;
-			if ("string" === type)
-				return byteLength + 1 + ArrayBuffer.fromString(value).byteLength;
-			return byteLength + value.byteLength;
-		}, 0);
+				byteLength += 1;
+			else if ("string" === type)
+				byteLength += 1 + ArrayBuffer.fromString(value).byteLength;
+			else
+				byteLength += value.byteLength;
+		}
 
-		let fragment = new Uint8Array(byteLength);
-		let position = 0;
-		parts.forEach(value => {
+		const fragment = new Uint8Array(byteLength);
+		for (let i = 0, position = 0; i < parts.length; i++) {
+			const value = parts[i];
 			const type = typeof value;
 			if ("number" === type) {
 				fragment[position] = value;
@@ -143,7 +166,7 @@ class Serializer {
 				fragment.set(value, position);
 				position += value.byteLength;
 			}
-		});
+		}
 
 /*
 		// check for duplicate answer

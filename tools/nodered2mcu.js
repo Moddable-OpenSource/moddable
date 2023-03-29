@@ -106,7 +106,14 @@ export default class extends TOOL {
 		const source = this.readFileString(this.sourcePath);
 		let flows = JSON.parse(source);
 
-		flows = this.transformFlows(flows);
+		let credentials;
+		if (this.sourcePath.toLowerCase().endsWith(".json")) {
+			const path = this.sourcePath.slice(0, -5) + "_cred_mcu.json";
+			if (this.resolveFilePath(path))
+				credentials = JSON.parse(this.readFileString(path)).credentials;
+		}
+
+		flows = this.transformFlows(flows, credentials);
 
 		const parts = this.splitPath(this.sourcePath);
 		parts.extension = ".js";
@@ -119,7 +126,7 @@ export default class extends TOOL {
 		output.close();
 	}
 
-	transformFlows(flows) {
+	transformFlows(flows, credentials) {
 		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
 
 		// must be an array with at least one element
@@ -246,6 +253,9 @@ export default class extends TOOL {
 				if (config.z !== z)
 					return;
 
+				if (credentials?.[config.id])
+					config.credentials = credentials[config.id];
+
 				const name = config.name;
 				let {type, id, /* name, */ ...c} = {...config};
 				delete c.x;
@@ -253,6 +263,7 @@ export default class extends TOOL {
 				delete c.z;
 				delete c.outputLabels;
 				delete c._mcu;
+				delete c.moddable_manifest;
 
 				try {
 					// remove wires that connect to missing nodes
@@ -563,7 +574,7 @@ export default class extends TOOL {
 						else if ("flow" === rule.pt)
 							doDelete = `\t\t\tthis.flow.delete(${this.makeStorageArgs(rule.p)});`;
 						else if ("global" === rule.pt)
-							doDelete = `\t\t\tglobalContext.delete${this.makeStorageArgs(rule.p)};`;
+							doDelete = `\t\t\tglobalContext.delete(${this.makeStorageArgs(rule.p)});`;
 						else
 							throw new Error(`unexpected delete type: ${rule.pt}`);
 					}
@@ -616,9 +627,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to, temp)});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to, temp)});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1236,8 +1247,12 @@ export default class extends TOOL {
 					config.pin = parseInt(config.pin);
 				config.edge = parseInt(config.edge);
 				config.debounce = config.debounce ? parseFloat(config.debounce) : 0;
+				if (!config.debounce)
+					delete config.debounce;
 				if (!config.initial)
-					delete config.initial; 
+					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
 				break;
 
 			case "mcu_digital_out":
@@ -1249,6 +1264,8 @@ export default class extends TOOL {
 					config.initial = 0;
 				else
 					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
 				break;
 
 			case "mcu_pulse_width":
@@ -1292,6 +1309,9 @@ export default class extends TOOL {
 				
 				if ("mcu_i2c_out" === type)
 					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
+
+				delete config.payload;
+				delete config.payloadType;
 				break;
 
 			case "mcu_sensor":
@@ -1569,7 +1589,6 @@ export default class extends TOOL {
 			case "ui_group":
 			case "ui_spacer":
 			case "ui_text":
-			case "ui_text_input":
 			case "ui_template":
 			case "ui_toast":
 				this.prepareUI(config, nodes);
@@ -1644,7 +1663,14 @@ export default class extends TOOL {
 					suffix = value.slice(first);
 					value = value.slice(0, first);		//@@ if "." may need to check regexIdentifierNameES6
 				}
-					
+
+				suffix = suffix.trim(suffix)
+				if (suffix) {
+					if (suffix.startsWith("["))
+						suffix = "?." + suffix;
+					else
+						suffix = "?" + suffix;
+				}
 				if ("flow" === type)
 					return `this.flow.get(${this.makeStorageArgs(value)})${suffix}`;
 				return `globalContext.get(${this.makeStorageArgs(value)})${suffix}`;
@@ -1803,7 +1829,7 @@ export default class extends TOOL {
 		}
 
 		for (let name in value) {
-			if (value.hasOwnProperty(name))
+			if (Object.hasOwn(value, name))
 				this.applyEnv(value, name, node, flows);
 		}
 	}

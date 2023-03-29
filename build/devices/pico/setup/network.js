@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -39,10 +39,7 @@ export default function (done) {
 
 				monitor = monitor.close();
 				if (!config.sntp)
-{
-trace("sntp was not defined. call done.\n");
 					return done();
-}
 
 				new SNTP({host: config.sntp}, function(message, value) {
 					if (1 === message) {

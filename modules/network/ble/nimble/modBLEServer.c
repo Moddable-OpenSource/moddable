@@ -795,7 +795,7 @@ static int nimble_gap_event(struct ble_gap_event *event, void *arg)
 		case BLE_GAP_EVENT_SUBSCRIBE: {
 			notificationState state = c_malloc(sizeof(notificationStateRecord));
 			if (NULL != state) {
-				state->notify = event->subscribe.cur_notify;
+				state->notify = event->subscribe.cur_notify || event->subscribe.cur_indicate;
 				state->conn_id = event->subscribe.conn_handle;
 				state->handle = event->subscribe.attr_handle;
 				modMessagePostToMachine(gBLE->the, NULL, 0, notificationStateEvent, state);

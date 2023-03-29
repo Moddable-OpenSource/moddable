@@ -72,7 +72,7 @@ class HTTPClient {
 			}
 			else if (0 === client.#remaining) {
 				client.#state = "receivedBody"; 
-				client.#timer = Timer.set(client.#done.bind(client));
+				client.#timer = Timer.set(() => client.#done());
 			}
 
 			return result;
@@ -161,9 +161,9 @@ class HTTPClient {
 						address,
 						host,
 						port: port ?? 80,
-						onReadable: this.#onReadable.bind(this),
-						onWritable: this.#onWritable.bind(this),
-						onError: this.#error.bind(this)
+						onReadable: count => this.#onReadable(count),
+						onWritable: count => this.#onWritable(count),
+						onError: () => this.#error()
 					});
 				}
 				catch (e) {

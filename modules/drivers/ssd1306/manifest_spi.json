@@ -46,6 +46,16 @@
 					"spi_port": "HSPI_HOST"
 				}
 			}
+		},
+		"pico": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json"
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ssd1306/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+			}
 		}
 	}
 }

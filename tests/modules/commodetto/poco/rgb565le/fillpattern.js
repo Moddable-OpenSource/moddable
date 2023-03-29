@@ -7,6 +7,7 @@ import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 

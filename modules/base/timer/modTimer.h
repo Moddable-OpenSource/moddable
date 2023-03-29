@@ -32,7 +32,6 @@ typedef struct modTimerRecord modTimerRecord;
 typedef struct modTimerRecord *modTimer;
 
 typedef void (*modTimerCallback)(modTimer timer, void *refcon, int refconSize);
-
 extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
 extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
 extern uint16_t modTimerGetID(modTimer timer);

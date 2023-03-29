@@ -1037,6 +1037,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_FINALIZATION_REGISTRY_KIND:
 		aSlot = theSlot->value.finalizationRegistry.callback;
 		if (aSlot) {
+			fxCheckCStack(the);
 			aSlot->flag |= XS_MARK_FLAG;
 			fxMarkReference(the, aSlot);
 			aSlot = aSlot->next;
@@ -1164,11 +1165,15 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		
 	case XS_ACCESSOR_KIND:
 		aSlot = theSlot->value.accessor.getter;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		aSlot = theSlot->value.accessor.setter;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_HOME_KIND:
 		aSlot = theSlot->value.home.object;
@@ -1185,8 +1190,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
 		aSlot = theSlot->value.module.realm;
-		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
+		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
+			fxCheckCStack(the);
 			fxMarkInstance(the, aSlot, fxMarkValue);
+		}
 		break;
 	case XS_EXPORT_KIND:
 		aSlot = theSlot->value.export.closure;
@@ -1295,6 +1302,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			aSlot = aSlot->next;
 			while (aSlot) {
 				aSlot->flag |= XS_MARK_FLAG;
+                fxCheckCStack(the);
 				fxMarkValue(the, aSlot); // holdings
 				aSlot = aSlot->next;
 				if (aSlot) {
