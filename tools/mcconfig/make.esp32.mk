@@ -368,7 +368,6 @@ PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		ifeq ($(USE_USB),1)
 			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
@@ -384,7 +383,6 @@ ifeq ($(DEBUG),1)
 
 	### Linux
 	else
-		KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		ifeq ($(USE_USB),1)
 #			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1"
@@ -407,10 +405,10 @@ ifeq ($(DEBUG),1)
 	endif
 
 else
-	KILL_SERIAL_2_XSBUG = 
 	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 endif
+KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 SDKCONFIGPATH ?= $(PROJ_DIR)
 SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
@@ -436,6 +434,7 @@ all: precursor
 deploy: 
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
+	$(KILL_SERIAL_2_XSBUG)
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
 
 xsbug:

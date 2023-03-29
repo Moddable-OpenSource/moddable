@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: March 20, 2023
+Revised: March 23, 2023
 
 ## About this Document
 
@@ -94,6 +94,8 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `all`: performs the `build`, `deploy`, and `xsbug` steps
 
 When the `-t` flag is omitted, the default value is `all`.
+
+When using **mcconfig** with microcontrollers that use a serial port for JavaScript debuggging with xsbug, the `deploy`, `xsbug`, and `all` targets terminate the currently running instance of serial2xsbug, if there is one.
 
 <a id="mcrun"></a>
 ## mcrun

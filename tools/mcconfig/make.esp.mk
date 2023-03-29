@@ -368,6 +368,7 @@ build: $(LIB_DIR) $(BIN_DIR)/main.bin
 
 deploy:
 	@echo "# uploading to esp"
+	$(KILL_SERIAL2XSBUG)
 	$(UPLOAD_TO_ESP)
 
 
@@ -384,6 +385,7 @@ debug: build
 	$(START_SERIAL2XSBUG)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
+	$(KILL_SERIAL2XSBUG)
 	$(UPLOAD_TO_ESP)
 
 clean:

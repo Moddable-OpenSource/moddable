@@ -70,7 +70,6 @@ ifeq ($(HOST_OS),Darwin)
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
 
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
 		ifeq ($(XSBUG_LOG),1)
@@ -96,7 +95,6 @@ else
 
 #	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
 	PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
@@ -113,6 +111,7 @@ else
 		NORESTART =
 	endif
 endif
+KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto

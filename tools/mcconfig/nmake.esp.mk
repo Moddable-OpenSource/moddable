@@ -374,6 +374,7 @@ release: precursor
 build: precursor
 
 deploy:
+	$(KILL_SERIAL2XSBUG)
 	if not exist $(BIN_DIR)\main.bin (echo # Build before deploy) else ( $(UPLOAD_TO_ESP) )
 
 xsbug:
