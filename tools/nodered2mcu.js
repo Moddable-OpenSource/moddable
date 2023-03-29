@@ -1663,7 +1663,14 @@ export default class extends TOOL {
 					suffix = value.slice(first);
 					value = value.slice(0, first);		//@@ if "." may need to check regexIdentifierNameES6
 				}
-					
+
+				suffix = suffix.trim(suffix)
+				if (suffix) {
+					if (suffix.startsWith("["))
+						suffix = "?." + suffix;
+					else
+						suffix = "?" + suffix;
+				}
 				if ("flow" === type)
 					return `this.flow.get(${this.makeStorageArgs(value)})${suffix}`;
 				return `globalContext.get(${this.makeStorageArgs(value)})${suffix}`;
