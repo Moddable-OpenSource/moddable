@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/network/mqtt/manifest.json",
+		"$(MODDABLE)/modules/crypt/tls.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"resources": {
+		"*": [
+			"./CA1-key",
+			"./device",
+			"./private-key"
+		]
+	}
+}
