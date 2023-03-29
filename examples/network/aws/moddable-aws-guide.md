@@ -1,5 +1,7 @@
 # Connecting to AWS IoT with the Moddable SDK
-​
+​Copyright 2023 Moddable Tech, Inc.<BR>
+Revised: March 28, 2023
+
 In this guide, you will learn how to use the Moddable SDK to securely connect  AWS IoT using the HTTP and MQTT protocols.
 ​
 There are two examples that show the techniques described in this guide, [http-aws](./http-aws) and [mqqt-aws](./mqtt-aws)
