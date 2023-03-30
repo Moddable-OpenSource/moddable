@@ -28,6 +28,7 @@ const worker = new Worker("testworker", minimumOptions);
 
 assert.throws(SyntaxError, () => worker.postMessage(), "postMessage requires 1 argument");
 assert.throws(SyntaxError, () => worker.postMessage.call(new $TESTMC.HostObject, 0, 64), "postMessage with non-worker this");
+assert.throws(TypeError, () => worker.postMessage({host: new $TESTMC.HostObject}), "postMessage rejects host objects");
 
 let index = 0;
 worker.postMessage(messages[index]);
@@ -52,10 +53,12 @@ worker.onmessage = function(reply) {
 			}
 			else if (7 === index) {
 				assert(actual instanceof ArrayBuffer, "expected ArrayBuffer instance");
+				assert.sameValue(actual.byteLength, 1, "expected ArrayBuffer.byteLength 1");
 				assert.sameValue((new Uint8Array(actual))[0], 1, "expected buffer[0] to be 1");
 			}
 			else if (8 === index) {
 				assert(actual instanceof Uint32Array, "expected Uint32Array instance");
+				assert.sameValue(actual.length, 1, "expected Uint32Array.length 1");
 				assert.sameValue(actual[0], 1, "expected buffer[0] to be 1");
 			}
 			else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -18,9 +18,23 @@
  *
  */
 
-const net = require('node:net');
-const { exec } = require('node:child_process');
-const { Machine } = require('./xsbug-machine.js');
+let net, exec, machine;
+
+try {
+	net = require('node:net');
+	exec = require('node:child_process').exec;
+	Machine = require('./xsbug-machine.js').Machine;
+}
+catch (e) {
+	if ("MODULE_NOT_FOUND" === e.code) {
+		console.log("#xsbug-log missing modules! Did you npm install?");
+		console.log("   cd $MODDABLE/tools/xsbug-log");
+		console.log("   npm install");
+	}
+	else
+		console.log("#xsbug-log start-up error: " + e);
+	process.exit();
+}
 
 class LogMachine extends Machine {
 	view = {};
@@ -30,7 +44,7 @@ class LogMachine extends Machine {
 		super.onTitleChanged(title, tag);
 		
 		if (title && (title !== "mcsim"))
-			console.log(`# Connected to "${title}"`);
+			console.log(`#xsbug-log connected to "${title}"`);
 
 		this.doSetAllBreakpoint([], false, true);		// break on exceptions
 	}
@@ -56,28 +70,51 @@ class LogMachine extends Machine {
 	}
 }
 
-const portIn = process.env.XSBUG_PORT || 5002;
+const portIn = 5002;
 let connections = 0;
+let autoexit = false;
 
-const server = net.createServer(target => { 
-	connections++;
-	target.setEncoding("utf8");
-	target.on('end', () => {
-		if (target.machine.title && ("mcsim" !== target.machine.title))
-			console.log(`# Disconnected from "${target.machine.title}"`);
-		if (0 === --connections)
-			process.exit(0);
+let probe = net.connect({
+	port: portIn,
+	host: "127.0.0.1"
+});
+probe.setEncoding("utf8");
+probe.on('ready', data => {
+	console.log(`#xsbug-log: Debugger detected running on port ${portIn}. Please quit xsbug and try again.`);
+	process.exit(-1);
+});
+probe.on('error', error => {
+	// no debugger detected. continue.
+	probe.destroy();
+	launch();
+});
+
+function launch() {
+	const server = net.createServer(target => { 
+		connections++;
+		target.setEncoding("utf8");
+		target.on('end', () => {
+			if (target.machine.title && ("mcsim" !== target.machine.title))
+				console.log(`#xsbug-log disconnected from "${target.machine.title}"`);
+			if ((0 === --connections) && autoexit)
+				process.exit(0);
+		});
+
+		target.machine = new LogMachine(target, target);
 	});
 
-	target.machine = new LogMachine(target, target);
-});
+	server.listen(portIn, () => { 
+	   console.log(`#xsbug-log listening on port ${portIn}. ^C to exit.`);
+	});
 
-server.listen(portIn, () => { 
-   console.log(`# xsbug-log listening on port ${portIn}. ^C to exit.`);
-});
+	let command = process.argv[2];
+	if (undefined === command) {
+		console.log("#xsbug-log: no command line arguments. Waiting for connection.");
+		return;
+	}
 
-let command = process.argv[2];
-for (let i = 3; i < process.argv.length; i++) 
-	command += ` ${process.argv[i]}`;
+	for (let i = 3; i < process.argv.length; i++) 
+		command += ` ${process.argv[i]}`;
 
-exec(command);
+	exec(command);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,7 +24,8 @@
 		uses Ecma-419 HTTPClient implementation (much better for streaming)
 		collects received audio into fixed size block (bytesPerBlock)
 		tries to top-up queue after audio buffer played and when new network data received
-		audio queue target is one second of audio
+		audio queue target defaults to one second of audio
+		down-mixes stereo to mono
 */
 
 /*
@@ -53,10 +54,7 @@ class WavStreamer {
 
 	constructor(options) {
 		const waveHeaderBytes = options.waveHeaderBytes ?? 512;
-		this.#targetBytesQueued = options.audio.out.sampleRate * this.#bytesPerSample;
-		this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, 8);
-		if (this.#bytesPerBlock % this.#bytesPerSample)
-			throw new Error("invalid bytesPerBlock")
+		const bufferDuration = options.bufferDuration ?? 1000;
 
 		if (options.onPlayed)
 			this.#callbacks.onPlayed = options.onPlayed;
@@ -75,6 +73,7 @@ class WavStreamer {
 			o.port = options.port; 
 		this.#http = new options.http.io(o);
 		this.#request = this.#http.request({
+			...options.request,
 			path: options.path,
 			onHeaders: (status, headers) => {
 				if (2 !== Math.idiv(status, 100)) {
@@ -109,6 +108,11 @@ class WavStreamer {
 					this.#ready = false;	
 					this.#swap = WavStreamer.swap;
 					this.#channels = channels;
+
+					this.#bytesPerSample = channels * 2; 
+					this.#targetBytesQueued = this.#audio.sampleRate * 2 * (bufferDuration / 1000);		// always mono because of downmixing
+					this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, 8);
+					this.#bytesPerBlock -= Math.imod(this.#bytesPerBlock, this.#bytesPerSample); 
 				}
 			},
 			onReadable: (count) => {
@@ -138,8 +142,13 @@ class WavStreamer {
 					this.#channels = wav.numChannels;
 					this.#ready = false;	
 
+					this.#bytesPerSample = (wav.numChannels * this.#audio.bitsPerSample) >> 3; 
+					this.#targetBytesQueued = this.#audio.sampleRate * (this.#audio.bitsPerSample >> 3) * (bufferDuration / 1000);		// always mono because of downmixing
+					this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, 8);
+					this.#bytesPerBlock -= Math.imod(this.#bytesPerBlock, this.#bytesPerSample); 
+
 					this.#request.readable -= waveHeaderBytes;
-					this.#next = new Uint8Array(new SharedArrayBuffer(this.#bytesPerBlock * this.#channels));
+					this.#next = new Uint8Array(new SharedArrayBuffer(this.#bytesPerBlock * wav.numChannels));
 					this.#next.set(new Uint8Array(buffer, wav.position));
 					this.#next.position = waveHeaderBytes - wav.position;
 
@@ -217,7 +226,7 @@ class WavStreamer {
 				if (this.#pending)
 					this.#pending.push(next);
 				else {
-					this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, next, 1, 0, next.position / this.#bytesPerSample);
+					this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, next, 1, 0, next.position / (this.#bytesPerSample / this.#channels));	// mono because of downmixing
 					this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, next.position);
 					this.#playing.push(next);
 				}
@@ -231,7 +240,7 @@ class WavStreamer {
 
 			while (this.#pending.length) {
 				const next = this.#pending.shift();
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, next, 1, 0, next.position / this.#bytesPerSample);
+				this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, next, 1, 0, next.position / (this.#bytesPerSample / this.#channels));		// mono because of downmixing
 				this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, next.position);
 				this.#playing.push(next);
 			}

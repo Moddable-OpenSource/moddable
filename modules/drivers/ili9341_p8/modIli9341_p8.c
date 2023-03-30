@@ -488,7 +488,6 @@ void ili9341Send(PocoPixel *pixels, int byteLength, void *refcon)
 		// Rongstar: ---- ST7789V Gamma setting ----
 		0xe0, 14, 0xd0, 0x00, 0x02, 0x07,  0x0b, 0x1a, 0x31, 0x54,  0x40, 0x29, 0x12, 0x12,  0x12, 0x17,
 		0xe1, 14, 0xd0, 0x00, 0x02, 0x07,  0x05, 0x25, 0x2d, 0x44,  0x45, 0x1c, 0x18, 0x16,  0x1c, 0x1d,
-		0x29, 0,
 		kDelayMS, 80,
 
 		kDelayMS, 0
@@ -552,10 +551,10 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	ili9341CommandAsync(sd, 0x2a, data, 4);
 
 	data = sd->data + (4 * (sd->ping++ & 7)); 
-	data[0] = sd->yMin & 0xff;
-	data[1] = sd->yMin >> 8;;
-	data[2] = sd->yMax & 0xff;
-	data[3] = sd->yMax >> 8;
+	data[0] = yMin & 0xff;
+	data[1] = yMin >> 8;;
+	data[2] = yMax & 0xff;
+	data[3] = yMax >> 8;
 	ili9341CommandAsync(sd, 0x2b, data, 4);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);

@@ -152,6 +152,8 @@ void xs_wifi_connect(xsMachine *the)
 
 	wifi_station_set_config_current(&config);
 
+	wifi_set_sleep_type(NONE_SLEEP_T);
+
 	if (channel >= 0)
 		wifi_set_channel(channel);
 
@@ -462,6 +464,8 @@ void xs_wifi_accessPoint(xsMachine *the)
 	ETS_UART_INTR_ENABLE();
 	if (!ret)
 		xsUnknownError("wifi_set_opmode_current failed");
+
+	wifi_set_sleep_type(NONE_SLEEP_T);
 
 	ETS_UART_INTR_DISABLE();
 	ret = wifi_softap_set_config_current(&config);

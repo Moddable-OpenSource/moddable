@@ -1,0 +1,14 @@
+{
+	"service": {
+		"uuid": "1801",
+		"characteristics": {
+			"service_changed": {
+				"uuid": "2A05",
+				"maxBytes": 4,
+				"type": "Uint8Array",
+				"permissions": "read",
+				"properties": "indicate"
+			}
+		}
+	}
+}

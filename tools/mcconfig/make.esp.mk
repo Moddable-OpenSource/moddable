@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -315,14 +315,23 @@ MEM_USAGE = \
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 ifeq ($(DEBUG),1)
+	LAUNCH = debug
 	ifeq ($(HOST_OS),Darwin)
-		LAUNCH = debug
-		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+		ifeq ($(XSBUG_LOG),1)
+			START_XSBUG =
+			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+		else
+			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/mac/release/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+		endif
 	else
-		LAUNCH = debug
-		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+		ifeq ($(XSBUG_LOG),1)
+			START_XSBUG =
+			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)$(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+		else
+			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(BUILD_DIR)/bin/lin/debug/serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+		endif
 	endif
 else
 	LAUNCH = release
@@ -359,6 +368,7 @@ build: $(LIB_DIR) $(BIN_DIR)/main.bin
 
 deploy:
 	@echo "# uploading to esp"
+	$(KILL_SERIAL2XSBUG)
 	$(UPLOAD_TO_ESP)
 
 
@@ -375,6 +385,7 @@ debug: build
 	$(START_SERIAL2XSBUG)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
+	$(KILL_SERIAL2XSBUG)
 	$(UPLOAD_TO_ESP)
 
 clean:

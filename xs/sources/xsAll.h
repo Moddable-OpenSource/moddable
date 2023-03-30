@@ -1727,6 +1727,7 @@ mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
 
+extern void fx_Promise_resolveAux(txMachine* the);
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
 extern void fx_Promise_prototype_finallyThrow(txMachine* the);

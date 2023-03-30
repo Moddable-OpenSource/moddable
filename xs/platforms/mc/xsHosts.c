@@ -41,7 +41,7 @@
 
 #include "xsScript.h"
 #include "xsHosts.h"
-#include "xsHosts.h"
+#include "xsHost.h"
 
 #ifdef mxInstrument
 	#include "modInstrumentation.h"

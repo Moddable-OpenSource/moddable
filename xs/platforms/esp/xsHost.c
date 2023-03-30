@@ -954,6 +954,14 @@ bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_even
 
 #if ESP32
 
+#ifndef MODDEF_TASK_QUEUEWAIT
+	#ifdef mxDebug
+		#define MODDEF_TASK_QUEUEWAIT (1000)
+	#else
+		#define MODDEF_TASK_QUEUEWAIT (portMAX_DELAY)
+	#endif
+#endif
+
 typedef struct modMessageRecord modMessageRecord;
 typedef modMessageRecord *modMessage;
 
@@ -974,7 +982,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 		msg.callback = callback;
 		msg.refcon = refcon;
 		msg.length = 0;
-		xQueueSendToFront(the->msgQueue, &msg, portMAX_DELAY);
+		xQueueSendToBack(the->dbgQueue, &msg, portMAX_DELAY);
 		return 0;
 	}
 #endif
@@ -990,19 +998,14 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
-#ifdef mxDebug
-	do {
-		if (uxQueueSpacesAvailable(the->msgQueue) > 1) {		// keep one entry free for debugger
-			xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
-			break;
-		}
-		vTaskDelay(5);
-	} while (1);
-#else
-	xQueueSendToBack(the->msgQueue, &msg, portMAX_DELAY);
-#endif
 
-	return 0;
+	if (pdTRUE == xQueueSendToBack(the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
+		return 0;
+
+	if (msg.message)
+		c_free(msg.message);
+
+	return -2;
 }
 
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
@@ -1022,7 +1025,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 
 void modMessageService(xsMachine *the, int maxDelayMS)
 {
-	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
+	modMessageRecord msg;
 
 #if CONFIG_ESP_TASK_WDT
 	modWatchDogReset();
@@ -1035,47 +1038,83 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 #endif
 
+#ifdef mxDebug
 	while (true) {
-		modMessageRecord msg;
+		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, maxDelayMS);
+		if (!queue)
+			break;
 
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
-			modWatchDogReset();
-			return;
-		}
+		if (!xQueueReceive(queue, &msg, 0))
+			break;
 
 		(msg.callback)(the, msg.refcon, msg.message, msg.length);
 		if (msg.message)
 			c_free(msg.message);
 
 		maxDelayMS = 0;
-		if (count <= 1)
-			break;
-		count -= 1;
 	}
+#else
+	while (xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		if (msg.message)
+			c_free(msg.message);
+
+		maxDelayMS = 0;
+	}
+#endif
+
+	modWatchDogReset();
 }
 
 #ifndef modTaskGetCurrent
 	#error make sure MOD_TASKS and modTaskGetCurrent are defined
 #endif
 
+#ifndef MODDEF_TASK_QUEUELENGTH
+	#define MODDEF_TASK_QUEUELENGTH (10)
+#endif
+
+#define kDebugQueueLength (4)
+
 void modMachineTaskInit(xsMachine *the)
 {
 	the->task = (void *)modTaskGetCurrent();
-	the->msgQueue = xQueueCreate(10, sizeof(modMessageRecord));
+	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
+#ifdef mxDebug
+	the->dbgQueue = xQueueCreate(kDebugQueueLength, sizeof(modMessageRecord));
+
+	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
+	xQueueAddToSet(the->msgQueue, the->queues);
+	xQueueAddToSet(the->dbgQueue, the->queues);
+#endif
 }
 
 void modMachineTaskUninit(xsMachine *the)
 {
-	if (the->msgQueue) {
-		modMessageRecord msg;
+	modMessageRecord msg;
 
+	if (the->msgQueue) {
 		while (xQueueReceive(the->msgQueue, &msg, 0)) {
 			if (msg.message)
 				c_free(msg.message);
 		}
 
+#ifdef mxDebug
+		xQueueRemoveFromSet(the->msgQueue, the->queues);
+#endif
 		vQueueDelete(the->msgQueue);
 	}
+
+#ifdef mxDebug
+	if (the->dbgQueue) {
+		while (xQueueReceive(the->dbgQueue, &msg, 0))
+			;
+		xQueueRemoveFromSet(the->dbgQueue, the->queues);
+		vQueueDelete(the->dbgQueue);
+	}
+	if (the->queues)
+		vQueueDelete(the->queues);
+#endif
 }
 
 void modMachineTaskWait(xsMachine *the)

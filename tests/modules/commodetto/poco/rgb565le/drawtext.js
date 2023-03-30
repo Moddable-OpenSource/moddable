@@ -9,6 +9,7 @@ import parseBMF from "commodetto/parseBMF";
 import Resource from "Resource";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 const font = parseBMF(new Resource("OpenSans-Regular-16.bf4"));
