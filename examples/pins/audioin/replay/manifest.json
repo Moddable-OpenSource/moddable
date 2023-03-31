@@ -2,9 +2,6 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json"
 	],
-	"config": {
-		"speaker": false
-	},
 	"modules": {
 		"*": [
 			  "./main",
