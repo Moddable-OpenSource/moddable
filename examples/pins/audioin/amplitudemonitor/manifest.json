@@ -24,7 +24,7 @@
 			}
 		},
 		"...": {
-			"error": "AUdioIn module unsupported"
+			"error": "audioIn module unsupported"
 		}
 	}
 }
