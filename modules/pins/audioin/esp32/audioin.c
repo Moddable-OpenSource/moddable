@@ -75,11 +75,7 @@ void xs_audioin(xsMachine *the)
 	esp_err_t err;
 	i2s_chan_handle_t rx_handle;
 
-#ifdef MODDEF_AUDIOIN_I2S_NUM
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(MODDEF_AUDIOIN_I2S_NUM, I2S_ROLE_MASTER);
-#else
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-#endif
 
     err = i2s_new_channel(&chan_cfg, NULL, &rx_handle);
 	if (err) xsUnknownError("i2s_new_channel failed");

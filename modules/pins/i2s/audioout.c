@@ -342,14 +342,7 @@ void xs_audioout_destructor(void *data)
 	DeleteCriticalSection(&out->cs);
 	UnregisterClass("modAudioWindowClass", NULL);
 #elif ESP32
-	out->state = kStateClosing;
-	if (out->task) {
-		xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
-		while (kStateClosing == out->state)
-			modDelayMilliseconds(1);
-
-		vSemaphoreDelete(out->mutex);
-	}
+	// this space intentionally left blank - task disposed synchronously in close
 #if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
 	if (out->buffer32)
 		heap_caps_free(out->buffer32);
@@ -553,6 +546,16 @@ void xs_audioout_close(xsMachine *the)
 	if (out && xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks)) {
 		xsmcSetHostData(xsThis, NULL);
 		xsmcSetHostDestructor(xsThis, NULL);
+
+		out->state = kStateClosing;
+		if (out->task) {
+			xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
+			while (kStateClosing == out->state)
+				modDelayMilliseconds(1);
+
+			vSemaphoreDelete(out->mutex);
+		}
+
 		downUseCount(out);
 	}
 }
@@ -1373,11 +1376,7 @@ void audioOutLoop(void *pvParameter)
 #elif !MODDEF_AUDIOOUT_I2S_DAC
 	// I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role)
 	i2s_chan_config_t chan_cfg = {
-#ifdef MODDEF_AUDIOIN_I2S_NUM
 		.id = MODDEF_AUDIOOUT_I2S_NUM,
-#else
-		.id = I2S_NUM_AUTO,
-#endif
 		.role = I2S_ROLE_MASTER,
 		.dma_desc_num = 2,
 		.dma_frame_num = sizeof(out->buffer) / out->bytesPerFrame,
@@ -1547,6 +1546,7 @@ void audioOutLoop(void *pvParameter)
 	}
 
 	out->state = kStateTerminated;
+	out->task = NULL;
 
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
@@ -1678,7 +1678,7 @@ void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream)
 #endif
 	}
 	else
-		printf("audio callback queue full\n");
+		modLog("audio callback queue full");
 }
 #endif
 
