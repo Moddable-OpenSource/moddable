@@ -178,11 +178,15 @@ void xs_pulsewidth_destructor(void *data)
     if (!pw)
         return;
 
-	if (pw->cap_timer)
+	if (pw->cap_chan) {
+		mcpwm_capture_channel_disable(pw->cap_chan);
 		mcpwm_del_capture_channel(pw->cap_chan);
+	}
 
-	if (pw->cap_chan)
+	if (pw->cap_timer) {
+		mcpwm_capture_timer_disable(pw->cap_timer);
 		mcpwm_del_capture_timer(pw->cap_timer);
+	}
 
     gpio_pulldown_dis(pw->pin);
     gpio_pullup_dis(pw->pin);
