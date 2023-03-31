@@ -1375,8 +1375,8 @@ void audioOutLoop(void *pvParameter)
 	i2s_chan_config_t chan_cfg = {
 		.id = MODDEF_AUDIOOUT_I2S_NUM,
 		.role = I2S_ROLE_MASTER,
-		.dma_desc_num = 6,
-		.dma_frame_num = 240,
+		.dma_desc_num = 2,
+		.dma_frame_num = sizeof(out->buffer) / out->bytesPerFrame,
 		.auto_clear = true,		// This is different from I2S_CHANNEL_DEFAULT_CONFIG
 	};
 	i2s_new_channel(&chan_cfg, &out->tx_handle, NULL);
@@ -1428,12 +1428,11 @@ void audioOutLoop(void *pvParameter)
 	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
 #else
 	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_MONO;
-	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
+	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
 #endif
 	i2s_config.slot_cfg.ws_pol = false;
 	i2s_config.slot_cfg.bit_shift = false;
 
-	esp_err_t ret;
 	i2s_channel_init_std_mode(out->tx_handle, &i2s_config);
 	i2s_channel_reconfig_std_slot(out->tx_handle, &i2s_config.slot_cfg);
 	i2s_channel_reconfig_std_clock(out->tx_handle, &i2s_config.clk_cfg);
