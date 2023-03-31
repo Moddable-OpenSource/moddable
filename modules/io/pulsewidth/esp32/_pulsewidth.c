@@ -108,8 +108,8 @@ void xs_pulsewidth_constructor(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
     
-    mcpwm_cap_timer_handle_t cap_timer = NULL;
-    mcpwm_cap_channel_handle_t cap_chan = NULL;
+    mcpwm_cap_timer_handle_t cap_timer;
+    mcpwm_cap_channel_handle_t cap_chan;
 
     mcpwm_capture_timer_config_t cap_conf = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
@@ -287,6 +287,8 @@ static void pulseWidthDeliver(void *the, void *refcon, uint8_t *message, uint16_
 void xs_pulsewidth_read(xsMachine *the) {}
 void xs_pulsewidth_mark(xsMachine* the, void *it, xsMarkRoot markRoot) {}
 void xs_pulsewidth_destructor(void *data) {}
-void xs_pulsewidth_constructor(xsMachine *the) {}
+void xs_pulsewidth_constructor(xsMachine *the) {
+	xsUnknownError("no hardware");
+}
 void xs_pulsewidth_close(xsMachine *the) {}
 #endif
