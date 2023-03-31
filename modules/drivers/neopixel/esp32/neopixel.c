@@ -52,7 +52,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /*
- * Copyright (c) 2018-2019  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -78,11 +78,19 @@
 #include <string.h>
 
 #include "driver/gpio.h"
-// #include "driver/rmt.h"		// deprecated
-#include "driver/rmt_tx.h"
+#include "driver/rmt.h"
+#include "rmt_types.h"
+#include "rmt_struct.h"
 
-#include "freertos/semphr.h"
-#include "log/include/esp_log.h"
+// rmt_block_mem_t and RMTMEM extracted from rmt_private.h
+typedef struct {
+    struct {
+        rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
+    } channels[SOC_RMT_CHANNELS_PER_GROUP];
+} rmt_block_mem_t;
+
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_block_mem_t RMTMEM;
 
 #include "neopixel.h"
 
@@ -94,10 +102,8 @@ static int gNumStarted = 0;
 static int gNumDone = 0;
 static int gNext = 0;
 
-/*
 static intr_handle_t gRMT_intr_handle = NULL;
-static xSemaphoreHandle gTX_sem = NULL;
-*/
+static SemaphoreHandle_t gTX_sem = NULL;
 static bool gInitialized = false;
 
 void initRMT();
@@ -135,7 +141,6 @@ static TaskHandle_t neopixelDisplayTaskHandle = NULL;
 static TaskHandle_t userTaskHandle = NULL;
 
 void neopixelDisplayTaskShow() {
-/*
 	if (gNumStarted == 0) {
 		// first one sets everything up
 		initRMT();
@@ -163,7 +168,7 @@ void neopixelDisplayTaskShow() {
 		gNumStarted = 0;
 		gNumDone = 0;
 	}
-*/
+
 }
 
 void neopixelDisplayTask(void *pvParameters) {
@@ -188,7 +193,6 @@ void puntToNeopixelDisplayTask() {
 
 
 void neopixel_deinit(pixel_settings_t *px) {
-/*
 	xSemaphoreTake(gTX_sem, portMAX_DELAY);
 	vSemaphoreDelete(gTX_sem);
 	gTX_sem = NULL;
@@ -209,11 +213,9 @@ void neopixel_deinit(pixel_settings_t *px) {
 	}
 
 	gInitialized = false;
-*/
 }
 
 int neopixel_init(pixel_settings_t *px) {
-/*
 #if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
 	if (!neopixelDisplayTaskHandle) {
 		xTaskCreatePinnedToCore(neopixelDisplayTask, "neopixelDisplayTask", 2048, NULL, 2, &neopixelDisplayTaskHandle, MODDEF_NEOPIXEL_CORE);
@@ -234,10 +236,8 @@ int neopixel_init(pixel_settings_t *px) {
 	px->rmtZero.duration1 = px->timings.space.duration1;
 
 	gControllers[gNumControllers++] = px;
-*/
 }
 
-/*
 static IRAM_ATTR void interruptHandler(void *arg) {
 	uint32_t intr_st = RMT.int_st.val;
 	uint8_t channel;
@@ -261,10 +261,8 @@ static IRAM_ATTR void interruptHandler(void *arg) {
 		}
 	}
 }
-*/
 
 void initRMT() {
-/*
 	if (gInitialized) return;
 	for (int i=0; i<MODDEF_NEOPIXEL_CHANNELS_MAX; i++) {
 		gOnChannel[i] = NULL;
@@ -300,12 +298,11 @@ void initRMT() {
 	if (gRMT_intr_handle == NULL)
 		esp_intr_alloc(ETS_RMT_INTR_SOURCE, 0, interruptHandler, 0, &gRMT_intr_handle);
 #endif
-*/
+
 	gInitialized = true;
 }
 
 void np_show(pixel_settings_t *px) {
-/*
 	countPixels(PixelsDrawn, px->pixel_count);
 #if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
 	NEOPIXEL_PREPARE_DATA(px);
@@ -338,7 +335,6 @@ void np_show(pixel_settings_t *px) {
 		gNext = 0;
 	}
 #endif
-*/
 }
 
 #if ! MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
@@ -432,7 +428,6 @@ void startOnChannel(pixel_settings_t *px, int channel) {
 }
 
 void IRAM_ATTR doneOnChannel(rmt_channel_t channel, void *arg) {
-/*
 	pixel_settings_t *px = gOnChannel[channel];
 	portBASE_TYPE HPTaskAwoken = 0;
 
@@ -448,11 +443,9 @@ void IRAM_ATTR doneOnChannel(rmt_channel_t channel, void *arg) {
 		if (gNext < gNumControllers)
 			startNext(channel);
 	}
-*/
 }
 
 void IRAM_ATTR fillHalfRMTBuffer(pixel_settings_t *px) {
-/*
 	uint32_t one_val = px->rmtOne.val;
 	uint32_t zero_val = px->rmtZero.val;
 
@@ -465,7 +458,7 @@ void IRAM_ATTR fillHalfRMTBuffer(pixel_settings_t *px) {
 
 		for (j=0; j<8; j++) {
 			uint32_t val = (byteval & 0x80L) ? one_val : zero_val;
-			RMTMEM.chan[px->rmtChannel].data32[px->curPulse].val = val;
+			RMTMEM.channels[px->rmtChannel].symbols[px->curPulse].val = val;
 			byteval <<= 1;
 			px->curPulse++;
 		}
@@ -474,7 +467,7 @@ void IRAM_ATTR fillHalfRMTBuffer(pixel_settings_t *px) {
 
 	if (px->curByte == px->rmtPixelDataSize) {
 		while (pulses < 32) {
-			RMTMEM.chan[px->rmtChannel].data32[px->curPulse].val = 0;
+			RMTMEM.channels[px->rmtChannel].symbols[px->curPulse].val = 0;
 			px->curPulse++;
 			pulses++;
 		}
@@ -482,7 +475,6 @@ void IRAM_ATTR fillHalfRMTBuffer(pixel_settings_t *px) {
 
 	if (px->curPulse >= 64)
 		px->curPulse = 0;
-*/
 }
 
 
