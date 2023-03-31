@@ -41,7 +41,7 @@
 #endif
 #if ESP32
 	#ifndef MODDEF_AUDIOOUT_I2S_NUM
-		#define MODDEF_AUDIOOUT_I2S_NUM (0)
+		#define MODDEF_AUDIOOUT_I2S_NUM (1)
 	#endif
 	#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
 		#define MODDEF_AUDIOOUT_I2S_BCK_PIN (26)
@@ -1373,7 +1373,11 @@ void audioOutLoop(void *pvParameter)
 #elif !MODDEF_AUDIOOUT_I2S_DAC
 	// I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role)
 	i2s_chan_config_t chan_cfg = {
+#ifdef MODDEF_AUDIOIN_I2S_NUM
 		.id = MODDEF_AUDIOOUT_I2S_NUM,
+#else
+		.id = I2S_NUM_AUTO,
+#endif
 		.role = I2S_ROLE_MASTER,
 		.dma_desc_num = 2,
 		.dma_frame_num = sizeof(out->buffer) / out->bytesPerFrame,
@@ -1438,7 +1442,7 @@ void audioOutLoop(void *pvParameter)
 	i2s_channel_reconfig_std_clock(out->tx_handle, &i2s_config.clk_cfg);
 
 #else
-modLog("audioOutLoop DAC - untested");
+	#error ADC unsupported in ESP-IDF 5.0
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 		.sample_rate = out->sampleRate,
@@ -1537,6 +1541,7 @@ modLog("audioOutLoop DAC - untested");
 	}
 
 	if (out->tx_handle) {
+		i2s_channel_disable(out->tx_handle);
 		i2s_del_channel(out->tx_handle);
 		out->tx_handle = NULL;
 	}
