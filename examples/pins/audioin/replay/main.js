@@ -29,7 +29,7 @@ try {
 		const s = new SharedArrayBuffer(4096);
 		input.read(s.byteLength >> 1, s, 0);
 		samples.push(s);
-		if (samples.length > 40)
+		if (samples.length > 20)
 			break;
 	}
 }
