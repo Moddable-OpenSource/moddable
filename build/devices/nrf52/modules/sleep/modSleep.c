@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -233,19 +233,10 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 	xsmcSetInteger(xsResult, nrf52_get_reset_reason());	
 }
 
-extern uint32_t gBootLatch;
 void xs_sleep_get_latch(xsMachine *the)
 {
-	uint32_t ret;
-	uint16_t argc = xsmcArgc;
-	if (argc > 0) {
-		uint32_t pin = xsmcToInteger(xsArg(0));
-		ret = nrf52_get_boot_latch(pin);
-	}
-	else
-		ret = nrf52_get_boot_latches();
-
-	xsmcSetInteger(xsResult, ret);
+	uint32_t pin = xsmcToInteger(xsArg(0));
+	xsmcSetInteger(xsResult, nrf52_get_boot_latch(pin));
 }
 
 void xs_sleep_setup(xsMachine *the)
