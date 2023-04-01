@@ -242,7 +242,7 @@ Not yet available.
 
 	```text
 	cd $HOME/pico
-	git clone -b 1.5.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
 	```
 	
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
