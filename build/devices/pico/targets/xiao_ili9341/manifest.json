@@ -1,0 +1,41 @@
+{
+	"include": [
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+		"led": {
+			"power": 11,
+			"pin": 12,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 6,
+			"scl_pin": 7,
+			"port": 1
+		},
+		"spi": {
+			"miso_pin": 4,
+			"mosi_pin": 3,
+			"sck_pin": 2,
+			"cs_pin": 1
+		},
+		"ili9341": {
+			"hz": 64000000,
+			"cs_pin": 1,
+			"dc_pin": 0,
+			"spi_port": 0
+		}
+	}
+}
