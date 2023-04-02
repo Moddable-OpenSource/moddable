@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"ota": "./ota"
+	},
+	"preload": [
+		"ota"
+	],
+    "platforms": {
+		"esp32": {},
+		"...": {
+			"error": "ESP32 OTA is not supported on this platform"
+		}
+	}
+}
