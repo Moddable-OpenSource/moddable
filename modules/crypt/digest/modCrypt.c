@@ -186,7 +186,7 @@ void xs_crypt_Digest_write(xsMachine *the)
 		size = c_strlen((char *)data);
 	}
 	else
-		xsmcGetBuffer(xsArg(0), (void **)&data, &size);
+		xsmcGetBufferReadable(xsArg(0), (void **)&data, &size);
 
 	cd = xsmcGetHostChunk(xsThis);
 	if (!cd)
