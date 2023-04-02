@@ -15,4 +15,4 @@ const content = new ContentTemplate("test", { left: 20, top: 20 });
 
 new Application(null, { skin: new Skin({ fill: "white" }), contents: [content] });
 
-screen.checkImage("cab2fdf449977d6b32c6d08ac339d2c9");
+screen.checkImage("da393b6234d976e7f9d47b1f892690c6");

@@ -35,10 +35,10 @@ new Application(null, {
 	Behavior: StateChangeBehavior
 });
 
-screen.checkImage("5e12be1ae9b54586c920d01a9a925a30");
+screen.checkImage("eee4cd48a70a40ed042fb9092852f98a");
 
 content.bubble("changeState", 1);
-screen.checkImage("d50d15464da2c0168447c1539d511207");
+screen.checkImage("4c4563403474c8041a9fa91380761fb0");
 
 content.bubble("changeState", 0.75);
-screen.checkImage("ef2a8ae1de643a20304bfaa980d88ae8");
+screen.checkImage("e3b93789511484099b6ae9a1d33c64c7");

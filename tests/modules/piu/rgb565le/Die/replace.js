@@ -24,13 +24,13 @@ new Application(null, {
 	contents: [ container ]
 });
 
-screen.checkImage("51c9578efc445ab1ad1024a340fb827f");
+screen.checkImage("e38aee4b2b12a786f0b9710e7b083fc9");
 
 container.replace(one, three);
-screen.checkImage("b8dfb300f5fa37e3d70d82bfdf87752f");
+screen.checkImage("b9e1308f00f21ea2513a6d08e5768196");
 
 container.replace(two, four);
-screen.checkImage("216a84f4d014a62d15a85f82ae9a90c9");
+screen.checkImage("2a1460d1c068a0f8d39a465e487543b0");
 
 container.replace(three, one);
-screen.checkImage("cbf8af0968663edb065f00d55e5bc409");
+screen.checkImage("905092ce216e848a371e7236e4da8457");

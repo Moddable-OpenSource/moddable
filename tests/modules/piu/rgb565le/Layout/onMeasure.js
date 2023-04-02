@@ -45,10 +45,10 @@ new Application(null, {
 	skin: new Skin({fill: "white"}),
 	contents: [sampleLayout] 
 });
-screen.checkImage("55d250454a69e2c8fb5113bc1370321e");
+screen.checkImage("66213203e043a729f4c429377459b462");
 
 sampleLayout.width = 100;
-screen.checkImage("c8ef68038073baa72bcd86df7693c56b");
+screen.checkImage("231ffdc4dfccc96e289b2af12f7bde8b");
 
 sampleLayout.height = 100;
-screen.checkImage("44f1a7e2a2a058657baa785b277a1687");
+screen.checkImage("6bc1354916fdd97bda81cfe86ec8c87e");

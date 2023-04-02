@@ -23,4 +23,4 @@ const CircleMaskSkinTemplate = Skin.template({
 application.add(new Content(null, { skin: circleMaskSkin, top: 0, left: 0 }));
 application.add(new Content(null, { Skin: CircleMaskSkinTemplate, top: 40, left: 0 }));
 
-screen.checkImage("6625bcdac17f577d79ab8c2fa66fe79c");
+screen.checkImage("8f657445c9b5dda381d2f9726e7e30b6");

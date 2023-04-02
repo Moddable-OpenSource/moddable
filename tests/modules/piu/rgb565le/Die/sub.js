@@ -8,12 +8,12 @@ class SampleBehavior extends $TESTMC.Behavior {
         die.fill()
             .sub(0, 0, 50, 50)
             .cut();
-        screen.checkImage("550ec4111f6e15b7cc0952039bfa581a");
+        screen.checkImage("8e4f7bde403e94148a35744e08b4b123");
         
         die.sub(100, 0, 50, 50)
             .sub(200, 0, 50, 50)
             .cut();
-        screen.checkImage("68565931177a8b408df1850ce8833b8d");
+        screen.checkImage("841ed8760dfc834e964d1cfdef0b202c");
 
         $DONE();
     }

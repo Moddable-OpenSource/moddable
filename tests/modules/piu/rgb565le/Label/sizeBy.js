@@ -13,10 +13,10 @@ const content = new Label(null, {
 
 new Application(null, { skin: new Skin({ fill: "black" }), contents: [content] });
 
-screen.checkImage("a175b9195b15e387fa4bef51df6e0baa");
+screen.checkImage("4510175e0a4b0c13f294d9473ddc8a7f");
 
 content.sizeBy(50, 50);
-screen.checkImage("c64616a23fddc5f981ded5a40c667bb3");
+screen.checkImage("3d84804199419ad24f057b6d0e441ade");
 
 content.sizeBy(-25, -25);
-screen.checkImage("e016f343772137dae570328a8aad3460");
+screen.checkImage("544ca9f1332f953e647654f0d5e0df13");

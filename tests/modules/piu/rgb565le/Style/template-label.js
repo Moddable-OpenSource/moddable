@@ -23,4 +23,4 @@ new Application(null, {
 	Style: sampleStyle, skin: new Skin({ fill: "white" }),
     contents: [ label1, label2, label3, label4, label5, label6 ]
 });
-screen.checkImage("3c0be7bc8489f4e4de55e228daeb8019");
+screen.checkImage("b88745fed3304441117048756f3739c9");

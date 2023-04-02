@@ -16,9 +16,9 @@ new Application(null, {
     skin: new Skin({ fill: "white" }),
     contents: [ unconstrainedContent, constrainedContent ]
 });
-screen.checkImage("ff0b1e62ffde210504996a9ae6ee7435");
+screen.checkImage("c2db89cd187ac7335a4741b2ffdb41ca");
 
 unconstrainedContent.moveBy(10,10);
-screen.checkImage("cc712649d0e9a60071b090744571130d");
+screen.checkImage("ee11158d656e62745c91557bcf73d8a7");
 constrainedContent.moveBy(10,10);	// Does nothing
 screen.checkImage(undefined);
