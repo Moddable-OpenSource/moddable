@@ -547,6 +547,7 @@ void xs_audioout_close(xsMachine *the)
 		xsmcSetHostData(xsThis, NULL);
 		xsmcSetHostDestructor(xsThis, NULL);
 
+#if ESP32
 		out->state = kStateClosing;
 		if (out->task) {
 			xTaskNotify(out->task, kStateClosing, eSetValueWithOverwrite);
@@ -555,6 +556,7 @@ void xs_audioout_close(xsMachine *the)
 
 			vSemaphoreDelete(out->mutex);
 		}
+#endif
 
 		downUseCount(out);
 	}
