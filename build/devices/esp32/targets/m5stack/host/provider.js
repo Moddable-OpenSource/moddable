@@ -27,6 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import PulseWidth from "embedded:io/pulsewidth";
 
 const device = {
 	I2C: {
@@ -59,7 +60,7 @@ const device = {
 			pin: 35
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
+	io: {Analog, Digital, DigitalBank, I2C, PulseCount,PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 38,
 		led: 2,

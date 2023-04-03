@@ -7,6 +7,7 @@ import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 
@@ -29,7 +30,7 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, 0, 0, 128, 128);
 render.end();
 
-assert.sameValue("87c71d5412add2a934b318f3c7b17a76", screen.checksum, "even align");
+assert.sameValue("12f003631e587a003ee8b6f1b74cf41e", screen.checksum, "even align");
 
 // odd align
 render.begin(0, 0, 128, 128);
@@ -37,7 +38,7 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, 1, 0, 128, 128);
 render.end();
 
-assert.sameValue("d6ea64065f1f0a0bf452704c6437e88e", screen.checksum, "odd align");
+assert.sameValue("9af59182831a313b800ea38f5d5e2446", screen.checksum, "odd align");
 
 // clipped left & right
 render.begin(0, 0, 128, 128);
@@ -45,7 +46,7 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, -bitmap.width / 2, 0, 128 + bitmap.width, 128);
 render.end();
 
-assert.sameValue("87c71d5412add2a934b318f3c7b17a76", screen.checksum, "clipped left & right");
+assert.sameValue("12f003631e587a003ee8b6f1b74cf41e", screen.checksum, "clipped left & right");
 
 // clipped left & right cropped
 render.begin(0, 0, 128, 128);
@@ -53,7 +54,7 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, -bitmap.width / 2, -2, 128 + bitmap.width, 128 + 2, 0, 0, bitmap.width / 2, bitmap.height / 2);
 render.end();
 
-assert.sameValue("ff75768115cf0dd48f6aedb2caad9066", screen.checksum, "clipped left & right cropped");
+assert.sameValue("6e19e2dccaebeff979b987761adbc3d7", screen.checksum, "clipped left & right cropped");
 
 // clipped top & bottom
 render.begin(0, 0, 128, 128);
@@ -61,7 +62,7 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, 0, -bitmap.width / 2, 128, 128 + bitmap.width);
 render.end();
 
-assert.sameValue("9a74ea839825f56ea737abc99df8a631", screen.checksum, "top & bottom");
+assert.sameValue("f0684a728edbe8510ff2cbfcfa069288", screen.checksum, "top & bottom");
 
 // clipped all edges
 render.begin(11, 11, 8, 8);
@@ -70,7 +71,7 @@ render.begin(11, 11, 8, 8);
 	render.fillPattern(bitmap, 0, 0, 128, 128);
 render.end();
 
-assert.sameValue("a94556abe963e91c5b41606374aaf7e1", screen.checksum, "clipped all edges");
+assert.sameValue("8ae20bde745dafd79e0f8ad890226b6e", screen.checksum, "clipped all edges");
 
 // clipped out
 render.begin(10, 10, 20, 20);
@@ -78,7 +79,7 @@ render.begin(10, 10, 20, 20);
 	render.fillPattern(bitmap, 30, 30, 128, 128);
 render.end();
 
-assert.sameValue("cf69901e6d4609009dff8be5b3045c96", screen.checksum, "clipped out");
+assert.sameValue("44aed7e3f1ad596d9aed457079608ed9", screen.checksum, "clipped out");
 
 // 1 pixel wide
 render.begin(0, 0, 1, 128);
@@ -86,7 +87,7 @@ render.begin(0, 0, 1, 128);
 	render.fillPattern(bitmap, 0, 0, 128, 128);
 render.end();
 
-assert.sameValue("3825d72f87d3ad5ce652687f666ef631", screen.checksum, "1 pixel wide");
+assert.sameValue("1be6e1ab3335de8d508b5634c54b9c91", screen.checksum, "1 pixel wide");
 
 // 1 pixel high
 render.begin(0, 0, 128, 1);
@@ -94,7 +95,7 @@ render.begin(0, 0, 128, 1);
 	render.fillPattern(bitmap, 0, 0, 128, 128);
 render.end();
 
-assert.sameValue("c69197d26af11bc728f8cf7df698328c", screen.checksum, "1 pixel high");
+assert.sameValue("19fd7d8d7fac49d464a5446ebfb75e5a", screen.checksum, "1 pixel high");
 
 // clipped to 1 pixel
 render.begin(10, 10, 1, 1);
@@ -102,7 +103,7 @@ render.begin(10, 10, 1, 1);
 	render.fillPattern(bitmap, 0, 0, 128, 128);
 render.end();
 
-assert.sameValue("a0497bec042a6c2f536d8bf250f4d095", screen.checksum, "clipped to 1 pixel");
+assert.sameValue("e8520647df23f3e03a54cb51778c781c", screen.checksum, "clipped to 1 pixel");
 
 // source rect quarters
 render.begin(0, 0, 128, 128);
@@ -113,4 +114,4 @@ render.begin(0, 0, 128, 128);
 	render.fillPattern(bitmap, 19, 19, 8, 8, 8, 8, 8, 8);
 render.end();
 
-assert.sameValue("ae09a393a0d4be96665b7e94956ca601", screen.checksum, "source rect quarters");
+assert.sameValue("97f5103f90c74ba6c67e48b84199972d", screen.checksum, "source rect quarters");

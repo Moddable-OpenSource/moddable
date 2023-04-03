@@ -411,6 +411,7 @@ struct sxMachine {
 	txID* colors;
 	txSlot** keyArray;
 	txID keyCount;
+	txID keyDelta;
 	txID keyIndex;
 	txID keyOffset;
 	txSlot** keyArrayHost;
@@ -495,7 +496,8 @@ struct sxCreation {
 	txSize initialHeapCount; /* xs.h */
 	txSize incrementalHeapCount; /* xs.h */
 	txSize stackCount; /* xs.h */
-	txSize keyCount; /* xs.h */
+	txSize initialKeyCount; /* xs.h */
+	txSize incrementalKeyCount; /* xs.h */
 	txSize nameModulo; /* xs.h */
 	txSize symbolModulo; /* xs.h */
 	txSize parserBufferSize; /* xs.h */
@@ -779,9 +781,10 @@ extern txBoolean fxIsSameValue(txMachine* the, txSlot* a, txSlot* b, txBoolean z
 extern txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b);
 extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
-extern void fxCollect(txMachine* the, txBoolean theFlag);
+extern void fxCollect(txMachine* the, txFlag theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
 extern void fxFree(txMachine* the);
+extern void fxGrowKeys(txMachine* the, txID theCount);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);
 mxExport void* fxNewChunk(txMachine* the, txSize theSize);
 mxExport void* fxNewGrowableChunk(txMachine* the, txSize size, txSize overflow);
@@ -1734,6 +1737,7 @@ mxExport void fxOnRejectedPromise(txMachine* the);
 mxExport void fxOnResolvedPromise(txMachine* the);
 mxExport void fxOnThenable(txMachine* the);
 
+extern void fx_Promise_resolveAux(txMachine* the);
 extern void fx_Promise_prototype_finallyAux(txMachine* the);
 extern void fx_Promise_prototype_finallyReturn(txMachine* the);
 extern void fx_Promise_prototype_finallyThrow(txMachine* the);
@@ -1917,9 +1921,11 @@ enum {
 	XS_GET_ONLY = XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG,
 
 	/* collect flags */
-	XS_COLLECTING_FLAG = 1,
-	XS_TRASHING_FLAG = 2,
-	XS_SKIPPED_COLLECT_FLAG = 4,
+	XS_COMPACT_FLAG = 1,
+	XS_ORGANIC_FLAG = 2,
+	XS_COLLECTING_FLAG = 4,
+	XS_TRASHING_FLAG = 8,
+	XS_SKIPPED_COLLECT_FLAG = 16,
 	XS_HOST_CHUNK_FLAG = 32,
 	XS_HOST_HOOKS_FLAG = 64,
 	

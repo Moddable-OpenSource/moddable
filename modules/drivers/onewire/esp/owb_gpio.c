@@ -31,17 +31,30 @@
 #include <stdlib.h>
 
 #include "xsmc.h"
-
-#if ESP32 || __ets__
-	#include "xsHost.h"
-
-#else
-	#error unknown platform    
-#endif
+#include "xsHost.h"
 
 #include "modGPIO.h"
+#include "mc.defines.h"
 #include "owb.h"
 #include "owb_gpio.h"
+
+#if __ets__ && !ESP32 && !defined(MODDEF_ONEWIRE_DIRECTGPIO)
+	// esp8266 defaults to MODDEF_ONEWIRE_DIRECTGPIO 
+	#define MODDEF_ONEWIRE_DIRECTGPIO 1
+#endif
+
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	#define PIN_TO_BASEREG(pin)             ((volatile uint32_t*) GPO)
+	#define PIN_TO_BITMASK(pin)             (1 << pin)
+	#define IO_REG_TYPE uint32_t
+	#define IO_REG_BASE_ATTR
+	#define IO_REG_MASK_ATTR
+	#define DIRECT_READ(base, mask)         ((GPI & (mask)) ? 1 : 0)    //GPIO_IN_ADDRESS
+	#define DIRECT_MODE_INPUT(base, mask)   (GPE &= ~(mask))            //GPIO_ENABLE_W1TC_ADDRESS
+	#define DIRECT_MODE_OUTPUT(base, mask)  (GPE |= (mask))             //GPIO_ENABLE_W1TS_ADDRESS
+	#define DIRECT_WRITE_LOW(base, mask)    (GPOC = (mask))             //GPIO_OUT_W1TC_ADDRESS
+	#define DIRECT_WRITE_HIGH(base, mask)   (GPOS = (mask))             //GPIO_OUT_W1TS_ADDRESS
+#endif
 
 // Use for now... sort later... Need to allocate
 static modGPIOConfigurationRecord config;
@@ -55,6 +68,7 @@ struct _OneWireBus_Timing
 
 // 1-Wire timing delays (standard) in microseconds.
 // Labels and values are from https://www.maximintegrated.com/en/app-notes/index.mvp/id/126
+// Mirror: http://www.pyfn.com/datasheets/maxim/AN126.pdf
 static const struct _OneWireBus_Timing _StandardTiming = {
         6,    // A - read/write "1" master pull DQ low duration
         64,   // B - write "0" master pull DQ low duration
@@ -78,34 +92,50 @@ static const struct _OneWireBus_Timing _StandardTiming = {
  */
 static owb_status _reset(const OneWireBus * bus, bool * is_present)
 {
-    bool present = false;
-    
+    *is_present = false;
+
+    struct modGPIOConfigurationRecord *config = bus->config;
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	volatile IO_REG_TYPE *reg IO_REG_BASE_ATTR = PIN_TO_BASEREG(config->pin);
+#endif
+	uint8_t retries = 125;
+
     modCriticalSectionBegin();
-
-    owb_gpio_driver_info *i = info_from_bus(bus);
-
-    modGPIOSetMode(bus->config, kModGPIOOutput);
-
-    modGPIOWrite(bus->config, 1); // NEW
-    ets_delay_us(bus->timing->G);
-    modGPIOWrite(bus->config, 0);  // Drive DQ low
-    ets_delay_us(bus->timing->H);
-    modGPIOSetMode(bus->config, kModGPIOInput); // Release the bus
-    modGPIOWrite(bus->config, 1);  // Reset the output level for the next output
-    ets_delay_us(bus->timing->I);
-
-    int level1 = modGPIORead(bus->config);
-
-    ets_delay_us(bus->timing->J);   // Complete the reset sequence recovery
-
-    int level2 = modGPIORead(bus->config);
-
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_INPUT(reg, PIN_TO_BITMASK(config->pin));
+#else
+	modGPIOSetMode(config, kModGPIOInput);
+#endif
     modCriticalSectionEnd();
+	// wait until the wire is high... just in case
+	while (!modGPIORead(config)) {
+		ets_delay_us(2);
+		if (--retries == 0) {
+			modLog("wire never high");
+			return OWB_STATUS_OK;
+		}
+	}
 
-    present = (level1 == 0) && (level2 == 1);   // Sample for presence pulse from slave
-
-    //*is_present = present;
-
+	modCriticalSectionBegin();
+	modGPIOWrite(config, 0);
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_OUTPUT(REG, PIN_TO_BITMASK(config->pin));
+#else
+	modGPIOSetMode(config, kModGPIOOutputOpenDrain);	// drive output low
+#endif
+	modCriticalSectionEnd();
+	ets_delay_us(bus->timing->H);
+	modCriticalSectionBegin();
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_INPUT(reg, PIN_TO_BITMASK(config->pin));	// allow it to float
+#else
+	modGPIOSetMode(config, kModGPIOInput);
+#endif
+	ets_delay_us(bus->timing->I);
+	if (!modGPIORead(config))
+		*is_present = true;
+	modCriticalSectionEnd();
+	ets_delay_us(bus->timing->J);
     return OWB_STATUS_OK;
 }
 
@@ -116,19 +146,28 @@ static owb_status _reset(const OneWireBus * bus, bool * is_present)
  */
 static void _write_bit(const OneWireBus * bus, int bit)
 {
-    int delay1 = bit ? bus->timing->A : bus->timing->C;
-    int delay2 = bit ? bus->timing->B : bus->timing->D;
-    owb_gpio_driver_info *i = info_from_bus(bus);
+    struct modGPIOConfigurationRecord *config = bus->config;
 
-    modGPIOSetMode(bus->config, kModGPIOOutput);
-    
-    modGPIOWrite(bus->config, 0);  // Drive DQ low
     modCriticalSectionBegin();
-    ets_delay_us(delay1);
-    modGPIOWrite(bus->config, 1);  // Release the bus
-    ets_delay_us(delay2);
 
-    modCriticalSectionEnd();
+	modGPIOWrite(config, 0);  // Drive DQ low
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_OUTPUT(REG, PIN_TO_BITMASK(config->pin));
+#else
+	modGPIOSetMode(config, kModGPIOOutputOpenDrain);
+#endif
+	if (bit) {
+		ets_delay_us(bus->timing->A);
+		modGPIOWrite(config, 1);  // Release the bus
+		modCriticalSectionEnd();
+		ets_delay_us(bus->timing->B);
+	}
+	else {
+		ets_delay_us(bus->timing->C);
+		modGPIOWrite(config, 1);  // Release the bus
+		modCriticalSectionEnd();
+		ets_delay_us(bus->timing->D);
+	}
 }
 
 /**
@@ -137,27 +176,34 @@ static void _write_bit(const OneWireBus * bus, int bit)
  */
 static int _read_bit(const OneWireBus * bus)
 {
-    int result = 0;
-    owb_gpio_driver_info *i = info_from_bus(bus);
-
-    modGPIOSetMode(bus->config, kModGPIOOutput);
-    modGPIOWrite(bus->config, 0);  // Drive DQ low
+    struct modGPIOConfigurationRecord *config = bus->config;
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	volatile IO_REG_TYPE *reg IO_REG_BASE_ATTR = PIN_TO_BASEREG(config->pin);
+#endif
 
     modCriticalSectionBegin();
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_OUTPUT(REG, PIN_TO_BITMASK(config->pin));
+#else
+    modGPIOSetMode(config, kModGPIOOutputOpenDrain);
+#endif
+    modGPIOWrite(config, 0);  // Drive DQ low
+
     ets_delay_us(bus->timing->A);
-    modGPIOSetMode(bus->config, kModGPIOInput); // Release the bus
-    modGPIOWrite(bus->config, 1);  // Reset the output level for the next output
+#if MODDEF_ONEWIRE_DIRECTGPIO
+	DIRECT_MODE_INPUT(reg, PIN_TO_BITMASK(config->pin)); // Release the bus
+#else
+    modGPIOSetMode(config, kModGPIOInput);
+#endif
     ets_delay_us(bus->timing->E);
 
-    int level = modGPIORead(bus->config);
-
-    ets_delay_us(bus->timing->F);   // Complete the timeslot and 10us recovery
+    int level = modGPIORead(config);
 
     modCriticalSectionEnd();
 
-    result = level & 0x01;
+    ets_delay_us(bus->timing->F);   // Complete the timeslot and 10us recovery
 
-    return result;
+    return level & 0x01;
 }
 
 /**
@@ -225,7 +271,7 @@ OneWireBus* owb_gpio_initialize(owb_gpio_driver_info *driver_info, int pin)
     if ( driver_info->bus.config == NULL ) {
         return NULL;
     }
-    if (modGPIOInit(driver_info->bus.config , NULL, pin, kModGPIOOutput)) {
+    if (modGPIOInit(driver_info->bus.config , NULL, pin, kModGPIOInput)) {
         return NULL;
     }
 

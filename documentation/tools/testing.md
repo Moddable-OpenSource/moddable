@@ -475,6 +475,7 @@ flags: [module]
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const redSkin = new Skin({ fill: "red" });
 new Application(null, {

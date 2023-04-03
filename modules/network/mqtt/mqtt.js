@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -48,6 +48,7 @@ const UNSUBSCRIBE = 0xA0;
 
 export default class Client {
 	#timer;
+	#messages;
 
 	constructor(dictionary) {
 		this.state = 0;
@@ -484,6 +485,8 @@ export default class Client {
 
 		msg.set(header, position);
 		msg[position + 7] |= (user.length ? 0x80 : 0) | (password.length ? 0x40 : 0) | (will.length ? 0x04 : 0) | ((will.length && connect.will.retain) ? 32 : 0);
+		if (will.length)
+			msg[position + 7] |= ((connect.will.quality ?? 0) & 3) << 3; 
 		position += header.length;
 
 		msg.set(id, position); position += id.length;
@@ -500,6 +503,9 @@ export default class Client {
 		return msg.buffer;
 	}
 	dispatch(msg) {
+		if (this.state <= 0)
+			return;
+
 		if (1 === this.state) {
 			if (msg.code !== CONNACK)
 				return this.fail(`received message type '${msg.code}' when expecting CONNACK`);
@@ -510,56 +516,46 @@ export default class Client {
 			this.state = 2;
 		}
 
-		switch (msg.code) {
-			case CONNECT:
+		this.#messages ??= [];
+		this.#messages.push(msg);
+		this.#messages.timer ??= Timer.set(() => {
+			const messages = this.#messages;
+			this.#messages = undefined; 
+			for (let i = 0; i < messages.length; i++) {
+				const msg = messages[i];
 				try {
-					return this.onAccept(msg.connect);
+					switch (msg.code) {
+						case CONNECT:
+							this.onAccept(msg.connect);
+							break;
+						case CONNACK:
+							this.onReady();
+							break;
+						case SUBSCRIBE:
+							this.onSubscribe?.(msg.topic, msg.qos);
+							break;
+						case UNSUBSCRIBE:
+							this.onUnsubscribe?.(msg.topic);
+							break;
+						case PUBLISH:
+							this.onMessage?.(msg.topic, msg.payload);
+							break;
+						default:
+							if (msg.code)
+								this.fail(`unhandled or no-op message type '${msg.code}'`);
+							break;
+					}
 				}
 				catch {
 				}
-				break;
-			case CONNACK:
-				try {
-					this.onReady();
-				}
-				catch {
-				}
-				break;
-			case SUBSCRIBE:
-				try {
-					return this.onSubscribe?.(msg.topic, msg.qos);
-				}
-				catch {
-				}
-				break;
-			case UNSUBSCRIBE:
-				try {
-					this.onUnsubscribe?.(msg.topic);
-				}
-				catch {
-				}
-				break;
-			case PUBLISH:
-				try {
-					this.onMessage?.(msg.topic, msg.payload);
-				}
-				catch {
-				}
-				break;
-			default:
-				if (msg.code)
-					this.fail(`unhandled or no-op message type '${msg.code}'`);
-				break;
-		}
-
+			}
+		});
 	}
-	close() {
-			Timer.clear(this.#timer);
-		this.#timer = undefined;
-
+	close(immediate) {
 		if (this.ws) {
 			try {
-				this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
+				if (!immediate)
+					this.ws.write(Uint8Array.of(0xE0, 0x00).buffer);		 // just shoot it out there, don't worry about ACKs
 			}
 			catch {
 			}
@@ -571,7 +567,13 @@ export default class Client {
 			delete this.ws;
 		}
 
-		this.state = 0;
+		Timer.clear(this.#timer);
+		this.#timer = undefined;
+		
+		Timer.clear(this.#messages?.timer);
+		this.#messages = undefined;
+
+		this.state = -1;
 	}
 	keepalive() {
 		const now = Date.now();
@@ -595,7 +597,6 @@ export default class Client {
 		this.close();
 	}
 }
-Object.freeze(Client.prototype);
 
 function ws_callback(state, message) {
 	switch (state) {
@@ -686,9 +687,9 @@ function makeStringBuffer(string) {
 function getRemainingLength(length) {
 	if (length < 128)
 		return 1;
-	else if (length < 16384)
+	if (length < 16384)
 		return 2;
-	else if (length < 2097152)
+	if (length < 2097152)
 		return 3;
 	return 4;
 }

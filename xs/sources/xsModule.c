@@ -139,9 +139,9 @@ enum {
 static void fxReportModuleQueue(txMachine* the, txSlot* queue, txString label)
 {
 	txSlot* module = queue->next;
-	fprintf(stderr, "%s", label);
+	fprintf(stderr, "%s %p", label, queue);
 	while (module) {
-		fprintf(stderr, " %s %d", fxGetKeyName(the, module->ID), mxModuleStatus(module));
+		fprintf(stderr, " '%s' %p %d", fxGetKeyName(the, module->ID), module->value.reference, mxModuleStatus(module));
 		module = module->next;
 	}
 	fprintf(stderr, "\n");
@@ -861,6 +861,7 @@ void fxLinkTransfer(txMachine* the, txSlot* module, txID importID, txSlot* trans
 					fxIDToString(the, importID, the->nameBuffer, sizeof(the->nameBuffer));
 					fxThrowMessage(the, path, line, XS_SYNTAX_ERROR, "import %s circular", the->nameBuffer);
 				}
+				fxCheckCStack(the);
 				fxLinkTransfer(the, from, import->value.symbol, transfer);
 			}
 		}
@@ -1563,6 +1564,7 @@ namespace:
 		else {
 			txID status = mxModuleStatus(module);
 			mxCheck(the, (status == XS_MODULE_STATUS_NEW) || (status == XS_MODULE_STATUS_LOADING));
+			mxPushSlot(module);
 			fxOverrideModule(the, queue, result, module->value.reference, property->value.reference);
 			status = mxModuleStatus(property);
 			if (result) {
@@ -1596,6 +1598,7 @@ namespace:
 					fxQueueModule(the, queue, property);
 				}
 			}
+			mxPop();
 		}
 		goto done;
 	}
@@ -2190,6 +2193,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 		txSlot* result = stack;
 		txSlot* queue = fxNewInstance(the);
 		mxTry(the) {
+			txBoolean done = 1;
 			result->kind = module->kind;
 			result->value = module->value;
 
@@ -2220,6 +2224,7 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							txSlot* internal = mxModuleInternal(module);
 							moduleID = internal->value.module.id;
 							realm = internal->value.module.realm;
+							done = 0;
 							mxModuleStatus(module) = XS_MODULE_STATUS_LOADING;
 							mxPushUndefined();
 							mxPushSlot(loadNowHook);
@@ -2231,18 +2236,23 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)
 							mxPop(); // descriptor
 						}
 					}
-                    mxReportModuleQueue("LOAD");
-                    module = queue->next;
+					module = queue;
+					done = 1;
+					mxReportModuleQueue("LOAD");
+				}
+				else if (mxModuleStatus(module) == XS_MODULE_STATUS_LOADING) {
+					done = 0;
 				}
 				else if (mxModuleStatus(module) == XS_MODULE_STATUS_LOADED) {
 					fxLoadModulesFrom(the, queue, module->value.reference, 1);
 					mxModuleStatus(module) = XS_MODULE_STATUS_LINKING;
-					mxReportModuleQueue("LOAD");
-					module = queue->next;
+					module = queue;
+					done = 1;
 				}
-				else
-					module = module->next;
+				module = module->next;
 			}
+			if (!done)
+				mxTypeError("async queue");
 			fxLinkModules(the, queue);
 			mxReportModuleQueue("INIT");
 			module = queue->next;

@@ -106,7 +106,14 @@ export default class extends TOOL {
 		const source = this.readFileString(this.sourcePath);
 		let flows = JSON.parse(source);
 
-		flows = this.transformFlows(flows);
+		let credentials;
+		if (this.sourcePath.toLowerCase().endsWith(".json")) {
+			const path = this.sourcePath.slice(0, -5) + "_cred_mcu.json";
+			if (this.resolveFilePath(path))
+				credentials = JSON.parse(this.readFileString(path)).credentials;
+		}
+
+		flows = this.transformFlows(flows, credentials);
 
 		const parts = this.splitPath(this.sourcePath);
 		parts.extension = ".js";
@@ -119,7 +126,7 @@ export default class extends TOOL {
 		output.close();
 	}
 
-	transformFlows(flows) {
+	transformFlows(flows, credentials) {
 		const imports = new Map([["nodered", ""]]);		// ensure that globalThis.RED is available
 
 		// must be an array with at least one element
@@ -221,6 +228,12 @@ export default class extends TOOL {
 				}
 			}
 		}
+		
+		// check for ui_base (required for all other ui_* nodes)
+		nodes.forEach(config => {
+			if ("ui_base" === config.type)
+				nodes.ui_base = config;
+		});
 
 		// replace ${Environment} variables
 		flows.forEach((config, i) => this.applyEnv(flows, i, flows[i], flows));
@@ -240,6 +253,9 @@ export default class extends TOOL {
 				if (config.z !== z)
 					return;
 
+				if (credentials?.[config.id])
+					config.credentials = credentials[config.id];
+
 				const name = config.name;
 				let {type, id, /* name, */ ...c} = {...config};
 				delete c.x;
@@ -247,6 +263,7 @@ export default class extends TOOL {
 				delete c.z;
 				delete c.outputLabels;
 				delete c._mcu;
+				delete c.moddable_manifest;
 
 				try {
 					// remove wires that connect to missing nodes
@@ -399,7 +416,7 @@ export default class extends TOOL {
 
 			case "debug": {
 				if ("jsonata" === config.targetType)
-					throw new Error("unimplemented");
+					throw new Error("jsonata unimplemented");
 
 				const getter = [];
 				getter.push(`function (msg) {`);
@@ -555,9 +572,9 @@ export default class extends TOOL {
 							doDelete = `\t\t\tdelete msg${this.prepareProp(rule.p)}`;
 						}
 						else if ("flow" === rule.pt)
-							doDelete = `\t\t\tthis.flow.delete("${rule.p}");`;
+							doDelete = `\t\t\tthis.flow.delete(${this.makeStorageArgs(rule.p)});`;
 						else if ("global" === rule.pt)
-							doDelete = `\t\t\tglobalContext.delete("${rule.p}");`;
+							doDelete = `\t\t\tglobalContext.delete(${this.makeStorageArgs(rule.p)});`;
 						else
 							throw new Error(`unexpected delete type: ${rule.pt}`);
 					}
@@ -573,9 +590,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.p)} = ${value};`);
 						}
 						else if ("flow" === rule.pt)
-							change.push(`\t\t\tthis.flow.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.p, value)});`);
 						else if ("global" === rule.pt)
-							change.push(`\t\t\tglobalContext.set("${rule.p}", ${value});`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.p, value)});`);
 						else
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
@@ -588,7 +605,8 @@ export default class extends TOOL {
 						}
 						else if (("flow" === rule.pt) || ("global" === rule.pt)) {
 							const which = ("flow" === rule.pt) ? "flow" : "globalContext";
-							change.push(`\t\t\tthis.${which}.set("${rule.p}", this.change(this.${which}.get("${rule.p}"), ${from}, ${JSON.stringify(rule.fromt)}, ${to}));`);
+							const value = `this.change(this.${which}.get(${this.makeStorageArgs(rule.p)}), ${from}, ${JSON.stringify(rule.fromt)}, ${to})`;
+							change.push(`\t\t\tthis.${which}.set(${this.makeStorageArgs(rule.p, value)});`);
 						}
 						else
 							throw new Error(`unexpected change type: ${rule.pt}`);
@@ -609,9 +627,9 @@ export default class extends TOOL {
 							change.push(`\t\t\tmsg${this.prepareProp(rule.to)} = temp;`);
 						}
 						else if ("flow" === rule.tot)
-							change.push(`\t\t\tthis.flow.set("${rule.to}", temp);`);
+							change.push(`\t\t\tthis.flow.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else if ("global" === rule.tot)
-							change.push(`\t\t\tglobalContext.set("${rule.to}", temp);`);
+							change.push(`\t\t\tglobalContext.set(${this.makeStorageArgs(rule.to)}, temp);`);
 						else
 							throw new Error(`unexpected move type: ${rule.pt}`);
 					}
@@ -1017,10 +1035,16 @@ export default class extends TOOL {
 			} break;
 		
 			case "mqtt in": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+					
 				config.qos = (undefined === config.qos) ? 0 : parseInt(config.qos); 
 			} break;
 
 			case "mqtt out": {
+				if (!nodes.has(config.broker))
+					throw new Error(`mqtt broker id "${config.broker}" not found`);
+
 				if ("" === config.topic)
 					delete config.topic;
 
@@ -1160,7 +1184,45 @@ export default class extends TOOL {
 				if (config.wipe < 0) { config.wipe = 0; }
 				if (config.brightness < 0) { config.brightness = 0; }
 				if (config.brightness > 100) { config.brightness = 100; }
+				
+				config.type = "mcu_neopixels";
+				config.foreground = config.fgnd;
+				config.background = config.bgnd;
+//				config.pin = config.gpio;			// gpio was never really used on rpi-neopixels, so just ignore it. projects should use mcu_neopixels.
+				config.length = config.pixels;
+				config.order = config.rgb.toUpperCase();
+				config.mode = ["", "pcent", "pixels", "pcentneedle", "pixelsneedle", "shiftu", "shiftd"].indexOf(config.mode);
+
+				delete config.gpio;
+				delete config.fgnd;
+				delete config.bgnd;
+				delete config.gamma;
+				delete config.pixels;
+				delete config.rgb;
+				delete config.channel;
+
+				return this.prepareNode(config.type, config, dones, errors, statuses, nodes, imports);
 			} break;
+
+			case "mcu_neopixels":
+				if (parseInt(config.pin) == config.pin)
+					config.pin = parseInt(config.pin);
+				if ("" === config.pin)
+					delete config.pin;
+				if (parseInt(config.length) == config.length)
+					config.length = parseInt(config.length);
+				if (!config.length)
+					config.length = 1;
+				if (config.brightness)
+					config.brightness = parseFloat(config.brightness);
+				if (config.wipe)
+					config.wipe = parseFloat(config.wipe);
+				if (!config.background)
+					config.background = "#000000";
+				if (!config.foreground)
+					config.foreground = "#ffffff";
+				config.mode = ["pcent", "pcent", "pixels", "pcentneedle", "pixelsneedle", "shiftu", "shiftd"][config.mode];
+				break;
 
 			case "mcu_analog":
 				if (parseInt(config.pin) == config.pin)
@@ -1185,9 +1247,12 @@ export default class extends TOOL {
 					config.pin = parseInt(config.pin);
 				config.edge = parseInt(config.edge);
 				config.debounce = config.debounce ? parseFloat(config.debounce) : 0;
+				if (!config.debounce)
+					delete config.debounce;
 				if (!config.initial)
-					delete config.initial; 
-					
+					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
 				break;
 
 			case "mcu_digital_out":
@@ -1199,6 +1264,13 @@ export default class extends TOOL {
 					config.initial = 0;
 				else
 					delete config.initial;
+				if (!config.invert)
+					delete config.invert;
+				break;
+
+			case "mcu_pulse_width":
+				if (parseInt(config.pin) == config.pin)
+					config.pin = parseInt(config.pin);
 				break;
 
 			case "mcu_pulse_count":
@@ -1208,13 +1280,48 @@ export default class extends TOOL {
 					config.control = parseInt(config.control);
 				break;
 
-			case "mcu_clock":
+			case "mcu_i2c_in":
+			case "mcu_i2c_out":
+				if (undefined != config.options.clock) {
+					if (parseInt(config.options.clock) == config.options.clock)
+						config.options.clock = parseInt(config.options.clock);
+				}
+				if (undefined != config.options.data) {
+					if (parseInt(config.options.data) == config.options.data)
+						config.options.data = parseInt(config.options.data);
+				}
+				if (isNaN(config.options.hz))
+					config.options.hz = 100_000;
+				else
+					config.options.hz = parseInt(config.options.hz);
+				if (isNaN(config.options.address))
+					delete config.options.address; 
+				else
+					config.options.address = parseInt(config.options.address);
+				if (isNaN(config.command) || ("" === config.command))
+					delete config.command; 
+				else
+					config.command = parseInt(config.command);
+				if (config.bytes)
+					config.bytes = parseInt(config.bytes);
+				else
+					delete config.bytes;		//@@ check default behavior in RPi code
+				
+				if ("mcu_i2c_out" === type)
+					config.getter = `function (msg) {return ${this.resolveValue(config.payloadType, config.payload)}}`;
+
+				delete config.payload;
+				delete config.payloadType;
+				break;
+
 			case "mcu_sensor":
+				type = config.type = "sensor";
+				// fall through
+			case "mcu_clock":
 			case "sensor": {
 				const kinds = {
 					mcu_clock: ["RTC", "rtc"],
 					sensor: ["Sensor", "sensor"],
-					mcu_sensor: ["Sensor", "sensor"]
 				}[type];
 
 				if (config.io && !config.options) {		// convert original sensor config to new
@@ -1256,13 +1363,14 @@ export default class extends TOOL {
 								initialize.push(`\t\t\t\t\tpin: ${pin},`);
 								initialize.push(`\t\t\t\t},`);
 								} break;
-							case "Digital": {
+							case "Digital":
+							case "PulseWidth": {
 								let pin = parseInt(option.pin);
 								if (Number.isNaN(pin))
 									pin = option.pin;
 								initialize.push(`\t\t\t\t${name}: {`);
-								initialize.push(`\t\t\t\t\tio: device.io.Digital,`);
-								initialize.push(`\t\t\t\t\tmode: device.io.Digital.${option.mode},`);
+								initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+								initialize.push(`\t\t\t\t\tmode: device.io.${option.io}.${option.mode},`);
 								initialize.push(`\t\t\t\t\tpin: ${pin},`);
 								initialize.push(`\t\t\t\t},`);
 								} break;
@@ -1292,6 +1400,31 @@ export default class extends TOOL {
 
 								if (undefined !== option.hz)
 									initialize.push(`\t\t\t\t\thz: ${option.hz},`);
+
+								initialize.push(`\t\t\t\t},`);
+								} break;
+							case "Serial": {
+								initialize.push(`\t\t\t\t${name}: {`);
+								initialize.push(`\t\t\t\t\tio: device.io.${option.io},`);
+
+								let receive = parseInt(option.receive), transmit = parseInt(option.transmit);
+								if (Number.isNaN(receive))
+									receive = option.receive;
+								if (Number.isNaN(transmit))
+									transmit = option.transmit;
+
+								initialize.push(`\t\t\t\t\ttransmit: ${transmit},`);
+								initialize.push(`\t\t\t\t\treceive: ${receive},`);
+								
+								if ((undefined !== option.port) && ("" !== option.port)) {
+									let port = parseInt(option.port);
+									if (Number.isNaN(port))
+										port = option.port;
+									initialize.push(`\t\t\t\t\tport: ${port},`);
+								}
+
+								if (undefined !== option.baud)
+									initialize.push(`\t\t\t\t\tbaud: ${parseInt(option.baud)},`);
 
 								initialize.push(`\t\t\t\t},`);
 								} break;
@@ -1413,7 +1546,7 @@ export default class extends TOOL {
 				delete config.payload; 
 				delete config.payloadType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_switch": {
@@ -1434,7 +1567,7 @@ export default class extends TOOL {
 				delete config.onvalue; 
 				delete config.onvalueType; 
 
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 
 			case "ui_colour_picker":
@@ -1448,7 +1581,7 @@ export default class extends TOOL {
 				config.topic = topic.join("\n");
 				delete config.topicType;
 				
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 			} break;
 			
 			case "ui_chart":
@@ -1456,10 +1589,9 @@ export default class extends TOOL {
 			case "ui_group":
 			case "ui_spacer":
 			case "ui_text":
-			case "ui_text_input":
 			case "ui_template":
 			case "ui_toast":
-				this.prepareUI(config);
+				this.prepareUI(config, nodes);
 				break;
 		}
 
@@ -1531,10 +1663,17 @@ export default class extends TOOL {
 					suffix = value.slice(first);
 					value = value.slice(0, first);		//@@ if "." may need to check regexIdentifierNameES6
 				}
-					
+
+				suffix = suffix.trim(suffix)
+				if (suffix) {
+					if (suffix.startsWith("["))
+						suffix = "?." + suffix;
+					else
+						suffix = "?" + suffix;
+				}
 				if ("flow" === type)
-					return `this.flow.get("${value}")${suffix}`;
-				return `globalContext.get("${value}")${suffix}`;
+					return `this.flow.get(${this.makeStorageArgs(value)})${suffix}`;
+				return `globalContext.get(${this.makeStorageArgs(value)})${suffix}`;
 				}
 			case "env": {
 				let offset = 0;
@@ -1626,7 +1765,10 @@ export default class extends TOOL {
 			}
 		}
 	}
-	prepareUI(config) {
+	prepareUI(config, nodes) {
+		if (!nodes.ui_base)
+			throw new Error("ui_base node not found. required for dashboard nodes.")
+
 		if (config.width)
 			config.width = parseInt(config.width);
 		if (config.height)
@@ -1687,7 +1829,7 @@ export default class extends TOOL {
 		}
 
 		for (let name in value) {
-			if (value.hasOwnProperty(name))
+			if (Object.hasOwn(value, name))
 				this.applyEnv(value, name, node, flows);
 		}
 	}
@@ -1742,5 +1884,18 @@ export default class extends TOOL {
 			default:
 				throw new Error(`environment type "${env.type}" unsupported on "${name}"`);
 		}
+	}
+	makeStorageArgs(name, value) {
+		if (name.startsWith("#:(") && name.includes("::")) {
+			name = name.split("::");
+			if ("#:(file)" !== name[0])
+				throw new Error("unsupported storage " + name[0]);
+			if (undefined !== value)
+				return `"${name[1]}", ${value}, "file"`;
+			return `"${name[1]}", "file"`;
+		}
+		if (undefined !== value)
+			return `"${name}", ${value}`;
+		return `"${name}"`;
 	}
 }

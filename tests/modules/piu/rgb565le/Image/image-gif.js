@@ -4,9 +4,9 @@ flags: [onlyStrict, async]
 ---*/
 
 const frames = [
-	"621d95f6ef8faf5c5cd3b512c8eeddde",
-	"be2002ecc9b7f0dfd6ec82aba73997e3",
-	"19a3f332eed85190b7b05adb069df9f2",
+	"223a16a534f0b594862bf4520fb90088",
+	"7b8ed64d8de598bab8f76bacbe2563f0",
+	"ea1169622be6b818971ccd262e14ad9e",
 	undefined
 ];
 

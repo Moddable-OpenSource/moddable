@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -236,6 +236,11 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+{
+	return 1;
+}
+
 #if OSSFUZZ
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     fuzz_oss(Data, Size);
@@ -319,7 +324,8 @@ int main(int argc, char* argv[])
 			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			256 * 1024, 		/* stackCount */
-			256 * 1024, 		/* keyCount */
+			256 * 1024, 		/* initialKeyCount */
+			0,					/* incrementalKeyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
 			64 * 1024,			/* parserBufferSize */
@@ -332,6 +338,9 @@ int main(int argc, char* argv[])
  		fxBuildAgent(machine);
  		if (profiling)
 			fxStartProfiling(machine);
+		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
+		{
+
 		xsBeginHost(machine);
 		{
 			xsVars(2);
@@ -417,6 +426,8 @@ int main(int argc, char* argv[])
 		}
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+		}
+		xsEndMetering(machine);
  		if (profiling)
 			fxStopProfiling(machine, C_NULL);
 		if (machine->abortStatus) {
@@ -1090,7 +1101,8 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* keyCount */
+		256 * 1024, 		/* initialKeyCount */
+		0,					/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1340,7 +1352,8 @@ void* fx_agent_start_aux(void* it)
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		4096, 				/* stackCount */
-		4096*3, 			/* keyCount */
+		4096*3, 			/* initialKeyCount */
+		0,					/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1752,7 +1765,8 @@ int fuzz(int argc, char* argv[])
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* keyCount */
+		8 * 1024,			/* initialKeyCount */
+		0,					/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1762,6 +1776,7 @@ int fuzz(int argc, char* argv[])
 	fxInitializeSharedCluster();
 
 	while (1) {
+		int error = 0;
 		char action[4];
 		ssize_t nread = read(REPRL_CRFD, action, 4);
 		fflush(0);		//@@
@@ -1783,6 +1798,8 @@ int fuzz(int argc, char* argv[])
 		buffer[script_size] = 0;	// required when debugger active
 
 		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
+		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
+		{
 		xsBeginHost(machine);
 		{
 			xsTry {
@@ -1822,17 +1839,17 @@ int fuzz(int argc, char* argv[])
 			}
 			xsCatch {
 				the->script = NULL;
-				the->abortStatus = XS_UNHANDLED_EXCEPTION_EXIT;
+				error = 1;
 			}
 		}
-//		fxCheckUnhandledRejections(machine, 1);
+		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
+		}
+		xsEndMetering(machine);
 		fxDeleteScript(machine->script);
-//		if (machine->abortStatus) {
-//			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
-//			fprintf(stderr, "Error: %s\n", why);
-//		}
 		int status = (machine->abortStatus & 0xff) << 8;
+		if (!status && error)
+			status = XS_UNHANDLED_EXCEPTION_EXIT << 8;
 		if (write(REPRL_CWFD, &status, 4) != 4) {
 			fprintf(stderr, "Erroring writing return value over REPRL_CWFD\n");
 			exit(-1);
@@ -1858,6 +1875,14 @@ int fuzz(int argc, char* argv[])
 	#define mxFuzzMeter (214748380)
 #endif
 
+static int lsan_disabled;
+
+// allow toggling ASAN leak-checking
+__attribute__((used)) int __lsan_is_turned_off()
+{
+	return lsan_disabled;
+}
+
 static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
 	// may be useful to print current index for debugging
@@ -1872,13 +1897,16 @@ static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue i
 
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
+	lsan_disabled = 0;
+
 	xsCreation _creation = {
 		1 * 1024 * 1024, 	/* initialChunkSize */
 		1 * 1024 * 1024, 	/* incrementalChunkSize */
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* keyCount */
+		8 * 1024,			/* initialKeyCount */
+		0,					/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1961,14 +1989,6 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	return 0;
 }
 
-const char *__lsan_default_suppressions()
-{
-	return	"leak:fxStringifyJSONChars\n"
-			"leak:fxStringifyJSONCharacter\n"
-			"leak:fxStringifyJSON\n"
-			"leak:fxParserCode\n";
-}
-
 #endif 
 
 #if 1 || FUZZING || FUZZILLI
@@ -1992,7 +2012,8 @@ void fx_nop(xsMachine *the)
 void fx_assert_throws(xsMachine *the)
 {
 	mxTry(the) {
-		xsCallFunction0(xsArg(1), xsGlobal);
+		if (xsToInteger(xsArgc) >= 2)
+			xsCallFunction0(xsArg(1), xsGlobal);
 	}
 	mxCatch(the) {
 	}
@@ -2119,14 +2140,17 @@ void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags)
 
 void fxAbort(txMachine* the, int status)
 {
+	if (XS_DEBUGGER_EXIT == status)
+		c_exit(1);
 	if (the->abortStatus) // xsEndHost calls fxAbort!
 		return;
-	if (status) {
-		the->abortStatus = status;
-		fxExitToHost(the);
-	}
-	else
-		c_exit(1);
+		
+	the->abortStatus = status;
+ #if OSSFUZZ
+	lsan_disabled = 1;		// disable leak checking
+ #endif
+
+	fxExitToHost(the);
 }
 
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
@@ -2173,6 +2197,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else
 		slash = path;
 	*slash = 0;
+	if ((c_strlen(path) + c_strlen(name + dot)) >= sizeof(path))
+		xsRangeError("path too long");
 	c_strcat(path, name + dot);
 	return fxNewNameC(the, path);
 }

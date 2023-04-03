@@ -19,7 +19,9 @@
 
 HOST_OS := $(shell uname)
 ifeq ($(HOST_OS),Darwin)
-	ifeq ($(findstring _12.,_$(shell sw_vers -productVersion)),_12.)
+	ifeq ($(findstring _13.,_$(shell sw_vers -productVersion)),_13.)
+		UPLOAD_PORT ?= /dev/cu.usbserial-0001
+	else ifeq ($(findstring _12.,_$(shell sw_vers -productVersion)),_12.)
 		UPLOAD_PORT ?= /dev/cu.usbserial-0001
 	else ifeq ($(findstring _11.,_$(shell sw_vers -productVersion)),_11.)
 		UPLOAD_PORT ?= /dev/cu.usbserial-0001

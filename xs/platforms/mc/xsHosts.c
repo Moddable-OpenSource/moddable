@@ -41,7 +41,7 @@
 
 #include "xsScript.h"
 #include "xsHosts.h"
-#include "xsHosts.h"
+#include "xsHost.h"
 
 #ifdef mxInstrument
 	#include "modInstrumentation.h"
@@ -147,7 +147,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 #ifdef mxDebug
 		fxReport(the, "# Slot allocation: failed. trying to make room...\n");
 #endif
-		fxCollect(the, 1);	/* expecting memory from the chunk pool */
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);	/* expecting memory from the chunk pool */
 #ifdef mxDebug
 		fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 #endif
@@ -481,7 +481,7 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 			creation.initialHeapCount = slotCount;
 		
 		if (keyCount)
-			creation.keyCount = keyCount;
+			creation.initialKeyCount = keyCount;
 
 		context[0] = c_malloc(allocation);
 		if (NULL == context[0]) {

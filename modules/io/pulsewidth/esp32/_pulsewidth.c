@@ -23,6 +23,7 @@
 #include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
 
+#if defined(SOC_MCPWM_SUPPORTED)
 #include "builtinCommon.h"
 
 #include "driver/mcpwm.h"
@@ -324,3 +325,11 @@ static uint8_t mcpwmFromChannel(uint8_t channel, mcpwm_unit_t *unit, mcpwm_io_si
 
     return result;
 }
+
+#else // ! SOC_MCPWM_SUPPORTED
+void xs_pulsewidth_read(xsMachine *the) {}
+void xs_pulsewidth_mark(xsMachine* the, void *it, xsMarkRoot markRoot) {}
+void xs_pulsewidth_destructor(void *data) {}
+void xs_pulsewidth_constructor(xsMachine *the) {}
+void xs_pulsewidth_close(xsMachine *the) {}
+#endif

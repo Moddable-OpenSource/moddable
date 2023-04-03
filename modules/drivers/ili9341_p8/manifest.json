@@ -1,0 +1,22 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json"
+	],
+	"defines": {
+		"ili9341p8": {
+			"width": 320,
+			"height": 480,
+			"hz": 20000000,
+			"flipX": false,
+			"flipY": false
+		}
+	},
+	"modules": {
+		"*": "./*",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+	},
+	"preload": [
+		"ili9341_p8",
+		"commodetto/Bitmap"
+	]
+}

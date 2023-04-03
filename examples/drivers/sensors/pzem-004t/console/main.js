@@ -22,14 +22,13 @@ let sensor = new PZEM004T({
 		transmit: config.transmit,
 		receive: config.receive,
 		port: config.port
-	},
-	onReady() {
-		trace(`Sensor identification is: ${JSON.stringify(sensor.identification)}\n`);
-		Timer.set(() => {
-			sensor.sample(onSample);
-		}, 0, 10_000);
 	}
 });
+
+trace(`Sensor identification is: ${JSON.stringify(sensor.identification)}\n`);
+Timer.set(() => {
+	sensor.sample(onSample);
+}, 0, 10_000);
 
 function onSample(error, sample) {
 	if (error) {

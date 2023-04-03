@@ -17,26 +17,26 @@ new Application(null, {
 	skin: new Skin({ fill: "white" }),
 	contents: coloredContent
 });
-screen.checkImage("b2342b9d128b17b544c8a1e7c4ff652d");
+screen.checkImage("e2af99ea42c6356c98bced63d96c75c7");
 
 coloredContent.skin = yellowBlueSkin;
-screen.checkImage("d44667614bc9e548158a618772fd2f6b");
+screen.checkImage("122f053c7f4ef57c8333e111754b8fb9");
 coloredContent.state = 0.5;
-screen.checkImage("de828f8c1a0914087bfd71deb774ab91");
+screen.checkImage("ba9a32f96bf86e5e351650f9a239ae1a");
 coloredContent.state = 1;
-screen.checkImage("141cf1bc835257c9d536611dee810a64");
+screen.checkImage("2b75c9d610c4fbf65c161caa9da4aa93");
 
 coloredContent.skin = leftLineSkin;
-screen.checkImage("59c41005a2fa5b72d2aa036330228ce9");
+screen.checkImage("1ba217d09b6c7ee6472bed4d1bf33735");
 
 coloredContent.skin = rightLineSkin;
-screen.checkImage("d4f4c64424263e265193465271173f42");
+screen.checkImage("9782cf6f6b9b21e1495f4cdf5e7c27c4");
 
 coloredContent.skin = topLineSkin;
-screen.checkImage("1874cc0291da6fa7732e1cc646050d57");
+screen.checkImage("d74722d4a49ca2240218937233e9ed7f");
 
 coloredContent.skin = bottomLineSkin;
-screen.checkImage("7aae357b48566774829e9b77667f8cbf");
+screen.checkImage("7c77b91b390f8b4761f2ab366bfe35a4");
 
 coloredContent.skin = fullOutlineSkin;
-screen.checkImage("cf36005cbf294cac5d27dce0910eebdb");
+screen.checkImage("c5029bf7e14efc252250b2a892a6a16a");

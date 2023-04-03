@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -44,7 +44,7 @@
 
 #if ESP32
 	#ifndef MODDEF_AUDIOIN_I2S_NUM
-		#define MODDEF_AUDIOIN_I2S_NUM (0)
+		#define MODDEF_AUDIOIN_I2S_NUM (1)
 	#endif
 	#ifndef MODDEF_AUDIOIN_I2S_BCK_PIN
 		#define MODDEF_AUDIOIN_I2S_BCK_PIN (32)
@@ -84,7 +84,7 @@ void xs_audioin(xsMachine *the)
 		  bits_per_sample: I2S_BITS_PER_SAMPLE_32BIT,
 		  channel_format: I2S_CHANNEL_FMT_ONLY_RIGHT,
 		  communication_format: (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_MSB),
-		  intr_alloc_flags: ESP_INTR_FLAG_LEVEL1,
+		  intr_alloc_flags: 0,
 		  dma_buf_count: 4,
 		  dma_buf_len: 1024
 	};

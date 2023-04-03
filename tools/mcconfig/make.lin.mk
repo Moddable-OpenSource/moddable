@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -33,11 +33,9 @@ ifeq ($(DEBUG),1)
 		START_SIMULATOR = $(shell export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 	endif
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-	KILL_XSBUG = $(shell pkill xsbug)
 else
 	START_XSBUG =
 	KILL_SERIAL2XSBUG =
-	KILL_XSBUG =
 endif
 
 XS_DIRECTORIES = \
@@ -164,7 +162,6 @@ XSBUG_PORT ?= 5002
 
 all: precursor xsbug
 	$(KILL_SERIAL2XSBUG)
-	$(KILL_XSBUG)
 	$(KILL_SIMULATOR)
 	$(START_XSBUG)
 	$(START_SIMULATOR)

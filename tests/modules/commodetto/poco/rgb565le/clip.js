@@ -7,6 +7,7 @@ import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 
@@ -32,4 +33,4 @@ render.begin();
 	render.clip();
 render.end();
 
-assert.sameValue("3f7bcfc81b231d62f787bea509c8646a", screen.checksum, "image mismatch");
+assert.sameValue("360f0f162cbbc27213004f3a71283909", screen.checksum, "image mismatch");

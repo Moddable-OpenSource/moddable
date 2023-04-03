@@ -7,6 +7,7 @@ import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 
@@ -36,7 +37,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 8, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("fddd631a5c2538b9a446c66eedf1f176", screen.checksum, "even align");
+assert.sameValue("3ad0da01a4416b89aa7c456481b7caa4", screen.checksum, "even align");
 
 // even align blended 50%
 render.begin(0, 0, 32, 32);
@@ -44,7 +45,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 8, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8, 128);
 render.end();
 
-assert.sameValue("6e725724b8fdea6a343418aefb1682c4", screen.checksum, "even align blended 50%");
+assert.sameValue("d833736953ba283376342771a46dc1be", screen.checksum, "even align blended 50%");
 
 // odd align
 render.begin(0, 0, 32, 32);
@@ -52,7 +53,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 9, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("d3151a4289d4c2ab82070ea7cba6a5e9", screen.checksum, "odd align");
+assert.sameValue("a6d5527b35cd7af4f76a4e34364130da", screen.checksum, "odd align");
 
 // odd align blended 75%
 render.begin(0, 0, 32, 32);
@@ -60,7 +61,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 9, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8, 192);
 render.end();
 
-assert.sameValue("f3cf0a7fdf0d6fe585e390fc8285c78f", screen.checksum, "odd align blended 75%");
+assert.sameValue("5ec15b4233be088281989d3bf53b7497", screen.checksum, "odd align blended 75%");
 
 // clipped left
 render.begin(0, 0, 32, 32);
@@ -68,7 +69,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, -1, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("116604acf2cf5e017d4007127d6895d7", screen.checksum, "clipped left");
+assert.sameValue("50c9c75579880526ea28c34735c937b1", screen.checksum, "clipped left");
 
 // clipped right
 render.begin(0, 0, 32, 32);
@@ -76,7 +77,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 32 - bitmap.width + 1, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("f463d1f16c4a0e4a54267dc56374404e", screen.checksum, "clipped right");
+assert.sameValue("3970be785bc7fb9cc6e90b30a0a334e2", screen.checksum, "clipped right");
 
 // clipped top
 render.begin(0, 0, 32, 32);
@@ -84,7 +85,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 0, -1, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("08a303e5cca984a806a5eaeb8ad1b193", screen.checksum, "clipped top");
+assert.sameValue("1802fc558119f4da45a00dbb962ac43c", screen.checksum, "clipped top");
 
 // clipped bottom
 render.begin(0, 0, 32, 32);
@@ -92,7 +93,7 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 0, 32 - bitmap.height + 1, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("c951b33e78dcb72e4a61390d1584aa75", screen.checksum, "clipped bottom");
+assert.sameValue("ac27bf58a8860471fcbc30162ad01cc6", screen.checksum, "clipped bottom");
 
 // clipped all edges
 render.begin(11, 11, 8, 8);
@@ -100,7 +101,7 @@ render.begin(11, 11, 8, 8);
 	render.drawMasked(bitmap, 8, 8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("a91b205660f8b6e1379a3ee837eb9de5", screen.checksum, "clipped all edges");
+assert.sameValue("5955b4b36bc5d0efb90d363d7e39850b", screen.checksum, "clipped all edges");
 
 // clipped out
 render.begin(10, 10, 20, 20);
@@ -108,7 +109,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMasked(bitmap, 30, 30, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("cf69901e6d4609009dff8be5b3045c96", screen.checksum, "clipped out");
+assert.sameValue("44aed7e3f1ad596d9aed457079608ed9", screen.checksum, "clipped out");
 
 // 1 pixel wide
 render.begin(0, 0, 1, 32);
@@ -116,7 +117,7 @@ render.begin(0, 0, 1, 32);
 	render.drawMasked(bitmap, 0, 0, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("e91111c78263ea8dbe0590258f190c6e", screen.checksum, "1 pixel wide");
+assert.sameValue("5a33142070e21cd4ea3a3955db89e613", screen.checksum, "1 pixel wide");
 
 // 1 pixel high
 render.begin(0, 0, 32, 1);
@@ -124,7 +125,7 @@ render.begin(0, 0, 32, 1);
 	render.drawMasked(bitmap, 0, 0, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("6a7cd824ccd17c1928cecc799f489339", screen.checksum, "1 pixel high");
+assert.sameValue("7a74f634bda0b941be253171ddd73187", screen.checksum, "1 pixel high");
 
 // clipped to 1 pixel
 render.begin(0, 0, 1, 1);
@@ -132,7 +133,7 @@ render.begin(0, 0, 1, 1);
 	render.drawMasked(bitmap, -8, -8, 0, 0, bitmap.width, bitmap.height, mask, 0, 8);
 render.end();
 
-assert.sameValue("5be0b4ca97f7fba6aec316ab2e85cd48", screen.checksum, "clipped to 1 pixel");
+assert.sameValue("85f939ef5bf69fd4e2b1ac2fac70bef8", screen.checksum, "clipped to 1 pixel");
 
 // source rect quarters
 render.begin(0, 0, 32, 32);
@@ -143,4 +144,4 @@ render.begin(0, 0, 32, 32);
 	render.drawMasked(bitmap, 19, 19, 8, 8, 8, 8, mask, 2, 2);
 render.end();
 
-assert.sameValue("067a2c87ba9b65241922fe2e11255122", screen.checksum, "source rect quarters");
+assert.sameValue("a9f54fd44d5f48453572c6c2da803d12", screen.checksum, "source rect quarters");

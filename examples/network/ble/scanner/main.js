@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,16 +15,19 @@
 import BLEClient from "bleclient";
 
 class Scanner extends BLEClient {
+	addresses = new Set;
+
 	onReady() {
-		this.startScanning({ duplicates:false });
+		this.startScanning({});
 	}
 	onDiscovered(device) {
-		let scanResponse = device.scanResponse;
-		let completeName = scanResponse.completeName;
-		if (completeName)
-			trace(`${completeName} - ${device.address}\n`);
+		const address = device.address.toString();
+		if (this.addresses.has(address))
+			return;
+		this.addresses.add(address);
+
+		trace(`${address} ${device.scanResponse.completeName ?? device.scanResponse.shortName ?? ""}\n`);
 	}
 }
 
 let scanner = new Scanner;
-

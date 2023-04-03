@@ -22,18 +22,18 @@ new Application(null, { contents: [col] });
 col.add(redSquare);
 col.add(yellowSquare);
 col.add(blueSquare);
-screen.checkImage("279bb31cdc6cfe54ca3022e7da2c781e");
+screen.checkImage("1ba9f0ea204606dee42e3fd8579153ab");
 
 col.remove(yellowSquare);
-screen.checkImage("3ef1278cb21216b0db4b98bd7a151b6c");
+screen.checkImage("528bee463ceef12591e3c6378540818f");
 
 col.remove(blueSquare);
-screen.checkImage("8d615e72ef34da297ccb1581fcc463da");
+screen.checkImage("12b6c910baa7363631ad4b692c8ae39c");
 
 col.remove(redSquare);
-screen.checkImage("14e6edc6291901a47e0268a966b4d99e");
+screen.checkImage("f29d3d7c7bace5943c2e44d85267b5d3");
 
 col.add(yellowSquare);
 col.add(blueSquare);
 col.add(redSquare);
-screen.checkImage("de0701ab33d7ff2121dc69116d7d5fea");
+screen.checkImage("4feef69a7f7eaa93a8fae5a4f0a06f9e");

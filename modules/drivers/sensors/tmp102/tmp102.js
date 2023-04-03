@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -41,36 +41,44 @@ class TMP102  {
 	#extendedRange = false;
 	#shift = 4;
 	#onAlert;
-	#onError;
-	#monitor;
-	#status = "ready";
+	#status;
 
 	constructor(options) {
-		const io = this.#io = new options.sensor.io({
-			hz: 400_000,
-			address: 0x48,
-			...options.sensor
-		});
+		let io, monitor;
+		try {
+			io = new options.sensor.io({
+				hz: 400_000,
+				address: 0x48,
+				...options.sensor
+			});
 
-		this.#onError = options.onError;
+			const {alert, onAlert} = options;
+			if (alert && onAlert) {
+				this.#onAlert = onAlert;
+				monitor = new alert.io({
+					mode: alert.io.InputPullUp,
+					...alert,
+					edge: alert.io.Falling,
+					onReadable: () => this.#onAlert()
+				 });
+			}
 
-		const {alert, onAlert} = options;
-		if (alert && onAlert) {
-			this.#onAlert = onAlert;
-			this.#monitor = new alert.io({
-				mode: alert.io.InputPullUp,
-				...alert,
-				edge: alert.io.Falling,
-				onReadable: () => this.#onAlert()
-			 });
+			// reset to default values (7.5.3 of datasheet)
+			io.writeUint16(Register.CONFIG, 0b0110_0000_1010_0000, true);
+
+			// THigh = +80C TLow = +75C (7.5.4)
+			io.writeUint16(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
+			io.writeUint16(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
+			
+			this.#io = io;
+			io.monitor = monitor;
+			this.#status = true;
 		}
-
-		// reset to default values (7.5.3 of datasheet)
-		io.writeUint16(Register.CONFIG, 0b0110_0000_1010_0000, true);
-
-		// THigh = +80C TLow = +75C (7.5.4)
-		io.writeUint16(Register.TEMP_HIGH, 0b0101_0000_0000_0000, true);
-		io.writeUint16(Register.TEMP_LOW, 0b0100_1011_0000_0000, true);
+		catch (e) {
+			io?.close();
+			monitor?.close();
+			throw e;
+		}
 	}
 
 	configure(options) {
@@ -92,10 +100,10 @@ class TMP102  {
 			config &= ~SHUTDOWN_MODE;
 			if (options.shutdownMode) {
 				config |= SHUTDOWN_MODE;
-				this.#status = "shutdown";
+				this.#status = undefined;
 			}
 			else
-				this.#status = "ready";
+				this.#status = true;
 		}
 
 		if (undefined !== options.highTemperature) {
@@ -112,7 +120,7 @@ class TMP102  {
 			if (options.thermostatMode === "interrupt")
 				config |= 0b10_0000_0000;
 			else if (options.thermostatMode !== "comparator")
-				this.#onError?.("bad thermostatMode");
+				throw new Error("bad thermostatMode");
 		}
 
 		if (undefined !== options.conversionRate) {
@@ -122,7 +130,7 @@ class TMP102  {
 				case 1:		config |= 0b0100_0000;	break;
 				case 4:		config |= 0b1000_0000;	break;
 				case 8:		config |= 0b1100_0000;	break;
-				default: this.#onError?.("invalid conversionRate");
+				default: throw new Error("invalid conversionRate");
 			}
 		}
 
@@ -138,7 +146,7 @@ class TMP102  {
 				case 2: config |= 0b0000_1000_0000_0000; break;
 				case 4: config |= 0b0001_0000_0000_0000; break;
 				case 6: config |= 0b0001_1000_0000_0000; break;
-				default: this.#onError?.("invalid faultQueue");
+				default: throw new Error("invalid faultQueue");
 			}
 		}
 
@@ -146,15 +154,16 @@ class TMP102  {
 	}
 
 	close() {
-		if ("ready" === this.#status) {
-			this.#io.writeUint16(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
-			this.#status = undefined;
-		}
+		const io = this.#io;
+		if (io) {
+			this.#io = undefined;
 
-		this.#monitor?.close();
-		this.#monitor = undefined;
-		this.#io.close();
-		this.#io = undefined;
+			if (this.#status)
+				io.writeUint16(Register.CONFIG, SHUTDOWN_MODE, true);	// shut down device
+			
+			io.close();
+			io.monitor?.close();
+		}
 	}
 
 	#twoC16(val) {

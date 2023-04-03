@@ -3184,9 +3184,8 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderAddIndex(param, 0, XS_CODE_PULL_LOCAL_1, next);
 
 	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
-	coder->firstContinueTarget = fxCoderAliasTargets(param, coder->firstContinueTarget);
+	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
 	coder->returnTarget = fxCoderAliasTargets(param, coder->returnTarget);
-	
 	catchTarget = fxCoderCreateTarget(param);
 	normalTarget = fxCoderCreateTarget(param);
 	fxCoderAddBranch(param, 0, XS_CODE_CATCH_1, catchTarget);

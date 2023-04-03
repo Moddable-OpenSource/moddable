@@ -51,22 +51,21 @@ let EnergyApplication = Application.template($ => ({
 				onCreate(container, data){
 					this.data = data;
 
-					const s = this.sensor = new PZEM004T({
+					this.sensor = new PZEM004T({
 						sensor: {
 							...device.Serial.default,
 							transmit: config.transmit,
 							receive: config.receive,
 							port: config.port
-						},
-						onReady: () => {
-							Timer.set(() => {
-								s.sample((error, sample) => {
-									if (error === null)
-										application.distribute("onSample", sample);
-								});
-							}, 0, 1_000);
 						}
 					});
+
+					Timer.set(() => {
+						this.sensor.sample((error, sample) => {
+							if (error === null)
+								application.distribute("onSample", sample);
+						});
+					}, 0, 1_000);
 				}
 				onSample(container, sample) {
 					const data = this.data;

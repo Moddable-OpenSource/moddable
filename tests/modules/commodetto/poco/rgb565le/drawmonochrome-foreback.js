@@ -7,6 +7,7 @@ import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 
 assert.sameValue(Bitmap.RGB565LE, screen.pixelFormat, "requires RGB565LE output");
+assert((240 === screen.width) && (320 === screen.height), "unexpected screen");
 
 const render = new Poco(screen);
 
@@ -33,7 +34,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, white, red, 10, 10);
 render.end();
 
-assert.sameValue("6937fdbe7dba788d0a6ea4fb4e6d6160", screen.checksum, "even align");
+assert.sameValue("46caf035515e075d7f73e8057729f6cb", screen.checksum, "even align");
 
 // odd align
 render.begin(10, 10, 20, 20);
@@ -41,7 +42,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, green, blue, 11, 10);
 render.end();
 
-assert.sameValue("3a920dc5188a72bd1ebeeca2600dae8e", screen.checksum, "odd align");
+assert.sameValue("8410e9b8a3e6aecc819a6ba4b111c187", screen.checksum, "odd align");
 
 // clipped left
 render.begin(10, 10, 20, 20);
@@ -49,7 +50,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, red, blue, 9, 10);
 render.end();
 
-assert.sameValue("f687c3c4df84ae56fa5fdc7deaafb4ae", screen.checksum, "clipped left");
+assert.sameValue("8aeafe3368ee74604bd306cd05dfd1e8", screen.checksum, "clipped left");
 
 // clipped right
 render.begin(10, 10, 20, 20);
@@ -57,7 +58,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, white, green, 15, 10);
 render.end();
 
-assert.sameValue("d4001fb07ea6c5355e5aa903a335c9cf", screen.checksum, "clipped right");
+assert.sameValue("f76d27ad41e382af0e229532160b874a", screen.checksum, "clipped right");
 
 // clipped top
 render.begin(10, 10, 20, 20);
@@ -65,7 +66,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, green, white, 10, 9);
 render.end();
 
-assert.sameValue("355542e76ffb01f0584d927832b3ff3f", screen.checksum, "clipped top");
+assert.sameValue("a821a2a2941fede6d1bf837fbb75ae7e", screen.checksum, "clipped top");
 
 // clipped bottom
 render.begin(10, 10, 20, 20);
@@ -73,7 +74,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, blue, red, 10, 15);
 render.end();
 
-assert.sameValue("01dd5582c5db2fa31778eadda0a24ec5", screen.checksum, "clipped bottom");
+assert.sameValue("7c07dd18d2ce9533107163ac895499cf", screen.checksum, "clipped bottom");
 
 // clipped all edges
 render.begin(11, 11, 8, 8);
@@ -81,7 +82,7 @@ render.begin(11, 11, 8, 8);
 	render.drawMonochrome(bitmap, blue, green, 10, 10);
 render.end();
 
-assert.sameValue("28cab108e5881c074f4adb8ceaffceab", screen.checksum, "clipped all edges");
+assert.sameValue("b08e9bd312514ba9795d8c33572e6c8e", screen.checksum, "clipped all edges");
 
 // clipped out
 render.begin(10, 10, 20, 20);
@@ -89,7 +90,7 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, red, red, -10, -10);
 render.end();
 
-assert.sameValue("cf69901e6d4609009dff8be5b3045c96", screen.checksum, "clipped out");
+assert.sameValue("44aed7e3f1ad596d9aed457079608ed9", screen.checksum, "clipped out");
 
 // 1 pixel wide
 render.begin(10, 10, 1, 20);
@@ -97,7 +98,7 @@ render.begin(10, 10, 1, 20);
 	render.drawMonochrome(bitmap, white, red, 10, 10);
 render.end();
 
-assert.sameValue("0275609e8fc3614f67e197ad063dfef3", screen.checksum, "1 pixel wide");
+assert.sameValue("22d40f5fb689d58867b1486767018017", screen.checksum, "1 pixel wide");
 
 // 1 pixel high
 render.begin(10, 10, 20, 1);
@@ -105,7 +106,7 @@ render.begin(10, 10, 20, 1);
 	render.drawMonochrome(bitmap, red, white, 10, 10);
 render.end();
 
-assert.sameValue("4b6468a9d0fe7fd6f9f29f3d1d3e6bd3", screen.checksum, "1 pixel high");
+assert.sameValue("5ccfb22e32f7d408b672c2aea5c39f4d", screen.checksum, "1 pixel high");
 
 // clipped to 1 pixel
 render.begin(10, 10, 1, 1);
@@ -113,7 +114,7 @@ render.begin(10, 10, 1, 1);
 	render.drawMonochrome(bitmap, blue, white, 10, 10);
 render.end();
 
-assert.sameValue("a0497bec042a6c2f536d8bf250f4d095", screen.checksum, "clipped to 1 pixel");
+assert.sameValue("e8520647df23f3e03a54cb51778c781c", screen.checksum, "clipped to 1 pixel");
 
 // source rect quarters
 render.begin(10, 10, 20, 20);
@@ -124,4 +125,4 @@ render.begin(10, 10, 20, 20);
 	render.drawMonochrome(bitmap, green, red, 19, 19, 8, 8, 8, 8);
 render.end();
 
-assert.sameValue("6a97ba04c2e87c2e1aa10af6073c9246", screen.checksum, "source rect quarters");
+assert.sameValue("427dfc791bfdf340368f661d649e3103", screen.checksum, "source rect quarters");

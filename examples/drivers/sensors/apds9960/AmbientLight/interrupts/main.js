@@ -26,14 +26,17 @@ let sensor = new APDS9960({
 	},
 	onAlert: () => {
 		const sample = sensor.sample();
-		trace(`Alert! ${JSON.stringify(sample)}\n`);
+		if (sample !== undefined)
+			trace(`Alert! ${JSON.stringify(sample)}\n`);
 	}
 });
 
 sensor.configure({
 	alsThresholdLow: 1,
 	alsThresholdHigh: 7000,
-	alsThresholdPersistence: 5
+	alsThresholdPersistence: 5,
+	enableProximity: false,
+	enableGesture: false
 });
 
 trace(`Sensor configuration is: ${JSON.stringify(sensor.configuration)}\n`);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -195,7 +195,7 @@ PRELOADS =\
 	-p unicode-ranges.xsb\
 	-p file.xsb\
 	-p url.xsb
-CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,1993,127,32768,1993,0,main
+CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,0,1993,127,32768,1993,0,main
 
 HEADERS = \
 	$(COMMODETTO)/commodettoBitmap.h \
@@ -275,8 +275,13 @@ ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(INSTRUMENTATION) $(COMMODETTO) ${CRYPT}/etc ${CRYPT}/arith ${CRYPT}/digest ${CRYPT}/digest/kcl $(TOOLS) $(TMP_DIR),-I$(dir))
+
+MACOS_ARCH ?=
+MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
+
 # C_FLAGS = -c -arch i386
-C_FLAGS = -c
+C_FLAGS = -c $(MACOS_ARCH) $(MACOS_VERSION_MIN)
+
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
@@ -286,7 +291,7 @@ endif
 LIBRARIES = -framework CoreServices
 
 # LINK_FLAGS = -arch i386
-LINK_FLAGS =
+LINK_FLAGS = $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 
 XSC = $(BUILD_DIR)/bin/mac/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/mac/$(GOAL)/xsid

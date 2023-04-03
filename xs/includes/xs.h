@@ -1191,7 +1191,8 @@ struct xsCreationRecord {
 	xsIntegerValue initialHeapCount;
 	xsIntegerValue incrementalHeapCount;
 	xsIntegerValue stackCount;
-	xsIntegerValue keyCount;
+	xsIntegerValue initialKeyCount;
+	xsIntegerValue incrementalKeyCount;
 	xsIntegerValue nameModulo;
 	xsIntegerValue symbolModulo;
 	xsIntegerValue parserBufferSize;

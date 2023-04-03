@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -45,7 +45,7 @@ void xs_net_get(xsMachine *the)
 		if (!netif_is_up(netif_list))
 			return;
 			
-		uint32_t ip = netif_ip4_addr(netif_list);
+		const ip4_addr_t *ip = netif_ip4_addr(netif_list);
 		ipaddr_ntoa_r(ip, addrStr, sizeof(addrStr));
 		xsResult = xsString(addrStr);
 	}

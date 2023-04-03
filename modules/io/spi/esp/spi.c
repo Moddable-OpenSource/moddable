@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -59,11 +59,10 @@ typedef struct SPIRecord *SPI;
 static void doChipSelect(uint8_t active, modSPIConfiguration config);
 static void doChipSelectNOP(uint8_t active, modSPIConfiguration config);
 
-//@@ pin values for in, out, and clock not being used or verified
 void xs_spi_constructor(xsMachine *the)
 {
 	SPI spi;
-	uint8_t mosi = kInvalidPin, miso = kInvalidPin, clock, select = kInvalidPin, active = 1, mode = 0;
+	uint8_t mosi = kInvalidPin, miso = kInvalidPin, clock, select = kInvalidPin, active = 0, mode = 0;
 	int hz, tmp;
 #if ESP32
 	uint8_t spiPort;
@@ -102,13 +101,15 @@ void xs_spi_constructor(xsMachine *the)
 		select = builtinGetPin(the, &xsVar(0));
 		if (!builtinIsPinFree(select))
 			xsUnknownError("in use");
-	}
 
-	if (xsmcHas(xsArg(0), xsID_active)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_active);
-		active = xsmcToInteger(xsVar(0));
-		if ((0 != active) && (1 != active))
-			xsRangeError("invalid active");
+		if (xsmcHas(xsArg(0), xsID_active)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_active);
+			active = xsmcToInteger(xsVar(0));
+			if ((0 != active) && (1 != active))
+				xsRangeError("invalid active");
+		}
+		else
+			xsTrace("WARNING: SPI used with default active (0). Please confirm that is intended.\n");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_mode)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -40,7 +40,7 @@ export default class ChecksumOut {
 			this.#digest.reset();
 		this.#continue = false;
 		
-		this.#digest.write((new Int32Array(x, y, width, height)).buffer);
+		this.#digest.write(Int32Array.of(x, y, width, height).buffer);
 	}
 	send(pixels, offset, byteLength) {
 		this.#show?.send(pixels, offset, byteLength);
@@ -73,7 +73,7 @@ export default class ChecksumOut {
 			this.#show?.adaptInvalid(r);
 	}
 	pixelsToBytes(count) {
-		return ((Bitmap.depth(this.pixelFormat) *  this.width) + 7) >> 3;
+		return ((Bitmap.depth(this.pixelFormat) * count) + 7) >> 3;
 	}
 	
 	configure(options) {

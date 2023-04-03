@@ -19,7 +19,7 @@
  */
 /*
     Broadcom APDS-9960 Proximity, Ambient Light, RGB, and Gesture Sensor
-    Driver currently supports only Ambient Light
+    Driver currently supports only Ambient Light and Proximity
     Datasheet: https://docs.broadcom.com/docs/AV02-4191EN
 */
 
@@ -30,11 +30,27 @@ const Register = Object.freeze({
   ENABLE: 0x80,
   ATIME: 0x81,
   WTIME: 0x83,
+  PILT: 0x89,
+  PIHT: 0x8B,
+  PROX_PULSE: 0x8E,
   CONTROLONE: 0x8F,
+  CONFIGTWO: 0x90,
   ID: 0x92,
   STATUS: 0x93,
   CDATAL: 0x94,
-  CDATAH: 0x95
+  CDATAH: 0x95,
+  PDATA: 0x9C,
+  POFFSET_UR: 0x9D,
+  POFFSET_DL: 0x9E,
+  GPENTH: 0xA0,
+  GEXTH: 0xA1,
+  GPULSE: 0xA6,
+  GFLVL: 0xAE,
+  GSTATUS: 0xAF,
+  GFIFO_U: 0xFC,
+  GFIFO_D: 0xFD,
+  GFIFO_L: 0xFE,
+  GIFIO_R: 0xFF
 });
 
 class Sensor {
@@ -112,27 +128,60 @@ class Sensor {
     this.configure({
       on: true,
       enableALS: true,
+      enableProximity: true,
+      enableGesture: true,
+      proximityGain: 2,
       alsIntegrationCycles: 10,
       alsGain: 1,
       alsThresholdLow: 0,
       alsThresholdHigh: 0xFFFF,
       alsThresholdPersistence: 1,
-      proximityThresholdPersistence: 1
+      proximityThresholdPersistence: 3,
+      proximityThresholdHigh: 0xFF,
+      proximityThresholdLow: 0,
+      gestureThresholdEnter: 70,
+      gestureThresholdExit: 10,
+      enableWait: true,
+      waitTime: 2.78,
+      LEDBoost: 100,
+      proximityPulseLength: 32,
+      proximityPulseCount:16,
+      proximityOffsetUR: 0,
+      proximityOffsetDL: 0,
+      gesturePulseLength: 32,
+      gesturePulseCount: 16
     });
   }
   
   configure(options){
-    const {enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence} = options;
+    const {
+          enableALS, on, alsIntegrationCycles, alsGain, proximityGain, alsThresholdHigh, 
+          alsThresholdLow, alsThresholdPersistence, proximityThresholdPersistence, enableProximity, 
+          proximityThresholdLow, proximityThresholdHigh, enableGesture, gestureThresholdEnter, gestureThresholdExit,
+          enableWait, waitTime, LEDBoost, proximityPulseLength, proximityPulseCount, proximityOffsetUR, proximityOffsetDL,
+          gesturePulseLength, gesturePulseCount} = options;
     const configuration = this.#configuration;
     const enabled = this.#configuration.enabled
     const io = this.#io;
     
     if (enableALS !== undefined) {
-      configuration.enabled.AEN = enableALS;
+      enabled.AEN = enableALS;
+    }
+
+    if (enableProximity !== undefined) {
+      enabled.PEN = enableProximity;
+    }
+
+    if (enableGesture !== undefined) {
+      enabled.GEN = enableGesture;
+    }
+
+    if (enableWait !== undefined) {
+      enabled.WEN = enableWait
     }
 
     if (on !== undefined) {
-      configuration.enabled.PON = on;
+      enabled.PON = on;
     }
 
     if (alsGain !== undefined) {
@@ -141,6 +190,68 @@ class Sensor {
 
     if (proximityGain !== undefined) {
       configuration.proximityGain = proximityGain;
+    }
+
+    if (proximityPulseLength !== undefined) {
+      if (proximityPulseLength !== 4 && proximityPulseLength !== 8 && proximityPulseLength !== 16 && proximityPulseLength !== 32)
+        throw new RangeError("invalid proximityPulseLength");
+
+      configuration.proximityPulseLength = proximityPulseLength;
+    }
+
+    if (proximityPulseCount !== undefined) {
+      if (proximityPulseCount < 1 || proximityPulseCount > 64)
+        throw new RangeError("invalid proximityPulseCount");
+
+      configuration.proximityPulseCount = proximityPulseCount;
+    }
+
+    if (proximityPulseLength !== undefined || proximityPulseCount !== undefined) {
+      const LENfield = (configuration.proximityPulseLength == 32 ? 3 : Math.floor(configuration.proximityPulseLength / 8)) << 6;
+      const PULSEfield = configuration.proximityPulseCount - 1;
+      const reg = LENfield | PULSEfield;
+      io.writeUint8(Register.PROX_PULSE, reg);
+    }
+
+    if (proximityOffsetUR !== undefined) {
+      if (proximityOffsetUR < -127 || proximityOffsetUR > 127)
+        throw new RangeError("invalid proximityOffsetUR");
+
+      let reg = Math.abs(proximityOffsetUR);
+      if (proximityOffsetUR < 0)
+        reg |= 0b10000000;
+      io.writeUint8(Register.POFFSET_UR);
+    }
+
+    if (proximityOffsetDL !== undefined) {
+      if (proximityOffsetDL < -127 || proximityOffsetDL > 127)
+        throw new RangeError("invalid proximityOffsetDL");
+
+      let reg = Math.abs(proximityOffsetDL);
+      if (proximityOffsetDL < 0)
+        reg |= 0b10000000;
+      io.writeUint8(Register.POFFSET_DL);
+    }
+
+    if (waitTime !== undefined) { // does not yet support WAITLONG
+      const closestValid = Math.round(waitTime / 2.78) * 2.78;
+
+      if (closestValid < 2.78 || closestValid > 712)
+        throw new RangeError("invalid waitTime setting");
+
+      configuration.waitTime = closestValid;
+      const value = 256 - Math.round(waitTime / 2.78);
+      io.writeUint8(Register.WTIME, value);
+    }
+
+    if (LEDBoost !== undefined) {
+      if (LEDBoost !== 100 && LEDBoost !== 150 && LEDBoost !== 200 && LEDBoost !== 300)
+        throw new RangeError("invalid LED boost");
+      
+      configuration.LEDBoost = LEDBoost;
+      const field = (LEDBoost === 100 ? 0 : Math.floor(LEDBoost / 100)) << 4;
+      const value = 0b00000001 | field;
+      io.writeUint8(Register.CONFIGTWO, value);
     }
 
     if (alsGain !== undefined || proximityGain !== undefined) {
@@ -196,6 +307,26 @@ class Sensor {
       io.writeUint8(Register.ATIME, regValue);
     }
 
+    if (gesturePulseLength !== undefined) {
+      if (gesturePulseLength !== 4 && gesturePulseLength !== 8 && gesturePulseLength !== 16 && gesturePulseLength !== 32)
+        throw new RangeError("invalid gesturePulseLength");
+
+      configuration.gesturePulseLength = gesturePulseLength;
+    }
+
+    if (gesturePulseCount !== undefined) {
+      if (gesturePulseCount < 1 || gesturePulseCount > 64)
+        throw new RangeError("invalid gesturePulseCount");
+
+      configuration.gesturePulseCount = gesturePulseCount;
+    }
+
+    if (gesturePulseLength !== undefined || gesturePulseCount !== undefined) {
+      const LENfield = (configuration.gesturePulseLength == 32 ? 3 : Math.floor(configuration.gesturePulseLength / 8)) << 6;
+      const PULSEfield = configuration.gesturePulseCount - 1;
+      const reg = LENfield | PULSEfield;
+      io.writeUint8(Register.GPULSE, reg);
+    }
 
     // Alert Thresholds
     if (alsThresholdLow !== undefined) {
@@ -210,6 +341,20 @@ class Sensor {
         throw new RangeError("invalid thresholdHigh");
       configuration.alsThresholdHigh = alsThresholdHigh;
       io.writeUint16(Register.AIHTL, alsThresholdHigh);
+    }
+
+    if (proximityThresholdLow !== undefined) {
+      if (proximityThresholdLow < 0 || proximityThresholdLow > 0xFF)
+        throw new RangeError("invalid proximityThresholdLow");
+      configuration.proximityThresholdLow = proximityThresholdLow;
+      io.writeUint8(Register.PILT, proximityThresholdLow);
+    }
+
+    if (proximityThresholdHigh !== undefined) {
+      if (proximityThresholdHigh < 0 || proximityThresholdHigh > 0xFF)
+        throw new RangeError("invalid proximityThresholdHigh");
+      configuration.proximityThresholdHigh = proximityThresholdHigh;
+      io.writeUint8(Register.PIHT, proximityThresholdHigh);
     }
 
     if (proximityThresholdPersistence !== undefined || alsThresholdPersistence !== undefined) {
@@ -239,10 +384,36 @@ class Sensor {
       } else {
         configuration.enabled.AIEN = true;
       }
-      this.#io.readUint8(0xE7); // clear interrupts
+      io.readUint8(0xE7); // clear interrupts
     }
 
-    if (on !== undefined || enableALS !== undefined || alsThresholdLow !== undefined || alsThresholdHigh !== undefined) {
+    if (proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
+      if (configuration.proximityThresholdHigh === 0xFF && configuration.proximityThresholdLow === 0) {
+        configuration.enabled.PIEN = false;
+      } else {
+        configuration.enabled.PIEN = true;
+      }
+      io.readUint8(0xE7); // clear interrupts
+    }
+
+    if (gestureThresholdEnter !== undefined) {
+      if (gestureThresholdEnter < 0 || gestureThresholdEnter > 0xFF)
+        throw new RangeError("invalid gestureThresholdEnter");
+      if (gestureThresholdEnter & 0b00010000)
+        throw new RangeError("Note: Bit 4 must be set to 0");
+      configuration.gestureThresholdEnter = gestureThresholdEnter;
+      io.writeUint8(Register.GPENTH, gestureThresholdEnter);
+    }
+
+    if (gestureThresholdExit !== undefined) {
+      if (gestureThresholdExit < 0 || gestureThresholdExit > 0xFF)
+        throw new RangeError("invalid gestureThresholdExit");
+
+      configuration.gestureThresholdExit = gestureThresholdExit;
+      io.writeUint8(Register.GEXTH, gestureThresholdExit);
+    }
+
+    if (on !== undefined || enableALS !== undefined || alsThresholdLow !== undefined || alsThresholdHigh !== undefined || proximityThresholdHigh !== undefined || proximityThresholdLow !== undefined) {
       let e = 0;
 
       if (enabled.GEN)
@@ -283,10 +454,9 @@ class Sensor {
     let result = {};
 
     if (enabled.AEN && status & 0x01) {
-      this.#io.readBuffer(Register.CDATAL, this.#alsBlock);
-      trace(`Clear: ${this.#alsView.getUint16(0, true)}\n`);
+      io.readBuffer(Register.CDATAL, this.#alsBlock);
 
-      // APDS-9960 datasheet offers no guidance on converting from raw values to Lux, so Lux is not provided in this driver's sample.
+      // APDS-9960 datasheet offers no guidance on converting from raw values to Lux, so "illuminance" is not provided in this driver's sample.
       // Values are instead [0,1] from darkness to max saturation, based on current settings.
       result.lightmeter = {
         clear: this.#alsView.getUint16(0, true) / this.#maxCount,
@@ -295,8 +465,64 @@ class Sensor {
         blue: this.#alsView.getUint16(6, true) / this.#maxCount
       }
     }
+    
+    // APDS-9960 datasheet offers no guidance on converting from raw values to distance, so "distance" is not provided in this driver's sample.
+    // `proximity` value is [0,1] from nothing sensed to max saturation
+    if (enabled.PEN && status & 0b00000010) {
+      result.proximity = {
+        proximity: (io.readUint8(Register.PDATA)  / 0xFF)
+      }
+    }
 
-    return result;
+    if (enabled.GEN) {
+      const gStatus = io.readUint8(Register.GSTATUS);
+      if (gStatus & 0x01) {
+        const count = io.readUint8(Register.GFLVL);
+        const data = io.readBuffer(Register.GFIFO_U, count * 4);
+        const view = new DataView(data);
+
+        if (count >= 4) {
+          let first = [-1, -1, -1, -1];
+          // let last = [-1, -1, -1, -1];  // not yet used
+          const enter = configuration.gestureThresholdEnter;
+          const exit = configuration.gestureThresholdExit;
+
+          for (let i = 0; i < count; i++) {
+            for (let j = 0; j < 4; j++) {
+              const value = view.getUint8((4*i) + j);
+
+              if (value >= enter && (first[j] == -1))
+                first[j] = i;
+
+              // if (value >= exit && (first[j] !== -1))
+              //   last[j] = i;
+            }
+          }
+          
+          if (first.every(element => { return element >= 0; })) {
+            const deltaUpDown = first[0] - first[1];
+            const deltaLeftRight = first[2] - first[3];
+
+            if (Math.abs(deltaUpDown) > Math.abs(deltaLeftRight)) {
+              if (deltaUpDown < 0) {
+                result.gestureDetector = {gesture: "UP"};
+              } else {
+                result.gestureDetector = {gesture: "DOWN"};
+              }
+            } else {
+              if (deltaLeftRight < 0) {
+                result.gestureDetector = {gesture: "LEFT"};
+              } else {
+                result.gestureDetector = {gesture: "RIGHT"};
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (Object.keys(result).length > 0)
+      return result;
   }
 
   close() {

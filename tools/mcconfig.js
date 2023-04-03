@@ -54,7 +54,8 @@ class MakeFile extends MAKEFILE {
 				creation.heap.initial, ",", 
 				creation.heap.incremental, ",", 
 				creation.stack, ",", 
-				creation.keys.available, ",", 
+				creation.keys.initial, ",", 
+				creation.keys.incremental, ",", 
 				creation.keys.name, ",", 
 				creation.keys.symbol, ",",
 				creation.parser.buffer, ",",
@@ -762,6 +763,7 @@ export default class extends Tool {
 		}
 		else
 			this.fragmentPath = path;
+		this.nativeCode = true;
 	}
 	createDirectories(path, first, last) {
 		this.createDirectory(path);
@@ -872,7 +874,17 @@ export default class extends Tool {
 		creation.heap.incremental ??= 64;
 		creation.stack ??= 384;
 		creation.keys ??= {};
-		if (!creation.keys.available) creation.keys.available = 256;
+		if (creation.keys.initial) {
+			creation.keys.incremental ??= 0;
+		}
+		else if (creation.keys.available) {
+			creation.keys.initial = creation.keys.available;
+			creation.keys.incremental = 0;
+		}
+		else {
+			creation.keys.initial = 256;
+			creation.keys.incremental = 0;
+		}
 		if (!creation.keys.name) creation.keys.name = 127;
 		if (!creation.keys.symbol) creation.keys.symbol = 127;
 		creation.parser ??= {};

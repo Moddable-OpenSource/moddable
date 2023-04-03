@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -54,8 +54,13 @@ UPLOAD_RESET = nodemcu
 UPLOAD_VERB = -v
 !ENDIF
 
-START_SERIAL2XSBUG= set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+!IF "$(XSBUG_LOG)"=="1"
+START_SERIAL2XSBUG= echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+START_XSBUG=
+!ELSE
+START_SERIAL2XSBUG= echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
 START_XSBUG= tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(BUILD_DIR)\bin\win\release\xsbug.exe)
+!ENDIF
 KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 
 
@@ -264,6 +269,7 @@ C_DEFINES = \
 	-DARDUINO_ARCH_ESP8266 \
 	-DWINBUILD=1 \
 	-DESP8266 \
+	-DCONT_STACKSIZE=4608 \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
@@ -368,6 +374,7 @@ release: precursor
 build: precursor
 
 deploy:
+	$(KILL_SERIAL2XSBUG)
 	if not exist $(BIN_DIR)\main.bin (echo # Build before deploy) else ( $(UPLOAD_TO_ESP) )
 
 xsbug:

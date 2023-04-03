@@ -27,8 +27,8 @@ new Application(null, {
 	Behavior: StateChangeBehavior
 });
 
-screen.checkImage("73328e0ea82021eb0cef0ac14a7832ee");
+screen.checkImage("73d09edd8afd47d9038203b6c975f44c");
 application.distribute("changeState", 1);
-screen.checkImage("3f60942166d96e84ed78b1941f108926");
+screen.checkImage("629c607faf060721f75196b5344fe974");
 application.distribute("changeState", 0.75);
-screen.checkImage("337eb6778402eb4008dab9016c134bb9");
+screen.checkImage("f2e08a7351408194550682bae2e47340");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -53,9 +53,9 @@ class TLSSocket {
 
 		this.#socket = new options.TCP.io({
 			...options,
-			onReadable: this.#onReadable.bind(this),
-			onWritable: this.#onWritable.bind(this),
-			onError: this.#onError.bind(this)
+			onReadable: count => this.#onReadable(count),
+			onWritable: count => this.#onWritable(count),
+			onError: () => this.#onError()
 		});
 		this.#socket.readable =
 		this.#socket.writable = 0;
@@ -145,8 +145,10 @@ class TLSSocket {
 		}
 
 		const data = this.#session.read(this.#socket);
-		if (!data)
+		if (undefined === data)		// nothing to read
 			return;
+		if (null === data)		// closed
+			return void this.#onError();
 		data.position = 0;
 		const readable = data.byteLength;
 		if (!readable)

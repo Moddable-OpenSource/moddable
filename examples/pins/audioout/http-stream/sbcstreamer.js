@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022  Moddable Tech, Inc.
+ * Copyright (c) 2020-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,7 +51,8 @@ class SBCStreamer {
 			host: options.host
 		};
 		if (options.port)
-			o.port = options.port; 
+			o.port = options.port;
+		this.#targetBytesQueued = options.bufferDuration ?? 1000;
 		this.#http = new options.http.io(o);
 		this.#request = this.#http.request({
 			path: options.path,
@@ -81,8 +82,8 @@ class SBCStreamer {
 						return;
 					}
 
-					this.#targetBytesQueued =  Math.idiv(this.#header.sampleRate, 128) * this.#header.bytesPerChunk;		// bytes in one second (128 samples per chunk)
-					this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, this.#header.bytesPerChunk << 3) * this.#header.bytesPerChunk;			// 1/8th second blocks
+					this.#targetBytesQueued = Math.idiv(this.#header.sampleRate * (this.#targetBytesQueued / 1000), 128) * this.#header.bytesPerChunk;		// bytes in bufferDuration (128 samples per chunk)
+					this.#bytesPerBlock = Math.idiv(this.#targetBytesQueued, this.#header.bytesPerChunk << 3) * this.#header.bytesPerChunk;					// 1/8th second blocks
 
 					this.#ready = false;	
 

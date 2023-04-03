@@ -11,7 +11,7 @@
 		]
 	},
 	"defines": {
-		"audioin": {
+		"audioIn": {
 			"sampleRate": 8000,
 			"bitsPerSample": 8
 		}
