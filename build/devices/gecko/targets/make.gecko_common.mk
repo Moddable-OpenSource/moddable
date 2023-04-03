@@ -142,7 +142,6 @@ C_DEFINES += \
 	-Dgecko=1 \
 	-D$(HWPART)=1 \
 	-U__STRICT_ANSI__ \
-	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \

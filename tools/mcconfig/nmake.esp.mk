@@ -74,14 +74,6 @@ FLASH_LAYOUT = eagle.flash.4m.ld
 WIFI_SSID =
 WIFI_PSK =
 
-# End user-configurable values. Derived values below.
-!IF "$(WIFI_SSID)"!=""
-NET_CONFIG_FLAGS += -DWIFI_SSID=$(WIFI_SSID)
-!ENDIF
-!IF "$(WIFI_PSK)"!=""
-NET_CONFIG_FLAGS += -DWIFI_PSK=$(WIFI_PSK)
-!ENDIF
-
 CORE_DIR = $(ARDUINO_ROOT)\cores\esp8266
 
 INC_DIRS = \
@@ -270,7 +262,6 @@ C_DEFINES = \
 	-DWINBUILD=1 \
 	-DESP8266 \
 	-DCONT_STACKSIZE=4608 \
-	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DmxNoConsole=1 \
