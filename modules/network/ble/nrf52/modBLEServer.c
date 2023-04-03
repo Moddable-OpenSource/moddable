@@ -242,11 +242,16 @@ void xs_ble_server_set_device_name(xsMachine *the)
 	ble_gap_conn_sec_mode_t sec_mode;
 	const char *name = xsmcToString(xsArg(0));
 
+	if (!gBLE)
+		xsUnknownError("BLE Server not yet initialized");
+
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
     err_code = sd_ble_gap_device_name_set(&sec_mode, name, c_strlen(name));
 	if (NRF_SUCCESS != err_code)
 		xsUnknownError("ble set device name failed");
+
+	sd_ble_gatts_service_changed(gBLE->conn_handle, 0x00, 0xFF);
 
 	gBLE->deviceNameSet = 1;
 }
@@ -396,6 +401,9 @@ void xs_ble_server_deploy(xsMachine *the)
 
 		if (UUID_LEN_16 == att_desc->uuid_length && 0x00 == att_desc->value[0] && 0x18 == att_desc->value[1])
 			continue;	// don't register gap service
+
+		if (UUID_LEN_16 == att_desc->uuid_length && 0x01 == att_desc->value[0] && 0x18 == att_desc->value[1])
+			continue;	// don't register Generic Attribute service
 			
 		if (UUID_LEN_16 == att_desc->length) {
 			uint16_t service_uuid = *(uint16_t*)att_desc->value;
