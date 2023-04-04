@@ -97,7 +97,7 @@ PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
 UF2_VOLUME_NAME = MODDABLE4
 WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 DO_COPY = -for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
-ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE)
+ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE) $(NRF52_HEAP_SIZE)
 
 !IF "$(DEBUG)"=="1"
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)

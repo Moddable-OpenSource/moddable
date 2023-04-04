@@ -10,6 +10,8 @@ SET MOD_PREFS_SIZE=8192
 REM 0xC000
 SET BOOTLOADER_SIZE=49152
 
+SET /a HEAP_SIZE=%3
+
 SET modRamTotal = 0
 SET modHeapTotal = 0
 SET modFlashTotal = 0
@@ -19,8 +21,6 @@ SET modGitTag=unknown (CMD git is not installed)
 FOR /F "tokens=* USEBACKQ" %%a IN (`git -C %2 describe --tags --always --dirty 2^>nul`) DO SET modGitTag=%%a
 
 FOR /F "tokens=1,2 skip=1" %%j in (%1) DO (
-    echo %%j | findstr /R "^\.heap " >nul
-    if !errorlevel! == 0 SET /A modHeapTotal += %%k
     echo %%j | findstr /R "^\.no_init ^\.data ^\.fs_data ^\.bss ^\.stack_dummy " >nul
     if !errorlevel! == 0 SET /A modRamTotal += %%k
     echo %%j | findstr /R "^\.text ^\.sdh ^\.crypto ^\.nrf ^\.ARM.exidx " >nul
@@ -33,11 +33,11 @@ FOR /F "tokens=1,2 skip=1" %%j in (%1) DO (
 	)
 )
 
-SET /A modRamTotal=%modRamTotal%+%SOFTDEVICE_RAM%
+SET /A modRamTotal=%modRamTotal%+%SOFTDEVICE_RAM%-%HEAP_SIZE%
 SET /A modFlashTotal=%modFlashTotal%+%SOFTDEVICE_ADDR%+%MOD_PREFS_SIZE%+%BOOTLOADER_SIZE%
 
 SET modRamTotal=            %modRamTotal%
-SET modHeapTotal=           %modHeapTotal%
+SET modHeapTotal=           %HEAP_SIZE%
 SET modFlashTotal=          %modFlashTotal%
 SET modQSPITotal=           %modQSPITotal%
 
@@ -47,8 +47,8 @@ echo #  XS:    %modGitTag%
 echo # Memory Usage
 echo #  Ram:   %modRamTotal:~-6% bytes
 echo #  Heap:  %modHeapTotal:~-6% bytes
-echo #  Flash: %modFlashTotal:~-6% bytes
-echo #  QSPI:  %modQSPITotal:~-6% bytes
+echo #  Flash: %modFlashTotal:~-7% bytes
+echo #  QSPI:  %modQSPITotal:~-7% bytes
 echo.
 
 SET modRamTotal=
