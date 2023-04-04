@@ -506,7 +506,7 @@ NRF_C_DEFINES = \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
 	-D__ARM_ARCH_FPV4_SP_D16__ \
-	-D__HEAP_SIZE=$(NRF52_HEAP_SIZE) \
+	-D__HEAP_SIZE__=$(NRF52_HEAP_SIZE) \
 	-D__GNU_LINKER \
 	-D$(BOARD_DEF) \
 	-DCONFIG_GPIO_AS_PINRESET \
@@ -599,7 +599,8 @@ ASMFLAGS = \
 	-DSOFTDEVICE_PRESENT \
 	-DNRF_CRYPTO_MAX_INSTANCE_COUNT=1 \
 	-DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION \
-	-D__HEAP_SIZE=$(NRF52_HEAP_SIZE)
+	-D__HEAP_SIZE=$(NRF52_HEAP_SIZE) \
+	-D__STACK_SIZE=512
 
 LDFLAGS = \
 	-mabi=aapcs \
@@ -703,7 +704,7 @@ $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
-$(LIB_DIR)\moddable_startup_nrf52840.o: $(NRF52_SDK_ROOT)\modules\nrfx\mdk\moddable_startup_nrf52840.S
+$(LIB_DIR)\moddable_startup_nrf52840.o: $(BUILD_DIR)\devices\nrf52\xsProj\moddable_startup_nrf52840.S
 	@echo # asm $(@F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $? -o $@
 
