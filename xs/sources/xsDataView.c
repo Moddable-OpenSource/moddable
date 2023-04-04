@@ -300,6 +300,8 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toLocaleString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
 	property = mxBehaviorGetProperty(the, mxArrayPrototype.value.reference, mxID(_toString), 0, XS_OWN);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_toString), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toReversed), 0, mxID(_toReversed), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toSorted), 1, mxID(_toSorted), XS_DONT_ENUM_FLAG);
 	property = slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_values), 0, mxID(_values), XS_DONT_ENUM_FLAG);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	mxTypedArrayPrototype = *the->stack;	
@@ -2260,7 +2262,7 @@ void fx_TypedArray_prototype_sort(txMachine* the)
 		}
 	}
 	if (function)
-		fxSortArrayItems(the, function, C_NULL, length);
+		fxSortArrayItems(the, function, C_NULL, length, mxThis);
 	else
 		c_qsort(data->value.arrayBuffer.address, length, delta, dispatch->value.typedArray.dispatch->compare);
 	mxResult->kind = mxThis->kind;
@@ -2333,6 +2335,61 @@ void fx_TypedArray_prototype_toLocaleString(txMachine* the)
 	*string = 0;
 	mxResult->kind = XS_STRING_KIND;
 	mxPop();
+}
+
+void fx_TypedArray_prototype_toReversed(txMachine* the)
+{
+	mxTypedArrayDeclarations;
+	txInteger delta = dispatch->value.typedArray.dispatch->size;
+	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	mxPushSlot(constructor);
+	mxNew();
+	mxPushInteger(length);
+	mxRunCount(1);
+	mxPullSlot(mxResult);
+	if (length) {
+		mxResultTypedArrayDeclarations;
+		txByte* base = buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset;
+		txByte* from = base + (resultLength << dispatch->value.typedArray.dispatch->shift) - delta;
+		txByte* to = resultBuffer->value.reference->next->value.arrayBuffer.address;
+		while (from >= base) {
+			txInteger offset;
+			for (offset = 0; offset < delta; offset++)
+				*to++ = *from++;
+			from -= delta << 1;
+		}
+	}
+}
+
+void fx_TypedArray_prototype_toSorted(txMachine* the)
+{
+	mxMutableTypedArrayDeclarations;
+	txInteger delta = dispatch->value.typedArray.dispatch->size;
+	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	txSlot* function = C_NULL;
+	if (mxArgc > 0) {
+		txSlot* slot = mxArgv(0);
+		if (slot->kind != XS_UNDEFINED_KIND) {
+			if (fxIsCallable(the, slot))
+				function = slot;
+			else
+				mxTypeError("compare is no function");
+		}
+	}
+	mxPushSlot(constructor);
+	mxNew();
+	mxPushInteger(length);
+	mxRunCount(1);
+	mxPullSlot(mxResult);
+	if (function)
+		fxSortArrayItems(the, function, C_NULL, length, mxResult);
+	else {
+		mxResultTypedArrayDeclarations;
+		txByte* from = buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset;
+		txByte* to = resultBuffer->value.reference->next->value.arrayBuffer.address;
+		c_memcpy(to, from, 	resultLength << dispatch->value.typedArray.dispatch->shift);		
+		c_qsort(to, length, delta, dispatch->value.typedArray.dispatch->compare);
+	}
 }
 
 void fx_TypedArray_prototype_toStringTag_get(txMachine* the)

@@ -454,7 +454,7 @@ txSlot* fxToReference(txMachine* the, txSlot* theSlot)
 
 /* Instances and Prototypes */
 
-txSlot* fxNewArray(txMachine* the, txInteger size)
+txSlot* fxNewArray(txMachine* the, txIndex size)
 {
 	txSlot* instance;
 	mxPush(mxArrayPrototype);

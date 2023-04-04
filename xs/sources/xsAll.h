@@ -577,7 +577,7 @@ mxExport txSlot* fxToClosure(txMachine* the, txSlot* theSlot);
 mxExport void fxReference(txMachine* the, txSlot* theSlot, txSlot* theReference);
 mxExport txSlot* fxToReference(txMachine* the, txSlot* theSlot);
 
-mxExport txSlot* fxNewArray(txMachine*, txInteger);
+mxExport txSlot* fxNewArray(txMachine*, txIndex);
 mxExport txSlot* fxNewObject(txMachine*);
 mxExport txBoolean fxIsInstanceOf(txMachine*);
 mxExport void fxArrayCacheBegin(txMachine*, txSlot*);
@@ -1382,6 +1382,9 @@ mxExport void fx_Array_prototype_some(txMachine* the);
 mxExport void fx_Array_prototype_sort(txMachine* the);
 mxExport void fx_Array_prototype_splice(txMachine* the);
 mxExport void fx_Array_prototype_toLocaleString(txMachine* the);
+mxExport void fx_Array_prototype_toReversed(txMachine* the);
+mxExport void fx_Array_prototype_toSorted(txMachine* the);
+mxExport void fx_Array_prototype_toSpliced(txMachine* the);
 mxExport void fx_Array_prototype_toString(txMachine* the);
 mxExport void fx_Array_prototype_unshift(txMachine* the);
 mxExport void fx_Array_prototype_values(txMachine* the);
@@ -1394,7 +1397,7 @@ extern void fxCacheArray(txMachine* the, txSlot* theArray);
 extern void fxConstructArrayEntry(txMachine* the, txSlot* entry);
 extern txBoolean fxIsArray(txMachine* the, txSlot* instance);
 extern txSlot* fxNewArrayInstance(txMachine* the);
-extern void fxSortArrayItems(txMachine* the, txSlot* function, txSlot* array, txNumber LENGTH);
+extern void fxSortArrayItems(txMachine* the, txSlot* function, txSlot* array, txNumber LENGTH, txSlot* target);
 extern txNumber fxToLength(txMachine* the, txSlot* slot);
 
 /* xsDataView.c */
@@ -1523,6 +1526,8 @@ mxExport void fx_TypedArray_prototype_some(txMachine* the);
 mxExport void fx_TypedArray_prototype_sort(txMachine* the);
 mxExport void fx_TypedArray_prototype_subarray(txMachine* the);
 mxExport void fx_TypedArray_prototype_toLocaleString(txMachine* the);
+mxExport void fx_TypedArray_prototype_toReversed(txMachine* the);
+mxExport void fx_TypedArray_prototype_toSorted(txMachine* the);
 mxExport void fx_TypedArray_prototype_toStringTag_get(txMachine* the);
 mxExport void fx_TypedArray_prototype_values(txMachine* the);
 
