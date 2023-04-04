@@ -294,14 +294,17 @@ extern void *my_malloc(size_t size);
 #define c_calloc my_calloc
 #define c_malloc my_malloc
 #define c_realloc my_realloc
+#define c_free my_free
 #else
-#define c_calloc calloc
-#define c_malloc malloc
-#define c_realloc realloc
+extern void *pvPortCalloc(size_t nitems, size_t size);
+extern void *pvPortRealloc(void *ptr, size_t size);
+#define c_calloc pvPortCalloc
+#define c_malloc pvPortMalloc
+#define c_realloc pvPortRealloc
+#define c_free vPortFree
 #endif
 
 #define c_exit(n) { nrf52_reset(); }
-#define c_free free
 #define c_qsort qsort
 #define c_strtod strtod
 #define c_strtol strtol
@@ -476,7 +479,10 @@ extern uint8_t *espFindUnusedFlashStart(void);
 
 extern uint32_t _MODPREF_start;		// from linker
 extern uint32_t _MODDABLE_start;	// from linker
-#define kModulesEnd ((uintptr_t)&_MODPREF_start)
+extern uint32_t _MODDABLE_end;		// from linker
+// #define kModulesEnd ((uintptr_t)&_MODPREF_start)
+
+#define kModulesEnd ((uintptr_t)&_MODDABLE_end)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
 
 extern uint8_t modSPIFlashInit(void);

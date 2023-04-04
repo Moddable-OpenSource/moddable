@@ -260,13 +260,13 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
 If you are building an application and the link fails with an error `arm-none-eabi/bin/ld: region RAM overflowed with stack`, you will need to reduce the amount of RAM allocated to the heap.
 
-By default, `HEAP_SIZE` is set to 0x32800.
+By default, `NRF52_HEAP_SIZE` is set to 0x35000.
 
-In your application manifest, you can change the `HEAP_SIZE` allocation:
+In your application manifest, you can change the `NRF52_HEAP_SIZE` allocation:
 
 ```text
     "build": {
-        "HEAP_SIZE": "0x30000"
+        "NRF52_HEAP_SIZE": "0x30000"
      }
 ```
 

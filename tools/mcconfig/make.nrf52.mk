@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -119,22 +119,12 @@ SOFTDEVICE_HEX ?= $(NRF_SDK_DIR)/components/softdevice/s140/hex/s140_nrf52_7.0.2
 # BOARD_DEF = BOARD_SPARKFUN_NRF52840_MINI
 BOARD_DEF ?= BOARD_MODDABLE_FOUR
 
-# HEAP_SIZE can be overridden by the manifest.json
-#HEAP_SIZE = 0x13000
-HEAP_SIZE ?= 0x32800	
+# NRF52_HEAP_SIZE can be overridden by the manifest.json
+#NRF52_HEAP_SIZE = 0x13000
+NRF52_HEAP_SIZE ?= 0x35000	
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
-
-ifeq ($(DEBUG),1)
-	LIB_DIR = $(BUILD_DIR)/tmp/nrf52/debug/lib
-else
-	ifeq ($(INSTRUMENT),1)
-		LIB_DIR = $(BUILD_DIR)/tmp/nrf52/instrument/lib
-	else
-		LIB_DIR = $(BUILD_DIR)/tmp/nrf52/release/lib
-	endif
-endif
 
 ifeq ($(DEBUG),1)
 	ifeq ($(USE_USB),1)
@@ -170,7 +160,8 @@ ASMFLAGS += -DS140
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DNRF_CRYPTO_MAX_INSTANCE_COUNT=1
 ASMFLAGS += -DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION
-ASMFLAGS += -D__HEAP_SIZE=$(HEAP_SIZE)
+ASMFLAGS += -D__HEAP_SIZE=$(NRF52_HEAP_SIZE)
+ASMFLAGS += -D__STACK_SIZE=512
 
 # Linker flags
 LDFLAGS += \
@@ -388,7 +379,7 @@ BOARD_SUPPORT = \
 FREERTOS_OBJECTS = \
 	$(LIB_DIR)/croutine.c.o \
 	$(LIB_DIR)/event_groups.c.o \
-	$(LIB_DIR)/heap_3.c.o \
+	$(LIB_DIR)/heap_4.c.o \
 	$(LIB_DIR)/list.c.o \
 	$(LIB_DIR)/port_cmsis_systick.c.o \
 	$(LIB_DIR)/port_cmsis.c.o \
@@ -399,10 +390,12 @@ FREERTOS_OBJECTS = \
 	$(LIB_DIR)/timers.c.o
 
 STARTUP_OBJECTS = \
-	$(LIB_DIR)/gcc_startup_nrf52840.S.o \
 	$(LIB_DIR)/system_nrf52840.c.o \
 	$(LIB_DIR)/hardfault_handler_gcc.c.o \
 	$(LIB_DIR)/hardfault_implementation.c.o \
+	$(LIB_DIR)/moddable_startup_nrf52840.S.o \
+
+#	$(LIB_DIR)/gcc_startup_nrf52840.S.o
 
 NRF_BLE_OBJECTS = \
 	$(LIB_DIR)/auth_status_tracker.c.o \
@@ -591,7 +584,7 @@ NRF_C_DEFINES= \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
 	-D__ARM_ARCH_FPV4_SP_D16__ \
-	-D__HEAP_SIZE__=$(HEAP_SIZE) \
+	-D__HEAP_SIZE__=$(NRF52_HEAP_SIZE) \
 	-D__GNU_LINKER \
 	-D$(BOARD_DEF) \
 	-DCONFIG_GPIO_AS_PINRESET \
@@ -703,14 +696,16 @@ ESP_GIT_VERSION = $(call git_description,$(ARDUINO_ROOT))
 time_string = $(shell perl -e 'use POSIX qw(strftime); print strftime($(1), localtime());')
 BUILD_DATE = $(call time_string,"%Y-%m-%d")
 BUILD_TIME = $(call time_string,"%H:%M:%S")
+#      $$h += $$1 if /^\.(?:ucHeap)\s+(\d+)/;
 MEM_USAGE = \
   'while (<>) { \
-      $$h += $$1 if /^\.(?:heap)\s+(\d+)/;\
 	  $$r += $$1 if /^\.(?:no_init|data|fs_data|bss|stack_dummy)\s+(\d+)/;\
 	  $$f += $$1 if /^\.(?:text|sdh*|crypto*|nrf*|ARM.exidx)\s+(\d+)/;\
 	  ${QSPI_COUNT} += $$1 if /^\.(?:rodata.resources|xs_lib_flash)\s+(\d+)/;\
 	  $$x += $$1 if /^\.(?:rodata.resources|xs_lib_flash)\s+(\d+)/;\
 	 }\
+    $$h += ${NRF52_HEAP_SIZE};\
+	$$r -= ${NRF52_HEAP_SIZE}; \
 	$$f += ${SOFTDEVICE_ADDR} ; \
 	$$f += ${MOD_PREFS_SIZE} ; \
 	$$f += ${BOOTLOADER_SIZE} ; \
@@ -848,7 +843,9 @@ $(TMP_DIR):
 	@echo "TMP_DIR"
 	mkdir -p $(TMP_DIR)
 
-$(LIB_DIR):
+libdir:
+
+$(LIB_DIR): libdir
 	mkdir -p $(LIB_DIR)
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
 	

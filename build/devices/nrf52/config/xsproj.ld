@@ -14,6 +14,7 @@ MEMORY
 
 PROVIDE(_MODPREF_start = 0xF2000);
 PROVIDE(_MODDABLE_start = 0x27000);
+PROVIDE(_MODDABLE_end = 0xEF000);
 
 /* much of Moddable code goes into flash */
 /* this is in nrf_common.h */

@@ -772,32 +772,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 #endif /* mxDebug */
 
-extern int __HeapLimit;		// from linker
-extern int end;				// from linker
-static uint8_t *heap_end = 0;
-static uint32_t heap_allocated = 0;
-
-void *_sbrk(int incr) {
-	uint8_t *prev_heap_end;
-	
-	if (heap_end == 0)
-		heap_end = (uint8_t*)&end;
-
-	prev_heap_end = heap_end;
-	if ((heap_end + incr) > (uint8_t*)&__HeapLimit) {
-		modLog("out of heap");
-		return NULL;
-	}
-
-	heap_end += incr;
-heap_allocated += incr;
-//ftdiTraceAndHex2(" allocd, end", heap_allocated, heap_end);
-//ftdiTraceAndHex(" remain", nrf52_memory_remaining());
-	return (void*)prev_heap_end;
-}
-
 uint32_t nrf52_memory_remaining() {
-	return ((uint8_t*)&__HeapLimit - heap_end);
+	return xPortGetFreeHeapSize();
 }
-
 

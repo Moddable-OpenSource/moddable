@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -121,20 +121,12 @@ FTDI_TRACE = -DUSE_FTDI_TRACE=0
 BOARD = pca10056
 BOARD_DEF = BOARD_MODDABLE_FOUR
 
-!IF "$(HEAP_SIZE)"==""
-HEAP_SIZE = 0x32800
+!IF "$(NRF52_HEAP_SIZE)"==""
+NRF52_HEAP_SIZE = 0x35000
 !ENDIF
 
 HWCPU = cortex-m4
 SOFT_DEVICE = s140
-
-!IF "$(DEBUG)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\debug\lib
-!ELSEIF "$(INSTRUMENT)"=="1"
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\instrument\lib
-!ELSE
-LIB_DIR = $(BUILD_DIR)\tmp\$(PLATFORMPATH)\release\lib
-!ENDIF
 
 !IF "$(DEBUG)"=="1"
 !IF "$(USE_USB)"=="1"
@@ -265,7 +257,7 @@ BOARD_SUPPORT_OBJ = \
 FREERTOS_OBJ = \
 	$(LIB_DIR)\croutine.o \
 	$(LIB_DIR)\event_groups.o \
-	$(LIB_DIR)\heap_3.o \
+	$(LIB_DIR)\heap_4.o \
 	$(LIB_DIR)\list.o \
 	$(LIB_DIR)\port.o \
 	$(LIB_DIR)\port_cmsis.o \
@@ -417,10 +409,12 @@ SDK_GLUE_OBJ = \
 #	$(TMP_DIR)\nrf52_serial.o 
 
 STARTUP_OBJ = \
-	$(LIB_DIR)\gcc_startup_nrf52840.o \
+	$(LIB_DIR)\moddable_startup_nrf52840.o \
 	$(LIB_DIR)\hardfault_handler_gcc.o \
 	$(LIB_DIR)\hardfault_implementation.o \
 	$(LIB_DIR)\system_nrf52840.o
+
+#	$(LIB_DIR)\gcc_startup_nrf52840.o
 
 XS_OBJ = \
 	$(LIB_DIR)\xsAll.o \
@@ -512,7 +506,7 @@ NRF_C_DEFINES = \
 	-D__SIZEOF_WCHAR_T=4 \
 	-D__ARM_ARCH_7EM__ \
 	-D__ARM_ARCH_FPV4_SP_D16__ \
-	-D__HEAP_SIZE=$(HEAP_SIZE) \
+	-D__HEAP_SIZE=$(NRF52_HEAP_SIZE) \
 	-D__GNU_LINKER \
 	-D$(BOARD_DEF) \
 	-DCONFIG_GPIO_AS_PINRESET \
@@ -605,7 +599,7 @@ ASMFLAGS = \
 	-DSOFTDEVICE_PRESENT \
 	-DNRF_CRYPTO_MAX_INSTANCE_COUNT=1 \
 	-DSVC_INTERFACE_CALL_AS_NORMAL_FUNCTION \
-	-D__HEAP_SIZE=$(HEAP_SIZE)
+	-D__HEAP_SIZE=$(NRF52_HEAP_SIZE)
 
 LDFLAGS = \
 	-mabi=aapcs \
@@ -709,7 +703,7 @@ $(LIB_DIR)\buildinfo.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
 
-$(LIB_DIR)\gcc_startup_nrf52840.o: $(NRF52_SDK_ROOT)\modules\nrfx\mdk\gcc_startup_nrf52840.S
+$(LIB_DIR)\moddable_startup_nrf52840.o: $(NRF52_SDK_ROOT)\modules\nrfx\mdk\moddable_startup_nrf52840.S
 	@echo # asm $(@F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $? -o $@
 
