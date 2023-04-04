@@ -19,7 +19,7 @@ new Application(null, {
 	contents: [ content ]
 });
 
-screen.checkImage("71a0212a51d4865fccc2bc3f38e2f305");
+screen.checkImage("6976b2da2767b4453c4def3163003888");
 
 content.delegate("changeWidth", 100);
-screen.checkImage("4324fba1206d67ecb4cb6bed8c674818");
+screen.checkImage("ced20a618e858c92117ebd10cbdca063");

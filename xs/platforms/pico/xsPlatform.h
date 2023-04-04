@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -82,12 +82,12 @@
 	#define false 0
 #endif
 
-typedef signed char txS1;
-typedef unsigned char txU1;
-typedef short txS2;
-typedef unsigned short txU2;
-typedef long txS4;
-typedef unsigned long txU4;
+typedef int8_t txS1;
+typedef uint8_t txU1;
+typedef int16_t txS2;
+typedef uint16_t txU2;
+typedef int32_t txS4;
+typedef uint32_t txU4;
 typedef int64_t txS8;
 typedef uint64_t txU8;
 

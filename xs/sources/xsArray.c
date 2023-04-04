@@ -333,6 +333,8 @@ txSlot* fxCheckArrayItems(txMachine* the, txSlot* array, txIndex from, txIndex t
 	while (from < to) {
 		if (address->flag)
 			return C_NULL;
+		if (address->kind == XS_ACCESSOR_KIND)
+			return C_NULL;
 		address++;
 		from++;
 	}

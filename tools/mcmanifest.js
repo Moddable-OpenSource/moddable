@@ -364,12 +364,9 @@ export class MakeFile extends FILE {
 		this.line("LIB_DIR = ", tool.libPath);
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("XSBUG_HOST = ", tool.xsbug?.host ?? "localhost");
-		if (tool.xsbugLog) {
-			this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 50002);
+		this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
+		if (tool.xsbugLog)
 			this.line("XSBUG_LOG = 1");
-		}
-		else
-			this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
 		
 		this.line("");
 
@@ -799,7 +796,7 @@ export class MakeFile extends FILE {
 			var source = result.source;
 			
 			if (!tool.getenv("FONTBM"))
-				throw new Error("$(FONTBM) environemnt variable not set");
+				throw new Error("$(FONTBM) environment variable not set. Is fontbm installed?");
 			
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
@@ -1740,6 +1737,28 @@ export class Tool extends TOOL {
 		}
 		this.currentDirectory = currentDirectory;
 	}
+	mergeNodeRed(manifests) {
+		manifests.forEach(manifest => {
+			const modules = manifest.modules?.["*"];
+			if (!modules) return;
+
+			for (const specifier in modules) {
+				const module = modules[specifier];
+				if ("object" !== typeof module)
+					continue;
+				if ("nodered2mcu" !== module.transform)
+					return;
+
+				this.currentDirectory = manifest.directory;
+				const source = this.resolveFilePath(this.resolveVariable(module.source) + ".json");
+				const flows = JSON.parse(this.readFileString(source));
+				flows.forEach((node, i) => {
+					if (node.moddable_manifest)
+						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
+				});
+			}
+		});
+	}
 	mergePlatform(all, platform) {
 		this.mergeProperties(all.config, platform.config);
 		this.mergeProperties(all.creation, platform.creation);
@@ -1814,19 +1833,21 @@ export class Tool extends TOOL {
 			}
 		}
 	}
-	parseManifest(path) {
+	parseManifest(path, manifest) {
 		let platformInclude;
-		var buffer = this.readFileString(path);
-		try {
-			var manifest = JSON.parse(buffer);
-		}
-		catch (e) {
-			var message = e.toString();
-			var result = /SyntaxError: ([^:]+: )?([0-9]+): (.+)/.exec(message);
-			if (result.length == 4) {
-				this.reportError(path, parseInt(result[2]), result[3]);
+		if (!manifest) {
+			var buffer = this.readFileString(path);
+			try {
+				var manifest = JSON.parse(buffer);
 			}
-			throw new Error("'" + path + "': invalid manifest!");;
+			catch (e) {
+				var message = e.toString();
+				var result = /SyntaxError: ([^:]+: )?([0-9]+): (.+)/.exec(message);
+				if (result.length == 4) {
+					this.reportError(path, parseInt(result[2]), result[3]);
+				}
+				throw new Error("'" + path + "': invalid manifest!");;
+			}
 		}
 		this.manifests.already[path] = manifest;
 		this.parseBuild(manifest);
@@ -1897,6 +1918,9 @@ export class Tool extends TOOL {
 		this.manifests.already = {};
 		var manifest = this.parseManifest(this.manifestPath);
 		manifest.directory = this.mainPath;
+
+		this.mergeNodeRed(this.manifests);
+
 		this.manifest = {
 			config:{},
 			creation:{},

@@ -861,6 +861,7 @@ void fxLinkTransfer(txMachine* the, txSlot* module, txID importID, txSlot* trans
 					fxIDToString(the, importID, the->nameBuffer, sizeof(the->nameBuffer));
 					fxThrowMessage(the, path, line, XS_SYNTAX_ERROR, "import %s circular", the->nameBuffer);
 				}
+				fxCheckCStack(the);
 				fxLinkTransfer(the, from, import->value.symbol, transfer);
 			}
 		}
@@ -1563,6 +1564,7 @@ namespace:
 		else {
 			txID status = mxModuleStatus(module);
 			mxCheck(the, (status == XS_MODULE_STATUS_NEW) || (status == XS_MODULE_STATUS_LOADING));
+			mxPushSlot(module);
 			fxOverrideModule(the, queue, result, module->value.reference, property->value.reference);
 			status = mxModuleStatus(property);
 			if (result) {
@@ -1596,6 +1598,7 @@ namespace:
 					fxQueueModule(the, queue, property);
 				}
 			}
+			mxPop();
 		}
 		goto done;
 	}

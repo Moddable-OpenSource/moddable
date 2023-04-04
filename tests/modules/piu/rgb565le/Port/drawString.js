@@ -20,6 +20,6 @@ new Application(null, {
 	contents: [ samplePort ]
 });
 
-screen.checkImage("d85a11e508e738cf3f90e7db7fe02c82");
+screen.checkImage("8539c4d17b2e12949a49468f7a6dbf10");
 
 // TO DO: should other `Style` properties (e.g. `horizontal`, `leading`) be tested? I'm guessing they don't make a difference so probably not

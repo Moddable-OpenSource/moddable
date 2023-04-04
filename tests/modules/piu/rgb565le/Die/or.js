@@ -7,11 +7,11 @@ class SampleBehavior extends $TESTMC.Behavior {
     onDisplaying(die) {
         die.or(10, 10, 50, 50)
             .cut();
-        screen.checkImage("2223c4764c1d80eca259e7a5854a40af");
+        screen.checkImage("ebaa18162e0319186ca4cf04864c8d88");
 
         die.or(70, 70, 100, 100)
             .cut();
-        screen.checkImage("213f0088905c22817cb0fc4ef3f7ee0a");
+        screen.checkImage("3cd9b7cfdbf107aa739ef257496bb3dc");
         $DONE();
     }
 }

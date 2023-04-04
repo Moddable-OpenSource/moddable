@@ -33,4 +33,4 @@ render.begin();
 	render.clip();
 render.end();
 
-assert.sameValue("3f7bcfc81b231d62f787bea509c8646a", screen.checksum, "image mismatch");
+assert.sameValue("360f0f162cbbc27213004f3a71283909", screen.checksum, "image mismatch");

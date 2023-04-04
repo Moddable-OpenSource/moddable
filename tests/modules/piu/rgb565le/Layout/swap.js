@@ -17,13 +17,13 @@ new Application(null, {
 	contents: [ container ]
 });
 
-screen.checkImage("550ec4111f6e15b7cc0952039bfa581a");
+screen.checkImage("8e4f7bde403e94148a35744e08b4b123");
 
 container.swap(one, three);
-screen.checkImage("cbf8af0968663edb065f00d55e5bc409");
+screen.checkImage("905092ce216e848a371e7236e4da8457");
 
 container.swap(two, one);
-screen.checkImage("36835b37f1e12930182c5bbfd684cfe1");
+screen.checkImage("f7e724fc1664cc89e258d6b94b358e54");
 
 container.swap(two, three);
-screen.checkImage("b8dfb300f5fa37e3d70d82bfdf87752f");
+screen.checkImage("b9e1308f00f21ea2513a6d08e5768196");

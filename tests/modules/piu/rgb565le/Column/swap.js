@@ -20,10 +20,10 @@ const col = new Column(null, {
 
 new Application(null, { contents: [col] });
 
-screen.checkImage("279bb31cdc6cfe54ca3022e7da2c781e");
+screen.checkImage("1ba9f0ea204606dee42e3fd8579153ab");
 
 col.swap(redSquare, blueSquare);
-screen.checkImage("fd7ba2d1c7926331c513eebd8fdfe9b7");
+screen.checkImage("effdec310e249c9686719172a8bcefe2");
 
 col.swap(redSquare, yellowSquare);
-screen.checkImage("0e2331f2483d8379f7133e60f00d6dde");
+screen.checkImage("79848c38bbbe2b134684f316c21dbf21");

@@ -22,14 +22,14 @@ assert.throws(Error, () => {
 
 assert.throws(Error, () => {
 	new WiFi({
-		ssid: "0".repeat(32)
+		ssid: "0".repeat(33)
 	});
 }, () => {}, "ssid too long");
 
 assert.throws(Error, () => {
 	new WiFi({
 		ssid: options.ssid,
-		password: "0".repeat(64)
+		password: "0".repeat(65)
 	});
 }, () => {}, "password too long");
 

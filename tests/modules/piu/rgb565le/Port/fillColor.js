@@ -19,4 +19,4 @@ new Application(null, {
 	contents: [ samplePort ]
 });
 
-screen.checkImage("a8ed77a2e29965aeee1d447a2cbb3662");
+screen.checkImage("8f4e27bb2e671bfb96eceb2674e8f903");

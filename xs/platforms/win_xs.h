@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -95,6 +95,7 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 #define WM_XSBUG WM_USER + 2
 #define WM_CALLBACK WM_USER + 3
 #define WM_WORKER WM_USER + 4
+#define WM_MODTIMER WM_USER + 5
 	
 #ifdef mxDebug
 	#define MODDEF_XS_TEST 1

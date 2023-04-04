@@ -95,13 +95,14 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 
 	config->pin = pin;
 
-	result = modGPIOSetMode(config, mode);
-	if (result) {
-		config->pin = kUninitializedPin;
-		return result;
-	}
+	if (pin < 16)
+		PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
 
-	return 0;
+	result = modGPIOSetMode(config, mode);
+	if (result)
+		config->pin = kUninitializedPin;
+
+	return result;
 }
 
 void modGPIOUninit(modGPIOConfiguration config)
@@ -118,7 +119,6 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 		case kModGPIOInputPullUp:
 		case kModGPIOInputPullDown:
 			if (config->pin < 16) {
-				PIN_FUNC_SELECT(gPixMuxAddr[config->pin], c_read8(&gPixMuxValue[config->pin]));
 				GPIO_INIT_INPUT(config->pin);
 
 				if (mode == kModGPIOInputPullUp)
@@ -148,7 +148,6 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 		case kModGPIOOutput:
 		case kModGPIOOutputOpenDrain:
 			if (config->pin < 16) {
-				PIN_FUNC_SELECT(gPixMuxAddr[config->pin], c_read8(&gPixMuxValue[config->pin]));
 				GPIO_INIT_OUTPUT(config->pin, kModGPIOOutputOpenDrain == mode);
 				GPIO_CLEAR(config->pin);
 			}

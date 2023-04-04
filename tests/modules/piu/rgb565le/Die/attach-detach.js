@@ -9,11 +9,11 @@ class SampleBehavior extends $TESTMC.Behavior {
         die.or(0, 0, die.width, die.height/4)
         die.or(0, die.height/2, die.width, die.height/4)
             .cut();
-        screen.checkImage("de4040e4b2f78fa903907f2e25675b9d");
+        screen.checkImage("8777bd1191fcf96fc52297010ca7cdc9");
 
         die.empty()
             .cut();
-        screen.checkImage("9ce5b7c7f139fa44f841923a8f6945c3");
+        screen.checkImage("5fd1cbf7e9d4a8f48652c91815270d6e");
 
         die.detach();
         die.or(0, 0, die.width, die.height/4)

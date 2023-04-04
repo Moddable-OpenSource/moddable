@@ -40,10 +40,10 @@ new Application(null, {
 	contents: [ container2 ]
 });
 
-screen.checkImage("73328e0ea82021eb0cef0ac14a7832ee");
+screen.checkImage("73d09edd8afd47d9038203b6c975f44c");
 
 content.bubble("changeState", 1);
-screen.checkImage("7c077be88252560e30f771cb95a772fd");
+screen.checkImage("55c671d11472f9ca50588996859007fa");
 
 content.bubble("changeState", 0.75);
-screen.checkImage("f5d65e22b3ae02ee408c2583c361c4db");
+screen.checkImage("80309e1395654656c5fdbd4b10d52085");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1367,7 +1367,7 @@ static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 	else
 		c = __builtin_add_overflow(r, c, &rp[i]);
 #else
-		c = __builtin_add_overflow(ap[i], bp[i], &rp[i]) | __builtin_add_overflow(rp[i], c, &rp[i]);
+		c = __builtin_add_overflow(ap[i], bp[i], &rp[i]) || __builtin_add_overflow(rp[i], c, &rp[i]);
 #endif
 	}
 	for (; c && (i < bn); i++) {

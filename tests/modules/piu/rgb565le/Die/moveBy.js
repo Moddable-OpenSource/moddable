@@ -22,10 +22,10 @@ const container = new Die(null, {
 
 new Application(null, { skin: new Skin({ fill: "black" }), contents: [container] });
 
-screen.checkImage("e2efe63d5e2d6a939e5c41ad94640ac4");
+screen.checkImage("76506edefdb9e9afba013993c91f8bae");
 
 container.moveBy(100, 100);
-screen.checkImage("1ebff34e88f78dd508efff6e416dc997");
+screen.checkImage("123c5ffded1740123264e7741051741e");
 
 container.moveBy(-150, -150);
-screen.checkImage("6d25d11af9cfe4ddec23ae3a870836f6");
+screen.checkImage("3b1d45dc86e5ef14ac03589cd9be7e90");
