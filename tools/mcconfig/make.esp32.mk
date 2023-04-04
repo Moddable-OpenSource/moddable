@@ -310,7 +310,8 @@ endif
 
 C_FLAGS ?= $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99
+	-std=gnu99 \
+	$(C_FLAGS_SUBPLATFORM)
 
 CPP_FLAGS ?= $(C_COMMON_FLAGS)
 
