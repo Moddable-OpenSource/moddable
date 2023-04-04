@@ -107,6 +107,9 @@ struct ls013b4dn04Record {
 
 	uint8_t		*pixelBuffer;
 	uint16_t	bufferSize;
+#if MODDEF_LS013B4DN04_DISP_PIN
+	uint8_t 	first;
+#endif
 
 #if kPocoFrameBuffer
 	uint8_t		*pixels;
@@ -200,17 +203,18 @@ void xs_LS013B4DN04(xsMachine *the)
 	modTimerUnschedule(ls->timer);
 #endif
 
-	SCREEN_DISP_INIT;
-
 	SCREEN_CS_INIT;
 	modSPIConfig(ls->spiConfig, MODDEF_LS013B4DN04_HZ, MODDEF_LS013B4DN04_SPI_PORT,
 			MODDEF_LS013B4DN04_CS_PORT, MODDEF_LS013B4DN04_CS_PIN, ls013b4dn04ChipSelect);
 	modSPIInit(&ls->spiConfig);
 
+#if MODDEF_LS013B4DN04_DISP_PIN
+	ls->first = 1;
+#endif
+
 #if MODDEF_LS013B4DN04_CLEARONSTART
 	ls_clear(ls);
 #endif
-	SCREEN_DISP_ON;
 }
 
 uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
@@ -578,8 +582,17 @@ void ls013b4dn04ChipSelect(uint8_t active, modSPIConfiguration config)
 {
 	ls013b4dn04 ls = (ls013b4dn04)(((char *)config) - offsetof(ls013b4dn04Record, spiConfig));
 
-	if (active)
+	if (active) {
+#if MODDEF_LS013B4DN04_DISP_PIN
+		if (ls->first) {
+			ls->first = 0;
+			SCREEN_DISP_INIT;
+			SCREEN_DISP_ON;
+		}
+#endif
+
 		SCREEN_CS_ACTIVE;
+	}
 	else
 		SCREEN_CS_INACTIVE;
 }
