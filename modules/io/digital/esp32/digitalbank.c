@@ -89,8 +89,9 @@ void xs_digitalbank_constructor(xsMachine *the)
 	int mode, pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t bank = 0, isInput = 1;
-	xsSlot *onReadable;
+	xsSlot *onReadable = NULL;
 	xsSlot tmp;
+	uint32_t mask;
 
 #if kPinBanks > 1
 	if (xsmcHas(xsArg(0), xsID_bank)) {
@@ -105,8 +106,10 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
-	if (!pins)
-		xsUnknownError("invalid");
+	mask = bank ? (SOC_GPIO_VALID_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
+	if (!pins || (pins != (pins & mask)))
+		xsUnknownError("invalid pin");
+
 	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
@@ -116,31 +119,34 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
-	onReadable = builtinGetCallback(the, xsID_onReadable);
-	if (onReadable) {
-		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
-			xsRangeError("invalid mode");
+	if ((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) {
+		onReadable = builtinGetCallback(the, xsID_onReadable);
+		if (onReadable) {
+			if (xsmcHas(xsArg(0), xsID_rises)) {
+				xsmcGet(tmp, xsArg(0), xsID_rises);
+				rises = xsmcToInteger(tmp) & pins;
+			}
+			if (xsmcHas(xsArg(0), xsID_falls)) {
+				xsmcGet(tmp, xsArg(0), xsID_falls);
+				falls = xsmcToInteger(tmp) & pins;
+			}
 
-		if (xsmcHas(xsArg(0), xsID_rises)) {
-			xsmcGet(tmp, xsArg(0), xsID_rises);
-			rises = xsmcToInteger(tmp) & pins;
+			if (!rises & !falls)
+				xsRangeError("invalid edges");
 		}
-		if (xsmcHas(xsArg(0), xsID_falls)) {
-			xsmcGet(tmp, xsArg(0), xsID_falls);
-			falls = xsmcToInteger(tmp) & pins;
-		}
-
-		if (!rises & !falls)
-			xsRangeError("invalid edges");
 	}
+	else if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
+		mask = bank ? (SOC_GPIO_VALID_OUTPUT_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_OUTPUT_GPIO_MASK; 
+		if (pins != (pins & mask))
+			xsRangeError("input only");
+	}
+	else
+		xsRangeError("invalid mode");
 
 	builtinInitializeTarget(the);
 
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
-
-	if (bank && (~3 & pins) && ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
-		xsRangeError("invalid mode");		// input-only pins
 
 	digital = c_malloc(onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
