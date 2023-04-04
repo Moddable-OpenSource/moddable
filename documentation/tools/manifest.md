@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: February 9, 2023
+Revised: April 4, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -76,7 +76,7 @@ When you build an application, the default output directory name is taken from t
 }
 ```
 	
-#### `ESP32-specific environment variables`
+#### ESP32-specific environment variables
 
 The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK build for ESP32 and ESP32-S2:
 
@@ -85,6 +85,7 @@ The `esp32` platform object supports a number of optional environment variables 
 | `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries. 
 | `PARTITIONS_FILE` | Full pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
 | `BOOTLOADERPATH` | Pathname to a directory containing a custom [ESP-IDF bootloader component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/bootloader.html#custom-bootloader).
+| `C_FLAGS_SUBPLATFORM` | C compiler flags to use when compiling Moddable SDK sources.
 
 > Note: This document does not cover native code ESP32 and ESP-IDF build details. Refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/get-started/index.html) for additional information.
  
@@ -98,6 +99,14 @@ The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contr
 ```
 
 In this example, the modClock [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/modClock/sdkconfig/partitions.csv) file completely replaces the base Moddable SDK [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) file at build time to provide additional partitions for OTA updates. The `sdkconfig` directory contains sdkconfig files that override and supplement the base Moddable SDK [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults) entries. The following section describes how the Moddable ESP32 build processes sdkconfig files.
+
+The `C_FLAGS_SUBPLATFORM` environment variable is for use in manifests of subplatforms (and should not be used elsewhere). It allows compiler specific settings unique to a subplatform. For example, a subplatform using first generation ESP32 silicon with external PSRAM would enable the following settings to cause the compiler to generate code to work around the silicon bugs:
+
+```json
+"build": {
+	"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
+},
+```
 
 #### How sdkconfig files are processed
 
