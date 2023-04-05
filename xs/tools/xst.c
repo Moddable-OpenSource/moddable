@@ -178,8 +178,6 @@ static void fxRunContext(txPool* pool, txContext* context);
 static int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
-static void fx_agent_get_safeBroadcast(xsMachine* the);
-static void fx_agent_set_safeBroadcast(xsMachine* the);
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
 static void fx_agent_leaving(xsMachine* the);
@@ -584,7 +582,6 @@ void fxBuildAgent(xsMachine* the)
 	txSlot* global;
 
 	slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_agent_get_safeBroadcast), mxCallback(fx_agent_set_safeBroadcast), xsID("safeBroadcast"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
@@ -981,7 +978,7 @@ void fxRunContext(txPool* pool, txContext* context)
 				strict = 0;
 				module = 0;
 			}
-			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsTrue")) {
+			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsFalse")) {
 				sloppy = 0;
 				strict = 0;
 				module = 0;
@@ -997,6 +994,7 @@ void fxRunContext(txPool* pool, txContext* context)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
+ 			||	!strcmp((char*)node->data.scalar.value, "Array.fromAsync")
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
   			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
@@ -1211,15 +1209,6 @@ int fxStringEndsWith(const char *string, const char *suffix)
 
 /* $262 */
 
-void fx_agent_get_safeBroadcast(xsMachine* the)
-{
-	xsResult = xsGet(xsThis, xsID("broadcast"));
-}
-
-void fx_agent_set_safeBroadcast(xsMachine* the)
-{
-}
-
 void fx_agent_broadcast(xsMachine* the)
 {
 	txAgentCluster* agentCluster = &gxAgentCluster;
@@ -1335,6 +1324,13 @@ void fx_agent_start(xsMachine* the)
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #if mxWindows
 	agent->thread = (HANDLE)_beginthreadex(NULL, 0, fx_agent_start_aux, agent, 0, NULL);
+#elif mxMacOSX
+	pthread_attr_t attr; 
+	pthread_t self = pthread_self();
+	size_t size = pthread_get_stacksize_np(self);
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, size);
+    pthread_create(&(agent->thread), &attr, &fx_agent_start_aux, agent);
 #else	
     pthread_create(&(agent->thread), NULL, &fx_agent_start_aux, agent);
 #endif

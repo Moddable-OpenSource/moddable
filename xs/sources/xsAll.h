@@ -1388,11 +1388,13 @@ mxExport void fx_Array_prototype_toSpliced(txMachine* the);
 mxExport void fx_Array_prototype_toString(txMachine* the);
 mxExport void fx_Array_prototype_unshift(txMachine* the);
 mxExport void fx_Array_prototype_values(txMachine* the);
+mxExport void fx_Array_prototype_with(txMachine* the);
 mxExport void fx_ArrayIterator_prototype_next(txMachine* the);
 
 extern txNumber fxArgToIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
 extern txNumber fxArgToLastIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
 extern txNumber fxArgToRange(txMachine* the, txInteger argi, txNumber index, txNumber min, txNumber max);
+extern txNumber fxArgToRelativeIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
 extern void fxCacheArray(txMachine* the, txSlot* theArray);
 extern void fxConstructArrayEntry(txMachine* the, txSlot* entry);
 extern txBoolean fxIsArray(txMachine* the, txSlot* instance);
@@ -1455,6 +1457,7 @@ mxExport void fx_ArrayBuffer_fromString(txMachine* the);
 #endif
 mxExport void fx_ArrayBuffer_isView(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_byteLength(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_get_detached(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_maxByteLength(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_get_resizable(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_concat(txMachine* the);
@@ -1530,6 +1533,7 @@ mxExport void fx_TypedArray_prototype_toReversed(txMachine* the);
 mxExport void fx_TypedArray_prototype_toSorted(txMachine* the);
 mxExport void fx_TypedArray_prototype_toStringTag_get(txMachine* the);
 mxExport void fx_TypedArray_prototype_values(txMachine* the);
+mxExport void fx_TypedArray_prototype_with(txMachine* the);
 
 extern void fxBuildDataView(txMachine* the);
 extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger length);

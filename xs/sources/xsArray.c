@@ -143,6 +143,7 @@ void fxBuildArray(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toSpliced), 2, mxID(_toSpliced), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_unshift), 1, mxID(_unshift), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_with), 2, mxID(_with), XS_DONT_ENUM_FLAG);
 	property = slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_values), 0, mxID(_values), XS_DONT_ENUM_FLAG);
 	mxPushSlot(property);
 	mxPull(mxArrayIteratorFunction);
@@ -226,6 +227,19 @@ txNumber fxArgToRange(txMachine* the, txInteger argi, txNumber index, txNumber m
 			i = min;
 		else if (i > max)
 			i = max;
+		index = i;
+	}
+	return index;
+}
+
+txNumber fxArgToRelativeIndex(txMachine* the, txInteger argi, txNumber index, txNumber length)
+{
+	if ((mxArgc > argi) && (mxArgv(argi)->kind != XS_UNDEFINED_KIND)) {
+		txNumber i = c_trunc(fxToNumber(the, mxArgv(argi)));
+		if (c_isnan(i) || (i == 0))
+			i = 0;
+		if (i < 0)
+			i = length + i;
 		index = i;
 	}
 	return index;
@@ -865,9 +879,9 @@ again:
 			mxPushSlot(item);
 			mxPushSlot(target);
 			if (flag)
-				mxSetIndex(index);
-			else
 				mxDefineIndex(index, 0, XS_GET_ONLY);
+			else
+				mxSetIndex(index);
 			mxPop();
 			index++;
 		}
@@ -2579,14 +2593,7 @@ void fx_Array_prototype_toSorted(txMachine* the)
 		mxRangeError("array overflow");
 	fxNewArray(the, (txIndex)LENGTH);
 	mxPullSlot(mxResult);
-// 	if (function)
-		fxSortArrayItems(the, function, C_NULL, LENGTH, mxResult);
-// 	else {
-// 		txSlot* array = fxCheckArray(the, mxThis, XS_IMMUTABLE);
-// 		if (array)
-// 			array = fxCheckArrayItems(the, array, 0, array->value.array.length);
-// 		fxSortArrayItems(the, function, array, fxGetArrayLength(the, mxThis), mxResult);
-// 	}
+	fxSortArrayItems(the, function, C_NULL, LENGTH, mxResult);
 }
 
 void fx_Array_prototype_toSpliced(txMachine* the)
@@ -2774,6 +2781,51 @@ void fx_Array_prototype_values(txMachine* the)
 	property = fxLastProperty(the, fxNewIteratorInstance(the, mxThis, mxID(_Array)));
 	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
 	mxPullSlot(mxResult);
+}
+
+void fx_Array_prototype_with(txMachine* the)
+{
+	txNumber LENGTH = fxGetArrayLength(the, mxThis), INDEX;
+	txIndex length, index, i;
+	if (LENGTH > 0xFFFFFFFF)
+		mxRangeError("array overflow");
+	INDEX = fxArgToRelativeIndex(the, 0, 0, LENGTH);
+	if ((INDEX < 0) || (LENGTH <= INDEX))
+		mxRangeError("invalid index");
+	length = (txIndex)LENGTH;
+	fxNewArray(the, length);
+	mxPullSlot(mxResult);
+	index = (txIndex)INDEX;
+	i = 0;
+	while (i < index) {
+		mxPushSlot(mxThis);
+		mxPushUnsigned(i);
+		mxGetAt();
+		mxPushSlot(mxResult);
+		mxPushUnsigned(i);
+		mxDefineAt(0, XS_GET_ONLY);
+		mxPop();
+		i++;
+	}
+	if (mxArgc > 1)
+		mxPushSlot(mxArgv(1));
+	else
+		mxPushUndefined();
+	mxPushSlot(mxResult);
+	mxPushUnsigned(i);
+	mxDefineAt(0, XS_GET_ONLY);
+	mxPop();
+	i++;
+	while (i < length) {
+		mxPushSlot(mxThis);
+		mxPushUnsigned(i);
+		mxGetAt();
+		mxPushSlot(mxResult);
+		mxPushUnsigned(i);
+		mxDefineAt(0, XS_GET_ONLY);
+		mxPop();
+		i++;
+	}
 }
 
 void fx_ArrayIterator_prototype_next(txMachine* the)
