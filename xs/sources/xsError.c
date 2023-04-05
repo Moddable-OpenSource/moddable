@@ -132,8 +132,8 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	
 	mxPush(mxObjectPrototype);
+    slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
-	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DisposableStack_prototype_get_disposed), C_NULL, mxID(_disposed), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_adopt), 2, mxID(_adopt), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_defer), 1, mxID(_defer), XS_DONT_ENUM_FLAG);

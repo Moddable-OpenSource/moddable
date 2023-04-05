@@ -661,8 +661,11 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger oldByteLength = bufferInfo->value.bufferInfo.length;
+	txInteger maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	txInteger newByteLength = fxArgToByteLength(the, 0, oldByteLength);
 	txSlot* resultBuffer;
+	if ((maxByteLength >= 0) && (newByteLength > maxByteLength))
+		mxRangeError("newLength > maxByteLength");
 	fxConstructArrayBufferResult(the, C_NULL, newByteLength);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult, XS_MUTABLE);
 	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
@@ -671,6 +674,7 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = C_NULL;
 	bufferInfo->value.bufferInfo.length = 0;
+	resultBuffer->next->value.bufferInfo.maxLength = maxByteLength;
 }
 
 txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot)
