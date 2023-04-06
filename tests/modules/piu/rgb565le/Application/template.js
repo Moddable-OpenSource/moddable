@@ -8,4 +8,4 @@ const App = Application.template($ => ({
 }));
 new App("white");
 
-screen.checkImage("14e6edc6291901a47e0268a966b4d99e");
+screen.checkImage("f29d3d7c7bace5943c2e44d85267b5d3");

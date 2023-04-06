@@ -20,13 +20,13 @@ const row = new Row(null, {
 
 new Application(null, { contents: [row] });
 
-screen.checkImage("3391308cef1310e5bf4c199b14ac331f");
+screen.checkImage("ddd1c35bcb968e0b1874435bef0cb891");
 
 row.replace(redSquare, blueSquare);
-screen.checkImage("e064ac84f65e8a8a589d1fa8c9e386cb");
+screen.checkImage("4a3a59e2c1190449bbd3d317010dde8b");
 
 row.replace(yellowSquare, redSquare);
-screen.checkImage("5de359101fd8482cbdaff13ef943a590");
+screen.checkImage("2217238d8a298ad0b24b73f5bb966d3a");
 
 row.replace(blueSquare, yellowSquare);
-screen.checkImage("70cb414b9f919d87ecba0a02001cf076");
+screen.checkImage("c31ad9dd4aab576e6a7edd5597a7a381");

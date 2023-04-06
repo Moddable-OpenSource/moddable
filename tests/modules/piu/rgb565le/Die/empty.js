@@ -18,13 +18,13 @@ new Application(null, {
 });
 die.fill()
 	.cut();
-screen.checkImage("1a9c67bcbd5c7b3b7c5391222eddbfe6");
+screen.checkImage("4ccc01803b9dcd9f9f0da37617f9cbf0");
 
 die.empty()
 	.cut();
-screen.checkImage("1e3612c0f8bbcec51213298b8905e34e");
+screen.checkImage("810dbe035803d397a144531c4667c225");
 
 die.empty()
 	.set(25, 25, 50, 100)
 	.cut();
-screen.checkImage("85926e0f4ee82122fa67c27f8b98bcfa");
+screen.checkImage("ac08269f02b0fd07f36a77e215157552");

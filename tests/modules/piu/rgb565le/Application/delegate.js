@@ -15,10 +15,10 @@ new Application(null, {
 	skin: colorSkin, Behavior: StateChangeBehavior
 });
 
-screen.checkImage("73328e0ea82021eb0cef0ac14a7832ee");
+screen.checkImage("73d09edd8afd47d9038203b6c975f44c");
 
 application.delegate("changeState", 1);
-screen.checkImage("64668108040303d923bbf1399e359203");
+screen.checkImage("ebc4432964a5c602347717a831ce4163");
 
 application.delegate("changeState", 0.75);
-screen.checkImage("bddb9fbabfdacc319ad3a40ffc2d0f50");
+screen.checkImage("a9e044860fb4d76fed1e79d5f63ea7c3");

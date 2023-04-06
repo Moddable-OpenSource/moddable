@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -115,7 +115,7 @@ void xs_preference_get(xsMachine *the)
 	nvs_handle handle;
 	uint8_t b;
 	int32_t integer;
-	size_t size;
+	size_t length;
 	char *str, key[64];
 
 	xsmcToStringBuffer(xsArg(1), key, sizeof(key));
@@ -128,13 +128,13 @@ void xs_preference_get(xsMachine *the)
 		xsmcSetBoolean(xsResult, b);
 	else if (ESP_OK == (err = nvs_get_i32(handle, key, &integer)))
 		xsmcSetInteger(xsResult, integer);
-	else if (ESP_OK == (err = nvs_get_str(handle, key, NULL, &size))) {
-		xsResult = xsStringBuffer(NULL, size);
-		err = nvs_get_str(handle, key, xsmcToString(xsResult), &size);
+	else if (ESP_OK == (err = nvs_get_str(handle, key, NULL, &length))) {
+		xsResult = xsStringBuffer(NULL, length);
+		err = nvs_get_str(handle, key, xsmcToString(xsResult), &length);
 	}
-	else if (ESP_OK == (err = nvs_get_blob(handle, key, NULL, &size))) {
-		xsmcSetArrayBuffer(xsResult, NULL, size);
-		err = nvs_get_blob(handle, key, xsmcToArrayBuffer(xsResult), &size);
+	else if (ESP_OK == (err = nvs_get_blob(handle, key, NULL, &length))) {
+		xsmcSetArrayBuffer(xsResult, NULL, length);
+		err = nvs_get_blob(handle, key, xsmcToArrayBuffer(xsResult), &length);
 	}
 	else
 		xsmcSetUndefined(xsResult);	// not an error if not found, just undefined
@@ -242,7 +242,6 @@ uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value,
 	uint8_t resultCode = -1;
 
 	if (ESP_OK == nvs_open(domain, NVS_READONLY, &handle)) {
-//		int32_t size = byteCountIn;
 		size_t size = byteCountIn;
 		resultCode = 0;
 		if (!nvs_get_u8(handle, key, value)) {

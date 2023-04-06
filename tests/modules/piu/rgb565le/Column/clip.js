@@ -23,12 +23,12 @@ new Application(null, {
 	contents: [ container1, container2 ]
 });
 
-screen.checkImage("b9defe4cbba8dab805368c13de4a266b");
+screen.checkImage("ee416a0eadac3f5c7c3c851d422ea215");
 
 one.height = 50;
 one.width = 50;
-screen.checkImage("f1dd85eb20df5f900845e1ae8b79aa25");
+screen.checkImage("dd9e60f20f3e926b5a39d61c980b5b5b");
 
 one.height = 150;
 one.width = 150;
-screen.checkImage("4e008cd76aa8c80e480d966a8aa91228");
+screen.checkImage("5156343c6bea3b775568b90dcb9ac4e1");

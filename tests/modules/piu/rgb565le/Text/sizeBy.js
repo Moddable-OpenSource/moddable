@@ -13,10 +13,10 @@ const content = new Text(null, {
 
 new Application(null, { skin: new Skin({ fill: "black" }), contents: [content] });
 
-screen.checkImage("1f23cbda3d4ad35b78d11ad8ec7d5792");
+screen.checkImage("f5540d10271ed6c15cf51a7b1e0c16ff");
 
 content.sizeBy(50, 50);
-screen.checkImage("b17c7ae5af32c1e98e254b1e65c5a89e");
+screen.checkImage("46ac774af9f1ed8ffcced9874aadccaf");
 
 content.sizeBy(-25, -25);
-screen.checkImage("4e1574343b41f55809ee82b05eba3657");
+screen.checkImage("79b6084ea0b2b9f601b7e9fe0efd1846");

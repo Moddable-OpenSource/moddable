@@ -280,7 +280,6 @@ C_DEFINES = \
 	-D__ets__ \
 	-U__STRICT_ANSI__ \
 	-DESP32=$(ESP32_TARGET) \
-	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \
@@ -323,7 +322,8 @@ endif
 
 C_FLAGS ?= $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99
+	-std=gnu99 \
+	$(C_FLAGS_SUBPLATFORM)
 
 CPP_FLAGS ?= $(C_COMMON_FLAGS)
 

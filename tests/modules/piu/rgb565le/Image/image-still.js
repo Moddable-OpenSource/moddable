@@ -14,7 +14,7 @@ new Application(null, {
 	contents: [ sampleImage ]
 });
 
-screen.checkImage("fcd138d7781078338d04d319ae2323e2");
+screen.checkImage("37abed92b6492496943ea1c3b39713e8");
 
 sampleImage.frameIndex = sampleImage.frameIndex + 1;
 screen.checkImage(undefined);

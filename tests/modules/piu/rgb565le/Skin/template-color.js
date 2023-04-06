@@ -17,4 +17,4 @@ new Application(null, {
 		})
 	]
 });
-screen.checkImage("4cd45f78f21c5af77e1d0a80816fee7a");
+screen.checkImage("82afd81be64e948dd85f671adbef88d1");

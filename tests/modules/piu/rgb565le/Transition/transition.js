@@ -9,7 +9,7 @@ class SampleTransition extends Transition {
 	constructor() {
 		super(50);
 		try {
-			screen.checkImage("73328e0ea82021eb0cef0ac14a7832ee");
+			screen.checkImage("73d09edd8afd47d9038203b6c975f44c");
 		} catch(e) {
 			$DONE(e.message);
 		}
@@ -17,7 +17,7 @@ class SampleTransition extends Transition {
 	onBegin(container, current, next) {
 		current.state = 1;
 		try {
-			screen.checkImage("64668108040303d923bbf1399e359203");
+			screen.checkImage("ebc4432964a5c602347717a831ce4163");
 		} catch(e) {
 			$DONE(e.message);
 		}
@@ -26,7 +26,7 @@ class SampleTransition extends Transition {
 		if (!this.tested) {
 			container1.state = 2;
 			try {
-				screen.checkImage("5bf3d0246377fe601c1bcab629307974");
+				screen.checkImage("e0f2c943e0a7398b6bda3b02ec6e9ff3");
 			} catch(e) {
 				$DONE(e.message);
 			}
@@ -37,7 +37,7 @@ class SampleTransition extends Transition {
 		container.remove(current);
 		container.add(next);
 		try {
-			screen.checkImage("817a0ecd3bdedd0c64a77176d88dd8db");
+			screen.checkImage("73abe5bc0e6f03166f8810a15b95416f");
 		} catch(e) {
 			$DONE(e.message);
 		}

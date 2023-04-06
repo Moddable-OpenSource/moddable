@@ -33,8 +33,8 @@ new Application(null, {
 	Behavior: StateChangeBehavior
 });
 
-screen.checkImage("db4dc3d8246223a45feb8ee57ac5117d");
+screen.checkImage("f30e02a81ef52d72e5e3bfcbeaa5d913");
 container.distribute("changeState", 1);
-screen.checkImage("8a7ec08911fcde89f9a49a69cf6cfee4");
+screen.checkImage("9f2424d6eb117dd361031e8ccbcb82e8");
 container.distribute("changeState", 0.75);
-screen.checkImage("500ba32b8ad96041123b8ddd2750455f");
+screen.checkImage("13177a0764fc846987588e457b7b96cd");
