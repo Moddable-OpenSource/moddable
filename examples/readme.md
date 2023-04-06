@@ -1,7 +1,7 @@
 # Moddable SDK - Examples
 
 Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: March 24, 2023
+Revised: April 6, 2023
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -174,8 +174,6 @@ To build an app for the `ft6206` touch controller driver, modify both the `confi
 
 There are examples for platform specific features included in `$MODDABLE/build/device/<platform>/examples`.
 
-* [nRF52840](../../build/devices/nrf52/examples)
-* [esp32](../../build/devices/esp32/examples)
-
-
+* [nRF52](../../build/devices/nrf52/examples)
+* [ESP32](../../build/devices/esp32/examples)
 

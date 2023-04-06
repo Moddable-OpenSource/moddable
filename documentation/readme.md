@@ -1,6 +1,6 @@
 # Moddable SDK – Documentation Overview
 Copyright 2019-2023 Moddable Tech, Inc.<BR>
-Revised: March 24, 2023
+Revised: April 6, 2023
 
 This directory contains documentation for the Moddable SDK.
 
@@ -15,7 +15,7 @@ Guides for working with specific microcontrollers supported by the Moddable SDK 
 - [Gecko](./devices/gecko/GeckoBuild.md) by Silicon Labs
 - [QCA4020](./devices/qca4020/README.md) by Qualcomm
 - [Pico](./devices/pico.md) by Raspberry Pi
-- [nRF52840](./devices/nrf52.md) by Nordic Semiconductor
+- [nRF52](./devices/nrf52.md) by Nordic Semiconductor
 
 ### API Documentation for Modules
 
