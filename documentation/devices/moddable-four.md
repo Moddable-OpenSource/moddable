@@ -214,7 +214,6 @@ Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/de
 
 See the Troubleshooting section of the [nRF52840 documentation](./nrf52.md) for a list of common issues and how to resolve them.
 
-
 <a id="development-resources"></a>
 ## Development Resources
 
@@ -223,24 +222,25 @@ See the Troubleshooting section of the [nRF52840 documentation](./nrf52.md) for 
 
 The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four. 
 
-That said, many of the examples that use Commodetto and Piu are designed for colored QVGA screens. In addition, not every example is compatible with Moddable Four hardware. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
+Many of the examples that use Commodetto and Piu are designed for colored QVGA screens. While they will run on Moddable Four, the colors will be dithered when rendered and some screens may be cropped. Not every example is compatible with Moddable Four hardware. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
 
 <a id="documentation"></a>
 ### Documentation
 
 Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v17.0.2, which is available [here](https://infocenter.nordicsemi.com/topic/struct_sdk/struct/sdk_nrf5_latest.html).
 
-All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+Documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
 
+- [Using the Moddable SDK with nRF52](./nrf52.md) explains how to get set-up for development, supported devices, and more.
+- [nRF52 Low Power Notes](./nRF52-low-power.md) describes the techniques and APIs to maximize battery life by minimizing power consumption.
 - The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
 - The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.
-- The `networking` subdirectory, which contains networking resources related to network sockets and a variety of standard, secure networking protocols built on sockets including HTTP/HTTPS, WebSockets, DNS, SNTP, and telnet
 - The `pins` subdirectory, which contains resources related to supported hardware protocols (digital, analog, PWM, I2C, etc.). A number of drivers for common off-the-shelf sensors and corresponding example apps are also available.
 
 <a id="support"></a>
 ### Support
 
-If you have questions, we recommend you [open an issue](https://github.com/Moddable-OpenSource/moddable/issues). We'll respond as quickly as practical, and other developers can offer help and benefit from the answers to your questions. Many questions have already been answered, so please try searching previous issues before opening a new issue.
+If you have questions, we're here to help. If you've encountered a bug, recommend you [open an issue](https://github.com/Moddable-OpenSource/moddable/issues). If you have a question, [start a discussion](https://github.com/Moddable-OpenSource/moddable/discussions) or ask us on our [Gitter](https://gitter.im/embedded-javascript/moddable#). We'll respond as quickly as practical, and other developers can offer help and benefit from the answers to your questions. Many questions have already been answered, so please try searching previous issues and discussions before opening a new one.
 
 <a id="updates"></a>
 ### Updates

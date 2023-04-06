@@ -1,4 +1,4 @@
-# Using the Moddable SDK with nRF52840
+# Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
 Revised: March 25, 2023
