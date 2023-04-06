@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -239,7 +239,7 @@ function fetch(href, info = {}) {
 					}
 				},
 				onDone(error) {
-					resolveBody(buffer);
+					resolveBody(buffer ?? new ArrayBuffer);
 				}
 			});
 		});
