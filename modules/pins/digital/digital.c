@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -49,6 +49,7 @@ void xs_digital(xsMachine *the)
 	int pin, mode, argc = xsmcArgc;
 	char *port = NULL;
 	modGPIOConfigurationRecord gpio;
+	int woke;
 
 	if (1 == argc) {		//@@ eventually only dictionary case should be here
 		xsmcVars(1);
@@ -86,13 +87,15 @@ void xs_digital(xsMachine *the)
 			port = xsmcToString(xsArg(0));
 	}
 
+	woke = modGPIODidWake(NULL, pin);
+
 	if (modGPIOInit(&gpio, port, (uint8_t)pin, mode))
 		xsUnknownError("can't init pin");
 		
 	xsmcSetHostChunk(xsThis, &gpio, sizeof(gpio));
 		
 	if (xsmcHas(xsArg(0), xsID_onWake)) {
-		if (modGPIODidWake(&gpio, pin)) {
+		if (woke) {
 			modDigitalWakeConfigurationRecord wake;
 			wake.obj = xsThis;
 			if (xsmcHas(xsArg(0), xsID_target)) {

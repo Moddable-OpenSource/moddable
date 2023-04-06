@@ -321,6 +321,10 @@ void sleep_wake_on_timer()
 	NRF_POWER->RAM[7].POWERCLR = 0x03;
 	NRF_POWER->RAM[8].POWERCLR = 0x3F;
 
+	((uint32_t *)MOD_WAKEUP_REASON_MEM)[0] = 0;
+	((uint32_t *)MOD_WAKEUP_REASON_MEM)[1] = 0;
+	((uint32_t *)MOD_WAKEUP_REASON_MEM)[2] = 0;
+
 	// Wait for RTC compare or configured digital/analog interrupt sources
 	do {
 		__WFE();

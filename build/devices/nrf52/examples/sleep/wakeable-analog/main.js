@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,7 +25,7 @@ import Sleep from "sleep";
 import Timer from "timer";
 
 const wakeup_pin = 1;	// channel 1, P.03
-const led = new Host.LED;
+const led = new Host.LED.Default;
 
 // Turn on LED upon wakeup
 led.write(1);

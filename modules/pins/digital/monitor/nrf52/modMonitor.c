@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -86,6 +86,7 @@ void xs_digital_monitor(xsMachine *the)
 	int pin, edge, wakeEdge = 0, mode = kModGPIOInput;
 	nrf_gpio_pin_sense_t sense_config = NRF_GPIO_PIN_NOSENSE;
 	ret_code_t err_code;
+	int woke;
 
 	xsmcVars(1);
 
@@ -97,6 +98,8 @@ void xs_digital_monitor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	pin = xsmcToInteger(xsVar(0));
+
+	woke = modGPIODidWake(NULL, pin);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_edge);
 	edge = xsmcToInteger(xsVar(0));
@@ -163,7 +166,7 @@ void xs_digital_monitor(xsMachine *the)
 		nrf_gpio_cfg_sense_set(monitor->pin, sense_config);
 
 	if (xsmcHas(xsArg(0), xsID_onWake)) {
-		if (modGPIODidWake(NULL, pin)) {
+		if (woke) {
 			modDigitalWakeConfigurationRecord wake;
 			wake.obj = xsThis;
 			if (xsmcHas(xsArg(0), xsID_target)) {

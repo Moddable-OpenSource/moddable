@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -29,27 +29,27 @@ let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);
 let font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 
-const led = new Host.LED;
+const led = new Host.LED.Default;
 led.write(1);
 render.begin();
 	render.fillRectangle(black, 0, 0, render.width, render.height);
 render.end();
 
 let digital1 = new Digital({
-	pin: 17,
+	pin: 13,
 	mode: Digital.InputPullUp,
 	wakeEdge: Digital.WakeOnFall,
 	onWake() {
-		notify("digital1");
+		notify("BackBtn");
 	}
 });
 
 let digital2 = new Digital({
-	pin: 22,
+	pin: 11,
 	mode: Digital.InputPullUp,
 	wakeEdge: Digital.WakeOnFall,
 	onWake() {
-		notify("digital2");
+		notify("JogPress");
 	}
 });
 
@@ -62,8 +62,20 @@ let analog = new Analog({
 	}
 });
 
-if (ResetReason.RESETPIN == Sleep.resetReason)
-	notify("reset");
+switch (Sleep.resetReason) {
+	case ResetReason.RESETPIN:
+		notify("ResetBtn");
+		break;
+	case ResetReason.GPIO:
+		notify("GPIO");
+		break;
+	case ResetReason.LPCOMP:
+		notify("LPCOMP");
+		break;
+	case ResetReason.SREQ:
+		notify("SREQ");
+		break;
+}
 
 Timer.set(() => {
 	led.write(0);
