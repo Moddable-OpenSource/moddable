@@ -288,31 +288,6 @@ void fx_GeneratorFunction(txMachine* the)
 	}
 }
 
-txSlot* fxAsyncGeneratorEnqueue(txMachine* the, txSlot* resolveFunction, txSlot* rejectFunction, txFlag status, txSlot* queue)
-{
-	txSlot* slot;
-	txSlot* instance = fxNewInstance(the);
-	txSlot* property = fxNextSlotProperty(the, instance, resolveFunction, XS_NO_ID, XS_INTERNAL_FLAG);
-	property = fxNextSlotProperty(the, property, rejectFunction, XS_NO_ID, XS_INTERNAL_FLAG);
-	property = fxNextIntegerProperty(the, property, status, XS_NO_ID, XS_INTERNAL_FLAG);
-	if (mxArgc > 0)
-		property = fxNextSlotProperty(the, property, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
-	else
-		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
-	slot = fxNewSlot(the);
-	slot->kind = XS_REFERENCE_KIND;
-	slot->value.reference = instance;
-	if (queue->value.list.first) {
-		queue->value.list.last->next = slot;
-		queue->value.list.last = slot;
-	}
-	else {
-		queue->value.list.first = slot;
-		queue->value.list.last = slot;
-	}
-	return property;
-}
-
 void fxAsyncGeneratorRejectAwait(txMachine* the)
 {
 	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
