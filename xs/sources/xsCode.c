@@ -4646,13 +4646,15 @@ void fxYieldNodeCode(void* it, void* param)
 	txBoolean async = (self->flags & mxAsyncFlag) ? 1 : 0;
 	txCoder* coder = param;
 	txTargetCode* target = fxCoderCreateTarget(coder);
-	
-	if (!async) {
+	if (async) {
+		fxNodeDispatchCode(self->expression, param);
+		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
+		fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
+	}
+	else {
 		fxCoderAddByte(param, 1, XS_CODE_OBJECT);
 		fxCoderAddByte(param, 1, XS_CODE_DUB);
-	}
-	fxNodeDispatchCode(self->expression, param);
-	if (!async) {
+		fxNodeDispatchCode(self->expression, param);
 		fxCoderAddSymbol(param, -2, XS_CODE_NEW_PROPERTY, coder->parser->valueSymbol);
 		fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
 		fxCoderAddByte(param, 1, XS_CODE_DUB);
