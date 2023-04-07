@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: March 24, 2023
+Revised: April 7, 2023
 
 This document provides information about Moddable Four, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -16,6 +16,7 @@ This document provides information about Moddable Four, including details about 
 - [Using the Moddable Four](#moddable-features)
 - [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
+	- [Simulator](#simulator)
 	- [Examples](#examples)
 	- [Documentation](#documentation)
 	- [Support](#support)
@@ -122,12 +123,12 @@ After you've setup your environment and nRF5 tools, take the following steps to 
 	
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
     
-    Use the platform -p `simulator/moddable_four` with `mcconfig` to build for the Moddable Four simulator.
+    Use the platform -p `sim/moddable_four` with `mcconfig` to build for the Moddable Four simulator.
 
 <a id="moddable-features"></a>
-### Using the Moddable Four
+### Using Moddable Four
 
-The Moddable Four hardware is carefully designed to be usable for many applications without additional hardware. These hardware features include:
+The hardware and software in Moddable Four have been carefully designed to work together to support many kinds of applications without additional hardware. The hardware features include:
 
 * LED
 * Back button
@@ -135,7 +136,7 @@ The Moddable Four hardware is carefully designed to be usable for many applicati
 * Display power
 * Display dither
 * Accelerometer
-* Sleep
+* Energy Management
 
 #### LED and Back button
 This code snippet shows the use of the Moddable Four Host object to turn on the LED when the back button is pressed.
@@ -151,7 +152,7 @@ new Host.Button({
 });
 ```
 
-#### Jog dial
+#### Jog Dial
 
 ```
 new Host.JogDial({
@@ -167,7 +168,7 @@ new Host.JogDial({
 });
 ```
 	
-#### Display power
+#### Display Power
 To use the Moddable Four display, the LCD power pin must be enabled. In the `moddable_four/setup-target.js` file, the screen is enabled if the `autobacklight` config variable is set:
 
 ```
@@ -175,15 +176,23 @@ if (config.autobacklight)
     Digital.write(config.lcd_power_pin, 0);
 ```
 
-#### Display dither
-The display driver can be set to dither. This is controlled by a define in the application's manifest:
+#### Display Dither
+The Sharp memory display in Moddable Four uses the ls013b4dn04 display driver. By default, the display driver is configured to dither images as it converts from 8-bit gray to black and white for the display. The driver uses the [Atkinson dither](https://en.wikipedia.org/wiki/Atkinson_dithering) algorithm which is fast, high quality, and well suited to animation.
+
+While low, there is some runtime cost to dither. For applications that want to maximize frame rate, minimize computation, reduce code size, and reduce RAM use, dithering may be completely disabled in the driver by setting the appropriate define in the project manifest:
 
 ```
     "defines": {
         "ls013b4dn04": {
-            "dither": 1
+            "dither": 0
         }
     },
+```
+Some applications want dithering enabled on some screens but not others. Those applications will leave dithering enabled in the driver, and use the `dither` property of the driver to turn dithering on and off at runtime.
+
+```
+screen.dither = true;
+screen.dither = false;
 ```
 
 #### Accelerometer
@@ -199,23 +208,58 @@ Timer.repeat(() => {
 }, 100);
 ```
 
-#### Sleep
+#### Energy Management
 
-The Moddable Four is designed to run on coin-cell batteries for long periods of time.
+The Moddable Four is designed to run on coin-cell batteries for long periods of time. The hardware is carefully designed to achieve maximum energy efficiency. Here is the energy used in various operating modes:
 
-Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`.
+- Idle mode - 3.7 uA - RAM maintained, waiting for user input, between screens and sensor readings.
+- Deep sleep - 1.85 uA - No software running. Automatically wake after a specified duration. Only retention RAM maintained.
+- Wake on digital - 1.9 uA - Like deep sleep, but also wakes up on state change of digital input
+- Wake on analog - 2.7 uA - Like deep sleep, but also wakes when an analog input crosses a specified threshold
+
+There are many energy management APIs available on Moddable Four. These include:
+
+- Deep sleep
+- Retention RAM
+- Wake on digital
+- Wake on timer
+- Wake on analog
+- Wake on motion (using accelerometer)
 
 <!--
 	should have a readme.md in that directory which describes the examples
 -->
 
+See the [nRF52 Low Power Notes](./nRF52-low-power.md) for details. Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`. 
+
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
-See the Troubleshooting section of the [nRF52840 documentation](./nrf52.md) for a list of common issues and how to resolve them.
+See the Troubleshooting section of the [nRF52 documentation](./nrf52.md) for a list of common issues and how to resolve them.
 
 <a id="development-resources"></a>
 ## Development Resources
+
+<a id="simulator"></a>
+### Simulator
+The Moddable SDK simulator, mcsim, includes a Moddable Four simulator. To use it, use the `sim/moddable_four` platform when building with `mcconfig`:
+
+```
+mcconfig -d -m -p sim/moddable_four
+```
+
+The simulator includes controls for many of the unique hardware features of Moddable Four. Use "Show Controls" and "Hide Controls" in the View menu to toggle their visibility.
+
+<img src="../assets/devices/moddable-four-simulator.png">
+
+You can also use your computer's keyboard to control the jog dial and button:
+
+- Jog dial clockwise – up arrow
+- Jog dial counter-clockwise – down arrow
+- Jog dial press – enter
+- Back button – delete
+
+The Moddable Four simulator renders images in 8-bit grayscale, which matches how Moddable Four hardware renders images off-screen. The display driver in Moddable Four then converts the 8-bit grayscale images to monochrome (1-bit) for display with optional dithering.
 
 <a id="examples"></a>
 ### Examples
@@ -233,9 +277,9 @@ Documentation for the Moddable SDK is in the [documentation](../) directory. The
 
 - [Using the Moddable SDK with nRF52](./nrf52.md) explains how to get set-up for development, supported devices, and more.
 - [nRF52 Low Power Notes](./nRF52-low-power.md) describes the techniques and APIs to maximize battery life by minimizing power consumption.
-- The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
-- The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.
-- The `pins` subdirectory, which contains resources related to supported hardware protocols (digital, analog, PWM, I2C, etc.). A number of drivers for common off-the-shelf sensors and corresponding example apps are also available.
+- The `commodetto` [directory](../../examples/commodetto), which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
+- The `piu` [directory](../../examples/piu), which contains resources related to Piu, our user interface framework for creating complex, responsive layouts.
+- The `pins` [directory](../../examples/pins), which contains resources related to supported hardware protocols (digital, analog, PWM, I²C, etc.). A number of drivers for common off-the-shelf sensors and corresponding example apps are also available.
 
 <a id="support"></a>
 ### Support
