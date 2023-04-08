@@ -80,7 +80,7 @@ Care must be taken to ensure that the amount of RAM requested is sufficient for 
 
 In the graph below, power consumption was measured while waiting on a [Timer](../../modules/base/timer). Power consumption tracks inversely with the amount of RAM powered.
 
-<img src="./assets/devices/nrf52-ram-power-consumption.png">
+<img src="./../assets/devices/nrf52-ram-power-consumption.png">
 
 > Note: RAM Power Control can only be used in release builds.
 
