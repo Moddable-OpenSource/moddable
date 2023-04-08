@@ -527,7 +527,7 @@ void fxFindThisItem(txMachine* the, txSlot* function, txNumber index, txSlot* it
 	mxCall();
 	/* ARGUMENTS */
 	mxPushSlot(mxThis);
-	mxGetIndex(index);
+	mxGetIndex((txIndex)index);
 	if (item) {
 		item->kind = the->stack->kind;
 		item->value = the->stack->value;
@@ -1675,7 +1675,7 @@ void fx_Array_prototype_findLastIndex(txMachine* the)
 		index--;
 		fxFindThisItem(the, function, index, C_NULL);
 		if (fxToBoolean(the, the->stack++)) {
-			fxUnsigned(the, mxResult, index);
+			fxUnsigned(the, mxResult, (txUnsigned)index);
 			break;
 		}
 	}
@@ -2624,7 +2624,7 @@ void fx_Array_prototype_toSpliced(txMachine* the)
 	if (array)
 		array = fxCheckArrayItems(the, array, (txIndex)0, (txIndex)START);
 	if (array)
-		array = fxCheckArrayItems(the, array, (txIndex)START + SKIP, (txIndex)LENGTH);
+		array = fxCheckArrayItems(the, array, (txIndex)(START + SKIP), (txIndex)LENGTH);
 	if (array) {
 		txIndex length = (txIndex)LENGTH;
 		txIndex start = (txIndex)START;

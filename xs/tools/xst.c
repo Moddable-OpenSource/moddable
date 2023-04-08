@@ -2282,7 +2282,6 @@ void fxConnect(txMachine* the)
 	char name[256];
 	char* colon;
 	int port;
-	struct sockaddr_in address;
 #if mxWindows
 	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
 #else
@@ -2303,22 +2302,21 @@ void fxConnect(txMachine* the)
 		strcpy(name, "localhost");
 		port = 5002;
 	}
-	memset(&address, 0, sizeof(address));
-  	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(name);
-	if (address.sin_addr.s_addr == INADDR_NONE) {
-		struct hostent *host = gethostbyname(name);
-		if (!host)
-			return;
-		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-	}
-  	address.sin_port = htons(port);
 #if mxWindows
 {  	
 	WSADATA wsaData;
+	struct hostent *host;
+	struct sockaddr_in address;
 	unsigned long flag;
 	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
 		return;
+	host = gethostbyname(name);
+	if (!host)
+		goto bail;
+	memset(&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+  	address.sin_port = htons(port);
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection == INVALID_SOCKET)
 		return;
@@ -2343,7 +2341,18 @@ void fxConnect(txMachine* the)
 }
 #else
 {  	
+	struct sockaddr_in address;
 	int	flag;
+	memset(&address, 0, sizeof(address));
+  	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = inet_addr(name);
+	if (address.sin_addr.s_addr == INADDR_NONE) {
+		struct hostent *host = gethostbyname(name);
+		if (!host)
+			return;
+		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+	}
+  	address.sin_port = htons(port);
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection <= 0)
 		goto bail;
