@@ -52,7 +52,7 @@
 #ifndef XSPLATFORM	
 	/* for xsc and xsid on Linux, macOS or Windows */
 	#if defined(_MSC_VER)
-		#if defined(_M_IX86) || defined(_M_X64)
+		#if defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64) || defined(_M_ARM64EC)
 			#undef mxWindows
 			#define mxWindows 1
 			#ifdef mxDynamicLink
