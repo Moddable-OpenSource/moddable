@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: March 25, 2023
+Revised: April 8, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -292,7 +292,7 @@ Debugging native code on the Moddable Four requires a [Nordic nRF52840-DK board]
 <a id="j-link-connection"></a>
 For example, connect your Moddable Four to the nRF52840-DK board as follows:
 
-| nRF52840 DK | Moddable Four | 
+| nRF52840 DK | Moddable Four |  |
 | :---: | :---: | :---
 | SWD CLK | SWDCLK |
 | SWD IO | SWDIO |
@@ -304,7 +304,7 @@ For example, connect your Moddable Four to the nRF52840-DK board as follows:
 
 If you have a Segger J-Link Plus, the connections to the J-Link are as follows:
 
-| Moddable Four | J-Link |
+| Moddable Four | J-Link | |
 | :---: | :---: | :---
 | SWDCLK | TCK |
 | SWDIO | TMS |
@@ -376,7 +376,7 @@ GDB communicates with the nRF58240 device via a J-Link connection in the nRF5284
 
     ```text
     Breakpoint 1 at 0x46550: file /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c, line 149.
-Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
+    Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
     
     Breakpoint 1, main () at /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c:149
     
@@ -431,9 +431,11 @@ section.
    
    > Note: The following BOARD configurations have been updated to support Moddable.
    - `moddable_four`
+   - `moddable_itsybitsy_nrf52`
+   - `moddable_makerdiary_nrf52`
    - `moddable_pca10056`
    - `moddable_sparkfun52840`
-   - `moddable_makerdiary_nrf52`
+   - `moddable_xiao`
  
 
 4. Install to your device. First install the SoftDevice, then flash the bootloader:

@@ -1,6 +1,6 @@
 # nRF52 Low Power Notes
 Copyright 2019-23 Moddable Tech, Inc.<br/>
-Revised: April 6, 2023
+Revised: April 8, 2023
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -80,7 +80,7 @@ Care must be taken to ensure that the amount of RAM requested is sufficient for 
 
 In the graph below, power consumption was measured while waiting on a [Timer](../../modules/base/timer). Power consumption tracks inversely with the amount of RAM powered.
 
-<img src="./assets/ram-power-consumption.png">
+<img src="./assets/devices/nrf52-ram-power-consumption.png">
 
 > Note: RAM Power Control can only be used in release builds.
 
@@ -100,7 +100,7 @@ import Sleep from "sleep";
 #### `deep([ms])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `ms` | `number` | Optional number of milliseconds to sleep
 
 Call the `deep` function to enter deep sleep. When called with the milliseconds parameter, the function powers off all RAM and configures a RTC to wake-up from System ON sleep after the specified number of milliseconds have passed, or on any configured interrupt. When the `ms` parameter is omitted, the device is put into System OFF sleep. In either case, the device reboots and the application script is relaunched upon wake-up.
@@ -126,15 +126,15 @@ The `resetReason` accessor function returns the reason for the most recent syste
 ### Properties
 
 | Name | Description |
-| --- | --- | :--- |
-| `RESETPIN` | Reset pin
-| `DOG` | Reset from watchdog timer
-| `SREQ` | Software reset
-| `LOCKUP` | Reset from lockup
-| `GPIO` | Reset triggered from GPIO DETECT (digital) signal
-| `LPCOMP` | Reset triggered from GPIO ANDETECT (analog) signal
-| `DIF` | Reset triggered from debugger interface
-| `NFC` | Reset triggered from NFC field detect
+| --- | --- |
+| `RESETPIN` | Reset pin |
+| `DOG` | Reset from watchdog timer |
+| `SREQ` | Software reset |
+| `LOCKUP` | Reset from lockup |
+| `GPIO` | Reset triggered from GPIO DETECT (digital) signal |
+| `LPCOMP` | Reset triggered from GPIO ANDETECT (analog) signal |
+| `DIF` | Reset triggered from debugger interface |
+| `NFC` | Reset triggered from NFC field detect |
 
 To check if reset was triggered by a digital input:
 
@@ -154,10 +154,10 @@ The `powerMode` setter function sets the System ON low power sub-mode. The `Powe
 
 ### Properties
 
-| Name | Description |
-| --- | --- | :--- |
-| `ConstantLatency` | Constant Latency sub-mode
-| `LowPower` | Low Power sub-mode
+| Name | Description | 
+| --- | --- |
+| `ConstantLatency` | Constant Latency sub-mode |
+| `LowPower` | Low Power sub-mode |
 
 To set System ON low power sub-power mode:
 
