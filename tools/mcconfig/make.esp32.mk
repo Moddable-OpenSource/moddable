@@ -332,9 +332,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all partitionsFileCheck bootloaderCheck
-
-PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
+.PHONY: all bootloaderCheck
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj-$(ESP32_SUBCLASS)
 PROJ_DIR_FILES = \
@@ -458,7 +456,7 @@ DUMP_VARS:
 	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
 	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
-precursor: idfVersionCheck partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+precursor: idfVersionCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(BLD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -495,13 +493,6 @@ $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 
-partitionsFileCheck:
-	if test -e $(PROJ_DIR)/partitions.csv ; then \
-		if ! cmp -s $(PROJ_DIR)/partitions.csv $(PARTITIONS_FILE) ; then \
-			touch $(PARTITIONS_FILE); \
-		fi ; \
-	fi
-
 bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
@@ -524,13 +515,9 @@ idfVersionCheck:
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/
-	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
 $(PROJ_DIR)/main:
 	mkdir -p $(PROJ_DIR)/main
-
-$(PROJ_DIR)/partitions.csv: $(PARTITIONS_FILE)
-	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@

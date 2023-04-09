@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: April 4, 2023
+Revised: April 9, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -107,6 +107,52 @@ The `C_FLAGS_SUBPLATFORM` environment variable is for use in manifests of subpla
 	"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
 },
 ```
+
+#### How partitions.csv is processed
+The [ESP-IDF partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) must contain certain partitions to support certain features:
+
+- [Mods](../xs/mods.md) requires a partition to store the mod's archive
+- Files requires a partition to store the file system
+- Over-the-Air (OTA) updates require two OTA app partitions plus an OTA Data partition
+
+The `mcconfig` tool can automatically modify the partition map to support these features. This simplifies development by eliminating the need to manually create a targeted partition table for projects. It makes optimal use of flash space, by only creating partitions for features that are used by the project.
+
+The `mcconfig` tool creates new partitions by dividing the factory app partition based on the features used by the project. The default partition tables for Moddable SDK devices all have a single factory app partition and so support this feature of `mcconfig`.
+
+To determine the features in-use, `mcconfig` checks the following manifest [defines](#defines). These defines are set in the manifests that require them, so it is usually unnecessary to set them in project manifests.
+
+- Mods – if `XS_MODS` is set to a non-zero value, mods are considered to be in use
+
+```json
+"defines": {
+	"XS_MODS": 1
+}
+```
+- Files - if `file partition` is set to the name of a partition, files are considered to be in use
+
+```json
+"defines": {
+	"file": {
+		"partition": "#storage"
+	}
+}
+```
+- OTA – if `ota autospilt` is set, OTA is considered to be in-use.
+
+```json
+"defines": {
+	"ota": {
+		"autosplit": 1
+	}
+}
+```
+If the partitions.csv file for the project includes a partition for these features, `mcconfig` does not automatically create the corresponding partition. For example, if a mods partition is defined in the partitions.csv file, `mcconfig` does not create one from the factory app partition.
+
+The partitions created have the following sizes. Options could be implemented in the future to configure these sizes.
+
+- Mods - 256 KB
+- Storage - 64 KB
+- OTA - 8 KB is reserved for the OTA Data partition required by the ESP-IDF. The space in the factory app partition not used for other partitions is divided into two OTA app partitions.
 
 #### How sdkconfig files are processed
 
