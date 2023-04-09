@@ -121,6 +121,9 @@ export class MakeFile extends FILE {
 		if ("esp32" !== tool.platform)
 			return;
 
+		if (!tool.environment.SDKCONFIGPATH)
+			return;		// mcrun
+
 		const ESP32_SUBCLASS = tool.environment.ESP32_SUBCLASS ?? "esp32";
 		const baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-" + ESP32_SUBCLASS;
 		const outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-" + ESP32_SUBCLASS;
@@ -216,9 +219,6 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 		if (partitions)
 			tool.writeFileString(buildPartitionsFile, partitions);
-
-		if (!tool.environment.SDKCONFIGPATH)
-			return;
 		
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
