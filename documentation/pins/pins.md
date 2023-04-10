@@ -1,6 +1,6 @@
 # Pins
-Copyright 2017-22 Moddable Tech, Inc.<BR>
-Revised: October 20, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: April 10, 2023
 
 ## Table of Contents
 
@@ -158,7 +158,7 @@ Digital.WakeOnRise = (1 << 6);
 Digital.WakeOnFall = (1 << 7);
 ```
 
-**Note**: Only nRF52840 devices currently support deep sleep wake-up from digital input triggers.
+**Note**: Only nRF52 devices currently support deep sleep wake-up from digital input triggers.
 
 ### `close()`
 
@@ -238,7 +238,7 @@ let monitor = new Monitor({
 });
 ```
 
-**Note**: Only nRF52840 devices currently support deep sleep wake-up from digital input triggers.
+**Note**: Only nRF52 devices currently support deep sleep wake-up from digital input triggers.
 
 ### `close()`
 
@@ -297,7 +297,7 @@ let analog = new Analog({ pin: 5 });
 trace(`Analog value is ${analog.read()}\n`);
 ```
 
-**Note**: The nRF52840 platform currently only supports the constructor and instance read function. On all other platforms, the Analog class provides only static functions. 
+**Note**: The nRF52 platform currently only supports the constructor and instance read function. On all other platforms, the Analog class provides only static functions. 
 
 ### `static read(pin)`
 
@@ -345,7 +345,7 @@ Analog.CrossingDown = 1;
 Analog.CrossingUpDown = 2;
 ```
 
-**Note:**: Only nRF52840 devices currently support deep sleep wake-up from analog input triggers.
+**Note:**: Only nRF52 devices currently support deep sleep wake-up from analog input triggers.
 
 <a id="pwm"></a>
 ## class PWM

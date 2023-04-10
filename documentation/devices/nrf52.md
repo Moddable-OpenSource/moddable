@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: April 8, 2023
+Revised: April 10, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -33,7 +33,7 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
 Before you can build applications, you need to:
 
 - Install the Moddable SDK and build its tools
-- Install the required drivers and development tools for the nRF52840 platform
+- Install the required drivers and development tools for the nRF52 platform
 
 The instructions below will have you verify your setup by running the `helloworld` example on your device using `mcconfig`, the command line tool to build and run applications using the Moddable SDK.
 
@@ -46,13 +46,13 @@ To build for Moddable Four,  run `mcconfig` with `nrf52/moddable_four` for the *
 mcconfig -d -m -p nrf52/moddable_four
 ```
 
-A list of available nRF52840 subplatforms and their platform identifiers is in the **Platforms** section below.
+A list of available nRF52 subplatforms and their platform identifiers is in the **Platforms** section below.
 
 <a id="platforms"></a>
 ## Platforms
 
 <a id="platforms-nrf52"></a>
-### nRF52840
+### nRF52
 
 nRF52840 has the following features:
 

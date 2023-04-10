@@ -127,15 +127,15 @@ The Moddable SDK supports [many devices](./documentation/devices/pico.md#platfor
 | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-adafruit-qt-py-rp2040.png" width=85></a><BR>Adafruit QT Py | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=160></a><BR>Sparkfun Pro Micro | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-lilygo-t-display-rp2040.png" width=160></a><BR> LILYGO T-Display
 
 
-### nRF52840 by Nordic Semiconductor
+### nRF52 by Nordic Semiconductor
 
-To use the Moddable SDK with nRF52840 devices, you need to:
+To use the Moddable SDK with nRF52 devices, you need to:
 
 1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
 2. Install [nRF5 tools](./documentation/devices/nrf52.md)
 3. Install [a bootloader](./documentation/devices/nrf52.md#install-bootloader). This is not necessary for the Moddable Four as the bootloader is pre-installed on Moddable Four.
 
-The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platforms) built with the nRF52840, including the boards shown below:
+The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platforms) built with the nRF52, including the boards shown below:
 
 | | | |
 | :---: | :---: | :---: |
