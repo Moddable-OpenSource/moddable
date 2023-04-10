@@ -246,10 +246,23 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
     mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE>
     ```
 
-<!--
 <a id="lin-troubleshooting"></a>
-### Troubleshooting
--->
+### Linux Troubleshooting
+
+When you're trying to install applications, you may experience roadblocks in the form of errors or warnings; this section explains some common issues on Linux and how to resolve them.
+
+For other issues that are common on macOS, Windows, and Linux, see the [Troubleshooting section](#troubleshooting) at the bottom of this document.
+
+
+#### Permission denied
+
+The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
+
+```text
+sudo adduser <username> dialout
+sudo reboot
+```
+
 
 <a id="troubleshooting"></a>
 # Troubleshooting
