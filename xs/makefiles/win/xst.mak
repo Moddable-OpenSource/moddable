@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -88,63 +88,63 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 OBJECTS = \
-	$(TMP_DIR)\xsAll.o \
-	$(TMP_DIR)\xsAPI.o \
-	$(TMP_DIR)\xsArguments.o \
-	$(TMP_DIR)\xsArray.o \
-	$(TMP_DIR)\xsAtomics.o \
-	$(TMP_DIR)\xsBigInt.o \
-	$(TMP_DIR)\xsBoolean.o \
-	$(TMP_DIR)\xsCode.o \
-	$(TMP_DIR)\xsCommon.o \
-	$(TMP_DIR)\xsDataView.o \
-	$(TMP_DIR)\xsDate.o \
-	$(TMP_DIR)\xsDebug.o \
-	$(TMP_DIR)\xsDefaults.o \
-	$(TMP_DIR)\xsError.o \
-	$(TMP_DIR)\xsFunction.o \
-	$(TMP_DIR)\xsGenerator.o \
-	$(TMP_DIR)\xsGlobal.o \
-	$(TMP_DIR)\xsJSON.o \
-	$(TMP_DIR)\xsLexical.o \
-	$(TMP_DIR)\xsLockdown.o \
-	$(TMP_DIR)\xsMapSet.o \
-	$(TMP_DIR)\xsMarshall.o \
-	$(TMP_DIR)\xsMath.o \
-	$(TMP_DIR)\xsMemory.o \
-	$(TMP_DIR)\xsModule.o \
-	$(TMP_DIR)\xsNumber.o \
-	$(TMP_DIR)\xsObject.o \
-	$(TMP_DIR)\xsPlatforms.o \
-	$(TMP_DIR)\xsProfile.o \
-	$(TMP_DIR)\xsPromise.o \
-	$(TMP_DIR)\xsProperty.o \
-	$(TMP_DIR)\xsProxy.o \
-	$(TMP_DIR)\xsRegExp.o \
-	$(TMP_DIR)\xsRun.o \
-	$(TMP_DIR)\xsScope.o \
-	$(TMP_DIR)\xsScript.o \
-	$(TMP_DIR)\xsSourceMap.o \
-	$(TMP_DIR)\xsString.o \
-	$(TMP_DIR)\xsSymbol.o \
-	$(TMP_DIR)\xsSyntaxical.o \
-	$(TMP_DIR)\xsTree.o \
-	$(TMP_DIR)\xsType.o \
-	$(TMP_DIR)\xsdtoa.o \
-	$(TMP_DIR)\xsre.o \
-	$(TMP_DIR)\api.o \
-	$(TMP_DIR)\dumper.o \
-	$(TMP_DIR)\emitter.o \
-	$(TMP_DIR)\loader.o \
-	$(TMP_DIR)\parser.o \
-	$(TMP_DIR)\reader.o \
-	$(TMP_DIR)\scanner.o \
-	$(TMP_DIR)\writer.o \
-	$(TMP_DIR)\xsmc.o \
-	$(TMP_DIR)\textdecoder.o \
-	$(TMP_DIR)\textencoder.o \
-	$(TMP_DIR)\modBase64.o \
-	$(TMP_DIR)\xst.o
+	$(TMP_DIR)\xsAll.obj \
+	$(TMP_DIR)\xsAPI.obj \
+	$(TMP_DIR)\xsArguments.obj \
+	$(TMP_DIR)\xsArray.obj \
+	$(TMP_DIR)\xsAtomics.obj \
+	$(TMP_DIR)\xsBigInt.obj \
+	$(TMP_DIR)\xsBoolean.obj \
+	$(TMP_DIR)\xsCode.obj \
+	$(TMP_DIR)\xsCommon.obj \
+	$(TMP_DIR)\xsDataView.obj \
+	$(TMP_DIR)\xsDate.obj \
+	$(TMP_DIR)\xsDebug.obj \
+	$(TMP_DIR)\xsDefaults.obj \
+	$(TMP_DIR)\xsError.obj \
+	$(TMP_DIR)\xsFunction.obj \
+	$(TMP_DIR)\xsGenerator.obj \
+	$(TMP_DIR)\xsGlobal.obj \
+	$(TMP_DIR)\xsJSON.obj \
+	$(TMP_DIR)\xsLexical.obj \
+	$(TMP_DIR)\xsLockdown.obj \
+	$(TMP_DIR)\xsMapSet.obj \
+	$(TMP_DIR)\xsMarshall.obj \
+	$(TMP_DIR)\xsMath.obj \
+	$(TMP_DIR)\xsMemory.obj \
+	$(TMP_DIR)\xsModule.obj \
+	$(TMP_DIR)\xsNumber.obj \
+	$(TMP_DIR)\xsObject.obj \
+	$(TMP_DIR)\xsPlatforms.obj \
+	$(TMP_DIR)\xsProfile.obj \
+	$(TMP_DIR)\xsPromise.obj \
+	$(TMP_DIR)\xsProperty.obj \
+	$(TMP_DIR)\xsProxy.obj \
+	$(TMP_DIR)\xsRegExp.obj \
+	$(TMP_DIR)\xsRun.obj \
+	$(TMP_DIR)\xsScope.obj \
+	$(TMP_DIR)\xsScript.obj \
+	$(TMP_DIR)\xsSourceMap.obj \
+	$(TMP_DIR)\xsString.obj \
+	$(TMP_DIR)\xsSymbol.obj \
+	$(TMP_DIR)\xsSyntaxical.obj \
+	$(TMP_DIR)\xsTree.obj \
+	$(TMP_DIR)\xsType.obj \
+	$(TMP_DIR)\xsdtoa.obj \
+	$(TMP_DIR)\xsre.obj \
+	$(TMP_DIR)\api.obj \
+	$(TMP_DIR)\dumper.obj \
+	$(TMP_DIR)\emitter.obj \
+	$(TMP_DIR)\loader.obj \
+	$(TMP_DIR)\parser.obj \
+	$(TMP_DIR)\reader.obj \
+	$(TMP_DIR)\scanner.obj \
+	$(TMP_DIR)\writer.obj \
+	$(TMP_DIR)\xsmc.obj \
+	$(TMP_DIR)\textdecoder.obj \
+	$(TMP_DIR)\textencoder.obj \
+	$(TMP_DIR)\modBase64.obj \
+	$(TMP_DIR)\xst.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -168,30 +168,24 @@ $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(SRC_DIR)\xsScript.h
 
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TLS_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(TLS_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.o::
+{$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(MODDABLE)\modules\data\text\decoder\}.c{$(TMP_DIR)\}.o:
-	cd $(TMP_DIR) 
-	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(MODDABLE)\modules\data\text\encoder\}.c{$(TMP_DIR)\}.o:
+{$(MODDABLE)\modules\data\text\decoder\}.c{$(TMP_DIR)\}.obj:
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(MODDABLE)\modules\data\base64\}.c{$(TMP_DIR)\}.o:
+{$(MODDABLE)\modules\data\text\encoder\}.c{$(TMP_DIR)\}.obj:
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
+{$(MODDABLE)\modules\data\base64\}.c{$(TMP_DIR)\}.obj:
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe
