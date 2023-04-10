@@ -462,3 +462,4 @@ The table below links to some of the documents in the `devices` folder to help y
 | Giant Gecko, Mighty Gecko,<BR>Thunderboard Sense 2, or Blue Gecko | [Using the Moddable SDK with Gecko](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
 | QCA4020 | [Using the Moddable SDK with QCA4020](./devices/qca4020/README.md)
 | Raspberry Pi Pico | [Using the Moddable SDK with Pico](./devices/pico.md) |
+| Nordic nRF52 | [Using the Moddable SDK with nRF52](./devices/nrf52.md) |
