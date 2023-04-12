@@ -62,6 +62,9 @@
 	#endif
 
 	#include "freertos/task.h"
+	#if MODDEF_XS_MODS
+		#include "spi_flash/include/spi_flash_mmap.h"
+	#endif
 #else
 	#include "Arduino.h"
 	#include "rtctime.h"
