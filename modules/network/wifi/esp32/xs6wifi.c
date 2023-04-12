@@ -510,7 +510,9 @@ void initWiFi(int mode)
 
 	if (gWiFiState <= -2) {
         esp_netif_init();
-		ESP_ERROR_CHECK(esp_event_loop_create_default());
+		esp_err_t err = esp_event_loop_create_default();
+		if (ESP_ERR_INVALID_STATE != err)		// ESP_ERR_INVALID_STATE indicates the default event loop has already been created
+			ESP_ERROR_CHECK(err);
 	}
 
 	gWiFiState = 1;

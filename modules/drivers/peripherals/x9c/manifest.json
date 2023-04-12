@@ -1,0 +1,8 @@
+{
+    "modules": {
+        "embedded:peripheral/Potentiometer/X9C": "$(MODDABLE)/modules/drivers/peripherals/x9c/x9c"
+    },
+    "preload": [
+        "embedded:peripheral/Potentiometer/X9C"
+    ]
+}

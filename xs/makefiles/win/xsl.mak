@@ -101,53 +101,53 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 OBJECTS = \
-	$(TMP_DIR)\xsAll.o \
-	$(TMP_DIR)\xsAPI.o \
-	$(TMP_DIR)\xsArguments.o \
-	$(TMP_DIR)\xsArray.o \
-	$(TMP_DIR)\xsAtomics.o \
-	$(TMP_DIR)\xsBigInt.o \
-	$(TMP_DIR)\xsBoolean.o \
-	$(TMP_DIR)\xsCode.o \
-	$(TMP_DIR)\xsCommon.o \
-	$(TMP_DIR)\xsDataView.o \
-	$(TMP_DIR)\xsDate.o \
-	$(TMP_DIR)\xsDebug.o \
-	$(TMP_DIR)\xsDefaults.o \
-	$(TMP_DIR)\xsError.o \
-	$(TMP_DIR)\xsFunction.o \
-	$(TMP_DIR)\xsGenerator.o \
-	$(TMP_DIR)\xsGlobal.o \
-	$(TMP_DIR)\xsJSON.o \
-	$(TMP_DIR)\xsLexical.o \
-	$(TMP_DIR)\xsMapSet.o \
-	$(TMP_DIR)\xsMarshall.o \
-	$(TMP_DIR)\xsMath.o \
-	$(TMP_DIR)\xsMemory.o \
-	$(TMP_DIR)\xsModule.o \
-	$(TMP_DIR)\xsNumber.o \
-	$(TMP_DIR)\xsObject.o \
-	$(TMP_DIR)\xsPlatforms.o \
-	$(TMP_DIR)\xsPromise.o \
-	$(TMP_DIR)\xsProperty.o \
-	$(TMP_DIR)\xsProxy.o \
-	$(TMP_DIR)\xsRegExp.o \
-	$(TMP_DIR)\xsRun.o \
-	$(TMP_DIR)\xsScope.o \
-	$(TMP_DIR)\xsScript.o \
-	$(TMP_DIR)\xsSourceMap.o \
-	$(TMP_DIR)\xsString.o \
-	$(TMP_DIR)\xsSymbol.o \
-	$(TMP_DIR)\xsSyntaxical.o \
-	$(TMP_DIR)\xsTree.o \
-	$(TMP_DIR)\xsType.o \
-	$(TMP_DIR)\xsdtoa.o \
-	$(TMP_DIR)\xsre.o \
-	$(TMP_DIR)\xslBase.o \
-	$(TMP_DIR)\xslOpt.o \
-	$(TMP_DIR)\xslSlot.o \
-	$(TMP_DIR)\xslStrip.o \
-	$(TMP_DIR)\xsl.o
+	$(TMP_DIR)\xsAll.obj \
+	$(TMP_DIR)\xsAPI.obj \
+	$(TMP_DIR)\xsArguments.obj \
+	$(TMP_DIR)\xsArray.obj \
+	$(TMP_DIR)\xsAtomics.obj \
+	$(TMP_DIR)\xsBigInt.obj \
+	$(TMP_DIR)\xsBoolean.obj \
+	$(TMP_DIR)\xsCode.obj \
+	$(TMP_DIR)\xsCommon.obj \
+	$(TMP_DIR)\xsDataView.obj \
+	$(TMP_DIR)\xsDate.obj \
+	$(TMP_DIR)\xsDebug.obj \
+	$(TMP_DIR)\xsDefaults.obj \
+	$(TMP_DIR)\xsError.obj \
+	$(TMP_DIR)\xsFunction.obj \
+	$(TMP_DIR)\xsGenerator.obj \
+	$(TMP_DIR)\xsGlobal.obj \
+	$(TMP_DIR)\xsJSON.obj \
+	$(TMP_DIR)\xsLexical.obj \
+	$(TMP_DIR)\xsMapSet.obj \
+	$(TMP_DIR)\xsMarshall.obj \
+	$(TMP_DIR)\xsMath.obj \
+	$(TMP_DIR)\xsMemory.obj \
+	$(TMP_DIR)\xsModule.obj \
+	$(TMP_DIR)\xsNumber.obj \
+	$(TMP_DIR)\xsObject.obj \
+	$(TMP_DIR)\xsPlatforms.obj \
+	$(TMP_DIR)\xsPromise.obj \
+	$(TMP_DIR)\xsProperty.obj \
+	$(TMP_DIR)\xsProxy.obj \
+	$(TMP_DIR)\xsRegExp.obj \
+	$(TMP_DIR)\xsRun.obj \
+	$(TMP_DIR)\xsScope.obj \
+	$(TMP_DIR)\xsScript.obj \
+	$(TMP_DIR)\xsSourceMap.obj \
+	$(TMP_DIR)\xsString.obj \
+	$(TMP_DIR)\xsSymbol.obj \
+	$(TMP_DIR)\xsSyntaxical.obj \
+	$(TMP_DIR)\xsTree.obj \
+	$(TMP_DIR)\xsType.obj \
+	$(TMP_DIR)\xsdtoa.obj \
+	$(TMP_DIR)\xsre.obj \
+	$(TMP_DIR)\xslBase.obj \
+	$(TMP_DIR)\xslOpt.obj \
+	$(TMP_DIR)\xslSlot.obj \
+	$(TMP_DIR)\xslStrip.obj \
+	$(TMP_DIR)\xsl.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -171,14 +171,12 @@ $(OBJECTS) : $(SRC_DIR)\xsAll.h
 $(OBJECTS) : $(TLS_DIR)\xsl.h
 $(OBJECTS) : $(TLS_DIR)\xslOpt.h
 
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TLS_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(TLS_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

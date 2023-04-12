@@ -290,12 +290,14 @@ esp_err_t initEthernet(void)
 	}
 
 	ESP_ERROR_CHECK(esp_netif_init());
-	ESP_ERROR_CHECK(esp_event_loop_create_default());
+	err = esp_event_loop_create_default();
+	if (ESP_ERR_INVALID_STATE != err)		// ESP_ERR_INVALID_STATE indicates the default event loop has already been created
+		ESP_ERROR_CHECK(err);
 
 	gEthernetState = 1;
 
-	ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &doEthernetEvent, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &doIPEvent, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_instance_register(ETH_EVENT, ESP_EVENT_ANY_ID, &doEthernetEvent, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &doIPEvent, NULL, NULL));
 
 	ESP_ERROR_CHECK(esp_read_mac(macaddr, ESP_MAC_ETH));
 	mac->set_addr(mac, macaddr);
