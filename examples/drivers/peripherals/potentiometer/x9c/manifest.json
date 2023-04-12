@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/peripherals/x9c/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

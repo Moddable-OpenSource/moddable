@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Switch/TTP223": "$(MODDABLE)/modules/drivers/sensors/ttp223/ttp223"
+	},
+	"preload": [
+		"embedded:sensor/Switch/TTP223"
+	]
+}
+
