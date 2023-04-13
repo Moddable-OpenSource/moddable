@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -48,7 +48,7 @@ void xs_servo(xsMachine *the)
 	int pin;
 	double d;
 	ledc_timer_config_t ledc_timer = {
-		.bit_num = LEDC_TIMER_15_BIT,
+		.duty_resolution = LEDC_TIMER_15_BIT,
 		.freq_hz = 50,
 		.speed_mode = LEDC_HIGH_SPEED_MODE,
 		.timer_num = LEDC_TIMER_0
