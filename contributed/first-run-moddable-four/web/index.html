@@ -38,30 +38,54 @@ html, body, div {
 	font-weight: normal;
 	font-style: normal;
 }
-.button {
-  	background: white;
-	border: 1px solid #C0C0C0;
-	border-radius: 10px;
-	color: #444444;
-	cursor: default;
-	font-size: 16px;
-	line-height: 30px;
-	text-align: center;
-	user-select: none;
-	-webkit-user-select: none;
-	padding-left:10px;
-	padding-right:10px;
-	padding-top:2px;
-	padding-bottom:2px;
+
+#header {
+  background-color: #062f87;
+  width: 100%;
+  height: 56px;
 }
-.button:hover {
-	background: #f8f8f8;
+	
+#header img {
+	height: 46px;
+	padding-top: 5px;
+	padding-left: 10px;
 }
-.button:active {
-	background: #002f87;
-	border: 1px solid #002f87;
-	color: white;
+#body {
+	clear: both;
+  	position: fixed;
+	overflow-y: scroll;
+	width: 100%;
+	top:56px; bottom:42px;
 }
+	
+#footer {
+	position: fixed;
+	width: 100%;
+	bottom:0; height:42px;
+}
+#footer .copyright {
+  border-top: 1px solid #999;
+  width: 100%;
+  font-size: .8rem;
+  color: #999;
+  padding-left: 10px;
+}
+
+#info {
+	margin-left: auto;
+	margin-right: auto;
+	padding: 10px;
+	line-height: 1.2rem;
+	max-width:880px;
+}
+
+#pane-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap:wrap;
+}
+
 .pane {
 	text-align: center;
 	float: left;
@@ -89,6 +113,31 @@ html, body, div {
 	position:absolute;
 	left:0px; right:0px;
 	bottom:10px; height:30px;
+}
+
+.button {
+  	background: white;
+	border: 1px solid #C0C0C0;
+	border-radius: 10px;
+	color: #444444;
+	cursor: default;
+	font-size: 16px;
+	line-height: 30px;
+	text-align: center;
+	user-select: none;
+	-webkit-user-select: none;
+	padding-left:10px;
+	padding-right:10px;
+	padding-top:2px;
+	padding-bottom:2px;
+}
+.button:hover {
+	background: #f8f8f8;
+}
+.button:active {
+	background: #002f87;
+	border: 1px solid #002f87;
+	color: white;
 }
 
 #navigation-pane {
@@ -151,57 +200,64 @@ html, body, div {
 </head>
 <body>
 	<div id="header">
+		<img src="white-moddable.svg" alt="Moddable logo"/> 
 	</div>
 	<div id="body">
-		
-		<div id="connect-pane" class="pane">
-			<div class="pane-body">
-				<img id="connect-image" src="./device.png" height="128"/>
-			</div>
-			<div class="pane-footer">
-				<label id="connect-button" class="button" onclick="gxView.onConnect()">Connect</label>
-			</div>
+		<div id="info">
+			<p>Use this web page to interact with the First Run app on <a href="https://www.moddable.com/moddable-four" target="_blank">Moddable Four</a>. This page communicates with Moddable Four using BLE through the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank">Web Bluetooth</a> APIs. If you don't already have the First Run app installed on your Moddable Four, you can build it from the source code at <a href="https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/first-run-moddable-four">$MODDABLE/contributed/first-run-moddable-four</a>.</p>
 		</div>
+		<div id="pane-container">
+			<div id="connect-pane" class="pane">
+				<div class="pane-body">
+					<img id="connect-image" src="./device.png" height="128"/>
+				</div>
+				<div class="pane-footer">
+					<label id="connect-button" class="button" onclick="gxView.onConnect()">Connect</label>
+				</div>
+			</div>
 	
-		<div id="navigation-pane" class="pane">
-			<div class="pane-body">
-				<canvas id="navigation-canvas" width="128" height="128"></canvas>
+			<div id="navigation-pane" class="pane">
+				<div class="pane-body">
+					<canvas id="navigation-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">NAVIGATION</div>
 			</div>
-			<div class="pane-footer">NAVIGATION</div>
-		</div>
-		<div id="accelerometer-pane" class="pane">
-			<div class="pane-body">
-				<canvas id="accelerometer-canvas" class="pane-canvas" width="128" height="128"></canvas>
+			<div id="accelerometer-pane" class="pane">
+				<div class="pane-body">
+					<canvas id="accelerometer-canvas" class="pane-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">ACCELEROMETER</div>
 			</div>
-			<div class="pane-footer">ACCELEROMETER</div>
-		</div>
 		
-		<div id="image-pane" class="pane">
-			<div id="image-drop" class="pane-body image-drag" ondrop="gxView.drop(event);" ondragenter="gxView.dragEnter(event);" ondragleave="gxView.dragLeave(event);" ondragover="gxView.dragOver(event);">
-				<div id="image-placeholder">DROP</div>
-				<canvas id="image-canvas" class="pane-canvas" width="128" height="128"></canvas>
+			<div id="image-pane" class="pane">
+				<div id="image-drop" class="pane-body image-drag" ondrop="gxView.drop(event);" ondragenter="gxView.dragEnter(event);" ondragleave="gxView.dragLeave(event);" ondragover="gxView.dragOver(event);">
+					<div id="image-placeholder">DROP</div>
+					<canvas id="image-canvas" class="pane-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">IMAGE
+					<label class="button" for="image-file">Open<input type="file" id="image-file" onchange="gxView.onOpenFile(event)"/></label>
+				</div>
 			</div>
-			<div class="pane-footer">IMAGE
-				<label class="button" for="image-file">Open<input type="file" id="image-file" onchange="gxView.onOpenFile(event)"/></label>
-			</div>
-		</div>
 		
-		<div id="time-name-pane" class="pane">
-			<div id="date-time"></div>
-			<div class="pane-header">
-				<label class="button" onclick="gxView.onSetTime()">Set Time</label>
-			</div>
-			<input id="name-input"/>
-			<div class="pane-footer">
-				<label class="button" onclick="gxView.onSetName()">Set Name</label>
+			<div id="time-name-pane" class="pane">
+				<div id="date-time"></div>
+				<div class="pane-header">
+					<label class="button" onclick="gxView.onSetTime()">Set Time</label>
+				</div>
+				<input id="name-input"/>
+				<div class="pane-footer">
+					<label class="button" onclick="gxView.onSetName()">Set Name</label>
+				</div>
 			</div>
 		</div>
 	</div>
 	<div id="footer">
+		<div class="copyright">
+			<p>Copyright &copy; <script>document.write(new Date().getFullYear())</script>, Moddable Tech, Inc.</p>
+		</div>
 	</div>
 
 <script>
-
 
 class View {
 	constructor() {
