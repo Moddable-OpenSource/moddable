@@ -26,6 +26,7 @@ import Bitmap from "commodetto/Bitmap";
 
 export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 	constructor(dictionary) @ "xs_LS013B4DN04";
+	close() @ "xs_LS013B4DN04_close";
 
 	begin(x, y, width, height) @ "xs_ls013b4dn04_begin";
 	send(pixels, offset, count) @  "xs_ls013b4dn04_send";

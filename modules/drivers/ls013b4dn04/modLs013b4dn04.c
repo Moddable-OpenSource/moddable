@@ -217,6 +217,13 @@ void xs_LS013B4DN04(xsMachine *the)
 #endif
 }
 
+void xs_LS013B4DN04_close(xsMachine *the)
+{
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+
+	xs_ls013b4dn04_destructor(ls);
+}
+
 uint8_t ls013b4dn04Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
 {
 	ls013b4dn04 ls = refcon;
@@ -449,7 +456,8 @@ void xs_ls013b4dn04_destructor(void *data)
 	ls013b4dn04 ls = (ls013b4dn04)data;
 	if (!ls) return;
 
-	SCREEN_DISP_OFF;
+	if (!ls->first)
+		SCREEN_DISP_OFF;
 	if (ls->pixelBuffer)
 		c_free(ls->pixelBuffer);
 	modSPIUninit(&ls->spiConfig);
