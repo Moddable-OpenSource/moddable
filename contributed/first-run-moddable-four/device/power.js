@@ -7,6 +7,7 @@ let wakenWith = "";
 
 export default class {
 	constructor() {
+		wakenWith = "timer";
 		if (Sleep.getLatch(config.lis3dh_int1_pin))
 			wakenWith = "accelerometer";
 	}

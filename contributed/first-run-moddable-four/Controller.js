@@ -147,30 +147,62 @@ class Controller extends Behavior {
 	onCreate(container, $) {
 		this.container = container;
 		this.model = $.model;
-		container.duration = container.interval = $.model.timeout;
+		container.duration = $.model.timeout;
+		container.interval = 1000;
 	}
 	onDisplaying(container) {
 		screen.dither = false;
-		const value = this.power.getRetainedValue(0);
-		if (value == 999) {
-			this.power.setRetainedValue(0, 0);
-			
+		const power = this.power;
+		const tag = power.getRetainedValue(0);
+		if (tag) {
+			if (tag == 666) {
+				if ((power.wakenWith == "accelerometer") || (power.wakenWith == "timer")) {
+					power.sleep();
+					return;
+				}
+			}
+			else if (tag == 999) {
+				if ((power.wakenWith != "accelerometer") && (power.wakenWith != "timer")) {
+					power.sleep(5000);
+					return;
+				}
+			}
+
 			const Home = importNow("Home");
 			const home = new Home();
 			home.id = "Home";
-
-			const Menu = importNow("Menu");
-			const menu = new Menu(this.model.menu);
-			menu.id = "Menu";
-			menu.index = this.model.menu.items.findIndex(item => item.View == "Wake");
 		
-			this.history = [ home, menu ];
+			if (power.getRetainedValue(1)) {
+				const Menu = importNow("Menu");
+				const menu = new Menu(this.model.menu);
+				menu.id = "Menu";
+				menu.index = power.getRetainedValue(2);
+				
+				if (power.getRetainedValue(3)) {
+					const item = this.model.menu.items[menu.index];
+				
+					const View = importNow(item.View);
+					const view = new View(item);
+					view.id = item.View;
+					view.motionDetected = power.wakenWith == "accelerometer";
+				
+					this.history = [ home, menu ];
+					this.display(container, view, false);
+				}
+				else {
+					this.history = [ home ];
+					this.display(container, menu, false);
+				}
+			}
+			else {
+				this.display(container, home, false);
+			}
 			
-			const Wake = importNow("Wake");
-			const wake = new Wake();
-			wake.id = "Wake";
-			wake.motionDetected = this.power.wakenWith == "accelerometer";
-			this.display(container, wake, false);
+			power.setRetainedValue(0, 0);
+			power.setRetainedValue(1, 0);
+			power.setRetainedValue(2, 0);
+			power.setRetainedValue(3, 0);
+			power.setRetainedValue(4, 0);
 		}
 		else {
 			let Splash = importNow("Splash");
@@ -180,7 +212,7 @@ class Controller extends Behavior {
 		}
 	}
 	onFinished(container) {
-		container.first.distribute("onTimeout");
+		container.distribute("onTimeout");
 	}
 	onPressed(container, key) {
 		container.stop();
@@ -212,6 +244,9 @@ class Controller extends Behavior {
 			return;
 	}
 	onJogDialTurned(container, delta) {
+		container.stop();
+		container.time = 0;
+		container.start();
 		delta += this.delta;
 		this.delta = delta;
 		if ((-4 < delta) && (delta < 4))
@@ -231,6 +266,11 @@ class Controller extends Behavior {
 	onScreenUndisplaying(container, view) {
 		container.stop();
 		container.first.distribute("onUndisplaying");
+	}
+	onTimeout(container) {
+		controller.sleep(undefined, 666);
+// 		container.time = 0;
+// 		container.start();
 	}
 	onTransitionEnded(container) {
 		application.purge();
@@ -256,6 +296,38 @@ class Controller extends Behavior {
 		result.y *= gravity;
 		result.z *= gravity;
 		return result;
+	}
+	sleep(duration, tag) {
+		const history = this.history;
+		const power = this.power;
+		switch (history.length) {
+		case 0:
+			power.setRetainedValue(0, tag);
+			power.setRetainedValue(1, 0);
+			power.setRetainedValue(2, 0);
+			power.setRetainedValue(3, 0);
+			power.setRetainedValue(4, 0);
+			break;
+		case 1:
+			power.setRetainedValue(0, tag);
+			power.setRetainedValue(1, 1);
+			power.setRetainedValue(2, this.view.index);
+			power.setRetainedValue(3, 0);
+			power.setRetainedValue(4, 0);
+			break;
+		case 2:
+			power.setRetainedValue(0, tag);
+			power.setRetainedValue(1, 1);
+			power.setRetainedValue(2, history[1].index);
+			power.setRetainedValue(3, 1);
+			power.setRetainedValue(4, 0);
+			break;
+		}
+		application.stop();
+		if (duration)
+			power.sleep(duration);
+		else
+			power.sleep();
 	}
 	
 	setTime(application, time) {
