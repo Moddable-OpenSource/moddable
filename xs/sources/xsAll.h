@@ -408,7 +408,6 @@ struct sxMachine {
 	txSize symbolModulo;
 	txSlot** symbolTable;
 
-	txID* colors;
 	txSlot** keyArray;
 	txID keyCount;
 	txID keyDelta;
@@ -420,6 +419,7 @@ struct sxMachine {
 	txID aliasCount;
 	txID aliasIndex;
 	txSlot** aliasArray;
+	txID* colors;
 #endif
 	
 	char* stackLimit;

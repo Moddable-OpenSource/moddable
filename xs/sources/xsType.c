@@ -563,6 +563,7 @@ again:
 	}
 #endif
 	if (id) {
+#if mxAliasInstance
 		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
 			if (id < the->keyOffset) {
 				txID color = the->colors[id];
@@ -573,6 +574,7 @@ again:
 				}
 			}
 		}
+#endif
 		result = instance->next;
 		while (result && (result->flag & XS_INTERNAL_FLAG))
 			result = result->next;
@@ -753,6 +755,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 	}
 #endif
 	if (id) {
+#if mxAliasInstance
 		if (the->colors && (instance->flag & XS_DONT_MARSHALL_FLAG)) {
 			if (id < the->keyOffset) {
 				txID color = the->colors[id];
@@ -763,6 +766,7 @@ txSlot* fxOrdinarySetProperty(txMachine* the, txSlot* instance, txID id, txIndex
 				}
 			}
 		}
+#endif
 		address = &(instance->next);
 		while ((property = *address) && (property->flag & XS_INTERNAL_FLAG))
 			address = &(property->next);
