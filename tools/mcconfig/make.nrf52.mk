@@ -468,6 +468,7 @@ NRF_DRIVERS = \
 	$(LIB_DIR)/nrfx_power.c.o \
 	$(LIB_DIR)/nrfx_ppi.c.o \
 	$(LIB_DIR)/nrfx_prs.c.o \
+	$(LIB_DIR)/nrfx_pwm.c.o \
 	$(LIB_DIR)/nrfx_qdec.c.o \
 	$(LIB_DIR)/nrfx_saadc.c.o \
 	$(LIB_DIR)/nrfx_spim.c.o \
