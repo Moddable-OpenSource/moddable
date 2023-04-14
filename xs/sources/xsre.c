@@ -629,8 +629,8 @@ void* fxCharSetNot(txPatternParser* parser, txCharSet* set)
 			*current0++ = character;
 			count0++;
 			*current0++ = begin;
-			character = end;
 		}
+        character = end;
 	}
 	if (character < 0x7FFFFFFF) {
 		count0++;
