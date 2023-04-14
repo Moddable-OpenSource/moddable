@@ -22,6 +22,11 @@
 				"file": {
 					"root": "/mod/"
 				}
+			},
+			"defines": {
+				"file": {
+					"partition": "#storage"
+				}
 			}
 		},
 		"mac": {

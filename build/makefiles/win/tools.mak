@@ -55,53 +55,53 @@ XS_HEADERS = \
 	$(XS_DIR)\sources\xsScript.h
 
 XS_OBJECTS = \
-	$(LIB_DIR)\win_xs.o \
-	$(LIB_DIR)\xsAll.o \
-	$(LIB_DIR)\xsAPI.o \
-	$(LIB_DIR)\xsArguments.o \
-	$(LIB_DIR)\xsArray.o \
-	$(LIB_DIR)\xsAtomics.o \
-	$(LIB_DIR)\xsBigInt.o \
-	$(LIB_DIR)\xsBoolean.o \
-	$(LIB_DIR)\xsCode.o \
-	$(LIB_DIR)\xsCommon.o \
-	$(LIB_DIR)\xsDataView.o \
-	$(LIB_DIR)\xsDate.o \
-	$(LIB_DIR)\xsDebug.o \
-	$(LIB_DIR)\xsError.o \
-	$(LIB_DIR)\xsFunction.o \
-	$(LIB_DIR)\xsGenerator.o \
-	$(LIB_DIR)\xsGlobal.o \
-	$(LIB_DIR)\xsJSON.o \
-	$(LIB_DIR)\xsLexical.o \
-	$(LIB_DIR)\xsMapSet.o \
-	$(LIB_DIR)\xsMarshall.o \
-	$(LIB_DIR)\xsMath.o \
-	$(LIB_DIR)\xsMemory.o \
-	$(LIB_DIR)\xsModule.o \
-	$(LIB_DIR)\xsNumber.o \
-	$(LIB_DIR)\xsObject.o \
-	$(LIB_DIR)\xsPlatforms.o \
-	$(LIB_DIR)\xsProfile.o \
-	$(LIB_DIR)\xsPromise.o \
-	$(LIB_DIR)\xsProperty.o \
-	$(LIB_DIR)\xsProxy.o \
-	$(LIB_DIR)\xsRegExp.o \
-	$(LIB_DIR)\xsRun.o \
-	$(LIB_DIR)\xsScope.o \
-	$(LIB_DIR)\xsScript.o \
-	$(LIB_DIR)\xsSourceMap.o \
-	$(LIB_DIR)\xsString.o \
-	$(LIB_DIR)\xsSymbol.o \
-	$(LIB_DIR)\xsSyntaxical.o \
-	$(LIB_DIR)\xsTree.o \
-	$(LIB_DIR)\xsType.o \
-	$(LIB_DIR)\xsdtoa.o \
-	$(LIB_DIR)\xsmc.o \
-	$(LIB_DIR)\xsre.o \
-	$(LIB_DIR)\xsa.o \
-	$(LIB_DIR)\xsc.o \
-	$(LIB_DIR)\xslBase.o
+	$(LIB_DIR)\win_xs.obj \
+	$(LIB_DIR)\xsAll.obj \
+	$(LIB_DIR)\xsAPI.obj \
+	$(LIB_DIR)\xsArguments.obj \
+	$(LIB_DIR)\xsArray.obj \
+	$(LIB_DIR)\xsAtomics.obj \
+	$(LIB_DIR)\xsBigInt.obj \
+	$(LIB_DIR)\xsBoolean.obj \
+	$(LIB_DIR)\xsCode.obj \
+	$(LIB_DIR)\xsCommon.obj \
+	$(LIB_DIR)\xsDataView.obj \
+	$(LIB_DIR)\xsDate.obj \
+	$(LIB_DIR)\xsDebug.obj \
+	$(LIB_DIR)\xsError.obj \
+	$(LIB_DIR)\xsFunction.obj \
+	$(LIB_DIR)\xsGenerator.obj \
+	$(LIB_DIR)\xsGlobal.obj \
+	$(LIB_DIR)\xsJSON.obj \
+	$(LIB_DIR)\xsLexical.obj \
+	$(LIB_DIR)\xsMapSet.obj \
+	$(LIB_DIR)\xsMarshall.obj \
+	$(LIB_DIR)\xsMath.obj \
+	$(LIB_DIR)\xsMemory.obj \
+	$(LIB_DIR)\xsModule.obj \
+	$(LIB_DIR)\xsNumber.obj \
+	$(LIB_DIR)\xsObject.obj \
+	$(LIB_DIR)\xsPlatforms.obj \
+	$(LIB_DIR)\xsProfile.obj \
+	$(LIB_DIR)\xsPromise.obj \
+	$(LIB_DIR)\xsProperty.obj \
+	$(LIB_DIR)\xsProxy.obj \
+	$(LIB_DIR)\xsRegExp.obj \
+	$(LIB_DIR)\xsRun.obj \
+	$(LIB_DIR)\xsScope.obj \
+	$(LIB_DIR)\xsScript.obj \
+	$(LIB_DIR)\xsSourceMap.obj \
+	$(LIB_DIR)\xsString.obj \
+	$(LIB_DIR)\xsSymbol.obj \
+	$(LIB_DIR)\xsSyntaxical.obj \
+	$(LIB_DIR)\xsTree.obj \
+	$(LIB_DIR)\xsType.obj \
+	$(LIB_DIR)\xsdtoa.obj \
+	$(LIB_DIR)\xsmc.obj \
+	$(LIB_DIR)\xsre.obj \
+	$(LIB_DIR)\xsa.obj \
+	$(LIB_DIR)\xsc.obj \
+	$(LIB_DIR)\xslBase.obj
 
 MODULES = \
 	$(MOD_DIR)\commodetto\Bitmap.xsb \
@@ -176,24 +176,24 @@ HEADERS =\
 	$(COMMODETTO)\commodettoPocoBlit.h\
 	$(INSTRUMENTATION)\modInstrumentation.h
 OBJECTS = \
-	$(TMP_DIR)\adpcm-lib.o \
-	$(TMP_DIR)\commodettoBitmap.o \
-	$(TMP_DIR)\commodettoBufferOut.o \
-	$(TMP_DIR)\commodettoColorCellOut.o \
-	$(TMP_DIR)\commodettoConvert.o \
-	$(TMP_DIR)\commodettoParseBMP.o \
-	$(TMP_DIR)\commodettoParseBMF.o \
-	$(TMP_DIR)\commodettoPoco.o \
-	$(TMP_DIR)\commodettoPocoBlit.o \
-	$(TMP_DIR)\commodettoReadJPEG.o \
-	$(TMP_DIR)\commodettoReadPNG.o \
-	$(TMP_DIR)\cfeBMF.o \
-	$(TMP_DIR)\image2cs.o \
-	$(TMP_DIR)\miniz.o \
-	$(TMP_DIR)\modInstrumentation.o \
-	$(TMP_DIR)\tool.o \
-	$(TMP_DIR)\wav2maud.o \
-	$(TMP_DIR)\url.o
+	$(TMP_DIR)\adpcm-lib.obj \
+	$(TMP_DIR)\commodettoBitmap.obj \
+	$(TMP_DIR)\commodettoBufferOut.obj \
+	$(TMP_DIR)\commodettoColorCellOut.obj \
+	$(TMP_DIR)\commodettoConvert.obj \
+	$(TMP_DIR)\commodettoParseBMP.obj \
+	$(TMP_DIR)\commodettoParseBMF.obj \
+	$(TMP_DIR)\commodettoPoco.obj \
+	$(TMP_DIR)\commodettoPocoBlit.obj \
+	$(TMP_DIR)\commodettoReadJPEG.obj \
+	$(TMP_DIR)\commodettoReadPNG.obj \
+	$(TMP_DIR)\cfeBMF.obj \
+	$(TMP_DIR)\image2cs.obj \
+	$(TMP_DIR)\miniz.obj \
+	$(TMP_DIR)\modInstrumentation.obj \
+	$(TMP_DIR)\tool.obj \
+	$(TMP_DIR)\wav2maud.obj \
+	$(TMP_DIR)\url.obj
 
 COMMANDS = \
 	$(BIN_DIR)\buildclut.bat \
@@ -285,31 +285,28 @@ $(MOD_DIR)\commodetto :
 $(BIN_DIR) :
 	if not exist $(BIN_DIR)\$(NULL) mkdir $(BIN_DIR)
 
-$(BIN_DIR)\tools.exe : $(XS_OBJECTS) $(TMP_DIR)\mc.xs.o $(OBJECTS)
+$(BIN_DIR)\tools.exe : $(XS_OBJECTS) $(TMP_DIR)\mc.xs.obj $(OBJECTS)
 	link \
 		$(LINK_OPTIONS) \
 		$(LIBRARIES) \
 		$(XS_OBJECTS) \
-		$(TMP_DIR)\mc.xs.o \
+		$(TMP_DIR)\mc.xs.obj \
 		$(OBJECTS) \
 		/implib:$(TMP_DIR)\$(NAME).lib \
 		/out:$(BIN_DIR)\tools.exe
 
 $(XS_OBJECTS) : $(XS_HEADERS)
-{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.o::
+{$(XS_DIR)\platforms\}.c{$(LIB_DIR)\}.obj::
 	cd $(LIB_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o::
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.obj::
 	cd $(LIB_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.o::
+{$(XS_DIR)\tools\}.c{$(LIB_DIR)\}.obj::
 	cd $(LIB_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
 
-$(TMP_DIR)\mc.xs.o: $(TMP_DIR)\mc.xs.c $(HEADERS)
+$(TMP_DIR)\mc.xs.obj: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	cl $(C_OPTIONS) $(TMP_DIR)\mc.xs.c /Fo$@
 $(TMP_DIR)\mc.xs.c: $(MODULES)
 	@echo # xsl modules
@@ -373,28 +370,23 @@ $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
-$(TMP_DIR)\tool.o : $(MODDABLE)\tools\VERSION
+$(TMP_DIR)\tool.obj : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
-{$(COMMODETTO)\}.c{$(TMP_DIR)\}.o::
+{$(COMMODETTO)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.o::
+{$(INSTRUMENTATION)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TOOLS)\}.c{$(TMP_DIR)\}.o::
+{$(TOOLS)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(DATA)\url\}.c{$(TMP_DIR)\}.o::
+{$(DATA)\url\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TMP_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(TMP_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
 
 $(BIN_DIR)\buildclut.bat :
 	@echo # buildclut.bat

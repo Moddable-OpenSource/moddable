@@ -67,8 +67,8 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 OBJECTS = \
-	$(TMP_DIR)\serial2xsbug.o \
-	$(TMP_DIR)\serial2xsbug_win.o
+	$(TMP_DIR)\serial2xsbug.obj \
+	$(TMP_DIR)\serial2xsbug_win.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -87,10 +87,9 @@ $(BIN_DIR)\$(NAME).exe : $(OBJECTS)
 		/out:$(BIN_DIR)\$(NAME).exe
 
 $(OBJECTS) : $(SRC_DIR)\serial2xsbug.h
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

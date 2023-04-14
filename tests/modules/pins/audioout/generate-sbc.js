@@ -6,7 +6,7 @@ flags: [module]
 import {Mixer} from "pins/audioout"
 import Resource from "Resource";
 import {Digest} from "crypt";
-import {MAUD, SampleFormat} from "./maud.js"
+import {MAUD, SampleFormat} from "./maud.js";
 
 // ffmpeg -i $MODDABLE/examples/assets/sounds/bflatmajor.wav -ac 1 -ar 16000 -b:a 32k ~/bflatmajor-sbc.sbc
 const sbc = new Resource("bflatmajor-sbc.sbc");

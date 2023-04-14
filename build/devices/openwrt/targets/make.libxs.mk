@@ -103,14 +103,8 @@ MODULE_DIRS = \
 	$(MODDABLE)/modules/base/timer\
 	$(MODDABLE)/modules/base/instrumentation
 
-ifneq ($(DEBUG_IP),)
-comma := ,
-NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
-endif
-
 C_DEFINES += \
 	-U__STRICT_ANSI__ \
-	$(NET_CONFIG_FLAGS) \
 	-Dopenwrt=1 \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1

@@ -12,7 +12,7 @@
  *
  */
 
-import Sensor from "embedded:sensor/OxygenGasSensor-OSensor/SEN0322";
+import Sensor from "embedded:sensor/Oxygen/SEN0322";
 import Timer from "timer";
 
 const knownOxygenVal = 20.9; // Known concentration of oxygen in the air, for calibration

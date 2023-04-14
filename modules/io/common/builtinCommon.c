@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,18 +24,13 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
-#if kCPUESP32C3
+#if ESP32
+	#include "soc/soc_caps.h"
 	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0x3FFFFF,		//@@
-	};
-#elif ESP32
-	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
-
-	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0xFFFFFFFF,		//@@
-		0xFFFFFF		//@@
+		SOC_GPIO_VALID_GPIO_MASK & 0xFFFFFFFF,
+		SOC_GPIO_VALID_GPIO_MASK >> 32
 	};
 #elif defined(__ets__)
 	static uint32_t gDigitalAvailable[kPinBanks] = {
