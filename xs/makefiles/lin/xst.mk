@@ -50,6 +50,7 @@ C_OPTIONS = \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
 	-DmxDebug=1 \
+	-DmxExplicitResourceManagement=1 \
 	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \

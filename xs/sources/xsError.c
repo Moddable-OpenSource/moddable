@@ -38,15 +38,15 @@
 #include "xsAll.h"
 
 static txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i);
-static txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable);
-static void fxDisposableStackPush(txMachine* the, txSlot* property);
 
 void fxBuildError(txMachine* the)
 {
 	txSlot* slot;
 	txSlot* prototype;
 	txSlot* instance;
+#if mxExplicitResourceManagement
 	txSlot* property;
+#endif
 	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -130,7 +130,8 @@ void fxBuildError(txMachine* the)
 	instance->value.instance.prototype = prototype;
 	mxURIErrorConstructor = *the->stack;
 	mxPop();
-	
+
+#if mxExplicitResourceManagement
 	mxPush(mxObjectPrototype);
     slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
@@ -146,6 +147,7 @@ void fxBuildError(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_DisposableStack), 0, mxID(_Map));
 	mxDisposableStackConstructor = *the->stack;
 	mxPop();
+#endif
 }
 
 void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
@@ -388,6 +390,11 @@ void fx_Error_prototype_get_stack(txMachine* the)
 	}
 }
 
+#if mxExplicitResourceManagement
+
+static txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable);
+static void fxDisposableStackPush(txMachine* the, txSlot* property);
+
 txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
@@ -587,6 +594,7 @@ void fxDisposableStackPush(txMachine* the, txSlot* property)
 	*address = slot;
 }
 
+#endif
 
 
 

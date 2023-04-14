@@ -1154,6 +1154,10 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 	#define mxIntegerDivideOverflowException 1
 #endif
 
+#ifndef mxExplicitResourceManagement
+	#define mxExplicitResourceManagement 0
+#endif
+
 #ifdef __cplusplus
 }
 #endif

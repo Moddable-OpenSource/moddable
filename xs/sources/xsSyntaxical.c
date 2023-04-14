@@ -1315,6 +1315,7 @@ void fxStatement(txParser* parser, txInteger blockIt)
 			fxSemicolon(parser);
 			break;
 		}
+#if mxExplicitResourceManagement
 		if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) 
 				&& ((gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))
 				&& (blockIt || (!parser->crlf2) || (parser->token2 == XS_TOKEN_LEFT_BRACKET))) {
@@ -1325,6 +1326,7 @@ void fxStatement(txParser* parser, txInteger blockIt)
 			fxSemicolon(parser);
 			break;
 		}
+#endif
 		/* continue */
 	default:
 		if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
@@ -1431,10 +1433,12 @@ void fxForStatement(txParser* parser)
 		parser->token = XS_TOKEN_LET;
 		fxVariableStatement(parser, XS_TOKEN_LET);
 	}
+#if mxExplicitResourceManagement
 	else if (fxIsKeyword(parser, parser->usingSymbol) && (!parser->escaped) && (!parser->crlf2) && (gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING)) {
 		parser->token = XS_TOKEN_USING;
 		fxVariableStatement(parser, XS_TOKEN_USING);
 	}
+#endif
 	else if (parser->token == XS_TOKEN_VAR) {
 		fxVariableStatement(parser, XS_TOKEN_VAR);
 	}

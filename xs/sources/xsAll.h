@@ -1045,6 +1045,7 @@ mxExport void fx_Error_prototype_get_stack(txMachine* the);
 extern void fxBuildError(txMachine* the);
 extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
 
+#if mxExplicitResourceManagement
 mxExport void fx_DisposableStack(txMachine* the);
 mxExport void fx_DisposableStack_prototype_get_disposed(txMachine* the);
 mxExport void fx_DisposableStack_prototype_adopt(txMachine* the);
@@ -1052,6 +1053,7 @@ mxExport void fx_DisposableStack_prototype_defer(txMachine* the);
 mxExport void fx_DisposableStack_prototype_dispose(txMachine* the);
 mxExport void fx_DisposableStack_prototype_move(txMachine* the);
 mxExport void fx_DisposableStack_prototype_use(txMachine* the);
+#endif
 
 /* xsNumber.c */
 mxExport void fx_isFinite(txMachine* the);
