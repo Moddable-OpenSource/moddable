@@ -1572,6 +1572,7 @@ void fxDeleteMachine(txMachine* the)
 		gxDefaults.terminateSharedCluster();
 }
 
+#if mxAliasInstance
 txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext)
 {
 	txMachine* the = (txMachine *)c_calloc(sizeof(txMachine), 1);
@@ -1784,6 +1785,7 @@ void fxShareMachine(txMachine* the)
 		the->shared = 1;
 	}
 }
+#endif
 
 /* Garbage Collector */
 

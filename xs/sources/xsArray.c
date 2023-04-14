@@ -302,6 +302,7 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 	txSlot* instance = fxToInstance(the, slot);
 	txSlot* array = instance->next;
 	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
+#if mxAliasInstance
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
@@ -311,6 +312,7 @@ txSlot* fxCheckArray(txMachine* the, txSlot* slot, txBoolean mutable)
 				array = instance->next;
 			}
 		}
+#endif
 		{
 			txSlot* address = array->value.array.address;
 			txIndex size = (address) ? (((txChunk*)(((txByte*)address) - sizeof(txChunk)))->size) / sizeof(txSlot) : 0;
@@ -555,11 +557,13 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* array = instance->next;
 	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
+#if mxAliasInstance
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (alias)
 				array = alias->next;
 		}
+#endif
 		return array->value.array.length;
 	}
 	if (array && (array->kind == XS_TYPED_ARRAY_KIND) && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
@@ -938,11 +942,13 @@ void fxArrayLengthGetter(txMachine* the)
 	}
 	if (!instance)
 		return;
+#if mxAliasInstance
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
 			array = alias->next;
 	}
+#endif
 	if (((txInteger)array->value.array.length) < 0) {
 		mxResult->value.number = array->value.array.length;
 		mxResult->kind = XS_NUMBER_KIND;
@@ -968,12 +974,14 @@ void fxArrayLengthSetter(txMachine* the)
 	}
 	if (!instance)
 		return;
+#if mxAliasInstance
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (!alias)
 			alias = fxAliasInstance(the, instance);
 		array = alias->next;
 	}
+#endif
 	length = fxCheckArrayLength(the, mxArgv(0));
 	if (array->flag & XS_DONT_SET_FLAG) {
 		if (the->frame->next->flag & XS_STRICT_FLAG)
@@ -999,6 +1007,7 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 		slot.value.number = array->value.array.length;
 		if (!fxIsPropertyCompatible(the, &slot, descriptor, mask))
 			return 0;
+#if mxAliasInstance
 		if (instance->ID) {
 			txSlot* alias = the->aliasArray[instance->ID];
 			if (!alias) {
@@ -1006,6 +1015,7 @@ txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, tx
 				array = alias->next;
 			}
 		}
+#endif
 		if (descriptor->kind != XS_UNINITIALIZED_KIND) {
 			if (array->value.array.length != length)
 				result = fxSetArrayLength(the, array, length);

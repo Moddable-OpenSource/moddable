@@ -416,9 +416,11 @@ struct sxMachine {
 	txID keyOffset;
 	txSlot** keyArrayHost;
 
+#if mxAliasInstance
 	txID aliasCount;
 	txID aliasIndex;
 	txSlot** aliasArray;
+#endif
 	
 	char* stackLimit;
 	
@@ -653,9 +655,11 @@ mxExport void fxDebugger(txMachine* the, txString thePath, txInteger theLine);
 mxExport const txByte gxNoCode[] ICACHE_FLASH_ATTR;
 mxExport txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext, txID profileID);
 mxExport void fxDeleteMachine(txMachine*);
+#if mxAliasInstance
 mxExport txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext);
 mxExport txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, txString name, void* context, void* archive);
 mxExport void fxShareMachine(txMachine* the);
+#endif
 
 mxExport txMachine* fxBeginHost(txMachine*);
 mxExport void fxEndHost(txMachine*);
@@ -790,7 +794,9 @@ mxExport void* fxNewChunk(txMachine* the, txSize theSize);
 mxExport void* fxNewGrowableChunk(txMachine* the, txSize size, txSize overflow);
 extern txSlot* fxNewSlot(txMachine* the);
 mxExport void* fxRenewChunk(txMachine* the, void* theData, txSize theSize);
+#if mxAliasInstance
 extern void fxShare(txMachine* the);
+#endif
 
 /* xsDebug.c */
 #ifdef mxDebug
@@ -824,7 +830,9 @@ extern void fxSuspendProfiler(txMachine* the);
 
 /* xsType.c */
 
+#if mxAliasInstance
 extern txSlot* fxAliasInstance(txMachine* the, txSlot* instance);
+#endif
 extern txSlot* fxDuplicateInstance(txMachine* the, txSlot* instance);
 extern txSlot* fxGetInstance(txMachine* the, txSlot* theSlot);
 extern txSlot* fxGetPrototype(txMachine* the, txSlot* instance);

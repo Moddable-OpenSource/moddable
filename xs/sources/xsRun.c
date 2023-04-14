@@ -1608,12 +1608,14 @@ XS_CODE_JUMP:
 			variable = slot->value.closure;
 			if (variable->kind < 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset) {
 				slot = the->aliasArray[offset];
 				if (slot)
 					variable = slot;
 			}	
+#endif
 			mxPushKind(variable->kind);
 			mxStack->value = variable->value;
 			mxBreak;
@@ -1731,6 +1733,7 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset) {
 				variable = the->aliasArray[offset];
@@ -1741,6 +1744,7 @@ XS_CODE_JUMP:
 					the->aliasArray[offset] = variable;
 				}
 			}	
+#endif
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxStack++;
@@ -1868,6 +1872,7 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset > 0) {
 				variable = the->aliasArray[offset];
@@ -1878,6 +1883,7 @@ XS_CODE_JUMP:
 					the->aliasArray[offset] = variable;
 				}
 			}	
+#endif
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
@@ -4554,6 +4560,7 @@ txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
 	b = b->value.reference;
 	if (a == b)
 		return 1;
+#if mxAliasInstance
 	if (a->ID) {
 		txSlot* alias = the->aliasArray[a->ID];
 		if (alias) {
@@ -4570,6 +4577,7 @@ txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
 				return 1;
 		}
 	}
+#endif
 	return 0;
 }
 

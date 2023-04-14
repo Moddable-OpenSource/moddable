@@ -1029,11 +1029,13 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 	txSlot* aSlot;
 	txInteger anIndex;
 
+#if mxAliasInstance
 	if (theInstance->ID) {
 		txSlot* aliasInstance = the->aliasArray[theInstance->ID];
 		if (aliasInstance)
 			theInstance = aliasInstance;
 	}
+#endif
 	aParent = fxGetPrototype(the, theInstance);
 	if (aParent)
 		fxEchoPropertyInstance(the, theList, "(..)", -1, C_NULL, XS_NO_ID, theInstance->flag & XS_MARK_FLAG, aParent);
@@ -1293,11 +1295,13 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		theProperty = theProperty->value.closure;
         if (!theProperty)
             return;
+#if mxAliasInstance
 		if (theProperty->ID) {
 			txSlot* slot = the->aliasArray[theProperty->ID];
 			if (slot)
 				theProperty = slot;
 		}
+#endif
 	}
 	if (theProperty->kind == XS_REFERENCE_KIND) {
  		instance = fxGetInstance(the, theProperty);

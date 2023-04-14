@@ -1158,6 +1158,10 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 	#define mxExplicitResourceManagement 0
 #endif
 
+#ifndef mxAliasInstance
+	#define mxAliasInstance 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif
