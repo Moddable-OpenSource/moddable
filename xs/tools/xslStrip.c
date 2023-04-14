@@ -345,9 +345,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxUnstripCallback(linker, fx_Date_prototype_toPrimitive);
 		fxUnstripCallback(linker, fx_Date_prototype_valueOf);
 	}
+#if mxExplicitResourceManagement
 	if (fxIsCallbackStripped(linker, fx_DisposableStack)) {
 		fxStripClass(linker, the, &mxDisposableStackConstructor);
 	}
+#endif
 	if (fxIsCallbackStripped(linker, fx_FinalizationRegistry)) {
 		fxStripClass(linker, the, &mxFinalizationRegistryConstructor);
 	}
