@@ -398,7 +398,23 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 	
 	mxTry(the) {
 		if (state->value.integer == XS_CODE_END) {
+			mxTemporary(resolveFunction);
+			mxTemporary(rejectFunction);
+			mxPush(mxPromiseConstructor);
+			fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+            fxPromiseThen(the, the->stack->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL, C_NULL);
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			if (status == XS_THROW_STATUS)
+				mxPushSlot(rejectFunction);
+			else
+				mxPushSlot(resolveFunction);
+			mxCall();
+			/* ARGUMENTS */
 			mxPush(the->scratch);
+			mxRunCount(1);
+			mxPop();
 		}
 		else {
 			the->status = status;
@@ -407,39 +423,42 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 			fxRunID(the, generator, XS_NO_ID);
 			if (state->value.integer == XS_NO_CODE)
 				state->value.integer = XS_CODE_END;
-		}
-		value = the->stack;
-		if (state->value.integer == XS_CODE_END) {
-			txSlot* current = queue->value.list.first;
-			if (current) {
-				if (value->kind == XS_UNINITIALIZED_KIND)
-					value->kind = XS_UNDEFINED_KIND;
-				mxPushUndefined();
-				mxPushSlot(resolveYieldFunction);
-				mxCall();
-				mxPushSlot(value);
-				mxRunCount(1);
-				mxPop();
+			value = the->stack;
+			if (state->value.integer == XS_CODE_END) {
+				txSlot* current = queue->value.list.first;
+				if (current) {
+					if (value->kind == XS_UNINITIALIZED_KIND)
+						value->kind = XS_UNDEFINED_KIND;
+					mxPushUndefined();
+					if (status == XS_THROW_STATUS)
+						mxPushSlot(rejectYieldFunction);
+					else
+						mxPushSlot(resolveYieldFunction);
+					mxCall();
+					mxPushSlot(value);
+					mxRunCount(1);
+					mxPop();
+				}
 			}
-		}
-		else if (state->value.integer == XS_CODE_AWAIT) {
-			mxPushUndefined();
-			mxPush(mxPromiseConstructor);
-			mxPushSlot(value);
-			fx_Promise_resolveAux(the);
-			mxPop();
-			mxPop();
-			fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
-		}
-		else if (state->value.integer == XS_CODE_YIELD) {
-			txSlot* current = queue->value.list.first;
-			if (current) {
+			else if (state->value.integer == XS_CODE_AWAIT) {
 				mxPushUndefined();
-				mxPushSlot(resolveYieldFunction);
-				mxCall();
+				mxPush(mxPromiseConstructor);
 				mxPushSlot(value);
-				mxRunCount(1);
+				fx_Promise_resolveAux(the);
 				mxPop();
+				mxPop();
+				fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
+			}
+			else if (state->value.integer == XS_CODE_YIELD) {
+				txSlot* current = queue->value.list.first;
+				if (current) {
+					mxPushUndefined();
+					mxPushSlot(resolveYieldFunction);
+					mxCall();
+					mxPushSlot(value);
+					mxRunCount(1);
+					mxPop();
+				}
 			}
 		}
 		mxPop();
