@@ -1543,7 +1543,8 @@ To be investigated.
 	built-ins/Array/prototype/filter/create-proto-from-ctor-realm-array.js
 	built-ins/Array/prototype/map/create-proto-from-ctor-realm-array.js
 	built-ins/Array/prototype/slice/create-proto-from-ctor-realm-array.js
-	built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.j	built-ins/RegExp/prototype/dotAll/cross-realm.js
+	built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.js
+	built-ins/RegExp/prototype/dotAll/cross-realm.js
 	built-ins/RegExp/prototype/global/cross-realm.js
 	built-ins/RegExp/prototype/ignoreCase/cross-realm.js
 	built-ins/RegExp/prototype/multiline/cross-realm.js
@@ -1564,9 +1565,8 @@ One realm.
 To be investigated.
 
 	built-ins/Function/prototype/toString/method-computed-property-name.js
-	built-ins/TypedArray/prototype/map/callbackfn-resize.js
 
-Invalid tests.
+Invalid test.
 	
 ### Skipped cases
 
