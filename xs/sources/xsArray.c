@@ -1495,15 +1495,17 @@ void fx_Array_prototype_every(txMachine* the)
 
 void fx_Array_prototype_fill(txMachine* the)
 {
-	txSlot* instance = fxToInstance(the, mxThis);
-	txSlot* array = instance->next;
 	txSlot* value;
+	txSlot* array;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
 	value = the->stack;
-	if (array && (array->kind == XS_ARRAY_KIND) && (array->ID == XS_ARRAY_BEHAVIOR)) {
+	array = fxCheckArray(the, mxThis, XS_MUTABLE);
+	if (array)
+		array = fxCheckArrayItems(the, array, 0, array->value.array.length);
+	if (array) {
 		txIndex length = array->value.array.length;
 		txIndex start = (txIndex)fxArgToIndex(the, 1, 0, length);
 		txIndex end = (txIndex)fxArgToIndex(the, 2, length, length);
