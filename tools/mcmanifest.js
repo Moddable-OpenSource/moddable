@@ -1915,8 +1915,19 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (typeof value == "string")
-					this.environment[name] = this.resolveVariable(value);
+				if (typeof value == "string") {
+					value = this.resolveVariable(value);
+					if (value.startsWith("./")) {
+						const path = this.resolveDirectoryPath("./");
+						if (path) {
+							if ("./" == value)
+								value = path;
+							else
+								value = path + value.slice(1);
+						}
+					}
+					this.environment[name] = value;
+				}
 				else
 					this.environment[name] = value;
 			}
