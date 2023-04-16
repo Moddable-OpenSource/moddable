@@ -30,12 +30,7 @@
 	#define MODDEF_PWM_LEDC_FREQUENCY 1024
 #endif
 
-#ifndef MODDEF_PWM_LEDC_OFFVALUE
-	#define MODDEF_PWM_LEDC_OFFVALUE 0
-#endif
-
 #define MOD_PWM_PORTS	4
-
 
 static nrf_drv_pwm_config_t pwmPortConfig[MOD_PWM_PORTS] = {
 {
@@ -46,7 +41,7 @@ static nrf_drv_pwm_config_t pwmPortConfig[MOD_PWM_PORTS] = {
 		NRF_DRV_PWM_PIN_NOT_USED,		// channel 3
 	},
 	.irq_priority = APP_IRQ_PRIORITY_LOWEST,
-	.base_clock = NRF_PWM_CLK_1MHz,
+	.base_clock = NRF_PWM_CLK_125kHz,
 	.count_mode = NRF_PWM_MODE_UP,
 	.top_value = MODDEF_PWM_LEDC_FREQUENCY,
 	.load_mode = NRF_PWM_LOAD_INDIVIDUAL,
@@ -140,39 +135,20 @@ typedef struct PWMRecord *PWM;
 static uint8_t gPortInitialized = 0;	// (1 << 0), (1 << 1), (1 << 2)
 static uint8_t gLEDC[MOD_PWM_PORTS] = { 0xf, 0xf, 0xf, 0xf }; // each port can have 4 gpios
 static nrf_drv_pwm_t m_pwm[MOD_PWM_PORTS] = {
-	{
-		.p_registers = NRF_PWM0,
-		.drv_inst_idx = NRFX_PWM0_INST_IDX
-	},
-	{
-		.p_registers = NRF_PWM1,
-		.drv_inst_idx = NRFX_PWM1_INST_IDX
-	},
-	{
-		.p_registers = NRF_PWM2,
-		.drv_inst_idx = NRFX_PWM2_INST_IDX
-	},
-	{
-		.p_registers = NRF_PWM3,
-		.drv_inst_idx = NRFX_PWM3_INST_IDX
-	}
+	NRF_DRV_PWM_INSTANCE(0),
+	NRF_DRV_PWM_INSTANCE(1),
+	NRF_DRV_PWM_INSTANCE(2),
+	NRF_DRV_PWM_INSTANCE(3)
 };
-//	NRFX_PWM_INSTANCE(0),
-//	NRFX_PWM_INSTANCE(1),
-//	NRFX_PWM_INSTANCE(2) };
 
 void xs_pwm_destructor(void *data)
 {
 	PWM pwm = data;
 	if (!pwm) return;
 
-modLog("destructor clearing channel, port");
-modLogInt(pwm->channel);
-modLogInt(pwm->port);
 	gLEDC[pwm->port] |= 1 << pwm->channel;
 	pwmPortConfig[pwm->port].output_pins[pwm->channel] = NRF_DRV_PWM_PIN_NOT_USED;
 	if (gLEDC[pwm->port] == 0xf) {
-modLog("all channels for port are returned. Uninit port");
 		nrf_drv_pwm_uninit(&m_pwm[pwm->port]);
 		gPortInitialized &= ~(1 << pwm->port);
 	}
