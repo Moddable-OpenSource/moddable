@@ -18,8 +18,8 @@ export default class extends Control {
 	setRetainedValue(index, value) {
 		this.#retainedValues[index] = value;
 	}
-	sleep(duration) {
-		this.postJSON({ sleep:duration || 0, retain:this.#retainedValues });
+	sleep(options) {
+		this.postJSON({ sleep:options.duration || 0, retain:this.#retainedValues });
 	}
 	get wakenWith() {
 		return this.#wakenWith;

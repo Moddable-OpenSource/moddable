@@ -156,6 +156,9 @@ class Controller extends Behavior {
 		const tag = power.getRetainedValue(0);
 		const history = [];
 		let view = null;
+		const wakenWith = power.wakenWith;
+		if (wakenWith == "reset")
+			tag = 0;
 		if (tag) {
 			const Home = importNow("Home");
 			view = new Home();
@@ -181,7 +184,7 @@ class Controller extends Behavior {
 				}
 			}
 			if (tag == 999) {
-				view.motionDetected = power.wakenWith == "accelerometer";
+				view.motionDetected = wakenWith == "accelerometer";
 			}
 			else {
 				history.push(view);
@@ -189,7 +192,7 @@ class Controller extends Behavior {
 				const Asleep = importNow("Asleep");
 				view = new Asleep();
 				view.id = "Asleep";
-				view.wakenWith = power.wakenWith;
+				view.wakenWith = wakenWith;
 			}
 			
 			this.history = history;
@@ -295,7 +298,7 @@ class Controller extends Behavior {
 		result.z *= gravity;
 		return result;
 	}
-	sleep(duration, tag) {
+	sleep(params, tag) {
 		const history = this.history;
 		const power = this.power;
 		switch (history.length) {
@@ -322,10 +325,7 @@ class Controller extends Behavior {
 			break;
 		}
 		application.stop();
-		if (duration)
-			power.sleep(duration);
-		else
-			power.sleep();
+		power.sleep(params);
 	}
 	
 	setTime(application, time) {

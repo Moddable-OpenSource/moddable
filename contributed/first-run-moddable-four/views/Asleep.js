@@ -9,10 +9,11 @@ class AsleepBehavior extends View.Behavior {
 	onDisplayed(container) {
 		if (this.view.wakenWith == null) {
 			controller.view = controller.history.pop();
-			controller.sleep(0, 666);
+			controller.sleep({ button:true, jogdial:true }, 666);
 		}
-		else
+		else {
 			controller.goBack();
+		}
 	}
 }
 
