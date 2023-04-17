@@ -172,9 +172,16 @@ class SetDateTimeline extends Timeline {
 		const year = screen.first;
 		const month = year.next;
 		const day = month.next;
-		this.from(year, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 0);
-		this.from(month, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
-		this.from(day, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+		if (controller.going != direction) {
+			this.from(year, { x:screen.x - year.width }, 200, Math.quadEaseOut, 0);
+			this.from(month, { x:screen.x - month.width }, 200, Math.quadEaseOut, -100);
+			this.from(day, { x:screen.x - day.width }, 200, Math.quadEaseOut, -100);
+		}
+		else {
+			this.from(year, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 0);
+			this.from(month, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+			this.from(day, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+		}
 	}
 }
 

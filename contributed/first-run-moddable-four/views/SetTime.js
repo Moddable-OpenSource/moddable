@@ -122,9 +122,16 @@ class SetTimeTimeline extends Timeline {
 		const hour = screen.first;
 		const colon = hour.next;
 		const minute = colon.next;
-		this.from(hour, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 0);
-		this.from(colon, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
-		this.from(minute, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+		if (controller.going != direction) {
+			this.from(minute, { x:screen.x - minute.width }, 200, Math.quadEaseOut, 0);
+			this.from(colon, { x:screen.x - colon.width }, 200, Math.quadEaseOut, -100);
+			this.from(hour, { x:screen.x - hour.width }, 200, Math.quadEaseOut, -100);
+		}
+		else {
+			this.from(hour, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 0);
+			this.from(colon, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+			this.from(minute, { x:screen.x + screen.width }, 200, Math.quadEaseOut, -100);
+		}
 	}
 }
 

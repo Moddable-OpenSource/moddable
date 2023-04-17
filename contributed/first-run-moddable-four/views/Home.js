@@ -72,9 +72,9 @@ class HomeTimeline extends Timeline {
 			this.from(hello, { x:screen.x - hello.width }, 250, Math.quadEaseOut, -125);
 		}
 		else {
-			this.from(logo, { x:screen.width }, 250, Math.quadEaseOut, 0);
-			this.from(moddable, { x:screen.width }, 250, Math.quadEaseOut, -125);
-			this.from(hello, { x:screen.width }, 250, Math.quadEaseOut, -125);
+			this.from(logo, { x:screen.x + screen.width }, 250, Math.quadEaseOut, 0);
+			this.from(moddable, { x:screen.x + screen.width }, 250, Math.quadEaseOut, -125);
+			this.from(hello, { x:screen.x + screen.width }, 250, Math.quadEaseOut, -125);
 		}
 	}
 }

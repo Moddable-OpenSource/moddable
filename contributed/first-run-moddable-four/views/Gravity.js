@@ -102,7 +102,10 @@ class GravityTimeline extends Timeline {
 		let ball = screen.first;
 		let offset = 0;
 		while (ball) {
-			this.from(ball, { x:screen.x + screen.width }, 200, Math.quadEaseOut, offset);
+			if (controller.going != direction)
+				this.from(ball, { x:screen.x - ball.width }, 200, Math.quadEaseOut, offset);
+			else
+				this.from(ball, { x:screen.x + screen.width }, 200, Math.quadEaseOut, offset);
 			ball = ball.next;
 			offset = -100;
 		}

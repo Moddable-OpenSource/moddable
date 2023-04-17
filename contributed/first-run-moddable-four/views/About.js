@@ -250,8 +250,14 @@ class AboutTimeline extends Timeline {
 		super();
 		const selector = screen.first;
 		const scroller = selector.next;
-		this.from(scroller, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 0);
-		this.from(selector, { x:screen.x + screen.width }, 200, Math.quadEaseOut, 100);
+		if (controller.going != direction) {
+			this.from(scroller, { x:screen.x - screen.width }, 250, Math.quadEaseOut, 0);
+			this.from(selector, { x:screen.x - screen.width }, 250, Math.quadEaseOut, -125);
+		}
+		else {
+			this.from(scroller, { x:screen.x + screen.width }, 250, Math.quadEaseOut, 0);
+			this.from(selector, { x:screen.x + screen.width }, 250, Math.quadEaseOut, -125);
+		}
 	}
 }
 

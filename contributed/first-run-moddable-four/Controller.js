@@ -154,50 +154,47 @@ class Controller extends Behavior {
 		screen.dither = false;
 		const power = this.power;
 		const tag = power.getRetainedValue(0);
+		const history = [];
+		let view = null;
 		if (tag) {
-			if (tag == 666) {
-				if ((power.wakenWith == "accelerometer") || (power.wakenWith == "timer")) {
-					power.sleep();
-					return;
-				}
-			}
-			else if (tag == 999) {
-				if ((power.wakenWith != "accelerometer") && (power.wakenWith != "timer")) {
-					power.sleep(5000);
-					return;
-				}
-			}
-
 			const Home = importNow("Home");
-			const home = new Home();
-			home.id = "Home";
+			view = new Home();
+			view.id = "Home";
 		
 			if (power.getRetainedValue(1)) {
+				history.push(view);
+			
 				const Menu = importNow("Menu");
-				const menu = new Menu(this.model.menu);
-				menu.id = "Menu";
-				menu.index = power.getRetainedValue(2);
+				view = new Menu(this.model.menu);
+				view.id = "Menu";
+				view.index = power.getRetainedValue(2);
 				
 				if (power.getRetainedValue(3)) {
-					const item = this.model.menu.items[menu.index];
+					history.push(view);
+					
+					const item = this.model.menu.items[view.index];
 				
 					const View = importNow(item.View);
-					const view = new View(item);
+					view = new View(item);
 					view.id = item.View;
-					view.motionDetected = power.wakenWith == "accelerometer";
 				
-					this.history = [ home, menu ];
-					this.display(container, view, false);
 				}
-				else {
-					this.history = [ home ];
-					this.display(container, menu, false);
-				}
+			}
+			if (tag == 999) {
+				view.motionDetected = power.wakenWith == "accelerometer";
 			}
 			else {
-				this.display(container, home, false);
+				history.push(view);
+			
+				const Asleep = importNow("Asleep");
+				view = new Asleep();
+				view.id = "Asleep";
+				view.wakenWith = power.wakenWith;
 			}
 			
+			this.history = history;
+			this.display(container, view, false);
+		
 			power.setRetainedValue(0, 0);
 			power.setRetainedValue(1, 0);
 			power.setRetainedValue(2, 0);
@@ -268,7 +265,8 @@ class Controller extends Behavior {
 		container.first.distribute("onUndisplaying");
 	}
 	onTimeout(container) {
-		controller.sleep(undefined, 666);
+// 		controller.sleep(undefined, 666);
+		controller.goTo("Asleep");
 // 		container.time = 0;
 // 		container.start();
 	}
