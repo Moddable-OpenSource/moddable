@@ -1,63 +1,14 @@
+// This implementation shares the modSPI implementation with ESP8266.
+// It could be written to use the nordic sdk directly.
+
+#include "../esp/spi.c"
+
 /*
- * Copyright (c) 2021 Moddable Tech, Inc.
- *
- *   This file is part of the Moddable SDK Runtime.
- *
- *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU Lesser General Public License as published by
- *   the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU Lesser General Public License for more details.
- *
- *   You should have received a copy of the GNU Lesser General Public License
- *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
- *
- */
-
-#include "xsmc.h"			// xs bindings for microcontroller
-#include "mc.xs.h"			// for xsID_* values
-#include "xsHost.h"			// esp platform support
-
-#include "stddef.h"			// for offsetof macro
-
-#include "modSPI.h"
-#include "modGPIO.h"
-
-#include "builtinCommon.h"
-
-void xs_spi_constructor(xsMachine *the)
-{
-}
-
-void xs_spi_destructor(void *data)
-{
-}
-
-void xs_spi_close(xsMachine *the)
-{
-}
-
-void xs_spi_read(xsMachine *the)
-{
-}
-
-void xs_spi_write(xsMachine *the)
-{
-}
-
-void xs_spi_transfer(xsMachine *the)
-{
-}
-
-void xs_spi_flush(xsMachine *the)
-{
-}
-
-void xs_spi_set_transform(xsMachine *the)
-{
-}
-
+	xsID_clock
+	xsID_out
+	xsID_hz
+	xsID_in
+	xsID_select
+	xsID_active
+	xsID_mode
+*/

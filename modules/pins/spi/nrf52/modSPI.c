@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -141,11 +141,10 @@ void modSPIInit(modSPIConfiguration config)
 	int ret;
 
 	if (!gSPIInited) {
-		config->spi_config.sck_pin = MODDEF_SPI_SCK_PIN;
-		config->spi_config.mosi_pin = MODDEF_SPI_MOSI_PIN;
-		config->spi_config.miso_pin = MODDEF_SPI_MISO_PIN;
+		config->spi_config.sck_pin = (254 == config->clock_pin) ? MODDEF_SPI_SCK_PIN : ((255 == config->clock_pin) ? NRFX_SPIM_PIN_NOT_USED : config->clock_pin);
+		config->spi_config.mosi_pin = (254 == config->mosi_pin) ? MODDEF_SPI_MOSI_PIN : ((255 == config->mosi_pin) ? NRFX_SPIM_PIN_NOT_USED : config->mosi_pin);
+		config->spi_config.miso_pin = (254 == config->miso_pin) ?  MODDEF_SPI_MISO_PIN : ((255 == config->miso_pin) ? NRFX_SPIM_PIN_NOT_USED : config->miso_pin);
 //		config->spi_config.ss_pin = config->cs_pin;
-//		config->spi_config.ss_pin = NRF_DRV_SPI_PIN_NOT_USED;
 		config->spi_config.ss_pin = NRFX_SPIM_PIN_NOT_USED;
 		config->spi_config.ss_active_high = false;
 		config->spi_config.irq_priority = 7; // 7 - APP_IRQ_PRIORITY_LOWEST;

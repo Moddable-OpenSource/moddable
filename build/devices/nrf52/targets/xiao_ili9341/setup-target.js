@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -17,49 +17,41 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 
-const device = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 4,
-			clock: 5
-		},
-		internal: {
-			io: I2C,
-			data: 7,
-			clock: 27
+import config from "mc/config";
+import Digital from "pins/digital";
+import Button from "button";
+import LED from "led";
+
+globalThis.Host = {
+	LED: {
+		Default: class {
+			constructor(options) {
+				return new LED({
+					...options,
+					pin: config.led1_pin,
+				});
+			}
 		}
 	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 44,
-			transmit: 43
+	Button: class {
+		constructor(options) {
+			return new Button({
+				...options,
+				invert: true,
+				pin: config.button1_pin,
+				mode: Digital.InputPullUp,
+			});
 		}
 	},
-	SPI: {
-		default: {
-			io: SPI,
-			clock: 45,
-			in: 46,
-			out: 47,
-			port: 3
-		}
-	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
-	pin: {
-		led: 26
+	pins: {
+		led: config.led1_pin,
+		button: config.button1_pin,
 	}
 };
+Object.freeze(Host, true);
 
-export default device;
+export default function (done) {
+	// Put startup code in here
+	done();
+}

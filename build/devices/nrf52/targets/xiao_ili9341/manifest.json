@@ -5,7 +5,8 @@
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json"
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
@@ -14,6 +15,9 @@
 		"setup/target"
 	],
 	"config": {
+		"screen": "ili9341",
+		"touch": "",
+
 		"led1_pin": 11,
 		"led2_pin": 12,
 		"led3_pin": 13
@@ -35,6 +39,12 @@
 			"interface": "0",
 			"scl_pin": 5,
 			"sda_pin": 4
+		},
+		"ili9341": {
+			"hz": "32000000",
+			"cs_pin": "NRF_GPIO_PIN_MAP(1,12)",
+			"dc_pin": "NRF_GPIO_PIN_MAP(1,11)",
+			"interface": "3"
 		}
 	}
 }
