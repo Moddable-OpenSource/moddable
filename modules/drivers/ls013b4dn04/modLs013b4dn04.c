@@ -461,7 +461,10 @@ void xs_ls013b4dn04_destructor(void *data)
 	if (ls->pixelBuffer)
 		c_free(ls->pixelBuffer);
 	modSPIUninit(&ls->spiConfig);
-	//@@ release gpio too
+	modGPIOUninit(&ls->cs);
+#ifdef MODDEF_LS013B4DN04_DISP_PIN
+	modGPIOUninit(&ls->disp);
+#endif
 #if MODDEF_LS013B4DN04_PULSE
 	if (ls->timer)
 		modTimerRemove(ls->timer);
