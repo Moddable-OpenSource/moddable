@@ -1465,20 +1465,13 @@ void audioOutLoop(void *pvParameter)
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		int count = sizeof(out->buffer) / out->bytesPerFrame;
-		int i = count;
-		int16_t *src = (int16_t *)out->buffer;
-		int32_t *dst = out->buffer32;
-
-		while (i--)
-			*dst++ = *src++ << 16;
-
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
+		i2s_write_expand(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), 16, 32, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
 	}
 
+modLogMemory("audio exit loop");
 	if (installed)
 		i2s_driver_uninstall(MODDEF_AUDIOOUT_I2S_NUM);
 
