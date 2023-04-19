@@ -1,7 +1,9 @@
 {
 	"build": {
 		"UPLOAD_SPEED": "1500000",
-		"DEBUGGER_SPEED": "1500000"
+		"DEBUGGER_SPEED": "1500000",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
@@ -67,8 +69,7 @@
 			"sampleRate": 11025,
 			"volume_divider": 1,
 			"i2s": {
-				"DAC_CHANNEL": 1,
-				"bitsPerSample": 16,
+				"bitsPerSample": 32,
 				"bck_pin": 12,
 				"lr_pin": 0,
 				"dataout_pin": 2

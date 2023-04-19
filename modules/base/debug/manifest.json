@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"*": [
+			"./debug",
+			"./modDebug"
+		]
+	},
+	"preload": "debug"
+}

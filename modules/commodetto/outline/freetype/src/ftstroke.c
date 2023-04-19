@@ -366,7 +366,7 @@
 
     /* don't record empty paths! */
     if ( count <= start + 1U )
-      border->num_points = start;
+      border->num_points = 0;
     else
     {
       /* copy the last point to the start of this sub-path, since */
