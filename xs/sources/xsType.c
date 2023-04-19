@@ -836,6 +836,7 @@ txBoolean fxOrdinarySetPropertyValue(txMachine* the, txSlot* instance, txID id, 
 	prototype = the->stack;
 	if (!mxBehaviorGetOwnProperty(the, instance, id, index, property)) {
 		if (mxBehaviorGetPrototype(the, instance, prototype)) {
+			fxCheckCStack(the);
 			result = mxBehaviorSetPropertyValue(the, prototype->value.reference, id, index, value, receiver);
 			goto bail;
 		}
