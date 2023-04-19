@@ -135,6 +135,8 @@ void xs_sleep_set_power_mode(xsMachine *the)
 
 void xs_sleep_deep(xsMachine *the)
 {
+	modRunOnSleepCallbacks();
+
 #ifdef mxDebug
 	modLog("Deep sleep only supported for release builds!");
 	return;

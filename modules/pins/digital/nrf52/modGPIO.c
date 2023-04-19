@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019  Moddable Tech, Inc.
+ * Copyright (c) 2017-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,6 +32,29 @@
 #define kResetReasonGPIO (1L << 16)
 
 static void digitalWakeISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
+void digitalSetupWake(uint32_t refCon);
+
+
+void digitalSetupWake(uint32_t refCon)
+{
+	nrf_drv_gpiote_in_config_t gpiote_config = {0};
+	int pin = (refCon & 0xff);
+	int val = (refCon & 0xff00) >> 8;
+
+	gpiote_config.hi_accuracy = true;
+	gpiote_config.is_watcher = false;
+	gpiote_config.pull = nrf_gpio_pin_pull_get(pin);
+	gpiote_config.sense = NRF_GPIOTE_POLARITY_TOGGLE;
+
+	nrf_gpio_cfg_input(pin, gpiote_config.pull);
+
+	if (!nrf_drv_gpiote_is_init())
+		nrf_drv_gpiote_init();
+
+	nrf_drv_gpiote_in_init(pin, &gpiote_config, digitalWakeISR);
+	nrf_drv_gpiote_in_event_enable(pin, true);
+	nrf_gpio_cfg_sense_input(pin, gpiote_config.pull, gpiote_config.sense);
+}
 
 int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint32_t mode)
 {
@@ -51,6 +74,8 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 
 void modGPIOUninit(modGPIOConfiguration config)
 {
+//	modRemoveOnSleepCallback(digitalSetupWake, config->pin); //@@ 
+
 	if (0 == config->direction) {
 		nrf_gpio_input_disconnect(config->pin);
 		config->direction = -1;
@@ -60,13 +85,13 @@ void modGPIOUninit(modGPIOConfiguration config)
 
 int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 {
-	nrf_gpio_pin_sense_t sense_config = NRF_GPIO_PIN_NOSENSE;
-	 
-	if (mode & kModGPIOWakeRisingEdge)
-		sense_config = NRF_GPIO_PIN_SENSE_HIGH;
-	else if (mode & kModGPIOWakeFallingEdge)
-		sense_config = NRF_GPIO_PIN_SENSE_LOW;
+	int triggerWake = 0;
+
+	triggerWake = mode;
 	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+
+	if (mode != triggerWake)
+		modAddOnSleepCallback(digitalSetupWake, config->pin);
 	
 	switch (mode) {
 		case kModGPIOInput:
@@ -93,19 +118,6 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 			return -1;
 	}
 
-	if (NRF_GPIO_PIN_NOSENSE != sense_config) {
-		nrf_drv_gpiote_in_config_t gpiote_config = {0};
-		gpiote_config.sense = (NRF_GPIO_PIN_SENSE_HIGH == sense_config) ? NRF_GPIOTE_POLARITY_LOTOHI : NRF_GPIOTE_POLARITY_HITOLO;
-		gpiote_config.pull = nrf_gpio_pin_pull_get(config->pin);
-		gpiote_config.hi_accuracy = true;
-		gpiote_config.skip_gpio_setup = true;
-		if (!nrf_drv_gpiote_is_init())
-			nrf_drv_gpiote_init();
-		nrf_drv_gpiote_in_init(config->pin, &gpiote_config, digitalWakeISR);
-		nrf_drv_gpiote_in_event_enable(config->pin, false);
-		nrf_gpio_cfg_sense_set(config->pin, sense_config);
-	}
-
 	return 0;
 }
 
@@ -129,7 +141,7 @@ uint8_t modGPIODidWake(modGPIOConfiguration config, uint8_t pin)
 	// Check for wake from System OFF sleep
 	if (kResetReasonGPIO == nrf52_get_reset_reason()) {
 		if (nrf52_get_boot_latch(pin)) {
-			nrf52_clear_boot_latch(pin);
+//			nrf52_clear_boot_latch(pin);
 			return 1;
 		}
 	}

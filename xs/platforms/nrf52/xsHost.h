@@ -494,6 +494,19 @@ char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
 uint8_t nrf52_softdevice_enabled(void);
 
+typedef void (*modOnSleepCallback)(uint32_t refCon);
+struct modOnSleepRecord {
+	struct modOnSleepRecord	*next;
+	modOnSleepCallback	callback;
+	uint32_t 			refCon;
+};
+typedef struct modOnSleepRecord modOnSleepRecord;
+typedef struct modOnSleepRecord *modOnSleep;
+
+void modAddOnSleepCallback(modOnSleepCallback callback, uint32_t refCon);
+void modRemoveOnSleepCallback(modOnSleepCallback callback, uint32_t refCon);
+void modRunOnSleepCallbacks(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1270,3 +1270,61 @@ int espMemCmp(const void *a, const void *b, size_t count)
 
 	return 0;
 }
+
+modOnSleepRecord *modOnSleepCallbacks = NULL;
+
+void modAddOnSleepCallback(modOnSleepCallback callback, uint32_t refCon)
+{
+	modOnSleep onSleep = modOnSleepCallbacks;
+
+	while (onSleep) {
+		if (onSleep->callback == callback && onSleep->refCon == refCon)
+			break;
+		onSleep = onSleep->next;
+	}
+
+	if (!onSleep) {
+		onSleep = c_calloc(1, sizeof(modOnSleepRecord));
+		if (!onSleep)
+			return;
+		onSleep->next = modOnSleepCallbacks;
+		modOnSleepCallbacks = onSleep;
+	}
+
+	onSleep->callback = callback;
+	onSleep->refCon = refCon;
+}
+
+void modRemoveOnSleepCallback(modOnSleepCallback callback, uint32_t refCon)
+{
+	modOnSleep onSleep = modOnSleepCallbacks, last;
+
+	if (!onSleep)
+		return;
+
+	if (onSleep->callback == callback && onSleep->refCon == refCon)
+		modOnSleepCallbacks = onSleep->next;
+	else {
+		while (NULL != (last = onSleep)) {	// intentional set of last
+			onSleep = onSleep->next;
+			if (onSleep && onSleep->callback == callback && onSleep->refCon == refCon) {
+				last->next = onSleep->next;
+				break;
+			}
+		}
+	}
+
+	if (onSleep)
+		c_free(onSleep);
+}
+
+void modRunOnSleepCallbacks()
+{
+	modOnSleep onSleep = modOnSleepCallbacks;
+
+	while (onSleep) {
+		onSleep->callback(onSleep->refCon);
+		onSleep = onSleep->next;
+	}
+}
+
