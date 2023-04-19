@@ -398,6 +398,8 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 	
 	mxTry(the) {
 		if (state->value.integer == XS_CODE_END) {
+			mxPush(the->scratch);
+			value = the->stack;
 			mxTemporary(resolveFunction);
 			mxTemporary(rejectFunction);
 			mxPush(mxPromiseConstructor);
@@ -412,7 +414,7 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 				mxPushSlot(resolveFunction);
 			mxCall();
 			/* ARGUMENTS */
-			mxPush(the->scratch);
+			mxPushSlot(value);
 			mxRunCount(1);
 			mxPop();
 		}
