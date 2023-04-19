@@ -39,11 +39,11 @@
 #ifndef MODDEF_AUDIOOUT_QUEUELENGTH
 	#define MODDEF_AUDIOOUT_QUEUELENGTH (8)
 #endif
-#ifndef MODDEF_AUDIOOUT_MIXER_BYTES
+#ifndef MODDEF_AUDIOOUT_MIXERBYTES
 	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
-		#define MODDEF_AUDIOOUT_MIXER_BYTES (256 * 2)
+		#define MODDEF_AUDIOOUT_MIXERBYTES (256 * 2)
 	#else
-		#define MODDEF_AUDIOOUT_MIXER_BYTES (384 * 2)
+		#define MODDEF_AUDIOOUT_MIXERBYTES (384 * 2)
 	#endif
 #endif
 #if ESP32
@@ -236,7 +236,7 @@ typedef struct {
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
-	uint32_t				buffer[MODDEF_AUDIOOUT_MIXER_BYTES >> 2];
+	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
 #if MODDEF_AUDIOOUT_I2S_DAC
 	uint32_t				*buffer32;
 #endif
