@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/ttp223/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

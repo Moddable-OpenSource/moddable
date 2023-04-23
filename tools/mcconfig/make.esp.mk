@@ -83,19 +83,6 @@ DEBUG_IP ?=
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
-# End user-configurable values. Derived values below.
-NET_CONFIG_FLAGS := 
-ifneq ($(WIFI_SSID),)
-NET_CONFIG_FLAGS += -DWIFI_SSID=$(WIFI_SSID)
-endif
-ifneq ($(WIFI_PSK),)
-NET_CONFIG_FLAGS += -DWIFI_PSK=$(WIFI_PSK)
-endif
-ifneq ($(DEBUG_IP),)
-comma := ,
-NET_CONFIG_FLAGS += -DDEBUG_IP=$(subst .,$(comma),$(DEBUG_IP))
-endif
-
 NEWLIBC_PATH = $(ESPRESSIF_SDK_ROOT)/components/newlib/newlib/lib/libc.a
 
 CORE_DIR = $(ARDUINO_ROOT)/cores/esp8266
@@ -264,7 +251,6 @@ C_DEFINES = \
 	-DARDUINO_ARCH_ESP8266 \
 	-DESP8266 \
 	-DCONT_STACKSIZE=4608 \
-	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DmxNoConsole=1 \

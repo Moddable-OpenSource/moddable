@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: February 9, 2023
+Revised: April 9, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -76,7 +76,7 @@ When you build an application, the default output directory name is taken from t
 }
 ```
 	
-#### `ESP32-specific environment variables`
+#### ESP32-specific environment variables
 
 The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK build for ESP32 and ESP32-S2:
 
@@ -85,6 +85,7 @@ The `esp32` platform object supports a number of optional environment variables 
 | `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries. 
 | `PARTITIONS_FILE` | Full pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
 | `BOOTLOADERPATH` | Pathname to a directory containing a custom [ESP-IDF bootloader component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/bootloader.html#custom-bootloader).
+| `C_FLAGS_SUBPLATFORM` | C compiler flags to use when compiling Moddable SDK sources.
 
 > Note: This document does not cover native code ESP32 and ESP-IDF build details. Refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/get-started/index.html) for additional information.
  
@@ -98,6 +99,60 @@ The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contr
 ```
 
 In this example, the modClock [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/modClock/sdkconfig/partitions.csv) file completely replaces the base Moddable SDK [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) file at build time to provide additional partitions for OTA updates. The `sdkconfig` directory contains sdkconfig files that override and supplement the base Moddable SDK [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults) entries. The following section describes how the Moddable ESP32 build processes sdkconfig files.
+
+The `C_FLAGS_SUBPLATFORM` environment variable is for use in manifests of subplatforms (and should not be used elsewhere). It allows compiler specific settings unique to a subplatform. For example, a subplatform using first generation ESP32 silicon with external PSRAM would enable the following settings to cause the compiler to generate code to work around the silicon bugs:
+
+```json
+"build": {
+	"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
+},
+```
+
+#### How partitions.csv is processed
+The [ESP-IDF partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) must contain certain partitions to support certain features:
+
+- [Mods](../xs/mods.md) requires a partition to store the mod's archive
+- Files requires a partition to store the file system
+- Over-the-Air (OTA) updates require two OTA app partitions plus an OTA Data partition
+
+The `mcconfig` tool can automatically modify the partition map to support these features. This simplifies development by eliminating the need to manually create a targeted partition table for projects. It makes optimal use of flash space, by only creating partitions for features that are used by the project.
+
+The `mcconfig` tool creates new partitions by dividing the factory app partition based on the features used by the project. The default partition tables for Moddable SDK devices all have a single factory app partition and so support this feature of `mcconfig`.
+
+To determine the features in-use, `mcconfig` checks the following manifest [defines](#defines). These defines are set in the manifests that require them, so it is usually unnecessary to set them in project manifests.
+
+- Mods – if `XS_MODS` is set to a non-zero value, mods are considered to be in use
+
+```json
+"defines": {
+	"XS_MODS": 1
+}
+```
+- Files - if `file partition` is set to the name of a partition, files are considered to be in use
+
+```json
+"defines": {
+	"file": {
+		"partition": "#storage"
+	}
+}
+```
+- OTA – if `ota autospilt` is set, OTA is considered to be in-use.
+
+```json
+"defines": {
+	"ota": {
+		"autosplit": 1
+	}
+}
+```
+If the partitions.csv file for the project includes a partition for these features, `mcconfig` does not automatically create the corresponding partition. For example, if a mods partition is defined in the partitions.csv file, `mcconfig` does not create one from the factory app partition.
+
+The partitions created have the following sizes. Options could be implemented in the future to configure these sizes.
+
+- Mods - 256 KB
+- Storage - 64 KB
+- OTA - 8 KB is reserved for the OTA Data partition required by the ESP-IDF. The space in the factory app partition not used for other partitions is divided into two OTA app partitions.
 
 #### How sdkconfig files are processed
 

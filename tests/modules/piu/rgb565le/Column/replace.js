@@ -19,13 +19,13 @@ const col = new Column(null, {
 });
 
 new Application(null, { contents: [col] });
-screen.checkImage("3ac52d95d4dd044f3ccf4a73d69dd7e7");
+screen.checkImage("f8c56d97bcf36970357550cf397b89b0");
 
 col.replace(redSquare, blueSquare);
-screen.checkImage("41016096e2c4133d7cbc06adac02b0dc");
+screen.checkImage("7ebf65c2ce4d953cc03187a793caf9cd");
 
 col.replace(yellowSquare, redSquare);
-screen.checkImage("055298d4930fd87709eba878f82c55ed");
+screen.checkImage("e82b1594db1a226b1eb21b7ffd75f364");
 
 col.replace(blueSquare, yellowSquare);
-screen.checkImage("b6ee7eb85bd72d02de6de645f3794efe");
+screen.checkImage("0d2de4cf859a9dd4ed02905b5d6859cc");

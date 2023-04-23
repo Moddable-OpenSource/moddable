@@ -20,10 +20,10 @@ const row = new Row(null, {
 
 new Application(null, { skin: new Skin({ fill: "black" }), contents: [row] });
 
-screen.checkImage("e76be9a0ba276d134362d7b7c529325d");
+screen.checkImage("6d7fcc18ace763d7c254b955ddd00b98");
 
 row.sizeBy(-100, -100);
-screen.checkImage("b37d7813528d7d2c8ca30a15187d4e41");
+screen.checkImage("cb7c3d074edc3094b503e4150d70de91");
 
 row.sizeBy(50, 50);
-screen.checkImage("fbae6bf8930cd55a153ef0bba08ac9ee");
+screen.checkImage("d5cdd0397159408055c428a84d683ba9");

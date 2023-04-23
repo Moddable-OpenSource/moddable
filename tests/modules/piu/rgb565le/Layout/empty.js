@@ -16,7 +16,7 @@ new Application(null, {
 	skin: new Skin({ fill: "white" }),
 	contents: [ container, three ]
 });
-screen.checkImage("1a9c67bcbd5c7b3b7c5391222eddbfe6");
+screen.checkImage("4ccc01803b9dcd9f9f0da37617f9cbf0");
 
 container.empty();
-screen.checkImage("859d7ec4a35cb329a7ccf97ff8715b55");
+screen.checkImage("2e92d418941e88f29b450a56cd3d4ace");

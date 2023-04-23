@@ -8,15 +8,15 @@ class SampleBehavior extends $TESTMC.Behavior {
         die.fill()
             .and(10, 10, 50, 50)
             .cut();
-        screen.checkImage("2223c4764c1d80eca259e7a5854a40af");
+        screen.checkImage("ebaa18162e0319186ca4cf04864c8d88");
        
         die.and(10, 10, 25, 25)
             .cut();
-        screen.checkImage("084b090aae60ca17fc4cb4fcbf2f5322");
+        screen.checkImage("b65f1a920565012534b7cac6ca001e2d");
 
         die.and(100, 100, 25, 25)
             .cut();
-        screen.checkImage("c9d0aacc2c08f82343962fec6a71c2ab");
+        screen.checkImage("7734e0d9fa986c3e446e15f6e5c7701b");
 
         $DONE();
     }

@@ -20,10 +20,10 @@ const col = new Column(null, {
 
 new Application(null, { skin: new Skin({ fill: "black" }), contents: [col] });
 
-screen.checkImage("9348fa0dc15709afabf2f80ac9b93205");
+screen.checkImage("34d071ae70f3b1e3451f5bf496da42f6");
 
 col.sizeBy(-100, -100);
-screen.checkImage("aa667ead353e2bac49637a16bf09c264");
+screen.checkImage("d2832168ee83cc9013fe1b50531d4a8a");
 
 col.sizeBy(50, 50);
-screen.checkImage("fb6656cc60b091b61ed7e994e1e07174");
+screen.checkImage("fafce0c97cce20ff0f00233969149af1");

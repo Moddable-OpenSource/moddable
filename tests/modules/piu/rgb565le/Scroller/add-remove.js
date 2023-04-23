@@ -22,22 +22,22 @@ new Application(null, {
 	contents: [ container ]
 });
 
-screen.checkImage("713a020343f665de3e0d40c69637d7a2");
+screen.checkImage("956d38536582eaab00d12d41ddb05629");
 
 container.remove(yellowSquare);
-screen.checkImage("dbc5b5c73ab256a2680366008fbad163");
+screen.checkImage("98868b4660b55533461626a949f47956");
 
 container.remove(blueSquare);
-screen.checkImage("48a415682ff21704cad15609593d2c86");
+screen.checkImage("b1b84e6a1e6ecdcee8643ff21e21963c");
 
 container.remove(redSquare);
-screen.checkImage("3028cca0e0b447b31496a4603a35bc60");
+screen.checkImage("3b06e6e8da2bfca351d5210df4a736df");
 
 container.add(yellowSquare);
-screen.checkImage("922b5ec8afa5dd26a8f512da399c6d2a");
+screen.checkImage("02466534568cdcce1d6ccece804eac31");
 
 container.add(blueSquare);
-screen.checkImage("dbc5b5c73ab256a2680366008fbad163");
+screen.checkImage("98868b4660b55533461626a949f47956");
 
 container.add(redSquare);
-screen.checkImage("48a415682ff21704cad15609593d2c86");
+screen.checkImage("b1b84e6a1e6ecdcee8643ff21e21963c");

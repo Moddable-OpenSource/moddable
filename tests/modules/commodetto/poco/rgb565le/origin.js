@@ -39,4 +39,4 @@ render.begin();
 	render.origin();
 render.end();
 
-assert.sameValue("c666fb10728e28f1f0cf1130e32ebe72", screen.checksum, "image mismatch");
+assert.sameValue("5fffd9c5f5fd284e1a8375dfac42ee17", screen.checksum, "image mismatch");

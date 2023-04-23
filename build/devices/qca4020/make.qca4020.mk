@@ -149,7 +149,6 @@ XSL = $(MODDABLE_TOOLS_DIR)/xsl
 #	-DmxNoConsole=1
 C_DEFINES = \
 	-U__STRICT_ANSI__ \
-	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(DISPLAY) \

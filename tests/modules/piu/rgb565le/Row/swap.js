@@ -20,10 +20,10 @@ const row = new Row(null, {
 
 new Application(null, { contents: [row] });
 
-screen.checkImage("09e9d41110204beebbb04f83a1f4c4d8");
+screen.checkImage("ceaea8935eab9131dda6804c99d97563");
 
 row.swap(redSquare, blueSquare);
-screen.checkImage("b656b586ab51fac830b3f0f17a1cd9d8");
+screen.checkImage("878cfe26dcf61758cb1d9ae13525c399");
 
 row.swap(redSquare, yellowSquare);
-screen.checkImage("163c8c4a00e54df0d0d65c21132bced6");
+screen.checkImage("65a5bfe2a09f00eca76266b2a6888ec1");

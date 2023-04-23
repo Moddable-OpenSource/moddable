@@ -12,10 +12,10 @@ new Application(null, {
 	contents: [ three ]
 });
 
-screen.checkImage("550ec4111f6e15b7cc0952039bfa581a");
+screen.checkImage("8e4f7bde403e94148a35744e08b4b123");
 
 application.insert(one, three);
-screen.checkImage("b8dfb300f5fa37e3d70d82bfdf87752f");
+screen.checkImage("b9e1308f00f21ea2513a6d08e5768196");
 
 application.insert(two, three);
-screen.checkImage("b8dfb300f5fa37e3d70d82bfdf87752f");
+screen.checkImage("b9e1308f00f21ea2513a6d08e5768196");
