@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1351,7 +1351,7 @@ txBigInt *fxBigInt_sub(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 	return(rr);
 }
 
-#if __has_builtin(__builtin_uadd_overflow)
+#if __has_builtin(__builtin_add_overflow)
 static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 {
 	txU4 c = 0;
@@ -1360,18 +1360,18 @@ static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 	for (i = 0; i < an; i++) {
 #ifdef __ets__
 	txU4 r;
-	if (__builtin_uadd_overflow(ap[i], bp[i], &r)) {
+	if (__builtin_add_overflow(ap[i], bp[i], &r)) {
 		rp[i] = r + c;
 		c = 1;
 	}
 	else
-		c = __builtin_uadd_overflow(r, c, &rp[i]);
+		c = __builtin_add_overflow(r, c, &rp[i]);
 #else
-		c = __builtin_uadd_overflow(ap[i], bp[i], &rp[i]) | __builtin_uadd_overflow(rp[i], c, &rp[i]);
+		c = __builtin_add_overflow(ap[i], bp[i], &rp[i]) || __builtin_add_overflow(rp[i], c, &rp[i]);
 #endif
 	}
 	for (; c && (i < bn); i++) {
-		c = __builtin_uadd_overflow(1, bp[i], &rp[i]);
+		c = __builtin_add_overflow(1, bp[i], &rp[i]);
 	}
 	for (; i < bn; i++) {
 		rp[i] = bp[i];

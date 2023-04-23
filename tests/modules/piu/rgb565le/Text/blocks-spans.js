@@ -27,4 +27,4 @@ new Application(null, {
 	skin: new Skin({ fill: "white" }),
     contents: [ sampleText ]
 });
-screen.checkImage("57068a2ae9a8a1899e3cdb1a99559b83");
+screen.checkImage("9a2e61a99e34e39ffe2ef8ad0571bfb0");

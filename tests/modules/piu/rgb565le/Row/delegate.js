@@ -21,10 +21,10 @@ new Application(null, {
 	contents: [ content ]
 });
 
-screen.checkImage("968025f9e885cc809dfaa88ad8b354ed");
+screen.checkImage("985606a9e36a608e7d51f25b829a08a8");
 
 content.delegate("changeState", 1);
-screen.checkImage("4534db1fcf186d0bb681b98b1e40d1c3");
+screen.checkImage("1d5d8720d0cc3b88842b2eaace2f45f9");
 
 content.delegate("changeState", 0.75);
-screen.checkImage("450f83a0baec4783c3eaa60834eda5e3");
+screen.checkImage("c5472ea529d8988943ccdfc3c5fbe7b5");

@@ -16,10 +16,10 @@ new Application(null, {
 	contents: [ container ]
 });
 
-screen.checkImage("1cbfdd2ce0bb314aa20b23d7e0b2c0f7");
+screen.checkImage("efadef3a732f4534bcd45e3c3bfeffad");
 
 container.insert(one, three);
-screen.checkImage("eed2170fa2cd9a0b5164c6fc6b74f690");
+screen.checkImage("782bfaf53e2e16f609287358083a3e92");
 
 container.insert(two, three);
-screen.checkImage("be2d2fb6ed9488cc2399abed12e28067");
+screen.checkImage("5c8b20d4e2f6e29c14a780e0b1c3088a");

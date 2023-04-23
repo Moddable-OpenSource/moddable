@@ -94,18 +94,18 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 OBJECTS = \
-	$(TMP_DIR)\xsBigInt.o \
-	$(TMP_DIR)\xsCode.o \
-	$(TMP_DIR)\xsCommon.o \
-	$(TMP_DIR)\xsdtoa.o \
-	$(TMP_DIR)\xsLexical.o \
-	$(TMP_DIR)\xsre.o \
-	$(TMP_DIR)\xsScope.o \
-	$(TMP_DIR)\xsScript.o \
-	$(TMP_DIR)\xsSourceMap.o \
-	$(TMP_DIR)\xsSyntaxical.o \
-	$(TMP_DIR)\xsTree.o \
-	$(TMP_DIR)\xsc.o
+	$(TMP_DIR)\xsBigInt.obj \
+	$(TMP_DIR)\xsCode.obj \
+	$(TMP_DIR)\xsCommon.obj \
+	$(TMP_DIR)\xsdtoa.obj \
+	$(TMP_DIR)\xsLexical.obj \
+	$(TMP_DIR)\xsre.obj \
+	$(TMP_DIR)\xsScope.obj \
+	$(TMP_DIR)\xsScript.obj \
+	$(TMP_DIR)\xsSourceMap.obj \
+	$(TMP_DIR)\xsSyntaxical.obj \
+	$(TMP_DIR)\xsTree.obj \
+	$(TMP_DIR)\xsc.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -127,14 +127,12 @@ $(OBJECTS) : $(PLT_DIR)\xsPlatform.h
 $(OBJECTS) : $(SRC_DIR)\xsCommon.h
 $(OBJECTS) : $(SRC_DIR)\xsScript.h
 
-{$(SRC_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(SRC_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
-{$(TLS_DIR)\}.c{$(TMP_DIR)\}.o::
+{$(TLS_DIR)\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
-	rename *.obj *.o
 
 clean :
 	del /Q $(BUILD_DIR)\bin\win\debug\$(NAME).exe

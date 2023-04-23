@@ -21,4 +21,4 @@ new Application(null, {
 	contents: [ samplePort ]
 });
 
-screen.checkImage("20545d6e32df4bf1e0f8e33d7b0d563e");
+screen.checkImage("365b479517f97a006608e68f5df88307");

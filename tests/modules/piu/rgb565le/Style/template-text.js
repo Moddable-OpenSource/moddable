@@ -25,4 +25,4 @@ new Application(null, {
 	Style: sampleStyle, skin: new Skin({ fill: "white" }),
     contents: [ text1, text2, text3, text4, text5, text6, text7, text8 ]
 });
-screen.checkImage("9c7c54c69f11353b2ac0ee094baf3279");
+screen.checkImage("0f452f1e7f1494749ef48f962be01882");

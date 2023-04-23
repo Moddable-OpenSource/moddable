@@ -23,10 +23,10 @@ new Application(null, {
 	contents: [ content ]
 });
 
-screen.checkImage("e29c52234f0c20262fac0e3abe321647");
+screen.checkImage("cbca45a370d984e48cf86de813d286b9");
 
 content.delegate("changeState", 1);
-screen.checkImage("48d847efb704b28f2f9266d0a70b66dc");
+screen.checkImage("39852254fb15186d5e1f34e2b40aa517");
 
 content.delegate("changeState", 0.75);
-screen.checkImage("782145007933c364da75071e9715af4a");
+screen.checkImage("bd38fe95d6fd806eedbad48eee088e9b");

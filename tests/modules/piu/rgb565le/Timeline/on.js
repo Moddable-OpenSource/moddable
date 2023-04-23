@@ -16,19 +16,19 @@ const redSquare = new Content(null, {
 	skin: new Skin({ fill: "red" })
 });
 application.add(redSquare);
-screen.checkImage("968025f9e885cc809dfaa88ad8b354ed");
+screen.checkImage("985606a9e36a608e7d51f25b829a08a8");
 
 let timeline = new Timeline();
 timeline.on(redSquare, { x: [0, 160, 160, 0, 0], y: [0, 0, 160, 160, 0] }, 400, null, 0);
 
 timeline.seekTo(100);
-screen.checkImage("8542ce81489c2d7136757496860c4707");
+screen.checkImage("dc4747180e8449c7e5839e748755bac6");
 
 timeline.seekTo(200);
-screen.checkImage("2db45c784aa67e5ae563c030b2a080ea");
+screen.checkImage("b87e1f080edc1627004d9ccdfe1370be");
 
 timeline.seekTo(300);
-screen.checkImage("8cc31b12e7b6cc86260de61fb975a0ae");
+screen.checkImage("ac199d492118495537dac5db5867d77a");
 
 timeline.seekTo(400);
-screen.checkImage("2116db69ca4ebd87d2effb2a43527df5");
+screen.checkImage("37fbd351438871b912c6f340a629b330");

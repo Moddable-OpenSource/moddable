@@ -22,10 +22,10 @@ new Application(null, {
 	contents: [ container ]
 });
 
-screen.checkImage("1cbfdd2ce0bb314aa20b23d7e0b2c0f7");
+screen.checkImage("efadef3a732f4534bcd45e3c3bfeffad");
 
 container.insert(one, three);
-screen.checkImage("53cfd1a7c064e964b72cc023428a7a0b");
+screen.checkImage("93dfe2e1d2d85b88b8d28a902a1cd8e0");
 
 container.insert(two, three);
-screen.checkImage("53cfd1a7c064e964b72cc023428a7a0b");
+screen.checkImage("93dfe2e1d2d85b88b8d28a902a1cd8e0");

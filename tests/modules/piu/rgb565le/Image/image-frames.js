@@ -4,11 +4,11 @@ flags: [onlyStrict, async]
 ---*/
 
 const frames = [
-	"53f15f781ccfc270bf763dd1591fca4d", 
-	"ac2d8df34ddc656ada0de8756f9bbef2", 
-	"7b69c17e812bd64c6d48c6ea84d13719", 
-	"ac2d8df34ddc656ada0de8756f9bbef2", 
-	"7b69c17e812bd64c6d48c6ea84d13719"
+	"547e1d56c7cdce05e785a78c467e0e12", 
+	"99d8540b8c60bb85d72676065f8ec4e6", 
+	"b2aa45b90faf0cd747314b4608b07b1b", 
+	"99d8540b8c60bb85d72676065f8ec4e6", 
+	"b2aa45b90faf0cd747314b4608b07b1b"
 ];
 
 class ImageBehavior extends Behavior {
