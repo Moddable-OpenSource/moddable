@@ -754,10 +754,12 @@ void fxBuildKeys(txMachine* the)
 	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
 		txLinkerSymbol* symbol = linker->symbolArray[i];
 		txID id = the->keyIndex;
-		txSlot* description = fxNewSlot(the);
-		fxCopyStringC(the, description, symbol->string);
-		the->keyArray[id] = description;
+		txSlot* instance = fxNewInstance(the);
+		txSlot* property = fxNextSymbolProperty(the, instance, id, XS_NO_ID, XS_INTERNAL_FLAG);
+		fxNextStringXProperty(the, property, symbol->string, XS_NO_ID, XS_INTERNAL_FLAG);
+		the->keyArray[id] = instance;
 		the->keyIndex++;
+		mxPop();
 	}
 	for (; i < c; i++) {
 		txLinkerSymbol* symbol = linker->symbolArray[i];

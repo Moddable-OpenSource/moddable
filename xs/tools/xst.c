@@ -1011,7 +1011,7 @@ void fxRunContext(txPool* pool, txContext* context)
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
 			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
-			||	!strcmp((char*)node->data.scalar.value, "symbols-as-weakmap-keys")
+// 			||	!strcmp((char*)node->data.scalar.value, "symbols-as-weakmap-keys")
 			) {
 				sloppy = 0;
 				strict = 0;

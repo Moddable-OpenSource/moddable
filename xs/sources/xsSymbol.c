@@ -82,23 +82,24 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 
 void fx_Symbol(txMachine* the)
 {
-	txID id;
-	txSlot* description;
-	if (mxTarget->kind != XS_UNDEFINED_KIND)
-		mxTypeError("new Symbol");
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
-		fxToString(the, mxArgv(0));
-		description = fxNewSlot(the);
-		description->kind = mxArgv(0)->kind;
-		description->value.string = mxArgv(0)->value.string;
-	}
-	else
-		description = C_NULL;
-	id = the->keyIndex;
+	txSlot* instance;
+	txSlot* property;
+	txID id = the->keyIndex;
 	if (id == the->keyCount)
 		fxGrowKeys(the, 1);
-	the->keyArray[id - the->keyOffset] = description;
+	if (mxTarget->kind != XS_UNDEFINED_KIND)
+		mxTypeError("new Symbol");
+	instance = fxNewInstance(the);
+	property = fxNextSymbolProperty(the, instance, id, XS_NO_ID, XS_INTERNAL_FLAG);
+	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
+		fxToString(the, mxArgv(0));
+		fxNextSlotProperty(the, property, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
+	}
+	else
+		fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+	the->keyArray[id - the->keyOffset] = instance;
 	the->keyIndex++;
+	mxPop();
 	mxResult->kind = XS_SYMBOL_KIND;
 	mxResult->value.symbol = id;
 }
@@ -168,7 +169,8 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 			mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
 			mxResult->value.string = slot->value.key.string;
 		}
-		else if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
+		else if (slot->kind == XS_INSTANCE_KIND) {
+			slot = slot->next->next;
 			mxResult->kind = slot->kind;
 			mxResult->value = slot->value;
 		}
@@ -221,8 +223,11 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 	if (key) {
 		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
 			fxConcatString(the, slot, key);
-		else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
-			fxConcatString(the, slot, key);
+		else if (key->kind == XS_INSTANCE_KIND) {
+			key = key->next->next;
+			if (key->kind != XS_UNDEFINED_KIND)
+				fxConcatString(the, slot, key);
+		}
 	}
 	fxConcatStringC(the, slot, ")");
 }
@@ -489,8 +494,11 @@ void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize)
 			txKind kind = mxGetKeySlotKind(key);
 			if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
 				c_snprintf(theBuffer, theSize, "%s", key->value.key.string);
-			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND))
-				c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
+			else if (key->kind == XS_INSTANCE_KIND) {
+				key = key->next->next;
+				if (key->kind != XS_UNDEFINED_KIND)
+					c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
+			}
 			else
 				*theBuffer = 0;
 		}

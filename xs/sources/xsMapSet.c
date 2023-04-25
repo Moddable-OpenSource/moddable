@@ -61,6 +61,8 @@ static void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list);
 static void fxSetEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txSlot* pair); 
 static txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b);
 
+static txSlot* fxCanBeHeldWeakly(txMachine* the, txSlot* slot);
+
 static txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable);
 static txSlot* fxCheckWeakMapKey(txMachine* the, txBoolean mutable);
 
@@ -981,6 +983,20 @@ txBoolean fxTestEntry(txMachine* the, txSlot* a, txSlot* b)
 	return result;
 }
 
+txSlot* fxCanBeHeldWeakly(txMachine* the, txSlot* slot)
+{
+	if (slot->kind == XS_REFERENCE_KIND)
+		slot = slot->value.reference;
+	else if (slot->kind == XS_SYMBOL_KIND) {
+		slot = fxGetKey(the, slot->value.symbol);
+		if (slot->kind != XS_INSTANCE_KIND)
+			slot = C_NULL;
+	}
+	else
+		slot = C_NULL;
+	return slot;
+}
+
 txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
@@ -998,12 +1014,10 @@ txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 txSlot* fxCheckWeakMapKey(txMachine* the, txBoolean mutable)
 {
 	if (mxArgc > 0) {
-		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND) {
-			if (mutable && (slot->value.reference->flag & XS_MARK_FLAG))
-				mxTypeError("WeakMap key is read-only");
-			return slot;
-		}
+		txSlot* slot = fxCanBeHeldWeakly(the, mxArgv(0));
+		if (slot && mutable && (slot->flag & XS_MARK_FLAG))
+			mxTypeError("WeakMap key is read-only");
+		return slot;
 	}
 	return C_NULL;
 }
@@ -1076,7 +1090,7 @@ void fx_WeakMap_prototype_delete(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
 	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
-	mxResult->value.boolean = (key) ? fxDeleteWeakEntry(the, instance->next, key->value.reference) : 0;
+	mxResult->value.boolean = (key) ? fxDeleteWeakEntry(the, instance->next, key) : 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
 
@@ -1084,7 +1098,7 @@ void fx_WeakMap_prototype_get(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
 	txSlot* key = fxCheckWeakMapKey(the, XS_IMMUTABLE);
-	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key) : C_NULL;
 	if (result) {
 		txSlot* value = result->value.weakEntry.value;
 		mxResult->kind = value->kind;
@@ -1096,7 +1110,7 @@ void fx_WeakMap_prototype_has(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_IMMUTABLE);
 	txSlot* key = fxCheckWeakMapKey(the, XS_IMMUTABLE);
-	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key->value.reference) : C_NULL;
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key) : C_NULL;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = (result) ? 1 : 0;
 }
@@ -1107,7 +1121,7 @@ void fx_WeakMap_prototype_set(txMachine* the)
 	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
 	if (!key)
 		mxTypeError("key is no object");
-	fxSetWeakEntry(the, instance->next, key->value.reference, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
+	fxSetWeakEntry(the, instance->next, key, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
 	*mxResult = *mxThis;
 }
 
@@ -1128,12 +1142,10 @@ txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 txSlot* fxCheckWeakSetValue(txMachine* the, txBoolean mutable)
 {
 	if (mxArgc > 0) {
-		txSlot* slot = mxArgv(0);
-		if (slot->kind == XS_REFERENCE_KIND) {
-			if (mutable && (slot->value.reference->flag & XS_MARK_FLAG))
-				mxTypeError("WeakSet value is read-only");
-			return slot;
-		}
+		txSlot* slot = fxCanBeHeldWeakly(the, mxArgv(0));
+		if (slot && mutable && (slot->flag & XS_MARK_FLAG))
+			mxTypeError("WeakSet value is read-only");
+		return slot;
 	}
 	return C_NULL;
 }
@@ -1203,7 +1215,7 @@ void fx_WeakSet_prototype_add(txMachine* the)
 	txSlot* value = fxCheckWeakSetValue(the, XS_MUTABLE);
 	if (!value)
 		mxTypeError("value is no object");
-	fxSetWeakEntry(the, instance->next, value->value.reference, &mxUndefined);
+	fxSetWeakEntry(the, instance->next, value, &mxUndefined);
 	*mxResult = *mxThis;
 }
 
@@ -1211,7 +1223,7 @@ void fx_WeakSet_prototype_has(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_IMMUTABLE);
 	txSlot* value = fxCheckWeakSetValue(the, XS_IMMUTABLE);
-	txSlot* result = (value) ? fxGetWeakEntry(the, instance->next, value->value.reference) : C_NULL;
+	txSlot* result = (value) ? fxGetWeakEntry(the, instance->next, value) : C_NULL;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = (result) ? 1 : 0;
 }
@@ -1220,7 +1232,7 @@ void fx_WeakSet_prototype_delete(txMachine* the)
 {
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
 	txSlot* value = fxCheckWeakSetValue(the, XS_MUTABLE);
-	mxResult->value.boolean = (value) ? fxDeleteWeakEntry(the, instance->next, value->value.reference) : 0;
+	mxResult->value.boolean = (value) ? fxDeleteWeakEntry(the, instance->next, value) : 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
 
@@ -1358,11 +1370,10 @@ void fx_WeakRef(txMachine* the)
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: WeakRef");
 	if (mxArgc < 1)
-		mxTypeError("new WeakRef: no target");
-	target = mxArgv(0);
-	if (!mxIsReference(target))
-		mxTypeError("new WeakRef: target is no object");
-	target = target->value.reference;
+		mxTypeError("no target");
+	target = fxCanBeHeldWeakly(the, mxArgv(0));
+	if (!target)
+		mxTypeError("target is no object");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);
 	instance = fxNewWeakRefInstance(the);
@@ -1376,8 +1387,15 @@ void fx_WeakRef_prototype_deref(txMachine* the)
 	txSlot* instance = fxCheckWeakRefInstance(the, mxThis);
 	txSlot* target = instance->next->value.weakRef.target;
 	if (target) {
-		mxResult->value.reference = target;
-		mxResult->kind = XS_REFERENCE_KIND;
+		txSlot* property = target->next;
+		if (property && (property->flag & XS_INTERNAL_FLAG) && (property->kind == XS_SYMBOL_KIND)) {
+			mxResult->value.symbol = property->value.symbol;
+			mxResult->kind = XS_SYMBOL_KIND;
+		}
+		else {
+			mxResult->value.reference = target;
+			mxResult->kind = XS_REFERENCE_KIND;
+		}
 		fxKeepDuringJobs(the, target);
 	}
 }
@@ -1485,22 +1503,22 @@ void fx_FinalizationRegistry_prototype_register(txMachine* the)
 	registry = instance->next->value.closure;
 	if (mxArgc < 1)
 		mxTypeError("no target");
-	target = mxArgv(0);
-	if (!mxIsReference(target))
+	target = fxCanBeHeldWeakly(the, mxArgv(0));
+	if (!target)
 		mxTypeError("target is no object");
 	if (mxArgc > 1) {
-		if (fxIsSameValue(the, target, mxArgv(1), 1))
+		if (fxIsSameValue(the, mxArgv(0), mxArgv(1), 1))
 			mxTypeError("target and holdings are the same");
 	}
-	target = target->value.reference;
 	if (mxArgc > 2) {
 		token = mxArgv(2);
 		if (mxIsUndefined(token))
 			token = C_NULL;
-		else if (mxIsReference(token))
-			token = token->value.reference;
-		else
-			mxTypeError("token is no object");
+		else {
+			token = fxCanBeHeldWeakly(the, token);
+			if (!token)
+				mxTypeError("token is no object");
+		}
 	}
 	callback = registry->value.finalizationRegistry.callback;
 	address = &(callback->next);
@@ -1540,10 +1558,9 @@ void fx_FinalizationRegistry_prototype_unregister(txMachine* the)
 	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	if (mxArgc < 1)
 		mxTypeError("no token");
-	token = mxArgv(0);
-	if (!mxIsReference(token))
+	token = fxCanBeHeldWeakly(the, mxArgv(0));
+	if (!token)
 		mxTypeError("token is no object");
-	token = token->value.reference;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
 	registry = instance->next->value.closure;
