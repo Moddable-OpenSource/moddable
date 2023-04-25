@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -60,6 +60,8 @@ class SNTP extends Socket {
 		});
 	}
 	failed(message) {
+		this.read(null);		// clear unread data from current packet
+
 		const host = this.#callback(SNTP.error, message);
 		if (host) {
 			Timer.schedule(this.#timer, 5000, 5000);
@@ -86,13 +88,13 @@ class SNTP extends Socket {
 		super.close();
 	}
 	callback(message, value) {
-		if (2 !== message)
+		if (Socket.readable !== message)
 			return;
 
 		if (48 !== value)
 			this.failed("unexpected SNTP packet length");
 		else
-		if (4 !== (7 & this.read(Number)))	// NTP serrver mode
+		if (4 !== (7 & this.read(Number)))	// NTP server mode
 			this.failed("unexpected SNTP packet first byte");
 		else if (0 === this.read(Number))
 			return;	// Kiss-o'-Death - "...KoD packets have no protocol significance and are discarded after inspection"
