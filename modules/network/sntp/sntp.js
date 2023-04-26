@@ -60,7 +60,8 @@ class SNTP extends Socket {
 		});
 	}
 	failed(message) {
-		this.read(null);		// clear unread data from current packet
+		if (this.read())
+			this.read(null);		// clear unread data from current packet
 
 		const host = this.#callback(SNTP.error, message);
 		if (host) {
@@ -96,8 +97,10 @@ class SNTP extends Socket {
 		else
 		if (4 !== (7 & this.read(Number)))	// NTP server mode
 			this.failed("unexpected SNTP packet first byte");
-		else if (0 === this.read(Number))
+		else if (0 === this.read(Number)) {
+			this.read(null);		// clear unread
 			return;	// Kiss-o'-Death - "...KoD packets have no protocol significance and are discarded after inspection"
+		}
 		else {
 			this.read(null, 38);
 			const time = toNumber(this.read(Number), this.read(Number), this.read(Number), this.read(Number));
