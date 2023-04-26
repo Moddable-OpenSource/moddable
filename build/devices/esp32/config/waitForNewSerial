@@ -8,6 +8,11 @@ fi
 # save original serial port
 original=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
 
+if [ "$UPLOAD_PORT" = "" ]; then
+	echo "** Please set the UPLOAD_PORT environment variable **"
+	exit
+fi
+
 # echo "# original serial ${original}"
 echo "# looking for UPLOAD_PORT: $UPLOAD_PORT"
 
