@@ -62,7 +62,7 @@ static void fxSpecifiers(txParser* parser);
 static void fxBody(txParser* parser);
 static void fxStatements(txParser* parser);
 static void fxBlock(txParser* parser);
-static void fxStatement(txParser* parser, txBoolean blockIt);
+static void fxStatement(txParser* parser, txInteger blockIt);
 static void fxSemicolon(txParser* parser);
 static void fxBreakStatement(txParser* parser);
 static void fxContinueStatement(txParser* parser);
@@ -327,6 +327,7 @@ static txTokenFlag gxTokenFlags[XS_TOKEN_COUNT] = {
 	/* XS_TOKEN_UNDEFINED */ 0,
 	/* XS_TOKEN_UNSIGNED_RIGHT_SHIFT */ XS_TOKEN_SHIFT_EXPRESSION,
 	/* XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN */ XS_TOKEN_ASSIGN_EXPRESSION,
+	/* XS_TOKEN_USING */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_VAR */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_VOID */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_BEGIN_EXPRESSION | XS_TOKEN_UNARY_EXPRESSION | XS_TOKEN_IDENTIFIER_NAME,
 	/* XS_TOKEN_WHILE */ XS_TOKEN_BEGIN_STATEMENT | XS_TOKEN_IDENTIFIER_NAME,
@@ -501,6 +502,7 @@ static txString const gxTokenNames[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = {
 	/* XS_TOKEN_UNDEFINED */ "undefined",
 	/* XS_TOKEN_UNSIGNED_RIGHT_SHIFT */ ">>>",
 	/* XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN */ ">>>=",
+	/* XS_TOKEN_USIGN */ "using",
 	/* XS_TOKEN_VAR */ "var",
 	/* XS_TOKEN_VOID */ "void",
 	/* XS_TOKEN_WHILE */ "while",
@@ -1077,7 +1079,7 @@ void fxProgram(txParser* parser)
 	txInteger line = parser->line;
 	txNode* node;
 	while (parser->token != XS_TOKEN_EOF) {
-		fxStatement(parser, 1);
+		fxStatement(parser, -1);
 		node = parser->root;
 		if (!node || !node->description || (node->description->token != XS_TOKEN_STATEMENT))
 			break;
@@ -1093,7 +1095,7 @@ void fxProgram(txParser* parser)
 		}
 	}
 	while (parser->token != XS_TOKEN_EOF) {
-		fxStatement(parser, 1);
+		fxStatement(parser, -1);
 	}
 	count = parser->nodeCount - count;
 	if (count > 1) {
@@ -1171,7 +1173,7 @@ void fxStatements(txParser* parser)
 	fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENTS, line);
 }
 
-void fxStatement(txParser* parser, txBoolean blockIt)
+void fxStatement(txParser* parser, txInteger blockIt)
 {
 	txInteger line = parser->line;
 	txSymbol* symbol = C_NULL;
@@ -1309,10 +1311,22 @@ void fxStatement(txParser* parser, txBoolean blockIt)
 			parser->token = XS_TOKEN_LET;
 			if (!blockIt)
 				fxReportParserError(parser, parser->line, "no block");
-			fxVariableStatement(parser, XS_TOKEN_LET);
+			fxVariableStatement(parser, parser->token);
 			fxSemicolon(parser);
 			break;
 		}
+#if mxExplicitResourceManagement
+		if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) 
+				&& ((gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))
+				&& (blockIt || (!parser->crlf2) || (parser->token2 == XS_TOKEN_LEFT_BRACKET))) {
+			parser->token = XS_TOKEN_USING;
+			if (blockIt <= 0)
+				fxReportParserError(parser, parser->line, "no block");
+			fxVariableStatement(parser, parser->token);
+			fxSemicolon(parser);
+			break;
+		}
+#endif
 		/* continue */
 	default:
 		if (gxTokenFlags[parser->token] & XS_TOKEN_BEGIN_EXPRESSION) {
@@ -1419,6 +1433,12 @@ void fxForStatement(txParser* parser)
 		parser->token = XS_TOKEN_LET;
 		fxVariableStatement(parser, XS_TOKEN_LET);
 	}
+#if mxExplicitResourceManagement
+	else if (fxIsKeyword(parser, parser->usingSymbol) && (!parser->escaped) && (!parser->crlf2) && (gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING)) {
+		parser->token = XS_TOKEN_USING;
+		fxVariableStatement(parser, XS_TOKEN_USING);
+	}
+#endif
 	else if (parser->token == XS_TOKEN_VAR) {
 		fxVariableStatement(parser, XS_TOKEN_VAR);
 	}
@@ -3242,16 +3262,20 @@ void fxBinding(txParser* parser, txToken theToken, txFlag initializeIt)
 	fxCheckParserStack(parser, aLine);
 	if (parser->token == XS_TOKEN_IDENTIFIER) {
 		fxCheckStrictSymbol(parser, parser->symbol);
-		if (((theToken == XS_TOKEN_CONST) || (theToken == XS_TOKEN_LET)) && (parser->symbol == parser->letSymbol))
+		if (((theToken == XS_TOKEN_CONST) || (theToken == XS_TOKEN_LET) || (theToken == XS_TOKEN_USING)) && (parser->symbol == parser->letSymbol))
 			fxReportParserError(parser, parser->line, "invalid identifier");
 		fxPushSymbol(parser, parser->symbol);
 		fxPushNodeStruct(parser, 1, theToken, aLine);
 		fxGetNextToken(parser);
 	}
 	else if (parser->token == XS_TOKEN_LEFT_BRACE) {
+		if (theToken == XS_TOKEN_USING)
+			fxReportParserError(parser, parser->line, "invalid using");
 		fxObjectBinding(parser, theToken);
 	}
 	else if (parser->token == XS_TOKEN_LEFT_BRACKET) {
+		if (theToken == XS_TOKEN_USING)
+			fxReportParserError(parser, parser->line, "invalid using");
 		fxArrayBinding(parser, theToken);
 	}
 	else {
@@ -3760,6 +3784,9 @@ void fxCheckStrictBinding(txParser* parser, txNode* node)
 			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
 		}
 		else if (node->description->token == XS_TOKEN_LET) {
+			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
+		}
+		else if (node->description->token == XS_TOKEN_USING) {
 			fxCheckStrictSymbol(parser, ((txDeclareNode*)node)->symbol);
 		}
 		else if (node->description->token == XS_TOKEN_VAR) {

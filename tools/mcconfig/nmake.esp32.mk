@@ -364,19 +364,8 @@ C_DEFINES = $(C_DEFINES) -DmxDebug=1
 LAUNCH = release
 !ENDIF
 
-!IF "$(PARTITIONS_FILE)"==""
-PARTITIONS_FILE = $(PROJ_DIR_TEMPLATE)\partitions.csv
-!ENDIF
-
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)\partition_table\$(PARTITIONS_BIN)
-
-!IF [fc $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv > nul 2> nul] == 1
-!IF [copy /Y $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv] == 0
-!IF [copy /b $(PROJ_DIR)\partitions.csv+,, $(PROJ_DIR)\partitions.csv] == 0
-!ENDIF
-!ENDIF
-!ENDIF
 
 PROJ_DIR_FILES = \
 	$(PROJ_DIR)\main\main.c	\
@@ -530,14 +519,10 @@ $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_O
 	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\buildinfo.c.o
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
-	echo d | xcopy /s $(PROJ_DIR_TEMPLATE)\* $(PROJ_DIR)\
-	copy $(PARTITIONS_FILE) $(PROJ_DIR)\partitions.csv
+	echo d | xcopy /s $(PROJ_DIR_TEMPLATE)\* $(PROJ_DIR)
 
 $(PROJ_DIR)\main:
 	mkdir $(PROJ_DIR)\main
-
-$(PROJ_DIR)\partitions.csv: $(PARTITIONS_FILE)
-	copy $? $@
 
 $(PROJ_DIR)\main\main.c: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\main.c
 	copy $(PROJ_DIR_TEMPLATE)\main\main.c $@

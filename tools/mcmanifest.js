@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -118,27 +118,116 @@ export class MakeFile extends FILE {
 		return { sdkconfig, changed };
 	}
 	generateConfigurationRules(tool) {
-		if (("esp32" != tool.platform) || !tool.environment.SDKCONFIGPATH) return;
+		if ("esp32" !== tool.platform)
+			return;
+
+		if (!tool.environment.SDKCONFIGPATH)
+			return;		// mcrun
+
+		const ESP32_SUBCLASS = tool.environment.ESP32_SUBCLASS ?? "esp32";
+		const baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-" + ESP32_SUBCLASS;
+		const outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-" + ESP32_SUBCLASS;
+		tool.createDirectory(outputConfigDirectory);
+
+		let PARTITIONS_FILE = tool.environment.PARTITIONS_FILE;
+		if (!PARTITIONS_FILE) {
+			const PROJ_DIR_TEMPLATE = `${tool.buildPath}/devices/esp32/xsProj-${tool.environment.ESP32_SUBCLASS}`;
+			PARTITIONS_FILE = `${PROJ_DIR_TEMPLATE}/partitions.csv`
+		}
+		let partitions = tool.readFileString(PARTITIONS_FILE);
+
+		const usesMods = tool.defines.xs?.mods || tool.defines.XS_MODS;
+		const wantsOTA = tool.defines.ota?.autosplit;
+		const wantsStorage = tool.defines.file?.partition;
+
+		if (wantsOTA || usesMods || wantsStorage) {
+			let factoryLine, hasOTA, hasMod, hasStorage, storagePartition = wantsStorage?.slice(1);
+
+			function parse(value) {
+				if (value.startsWith("0x"))
+					return parseInt(value, 16);
+				if (value.endsWith("K"))
+					return parseInt(value) * 1024;
+				if (value.endsWith("M"))
+					return parseInt(value) * 1024 * 1024;
+				return parseInt(value);
+			}
+
+			partitions = partitions.split("\n");
+			for (let i = 0; i < partitions.length; i++) {
+				let line = partitions[i].trim();
+				if (!line || line.startsWith("#")) continue;
+				
+				line = line.split(",").map(item => item.trim());
+				if ("app" === line[1]) {
+					const kind = line[2].toLowerCase();
+					if (kind.startsWith("ota"))
+						hasOTA = true;
+					else if ("factory" === kind)
+						factoryLine = i;
+				}
+				else if (("xs" === line[0]) && (("data" === line[1]) || (64 === parse(line[1]))))
+					hasMod = true;
+				else if ((storagePartition === line[0]) && ("data" === line[1]))
+					hasStorage = true;
+			}
+
+			if (undefined !== factoryLine) {
+				const OTADATA_SIZE = 0x2000;
+				const MODS_SIZE = 0x40000;
+				const STORAGE_SIZE = 0x10000;
+				let line = partitions[factoryLine].split(",").map(item => item.trim());
+				let size = parse(line[4]);
+
+				if (!hasOTA && wantsOTA)
+					size -= OTADATA_SIZE;	// space for ota_data
+				if (!hasMod && usesMods)
+					size -= MODS_SIZE;		// space for mods
+				if (!hasStorage && wantsStorage)
+					size -= STORAGE_SIZE;	// space for files
+
+				if (!hasOTA && wantsOTA) {
+					const size1 = Math.idiv(size >> 1, 0x10000) * 0x10000;		// "Partitions of type app have to be placed at offsets aligned to 0x10000"
+					const size2 = size - size1;
+		
+					partitions[factoryLine] =
+`ota_0, app, ota_0, ${line[3]}, 0x${size1.toString(16).toUpperCase()},
+ota_1, app, ota_1, , 0x${size2.toString(16).toUpperCase()},
+otadata, data, ota, , ${OTADATA_SIZE},`;
+					tool.report(`mcconfig: ESP32 factory app partition divided into OTA partitions of size 0x${size1.toString(16)} and 0x${size2.toString(16)}`)
+				}
+				else
+					partitions[factoryLine] = `factory, app, factory, , 0x${size.toString(16)}`;
+				if (!hasMod && usesMods) {
+					partitions[factoryLine] += "\n" + `xs, 0x40, 1, , 0x${MODS_SIZE.toString(16)}`,
+					tool.report(`mcconfig: mod partition of size 0x${MODS_SIZE.toString(16)} created from factory app partition`)
+				}
+				if (!hasStorage && wantsStorage) {
+					partitions[factoryLine] += "\n" + `storage, data, spiffs, , 0x${STORAGE_SIZE.toString(16)},`,
+					tool.report(`mcconfig: file storage partition of size 0x${STORAGE_SIZE.toString(16)} created from factory app partition`)
+				}
+			}
+			partitions = partitions.join("\n");
+		}
+		let buildPartitionsFile = outputConfigDirectory + tool.slash + "partitions.csv";
+		tool.setenv("PARTITIONS_FILE", buildPartitionsFile);
+		this.line("PARTITIONS_FILE = ", buildPartitionsFile);
+		
+		if (1 === tool.isDirectoryOrFile(buildPartitionsFile)) {
+			if (partitions === tool.readFileString(buildPartitionsFile))
+				partitions = undefined;		// hasn't changed, so don't write
+		}
+		if (partitions)
+			tool.writeFileString(buildPartitionsFile, partitions);
 		
 		// Read base debug build sdkconfig.defaults file
 		let mergedConfig = [];
 		let regex = /[\r\n]+/gm;
-		let baseConfigDirectory = tool.buildPath + tool.slash + "devices" + tool.slash + "esp32" + tool.slash + "xsProj-";
-		let outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-";
-
-		if (undefined === tool.environment.ESP32_SUBCLASS) {
-			baseConfigDirectory += "esp32";
-			outputConfigDirectory += "esp32";
-		}else{
-			baseConfigDirectory += tool.environment.ESP32_SUBCLASS;
-			outputConfigDirectory += tool.environment.ESP32_SUBCLASS;
-		}
 			
 		let baseConfigFile = baseConfigDirectory + tool.slash + "sdkconfig.defaults";
 		let baseConfig = tool.readFileString(baseConfigFile);
 		let baseConfigLength = baseConfig.length;
 
-		tool.createDirectory(outputConfigDirectory);
 		tool.setenv("CONFIGDIR", outputConfigDirectory);
 		this.line("CONFIGDIR = ", outputConfigDirectory);
 
@@ -1738,6 +1827,19 @@ export class Tool extends TOOL {
 		this.currentDirectory = currentDirectory;
 	}
 	mergeNodeRed(manifests) {
+		if (!this.environment.NODEREDMCU)
+			return;
+
+		let nodeTypes = {};
+
+		try {
+			const path = this.resolveFilePath(this.resolveVariable("$(NODEREDMCU)/node_types.json"));
+			if (path)
+				nodeTypes = JSON.parse(this.readFileString(path));
+		}
+		catch {
+		}
+
 		manifests.forEach(manifest => {
 			const modules = manifest.modules?.["*"];
 			if (!modules) return;
@@ -1755,6 +1857,8 @@ export class Tool extends TOOL {
 				flows.forEach((node, i) => {
 					if (node.moddable_manifest)
 						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
+					else if (nodeTypes[node.type])
+						this.parseManifest(source, {include: nodeTypes[node.type], directory: this.resolveVariable("$(NODEREDMCU)")});
 				});
 			}
 		});
@@ -1826,8 +1930,19 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (typeof value == "string")
-					this.environment[name] = this.resolveVariable(value);
+				if (typeof value == "string") {
+					value = this.resolveVariable(value);
+					if (value.startsWith("./")) {
+						const path = this.resolveDirectoryPath("./");
+						if (path) {
+							if ("./" == value)
+								value = path;
+							else
+								value = path + value.slice(1);
+						}
+					}
+					this.environment[name] = value;
+				}
 				else
 					this.environment[name] = value;
 			}

@@ -2,7 +2,7 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32s3",
 		"USE_USB": "1",
-		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/atoms3_lite/sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
 		"$(MODULES)/pins/smbus/manifest.json",
@@ -23,6 +23,18 @@
 		"neopixel",
 		"m5button"
 	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
 	"defines": {
 		"i2c": {
 			"sda_pin": 38,

@@ -52,7 +52,7 @@ static void fxParseJSNumberO(PiuCodeParser parser);
 static void fxParseJSNumberX(PiuCodeParser parser);
 static void fxParseJSString(PiuCodeParser parser);
 
-#define XS_KEYWORD_COUNT 46
+#define XS_KEYWORD_COUNT 47
 static const txKeyword gxKeywords[XS_KEYWORD_COUNT] = {
 	{ "break", 0 },
 	{ "case", 0 },
@@ -95,6 +95,7 @@ static const txKeyword gxKeywords[XS_KEYWORD_COUNT] = {
 	{ "try", 0 },
 	{ "typeof", 0 },
 	{ "undefined", 1 },
+	{ "using", 0 },
 	{ "var", 0 },
 	{ "void", 0 },
 	{ "while", 0 },

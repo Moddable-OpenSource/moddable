@@ -44,6 +44,10 @@ void fxBuildError(txMachine* the)
 	txSlot* slot;
 	txSlot* prototype;
 	txSlot* instance;
+#if mxExplicitResourceManagement
+	txSlot* property;
+#endif
+	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
@@ -92,6 +96,15 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextStringXProperty(the, slot, "SuppressedError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
+	mxSuppressedErrorPrototype = *the->stack;
+	instance = fxBuildHostConstructor(the, mxCallback(fx_SuppressedError), 2, mxID(_SuppressedError));
+	instance->value.instance.prototype = prototype;
+	mxSuppressedErrorConstructor = *the->stack;
+	mxPop();
+	mxPush(mxErrorPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "SyntaxError", mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxSyntaxErrorPrototype = *the->stack;
@@ -117,6 +130,24 @@ void fxBuildError(txMachine* the)
 	instance->value.instance.prototype = prototype;
 	mxURIErrorConstructor = *the->stack;
 	mxPop();
+
+#if mxExplicitResourceManagement
+	mxPush(mxObjectPrototype);
+    slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_DisposableStack_prototype_get_disposed), C_NULL, mxID(_disposed), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_adopt), 2, mxID(_adopt), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_defer), 1, mxID(_defer), XS_DONT_ENUM_FLAG);
+	property = slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_dispose), 0, mxID(_dispose), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_move), 0, mxID(_move), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DisposableStack_prototype_use), 1, mxID(_use), XS_DONT_ENUM_FLAG);
+	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_dispose), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "DisposableStack", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	mxDisposableStackPrototype = *the->stack;
+	slot = fxBuildHostConstructor(the, mxCallback(fx_DisposableStack), 0, mxID(_Map));
+	mxDisposableStackConstructor = *the->stack;
+	mxPop();
+#endif
 }
 
 void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
@@ -286,6 +317,13 @@ void fx_ReferenceError(txMachine* the)
 	fx_Error_aux(the, XS_REFERENCE_ERROR, 0);
 }
 
+void fx_SuppressedError(txMachine* the)
+{
+	txSlot* property = fx_Error_aux(the, XS_SUPPRESSED_ERROR, 2);
+	property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_error), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, mxArgv(1), mxID(_suppressed), XS_DONT_ENUM_FLAG);
+}
+
 void fx_SyntaxError(txMachine* the)
 {
 	fx_Error_aux(the, XS_SYNTAX_ERROR, 0);
@@ -351,3 +389,213 @@ void fx_Error_prototype_get_stack(txMachine* the)
 		}
 	}
 }
+
+#if mxExplicitResourceManagement
+
+static txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable);
+static void fxDisposableStackPush(txMachine* the, txSlot* property);
+
+txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable)
+{
+	if (slot->kind == XS_REFERENCE_KIND) {
+		txSlot* instance = slot->value.reference;
+		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_DISPOSABLE_STACK_KIND)) {
+			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
+				mxTypeError("DisposableStack instance is read-only");
+			if (disposable && slot->value.disposableStack.disposed)
+				mxReferenceError("DisposableStack instance is disposed");
+			return instance;
+		}
+	}
+	mxTypeError("this is no DisposableStack instance");
+	return C_NULL;
+}
+
+void fx_DisposableStack(txMachine* the)
+{
+	txSlot* instance;
+	txSlot* property;
+	if (mxIsUndefined(mxTarget))
+		mxTypeError("call: DisposableStack");
+	mxPushSlot(mxTarget);
+	fxGetPrototypeFromConstructor(the, &mxDisposableStackPrototype);
+	instance = fxNewSlot(the);
+	instance->kind = XS_INSTANCE_KIND;
+	instance->value.instance.garbage = C_NULL;
+	instance->value.instance.prototype = the->stack->value.reference;
+	the->stack->kind = XS_REFERENCE_KIND;
+	the->stack->value.reference = instance;
+	mxPullSlot(mxResult);
+	property = instance->next = fxNewSlot(the);
+	property->flag = XS_INTERNAL_FLAG;
+	property->kind = XS_DISPOSABLE_STACK_KIND;
+	property->value.disposableStack.stack = C_NULL;
+	property->value.disposableStack.disposed = 0;
+}
+
+void fx_DisposableStack_prototype_get_disposed(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 0, 0);
+	txSlot* property = instance->next;
+	mxResult->value.boolean = property->value.disposableStack.disposed;
+	mxResult->kind = XS_BOOLEAN_KIND;
+}
+
+void fx_DisposableStack_prototype_adopt(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 1);
+	txSlot* property = instance->next;
+	if (mxArgc > 0) 
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	if (mxArgc > 1) 
+		mxPushSlot(mxArgv(1));
+	else
+		mxPushUndefined();
+	fxDisposableStackPush(the, property);
+	property->value.disposableStack.stack->flag |= XS_BASE_FLAG;
+	mxPop();
+	mxPullSlot(mxResult);
+}
+
+void fx_DisposableStack_prototype_defer(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 1);
+	txSlot* property = instance->next;
+	mxPushUndefined();
+	if (mxArgc > 0) 
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	fxDisposableStackPush(the, property);
+	mxPop();
+	mxPop();
+}	
+
+void fx_DisposableStack_prototype_dispose(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 0);
+	txSlot* property = instance->next;
+	txSlot* exception;
+	txBoolean selector = 1;
+	txSlot* slot;
+	if (property->value.disposableStack.disposed)
+		return;
+	property->value.disposableStack.disposed = 1;
+	mxTemporary(exception);
+	slot = property->value.disposableStack.stack;
+	while (slot) {
+		txSlot* dispose = slot;
+		txSlot* resource = slot->next;
+		mxTry(the) {
+			if (dispose->flag & XS_BASE_FLAG) {
+				mxPushUndefined();
+				mxPushSlot(dispose);
+				mxCall();
+				mxPushSlot(resource);
+				mxRunCount(1);
+				mxPop();
+			}
+			else {
+				mxPushSlot(resource);
+				mxPushSlot(dispose);
+				mxCall();
+				mxRunCount(0);
+				mxPop();
+			}
+		}
+		mxCatch(the) {
+			if (selector == 0) {
+				mxPush(mxSuppressedErrorConstructor);
+				mxNew();
+				mxPush(mxException);
+				mxPushSlot(exception);
+				mxRunCount(2);
+				mxPullSlot(exception);
+			}
+			else {
+				*exception = mxException;
+				selector = 0;
+			}
+			mxException = mxUndefined;
+		}
+		slot = resource->next;
+	}
+	if (selector == 0) {
+		mxException.kind = exception->kind;
+		mxException.value = exception->value;
+		fxJump(the);
+	}
+}
+
+void fx_DisposableStack_prototype_move(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 1);
+	txSlot* property = instance->next;
+	txSlot* resultInstance;
+	txSlot* resultProperty;
+	mxPush(mxDisposableStackConstructor);
+	fxGetPrototypeFromConstructor(the, &mxDisposableStackPrototype);
+	resultInstance = fxNewSlot(the);
+	resultInstance->kind = XS_INSTANCE_KIND;
+	resultInstance->value.instance.garbage = C_NULL;
+	resultInstance->value.instance.prototype = the->stack->value.reference;
+	the->stack->kind = XS_REFERENCE_KIND;
+	the->stack->value.reference = resultInstance;
+	mxPullSlot(mxResult);
+	resultProperty = resultInstance->next = fxNewSlot(the);
+	resultProperty->flag = XS_INTERNAL_FLAG;
+	resultProperty->kind = XS_DISPOSABLE_STACK_KIND;
+	resultProperty->value.disposableStack.stack = property->value.disposableStack.stack;
+	resultProperty->value.disposableStack.disposed = 0;
+	property->value.disposableStack.stack = C_NULL;
+	property->value.disposableStack.disposed = 1;
+}
+
+void fx_DisposableStack_prototype_use(txMachine* the)
+{
+	txSlot* instance = fxCheckDisposableStackInstance(the, mxThis, 1, 1);
+	txSlot* property = instance->next;
+	txSlot* resource;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	resource = the->stack;
+	if (!mxIsNull(resource) && !mxIsUndefined(resource)) {
+		mxPushSlot(resource);
+		mxGetID(mxID(_Symbol_dispose));
+		fxDisposableStackPush(the, property);
+		mxPop();
+	}
+	mxPullSlot(mxResult);
+}
+
+void fxDisposableStackPush(txMachine* the, txSlot* property)
+{
+	txSlot* dispose = the->stack;
+	txSlot* resource = dispose + 1;
+	txSlot** address = &property->value.disposableStack.stack;
+	txSlot* slot;
+	if (!fxIsCallable(the, dispose))
+		mxTypeError("dispose is no function");
+		
+	slot = fxNewSlot(the);
+	slot->next = *address;
+	slot->kind = resource->kind;
+	slot->value = resource->value;
+	*address = slot;
+	
+	slot = fxNewSlot(the);
+	slot->next = *address;
+	slot->kind = dispose->kind;
+	slot->value = dispose->value;
+	*address = slot;
+}
+
+#endif
+
+
+
+

@@ -39,6 +39,13 @@
 #ifndef MODDEF_AUDIOOUT_QUEUELENGTH
 	#define MODDEF_AUDIOOUT_QUEUELENGTH (8)
 #endif
+#ifndef MODDEF_AUDIOOUT_MIXERBYTES
+	#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
+		#define MODDEF_AUDIOOUT_MIXERBYTES (256 * 2)
+	#else
+		#define MODDEF_AUDIOOUT_MIXERBYTES (384 * 2)
+	#endif
+#endif
 #if ESP32
 	#ifndef MODDEF_AUDIOOUT_I2S_NUM
 		#define MODDEF_AUDIOOUT_I2S_NUM (0)
@@ -229,12 +236,8 @@ typedef struct {
 
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
 
-#if MODDEF_AUDIOOUT_BITSPERSAMPLE == 16
-	uint32_t				buffer[384];
-#elif MODDEF_AUDIOOUT_BITSPERSAMPLE == 8
-	uint32_t				buffer[256];
-#endif
-#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
+	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
+#if MODDEF_AUDIOOUT_I2S_DAC
 	uint32_t				*buffer32;
 #endif
 #elif defined(__ets__)
@@ -343,9 +346,9 @@ void xs_audioout_destructor(void *data)
 
 		vSemaphoreDelete(out->mutex);
 	}
-#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
+#if MODDEF_AUDIOOUT_I2S_DAC
 	if (out->buffer32)
-		heap_caps_free(out->buffer32);
+		free(out->buffer32);
 #endif
 
 #elif defined(__ets__)
@@ -507,13 +510,9 @@ void xs_audioout_build(xsMachine *the)
 	out->state = kStateIdle;
 	out->mutex = xSemaphoreCreateMutex();
 
-	xTaskCreate(audioOutLoop, "audioOut", 2048 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
-#if (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || MODDEF_AUDIOOUT_I2S_DAC
-	#if MODDEF_AUDIOOUT_I2S_DAC
-		out->buffer32 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
-	#else
-		out->buffer32 = heap_caps_malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t), MALLOC_CAP_32BIT);
-	#endif
+	xTaskCreate(audioOutLoop, "audioOut", 1536 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
+#if MODDEF_AUDIOOUT_I2S_DAC
+	out->buffer32 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
 #endif
@@ -1465,15 +1464,7 @@ void audioOutLoop(void *pvParameter)
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		int count = sizeof(out->buffer) / out->bytesPerFrame;
-		int i = count;
-		int16_t *src = (int16_t *)out->buffer;
-		int32_t *dst = out->buffer32;
-
-		while (i--)
-			*dst++ = *src++ << 16;
-
-		i2s_write(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer32, count * out->bytesPerFrame * 2, &bytes_written, portMAX_DELAY);
+		i2s_write_expand(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), 16, 32, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif

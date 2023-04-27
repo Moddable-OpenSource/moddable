@@ -428,9 +428,11 @@ void fxFree(txMachine* the)
 {
 	txSlot* aHeap;
 
+#if mxAliasInstance
 	if (the->aliasArray)
 		c_free_uint32(the->aliasArray);
 	the->aliasArray = C_NULL;
+#endif
 
 	if (the->symbolTable)
 		c_free_uint32(the->symbolTable);
@@ -651,7 +653,7 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anArray++;
 		anIndex--;
 	}
-	
+#if mxAliasInstance
 	anArray = the->aliasArray;
 	anIndex = the->aliasCount;
 	while (anIndex) {
@@ -664,6 +666,7 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		anArray++;
 		anIndex--;
 	}
+#endif
 	
 	aSlot = the->stackTop;
 	while (aSlot > the->stack) {
@@ -956,6 +959,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
+	case XS_DISPOSABLE_STACK_KIND:
 	case XS_LIST_KIND:
 		fxCheckCStack(the);
 		aSlot = theSlot->value.list.first;
@@ -1215,6 +1219,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
+	case XS_DISPOSABLE_STACK_KIND:
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;
 		while (aSlot) {
@@ -1556,6 +1561,7 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 #endif
 }
 
+#if mxAliasInstance
 void fxShare(txMachine* the)
 {
 	txID aliasCount = 0;
@@ -1623,6 +1629,7 @@ void fxShare(txMachine* the)
 	fxReport(the, "# \tChunks: %ld bytes\n", the->currentChunksSize);
 	*/
 }
+#endif
 
 void fxSweep(txMachine* the)
 {

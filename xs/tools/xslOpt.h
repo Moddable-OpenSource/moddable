@@ -25,7 +25,7 @@
 	#define mxLinux 1
 #else
 	#if defined(_MSC_VER)
-		#if defined(_M_IX86) || defined(_M_X64)
+		#if defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64) || defined(_M_ARM64EC)
 			#undef mxLittleEndian
 			#define mxLittleEndian 1
 			#undef mxWindows

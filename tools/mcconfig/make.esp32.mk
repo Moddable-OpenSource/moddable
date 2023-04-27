@@ -92,6 +92,9 @@ ifeq ("$(ESP32_SUBCLASS)","esp32s3")
 else
 	ifeq ("$(ESP32_SUBCLASS)","esp32s2")
 		ESP32_TARGET = 2
+		ifeq ($(USE_USB),1) 
+			USB_OPTION = -DUSE_USB=1
+		endif
 	else
 		ESP32_TARGET = 1
 	endif
@@ -100,39 +103,39 @@ endif
 
 
 INC_DIRS = \
- 	$(IDF_PATH)/components \
- 	$(IDF_PATH)/components/bootloader_support/include \
- 	$(IDF_PATH)/components/bt/include \
+	$(IDF_PATH)/components \
+	$(IDF_PATH)/components/bootloader_support/include \
+	$(IDF_PATH)/components/bt/include \
 	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
- 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
- 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
- 	$(IDF_PATH)/components/driver/include \
- 	$(IDF_PATH)/components/driver/include/driver \
+	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
+	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+	$(IDF_PATH)/components/driver/include \
+	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
- 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
- 	$(IDF_PATH)/components/esp_common/include \
- 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
- 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
- 	$(IDF_PATH)/components/esp_event/include \
- 	$(IDF_PATH)/components/esp_eth/include \
- 	$(IDF_PATH)/components/esp_hw_support/include \
- 	$(IDF_PATH)/components/esp_hw_support/include/soc \
+	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
+	$(IDF_PATH)/components/esp_common/include \
+	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/esp_event/include \
+	$(IDF_PATH)/components/esp_eth/include \
+	$(IDF_PATH)/components/esp_hw_support/include \
+	$(IDF_PATH)/components/esp_hw_support/include/soc \
 	$(IDF_PATH)/components/esp_lcd/include \
- 	$(IDF_PATH)/components/esp_netif/include \
- 	$(IDF_PATH)/components/esp_pm/include \
- 	$(IDF_PATH)/components/esp_ringbuf/include \
- 	$(IDF_PATH)/components/esp_rom/include \
- 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
- 	$(IDF_PATH)/components/esp_system/include \
- 	$(IDF_PATH)/components/esp_timer/include \
- 	$(IDF_PATH)/components/esp_wifi/include \
- 	$(IDF_PATH)/components/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/esp_netif/include \
+	$(IDF_PATH)/components/esp_pm/include \
+	$(IDF_PATH)/components/esp_ringbuf/include \
+	$(IDF_PATH)/components/esp_rom/include \
+	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/esp_system/include \
+	$(IDF_PATH)/components/esp_timer/include \
+	$(IDF_PATH)/components/esp_wifi/include \
+	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
- 	$(IDF_PATH)/components/freertos \
- 	$(IDF_PATH)/components/freertos/include \
- 	$(IDF_PATH)/components/freertos/include/freertos \
- 	$(IDF_PATH)/components/freertos/port \
- 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos \
+	$(IDF_PATH)/components/freertos/include \
+	$(IDF_PATH)/components/freertos/include/freertos \
+	$(IDF_PATH)/components/freertos/port \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/freertos/include/esp_additions \
 	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
@@ -140,38 +143,38 @@ INC_DIRS = \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/hal/platform_port/include \
 	$(IDF_PATH)/components/heap/include \
- 	$(IDF_PATH)/components/log/include \
- 	$(IDF_PATH)/components/lwip/include/apps/ \
+	$(IDF_PATH)/components/log/include \
+	$(IDF_PATH)/components/lwip/include/apps/ \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
- 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
- 	$(IDF_PATH)/components/lwip/port/esp32/ \
- 	$(IDF_PATH)/components/lwip/port/esp32/include/ \
- 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
- 	$(IDF_PATH)/components/newlib/include \
- 	$(IDF_PATH)/components/newlib/platform_include \
- 	$(IDF_PATH)/components/bt/host/nimble/esp-hci/include \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/include \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/services/gap/include \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/src \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include/nimble \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
- 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
- 	$(IDF_PATH)/components/bt/host/nimble/port/include \
-        $(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
- 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/lwip/lwip/src/include/ \
+	$(IDF_PATH)/components/lwip/port/esp32/ \
+	$(IDF_PATH)/components/lwip/port/esp32/include/ \
+	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
+	$(IDF_PATH)/components/newlib/include \
+	$(IDF_PATH)/components/newlib/platform_include \
+	$(IDF_PATH)/components/bt/host/nimble/esp-hci/include \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/include \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/services/gap/include \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/src \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include/nimble \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
+	$(IDF_PATH)/components/bt/host/nimble/port/include \
+	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include/soc \
- 	$(IDF_PATH)/components/soc/include \
- 	$(IDF_PATH)/components/soc/include/soc \
- 	$(IDF_PATH)/components/spiffs/include \
+	$(IDF_PATH)/components/soc/include \
+	$(IDF_PATH)/components/soc/include/soc \
+	$(IDF_PATH)/components/spiffs/include \
 	$(IDF_PATH)/components/fatfs/src \
 	$(IDF_PATH)/components/fatfs/vfs \
 	$(IDF_PATH)/components/wear_levelling/include \
 	$(IDF_PATH)/components/sdmmc/include \
- 	$(IDF_PATH)/components/spi_flash/include \
- 	$(IDF_PATH)/components/tcpip_adapter/include \
- 	$(IDF_PATH)/components/tcpip_adapter \
- 	$(IDF_PATH)/components/tinyusb/additions/include
+	$(IDF_PATH)/components/spi_flash/include \
+	$(IDF_PATH)/components/tcpip_adapter/include \
+	$(IDF_PATH)/components/tcpip_adapter \
+	$(IDF_PATH)/components/tinyusb/additions/include
 	
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
@@ -313,6 +316,8 @@ C_FLAGS ?= $(C_COMMON_FLAGS) \
 	-std=gnu99 \
 	$(C_FLAGS_SUBPLATFORM)
 
+#	--machine-fix-esp32-psram-cache-issue --machine-fix-esp32-psram-cache-strategy=memw
+
 CPP_FLAGS ?= $(C_COMMON_FLAGS)
 
 # Utility functions
@@ -332,9 +337,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all partitionsFileCheck bootloaderCheck
-
-PARTITIONS_FILE ?= $(PROJ_DIR_TEMPLATE)/partitions.csv
+.PHONY: all bootloaderCheck
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj-$(ESP32_SUBCLASS)
 PROJ_DIR_FILES = \
@@ -370,6 +373,7 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		ifeq ($(USE_USB),1)
+			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
 			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		else
@@ -404,7 +408,13 @@ ifeq ($(DEBUG),1)
 		DO_XSBUG = 
 	endif
 
-else
+else	# release
+	ifeq ($(USE_USB),1)
+		ifeq ($(HOST_OS),Darwin)
+			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
+		endif
+	endif
+
 	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 endif
@@ -458,7 +468,7 @@ DUMP_VARS:
 	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
 	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
-precursor: idfVersionCheck partitionsFileCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+precursor: idfVersionCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(BLD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -495,13 +505,6 @@ $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 
-partitionsFileCheck:
-	if test -e $(PROJ_DIR)/partitions.csv ; then \
-		if ! cmp -s $(PROJ_DIR)/partitions.csv $(PARTITIONS_FILE) ; then \
-			touch $(PARTITIONS_FILE); \
-		fi ; \
-	fi
-
 bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
 	if test -e $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c ; then \
@@ -524,13 +527,9 @@ idfVersionCheck:
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/
-	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
 $(PROJ_DIR)/main:
 	mkdir -p $(PROJ_DIR)/main
-
-$(PROJ_DIR)/partitions.csv: $(PARTITIONS_FILE)
-	cp $(PARTITIONS_FILE) $(PROJ_DIR)/partitions.csv
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@

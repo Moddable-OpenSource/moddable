@@ -55,7 +55,7 @@ export default class extends TOOL {
 	print(which, results) {
 		let c = results.length;
 		let string = `\t#define mx${which}Count ${c}`;
-		string += `\n\tstatic const txInteger gx${which}[mx${which}Count] ICACHE_RODATA_ATTR = {`;
+		string += `\n\tstatic const txU2 gx${which}Table[mx${which}Count] ICACHE_RODATA_ATTR = {`;
 		for (let i = 0; i < c; i++) {
 			const result = results[i];
 			if (i % 32 == 0)

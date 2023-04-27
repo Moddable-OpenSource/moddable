@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -21,7 +21,4 @@
 # Note: if you change the phy_init or app partition offset, make sure to change the offset in Kconfig.projbuild,,,,
 nvs,      data, nvs,     0x9000,  0x006000,
 phy_init, data, phy,     0xf000,  0x001000,
-factory,  app,  factory, 0x10000, 0x390000,
-xs,       0x40, 1,       0x3A0000, 0x040000,
-settings, data, 1,       0x3E0000, 0x010000,
-storage,  data, spiffs,  0x3F0000, 0x010000,
+factory,  app,  factory, 0x10000, 0x3F0000,

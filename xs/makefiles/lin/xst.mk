@@ -49,7 +49,9 @@ C_OPTIONS = \
 	-fno-common \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
+	-DmxAliasInstance=0 \
 	-DmxDebug=1 \
+	-DmxExplicitResourceManagement=1 \
 	-DmxLockdown=1 \
 	-DmxNoConsole=1 \
 	-DmxParse=1 \

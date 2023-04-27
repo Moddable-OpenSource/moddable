@@ -56,6 +56,8 @@ static void fxRunIn(txMachine* the);
 static void fxRunInstantiate(txMachine* the);
 static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
+static void fxRunUsed(txMachine* the, txSlot* selector);
+static void fxRunUsing(txMachine* the);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
@@ -626,6 +628,9 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_UNSIGNED_RIGHT_SHIFT,
 		&&XS_CODE_UNWIND_1,
 		&&XS_CODE_UNWIND_2,
+		&&XS_CODE_USED_1,
+		&&XS_CODE_USED_2,
+		&&XS_CODE_USING,
 		&&XS_CODE_VAR_CLOSURE_1,
 		&&XS_CODE_VAR_CLOSURE_2,
 		&&XS_CODE_VAR_LOCAL_1,
@@ -1603,12 +1608,14 @@ XS_CODE_JUMP:
 			variable = slot->value.closure;
 			if (variable->kind < 0)
 				mxRunDebugID(XS_REFERENCE_ERROR, "get %s: not initialized yet", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset) {
 				slot = the->aliasArray[offset];
 				if (slot)
 					variable = slot;
 			}	
+#endif
 			mxPushKind(variable->kind);
 			mxStack->value = variable->value;
 			mxBreak;
@@ -1726,6 +1733,7 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset) {
 				variable = the->aliasArray[offset];
@@ -1736,6 +1744,7 @@ XS_CODE_JUMP:
 					the->aliasArray[offset] = variable;
 				}
 			}	
+#endif
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxStack++;
@@ -1863,6 +1872,7 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_REFERENCE_ERROR, "set %s: not initialized yet", slot->ID);
 			if (variable->flag & XS_DONT_SET_FLAG)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", slot->ID);
+#if mxAliasInstance
 			offset = variable->ID;
 			if (offset > 0) {
 				variable = the->aliasArray[offset];
@@ -1873,6 +1883,7 @@ XS_CODE_JUMP:
 					the->aliasArray[offset] = variable;
 				}
 			}	
+#endif
 			variable->kind = mxStack->kind;
 			variable->value = mxStack->value;
 			mxBreak;
@@ -2050,6 +2061,26 @@ XS_CODE_JUMP:
 			slot->kind = variable->kind;
 			slot->value = variable->value;
 			mxNextCode(1);
+			mxBreak;
+			
+		mxCase(XS_CODE_USED_2)
+			index = mxRunU2(1);
+			mxNextCode(3);
+			goto XS_CODE_USED;
+		mxCase(XS_CODE_USED_1)
+			index = mxRunU1(1);
+			mxNextCode(2);
+		XS_CODE_USED:
+			slot = mxEnvironment - index;
+			mxSaveState;
+			fxRunUsed(the, slot);
+			mxRestoreState;
+			mxBreak;
+		mxCase(XS_CODE_USING)
+			mxNextCode(1);
+			mxSaveState;
+			fxRunUsing(the);
+			mxRestoreState;
 			mxBreak;
 				
 	/* PROPERTIES */	
@@ -3469,6 +3500,12 @@ XS_CODE_JUMP:
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = C_NAN;
 					}
+				#if mxIntegerDivideOverflowException
+					else if ((-1 == mxStack->value.integer) && ((txInteger)0x80000000 == slot->value.integer)) {
+						slot->kind = XS_NUMBER_KIND;
+						slot->value.number = -0.0;
+					}
+				#endif 
 				#ifdef mxMinusZero
 					else if (slot->value.integer < 0) {
 						slot->value.integer %= mxStack->value.integer;
@@ -4523,6 +4560,7 @@ txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
 	b = b->value.reference;
 	if (a == b)
 		return 1;
+#if mxAliasInstance
 	if (a->ID) {
 		txSlot* alias = the->aliasArray[a->ID];
 		if (alias) {
@@ -4539,6 +4577,7 @@ txBoolean fxIsSameReference(txMachine* the, txSlot* a, txSlot* b)
 				return 1;
 		}
 	}
+#endif
 	return 0;
 }
 
@@ -4870,6 +4909,52 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 	}
 }
 
+void fxRunUsed(txMachine* the, txSlot* selector)
+{
+	txSlot* exception = selector + 1;
+	txSlot* resource = the->stack;
+	txSlot* dispose = the->stack + 1;
+	fxBeginHost(the);
+	{
+		mxTry(the) {
+			mxPushSlot(resource);
+			mxPushSlot(dispose);
+			mxCall();
+			mxRunCount(0);
+			mxPop();
+		}
+		mxCatch(the) {
+			if (selector->value.integer == 0) {
+				mxPush(mxSuppressedErrorConstructor);
+				mxNew();
+				mxPush(mxException);
+				mxPushSlot(exception);
+				mxRunCount(2);
+				mxPullSlot(exception);
+			}
+			else {
+				*exception = mxException;
+				selector->value.integer = 0;
+			}
+			mxException = mxUndefined;
+		}
+	}
+	fxEndHost(the);
+}
+
+void fxRunUsing(txMachine* the)
+{
+	txSlot* resource = the->stack;
+	fxBeginHost(the);
+	mxPushSlot(resource);
+	if (!mxIsNull(resource) && !mxIsUndefined(resource)) {
+		mxGetID(mxID(_Symbol_dispose));
+		if (!fxIsCallable(the, the->stack))
+			mxTypeError("no [Symbol.dispose] method");
+	}
+	mxPullSlot(resource);
+	fxEndHost(the);
+}
 
 
 
