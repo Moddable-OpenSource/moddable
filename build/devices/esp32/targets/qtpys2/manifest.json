@@ -2,6 +2,8 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32s2",
 		"USE_USB": "1",
+		"PROGRAMMING_VID": "303a",
+		"PROGRAMMING_PID": "0002",
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
