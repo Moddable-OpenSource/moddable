@@ -19,6 +19,18 @@
 		"neopixel",
 		"setup/target"
 	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
 	"defines": {
 		"neopixel": {
 			"length": 1,

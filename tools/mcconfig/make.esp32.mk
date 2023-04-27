@@ -374,6 +374,7 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		ifeq ($(USE_USB),1)
+			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
 			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		else
@@ -408,7 +409,13 @@ ifeq ($(DEBUG),1)
 		DO_XSBUG = 
 	endif
 
-else
+else	# release
+	ifeq ($(USE_USB),1)
+		ifeq ($(HOST_OS),Darwin)
+			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
+		endif
+	endif
+
 	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 endif

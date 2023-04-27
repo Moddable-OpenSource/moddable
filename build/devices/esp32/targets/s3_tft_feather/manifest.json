@@ -28,6 +28,18 @@
 		"backlight": "1",
 		"peripheral_power_pin": "21"
 	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
 	"defines": {
 		"i2c": {
 			"sda_pin": 42,
