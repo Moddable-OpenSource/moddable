@@ -1827,6 +1827,19 @@ export class Tool extends TOOL {
 		this.currentDirectory = currentDirectory;
 	}
 	mergeNodeRed(manifests) {
+		if (!this.environment.NODEREDMCU)
+			return;
+
+		let nodeTypes = {};
+
+		try {
+			const path = this.resolveFilePath(this.resolveVariable("$(NODEREDMCU)/node_types.json"));
+			if (path)
+				nodeTypes = JSON.parse(this.readFileString(path));
+		}
+		catch {
+		}
+
 		manifests.forEach(manifest => {
 			const modules = manifest.modules?.["*"];
 			if (!modules) return;
@@ -1844,6 +1857,8 @@ export class Tool extends TOOL {
 				flows.forEach((node, i) => {
 					if (node.moddable_manifest)
 						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
+					else if (nodeTypes[node.type])
+						this.parseManifest(source, {include: nodeTypes[node.type], directory: this.resolveVariable("$(NODEREDMCU)")});
 				});
 			}
 		});
@@ -1915,8 +1930,19 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (typeof value == "string")
-					this.environment[name] = this.resolveVariable(value);
+				if (typeof value == "string") {
+					value = this.resolveVariable(value);
+					if (value.startsWith("./")) {
+						const path = this.resolveDirectoryPath("./");
+						if (path) {
+							if ("./" == value)
+								value = path;
+							else
+								value = path + value.slice(1);
+						}
+					}
+					this.environment[name] = value;
+				}
 				else
 					this.environment[name] = value;
 			}

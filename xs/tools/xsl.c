@@ -901,6 +901,7 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxSharedArrayBufferPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxSuppressedErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSymbolPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSyntaxErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxTransferPrototype); mxFreezeBuiltInRun;

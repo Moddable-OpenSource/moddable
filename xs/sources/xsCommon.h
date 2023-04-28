@@ -104,8 +104,8 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 13
-#define XS_MINOR_VERSION 3
+#define XS_MAJOR_VERSION 14
+#define XS_MINOR_VERSION 0
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -366,6 +366,9 @@ enum {
 	XS_CODE_UNSIGNED_RIGHT_SHIFT,
 	XS_CODE_UNWIND_1,
 	XS_CODE_UNWIND_2,
+	XS_CODE_USED_1,
+	XS_CODE_USED_2,
+	XS_CODE_USING,
 	XS_CODE_VAR_CLOSURE_1,
 	XS_CODE_VAR_CLOSURE_2,
 	XS_CODE_VAR_LOCAL_1,
@@ -652,6 +655,7 @@ extern void fxBigIntParseX(txBigInt* bigint, txString string, txSize length);
 enum {
 	XS_NO_ID = 0,
 	_Symbol_asyncIterator = 1,
+	_Symbol_dispose,
 	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,
 	_Symbol_iterator,
@@ -674,6 +678,7 @@ enum {
 	_Boolean,
 	_DataView,
 	_Date,
+	_DisposableStack,
 	_Error,
 	_EvalError,
 	_FinalizationRegistry,
@@ -697,6 +702,7 @@ enum {
 	_Set,
 	_SharedArrayBuffer,
 	_String,
+	_SuppressedError,
 	_Symbol,
 	_SyntaxError,
 	_TypeError,
@@ -756,6 +762,7 @@ enum {
 	_acos,
 	_acosh,
 	_add,
+	_adopt,
 	_aliases,
 	_all,
 	_allSettled,
@@ -817,12 +824,16 @@ enum {
 	_count,
 	_create,
 	_default,
+	_defer,
 	_defineProperties,
 	_defineProperty,
 	_delete,
 	_deleteProperty,
 	_deref,
 	_description,
+	_detached,
+	_dispose,
+	_disposed,
 	_done,
 	_dotAll,
 	_eachDown,
@@ -831,6 +842,7 @@ enum {
 	_entries,
 	_enumerable,
 	_enumerate,
+	_error,
 	_errors,
 	_evaluate,
 	_every,
@@ -963,6 +975,7 @@ enum {
 	_min,
 	_mod,
 	_module,
+	_move,
 	_multiline,
 	_name,
 	_needsImport,
@@ -1063,6 +1076,7 @@ enum {
 	_subarray,
 	_substr,
 	_substring,
+	_suppressed,
 	_tan,
 	_tanh,
 	_test,
@@ -1083,6 +1097,9 @@ enum {
 	_toLowerCase,
 	_toPrecision,
 	_toPrimitive,
+	_toReversed,
+	_toSorted,
+	_toSpliced,
 	_toString,
 	_toStringTag,
 	_toTimeString,
@@ -1101,12 +1118,14 @@ enum {
 	_unscopables,
 	_unshift,
 	_uri,
+	_use,
 	_value,
 	_valueOf,
 	_values,
 	_wait,
 	_wake,
 	_weak,
+	_with,
 	_writable,
 	_xor,
 	__empty_string_,
@@ -1133,6 +1152,14 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #ifndef mxIntegerDivideOverflowException
 	#define mxIntegerDivideOverflowException 1
+#endif
+
+#ifndef mxExplicitResourceManagement
+	#define mxExplicitResourceManagement 0
+#endif
+
+#ifndef mxAliasInstance
+	#define mxAliasInstance 1
 #endif
 
 #ifdef __cplusplus

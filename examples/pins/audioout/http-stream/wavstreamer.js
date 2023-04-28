@@ -40,6 +40,7 @@ class WavStreamer {
 	#http;
 	#request;
 	#playing = [];
+	#free = [];
 	#ready;		// undefined while initializing, false if not buffered / playing, true if buffers full to play / playing
 	#next;
 	#bytes = Infinity;		// remaining in stream
@@ -179,9 +180,9 @@ class WavStreamer {
 			this.#bytesQueued -= bytes;
 			let played = this.#playing.shift();
 			this.#callbacks.onPlayed?.(played);
-			if (!this.#next && (played.byteLength === (this.#bytesPerBlock * this.#channels))) {
+			if (played.byteLength === (this.#bytesPerBlock * this.#channels)) {
 				played.position = 0;
-				this.#next = played;
+				this.#free.push(played);
 			}
 			played = undefined;
 
@@ -198,7 +199,7 @@ class WavStreamer {
 		this.#audio.callbacks[this.#stream] = null;
 		
 		this.#http?.close();
-		this.#http = this.#audio = this.#playing = this.#pending = undefined;
+		this.#http = this.#audio = this.#playing = this.#pending = this.#free = undefined;
 	}
 	#fillQueue() {
 		while ((this.#bytesQueued < this.#targetBytesQueued) &&
@@ -206,7 +207,9 @@ class WavStreamer {
 				(this.#audio.length(this.#stream) >= 2)) {
 			let next = this.#next;
 			if (!next) {
-				this.#next = next = new Uint8Array(new SharedArrayBuffer(this.#bytesPerBlock * this.#channels));
+				this.#next = next = this.#free.shift();
+				if (!next)
+					this.#next = next = new Uint8Array(new SharedArrayBuffer(this.#bytesPerBlock * this.#channels));
 				next.position = 0;
 			}
 

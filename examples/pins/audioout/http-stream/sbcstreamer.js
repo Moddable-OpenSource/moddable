@@ -27,6 +27,7 @@ class SBCStreamer {
 	#stream;
 	#next;
 	#playing = [];
+	#free = [];
 	#pending = [];
 	#ready;		// undefined while initializing, false if not buffered / playing, true if buffers full to play / playing
 	#header;
@@ -116,9 +117,9 @@ class SBCStreamer {
 			this.#bytesQueued -= bytes;
 			let played = this.#playing.shift();
 			this.#callbacks.onPlayed?.(played);
-			if (!this.#next && (played.byteLength === (kMAUDHeader + this.#bytesPerBlock))) {
+			if (played.byteLength === (kMAUDHeader + this.#bytesPerBlock)) {
 				played.position = kMAUDHeader;
-				this.#next = played;
+				this.#free.push(played);
 			}
 			played = undefined;
 
@@ -135,7 +136,7 @@ class SBCStreamer {
 		this.#audio.callbacks[this.#stream] = null;
 
 		this.#http.close();
-		this.#http = this.#audio = this.#playing = this.#pending = undefined;
+		this.#http = this.#audio = this.#playing = this.#pending = this.#free = undefined;
 	}
 
 	#fillQueue() {
@@ -144,7 +145,9 @@ class SBCStreamer {
 				(this.#audio.length(this.#stream) >= 2)) {
 			let next = this.#next;
 			if (!next) {
-				this.#next = next = new Uint8Array(new SharedArrayBuffer(kMAUDHeader + this.#bytesPerBlock));
+				this.#next = next = this.#free.shift();
+				if (!next)
+					this.#next = next = new Uint8Array(new SharedArrayBuffer(kMAUDHeader + this.#bytesPerBlock));
 				next.position = kMAUDHeader;
 			}
 
