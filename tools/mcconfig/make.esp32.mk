@@ -109,6 +109,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+ 	$(IDF_PATH)/components/driver/deprecated \
 	$(IDF_PATH)/components/driver/include \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
@@ -122,6 +123,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_netif/include \
+ 	$(IDF_PATH)/components/esp_partition/include \
 	$(IDF_PATH)/components/esp_pm/include \
 	$(IDF_PATH)/components/esp_ringbuf/include \
 	$(IDF_PATH)/components/esp_rom/include \
@@ -131,6 +133,11 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_wifi/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
+	$(IDF_PATH)/components/freertos/esp_additions/include \
+	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
 	$(IDF_PATH)/components/freertos \
 	$(IDF_PATH)/components/freertos/include \
 	$(IDF_PATH)/components/freertos/include/freertos \
@@ -174,8 +181,10 @@ INC_DIRS = \
 	$(IDF_PATH)/components/spi_flash/include \
 	$(IDF_PATH)/components/tcpip_adapter/include \
 	$(IDF_PATH)/components/tcpip_adapter \
-	$(IDF_PATH)/components/tinyusb/additions/include
-	
+ 	$(IDF_PATH)/components/tinyusb/additions/include \
+ 	$(IDF_PATH)/components/esp_adc/include \
+ 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include
+
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
