@@ -656,6 +656,6 @@ An object with properties for SPI testing. `select` is the ECMA-419 pin specifie
 
 An array of ECMA-419 pin specifiers that are invalid for the target device. 
 
-- `config.flashParition`
+- `config.flashPartition`
 
 The name of the flash partition to use for tests. The content of this partition will be destroyed by the tests.

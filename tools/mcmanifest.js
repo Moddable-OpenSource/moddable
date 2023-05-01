@@ -137,10 +137,11 @@ export class MakeFile extends FILE {
 		let partitions = tool.readFileString(PARTITIONS_FILE);
 
 		const usesMods = tool.defines.xs?.mods || tool.defines.XS_MODS;
+		const wantsTest = tool.defines.xs?.test || tool.defines.XS_TEST
 		const wantsOTA = tool.defines.ota?.autosplit;
 		const wantsStorage = tool.defines.file?.partition;
 
-		if (wantsOTA || usesMods || wantsStorage) {
+		if (wantsOTA || usesMods || wantsStorage || wantsTest) {
 			let factoryLine, hasOTA, hasMod, hasStorage, storagePartition = wantsStorage?.slice(1);
 
 			function parse(value) {
@@ -176,6 +177,7 @@ export class MakeFile extends FILE {
 				const OTADATA_SIZE = 0x2000;
 				const MODS_SIZE = 0x40000;
 				const STORAGE_SIZE = 0x10000;
+				const TEST_SIZE = 0x10000;
 				let line = partitions[factoryLine].split(",").map(item => item.trim());
 				let size = parse(line[4]);
 
@@ -185,6 +187,8 @@ export class MakeFile extends FILE {
 					size -= MODS_SIZE;		// space for mods
 				if (!hasStorage && wantsStorage)
 					size -= STORAGE_SIZE;	// space for files
+				if (wantsTest)
+					size -= TEST_SIZE;		// scratch space for flash unit tests
 
 				if (!hasOTA && wantsOTA) {
 					const size1 = Math.idiv(size >> 1, 0x10000) * 0x10000;		// "Partitions of type app have to be placed at offsets aligned to 0x10000"
@@ -205,6 +209,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				if (!hasStorage && wantsStorage) {
 					partitions[factoryLine] += "\n" + `storage, data, spiffs, , 0x${STORAGE_SIZE.toString(16)},`,
 					tool.report(`mcconfig: file storage partition of size 0x${STORAGE_SIZE.toString(16)} created from factory app partition`)
+				}
+				if (wantsTest) {
+					partitions[factoryLine] += "\n" + `xs_test, data, 1, , 0x${TEST_SIZE.toString(16)},`,
+					tool.report(`mcconfig: xs_test partition of size 0x${TEST_SIZE.toString(16)} created from factory app partition`)
 				}
 			}
 			partitions = partitions.join("\n");

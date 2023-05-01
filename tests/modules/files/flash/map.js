@@ -5,10 +5,10 @@ flags: [module]
 
 import Flash from "flash";
 
-let f = new Flash($TESTMC.config.flashParition);
+let f = new Flash($TESTMC.config.flashPartition);
 const {byteLength, blockSize} = f;
 
-const firstBlock = 16, blockCount = 4;
+const firstBlock = 4, blockCount = 4;
 for (let i = 0; i < blockCount; i++) {
 	let block = new Uint8Array(blockSize);
 	block.fill(i);
