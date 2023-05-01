@@ -129,7 +129,7 @@
 			},
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
-				"flashParition": "xs",
+				"flashPartition": "xs",
 				"i2c": {
 					"hz": 100000,
 					"address": 53,
