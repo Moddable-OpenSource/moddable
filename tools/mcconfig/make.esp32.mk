@@ -114,6 +114,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
+	$(IDF_PATH)/components/esp_app_format/include \
 	$(IDF_PATH)/components/esp_common/include \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
