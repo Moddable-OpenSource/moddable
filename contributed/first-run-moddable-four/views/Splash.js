@@ -4,6 +4,14 @@ import Timeline from "piu/Timeline";
 import View from "View";
 
 class SplashBehavior extends View.Behavior {
+	onDisplaying(container) {
+		container.duration = 1;
+		container.time = 0;
+		container.start();
+	}
+	onFinished(container) {
+		container.first.start();
+	}
 	onJogDialReleased(container) {
 		container.first.stop();
 		controller.goTo("Home");
@@ -12,9 +20,6 @@ class SplashBehavior extends View.Behavior {
 }
 
 class GIFImageBehavior extends Behavior {
-	onDisplaying(image) {
-		image.start();
-	}
 	onFinished(image) {
 		controller.goTo("Home");
 	}
