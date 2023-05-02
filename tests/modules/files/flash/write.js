@@ -5,7 +5,7 @@ flags: [module]
 
 import Flash from "flash";
 
-const f = new Flash($TESTMC.config.flashParition);
+const f = new Flash($TESTMC.config.flashPartition);
 const {byteLength, blockSize} = f;
 
 assert.throws(SyntaxError, () => f.write(), "write requires 3 arguments");

@@ -5,7 +5,7 @@ flags: [module]
 
 import Flash from "flash";
 
-let f = new Flash($TESTMC.config.flashParition);
+let f = new Flash($TESTMC.config.flashPartition);
 let byteLength = f.byteLength;
 assert.sameValue("number", typeof byteLength, "byteLength is number");
 assert(byteLength > 0, "byteLength is positive");
