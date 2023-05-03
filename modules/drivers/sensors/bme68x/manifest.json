@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"*": [
+			"./bme68xlib",
+			"./boschlib/bme68x"
+		],
+		"embedded:sensor/Barometer-Humidity-Temperature/BME68x": "./bme68x"
+	},
+	"preload": [
+		"embedded:sensor/Barometer-Humidity-Temperature/BME68x"
+	]
+}
