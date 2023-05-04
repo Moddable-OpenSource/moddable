@@ -124,7 +124,11 @@ export default class {
 		bme.set_op_mode(BME68x.SEQUENTIAL_MODE);
 	}
 	close() {
-		this.#bme?.close();
+		if (!this.#bme)
+			return;
+
+		this.#bme.set_op_mode(BME68x.SLEEP_MODE);
+		this.#bme.close();
 		this.#bme = undefined;
 	}
 	configure(options) {
