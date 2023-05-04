@@ -1939,11 +1939,12 @@ export class Tool extends TOOL {
 			for (let name in properties) {
 				let value = properties[name];
 				if (typeof value == "string") {
+					const dotSlash = "." + this.slash;
 					value = this.resolveVariable(value);
-					if (value.startsWith("./")) {
-						const path = this.resolveDirectoryPath("./");
+					if (value.startsWith(dotSlash)) {
+						const path = this.resolveDirectoryPath(dotSlash);
 						if (path) {
-							if ("./" == value)
+							if (dotSlash == value)
 								value = path;
 							else
 								value = path + value.slice(1);
