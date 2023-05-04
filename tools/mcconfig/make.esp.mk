@@ -101,7 +101,6 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/core_esp8266_noniso.c \
 	$(ARDUINO_ESP8266)/core_esp8266_phy.c \
 	$(ARDUINO_ESP8266)/core_esp8266_postmortem.c \
-	$(ARDUINO_ESP8266)/core_esp8266_si2c.c \
 	$(ARDUINO_ESP8266)/core_esp8266_timer.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_digital.c \
@@ -119,6 +118,7 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/Schedule.cpp \
 	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
+	$(PLATFORM_DIR)/lib/i2c/core_esp8266_si2c.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
 	$(PLATFORM_DIR)/lib/tinyi2s/tinyi2s.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \
@@ -130,6 +130,7 @@ SDK_SRC_SKIPPED = \
 	$(ARDUINO_ESP8266)/core_esp8266_eboot_command.c \
 	$(ARDUINO_ESP8266)/core_esp8266_i2s.c \
 	$(ARDUINO_ESP8266)/core_esp8266_flash_utils.c \
+	$(ARDUINO_ESP8266)/core_esp8266_si2c.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_analog.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_pulse.c \
 	$(ARDUINO_ESP8266)/core_esp8266_wiring_shift.c \

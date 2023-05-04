@@ -198,6 +198,7 @@ unsigned char twi_readFrom(unsigned char address, unsigned char* buf, unsigned i
   return 0;
 }
 
+// jph - May 2, 2023 - experimental
 unsigned char twi_writeRead(unsigned char address, unsigned char* buf, unsigned int len, unsigned char* bufRead, unsigned int lenRead, unsigned char sendStop){
   unsigned int i;
   if(!twi_write_start()) return 4;//line busy
