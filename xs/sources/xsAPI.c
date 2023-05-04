@@ -457,9 +457,12 @@ txSlot* fxToReference(txMachine* the, txSlot* theSlot)
 txSlot* fxNewArray(txMachine* the, txIndex size)
 {
 	txSlot* instance;
+	txSlot* array;
 	mxPush(mxArrayPrototype);
 	instance = fxNewArrayInstance(the);
-	fxSetIndexSize(the, instance->next, size, XS_CHUNK);
+	array = instance->next;
+	fxSetIndexSize(the, array, size, XS_CHUNK);
+	fxIndexArray(the, array);
 	return instance;
 }
 
