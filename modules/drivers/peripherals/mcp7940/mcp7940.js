@@ -26,13 +26,15 @@
 const Register = Object.freeze({
 	TIME:			0x00,
 	DAY:			0x03,
+	CONTROL:		0x07,
+	TRIM:			0x08,
 	ENABLED_BIT:	0b0010_0000,
 	ENABLE_BIT:		0b1000_0000
 });
 
 class MCP7940 {
 	#io;
-	#blockBuffer = new Uint8Array(7);
+	#reg = new Uint8Array(7);
 
 	constructor(options) {
 		const { clock } = options;
@@ -55,13 +57,33 @@ class MCP7940 {
 		this.#io = undefined;
 	}
 	configure(options) {
+		const io = this.#io;
+		const { trim } = options;
+
+		if (undefined !== trim) {	// parts-per-million input
+			const value = Math.round(Math.abs(trim) * (32768 * 60) / 2_000_000);		// data sheet equation 4-4
+			if (value > 127)
+				throw new RangeError("invalid");
+			io.writeUint8(Register.CONTROL, io.readUint8(Register.CONTROL) & ~0x02)		// clear CRSTRIM flag
+			io.writeUint8(Register.TRIM, ((trim < 0) ? 0x80 : 0) | value);
+		}
 	}
 	get configuration() {
-		return {};
+		const io = this.#io;
+
+		let trim = io.readUint8(Register.TRIM);
+		if (trim & 0x80)
+			trim = -(trim & 0x7F);
+		trim = trim / (32768 * 60) * 2_000_000;
+		if (io.readUint8(Register.CONTROL) & 2)
+			trim *= 128;		// course
+		trim = Math.round(trim);
+
+		return {trim};
 	}
 	get time() {
 		const io = this.#io;
-		const reg = this.#blockBuffer;
+		const reg = this.#reg;
 
 		io.readBuffer(Register.TIME, reg);
 
@@ -82,21 +104,21 @@ class MCP7940 {
 
 	set time(v) {
 		const io = this.#io;
-		const b = this.#blockBuffer;
+		const reg = this.#reg;
 
 		const now = new Date(v);
 		const year = now.getUTCFullYear();
 
 		if (year < 2000)
-			return undefined;
+			return;
 
-		b[0] = decToBcd(now.getUTCSeconds()) | Register.ENABLE_BIT;		// make sure oscillator is enabled
-		b[1] = decToBcd(now.getUTCMinutes());
-		b[2] = decToBcd(now.getUTCHours());
-		b[3] = decToBcd(now.getUTCDay());
-		b[4] = decToBcd(now.getUTCDate());
-		b[5] = decToBcd(now.getUTCMonth() + 1);
-		b[6] = decToBcd(year % 100);
+		reg[0] = decToBcd(now.getUTCSeconds()) | Register.ENABLE_BIT;		// make sure oscillator is enabled
+		reg[1] = decToBcd(now.getUTCMinutes());
+		reg[2] = decToBcd(now.getUTCHours());
+		reg[3] = decToBcd(now.getUTCDay());
+		reg[4] = decToBcd(now.getUTCDate());
+		reg[5] = decToBcd(now.getUTCMonth() + 1);
+		reg[6] = decToBcd(year % 100);
 
 		// stop the oscillator
 		let ST = io.readUint8(Register.TIME);
@@ -105,7 +127,7 @@ class MCP7940 {
 			io.writeUint8(Register.TIME, ST);
 		}
 
-		io.writeBuffer(Register.TIME, b);		// enable is included
+		io.writeBuffer(Register.TIME, reg);		// enable is included
 	}
 }
 
