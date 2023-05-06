@@ -1,5 +1,8 @@
 {
 	"include": "$(MODULES)/network/wifi/manifest.json",
+	"config": {
+		"sntp": "pool.ntp.org"
+	},
 	"platforms": {
 		"esp": {
 			"modules": {
