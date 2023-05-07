@@ -3,6 +3,8 @@ description:
 flags: [module]
 ---*/
 
+// NOTE: Tests in this file are expected to fail (Punycode and IDNA are unimplemented)
+
 import { runTests } from "./url_FIXTURE.js";
 
 const tests = [

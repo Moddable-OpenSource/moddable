@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -23,6 +23,7 @@ class I2C @ "_xs_i2c_destructor" {
 	close() @ "_xs_i2c_close"
 	read(count) @ "_xs_i2c_read"
 	write(buffer) @ "_xs_i2c_write"
+	writeRead(buffer, count) @ "_xs_i2c_writeRead"		// experimental extension
 
 	get format() {
 		return "buffer";

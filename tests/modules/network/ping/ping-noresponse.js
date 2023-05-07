@@ -7,7 +7,7 @@ import Ping from "ping";
 
 await $NETWORK.connected;
 
-const host = "marvell.com";
+const host = "httpbin.org";
 const id = 0;
 const interval = 500;
 

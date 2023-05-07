@@ -1407,6 +1407,7 @@ extern txNumber fxArgToRange(txMachine* the, txInteger argi, txNumber index, txN
 extern txNumber fxArgToRelativeIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
 extern void fxCacheArray(txMachine* the, txSlot* theArray);
 extern void fxConstructArrayEntry(txMachine* the, txSlot* entry);
+extern void fxIndexArray(txMachine* the, txSlot* array);
 extern txBoolean fxIsArray(txMachine* the, txSlot* instance);
 extern txSlot* fxNewArrayInstance(txMachine* the);
 extern void fxSortArrayItems(txMachine* the, txSlot* function, txSlot* array, txNumber LENGTH, txSlot* target);

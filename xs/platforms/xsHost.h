@@ -60,4 +60,18 @@
 
 uint32_t modMilliseconds(void);
 
+#if mxWindows
+	#define modDelayMilliseconds(ms) \
+		do { \
+			timeBeginPeriod(1); \
+			Sleep(ms); \
+			timeEndPeriod(1); \
+		} while (false)
+
+	#define modDelayMicroseconds(us)  modDelayMilliseconds((((us) + 500) / 1000))
+#else
+	#define modDelayMicroseconds(us)  usleep(us)
+	#define modDelayMilliseconds(ms)  uleep((ms) * 1000)
+#endif
+
 #endif
