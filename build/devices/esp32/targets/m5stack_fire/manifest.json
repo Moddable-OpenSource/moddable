@@ -5,7 +5,7 @@
 		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
 	],
 	"config": {
-		"screen": "m5stack_fire/screen",
+		"screen": "m5stack/screen",
 		"touch": "",
 		"autorotate": 300,
 		"startupSound": "bflatmajor.maud"
@@ -93,14 +93,14 @@
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
-		"m5stack_fire/screen": "./screen"
+		"m5stack/screen": "../m5stack/screen"
 	},
 	"preload": [
 		"neopixel",
 		"pins/audioout",
 		"audioin",
 		"setup/target",
-		"m5stack_fire/screen",
+		"m5stack/screen",
 		"mpu6050",
 		"mag3110",
 		"m5button"
