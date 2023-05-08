@@ -7,7 +7,8 @@
 	},
 	"creation": {
 		"keys": {
-			"available": 32,
+			"initial": 32,
+			"incremental": 32,
 			"name": 53,
 			"symbol": 3
 		},
