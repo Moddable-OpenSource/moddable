@@ -379,6 +379,7 @@ class ApplicationBehavior extends Behavior {
 			application.defer("doOpenFileCallback", new String(path));
 	}
 	onQuit(application) {
+		this.quitScreen();
 		this.writePreferences();
 		application.quit();
 	}
