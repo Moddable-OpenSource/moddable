@@ -82,14 +82,14 @@ class TLSSocket {
 					if (result > available)
 						result = available;
 
-					const buffer = ArrayBuffer.isView(count) ? new Uint8Array(count.buffer, count.byteOffset, count.byteLength) : new Uint8Array(count.buffer);
-					buffer.set(data.slice(data.position, data.position + result)); 
+					const buffer = ArrayBuffer.isView(count) ? new Uint8Array(count.buffer, count.byteOffset, result) : new Uint8Array(count.buffer);
+					buffer.set(data.subarray(data.position, data.position + result)); 
 					data.position += result;
 				}
 				else {
 					if (count > available)
 						throw new Error("invalid")
-					result = data.slice(data.position, data.position + count);
+					result = data.slice(data.position, data.position + count).buffer;
 					data.position += count;
 				}
 				if (data.position === data.byteLength)
