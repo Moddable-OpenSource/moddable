@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
 
 
 #define __XS6PLATFORMMINIMAL__
-#define ESP32 1
+#define ESP32 2
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,6 @@
 #include "freertos/task.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-// #include "esp_event_loop.h"
 #include "esp_task_wdt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
@@ -43,11 +42,15 @@
 #endif
 
 #if USE_USB
-	#include "sdkconfig.h"
-	#include "tinyusb.h"
-	#include "tusb_cdc_acm.h"
+	#if USE_USB == 1
+		#include "sdkconfig.h"
+		#include "tinyusb.h"
+		#include "tusb_cdc_acm.h"
 
-	static void setupDebuggerUSB(void);
+		static void setupDebuggerUSB(void);
+	#else
+		#error esp32s2 doesnt support JTAG-CDC
+	#endif
 #else
 	#include "driver/uart.h"
 

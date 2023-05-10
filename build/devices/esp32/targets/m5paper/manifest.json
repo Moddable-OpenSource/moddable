@@ -1,6 +1,6 @@
 {
 	"build":{
-		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/m5paper/sdkconfig",
+		"SDKCONFIGPATH": "./sdkconfig",
 		"DEBUGGER_SPEED": "115200"
 	},
 	"include": [

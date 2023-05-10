@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -55,9 +55,13 @@
 #endif
 
 #if USE_USB
-	#include "sdkconfig.h"
-	#include "tinyusb.h"
-	#include "tusb_cdc_acm.h"
+	#if (USE_USB == 1)
+		#include "sdkconfig.h"
+		#include "tinyusb.h"
+		#include "tusb_cdc_acm.h"
+	#elif (USE_USB == 2)
+		#include "driver/usb_serial_jtag.h"
+	#endif
 #else
 	#include "driver/uart.h"
 
@@ -99,7 +103,7 @@ static
 	unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
-#if USE_USB
+#if (USE_USB == 1)
 typedef struct {
     uint8_t     *buf;
     uint32_t    size_mask;
@@ -182,9 +186,14 @@ printf("fifo_init - bad size: %d\r\n", size);
 #ifdef mxDebug
 static void debug_task(void *pvParameter)
 {
+#if (USE_USB == 2)
+	const usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 4096, .tx_buffer_size = 2048 };
+	usb_serial_jtag_driver_install(&cfg);
+#endif
+
 	while (true) {
 
-#if USE_USB
+#if (USE_USB == 1)
 		uint32_t count;
 		if (!fifo_length(&rx_fifo)) {
 			usbEvtPending = 0;
@@ -192,6 +201,10 @@ static void debug_task(void *pvParameter)
 		}
 
 		fxReceiveLoop();
+
+#elif (USE_USB == 2)
+		fxReceiveLoop();
+		modDelayMilliseconds(5);
 
 #else	// !USE_USB
 
@@ -262,7 +275,7 @@ void modLog_transmit(const char *msg)
 	}
 }
 
-#if USE_USB
+#if (USE_USB == 1)
 static uint8_t DTR = 1;
 static uint8_t RTS = 1;
 
@@ -378,29 +391,55 @@ uint8_t ESP_setBaud(int baud) {
 #else
 
 void ESP_put(uint8_t *c, int count) {
+#if (USE_USB == 2)
+	int sent = 0;
+	while (count > 0) {
+		sent = usb_serial_jtag_write_bytes(c, count, 10);
+		c += sent;
+		count -= sent;
+	}   
+#else
 	uart_write_bytes(USE_UART, (char *)c, count);
+#endif
 }
 
 void ESP_putc(int c) {
 	char cx = c;
+#if (USE_USB == 2)
+    usb_serial_jtag_write_bytes(&cx, 1, 1);
+#else
 	uart_write_bytes(USE_UART, &cx, 1);
+#endif
 }
 
 int ESP_getc(void) {
+	int amt;
 	uint8_t c;
-	int err = uart_read_bytes(USE_UART, &c, 1, 0);
-	return (1 == err) ? c : -1;
+#if (USE_USB == 2)
+	amt = usb_serial_jtag_read_bytes(&c, 1, 1);
+#else
+	amt = uart_read_bytes(USE_UART, &c, 1, 0);
+#endif
+	return (1 == amt) ? c : -1;
 }
 
 uint8_t ESP_isReadable() {
+#if (USE_USB == 2)
+	return true;
+#else
 	size_t s;
 	uart_get_buffered_data_len(USE_UART, &s);
 	return s > 0;
+#endif
 }
 
 uint8_t ESP_setBaud(int baud) {
+#if (USE_USB == 2)
+	return 1;
+#else
 	uart_wait_tx_done(USE_UART, 5 * 1000);
 	return ESP_OK == uart_set_baudrate(USE_UART, baud);
+#endif
 }
 #endif
 
@@ -418,11 +457,12 @@ void app_main() {
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
 
-#if USE_USB
-
-	printf("USE_USB!!\r\n");
+#if (USE_USB == 1)
+	printf("USE TinyUSB\r\n");
 	setupDebuggerUSB();
-
+#elif (USE_USB == 2)
+    xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
+    printf("START USB CONSOLE!!!\n");
 #else // !USE_USB
 
 	esp_err_t err;

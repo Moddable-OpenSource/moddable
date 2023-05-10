@@ -1,80 +1,38 @@
 #!/bin/bash
 
-if [ $1 -eq 0 ]; then
+DEVTYPE=cu.usbmodem
+
+if [ "$1" = "0" ]; then
 	echo "Release build installed."
 	exit
 fi
-
-# save original serial port
-original=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
 
 if [ "$UPLOAD_PORT" = "" ]; then
 	echo "** Please set the UPLOAD_PORT environment variable **"
 	exit
 fi
 
-# echo "# original serial ${original}"
-echo "# looking for UPLOAD_PORT: $UPLOAD_PORT"
-
-if [ "$original" != "" ]; then
-	if [ "$UPLOAD_PORT" = "$original" ]; then
-		echo "-- device is already in programming mode --"
+for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
+	if [ "$UPLOAD_PORT" = "$port" ]; then
+		echo "-- device in programming mode --"
 		exit
 	fi
-fi
+	# echo port: $port
+done
 
+echo "# looking for UPLOAD_PORT: $UPLOAD_PORT"
 echo "** Put device in programming mode **"
 
-fileToCompare=""
-
-arrayContained=""
-
-arrayContains() {
-	local i
-	arr=("$@")
-	it="${fileToCompare}"
-	for ((i=0; i<${#arr[@]}; i++)); do
-# echo "${i} does array ${arr[$i]} contain ${it}"
-		if [ "${arr[$i]}" = "${it}" ]; then
-# echo "array contains ${it}"
-			arrayContained=${it}
-			return 1
-		fi
-	done
-
-	return 0
-}
-
-findNew() {
-	local i
-	new=("$@")
-# echo "${#new[@]} new array size in findNew"
-	old=${original[@]}
-	for ((i=0; i<${#new[@]}; i++)); do
-# echo "${i} look for ${new[$i]}"
-		arrayContained=""
-		fileToCompare="${new[$i]}"
-		arrayContains ${old}
-		if [ "" == "${arrayContained}" ]; then
-			return 1;
-		fi
-	done
-	fileToCompare=""
-	return 0;
-}
-
-newOne=0
-
 # wait for usbd serial port to enumerate
-while [ $newOne -eq 0 ]; do
-	sleep 0.1
-	compare=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
-
-	findNew "${compare[@]}"
-	if [ 1 -eq $? ]; then
-		break;
-	fi
-	
+while [ 1 ]; do
+	sleep 0.5
+	for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
+		if [ "$UPLOAD_PORT" = "$port" ]; then
+			echo "-- device in programming mode --"
+			exit
+		fi
+		# echo port: $port
+	done
 done
 
 
