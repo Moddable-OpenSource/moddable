@@ -1,7 +1,7 @@
 {
 	"build":{
-		"ESP32_SUBCLASS": "esp32s3",
-		"USE_USB": "1",
+		"ESP32_SUBCLASS": "esp32c3",
+		"USE_USB": "2",
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
@@ -18,33 +18,21 @@
 	"config": {
 		"screen": "",
 		"led": {
-			"power": 38,
-			"pin": 39,
+			"pin": 2,
 			"rainbow": true,
 			"brightness": 32
-		}
-	},
-	"creation": {
-		"static": 0,
-		"chunk": {
-			"initial": 78848,
-			"incremental": 0
 		},
-		"heap": {
-			"initial": 4928,
-			"incremental": 0
-		},
-		"stack": 512
+		"button": 9
 	},
 	"defines": {
 		"i2c": {
-			"sda_pin": 41,
-			"scl_pin": 40
+			"sda_pin": 5,
+			"scl_pin": 6
 		},
 		"spi": {
-			"miso_pin":37,
-			"mosi_pin":35,
-			"sck_pin": 36
+			"miso_pin":8,
+			"mosi_pin":7,
+			"sck_pin": 10
 		}
 	}
 }
