@@ -83,12 +83,11 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 void fx_Symbol(txMachine* the)
 {
 	txSlot* instance;
+	txID id ;
 	txSlot* property;
-	txID id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
 	if (mxTarget->kind != XS_UNDEFINED_KIND)
 		mxTypeError("new Symbol");
+	id = fxFindKey(the);
 	instance = fxNewInstance(the);
 	property = fxNextSymbolProperty(the, instance, id, XS_NO_ID, XS_INTERNAL_FLAG);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
@@ -98,7 +97,6 @@ void fx_Symbol(txMachine* the)
 	else
 		fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 	the->keyArray[id - the->keyOffset] = instance;
-	the->keyIndex++;
 	mxPop();
 	mxResult->kind = XS_SYMBOL_KIND;
 	mxResult->value.symbol = id;
@@ -130,17 +128,15 @@ void fx_Symbol_for(txMachine* the)
 		result = result->next;
 	}
 	if (result == C_NULL) {
-		id = the->keyIndex;
-		if (id == the->keyCount)
-			fxGrowKeys(the, 1);
+		id = fxFindKey(the);
 		result = fxNewSlot(the);
 		result->next = the->symbolTable[modulo];
+		result->flag = XS_INTERNAL_FLAG;
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
 		result->ID = id;
 		result->value.key.string = mxArgv(0)->value.string;
 		result->value.key.sum = sum;
 		the->keyArray[id - the->keyOffset] = result;
-		the->keyIndex++;
 		the->symbolTable[modulo] = result;
 	}
 	mxResult->kind = XS_SYMBOL_KIND;
@@ -317,18 +313,15 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 		result = result->next;
 	}
 
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
+	id = fxFindKey(the);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
 	result->ID = id;
 	result->value.key.string = theSlot->value.string;
 	result->value.key.sum = sum;
 	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
 }
@@ -357,18 +350,15 @@ txID fxNewNameC(txMachine* the, txString theString)
 		result = result->next;
 	}
 
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
+	id = fxFindKey(the);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
 	result->ID = id;
 	result->value.key.string = C_NULL;
 	result->value.key.sum = sum;
 	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	result->value.key.string = (txString)fxNewChunk(the, mxStringLength(theString) + 1);
 	c_strcpy(result->value.key.string, theString);
@@ -399,18 +389,15 @@ txID fxNewNameX(txMachine* the, txString theString)
 		result = result->next;
 	}
 
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
+	id = fxFindKey(the);
 	result = fxNewSlot(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_X_KIND;
 	result->ID = id;
 	result->value.key.string = theString;
 	result->value.key.sum = sum;
 	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
 }

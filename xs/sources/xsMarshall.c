@@ -110,9 +110,7 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					id = fxNewNameC(the, (char *)p);
 				else {
 					aSymbolLength = aSymbolLength & mxSymbolMask;
-					id = the->keyIndex;
-					if (id == the->keyCount)
-						fxGrowKeys(the, 1);
+					id = fxFindKey(the);
 					if (aSymbolLength > 1) {
 						aSlot = fxNewSlot(the);
 						aSlot->kind = XS_STRING_KIND;
@@ -122,7 +120,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					else
 						aSlot = C_NULL;
 					the->keyArray[id - the->keyOffset] = aSlot;
-					the->keyIndex++;
 				}
 				*aSymbolPointer++ = id;
 				aSymbolCount--;

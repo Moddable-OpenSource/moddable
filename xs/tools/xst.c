@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
 			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			256 * 1024, 		/* stackCount */
-			256 * 1024, 		/* initialKeyCount */
+			1024, 		/* initialKeyCount */
 			0,					/* incrementalKeyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
