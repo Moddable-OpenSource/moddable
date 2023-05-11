@@ -466,7 +466,7 @@ void app_main() {
 #else // !USE_USB
 
 	esp_err_t err;
-	uart_config_t uartConfig;
+	uart_config_t uartConfig = {0};
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else

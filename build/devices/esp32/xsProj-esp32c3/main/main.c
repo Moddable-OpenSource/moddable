@@ -262,7 +262,7 @@ void app_main() {
 	printf("START USB CONSOLE!!!\n");
 #else
 	esp_err_t err;
-	uart_config_t uartConfig;
+	uart_config_t uartConfig = {0};
 
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
