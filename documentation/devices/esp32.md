@@ -101,6 +101,8 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 | :---: | :--- | :--- | :--- |
 |  <img src="https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png" width=125><BR>Kaluga | `esp32/kaluga` | **3.2" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>2 MB SRAM<BR>Speaker and Audio Playback<BR>Touch Pad Panel<BR>NeoPixel LED | <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit.html)</li> |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/_images/esp32-s2-saola-1-v1.2-isometric.png" width=125><BR>Saola<BR>(WROOM & WROVER versions) | `esp32/saola_wroom` <BR> `esp32/saola_wrover`| NeoPixel LED<BR>2 MB SRAM (WROVER version only)| <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)</li> |
+| <img src="./../assets/devices/adafruit-qtpys2.png" width=125><BR>Adafruit<BR>QT Py ESP32-S2 | `esp32/qtpys2` |  Neopixel, 1 button, STEMMA/QWIIC | <li>[Product page](https://www.adafruit.com/product/5325)</li>|
+| <img src="./../assets/devices/lolin-s2-mini.png" width=100><BR>Lolin<BR>S2 Mini | `esp32/s2mini` |  1 button |
 
 <a id="platforms-esp32-s3"></a>
 ### ESP32-S3
@@ -140,6 +142,8 @@ The Moddable SDK supports three ESP32-C3 development kits:
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/_images/esp32-c3-devkitm-1-v1-isometric.png" width=125><BR>ESP32-C3-DevKitM-1 | `esp32/esp32c3` |  | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)</li> |
+|  <img src="./../assets/devices/esp32c3-dual.png" width=125><BR>ESP32 C3 DevKit clone| `esp32/esp32c3_cdc` |  | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)</li> |
+|  <img src="./../assets/devices/c3_devkit_rust.png" width=125><BR>ESP32-C3-DevKit-RUST-1 | `esp32/c3_devkit_rust` |  | <li>[Product page](https://www.espressif.com/en/dev-board/esp32-c3-devkit-rust-1-en)</li> |
 | <img src="./../assets/devices/xiao-esp32c3.png" width=125><BR>Seeed Studio<BR>XIAO ESP32C3 | `esp32/xiao_esp32c3` | 1 button | <li>[Product page](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html)</li>|
 | <img src="./../assets/devices/adafruit-qtpyc3.png" width=125><BR>Adafruit<BR>QT Py ESP32-C3 | `esp32/qtpyc3` |  Neopixel, 1 button, STEMMA/QWIIC | <li>[Product page](https://www.adafruit.com/product/5405)</li>|
 | AI Thinker ESP-C3-32S-Kit <BR> (1 MB and 2 MB versions) | `esp32/c3_32s_kit` <BR> `esp32/c3_32s_kit_2m`| RGB LED  | <li>[Product specification](https://docs.ai-thinker.com/_media/esp32/docs/esp-c3-32s-kit-v1.0_specification.pdf)</li> |
@@ -246,6 +250,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
+<a id="upload_port_mac"></a>
 	There is one optional environment variables for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
@@ -468,6 +473,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 		- Variable name: `IDF_PATH`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\esp32\esp-idf`
 
+<a id="upload_port_win"></a>
 	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable following the same procedure as above.
 
@@ -705,6 +711,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
+<a id="upload_port_lin"></a>
 	There is an optional environment variable for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
