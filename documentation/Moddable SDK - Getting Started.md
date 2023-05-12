@@ -382,6 +382,8 @@ The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry 
 	mcconfig -d -m -p lin
 	```
 
+	> [See this discussion](https://github.com/Moddable-OpenSource/moddable/discussions/1097) for a description of what you should expect to see.
+
 11. **IMPORTANT:** You can now build and run applications for the desktop simulator. To build and run applications on a development board or MCU, you need to install additional SDKs, drivers, and development tools for your target platform. See the [What's Next](#dev-boards-and-mcus) (Building and Running Apps on Development Boards and MCUs) section of this document for more details and links to instructions.
 
 <!--<a id="lin-troubleshooting"></a>
