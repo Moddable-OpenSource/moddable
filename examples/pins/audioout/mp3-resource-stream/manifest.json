@@ -1,0 +1,17 @@
+{
+	"include": [
+		"./manifest_streamer.json"
+	],
+	"resources": {
+		"*": [
+			"$(MODDABLE)/modules/data/mp3/assets/test",
+			"./groovesalad"
+		]
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"../http-stream/calculatePower"
+		]
+	}
+}
