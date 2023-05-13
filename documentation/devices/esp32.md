@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: March 3, 2023
+Revised: May 12, 2023
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
@@ -24,6 +24,7 @@ This document provides a guide to building apps for the ESP32 line of SoCs from 
 	| •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting)<BR>•  [Updating](#mac-update) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting)<BR>•  [Updating](#win-update) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)<BR>•  [Updating](#lin-update)
 
 * [Troubleshooting](#troubleshooting)
+* [Using USB on ESP32](#using_usb)
 
 <a id="overview"></a>
 ## Overview
@@ -151,7 +152,7 @@ The Moddable SDK supports three ESP32-C3 development kits:
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest
 
-The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` property in the `build` section of the manifest. This is usually set by the manifest for the target build device. The following example shows how to set the subclass to ESP32-S2. Use `"esp32s3"` for the ESP32-S3 and `"esp32"` for the original ESP32.
+The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` property in the `build` section of the manifest. This is usually set by the manifest for the target build device. The following example shows how to set the subclass to ESP32-S2.
 
 
 ```
@@ -159,6 +160,13 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 	"ESP32_SUBCLASS": "esp32s2"
 },
 ``` 
+
+| `ESP32_SUBCLASS` | Device |
+|:---:|:---:|
+| `esp32` or not set | ESP32 |
+| `esp32s2` | ESP32-S2 |
+| `esp32s3` | ESP32-S3 |
+| `esp32c3` | ESP32-C3 |
 
 <a id="builds"></a>
 ## Build Types
@@ -250,7 +258,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
-<a id="upload_port_mac"></a>
+	<a id="upload_port_mac"></a>
 	There is one optional environment variables for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
@@ -473,7 +481,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 		- Variable name: `IDF_PATH`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\esp32\esp-idf`
 
-<a id="upload_port_win"></a>
+	<a id="upload_port_win"></a>
 	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable following the same procedure as above.
 
@@ -711,7 +719,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
-<a id="upload_port_lin"></a>
+	<a id="upload_port_lin"></a>
 	There is an optional environment variable for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
@@ -953,3 +961,90 @@ To manually put your ESP32 into bootloader mode, follow these steps:
 3. Plug the device into your computer.
 4. Enter the `mcconfig` command.
 5. Wait a few seconds and release the BOOT button.
+
+
+<a id="using_usb"></a>
+## Using USB on ESP32
+
+Originally, programming and debugging with the ESP32 was done over a serial connection. Some devices contain an integrated serial-to-USB chip, and some use an external programmer.
+
+In newer devices, Espressif has added USB support. Starting with the ESP32-S2, TinyUSB support was added. TinyUSB support continued with ESP32-S3.
+
+Starting with the ESP32-S3 and ESP32-C3, support for USB was integrated into the device with a USB Serial/JTAG driver.
+
+
+#### Build configuration
+
+In a device's manifest.json file, the `USE_USB` build option specifies which USB implementation to use. The `SDKCONFIGPATH` is also specified to pick up the ESP-IDF config files specific to this device:
+
+```
+	"build": {
+		"ESP32_SUBCLASS": "esp32s2",
+		"USE_USB": "1",
+		"SDKCONFIGPATH": "./sdkconfig"
+		...
+```
+
+### `USE_USB: 1` - TinyUSB
+
+TinyUSB works with the ESP32-S2 and ESP32-S3 devices.
+
+With TinyUSB, we need to set the `UPLOAD_PORT`. For example:
+
+```
+export UPLOAD_PORT=/dev/cu.usbmodem01
+```
+
+> See the section for your build platform [macOS](#upload_port_mac), [Windows](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#upload_port_win), or [Linux](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#upload_port_lin) which describes how to find your device's `UPLOAD_PORT`.
+
+Build your application:
+
+`mcconfig -d -m -p esp32/esp32s3_usb`
+
+> Note: if your device is not in programming mode, there will be a notice in the build console:
+
+```
+# looking for UPLOAD_PORT: /dev/cu.usbmodem01
+** Put device in programming mode **
+```
+
+When the console says `Done`, press the __Reset__ button on the device.
+
+```
+Executing "ninja flash"...
+Done
+```
+
+After you press __Reset__ on the device, the device will restart and connect to `xsbug`.
+
+These devices use this technique:
+
+| Platform | Device |
+| :---: | :--- |
+| `esp32/esp32s3_usb` | Espressif ESP32-S3-DevKitC |
+| `esp32/m5atom_s3` | M5 Atom S3 |
+| `esp32/m5atom_s3_lite` | M5 Atom S3 Lite |
+| `esp32/qtpys2` | Adafruit QT Py S2 |
+| `esp32/qtpys3` | Adafruit QT Py S3 |
+| `esp32/s2mini` | Lolin S2 mini |
+| `esp32/s3_tft_feather` | Adafruit ESP32-S3 TFT Feather |
+
+### `USE_USB: 2` - SERIAL-JTAG
+
+The built-in SERIAL-JTAG driver can be used with the ESP32-S3 and ESP32-C3 devices.
+
+There is usually no need to set the `UPLOAD_PORT`, or press buttons on your device. However, if you have multiple devices connected simultaneously, you will have to use the `UPLOAD_PORT` to specify which one to use.
+
+Build your application:
+
+`mcconfig -d -m -p esp32/esp32s3_cdc`
+
+These devices use this technique:
+
+| Platform | Device |
+| :---: | :--- |
+| `esp32/c3_devkit_rust` | Espressif C3 DevKit Rust |
+| `esp32/esp32c3_cdc` | Espressif C3 DevKitM |
+| `esp32/esp32s3_cdc` | Espressif ESP32-S3-DevKitC |
+| `esp32/qtpyc3` | Adafruit QT Py C3 |
+| `esp32/xiao_esp32c3` | Seeed Xiao ESP32C3 |
