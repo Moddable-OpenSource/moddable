@@ -31,7 +31,9 @@ import Timer from "timer";
 
 function calculatePower(samplea) @ "xs_calculatePower";
 
-const audio = new AudioOut({});
+const audio = new AudioOut({
+	sampleRate: 44100
+});
 let streamer
 
 async function stream() {
@@ -41,22 +43,15 @@ async function stream() {
 			return
 		}
 		streamer = new ResourceStreamer({
-		path: "groovesalad.mp3",
+		path: "startup.mp3",
 		audio: {
 			out: audio,
 			stream: 0,
-			sampleRate: 44100
+			sampleRate: 48000
 		},
 		onPlayed(buffer) {
 			const power = calculatePower(buffer);
 			trace("power " + Math.round(power) + "\n");
-		},
-		onReady(state) {
-			trace(`Ready: ${state}\n`);
-			if (state)
-				audio.start();
-			else
-				audio.stop();
 		},
 		onError(e) {
 			trace("ERROR: ", e, "\n");
@@ -76,6 +71,7 @@ async function stream() {
 (async function main() {
 	let count = 0
 	while (true){
+		audio.stop();
 		trace(`play: ${count++}\n`)
 		let willPlay = stream();
 		let willFail = stream().catch(e => {trace(`error: ${e.message}\n`)}) // error: already playing
