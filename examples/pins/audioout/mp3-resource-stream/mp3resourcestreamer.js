@@ -80,7 +80,7 @@ class ResourceStreamer {
 			this.#resource.position < this.#resource.byteLength &&
 			this.#audio.length(this.#stream) >= 2
 			) {
-			const found = MP3.scan(this.#resource, this.#resource.position, this.#resource.byteLength - this.#resource.position, this.#info);
+			const found = MP3.scan(this.#resource, this.#resource.position, this.#resource.byteLength, this.#info);
 			if (!found) {
 				this.#resource.position = this.#resource.byteLength;
 				this.#audio.enqueue(0, this.#audio.constructor.Callback, 0);
@@ -109,7 +109,10 @@ class ResourceStreamer {
 			);
 			this.#bytesQueued += slice.byteLength;
 			this.#playing.push(slice);
-		}
+
+			if ((found.position + found.length) >= this.#resource.byteLength)
+				this.#audio.enqueue(0, this.#audio.constructor.Callback, 0);
+	    }
 	}
 }
 

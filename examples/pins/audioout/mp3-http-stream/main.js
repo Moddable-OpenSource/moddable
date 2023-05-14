@@ -17,7 +17,10 @@ import MP3Streamer from "mp3streamer";
 
 function calculatePower(samplea) @ "xs_calculatePower";
 
-const audio = new AudioOut({});
+const audio = new AudioOut({
+	sampleRate: 44100,
+	streams: 1
+});
 
 function streamMP3() {
 	new MP3Streamer({
