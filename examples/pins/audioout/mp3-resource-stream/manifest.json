@@ -1,0 +1,16 @@
+{
+	"include": [
+		"./manifest_streamer.json"
+	],
+	"data": {
+		"*": [
+			"$(MODDABLE)/examples/assets/sounds/startup"
+		]
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"../http-stream/calculatePower"
+		]
+	}
+}

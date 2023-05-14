@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json",
+		"../mp3-http-stream/manifest_mp3streamer.json"
+	],
+	"modules": {
+		"*": "./elevenlabsstreamer"
+	},
+	"preload": "elevenlabsstreamer",
+	"data": { 
+		"*": [
+			"$(MODULES)/crypt/data/ca233"
+		]
+	}
+}

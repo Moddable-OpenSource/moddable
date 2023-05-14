@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020-2022 Moddable Tech, Inc.
+# Copyright (c) 2020-2023 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -35,8 +35,8 @@ if (INSTRUMENT EQUAL "1")
     target_compile_options(${COMPONENT_TARGET} PRIVATE -DMODINSTRUMENTATION=1)
 endif()
 
-if (USE_USB EQUAL "1")
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DUSE_USB=1)
+if (USE_USB)
+    target_compile_options(${COMPONENT_TARGET} PRIVATE -DUSE_USB=${USE_USB})
 endif()
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a

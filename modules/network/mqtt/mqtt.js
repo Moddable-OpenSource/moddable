@@ -521,7 +521,7 @@ export default class Client {
 		this.#messages.timer ??= Timer.set(() => {
 			const messages = this.#messages;
 			this.#messages = undefined; 
-			for (let i = 0; i < messages.length; i++) {
+			for (let i = 0; (i < messages.length) && this.ws; i++) {
 				const msg = messages[i];
 				try {
 					switch (msg.code) {
