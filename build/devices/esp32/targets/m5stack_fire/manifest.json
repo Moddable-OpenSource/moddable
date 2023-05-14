@@ -1,4 +1,8 @@
 {
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/pins/smbus/manifest.json",
