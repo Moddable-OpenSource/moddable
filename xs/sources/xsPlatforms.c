@@ -89,12 +89,13 @@ void fxBuildKeys(txMachine* the)
 {
 	int i;
 	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
-		txID id = the->keyIndex;
+		txSlot* key = fxFindKey(the);
 		txSlot* instance = fxNewInstance(the);
-		txSlot* property = fxNextSymbolProperty(the, instance, id, XS_NO_ID, XS_INTERNAL_FLAG);
+		txSlot* property = fxNextSymbolProperty(the, instance, i, XS_NO_ID, XS_INTERNAL_FLAG);
 		fxNextStringXProperty(the, property, gxIDStrings[i], XS_NO_ID, XS_INTERNAL_FLAG);
-		the->keyArray[id] = instance;
-		the->keyIndex++;
+		key->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
+		key->kind = XS_REFERENCE_KIND;
+		key->value.reference = instance;
 		mxPop();
 	}
 	for (; i < XS_ID_COUNT; i++) {

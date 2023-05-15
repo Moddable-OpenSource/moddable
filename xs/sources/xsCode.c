@@ -2166,14 +2166,14 @@ void fxArrayNodeCode(void* it, void* param)
 					break;
 				item = item->next;
 			}
-			if (!item) {
-				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, array);
-				fxCoderAddByte(param, 1, XS_CODE_DUB);
-				fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->fillSymbol);
-				fxCoderAddByte(param, 1, XS_CODE_CALL);
-				fxCoderAddInteger(param, -2, XS_CODE_RUN_1, 0);
-				fxCoderAddByte(param, -1, XS_CODE_POP);
-			}
+// 			if (!item) {
+// 				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, array);
+// 				fxCoderAddByte(param, 1, XS_CODE_DUB);
+// 				fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->fillSymbol);
+// 				fxCoderAddByte(param, 1, XS_CODE_CALL);
+// 				fxCoderAddInteger(param, -2, XS_CODE_RUN_1, 0);
+// 				fxCoderAddByte(param, -1, XS_CODE_POP);
+// 			}
 			item = self->items->first;
 			while (item) {
 				if (item->description->token != XS_TOKEN_ELISION) {
@@ -2181,8 +2181,8 @@ void fxArrayNodeCode(void* it, void* param)
 					fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, index);
 					fxCoderAddByte(param, 0, XS_CODE_AT);
 					fxNodeDispatchCode(item, param);
-					fxCoderAddByte(param, -2, XS_CODE_SET_PROPERTY_AT);
-					fxCoderAddByte(param, -1, XS_CODE_POP);
+					fxCoderAddByte(param, -3, XS_CODE_NEW_PROPERTY_AT);
+					fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
 				}
 				item = item->next;
 				index++;

@@ -96,8 +96,9 @@ void fx_Symbol(txMachine* the)
 	}
 	else
 		fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
-	slot->value.reference = instance;
+	slot->flag = XS_INTERNAL_FLAG;
 	slot->kind = XS_REFERENCE_KIND;
+	slot->value.reference = instance;
 	mxPop();
 	mxResult->kind = XS_SYMBOL_KIND;
 	mxResult->value.symbol = slot->ID;
@@ -130,7 +131,7 @@ void fx_Symbol_for(txMachine* the)
 	if (result == C_NULL) {
 		result = fxFindKey(the);
 		result->next = the->symbolTable[modulo];
-		result->flag = XS_INTERNAL_FLAG;
+		result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
 		result->value.key.string = mxArgv(0)->value.string;
 		result->value.key.sum = sum;
@@ -337,14 +338,18 @@ txID fxNewNameC(txMachine* the, txString theString)
 	result = the->nameTable[modulo];
 	while (result != C_NULL) {
 		if (result->value.key.sum == sum) {
-			if (c_strcmp(result->value.key.string, theString) == 0)
-				return mxGetKeySlotID(result);
+			if (c_strcmp(result->value.key.string, theString) == 0) {
+				txID id = mxGetKeySlotID(result);
+				if (id >= the->keyOffset)
+					result->flag |= XS_DONT_DELETE_FLAG;
+				return id;
+			}
 		}
 		result = result->next;
 	}
 	result = fxFindKey(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
 	result->value.key.string = C_NULL;
 	result->value.key.sum = sum;
@@ -371,14 +376,18 @@ txID fxNewNameX(txMachine* the, txString theString)
 	result = the->nameTable[modulo];
 	while (result != C_NULL) {
 		if (result->value.key.sum == sum) {
-			if (c_strcmp(result->value.key.string, theString) == 0)
-				return mxGetKeySlotID(result);
+			if (c_strcmp(result->value.key.string, theString) == 0) {
+				txID id = mxGetKeySlotID(result);
+				if (id >= the->keyOffset)
+					result->flag |= XS_DONT_DELETE_FLAG;
+				return id;
+			}
 		}
 		result = result->next;
 	}
 	result = fxFindKey(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_X_KIND;
 	result->value.key.string = theString;
 	result->value.key.sum = sum;
@@ -469,6 +478,8 @@ void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize)
 				key = key->value.reference->next->next;
 				if (key->kind != XS_UNDEFINED_KIND)
 					c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
+				else
+					c_snprintf(theBuffer, theSize, "[]");
 			}
 			else
 				*theBuffer = 0;
