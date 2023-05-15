@@ -239,9 +239,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 	#ifdef mxSnapshotRandomInit
 		arc4random_buf(data + sizeof(txChunk), offset);
 	#endif		
+	#endif
 		offset += sizeof(txChunk);
 		c_memset(data + offset, 0, capacity - offset);
-	#endif
 		chunk->size = size;
 		the->currentChunksSize += capacity;
 #endif
@@ -424,26 +424,25 @@ again:
 	return C_NULL;
 }
 
-txID fxFindKey(txMachine* the)
+txSlot* fxFindKey(txMachine* the)
 {
 	txBoolean once = 1;
 	txID id;
-	txSlot** p;
-	txSlot** q;
+	txSlot* result;
 again:
 	id = the->keyIndex;
 	if (id < the->keyCount) {
+		result = fxNewSlot(the);
+		result->ID = id;
+		the->keyArray[id - the->keyOffset] = result;
 		the->keyIndex++;
-		return id;
+		return result;
 	}
-	id = the->keyOffset;
-	p = the->keyArray;
-	q = p + the->keyCount - the->keyOffset;
-	while (p < q) {
-		if (*p == C_NULL)
-			return id;
-		id++;
-		p++;
+	result = the->keyhole;
+	if (result) {
+		the->keyhole = result->next;
+		result->next = C_NULL;
+		return result;
 	}
 	if (once) {
 		fxCollect(the, XS_ORGANIC_FLAG);
@@ -452,7 +451,8 @@ again:
 	else
 		fxGrowKeys(the, 1);
 	goto again;
-	return XS_NO_ID;
+	fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+	return C_NULL;
 }
 
 void fxFree(txMachine* the) 
@@ -681,13 +681,13 @@ void fxMarkID(txMachine* the, txID id, void (*theMarker)(txMachine*, txSlot*))
 void fxMarkCodeID(txMachine* the, txByte* codeBuffer, void (*theMarker)(txMachine*, txSlot*))
 {
 	const txS1* bytes = gxCodeSizes;
-	txSize codeSize = ((txChunk*)(((txByte*)(codeBuffer)) - sizeof(txChunk)))->size;
+	txSize codeSize = ((txChunk*)(((txByte*)(codeBuffer)) - sizeof(txChunk)))->size - sizeof(txChunk);
 	register txByte* p = codeBuffer;
 	register txByte* q = codeBuffer + codeSize;
 	register txS1 offset;
 	txID id;
 	while (p < q) {
-		//fprintf(stderr, "%s", gxCodeNames[*((txU1*)p)]);
+// 		fprintf(stderr, "%s\n", gxCodeNames[*((txU1*)p)]);
 		offset = (txS1)c_read8(bytes + c_read8(p));
 		if (0 < offset)
 			p += offset;
@@ -728,16 +728,14 @@ void fxMarkSlotID(txMachine* the, txSlot* slot, void (*theMarker)(txMachine*, tx
 
 void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 {
+#if mxAliasInstance
 	txInteger anIndex;
 	txSlot** anArray;
+#endif
 	txSlot* aSlot;
 	txSlot** p;
 	txSlot** q;
-	txSize hole;
 
-#ifdef mxNever
-	startTime(&gxMarkTime);
-#endif
 #if mxAliasInstance
 	anArray = the->aliasArray;
 	anIndex = the->aliasCount;
@@ -770,57 +768,46 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		q = p + XS_ID_COUNT;
 		while (p < q) {
 			aSlot = *p;
-			if (!(aSlot->flag & XS_MARK_FLAG)) {
-				aSlot->flag |= XS_MARK_FLAG;
-				(*theMarker)(the, *p);
-			}
+			aSlot->flag |= XS_MARK_FLAG;
 			p++;
 		}
 	}
-	hole = 0;
+	
+	p = the->nameTable;
+	q = the->nameTable + the->nameModulo;
+	while (p < q) {
+		txSlot** address = p;
+		while ((aSlot = *address)) {
+			if (aSlot->flag & XS_MARK_FLAG) {
+				address = &(aSlot->next);
+			}
+			else {
+				*address = aSlot->next;
+				aSlot->next = C_NULL;
+			}
+		}
+		p++;
+	}
+	
+	the->keyhole = C_NULL;
 	p = the->keyArray;
 	q = p + the->keyIndex - the->keyOffset;
 	while (p < q) {
 		aSlot = *p;
 		if (!(aSlot->flag & XS_MARK_FLAG)) {
-			*p = C_NULL;
-			hole++;
+			if ((aSlot->kind == XS_REFERENCE_KIND) || (aSlot->flag & XS_DONT_ENUM_FLAG)) {
+				aSlot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
+				aSlot->next = the->keyhole;
+				aSlot->kind = XS_UNDEFINED_KIND;
+				the->keyhole = aSlot;
+			}
+			else {
+				aSlot->flag |= XS_MARK_FLAG;
+			}
+			(*theMarker)(the, *p);
 		}
+			
 		p++;
-	}
-	if (hole) {
-		p = the->nameTable;
-		q = the->nameTable + the->nameModulo;
-		while (hole && (p < q)) {
-			txSlot** address = p;
-			while ((aSlot = *address)) {
-				if (aSlot->flag & XS_MARK_FLAG) {
-					address = &(aSlot->next);
-				}
-				else {
-					*address = aSlot->next;
-					hole--;
-				}
-			}
-			p++;
-		}
-	}
-	if (hole) {
-		p = the->symbolTable;
-		q = the->symbolTable + the->symbolModulo;
-		while (hole && (p < q)) {
-			txSlot** address = p;
-			while ((aSlot = *address)) {
-				if (aSlot->flag & XS_MARK_FLAG) {
-					address = &(aSlot->next);
-				}
-				else {
-					*address = aSlot->next;
-					hole--;
-				}
-			}
-			p++;
-		}
 	}
 	
 #ifdef mxNever

@@ -2347,6 +2347,8 @@ txBoolean fxModuleDefineOwnProperty(txMachine* the, txSlot* instance, txID id, t
 
 txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
 {
+	if (id == XS_NO_ID)
+		return 1;
 	if (fxIsKeySymbol(the, id)) {
 		return (id == mxID(_Symbol_toStringTag)) ? 0 : 1;
 	}
@@ -2370,6 +2372,8 @@ txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 txSlot* fxModuleFindProperty(txMachine* the, txSlot* instance, txID id, txIndex index)
 {
+	if (id == XS_NO_ID)
+		return C_NULL;
 	if (fxIsKeySymbol(the, id)) {
 		if (id == mxID(_Symbol_toStringTag))
 			return mxModulePrototype.value.reference->next;
@@ -2414,6 +2418,8 @@ txBoolean fxModuleGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIn
 
 txSlot* fxModuleGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag)
 {
+	if (id == XS_NO_ID)
+		return C_NULL;
 	if (fxIsKeySymbol(the, id)) {
 		if (id == mxID(_Symbol_toStringTag))
 			return mxModulePrototype.value.reference->next;
@@ -2461,6 +2467,8 @@ txBoolean fxModuleGetPrototype(txMachine* the, txSlot* instance, txSlot* result)
 
 txBoolean fxModuleHasProperty(txMachine* the, txSlot* instance, txID id, txIndex index) 
 {
+	if (id == XS_NO_ID)
+		return 0;
 	if (fxIsKeySymbol(the, id)) {
 		return (id == mxID(_Symbol_toStringTag)) ? 1 : 0;
 	}

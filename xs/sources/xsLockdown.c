@@ -716,8 +716,13 @@ void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, t
 			else {
 				if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
 					c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.key.string);
-				else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
-					c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.string);
+				else if (key->kind == XS_REFERENCE_KIND) {
+					key = key->value.reference->next->next;
+					if (key->kind != XS_UNDEFINED_KIND)
+						c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.string);
+					else
+						the->nameBuffer[0] = 0;
+				}
 				else
 					the->nameBuffer[0] = 0;
 				fxConcatStringC(the, slot, "[Symbol(");

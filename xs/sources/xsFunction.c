@@ -243,8 +243,8 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 				if (!(key->flag & XS_DONT_ENUM_FLAG))
 					fxAdornStringC(the, "[", property, "]");
 			}
-			else if (key->kind == XS_INSTANCE_KIND) {
-				key = key->next->next;
+			else if (key->kind == XS_REFERENCE_KIND) {
+				key = key->value.reference->next->next;
 				if (key->kind != XS_UNDEFINED_KIND) {
 					property->kind = key->kind;
 					property->value.string = key->value.string;

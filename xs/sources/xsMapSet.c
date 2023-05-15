@@ -989,7 +989,9 @@ txSlot* fxCanBeHeldWeakly(txMachine* the, txSlot* slot)
 		slot = slot->value.reference;
 	else if (slot->kind == XS_SYMBOL_KIND) {
 		slot = fxGetKey(the, slot->value.symbol);
-		if (slot->kind != XS_INSTANCE_KIND)
+		if (slot->kind == XS_REFERENCE_KIND)
+			slot = slot->value.reference;
+		else
 			slot = C_NULL;
 	}
 	else

@@ -110,12 +110,12 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					id = fxNewNameC(the, (char *)p);
 				else {
 					aSymbolLength = aSymbolLength & mxSymbolMask;
-					id = fxFindKey(the);
+// 					id = fxFindKey(the);
 					if (aSymbolLength > 1) {
-						aSlot = fxNewSlot(the);
-						aSlot->kind = XS_STRING_KIND;
-						aSlot->value.string = (txString)fxNewChunk(the, mxStringLength((char *)p) + 1);
-						c_strcpy(aSlot->value.key.string, (char *)p);
+// 						aSlot = fxNewSlot(the);
+// 						aSlot->kind = XS_STRING_KIND;
+// 						aSlot->value.string = (txString)fxNewChunk(the, mxStringLength((char *)p) + 1);
+// 						c_strcpy(aSlot->value.key.string, (char *)p);
 					}
 					else
 						aSlot = C_NULL;

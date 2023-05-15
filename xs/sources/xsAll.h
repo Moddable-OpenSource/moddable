@@ -414,7 +414,7 @@ struct sxMachine {
 	txID keyIndex;
 	txID keyOffset;
 	txSlot** keyArrayHost;
-	txSlot** freeKey;
+	txSlot* keyhole;
 
 #if mxAliasInstance
 	txID aliasCount;
@@ -788,7 +788,7 @@ extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
 extern void fxCollect(txMachine* the, txFlag theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
-extern txID fxFindKey(txMachine* the);
+extern txSlot* fxFindKey(txMachine* the);
 extern void fxFree(txMachine* the);
 extern void fxGrowKeys(txMachine* the, txID theCount);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);

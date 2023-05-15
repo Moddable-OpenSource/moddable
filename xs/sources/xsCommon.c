@@ -285,7 +285,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 };
 
 const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
-	0 /* XS_NO_CODE */,
+	1 /* XS_NO_CODE */,
 	1 /* XS_CODE_ADD */,
 	2 /* XS_CODE_ARGUMENT */,
 	2 /* XS_CODE_ARGUMENTS */,
