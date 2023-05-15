@@ -40,6 +40,9 @@ if (USE_USB)
 endif()
 
 add_prebuilt_library(xs_esp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_lcd)
+             REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
+
+#             REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_lcd
+			)
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xs_esp32)
