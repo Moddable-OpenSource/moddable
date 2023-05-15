@@ -314,7 +314,7 @@ void _xs_i2c_writeRead(xsMachine *the)
 	i2c_master_read(cmd, ((uint8_t *)bufferRead) + lengthRead - 1, 1, I2C_MASTER_NACK);
 	i2c_master_stop(cmd);
 
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 
 	xSemaphoreGive(gI2CMutex);
