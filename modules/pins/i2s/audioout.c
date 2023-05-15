@@ -1387,7 +1387,7 @@ void audioOutLoop(void *pvParameter)
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 		.sample_rate = out->sampleRate,
-		.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+		.bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
 #if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3
 		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
 #elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1		// I2S_DAC_CHANNEL_RIGHT_EN
