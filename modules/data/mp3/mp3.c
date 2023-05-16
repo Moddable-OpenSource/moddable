@@ -20,6 +20,7 @@
 
 #include "xsHost.h"
 #include "xsmc.h"
+#include "mc.xs.h"
 
 #include "./libmad/config.h"
 #include "./libmad/mad.h"
@@ -97,7 +98,7 @@ void xs_mp3_decode(xsMachine *the)
 		xsUnknownError("closed");
 
 	xsmcGetBufferWritable(xsArg(1), (void *)&mp3->outputBuffer, &count);
-	if ((kMP3SamplesPerFrame * 2) > count)
+	if ((kMP3SamplesPerFrame * sizeof(int16_t)) > count)
 		xsUnknownError("output too small");
 	mp3->outputBufferPosition = 0;
 
@@ -110,8 +111,10 @@ void xs_mp3_decode(xsMachine *the)
 	if (MAD_FLOW_BREAK == result)
 		xsUnknownError("break");
 
-	if ((2 * kMP3SamplesPerFrame) != mp3->outputBufferPosition)
-		xsUnknownError("bad output");
+	if (!mp3->stream.this_frame || !mp3->stream.next_frame)
+		return;
 
-	xsmcSetTrue(xsResult);
+	xsmcSetInteger(xsResult, mp3->outputBufferPosition / sizeof(int16_t));
+	xsmcSet(xsArg(1), xsID_samples, xsResult);
+	xsmcSetInteger(xsResult, mp3->stream.next_frame - mp3->stream.this_frame);
 }

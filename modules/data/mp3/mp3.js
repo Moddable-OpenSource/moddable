@@ -19,7 +19,10 @@
  */
 
 // tables based on https://github.com/biril/mp3-parser/blob/master/lib/lib.js
- const bitRates = Object.freeze([
+// http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm
+// https://github.com/lieff/minimp3/blob/master/minimp3.h#L77
+
+ const bitRates = [
 	[],
 	[],
 	[
@@ -34,7 +37,9 @@
 		[0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],
 		[0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448]
 	],
-], true);
+];
+bitRates[0] = bitRates[2];
+Object.freeze(bitRates, true);
 
 const sampleRates = Object.freeze([
 	[11025, 12000, 8000],
@@ -56,43 +61,65 @@ export default class @ "xs_mp3_destructor" {
 	decode(input, output) @ "xs_mp3_decode";
 	
 	static scan(buffer, start, end, info = {}) {
-		let position = start;
-		while (position < end) {
-			position = buffer.indexOf(0xFF, position);
-			if ((position < 0) || ((position + 4) > end))
+		let position = sync(buffer, start, end, info);
+		if (undefined === position)
+			return;
+
+		info.position = position;
+
+		if (0 === info.length) {
+			position = sync(buffer, position + 1, end);
+			if ((undefined === position) && ((end - start) >= 2048))
 				return;
 
-			let byte = buffer[++position];
-			const mpegVersion = (byte >> 3) & 0x03;
-			const layerVersion = (byte >> 1) & 0x03;
-			if ((byte < 0xE0) || (1 === mpegVersion) || (0 === layerVersion))
-				continue;
-
-			byte = buffer[++position];
-			const bitRate = bitRates[mpegVersion][layerVersion][byte >> 4];
-			const sampleRate = sampleRates[mpegVersion][(byte >> 2) & 3];
-			const padded = (byte >> 1) & 1;
-			if ((undefined === bitRate) || (undefined === sampleRate)) {
-				position -= 1;
-				continue;
-			}
-			
-			let length = sampleLengths[mpegVersion][layerVersion];
-			if (!length) {
-				position -= 1;
-				continue;
-			}
-			length = Math.idiv(length * (bitRate * 1000 / 8), sampleRate);
-			if (padded)
-				length += (3 === layerVersion) ? 4 : 1;
-
-			info.position = position - 2;
-			info.length = length;
-			info.bitRate = bitRate; 
-			info.sampleRate = sampleRate; 
-			
-			return info;
+			info.length = 2048;		// worst case (MAINBUF_SIZE == 1940 in libhelix)
 		}
+
+		return info;
 	}
 	static BUFFER_GUARD = 8;		// MAD_BUFFER_GUARD == 8
 }
+
+function sync(buffer, position, end, info)
+{
+	while (position < end) {
+		position = buffer.indexOf(0xFF, position);
+		if ((position < 0) || ((position + 4) > end))
+			return;
+
+		let byte = buffer[position + 1];
+		if (0xE0 !== (byte & 0xE0)) {
+			position += 1;
+			continue;
+		}
+
+		const mpegVersion = (byte >> 3) & 0x03;
+		const layerVersion = (byte >> 1) & 0x03;
+		if ((1 === mpegVersion) || (0 === layerVersion)) {
+			position += 1;
+			continue;
+		}
+
+		byte = buffer[position + 2];
+		const bitRate = bitRates[mpegVersion][layerVersion][byte >> 4];
+		const sampleRate = sampleRates[mpegVersion][(byte >> 2) & 3];
+		const padded = (byte >> 1) & 1;
+		if ((undefined === bitRate) || (undefined === sampleRate)) {
+			position += 1;
+			continue;
+		}
+
+		if (info) {
+			let length = sampleLengths[mpegVersion][layerVersion];
+			if (length) {
+				length = Math.idiv(length * (bitRate * 1000 / 8), sampleRate);
+				if (padded)
+					length += (3 === layerVersion) ? 4 : 1;
+			}
+			info.length = length;		// will be 0 if unable to calculate it here... for LFR may be too big... that's OK too
+		}
+		
+		return position;
+	}
+}
+
