@@ -219,7 +219,6 @@ txSlot* fxNewFunctionLength(txMachine* the, txSlot* instance, txNumber length)
 txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix)
 {
 	txSlot* property;
-	txSlot* key;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
 	if (property) {
 		if ((property->kind != mxEmptyString.kind) || (property->value.string != mxEmptyString.value.string))
@@ -228,38 +227,11 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 	else
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	if (id != XS_NO_ID) {
-		key = fxGetKey(the, (txID)id);
-		if (key) {
-			txKind kind = mxGetKeySlotKind(key);
-			if (kind == XS_KEY_KIND) {
-				property->kind = XS_STRING_KIND;
-				property->value.string = key->value.key.string;
-				if (!(key->flag & XS_DONT_ENUM_FLAG))
-					fxAdornStringC(the, "[", property, "]");
-			}
-			else if (kind == XS_KEY_X_KIND) {
-				property->kind = XS_STRING_X_KIND;
-				property->value.string = key->value.key.string;
-				if (!(key->flag & XS_DONT_ENUM_FLAG))
-					fxAdornStringC(the, "[", property, "]");
-			}
-			else if (key->kind == XS_REFERENCE_KIND) {
-				key = key->value.reference->next->next;
-				if (key->kind != XS_UNDEFINED_KIND) {
-					property->kind = key->kind;
-					property->value.string = key->value.string;
-					fxAdornStringC(the, "[", property, "]");
-				}
-			}
-			else {
-				property->kind = mxEmptyString.kind;
-				property->value = mxEmptyString.value;
-			}
-		}
-		else {
-			property->kind = mxEmptyString.kind;
-			property->value = mxEmptyString.value;
-		}
+		txBoolean adorn;
+		fxPushKeyString(the, id, &adorn);
+		mxPullSlot(property);
+		if (adorn)
+			fxAdornStringC(the, "[", property, "]");
 	}
 	else if (former) {
 		char buffer[16];

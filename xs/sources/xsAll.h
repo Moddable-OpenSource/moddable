@@ -407,6 +407,9 @@ struct sxMachine {
 	txSlot** nameTable;
 	txSize symbolModulo;
 	txSlot** symbolTable;
+	
+	txID keyholeCount;
+	txSlot* keyholeList;
 
 	txSlot** keyArray;
 	txID keyCount;
@@ -414,7 +417,6 @@ struct sxMachine {
 	txID keyIndex;
 	txID keyOffset;
 	txSlot** keyArrayHost;
-	txSlot* keyhole;
 
 #if mxAliasInstance
 	txID aliasCount;
@@ -1029,12 +1031,14 @@ extern txSlot* fxNewSymbolInstance(txMachine* the);
 extern void fxSymbolToString(txMachine* the, txSlot* slot);
 extern txSlot* fxGetKey(txMachine* the, txID theID);
 extern char* fxGetKeyName(txMachine* the, txID theID);
+extern char* fxGetKeyString(txMachine* the, txID theID, txBoolean* adorn);
 extern txID fxFindName(txMachine* the, txString theString);
 extern txBoolean fxIsKeyName(txMachine* the, txID theID);
 extern txBoolean fxIsKeySymbol(txMachine* the, txID theID);
 extern txID fxNewName(txMachine* the, txSlot* theSlot);
 extern txID fxNewNameC(txMachine* the, txString theString);
 extern txID fxNewNameX(txMachine* the, txString theString);
+extern void fxPushKeyString(txMachine* the, txID theID, txBoolean* adorn);
 extern txSlot* fxAt(txMachine* the, txSlot* slot);
 extern void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot);
 extern void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize);

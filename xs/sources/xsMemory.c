@@ -79,6 +79,7 @@ static void* fxGrowChunk(txMachine* the, txSize size);
 static void* fxGrowChunks(txMachine* the, txSize theSize); 
 /* static */ void fxGrowSlots(txMachine* the, txSize theCount); 
 static void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*));
+static void fxMarkID(txMachine* the, txID id);
 static void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry);
 static void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMachine*, txSlot*));
 static void fxMarkReference(txMachine* the, txSlot* theSlot);
@@ -438,9 +439,10 @@ again:
 		the->keyIndex++;
 		return result;
 	}
-	result = the->keyhole;
+	result = the->keyholeList;
 	if (result) {
-		the->keyhole = result->next;
+		the->keyholeCount--;
+		the->keyholeList = result->next;
 		result->next = C_NULL;
 		return result;
 	}
@@ -661,146 +663,104 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 #endif
 }
 
-void fxMarkID(txMachine* the, txID id, void (*theMarker)(txMachine*, txSlot*))
+void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
+{
+	txSlot** p;
+	txSlot** q;
+	txSlot* slot;
+	txInteger deletions = 0;
+
+#if mxAliasInstance
+	p = the->aliasArray;
+	q = p + the->aliasCount;
+	while (p < q) {
+		if ((slot = *p)) {
+			if (!(slot->flag & XS_MARK_FLAG)) {
+				slot->flag |= XS_MARK_FLAG;
+				(*theMarker)(the, slot);
+			}
+		}
+		p++;
+	}
+#endif
+	
+	slot = the->stackTop;
+	while (slot > the->stack) {
+        slot--;
+		(*theMarker)(the, slot);
+	}
+	slot = the->cRoot;
+	while (slot) {
+		(*theMarker)(the, slot);
+		slot = slot->next;
+	}
+	
+	p = the->keyArray;
+	q = p + the->keyIndex - the->keyOffset;
+	while (p < q) {
+		slot = *p++;
+		if (!(slot->flag & XS_MARK_FLAG)) {
+			if (slot->flag & XS_DONT_DELETE_FLAG)
+				slot->flag |= XS_MARK_FLAG;
+			else if (slot->flag & XS_DONT_ENUM_FLAG)
+				deletions++;
+		}
+	}
+	
+	p = the->nameTable;
+	q = the->nameTable + the->nameModulo;
+	while ((p < q) && deletions) {
+		txSlot** address = p;
+		while (((slot = *address)) && deletions) {
+			if (slot->flag & XS_MARK_FLAG)
+				address = &(slot->next);
+			else {
+				*address = slot->next;
+				deletions--;
+			}
+		}
+		p++;
+	}
+	
+// 	fprintf(stderr, "\n### GC");
+	the->keyholeCount = 0;
+	the->keyholeList = C_NULL;
+	p = the->keyArray;
+	q = p + the->keyIndex - the->keyOffset;
+	while (p < q) {
+		slot = *p;
+		if (slot->flag & XS_MARK_FLAG)
+			(*theMarker)(the, slot);
+		else {
+// 			if (slot->kind != XS_UNDEFINED_KIND) {	
+// 				fxIDToString(the, slot->ID, the->nameBuffer, sizeof(the->nameBuffer));
+// 				fprintf(stderr, " %s", the->nameBuffer);
+// 			}
+			slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_MARK_FLAG;
+			slot->next = the->keyholeList;
+			slot->kind = XS_UNDEFINED_KIND;
+			the->keyholeCount++;
+			the->keyholeList = slot;
+		}
+		p++;
+	}
+// 	fprintf(stderr, "\n");
+	
+#ifdef mxNever
+	stopTime(&gxMarkTime);
+#endif
+}
+
+void fxMarkID(txMachine* the, txID id)
 {
 	txSlot* slot;
+	if (id == XS_NO_ID)
+		return;
 	if (id < the->keyOffset)
 		return;
 	id -= the->keyOffset;
 	slot = the->keyArray[id];
 	slot->flag |= XS_MARK_FLAG;
-}
-
-void fxMarkCodeID(txMachine* the, txByte* codeBuffer, void (*theMarker)(txMachine*, txSlot*))
-{
-	const txS1* bytes = gxCodeSizes;
-	txSize codeSize = ((txChunk*)(((txByte*)(codeBuffer)) - sizeof(txChunk)))->size - sizeof(txChunk);
-	register txByte* p = codeBuffer;
-	register txByte* q = codeBuffer + codeSize;
-	register txS1 offset;
-	txID id;
-	while (p < q) {
-// 		fprintf(stderr, "%s\n", gxCodeNames[*((txU1*)p)]);
-		offset = (txS1)c_read8(bytes + c_read8(p));
-		if (0 < offset)
-			p += offset;
-		else if (0 == offset) {
-			p++;
-			mxDecodeID(p, id);
-			if (id != XS_NO_ID) {
-				fxMarkID(the, id, theMarker);
-			}
-		}
-		else if (-1 == offset) {
-			txU1 index;
-			p++;
-			index = *((txU1*)p);
-			p += 1 + index;
-		}
-        else if (-2 == offset) {
-			txU2 index;
-            p++;
-            mxDecode2(p, index);
-            p += index;
-        }
-        else if (-4 == offset) {
-			txS4 index;
-            p++;
-            mxDecode4(p, index);
-            p += index;
-        }
-	}
-}
-
-void fxMarkSlotID(txMachine* the, txSlot* slot, void (*theMarker)(txMachine*, txSlot*))
-{
-	if (slot->flag & XS_INTERNAL_FLAG)
-		return;
-	if (slot->ID == XS_NO_ID)
-		return;
-	fxMarkID(the, slot->ID, theMarker);
-}
-
-void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
-{
-#if mxAliasInstance
-	txInteger anIndex;
-	txSlot** anArray;
-#endif
-	txSlot* aSlot;
-	txSlot** p;
-	txSlot** q;
-
-#if mxAliasInstance
-	anArray = the->aliasArray;
-	anIndex = the->aliasCount;
-	while (anIndex) {
-		if ((aSlot = *anArray)) {
-			if (!(aSlot->flag & XS_MARK_FLAG)) {
-				(*theMarker)(the, aSlot);
-				aSlot->flag |= XS_MARK_FLAG;
-			}
-		}
-		anArray++;
-		anIndex--;
-	}
-#endif
-	
-	aSlot = the->stackTop;
-	while (aSlot > the->stack) {
-        aSlot--;
-        fxMarkSlotID(the, aSlot, theMarker);
-		(*theMarker)(the, aSlot);
-	}
-	aSlot = the->cRoot;
-	while (aSlot) {
-		(*theMarker)(the, aSlot);
-		aSlot = aSlot->next;
-	}
-	
-	p = the->keyArray;
-	q = p + the->keyIndex - the->keyOffset;
-	while (p < q) {
-		aSlot = *p++;
-		if (aSlot->flag & XS_DONT_DELETE_FLAG)
-			aSlot->flag |= XS_MARK_FLAG;
-	}
-	
-	p = the->nameTable;
-	q = the->nameTable + the->nameModulo;
-	while (p < q) {
-		txSlot** address = p;
-		while ((aSlot = *address)) {
-			if (aSlot->flag & XS_MARK_FLAG)
-				address = &(aSlot->next);
-			else
-				*address = aSlot->next;
-		}
-		p++;
-	}
-	
-	fprintf(stderr, "\n### GC\n");
-	the->keyhole = C_NULL;
-	p = the->keyArray;
-	q = p + the->keyIndex - the->keyOffset;
-	while (p < q) {
-		aSlot = *p;
-		if (aSlot->flag & XS_MARK_FLAG)
-			(*theMarker)(the, aSlot);
-		else {	
-			fxIDToString(the, aSlot->ID, the->nameBuffer, sizeof(the->nameBuffer));
-			fprintf(stderr, "%s\n", the->nameBuffer);
-			aSlot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
-			aSlot->next = the->keyhole;
-			aSlot->kind = XS_UNDEFINED_KIND;
-			the->keyhole = aSlot;
-		}
-		p++;
-	}
-	
-#ifdef mxNever
-	stopTime(&gxMarkTime);
-#endif
 }
 
 void fxMarkFinalizationRegistry(txMachine* the, txSlot* registry) 
@@ -848,7 +808,8 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 						aProperty = aProperty->next;
 					break;
 				case XS_REFERENCE_KIND:
-					fxMarkSlotID(the, aProperty, theMarker);
+					if (!(aProperty->flag & XS_INTERNAL_FLAG))
+						fxMarkID(the, aProperty->ID);
 					aTemporary = aProperty->value.reference;
 					if (!(aTemporary->flag & XS_MARK_FLAG)) {
 						aProperty->value.reference = theCurrent;
@@ -883,7 +844,8 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					break;
 					
 				case XS_CLOSURE_KIND:
-					fxMarkSlotID(the, aProperty, theMarker);
+					if (!(aProperty->flag & XS_INTERNAL_FLAG))
+						fxMarkID(the, aProperty->ID);
 					aTemporary = aProperty->value.closure;
 					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
 						aTemporary->flag |= XS_MARK_FLAG; 
@@ -908,13 +870,14 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					
 				case XS_CALLBACK_KIND:
 				case XS_CODE_KIND:
-					fxMarkID(the, aProperty->ID, theMarker);
+					fxMarkID(the, aProperty->ID);
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
 					break;	
 				
 				default:
-					fxMarkSlotID(the, aProperty, theMarker);
+					if (!(aProperty->flag & XS_INTERNAL_FLAG))
+						fxMarkID(the, aProperty->ID);
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
 					break;	
@@ -1019,7 +982,6 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			if (aLength > theSlot->value.array.length)
 				aLength = theSlot->value.array.length;
 			while (aLength) {
-				fxMarkSlotID(the, aSlot, fxMarkReference);
 				fxMarkReference(the, aSlot);
 				aSlot++;
 				aLength--;
@@ -1034,7 +996,6 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_CODE_KIND:
-// 		fxMarkCodeID(the, theSlot->value.code.address, fxMarkReference);
 		// continue
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
@@ -1059,7 +1020,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_PROGRAM_KIND:
 		fxCheckCStack(the);
 		if (theSlot->value.module.id != XS_NO_ID)
-			fxMarkID(the, theSlot->value.module.id, fxMarkReference);
+			fxMarkID(the, theSlot->value.module.id);
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
@@ -1201,11 +1162,10 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		
 	case XS_SYMBOL_KIND:
 		if (!(theSlot->flag & XS_INTERNAL_FLAG))
-			fxMarkID(the, theSlot->value.symbol, fxMarkReference);
+			fxMarkID(the, theSlot->value.symbol);
 		break;	
 	case XS_AT_KIND:
-		if (theSlot->value.at.id != XS_NO_ID)
-			fxMarkID(the, theSlot->value.at.id, fxMarkReference);
+		fxMarkID(the, theSlot->value.at.id);
 		break;	
 	}
 }
@@ -1252,7 +1212,6 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 				if (aLength > theSlot->value.array.length)
 					aLength = theSlot->value.array.length;
 				while (aLength) {
-					fxMarkSlotID(the, aSlot, fxMarkValue);
 					fxMarkValue(the, aSlot);
 					aSlot++;
 					aLength--;
@@ -1273,7 +1232,6 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		}
 		break;
 	case XS_CODE_KIND:
-// 		fxMarkCodeID(the, theSlot->value.code.address, fxMarkValue);
 		mxMarkChunk(theSlot->value.code.address);
 		/* continue */
 	case XS_CODE_X_KIND:
@@ -1340,7 +1298,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
 		if (theSlot->value.module.id != XS_NO_ID)
-			fxMarkID(the, theSlot->value.module.id, fxMarkValue);
+			fxMarkID(the, theSlot->value.module.id);
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
 			fxCheckCStack(the);
@@ -1475,11 +1433,10 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		
 	case XS_SYMBOL_KIND:
 		if (!(theSlot->flag & XS_INTERNAL_FLAG))
-			fxMarkID(the, theSlot->value.symbol, fxMarkValue);
+			fxMarkID(the, theSlot->value.symbol);
 		break;	
 	case XS_AT_KIND:
-		if (theSlot->value.at.id != XS_NO_ID)
-			fxMarkID(the, theSlot->value.at.id, fxMarkValue);
+		fxMarkID(the, theSlot->value.at.id);
 		break;	
 	}
 }

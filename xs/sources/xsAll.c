@@ -147,28 +147,14 @@ void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, t
 {
 	txInteger length;
 	if (id != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, id);
-		if (key) {
-			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-				if (key->flag & XS_DONT_ENUM_FLAG) {
-					c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-					return;
-				}
-				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-				return;
-			}
-			if (key->kind == XS_REFERENCE_KIND) {
-				key = key->value.reference->next->next;
-				if (key->kind != XS_UNDEFINED_KIND) {
-					c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
-					c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
-					c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-					return;
-				}
-			}
-		}
+		txBoolean adorn;
+		txString string = fxGetKeyString(the, id, &adorn);
+		if (adorn)
+			c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
+		c_strncat(buffer, string, size - mxStringLength(buffer) - 1);
+		if (adorn)
+			c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
+		return;
 	}
 	if (address) {
 		c_strncat(buffer, "@", size - mxStringLength(buffer) - 1);

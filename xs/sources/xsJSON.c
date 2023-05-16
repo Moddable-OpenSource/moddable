@@ -923,13 +923,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 						if (mxBehaviorGetOwnProperty(the, anInstance, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 							mxPushReference(anInstance);
 							mxGetAll(at->value.at.id, at->value.at.index);
-							if (at->value.at.id) {
-								txSlot* key = fxGetKey(the, at->value.at.id);
-								if (mxGetKeySlotKind(key) == XS_KEY_KIND)
-									mxPushString(key->value.key.string);
-								else
-									mxPushStringX(key->value.key.string);
-							}
+							if (at->value.at.id)
+								fxPushKeyString(the, at->value.at.id, C_NULL);
 							else
 								mxPushInteger((txInteger)at->value.at.index);
 							fxStringifyJSONProperty(the, theStringifier, &aFlag);

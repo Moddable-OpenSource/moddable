@@ -106,21 +106,9 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 			while (aSymbolCount) {
 				txID id;
 				aSymbolLength = *aSymbolPointer;
-				if ((aSymbolLength & mxSymbolBit) == 0)
-					id = fxNewNameC(the, (char *)p);
-				else {
-					aSymbolLength = aSymbolLength & mxSymbolMask;
-// 					id = fxFindKey(the);
-					if (aSymbolLength > 1) {
-// 						aSlot = fxNewSlot(the);
-// 						aSlot->kind = XS_STRING_KIND;
-// 						aSlot->value.string = (txString)fxNewChunk(the, mxStringLength((char *)p) + 1);
-// 						c_strcpy(aSlot->value.key.string, (char *)p);
-					}
-					else
-						aSlot = C_NULL;
-					the->keyArray[id - the->keyOffset] = aSlot;
-				}
+				mxPushStringC((char *)p);
+				id = fxNewName(the, the->stack);
+				mxPop();
 				*aSymbolPointer++ = id;
 				aSymbolCount--;
 				p += aSymbolLength;
@@ -475,6 +463,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			txID dstIndex = 1;
 			txSlot** p;
 			txSlot** q;
+			txSlot* key;
 			aBuffer.current += aBuffer.symbolCount * sizeof(txID);
 			if (alien) {
 				p = the->keyArrayHost;
@@ -483,17 +472,10 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 					txID length = *map;
 					if (length) {
 						*map = dstIndex;
-						if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
-							*lengths++ = length;
-							c_memcpy(aBuffer.current, (*p)->value.key.string, length);
-						}
-						else {
-							*lengths++ = mxSymbolBit | length;
-							if (length > 1)
-								c_memcpy(aBuffer.current, (*p)->value.string, length);
-							else
-								*aBuffer.current = 0;
-						}
+						key = *p;
+						mxCheck(the, (key->kind == XS_KEY_KIND) || (key->kind  == XS_KEY_X_KIND));
+						*lengths++ = length;
+						c_memcpy(aBuffer.current, key->value.key.string, length);
 						aBuffer.current += length;
 						dstIndex++;
 					}
@@ -509,17 +491,10 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 				txID length = *map;
 				if (length) {
 					*map = dstIndex;
-					if ((*p) && ((*p)->flag & XS_DONT_ENUM_FLAG)) {
-						*lengths++ = length;
-						c_memcpy(aBuffer.current, (*p)->value.key.string, length);
-					}
-					else {
-						*lengths++ = mxSymbolBit | length;
-						if (length > 1)
-							c_memcpy(aBuffer.current, (*p)->value.string, length);
-						else
-							*aBuffer.current = 0;
-					}
+					key = *p;
+					mxCheck(the, (key->kind == XS_KEY_KIND) || (key->kind  == XS_KEY_X_KIND));
+					*lengths++ = length;
+					c_memcpy(aBuffer.current, key->value.key.string, length);
 					aBuffer.current += length;
 					dstIndex++;
 				}
@@ -763,37 +738,27 @@ void fxMeasureChunk(txMachine* the, void* theData, txMarshallBuffer* theBuffer)
 
 void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoolean alien)
 {
-	txSlot* aSlot;
+	txSlot* key;
 	txSize aLength;
 	if (theID != XS_NO_ID) {
 		if (alien) {
 			if (theBuffer->symbolMap[theID])
 				return;
 			if (theID >= the->keyOffset)
-				aSlot = the->keyArray[theID - the->keyOffset];
+				key = the->keyArray[theID - the->keyOffset];
 			else
-				aSlot = the->keyArrayHost[theID];
+				key = the->keyArrayHost[theID];
 		}
 		else if (theID >= the->keyOffset) {
 			theID -= the->keyOffset;
 			if (theBuffer->symbolMap[theID])
 				return;
-			aSlot = the->keyArray[theID];
+			key = the->keyArray[theID];
 		}
 		else
 			return;
-		if (aSlot) {
-			if (aSlot->flag & XS_DONT_ENUM_FLAG) {
-				aLength = mxStringLength(aSlot->value.key.string) + 1;
-			}
-			else if (aSlot->kind != XS_UNDEFINED_KIND) {
-				aLength = mxStringLength(aSlot->value.string) + 1;
-			}
-			else
-				aLength = 1;
-		}
-		else
-			aLength = 1;
+		mxCheck(the, (key->kind == XS_KEY_KIND) || (key->kind  == XS_KEY_X_KIND));
+		aLength = mxStringLength(key->value.key.string) + 1;
 // 		if (aLength > XS_ID_MASK)
 // 			mxRangeError("marshall: key overflow");
 		theBuffer->symbolMap[theID] = (txID)aLength;
@@ -857,7 +822,10 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		break;
 		
 	case XS_SYMBOL_KIND:
-		fxMeasureKey(the, theSlot->value.symbol, theBuffer, alien);
+		if (!alien && (theSlot->value.symbol < the->keyOffset))
+			fxMeasureKey(the, theSlot->value.symbol, theBuffer, alien);
+		else
+			fxMeasureThrow(the, theBuffer, "symbol");
 		break;
 		
 	case XS_HOST_KIND: 
@@ -878,12 +846,27 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		theSlot->value.instance.garbage = C_NULL;
 		aSlot = theSlot->next;
 		while (aSlot) {
-			if (aSlot->flag & XS_INTERNAL_FLAG)
+			if (aSlot->flag & XS_INTERNAL_FLAG) {
 				mxPushUndefined();
-			else
-				mxPushAt(aSlot->ID, 0);
-			fxMeasureSlot(the, aSlot, theBuffer, alien);
-			mxPop();
+				fxMeasureSlot(the, aSlot, theBuffer, alien);
+				mxPop();
+			}
+			else {
+				txID id = aSlot->ID;
+				if (!alien && (id < the->keyOffset)) {
+					mxPushAt(aSlot->ID, 0);
+					fxMeasureSlot(the, aSlot, theBuffer, alien);
+					mxPop();
+				}
+				else {
+					txSlot* key = fxGetKey(the, id);
+					if (key->flag & XS_DONT_ENUM_FLAG) {
+						mxPushAt(aSlot->ID, 0);
+						fxMeasureSlot(the, aSlot, theBuffer, alien);
+						mxPop();
+					}
+				}
+			}
 			aSlot = aSlot->next;
 		}
 		break;	
@@ -933,7 +916,9 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		if (!alien && (aSlot->flag & XS_DONT_MARSHALL_FLAG)) {
 			aSlot = theSlot->value.private.first;
 			while (aSlot) {
+				mxPushAt(aSlot->ID, 0);
 				fxMeasureSlot(the, aSlot, theBuffer, alien);
+				mxPop();
 				aSlot = aSlot->next;
 			}
 		}
@@ -997,12 +982,13 @@ void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString messag
 		slot--;
 		if (slot->kind == XS_AT_KIND) {
 			if (slot->value.at.id != XS_NO_ID) {
-				txSlot* key = fxGetKey(the, slot->value.at.id);
-				if (key) {
-					txKind kind = mxGetKeySlotKind(key);
-					if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND)) {
-						if (i < c) i += c_snprintf(buffer + i, c - i, ".%s", key->value.string);
-					}
+				txBoolean adorn;
+				txString string = fxGetKeyString(the, slot->value.at.id, &adorn);
+				if (adorn) {
+					if (i < c) i += c_snprintf(buffer + i, c - i, "[%s]", string);
+				}
+				else {
+					if (i < c) i += c_snprintf(buffer + i, c - i, ".%s", string);
 				}
 			}
 			else {

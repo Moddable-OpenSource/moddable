@@ -649,7 +649,7 @@ int32_t modInstrumentationChunkHeapSize(xsMachine *the)
 
 int32_t modInstrumentationKeysUsed(xsMachine *the)
 {
-	return the->keyIndex - the->keyOffset;
+	return the->keyIndex - the->keyOffset - the->keyholeCount;
 }
 
 int32_t modInstrumentationGarbageCollectionCount(xsMachine *the)

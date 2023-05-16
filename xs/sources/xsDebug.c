@@ -1290,7 +1290,6 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txID ID = theProperty->ID;
 	txFlag flag = theProperty->flag;
 	txSlot* instance;
-	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
         if (!theProperty)
@@ -1431,10 +1430,8 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			fxEcho(the, "'\"/>");
 			break;
 		case XS_SYMBOL_KIND:
-			name = fxGetKeyName(the, theProperty->value.symbol);
 			fxEcho(the, " value=\"Symbol(");
-			if (name)
-				fxEchoString(the, name);
+			fxEchoString(the, fxGetKeyString(the, theProperty->value.symbol, C_NULL));
 			fxEcho(the, ")\"/>");
 			break;
 		case XS_DATA_VIEW_KIND:
@@ -2390,7 +2387,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[4] = (mxPtrDiff(the->stackTop - the->stackPeak)) * sizeof(txSlot);
 	xsInstrumentValues[5] = (mxPtrDiff(the->stackTop - the->stackBottom)) * sizeof(txSlot);
 	xsInstrumentValues[6] = the->garbageCollectionCount;
-	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
+	xsInstrumentValues[7] = the->keyIndex - the->keyOffset - the->keyholeCount;
 	xsInstrumentValues[8] = the->loadedModulesCount;
 	xsInstrumentValues[9] = the->peakParserSize;
 	xsInstrumentValues[10] = the->floatingPointOps;
