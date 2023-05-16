@@ -253,6 +253,15 @@ That is especially useful for exchanging references to objects with methods, lik
 		trace(`${m.message2}\n`); // world
 	}
 
+### Symbols
+
+Properties keyed by symbols are ignored when marshalled.
+
+
+Except when the symbol is created in the read-only machine.
+
+
+
 
 ### Exchange Data, Share Code
 
