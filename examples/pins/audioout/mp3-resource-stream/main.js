@@ -16,23 +16,11 @@ import AudioOut from "pins/audioout"
 import ResourceStreamer from "mp3resourcestreamer";
 import Timer from "timer";
 
-
-/*
-
-	Let's make some test files!
-
-		https://trac.ffmpeg.org/wiki/Encode/MP3
-
-	ffmpeg -i input.wav -codec:a libmp3lame -qscale:a 2 output.mp3
-
-	curl --url http://ice2.somafm.com/groovesalad-128-mp3 --output groovesalad.mp3
-
-*/
-
-function calculatePower(samplea) @ "xs_calculatePower";
+function calculatePower(samples) @ "xs_calculatePower";
 
 const audio = new AudioOut({
-	sampleRate: 44100
+	sampleRate: 44100,
+	streams: 1
 });
 let streamer
 
@@ -47,7 +35,7 @@ async function stream() {
 		audio: {
 			out: audio,
 			stream: 0,
-			sampleRate: 48000
+			sampleRate: audio.sampleRate
 		},
 		onPlayed(buffer) {
 			const power = calculatePower(buffer);

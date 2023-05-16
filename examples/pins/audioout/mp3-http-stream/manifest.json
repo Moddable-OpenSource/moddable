@@ -31,7 +31,7 @@
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
-			"queueLength": 48
+			"queueLength": 12
 		}
 	},
 	"config": {
