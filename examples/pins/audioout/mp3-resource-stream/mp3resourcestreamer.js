@@ -89,10 +89,12 @@ class ResourceStreamer {
 			
 			const slice = new SharedArrayBuffer(1152 * 2);
 			let result = this.#mp3.decode(this.#resource.subarray(found.position, found.position + found.length + MP3.BUFFER_GUARD), slice);
-			if (!result)
-				throw new Error("bad mp3 data");
+			if (!result) {
+				this.#resource.position += 1;
+				continue;
+			}
 
-			this.#resource.position = found.position + found.length;
+			this.#resource.position = found.position + result;
 
 			this.#audio.enqueue(
 				this.#stream,
@@ -100,7 +102,7 @@ class ResourceStreamer {
 				slice,
 				1,
 				0,
-				slice.byteLength / this.#bytesPerSample
+				slice.samples
 			);
 			this.#audio.enqueue(
 				this.#stream,
@@ -110,7 +112,7 @@ class ResourceStreamer {
 			this.#bytesQueued += slice.byteLength;
 			this.#playing.push(slice);
 
-			if ((found.position + found.length) >= this.#resource.byteLength)
+			if (found.position >= this.#resource.byteLength)
 				this.#audio.enqueue(0, this.#audio.constructor.Callback, 0);
 	    }
 	}
