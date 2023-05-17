@@ -675,10 +675,8 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 	q = p + the->aliasCount;
 	while (p < q) {
 		if ((slot = *p)) {
-			if (!(slot->flag & XS_MARK_FLAG)) {
-				slot->flag |= XS_MARK_FLAG;
-				(*theMarker)(the, slot);
-			}
+			(*theMarker)(the, slot);
+			slot->flag |= XS_MARK_FLAG;
 		}
 		p++;
 	}

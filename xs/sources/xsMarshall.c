@@ -62,11 +62,11 @@ static txID fxDemarshallKey(txMachine* the, txID id, txID* theSymbolMap, txBoole
 static void fxDemarshallReference(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, txID* theSymbolMap, txBoolean alien);
 static void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* theSymbolMap, txBoolean alien);
 static void fxMarshallChunk(txMachine* the, void* theData, void** theDataAddress, txMarshallBuffer* theBuffer);
-static txID fxMarshallKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txBoolean alien);
+static txBoolean fxMarshallKey(txMachine* the, txSlot* slot, txMarshallBuffer* theBuffer, txBoolean alien);
 static void fxMarshallReference(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, txMarshallBuffer* theBuffer, txBoolean alien);
 static txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, txMarshallBuffer* theBuffer, txBoolean alien);
 static void fxMeasureChunk(txMachine* the, void* theData, txMarshallBuffer* theBuffer);
-static void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoolean alien);
+static txBoolean fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoolean alien);
 static void fxMeasureReference(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer, txBoolean alien);
 static void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer, txBoolean alien);
 static void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString message);
@@ -550,17 +550,34 @@ void fxMarshallChunk(txMachine* the, void* theData, void** theDataAddress, txMar
 	mxMarshallAlign(theBuffer->current, aSize);
 }
 
-txID fxMarshallKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txBoolean alien)
+txBoolean fxMarshallKey(txMachine* the, txSlot* slot, txMarshallBuffer* theBuffer, txBoolean alien)
 {
-	if (id != XS_NO_ID) {
-		if (alien) {
-            id = theBuffer->symbolMap[id];
-		}
-		else if (id >= the->keyOffset) {
-            id = theBuffer->symbolMap[id - the->keyOffset];
-        }
+	txID id = slot->ID;
+	txSlot* result = (txSlot*)(theBuffer->current);
+	txSlot* key;
+	if ((id == XS_NO_ID) || (slot->flag & XS_INTERNAL_FLAG)) {
+		result->ID = id;
+		return 1;
 	}
-	return id;
+	if (alien) {
+		key = fxGetKey(the, id);
+		if (key->flag & XS_DONT_ENUM_FLAG) {
+			result->ID = theBuffer->symbolMap[id];
+			return 1;
+		}
+	}
+	else if (id >= the->keyOffset) {
+		key = fxGetKey(the, id);
+		if (key->flag & XS_DONT_ENUM_FLAG) {
+			result->ID = theBuffer->symbolMap[id - the->keyOffset];
+			return 1;
+		}
+	}
+	else {
+		result->ID = id;
+		return 1;
+	}
+	return 0;
 }
 
 void fxMarshallReference(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, txMarshallBuffer* theBuffer, txBoolean alien)
@@ -579,12 +596,10 @@ txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 	txSlot* aSlot;
 	txSlot** aSlotAddress;
 	
+	if (!fxMarshallKey(the, theSlot, theBuffer, alien))
+		return 0;
 	aResult = (txSlot*)(theBuffer->current);
 	theBuffer->current += sizeof(txSlot);
-	if (!(theSlot->flag & XS_INTERNAL_FLAG))
-		aResult->ID = fxMarshallKey(the, theSlot->ID, theBuffer, alien);
-	else
-		aResult->ID = theSlot->ID;
 	aResult->flag = theSlot->flag;
 	aResult->kind = theSlot->kind;
 	aResult->value = theSlot->value;
@@ -625,7 +640,7 @@ txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 		break;
 		
 	case XS_SYMBOL_KIND:
-		aResult->value.symbol = fxMarshallKey(the, theSlot->value.symbol, theBuffer, alien);
+		aResult->value.symbol = theSlot->value.symbol; //@@ only shared symbols remain
 		break;
 		
 	case XS_HOST_KIND: 
@@ -736,36 +751,34 @@ void fxMeasureChunk(txMachine* the, void* theData, txMarshallBuffer* theBuffer)
 	mxMarshallAlign(theBuffer->size, aSize);
 }
 
-void fxMeasureKey(txMachine* the, txID theID, txMarshallBuffer* theBuffer, txBoolean alien)
+txBoolean fxMeasureKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txBoolean alien)
 {
 	txSlot* key;
-	txSize aLength;
-	if (theID != XS_NO_ID) {
-		if (alien) {
-			if (theBuffer->symbolMap[theID])
-				return;
-			if (theID >= the->keyOffset)
-				key = the->keyArray[theID - the->keyOffset];
-			else
-				key = the->keyArrayHost[theID];
-		}
-		else if (theID >= the->keyOffset) {
-			theID -= the->keyOffset;
-			if (theBuffer->symbolMap[theID])
-				return;
-			key = the->keyArray[theID];
-		}
-		else
-			return;
-		mxCheck(the, (key->kind == XS_KEY_KIND) || (key->kind  == XS_KEY_X_KIND));
-		aLength = mxStringLength(key->value.key.string) + 1;
-// 		if (aLength > XS_ID_MASK)
-// 			mxRangeError("marshall: key overflow");
-		theBuffer->symbolMap[theID] = (txID)aLength;
-		theBuffer->symbolSize += sizeof(txID);
-		theBuffer->symbolSize += aLength;
-		theBuffer->symbolCount++;
+	txSize length;
+	if (id == XS_NO_ID)
+		return 1;
+	if (alien) {
+		if (theBuffer->symbolMap[id])
+			return 1;
+		key = fxGetKey(the, id);
+		if (!(key->flag & XS_DONT_ENUM_FLAG))
+			return 0;
 	}
+	else if (id >= the->keyOffset) {
+		if (theBuffer->symbolMap[id - the->keyOffset])
+			return 1;
+		key = fxGetKey(the, id);
+		if (!(key->flag & XS_DONT_ENUM_FLAG))
+			return 0;
+	}
+	else
+		return 1;
+	length = mxStringLength(key->value.key.string) + 1;	
+	theBuffer->symbolMap[id] = (txID)length;
+	theBuffer->symbolSize += sizeof(txID);
+	theBuffer->symbolSize += length;
+	theBuffer->symbolCount++;
+	return 1;
 }
 
 void fxMeasureReference(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer, txBoolean alien)
@@ -783,8 +796,8 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 {
 	txSlot* aSlot;
 
-	if (!(theSlot->flag & XS_INTERNAL_FLAG))
-		fxMeasureKey(the, theSlot->ID, theBuffer, alien);
+	if (!(theSlot->flag & XS_INTERNAL_FLAG) && !fxMeasureKey(the, theSlot->ID, theBuffer, alien))
+		return;
 	theBuffer->size += sizeof(txSlot);
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:
@@ -822,9 +835,7 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		break;
 		
 	case XS_SYMBOL_KIND:
-		if (!alien && (theSlot->value.symbol < the->keyOffset))
-			fxMeasureKey(the, theSlot->value.symbol, theBuffer, alien);
-		else
+		if (!fxMeasureKey(the, theSlot->value.symbol, theBuffer, alien))
 			fxMeasureThrow(the, theBuffer, "symbol");
 		break;
 		
@@ -846,27 +857,9 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		theSlot->value.instance.garbage = C_NULL;
 		aSlot = theSlot->next;
 		while (aSlot) {
-			if (aSlot->flag & XS_INTERNAL_FLAG) {
-				mxPushUndefined();
-				fxMeasureSlot(the, aSlot, theBuffer, alien);
-				mxPop();
-			}
-			else {
-				txID id = aSlot->ID;
-				if (!alien && (id < the->keyOffset)) {
-					mxPushAt(aSlot->ID, 0);
-					fxMeasureSlot(the, aSlot, theBuffer, alien);
-					mxPop();
-				}
-				else {
-					txSlot* key = fxGetKey(the, id);
-					if (key->flag & XS_DONT_ENUM_FLAG) {
-						mxPushAt(aSlot->ID, 0);
-						fxMeasureSlot(the, aSlot, theBuffer, alien);
-						mxPop();
-					}
-				}
-			}
+			mxPushAt(aSlot->ID, 0);
+			fxMeasureSlot(the, aSlot, theBuffer, alien);
+			mxPop();
 			aSlot = aSlot->next;
 		}
 		break;	

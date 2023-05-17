@@ -3053,7 +3053,7 @@ void fx_ModuleSource_prototype_get_bindings(txMachine* the)
 						slot = fxNextSlotProperty(the, slot, the->stack, mxID(_export), XS_NO_FLAG);
 						mxPop();
 						if (alias->value.symbol != import->value.symbol) {
-							fxPushKeyString(the, local->value.symbol, C_NULL);
+							fxPushKeyString(the, alias->value.symbol, C_NULL);
 							slot = fxNextSlotProperty(the, slot, the->stack, mxID(_as), XS_NO_FLAG);
 							mxPop();
 						}
