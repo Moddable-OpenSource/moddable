@@ -175,7 +175,8 @@ LDFLAGS += \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
 	-Xlinker -no-enum-size-warning \
-	-Xlinker -Map=$(BIN_DIR)/xs_lib.map
+	-Xlinker -Map=$(BIN_DIR)/xs_lib.map \
+	-Xlinker -cref
 
 LIB_FILES += \
 	-lc -lnosys -lm \
