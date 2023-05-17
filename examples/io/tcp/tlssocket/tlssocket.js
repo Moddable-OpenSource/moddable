@@ -75,18 +75,30 @@ class TLSSocket {
 
 		let result;
 		if (this.#format) {
-//@@ if count is a buffer, copy data into buffer
-			if (count) {
-				result = data.slice(data.position, data.position + count);
-				data.position += count;
+			if (undefined !== count) {
+				const available = data.byteLength - data.position;
+				if ("object" === typeof count) {
+					result = count.byteLength;
+					if (result > available)
+						result = available;
+
+					const buffer = ArrayBuffer.isView(count) ? new Uint8Array(count.buffer, count.byteOffset, result) : new Uint8Array(count.buffer);
+					buffer.set(data.subarray(data.position, data.position + result)); 
+					data.position += result;
+				}
+				else {
+					if (count > available)
+						throw new Error("invalid")
+					result = data.slice(data.position, data.position + count).buffer;
+					data.position += count;
+				}
 				if (data.position === data.byteLength)
 					this.#data = undefined;
 			}
-			else {
-				result = data.slice(data.position, data.end);
+			else {	// could optimize when entire buffer is requested
+				result = data.slice(data.position, data.position + data.byteLength).buffer;
 				this.#data = undefined;
 			}
-			result = result.buffer;
 		}
 		else {
 			result = data[data.position++];

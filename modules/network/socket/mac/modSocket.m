@@ -95,6 +95,9 @@ static void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamEr
 
 static void socketDownUseCount(xsMachine *the, xsSocket xss)
 {
+	if (xss->done)
+		return;
+
 	xss->useCount -= 1;
 	if (xss->useCount <= 0) {
 		xsDestructor destructor = xsGetHostDestructor(xss->obj);

@@ -1,6 +1,6 @@
 # Files
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: November 28, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: April 30, 2023
 
 ## Table of Contents
 
@@ -456,7 +456,7 @@ When not in use (when all files and file iterators are closed), the littlefs imp
 ## class ZIP
 
 - **Source code:** [zip](../../modules/files/zip)
-- **Relevant Examples:** [zip](../../examples/files/zip/)
+- **Relevant Examples:** [zip](../../examples/files/zip/), [httpzip](../../examples/network/http/httpzip)
 
 The `ZIP` class implements read-only file system access to the contents of a ZIP file stored in memory. Typically these are stored in flash memory. A ZIP file is a convenient way to embed a read-only file system into a project.
 

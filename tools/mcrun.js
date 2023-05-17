@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -460,18 +460,32 @@ export default class extends Tool {
 			file = new MakeFile(path);
 			file.generate(this);
 			if (this.make) {
+				let cmd;
 				if (this.buildTarget) {
 					if (this.windows)
-						this.then("nmake", "/nologo", "/f", path, this.buildTarget);
+						cmd = ["nmake", "/nologo", "/f", path, this.buildTarget];
 					else 
-						this.then("make", "-f", path, this.buildTarget);
+						cmd = ["make", "-f", path, this.buildTarget];
 				}
 				else {
 					if (this.windows)
-						this.then("nmake", "/nologo", "/f", path);
+						cmd = ["nmake", "/nologo", "/f", path];
 					else
-						this.then("make", "-f", path);
+						cmd = ["make", "-f", path];
 				}
+
+				if ("esp32" === this.platform) {
+					if (this.getenv("IDF_PATH")) {		// IDF not required for mcrun; if present, set it up so we use the same Python environment as mcconfig
+						if (this.spawn(this.windows ? "where" : "which", "idf.py") !== 0) { // IDF installed but not sourced
+							if (this.windows)
+								cmd = ["cmd", "/C", `set IDF_EXPORT_QUIET=1 && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\\idf_cmd_init.bat" && popd && ${cmd.join(" ")}`];
+							else
+								cmd = ["bash", "-c", `export IDF_EXPORT_QUIET=1 && source $IDF_PATH/export.sh && ${cmd.join(" ")}`];
+						}
+					}
+				}
+
+				this.then.apply(this, cmd);
 			}
 		}
 		else {

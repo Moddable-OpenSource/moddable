@@ -4,7 +4,7 @@ flags: [onlyStrict]
 ---*/
 
 new Application(null, {
-	displayListLength: 3000,
+	displayListLength: 4000,
 	skin: new Skin({ fill: "white" })
 });
 
@@ -94,6 +94,6 @@ circleMaskSkin = new Skin({
 	tiles: { top: 10, bottom: 10, left: 10, right: 10 }
 });
 application.add(new Content(null, { skin: circleMaskSkin, top: 0, height:200, left: 0, width: 200 }));
-screen.checkImage("8b684395af0e96af7a906a406d2e97ab");
+screen.checkImage("eadcce0b07ca48f9a838c8fadb4dcf1e");
 application.first.state = 1;
-screen.checkImage("8ed49b081ed09dcee56ba2efb5248060");
+screen.checkImage("6e45e1c9d80dabe3495ae7da43947897");

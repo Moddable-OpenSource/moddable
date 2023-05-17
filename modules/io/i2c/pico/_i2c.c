@@ -137,7 +137,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->data = data;
 	i2c->hz = hz;
 	i2c->address = address;
-	i2c->timeout = timeout;
+	i2c->timeout = timeout * 1000;
 	i2c->pullup = pullup;
 	i2c->port = port;
 	if (port == 0)
@@ -231,14 +231,8 @@ void _xs_i2c_read(xsMachine *the)
 		xsUnknownError("activate failed");
 
 	err = i2c_read_timeout_us(i2c->inst, i2c->address, buffer, length, !stop, i2c->timeout);
-	if (PICO_ERROR_TIMEOUT == err) {
-		modLog("i2c_read timeout");
-	}
-	else if (PICO_ERROR_GENERIC == err) {
-		modLog("i2c_read error:");
-		modLogInt(err);
+	if (err < 0)
 		xsUnknownError("read failed");
-	}
 }
 
 void _xs_i2c_write(xsMachine *the)
@@ -258,14 +252,42 @@ void _xs_i2c_write(xsMachine *the)
 		xsUnknownError("activate failed");
 
 	err = i2c_write_timeout_us(i2c->inst, i2c->address, buffer, length, !stop, i2c->timeout);
-	if (PICO_ERROR_TIMEOUT == err) {
-		modLog("i2c_write timeout");
-	}
-	else if (PICO_ERROR_GENERIC == err) {
-		modLog("i2c_write error:");
-		modLogInt(err);
+	if (err < 0)
 		xsUnknownError("write failed");
+}
+
+void _xs_i2c_writeRead(xsMachine *the)
+{
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	xsUnsignedValue lengthWrite, lengthRead;
+	void *bufferWrite, *bufferRead;
+	uint8_t stop = true;
+	int err;
+
+	if (xsmcArgc > 2)
+		stop = xsmcToBoolean(xsArg(2));
+
+	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
+		xsResult = xsArg(1);
+		xsmcGetBufferWritable(xsResult, &bufferRead, &lengthRead);
+		xsmcSetInteger(xsResult, lengthRead);
 	}
+	else {
+ 		lengthRead = xsmcToInteger(xsArg(1));
+		bufferRead = xsmcSetArrayBuffer(xsResult, NULL, lengthRead);
+	}
+	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
+
+	if (!i2cActivate(i2c))
+		xsUnknownError("activate failed");
+
+	err = i2c_write_timeout_us(i2c->inst, i2c->address, bufferWrite, lengthWrite, !stop, i2c->timeout);
+	if (err < 0)
+		xsUnknownError("write failed");
+
+	err = i2c_read_timeout_us(i2c->inst, i2c->address, bufferRead, lengthRead, false, i2c->timeout);
+	if (err < 0)
+		xsUnknownError("read failed");
 }
 
 uint8_t i2cActivate(I2C i2c)

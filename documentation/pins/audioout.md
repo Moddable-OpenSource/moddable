@@ -1,6 +1,6 @@
 # AudioOut
-Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: December 4, 2022
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
+Revised: April 25, 2023
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -326,6 +326,7 @@ The `audioOut` module is configured at build time.
 - `MODDEF_AUDIOOUT_I2S_DAC` - Enable built-in Digital-to-Analog (DAC) output. Set to 1 to enable DAC. Default is 0.
 - `MODDEF_AUDIOOUT_I2S_DAC_CHANNEL` - Controls DAC output - left (1), right (2), or both (3). Defaults to both.
 - `MODDEF_AUDIOOUT_I2S_PDM` - Enable built-in PDM encoder. Set to 1 to enable PDM. Default is 0.
+- `MODDEF_AUDIOOUT_I2S_MIXERBYTES` - Number of bytes to allocate for the mixing buffer. This value is also used to size the two DMA buffers for the audio driver. Even when there is only a single stream of audio, there is a mixing buffer. Defaults to 512 for 8-bit audio and 768 bytes otherwise. Smaller values reduce memory use, while slightly increasing the audio processing overhead. Smaller buffers are more likely to glitch under high CPU load in the overall system.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.

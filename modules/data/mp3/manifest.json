@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": [
+			"./libmad/bit",
+			"./libmad/fixed",
+			"./libmad/frame",
+			"./libmad/huffman",
+			"./libmad/layer3",
+			"./libmad/stream",
+			"./libmad/synth",
+			"./libmad/mad_timer"
+		],
+		"mp3/decode": "./mp3"
+	},
+	"preload": "mp3/decode"
+}

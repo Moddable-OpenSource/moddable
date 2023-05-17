@@ -26,8 +26,15 @@ XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
 USE_USB ?= 0
-USB_VENDOR_ID ?= beef
-USB_PRODUCT_ID ?= 1cee
+# USE_USB = 1 - TinyUSB - uses a custom VID/PID
+ifeq ($(USE_USB),1) 
+	USB_VENDOR_ID ?= beef
+	USB_PRODUCT_ID ?= 1cee
+else
+	# USE_USB = 2 - built-in CDC/USB
+	USB_VENDOR_ID ?= 303a
+	USB_PRODUCT_ID ?= 1001
+endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
@@ -81,22 +88,24 @@ endif
 USB_OPTION=
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config
+
+ifeq ($(USE_USB),0) 
+else
+	USB_OPTION = -DUSE_USB=$(USE_USB)
+endif
+
 ifeq ("$(ESP32_SUBCLASS)","esp32c3")
 	ESP32_TARGET = 4
 else
 ifeq ("$(ESP32_SUBCLASS)","esp32s3")
 	ESP32_TARGET = 3
-	ifeq ($(USE_USB),1) 
-		USB_OPTION = -DUSE_USB=1
-	endif
 else
 	ifeq ("$(ESP32_SUBCLASS)","esp32s2")
 		ESP32_TARGET = 2
-		ifeq ($(USE_USB),1) 
-			USB_OPTION = -DUSE_USB=1
-		endif
 	else
+		# basic esp32 doesn't support USB
 		ESP32_TARGET = 1
+		USB_OPTION =
 	endif
 endif
 endif
@@ -373,12 +382,16 @@ PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		ifeq ($(USE_USB),1)
-			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
-			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
-		else
+		ifeq ($(USE_USB),0)
 			DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
+		else
+			ifeq ($(USE_USB),1)
+				PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
+				# USE_USB == 2 doesn't use PROGRAMMING_MODE
+			endif
+			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		endif
 
 		ifeq ($(XSBUG_LOG),1)
@@ -388,11 +401,7 @@ ifeq ($(DEBUG),1)
 	### Linux
 	else
 		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		ifeq ($(USE_USB),1)
-#			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1"
-			DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
-			PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
-		else
+		ifeq ($(USE_USB),0)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
 
 			ifeq ($(XSBUG_LOG),1)
@@ -400,7 +409,12 @@ ifeq ($(DEBUG),1)
 			else
 				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 			endif
-
+		else
+			ifeq ($(USE_USB),1)
+				PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
+				# USE_USB == 2 doesn't use PROGRAMMING_MODE
+			endif
+			DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
 		endif
 	endif
 
@@ -408,7 +422,14 @@ ifeq ($(DEBUG),1)
 		DO_XSBUG = 
 	endif
 
-else
+else	# release
+	ifeq ($(USE_USB),1)
+		ifeq ($(HOST_OS),Darwin)
+			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
+			PROGRAMMING_MODE =
+		endif
+	endif
+
 	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 endif

@@ -70,10 +70,10 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxChunkFlag 0x80000000
 
 #if mxExplicitResourceManagement
-#define mxCallbacksLength 505
+#define mxCallbacksLength 511
 #else
-#define mxCallbacksLength 512
-#ednif
+#define mxCallbacksLength 504
+#endif
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -535,8 +535,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_TypedArray_prototype_sort,
 	fx_TypedArray_prototype_subarray,
 	fx_TypedArray_prototype_toLocaleString,
-	fx_TypepArray_prototype_toReversed,
-	fx_TypepArray_prototype_toSorted,
+	fx_TypedArray_prototype_toReversed,
+	fx_TypedArray_prototype_toSorted,
 	fx_TypedArray_prototype_values,
 	fx_TypedArray_prototype_with,
 	fx_TypedArray,

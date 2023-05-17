@@ -223,7 +223,7 @@ void app_main() {
 #endif
 
 	esp_err_t err;
-	uart_config_t uartConfig;
+	uart_config_t uartConfig = {0};
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
@@ -235,6 +235,7 @@ void app_main() {
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
 //	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
+	uartConfig.source_clk = UART_SCLK_APB;
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)

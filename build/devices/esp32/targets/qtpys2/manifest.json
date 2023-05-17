@@ -2,6 +2,8 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32s2",
 		"USE_USB": "1",
+		"PROGRAMMING_VID": "303a",
+		"PROGRAMMING_PID": "0002",
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
@@ -23,6 +25,18 @@
 			"rainbow": true,
 			"brightness": 32
 		}
+	},
+	"creation": {
+		"static": 524288,
+		"chunk": {
+			"initial": 131072,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 8192,
+			"incremental": 64
+		},
+		"stack": 512
 	},
 	"defines": {
 		"i2c": {

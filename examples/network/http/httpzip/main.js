@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2020-2023  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK.
+ * 
+ *   This work is licensed under the
+ *       Creative Commons Attribution 4.0 International License.
+ *   To view a copy of this license, visit
+ *       <http://creativecommons.org/licenses/by/4.0>.
+ *   or send a letter to Creative Commons, PO Box 1866,
+ *   Mountain View, CA 94042, USA.
+ *
+ */
+
 import Resource from "Resource";
 import {Server as HTTPServer} from "http/zipresource";
 import {Server as WebSocketServer} from "websocket";
@@ -62,7 +76,6 @@ class WS extends WebSocketServer {
 			}
 		}				
 	}
-
 }
 
 
@@ -70,7 +83,8 @@ const http = new HTTPServer({
 	port: 80,
 	onRoute(path) {
 		if ("/" === path)
-			return '/index.html';
+			path = '/index.html';
+		return "/site" + path;
 	}
 }, new Resource("site.zip"));
 

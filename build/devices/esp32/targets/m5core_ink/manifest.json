@@ -1,6 +1,6 @@
 {
 	"build":{
-		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/m5core_ink/sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
@@ -21,5 +21,17 @@
 	"config": {
 		"format": "Gray256",
 		"screen": "gdew0154m09"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
 	}
 }
