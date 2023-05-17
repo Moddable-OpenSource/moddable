@@ -408,40 +408,25 @@ extern void *pvPortRealloc(void *ptr, size_t size);
 
 /* STRING */
 
-uint8_t espRead8(const void *addr);
-uint16_t espRead16(const void *addr);
-uint32_t espRead32(const void *addr);
 uint16_t espRead16be(const void *addr);
 uint32_t espRead32be(const void *addr);
-size_t espStrLen(const void *addr);
-int espStrCmp(const char *ap, const char *bp);
-int espStrNCmp(const char *ap, const char *bp, size_t count);
-void espStrCpy(char *dst, const char *src);
-void espStrNCpy(char *dst, const char *src, size_t count);
-void espStrCat(char *dst, const char *src);
-void espStrNCat(char *dst, const char *src, size_t count);
-char *espStrChr(const char *str, int c);
-char *espStrRChr(const char *str, int c);
-char *espStrStr(const char *src, const char *search);
-void espMemCpy(void *dst, const void *src, size_t count);
-int espMemCmp(const void *a, const void *b, size_t count);
 
 
 #include <string.h>
-#define c_memcpy espMemCpy
+#define c_memcpy memcpy
 #define c_memmove memmove
 #define c_memset memset
-#define c_memcmp espMemCmp
-#define c_strcat espStrCat
-#define c_strchr espStrChr
-#define c_strcmp espStrCmp
-#define c_strcpy espStrCpy
-#define c_strlen espStrLen
-#define c_strncat espStrNCat
-#define c_strncmp espStrNCmp
-#define c_strncpy espStrNCpy
-#define c_strstr espStrStr
-#define c_strrchr espStrRChr
+#define c_memcmp memcmp
+#define c_strcat strcat
+#define c_strchr strchr
+#define c_strcmp strcmp
+#define c_strcpy strcpy
+#define c_strlen strlen
+#define c_strncat strncat
+#define c_strncmp strncmp
+#define c_strncpy strncpy
+#define c_strstr strstr
+#define c_strrchr strrchr
 #define c_isEmpty(s) (!c_read8(s))
 
 /* ERROR */
@@ -453,18 +438,10 @@ int espMemCmp(const void *a, const void *b, size_t count);
 #define mxGetKeySlotKind(SLOT) (SLOT)->kind
 
 
-/*
-#define espRead8(POINTER) *((txU1*)POINTER)
-#define c_read8(POINTER) *((txU1*)(POINTER))
-#define c_read16(POINTER) *((txU2*)(POINTER))
-#define c_read16be(POINTER) ((((txU2)((txU1*)POINTER)[0]) << 8) | ((txU2)((txU1*)POINTER)[1]))
-#define c_read32(POINTER) *((txU4*)(POINTER))
-#define c_read32be(POINTER) ((((txU4)((txU1*)POINTER)[0]) << 24) | (((txU4)((txU1*)POINTER)[1]) << 16) | (((txU4)((txU1*)POINTER)[2]) << 8) | ((txU4)((txU1*)POINTER)[3]))
-*/
-#define c_read8 espRead8
-#define c_read16 espRead16
+#define c_read8(POINTER) (*((uint8_t *)(POINTER)))
+#define c_read16(POINTER) (*((uint16_t *)(POINTER)))
+#define c_read32(POINTER) (*((uint32_t *)(POINTER)))
 #define c_read16be espRead16be
-#define c_read32 espRead32
 #define c_read32be espRead32be
 /* FLASH */
 
