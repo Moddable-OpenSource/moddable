@@ -87,8 +87,13 @@ void fxDeleteMachinePlatform(txMachine* the)
 
 void fxBuildKeys(txMachine* the)
 {
-	int i;
-	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
+	int i = 0;
+	{
+		txSlot* key = fxFindKey(the);
+		key->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
+		i++;
+	}
+	for (; i < XS_SYMBOL_ID_COUNT; i++) {
 		txSlot* key = fxFindKey(the);
 		txSlot* instance = fxNewInstance(the);
 		txSlot* property = fxNextSymbolProperty(the, instance, i, XS_NO_ID, XS_INTERNAL_FLAG);
