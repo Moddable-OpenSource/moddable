@@ -543,7 +543,7 @@ void* fxGrowChunks(txMachine* the, txSize size)
 			the->firstBlock = block;
 			size -= sizeof(txBlock);
 		}
-		the->maximumChunksSize += size;
+		the->maximumChunksSize = fxAddChunkSizes(the, the->maximumChunksSize, size);
 	#if mxReport
 		fxReport(the, "# Chunk allocation: reserved %ld used %ld peak %ld bytes\n", 
 			(long)the->maximumChunksSize, (long)the->currentChunksSize, (long)the->peakChunksSize);
