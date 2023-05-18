@@ -339,6 +339,10 @@ extern void *pvPortRealloc(void *ptr, size_t size);
 #define C_ENOMEM NRF_ERROR_NO_MEM
 #define C_EINVAL NRF_ERROR_INVALID_PARAM
 
+#ifndef PATH_MAX
+	#define PATH_MAX 128
+#endif
+#define C_PATH_MAX PATH_MAX
 
 /* MATH */
 
