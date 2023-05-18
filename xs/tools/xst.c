@@ -234,10 +234,12 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+#ifdef mxMetering
 static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
 	return 1;
 }
+#endif
 
 #if OSSFUZZ
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
@@ -322,8 +324,8 @@ int main(int argc, char* argv[])
 			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			256 * 1024, 		/* stackCount */
-			1024, 		/* initialKeyCount */
-			0,					/* incrementalKeyCount */
+			1024, 				/* initialKeyCount */
+			1024,				/* incrementalKeyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
 			64 * 1024,			/* parserBufferSize */
@@ -1104,8 +1106,8 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024, 				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1353,8 +1355,8 @@ void* fx_agent_start_aux(void* it)
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		4096, 				/* stackCount */
-		4096*3, 			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024, 				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1766,8 +1768,8 @@ int fuzz(int argc, char* argv[])
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024,				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1906,8 +1908,8 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024,				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
