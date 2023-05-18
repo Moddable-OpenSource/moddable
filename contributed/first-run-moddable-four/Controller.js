@@ -153,7 +153,7 @@ class Controller extends Behavior {
 	onDisplaying(container) {
 		screen.dither = false;
 		const power = this.power;
-		const tag = power.getRetainedValue(0);
+		let tag = power.getRetainedValue(0);
 		const history = [];
 		let view = null;
 		const wakenWith = power.wakenWith;
