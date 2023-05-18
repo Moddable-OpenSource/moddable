@@ -2934,7 +2934,7 @@ void fxExecuteVirtualModuleSourceImport(txMachine* the)
 	txSlot* module = home->value.home.module;
 	txSlot* internal = mxModuleInstanceInternal(module);
 	mxPushSlot(mxArgv(0));
-	fxRunImport(the, internal->value.module.realm, internal->value.module.id);
+	gxDefaults.runImport(the, internal->value.module.realm, internal->value.module.id);
 	mxPullSlot(mxResult);
 }
 
