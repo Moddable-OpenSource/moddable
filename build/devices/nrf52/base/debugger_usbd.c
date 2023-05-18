@@ -110,7 +110,7 @@ static uint8_t m_tx_buffer[kTXBufferSize];
 static int16_t m_tx_buffer_index = 0;
 
 static char m_rx_buffer[1];
-NRF_QUEUE_DEF(uint8_t, m_rx_queue, 2*NRF_DRV_USBD_EPSIZE, NRF_QUEUE_MODE_OVERFLOW);
+NRF_QUEUE_DEF(uint8_t, m_rx_queue, 4096, NRF_QUEUE_MODE_OVERFLOW);
 
 static volatile uint8_t m_usb_connected = false;
 
