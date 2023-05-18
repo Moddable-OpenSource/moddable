@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,37 +54,8 @@ export default class Poco @ "xs_poco_destructor" {
 					pixelsOut.clut);
 	}
 	close() @ "xs_poco_close"
-	begin(x, y, width, height) @ "xs_poco_begin"
-	end() @ "xs_poco_end"
-	continue(x, y, w, h) {
-		this.end(true);
-		this.begin(x, y, w, h);
-	}
 
-	// clip and origin stacks
-	clip(x, y, width, height) @ "xs_poco_clip"
-	origin(x, y) @ "xs_poco_origin"
-
-	// rendering calls
-	makeColor(r, g, b) @ "xs_poco_makeColor"
-	fillRectangle(color, x, y, width, height) @ "xs_poco_fillRectangle"
-	blendRectangle(color, blend, x, y, width, height) @ "xs_poco_blendRectangle"
-	drawPixel(color, x, y) @ "xs_poco_drawPixel"
-	drawBitmap(bits, x, y, sx, sy, sw, sh) @ "xs_poco_drawBitmap"
-	drawMonochrome(monochrome, fore, back, x, y, sx, sy, sw, sh) @ "xs_poco_drawMonochrome"
-	drawGray(bits, color, x, y, sx, sy, sw, sh, blend) @ "xs_poco_drawGray"
-	drawMasked(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) @ "xs_poco_drawMasked"
-	fillPattern(bits, x, y, w, h, sx, sy, sw, sh) @ "xs_poco_fillPattern"
-
-	drawFrame(frame, stream, x, y) @ "xs_poco_drawFrame"
-
-	drawText(text, font, color, x, y) @ "xs_poco_drawText"
-
-	// metrics
-	getTextWidth(text, font) @ "xs_poco_getTextWidth"
-
-	// invalidate area
-	adaptInvalid(rectangle) @ "xs_poco_adaptInvalid";
+	// for drawing calls, see commodettoPocoDraw.js
 
 	get width() @ "xs_poco_get_width";
 	get height() @ "xs_poco_get_height";
@@ -95,7 +66,6 @@ export default class Poco @ "xs_poco_destructor" {
 			return new Rectangle(x, y, width, height);
 		return new Rectangle(0, 0, 0, 0);
 	}
-
 }
 
 function build(width, height, byteLength, pixelFormat, displayListLength, rotation) @ "xs_poco_build";
