@@ -57,9 +57,6 @@ export default class Poco @ "xs_poco_destructor" {
 
 	// for drawing calls, see commodettoPocoDraw.js
 
-	get width() @ "xs_poco_get_width";
-	get height() @ "xs_poco_get_height";
-
 	// rectangle
 	rectangle(x, y, width, height) {
 		if (undefined !== height)

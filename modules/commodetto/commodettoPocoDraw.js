@@ -63,5 +63,13 @@ Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_poco_drawText"
 // // metrics
 Poco.prototype.getTextWidth = function(text, font) @ "xs_poco_getTextWidth";
 
-	// // invalidate area
+// // invalidate area
 Poco.prototype.adaptInvalid = function(rectangle) @ "xs_poco_adaptInvalid";
+
+Object.defineProperty(Poco.prototype, "width", {
+	get: function() @ "xs_poco_get_width"
+});
+Object.defineProperty(Poco.prototype, "height", {
+	get: function() @ "xs_poco_get_height",
+});
+
