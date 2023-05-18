@@ -72,6 +72,15 @@
 		"win": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		},
+		"cli-lin": {
+			"include": "$(MODDABLE)/examples/manifest_cli.json"
+		},
+		"cli-mac": {
+			"include": "$(MODDABLE)/examples/manifest_cli.json"
+		},
+		"cli-win": {
+			"include": "$(MODDABLE)/examples/manifest_cli.json"
+		},
 		"wasm": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"
 		}

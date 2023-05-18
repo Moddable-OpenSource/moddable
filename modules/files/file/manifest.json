@@ -39,7 +39,7 @@
 				}
 			}
 		},
-		"x-cli-mac": {
+		"cli-mac": {
 			"modules": {
 				"*": "$(MODULES)/files/file/mac/*"
 			},
@@ -59,7 +59,27 @@
 				}
 			}
 		},
+		"cli-win": {
+			"modules": {
+				"*": "$(MODULES)/files/file/win/*"
+			},
+			"config": {
+				"file": {
+					"root": "./"
+				}
+			}
+		},
 		"lin": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			},
+			"config": {
+				"file": {
+					"root": "/tmp/"
+				}
+			}
+		},
+		"cli-lin": {
 			"modules": {
 				"*": "$(MODULES)/files/file/lin/*"
 			},

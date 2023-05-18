@@ -1,0 +1,40 @@
+{
+	"include": [
+		"$(MODDABLE)/contributed/cli/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/base/timer/timer"
+		]
+	},
+	"preload": [
+	],
+	"platforms": {
+		"cli-win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/win/*",
+					"$(MODULES)/base/timer/modTimer",
+					"$(MODULES)/base/timer/win/*"
+				]
+			}
+		},
+		"cli-lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/lin/*",
+					"$(MODULES)/base/timer/lin/*"
+				]
+			}
+		},
+		"cli-mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/mac/*",
+					"$(MODULES)/base/timer/modTimer",
+					"$(MODULES)/base/timer/mac/*"
+				]
+			}
+		}
+	}
+}
