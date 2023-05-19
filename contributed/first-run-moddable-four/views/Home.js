@@ -47,7 +47,7 @@ const HomeContainer = Container.template($ => ({
 								Label($, { width:128, height:64, string:"Bonjour", style:{ font:"italic 32px Arial Narrow", color:"black" } }),
 								Label($, { width:128, height:64, string:"Hallo", style:{ font:"bold 32px Arial Narrow", color:"black" } }),
 								Label($, { width:128, height:64, string:"Ciao", style:{ font:"italic 40px Arial Narrow", color:"black" } }),
-								Label($, { width:128, height:64, string:"もしもし", style:{ font:"30px NotoSansJP", color:"black" } }),
+								Label($, { width:128, height:64, string:"こんにちは", style:{ font:"24px NotoSansJP", color:"black" } }),
 								Label($, { width:128, height:64, string:"안녕하세요", style:{ font:"26px NotoSansKR", color:"black" } }),
 								Label($, { width:128, height:64, string:"Hola", style:{ font:"bold 36px Arial Narrow", color:"black" } }),
 								Label($, { width:128, height:64, string:"Привіт", style:{ font:"italic 36px Arial Narrow", color:"black" } }),

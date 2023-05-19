@@ -136,8 +136,8 @@
 			},
 			{
 				"source": "./fonts/NotoSansJP-Regular",
-				"size": 30,
-				"characters": "もしもし",
+				"size": 24,
+				"characters": "こんにちは",
 				"monochrome": true
 			},
 			{
