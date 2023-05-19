@@ -222,7 +222,7 @@ That is especially useful for exchanging references to objects with methods, lik
 
 ### Symbols
 
-Properties keyed by symbols are ignored when marshalled, except when the symbol is created in the read-only machine.
+Like private fields, properties keyed by symbols are ignored when marshalled, except when the symbol is created in the read-only machine.
 
 ##### preload.js
 	export const s = Symbol();
