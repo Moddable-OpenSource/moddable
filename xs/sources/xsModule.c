@@ -1924,8 +1924,8 @@ txBoolean fxQueueModule(txMachine* the, txSlot* queue, txSlot* module)
 void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor)
 {
 	if (script->codeBuffer) {
-		txSlot* key = fxGetKey(the, moduleID);
-		if (key) {
+		if (moduleID != XS_NO_ID) {
+			txSlot* key = fxGetKey(the, moduleID);
 			txSlot* meta = mxModuleMeta(module);
 			txSlot* slot = fxLastProperty(the, meta->value.reference);
 			slot = slot->next = fxNewSlot(the);

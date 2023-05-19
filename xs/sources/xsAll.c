@@ -240,7 +240,7 @@ txString fxCopyStringC(txMachine* the, txSlot* a, txString b)
 txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 {
 	txSlot* key = fxGetKey(the, id);
-	if (key && (key->flag & XS_DONT_ENUM_FLAG)) {
+	if (key->flag & XS_DONT_ENUM_FLAG) {
 		txString string = key->value.key.string;
 		char buffer[256], c;
 		txNumber number;
