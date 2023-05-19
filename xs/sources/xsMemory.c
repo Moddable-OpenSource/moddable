@@ -430,7 +430,7 @@ txSlot* fxFindKey(txMachine* the)
 	txBoolean once = 1;
 	txID id;
 	txSlot* result;
-again:
+more:
 	id = the->keyIndex;
 	if (id < the->keyCount) {
 		result = fxNewSlot(the);
@@ -439,6 +439,7 @@ again:
 		the->keyIndex++;
 		return result;
 	}
+again:
 	result = the->keyholeList;
 	if (result) {
 		the->keyholeCount--;
@@ -449,11 +450,12 @@ again:
 	if (once) {
 		fxCollect(the, XS_ORGANIC_FLAG);
 		once = 0;
+		goto again;
 	}
-	else
+	else {
 		fxGrowKeys(the, 1);
-	goto again;
-	fxAbort(the, XS_NO_MORE_KEYS_EXIT);
+		goto more;
+	}
 	return C_NULL;
 }
 

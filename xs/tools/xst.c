@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
 								buffer[size] = 0;
 								fclose(file);
 								file = C_NULL;
-								xsResult = xsArrayBuffer(buffer, size);
+								xsResult = xsArrayBuffer(buffer, (txInteger)size);
 								c_free(buffer);
 								buffer = C_NULL;
 								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
