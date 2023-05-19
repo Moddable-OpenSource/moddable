@@ -734,7 +734,7 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 // 				fxIDToString(the, slot->ID, the->nameBuffer, sizeof(the->nameBuffer));
 // 				fprintf(stderr, " %s", the->nameBuffer);
 // 			}
-			slot->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_MARK_FLAG;
+			slot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
 			slot->next = the->keyholeList;
 			slot->kind = XS_UNDEFINED_KIND;
 			the->keyholeCount++;
