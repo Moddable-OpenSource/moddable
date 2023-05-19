@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -90,11 +90,84 @@ void xs_instrumentation_get(xsMachine *the)
 		xsmcSetInteger(xsResult, modInstrumentationGet_(the, what));
 }
 
+
+static const char *gInstrumentationNames[kModInstrumentationLast + 1 + 1 + 1] = {
+	"",
+	"Pixels Drawn",
+	"Frames Drawn",
+#if kModInstrumentationHasNetwork
+	"Network Bytes Read",
+	"Network Bytes Written",
+	"Network Sockets",
+#endif
+	"Timers",
+	"Files",
+
+	"Poco Display List Used",
+	"Piu Command List Used",
+	
+#if kModInstrumentationHasSPIFlashErases
+	"SPI Flash Erases",
+#endif
+#if kModInstrumentationHasTurns
+	"Turns",
+#endif
+	"System Free Memory",
+#if kModInstrumentationHasCPU
+	"CPU 0",
+	#if kTargetCPUCount > 1
+		"CPU 1",
+	#endif
+#endif
+	"XS Slot Heap Used",
+	"XS Chunk Heap Used",
+	"XS Keys Used",
+	"XS Garbage Collection Count",
+	"XS Modules Loaded",
+	"XS Stack Used",
+	NULL
+};
+
+void xs_instrumentation_map(xsMachine *the)
+{
+	char *name = xsmcToString(xsArg(0));
+	const char **walker = gInstrumentationNames;
+	int i = 0;
+
+	while (walker[i]) {
+		if (0 == c_strcmp(walker[i], name)) {
+			xsmcSetInteger(xsResult, i);
+			return;
+		}
+		i++;
+	}
+}
+
+void xs_instrumentation_name(xsMachine *the)
+{
+	int what = xsmcToInteger(xsArg(0));
+
+	if ((0 <= what) && (what <= kModInstrumentationLast) && gInstrumentationNames[what])
+		xsmcSetString(xsResult, (char *)gInstrumentationNames[what]);
+}
+
+
 #else
 
 void xs_instrumentation_get(xsMachine *the)
 {
 	// returns undefined
 }
+
+void xs_instrumentation_map(xsMachine *the)
+{
+	// returns undefined
+}
+
+void xs_instrumentation_name(xsMachine *the)
+{
+	// returns undefined
+}
+
 
 #endif

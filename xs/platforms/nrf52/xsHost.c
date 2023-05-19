@@ -78,9 +78,6 @@
 	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)"Pixels drawn",
 		(char *)"Frames drawn",
-		(char *)"Network bytes read",
-		(char *)"Network bytes written",
-		(char *)"Network sockets",
 		(char *)"Timers",
 		(char *)"Files",
 		(char *)"Poco display list used",
@@ -93,9 +90,6 @@
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)" pixels",
 		(char *)" frames",
-		(char *)" bytes",
-		(char *)" bytes",
-		(char *)" sockets",
 		(char *)" timers",
 		(char *)" files",
 		(char *)" bytes",
@@ -342,8 +336,6 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(FramesDrawn, 0);
 	modInstrumentationSet(PocoDisplayListUsed, 0);
 	modInstrumentationSet(PiuCommandListUsed, 0);
-	modInstrumentationSet(NetworkBytesRead, 0);
-	modInstrumentationSet(NetworkBytesWritten, 0);
 	modInstrumentationSet(Turns, 0);
 	modInstrumentMachineReset(the);
 
