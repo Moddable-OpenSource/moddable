@@ -707,6 +707,7 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		}
 	}
 	
+// 	fprintf(stderr, "\n### KEYS GC %d", deletions);
 	p = the->nameTable;
 	q = the->nameTable + the->nameModulo;
 	while ((p < q) && deletions) {
@@ -721,8 +722,8 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		}
 		p++;
 	}
+// 	fprintf(stderr, " => %d", deletions);
 	
-// 	fprintf(stderr, "\n### GC");
 	the->keyholeCount = 0;
 	the->keyholeList = C_NULL;
 	p = the->keyArray;
@@ -734,7 +735,7 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 		else {
 // 			if (slot->kind != XS_UNDEFINED_KIND) {	
 // 				fxIDToString(the, slot->ID, the->nameBuffer, sizeof(the->nameBuffer));
-// 				fprintf(stderr, " %s", the->nameBuffer);
+// 				fprintf(stderr, "\n%p %d %s", slot, slot->ID, the->nameBuffer);
 // 			}
 			slot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
 			slot->next = the->keyholeList;
