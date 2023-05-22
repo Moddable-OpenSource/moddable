@@ -1,7 +1,8 @@
 {
 	"build": {
 		"SDKCONFIGPATH": "./sdkconfig",
-		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+		"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue"
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
