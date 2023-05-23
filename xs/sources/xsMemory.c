@@ -1070,6 +1070,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;
 		
 	case XS_PRIVATE_KIND:
+		fxCheckCStack(the);
 		aSlot = theSlot->value.private.check;
 		if (!(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkReference);
@@ -1339,6 +1340,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		break;
 		
 	case XS_PRIVATE_KIND:
+		fxCheckCStack(the);
 		aSlot = theSlot->value.private.check;
 		if (!(aSlot->flag & XS_MARK_FLAG))
 			fxMarkInstance(the, aSlot, fxMarkValue);
