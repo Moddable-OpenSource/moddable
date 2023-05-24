@@ -42,6 +42,7 @@
 #endif
 
 static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID);
+static void fxBufferName(txString dst, txString src, txSize size);
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
@@ -151,7 +152,7 @@ void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, t
 		txString string = fxGetKeyString(the, id, &adorn);
 		if (adorn)
 			c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
-		c_strncat(buffer, string, size - mxStringLength(buffer) - 1);
+		fxBufferName(buffer, string, size - mxStringLength(buffer) - 1);
 		if (adorn)
 			c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
 		return;
@@ -182,9 +183,27 @@ void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* ob
 {
 	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
 	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string)) {
-		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
+		fxBufferName(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
 		c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 	}
+}
+
+void fxBufferName(txString dst, txString src, txSize size)
+{
+	dst += mxStringLength(dst);
+	for (;;) {
+		txInteger c;
+		txSize length;
+		src = mxStringByteDecode(src, &c);
+		if (c == C_EOF)
+			break;
+		length = mxStringByteLength(c);
+		if (length > size)
+			break;
+		dst = mxStringByteEncode(dst, c);
+		size -= length;
+	}
+	*dst = 0;
 }
 
 txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
