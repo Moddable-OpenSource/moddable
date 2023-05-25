@@ -91,7 +91,8 @@ enum {
 	kPocoFlagErrorStackProblem = 1 << 5,
 	kPocoFlagDidBegin = 1 << 6,
 	kPocoFlagContinue = 1 << 7,
-	kPocoFlagBuffer = 1 << 8
+	kPocoFlagBuffer = 1 << 8,
+	kPocoFlagErrorUnimplemented = 1 << 9
 };
 
 struct PocoRecord {

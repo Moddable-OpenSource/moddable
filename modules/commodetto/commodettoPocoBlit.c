@@ -28,6 +28,7 @@
 #include "commodettoPocoBlit.h"
 
 #include "xsPlatform.h"
+#include "mc.defines.h"
 
 enum {
 	kPocoCommandRectangleFill = 0,		// must start at 0 to match gDrawRenderCommand
@@ -84,8 +85,6 @@ static void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDime
 static void doDrawPattern(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
-
-static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
 
 static const PocoRenderCommandProc gDrawRenderCommand[kPocoCommandDrawMax] ICACHE_RODATA_ATTR = {
 	doFillRectangle,
@@ -945,6 +944,9 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 	PocoCommandBuilt(poco, pc);
 }
 
+#if MODDEF_POCO_COLORCELL
+static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
+
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
 	PocoCommand pc = poco->next;
@@ -1005,6 +1007,12 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 
 	PocoCommandBuilt(poco, pc);
 }
+#else
+void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
+{
+	poco->flags |= kPocoFlagErrorUnimplemented; 
+}
+#endif
 
 // rotation and clipped performed externally
 void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
@@ -3056,6 +3064,7 @@ void buildColorMap(uint32_t *srcCLUT, uint8_t *inverseTable, uint8_t *remap)
 }
 #endif
 
+#if MODDEF_POCO_COLORCELL
 #define kReuse0Mask (0x10)
 #define kReuse1Mask (0x08)
 
@@ -3367,6 +3376,11 @@ done:
 
 	return repeatSkip;
 }
+#else
+void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
+{
+}
+#endif
 
 void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 {
@@ -3442,6 +3456,11 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		poco->displayListEnd += poco->stackDepth * sizeof(PocoRectangleRecord); 
 		return 2;
 	}
+
+#if !MODDEF_POCO_COLORCELL
+	if (poco->flags & kPocoFlagErrorUnimplemented)
+		return 5;
+#endif
 
 	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
 		return 1;

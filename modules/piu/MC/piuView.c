@@ -1072,6 +1072,8 @@ done:
 				xsErrorPrintf("clip/origin stack not cleared");
 			if (3 == result)
 				xsErrorPrintf("clip/origin stack under/overflow");
+			if (5 == result)
+				xsErrorPrintf("frame disabled");
 			xsErrorPrintf("unknown error");
 		}
 		if (flag) {
