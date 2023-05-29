@@ -6530,7 +6530,8 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			theSize -= 2 - decpt + (mxPtrDiff(stop - start));
 			if (theSize < 0) goto error;
 			*result++ = '0';
-			*result++ = '.';
+			if ((decpt < 0) || (start < stop) || (pad > 0))
+				*result++ = '.';
 			while (decpt < 0) {
 				*result++ = '0';
 				decpt++;
