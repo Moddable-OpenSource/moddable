@@ -1696,7 +1696,8 @@ void fxEchoTypedArray(txMachine* the, txSlot* theInstance, txInspectorNameList* 
 	txSlot* dispatch = theInstance->next;
 	txSlot* view = dispatch->next;
 	txSlot* buffer = view->next;
-	txInteger size = fxGetDataViewSize(the, view, buffer) >> dispatch->value.typedArray.dispatch->shift;
+	txU2 shift = dispatch->value.typedArray.dispatch->shift;
+	txInteger size = fxGetDataViewSize(the, view, buffer) >> shift;
 	fxEcho(the, "<property");
 	fxEchoFlags(the, " ", dispatch->flag);
 	fxEcho(the, " name=\"(");
@@ -1710,15 +1711,13 @@ void fxEchoTypedArray(txMachine* the, txSlot* theInstance, txInspectorNameList* 
 		txInteger index = 0;
 		if (size > 1024)
 			size = 1024;
-		fxBeginHost(the);
+		mxPushUndefined();
 		while (index < size) {
-			mxPushReference(theInstance);
-			mxGetIndex(index);
+			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), the->stack, EndianNative);
 			fxEchoProperty(the, the->stack, theList, "[", index, "]");
-			mxPop();
 			index++;
 		}
-		fxEndHost(the);
+		mxPop();
 	}
 }
 
