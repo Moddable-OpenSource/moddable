@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -121,7 +121,7 @@ typedef struct AnalogRecord *Analog;
 	};
 #endif
 
-static esp_adc_cal_characteristics_t gADC1Characteristics, gADC2Characteristics;
+static esp_adc_cal_characteristics_t gADC1Characteristics = {.adc_num = ADC_UNIT_MAX + 1}, gADC2Characteristics = {.adc_num = ADC_UNIT_MAX + 1};
 
 void xs_analog_constructor_(xsMachine *the)
 {
@@ -162,10 +162,10 @@ void xs_analog_constructor_(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
-	if (port == 1 && !gADC1Characteristics.vref) {
+	if (port == 1 && (gADC1Characteristics.adc_num > ADC_UNIT_MAX)) {
 		adc1_config_width(ADC_WIDTH);
 		esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN, ADC_WIDTH, V_REF, &gADC1Characteristics);
-	} else if (port == 2 && !gADC2Characteristics.vref) {
+	} else if (port == 2 && (gADC2Characteristics.adc_num > ADC_UNIT_MAX)) {
 		esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN, ADC_WIDTH, V_REF, &gADC2Characteristics);
 	}
 

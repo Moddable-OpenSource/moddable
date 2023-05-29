@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: February 9, 2023
+Revised: May 25, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -75,31 +75,35 @@ XS in C provides macros to access properties of objects. XS provides two functio
 
 In the XS runtime, the *slot* is a fundamental storage unit. A slot is an opaque structure that is manipulated only through XS in C.
 
-	typedef struct xsSlotRecord xsSlot
-	struct xsSlotRecord {
-		void* data[4];
-	};
+```c
+typedef struct xsSlotRecord xsSlot
+struct xsSlotRecord {
+	void* data[4];
+};
+```
 
 <a id="slot-types"></a>
 ### Slot types
 
 There are eleven types of slots:
 
-	enum {
-		xsUndefinedType,
-		xsNullType,
-		xsBooleanType,
-		xsIntegerType,
-		xsNumberType,
-		xsStringType,
-		xsStringXType,
-		xsSymbolType,
-		xsBigIntType,
-		xsBigIntXType,
-		xsReferenceType 
-	}
-	typedef char xsType;
- 
+```c
+enum {
+	xsUndefinedType,
+	xsNullType,
+	xsBooleanType,
+	xsIntegerType,
+	xsNumberType,
+	xsStringType,
+	xsStringXType,
+	xsSymbolType,
+	xsBigIntType,
+	xsBigIntXType,
+	xsReferenceType 
+}
+typedef char xsType;
+```
+
 The undefined, null, boolean, number, string, symbol, and bigint slots correspond to the ECMAScript primitive types. The reference slot corresponds to the ECMAScript `reference` type. The integer, stringx and bigintx slots are optimizations that are unobservable by scripts. The integer slot is equivalent to the number slot, but allowing floating point operations to be bypassed. The stringx slot is equivalent to the string slot, but uses a string in place (e.g. in ROM) without making a copy. The bigintx slot is equivalent to the bigint slot, but uses a bigint in place (e.g. in ROM) without making a copy.
 
 ##### In ECMAScript:
@@ -116,7 +120,7 @@ true
 
 ##### In C:
 
-```
+```c
 xsUndefined;
 xsNull;
 xsFalse;
@@ -160,7 +164,7 @@ switch(typeof arguments[0]) {
 
 ##### In C:
 
-```
+```c
 switch(xsTypeOf(xsArg(0))) {
 	case xsUndefinedType: break;
 	case xsNullType: break;
@@ -357,8 +361,10 @@ Sets the slot value to a number
 
 These slots contain values of the corresponding type.
 
-	typedef char* xsStringValue;
-	
+```c
+typedef char* xsStringValue;
+```
+
 A string value is a pointer to a UTF-8 C string. The XS runtime virtual machine and the garbage collector manage UTF-8 C strings used by scripts.
 
 **`xsSlot xsString(xsStringValue theValue)`**
@@ -585,7 +591,7 @@ new Array(5);
 
 ##### In C:
 
-```
+```c
 xsNewArray(5);
 ```
 
@@ -604,7 +610,7 @@ new Object();
 
 ##### In C:
 
-```
+```c
 xsNewObject();
 ```
 
@@ -626,9 +632,9 @@ new Object();
 
 ##### In C:
 
-```
+```c
 xsVars(1);
-xsmcNewObject(xsVar(0));
+xsmcSetNewObject(xsVar(0));
 ```
 
 ***
@@ -654,7 +660,7 @@ if (Object.prototype.isPrototypeOf(this))
 
 ##### In C:
 
-```
+```c
 if (xsIsInstanceOf(xsThis, xsObjectPrototype))
 	xsResult = xsNewObject();
 ```
@@ -668,13 +674,13 @@ In ECMAScript, the properties of an object are identified by number, string or s
 
 If the number or string value of a property key can be converted into a 32-bit unsigned integer, XS uses the result of the conversion – a.k.a. the property **index** — to identify the property. In XS in C, you can access properties directy with property indexes through the `xsGetIndex`, `xsSetIndex`, etc macros described below. A property index can be used with all instances but is typically used to access items of `Array` instances.
 
-```
+```c
 typedef uint32_t xsIndex;
 ```
 
 Otherwise the string or symbol value of a property key is stored into a table and XS uses the resulting table index – a.k.a. the property **identifier** — to identify the property. In XS in C, you can access properties directy with property identifiers through the `xsGet`, `xsSet` etc macros described below.
 
-```
+```c
 typedef uint16_t xsIdentifier;
 ```
 
@@ -702,7 +708,8 @@ this.foo
 
 ##### In C:
 
-```
+```c
+xsGet(xsThis, xsID("foo"));
 xsGet(xsThis, xsID_foo);
 ```
 
@@ -824,18 +831,19 @@ You can use the `xsGet`, `xsSet`, `xsDelete`, `xsCall*`, and `xsNew*` macros wit
 
 To define a new property of an instance with an identifier and attributes, use the `xsDefine` macro. The attributes of the property are set using one or more of the following constants. 
 
-	enum {
-		xsDefault = 0,
-		xsDontDelete = 2,
-		xsDontEnum = 4,
-		xsDontSet = 8,
-		xsStatic = 16,
-		xsIsGetter = 32,
-		xsIsSetter = 64,
-		xsChangeAll = 30
-	} 
-	typedef unsigned char xsAttribute;
-
+```c
+enum {
+	xsDefault = 0,
+	xsDontDelete = 2,
+	xsDontEnum = 4,
+	xsDontSet = 8,
+	xsStatic = 16,
+	xsIsGetter = 32,
+	xsIsSetter = 64,
+	xsChangeAll = 30
+} 
+typedef unsigned char xsAttribute;
+```
 
 **`void xsDefine(xsSlot theThis, xsIdentifier theID, xsSlot theParam, xsAttribute theAttributes)`**
 
@@ -860,8 +868,8 @@ Object.defineProperty(this, "foo", 7, { writable: true, enumerable: true, config
 
 ##### In C:
 
-```
-xsDefine(xsThis, xsID_foo, xsInteger(7), xsDefault);
+```c
+xsDefine(xsThis, xsID{"foo"), xsInteger(7), xsDefault);
 ```
 
 ***
@@ -888,7 +896,7 @@ Object.defineProperty(this, 5, 7, { writable: true, enumerable: true, configurab
 
 ##### In C:
 
-```
+```c
 xsDefineAt(xsThis, xsString("foo"), xsInteger(7), xsDefault);
 xsDefineAt(xsThis, xsInteger(5), xsInteger(7), xsDefault);
 ```
@@ -912,12 +920,14 @@ Returns `true` if the instance has the property, `false` otherwise
 
 ```javascript
 if ("foo" in this)
+	;
 ```
 
 ##### In C:
 
-```
-if (xsHas(xsThis, xsID_foo));
+```c
+if (xsHas(xsThis, xsID("foo"))
+	;
 ```
 
 ***
@@ -940,14 +950,18 @@ Returns `true` if the instance has the property, `false` otherwise
 
 ```javascript
 if ("foo" in this)
+	;
 if (5 in this)
+	;
 ```
 
 ##### In C:
 
-```
+```c
 if (xsHasAt(xsThis, xsString("foo"))
+	;
 if (xsHasAt(xsThis, xsInteger(5))
+	;
 ```
 
 ***
@@ -970,12 +984,14 @@ Returns `true` if the instance has the property, `false` otherwise
 
 ```javascript
 if (7 in this)
+	;
 ```
 
 ##### In C:
 
-```
+```c
 if (xsHasIndex(xsThis, 7));
+	;
 ```
 
 ***
@@ -1002,9 +1018,10 @@ this.foo
 
 ##### In C:
 
-```
-xsGet(xsGlobal, xsID_foo);
-xsGet(xsThis, xsID_foo);
+```c
+xsVars(1);)
+xsVar(0) = xsGet(xsGlobal, xsID_foo);
+xsVar(0) = xsGet(xsThis, xsID("foo"));
 ```
 
 ***
@@ -1031,10 +1048,10 @@ this.foo
 
 ##### In C:
 
-```
+```c
 xsVars(1);
 xsmcGet(xsVar(0), xsGlobal, xsID_foo);
-xsmcGet(xsVar(0), xsThis, xsID_foo);
+xsmcGet(xsVar(0), xsThis, xsID("foo"));
 ```
 
 ***
@@ -1061,7 +1078,7 @@ this[5]
 
 ##### In C:
 
-```
+```c
 xsGetAt(xsThis, xsString("foo"));
 xsGetAt(xsVar(0), xsInteger(5));
 ```
@@ -1089,7 +1106,7 @@ this[5]
 
 ##### In C:
 
-```
+```c
 xsVars(1);
 xsmcGetAt(xsVar(0), xsThis, xsString("foo"));
 xsmcGetAt(xsVar(0), xsThis, xsInteger(5));
@@ -1117,7 +1134,7 @@ this[0]
 
 ##### In C:
 
-```
+```c
 xsGetIndex(xsThis, 0);
 ```
 
@@ -1143,7 +1160,7 @@ this[0]
 
 ##### In C:
 
-```
+```c
 xsVars(1);
 xsmcGetIndex(xsVar(0), xsThis, 0);
 ```
@@ -1172,8 +1189,8 @@ this.foo = 1
 
 ##### In C:
 
-```
-xsSet(xsGlobal, xsID_foo, xsInteger(0));
+```c
+xsSet(xsGlobal, xsID("foo"), xsInteger(0));
 xsSet(xsThis, xsID_foo, xsInteger(1));
 ```
 
@@ -1202,7 +1219,7 @@ this[3] = 1
 
 ##### In C:
 
-```
+```c
 xsSetAt(xsThis, xsString("foo"), xsInteger(0));
 xsSetAt(xsThis, xsInteger(3), xsInteger(1));
 ```
@@ -1230,7 +1247,7 @@ this[3] = 1
 
 ##### In C:
 
-```
+```c
 xsSetIndex(xsThis, 3, xsInteger(1));
 ```
 
@@ -1251,14 +1268,14 @@ To delete a property of an instance corresponding to a particular identifier, us
 ##### In ECMAScript:
 
 ```javascript
-delete foo
+delete globalThis.foo
 delete this.foo
 ```
 
 ##### In C:
 
-```
-xsDelete(xsGlobal, xsID_foo);
+```c
+xsDelete(xsGlobal, xsID("foo"));
 xsDelete(xsThis, xsID_foo);
 ```
 
@@ -1285,8 +1302,10 @@ delete this[3]
 
 ##### In C:
 
-	xsDeleteAt(xsThis, xsString("foo"));
-	xsDeleteAt(xsThis, xsInteger(3));
+```c
+xsDeleteAt(xsThis, xsString("foo"));
+xsDeleteAt(xsThis, xsInteger(3));
+```
 
 ***
 
@@ -1321,9 +1340,11 @@ this[0](2, 3)
 
 ##### In C:
 
-	xsCall0(xsGlobal, xsID_foo);
-	xsCall1(xsThis, xsID_foo, xsInteger(1));
-	xsCall2(xsThis, 0, xsInteger(2), xsInteger(3));
+```
+xsCall0(xsGlobal, xsID_foo);
+xsCall1(xsThis, xsID("foo"), xsInteger(1));
+xsCall2(xsThis, 0, xsInteger(2), xsInteger(3));
+```
 
 #### xsmcCall
 
@@ -1348,14 +1369,15 @@ this[0](2, 3)
 
 ##### In C:
 
-	xsVars(3);
-	xsmcSetInteger(xsVar(0), 1);
-	xsmcSetInteger(xsVar(1), 2);
-	xsmcSetInteger(xsVar(2), 3);
-	xsmcCall(xsResult, xsGlobal, xsID_foo, xsVar(0));
-	xsmcCall(xsResult, xsThis, xsID_foo, xsVar(0));
-	xsmcCall(xsResult, xsThis, 0, xsVar(1), xsVar(2));
-	
+```c
+xsVars(3);
+xsmcSetInteger(xsVar(0), 1);
+xsmcSetInteger(xsVar(1), 2);
+xsmcSetInteger(xsVar(2), 3);
+xsmcCall(xsResult, xsGlobal, xsID("foo"), xsVar(0));
+xsmcCall(xsResult, xsThis, xsID_foo, xsVar(0));
+xsmcCall(xsResult, xsThis, 0, xsVar(1), xsVar(2));
+```
 	
 ***
 
@@ -1392,9 +1414,11 @@ new this[0](2, 3)
 
 ##### In C:
 
-	xsNew0(xsGlobal, xsID_foo);
-	xsNew1(xsThis, xsID_foo, xsInteger(1));
-	xsNew2(xsThis, 0, xsInteger(2), xsInteger(3));
+```c
+xsNew0(xsGlobal, xsID("foo"));
+xsNew1(xsThis, xsID_foo, xsInteger(1));
+xsNew2(xsThis, 0, xsInteger(2), xsInteger(3));
+```
 
 ***
 
@@ -1422,13 +1446,15 @@ new this[0](2, 3)
 
 ##### In C:
 
-	xsVars(3);
-	xsmcSetInteger(xsVar(0), 1);
-	xsmcSetInteger(xsVar(1), 2);
-	xsmcSetInteger(xsVar(2), 3);
-	xsmcNew(xsResult, xsGlobal, xsID_foo, xsVar(0));
-	xsmcNew(xsResult, xsThis, xsID_foo, xsVar(0));
-	xsmcNew(xsResult, xsThis, 0, xsVar(1), xsVar(2));
+```c
+xsVars(3);
+xsmcSetInteger(xsVar(0), 1);
+xsmcSetInteger(xsVar(1), 2);
+xsmcSetInteger(xsVar(2), 3);
+xsmcNew(xsResult, xsGlobal, xsID_foo, xsVar(0));
+xsmcNew(xsResult, xsThis, xsID("foo"), xsVar(0));
+xsmcNew(xsResult, xsThis, 0, xsVar(1), xsVar(2));
+```
 
 ***
 
@@ -1454,8 +1480,10 @@ if (foo) {}
 
 ##### In C:
 
-	if (xsTest(xsGet(xsGlobal, xsID_foo)) {}
-	
+```c
+if (xsTest(xsGet(xsGlobal, xsID_foo)) {}
+```
+
 ***
 
 #### xsEnumerate
@@ -1480,18 +1508,20 @@ for (let prop in rectangle)
 
 ##### In C:
 
-	xsVars(5);
-	xsVar(0) = xsGet(xsGlobal, xsID_rectangle);
-	xsVar(1) = xsEnumerate(xsVar(0));
-	for (;;) {
-		xsVar(2) = xsCall0(xsVar(1), xsID("next"));
-		if (xsTest(xsGet(xsVar(2), xsID("done"))))
-			break;
-		xsVar(3) = xsGet(xsVar(2), xsID("value"));
-		xsVar(4) = xsGetAt(xsVar(0), xsVar(3));
-		xsTrace(xsToString(xsVar(3)));xsTrace(": ");
-		xsTrace(xsToString(xsVar(4)));xsTrace("\n");
-	}
+```c
+xsVars(5);
+xsVar(0) = xsGet(xsGlobal, xsID_rectangle);
+xsVar(1) = xsEnumerate(xsVar(0));
+for (;;) {
+	xsVar(2) = xsCall0(xsVar(1), xsID("next"));
+	if (xsTest(xsGet(xsVar(2), xsID("done"))))
+		break;
+	xsVar(3) = xsGet(xsVar(2), xsID("value"));
+	xsVar(4) = xsGetAt(xsVar(0), xsVar(3));
+	xsTrace(xsToString(xsVar(3)));xsTrace(": ");
+	xsTrace(xsToString(xsVar(4)));xsTrace("\n");
+}
+```
 
 ***
 
@@ -1593,15 +1623,17 @@ function foo() {
 
 ##### In C:
 
-	void xs_foo(xsMachine* the) {
-		xsIntegerValue c, i;
-		xsVars(1);
-		c = xsToInteger(xsArgc));
-		xsVar(0) = xsString("");
-		for (i = 0; i < c; i++)
-			xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(i));
-		xsResult = xsVar(0);
-	}
+```c
+void xs_foo(xsMachine* the) {
+	xsIntegerValue c, i;
+	xsVars(1);
+	c = xsToInteger(xsArgc));
+	xsVar(0) = xsString("");
+	for (i = 0; i < c; i++)
+		xsVar(0) = xsCall1(xsVar(0), xsID_concat, xsArg(i));
+	xsResult = xsVar(0);
+}
+```
 
 <a id="garbage-collector"></a>
 ### Garbage Collector
@@ -1643,20 +1675,22 @@ Returns the value of the slot
 
 ##### In C:
 
-	xsSlot gFooSlot;
-	void xsSetupFoo(xsMachine* the) {
-		gFooSlot = xsThis;
-		xsRemember(gFooSlot);
-	}
-	void xsInvokeFoo(xsMachine* the) {
-		xsVars(2);
-		xsVar(0) = xsAccess(gFooSlot);
-		xsVar(1) = xsString("message");
-		xsCall1(xsVar(0), xsID_invoke, xsVar(1));
-	}
-	void xsCleanupFoo(xsMachine* the) {
-		xsForget(gFooSlot);
-	}
+```c
+xsSlot gFooSlot;
+void xsSetupFoo(xsMachine* the) {
+	gFooSlot = xsThis;
+	xsRemember(gFooSlot);
+}
+void xsInvokeFoo(xsMachine* the) {
+	xsVars(2);
+	xsVar(0) = xsAccess(gFooSlot);
+	xsVar(1) = xsString("message");
+	xsCall1(xsVar(0), xsID_invoke, xsVar(1));
+}
+void xsCleanupFoo(xsMachine* the) {
+	xsForget(gFooSlot);
+}
+```
 
 ***
 
@@ -1675,13 +1709,15 @@ The garbage collector is enabled by default. Use `xsEnableGarbageCollection` to 
 
 To handle exceptions in C, the XS runtime uses `setjmp`, `longjmp`, and a chain of `jmp_buf` buffers, defined as follows:
 
-	typedef struct xsJumpRecord xsJump
-	struct xsJumpRecord {
-		jmp_buf buffer;
-		xsJump* nextJump;
-		xsSlot* stack;
-		xsSlot* frame;
-	};
+```c
+typedef struct xsJumpRecord xsJump
+struct xsJumpRecord {
+	jmp_buf buffer;
+	xsJump* nextJump;
+	xsSlot* stack;
+	xsSlot* frame;
+};
+```
 
 However, you do not need to use this directly, because XS in C defines macros for throwing and catching exceptions.
 
@@ -1721,15 +1757,17 @@ As shown in the following example, the `xsTry` and `xsCatch` macros are used tog
 
 ##### In C:
 
-	 {
-		xsTry {
-			/* Exception thrown here ... */
-		}
-		xsCatch {
-			/* ... is caught here. */
-			xsThrow(xsException)
-		}
-	} 
+```c
+ {
+	xsTry {
+		/* Exception thrown here ... */
+	}
+	xsCatch {
+		/* ... is caught here. */
+		xsThrow(xsException)
+	}
+}
+```
 
 <a id="errors"></a>
 ### Errors
@@ -1738,18 +1776,20 @@ Exceptions may be thrown by C callbacks. C callbacks are often provide the inter
 
 For specific errors, the XS runtime provides error types and prototypes.
 
-	enum {
-		XS_NO_ERROR = 0,
-		XS_UNKNOWN_ERROR,
-		XS_EVAL_ERROR,
-		XS_RANGE_ERROR,
-		XS_REFERENCE_ERROR,
-		XS_SYNTAX_ERROR,
-		XS_TYPE_ERROR,
-		XS_URI_ERROR,
-		XS_ERROR_COUNT
-	};
-	
+```c
+enum {
+	XS_NO_ERROR = 0,
+	XS_UNKNOWN_ERROR,
+	XS_EVAL_ERROR,
+	XS_RANGE_ERROR,
+	XS_REFERENCE_ERROR,
+	XS_SYNTAX_ERROR,
+	XS_TYPE_ERROR,
+	XS_URI_ERROR,
+	XS_ERROR_COUNT
+};
+```
+
 XS in C defines the following macros to throw specific exceptions.
 
 **`void xsUnknownError(...)`<BR>
@@ -1766,15 +1806,17 @@ XS in C defines the following macros to throw specific exceptions.
 
 ##### In C:
 
-	xpt2046 xpt = calloc(1, sizeof(xpt2046Record));
-	if (!xpt) xsUnknownError("out of memory");
-	
-	if (strlen(string) > MAXNAMESIZE)
-		xsRangeError("name too long: %s", string);
+```
+xpt2046 xpt = calloc(1, sizeof(xpt2046Record));
+if (!xpt) xsUnknownError("out of memory");
 
-	char *slash = strrchr(path, '/');
-	if (!slash)
-		xsURIError("No path");
+if (strlen(string) > MAXNAMESIZE)
+	xsRangeError("name too long: %s", string);
+
+char *slash = strrchr(path, '/');
+if (!slash)
+	xsURIError("No path");
+```
 
 ***
 
@@ -1789,8 +1831,10 @@ The `xsErrorPrintf` macro is a shortcut for `xsUnknownError` when only a message
 
 ##### In C:
 
-	if (rotation != requestedRotation)
-		xsErrorPrintf("not configured for requested rotation");
+```c
+if (rotation != requestedRotation)
+	xsErrorPrintf("not configured for requested rotation");
+```
 
 ***
 
@@ -1822,9 +1866,24 @@ trace("Hello xsbug!\n");
 
 ##### In C:
 
-```
+```c
 xsDebugger();
 xsTrace("Hello xsbug!\n");
+```
+
+**`void xsLog(xsStringValue format, ...)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `format` | A printf-style format string
+| `...` | Items to referenced by the format string
+
+##### In C:
+
+```c
+int err = -108;
+char *msg = "out of memory";
+xsLog("The error is %d (%s)\n", err, msg);
 ```
 
 <a id="machine"></a>
@@ -1832,7 +1891,7 @@ xsTrace("Hello xsbug!\n");
 
 The main structure of the XS runtime is its virtual machine, which is what parses, compiles, links, and executes scripts. A virtual machine is an opaque structure though some members of the structure are available to optimize the macros of XS in C; you never need to use them directly.
 
-```
+```c
 typedef struct xsMachineRecord xsMachine
 struct xsMachineRecord {
 	xsSlot* stack;
@@ -1855,7 +1914,7 @@ To use the XS runtime you have to create a machine with the `xsCreateMachine` ma
 
 -  A structure with members that are essentially parameters specifying what to allocate for the machine. Pass `NULL` if you want to use the defaults. 
 
-```
+```c
 typedef struct {
 	xsIntegerValue initialChunkSize;
 	xsIntegerValue incrementalChunkSize;
@@ -1915,7 +1974,7 @@ The `xsDeleteMachine` macro is one of a number of macros described in this docum
 
 The following example illustrates the use of `xsCreateMachine` and `xsDeleteMachine`. The `xsMainContext` function called in the example is defined in the next section.
 
-```
+```c
 int main(int argc, char* argv[]) 
 {
 	xsCreation aCreation = {
@@ -1970,7 +2029,7 @@ Returns a context
 #### Example 
 The following code shows a context being set in the `xsMainContext` function, which was called in the preceding section's example.
 
-```
+```c
 typedef struct {
 	int argc;
 	char** argv;
@@ -2053,7 +2112,7 @@ This section describes the host-related macros of XS in C (see Table 2). An anno
 
 A *host function* is a special kind of function, one whose implementation is in C rather than ECMAScript. For a script, a host function is just like a function; however, when a script invokes a host function, a C callback is executed. The same is true for *host constructors*, which are constructors implemented in C.
 
-```
+```c
 typedef void (*xsCallback)(xsMachine* the);
 ```
 
@@ -2088,7 +2147,7 @@ A *host object* is a special kind of object with data that can be directly acces
 
 When the garbage collector is about to get rid of a host object, it executes the host object's destructor, if any. No reference to the host object is passed to the destructor: a destructor can only destroy data.
 
-```
+```c
 typedef void (xsDestructor)(void* theData);
 ```
 
@@ -2208,7 +2267,7 @@ This example creates a `File` class using the host macros of XS in C. This is a 
 
 This code uses the `File` class from JavaScript to open and close a file:
 
-```
+```c
 const f = new File("/Users/user/test.js", "rb");
 f.close();
 ```
@@ -2221,7 +2280,7 @@ This example adds the `close` function to the prototype after creating the const
 
 This example also adds a getter accessor function for the property `isOpen`. 
 
-```
+```c
 #define kPrototype (0)
 #define kConstructor (1)
 
@@ -2239,7 +2298,7 @@ The `xs_file_constructor` function implements the host constructor. The construc
 
 Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
 
-```
+```c
 typedef struct {
 	FILE *fd;
 } xsFileRecord, *xsFile;
@@ -2265,7 +2324,7 @@ static void xs_file_constructor(xsMachine *the)
 
 The `xs_file_destructor` function implements the host object's destructor. The destructor closes the file and frees the host data:
 
-```
+```c
 static void xs_file_destructor(void *data)
 {
 	xsFile f = data;
@@ -2280,7 +2339,7 @@ static void xs_file_destructor(void *data)
 
 The `xs_file_close` function closes the file immediately, rather than waiting for the instance to be freed by the garbage collector. The function retrieves the associated `xsFileRecord` record from the object instance host data and calls the host object destructor to close the file.
 
-```
+```c
 static void xs_file_close(xsMachine *the)
 {
 	xsFile f = xsGetHostData(xsThis);
@@ -2292,7 +2351,7 @@ static void xs_file_close(xsMachine *the)
 
 The `xs_file_get_isOpen` getter accessor function sets the result to `true` or `false` depending on whether the file is open.
 
-```
+```c
 static void xs_file_get_isOpen(xsMachine *the)
 {
 	xsFile f = xsGetHostData(xsThis);
@@ -2340,7 +2399,7 @@ r3.union(r1, r2);
 
 The `Rectangle` constructor `xs_rectangle` function stores the parameters in a host chunk. The constructor accepts either a single `Rectangle` instance or the individual `x`, `y`, `w` and `h` values. The function uses the `xsmcArgc` macro to count the function parameters and the `xsmcIsInstanceOf` macro to determine if the first parameter is an object.
 
-```
+```c
 typedef struct {
 	int x;
 	int y;
@@ -2369,7 +2428,7 @@ void xs_rectangle(xsMachine *the)
 ```
 The destructor function `xs_rectangle_destructor` is called when the object instance is deleted or garbage collected. Any memory or resources allocated by the instance should be freed in the destructor. Because the XS runtime manages host chunk memory, the destructor doesn't need to dispose the chunk.
 
-```
+```c
 void xs_rectangle_destructor(void *data)
 {
 }
@@ -2383,7 +2442,7 @@ The `Rectangle` class provides getters and setters for class properties.
 
 The `get` functions read the corresponding field from the host chunk and return the property to the caller by setting `xsResult`. The `set` functions store the value provided into the host chunk.
 
-```
+```c
 void xs_rectangle_get_x(xsMachine *the)
 {
 	xsRectangle r = xsmcGetHostChunk(xsThis);
@@ -2399,7 +2458,7 @@ void xs_rectangle_set_x(xsMachine *the)
 
 The `union` method returns the union of all the rectangles passed to the function. The `xs_rectangle_union` function uses the `xsmcArgc` macro to count the number or `Rectangle` instances. The union result is stored back into calling instance's host chunk. JavaScript applications read the result rectangle properties using the `get *()` methods.
 
-```
+```c
 void xs_rectangle_union(xsMachine *the)
 {
 	xsIntegerValue i, argc;
@@ -2416,8 +2475,8 @@ void xs_rectangle_union(xsMachine *the)
 
 Standalone functions -- functions that are not part of a class -- can also be implemented in C. The `@` syntax extension is used where the function body normally appears. 
 
-```
-	function restart() @ "xs_restart";
+```c
+function restart() @ "xs_restart";
 ```
 
 The value of `xsThis` in the implementation of `xs_restart` matches the receiver, which is `xsGlobal` in the following invocation.
@@ -2459,7 +2518,7 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 
 <a id="license"></a>
 ## License
-    Copyright (c) 2016-2021  Moddable Tech, Inc.
+    Copyright (c) 2016-2023  Moddable Tech, Inc.
  
     This file is part of the Moddable SDK Runtime.
   

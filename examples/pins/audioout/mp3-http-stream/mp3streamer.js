@@ -32,7 +32,7 @@ export default class {
 	#targetSamplesQueued = 1152 * 4;
 	#callbacks = {};
 	#pending = [];
-	#readBuffer = new Uint8Array(8192);			// must be able to hold a full mp3 frame + MP3.BUFFER_GUARD
+	#readBuffer;
 	#info = {};
 	#mp3 = new MP3;
 
@@ -69,6 +69,11 @@ export default class {
 				
 			},
 			onReadable: (count) => {
+				if (!this.#readBuffer) {
+					this.#readBuffer = new Uint8Array(8192);			// must be able to hold a full mp3 frame + MP3.BUFFER_GUARD
+					this.#readBuffer.position = 0;
+				}
+
 				this.#request.readable = count;
 				this.#fillQueue();
 			},
@@ -79,8 +84,6 @@ export default class {
 				this.#callbacks.onError?.call(this, e);
 			}
 		});
-		
-		this.#readBuffer.position = 0;
 
 		const audio = options.audio.out;
 		this.#audio = audio;
