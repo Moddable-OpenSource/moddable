@@ -52,6 +52,9 @@ extern "C" {
 		#define mxBoundsCheck 0
 	#endif
 #endif
+#ifndef mxKeysGarbageCollection
+	#define mxKeysGarbageCollection 0
+#endif
 #ifndef mxRegExp
 	#define mxRegExp 1
 #endif
