@@ -32,7 +32,7 @@ class Screen extends config.Screen {
 		super(dictionary);
 
 		this.#timer = Timer.set(() => {
-			this.context.onIdle();
+			this.context?.onIdle();
 		}, 1, 100);
 		Timer.schedule(this.#timer);
 
@@ -58,7 +58,7 @@ class Screen extends config.Screen {
 						  case 3:
 								if (point.down) {
 									delete point.down;
-									this.context.onTouchEnded(i, point.x, point.y, Time.ticks);
+									this.context?.onTouchEnded(i, point.x, point.y, Time.ticks);
 									delete point.x;
 									delete point.y;
 								}
@@ -67,10 +67,10 @@ class Screen extends config.Screen {
 						  case 2:
 								if (!point.down) {
 									point.down = true;
-									this.context.onTouchBegan(i, point.x, point.y, Time.ticks);
+									this.context?.onTouchBegan(i, point.x, point.y, Time.ticks);
 								}
 								else
-									this.context.onTouchMoved(i, point.x, point.y, Time.ticks);
+									this.context?.onTouchMoved(i, point.x, point.y, Time.ticks);
 								break;
 					}
 				}
