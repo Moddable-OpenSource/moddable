@@ -1,0 +1,29 @@
+{
+	"preload": "audioin",
+	"platforms": {
+		"esp32/*": {
+			"modules": {
+				"*": [
+					"./audioin",
+					"./esp32/audioin"
+				]
+			}
+		},
+		"...": {
+			"warning": "Using AudioIn simulator",
+			"include": [
+				"$(MODDABLE)/modules/files/file/manifest.json",
+				"$(MODDABLE)/modules/data/wavreader/manifest.json"
+			],
+			"config": {
+				"audioin": {
+					"sim" : ""
+				}
+			},
+			"modules": {
+				"*": "./sim/audioin"
+			}
+		}
+	}
+}
+
