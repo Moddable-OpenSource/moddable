@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "errno.h"
+#include "pico.h"
 #include "pico/stdlib.h"
 
 #ifdef __cplusplus

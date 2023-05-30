@@ -506,6 +506,7 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 	}
 
 #if MODDEF_XS_MODS
+	extern const char *gXSAbortStrings[];
 	if (modStatus)
 		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
 #endif
