@@ -62,6 +62,7 @@ static void fxDebugPushTag(txMachine* the);
 static void fxDebugScriptCDATA(txMachine* the, char c);
 static void fxEcho(txMachine* the, txString theString);
 static void fxEchoAddress(txMachine* the, txSlot* theSlot);
+static void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList);
 static void fxEchoBigInt(txMachine* the, txBigInt* bigint);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
@@ -890,6 +891,38 @@ void fxEchoAddress(txMachine* the, txSlot* theSlot)
 	fxEcho(the, "\"");
 }
 
+void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList)
+{
+	txSlot* arrayBuffer = theInstance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txU1* address = (txU1*)(arrayBuffer->value.arrayBuffer.address);
+	txInteger size = bufferInfo->value.bufferInfo.length;
+	txInteger offset = 0, index;
+	if (size > 1024)
+		size = 1024;
+	while (offset < size) {
+		fxEcho(the, "<property");
+		fxEchoFlags(the, " ", 0);
+		fxEcho(the, " name=\"");
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 12) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 8) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 4) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + (offset & 0xF)));
+		fxEcho(the, "\"");
+		fxEcho(the, " value=\"");
+		for (index = 0; index < 16; index++) {
+			txByte byte = *address++;
+			fxEchoCharacter(the, c_read8(gxHexaDigits + ((byte >> 4) & 0xF)));
+			fxEchoCharacter(the, c_read8(gxHexaDigits + (byte & 0xF)));
+			fxEcho(the, " ");
+			offset++;
+			if (offset == size)
+				break;
+		}
+		fxEcho(the, " \"/>");
+	}
+}
+
 void fxEchoBigInt(txMachine* the, txBigInt* bigint)
 {
 	int i = bigint->size - 1;
@@ -1059,6 +1092,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aProperty = aProperty->next;
 			break;
 		case XS_ARRAY_BUFFER_KIND:
+			fxEchoArrayBuffer(the, theInstance, theList);
 			aProperty = aProperty->next;
 			fxEchoProperty(the, aProperty, theList, "(buffer)", -1, C_NULL);
 			aProperty = aProperty->next;
