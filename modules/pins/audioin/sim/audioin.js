@@ -18,7 +18,7 @@
  *
  */
 
-import {File} from "file";
+import Resource from "Resource";
 import config from "mc/config";
 import WavReader from "data/wavreader";
 
@@ -27,12 +27,7 @@ class AudioIn  {
 	#reader;
 
 	constructor() {
-		if (!config.audioin.sim)
-			throw new Error("audo input simulator file not configured");
-		const file = new File(config.audioin.sim);
-		this.#wav = file.read(ArrayBuffer, file.length);
-		file.close();
-		
+		this.#wav = new Resource("sim.wav");		
 		this.#reader = new WavReader(this.#wav);
 	}
 	close() {
@@ -42,13 +37,12 @@ class AudioIn  {
 		const output = new Int16Array(buffer, offset, count);
 		let position = 0;
 		while (count) {
-			const remain = (this.#reader.waveSize - this.#reader.position) >> 1
-			const use = Math.min(count, remain);
+			const use = Math.min(count, this.#reader.samples);
 			this.#reader.getSamples(output.subarray(position, position + use), use);
 			count -= use;
 			position += use;
 
-			if (this.#reader.waveSize === this.#reader.position)
+			if (0 === this.#reader.samples)
 				this.#reader = new WavReader(this.#wav);		// loop
 		}
 

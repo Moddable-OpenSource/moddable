@@ -12,16 +12,18 @@
 		"...": {
 			"warning": "Using AudioIn simulator",
 			"include": [
-				"$(MODDABLE)/modules/files/file/manifest.json",
 				"$(MODDABLE)/modules/data/wavreader/manifest.json"
 			],
 			"config": {
 				"audioin": {
-					"sim" : ""
+					"sim" : "bflatmajor.wav"
 				}
 			},
 			"modules": {
 				"*": "./sim/audioin"
+			},
+			"data": {
+				"sim": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
 			}
 		}
 	}
