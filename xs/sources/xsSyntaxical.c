@@ -2370,7 +2370,7 @@ void fxArrowExpression(txParser* parser, txUnsigned flag)
 {
 	txInteger aLine = parser->line;
 	txUnsigned flags = parser->flags;
-	parser->flags &= ~mxAsyncFlag;
+	parser->flags &= ~(mxAsyncFlag | mxGeneratorFlag);
 	parser->flags |= mxArrowFlag | flag;
 	fxMatchToken(parser, XS_TOKEN_ARROW);
 	fxPushNULL(parser);

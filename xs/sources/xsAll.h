@@ -52,6 +52,9 @@ extern "C" {
 		#define mxBoundsCheck 0
 	#endif
 #endif
+#ifndef mxKeysGarbageCollection
+	#define mxKeysGarbageCollection 0
+#endif
 #ifndef mxRegExp
 	#define mxRegExp 1
 #endif
@@ -407,6 +410,9 @@ struct sxMachine {
 	txSlot** nameTable;
 	txSize symbolModulo;
 	txSlot** symbolTable;
+	
+	txID keyholeCount;
+	txSlot* keyholeList;
 
 	txSlot** keyArray;
 	txID keyCount;
@@ -787,6 +793,7 @@ extern void fxCheckCStack(txMachine* the);
 extern void fxAllocate(txMachine* the, txCreation* theCreation);
 extern void fxCollect(txMachine* the, txFlag theFlag);
 mxExport txSlot* fxDuplicateSlot(txMachine* the, txSlot* theSlot);
+extern txSlot* fxFindKey(txMachine* the);
 extern void fxFree(txMachine* the);
 extern void fxGrowKeys(txMachine* the, txID theCount);
 extern txSize fxMultiplyChunkSizes(txMachine* the, txSize a, txSize b);
@@ -1027,12 +1034,14 @@ extern txSlot* fxNewSymbolInstance(txMachine* the);
 extern void fxSymbolToString(txMachine* the, txSlot* slot);
 extern txSlot* fxGetKey(txMachine* the, txID theID);
 extern char* fxGetKeyName(txMachine* the, txID theID);
+extern char* fxGetKeyString(txMachine* the, txID theID, txBoolean* adorn);
 extern txID fxFindName(txMachine* the, txString theString);
 extern txBoolean fxIsKeyName(txMachine* the, txID theID);
 extern txBoolean fxIsKeySymbol(txMachine* the, txID theID);
 extern txID fxNewName(txMachine* the, txSlot* theSlot);
 extern txID fxNewNameC(txMachine* the, txString theString);
 extern txID fxNewNameX(txMachine* the, txString theString);
+extern void fxPushKeyString(txMachine* the, txID theID, txBoolean* adorn);
 extern txSlot* fxAt(txMachine* the, txSlot* slot);
 extern void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot);
 extern void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize);

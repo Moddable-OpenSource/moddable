@@ -48,6 +48,7 @@ C_OPTIONS = \
 	/D mxAliasInstance=0 \
 	/D mxDebug=1 \
 	/D mxExplicitResourceManagement=1 \
+	/D mxKeysGarbageCollection=1 \
 	/D mxLockdown=1 \
 	/D mxNoConsole=1 \
 	/D mxParse=1 \
