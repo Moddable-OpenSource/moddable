@@ -1,4 +1,10 @@
 {
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"COMMODETTO": "$(MODULES)/commodetto",
+		"PIU": "$(MODULES)/piu"
+	},
 	"platforms": {
         "esp32/m5atom_echo": {
             "build": {
