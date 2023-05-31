@@ -14,11 +14,6 @@
 			"include": [
 				"$(MODDABLE)/modules/data/wavreader/manifest.json"
 			],
-			"config": {
-				"audioin": {
-					"sim" : "bflatmajor.wav"
-				}
-			},
 			"modules": {
 				"*": "./sim/audioin"
 			},
@@ -28,4 +23,3 @@
 		}
 	}
 }
-
