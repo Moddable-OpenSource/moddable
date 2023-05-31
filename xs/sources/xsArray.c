@@ -2367,8 +2367,8 @@ void fx_Array_prototype_some(txMachine* the)
 
 void fx_Array_prototype_sort(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* function = C_NULL;
+	/*txSlot* array =*/ fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
 		if (slot->kind != XS_UNDEFINED_KIND) {
