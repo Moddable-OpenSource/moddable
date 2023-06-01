@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,9 +22,6 @@
 	DigitalBank - 
 
 	To do:
-
-		read not blocked on input instances, write not blocked on output instances
-		ESP8266 implementation assumes a single VM
 
 */
 
@@ -322,7 +319,7 @@ void xs_digitalbank_read(xsMachine *the)
 	uint32_t result = 0;
 
 	if (!digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't read output");
 
 	if (0 == digital->bank) {
 		result = gpio_get_all();
@@ -344,7 +341,7 @@ void xs_digitalbank_write(xsMachine *the)
 	uint32_t value;
 
 	if (digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't write input");
 
 	value = xsmcToInteger(xsArg(0));
 
