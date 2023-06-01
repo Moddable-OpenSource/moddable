@@ -1046,7 +1046,7 @@ void fxImport(txParser* parser)
 
 void fxSpecifiers(txParser* parser)
 {
-	txInteger aCount = 0;
+//	txInteger aCount = 0;
 	fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
 	while (gxTokenFlags[parser->token] & XS_TOKEN_IDENTIFIER_NAME) {
 		fxPushSymbol(parser, parser->symbol);
@@ -1065,7 +1065,7 @@ void fxSpecifiers(txParser* parser)
 		else
 			fxPushNULL(parser);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_SPECIFIER, parser->line);
-		aCount++;
+//		aCount++;
 		if (parser->token != XS_TOKEN_COMMA) 
 			break;
 		fxGetNextToken(parser);

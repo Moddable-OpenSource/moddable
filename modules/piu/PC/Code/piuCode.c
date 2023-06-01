@@ -680,9 +680,9 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 	PiuTextBufferClear(the, results);
 	if ((*self)->code) {
         int32_t offset = 0;
-		int32_t itemCount = 0;
+//		int32_t itemCount = 0;
 		int32_t itemSize = 0;
-		itemCount = 0;
+//		itemCount = 0;
 		itemSize = sizeof(PiuCodeResultRecord);
 		for (;;) {
 			former = (*results)->current;
@@ -703,7 +703,7 @@ void PiuCodeSearch(PiuCode* self, uint32_t size)
 			PiuCodeOffsetToColumnLine(self, result->to, &result->toColumn, &result->toLine);
 			result->from = fxUTF8ToUnicodeOffset(string, result->from);
 			result->to = fxUTF8ToUnicodeOffset(string, result->to);
-			itemCount++;
+//			itemCount++;
 		}
 		(*self)->resultsSize = itemSize;
 	}
