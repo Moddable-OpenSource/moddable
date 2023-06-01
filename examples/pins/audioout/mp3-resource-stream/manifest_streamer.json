@@ -16,7 +16,7 @@
 	],
 	"defines": {
 		"audioOut": {
-			"queueLength": 24
+			"queueLength": 12
 		}
 	},
 	"config": {

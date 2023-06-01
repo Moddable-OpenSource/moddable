@@ -62,6 +62,7 @@ static void fxDebugPushTag(txMachine* the);
 static void fxDebugScriptCDATA(txMachine* the, char c);
 static void fxEcho(txMachine* the, txString theString);
 static void fxEchoAddress(txMachine* the, txSlot* theSlot);
+static void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList);
 static void fxEchoBigInt(txMachine* the, txBigInt* bigint);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
@@ -79,6 +80,7 @@ static void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList,
 static void fxEchoStart(txMachine* the);
 static void fxEchoStop(txMachine* the);
 static void fxEchoString(txMachine* the, txString theString);
+static void fxEchoTypedArray(txMachine* the, txSlot* theInstance, txInspectorNameList* theList);
 static txSlot* fxFindFrame(txMachine* the);
 static txSlot* fxFindRealm(txMachine* the);
 static void fxGo(txMachine* the);
@@ -889,6 +891,38 @@ void fxEchoAddress(txMachine* the, txSlot* theSlot)
 	fxEcho(the, "\"");
 }
 
+void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList)
+{
+	txSlot* arrayBuffer = theInstance->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	txU1* address = (txU1*)(arrayBuffer->value.arrayBuffer.address);
+	txInteger size = bufferInfo->value.bufferInfo.length;
+	txInteger offset = 0, index;
+	if (size > 1024)
+		size = 1024;
+	while (offset < size) {
+		fxEcho(the, "<property");
+		fxEchoFlags(the, " ", 0);
+		fxEcho(the, " name=\"");
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 12) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 8) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + ((offset >> 4) & 0xF)));
+		fxEchoCharacter(the, c_read8(gxHexaDigits + (offset & 0xF)));
+		fxEcho(the, "\"");
+		fxEcho(the, " value=\"");
+		for (index = 0; index < 16; index++) {
+			txByte byte = *address++;
+			fxEchoCharacter(the, c_read8(gxHexaDigits + ((byte >> 4) & 0xF)));
+			fxEchoCharacter(the, c_read8(gxHexaDigits + (byte & 0xF)));
+			fxEcho(the, " ");
+			offset++;
+			if (offset == size)
+				break;
+		}
+		fxEcho(the, " \"/>");
+	}
+}
+
 void fxEchoBigInt(txMachine* the, txBigInt* bigint)
 {
 	int i = bigint->size - 1;
@@ -1058,6 +1092,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aProperty = aProperty->next;
 			break;
 		case XS_ARRAY_BUFFER_KIND:
+			fxEchoArrayBuffer(the, theInstance, theList);
 			aProperty = aProperty->next;
 			fxEchoProperty(the, aProperty, theList, "(buffer)", -1, C_NULL);
 			aProperty = aProperty->next;
@@ -1144,11 +1179,11 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			aProperty = aProperty->next;
 			break;
 		case XS_TYPED_ARRAY_KIND:
-			fxEchoProperty(the, aProperty, theList, "(per item)", -1, C_NULL);
+			fxEchoTypedArray(the, theInstance, theList);
 			aProperty = aProperty->next;
 			fxEchoProperty(the, aProperty, theList, "(view)", -1, C_NULL);
 			aProperty = aProperty->next;
-			fxEchoProperty(the, aProperty, theList, "(items)", -1, C_NULL);
+			fxEchoProperty(the, aProperty, theList, "(buffer)", -1, C_NULL);
 			aProperty = aProperty->next;
 			break;
 		case XS_PROXY_KIND:
@@ -1165,6 +1200,8 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 			if (aProperty->kind == XS_ARRAY_KIND) {
 				txSlot* item = aProperty->value.array.address;
 				txIndex c = fxGetIndexSize(the, aProperty), i;
+				if (c > 1024)
+					c = 1024;
 				for (i = 0; i < c; i++) {
 					txIndex index = *((txIndex*)item);
 					fxEchoProperty(the, item, theList, "[", index, "]");
@@ -1290,7 +1327,6 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 	txID ID = theProperty->ID;
 	txFlag flag = theProperty->flag;
 	txSlot* instance;
-	txString name;
 	if ((theProperty->kind == XS_CLOSURE_KIND) || (theProperty->kind == XS_EXPORT_KIND)) {
 		theProperty = theProperty->value.closure;
         if (!theProperty)
@@ -1431,10 +1467,8 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			fxEcho(the, "'\"/>");
 			break;
 		case XS_SYMBOL_KIND:
-			name = fxGetKeyName(the, theProperty->value.symbol);
 			fxEcho(the, " value=\"Symbol(");
-			if (name)
-				fxEchoString(the, name);
+			fxEchoString(the, fxGetKeyString(the, theProperty->value.symbol, C_NULL));
 			fxEcho(the, ")\"/>");
 			break;
 		case XS_DATA_VIEW_KIND:
@@ -1442,11 +1476,6 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			fxEchoInteger(the, theProperty->value.dataView.offset);
 			fxEcho(the, ", ");
 			fxEchoInteger(the, fxGetDataViewSize(the, theProperty, theProperty->next));
-			fxEcho(the, " bytes\"/>");
-			break;
-		case XS_TYPED_ARRAY_KIND:
-			fxEcho(the, " value=\"");
-			fxEchoInteger(the, theProperty->value.typedArray.dispatch->size);
 			fxEcho(the, " bytes\"/>");
 			break;
 		default:
@@ -1694,6 +1723,36 @@ void fxEchoString(txMachine* the, txString theString)
 		}
 	}
 	the->echoOffset = mxPtrDiff(dst - start);
+}
+
+void fxEchoTypedArray(txMachine* the, txSlot* theInstance, txInspectorNameList* theList)
+{
+	txSlot* dispatch = theInstance->next;
+	txSlot* view = dispatch->next;
+	txSlot* buffer = view->next;
+	txU2 shift = dispatch->value.typedArray.dispatch->shift;
+	txInteger size = fxGetDataViewSize(the, view, buffer) >> shift;
+	fxEcho(the, "<property");
+	fxEchoFlags(the, " ", dispatch->flag);
+	fxEcho(the, " name=\"(");
+	fxIDToString(the, dispatch->value.typedArray.dispatch->constructorID, the->nameBuffer, sizeof(the->nameBuffer));
+	fxEchoString(the, the->nameBuffer);
+	fxEcho(the, ")\"");
+	fxEcho(the, " value=\"");
+	fxEchoInteger(the, size);
+	fxEcho(the, " items\"/>");
+	if (size > 0) {
+		txInteger index = 0;
+		if (size > 1024)
+			size = 1024;
+		mxPushUndefined();
+		while (index < size) {
+			(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), the->stack, EndianNative);
+			fxEchoProperty(the, the->stack, theList, "[", index, "]");
+			index++;
+		}
+		mxPop();
+	}
 }
 
 txSlot* fxFindFrame(txMachine* the)
@@ -2390,7 +2449,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[4] = (mxPtrDiff(the->stackTop - the->stackPeak)) * sizeof(txSlot);
 	xsInstrumentValues[5] = (mxPtrDiff(the->stackTop - the->stackBottom)) * sizeof(txSlot);
 	xsInstrumentValues[6] = the->garbageCollectionCount;
-	xsInstrumentValues[7] = the->keyIndex - the->keyOffset;
+	xsInstrumentValues[7] = the->keyIndex - the->keyOffset - the->keyholeCount;
 	xsInstrumentValues[8] = the->loadedModulesCount;
 	xsInstrumentValues[9] = the->peakParserSize;
 	xsInstrumentValues[10] = the->floatingPointOps;

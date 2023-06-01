@@ -506,6 +506,7 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 	}
 
 #if MODDEF_XS_MODS
+	extern const char *gXSAbortStrings[];
 	if (modStatus)
 		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
 #endif
@@ -649,7 +650,7 @@ int32_t modInstrumentationChunkHeapSize(xsMachine *the)
 
 int32_t modInstrumentationKeysUsed(xsMachine *the)
 {
-	return the->keyIndex - the->keyOffset;
+	return the->keyIndex - the->keyOffset - the->keyholeCount;
 }
 
 int32_t modInstrumentationGarbageCollectionCount(xsMachine *the)

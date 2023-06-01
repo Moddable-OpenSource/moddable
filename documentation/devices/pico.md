@@ -1,13 +1,12 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: March 28, 2023
+Revised: May 30, 2023
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 > Note: The Pico port is solid and mostly complete. Possible future work includes:
 > 
 > - Mods
-> - Audio
 > - JavaScript Atomics
 > - Web Workers making use of the second core
 > - PIO integration
@@ -125,7 +124,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 	export PICO_GCC_ROOT=$(brew --prefix)
 	```
 
-5. Install the __pico__ sdk and examples:
+5. Install the __pico__ sdk, extras and examples:
 
 	```text
 	cd $HOME/pico
@@ -134,6 +133,11 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 	git submodule update --init
 	```
 
+	```text
+	cd $HOME/pico
+	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
+	```
+	
 	```text
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
@@ -231,7 +235,7 @@ Not yet available.
 	export PICO_GCC_ROOT=/usr
 	```
 
-5. Install the __pico__ sdk and examples:
+5. Install the __pico__ sdk, extras and examples:
 
 	```text
 	cd $HOME/pico
@@ -240,6 +244,11 @@ Not yet available.
 	git submodule update --init
 	```
 
+	```text
+	cd $HOME/pico
+	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
+	```
+	
 	```text
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples

@@ -180,7 +180,7 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
-const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
+char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 	"debugger",
 	"memory full",
 	"stack overflow",

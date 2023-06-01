@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020  Moddable Tech, Inc.
+ * Copyright (c) 2020-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,6 +19,7 @@ import Timer from "timer"
 const samples = [];
 
 const input = new AudioIn;
+const sampleRate = input.sampleRate;
 if (16 !== input.bitsPerSample)
 	throw new Error("expects 16 bit samples");
 
@@ -39,7 +40,8 @@ trace("recording complete\n");
 input.close();
 
 let speaker = new AudioOut({
-	streams: 1
+	streams: 1,
+	sampleRate
 });
 
 const playing = [];

@@ -530,7 +530,6 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 {
 	txLinker* linker = (txLinker*)(the->context);
 	txSlot* property;
-	txSlot* key;
 	if (linker->stripFlag)
 		return C_NULL;
 	property = mxBehaviorGetProperty(the, instance, mxID(_name), 0, XS_OWN);
@@ -541,31 +540,11 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 	else
 		property = fxNextSlotProperty(the, fxLastProperty(the, instance), &mxEmptyString, mxID(_name), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	if (id != XS_NO_ID) {
-		key = fxGetKey(the, (txID)id);
-		if (key) {
-			txKind kind = mxGetKeySlotKind(key);
-			if (kind == XS_KEY_KIND) {
-				property->kind = XS_STRING_KIND;
-				property->value.string = key->value.key.string;
-			}
-			else if (kind == XS_KEY_X_KIND) {
-				property->kind = XS_STRING_X_KIND;
-				property->value.string = key->value.key.string;
-			}
-			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND)) {
-				property->kind = kind;
-				property->value.string = key->value.string;
-				fxAdornStringC(the, "[", property, "]");
-			}
-			else {
-				property->kind = mxEmptyString.kind;
-				property->value = mxEmptyString.value;
-			}
-		}
-		else {
-			property->kind = mxEmptyString.kind;
-			property->value = mxEmptyString.value;
-		}
+		txBoolean adorn;
+		fxPushKeyString(the, id, &adorn);
+		mxPullSlot(property);
+		if (adorn)
+			fxAdornStringC(the, "[", property, "]");
 	}
 	else if (former) {
 		char buffer[16];

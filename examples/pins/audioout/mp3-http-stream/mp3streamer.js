@@ -28,12 +28,11 @@ export default class {
 	#playing = [];
 	#free = [];
 	#ready;		// undefined while initializing, false if not buffered / playing, true if buffers full to play / playing
-	#next;
-	#framesQueued = 0;
-	#targetFramesQueued = 1;
+	#samplesQueued = 0;
+	#targetSamplesQueued = 1152 * 4;
 	#callbacks = {};
 	#pending = [];
-	#readBuffer = new Uint8Array(1024);
+	#readBuffer;
 	#info = {};
 	#mp3 = new MP3;
 
@@ -70,31 +69,33 @@ export default class {
 				
 			},
 			onReadable: (count) => {
+				if (!this.#readBuffer) {
+					this.#readBuffer = new Uint8Array(8192);			// must be able to hold a full mp3 frame + MP3.BUFFER_GUARD
+					this.#readBuffer.position = 0;
+				}
+
 				this.#request.readable = count;
 				this.#fillQueue();
 			},
 			onDone: () => {
-				this.#fillQueue();
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, 0);
+				this.#info.done = 1;
 			},
 			onError: e => {
 				this.#callbacks.onError?.call(this, e);
 			}
 		});
-		
-		this.#readBuffer.position = 0;
 
 		const audio = options.audio.out;
 		this.#audio = audio;
 		this.#stream = options.audio.stream ?? 0;
 		audio.callbacks ??= [];
-		audio.callbacks[this.#stream] = bytes => {
-			if (!bytes) {
+		audio.callbacks[this.#stream] = samples => {
+			if (!samples) {
 				this.#callbacks.onDone?.call(this);
 				return;
 			}
 
-			this.#framesQueued -= 1;
+			this.#samplesQueued -= samples;
 			let played = this.#playing.shift();
 			this.#free.push(played);
 			this.#callbacks.onPlayed?.call(this, played);
@@ -102,10 +103,18 @@ export default class {
 
 			this.#fillQueue();
 
-			if (0 === this.#framesQueued) {
+			if (0 === this.#samplesQueued) {
 				this.#ready = false;
 				this.#pending = [];
-				this.#callbacks.onReady?.call(this, false);
+
+				if (this.#info.done) {
+					if (1 === this.#info.done) {
+						this.#info.done = 2;
+						this.#callbacks.onDone?.call(this);
+					}
+				}
+				else
+					this.#callbacks.onReady?.call(this, false);
 			}
 		};
 	}
@@ -122,9 +131,7 @@ export default class {
 	}
 	#fillQueue() {
 		const readBuffer = this.#readBuffer;
-		while ((this.#framesQueued < this.#targetFramesQueued) &&
-				(this.#request.readable || readBuffer.position) &&
-				(this.#audio.length(this.#stream) >= 2)) {
+		do {
 			let use = this.#request.readable;
 			let available = readBuffer.length - readBuffer.position;
 			if (use > available) use = available;;
@@ -133,6 +140,15 @@ export default class {
 				this.#request.readable -= use;
 				readBuffer.position += use;
 			}
+
+			if (!readBuffer.position)
+				break;		// no data to parse
+
+			if (this.#samplesQueued >= this.#targetSamplesQueued)
+				break;		// audio out queue full
+
+			if (this.#audio.length(this.#stream) < 2)
+				break;		// no free queue elements
 
 			const found = MP3.scan(readBuffer, 0, readBuffer.position, this.#info);
 			if (!found || ((found.position + found.length + MP3.BUFFER_GUARD) > readBuffer.position)) { 
@@ -153,36 +169,35 @@ export default class {
 			}
 
 			if (undefined === this.#ready) {
-				this.#targetFramesQueued = Math.idiv((this.#info.sampleRate >> 1) + 1151, 1152);		//@@ half second
+//				this.#targetSamplesQueued = Math.idiv((this.#info.sampleRate >> 1) + 1151, 1152);
 				this.#ready = false;
 			}
 
 			const slice = this.#free.shift() ?? (new SharedArrayBuffer(1152 * 2));
-			let result = this.#mp3.decode(readBuffer.subarray(found.position, found.position + found.length + MP3.BUFFER_GUARD), slice);
-			if (!result)
-				throw new Error("bad mp3 data");
+			const byteLength = this.#mp3.decode(readBuffer.subarray(found.position, found.position + found.length + MP3.BUFFER_GUARD), slice);
+			if (byteLength) {
+				if (this.#pending)
+					this.#pending.push(slice);
+				else {
+					this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, slice, 1, 0, slice.samples);
+					this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, slice.samples);
+					this.#playing.push(slice);
+				}
 
-			if (this.#pending)
-				this.#pending.push(slice);
-			else {
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, slice, 1, 0, slice.byteLength);
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, 1);
-				this.#playing.push(slice);
+				this.#samplesQueued += slice.samples;
 			}
 
-			this.#framesQueued += 1;
+			readBuffer.copyWithin(0, found.position + byteLength, readBuffer.position);
+			readBuffer.position -= (found.position + byteLength);
+		} while (true);
 
-			readBuffer.copyWithin(0, found.position + found.length, readBuffer.position);
-			readBuffer.position -= (found.position + found.length);
-		}
-
-		if (!this.#ready && (this.#framesQueued >= this.#targetFramesQueued)) {
+		if (!this.#ready && (this.#samplesQueued >= this.#targetSamplesQueued)) {
 			this.#ready = true;
 
 			while (this.#pending.length) {
 				const slice = this.#pending.shift();
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, slice, 1, 0, slice.byteLength);
-				this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, 1);
+				this.#audio.enqueue(this.#stream, this.#audio.constructor.RawSamples, slice, 1, 0, slice.samples);
+				this.#audio.enqueue(this.#stream, this.#audio.constructor.Callback, slice.samples);
 				this.#playing.push(slice);
 			}
 			this.#pending = undefined;

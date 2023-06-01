@@ -1314,7 +1314,7 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
     va_end(arguments);
 
-	length = c_strlen(message) - 1;
+	length = (txSize)c_strlen(message) - 1;
 	while (length && (0x80 & message[length]))
 		message[length--] = 0;
 
