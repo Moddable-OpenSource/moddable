@@ -993,8 +993,6 @@ void fxArrayLengthSetter(txMachine* the)
 			return;
 	}
 	fxSetArrayLength(the, array, length);
-    mxResult->value.number = array->value.array.length;
-    mxResult->kind = XS_NUMBER_KIND;
 }
 
 txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* descriptor, txFlag mask) 
