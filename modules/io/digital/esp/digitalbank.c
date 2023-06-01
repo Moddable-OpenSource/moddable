@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -23,7 +23,6 @@
 
 	To do:
 
-		read not blocked on input instances, write not blocked on output instances
 		ESP8266 implementation assumes a single VM
 
 */
@@ -104,7 +103,9 @@ struct DigitalRecord {
 	uint32_t	pins;
 	xsSlot		obj;
 	uint8_t		bank;
-	uint8_t		hasOnReadable;
+	int			hasOnReadable : 1;
+	int			isInput : 1;
+	int			marked : 1;
 	// fields after here only allocated if onReadable callback present
 	uint16_t	triggered;
 	uint16_t	rises;
@@ -198,6 +199,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsmcSetHostData(xsThis, digital);
 	digital->pins = 0;
 	digital->obj = xsThis;
+	digital->isInput = 0;
+	digital->marked = 0;
 	xsRemember(digital->obj);
 
 	for (pin = 0; pin < 17; pin++) {
@@ -208,6 +211,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 			case kDigitalInput:
 			case kDigitalInputPullUp:
 			case kDigitalInputPullDown:
+				digital->isInput = 1;
 				if (pin < 16) {
 					PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
 					GPIO_INIT_INPUT(pin);
@@ -356,9 +360,10 @@ void xs_digitalbank_close(xsMachine *the)
 void xs_digitalbank_read(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t result;
+	if (!digital->isInput)
+		xsUnknownError("can't read output");
 
-	result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
+	uint32_t result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
 	if (digital->pins & 0x10000) {
 		if (READ_PERI_REG(RTC_GPIO_IN_DATA) & 1)
 			result |= 0x10000;
@@ -372,8 +377,10 @@ void xs_digitalbank_read(xsMachine *the)
 void xs_digitalbank_write(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
+	if (digital->isInput)
+		xsUnknownError("can't write input");
 
+	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
 	if (digital->pins & 0x10000)
@@ -415,26 +422,32 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 
 	gDigitalCallbackPending = 0;
 
-//@@ bad things happen if a digital instance is closed inside this loop
-	for (walker = gDigitals; walker; walker = walker->next) {
-		uint32_t triggered;
+	for (walker = gDigitals; walker; walker = walker->next)
+		walker->marked = 0 != walker->triggered; 
+
+	walker = gDigitals;
+	while (walker) {
+		if (!walker->marked) {
+			walker = walker->next;
+			continue;
+		}
 
 		builtinCriticalSectionBegin();
-			triggered = walker->triggered;
+			uint32_t triggered = walker->triggered;
 			walker->triggered = 0;
+			walker->marked = 0;
 		builtinCriticalSectionEnd();
 
-		if (!triggered)
-			continue;
-
-		xsBeginHost(walker->the);
+		xsMachine *the = walker->the;
+		xsBeginHost(the);
 			xsmcSetInteger(xsResult, triggered);
 			xsCallFunction1(xsReference(walker->onReadable), walker->obj, xsResult);
-		xsEndHost(walker->the);
+		xsEndHost(the);
+
+		walker = gDigitals;
 	}
 }
 
-//@@ verify read is allowed
 uint32_t modDigitalBankRead(Digital digital)
 {
 	uint32_t result = GPIO_REG_READ(GPIO_IN_ADDRESS) & digital->pins;
@@ -447,7 +460,6 @@ uint32_t modDigitalBankRead(Digital digital)
 	return result;
 }
 
-//@@ verify write is allowed
 void modDigitalBankWrite(Digital digital, uint32_t value)
 {
 	value &= digital->pins;

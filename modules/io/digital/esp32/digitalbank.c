@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -300,7 +300,7 @@ void xs_digitalbank_read(xsMachine *the)
 	uint32_t result;
 
 	if (!digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't read output");
 
 	gpio_dev_t *hw = &GPIO;
 
@@ -322,7 +322,7 @@ void xs_digitalbank_write(xsMachine *the)
 	uint32_t value;
 
 	if (digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't write input");
 
 	gpio_dev_t *hw = &GPIO;
 	value = xsmcToInteger(xsArg(0)) & digital->pins;
