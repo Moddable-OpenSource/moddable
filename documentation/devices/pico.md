@@ -135,7 +135,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-extras
 	```
 	
 	```text
@@ -246,7 +246,7 @@ Not yet available.
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-extras
 	```
 	
 	```text
