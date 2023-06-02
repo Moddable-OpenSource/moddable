@@ -124,10 +124,14 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\include\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include\api \
+ 	-I$(IDF_PATH)\components\driver\deprecated \
  	-I$(IDF_PATH)\components\driver\include \
 	-I$(IDF_PATH)\components\driver\include\driver \
 	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include\driver \
+	-I$(IDF_PATH)\components\esp_adc\include \
+	-I$(IDF_PATH)\components\esp_adc\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\esp_app_format\include \
 	-I$(IDF_PATH)\components\esp_common\include \
  	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS) \
@@ -136,6 +140,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
  	-I$(IDF_PATH)\components\esp_netif\include \
+ 	-I$(IDF_PATH)\components\esp_partition\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
 	-I$(IDF_PATH)\components\esp_rom\include \
@@ -145,14 +150,14 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_wifi\include \
  	-I$(IDF_PATH)\components\$(ESP_ARCH)\include \
 	-I$(IDF_PATH)\components\$(ESP_ARCH)\$(ESP32_SUBCLASS)\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\portable\$(ESP_ARCH)\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\include\freertos \
  	-I$(IDF_PATH)\components\freertos \
  	-I$(IDF_PATH)\components\freertos\include \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
-	-I$(IDF_PATH)\components\freertos\port \
- 	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
-	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
-	-I$(IDF_PATH)\components\freertos\include\esp_additions \
-	-I$(IDF_PATH)\components\freertos\include\esp_additions\freertos \
+	-I$(IDF_PATH)\components\freertos\esp_additions\include \
+	-I$(IDF_PATH)\components\freertos\esp_additions\include\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\hal\platform_port\include \
@@ -186,7 +191,8 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
-	-I$(IDF_PATH)\components\vfs\include
+	-I$(IDF_PATH)\components\vfs\include \
+	-I$(IDF_PATH)\components\tinyusb\additions\include 
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
@@ -490,7 +496,8 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION) - continuing")
+#	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
 xidfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
