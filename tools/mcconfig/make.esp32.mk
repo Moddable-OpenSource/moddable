@@ -113,12 +113,12 @@ endif
 
 INC_DIRS = \
 	$(IDF_PATH)/components \
+ 	$(IDF_PATH)/components/driver/deprecated \
 	$(IDF_PATH)/components/bootloader_support/include \
 	$(IDF_PATH)/components/bt/include \
 	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
- 	$(IDF_PATH)/components/driver/deprecated \
 	$(IDF_PATH)/components/driver/include \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
@@ -143,16 +143,17 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_wifi/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
+	$(IDF_PATH)/components/freertos/esp_additions/arch/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/freertos/esp_additions/include \
 	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
 	$(IDF_PATH)/components/freertos \
 	$(IDF_PATH)/components/freertos/include \
 	$(IDF_PATH)/components/freertos/include/freertos \
 	$(IDF_PATH)/components/freertos/port \
-	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/freertos/include/esp_additions \
 	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
@@ -164,6 +165,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/lwip/include/apps/ \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
+	$(IDF_PATH)/components/lwip/port/include/ \
 	$(IDF_PATH)/components/lwip/port/esp32/ \
 	$(IDF_PATH)/components/lwip/port/esp32/include/ \
 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
