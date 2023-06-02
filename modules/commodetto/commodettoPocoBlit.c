@@ -25,10 +25,13 @@
 		the opposite order within a byte from destination pixels. Consequently, rendering to an offscreen will generate incorrect results.
 */
 
+#include "xsPlatform.h"
+#ifdef kPocoRotation
+	// Moddable SDK
+	#include "mc.defines.h"
+#endif
 #include "commodettoPocoBlit.h"
 
-#include "xsPlatform.h"
-#include "mc.defines.h"
 
 enum {
 	kPocoCommandRectangleFill = 0,		// must start at 0 to match gDrawRenderCommand
