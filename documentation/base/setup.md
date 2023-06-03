@@ -29,5 +29,5 @@ To minimize RAM use and speed start-up time, the main module and any setup modul
 
 ## Additional notes
 
-- The idea for setup modules is loosely modeled on the setup function in the Arduino application model. 
+- The idea for setup modules is loosely modeled on the setup function in the Arduino application model.
 - The simulator implicitly performs the work of setup already, initializing the screen global variable before running the main module.

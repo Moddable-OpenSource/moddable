@@ -30,7 +30,7 @@ import {Keyboard, BACKSPACE, SUBMIT} from "keyboard";
 #### `Keyboard(behaviorData, dictionary)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `behaviorData`	| `*` |	A parameter that is passed into the `onCreate `function of the keyboard's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to configure the resulting keyboard. Only parameters specified in the [Dictionary](#keyboard-dictionary) section below will have an effect; other parameters will be ignored.
 
@@ -47,7 +47,7 @@ let keyboard = new Keyboard(null, {style: OpenSans18, doTransition: false})
 ### Dictionary
 
 | Parameter | Type | Default Value | Description |
-| :---: | :---: | :---: | :--- | 
+| :---: | :---: | :---: | :--- |
 | `style` | `style` | n/a | **Required.** A Piu Style object that will be used for the text on keys. |
 | `bgColor` | `string` | `"#5b5b5b"`| The background fill color. |
 | `doTransition` | `boolean` | `false`| Whether or not to transition in the keyboard when it is first displayed. |
@@ -71,7 +71,7 @@ The keyboard will bubble this event when it is done transitioning off-screen. Th
 #### `onKeyDown(key)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `key` | `string` | In most cases, the string will be the value of the key that is down (e.g. `"a"`, `"3"`, `"$"`). It can also be one of the two constants exported by the module:  `BACKSPACE` or `SUBMIT` which indicate that those keys are down on the keyboard.|
 
 The keyboard will bubble this event when a key is pressed down. The `onKeyDown` function will usually be implemented and triggered in the calling application's behavior.
@@ -82,7 +82,7 @@ The keyboard will bubble this event when a key is pressed down. The `onKeyDown` 
 #### `onKeyUp(key)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `key` | `string` | In most cases, the string will be the value of the key that was released (e.g. `"a"`, `"3"`, `"$"`). It can also be one of the two constants exported by the module:  `BACKSPACE` or `SUBMIT` which indicate that those keys were released on the keyboard.|
 
 The keyboard will bubble an event `onKeyUp` when a key is released. The `onKeyUp` function will usually be implemented and triggered in the calling application's behavior.
@@ -94,7 +94,7 @@ The keyboard will bubble an event `onKeyUp` when a key is released. The `onKeyUp
 #### `doKeyboardTransitionOut(keyboard)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `keyboard` | `keyboard` | The `keyboard` object that received the event. |
 
 This function can be triggered to cause the keyboard to transition off screen. When the transition is complete, the `onKeyboardTransitionFinished` event will be bubbled by the keyboard.

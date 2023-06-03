@@ -31,11 +31,11 @@ In the `defines` object, the optional `brightness` property may be set, where 25
 	}
 
 ### Configuring SPI
-The `defines` object must contain the `spi_port`. 
+The `defines` object must contain the `spi_port`.
 
 	"defines": {
 		"dotstar": {
-			/* other properties here */	
+			/* other properties here */
 			"spi_port": "#HSPI"
 		}
 	}

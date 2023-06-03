@@ -49,7 +49,7 @@ const strand = new NeoStrand({length: 50, pin: 22, order: "RGB",
 &nbsp;
 
 > Note: You may want to tone down your lights during development so you don't blind yourself.
-> 
+>
 > ```js
 > strand.brightness(10);
 > ```
@@ -125,7 +125,7 @@ start | `0` | [0..strand.length] | The index of the first pixel of effect
 end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
 size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
 duration | `1000` | | The duration of one complete cycle of the effect, in ms
-reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards
 loop | `1` | [0, 1] | Set to 1 to loop the effect
 
 `start` and `end` define the span of pixels that this effect will operate on. `duration` is the length of one cycle of the effect.
@@ -197,7 +197,7 @@ start | `0` | [0..strand.length] | The index of the first pixel of effect
 end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
 size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
 duration | 1000 | | time of one complete cycle of the pattern, in ms
-reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards
 loop | `1` | [0, 1] | Set to 1 to loop the effect
 sizeA | 1 | [1..strand.length] | number of pixels in the A part of pattern
 sizeB | 3 | [1..strand.length] | number of pixels in the B part of pattern
@@ -218,7 +218,7 @@ start | `0` | [0..strand.length] | The index of the first pixel of effect
 end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
 size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
 duration | 1000 | | time of one complete cycle of the color wheel, in ms
-reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards
 loop | `1` | [0, 1] | Set to 1 to loop the effect
 speed | 1.0 | | speed multiplier
 position | 0 | [0..1] | starting HSV hue position
@@ -240,7 +240,7 @@ start | `0` | [0..strand.length] | The index of the first pixel of effect
 end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
 size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
 duration | 1000 | | time of one complete sine cycle, in ms
-reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards
 loop | `1` | [0, 1] | Set to 1 to loop the effect
 speed | 1.0 | | speed multiplier
 loop | 1 | [0, 1] | loop the effect
@@ -262,7 +262,7 @@ start | `0` | [0..strand.length] | The index of the first pixel of effect
 end | `strand.length` | [0..strand.length] | The index of the last pixel of effect
 size | `strand.length` | [0..strand.length] | The length of one hue cycle, in pixels
 duration | 3000 | | time of one pulse cycle, in ms
-reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards 
+reverse | `0` | [0, 1] | Set to 1 to run the effect in reverse, i.e. run the timeline of the effect backwards
 loop | `1` | [0, 1] | Set to 1 to loop the effect
 position | "random" | [-strand.length..strand.length] | index of the pulse starting pixel<br>negative numbers are off-strand and okay<br>"random" picks a random starting location
 mode | 1 | [-1, 0, 1] | **1** to add, **-1** to subtract, or **0** set the pixel color
@@ -314,7 +314,7 @@ size | 5 | [0..strand.length] | size of each color
 max | 127 | [0..255] | maximium value of random RGB component
 
 Using *Pattern* as a starting point, we'll change the class name and constructor, set up the timeline in `activate` and provide a setter for the changing `effectValue`. The `loopPrepare` function will be called before a looping effect starts or restarts.
-	
+
 
 ```js
 class RandomColor extends NeoStrandEffect {
@@ -356,7 +356,7 @@ manySchemes.push( randomColorScheme );
 
 ## Timing
 
-Timing specifications for the various driver chips of the LEDs are included for reference below. 
+Timing specifications for the various driver chips of the LEDs are included for reference below.
 
 ```js
 const Timing_WS2812B = {

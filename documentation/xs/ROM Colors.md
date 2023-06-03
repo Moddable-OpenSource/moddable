@@ -6,7 +6,7 @@ Revised: August 12, 2020
 
 In XS, instances are mostly linked list of properties with a key and a value. To get a value by key, the runtime iterates the linked list to find a property with a matching key.
 
-Of course XS already implements several optimizations to access properties by index: in array instances, in closures, in global and local scopes. 
+Of course XS already implements several optimizations to access properties by index: in array instances, in closures, in global and local scopes.
 
 The XS linker prepares most classes, objects, prototypes, functions to be accessed straightly from ROM. Such instances and their properties never change. That is an opportunity to access properties by index, especially since iterating a linked list in ROM is not optimal.
 
@@ -22,7 +22,7 @@ The technique is based on graph coloring. Similar techniques are applied to obje
 
 When intrinsics and all modules are preloaded, the XS linker traverses all instances and their properties to build a conflict graph. The nodes are the keys, the edges are the conflicts. Two keys conflict if there is an instance that has properties for both keys. Choosing indexes for keys is equivalent to coloring nodes in the graph.
 
-Once the graph is colored, each key has a color that can be used to access a property by index. 
+Once the graph is colored, each key has a color that can be used to access a property by index.
 
 	property = instance[key.color]
 
@@ -30,9 +30,9 @@ Since non conflicting keys can reuse the same color, the runtime has to check if
 
 	if (property.key == key)
 		return property
-	
-Optimal graph coloring could be complex, but coloring from the most to the least conflicted key usually gives good enough results: the number of colors is significantly smaller than the number of keys. 
-	
+
+Optimal graph coloring could be complex, but coloring from the most to the least conflicted key usually gives good enough results: the number of colors is significantly smaller than the number of keys.
+
 ## Memory Layout
 
 What remains to be done is to reorganize the ROM so properties are where the color of their key wants them to be.
@@ -97,11 +97,11 @@ Eventually instances are moved to fill the holes.
 
 Now the two objects are intertwined to reduce the memory footprint. There are usually enough instances without properties or with a few properties to fill all holes.
 
-> Despite all movements, the order of the linked lists is maintained. That is required by several object traversal functions. 
+> Despite all movements, the order of the linked lists is maintained. That is required by several object traversal functions.
 
 ## Results
 
-Here is a simple test. 
+Here is a simple test.
 
 	const math = Math;
 	const now = Date.now();
@@ -115,7 +115,7 @@ Here is a simple test.
 
 
 
-The `Math` object is in ROM and its `imul`, `max`, `min` and `sign` properties are accessed 100000 times. The `Math` object is cached into a `const` to avoid the interference of global scope optimizations, the properties are selected to avoid floating point operations. 
+The `Math` object is in ROM and its `imul`, `max`, `min` and `sign` properties are accessed 100000 times. The `Math` object is cached into a `const` to avoid the interference of global scope optimizations, the properties are selected to avoid floating point operations.
 
 Here are results without and with the optimization:
 

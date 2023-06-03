@@ -28,7 +28,7 @@ mcconfig -d -m -p pico/ili9341
 
 ## ili9341 Module pinout
 
-This is a typical layout of the ili9341 module. 
+This is a typical layout of the ili9341 module.
 
 ![](./images/ili9341-pinout.png)
 
@@ -51,4 +51,4 @@ This is a typical layout of the ili9341 module.
 | T_DIn | GPIO 11
 | T_DO | GPIO 8
 | T_IRQ | GPIO 14
---> 
+-->

@@ -41,7 +41,7 @@ To add the BLE client to a project:
 		/* other includes here */
 		"$(MODDABLE)/modules/network/ble/manifest_client.json",
 	],
-	
+
 To add the BLE server to a project:
 
 	"include": [
@@ -68,7 +68,7 @@ class Scanner extends BLEClient {
 			trace(completeName + "\n");
 	}
 }
-	
+
 let scanner = new Scanner;
 ```
 
@@ -77,7 +77,7 @@ The following BLE server example subclasses `BLEServer` to advertise the device 
 ```javascript
 import BLEServer from "bleserver";
 import {uuid} from "btutils";
-	
+
 class HealthThermometerService extends BLEServer {
 	onReady() {
 		this.startAdvertising({
@@ -85,7 +85,7 @@ class HealthThermometerService extends BLEServer {
 		});
 	}
 }
-	
+
 let htm = new HealthThermometerService;
 ```
 
@@ -176,7 +176,7 @@ let client = new BLEClient;
 #### `startScanning([params])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Object containing scan properties.
 
 The `params` object contains the following properties:
@@ -186,8 +186,8 @@ The `params` object contains the following properties:
 | `active` | `boolean` | Set `true` for active scanning, `false` for passive scanning. Default is `true`.
 | `duplicates` | `boolean` | Set `true` to receive all advertising packets, `false` to filter out multiple advertising packets received from the same peripheral device. Default is `true`.
 | `filterPolicy` | `number` | Filter policy applied to scan. Default is `GAP.ScanFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
-| `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`. 
-| `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`. 
+| `interval` | `number` | Scan interval value in units of 0.625 ms. Default is `0x50`.
+| `window` | `number` | Scan window value in units of 0.625 ms. Default is `0x30`.
 
 The `filterPolicy` parameter can be one of the following:
 
@@ -230,10 +230,10 @@ class Scanner extends BLEClient {
 #### `onDiscovered(device)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
-The `onDiscovered` callback function is called one or more times for each peripheral device discovered. 
+The `onDiscovered` callback function is called one or more times for each peripheral device discovered.
 
 To connect to a device named "Brian" from the `onDiscovered` callback:
 
@@ -246,7 +246,7 @@ onDiscovered(device) {
 ```
 
 ***
-	
+
 #### `stopScanning()`
 The `stopScanning` function disables scanning for nearby peripherals.
 
@@ -255,7 +255,7 @@ The `stopScanning` function disables scanning for nearby peripherals.
 #### `connect(device)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `connect` function initiates a connection request between the `BLEClient` and a target peripheral `device`.
@@ -274,7 +274,7 @@ onConnected(device) {
 #### `onConnected(device)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onConnected` callback function is called when the client connects to a target peripheral `device`.
@@ -284,7 +284,7 @@ The `onConnected` callback function is called when the client connects to a targ
 #### `onDisconnected(device)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onDisconnected` callback is called when the connection is closed.
@@ -340,12 +340,12 @@ An instance of the `Client` class is instantiated by `BLEClient` and provided to
 | `scanResponse` | `object` | Instance of [Advertisement](#classadvertisement) class containing advertisement and scan response packet values.
 | `rssi` | `number` | Discovered device signal strength.
 
-### Functions 
+### Functions
 
 #### `exchangeMTU(mtu)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `mtu` | `number` | Requested MTU value |
 
 Use the `exchangeMTU ` function to request a higher MTU once the peripheral connection has been established.
@@ -354,7 +354,7 @@ Use the `exchangeMTU ` function to request a higher MTU once the peripheral conn
 #### `onMTUExchanged(device, mtu)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `mtu` | `number` | Exchanged MTU value |
 
@@ -382,7 +382,7 @@ Use the `readRSSI` function to read the connected peripheral's signal strength.
 #### `onRSSI(device, rssi)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 | `rssi` | `number` | Received signal strength |
 
@@ -409,7 +409,7 @@ Use the `discoverAllPrimaryServices` function to discover all the peripheral's G
 #### `discoverPrimaryService(uuid)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `uuid` | `object` | A [Bytes](#classbytes) object containing the UUID to discover |
 
 Use the `discoverPrimaryService` function to discover a single GATT primary service by UUID.
@@ -418,7 +418,7 @@ Use the `discoverPrimaryService` function to discover a single GATT primary serv
 #### `findServiceByUUID(uuid)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `uuid` | `object` | A [Bytes](#classbytes) object containing the Service UUID to find |
 
 The `findServiceByUUID` function finds and returns the service identified by `uuid`. This function searches the `services` property array.
@@ -428,7 +428,7 @@ The `findServiceByUUID` function finds and returns the service identified by `uu
 #### `onServices(services)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `services` | `array` | An array of `service` objects, or an empty array if no services are discovered. See the section [Class Service](#classservice) for more information. |
 
 The `onServices` callback function is called when service discovery completes. If `findServiceByUUID` was called to find a single service, the `services` array contains the single service found.
@@ -444,7 +444,7 @@ onServices(services) {
 }
 ```
 
-To discover a single primary service:	
+To discover a single primary service:
 
 ```javascript
 const SERVICE_UUID = uuid`0xFF00`;
@@ -476,7 +476,7 @@ onDisconnected() {
 
 <a id="classservice"></a>
 ## Class Service
-The `Service` class provides access to a single peripheral GATT service. 
+The `Service` class provides access to a single peripheral GATT service.
 
 ### Properties
 
@@ -498,7 +498,7 @@ Use the `discoverAllCharacteristics()` function to discover all the service char
 #### `discoverCharacteristic(uuid)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `uuid` | `object` | A [Bytes](#classbytes) object containing the Characteristic UUID to discover |
 
 Use the `discoverCharacteristic` function to discover a single service characteristic by UUID.
@@ -508,7 +508,7 @@ Use the `discoverCharacteristic` function to discover a single service character
 #### `findCharacteristicByUUID(uuid)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `uuid` | `object` | A [Bytes](#classbytes) object containing the Characteristic UUID to find |
 
 The `findCharacteristicByUUID` function finds and returns the characteristic identified by `uuid`. This function searches the `characteristics` property array.
@@ -518,7 +518,7 @@ The `findCharacteristicByUUID` function finds and returns the characteristic ide
 #### `onCharacteristics(characteristics)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristics` | `array` | An array of `characteristic` objects, or an empty array if no characteristics are discovered. See the section [Class Characteristic](#classcharacteristic) for more information. |
 
 The `onCharacteristics` callback function is called when characteristic discovery completes. If `findCharacteristicByUUID` was called to find a single characteristic, the `characteristics` array contains the single characteristic found.
@@ -587,7 +587,7 @@ Use the `discoverAllDescriptors` function to discover all the characteristic's d
 #### `onDescriptors(descriptors)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `descriptors` | `array` | An array of `descriptor` objects, or an empty array if no descriptors are discovered. See the section [Class Descriptor](#classdescriptor) for more information. |
 
 The `onDescriptors` callback function is called when descriptor discovery completes.
@@ -620,7 +620,7 @@ Use the `enableNotifications` function to enable characteristic value change not
 #### `onCharacteristicNotificationEnabled(characteristic)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | A `characteristic` object. |
 
 The `onCharacteristicNotificationEnabled` callback function is called when notifications have been enabled for the `characteristic`.
@@ -635,7 +635,7 @@ Use the `disableNotifications` function to disable characteristic value change n
 #### `onCharacteristicNotificationDisabled(characteristic)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | A `characteristic` object. |
 
 The `onCharacteristicNotificationDisabled` callback function is called when notifications have been disabled for the `characteristic`.
@@ -645,7 +645,7 @@ The `onCharacteristicNotificationDisabled` callback function is called when noti
 #### `onCharacteristicNotification(characteristic, value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | A `characteristic` object. |
 | `value` | `varies` | The `characteristic` value. The value is automatically converted to the `type` defined in the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
@@ -680,7 +680,7 @@ onCharacteristicNotification(characteristic, value) {
 Use the `readValue` function to read a characteristic value on demand.
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `auth` | `number` | Optional `SM.Authorization` applied to the read request. |
 
 The `Authorization` object contains the following properties:
@@ -698,7 +698,7 @@ The `Authorization` object contains the following properties:
 #### `onCharacteristicValue(characteristic, value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | A `characteristic` object. |
 | `value` | `varies` | The `characteristic` value read. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
@@ -732,7 +732,7 @@ onCharacteristicValue(characteristic, value) {
 #### `writeWithoutResponse(value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `value` | `varies` | The `characteristic` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeWithoutResponse` function to write a characteristic value on demand.
@@ -779,7 +779,7 @@ The `Descriptor` class provides access to a single characteristic descriptor.
 Use the `readValue` function to read a descriptor value on demand.
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `auth` | `number` | Optional `SM.Authorization` applied to the read request. |
 
 The `Authorization` object contains the following properties:
@@ -797,7 +797,7 @@ The `Authorization` object contains the following properties:
 #### `onDescriptorValue(descriptor, value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `descriptor ` | `object` | A `descriptor` object. |
 | `value` | `varies` | The `descriptor` value read. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer`. |
 
@@ -822,7 +822,7 @@ onDescriptorValue(descriptor, value) {
 #### `writeValue(value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `value` | `varies` | The `descriptor` value to write. The value `type` is defined by the service JSON, when available. Otherwise `value` is an `ArrayBuffer` or `String`. |
 
 Use the `writeValue` function to write a descriptor value.
@@ -840,7 +840,7 @@ onDescriptors(descriptors) {
 	}
 }
 ```
-	
+
 > **Note:** The `Characteristic` `enableNotifications` convenience function is typically used for this purpose, though writing the CCCD descriptor directly provides the same net result.
 
 <a id="classadvertisement"></a>
@@ -866,11 +866,11 @@ The `Advertisement` class provides accessor functions to read common advertiseme
 Use the `findIndex` function to find the index of a specific advertisement data type in the raw advertisement data bytes.
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `type` | `number` | The `GAP.ADType` to search for. |
 | `index` | `number` | The optional starting index to search from. Defaults to 0. |
 
-### Examples 
+### Examples
 
 To identify an advertised device with the complete name "Zip":
 
@@ -888,8 +888,8 @@ To identify a [Blue Maestro Environment Monitor](https://www.bluemaestro.com/pro
 ```javascript
 onDiscovered(device) {
 	let manufacturerSpecific = device.scanResponse.manufacturerSpecific;
-	const TempoManufacturerID = 307; 
-	
+	const TempoManufacturerID = 307;
+
 	// If this is a Tempo device...
 	if (manufacturerSpecific && (TempoManufacturerID == manufacturerSpecific.identifier)) {
 		let data = manufacturerSpecific.data;
@@ -919,13 +919,13 @@ onDiscovered(device) {
 ## Class Bytes
 
 The private `Bytes` class extends `ArrayBuffer`. Applications typically use the provided `uuid` and `address` tagged templates to create a `Bytes` instance from hex strings.
- 
+
 #### Constructor Description
 
 #### `Bytes(bytes [,littleEndian])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `bytes` | `object` or `string` | The ArrayBuffer `bytes` to set. The bytes can be a String or ArrayBuffer. |
 | `littleEndian` | `boolean` | When set `true` the contents of the ArrayBuffer are stored in reverse order. Default is `false`.|
 ### Functions
@@ -954,11 +954,11 @@ const CHARACTERISTIC_RX_UUID = uuid`6E400002-B5A3-F393-E0A9-E50E24DCCA9E`;
 #### `equals(buffer)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `buffer` | `object` | The `Bytes` instance to compare. |
 
 The `equals` function returns `true` if the instance ArrayBuffer data equals the data contained in `buffer`.
- 
+
 ```javascript
 import {uuid} from "btutils";
 
@@ -1204,7 +1204,7 @@ import {address} from "btutils";
 this.startAdvertising({
 	connectable: false,
 	advertisingData: {flags: 5, completeName: "Moddable HRS"},
-	scanResponseData: {shortName: "Moddable", randomAddress: address`00:11:22:33:44:55`} 
+	scanResponseData: {shortName: "Moddable", randomAddress: address`00:11:22:33:44:55`}
 });
 ```
 
@@ -1228,7 +1228,7 @@ onConnected(device) {
 
 #### `notifyValue(characteristic, value)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | The `characteristic` object to notify. |
 | `value` | `varies` | The `characteristic` notification value. The value is automatically converted from the `type` defined in the service JSON. |
 
@@ -1251,16 +1251,16 @@ startNotifications(characteristic) {
 
 #### `onCharacteristicNotifyEnabled(characteristic)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | The `characteristic` object with notifications enabled.
 
 The `onCharacteristicNotifyEnabled` callback function is called when a client enables notifications on the `characteristic`.
- 
+
 ***
 
 #### `onCharacteristicWritten(characteristic, value)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic` | `object` | The `characteristic` object written.
 | `value` | `varies` | The value written. The value is automatically converted to the `type` defined in the service JSON.
 
@@ -1296,7 +1296,7 @@ onCharacteristicWritten(characteristic, value) {
 
 #### `onCharacteristicRead(characteristic)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `characteristic ` | `object` | The characteristic object being read.
 
 The `characteristic` object contains the following properties:
@@ -1324,7 +1324,7 @@ onCharacteristicRead(characteristic) {
 ***
 
 #### `disconnect()`
-Use the `disconnect` function to terminate the BLE client connection. 
+Use the `disconnect` function to terminate the BLE client connection.
 
 ```javascript
 import {address} from "btutils";
@@ -1346,7 +1346,7 @@ onDisconnected(device) {
 
 #### `onConnected(device)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onConnected` callback function is called when a client connects to the `BLEServer`.
@@ -1355,7 +1355,7 @@ The `onConnected` callback function is called when a client connects to the `BLE
 
 #### `onDisconnected(device)`
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `device` | `object` | A `device` object. See the section [Class Client](#classclient) for more information. |
 
 The `onDisconnected` callback function is called when the client connection is closed.
@@ -1413,7 +1413,7 @@ The following is an example of JSON corresponding to a Bluetooth [Battery Servic
 			}
 		}
 	}
-	
+
 The service is defined as follows:
 
 * The service UUID is 0x180F
@@ -1458,7 +1458,7 @@ onReady() {
 #### `deleteBonding(address, addressType)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
 | `addressType` | `number` | Peer device Bluetooth address type. Refer to `GAP.AddressType` for supported address types.
 
@@ -1492,7 +1492,7 @@ onReady() {
 #### `passkeyInput(address, value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
 | `value` | `number` | passkey value input
 
@@ -1510,7 +1510,7 @@ onPasskeyInput(params) {
 #### `passkeyReply(address, result)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `address` | `object` | `ArrayBuffer` containing peer device Bluetooth address
 | `result` | `boolean` | Set `true` to confirm passkey value, `false` otherwise
 
@@ -1528,7 +1528,7 @@ onPasskeyConfirm(params) {
 #### `onSecurityParameters(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Device security properties applied.
 
 The `onSecurityParameters` callback is called after the device security requirements and I/O capabilities have been set.
@@ -1549,7 +1549,7 @@ onSecurityParameters() {
 #### `onAuthenticated(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Properties associated with the authentication procedure.
 
 The `params` object contains the following properties:
@@ -1572,7 +1572,7 @@ onAuthenticated(params) {
 #### `onPasskeyConfirm(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Properties associated with the passkey confirmation.
 
 The `params` object contains the following properties:
@@ -1587,7 +1587,7 @@ The `onPasskeyConfirm` callback is called when the user needs to confirm a passk
 ```javascript
 onPasskeyConfirm(params) {
 	trace(`confirm passkey: ${params.passkey}\n`);
-	
+
 	// passkey is valid
 	this.passkeyReply(params.address, true);
 }
@@ -1597,7 +1597,7 @@ onPasskeyConfirm(params) {
 #### `onPasskeyDisplay(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Properties associated with the passkey display.
 
 The `params` object contains the following properties:
@@ -1621,7 +1621,7 @@ onPasskeyDisplay(params) {
 #### `onPasskeyInput(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Properties associated with the passkey input.
 
 The `params` object contains the following properties:
@@ -1645,7 +1645,7 @@ onPasskeyInput(params) {
 #### `onPasskeyRequested(params)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `params` | `object` | Properties associated with the passkey to request.
 
 The `params` object contains the following properties:
@@ -1688,7 +1688,7 @@ import GAPWhitelist from "gapwhitelist";
 #### `add(address [,addressType])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `address` | `string` or `object` | The peer address to whitelist.
 | `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
 
@@ -1725,7 +1725,7 @@ onDisconnected() {
 #### `remove(address [,addressType])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `address` | `string` or `object` | The peer address to whitelist.
 | `addressType` | `number` | Optional peer address type. Defaults to `GAP.AddressType.PUBLIC`.
 
@@ -1765,9 +1765,9 @@ After building the BLE archive, the archive is linked to the native app hosted i
 		initMcu();
 		initBoard();
 		initApp();
-		
+
 		xs_setup();
-		
+
 		while (1) {
 			xs_loop();
 		}
@@ -1777,7 +1777,7 @@ BLE apps require additional stack and heap. We've been able to run the Moddable 
 
 	__STACK_SIZE=0x2000
 	__HEAP_SIZE=0xA000
-	
+
 Simplicity Studio includes a **BLE GATT Configurator** to define BLE services. Moddable apps define BLE services in JSON files and hence don't use the `gatt_db.c` and `gatt_db.h` files generated by the configurator tool. These two files must be removed from the Simplicity Studio project.
 
 <a id="exampleapps"></a>
@@ -1814,5 +1814,5 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | [heart-rate-server](../../../examples/network/ble/heart-rate-server) | Implements the Bluetooth [Heart Rate Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.heart_rate.xml).
 | [security-server](../../../examples/network/ble/security-server) | Demonstrates how to implement a secure health thermometer BLE server using SMP. The `security-server` can connect to the [security-client](../../../examples/network/ble/security-client) app.
 | [uri-beacon](../../../examples/network/ble/uri-beacon) | Implements a [UriBeacon](https://github.com/google/uribeacon/tree/uribeacon-final/specification) compatible with Google's [Physical Web](https://github.com/google/physical-web) discovery service.
-| [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics. 
+| [wifi-connection-server](../../../examples/network/ble/wifi-connection-server) | Deploys a BLE WiFi connection service on ESP32. The connection service allows BLE clients to connect the BLE device to a WiFi access point, by writing the SSID and password characteristics.
 | [uart-server](../../../examples/network/ble/uart-server) | Shows how implement a Nordic UART Service server. The `uart-server` can connect to the [uart-client](../../../examples/network/ble/uart-client) app.

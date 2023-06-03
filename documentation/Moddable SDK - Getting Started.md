@@ -21,9 +21,9 @@ This document provides instructions to install the Moddable SDK and build its to
 
 To get started with the Moddable SDK, take the following steps:
 
-#### Step 1: Build the Moddable SDK tools 
+#### Step 1: Build the Moddable SDK tools
 
-Follow the **Installing** instructions in the section below for your computer's OS. These instructions will have you verify your setup by running the `helloworld` example on a desktop simulator using `mcconfig`, a command line tool that builds and runs Moddable applications. 
+Follow the **Installing** instructions in the section below for your computer's OS. These instructions will have you verify your setup by running the `helloworld` example on a desktop simulator using `mcconfig`, a command line tool that builds and runs Moddable applications.
 
 > For more information about the desktop simulator, see the **Simulator** section of the [tools documentation](./tools/tools.md#simulator).
 
@@ -40,7 +40,7 @@ To run applications on a device, you have to install the required SDKs, drivers 
 
 #### Step 3: Try out some examples
 
-This repository includes over [150 example apps](./../examples) that demonstrate how to use many features of the Moddable SDK. Many are less than one page of source code to focus on demonstrating how to use a specific capability. 
+This repository includes over [150 example apps](./../examples) that demonstrate how to use many features of the Moddable SDK. Many are less than one page of source code to focus on demonstrating how to use a specific capability.
 
 #### Step 4: Build your own apps
 
@@ -74,7 +74,7 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 2. Create a `Projects` directory in your home directory at `~/Projects` for the Moddable SDK repository.
 
 	> Note: The Moddable SDK repository can be downloaded to any directory. These instructions assume the Moddable SDK is downloaded to the `~/Projects` directory.
-	
+
 3. Download the [Moddable repository](https://github.com/Moddable-OpenSource/moddable), or use the `git` command line tool as follows:
 
 	```text
@@ -82,16 +82,16 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 	git clone https://github.com/Moddable-OpenSource/moddable
 	```
 
-4. Open your shell startup/initialization file. 
+4. Open your shell startup/initialization file.
 
-	For macOS Mojave and earlier, the default shell is `bash`, so you should open `~/.profile`. 
+	For macOS Mojave and earlier, the default shell is `bash`, so you should open `~/.profile`.
 
 	```text
 	open ~/.profile
 	```
-	
+
 	Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050), so you should open `~/.zshrc`.
-	
+
 	```text
 	open ~/.zshrc
 	```
@@ -106,14 +106,14 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 	```
 
 5. Adding the export statements to your `~/.profile` or `~/.zshrc` does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.
-	
+
 6. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```text
 	cd ${MODDABLE}/build/makefiles/mac
 	make
 	```
-	
+
 7. Launch the `xsbug` debugger from the command line:
 
 	```text
@@ -133,15 +133,15 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 ### Troubleshooting
 
 - If the Moddable SDK build fails with an error like "`xcode-select: error: tool 'ibtool' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance.`" there are three potential issues and fixes:
-	 1. You may have a command line tools-only Xcode installation. The Moddable SDK build requires a full installation of Xcode. 
-	 2. You may need to launch the Xcode application to accept Xcode's license agreement and install the command line components. 
+	 1. You may have a command line tools-only Xcode installation. The Moddable SDK build requires a full installation of Xcode.
+	 2. You may need to launch the Xcode application to accept Xcode's license agreement and install the command line components.
 	 3. If you have a full Xcode installation but your build fails with this error, you need to use the `xcode-select` utility to select your full Xcode installation. This can be done with this command, with the path adjusted as necessary for your environment: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 
 <a id="mac-update"></a>
 ### Updating
 
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps:
-	
+
 1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
 
 	```text
@@ -157,7 +157,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	git pull
 	git stash pop
 	```
-	
+
 2. Delete any existing Moddable SDK build outputs:
 
 	```text
@@ -165,7 +165,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	rm -rf build/bin
    rm -rf build/tmp
 	```
-	
+
 3. Build the Moddable command line tools, simulator, and debugger:
 
 	```text
@@ -179,7 +179,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p mac
 	```
-	
+
 <a id="windows"></a>
 ## Windows
 
@@ -191,7 +191,7 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 <a id="win-instructions"></a>
 ### Installing
 
-1. Download the [Microsoft Visual Studio 2022 Community installer](https://www.visualstudio.com/downloads/). 
+1. Download the [Microsoft Visual Studio 2022 Community installer](https://www.visualstudio.com/downloads/).
 
 2. Launch the installer. On the "Workloads" tab, select the "Desktop development for C++" option. On the "Individual Components" tab, select "Windows 10 SDK (10.0.19041.0)" (this should be preselected on Windows 10 systems but must be manually included on Windows 11 systems). Proceed with the installation as configured.
 
@@ -208,7 +208,7 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 
 5. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
  - Create a User Variable called `MODDABLE` and set it to point at your local Moddable SDK repository directory. Update the path as necessary for you system by navigating to the Moddable SDK folder using the "Browse Directory..." button.
-	- Variable Name: `MODDABLE` 
+	- Variable Name: `MODDABLE`
 	- Variable Value: `%USERPROFILE%\Projects\moddable`
 
  - Edit the User Variable `Path` to include the Moddable SDK tools directory. Update the path as necessary for your system by navigating to the correct folder using the "Browse..." button.
@@ -218,23 +218,23 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 	> Note: The `%USERPROFILE%\Projects\moddable\build\bin\win\release` directory will be created in the next step. It is safe to set the environment variable now or to come back after Step 6 to add it to the `Path`.
 
 	> Note: Make sure you open a new Command Prompt after setting the environment variables. The new environment settings will not take effect in existing Command Prompt instances.
-	
+
 6. Launch the "x86 Native Tools Command Prompt for VS 2022" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```text
 	cd %MODDABLE%\build\makefiles\win
 	build
 	```
-	
+
 	> Note: There is an alternative build batch file called `parallel_build.bat` that can be used on multi-core systems to significantly speed up the Moddable SDK build. It is, however, more difficult to see diagnostic error messages when using this batch file. If `build.bat` works correctly on your system, consider using `parallel_build.bat` for future Moddable SDK builds.
-	
+
 
 7. Launch the `xsbug` debugger from the command line:
 
 	```text
 	xsbug
 	```
-	
+
 8. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```text
@@ -294,14 +294,14 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```
 
 	> Note: There is an alternative build batch file called `parallel_build.bat` that can be used on multi-core systems to significantly speed up the Moddable SDK build. It is, however, more difficult to see diagnostic error messages when using this batch file. If `build.bat` works correctly on your system, consider using `parallel_build.bat` for future Moddable SDK builds.
-		
+
 4. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p win
 	```
-	
+
 <a id="linux"></a>
 ## Linux
 
@@ -351,7 +351,7 @@ The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry 
 	cd $MODDABLE/build/makefiles/lin
 	make
 	```
-	
+
 7. Update the `PATH` environment variable in your `~/.bashrc` to include the tools directory:
 
 	```text
@@ -368,13 +368,13 @@ The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry 
 	```
 
 	When prompted, enter your `sudo` password to copy the application's desktop, executable and icon files into the standard `/usr/share/applications`, `/usr/bin`, and `/usr/share/icon/hicolor` directories.
-	
+
 9. Launch the `xsbug` debugger from the command line:
 
 	```text
 	xsbug
 	```
-	
+
 10. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```text
@@ -402,7 +402,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	sudo apt-get install libgtk-3-dev
 	sudo apt-get upgrade libgtk-3-dev
 	```
-	
+
 2. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
 
 	```text
@@ -426,7 +426,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	rm -rf build/tmp
 	rm -rf build/bin
 	```
-	
+
 4. Build the Moddable command line tools, simulator, and debugger:
 
 	```text
@@ -442,7 +442,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 	```
 
 	When prompted, enter your `sudo` password to copy the application's desktop, executable and icon files into the standard `/usr/share/applications`, `/usr/bin`, and `/usr/share/icon/hicolor` directories.
-		
+
 6. Verify the host environment setup by building the starter `helloworld` application for the desktop simulator target:
 
 	```text
@@ -453,7 +453,7 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 <a id="dev-boards-and-mcus"></a>
 ## What's Next: Building and Running Apps on Development Boards and MCUs
 
-To build and run applications on a development board or MCU, you will need to install additional SDKs, drivers, and development tools for your target platform. These tools are provided by the manufacturer of the MCU and are not part of the Moddable SDK, but the `devices` folder contains instructions we wrote to guide you through the installation process. 
+To build and run applications on a development board or MCU, you will need to install additional SDKs, drivers, and development tools for your target platform. These tools are provided by the manufacturer of the MCU and are not part of the Moddable SDK, but the `devices` folder contains instructions we wrote to guide you through the installation process.
 
 The table below links to some of the documents in the `devices` folder to help you quickly find instructions for your target platform:
 

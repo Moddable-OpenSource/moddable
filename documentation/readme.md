@@ -8,7 +8,7 @@ This directory contains documentation for the Moddable SDK.
 
 The [Getting Started Guide](./Moddable%20SDK%20-%20Getting%20Started.md) provides step-by-step instructions for installing, configuring, and building the Moddable SDK for macOS, Linux, and Windows. It also provides instructions for keeping the Moddable SDK tools and build environment up to date over time.
 
-Guides for working with specific microcontrollers supported by the Moddable SDK are in the  [devices](./devices) directory. These include links to additional detail for specific development boards including Moddable One, Moddable Two, and Moddable Three. 
+Guides for working with specific microcontrollers supported by the Moddable SDK are in the  [devices](./devices) directory. These include links to additional detail for specific development boards including Moddable One, Moddable Two, and Moddable Three.
 
 - [ESP32](./devices/esp32.md) by Espressif
 - [ESP8266](./devices/esp8266.md) by Espressif
@@ -21,10 +21,10 @@ Guides for working with specific microcontrollers supported by the Moddable SDK 
 The JavaScript APIs for the modules in the Moddable SDK are documented in the following files:
 
 - [**Base**](./base/base.md): Fundamental runtime capabilities including time, timer, debug, instrumentation, and UUID
-  - [**Setup**](./base/setup.md): Using `setup` modules to configure a host before other modules execute 
-  - [**Worker**](./base/worker.md): Using Web Workers and Shared Workers 
+  - [**Setup**](./base/setup.md): Using `setup` modules to configure a host before other modules execute
+  - [**Worker**](./base/worker.md): Using Web Workers and Shared Workers
 - [**Commodetto**](./commodetto/commodetto.md): Bitmap graphics library including parsing and rendering of BMP, JPEG, and PNG images, and BMFont files; classes for operating on bitmaps, and pixel format conversion
-  - [**Poco**](./commodetto/poco.md): Examples and reference for using the JavaScript and C APIs of the Poco renderer  
+  - [**Poco**](./commodetto/poco.md): Examples and reference for using the JavaScript and C APIs of the Poco renderer
 - [**Crypt**](./crypt/crypt.md): Cryptographic primitives
 - [**Data**](./data/data.md): Base64 and hex encoding and decoding
  - [**Files**](./files/files.md): Storage capabilities including files, flash, preferences, resources, and ZIP

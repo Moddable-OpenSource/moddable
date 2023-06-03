@@ -22,21 +22,21 @@ The [balls](../../examples/piu/balls/) example is good for testing this display.
 
 ```
 cd $MODDABLE/examples/piu/balls
-mcconfig -d -m -p esp/sharp_memory  
+mcconfig -d -m -p esp/sharp_memory
 ```
 
 ## ESP8266 pinout
 
 | Sharp Memory Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
-| VIN | 3.3V |  
-| GND | GND | 
-| EXTMODE |  |  
-| DISP | 3.3V | 
-| EXTCOMM |  | 
-| SCS | GPIO 4 | (D2) 
-| SI | GPIO 13 | (D7) 
-| SCK | GPIO 14 | (D5) 
+| VIN | 3.3V |
+| GND | GND |
+| EXTMODE |  |
+| DISP | 3.3V |
+| EXTCOMM |  |
+| SCS | GPIO 4 | (D2)
+| SI | GPIO 13 | (D7)
+| SCK | GPIO 14 | (D5)
 
 ![Generic SPI Display](images/wiring-Kuzyatech-sharp-2.7.jpg)
 
