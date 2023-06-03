@@ -14,7 +14,7 @@ Revised: August 28, 2019
 
 <a id="introduction"></a>
 ## Introduction
-The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that  implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products. 
+The Web Thing API is part of the [Project Things](https://iot.mozilla.org) initiative by Mozilla to define open communication protocols between IoT products. The Web Thing API is a protocol built using JSON, HTTP, and mDNS. It is related to the larger [Web of Things](https://www.w3.org/WoT/) effort of W3C. The IoT team at Mozilla created a home gateway that works with IoT products that  implement the Web Thing API protocol. Mozilla also provides embedded device APIs to make it easier to create products that support the Web Thing API. All this work is in development, so it is not ready incorporate into products.
 
 In the goals of Mozilla's Web Thing API effort we hear echoes of Moddable's own goals of creating an open environment of IoT products that put the user in control. Consequently, at Moddable we have begun experimenting with the Web Thing API. One result of that work is a set of simple JavaScript classes for building devices compatible with the Web Thing API. The classes have been successfully used on ESP8266 and ESP32 hardware with the Mozilla gateway.
 
@@ -31,7 +31,7 @@ The Web of Things [gateway software](https://iot.mozilla.org/gateway/) is availa
 
 The Moddable SDK repository on GitHub contains the [WebThings implementation](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/network/webthings) and several [example device implementations](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/network/webthings).
 
-This documentation describes how to implement a `WebThing` subclass to be used with the `WebThings` host. The `WebThing` class is a base class to be subclassed by specific implementations. It contains no device specific capabilities. 
+This documentation describes how to implement a `WebThing` subclass to be used with the `WebThings` host. The `WebThing` class is a base class to be subclassed by specific implementations. It contains no device specific capabilities.
 
 <a id="implementing-a-light"></a>
 ### Implementing a Light using the WebThing class
@@ -168,14 +168,14 @@ The `add` function registers a subclass of `WebThing`. The constructor argument 
 In this example, `OnOffLight` is the class defined in the "Implementing a Light using the WebThing class" section above.
 
 ```js
-things.add(OnOffLight);	
+things.add(OnOffLight);
 ```
 
 ***
 
 <a id="webthing"></a>
 ## class WebThing
-The `WebThing` class is subclassed to create implementations of specific Web Things. 
+The `WebThing` class is subclassed to create implementations of specific Web Things.
 
 ```js
 import {WebThing} from "webthings";

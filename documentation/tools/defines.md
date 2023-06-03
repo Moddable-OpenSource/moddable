@@ -82,8 +82,8 @@ To support option #defines, the driver implementation provides default values an
 		#define MODDEF_ILI9341_FLIPY (false)
 	#endif
 
-Many deployments do not need to reset the ILI9341 display explicitly, as the automatic reset at power-up is sufficient. The reset pin has a behavior which is only implemented when the reset pin is defined in the manifest. 
-	
+Many deployments do not need to reset the ILI9341 display explicitly, as the automatic reset at power-up is sufficient. The reset pin has a behavior which is only implemented when the reset pin is defined in the manifest.
+
 	#ifdef MODDEF_ILI9341_RST_PIN
 		SCREEN_RST_INIT;
 		SCREEN_RST_ACTIVE;

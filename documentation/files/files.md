@@ -37,7 +37,7 @@ As a rule, scripts should always prefix full paths with this root.
 
 The forward slash character (`/`) is always used as a path separator, even on hosts that natively use a different path separator.
 
-The `System.config()` function, described below, provides the length of the longest supported path through the `maxPathLength` property. 
+The `System.config()` function, described below, provides the length of the longest supported path through the `maxPathLength` property.
 
 <a id="file"></a>
 ### class File
@@ -232,7 +232,7 @@ Directory.delete(config.file.root + "tmp");
 - **Source code:** [file](../../modules/files/file)
 - **Relevant Examples:** [files](../../examples/files/files/)
 
-The File `Iterator` class enumerates the files and subdirectories in a directory. 
+The File `Iterator` class enumerates the files and subdirectories in a directory.
 
 ```js
 import {Iterator} from "file";
@@ -420,7 +420,7 @@ By default, the FAT32 file system is mounted at `/mod`. To change the default ro
 #### littlefs
 The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a little fail-safe filesystem designed for microcontrollers." It provides a high reliability, hierarchical file system in a small code footprint (about 60 KB) using minimal memory (well under 1 KB) with a high degree of configurability. littlefs also supports long file names (up to 255 characters) and formats a new partition very quickly.
 
-The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest. 
+The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest.
 
 ```json
 "includes": {
@@ -622,7 +622,7 @@ The `Preference` class provides storage of persistent preference storage. Prefer
 ```js
 import Preference from "preference";
 ```
-	
+
 Preferences are grouped by domain. A domain contains one or more keys. Each domain/key pair holds a single value, which is either a `Boolean`, integer (e.g. `Number` with no fractional part), `String` or `ArrayBuffer`.
 
 ```js
@@ -677,13 +677,13 @@ Preference.delete("wifi", "password");
 ### `static keys(domain)`
 
 Returns an array of all keys under the given domain.
- 
+
 ```js
 let wifiKeys = Preference.keys("wifi");
 for (let key of wifiKeys)
 	trace(`${key}: ${Preference.get("wifi", key)}\n`);
 ```
- 
+
 ***
 
 <a id="flash"></a>

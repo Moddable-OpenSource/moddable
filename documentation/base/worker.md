@@ -27,7 +27,7 @@ Scripts import the `Worker` class to be able to create a new worker.
 To launch a worker, create an instance of the `Worker` class, passing the name of the module to invoke when the worker starts to run. In the following example, the module run at worker start is `simpleworker`.
 
 	let aWorker = new Worker("simpleworker");
-	
+
 The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has fully completely initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
 ### Launching a worker with memory configuration
@@ -75,7 +75,7 @@ When the Worker constructor is called, the module at the path specified (`simple
 
 	let count = 1;
 	let state = INITIALIZED;
-	
+
 	self.onmessage = function (message) {
 		trace(message, "\n");
 	}
@@ -139,7 +139,7 @@ The `SharedWorker` class is an API for working with shared virtual machines. The
 Scripts import the `SharedWorker` class to be able to connect to a shared worker, creating the shared worker if it is not currently instantiated.
 
 	import {SharedWorker} from "worker";
-	
+
 **Note**: Examples and documentation needed.
 
 ## Scheduling

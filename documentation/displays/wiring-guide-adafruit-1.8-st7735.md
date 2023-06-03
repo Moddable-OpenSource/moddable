@@ -8,7 +8,7 @@ Revised: December 10, 2018
 
 | | |
 | :---: | :--- |
-| **Part** | Adafruit Product ID: 2088 
+| **Part** | Adafruit Product ID: 2088
 | **Size** | 1.8", 128 × 160
 | **Type** | TFT LCD
 | **Interface** | SPI
@@ -30,15 +30,15 @@ mcconfig -d -m -p esp/adafruit_st7735
 
 | Adafruit 1.8" TFT | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
-| LITE | 3.3v | 
+| LITE | 3.3v |
 | MISO | GPIO 12 | (D6)
 | SCK | GPIO 14 | (D5)
 | MOSI | GPIO 13 | (D7)
 | TFT_CS | GPIO 15| (D8)
 | DC | GPIO 2 | (D4)
-| RESET | 3.3v  | 
-| VCC| 3.3v | 
-| GND | GND | 
+| RESET | 3.3v  |
+| VCC| 3.3v |
+| GND | GND |
 
 ![Generic 2.4"-2.8" wiring illustration](images/adafruit-st7735-1.8-wiring.png)
 

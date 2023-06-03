@@ -35,7 +35,7 @@ Projects using Outlines with Piu should include the `manifest_outline_piu.json` 
 
 ## Building Paths
 
-The `Outline` class has several different ways to build paths. 
+The `Outline` class has several different ways to build paths.
 
 ```
 import Outline from "commodetto/outline";
@@ -56,8 +56,8 @@ The `Outline.CanvasPath.prototype` supports the following methods:
 - `moveTo(x, y)`
 - `quadraticCurveTo(cpx, cpy, x, y)`
 - `rect(x, y, w, h)`
-	
-These methods are documented in  the HTML specification under [Building Paths](https://html.spec.whatwg.org/multipage/canvas.html#building-paths). 
+
+These methods are documented in  the HTML specification under [Building Paths](https://html.spec.whatwg.org/multipage/canvas.html#building-paths).
 
 ![](./assets/CanvasPath.gif) [source](../../../examples/piu/outline/figures/CanvasPath/mod.js)
 
@@ -82,7 +82,7 @@ The `Outline.FreeTypePath.prototype` has the following methods:
 	- see [`FT_Stroker_CubicTo`](https://freetype.org/freetype2/docs/reference/ft2-glyph_stroker.html#ft_stroker_cubicto)
 - `endSubpath()`:
 	- see [`FT_Stroker_EndSubPath`](https://freetype.org/freetype2/docs/reference/ft2-glyph_stroker.html#ft_stroker_endsubpath)
-- `lineTo(x, y)`: 
+- `lineTo(x, y)`:
 	- `x`, `y`: the destination point
 	- see [`FT_Stroker_LineTo`](https://freetype.org/freetype2/docs/reference/ft2-glyph_stroker.html#ft_stroker_lineto)
 
@@ -96,7 +96,7 @@ A static method that creates a polygon from a list of coordinates.
 | --- | --- | --- |
 | x0, y0, x1, y1 /* etc */ | number | the coordinates of the polygon vertices |
 
-Returns a new path. 
+Returns a new path.
 
 ![](./assets/PolygonPath.gif) [source](../../../examples/piu/outline/figures/PolygonPath/mod.js)
 
@@ -109,7 +109,7 @@ A static method that creates a rectangle with rounded corners.
 | x, y, width, height | number | the coordinates of the rectangle |
 | radius | number | the radius of the rounded corners |
 
-Returns a new path. 
+Returns a new path.
 
 ![](./assets/RoundRectPath.gif) [source](../../../examples/piu/outline/figures/RoundRectPath/mod.js)
 
@@ -121,7 +121,7 @@ A static method that creates a path from an SVG path string.
 | --- | --- | --- |
 | data | string | [the SVG path data](https://svgwg.org/svg2-draft/paths.html#PathData)  |
 
-Returns a new path. 
+Returns a new path.
 
 The SVG path data parser supports the following commands:
 
@@ -138,7 +138,7 @@ Since a path is an array, if there are multiple paths in the SVG element, use `O
 
 ## Creating Outlines
 
-The `Outline` class has static methods to create outlines by filling or stroking a path. 
+The `Outline` class has static methods to create outlines by filling or stroking a path.
 
 #### `Outline.fill(path, rule)`
 
@@ -171,7 +171,7 @@ Returns a new outline, an instance of `Outline.prototype`.
 
 The `Outline` prototype has one getter to get the bounds of the outline, one method to clone outlines and three methods to transform outlines.
 
-All transformations modify the outline's data and therefore can be irreversible because of the precision of coordinates. 
+All transformations modify the outline's data and therefore can be irreversible because of the precision of coordinates.
 
 #### `Outline.prototype.get bounds()`
 
@@ -327,7 +327,7 @@ The Piu `shape` object is a `content` object that uses the fill color and the st
 
 By default, a `shape` object is empty, its fill outline and stroke outlines are `null`. Set the `fillOutline` or `strokeOutline` properties to change its fill outline or its stroke outline.
 
-The measured width of a shape object is the maximum of its fill outline and stroke outline widths. The measured height of a shape object is the maximum of its fill outline and stroke outline heights. So changing the fill outline or the stroke outline of a `shape` object can reflow the layout of its containers. 
+The measured width of a shape object is the maximum of its fill outline and stroke outline widths. The measured height of a shape object is the maximum of its fill outline and stroke outline heights. So changing the fill outline or the stroke outline of a `shape` object can reflow the layout of its containers.
 
 > Usually the same path is used to create the fill outline with `Outline.fill` and the stroke outline with `Outline.stroke`. However, the `shape` object assumes no relationships between the two outlines.
 
@@ -366,7 +366,7 @@ import {} from "piu/MC";
 import {} from "piu/shape";
 import {Outline} from "commodetto/outline";
 ```
-Then we define the shapes outlines in the `onCreate` method of their behavior. 
+Then we define the shapes outlines in the `onCreate` method of their behavior.
 
 ### Frame and Dial
 
@@ -376,7 +376,7 @@ The frame is just a white circle.
 class FrameBehavior extends Behavior {
 	onCreate(shape) {
 		const path = new Outline.CanvasPath();
-		path.arc(120, 120, 120, 0, 2 * Math.PI);	
+		path.arc(120, 120, 120, 0, 2 * Math.PI);
 		shape.fillOutline = Outline.fill(path);
 	}
 }

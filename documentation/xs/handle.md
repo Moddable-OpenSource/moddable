@@ -5,13 +5,13 @@ Revised: May 17, 2017
 
 ## Objective
 
-To develop frameworks for microcontrollers with XS, the most significant constraint is RAM. 
+To develop frameworks for microcontrollers with XS, the most significant constraint is RAM.
 
 The XS linker prepares most classes, prototypes, functions and byte codes to be accessed straightly from ROM. All the ECMAScript 2017 features, and most modules composing the frameworks are there, instantaneously available and requiring just a few KB of RAM.
 
-For everything that is created at runtime, applications rely on the XS garbage collector to manage memory. XS divides memory into two zones: the slots and the chunks. 
+For everything that is created at runtime, applications rely on the XS garbage collector to manage memory. XS divides memory into two zones: the slots and the chunks.
 
-Slots have a fixed size (16 bytes on a 32-bit processor) and cannot move. Chunks have a variable size and can move. The XS garbage collector can compact chunks when necessary, which is a life saver for processors without an MMU. 
+Slots have a fixed size (16 bytes on a 32-bit processor) and cannot move. Chunks have a variable size and can move. The XS garbage collector can compact chunks when necessary, which is a life saver for processors without an MMU.
 
 Slots are used for anything that fits: booleans, dates, instances, numbers, properties, references, symbols, etc. Chunks are used for everything else: byte codes, arrays, strings, etc.
 
@@ -33,14 +33,14 @@ The `HANDLE` is a pointer to the `DATA` part of a `HOST` slot. The `DATA` part o
 
 C based objects are chunks. They can contain anything, for instance colors, coordinates, dimensions, etc. Notice that for such values, C based objects are also saving memory since they can pack several values into one chunk instead of using one slot for each value. The memory savings by applying this approach can be considerable as a JavaScript property requires a slot (16 bytes on a typical MCU) which is larger than a native boolean (1 byte), integer (2 or 4 bytes), or even a floating point double (8 bytes).
 
-From JavaScript, C based objects are just host objects and are accessed thru the `INSTANCE` slot like any host objects. Thru the `PROTOTYPE` part of the `INSTANCE` slot, frameworks provides getters, setters and methods so applications can access and manipulate values as usual. 
+From JavaScript, C based objects are just host objects and are accessed thru the `INSTANCE` slot like any host objects. Thru the `PROTOTYPE` part of the `INSTANCE` slot, frameworks provides getters, setters and methods so applications can access and manipulate values as usual.
 
 ## Implementation
 
 C based objects reference other C based object thru handles, i.e. a chunk can contain a handle to another chunk. For instance a content accesses its container with
 
 	(*content)->container
-	
+
 That is essential for to achieve maximum performance. For instance, the layout hierarchy is traversed a lot when animating a screen at 30 fps.
 
 What happens when XS collects garbage if a handle inside a chunk is the only reference to a C based object?
@@ -53,6 +53,6 @@ C based objects implement host `HOOKS`, which are XS garbage collector callbacks
 
 ## Example
 
-Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on microcontrollers using the *Commodetto* graphics library. 
+Please look at the *Piu* sources, which implement part of the *KinomaJS* programming interface on microcontrollers using the *Commodetto* graphics library.
 
 

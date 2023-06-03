@@ -1,4 +1,4 @@
-This folder contains a host and mods that demonstrate how to build BLE HID Keyboards and Media Controllers with the Moddable SDK. 
+This folder contains a host and mods that demonstrate how to build BLE HID Keyboards and Media Controllers with the Moddable SDK.
 
 For a high-level overview, refer to [this blog post](https://blog.moddable.com/blog/ble-keyboards-media/). This document is documentation for using the BLE HID Host to make new keyboard and media controller apps.
 
@@ -20,9 +20,9 @@ An HID peripheral must describe its own input capabilities to the BLE central it
 
 The implemented HID Report Descriptor is provided for reference at the end of this document.
 
-## BLE HID Host API 
+## BLE HID Host API
 
-### Host Events 
+### Host Events
 
 Three events are available on the BLE HID Host's `application` object and can be triggered by the UI mod to send keystrokes/button presses to a connected BLE Central:
 
@@ -130,7 +130,7 @@ Send a quick tap of the `Mute` HID Consumer Device media key to the BLE Central:
 application.delegate("doKeyTap", {hidCode: HIDKEYS.MUTE.HID});
 ```
 
-## HID Report Descriptor 
+## HID Report Descriptor
 
 Experienced HID developers may want to review the HID Report Descriptor used by the BLE HID Host. The report follows (annotations courtesy of [https://eleccelerator.com/usbdescreqparser/](https://eleccelerator.com/usbdescreqparser/)):
 

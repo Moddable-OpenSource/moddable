@@ -3,7 +3,7 @@
 Copyright 2021 Moddable Tech, Inc.<BR>
 Revised: November 4, 2021
 
-These examples demonstrate how to use features of [Commodetto](../../documentation/commodetto/commodetto.md), a bitmap graphics library that provides a 2D graphics API. Commodetto includes the lightweight [Poco rendering engine](../../documentation/commodetto/poco.md), a display list renderer able to efficiently render a single scanline at a time, saving considerable memory by eliminating the need for a frame buffer. 
+These examples demonstrate how to use features of [Commodetto](../../documentation/commodetto/commodetto.md), a bitmap graphics library that provides a 2D graphics API. Commodetto includes the lightweight [Poco rendering engine](../../documentation/commodetto/poco.md), a display list renderer able to efficiently render a single scanline at a time, saving considerable memory by eliminating the need for a frame buffer.
 
 Most of the examples are designed for a QVGA (320x240) screen, but many work on a variety of screen sizes. All of the examples in this folder run on the desktop simulator with the exception of the `mini-drag` example.
 
@@ -13,7 +13,7 @@ This document provides a brief description of each example and a preview of each
 - **Text:** <a href="#text">`text`</a>, <a href="#text-ticker">`text-ticker`</a>, <a href="#cfe8x8">`cfe8x8`</a>, <a href="#cfeNFNT">`cfeNFNT`</a>
 - **Animation:** <a href="#docs">`docs`</a>, <a href="#progress">`progress`</a>, <a href="#text-ticker">`text-ticker`</a>
 - **Touch input:** <a href="#mini-drag">`mini-drag`</a>
-- **Networking:** <a href="#jpeghttp-and-jpegstream">`jpeghttp`</a>, <a href="#jpeghttp-and-jpegstream">`jpegstream`</a>, <a href="#epaper-mini-travel-time">`epaper-mini-travel-time`</a>, 
+- **Networking:** <a href="#jpeghttp-and-jpegstream">`jpeghttp`</a>, <a href="#jpeghttp-and-jpegstream">`jpegstream`</a>, <a href="#epaper-mini-travel-time">`epaper-mini-travel-time`</a>,
 
 ***
 
@@ -141,7 +141,7 @@ The `outline/random-triangles` example demonstrates using both stroked and fille
 
 ### `pngdisplay`
 
-The `pngdisplay` allows you to use the curl command line tool to push PNG images to the display. Created for use by user interface designers, not developers. 
+The `pngdisplay` allows you to use the curl command line tool to push PNG images to the display. Created for use by user interface designers, not developers.
 
 > See the [blog post](https://blog.moddable.com/blog/pngdisplay/) Pushing PNG Images to a Display for more information about this example.
 
@@ -159,7 +159,7 @@ The `progress` example displays high frame rate animations of progress bars and 
 
 ![](https://www.moddable.com/assets/commodetto-gifs/rotated.png)
 
-The `rotated` example demonstrates how to define the rotation of the screen. This example rotates 90 degrees; 0, 180, and 270 degree rotation is also supported. 
+The `rotated` example demonstrates how to define the rotation of the screen. This example rotates 90 degrees; 0, 180, and 270 degree rotation is also supported.
 
 ***
 

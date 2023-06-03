@@ -27,22 +27,22 @@ mcconfig -d -m -p esp32/moddable_zero
 
 ## ESP32 Pinout
 
-| ILI9341 Display | ESP32 | 
+| ILI9341 Display | ESP32 |
 | --- | --- |
 | SDO / MISO | GPIO 12  |
-| LED | 3.3V | 
+| LED | 3.3V |
 | SCK | GPIO 14 |
 | SDI / MOSI | GPIO 13 |
 | CS | GPIO 15 |
-| DC | GPIO 2 | 
-| RESET | 3.3V | 
-| GND | GND | 
-| VCC | 3.3V | 
-| T_DO | GPIO 12 | 
-| T_DIn | GPIO 13 | 
-| T_CLK | GPIO 14 | 
-| T_IRQ | GPIO 23 | 
-| T_CS | GPIO 18 | 
+| DC | GPIO 2 |
+| RESET | 3.3V |
+| GND | GND |
+| VCC | 3.3V |
+| T_DO | GPIO 12 |
+| T_DIn | GPIO 13 |
+| T_CLK | GPIO 14 |
+| T_IRQ | GPIO 23 |
+| T_CS | GPIO 18 |
 
 ![ESP32 - Generic 2.4"-2.8" wiring](images/ESP32+display-wiring2.png)
 

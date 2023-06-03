@@ -67,7 +67,7 @@ The Moddable SDK supports many devices built on ESP32. The following table lists
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | <img src="./../assets/devices/moddable-two.png" width=125><BR>Moddable Two | `esp32/moddable_two`<BR>`simulator/moddable_two` | **2.4" IPS display**<BR>240 x 320 QVGA<BR>16-bit color<BR>Capacitive touch<BR><BR>20 External pins  | <li>[Moddable Two developer guide](./moddable-two.md)</li><li>[Moddable product page](https://www.moddable.com/purchase.php)</li> |
-| ![ESP32](./../assets/devices/esp32.png)<BR>Node MCU ESP32 | `esp32/nodemcu` | | 
+| ![ESP32](./../assets/devices/esp32.png)<BR>Node MCU ESP32 | `esp32/nodemcu` | |
 | ![M5Stack](./../assets/devices/m5stack.png)<BR> M5Stack | `esp32/m5stack`<BR>`esp32/m5stack_core2` | **1.8" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>Audio playback<BR>Accelerometer<BR>NeoPixels  | <li>[Product page](https://m5stack.com/collections/m5-core/products/basic-core-iot-development-kit)</li> |
 | ![M5Stack Fire](./../assets/devices/m5stack-fire.png)<BR>M5Stack Fire | `esp32/m5stack_fire` | **1.8" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>Audio playback<BR>Accelerometer<BR>NeoPixels | <li>[Product page](https://m5stack.com/collections/m5-core/products/fire-iot-development-kit?variant=16804798169178)</li> |
 | ![M5Stick C](./../assets/devices/m5stick-c.png)<BR>M5Stick C | `esp32/m5stick_c`<BR>`simulator/m5stick_c` | **0.96" LCD display**<BR>80 x 160<BR>16-bit color<BR><BR>IMU<BR>Microphone | <li>[Product page](https://m5stack.com/collections/m5-core/products/stick-c?variant=17203451265114)</li> |
@@ -124,7 +124,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
 |  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` | Neopixel, 1 button, STEMMA/QWIIC  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
 |  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
-|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
+|<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>|
 |<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
 
 <a id="platforms-esp32-c3"></a>
@@ -159,7 +159,7 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 "build":{
 	"ESP32_SUBCLASS": "esp32s2"
 },
-``` 
+```
 
 | `ESP32_SUBCLASS` | Device |
 |:---:|:---:|
@@ -193,19 +193,19 @@ Omitting the `-d` and `-i` options on the `mcconfig` command line selects a rele
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py).
 
 <a id="mac-instructions"></a>
 ### Installing
 
 1. Install the Moddable SDK tools by following the instructions in the [Getting Started document](./../Moddable%20SDK%20-%20Getting%20Started.md).
 
-2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
+2. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools.
 
-3. If you are running macOS 10.15 (Catalina) or earlier, download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers). 
+3. If you are running macOS 10.15 (Catalina) or earlier, download and install the Silicon Labs [CP210x USB to UART VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers).
 
 	If you run macOS Catalina, an extra step is required to enable the VCP driver. If you see a popup that says "System Extension Blocked" during installation, follow the instructions in the dialog to enable the extension in Security & Privacy System Preferences.
-	
+
 	If you are using macOS 10.16 (Big Sur) or later, you do not need to install the VCP driver.
 
 4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
@@ -238,20 +238,20 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 
 6. Connect the ESP32 device to your macOS host with a USB cable.
 
-7. Open your shell startup/initialization file. 
+7. Open your shell startup/initialization file.
 
-	For macOS Mojave and earlier, the default shell is `bash`, so you should open `~/.profile`. 
+	For macOS Mojave and earlier, the default shell is `bash`, so you should open `~/.profile`.
 
 	```text
 	open ~/.profile
 	```
-	
+
 	Starting with macOS Catalina, the [default shell is `zsh`](https://support.apple.com/en-us/HT208050), so you should open `~/.zshrc`.
-	
+
 	```text
 	open ~/.zshrc
 	```
-		
+
 8. Add the following line to the file you just opened and save. This sets the `IDF_PATH` environment variable to point at your ESP-IDF directory.
 
 	```text
@@ -268,13 +268,13 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	```
 
 	To identify the proper serial port, examine the list of serial devices in macOS before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial device files, use the following command in Terminal:
-	
+
 	```text
 	ls /dev/cu.*
 	```
 
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
-	
+
 	```text
 	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
 	```
@@ -287,10 +287,10 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	cd $IDF_PATH
 	./install.sh
 	```
-	
+
 	If you are using a Mac with an M1 chip, you will have to take some additional steps before you can run the install script because the ESP-IDF does not yet have proper support for Darwin-arm64 hosts. [This comment](https://github.com/espressif/esp-idf/issues/6113#issuecomment-756335935) provides step by step instructions that you can follow to work around this issue.
 
-11. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run __every time__ you open a new shell instance,** either manually or by a startup script. 
+11. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run __every time__ you open a new shell instance,** either manually or by a startup script.
 
 	```text
 	source $IDF_PATH/export.sh
@@ -305,7 +305,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
-	
+
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 <a id="mac-troubleshooting"></a>
@@ -329,7 +329,7 @@ pip install future
 pip install pyserial
 pip install cryptography
 ```
-	
+
 #### Device not connected/recognized
 
 The following error messages mean that the device is not connected to your computer or the computer doesn't recognize the device.
@@ -340,8 +340,8 @@ error: cannot access /dev/usbserial-0001
 ```
 
 There are a few reasons this can happen:
- 
-1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands. 
+
+1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands.
 2. You have a USB cable that is power only. Make sure you're using a data sync-capable USB cable.
 3. The computer does not recognize your device. To fix this problem, follow the instructions below.
 
@@ -354,7 +354,7 @@ ls /dev/cu*
 
 Then plug in the device and repeat the same command. If nothing new appears in the terminal output, the device isn't being recognized by your computer.
 
-If you are running macOS 10.15 or earlier, make sure you have the correct VCP driver installed.  If you are running macOS 10.16 or earlier, you do not need to install the VCP driver. 
+If you are running macOS 10.15 or earlier, make sure you have the correct VCP driver installed.  If you are running macOS 10.16 or earlier, you do not need to install the VCP driver.
 
 If it is recognized, you now have the device name and you need to edit the `UPLOAD_PORT` environment variable. Enter the following command, replacing `/dev/cu.SLAB_USBtoUART` with the name of the device on your system.
 
@@ -362,7 +362,7 @@ If it is recognized, you now have the device name and you need to edit the `UPLO
 export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 ```
 
-<a id="mac-update"></a>	
+<a id="mac-update"></a>
 ### Updating
 
 1. If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag.
@@ -384,7 +384,7 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	git checkout v4.4.3
 	git submodule update --init --recursive
 	```
-	
+
 2. Update homebrew and then verify that you have all the necessary tools and that they are up to date:
 
 	```text
@@ -392,8 +392,8 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	brew install python cmake ninja
 	brew upgrade python cmake ninja
 	pip install pyserial
-	```	
-		
+	```
+
 3. Verify the `IDF_PATH` environment variable is set correctly in your shell's user profile file (e.g. `~/.profile` or `~/.zshrc`, depending on your shell).
 
 	```text
@@ -407,14 +407,14 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	./install.sh
 	```
 
-5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script.
 
 	```text
 	source $IDF_PATH/export.sh
 	```
 
 	If you prefer to automate this process for new shell instances, follow the instructions from Step 3 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
-	
+
 6. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
     ```text
@@ -429,15 +429,15 @@ export UPLOAD_PORT=/dev/cu.SLAB_USBtoUART
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
-	
+
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
 
 
-<a id="win"></a>	
+<a id="win"></a>
 ## Windows
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py).
 
 <a id="win-instructions"></a>
 ### Installing
@@ -475,7 +475,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	If you already have a cloned copy of the ESP-IDF, the simplest way to do the update is to delete the existing `esp-idf` folder and clone it again. [See Espressif's Get ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32/get-started/index.html#get-started-get-esp-idf)
 
 6. Connect the ESP32 device to your Windows host with a USB cable.
-	
+
 7. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
 	- Create a User Variable called `IDF_PATH` and set it to the directory where you cloned the ESP-IDF, e.g.:
 		- Variable name: `IDF_PATH`
@@ -497,7 +497,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	cd %IDF_PATH%
 	install.bat
 	```
-	
+
 10. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects with "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
@@ -526,7 +526,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
-	
+
 <a id="win-troubleshooting"></a>
 ### Troubleshooting
 
@@ -542,11 +542,11 @@ The built-in anti-virus software included with Windows 10 and 11 (Microsoft Defe
 
 Espressif recommends using Python 3.9 or later when building with ESP-IDF v4.4. Python 3.9 will be installed by the ESP-IDF Windows Installer.
 
-If you had a previous version of Python (such as Python 2.7) installed on your system, you may need to remove it from the System PATH so that Python 3.9 is chosen by default. Look for entries like `C:\Python27\` or `C:\Python27\Scripts\` in your PATH and remove them if you encounter Python errors during the build process. 
+If you had a previous version of Python (such as Python 2.7) installed on your system, you may need to remove it from the System PATH so that Python 3.9 is chosen by default. Look for entries like `C:\Python27\` or `C:\Python27\Scripts\` in your PATH and remove them if you encounter Python errors during the build process.
 
 #### Python dependencies
 
-If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2022."	
+If you get an error about Python dependencies not being installed, it means that the ESP-IDF installer failed to update Python. This usually happens due to permissions issues on your machine. To correct it, run `python -m pip install -r %IDF_PATH%\requirements.txt` from the "x86 Native Tools Command Prompt for VS 2022."
 
 #### Device not connected/recognized
 
@@ -558,8 +558,8 @@ serial.serialutil.SerialException: could not open port 'COM3': FileNotFoundError
 ```
 
 There are a few reasons this can happen:
- 
-1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands. 
+
+1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands.
 2. You have a USB cable that is power only. Make sure you're using a data sync-capable USB cable.
 3. The computer does not recognize your device. To fix this problem, follow the instructions below.
 
@@ -571,7 +571,7 @@ If your device shows up on a COM port other than COM3, you need to edit the `UPL
 set UPLOAD_PORT=COM5
 ```
 
-<a id="win-update"></a>	
+<a id="win-update"></a>
 ### Updating
 
 To ensure that your build environment is up to date, perform the following steps:
@@ -581,7 +581,7 @@ To ensure that your build environment is up to date, perform the following steps
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
     If you do not already have CMake or Python, the installer will also prompt you to download and install those tools (you should do so if needed).
-    
+
     If you choose to clone the ESP-IDF, select the `v4.4.3 (release version)` of the esp-idf.
 
 	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to the `v4.4.3` tag.
@@ -660,7 +660,7 @@ To ensure that your build environment is up to date, perform the following steps
 <a id="esp32-linux"></a>
 ## Linux
 
-The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py). 
+The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`) and the CMake option of Espressif's [`idf.py` tool](https://github.com/espressif/esp-idf/blob/master/tools/idf.py).
 
 <a id="lin-instructions"></a>
 ### Installing
@@ -690,7 +690,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 	```
 
-3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools. 
+3. Create an `esp32` directory in your home directory at `~/esp32` for required third party SDKs and tools.
 
 4. If this is your first install, clone the `ESP-IDF` GitHub repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v4.4.3` tag:
 
@@ -729,13 +729,13 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	```
 
 	To identify the proper serial port, examine the list of serial devices on your Linux host before and after plugging in your ESP32 device and note the new serial port that shows up. To see a list of serial device files, use the following command:
-	
+
 	```text
 	ls /dev/*
 	```
 
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
-	
+
 	```text
 	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
 	```
@@ -749,7 +749,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	./install.sh
 	```
 
-9. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+9. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script.
 
 	```text
 	source $IDF_PATH/export.sh
@@ -765,7 +765,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	```
 
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
-	
+
 <a id="lin-troubleshooting"></a>
 ### Troubleshooting
 
@@ -778,7 +778,7 @@ For other issues that are common on macOS, Windows, and Linux, see the [Troubles
 The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
 
 ```text
-sudo adduser <username> dialout 
+sudo adduser <username> dialout
 sudo reboot
 ```
 
@@ -791,8 +791,8 @@ error: cannot access /dev/ttyUSB0
 ```
 
 There are a few reasons this can happen:
- 
-1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands. 
+
+1. Your device is not plugged into your computer. Make sure it's plugged in when you run the build commands.
 2. You have a USB cable that is power only. Make sure you're using a data sync-capable USB cable.
 3. The computer does not recognize your device. To fix this problem, follow the instructions below.
 
@@ -811,7 +811,7 @@ If it is recognized, you now have the device name and you need to edit the `UPLO
 export UPLOAD_PORT=/dev/ttyUSB1
 ```
 
-<a id="lin-update"></a>	
+<a id="lin-update"></a>
 ### Updating
 
 1. If you already have a clone of the ESP-IDF, update to the `v4.4.3` tag.
@@ -870,7 +870,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
 	./install.sh
 	```
 
-5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script. 
+5. Set up your build environment by sourcing the ESP-IDF `export.sh` script. **This must be run every time you open a new shell instance,** either manually or by a startup script.
 
 	```text
 	source $IDF_PATH/export.sh
@@ -887,7 +887,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
     ```
 
 7. Verify the setup by building `helloworld` for your device target:
-	
+
 	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
@@ -899,7 +899,7 @@ export UPLOAD_PORT=/dev/ttyUSB1
 ## Troubleshooting
 
 When you're trying to install applications, you may experience roadblocks in the form of errors or warnings; this section explains some common issues and how to resolve them.
-	
+
 ### Incompatible baud rate
 
 The following warning message is normal and is no cause for concern.
@@ -926,27 +926,27 @@ There are a few reasons the upload may fail partway through:
 - You have a USB cable that does not support higher baud rates.
 - You're using a board that requires a lower baud rate than the default baud rate that the Moddable SDK uses.
 
-To solve the last two problems above, you can change to a slower baud rate as follows: 
+To solve the last two problems above, you can change to a slower baud rate as follows:
 
 1. Open `$MODDABLE/tools/mcconfig/make.esp32.mk`.
 
 2. Find this line, which sets the upload speed to 921600:
 
-    ```text 
+    ```text
     UPLOAD_SPEED ?= 921600
     ```
 
 3. Set the speed to a smaller number. For example:
 
-    ```text 
+    ```text
     UPLOAD_SPEED ?= 115200
     ```
-    
+
 > Note: Instead of modifying the `make.esp32.mk` file, you can make a temporary change by setting the environment variable `UPLOAD_SPEED`.
- 
+
 ### ESP32 is not in bootloader mode
 
-If an ESP32 is not in bootloader mode, you cannot flash the device. Most development boards built with the ESP32 include circuitry that automatically puts them into bootloader mode when you try to reflash the board. Some do not, and sometimes the auto programming will fail. This is most common on Windows machines. 
+If an ESP32 is not in bootloader mode, you cannot flash the device. Most development boards built with the ESP32 include circuitry that automatically puts them into bootloader mode when you try to reflash the board. Some do not, and sometimes the auto programming will fail. This is most common on Windows machines.
 
 When your ESP32 is not in bootloader mode, status messages stop being traced briefly when you attempt to flash the device, and after several seconds this error message is traced to the console:
 

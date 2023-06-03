@@ -85,7 +85,7 @@ The `pemToDER` function transforms a certificate in PEM format (Base64 encoded A
 
 For PEM files containing more than one certificate, `pemToDER` converts only the first certificate.
 
-This function is similar to the following `openssl` command line: 
+This function is similar to the following `openssl` command line:
 
 ```
 openssl x509 -inform pem -in data.pem -out data.der -outform der

@@ -65,7 +65,7 @@ After you've set up your host environment and ESP8266 tools, take the following 
 1. Attach the programmer to your Moddable One.
 
 	Make sure you have the programmer oriented correctly. The orientation should match the image below.
-	
+
 	<img src="../assets/devices/moddable-one-programmer.jpg">
 
 	**Note**: The USB port on Moddable One may be used to provide power when operating without the programmer. The USB port is only for powering Moddable One. It cannot be used to program Moddable One.
@@ -76,15 +76,15 @@ After you've set up your host environment and ESP8266 tools, take the following 
 
 3. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Use the platform `-p esp/moddable_one`  with `mcconfig` to build for Moddable One. For example, to build the [`piu/balls` example](../../examples/piu/balls):
-	
+
 	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p esp/moddable_one
 	```
-	
+
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
 
 	Use the platform `-p simulator/moddable_one` with `mcconfig` to build for the Moddable One simulator.
@@ -101,14 +101,14 @@ See the Troubleshooting section of the [ESP8266 documentation](./esp8266.md) for
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. The vast majority of these examples run on Moddable One. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. The vast majority of these examples run on Moddable One.
 
 That said, not every example is compatible with Moddable One hardware. For example, the ESP8266 does not have BLE capabilities so BLE examples do not build or run. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable One display and give a build error.
 
 <a id="documentation"></a>
 ### Documentation
 
-All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include:
 
 - The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
 - The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.
