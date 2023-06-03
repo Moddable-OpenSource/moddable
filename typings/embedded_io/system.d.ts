@@ -26,7 +26,7 @@ declare module "embedded:io/system" {
   class System {
     static deepSleep(us: number, mode: number): void;
     static restart(): void;
-    static resolve(name: string, callback: (name: string, ip: string) => void);
+    static resolve(name: string, callback: (name: string, ip: string) => void) : void;
     static setTimeout: typeof Timer.set;
     static clearTimeout: typeof Timer.clear;
     static setInterval: typeof Timer.repeat;
