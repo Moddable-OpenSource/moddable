@@ -993,8 +993,6 @@ void fxArrayLengthSetter(txMachine* the)
 			return;
 	}
 	fxSetArrayLength(the, array, length);
-    mxResult->value.number = array->value.array.length;
-    mxResult->kind = XS_NUMBER_KIND;
 }
 
 txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* descriptor, txFlag mask) 
@@ -2367,8 +2365,8 @@ void fx_Array_prototype_some(txMachine* the)
 
 void fx_Array_prototype_sort(txMachine* the)
 {
-	txSlot* array = fxCheckArray(the, mxThis, XS_MUTABLE);
 	txSlot* function = C_NULL;
+	/*txSlot* array =*/ fxCheckArray(the, mxThis, XS_MUTABLE);
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
 		if (slot->kind != XS_UNDEFINED_KIND) {
@@ -2378,13 +2376,13 @@ void fx_Array_prototype_sort(txMachine* the)
 				mxTypeError("compare is no function");
 		}
 	}
-	if (function)
+//	if (function)
 		fxSortArrayItems(the, function, C_NULL, fxGetArrayLength(the, mxThis), mxThis);
-	else {
-		if (array)
-			array = fxCheckArrayItems(the, array, 0, array->value.array.length);
-		fxSortArrayItems(the, function, array, fxGetArrayLength(the, mxThis), mxThis);
-	}
+//	else {
+//		if (array)
+//			array = fxCheckArrayItems(the, array, 0, array->value.array.length);
+//		fxSortArrayItems(the, function, array, fxGetArrayLength(the, mxThis), mxThis);
+//	}
 	mxResult->kind = mxThis->kind;
 	mxResult->value = mxThis->value;
 }

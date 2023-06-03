@@ -1156,6 +1156,8 @@ export default class extends Tool {
 		var file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);
 		file.generate(this);
 
+		this.writeFileString(this.tmpPath + this.slash + "manifest_flat.json", JSON.stringify(this.manifest, undefined, "\t")); 
+
 		var path = this.tmpPath + this.slash + "makefile", file;
 		if (this.windows) {
 			if (this.platform == "synergy")

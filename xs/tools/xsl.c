@@ -750,14 +750,22 @@ int main(int argc, char* argv[])
 void fxBuildKeys(txMachine* the)
 {
 	txLinker* linker = (txLinker*)(the->context);
-	txID c = linker->symbolIndex, i;
-	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
+	txID c = linker->symbolIndex, i = 0;
+	{
+		txSlot* key = fxFindKey(the);
+		key->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
+		i++;
+	}
+	for (; i < XS_SYMBOL_ID_COUNT; i++) {
 		txLinkerSymbol* symbol = linker->symbolArray[i];
-		txID id = the->keyIndex;
-		txSlot* description = fxNewSlot(the);
-		fxCopyStringC(the, description, symbol->string);
-		the->keyArray[id] = description;
-		the->keyIndex++;
+		txSlot* key = fxFindKey(the);
+		txSlot* instance = fxNewInstance(the);
+		txSlot* property = fxNextSymbolProperty(the, instance, i, XS_NO_ID, XS_INTERNAL_FLAG);
+		fxNextStringXProperty(the, property, symbol->string, XS_NO_ID, XS_INTERNAL_FLAG);
+		key->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
+		key->kind = XS_REFERENCE_KIND;
+		key->value.reference = instance;
+		mxPop();
 	}
 	for (; i < c; i++) {
 		txLinkerSymbol* symbol = linker->symbolArray[i];

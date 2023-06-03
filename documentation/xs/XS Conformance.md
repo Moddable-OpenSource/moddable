@@ -1,6 +1,6 @@
 # XS Conformance
 Copyright 2016-2022 Moddable Tech, Inc.<BR>
-Revised: June 1, 2022
+Revised: May 16, 2023
 
 ## Caveat
 
@@ -57,7 +57,7 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.62%** of the language tests and **83.78%** of the built-ins tests. Mostly because of `Temporal`, XS skips **16.12%** of the built-ins tests.
+Currently, on macOS, XS passes **99.62%** of the language tests and **83.84%** of the built-ins tests. Mostly because of `Temporal`, XS skips **16.06%** of the built-ins tests.
 
 Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
@@ -444,7 +444,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
 
 ### Built-ins
 
-     33269/39709 (6402) built-ins
+     33309/39729 (6382) built-ins
          5761/5860 (87) Array
              8/8 Symbol.species
              90/90 from
@@ -648,11 +648,11 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  2/2 message
                  2/2 name
                  28/28 toString
-         90/108 (18) FinalizationRegistry
-             58/75 (17) prototype
+         94/110 (16) FinalizationRegistry
+             62/77 (15) prototype
                  0/14 (14) cleanupSome
-                 32/33 (1) register
-                 18/20 (2) unregister
+                 34/34 register
+                 20/21 (1) unregister
          887/889 Function
              16/16 internals
                  4/4 Call
@@ -1452,21 +1452,21 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  4/4 toLocaleString
                  4/4 toString
                  4/4 values
-         186/195 (9) WeakMap
-             140/148 (8) prototype
-                 38/41 (3) delete
-                 22/24 (2) get
-                 36/38 (2) has
-                 38/39 (1) set
-         54/57 (3) WeakRef
-             24/26 (2) prototype
-                 16/18 (2) deref
-         156/163 (7) WeakSet
-             120/126 (6) prototype
-                 38/41 (3) add
+         204/204 WeakMap
+             156/156 prototype
+                 44/44 delete
+                 26/26 get
+                 40/40 has
+                 40/40 set
+         58/59 (1) WeakRef
+             26/27 (1) prototype
+                 18/19 (1) deref
+         170/170 WeakSet
+             132/132 prototype
+                 44/44 add
                  4/4 constructor
-                 38/39 (1) delete
-                 36/38 (2) has
+                 40/40 delete
+                 40/40 has
          110/110 decodeURI
          110/110 decodeURIComponent
          62/62 encodeURI
@@ -1586,4 +1586,3 @@ Invalid test.
 - json-modules
 - regexp-duplicate-named-groups
 - regexp-v-flag
-- symbols-as-weakmap-keys

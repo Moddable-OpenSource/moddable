@@ -1,0 +1,25 @@
+{
+	"preload": "audioin",
+	"platforms": {
+		"esp32/*": {
+			"modules": {
+				"*": [
+					"./audioin",
+					"./esp32/audioin"
+				]
+			}
+		},
+		"...": {
+			"warning": "Using AudioIn simulator",
+			"include": [
+				"$(MODDABLE)/modules/data/wavreader/manifest.json"
+			],
+			"modules": {
+				"*": "./sim/audioin"
+			},
+			"data": {
+				"sim": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+			}
+		}
+	}
+}

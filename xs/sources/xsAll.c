@@ -42,6 +42,7 @@
 #endif
 
 static void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, txID id, txCallback address, txID profileID);
+static void fxBufferName(txString dst, txString src, txSize size);
 
 txString fxAdornStringC(txMachine* the, txString prefix, txSlot* string, txString suffix)
 {
@@ -147,19 +148,14 @@ void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, t
 {
 	txInteger length;
 	if (id != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, id);
-		if (key) {
-			if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-				c_strncat(buffer, key->value.key.string, size - mxStringLength(buffer) - 1);
-				return;
-			}
-			if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
-				c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, key->value.string, size - mxStringLength(buffer) - 1);
-				c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
-				return;
-			}
-		}
+		txBoolean adorn;
+		txString string = fxGetKeyString(the, id, &adorn);
+		if (adorn)
+			c_strncat(buffer, "[", size - mxStringLength(buffer) - 1);
+		fxBufferName(buffer, string, size - mxStringLength(buffer) - 1);
+		if (adorn)
+			c_strncat(buffer, "]", size - mxStringLength(buffer) - 1);
+		return;
 	}
 	if (address) {
 		c_strncat(buffer, "@", size - mxStringLength(buffer) - 1);
@@ -187,9 +183,27 @@ void fxBufferObjectName(txMachine* the, txString buffer, txSize size, txSlot* ob
 {
 	txSlot* slot = mxBehaviorGetProperty(the, object, mxID(_Symbol_toStringTag), 0, XS_ANY);
 	if (slot && ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) && !c_isEmpty(slot->value.string)) {
-		c_strncat(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
+		fxBufferName(buffer, slot->value.string, size - mxStringLength(buffer) - 1);
 		c_strncat(buffer, suffix, size - mxStringLength(buffer) - 1);
 	}
+}
+
+void fxBufferName(txString dst, txString src, txSize size)
+{
+	dst += mxStringLength(dst);
+	for (;;) {
+		txInteger c;
+		txSize length;
+		src = mxStringByteDecode(src, &c);
+		if (c == C_EOF)
+			break;
+		length = mxStringByteLength(c);
+		if (length > size)
+			break;
+		dst = mxStringByteEncode(dst, c);
+		size -= length;
+	}
+	*dst = 0;
 }
 
 txString fxConcatString(txMachine* the, txSlot* a, txSlot* b)
@@ -245,7 +259,7 @@ txString fxCopyStringC(txMachine* the, txSlot* a, txString b)
 txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 {
 	txSlot* key = fxGetKey(the, id);
-	if (key && (key->flag & XS_DONT_ENUM_FLAG)) {
+	if (key->flag & XS_DONT_ENUM_FLAG) {
 		txString string = key->value.key.string;
 		char buffer[256], c;
 		txNumber number;

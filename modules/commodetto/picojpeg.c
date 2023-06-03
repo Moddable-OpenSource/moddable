@@ -731,13 +731,13 @@ static uint8 readSOSMarker(void)
 static uint8 nextMarker(void)
 {
    uint8 c;
-   uint8 bytes = 0;
+//   uint8 bytes = 0;
 
    do
    {
       do
       {
-         bytes++;
+//         bytes++;
 
          c = (uint8)getBits1(8);
 

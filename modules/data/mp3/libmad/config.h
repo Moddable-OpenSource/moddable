@@ -86,6 +86,7 @@ extern int stackfree();
 
 /* Define to disable debugging assertions. */
 #define NDEBUG 1
+#undef DEBUG
 
 /* Define to optimize for accuracy over speed. */
 /* #undef OPT_ACCURACY */
