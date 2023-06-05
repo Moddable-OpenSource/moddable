@@ -543,6 +543,8 @@ void ili9341Init(spiDisplay sd)
 			modDelayMilliseconds(ms);
 		}
 		else {
+			if (0x00 == cmd)		// escape so we can use register 0xFF
+				cmd = c_read8(cmds++);
 			if (0x36 == cmd)
 				sd->memoryAccessControl = c_read8(cmds + 1);
 			uint8_t count = c_read8(cmds++);

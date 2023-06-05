@@ -7,9 +7,7 @@
 		"ili9341": {
 			"width": 240,
 			"height": 320,
-			"hz": 40000000,
-			"flipX": false,
-			"flipY": false
+			"hz": 40000000
 		}
 	},
 	"modules": {
