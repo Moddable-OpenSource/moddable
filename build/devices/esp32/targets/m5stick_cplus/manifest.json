@@ -66,6 +66,7 @@
 			"sampleRate": 11025,
 			"bitsPerSample": 16,
 			"i2s": {
+				"num": 0,
 				"lr_pin": 0,
 				"datain": 34,
 				"pdm": 1
