@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022  Moddable Tech, Inc.
+ * Copyright (c) 2020-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -81,7 +81,7 @@ export default function (done) {
 		speaker.callback = function () {
 			this.stop();
 			this.close();
-			this.done();
+			Timer.set(this.done);
 		};
 		speaker.done = done;
 		done = undefined;
