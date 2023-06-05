@@ -42,6 +42,7 @@
 			"sampleRate": 11025,
 			"bitsPerSample": 16,
 			"i2s": {
+				"num": 0,
 				"bck_pin": 0,
 				"lr_pin": 5,
 				"datain": 19,
