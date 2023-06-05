@@ -1004,13 +1004,13 @@ export class TSConfigFile extends FILE {
 			compilerOptions: {
 				baseUrl: "./",
 				forceConsistentCasingInFileNames: true,
-				module: "es2020",
+				module: "es2022",
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2020"],
+				lib: ["es2022"],
 				sourceMap: true,
-				target: "ES2020",
+				target: "ES2022",
 				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
