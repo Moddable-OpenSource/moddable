@@ -1028,6 +1028,7 @@ export class TSConfigFile extends FILE {
 			var specifier = result.target.slice(0, -4);
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
 		}
