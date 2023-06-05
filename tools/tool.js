@@ -55,7 +55,7 @@ export class TOOL {
 			path = path.replaceAll("/", "\\");
 		const fileVersion = (this.isDirectoryOrFile(path) == 1) ? this.readFileString(path) : undefined;
 		const toolsVersion = this.getToolsVersion();
-		if (fileVersion === toolsVersion)
+		if (fileVersion.trim() === toolsVersion)
 			return;
 
 		trace(`Moddable SDK tools mismatch between binary (${toolsVersion}) and source (${fileVersion})! Rebuilding tools.\n`);
