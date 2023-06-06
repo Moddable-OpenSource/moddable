@@ -46,7 +46,7 @@ This document describes XS in C, the C interface to the runtime of the XS JavaSc
 
 In accordance with the ECMAScript specifications, the XS runtime implements only generic features that all scripts can use. An application defines the specific features that its own scripts can use through C callbacks. An application that uses the XS runtime is a host in ECMAScript terminology. 
 
-XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate larger binary code whereas the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. Including the `xsmc.h` header file makes the `xs` versions of some operations available.
+XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate larger binary code whereas the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. To use the `xsmc*` macros include "xsmc.h" and do not include "xs.h". to use the macros prefixed with `xs` alone, include "xs.h" and do not include "xsmc.h". Including the `xsmc.h` header file makes the `xs` versions of some operations available.
 
 ## Table of Contents
 
@@ -633,7 +633,7 @@ new Object();
 ##### In C:
 
 ```c
-xsVars(1);
+xsmcVars(1);
 xsmcSetNewObject(xsVar(0));
 ```
 
@@ -743,7 +743,7 @@ This section describes the macros related to accessing properties of objects (or
       <td>Returns a special instance made of global properties available to scripts</td>
     </tr> 
     <tr>
-      <td><code>xsDefine</code></td>
+      <td><code>xsDefine, xsmcDefine</code></td>
       <td>Defines a new property of an instance with an identifier and attributes</td>
     </tr> 
       <td><code>xsDefineAt</code></td>
@@ -846,6 +846,7 @@ typedef unsigned char xsAttribute;
 ```
 
 **`void xsDefine(xsSlot theThis, xsIdentifier theID, xsSlot theParam, xsAttribute theAttributes)`**
+**`void xsmcDefine(xsSlot theThis, xsIdentifier theID, xsSlot theParam, xsAttribute theAttributes)`**
 
 | Arguments | Description |
 | --- | :-- |
@@ -1049,7 +1050,7 @@ this.foo
 ##### In C:
 
 ```c
-xsVars(1);
+xsmcVars(1);
 xsmcGet(xsVar(0), xsGlobal, xsID_foo);
 xsmcGet(xsVar(0), xsThis, xsID("foo"));
 ```
@@ -1107,7 +1108,7 @@ this[5]
 ##### In C:
 
 ```c
-xsVars(1);
+xsmcVars(1);
 xsmcGetAt(xsVar(0), xsThis, xsString("foo"));
 xsmcGetAt(xsVar(0), xsThis, xsInteger(5));
 ```
@@ -1161,7 +1162,7 @@ this[0]
 ##### In C:
 
 ```c
-xsVars(1);
+xsmcVars(1);
 xsmcGetIndex(xsVar(0), xsThis, 0);
 ```
 
@@ -1370,7 +1371,7 @@ this[0](2, 3)
 ##### In C:
 
 ```c
-xsVars(3);
+xsmcVars(3);
 xsmcSetInteger(xsVar(0), 1);
 xsmcSetInteger(xsVar(1), 2);
 xsmcSetInteger(xsVar(2), 3);
@@ -1447,7 +1448,7 @@ new this[0](2, 3)
 ##### In C:
 
 ```c
-xsVars(3);
+xsmcVars(3);
 xsmcSetInteger(xsVar(0), 1);
 xsmcSetInteger(xsVar(1), 2);
 xsmcSetInteger(xsVar(2), 3);
