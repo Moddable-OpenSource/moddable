@@ -1879,6 +1879,8 @@ xsTrace("Hello xsbug!\n");
 | `format` | A printf-style format string
 | `...` | Items to referenced by the format string
 
+The support formatting options are %c, %hd, %d, %ld, %g, and %s.
+
 ##### In C:
 
 ```c
