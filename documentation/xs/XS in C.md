@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: May 25, 2023
+Revised: June 6, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -46,7 +46,7 @@ This document describes XS in C, the C interface to the runtime of the XS JavaSc
 
 In accordance with the ECMAScript specifications, the XS runtime implements only generic features that all scripts can use. An application defines the specific features that its own scripts can use through C callbacks. An application that uses the XS runtime is a host in ECMAScript terminology. 
 
-XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate larger binary code whereas the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. Including the `xsmc.h` header file makes the `xsmc` versions of some operations available.
+XS in C provides macros to access properties of objects. XS provides two functionally equivalent variations of many of the macros. The macros prefixed with `xs` alone are somewhat more convenient to work with but generate larger binary code whereas the macros prefixed with `xsmc` generate smaller binary code at the expense of being more difficult to use. Including the `xsmc.h` header file makes the `xs` versions of some operations available.
 
 ## Table of Contents
 
