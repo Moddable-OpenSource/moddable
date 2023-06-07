@@ -20,6 +20,7 @@
 
 import AXP2101 from "axp2101";
 import SMBus from "pins/smbus";
+import Timer from "timer";
 
 const INTERNAL_I2C = Object.freeze({
   sda: 12,
