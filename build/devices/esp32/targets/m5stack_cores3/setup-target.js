@@ -48,71 +48,24 @@ export default function (done) {
   done?.();
 }
 
-class Power extends AXP192 {
+class Power extends AXP2101 {
   constructor() {
     super(INTERNAL_I2C);
 
-    // TODO: encapsulate direct register access by class method
-    this.writeByte(0x30, (this.readByte(0x30) & 0x04) | 0x02); //AXP192 30H
-    this.writeByte(0x92, this.readByte(0x92) & 0xf8); //AXP192 GPIO1:OD OUTPUT
-    this.writeByte(0x93, this.readByte(0x93) & 0xf8); //AXP192 GPIO2:OD OUTPUT
-    this.writeByte(0x35, (this.readByte(0x35) & 0x1c) | 0xa3); //AXP192 RTC CHG
-
-    // main power line
-    this._dcdc1.voltage = 3350;
-    this.chargeCurrent = AXP192.CHARGE_CURRENT.Ch_100mA;
-
-    // LCD
-    this.lcd = this._dcdc3;
-    this.lcd.voltage = 2800;
-
-    // internal LCD logic
-    this._ldo2.voltage = 3300;
-    this._ldo2.enable = true;
-
-    // Vibration
-    this.vibration = this._ldo3;
-    this.vibration.voltage = 2000;
-
-    // Speaker
-    this.speaker = this._gpio2;
-
-    // AXP192 GPIO4
-    this.writeByte(0x95, (this.readByte(0x95) & 0x72) | 0x84);
-    this.writeByte(0x36, 0x4c);
-    this.writeByte(0x82, 0xff);
-    this.resetLcd();
-    this.busPowerMode = 0; //  bus power mode_output
-    Timer.delay(200);
+    this.expander = new AW9523(INTERNAL_I2C)
+    this.expander.writeByte(0x02, 0b00000101);  // P0
+    this.expander.writeByte(0x03, 0b00000011);
+    this.expander.writeByte(0x04, 0b00011000);
+    this.expander.writeByte(0x05, 0b00001100);
+    this.expander.writeByte(0x11, 0b00010000);
+    this.expander.writeByte(0x12, 0b11111111);
+    this.expander.writeByte(0x13, 0b11111111);
   }
+}
 
-  resetLcd() {
-    this._gpio4.enable = false;
-    Timer.delay(20);
-    this._gpio4.enable = true;
-  }
-
-  set busPowerMode(mode) {
-    if (mode == 0) {
-      this.writeByte(0x91, (this.readByte(0x91) & 0x0f) | 0xf0);
-      this.writeByte(0x90, (this.readByte(0x90) & 0xf8) | 0x02); //set GPIO0 to LDO OUTPUT , pullup N_VBUSEN to disable supply from BUS_5V
-      this.writeByte(0x12, this.readByte(0x12) | 0x40); //set EXTEN to enable 5v boost
-    } else {
-      this.writeByte(0x12, this.readByte(0x12) & 0xbf); //set EXTEN to disable 5v boost
-      this.writeByte(0x90, (this.readByte(0x90) & 0xf8) | 0x01); //set GPIO0 to float , using enternal pulldown resistor to enable supply from BUS_5VS
-    }
-  }
-
-  // value 0 - 100 %
-  set brightness(value) {
-    if (value <= 0) value = 2500;
-    else if (value >= 100) value = 3300;
-    else value = (value / 100) * 800 + 2500;
-    this.lcd.voltage = value;
-  }
-
-  get brightness() {
-    return ((this.lcd.voltage - 2500) / 800) * 100;
+class AW9523 extends SMBus {
+  constructor(it) {
+    super({ address: 0x58, ...it });
   }
 }
 
