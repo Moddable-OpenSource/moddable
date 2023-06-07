@@ -201,6 +201,13 @@ function fetch(href, info = {}) {
 				if (!headers)
 					headers = new Headers();
 				else {
+					if (!(headers instanceof Headers)) {
+						const h = new Headers();
+						for (const name in headers)
+							h.set(name.toLowerCase(), headers[name]);
+						headers = h;
+					}
+
 					length = headers.get("content-length");
 					if (length == undefined) {
 						headers = new Headers(headers);
