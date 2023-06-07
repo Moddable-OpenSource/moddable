@@ -60,12 +60,31 @@ class Power extends AXP2101 {
     this.expander.writeByte(0x11, 0b00010000);
     this.expander.writeByte(0x12, 0b11111111);
     this.expander.writeByte(0x13, 0b11111111);
+
+    // this.resetLcd()
+    this.writeByte(0x03, 3)
+    Timer.delay(20)
+    this.writeByte(0x03, 35)
+  }
+
+  resetLcd() {
+    this.expander.writeByteMask(0x03, 0, 0b11011111)
+    Timer.delay(20);
+    // FIXME: read byte is 0x00 despite of write op above. something wrong
+    this.expander.writeByteMask(0x03, 0b00100000, 0xff)
   }
 }
 
 class AW9523 extends SMBus {
   constructor(it) {
     super({ address: 0x58, ...it });
+  }
+
+  writeByteMask(address, data, mask) {
+    const tmp = this.readByte(address)
+    const newData = (tmp & mask) | data
+    trace(`tmp: ${tmp}, mask: ${mask}, writing: ${newData}\n`)
+    this.writeByte(newData)
   }
 }
 
