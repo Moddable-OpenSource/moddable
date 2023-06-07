@@ -57,11 +57,11 @@
 			"sck_pin": 36
 		},
 		"ili9341": {
-			"hz": 32000000,
+			"hz": 40000000,
 			"width": 320,
 			"height": 240,
-			"cs_pin": 5,
-			"dc_pin": 15,
+			"cs_pin": 3,
+			"dc_pin": 35,
 			"spi_port": "SPI3_HOST",
 			"registers": [
 				"0x01, 0,",
