@@ -18,13 +18,8 @@
  *
  */
 
-import AXP192 from "axp192";
-import MPU6886 from "mpu6886";
-import AudioOut from "pins/audioout";
-import Resource from "Resource";
-import Timer from "timer";
-import config from "mc/config";
-import I2C from "pins/i2c";
+import AXP2101 from "axp2101";
+import SMBus from "pins/smbus";
 
 const INTERNAL_I2C = Object.freeze({
   sda: 12,
@@ -48,133 +43,8 @@ globalThis.Host = {
 };
 
 export default function (done) {
-  /*
   // power
   globalThis.power = new Power();
-
-  // speaker
-  power.speaker.enable = true;
-
-  // start-up sound
-  if (config.startupSound) {
-    const speaker = new AudioOut({ streams: 1 });
-    speaker.callback = function () {
-      this.stop();
-      this.close();
-      this.done();
-    };
-    speaker.done = done;
-    done = undefined;
-
-    speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
-    speaker.enqueue(0, AudioOut.Callback, 0);
-    speaker.start();
-  }
-
-  // vibration
-  globalThis.vibration = {
-    read: function () {
-      return power.vibration.enable;
-    },
-    write: function (v) {
-      power.vibration.enable = v;
-    },
-  };
-
-  if (config.startupVibration) {
-    vibration.write(true);
-    Timer.set(() => {
-      vibration.write(false);
-    }, config.startupVibration);
-  }
-
-  // accelerometer and gyrometer
-  const test = new I2C({ ...INTERNAL_I2C, address: 0x68, throw: false });
-  test.write(0x75, false);
-  const ok = test.read(1);
-  test.close();
-  if (undefined !== ok) {
-    state.accelerometerGyro = new MPU6886(INTERNAL_I2C);
-
-    globalThis.accelerometer = {
-      onreading: nop,
-    };
-
-    globalThis.gyro = {
-      onreading: nop,
-    };
-
-    accelerometer.start = function (frequency) {
-      accelerometer.stop();
-      state.accelerometerTimerID = Timer.repeat((id) => {
-        state.accelerometerGyro.configure({
-          operation: "accelerometer",
-        });
-        const sample = state.accelerometerGyro.sample();
-        if (sample) {
-          state.handleRotation(sample);
-          accelerometer.onreading(sample);
-        }
-      }, frequency);
-    };
-
-    gyro.start = function (frequency) {
-      gyro.stop();
-      state.gyroTimerID = Timer.repeat((id) => {
-        state.accelerometerGyro.configure({
-          operation: "gyroscope",
-        });
-        const sample = state.accelerometerGyro.sample();
-        if (sample) {
-          let { x, y, z } = sample;
-          const temp = x;
-          x = y * -1;
-          y = temp * -1;
-          z *= -1;
-          gyro.onreading({
-            x,
-            y,
-            z,
-          });
-        }
-      }, frequency);
-    };
-
-    accelerometer.stop = function () {
-      if (undefined !== state.accelerometerTimerID)
-        Timer.clear(state.accelerometerTimerID);
-      delete state.accelerometerTimerID;
-    };
-
-    gyro.stop = function () {
-      if (undefined !== state.gyroTimerID) Timer.clear(state.gyroTimerID);
-      delete state.gyroTimerID;
-    };
-  }
-
-  // autorotate
-  if (config.autorotate && globalThis.Application && globalThis.accelerometer) {
-    state.handleRotation = function (reading) {
-      if (globalThis.application === undefined) return;
-
-      if (Math.abs(reading.y) > Math.abs(reading.x)) {
-        if (reading.y < -0.7 && application.rotation != 180) {
-          application.rotation = 180;
-        } else if (reading.y > 0.7 && application.rotation != 0) {
-          application.rotation = 0;
-        }
-      } else {
-        if (reading.x < -0.7 && application.rotation != 270) {
-          application.rotation = 270;
-        } else if (reading.x > 0.7 && application.rotation != 90) {
-          application.rotation = 90;
-        }
-      }
-    };
-    accelerometer.start(300);
-  }
-  */
-
   done?.();
 }
 
