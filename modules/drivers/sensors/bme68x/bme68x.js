@@ -100,7 +100,7 @@ export class BME68x @ "xs_bne68x_destructor" {
 	static VALID_DATA = 0x80;
 }
 
-// ECMA-419 sensor driver - compound sensor with temperature, humidity, pressur
+// ECMA-419 sensor driver - compound sensor with temperature, humidity, pressure
 export default class {
 	#bme;
 
