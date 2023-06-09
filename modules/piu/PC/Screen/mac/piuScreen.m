@@ -87,6 +87,7 @@ struct PiuScreenStruct {
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
 	xsNumberValue transparency;
+	xsBooleanValue circular;
 };
 
 struct PiuScreenMessageStruct {
@@ -138,6 +139,10 @@ struct PiuScreenMessageStruct {
 	if (!PiuRectangleIsEmpty(hole)) {
 		CGContextAddRect(context, dstRect);
 		CGContextAddRect(context, CGRectMake(hole->x, dstRect.size.height - hole->height - hole->y, hole->width, hole->height));
+		CGContextEOClip(context);
+	}
+	else if ((*piuScreen)->circular) {
+		CGContextAddEllipseInRect(context, dstRect);
 		CGContextEOClip(context);
 	}
 	CGContextTranslateCTM(context, dstRect.size.width/2, dstRect.size.height/2);
@@ -516,8 +521,12 @@ void PiuScreenDictionary(xsMachine* the, void* it)
 {
 	PiuScreen* self = it;
 	xsIntegerValue integer;
+	xsBooleanValue boolean;
 	if (xsFindInteger(xsArg(1), xsID_rotation, &integer)) {
 		(*self)->rotation = integer;
+	}
+	if (xsFindBoolean(xsArg(1), xsID_circular, &boolean)) {
+		(*self)->circular = boolean;
 	}
 }
 
