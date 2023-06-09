@@ -36,7 +36,11 @@ void xs_servo_destructor(void *data)
 	if (data) {
 		modServo ms = (modServo)data;
 		if (ms->running){
-			ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 			ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
+#else
+			ledc_stop(LEDC_LOW_SPEED_MODE, ms->channel, 0);
+#endif
 			gChannelsUsed &= ~(1 << ms->channel);
 		}
 	}
@@ -48,21 +52,38 @@ void xs_servo(xsMachine *the)
 	int pin;
 	double d;
 	ledc_timer_config_t ledc_timer = {
-		.bit_num = LEDC_TIMER_15_BIT,
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
+ 		.bit_num = LEDC_TIMER_15_BIT,
+#else
+		.bit_num = LEDC_TIMER_14_BIT,
+#endif
 		.freq_hz = 50,
-		.speed_mode = LEDC_HIGH_SPEED_MODE,
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 		.speed_mode = LEDC_HIGH_SPEED_MODE,
+#else
+		.speed_mode = LEDC_LOW_SPEED_MODE,
+#endif		
 		.timer_num = LEDC_TIMER_0
 	};
 	ledc_channel_config_t ledc_channel = {
 		.channel    = LEDC_CHANNEL_0,
 		.duty       = 0,
 		.gpio_num   = 0,
-		.speed_mode = LEDC_HIGH_SPEED_MODE,
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 		.speed_mode = LEDC_HIGH_SPEED_MODE,
+#else
+		.speed_mode = LEDC_LOW_SPEED_MODE,
+#endif
 		.timer_sel  = LEDC_TIMER_0
 	};
 
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
 	ms.min = 890;
 	ms.max = 4000;
+#else
+	ms.min = 445;
+	ms.max = 2000;
+#endif
 	ms.channel = LEDC_CHANNEL_0;
 
 	xsmcVars(1);
@@ -92,13 +113,21 @@ void xs_servo(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_min)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_min);
 		d = xsmcToNumber(xsVar(0));
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
 		ms.min = (int)((d / 20000.0) * 32767.0);
+#else
+		ms.min = (int)((d / 20000.0) * 16383.0);
+#endif
 	}
 
 	if (xsmcHas(xsArg(0), xsID_max)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_max);
 		d = xsmcToNumber(xsVar(0));
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
 		ms.max = (int)((d / 20000.0) * 32767.0);
+#else
+		ms.max = (int)((d / 20000.0) * 16383.0);
+#endif
 	}
 
 	ledc_timer_config(&ledc_timer);
@@ -113,7 +142,11 @@ void xs_servo_close(xsMachine *the)
 	modServo ms = (modServo)xsmcGetHostChunk(xsThis);
 	if (!ms || !ms->running) return;
 
-	ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 	ledc_stop(LEDC_HIGH_SPEED_MODE, ms->channel, 0);
+#else
+	ledc_stop(LEDC_LOW_SPEED_MODE, ms->channel, 0);
+#endif
 	ms->running = false;
 	gChannelsUsed &= ~(1 << ms->channel);
 }
@@ -128,8 +161,13 @@ void xs_servo_write(xsMachine *the)
 
 	duty = (((double)(ms->max - ms->min) * degrees) / 180.0) + ms->min;
 
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
+ 	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
+#else
+	ledc_set_duty(LEDC_LOW_SPEED_MODE, ms->channel, duty);
+	ledc_update_duty(LEDC_LOW_SPEED_MODE, ms->channel);
+#endif
 }
 
 void xs_servo_writeMicroseconds(xsMachine *the)
@@ -140,8 +178,16 @@ void xs_servo_writeMicroseconds(xsMachine *the)
 
 	if (!ms || !ms->running) xsUnknownError((char *)"closed");
 
+#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
 	duty = (int)((us / 20000.0) * 32767.0);
-
-	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
-	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
+#else
+	duty = (int)((us / 20000.0) * 16383.0);
+#endif
+#if SOC_LEDC_SUPPORT_HS_MODE
+ 	ledc_set_duty(LEDC_HIGH_SPEED_MODE, ms->channel, duty);
+ 	ledc_update_duty(LEDC_HIGH_SPEED_MODE, ms->channel);
+#else
+	ledc_set_duty(LEDC_LOW_SPEED_MODE, ms->channel, duty);
+	ledc_update_duty(LEDC_LOW_SPEED_MODE, ms->channel);
+#endif
 }

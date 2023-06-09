@@ -1,6 +1,6 @@
 # Using XS Preload to Optimize Applications
-Copyright 2019-2021 Moddable Tech, Inc.<BR>
-Revised: June 7, 2021
+Copyright 2019-2023 Moddable Tech, Inc.<BR>
+Revised: June 8, 2023
 
 Preloading of modules is a unique feature of the XS JavaScript engine. Preloading executes parts of a JavaScript application during the the build process, before the application is downloaded to the target device. This has two major benefits:
 
@@ -155,6 +155,8 @@ Object.freeze(Colors, true);
 ```
 
 Because this extension is not part of the JavaScript language, care should be taken to only use it in code that is intended for exclusive use by the XS engine. If equivalent functionality becomes available in a standard way such as [`harden`](https://github.com/Agoric/Harden), XS will move to use that mechanism exclusively.
+
+Hardened JavaScript formalizes recursive freeze as the `harden()` global function. XS implements `harden()` as part of its Hardened JavaScript (formerly Secure ECMAScript) support, but it is not included in Moddable SDK builds at this time.
 
 ### Automatic Freezing of Built-ins
 Following the preload build phase, the XS linker freezes the following:
@@ -364,6 +366,10 @@ The module pane shows a list of all loaded modules and indicates by color which 
 In the image below, the Instruments shows one module is loaded at the time of breakpoint and the Modules pane shows that the `main` module was loaded at runtime.
 
 ![](./../assets/preload//xsbug.png)
+
+## Additional Notes
+
+Preloaded objects may not be serialized using `JSON.stringify()`. Attempting to do so results in a "read only value" exception. This is because the implementation of `JSON.stringify()` depends on the objects being in RAM to detect cycles. A workaround is to use `structuredClone` to make a deep copy of an object that can be passed to `JSON.stringify()`.
 
 ## Conclusion
 Preloading of modules is a unique feature of the XS JavaScript engine to enable more efficient use of the limited RAM and performance of microcontrollers. It is widely supported by the modules provided in the Moddable SDK, so developers benefit from preloading even if they don't understand it fully. By understanding the preload mechanism, developers can realize its benefits for their own code. Those benefits include:

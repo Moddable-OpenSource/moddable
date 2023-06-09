@@ -1829,6 +1829,9 @@ void fxListGlobal(txMachine* the)
 		fxEchoPropertyInstance(the, &aList, "(..)", -1, C_NULL, XS_NO_ID, global->flag & XS_MARK_FLAG, slot);
 	}
 	slot = global->next;
+	while (slot->flag & XS_INTERNAL_FLAG) {
+		slot = slot->next;
+	}
 	while (slot) {
 		fxEchoProperty(the, slot, &aList, C_NULL, -1, C_NULL);
 		slot = slot->next;
