@@ -294,7 +294,7 @@ void _xs_i2c_read(xsMachine *the)
 
 	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_rx(&gTwi, i2c->address, buffer, length)))
 		taskYIELD();
-	
+
 	if (0 != err) {
 		modLog("I2CErr rx");
 	}
@@ -325,6 +325,50 @@ void _xs_i2c_write(xsMachine *the)
 	if (0 != err) {
 		modLog("I2CErr tx");
 	}
+	else
+		waitForComplete(the, i2c->timeout);
+
+}
+
+void _xs_i2c_writeRead(xsMachine *the)
+{
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	int err;
+	xsUnsignedValue lengthWrite, lengthRead;
+	uint8_t stop = true;
+	void *bufferWrite, *bufferRead;
+
+	if (xsmcArgc > 2)
+		stop = xsmcToBoolean(xsArg(2));
+
+	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
+		xsResult = xsArg(1);
+		xsmcGetBufferWritable(xsArg(0), &bufferRead, &lengthRead);
+		xsmcSetInteger(xsResult, lengthRead);
+	}
+	else {
+		lengthRead = xsmcToInteger(xsArg(1));
+		bufferRead = xsmcSetArrayBuffer(xsResult, NULL, lengthRead);
+	}
+
+	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
+
+	if (!i2cActivate(i2c))
+		xsUnknownError("activate failed");
+
+	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_tx(&gTwi, i2c->address, bufferWrite, lengthWrite, stop ? 0 : 1)))
+		taskYIELD();
+
+	if (0 != err)
+		modLog("I2CErr tx");
+	else
+		waitForComplete(the, i2c->timeout);
+
+	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_rx(&gTwi, i2c->address, bufferRead, lengthRead)))
+		taskYIELD();
+	
+	if (0 != err)
+		modLog("I2CErr rx");
 	else
 		waitForComplete(the, i2c->timeout);
 
