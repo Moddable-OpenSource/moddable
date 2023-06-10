@@ -76,7 +76,7 @@ static Digital gDigitals;	// pins with onReadable callbacks
 
 static void digitalWakeISR(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 
-static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
+/* static */ const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 	xs_digitalbank_destructor,
 	xs_digitalbank_mark,
 	NULL
@@ -301,7 +301,7 @@ void xs_digitalbank_read(xsMachine *the)
 	uint32_t result;
 
 	if (!digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't read output");
 
 	nrf_gpio_ports_read(digital->bank, 1, &result);
 	result &= digital->pins;
@@ -316,7 +316,7 @@ void xs_digitalbank_write(xsMachine *the)
 	NRF_GPIO_Type *port;
 
 	if (digital->isInput)
-		xsUnknownError("unimplemented");
+		xsUnknownError("can't write input");
 
 	value = xsmcToInteger(xsArg(0)) & digital->pins;
 
@@ -366,4 +366,22 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
 	xsEndHost(digital->the);
 }
+
+uint32_t modDigitalBankRead(Digital digital)
+{
+	uint32_t result;
+
+	nrf_gpio_ports_read(digital->bank, 1, &result);
+	return result &= digital->pins;
+}
+
+void modDigitalBankWrite(Digital digital, uint32_t value)
+{
+	NRF_GPIO_Type *port = digital->bank ? NRF_P1 : NRF_P0;
+
+	value &= digital->pins;
+	nrf_gpio_port_out_set(port, value);
+	nrf_gpio_port_out_clear(port, ~value & digital->pins);
+}
+
 
