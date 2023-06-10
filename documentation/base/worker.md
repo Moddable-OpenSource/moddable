@@ -1,8 +1,8 @@
 # Worker
 Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: March 16, 2023
+Revised: June 9, 2023
 
-The Moddable runtime integrates with XS to allow a multiple virtual machines to co-exist on a single microcontroller. The majority of projects use only a single virtual machine. However, there are situations where the several independent runtime contexts provided by having several virtual machines is advantageous. This isolation is useful to fully separate a particular set of scripts, for example user installed modules, from the core project functionality for security, privacy, and reliability reasons. Another useful situation is to allow scripts to perform blocking operations in one virtual machine while scripts in another virtual machine remain fully responsive. On microcontrollers with multiple CPU cores, workers can execute in parallel to take full advantage of the available CPU power.
+The Moddable runtime integrates with XS to allow a multiple virtual machines to co-exist on a single microcontroller. The majority of projects use only a single virtual machine. However, there are situations where the several independent runtime contexts provided by having several virtual machines is advantageous. This isolation is useful to fully separate a particular set of scripts, for example user installed modules, from the core project functionality for security, privacy, and reliability reasons. Another useful situation is to allow scripts to perform blocking operations in one virtual machine while scripts in another virtual machine remain fully responsive. On microcontrollers with multiple CPU cores, workers may execute in parallel to take full advantage of the available CPU power.
 
 Undertake the use of multiple virtual machines in a project with care. Each virtual machine requires additional RAM, and RAM is the most limited resource on most microcontroller deployments. In addition, the asynchronous nature of communication between virtual machines adds complexity to the overall system. Still, having multiple virtual machines is useful, even essential, in some circumstances. The remainder of this document describes how to use multiple virtual machines with the Moddable SDK together with some implementation details.
 
@@ -23,12 +23,14 @@ Scripts import the `Worker` class to be able to create a new worker.
 
 	import Worker from "worker";
 
+> **Note**: The memory for a Worker's virtual machine is allocated from global system memory.
+
 ### Launching a worker
 To launch a worker, create an instance of the `Worker` class, passing the name of the module to invoke when the worker starts to run. In the following example, the module run at worker start is `simpleworker`.
 
 	let aWorker = new Worker("simpleworker");
 	
-The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has fully completely initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
+The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has completed initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
 ### Launching a worker with memory configuration
 The previous example launches the worker with the default memory configuration. This may not be large enough for the worker, or may allocate more RAM than needed by the worker. An optional configuration object allows the script instantiating a new virtual machine to set the memory use.
@@ -101,7 +103,7 @@ An optional dictionary contains configuration properties for the new worker. If 
 	let aWorker = new Worker("simpleworker",
 			{allocation: 8192, stackCount: 64, slotCount: 64});
 
-The `allocation` property is the total memory shared by the new virtual machine for its chunk heap, slot heap, and stack. The `stackCount` property is the number of slot entries on the virtual machine's stack. The `slotCount` property is the initial number of slots in the virtual machine's slot heap.
+The `allocation` property is the total memory shared by the new virtual machine for its chunk heap, slot heap, and stack. It is allocated when the virtual machine is created. The `stackCount` property is the number of slot entries on the virtual machine's stack. The `slotCount` property is the initial number of slots in the virtual machine's slot heap.
 
 If an error occurs or an exception is thrown during execution of the module, the `Worker` constructor also throws an error.
 
