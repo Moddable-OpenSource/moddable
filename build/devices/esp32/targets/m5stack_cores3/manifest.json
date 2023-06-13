@@ -98,6 +98,7 @@
 			"sampleRate": 11025,
 			"volume_divider": 1,
 			"i2s": {
+				"num": 1,
 				"bitsPerSample": 32,
 				"bck_pin": 34,
 				"lr_pin": 33,
