@@ -101,6 +101,7 @@
 				"bitsPerSample": 32,
 				"bck_pin": 34,
 				"lr_pin": 33,
+				"mck_pin": 0,
 				"dataout_pin": 13
 			}
 		},
