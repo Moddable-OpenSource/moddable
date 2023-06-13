@@ -21,6 +21,7 @@
 import AXP2101 from "axp2101";
 import SMBus from "pins/smbus";
 import Timer from "timer";
+import { getSampleRate } from "get-sample-rate";
 
 const INTERNAL_I2C = Object.freeze({
   sda: 12,
@@ -55,15 +56,19 @@ class AW88298 extends SMBus {
     super({ address: 0x36, ...INTERNAL_I2C });
     const rate_tbl = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
     let reg0x06_value = 0;
-    let sample_rate = 11025;
+    /**
+     * @note 11025Hz is not available for the slight gap between the clock of ESP32S3 and AW88298 PLL
+     * @fixme should reset sampleRate if the different value specified in AudioOut#constructor
+     */
+    let sample_rate = getSampleRate();
     let rate = Math.round((sample_rate + 1102) / 2205);
     while (rate > rate_tbl[reg0x06_value] && ++reg0x06_value < rate_tbl.length);
     reg0x06_value |= 0x14c0; // I2SRXEN=1 CHSEL=01(left) I2SFS=11(32bits)
-    this.writeWord(0x61, 0x0673, true); // boost mode disabled
-    this.writeWord(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
     this.writeWord(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
     this.writeWord(0x06, reg0x06_value, true);
-    this.writeWord(0x0c, 0x0064, true); // volume setting (full volume)
+    this.writeWord(0x61, 0x0673, true); // boost mode disabled
+    this.writeWord(0x0c, 0x1064, true); // volume setting (full volume)
+    this.writeWord(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
   }
 }
 

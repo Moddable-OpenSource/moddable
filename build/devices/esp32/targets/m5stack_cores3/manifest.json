@@ -21,7 +21,8 @@
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",
-			"../m5stack_core2/M5StackCoreTouch"
+			"../m5stack_core2/M5StackCoreTouch",
+			"./get-sample-rate"
 		]
 	},
 	"preload": [
