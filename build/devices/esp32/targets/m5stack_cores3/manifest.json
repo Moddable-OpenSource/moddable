@@ -99,18 +99,18 @@
 			"volume_divider": 1,
 			"i2s": {
 				"bitsPerSample": 32,
-				"bck_pin": 12,
-				"lr_pin": 0,
-				"dataout_pin": 2
+				"bck_pin": 34,
+				"lr_pin": 33,
+				"dataout_pin": 13
 			}
 		},
 		"audioIn": {
 			"sampleRate": 11025,
 			"bitsPerSample": 16,
 			"i2s": {
-				"bck_pin": 12,
-				"lr_pin": 0,
-				"datain": 34,
+				"bck_pin": 34,
+				"lr_pin": 33,
+				"datain": 14,
 				"pdm": 1
 			}
 		}
