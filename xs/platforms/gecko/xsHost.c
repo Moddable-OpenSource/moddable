@@ -592,7 +592,7 @@ static int32_t modInstrumentationChunkHeapSize(void *theIn)
 static int32_t modInstrumentationKeysUsed(void *theIn)
 {
 	txMachine *the = theIn;
-	return the->keyIndex - the->keyOffset;
+	return the->keyIndex - the->keyOffset - the->keyholeCount;
 }
 
 static int32_t modInstrumentationGarbageCollectionCount(void *theIn)

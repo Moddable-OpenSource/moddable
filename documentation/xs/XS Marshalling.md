@@ -51,7 +51,6 @@ XS can also marshall other values not possible using JSON:
 
 - `undefined` 
 - bigints
-- symbols 
 - instances of 
 	- `Boolean`, `Error`, `EvalError`, `RangeError`, `ReferenceError`, `SyntaxError`, `TypeError`, `URIError`, `AggregateError`
 	- `Number`, `Date`
@@ -71,38 +70,6 @@ Furthermore, XS can marshall cyclic references:
 ##### worker.js
 	self.onmessage = function(a) {
 		trace(`${ a.b.a === a }\n`); // true
-	}
-
-### Symbols Caveat
-
-Symbols are consistent inside a marshalled memory block: 
-
-##### main.js
-	const symbol = Symbol();
-	const object = { [symbol]: null }
-	worker.postMessage({ symbol, object });
-
-##### worker.js
-	self.onmessage = function(m) {
-		trace(`${m.object[m.symbol]}\n`); // null
-	}
-
-However, successive marshallings of the same symbol result in successive demarshalling of different symbols:
-
-##### main.js
-	let step = 0;
-	const symbol = Symbol();
-	worker.postMessage({ step, symbol });
-	step++;
-	worker.postMessage({ step, symbol });
-
-##### worker.js
-	let symbol;
-	self.onmessage = function(m) {
-		if (m.step == 0)
-			symbol = m.symbol;
-		else
-			trace(`${symbol === m.symbol}`) // false
 	}
 
 ### No Way
@@ -253,6 +220,23 @@ That is especially useful for exchanging references to objects with methods, lik
 		trace(`${m.message2}\n`); // world
 	}
 
+### Symbols
+
+Like private fields, properties keyed by symbols are ignored when marshalled, except when the symbol is created in the read-only machine.
+
+##### preload.js
+	export const s = Symbol();
+
+##### main.js
+	import { s } from "preload";
+	const o = { [s]: "wow" };
+	worker.postMessage(o);
+	
+##### worker.js
+	import { s } from "preload";
+	self.onmessage = function(m) {
+		trace(`${m[s]}\n`); // wow
+	}
 
 ### Exchange Data, Share Code
 

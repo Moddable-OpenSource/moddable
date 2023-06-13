@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 Moddable Tech, Inc.
+ * Copyright (c) 2018-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -79,6 +79,23 @@
 	#endif
 #endif
 
+#if PICO_BUILD
+	#include "modTimer.h"
+	static void picoAudioCallback(modTimer timer, void *refcon, int refconSize);
+
+	#define SAMPLES_PER_BUFFER (882 * 2)
+	#define NUM_SAMPLES_BUFFERS	3
+	#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
+		#define MODDEF_AUDIOOUT_I2S_BCK_PIN (10)
+	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_LR_PIN
+		#define MODDEF_AUDIOOUT_I2S_LR_PIN (11)
+	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_DATAOUT_PIN
+		#define MODDEF_AUDIOOUT_I2S_DATAOUT_PIN (9)
+	#endif
+#endif
+
 #ifndef MODDEF_AUDIOOUT_VOLUME_DIVIDER
 	#define MODDEF_AUDIOOUT_VOLUME_DIVIDER (1)
 #endif
@@ -140,6 +157,15 @@
 #elif defined(__ets__)
 	#include "xsHost.h"
 	#include "tinyi2s.h"
+#elif PICO_BUILD
+	#include "xsHost.h"
+	#include "pico/audio_i2s.h"
+	enum {
+		kStateIdle = 0,
+		kStatePlaying = 1,
+		kStateClosing = 2,
+		kStateTerminated = 3
+	};
 #endif
 
 #define kIMABytesPerChunk (68)
@@ -246,6 +272,14 @@ typedef struct {
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
+#elif PICO_BUILD
+	uint8_t					state;
+	modTimer				timer;
+	struct audio_buffer_pool	*ap;
+	audio_format_t 				format;
+	struct audio_buffer_format	producer_format;
+	struct audio_buffer_pool	*producer_pool;
+	struct audio_i2s_config config;
 #endif
 
 #if MODDEF_AUDIOOUT_I2S_PDM
@@ -275,7 +309,7 @@ static void updateActiveStreams(modAudioOut out);
 #elif defined(__ets__)
 	static void doRenderSamples(void *refcon, int16_t *lr, int count);
 #endif
-#if defined(__ets__) || ESP32 || defined(_WIN32)
+#if PICO_BUILD || defined(__ets__) || ESP32 || defined(_WIN32)
 	void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 	void queueCallback(modAudioOut out, xsIntegerValue id, xsIntegerValue stream);
 #endif
@@ -519,6 +553,32 @@ void xs_audioout_build(xsMachine *the)
 	if (!out->buffer32)
 		xsUnknownError("out of memory");
 #endif
+#elif PICO_BUILD
+	out->format.format = AUDIO_BUFFER_FORMAT_PCM_S16;
+	out->format.sample_freq = out->sampleRate;
+	out->format.channel_count = out->numChannels;
+	out->producer_format.format = &out->format;
+	out->producer_format.sample_stride = 2;
+
+	out->producer_pool = audio_new_producer_pool(&out->producer_format, NUM_SAMPLES_BUFFERS, SAMPLES_PER_BUFFER);
+
+	out->config.data_pin = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN;
+	out->config.clock_pin_base = MODDEF_AUDIOOUT_I2S_BCK_PIN;		// uses this pin for BCK and pin + 1 for LR
+	out->config.dma_channel = 3;
+	out->config.pio_sm = 1;
+
+	const struct audio_format *output_format;
+	output_format = audio_i2s_setup(&out->format, &out->config);
+	if (!output_format) {
+		modLog("can't open audio device");
+		return;
+	}
+
+	audio_i2s_connect(out->producer_pool);
+
+	out->ap = out->producer_pool;
+	out->state = kStateIdle;
+
 #endif
 
 	xsRemember(out->obj);
@@ -580,6 +640,11 @@ void xs_audioout_start(xsMachine *the)
 		i2s_begin(doRenderSamples, out, out->sampleRate);
 	#endif
 	out->i2sActive = true;
+#elif PICO_BUILD
+	out->state = kStatePlaying;
+	if (!out->timer) {
+		out->timer = modTimerAdd(1, 20, picoAudioCallback, &out, 4);
+	}
 #endif
 }
 
@@ -598,6 +663,8 @@ void xs_audioout_stop(xsMachine *the)
 #elif defined(__ets__)
 	i2s_end();
 	out->i2sActive = false;
+#elif PICO_BUILD
+	out->state = kStateIdle;
 #endif
 }
 
@@ -892,7 +959,7 @@ void xs_audioout_enqueue(xsMachine *the)
 
 #if defined(__APPLE__)
 			invokeCallbacks(NULL, out);
-#elif ESP || defined(__ets__) || defined(_WIN32)
+#elif PICO_BUILD || ESP || defined(__ets__) || defined(_WIN32)
 			deliverCallbacks(the, out, NULL, 0);
 #endif
 		} break;
@@ -1391,7 +1458,7 @@ void audioOutLoop(void *pvParameter)
 	i2s_config_t i2s_config = {
 		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 		.sample_rate = out->sampleRate,
-		.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+		.bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
 #if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3
 		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
 #elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1		// I2S_DAC_CHANNEL_RIGHT_EN
@@ -1482,8 +1549,7 @@ void audioOutLoop(void *pvParameter)
 	vTaskDelete(NULL);	// "If it is necessary for a task to exit then have the task call vTaskDelete( NULL ) to ensure its exit is clean."
 }
 
-#elif defined(__ets__)
-
+#elif defined(__ets__) 
 void doRenderSamples(void *refcon, int16_t *lr, int count)
 {
 	modAudioOut out = refcon;
@@ -1546,9 +1612,50 @@ void doRenderSamples(void *refcon, int16_t *lr, int count)
 	out->error = error;
 #endif
 }
+
+#elif PICO_BUILD
+static void picoAudioCallback(modTimer timer, void *refcon, int refconSize)
+{
+	modAudioOut out = *(modAudioOut*)refcon;
+
+	static int i2s_enabled = 0;
+
+	if (!i2s_enabled) {
+modLog(" - enable i2s ");
+		audio_i2s_set_enabled(true);
+		i2s_enabled = 1;
+	}
+
+	if (out->state == kStatePlaying) {
+		int j;
+		for (j=0; j<3; j++) {
+			struct audio_buffer *buffer = take_audio_buffer(out->ap, false);
+			if (!buffer) {
+//				modLog("no buffer");
+				break;
+			}
+			int16_t *samples = (int16_t*)buffer->buffer->bytes;
+			audioMix(out, buffer->max_sample_count, samples);
+			buffer->sample_count = buffer->max_sample_count;
+			give_audio_buffer(out->ap, buffer);
+		}
+	}
+	else if (out->state == kStateIdle) {
+	}
+	else if (out->state == kStateClosing) {
+		modLog("audio closing");
+
+		audio_i2s_set_enabled(false);
+		i2s_enabled = 0;
+		modTimerRemove(out->timer);
+		out->timer = NULL;
+		out->state = kStateTerminated;
+	}
+
+}
 #endif
 
-#if defined(__ets__) || ESP32 || defined(_WIN32)
+#if PICO_BUILD || defined(__ets__) || ESP32 || defined(_WIN32)
 
 void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
@@ -1622,7 +1729,7 @@ void doLock(modAudioOut out)
 		EnterCriticalSection(&out->cs);
 #elif ESP32
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
-#elif defined(__ets__)
+#elif PICO_BUILD || defined(__ets__)
 		modCriticalSectionBegin();
 #endif
 	}
@@ -1637,7 +1744,7 @@ void doUnlock(modAudioOut out)
 		LeaveCriticalSection(&out->cs);
 #elif ESP32
 		xSemaphoreGive(out->mutex);
-#elif defined(__ets__)
+#elif PICO_BUILD || defined(__ets__)
 		modCriticalSectionEnd();
 #endif
 	}
@@ -1996,3 +2103,4 @@ int streamDecompressNext(modAudioOutStream stream)
 
 	return 1;
 }
+

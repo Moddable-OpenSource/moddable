@@ -16,22 +16,12 @@ import AudioOut from "pins/audioout"
 import ResourceStreamer from "mp3resourcestreamer";
 import Timer from "timer";
 
+function calculatePower(samples) @ "xs_calculatePower";
 
-/*
-
-	Let's make some test files!
-
-		https://trac.ffmpeg.org/wiki/Encode/MP3
-
-	ffmpeg -i input.wav -codec:a libmp3lame -qscale:a 2 output.mp3
-
-	curl --url http://ice2.somafm.com/groovesalad-128-mp3 --output groovesalad.mp3
-
-*/
-
-function calculatePower(samplea) @ "xs_calculatePower";
-
-const audio = new AudioOut({});
+const audio = new AudioOut({
+	sampleRate: 44100,
+	streams: 1
+});
 let streamer
 
 async function stream() {
@@ -41,22 +31,15 @@ async function stream() {
 			return
 		}
 		streamer = new ResourceStreamer({
-		path: "groovesalad.mp3",
+		path: "startup.mp3",
 		audio: {
 			out: audio,
 			stream: 0,
-			sampleRate: 44100
+			sampleRate: audio.sampleRate
 		},
 		onPlayed(buffer) {
 			const power = calculatePower(buffer);
 			trace("power " + Math.round(power) + "\n");
-		},
-		onReady(state) {
-			trace(`Ready: ${state}\n`);
-			if (state)
-				audio.start();
-			else
-				audio.stop();
 		},
 		onError(e) {
 			trace("ERROR: ", e, "\n");
@@ -76,6 +59,7 @@ async function stream() {
 (async function main() {
 	let count = 0
 	while (true){
+		audio.stop();
 		trace(`play: ${count++}\n`)
 		let willPlay = stream();
 		let willFail = stream().catch(e => {trace(`error: ${e.message}\n`)}) // error: already playing

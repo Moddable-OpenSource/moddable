@@ -178,11 +178,9 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 					txSlot* code = mxFunctionInstanceCode(function);
 					if (code->ID != XS_NO_ID) {
 						txSlot* key = fxGetKey(the, code->ID);
-						if (key) {
-							if (key->kind == XS_KEY_X_KIND)
-								slot->kind = XS_KEY_X_KIND;
-							slot->value.key.string = key->value.key.string;
-						}
+						if (key->kind == XS_KEY_X_KIND)
+							slot->kind = XS_KEY_X_KIND;
+						slot->value.key.string = key->value.key.string;
 					}
 				}
 			}

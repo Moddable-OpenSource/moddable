@@ -63,7 +63,9 @@
 			"bitsPerSample": 16,
 			"numChannels": 1,
 			"sampleRate": 44100,
-			"queueLength": 48
+			"queueLength": 12,
+			"streams": 1,
+			"mixerBytes": 256
 		}
 	},
 	"config": {

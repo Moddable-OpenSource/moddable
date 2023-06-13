@@ -23,7 +23,7 @@ const audio = new AudioOut({});
 audio.start();
 
 new ElevenLabsStreamer({
-	key: "6c25a5694c5c3becb119141d2bb029d0",
+	key,
 	voice: "AZnzlk1XvdvUeBnXmlld",
 	latency: 2,
 	text: "The Moddable SDK is a combination of development tools and runtime software to create applications for microcontrollers.",

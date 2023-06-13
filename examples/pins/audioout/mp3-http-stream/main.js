@@ -17,36 +17,37 @@ import MP3Streamer from "mp3streamer";
 
 function calculatePower(samplea) @ "xs_calculatePower";
 
-const audio = new AudioOut({});
+const audio = new AudioOut({
+	sampleRate: 44100,
+	streams: 1
+});
 
-function streamMP3() {
-	new MP3Streamer({
-		http: device.network.http,
-		host: "ice2.somafm.com",
-		path: "/poptron-128-mp3",
-		audio: {
-			out: audio,
-			stream: 0
-		},
-		onPlayed(buffer) {
-			const power = calculatePower(buffer);
-			trace(`MP3 power ${Math.round(power)}\n`);
-		},
-		onReady(state) {
-			trace(`MP3 Ready: ${state}\n`);
-			if (state)
-				audio.start();
-			else
-				audio.stop();
-		},
-		onError(e) {
-			trace("MP3 ERROR: ", e, "\n");
-		},
-		onDone() {
-			trace("MP3 Done\n");
-			streamMP3();
-		}
-	});
-}
+// audio.enqueue(0, AudioOut.Volume, 64);
 
-streamMP3();
+new MP3Streamer({
+	http: device.network.http,
+	host: "ice4.somafm.com",
+	path: "/indiepop-128-mp3",
+	audio: {
+		out: audio,
+		stream: 0
+	},
+	onPlayed(buffer) {
+		const power = calculatePower(buffer);
+		trace(`MP3 power ${Math.round(power)}\n`);
+	},
+	onReady(state) {
+		trace(`MP3 Ready: ${state}\n`);
+		if (state)
+			audio.start();
+		else
+			audio.stop();
+	},
+	onError(e) {
+		trace("MP3 ERROR: ", e, "\n");
+	},
+	onDone() {
+		trace("MP3 Done\n");
+	}
+});
+
