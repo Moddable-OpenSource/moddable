@@ -50,6 +50,9 @@
 	#ifndef MODDEF_AUDIOOUT_I2S_NUM
 		#define MODDEF_AUDIOOUT_I2S_NUM (0)
 	#endif
+#ifndef MODDEF_AUDIOOUT_I2S_MCK_PIN
+#define MODDEF_AUDIOOUT_I2S_MCK_PIN I2S_PIN_NO_CHANGE
+#endif
 	#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
 		#define MODDEF_AUDIOOUT_I2S_BCK_PIN (26)
 	#endif
@@ -1378,6 +1381,7 @@ void audioOutLoop(void *pvParameter)
 		.intr_alloc_flags = 0
 	};
 	i2s_pin_config_t pin_config = {
+	    .mck_io_num = MODDEF_AUDIOOUT_I2S_MCK_PIN,
 		.bck_io_num = MODDEF_AUDIOOUT_I2S_BCK_PIN,
 		.ws_io_num = MODDEF_AUDIOOUT_I2S_LR_PIN,
 		.data_out_num = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
