@@ -95,11 +95,11 @@
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
-			"sampleRate": 11025,
+			"sampleRate": 24000,
 			"volume_divider": 1,
 			"i2s": {
 				"num": 1,
-				"bitsPerSample": 32,
+				"bitsPerSample": 16,
 				"bck_pin": 34,
 				"lr_pin": 33,
 				"mck_pin": 0,
