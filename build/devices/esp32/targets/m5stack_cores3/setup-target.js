@@ -52,8 +52,14 @@ export default function (done) {
 class Power extends AXP2101 {
   constructor() {
     super(INTERNAL_I2C);
-    this.writeByte(0x90, 0xbf)
-    this.writeByte(0x95, 0x28)
+    this.writeByte(0x90, 0xbf);
+    this.writeByte(0x92, 13);
+    this.writeByte(0x93, 28);
+    this.writeByte(0x94, 28);
+    this.writeByte(0x95, 28);
+    this.writeByte(0x27, 0);
+    this.writeByte(0x69, 0x11);
+    this.writeByte(0x10, 0x30);
 
     this.expander = new AW9523(INTERNAL_I2C)
     this.expander.writeByte(0x02, 0b00000101);  // P0
