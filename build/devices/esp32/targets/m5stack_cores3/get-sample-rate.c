@@ -1,4 +1,4 @@
-#include "piuMC.h"
+#include "xsmc.h"
 #include "mc.defines.h"
 
 #ifndef MODDEF_AUDIOOUT_SAMPLERATE
