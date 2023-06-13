@@ -10,7 +10,8 @@
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json",
 		"$(MODDABLE)/modules/drivers/st7789_p8/manifest.json",
-		"$(MODULES)/pins/pwm/manifest.json"
+		"$(MODULES)/pins/pwm/manifest.json",
+		"$(MODULES)/drivers/sensors/cst816/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
@@ -56,10 +57,13 @@
 			"data7_pin": 48,
 			"x_tearingEffect_pin": 19
 		},
-		"ft6206": {
-			"threshold": 20,
+		"cst816": {
 			"flipX": false,
-			"flipY": false
+			"flipY": false,
+			"raw_left": 36,
+			"raw_right": 147,
+			"raw_top": 12,
+			"raw_bottom": 315
 		}
 	}
 }

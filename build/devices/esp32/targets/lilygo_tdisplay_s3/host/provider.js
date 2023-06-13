@@ -27,6 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import Touch from "embedded:sensor/Touch/CST816";
 import PulseWidth from "embedded:io/pulsewidth";
 
 const device = {
@@ -35,6 +36,11 @@ const device = {
 			io: I2C,
 			data: 43,
 			clock: 44
+		},
+		internal: {
+			io: I2C,
+			data: 18,
+			clock: 17
 		}
 	},
 	SPI: {
@@ -50,26 +56,29 @@ const device = {
 	pin: {
 	},
 	sensor: {
-/*
 		Touch: class {
 			constructor(options) {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.I2C.internal,
 						io: device.io.SMBus
+					},
+					reset: {
+						io: Digital,
+						mode: Digital.Output,
+						pin: 21
 					},
 					interrupt: {
 						io: Digital,
 						mode: Digital.Input,
-						pin: 35
+						pin: 16
 					}
 				});
-				result.configure({threshold: 20});
+				result.configure({});
 				return result;
 			}
 		}
-*/
 	}
 };
 

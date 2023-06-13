@@ -12,7 +12,7 @@ class Backlight extends PWM {
 		this.write(brightness);
 	}
 	write(value) {
-		value = 100 - value;        // PWM is inverted
+//		value = 100 - value;        // PWM is inverted
 		if (value <= 0)
 			value = 0;
 		else if (value >= 100)
