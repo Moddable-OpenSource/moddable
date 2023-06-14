@@ -118,10 +118,21 @@ class SMBus {
 	}
 	set format(value) {
 		if ("buffer" !== value)
-			throw new Error;
+			throw new RangeError;
 	}
 
-	// compatibility
+	// inherited from i2c
+	read(count, stop = true) {
+		return this.#io.read(count, stop);
+	}
+	write(buffer, stop = true) {
+		return this.#io.write(buffer, stop);
+	}
+	writeRead(buffer, count, stop = true) {
+		return this.#io.writeRead(buffer, count, stop);
+	}
+
+	// compatibility - to be removed
 	readByte(register) {
 		trace("readByte renamed to readUint8\n");
 		return this.readUint8(register);
