@@ -72,11 +72,12 @@ interface BigIntConstructor {
 
 // integer math proposal
 interface Math {
-	idiv(a: number, b: number): number;
-	idivmod(a: number, b: number): number;
-	imod(a: number, b: number): number;
-	imuldiv(a: number, b: number, c: number): number;
-	irem(a: number, b: number): number;
+	idiv(a: number, b: number): number
+	idivmod(a: number, b: number): number
+	imod(a: number, b: number): number
+	imuldiv(a: number, b: number, c: number): number
+	irem(a: number, b: number): number
+	mod(a: number, b: number): number
 }
 
 // already defined by TypeScript (because Web)
