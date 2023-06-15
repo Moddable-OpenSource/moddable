@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -123,6 +123,8 @@ struct PocoRecord {
 
 	// native pixel output dispatch
 	void				*outputRefcon;
+
+	void				*reservedPocoJS;
 
 #if kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	uint8_t				*clut;
