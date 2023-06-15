@@ -139,10 +139,10 @@ class CST816  {
 			let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
 
 			if (io.flipX)
-				x = 240 - x;		//@@ screen.width?
+				x = screen.width ? (screen.width - x) : x;	//@@ screen.width?
 
 			if (io.flipY)
-				y = 320 - y;		//@@ screen.height?
+				y = screen.height ? (screen.height - y) : y;	//@@ screen.height?
 
 			const j = {x, y, evt};
 
