@@ -25,6 +25,29 @@ import I2C from "embedded:io/i2c";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import Touch from "embedded:sensor/Touch/CST816";
+
+class Backlight {
+	#io;
+
+	constructor(options) {
+		this.#io = new PWM(options);
+	}
+	close() {
+		this.#io?.close();
+		this.#io = undefined;
+	}
+	set brightness(value) {
+		value = 1 - value;		// PWM is inverted
+		if (value <= 0)
+			value = 0;
+		else if (value >= 1)
+			value = 1023;
+		else
+			value *= 1023;
+		this.#io.write(value);
+	}
+}
 
 const device = {
 	I2C: {
@@ -33,6 +56,12 @@ const device = {
 			data: 6,
 			clock: 7,
 			port: 0
+		},
+		external: {
+			io: I2C,
+			data: 26,
+			clock: 27,
+			port: 1
 		}
 	},
 	SPI: {
@@ -46,11 +75,48 @@ const device = {
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 26
+			pin: 29
 		}
 	},
 	io: { Analog, Digital, DigitalBank, I2C, PWM, SMBus, SPI },
 	pin: {
+		backlight: 25,
+		displayDC: 8,
+		displaySelect: 9,
+		batteryADC: 29
+	},
+	peripheral: {
+		Backlight: class {
+			constructor() {
+				if (device.pin.backlight)
+					return new Backlight({pin: device.pin.backlight });
+			}
+		}
+	},
+	sensor: {
+		Touch: class {
+			constructor(options) {
+				const result = new Touch({
+					...options,
+					sensor: {
+						...device.I2C.default,
+						io: device.io.SMBus
+					},
+					reset: {
+						io: Digital,
+						mode: Digital.Output,
+						pin: 22
+					},
+					interrupt: {
+						io: Digital,
+						mode: Digital.Input,
+						pin: 21
+					}
+				});
+				result.configure({ flip: "hv" });
+				return result;
+			}
+		}
 	}
 };
 
