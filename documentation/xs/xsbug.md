@@ -1,5 +1,5 @@
-
 # xsbug
+Updated June 16, 2023
 
 The `xsbug` JavaScript source level debugger is a full featured debugger that supports debugging modules and applications for [XS platforms](../xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
@@ -81,6 +81,16 @@ The **Break** preferences panel toggles the **Break On Start** and **Break On Ex
 The **Instruments** preferences panel allows you to select whether you want the instrumentation panel to automatically show while all virtual machines are running and hide when a virtual machine breaks.
 
 The **Network** preferences panel displays the interfaces **xsbug** is listening on, and provides an edit field to change the port number **xsbug** is listening with. The default port number is **5002**. Changing the port number kills all connected virtual machines.
+
+## Performance Profiler
+xsbug has an integrated performance profiler that is invaluable for identifying performance hotspots in JavaScript code. The profiler works on JavaScript running on embedded device targets and the simulator.
+
+These resources will help you get started:
+
+- [High level introduction](https://blog.moddable.com/blog/profiler/) to the profiler on the Moddable blog
+- [Step-by-step walkthrough](https://blog.moddable.com/blog/optimizing-life/) showing how the XS profiler was used to identify performance hotspots, guide optimizations, and verify performance improvements
+- [Technical details](./XS%20Profiler.md) on the XS performance profiler including implementation notes and how the displayed time values are calculated
+
 
 ## Colorizing console/log with trace
 
