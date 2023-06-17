@@ -1,0 +1,39 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32c3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig"
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "",
+		"button_pin": 9,
+		"led": {
+			"pin": 7,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 8,
+			"scl_pin": 10,
+			"port": 0
+		},
+		"spi": {
+			"miso_pin": 0,
+			"mosi_pin": 4,
+			"sck_pin": 1
+		}
+	}
+}
