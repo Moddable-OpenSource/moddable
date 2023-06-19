@@ -1084,7 +1084,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		case XS_CODE_KIND:
 		case XS_CODE_X_KIND:
 			if (aProperty->value.code.closures)
-				fxEchoPropertyInstance(the, theList, "(closures)", -1, C_NULL, XS_NO_ID, aProperty->flag, aProperty->value.code.closures);
+				fxEchoPropertyInstance(the, theList, "(closures)", -1, C_NULL, XS_NO_ID, aProperty->flag & (XS_GET_ONLY | XS_INSPECTOR_FLAG | XS_MARK_FLAG), aProperty->value.code.closures);
 			fxEchoProperty(the, aProperty, theList, "(function)", -1, C_NULL);
 			aProperty = aProperty->next;
 			if ((aProperty->kind == XS_HOME_KIND) && (aProperty->value.home.object))
