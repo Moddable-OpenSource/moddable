@@ -80,8 +80,8 @@ class Power extends AXP2101 {
     this.writeByte(0x10, 0x30);
 
     this.expander = new AW9523(INTERNAL_I2C);
-    this.expander.writeByte(0x02, 0b00000101); // P0
-    this.expander.writeByte(0x03, 0b00000011);
+    this.expander.writeByte(0x02, 0b00000110);
+    this.expander.writeByte(0x03, 0b10000011);
     this.expander.writeByte(0x04, 0b00011000);
     this.expander.writeByte(0x05, 0b00001100);
     this.expander.writeByte(0x11, 0b00010000);
@@ -89,9 +89,9 @@ class Power extends AXP2101 {
     this.expander.writeByte(0x13, 0b11111111);
 
     // this.resetLcd()
-    this.writeByte(0x03, 3);
+    this.writeByte(0x03, 0b10000011);
     Timer.delay(20);
-    this.writeByte(0x03, 35);
+    this.writeByte(0x03, 0b10100011);
   }
 
   resetLcd() {
