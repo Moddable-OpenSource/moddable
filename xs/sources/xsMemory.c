@@ -1021,7 +1021,7 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		aSlot = theSlot->value.callback.closures;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
 			fxCheckCStack(the);
-			fxMarkInstance(the, aSlot, fxMarkValue);
+			fxMarkInstance(the, aSlot, fxMarkReference);
 		}
 		break;
 	case XS_CODE_KIND:
