@@ -1854,7 +1854,12 @@ void fxWriteSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txFlag flag
 		buffer.value.integer = slot->value.integer;
 		break;
 	case XS_NUMBER_KIND:
-		buffer.value.number = slot->value.number;
+	#if mxCanonicalNaN
+		if (c_isnan(slot->value.number))
+			buffer.value.number = *gxCanonicalNaN64;
+		else
+	#endif
+			buffer.value.number = slot->value.number;
 		break;
 	case XS_STRING_KIND:
 		buffer.value.string = (txString)fxProjectChunk(the, slot->value.string);

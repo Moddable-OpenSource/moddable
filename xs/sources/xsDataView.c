@@ -2735,6 +2735,10 @@ void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
 	float value = (float)slot->value.number;
+#if mxCanonicalNaN
+	if (c_isnan(value))
+		value = *gxCanonicalNaN32;
+#endif
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(Float);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(float));
@@ -2787,6 +2791,10 @@ void fxFloat64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 void fxFloat64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
 	double value = slot->value.number;
+#if mxCanonicalNaN
+	if (c_isnan(value))
+		value = *gxCanonicalNaN64;
+#endif
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(Double);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(double));

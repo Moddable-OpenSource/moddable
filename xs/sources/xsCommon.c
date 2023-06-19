@@ -1732,3 +1732,18 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"",
 	"<xsbug:script>"
 };
+
+#if mxCanonicalNaN
+
+#if mxBigEndian
+uint8_t gxCanonicalNaN32Bytes[4] = { 0x7F, 0xC0, 0, 0 };
+uint8_t gxCanonicalNaN64Bytes[8] = { 0x7F, 0xF8, 0, 0, 0, 0, 0, 0 };
+#else
+uint8_t gxCanonicalNaN32Bytes[4] = { 0, 0, 0xC0, 0x7F };
+uint8_t gxCanonicalNaN64Bytes[8] = { 0, 0, 0, 0, 0, 0, 0xF8, 0x7F };
+#endif
+
+float* gxCanonicalNaN32 = (float*)gxCanonicalNaN32Bytes;
+double* gxCanonicalNaN64 = (double*)gxCanonicalNaN64Bytes;
+
+#endif
