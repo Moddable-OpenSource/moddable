@@ -2,7 +2,7 @@
 Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: July 2, 2019
 
-The vertical and horizontal expanding keyboard modules implement touch screen keyboards for use with [Piu](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md) on Moddable One and Moddable Two [products](https://www.moddable.com/product.php). The keys automatically expand when tapped, eliminating the need for a stylus. Both keyboards implement the same API. 
+The vertical and horizontal expanding keyboard modules implement touch screen keyboards for use with [Piu](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md) on Moddable One and Moddable Two [products](https://www.moddable.com/hardware.php). The keys automatically expand when tapped, eliminating the need for a stylus. Both keyboards implement the same API. 
 
 - **Source code:** [`vertical/keyboard.js`](../../modules/input/expanding-keyboard/vertical/keyboard.js) [`horizontal/keyboard.js`](../../modules/input/expanding-keyboard/horizontal/keyboard.js)
 - **Relevant Examples:** [vertical-expanding-keyboard](../../examples/piu/vertical-expanding-keyboard/main.js) [horizontal-expanding-keyboard](../../examples/piu/horizontal-expanding-keyboard/main.js)

@@ -90,7 +90,7 @@ The Moddable SDK supports [many devices](./documentation/devices/esp8266.md#plat
 | <a href="./documentation/devices/moddable-one.md"><img src="./documentation/assets/devices/moddable-one.png" width=125></a><BR>Moddable One<sup>[[5](#footnotes2)]</sup> | <a href="./documentation/devices/esp8266.md"><img src="./documentation/assets/devices/esp8266.png" width=125></a><BR>Node MCU ESP8266<sup>[[6](#footnotes2)]</sup> | <a href="./documentation/devices/moddable-three.md"><img src="./documentation/assets/devices/moddable-three.png" width=125></a><BR>Moddable Three<sup>[[7](#footnotes2)]</sup>
 
 <a id="footnotes2"></a>
-> <sup>[5]</sup> *See also: [Moddable One Developer Guide](./documentation/devices/moddable-one.md), Moddable [product page](https://www.moddable.com/product)*<BR>
+> <sup>[5]</sup> *See also: [Moddable One Developer Guide](./documentation/devices/moddable-one.md), Moddable [product page](https://www.moddable.com/hardware)*<BR>
 <sup>[6]</sup> *See also: [Using the Moddable SDK with ESP8266](./documentation/devices/esp8266.md)*<BR>
 <sup>[7]</sup> *See also: [Moddable Three Developer Guide](./documentation/devices/moddable-three.md)*<BR>
 
@@ -109,7 +109,7 @@ The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platfo
 | <a href="./documentation/devices/esp32.md#platforms">![M5Stack Fire](./documentation/assets/devices/m5stack-fire.png)</a><BR>M5Stack Fire | <a href="./documentation/devices/esp32.md#platforms">![M5Stick C](./documentation/assets/devices/m5stick-c.png)</a><BR>M5Stick C |  <a href="./documentation/devices/esp32.md#platforms">![M5Atom](./documentation/assets/devices/m5atom.png)</a><BR>M5Atom Matrix
 
 <a id="footnotes3"></a>
-> <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/product)*<BR>
+> <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/hardware)*<BR>
 <sup>[9]</sup> *See also: [Using the Moddable SDK with ESP32](./documentation/devices/esp32.md)*<BR>
 
 ### Pico by Raspberry Pi
