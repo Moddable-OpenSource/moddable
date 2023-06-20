@@ -85,7 +85,7 @@ class Power extends AXP2101 {
     this.writeByte(0x10, 0x30);
 
     this.expander = new AW9523(INTERNAL_I2C);
-    this.expander.writeByte(0x02, 0b00000110);
+    this.expander.writeByte(0x02, 0b00000111);
     this.expander.writeByte(0x03, 0b10000011);
     this.expander.writeByte(0x04, 0b00011000);
     this.expander.writeByte(0x05, 0b00001100);
