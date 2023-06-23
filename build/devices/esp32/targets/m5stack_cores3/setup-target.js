@@ -51,24 +51,41 @@ export default function (done) {
   done?.();
 }
 
+/**
+ * AW88298 amplifier IC
+ */
 class AW88298 extends SMBus {
+  #rateTable
   constructor() {
     super({ address: 0x36, ...INTERNAL_I2C });
-    const rate_tbl = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
-    let reg0x06_value = 0;
-    /**
-     * @note 11025Hz is not available for the slight gap between the clock of ESP32S3 and AW88298 PLL
-     * @fixme should reset sampleRate if the different value specified in AudioOut#constructor
-     */
-    let sample_rate = getSampleRate();
-    let rate = Math.round((sample_rate + 1102) / 2205);
-    while (rate > rate_tbl[reg0x06_value] && ++reg0x06_value < rate_tbl.length);
-    reg0x06_value |= 0x14c0; // I2SRXEN=1 CHSEL=01(left) I2SFS=11(32bits)
+    this.#rateTable = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
     this.writeWord(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
-    this.writeWord(0x06, reg0x06_value, true);
     this.writeWord(0x61, 0x0673, true); // boost mode disabled
-    this.writeWord(0x0c, 0x1064, true); // volume setting (full volume)
     this.writeWord(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
+    this.volume = 250
+    this.sampleRate = getSampleRate()
+  }
+
+  /**
+   * @note with ESP-IDF, 11025Hz and its multiples are not available for the slight gap between the clock of ESP32S3 and AW88298 PLL
+   * @fixme should reset sampleRate if the different value specified in AudioOut#constructor
+   */
+  set sampleRate(sampleRate) {
+    let rateData = 0;
+    let rate = Math.round((sampleRate + 1102) / 2205);
+    while (rate > this.#rateTable[rateData] && ++rateData < this.#rateTable.length);
+    rateData |= 0x14c0; // I2SRXEN=1 CHSEL=01(left) I2SFS=11(32bits)
+    this.writeWord(0x06, rateData, true);
+  }
+
+  set volume(volume) {
+    const vdata = Math.round(Math.min(256, Math.max(0, volume)))
+    this.writeWord(0x0c, ((256 - vdata) << 8) | 0x64, true)
+  }
+
+  get volume() {
+    const vdata = this.readByte(0x0c)
+    return 256 - vdata
   }
 }
 
@@ -93,20 +110,19 @@ class Power extends AXP2101 {
     this.expander.writeByte(0x12, 0b11111111);
     this.expander.writeByte(0x13, 0b11111111);
 
-    // this.resetLcd()
-    this.writeByte(0x03, 0b10000011);
-    Timer.delay(20);
-    this.writeByte(0x03, 0b10100011);
+    this.resetLcd()
   }
 
   resetLcd() {
     this.expander.writeByteMask(0x03, 0, 0b11011111);
     Timer.delay(20);
-    // FIXME: read byte is 0x00 despite of write op above. something wrong
     this.expander.writeByteMask(0x03, 0b00100000, 0xff);
   }
 }
 
+/**
+ * AW9523 Expander IC
+ */
 class AW9523 extends SMBus {
   constructor(it) {
     super({ address: 0x58, ...it });
@@ -116,7 +132,7 @@ class AW9523 extends SMBus {
     const tmp = this.readByte(address);
     const newData = (tmp & mask) | data;
     trace(`tmp: ${tmp}, mask: ${mask}, writing: ${newData}\n`);
-    this.writeByte(newData);
+    this.writeByte(address, newData);
   }
 }
 
