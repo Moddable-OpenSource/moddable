@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -105,6 +105,9 @@ mxImport void _xsNewHostInstance(xsMachine *, xsSlot *, xsSlot *);
 mxImport xsBooleanValue _xsIsInstanceOf(xsMachine *, xsSlot *, xsSlot *);
 #define xsmcIsInstanceOf(_SLOT,_PROTOTYPE)	_xsIsInstanceOf(the, &_SLOT, &_PROTOTYPE)
 
+//#undef xsToReference
+#define xsmcToReference(_SLOT) fxToReference(the, &_SLOT)
+
 #undef xsHas
 #undef xsHasIndex
 #undef xsGet
@@ -197,6 +200,49 @@ mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data
 #define xsmcGetBuffer(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 0)
 #define xsmcGetBufferReadable(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 0)
 #define xsmcGetBufferWritable(_SLOT, data, count) _xsmcGetBuffer(the, &_SLOT, data, count, 1)
+
+#if __GNUC__
+	// unavailable when using xsmc
+	#pragma GCC poison xsTypeOf
+	#pragma GCC poison xsIsCallable
+	#pragma GCC poison xsToBoolean
+	#pragma GCC poison xsToInteger
+	#pragma GCC poison xsToNumber
+	#pragma GCC poison xsToString
+	#pragma GCC poison xsToStringBuffer
+	#pragma GCC poison xsArrayBuffer
+	#pragma GCC poison xsArrayBufferResizable
+	#pragma GCC poison xsGetArrayBufferData
+	#pragma GCC poison xsSetArrayBufferData
+	#pragma GCC poison xsToArrayBuffer
+	#pragma GCC poison xsGetArrayBufferLength
+	#pragma GCC poison xsGetArrayBufferMaxLength
+	#pragma GCC poison xsSetArrayBufferLength
+	#pragma GCC poison xsIsInstanceOf
+//	#pragma GCC poison xsToReference
+	#pragma GCC poison xsHas
+	#pragma GCC poison xsHasIndex
+	#pragma GCC poison xsGet
+	#pragma GCC poison xsGetAt
+	#pragma GCC poison xsGetIndex
+	#pragma GCC poison xsSet
+	#pragma GCC poison xsSetAt
+	#pragma GCC poison xsSetIndex
+	#pragma GCC poison xsDefine
+	#pragma GCC poison xsDelete
+	#pragma GCC poison xsDeleteAt
+	#pragma GCC poison xsTest
+	#pragma GCC poison xsGetHostBufferLength
+	#pragma GCC poison xsPetrifyHostBuffer
+	#pragma GCC poison xsSetHostBuffer
+	#pragma GCC poison xsGetHostData
+	#pragma GCC poison xsSetHostData
+	#pragma GCC poison xsGetHostDataValidate
+	#pragma GCC poison xsGetHostChunk
+	#pragma GCC poison xsSetHostChunk
+	#pragma GCC poison xsGetHostChunkValidate
+	#pragma GCC poison xsVars 
+#endif
 
 #ifdef __cplusplus
 }

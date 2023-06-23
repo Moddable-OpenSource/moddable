@@ -6,6 +6,7 @@ flags: [async, module]
 import Timer from "timer";
 
 assert.throws(SyntaxError, () => Timer.repeat(), "requires two arguments")
+assert.throws(SyntaxError, () => Timer.repeat(function(){}), "requires two arguments")
 assert.throws(TypeError, () => Timer.repeat(function(){}, 1n), "can't make integer")
 
 let start = Date.now();

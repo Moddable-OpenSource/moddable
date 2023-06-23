@@ -164,7 +164,7 @@ void xs_crypt_Digest(xsMachine *the)
 
 	cd = xsmcSetHostChunk(xsThis, NULL, digest->ctxSize + sizeof(xsCryptDigestRecord) - sizeof(unsigned char));
 #if mxNoFunctionLength
-	cd->reference = xsToReference(xsThis);
+	cd->reference = xsmcToReference(xsThis);
 #endif
 	cd->digest = digest - gDigests;
 
@@ -564,7 +564,7 @@ void xs_crypt_cipher_constructor(xsMachine *the)
 		xsUnknownError("unsupported cipher");
 
 	cipher.direction = -1;
-	cipher.reference = xsToReference(xsThis);
+	cipher.reference = xsmcToReference(xsThis);
 	xsmcSetHostChunk(xsThis, &cipher, offsetof(crypt_blockcipher_t, context) + contextSize);
 }
 
@@ -736,7 +736,7 @@ void xs_crypt_streamcipher_constructor(xsMachine *the)
 	else
 		xsUnknownError("unsupported cipher");
 
-	stream.reference = xsToReference(xsThis);
+	stream.reference = xsmcToReference(xsThis);
 	xsmcSetHostChunk(xsThis, &stream, offsetof(crypt_streamcipher_t, context) + contextSize);
 }
 
@@ -868,7 +868,7 @@ void xs_crypt_mode_constructor(xsMachine *the)
 		xsUnknownError("unsupported mode");
 
 	mode = xsmcSetHostChunk(xsThis, NULL, sizeof(crypt_mode_t));
-	mode->reference = xsToReference(xsThis);
+	mode->reference = xsmcToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&xs_crypt_mode_hooks);
 	mode->kind = kind;
 	mode->cipherH = xsGetHostHandle(xsArg(1));

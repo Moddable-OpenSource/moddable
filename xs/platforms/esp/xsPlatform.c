@@ -227,37 +227,52 @@ void fxAbort(txMachine* the, int status)
 	}
 #endif
 
-#if defined(mxDebug) || defined(mxInstrument)
+#if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
 
+	#if MODDEF_XS_ABORTHOOK
+		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
+			xsBooleanValue ignore = false;
+			
+			fxBeginHost(the);
+			{
+				mxPush(mxException);
+				txSlot *exception = the->stack;
+				mxException = xsUndefined;
+				mxTry(the) {
+					txID abortID = fxFindName(the, "abort");
+					mxOverflow(-8);
+					mxPush(mxGlobal);
+					if (fxHasID(the, abortID)) {
+						mxPush(mxGlobal);
+						fxCallID(the, abortID);
+						mxPushStringC((char *)msg);
+						mxPushSlot(exception);
+						fxRunCount(the, 2);
+						ignore = (XS_BOOLEAN_KIND == the->stack->kind) && !the->stack->value.boolean;
+						mxPop();
+					}
+				}
+				mxCatch(the) {
+				}
+			}
+			fxEndHost(the);
+			if (ignore)
+				return;
+		}
+	#endif
+
 	fxReport(the, "XS abort: %s\n", msg);
-	#if defined(mxDebug) && !MODDEF_XS_TEST
-		if ((char *)&the <= the->stackLimit)
-			the->stackLimit = NULL;
-		fxDebugger(the, (char *)__FILE__, __LINE__);
+	#if !defined(MODDEF_XS_DEBUGABORT) || MODDEF_XS_DEBUGABORT
+		#if defined(mxDebug) && !MODDEF_XS_TEST
+			if ((char *)&the <= the->stackLimit)
+				the->stackLimit = NULL;
+			fxDebugger(the, (char *)__FILE__, __LINE__);
+		#endif
 	#endif
 #endif
 
-#ifdef MODDEF_XS_RESTARTON
-	static const int restart[] = {
-		#if defined(mxDebug)
-			XS_DEBUGGER_EXIT,
-			XS_FATAL_CHECK_EXIT,
-		#endif
-			MODDEF_XS_RESTARTON };
-	int i;
-	for (i = 0; i < sizeof(restart) / sizeof(int); i++) {
-		if (restart[i] == status)
-			c_exit(status);
-	}
-#else
-	#if ESP32
-		c_exit(status);
-	#else
-		system_restart();
-		esp_yield();
-	#endif
-#endif
+	c_exit(status);
 }
 
 #ifdef mxDebug

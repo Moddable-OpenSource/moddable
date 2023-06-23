@@ -141,6 +141,8 @@ void xs_outlinerenderer_blendOutline(xsMachine *the)
 	orr.x = x - orr.dx;
 	orr.y = y - dy;
 	PocoDrawExternal(poco, doOutline, (void *)&orr, sizeof(orr), x, y, w, h);
+	
+	PocoHold(the, poco, xsmcToReference(xsArg(2)));
 }
 
 

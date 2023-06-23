@@ -1004,13 +1004,13 @@ export class TSConfigFile extends FILE {
 			compilerOptions: {
 				baseUrl: "./",
 				forceConsistentCasingInFileNames: true,
-				module: "es2020",
+				module: "es2022",
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2020"],
+				lib: ["es2022"],
 				sourceMap: true,
-				target: "ES2020",
+				target: "ES2022",
 				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
@@ -1018,7 +1018,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			var specifier = result.target.slice(0, -2);
+			var specifier = result.target;
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
 			specifier = tool.unresolvePrefix(specifier);
@@ -1028,6 +1028,7 @@ export class TSConfigFile extends FILE {
 			var specifier = result.target.slice(0, -4);
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
 		}
@@ -1127,6 +1128,10 @@ class Rule {
 					continue;
 				var path = directory + tool.slash + name;
 				var parts = tool.splitPath(path);
+				if ((".ts" === parts.extension) && parts.name.endsWith(".d")) {
+					parts.name = parts.name.slice(0, parts.name.length - 2);
+					parts.extension = ".d.ts";
+				} 
 				if (star >= 0) {
 					if (prefix) {
 						if (parts.name.startsWith(prefix))
@@ -1271,14 +1276,10 @@ class ModulesRule extends Rule {
 			else if (parts.name.endsWith(".cdv"))
 				this.appendFile(tool.cdvFiles, target.slice(0, -4), source, include);
 		}
-		else if (parts.extension == ".ts") {
-			if (parts.name.endsWith(".d")) {
-				this.appendFile(tool.dtsFiles, target, source, include);
-			}
-			else {
-				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
-			}
-		}
+		else if (parts.extension == ".ts")
+			this.appendFile(tool.tsFiles, target + ".xsb", source, include);
+		else if (parts.extension == ".d.ts")
+			this.appendFile(tool.dtsFiles, target, source, include);
 		else if (parts.extension == ".json") {
 			if ("nodered2mcu" === query.transform)
 				this.appendFile(tool.nodered2mcuFiles, target, source, include);

@@ -63,7 +63,7 @@ class AnimatedTextBehavior extends Behavior {
 };
 
 const AnimatedText = Port.template($ => ({
-	width:240,
+	width: screen.width,
 	Behavior: AnimatedTextBehavior
 }));
 
@@ -88,7 +88,7 @@ class MainColBehavior extends Behavior {
 		this.timeline = (new Timeline)
 			.to(column.content("city"), { x:0 }, 750, Math.backEaseOut, 0)
 			.to(column.content("temp"), { x:0 }, 750, Math.backEaseOut, -500)
-			.from(column.content("condition"), { y: 320 }, 400, Math.quadEaseOut, -750)
+			.from(column.content("condition"), { y: screen.height }, 400, Math.quadEaseOut, -750)
 			.to(column.content("icon"), { state: 1 }, 500, Math.quadEaseOut, -250)
 		column.duration = this.timeline.duration;
 		column.time = 0;
@@ -98,9 +98,9 @@ class MainColBehavior extends Behavior {
 	onTransitionOut(column) {
 		this.timeline = (new Timeline)
 			.to(column.content("icon"), { state: 0 }, 400, Math.quadEaseOut, 0)
-			.to(column.content("city"), { x:-240 }, 400, Math.backEaseOut, -200)
-			.to(column.content("condition"), { y:320 }, 400, Math.quadEaseOut, -400)
-			.to(column.content("temp"), { x:240 }, 400, Math.backEaseOut, -280)
+			.to(column.content("city"), { x:-screen.width }, 400, Math.backEaseOut, -200)
+			.to(column.content("condition"), { y:screen.height }, 400, Math.quadEaseOut, -400)
+			.to(column.content("temp"), { x:screen.width }, 400, Math.backEaseOut, -280)
 		column.duration = this.timeline.duration;
 		column.time = 0;
 		this.timeline.seekTo(0);
@@ -111,8 +111,8 @@ class MainColBehavior extends Behavior {
 const MainCol = Column.template($ => ({
 	left:0, top:0, right: 0, bottom: 0, skin: blackSkin,
 	contents:[
-		new AnimatedText({ hue: 0, string: $.city, style: OpenSans28, }, { name: "city", top: 15, height: 38, left: 240,  }),
-		new AnimatedText({ hue: 90, string: $.temp, style: OpenSans52, }, { name: "temp", top: -4, height: 58, left: -240 }),
+		new AnimatedText({ hue: 0, string: $.city, style: OpenSans28, }, { name: "city", top: 15, height: 38, left: screen.width,  }),
+		new AnimatedText({ hue: 90, string: $.temp, style: OpenSans52, }, { name: "temp", top: -4, height: 58, left: -screen.width }),
 		Content($, { name: "icon", width: 150, top: 10, height:150, skin: iconSkin, variant: $.icon }),
 		new AnimatedText({ hue: 270, string: $.condition, style: OpenSans28, }, { name: "condition", top: 3, height: 38, }),	
 	],
@@ -125,7 +125,7 @@ class WeatherAppBehavior extends Behavior {
 		application.duration = 5000;
 	}
 	onDisplaying(application) {
-		if (application.height != 320 || application.width != 240)
+		if (application.height != screen.height || application.width !=  screen.width)
 			trace("WARNING: This application was designed to run on a 240x320 screen.\n");
 		this.zipIndex = 0;
 		this.getWeatherData(application, zips[this.zipIndex]); 

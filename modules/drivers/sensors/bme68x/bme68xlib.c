@@ -35,47 +35,36 @@ typedef struct BME68xlib BME68xlib;
 static BME68X_INTF_RET_TYPE libRead(uint8_t reg_addr, uint8_t *reg_data, uint32_t length, void *intf_ptr)
 {
 	BME68xlib *lib = intf_ptr;
-	BME68X_INTF_RET_TYPE rtrn = BME68X_E_COM_FAIL;
+	xsMachine *the = lib->the;
 
-	xsBeginHost(lib->the);
-		xsmcVars(2);
-		xsmcSetInteger(xsVar(0), reg_addr);
-		xsmcSetInteger(xsVar(1), length);
-		xsResult = xsCall2(lib->obj, xsID_read, xsVar(0), xsVar(1));
+	xsmcSetInteger(xsVar(0), reg_addr);
+	xsmcSetInteger(xsVar(1), length);
+	xsResult = xsCall2(lib->obj, xsID_read, xsVar(0), xsVar(1));
 
-		void *data;
-		xsUnsignedValue count;
-		xsmcGetBufferReadable(xsResult, &data, &count);
-		if (count != length)
-			xsUnknownError("bad length");
-		c_memmove(reg_data, data, count);
-		rtrn = BME68X_OK;
-	xsEndHost(lib->the);
-
-	return rtrn;
+	void *data;
+	xsUnsignedValue count;
+	xsmcGetBufferReadable(xsResult, &data, &count);
+	if (count != length)
+		xsUnknownError("bad length");
+	c_memmove(reg_data, data, count);
+	return BME68X_OK;
 }
 
 static BME68X_INTF_RET_TYPE libWrite(uint8_t reg_addr, const uint8_t *reg_data, uint32_t length, void *intf_ptr)
 {
 	BME68xlib *lib = intf_ptr;
+	xsMachine *the = lib->the;
 	uint8_t buffer[32];
-	BME68X_INTF_RET_TYPE rtrn = BME68X_E_COM_FAIL;
 
-	xsBeginHost(lib->the);
-		xsmcVars(1);
+	if ((length + 1) > sizeof(buffer))
+		xsUnknownError("write too long");
 
-		if ((length + 1) > sizeof(buffer))
-			xsUnknownError("write too long");
+	buffer[0] = reg_addr;
+	c_memmove(buffer + 1, reg_data, length);
 
-		buffer[0] = reg_addr;
-		c_memmove(buffer + 1, reg_data, length);
-
-		xsmcSetArrayBuffer(xsVar(0), buffer, length + 1);
-		xsCall1(lib->obj, xsID_write, xsVar(0));
-		rtrn = BME68X_OK;
-	xsEndHost(lib->the);
-
-	return rtrn;
+	xsmcSetArrayBuffer(xsVar(0), buffer, length + 1);
+	xsCall1(lib->obj, xsID_write, xsVar(0));
+	return BME68X_OK;
 }
 
 static void libDelay(uint32_t period, void *intf_ptr)
@@ -93,6 +82,8 @@ void xs_bne68x_destructor(void *data)
 void xs_bme68x_init(xsMachine *the)
 {
 	BME68xlib *lib;
+
+	xsmcVars(2);
 
 	lib = c_calloc(1, sizeof(BME68xlib));
 	if (!lib)
@@ -150,6 +141,8 @@ void xs_bme68x_set_conf(xsMachine *the)
 	BME68xlib *lib = xsmcGetHostData(xsThis);
     struct bme68x_conf conf;
 
+	xsmcVars(2);
+
 	conf.os_hum = getUint8(lib, &xsArg(0), xsID_os_hum);
 	conf.os_temp = getUint8(lib, &xsArg(0), xsID_os_temp);
 	conf.os_pres = getUint8(lib, &xsArg(0), xsID_os_pres);
@@ -164,6 +157,8 @@ void xs_bme68x_get_conf(xsMachine *the)
 {
 	BME68xlib *lib = xsmcGetHostData(xsThis);
     struct bme68x_conf conf;
+
+	xsmcVars(2);
 
 	if (0 != bme68x_get_conf(&conf, &lib->bd))
 		xsUnknownError("get_conf fail");
@@ -193,6 +188,8 @@ void xs_bme68x_set_heatr_conf(xsMachine *the)
     struct bme68x_heatr_conf conf;
     uint16_t heatr_temp_prof[10];
     uint16_t heatr_dur_prof[10];
+
+	xsmcVars(2);
 
 	int mode = xsmcToInteger(xsArg(0));
 	if ((mode < 0) || (mode > 255))
@@ -290,6 +287,9 @@ void xs_bme68x_set_op_mode(xsMachine *the)
 	int mode = xsmcToInteger(xsArg(0));
 	if ((mode < 0) || (mode > 255))
 		xsRangeError("bad value");
+
+	xsmcVars(2);
+
 	if (0 != bme68x_set_op_mode((uint8_t)mode, &lib->bd))
 		xsUnknownError("set_op_mode fail");
 }
@@ -298,6 +298,8 @@ void xs_bme68x_get_op_mode(xsMachine *the)
 {
 	BME68xlib *lib = xsmcGetHostData(xsThis);
 	uint8_t op_mode;
+
+	xsmcVars(2);
 
 	if (0 != bme68x_get_op_mode(&op_mode, &lib->bd))
 		xsUnknownError("get_op_mode fail");
@@ -312,6 +314,8 @@ void xs_bme68x_get_meas_dur(xsMachine *the)
 	if ((mode < 0) || (mode > 255))
 		xsRangeError("bad value");
 	struct bme68x_conf conf;
+
+	xsmcVars(2);
 
 	conf.os_hum = getUint8(lib, &xsArg(1), xsID_os_hum);
 	conf.os_temp = getUint8(lib, &xsArg(1), xsID_os_temp);
@@ -331,6 +335,8 @@ void xs_bme68x_get_data(xsMachine *the)
 		xsRangeError("bad value");
 	struct bme68x_data data[3];
     uint8_t n_fields;
+
+	xsmcVars(2);
 
 	int8_t rslt = bme68x_get_data((uint8_t)mode, data, &n_fields, &lib->bd);
 	if (BME68X_W_NO_NEW_DATA == rslt)
@@ -382,6 +388,9 @@ void xs_bme68x_get_data(xsMachine *the)
 void xs_bme68x_selftest_check(xsMachine *the)
 {
 	BME68xlib *lib = xsmcGetHostData(xsThis);
+
+	xsmcVars(2);
+
 	int8_t rslt = bme68x_selftest_check(&lib->bd);
 	if (BME68X_OK != rslt)
 		xsUnknownError("selftest_check fail");
@@ -390,6 +399,9 @@ void xs_bme68x_selftest_check(xsMachine *the)
 void xs_bme68x_soft_reset(xsMachine *the)
 {
 	BME68xlib *lib = xsmcGetHostData(xsThis);
+
+	xsmcVars(2);
+
 	if (0 != bme68x_soft_reset(&lib->bd))
 		xsUnknownError("soft_reset fail");
 }
@@ -400,6 +412,9 @@ void xs_bme68x_get_regs(xsMachine *the)
 	int reg_addr;
 	void *output;
 	xsUnsignedValue count;
+
+	xsmcVars(2);
+
 	reg_addr = xsmcToInteger(xsArg(0));
 	xsmcGetBufferWritable(xsArg(1), &output, &count);
 
@@ -412,6 +427,8 @@ void xs_bme68x_set_regs(xsMachine *the)
 	BME68xlib *lib = xsmcGetHostData(xsThis);
 	void *regs, *output;
 	xsUnsignedValue countRegs, countOut;
+
+	xsmcVars(2);
 
 	xsmcGetBufferReadable(xsArg(0), &regs, &countRegs);
 	xsmcGetBufferReadable(xsArg(1), &output, &countOut);
