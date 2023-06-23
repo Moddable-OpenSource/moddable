@@ -20,6 +20,9 @@
 
 import AXP2101 from "axp2101";
 import SMBus from "pins/smbus";
+import AudioOut from "pins/audioout";
+import Resource from "Resource";
+import config from "mc/config";
 import Timer from "timer";
 
 const INTERNAL_I2C = Object.freeze({
@@ -66,6 +69,23 @@ export default function (done) {
 
   // power
   globalThis.power = new Power();
+
+	// start-up sound
+	if (config.startupSound) {
+    const speaker = new AudioOut({streams: 1});
+		speaker.callback = function () {
+			this.stop();
+			this.close();
+			this.done();
+		};
+		speaker.done = done;
+		done = undefined;
+
+		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+		speaker.enqueue(0, AudioOut.Callback, 0);
+		speaker.start();
+	}
+
   done?.();
 }
 
