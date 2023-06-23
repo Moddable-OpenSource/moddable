@@ -11,7 +11,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "M5StackCoreTouch",
+		"touch": "M5StackCoreS3Touch",
 		"startupSound": "bflatmajor.maud",
 		"startupVibration": 600
 	},
@@ -22,8 +22,7 @@
 		"pins/audioout": "./M5StackCoreS3AudioOut",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",
-			"../m5stack_core2/M5StackCoreTouch",
-			"./get-sample-rate"
+			"./M5StackCoreS3Touch"
 		]
 	},
 	"preload": [
@@ -31,7 +30,7 @@
 		"pins/audioout-original",
 		"pins/audioout",
 		"mpu6886",
-		"pins/smbus",
+		"M5StackCoreS3Touch",
 		"setup/target"
 	],
 	"resources": {

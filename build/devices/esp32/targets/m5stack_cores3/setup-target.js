@@ -43,7 +43,27 @@ globalThis.Host = {
   },
 };
 
+class M5CoreS3Button {		// M5StackCoreTouch calls write when button changes 
+	#value = 0;
+	read() {
+		return this.#value;
+	}
+	write(value) {
+		if (this.#value === value)
+			return;
+		this.#value = value;
+		this.onChanged?.();
+	}
+}
+
 export default function (done) {
+	// buttons
+	globalThis.button = {
+		a: new M5CoreS3Button,
+		b: new M5CoreS3Button,
+		c: new M5CoreS3Button,
+	};
+
   // power
   globalThis.power = new Power();
   done?.();
