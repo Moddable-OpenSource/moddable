@@ -18,7 +18,7 @@
 	"modules": {
 		"setup/target": "./setup-target",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
-		"pins/audioout-original": "$(MODULES)/pins/i2s/audioout",
+		"pins/audioout-original": "$(MODULES)/pins/i2s/*",
 		"pins/audioout": "./M5StackCoreS3AudioOut",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",
