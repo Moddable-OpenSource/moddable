@@ -1695,11 +1695,11 @@ export class Tool extends TOOL {
 		else if (!this.format)
 			this.format = "UNDEFINED";
 		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
+			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/release/mcsim.app";
 		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
+			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\release\\mcsim.exe";
 		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/release/mcsim";
 		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
