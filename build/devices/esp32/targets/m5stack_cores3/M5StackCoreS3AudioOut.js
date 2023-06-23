@@ -12,7 +12,7 @@ const INTERNAL_I2C = Object.freeze({
 class AW88298 extends SMBus {
   #rateTable
   constructor() {
-    super({ address: 0x36, ...INTERNAL_I2C });
+    super({ throw: false, address: 0x36, ...INTERNAL_I2C });
     this.#rateTable = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
     this.writeWord(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
     this.writeWord(0x61, 0x0673, true); // boost mode disabled
