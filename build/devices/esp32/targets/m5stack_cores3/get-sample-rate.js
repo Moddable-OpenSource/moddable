@@ -1,1 +1,0 @@
-export function getSampleRate() @ "M5CoreS3_getSampleRate"
