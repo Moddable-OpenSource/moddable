@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -111,19 +111,11 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs freetype2 gtk+-3.0) -ldl -l
 
 LINK_OPTIONS = -fPIC
 
-ifeq ($(DEBUG),1)
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
-XSC = $(BUILD_DIR)/bin/lin/debug/xsc
-XSID = $(BUILD_DIR)/bin/lin/debug/xsid
-XSL = $(BUILD_DIR)/bin/lin/debug/xsl
-else
-MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
+MCLOCAL = $(BUILD_DIR)/bin/lin/release/mclocal
 MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
 XSC = $(BUILD_DIR)/bin/lin/release/xsc
 XSID = $(BUILD_DIR)/bin/lin/release/xsid
 XSL = $(BUILD_DIR)/bin/lin/release/xsl
-endif
 
 VPATH += $(XS_DIRECTORIES)
 

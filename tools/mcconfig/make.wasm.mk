@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -129,9 +129,9 @@ endif
 BUILDCLUT = $(MODDABLE_TOOLS_DIR)/release/buildclut
 COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/release/compressbmf
 IMAGE2CS = $(MODDABLE_TOOLS_DIR)/release/image2cs
-MCLOCAL = $(MODDABLE_TOOLS_DIR)/debug/mclocal
+MCLOCAL = $(MODDABLE_TOOLS_DIR)/release/mclocal
 MCREZ = $(MODDABLE_TOOLS_DIR)/release/mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)/debug/png2bmp
+PNG2BMP = $(MODDABLE_TOOLS_DIR)/release/png2bmp
 RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/release/rle4encode
 WAV2MAUD = $(MODDABLE_TOOLS_DIR)/release/wav2maud
 XSC = $(MODDABLE_TOOLS_DIR)/release/xsc

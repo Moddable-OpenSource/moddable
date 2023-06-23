@@ -142,7 +142,7 @@ LINK_OPTIONS = /incremental:no /nologo /subsystem:console
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
+MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
 MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
 XSC = $(BUILD_DIR)\bin\win\debug\xsc
 XSID = $(BUILD_DIR)\bin\win\debug\xsid

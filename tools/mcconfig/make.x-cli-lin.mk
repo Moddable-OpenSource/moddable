@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -113,9 +113,9 @@ LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
 LINK_FLAGS = -fPIC
 
-XSC = $(BUILD_DIR)/bin/lin/debug/xsc
-XSID = $(BUILD_DIR)/bin/lin/debug/xsid
-XSL = $(BUILD_DIR)/bin/lin/debug/xsl
+XSC = $(BUILD_DIR)/bin/lin/release/xsc
+XSID = $(BUILD_DIR)/bin/lin/release/xsid
+XSL = $(BUILD_DIR)/bin/lin/release/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 

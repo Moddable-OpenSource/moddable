@@ -111,10 +111,10 @@ LIBRARIES = -framework CoreFoundation -framework CoreServices -framework Cocoa
 # LINK_FLAGS = -arch i386 -ObjC
 LINK_FLAGS = -ObjC $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-XSC = $(BUILD_DIR)/bin/mac/debug/xsc
-XSID = $(BUILD_DIR)/bin/mac/debug/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
+MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
+XSC = $(BUILD_DIR)/bin/mac/release/xsc
+XSID = $(BUILD_DIR)/bin/mac/release/xsid
+XSL = $(BUILD_DIR)/bin/mac/release/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 
