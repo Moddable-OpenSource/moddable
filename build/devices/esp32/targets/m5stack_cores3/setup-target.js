@@ -78,7 +78,7 @@ export default function (done) {
 		speaker.callback = function () {
 			this.stop();
 			this.close();
-			this.done();
+			Timer.set(this.done);
 		};
 		speaker.done = done;
 		done = undefined;
