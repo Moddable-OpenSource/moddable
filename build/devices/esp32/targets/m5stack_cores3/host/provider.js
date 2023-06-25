@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2023 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Runtime.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022  Moddable Tech, Inc.
+ * Copyright (c) 2023 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -47,46 +47,46 @@ globalThis.Host = {
   },
 };
 
-class M5CoreS3Button {		// M5StackCoreTouch calls write when button changes 
-	#value = 0;
-	read() {
-		return this.#value;
-	}
-	write(value) {
-		if (this.#value === value)
-			return;
-		this.#value = value;
-		this.onChanged?.();
-	}
+class M5CoreS3Button {
+  // M5StackCoreTouch calls write when button changes
+  #value = 0;
+  read() {
+    return this.#value;
+  }
+  write(value) {
+    if (this.#value === value) return;
+    this.#value = value;
+    this.onChanged?.();
+  }
 }
 
 export default function (done) {
-	// buttons
-	globalThis.button = {
-		a: new M5CoreS3Button,
-		b: new M5CoreS3Button,
-		c: new M5CoreS3Button,
-	};
+  // buttons
+  globalThis.button = {
+    a: new M5CoreS3Button(),
+    b: new M5CoreS3Button(),
+    c: new M5CoreS3Button(),
+  };
 
   // power
   globalThis.power = new Power();
   globalThis.amp = new AW88298();
 
-	// start-up sound
-	if (config.startupSound) {
-    const speaker = new AudioOut({streams: 1});
-		speaker.callback = function () {
-			this.stop();
-			this.close();
-			Timer.set(this.done);
-		};
-		speaker.done = done;
-		done = undefined;
+  // start-up sound
+  if (config.startupSound) {
+    const speaker = new AudioOut({ streams: 1 });
+    speaker.callback = function () {
+      this.stop();
+      this.close();
+      Timer.set(this.done);
+    };
+    speaker.done = done;
+    done = undefined;
 
-		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
-		speaker.enqueue(0, AudioOut.Callback, 0);
-		speaker.start();
-	}
+    speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
+    speaker.enqueue(0, AudioOut.Callback, 0);
+    speaker.start();
+  }
 
   done?.();
 }
@@ -95,16 +95,16 @@ export default function (done) {
  * AW88298 amplifier IC
  */
 class AW88298 extends SMBus {
-  #rateTable
-  #sampleRate
+  #rateTable;
+  #sampleRate;
   constructor() {
     super({ address: 0x36, ...INTERNAL_I2C });
     this.#rateTable = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
     this.writeWord(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
     this.writeWord(0x61, 0x0673, true); // boost mode disabled
     this.writeWord(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
-    this.volume = 250
-    this.sampleRate = 24000
+    this.volume = 250;
+    this.sampleRate = 24000;
   }
 
   /**
@@ -113,24 +113,27 @@ class AW88298 extends SMBus {
    */
   set sampleRate(sampleRate) {
     if (this.#sampleRate === sampleRate) {
-      return
+      return;
     }
-    this.#sampleRate = sampleRate
+    this.#sampleRate = sampleRate;
     let rateData = 0;
     let rate = Math.round((sampleRate + 1102) / 2205);
-    while (rate > this.#rateTable[rateData] && ++rateData < this.#rateTable.length);
+    while (
+      rate > this.#rateTable[rateData] &&
+      ++rateData < this.#rateTable.length
+    );
     rateData |= 0x14c0; // I2SRXEN=1 CHSEL=01(left) I2SFS=11(32bits)
     this.writeWord(0x06, rateData, true);
   }
 
   set volume(volume) {
-    const vdata = Math.round(Math.min(256, Math.max(0, volume)))
-    this.writeWord(0x0c, ((256 - vdata) << 8) | 0x64, true)
+    const vdata = Math.round(Math.min(256, Math.max(0, volume)));
+    this.writeWord(0x0c, ((256 - vdata) << 8) | 0x64, true);
   }
 
   get volume() {
-    const vdata = this.readByte(0x0c)
-    return 256 - vdata
+    const vdata = this.readByte(0x0c);
+    return 256 - vdata;
   }
 }
 
@@ -155,7 +158,7 @@ class Power extends AXP2101 {
     this.expander.writeByte(0x12, 0b11111111);
     this.expander.writeByte(0x13, 0b11111111);
 
-    this.resetLcd()
+    this.resetLcd();
   }
 
   resetLcd() {
