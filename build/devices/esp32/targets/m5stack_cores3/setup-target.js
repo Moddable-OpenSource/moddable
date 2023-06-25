@@ -28,6 +28,7 @@ import Timer from "timer";
 const INTERNAL_I2C = Object.freeze({
   sda: 12,
   scl: 11,
+  hz: 400_000,
 });
 
 const state = {
