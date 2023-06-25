@@ -176,7 +176,6 @@ class AW9523 extends SMBus {
   writeByteMask(address, data, mask) {
     const tmp = this.readByte(address);
     const newData = (tmp & mask) | data;
-    trace(`tmp: ${tmp}, mask: ${mask}, writing: ${newData}\n`);
     this.writeByte(address, newData);
   }
 }
