@@ -65,6 +65,7 @@ static void fxEchoAddress(txMachine* the, txSlot* theSlot);
 static void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList);
 static void fxEchoBigInt(txMachine* the, txBigInt* bigint);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
+static void fxEchoException(txMachine* the);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
 static void fxEchoFormat(txMachine* the, txString theFormat, c_va_list theArguments);
 static void fxEchoFrameName(txMachine* the, txSlot* theFrame);
@@ -311,7 +312,10 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 	if (path)
 		fxEchoPathLine(the, path, line);
 	fxEcho(the, "># Break: ");
-	fxEchoString(the, message);
+	if (!c_strcmp(message, "throw"))
+		fxEchoException(the);
+	else
+		fxEchoString(the, message);
 	fxEcho(the, "!\n</break>");
 	fxEchoStop(the);
 
@@ -963,6 +967,74 @@ void fxEchoCharacter(txMachine* the, char theCharacter)
 	c[0] = theCharacter;
 	c[1] = 0;
 	fxEchoString(the, c);
+}
+
+void fxEchoException(txMachine* the)
+{
+	txSlot* exception = &mxException;
+	switch (exception->kind) {
+	case XS_REFERENCE_KIND: {
+		txSlot* instance = exception->value.reference;
+		txSlot* internal = instance->next;
+		if (internal && (internal->kind == XS_ERROR_KIND)) {
+			switch (internal->value.error.which) {
+			case XS_UNKNOWN_ERROR: fxEcho(the, "Error"); break;
+			case XS_EVAL_ERROR: fxEcho(the, "EvalError"); break;
+			case XS_RANGE_ERROR: fxEcho(the, "RangeError"); break;
+			case XS_REFERENCE_ERROR: fxEcho(the, "ReferenceError"); break;
+			case XS_SYNTAX_ERROR: fxEcho(the, "SyntaxError"); break;
+			case XS_TYPE_ERROR: fxEcho(the, "TypeError"); break;
+			case XS_URI_ERROR: fxEcho(the, "URIError"); break;
+			case XS_AGGREGATE_ERROR: fxEcho(the, "AggregateError"); break;
+			case XS_SUPPRESSED_ERROR: fxEcho(the, "SuppressedError"); break;
+			}
+			fxEcho(the, ": ");
+			internal = internal->next;
+			if (internal && ((internal->kind == XS_STRING_KIND) || (internal->kind == XS_STRING_X_KIND))) {
+				fxEchoString(the, internal->value.string);
+			}
+		}
+		else {
+			fxEcho(the, "(");
+			if (instance->flag & XS_CAN_CALL_FLAG)
+				fxEcho(the, mxFunctionString.value.string);
+			else
+				fxEcho(the, mxObjectString.value.string);
+			fxEcho(the, ")");
+		}
+		} break;
+	case XS_UNDEFINED_KIND:
+		fxEcho(the, "undefined");
+		break;
+	case XS_NULL_KIND:
+		fxEcho(the, "null");
+		break;
+	case XS_BOOLEAN_KIND:
+		if (exception->value.boolean)
+			fxEcho(the, "true");
+		else
+			fxEcho(the, "false");
+		break;
+	case XS_INTEGER_KIND:
+		fxEchoInteger(the, exception->value.integer);
+		break;
+	case XS_NUMBER_KIND:
+		fxEchoNumber(the, exception->value.number);
+		break;
+	case XS_STRING_KIND:
+	case XS_STRING_X_KIND:
+		fxEchoString(the, exception->value.string);
+		break;
+	case XS_SYMBOL_KIND:
+		fxEcho(the, "Symbol(");
+		fxEchoString(the, fxGetKeyString(the, exception->value.symbol, C_NULL));
+		fxEcho(the, ")\"/>");
+		break;
+	case XS_BIGINT_KIND:
+	case XS_BIGINT_X_KIND:
+		fxEchoBigInt(the, &exception->value.bigint);
+		break;
+	}
 }
 
 void fxEchoFlags(txMachine* the, txString state, txFlag flag)
