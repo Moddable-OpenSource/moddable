@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 14, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: June 26, 2023
 
 ## Table of Contents
 
@@ -165,6 +165,10 @@ let stop = Time.ticks;
 trace(`Operation took ${stop - start} milliseconds\n`);
 ```
 
+On devices that supports multiple concurrent JavaScript virtual machines (for example, using Wokers), the clock used to determine the value of the `ticks` property is the same across all virtual machines. This allows `tick` values created in one machine to be compared with values from another.   
+
+The range of the value depends on the host. On most microcontrollers, the value is a signed 32-bit integer. On the simulator, it is a positive 64-bit floating point value. 
+
 ***
 
 ### `microseconds` property  *(optional)*
@@ -180,7 +184,7 @@ To use the `microseconds` property, include its manifest in the project manifest
 	],
 ```
 
-The `microseconds` property is used in the same way as the `ticks` property.
+The `microseconds` property is used in the same way as the `ticks` property. Like the `ticks` property, a single time source is used when there multiple concurrent virtual machines. The range of the `microseconds` property is a 64-bit floating point value.  
 
 ```js
 const start = Time.microseconds;
@@ -369,6 +373,6 @@ The `CLI` class is a plug-in interface for commands used in a command line inter
 <a id="worker"></a>
 ## class Worker
 
-See the [Worker documentation](./worker.md) for more information about the `Worker` class.
+See the [Worker documentation](./worker.md) for information about the `Worker` class.
 
 
