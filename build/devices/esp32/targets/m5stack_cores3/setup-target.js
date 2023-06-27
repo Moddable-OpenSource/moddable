@@ -62,11 +62,13 @@ class M5CoreS3Button {
 
 export default function (done) {
   // buttons
-  globalThis.button = {
-    a: new M5CoreS3Button(),
-    b: new M5CoreS3Button(),
-    c: new M5CoreS3Button(),
-  };
+  if (config.virtualButton) {
+    globalThis.button = {
+      a: new M5CoreS3Button(),
+      b: new M5CoreS3Button(),
+      c: new M5CoreS3Button(),
+    };
+  }
 
   // power
   globalThis.power = new Power();

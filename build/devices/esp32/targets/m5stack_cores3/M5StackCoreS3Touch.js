@@ -32,6 +32,9 @@ class M5StackCoreTouch extends Touch {
   read(points) {
     super.read(points);
 
+    if (!globalThis.button) {
+      return;
+    }
     if (this.#captured) {
       if (0 === points[0].state) {
         this.#captured.write(0);
