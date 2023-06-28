@@ -379,8 +379,12 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 			break;
 		breakpoint = breakpoint->next;
 	}
-	if (breakpoint)
-		fxDebugLoop(the, C_NULL, 0, "breakpoint");
+	if (breakpoint) {
+		if (line == 0x7FFFFFFF)
+			fxDebugLoop(the, fxGetKeyName(the, id), line, "breakpoint");
+		else
+			fxDebugLoop(the, C_NULL, 0, "breakpoint");
+	}
 	else if ((the->frame->flag & XS_STEP_OVER_FLAG))
 		fxDebugLoop(the, C_NULL, 0, "step");
 }
@@ -2221,15 +2225,15 @@ void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine)
 
 	if (!thePath)
 		return;
-	if (!c_strcmp(thePath, "exceptions")) {
+	if (!c_strcmp(thePath, "exceptions") && (theLine == 0)) {
 		the->breakOnExceptionsFlag = 1;
 		return;
 	}	
-	if (!c_strcmp(thePath, "start")) {
+	if (!c_strcmp(thePath, "start") && (theLine == 0)) {
 		the->breakOnStartFlag = 1;
 		return;
 	}	
-	if ((theLine <= 0) || (0x00007FFF < theLine))
+	if ((theLine <= 0) || (0x7FFFFFFF < theLine))
 		return;
 	path = fxNewNameC(the, thePath);
 	if (!path)

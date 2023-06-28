@@ -4032,6 +4032,7 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceID(the, count, 0);
 #endif
 			mxEnvironment->ID = count;
+			mxEnvironment->value.environment.line = 0;
 		#endif
 			mxNextCode(1 + sizeof(txID));
 			mxBreak;
@@ -4041,15 +4042,24 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, count);
 #endif
+			byte = (mxEnvironment->value.environment.line == 0) ? 1 : 0;
 			mxEnvironment->value.environment.line = count;
 			if (fxIsReadable(the)) {
 				mxSaveState;
 				fxDebugCommand(the);
 				mxRestoreState;
 			}
+			if (byte) {
+				count = mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID;
+				if ((count != XS_NO_ID) && mxBreakpoints.value.list.first) {
+					mxSaveState;
+					fxDebugLine(the, count, 0x7FFFFFFF);
+					mxRestoreState;
+				}
+			}
 			if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
 				mxSaveState;
-				fxDebugLine(the, mxEnvironment->ID, count);
+				fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line);
 				mxRestoreState;
 			}
 		#endif
