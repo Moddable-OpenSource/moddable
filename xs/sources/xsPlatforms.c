@@ -298,17 +298,19 @@ txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigne
 		fxParserTree(parser, stream, getter, flags, NULL);
 #ifdef mxDebug
 		parser->flags |= mxDebugFlag;
-		if (!parser->source) {
-			char tag[16];
-			parser->flags |= mxDebugFlag;
-			fxGenerateTag(the, tag, sizeof(tag), C_NULL);
-			parser->source = fxNewParserSymbol(parser, tag);
-		}
-		if (fxIsConnected(the)) {
-			if (getter == fxStringGetter)
-				fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
-			else if (getter == fxStringCGetter)
-				fxFileEvalString(the, ((txStringCStream*)stream)->buffer, parser->source->string);
+		if (!the->debugEval) {
+			if (!parser->source) {
+				char tag[16];
+				parser->flags |= mxDebugFlag;
+				fxGenerateTag(the, tag, sizeof(tag), C_NULL);
+				parser->source = fxNewParserSymbol(parser, tag);
+			}
+			if (fxIsConnected(the)) {
+				if (getter == fxStringGetter)
+					fxFileEvalString(the, ((txStringStream*)stream)->slot->value.string, parser->source->string);
+				else if (getter == fxStringCGetter)
+					fxFileEvalString(the, ((txStringCStream*)stream)->buffer, parser->source->string);
+			}
 		}
 #endif
 		fxParserHoist(parser);

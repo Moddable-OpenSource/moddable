@@ -460,6 +460,7 @@ struct sxMachine {
 	txFlag breakOnExceptionsFlag;
 	txFlag breakOnStartFlag;
 	txFlag debugAttribute;
+	txFlag debugEval;
 	txFlag debugExit;
 	txFlag debugState;
 	txFlag debugTag;

@@ -105,7 +105,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 1
+#define XS_MINOR_VERSION 2
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -1152,6 +1152,10 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #ifndef mxAliasInstance
 	#define mxAliasInstance 1
+#endif
+
+#ifndef mxDebugEval
+	#define mxDebugEval 0
 #endif
 
 #ifndef mxExplicitResourceManagement

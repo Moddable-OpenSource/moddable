@@ -55,6 +55,7 @@ C_OPTIONS = \
 	-DmxAliasInstance=0 \
 	-DmxCanonicalNaN=1 \
 	-DmxDebug=1 \
+	-DmxDebugEval=1 \
 	-DmxExplicitResourceManagement=1 \
 	-DmxKeysGarbageCollection=1 \
 	-DmxLockdown=1 \

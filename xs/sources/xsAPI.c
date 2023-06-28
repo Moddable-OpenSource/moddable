@@ -1307,7 +1307,8 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     va_list arguments;
     txSlot* slot;
 #ifdef mxDebug
-	fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
+ 	if (!the->debugEval)
+		fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
 	length = mxStringLength(message);
 #endif
     va_start(arguments, format);

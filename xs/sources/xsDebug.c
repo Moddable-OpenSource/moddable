@@ -55,6 +55,7 @@ static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOP
 #ifdef mxDebug
 static void fxClearAllBreakpoints(txMachine* the);
 static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine);
+static void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index);
 static void fxDebugParse(txMachine* the);
 static void fxDebugParseTag(txMachine* the, txString name);
 static void fxDebugPopTag(txMachine* the);
@@ -144,6 +145,7 @@ enum {
 	XS_BREAKPOINT_TAG,
 	XS_CLEAR_ALL_BREAKPOINTS_TAG,
 	XS_CLEAR_BREAKPOINTS_TAG,
+	XS_EVAL_TAG,
 	XS_GO_TAG,
 	XS_IMPORT_TAG,
 	XS_LOGOUT_TAG,
@@ -231,6 +233,115 @@ void fxDebugCommand(txMachine* the)
 		fxQueueJob(the, 2, C_NULL);
 	else if (the->debugTag == XS_SCRIPT_TAG)
 		fxQueueJob(the, 6, C_NULL);
+#endif
+}
+
+void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index)
+{
+#if mxDebugEval
+	txSlot* scope = scope;
+	if (frame == the->frame)
+		scope = the->scope;
+	else {
+		txSlot* current = the->frame;
+		while (current->next != frame)
+			current = current->next;
+		if (current)
+			scope = current->value.frame.scope;
+	}
+
+	txSlot* _this = mxThis;
+	txSlot* function = mxFunction;
+	txSlot* target = mxTarget;
+	txSlot* environment = mxFrameToEnvironment(frame);
+	txSlot* instance;
+	
+	the->debugEval = 1;
+	
+	mxOverflow(-7);
+	/* THIS */
+	mxPushSlot(_this);
+	/* FUNCTION */
+	mxPushSlot(function);
+	/* TARGET */
+	mxPushSlot(target);
+	/* RESULT */
+	mxPushUndefined();
+	/* FRAME */
+	(--the->stack)->next = the->frame;
+	the->stack->ID = XS_NO_ID;
+	the->stack->flag = XS_C_FLAG;
+	the->stack->kind = XS_FRAME_KIND;
+	the->stack->value.frame.code = the->code;
+	the->stack->value.frame.scope = the->scope;
+	the->frame = the->stack;
+	/* COUNT */
+	mxPushInteger(0);
+	/* ENVIRONMENT */
+	mxPushUndefined();
+	instance = fxNewEnvironmentInstance(the, C_NULL);
+	if (scope) {
+		txSlot* property = fxLastProperty(the, instance);
+		txSlot* local = environment;
+		txID id;
+		while (local > scope) {
+			local--;
+			id = local->ID;
+			if ((0 < id) && (id < the->keyCount)) {
+				property = fxNextSlotProperty(the, property, local, id, XS_GET_ONLY);
+			}
+		}
+	}
+	the->scope = the->stack;
+	the->code = C_NULL;
+	
+	{
+		mxTry(the) {
+			txInspectorNameList aList = { C_NULL, C_NULL };
+			txSlot* result;
+			mxPushUndefined();
+			mxPushUndefined();
+			fxCall(the);
+			mxPushString(expression);
+			mxPushInteger(1);
+			gxDefaults.runEval(the);
+			result = the->stack;
+			fxEchoStart(the);
+			fxEcho(the, "<result line=\"");
+			fxEchoInteger(the, index);
+			fxEcho(the, "\">");
+			if (result->kind == XS_REFERENCE_KIND) {
+				txSlot* instance = result->value.reference;
+				txSlot* instanceInspector = fxToInstanceInspector(the, instance);
+				if (!instanceInspector)
+					fxToggle(the, instance);
+			}
+			fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
+			fxEcho(the, "</result>");
+			fxEchoStop(the);
+			mxPop();	
+		}
+		mxCatch(the) {
+			fxEchoStart(the);
+			fxEcho(the, "<result line=\"");
+			fxEchoInteger(the, index);
+			fxEcho(the, "\">");
+			fxEchoException(the);
+			fxEcho(the, "</result>");
+			fxEchoStop(the);
+			mxException = mxUndefined;
+		}
+	}
+	
+	fxEndHost(the);
+	
+	the->debugEval = 0;
+#else
+	fxEchoStart(the);
+	fxEcho(the, "<result line=\"");
+	fxEchoInteger(the, index);
+	fxEcho(the, "\">not available</result>");
+	fxEchoStop(the);
 #endif
 }
 
@@ -633,6 +744,8 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_CLEAR_ALL_BREAKPOINTS_TAG;
 	else if (!c_strcmp(name, "clear-breakpoint"))
 		the->debugTag = XS_CLEAR_BREAKPOINTS_TAG;
+	else if (!c_strcmp(name, "eval"))
+		the->debugTag = XS_EVAL_TAG;
 	else if (!c_strcmp(name, "go"))
 		the->debugTag = XS_GO_TAG;
 	else if (!c_strcmp(name, "logout"))
@@ -680,6 +793,8 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_CLEAR_BREAKPOINTS_TAG:
 		the->debugExit |= 1;
+		break;
+	case XS_EVAL_TAG:
 		break;
 	case XS_GO_TAG:
 		the->debugExit |= 2;
@@ -740,6 +855,9 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_CLEAR_BREAKPOINTS_TAG:
 		fxClearBreakpoint(the, the->pathValue, the->lineValue);
+		break;
+	case XS_EVAL_TAG:
+		fxDebugEval(the, (txSlot*)the->idValue, the->pathValue, the->lineValue);
 		break;
 	case XS_GO_TAG:
 		fxGo(the);
@@ -848,6 +966,8 @@ void fxDebugScriptCDATA(txMachine* the, char c)
 
 void fxDebugThrow(txMachine* the, txString path, txInteger line, txString message)
 {
+	if (the->debugEval)
+		return;
 	if (fxIsConnected(the) && (the->breakOnExceptionsFlag))
 		fxDebugLoop(the, path, line, message);
 	else {
