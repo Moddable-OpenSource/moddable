@@ -2164,7 +2164,27 @@ void fxLogin(txMachine* the)
 	else
 		fxEchoString(the, "xslib");
 	fxEcho(the, "\" value=\"");
-	fxEcho(the, "XS");
+	fxEcho(the, "XS ");
+	fxEchoInteger(the, XS_MAJOR_VERSION);
+	fxEcho(the, ".");
+	fxEchoInteger(the, XS_MINOR_VERSION);
+	fxEcho(the, ".");
+	fxEchoInteger(the, XS_PATCH_VERSION);
+	fxEcho(the, " ");
+	fxEchoInteger(the, (txInteger)(sizeof(txSlot*)*8));
+	fxEcho(the, "-bit ");
+#if mxBigEndian
+	fxEcho(the, "BE ");
+#else
+	fxEcho(the, "LE ");
+#endif
+	fxEchoInteger(the, (txInteger)(sizeof(txID)*8));
+	fxEcho(the, "-bit ID\" flags=\"");
+#if mxDebugEval
+	fxEcho(the, "e");
+#else	
+	fxEcho(the, "E");
+#endif
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
 	if (the->sharedMachine) {
