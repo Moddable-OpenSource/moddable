@@ -39,23 +39,6 @@ DEBUGGER_SPEED ?= 921600
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
-ifeq ($(HOST_OS),Darwin)
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
-else
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-endif
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
-MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
-SERIAL2XSBUG = $(MODDABLE_TOOLS_DIR)/serial2xsbug
-XSC = $(MODDABLE_TOOLS_DIR)/xsc
-XSL = $(MODDABLE_TOOLS_DIR)/xsl
-
 ARCHIVE = $(BIN_DIR)/$(NAME).xsa
 
 ifeq ($(URL),"~")
@@ -101,7 +84,7 @@ releaseURL: $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
-	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)
+	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)
 
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

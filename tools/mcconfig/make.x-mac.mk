@@ -110,11 +110,6 @@ LIBRARIES = -framework CoreFoundation -framework CoreServices -framework Cocoa
 
 # LINK_FLAGS = -arch i386 -ObjC
 LINK_FLAGS = -ObjC $(MACOS_ARCH) $(MACOS_VERSION_MIN)
-
-MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
-XSC = $(BUILD_DIR)/bin/mac/release/xsc
-XSID = $(BUILD_DIR)/bin/mac/release/xsid
-XSL = $(BUILD_DIR)/bin/mac/release/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 
@@ -154,7 +149,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 	
 $(RESOURCES_DIR)/main.icns: $(MAIN_DIR)/mac/main.icns
 	cp -rf $< $@
