@@ -410,7 +410,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
 			}
 		}
-		this.write("\tble2gatt");
+		this.write("\tbles2gatt");
 		if (tool.bleServicesFiles.length)
 			this.write(tool.windows ? " $**" : " $^");
 		if (client)
