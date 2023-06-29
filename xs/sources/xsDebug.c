@@ -303,17 +303,6 @@ txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSl
 	txSlot* function = mxFunction;
 	txSlot* target = mxTarget;
 	txSlot* environment = mxFrameToEnvironment(frame);
-	txSlot* closures = C_NULL;
-	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
-	if (home->value.home.object) {
-		txSlot* constructor = mxBehaviorGetProperty(the, home->value.home.object, mxID(_constructor), 0, XS_OWN); //@@
-		if (constructor && (constructor->kind == XS_REFERENCE_KIND) && (constructor->value.reference->kind == XS_FUNCTION_KIND)) {
-			txSlot* code = mxFunctionInstanceCode(constructor->value.reference);
-			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND))
-				closures = code->value.code.closures;
-		}
-	
-	}
 	txSlot* instance;
 	
 	the->debugEval = 1;
@@ -340,7 +329,6 @@ txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSl
 	/* ENVIRONMENT */
 	mxPushUndefined();
 	instance = fxNewEnvironmentInstance(the, C_NULL);
-	instance->value.instance.prototype = closures; //@@
 	if (scope) {
 		txSlot* property = fxLastProperty(the, instance);
 		txSlot* local = environment;
