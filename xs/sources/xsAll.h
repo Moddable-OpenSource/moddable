@@ -279,6 +279,7 @@ typedef union {
 	
 	struct { txSlot* getter; txSlot* setter; } accessor;
 	struct { txU4 index; txID id; } at;
+	struct { txSlot* info; txInteger line; } breakpoint;
 	struct { txSlot* slot; txU4 sum; } entry;
 	struct { txSlot* first; txIndex length; } errors;
 	struct { txSlot* object; txSlot* module; } home;
@@ -2036,6 +2037,7 @@ enum {
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
 	XS_DISPOSABLE_STACK_KIND,
+	XS_BREAKPOINT_KIND,
 };
 enum {
 	XS_DEBUGGER_EXIT = 0,

@@ -56,6 +56,7 @@ static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOP
 static void fxClearAllBreakpoints(txMachine* the);
 static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine);
 static void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index);
+static txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result);
 static void fxDebugParse(txMachine* the);
 static void fxDebugParseTag(txMachine* the, txString name);
 static void fxDebugPopTag(txMachine* the);
@@ -66,7 +67,7 @@ static void fxEchoAddress(txMachine* the, txSlot* theSlot);
 static void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList* theList);
 static void fxEchoBigInt(txMachine* the, txBigInt* bigint);
 static void fxEchoCharacter(txMachine* the, char theCharacter);
-static void fxEchoException(txMachine* the);
+static void fxEchoException(txMachine* the, txSlot* exception);
 static void fxEchoFlags(txMachine* the, txString state, txFlag flag);
 static void fxEchoFormat(txMachine* the, txString theFormat, c_va_list theArguments);
 static void fxEchoFrameName(txMachine* the, txSlot* theFrame);
@@ -91,7 +92,9 @@ static void fxListFrames(txMachine* the);
 static void fxListGlobal(txMachine* the);
 static void fxListLocal(txMachine* the);
 static void fxListModules(txMachine* the);
-static void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine);
+static void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID);
+static void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCondition);
+static void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace);
 static void fxSelect(txMachine* the, txSlot* slot);
 static void fxStep(txMachine* the);
 static void fxStepInside(txMachine* the);
@@ -143,6 +146,8 @@ enum {
 enum {
 	XS_ABORT_TAG = 0,
 	XS_BREAKPOINT_TAG,
+	XS_BREAKPOINT_CONDITION_TAG,
+	XS_BREAKPOINT_TRACE_TAG,
 	XS_CLEAR_ALL_BREAKPOINTS_TAG,
 	XS_CLEAR_BREAKPOINTS_TAG,
 	XS_EVAL_TAG,
@@ -208,7 +213,7 @@ void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine)
 		return;
 	breakpointAddress = &(mxBreakpoints.value.list.first);
 	while ((breakpoint = *breakpointAddress)) {
-		if ((breakpoint->ID == path) && (breakpoint->value.integer == theLine)) {
+		if ((breakpoint->ID == path) && (breakpoint->value.breakpoint.line == theLine)) {
 			*breakpointAddress = breakpoint->next;
 			break;
 		}
@@ -239,6 +244,50 @@ void fxDebugCommand(txMachine* the)
 void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index)
 {
 #if mxDebugEval
+	txSlot* result;
+	mxTemporary(result);
+	mxPushString(expression);
+	if (fxDebugEvalAux(the, frame, the->stack, result)) {
+		txInspectorNameList aList = { C_NULL, C_NULL };
+		fxEchoStart(the);
+		fxEcho(the, "<result line=\"");
+		fxEchoInteger(the, index);
+		fxEcho(the, "\">");
+		if (result->kind == XS_REFERENCE_KIND) {
+			txSlot* instance = result->value.reference;
+			txSlot* instanceInspector = fxToInstanceInspector(the, instance);
+			if (!instanceInspector)
+				fxToggle(the, instance);
+		}
+		fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
+		fxEcho(the, "</result>");
+		fxEchoStop(the);
+	}
+	else {
+		fxEchoStart(the);
+		fxEcho(the, "<result line=\"");
+		fxEchoInteger(the, index);
+		fxEcho(the, "\">");
+		fxEchoException(the, result);
+		fxEcho(the, "</result>");
+		fxEchoStop(the);
+	}
+	mxPop();
+	mxPop();
+#else
+	fxEchoStart(the);
+	fxEcho(the, "<result line=\"");
+	fxEchoInteger(the, index);
+	fxEcho(the, "\">not available</result>");
+	fxEchoStop(the);
+#endif
+}
+
+txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result)
+{
+	txBoolean success = 0;
+#if mxDebugEval
+	txFlag flag = frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG);
 	txSlot* scope = scope;
 	if (frame == the->frame)
 		scope = the->scope;
@@ -249,11 +298,22 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 		if (current)
 			scope = current->value.frame.scope;
 	}
-
+	
 	txSlot* _this = mxThis;
 	txSlot* function = mxFunction;
 	txSlot* target = mxTarget;
 	txSlot* environment = mxFrameToEnvironment(frame);
+	txSlot* closures = C_NULL;
+	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
+	if (home->value.home.object) {
+		txSlot* constructor = mxBehaviorGetProperty(the, home->value.home.object, mxID(_constructor), 0, XS_OWN); //@@
+		if (constructor && (constructor->kind == XS_REFERENCE_KIND) && (constructor->value.reference->kind == XS_FUNCTION_KIND)) {
+			txSlot* code = mxFunctionInstanceCode(constructor->value.reference);
+			if ((code->kind == XS_CODE_KIND) || (code->kind == XS_CODE_X_KIND))
+				closures = code->value.code.closures;
+		}
+	
+	}
 	txSlot* instance;
 	
 	the->debugEval = 1;
@@ -270,7 +330,7 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 	/* FRAME */
 	(--the->stack)->next = the->frame;
 	the->stack->ID = XS_NO_ID;
-	the->stack->flag = XS_C_FLAG;
+	the->stack->flag = XS_C_FLAG | flag;
 	the->stack->kind = XS_FRAME_KIND;
 	the->stack->value.frame.code = the->code;
 	the->stack->value.frame.scope = the->scope;
@@ -280,6 +340,7 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 	/* ENVIRONMENT */
 	mxPushUndefined();
 	instance = fxNewEnvironmentInstance(the, C_NULL);
+	instance->value.instance.prototype = closures; //@@
 	if (scope) {
 		txSlot* property = fxLastProperty(the, instance);
 		txSlot* local = environment;
@@ -297,38 +358,17 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 	
 	{
 		mxTry(the) {
-			txInspectorNameList aList = { C_NULL, C_NULL };
-			txSlot* result;
 			mxPushUndefined();
 			mxPushUndefined();
 			fxCall(the);
-			mxPushString(expression);
+			mxPushSlot(expression);
 			mxPushInteger(1);
 			gxDefaults.runEval(the);
-			result = the->stack;
-			fxEchoStart(the);
-			fxEcho(the, "<result line=\"");
-			fxEchoInteger(the, index);
-			fxEcho(the, "\">");
-			if (result->kind == XS_REFERENCE_KIND) {
-				txSlot* instance = result->value.reference;
-				txSlot* instanceInspector = fxToInstanceInspector(the, instance);
-				if (!instanceInspector)
-					fxToggle(the, instance);
-			}
-			fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
-			fxEcho(the, "</result>");
-			fxEchoStop(the);
-			mxPop();	
+			mxPullSlot(result);
+			success = 1;
 		}
 		mxCatch(the) {
-			fxEchoStart(the);
-			fxEcho(the, "<result line=\"");
-			fxEchoInteger(the, index);
-			fxEcho(the, "\">");
-			fxEchoException(the);
-			fxEcho(the, "</result>");
-			fxEchoStop(the);
+			*result = mxException;
 			mxException = mxUndefined;
 		}
 	}
@@ -336,13 +376,8 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 	fxEndHost(the);
 	
 	the->debugEval = 0;
-#else
-	fxEchoStart(the);
-	fxEcho(the, "<result line=\"");
-	fxEchoInteger(the, index);
-	fxEcho(the, "\">not available</result>");
-	fxEchoStop(the);
 #endif
+	return success;
 }
 
 #if MODDEF_XS_XSBUG_HOOKS
@@ -375,15 +410,37 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 	txSlot* breakpoint = C_NULL;
 	breakpoint = mxBreakpoints.value.list.first;
 	while (breakpoint) {
-		if ((breakpoint->ID == id) && (breakpoint->value.integer == line))
+		if ((breakpoint->ID == id) && (breakpoint->value.breakpoint.line == line))
 			break;
 		breakpoint = breakpoint->next;
 	}
 	if (breakpoint) {
-		if (line == 0x7FFFFFFF)
-			fxDebugLoop(the, fxGetKeyName(the, id), line, "breakpoint");
-		else
-			fxDebugLoop(the, C_NULL, 0, "breakpoint");
+		txSlot* instance = breakpoint->value.breakpoint.info;
+		if (instance) {
+			txSlot* property = instance->next;
+			if (!mxIsUndefined(property)) {
+				txSlot* result;
+				txBoolean skip = 1;
+				mxTemporary(result);
+				if (fxDebugEvalAux(the, the->frame, property, result))
+					skip = ((result->kind == XS_BOOLEAN_KIND) && result->value.boolean) ? 0 : 1;
+				mxPop();
+				if (skip)
+					return;
+			}
+			property = property->next;
+			if (!mxIsUndefined(property)) {
+				txSlot* result;
+				mxTemporary(result);
+				if (fxDebugEvalAux(the, the->frame, property, result)) {
+					fxToString(the, result);
+					fxReport(the, "%s\n", result->value.string);
+				}
+				mxPop();
+				return;
+			}
+		}
+		fxDebugLoop(the, C_NULL, 0, "breakpoint");
 	}
 	else if ((the->frame->flag & XS_STEP_OVER_FLAG))
 		fxDebugLoop(the, C_NULL, 0, "step");
@@ -428,7 +485,7 @@ void fxDebugLoop(txMachine* the, txString path, txInteger line, txString message
 		fxEchoPathLine(the, path, line);
 	fxEcho(the, "># Break: ");
 	if (!c_strcmp(message, "throw"))
-		fxEchoException(the);
+		fxEchoException(the, &mxException);
 	else
 		fxEchoString(the, message);
 	fxEcho(the, "!\n</break>");
@@ -742,8 +799,14 @@ void fxDebugParseTag(txMachine* the, txString name)
 {
 	if (!c_strcmp(name, "abort"))
 		the->debugTag = XS_ABORT_TAG;
-	else if (!c_strcmp(name, "breakpoint"))
+	else if (!c_strcmp(name, "breakpoint")) {
 		the->debugTag = XS_BREAKPOINT_TAG;
+		the->idValue = 0;
+	}
+	else if (!c_strcmp(name, "breakpoint-condition"))
+		the->debugTag = XS_BREAKPOINT_CONDITION_TAG;
+	else if (!c_strcmp(name, "breakpoint-trace"))
+		the->debugTag = XS_BREAKPOINT_TRACE_TAG;
 	else if (!c_strcmp(name, "clear-all-breakpoints"))
 		the->debugTag = XS_CLEAR_ALL_BREAKPOINTS_TAG;
 	else if (!c_strcmp(name, "clear-breakpoint"))
@@ -758,8 +821,10 @@ void fxDebugParseTag(txMachine* the, txString name)
 		the->debugTag = XS_SELECT_TAG;
 	else if (!c_strcmp(name, "set-all-breakpoints"))
 		the->debugTag = XS_SET_ALL_BREAKPOINTS_TAG;
-	else if (!c_strcmp(name, "set-breakpoint"))
+	else if (!c_strcmp(name, "set-breakpoint")) {
 		the->debugTag = XS_SET_BREAKPOINT_TAG;
+		the->idValue = 0;
+	}
 	else if (!c_strcmp(name, "start-profiling"))
 		the->debugTag = XS_START_PROFILING_TAG;
 	else if (!c_strcmp(name, "step"))
@@ -791,9 +856,11 @@ void fxDebugPopTag(txMachine* the)
 		the->debugExit |= 2;
 		break;
 	case XS_BREAKPOINT_TAG:
+		mxPop();
 		break;
-	case XS_CLEAR_ALL_BREAKPOINTS_TAG:
-		the->debugExit |= 1;
+	case XS_BREAKPOINT_CONDITION_TAG:
+		break;
+	case XS_BREAKPOINT_TRACE_TAG:
 		break;
 	case XS_CLEAR_BREAKPOINTS_TAG:
 		the->debugExit |= 1;
@@ -812,6 +879,7 @@ void fxDebugPopTag(txMachine* the)
 		the->debugExit |= 1;
 		break;
 	case XS_SET_BREAKPOINT_TAG:
+		mxPop();
 		the->debugExit |= 1;
 		break;
 	case XS_START_PROFILING_TAG:
@@ -852,7 +920,13 @@ void fxDebugPushTag(txMachine* the)
 		fxAbort(the, XS_DEBUGGER_EXIT);
 		break;
 	case XS_BREAKPOINT_TAG:
-		fxSetBreakpoint(the, the->pathValue, the->lineValue);
+		fxSetBreakpoint(the, the->pathValue, the->lineValue, the->idValue);
+		break;
+	case XS_BREAKPOINT_CONDITION_TAG:
+		fxSetBreakpointCondition(the, the->stack, the->pathValue);
+		break;
+	case XS_BREAKPOINT_TRACE_TAG:
+		fxSetBreakpointTrace(the, the->stack, the->pathValue);
 		break;
 	case XS_CLEAR_ALL_BREAKPOINTS_TAG:
 		fxClearAllBreakpoints(the);
@@ -881,7 +955,7 @@ void fxDebugPushTag(txMachine* the)
 	case XS_SET_ALL_BREAKPOINTS_TAG:
 		break;
 	case XS_SET_BREAKPOINT_TAG:
-		fxSetBreakpoint(the, the->pathValue, the->lineValue);
+		fxSetBreakpoint(the, the->pathValue, the->lineValue, the->idValue);
 		break;
 	case XS_START_PROFILING_TAG:
 		fxStartProfiling(the);
@@ -1093,9 +1167,8 @@ void fxEchoCharacter(txMachine* the, char theCharacter)
 	fxEchoString(the, c);
 }
 
-void fxEchoException(txMachine* the)
+void fxEchoException(txMachine* the, txSlot* exception)
 {
-	txSlot* exception = &mxException;
 	switch (exception->kind) {
 	case XS_REFERENCE_KIND: {
 		txSlot* instance = exception->value.reference;
@@ -2218,38 +2291,68 @@ void fxSelect(txMachine* the, txSlot* slot)
 	}
 }
 
-void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine)
+void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID)
 {
 	txID path;
 	txSlot* breakpoint;
 
 	if (!thePath)
 		return;
-	if (!c_strcmp(thePath, "exceptions") && (theLine == 0)) {
-		the->breakOnExceptionsFlag = 1;
-		return;
-	}	
-	if (!c_strcmp(thePath, "start") && (theLine == 0)) {
-		the->breakOnStartFlag = 1;
-		return;
-	}	
-	if ((theLine <= 0) || (0x7FFFFFFF < theLine))
-		return;
+	if ((theID == 0) && (theLine == 0)) { 
+		if (!c_strcmp(thePath, "exceptions")) {
+			the->breakOnExceptionsFlag = 1;
+			mxPushUndefined();
+			return;
+		}	
+		if (!c_strcmp(thePath, "start")) {
+			the->breakOnStartFlag = 1;
+			mxPushUndefined();
+			return;
+		}	
+	}
 	path = fxNewNameC(the, thePath);
 	if (!path)
 		return;
 	breakpoint = mxBreakpoints.value.list.first;
 	while (breakpoint)	{
-		if ((breakpoint->ID == path) && (breakpoint->value.integer == theLine))
-			return;
+		if ((breakpoint->ID == path) && (breakpoint->value.breakpoint.line == theLine)) {
+			break;
+		}
 		breakpoint = breakpoint->next;
 	}
-	breakpoint = fxNewSlot(the);
-	breakpoint->next = mxBreakpoints.value.list.first;
-	breakpoint->ID = path;
-	breakpoint->kind = XS_INTEGER_KIND;
-	breakpoint->value.integer = theLine;
-	mxBreakpoints.value.list.first = breakpoint;
+	if (!breakpoint) {
+		breakpoint = fxNewSlot(the);
+		breakpoint->next = mxBreakpoints.value.list.first;
+		breakpoint->ID = path;
+		breakpoint->kind = XS_BREAKPOINT_KIND;
+		breakpoint->value.breakpoint.line = theLine;
+		mxBreakpoints.value.list.first = breakpoint;
+	}
+	if (theID == 0) {
+		mxPushUndefined();
+		breakpoint->value.breakpoint.info = C_NULL;
+	}
+	else {
+		txSlot* instance = fxNewInstance(the);
+		txSlot* property = fxLastProperty(the, instance);
+		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+		breakpoint->value.breakpoint.info = instance;
+	}
+}
+
+void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCondition)
+{
+	txSlot* instance = fxToInstance(the, reference);
+	txSlot* property = instance->next;
+	fxString(the, property, theCondition);
+}
+
+void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace)
+{
+	txSlot* instance = fxToInstance(the, reference);
+	txSlot* property = instance->next->next;
+	fxString(the, property, theTrace);
 }
 
 void fxStep(txMachine* the)

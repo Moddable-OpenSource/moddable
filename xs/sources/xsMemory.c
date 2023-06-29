@@ -1081,6 +1081,11 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 		
+	case XS_BREAKPOINT_KIND:
+		aSlot = theSlot->value.breakpoint.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.error.info;
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
@@ -1354,6 +1359,11 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			mxMarkChunk(theSlot->value.key.string);
 		break;
 		
+	case XS_BREAKPOINT_KIND:
+		aSlot = theSlot->value.breakpoint.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.error.info;
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))

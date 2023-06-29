@@ -921,7 +921,7 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_BEGIN_SLOPPY)
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
+            if ((mxFrameTarget->kind != XS_UNDEFINED_KIND) && (mxFrameFunction->value.reference->flag & XS_CAN_CONSTRUCT_FLAG)) {
 				mxSaveState;
 				fxRunConstructor(the);
 				mxRestoreState;
@@ -947,7 +947,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_BEGIN_STRICT)
 			mxFrame->flag |= XS_STRICT_FLAG;
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
+            if ((mxFrameTarget->kind != XS_UNDEFINED_KIND) && (mxFrameFunction->value.reference->flag & XS_CAN_CONSTRUCT_FLAG)) {
 				mxSaveState;
 				fxRunConstructor(the);
 				mxRestoreState;
@@ -4053,7 +4053,7 @@ XS_CODE_JUMP:
 				count = mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID;
 				if ((count != XS_NO_ID) && mxBreakpoints.value.list.first) {
 					mxSaveState;
-					fxDebugLine(the, count, 0x7FFFFFFF);
+					fxDebugLine(the, count, 0);
 					mxRestoreState;
 				}
 			}
