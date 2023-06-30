@@ -412,6 +412,15 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				mxTemporary(result);
 				if (fxDebugEvalAux(the, the->frame, property, result))
 					skip = ((result->kind == XS_BOOLEAN_KIND) && result->value.boolean) ? 0 : 1;
+				else {
+					fxEchoStart(the);
+					fxEcho(the, "<log");
+					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEcho(the, "># ");
+					fxEchoException(the, result);
+					fxEcho(the, "\n</log>");
+					fxEchoStop(the);
+				}
 				mxPop();
 				if (skip)
 					return;
