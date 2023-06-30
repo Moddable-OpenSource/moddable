@@ -1882,6 +1882,8 @@ txMachine* fxBeginHost(txMachine* the)
 		the->breakOnStartFlag = 0;
 		the->stack->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
 	}
+	if (the->frame && (the->frame->flag & XS_STEP_INTO_FLAG))
+		the->stack->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
 #endif
 	the->stack->kind = XS_FRAME_KIND;
 	the->stack->value.frame.code = the->code;

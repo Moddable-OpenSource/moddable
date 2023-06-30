@@ -3377,13 +3377,15 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_STRICT, fxCoderCountParameters(coder, self->params));
 	else
 		fxCoderAddIndex(param, 0, XS_CODE_BEGIN_SLOPPY, fxCoderCountParameters(coder, self->params));
-	coder->path = C_NULL;
-	if (self->line >= 0)
-		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->scopeCount)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
 	fxScopeCodeRetrieve(self->scope, param);
 	fxScopeCodingParams(self->scope, param);
+	if ((self->flags & mxAsyncFlag) && !(self->flags & mxGeneratorFlag))
+		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
+	coder->path = C_NULL;
+	if (self->line >= 0)
+		fxCoderAddLine(coder, 0, XS_CODE_LINE, it); 
 	if (self->flags & mxBaseFlag) {
 		if (coder->classNode->instanceInitAccess) {
 			fxCoderAddByte(param, 1, XS_CODE_THIS);
@@ -3393,8 +3395,6 @@ void fxFunctionNodeCode(void* it, void* param)
 			fxCoderAddByte(param, -1, XS_CODE_POP);
 		}
 	}
-	if ((self->flags & mxAsyncFlag) && !(self->flags & mxGeneratorFlag))
-		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 	fxNodeDispatchCode(self->params, param);
 	fxScopeCodeDefineNodes(self->scope, param);
 	coder->returnTarget = fxCoderCreateTarget(param);
