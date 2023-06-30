@@ -267,7 +267,7 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 		fxEchoStart(the);
 		fxEcho(the, "<result line=\"");
 		fxEchoInteger(the, index);
-		fxEcho(the, "\">");
+		fxEcho(the, "\"># ");
 		fxEchoException(the, result);
 		fxEcho(the, "</result>");
 		fxEchoStop(the);
@@ -422,7 +422,22 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				mxTemporary(result);
 				if (fxDebugEvalAux(the, the->frame, property, result)) {
 					fxToString(the, result);
-					fxReport(the, "%s\n", result->value.string);
+					fxEchoStart(the);
+					fxEcho(the, "<log");
+					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEcho(the, ">");
+					fxEchoString(the, result->value.string);
+					fxEcho(the, "\n</log>");
+					fxEchoStop(the);
+				}
+				else {
+					fxEchoStart(the);
+					fxEcho(the, "<log");
+					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEcho(the, "># ");
+					fxEchoException(the, result);
+					fxEcho(the, "\n</log>");
+					fxEchoStop(the);
 				}
 				mxPop();
 				return;
