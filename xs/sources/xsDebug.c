@@ -94,6 +94,7 @@ static void fxListLocal(txMachine* the);
 static void fxListModules(txMachine* the);
 static void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID);
 static void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCondition);
+static void fxSetBreakpointHitCount(txMachine* the, txSlot* reference, txString it);
 static void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace);
 static void fxSelect(txMachine* the, txSlot* slot);
 static void fxStep(txMachine* the);
@@ -147,6 +148,7 @@ enum {
 	XS_ABORT_TAG = 0,
 	XS_BREAKPOINT_TAG,
 	XS_BREAKPOINT_CONDITION_TAG,
+	XS_BREAKPOINT_HIT_COUNT_TAG,
 	XS_BREAKPOINT_TRACE_TAG,
 	XS_CLEAR_ALL_BREAKPOINTS_TAG,
 	XS_CLEAR_BREAKPOINTS_TAG,
@@ -422,6 +424,23 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 					fxEchoStop(the);
 				}
 				mxPop();
+				if (skip)
+					return;
+			}
+			property = property->next;
+			if (!mxIsUndefined(property)) {
+				txInteger offset = property->value.dataView.offset + 1;
+				txInteger size = property->value.dataView.size;
+				txBoolean skip = 1;
+				switch (property->ID) {
+				case XS_CODE_EQUAL: if (offset == size) skip = 0; break;
+				case XS_CODE_LESS: if (offset < size) skip = 0; break;
+				case XS_CODE_LESS_EQUAL: if (offset <= size) skip = 0; break;
+				case XS_CODE_MODULO: if ((offset % size) == 0) skip = 0; break;
+				case XS_CODE_MORE: if (offset > size) skip = 0; break;
+				case XS_CODE_MORE_EQUAL: if (offset >= size) skip = 0; break;
+				}
+				property->value.dataView.offset = offset;
 				if (skip)
 					return;
 			}
@@ -817,6 +836,8 @@ void fxDebugParseTag(txMachine* the, txString name)
 	}
 	else if (!c_strcmp(name, "breakpoint-condition"))
 		the->debugTag = XS_BREAKPOINT_CONDITION_TAG;
+	else if (!c_strcmp(name, "breakpoint-hit-count"))
+		the->debugTag = XS_BREAKPOINT_HIT_COUNT_TAG;
 	else if (!c_strcmp(name, "breakpoint-trace"))
 		the->debugTag = XS_BREAKPOINT_TRACE_TAG;
 	else if (!c_strcmp(name, "clear-all-breakpoints"))
@@ -871,6 +892,8 @@ void fxDebugPopTag(txMachine* the)
 		mxPop();
 		break;
 	case XS_BREAKPOINT_CONDITION_TAG:
+		break;
+	case XS_BREAKPOINT_HIT_COUNT_TAG:
 		break;
 	case XS_BREAKPOINT_TRACE_TAG:
 		break;
@@ -936,6 +959,9 @@ void fxDebugPushTag(txMachine* the)
 		break;
 	case XS_BREAKPOINT_CONDITION_TAG:
 		fxSetBreakpointCondition(the, the->stack, the->pathValue);
+		break;
+	case XS_BREAKPOINT_HIT_COUNT_TAG:
+		fxSetBreakpointHitCount(the, the->stack, the->pathValue);
 		break;
 	case XS_BREAKPOINT_TRACE_TAG:
 		fxSetBreakpointTrace(the, the->stack, the->pathValue);
@@ -2349,6 +2375,7 @@ void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t
 		txSlot* property = fxLastProperty(the, instance);
 		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+		property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
 		breakpoint->value.breakpoint.info = instance;
 	}
 }
@@ -2360,10 +2387,56 @@ void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCon
 	fxString(the, property, theCondition);
 }
 
-void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace)
+void fxSetBreakpointHitCount(txMachine* the, txSlot* reference, txString it)
 {
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* property = instance->next->next;
+	char c = *it;
+	txID op = XS_CODE_MORE_EQUAL;
+	txInteger count = 0;
+	if (c == '%') {
+		it++;
+		op = XS_CODE_MODULO;
+	}
+	else if (c == '<') {
+		it++;
+		if (*it == '=') {
+			it++;
+			op = XS_CODE_LESS_EQUAL;
+		}
+		else
+			op = XS_CODE_LESS;
+	}
+	else if (*it == '=') {
+		op = XS_CODE_EQUAL;
+		it++;
+	}
+	else if (*it == '>') {
+		it++;
+		if (*it == '=') {
+			it++;
+			op = XS_CODE_MORE_EQUAL;
+		}
+		else
+			op = XS_CODE_MORE;
+	}
+	it = fxSkipSpaces(it);
+	while ((c = *it++)) {
+		if (('0' <= c) && (c <= '9'))
+			count = (count * 10) + (c - '0');
+		else
+			break;
+	}
+	property->ID = op;
+	property->kind = XS_DATA_VIEW_KIND;
+	property->value.dataView.offset = 0;
+	property->value.dataView.size = count;
+}
+
+void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace)
+{
+	txSlot* instance = fxToInstance(the, reference);
+	txSlot* property = instance->next->next->next;
 	fxString(the, property, theTrace);
 }
 
