@@ -55,8 +55,10 @@ static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOP
 #ifdef mxDebug
 static void fxClearAllBreakpoints(txMachine* the);
 static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine);
-static void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index);
-static txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result);
+static void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index);
+static txU1* fxDebugEvalAtom(txMachine* the, txU1* p, Atom* atom, txString t);
+static void fxDebugEvalBuffer(txMachine* the, txString buffer, txSlot* expression);
+static txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result);
 static void fxDebugParse(txMachine* the);
 static void fxDebugParseTag(txMachine* the, txString name);
 static void fxDebugPopTag(txMachine* the);
@@ -93,9 +95,9 @@ static void fxListGlobal(txMachine* the);
 static void fxListLocal(txMachine* the);
 static void fxListModules(txMachine* the);
 static void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID);
-static void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCondition);
+static void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString it);
 static void fxSetBreakpointHitCount(txMachine* the, txSlot* reference, txString it);
-static void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace);
+static void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString it);
 static void fxSelect(txMachine* the, txSlot* slot);
 static void fxStep(txMachine* the);
 static void fxStepInside(txMachine* the);
@@ -243,13 +245,15 @@ void fxDebugCommand(txMachine* the)
 #endif
 }
 
-void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger index)
+void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index)
 {
-#if mxDebugEval
+// #if mxDebugEval
 	txSlot* result;
+	txSlot* expression;
 	mxTemporary(result);
-	mxPushString(expression);
-	if (fxDebugEvalAux(the, frame, the->stack, result)) {
+	mxTemporary(expression);
+	fxDebugEvalBuffer(the, buffer, expression);
+	if (fxDebugEvalExpression(the, frame, expression, result)) {
 		txInspectorNameList aList = { C_NULL, C_NULL };
 		fxEchoStart(the);
 		fxEcho(the, "<result line=\"");
@@ -263,6 +267,9 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 		}
 		fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
 		fxEcho(the, "</result>");
+		fxListLocal(the);
+		fxListGlobal(the);
+		fxListModules(the);
 		fxEchoStop(the);
 	}
 	else {
@@ -272,101 +279,198 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString expression, txInteger i
 		fxEcho(the, "\"># ");
 		fxEchoException(the, result);
 		fxEcho(the, "</result>");
+		fxListLocal(the);
+		fxListGlobal(the);
+		fxListModules(the);
 		fxEchoStop(the);
 	}
 	mxPop();
 	mxPop();
-#else
-	fxEchoStart(the);
-	fxEcho(the, "<result line=\"");
-	fxEchoInteger(the, index);
-	fxEcho(the, "\">not available</result>");
-	fxEchoStop(the);
-#endif
+// #else
+// 	fxEchoStart(the);
+// 	fxEcho(the, "<result line=\"");
+// 	fxEchoInteger(the, index);
+// 	fxEcho(the, "\">not available</result>");
+// 	fxEchoStop(the);
+// #endif
 }
 
-txBoolean fxDebugEvalAux(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result)
+txU1* fxDebugEvalAtom(txMachine* the, txU1* p, Atom* atom, txString t)
+{
+	atom->atomSize = (p[0] << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
+	if ((t[0] != p[4]) || (t[1] != p[5]) || (t[2] != p[6]) || (t[3] != p[7]))
+		mxUnknownError("invalid buffer");
+	return p + 8;
+}
+
+void fxDebugEvalBuffer(txMachine* the, txString buffer, txSlot* expression)
+{
+	mxTry(the) {
+		txU1* src = (txU1*)buffer;
+		txU1* dst = src;
+		Atom atom;
+		txScript script;
+		txSlot* instance;
+		txSlot* code;
+		txSlot* home;
+		for (;;) {
+			txU4 byte = 0;
+			txU1 c = *src++;
+			if (c == 0)
+				break;
+			if (!fxParseHex(c, &byte))
+				mxUnknownError("invalid buffer");
+			c = *src++;
+			if (!fxParseHex(c, &byte))
+				mxUnknownError("invalid buffer");
+			*dst++ = (txU1)byte;
+		}
+		src = fxDebugEvalAtom(the, (txU1*)buffer, &atom, "XS_B");
+		if (atom.atomSize != (txSize)(dst - (txU1*)buffer)) mxUnknownError("invalid buffer");
+		src = fxDebugEvalAtom(the, src, &atom, "VERS");
+		if (atom.atomSize != 12) mxUnknownError("invalid buffer");
+		if (src[0] != XS_MAJOR_VERSION) mxUnknownError("invalid buffer");
+		if (src[1] != XS_MINOR_VERSION) mxUnknownError("invalid buffer");
+		src = fxDebugEvalAtom(the, src + 4, &atom, "SYMB");
+		script.symbolsSize = atom.atomSize - sizeof(atom);
+		script.symbolsBuffer = (txByte*)src;
+		src = fxDebugEvalAtom(the, src + script.symbolsSize, &atom, "CODE");
+		script.codeSize = atom.atomSize - sizeof(atom);
+		script.codeBuffer = (txByte*)src;
+		fxRemapScript(the, &script);
+		mxPop();
+		mxPush(mxFunctionPrototype);
+		instance = fxNewFunctionInstance(the, XS_NO_ID);
+		code = instance->next;
+		code->value.code.address = fxNewChunk(the, script.codeSize);
+		c_memcpy(code->value.code.address, script.codeBuffer, script.codeSize);
+		code->kind = XS_CODE_KIND;
+		home = mxFunctionInstanceHome(instance);
+		home->ID = fxGenerateProfileID(the);
+		mxPullSlot(expression);
+	}
+	mxCatch(the) {
+		mxPush(mxException);
+		mxException = mxUndefined;
+		mxPullSlot(expression);
+	}
+}
+
+txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expression, txSlot* result)
 {
 	txBoolean success = 0;
-#if mxDebugEval
-	txFlag flag = frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG);
-	txSlot* scope = scope;
-	if (frame == the->frame)
-		scope = the->scope;
-	else {
-		txSlot* current = the->frame;
-		while (current->next != frame)
-			current = current->next;
-		if (current)
-			scope = current->value.frame.scope;
-	}
+	if (mxIsFunction(expression->value.reference)) {
+	// #if mxDebugEval
+		txFlag flag = frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG);
+		txSlot* scope = scope;
+		if (frame == the->frame)
+			scope = the->scope;
+		else {
+			txSlot* current = the->frame;
+			while (current->next != frame)
+				current = current->next;
+			if (current)
+				scope = current->value.frame.scope;
+		}
 	
-	txSlot* _this = mxThis;
-	txSlot* function = mxFunction;
-	txSlot* target = mxTarget;
-	txSlot* environment = mxFrameToEnvironment(frame);
-	txSlot* instance;
+		txSlot* _this = mxThis;
+		txSlot* function = mxFunction;
+		txSlot* target = mxTarget;
+		txSlot* environment = mxFrameToEnvironment(frame);
+		txSlot* instance;
 	
-	the->debugEval = 1;
+		the->debugEval = 1;
 	
-	mxOverflow(-7);
-	/* THIS */
-	mxPushSlot(_this);
-	/* FUNCTION */
-	mxPushSlot(function);
-	/* TARGET */
-	mxPushSlot(target);
-	/* RESULT */
-	mxPushUndefined();
-	/* FRAME */
-	(--the->stack)->next = the->frame;
-	the->stack->ID = XS_NO_ID;
-	the->stack->flag = XS_C_FLAG | flag;
-	the->stack->kind = XS_FRAME_KIND;
-	the->stack->value.frame.code = the->code;
-	the->stack->value.frame.scope = the->scope;
-	the->frame = the->stack;
-	/* COUNT */
-	mxPushInteger(0);
-	/* ENVIRONMENT */
-	mxPushUndefined();
-	instance = fxNewEnvironmentInstance(the, C_NULL);
-	if (scope) {
-		txSlot* property = fxLastProperty(the, instance);
-		txSlot* local = environment;
-		txID id;
-		while (local > scope) {
-			local--;
-			id = local->ID;
-			if ((0 < id) && (id < the->keyCount)) {
-				property = fxNextSlotProperty(the, property, local, id, XS_GET_ONLY);
+		mxOverflow(-7);
+		/* THIS */
+		mxPushSlot(_this);
+		/* FUNCTION */
+		mxPushSlot(function);
+		/* TARGET */
+		mxPushSlot(target);
+		/* RESULT */
+		mxPushUndefined();
+		/* FRAME */
+		(--the->stack)->next = the->frame;
+		the->stack->ID = XS_NO_ID;
+		the->stack->flag = XS_C_FLAG | flag;
+		the->stack->kind = XS_FRAME_KIND;
+		the->stack->value.frame.code = the->code;
+		the->stack->value.frame.scope = the->scope;
+		the->frame = the->stack;
+		/* COUNT */
+		mxPushInteger(0);
+		/* ENVIRONMENT */
+		mxPushUndefined();
+		instance = fxNewEnvironmentInstance(the, C_NULL);
+		if (scope) {
+			txSlot* property = fxLastProperty(the, instance);
+			txSlot* local = environment;
+			txID id;
+			while (local > scope) {
+				local--;
+				id = local->ID;
+				if ((0 < id) && (id < the->keyCount)) {
+					property = fxNextSlotProperty(the, property, local, id, XS_GET_ONLY);
+				}
 			}
 		}
-	}
-	the->scope = the->stack;
-	the->code = C_NULL;
+		the->scope = the->stack;
+		the->code = C_NULL;
 	
-	{
-		mxTry(the) {
-			mxPushUndefined();
-			mxPushUndefined();
-			fxCall(the);
-			mxPushSlot(expression);
-			mxPushInteger(1);
-			gxDefaults.runEval(the);
-			mxPullSlot(result);
-			success = 1;
+		{
+			txSlot* property;
+			mxTry(the) {
+				txSlot* function = mxFunction->value.reference;
+				txSlot* home = mxFunctionInstanceHome(function);
+				txSlot* closures = mxFrameToEnvironment(the->frame);
+				if (closures->kind == XS_REFERENCE_KIND)
+					closures = closures->value.reference;
+				else
+					closures = C_NULL;
+				/* THIS */
+				mxPushSlot(mxThis);
+				the->stack->ID = XS_NO_ID;
+				/* FUNCTION */
+				mxPushSlot(expression);
+				function = expression->value.reference;
+				function->next->value.code.closures = closures;
+				property = mxFunctionInstanceHome(function);
+				property->value.home.object = home->value.home.object;
+				property->value.home.module = home->value.home.module;
+				/* TARGET */
+				mxPushSlot(mxTarget);
+				/* RESULT */
+				mxPushUndefined();
+				/* FRAME */
+				mxPushUninitialized();
+				/* COUNT */
+				mxPushUninitialized();
+				mxRunCount(0);
+				mxPullSlot(result);
+				success = 1;
+			}
+			mxCatch(the) {
+				mxPush(mxException);
+				mxException = mxUndefined;
+				mxPullSlot(result);
+			}
+			function = expression->value.reference;
+			function->next->value.code.closures = C_NULL;
+			property = mxFunctionInstanceHome(function);
+			property->value.home.object = C_NULL;
+			property->value.home.module = C_NULL;
 		}
-		mxCatch(the) {
-			*result = mxException;
-			mxException = mxUndefined;
-		}
+	
+		fxEndHost(the);
+	
+		the->debugEval = 0;
+	// #endif
 	}
-	
-	fxEndHost(the);
-	
-	the->debugEval = 0;
-#endif
+	else {
+		mxPushSlot(expression);
+		mxPullSlot(result);
+	}
 	return success;
 }
 
@@ -412,8 +516,10 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				txSlot* result;
 				txBoolean skip = 1;
 				mxTemporary(result);
-				if (fxDebugEvalAux(the, the->frame, property, result))
-					skip = ((result->kind == XS_BOOLEAN_KIND) && result->value.boolean) ? 0 : 1;
+				if (fxDebugEvalExpression(the, the->frame, property, result)) {
+					mxPushSlot(result);
+					skip = (fxRunTest(the)) ? 0 : 1;
+				}
 				else {
 					fxEchoStart(the);
 					fxEcho(the, "<log");
@@ -425,7 +531,7 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				}
 				mxPop();
 				if (skip)
-					return;
+					breakpoint = C_NULL;;
 			}
 			property = property->next;
 			if (!mxIsUndefined(property)) {
@@ -442,13 +548,13 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				}
 				property->value.dataView.offset = offset;
 				if (skip)
-					return;
+					breakpoint = C_NULL;;
 			}
 			property = property->next;
 			if (!mxIsUndefined(property)) {
 				txSlot* result;
 				mxTemporary(result);
-				if (fxDebugEvalAux(the, the->frame, property, result)) {
+				if (fxDebugEvalExpression(the, the->frame, property, result)) {
 					fxToString(the, result);
 					fxEchoStart(the);
 					fxEcho(the, "<log");
@@ -468,11 +574,12 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 					fxEchoStop(the);
 				}
 				mxPop();
-				return;
+				breakpoint = C_NULL;;
 			}
 		}
-		fxDebugLoop(the, C_NULL, 0, "breakpoint");
 	}
+	if (breakpoint)
+		fxDebugLoop(the, C_NULL, 0, "breakpoint");
 	else if ((the->frame->flag & XS_STEP_OVER_FLAG))
 		fxDebugLoop(the, C_NULL, 0, "step");
 }
@@ -656,11 +763,17 @@ void fxDebugParse(txMachine* the)
 			break;
 		case XS_ATTRIBUTE_VALUE_STATE:
 			if (the->debugAttribute == XS_PATH_ATTRIBUTE) {
+				if (the->pathIndex == the->pathCount) {
+					the->pathCount += 256;
+					the->pathValue = c_realloc(the->pathValue, the->pathCount);
+					if (!the->pathValue)
+						fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+				}
 				if (c == '"') {
 					the->debugState = XS_START_TAG_SPACE_STATE;
 					the->pathValue[the->pathIndex] = 0;
 				}
-				else if (the->pathIndex < 255) {
+				else {
 					the->pathValue[the->pathIndex] = c;
 					the->pathIndex++;
 				}
@@ -2380,11 +2493,11 @@ void fxSetBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t
 	}
 }
 
-void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString theCondition)
+void fxSetBreakpointCondition(txMachine* the, txSlot* reference, txString it)
 {
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* property = instance->next;
-	fxString(the, property, theCondition);
+	fxDebugEvalBuffer(the, it, property);
 }
 
 void fxSetBreakpointHitCount(txMachine* the, txSlot* reference, txString it)
@@ -2433,11 +2546,11 @@ void fxSetBreakpointHitCount(txMachine* the, txSlot* reference, txString it)
 	property->value.dataView.size = count;
 }
 
-void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString theTrace)
+void fxSetBreakpointTrace(txMachine* the, txSlot* reference, txString it)
 {
 	txSlot* instance = fxToInstance(the, reference);
 	txSlot* property = instance->next->next->next;
-	fxString(the, property, theTrace);
+	fxDebugEvalBuffer(the, it, property);
 }
 
 void fxStep(txMachine* the)

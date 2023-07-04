@@ -466,11 +466,12 @@ struct sxMachine {
 	txFlag debugState;
 	txFlag debugTag;
 	txFlag nameIndex;
-	txFlag pathIndex;
 	txSlot* debugModule;
 	size_t idValue;
 	txInteger lineValue;
-	char pathValue[256];
+	txInteger pathCount;
+	txInteger pathIndex;
+	txString pathValue;
 	txSize debugOffset;
 	char debugBuffer[256];
 	txSize echoOffset;
@@ -781,6 +782,8 @@ extern int fxStringCGetter(void*);
 extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
 
 /* xsRun.c */
+extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
+extern void fxRemapScript(txMachine* the, txScript* script);
 extern void fxRunEval(txMachine* the);
 extern void fxRunForAwaitOf(txMachine* the);
 extern void fxRunID(txMachine* the, txSlot* generator, txInteger count);

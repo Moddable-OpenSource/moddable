@@ -609,7 +609,6 @@ const txUTF8Sequence gxUTF8Sequences[] ICACHE_RODATA_ATTR = {
 
 static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";
 static const char gxHexUpper[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
-static txBoolean fxParseHex(txU1 c, txU4* value);
 
 txBoolean fxIsIdentifierFirst(txU4 c)
 {

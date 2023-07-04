@@ -424,6 +424,7 @@ extern txBoolean fxIsIdentifierNext(txU4 c);
 extern txBoolean fxIsSpace(txInteger character);
 extern txString fxSkipSpaces(txString string);
 
+extern txBoolean fxParseHex(txU1 c, txU4* value);
 extern txBoolean fxParseHexEscape(txString* string, txInteger* character);
 extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger braces, txInteger separator);
 extern txString fxStringifyHexEscape(txString string, txInteger character);

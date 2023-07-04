@@ -224,6 +224,13 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
 	the->parserTableModulo = theCreation->parserTableModulo;
+	
+#ifdef mxDebug
+	the->pathCount = 256;
+	the->pathValue = c_malloc(the->pathCount);
+	if (!the->pathValue)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+#endif
 }
 
 void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)

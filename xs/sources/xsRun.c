@@ -42,7 +42,6 @@
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
 
-extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
 static void fxRunArguments(txMachine* the, txIndex offset);
 static void fxRunBase(txMachine* the);
 static void fxRunConstructor(txMachine* the);
@@ -4131,7 +4130,11 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_EVAL_ENVIRONMENT)
 			mxNextCode(1);
 			mxSaveState;
+		#ifdef mxDebug
+			fxRunEvalEnvironment(the);
+		#else	
 			gxDefaults.runEvalEnvironment(the);
+		#endif
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_EVAL_PRIVATE)
@@ -4739,6 +4742,31 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 	}
 }
 
+void fxRemapScript(txMachine* the, txScript* script)
+{
+	mxPushUndefined();
+	if (script->symbolsBuffer) {
+		txByte* p = script->symbolsBuffer;
+		txID c, i;
+		mxDecodeID(p, c);
+		the->stack->value.callback.address = C_NULL;
+		the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
+		the->stack->kind = XS_IDS_KIND;
+		the->stack->value.IDs[0] = XS_NO_ID;
+		for (i = 1; i < c; i++) {
+			txID id = fxNewNameC(the, (txString)p);
+			the->stack->value.IDs[i] = id;
+			p += mxStringLength((char*)p) + 1;
+		}
+		fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
+		the->stack->value.IDs = C_NULL;
+	}	
+	else {
+		the->stack->value.IDs = C_NULL;
+		the->stack->kind = XS_IDS_KIND;
+	}
+}
+
 txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot)
 {
 	if (theSlot->kind == XS_REFERENCE_KIND)
@@ -4820,27 +4848,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			txSlot* instance;
 			txSlot* property;
 			__JUMP__.code = C_NULL;
-			mxPushUndefined();
-			if (script->symbolsBuffer) {
-				txByte* p = script->symbolsBuffer;
-				txID c, i;
-				mxDecodeID(p, c);
-				the->stack->value.callback.address = C_NULL;
-				the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
-				the->stack->kind = XS_IDS_KIND;
-				the->stack->value.IDs[0] = XS_NO_ID;
-				for (i = 1; i < c; i++) {
-					txID id = fxNewNameC(the, (txString)p);
-					the->stack->value.IDs[i] = id;
-					p += mxStringLength((char*)p) + 1;
-				}
-				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
-				the->stack->value.IDs = C_NULL;
-			}	
-			else {
-				the->stack->value.IDs = C_NULL;
-				the->stack->kind = XS_IDS_KIND;
-			}
+			fxRemapScript(the, script);
 			if (script->callback) {
 				property = the->stack;
 				/* THIS */
