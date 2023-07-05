@@ -361,7 +361,7 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 	txBoolean success = 0;
 	if (mxIsFunction(expression->value.reference)) {
 	// #if mxDebugEval
-		txFlag flag = frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG);
+		
 		txSlot* scope = scope;
 		if (frame == the->frame)
 			scope = the->scope;
@@ -374,10 +374,12 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		}
 	
 		txSlot* _this = mxThis;
-		txSlot* function = mxFunction;
-		txSlot* target = mxTarget;
 		txSlot* environment = mxFrameToEnvironment(frame);
-		txSlot* instance;
+		txSlot* function = mxFunction;
+		txSlot* home = mxFunctionInstanceHome(function->value.reference);
+		txSlot* target = mxTarget;
+		txSlot* closures;
+		txSlot* property;
 	
 		the->debugEval = 1;
 	
@@ -393,7 +395,7 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		/* FRAME */
 		(--the->stack)->next = the->frame;
 		the->stack->ID = XS_NO_ID;
-		the->stack->flag = XS_C_FLAG | flag;
+		the->stack->flag = XS_C_FLAG | (frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG));
 		the->stack->kind = XS_FRAME_KIND;
 		the->stack->value.frame.code = the->code;
 		the->stack->value.frame.scope = the->scope;
@@ -402,42 +404,35 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		mxPushInteger(0);
 		/* ENVIRONMENT */
 		mxPushUndefined();
-		instance = fxNewEnvironmentInstance(the, C_NULL);
+		closures = fxNewEnvironmentInstance(the, C_NULL);
 		if (scope) {
-			txSlot* property = fxLastProperty(the, instance);
 			txSlot* local = environment;
 			txID id;
+			property = closures->next;
 			while (local > scope) {
 				local--;
 				id = local->ID;
 				if ((0 < id) && (id < the->keyCount)) {
-					property = fxNextSlotProperty(the, property, local, id, XS_GET_ONLY);
+					property = fxNextSlotProperty(the, property, local, id, local->flag);
 				}
 			}
 		}
 		the->scope = the->stack;
 		the->code = C_NULL;
+				
+		property = mxFunctionInstanceCode(expression->value.reference);
+		property->value.code.closures = closures;
+		property = mxFunctionInstanceHome(expression->value.reference);
+		property->value.home.object = home->value.home.object;
+		property->value.home.module = home->value.home.module;
 	
 		{
-			txSlot* property;
 			mxTry(the) {
-				txSlot* function = mxFunction->value.reference;
-				txSlot* home = mxFunctionInstanceHome(function);
-				txSlot* closures = mxFrameToEnvironment(the->frame);
-				if (closures->kind == XS_REFERENCE_KIND)
-					closures = closures->value.reference;
-				else
-					closures = C_NULL;
 				/* THIS */
 				mxPushSlot(mxThis);
 				the->stack->ID = XS_NO_ID;
 				/* FUNCTION */
 				mxPushSlot(expression);
-				function = expression->value.reference;
-				function->next->value.code.closures = closures;
-				property = mxFunctionInstanceHome(function);
-				property->value.home.object = home->value.home.object;
-				property->value.home.module = home->value.home.module;
 				/* TARGET */
 				mxPushSlot(mxTarget);
 				/* RESULT */
@@ -455,11 +450,29 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 				mxException = mxUndefined;
 				mxPullSlot(result);
 			}
-			function = expression->value.reference;
-			function->next->value.code.closures = C_NULL;
-			property = mxFunctionInstanceHome(function);
-			property->value.home.object = C_NULL;
-			property->value.home.module = C_NULL;
+		}
+	
+		property = mxFunctionInstanceCode(expression->value.reference);
+		property->value.code.closures = C_NULL;
+		property = mxFunctionInstanceHome(expression->value.reference);
+		property->value.home.object = C_NULL;
+		property->value.home.module = C_NULL;
+		
+		if (scope) {
+			txSlot* local = environment;
+			txID id;
+			property = closures->next->next;
+			while (local > scope) {
+				local--;
+				id = local->ID;
+				if ((0 < id) && (id < the->keyCount)) {
+					if (property->kind != XS_CLOSURE_KIND) {
+						local->kind = property->kind;
+						local->value = property->value;
+					}
+					property = property->next;
+				}
+			}		
 		}
 	
 		fxEndHost(the);
