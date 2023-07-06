@@ -686,11 +686,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		}
 		variable = slot - (mxStack++)->value.integer;
 		variable->next = mxFrame;
-		variable->flag &= XS_STRICT_FLAG;
-#ifdef mxDebug
-		if (mxFrame && (mxFrame->flag & XS_STEP_INTO_FLAG))
-			variable->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
-#endif
 		variable->value.frame.code = the->code;
 		variable->value.frame.scope = mxScope;
 		mxFrame = variable;
@@ -4048,17 +4043,10 @@ XS_CODE_JUMP:
 				fxDebugCommand(the);
 				mxRestoreState;
 			}
-			if (byte) {
-				count = mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID;
-				if ((count != XS_NO_ID) && mxBreakpoints.value.list.first) {
-					mxSaveState;
-					fxDebugLine(the, count, 0);
-					mxRestoreState;
-				}
-			}
+			count = (byte) ? mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID : XS_NO_ID;
 			if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
 				mxSaveState;
-				fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line);
+				fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, count);
 				mxRestoreState;
 			}
 		#endif

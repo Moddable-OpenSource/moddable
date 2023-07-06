@@ -814,7 +814,7 @@ extern void fxShare(txMachine* the);
 #ifdef mxDebug
 mxExport void fxCheck(txMachine* the, txString thePath, txInteger theLine);
 extern void fxDebugCommand(txMachine* the);
-extern void fxDebugLine(txMachine* the, txID id, txInteger line);
+extern void fxDebugLine(txMachine* the, txID path, txInteger line, txID function);
 extern void fxDebugLoop(txMachine* the, txString thePath, txInteger theLine, txString message);
 extern void fxDebugThrow(txMachine* the, txString thePath, txInteger theLine, txString message);
 mxExport void fxLogin(txMachine* the);

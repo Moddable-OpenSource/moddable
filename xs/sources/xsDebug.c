@@ -512,13 +512,19 @@ void fxDebugImport(txMachine* the, txSlot* module, txString path)
 }
 #endif
 
-void fxDebugLine(txMachine* the, txID id, txInteger line)
+void fxDebugLine(txMachine* the, txID path, txInteger line, txID function)
 {
 	txSlot* breakpoint = C_NULL;
 	breakpoint = mxBreakpoints.value.list.first;
 	while (breakpoint) {
-		if ((breakpoint->ID == id) && (breakpoint->value.breakpoint.line == line))
-			break;
+		if (breakpoint->value.breakpoint.line == line) {
+			if (breakpoint->ID == path)
+				break;
+		}
+		else if (breakpoint->value.breakpoint.line == 0) {
+			if (breakpoint->ID == function)
+				break;
+		}
 		breakpoint = breakpoint->next;
 	}
 	if (breakpoint) {
@@ -536,7 +542,7 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				else {
 					fxEchoStart(the);
 					fxEcho(the, "<log");
-					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEchoPathLine(the, fxGetKeyName(the, path), line);
 					fxEcho(the, "># ");
 					fxEchoException(the, result);
 					fxEcho(the, "\n</log>");
@@ -544,7 +550,7 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				}
 				mxPop();
 				if (skip)
-					breakpoint = C_NULL;;
+					breakpoint = C_NULL;
 			}
 			property = property->next;
 			if (!mxIsUndefined(property)) {
@@ -561,7 +567,7 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				}
 				property->value.dataView.offset = offset;
 				if (skip)
-					breakpoint = C_NULL;;
+					breakpoint = C_NULL;
 			}
 			property = property->next;
 			if (!mxIsUndefined(property)) {
@@ -571,7 +577,7 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 					fxToString(the, result);
 					fxEchoStart(the);
 					fxEcho(the, "<log");
-					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEchoPathLine(the, fxGetKeyName(the, path), line);
 					fxEcho(the, ">");
 					fxEchoString(the, result->value.string);
 					fxEcho(the, "\n</log>");
@@ -580,14 +586,14 @@ void fxDebugLine(txMachine* the, txID id, txInteger line)
 				else {
 					fxEchoStart(the);
 					fxEcho(the, "<log");
-					fxEchoPathLine(the, fxGetKeyName(the, id), line);
+					fxEchoPathLine(the, fxGetKeyName(the, path), line);
 					fxEcho(the, "># ");
 					fxEchoException(the, result);
 					fxEcho(the, "\n</log>");
 					fxEchoStop(the);
 				}
 				mxPop();
-				breakpoint = C_NULL;;
+				breakpoint = C_NULL;
 			}
 		}
 	}
