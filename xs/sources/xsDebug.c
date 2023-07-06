@@ -54,7 +54,7 @@ static const char gxHexaDigits[] ICACHE_FLASH_ATTR = "0123456789ABCDEFGHIJKLMNOP
 
 #ifdef mxDebug
 static void fxClearAllBreakpoints(txMachine* the);
-static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine);
+static void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID);
 static void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index);
 static txU1* fxDebugEvalAtom(txMachine* the, txU1* p, Atom* atom, txString t);
 static void fxDebugEvalBuffer(txMachine* the, txString buffer, txSlot* expression);
@@ -194,7 +194,7 @@ void fxClearAllBreakpoints(txMachine* the)
 	mxBreakpoints.value.list.first = C_NULL;
 }
 
-void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine)
+void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine, size_t theID)
 {
 	txID path;
 	txSlot** breakpointAddress;
@@ -202,16 +202,16 @@ void fxClearBreakpoint(txMachine* the, txString thePath, txInteger theLine)
 
 	if (!thePath)
 		return;
-	if (!c_strcmp(thePath, "exceptions")) {
-		the->breakOnExceptionsFlag = 0;
-		return;
-	}	
-	if (!c_strcmp(thePath, "start")) {
-		the->breakOnStartFlag = 0;
-		return;
-	}	
-	if ((theLine <= 0) || (0x00007FFF < theLine))
-		return;
+	if ((theID == 0) && (theLine == 0)) { 
+		if (!c_strcmp(thePath, "exceptions")) {
+			the->breakOnExceptionsFlag = 0;
+			return;
+		}	
+		if (!c_strcmp(thePath, "start")) {
+			the->breakOnStartFlag = 0;
+			return;
+		}	
+	}
 	path = fxFindName(the, thePath);
 	if (!path)
 		return;
@@ -1096,7 +1096,7 @@ void fxDebugPushTag(txMachine* the)
 		fxClearAllBreakpoints(the);
 		break;
 	case XS_CLEAR_BREAKPOINTS_TAG:
-		fxClearBreakpoint(the, the->pathValue, the->lineValue);
+		fxClearBreakpoint(the, the->pathValue, the->lineValue, the->idValue);
 		break;
 	case XS_EVAL_TAG:
 		fxDebugEval(the, (txSlot*)the->idValue, the->pathValue, the->lineValue);
