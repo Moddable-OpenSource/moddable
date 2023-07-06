@@ -1,6 +1,6 @@
 # Worker
 Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: June 9, 2023
+Revised: July 6, 2023
 
 The Moddable runtime integrates with XS to allow a multiple virtual machines to co-exist on a single microcontroller. The majority of projects use only a single virtual machine. However, there are situations where the several independent runtime contexts provided by having several virtual machines is advantageous. This isolation is useful to fully separate a particular set of scripts, for example user installed modules, from the core project functionality for security, privacy, and reliability reasons. Another useful situation is to allow scripts to perform blocking operations in one virtual machine while scripts in another virtual machine remain fully responsive. On microcontrollers with multiple CPU cores, workers may execute in parallel to take full advantage of the available CPU power.
 
@@ -39,14 +39,14 @@ The previous example launches the worker with the default memory configuration. 
 			{allocation: 8192, stackCount: 64, slotCount: 64});
 
 ### Sending a message to a worker
-Messages to workers are JavaScript objects and binary data. The JavaScript objects can be considered equivalent to JSON. The binary data is an `ArrayBuffer`.
+Messages to workers are JavaScript objects and binary data. 
 
 	aWorker.postMessage({hello: "world", count: 12});
 	aWorker.postMessage(new ArrayBuffer(12));
 
-Internally, workers use the XS marshalling feature which supports sending some types of data that fail in browser implementations of workers. If an object cannot be serialized, `postMessage` throws an exception.
+The worker implementation uses [XS Marshalling](../xs/XS%20Marshalling.md) to send messages. It supports sending more types of data than the implementation of workers in web browsers. If an object cannot be sent using XS Marshalling, `postMessage` throws an exception.
 
-Messages are passed by copy, so the size of the message should be as small as practical.  If the memory allocation fails, `postMessage` throws an exception.
+Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`) so the size of the message should be as small as practical. If the memory allocation fails, `postMessage` throws an exception.
 
 ### Receiving a message from a worker
 The worker instance has an `onmessage` function which receives all messages from the worker. It is typically assigned immediately after the worker is constructed:
@@ -115,13 +115,15 @@ The `terminate` function immediately ends execution of the worker instance, free
 Once a worker has been terminated, no further calls should be made to it.
 
 #### postMessage(msg)
-The `postMessage` function queues a message for delivery to the worker. Messages are either a JavaScript object, roughly equivalent to JSON objects, or an `ArrayBuffer`.
+The `postMessage` function queues a message for delivery to the worker. Messages can be anything supported in JSON, binary buffers (`TypedArray`, `ArrayBuffer`, `SharedArrayBuffer`, `DataView`) and anything else supported by [XS Marshalling](../xs/XS%20Marshalling.md).
 
 	aWorker.postMessage("hello");
 	aWorker.postMessage({msg: "hello", when: Date.now()});
 	aWorker.postMessage(new ArrayBuffer(8));
 
-Messages are passed by copy, so they should be in small in size as practical. Messages are  delivered in the same order they were sent.
+Messages are delivered in the same order they are sent.
+
+Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`, so the size of the message should be as small as practical.  If the memory allocation fails, `postMessage` throws an exception. 
 
 #### onmessage property
 The worker `onmessage` property contains a function which receives messages from the worker.
