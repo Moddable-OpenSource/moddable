@@ -374,14 +374,8 @@ void fx_Math_imuldiv(txMachine* the)
 	}
 	else {
 		txS8 r = (x * y) / z;
-		if ((-2147483648LL <= r) && (r <= 2147483647LL)) {
-			mxResult->kind = XS_INTEGER_KIND;
-			mxResult->value.integer = (txInteger)r;
-		}
-		else {
-			mxResult->kind = XS_NUMBER_KIND;
-			mxResult->value.number = (txNumber)r;
-		}
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = (txInteger)(r & 0x00000000FFFFFFFF);
 	}
 }
 
