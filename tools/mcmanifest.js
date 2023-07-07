@@ -1866,8 +1866,12 @@ export class Tool extends TOOL {
 				flows.forEach((node, i) => {
 					if (node.moddable_manifest)
 						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
-					else if (nodeTypes[node.type])
-						this.parseManifest(source, {include: nodeTypes[node.type], directory: this.resolveVariable("$(NODEREDMCU)")});
+					else if (nodeTypes[node.type]) {
+						const save = this.currentDirectory;
+						this.currentDirectory = this.resolveVariable("$(NODEREDMCU)");
+						this.parseManifest(source, {include: nodeTypes[node.type], directory: this.currentDirectory});
+						this.currentDirectory = save;
+					}
 				});
 			}
 		});
