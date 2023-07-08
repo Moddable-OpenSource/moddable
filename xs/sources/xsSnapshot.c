@@ -71,9 +71,9 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxChunkFlag 0x80000000
 
 #if mxExplicitResourceManagement
-#define mxCallbacksLength 512
+#define mxCallbacksLength 513
 #else
-#define mxCallbacksLength 505
+#define mxCallbacksLength 506
 #endif
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -313,10 +313,11 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Math_fround,
 	fx_Math_hypot,
 	fx_Math_idiv,
-	fx_Math_idivmod,
 	fx_Math_imod,
 	fx_Math_imul,
 	fx_Math_imuldiv,
+	fx_Math_irandom,
+	fx_Math_irandom_secure,
 	fx_Math_irem,
 	fx_Math_log,
 	fx_Math_log1p,

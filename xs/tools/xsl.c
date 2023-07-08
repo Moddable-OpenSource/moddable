@@ -426,6 +426,8 @@ int main(int argc, char* argv[])
 					fxDuplicateInstance(the, mxMathObject.value.reference);
 					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
 					mxPull(mxMathObject);
 					
 					property = fxLastProperty(the, fxNewInstance(the));
