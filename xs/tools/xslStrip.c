@@ -106,6 +106,9 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			
 		if (fxIsCodeUsed(XS_CODE_REGEXP))
 			fxUnstripCallback(linker, fx_RegExp);
+			
+		fxUnstripCallback(linker, fx_RangeError);
+		fxUnstripCallback(linker, fx_SyntaxError);
 	}
 	linkerStrip = linker->firstStrip;
 	while (linkerStrip) {
