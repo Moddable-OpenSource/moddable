@@ -2457,7 +2457,7 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	mxPushInteger(length);
 	mxRunCount(1);
 	mxPullSlot(mxResult);
- 	{
+	if (fxGetDataViewSize(the, view, buffer) == length) {
 		mxResultTypedArrayDeclarations;
 		txSlot* resultData = resultBuffer->value.reference->next;
 		txByte* resultAddress = resultData->value.arrayBuffer.address;
@@ -2470,8 +2470,37 @@ void fx_TypedArray_prototype_with(txMachine* the)
 		offset += dispatch->value.typedArray.dispatch->size;
 		if (offset < size)
 			c_memcpy(resultAddress + offset, address + offset, size - offset);
+		mxMeterSome((txU4)length * 7);
 	}
-	mxMeterSome((txU4)length * 2);
+	else {
+		txInteger i = 0;
+		while (i < index) {
+			mxPushSlot(mxThis);
+			mxPushInteger(i);
+			mxGetAt();
+			mxPushSlot(mxResult);
+			mxPushInteger(i);
+			mxSetAt();
+			mxPop();
+			i++;
+		}
+		mxPushSlot(value);
+		mxPushSlot(mxResult);
+		mxPushInteger(i);
+		mxSetAt();
+		mxPop();
+		i++;
+		while (i < length) {
+			mxPushSlot(mxThis);
+			mxPushInteger(i);
+			mxGetAt();
+			mxPushSlot(mxResult);
+			mxPushInteger(i);
+			mxSetAt();
+			mxPop();
+			i++;
+		}
+	}
 	mxPop();
 }
 
@@ -2735,6 +2764,10 @@ void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
 	float value = (float)slot->value.number;
+#if mxCanonicalNaN
+	if (c_isnan(value))
+		value = *gxCanonicalNaN32;
+#endif
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(Float);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(float));
@@ -2787,6 +2820,10 @@ void fxFloat64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 void fxFloat64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
 	double value = slot->value.number;
+#if mxCanonicalNaN
+	if (c_isnan(value))
+		value = *gxCanonicalNaN64;
+#endif
 #ifdef mxMisalignedSettersCrash
 	value = EXPORT(Double);
 	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(double));

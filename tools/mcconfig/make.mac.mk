@@ -124,18 +124,6 @@ endif
 # LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
 LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc $(MACOS_ARCH)
 
-BUILDCLUT = $(BUILD_DIR)/bin/mac/release/buildclut
-COMPRESSBMF = $(BUILD_DIR)/bin/mac/release/compressbmf
-IMAGE2CS = $(BUILD_DIR)/bin/mac/release/image2cs
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/mac/release/mcrez
-PNG2BMP = $(BUILD_DIR)/bin/mac/debug/png2bmp
-RLE4ENCODE = $(BUILD_DIR)/bin/mac/release/rle4encode
-WAV2MAUD = $(BUILD_DIR)/bin/mac/release/wav2maud
-XSC = $(BUILD_DIR)/bin/mac/release/xsc
-XSID = $(BUILD_DIR)/bin/mac/release/xsid
-XSL = $(BUILD_DIR)/bin/mac/debug/xsl
-
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
@@ -176,7 +164,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
 	@echo "# cc" $(<F)
@@ -184,7 +172,7 @@ $(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
 
 $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

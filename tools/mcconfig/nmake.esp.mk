@@ -231,19 +231,6 @@ ESPTOOL = python $(ESPRESSIF_SDK_ROOT)\components\esptool_py\esptool\esptool.py
 
 AR_OPTIONS = rcs
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
-XSC = $(MODDABLE_TOOLS_DIR)\xsc
-XSID = $(MODDABLE_TOOLS_DIR)\xsid
-XSL = $(MODDABLE_TOOLS_DIR)\xsl
-
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
 	-L$(ARDUINO_ROOT)\tools\sdk\ld \
@@ -494,11 +481,11 @@ $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
+	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
 	
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped

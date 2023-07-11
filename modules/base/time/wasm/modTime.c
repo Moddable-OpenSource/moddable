@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -42,5 +42,9 @@ void xs_time_dst_set(xsMachine *the)
 }
 
 void xs_time_ticks(xsMachine *the)
+{
+}
+
+void xs_time_delta(xsMachine *the)
 {
 }

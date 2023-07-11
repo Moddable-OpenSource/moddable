@@ -2,7 +2,7 @@
 	"modules": {
 		"pins/pwm": "$(MODULES)/pins/pwm/pwm"
 	},
-	"preload": "pins/pwn",
+	"preload": "pins/pwm",
 	"platforms": {
 		"esp": {
 			"modules": {
@@ -17,6 +17,11 @@
 		"nrf52": {
 			"modules": {
 				"*": "$(MODULES)/pins/pwm/nrf52/*"
+			}
+		},
+		"pico": {
+			"modules": {
+				"*": "$(MODULES)/pins/pwm/pico/*"
 			}
 		},
 		"...": {

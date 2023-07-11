@@ -76,7 +76,7 @@ declare module "commodetto/outline" {
     static SVGPath: SVGPath
 
     static fill(path: CommodettoPath, rule?: number): Outline
-    static stroke(path: CommodettoPath, weight: number, linecap?: number, linejoin?: number, miterLimit?: number): Outline
+    static stroke(path: CommodettoPath, weight?: number, linecap?: number, linejoin?: number, miterLimit?: number): Outline
   
     static readonly NON_ZERO_RULE: number
     static readonly EVEN_ODD_RULE: number

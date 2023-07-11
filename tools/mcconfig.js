@@ -123,13 +123,13 @@ class MakeFile extends MAKEFILE {
 			var sourceParts = tool.splitPath(result.source);
 			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, sourceParts.extension, ".xsi: ", source);
 			this.echo(tool, "xsid ", sourceParts.name, sourceParts.extension, ".xsi");
-			this.line("\t$(XSID) ", source, " -o $(@D)");
+			this.line("\txsid ", source, " -o $(@D)");
 		}
 		for (var result of tool.hFiles) {
 			var sourceParts = tool.splitPath(result);
 			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".h.xsi: ", result);
 			this.echo(tool, "xsid ", sourceParts.name, ".h.xsi");
-			this.line("\t$(XSID) ", result, " -o $(@D)");
+			this.line("\txsid ", result, " -o $(@D)");
 		}
 		this.line("");
 	}

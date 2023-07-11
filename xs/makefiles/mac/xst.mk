@@ -53,6 +53,7 @@ C_OPTIONS = \
 	-DINCLUDE_XSPLATFORM \
 	-DXSPLATFORM=\"xst.h\" \
 	-DmxAliasInstance=0 \
+	-DmxCanonicalNaN=1 \
 	-DmxDebug=1 \
 	-DmxExplicitResourceManagement=1 \
 	-DmxKeysGarbageCollection=1 \
