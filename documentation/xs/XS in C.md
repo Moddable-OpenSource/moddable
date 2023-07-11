@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: June 6, 2023
+Revised: June 11, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -1358,7 +1358,7 @@ The `xsmcCall` macro is functionally equivalent to the `xsCall*` macros. The res
 | `theSlot` | The result slot 
 | `theThis` | A reference to the instance that will have the property or item 
 | `theID` | The identifier of the property or item to call 
-| ... | The variable length parameter slots to pass to the function
+| ... | Pointers to the slots that are passed as arguments to the constructor followed by a null pointer
 
 ##### In ECMAScript:
 
@@ -1375,9 +1375,9 @@ xsmcVars(3);
 xsmcSetInteger(xsVar(0), 1);
 xsmcSetInteger(xsVar(1), 2);
 xsmcSetInteger(xsVar(2), 3);
-xsmcCall(xsResult, xsGlobal, xsID("foo"), xsVar(0));
-xsmcCall(xsResult, xsThis, xsID_foo, xsVar(0));
-xsmcCall(xsResult, xsThis, 0, xsVar(1), xsVar(2));
+xsmcCall(xsResult, xsGlobal, xsID("foo"), &xsVar(0), NULL);
+xsmcCall(xsResult, xsThis, xsID_foo, &xsVar(0), NULL);
+xsmcCall(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
 ```
 	
 ***
@@ -1434,7 +1434,7 @@ The `xsmcNew` macro is functionally equivalent to the `xsNew*` macros. The resul
 | `theSlot` | The result slot of the constructor 
 | `theThis` | A reference to the instance that has the property or item 
 | `theID` | The identifier of the property or item to call 
-| ... | The variable length parameter slots to pass to the function
+| ... | Pointers to the slots that are passed as arguments to the constructor followed by a null pointer
 
 
 ##### In ECMAScript:
@@ -1452,9 +1452,9 @@ xsmcVars(3);
 xsmcSetInteger(xsVar(0), 1);
 xsmcSetInteger(xsVar(1), 2);
 xsmcSetInteger(xsVar(2), 3);
-xsmcNew(xsResult, xsGlobal, xsID_foo, xsVar(0));
-xsmcNew(xsResult, xsThis, xsID("foo"), xsVar(0));
-xsmcNew(xsResult, xsThis, 0, xsVar(1), xsVar(2));
+xsmcNew(xsResult, xsGlobal, xsID_foo, &xsVar(0), NULL);
+xsmcNew(xsResult, xsThis, xsID("foo"), &xsVar(0), NULL);
+xsmcNew(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
 ```
 
 ***

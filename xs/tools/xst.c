@@ -1117,7 +1117,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	xsMachine* machine;
 	char buffer[C_PATH_MAX];
 	int success = 0;	
-	machine = xsCreateMachine(creation, "xst", NULL);
+	machine = xsCreateMachine(creation, "xst262", NULL);
 	xsBeginHost(machine);
 	{
 		xsVars(1);
@@ -1800,7 +1800,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
-		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
+		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{
 		xsBeginHost(machine);
@@ -1924,7 +1924,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
 	fxInitializeSharedCluster();
-	machine = xsCreateMachine(creation, "xst", NULL);
+	machine = xsCreateMachine(creation, "xst_fuzz_oss", NULL);
 
 	xsBeginMetering(machine, xsWithinComputeLimit, 1);
 	{
@@ -2280,7 +2280,11 @@ void fxConnect(txMachine* the)
 	return;
 #endif
 #ifdef mxMultipleThreads
-#else
+	if (!c_strcmp(the->name, "xst262"))
+		return;
+	if (!c_strcmp(the->name, "xst-agent"))
+		return;
+#endif		
 	char name[256];
 	char* colon;
 	int port;
@@ -2394,7 +2398,6 @@ void fxConnect(txMachine* the)
 	return;
 bail:
 	fxDisconnect(the);
-#endif		
 }
 
 void fxDisconnect(txMachine* the)

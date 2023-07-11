@@ -26,23 +26,23 @@ class Transform {
 		if ("string" !== typeof source)
 			source = String.fromArrayBuffer(source);
 
-		let start = source.indexOf("-----BEGIN CERTIFICATE-----"), end = -1, offset;
+		let start = source.indexOf("-----BEGIN CERTIFICATE-----"), end = -1;
 		if (start >= 0) {
-			offset = 28;
-			end = source.indexOf("-----END CERTIFICATE-----", offset)
+			start += 28;
+			end = source.indexOf("-----END CERTIFICATE-----", start)
 		}
 		else {
 			start = source.indexOf("-----BEGIN RSA PRIVATE KEY-----");
 			if (start >= 0) {
-				offset = 32;
-				end = source.indexOf("-----END RSA PRIVATE KEY-----", offset)
+				start += 32;
+				end = source.indexOf("-----END RSA PRIVATE KEY-----", start)
 			}
 		}
 
 		if (end < 0)
-			throw new Error("no delimeter");
+			throw new Error("no delimiter");
 
-		return Base64.decode(source.slice(start + offset, end));
+		return Base64.decode(source.slice(start, end));
 	}
 	static privateKeyToPrivateKeyInfo(source, id = [1, 2, 840, 113549, 1, 1, 1] /* // PKCS#1 OID */) {	// https://datatracker.ietf.org/doc/html/rfc5208#section-5
 		return BER.encode([

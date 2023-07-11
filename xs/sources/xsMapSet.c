@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -909,8 +909,7 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 	}
 	else {
 		if (XS_REFERENCE_KIND == kind) {
-			txSlot* base = C_NULL;
-			sum = slot->value.reference - base;
+			sum = (txU8)(((uintptr_t)slot->value.reference) / sizeof(txSlot));
 		}
 		else if (XS_INTEGER_KIND == kind) {
 			fxToNumber(the, slot);
@@ -920,7 +919,11 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 			if (slot->value.number == 0)
 				slot->value.number = 0;
 			else if (c_isnan(slot->value.number))
+			#if mxCanonicalNaN
+				slot->value.number = *gxCanonicalNaN64;
+			#else				
 				slot->value.number = C_NAN;
+			#endif
 			sum = *((txU8*)&slot->value.number);
 		}
 		else if ((XS_BIGINT_KIND == kind) || (XS_BIGINT_X_KIND == kind)) {

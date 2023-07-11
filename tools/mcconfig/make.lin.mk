@@ -139,20 +139,6 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -lpthread
 
 LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
-BLES2GATT = $(MODDABLE_TOOLS_DIR)/bles2gatt
-XSC = $(MODDABLE_TOOLS_DIR)/xsc
-XSID = $(MODDABLE_TOOLS_DIR)/xsid
-XSL = $(MODDABLE_TOOLS_DIR)/xsl
-
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
@@ -200,7 +186,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
 	@echo "# cc" $(<F)
@@ -208,7 +194,7 @@ $(TMP_DIR)/mc.resources.c.o: $(TMP_DIR)/mc.resources.c $(HEADERS)
 
 $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
+	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 	
 MAKEFLAGS += --jobs 8
 ifneq ($(VERBOSE),1)

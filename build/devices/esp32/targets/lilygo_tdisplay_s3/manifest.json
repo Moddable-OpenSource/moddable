@@ -1,0 +1,69 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODDABLE)/modules/drivers/st7789_p8/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json",
+		"$(MODULES)/drivers/sensors/cst816/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "st7789_p8",
+		"lcd_pin": 15,
+		"backlight": 38,
+		"brightness": 50,
+		"button_pin": 14
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 43,
+			"scl_pin": 44
+		},
+		"spi": {
+			"miso_pin": 13,
+			"mosi_pin": 11,
+			"sck_pin":  12
+		},
+		"ili9341p8": {
+			"width": 170,
+			"height": 320,
+			"column_offset": 35,
+			"hz": 20000000,
+			"cs_pin": 6,
+			"dc_pin": 7,
+			"rst_pin": 5,
+			"pclk_pin": 8,
+			"read_pin": 9,
+			"data0_pin": 39,
+			"data1_pin": 40,
+			"data2_pin": 41,
+			"data3_pin": 42,
+			"data4_pin": 45,
+			"data5_pin": 46,
+			"data6_pin": 47,
+			"data7_pin": 48,
+			"x_tearingEffect_pin": 19
+		},
+		"cst816": {
+			"flipX": false,
+			"flipY": false,
+			"raw_left": 36,
+			"raw_right": 147,
+			"raw_top": 12,
+			"raw_bottom": 315
+		}
+	}
+}

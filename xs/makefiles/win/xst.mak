@@ -46,6 +46,7 @@ C_OPTIONS = \
 	/D INCLUDE_XSPLATFORM \
 	/D XSPLATFORM=\"xst.h\" \
 	/D mxAliasInstance=0 \
+	/D mxCanonicalNaN=1 \
 	/D mxDebug=1 \
 	/D mxExplicitResourceManagement=1 \
 	/D mxKeysGarbageCollection=1 \

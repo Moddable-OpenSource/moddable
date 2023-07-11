@@ -296,20 +296,6 @@ OBJCOPY = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-objcopy
 
 AR_OPTIONS = crs
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
-BLES2GATT = $(MODDABLE_TOOLS_DIR)\bles2gatt
-XSC = $(MODDABLE_TOOLS_DIR)\xsc
-XSID = $(MODDABLE_TOOLS_DIR)\xsid
-XSL = $(MODDABLE_TOOLS_DIR)\xsl
-
 #	-DICACHE_FLASH
 #	-DmxNoConsole=1
 C_DEFINES = \
@@ -578,12 +564,12 @@ $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) <<args.txt
+	xsl <<args.txt
 -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 <<
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) <<args.txt
+	mcrez <<args.txt
 $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
 <<

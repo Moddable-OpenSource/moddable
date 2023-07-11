@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: August 14, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: June 28, 2023
 
 ## Table of Contents
 
@@ -158,12 +158,22 @@ Time.dst = 60 * 60;	// Set DST
 The `ticks` property returns the value of a millisecond counter. The value returned does not correspond to the time of day. The milliseconds are used to calculate time differences.
 
 ```js
-let start = Time.ticks;
+const start = Time.ticks;
 for (let i = 0; i < 1000; i++)
 	;
-let stop = Time.ticks;
-trace(`Operation took ${stop - start} milliseconds\n`);
+const stop = Time.ticks;
+trace(`Operation took ${Time.delta(start, stop)} milliseconds\n`);
 ```
+
+On devices that supports multiple concurrent JavaScript virtual machines (for example, using Workers), the clock used to determine the value of the `ticks` property is the same across all virtual machines. This allows `tick` values created in one machine to be compared with values from another.   
+
+The range of the value depends on the host. On most microcontrollers, the value is a signed 32-bit integer. On the simulator, it is a positive 64-bit floating point value. To determine the difference between two `ticks` values, use `Time.delta()` which is guaranteed to give a correct result for the host.
+
+***
+
+### `Time.delta(start[, end])`
+
+The `delta` function calculates the difference between two values returned by `Time.ticks`. It is guaranteed to return a correct result even when the value rolls over. If the optional `end` argument is omitted the current value of `Time.ticks` is used.
 
 ***
 
@@ -180,7 +190,9 @@ To use the `microseconds` property, include its manifest in the project manifest
 	],
 ```
 
-The `microseconds` property is used in the same way as the `ticks` property.
+The `microseconds` property is used in the same way as the `ticks` property. Like the `ticks` property, a single time source is used when there multiple concurrent virtual machines. The range of the `microseconds` property is a 64-bit floating point value.
+
+Unlike `Time.ticks`, the values returned by `Time.microseconds` may always be subtracted from one another to calculate intervals.
 
 ```js
 const start = Time.microseconds;
@@ -369,6 +381,6 @@ The `CLI` class is a plug-in interface for commands used in a command line inter
 <a id="worker"></a>
 ## class Worker
 
-See the [Worker documentation](./worker.md) for more information about the `Worker` class.
+See the [Worker documentation](./worker.md) for information about the `Worker` class.
 
 

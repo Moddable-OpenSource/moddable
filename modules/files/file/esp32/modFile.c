@@ -143,13 +143,13 @@ void xs_file_read(xsMachine *the)
         xsResult = xsStringBuffer(NULL, dstLen);
         dst = xsmcToString(xsResult);
     }
-    else {
+	else {
 		xsmcGet(xsVar(0), xsGlobal, xsID_ArrayBuffer);
 		s2 = &xsVar(0);
 		if (s1->data[2] == s2->data[2]) {	
-        xsmcSetArrayBuffer(xsResult, NULL, dstLen);
-        dst = xsmcToArrayBuffer(xsResult);
-    }
+			xsmcSetArrayBuffer(xsResult, NULL, dstLen);
+			dst = xsmcToArrayBuffer(xsResult);
+		}
 		else {
 			xsUnsignedValue len;
 			xsmcGetBufferWritable(xsArg(0), (void **)&dst, &len);
@@ -185,11 +185,11 @@ void xs_file_write(xsMachine *the)
 			src = &temp;
 			srcLen = 1;
 		}
-        else {
+		else {
 			xsUnsignedValue len;
 			xsmcGetBufferReadable(xsArg(i), (void **)&src, &len);
 			srcLen = len;
-        }
+		}
 
 		result = fwrite(src, 1, srcLen, file);
 		if (result != srcLen)

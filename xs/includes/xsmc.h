@@ -105,6 +105,9 @@ mxImport void _xsNewHostInstance(xsMachine *, xsSlot *, xsSlot *);
 mxImport xsBooleanValue _xsIsInstanceOf(xsMachine *, xsSlot *, xsSlot *);
 #define xsmcIsInstanceOf(_SLOT,_PROTOTYPE)	_xsIsInstanceOf(the, &_SLOT, &_PROTOTYPE)
 
+//#undef xsToReference
+#define xsmcToReference(_SLOT) fxToReference(the, &_SLOT)
+
 #undef xsHas
 #undef xsHasIndex
 #undef xsGet
@@ -216,6 +219,7 @@ mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data
 	#pragma GCC poison xsGetArrayBufferMaxLength
 	#pragma GCC poison xsSetArrayBufferLength
 	#pragma GCC poison xsIsInstanceOf
+//	#pragma GCC poison xsToReference
 	#pragma GCC poison xsHas
 	#pragma GCC poison xsHasIndex
 	#pragma GCC poison xsGet

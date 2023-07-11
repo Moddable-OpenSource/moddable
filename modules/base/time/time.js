@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,6 +33,8 @@ class Time {
 	static set dst(value) @ "xs_time_dst_set";
 
 	static get ticks() @ "xs_time_ticks";
+
+	static delta(start, end) @ "xs_time_delta";
 };
 
 export default Time;

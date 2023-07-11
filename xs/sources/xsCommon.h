@@ -1150,16 +1150,23 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #define mxPtrDiff(_DIFF) ((txSize)(_DIFF))
 
-#ifndef mxIntegerDivideOverflowException
-	#define mxIntegerDivideOverflowException 1
+#ifndef mxAliasInstance
+	#define mxAliasInstance 1
 #endif
 
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0
 #endif
 
-#ifndef mxAliasInstance
-	#define mxAliasInstance 1
+#ifndef mxIntegerDivideOverflowException
+	#define mxIntegerDivideOverflowException 1
+#endif
+
+#ifndef mxCanonicalNaN
+	#define mxCanonicalNaN 0
+#else
+	extern float* gxCanonicalNaN32;
+	extern double* gxCanonicalNaN64;
 #endif
 
 #ifdef __cplusplus

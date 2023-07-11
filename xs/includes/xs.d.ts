@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Moddable Tech, Inc
+ * Copyright (c) 2020-2023 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -69,5 +69,21 @@ interface BigIntConstructor {
 	bitLength(value: BigInt): number
 	fromArrayBuffer(buffer: ArrayBufferLike): BigInt
 }
+
+interface Math {
+	idiv(x: number, y: number): number
+	imod(x: number, y: number): number // (x%y+y)%y (always pos results)
+	irem(x: number, y: number): number // x%y (neg x -> neg result)
+	idivmod(x: number, y: number): [number, number] // [x/y, (x%y+y)%y]
+	imuldiv(x: number, y: number, z: number): number // (x * y) / z
+	mod(x: number, y: number): number // (x%y+y)%y (floating point)
+ }
+
+
+// already defined by TypeScript (because Web)
+// interface Error {
+// 	stack: string
+// }
+
 
 // Compartment?
