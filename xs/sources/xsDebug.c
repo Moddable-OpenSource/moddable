@@ -425,6 +425,8 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		property = mxFunctionInstanceHome(expression->value.reference);
 		property->value.home.object = home->value.home.object;
 		property->value.home.module = home->value.home.module;
+		if (property->value.home.module == C_NULL)
+			property->value.home.module = mxProgram.value.reference;
 	
 		{
 			mxTry(the) {
