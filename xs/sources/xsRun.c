@@ -120,6 +120,12 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	mxEnvironment = mxFrameToEnvironment(mxFrame); \
 	mxCode = the->code; \
 }
+#define mxRestoreStateKeepStack { \
+	mxScope = the->scope; \
+	mxFrame = the->frame; \
+	mxEnvironment = mxFrameToEnvironment(mxFrame); \
+	mxCode = the->code; \
+}
 #if defined(mxFrequency)
 	#define mxSaveState { \
 		the->exits[byte]++; \
@@ -128,9 +134,20 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		the->frame = mxFrame; \
 		the->code = mxCode; \
 	}
+	#define mxSaveStateKeepStack { \
+		the->exits[byte]++; \
+		the->scope = mxScope; \
+		the->frame = mxFrame; \
+		the->code = mxCode; \
+	}
 #else
 	#define mxSaveState { \
 		the->stack = mxStack; \
+		the->scope = mxScope; \
+		the->frame = mxFrame; \
+		the->code = mxCode; \
+	}
+	#define mxSaveStateKeepStack { \
 		the->scope = mxScope; \
 		the->frame = mxFrame; \
 		the->code = mxCode; \
@@ -2161,6 +2178,7 @@ XS_CODE_JUMP:
 			variable = (mxStack + 1)->value.reference;
 			offset = mxStack->value.at.id;
 			index = mxStack->value.at.index;
+			the->stack = mxStack;
 			mxStack++;
 			mxNextCode(1);
 			goto XS_CODE_DELETE_PROPERTY_ALL;
@@ -2168,15 +2186,16 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_DELETE_PROPERTY_ALL:	
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset, index);
 #endif
-			mxSaveState;
+			mxSaveStateKeepStack;
 			index = (txU4)fxRunDelete(the, variable, (txID)offset, index);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 			if (!index && (mxFrame->flag & XS_STRICT_FLAG))
 				mxRunDebugID(XS_TYPE_ERROR, "delete %s: no permission (strict mode)", (txID)offset);
 			mxStack->kind = XS_BOOLEAN_KIND;
@@ -2307,14 +2326,18 @@ XS_CODE_JUMP:
 			offset = slot->ID;
 			index = 0;
 			slot = slot->value.closure->value.reference;
+			the->stack = mxStack;
 			goto XS_CODE_NEW_PROPERTY_ALL;
 		mxCase(XS_CODE_NEW_PROPERTY_AT)
 			mxToInstance(mxStack + 2);
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
 			slot = C_NULL;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_NEW_PROPERTY_ALL;
 		mxCase(XS_CODE_NEW_PROPERTY)
@@ -2322,10 +2345,11 @@ XS_CODE_JUMP:
 			offset = mxRunID(1);
 			index = 0;
 			slot = C_NULL;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 		XS_CODE_NEW_PROPERTY_ALL:
 			byte = mxRunU1(1);
-			mxSaveState;
+			mxSaveStateKeepStack;
 			if (byte & XS_GETTER_FLAG) {
 				mxStack->value.accessor.getter = fxToInstance(the, mxStack);
 				mxStack->value.accessor.setter = C_NULL;
@@ -2338,7 +2362,7 @@ XS_CODE_JUMP:
 			}
 			mxStack->flag = byte & XS_GET_ONLY;
 			index = fxRunDefine(the, variable, slot, (txID)offset, index, mxStack, byte | XS_GET_ONLY);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 			mxStack += 2;
 			if (!index)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", (txID)offset);
@@ -2366,14 +2390,18 @@ XS_CODE_JUMP:
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_SET_SUPER_ALL;
 		mxCase(XS_CODE_SET_SUPER)
 			mxToInstance(mxStack + 1);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_SET_SUPER_ALL:
@@ -2385,9 +2413,9 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_TYPE_ERROR, "set super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
 			if (!slot || (slot->kind != XS_ACCESSOR_KIND)) {
-				mxSaveState;
+				mxSaveStateKeepStack;
 				slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_OWN);
-				mxRestoreState;
+				mxRestoreStateKeepStack;
 			}
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_PRIVATE_2)
@@ -2415,20 +2443,24 @@ XS_CODE_JUMP:
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_SET_PROPERTY_ALL;
 		mxCase(XS_CODE_SET_PROPERTY)
 			mxToInstance(mxStack + 1);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_SET_PROPERTY_ALL:	
-			mxSaveState;
+			mxSaveStateKeepStack;
 			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 		XS_CODE_SET_ALL:	
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset, index);

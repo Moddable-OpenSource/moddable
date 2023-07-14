@@ -623,23 +623,23 @@ mxExport txID fxToID(txMachine* the, txSlot* theSlot);
 mxExport txString fxName(txMachine*, txID);
 
 mxExport void fxEnumerate(txMachine* the);
-mxExport txBoolean fxHasAll(txMachine* the, txID id, txIndex index);
+extern txBoolean fxHasAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport txBoolean fxHasAt(txMachine* the);
 mxExport txBoolean fxHasID(txMachine*, txID);
 mxExport txBoolean fxHasIndex(txMachine* the, txIndex index);
-mxExport void fxGetAll(txMachine* the, txID id, txIndex index);
+extern void fxGetAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxGetAt(txMachine*);
 mxExport void fxGetID(txMachine*, txID);
 mxExport void fxGetIndex(txMachine*, txIndex);
-mxExport void fxSetAll(txMachine* the, txID id, txIndex index);
+extern void fxSetAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxSetAt(txMachine*);
 mxExport void fxSetID(txMachine*, txID);
 mxExport void fxSetIndex(txMachine*, txIndex);
-mxExport void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mask);
+extern void fxDefineAll(txMachine* the, txSlot* stack, txID id, txIndex index, txFlag flag, txFlag mask);
 mxExport void fxDefineAt(txMachine* the, txFlag flag, txFlag mask);
 mxExport void fxDefineID(txMachine* the, txID id, txFlag flag, txFlag mask);
 mxExport void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask);
-mxExport void fxDeleteAll(txMachine*, txID, txIndex);
+extern void fxDeleteAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxDeleteAt(txMachine*);
 mxExport void fxDeleteID(txMachine*, txID);
 mxExport void fxDeleteIndex(txMachine*, txIndex);
@@ -2186,22 +2186,22 @@ enum {
 	fxCall(the))
 	
 #define mxDefineAll(ID, INDEX, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, ID, INDEX, FLAG, MASK))
+	(mxMeterOne(), fxDefineAll(the, the->stack, ID, INDEX, FLAG, MASK))
 #define mxDefineAt(FLAG, MASK) \
 	(mxMeterOne(), fxDefineAt(the, FLAG, MASK))
 #define mxDefineID(ID, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, ID, 0, FLAG, MASK))
+	(mxMeterOne(), fxDefineID(the, ID, FLAG, MASK))
 #define mxDefineIndex(INDEX, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, XS_NO_ID, INDEX, FLAG, MASK))
+	(mxMeterOne(), fxDefineIndex(the, INDEX, FLAG, MASK))
 	
 #define mxDeleteAll(ID, INDEX) \
-	(mxMeterOne(), fxDeleteAll(the, ID, INDEX))
+	(mxMeterOne(), fxDeleteAll(the, the->stack, ID, INDEX))
 #define mxDeleteAt() \
 	(mxMeterOne(), fxDeleteAt(the))
 #define mxDeleteID(ID) \
-	(mxMeterOne(), fxDeleteAll(the, ID, 0))
+	(mxMeterOne(), fxDeleteID(the, ID))
 #define mxDeleteIndex(INDEX) \
-	(mxMeterOne(), fxDeleteAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxDeleteIndex(the, INDEX))
 	
 #define mxDub() \
 	(mxOverflow(-1), \
@@ -2211,22 +2211,22 @@ enum {
 	the->stack->value = (the->stack + 1)->value))
 	
 #define mxGetAll(ID, INDEX) \
-	(mxMeterOne(), fxGetAll(the, ID, INDEX))
+	(mxMeterOne(), fxGetAll(the, the->stack, ID, INDEX))
 #define mxGetAt() \
 	(mxMeterOne(), fxGetAt(the))
 #define mxGetID(ID) \
-	(mxMeterOne(), fxGetAll(the, ID, 0))
+	(mxMeterOne(), fxGetID(the, ID))
 #define mxGetIndex(INDEX) \
-	(mxMeterOne(), fxGetAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxGetIndex(the, INDEX))
 	
 #define mxHasAll(ID, INDEX) \
-	(mxMeterOne(), fxHasAll(the, ID, INDEX))
+	(mxMeterOne(), fxHasAll(the, the->stack, ID, INDEX))
 #define mxHasAt() \
 	(mxMeterOne(), fxHasAt(the))
 #define mxHasID(ID) \
-	(mxMeterOne(), fxHasAll(the, ID, 0))
+	(mxMeterOne(), fxHasID(the, ID))
 #define mxHasIndex(INDEX) \
-	(mxMeterOne(), fxHasAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxHasIndex(the, INDEX))
 	
 #define mxNew() \
 	(mxOverflow(-5), \
@@ -2236,13 +2236,13 @@ enum {
 	(mxMeterOne(), fxRunID(the, C_NULL, _COUNT))
 	
 #define mxSetAll(ID, INDEX) \
-	(mxMeterOne(), fxSetAll(the, ID, INDEX))
+	(mxMeterOne(), fxSetAll(the, the->stack, ID, INDEX))
 #define mxSetAt() \
 	(mxMeterOne(), fxSetAt(the))
 #define mxSetID(ID) \
-	(mxMeterOne(), fxSetAll(the, ID, 0))
+	(mxMeterOne(), fxSetID(the, ID))
 #define mxSetIndex(INDEX) \
-	(mxMeterOne(), fxSetAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxSetIndex(the, INDEX))
 
 #define mxPush(THE_SLOT) \
 	(mxOverflow(-1), \
