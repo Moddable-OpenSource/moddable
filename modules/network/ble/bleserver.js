@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -127,9 +127,10 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			}
 			case "onCharacteristicRead": {
-				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
-				value = typedValueToBuffer(params.type, value);
-				return value;
+				const value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
+				if (undefined !== value)
+					return typedValueToBuffer(params.type, value);
+				break;
 			}
 			case "onCharacteristicNotifyEnabled":
 				this.onCharacteristicNotifyEnabled(params);
