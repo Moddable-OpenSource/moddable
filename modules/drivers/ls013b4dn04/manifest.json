@@ -53,6 +53,16 @@
 				"*": "$(MODULES)/drivers/ls013b4dn04/*",
 				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
 			}
+		},
+		"nrf52": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json",
+				"$(MODULES)/pins/spi/manifest.json"
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/ls013b4dn04/*",
+				"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+			}
 		}
 	}
 }

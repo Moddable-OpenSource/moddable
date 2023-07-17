@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -450,10 +450,11 @@ void lpm013m126aEnd(void *refcon)
 }
 
 void xs_LPM013M126A_destructor(void *data){
-  if (data){
-	  lpm013m126a lpm = data;
+	if (data){
+		lpm013m126a lpm = data;
 		if ( lpm->pixelBuffer )
 			c_free(lpm->pixelBuffer);
+		modGPIOUninit(&lpm->cs);
 		c_free(data);
 	}
 }

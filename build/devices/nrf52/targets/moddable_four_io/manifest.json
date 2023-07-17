@@ -1,0 +1,77 @@
+{
+	"build": {
+		"USE_USB": "1",
+		"FTDI_TRACE": "-DUSE_FTDI_TRACE=0"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/drivers/jogdial/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/sensors/lis3dh/manifest.json",
+		"$(MODULES)/pins/smbus/manifest.json",
+		"$(MODULES)/files/preference/manifest.json"
+	],
+	"config": {
+		"screen": "ls013b4dn04",
+		"touch": "",
+		"format": "Gray256",
+
+		"autobacklight": 1,
+		"lcd_power_pin": 23,
+
+		"led1_pin": 7,
+
+		"button1_pin": 13,
+
+		"lis3dh_int1_pin": 14,
+		"lis3dh_int2_pin": 16,
+
+		"jogdial": {
+			"signal": 6,
+			"control": 8,
+			"button": 11
+		}
+	},
+   "modules": {
+		"setup/target": "./setup-target"
+   },
+    "preload": [
+		"setup/target"
+   ],
+	"defines": {
+		"debugger": {
+			"xtx_pin": "NRF_GPIO_PIN_MAP(0,30)",
+			"xrx_pin": "NRF_GPIO_PIN_MAP(0,31)",
+			"tx_pin": "3",
+			"rx_pin": "4",
+			"baudrate": "NRF_UARTE_BAUDRATE_115200"
+		},
+		"spi": {
+			"interface": "3",
+			"hz": "2000000",
+			"mosi_pin": "NRF_GPIO_PIN_MAP(0,2)",
+			"xmosi_pin": "NRF_GPIO_PIN_MAP(0,29)",
+			"miso_pin": "NRF_GPIO_PIN_MAP(1,15)",
+			"sck_pin": "NRF_GPIO_PIN_MAP(1,14)"
+		},
+		"i2c": {
+			"interface": "0",
+			"sda_pin": "NRF_GPIO_PIN_MAP(0,26)",
+			"scl_pin": "NRF_GPIO_PIN_MAP(0,27)"
+		},
+		"ls013b4dn04": {
+			"width": 128,
+			"height": 128,
+			"spi_port": 3,
+			"hz": 2000000,
+			"clearOnStart": 0,
+			"cs_pin": "NRF_GPIO_PIN_MAP(1,13)",
+			"disp_pin": "NRF_GPIO_PIN_MAP(1,1)",
+			"dither": 1,
+			"updateAll": 0
+		}
+	}
+}

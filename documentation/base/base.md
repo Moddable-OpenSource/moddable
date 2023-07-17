@@ -315,7 +315,7 @@ The Moddable SDK implementation of `structuredClone` implements all [supported t
 ## class Instrumentation
 
 - **Source code:** [instrumentation](../../modules/base/instrumentation)
-- **Relevant Examples:** [instrumentation](../../examples/base/instrumentation)
+- **Relevant Examples:** [instrumentation](../../examples/base/instrumentation/instrumentation), [xsuse](../../examples/base/instrumentation/xsuse)
 
 The `Instrumentation` class returns statistics on the behavior of the runtime, including memory use, open file count, and rendering frame rate.
 
@@ -331,26 +331,60 @@ The `get` function returns the value of the instrumented item at the index speci
 let pixelsDrawn = Instrumentation.get(1);
 ```
 
+The index of instrumentation items depends on the host and varies between different devices based on the supported features. Use `Instrumentation.map()` to determine the index of a specific instrumentation on the running host.
+
+### `map(name)`
+
+The `map` function returns the instrumentation index for a name.
+
+```js
+let pixelsDrawnIndex = Instrumentation.map("Pixels Drawn");
+let pixelsDrawn = Instrumentation.get(pixelsDrawnIndex);
+```
+
+If the instrumentation item named is unavailable, `map` returns `undefined`.
+
+### `name(index)`
+
+The `name` function returns the name of the instrumentation item at the specified index. It can be used to iterate through all available instrumentation items.
+
+
+```js
+for (let i = 1; true; i++) {
+	const name = Instrumentation.name(i);
+	if (!name)
+		break;
+	trace(`${name}: ${Instrumentation.get(i)}\n`);
+}
+```
+
+
+### Instrumentation items
+
 The table below describes the instrumented items that are available. The following instrumented items are reset at one second intervals: Pixels Drawn, Frames Drawn, Poco Display List Used, Piu Command List Used, Network Bytes Read, Network Bytes Written, and Garbage Collection Count. 
 
-| Index | Short Description | Long Description |
-| :---: | :--- | :--- |
-| 1 | Pixels drawn | The total number of pixels rendered to by Poco during the current interval. This value includes pixels drawn to a display device and pixels rendered offscreen.
-| 2 |Frames drawn | The total number of frames rendered by Poco during the most recent interval. Frames are counted by calls to Poco.prototype.end() and by Piu frame updates.
-| 3 | Network bytes read | The total number of bytes received by the Socket module during the current interval. This includes bytes received over TCP and UDP.
-| 4 | Network bytes written | The total number of bytes send by the Socket module during the current interval. This includes bytes sent using TCP and UDP.
-| 5 | Network sockets |The total number of active network sockets created by the Socket module. This includes TCP sockets, TCP listeners, and UDP sockets.
-| 6 | Timers | The number of allocated timers created by the Timer module.
-| 7 | Files | The number of open files and directory iterators created the File module.
-| 8 | Poco display list used | The peak size in bytes of the Poco display list in the current interval.
-| 9 | Piu command list used | The peak size in bytes of the Piu command list in the current interval.
-| 10 | System free memory | The number of free bytes in the system memory heap. This value is not available on the simulator.
-| 11 | Slot heap size | Number of bytes in use in the slot heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
-| 12 | Chunk heap size | Number of bytes in use in the chunk heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
-| 13 | Keys used | Number of runtime keys allocated by the primary XS machine. Once allocated keys are never deallocated.
-| 14 | Garbage collection count | The number of times the garbage collector has run in the current interval.
-| 15 | Modules loaded | The number of JavaScript modules that are currently loaded in the primary XS machine. This number does not include modules which are preloaded.
-| 16 | Stack peak | The maximum depth in bytes of the stack of the primary XS virtual machine during the current interval.
+| Name | Long Description |
+| ---: | :--- |
+| `Pixels Drawn` | The total number of pixels rendered to by Poco during the current interval. This value includes pixels drawn to a display device and pixels rendered offscreen.
+| `Frames Drawn` | The total number of frames rendered by Poco during the most recent interval. Frames are counted by calls to Poco.prototype.end() and by Piu frame updates.
+| `Network Bytes Read` | The total number of bytes received by the Socket module during the current interval. This includes bytes received over TCP and UDP.
+| `Network Bytes Written` | The total number of bytes send by the Socket module during the current interval. This includes bytes sent using TCP and UDP.
+| `Network Sockets` |The total number of active network sockets created by the Socket module. This includes TCP sockets, TCP listeners, and UDP sockets.
+| `Timers` | The number of allocated timers created by the Timer module.
+| `Files` | The number of open files and directory iterators created the File module.
+| `Poco Display List Used` | The peak size in bytes of the Poco display list in the current interval.
+| `Piu Command List Used` | The peak size in bytes of the Piu command list in the current interval.
+| `Turns` | The number of times the event loop has run in the current interval.
+| `CPU 0` | The load on CPU 0 during the current interval.
+| `CPU 1` | The load on CPU 1 during the current interval.
+| `System Free Memory` | The number of free bytes in the system memory heap. This value is not available on the simulator.
+| `XS Slot Heap Used` | Number of bytes in use in the slot heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
+| `XS Chunk Heap Used` | Number of bytes in use in the chunk heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
+| `XS Keys Used` | Number of runtime keys allocated by the primary XS machine. Once allocated keys are never deallocated.
+| `XS Garbage Collection Count` | The number of times the garbage collector has run in the current interval.
+| `XS Modules Loaded` | The number of JavaScript modules that are currently loaded in the primary XS machine. This number does not include modules which are preloaded.
+| `XS Stack Used` | The maximum depth in bytes of the stack of the primary XS virtual machine during the current interval.
+
 
 ***
 

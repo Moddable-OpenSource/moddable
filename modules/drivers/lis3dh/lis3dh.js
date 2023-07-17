@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -104,8 +104,26 @@ class Sensor extends SMBus {
 		else if (0x33 !== this.readByte(Register.WHOAMI))
 			throw new Error("unexpected device ID");
 
-		this.configure({});
+		this.configure({rate: dictionary.rate ?? this.#rate, range:dictionary.range ?? this.#range});
+
+		const interrupt = dictionary.interrupt;
+		if (interrupt) {
+			this.writeByte(Register.CTRL6, (interrupt.polarity ?? 1) ? 0b00000000 : 0b00000010);
+
+			this.writeByte(Register.INT1THS, (interrupt.threshold ?? 0) & 0x7f);
+			this.writeByte(Register.INT1DUR, (interrupt.duration ?? 0) & 0x7f);
+
+			this.writeByte(Register.INT1CFG, interrupt.enable);
+			this.writeByte(Register.CTRL2, 0x01);		// HP filter for INT1
+			this.writeByte(Register.CTRL3, 0x40);		// interrupt to INT1
+			this.writeByte(Register.CTRL5, interrupt.latch ? 0x08 : 0);		// latch interrupt LIR_INT1
+		}
+		else {
+			this.writeByte(Register.INT1CFG, 0);
+		}
 	}
+
+	get irq_fired() { return 0 != (this.readByte(Register.INT1SRC) & 64); }
 
 	configure(dictionary) {
 		for (let property in dictionary) {

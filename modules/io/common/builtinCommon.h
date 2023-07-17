@@ -45,6 +45,12 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 	#define builtinCriticalSectionBegin() xt_rsil(0)
 	#define builtinCriticalSectionEnd() xt_rsil(15)
+#elif nrf52
+	#define kPinBanks (2)
+	#define GPIO_NUM_MAX (64)
+
+	#define builtinCriticalSectionBegin() vPortEnterCritical()
+	#define builtinCriticalSectionEnd() vPortExitCritical()
 #elif defined(PICO_BUILD)
 	#include "pico/critical_section.h"
 	#define kPinBanks	(2)

@@ -18,11 +18,13 @@
  *
  */
 
+// #include "commodettoPocoDrawFrame.h"
 #include "piuMC.h"
 
 static void PiuImageBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuImageDictionary(xsMachine* the, void* it);
 static void PiuImageDraw(void* it, PiuView* view, PiuRectangle area);
+static void PiuImageDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
 static void PiuImageMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuImageMeasureHorizontally(void* it);
 static void PiuImageMeasureVertically(void* it);
@@ -113,10 +115,21 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 			PocoDrawImage((*view)->poco, &bm, 255, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
 		}
 #else	
-		PiuViewDrawFrame(view, (*self)->data + sizeof(uint16_t) + (*self)->frameOffset, (*self)->frameSize, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
+		PiuViewDrawContent(view, PiuImageDrawAux, it, 0, 0, bounds.width, bounds.height);
 #endif		
 		PiuViewPopClip(view);
 	}
+}
+
+void PiuImageDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh)
+{
+	PiuImage* self = it;
+	xsBeginHost((*self)->the);
+	xsVars(4);
+	xsVar(0) = xsReference((*view)->reference);
+	xsVar(0) = xsGet(xsVar(0), xsID_poco);
+	PocoDrawFrame((*view)->poco, (*self)->data + sizeof(uint16_t) + (*self)->frameOffset, (*self)->frameSize, x, y, sw, sh);
+	xsEndHost((*self)->the);
 }
 
 void PiuImageMark(xsMachine* the, void* it, xsMarkRoot markRoot)

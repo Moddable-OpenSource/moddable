@@ -1,6 +1,6 @@
 # Pins
-Copyright 2017-22 Moddable Tech, Inc.<BR>
-Revised: October 20, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: April 10, 2023
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ import Digital from "pins/digital";
 
 The Digital constructor establishes a connection to the GPIO pin specified. There are two ways to configure the pin: by passing a dictionary or by passing separate arguments.
 
-When using a dictionary, the `pin` and `mode` property are required. The port property is optional, with a default value of `NULL`.
+When using a dictionary, the `pin` and `mode` properties are required. The port property is optional, with a default value of `NULL`.
 
 Pin numbers and port names are device dependent.
 
@@ -134,6 +134,38 @@ pin.mode(Digital.Input);
 
 ***
 
+### `wakeEdge and onWake() callback`
+
+On platforms that support device wake-up from deep sleep on digital input triggers, an `onWake` callback can be provided in the `Digital` constructor. The `onWake` callback is called the first time the pin is instantiated after waking with that pin being the reset reason. The wake-up edge event trigger is configured by the `wakeEdge` property.
+
+The following example configures input pin 7 to trigger wake-up on a falling edge using an internal pull-up resistor:
+
+```js
+let digital = new Digital({
+	pin: 7,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
+	onWake() {
+		// take action based on digital wake-up trigger
+	}
+});
+```
+
+The following edge events are available for configuring the wake-up trigger.
+
+```js
+Digital.WakeOnRise = (1 << 6);
+Digital.WakeOnFall = (1 << 7);
+```
+
+**Note**: Only nRF52 devices currently support deep sleep wake-up from digital input triggers.
+
+### `close()`
+
+The `close` function releases the resources associated with the `Digital` instance.
+
+***
+
 <a id="monitor"></a>
 ## class Monitor
 
@@ -182,6 +214,32 @@ let value = this.read();
 
 ***
 
+### `wakeEdge and onWake() callback`
+
+On platforms that support device wake-up from deep sleep on digital input triggers, an `onWake` callback can be provided in the `Monitor` constructor. The `onWake` callback is called the first time the pin is instantiated after waking with that pin being the reset reason. The wake-up edge event trigger is configured by the `wakeEdge` property.
+
+The following edge events are available for configuring the wake-up trigger.
+
+```js
+Digital.WakeOnRise = (1 << 6);
+Digital.WakeOnFall = (1 << 7);
+```
+
+The following example configures input pin 7 to trigger wake-up on a falling edge using an internal pull-up resistor:
+
+```js
+let monitor = new Monitor({
+	pin: 7,
+	mode: Digital.InputPullUp,
+	wakeEdge: Digital.WakeOnFall,
+	onWake() {
+		// take action based on digital monitor wake-up trigger
+	}
+});
+```
+
+**Note**: Only nRF52 devices currently support deep sleep wake-up from digital input triggers.
+
 ### `close()`
 
 The `close` function releases the resources associated with the `Monitor` instance.
@@ -228,7 +286,18 @@ The `Analog` class provides access to the analog input pins.
 import Analog from "pins/analog";
 ```
 	
-The Analog class provides only static functions. It is not instantiated.
+### `constructor(dictionary)`
+
+The `Analog` dictionary requires a `pin` property. On platforms supporting wake-up from deep sleep on analog input triggers, the `onWake`, `wakeCrossing`, and `wakeValue` properties are additionally required to configure the analog input as a wake-up trigger. Refer to the `onWake() callback` section below for further details.
+
+The following shows how to configure an analog input instance and read the analog value:
+
+```js
+let analog = new Analog({ pin: 5 });
+trace(`Analog value is ${analog.read()}\n`);
+```
+
+**Note**: The nRF52 platform currently only supports the constructor and instance read function. On all other platforms, the Analog class provides only static functions. 
 
 ### `static read(pin)`
 
@@ -248,6 +317,35 @@ The example works with a widely-available low-cost [temperature sensor](https://
 > Caution: The output voltage range of the TMP36 temperature sensor is 0.1V to 2.0V and the input voltage range of the analog to digital converter on the ESP8266 is 0V to 1.0V. To avoid damaging the ESP8266 a voltage divider should be used to reduce the magnitude of the TMP36 output voltage. The ESP8266 NodeMCU board has a voltage divider for this purpose. Other boards may not have a voltage divider.
 
 ***
+
+### `onWake() callback`
+
+On platforms that support device wake-up from deep sleep on analog input triggers, an `onWake` callback can be provided in the `Analog` constructor. The `onWake` callback is called the first time the pin is instantiated after waking with that pin being the reset reason. The wake-up trigger is configured by the `wakeValue` and `wakeCrossing` properties.
+
+The following example configures input pin 5 to trigger wake-up when the analog input crosses above or below a value of 512:
+
+```js
+let analog = new Analog({
+	pin: 5,
+	wakeValue: 512,
+	wakeCrossing: Analog.CrossingUpDown,
+	onWake() {
+		for (let i = 0; i < 10; ++i) {
+			// take action based on analog wake-up trigger
+		}
+	}
+});
+```
+
+The following crossing mode values are available for configuring the wake-up trigger.
+
+```js
+Analog.CrossingUp = 0;
+Analog.CrossingDown = 1;
+Analog.CrossingUpDown = 2;
+```
+
+**Note:**: Only nRF52 devices currently support deep sleep wake-up from analog input triggers.
 
 <a id="pwm"></a>
 ## class PWM

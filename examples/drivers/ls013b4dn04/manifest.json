@@ -23,13 +23,19 @@
 	},
 	"modules": {
 		"Resource": "$(MODDABLE)/modules/files/resource/Resource",
+        "commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
+        "commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
+        "commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
+        "commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+        "commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+        "commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
+        "commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 		"*": "./main"
 	},
 	"preload": [
 		"Resource",
 		"main"
 	],
-	"strip":"*",
 	"platforms": {
 		"gecko": {
 			"modules": {

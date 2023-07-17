@@ -1,7 +1,7 @@
 # Moddable SDK - Examples
 
-Copyright 2018-2019 Moddable Tech, Inc.<BR>
-Revised: May 17, 2019
+Copyright 2018-2023 Moddable Tech, Inc.<BR>
+Revised: April 6, 2023
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -17,6 +17,7 @@ This document is a guide to building example applications in the Moddable SDK. I
 * [Screen rotation](#screen-rotation)
 * [Wi-Fi configuration](#wifi-configuration)
 * [Screen driver configuration](#screen-driver-configuration)
+* [Platform specific examples](#platform-specific)
 
 <a id="building-apps"></a>
 ## Building apps
@@ -166,3 +167,13 @@ To build an app for the `ft6206` touch controller driver, modify both the `confi
 	]
 
 > **Note**: For additional details on the `manifest.json` file please refer to the [manifest.md](../documentation/tools/manifest.md) document.
+
+
+<a id="platform-specific"></a>
+## Platform specific examples
+
+There are examples for platform specific features included in `$MODDABLE/build/device/<platform>/examples`.
+
+* [nRF52](../../build/devices/nrf52/examples)
+* [ESP32](../../build/devices/esp32/examples)
+

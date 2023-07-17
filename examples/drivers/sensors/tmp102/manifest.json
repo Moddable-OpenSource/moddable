@@ -16,6 +16,11 @@
 			"config": {
 				"interrupt_pin": 13
 			}
+		},
+		"nrf52": {
+			"config": {
+				"interrupt_pin": 22
+			}
 		}
 	}	
 }

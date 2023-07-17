@@ -1,0 +1,29 @@
+{
+	"build": {
+		"IO": "$(MODDABLE)/build/devices/nrf52/modules/io"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json"
+	],
+	"modules": {
+		"*": [
+			"$(IO)/common/builtinCommon",
+			"$(MODULES)/pins/analog/nrf52/*"
+		],
+		"builtin/wakeabledigital": "$(IO)/wakeabledigital/wakeabledigital",
+		"builtin/wakeableanalog": "$(IO)/wakeableanalog/wakeableanalog"
+	},
+	"preload": [
+		"builtin/wakeabledigital",
+		"builtin/wakeableanalog"
+	],
+	"platforms": {
+		"esp": {
+		},
+		"nrf52": {
+		},
+		"...": {
+			"error": "Experimental TC53 IO modules unsupported"
+		}
+	}
+}

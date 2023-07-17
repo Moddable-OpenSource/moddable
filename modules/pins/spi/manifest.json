@@ -25,6 +25,11 @@
 				"*": "$(MODULES)/pins/spi/qca4020/*"
 			}
 		},
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/spi/nrf52/*"
+			}
+		},
 		"...": {
 			"error": "pins/spi module unsupported"
 		}

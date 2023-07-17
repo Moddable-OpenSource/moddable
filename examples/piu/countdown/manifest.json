@@ -1,7 +1,6 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/files/preference/manifest.json"
 	],

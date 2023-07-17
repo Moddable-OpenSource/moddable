@@ -7,11 +7,20 @@
 	"modules": {
 		"*": "./main"
 	},
+	"preload": [
+		"pins/pulsecount"
+	],
 	"platforms":{
 		"esp32": {
 			"modules": {
 				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
 				"*": "$(MODULES)/pins/pulsecount/esp32/*"
+			}
+		},
+		"nrf52": {
+			"modules": {
+				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
+				"*": "$(MODULES)/pins/pulsecount/nrf52/*"
 			},
 			"preload": [
 				"pins/pulsecount"

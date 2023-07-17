@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/ble/manifest_server.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"platforms": {
+		"nrf52": {
+		},
+		"...": {
+			"error": "Advertisement notifications currently available for nRF52 only"
+		}
+	}
+}

@@ -15,7 +15,7 @@ export default class extends Control {
 		if (undefined === pressed)
 			return;
 		this.#pressed = pressed; 
-		this.#onPush();
+		this.#onPush(pressed);
 	}
 	read() {
 		return this.#pressed;

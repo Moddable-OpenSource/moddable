@@ -5,6 +5,11 @@
 	},
 	"preload": "pins/digital/monitor",
 	"platforms": {
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/monitor/nrf52/*"
+			}
+		},
 		"esp": {
 			"modules": {
 				"*": "$(MODULES)/pins/digital/monitor/esp/*"

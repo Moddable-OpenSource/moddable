@@ -1,0 +1,1497 @@
+target remote :2331
+set remote hardware-watchpoint-limit 2
+file xs_nrf52.out
+flushregs
+# b xs_sleep_deep
+# c
+
+# Functions to print and interpret registers
+#
+# pCLOCK
+# pPOWER
+# pGPIOTE
+# pRTC1
+# pNVMC
+# pNRF_P0
+# pNRF_P1
+# pNVIC
+# pQSPI
+# pSPIS2
+# pSPIM3
+# pUARTE1
+
+define printLFCLK
+	if $arg0 & 1
+		printf "LFXO (Crystal) "
+	else
+		if $arg0 & 2
+			printf "Synth (from HFCLK) "
+		else
+			if $arg0 & 4
+				printf "RC "
+			else
+				printf "OFF "
+			end
+		end
+	end
+	if $arg0 & (1 << 16)
+		printf "Running\n"
+	else
+		printf "Not running\n"
+	end
+end
+
+define printHFCLK
+	if $arg0 & 1
+		printf "HFXO (Crystal) "
+	else
+		printf "HFINT "
+	end
+	if $arg0 & (1 << 16)
+		printf "Running\n"
+	else
+		printf "Not running\n"
+	end
+end
+
+# peripherals - nrfx/mdk/nrf52840.h
+# TASKS are write-only, no need to display
+define pCLOCK
+	set $NRF_CLOCK_BASE = 0x40000000
+	set $a = $NRF_CLOCK_BASE
+	printf "CLOCK\n"
+#	printf "  TASKS_HFCLKSTART: %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_HFCLKSTOP:  %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_LFCLKSTART: %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_LFCLKSTOP:  %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_CAL:        %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_CTSTART:    %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_CTSTOP:     %x\n", *$a
+	set $a += 4
+		# reserved[57]
+	set $a += 4 * 57
+	printf "  EVENTS_HFCLKSTARTED: %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_LFCLKSTARTED: %x\n", *$a
+	set $a += 4
+		# reserved
+	set $a += 4
+	printf "  EVENTS_DONE:      %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_CTTO:      %x\n", *$a
+	set $a += 4
+		# reserved[5]
+	set $a += 4 * 5
+	printf "  EVENTS_CTSTARTED: %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_CTSTOPPED: %x\n", *$a
+	set $a += 4
+		# reserved[117]
+	set $a += 4 * 117
+	printf "  INTENSET:         %x\n", *$a
+	set $a += 4
+#	printf "  INTENCLR:         %x\n", *$a
+	set $a += 4
+		# reserved[63]
+	set $a += 4 * 63
+	printf "  HFCLKRUN:         %x\n", *$a
+	set $a += 4
+	printf "  HFCLKSTAT:        %x - ", *$a
+	printHFCLK *$a
+	set $a += 4
+		#reserved
+	set $a += 4
+	printf "  LFCLKRUN:         %x\n", *$a
+	set $a += 4
+	printf "  LFCLKSTAT:        %x - ", *$a
+	printLFCLK *$a
+	set $a += 4
+#	printf "  LFCLKSRCCOPY:     %x\n", *$a
+	set $a += 4
+		#reserved[62]
+	set $a += 4 * 62
+	printf "  LFCLKSRC:         %x\n", *$a
+	set $a += 4
+		#reserved[3]
+	set $a += 4 * 3
+	printf "  HFXODEBOUNCE:     %x\n", *$a
+	set $a += 4
+		#reserved[3]
+	set $a += 4 * 3
+	printf "  CTIV:             %x\n", *$a
+	set $a += 4
+		#reserved[8]
+	set $a += 4 * 8
+	printf "  TRACECONFIG:      %x\n", *$a
+	set $a += 4
+		#reserved[21]
+	set $a += 4 * 21
+	printf "  LFRCMODE:         %x\n", *$a
+	set $a += 4
+
+end
+
+define printRESETREAS
+	if $arg0 & (1 << 0)
+		printf "RESETPIN "
+	end
+	if $arg0 & (1 << 1)
+		printf "DOG "
+	end
+	if $arg0 & (1 << 2)
+		printf "SREQ "
+	end
+	if $arg0 & (1 << 3)
+		printf "LOCKUP "
+	end
+	if $arg0 & (1 << 16)
+		printf "OFF (GPIO) "
+	end
+	if $arg0 & (1 << 17)
+		printf "LPCOMP "
+	end
+	if $arg0 & (1 << 18)
+		printf "DIF "
+	end
+	if $arg0 & (1 << 19)
+		printf "NFC "
+	end
+	if $arg0 & (1 << 20)
+		printf "VBUS "
+	end
+	if $arg0 & 0xffe0fff0
+		printf "Unknown reset reason\n"
+	else
+		printf "\n"
+	end
+end
+
+define pPOWER
+	set $NRF_POWER_BASE = 0x40000000
+	set $a = $NRF_POWER_BASE
+	printf "POWER\n"
+		# reserved[30]
+	set $a += 4 * 30
+#	printf "  TASKS_CONSTLAT:   %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_LOWPWR:     %x\n", *$a
+	set $a += 4
+		# reserved[34]
+	set $a += 4 * 34
+#	printf "  TASKS_POFWARN:    %x\n", *$a
+	set $a += 4
+		# reserved[2]
+	set $a += 4 * 2
+	printf "  EVENTS_SLEEPENTER:  %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_SLEEPEXIT:   %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_USBDETECTED: %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_USBREMOVED:  %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_USBPWRRDY:   %x\n", *$a
+	set $a += 4
+		# reserved[119]
+	set $a += 4 * 119
+	printf "  INTENSET:         %x\n", *$a
+	set $a += 4
+#	printf "  INTENCLR:         %x\n", *$a
+	set $a += 4
+		# reserved[61]
+	set $a += 4 * 61
+	printf "  RESETREAS: (%x): ", *$a
+	printRESETREAS *$a 
+	set $a += 4
+		# reserved[9]
+	set $a += 4 * 9
+#	printf "  RAMSTATUS:        %x\n", *$a
+	set $a += 4
+		# reserved[3]
+	set $a += 4 * 3
+	printf "  USBREGSTATUS:     %x\n", *$a
+	set $a += 4
+		# reserved[49]
+	set $a += 4 * 49
+	printf "  SYSTEMOFF:        %x\n", *$a
+	set $a += 4
+		# reserved[3]
+	set $a += 4 * 3
+	printf "  POFCON:           %x\n", *$a
+	set $a += 4
+		# reserved[2]
+	set $a += 4 * 2
+	printf "  GPREGET:          %x\n", *$a
+	set $a += 4
+	printf "  GPREGGET2         %x\n", *$a
+	set $a += 4
+		# reserved[21]
+	set $a += 4 * 21
+	printf "  DCDCEN:           %x\n", *$a
+	set $a += 4
+		# reserved
+	set $a += 4
+	printf "  DCDCEN0:          %x\n", *$a
+	set $a += 4
+		# reserved[47]
+	set $a += 4 * 47
+	printf "  MAINREGSTATUS:    %x\n", *$a
+	set $a += 4
+		# reserved[175]
+	set $a += 4 * 175
+	# POWER_RAM_Type RAM[9]
+end
+
+define printGPIOTEInt
+	if ($arg0 & 0x80000000)
+		printf "PORT "
+	end
+	set $i = 0
+	while $i < 8
+		set $bit = 1 << $i
+		if $arg0 & $bit
+			printf "%d ", $i
+		end
+		set $i++
+	end
+	printf "\n"
+end
+
+define pGPIOTE
+	set $NRF_GPIOTE_BASE = 0x40006000
+	set $a = $NRF_GPIOTE_BASE
+	printf "GPIOTE\n"
+	set $i = 8
+#	printf "  TASKS_OUT[%d]:   ", 8 - $i
+	while $i > 0
+#		printf " %x", *$a
+		set $a += 4
+		set $i-- 
+	end
+#	printf "\n"
+	#reserved[4]
+	set $a += 4 * 4
+	set $i = 8
+#	printf "  TASKS_SET[%d]:   ", 8 - $i
+	while $i > 0
+#		printf " %x", *$a
+		set $a += 4
+		set $i-- 
+	end
+#	printf "\n"
+	#reserved[4]
+	set $a += 4 * 4
+	set $i = 8
+#	printf "  TASKS_CLR[%d]:   ", 8 - $i
+	while $i > 0
+#		printf " %x", *$a
+		set $a += 4
+		set $i-- 
+	end
+#	printf "\n"
+	#reserved[32]
+	set $a += 4 * 32
+	set $i = 8
+	printf "  EVENTS_IN[%d]:   ", 8 - $i
+	while $i > 0
+		printf " %x", *$a
+		set $a += 4
+		set $i-- 
+	end
+	printf "\n"
+	#reserved[23]
+	set $a += 4 * 23
+	printf "  EVENTS_PORT:      %x\n", *$a
+	set $a += 4
+	#reserved[97]
+	set $a += 4 * 97
+	printf "  INTENSET:  (%x): ", *$a
+	printGPIOTEInt *$a 
+	set $a += 4
+#	printf "  INTENCLR:         %x\n", *$a
+	set $a += 4
+	#reserved[129]
+	set $a += 4 * 129
+	set $i = 8
+	while $i > 0
+		if 0 != *$a
+			printf "  CONFIG[%d]: %x ", 8 - $i, *$a
+			printGPIOTECnf *$a
+			printf "\n"
+		end
+		set $a += 4
+		set $i-- 
+	end
+	printf "\n"
+end
+
+define pRTC1
+	set $NRF_RTC1_BASE = 0x40011000
+	set $a = $NRF_RTC1_BASE
+	printf "RTC1\n"
+#	printf "  TASKS_START:      %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_STOP:       %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_CLEAR:      %x\n", *$a
+	set $a += 4
+#	printf "  TASKS_TRIGOVRFLW: %x\n", *$a
+	set $a += 4
+		# reserved[60]
+	set $a += 4 * 60
+	printf "  EVENTS_TICK:      %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_OVRFLW:    %x\n", *$a
+	set $a += 4
+		# reserved[14]
+	set $a += 4 * 14
+	printf "  EVENTS_COMPARE[0-4]: %d ", *$a
+	set $a += 4
+		printf "%d ", *$a
+	set $a += 4
+		printf "%d ", *$a
+	set $a += 4
+		printf "%d\n", *$a
+	set $a += 4
+		# reserved[109]
+	set $a += 4 * 109
+	printf "  INTENSET:         %x\n", *$a
+	set $a += 4
+#	printf "  INTENCLR:         %x\n", *$a
+	set $a += 4
+		# reserved[13]
+	set $a += 4 * 13
+	printf "  EVTEN:            %x\n", *$a
+	set $a += 4
+#	printf "  EVTENSET:         %x\n", *$a
+	set $a += 4
+#	printf "  EVTENCLR:         %x\n", *$a
+	set $a += 4
+		# reserved[110]
+	set $a += 4 * 110
+	printf "  COUNTER:          %x\n", *$a
+	set $a += 4
+	printf "  PRESCALER:        %x\n", *$a
+	set $a += 4
+		# reserved[13]
+	set $a += 4 * 13
+	printf "              CC[0-4]: %d ", *$a
+	set $a += 4
+		printf "%d ", *$a
+	set $a += 4
+		printf "%d ", *$a
+	set $a += 4
+		printf "%d\n", *$a
+	set $a += 4
+end
+
+define pNVMC
+	set $NRF_NVMC_BASE = 0x4001E000
+	set $a = $NRF_NVMC_BASE
+	printf "NVMC\n"
+		# reserved[256]
+	set $a += 4 * 256
+	printf "  READY:            %x\n", *$a
+	set $a += 4
+		#reserved
+	set $a += 4
+	printf "  READYNEXT:        %x\n", *$a
+	set $a += 4
+		#reserved[65]
+	set $a += 4 * 62
+	printf "  CONFIG:           %x\n", *$a
+	set $a += 4
+	printf "  ERASEPAGE:        %x\n", *$a
+	set $a += 4
+	printf "  ERASEALL:         %x\n", *$a
+	set $a += 4
+	printf "  ERASEPCR0:        %x\n", *$a
+	set $a += 4
+	printf "  ERASEUICR:        %x\n", *$a
+	set $a += 4
+	printf "  ERASEPAGEPARTIAL: %x\n", *$a
+	set $a += 4
+	printf "  ERASEPAGEPARTIALCFG:  %x\n", *$a
+	set $a += 4
+		#reserved[8]
+	set $a += 4 * 8
+	printf "  ICACHECNF:        %x\n", *$a
+	set $a += 4
+		#reserved
+	set $a += 4
+	printf "  IHIT:             %x\n", *$a
+	set $a += 4
+	printf "  IMISS:            %x\n", *$a
+	set $a += 4
+end
+
+define printBitfield
+	set $i = 0
+	set $max = $arg1
+	set $start = $arg2
+	while $i < $max
+		set $b = 1 << $i
+		if $arg0 & $b
+			printf "%d ", $i + $start
+		end
+		set $i++
+	end
+end
+
+define printDirections
+	set $i = 0
+	set $max = $arg1
+	set $start = $arg2
+	while $i < $max
+		set $b = 1 << $i
+		if $arg0 & $b
+			printf "%d ", $i + $start
+		end
+		set $i++
+	end
+end
+
+define pNRF_P0
+	set $NRF_P0_BASE = 0x50000000
+	set $a = $NRF_P0_BASE
+	printf "NRF_P0 (gpio)\n"
+		#reserved[321]
+	set $a += 4 * 321
+	printf "  OUT:  (%x) ", *$a
+		printBitfield *$a 32 0
+		printf "\n"
+	set $a += 4
+#	printf "  OUTSET:           %x\n", *$a
+	set $a += 4
+#	printf "  OUTCLR:           %x\n", *$a
+	set $a += 4
+	printf "  IN:   (%x) ", *$a
+		printBitfield *$a 32 0
+		printf "\n"
+	set $a += 4
+	printf "  DIR:  (%x) ", *$a
+		printDirections *$a 32 0
+		printf "\n"
+	set $a += 4
+#	printf "  DIRSET:           %x\n", *$a
+	set $a += 4
+#	printf "  DIRCLR:           %x\n", *$a
+	set $a += 4
+	printf "  LATCH (%x) ", *$a
+		printBitfield *$a 32 0
+		printf "\n"
+	set $a += 4
+	printf "  DETECTMODE        %x\n", *$a
+	set $a += 4
+		# reserved[118]
+	set $a += 4 * 118
+	set $i = 32
+	while $i > 0
+		if *$a != 2
+			printf "  PIN_CNF[%d]:  %x - ", 32 - $i, *$a
+			printPinCnf *$a
+			printf "\n"
+		end
+		set $a += 4
+		set $i-- 
+	end
+	printf "\n"
+end
+
+define pNRF_P1
+	set $NRF_P1_BASE = 0x50000300
+	set $a = $NRF_P1_BASE
+	printf "NRF_P1 (gpio)\n"
+		#reserved[321]
+	set $a += 4 * 321
+	printf "  OUT:  (%x) ", *$a
+		printBitfield *$a 16 32
+		printf "\n"
+	set $a += 4
+#	printf "  OUTSET:           %x\n", *$a
+	set $a += 4
+#	printf "  OUTCLR:           %x\n", *$a
+	set $a += 4
+	printf "  IN:   (%x) ", *$a
+		printBitfield *$a 16 32
+		printf "\n"
+	set $a += 4
+	printf "  DIR:  (%x) ", *$a
+		printDirections *$a 16 32
+		printf "\n"
+	set $a += 4
+#	printf "  DIRSET:           %x\n", *$a
+	set $a += 4
+#	printf "  DIRCLR:           %x\n", *$a
+	set $a += 4
+	printf "  LATCH (%x) ", *$a
+		printBitfield *$a 16 32
+		printf "\n"
+	set $a += 4
+	printf "  DETECTMODE        %x\n", *$a
+	set $a += 4
+		# reserved[118]
+	set $a += 4 * 118
+	set $i = 16
+	while $i > 0
+		printf "  PIN_CNF[%d - %d]:  %x - ", 32 + 16 - $i, 16 - $i, *$a
+		printPinCnf *$a
+		printf "\n"
+		set $a += 4
+		set $i-- 
+	end
+	printf "\n"
+end
+
+define printGPIOTECnf
+	set $v = $arg0 & 0x3
+	if $v == 1
+		printf "Event "
+	else
+		if $v == 3
+			printf "Task "
+		end
+	end
+	set $port = ($arg0 & 0x2000) / 0x1000
+	set $v = ($arg0 & 0x1F00) / 0x100
+	if $port
+		set $v += 32
+	end
+	printf "Pin[%d] ", $v
+	set $v = ($arg0 & 0x30000) / 0x10000
+	if $v == 0
+		printf "None "
+	else
+		if $v == 1
+			printf "LoToHi "
+		else
+			if $v == 2
+				printf "HiToLo "
+			else
+				if $v == 3
+					printf "Toggle "
+				end
+			end
+		end
+	end
+	set $v = ($arg0 & 0x100000)
+	if $f = 0x100000
+		printf "Low "
+	else
+		printf "Hi "
+	end
+end
+
+define printPinCnf
+	set $v = $arg0 & 0x01
+	if $v == 1
+		printf "Out "
+	else
+		set $v = $arg0 & 0x02
+		printf "In "
+		if $v == 0x02
+			printf "Disconnected "
+		else
+			printf "Connected "
+		end
+		set $v = $arg0 & 0xc
+		if $v == 0
+			printf "NoPull "
+		else
+			if $v == 0x4
+				printf "PullDown "
+			else
+				printf "PullUp "
+			end
+		end
+	end
+	set $v = $arg0 & 0x700
+	if $v == 0
+		printf "S0S1 "
+	else
+		if $v == 0x100
+			printf "H0S1 "
+		else
+			if $v == 0x200
+				printf "S0H1 "
+			else
+				if $v == 0x300
+					printf "H0H1 "
+				else
+					if $v == 0x400
+						printf "D0S1 "
+					else
+						if $v == 0x500
+							printf "D0H1 "
+						else
+							if $v == 0x600
+								printf "S0D1 "
+							else
+								if $v == 0x700
+									printf "H0D1 "
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	set $v = $arg0 & 0x30000
+	if $v == 0
+		printf "Sense(Disabled)"
+	else
+		if $v == 0x20000
+			printf "Sense(HIGH)"
+		else
+			if $v == 0x30000
+				printf "Sense(LOW)"
+			end
+		end
+	end
+end
+
+define xprintSome
+	set $a_$arg0 = $arg0
+	set $i_$arg1 = $arg1
+	printf "%s", $arg2
+	while $i_$arg1 > 0
+		printf " %x", *$a_$arg0
+		set $a_$arg0 += 4
+		set $i_$arg1--
+	end
+	printf "\n"
+end
+
+define printIRQs
+	set $x = $arg0
+	set $num = $arg1
+# printf "printIRQs x: %x, num: %d\n", $x, $num
+	set $j = 0
+	set $didit = 0
+	while $j < $num
+# printf " j = %d\n", $j
+		set $i = 0
+		while $i < 32
+			set $p = 1 << $i
+			set $v = *$x & $p
+# printf " i: %d - v: %d - p: %d \n", $i, $v, $p
+			if $v > 0
+				if $didit == 0
+					printf "    "
+				end
+				set $which = ($j * 32) + $i
+				printIRQ $which
+#				printf "%d ", $i
+				set $didit = 1
+			end
+			set $i++
+		end
+		set $j++
+		set $x += 4
+	end
+	if $didit
+		printf "\n"
+	end
+end
+
+define pNVIC
+	set $NVIC_BASE = 0xE000E100
+	set $a = $NVIC_BASE
+	printf "NVIC\n"
+	printf "  ISER: %d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d\n", *$a
+		set $a += 4
+	printIRQs ($a-4*8) 2
+#	set $a += 4 * 8
+		#reserved[24]
+	set $a += 4 * 24
+#	printSome $a 8 "  ICER:"
+	set $a += 4 * 8
+		#reserved[24]
+	set $a += 4 * 24
+	printf "  ISPR: %d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d ", *$a
+		set $a += 4
+		printf "%d\n", *$a
+		set $a += 4
+	printIRQs ($a-4*8) 2
+#	set $a += 4 * 8
+		#reserved[24]
+	set $a += 4 * 24
+#	printSome $a 8 "  ICPR:"
+	set $a += 4 * 8
+		#reserved[24]
+	set $a += 4 * 24
+#	printSome $a 8 "  IABR:"
+	set $a += 4 * 8
+end
+
+define printIRQ
+	if $arg0 == 0
+		printf "CLOCK_POWER_GPIO "
+	end
+	if $arg0 == 1
+		printf "RADIO "
+	end
+	if $arg0 == 2
+		printf "UART_UARTE "
+	end
+	if $arg0 == 3
+		printf "SPI0_TWI0 "
+	end
+	if $arg0 == 4
+		printf "SPI1_TWI1 "
+	end
+	if $arg0 == 6
+		printf "GPIOTE "
+	end
+	if $arg0 == 7
+		printf "SAADC "
+	end
+	if $arg0 == 8
+		printf "TIMER0 "
+	end
+	if $arg0 == 9
+		printf "TIMER1 "
+	end
+	if $arg0 == 10
+		printf "TIMER2 "
+	end
+	if $arg0 == 11
+		printf "RTC0 "
+	end
+	if $arg0 == 12
+		printf "TEMP "
+	end
+	if $arg0 == 13
+		printf "RNG "
+	end
+	if $arg0 == 14
+		printf "ECB "
+	end
+	if $arg0 == 15
+		printf "AAR "
+	end
+	if $arg0 == 16
+		printf "WDT "
+	end
+	if $arg0 == 17
+		printf "RTC1 "
+	end
+	if $arg0 == 18
+		printf "QDEC "
+	end
+	if $arg0 == 19
+		printf "LPCOMP "
+	end
+	if $arg0 == 20
+		printf "EGU0_SWI0 "
+	end
+	if $arg0 == 21
+		printf "EGU1_SWI1 "
+	end
+	if $arg0 == 22
+		printf "EGU2_SWI2 "
+	end
+	if $arg0 == 23
+		printf "EGU3_SWI3 "
+	end
+	if $arg0 == 24
+		printf "EGU4_SWI4 "
+	end
+	if $arg0 == 25
+		printf "EGU5_SWI5 "
+	end
+	if $arg0 == 26
+		printf "TIMER3 "
+	end
+	if $arg0 == 27
+		printf "TIMER4 "
+	end
+	if $arg0 == 28
+		printf "PWM0 "
+	end
+	if $arg0 == 29
+		printf "PDM "
+	end
+	if $arg0 == 30
+		printf "ACL_NVMC "
+	end
+	if $arg0 == 31
+		printf "PPI "
+	end
+	if $arg0 == 32
+		printf "MWU "
+	end
+	if $arg0 == 33
+		printf "PWM1 "
+	end
+	if $arg0 == 34
+		printf "PWM2 "
+	end
+	if $arg0 == 35
+		printf "SPI2 "
+	end
+	if $arg0 == 36
+		printf "RTC2 "
+	end
+	if $arg0 == 37
+		printf "I2S "
+	end
+	if $arg0 == 38
+		printf "FPU "
+	end
+	if $arg0 == 39
+		printf "USBD "
+	end
+	if $arg0 == 40
+		printf "UARTE1 "
+	end
+	if $arg0 == 41
+		printf "QSPI "
+	end
+	if $arg0 == 42
+		printf "CC_HOST_RGF_CRYPTOCELL "
+	end
+	if $arg0 == 43
+		printf "PWM3 "
+	end
+	if $arg0 == 47
+		printf "SPIM3 "
+	end
+end
+
+define pQSPI
+	set $NRF_QSPI_BASE = 0x40029000
+	set $a = $NRF_QSPI_BASE
+	printf "QSPI\n"
+	set $a += 0x100
+	printf "  EVENTS_READY:  %x\n", *$a
+	set $a += 0x200
+	printf "  INTEN:         %x\n", *$a
+	set $a += 0x200
+	printf "  ENABLE:        %x\n", *$a
+	set $a += 4
+	printf "  READ.SRC:      %x\n", *$a
+	set $a += 4
+	printf "  READ.DST:      %x\n", *$a
+	set $a += 4
+	printf "  READ.CNT:      %x\n", *$a
+	set $a += 4
+	printf "  WRITE.DST:     %x\n", *$a
+	set $a += 4
+	printf "  WRITE.SRC:     %x\n", *$a
+	set $a += 4
+	printf "  WRITE.CNT:     %x\n", *$a
+	set $a += 4
+	printf "  ERASE.PTR:     %x\n", *$a
+	set $a += 4
+	printf "  ERASE.LEN:     %x\n", *$a
+	set $a += 4
+	printPin "PSEL.SCK " *$a
+	set $a += 4
+	printPin "PSEL.CSN " *$a
+	set $a += 8
+	printPin "PSEL.IO0 " *$a
+	set $a += 4
+	printPin "PSEL.IO1 " *$a
+	set $a += 4
+	printPin "PSEL.IO2 " *$a
+	set $a += 4
+	printPin "PSEL.IO3 " *$a
+	set $a += 4
+	printf "  XIPOFFSET:     %x\n", *$a
+	set $a += 4
+	set $v = *$a
+	printf "  IFCONFIG0:     %x - ", $v
+		set $x = ($v & 0x7)
+		if 0 == $x
+			printf "FASTREAD "
+		end
+		if 1 == $x
+			printf "READ2O "
+		end
+		if 2 == $x
+			printf "READ2IO "
+		end
+		if 3 == $x
+			printf "READ4O "
+		end
+		if 4 == $x
+			printf "READ4IO "
+		end
+		set $x = ($v & 0x38) >> 3
+		if 0 == $x
+			printf "PP " 
+		end
+		if 1 == $x
+			printf "PP2O "
+		end
+		if 2 == $x
+			printf "PP4O "
+		end
+		if 3 == $x
+			printf "PP4IO "
+		end
+		if $v & 0x40
+			printf "32BIT "
+		else
+			printf "24BIT "
+		end
+		if $v & 0x80
+			printf "DPM-enable "
+		else
+			printf "DPM-disable "
+		end
+		if $v & 0x1000
+			printf "512 Byte page "
+		else
+			printf "256 Byte page "
+		end
+		printf "\n"
+	set $a = $NRF_QSPI_BASE + 0x600
+	set $v = *$a
+	printf "  IFCONFIG1:     %x - ", $v
+		set $x = ($v & 0xFF)
+		printf "SCKDELAY(%d) ", $x
+		if $v & 0x1000000
+			printf "DPMEN "
+		end
+		if $v & 0x2000000
+			printf "MODE3 "
+		else
+			printf "MODE0 "
+		end
+		set $x = ($v & 0xF0000000) >> 28
+		printf "SCKFREQ(%d) ", 32 / ($x + 1)
+		printf "\n"
+	set $a += 4
+	set $v = *$a
+	printf "  STATUS:        %x - ", $v
+		if $v & 0x4
+			printf "DPM "
+		else
+			printf "DPM(disable) "
+		end
+		if $v & 0x8
+			printf "READY "
+		else
+			printf "BUSY "
+		end
+		set $v = $v >> 24
+		printf "SREG(%d) ", $v
+		printf "\n"
+	set $a += 0x10
+	printf "  DPMDUR:        %x\n", *$a
+	set $a += 0x10
+	set $v = *$a
+	printf "  ADDRCONF:      %x - ", $v
+		printf "OPCODE(%x) ", $v & 0xff
+		printf "BYTE0(%x) ", ($v >> 8) & 0xff
+		printf "BYTE1(%x) ", ($v >> 16) & 0xff
+		set $x = ($v >> 24) & 0x3
+		if 0 == $x
+			printf "MODE(NoInstr) "
+		end
+		if 1 == $x
+			printf "MODE(Opcode) "
+		end
+		if 2 == $x
+			printf "MODE(OpByte0) "
+		end
+		if 3 == $x
+			printf "MODE(All) "
+		end
+		if $v & 0x4000000
+			printf "WIPWAIT "
+		else
+			printf "WIPWAIT(disabled) "
+		end
+		if $v & 0x8000000
+			printf "WREN "
+		else
+			printf "WREN(disabled) "
+		end
+		printf "\n"
+	set $a += 0x10
+	printf "  CINSTRCONF:    %x\n", *$a
+	set $a += 4
+	printf "  CINSTRDAT0:    %x\n", *$a
+	set $a += 4
+	printf "  CINSTRDAT1:    %x\n", *$a
+	set $a += 4
+	set $v = *$a
+	printf "  IFTIMING:      %x - ", $v
+		set $v = ($v & 0x700) >> 8
+		printf "(%d cycles) ", $v
+		printf "\n"
+	set $a += 4
+end
+
+define printUARTBAUDRATE
+	set $b = $arg0
+	if 0x4f000 == $b
+		printf "1200 baud"
+	end
+	if 0x9d000 == $b
+		printf "2400 baud"
+	end
+	if 0x13b000 == $b
+		printf "4800 baud"
+	end
+	if 0x275000 == $b
+		printf "9600 baud"
+	end
+	if 0x3af000 == $b
+		printf "14400 baud"
+	end
+	if 0x4ea000 == $b
+		printf "19200 baud"
+	end
+	if 0x75c000 == $b
+		printf "28800 baud"
+	end
+	if 0x800000 == $b
+		printf "31250 baud"
+	end
+	if 0x9d0000 == $b
+		printf "38400 baud"
+	end
+	if 0xe50000 == $b
+		printf "56000 baud"
+	end
+	if 0xeb0000 == $b
+		printf "57600 baud"
+	end
+	if 0x13a9000 == $b
+		printf "76800 baud"
+	end
+	if 0x1d60000 == $b
+		printf "115200 baud"
+	end
+	if 0x3b00000 == $b
+		printf "230400 baud"
+	end
+	if 0x4000000 == $b
+		printf "250000 baud"
+	end
+	if 0x7400000 == $b
+		printf "460800 baud"
+	end
+	if 0xF000000 == $b
+		printf "921600 baud"
+	end
+	if 0x10000000 == $b
+		printf "1 megabaud"
+	end
+	printf "\n"
+end
+
+define pUARTE1
+	set $NRF_UARTE1_BASE = 0x40028000
+	printf "UARTE1\n"
+	printUARTE $NRF_UARTE1_BASE
+end
+
+define printUARTE
+	set $base = $arg0
+	set $a = $base + 0x100
+	printf "  EVENTS_CTS:      %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_NCTS:     %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_RXDRDY:   %x\n", *$a
+	set $a += 8
+	printf "  EVENTS_ENDRX:    %x\n", *$a
+	set $a += 0xc 
+	printf "  EVENTS_TXDRDY:   %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_ENDTX:    %x\n", *$a
+	set $a += 4
+	printf "  EVENTS_ERROR:    %x\n", *$a
+	set $a += 0x20
+	printf "  EVENTS_RXTO:     %x\n", *$a
+	set $a += 8
+	printf "  EVENTS_RXSTARTED:%x\n", *$a
+	set $a += 4
+	printf "  EVENTS_TXSTARTED:%x\n", *$a
+	set $a += 8
+	printf "  EVENTS_TXSTOPPED:%x\n", *$a
+	set $a = $base + 0x200
+	printf "  SHORTS:          %x\n", *$a
+	set $a += 0x100
+	set $v = *$a
+	printf "  INTEN:           %x - ", $v
+		if 1 & $v
+			printf "CTS "
+		end
+		if 2 & $v
+			printf "NCTS "
+		end
+		if 4 & $v
+			printf "RXDRDY "
+		end
+		if 0x10 & $v
+			printf "ENDRX "
+		end
+		if 0x80 & $v
+			printf "TXDRDY "
+		end
+		if 0x100 & $v
+			printf "ENDTX "
+		end
+		if 0x200 & $v
+			printf "ERROR "
+		end
+		if 0x20000 & $v
+			printf "RXTO "
+		end
+		if 0x80000 & $v
+			printf "RXSTARTED "
+		end
+		if 0x100000 & $v
+			printf "TXSTARTED "
+		end
+		if 0x400000 & $v
+			printf "TXSTOPPED "
+		end
+		printf "\n"
+	set $a += 0x180
+	set $v = *$a
+	printf "  ERRORSRC:        %x - ", $v
+		if 1 & $v
+			printf "OVERRUN "
+		end
+		if 2 & $v
+			printf "PARITY "
+		end
+		if 4 & $v
+			printf "FRAMING "
+		end
+		if 8 & $v
+			printf "BREAK "
+		end
+		printf "\n"
+	set $a += 0x80
+	set $v = *$a
+	printf "  ENABLE:          %x - ", $v
+		if 8 == $v
+			printf "enabled\n"
+		end
+	set $a += 8
+	printPin "PSEL.RTS " *$a
+	set $a += 4
+	printPin "PSEL.TXD " *$a
+	set $a += 4
+	printPin "PSEL.CTS " *$a
+	set $a += 4
+	printPin "PSEL.RXD " *$a
+	set $a += 0x10
+	set $v = *$a
+	printf "  BAUDRATE:       (%x) - ", $v
+		printUARTBAUDRATE $v
+	set $a += 0x10
+	printf "  RXD.PTR:         %x\n", *$a
+	set $a += 4
+	printf "  RXD.MAXCNT:      %x\n", *$a
+	set $a += 4
+	printf "  RXD.AMOUNT:      %x\n", *$a
+	set $a += 8
+	printf "  TXD.PTR:         %x\n", *$a
+	set $a += 4
+	printf "  TXD.MAXCNT:      %x\n", *$a
+	set $a += 4
+	printf "  TXD.AMOUNT:      %x\n", *$a
+	set $a += 0x20
+	printf "  CONFIG:          %x\n", *$a
+end
+
+define pSPIS2
+	set $NRF_SPIS2_BASE = 0x40023000
+	printf "SPIS2\n"
+	printSPIS $NRF_SPIS2_BASE
+end
+
+define printSPIS
+	set $base = $arg0
+	set $a = $base + 0x104
+	printf "  EVENTS_END:     %x\n", *$a
+	set $a += 0xc
+	printf "  EVENTS_ENDRX:   %x\n", *$a
+	set $a += 0x18
+	printf "  EVENTS_ACQUIRED:%x\n", *$a
+	set $a = $base + 0x200
+	printf "  SHORTS:         %x\n", *$a
+	set $a = $base + 0x304
+	set $v = *$a
+	printf "  INTENSET:       %x - ", $v
+		if 0x2 & $v
+			printf "END "
+		end
+		if 0x10 & $v
+			printf "ENDRX "
+		end
+		if 0x400 & $v
+			printf "ACQUIRED "
+		end
+		printf "\n"
+	set $a = $base + 0x400
+	set $v = *$a & 0x3
+	printf "  SEMSTAT:        %x - ", $v
+		if 0 == $v
+			printf "Free "
+		end
+		if 1 == $v
+			printf "CPU "
+		end
+		if 2 == $v
+			printf "SPIS "
+		end
+		if 3 == $v
+			printf "CPUPending "
+		end
+		printf "\n"
+	set $a = $base + 0x440
+	set $v = *$a & 0x3
+	printf "  STATUS:         %x - ", $v
+		if $v & 0x1
+			printf "OVERREAD "
+		end
+		if $v & 0x2
+			printf "OVERFLOW "
+		end
+		printf "\n"
+	set $a = $base + 0x500
+	set $v = *$a
+	printf "  ENABLE:         %x - ", $v
+		if $v == 2
+			printf "ENABLED "
+		end
+		printf "\n"
+	set $a += 8
+	printPin "PSEL.SCK " *$a
+	set $a += 4
+	printPin "PSEL.MISO" *$a
+	set $a += 4
+	printPin "PSEL.MOSI" *$a
+	set $a += 4
+	printPin "PSEL.CSN " *$a
+	set $a = $base + 0x534
+	printf "  RXD.PTR:        %x\n", *$a
+	set $a += 4
+	printf "  RXD.MAXCNT:     %x\n", *$a
+	set $a += 4
+	printf "  RXD.AMOUNT:     %x\n", *$a
+	set $a += 4
+	printf "  RXD.LIST:       %x\n", *$a
+	set $a += 4
+	printf "  TXD.PTR:        %x\n", *$a
+	set $a += 4
+	printf "  TXD.MAXCNT:     %x\n", *$a
+	set $a += 4
+	printf "  TXD.AMOUNT:     %x\n", *$a
+	set $a += 4
+	printf "  TXD.LIST:       %x\n", *$a
+	set $a += 4
+	set $v = *$a
+	printf "  CONFIG:         %x - ", $v
+		if 0x1 & $v
+			"LSB "
+		else
+			"MSB "
+		end
+		if 0x2 & $v
+			printf "CPHA-Trailing "
+		else
+			printf "CPHA-Leading "
+		end
+		if 0x4 & $v
+			printf "CPOL-Low "
+		else
+			printf "CPOL-High "
+		end
+		printf "\n"
+	set $a += 8
+	printf "  DEF:            %x\n", *$a
+	set $a = $base + 0x5C0
+	printf "  ORC:            %x\n", *$a
+end
+
+define pSPIM3
+	set $NRF_SPIM3_BASE = 0x4002F000
+	printf "SPIM3\n"
+	printSPIM $NRF_SPIM3_BASE
+end
+
+define printSPIM
+	set $base = $arg0
+	set $a += $base + 0x104
+	printf "  EVENTS_STOPPED:%x\n", *$a
+	set $a += 0xc
+	printf "  EVENTS_ENDRX:  %x\n", *$a
+	set $a += 0x8
+	printf "  EVENTS_END:    %x\n", *$a
+	set $a += 0x8
+	printf "  EVENTS_ENDTX:  %x\n", *$a
+	set $a += 0x2C
+	printf "  EVENTS_STARTED:%x\n", *$a
+	set $a = $base + 0x200
+	printf "  SHORTS:        %x\n", *$a
+	set $a += 0x104
+	set $v = *$a
+	printf "  INTENSET:      %x - ", $v
+		if $v & 0x2
+			printf "STOPPED "
+		end
+		if $v & 0x10
+			printf "ENDRX "
+		end
+		if $v & 0x40
+			printf "END "
+		end
+		if $v & 0x100
+			printf "ENDTX "
+		end
+		if $v & 0x80000
+			printf "STARTED "
+		end
+		printf "\n"
+	set $a = $base + 0x400
+	set $v = *$a
+	printf "  STALLSTAT:     %x - ", $v
+		if $v & 0x1
+			printf "DMAREAD "
+		end
+		if $v & 0x2
+			printf "DMAWRITE "
+		end
+		printf "\n"
+	set $a = $base + 0x500
+	printf "  ENABLE:        %x\n", *$a
+	set $a += 0x8
+	printPin "PSEL.SCK " *$a
+	set $a += 0x4
+	printPin "PSEL.MOSI" *$a
+	set $a += 0x4
+	printPin "PSEL.MISO" *$a
+	set $a += 0x4
+	printPin "PSEL.CSN " *$a
+	set $a += 0x10
+	set $v = *$a
+	printf "  FREQUENCY:     %x - ", $v
+		set $v = $v >> 24
+		if 0x02 == $v
+			printf "125 kbps"
+		end
+		if 0x04 == $v
+			printf "250 kbps"
+		end
+		if 0x08 == $v
+			printf "500 kbps"
+		end
+		if 0x10 == $v
+			printf "1 Mbps"
+		end
+		if 0x20 == $v
+			printf "2 Mbps"
+		end
+		if 0x40 == $v
+			printf "4 Mbps"
+		end
+		if 0x80 == $v
+			printf "8 Mbps"
+		end
+		if 0x0A == $v
+			printf "16 Mbps"
+		end
+		if 0x14 == $v
+			printf "32 Mbps"
+		end
+		printf "\n"
+	set $a += 0x10
+	printf "  RXD.PTR:       %x\n", *$a
+	set $a += 0x4
+	printf "  RXD.MAXCNT:    %x\n", *$a
+	set $a += 0x4
+	printf "  RXD.AMOUNT:    %x\n", *$a
+	set $a += 0x4
+	printf "  RXD.LIST:      %x\n", *$a
+	set $a += 0x4
+	printf "  TXD.PTR:       %x\n", *$a
+	set $a += 0x4
+	printf "  TXD.MAXCNT:    %x\n", *$a
+	set $a += 0x4
+	printf "  TXD.AMOUNT:    %x\n", *$a
+	set $a += 0x4
+	printf "  TXD.LIST:      %x\n", *$a
+	set $a += 0x4
+	set $v = *$a
+	printf "  CONFIG:        %x - ", $v
+		if 0x1 & $v
+			printf "LSB "
+		else
+			printf "MSB "
+		end
+		if 0x2 & $v
+			printf "CPHA-Trailing "
+		else
+			printf "CPHA-Leading "
+		end
+		if 0x4 & $v
+			printf "CPOL-Low "
+		else
+			printf "CPOL-High "
+		end
+		printf "\n"
+	set $a += 0xC
+	printf "  IFTIM.RXDELAY: %x\n", *$a
+	set $a += 0x4
+	printf "  IFTIM.CSNDUR:  %x\n", *$a
+	set $a += 0x4
+	set $v = *$a
+	printf "  CSNPOL:        %x - ", $v
+		if 0x1 & $v
+			printf "Active HIGH "
+		else
+			printf "Active LOW "
+		end
+		printf "\n"
+	set $a += 0x4
+	printPin "PSEL.DCX " *$a
+	set $a += 0x4
+	printf "  DCXCNT:        %x\n", *$a
+	set $a += 0x50
+	printf "  ORC:           %x\n", *$a
+end

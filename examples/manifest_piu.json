@@ -53,6 +53,12 @@
 				"setup/piu": "$(BUILD)/devices/qca4020/setup/piu"
 			},
 			"preload": "setup/piu"
+		},
+		"nrf52": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/nrf52/setup/piu"
+			},
+			"preload": "setup/piu"
 		}
 	}
 }

@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# wait for the M4 to go away
+NAME=/Volumes/MODDABLE4
+echo "Installing to $NAME"
+# while [ -d "$NAME" ]; do
+#      echo -n "."
+#      sleep 0.1
+# done
+# echo
+
+if [ $1 -eq 0 ]; then
+	echo "Release build installed."
+	exit
+fi
+
+# save original serial port
+original=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
+
+fileToCompare=""
+
+arrayContained=""
+
+arrayContains() {
+	local i
+	arr=("$@")
+	it="${fileToCompare}"
+	for ((i=0; i<${#arr[@]}; i++)); do
+# echo "${i} does array ${arr[$i]} contain ${it}"
+		if [ "${arr[$i]}" = "${it}" ]; then
+# echo "array contains ${it}"
+			arrayContained=${it}
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+findNew() {
+	local i
+	new=("$@")
+# echo "${#new[@]} new array size in findNew"
+	old=${original[@]}
+	for ((i=0; i<${#new[@]}; i++)); do
+# echo "${i} look for ${new[$i]}"
+		arrayContained=""
+		fileToCompare="${new[$i]}"
+		arrayContains ${old}
+		if [ "" == "${arrayContained}" ]; then
+			return 1;
+		fi
+	done
+	fileToCompare=""
+	return 0;
+}
+
+newOne=0
+
+# wait for usbd serial port to enumerate
+while [ $newOne -eq 0 ]; do
+	sleep 0.1
+	compare=( $(find /dev -type c -name "cu.usbmodem*" 2> /dev/null) )
+
+	findNew "${compare[@]}"
+	if [ 1 -eq $? ]; then
+		break;
+	fi
+	
+done
+
+echo "Debug build installed"
+echo "Connecting to xsbug using serial port at ${fileToCompare}"
+# ${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1 -dtr
+${MODDABLE}/build/bin/mac/release/serial2xsbug ${fileToCompare} 921600 8N1
+

@@ -46,6 +46,11 @@
 		(1 << 15) |
 		(1 << 16)
 	};
+#elif nrf52
+	static uint32_t gDigitalAvailable[kPinBanks] = {
+		0xFFFFFFFF,		//@@
+		0xFFFFFFFF		//@@
+	};
 #elif defined(PICO_BUILD)
     critical_section_t gCommonCriticalMux;
 
@@ -58,6 +63,8 @@
 		0x00000000		//@@
 #endif
 	};
+#else
+	#error - unsupported platform
 #endif
 
 #if __COMMON__PINS__

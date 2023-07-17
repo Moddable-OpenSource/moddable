@@ -309,7 +309,6 @@ C_FLAGS ?= $(C_COMMON_FLAGS) \
 
 #	--machine-fix-esp32-psram-cache-issue --machine-fix-esp32-psram-cache-strategy=memw
 
-
 CPP_FLAGS ?= $(C_COMMON_FLAGS)
 
 # Utility functions

@@ -25,9 +25,13 @@
 		the opposite order within a byte from destination pixels. Consequently, rendering to an offscreen will generate incorrect results.
 */
 
+#include "xsPlatform.h"
+#ifdef kPocoRotation
+	// Moddable SDK
+	#include "mc.defines.h"
+#endif
 #include "commodettoPocoBlit.h"
 
-#include "xsPlatform.h"
 
 enum {
 	kPocoCommandRectangleFill = 0,		// must start at 0 to match gDrawRenderCommand
@@ -84,8 +88,6 @@ static void doDrawMaskedBitmap(Poco poco, PocoCommand pc, PocoPixel *d, PocoDime
 static void doDrawPattern(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
 static void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h);
-
-static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
 
 static const PocoRenderCommandProc gDrawRenderCommand[kPocoCommandDrawMax] ICACHE_RODATA_ATTR = {
 	doFillRectangle,
@@ -510,6 +512,13 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 	int16_t d;
 	PocoCommand pc = poco->next;
 
+	if (kCommodettoBitmapMonochrome == bits->format) {
+		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeAndBackground, 0, ~0, x, y, sx, sy, sw, sh);
+		return;
+	}
+	if (kCommodettoBitmapFormat != bits->format)
+		return;
+
 	PocoReturnIfNoSpace(pc, sizeof(RenderMonochromeBitsRecord));
 
 	rotateCoordinates(poco->width, poco->height, x, y, sw, sh);
@@ -553,60 +562,87 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 
 	pc->x = x, pc->y = y, pc->w = sw, pc->h = sh;
 
-	if (kCommodettoBitmapFormat == bits->format) {
-		pc->command = kPocoCommandBitmapDraw;
-		PocoCommandSetLength(pc, sizeof(RenderBitsRecord));
+	pc->command = kPocoCommandBitmapDraw;
+	PocoCommandSetLength(pc, sizeof(RenderBitsRecord));
 #if 4 != kPocoPixelSize
-		((RenderBits)pc)->pixels = (void *)(pixels + (sy * bits->width) + sx);
-		((RenderBits)pc)->rowPixels = bits->width;
+	((RenderBits)pc)->pixels = (void *)(pixels + (sy * bits->width) + sx);
+	((RenderBits)pc)->rowPixels = bits->width;
 #else
-		((RenderBits)pc)->pixels = (void *)(pixels + ((sy * (bits->width + 1)) >> 1) + (sx >> 1));
-		((RenderBits)pc)->rowBytes = (bits->width + 1) >> 1;
-		((RenderBits)pc)->doCopy = getMemCpy4(sx, x - poco->x);
+	((RenderBits)pc)->pixels = (void *)(pixels + ((sy * (bits->width + 1)) >> 1) + (sx >> 1));
+	((RenderBits)pc)->rowBytes = (bits->width + 1) >> 1;
+	((RenderBits)pc)->doCopy = getMemCpy4(sx, x - poco->x);
 #if kPocoPixelFormat == kCommodettoBitmapCLUT16
-		buildColorMap((uint32_t *)((uint8_t *)bits->pixels) - 16, poco->clut + 32, ((RenderBits)pc)->remap);
+	buildColorMap((uint32_t *)((uint8_t *)bits->pixels) - 16, poco->clut + 32, ((RenderBits)pc)->remap);
 #endif
 #endif
-	}
-	else
-	if (kCommodettoBitmapMonochrome == bits->format) {
-		uint8_t mask;
-		RenderMonochromeBits srcBits = (RenderMonochromeBits)pc;
-
-		pixels = (PocoPixel *)(((char *)pixels) + ((bits->width + 7) >> 3) * sy);  // clipped off top. skip sy scan lines.
-		pixels = (PocoPixel *)(((char *)pixels) + (sx >> 3));
-		sx &= 0x07;
-		mask = 1 << (7 - sx);
-
-		pc->command = kPocoCommandMonochromeBitmapDraw;
-		PocoCommandSetLength(pc, sizeof(RenderMonochromeBitsRecord));
-		srcBits->pixels = (const unsigned char *)pixels;
-		srcBits->rowBump = (bits->width + 7) >> 3;
-		srcBits->mask = mask;
-		srcBits->mode = kPocoMonochromeForeAndBackground;	// mode, fore, amd back are patched in PocoMonochromeBitmapDraw
-		srcBits->fore = 0x00;
-		srcBits->back = ~0;
-// 		return;		// special case for PocoMonochromeBitmapDraw
-	}
-	else
-		return;
 
 	PocoCommandBuilt(poco, pc);
 }
 
 void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mode, PocoColor fgColor, PocoColor bgColor, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
+	const PocoPixel *pixels;
+	int16_t d;
 	PocoCommand pc = poco->next;
 	RenderMonochromeBits rmb = (RenderMonochromeBits)pc;
+	uint8_t mask;
 
 	if (kCommodettoBitmapMonochrome != bits->format)
 		return;
 
-	PocoBitmapDraw(poco, bits, x, y, sx, sy, sw, sh);
+	PocoReturnIfNoSpace(pc, sizeof(RenderMonochromeBitsRecord));
 
-	if (poco->next == pc)
-		return;		// didn't queue anything to draw
+	rotateCoordinates(poco->width, poco->height, x, y, sw, sh);
+#if (0 == kPocoRotation) || (180 == kPocoRotation)
+	rotateCoordinatesAndDimensions(bits->width, bits->height, sx, sy, sw, sh);
+#elif (90 == kPocoRotation) || (270 == kPocoRotation)
+	rotateCoordinatesAndDimensions(bits->height, bits->width, sx, sy, sw, sh);
+#endif
 
+	if ((x >= poco->xMax) || (y >= poco->yMax))
+		return;
+
+	if (x < poco->x) {
+		d = poco->x - x;
+		if (sw <= d)
+			return;
+		sx += d;
+		sw -= d;
+		x = poco->x;
+	}
+
+	if (y < poco->y) {
+		d = poco->y - y;
+		if (sh <= d)
+			return;
+		sy += d;
+		sh -= d;
+		y = poco->y;
+	}
+
+	if ((x + sw) > poco->xMax)
+		sw = poco->xMax - x;
+
+	if ((y + sh) > poco->yMax)
+		sh = poco->yMax - y;
+
+	if ((sx >= bits->width) || (sy >= bits->height) || ((sx + sw) > bits->width) || ((sy + sh) > bits->height) || !sw || !sh)
+		return;
+
+	pixels = bits->pixels;
+
+	pc->x = x, pc->y = y, pc->w = sw, pc->h = sh;
+
+	pixels = (PocoPixel *)(((char *)pixels) + ((bits->width + 7) >> 3) * sy);  // clipped off top. skip sy scan lines.
+	pixels = (PocoPixel *)(((char *)pixels) + (sx >> 3));
+	sx &= 0x07;
+	mask = 1 << (7 - sx);
+
+	pc->command = kPocoCommandMonochromeBitmapDraw;
+	PocoCommandSetLength(pc, sizeof(RenderMonochromeBitsRecord));
+	rmb->pixels = (const unsigned char *)pixels;
+	rmb->rowBump = (bits->width + 7) >> 3;
+	rmb->mask = mask;
 	rmb->mode = mode;
 #if kPocoPixelFormat != kCommodettoBitmapCLUT16
 	rmb->fore = fgColor;
@@ -911,6 +947,9 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 	PocoCommandBuilt(poco, pc);
 }
 
+#if MODDEF_POCO_COLORCELL
+static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
+
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
 	PocoCommand pc = poco->next;
@@ -971,6 +1010,12 @@ void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x
 
 	PocoCommandBuilt(poco, pc);
 }
+#else
+void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
+{
+	poco->flags |= kPocoFlagErrorUnimplemented; 
+}
+#endif
 
 // rotation and clipped performed externally
 void PocoDrawExternal(Poco poco, PocoRenderExternal doDrawExternal, uint8_t *data, uint8_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
@@ -3022,6 +3067,7 @@ void buildColorMap(uint32_t *srcCLUT, uint8_t *inverseTable, uint8_t *remap)
 }
 #endif
 
+#if MODDEF_POCO_COLORCELL
 #define kReuse0Mask (0x10)
 #define kReuse1Mask (0x08)
 
@@ -3333,6 +3379,11 @@ done:
 
 	return repeatSkip;
 }
+#else
+void doDrawFrame(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
+{
+}
+#endif
 
 void doDrawExternal(Poco poco, PocoCommand pc, PocoPixel *dst, PocoDimension h)
 {
@@ -3408,6 +3459,11 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		poco->displayListEnd += poco->stackDepth * sizeof(PocoRectangleRecord); 
 		return 2;
 	}
+
+#if !MODDEF_POCO_COLORCELL
+	if (poco->flags & kPocoFlagErrorUnimplemented)
+		return 5;
+#endif
 
 	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
 		return 1;

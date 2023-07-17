@@ -3,7 +3,7 @@ Copyright 2017-2022 Moddable Tech, Inc.<BR>
 Revised: June 20, 2022
 
 ## About This Document
-This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, and Qualcomm QCA4020 devices.
+This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, Qualcomm QCA4020, and Nordic nRF52 devices.
 
 > **Note:** A BLE server/slave is also commonly referred to as a BLE peripheral. The terms *server*, *slave* and *peripheral* in this document are used interchangeably.
 
@@ -1139,7 +1139,10 @@ The `params` object contains the following properties:
 | `discoverable` | `boolean` | Optional property to specify discoverable mode. Set to `true` to use the general discovery procedure; `false` to specify non-discoverable. Defaults to `true`.
 | `fast` | `boolean` | Optional property to specify the GAP advertisement interval. Set to `true` to specify TGAP(adv\_fast\_interval1); `false` to specify TGAP(adv\_slow\_interval). Defaults to `true`.
 | `filterPolicy` | `number` | Optional property to apply a filter policy. Defaults to `GAP.AdvFilterPolicy.NONE` (no filtering). Refer to the [BLE whitelisting](#blewhitelisting) section for details.
+| `notify` | `boolean` | Optional property to notify application after each advertising data packet sent. Defaults to `false`.
 | `scanResponseData` | `object` | Optional object containing scan response data properties.
+
+> Note: The `notify` property is only implemented for nRF52 devices.
 
 The `filterPolicy` property can be one of the following:
 
@@ -1208,6 +1211,20 @@ this.startAdvertising({
 });
 ```
 
+To receive a notification callback after each advertising data packet sent:
+
+```javascript
+onReady() {
+	this.startAdvertising({
+		notify: true,
+		advertisingData: {flags: GAP.ADFlag.NO_BR_EDR, completeName: "Advertiser"}
+	});
+}
+onAdvertisementSent() {
+	trace("advertisement sent\n");
+}
+```
+
 ***
 
 #### `stopAdvertising()`
@@ -1247,6 +1264,14 @@ startNotifications(characteristic) {
 }
 ```
 
+***
+
+#### `onAdvertisementSent()`
+
+The `onAdvertisementSent` callback function is called after each advertising data packet sent, when a server enables advertisement notifications from the `startAdvertising()` function.
+
+> Note: The `onAdvertisementSent` callback is only implemented for nRF52 devices.
+ 
 ***
 
 #### `onCharacteristicNotifyEnabled(characteristic)`
@@ -1808,6 +1833,7 @@ The Moddable SDK includes many BLE client and server example apps to build from.
 | Name | Description |
 | :---: | :--- |
 | [advertiser](../../../examples/network/ble/advertiser) | Broadcasts advertisements until a BLE client connects.
+| [advertiser-notify](../../../examples/network/ble/advertiser-whitelist) | Demonstrates how to configure advertiser to receive notification callbacks for each advertising data packet sent.
 | [advertiser-whitelist](../../../examples/network/ble/advertiser-whitelist) | Broadcasts advertisements until the whitelisted BLE client connects.
 | [health-thermometer-server](../../../examples/network/ble/health-thermometer-server) | Implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
 | [health-thermometer-server-gui](../../../examples/network/ble/health-thermometer-server-gui) | [Piu](../../../documentation/piu/piu.md) app for ESP32 that implements the Bluetooth [Health Thermometer Service](https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml).
