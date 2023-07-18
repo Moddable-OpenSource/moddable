@@ -1075,6 +1075,14 @@ mxExport void fx_DisposableStack_prototype_defer(txMachine* the);
 mxExport void fx_DisposableStack_prototype_dispose(txMachine* the);
 mxExport void fx_DisposableStack_prototype_move(txMachine* the);
 mxExport void fx_DisposableStack_prototype_use(txMachine* the);
+
+mxExport void fx_AsyncDisposableStack(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_get_disposed(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_adopt(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_defer(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_dispose(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_move(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_use(txMachine* the);
 #endif
 
 /* xsNumber.c */
@@ -2041,6 +2049,7 @@ enum {
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
 	XS_DISPOSABLE_STACK_KIND,
+	XS_ASYNC_DISPOSABLE_STACK_KIND,
 	XS_BREAKPOINT_KIND,
 };
 enum {
@@ -2517,6 +2526,7 @@ enum {
 	mxWeakRefPrototypeStackIndex,
 	mxFinalizationRegistryPrototypeStackIndex,
 	mxDisposableStackPrototypeStackIndex,
+	mxAsyncDisposableStackPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxAssignObjectFunctionStackIndex,
@@ -2593,6 +2603,7 @@ enum {
 #define mxAggregateErrorConstructor the->stackPrototypes[-1 - _AggregateError]
 #define mxArrayConstructor the->stackPrototypes[-1 - _Array]
 #define mxArrayBufferConstructor the->stackPrototypes[-1 - _ArrayBuffer]
+#define mxAsyncDisposableStackConstructor the->stackPrototypes[-1 - _AsyncDisposableStack]
 #define mxAtomicsObject the->stackPrototypes[-1 - _Atomics]
 #define mxBigIntConstructor the->stackPrototypes[-1 - _BigInt]
 #define mxBigInt64ArrayConstructor the->stackPrototypes[-1 - _BigInt64Array]
@@ -2693,6 +2704,7 @@ enum {
 #define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
 #define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
 #define mxDisposableStackPrototype the->stackPrototypes[-1 - mxDisposableStackPrototypeStackIndex]
+#define mxAsyncDisposableStackPrototype the->stackPrototypes[-1 - mxAsyncDisposableStackPrototypeStackIndex]
 
 #define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
 #define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]

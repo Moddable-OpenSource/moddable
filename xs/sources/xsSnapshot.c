@@ -71,7 +71,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxChunkFlag 0x80000000
 
 #if mxExplicitResourceManagement
-#define mxCallbacksLength 513
+#define mxCallbacksLength 520
 #else
 #define mxCallbacksLength 506
 #endif
@@ -131,6 +131,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_ArrayBuffer_prototype_transfer,
 	fx_ArrayBuffer,
 	fx_ArrayIterator_prototype_next,
+#if mxExplicitResourceManagement
+	fx_AsyncDisposableStack,
+	fx_AsyncDisposableStack_prototype_get_disposed,
+	fx_AsyncDisposableStack_prototype_adopt,
+	fx_AsyncDisposableStack_prototype_defer,
+	fx_AsyncDisposableStack_prototype_dispose,
+	fx_AsyncDisposableStack_prototype_move,
+	fx_AsyncDisposableStack_prototype_use,
+#endif
 	fx_AsyncFromSyncIterator_prototype_next,
 	fx_AsyncFromSyncIterator_prototype_return,
 	fx_AsyncFromSyncIterator_prototype_throw,

@@ -57,6 +57,7 @@ static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
 static void fxRunUsed(txMachine* the, txSlot* selector);
 static void fxRunUsing(txMachine* the);
+static void fxRunUsingAsync(txMachine* the);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
@@ -647,6 +648,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_USED_1,
 		&&XS_CODE_USED_2,
 		&&XS_CODE_USING,
+		&&XS_CODE_USING_ASYNC,
 		&&XS_CODE_VAR_CLOSURE_1,
 		&&XS_CODE_VAR_CLOSURE_2,
 		&&XS_CODE_VAR_LOCAL_1,
@@ -2091,6 +2093,12 @@ XS_CODE_JUMP:
 			mxNextCode(1);
 			mxSaveState;
 			fxRunUsing(the);
+			mxRestoreState;
+			mxBreak;
+		mxCase(XS_CODE_USING_ASYNC)
+			mxNextCode(1);
+			mxSaveState;
+			fxRunUsingAsync(the);
 			mxRestoreState;
 			mxBreak;
 				
@@ -4950,32 +4958,21 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 void fxRunUsed(txMachine* the, txSlot* selector)
 {
 	txSlot* exception = selector + 1;
-	txSlot* resource = the->stack;
-	txSlot* dispose = the->stack + 1;
 	fxBeginHost(the);
 	{
-		mxTry(the) {
-			mxPushSlot(resource);
-			mxPushSlot(dispose);
-			mxCall();
-			mxRunCount(0);
-			mxPop();
+		if (selector->value.integer == 0) {
+			mxPush(mxSuppressedErrorConstructor);
+			mxNew();
+			mxPush(mxException);
+			mxPushSlot(exception);
+			mxRunCount(2);
+			mxPullSlot(exception);
 		}
-		mxCatch(the) {
-			if (selector->value.integer == 0) {
-				mxPush(mxSuppressedErrorConstructor);
-				mxNew();
-				mxPush(mxException);
-				mxPushSlot(exception);
-				mxRunCount(2);
-				mxPullSlot(exception);
-			}
-			else {
-				*exception = mxException;
-				selector->value.integer = 0;
-			}
-			mxException = mxUndefined;
+		else {
+			*exception = mxException;
+			selector->value.integer = 0;
 		}
+		mxException = mxUndefined;
 	}
 	fxEndHost(the);
 }
@@ -4990,6 +4987,29 @@ void fxRunUsing(txMachine* the)
 		if (!fxIsCallable(the, the->stack))
 			mxTypeError("no [Symbol.dispose] method");
 	}
+	else
+		the->stack->kind = XS_NULL_KIND;
+	mxPullSlot(resource);
+	fxEndHost(the);
+}
+
+void fxRunUsingAsync(txMachine* the)
+{
+	txSlot* resource = the->stack;
+	fxBeginHost(the);
+	mxPushSlot(resource);
+	if (!mxIsNull(resource) && !mxIsUndefined(resource)) {
+		mxGetID(mxID(_Symbol_asyncDispose));
+		if (!fxIsCallable(the, the->stack)) {
+			mxPop();
+			mxPushSlot(resource);
+			mxGetID(mxID(_Symbol_dispose));
+		}
+		if (!fxIsCallable(the, the->stack))
+			mxTypeError("no [Symbol.asyncDispose] method, no [Symbol.dispose] method");
+	}
+	else
+		the->stack->kind = XS_NULL_KIND;
 	mxPullSlot(resource);
 	fxEndHost(the);
 }
