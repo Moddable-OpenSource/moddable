@@ -1316,9 +1316,8 @@ void fxStatement(txParser* parser, txInteger blockIt)
 			break;
 		}
 #if mxExplicitResourceManagement
-		if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) 
-				&& ((gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))
-				&& (blockIt || (!parser->crlf2) || (parser->token2 == XS_TOKEN_LEFT_BRACKET))) {
+		if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (blockIt) && (!parser->crlf2) 
+				&& ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
 			parser->token = XS_TOKEN_USING;
 			if (blockIt <= 0)
 				fxReportParserError(parser, parser->line, "no block");
@@ -1434,7 +1433,8 @@ void fxForStatement(txParser* parser)
 		fxVariableStatement(parser, XS_TOKEN_LET);
 	}
 #if mxExplicitResourceManagement
-	else if (fxIsKeyword(parser, parser->usingSymbol) && (!parser->escaped) && (!parser->crlf2) && (gxTokenFlags[parser->token2] & XS_TOKEN_BEGIN_BINDING)) {
+	else if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (!parser->crlf2) 
+				&& ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
 		parser->token = XS_TOKEN_USING;
 		fxVariableStatement(parser, XS_TOKEN_USING);
 	}
@@ -1461,6 +1461,9 @@ void fxForStatement(txParser* parser)
 				if (((txBindingNode*)(parser->root))->initializer)
 					fxReportParserError(parser, parser->line, "invalid binding initializer");
 			}
+			if (fxIsToken(parser, XS_TOKEN_IN) && (aToken == XS_TOKEN_USING))
+				fxReportParserError(parser, parser->line, "invalid using in");
+			
 // 			else if (aToken == XS_TOKEN_ARRAY_BINDING) {
 // 				if (((txArrayBindingNode*)(parser->root))->initializer)
 // 					fxReportParserError(parser, parser->line, "invalid array binding initializer");

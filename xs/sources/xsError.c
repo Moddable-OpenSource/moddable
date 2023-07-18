@@ -144,7 +144,7 @@ void fxBuildError(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_dispose), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "DisposableStack", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxDisposableStackPrototype = *the->stack;
-	slot = fxBuildHostConstructor(the, mxCallback(fx_DisposableStack), 0, mxID(_Map));
+	slot = fxBuildHostConstructor(the, mxCallback(fx_DisposableStack), 0, mxID(_DisposableStack));
 	mxDisposableStackConstructor = *the->stack;
 	mxPop();
 #endif
