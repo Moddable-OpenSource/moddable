@@ -71,7 +71,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxChunkFlag 0x80000000
 
 #if mxExplicitResourceManagement
-#define mxCallbacksLength 520
+#define mxCallbacksLength 522
 #else
 #define mxCallbacksLength 506
 #endif
@@ -136,7 +136,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncDisposableStack_prototype_get_disposed,
 	fx_AsyncDisposableStack_prototype_adopt,
 	fx_AsyncDisposableStack_prototype_defer,
-	fx_AsyncDisposableStack_prototype_dispose,
+	fx_AsyncDisposableStack_prototype_disposeAsync,
 	fx_AsyncDisposableStack_prototype_move,
 	fx_AsyncDisposableStack_prototype_use,
 #endif
@@ -149,6 +149,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncGenerator_prototype_throw,
 	fx_AsyncGenerator,
 	fx_AsyncGeneratorFunction,
+#if mxExplicitResourceManagement
+	fx_AsyncIterator_asyncDispose,
+#endif
 	fx_AsyncIterator_asyncIterator,
 	fx_Atomics_add,
 	fx_Atomics_and,
@@ -288,6 +291,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_GeneratorFunction,
 	fx_isFinite,
 	fx_isNaN,
+#if mxExplicitResourceManagement
+	fx_Iterator_dispose,
+#endif
 	fx_Iterator_iterator,
 	fx_JSON_parse,
 	fx_JSON_stringify,

@@ -81,6 +81,9 @@ void fxBuildGenerator(txMachine* the)
 
 	mxPush(mxObjectPrototype);
 	slot = fxNewObjectInstance(the);
+#if mxExplicitResourceManagement
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_AsyncIterator_asyncDispose), 0, mxID(_Symbol_asyncDispose), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_AsyncIterator_asyncIterator), 0, mxID(_Symbol_asyncIterator), XS_DONT_ENUM_FLAG);
 	mxPull(mxAsyncIteratorPrototype);
 	
@@ -694,6 +697,22 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 		mxPop();
 	}
 }
+
+#if mxExplicitResourceManagement
+void fx_AsyncIterator_asyncDispose(txMachine* the)
+{	
+	mxPushSlot(mxThis);
+	mxDub();
+	mxGetID(mxID(_return));
+	if (mxIsUndefined(the->stack)) 
+		mxPop();
+	else {
+		mxCall();
+		mxRunCount(0);
+		mxPullSlot(mxResult);
+	}
+}
+#endif
 
 void fx_AsyncIterator_asyncIterator(txMachine* the)
 {

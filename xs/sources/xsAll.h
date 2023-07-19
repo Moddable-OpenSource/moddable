@@ -924,6 +924,9 @@ extern txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID i
 extern txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 extern txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 
+#if mxExplicitResourceManagement
+mxExport void fx_Iterator_dispose(txMachine* the);
+#endif
 mxExport void fx_Iterator_iterator(txMachine* the);
 mxExport void fx_Enumerator(txMachine* the);
 mxExport void fx_Enumerator_next(txMachine* the);
@@ -1080,7 +1083,7 @@ mxExport void fx_AsyncDisposableStack(txMachine* the);
 mxExport void fx_AsyncDisposableStack_prototype_get_disposed(txMachine* the);
 mxExport void fx_AsyncDisposableStack_prototype_adopt(txMachine* the);
 mxExport void fx_AsyncDisposableStack_prototype_defer(txMachine* the);
-mxExport void fx_AsyncDisposableStack_prototype_dispose(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_disposeAsync(txMachine* the);
 mxExport void fx_AsyncDisposableStack_prototype_move(txMachine* the);
 mxExport void fx_AsyncDisposableStack_prototype_use(txMachine* the);
 #endif
@@ -1748,6 +1751,7 @@ mxExport void fx_AsyncGenerator_prototype_return(txMachine* the);
 mxExport void fx_AsyncGenerator_prototype_throw(txMachine* the);
 mxExport void fx_AsyncGeneratorFunction(txMachine* the);
 
+mxExport void fx_AsyncIterator_asyncDispose(txMachine* the);
 mxExport void fx_AsyncIterator_asyncIterator(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_next(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_return(txMachine* the);
