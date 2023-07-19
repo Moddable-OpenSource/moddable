@@ -37,11 +37,6 @@
 			"backlight_pin": 25,
 			"backlight_on": 1,
 			"flipx": true
-		},
-        "cst816": {
-			"flipX": true,
-			"flipY": true
 		}
-
 	}
 }

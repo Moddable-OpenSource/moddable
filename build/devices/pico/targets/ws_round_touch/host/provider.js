@@ -113,7 +113,7 @@ const device = {
 						pin: 21
 					}
 				});
-				result.configure({ flip: "hv" });
+				result.configure({ });
 				return result;
 			}
 		}
