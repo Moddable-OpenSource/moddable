@@ -95,7 +95,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		if (fxIsCodeUsed(XS_CODE_ARRAY))
 			fxUnstripCallback(linker, fx_Array);
 			
-		if (fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION)|| fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) || fxIsCodeUsed(XS_CODE_IMPORT))
+		if (fxIsCodeUsed(XS_CODE_ASYNC_FUNCTION)|| fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) || fxIsCodeUsed(XS_CODE_IMPORT) || fxIsCodeUsed(XS_CODE_USING_ASYNC))
 			fxUnstripCallback(linker, fx_Promise);
 			
 		if (fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
@@ -108,6 +108,8 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			fxUnstripCallback(linker, fx_RegExp);
 			
 		fxUnstripCallback(linker, fx_RangeError);
+		if (fxIsCodeUsed(XS_CODE_USED_1) || fxIsCodeUsed(XS_CODE_USED_2))
+			fxUnstripCallback(linker, fx_SuppressedError);
 		fxUnstripCallback(linker, fx_SyntaxError);
 	}
 	linkerStrip = linker->firstStrip;
@@ -146,14 +148,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_Date_secure);
 			}
 #if mxExplicitResourceManagement
-			else if (!c_strcmp(name, "DisposableStack")) {
+			else if (!c_strcmp(name, "DisposableStack"))
 				fxStripCallback(linker, fx_DisposableStack);
-				fxStripCallback(linker, fx_DisposableStack_prototype_get_disposed);
-				fxStripCallback(linker, fx_DisposableStack_prototype_adopt);
-				fxStripCallback(linker, fx_DisposableStack_prototype_dispose);
-				fxStripCallback(linker, fx_DisposableStack_prototype_move);
-				fxStripCallback(linker, fx_DisposableStack_prototype_use);
-			}
+			else if (!c_strcmp(name, "AsyncDisposableStack"))
+				fxStripCallback(linker, fx_AsyncDisposableStack);
 #endif
 			else if (!c_strcmp(name, "FinalizationRegistry"))
 				fxStripCallback(linker, fx_FinalizationRegistry);
@@ -219,6 +217,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxUnuseCode(XS_CODE_IMPORT);
 				fxUnuseCode(XS_CODE_START_ASYNC);
 				fxUnuseCode(XS_CODE_START_ASYNC_GENERATOR);
+				fxUnuseCode(XS_CODE_USING_ASYNC);
 			}
 			else if (!c_strcmp(name, "Proxy"))
 				fxStripCallback(linker, fx_Proxy);
@@ -351,6 +350,15 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 #if mxExplicitResourceManagement
 	if (fxIsCallbackStripped(linker, fx_DisposableStack)) {
 		fxStripClass(linker, the, &mxDisposableStackConstructor);
+	}
+	else {
+		fxUnstripCallback(linker, fx_SuppressedError);
+	}
+	if (fxIsCallbackStripped(linker, fx_AsyncDisposableStack)) {
+		fxStripClass(linker, the, &mxAsyncDisposableStackConstructor);
+	}
+	else {
+		fxUnstripCallback(linker, fx_SuppressedError);
 	}
 #endif
 	if (fxIsCallbackStripped(linker, fx_FinalizationRegistry)) {

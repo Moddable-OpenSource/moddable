@@ -64,6 +64,10 @@ static void fxStatements(txParser* parser);
 static void fxBlock(txParser* parser);
 static void fxStatement(txParser* parser, txInteger blockIt);
 static void fxSemicolon(txParser* parser);
+
+#if mxExplicitResourceManagement
+static txInteger fxAwaitUsingStatement(txParser* parser, txInteger blockIt);
+#endif
 static void fxBreakStatement(txParser* parser);
 static void fxContinueStatement(txParser* parser);
 static void fxDebuggerStatement(txParser* parser);
@@ -78,7 +82,6 @@ static void fxVariableStatement(txParser* parser, txToken theToken, txUnsigned f
 static void fxWhileStatement(txParser* parser);
 static void fxWithStatement(txParser* parser);
 
-static txInteger fxAwaitExpression(txParser* parser, txInteger blockIt);
 static void fxCommaExpression(txParser* parser);
 static void fxAssignmentExpression(txParser* parser);
 static void fxConditionalExpression(txParser* parser);
@@ -1287,7 +1290,7 @@ void fxStatement(txParser* parser, txInteger blockIt)
 		break;
 #if mxExplicitResourceManagement
 	case XS_TOKEN_AWAIT:
-		if (fxAwaitExpression(parser, blockIt)) 
+		if (fxAwaitUsingStatement(parser, blockIt)) 
 			fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, parser->line);
 		fxSemicolon(parser);
 		break;
@@ -1359,6 +1362,41 @@ void fxSemicolon(txParser* parser)
 	else
 		fxReportParserError(parser, parser->line, "missing ;");
 }
+
+#if mxExplicitResourceManagement
+txInteger fxAwaitUsingStatement(txParser* parser, txInteger blockIt)
+{
+	txInteger aCount = 0;
+	fxGetNextToken(parser);
+	fxGetNextToken2(parser);
+	if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (blockIt) && (!parser->crlf2) 
+				&& ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
+		parser->token = XS_TOKEN_USING;
+		if (blockIt <= 0)
+			fxReportParserError(parser, parser->line, "no block");
+		fxVariableStatement(parser, XS_TOKEN_USING, mxAwaitingFlag);
+		parser->flags |= mxAwaitingFlag;
+		return 0;
+	}
+	fxUnaryExpression(parser);
+	if ((parser->flags & mxGeneratorFlag) && !(parser->flags & mxYieldFlag))
+		fxReportParserError(parser, parser->line, "invalid await");
+	else
+		parser->flags |= mxAwaitingFlag;
+	fxPushNodeStruct(parser, 1, XS_TOKEN_AWAIT, parser->line);
+	aCount++;
+	while (parser->token == XS_TOKEN_COMMA) {
+		fxGetNextToken(parser);
+		fxAssignmentExpression(parser);
+		aCount++;
+	}
+	if (aCount > 1) {
+		fxPushNodeList(parser, aCount);
+		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, parser->line);
+	}
+	return 1;
+}
+#endif
 
 void fxBreakStatement(txParser* parser)
 {
@@ -1447,7 +1485,7 @@ void fxForStatement(txParser* parser)
 		fxVariableStatement(parser, XS_TOKEN_USING, 0);
 	}
 	else if (parser->token == XS_TOKEN_AWAIT) {
-		expressionFlag = fxAwaitExpression(parser, 1);
+		expressionFlag = fxAwaitUsingStatement(parser, 1);
 	}
 #endif
 	else if (parser->token == XS_TOKEN_VAR) {
@@ -1948,39 +1986,6 @@ void fxExponentiationExpression(txParser* parser)
 			fxPushNodeStruct(parser, 2, aToken, aLine);
 		}
 	}
-}
-
-txInteger fxAwaitExpression(txParser* parser, txInteger blockIt)
-{
-	txInteger aCount = 0;
-	fxGetNextToken(parser);
-	fxGetNextToken2(parser);
-	if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (blockIt) && (!parser->crlf2) 
-				&& ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
-		parser->token = XS_TOKEN_USING;
-		if (blockIt <= 0)
-			fxReportParserError(parser, parser->line, "no block");
-		fxVariableStatement(parser, XS_TOKEN_USING, mxAwaitingFlag);
-		parser->flags |= mxAwaitingFlag;
-		return 0;
-	}
-	fxUnaryExpression(parser);
-	if ((parser->flags & mxGeneratorFlag) && !(parser->flags & mxYieldFlag))
-		fxReportParserError(parser, parser->line, "invalid await");
-	else
-		parser->flags |= mxAwaitingFlag;
-	fxPushNodeStruct(parser, 1, XS_TOKEN_AWAIT, parser->line);
-	aCount++;
-	while (parser->token == XS_TOKEN_COMMA) {
-		fxGetNextToken(parser);
-		fxAssignmentExpression(parser);
-		aCount++;
-	}
-	if (aCount > 1) {
-		fxPushNodeList(parser, aCount);
-		fxPushNodeStruct(parser, 1, XS_TOKEN_EXPRESSIONS, parser->line);
-	}
-	return 1;
 }
 
 void fxUnaryExpression(txParser* parser)
