@@ -701,15 +701,34 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 #if mxExplicitResourceManagement
 void fx_AsyncIterator_asyncDispose(txMachine* the)
 {	
-	mxPushSlot(mxThis);
-	mxDub();
-	mxGetID(mxID(_return));
-	if (mxIsUndefined(the->stack)) 
+	mxTry(the) {
+		mxPushUndefined();
+		mxPush(mxPromiseConstructor);
+		mxPushSlot(mxThis);
+		mxDub();
+		mxGetID(mxID(_return));
+		if (mxIsUndefined(the->stack)) {
+			mxPop();
+			the->stack->kind = XS_UNDEFINED_KIND;
+		}
+		else {
+			mxCall();
+			mxRunCount(0);		
+		}
+		fx_Promise_resolveAux(the);
 		mxPop();
-	else {
-		mxCall();
-		mxRunCount(0);
+		mxPop();
 		mxPullSlot(mxResult);
+	}
+	mxCatch(the) {
+		txSlot* resolveFunction;
+		txSlot* rejectFunction;
+		mxTemporary(resolveFunction);
+		mxTemporary(rejectFunction);
+		mxPush(mxPromiseConstructor);
+		fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+		mxPullSlot(mxResult);
+		fxRejectException(the, rejectFunction);
 	}
 }
 #endif
