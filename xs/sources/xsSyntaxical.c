@@ -1367,16 +1367,17 @@ void fxSemicolon(txParser* parser)
 txInteger fxAwaitUsingStatement(txParser* parser, txInteger blockIt)
 {
 	txInteger aCount = 0;
-	fxGetNextToken(parser);
-	fxGetNextToken2(parser);
-	if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (blockIt) && (!parser->crlf2) 
-				&& ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
-		parser->token = XS_TOKEN_USING;
-		if (blockIt <= 0)
-			fxReportParserError(parser, parser->line, "no block");
-		fxVariableStatement(parser, XS_TOKEN_USING, mxAwaitingFlag);
-		parser->flags |= mxAwaitingFlag;
-		return 0;
+	fxMatchToken(parser, XS_TOKEN_AWAIT);
+	if ((parser->symbol == parser->usingSymbol) && (!parser->escaped) && (blockIt)) {
+		fxGetNextToken2(parser);
+		if ((!parser->crlf2) && ((parser->token2 == XS_TOKEN_IDENTIFIER) || (parser->token2 == XS_TOKEN_AWAIT) || (parser->token2 == XS_TOKEN_YIELD))) {
+			parser->token = XS_TOKEN_USING;
+			if (blockIt <= 0)
+				fxReportParserError(parser, parser->line, "no block");
+			fxVariableStatement(parser, XS_TOKEN_USING, mxAwaitingFlag);
+			parser->flags |= mxAwaitingFlag;
+			return 0;
+		}
 	}
 	fxUnaryExpression(parser);
 	if ((parser->flags & mxGeneratorFlag) && !(parser->flags & mxYieldFlag))
