@@ -82,6 +82,7 @@ static void fxEchoPathLine(txMachine* the, txString thePath, txInteger theLine);
 static void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* theList, txString thePrefix, txIndex theIndex, txString theSuffix);
 static void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* theInstance, txSlot* theHost);
 static void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID, txFlag theFlag, txSlot* theInstance);
+static void fxEchoPropertyName(txMachine* the, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID);
 static void fxEchoStart(txMachine* the);
 static void fxEchoStop(txMachine* the);
 static void fxEchoString(txMachine* the, txString theString);
@@ -1284,11 +1285,31 @@ void fxEchoArrayBuffer(txMachine* the, txSlot* theInstance, txInspectorNameList*
 		fxEchoCharacter(the, c_read8(gxHexaDigits + (offset & 0xF)));
 		fxEcho(the, "\"");
 		fxEcho(the, " value=\"");
-		for (index = 0; index < 16; index++) {
+		index = 0;
+		while (index < 16) {
 			txByte byte = *address++;
 			fxEchoCharacter(the, c_read8(gxHexaDigits + ((byte >> 4) & 0xF)));
 			fxEchoCharacter(the, c_read8(gxHexaDigits + (byte & 0xF)));
 			fxEcho(the, " ");
+			index++;
+			offset++;
+			if (offset == size)
+				break;
+		}
+		address -= index;
+		offset -= index;
+		while (index < 16) {
+			fxEcho(the, "   ");
+			index++;
+		}		
+		index = 0;
+		while (index < 16) {
+			txByte byte = *address++;
+			if ((32 <= byte) && (byte < 127))
+				fxEchoCharacter(the, byte);
+			else
+				fxEchoCharacter(the, '.');
+			index++;
 			offset++;
 			if (offset == size)
 				break;
@@ -1672,7 +1693,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 						txInspectorNameLink* link = theList->first;
 						fxEcho(the, " value=\"");
 						while (link) {
-							fxEchoString(the, link->name);
+							fxEchoPropertyName(the, link->prefix, link->index, link->suffix, link->id);
 							if (link == instanceInspector->value.instanceInspector.link)
 								break;
 							fxEcho(the, ".");
@@ -1684,7 +1705,10 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 						txInspectorNameLink link;
 						link.previous = theList->last;
 						link.next = C_NULL;
-						link.name = buffer;
+						link.prefix = buffer;
+						link.index = 0;
+						link.suffix = C_NULL;
+						link.id = XS_NO_ID;
 						if (theList->first)
 							theList->last->next = &link;
 						else
@@ -1797,18 +1821,7 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 		fxEcho(the, "<property");
 		fxEchoFlags(the, " ", flag);
 		fxEcho(the, " name=\"");
-		if (thePrefix) {
-			fxEchoString(the, thePrefix);
-			if (theSuffix) {
-				fxIndexToString(the, theIndex, the->nameBuffer, sizeof(the->nameBuffer));
-				fxEchoString(the, the->nameBuffer);
-				fxEchoString(the, theSuffix);
-			}
-		}
-		else {
-			fxIDToString(the, ID, the->nameBuffer, sizeof(the->nameBuffer));
-			fxEchoString(the, the->nameBuffer);
-		}
+		fxEchoPropertyName(the, thePrefix, theIndex, theSuffix, ID);
 		fxEcho(the, "\"");
 	
 		switch (theProperty->kind) {
@@ -1995,6 +2008,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 	}
 }
 
+
 void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID, txFlag theFlag, txSlot* theInstance)
 {
 	txSlot* instanceInspector = fxToInstanceInspector(the, theInstance);
@@ -2031,7 +2045,11 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 	else
 		fxEchoFlags(the, "+", theFlag);
 	fxEcho(the, " name=\"");
-	fxEchoString(the, buffer);
+	if (theFlag & XS_GETTER_FLAG)
+		fxEcho(the, "get ");
+	else if (theFlag & XS_SETTER_FLAG)
+		fxEcho(the, "set ");
+	fxEchoPropertyName(the, thePrefix, theIndex, theSuffix, theID);
 	fxEcho(the, "\"");
 	
 	if (instanceInspector) {
@@ -2039,7 +2057,7 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 			txInspectorNameLink* link = theList->first;
 			fxEcho(the, " value=\"");
 			while (link) {
-				fxEchoString(the, link->name);
+				fxEchoPropertyName(the, link->prefix, link->index, link->suffix, link->id);
 				if (link == instanceInspector->value.instanceInspector.link)
 					break;
 				fxEcho(the, ".");
@@ -2051,7 +2069,10 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 			txInspectorNameLink link;
 			link.previous = theList->last;
 			link.next = C_NULL;
-			link.name = buffer;
+			link.prefix = thePrefix;
+			link.index = theIndex;
+			link.suffix = theSuffix;
+			link.id = theID;
 			if (theList->first)
 				theList->last->next = &link;
 			else
@@ -2075,6 +2096,33 @@ void fxEchoPropertyInstance(txMachine* the, txInspectorNameList* theList, txStri
 	else {
 		fxEchoAddress(the, theInstance);
 		fxEcho(the, "/>");
+	}
+}
+
+void fxEchoPropertyName(txMachine* the, txString thePrefix, txIndex theIndex, txString theSuffix, txID theID)
+{
+	if (thePrefix) {
+		fxEchoString(the, thePrefix);
+		if (theSuffix) {
+			fxIndexToString(the, theIndex, the->nameBuffer, sizeof(the->nameBuffer));
+			fxEchoString(the, the->nameBuffer);
+			fxEchoString(the, theSuffix);
+		}
+	}
+	else {
+		if (theID != XS_NO_ID) {
+			txBoolean adorn;
+			txString string = fxGetKeyString(the, theID, &adorn);
+			if (adorn) {
+				fxEcho(the, "Symbol(");
+				fxEchoString(the, string);
+				fxEcho(the, ")");
+			}
+			else
+				fxEchoString(the, string);
+		}
+		else
+			fxEcho(the, "?");
 	}
 }
 

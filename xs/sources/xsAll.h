@@ -377,7 +377,10 @@ struct sxSlot {
 struct sxInspectorNameLink {
 	txInspectorNameLink* previous;
 	txInspectorNameLink* next;
-	txString name;
+	txID id;
+	txIndex index;
+	txString prefix;
+	txString suffix;
 };
 
 struct sxInspectorNameList {
