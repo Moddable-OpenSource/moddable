@@ -142,6 +142,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 #endif
 	}
 
+	the->growHeapDirection = -1;
 	txSlot *result = (txSlot *)mc_xs_slot_allocator(the, needed);
 	if (!result && the->firstBlock) {
 #ifdef mxDebug
