@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -52,6 +52,8 @@ extern int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode);
 #define kModGPIOReadError (255)
 extern uint8_t modGPIORead(modGPIOConfiguration config);
 extern void modGPIOWrite(modGPIOConfiguration config, uint8_t value);
+
+#define modGPIODidWake(...)	(0)
 
 // callback on input value change...
 

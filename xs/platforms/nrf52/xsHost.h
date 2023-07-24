@@ -458,7 +458,7 @@ extern nrf_fstorage_t fstorage;
 extern uint8_t *espFindUnusedFlashStart(void);
 #define kModulesStart ((uintptr_t)espFindUnusedFlashStart())
 
-extern uint32_t _MODPREF_start;		// from linker
+extern uint8_t _MODPREF_start;		// from linker
 extern uint32_t _MODDABLE_start;	// from linker
 extern uint32_t _MODDABLE_end;		// from linker
 // #define kModulesEnd ((uintptr_t)&_MODPREF_start)

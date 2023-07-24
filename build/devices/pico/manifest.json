@@ -22,12 +22,6 @@
 		},
 		"stack": 512
 	},
-	"defines": {
-		"i2c": {
-			"sda_pin": 4,
-			"scl_pin": 5
-		}
-	},
 	"preload": [
 		"timer",
 		"time"
