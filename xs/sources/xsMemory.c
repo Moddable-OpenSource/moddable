@@ -628,18 +628,20 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	if ((void *)-1 == aHeap)
 		return;
 		
-	if (the->firstHeap && (the->firstHeap->value.reference == aHeap)) {
-		the->firstHeap->value.reference = aHeap + theCount;
-		the->maximumHeapCount += theCount;		
-		theCount -= 1;
-		aSlot = aHeap;
-	}
-	else if ((aHeap + theCount) == the->firstHeap) {
-		*aHeap = *(the->firstHeap);
-		the->maximumHeapCount += theCount;
-		theCount -= 1;
-		the->firstHeap = aHeap;
-		aSlot = aHeap + 1;
+	if (the->firstHeap && the->growHeapDirection) {
+		if (the->growHeapDirection > 0) {
+			the->firstHeap->value.reference = aHeap + theCount;
+			the->maximumHeapCount += theCount;		
+			theCount -= 1;
+			aSlot = aHeap;
+		}
+		else {
+			*aHeap = *(the->firstHeap);
+			the->maximumHeapCount += theCount;
+			theCount -= 1;
+			the->firstHeap = aHeap;
+			aSlot = aHeap + 1;
+		}
 	}
 	else {
 		the->maximumHeapCount += theCount - 1;

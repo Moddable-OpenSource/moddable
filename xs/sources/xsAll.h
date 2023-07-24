@@ -446,6 +446,7 @@ struct sxMachine {
 	txSize peakHeapCount;
 	txSize maximumHeapCount;
 	txSize minimumHeapCount;
+	txKind growHeapDirection;
 	
 	txSize parserBufferSize;
 	txSize parserTableModulo;
