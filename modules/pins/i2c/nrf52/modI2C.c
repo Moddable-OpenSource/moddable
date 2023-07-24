@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -91,9 +91,10 @@ void modI2CInit(modI2CConfiguration config)
 		.scl = MODDEF_I2C_SCL_PIN,
 		.sda = MODDEF_I2C_SDA_PIN,
 		.frequency = 0,
-		.interrupt_priority = _PRIO_APP_HIGH, 		// 2 APP_IRQ_PRIORITY_HIGH,
+		.interrupt_priority = _PRIO_APP_HIGH,		// 2 APP_IRQ_PRIORITY_HIGH,
 		.clear_bus_init = false
 	};
+
 
 	if (-1 != config->sda)
 		twi_config.sda = config->sda;
@@ -132,12 +133,13 @@ uint8_t waitForComplete(uint32_t timeout) {
 			case TWI_READ_COMPLETE:
 			case TWI_WRITE_COMPLETE:
 				m_xfer_done = true;
-				break;
+				return 0;
 			default:
 				m_xfer_done = true;
-				break;
+				return 2;
 		}
 	}
+	return 1;		// error - timeout
 }
 
 void modI2CUninit(modI2CConfiguration config)
@@ -167,8 +169,10 @@ uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length,
 		modLog("I2CErr rx");
 		modLogInt(ret);
 	}
-	else
-		waitForComplete(config->timeout);
+	else {
+		if (0 != waitForComplete(config->timeout))
+			ret = NRF_ERROR_TIMEOUT;
+	}
 
 	return ret;
 }
