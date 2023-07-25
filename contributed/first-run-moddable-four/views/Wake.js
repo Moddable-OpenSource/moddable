@@ -38,7 +38,7 @@ class WakeBehavior extends View.Behavior {
 		}
 	}
 	onSleep(container) {
-		controller.sleep({ duration:5000, accelerometer:true }, 999);
+		controller.sleep({ duration:60000, accelerometer:true }, 999);
 	}
 	onTimeChanged(container) {
 		const fade = container.last.last;
