@@ -13,7 +13,6 @@
 		"*": [
 			  "$(PIU)/MC/piuDie",
 			  "$(PIU)/MC/piuFont",
-			  "$(PIU)/MC/piuImage",
 			  "$(PIU)/MC/piuRegion",
 			  "$(PIU)/MC/piuTexture",
 			  "$(PIU)/MC/piuView"

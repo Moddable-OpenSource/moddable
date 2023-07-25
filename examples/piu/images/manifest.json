@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/commodetto/colorcell/manifest.json"
+		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json"
 	],
 	"modules": {
 		"*": "./main"
