@@ -1,0 +1,7 @@
+{
+	"include": "$(MODDABLE)/modules/commodetto/colorcell/manifest.json",
+	"modules": {
+		"piu/Image": "./piuImage"
+	},
+	"preload": "piu/Image"
+}
