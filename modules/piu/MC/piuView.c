@@ -963,7 +963,7 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 	Poco poco = (*self)->poco;
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
 	uint32_t current = sizeof(PiuViewRecord);
-	int result;
+	int result = 0;
 
 #if kPocoFrameBuffer
 	if (!(poco->flags & kPocoFlagFrameBuffer))
@@ -1065,17 +1065,8 @@ done:
 			xsCallFunction4((*self)->_begin, xsReference((*self)->screen), xsInteger(poco->x), xsInteger(poco->y), xsInteger(poco->w), xsInteger(poco->h));
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
 		}
-		if (result) {
-			if (1 == result)
-				xsErrorPrintf("display list overflowed");
-			if (2 == result)
-				xsErrorPrintf("clip/origin stack not cleared");
-			if (3 == result)
-				xsErrorPrintf("clip/origin stack under/overflow");
-			if (5 == result)
-				xsErrorPrintf("frame disabled");
-			xsErrorPrintf("unknown error");
-		}
+		if (result) goto fail;
+
 		if (flag) {
 			if (pixelsOutDispatch)
 				(pixelsOutDispatch->doContinue)(poco->outputRefcon);
@@ -1096,7 +1087,8 @@ done:
 endStepFrameBuffer:
 		PocoClipPop(poco);
 		if (!flag) {
-			PocoDrawingEndFrameBuffer(poco);
+			result = PocoDrawingEndFrameBuffer(poco);
+			if (result) goto fail;
 
 			if (pixelsOutDispatch)
 				(pixelsOutDispatch->doEnd)(poco->outputRefcon);
@@ -1107,6 +1099,19 @@ endStepFrameBuffer:
 		}
 	}
 #endif
+
+	return;
+
+fail:
+	if (1 == result)
+		xsErrorPrintf("display list overflowed");
+	if (2 == result)
+		xsErrorPrintf("clip/origin stack not cleared");
+	if (3 == result)
+		xsErrorPrintf("clip/origin stack under/overflow");
+	if (5 == result)
+		xsErrorPrintf("drawFrame unavailable");
+	xsErrorPrintf("unknown error");
 }
 #endif
 

@@ -258,13 +258,12 @@ void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+	int result;
 
 	if (!(poco->flags & kPocoFlagDidBegin))
 		xsUnknownError("inactive");
 
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
-		int result;
-
 		xsmcVars(5);
 
 		if (pixelsOutDispatch) {
@@ -302,21 +301,10 @@ void xs_poco_end(xsMachine *the)
 			xsVar(3) = xsThis;		// Poco doubles as pixels
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, pixelReceiver, the);
 		}
-		if (result) {
-			if (1 == result)
-				xsErrorPrintf("display list overflowed");
-			if (2 == result)
-				xsErrorPrintf("clip/origin stack not cleared");
-			if (3 == result)
-				xsErrorPrintf("clip/origin stack under/overflow");
-			if (5 == result)
-				xsErrorPrintf("frame disabled");
-			xsErrorPrintf("unknown error");
-		}
 	}
 	else {
 #if kPocoFrameBuffer
-		PocoDrawingEndFrameBuffer(poco);
+		result = PocoDrawingEndFrameBuffer(poco);
 
 		if (NULL == pixelsOutDispatch) {
 			xsmcVars(1);
@@ -325,6 +313,18 @@ void xs_poco_end(xsMachine *the)
 #else
 		xsErrorPrintf("frameBuffer disabled");
 #endif
+	}
+
+	if (result) {
+		if (1 == result)
+			xsErrorPrintf("display list overflow");
+		if (2 == result)
+			xsErrorPrintf("clip/origin stack not cleared");
+		if (3 == result)
+			xsErrorPrintf("clip/origin stack under/overflow");
+		if (5 == result)
+			xsErrorPrintf("drawFrame unavailable");
+		xsErrorPrintf("unknown error");
 	}
 
 	if (poco->flags & kPocoFlagGCDisabled) {

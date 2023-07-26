@@ -947,7 +947,7 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 	PocoCommandBuilt(poco, pc);
 }
 
-#if MODDEF_POCO_COLORCELL
+#if MODDEF_POCO_COLORCELL && (16 == kPocoPixelSize)
 static uint8_t doSkipColorCells(Poco poco, PocoCommand pc, int cells);
 
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
@@ -3067,7 +3067,7 @@ void buildColorMap(uint32_t *srcCLUT, uint8_t *inverseTable, uint8_t *remap)
 }
 #endif
 
-#if MODDEF_POCO_COLORCELL
+#if MODDEF_POCO_COLORCELL && (16 == kPocoPixelSize)
 #define kReuse0Mask (0x10)
 #define kReuse1Mask (0x08)
 
@@ -3460,7 +3460,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		return 2;
 	}
 
-#if !MODDEF_POCO_COLORCELL
+#if !(MODDEF_POCO_COLORCELL && (16 == kPocoPixelSize))
 	if (poco->flags & kPocoFlagErrorUnimplemented)
 		return 5;
 #endif
@@ -3578,6 +3578,14 @@ int PocoDrawingEndFrameBuffer(Poco poco)
 {
 	PocoClipPop(poco);
 	poco->frameBuffer = NULL;
+
+#if !(MODDEF_POCO_COLORCELL && (16 == kPocoPixelSize))
+	if (poco->flags & kPocoFlagErrorUnimplemented)
+		return 5;
+#endif
+
+	if (poco->flags & kPocoFlagErrorStackProblem)
+		return 3;
 
 	return 0;
 }

@@ -115,7 +115,7 @@ void PiuImageDraw(void* it, PiuView* view, PiuRectangle area)
 			PocoDrawImage((*view)->poco, &bm, 255, (*view)->poco->xOrigin, (*view)->poco->yOrigin, bounds.width, bounds.height, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
 		}
 #else	
-		PiuViewDrawContent(view, PiuImageDrawAux, it, 0, 0, bounds.width, bounds.height);
+		PiuViewDrawContent(view, PiuImageDrawAux, it, 0, 0, (*self)->dataWidth, (*self)->dataHeight);
 #endif		
 		PiuViewPopClip(view);
 	}
