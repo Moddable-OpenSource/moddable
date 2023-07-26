@@ -618,14 +618,14 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			uint8_t erase[16] = {0};
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 			if (!modSPIWrite(offset, sizeof(erase), erase))
-				resultCode = -1;
+				resultCode = -2;
 			} break;
 
 		case 3: {	// install some
 			uint32_t offset = c_read32be(cmd);
 			cmd += 4, cmdLen -= 4;
 			if ((offset + cmdLen) > kModulesByteLength) {
-				resultCode = -2;
+				resultCode = -3;
 				break;
 			}
 
@@ -637,9 +637,10 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			else if (firstSector != lastSector)
 				modSPIErase((firstSector + 1) * kFlashSectorSize, kFlashSectorSize * (lastSector - firstSector));	// crosses into a new sector
 
-			if (!modSPIWrite(offset, cmdLen, cmd))
+			if (!modSPIWrite(offset, cmdLen, cmd)) {
 				resultCode = -1;
 			}
+			} // end of case 3
 			break;
 //#endif /* MODDEF_XS_MODS */
 
@@ -658,6 +659,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			if (key && value) {
 				uint8_t prefType = c_read8(value++);
 				cmdLen -= 1;
+
 				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
 					resultCode = -5;
 			}
@@ -681,15 +683,13 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 					resultCode = -4;
 					break;
 				}
-				uint8_t buffer[65];
-				uint8_t type;
+
+				uint8_t *buffer = the->echoBuffer + the->echoOffset;
 				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, &buffer[0], buffer + 1, sizeof(buffer), &byteCountOut))
+				if (!modPreferenceGet(domain, key, buffer, buffer + 1, sizeof(the->echoBuffer) - (the->echoOffset + 1), &byteCountOut))
 					resultCode = -6;
-				else {
-					c_memcpy(the->echoBuffer + the->echoOffset, buffer, byteCountOut + 1);
+				else
 					the->echoOffset += byteCountOut + 1;
-				}
 			}
 		}
 		break;
@@ -731,7 +731,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 #if MODDEF_XS_MODS
 		case 15: {
 			uint32_t transferSize = 4096;
-
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
 			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;

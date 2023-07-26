@@ -117,7 +117,7 @@ extern void fx_putc(void *refcon, char c);
 
 struct DebugFragmentRecord {
 	struct DebugFragmentRecord *next;
-	uint8_t count;
+	uint16_t count;
 	uint8_t binary;
 	uint8_t pad;
 	uint8_t bytes[1];

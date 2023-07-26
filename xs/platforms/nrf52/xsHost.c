@@ -492,9 +492,6 @@ void modMachineTaskInit(xsMachine *the)
 	xQueueAddToSet(the->msgQueue, the->queues);
 	xQueueAddToSet(the->dbgQueue, the->queues);
 #endif
-
-	if (NULL == gFlashMutex)
-		gFlashMutex = xSemaphoreCreateMutex();
 }
 
 void modMachineTaskUninit(xsMachine *the)
@@ -579,13 +576,14 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
 
-	if (fxMapArchive(preparation, (void *)kModulesStart, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+	if (NULL == gFlashMutex)
+		gFlashMutex = xSemaphoreCreateMutex();
+
+	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		result = (void *)kModulesStart;
 
-	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
+	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart))
 		*status = *(8 + (uint8_t *)kModulesStart);
-		modLog("mod failed");
-	}
 	else
 		*status = 0;
 
