@@ -79,6 +79,11 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		tool.nodeRedExtracts?.forEach((source, target) => {
+			this.write("\\\n\t$(DATA_DIR)");
+			this.write(tool.slash);
+			this.write(target);
+		});
 		this.line("");
 		this.line("");
 	}
@@ -93,6 +98,11 @@ export class MakeFile extends FILE {
 			else
 				this.line("\tcp $< $@");
 		}
+		tool.nodeRedExtracts?.forEach((source, target) => {
+			this.line("$(DATA_DIR)", tool.slash, target, ": ", source);
+			this.echo(tool, "extract from Node-RED ", target);
+			this.line(`\tnodered2mcu -e ${target} -o $(@D) ${source}`);
+		});
 		this.line("");
 	}
 	setConfigOption(sdkconfig, option) {
@@ -1838,7 +1848,7 @@ export class Tool extends TOOL {
 	mergeNodeRed(manifests) {
 		if (!this.environment.NODEREDMCU)
 			return;
-
+		this.nodeRedExtracts = new Map;
 		let nodeTypes = {};
 
 		try {
@@ -1864,14 +1874,26 @@ export class Tool extends TOOL {
 				const source = this.resolveFilePath(this.resolveVariable(module.source) + ".json");
 				const flows = JSON.parse(this.readFileString(source));
 				flows.forEach((node, i) => {
+					let manifest;
 					if (node.moddable_manifest)
-						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
-					else if (nodeTypes[node.type]) {
-						const save = this.currentDirectory;
-						this.currentDirectory = this.resolveVariable("$(NODEREDMCU)");
-						this.parseManifest(source, {include: nodeTypes[node.type], directory: this.currentDirectory});
-						this.currentDirectory = save;
+						manifest = {...node.moddable_manifest};
+					else if (nodeTypes[node.type])
+						manifest = {include: nodeTypes[node.type]};
+					else
+						return;
+
+					switch (node.type) {
+						case "tls-config":
+							if (node.ca || node.credentials?.cadata)
+								this.nodeRedExtracts.set(`${node.id}-ca.der`, source)
+							break;
 					}
+
+					manifest.directory = this.currentDirectory; 
+					const save = this.currentDirectory;
+					this.currentDirectory = this.resolveVariable("$(NODEREDMCU)");
+					this.parseManifest(source, manifest);
+					this.currentDirectory = save;
 				});
 			}
 		});
