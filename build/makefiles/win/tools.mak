@@ -142,7 +142,7 @@ MODULES = \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
 	$(MOD_DIR)\url.xsb \
-	$(TMP_DIR)\modBase64.c.xsi \
+	$(TMP_DIR)\modBase64.xsi \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
