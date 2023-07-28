@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"
+#include "builtinCommon.h"
 #include "nrfx_qdec.h"
 #include "nrf_gpio.h"
 
@@ -31,6 +32,8 @@ typedef struct {
 	int32_t		current;		// current value
 	uint8_t		changeQueued;
 	uint8_t		hasOnReadable;
+	uint8_t		signal;
+	uint8_t		control;
 } PulseCountRecord, *PulseCount;
 
 static PulseCount gPCR = NULL;
@@ -57,49 +60,44 @@ static void qdec_event_handler(nrfx_qdec_event_t event)
     }
 }
 
-void xs_pulsecount_destructor(void *data)
+void xs_pulsecount_destructor_(void *data)
 {
-	if (data) {
+	PulseCount pc = data;
+	if (pc) {
 		nrfx_qdec_uninit();
+		builtinFreePin(pc->signal);
+		builtinFreePin(pc->control);
 		gPCR = NULL;
 		c_free(data);
 	}
 }
 
-void xs_pulsecount(xsMachine *the)
+void xs_pulsecount_(xsMachine *the)
 {
 	PulseCount pc;
 	int signal, control;
+	xsSlot *onReadable;
 
-	if (gPCR)
-		xsUnknownError("busy");
+	 if (gPCR)
+	 	xsUnknownError("busy");
 
 	xsmcVars(1);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_signal);
-	signal = xsmcToInteger(xsVar(0));
+	signal = builtinGetPin(the, &xsVar(0));
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_control);
-	control = xsmcToInteger(xsVar(0));
+	control = builtinGetPin(the, &xsVar(0));
+
+	if (!builtinIsPinFree(signal) || !builtinIsPinFree(control))
+		xsRangeError("inUse");
+
+	builtinInitializeTarget(the);
+	onReadable = builtinGetCallback(the, xsID_onReadable);
 
 	pc = c_malloc(sizeof(PulseCountRecord));
 	if (!pc)
 		xsUnknownError("no memory");
-
-	pc->the = the;
-
-	pc->obj = xsThis;
-	if (xsmcHas(xsArg(0), xsID_target)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_target);
-		xsmcSet(xsThis, xsID_target, xsVar(0));
-	}
-
-	pc->hasOnReadable = false;
-	if (xsmcHas(xsArg(0), xsID_onReadable)) {
-		xsmcGet(pc->onReadable, xsArg(0), xsID_onReadable);
-		xsRemember(pc->onReadable);
-		pc->hasOnReadable = true;
-	}
 
 	nrfx_qdec_config_t qdec_config = {
         .reportper          = (nrf_qdec_reportper_t)NRF_QDEC_REPORTPER_10,
@@ -115,10 +113,23 @@ void xs_pulsecount(xsMachine *the)
 	};
 
 	if (NRFX_SUCCESS != nrfx_qdec_init(&qdec_config, qdec_event_handler)) {
-		if (pc->hasOnReadable)
-			xsForget(pc->onReadable);
-		c_free(gPCR);
+		c_free(pc);
 		xsUnknownError("qdec init failed");
+	}
+
+	pc->the = the;
+	pc->obj = xsThis;
+	xsRemember(pc->obj);
+
+	builtinUsePin(signal);
+	builtinUsePin(control);
+	pc->signal = (uint8_t)signal;
+	pc->control = (uint8_t)control;
+
+	pc->hasOnReadable = onReadable ? true : false;
+	if (onReadable) {
+		pc->onReadable = xsReference(onReadable);
+		xsRemember(pc->onReadable);
 	}
 
 	pc->current = 0;
@@ -132,26 +143,26 @@ void xs_pulsecount(xsMachine *the)
 	nrfx_qdec_enable();
 }
 
-void xs_pulsecount_close(xsMachine *the)
+void xs_pulsecount_close_(xsMachine *the)
 {
-	if (!gPCR)
-		return;
-	if (gPCR->hasOnReadable)
-		xsForget(gPCR->onReadable);
-	xs_pulsecount_destructor(gPCR);
+	PulseCount pc = xsmcGetHostData(xsThis);
+	if (!pc) return;
+	pc = xsmcGetHostDataValidate(xsThis, xs_pulsecount_destructor_);
+	xsForget(pc->obj);
+	if (pc->hasOnReadable)
+		xsForget(pc->onReadable);
+	xs_pulsecount_destructor_(pc);
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_pulsecount_read(xsMachine *the)
+void xs_pulsecount_read_(xsMachine *the)
 {
-	if (!gPCR) return;
-
-	xsmcSetInteger(xsResult, gPCR->current);
+	PulseCount pc = xsmcGetHostDataValidate(xsThis, xs_pulsecount_destructor_);
+	xsmcSetInteger(xsResult, pc->current);
 }
 
-void xs_pulsecount_write(xsMachine *the)
+void xs_pulsecount_write_(xsMachine *the)
 {
-	if (!gPCR) return;
-
-	gPCR->current = xsmcToInteger(xsArg(0));
+	PulseCount pc = xsmcGetHostDataValidate(xsThis, xs_pulsecount_destructor_);
+	pc->current = xsmcToInteger(xsArg(0));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,9 +12,9 @@
  *
  */
 
-const encoder = new device.io.PulseCount({
-   signal: 13,
-   control: 14,
+new device.io.PulseCount({
+   signal: 6,
+   control: 8,
    onReadable() {
       const count = this.read();
       trace(`count: ${count}\n`);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -17,37 +17,22 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
 
-const device = {
-	I2C: {
-		default: {
-			io: I2C,
-			data: 26,
-			clock: 27
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 31,
-			transmit: 30
-		}
-	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus},
-	pin: {
-		lcdPwr: 23,
-		button: 13,
-		led: 7
-	}
+class PulseCount @ "xs_pulsecount_destructor_" {
+	constructor(options) @ "xs_pulsecount_";
+	close() @ "xs_pulsecount_close_";
+	read() @ "xs_pulsecount_read_";
+	write(count) @ "xs_pulsecount_write_";
+
+    get format() {
+        return "number";
+    }
+
+    set format(value) {
+        if ("number" !== value)
+            throw new RangeError;
+    }
+
 };
 
-export default device;
+export default PulseCount;
