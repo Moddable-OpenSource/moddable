@@ -13,7 +13,7 @@
  */
 
 /*
-	Note: the abort hook is disabled by default. To enabled it
+	Note: the abort hook is disabled by default. To enable it
 		set the XS abortHook define in the manifest:
 		
 		"defines": {
@@ -30,7 +30,7 @@
 	
 	The abort hook is called on memory full errors. This may work, depending on the cause of the memory
 		full error. It does have the potential to fail, so you should not rely on the abort hook
-		as a wy to recover from memory exhaustion.
+		as a way to recover from memory exhaustion.
 
 	You can configure xsbug to NOT stop when an exception is thrown. In Settings,
 		turn off Break - On Exceptions.
