@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2022  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -33,6 +33,7 @@ XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
 COMMODETTO = $(MODDABLE)/modules/commodetto
+CRYPT = $(MODDABLE)/modules/crypt
 DATA = $(MODDABLE)/modules/data
 INSTRUMENTATION = $(MODDABLE)/modules/base/instrumentation
 TOOLS = $(MODDABLE)/tools
@@ -120,6 +121,8 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
 	$(MOD_DIR)/wavreader.xsb \
+	$(MOD_DIR)/base64.xsb \
+	$(MOD_DIR)/ber.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/buildclut.xsb \
 	$(MOD_DIR)/cdv.xsb \
@@ -136,11 +139,13 @@ MODULES = \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/resampler.xsb \
 	$(MOD_DIR)/rle4encode.xsb \
+	$(MOD_DIR)/transform.xsb \
 	$(MOD_DIR)/tool.xsb \
 	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
 	$(MOD_DIR)/url.xsb \
+	$(TMP_DIR)/modBase64.c.xsi \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -169,7 +174,10 @@ PRELOADS =\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
+	-p base64.xsb\
+	-p ber.xsb\
 	-p resampler.xsb\
+	-p transform.xsb\
 	-p unicode-ranges.xsb\
 	-p file.xsb\
 	-p url.xsb
@@ -181,6 +189,7 @@ HEADERS = \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
 	$(TMP_DIR)/adpcm-lib.c.o \
+	$(TMP_DIR)/modBase64.c.o \
 	$(TMP_DIR)/commodettoBitmap.c.o \
 	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
@@ -258,7 +267,7 @@ XSC = $(BUILD_DIR)/bin/lin/$(GOAL)/xsc
 XSID = $(BUILD_DIR)/bin/lin/$(GOAL)/xsid
 XSL = $(BUILD_DIR)/bin/lin/$(GOAL)/xsl
 
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/url $(DATA)/wavreader $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/url $(DATA)/wavreader $(DATA)/base64 $(CRYPT)/etc $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME) $(COMMANDS)
 
@@ -294,9 +303,17 @@ $(TMP_DIR)/mc.xs.c: $(MODULES)
 	@echo "#" $(NAME) $(GOAL) ": xsl modules"
 	$(XSL) -b $(MOD_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 
+$(MOD_DIR)/%.xsb: $(DATA)/base64/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+
 $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
+
+$(MOD_DIR)/%.xsb: $(CRYPT)/etc/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
 
 $(MOD_DIR)/%.xsb: $(DATA)/url/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)

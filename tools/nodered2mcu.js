@@ -19,6 +19,7 @@
  */
 
 import { FILE, TOOL } from "tool";
+import Transform from "transform"
 
 //	Regular Expression by Mathias Bynens
 //		https://github.com/mathiasbynens/mothereff.in/blob/master/js-properties/eff.js
