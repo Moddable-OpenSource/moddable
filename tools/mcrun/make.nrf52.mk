@@ -18,11 +18,9 @@
 #
 
 HOST_OS := $(shell uname)
-ifeq ($(HOST_OS),Darwin)
-UPLOAD_PORT ?= /dev/cu.usbmodemE3D911ADEA0E1
-else
-UPLOAD_PORT ?= /dev/ttyUSB0
-endif
+
+M4_VID ?= beef
+M4_PID ?= cafe
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -53,11 +51,11 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
 
 release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	$(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
