@@ -36,6 +36,7 @@ TOOLS_VERSION = \
 !INCLUDE $(MODDABLE)\tools\VERSION
 
 COMMODETTO = $(MODDABLE)\modules\commodetto
+CRYPT = $(MODDABLE)\modules\crypt
 DATA = $(MODDABLE)\modules\data
 INSTRUMENTATION = $(MODDABLE)\modules\base\instrumentation
 TOOLS = $(MODDABLE)\tools
@@ -117,6 +118,8 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
 	$(MOD_DIR)\wavreader.xsb \
+	$(MOD_DIR)\base64.xsb \
+	$(MOD_DIR)\ber.xsb \
 	$(MOD_DIR)\file.xsb \
 	$(MOD_DIR)\buildclut.xsb \
 	$(MOD_DIR)\cdv.xsb \
@@ -133,11 +136,13 @@ MODULES = \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\resampler.xsb \
 	$(MOD_DIR)\rle4encode.xsb \
+	$(MOD_DIR)\transform.xsb \
 	$(MOD_DIR)\tool.xsb \
 	$(MOD_DIR)\unicode-ranges.xsb \
 	$(MOD_DIR)\wav2maud.xsb \
 	$(MOD_DIR)\bles2gatt.xsb \
 	$(MOD_DIR)\url.xsb \
+	$(TMP_DIR)\modBase64.xsi \
 	$(TMP_DIR)\commodettoBitmap.xsi \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
@@ -165,7 +170,10 @@ PRELOADS =\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
 	-p wavreader.xsb\
+	-p base64.xsb\
+	-p ber.xsb\
 	-p resampler.xsb\
+	-p transform.xsb\
 	-p unicode-ranges.xsb\
 	-p file.xsb\
 	-p url.xsb
@@ -190,6 +198,7 @@ OBJECTS = \
 	$(TMP_DIR)\cfeBMF.obj \
 	$(TMP_DIR)\image2cs.obj \
 	$(TMP_DIR)\miniz.obj \
+	$(TMP_DIR)\modBase64.obj \
 	$(TMP_DIR)\modInstrumentation.obj \
 	$(TMP_DIR)\tool.obj \
 	$(TMP_DIR)\wav2maud.obj \
@@ -353,6 +362,15 @@ $(MOD_DIR)\url.xsb : $(DATA)\url\url.js
 $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
+$(MOD_DIR)\base64.xsb : $(DATA)\base64\base64.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
+$(MOD_DIR)\ber.xsb : $(CRYPT)\etc\ber.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
+$(MOD_DIR)\transform.xsb : $(CRYPT)\etc\transform.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR) -r $(@B)
 {$(TOOLS)\}.js{$(MOD_DIR)\}.xsb:
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $< -c -d -e -o $(MOD_DIR)
@@ -369,6 +387,9 @@ $(MOD_DIR)\wavreader.xsb : $(DATA)\wavreader\wavreader.js
 {$(DATA)\url\}.c{$(TMP_DIR)\}.xsi:
 	@echo # xsid $(@F)
 	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
+{$(DATA)\base64\}.c{$(TMP_DIR)\}.xsi:
+	@echo # xsid $(@F)
+	$(BIN_DIR)\xsid $< -o $(TMP_DIR) -r $(@F)
 
 $(TMP_DIR)\tool.obj : $(MODDABLE)\tools\VERSION
 $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
@@ -382,6 +403,9 @@ $(OBJECTS) : $(XS_HEADERS) $(HEADERS)
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
 {$(DATA)\url\}.c{$(TMP_DIR)\}.obj::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+{$(DATA)\base64\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
 {$(TMP_DIR)\}.c{$(TMP_DIR)\}.obj::

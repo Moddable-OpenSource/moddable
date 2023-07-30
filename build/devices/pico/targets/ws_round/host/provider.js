@@ -25,7 +25,6 @@ import I2C from "embedded:io/i2c";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import Touch from "embedded:sensor/Touch/CST816";
 
 class Backlight {
 	#io;
@@ -90,31 +89,6 @@ const device = {
 			constructor() {
 				if (device.pin.backlight)
 					return new Backlight({pin: device.pin.backlight });
-			}
-		}
-	},
-	sensor: {
-		Touch: class {
-			constructor(options) {
-				const result = new Touch({
-					...options,
-					sensor: {
-						...device.I2C.default,
-						io: device.io.SMBus
-					},
-					reset: {
-						io: Digital,
-						mode: Digital.Output,
-						pin: 22
-					},
-					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
-						pin: 21
-					}
-				});
-				result.configure({ flip: "hv" });
-				return result;
 			}
 		}
 	}

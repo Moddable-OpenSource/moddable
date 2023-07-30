@@ -19,6 +19,7 @@
  */
 
 import { FILE, TOOL } from "tool";
+import Transform from "transform"
 
 //	Regular Expression by Mathias Bynens
 //		https://github.com/mathiasbynens/mothereff.in/blob/master/js-properties/eff.js
@@ -73,7 +74,15 @@ export default class extends TOOL {
 		let argc = argv.length;
 		for (let argi = 1; argi < argc; argi++) {
 			let option = argv[argi], name, path;
-			switch (option) {				
+			
+			switch (option) {
+			case "-e":
+				argi++;	
+				if (argi >= argc)
+					throw new Error("-e: no extract path");
+				this.extract = argv[argi];
+				break;
+
 			case "-o":
 				argi++;	
 				if (argi >= argc)
@@ -111,6 +120,19 @@ export default class extends TOOL {
 			const path = this.sourcePath.slice(0, -5) + "_cred_mcu.json";
 			if (this.resolveFilePath(path))
 				credentials = JSON.parse(this.readFileString(path)).credentials;
+		}
+
+		if (this.extract) {
+			const data = this.extractOne(flows, this.extract);
+			const parts = {
+				directory: this.outputDirectory,
+				name: this.extract.substring(0, this.extract.lastIndexOf(".")),
+				extension: this.extract.substring(this.extract.lastIndexOf("."))
+			};
+			const output = new FILE(this.joinPath(parts), "wb");
+			output.writeBuffer(data);
+			output.close();
+			return;
 		}
 
 		flows = this.transformFlows(flows, credentials);
@@ -1120,6 +1142,32 @@ export default class extends TOOL {
 				if (config.newline)
 					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
 			} break;
+			
+			case "tls-config": {
+				if (config.key || config.cert || config.credentials?.keydata || config.credentials?.certdata)
+					throw new Error("private keys not yet implemented");
+				
+				if (config.alpnprotocol)
+					throw new Error("ALPN not yet implemented");
+
+				if (!config.verifyservercert)
+					throw new Error("disable server certificate verify not yet implemented");
+
+				if (config.servername)
+					throw new Error("cannot configure servername - name of host always used");
+
+				delete config.ca;				// processed separately
+				delete config.cert;				// processed separately
+				delete config.key;				// processed separately
+				delete config.credentials;		// processed separately
+
+				delete config.alpnprotocol;
+				delete config.verifyservercert;
+				delete config.servername;
+				delete config.certname;
+				delete config.keyname;
+				delete config.caname;
+			} break;
 
 			case "rpi-gpio in": {
 				config.type = "mcu_digital_in";
@@ -1897,5 +1945,38 @@ export default class extends TOOL {
 		if (undefined !== value)
 			return `"${name}", ${value}`;
 		return `"${name}"`;
+	}
+	extractOne(flows, what) {
+		const parts = what.substring(0, what.lastIndexOf(".")).split("-");
+		let data;
+		
+		flows.some(config => {
+			if (config.id !== parts[0])
+				return;
+			
+			switch (config.type) {
+				case "tls-config": {
+					switch (parts[1]) {
+						case "ca":
+							if (config.ca)
+								data = this.readFileString(config.ca);
+							else if (config.credentials?.cadata)
+								data = config.credentials.cadata;
+
+							if (data) {
+								data = Transform.pemToDER(data);
+								return true;
+							}
+							break;
+					}
+				}
+				break;
+			}
+		});
+		
+		if (!data)
+			throw new Error("cannot extract " + what);
+		
+		return data;
 	}
 }
