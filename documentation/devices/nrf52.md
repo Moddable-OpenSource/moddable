@@ -265,7 +265,7 @@ sudo reboot
 
 
 <a id="troubleshooting"></a>
-# Troubleshooting
+## Troubleshooting
 
 ### Stack overflow
 
@@ -293,10 +293,10 @@ If you are building an application and the link fails with an error like those a
 
 
 <a id="advanced"></a>
-# Advanced
+## Advanced
 
 <a id="debugging-native-code"></a>
-## Debugging Native Code
+### Debugging Native Code
 
 As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
 
