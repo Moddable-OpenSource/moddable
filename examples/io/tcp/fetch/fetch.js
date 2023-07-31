@@ -232,7 +232,6 @@ function fetch(href, info = {}) {
 						url = new URL(headers.get("location"));
 						redirected = this.redirected = true;
 						offset = 0;
-						fetchClientRequest(url, options);
 						return;
 					}
 					resolveResponse(new Response(url, status, headers, promiseBody, redirected));
@@ -262,8 +261,10 @@ function fetch(href, info = {}) {
 						buffer = this.read(count);
 				},
 				onDone(error) {
-					if (this.redirected)
+					if (this.redirected) {
+						fetchClientRequest(url, options);
 						return;
+					}
 					resolveBody(buffer ?? new ArrayBuffer);
 				}
 			};
@@ -274,5 +275,3 @@ function fetch(href, info = {}) {
 
 export { fetch, Headers }
 export default fetch;
-
-
