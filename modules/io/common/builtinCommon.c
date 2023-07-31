@@ -24,6 +24,8 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
+#if __COMMON__PINS__
+
 #if ESP32
 	#include "soc/soc_caps.h"
 	portMUX_TYPE gCommonCriticalMux = portMUX_INITIALIZER_UNLOCKED;
@@ -63,11 +65,8 @@
 		0x00000000		//@@
 #endif
 	};
-#else
-	#error - unsupported platform
 #endif
 
-#if __COMMON__PINS__
 uint8_t builtinArePinsFree(uint32_t bank, uint32_t pins)
 {
 	return ((bank < kPinBanks) && (pins == (gDigitalAvailable[bank] & pins))) ? 1 : 0;
@@ -87,7 +86,7 @@ void builtinFreePins(uint32_t bank, uint32_t pins)
 	if (bank < kPinBanks)
 		gDigitalAvailable[bank] |= pins;
 }
-#endif
+#endif /* __COMMON__PINS__ */
 
 xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 {
