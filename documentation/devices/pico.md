@@ -20,6 +20,7 @@ This document describes how to start building Moddable applications for the Rasp
 - [macOS](#mac)
   - [SDK and Host Environment Setup - macOS](#macos-setup)
   - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
+  - [Troubleshooting](#mac-troubleshooting)
 - [Windows](#win)
   - [SDK and Host Environment Setup - Windows](#windows-setup)
   - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
@@ -190,6 +191,12 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
+<a id="mac-troubleshooting"></a>
+### Troubleshooting
+
+- If the macOS **DISK NOT EJECTED PROPERLY** remain on your screen, you can download and use the [`ejectfix.py`](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/ejectfix.py) tool to make them auto-dismiss.
+    
+   See the [article at the Adafruit blog](https://blog.adafruit.com/2021/05/11/how-to-tone-down-macos-big-surs-circuitpy-eject-notifications/) for details.
 
 <a id="win"></a>
 
