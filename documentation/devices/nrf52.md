@@ -256,11 +256,19 @@ For other issues that are common on macOS, Windows, and Linux, see the [Troubles
 
 #### Permission denied
 
-The ESP32 communicates with the Linux host via the ttyUSB0 device. On Ubuntu Linux the ttyUSB0 device is owned by the `dialout` group. If you get a **permission denied error** when flashing the ESP32, add your user to the `dialout` group:
+The nrf52 communicates with the Linux host via the ttyACM0 device. On Ubuntu Linux the ttyACM0 device is owned by the `dialout` group. If you get a **permission denied error** when trying to connect to the `xsbug` debugger, add your user to the `dialout` group:
 
 ```text
 sudo adduser <username> dialout
 sudo reboot
+```
+
+#### Permission problems with `MODDABLE4` or other `nrf52` disk
+
+When the nrf52 device is in programming mode (ie. double-press the reset button), it should appear on the desktop. If there are permissions problems, try the following command to mount the disk:
+
+```text
+udisksctl mount -b /dev/sdb -t FAT
 ```
 
 
