@@ -97,17 +97,19 @@ static void twi_handler(nrf_drv_twi_evt_t const *p_event, void *p_context)
 		xQueueSendFromISR(gTWIQueue, &msg, NULL);
 }
 
-static void waitForComplete(xsMachine *the, uint32_t timeout)
+static int waitForComplete(xsMachine *the, uint32_t timeout)
 {
 	uint32_t msg = 0;
 	if (xQueueReceive(gTWIQueue, (void*)&msg, timeout)) {
 		switch (msg) {
 			case TWI_READ_COMPLETE:
 			case TWI_WRITE_COMPLETE:
-				return;
+				return 0;
+			default:
+				return 2;
 		}
 	}
-	xsUnknownError("i2c error");
+	return 1;		// error - timeout
 }
 
 void _xs_i2c_constructor(xsMachine *the)
@@ -298,8 +300,11 @@ void _xs_i2c_read(xsMachine *the)
 	if (0 != err) {
 		modLog("I2CErr rx");
 	}
-	else
-		waitForComplete(the, i2c->timeout);
+	else {
+		if (0 != waitForComplete(the, i2c->timeout)) {
+			modLog("I2C rx timeout");
+		}
+	}
 
 }
 
@@ -325,9 +330,11 @@ void _xs_i2c_write(xsMachine *the)
 	if (0 != err) {
 		modLog("I2CErr tx");
 	}
-	else
-		waitForComplete(the, i2c->timeout);
-
+	else {
+		if (0 != waitForComplete(the, i2c->timeout)) {
+			modLog("I2C tx timeout");
+		}
+	}
 }
 
 void _xs_i2c_writeRead(xsMachine *the)
@@ -343,7 +350,7 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
 		xsResult = xsArg(1);
-		xsmcGetBufferWritable(xsArg(0), &bufferRead, &lengthRead);
+		xsmcGetBufferWritable(xsResult, &bufferRead, &lengthRead);
 		xsmcSetInteger(xsResult, lengthRead);
 	}
 	else {
@@ -361,16 +368,20 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 	if (0 != err)
 		modLog("I2CErr tx");
-	else
-		waitForComplete(the, i2c->timeout);
+	else {
+		if (0 != waitForComplete(the, i2c->timeout))
+			modLog("I2C txrx tx timeout");
+	}
 
 	while (NRF_ERROR_BUSY == (err = nrf_drv_twi_rx(&gTwi, i2c->address, bufferRead, lengthRead)))
 		taskYIELD();
 	
 	if (0 != err)
 		modLog("I2CErr rx");
-	else
-		waitForComplete(the, i2c->timeout);
+	else {
+		if (0 != waitForComplete(the, i2c->timeout))
+			modLog("I2C txrx rx timeout");
+	}
 
 }
 
