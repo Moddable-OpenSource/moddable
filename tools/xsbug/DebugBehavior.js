@@ -599,6 +599,8 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(mxGoCommand);
 	}
 	doImport(path, wait) {
+		if (system.platform == "win")
+			path = path.replaceAll('\\', '/');
 		this.doCommand(mxImportCommand, path, wait);
 	}
 	doModule(path, wait) {
