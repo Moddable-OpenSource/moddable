@@ -90,8 +90,7 @@ class HMC5883 {
 		io.readBuffer(Register.ID_A, ID);
 		if (ID[0] !== 72 || ID[1] !== 52 || ID[2] !== 51) {
 			this.close();
-			throw("unexpected sensor");
-			return;
+			throw new Error("unexpected sensor");
 		}
 
 		const {alert, onAlert} = options;
