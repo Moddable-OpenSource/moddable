@@ -211,8 +211,6 @@ hr.alert-divider {
 	</div>
 	<div id="body">
 		<div id="info">
-			<p class="alert-text">Note: This webpage uses features available in Google Chrome desktop browsers. To interact with your Moddable Four please use Google Chrome.</p>
-			<hr class="alert-divider" />
 			<p>Use this web page to interact with the First Run app on <a href="https://www.moddable.com/moddable-four" target="_blank">Moddable Four</a>. This page communicates with Moddable Four using BLE through the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank">Web Bluetooth</a> APIs. If you don't already have the First Run app installed on your Moddable Four, you can build it from the source code at <a href="https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/first-run-moddable-four">$MODDABLE/contributed/first-run-moddable-four</a>.</p>
 		</div>
 		<div id="pane-container">
@@ -418,7 +416,7 @@ class View {
 	
 	async onConnect() {
 		if (navigator.bluetooth === undefined) {
-			alert("This browser does not support Bluetooth.");
+			alert("This browser does not support Bluetooth.\rPlease use Google Chrome or Microsoft Edge.");
 			return;
 		}
 		if (this.device) {
