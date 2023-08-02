@@ -483,6 +483,9 @@ static SemaphoreHandle_t gFlashMutex;
 
 void modMachineTaskInit(xsMachine *the)
 {
+	if (NULL == gFlashMutex)
+		gFlashMutex = xSemaphoreCreateMutex();
+
 	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
 #ifdef mxDebug
@@ -575,9 +578,6 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
-
-	if (NULL == gFlashMutex)
-		gFlashMutex = xSemaphoreCreateMutex();
 
 	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		result = (void *)kModulesStart;
