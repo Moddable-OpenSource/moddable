@@ -146,12 +146,7 @@ void PiuQRCodeDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y,
 	xsVar(0) = xsReference((*view)->reference);
 	xsVar(0) = xsGet(xsVar(0), xsID_poco);
 	if ((*self)->fillBlend) {
-		xsVar(1) = xsInteger((*self)->fillColor);
-		xsVar(2) = xsInteger(x);
-		xsVar(3) = xsInteger(y);
-		xsVar(4) = xsInteger(sw);
-		xsVar(5) = xsInteger(sh);
-		xsCall5(xsVar(0), xsID_fillRectangle, xsVar(1), xsVar(2), xsVar(3), xsVar(4), xsVar(5));
+		PocoRectangleFill((*view)->poco, (*self)->fillColor, 0xff, x, y, sw, sh); 
 	}
 	if ((*self)->strokeBlend) {
 		xsVar(1) = xsReference((*self)->buffer);

@@ -2,7 +2,6 @@
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-		"commodetto/PocoDraw": "$(COMMODETTO)/commodettoPocoDraw",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
