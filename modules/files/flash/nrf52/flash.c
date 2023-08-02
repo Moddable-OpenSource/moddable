@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -111,6 +111,8 @@ void xs_flash_write(xsMachine *the)
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	modFlash flash = xsmcGetHostChunk(xsThis);
+	void *buffer;
+	xsUnsignedValue bufferLength;
 
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
@@ -118,13 +120,25 @@ void xs_flash_write(xsMachine *the)
 	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
 		xsUnknownError("invalid length");
 
-	if (!modSPIWrite(offset + flash->partitionStart, byteLength, xsmcToArrayBuffer(xsArg(2))))
+	xsmcGetBufferReadable(xsArg(2), &buffer, &bufferLength);
+	if (bufferLength < byteLength)
+		xsUnknownError("invalid length");
+
+	if (!modSPIWrite(offset + flash->partitionStart, byteLength, buffer))
 		xsUnknownError("write failed");
 }
 
 void xs_flash_map(xsMachine *the)
 {
-	xsUnknownError("unsupported");
+	modFlash flash = xsmcGetHostChunk(xsThis);
+	uint32_t partitionStart = flash->partitionStart, partitionByteLength = flash->partitionByteLength;
+
+	xsmcVars(1);
+	xsResult = xsNewHostObject(NULL);
+	xsmcSetHostBuffer(xsResult, (void *)(kFlashStart + partitionStart), partitionByteLength);
+	xsmcPetrifyHostBuffer(xsResult);
+	xsmcSetInteger(xsVar(0), partitionByteLength);
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
 }
 
 void xs_flash_byteLength(xsMachine *the)
