@@ -797,3 +797,12 @@ uint32_t nrf52_memory_remaining() {
 	return xPortGetFreeHeapSize();
 }
 
+// eliminate linker errors of the form: "warning: _close is not implemented and will always fail" 
+void _close(void){}
+void _lseek () __attribute__ ((weak, alias ("_close")));
+void _write () __attribute__ ((weak, alias ("_close")));
+void _read () __attribute__ ((weak, alias ("_close")));
+void _fstat () __attribute__ ((weak, alias ("_close")));
+void _getpid () __attribute__ ((weak, alias ("_close")));
+void _isatty () __attribute__ ((weak, alias ("_close")));
+void _kill () __attribute__ ((weak, alias ("_close")));
