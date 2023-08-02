@@ -22,6 +22,12 @@
 				"button1_pin": 0
 			}
 		},
+		"nrf52": {
+			"config": {
+				"led1_pin": 7,
+				"button1_pin": 13
+			}
+		},
 		"qca4020": {
 			"config": {
 				"led1_pin": 12,

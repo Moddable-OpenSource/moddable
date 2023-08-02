@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,4 +43,22 @@ void xs_time_dst_set(xsMachine *the)
 
 void xs_time_ticks(xsMachine *the)
 {
+	c_timeval tv;
+	c_gettimeofday(&tv, NULL);
+	xsResult = xsNumber(((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec / 1000)));
+}
+
+void xs_time_delta(xsMachine *the)
+{
+	xsNumberValue start, end;
+	
+	start = xsToNumber(xsArg(0));
+	if (xsToNumber(xsArgc) > 1)
+		end = xsToNumber(xsArg(1));
+	else {
+		c_timeval tv;
+		c_gettimeofday(&tv, NULL);
+		end = ((double)(tv.tv_sec) * 1000.0) + ((double)(tv.tv_usec / 1000));
+	}
+	xsResult = xsNumber(end - start);
 }

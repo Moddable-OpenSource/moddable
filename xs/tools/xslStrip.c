@@ -471,6 +471,25 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripClass(linker, the, &mxWeakSetConstructor);
 		
 	fxUnstripCallback(linker, fx_species_get); //@@
+	
+	if (!fxIsCodeUsed(XS_CODE_GENERATOR_FUNCTION)) {
+		fxStripCallback(linker, fx_Generator_prototype_next);
+		fxStripCallback(linker, fx_Generator_prototype_return);
+		fxStripCallback(linker, fx_Generator_prototype_throw);
+	}
+	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION)) {
+		fxStripCallback(linker, fx_AsyncGenerator_prototype_next);
+		fxStripCallback(linker, fx_AsyncGenerator_prototype_return);
+		fxStripCallback(linker, fx_AsyncGenerator_prototype_throw);
+	}
+	if (!fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF)) {
+		fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_next);
+		fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_return);
+		fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_throw);
+	}
+	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) && !fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF)) {
+		fxStripCallback(linker, fx_AsyncIterator_asyncIterator);
+	}
 }
 
 void fxStripClass(txLinker* linker, txMachine* the, txSlot* slot)

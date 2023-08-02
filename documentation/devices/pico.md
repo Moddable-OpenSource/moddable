@@ -20,6 +20,7 @@ This document describes how to start building Moddable applications for the Rasp
 - [macOS](#mac)
   - [SDK and Host Environment Setup - macOS](#macos-setup)
   - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
+  - [Troubleshooting](#mac-troubleshooting)
 - [Windows](#win)
   - [SDK and Host Environment Setup - Windows](#windows-setup)
   - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
@@ -86,6 +87,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | <img src="../assets/devices/pico-adafruit-qt-py-rp2040.png" width=150></a><br>Adafruit<br>QT Py | `pico/qtpy` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/4900)</li> |
 | <img src="../assets/devices/pico-adafruit-qt-trinkey.png" width=150></a><br>Adafruit<br>Trinkey QT2040 | `pico/qt_trinkey` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/5056)</li> |
 | <img src="../assets/devices/pico-pimoroni-tiny-2040.png" width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
+| <img src="../assets/devices/ws_round.png" width=150></a><br>WAVESHARE<br>1.28inch Round LCD | `pico/ws_round`<BR>`pico/ws_round_touch` | 1.28" IPS 240×240 Round Display| <li>[WAVESHARE product page](https://www.waveshare.com/rp2040-lcd-1.28.htm)</li><li>[touch LCD version](https://www.waveshare.com/product/rp2040-touch-lcd-1.28.htm)</li> |
 | <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png" width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
 | <img src="../assets/devices/pico-xiao-ili9341.png" width=140></a><BR>ili9341 | `pico/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 | <img src="../assets/devices/pico-ili9341.png" width=140></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
@@ -189,6 +191,12 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
+<a id="mac-troubleshooting"></a>
+### Troubleshooting
+
+- If the macOS **DISK NOT EJECTED PROPERLY** remain on your screen, you can download and use the [`ejectfix.py`](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/ejectfix.py) tool to make them auto-dismiss.
+    
+   See the [article at the Adafruit blog](https://blog.adafruit.com/2021/05/11/how-to-tone-down-macos-big-surs-circuitpy-eject-notifications/) for details.
 
 <a id="win"></a>
 

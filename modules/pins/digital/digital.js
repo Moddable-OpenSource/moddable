@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -32,6 +32,10 @@ Digital.Input = 0;
 Digital.InputPullUp = 1;
 Digital.InputPullDown = 2;
 Digital.InputPullUpDown = 3;
+
+Digital.WakeOnRise = (1 << 6);
+Digital.WakeOnFall = (1 << 7);
+
 Digital.Output = 8;
 Digital.OutputOpenDrain = 9;
 

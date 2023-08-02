@@ -112,10 +112,6 @@ endif
 LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -latomic -lpthread -ldl
 
 LINK_FLAGS = -fPIC
-
-XSC = $(BUILD_DIR)/bin/lin/release/xsc
-XSID = $(BUILD_DIR)/bin/lin/release/xsid
-XSL = $(BUILD_DIR)/bin/lin/release/xsl
 	
 VPATH += $(XS_DIRECTORIES)
 
@@ -148,7 +144,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

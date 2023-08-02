@@ -1,0 +1,123 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "1",
+		"SDKCONFIGPATH": "./sdkconfig"
+	},
+	"include": [
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODDABLE)/modules/drivers/axp2101/manifest.json"
+	],
+	"config": {
+		"screen": "ili9341",
+		"virtualButton": false,
+		"touch": "M5StackCoreS3Touch",
+		"startupSound": "bflatmajor.maud",
+		"startupVibration": 600
+	},
+	"modules": {
+		"setup/target": "./setup-target",
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
+		"pins/audioout-original": "$(MODULES)/pins/i2s/*",
+		"pins/audioout": "./M5StackCoreS3AudioOut",
+		"*": [
+			"$(MODULES)/drivers/mpu6886/*",
+			"./M5StackCoreS3Touch"
+		]
+	},
+	"preload": [
+		"pins/smbus",
+		"pins/audioout-original",
+		"pins/audioout",
+		"mpu6886",
+		"M5StackCoreS3Touch",
+		"setup/target"
+	],
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 2,
+			"scl_pin": 1
+		},
+		"spi": {
+			"mosi_pin": 37,
+			"sck_pin": 36
+		},
+		"ili9341": {
+			"hz": 40000000,
+			"width": 320,
+			"height": 240,
+			"cs_pin": 3,
+			"dc_pin": 35,
+			"spi_port": "SPI3_HOST",
+			"registers": [
+				"0x01, 0,",
+				"0xC8, 3, 0xFF, 0x93, 0x42,",
+				"0xC0, 2, 0x12, 0x12,",
+				"0xC1, 1, 0x03,",
+				"0xB0, 1, 0xE0,",
+				"0xF6, 3, 0x00, 0x01, 0x01,",
+				"0x36, 1, 0x08,",
+				"0x3A, 1, 0x55,",
+				"0xB6, 3, 0x08, 0x82, 0x27,",
+				"0xE0, 15, 0x00 ,0x0C ,0x11 ,0x04 ,0x11 ,0x08 ,0x37 ,0x89 ,0x4C ,0x06 ,0x0C ,0x0A ,0x2E ,0x34 ,0x0F,",
+				"0xE1, 15 ,0x00 ,0x0B ,0x11 ,0x05 ,0x13 ,0x09 ,0x33 ,0x67 ,0x48 ,0x07 ,0x0E ,0x0B ,0x2E ,0x33 ,0x0F,",
+				"0x11, 0,",
+				"0x29, 0,",
+				"0x21, 0,",
+				"0xFF, 0"
+			]
+		},
+		"ft6206": {
+			"width": 320,
+			"height": 280,
+			"hz": 100000,
+			"sda": 12,
+			"scl": 11,
+			"threshold": 128,
+			"flipX": false,
+			"flipY": false,
+			"fitX": false,
+			"fitY": false
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000,
+			"volume_divider": 1,
+			"i2s": {
+				"num": 1,
+				"bitsPerSample": 16,
+				"bck_pin": 34,
+				"lr_pin": 33,
+				"mck_pin": 0,
+				"dataout_pin": 13
+			}
+		},
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"bck_pin": 34,
+				"lr_pin": 33,
+				"datain": 14,
+				"pdm": 1
+			}
+		}
+	}
+}

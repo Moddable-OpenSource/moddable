@@ -1,0 +1,198 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"HEAP_SIZE": "0x31000"
+	},
+	"defines": {
+		"ls013b4dn04": {
+			"dither": 1
+		}
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/commodetto/gif/manifest.json",
+		"$(MODULES)/commodetto/qrcode/manifest.json",
+		"$(MODULES)/data/qrcode/manifest.json"
+	],
+	"creation": {
+		"stack": 512
+	},
+	"modules": {
+		"piu/GIFImage": "$(MODULES)/piu/MC/gif/piuGIFImage",
+		"piu/QRCode": "$(MODULES)/piu/MC/qrcode/piuQRCode",
+		"*": [
+			"./Controller",
+			"./Transition",
+			"./View",
+			"./assets",
+			"./main",
+			"./model",
+			"./views/*"
+		]
+	},
+	"preload": [
+		"Controller",
+		"Transition",
+		"View",
+		"About",
+		"Asleep",
+		"BLEWeb",
+		"Dither",
+		"Gravity",
+		"Home",
+		"Menu",
+		"SetDate",
+		"SetTime",
+		"Splash",
+		"Wake",
+		"assets",
+		"model"
+	],
+	"data":{
+		"*": [
+			"./assets/gifs/*"
+		]
+	},
+	"resources":{
+		"*-alpha-monochrome": [
+			"./assets/*"
+		],
+		"*-mask": [
+			{
+				"source": "./fonts/ArialNarrow-Bold",
+				"size": 20,
+				"characters": "HardwareSoftwareToolsLearn More",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 20,
+				"blocks": ["Basic Latin"],
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 22,
+				"blocks": ["Basic Latin"],
+				"characters": "AccelerometerModdable Four",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 24,
+				"blocks": ["Basic Latin"],
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 42,
+				"characters": "0123456789JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Bold",
+				"size": 24,
+				"characters": "SUNMONTUEWEDTHUFRISAT",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 60,
+				"characters": "0123456789:",
+				"monochrome": true
+			},
+			
+			{
+				"source": "./fonts/ArialNarrow-Regular",
+				"size": 40,
+				"characters": "Hello",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/NotoSansTC-Regular",
+				"size": 36,
+				"characters": "你好",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Italic",
+				"size": 32,
+				"characters": "Bonjour",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Bold",
+				"size": 32,
+				"characters": "Hallo",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Italic",
+				"size": 40,
+				"characters": "Ciao",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/NotoSansJP-Regular",
+				"size": 24,
+				"characters": "こんにちは",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/NotoSansKR-Regular",
+				"size": 26,
+				"characters": "안녕하세요",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Bold",
+				"size": 36,
+				"characters": "Hola",
+				"monochrome": true
+			},
+			{
+				"source": "./fonts/ArialNarrow-Italic",
+				"size": 36,
+				"characters": "Привіт",
+				"monochrome": true
+			}
+		]
+    },
+	"platforms": {
+		"mac": {
+			"modules": {
+				"*": [
+					"./simulator/uart",
+					"./simulator/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		},
+		"nrf52/moddable_four": {
+			"include": [
+				"$(MODDABLE)/modules/network/ble/manifest_server.json",
+				"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+			],
+			"ble":{
+				"*": [
+					"./bleservices/*"
+				]
+			},
+			"modules": {
+				"*": [
+					"./device/uart",
+					"./device/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		}
+	}
+}

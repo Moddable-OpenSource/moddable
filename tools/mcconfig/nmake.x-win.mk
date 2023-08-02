@@ -140,12 +140,6 @@ LINK_OPTIONS = /incremental:no /nologo /MANIFEST:EMBED
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
-MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
-XSC = $(BUILD_DIR)\bin\win\debug\xsc
-XSID = $(BUILD_DIR)\bin\win\debug\xsid
-XSL = $(BUILD_DIR)\bin\win\debug\xsl
-	
 all: build
 
 build: $(LIB_DIR) $(BIN_DIR)\$(NAME).exe 
@@ -183,7 +177,7 @@ $(TMP_DIR)\mc.xs.obj: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)\main.res: $(MAIN_DIR)/win/main.rc $(MAIN_DIR)/win/main.ico
 	@echo # rc main.rc
@@ -195,6 +189,6 @@ $(TMP_DIR)\mc.res: $(TMP_DIR)\mc.rc
 
 $(TMP_DIR)\mc.rc: $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(RESOURCES) -o $(TMP_DIR) -p x-win -r mc.rc
+	mcrez $(RESOURCES) -o $(TMP_DIR) -p x-win -r mc.rc
 	
 	

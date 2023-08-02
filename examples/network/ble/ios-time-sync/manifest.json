@@ -28,6 +28,11 @@
 				"rotation": 270
 			}
 		},
+		"nrf52": {
+			"config": {
+				"rotation": 270
+			}
+		},
 		"gecko/blue": {
 			"error": "application not supported on this platform"
 		}

@@ -99,6 +99,7 @@ class BLEHIDClient extends BLEClient {
 				delete this.connecting;
 				delete this.bonded;
 				delete this.timer;
+				Bonded.remove(this.usageID);
 				this.scan();
 			}, 5000);
 			return;
@@ -146,7 +147,7 @@ class BLEHIDClient extends BLEClient {
 			delete this.timer;
 		}
 		if (!this.bonded) {
-			this.onDeviceConnected(device);
+			this.onDeviceConnected(this.device);
 			this.device.discoverPrimaryService(this.HID_SERVICE_UUID);
 		}
 	}
@@ -182,9 +183,8 @@ class BLEHIDClient extends BLEClient {
 				characteristic.readValue(Authorization.NoMITM);
 				return;
 			}
-			else if (characteristic.uuid.equals(this.REPORT_CHARACTERISTIC_UUID)) {
+			else if (characteristic.uuid.equals(this.REPORT_CHARACTERISTIC_UUID))
 				this.reports.push({ characteristic, reportType:ReportType.NONE });
-			}
 		}
 		this.reportIndex = 0;
 		this.reports[this.reportIndex].characteristic.discoverAllDescriptors();
@@ -222,8 +222,10 @@ class BLEHIDClient extends BLEClient {
 			});
 		}		
 		if (matched.length) {
-			if (this.bonding)
+			if (this.bonding) {
 				Bonded.set(this.usageID, this.device, matched);
+				this.bonded = Bonded.get(this.usageID);
+			}
 			this.onDeviceReports(matched);
 			this.onDeviceReady();
 		}

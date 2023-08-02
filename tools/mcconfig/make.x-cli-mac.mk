@@ -113,10 +113,6 @@ LIBRARIES = -framework CoreFoundation
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = $(MACOS_ARCH)
 
-XSC = $(BUILD_DIR)/bin/mac/release/xsc
-XSID = $(BUILD_DIR)/bin/mac/release/xsid
-XSL = $(BUILD_DIR)/bin/mac/release/xsl
-	
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
@@ -152,7 +148,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(CREATION) $(MODULES)
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)

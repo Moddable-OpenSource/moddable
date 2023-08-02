@@ -127,6 +127,8 @@ export class Test262Context {
 		}
 	}
 	onImport(machine, path) {
+		if (system.platform == "win")
+			path = path.replaceAll('/', '\\');
 		if (system.fileExists(path))
 			machine.doModule(path);
 		else

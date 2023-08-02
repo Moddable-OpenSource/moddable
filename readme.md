@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: October 13, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: March 25, 2023
 
 ## Modern software development for microcontrollers
 
@@ -125,6 +125,25 @@ The Moddable SDK supports [many devices](./documentation/devices/pico.md#platfor
 | :---: | :---: | :---: |
 | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pi-pico_w.png" width=65></a><BR>Raspberry Pi<BR>Pico W | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-display.png" width=65></a><BR>Pimoroni<BR>Pico Display | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-ili9341.png" width=120></a><BR>ili9341
 | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-adafruit-qt-py-rp2040.png" width=85></a><BR>Adafruit QT Py | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=160></a><BR>Sparkfun Pro Micro | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-lilygo-t-display-rp2040.png" width=160></a><BR> LILYGO T-Display
+
+
+### nRF52 by Nordic Semiconductor
+
+To use the Moddable SDK with nRF52 devices, you need to:
+
+1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [nRF5 tools](./documentation/devices/nrf52.md)
+3. Install [a bootloader](./documentation/devices/nrf52.md#install-bootloader). This is not necessary for the Moddable Four as the bootloader is pre-installed on Moddable Four.
+
+The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platforms) built with the nRF52, including the boards shown below:
+
+| | | |
+| :---: | :---: | :---: |
+| <a href="./documentation/devices/moddable-four.md"><img src="./documentation/assets/devices/moddable-four.png" width=125></a><BR>Moddable Four<sup>[[10](#footnotes4)]</sup> | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-pca10056.png" width=125></a><BR>Nordic DK pca10056 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-sparkfun.png" width=125></a><BR>Sparkfun Pro nRF52840 |
+| <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-makerdiary.png" width=125></a><BR>Makerdiary nRF52840 MDK | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-xiao.png" width=125></a><BR>seeed XIAO-nRF52840 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-itsybitsy.png" width=125></a><BR>Adafruit ItsyBitsy nRF52840 |
+
+<a id="footnotes4"></a>
+> <sup>[10]</sup> *See also: [Moddable Four Developer Guide](./documentation/devices/moddable-four.md), Moddable [product page](https://www.moddable.com/product)*<BR>
 
 
 ### Gecko by Silicon Labs

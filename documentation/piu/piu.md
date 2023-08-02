@@ -4318,7 +4318,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [15]: ../../modules/piu/All/piuText.c "piuText.c"
 [16]: ../../modules/piu/MC/piuTexture.c "piuTexture.c"
 [17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
-[30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
+[30]: ../../modules/piu/MC/colorcell/piuImage.c "piuImage.c"
 [33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [36]: ../../modules/piu/All/piuTimeline.js "piuTimeline.js"
 [37]: ../../modules/piu/MC/piuSound.c "piuSound.c"

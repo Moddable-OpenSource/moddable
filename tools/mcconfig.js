@@ -123,13 +123,13 @@ class MakeFile extends MAKEFILE {
 			var sourceParts = tool.splitPath(result.source);
 			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, sourceParts.extension, ".xsi: ", source);
 			this.echo(tool, "xsid ", sourceParts.name, sourceParts.extension, ".xsi");
-			this.line("\t$(XSID) ", source, " -o $(@D)");
+			this.line("\txsid ", source, " -o $(@D)");
 		}
 		for (var result of tool.hFiles) {
 			var sourceParts = tool.splitPath(result);
 			this.line("$(TMP_DIR)", tool.slash, sourceParts.name, ".h.xsi: ", result);
 			this.echo(tool, "xsid ", sourceParts.name, ".h.xsi");
-			this.line("\t$(XSID) ", result, " -o $(@D)");
+			this.line("\txsid ", result, " -o $(@D)");
 		}
 		this.line("");
 	}
@@ -294,6 +294,28 @@ class espNMakeFile extends NMakeFile {
 }
 
 class esp32NMakeFile extends NMakeFile {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
+			if (result.recipe) {
+				var recipe = tool.recipes[result.recipe];
+				recipe = recipe.replace(/\$</g, source);
+				this.write(recipe);
+			}
+			else {
+				this.echo(tool, "cc ", target);
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+			}
+		}
+	}
+}
+
+class nrf52NMakeFile extends NMakeFile {
 	constructor(path) {
 		super(path)
 	}
@@ -1144,6 +1166,8 @@ export default class extends Tool {
 				file = new espNMakeFile(path);
 			else if (this.platform == "esp32")
 				file = new esp32NMakeFile(path);
+			else if (this.platform == "nrf52")
+				file = new nrf52NMakeFile(path);
 			else
 				file = new NMakeFile(path);
 		}

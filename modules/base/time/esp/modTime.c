@@ -54,3 +54,15 @@ void xs_time_ticks(xsMachine *the)
 {
 	xsmcSetInteger(xsResult, modMilliseconds());
 }
+
+void xs_time_delta(xsMachine *the)
+{
+	uint32_t start, end;
+	
+	start = (uint32_t)xsmcToInteger(xsArg(0));
+	if (xsmcArgc > 1)
+		end = (uint32_t)xsmcToInteger(xsArg(1));
+	else
+		end = modMilliseconds();
+	xsmcSetInteger(xsResult, end - start);
+}

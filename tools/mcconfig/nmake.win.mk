@@ -152,18 +152,6 @@ LINK_OPTIONS = /incremental:no /nologo /dll
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
-BUILDCLUT = $(BUILD_DIR)\bin\win\debug\buildclut
-COMPRESSBMF = $(BUILD_DIR)\bin\win\debug\compressbmf
-IMAGE2CS = $(BUILD_DIR)\bin\win\debug\image2cs
-MCLOCAL = $(BUILD_DIR)\bin\win\debug\mclocal
-MCREZ = $(BUILD_DIR)\bin\win\debug\mcrez
-PNG2BMP = $(BUILD_DIR)\bin\win\debug\png2bmp
-RLE4ENCODE = $(BUILD_DIR)\bin\win\debug\rle4encode
-WAV2MAUD = $(BUILD_DIR)\bin\win\debug\wav2maud
-XSC = $(BUILD_DIR)\bin\win\debug\xsc
-XSID = $(BUILD_DIR)\bin\win\debug\xsid
-XSL = $(BUILD_DIR)\bin\win\debug\xsl
-	
 all: build
 	$(START_XSBUG)
 	$(START_COMMAND)
@@ -203,7 +191,7 @@ $(TMP_DIR)\mc.xs.obj: $(TMP_DIR)\mc.xs.c $(HEADERS)
 	
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) <<args.txt 
+	xsl <<args.txt 
 -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 <<
 
@@ -212,6 +200,6 @@ $(TMP_DIR)\mc.resources.obj: $(TMP_DIR)\mc.resources.c $(HEADERS)
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) <<args.txt
+	mcrez <<args.txt
 $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 <<

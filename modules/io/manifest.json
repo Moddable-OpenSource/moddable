@@ -16,6 +16,9 @@
 		"pico": {
 			"include": "./manifests/pico/manifest.json"
 		},
+		"nrf52": {
+			"include": "./manifests/nrf52/manifest.json"
+		},
 		"mac": {
 			"include": "./manifests/mac/manifest.json"
 		},

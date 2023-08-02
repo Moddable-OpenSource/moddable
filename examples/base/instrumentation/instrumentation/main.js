@@ -14,25 +14,18 @@
 
 import Instrumentation from "instrumentation";
 
-const instruments = [
-	"",
-	"Pixels Drawn",
-	"Frames Drawn",
-	"Network Bytes Read",
-	"Network Bytes Written",
-	"Network Sockets",
-	"Timers",
-	"Files",
-	"Poco Display List Used",
-	"Piu Command List Used",
-	"System Free Memory",
-	"XS Slot Heap Used",
-	"XS Chunk Heap Used",
-	"XS Keys Used",
-	"XS Garbage Collection Count",
-	"XS Modules Loaded",
-	"XS Stack Used",
-];
+import Timer from "timer"
 
-for (let i = 1; i < 17; i++)
-	trace(`${instruments[i]}: ${Instrumentation.get(i)}\n`);
+Timer.set(() => {}, 5000)
+
+
+const stackIndex = Instrumentation.map("XS Stack Used");
+trace(`XS Stack Used: ${Instrumentation.get(stackIndex)}\n`);
+
+for (let i = 1; true; i++) {
+	const name = Instrumentation.name(i);
+	if (!name)
+		break;
+	const value = Instrumentation.get(i);
+	trace(`${name}: ${value}\n`);
+}

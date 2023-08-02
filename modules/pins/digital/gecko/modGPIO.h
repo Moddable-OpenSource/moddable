@@ -31,6 +31,9 @@ enum {
 	kModGPIOInputPullDown	= 2,
 	kModGPIOInputPullUpDown	= 3,
 
+	kModGPIOWakeRisingEdge	= 1 << 6,
+	kModGPIOWakeFallingEdge	= 1 << 7,
+
 	kModGPIOOutput 			= 8,
 	kModGPIOOutputOpenDrain	= 9
 };
@@ -55,6 +58,8 @@ extern int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode);
 #define kModGPIOReadError (255)
 extern uint8_t modGPIORead(modGPIOConfiguration config);
 extern void modGPIOWrite(modGPIOConfiguration config, uint8_t value);
+
+#define modGPIODidWake(...) (0)
 
 // callback on input value change...
 

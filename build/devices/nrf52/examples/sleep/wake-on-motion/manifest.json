@@ -1,0 +1,19 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/pins/digital/manifest.json",
+		"$(MODDABLE)/modules/pins/i2c/manifest.json",
+		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(MODULES)/drivers/lis3dh/*"
+		],
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+	},
+	"preload": [
+		"lis3dh",
+		"pins/smbus"
+	]
+}

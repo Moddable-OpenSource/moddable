@@ -1,0 +1,25 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/digital/monitor/manifest.json"
+	],
+	"modules": {
+		"pins/pulsecount": "$(MODULES)/pins/pulsecount/*"
+	},
+	"preload": "pins/pulsecount",
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/pins/pulsecount/esp32/*"
+			}
+		},
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/pulsecount/nrf52/*"
+			}
+		},
+		"...": {
+			"error": "pins/digital module unsupported"
+		}
+	}
+}

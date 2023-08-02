@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,6 +24,16 @@
 
 #include "modGPIO.h"
 
+typedef struct modDigitalWakeConfigurationRecord modDigitalWakeConfigurationRecord;
+typedef struct modDigitalWakeConfigurationRecord *modDigitalWakeConfiguration;
+
+struct modDigitalWakeConfigurationRecord {
+	xsSlot obj;
+	xsSlot onWake;
+};
+
+void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
+
 /*
 	Digital
 */
@@ -37,8 +47,9 @@ void xs_digital_destructor(void *data)
 void xs_digital(xsMachine *the)
 {
 	int pin, mode, argc = xsmcArgc;
-	char *port = NULL;;
+	char *port = NULL;
 	modGPIOConfigurationRecord gpio;
+	int woke;
 
 	if (1 == argc) {		//@@ eventually only dictionary case should be here
 		xsmcVars(1);
@@ -59,6 +70,11 @@ void xs_digital(xsMachine *the)
 			xsmcGet(xsVar(0), xsArg(0), xsID_port);
 			port = xsmcToString(xsVar(0));
 		}
+		
+		if (xsmcHas(xsArg(0), xsID_wakeEdge)) {
+			xsmcGet(xsVar(0), xsArg(0), xsID_wakeEdge);
+			mode |= xsmcToInteger(xsVar(0));
+		}
 	}
 	else if (2 == argc) {
 		pin = xsmcToInteger(xsArg(0));
@@ -71,10 +87,26 @@ void xs_digital(xsMachine *the)
 			port = xsmcToString(xsArg(0));
 	}
 
+	woke = modGPIODidWake(NULL, pin);
+
 	if (modGPIOInit(&gpio, port, (uint8_t)pin, mode))
 		xsUnknownError("can't init pin");
-
+		
 	xsmcSetHostChunk(xsThis, &gpio, sizeof(gpio));
+		
+	if (xsmcHas(xsArg(0), xsID_onWake)) {
+		if (woke) {
+			modDigitalWakeConfigurationRecord wake;
+			wake.obj = xsThis;
+			if (xsmcHas(xsArg(0), xsID_target)) {
+				xsmcGet(xsVar(0), xsArg(0), xsID_target);
+				xsmcSet(xsThis, xsID_target, xsVar(0));
+			}
+			xsmcGet(wake.onWake, xsArg(0), xsID_onWake);
+			xsRemember(wake.onWake);
+			modMessagePostToMachine(the, (uint8_t*)&wake, sizeof(wake), wakeableDigitalDeliver, NULL);
+		}
+	}
 }
 
 void xs_digital_close(xsMachine *the)
@@ -140,4 +172,14 @@ void xs_digital_static_write(xsMachine *the)
 
 	modGPIOWrite(&config, value ? 1 : 0);
 	modGPIOUninit(&config);
+}
+
+void wakeableDigitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	modDigitalWakeConfiguration wake = (modDigitalWakeConfiguration)message;
+
+	xsBeginHost(the);
+		xsCallFunction0(wake->onWake, wake->obj);
+		xsForget(wake->onWake);
+	xsEndHost(the);
 }
