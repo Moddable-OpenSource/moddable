@@ -613,7 +613,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			the->wsState = 18;
 			break;
 
-//#if MODDEF_XS_MODS
+#if MODDEF_XS_MODS
 		case 2: {		// uninstall
 			uint8_t erase[16] = {0};
 			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
@@ -642,7 +642,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 			} // end of case 3
 			break;
-//#endif /* MODDEF_XS_MODS */
+#endif /* MODDEF_XS_MODS */
 
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
