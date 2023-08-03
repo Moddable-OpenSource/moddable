@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: April 9, 2023
+Revised: August 3, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -741,7 +741,7 @@ The second pass matches files with the properties of the combined `modules` and 
 - The name of each property is the target file, the value of the property is the source file or an array of source files.
 - Targets and sources can use the `*` wildcard to represent all files that match.
 
-There are no extensions:
+These are the supported extensions:
 
 - In the `modules` object, `mcconfig` matches `.c`, `.cc`, `.cpp`, `.h`, `.js` and `.m` files.
 - In the `resources` object, `mcconfig` matches `.act`, `.bmp`, `.cct`, `.dat`, `.der`, `.fnt`, `.jpg`, `.json`, `.nfnt`, `.pk8`, `.png`, `.rle`, `.ski` and `.ttf`  files.
