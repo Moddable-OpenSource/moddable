@@ -234,7 +234,7 @@ The Moddable runtime is optimized to support the low-power features of the Modda
 | Example app | Power Consumption | Description
 | :---: | :---: | :--- |
 | [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep) | 1.4 uA | Wake on reset
-| [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital) | 1.5 uA | Wake on digital input trigger
+| [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital) | 1.5 uA | Wake on digital input trigger
 | [wake-on-analog](./../../build/devices/nrf52/examples/sleep/wake-on-analog) | 2.3 uA | Wake on analog input trigger
 | [wake-on-motion](./../../build/devices/nrf52/examples/sleep/wake-on-motion) | 5.2 uA | Wake on accelerometer motion interrupt digital input trigger
 | [wake-on-multiple](./../../build/devices/nrf52/examples/sleep/wake-on-multiple) | 2.4 uA | Wake on RTC, analog, or digital input triggers with LCD on and displaying the wake-up source
