@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: April 30, 2023
+Revised: August 3, 2023
 
 ## Table of Contents
 
@@ -430,9 +430,24 @@ The Moddable SDK supports littlefs using the APIs described above. To use little
 
 > **Note**: A project may use the littlefs manifest or the default file manifest (`$MODDABLE/modules/files/file/manifest.json`). Both cannot currently be included in the same project.
 
-On ESP32, littlefs uses the "storage" partition to hold the file system. On ESP8266, the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS). On other devices, littlefs uses a 64 KB static memory buffer to hold the file system. This RAM disk mode allows littlefs to be used with the simulator.
+The backing store for littlefs varies depending the host platform:
 
-The littlefs implementation is thread safe on devices running FreeRTOS (ESP32) allowing littlefs to be used with Workers. Thread safety is irrelevant on ESP8266 as it runs as a single process. The thread safety support may be extended for other runtime environments.
+- **ESP32** - littlefs uses the "storage" partition to hold the file system.
+- **ESP8266** - the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS). 
+- **nRF52** - littlefs uses the free space following the firmware image and installed mod. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest `defines`. If there is not enough space, an exception is thrown when accessing the file system.
+- **Others**, littlefs uses a static memory buffer to hold the file system. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest. This RAM disk mode allows littlefs to be used with the simulator.
+
+```json
+	"defines": {
+		"file": {
+			"lfs": {
+				"partition_size": 131072
+			}
+		}
+	},
+```
+
+The littlefs implementation is thread safe on devices running FreeRTOS (ESP32 and nRF52) allowing littlefs to be used with Workers. Thread safety is irrelevant on ESP8266 as it runs as a single process. The thread safety support may be extended for other runtime environments.
 
 The littlefs implementation can be configured to trade-off performance and memory use. The default configuration in the Moddable SDK uses the least memory possible. For projects that make lightweight use of the file system, this offers adequate performance. To improve performance, the configuration may be changed in the project's manifest. The `read_size`, `prog_size`, `lookahead_size`, and `block_cycles` values are described in [`lfs.h`](https://github.com/littlefs-project/littlefs/blob/40dba4a556e0d81dfbe64301a6aa4e18ceca896c/lfs.h#L194-L230). Experimentation has shown that increasing the four `*_size` settings from 16 bytes to 512 gives a significant performance boost at the expense of 2 KB of RAM.
 

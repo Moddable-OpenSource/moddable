@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,9 @@
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/semphr.h"
+#elif defined(nrf52)
+	#include "FreeRTOS.h"
+	#include "semphr.h"
 #endif
 
 #ifndef MODDEF_FILE_PARTITION 
@@ -49,6 +52,9 @@
 #ifndef MODDEF_FILE_LFS_BLOCK_CYCLES
 	#define MODDEF_FILE_LFS_BLOCK_CYCLES 500
 #endif
+#ifndef MODDEF_FILE_LFS_PARITION_SIZE  
+	#define MODDEF_FILE_LFS_PARITION_SIZE (65536)
+#endif
 
 #ifdef __ets__
 	#if !ESP32
@@ -58,7 +64,7 @@
 	#define MOD_LFS_RAMDISK 1
 
 	#define kBlockSize (4096)
-	#define kBlockCount (16)
+	#define kBlockCount ((MODDEF_FILE_LFS_PARITION_SIZE + kBlockSize - 1) / kBlockSize)
 	
 	uint8_t gRAMDisk[kBlockSize * kBlockCount]; 
 #endif
@@ -83,6 +89,8 @@ typedef struct {
 
 #if ESP32
 	const esp_partition_t	*partition;
+#elif defined(nrf52)
+	uint32_t				offset;
 #endif
 } xsLittleFSRecord, *xsLittleFS;
 
@@ -616,6 +624,43 @@ static int lfs_sync(const struct lfs_config *cfg)
 	return 0;
 }
 
+#elif defined(nrf52)
+
+static int lfs_read(const struct lfs_config *cfg, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
+{
+    xsLittleFS lfs = cfg->context;
+
+	if (!modSPIRead(block * kFlashSectorSize + off + lfs->offset, size, buffer))
+		return -1;
+
+    return 0;
+}
+
+static int lfs_prog(const struct lfs_config *cfg, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
+{
+    xsLittleFS lfs = cfg->context;
+
+	if (!modSPIWrite(block * kFlashSectorSize + off + lfs->offset, size, buffer))
+		return -1;
+    
+    return 0;
+}
+
+static int lfs_erase(const struct lfs_config *cfg, lfs_block_t block)
+{
+    xsLittleFS lfs = cfg->context;
+
+	if (!modSPIErase(block * kFlashSectorSize + lfs->offset, cfg->block_size))
+		return -1;
+	
+	return 0;
+}
+
+static int lfs_sync(const struct lfs_config *cfg)
+{
+	return 0;
+}
+
 #endif
 
 #if defined(INC_FREERTOS_H) && defined(LFS_THREADSAFE)
@@ -675,6 +720,20 @@ void startLittlefs(xsMachine *the)
 #endif
 		xsUnknownError("can't find partition");
 	}
+#elif defined(nrf52)
+	if (MODDEF_FILE_LFS_PARITION_SIZE < (kFlashSectorSize * 8))
+		xsUnknownError("bad LFS partition size");
+
+	int needed = ((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize; 
+	int available = ((kModulesEnd - kModulesStart + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+
+	#if MODDEF_XS_MODS
+	if (/* XS_ATOM_ARCHIVE */ 0x58535F41 == c_read32be((void *)(4 + kModulesStart)))
+		available -= ((c_read32be((void *)(kModulesStart)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+	#endif
+
+	if (needed > available)
+		xsUnknownError("no space for littlefs partition");
 #endif
 
 	xsLittleFS lfs = (xsLittleFS)c_calloc(sizeof(xsLittleFSRecord), 1);
@@ -712,6 +771,10 @@ void startLittlefs(xsMachine *the)
 #elif defined(__ets__)
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = SPIFFS_PHYS_SIZE / kFlashSectorSize;
+#elif defined(nrf52)
+	lfs->offset = kModulesEnd - (((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+    lfs->config.block_size = kFlashSectorSize;
+    lfs->config.block_count = (kModulesEnd - lfs->offset) / kFlashSectorSize;
 #endif
     lfs->config.cache_size = MODDEF_FILE_LFS_CACHE_SIZE;
     lfs->config.lookahead_size = MODDEF_FILE_LFS_LOOKAHEAD_SIZE;
