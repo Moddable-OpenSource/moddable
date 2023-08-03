@@ -173,6 +173,30 @@
 				"power"
 			]
 		},
+		"lin": {
+			"modules": {
+				"*": [
+					"./simulator/uart",
+					"./simulator/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"./simulator/uart",
+					"./simulator/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		},
 		"nrf52/moddable_four": {
 			"include": [
 				"$(MODDABLE)/modules/network/ble/manifest_server.json",
