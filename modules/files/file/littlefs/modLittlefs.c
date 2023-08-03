@@ -60,6 +60,7 @@
 	#if !ESP32
 		#define MOD_LFS_COPYTORAM 1
 	#endif
+#elif defined(nrf52)
 #else
 	#define MOD_LFS_RAMDISK 1
 
