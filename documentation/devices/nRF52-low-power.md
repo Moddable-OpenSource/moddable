@@ -218,14 +218,14 @@ Example apps are provided to demonstrate the various `Sleep` class features:
 
 | Name | Description |
 | :---: | :--- |
-| [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep) | Enter deep sleep mode and read the reset reason on launch.
-| [ram-power-off](../build/devices/nrf52/examples/sleep/ram-power-off) | Configure required RAM in manifest and power off unused RAM.
-| [retained-values](../build/devices/nrf52/examples/sleep/retained-values) | Retain 32 values across System OFF sleep mode and verify the values on reset.
-| [wake-on-analog](../build/devices/nrf52/examples/sleep/wake-on-analog) | Configure wake-up on analog crossing configurations.
-| [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital) | Configure wake-up on a button press.
-| [wake-on-motion](../build/devices/nrf52/examples/sleep/wake-on-motion) | Configure wake-up from a connected LIS3DH accelerometer configured to generate interrupts on motion. 
-| [wake-on-multiple](../build/devices/nrf52/examples/sleep/wake-on-multiple) | Configure wake-up from a combination of analog and digital triggers. 
-| [wake-on-timer](../build/devices/nrf52/examples/sleep/wake-on-timer) | Configure wake-up after the specified number of milliseconds have passed. 
+| [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep) | Enter deep sleep mode and read the reset reason on launch.
+| [ram-power-off](./../../build/devices/nrf52/examples/sleep/ram-power-off) | Configure required RAM in manifest and power off unused RAM.
+| [retained-values](./../../build/devices/nrf52/examples/sleep/retained-values) | Retain 32 values across System OFF sleep mode and verify the values on reset.
+| [wake-on-analog](./../../build/devices/nrf52/examples/sleep/wake-on-analog) | Configure wake-up on analog crossing configurations.
+| [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital) | Configure wake-up on a button press.
+| [wake-on-motion](./../../build/devices/nrf52/examples/sleep/wake-on-motion) | Configure wake-up from a connected LIS3DH accelerometer configured to generate interrupts on motion. 
+| [wake-on-multiple](./../../build/devices/nrf52/examples/sleep/wake-on-multiple) | Configure wake-up from a combination of analog and digital triggers. 
+| [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer) | Configure wake-up after the specified number of milliseconds have passed. 
 
 <a id="power-consumption-on-moddable-four"></a>
 ## Power Consumption on Moddable Four
@@ -233,12 +233,12 @@ The Moddable runtime is optimized to support the low-power features of the Modda
 
 | Example app | Power Consumption | Description
 | :---: | :---: | :--- |
-| [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep) | 1.4 uA | Wake on reset
+| [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep) | 1.4 uA | Wake on reset
 | [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital) | 1.5 uA | Wake on digital input trigger
-| [wake-on-analog](../build/devices/nrf52/examples/sleep/wake-on-analog) | 2.3 uA | Wake on analog input trigger
-| [wake-on-motion](../build/devices/nrf52/examples/sleep/wake-on-motion) | 5.2 uA | Wake on accelerometer motion interrupt digital input trigger
-| [wake-on-multiple](../build/devices/nrf52/examples/sleep/wake-on-multiple) | 2.4 uA | Wake on RTC, analog, or digital input triggers with LCD on and displaying the wake-up source
-| [wake-on-timer](../build/devices/nrf52/examples/sleep/wake-on-timer) | 2.4 uA | Wake on RTC with LCD on and displaying the time
+| [wake-on-analog](./../../build/devices/nrf52/examples/sleep/wake-on-analog) | 2.3 uA | Wake on analog input trigger
+| [wake-on-motion](./../../build/devices/nrf52/examples/sleep/wake-on-motion) | 5.2 uA | Wake on accelerometer motion interrupt digital input trigger
+| [wake-on-multiple](./../../build/devices/nrf52/examples/sleep/wake-on-multiple) | 2.4 uA | Wake on RTC, analog, or digital input triggers with LCD on and displaying the wake-up source
+| [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer) | 2.4 uA | Wake on RTC with LCD on and displaying the time
 
 <a id="references"></a>
 ## References
