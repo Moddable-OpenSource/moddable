@@ -174,6 +174,7 @@ LDFLAGS += \
 	-L$(NRF52_SDK_ROOT)/modules/nrfx/mdk \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
+	-Wl,--no-warn-rwx-segments \
 	-Xlinker -no-enum-size-warning \
 	-Xlinker -Map=$(BIN_DIR)/xs_lib.map \
 	-Xlinker -cref
