@@ -13,17 +13,13 @@
  */
 
 import Timer from "timer";
-import config from "mc/config";
-import Analog from "embedded:io/analog";
 
-const potConfig = {
-	io: Analog,
-	pin: 31
-};
+const analogInput = new device.io.Analog({
+	pin: 0		// change the pin number for your development board
+});
 
-const sensor = new Analog(potConfig);
-
-Timer.repeat(id => {
-	let sample = sensor.read();
-	trace(`read: ${sample}\n`);
+Timer.repeat(() => {
+	const rawValue = analogInput.read();
+	const value = rawValue / ((1 << analogInput.resolution) - 1);
+	trace(`read: ${value.toPrecision(4)}\n`);
 }, 100);
