@@ -479,7 +479,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #define kDebugQueueLength (4)
 
-static SemaphoreHandle_t gFlashMutex;
+static SemaphoreHandle_t gFlashMutex = NULL;
 
 void modMachineTaskInit(xsMachine *the)
 {
@@ -578,6 +578,9 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
+
+	if (NULL == gFlashMutex)
+		gFlashMutex = xSemaphoreCreateMutex();
 
 	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		result = (void *)kModulesStart;
