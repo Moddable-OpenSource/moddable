@@ -22,15 +22,15 @@ The [transitions](../../examples/piu/transitions/) example is good for testing t
 
 ```
 cd $MODDABLE/examples/piu/transitions
-mcconfig -d -m -p esp/sharp_memory_square  
+mcconfig -d -m -p esp/sharp_memory_square
 ```
 
 ## ESP8266 Pinout
 
 | 1.3" Memory Display | ESP8266 | ESP8266 Devboard label
-| --- | --- | --- | 
-| 3v3 | 3.3V | 
-| GND | GND | 
+| --- | --- | --- |
+| 3v3 | 3.3V |
+| GND | GND |
 | CLK | GPIO 14 | (D5)
 | DI | GPIO 13 | (D7)
 | CS | GPIO 15 | (D8)

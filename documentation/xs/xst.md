@@ -4,26 +4,26 @@
 
 ## Build
 
-### Linux 
+### Linux
 
 	cd $MODDABLE/xs/makefiles/lin
 	make
 
-### macOS 
+### macOS
 
 	cd $MODDABLE/xs/makefiles/mac
 	make
-	
-### Windows 
+
+### Windows
 
 	cd %MODDABLE%\xs\makefiles\win
 	build
 
 ## Download
 
-You can use the [jsvu CLI](https://github.com/GoogleChromeLabs/jsvu) to install or update  **xst**.  
+You can use the [jsvu CLI](https://github.com/GoogleChromeLabs/jsvu) to install or update  **xst**.
 
-You can also download the latest versions of `xst` 
+You can also download the latest versions of `xst`
 from the [moddable-xst](https://github.com/Moddable-OpenSource/moddable-xst/releases) repository into a directory that is on your `PATH`
 
 
@@ -37,7 +37,7 @@ from the [moddable-xst](https://github.com/Moddable-OpenSource/moddable-xst/rele
 - `-s`: `strings` are paths to scripts
 - `-v`: print XS version
 
-Without the `-e`, `-m` or `-s` options, `strings` are paths to **test262** cases or directories. 
+Without the `-e`, `-m` or `-s` options, `strings` are paths to **test262** cases or directories.
 
 ### eshost
 
@@ -50,7 +50,7 @@ To test XS with **eshost**, install the [eshost CLI](https://github.com/bterlson
 ### test262
 
 To test XS with **test262**, clone [test262](https://github.com/tc39/test262) and change the directory to the `test` directory inside the `test262` directory. For instance:
-	
+
 	cd ~/test262/test
 	xst language/block-scope
 	xst built-ins/TypedArrays/buffer-arg-*

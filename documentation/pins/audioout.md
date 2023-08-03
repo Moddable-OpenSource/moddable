@@ -93,7 +93,7 @@ This is done by using the ability to repeat a sample an infinite number of times
 audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.attackStart, aSample.attackCount);
 audio.enqueue(0, AudioOut.Samples, aSample, Infinity, aSample.sustainStart, aSample.sustainCount);
 ```
-	
+
 When it is time to end playback of the sample, enqueue the decay section. This will terminate the enqueue sustain section when it completes the current repetition:
 
 ```js
@@ -101,7 +101,7 @@ audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.decayStart, aSample.decay
 ```
 
 ### constructor(dictionary)
-The constructor accepts a dictionary to configure the audio output. 
+The constructor accepts a dictionary to configure the audio output.
 
 ```js
 let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 2, streams: 3});
@@ -132,7 +132,7 @@ audio.start();
 ```
 
 ### stop()
-Call the `stop` function to immediately suspend audio playback. 
+Call the `stop` function to immediately suspend audio playback.
 
 ```js
 audio.stop();
@@ -174,12 +174,12 @@ audio.enqueue(0, AudioOut.Samples, bufferTwo, Infinity);
 ```
 
 If the repeat count is `Infinity`, the buffer is repeated until the audio out instance is closed, the streaming is flushed, or another buffer of audio is enqueued. In the final case, the currently playing buffer plays to completion, and then the following buffer is played.
-	
+
 A subset of the samples in the buffer may be selected for playback by using the optional `offset` and `count` parameters. Both parameters are in units of samples, not bytes. The `offset` parameter indicates the number of samples into the buffer to begin playback. If the `count` parameter is not provided, playback proceeds to the end of the buffer. It the `count` parameter is provided, only the number of samples it specifies are played.
 
 #### Enqueuing tones and silence
 
-To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`. 
+To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`.
 
 ```js
 audio.enqueue(0, AudioOut.Tone, 440, 8000);

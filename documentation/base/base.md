@@ -55,7 +55,7 @@ The callback function receives the timer id as the first argument.
 
 ### `Timer.repeat(callback, interval)`
 
-A repeating timer is called continuously until stopped using the `Timer.clear` function. 
+A repeating timer is called continuously until stopped using the `Timer.clear` function.
 
 ```js
 Timer.repeat(id => trace("repeat fired\n"), 1000);
@@ -165,7 +165,7 @@ const stop = Time.ticks;
 trace(`Operation took ${Time.delta(start, stop)} milliseconds\n`);
 ```
 
-On devices that supports multiple concurrent JavaScript virtual machines (for example, using Workers), the clock used to determine the value of the `ticks` property is the same across all virtual machines. This allows `tick` values created in one machine to be compared with values from another.   
+On devices that supports multiple concurrent JavaScript virtual machines (for example, using Workers), the clock used to determine the value of the `ticks` property is the same across all virtual machines. This allows `tick` values created in one machine to be compared with values from another.
 
 The range of the value depends on the host. On most microcontrollers, the value is a signed 32-bit integer. On the simulator, it is a positive 64-bit floating point value. To determine the difference between two `ticks` values, use `Time.delta()` which is guaranteed to give a correct result for the host.
 
@@ -241,7 +241,7 @@ Debug.gc(false);	// disable garbage collector
 
 - **Source code:** [uuid](../../modules/base/uuid)
 
-The `UUID` class provides a single function to generate a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) string. 
+The `UUID` class provides a single function to generate a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) string.
 
 ```js
 import UUID from "uuid";
@@ -265,7 +265,7 @@ let value = UUID();	// 1080B49C-59FC-4A32-A38B-DE7E80117842
 - **Source code:** [deepEqual](../../modules/base/deepEqual)
 - **Tests:** [deepEqual](../../tests/modules/base/deepEqual)
 
-The `deepEqual` function implements a deep comparison between two JavaScript object. 
+The `deepEqual` function implements a deep comparison between two JavaScript object.
 
 ```js
 import deepEqual from "deepEqual";
@@ -296,13 +296,13 @@ The known differences between the Moddable SDK implementation and Node.js will n
 - **Source code:** [structuredClone](../../modules/base/structuredClone)
 - **Tests:** [structuredClone](../../tests/modules/base/structuredClone)
 
-The `structuredClone` function creates a deep copy of a JavaScript object. 
+The `structuredClone` function creates a deep copy of a JavaScript object.
 
 ```js
 import structuredClone from "structuredClone";
 ```
 
-The `structuredClone` function in the Moddable SDK implements the [algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) defined by WHATWG for the web platform as much as practical, including circular references and the `transferables` option. 
+The `structuredClone` function in the Moddable SDK implements the [algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) defined by WHATWG for the web platform as much as practical, including circular references and the `transferables` option.
 
 ```js
 const a = {a: 1, b: Uint8Array.of(1, 2, 3,)}
@@ -361,7 +361,7 @@ for (let i = 1; true; i++) {
 
 ### Instrumentation items
 
-The table below describes the instrumented items that are available. The following instrumented items are reset at one second intervals: Pixels Drawn, Frames Drawn, Poco Display List Used, Piu Command List Used, Network Bytes Read, Network Bytes Written, and Garbage Collection Count. 
+The table below describes the instrumented items that are available. The following instrumented items are reset at one second intervals: Pixels Drawn, Frames Drawn, Poco Display List Used, Piu Command List Used, Network Bytes Read, Network Bytes Written, and Garbage Collection Count.
 
 | Name | Long Description |
 | ---: | :--- |

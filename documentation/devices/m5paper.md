@@ -1,4 +1,4 @@
-# M5Paper Developer Guide 
+# M5Paper Developer Guide
 Copyright 2021-2022 Moddable Tech, Inc.<BR>
 Revised: March 22, 2022
 
@@ -13,7 +13,7 @@ This document provides information about using the M5Paper with the Moddable SDK
 - [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Port Status](#port-status)
-	- [Display Driver](#display-driver) 
+	- [Display Driver](#display-driver)
 		- [Update Modes](#update-modes)
 		- [Image Filters](#image-filters)
 	- [Examples](#examples)
@@ -50,19 +50,19 @@ After you've set up your host environment and ESP32 tools, take the following st
 
 2. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Use the platform `-p esp32/m5paper`  with `mcconfig` to build for M5Paper. For example, to build the [`epaper-photos` example](../../examples/piu/epaper-photos):
-	
+
 	```text
 	cd $MODDABLE/examples/piu/epaper-photos
 	mcconfig -d -m -p esp32/m5paper
 	```
-	
+
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
 
 	Use the platform `-p simulator/m5paper` with `mcconfig` to build for the M5Paper simulator.
-	
+
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
@@ -79,7 +79,7 @@ The following are implemented and working:
 - EPD display driver
 - GT911 touch driver
 - SHT30 temperature/humidity sensor
-- A / B / C buttons 
+- A / B / C buttons
 - RTC
 
 > **Note**: The I2C address of the GT911 touch controller floats. The implementation tries both addresses 0x14 and 0x5D. This is handled in host provider's Touch constructor -- not in driver and not in user script. If 0x14 fails, an exception is thrown before it retries at 0x5D. If you encounter this, just hit Go in xsbug.
@@ -154,7 +154,7 @@ screen.config({filter});
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on M5Paper. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on M5Paper.
 
 That said, not every example is compatible with M5Paper hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the M5Paper display and give a build error.
 
@@ -163,7 +163,7 @@ There are several example applications in the Moddable SDK that show how to take
 <a id="documentation"></a>
 ### Documentation
 
-All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include:
 
 - The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
 - The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.

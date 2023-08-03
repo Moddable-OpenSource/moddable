@@ -41,9 +41,9 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 <img src="../assets/devices/moddable-four-pinout.png">
 
-**Note:** LCD-PWR / GPIO23 is not for use as a general GPIO. It is used to provide power to a sensor and to the screen. 
+**Note:** LCD-PWR / GPIO23 is not for use as a general GPIO. It is used to provide power to a sensor and to the screen.
 
-- Writing `0` to GPIO23 emits 3.3V on LCD-PWR, which also gives power to the screen. 
+- Writing `0` to GPIO23 emits 3.3V on LCD-PWR, which also gives power to the screen.
 - Writing `1` to GPIO23 turns off the the pin and the screen.
 
 <a id="pin-info"></a>
@@ -112,17 +112,17 @@ After you've setup your environment and nRF5 tools, take the following steps to 
 
 3. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Use the platform `-p nrf52/moddable_four` with `mcconfig` to build for Moddable Four. Build the [`piu/balls`](../../examples/piu/balls) example:
-	
+
 	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p nrf52/moddable_four
 	```
-	
+
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
-    
+
     Use the platform -p `sim/moddable_four` with `mcconfig` to build for the Moddable Four simulator.
 
 <a id="moddable-features"></a>
@@ -167,7 +167,7 @@ new Host.JogDial({
     }
 });
 ```
-	
+
 #### Display Power
 To use the Moddable Four display, the LCD power pin must be enabled. In the `moddable_four/setup-target.js` file, the screen is enabled if the `autobacklight` config variable is set:
 
@@ -230,7 +230,7 @@ There are many energy management APIs available on Moddable Four. These include:
 	should have a readme.md in that directory which describes the examples
 -->
 
-See the [nRF52 Low Power Notes](./nRF52-low-power.md) for details. Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`. 
+See the [nRF52 Low Power Notes](./nRF52-low-power.md) for details. Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting
@@ -264,7 +264,7 @@ The Moddable Four simulator renders images in 8-bit grayscale, which matches how
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four.
 
 Many of the examples that use Commodetto and Piu are designed for colored QVGA screens. While they will run on Moddable Four, the colors will be dithered when rendered and some screens may be cropped. Not every example is compatible with Moddable Four hardware. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
 
@@ -273,7 +273,7 @@ Many of the examples that use Commodetto and Piu are designed for colored QVGA s
 
 Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v17.0.2, which is available [here](https://infocenter.nordicsemi.com/topic/struct_sdk/struct/sdk_nrf5_latest.html).
 
-Documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+Documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include:
 
 - [Using the Moddable SDK with nRF52](./nrf52.md) explains how to get set-up for development, supported devices, and more.
 - [nRF52 Low Power Notes](./nRF52-low-power.md) describes the techniques and APIs to maximize battery life by minimizing power consumption.

@@ -7,7 +7,7 @@ Revised: November 22, 2016
 To get animations on a screen connected to a microcontroller by a serial interface (SPI), the game is to minimize the number of pixels that change from frame to frame.
 
 > FYI, here is what is happening at every frame when changes in the appearance or the layout invalidate and update the screen:
-> 
+>
 > - The dirty region accumulates the invalidations.
 > - The containment hierarchy is traversed once to build the command list that will update the screen.
 > - The dirty region and the command list are decomposed into rectangles and display lists.
@@ -43,14 +43,14 @@ Let us begin with a static example:
 			}),
 		]
 	}));
-	
+
 The `empty`, `or`, `xor` and `sub` methods are chainable operations to build the region. The `cut` method changes the region.
 
 If you add the `TestContainer` to an application, here is what it will look like:
 
 ![](./../assets/die-cut/die-cut.png)
 
-But of course the `die` object is mostly interesting to build animations and transitions. You will find examples in the Piu libraries: WipeTransition and CombTransition. 
+But of course the `die` object is mostly interesting to build animations and transitions. You will find examples in the Piu libraries: WipeTransition and CombTransition.
 
 Let us build a "venitian blind" transition:
 
@@ -88,9 +88,9 @@ The `attach` and `detach` methods allow to temporarily insert a `die` object in 
 
 ## Reference
 
-The `die` object is a `layout` object that allows to “die cut” its contents with a region. The `die` object maintains two regions: 
+The `die` object is a `layout` object that allows to “die cut” its contents with a region. The `die` object maintains two regions:
 
-- the work region that the available operations build, 
+- the work region that the available operations build,
 - the clip region that clips the contents of the `die` object
 
 Both regions are initially empty.
@@ -102,13 +102,13 @@ Prototype inherits from `Layout.prototype`.
 ##### `Die.prototype.and(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
-> 
+>
 > Intersect the rectangle with the work region. Return this.
 
 ##### `Die.prototype.attach(content)`
 
 > `content ` the `content` object to attach
-> 
+>
 > Bind the `die` object to the content hierarchy by replacing the specified `content` object in the content's container with this `die` object and adding the `content` object to this `die` object.
 
 ##### `Die.prototype.cut()`
@@ -130,25 +130,25 @@ Prototype inherits from `Layout.prototype`.
 ##### `Die.prototype.or(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
-> 
+>
 > Inclusively union the rectangle with the work region. Return `this`.
 
 ##### `Die.prototype.set(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
-> 
+>
 > Set the work region to the rectangle. Return `this`.
 
 ##### `Die.prototype.sub(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
-> 
+>
 > Subtract the rectangle from the work region. Return `this`.
 
 ##### `Die.prototype.xor(x, y, width, height)`
 
 > `x, y, width, height` a local rectangle, in pixels
-> 
+>
 > Exclusively union the work region with the rectangle. Return `this`.
 
 

@@ -51,7 +51,7 @@ In the following example, the TLS socket is created with support for version `0x
 
 ```js
 let socket = new SecureSocket({
-	host: "www.example.com", 
+	host: "www.example.com",
 	port: 443,
 	secure: {
 		protocolVersion: 0x303
@@ -68,8 +68,8 @@ The HTTP `Client` class accepts an optional `Socket` property in the dictionary 
 let request = new Request({
 	host: "www.howsmyssl.com",
 	path: "/",
-	response: String, 
-	Socket: SecureSocket, 
+	response: String,
+	Socket: SecureSocket,
 	port: 443,
 	secure: {
 		trace: true,
@@ -85,9 +85,9 @@ The WebSocket `Client` class accepts an optional `Socket` property in the dictio
 
 ```js
 let ws = new Client({
-	host: "echo.websocket.org", 
+	host: "echo.websocket.org",
 	port: 443,
-	Socket: SecureSocket, 
+	Socket: SecureSocket,
 	secure: {
 		protocolVersion: 0x302
 	}
@@ -150,10 +150,10 @@ As an alternative to the certificate store, you can put the certificates needed 
 
 ```js
 let request = new Request({
-	host: "www.howsmyssl.com", 
+	host: "www.howsmyssl.com",
 	path: "/",
-	response: String, 
-	Socket: SecureSocket, 
+	response: String,
+	Socket: SecureSocket,
 	port: 443,
 	secure: {
 		certificate: new Resource("ca109.der")
@@ -170,19 +170,19 @@ let request = new Request({
     ...
     secure: {
     	certificate: new Resource("mycert.der")
-    } 
+    }
 });
 ```
 
 <a id="converting-pem"></a>
 #### Converting PEM to DER
-The `SecureSocket` implementation requires certificates to be provided in DER (binary) format. If you have a certificate in PEM (a Base64 encoded) format, you need to convert it to DER. 
+The `SecureSocket` implementation requires certificates to be provided in DER (binary) format. If you have a certificate in PEM (a Base64 encoded) format, you need to convert it to DER.
 
 Whenever possible, convert the PEM file to DER format before adding it to your project. There are many tools that can perform the conversion. A reliable choice is `openssl`. The following command line works for many certificates (substitute your PEM file path for `data.pem` and the desired output file path for `data.der`):
 
 ```
 openssl x509 -inform pem -in data.pem -out data.der -outform der
-``` 
+```
 
 
 Sometimes there is no choices but to convert the PEM to DER at runtime. For example, during provisioning you might receive a certificate in PEM format from a service, and later you need to use that certificate to establish a TLS connection. The Moddable SDK provides the [`pemtoDER`](../crypt/crypt.md#transform-pemToDER) and [`privateKeyToPrivateKeyInfo`](../crypt/crypt.md#transform-privateKeyToPrivateKeyInfo) functions for these situations. These functions are part of the Crypt `Transform` class.

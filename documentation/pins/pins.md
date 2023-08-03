@@ -50,7 +50,7 @@ To open a GPIO pin on a specific port, use the Digital constructor with the opti
 ```js
 let blink = 1;
 let led = new Digital("gpioPortName", 5, Digital.Output);
-	
+
 Timer.repeat(id => {
 	blink = blink ^ 1;
 	led.write(blink);
@@ -91,7 +91,7 @@ The following example configures pin 5 as an output and then blinks it one per s
 
 ```js
 let blink = 1;
-	
+
 Timer.repeat(id => {
 	blink = blink ^ 1;
 	Digital.write(5, blink);
@@ -192,7 +192,7 @@ let monitor = new Monitor({pin: 0, port: "B", mode: Digital.Input, edge: Monitor
 
 ### `onChanged()` callback
 
-A script must install an `onChanged` callback on the instance to be invoked with the specified edge events occur. 
+A script must install an `onChanged` callback on the instance to be invoked with the specified edge events occur.
 
 ```js
 monitor.onChanged = function() {
@@ -285,7 +285,7 @@ The `Analog` class provides access to the analog input pins.
 ```js
 import Analog from "pins/analog";
 ```
-	
+
 ### `constructor(dictionary)`
 
 The `Analog` dictionary requires a `pin` property. On platforms supporting wake-up from deep sleep on analog input triggers, the `onWake`, `wakeCrossing`, and `wakeValue` properties are additionally required to configure the analog input as a wake-up trigger. Refer to the `onWake() callback` section below for further details.
@@ -297,17 +297,17 @@ let analog = new Analog({ pin: 5 });
 trace(`Analog value is ${analog.read()}\n`);
 ```
 
-**Note**: The nRF52 platform currently only supports the constructor and instance read function. On all other platforms, the Analog class provides only static functions. 
+**Note**: The nRF52 platform currently only supports the constructor and instance read function. On all other platforms, the Analog class provides only static functions.
 
 ### `static read(pin)`
 
-The `read` function samples the value of the specified pin, returning a value from 0 to 1023. 
+The `read` function samples the value of the specified pin, returning a value from 0 to 1023.
 
 Pin numbers are device dependent:
  - The ESP8266 NodeMCU board has a single analog input pin, analog pin number 0.
  - On the ESP32, use the analog channel number, not the associated GPIO number. You can find GPIO number to analog channel mappings for ESP32 and ESP32-S2 in the [ESP-IDF ADC documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2-beta1/esp32/api-reference/peripherals/adc.html#_CPPv414adc1_channel_t). Only ADC1 is supported on the ESP32.
 
-The following example samples an analog temperature sensor, converting the result to celsius degrees. 
+The following example samples an analog temperature sensor, converting the result to celsius degrees.
 
 	let temperature = (Analog.read(0) / 1023) * 330 - 50;
 	trace(`Temperature is ${temperature} degrees celsius\n`);
@@ -361,7 +361,7 @@ import PWM from "pins/pwm";
 
 ### `constructor(dictionary)`
 
-The PWM constructor takes a dictionary which contains the pin number to use. Pin numbers are device dependent. 
+The PWM constructor takes a dictionary which contains the pin number to use. Pin numbers are device dependent.
 
 The dictionary may optionally contain a `port` property. If the port is not provided, the default port (`NULL`) is used.
 
@@ -452,19 +452,19 @@ sensor.read(3, bytes.buffer);
 
 ### `write(...value [, stop])`
 
-The `write` function writes up to 40 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes). 
+The `write` function writes up to 40 bytes to the target device. The write function accepts multiple arguments, concatenating them together to send to the device. The values may be numbers, which are transmitted as bytes, Arrays, TypedArrays, and strings (which are transmitted as UTF-8 encoded text bytes).
 
 The `write` function accepts an optional final boolean argument, `stop`, which indicates if a stop condition should be sent when the write is complete. If the final argument is not a boolean value, a stop condition is sent.
 
 ```js
 let sensor = new I2C({address: 0x48});
-sensor.write(0);	
+sensor.write(0);
 ```
 ***
 
 ### Example: Reading an I2C temperature sensor
 
-The following example instantiates an I2C connection to a [temperature sensor](https://www.sparkfun.com/products/11931) with address 0x48 connected to pins 4 and 5. 
+The following example instantiates an I2C connection to a [temperature sensor](https://www.sparkfun.com/products/11931) with address 0x48 connected to pins 4 and 5.
 
 ```js
 let sensor = new I2C({sda: 5, scl: 4, address: 0x48});
@@ -482,7 +482,7 @@ value *= 0.0625;
 
 trace(`Celsius temperature: ${value}\n`);
 ```
-	
+
 ***
 
 <a id="smbus"></a>
@@ -546,7 +546,7 @@ The following example establishes an SMBus connection to a [triple axis magnetom
 
 ```js
 let sensor = new SMBus({address: 0x1E});
-	
+
 let id = sensor.readBlock(10, 3);
 id = String.fromCharCode(id[0]) + String.fromCharCode(id[1]) + String.fromCharCode(id[2]);
 if ("H43" != id)
@@ -557,7 +557,7 @@ sensor.writeByte(2, 0);	// continuous measurement mode
 
 ***
 
-	
+
 <a id="servo"></a>
 ## class Servo
 
@@ -569,7 +569,7 @@ The `Servo` class uses digital pins to control servo motors. The API is designed
 ```js
 import Servo from "pins/servo";
 ```
-	
+
 ### `constructor(dictionary)`
 
 The Servo constructor takes a dictionary. The `pin` property is required, and specifies the digital pin to use. The `min` and `max` properties are optional, and specify the range of the pulse duration in microseconds.
@@ -595,7 +595,7 @@ servo.write(45);
 
 ### `writeMicroseconds(us)`
 
-The `writeMicroseconds` call sets the duration of the pulse width in microseconds. The value provided is pinned by the `min` and `max` values. 
+The `writeMicroseconds` call sets the duration of the pulse width in microseconds. The value provided is pinned by the `min` and `max` values.
 
 The Servo implementation pulses a digital signal for a number of microseconds that is proportional to the angle of rotation. Scripts may provide the number of microseconds for the signal pulse instead of degrees, for greater precision.
 
@@ -619,9 +619,9 @@ import RMT from "pins/rmt";
 
 ### `constructor(dictionary)`
 
-The RMT constructor initializes the RMT module and associates it with the specified pin. 
+The RMT constructor initializes the RMT module and associates it with the specified pin.
 
-The RMT constructor takes a dictionary. The `pin` property is required, and specifies the pin to associate with the RMT module. 
+The RMT constructor takes a dictionary. The `pin` property is required, and specifies the pin to associate with the RMT module.
 
 ```js
 let rmt = new RMT({pin: 17});
@@ -629,7 +629,7 @@ let rmt = new RMT({pin: 17});
 
 The constructor dictionary also has several optional properties:
 
-- The `channel` property specifies the RMT channel to use with this instance, with a default value of `0`. 
+- The `channel` property specifies the RMT channel to use with this instance, with a default value of `0`.
 - The `divider` property specifies the clock divider used to generate RMT ticks, with a range of `1` to `255` and a default value of `255`.
 - The `direction` property specifies whether to use this RMT as an input or an output. Use `"rx"` for input and `"tx"` for output. The default is output.
 
@@ -665,7 +665,7 @@ The write is performed asynchronously, so `write` returns immediately. When the 
 
 ### `onWriteable()` callback
 
-A script may install an `onWriteable` callback on the instance to be invoked when the RMT module is ready to write data. 
+A script may install an `onWriteable` callback on the instance to be invoked when the RMT module is ready to write data.
 
 ```js
 rmt.onWritable = function() {
@@ -679,12 +679,12 @@ The `onWriteable` function is called once when the RMT module is initialized and
 
 ### `read(buffer)`
 
-The `read` function returns RMT data in an ArrayBuffer provided by the `buffer` argument. Up to `buffer.byteLength` bytes from the RMT module's ring buffer are returned in the ArrayBuffer. 
+The `read` function returns RMT data in an ArrayBuffer provided by the `buffer` argument. Up to `buffer.byteLength` bytes from the RMT module's ring buffer are returned in the ArrayBuffer.
 
-`read` returns an object with three properties: 
+`read` returns an object with three properties:
 
-- The `buffer` property is the ArrayBuffer provided to `read` as an argument, filled with the received pulse duration sequence read by the RMT module. 
-- The `count` property is the total number of pulses received in the sequence. 
+- The `buffer` property is the ArrayBuffer provided to `read` as an argument, filled with the received pulse duration sequence read by the RMT module.
+- The `count` property is the total number of pulses received in the sequence.
 - The `phase` property is the logic level of the first item in the sequence (`0` or `1`) — subsequent pulses in the `buffer` alternate logic levels.
 
 ```js

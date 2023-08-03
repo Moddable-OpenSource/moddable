@@ -203,7 +203,7 @@ poco.fillPattern(pattern, 28, 28, 63, 35, 21, 14, 7, 7);
 <a id="gray-bitmap"></a>
 ### Gray Bitmap
 
-This example uses `drawGray` to draw a 16-level gray image in several colors. `drawGray` treats the pixel values as alpha blending levels, blending the specified color with the background. 
+This example uses `drawGray` to draw a 16-level gray image in several colors. `drawGray` treats the pixel values as alpha blending levels, blending the specified color with the background.
 
 ```javascript
 poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
@@ -312,7 +312,7 @@ When complete, each approach generates the same result.
 <a id="text"></a>
 ### Text
 
-Poco supports the BMPFont format for fonts used to rendering text. BMFont is a gray or color font used in games for anti-aliased fonts. A BMFont consists of two files: the font metrics and the font image. 
+Poco supports the BMPFont format for fonts used to rendering text. BMFont is a gray or color font used in games for anti-aliased fonts. A BMFont consists of two files: the font metrics and the font image.
 
 The following example loads and draws a 36-point Palatino BMFont.
 
@@ -466,7 +466,7 @@ Poco extends the `Render` dictionary with the `displayListLength` property, whic
 
 ```javascript
 import Poco from "commodetto/Poco";
-	
+
 let screen = ... // SPIOut instance
 let poco = new Poco(screen, {displayListLength: 4096});
 ```
@@ -501,9 +501,9 @@ poco.clip()			// Clip is entire PixelsOut area
 poco.end();
 ```
 
-If the clip stack overflows or underflows, an exception is thrown from `end`. The clip stack must be empty when `end` is called or an exception is thrown. 
+If the clip stack overflows or underflows, an exception is thrown from `end`. The clip stack must be empty when `end` is called or an exception is thrown.
 
-When calling `clip` with four arguments, the return value is `true` if the resulting area contains one or more pixels and `undefined` if the clip area is empty. 
+When calling `clip` with four arguments, the return value is `true` if the resulting area contains one or more pixels and `undefined` if the clip area is empty.
 
 > **Note:** `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
@@ -511,7 +511,7 @@ When calling `clip` with four arguments, the return value is `true` if the resul
 
 #### `origin(x, y)`
 
-Poco maintains an origin that is applied to all drawing operations. 
+Poco maintains an origin that is applied to all drawing operations.
 
 When `begin` is called, the origin is set to `{x: 0, y: 0}`. Poco maintains an origin stack, eliminating the need for applications to save and restore the current origin. Calling `origin` with two arguments offsets the current origin by the arguments; calling it with no arguments pops the origin stack, restoring the previous origin.
 
@@ -524,7 +524,7 @@ poco.origin();			// Origin is {x: 0, y: 0}
 poco.end();
 ```
 
-If the origin stack overflows or underflows, an exception is thrown from `end`. The origin stack must be empty when `end` is called, or an exception will be thrown. 
+If the origin stack overflows or underflows, an exception is thrown from `end`. The origin stack must be empty when `end` is called, or an exception will be thrown.
 
 > **Note:** Changing the origin does not change the clip rectangle. Note too that `clip` and `origin` share the same stack, and so must be popped in the order they were pushed.
 
@@ -613,7 +613,7 @@ let red = poco.makeColor(255, 0, 0);
 let gray = poco.makeColor(128, 128, 128);
 let white = poco.makeColor(255, 255, 255);
 let icon = parseBMP(new Resource("icon.bmp"));
-	
+
 poco.drawMonochrome(icon, red, white, 0, 5);  // red foreground and white background
 poco.drawMonochrome(icon, gray, undefined, 0, 5);  // only foreground pixels in gray
 poco.drawMonochrome(icon, undefined, red, 0, 5);  // only background pixels in red
@@ -748,7 +748,7 @@ The Poco C API may be used independently of Commodetto and its JavaScript API. I
 
 `PocoRecord` maintains state for Poco. Many of the fields are private to the implementation and should not be accessed directly by users of the library. The `PocoRecord` data structure should be initialized to 0, and the same `PocoRecord` structure must be passed to all Poco function calls.
 
-The following fields in `PocoRecord` are public and can be accessed by users of the library. Poco expects these fields to be initialized by the users of the library before the first call to Poco is made. 
+The following fields in `PocoRecord` are public and can be accessed by users of the library. Poco expects these fields to be initialized by the users of the library before the first call to Poco is made.
 
 | Field | Description |
 | :---: | :--- |
@@ -814,7 +814,7 @@ typedef struct {
 
 ##### `PocoBitmap`
 
-The `PocoBitmap` structure contains the width and height of the bitmap in pixels, the format of the pixels in the bitmap, and a pointer to the pixel data. 
+The `PocoBitmap` structure contains the width and height of the bitmap in pixels, the format of the pixels in the bitmap, and a pointer to the pixel data.
 
 ```c
 typedef struct PocoBitmapRecord {

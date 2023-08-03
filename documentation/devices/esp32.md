@@ -159,7 +159,7 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 "build":{
 	"ESP32_SUBCLASS": "esp32s2"
 },
-``` 
+```
 
 | `ESP32_SUBCLASS` | Device |
 |:---:|:---:|
