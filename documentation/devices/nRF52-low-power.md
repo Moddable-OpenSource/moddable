@@ -86,8 +86,8 @@ In the graph below, power consumption was measured while waiting on a [Timer](..
 
 <a id="class-sleep"></a>
 ## Class Sleep
-- **Source code:** [sleep](../build/devices/nrf52/modules/sleep)
-- **Relevant Examples:** [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep), [ram-power-off](../build/devices/nrf52/examples/sleep/ram-power-off), [retained-values](../build/devices/nrf52/examples/sleep/retained-values), [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital), and [many more](../build/devices/nrf52/examples/sleep/).
+- **Source code:** [sleep](./../../build/devices/nrf52/modules/sleep)
+- **Relevant Examples:** [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep), [ram-power-off](./../../build/devices/nrf52/examples/sleep/ram-power-off), [retained-values](./../../build/devices/nrf52/examples/sleep/retained-values), [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital), and [many more](./../../build/devices/nrf52/examples/sleep/).
 
 The Sleep class includes static methods for setting low power modes, initiating deep sleep, and RAM retention. This section provides an overview of the available methods and features.
 
@@ -210,7 +210,7 @@ trace(`Retrieved value ${value} at index ${index}\n`);
 
 #### `setup()`
 
-The `setup` method is called internally by the nRF52 [power.js](../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `Sleep.deep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration. 
+The `setup` method is called internally by the nRF52 [power.js](./../../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `Sleep.deep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration. 
 
 <a id="example-apps"></a>
 ## Example apps
