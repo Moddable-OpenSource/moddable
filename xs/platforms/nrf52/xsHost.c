@@ -585,7 +585,7 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
 		result = (void *)kModulesStart;
 
-	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart))
+	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart)))
 		*status = *(8 + (uint8_t *)kModulesStart);
 	else
 		*status = 0;
