@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,6 +37,10 @@
 #include "nrf_ble_scan.h"
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
+
+#if MODDEF_BLE_MAX_CONNECTIONS != 1
+	#error - only one ble client connection supported on nRF52
+#endif
 
 #define APP_BLE_OBSERVER_PRIO 3
 #define FIRST_CONN_PARAMS_UPDATE_DELAY      5000                                    /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
