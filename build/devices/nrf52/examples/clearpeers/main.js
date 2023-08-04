@@ -32,6 +32,8 @@ catch (e) {
 function notify(msg) {
 	trace(msg, "\n");
 
+	if (!globalThis.screen) return;
+
 	if (!globalThis.render) {
 		globalThis.render = new Poco(screen);
 
