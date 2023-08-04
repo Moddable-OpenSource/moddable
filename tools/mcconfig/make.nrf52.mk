@@ -287,9 +287,9 @@ NRF_PATHS += \
 	$(INC_DIRS)
 
 XS_OBJ = \
-	$(LIB_DIR)/xsHost.c.o \
-	$(LIB_DIR)/xsHosts.c.o \
-	$(LIB_DIR)/xsPlatform.c.o \
+	$(TMP_DIR)/xsHost.c.o \
+	$(TMP_DIR)/xsHosts.c.o \
+	$(TMP_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -301,7 +301,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsCommon.c.o \
 	$(LIB_DIR)/xsDataView.c.o \
 	$(LIB_DIR)/xsDate.c.o \
-	$(LIB_DIR)/xsDebug.c.o \
+	$(TMP_DIR)/xsDebug.c.o \
 	$(LIB_DIR)/xsError.c.o \
 	$(LIB_DIR)/xsFunction.c.o \
 	$(LIB_DIR)/xsGenerator.c.o \
@@ -894,6 +894,10 @@ $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_D
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F)
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+
+$(TMP_DIR)/xs%.c.o: xs%.c $(TMP_DIR)/mc.defines.h
+	@echo "# project xs:" $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
 $(LIB_DIR)/%.c.o: %.c

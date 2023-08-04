@@ -428,7 +428,7 @@ XS_OBJ = \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
-	$(LIB_DIR)\xsDebug.o \
+	$(TMP_DIR)\xsDebug.o \
 	$(LIB_DIR)\xsError.o \
 	$(LIB_DIR)\xsFunction.o \
 	$(LIB_DIR)\xsGenerator.o \
@@ -476,9 +476,9 @@ OBJECTS = \
 
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
-	$(LIB_DIR)\xsHost.o \
-	$(LIB_DIR)\xsHosts.o \
-	$(LIB_DIR)\xsPlatform.o \
+	$(TMP_DIR)\xsHost.o \
+	$(TMP_DIR)\xsHosts.o \
+	$(TMP_DIR)\xsPlatform.o \
 	$(OBJECTS) \
 	$(SDK_GLUE_OBJ) \
 	$(TMP_DIR)\mc.xs.o \
@@ -718,16 +718,20 @@ $(XS_OBJ): $(XS_HEADERS)
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-$(LIB_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
-	@echo # library xs: $(@F)
+{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o: $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
+	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
+
+$(LIB_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-$(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
-	@echo # library xs: $(@F)
+$(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
-	@echo # library xs: $(@F)
+$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
 {$(NRF52_SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
