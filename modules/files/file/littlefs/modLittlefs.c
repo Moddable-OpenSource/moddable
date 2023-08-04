@@ -29,7 +29,7 @@
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/semphr.h"
-#elif defined(nrf52)
+#elif nrf52
 	#include "FreeRTOS.h"
 	#include "semphr.h"
 #endif
@@ -60,7 +60,7 @@
 	#if !ESP32
 		#define MOD_LFS_COPYTORAM 1
 	#endif
-#elif defined(nrf52)
+#elif nrf52
 #else
 	#define MOD_LFS_RAMDISK 1
 
@@ -90,7 +90,7 @@ typedef struct {
 
 #if ESP32
 	const esp_partition_t	*partition;
-#elif defined(nrf52)
+#elif nrf52
 	uint32_t				offset;
 #endif
 } xsLittleFSRecord, *xsLittleFS;
@@ -625,7 +625,7 @@ static int lfs_sync(const struct lfs_config *cfg)
 	return 0;
 }
 
-#elif defined(nrf52)
+#elif nrf52
 
 static int lfs_read(const struct lfs_config *cfg, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -721,7 +721,7 @@ void startLittlefs(xsMachine *the)
 #endif
 		xsUnknownError("can't find partition");
 	}
-#elif defined(nrf52)
+#elif nrf52
 	if (MODDEF_FILE_LFS_PARITION_SIZE < (kFlashSectorSize * 8))
 		xsUnknownError("bad LFS partition size");
 
@@ -772,7 +772,7 @@ void startLittlefs(xsMachine *the)
 #elif defined(__ets__)
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = SPIFFS_PHYS_SIZE / kFlashSectorSize;
-#elif defined(nrf52)
+#elif nrf52
 	lfs->offset = kModulesEnd - (((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = (kModulesEnd - lfs->offset) / kFlashSectorSize;
