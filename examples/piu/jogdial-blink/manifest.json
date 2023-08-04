@@ -10,5 +10,14 @@
 		"*-alpha": [
 			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-36"
 		]
+	},
+	"platforms":{
+		"nrf52/moddable_four": {},
+		"lin/moddable_four": {},
+		"mac/moddable_four": {},
+		"win/moddable_four": {},
+		"...": {
+			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
+		}
 	}
 }
