@@ -25,8 +25,6 @@
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/spi": "$(IO)/spi/spi",
 
-		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
-
 		"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 		"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 		"embedded:io/socket/listener": "$(IO)/socket/lwip/listener",

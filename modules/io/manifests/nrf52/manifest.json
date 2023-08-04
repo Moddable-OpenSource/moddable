@@ -26,8 +26,6 @@
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/spi": "$(IO)/spi/spi",
 
-		"embedded:io/provider/MCP23017": "$(IO)/expander/*",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
