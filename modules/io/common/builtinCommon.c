@@ -50,8 +50,8 @@
 	};
 #elif nrf52
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0xFFFFFFFF,		//@@
-		0xFFFFFFFF		//@@
+		0xFFFFFFFF,
+		0x0000FFFF
 	};
 #elif defined(PICO_BUILD)
     critical_section_t gCommonCriticalMux;
