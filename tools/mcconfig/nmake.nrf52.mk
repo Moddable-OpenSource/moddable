@@ -131,14 +131,11 @@ SOFT_DEVICE = s140
 !IF "$(DEBUG)"=="1"
 !IF "$(USE_USB)"=="1"
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ENDIF
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ENDIF
 
 !IF "$(USE_QSPI)"=="1"
@@ -325,6 +322,7 @@ NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrfx_systick.o \
 	$(LIB_DIR)\nrfx_timer.o \
 	$(LIB_DIR)\nrfx_twim.o \
+	$(LIB_DIR)\nrfx_uarte.o \
 	$(LIB_DIR)\nrfx_wdt.o
 
 NRF_CRYPTO_BACKEND_CC310_OBJ = \
@@ -428,7 +426,6 @@ XS_OBJ = \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
-	$(TMP_DIR)\xsDebug.o \
 	$(LIB_DIR)\xsError.o \
 	$(LIB_DIR)\xsFunction.o \
 	$(LIB_DIR)\xsGenerator.o \
@@ -479,6 +476,7 @@ FINAL_LINK_OBJ = \
 	$(TMP_DIR)\xsHost.o \
 	$(TMP_DIR)\xsHosts.o \
 	$(TMP_DIR)\xsPlatform.o \
+	$(TMP_DIR)\xsDebug.o \
 	$(OBJECTS) \
 	$(SDK_GLUE_OBJ) \
 	$(TMP_DIR)\mc.xs.o \
@@ -718,19 +716,19 @@ $(XS_OBJ): $(XS_HEADERS)
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-{$(XS_DIR)\sources\}.c{$(LIB_DIR)\}.o: $(TMP_DIR)\mc.defines.h
-	@echo # project xs: $(@F)
-	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
-
-$(LIB_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c $(TMP_DIR)\mc.defines.h
+$(TMP_DIR)\xsDebug.o: $(XS_DIR)\sources\xsDebug.c
 	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-$(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c $(TMP_DIR)\mc.defines.h
+$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
 	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
-$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c $(TMP_DIR)\mc.defines.h
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
+	@echo # project xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
 	@echo # project xs: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
 
