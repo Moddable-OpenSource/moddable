@@ -716,21 +716,21 @@ $(XS_OBJ): $(XS_HEADERS)
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-$(TMP_DIR)\xsDebug.o: $(XS_DIR)\sources\xsDebug.c
+$(TMP_DIR)\xsDebug.o: $(XS_DIR)\sources\xsDebug.c $(TMP_DIR)\mc.defines.h
 	@echo # project xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\sources\xsDebug.c -o $@
 
-$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
+$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c $(TMP_DIR)\mc.defines.h
 	@echo # project xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\mc\xsHosts.c -o $@
 
-$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c $(TMP_DIR)\mc.defines.h
 	@echo # project xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\nrf52\xsHost.c -o $@
 
-$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c $(TMP_DIR)\mc.defines.h
 	@echo # project xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\nrf52\xsPlatform.c -o $@
 
 {$(NRF52_SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)
