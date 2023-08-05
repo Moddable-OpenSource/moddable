@@ -1,0 +1,9 @@
+{
+  "include": [
+    "$(MODULES)/io/manifest.json",
+    "$(MODULES)/data/text/decoder/manifest.json"
+  ],
+  "modules": {
+    "*": "./cluster"
+  }
+}
