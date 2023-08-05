@@ -44,31 +44,30 @@ void xs_flash(xsMachine *the)
 {
 	modFlashRecord flash;
 
+	flash.partitionStart = ~0;
 	if (!modSPIFlashInit())
 		xsUnknownError("init failed");
 
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		char *partition = xsmcToString(xsArg(0));
-		uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);
-		if (0 == c_strcmp(partition, "ble-peers")) {
-			flash.partitionStart = 0xEF000;
-			flash.partitionByteLength = 0x3000;
-		}
-		else if (0 == c_strcmp(partition, "xs")) {
-			flash.partitionStart = modStart;
-			flash.partitionByteLength = kModulesEnd - flash.partitionStart;
-		}
+		if (0 == c_strcmp(partition, "ble-peers"))
+			modGetPartition(kPartitionBLEState, &flash.partitionStart, &flash.partitionByteLength);
+		else if (0 == c_strcmp(partition, "xs"))
+			modGetPartition(kPartitionMod, &flash.partitionStart, &flash.partitionByteLength);
+		else if (0 == c_strcmp(partition, "storage"))
+			modGetPartition(kPartitionStorage, &flash.partitionStart, &flash.partitionByteLength);
 		else if (0 == c_strcmp(partition, "running")) {
+			uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);
 			flash.partitionStart = _MODDABLE_start;			// was 0x26000, 0x27000 for SD 7.0
 			flash.partitionByteLength = modStart - flash.partitionStart;
 		}
-		else
-			xsUnknownError("unknown partition");
 	}
 	else {
 		flash.partitionStart = xsmcToInteger(xsArg(0));
 		flash.partitionByteLength = xsmcToInteger(xsArg(1));
 	}
+	if (~0 == flash.partitionStart)
+		xsUnknownError("unknown partition");
 
 	xsmcSetHostChunk(xsThis, &flash, sizeof(flash));
 }

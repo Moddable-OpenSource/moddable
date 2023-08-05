@@ -722,19 +722,9 @@ void startLittlefs(xsMachine *the)
 		xsUnknownError("can't find partition");
 	}
 #elif nrf52
-	if (MODDEF_FILE_LFS_PARITION_SIZE < (kFlashSectorSize * 8))
-		xsUnknownError("bad LFS partition size");
-
-	int needed = ((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize; 
-	int available = ((kModulesEnd - kModulesStart + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
-
-	#if MODDEF_XS_MODS
-	if (/* XS_ATOM_ARCHIVE */ 0x58535F41 == c_read32be((void *)(4 + kModulesStart)))
-		available -= ((c_read32be((void *)(kModulesStart)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
-	#endif
-
-	if (needed > available)
-		xsUnknownError("no space for littlefs partition");
+	uint32_t storageOffset, storageSize;
+	if (!modGetPartition(kPartitionStorage, &storageOffset, &storageSize))
+		xsUnknownError("no storage");
 #endif
 
 	xsLittleFS lfs = (xsLittleFS)c_calloc(sizeof(xsLittleFSRecord), 1);
@@ -773,9 +763,9 @@ void startLittlefs(xsMachine *the)
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = SPIFFS_PHYS_SIZE / kFlashSectorSize;
 #elif nrf52
-	lfs->offset = kModulesEnd - (((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+	lfs->offset = storageOffset;
     lfs->config.block_size = kFlashSectorSize;
-    lfs->config.block_count = (kModulesEnd - lfs->offset) / kFlashSectorSize;
+    lfs->config.block_count = storageSize / kFlashSectorSize;
 #endif
     lfs->config.cache_size = MODDEF_FILE_LFS_CACHE_SIZE;
     lfs->config.lookahead_size = MODDEF_FILE_LFS_LOOKAHEAD_SIZE;

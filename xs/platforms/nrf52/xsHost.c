@@ -238,15 +238,6 @@ int32_t modGetDaylightSavingsOffset(void)
 	return gDaylightSavings;
 }
 
-#if MODDEF_XS_MODS
-	static void *installModules(txPreparation *preparation);
-	static char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSize, int *atomSizeOut);
-	#define findAtom(atomTypeIn, xsb, xsbSize, atomSizeOut) findNthAtom(atomTypeIn, 0, xsb, xsbSize, atomSizeOut);
-
-	static uint8_t gHasMods;
-#endif
-
-
 /*
 	Instrumentation
 */
@@ -594,6 +585,45 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 }
 
 #endif /* MODDEF_XS_MODS */
+
+#ifndef MODDEF_FILE_LFS_PARITION_SIZE  
+	#define MODDEF_FILE_LFS_PARITION_SIZE (65536)
+#endif
+
+uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
+{
+	uint32_t offset, size;
+	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
+		offset = kModulesStart;
+		size = 0;
+
+#if !MODDEF_XS_MODS
+		if (which == kPartitionMod)
+			return 0;
+#else
+		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
+			size = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+#endif
+
+		if (kPartitionStorage == which) {
+			if ((kModulesEnd - (offset + size)) < MODDEF_FILE_LFS_PARITION_SIZE)
+				return 0;
+			size = (((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+			offset = kModulesEnd - size;
+		}
+	}
+	else if (kPartitionBLEState == which) {
+		offset = 0xEF000;
+		size = 0x3000;
+	}
+	else
+		return 0;
+
+	if (offsetOut) *offsetOut = offset;
+	if (sizeOut) *sizeOut = size;
+
+	return 1;
+}
 
 /*
 	flash

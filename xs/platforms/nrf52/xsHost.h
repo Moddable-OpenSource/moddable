@@ -468,6 +468,14 @@ extern uint32_t _MODDABLE_end;		// from linker
 #define kModulesEnd ((uintptr_t)&_MODDABLE_end)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
 
+enum {
+	kPartitionMod = 1,
+	kPartitionStorage,
+	kPartitionBLEState
+};
+
+extern uint8_t modGetPartition(uint8_t which, uint32_t *offset, uint32_t *size);
+
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
