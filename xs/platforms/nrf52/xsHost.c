@@ -613,8 +613,8 @@ uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
 		}
 	}
 	else if (kPartitionBLEState == which) {
-		offset = 0xEF000;
-		size = 0x3000;
+		offset = (uintptr_t)&_FSTORAGE_start;
+		size = &_FSTORAGE_end - &_FSTORAGE_start;
 	}
 	else
 		return 0;
