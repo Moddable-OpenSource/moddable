@@ -6,9 +6,14 @@
 	"modules": {
 		"*": "./main"
 	},
-	"resources":{
-		"*-alpha": [
-			"$(MODDABLE)/examples/assets/fonts/OpenSans-Light-36"
+	"resources": {
+		"*-mask": [
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Semibold",
+				"size": 36,
+				"blocks": ["Basic Latin"],
+				"monochrome": true
+			}
 		]
 	},
 	"platforms":{

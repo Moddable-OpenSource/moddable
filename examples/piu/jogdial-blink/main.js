@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,7 +17,7 @@ const BLACK = "black";
 const WHITE = "white";
 
 const whiteSkin = new Skin({ fill: WHITE });
-const bigTextStyle = new Style({ color: [BLACK, WHITE], font: "light 36px Open Sans"});
+const bigTextStyle = new Style({ color: [BLACK, WHITE], font: "semibold 36px Open Sans"});
 
 class BlinkAppBehavior extends Behavior {
 	onCreate(column, data) {
@@ -108,3 +108,15 @@ const BlinkApp = Application.template($ => ({
 }));
 
 export default new BlinkApp({});
+
+trace(`
+The LED blinks at the rate shown on screen (e.g. 250ms).
+
+Press the jog dial button to adjust the rate the LED blinks.
+
+The interval shown on screen blinks when in adjusting mode
+
+Turn the jogdial to adjust the interval.
+
+Press the jog dial again to exist adjusting mode.
+`);
