@@ -567,6 +567,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
+			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
 			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "xsc ", target);
@@ -1124,12 +1125,13 @@ class Rule {
 	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
 		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
+		var sourceParts = tool.splitPath(source);
 		var slash = source.lastIndexOf(tool.slash);
-		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
+		var directory = this.tool.resolveDirectoryPath(sourceParts.directory);
 		if (directory) {
 			this.count = 0;
-			var star = source.lastIndexOf("*");
-			var prefix = (star >= 0) ? source.slice(slash + 1, star) : source.slice(slash + 1);
+			var star = sourceParts.name.lastIndexOf("*");
+			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name;
 			var names = tool.enumerateDirectory(directory);
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -1153,7 +1155,7 @@ class Rule {
 						name = parts.name;
 				}
 				else {
-					if (parts.name == prefix)
+					if ((parts.name == prefix) && ((sourceParts.extension == "") || (sourceParts.extension == parts.extension)))
 						name = prefix;
 					else
 						continue;
@@ -1260,7 +1262,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if (parts.extension == ".js")
+		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);

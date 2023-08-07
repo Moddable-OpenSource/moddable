@@ -90,7 +90,7 @@ class MakeFile extends MAKEFILE {
 		for (var result of [].concat(tool.jsFiles, tool.tsFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
-			this.write(result.target);
+			this.write(result.target.replaceAll('#', '\\#'));
 		}	
 		for (var result of tool.cFiles) {
 			var sourceParts = tool.splitPath(result.source);

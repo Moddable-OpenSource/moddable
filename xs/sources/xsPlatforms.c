@@ -151,6 +151,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 	char buffer[C_PATH_MAX];
 	txInteger dot = 0;
+	txInteger hash = 0;
 	txString slash;
 	txString path;
 	fxToStringBuffer(the, slot, name, sizeof(name));
@@ -161,6 +162,9 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		else if ((name[1] == '.') && (name[2] == '/')) {
 			dot = 2;
 		}
+	}
+	else if (name[0] == '#') {
+		hash = 1;
 	}
 #if mxWindows
 	{
@@ -204,6 +208,19 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		if ((c_strlen(buffer) + c_strlen(name + dot)) >= sizeof(buffer))
 			mxRangeError("path too long");
 		c_strcat(buffer, name + dot);
+	}
+	else if (hash) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		path = buffer;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strchr(buffer, mxSeparator);
+		if (!slash)
+			return XS_NO_ID;
+		*(slash + 1) = 0;
+		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name);
 	}
 	else
 		path = name;

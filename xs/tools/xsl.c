@@ -784,6 +784,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char buffer[C_PATH_MAX];
 	char separator;
 	txInteger dot = 0;
+	txInteger hash = 0;
 	txString slash;
 	txString path;
 	txID id;
@@ -797,6 +798,10 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			dot = 2;
 		}
 	}
+	else if (name[0] == '#') {
+		hash = 1;
+	}
+	
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
 	slash = c_strrchr(name, separator);
@@ -805,6 +810,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
 		*slash = 0;
+		
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
@@ -825,8 +831,22 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			mxRangeError("path too long");
 		c_strcat(buffer, name + dot);
 	}
+	else if (hash) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		path = buffer;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strchr(buffer, separator);
+		if (!slash)
+			return XS_NO_ID;
+		*(slash + 1) = 0;
+		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name);
+	}
 	else
 		path = name;
+		
 	if (fxFindScript(the, path, &id))
 		return id;
 	return XS_NO_ID;
