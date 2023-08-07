@@ -249,7 +249,7 @@ nrf_saadc_value_t read_analog(int channel)
 
 void xs_analog_read(xsMachine *the)
 {
-	modAnalogConfiguration analog = xsmcGetHostChunk(xsThis);
+	modAnalogConfiguration analog = xsmcGetHostData(xsThis);
 	int channel = analog->channel;
 	nrf_saadc_value_t value;
 
