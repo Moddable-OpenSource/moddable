@@ -68,10 +68,17 @@ ifeq ($(HOST_OS),Darwin)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
-		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
-		NORESTART=-norestart
-		WAIT_FOR_COPY_COMPLETE =
+		ifeq ($(XSBUG_LOG),1)
+			DO_XSBUG =
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			NORESTART=-norestart
+			WAIT_FOR_COPY_COMPLETE =
+		else
+			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			NORESTART=-norestart
+			WAIT_FOR_COPY_COMPLETE =
+		endif
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
@@ -86,9 +93,15 @@ else
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-		NORESTART=-norestart
+		ifeq ($(XSBUG_LOG),1)
+			DO_XSBUG =
+			CONNECT_XSBUG = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			NORESTART=-norestart
+		else
+			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			NORESTART=-norestart
+		endif
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
