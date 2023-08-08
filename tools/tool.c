@@ -289,6 +289,15 @@ void FILE_prototype_writeString(xsMachine* the)
 	xsResult = xsInteger(size);
 }
 
+void Tool_prototype_get_build(xsMachine* the)
+{
+	#if mxDebug
+		xsResult = xsString("debug");
+	#else
+		xsResult = xsString("release");
+	#endif
+}
+
 void Tool_prototype_get_ipAddress(xsMachine* the)
 {
 #if mxWindows
