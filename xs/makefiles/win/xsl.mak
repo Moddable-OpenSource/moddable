@@ -89,7 +89,7 @@ C_OPTIONS = $(C_OPTIONS) \
 C_OPTIONS = $(C_OPTIONS) \
 	/D NDEBUG \
 	/Fp$(TMP_DIR_RLS)\ \
-	/Od \
+	/O2 \
 	/W0
 !ENDIF
 
@@ -98,6 +98,8 @@ LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32
 LINK_OPTIONS = /incremental:no /nologo /subsystem:console
 !IF "$(GOAL)"=="debug"
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
+!ELSE
+LINK_OPTIONS = $(LINK_OPTIONS) /OPT:NOICF
 !ENDIF
 
 OBJECTS = \
