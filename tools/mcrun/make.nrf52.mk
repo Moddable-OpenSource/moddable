@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2020  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -47,15 +47,25 @@ else
 	LAUNCH = release
 endif
 
+ifeq ($(HOST_OS),Darwin)
+	INSTALL_ARCHIVE = $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
+else
+	ifeq ($(DEBUGGER_PORT),)
+		INSTALL_ARCHIVE = $(SERIAL2XSBUG) `$(MODDABLE_TOOLS_DIR)/findUSBLinux $(M4_VID) $(M4_PID) cdc_acm` 921600 8N1 -install $(ARCHIVE)
+	else
+		INSTALL_ARCHIVE = $(SERIAL2XSBUG) $(DEBUGGER_PORT) 921600 8N1 -install $(ARCHIVE)
+	endif
+endif
+
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
+	$(INSTALL_ARCHIVE)
 
 release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	$(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
+	$(INSTALL_ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
