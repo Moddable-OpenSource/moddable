@@ -104,7 +104,7 @@ DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
-NORESTART = -norestart
+NORESTART = 
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
