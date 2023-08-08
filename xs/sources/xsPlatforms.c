@@ -217,6 +217,11 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 		slash = c_strchr(buffer, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
+		if (path[0] == '@') {
+			slash = c_strchr(slash + 1, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
+		}
 		*(slash + 1) = 0;
 		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
 			mxRangeError("path too long");
