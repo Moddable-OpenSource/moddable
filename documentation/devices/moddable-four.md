@@ -1,7 +1,7 @@
 # Getting Started with Moddable Four
 
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: April 7, 2023
+Revised: August 7, 2023
 
 This document provides information about Moddable Four, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -54,15 +54,15 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 | Name| Function| Description |
 | :---: | :---: | :--- |
 | LCD-PWR<BR>GPIO23 | Power | GPIO23 is used to turn power on for the screen and sensors connected to this pin. 3.3v |
-| GPIO3<BR>ADC1 | I/O<BR>Analog | Connects to nrf52 GPIO3 |
-| GPIO4<BR>ADC2 | I/O<BR>Analog | Connects to nrf52 GPIO4 |
-| GPIO5<BR>ADC3 | I/O<BR>Analog | Connects to nrf52 GPIO5 |
+| GPIO3<BR>ADC1 | I/O<BR>Analog | Connects to nrf52 GPIO3. ADC Channel 1 |
+| GPIO4<BR>ADC2 | I/O<BR>Analog | Connects to nrf52 GPIO4. ADC Channel 2 |
+| GPIO5<BR>ADC3 | I/O<BR>Analog | Connects to nrf52 GPIO5. ADC Channel 3 |
 | GPIO17 | I/O | Connects to nrf52 GPIO17 |
 | GPIO22 | I/O | Connects to nrf52 GPIO22 |
-| GPIO28<BR>ADC4 | I/O<BR>Analog | Connects to nrf52 GPIO28 |
-| GPIO29<BR>ADC5 | I/O<BR>Analog | Connects to nrf52 GPIO29 |
-| GPIO30<BR>ADC6 | I/O<BR>Analog | Connects to nrf52 GPIO30 |
-| GPIO31<BR>ADC7 | I/O<BR>Analog | Connects to nrf52 GPIO31 |
+| GPIO28<BR>ADC4 | I/O<BR>Analog | Connects to nrf52 GPIO28. ADC Channel 4 |
+| GPIO29<BR>ADC5 | I/O<BR>Analog | Connects to nrf52 GPIO29. ADC Channel 5 |
+| GPIO30<BR>ADC6 | I/O<BR>Analog | Connects to nrf52 GPIO30. ADC Channel 6 |
+| GPIO31<BR>ADC7 | I/O<BR>Analog | Connects to nrf52 GPIO31. ADC Channel 7 |
 | GPIO27<BR>SCL | I/O<BR>I2C | Connects to nrf52 GPIO27<BR>I2C Clock<BR>Accelerometer |
 | GPIO26<BR>SDA | I/O<BR>I2C | Connects to nrf52 GPIO26<BR>I2C Data<BR>Accelerometer |
 | RST | Reset | Reset device |
@@ -83,6 +83,9 @@ Power can be supplied to the Moddable Four via the following:
 
 Power provided by the CR2032 battery connector can be turned on and off with the sliding switch.
 
+#### 6-pin JTAG connector
+
+The 6-pin JTAG connector can be used for gdb debugging or flashing a new bootloader onto the Moddable Four. Please see the [nrf52 Platform document](./nrf52.md#debugging-native-code) for details.
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
