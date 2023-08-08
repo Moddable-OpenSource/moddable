@@ -123,7 +123,7 @@ export default class extends TOOL {
 		}
 
 		if (this.extract) {
-			const data = this.extractOne(flows, this.extract);
+			const data = this.extractOne(flows, this.extract, credentials);
 			const parts = {
 				directory: this.outputDirectory,
 				name: this.extract.substring(0, this.extract.lastIndexOf(".")),
@@ -1946,7 +1946,7 @@ export default class extends TOOL {
 			return `"${name}", ${value}`;
 		return `"${name}"`;
 	}
-	extractOne(flows, what) {
+	extractOne(flows, what, credentials) {
 		const parts = what.substring(0, what.lastIndexOf(".")).split("-");
 		let data;
 		
@@ -1960,8 +1960,8 @@ export default class extends TOOL {
 						case "ca":
 							if (config.ca)
 								data = this.readFileString(config.ca);
-							else if (config.credentials?.cadata)
-								data = config.credentials.cadata;
+							else if (credentials?.[config.id]?.cadata)
+								data = credentials?.[config.id].cadata;
 
 							if (data) {
 								data = Transform.pemToDER(data);
