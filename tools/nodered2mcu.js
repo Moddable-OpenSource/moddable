@@ -1094,12 +1094,9 @@ export default class extends TOOL {
 							break;
 
 						case "mqtt":
+						case "mqtts":
 							break;
 
-						case "mqtts":
-							throw new Error("MQTT TLS unimplemented")
-							break;
-						
 						default:
 							// Node-RED ignores all unrecognized schemes.
 							break;
