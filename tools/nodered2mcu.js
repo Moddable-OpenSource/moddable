@@ -1151,9 +1151,6 @@ export default class extends TOOL {
 			} break;
 			
 			case "tls-config": {
-				if (config.key || config.cert || config.credentials?.keydata || config.credentials?.certdata)
-					throw new Error("private keys not yet implemented");
-				
 				if (config.alpnprotocol)
 					throw new Error("ALPN not yet implemented");
 
@@ -1972,6 +1969,28 @@ export default class extends TOOL {
 
 							if (data) {
 								data = Transform.pemToDER(data);
+								return true;
+							}
+							break;
+						case "cert":
+							if (config.cert)
+								data = this.readFileString(config.cert);
+							else if (credentials?.[config.id]?.certdata)
+								data = credentials?.[config.id].certdata;
+
+							if (data) {
+								data = Transform.pemToDER(data);
+								return true;
+							}
+							break;
+						case "key":
+							if (config.key)
+								data = this.readFileString(config.key);
+							else if (credentials?.[config.id]?.keydata)
+								data = credentials?.[config.id].keydata;
+
+							if (data) {
+								data = Transform.privateKeyToPrivateKeyInfo(Transform.pemToDER(data));
 								return true;
 							}
 							break;
