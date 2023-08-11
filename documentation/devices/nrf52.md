@@ -306,7 +306,7 @@ If you are building an application and the link fails with an error like those a
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
 
-As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
+As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
 
 Debugging native code on the Moddable Four requires a [Nordic nRF52840-DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK), [Segger J-Link Plus](https://www.segger.com/products/debug-probes/j-link/models/j-link-plus/) or compatible device.
 
