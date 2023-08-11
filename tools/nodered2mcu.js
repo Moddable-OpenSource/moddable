@@ -1094,7 +1094,13 @@ export default class extends TOOL {
 							break;
 
 						case "mqtt":
+							if (config.usetls)
+								throw new Error(`TLS configuration not allowed for mqtt URLs - disable "Use TLS"`);
+							break;
+
 						case "mqtts":
+							if (!config.usetls || !config.tls)
+								throw new Error(`TLS configuration required for mqtts URLs - enable "Use TLS"`)
 							break;
 
 						default:
@@ -1103,6 +1109,11 @@ export default class extends TOOL {
 					}
 					
 					config.broker = config.broker.slice(index + 3);
+				}
+				
+				if (!config.usetls) {
+					delete config.usetls;
+					delete config.tls;
 				}
 
 				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
