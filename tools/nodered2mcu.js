@@ -1105,7 +1105,6 @@ export default class extends TOOL {
 					config.broker = config.broker.slice(index + 3);
 				}
 
-				config.port = config.port ? parseInt(config.port) : 1883;
 				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
 
 			} break;
