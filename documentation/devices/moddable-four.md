@@ -1,4 +1,4 @@
-# Getting Started with Moddable Four
+# Moddable Four Developer Guide
 
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
 Revised: August 7, 2023
