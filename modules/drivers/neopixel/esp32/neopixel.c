@@ -79,8 +79,8 @@
 
 #include "driver/gpio.h"
 #include "driver/rmt.h"
-#include "rmt_types.h"
-#include "rmt_struct.h"
+#include "driver/rmt_types.h"
+#include "soc/rmt_struct.h"
 
 // rmt_block_mem_t and RMTMEM extracted from rmt_private.h
 typedef struct {

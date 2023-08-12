@@ -220,6 +220,9 @@ const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 
 void fxAbort(txMachine* the, int status)
 {
+modLog("fxAbort\n");
+modLogInt(status);
+
 #if MODDEF_XS_TEST
 	if (XS_DEBUGGER_EXIT == status) {
 		extern txMachine *gThe;

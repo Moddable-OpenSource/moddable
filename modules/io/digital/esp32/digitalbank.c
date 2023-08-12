@@ -306,6 +306,8 @@ void xs_digitalbank_read(xsMachine *the)
 
 #if kCPUESP32C3
 	result = hw->in.data;
+#elif kCPUESP32C6
+	result = hw->in.val;
 #else
     if (digital->bank)
         result = hw->in1.data;
@@ -332,12 +334,22 @@ void xs_digitalbank_write(xsMachine *the)
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else
 	if (digital->bank) {
+#if kCPUESP32C6
+		hw->out1_w1ts.val = value;
+		hw->out1_w1tc.val = ~value & digital->pins;
+#else
 		hw->out1_w1ts.data = value;
 		hw->out1_w1tc.data = ~value & digital->pins;
+#endif
 	}
 	else {
+#if kCPUESP32C6
+		hw->out_w1ts.val = value;
+		hw->out_w1tc.val = ~value & digital->pins;
+#else
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
+#endif
 	}
 #endif
 }
@@ -393,6 +405,8 @@ uint32_t modDigitalBankRead(Digital digital)
 
 #if kCPUESP32C3
 	return hw->in.data & digital->pins;
+#elif kCPUESP32C6
+	return hw->in.val & digital->pins;
 #else
     if (digital->bank)
         return hw->in1.data & digital->pins;
@@ -407,7 +421,7 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 	gpio_dev_t *hw = &GPIO;
 	value &= digital->pins;
 
-#if kCPUESP32C3
+#if kCPUESP32C3 || kCPUESP32C6
 	hw->out_w1ts.out_w1ts = value;
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else

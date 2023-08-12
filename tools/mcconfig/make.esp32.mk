@@ -49,8 +49,13 @@ ifeq ("$(ESP32_SUBCLASS)","esp32c3")
 	ESP_ARCH = riscv
 	GXX_PREFIX = riscv32-esp
 else
-	ESP_ARCH = xtensa
-	GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+	ifeq ("$(ESP32_SUBCLASS)","esp32c6")
+		ESP_ARCH = riscv
+		GXX_PREFIX = riscv32-esp
+	else
+		ESP_ARCH = xtensa
+		GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+	endif
 endif
 
 ifeq ($(VERBOSE),1)
@@ -94,20 +99,24 @@ else
 	USB_OPTION = -DUSE_USB=$(USE_USB)
 endif
 
-ifeq ("$(ESP32_SUBCLASS)","esp32c3")
-	ESP32_TARGET = 4
+ifeq ("$(ESP32_SUBCLASS)","esp32c6")
+	ESP32_TARGET = 5
 else
-ifeq ("$(ESP32_SUBCLASS)","esp32s3")
-	ESP32_TARGET = 3
-else
-	ifeq ("$(ESP32_SUBCLASS)","esp32s2")
-		ESP32_TARGET = 2
+	ifeq ("$(ESP32_SUBCLASS)","esp32c3")
+		ESP32_TARGET = 4
 	else
-		# basic esp32 doesn't support USB
-		ESP32_TARGET = 1
-		USB_OPTION =
+		ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+			ESP32_TARGET = 3
+		else
+			ifeq ("$(ESP32_SUBCLASS)","esp32s2")
+				ESP32_TARGET = 2
+			else
+				# basic esp32 doesn't support USB
+				ESP32_TARGET = 1
+				USB_OPTION =
+			endif
+		endif
 	endif
-endif
 endif
 
 
@@ -119,6 +128,16 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+	$(IDF_PATH)/components/driver/gpio/include \
+	$(IDF_PATH)/components/driver/gptimer/include \
+	$(IDF_PATH)/components/driver/i2c/include \
+	$(IDF_PATH)/components/driver/i2s/include \
+	$(IDF_PATH)/components/driver/ledc/include \
+	$(IDF_PATH)/components/driver/mcpwm/include \
+	$(IDF_PATH)/components/driver/pcnt/include \
+	$(IDF_PATH)/components/driver/rmt/include \
+	$(IDF_PATH)/components/driver/spi/include \
+	$(IDF_PATH)/components/driver/uart/include \
 	$(IDF_PATH)/components/driver/include \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
@@ -166,8 +185,9 @@ INC_DIRS = \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
 	$(IDF_PATH)/components/lwip/port/include/ \
-	$(IDF_PATH)/components/lwip/port/esp32/ \
-	$(IDF_PATH)/components/lwip/port/esp32/include/ \
+	$(IDF_PATH)/components/lwip/port/esp32xx/ \
+	$(IDF_PATH)/components/lwip/port/esp32xx/include/ \
+	$(IDF_PATH)/components/lwip/port/freertos/include/ \
 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
 	$(IDF_PATH)/components/newlib/include \
 	$(IDF_PATH)/components/newlib/platform_include \
@@ -177,6 +197,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/src \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include/nimble \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/transport/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
 	$(IDF_PATH)/components/bt/host/nimble/port/include \
@@ -316,7 +337,7 @@ endif
 
 C_FLAGS ?= $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99 \
+	-std=gnu17 \
 	$(C_FLAGS_SUBPLATFORM)
 
 #	--machine-fix-esp32-psram-cache-issue --machine-fix-esp32-psram-cache-strategy=memw
@@ -593,8 +614,8 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST) $(SDKCONFIG_H)
 $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H) 
 	@echo "# mcrez resources"
 	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
-	
-MAKEFLAGS += $(MAKEFLAGS_JOBS)
+
+# MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

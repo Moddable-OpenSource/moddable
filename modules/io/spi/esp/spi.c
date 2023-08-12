@@ -36,7 +36,7 @@
 #include "builtinCommon.h"
 
 #if ESP32
-	#include "spi_common.h"
+	#include "driver/spi_common.h"
 #endif
 
 struct SPIRecord {
@@ -126,7 +126,9 @@ void xs_spi_constructor(xsMachine *the)
 #if ESP32
 	xsmcGet(xsVar(0), xsArg(0), xsID_port);
 	tmp = builtinGetSignedInteger(the, &xsVar(0));
-#if kCPUESP32C3 || kCPUESP32S3
+#if kCPUESP32C6
+	if ((SPI1_HOST != tmp) && (SPI2_HOST != tmp))
+#elif kCPUESP32C3 || kCPUESP32S3
 	if ((SPI1_HOST != tmp) && (SPI2_HOST != tmp) && (SPI3_HOST != tmp))
 #else
 	if ((SPI_HOST != tmp) && (HSPI_HOST != tmp)

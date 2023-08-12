@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -195,8 +195,13 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
+#if ESP32 == 5
+	#define modCriticalSectionBegin()	portENTER_CRITICAL_SAFE(&gCriticalMux)
+	#define modCriticalSectionEnd()		portEXIT_CRITICAL_SAFE(&gCriticalMux)
+#else
 	#define modCriticalSectionBegin() vPortEnterCriticalSafe(&gCriticalMux)
 	#define modCriticalSectionEnd() vPortExitCriticalSafe(&gCriticalMux)
+#endif
 #endif
 
 /*
@@ -537,7 +542,13 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size);
 
 /* CPU */
 
-#if ESP32 == 4
+#if ESP32 == 5
+	#define kCPUESP32C6 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 4
 	#define kCPUESP32C3 1
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr

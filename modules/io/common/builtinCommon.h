@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -28,7 +28,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #define __COMMON__PINS__ 1
 #if ESP32
-#if kCPUESP32C3
+#if kCPUESP32C3 || kCPUESP32C6
 	#define kPinBanks (1)
 #else
 	#define kPinBanks (2)

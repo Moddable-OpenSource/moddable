@@ -59,6 +59,22 @@ typedef struct AnalogRecord *Analog;
 		3,
 		4
 	};
+#elif kCPUESP32C6
+	// From espressif doc:
+	#define ADC_RESOLUTION (12)
+	#define ADC_WIDTH 		ADC_BITWIDTH_12
+	#define ADC_PORTS		(1)
+	#define ADC_CHANNEL_MAX (7)
+
+	static const uint8_t gADCMap[ADC_CHANNEL_MAX] = {		// ADC channel to GPIO
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		6
+	};
 
 #elif kCPUESP32S2 || kCPUESP32S3
 
@@ -127,6 +143,8 @@ typedef struct AnalogRecord *Analog;
 	};
 #endif
 
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+
 static adc_cali_handle_t gADC1_cali_handle;
 static int gADC1_caliCount = 0;
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
@@ -143,6 +161,8 @@ static int gADC1_caliCount = 0;
 	#else
 		static adc_cali_line_fitting_config_t gADC2_cali_config;
 	#endif
+#endif
+
 #endif
 
 void xs_analog_constructor_(xsMachine *the)
@@ -186,6 +206,7 @@ void xs_analog_constructor_(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
 	if (port == 1 && ADC_UNIT_1 != gADC1_cali_config.unit_id) {
 		gADC1_cali_config.unit_id = ADC_UNIT_1;
 		gADC1_cali_config.bitwidth = ADC_WIDTH;
@@ -209,6 +230,8 @@ void xs_analog_constructor_(xsMachine *the)
 		adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
 	#endif
 	}
+#endif
+
 #endif
 
 	analog = c_malloc(sizeof(AnalogRecord));
@@ -252,6 +275,7 @@ void xs_analog_destructor_(void *data)
 
 	adc_oneshot_del_unit(analog->handle);
 
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
 	if (1 == analog->port) {
 		if (0 >= --gADC1_caliCount)
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
@@ -269,6 +293,7 @@ void xs_analog_destructor_(void *data)
 			adc_cali_delete_scheme_line_fitting(gADC2_cali_handle);
 #endif
 	}
+#endif
 #endif
     builtinFreePin(analog->pin);
 
@@ -292,6 +317,7 @@ void xs_analog_read_(xsMachine *the)
 	int reading;
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
 	adc_oneshot_read(analog->handle, analog->channel, &reading);
 	if (analog->port == 1) {
 		adc_cali_raw_to_voltage(gADC1_cali_handle, reading, &millivolts);
@@ -300,6 +326,9 @@ void xs_analog_read_(xsMachine *the)
 	else if (analog->port == 2) {
 		adc_cali_raw_to_voltage(gADC2_cali_handle, reading, &millivolts);
 	}
+#endif
+#else
+;
 #endif
 
 	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_RESOLUTION) - 1)) / 3300);
