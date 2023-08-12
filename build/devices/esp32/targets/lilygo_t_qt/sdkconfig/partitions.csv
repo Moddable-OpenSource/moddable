@@ -21,4 +21,4 @@
 # Note: if you change the phy_init or app partition offset, make sure to change the offset in Kconfig.projbuild,,,,
 nvs,      data, nvs,     0x9000,  0x006000,
 phy_init, data, phy,     0xf000,  0x001000,
-factory,  app,  factory, 0x10000, 0xFE0000,
+factory,  app,  factory, 0x10000, 0x7E0000,

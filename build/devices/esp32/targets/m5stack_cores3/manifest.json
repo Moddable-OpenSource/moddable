@@ -1,8 +1,9 @@
 {
 	"build": {
 		"ESP32_SUBCLASS": "esp32s3",
-		"USE_USB": "1",
-		"SDKCONFIGPATH": "./sdkconfig"
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
