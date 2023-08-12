@@ -44,6 +44,17 @@
 				"preference"
 			]
 		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/esp/*"
+				]
+			},
+			"preload": [
+				"preference"
+			]		
+		},
 		"mac": {
 			"modules": {
 				"*": [

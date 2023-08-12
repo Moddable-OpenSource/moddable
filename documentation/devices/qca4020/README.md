@@ -57,7 +57,7 @@ After the initial host setup, there are four major steps to build and deploy a M
 
 3. Flash the application to the board.
 
-4. Use `gdb` to launch and debug the native portion of your application. Use `xsbug` to debug your ECMAScript application. 
+4. Use `gdb` to launch and debug the native portion of your application. Use `xsbug` to debug your ECMAScript application.
 
 ## Getting Started
 
@@ -76,7 +76,7 @@ Decompress the SDK file into a `~/qualcomm` directory making:
 ```text
 /home/<user>/qualcomm/qca4020
 ```
-	
+
 The `qca4020` directory should contain a `target/` subdirectory.
 
 #### Environment variables
@@ -99,7 +99,7 @@ export PATH=$PATH:$SDK/bin/cortex-m4
 
 #### Arm toolchain setup
 
-Download [version 6.2 (Linux, 64-bit)][armtoolslink] of the GNU embedded toolchain for ARM-based processors from the [Arm Developer Site][armdevsite] 
+Download [version 6.2 (Linux, 64-bit)][armtoolslink] of the GNU embedded toolchain for ARM-based processors from the [Arm Developer Site][armdevsite]
 
 Update the `PATH` environment variable to include the toolchain installation path:
 
@@ -128,7 +128,7 @@ git clone https://source.codeaurora.org/external/quartz/ioe/qurt
 ```
 
 > Note: You may get an warning here. Continue.
-	
+
 ```text
 cd qurt
 git checkout v2.0
@@ -160,7 +160,7 @@ To trigger the `vApplicationStackOverflowHook()` callback in `$MODDABLE/build/de
 ```
 
 To trigger the `vApplicationMallocFailedHook()` callback when memory allocation fails, change the following config value:
-		
+
 ```text
 #define configUSE_MALLOC_FAILED_HOOK    1
 ```
@@ -191,7 +191,7 @@ cp output/free_rtos.lib ~/qualcomm/qca4020/target/lib/cortex-m4IPT/freertos/
 
 ###### Ref: [B] Development Kit User Guide - section 3.7.2.1
 
-[OpenOCD](http://openocd.org) is used to flash the binary to the QCA4020. 
+[OpenOCD](http://openocd.org) is used to flash the binary to the QCA4020.
 
 Download [openocd-0.10.0](https://sourceforge.net/projects/openocd/files/openocd/0.10.0/) and build with the `--enable-ftdi` option. The location doesn't matter.
 
@@ -239,13 +239,13 @@ to:
 ```text
 <props name="dog_hal_disable" type="0x00000002”> 1 </props>
 ```
-    
+
 > Note: you will want to re-enable the watchdog before shipping.
 
 
 ### Adjust link map
 
-The link map specifies where in memory the different components of your application will go. 
+The link map specifies where in memory the different components of your application will go.
 
 The QCA4020 allocates RAM to read-only memory (instructions and data), and read-write memory for each of the different operating modes of the chip. Moddable apps run primarily in the Full Operating Mode (***FOM***).
 
@@ -296,7 +296,7 @@ After this, add:
 	*(.flash.rodata*)
 ```
 
-##### 3) Allocate 40 KB to read-only memory and 262 KB RAM to data space 
+##### 3) Allocate 40 KB to read-only memory and 262 KB RAM to data space
 
 ###### Ref: 	(see similar in Document [C]: QCA402x (CDB2x) Programmers Guide - section 4.3.4 Resize application memory)
 
@@ -348,7 +348,7 @@ export DEBUG=1
 > Note: The `APP_NAME` environment variable value must match the name of the application being built.
 
 Build the stub application to link in the qca4020 libraries and *main.c*.
-	
+
 ```text
 cd $MODDABLE/build/devices/qca4020/xsProj/build/gcc
 make
@@ -374,7 +374,7 @@ To use JTAG3 (which doesn't conflict with SPI):
 J30 Connect pins 2 and 3 for JTAG    (GPIO_25 low)
 J32 Connect pins 1 and 2 for JTAG    (GPIO_18 high)
 
-// JTAG 
+// JTAG
 J37 pin 2 Connect J5 pin 28 (JTAG TCK)
 J38 pin 2 Connect J5 pin 34 (JTAG TDI)
 J39 pin 2 Connect J5 pin 30 (JTAG TDO)
@@ -409,7 +409,7 @@ serial2xsbug /dev/ttyUSB1 115200 8N1
 ```
 
 > `xsbug` is used to debug the ECMAScript side of your application. `serial2xsbug` provides a serial to network socket bridge between the QCA4020 CDB and the `xsbug` debugger.
-     
+
 #### Launch gdb
 
 Navigate to the project build directory and launch `gdb`:
@@ -471,9 +471,9 @@ The board will boot into the app instead of waiting for `gdb`.
 
 ## Example apps with QCA4020 support
 
-App | Feature 
---- | ------- 
-[helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug 
+App | Feature
+--- | -------
+[helloworld](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/helloworld) | xsbug
 [timers](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/base/timers) | timers
 [files](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/files/files) | file I/O
 [preference](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/files/preference) | persistent preferences

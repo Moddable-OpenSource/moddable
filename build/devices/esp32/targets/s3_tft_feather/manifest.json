@@ -1,7 +1,7 @@
 {
 	"build":{
 		"ESP32_SUBCLASS": "esp32s3",
-		"USE_USB": "1",
+		"USE_USB": "2",
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [

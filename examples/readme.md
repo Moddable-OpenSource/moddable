@@ -1,7 +1,7 @@
 # Moddable SDK - Examples
 
-Copyright 2018-2019 Moddable Tech, Inc.<BR>
-Revised: May 17, 2019
+Copyright 2018-2023 Moddable Tech, Inc.<BR>
+Revised: April 6, 2023
 
 The examples demonstrate how to use many of the capabilities of the Moddable SDK. Because each target platform is unique, not all examples run on every platform or device.
 
@@ -17,6 +17,7 @@ This document is a guide to building example applications in the Moddable SDK. I
 * [Screen rotation](#screen-rotation)
 * [Wi-Fi configuration](#wifi-configuration)
 * [Screen driver configuration](#screen-driver-configuration)
+* [Platform specific examples](#platform-specific)
 
 <a id="building-apps"></a>
 ## Building apps
@@ -25,12 +26,12 @@ The `mcconfig` command line tool builds Moddable apps. To use it, open a termina
 
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -m
-	
+
 On Windows, use the **Developer Command Prompt for VS 2017** to build apps:
 
 	cd %MODDABLE%\examples\piu\balls
 	mcconfig -m
-	
+
 By default, `mcconfig` generates a release build that targets the host platform. These are common command line options:
 
 - `-d`: build a debug instrumented version
@@ -53,7 +54,7 @@ Also note that `mcconfig` automatically deploys apps to target devices. For many
 The `-p` command line option specifies the target platform/subplatform you are building for. For example, to build a release app that targets Moddable One:
 
 	mcconfig -m -p esp/moddable_one
-	
+
 To build a debug app that targets ESP32 devices:
 
 	mcconfig -d -m -p esp32
@@ -79,7 +80,7 @@ For example, to build a debug version of the `balls` example app with the 8-bit 
 <a id="screen-rotation"></a>
 ### Screen rotation
 
-Some example apps are designed to render on a rotated screen. Use the `-r` command line option to specify the target rotation angle: 
+Some example apps are designed to render on a rotated screen. Use the `-r` command line option to specify the target rotation angle:
 
 - `-r 0`: no rotation (default)
 - `-r 90`: 90 degree rotation
@@ -96,7 +97,7 @@ To build the `progress` app to run at 180 degrees rotation on the host platform:
 
 	cd $MODDABLE/examples/commodetto/progress
 	mcconfig -d -m -r 180
-	
+
 <a id="wifi-configuration"></a>
 ### Wi-Fi configuration
 
@@ -113,7 +114,7 @@ To build and run the `sntp` app for the open network `Free Wifi`:
 
 	cd $MODDABLE/examples/network/sntp
 	mcconfig -d -m -p esp ssid="Free WiFi"
-	
+
 <a id="screen-driver-configuration"></a>
 ### Screen driver configuration
 
@@ -131,7 +132,7 @@ The remainder of this section explains how to do these steps.
 To run the `text` app on an ESP8266 device with a [LPM013M126A](../modules/drivers/lpm013m126a) 8-color display:
 
 	cd $MODDABLE/examples/commodetto/text
-	mcconfig -d -m -p esp screen=lpm013m126a	
+	mcconfig -d -m -p esp screen=lpm013m126a
 To run the `map-puzzle` app on an ESP8266 device with a [FT6206](../modules/drivers/ft6206) multi-touch controller:
 
 	cd $MODDABLE/examples/piu/map-puzzle
@@ -159,10 +160,20 @@ To build an app for the `ft6206` touch controller driver, modify both the `confi
 		"screen": "ili9341",
 		"touch": "ft6206"
 	}
-	
+
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/ft6206/manifest.json"
 	]
 
 > **Note**: For additional details on the `manifest.json` file please refer to the [manifest.md](../documentation/tools/manifest.md) document.
+
+
+<a id="platform-specific"></a>
+## Platform specific examples
+
+There are examples for platform specific features included in `$MODDABLE/build/device/<platform>/examples`.
+
+* [nRF52](../../build/devices/nrf52/examples)
+* [ESP32](../../build/devices/esp32/examples)
+

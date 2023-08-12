@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -72,6 +72,10 @@ const KeyboardContainer = Column.template($ => ({
 class KeyboardAppBehavior extends Behavior {
 	onCreate(application, data) {
 		this.data = data;
+	}
+	onDisplaying(application) {
+		if (application.height != 240 || application.width != 320)
+			trace("WARNING: This application was designed to run on a 320x240 screen.\n");
 	}
 	onKeyboardRowsContracted(application) {
 		// keyboard rows contracted back to 1x view

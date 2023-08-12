@@ -568,22 +568,40 @@ void fx_Atomics_xor(txMachine* the)
 	#define mxThreads 1
 
 	#include "FreeRTOS.h"
+#if ESP32
 	#include "freertos/queue.h"
 	#include "freertos/semphr.h"
-
+#else
+	#include "queue.h"
+	#include "semphr.h"
+#endif
 	typedef TaskHandle_t txCondition;
 	typedef struct {
+#if nrf52
+		SemaphoreHandle_t sem;
+#else
 		QueueHandle_t handle;
 		StaticSemaphore_t buffer;
+#endif
 	} txMutex;
 	typedef TaskHandle_t txThread;
 	#define mxCreateCondition(CONDITION) *(CONDITION) = xTaskGetCurrentTaskHandle()
+#if nrf52
+	#define mxCreateMutex(MUTEX) (MUTEX)->sem = xSemaphoreCreateMutex()
+#else
 	#define mxCreateMutex(MUTEX) (MUTEX)->handle = xSemaphoreCreateMutexStatic(&((MUTEX)->buffer))
+#endif
 	#define mxCurrentThread() xTaskGetCurrentTaskHandle()
 	#define mxDeleteCondition(CONDITION) *(CONDITION) = NULL
+#if nrf52
+	#define mxDeleteMutex(MUTEX) vSemaphoreDelete((MUTEX)->sem)
+	#define mxLockMutex(MUTEX) xSemaphoreTake((MUTEX)->sem, portMAX_DELAY)
+	#define mxUnlockMutex(MUTEX) xSemaphoreGive((MUTEX)->sem)
+#else
 	#define mxDeleteMutex(MUTEX) vSemaphoreDelete((MUTEX)->handle)
 	#define mxLockMutex(MUTEX) xSemaphoreTake((MUTEX)->handle, portMAX_DELAY)
 	#define mxUnlockMutex(MUTEX) xSemaphoreGive((MUTEX)->handle)
+#endif
 	#define mxWakeCondition(CONDITION) xTaskNotifyGive(*(CONDITION));
 #elif mxWindows
 	#define mxThreads 1

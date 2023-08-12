@@ -59,6 +59,8 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 	tlmm_config.drive = QAPI_GPIO_2MA_E;
 	tlmm_config.pull = QAPI_GPIO_NO_PULL_E;
 
+	mode &= ~(kModGPIOWakeRisingEdge | kModGPIOWakeFallingEdge);
+
 	switch (mode) {
 		case kModGPIOInput:
 			tlmm_config.dir = QAPI_GPIO_INPUT_E;

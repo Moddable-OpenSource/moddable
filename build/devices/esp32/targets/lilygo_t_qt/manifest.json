@@ -1,0 +1,46 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/drivers/gc9a01/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341"
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 43,
+			"scl_pin": 44
+		},
+		"spi": {
+			"mosi_pin": 2,
+			"sck_pin":  3
+		},
+		"ili9341": {
+			"width": 128,
+			"height": 128,
+			"spi_port": "SPI3_HOST",
+			"column_offset": 2,
+			"row_offset": 1,
+			"hz": 40000000,
+			"cs_pin": 5,
+			"dc_pin": 6,
+			"rst_pin": 1,
+			"backlight_pin": 10,
+			"backlight_on": 0,
+			"flipy": 1
+		}
+	}
+}

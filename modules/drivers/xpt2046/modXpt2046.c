@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -109,6 +109,10 @@ void xs_XPT2046_destructor(void *data)
 {
 	xpt2046 xpt = data;
 	if (xpt) {
+#ifdef MODDEF_XPT2046_TOUCH_PIN
+		modGPIOUninit(&xpt->touchPin);
+#endif
+		modGPIOUninit(&xpt->csPin);
 		modSPIUninit(&xpt->spiConfig);
 		c_free(data);
 	}

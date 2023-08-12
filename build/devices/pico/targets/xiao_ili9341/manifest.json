@@ -22,8 +22,7 @@
 	"defines": {
 		"i2c": {
 			"sda_pin": 6,
-			"scl_pin": 7,
-			"port": 1
+			"scl_pin": 7
 		},
 		"spi": {
 			"miso_pin": 4,

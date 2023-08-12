@@ -21,23 +21,16 @@
 #ifndef __BUILTINCOMMON_H__
 #define __BUILTINCOMMON_H__
 
-
-
-
-xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
-
-#define __COMMON__PINS__ 1
 #if ESP32
-#if kCPUESP32C3 || kCPUESP32C6
-	#define kPinBanks (1)
-#else
-	#define kPinBanks (2)
-#endif
+	#if kCPUESP32C3 || kCPUESP32C6
+		#define kPinBanks (1)
+	#else
+		#define kPinBanks (2)
+	#endif
 
 	extern portMUX_TYPE gCommonCriticalMux;
 	#define builtinCriticalSectionBegin() portENTER_CRITICAL(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd() portEXIT_CRITICAL(&gCommonCriticalMux)
-
 #elif defined(__ets__)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
@@ -45,6 +38,12 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 	#define builtinCriticalSectionBegin() xt_rsil(0)
 	#define builtinCriticalSectionEnd() xt_rsil(15)
+#elif nrf52
+	#define kPinBanks (2)
+	#define GPIO_NUM_MAX (64)
+
+	#define builtinCriticalSectionBegin() vPortEnterCritical()
+	#define builtinCriticalSectionEnd() vPortExitCritical()
 #elif defined(PICO_BUILD)
 	#include "pico/critical_section.h"
 	#define kPinBanks	(2)
@@ -52,10 +51,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 	extern critical_section_t gCommonCriticalMux;
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
-#else
-	#undef __COMMON__PINS__
 #endif
-
 
 enum {
 	kIOFormatNumber = 1,
@@ -77,7 +73,9 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format);
 int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot);
 uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 
-#if __COMMON__PINS__
+xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
+
+#if kPinBanks
 	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))
@@ -90,7 +88,7 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 #endif
 
 #if defined(PICO_BUILD)
-uint8_t builtinInitIO(void);
+	uint8_t builtinInitIO(void);
 #endif
 
 #endif

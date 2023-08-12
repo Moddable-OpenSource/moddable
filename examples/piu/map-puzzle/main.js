@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -56,7 +56,13 @@ let DragApplication = Application.template($ => ({
 				Content({ x:0, y:160 }, { left:0, top:40, width:120, height:120, skin:swSkin, active:true, Behavior:DragBehavior }),
 			],
 		}),
-	]
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(application) {
+			if (application.height != 320 || application.width != 240)
+				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
+		}
+	}
 }));
 
 export default function() {

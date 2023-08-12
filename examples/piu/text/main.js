@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -83,7 +83,13 @@ let TestApplication = Application.template($ => ({
 				]},
 			]
 		}),
-	]
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(application) {
+			if (application.height != 240 || application.width != 320)
+				trace("WARNING: This application was designed to run on a 320x240 screen.\n");
+		}
+	}
 }));
 
 export default new TestApplication(null, { displayListLength:4608 });

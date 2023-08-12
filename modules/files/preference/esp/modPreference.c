@@ -23,9 +23,27 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "modPreference.h"
 
+#if MOD_TASKS
+	#include "semphr.h"
+
+	static SemaphoreHandle_t gPreferenceMutex;
+
+	#define modPreferenceTake() \
+		do { \
+			if (NULL == gPreferenceMutex) \
+				gPreferenceMutex = xSemaphoreCreateMutex(); \
+			xSemaphoreTake(gPreferenceMutex, portMAX_DELAY); \
+		} while (0)
+	#define modPreferenceGive() xSemaphoreGive(gPreferenceMutex)
+#else
+	#define modPreferenceTake()
+	#define modPreferenceGive()
+#endif
+
+
 extern uint8_t _MODPREF_start;
 
-#define kPreferencesStartOffset ((uint8_t *)&_MODPREF_start - (uint8_t*)kFlashStart)
+#define kPreferencesStartOffset ((uintptr_t)&_MODPREF_start - (uintptr_t)kFlashStart)
 #define kPreferencesMagic 0x81213141
 
 #define kBufferSize (64)
@@ -93,8 +111,14 @@ void xs_preference_get(xsMachine *the)
 	uint8_t buffer[kBufferSize] __attribute__((aligned(4)));
 	uint8_t *pref = buffer;
 
-	if (!findPrefOffset(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), &entryOffset, &valueOffset, &entrySize, buffer))
+	modPreferenceTake();
+
+	if (!findPrefOffset(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), &entryOffset, &valueOffset, &entrySize, buffer)) {
+		modPreferenceGive();
 		return;
+	}
+
+	modPreferenceGive();
 
 	switch (*pref++) {
 		case kPrefsTypeBoolean:
@@ -115,7 +139,13 @@ void xs_preference_get(xsMachine *the)
 void xs_preference_delete(xsMachine *the)
 {
 	uint8_t buffer[kBufferSize] __attribute__((aligned(4)));
-	uint8_t success = erasePref(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), buffer);
+	uint8_t success;
+
+	modPreferenceTake();
+
+	success = erasePref(xsmcToString(xsArg(0)), xsmcToString(xsArg(1)), buffer);
+
+	modPreferenceGive();
 
 	if (!success)
 		xsUnknownError("can't save prefs");
@@ -128,8 +158,12 @@ void xs_preference_keys(xsMachine *the)
 
 	xsResult = xsNewArray(0);
 
-	if (!findPrefsBlock(&offset))
+	modPreferenceTake();
+
+	if (!findPrefsBlock(&offset)) {
+		modPreferenceGive();
 		return;
+	}
 
 	xsmcVars(1);
 
@@ -146,8 +180,10 @@ void xs_preference_keys(xsMachine *the)
 
 		modSPIRead(offset, use, buffer);
 		while (use) {
-			if (0xff == *b)		// uninitialized
+			if (0xff == *b) {		// uninitialized
+				modPreferenceGive();
 				return;
+			}
 
 			if (*b)
 				break; 				// found something
@@ -174,11 +210,17 @@ void xs_preference_keys(xsMachine *the)
 		offset += getPrefSize(buffer);
 		offset = (offset + 3) & ~3;			// round to a long
 	}
+
+	modPreferenceGive();
 }
 
 void xs_preference_reset(xsMachine *the)
 {
+	modPreferenceTake();
+
 	resetPrefs();
+
+	modPreferenceGive();
 }
 
 void resetPrefs(void)
@@ -306,11 +348,17 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 	if ((prefSize > sizeof(buffer)) || (byteCount > 63))
 		return 0;
 
-	if (!erasePref(domain, key, buffer))
-		return 0;
+	modPreferenceTake();
 
-	if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer))
-		return 0;
+	if (!erasePref(domain, key, buffer)) {
+		modLog("erasePref fail");
+		goto fail;
+	}
+
+	if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer)) {
+		modLog("findPrefOffset fail");
+		goto fail;
+	}
 
 	prefsFree = kFlashSectorSize - (prefsEnd & (kFlashSectorSize - 1));
 	if (prefsFree < prefSize) { // compact
@@ -318,8 +366,10 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 		uint32_t dstOffset = kPreferencesStartOffset + ((srcOffset == kPreferencesStartOffset) ? kFlashSectorSize : 0);
 		uint32_t srcOffsetSave = srcOffset;
 
-		if (!modSPIErase(dstOffset, kFlashSectorSize))
-			return 0;
+		if (!modSPIErase(dstOffset, kFlashSectorSize)) {
+			modLog("modSPIErase fail");
+			goto fail;
+		}
 
 		*(uint32_t *)buffer = kPreferencesMagic;
 		modSPIWrite(dstOffset, sizeof(uint32_t), buffer);
@@ -361,12 +411,16 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 		*(uint32_t *)buffer = 0;	// invalidated previous block
 		modSPIWrite(srcOffsetSave, sizeof(uint32_t), buffer);
 
-		if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer))
-			return 0;
+		if (!findPrefOffset(NULL, NULL, &prefsEnd, &valueOffset, &entrySize, buffer)) {
+			modLog("findPrefOffset 2 fail");
+			goto fail;
+		}
 
 		prefsFree = kFlashSectorSize - (prefsEnd & (kFlashSectorSize - 1));
-		if (prefsFree < prefSize)
-			return 0;		// not enough space
+		if (prefsFree < prefSize) {
+			modLog("not enough space");
+			goto fail;		// not enough space
+		}
 	}
 
 	// write preference at the end
@@ -383,7 +437,12 @@ uint8_t modPreferenceSet(char *domain, char *key, uint8_t type, uint8_t *value, 
 	}
 	c_memcpy(pref, value, byteCount);
 
+	modPreferenceGive();
 	return modSPIWrite(prefsEnd, prefSize, buffer);
+
+fail:
+	modPreferenceGive();
+	return 0;
 }
 
 int getPrefSize(const uint8_t *pref)
@@ -404,8 +463,10 @@ uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value,
 	uint8_t buffer[kBufferSize] __attribute__((aligned(4)));
 	uint8_t *pref = buffer;
 
+	modPreferenceTake();
+
 	if (!findPrefOffset(domain, key, &entryOffset, &valueOffset, &entrySize, buffer))
-		return 0;
+		goto fail;
 
 	*type = *pref;
 	switch (*pref++) {
@@ -423,15 +484,20 @@ uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value,
 			pref += 2;
 			break;
 		default:
-			return 0;
+			goto fail;
 	}
 
 	if (byteCountIn < *byteCountOut)
-		return 0;
+		goto fail;
 
 	c_memcpy(value, pref, *byteCountOut);
 
+	modPreferenceGive();
 	return 1;
+
+fail:
+	modPreferenceGive();
+	return 0;
 }
 
 /*
@@ -444,7 +510,7 @@ SIGNATURE
 	domain
 	key
 	type (byte) - boolean, integer, string, arraybuffer
-	value (for ArrayBuffer, preceeded by 16-bit count)
+	value (for ArrayBuffer, preceded by 16-bit count)
 ]
 
 */

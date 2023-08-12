@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -90,7 +90,7 @@ class HTTPClient {
 					throw new Error("bad data");
 
 //@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
-				client.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
+				client.#pendingWrite = ArrayBuffer.fromString("0\r\n\r\n");
 				client.#requestBody = false;
 				return 0;		// request done. can't write more. 
 			}
@@ -101,9 +101,11 @@ class HTTPClient {
 					throw new Error("too much");
 
 				client.#writable -= byteLength + 8;
-				client.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"));
+				client.#socket.write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"));
 				client.#socket.write(data);
-				client.#socket.write(ArrayBuffer.fromString("\r\n"));
+				let remain = client.#socket.write(ArrayBuffer.fromString("\r\n"));
+				if (undefined !== remain)
+					client.#writable = remain;
 
 				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
@@ -274,7 +276,9 @@ class HTTPClient {
 								continue;
 							}
 						}
-						this.#current.onReadable?.call(this.#current.request, Math.min(this.#readable, this.#chunk));
+						const min = Math.min(this.#readable, this.#chunk);
+						if (min)
+							this.#current.onReadable?.call(this.#current.request, min);
 					}
 					else
 						this.#current.onReadable?.call(this.#current.request, Math.min(this.#readable, this.#remaining));

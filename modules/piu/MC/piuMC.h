@@ -217,7 +217,6 @@ struct PiuViewStruct {
 typedef void (*PiuViewDrawContentProc)(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
 
 extern void PiuViewDrawContent(PiuView* self, PiuViewDrawContentProc proc, void* it, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
-extern void PiuViewDrawFrame(PiuView* self, uint8_t *data, uint32_t dataSize, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
 extern void PiuViewInvalidateRegion(PiuView* self, PiuRegion* region);
 extern void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon);
 extern void PiuViewValidateRegion(PiuView* self, PiuRegion* region);

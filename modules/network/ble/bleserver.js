@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,7 +40,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
 	}
 	startAdvertising(params) {
-		let {fast = true, scanResponseData = null, filterPolicy = GAP.AdvFilterPolicy.NONE, advertisingData} = params;
+		let {fast = true, scanResponseData = null, filterPolicy = GAP.AdvFilterPolicy.NONE, advertisingData, notify = false} = params;
 		let flags = "flags" in advertisingData ? advertisingData.flags : GAP.ADFlag.NO_BR_EDR;
 		let interval;
 		if (undefined !== params.interval)
@@ -56,7 +56,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 		}
 		let advertisingDataBuffer = Advertisement.serialize(advertisingData);
 		let scanResponseDataBuffer = scanResponseData ? Advertisement.serialize(scanResponseData) : null;
-		this._startAdvertising(flags, interval.min, interval.max, filterPolicy, advertisingDataBuffer, scanResponseDataBuffer);
+		this._startAdvertising(flags, interval.min, interval.max, filterPolicy, advertisingDataBuffer, scanResponseDataBuffer, notify);
 	}
 	stopAdvertising() @ "xs_ble_server_stop_advertising"
 	initialize(dictionary) @ "xs_ble_server_initialize"
@@ -101,6 +101,7 @@ export class BLEServer @ "xs_ble_server_destructor" {
 	onPasskeyRequested() {}
 	onAuthenticated() {}
 	onMTUExchanged() {}
+	onAdvertisementSent() {}
 	onBondingDeleted() {}
 
 	_deploy() @ "xs_ble_server_deploy"
@@ -127,9 +128,10 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			}
 			case "onCharacteristicRead": {
-				let value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
-				value = typedValueToBuffer(params.type, value);
-				return value;
+				const value = this.onCharacteristicRead({ uuid:new Bytes(params.uuid), handle:params.handle, name:params.name, type:params.type });
+				if (undefined !== value)
+					return typedValueToBuffer(params.type, value);
+				break;
 			}
 			case "onCharacteristicNotifyEnabled":
 				this.onCharacteristicNotifyEnabled(params);
@@ -160,6 +162,9 @@ export class BLEServer @ "xs_ble_server_destructor" {
 				break;
 			case "onMTUExchanged":
 				this.onMTUExchanged(params);
+				break;
+			case "onAdvertisementSent":
+				this.onAdvertisementSent();
 				break;
 			case "onBondingDeleted": {
 				this.onBondingDeleted({ address:new Bytes(params.address), addressType:params.addressType });

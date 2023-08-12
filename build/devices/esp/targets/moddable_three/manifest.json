@@ -14,6 +14,10 @@
         "format": "Gray256"
     },
     "defines": {
+		"i2c": {
+			"sda_pin": 5,
+			"scl_pin": 4
+		},
         "destm32s": {
             "width": 122,
             "height": 250,

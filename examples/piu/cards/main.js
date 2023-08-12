@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -77,6 +77,8 @@ let CardApplication = Application.template($ => ({
 						anchors[i].string = person[i];
 				}
 				onDisplaying(layout) {
+					if (application.height != 320 || application.width != 240)
+						trace("WARNING: This application was designed to run on a 240x320 screen.\n");
 					this.resetTimeline(layout);
 					layout.start();
 				}

@@ -5,7 +5,7 @@ Revised: May 30, 2023
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 > Note: The Pico port is solid and mostly complete. Possible future work includes:
-> 
+>
 > - Mods
 > - JavaScript Atomics
 > - Web Workers making use of the second core
@@ -20,6 +20,7 @@ This document describes how to start building Moddable applications for the Rasp
 - [macOS](#mac)
   - [SDK and Host Environment Setup - macOS](#macos-setup)
   - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
+  - [Troubleshooting](#mac-troubleshooting)
 - [Windows](#win)
   - [SDK and Host Environment Setup - Windows](#windows-setup)
   - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
@@ -86,6 +87,7 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | <img src="../assets/devices/pico-adafruit-qt-py-rp2040.png" width=150></a><br>Adafruit<br>QT Py | `pico/qtpy` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/4900)</li> |
 | <img src="../assets/devices/pico-adafruit-qt-trinkey.png" width=150></a><br>Adafruit<br>Trinkey QT2040 | `pico/qt_trinkey` | STEMMA/Qwiic connector, Neopixel, 1 button | <li>[Adafruit product page](https://www.adafruit.com/product/5056)</li> |
 | <img src="../assets/devices/pico-pimoroni-tiny-2040.png" width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
+| <img src="../assets/devices/ws_round.png" width=150></a><br>WAVESHARE<br>1.28inch Round LCD | `pico/ws_round`<BR>`pico/ws_round_touch` | 1.28" IPS 240×240 Round Display| <li>[WAVESHARE product page](https://www.waveshare.com/rp2040-lcd-1.28.htm)</li><li>[touch LCD version](https://www.waveshare.com/product/rp2040-touch-lcd-1.28.htm)</li> |
 | <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png" width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
 | <img src="../assets/devices/pico-xiao-ili9341.png" width=140></a><BR>ili9341 | `pico/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
 | <img src="../assets/devices/pico-ili9341.png" width=140></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
@@ -137,12 +139,12 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-extras
 	```
-	
+
 	```text
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
 	```
-	
+
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
 
 	```text
@@ -167,10 +169,10 @@ After you've setup your macOS host environment, take the following steps to inst
 
 1. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Specify the platform `-p pico` with `mcconfig` to build for the Pico. Build the [`helloworld`](../../examples/helloworld) example:
-	
+
 	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p pico
@@ -179,7 +181,7 @@ After you've setup your macOS host environment, take the following steps to inst
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
 
 > Note: If the device is unresponsive, you may see this message:
->	
+>
 >	```text
 >	Hold the BOOTSEL button and power-cycle the device.
 >	Waiting for /Volumes/RPI-RPI2.....
@@ -189,6 +191,12 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
+<a id="mac-troubleshooting"></a>
+### Troubleshooting
+
+- If the macOS **DISK NOT EJECTED PROPERLY** remain on your screen, you can download and use the [`ejectfix.py`](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/ejectfix.py) tool to make them auto-dismiss.
+
+   See the [article at the Adafruit blog](https://blog.adafruit.com/2021/05/11/how-to-tone-down-macos-big-surs-circuitpy-eject-notifications/) for details.
 
 <a id="win"></a>
 
@@ -248,12 +256,12 @@ Not yet available.
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-extras
 	```
-	
+
 	```text
 	cd $HOME/pico
 	git clone -b sdk-1.5.0 https://github.com/raspberrypi/pico-examples
 	```
-	
+
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
 
 	```text
@@ -283,19 +291,19 @@ After you've setup your Linux host environment, take the following steps to inst
 	> Note: a USB hub with power switch is very helpful here.
 
 	You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
-	
+
 	<img src="../assets/devices/pico-on-linux.png" width="175">
 
 	> Note: For best results with a virtual machine, capture the Pico device in both the Boot mode state and running state. The image below shows the configuration in VirtualBox:
-	
+
 	<img src="../assets/devices/pico-vbox-usb.png" width="400">
 
 3. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Specify the platform `-p pico` with `mcconfig` to build for the Pico. Build the [`helloworld`](../../examples/helloworld) example:
-	
+
 	```text
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p pico
@@ -308,7 +316,7 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 <a id="debugging-native-code"></a>
 ## Debugging Native Code
 
-Refer to the [Getting Started With Pico][picogettingstarteddoc] for 
+Refer to the [Getting Started With Pico][picogettingstarteddoc] for
 instructions on setting up your hardware.
 
 These instructions have been tested on a macOS host using the two Pico SWD setup described in Appendix A: Using Picoprobe.
@@ -337,7 +345,7 @@ These instructions have been tested on a macOS host using the two Pico SWD setup
 	(gdb) monitor reset init
 	(gdb) continue
 	```
-	
+
 <a id="reference"></a>
 ## Reference Documents
 
@@ -346,7 +354,7 @@ These instructions have been tested on a macOS host using the two Pico SWD setup
 [Hardware Design with RP2040][picohwdoc]
 
 [Raspberry Pi Pico C SDK][picosdkdoc]
-	
+
 
 [picogettingstarteddoc]:https://datasheets.raspberrypi.org/pico/getting-started-with-pico.pdf
 [picohwdoc]:https://datasheets.raspberrypi.org/rp2040/hardware-design-with-rp2040.pdf

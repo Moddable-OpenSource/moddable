@@ -14,7 +14,7 @@ XS does not implement ECMA-402, the Internationalization API Specification, so t
 
 #### Annex B
 
-No XS hosts are web browsers, so the `annexB` tests are skipped. However XS implements `Date.prototype.getYear`, `Date.prototype.setYear`, `Object.prototype.__defineGetter__`, `Object.prototype.__defineSetter__`, `Object.prototype.__lookupGetter__`, `Object.prototype.__lookupSetter__`, `Object.prototype.__proto__`, `String.prototype.substr`, `escape` and `unescape`, 
+No XS hosts are web browsers, so the `annexB` tests are skipped. However XS implements `Date.prototype.getYear`, `Date.prototype.setYear`, `Object.prototype.__defineGetter__`, `Object.prototype.__defineSetter__`, `Object.prototype.__lookupGetter__`, `Object.prototype.__lookupSetter__`, `Object.prototype.__proto__`, `String.prototype.substr`, `escape` and `unescape`,
 
 ## Runtime models
 
@@ -23,7 +23,7 @@ On microcontrollers, XS uses a runtime model based on a virtual machine prepared
 Such a runtime model introduces no conformance issues in itself since XS can alias shared classes, functions and objects if apps modify them. However, in order to save ROM and RAM, other restrictions have been introduced:
 
 - Host functions, i.e. functions implemented in C, are primitive values like booleans, numbers, strings, etc. They are promoted to `Function` objects when necessary.
-- Scripts evaluation is optional. So some platforms do not support `eval`, `new Function`, etc. But all platforms support `JSON.parse`. 
+- Scripts evaluation is optional. So some platforms do not support `eval`, `new Function`, etc. But all platforms support `JSON.parse`.
 - Optionnally the XS linker can dead strip ECMAScript built-ins that Moddable apps do not use, and remove `length` and `name` properties from functions.
 
 Here the conformance is tested on macOS with a traditional runtime model and without any restrictions. For each case, XS creates a virtual machine, then parses and runs the script. The XS harness, `xst`, uses [LibYAML](http://pyyaml.org/wiki/LibYAML) to load the frontmatter, which contains, among other information, the harness scripts to parse and run before the case script itself.
@@ -34,17 +34,17 @@ To build `xst`:
 
 	cd $MODDABLE/xs/makefiles/lin
 	make
-	
+
 #### macOS
 
 	cd $MODDABLE/xs/makefiles/mac
 	make
-	
+
 #### Windows
 
 	cd %MODDABLE%\xs\makefiles\win
 	build
-	
+
 To pass some tests, clone [test262](https://github.com/tc39/test262.git) and change the directory to the `test` directory inside the `test262` directory. Then you can run `xst` with files or directories. For instance:
 
 	cd ~/test262/test
@@ -1481,7 +1481,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
 
 ## Failures
 
-Here under are the failed tests. The comments are primarily here for the sake of future versions of XS. 
+Here under are the failed tests. The comments are primarily here for the sake of future versions of XS.
 
 ### Language
 
@@ -1512,19 +1512,19 @@ Assignments should rename functions only if the left hand side is an identifier.
 The name of a function expression always defines a constant variable that reference the current function. In sloppy mode it should define a variable that can be assigned but does not change!
 
 	language/expressions/object/literal-property-name-bigint.js
-	
+
 XS does not support bigint as property name.
 
-	language/expressions/super/call-proto-not-ctor.js 
-	
+	language/expressions/super/call-proto-not-ctor.js
+
 XS checks if super is a constructor before evaluating arguments.
 
 	language/statements/class/subclass/default-constructor-spread-override.js
-	
+
 The default derived constructor should not use `%Array.prototype%  @@iterator`
-	
+
 	language/statements/for-await-of/head-lhs-async.js
-	
+
 `for (async of x)` is a syntax error but `for await (async of x)` should not be!
 
 	language/statements/try/tco-catch.js (strict)
@@ -1535,7 +1535,7 @@ XS does not tail call optimize `return` inside `catch`
 	language/expressions/assignment/target-member-computed-reference-undefined.js
 	language/identifier-resolution/assign-to-global-undefined.js
 
-To be investigated.		
+To be investigated.
 
 ### Built-ins
 
@@ -1548,26 +1548,26 @@ To be investigated.
 	built-ins/RegExp/prototype/global/cross-realm.js
 	built-ins/RegExp/prototype/ignoreCase/cross-realm.js
 	built-ins/RegExp/prototype/multiline/cross-realm.js
-	built-ins/RegExp/prototype/source/cross-realm.js 
+	built-ins/RegExp/prototype/source/cross-realm.js
 	built-ins/RegExp/prototype/sticky/cross-realm.js
 	built-ins/RegExp/prototype/unicode/cross-realm.js
 	built-ins/Symbol/for/cross-realm.js
 	built-ins/Symbol/for/cross-realm.js
 	built-ins/Symbol/keyFor/cross-realm.js
 	built-ins/Symbol/keyFor/cross-realm.js
-	
+
 One realm.
-	
+
 	built-ins/Array/prototype/reduceRight/length-near-integer-limit.js
 	built-ins/String/prototype/localeCompare/15.5.4.9_CE.js
 	built-ins/JSON/stringify/replacer-function-object-deleted-property.js
-	
+
 To be investigated.
 
 	built-ins/Function/prototype/toString/method-computed-property-name.js
 
 Invalid test.
-	
+
 ### Skipped cases
 
 `xst` skips cases with the following features:

@@ -47,6 +47,11 @@
                 "UPLOAD_SPEED": "1500000",
                 "DEBUGGER_SPEED": "1500000"
             }
+        },
+        "nrf52/moddable_four": {
+			"config": {
+				"format": "Gray256"
+			}
         }
 	},
 	"typescript": {

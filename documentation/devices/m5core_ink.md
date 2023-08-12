@@ -13,7 +13,7 @@ This document provides information about using the M5Core Ink with the Moddable 
 - [Troubleshooting](#troubleshooting)
 - [Development Resources](#development-resources)
 	- [Port Status](#port-status)
-	- [Display Driver](#display-driver) 
+	- [Display Driver](#display-driver)
 	- [Buttons](#buttons)
 	- [LED](#led)
 	- [Buzzer](#buzzer)
@@ -44,15 +44,15 @@ After you've set up your host environment and ESP32 tools, take the following st
 
 2. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Use the platform `-p esp32/m5core_ink`  with `mcconfig` to build for M5Core Ink. For example, to build the [`epaper-photos` example](../../examples/piu/epaper-photos):
-	
+
 	```text
 	cd $MODDABLE/examples/piu/epaper-photos
 	mcconfig -d -m -p esp32/m5core_ink
 	```
-	
+
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation, Wi-Fi configuration, and more.
 
 <a id="troubleshooting"></a>
@@ -70,7 +70,7 @@ The following are implemented and working:
 
 - EPD display driver (GDEW0154M09)
 - RTC (PCF8563 / BM8563)
-- Up / Down / Middle / Power / External buttons 
+- Up / Down / Middle / Power / External buttons
 - LED
 - Buzzer
 - Battery voltage
@@ -80,7 +80,7 @@ The following are implemented and working:
 
 The display driver is a [Poco `PixelsOut`](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/commodetto.md#pixelsout-class) implementation. This allows it to use both the [Poco](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/commodetto/poco.md) graphics APIs and[ Piu](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md) user interface framework from the Moddable SDK.
 
-The display driver is written entirely in JavaScript. It uses [Ecma-419 IO](https://419.ecma-international.org/#-9-io-class-pattern) APIs for all hardware access. Performance is excellent, often faster than the EPD class built into the native M5Core Ink library. 
+The display driver is written entirely in JavaScript. It uses [Ecma-419 IO](https://419.ecma-international.org/#-9-io-class-pattern) APIs for all hardware access. Performance is excellent, often faster than the EPD class built into the native M5Core Ink library.
 
 The display driver implements dithering, which allows many levels of gray to be displayed using only black and white pixels. The default dithering algorithm is the venerable [Atkinson dither](https://twitter.com/phoddie/status/1274054345969950720). To change to Burkes or to disable dithering:
 
@@ -101,7 +101,7 @@ The display driver does a full screen refresh on the first draw after instantiat
 screen.configure({refresh: false});
 ```
 
-The display driver uses partial updates after the first frame. To force a full screen update: 
+The display driver uses partial updates after the first frame. To force a full screen update:
 
 ```js
 screen.configure({refresh: true});
@@ -220,7 +220,7 @@ power.main.write(0);
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on M5Core Ink. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on M5Core Ink.
 
 That said, not every example is compatible with M5Core Ink hardware. For example, some examples are designed to test specific display and touch drivers that are not compatible with the M5Core Ink display and give a build error.
 
@@ -231,7 +231,7 @@ There are several example applications in the Moddable SDK that show how to take
 <a id="documentation"></a>
 ### Documentation
 
-All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+All the documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include:
 
 - The `commodetto` subdirectory, which contains resources related to Commodetto--a bitmap graphics library that provides a 2D graphics API--and Poco, a lightweight rendering engine.
 - The `piu` subdirectory, which contains resources related to Piu, a user interface framework that makes it easier to create complex, responsive layouts.

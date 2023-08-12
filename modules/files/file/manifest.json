@@ -89,6 +89,9 @@
 				}
 			}
 		},
+		"nrf52": {
+			"include": "./manifest_littlefs.json"
+		},
 		"...": {
 			"error": "File module unsupported"
 		}

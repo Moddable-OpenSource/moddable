@@ -27,15 +27,15 @@ mcconfig -d -m -p esp/generic_square
 ## ESP8266 Pinout
 
 | 1.44" Display | ESP8266 | ESP8266 Devboard label
-| --- | --- | --- | 
+| --- | --- | --- |
 | VCC | 3.3V |
-| GND | GND | 
+| GND | GND |
 | CS | GPIO 15 | (D8)
-| RESET | 3.3V | 
+| RESET | 3.3V |
 | AO | GPIO 2 | (D4)
-| SDA | GPIO 13 | (D7) 
-| SCK | GPIO 14 | (D5) 
-| LED | 3.3V | 
+| SDA | GPIO 13 | (D7)
+| SCK | GPIO 14 | (D5)
+| LED | 3.3V |
 
 ![Generic 2.4"-2.8" wiring illustration](images/esp-generic-1.44-display.jpg)
 

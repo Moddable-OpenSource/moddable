@@ -5,6 +5,7 @@
 		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/PocoDraw": "$(COMMODETTO)/commodettoPocoDraw",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 		"commodetto/cfe": "$(COMMODETTO)/cfeBMF"
 	},
@@ -37,6 +38,12 @@
 		"qca4020": {
 			"modules": {
 				"setup/commodetto": "$(BUILD)/devices/gecko/setup/commodetto"
+			},
+			"preload": "setup/commodetto"
+		},
+		"nrf52": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/nrf52/setup/commodetto"
 			},
 			"preload": "setup/commodetto"
 		}

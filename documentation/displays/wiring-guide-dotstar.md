@@ -8,7 +8,7 @@ Revised: December 11, 2018
 
 | | |
 | :---: | :--- |
-| **Size** | 144 LED strip (5mm x 5mm LEDs) 
+| **Size** | 144 LED strip (5mm x 5mm LEDs)
 | **Type** | ADA102 LED
 | **Interface** | SPI
 | **Drivers** | [dotstar](../../documentation/drivers/dotstar/dotstar.md)
@@ -30,8 +30,8 @@ mcconfig -d -m -p esp
 
 | Dotstar Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
-| 5V | N/A (connect to 5V supply) | 
-| GND | GND | 
+| 5V | N/A (connect to 5V supply) |
+| GND | GND |
 | CI | GPIO 14/SCLK | D5
 | DI| GPIO 13/MOSI | D7
 

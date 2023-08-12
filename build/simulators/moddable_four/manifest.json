@@ -1,0 +1,25 @@
+{
+	"config": {
+		"format": "Gray256"
+	},
+	"modules": {
+		"*": [
+			"../modules/control",
+			"../modules/accelerometer",
+			"../modules/button",
+			"../modules/jogdial",
+			"../modules/led",
+			"../modules/power",
+			"./host"
+		]
+	},
+	"preload": [
+		"control",
+		"accelerometer",
+		"button",
+		"jogdial",
+		"led",
+		"power",
+		"host"
+	]
+}

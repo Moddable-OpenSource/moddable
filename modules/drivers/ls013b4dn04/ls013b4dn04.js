@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -26,26 +26,29 @@ import Bitmap from "commodetto/Bitmap";
 
 export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 	constructor(dictionary) @ "xs_LS013B4DN04";
+	close() @ "xs_LS013B4DN04_close";
 
 	begin(x, y, width, height) @ "xs_ls013b4dn04_begin";
 	send(pixels, offset, count) @  "xs_ls013b4dn04_send";
 	end() @  "xs_ls013b4dn04_end";
 
-	hold() @ "xs_ls013b4dn04_hold";
-	clear() @ "xs_ls013b4dn04_clear";
-
 	adaptInvalid() @ "xs_ls013b4dn04_adaptInvalid";
+	continue() {}
 
-	continue() {
-	}
+	pixelsToBytes(count) { return count; }
 
-	pixelsToBytes(count) {
-		return count;
-	}
-
-	get async() {return false;}
 	get pixelFormat() @ "xs_ls013b4dn04_get_pixelFormat";
 	get width() @ "xs_ls013b4dn04_get_width";
 	get height() @ "xs_ls013b4dn04_get_height";
+	get async() {return false;}
+
+	hold() @ "xs_ls013b4dn04_hold";
+	clear() @ "xs_ls013b4dn04_clear";
+	get dither() @ "xs_ls013b4dn04_dither_get";
+	set dither(value) @ "xs_ls013b4dn04_dither_set";
+
+	get frameBuffer() @ "xs_ls013b4dn04_frameBuffer_get";
 	get c_dispatch() @ "xs_ls013b4dn04_get_c_dispatch";
 }
+
+Object.freeze(LS013B4DN04.prototype);

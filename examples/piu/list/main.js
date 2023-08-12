@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -139,7 +139,13 @@ let TestApplication = Application.template($ => ({
 				Port($, {left:0, right:0, top:0, active:true, Behavior:ListBehavior }),
 			]
 		}),
-	]
+	],
+	Behavior: class extends Behavior {
+		onDisplaying(application) {
+			if (!(application.height >= 128) || !(application.width >= 128))
+				trace("WARNING: This application was designed to run on a screen larger than 128x128.\n");
+		}
+	}
 }));
 
 let data = lorem.split(".").map((item, index) => ({ ssid:item.trim(), variant:(index % 10) - 5 }));

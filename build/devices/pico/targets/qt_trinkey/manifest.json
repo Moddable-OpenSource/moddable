@@ -20,8 +20,7 @@
 	"defines": {
 		"i2c": {
 			"sda_pin": 16,
-			"scl_pin": 17,
-			"port": 0
+			"scl_pin": 17
 		}
 	}
 }

@@ -22,6 +22,6 @@ The examples in this directory use the [TCP socket](https://419.ecma-internation
 
 The `HTTPRequest`, `WebSocketClient`, and `MQTTClient` classes are designed to use runtime resources efficiently while supporting all the fundamental capabilities of the underlying protocol. They give the most control and the lightest footprint, but as lower-level APIs they are less convenient to use.
 
-The `fetch`, `WebSocket`, and `mqtt` classes provide embedded developers access to familiar, standard APIs from the web platform. They are generally more convenient to use and use more resources (RAM, code size, CPU). 
+The `fetch`, `WebSocket`, and `mqtt` classes provide embedded developers access to familiar, standard APIs from the web platform. They are generally more convenient to use and use more resources (RAM, code size, CPU).
 
-The choice of which API to use for a project depends on the requirements of that project. For many situations, the standard `fetch`, `WebSocket`, and `mqtt` APIs work well. 
+The choice of which API to use for a project depends on the requirements of that project. For many situations, the standard `fetch`, `WebSocket`, and `mqtt` APIs work well.

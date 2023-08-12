@@ -73,7 +73,7 @@ Demonstrates use of the the Hitachi HD44780 character LCD module.
 
 ### [`HMC5883L`](./HMC5883L)
 
-Reads digital compass measurements at 250ms intervals from the I<sup>2</sup>C [SparkFun Triple Axis Magnetometer Breakout - HMC5883L](https://www.sparkfun.com/products/retired/10530).	
+Reads digital compass measurements at 250ms intervals from the I<sup>2</sup>C [SparkFun Triple Axis Magnetometer Breakout - HMC5883L](https://www.sparkfun.com/products/retired/10530).
 ***
 
 ### [`hx711`](./hx711)

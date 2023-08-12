@@ -315,6 +315,28 @@ class esp32NMakeFile extends NMakeFile {
 	}
 }
 
+class nrf52NMakeFile extends NMakeFile {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(TMP_DIR)\\", target, ": ", source, " $(HEADERS)");
+			if (result.recipe) {
+				var recipe = tool.recipes[result.recipe];
+				recipe = recipe.replace(/\$</g, source);
+				this.write(recipe);
+			}
+			else {
+				this.echo(tool, "cc ", target);
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " -o $@");
+			}
+		}
+	}
+}
+
 class SynergyNMakeFile extends NMakeFile {
 	constructor(path) {
 		super(path)
@@ -1144,6 +1166,8 @@ export default class extends Tool {
 				file = new espNMakeFile(path);
 			else if (this.platform == "esp32")
 				file = new esp32NMakeFile(path);
+			else if (this.platform == "nrf52")
+				file = new nrf52NMakeFile(path);
 			else
 				file = new NMakeFile(path);
 		}

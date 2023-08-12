@@ -122,7 +122,7 @@ Include the module's manifest to use it in a project:
 #### `CRC8(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
 #### `CRC16(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
 
-The `CRC8` and `CRC16` functions take a number of options used to specify the CRC checksum to calculate. 
+The `CRC8` and `CRC16` functions take a number of options used to specify the CRC checksum to calculate.
 
 | Parameter | Default | Description |
 | :---: | :---: | :--- |
@@ -136,39 +136,39 @@ The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 a
 
 The [crc example](../../examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
 
-- `CRC-8` 
-- `CRC-8/CDMA2000` 
-- `CRC-8/DARC` 
-- `CRC-8/DVB-S2` 
-- `CRC-8/EBU` 
-- `CRC-8/I-CODE` 
-- `CRC-8/ITU` 
-- `CRC-8/MAXIM` 
-- `CRC-8/ROHC` 
-- `CRC-8/WCDM` 
-- `CRC-16/CCITT-FALSE` 
-- `CRC-16/ARC` 
-- `CRC-16/ARG-CCITT` 
-- `CRC-16/BUYPASS` 
-- `CRC-16/CDMA2000` 
-- `CRC-16/DDS-110` 
-- `CRC-16/DECT-R` 
-- `CRC-16/DECT-X` 
-- `CRC-16/DNP` 
-- `CRC-16/EN-13757` 
-- `CRC-16/GENIBUS` 
-- `CRC-16/MAXIM` 
-- `CRC-16/MCRF4XX` 
-- `CRC-16/RIELLO` 
-- `CRC-16/T10-DIF` 
-- `CRC-16/TELEDISK` 
-- `CRC-16/TMS37157` 
-- `CRC-16/USB` 
-- `CRC-A` 
-- `CRC-16/KERMIT` 
-- `CRC-16/MODBUS` 
-- `CRC-16/X-25` 
-- `CRC-16/XMODE` 
+- `CRC-8`
+- `CRC-8/CDMA2000`
+- `CRC-8/DARC`
+- `CRC-8/DVB-S2`
+- `CRC-8/EBU`
+- `CRC-8/I-CODE`
+- `CRC-8/ITU`
+- `CRC-8/MAXIM`
+- `CRC-8/ROHC`
+- `CRC-8/WCDM`
+- `CRC-16/CCITT-FALSE`
+- `CRC-16/ARC`
+- `CRC-16/ARG-CCITT`
+- `CRC-16/BUYPASS`
+- `CRC-16/CDMA2000`
+- `CRC-16/DDS-110`
+- `CRC-16/DECT-R`
+- `CRC-16/DECT-X`
+- `CRC-16/DNP`
+- `CRC-16/EN-13757`
+- `CRC-16/GENIBUS`
+- `CRC-16/MAXIM`
+- `CRC-16/MCRF4XX`
+- `CRC-16/RIELLO`
+- `CRC-16/T10-DIF`
+- `CRC-16/TELEDISK`
+- `CRC-16/TMS37157`
+- `CRC-16/USB`
+- `CRC-A`
+- `CRC-16/KERMIT`
+- `CRC-16/MODBUS`
+- `CRC-16/X-25`
+- `CRC-16/XMODE`
 
 
 ### `close()`
@@ -277,8 +277,8 @@ The [inflate example](../../examples/data/inflate/main.js) demonstrates how to d
 > **Note**: A significant amount of memory is required for zlib decompression and especially for compression. These libraries may not work on all microcontrollers because of memory constraints.
 
 <a id="url"></a>
-## class URL and class URLSearchParams 
-The `URL` and `URLSearchParams` classes provide utilities for working with URLs and their search parameters. 
+## class URL and class URLSearchParams
+The `URL` and `URLSearchParams` classes provide utilities for working with URLs and their search parameters.
 
 ```js
 import URL from "url";

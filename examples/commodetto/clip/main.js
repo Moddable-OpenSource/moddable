@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,6 +17,8 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 
 let render = new Poco(screen);
+if (!(render.height >= 122) || !(render.width >= 250))
+	trace("WARNING: This application was designed to run on a screen larger than 250x122.\n");
 
 let black = render.makeColor(0, 0, 0);
 let white = render.makeColor(255, 255, 255);

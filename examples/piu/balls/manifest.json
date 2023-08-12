@@ -14,5 +14,11 @@
 			"./main",
 			"./balls"
 		]
+	},
+	"defines": {
+		"ls013b4dn04": {
+			"dither": 1,
+			"updateAll": 1
+		}
 	}
 }
