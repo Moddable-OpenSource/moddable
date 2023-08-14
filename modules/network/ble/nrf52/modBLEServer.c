@@ -135,10 +135,6 @@ typedef struct {
 
 static modBLE gBLE = NULL;
 
-#if MODDEF_BLE_MAX_CONNECTIONS != 1
-	#error - only one ble client connection supported
-#endif
-
 void xs_ble_server_initialize(xsMachine *the)
 {
     ret_code_t err_code;

@@ -21,7 +21,6 @@
 #ifndef __BUILTINCOMMON_H__
 #define __BUILTINCOMMON_H__
 
-#define __COMMON__PINS__ 1
 #if ESP32
 	#if kCPUESP32C3
 		#define kPinBanks (1)
@@ -52,8 +51,6 @@
 	extern critical_section_t gCommonCriticalMux;
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
-#else
-	#undef __COMMON__PINS__
 #endif
 
 enum {
@@ -78,7 +75,7 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 
 xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
-#if __COMMON__PINS__
+#if kPinBanks
 	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))

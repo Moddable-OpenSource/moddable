@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,28 +44,30 @@ void xs_flash(xsMachine *the)
 {
 	modFlashRecord flash;
 
+	flash.partitionStart = ~0;
 	if (!modSPIFlashInit())
 		xsUnknownError("init failed");
 
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		char *partition = xsmcToString(xsArg(0));
-		uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);
-
-		if (0 == c_strcmp(partition, "xs")) {
-			flash.partitionStart = modStart;
-			flash.partitionByteLength = kModulesEnd - flash.partitionStart;
-		}
+		if (0 == c_strcmp(partition, "ble-peers"))
+			modGetPartition(kPartitionBLEState, &flash.partitionStart, &flash.partitionByteLength);
+		else if (0 == c_strcmp(partition, "xs"))
+			modGetPartition(kPartitionMod, &flash.partitionStart, &flash.partitionByteLength);
+		else if (0 == c_strcmp(partition, "storage"))
+			modGetPartition(kPartitionStorage, &flash.partitionStart, &flash.partitionByteLength);
 		else if (0 == c_strcmp(partition, "running")) {
+			uint32_t modStart = (uintptr_t)(kModulesStart - kFlashStart);
 			flash.partitionStart = _MODDABLE_start;			// was 0x26000, 0x27000 for SD 7.0
 			flash.partitionByteLength = modStart - flash.partitionStart;
 		}
-		else
-			xsUnknownError("unknown partition");
 	}
 	else {
 		flash.partitionStart = xsmcToInteger(xsArg(0));
 		flash.partitionByteLength = xsmcToInteger(xsArg(1));
 	}
+	if (~0 == flash.partitionStart)
+		xsUnknownError("unknown partition");
 
 	xsmcSetHostChunk(xsThis, &flash, sizeof(flash));
 }
@@ -111,6 +113,8 @@ void xs_flash_write(xsMachine *the)
 	int offset = xsmcToInteger(xsArg(0));
 	int byteLength = xsmcToInteger(xsArg(1));
 	modFlash flash = xsmcGetHostChunk(xsThis);
+	void *buffer;
+	xsUnsignedValue bufferLength;
 
 	if ((offset < 0) || (offset >= flash->partitionByteLength))
 		xsUnknownError("invalid offset");
@@ -118,13 +122,25 @@ void xs_flash_write(xsMachine *the)
 	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
 		xsUnknownError("invalid length");
 
-	if (!modSPIWrite(offset + flash->partitionStart, byteLength, xsmcToArrayBuffer(xsArg(2))))
+	xsmcGetBufferReadable(xsArg(2), &buffer, &bufferLength);
+	if (bufferLength < byteLength)
+		xsUnknownError("invalid length");
+
+	if (!modSPIWrite(offset + flash->partitionStart, byteLength, buffer))
 		xsUnknownError("write failed");
 }
 
 void xs_flash_map(xsMachine *the)
 {
-	xsUnknownError("unsupported");
+	modFlash flash = xsmcGetHostChunk(xsThis);
+	uint32_t partitionStart = flash->partitionStart, partitionByteLength = flash->partitionByteLength;
+
+	xsmcVars(1);
+	xsResult = xsNewHostObject(NULL);
+	xsmcSetHostBuffer(xsResult, (void *)(kFlashStart + partitionStart), partitionByteLength);
+	xsmcPetrifyHostBuffer(xsResult);
+	xsmcSetInteger(xsVar(0), partitionByteLength);
+	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
 }
 
 void xs_flash_byteLength(xsMachine *the)

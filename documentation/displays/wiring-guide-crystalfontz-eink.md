@@ -9,7 +9,7 @@ Revised: October 23, 2018
 | | |
 | :---: | :--- |
 | **Part** | CFAP128296C0-0290 ([datasheet](https://www.crystalfontz.com/products/document/3660/CFAP128296C0-0290DatasheetReleaseDate2017-08-14.pdf))
-| **Size**  | 2.9" 128x296 
+| **Size**  | 2.9" 128x296
 | **Type** | EPD (Electronic Paper Displays)
 | **Interface** | SPI
 | **Drivers** | video [destm32s](../../documentation/drivers/destm32s/destm32s.md), no touch
@@ -29,16 +29,16 @@ mcconfig -d -m -p esp/crystalfontz_monochrome_epaper -r 270
 
 | eInk Display | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
-| 3 - GND | GND | 
-| 5 - 3.3v | 3.3v | 
+| 3 - GND | GND |
+| 5 - 3.3v | 3.3v |
 | 13 - SCK | GPIO 14 | (D5)
 | 14 - SDI | GPIO 13 | (D7)
-| 15 - DC | GPIO 2 | (D4) 
-| 16 - CS | GPIO 4 | (D2) 
+| 15 - DC | GPIO 2 | (D4)
+| 16 - CS | GPIO 4 | (D2)
 | 17 - BUSY | GPIO 5 | (D1)
 | 18 - Reset | 3.3v |
-| 19 - BUSSEL | GND |  
- 
+| 19 - BUSSEL | GND |
+
 
 ![Generic 2.4"-2.8" wiring illustration](images/eink+adaptor+esp-wiring.png)
 

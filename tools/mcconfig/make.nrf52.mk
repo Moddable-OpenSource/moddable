@@ -68,10 +68,17 @@ ifeq ($(HOST_OS),Darwin)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
-		DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-		CONNECT_XSBUG=@echo "Connect to xsbug." ; serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
-		NORESTART=-norestart
-		WAIT_FOR_COPY_COMPLETE =
+		ifeq ($(XSBUG_LOG),1)
+			DO_XSBUG =
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			NORESTART=-norestart
+			WAIT_FOR_COPY_COMPLETE =
+		else
+			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			NORESTART=-norestart
+			WAIT_FOR_COPY_COMPLETE =
+		endif
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
@@ -86,9 +93,15 @@ else
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-		CONNECT_XSBUG = $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-		NORESTART=-norestart
+		ifeq ($(XSBUG_LOG),1)
+			DO_XSBUG =
+			CONNECT_XSBUG = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			NORESTART=-norestart
+		else
+			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			NORESTART=-norestart
+		endif
 	else
 		DO_XSBUG =
 		CONNECT_XSBUG =
@@ -174,6 +187,7 @@ LDFLAGS += \
 	-L$(NRF52_SDK_ROOT)/modules/nrfx/mdk \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
+	-Wl,--no-warn-rwx-segments \
 	-Xlinker -no-enum-size-warning \
 	-Xlinker -Map=$(BIN_DIR)/xs_lib.map \
 	-Xlinker -cref
@@ -286,9 +300,9 @@ NRF_PATHS += \
 	$(INC_DIRS)
 
 XS_OBJ = \
-	$(LIB_DIR)/xsHost.c.o \
-	$(LIB_DIR)/xsHosts.c.o \
-	$(LIB_DIR)/xsPlatform.c.o \
+	$(TMP_DIR)/xsHost.c.o \
+	$(TMP_DIR)/xsHosts.c.o \
+	$(TMP_DIR)/xsPlatform.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -300,7 +314,7 @@ XS_OBJ = \
 	$(LIB_DIR)/xsCommon.c.o \
 	$(LIB_DIR)/xsDataView.c.o \
 	$(LIB_DIR)/xsDate.c.o \
-	$(LIB_DIR)/xsDebug.c.o \
+	$(TMP_DIR)/xsDebug.c.o \
 	$(LIB_DIR)/xsError.c.o \
 	$(LIB_DIR)/xsFunction.c.o \
 	$(LIB_DIR)/xsGenerator.c.o \
@@ -893,6 +907,10 @@ $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_D
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F)
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+
+$(TMP_DIR)/xs%.c.o: xs%.c $(TMP_DIR)/mc.defines.h
+	@echo "# project xs:" $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
 $(LIB_DIR)/%.c.o: %.c

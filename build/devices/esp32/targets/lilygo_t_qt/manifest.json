@@ -2,7 +2,8 @@
 	"build": {
 		"ESP32_SUBCLASS": "esp32s3",
 		"USE_USB": "2",
-		"SDKCONFIGPATH": "./sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",

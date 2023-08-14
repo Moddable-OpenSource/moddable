@@ -103,8 +103,8 @@ ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DI
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && for /F "tokens=1" %%i in ( $(TMP_DIR)\_port.tmp ) do @$(MODDABLE_TOOLS_DIR)\serial2xsbug %%i $(DEBUGGER_SPEED) 8N1 -dtr
-NORESTART = -norestart
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
+NORESTART = 
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
@@ -131,14 +131,11 @@ SOFT_DEVICE = s140
 !IF "$(DEBUG)"=="1"
 !IF "$(USE_USB)"=="1"
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ENDIF
 !ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
-FTDI_TRACE = -DUSE_FTDI_TRACE=0
 !ENDIF
 
 !IF "$(USE_QSPI)"=="1"
@@ -325,6 +322,7 @@ NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrfx_systick.o \
 	$(LIB_DIR)\nrfx_timer.o \
 	$(LIB_DIR)\nrfx_twim.o \
+	$(LIB_DIR)\nrfx_uarte.o \
 	$(LIB_DIR)\nrfx_wdt.o
 
 NRF_CRYPTO_BACKEND_CC310_OBJ = \
@@ -428,7 +426,6 @@ XS_OBJ = \
 	$(LIB_DIR)\xsCommon.o \
 	$(LIB_DIR)\xsDataView.o \
 	$(LIB_DIR)\xsDate.o \
-	$(LIB_DIR)\xsDebug.o \
 	$(LIB_DIR)\xsError.o \
 	$(LIB_DIR)\xsFunction.o \
 	$(LIB_DIR)\xsGenerator.o \
@@ -476,9 +473,10 @@ OBJECTS = \
 
 FINAL_LINK_OBJ = \
 	$(LIB_DIR)\buildinfo.o \
-	$(LIB_DIR)\xsHost.o \
-	$(LIB_DIR)\xsHosts.o \
-	$(LIB_DIR)\xsPlatform.o \
+	$(TMP_DIR)\xsHost.o \
+	$(TMP_DIR)\xsHosts.o \
+	$(TMP_DIR)\xsPlatform.o \
+	$(TMP_DIR)\xsDebug.o \
 	$(OBJECTS) \
 	$(SDK_GLUE_OBJ) \
 	$(TMP_DIR)\mc.xs.o \
@@ -612,6 +610,7 @@ LDFLAGS = \
 	-L$(NRF52_SDK_ROOT)\modules\nrfx\mdk \
 	-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
+	-Wl,--no-warn-rwx-segments \
 	-Xlinker -no-enum-size-warning \
 	-Xlinker -Map=$(BIN_DIR)\xs_lib.map
 
@@ -717,17 +716,21 @@ $(XS_OBJ): $(XS_HEADERS)
 	@echo # library xs: $(@F)
 	$(CC) -c $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $< -o $@
 
-$(LIB_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c
-	@echo # library xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+$(TMP_DIR)\xsDebug.o: $(XS_DIR)\sources\xsDebug.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\sources\xsDebug.c -o $@
 
-$(LIB_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c
-	@echo # library xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+$(TMP_DIR)\xsHosts.o: $(XS_DIR)\platforms\mc\xsHosts.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\mc\xsHosts.c -o $@
 
-$(LIB_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c
-	@echo # library xs: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+$(TMP_DIR)\xsHost.o: $(XS_DIR)\platforms\nrf52\xsHost.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\nrf52\xsHost.c -o $@
+
+$(TMP_DIR)\xsPlatform.o: $(XS_DIR)\platforms\nrf52\xsPlatform.c $(TMP_DIR)\mc.defines.h
+	@echo # project xs: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $(XS_DIR)\platforms\nrf52\xsPlatform.c -o $@
 
 {$(NRF52_SDK_ROOT)\components\ble\ble_advertising\}.c{$(LIB_DIR)\}.o:
 	@echo # library: $(@F)

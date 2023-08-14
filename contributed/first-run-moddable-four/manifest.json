@@ -161,7 +161,31 @@
 		]
     },
 	"platforms": {
-		"mac": {
+		"mac/moddable_four": {
+			"modules": {
+				"*": [
+					"./simulator/uart",
+					"./simulator/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		},
+		"lin/moddable_four": {
+			"modules": {
+				"*": [
+					"./simulator/uart",
+					"./simulator/power"
+				]
+			},
+			"preload": [
+				"uart",
+				"power"
+			]
+		},
+		"win/moddable_four": {
 			"modules": {
 				"*": [
 					"./simulator/uart",
@@ -193,6 +217,9 @@
 				"uart",
 				"power"
 			]
+		},
+		"...": {
+			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
 		}
 	}
 }

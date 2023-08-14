@@ -32,7 +32,20 @@ export default function (done) {
 		a: new M5Button(39)
 	};
 
-	globalThis.lights = new NeoPixel({});
+	Object.defineProperty(globalThis, "lights", {
+		enumerable: true,
+		configurable: true,
+		get() {		// instantiate lights on first access
+			const value = new NeoPixel({}); 
+			Object.defineProperty(globalThis, "lights", {
+				enumerable: true,
+				configurable: true,
+				writable: true,
+				value
+			});
+			return value;
+		}
+	});
 
 	// start-up sound
 	if (config.startupSound) {

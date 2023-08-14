@@ -1,7 +1,7 @@
-# Getting Started with Moddable Four
+# Moddable Four Developer Guide
 
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: April 7, 2023
+Revised: August 7, 2023
 
 This document provides information about Moddable Four, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -41,9 +41,9 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 
 <img src="../assets/devices/moddable-four-pinout.png">
 
-**Note:** LCD-PWR / GPIO23 is not for use as a general GPIO. It is used to provide power to a sensor and to the screen. 
+**Note:** LCD-PWR / GPIO23 is not for use as a general GPIO. It is used to provide power to a sensor and to the screen.
 
-- Writing `0` to GPIO23 emits 3.3V on LCD-PWR, which also gives power to the screen. 
+- Writing `0` to GPIO23 emits 3.3V on LCD-PWR, which also gives power to the screen.
 - Writing `1` to GPIO23 turns off the the pin and the screen.
 
 <a id="pin-info"></a>
@@ -54,15 +54,15 @@ It also includes an integrated LIS3DH accelerometer, jog dial, and CR2032 batter
 | Name| Function| Description |
 | :---: | :---: | :--- |
 | LCD-PWR<BR>GPIO23 | Power | GPIO23 is used to turn power on for the screen and sensors connected to this pin. 3.3v |
-| GPIO3<BR>ADC1 | I/O<BR>Analog | Connects to nrf52 GPIO3 |
-| GPIO4<BR>ADC2 | I/O<BR>Analog | Connects to nrf52 GPIO4 |
-| GPIO5<BR>ADC3 | I/O<BR>Analog | Connects to nrf52 GPIO5 |
+| GPIO3<BR>ADC1 | I/O<BR>Analog | Connects to nrf52 GPIO3. ADC Channel 1 |
+| GPIO4<BR>ADC2 | I/O<BR>Analog | Connects to nrf52 GPIO4. ADC Channel 2 |
+| GPIO5<BR>ADC3 | I/O<BR>Analog | Connects to nrf52 GPIO5. ADC Channel 3 |
 | GPIO17 | I/O | Connects to nrf52 GPIO17 |
 | GPIO22 | I/O | Connects to nrf52 GPIO22 |
-| GPIO28<BR>ADC4 | I/O<BR>Analog | Connects to nrf52 GPIO28 |
-| GPIO29<BR>ADC5 | I/O<BR>Analog | Connects to nrf52 GPIO29 |
-| GPIO30<BR>ADC6 | I/O<BR>Analog | Connects to nrf52 GPIO30 |
-| GPIO31<BR>ADC7 | I/O<BR>Analog | Connects to nrf52 GPIO31 |
+| GPIO28<BR>ADC4 | I/O<BR>Analog | Connects to nrf52 GPIO28. ADC Channel 4 |
+| GPIO29<BR>ADC5 | I/O<BR>Analog | Connects to nrf52 GPIO29. ADC Channel 5 |
+| GPIO30<BR>ADC6 | I/O<BR>Analog | Connects to nrf52 GPIO30. ADC Channel 6 |
+| GPIO31<BR>ADC7 | I/O<BR>Analog | Connects to nrf52 GPIO31. ADC Channel 7 |
 | GPIO27<BR>SCL | I/O<BR>I2C | Connects to nrf52 GPIO27<BR>I2C Clock<BR>Accelerometer |
 | GPIO26<BR>SDA | I/O<BR>I2C | Connects to nrf52 GPIO26<BR>I2C Data<BR>Accelerometer |
 | RST | Reset | Reset device |
@@ -83,6 +83,9 @@ Power can be supplied to the Moddable Four via the following:
 
 Power provided by the CR2032 battery connector can be turned on and off with the sliding switch.
 
+#### 6-pin JTAG connector
+
+The 6-pin JTAG connector can be used for gdb debugging or flashing a new bootloader onto the Moddable Four. Please see the [nrf52 Platform document](./nrf52.md#debugging-native-code) for details.
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
@@ -112,17 +115,17 @@ After you've setup your environment and nRF5 tools, take the following steps to 
 
 3. Build and deploy the app with `mcconfig`.
 
-	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md). 
-	
+	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
+
 	Use the platform `-p nrf52/moddable_four` with `mcconfig` to build for Moddable Four. Build the [`piu/balls`](../../examples/piu/balls) example:
-	
+
 	```text
 	cd $MODDABLE/examples/piu/balls
 	mcconfig -d -m -p nrf52/moddable_four
 	```
-	
+
 	The [examples readme](../../examples) contains additional information about other commonly used `mcconfig` arguments for screen rotation and more.
-    
+
     Use the platform -p `sim/moddable_four` with `mcconfig` to build for the Moddable Four simulator.
 
 <a id="moddable-features"></a>
@@ -167,7 +170,7 @@ new Host.JogDial({
     }
 });
 ```
-	
+
 #### Display Power
 To use the Moddable Four display, the LCD power pin must be enabled. In the `moddable_four/setup-target.js` file, the screen is enabled if the `autobacklight` config variable is set:
 
@@ -230,7 +233,7 @@ There are many energy management APIs available on Moddable Four. These include:
 	should have a readme.md in that directory which describes the examples
 -->
 
-See the [nRF52 Low Power Notes](./nRF52-low-power.md) for details. Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`. 
+See the [nRF52 Low Power Notes](./nRF52-low-power.md) for details. Examples of different sleep and wakeup modes can be found in `$MODDABLE/build/devices/nrf52/examples/sleep`.
 
 <a id="troubleshooting"></a>
 ## Troubleshooting
@@ -264,7 +267,7 @@ The Moddable Four simulator renders images in 8-bit grayscale, which matches how
 <a id="examples"></a>
 ### Examples
 
-The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four. 
+The Moddable SDK has over 150 [example apps](../../examples) that demonstrate how to use its many features. Many of these examples run on Moddable Four.
 
 Many of the examples that use Commodetto and Piu are designed for colored QVGA screens. While they will run on Moddable Four, the colors will be dithered when rendered and some screens may be cropped. Not every example is compatible with Moddable Four hardware. Some examples are designed to test specific display and touch drivers that are not compatible with the Moddable Four display and give a build error.
 
@@ -273,7 +276,7 @@ Many of the examples that use Commodetto and Piu are designed for colored QVGA s
 
 Documentation for the nRF5 device and SDK can be found on the [Nordic Semiconductor Infocenter](https://infocenter.nordicsemi.com/topic/struct_nrf52/struct/nrf52840.html). Of particular interest is the documentation for the Nordic nRF5 SDK v17.0.2, which is available [here](https://infocenter.nordicsemi.com/topic/struct_sdk/struct/sdk_nrf5_latest.html).
 
-Documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include: 
+Documentation for the Moddable SDK is in the [documentation](../) directory. The **documentation**, **examples**, and **modules** directories share a common structure to make it straightforward to locate information. Some of the highlights include:
 
 - [Using the Moddable SDK with nRF52](./nrf52.md) explains how to get set-up for development, supported devices, and more.
 - [nRF52 Low Power Notes](./nRF52-low-power.md) describes the techniques and APIs to maximize battery life by minimizing power consumption.

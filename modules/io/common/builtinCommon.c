@@ -24,7 +24,7 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
-#if __COMMON__PINS__
+#if kPinBanks
 
 #if ESP32
 	#include "soc/soc_caps.h"
@@ -50,8 +50,8 @@
 	};
 #elif nrf52
 	static uint32_t gDigitalAvailable[kPinBanks] = {
-		0xFFFFFFFF,		//@@
-		0xFFFFFFFF		//@@
+		0xFFFFFFFF,
+		0x0000FFFF
 	};
 #elif defined(PICO_BUILD)
     critical_section_t gCommonCriticalMux;
@@ -86,7 +86,7 @@ void builtinFreePins(uint32_t bank, uint32_t pins)
 	if (bank < kPinBanks)
 		gDigitalAvailable[bank] |= pins;
 }
-#endif /* __COMMON__PINS__ */
+#endif /* kPinBanks */
 
 xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 {

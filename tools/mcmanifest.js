@@ -1876,6 +1876,14 @@ export class Tool extends TOOL {
 				this.currentDirectory = manifest.directory;
 				const source = this.resolveFilePath(this.resolveVariable(module.source) + ".json");
 				const flows = JSON.parse(this.readFileString(source));
+
+				let credentials;
+				if (source.toLowerCase().endsWith(".json")) {
+					const path = source.slice(0, -5) + "_cred_mcu.json";
+					if (this.resolveFilePath(path))
+						credentials = JSON.parse(this.readFileString(path)).credentials;
+				}
+
 				flows.forEach((node, i) => {
 					let manifest;
 					if (node.moddable_manifest)
@@ -1887,7 +1895,7 @@ export class Tool extends TOOL {
 
 					switch (node.type) {
 						case "tls-config":
-							if (node.ca || node.credentials?.cadata)
+							if (node.ca || credentials?.[node.id]?.cadata)
 								this.nodeRedExtracts.set(`${node.id}-ca.der`, source)
 							break;
 					}

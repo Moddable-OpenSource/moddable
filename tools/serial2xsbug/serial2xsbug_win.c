@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -19,6 +19,8 @@
  */
 
 #include "serial2xsbug.h"
+#include <windows.h>
+#include <Setupapi.h>
 
 static void fxCountMachines(txSerialTool self);
 static void fxProgrammingModeSerial(txSerialTool self);
@@ -326,6 +328,56 @@ static void fxSignalHandler(int s)
 	SetEvent(self->events[0]);
 }
 
+static int fxFindPortFromVIDPID(int VID, int PID)
+{
+	HDEVINFO info;
+	SP_DEVINFO_DATA data;
+	DEVPROPTYPE propertyType;
+	DWORD index = 0;
+	DWORD size = 0;
+	char buffer[1024] = {0};
+	int portNum = -1;
+
+	char searchName[25];
+	sprintf(searchName, "VID_%04X&PID_%04X&", VID, PID);
+
+	info = SetupDiGetClassDevs(NULL, "USB", NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+	if (info == INVALID_HANDLE_VALUE)
+		return -1;
+
+	data.cbSize = sizeof(SP_DEVINFO_DATA);
+
+	while (SetupDiEnumDeviceInfo(info, index, &data)) {
+		index++;
+
+		if (SetupDiGetDeviceRegistryProperty(info, &data, SPDRP_HARDWAREID, &propertyType, buffer, sizeof(buffer), &size)) {
+			if ( !strstr(buffer, searchName))
+				continue;
+			
+			HKEY key = SetupDiOpenDevRegKey(info, &data, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
+
+			if (key == INVALID_HANDLE_VALUE)
+				continue;
+			
+			char portName[20];
+			DWORD type = 0;
+
+			if ( (RegQueryValueEx(key, "PortName", NULL, &type, portName, &size) == ERROR_SUCCESS) && type == REG_SZ) {
+				if ( strncmp( portName, "COM", 3) == 0) {
+					portNum = atoi( portName + 3);
+				}
+			}
+			
+			RegCloseKey(key);
+		}
+	}
+
+	if (info)
+		SetupDiDestroyDeviceInfoList(info);
+
+	return portNum;
+}
+
 int main(int argc, char* argv[]) 
 {
 	txSerialTool self = &tool;
@@ -334,8 +386,19 @@ int main(int argc, char* argv[])
 	int result = fxArguments(self, argc, argv);
 	if (result)
 		return result;
-	strcpy(path, "\\\\.\\");
-	strcat(path, self->path);
+	
+	if (!(self->vendorID) || !(self->productID)) {
+		strcpy(path, "\\\\.\\");
+		strcat(path, self->path);
+	} else {
+		int port = fxFindPortFromVIDPID(self->vendorID, self->productID);
+		if (port == -1) {
+			fprintf(stderr, "Could not find USB COM Port with VID 0x%04X and ID 0x%04X\n", self->vendorID, self->productID);
+			exit(1);
+		}
+		sprintf(path, "\\\\.\\COM%d", port);
+	}
+
 	self->path = path;
 	self->serialConnection = INVALID_HANDLE_VALUE;
 	if (setjmp(self->_jmp_buf) == 0) {

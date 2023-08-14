@@ -42,7 +42,7 @@ System OFF power mode is deep sleep. The CPU and most peripherals are asleep and
 ## FreeRTOS and Low Power
 Moddable apps run on FreeRTOS on nRF52 devices. To conserve energy, FreeRTOS supports a [Tickless Idle](https://www.freertos.org/low-power-tickless-rtos.html) mode. Tickless idle disables the periodic tick interrupt, allowing the CPU to enter low power mode until a task needs to run or interrupt occurs, at which point the RTOS tick value is adjusted.
 
-The core of the tickless idle implementation/hook is provided by our `vApplicationSleep()` function. This function enters System ON sleep mode when the application is idle and exits System ON sleep mode when an interrupt occurs or a task needs to run. 
+The core of the tickless idle implementation/hook is provided by our `vApplicationSleep()` function. This function enters System ON sleep mode when the application is idle and exits System ON sleep mode when an interrupt occurs or a task needs to run.
 
 The main loop in a Moddable app on nRF52 executes all "ready" timers and then waits on messages until the next timer needs to fire. If no timers are active, the app waits for a maximum delay time. This wait triggers the FreeRTOS scheduler, which in turn calls the tickless idle function and puts the app into System ON sleep mode.
 
@@ -86,8 +86,8 @@ In the graph below, power consumption was measured while waiting on a [Timer](..
 
 <a id="class-sleep"></a>
 ## Class Sleep
-- **Source code:** [sleep](../build/devices/nrf52/modules/sleep)
-- **Relevant Examples:** [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep), [ram-power-off](../build/devices/nrf52/examples/sleep/ram-power-off), [retained-values](../build/devices/nrf52/examples/sleep/retained-values), [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital), and [many more](../build/devices/nrf52/examples/sleep/).
+- **Source code:** [sleep](./../../build/devices/nrf52/modules/sleep)
+- **Relevant Examples:** [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep), [ram-power-off](./../../build/devices/nrf52/examples/sleep/ram-power-off), [retained-values](./../../build/devices/nrf52/examples/sleep/retained-values), [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital), and [many more](./../../build/devices/nrf52/examples/sleep/).
 
 The Sleep class includes static methods for setting low power modes, initiating deep sleep, and RAM retention. This section provides an overview of the available methods and features.
 
@@ -154,7 +154,7 @@ The `powerMode` setter function sets the System ON low power sub-mode. The `Powe
 
 ### Properties
 
-| Name | Description | 
+| Name | Description |
 | --- | --- |
 | `ConstantLatency` | Constant Latency sub-mode |
 | `LowPower` | Low Power sub-mode |
@@ -172,7 +172,7 @@ Sleep.powerMode = PowerMode.LowPower;
 #### `setRetainedValue(index, value)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `index` | `number` | Index of 32-bit memory slot to retain
 | `value` | `number` | 32-bit value to retain
 
@@ -186,7 +186,7 @@ import {Sleep} from "sleep";
 // retain values
 for (let index = 0; index < 32; ++index)
 	Sleep.setRetainedValue(index, index + 1);
-	
+
 // sleep
 Sleep.deep();
 ```
@@ -194,7 +194,7 @@ Sleep.deep();
 #### `getRetainedValue(index)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `index` | `number` | Zero-based index of 32-bit memory slot to retrieve.
 
 The `getRetainedValue` method allows an application to retrieve a 32-bit memory value previously retained across System OFF sleep. The function returns a `number` containing the retained memory value when available. If no memory was retained the function returns the value `0`.
@@ -210,7 +210,7 @@ trace(`Retrieved value ${value} at index ${index}\n`);
 
 #### `setup()`
 
-The `setup` method is called internally by the nRF52 [power.js](../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `Sleep.deep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration. 
+The `setup` method is called internally by the nRF52 [power.js](./../../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `Sleep.deep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration.
 
 <a id="example-apps"></a>
 ## Example apps
@@ -218,14 +218,14 @@ Example apps are provided to demonstrate the various `Sleep` class features:
 
 | Name | Description |
 | :---: | :--- |
-| [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep) | Enter deep sleep mode and read the reset reason on launch.
-| [ram-power-off](../build/devices/nrf52/examples/sleep/ram-power-off) | Configure required RAM in manifest and power off unused RAM.
-| [retained-values](../build/devices/nrf52/examples/sleep/retained-values) | Retain 32 values across System OFF sleep mode and verify the values on reset.
-| [wake-on-analog](../build/devices/nrf52/examples/sleep/wake-on-analog) | Configure wake-up on analog crossing configurations.
-| [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital) | Configure wake-up on a button press.
-| [wake-on-motion](../build/devices/nrf52/examples/sleep/wake-on-motion) | Configure wake-up from a connected LIS3DH accelerometer configured to generate interrupts on motion. 
-| [wake-on-multiple](../build/devices/nrf52/examples/sleep/wake-on-multiple) | Configure wake-up from a combination of analog and digital triggers. 
-| [wake-on-timer](../build/devices/nrf52/examples/sleep/wake-on-timer) | Configure wake-up after the specified number of milliseconds have passed. 
+| [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep) | Enter deep sleep mode and read the reset reason on launch.
+| [ram-power-off](./../../build/devices/nrf52/examples/sleep/ram-power-off) | Configure required RAM in manifest and power off unused RAM.
+| [retained-values](./../../build/devices/nrf52/examples/sleep/retained-values) | Retain 32 values across System OFF sleep mode and verify the values on reset.
+| [wake-on-analog](./../../build/devices/nrf52/examples/sleep/wake-on-analog) | Configure wake-up on analog crossing configurations.
+| [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital) | Configure wake-up on a button press.
+| [wake-on-motion](./../../build/devices/nrf52/examples/sleep/wake-on-motion) | Configure wake-up from a connected LIS3DH accelerometer configured to generate interrupts on motion.
+| [wake-on-multiple](./../../build/devices/nrf52/examples/sleep/wake-on-multiple) | Configure wake-up from a combination of analog and digital triggers.
+| [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer) | Configure wake-up after the specified number of milliseconds have passed.
 
 <a id="power-consumption-on-moddable-four"></a>
 ## Power Consumption on Moddable Four
@@ -233,12 +233,12 @@ The Moddable runtime is optimized to support the low-power features of the Modda
 
 | Example app | Power Consumption | Description
 | :---: | :---: | :--- |
-| [deep-sleep](../build/devices/nrf52/examples/sleep/deep-sleep) | 1.4 uA | Wake on reset
-| [wake-on-digital](../build/devices/nrf52/examples/sleep/wake-on-digital) | 1.5 uA | Wake on digital input trigger
-| [wake-on-analog](../build/devices/nrf52/examples/sleep/wake-on-analog) | 2.3 uA | Wake on analog input trigger
-| [wake-on-motion](../build/devices/nrf52/examples/sleep/wake-on-motion) | 5.2 uA | Wake on accelerometer motion interrupt digital input trigger
-| [wake-on-multiple](../build/devices/nrf52/examples/sleep/wake-on-multiple) | 2.4 uA | Wake on RTC, analog, or digital input triggers with LCD on and displaying the wake-up source
-| [wake-on-timer](../build/devices/nrf52/examples/sleep/wake-on-timer) | 2.4 uA | Wake on RTC with LCD on and displaying the time
+| [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep) | 1.4 uA | Wake on reset
+| [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital) | 1.5 uA | Wake on digital input trigger
+| [wake-on-analog](./../../build/devices/nrf52/examples/sleep/wake-on-analog) | 2.3 uA | Wake on analog input trigger
+| [wake-on-motion](./../../build/devices/nrf52/examples/sleep/wake-on-motion) | 5.2 uA | Wake on accelerometer motion interrupt digital input trigger
+| [wake-on-multiple](./../../build/devices/nrf52/examples/sleep/wake-on-multiple) | 2.4 uA | Wake on RTC, analog, or digital input triggers with LCD on and displaying the wake-up source
+| [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer) | 2.4 uA | Wake on RTC with LCD on and displaying the time
 
 <a id="references"></a>
 ## References

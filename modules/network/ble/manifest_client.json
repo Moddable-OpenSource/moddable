@@ -25,8 +25,7 @@
 	],
 	"defines": {
 		"ble": {
-			"client": true,
-			"max_connections": 2
+			"client": true
 		}
 	},
 	"platforms": {
@@ -35,6 +34,11 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
+			},
+			"defines": {
+				"ble": {
+					"max_connections": 2
+				}
 			}
 		},
 		"nrf52": {
@@ -42,6 +46,11 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
+			},
+			"defines": {
+				"ble": {
+					"max_connections": 1
+				}
 			}
 		},
 		"esp32/kaluga": {

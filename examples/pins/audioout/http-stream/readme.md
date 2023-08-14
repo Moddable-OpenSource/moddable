@@ -2,7 +2,7 @@
 Copyright 2022-2023 Moddable Tech, Inc.<BR>
 Revised: March 13, 2023
 
-The `WavStream` and `SBCStream` classes plays audio streams delivered over HTTP. The `WavStream` class plays uncompressed WAV audio files and `Audio/L16`; the `SBCStream` class plays [SBC compressed](https://en.wikipedia.org/wiki/SBC_%28codec%29) audio. SBC is a low-complexity format used primarily by Bluetooth. Its relatively high quality and simple decoder make it well suited for microcontrollers. 
+The `WavStream` and `SBCStream` classes plays audio streams delivered over HTTP. The `WavStream` class plays uncompressed WAV audio files and `Audio/L16`; the `SBCStream` class plays [SBC compressed](https://en.wikipedia.org/wiki/SBC_%28codec%29) audio. SBC is a low-complexity format used primarily by Bluetooth. Its relatively high quality and simple decoder make it well suited for microcontrollers.
 
 The `WavStream` and `SBCStream` classes share a common API but have separate implementations. They uses the following modules:
 

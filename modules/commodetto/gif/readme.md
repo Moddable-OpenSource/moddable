@@ -10,7 +10,7 @@ Most GIF implementations for microcontrollers decode directly to the frame buffe
 
 The Commodetto animated GIF decoder has several special decoding modes to significantly reduce the amount of memory required to decode many animated GIF sequences.
 
-Because of the increased memory requirements, the Commodetto animated GIF decoder is not practical on all microcontrollers. It works very well on an ESP32 (with no external RAM) and Pico (RP2040) for images that are about 200 pixels on a side. 
+Because of the increased memory requirements, the Commodetto animated GIF decoder is not practical on all microcontrollers. It works very well on an ESP32 (with no external RAM) and Pico (RP2040) for images that are about 200 pixels on a side.
 
 ## Examples
 
@@ -47,7 +47,7 @@ The `width` and `height` properties of the reader instance provide the dimension
 The `duration` property is the total length of the animation in milliseconds. The `frameCount` is the total number of frames in the animation.
 
 ### Decoding a frame
-To decode an image, call `next`. When the end of the animated frame sequence is reached, the decoder automatically loops back to the start. 
+To decode an image, call `next`. When the end of the animated frame sequence is reached, the decoder automatically loops back to the start.
 
 ```js
 reader.next();
@@ -122,7 +122,7 @@ poco.drawBitmapWithKeyColor(reader, 0, 0, reader.transparentColor);
 Note that the `fillRectangle` call draws behind the animated GIF. Your code can draw anything behind the GIF, such as a pattern or a logo or even another animation. It is safe to use `drawBitmapWithKeyColor`.
 
 ### Reducing memory use
-A GIF image contains between 2 and about 16 million colors. Images with many colors must be stored at 16-bits per pixel, which uses quite a bit of memory. The Commodetto GIF decoder is also able to decode GIF images to 8-bit, 4-bit, and 1-bit pixels. The decoder automatically determines the format that uses the least memory while maintaining full color fidelity. Thee bitmap format used may always be drawn using `poco.drawBitmapWithKeyColor`. The format of the bitmap used is available from the `pixelFormat` property of the GIF Reader instance. 
+A GIF image contains between 2 and about 16 million colors. Images with many colors must be stored at 16-bits per pixel, which uses quite a bit of memory. The Commodetto GIF decoder is also able to decode GIF images to 8-bit, 4-bit, and 1-bit pixels. The decoder automatically determines the format that uses the least memory while maintaining full color fidelity. Thee bitmap format used may always be drawn using `poco.drawBitmapWithKeyColor`. The format of the bitmap used is available from the `pixelFormat` property of the GIF Reader instance.
 
 Some applications may wish to force decoding to a specific format, overriding the automatic format detection. This may generate an image which does not render correctly, but should never crash. To force decoding to a particular format, pass the pixel format to the `ReadGIF` constructor as part of the optional options argument. The following example shows requesting pixels in RGB565 little-endian format:
 
@@ -161,4 +161,4 @@ The following table describes the properties available on the GIF reader instanc
 
 ## Thank you
 
-The core GIF decoder is [GIF Animator](https://github.com/bitbank2/AnimatedGIF) by [Larry Bank](https://github.com/bitbank2) of [BitBank Software](https://www.bitbanksoftware.com). 
+The core GIF decoder is [GIF Animator](https://github.com/bitbank2/AnimatedGIF) by [Larry Bank](https://github.com/bitbank2) of [BitBank Software](https://www.bitbanksoftware.com).

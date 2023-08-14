@@ -19,7 +19,7 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
-    
+
 * [Troubleshooting](#troubleshooting)
 * [Debugging Native Code](#debugging-native-code)
 * [Bootloader](#bootloader)
@@ -73,7 +73,7 @@ nRF52840 has the following features:
 <a id="builds"></a>
 ## Build Types
 The nRF52 supports three kinds of builds: debug, instrumented, and release. Each is appropriate for different stages in the product development process. You select which kind of build you want from the command line when running `mcconfig`.
-    
+
 <a id="build-debug"></a>
 ### Debug
 A debug build is used for debugging JavaScript. In a debug build, the device will attempt to connect to xsbug at startup over USB or serial depending on the device configuration. Symbols will be included for native gdb debugging.
@@ -124,7 +124,7 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 6. Moddable Four uses a modified [Adafruit nRF52 Bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader) that supports the UF2 file format for flashing firmware to a device. Moddable uses the `uf2conv.py` Python tool from Microsoft that packages the UF2 binary for transfer to the device. Download the [uf2conv](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/uf2conv.py) tool. Move or copy the `uf2conv.py` file into the `nrf5` directory.
 
     Use `chmod` to change the access permissions of `uf2conv` to make it executable.
-   
+
     ```text
     cd ~/nrf5
     chmod 755 uf2conv.py
@@ -306,7 +306,7 @@ If you are building an application and the link fails with an error like those a
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
 
-As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
+As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with Moddable Four. For more information, see the [`xsbug` documentation](../xs/xsbug.md). For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
 
 Debugging native code on the Moddable Four requires a [Nordic nRF52840-DK board](https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK), [Segger J-Link Plus](https://www.segger.com/products/debug-probes/j-link/models/j-link-plus/) or compatible device.
 
@@ -392,15 +392,15 @@ GDB communicates with the nRF58240 device via a J-Link connection in the nRF5284
     ```text
     arm-none-eabi-gdb $MODDABLE/build/tmp/nrf52/moddable_four/debug/heart-rate-server/xs_nrf52.out -x ~/nrf5/gdb_cmds.txt
     ```
-    
+
     The GDB server connects with the client, downloads the application and stops at the breakpoint `main` specified in the GDB setup command file:
 
     ```text
     Breakpoint 1 at 0x46550: file /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c, line 149.
     Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
-    
+
     Breakpoint 1, main () at /Users/<user>/Projects/moddable/build/devices/nrf52/xsProj/main.c:149
-    
+
     149     clock_init();
     (gdb)
     ```
@@ -433,23 +433,23 @@ To use a nRF52840 device with the Moddable SDK, you will have to install the boo
 
 You will need a Segger J-Link or equivalent to program the bootloader.
 
-1. Connect your device to the J-Link in the same way that you would for the debugger. See the 
+1. Connect your device to the J-Link in the same way that you would for the debugger. See the
 [Debugging Native Code](#debugging-native-code)
 section.
 
 2. Fetch the bootloader repository:
-   
+
    ```
    git clone https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader --recurse-submodules
    ```
 
 3. Build for your device
-   
+
    ```
    cd Adafuit_nRF52_Bootloader
    make BOARD=moddable_four
    ```
-   
+
    > Note: The following BOARD configurations have been updated to support Moddable.
    - `moddable_four`
    - `moddable_itsybitsy_nrf52`
@@ -457,10 +457,10 @@ section.
    - `moddable_pca10056`
    - `moddable_sparkfun52840`
    - `moddable_xiao`
- 
+
 
 4. Install to your device. First install the SoftDevice, then flash the bootloader:
-   
+
    ```
    make BOARD=moddable_four sd
    make BOARD=moddable_four flash
@@ -472,19 +472,19 @@ You can now program the device.
 
 
 ----
-        
+
 <a id="nrf5-sdk-mods"></a>
-## nRF5 SDK Modifications 
+## nRF5 SDK Modifications
 
 Moddable Four requires a few small adjustments to the Nordic nRF5 SDK. You can use the prepared SDK at [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip).
 
 Or you can make your own by following these steps to modify the SDK:
 
-1. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps: 
+1. Download the [Nordic nRF5 SDK](https://www.nordicsemi.com/Software-and-Tools/Software/nRF5-SDK/Download) by taking the following steps:
 
     - Select `v17.0.2` from the nRF5 SDK versions section.
-    
-        ![](../assets/devices/nrf5-sdk-versions.png) 
+
+        ![](../assets/devices/nrf5-sdk-versions.png)
 
     - Uncheck all SoftDevices.
 

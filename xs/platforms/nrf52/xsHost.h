@@ -432,6 +432,8 @@ uint32_t espRead32be(const void *addr);
 #define c_strstr strstr
 #define c_strrchr strrchr
 #define c_isEmpty(s) (!c_read8(s))
+#define c_strcspn strcspn
+#define c_strspn strspn
 
 /* ERROR */
 
@@ -462,9 +464,19 @@ extern uint8_t _MODPREF_start;		// from linker
 extern uint32_t _MODDABLE_start;	// from linker
 extern uint32_t _MODDABLE_end;		// from linker
 // #define kModulesEnd ((uintptr_t)&_MODPREF_start)
+extern uint8_t _FSTORAGE_start;		// from linker
+extern uint8_t _FSTORAGE_end;		// from linker
 
 #define kModulesEnd ((uintptr_t)&_MODDABLE_end)
 #define kModulesByteLength (kModulesEnd - kModulesStart)
+
+enum {
+	kPartitionMod = 1,
+	kPartitionStorage,
+	kPartitionBLEState
+};
+
+extern uint8_t modGetPartition(uint8_t which, uint32_t *offset, uint32_t *size);
 
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
