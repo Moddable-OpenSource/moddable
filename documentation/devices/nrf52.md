@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: April 10, 2023
+Revised: August 15, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -21,6 +21,7 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
 
 * [Troubleshooting](#troubleshooting)
+* [Debugging Over Serial](#serial-debugging)
 * [Debugging Native Code](#debugging-native-code)
 * [Bootloader](#bootloader)
 	* [Installing the bootloader](#install-bootloader)
@@ -302,6 +303,69 @@ If you are building an application and the link fails with an error like those a
 
 <a id="advanced"></a>
 ## Advanced
+
+<a id="serial-debugging"></a>
+### Debugging Over Serial
+
+Custom devices and some development boards may not have a USB port for debugging.
+
+The Moddable SDK can connect to `xsbug` over a serial connection.
+
+#### `manifest.json` changes
+
+In the `build` section, ensure the following settings:
+
+```
+"USE_USB": "0",
+"FTDI_TRACE": "-DUSE_FTDI_TRACE=0"
+```
+
+In the `defines` section, set up a `debugger` clause, setting up pins and baudrate:
+
+```
+"debugger": {
+    "tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
+    "rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
+    "baudrate": "NRF_UARTE_BAUDRATE_460800"
+},
+```
+
+#### Environment changes
+
+Set the `DEBUGGER_PORT` environment variable to refer to your serial adapter and set the `DEBUGGER_SPEED`.
+
+```
+export DEBUGGER_PORT=/dev/cu.usbserial-0001
+export DEBUGGER_SPEED=460800
+```
+
+Build and install the application.
+
+
+#### Connect to the debugger
+
+If `xsbug` is not running, launch it:
+
+macOS:
+
+```
+open $MODDABLE/build/bin/mac/release/xsbug.app
+```
+
+On Windows and Linux you can just type:
+
+```
+xsbug
+```
+
+Run `serial2xsbug` to connect:
+
+```
+serial2xsbug $DEBUGGER_PORT $DEBUGGER_SPEED 8N1
+```
+
+Reset the device, and it will connect to `xsbug`.
+
 
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
