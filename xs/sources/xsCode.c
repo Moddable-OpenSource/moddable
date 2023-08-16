@@ -454,7 +454,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SYMBOL:
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
-				symbol->usage++;
+				symbol->usage |= 1;
 			size += 1 + sizeof(txID);
 			break;
 		case XS_CODE_PROFILE:
@@ -564,7 +564,7 @@ txScript* fxParserCode(txParser* parser)
 	node = parser->firstHostNode;
 	while (node) {
 		if (node->symbol)
-			node->symbol->usage++;
+			node->symbol->usage |= 1;
 		node = node->nextHostNode;
 	}
 	
@@ -575,7 +575,7 @@ txScript* fxParserCode(txParser* parser)
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
-			if (symbol->usage) {
+			if (symbol->usage & 1) {
 				symbol->ID = id;
 				id++;
 				total += symbol->length;
@@ -1007,7 +1007,7 @@ txScript* fxParserCode(txParser* parser)
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
-			if (symbol->usage) {
+			if (symbol->usage & 1) {
 				c_memcpy(p, symbol->string, symbol->length);
 				p += symbol->length;
 			}

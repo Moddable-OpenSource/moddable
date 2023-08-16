@@ -360,6 +360,7 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 		}
 		else {
 			access->declaration = C_NULL;
+			access->symbol->usage |= 2;
 		}
 	}
 }

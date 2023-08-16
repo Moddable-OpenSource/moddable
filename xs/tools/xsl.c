@@ -801,6 +801,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else if (name[0] == '#') {
 		hash = 1;
 	}
+	else if (c_strncmp(name, "moddable:", 9) == 0)
+		c_memmove(name, name + 9, c_strlen(name) - 8);
 	
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
