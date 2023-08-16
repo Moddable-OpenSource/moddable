@@ -293,7 +293,11 @@ static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly)
                     if (pPage->ucLittleEndian)
                         pPage->pPalette[i] = usRGB565;
                     else
+#if WIN32
+                        pPage->pPalette[i] = _byteswap_ushort(usRGB565); // SPI wants MSB first
+#else
                         pPage->pPalette[i] = __builtin_bswap16(usRGB565); // SPI wants MSB first
+#endif
                     iOffset += 3;
                 }
             }
@@ -439,7 +443,11 @@ static int GIFParseInfo(GIFIMAGE *pPage, int bInfoOnly)
                 if (pPage->ucLittleEndian)
                     pPage->pLocalPalette[i] = usRGB565;
                 else
+#if WIN32
+                    pPage->pLocalPalette[i] = _byteswap_ushort(usRGB565); // SPI wants MSB first
+#else
                     pPage->pLocalPalette[i] = __builtin_bswap16(usRGB565); // SPI wants MSB first
+#endif
                 iOffset += 3;
             }
         }

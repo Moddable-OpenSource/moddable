@@ -40,6 +40,7 @@ extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *stat
 	extern void modInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
 	extern void modInstrumentMachineEnd(xsMachine *the);
 	extern void modInstrumentMachineReset(xsMachine *the);
+	extern void modInstrumentationSetup(xsMachine *the);
 
 	extern int32_t modInstrumentationSlotHeapSize(xsMachine *the);
 	extern int32_t modInstrumentationChunkHeapSize(xsMachine *the);

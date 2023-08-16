@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"nrf52": {
+			"config": {
+				"ram": 50000
+			}
+		}
+	}
+}

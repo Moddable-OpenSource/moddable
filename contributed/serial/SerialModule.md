@@ -26,7 +26,7 @@ The `Serial` constructor takes its configuration information from the **manifest
 
 	let serial = new Serial();
 
-<a id="configuration"></a>	
+<a id="configuration"></a>
 ### Configuration
 
 Configuration of the serial port is done in the **manifest.json** file.
@@ -53,15 +53,15 @@ Configuration of the serial port is done in the **manifest.json** file.
 
 <a id="blocking"></a>
 ## Blocking I/O
-	
+
 A `timeout` can be set for blocking reads. The units are milliseconds:
 
 	serial.setTimeout(10000);
-	
+
 > If a read operation is not fulfilled by the timeout, the call will return with a partial read.
 
 #### Reading
-	
+
 You can read a number of bytes:
 
 	let str = serial.readBytes(10);
@@ -101,19 +101,19 @@ You can write strings with an optional starting and ending position:
 
 	serial.write("Hello");			// Hello
 	serial.write("Hello", 3);		// llo
-	serial.write("Hello", 1, 1);	// e 
+	serial.write("Hello", 1, 1);	// e
 	serial.write("Hello", -2);		// lo
-	
+
 You can write an array buffer with an optional starting and ending position.
 
 	let buffer = new ArrayBuffer(6);
 	let chars = new Uint8Array(buffer);
-	
+
 	// fill buffer with "test 1"
 	chars[0] = 0x74;		chars[1] = 0x65;
 	chars[2] = 0x73;		chars[3] = 0x74;
 	chars[4] = 0x20;		chars[5] = 0x31;
-	
+
 	serial.write(buffer);			// test 1
 	serial.write(buffer, 4);		// test
 	serial.write(buffer, 1, 3);		// est
@@ -145,8 +145,8 @@ key | default | description
 Call `serial.poll` with no dictionary to stop polling.
 
 	serial.poll();
-	
-	
+
+
 <a id="examples"></a>
 ## Examples
 

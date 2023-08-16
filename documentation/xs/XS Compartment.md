@@ -8,9 +8,9 @@ XS implements most of the [TC39 Compartment Proposal](https://github.com/tc39/pr
 
 In XS, the real host is the application that creates an XS machine to evaluate scripts and import modules.
 
-Compartments are lightweight virtual hosts that evaluate scripts and import modules separately from the real host and from other compartments. 
+Compartments are lightweight virtual hosts that evaluate scripts and import modules separately from the real host and from other compartments.
 
-Compartments have their own `globalThis` object, their own global lexical scope and their own module map. 
+Compartments have their own `globalThis` object, their own global lexical scope and their own module map.
 
 > The module map binds module specifiers to modules. Inside compartments like inside the real host, the same module specifier always imports the same module.
 
@@ -22,8 +22,8 @@ By default:
 
 Compartments run in the same XS machine:
 
-- Except for `Compartment`, `Function` and `eval`, built-ins are shared. 
-- Other objects can be shared thru the `globals` and `globalLexicals` options. 
+- Except for `Compartment`, `Function` and `eval`, built-ins are shared.
+- Other objects can be shared thru the `globals` and `globalLexicals` options.
 - Modules can be shared thru the `modules`, `loadHook` and `loadNowHook` options.
 
 For the sake of security, it is the responsibility of a real host that creates compartments to ensure that shared features are immutable.
@@ -49,13 +49,13 @@ XS implements compartments natively, without `Module` and `Evaluators` classes, 
 
 #### Compartment(options)
 
-Returns a compartment, an instance of `Compartment.prototype`. 
+Returns a compartment, an instance of `Compartment.prototype`.
 
 If present, the `options` argument must be an object with optional properties: `globals`, `globalLexicals`, `modules`, `loadHook`, `loadNowHook`, `resolveHook`.
 
 #### options.globals
 
-The `globals` option adds properties to the compartment `globalThis` object. 
+The `globals` option adds properties to the compartment `globalThis` object.
 
 If defined, the value of the `globals` option must be an object.
 
@@ -67,12 +67,12 @@ A compartment does not keep a reference to the `globals` object.
 
 The `globalLexicals` option initializes the compartment global lexical scope.
 
-If defined, the value of the `globalLexicals` option must be an object. 
+If defined, the value of the `globalLexicals` option must be an object.
 
 Each own enumerable named property of the `globalLexicals ` object become a variable or a constant:
 
 - property names are variable or constant names,
-- property values are variable or constant values. 
+- property values are variable or constant values.
 
 If the property is writable, a variable (`let`) is created, else a constant (`const`) is created.
 
@@ -82,7 +82,7 @@ A compartment does not keep a reference to the `globalLexicals` object.
 
 The `modules` option initializes the compartment module map.
 
-If defined, the value of the `modules` option must be an object. 
+If defined, the value of the `modules` option must be an object.
 
 Each own enumerable named property of the `modules` object creates an entry in the compartment module map:
 
@@ -99,7 +99,7 @@ The `loadHook` option is an asynchronous function that takes a module specifier 
 
 The `loadHook` function is only called directly or indirectly by `Compartment.prototype.import` if the module map of the compartment has no entry for a module specifier.
 
-The `loadHook` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically. 
+The `loadHook` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically.
 
 A compartment keeps a reference to the `loadHook` function.
 
@@ -109,7 +109,7 @@ The `loadNowHook` option is a function that takes a module specifier and returns
 
 The `loadNowHook` function is only called directly or indirectly by `Compartment.prototype.importNow` if the module map of the compartment has no entry for a module specifier.
 
-The `loadNowHook ` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically. 
+The `loadNowHook ` function is useful if the module descriptor is unavailable when constructing the compartment, or to create a module descriptor dynamically.
 
 A compartment keeps a reference to the `loadNowHook ` function.
 
@@ -173,7 +173,7 @@ The initial value of this property is the `"Compartment"` string.
 
 Returns a module source, an instance of `ModuleSource.prototype`.
 
-The source argument is coerced into a string, then parsed as a module and compiled into byte codes. 
+The source argument is coerced into a string, then parsed as a module and compiled into byte codes.
 
 XS does not keep a reference to the `source` string.
 
@@ -201,7 +201,7 @@ The initial value of this property is the `"ModuleSource"` string.
 
 ### <a name="ModuleDescriptor"></a> Module Descriptor
 
-Comparments can load and initialize module namespaces from module descriptors. Like property descriptors, module descriptors are ordinary objects with various forms. 
+Comparments can load and initialize module namespaces from module descriptors. Like property descriptors, module descriptors are ordinary objects with various forms.
 
 #### descriptors with `source`, `importMeta` and `specifier` properties
 
@@ -213,26 +213,26 @@ Comparments can load and initialize module namespaces from module descriptors. L
 
 If the `importMeta` property is present, its value must be an object. The default `importMeta` object is an empty object.
 
-Compartments copy the `importMeta` object properties into the module `import.meta` object like `Object.assign`. 
+Compartments copy the `importMeta` object properties into the module `import.meta` object like `Object.assign`.
 
 If the `specifier` property is present, its value is coerced into a string and becomes the referrer specifier of the module.
 
 #### descriptors with `namespace` and `compartment` properties
 
-- If fhe value of the `namespace` property is a string, the descriptor shares a module to be loaded and initialized by the compartment referred by the `compartment` property. 
+- If fhe value of the `namespace` property is a string, the descriptor shares a module to be loaded and initialized by the compartment referred by the `compartment` property.
 
 	- If the `compartment` property is present, its value must be a compartment.
 	- If absent, the `compartment` property defaults to the compartment being constructed in the `modules` option, or being hooked in the `loadHook` and `loadNowHook` options.
-	
+
 - Else if the value of the `namespace ` property is a module namepace, the descriptor shares a module that is already available.
 
 - Else the value of `record` property must be an object. The module is loaded and initialized from the object according to the [virtual module namespace](#VirtualModuleNamespace) pattern.
-	
+
 #### descriptor with `archive` and `path` properties
 
-To construct a static module record from a [mod](./mods.md). In Moddable runtime, mods are separate archives of modules and resources. 
+To construct a static module record from a [mod](./mods.md). In Moddable runtime, mods are separate archives of modules and resources.
 
-- The `archive` property must be an archive. 
+- The `archive` property must be an archive.
 - The `path` property is coerced into a string then used to find the module in the archive.
 
 ### <a name="ModuleBinding"></a> Module Binding
@@ -240,7 +240,7 @@ To construct a static module record from a [mod](./mods.md). In Moddable runtime
 A module binding is an ordinary object with properties that mimick the `import` and `export` constructs. There are many forms of module bindings. See the
 [imports](https://tc39.es/ecma262/#table-import-forms-mapping-to-importentry-records) and [exports](https://tc39.es/ecma262/#table-export-forms-mapping-to-exportentry-records) tables.
 
-Most bindings can be represented as JSON-like objects with `export`, `import`, `as`, `from` properties. Except `*` bindings, which requires special forms because module namespace identifiers can be arbitrary.  
+Most bindings can be represented as JSON-like objects with `export`, `import`, `as`, `from` properties. Except `*` bindings, which requires special forms because module namespace identifiers can be arbitrary.
 
 | Construct | Module Binding |
 | :--- | :--- |
@@ -253,13 +253,13 @@ Most bindings can be represented as JSON-like objects with `export`, `import`, `
 | import x from "mod" | { import: "default", as: "x", from: "mod" }
 | import { x } from "mod" | { import: "x", from: "mod" }
 | import { x as y } from "mod" | { import: "x", as: "y", from: "mod" }
-| import * as star from "mod" | { importAllFrom: "mod", as: "star" } 
+| import * as star from "mod" | { importAllFrom: "mod", as: "star" }
 
 ### <a name="VirtualModuleSource"></a> Virtual Module Source
 
 A virtual module source is an ordinary object with `execute`, `bindings`, `needsImport` and `needsImportMeta` properties
 
-- The `execute` property must be a function. 
+- The `execute` property must be a function.
 - If defined, the `bindings` property must be an array of [module bindings](#ModuleBinding). The default is an empty array.
 - If defined, the `needsImport` property is coerced into a boolean. The default is `false`.
 - If defined, the `needsImportMeta` property is coerced into a boolean. The default is `false`.
@@ -272,7 +272,7 @@ Once the module is loaded and linked, the compartment calls the `execute` functi
 - `Import`: a function equivalent to the `import` call in a module body. The argument is `undefined` if `needsImport` was false.
 - `ImportMeta`: an object equivalent to the `import.meta` object in a module body. The argument is `undefined` if `needsImportMeta` was false.
 
-The module environment record is sealed: 
+The module environment record is sealed:
 
 - no properties can be created or deleted,
 - export properties are writable,
@@ -285,4 +285,4 @@ Like a module body, the `execute` function can be asynchronous.
 
 A virtual module namespace is an ordinary object posing as a module namespace.
 
-When a compartment loads a virtual module namespace, each own enumerable named property of the object becomes an exported property of the module. 
+When a compartment loads a virtual module namespace, each own enumerable named property of the object becomes an exported property of the module.

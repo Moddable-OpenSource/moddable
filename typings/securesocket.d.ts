@@ -24,7 +24,7 @@ declare module "securesocket" {
     type WriteData = number | string | BufferLike;
 
     export default class SecureSocket {
-        sock: Socket;
+        sock: typeof Socket;
 
         constructor(dict: { [k: string]: any });
 

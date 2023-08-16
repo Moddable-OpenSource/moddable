@@ -14,14 +14,14 @@ Want to contribute to the Moddable SDK? Great! We welcome all kinds of contribut
 
 If you find a bug or have trouble using the Moddable SDK, please [open an issue](https://github.com/Moddable-OpenSource/moddable/issues). We'll respond as quickly as practical. By open an issue, other developers will benefit from the answers to your questions.
 
-Before you open an issue, search the repository to see if someone else has already reported it. If they have, please add comments to the existing thread. 
+Before you open an issue, search the repository to see if someone else has already reported it. If they have, please add comments to the existing thread.
 
 <a id="requesting-features"></a>
 ## Requesting features
 
 To request a new feature, please [open an issue](https://github.com/Moddable-OpenSource/moddable/issues).
 
-Before you open an issue, search the repository to see if someone else has already requested the feature. If they have, please add comments to the existing thread about why you'd like to see the feature added. 
+Before you open an issue, search the repository to see if someone else has already requested the feature. If they have, please add comments to the existing thread about why you'd like to see the feature added.
 
 <a id="pull-requests"></a>
 ## Submitting pull requests

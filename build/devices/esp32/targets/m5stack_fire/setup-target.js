@@ -35,7 +35,20 @@ const state = {
 };
 
 export default function (done) {
-	globalThis.lights = new NeoPixel({});
+	Object.defineProperty(globalThis, "lights", {
+		enumerable: true,
+		configurable: true,
+		get() {		// instantiate lights on first access
+			const value = new NeoPixel({}); 
+			Object.defineProperty(globalThis, "lights", {
+				enumerable: true,
+				configurable: true,
+				writable: true,
+				value
+			});
+			return value;
+		}
+	});
 
 	globalThis.button = {
 		a: new M5Button(39),

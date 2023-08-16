@@ -71,7 +71,6 @@ const Config = Object.freeze({
 class HMC5883 {
 	#io;
 	#onAlert;
-	#onError;
 	#monitor;
 	#valueBuffer = new Uint8Array(6);
 	#rate = Config.Rate.RATE_15;
@@ -87,14 +86,11 @@ class HMC5883 {
 			...options.sensor
 		});
 
-		this.#onError = options.onError;
-
 		const ID = new Uint8Array(3);
 		io.readBuffer(Register.ID_A, ID);
 		if (ID[0] !== 72 || ID[1] !== 52 || ID[2] !== 51) {
-			this.#onError("unexpected sensor");
 			this.close();
-			return;
+			throw new Error("unexpected sensor");
 		}
 
 		const {alert, onAlert} = options;

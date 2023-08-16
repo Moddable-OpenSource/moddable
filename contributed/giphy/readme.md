@@ -22,9 +22,9 @@ For more information on the implementation, see the blog post [GIPHY Goes to ESP
 	cd $MODDABLE/contributed/giphy
 	mcconfig -d -m -p esp32/moddable_two
 	```
-	
+
 > **Note:** Instead of putting your Wi-Fi network credentials and Giphy API key in the app manifest, you can also specify them in the `mcconfig` command:
-> 
+>
 > ```text
 > mcconfig -d -m -p esp32/moddable_two ssid="YOUR_SSID_HERE" password="YOUR_PASSWORD_HERE" apiKey="YOUR_API_KEY_HERE"
 > ```

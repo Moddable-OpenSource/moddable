@@ -36,9 +36,10 @@
 	#include "freertos/semphr.h"
 
 	static void workerLoop(void *pvParameter);
-#elif qca4020
+#elif qca4020 || nrf52
 	#include "FreeRTOS.h"
 	#include "task.h"
+	#include "semphr.h"
 	static void workerLoop(void *pvParameter);
 #endif
 
@@ -220,6 +221,11 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	#endif
 
 	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
+#elif nrf52
+	#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
+	#define kStack ((10 * 1024) / sizeof(StackType_t))
+
+	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
 #endif
 
 	modMachineTaskWait(the);
@@ -471,6 +477,8 @@ void workerLoop(void *pvParameter)
 		modMessageService(worker->the, modTimersNext());
 #if qca4020
 		qca4020_watchdog();
+#elif nrf52
+		modWatchDogReset();
 #endif
 	}
 }
@@ -482,7 +490,7 @@ extern void fxSampleInstrumentation(xsMachine * the, xsIntegerValue count, xsInt
 void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
 	xsMachine *the = *(xsMachine **)refcon;
-#if ESP32
+#ifdef INC_FREERTOS_H
 	extern SemaphoreHandle_t gInstrumentMutex;
 	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
 #endif
@@ -490,7 +498,7 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	fxSampleInstrumentation(the, 0, NULL);
 	modInstrumentMachineReset(the);
 
-#if ESP32
+#ifdef INC_FREERTOS_H
 	xSemaphoreGive(gInstrumentMutex);
 #endif
 }

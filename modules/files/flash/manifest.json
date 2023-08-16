@@ -21,6 +21,17 @@
 			"preload": [
 				"flash"
 			]		
+		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"./flash",
+					"./nrf52/flash"
+				]
+			},
+			"preload": [
+				"flash"
+			]		
 		}
 	}
 }

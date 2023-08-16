@@ -29,7 +29,7 @@ To minimize RAM use and speed start-up time, the main module and any setup modul
 
 ## Additional notes
 
-- The idea for setup modules is loosely modeled on the setup function in the Arduino application model. 
+- The idea for setup modules is loosely modeled on the setup function in the Arduino application model.
 - The simulator implicitly performs the work of setup already, initializing the screen global variable before running the main module.
 - The setup modules are only run on the first (main) virtual machine instantiated. For example, when using Workers, the setup modules are not run in the workers.
 - Sometimes it is useful to remove a setup module provided by the host, for example to replace the default `setup/network` module so that the application script can manage the Wi-Fi connection itself. This is accomplished using the `"~"` option of manifests.

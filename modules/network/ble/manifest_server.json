@@ -33,6 +33,13 @@
 				]
 			}
 		},
+		"nrf52": {
+			"modules": {
+				"*": [
+					"$(BLEMODULEPATH)/modBLECommon"
+				]
+			}
+		},
 		"esp32/kaluga": {
 			"error": "ble is unsupported on esp32s2"
 		}

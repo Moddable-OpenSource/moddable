@@ -1,4 +1,4 @@
-# TC53 IO: A New Take on JavaScript Input/Output on Microcontrollers 
+# TC53 IO: A New Take on JavaScript Input/Output on Microcontrollers
 Author: Peter Hoddie<BR>
 Updated: April 7, 2021<BR>
 Copyright 2019-2021 Moddable Tech, Inc.
@@ -20,7 +20,7 @@ The remainder of this document describes the IO Class Pattern and how it is appl
 ## The Basic IO Pattern
 The IO Class Pattern design starts with the idea that the majority of IO operations on a microcontroller are described by four basic operations:
 
-1. **Create** -- Establish and configure a connection to an IO resource. 
+1. **Create** -- Establish and configure a connection to an IO resource.
 1. **Read** -- Get data from the IO resource.
 1. **Write** -- Send data to the IO resource.
 1. **Close** -- Release the IO resource.
@@ -58,7 +58,7 @@ let serial = new Serial({
 })
 ```
 
-This way of providing the callback as a property of the configuration is often convenient. The same approach is used by streams in Node.js as described in [Simplified Construction](https://nodejs.org/api/stream.html#stream_simplified_construction). 
+This way of providing the callback as a property of the configuration is often convenient. The same approach is used by streams in Node.js as described in [Simplified Construction](https://nodejs.org/api/stream.html#stream_simplified_construction).
 
 Each IO implementation defines the notifications it supports. The IO Class Pattern proposal defines four notifications:
 
@@ -96,10 +96,10 @@ Scripts that perform read operations may call read at any time. To avoid polling
 
 Most kinds of IO have one of the following behaviors for their read operation:
 
-- Return the current value of the IO resource. 
+- Return the current value of the IO resource.
 
 	Examples of this include digital inputs and analog inputs. Performing a read operation does not change what will be returned by the next read operation. Only changes to the IO resource itself change the value. The `onReadable` callback is invoked when the value of the IO resource changes.
-- Return data from the input buffer. 
+- Return data from the input buffer.
 
 	Examples of this include serial and TCP network connections. Once data is read from a serial connection, that data is removed from the input buffer. A subsequent read will receive the next data in the buffer. The `onReadable` callback is invoked when new data is received.
 
@@ -132,10 +132,10 @@ new Serial({
 
 Most kinds of IO have one of the following behaviors for their write operation:
 
-- Change the current value output by the IO resource. 
+- Change the current value output by the IO resource.
 
 	A digital output is an example of this behavior. Performing a write operation immediately changes what is output by the IO resource. The `onWritable` callback is not useful for this case, as the value may be changed at any time.
-- Add data to the output buffer. 
+- Add data to the output buffer.
 
 	Examples of this include serial and TCP network connections. Once data is written from a serial connection, that data is transmitted over a period of time. The `onWritable` callback is invoked when space has been freed in the output buffer.
 
@@ -375,7 +375,7 @@ let pwm = new PWM({ pin: 5, hz: 10000 });
 pwm.write(0.5 * ((1 << pwm.resolution) - 1));
 ```
 
-### I<sup>2</sup>C 
+### I<sup>2</sup>C
 The built-in `I2C` class implements an I<sup>2</sup>C Master to communicate with one address on an I<sup>2</sup>C bus.
 
 ```js
@@ -399,7 +399,7 @@ The data format is always a buffer. The `write` call accepts an `ArrayBuffer` or
 #### Use Notes
 Many I<sup>2</sup>C buses use the higher-level SMB protocol, an extension to the I<sup>2</sup>C protocol that simplifies its use.  The `SMBus` class is a subclass of the `I2C` class that provides support for working with SMBus devices.
 
-The I<sup>2</sup>C protocol is transaction-based. At the end of each read and write operation, a stop bit is sent. If the stop bit is 1, it indicates the end of the transaction; if 0, it indicates that there are additional operations on the transaction. The `read` and `write` calls set the stop bit to 1 by default. An optional second parameter to the `read` and `write` allows the stop bit to be specified. Pass `false` to set the stop bit to 0, and `true` to set the stop bit to 1. 
+The I<sup>2</sup>C protocol is transaction-based. At the end of each read and write operation, a stop bit is sent. If the stop bit is 1, it indicates the end of the transaction; if 0, it indicates that there are additional operations on the transaction. The `read` and `write` calls set the stop bit to 1 by default. An optional second parameter to the `read` and `write` allows the stop bit to be specified. Pass `false` to set the stop bit to 0, and `true` to set the stop bit to 1.
 
 #### Example
 The following example reads the number of touch points from an FT6206 touch sensor, and then retrieves the X and Y coordinates for the active touch points.
@@ -437,7 +437,7 @@ import Serial from "embedded:io/serial";
 | :---: | :--- |
 | `baud` | A number specifying the baud rate of the connection. This property is required.
 
-> **Note**: No pins are specified because there is only a single full-duplex hardware serial port on the ESP8266, which is always connected to GPIO pins 1 and 3. 
+> **Note**: No pins are specified because there is only a single full-duplex hardware serial port on the ESP8266, which is always connected to GPIO pins 1 and 3.
 
 #### Callbacks
 
@@ -487,7 +487,7 @@ The following example continuously outputs text to the serial output. It uses th
 const message = ArrayBuffer.fromString("Since publication of the first edition in 1997, ECMAScript has grown to be one of the world's most widely used general-purpose programming languages. It is best known as the language embedded in web browsers but has also been widely adopted for server and embedded applications.\r\n");
 
 let offset = 0;
-	
+
 const serial = new Serial({
 	baud: 921600,
 	onWritable: function(count) {
@@ -505,7 +505,7 @@ serial.format = "buffer";
 ```
 
 ### TCP Socket
-The built-in `TCP` network socket class implements a general purpose, bi-directional TCP connection. 
+The built-in `TCP` network socket class implements a general purpose, bi-directional TCP connection.
 
 ```js
 import TCP from "embedded:io/socket/tcp";
@@ -623,14 +623,14 @@ class TCPEcho {
 	}
 	onReadable() {
 		const response = this.read();
-	
+
 		this.write(ArrayBuffer.fromString("HTTP/1.1 200 OK\r\n"));
 		this.write(ArrayBuffer.fromString("connection: close\r\n"));
 		this.write(ArrayBuffer.fromString("content-type: text/plain\r\n"));
 		this.write(ArrayBuffer.fromString(`content-length: ${response.byteLength}\r\n`));
 		this.write(ArrayBuffer.fromString("\r\n"));
 		this.write(response);
-	
+
 		this.close();
 	}
 }
@@ -648,7 +648,7 @@ new Listener({
 ```
 
 ### UDP Socket
-The built-in `UDP` network socket class implements the sending and receiving of UDP packets. 
+The built-in `UDP` network socket class implements the sending and receiving of UDP packets.
 
 ```js
 import UDP from "embedded:io/socket/udp";
@@ -669,7 +669,7 @@ Invoked when one or more packets are received. The callback receives a single ar
 The data format is always `buffer`. The `write` call accepts an `ArrayBuffer` or a `TypedArray`. The `read` call always returns an `ArrayBuffer`.
 
 #### Use Notes
-The `read` call returns a complete UDP packet as an `ArrayBuffer`. Partial reads are not supported. The returned packet data has two properties attached to it: 
+The `read` call returns a complete UDP packet as an `ArrayBuffer`. Partial reads are not supported. The returned packet data has two properties attached to it:
 
 - `address`, a string containing the packet sender's address
 - `port`, the port number used to send the packet.
@@ -726,7 +726,7 @@ Putting the ESP8266 into deep sleep is out of scope for IO. The `System.deepSlee
 
 **`onReadable()`**
 
-Invoked following instantiation if the device was woken from deep sleep. 
+Invoked following instantiation if the device was woken from deep sleep.
 
 #### Data Format
 The Wakeable Digital IO always uses a data format of `number`. A value of 0 indicates the device did not wake from a deep sleep and a value of 1 indicates that it did wake from a deep sleep.
@@ -748,16 +748,16 @@ trace(wakeable.read() ? "Woke from deep sleep\n" : "Hard reset\n");
 ## IO Providers
 IO providers access IO resources that are external to the built-in IO resources. IO providers often use the built-in IO resources to access their external IO resources. The definition of "external" encompasses a wide range of possibilities.
 
-- A separate component on the same board as the microcontroller. 
+- A separate component on the same board as the microcontroller.
 
 	Examples of this include GPIO and Analog expanders. These operate over shared-bus protocols like I<sup>2</sup>C and SPI to provide additional IO pins.
-- A separate board physically connected to the board holding the microcontroller. 
+- A separate board physically connected to the board holding the microcontroller.
 
 	An example of this is an Arduino connected to a microcontroller over a serial connection as used by the Firmata protocol.
-- A separate physical device in close proximity. 
+- A separate physical device in close proximity.
 
 	Examples of this include peripherals connected by Bluetooth LE and Decentralized Ambient Synchronization ([DAS](https://blog.moddable.com/blog/das/)) using mDNS over a UDP network connection.
-- A separate physical device at a physically remote location. 
+- A separate physical device at a physically remote location.
 
 	Examples of this include the Firmata protocol running over a TCP connection and many IoT cloud services operating over protocols including HTTP/REST, MQTT, and WebSocket.
 
@@ -823,7 +823,7 @@ const expander = new Expander({
 });
 ```
 
-With the interrupt configured, the `onReadable` callback may be used. 
+With the interrupt configured, the `onReadable` callback may be used.
 
 ```js
 let buttons = new expander.DigitalBank({
@@ -833,7 +833,7 @@ let buttons = new expander.DigitalBank({
 	mode: expander.Digital.Input,
 	onReadable(pins) {
 		const result = this.read();
-		trace(`Pins ${pins.toString(2)} changed. Buttons now ${result.toString(2)}.`);			
+		trace(`Pins ${pins.toString(2)} changed. Buttons now ${result.toString(2)}.`);
 	}
 });
 ```
@@ -863,7 +863,7 @@ let provider = new CloudProvider({
 
 Note that the MCP23017 expander does not implement the `onReady` callback as it supports a separate component on the same board as the microcontroller accessing it, so there are no significant latencies.
 
-#### Asynchronous I<sup>2</sup>C 
+#### Asynchronous I<sup>2</sup>C
 All of the IO kinds defined earlier in this document implement asynchronous IO by following the IO Class Pattern directly. It is less obvious how to implement an I<sup>2</sup>C  Master. An implementation of the Firmata Client through the IO Provider API provided a motivation to explore the problem and to find a solution.
 
 I<sup>2</sup>C  performs read and write operations with buffers of bytes, much like serial and TCP IO. Serial and TCP (once the connection is established) are essentially peer protocols -- either side of the connection may initiate a write operation at any time. I<sup>2</sup>C , by contrast, is a master/slave protocol. The slave may only send bytes for the master to read when requested to do so. That requires the master to issue a read request to the slave device to receive data.
@@ -898,6 +898,6 @@ From the API perspective, the IO Class Pattern provides clear guidance to the de
 
 Perhaps the most interesting perspective is as a script writer using IO classes that follow the pattern. The small API size is easy to remember. This makes it quick and comfortable to work with a range of IO. There are, of course, details that differ from one IO type to another. A digital input is quite different from a UDP socket. Still, these differences are consistent with needs of the IO, not arbitrary differences because their APIs happened to be designed by different individuals at different times with different priorities or different programming style preferences. Overall, this makes it relatively easy to both read and write code that applies the IO Class Pattern.
 
-Based on this exercise of building an implementation of the IO Class Pattern for a microcontroller, the design achieves its goals well. The API meets the needs of low-level script developers to access IO, it is possible to implement efficiently on resource-constrained embedded hardware, and the implementation/porting effort is focused and manageable. 
+Based on this exercise of building an implementation of the IO Class Pattern for a microcontroller, the design achieves its goals well. The API meets the needs of low-level script developers to access IO, it is possible to implement efficiently on resource-constrained embedded hardware, and the implementation/porting effort is focused and manageable.
 
 There is a great deal of work remaining to fully explore the IO Class Pattern. More will be learned from future work, and those lessons will lead to refinements in the design. Areas for future work include ports to other microcontrollers, support for other runtime environments beyond the Moddable SDK, and implementations of other kinds of IO and providers.

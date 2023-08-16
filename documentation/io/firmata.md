@@ -7,13 +7,13 @@ The Moddable SDK contains an implementation of the Firmata protocol for communic
 
 The primary goal of the implementation is to explore using the new IO class. The Firmata protocol is an interesting test case as it exercises many different kinds of IO. The Firmata protocol has been invaluable in this regard. The resulting Firmata implementation may also be useful more broadly. As the TC53 IO class becomes available on other hardware platforms, this Firmata implementation should run more-or-less as-is there, perhaps providing Firmata support on additional hardware hosts.
 
-> **Note**: The IO Class implementation is available only for the ESP8266 microcontroller which was selected as the initial target because it is representative of resource constrained devices, widely available, well-understood at Moddable, and inexpensive. 
+> **Note**: The IO Class implementation is available only for the ESP8266 microcontroller which was selected as the initial target because it is representative of resource constrained devices, widely available, well-understood at Moddable, and inexpensive.
 
 The Firmata protocol is effectively a client/server protocol with the microcontroller taking the role of the server, and the device controller, often a computer, taking the role of the client. In the Firmata ecosystem, [Firmata.js](https://github.com/firmata/firmata.js#firmatajs) is a popular client, providing a [JavaScript API](https://github.com/firmata/firmata.js/tree/master/packages/firmata.js#firmata-prototype-api) in the Node.js environment to communicate with Firmata servers. There are [many other](https://github.com/firmata/arduino#firmata-client-libraries) Firmata clients available for various languages and environments. There are many fewer implementations of the Firmata server, with the [Standard Firmata Adruino implementation](https://github.com/firmata/arduino#firmata) being the most commonly used.
 
-The implementation of Firmata in the Moddable SDK includes both a client and server. Each is implemented in JavaScript using the proposed TC53 IO class APIs. In the case of the client, it presents Firmata as a TC53 IO class provider. 
+The implementation of Firmata in the Moddable SDK includes both a client and server. Each is implemented in JavaScript using the proposed TC53 IO class APIs. In the case of the client, it presents Firmata as a TC53 IO class provider.
 
-Implementing both the client and server allowed more uses of the IO class to be explored. The server implementation was developed against the Firmata.js client; the client implementation, against the server. The Firmata.js and Arduino Firmata server code were consulted to supplement the information in the protocol documentation. 
+Implementing both the client and server allowed more uses of the IO class to be explored. The server implementation was developed against the Firmata.js client; the client implementation, against the server. The Firmata.js and Arduino Firmata server code were consulted to supplement the information in the protocol documentation.
 
 > **Note:** To build and run the examples in this document, you must have already installed the Moddable SDK and followed the instructions to set up the build tools for the ESP8266 target from the [Getting Started document](../Moddable%20SDK%20-%20Getting%20Started.md).
 
@@ -55,11 +55,11 @@ To build and run the Firmata server, execute the following commands:
 	cd $MODDABLE/examples/io/firmata/server
 	mcconfig -m -p esp
 
-This builds and deploys the Firmata server to an ESP8266. Note that this a release build, not a debug build. This is because Firmata uses the serial port for communication, which precludes it from being by the xsbug debugger to communicate with the ESP8266. 
+This builds and deploys the Firmata server to an ESP8266. Note that this a release build, not a debug build. This is because Firmata uses the serial port for communication, which precludes it from being by the xsbug debugger to communicate with the ESP8266.
 
 From here, the Firmata.js server may be used as usual with Firmata clients. Note that the Firmata server does not announce itself over serial so it is necessary to wait about five seconds for Firmata.js to issue a probe request before the connection is fully established.
 
-The Firmata server implementation supports the following standard pin types: 
+The Firmata server implementation supports the following standard pin types:
 
 - digital input
 - digital input pull-up
@@ -67,9 +67,9 @@ The Firmata server implementation supports the following standard pin types:
 - analog input
 - serial
 
-The pins that are available depend on the configuration. For example, only a single serial port is available in the implementation. If that port is being used for Firmata transport, it is unavailable for use by a Firmata client. 
+The pins that are available depend on the configuration. For example, only a single serial port is available in the implementation. If that port is being used for Firmata transport, it is unavailable for use by a Firmata client.
 
-The Firmata Server was tested primarily on a [Moddable One](https://www.moddable.com/moddable-one.php), which combines an ESP8266 with a high quality IPS display and capacitive touch screen. 
+The Firmata Server was tested primarily on a [Moddable One](https://www.moddable.com/moddable-one.php), which combines an ESP8266 with a high quality IPS display and capacitive touch screen.
 
 <a id="server-example-code"></a>
 ### Example code
@@ -144,7 +144,7 @@ void board.i2cStop(0x38)
 
 <a id="server-tcp"></a>
 ### Communicating with the Firmata Server Over TCP
-The Firmata server implements communication over a TCP network connection, in addition to serial. The Firmata server can operate in TCP in two different ways. One way is by initiating a TCP connection to a Firmata client, in which case (confusingly) the Firmata server is acting as a TCP client while the Firmata client is acting as a TCP server. This is the more common way. Alternatively, it can listen for an incoming TCP request from a Firmata client, in which case the Firmata server is a TCP server and the Firmata client is a TCP client. 
+The Firmata server implements communication over a TCP network connection, in addition to serial. The Firmata server can operate in TCP in two different ways. One way is by initiating a TCP connection to a Firmata client, in which case (confusingly) the Firmata server is acting as a TCP client while the Firmata client is acting as a TCP server. This is the more common way. Alternatively, it can listen for an incoming TCP request from a Firmata client, in which case the Firmata server is a TCP server and the Firmata client is a TCP client.
 
 #### Using `FirmataTCPClient`
 To configure the Firmata server to initiate a TCP connection to a Firmata client, do the following:
@@ -215,7 +215,7 @@ The I2C bus on Moddable One uses pin 5 for data and pin 4 for a clock.
 
 The primary serial connection on ESP8266 uses pin 1 for TX and pin 3 for RX.
 
-The Moddable Firmata Server implementation combines a general purpose Firmata server with specific knowledge of the ESP2866 pin configuration. The ESP8266 knowledge is largely isolated and should eventually migrate to a separate file to ease supporting additional microcontrollers. 
+The Moddable Firmata Server implementation combines a general purpose Firmata server with specific knowledge of the ESP2866 pin configuration. The ESP8266 knowledge is largely isolated and should eventually migrate to a separate file to ease supporting additional microcontrollers.
 
 The Firmata Server implements the optional `STRING_DATA` message with the `doSendString` function which allows the server implementation to send short text strings to the client. These messages have no meaning defined in the protocol. They proved useful for debugging to generate a simple console trace from the server to the client, which is not possible when communicating with Firmata over serial which makes the xsbug debugging connection unavailable. To output these messages to the console using Firmata.js, add this line:
 
@@ -236,7 +236,7 @@ To build and run the Firmata client, execute the following commands:
 	cd $MODDABLE/examples/io/firmata/client
 	mcconfig -d -m -p esp ssid="Moddable" password="secret"
 
-This  builds and deploys the Firmata client to an ESP8266. Note that unlike the server, this a debug build, as the examples will only use Firmata over TCP, not serial. 
+This  builds and deploys the Firmata client to an ESP8266. Note that unlike the server, this a debug build, as the examples will only use Firmata over TCP, not serial.
 
 The Client API is the proposed TC53 IO provider class. An IO provider is an object that gives access to one or more kinds of IO. The IO it provides access to may be remote, as is the case with the Firmata use described here, or local, for example an GPIO expander connected over I2C.
 
@@ -286,7 +286,7 @@ let led = new firmata.Digital({
 	pin: 2,
 	mode: firmata.Digital.Output,
 });
-	
+
 let value = 0;
 System.setInterval(() => {
 	led.write(value);
@@ -295,7 +295,7 @@ System.setInterval(() => {
 ```
 
 #### Monitor Remote Flash Button
-	
+
 ```js
 let remoteButton = new firmata.Digital({
 	pin: 0,
@@ -339,7 +339,7 @@ let remoteBank = new firmata.DigitalBank({
 ```
 
 #### I2C
-I2C is a bit more complicated than Analog and Digital pins as it is a transaction-based hardware protocol: requests are made to the hardware to read and write bytes. The provider is fully asynchronous. This is not a problem for write operations as the Firmata protocol assumes reliable delivery, so the write request will eventually be delivered to the write pins. 
+I2C is a bit more complicated than Analog and Digital pins as it is a transaction-based hardware protocol: requests are made to the hardware to read and write bytes. The provider is fully asynchronous. This is not a problem for write operations as the Firmata protocol assumes reliable delivery, so the write request will eventually be delivered to the write pins.
 
 ```js
 let i2c = new firmata.I2C({
@@ -452,7 +452,7 @@ Colors are transmitted from client to server using seven bits per channel (R, G,
 
 The Firmata Server informs the client that the Poco protocol extension is supported by sending a `STRING_DATA` message with the value `hasPoco` following the response to the `CAPABILITY_QUERY` message. A client which is unaware of the feature will ignore the message. This is a temporary ad-hoc approach.
 
-All Poco messages contained within the Sysex message `User Command 1` to avoid conflicting with any existing or proposed extension to Firmata. 
+All Poco messages contained within the Sysex message `User Command 1` to avoid conflicting with any existing or proposed extension to Firmata.
 
 <a id="conclusion"></a>
 ## Conclusion

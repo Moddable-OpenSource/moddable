@@ -67,7 +67,7 @@ class MQTTClient {
 			port: options.port,
 			id: options.id ?? "",
 			clean: options.clean ?? true,
-			keepalive: options.keepalive ?? 0,
+			keepalive: options.keepAlive ?? options.keepalive ?? 0,		// for compatibilty. should eventually be removed
 			pending: []
 		};
 
@@ -143,6 +143,7 @@ class MQTTClient {
 			if (0 === this.#options.remaining) {
 				delete this.#options.remaining;
 				this.#state = "connected";
+				this.#options.last = Date.now();
 			}
 				
 			return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
@@ -258,7 +259,10 @@ class MQTTClient {
 			default:
 				throw new Error("unknown");
 		}
-		
+
+		if ("connected" === this.#state)
+			this.#options.last = Date.now();
+
 		return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
 	}
 	read(count) {
@@ -285,7 +289,6 @@ class MQTTClient {
 	}
 	#onReadable(count) {
 		this.#readable = count;
-		this.#options.last = Date.now();
 
 		if (this.#payload)
 			return;
@@ -710,7 +713,7 @@ class MQTTClient {
 		const interval = options.keepalive.interval;
 		const now = Date.now();
 		if ((options.last + (interval >> 1)) > now)
-			return;		// received data within the keepalive interval
+			return;		// wrote control packet within the keepalive interval
 
 		if ((options.last + (interval + (interval >> 1))) < now)
 			return void this.#onError("time out"); // no response in too long

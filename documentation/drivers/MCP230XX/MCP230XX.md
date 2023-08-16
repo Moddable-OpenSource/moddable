@@ -11,15 +11,15 @@ The [MCP23017](http://www.microchip.com/wwwproducts/en/MCP23017) device provides
 The driver module "MCP230XX" exports the following:
 
 ```js
-export { 
-  MCP23008, 
+export {
+  MCP23008,
   MCP23017
 };
 ```
 
 ### MCP23008 Class
 
-The `MCP23008` class produces instances that represent a single MCP23008 IC on the I2C bus. The `MCP23008` class extends an internal `Expander` class, which extends the `SMBus` class. `Expander` is not exported. 
+The `MCP23008` class produces instances that represent a single MCP23008 IC on the I2C bus. The `MCP23008` class extends an internal `Expander` class, which extends the `SMBus` class. `Expander` is not exported.
 
 Instance objects of `MCP23008` contain 8 `Pin` instance object entries.
 
@@ -63,8 +63,8 @@ let leds = new MCP23008({ sda: 4, scl: 5 });
 | Parameter | Type | Default Value | Description
 | --- | --- | --- | :--- |
 | `address`  | `number` | `0x20` | The address of the I2C device |
-| `hz`       | `number` | 100kHz | The clock speed of the I2C device. | 
-| `sda`      | `number` | 4 | The I2C sda (data) pin. | 
+| `hz`       | `number` | 100kHz | The clock speed of the I2C device. |
+| `sda`      | `number` | 4 | The I2C sda (data) pin. |
 | `scl`      | `number` |  5 | The I2C scl (clock) pin.     |
 | `inputs`   | `number` (byte) | `0b11111111` | A byte representing the input/output initialization state of the 8 GPIO pins. `1` for input, `0` for output |
 | `pullups`  | `number` (byte)  | `0b00000000` | A byte representing the pullup initialization state of the 8 GPIO pins. `1` for pullup, `0` for default |
@@ -86,7 +86,7 @@ All properties are read-only.
 
 ##### `write(byte)`
 
-Temporarily sets the mode of all pins to output and writes all pins at once. 
+Temporarily sets the mode of all pins to output and writes all pins at once.
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
@@ -99,7 +99,7 @@ Temporarily sets the mode of all pins to input, reads all pins at once, and retu
 
 ```js
 let expander = new MCP23008(); // defaults to 0x20!
-trace(`${expander.read()}\n`); 
+trace(`${expander.read()}\n`);
 ```
 
 
@@ -157,7 +157,7 @@ let leds = new MCP23017({ sda: 4, scl: 5 });
 
 #### Properties
 
-All properties are read-only. 
+All properties are read-only.
 
 | Name | Type | Value | Description|
 | --- | --- | --- | :--- |
@@ -173,7 +173,7 @@ All properties are read-only.
 
 ##### `write(word)`
 
-Temporarily sets the mode of all pins to output and writes all pins at once. 
+Temporarily sets the mode of all pins to output and writes all pins at once.
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
@@ -186,7 +186,7 @@ Temporarily sets the mode of all pins to input, reads all pins at once, and retu
 
 ```js
 let expander = new MCP23017(); // defaults to 0x20!
-trace(`${expander.read()}\n`); 
+trace(`${expander.read()}\n`);
 ```
 
 ### Pin Class
@@ -201,7 +201,7 @@ export default function() {
 	const leds = new MCP23008({
 		inputs: 0b00000000
 	});
-  
+
   	// leds[0], leds[1], etc. are Pin instances
 	leds[0].write(1);
 	leds[1].write(0);
@@ -237,7 +237,7 @@ export default function() {
 
 All properties are read-only.
 
-| Name | Type | Description 
+| Name | Type | Description
 | --- | --- | :--- |
 | `pin` | `number` | The GPIO pin number |
 | `expander` | `expander` | The instance of `Expander` that this `Pin` belongs to |
@@ -250,7 +250,7 @@ All properties are read-only.
 | --- | --- | :--- |
 | `mode` | `number` | A number representing the desired mode. May be input, input pullup, or output.
 
-Sets the pin's mode to the specified mode. 
+Sets the pin's mode to the specified mode.
 
 ##### `read()`
 

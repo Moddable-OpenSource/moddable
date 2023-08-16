@@ -545,12 +545,42 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	#define mxASANStackMargin 0
 #endif
 
+#if mxWindows
+ULONG GetCurrentThreadStackLimits_Win7( _Out_ PULONG_PTR LowLimit, _Out_ PULONG_PTR HighLimit )
+{
+    static void (WINAPI* GetCurrentThreadStackLimits)(PULONG_PTR , PULONG_PTR);
+
+    if (!GetCurrentThreadStackLimits)
+    {
+        *(void**)&GetCurrentThreadStackLimits = GetProcAddress(GetModuleHandle(L"kernel32"), "GetCurrentThreadStackLimits");
+
+        if (!GetCurrentThreadStackLimits)
+        {
+            NT_TIB* tib = (NT_TIB*)NtCurrentTeb();
+            *HighLimit = (ULONG_PTR)tib->StackBase;
+
+            MEMORY_BASIC_INFORMATION mbi;
+            if (VirtualQuery(tib->StackLimit, &mbi, sizeof(mbi)))
+            {
+                *LowLimit = (ULONG_PTR)mbi.AllocationBase;
+                return 0;
+            }
+
+            return GetLastError();
+        }
+    }
+
+    GetCurrentThreadStackLimits(LowLimit, HighLimit);
+    return 0;
+}
+#endif
+
 char* fxCStackLimit()
 {
 	#if mxWindows
 		ULONG_PTR low, high;
-		GetCurrentThreadStackLimits(&low, &high);
-		return (char*)low + (16 * 1024) + mxASANStackMargin;
+		GetCurrentThreadStackLimits_Win7(&low, &high);
+		return (char*)low + (32 * 1024);
 	#elif mxMacOSX
 		pthread_t self = pthread_self();
     	void* stackAddr = pthread_get_stackaddr_np(self);

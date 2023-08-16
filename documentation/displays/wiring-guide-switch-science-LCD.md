@@ -8,7 +8,7 @@ Revised: October 23, 2018
 
 | | |
 | :---: | :--- |
-| **Part** | 2858: JDI - REFLCD - 128 
+| **Part** | 2858: JDI - REFLCD - 128
 | **Size** | 1.28", 176 × 176
 | **Type** | Color reflective LCD (no backlight)
 | **Interface** | SPI
@@ -30,11 +30,11 @@ mcconfig -d -m -p esp/switch_science_reflective_lcd
 | Switch Science LCD | ESP8266 | ESP8266 Devboard label
 | --- | --- | --- |
 | 14 - SCLK | GPIO 14 | (D5)
-| 13 - SI | GPIO 13 | (D7) 
+| 13 - SI | GPIO 13 | (D7)
 | 15 - SCS | GPIO 15 | (D8)
-| DISP | 3.3v | 
-| GND | GND | 
-| VIN | 3.3v | 
+| DISP | 3.3v |
+| GND | GND |
+| VIN | 3.3v |
 
 ![Generic 2.4"-2.8" wiring illustration](images/switch-science-esp-wiring.png)
 

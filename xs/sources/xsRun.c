@@ -3066,9 +3066,9 @@ XS_CODE_JUMP:
 			slot = mxStack + 1;
 			if (slot->kind == XS_INTEGER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND)
-					slot->value.integer <<= mxStack->value.integer & 0x1f;
+					slot->value.integer = (txInteger)(((txUnsigned)slot->value.integer) << (mxStack->value.integer & 0x1f));
 				else if (mxStack->kind == XS_NUMBER_KIND) {
-					slot->value.integer <<= fxNumberToInteger(mxStack->value.number) & 0x1f;
+					slot->value.integer = (txInteger)(((txUnsigned)slot->value.integer) << (fxNumberToInteger(mxStack->value.number) & 0x1f));
 					mxFloatingPointOp("left shift");
 				}
 				else
@@ -3077,12 +3077,12 @@ XS_CODE_JUMP:
 			else if (slot->kind == XS_NUMBER_KIND) {
 				if (mxStack->kind == XS_INTEGER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
-					slot->value.integer = fxNumberToInteger(slot->value.number) << (mxStack->value.integer & 0x1f);
+					slot->value.integer = (txInteger)(((txUnsigned)fxNumberToInteger(slot->value.number)) << (mxStack->value.integer & 0x1f));
 					mxFloatingPointOp("left shift");
 				}
 				else if (mxStack->kind == XS_NUMBER_KIND) {
 					slot->kind = XS_INTEGER_KIND;
-					slot->value.integer = fxNumberToInteger(slot->value.number) << (fxNumberToInteger(mxStack->value.number) & 0x1f);
+					slot->value.integer = (txInteger)(((txUnsigned)fxNumberToInteger(slot->value.number)) << (fxNumberToInteger(mxStack->value.number) & 0x1f));
 					mxFloatingPointOp("left shift");
 				}
 				else
@@ -3092,7 +3092,7 @@ XS_CODE_JUMP:
 		XS_CODE_LEFT_SHIFT_GENERAL:
 				mxSaveState;
 				if (fxToNumericIntegerBinary(the, slot, mxStack, gxTypeBigInt._lsl))
-					slot->value.integer <<= mxStack->value.integer & 0x1f;
+					slot->value.integer = (txInteger)(((txUnsigned)slot->value.integer) << (mxStack->value.integer & 0x1f));
 				mxRestoreState;
 			}
 			mxStack++;

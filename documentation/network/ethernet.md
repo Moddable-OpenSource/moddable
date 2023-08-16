@@ -6,7 +6,7 @@ Revised: November 16, 2021
 
 The Moddable SDK supports Ethernet for the ESP32. Ethernet support is an extension to our [network support](./network.md), which includes support for Wi-Fi and protocols like HTTP/HTTPS, MQTT, WebSockets, DNS, and mDNS. Most of the [networking examples](../../examples/network) in the Moddable SDK enable Wi-Fi by default, but examples that work with Wi-Fi can easily be made to use Ethernet instead.
 
-This document provides information about how to enable Ethernet in applications, details of the JavaScript API used to establish and monitor an Ethernet connection, and wiring instructions for a compatible Ethernet breakout board. 
+This document provides information about how to enable Ethernet in applications, details of the JavaScript API used to establish and monitor an Ethernet connection, and wiring instructions for a compatible Ethernet breakout board.
 
 ## Table of Contents
 
@@ -124,7 +124,7 @@ let monitor = new Ethernet((msg) => {
 			// Got IP address
 			break;
 	}
-});	
+});
 ```
 
 ### `close()`
@@ -134,7 +134,7 @@ The `close` method closes the connection between the `Ethernet` instance and the
 ```js
 let monitor = new Ethernet((msg) => {
 	trace(`Ethernet msg: ${msg}\n`);
-});	
+});
 
 monitor.close();
 ```
@@ -152,7 +152,7 @@ let monitor = new Ethernet((msg) => {
 		case Ethernet.connected:
 			trace(`Physical link established. Waiting for IP address.\n`);
 			break;
-	
+
 		case Ethernet.gotIP:
 			let ip = Net.get("IP", "ethernet");
         	trace(`Ethernet connected. IP address ${ip}\n`);
@@ -162,7 +162,7 @@ let monitor = new Ethernet((msg) => {
 			trace(`Ethernet connection lost.\n`);
 			break;
     }
-});	
+});
 ```
 
 ### Example: Get MAC address of Ethernet device

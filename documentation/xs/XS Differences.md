@@ -5,18 +5,18 @@ Revised: October 10, 2018
 ## Ultra-light JavaScript
 XS is the JavaScript engine at the core of Moddable applications and tools. XS has existed since the beginning of this century. You can get the latest version on [GitHub](https://github.com/Moddable-OpenSource/moddable).
 
-Other JavaScript engines are primarily used for client or server side web development. Their main focus is speed, their main cost is the significant resources they consume to get that speed. 
+Other JavaScript engines are primarily used for client or server side web development. Their main focus is speed, their main cost is the significant resources they consume to get that speed.
 
 The XS engine targets embedded platforms built around microcontrollers like the [ESP8266](https://www.espressif.com/en/products/hardware/esp8266ex/overview) or [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview). XS also runs on the usual desktop and mobile platforms.
 
 The challenges of embedded development are well known: limited memory and limited performance. Compared to hardware that usually runs JavaScript for the web on the client or the server sides, the differences are measured in orders of magnitude, not percentages. Moreover battery life is often critical.
 
-Despite such constraints, and unlike other scripting libraries available on microcontrollers, XS always strives to fully implement the quite extensive [ECMAScript Language Specification](https://tc39.github.io/ecma262/). 
+Despite such constraints, and unlike other scripting libraries available on microcontrollers, XS always strives to fully implement the quite extensive [ECMAScript Language Specification](https://tc39.github.io/ecma262/).
 
 These constraints have consequences. This document highlights key differences between XS, with its focus on embedded devices, and  JavaScript engines focused on web development.
 
 ## Spare runtime resources
-Embedded platforms do not exist alone. You need a computer to develop applications for them. Therefore, you should prepare in advance of execution, at *compile* time, everything you can in order to spare *run*-time resources. 
+Embedded platforms do not exist alone. You need a computer to develop applications for them. Therefore, you should prepare in advance of execution, at *compile* time, everything you can in order to spare *run*-time resources.
 
 On the web, JavaScript engines currently execute scripts and modules from their source code. For microcontrollers, the XS compiler transforms modules source code into byte code on your computer, so the XS engine on the microcontroller only has to execute byte code.
 
@@ -27,12 +27,12 @@ At Moddable, we generalized this approach beyond scripts to all kinds of assets.
 Despite being based on JavaScript, embedded development with XS is more similar to mobile development than web development. Applications built with XS are described by a manifest and built with a tool chain that includes the XS compiler and linker, asset encoders, C compiler and linker, a debugger, and ROM flasher.
 
 ## Prepare the environment
-On embedded platforms, the amount of RAM is extremely small, often under 64 KB. The amount of ROM is larger, 512 KB to 4 MB, roughly the same amount of data downloaded for a typical modern web page. An application's native code and data are flashed into ROM. 
+On embedded platforms, the amount of RAM is extremely small, often under 64 KB. The amount of ROM is larger, 512 KB to 4 MB, roughly the same amount of data downloaded for a typical modern web page. An application's native code and data are flashed into ROM.
 
 JavaScript modules compiled to byte code and encoded assets are stored in flash ROM as part of the native data. This allows the byte code and assets to be used in place, rather than being copied to RAM first. For example, the XS engine executes byte code directly from ROM. Still, a significant amount of RAM is needed for the JavaScript environment your application runs in. For example:
 
-- JavaScript Built-ins including `Object`, `Function`, `Boolean`, `Symbol`, `Error`, `Number`, `Math`, `Date`, `String`, `RegExp`, `Array`, `TypedArray`, `Map`, `Set`, `WeakMap`, `WeakSet`, `ArrayBuffer`, `SharedArrayBuffer`, `DataView`, `Atomics`, `JSON`, `Generator`, `AsyncGenerator`, `AsyncFunction`, `Promise`, `Reflect`, `Proxy`, etc. 
-- Modules your application uses to do something useful, like a user interface framework, a secure network framework, etc. 
+- JavaScript Built-ins including `Object`, `Function`, `Boolean`, `Symbol`, `Error`, `Number`, `Math`, `Date`, `String`, `RegExp`, `Array`, `TypedArray`, `Map`, `Set`, `WeakMap`, `WeakSet`, `ArrayBuffer`, `SharedArrayBuffer`, `DataView`, `Atomics`, `JSON`, `Generator`, `AsyncGenerator`, `AsyncFunction`, `Promise`, `Reflect`, `Proxy`, etc.
+- Modules your application uses to do something useful, like a user interface framework, a secure network framework, etc.
 
 Constructing built-ins and loading modules creates many classes, functions, and prototype objects. These objects often require more RAM than is present on a modest microcontroller.
 
@@ -41,7 +41,7 @@ To solve this problem, the XS linker allows you to prepare a JavaScript environm
 The benefits are significant:
 
 - Since almost nothing is ever copied from ROM to RAM, your application runs with a small amount of RAM.
-- Since everything is ready in ROM, your application boots instantaneously. 
+- Since everything is ready in ROM, your application boots instantaneously.
 
 > The XS linker cannot preload a module with a body that calls a native function that is only available on the microcontroller. Typically there will be only one module like that to start your application.
 
@@ -50,9 +50,9 @@ But what happens when applications want to modify objects that the XS linker pre
 
 The XS engine maintains a a table of aliases which is initially empty. All aliasable objects in ROM have an index in that table. When an application modifies an aliasable object, the aliasable object is cloned into RAM and inserted into the table to override the aliasable object.
 
-Such a mechanism has a cost in memory footprint and performance, but is essential for conformance with the JavaScript language specification. However JavaScript has a feature to specify that an object cannot be modified: `Object.freeze`. When objects are frozen, the XS linker does not index them as aliasable. 
+Such a mechanism has a cost in memory footprint and performance, but is essential for conformance with the JavaScript language specification. However JavaScript has a feature to specify that an object cannot be modified: `Object.freeze`. When objects are frozen, the XS linker does not index them as aliasable.
 
-Modules can use `Object.freeze` in their body to tell the XS linker which objects do not need to be indexed as aliasable. Calling that for each object is tedious enough, so the XS linker can automatically freeze all class, function and prototype objects, as well as other built-in objects like `Atomics`, `JSON`, `Math` and `Reflect`. 
+Modules can use `Object.freeze` in their body to tell the XS linker which objects do not need to be indexed as aliasable. Calling that for each object is tedious enough, so the XS linker can automatically freeze all class, function and prototype objects, as well as other built-in objects like `Atomics`, `JSON`, `Math` and `Reflect`.
 
 In ECMAScript parlance, that is related to a [frozen realm](https://github.com/tc39/proposal-frozen-realms).
 
@@ -63,7 +63,7 @@ As mentioned above, JavaScript defines many of built-ins, which are all implemen
 
 Based on the byte code of your modules, the XS linker can strip unused native code from the XS engine itself. So your application will run its own version of the XS engine, tailored to reduce its ROM footprint.
 
-That is automatic for applications that are self-contained and updated as a whole, which is still common on embedded platforms for the sake of consistency, safety, and security. 
+That is automatic for applications that are self-contained and updated as a whole, which is still common on embedded platforms for the sake of consistency, safety, and security.
 
 For applications that expect to be customized or updated with separate modules, you can manually specify the built-in features to strip from the XS engine and to document the profiled JavaScript environment. For instance you can strip `eval`, `Function`, etc to get rid of the XS parser and byte coder.
 
@@ -77,7 +77,7 @@ Web development often claims to be "pure" Javascript while it is in fact relying
 
 At Moddable, we use native code only when necessary, for instance to build drivers, or when the memory footprint or performance gains are obvious, for instance in our graphics library and user interface framework.
 
-Indeed a reasonable solution to sparing resources is to sometimes use native code instead of JavaScript. Remember that your application is in charge of everything. 
+Indeed a reasonable solution to sparing resources is to sometimes use native code instead of JavaScript. Remember that your application is in charge of everything.
 
 > Since the tool chain always requires compiling and linking native code, there is no overhead in your development cycle.
 

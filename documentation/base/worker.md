@@ -29,7 +29,7 @@ Scripts import the `Worker` class to be able to create a new worker.
 To launch a worker, create an instance of the `Worker` class, passing the name of the module to invoke when the worker starts to run. In the following example, the module run at worker start is `simpleworker`.
 
 	let aWorker = new Worker("simpleworker");
-	
+
 The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has completed initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
 ### Launching a worker with memory configuration
@@ -39,7 +39,7 @@ The previous example launches the worker with the default memory configuration. 
 			{allocation: 8192, stackCount: 64, slotCount: 64});
 
 ### Sending a message to a worker
-Messages to workers are JavaScript objects and binary data. 
+Messages to workers are JavaScript objects and binary data.
 
 	aWorker.postMessage({hello: "world", count: 12});
 	aWorker.postMessage(new ArrayBuffer(12));
@@ -77,7 +77,7 @@ When the Worker constructor is called, the module at the path specified (`simple
 
 	let count = 1;
 	let state = INITIALIZED;
-	
+
 	self.onmessage = function (message) {
 		trace(message, "\n");
 	}
@@ -123,7 +123,7 @@ The `postMessage` function queues a message for delivery to the worker. Messages
 
 Messages are delivered in the same order they are sent.
 
-Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`, so the size of the message should be as small as practical.  If the memory allocation fails, `postMessage` throws an exception. 
+Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`, so the size of the message should be as small as practical.  If the memory allocation fails, `postMessage` throws an exception.
 
 #### onmessage property
 The worker `onmessage` property contains a function which receives messages from the worker.
@@ -143,7 +143,7 @@ The `SharedWorker` class is an API for working with shared virtual machines. The
 Scripts import the `SharedWorker` class to be able to connect to a shared worker, creating the shared worker if it is not currently instantiated.
 
 	import {SharedWorker} from "worker";
-	
+
 **Note**: Examples and documentation needed.
 
 ## Scheduling

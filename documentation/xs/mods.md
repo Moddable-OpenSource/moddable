@@ -8,7 +8,7 @@ Mods are simple to create but the technology behind them is complex. This articl
 
 ## Key Characteristics of Mods
 
-Mods are a tool to extend the capabilities of IoT products. It is rare today for an IoT product to support extensions, and when they do it is through native code. Using JavaScript as the foundation for mods not only makes it feasible to support extensibility in many more products, it empowers many more users to do so. 
+Mods are a tool to extend the capabilities of IoT products. It is rare today for an IoT product to support extensions, and when they do it is through native code. Using JavaScript as the foundation for mods not only makes it feasible to support extensibility in many more products, it empowers many more users to do so.
 
 - **Mods are portable** - The JavaScript language was designed from the start to be independent of both the host operating system and the host hardware. The Moddable SDK follows that by providing APIs that are consistent across devices.  This portability is critical so that developers can use their knowledge and experience across devices from many different manufacturers, rather than needing to learn new development tools, a new language, and new APIs for each IoT product.
 - **Mods are standard** - IoT products are built using standards -- from standard electrical connectors to standard Wi-Fi -- to ensure they are reliable, safe, and can interoperate with products from different manufacturers. Mods follow this proven pattern by using modern industry-standard JavaScript (ECMAScript 2020) as their programming language. Moddable is helping to standardize APIs for IoT products through the Ecma TC53 committee, ECMAScript Modules for Embedded Systems.
@@ -52,7 +52,7 @@ trace(`Software version ${config.version}\n`);
 ```
 
 The mod contains a single data file, a text file with a short message.
- 
+
 ```
 Hello, mod.
 ```
@@ -157,7 +157,7 @@ if (Modules.has("mod"))
 	Modules.importNow("mod");
 ```
 
-The `importNow` function loads the module and executes the module's body, similar to calling dynamic `import`, though `importNow` is synchronous. 
+The `importNow` function loads the module and executes the module's body, similar to calling dynamic `import`, though `importNow` is synchronous.
 
 The `importNow` function returns the module's default export. Consider the following mod that exports several functions through its default export.
 
@@ -249,7 +249,7 @@ For additional details on stripping language features, see the [Strip](https://g
 When a mod uses a JavaScript language feature that has been stripped, a "dead strip" exception is generated and the virtual machine terminates execution.
 
 ### Securing a Mod
-Mods are powerful because they have access to the same modules and global variables as the host. This means that a mod is likely able to perform all of the same operations as the host. For a simple host that only prepares an environment for the mod to run in, this is not a problem.  However, some hosts want to limit what a mod can do to ensure the integrity of operation of the host. These IoT product hosts want to ensure that the mod can only perform those operations the host chooses to allow. 
+Mods are powerful because they have access to the same modules and global variables as the host. This means that a mod is likely able to perform all of the same operations as the host. For a simple host that only prepares an environment for the mod to run in, this is not a problem.  However, some hosts want to limit what a mod can do to ensure the integrity of operation of the host. These IoT product hosts want to ensure that the mod can only perform those operations the host chooses to allow.
 
 Restricting a script from access to certain capabilities is common. Every web browser ensures the integrity of the user's computer by restricting scripts in many ways. For example, scripts cannot normally access the user's file system.
 
@@ -270,13 +270,13 @@ let c = new Compartment(
 let exports = c.importNow("mod");
 ```
 
-The first argument to the `Compartment` constructor relates to global variables inside the compartment and is described in the following section. The second argument is the compartment's module map. It performs two functions. First, it determines which modules are available to be imported by scripts running inside the compartment. Second, it allows remapping module specifiers to change how a module is accessed inside the compartment. 
+The first argument to the `Compartment` constructor relates to global variables inside the compartment and is described in the following section. The second argument is the compartment's module map. It performs two functions. First, it determines which modules are available to be imported by scripts running inside the compartment. Second, it allows remapping module specifiers to change how a module is accessed inside the compartment.
 
 The module map above allows only the module named "mod" to be imported inside the compartment. There is no remapping of module specifiers. The property name on the left ("mod") is the module specifier inside the compartment and the value on the right (also "mod") is the module specified in the host.
 
 The call to the `importNow` method loads the module "mod" inside of compartment `c`. Because of the module map, the mod cannot import any of the modules from the host. If it tries to do so, the import fails as if the module is not present.
 
-The compartment map below is changed to use remapping. 
+The compartment map below is changed to use remapping.
 
 ```js
 let c = new Compartment(
@@ -353,15 +353,15 @@ Array.prototype.push = function(...elements) {
 This kind of global patch of built-in objects is called a [monkey patch](https://en.wikipedia.org/wiki/Monkey_patch). It is a technique that allows one script to attack another. In SES, this kind of attack is not possible through the primordial objects because they are frozen, making it impossible to change existing properties. If a script running in a compartment attempts to replace the `push` function, an exception is thrown.
 
 ## Behind the Scenes
-Mods are easy to use, which makes it easy to overlook the many complex details involved in making them work. This section describes implementation details that may be important when working with mods. 
+Mods are easy to use, which makes it easy to overlook the many complex details involved in making them work. This section describes implementation details that may be important when working with mods.
 
 ### Building Mods
-`mcrun` converts the mod's JavaScript source code and data into a single binary file, an XS Archive (.xsa extension). The archive format is designed so JavaScript byte code executes directly from flash storage without having to be copied into memory. 
+`mcrun` converts the mod's JavaScript source code and data into a single binary file, an XS Archive (.xsa extension). The archive format is designed so JavaScript byte code executes directly from flash storage without having to be copied into memory.
 
 The JavaScript modules are precompiled to XS byte code, so no source code is deployed to the target device. This allows the device to begin executing the mod without needing to parse the JavaScript source code first.
 
 The image, font, and audio resources in the manifest are transformed to a format compatible with the target device following the manifest [resource rules](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md#resources).
- 
+
 While the source code to the mod is platform independent, the binary format of the mod is not. The pixel format and rotation of the images is optimized for a specific host, the XS byte code generated is for a specific version of the XS engine, etc. The archive is not a general purpose distribution format for mods.
 
 The `mcrun` tool builds the mod without knowledge of the symbol table of the mod host. XS byte code references symbols by a 16-bit ID. The first time a mod is run by a mod host, XS automatically updates the symbol ID values in the mod's byte code so they match the host IDs. This process is very fast. However, it does mean that the remapped mod data on the device cannot be copied and installed on another device. Instead, a fresh copy of the mod must be installed. When the ID remapping is performed, XS stores a hash of the mod host's symbol table so that if the host is updated independently of the mod, the mod will not attempt to run (as the symbol IDs could be incorrect).

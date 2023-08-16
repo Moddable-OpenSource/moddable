@@ -126,6 +126,8 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
 |<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
 |<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
+| <img src="./../assets/devices/lilygo-qt-pro-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_t_qt` | 0.85" LCD display<br>128 x 128 16 bit color<br>2 buttons<br>Qwiic connector | <li>[Product page](https://www.lilygo.cc/products/t-qt-v1-1)</li>|
+| <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
 
 <a id="platforms-esp32-c3"></a>
 ### ESP32-C3
@@ -159,7 +161,7 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 "build":{
 	"ESP32_SUBCLASS": "esp32s2"
 },
-``` 
+```
 
 | `ESP32_SUBCLASS` | Device |
 |:---:|:---:|

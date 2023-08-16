@@ -2,7 +2,7 @@
 Copyright 2019 Moddable Tech, Inc.<BR>
 Revised: July 2, 2019
 
-The vertical and horizontal expanding keyboard modules implement touch screen keyboards for use with [Piu](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md) on Moddable One and Moddable Two [products](https://www.moddable.com/product.php). The keys automatically expand when tapped, eliminating the need for a stylus. Both keyboards implement the same API. 
+The vertical and horizontal expanding keyboard modules implement touch screen keyboards for use with [Piu](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/piu/piu.md) on Moddable One and Moddable Two [products](https://www.moddable.com/product.php). The keys automatically expand when tapped, eliminating the need for a stylus. Both keyboards implement the same API.
 
 - **Source code:** [`vertical/keyboard.js`](../../modules/input/expanding-keyboard/vertical/keyboard.js) [`horizontal/keyboard.js`](../../modules/input/expanding-keyboard/horizontal/keyboard.js)
 - **Relevant Examples:** [vertical-expanding-keyboard](../../examples/piu/vertical-expanding-keyboard/main.js) [horizontal-expanding-keyboard](../../examples/piu/horizontal-expanding-keyboard/main.js)
@@ -43,7 +43,7 @@ import {KeyboardField} from "common/keyboard";
 #### `HorizontalExpandingKeyboard(behaviorData, dictionary)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `behaviorData`	| `*` |	A parameter that is passed into the `onCreate `function of the keyboard's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to configure the resulting keyboard. Only parameters specified in the [Dictionary](#keyboard-dictionary) section below will have an effect; other parameters will be ignored.
 
@@ -60,7 +60,7 @@ let keyboard = new VerticalExpandingKeyboard(null, { Style:KeyboardStyle, target
 ### Dictionary
 
 | Parameter | Type | Default Value | Description |
-| :---: | :---: | :---: | :--- | 
+| :---: | :---: | :---: | :--- |
 | `Style` | `style` | n/a | **Required.** A Piu Style object that will be used for the text on keys. |
 | `target` | `object` | n/a | **Required.** A Piu Container object that will receive the `onKeyUp` event. |
 | `doTransition` | `boolean` | `false`| Whether or not to transition in the keyboard when it is first displayed and transition out when dismissed. |
@@ -71,7 +71,7 @@ let keyboard = new VerticalExpandingKeyboard(null, { Style:KeyboardStyle, target
 #### `onKeyboardOK(container, text)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 | `text` | `string` | The complete string entered into the field |
 
@@ -80,7 +80,7 @@ The keyboard bubbles this event when the OK button is pressed.
 #### `onKeyboardRowsContracted(container)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 
 The keyboard bubbles this event when it is done horizontally contracting the keyboard rows back to the unzoomed view.
@@ -88,7 +88,7 @@ The keyboard bubbles this event when it is done horizontally contracting the key
 #### `onKeyboardRowsExpanded(container)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 
 The keyboard bubbles this event when it is done horizontally expanding the keyboard rows to the zoomed view.
@@ -96,7 +96,7 @@ The keyboard bubbles this event when it is done horizontally expanding the keybo
 #### `onKeyboardTransitionFinished(container, out)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 | `out` | `boolean` | Set `true` when the keyboard transitions out of view, `false` when the keyboard transitions into view |
 
@@ -105,7 +105,7 @@ The keyboard bubbles this event when it is done transitioning on and off the scr
 #### `onKeyUp(container, key)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 | `key` | `string` | The string value of the key that was pressed (e.g., `'a'`, `'3'`, `'$'`). It can also be `\b` for backspace or `\r` for the submit button.|
 
@@ -120,7 +120,7 @@ The keyboard bubbles the `onKeyUp` event when a key is released. The `onKeyUp` f
 #### `KeyboardField(behaviorData, dictionary)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `behaviorData`	| `*` |	A parameter that is passed into the `onCreate `function of the keyboard field's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to configure the resulting keyboard field. Only parameters specified in the [Dictionary](#keyboard-field-dictionary) section below will have an effect; other parameters will be ignored.
 
@@ -135,7 +135,7 @@ let keyboardField = new KeyboardField(null, { Style:FieldStyle });
 ### Dictionary
 
 | Parameter | Type | Default Value | Description |
-| :---: | :---: | :---: | :--- | 
+| :---: | :---: | :---: | :--- |
 | `Style` | `style` | n/a | **Required.** A Piu Style object that will be used for the keyboard entry text. |
 | `password` | `boolean` | `false` | Set `true` to enable password mode. The password mode hides each character displayed after a short delay. |
 
@@ -144,7 +144,7 @@ let keyboardField = new KeyboardField(null, { Style:FieldStyle });
 #### `onKeyboardOK(container, text)`
 
 | Argument | Type | Description |
-| :---: | :---: | :--- | 
+| :---: | :---: | :--- |
 | `container` | `object` | The behavior's Container object |
 | `text` | `string` | The complete string entered into the field |
 

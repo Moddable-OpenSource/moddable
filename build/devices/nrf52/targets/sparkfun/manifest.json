@@ -1,0 +1,42 @@
+{
+    "build": {
+        "USE_USB": "1",
+        "UF2_VOLUME_NAME": "MODDABLEnRF"
+    },
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "",
+		"touch": "",
+
+		"led1_pin": 7,
+		"button1_pin": 13
+	},
+	"defines": {
+		"xdebugger": {
+			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
+			"rx_pin": "NRF_GPIO_PIN_MAP(0,31)",
+			"baud": "NRF_UART_BAUDRATE_115200"
+		},
+		"spi": {
+            "interface": "3",
+            "hz": "2000000",
+			"mosi_pin": "19",
+			"miso_pin": "20",
+			"sck_pin": "22"
+		},
+		"i2c": {
+            "interface": "0",
+			"scl_pin": 11,
+			"sda_pin": 8
+		}
+	}
+}

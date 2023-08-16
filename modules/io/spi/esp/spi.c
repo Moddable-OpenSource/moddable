@@ -64,7 +64,7 @@ void xs_spi_constructor(xsMachine *the)
 	SPI spi;
 	uint8_t mosi = kInvalidPin, miso = kInvalidPin, clock, select = kInvalidPin, active = 0, mode = 0;
 	int hz, tmp;
-#if ESP32
+#if ESP32 || nrf52
 	uint8_t spiPort;
 #else
 	char spiPort[8];
@@ -137,6 +137,8 @@ void xs_spi_constructor(xsMachine *the)
 #endif
 		xsRangeError("invalid port");
 	spiPort = (uint8_t)tmp;
+#elif nrf52
+	spiPort = 0;
 #else
 	xsmcGet(xsVar(0), xsArg(0), xsID_port);
 	xsmcToStringBuffer(xsVar(0), spiPort, sizeof(spiPort));
