@@ -48,6 +48,7 @@ extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *stat
 	extern int32_t modInstrumentationGarbageCollectionCount(xsMachine *the);
 	extern int32_t modInstrumentationModulesLoaded(xsMachine *the);
 	extern int32_t modInstrumentationStackRemain(xsMachine *the);
+	extern int32_t modInstrumentationPromisesSettledCount(xsMachine *the);
 #endif
 
 #ifdef __cplusplus

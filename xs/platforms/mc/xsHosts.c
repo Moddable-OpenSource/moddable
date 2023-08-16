@@ -636,6 +636,7 @@ void modInstrumentMachineReset(xsMachine *the)
 	the->stackPeak = the->stack;
 	the->peakParserSize = 0;
 	the->floatingPointOps = 0;
+	the->promisesSettledCount = 0;
 }
 
 int32_t modInstrumentationSlotHeapSize(xsMachine *the)
@@ -668,6 +669,11 @@ int32_t modInstrumentationStackRemain(xsMachine *the)
 	if (the->stackPeak > the->stack)
 		the->stackPeak = the->stack;
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
+}
+
+int32_t modInstrumentationPromisesSettledCount(xsMachine *the)
+{
+	return the->promisesSettledCount;
 }
 
 #endif

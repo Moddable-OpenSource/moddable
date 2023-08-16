@@ -97,9 +97,10 @@ enum {
 	kModInstrumentationGarbageCollectionCount,
 	kModInstrumentationModulesLoaded,
 	kModInstrumentationStackRemain,
+	kModInstrumentationPromisesSettledCount,	
 
 	kModInstrumentationCallbacksBegin = kModInstrumentationSystemFreeMemory,
-	kModInstrumentationCallbacksEnd = kModInstrumentationStackRemain,
+	kModInstrumentationCallbacksEnd = kModInstrumentationPromisesSettledCount,
 
 	kModInstrumentationLast = kModInstrumentationCallbacksEnd
 };

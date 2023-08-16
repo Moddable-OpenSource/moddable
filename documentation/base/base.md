@@ -1,6 +1,6 @@
 # Base
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: June 28, 2023
+Revised: August 16, 2023
 
 ## Table of Contents
 
@@ -377,13 +377,14 @@ The table below describes the instrumented items that are available. The followi
 | `Turns` | The number of times the event loop has run in the current interval.
 | `CPU 0` | The load on CPU 0 during the current interval.
 | `CPU 1` | The load on CPU 1 during the current interval.
-| `System Free Memory` | The number of free bytes in the system memory heap. This value is not available on the simulator.
+| `System Free Memory` | The number of free bytes in the system memory heap. This value is not available in the simulator.
 | `XS Slot Heap Used` | Number of bytes in use in the slot heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
 | `XS Chunk Heap Used` | Number of bytes in use in the chunk heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
 | `XS Keys Used` | Number of runtime keys allocated by the primary XS machine. Once allocated keys are never deallocated.
 | `XS Garbage Collection Count` | The number of times the garbage collector has run in the current interval.
 | `XS Modules Loaded` | The number of JavaScript modules that are currently loaded in the primary XS machine. This number does not include modules which are preloaded.
 | `XS Stack Used` | The maximum depth in bytes of the stack of the primary XS virtual machine during the current interval.
+| `XS Promises Settled` | The number of Promises settled. This is useful as a measure of Promisee/async/await activity.
 
 
 ***

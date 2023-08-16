@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -344,6 +344,11 @@ static int32_t modInstrumentationStackRemain(xsMachine *the)
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
 }
 
+static int32_t modInstrumentationPromisesSettledCount(xsMachine *the)
+{
+	return the->promisesSettledCount;
+}
+
 #endif
 
 static uint16_t gSetupPending = 0;
@@ -424,6 +429,7 @@ void fxScreenLaunch(txScreen* screen)
 	modInstrumentationSetCallback(GarbageCollectionCount, (ModInstrumentationGetter)modInstrumentationGarbageCollectionCount);
 	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
+	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
 	((txMachine*)(screen->machine))->onBreak = debugBreak;
 	fxDescribeInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentNames, screenInstrumentUnits);
 	fxScreenSampleInstrumentation(screen);
@@ -537,6 +543,7 @@ void fxScreenSampleInstrumentation(txScreen* screen)
 	the->garbageCollectionCount = 0;
 	the->stackPeak = the->stack;
 	the->floatingPointOps = 0;
+	the->promisesSettledCount = 0;
 }
 #endif
 

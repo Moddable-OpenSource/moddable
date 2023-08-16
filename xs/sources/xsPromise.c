@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1136,6 +1136,9 @@ void fxQueueJob(txMachine* the, txInteger count, txSlot* promise)
 		}
 #ifdef mxPromisePrint
 		fprintf(stderr, "fxQueueJob %d\n", promise->next->ID);
+#endif
+#ifdef mxInstrument	
+	the->promisesSettledCount += 1;
 #endif
 	}
 	if (mxPendingJobs.value.reference->next == NULL) {
