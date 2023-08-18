@@ -107,7 +107,7 @@ class TLSSocket {
 		}
 
 		if (!this.#data && this.#socket.readable) {
-			this.#doRead = Timer.set(() => {
+			this.#doRead ??= Timer.set(() => {
 				this.#doRead = undefined;
 				if (this.#socket.readable)
 					this.#onReadable(this.#socket.readable);
