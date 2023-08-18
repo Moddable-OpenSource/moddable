@@ -1154,9 +1154,6 @@ export default class extends TOOL {
 				if (config.alpnprotocol)
 					throw new Error("ALPN not yet implemented");
 
-				if (!config.verifyservercert)
-					throw new Error("disable server certificate verify not yet implemented");
-
 				if (config.servername)
 					throw new Error("cannot configure servername - name of host always used");
 
@@ -1166,7 +1163,6 @@ export default class extends TOOL {
 				delete config.credentials;		// processed separately
 
 				delete config.alpnprotocol;
-				delete config.verifyservercert;
 				delete config.servername;
 				delete config.certname;
 				delete config.keyname;
