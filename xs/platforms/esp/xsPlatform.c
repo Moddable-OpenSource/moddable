@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -229,6 +229,10 @@ void fxAbort(txMachine* the, int status)
 
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+
+	#ifdef MODDEF_XS_RESTARTON
+		#error RestartOn deprecated. Use abortHook instead.
+	#endif
 
 	#if MODDEF_XS_ABORTHOOK
 		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
