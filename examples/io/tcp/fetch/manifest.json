@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json"
 	],
 	"modules": {
