@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -81,7 +81,7 @@ void setup()
 	wifi_set_opmode_current(NULL_MODE);
 
 #ifdef mxDebug
-	gThe = modCloneMachine(0, 0, 0, 0, NULL);
+	gThe = modCloneMachine(NULL, NULL);
 	if (!gThe) {
 		modLog("can't clone: no memory?");
 		while (true)
@@ -90,7 +90,7 @@ void setup()
 
 	modRunMachineSetup(gThe);
 #else
-	modRunMachineSetup(modCloneMachine(0, 0, 0, 0, NULL));
+	modRunMachineSetup(modCloneMachine(NULL, NULL));
 #endif
 }
 

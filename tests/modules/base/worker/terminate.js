@@ -6,10 +6,19 @@ flags: [module]
 import Worker from "worker";
 
 const minimumOptions = {
-	allocation: 8192,
-	stackCount: 64,
-	slotCount: 64,
-	keyCount: 7
+	static: 8192,
+	heap: {
+		initial: 64,
+		incremental: 64
+	},
+	chunk: {
+		initial: 1024,
+		incremental: 512
+	},
+	stack: 64,
+	keys: {
+		initial: 1
+	}
 };
 
 let worker = new Worker("testworker", minimumOptions);

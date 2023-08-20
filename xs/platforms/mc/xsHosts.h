@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,7 +29,7 @@ extern "C" {
 	#include "modTimer.h"
 #endif
 
-extern xsMachine *modCloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint32_t keyCount, const char *name);
+extern xsMachine *modCloneMachine(xsCreation *creation, const char *name);
 extern void modRunMachineSetup(xsMachine *the);
 
 extern char *modGetModAtom(xsMachine *the, uint32_t atomTypeIn, int *atomSizeOut);

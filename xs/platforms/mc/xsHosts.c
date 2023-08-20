@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -450,11 +450,11 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 	create VM
 */
 
-txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint32_t keyCount, const char *name)
+txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 {
 	txMachine *the;
-	xsCreation *creationP;
-	void *preparation = xsPreparationAndCreation(&creationP);
+	xsCreation *creation = creationIn;
+	void *preparation = xsPreparationAndCreation(creation ? NULL : &creation);
 
 #if MODDEF_XS_MODS
 	uint8_t modStatus = 0;
@@ -467,30 +467,17 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 	if (!name)
 		name = ((txPreparation *)preparation)->main;
 
-	if (0 == allocation)
-		allocation = creationP->staticSize;
-
-	if (allocation) {
-		xsCreation creation = *creationP;
+	if (creation->staticSize) {
 		uint8_t *context[2];
 
-		if (stackCount)
-			creation.stackCount = stackCount;
-
-		if (slotCount)
-			creation.initialHeapCount = slotCount;
-		
-		if (keyCount)
-			creation.initialKeyCount = keyCount;
-
-		context[0] = c_malloc(allocation);
+		context[0] = c_malloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
 		}
-		context[1] = context[0] + allocation;
+		context[1] = context[0] + creation->staticSize;
 
-		the = xsPrepareMachine(&creation, preparation, (char *)name, context, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, context, archive);
 		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);

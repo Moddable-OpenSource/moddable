@@ -50,7 +50,7 @@ void xs_setup(void)
 #endif
 
 	while (true) {
-		gThe = modCloneMachine(0, 0, 0, 0, NULL);
+		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
