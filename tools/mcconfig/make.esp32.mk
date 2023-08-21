@@ -99,6 +99,9 @@ else
 	USB_OPTION = -DUSE_USB=$(USE_USB)
 endif
 
+ESP32_SUBCLASS ?= esp32
+ESP32_BT_SUBCLASS = $(ESP32_SUBCLASS)
+
 ifeq ("$(ESP32_SUBCLASS)","esp32c6")
 	ESP32_TARGET = 5
 else
@@ -106,9 +109,11 @@ else
 		ESP32_TARGET = 4
 	else
 		ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+			ESP32_BT_SUBCLASS = esp32
 			ESP32_TARGET = 3
 		else
 			ifeq ("$(ESP32_SUBCLASS)","esp32s2")
+				# esp32s2 doesn't support BlueTooth
 				ESP32_TARGET = 2
 			else
 				# basic esp32 doesn't support USB
@@ -119,13 +124,16 @@ else
 	endif
 endif
 
+ifeq ($(USE_USB),1) 
+	TINY_USB_BITS=$(PROJ_DIR)/managed_components
+endif
 
 INC_DIRS = \
 	$(IDF_PATH)/components \
  	$(IDF_PATH)/components/driver/deprecated \
 	$(IDF_PATH)/components/bootloader_support/include \
 	$(IDF_PATH)/components/bt/include \
-	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
 	$(IDF_PATH)/components/driver/gpio/include \
@@ -519,7 +527,10 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
+$(PROJ_DIR)/managed_components:
+	echo "# Configure tinyusb..."; cd $(PROJ_DIR) ; idf.py add-dependency "espressif/esp_tinyusb"
+
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 

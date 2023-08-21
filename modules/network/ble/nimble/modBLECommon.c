@@ -51,6 +51,7 @@ static void ble_host_task(void *param)
 	nimble_host_task(param);
 }
 
+/*
 static esp_err_t _esp_nimble_hci_and_controller_init(void)
 {
     esp_err_t err;
@@ -64,6 +65,7 @@ static esp_err_t _esp_nimble_hci_and_controller_init(void)
 
     return err;
 }
+*/
 
 int modBLEPlatformInitialize(void)
 {

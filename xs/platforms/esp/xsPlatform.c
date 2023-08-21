@@ -43,7 +43,7 @@
 #include "mc.defines.h"
 
 #if ESP32
-#if ESP32 < 3
+#if ESP32 < 2
 	#include "esp32/rom/ets_sys.h"
 #endif
 	#include "nvs_flash/include/nvs_flash.h"
@@ -220,9 +220,6 @@ const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 
 void fxAbort(txMachine* the, int status)
 {
-modLog("fxAbort\n");
-modLogInt(status);
-
 #if MODDEF_XS_TEST
 	if (XS_DEBUGGER_EXIT == status) {
 		extern txMachine *gThe;

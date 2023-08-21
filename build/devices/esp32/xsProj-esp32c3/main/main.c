@@ -150,7 +150,8 @@ void loop_task(void *pvParameter)
 		xsMachine *the = gThe;
 		while (gThe) {
 			modTimersExecute();
-			modMessageService(gThe, modTimersNext());
+			if (gThe)
+				modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
 		}
 
