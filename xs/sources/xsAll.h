@@ -1755,7 +1755,9 @@ mxExport void fx_AsyncGenerator_prototype_return(txMachine* the);
 mxExport void fx_AsyncGenerator_prototype_throw(txMachine* the);
 mxExport void fx_AsyncGeneratorFunction(txMachine* the);
 
+#if mxExplicitResourceManagement
 mxExport void fx_AsyncIterator_asyncDispose(txMachine* the);
+#endif
 mxExport void fx_AsyncIterator_asyncIterator(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_next(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_return(txMachine* the);
