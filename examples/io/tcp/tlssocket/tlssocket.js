@@ -44,7 +44,7 @@ class TLSSocket {
 		}; 
 
 		this.#session = new Session({
-			serverName: options.host,		//@@ serverName  here... distinct from host... if no serverName then fall-back to host
+			serverName: options.host,		// serverName for SNI. This defaults it to host. Caller can override with options.secure.serverName
 			...options.secure,
 			protocolVersion: 0x303,
 			trace: false
