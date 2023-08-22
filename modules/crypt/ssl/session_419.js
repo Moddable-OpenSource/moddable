@@ -50,6 +50,8 @@ const maxFragmentSize = 16384	// maximum record layer framgment size (not a pack
 
 class SSLSession {
 	constructor(options) {
+		options = {...options};	// shallow copy so it can be safely modified
+
 		if (options.protocolVersion) {
 			if ((options.protocolVersion < minProtocolVersion) || (options.protocolVersion > maxProtocolVersion))
 				throw new TLSError("protocolVersion: not supported");

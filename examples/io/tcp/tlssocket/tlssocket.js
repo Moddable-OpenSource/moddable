@@ -44,7 +44,7 @@ class TLSSocket {
 		}; 
 
 		this.#session = new Session({
-			tls_server_name: options.host,
+			serverName: options.host,		//@@ serverName  here... distinct from host... if no serverName then fall-back to host
 			...options.secure,
 			protocolVersion: 0x303,
 			trace: false

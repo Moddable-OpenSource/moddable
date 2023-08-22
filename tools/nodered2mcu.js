@@ -1154,19 +1154,18 @@ export default class extends TOOL {
 				if (config.alpnprotocol)
 					throw new Error("ALPN not yet implemented");
 
-				if (config.servername)
-					throw new Error("cannot configure servername - name of host always used");
-
 				delete config.ca;				// processed separately
 				delete config.cert;				// processed separately
 				delete config.key;				// processed separately
 				delete config.credentials;		// processed separately
 
 				delete config.alpnprotocol;
-				delete config.servername;
 				delete config.certname;
 				delete config.keyname;
 				delete config.caname;
+
+				if (!config.servername)
+					delete config.servername;
 			} break;
 
 			case "rpi-gpio in": {
