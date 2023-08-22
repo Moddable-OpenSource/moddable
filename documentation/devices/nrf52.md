@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: August 15, 2023
+Revised: August 22, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -75,6 +75,8 @@ nRF52840 has the following features:
 ## Build Types
 The nRF52 supports three kinds of builds: debug, instrumented, and release. Each is appropriate for different stages in the product development process. You select which kind of build you want from the command line when running `mcconfig`.
 
+> **Note**: Deep sleep APIs are only available instrumented and release builds.
+
 <a id="build-debug"></a>
 ### Debug
 A debug build is used for debugging JavaScript. In a debug build, the device will attempt to connect to xsbug at startup over USB or serial depending on the device configuration. Symbols will be included for native gdb debugging.
@@ -83,13 +85,13 @@ The `-d` option on the `mcconfig` command line selects a debug build.
 
 <a id="build-instrumented"></a>
 ### Instrumented
-A debug build is used for debugging native code. In an instrumented build, the JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second.
+An instrumented build is used for debugging native code. In an instrumented build, the JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second. Deep sleep APIs are available in an instrumented build.
 
 The `-i` option on the `mcconfig` command line selects an instrumented build.
 
 <a id="build-release"></a>
 ### Release
-A release build is for production. In a release build, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
+A release build is for production. In a release build, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed. Deep sleep APIs are available in a release build.
 
 Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies display rotation rather than selecting a release build.
 
@@ -135,7 +137,7 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
     Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 7. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 
@@ -181,7 +183,7 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
     Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
@@ -232,7 +234,7 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
     Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 
