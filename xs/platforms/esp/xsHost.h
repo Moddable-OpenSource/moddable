@@ -64,9 +64,11 @@
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
 #elif ESP32 == 1
+	#define kCPUESP32	1
 	#define kTargetCPUCount 2
 	#define kESP32TimerDef	int_clr_timers
 #else
+	#error undefined platform
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
 #endif

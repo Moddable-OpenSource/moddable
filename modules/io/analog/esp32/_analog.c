@@ -207,28 +207,34 @@ void xs_analog_constructor_(xsMachine *the)
 		xsRangeError("invalid format");
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	if (port == 1 && ADC_UNIT_1 != gADC1_cali_config.unit_id) {
-		gADC1_cali_config.unit_id = ADC_UNIT_1;
-		gADC1_cali_config.bitwidth = ADC_WIDTH;
-		gADC1_cali_config.atten = ADC_ATTEN_DB_11;
+	if (port == 1) {
+		if (ADC_UNIT_1 != gADC1_cali_config.unit_id) {
+			gADC1_cali_config.unit_id = ADC_UNIT_1;
+			gADC1_cali_config.bitwidth = ADC_WIDTH;
+			gADC1_cali_config.atten = ADC_ATTEN_DB_11;
 
-#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-		adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
-#else
-		adc_cali_create_scheme_line_fitting(&gADC1_cali_config, &gADC1_cali_handle);
-#endif
+			#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+			adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			#else
+			adc_cali_create_scheme_line_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			#endif
+		}
+		gADC1_caliCount++;
 	}
 #if ADC_PORTS > (1)
-	 else if (port == 2 && ADC_UNIT_2 != gADC2_cali_config.unit_id) {
-		gADC2_cali_config.unit_id = ADC_UNIT_2;
-		gADC2_cali_config.bitwidth = ADC_WIDTH;
-		gADC2_cali_config.atten = ADC_ATTEN_DB_11;
+	 else if (port == 2) {
+		if (ADC_UNIT_2 != gADC2_cali_config.unit_id) {
+			gADC2_cali_config.unit_id = ADC_UNIT_2;
+			gADC2_cali_config.bitwidth = ADC_WIDTH;
+			gADC2_cali_config.atten = ADC_ATTEN_DB_11;
 
-	#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-		adc_cali_create_scheme_curve_fitting(&gADC2_cali_config, &gADC2_cali_handle);
-	#else
-		adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
-	#endif
+			#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+			adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			#else
+			adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
+			#endif
+		}
+		gADC2_caliCount++;
 	}
 #endif
 
@@ -257,9 +263,9 @@ void xs_analog_constructor_(xsMachine *the)
 		unit_cfg.unit_id = ADC_UNIT_1;
 	} 
 #if ADC_PORTS > (1)
-	 	else if (port == 2) {
-			unit_cfg.unit_id = ADC_UNIT_2;
-		}
+	else if (port == 2) {
+		unit_cfg.unit_id = ADC_UNIT_2;
+	}
 #endif
 	unit_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
@@ -277,21 +283,23 @@ void xs_analog_destructor_(void *data)
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
 	if (1 == analog->port) {
-		if (0 >= --gADC1_caliCount)
+		if (0 == --gADC1_caliCount) {
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 			adc_cali_delete_scheme_curve_fitting(gADC1_cali_handle);
 #else
 			adc_cali_delete_scheme_line_fitting(gADC1_cali_handle);
 #endif
+		}
 	}
 #if ADC_PORTS > (1)
 	else {
-		if (0 >= --gADC2_caliCount)
+		if (0 == --gADC2_caliCount) {
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 			adc_cali_delete_scheme_curve_fitting(gADC2_cali_handle);
 #else
 			adc_cali_delete_scheme_line_fitting(gADC2_cali_handle);
 #endif
+		}
 	}
 #endif
 #endif
@@ -313,23 +321,25 @@ void xs_analog_close_(xsMachine *the)
 
 void xs_analog_read_(xsMachine *the)
 {
-	int millivolts;
-	int reading;
+	int millivolts = -1;
+	int raw;
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 
+	if (ESP_OK != adc_oneshot_read(analog->handle, analog->channel, &raw))
+		modLog("analog onshot_read failed");
+	
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	adc_oneshot_read(analog->handle, analog->channel, &reading);
 	if (analog->port == 1) {
-		adc_cali_raw_to_voltage(gADC1_cali_handle, reading, &millivolts);
+		adc_cali_raw_to_voltage(gADC1_cali_handle, raw, &millivolts);
 	} 
 #if ADC_PORTS > (1)
 	else if (analog->port == 2) {
-		adc_cali_raw_to_voltage(gADC2_cali_handle, reading, &millivolts);
+		adc_cali_raw_to_voltage(gADC2_cali_handle, raw, &millivolts);
 	}
 #endif
-#else
-;
 #endif
+	if (-1 == millivolts)
+		millivolts = raw;		// uncalibrated
 
 	xsmcSetInteger(xsResult, (millivolts * ((1 << ADC_RESOLUTION) - 1)) / 3300);
 }
@@ -338,3 +348,4 @@ void xs_analog_get_resolution_(xsMachine *the)
 {
 	xsmcSetInteger(xsResult, ADC_RESOLUTION);
 }
+

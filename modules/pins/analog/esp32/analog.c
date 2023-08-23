@@ -34,16 +34,96 @@
 	#error unknown CPU type
 #endif
 
+#if kCPUESP32C6
+	#define ADC1_CHANNEL_MAX	7
+	#define ADC2_CHANNEL_MAX	-1
+#elif kCPUESP32C3
+	#define ADC1_CHANNEL_MAX	4
+	#define ADC2_CHANNEL_MAX	0
+#elif kCPUESP32S3 || kCPUESP32S2
+	#define ADC1_CHANNEL_MAX	9
+	#define ADC2_CHANNEL_MAX	9
+#elif kCPUESP32
+	#define ADC1_CHANNEL_MAX	7
+	#define ADC2_CHANNEL_MAX	9
+#else
+	#error undefined cpu
+#endif
+
+
+#define ADC_ATTEN		ADC_ATTEN_DB_11
+
 typedef struct modAnalogConfigurationRecord modAnalogConfigurationRecord;
 typedef struct modAnalogConfigurationRecord *modAnalogConfiguration;
 
 struct modAnalogConfigurationRecord {
-	uint8_t channel;
+	uint8_t						channel;
+	adc_oneshot_unit_handle_t	adc_handle;
+	adc_cali_handle_t			cali_handle;
 };
+
+static bool adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_cali_handle_t *out_handle)
+{
+	adc_cali_handle_t handle = NULL;
+	esp_err_t ret = ESP_FAIL;
+	bool calibrated = false;
+
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+	if (!calibrated) {
+		adc_cali_curve_fitting_config_t cali_config = {
+			.unit_id = unit,
+			.atten = atten,
+			.bitwidth = ADC_RESOLUTION,
+		};
+		ret = adc_cali_create_scheme_curve_fitting(&cali_config, &handle);
+		if (ret == ESP_OK) {
+			calibrated = true;
+		}
+	}
+#endif
+
+#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+	if (!calibrated) {
+		adc_cali_line_fitting_config_t cali_config = {
+			.unit_id = unit,
+			.atten = atten,
+			.bitwidth = ADC_RESOLUTION,
+		};
+		ret = adc_cali_create_scheme_line_fitting(&cali_config, &handle);
+		if (ret == ESP_OK) {
+			calibrated = true;
+		}
+	}
+#endif
+
+	*out_handle = handle;
+	if (ret == ESP_ERR_NOT_SUPPORTED || !calibrated) {
+		modLog("calibration not supported or eFuse not burnt");
+	}
+
+	return calibrated;
+}
+
+static void adc_calibration_deinit(adc_cali_handle_t handle)
+{
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+	adc_cali_delete_scheme_curve_fitting(handle);
+#elif ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+	adc_cali_delete_scheme_line_fitting(handle);
+#endif
+}
 
 void xs_analog(xsMachine *the)
 {
 	modAnalogConfiguration analog;
+	adc_oneshot_unit_handle_t adc_handle;
+	adc_oneshot_chan_cfg_t config = {
+		.bitwidth = ADC_RESOLUTION,
+		.atten = ADC_ATTEN,
+	};
+	adc_oneshot_unit_init_cfg_t init_config = {
+		.unit_id = ADC_UNIT_1,
+	};
 	xsmcVars(1);
 
 	if (!xsmcHas(xsArg(0), xsID_pin))
@@ -52,14 +132,14 @@ void xs_analog(xsMachine *the)
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	int pin = xsmcToInteger(xsVar(0));
 
-	if (pin < 0 || pin >= ADC1_CHANNEL_MAX)
+	if (pin < 0 || pin > ADC1_CHANNEL_MAX)
 		xsRangeError("invalid analog channel number");
 
-	if (ESP_OK != adc1_config_width(ADC_WIDTH))
-		xsUnknownError("can't configure precision for ADC1 peripheral");
+	if (ESP_OK != adc_oneshot_new_unit(&init_config, &adc_handle))
+		xsUnknownError("problems configuring analog unit");
 
-	if (ESP_OK != adc1_config_channel_atten(pin, ADC_ATTEN))
-		xsUnknownError("can't configure attenuation for requested channel on ADC1 peripheral");
+	if (ESP_OK != adc_oneshot_config_channel(adc_handle, pin, &config))
+		xsUnknownError("problems configuring analog");
 
 	analog = c_malloc(sizeof(modAnalogConfigurationRecord));
 	if (NULL == analog)
@@ -68,12 +148,18 @@ void xs_analog(xsMachine *the)
 	xsmcSetHostData(xsThis, analog);
 
 	analog->channel = pin;
+	analog->adc_handle = adc_handle;
+
+	adc_calibration_init(ADC_UNIT_1, ADC_ATTEN, &analog->cali_handle);
 }
 
 void xs_analog_destructor(void *data)
 {
 	modAnalogConfiguration analog = data;
 	if (analog) {
+		adc_oneshot_del_unit(analog->adc_handle);
+		if (analog->cali_handle)
+			adc_calibration_deinit(analog->cali_handle);
 		c_free(analog);
 	}
 }
@@ -87,14 +173,20 @@ void xs_analog_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
-static uint32_t analog_read(int channel)
+static uint32_t analog_read(modAnalogConfiguration analog)
 {
-	esp_adc_cal_characteristics_t characteristics;
-	esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN, ADC_WIDTH, V_REF, &characteristics);
+	int raw, voltage = -1;
+	if (ESP_OK != adc_oneshot_read(analog->adc_handle, analog->channel, &raw))
+		modLog("analog_read failed");
 
-	uint32_t reading = adc1_get_raw(channel);
-	uint32_t millivolts = esp_adc_cal_raw_to_voltage(reading, &characteristics);
-	uint32_t linear_value = c_round(millivolts / 3300.0 * 1023.0);
+	if (analog->cali_handle) {
+		if (ESP_OK != adc_cali_raw_to_voltage(analog->cali_handle, raw, &voltage))
+			modLog("analog cali_to_voltage failed");
+	}
+	if (-1 == voltage)
+		voltage = raw;		// uncalibrated
+
+	uint32_t linear_value = c_round(voltage / 3300.0 * 1023.0);
 
 	return linear_value;
 }
@@ -106,82 +198,38 @@ void xs_analog_read(xsMachine *the)
 	if (!analog)
 		xsUnknownError("analog uninitialized");
 
-	xsResult = xsInteger(analog_read(analog->channel));
+	xsResult = xsInteger(analog_read(analog));
 }
+
 
 void xs_analog_static_read(xsMachine *the)
 {
-	int channel = xsmcToInteger(xsArg(0));
-	if (channel < 0 || channel >= ADC1_CHANNEL_MAX)
+	modAnalogConfigurationRecord analog;
+	adc_oneshot_unit_handle_t adc_handle;
+	adc_oneshot_chan_cfg_t config = {
+		.bitwidth = ADC_RESOLUTION,
+		.atten = ADC_ATTEN,
+	};
+	adc_oneshot_unit_init_cfg_t init_config = {
+		.unit_id = ADC_UNIT_1,
+	};
+
+	analog.channel = xsmcToInteger(xsArg(0));
+	if (analog.channel < 0 || analog.channel > ADC1_CHANNEL_MAX)
 		xsRangeError("invalid analog channel number");
 
-	adc_oneshot_unit_handle_t adc_handle;
-	adc_oneshot_unit_init_cfg_t adc_unit_config = {
-		.unit_id = ADC_UNIT_2,
-		.ulp_mode = ADC_ULP_MODE_DISABLE,
-	};
+	if (ESP_OK != adc_oneshot_new_unit(&init_config, &analog.adc_handle))
+		xsUnknownError("problems configuring analog unit");
 
-	if (ESP_OK != adc_oneshot_new_unit(&adc_unit_config, &adc_handle))	
-		xsUnknownError("adc_oneshot_new_unit failed");
+	if (ESP_OK != adc_oneshot_config_channel(analog.adc_handle, analog.channel, &config))
+		xsUnknownError("problems configuring analog");
 
-	adc_oneshot_chan_cfg_t adc_config = {
-		.bitwidth = ADC_RESOLUTION,
-		.atten = ADC_ATTEN_DB_11,
-	};
-	
-	if (ESP_OK != adc_oneshot_config_channel(adc_handle, channel, &adc_config)) {
-		xsLog("adc_oneshot_config_channel failed");
-		goto bail;
-	}
+	adc_calibration_init(ADC_UNIT_1, ADC_ATTEN, &analog.cali_handle);
 
-	int reading;
-	int millivolts;
-	if (ESP_OK != adc_oneshot_read(adc_handle, channel, &reading)) {
-		xsLog("adc_oneshot_read failed");
-		goto bail;
-	}
+	xsResult = xsInteger( analog_read(&analog) );
 
-	adc_cali_handle_t cali_handle;
-#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-	adc_cali_curve_fitting_config_t cali_config = {
-		.unit_id = ADC_UNIT_2,
-		.bitwidth = ADC_RESOLUTION,
-		.atten = ADC_ATTEN_DB_11,
-	};
-	if (ESP_OK != adc_cali_create_scheme_curve_fitting(&cali_config, &cali_handle)) {
-		xsLog("cali_create_scheme_curve_fitting failed");
-		goto bail2;
-	}
-#else
-	adc_cali_line_fitting_config_t cali_config = {
-		.unit_id = ADC_UNIT_2,
-		.bitwidth = ADC_RESOLUTION,
-		.atten = ADC_ATTEN_DB_11,
-	};
-	if (ESP_OK != adc_cali_create_scheme_line_fitting(&cali_config, &cali_handle)) {
-		xsLog("cali_create_scheme_line_fitting failed");
-		goto bail2;
-	}
-#endif
-
-	if (ESP_OK != adc_cali_raw_to_voltage(cali_handle, reading, &millivolts)) {
-		xsLog("cali_raw_to_voltage failed");
-		goto bail2;
-	}
-
-	double max = (double)((1 << ADC_RESOLUTION) - 1);
-	uint32_t linear_value = c_round(millivolts / 3300.0 * max);
-
-	xsResult = xsInteger(linear_value);
-
-bail2:
-#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-	adc_cali_delete_scheme_curve_fitting(cali_handle);
-#else
-	adc_cali_delete_scheme_line_fitting(cali_handle);
-#endif
-
-bail:
-	adc_oneshot_del_unit(adc_handle);
+	adc_oneshot_del_unit(analog.adc_handle);
+	if (analog.cali_handle)
+		adc_calibration_deinit(analog.cali_handle);
 }
 
