@@ -71,7 +71,8 @@ void twi_init(unsigned char sda, unsigned char scl){
   pinMode(twi_sda, INPUT_PULLUP);
   pinMode(twi_scl, INPUT_PULLUP);
   twi_setClock(100000);
-  twi_setClockStretchLimit(230); // default value is 230 uS
+  twi_setClockStretchLimit(1000); // default value is 230 uS
+  // bno055 wants at least 260. adafruit uses 1000.
 }
 
 
