@@ -487,7 +487,7 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		xsSetContext(the, NULL);
 	}
 	else {
-		the = xsPrepareMachine(NULL, preparation, (char *)name, NULL, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, NULL, archive);
 		if (NULL == the)
 			return NULL;
 	}
@@ -507,8 +507,8 @@ static uint16_t gSetupPending = 0;
 static void setStepDoneFulfilled(xsMachine *the)
 {
 	xsResult = xsGet(xsArg(0), xsID("default"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
+	if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+		xsCallFunction0(xsResult, xsGlobal);
 }
 
 static void setStepDoneRejected(xsMachine *the)
