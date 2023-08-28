@@ -45,18 +45,42 @@ EXPECTED_ESP_IDF ?= v4.4.3
 ESP32_SUBCLASS ?= esp32
 # $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
 
-ifeq ("$(ESP32_SUBCLASS)","esp32c3")
+ESP_ARCH = xtensa
+GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+ESP32_BT_SUBCLASS = $(ESP32_SUBCLASS)
+
+ifeq ("$(ESP32_SUBCLASS)","esp32h2")
+	ESP32_TARGET = 5
 	ESP_ARCH = riscv
 	GXX_PREFIX = riscv32-esp
 else
 	ifeq ("$(ESP32_SUBCLASS)","esp32c6")
+		ESP32_TARGET = 5
 		ESP_ARCH = riscv
 		GXX_PREFIX = riscv32-esp
 	else
-		ESP_ARCH = xtensa
-		GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+		ifeq ("$(ESP32_SUBCLASS)","esp32c3")
+			ESP32_TARGET = 4
+			ESP_ARCH = riscv
+			GXX_PREFIX = riscv32-esp
+		else
+			ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+				ESP32_BT_SUBCLASS = esp32
+				ESP32_TARGET = 3
+			else
+				ifeq ("$(ESP32_SUBCLASS)","esp32s2")
+					# esp32s2 doesn't support BlueTooth
+					ESP32_TARGET = 2
+				else
+					# basic esp32 doesn't support USB
+					ESP32_TARGET = 1
+					USB_OPTION =
+				endif
+			endif
+		endif
 	endif
 endif
+
 
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
@@ -97,31 +121,6 @@ SDKCONFIG_H_DIR = $(BLD_DIR)/config
 ifeq ($(USE_USB),0) 
 else
 	USB_OPTION = -DUSE_USB=$(USE_USB)
-endif
-
-ESP32_SUBCLASS ?= esp32
-ESP32_BT_SUBCLASS = $(ESP32_SUBCLASS)
-
-ifeq ("$(ESP32_SUBCLASS)","esp32c6")
-	ESP32_TARGET = 5
-else
-	ifeq ("$(ESP32_SUBCLASS)","esp32c3")
-		ESP32_TARGET = 4
-	else
-		ifeq ("$(ESP32_SUBCLASS)","esp32s3")
-			ESP32_BT_SUBCLASS = esp32
-			ESP32_TARGET = 3
-		else
-			ifeq ("$(ESP32_SUBCLASS)","esp32s2")
-				# esp32s2 doesn't support BlueTooth
-				ESP32_TARGET = 2
-			else
-				# basic esp32 doesn't support USB
-				ESP32_TARGET = 1
-				USB_OPTION =
-			endif
-		endif
-	endif
 endif
 
 ifeq ($(USE_USB),1) 
