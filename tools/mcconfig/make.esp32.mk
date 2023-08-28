@@ -149,6 +149,8 @@ INC_DIRS = \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
+ 	$(IDF_PATH)/components/esp_adc/include \
+ 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_app_format/include \
 	$(IDF_PATH)/components/esp_common/include \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
@@ -221,9 +223,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/spi_flash/include \
 	$(IDF_PATH)/components/tcpip_adapter/include \
 	$(IDF_PATH)/components/tcpip_adapter \
- 	$(IDF_PATH)/components/tinyusb/additions/include \
- 	$(IDF_PATH)/components/esp_adc/include \
- 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include
+ 	$(IDF_PATH)/components/tinyusb/additions/include
 
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
