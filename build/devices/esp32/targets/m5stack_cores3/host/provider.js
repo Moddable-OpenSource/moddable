@@ -28,6 +28,7 @@ import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
+import RTC from "embedded:RTC/BM8563"
 
 const device = {
   I2C: {
@@ -81,6 +82,19 @@ const device = {
     displayDC: 15,
     displaySelect: 5,
   },
+  peripheral: {
+		RTC: class {
+			constructor(options) {
+				return new RTC({
+					...options,
+					clock: {
+						...device.I2C.internal,
+						io: SMBus
+					}
+				});
+			}
+		}
+  }
 };
 
 export default device;
