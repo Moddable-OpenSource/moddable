@@ -1,5 +1,8 @@
 {
-	"include": "$(MODDABLE)/modules/drivers/peripherals/pcf8563/manifest.json",
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/peripherals/pcf8563/manifest.json"
+	],
 	"strip": [ ],
 	"modules": {
 		"*": "./main"

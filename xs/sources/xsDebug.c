@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -2370,10 +2370,10 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #ifdef mxInstrument	
-#define xsInstrumentCount 11
 #if kCPUESP32C6
 #define ICACHE_XS6STRING_ATTR
 #endif
+#define xsInstrumentCount 12
 static char* const xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",
 	"Chunk available",
@@ -2386,6 +2386,7 @@ static char* const xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = 
 	"Modules loaded",
 	"Parser used",
 	"Floating Point",
+	"Promises settled"
 };
 static char* const xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	" / ",
@@ -2399,6 +2400,7 @@ static char* const xsInstrumentUnits[xsInstrumentCount] ICACHE_XS6STRING_ATTR = 
 	" modules",
 	" bytes",
 	" operations",
+	" promises",
 };
 
 void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names, txString* units)
@@ -2459,6 +2461,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	xsInstrumentValues[8] = the->loadedModulesCount;
 	xsInstrumentValues[9] = the->peakParserSize;
 	xsInstrumentValues[10] = the->floatingPointOps;
+	xsInstrumentValues[11] = the->promisesSettledCount;
 
 	txInteger i, j = 0;
 #ifdef mxDebug

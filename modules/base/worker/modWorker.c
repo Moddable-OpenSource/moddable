@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,10 +51,7 @@ struct modWorkerRecord {
 	xsSlot					owner;
 	xsSlot					ownerPort;
 	xsSlot					workerPort;
-	uint32_t				allocation;
-	uint32_t				stackCount;
-	uint32_t				slotCount;
-	uint32_t				keyCount;
+	xsCreation				creation;
 	xsBooleanValue			closing;
 	xsBooleanValue			shared;
 #ifdef INC_FREERTOS_H
@@ -136,6 +133,16 @@ void xs_worker_destructor(void *data)
 	}
 }
 
+static void getIntegerProperty(xsMachine *the, xsSlot *slot, xsIdentifier id, xsIntegerValue *value)
+{
+	if (!xsmcHas(*slot, id))
+		return;
+	
+	xsSlot tmp;
+	xsmcGet(tmp, *slot, id);
+	*value = xsmcToInteger(tmp);
+}
+
 static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 {
 	modCriticalSectionDeclare;
@@ -190,18 +197,65 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 		}
 	}
 
+	xsCreation *creationP;
+	(void *)xsPreparationAndCreation(&creationP);
+	worker->creation = *creationP;
 	if (xsmcArgc > 1) {
-		xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
-		worker->allocation = xsmcToInteger(xsVar(0));
+		if (xsmcHas(xsArg(1), xsID_allocation) ||
+			 xsmcHas(xsArg(1), xsID_stackCount) ||
+			 xsmcHas(xsArg(1), xsID_slotCount) ||
+		 	 xsmcHas(xsArg(1), xsID_keyCount)) {
+#ifdef mxDebug
+			xsTrace("deprecated worker creation parameters detected. update recommended.");
+#endif
+			xsIntegerValue allocation, stackCount, slotCount, keyCount;
+			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
+			allocation = xsmcToInteger(xsVar(0));
 
-		xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
-		worker->stackCount = xsmcToInteger(xsVar(0));
+			xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
+			stackCount = xsmcToInteger(xsVar(0));
 
-		xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
-		worker->slotCount = xsmcToInteger(xsVar(0));
+			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
+			slotCount = xsmcToInteger(xsVar(0));
 
-		xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
-		worker->keyCount = xsmcToInteger(xsVar(0));
+			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
+			keyCount = xsmcToInteger(xsVar(0));
+
+			if (allocation)
+				worker->creation.staticSize = allocation;
+
+			if (stackCount)
+				worker->creation.stackCount = stackCount;
+
+			if (slotCount)
+				worker->creation.initialHeapCount = slotCount;
+			
+			if (keyCount)
+				worker->creation.initialKeyCount = keyCount;
+		}
+		else {
+			xsIntegerValue value;
+
+			getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
+			xsmcGet(xsVar(0), xsArg(1), xsID_chunk);
+			if (xsmcTest(xsVar(0))) {
+				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialChunkSize);
+				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalChunkSize);
+			}
+			xsmcGet(xsVar(0), xsArg(1), xsID_heap);
+			if (xsmcTest(xsVar(0))) {
+				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialHeapCount);
+				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalHeapCount);
+			}
+			getIntegerProperty(the, &xsArg(1), xsID_stack, &worker->creation.stackCount);
+			xsmcGet(xsVar(0), xsArg(1), xsID_keys);
+			if (xsmcTest(xsVar(0))) {
+				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialKeyCount);
+				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalKeyCount);
+				getIntegerProperty(the, &xsVar(0), xsID_name, &worker->creation.nameModulo);
+				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
+			}
+		}
 	}
 
 #ifdef INC_FREERTOS_H
@@ -367,7 +421,7 @@ int workerStart(modWorker worker)
 	xsMachine *the;
 	int result = 0;
 
-	the = modCloneMachine(worker->allocation, worker->stackCount, worker->slotCount, worker->keyCount, worker->module);
+	the = modCloneMachine(&worker->creation, worker->module);
 	if (!the)
 		return -1;
 

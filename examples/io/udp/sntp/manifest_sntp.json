@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": "./main",
+		"network/sntp": "./sntp"
+	},
+	"preload": [
+		"network/sntp"
+	]
+}

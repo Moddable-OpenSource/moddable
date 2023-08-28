@@ -1,5 +1,7 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
 		"../httpclient/manifest_httpclient.json",
 		"../tlssocket/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls_419.json",
