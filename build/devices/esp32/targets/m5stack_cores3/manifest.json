@@ -16,8 +16,7 @@
 		"screen": "ili9341",
 		"virtualButton": false,
 		"touch": "M5StackCoreS3Touch",
-		"startupSound": "bflatmajor.maud",
-		"startupVibration": 600
+		"startupSound": "bflatmajor.maud"
 	},
 	"modules": {
 		"setup/target": "./setup-target",
