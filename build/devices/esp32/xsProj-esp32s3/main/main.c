@@ -171,7 +171,7 @@ int fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
 
 	if (! ((0 != size) && (0 == ((size - 1) & size))))
 {
-printf("fifo_init - bad size: %d\r\n", size);
+printf("fifo_init - bad size: %ld\r\n", size);
 		return -2;		// bad size - needs to be base 2
 }
 
@@ -300,7 +300,7 @@ void checkLineState() {
 void line_state_callback(int itf, cdcacm_event_t *event) {
 	DTR = event->line_state_changed_data.dtr;
 	RTS = event->line_state_changed_data.rts;
-	printf("[%d] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
+	printf("[%ld] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
 	checkLineState();
 }
 
