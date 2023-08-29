@@ -405,6 +405,7 @@ void fxScreenLaunch(txScreen* screen)
 	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	txPreparation* preparation = xsPreparation();
 	void* archive = (screen->archive) ? fxMapArchive(C_NULL, preparation, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite) : NULL;
+	txFlag breakOnStartFlag;
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, archive);
 	if (!screen->machine)
 		return;	
@@ -428,6 +429,8 @@ void fxScreenLaunch(txScreen* screen)
 	fxDescribeInstrumentation(screen->machine, screenInstrumentCount, screenInstrumentNames, screenInstrumentUnits);
 	fxScreenSampleInstrumentation(screen);
 #endif	
+
+	breakOnStartFlag = ((txMachine*)screen->machine)->breakOnStartFlag;
 	xsBeginHost(screen->machine);
 	{
 		xsVars(2);
@@ -504,6 +507,7 @@ void fxScreenLaunch(txScreen* screen)
 				if (dot)
 					*dot = 0;
 
+				breakOnStartFlag = 0;
 				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
@@ -517,7 +521,8 @@ void fxScreenLaunch(txScreen* screen)
 	}
 	xsEndHost(screen->machine);
 	
-  setStepDone(screen->machine);
+	((txMachine*)screen->machine)->breakOnStartFlag = breakOnStartFlag;
+	setStepDone(screen->machine);
 }
 
 #ifdef mxInstrument
