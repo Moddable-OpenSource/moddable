@@ -109,5 +109,4 @@ function bcdToDec(b) {
   return v;
 }
 
-Object.freeze(BM8563.prototype);
 export default BM8563;
