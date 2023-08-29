@@ -50,9 +50,9 @@
 	#ifndef MODDEF_AUDIOOUT_I2S_NUM
 		#define MODDEF_AUDIOOUT_I2S_NUM (1)
 	#endif
-#ifndef MODDEF_AUDIOOUT_I2S_MCK_PIN
-#define MODDEF_AUDIOOUT_I2S_MCK_PIN I2S_PIN_NO_CHANGE
-#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_MCK_PIN
+		#define MODDEF_AUDIOOUT_I2S_MCK_PIN I2S_PIN_NO_CHANGE
+	#endif
 	#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
 		#define MODDEF_AUDIOOUT_I2S_BCK_PIN (26)
 	#endif
@@ -72,6 +72,7 @@
 		#error must be 16 bit samples
 	#endif
 	#if MODDEF_AUDIOOUT_I2S_DAC
+		#include "driver/dac_continuous.h"
 		#ifndef MODDEF_AUDIOOUT_I2S_DAC_CHANNEL
 			// I2S_DAC_CHANNEL_BOTH_EN = 3
 			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL 3
@@ -268,14 +269,14 @@ typedef struct {
 	SemaphoreHandle_t 		mutex;
 	TaskHandle_t			task;
 
-	i2s_chan_handle_t 		tx_handle;
-
 	uint8_t					state;		// 0 idle, 1 playing, 2 terminated
-
-	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
 #if MODDEF_AUDIOOUT_I2S_DAC
-	uint32_t				*buffer32;
+	dac_continuous_handle_t	dacHandle;
+	uint8_t					*buffer8;
+#else
+	i2s_chan_handle_t 		tx_handle;
 #endif
+	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
 #elif defined(__ets__)
 	uint8_t					i2sActive;
 	OUTPUTSAMPLETYPE		buffer[64];		// size assumes DMA Buffer size of I2S
@@ -391,8 +392,8 @@ void xs_audioout_destructor(void *data)
 		vSemaphoreDelete(out->mutex);
 	}
 #if MODDEF_AUDIOOUT_I2S_DAC
-	if (out->buffer32)
-		free(out->buffer32);
+	if (out->buffer8)
+		free(out->buffer8);
 #endif
 
 #elif defined(__ets__)
@@ -556,8 +557,8 @@ void xs_audioout_build(xsMachine *the)
 
 	xTaskCreate(audioOutLoop, "audioOut", 1536 + XT_STACK_EXTRA_CLIB, out, 10, &out->task);
 #if MODDEF_AUDIOOUT_I2S_DAC
-	out->buffer32 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint32_t));
-	if (!out->buffer32)
+	out->buffer8 = malloc((sizeof(out->buffer) / sizeof(uint16_t)) * sizeof(uint8_t));
+	if (!out->buffer8)
 		xsUnknownError("out of memory");
 #endif
 #elif PICO_BUILD
@@ -1518,25 +1519,26 @@ void audioOutLoop(void *pvParameter)
 	i2s_channel_reconfig_std_slot(out->tx_handle, &i2s_config.slot_cfg);
 	i2s_channel_reconfig_std_clock(out->tx_handle, &i2s_config.clk_cfg);
 
-#else
-	#error ADC unsupported in ESP-IDF 5.0
-	i2s_config_t i2s_config = {
-		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-		.sample_rate = out->sampleRate,
-		.bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+#else /* MODDEF_AUDIOOUT_I2S_DAC */
+	dac_continuous_config_t cont_cfg = {
 #if MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 3
-		.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1		// I2S_DAC_CHANNEL_RIGHT_EN
-		.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
-#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2		// I2S_DAC_CHANNEL_LEFT_EN
-		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+		.chan_mask = DAC_CHANNEL_MASK_ALL,
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 1
+		.chan_mask = DAC_CHANNEL_MASK_CH1,
+#elif MODDEF_AUDIOOUT_I2S_DAC_CHANNEL == 2
+		.chan_mask = DAC_CHANNEL_MASK_CH0,
+#else
+		#error "invalid dac channel"
 #endif
-		.communication_format = I2S_COMM_FORMAT_STAND_MSB,
-		.intr_alloc_flags = 0,
-		.dma_buf_count = 2,
-		.dma_buf_len = sizeof(out->buffer) / 2,
-		.use_apll = false
+		.chan_mask = DAC_CHANNEL_MASK_ALL,
+		.desc_num = 4,
+		.buf_size = 2048,
+		.freq_hz = out->sampleRate,
+		.offset = 0,
+		.clk_src = DAC_DIGI_CLK_SRC_APLL,   // Using APLL as clock source to get a wider frequency range
+		.chan_mode = DAC_CHANNEL_MODE_SIMUL,
 	};
+	dac_continuous_new_channels(&cont_cfg, &out->dacHandle);
 #endif
 
 	while (true) {
@@ -1546,12 +1548,8 @@ void audioOutLoop(void *pvParameter)
 			uint32_t newState;
 
 			if (!stopped) {
-//				i2s_zero_dma_buffer(MODDEF_AUDIOOUT_I2S_NUM);		// maybe use auto_clear in the future
-				// use auto_clear in idfv5
-
 #if MODDEF_AUDIOOUT_I2S_DAC
-				modLog("i2s_set_dac_mode");
-				i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+				dac_continuous_disable(out->dacHandle);
 #else
 				i2s_channel_disable(out->tx_handle);
 #endif
@@ -1566,20 +1564,20 @@ void audioOutLoop(void *pvParameter)
 		}
 
 		if (!installed) {
-#if !MODDEF_AUDIOOUT_I2S_DAC || MODDEF_AUDIOOUT_I2S_PDM
-			i2s_channel_enable(out->tx_handle);
+#if MODDEF_AUDIOOUT_I2S_DAC
+			dac_continuous_enable(out->dacHandle);
 #else
-			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
+			i2s_channel_enable(out->tx_handle);
 #endif
 			installed = true;
 			stopped = false;
 		}
 		else if (stopped) {
 			stopped = false;
-#if !MODDEF_AUDIOOUT_I2S_DAC
-			i2s_channel_enable(out->tx_handle);
+#if MODDEF_AUDIOOUT_I2S_DAC
+			dac_continuous_enable(out->dacHandle);
 #else
-			i2s_set_dac_mode(MODDEF_AUDIOOUT_I2S_DAC_CHANNEL);
+			i2s_channel_enable(out->tx_handle);
 #endif
 		}
 
@@ -1591,14 +1589,14 @@ void audioOutLoop(void *pvParameter)
 		int count = sizeof(out->buffer) / out->bytesPerFrame;
 		int i = count;
 		uint16_t *src = (uint16_t *)out->buffer;
-		uint32_t *dst = out->buffer32;
+		uint8_t *dst = out->buffer8;
 
 		while (i--) {
-			uint32_t s = *src++ ^ 0x8000;
-			*dst++ = (s << 16) | s;
+			uint16_t s = *src++ ^ 0x8000;
+			*dst++ = s >> 8;
 		}
-		modLog("i2s_write dac");
-		i2s_channel_write(out->tx_handle, (const char *)out->buffer32, count * 4, &bytes_written, portMAX_DELAY);
+
+		dac_continuous_write(out->dacHandle, out->buffer8, count, NULL, -1);		// -1 for portMAX_DELAY
 #elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 		i2s_channel_write(out->tx_handle, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
@@ -1608,11 +1606,19 @@ void audioOutLoop(void *pvParameter)
 #endif
 	}
 
+#if MODDEF_AUDIOOUT_I2S_DAC
+	if (out->dacHandle) {
+		dac_continuous_disable(out->dacHandle);
+		dac_continuous_del_channels(out->dacHandle);
+		out->dacHandle = NULL;
+	}
+#else
 	if (out->tx_handle) {
 		i2s_channel_disable(out->tx_handle);
 		i2s_del_channel(out->tx_handle);
 		out->tx_handle = NULL;
 	}
+#endif
 
 	out->state = kStateTerminated;
 	out->task = NULL;

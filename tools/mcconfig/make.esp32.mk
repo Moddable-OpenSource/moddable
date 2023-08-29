@@ -135,6 +135,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+	$(IDF_PATH)/components/driver/dac/include \
 	$(IDF_PATH)/components/driver/gpio/include \
 	$(IDF_PATH)/components/driver/gptimer/include \
 	$(IDF_PATH)/components/driver/i2c/include \
