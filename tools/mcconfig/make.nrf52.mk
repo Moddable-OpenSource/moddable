@@ -54,8 +54,6 @@ DEBUGGER_PORT ?= $(UPLOAD_PORT)
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
 
-NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
-
 UF2_VOLUME_NAME ?= MODDABLE4
 M4_VID ?= beef
 M4_PID ?= cafe
@@ -821,17 +819,22 @@ erase:
 	"$(NRFJPROG)" -f nrf52 --eraseall
 
 $(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
-	@echo CR $<
+	@echo "# make xs_nerf52-merged.hex"
 	@mergehex -q -m $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex -o $@
 
-dfu-package: $(BIN_DIR)/xs_nrf52-merged.hex
+dfu-package: $(BIN_DIR)/xs_nrf52.hex
 	@echo "# Packaging $<"
-#	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip --bootloader $(BOOTLOADER_HEX) --softdevice $(SOFTDEVICE_HEX)
-	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52-merged.hex $(BIN_DIR)/dfu-package.zip
+	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
 
-installDFU: all dfu-package
+## adafruit-nrfutil forces 115200
+installDFU: precursor dfu-package
 	@echo "# Flashing $<"
-	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b $(UPLOAD_SPEED) --singlebank --touch 1200
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(UPLOAD_PORT) -b 115200 --singlebank --touch 1200
+
+debugDFU: installDFU
+	$(KILL_SERIAL_2_XSBUG)
+	$(DO_XSBUG)
+	$(CONNECT_XSBUG)
 
 xsbug:
 	@echo Starting xsbug.
