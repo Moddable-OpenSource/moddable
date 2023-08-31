@@ -73,7 +73,7 @@ For applications that expect to be customized or updated with separate modules, 
 
 That may seem contradictory when talking about a JavaScript engine! But the simplicity of [XS in C](./XS%20in%20C.md), the C programming interface of XS, has always been essential to develop efficient applications.
 
-Web development often claims to be "pure" Javascript while it is in fact relying on the huge amount of native code required to implement web browsers. The reality is of course that web development is restricted to JavaScript on the client side.
+Web development often claims to be "pure" JavaScript while it is in fact relying on the huge amount of native code required to implement web browsers. The reality is of course that web development is restricted to JavaScript on the client side.
 
 At Moddable, we use native code only when necessary, for instance to build drivers, or when the memory footprint or performance gains are obvious, for instance in our graphics library and user interface framework.
 

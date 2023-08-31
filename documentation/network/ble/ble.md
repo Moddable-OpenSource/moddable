@@ -572,7 +572,7 @@ The `Characteristic` class provides access to a single service characteristic.
 | `connection` | `number` | Connection identifier.
 | `uuid` | `object` | Instance of [Bytes](#classbytes) class containing characteristic UUID.
 | `service` | `object` | `Service` object containing characteristic.
-| `handle` | `number` | Chararacteristic handle.
+| `handle` | `number` | Characteristic handle.
 | `name` | `string` | Characteristic name defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `type` | `string` | Characteristic type defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `descriptors` | `array` | Array of characteristic descriptors discovered.
