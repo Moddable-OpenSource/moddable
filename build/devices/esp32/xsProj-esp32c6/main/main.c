@@ -232,7 +232,7 @@ void loop_task(void *pvParameter)
 #endif
 
 	while (true) {
-		gThe = modCloneMachine(0, 0, 0, 0, NULL);
+		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
