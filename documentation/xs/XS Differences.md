@@ -1,6 +1,6 @@
 # JavaScript language considerations on embedded devices using the XS engine
-Copyright 2018 Moddable Tech, Inc.<BR>
-Revised: October 10, 2018
+Copyright 2018-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## Ultra-light JavaScript
 XS is the JavaScript engine at the core of Moddable applications and tools. XS has existed since the beginning of this century. You can get the latest version on [GitHub](https://github.com/Moddable-OpenSource/moddable).

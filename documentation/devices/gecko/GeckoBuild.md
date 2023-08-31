@@ -389,7 +389,7 @@ Sleep.WatchdogReset     = 0b01000000;		// watchdog timer expired
 
 #### Storing data for retention during EM4 sleep
 
-During EM4 sleep, RAM is shut off. A small amount of memory persists, and is available for retreival after wakeup.
+During EM4 sleep, RAM is shut off. A small amount of memory persists, and is available for retrieval after wakeup.
 
 		let index;
 

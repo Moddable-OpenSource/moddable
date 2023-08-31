@@ -1,6 +1,6 @@
 # Networking
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 8, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## Table of Contents
 
@@ -447,7 +447,7 @@ server.close();
 The `detach` function accepts an active HTTP connection of the server instance and removes it from the server, returning the socket instance of the connection. This is useful for implementing an HTTP endpoint that accepts both HTTP and WebSocket connections by allowing the existing connection of HTTP server to be handed off to the WebSocket server.
 
 ```js
-server.detach(connnection);
+server.detach(connection);
 ```
 
 ***

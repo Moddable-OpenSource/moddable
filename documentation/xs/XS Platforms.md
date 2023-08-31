@@ -1,6 +1,6 @@
 # XS Platforms
-Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: September 2, 2020
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## History
 
@@ -32,7 +32,7 @@ XS uses a few basic types that the interface file has to define.
 
 ### C defines and includes
 
-XS mostly relies on constants and functions from the C stantard library, accessed thru macros with `C_` or `c_` prefixes:
+XS mostly relies on constants and functions from the C standard library, accessed thru macros with `C_` or `c_` prefixes:
 
 	#include <math.h>
 	#define C_NAN NAN

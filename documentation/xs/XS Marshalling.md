@@ -1,6 +1,6 @@
 # XS Marshalling
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: March 15, 2021
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## Introduction
 

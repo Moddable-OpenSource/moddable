@@ -31,7 +31,7 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 
 <a id="addingble"></a>
 ## Adding BLE to a Project
-The BLE client and server are implemented as separate modules to accomodate the limited memory and storage available on embedded devices. BLE applications instantiate a BLE client or BLE server, but never both.
+The BLE client and server are implemented as separate modules to accommodate the limited memory and storage available on embedded devices. BLE applications instantiate a BLE client or BLE server, but never both.
 
 Pre-made manifests are available for the BLE client and BLE server. Add them to the `include` array of your application's manifest to use them in your project.
 

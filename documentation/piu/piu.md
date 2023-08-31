@@ -1,6 +1,6 @@
 # Piu JavaScript Reference
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 24, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## About This Document
 

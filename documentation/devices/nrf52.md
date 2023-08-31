@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: August 22, 2023
+Revised: August 31, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -512,7 +512,7 @@ section.
 3. Build for your device
 
    ```
-   cd Adafuit_nRF52_Bootloader
+   cd Adafruit_nRF52_Bootloader
    make BOARD=moddable_four
    ```
 
