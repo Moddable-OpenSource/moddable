@@ -26,6 +26,7 @@
 #include "mc.defines.h"
 
 #include "esp_eth.h"
+#include "esp_mac.h"
 #include "esp_netif.h"
 
 #include "ethernet.h"
@@ -242,14 +243,15 @@ esp_err_t initEthernet(void)
 	gNetif = esp_netif_new(&netif_cfg);
 
 #ifdef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-	eth_mac_config_t mac_config =  ETH_MAC_DEFAULT_CONFIG();
-	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+	eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+	eth_esp32_emac_config_t esp32_mac_config =  ETH_ESP32_EMAC_DEFAULT_CONFIG();
+	esp32_mac_config.smi_mdc_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDC;
+	esp32_mac_config.smi_mdio_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDIO;
+	mac = esp_eth_mac_new_esp32(&esp32_mac_config, &mac_config);
 
+	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 	phy_config.phy_addr = MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS;
 	phy_config.reset_gpio_num = MODDEF_ETHERNET_INTERNAL_PHY_RESET;
-	mac_config.smi_mdc_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDC;
-	mac_config.smi_mdio_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDIO;
-	mac = esp_eth_mac_new_esp32(&mac_config);
 #if MODDEF_ETHERNET_INTERNAL_PHY_IP101
     phy = esp_eth_phy_new_ip101(&phy_config);
 #elif MODDEF_ETHERNET_INTERNAL_PHY_RTL8201
