@@ -44,7 +44,7 @@ if (USE_USB)
 endif()
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
+			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs
 		)
 
 #            REQUIRES spi_flash bt esp_lcd
