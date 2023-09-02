@@ -25,7 +25,7 @@ HOST_OS = win
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v5.0
+EXPECTED_ESP_IDF = v5.1.1
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -193,7 +193,6 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\include\$(ESP32_BT_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include\api \
- 	-I$(IDF_PATH)\components\driver\deprecated \
  	-I$(IDF_PATH)\components\driver\gpio\include \
  	-I$(IDF_PATH)\components\driver\gptimer\include \
  	-I$(IDF_PATH)\components\driver\i2c\include \
