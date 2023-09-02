@@ -1,7 +1,7 @@
 {
 	"build": {
-		"SDKCONFIGPATH": "$(MODDABLE)/contributed/modClock/sdkconfig",
-		"PARTITIONS_FILE": "$(MODDABLE)/contributed/modClock/sdkconfig/partitions.csv"
+		"xSDKCONFIGPATH": "$(MODDABLE)/contributed/modClock/sdkconfig",
+		"xPARTITIONS_FILE": "$(MODDABLE)/contributed/modClock/sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",

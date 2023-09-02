@@ -127,9 +127,10 @@ ifeq ($(USE_USB),1)
 	TINY_USB_BITS=$(PROJ_DIR)/managed_components
 endif
 
+# 	$(IDF_PATH)/components/driver/deprecated
+
 INC_DIRS = \
 	$(IDF_PATH)/components \
- 	$(IDF_PATH)/components/driver/deprecated \
 	$(IDF_PATH)/components/bootloader_support/include \
 	$(IDF_PATH)/components/bt/include \
 	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
@@ -535,14 +536,16 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
-$(LIB_DIR):
-	mkdir -p $(LIB_DIR)
-	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
-	@echo "# ld xs_esp32.bin"
+$(TMP_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
+
+$(LIB_DIR):
+	mkdir -p $(LIB_DIR)
+	
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+	@echo "# ld xs_esp32.bin"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 
@@ -626,7 +629,7 @@ $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H)
 	@echo "# mcrez resources"
 	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
 
-# MAKEFLAGS += $(MAKEFLAGS_JOBS)
+MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent
 endif

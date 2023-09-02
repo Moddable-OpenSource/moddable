@@ -26,7 +26,7 @@ const DEFAULT_NUM_PIXELS = 56;	// (2 pixels per 7 segments * 4 digits)
 const DisplayWidth = 17;
 const DisplayHeight = 7;
 
-const REFRESH_RATE = 10;		// ms refresh rate
+const REFRESH_RATE = 25;		// ms refresh rate
 
 const TenPow = Object.freeze([ 1, 10, 100, 1000 ]);
 
