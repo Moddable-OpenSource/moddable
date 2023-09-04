@@ -43,8 +43,8 @@ esp_netif_t *gNetif = NULL;
 static esp_err_t initEthernet(void);
 
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-static spi_device_handle_t init_spi();
-static void uninit_spi(spi_device_handle_t);
+static void init_spi();
+static void uninit_spi();
 #endif
 
 void xs_ethernet_start(xsMachine *the)
@@ -230,7 +230,6 @@ static void doIPEvent(void* arg, esp_event_base_t event_base, int32_t event_id, 
 
 esp_err_t initEthernet(void)
 {
-	spi_device_handle_t spi_handle;
 	uint8_t macaddr[6];
 	esp_err_t err = ESP_OK;
 	esp_eth_mac_t *mac;
@@ -270,9 +269,18 @@ esp_err_t initEthernet(void)
 		gpio_install_isr_service(0);
 		gEthernetState = -1;
 	}
-		
-	spi_handle = init_spi();
-	mac = mod_ethernet_get_mac(spi_handle, MODDEF_ETHERNET_INT_PIN);
+	
+	spi_device_interface_config_t devcfg = {
+        .command_bits = 3,
+        .address_bits = 5,
+        .mode = 0,
+        .clock_speed_hz = MODDEF_ETHERNET_HZ,
+        .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
+        .queue_size = 20
+    };
+
+	init_spi();
+	mac = mod_ethernet_get_mac(devcfg, MODDEF_ETHERNET_INT_PIN);
 	phy = mod_ethernet_get_phy();
 #endif
 	
@@ -285,8 +293,7 @@ esp_err_t initEthernet(void)
 		if (phy)
 			phy->del(phy);
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-		if (spi_handle)
-			uninit_spi(spi_handle);
+		uninit_spi();
 #endif
 		return err;
 	}
@@ -312,9 +319,7 @@ esp_err_t initEthernet(void)
 
 
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-static spi_device_handle_t init_spi() {
-	spi_device_handle_t spi_handle = NULL;
-
+static void init_spi() {
 #ifdef MODDEF_ETHERNET_SPI_MISO_PIN
 	spi_bus_config_t buscfg = {
 		.miso_io_num = MODDEF_ETHERNET_SPI_MISO_PIN,
@@ -324,15 +329,6 @@ static spi_device_handle_t init_spi() {
         .quadhd_io_num = -1,
 	};
 	ESP_ERROR_CHECK(spi_bus_initialize(MODDEF_ETHERNET_SPI_PORT, &buscfg, 2));
-	spi_device_interface_config_t devcfg = {
-        .command_bits = 3,
-        .address_bits = 5,
-        .mode = 0,
-        .clock_speed_hz = MODDEF_ETHERNET_HZ,
-        .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
-        .queue_size = 20
-    };
-    ESP_ERROR_CHECK(spi_bus_add_device(MODDEF_ETHERNET_SPI_PORT, &devcfg, &spi_handle));
 #else
 	modSPIConfigurationRecord config = {0};
 	config.cs_pin = MODDEF_ETHERNET_SPI_CS_PIN;
@@ -344,15 +340,11 @@ static spi_device_handle_t init_spi() {
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIInit(&config);
-	spi_handle = config.spi_dev;
 #endif
-
-	return spi_handle;
 }
 
-static void uninit_spi(spi_device_handle_t spi_handle) {
+static void uninit_spi() {
 #ifdef MODDEF_ETHERNET_SPI_MISO_PIN
-	spi_bus_remove_device(spi_handle);
     spi_bus_free(MODDEF_ETHERNET_SPI_PORT);
 #else
 	modSPIConfigurationRecord config = {0};
