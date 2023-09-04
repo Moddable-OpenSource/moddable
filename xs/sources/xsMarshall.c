@@ -770,6 +770,7 @@ txBoolean fxMeasureKey(txMachine* the, txID id, txMarshallBuffer* theBuffer, txB
 		key = fxGetKey(the, id);
 		if (!(key->flag & XS_DONT_ENUM_FLAG))
 			return 0;
+		id -= the->keyOffset;
 	}
 	else
 		return 1;
