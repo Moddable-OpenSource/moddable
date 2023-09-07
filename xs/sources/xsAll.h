@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -491,6 +491,7 @@ struct sxMachine {
 	txSize peakParserSize;
 	txSlot* stackPeak;
 	txSize floatingPointOps;
+	txSize promisesSettledCount;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
 #ifdef mxMetering

@@ -42,8 +42,11 @@ for (let i = 0; i < 3; i++) {
 			const buffer = this.read(count);
 			trace(this.decoder.decode(buffer, {stream: true})); 
 		},
-		onDone() {
-			trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
+		onDone(error) {
+			if (error)
+				trace(error, `\n\n **ERROR ${i} **\n\n`);
+			else
+				trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
 		}
 	});
 }

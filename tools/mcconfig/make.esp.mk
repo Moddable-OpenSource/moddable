@@ -118,7 +118,7 @@ SDK_SRC = \
 	$(ARDUINO_ESP8266)/Schedule.cpp \
 	$(PLATFORM_DIR)/lib/bsearch/bsearch.c \
 	$(PLATFORM_DIR)/lib/fmod/e_fmod.c \
-	$(PLATFORM_DIR)/lib/i2c/core_esp8266_si2c.c \
+	$(PLATFORM_DIR)/lib/i2c/core_esp8266_si2c_patched.c \
 	$(PLATFORM_DIR)/lib/rtc/rtctime.c \
 	$(PLATFORM_DIR)/lib/tinyi2s/tinyi2s.c \
 	$(PLATFORM_DIR)/lib/tinyprintf/tinyprintf.c \

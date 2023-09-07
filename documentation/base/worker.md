@@ -1,6 +1,6 @@
 # Worker
 Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: July 6, 2023
+Revised: August 20, 2023
 
 The Moddable runtime integrates with XS to allow a multiple virtual machines to co-exist on a single microcontroller. The majority of projects use only a single virtual machine. However, there are situations where the several independent runtime contexts provided by having several virtual machines is advantageous. This isolation is useful to fully separate a particular set of scripts, for example user installed modules, from the core project functionality for security, privacy, and reliability reasons. Another useful situation is to allow scripts to perform blocking operations in one virtual machine while scripts in another virtual machine remain fully responsive. On microcontrollers with multiple CPU cores, workers may execute in parallel to take full advantage of the available CPU power.
 
@@ -33,10 +33,18 @@ To launch a worker, create an instance of the `Worker` class, passing the name o
 The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has completed initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
 ### Launching a worker with memory configuration
-The previous example launches the worker with the default memory configuration. This may not be large enough for the worker, or may allocate more RAM than needed by the worker. An optional configuration object allows the script instantiating a new virtual machine to set the memory use.
+The previous example launches the worker with the default memory creation configuration used for the main virtual machine. This may not be large enough for the worker, or may allocate more RAM than needed by the worker. An optional configuration object allows the script instantiating a new virtual machine to set the memory use.
 
-	let aWorker = new Worker("simpleworker",
-			{allocation: 8192, stackCount: 64, slotCount: 64});
+```js
+let aWorker = new Worker("simpleworker", {
+	static: 8192,
+	stack: 64,
+	heap: {
+		initial: 64,
+		incremental: 32
+	}		
+});
+```
 
 ### Sending a message to a worker
 Messages to workers are JavaScript objects and binary data.
@@ -98,12 +106,20 @@ The `Worker` constructor takes a path to the module used to initialize the new w
 
 	let aWorker = new Worker("simpleworker");
 
-An optional dictionary contains configuration properties for the new worker. If the dictionary is not provided, the default parameters are used. These defaults vary by host runtime, so it is recommended to always provide a memory configuration.
+An optional dictionary contains creation properties for the new worker. If the dictionary is not provided, the default parameters are used. These defaults vary by host runtime, so it is recommended to always provide a memory configuration. The creation properties are the same as the `creation` section of a manifest. See the [manifest documentation](../tools/manifest.md#creation) for details.
 
-	let aWorker = new Worker("simpleworker",
-			{allocation: 8192, stackCount: 64, slotCount: 64});
+```js
+let aWorker = new Worker("simpleworker", {
+	static: 8192,
+	stack: 64,
+	heap: {
+		initial: 64,
+		incremental: 32
+	}		
+});
+```
 
-The `allocation` property is the total memory shared by the new virtual machine for its chunk heap, slot heap, and stack. It is allocated when the virtual machine is created. The `stackCount` property is the number of slot entries on the virtual machine's stack. The `slotCount` property is the initial number of slots in the virtual machine's slot heap.
+> **Note**: An earlier implementation of `Worker` used different properties to configure the memory creation. These have been deprecated and are no longer included in the documentation. It is recommended to update scripts to use the new format.
 
 If an error occurs or an exception is thrown during execution of the module, the `Worker` constructor also throws an error.
 

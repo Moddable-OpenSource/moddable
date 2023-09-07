@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -476,11 +476,11 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 	create VM
 */
 
-txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint32_t keyCount, const char *name)
+txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 {
 	txMachine *the;
-	xsCreation *creationP;
-	void *preparation = xsPreparationAndCreation(&creationP);
+	xsCreation *creation = creationIn;
+	void *preparation = xsPreparationAndCreation(creation ? NULL : &creation);
 
 #if MODDEF_XS_MODS
 	uint8_t modStatus = 0;
@@ -493,30 +493,17 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 	if (!name)
 		name = ((txPreparation *)preparation)->main;
 
-	if (0 == allocation)
-		allocation = creationP->staticSize;
-
-	if (allocation) {
-		xsCreation creation = *creationP;
+	if (creation->staticSize) {
 		uint8_t *context[2];
 
-		if (stackCount)
-			creation.stackCount = stackCount;
-
-		if (slotCount)
-			creation.initialHeapCount = slotCount;
-		
-		if (keyCount)
-			creation.initialKeyCount = keyCount;
-
-		context[0] = c_malloc(allocation);
+		context[0] = c_malloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
 		}
-		context[1] = context[0] + allocation;
+		context[1] = context[0] + creation->staticSize;
 
-		the = xsPrepareMachine(&creation, preparation, (char *)name, context, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, context, archive);
 		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);
@@ -526,7 +513,7 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 		xsSetContext(the, NULL);
 	}
 	else {
-		the = xsPrepareMachine(NULL, preparation, (char *)name, NULL, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, NULL, archive);
 		if (NULL == the)
 			return NULL;
 	}
@@ -546,8 +533,8 @@ static uint16_t gSetupPending = 0;
 static void setStepDoneFulfilled(xsMachine *the)
 {
 	xsResult = xsGet(xsArg(0), xsID("default"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
+	if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+		xsCallFunction0(xsResult, xsGlobal);
 }
 
 static void setStepDoneRejected(xsMachine *the)
@@ -662,6 +649,7 @@ void modInstrumentMachineReset(xsMachine *the)
 	the->stackPeak = the->stack;
 	the->peakParserSize = 0;
 	the->floatingPointOps = 0;
+	the->promisesSettledCount = 0;
 }
 
 int32_t modInstrumentationSlotHeapSize(xsMachine *the)
@@ -694,6 +682,11 @@ int32_t modInstrumentationStackRemain(xsMachine *the)
 	if (the->stackPeak > the->stack)
 		the->stackPeak = the->stack;
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
+}
+
+int32_t modInstrumentationPromisesSettledCount(xsMachine *the)
+{
+	return the->promisesSettledCount;
 }
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -68,7 +68,7 @@ void loop_task(void *pvParameter)
 
 #if MODDEF_XS_TEST
 	while (true) {
-	    gThe = modCloneMachine(0, 0, 0, 0, NULL);
+	    gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 

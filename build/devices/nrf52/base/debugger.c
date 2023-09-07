@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,6 +26,10 @@
 
 #if !USE_DEBUGGER_USBD || USE_FTDI_TRACE
 
+#if !USE_DEBUGGER_USBD && USE_FTDI_TRACE
+	#error Use either FTDI_TRACE or serial debugging, not both
+#endif
+
 #include "nrfx_uarte.h"
 #include "app_fifo.h"
 
@@ -50,16 +54,11 @@ static QueueHandle_t gDebuggerQueue;
 
 
 static app_fifo_t m_rx_fifo;
-static app_fifo_t m_tx_fifo;
-static uint8_t *tx_fifo_buffer;
 static uint8_t *rx_fifo_buffer;
 
-#define tx_buffer_size	128
-static uint8_t tx_buffer[tx_buffer_size];
 #define rx_buffer_size	1		// 4
 static uint8_t rx_buffer[rx_buffer_size];
 
-#define MODDEF_DEBUGGER_TX_FIFO_SIZE	512
 #define MODDEF_DEBUGGER_RX_FIFO_SIZE	512
 
 #define DEBUG_WRITABLE			14
@@ -70,7 +69,6 @@ static uint8_t rx_buffer[rx_buffer_size];
 #define DEBUG_RX_FAIL			19
 
 char notifyOutstanding = 0;
-char gTransmitInProgress = 0;
 char gReceiveInProgress = 0;
 
 const nrfx_uarte_t gDebuggerUARTE = NRFX_UARTE_INSTANCE(0);
@@ -79,7 +77,6 @@ void die(char *x) {
 	uint8_t DIE_BUF[256];
 	c_strcpy(DIE_BUF, x);
 	while (1) {
-	
 	}
 }
 #define DIE(x, ...)	die(x)
@@ -119,14 +116,6 @@ static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 			}
 			break;
 		case NRFX_UARTE_EVT_TX_DONE:
-			i = fillBufFromFifo(&m_tx_fifo, tx_buffer, tx_buffer_size);
-			if (i) {
-				err = nrfx_uarte_tx(&gDebuggerUARTE, tx_buffer, i);
-				if (NRF_SUCCESS != err)
-					msg = DEBUG_TX_FIFO_ERROR;
-			}
-			else
-				gTransmitInProgress = 0;
 			break;
 		case NRFX_UARTE_EVT_ERROR:
 			msg = DEBUG_UARTE_ERROR;
@@ -145,19 +134,11 @@ static void debug_task(void *pvParameter) {
 	uint32_t	i;
 
 	while (true) {
-		if (!fifo_length(&m_rx_fifo) && !fifo_length(&m_tx_fifo)) {
+		if (!fifo_length(&m_rx_fifo)
+			/* && !fifo_length(&m_tx_fifo) */
+			) {
 			xQueueReceive(gDebuggerQueue, (void*)&msg, 1000);
 			notifyOutstanding = 0;
-		}
-
-		if (fifo_length(&m_tx_fifo) && !gTransmitInProgress) {
-			i = fillBufFromFifo(&m_tx_fifo, tx_buffer, tx_buffer_size);
-			if (i) {
-				gTransmitInProgress = 1;
-				err = nrfx_uarte_tx(&gDebuggerUARTE, tx_buffer, i);
-				if (NRFX_SUCCESS != err)
-					DIE("nrfx_uarte_tx fail");
-			}
 		}
 
 		if (!gReceiveInProgress) {
@@ -165,7 +146,7 @@ static void debug_task(void *pvParameter) {
 			if (NRFX_SUCCESS == err)
 				gReceiveInProgress = 1;
 			else
-				DIE("nrfx_uarte_rr fail");
+				DIE("nrfx_uarte_rx fail");
 		}
 
 		// necessary to allow xsbug to break a running app
@@ -198,10 +179,7 @@ void setupDebugger() {
 	if (NRFX_SUCCESS != err)
 		DIE("nrfx_uarte_init fail");
 
-	tx_fifo_buffer = c_malloc(MODDEF_DEBUGGER_TX_FIFO_SIZE);
 	rx_fifo_buffer = c_malloc(MODDEF_DEBUGGER_RX_FIFO_SIZE);
-
-	err = app_fifo_init(&m_tx_fifo, tx_fifo_buffer, MODDEF_DEBUGGER_TX_FIFO_SIZE);
 	err = app_fifo_init(&m_rx_fifo, rx_fifo_buffer, MODDEF_DEBUGGER_RX_FIFO_SIZE);
 
 	gDebuggerQueue = xQueueCreate(DEBUG_QUEUE_LEN, DEBUG_QUEUE_ITEM_SIZE);
@@ -224,16 +202,12 @@ void ESP_putc(int c) {
 	uint32_t msg = DEBUG_WRITABLE;
 
 	ch = c;
-	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
-		nrf52_delay(5);	// drain a little
-	if (fifo_length(&m_tx_fifo) > m_tx_fifo.buf_size_mask)
-		DIE("ESP_putc waiting");
-
-	ret = app_fifo_put(&m_tx_fifo, ch);
+	while (nrfx_uarte_tx_in_progress(&gDebuggerUARTE))
+		;
+	ret = nrfx_uarte_tx(&gDebuggerUARTE, &ch, 1);
 	if (NRF_SUCCESS != ret)
-		DIE("tx fifo put");
-	if (!notifyOutstanding++)
-		xQueueSend(gDebuggerQueue, &msg, 0);
+		DIE("nrfx_uarte_tx failed");
+
 }
 
 int ESP_getc(void) {

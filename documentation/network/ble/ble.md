@@ -31,7 +31,7 @@ This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Bot
 
 <a id="addingble"></a>
 ## Adding BLE to a Project
-The BLE client and server are implemented as separate modules to accomodate the limited memory and storage available on embedded devices. BLE applications instantiate a BLE client or BLE server, but never both.
+The BLE client and server are implemented as separate modules to accommodate the limited memory and storage available on embedded devices. BLE applications instantiate a BLE client or BLE server, but never both.
 
 Pre-made manifests are available for the BLE client and BLE server. Add them to the `include` array of your application's manifest to use them in your project.
 
@@ -572,7 +572,7 @@ The `Characteristic` class provides access to a single service characteristic.
 | `connection` | `number` | Connection identifier.
 | `uuid` | `object` | Instance of [Bytes](#classbytes) class containing characteristic UUID.
 | `service` | `object` | `Service` object containing characteristic.
-| `handle` | `number` | Chararacteristic handle.
+| `handle` | `number` | Characteristic handle.
 | `name` | `string` | Characteristic name defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `type` | `string` | Characteristic type defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `descriptors` | `array` | Array of characteristic descriptors discovered.
