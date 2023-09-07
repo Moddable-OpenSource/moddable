@@ -14,7 +14,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/crypt/tls.json"
+		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/modules/files/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -23,7 +24,8 @@
 		]
 	},
 	"preload": [
-		"http"
+		"http",
+		"main"
 	],
 	"resources":{
 		"*-mask": [
