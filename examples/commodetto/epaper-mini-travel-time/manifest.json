@@ -30,7 +30,7 @@
 			"./assets/masks/*"
 		],
 		"*": [
-			"$(MODULES)/crypt/data/ca22"
+			"$(MODULES)/crypt/data/ca233"
 		]
 	},
 	"platforms": {
