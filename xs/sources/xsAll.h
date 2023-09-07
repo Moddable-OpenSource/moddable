@@ -1957,6 +1957,10 @@ enum {
 	XS_BASE_FLAG = 32,
 	XS_DERIVED_FLAG = 64,
 	/* XS_MARK_FLAG = 128, */
+	
+	/* host property flags */
+	XS_HOST_CHUNK_FLAG = 32,
+	XS_HOST_HOOKS_FLAG = 64,
 
 	/* mxBehaviorOwnKeys flags */
 	XS_EACH_NAME_FLAG = 1,
@@ -1979,8 +1983,7 @@ enum {
 	XS_COLLECTING_FLAG = 4,
 	XS_TRASHING_FLAG = 8,
 	XS_SKIPPED_COLLECT_FLAG = 16,
-	XS_HOST_CHUNK_FLAG = 32,
-	XS_HOST_HOOKS_FLAG = 64,
+	XS_COLLECT_KEYS_FLAG = 32,
 	
 	/* finalization registry flags */
 	XS_FINALIZATION_REGISTRY_CHANGED = 1,

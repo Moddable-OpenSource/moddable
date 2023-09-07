@@ -1796,7 +1796,7 @@ void fxShareMachine(txMachine* the)
 
 void fxCollectGarbage(txMachine* the)
 {
-	fxCollect(the, XS_COMPACT_FLAG);
+	fxCollect(the, XS_COMPACT_FLAG | XS_COLLECT_KEYS_FLAG);
 }
 
 void fxEnableGarbageCollection(txMachine* the, txBoolean enableIt)
