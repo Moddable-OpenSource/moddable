@@ -1996,6 +1996,13 @@ txID fxResolveSpecifier(txMachine* the, txSlot* realm, txID moduleID, txSlot* na
 	return moduleID;
 }
 
+void fxImport(txMachine* the)
+{
+	txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	fxToString(the, the->stack);
+	fxRunImport(the, realm, XS_NO_ID);
+}
+
 void fxRunImport(txMachine* the, txSlot* realm, txID moduleID)
 {
 	txSlot* stack = the->stack;
@@ -2164,6 +2171,13 @@ void fxAwaitImport(txMachine* the, txBoolean defaultFlag)
 		fxJump(the);
 	}
 	the->stack = stack;
+}
+
+void fxImportNow(txMachine* the)
+{
+	txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
+	fxToString(the, the->stack);
+	fxRunImportNow(the, realm, XS_NO_ID);
 }
 
 void fxRunImportNow(txMachine* the, txSlot* realm, txID moduleID)

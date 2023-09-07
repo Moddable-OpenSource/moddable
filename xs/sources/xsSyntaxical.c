@@ -54,9 +54,9 @@ static void fxPushStringNode(txParser* parser, txInteger length, txString value,
 static void fxPushSymbol(txParser* parser, txSymbol* symbol);
 static void fxSwapNodes(txParser* parser);
 
-static void fxExport(txParser* parser);
+static void fxExportDeclaration(txParser* parser);
 static void fxExportBinding(txParser* parser, txNode* node);
-static void fxImport(txParser* parser);
+static void fxImportDeclaration(txParser* parser);
 static void fxSpecifiers(txParser* parser);
 
 static void fxBody(txParser* parser);
@@ -706,13 +706,13 @@ void fxModule(txParser* parser)
 	txInteger aLine = parser->line;
 	while ((parser->token != XS_TOKEN_EOF)) {
 		if (parser->token == XS_TOKEN_EXPORT)
-			fxExport(parser);
+			fxExportDeclaration(parser);
 		else if (parser->token == XS_TOKEN_IMPORT) {
 			fxGetNextToken2(parser);
 			if ((parser->token2 == XS_TOKEN_DOT) || (parser->token2 == XS_TOKEN_LEFT_PARENTHESIS))
 				fxStatement(parser, 1);
 			else
-				fxImport(parser);
+				fxImportDeclaration(parser);
 		}
 		else if (parser->token == XS_TOKEN_RETURN) {
 			fxReportParserError(parser, parser->line, "invalid return");
@@ -739,7 +739,7 @@ void fxModule(txParser* parser)
 	parser->root->flags = parser->flags & (mxStrictFlag | mxAwaitingFlag);
 }
 
-void fxExport(txParser* parser)
+void fxExportDeclaration(txParser* parser)
 {
 	txSymbol* symbol = C_NULL;
 	txInteger count;
@@ -976,7 +976,7 @@ void fxExportBinding(txParser* parser, txNode* node)
 }
 
 
-void fxImport(txParser* parser)
+void fxImportDeclaration(txParser* parser)
 {
 	txBoolean asFlag = 1;
 	txBoolean fromFlag = 0;

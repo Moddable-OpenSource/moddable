@@ -375,13 +375,14 @@ static void setStepDone(txMachine *the)
 	xsBeginHost(the);
 #if MODDEF_MAIN_ASYNC
 		xsVars(2);
-		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsResult = xsImport(((txPreparation *)xsPreparationAndCreation(NULL))->main);
 		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
 		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
 		xsCall2(xsResult, xsID_then, xsVar(0), xsVar(1));
 #else	
 		xsVars(1);
-		xsVar(0) = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
+		xsVar(0) = xsImportNow(((txPreparation *)xsPreparationAndCreation(NULL))->main);
+		xsVar(0) = xsGet(xsVar(0), xsID_default);
 		if (xsTest(xsVar(0))) {
 			if (xsIsInstanceOf(xsVar(0), xsFunctionPrototype)) {
 				xsCallFunction0(xsVar(0), xsGlobal);

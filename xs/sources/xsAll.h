@@ -703,6 +703,8 @@ mxExport void fxStartProfiling(txMachine* the);
 mxExport void fxStopProfiling(txMachine* the, void* stream);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
+mxExport void fxImport(txMachine*);
+mxExport void fxImportNow(txMachine*);
 
 #ifdef mxMetering
 mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
