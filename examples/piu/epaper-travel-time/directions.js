@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -57,7 +57,7 @@ export function getTimeEstimate(swap = false) {
     }
     let request = new Request({
         host: "maps.googleapis.com", 
-        path: `/maps/api/directions/json?origin=${origin}&destination=${destination}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
+        path: `/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
         response: String,
         port: 443, 
         Socket: SecureSocket, 

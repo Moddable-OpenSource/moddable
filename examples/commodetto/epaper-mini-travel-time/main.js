@@ -51,8 +51,7 @@ function getTimeEstimate() {
 
     let request = new Request({
         host: "maps.googleapis.com", 
-        path: `/maps/api/directions/json?origin=${HOME}&destination=${WORK}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
-        response: String,
+        path: `/maps/api/directions/json?origin=${encodeURIComponent(HOME)}&destination=${encodeURIComponent(WORK)}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
         port: 443, 
         Socket: SecureSocket, 
         secure: {protocolVersion: 0x303} 

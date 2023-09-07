@@ -39,11 +39,8 @@
 				"rotation": 90
 			}
 		},
-		"mac": {},
-		"win": {},
-		"lin": {},
 		"...": {
-			"error": "Platform not supported"
+			"error": "Platform not supported - esp/moddable_three only"
 		}
 	}
 }
