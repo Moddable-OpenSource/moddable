@@ -983,7 +983,7 @@ void fx_String_prototype_normalize(txMachine* the)
 	}
 	mxMeterSome(fxUnicodeLength(mxThis->value.string));
 	mxResult->value.string = mxThis->value.string;
-	mxResult->kind = XS_STRING_KIND;
+	mxResult->kind = mxThis->kind;
 #ifdef mxStringNormalize
 	fxNormalizeString(the, mxResult, form);
 #else	
