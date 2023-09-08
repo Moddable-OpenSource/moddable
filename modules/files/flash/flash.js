@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,6 +24,7 @@ class Flash @ "xs_flash_destructor" {
 	// sector and offsets are relative to area opened in constructor
 	erase(sector) @ "xs_flash_erase";
 	read(offset, byteLength, buffer) @ "xs_flash_read";
+	readString(offset, byteLength) @ "xs_flash_readString";
 	write(offset, byteLength, buffer) @ "xs_flash_write";
 	map() @ "xs_flash_map"
 	get byteLength()  @ "xs_flash_byteLength";

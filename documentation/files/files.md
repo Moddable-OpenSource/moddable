@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 3, 2023
+Revised: September 7, 2023
 
 ## Table of Contents
 
@@ -705,3 +705,5 @@ for (let key of wifiKeys)
 ## class Flash
 
 This class is not yet documented.
+
+N.B. The `readString()` API is considered experimental. It assumes that the input is a valid UTF-8 string.

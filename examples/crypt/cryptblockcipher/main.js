@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -49,11 +49,11 @@ testBlockCipher("DES", "ABCDEFGH", "01234567", "5BD7DE165BB69D60");
 testBlockCipher("TDES", "ABCDEFGHIJKLMNOPQRSTUVWX", "01234567", "4F598233C4E86579");
 testBlockCipher("AES", "ABCDEFGHIJKLMNOP", "0123456789ABCDEF", "5AD42F600746B101FA1C7C2318542CD6");
 
-testStreamCipher("RC4", "ABCDEFGH", "01234567", undefined, 0, "EFB6FFCB07AEB5A3");
-testStreamCipher("ChaCha", new ArrayBuffer(32), new ArrayBuffer(64), new ArrayBuffer(12), 0, "76B8E0ADA0F13D90405D6AE55386BD28BDD219B8A08DED1AA836EFCC8B770DC7DA41597C5157488D7724E03FB8D84A376A43B8F41518A11CC387B669B2EE6586");
+testStreamCipher("RC4", "ABCDEFGH", "01234567", undefined, 0, "efb6ffcb07aeb5a3");
+testStreamCipher("ChaCha", new ArrayBuffer(32), new ArrayBuffer(64), new ArrayBuffer(12), 0, "76b8e0ada0f13d90405d6ae55386bd28bdd219b8a08ded1aa836efcc8b770dc7da41597c5157488d7724e03fb8d84a376a43b8f41518a11cc387b669b2ee6586");
 
 testCipherMode("GCM", "encrypt", new BlockCipher("AES", Hex.toBuffer("00000000000000000000000000000000")), Hex.toBuffer("000000000000000000000000"), undefined, new ArrayBuffer(), Hex.toBuffer("58e2fccefa7e3061367f1d57a4e7455a"));
-// testCipherMode("GCM", "decrypt", new BlockCipher("AES", Hex.toBuffer("00000000000000000000000000000000")), Hex.toBuffer("000000000000000000000000"), undefined, Hex.toBuffer("58e2fccefa7e3061367f1d57a4e7455a"), new ArrayBuffer());	// ArrayBuffer can't be empty??
+testCipherMode("GCM", "decrypt", new BlockCipher("AES", Hex.toBuffer("00000000000000000000000000000000")), Hex.toBuffer("000000000000000000000000"), undefined, new Uint8Array(Hex.toBuffer("58e2fccefa7e3061367f1d57a4e7455a")), new ArrayBuffer());	// ArrayBuffer can't be empty??
 
 let cipher = new BlockCipher("AES", Hex.toBuffer("feffe9928665731c6d6a8f9467308308"));
 let iv = Hex.toBuffer("cafebabefacedbaddecaf888");
@@ -62,7 +62,7 @@ let tag = Hex.toBuffer("5bc94fbc3221a5db94fae95ae7121a47");
 let plain = Hex.toBuffer("d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b39");
 let cipherText = Hex.toBuffer("42831ec2217774244b7221b784d0d49ce3aa212f2c02a4e035c17e2329aca12e21d514b25466931c7d8f6a5aac84aa051ba30b396a0aac973d58e091");
 testCipherMode("GCM", "encrypt", cipher, iv, aad, plain, cipherText.concat(tag));
-testCipherMode("GCM", "decrypt", cipher, iv, aad, cipherText.concat(tag), plain);
+testCipherMode("GCM", "decrypt", cipher, iv, aad, new Uint8Array(cipherText.concat(tag)), plain);
 
 
 
@@ -95,20 +95,20 @@ function testBlockCipher(name, keyStr, plain, expected)
 	let result = (new BlockCipher(name, key)).encrypt(plain + "");
 
 	if (Bin.comp(result, expected) != 0)
-		trace(`${name} FAIL\n`);
+		trace(`${name} encrypt FAIL\n`);
 	else
-		trace(`${name} pass\n`);
+		trace(`${name} encrypt pass\n`);
 
 	plain = ArrayBuffer.fromString(plain);
 	result = (new BlockCipher(name, key)).decrypt(result)
 	
 	if (Bin.comp(result, plain) != 0) {
-		trace(`${name} FAIL\n`);
-		trace("result = " + Hex.toString(result) + "\n");
-		trace("plain = " + Hex.toString(plain) + "\n");
+		trace(`${name} decrypt FAIL\n`);
+		trace(" result = " + Hex.toString(result) + "\n");
+		trace(" plain = " + Hex.toString(plain) + "\n");
 	}
 	else
-		trace(`${name} pass\n`);
+		trace(`${name} decrypt pass\n`);
 }
 
 function testStreamCipher(name, keyStr, plain, iv, counter, expected)

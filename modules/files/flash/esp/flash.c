@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -120,6 +120,26 @@ void xs_flash_read(xsMachine *the)
 
 	flash = xsmcGetHostChunk(xsThis);
 	if (0 == modSPIRead(offset + flash->partitionStart, byteLength, buffer))
+		xsUnknownError("read fail");
+}
+
+void xs_flash_readString(xsMachine *the)
+{
+	modFlash flash;
+	int offset = xsmcToInteger(xsArg(0));
+	int byteLength = xsmcToInteger(xsArg(1));
+	uint8_t *buffer;
+
+	flash = xsmcGetHostChunk(xsThis);
+	if ((offset < 0) || (offset >= flash->partitionByteLength))
+		xsUnknownError("invalid offset");
+
+	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
+		xsUnknownError("invalid length");
+
+	xsResult = xsStringBuffer(NULL, byteLength);
+	flash = xsmcGetHostChunk(xsThis);
+	if (0 == modSPIRead(offset + flash->partitionStart, byteLength, xsmcToString(xsResult)))
 		xsUnknownError("read fail");
 }
 
