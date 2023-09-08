@@ -105,7 +105,7 @@ typedef struct {
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 1
+#define XS_MINOR_VERSION 2
 #define XS_PATCH_VERSION 0
 
 #define XS_DIGEST_SIZE 16
@@ -369,6 +369,7 @@ enum {
 	XS_CODE_USED_1,
 	XS_CODE_USED_2,
 	XS_CODE_USING,
+	XS_CODE_USING_ASYNC,
 	XS_CODE_VAR_CLOSURE_1,
 	XS_CODE_VAR_CLOSURE_2,
 	XS_CODE_VAR_LOCAL_1,
@@ -424,6 +425,7 @@ extern txBoolean fxIsIdentifierNext(txU4 c);
 extern txBoolean fxIsSpace(txInteger character);
 extern txString fxSkipSpaces(txString string);
 
+extern txBoolean fxParseHex(txU1 c, txU4* value);
 extern txBoolean fxParseHexEscape(txString* string, txInteger* character);
 extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger braces, txInteger separator);
 extern txString fxStringifyHexEscape(txString string, txInteger character);
@@ -654,7 +656,8 @@ extern void fxBigIntParseX(txBigInt* bigint, txString string, txSize length);
 
 enum {
 	XS_NO_ID = 0,
-	_Symbol_asyncIterator = 1,
+	_Symbol_asyncDispose = 1,
+	_Symbol_asyncIterator,
 	_Symbol_dispose,
 	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,
@@ -671,6 +674,7 @@ enum {
 	_AggregateError,
 	_Array,
 	_ArrayBuffer,
+	_AsyncDisposableStack,
 	_Atomics,
 	_BigInt,
 	_BigInt64Array,
@@ -777,6 +781,7 @@ enum {
 	_asin,
 	_asinh,
 	_assign,
+	_asyncDispose,
 	_asyncIterator,
 	_at,
 	_atan,
@@ -833,6 +838,7 @@ enum {
 	_description,
 	_detached,
 	_dispose,
+	_disposeAsync,
 	_disposed,
 	_done,
 	_dotAll,
@@ -924,7 +930,6 @@ enum {
 	_hypot_,
 	_id,
 	_idiv,
-	_idivmod,
 	_ignoreCase,
 	_imod,
 	_import,
@@ -937,6 +942,7 @@ enum {
 	_indexOf,
 	_indices,
 	_input,
+	_irandom,
 	_irem,
 	_is,
 	_isArray,
@@ -1152,6 +1158,10 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #ifndef mxAliasInstance
 	#define mxAliasInstance 1
+#endif
+
+#ifndef mxDebugEval
+	#define mxDebugEval 0
 #endif
 
 #ifndef mxExplicitResourceManagement

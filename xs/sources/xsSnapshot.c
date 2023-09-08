@@ -71,9 +71,9 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxChunkFlag 0x80000000
 
 #if mxExplicitResourceManagement
-#define mxCallbacksLength 512
+#define mxCallbacksLength 522
 #else
-#define mxCallbacksLength 505
+#define mxCallbacksLength 506
 #endif
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -131,6 +131,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_ArrayBuffer_prototype_transfer,
 	fx_ArrayBuffer,
 	fx_ArrayIterator_prototype_next,
+#if mxExplicitResourceManagement
+	fx_AsyncDisposableStack,
+	fx_AsyncDisposableStack_prototype_get_disposed,
+	fx_AsyncDisposableStack_prototype_adopt,
+	fx_AsyncDisposableStack_prototype_defer,
+	fx_AsyncDisposableStack_prototype_disposeAsync,
+	fx_AsyncDisposableStack_prototype_move,
+	fx_AsyncDisposableStack_prototype_use,
+#endif
 	fx_AsyncFromSyncIterator_prototype_next,
 	fx_AsyncFromSyncIterator_prototype_return,
 	fx_AsyncFromSyncIterator_prototype_throw,
@@ -140,6 +149,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncGenerator_prototype_throw,
 	fx_AsyncGenerator,
 	fx_AsyncGeneratorFunction,
+#if mxExplicitResourceManagement
+	fx_AsyncIterator_asyncDispose,
+#endif
 	fx_AsyncIterator_asyncIterator,
 	fx_Atomics_add,
 	fx_Atomics_and,
@@ -279,6 +291,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_GeneratorFunction,
 	fx_isFinite,
 	fx_isNaN,
+#if mxExplicitResourceManagement
+	fx_Iterator_dispose,
+#endif
 	fx_Iterator_iterator,
 	fx_JSON_parse,
 	fx_JSON_stringify,
@@ -313,10 +328,11 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Math_fround,
 	fx_Math_hypot,
 	fx_Math_idiv,
-	fx_Math_idivmod,
 	fx_Math_imod,
 	fx_Math_imul,
 	fx_Math_imuldiv,
+	fx_Math_irandom,
+	fx_Math_irandom_secure,
 	fx_Math_irem,
 	fx_Math_log,
 	fx_Math_log1p,

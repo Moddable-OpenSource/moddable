@@ -14,7 +14,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/crypt/tls.json"
+		"$(MODDABLE)/modules/crypt/tls.json",
+		"$(MODDABLE)/modules/files/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -23,14 +24,15 @@
 		]
 	},
 	"preload": [
-		"http"
+		"http",
+		"main"
 	],
 	"resources":{
 		"*-mask": [
 			"./assets/masks/*"
 		],
 		"*": [
-			"$(MODULES)/crypt/data/ca22"
+			"$(MODULES)/crypt/data/ca233"
 		]
 	},
 	"platforms": {
@@ -39,11 +41,8 @@
 				"rotation": 90
 			}
 		},
-		"mac": {},
-		"win": {},
-		"lin": {},
 		"...": {
-			"error": "Platform not supported"
+			"error": "Platform not supported - esp/moddable_three only"
 		}
 	}
 }

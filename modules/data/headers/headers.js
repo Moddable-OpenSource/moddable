@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,17 +18,19 @@
  *
  */
 
-class Flash @ "xs_flash_destructor" {
-	constructor(name) @ "xs_flash"
-
-	// sector and offsets are relative to area opened in constructor
-	erase(sector) @ "xs_flash_erase";
-	read(offset, byteLength, buffer) @ "xs_flash_read";
-	readString(offset, byteLength) @ "xs_flash_readString";
-	write(offset, byteLength, buffer) @ "xs_flash_write";
-	map() @ "xs_flash_map"
-	get byteLength()  @ "xs_flash_byteLength";
-	get blockSize()  @ "xs_flash_blockSize";
+class Headers extends Map {
+	delete(key) {
+		return super.delete(key.toString().toLowerCase());
+	}
+	get(key) {
+		return super.get(key.toString().toLowerCase());
+	}
+	has(key) {
+		return super.has(key.toString().toLowerCase());
+	}
+	set(key, value) {
+		return super.set(key.toString().toLowerCase(), value.toString());
+	}
 }
 
-export default Flash;
+export default Headers;

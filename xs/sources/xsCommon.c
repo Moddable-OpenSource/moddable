@@ -273,6 +273,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_USED_1 */ "used_1",
 	/* XS_CODE_USED_2 */ "used_2",
 	/* XS_CODE_USING */ "using",
+	/* XS_CODE_USING_ASYNC */ "await using",
 	/* XS_CODE_VAR_CLOSURE_1 */ "var_closure_1",
 	/* XS_CODE_VAR_CLOSURE_2 */ "var_closure_2",
 	/* XS_CODE_VAR_LOCAL_1 */ "var_local_1",
@@ -516,6 +517,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	2 /* XS_CODE_USED_1 */,
 	3 /* XS_CODE_USED_2 */,
 	1 /* XS_CODE_USING */,
+	1 /* XS_CODE_USING_ASYNC */,
 	2 /* XS_CODE_VAR_CLOSURE_1 */,
 	3 /* XS_CODE_VAR_CLOSURE_2 */,
 	2 /* XS_CODE_VAR_LOCAL_1 */,
@@ -639,7 +641,6 @@ const txUTF8Sequence gxUTF8Sequences[] ICACHE_RODATA_ATTR = {
 
 static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";
 static const char gxHexUpper[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
-static txBoolean fxParseHex(txU1 c, txU4* value);
 
 txBoolean fxIsIdentifierFirst(txU4 c)
 {
@@ -1285,6 +1286,7 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
 
 const txString gxIDStrings[XS_ID_COUNT] = {
 	"@",
+	"Symbol.asyncDispose",
 	"Symbol.asyncIterator",
 	"Symbol.dispose",
 	"Symbol.hasInstance",
@@ -1302,6 +1304,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"AggregateError",
 	"Array",
 	"ArrayBuffer",
+	"AsyncDisposableStack",
 	"Atomics",
 	"BigInt",
 	"BigInt64Array",
@@ -1408,6 +1411,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"asin",
 	"asinh",
 	"assign",
+	"asyncDispose",
 	"asyncIterator",
 	"at",
 	"atan",
@@ -1464,6 +1468,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"description",
 	"detached",
 	"dispose",
+	"disposeAsync",
 	"disposed",
 	"done",
 	"dotAll",
@@ -1555,7 +1560,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"hypot",
 	"id",
 	"idiv",
-	"idivmod",
 	"ignoreCase",
 	"imod",
 	"import",
@@ -1568,6 +1572,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"indexOf",
 	"indices",
 	"input",
+	"irandom",
 	"irem",
 	"is",
 	"isArray",

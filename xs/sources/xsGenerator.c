@@ -81,6 +81,9 @@ void fxBuildGenerator(txMachine* the)
 
 	mxPush(mxObjectPrototype);
 	slot = fxNewObjectInstance(the);
+#if mxExplicitResourceManagement
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_AsyncIterator_asyncDispose), 0, mxID(_Symbol_asyncDispose), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_AsyncIterator_asyncIterator), 0, mxID(_Symbol_asyncIterator), XS_DONT_ENUM_FLAG);
 	mxPull(mxAsyncIteratorPrototype);
 	
@@ -694,6 +697,41 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 		mxPop();
 	}
 }
+
+#if mxExplicitResourceManagement
+void fx_AsyncIterator_asyncDispose(txMachine* the)
+{	
+	mxTry(the) {
+		mxPushUndefined();
+		mxPush(mxPromiseConstructor);
+		mxPushSlot(mxThis);
+		mxDub();
+		mxGetID(mxID(_return));
+		if (mxIsUndefined(the->stack)) {
+			mxPop();
+			the->stack->kind = XS_UNDEFINED_KIND;
+		}
+		else {
+			mxCall();
+			mxRunCount(0);		
+		}
+		fx_Promise_resolveAux(the);
+		mxPop();
+		mxPop();
+		mxPullSlot(mxResult);
+	}
+	mxCatch(the) {
+		txSlot* resolveFunction;
+		txSlot* rejectFunction;
+		mxTemporary(resolveFunction);
+		mxTemporary(rejectFunction);
+		mxPush(mxPromiseConstructor);
+		fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+		mxPullSlot(mxResult);
+		fxRejectException(the, rejectFunction);
+	}
+}
+#endif
 
 void fx_AsyncIterator_asyncIterator(txMachine* the)
 {

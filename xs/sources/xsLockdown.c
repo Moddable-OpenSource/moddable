@@ -126,6 +126,8 @@ void fx_lockdown(txMachine* the)
 	fxDuplicateInstance(the, mxMathObject.value.reference);
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
+	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
 	mxPull(instance->next->value.array.address[_Math]);
 
 	mxPull(mxCompartmentGlobal);

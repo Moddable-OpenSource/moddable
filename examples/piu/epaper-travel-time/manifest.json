@@ -29,13 +29,13 @@
 			"./assets/masks/*"
 		],
 		"*": [
-			"$(MODULES)/crypt/data/ca22"
+			"$(MODULES)/crypt/data/ca233"
 		]
 	},
 	"platforms": {
 		"esp32/m5paper": {},
 		"...": {
-			"error": "Platform not supported"
+			"error": "Platform not supported - esp32/m5paper only"
 		}
 	}
 }

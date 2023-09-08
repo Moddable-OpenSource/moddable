@@ -319,7 +319,7 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -79
+#define prototypesStackIndex -81
 #define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
 #define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
 #define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
@@ -1350,6 +1350,18 @@ typedef unsigned char xsAttribute;
 	fxStringX(the, --the->stack, (xsStringValue)_NAME), \
 	fxAwaitImport(the, _FLAG), \
 	fxPop())
+	
+#define xsImport(_NAME) \
+	(xsOverflow(-1), \
+	fxStringX(the, --the->stack, (xsStringValue)_NAME), \
+	fxImport(the), \
+	fxPop())
+	
+#define xsImportNow(_NAME) \
+	(xsOverflow(-1), \
+	fxStringX(the, --the->stack, (xsStringValue)_NAME), \
+	fxImportNow(the), \
+	fxPop())
 
 enum {
 	xsDebuggerExit = 0,
@@ -1517,6 +1529,8 @@ mxImport xsIntegerValue fxGetArchiveDataCount(xsMachine*, void*);
 mxImport void* fxGetArchiveDataName(xsMachine*, void*, xsIntegerValue);
 
 mxImport void fxAwaitImport(xsMachine*, xsBooleanValue);
+mxImport void fxImport(xsMachine*);
+mxImport void fxImportNow(xsMachine*);
 
 mxImport xsBooleanValue fxCompileRegExp(xsMachine* the, xsStringValue pattern, xsStringValue modifier, xsIntegerValue** code, xsIntegerValue** data, xsStringValue errorBuffer, xsIntegerValue errorSize);
 mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data);

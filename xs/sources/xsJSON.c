@@ -576,7 +576,7 @@ void fxReviveJSON(txMachine* the, txSlot* reviver)
 				mxPushUndefined();
 				fxKeyAt(the, 0, index, the->stack);
 				mxPushSlot(reference);
-				mxGetAll(0, index);
+				mxGetIndex(index);
 				fxReviveJSON(the, reviver);
 				if (mxIsUndefined(the->stack)) {
 					mxBehaviorDeleteProperty(the, reference->value.reference, 0, index);

@@ -171,7 +171,9 @@ void fxScopeAddDeclareNode(txScope* self, txDeclareNode* node)
 		self->lastDeclareNode = node;
 	}
 	if (node->description->token == XS_TOKEN_USING) {
-		fxScopeAddDeclareNode(self, fxDeclareNodeNew(self->parser, XS_TOKEN_CONST, C_NULL));
+		txDeclareNode* node = fxDeclareNodeNew(self->parser, XS_TOKEN_CONST, C_NULL);
+		node->flags |= mxDeclareNodeDisposableFlag;
+		fxScopeAddDeclareNode(self, node);
 		self->disposableNodeCount++;
 	}
 }
@@ -214,7 +216,8 @@ void fxScopeBound(txScope* self, txBinder* binder)
 	if (self->token == XS_TOKEN_MODULE) {
 		txDeclareNode* node = self->firstDeclareNode;
 		while (node) {
-			node->flags |= mxDeclareNodeClosureFlag |  mxDeclareNodeUseClosureFlag;
+			if (!(node->flags & mxDeclareNodeDisposableFlag))
+				node->flags |= mxDeclareNodeClosureFlag |  mxDeclareNodeUseClosureFlag;
 			node = node->nextDeclareNode;
 		}
 	}
@@ -357,6 +360,7 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 		}
 		else {
 			access->declaration = C_NULL;
+			access->symbol->usage |= 2;
 		}
 	}
 }
@@ -560,7 +564,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 		while (scope != hoister->bodyScope) {
 			node = fxScopeGetDeclareNode(scope, self->symbol);
 			if (node) {
-				if ((node->description->token == XS_TOKEN_CONST) || (node->description->token == XS_TOKEN_LET) || (self->description->token == XS_TOKEN_USING) || (node->description->token == XS_TOKEN_DEFINE))
+				if ((node->description->token == XS_TOKEN_CONST) || (node->description->token == XS_TOKEN_LET) || (node->description->token == XS_TOKEN_USING) || (node->description->token == XS_TOKEN_DEFINE))
 					break;
 				node = C_NULL;
 			}

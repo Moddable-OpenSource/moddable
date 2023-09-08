@@ -66,6 +66,7 @@ struct ServiceThreadStruct {
 	CFRunLoopRef runLoop;
 	CFRunLoopSourceRef runLoopSource;
 #endif
+	txCreation creation;
 	char name[1];
 };
 
@@ -134,6 +135,7 @@ static ServiceThreadRecord MainThread;
 #if mxAndroid
 JNIEXPORT void JNICALL Java_tech_moddable_piu_PiuThread_run(JNIEnv* jenv, jobject jthis)
 {
+	if (jthis == NULL) return;
 	jobject jbytes = (*jenv)->GetObjectField(jenv, jthis, jPiuThread_self);
 	ServiceThread thread = (*jenv)->GetDirectBufferAddress(jenv, jbytes);
 	(*jenv)->CallStaticVoidMethod(jenv, jLooperClass, jLooper_prepare);
@@ -197,16 +199,56 @@ void ServiceThreadCreate(xsMachine* the)
 	c_memcpy(&(thread->name[0]), name, length + 1);
 	xsResult = xsNewHostObject(NULL);
 	xsSetHostData(xsResult, thread);
+	
+	if ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1))) {
+		xsIntegerValue integer;
+		
+		if (xsFindInteger(xsArg(1), xsID_initialChunkSize, &integer)) {
+			thread->creation.initialChunkSize = integer;
+		}
+		if (xsFindInteger(xsArg(1), xsID_incrementalChunkSize, &integer)) {
+			thread->creation.incrementalChunkSize = integer;
+		}
+		if (xsFindInteger(xsArg(1), xsID_initialHeapCount, &integer)) {
+			thread->creation.initialHeapCount = integer;
+		}
+		if (xsFindInteger(xsArg(1), xsID_incrementalHeapCount, &integer)) {
+			thread->creation.incrementalHeapCount = integer;
+		}
+		if (xsFindInteger(xsArg(1), xsID_stackCount, &integer)) {
+			thread->creation.stackCount = integer;
+		}
+		if (xsFindInteger(xsArg(1), xsID_parserBufferSize, &integer)) {
+			thread->creation.parserBufferSize = integer;
+		}
+	}
+
 #if mxAndroid
-    pthread_mutex_init(&(thread->mutex), NULL);
-    pthread_mutex_lock(&(thread->mutex));
+	jobject jbytes = NULL;
+	jobject jthread = NULL;
 	JNIEnv* jenv = the->jenv;
-	jobject jbytes = (*jenv)->NewDirectByteBuffer(jenv, thread, sizeof(ServiceThreadRecord));
-	jobject jthread = (*jenv)->NewObject(jenv, jPiuThreadClass, jPiuThreadConstructor, jbytes);
-	thread->jthread = (*jenv)->NewGlobalRef(jenv, jthread);
-	(*jenv)->CallVoidMethod(jenv, jthread, jPiuThread_start);
-	(*jenv)->DeleteLocalRef(jenv, jthread);
-	(*jenv)->DeleteLocalRef(jenv, jbytes);
+	
+	xsTry {
+		pthread_mutex_init(&(thread->mutex), NULL);
+		pthread_mutex_lock(&(thread->mutex));
+		
+		jbytes = (*jenv)->NewDirectByteBuffer(jenv, thread, sizeof(ServiceThreadRecord));
+		jthread = (*jenv)->NewObject(jenv, jPiuThreadClass, jPiuThreadConstructor, jbytes);
+		xsAndroidException("Java: ServiceThreadCreate new jPiuThreadClass failed!");
+		thread->jthread = (*jenv)->NewGlobalRef(jenv, jthread);
+		(*jenv)->CallVoidMethod(jenv, jthread, jPiuThread_start);
+		(*jenv)->DeleteLocalRef(jenv, jthread);
+		jthread = NULL;
+		(*jenv)->DeleteLocalRef(jenv, jbytes);
+		jbytes = NULL;
+	}
+	xsCatch {
+		if (jthread)
+			(*jenv)->DeleteLocalRef(jenv, jthread);
+		if (jbytes)
+			(*jenv)->DeleteLocalRef(jenv, jbytes);
+		xsThrow(xsException);
+	}
 #elif mxLinux
 	g_mutex_init(&(thread->mutex));
 	g_mutex_lock(&(thread->mutex));
@@ -220,7 +262,12 @@ void ServiceThreadCreate(xsMachine* the)
 	pthread_t pthread;
     pthread_mutex_init(&(thread->mutex), NULL);
     pthread_mutex_lock(&(thread->mutex));
+	
+	pthread_t self = pthread_self();
+	size_t size = pthread_get_stacksize_np(self);
 	pthread_attr_init(&attr);
+	// pthread_attr_setstacksize(&attr, size); // Sanitize check needs huge stack
+	
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&pthread, &attr, &ServiceThreadLoop, thread);
     pthread_attr_destroy(&attr);
@@ -234,7 +281,18 @@ void ServiceThreadInitialize(void* it, void* context)
 	//fprintf(stderr, "ServiceThreadInitialize thread %p\n", thread);
 	txMachine* root = &ServiceRoot;
 	txPreparation* preparation = xsPreparation();
-	thread->the = fxCloneMachine(&preparation->creation, root, thread->name[0] ? thread->name : strrchr(signature, '.') + 1, context);
+	
+	txCreation creation = preparation->creation;
+	txCreation override = thread->creation;
+	
+	if (override.initialChunkSize > 0) creation.initialChunkSize = override.initialChunkSize;
+	if (override.incrementalChunkSize > 0) creation.incrementalChunkSize = override.incrementalChunkSize;
+	if (override.initialHeapCount > 0) creation.initialHeapCount = override.initialHeapCount;
+	if (override.incrementalHeapCount > 0) creation.incrementalHeapCount = override.incrementalHeapCount;
+	if (override.stackCount > 0) creation.stackCount = override.stackCount;
+	if (override.parserBufferSize > 0) creation.parserBufferSize = override.parserBufferSize;
+
+	thread->the = fxCloneMachine(&creation, root, thread->name[0] ? thread->name : strrchr(signature, '.') + 1, context);
 	xsBeginHost(thread->the);
 	{
 		xsVars(3);
@@ -712,12 +770,12 @@ void Piu__jsx__(xsMachine* the)
 			xsSetAt(xsVar(2), xsInteger(i), xsArg(2 + i));
 		xsSet(xsVar(0), xsID_contents, xsVar(2));
 	}
+	xsOverflow(-XS_FRAME_COUNT-2);
 	fxPush(xsArg(0));
 	fxNew(the);
 	fxPush(xsVar(1));
 	fxPush(xsVar(0));
 	fxRunCount(the, 2);
-	xsResult = *the->stack;
-	the->stack++;
+	xsResult = fxPop();
 }
 

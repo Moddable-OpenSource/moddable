@@ -21,22 +21,8 @@
 import HTTPServer from "embedded:network/http/server"
 import Listener from "embedded:io/socket/listener";
 
-import URL from "./url";
-
-class Headers extends Map {
-	delete(key) {
-		return super.delete(key.toString().toLowerCase());
-	}
-	get(key) {
-		return super.get(key.toString().toLowerCase());
-	}
-	has(key) {
-		return super.has(key.toString().toLowerCase());
-	}
-	set(key, value) {
-		return super.set(key.toString().toLowerCase(), value.toString());
-	}
-}
+import Headers from "headers";
+import URL from "url";
 
 class Request {
 	#url;

@@ -105,7 +105,26 @@ void xs_flash_read(xsMachine *the)
 
 	if (!modSPIRead(offset + flash->partitionStart, byteLength, xsmcToArrayBuffer(xsResult)))
 		xsUnknownError("read failed");
+}
 
+void xs_flash_readString(xsMachine *the)
+{
+	int offset = xsmcToInteger(xsArg(0));
+	int byteLength = xsmcToInteger(xsArg(1));
+	modFlash flash = xsmcGetHostChunk(xsThis);
+
+	if ((offset < 0) || (offset >= flash->partitionByteLength))
+		xsUnknownError("invalid offset");
+
+	if ((byteLength <= 0) || ((offset + byteLength) > flash->partitionByteLength))
+		xsUnknownError("invalid length");
+
+	xsResult = xsStringBuffer(NULL, byteLength);
+
+	flash = xsmcGetHostChunk(xsThis);	// xsmcToString may have moved the handle
+
+	if (!modSPIRead(offset + flash->partitionStart, byteLength, xsmcToString(xsResult)))
+		xsUnknownError("read failed");
 }
 
 void xs_flash_write(xsMachine *the)

@@ -939,6 +939,7 @@ enum {
 
 	mxDefineNodeBoundFlag = 1 << 15,
 	mxDefineNodeCodedFlag = 1 << 16,
+	mxDeclareNodeDisposableFlag = 1 << 14,
 	
 
 	mxStringEscapeFlag = 1 << 0,

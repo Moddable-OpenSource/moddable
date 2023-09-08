@@ -335,7 +335,6 @@ int main(int argc, char* argv[])
 		xsMachine* machine;
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
- 		fxBuildAgent(machine);
  		if (profiling)
 			fxStartProfiling(machine);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
@@ -345,6 +344,7 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
+ 				fxBuildAgent(machine);
 #if FUZZING
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);

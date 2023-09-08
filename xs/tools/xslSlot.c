@@ -1321,6 +1321,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 #endif
 	default:
+		fprintf(file, ".kind = XS_NULL_KIND}, ");
+		fprintf(file, ".value = { .number = 0 } ");
 		break;
 	}
 	fprintf(file, "},\n");

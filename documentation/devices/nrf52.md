@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.
-Revised: August 22, 2023
+Revised: September 7, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -22,6 +22,7 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
 
 * [Troubleshooting](#troubleshooting)
 * [Debugging Over Serial](#serial-debugging)
+* [Installing Apps via Serial](#install-apps-via-serial)
 * [Debugging Native Code](#debugging-native-code)
 * [Bootloader](#bootloader)
 	* [Installing the bootloader](#install-bootloader)
@@ -368,6 +369,122 @@ serial2xsbug $DEBUGGER_PORT $DEBUGGER_SPEED 8N1
 
 Reset the device, and it will connect to `xsbug`.
 
+<a id="install-apps-via-serial"></a>
+### Installing apps via Serial
+
+The bootloader and Moddable SDK support installation of firmware using the serial port. Note that a build of the bootloader supports either programming via USB or Serial but not both.
+
+To install via serial, you need to take the follow steps:
+
+1. Modify your bootloader `board.h` file
+2. Build and install the bootloader
+3. Build your Moddable apps with a special target
+
+These steps are explained in detail below.
+
+#### Bootloader
+
+The bootloader needs to be built specifically for the device being targeted. You need to modify the `BOARD` definitions file and use a build define.
+
+##### `BOARD` definitions
+
+Add this section to the `src/boards/<boardname>/board.h` file:
+
+```
+//--------------------------------------------------------------------+
+// UART update
+//--------------------------------------------------------------------+
+#define RX_PIN_NUMBER      31
+#define TX_PIN_NUMBER      30
+#define CTS_PIN_NUMBER     0
+#define RTS_PIN_NUMBER     0
+#define HWFC               false
+```
+
+Set the `RX_PIN_NUMBER` and `TX_PIN_NUMBER` to the appropriate values for your board.
+
+The status LED is useful as it blinks rapidly when the device is in programming mode. It is defined as `LED_PRIMARY_PIN` in this file.
+
+##### Build line
+
+When building the bootloader, add `SERIAL_DFU=1` to the build line. For example:
+
+```
+make BOARD=<boardname> SERIAL_DFU=1 flash
+```
+
+See below for more details on building the [bootloader](#bootloader).
+
+#### Moddable application build target
+
+In order to install over the serial port instead of USB, use either of the targets `installDFU` or `debugDFU`.
+
+```
+mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+```
+
+`installDFU` simply installs the app to your device.
+
+`debugDFU` installs the app, launches xsbug, and then connects to it with serial2xsbug.
+
+Installation is done by mcconfig using Adafruit's adafruit-nrfutil.
+
+#### Setup
+
+Install Adafruit's `adafruit-nrfutil` as described at the github repository:
+
+[`https://github.com/adafruit/Adafruit_nRF52_nrfutil`](https://github.com/adafruit/Adafruit_nRF52_nrfutil)
+
+
+Set the environment variable `UPLOAD_PORT` to the serial port that is connected to your device.
+
+```
+export UPLOAD_PORT=/dev/cu.usbserial-0001
+```
+
+#### Device target
+
+In the device target's `manifest.json` file, ensure that the debugger tx and rx pins and baudrate are defined.
+
+The manifest.json file is located at `$MODDABLE/build/devices/nrf52/targets/<boardname>/manifest.json`.
+
+In the `"defines"` section:
+
+```
+"defines": {
+	"debugger": {
+		"tx_pin": "30",
+		"rx_pin": "31",
+		"baudrate": "NRF_UARTE_BAUDRATE_921600"
+	},
+...
+```
+
+#### Build and install
+
+The device needs to be in firmware update mode in order to receive the installation. Double-tap the reset button to put the device into programming mode. The status LED will blink rapidly.
+
+```
+mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+```
+
+After the build information, the console will progress to installing:
+
+```
+Sending DFU start packet
+Sending DFU init packet
+Sending firmware file
+########################################
+########################################
+...
+########################################
+###########################
+Activating new firmware
+
+DFU upgrade took 69.43805122375488s
+Device programmed.
+```
+
 
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
@@ -512,7 +629,7 @@ section.
 3. Build for your device
 
    ```
-   cd Adafuit_nRF52_Bootloader
+   cd Adafruit_nRF52_Bootloader
    make BOARD=moddable_four
    ```
 

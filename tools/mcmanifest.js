@@ -567,6 +567,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
+			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
 			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "xsc ", target);
@@ -1124,12 +1125,12 @@ class Rule {
 	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
 		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
-		var slash = source.lastIndexOf(tool.slash);
-		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
+		var sourceParts = tool.splitPath(source);
+		var directory = this.tool.resolveDirectoryPath(sourceParts.directory);
 		if (directory) {
 			this.count = 0;
-			var star = source.lastIndexOf("*");
-			var prefix = (star >= 0) ? source.slice(slash + 1, star) : source.slice(slash + 1);
+			var star = sourceParts.name.lastIndexOf("*");
+			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name + sourceParts.extension;
 			var names = tool.enumerateDirectory(directory);
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -1155,6 +1156,8 @@ class Rule {
 				else {
 					if (parts.name == prefix)
 						name = prefix;
+					else if (parts.name + parts.extension == prefix)
+						name = sourceParts.name;
 					else
 						continue;
 				}
@@ -1260,7 +1263,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if (parts.extension == ".js")
+		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
@@ -1705,11 +1708,12 @@ export class Tool extends TOOL {
 		else if (!this.format)
 			this.format = "UNDEFINED";
 		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/release/mcsim.app";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\release\\mcsim.exe";
+			this.environment.SIMULATOR = `${this.moddablePath}\\build\\bin\\win\\${this.build}\\mcsim.exe`;
 		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/release/mcsim";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/lin/${this.build}/mcsim`;
+			
 		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {

@@ -426,6 +426,8 @@ int main(int argc, char* argv[])
 					fxDuplicateInstance(the, mxMathObject.value.reference);
 					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
 					mxPull(mxMathObject);
 					
 					property = fxLastProperty(the, fxNewInstance(the));
@@ -782,6 +784,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char buffer[C_PATH_MAX];
 	char separator;
 	txInteger dot = 0;
+	txInteger hash = 0;
 	txString slash;
 	txString path;
 	txID id;
@@ -795,6 +798,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			dot = 2;
 		}
 	}
+	else if (name[0] == '#') {
+		hash = 1;
+	}
+	else if (c_strncmp(name, "moddable:", 9) == 0)
+		c_memmove(name, name + 9, c_strlen(name) - 8);
+	
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
 	slash = c_strrchr(name, separator);
@@ -803,6 +812,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
 		*slash = 0;
+		
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
@@ -823,8 +833,27 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			mxRangeError("path too long");
 		c_strcat(buffer, name + dot);
 	}
+	else if (hash) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		path = buffer;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strchr(buffer, separator);
+		if (!slash)
+			return XS_NO_ID;
+		if (path[0] == '@') {
+			slash = c_strchr(slash + 1, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
+		}
+		*(slash + 1) = 0;
+		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name);
+	}
 	else
 		path = name;
+		
 	if (fxFindScript(the, path, &id))
 		return id;
 	return XS_NO_ID;
