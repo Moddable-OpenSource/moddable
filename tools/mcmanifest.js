@@ -1126,12 +1126,11 @@ class Rule {
 		var tool = this.tool;
 		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
 		var sourceParts = tool.splitPath(source);
-		var slash = source.lastIndexOf(tool.slash);
 		var directory = this.tool.resolveDirectoryPath(sourceParts.directory);
 		if (directory) {
 			this.count = 0;
 			var star = sourceParts.name.lastIndexOf("*");
-			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name;
+			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name + sourceParts.extension;
 			var names = tool.enumerateDirectory(directory);
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -1155,8 +1154,10 @@ class Rule {
 						name = parts.name;
 				}
 				else {
-					if ((parts.name == prefix) && ((sourceParts.extension == "") || (sourceParts.extension == parts.extension)))
+					if (parts.name == prefix)
 						name = prefix;
+					else if (parts.name + parts.extension == prefix)
+						name = sourceParts.name;
 					else
 						continue;
 				}
