@@ -556,10 +556,11 @@ static void setStepDone(txMachine *the)
 		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
 		xsCall2(xsResult, xsID("then"), xsVar(0), xsVar(1));
 #else	
+		xsVars(1);
 		xsVar(0) = xsImportNow(((txPreparation *)xsPreparationAndCreation(NULL))->main);
 		xsVar(0) = xsGet(xsVar(0), xsID("default"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
+		if (xsTest(xsVar(0)) && xsIsInstanceOf(xsVar(0), xsFunctionPrototype))
+			xsCallFunction0(xsVar(0), xsGlobal);
 #endif
 	xsEndHost(the);
 }
