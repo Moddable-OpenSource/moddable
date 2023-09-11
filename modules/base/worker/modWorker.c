@@ -206,7 +206,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			 xsmcHas(xsArg(1), xsID_slotCount) ||
 		 	 xsmcHas(xsArg(1), xsID_keyCount)) {
 #ifdef mxDebug
-			xsTrace("deprecated worker creation parameters detected. update recommended.");
+			xsTrace("deprecated worker creation parameters detected. update recommended.\n");
 #endif
 			xsIntegerValue allocation, stackCount, slotCount, keyCount;
 			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
@@ -234,8 +234,6 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				worker->creation.initialKeyCount = keyCount;
 		}
 		else {
-			xsIntegerValue value;
-
 			getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
 			xsmcGet(xsVar(0), xsArg(1), xsID_chunk);
 			if (xsmcTest(xsVar(0))) {
