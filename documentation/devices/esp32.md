@@ -82,6 +82,7 @@ The Moddable SDK supports many devices built on ESP32. The following table lists
 |  <img src="https://cdn.sparkfun.com//assets/parts/1/4/2/4/1/15663-SparkFun_Thing_Plus_-_ESP32_WROOM-01.jpg" width=125><BR>SparkFun Thing Plus | `esp32/esp32_thing_plus ` | | <li>[Product page](https://www.sparkfun.com/products/15663)</li> |
 | <img src="https://cdn.sparkfun.com//assets/parts/1/3/2/0/9/14917_-_356-ESP-WROVER-KIT_3_Edit.jpg" width=125><BR>ESP32 WRover Kit | `esp32/wrover_kit` | | <li>[Product page](https://www.adafruit.com/product/3384)</li> |
 |  <img src="https://media-cdn.seeedstudio.com/media/catalog/product/cache/b5e839932a12c6938f4f9ff16fa3726a/1/0/102991455_preview-07.png" width=125><BR> Wireless Tag WT32-ETH01 | `esp32/wt32_eth01` | **Built-in Ethernet** | <li>[Product page](http://www.wireless-tag.com/portfolio/wt32-eth01/)</li> |
+| <img src="./../assets/devices/lilygo-ttgo.png" width=125><BR>Lilygo TTGO | `esp32/lilygo_ttgo` | **135 x 240 IPS display**<br>Button | <li>[Product page](https://www.lilygo.cc/products/lilygo%C2%AE-ttgo-t-display-1-14-inch-lcd-esp32-control-board)</li> |
 | Moddable Zero | `esp32/moddable_zero` | | <li>[Wiring guide](../displays/wiring-guide-generic-2.4-spi-esp32.md)</li> |
 
 
@@ -127,7 +128,8 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
 |<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
 | <img src="./../assets/devices/lilygo-qt-pro-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_t_qt` | 0.85" LCD display<br>128 x 128 16 bit color<br>2 buttons<br>Qwiic connector | <li>[Product page](https://www.lilygo.cc/products/t-qt-v1-1)</li>|
-| <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
+| <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-Display-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
+| <img src="./../assets/devices/xiao-esp32c3.png" width=125><BR>Seeed Studio<BR>XIAO ESP32S3 | `esp32/xiao_esp32s3` | 1 button | <li>[Product page](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html)</li>|
 
 <a id="platforms-esp32-c3"></a>
 ### ESP32-C3
