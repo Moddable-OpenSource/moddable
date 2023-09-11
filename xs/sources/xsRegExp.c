@@ -1006,8 +1006,9 @@ void fx_RegExp_prototype_split(txMachine* the)
 {
 #if mxRegExp
 	txSlot* argument;
-	txBoolean unicodeFlag = 0;
 	txIndex limit;
+	txString flags;
+	txBoolean unicodeFlag = 0;
 	txSlot* splitter;
 	txSlot* array;
 	txSlot* item;
@@ -1030,10 +1031,14 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_flags));
-	if (!c_strchr(fxToString(the, the->stack), 'y'))
-		fxConcatStringC(the, the->stack, "y");
-	if (c_strchr(fxToString(the, the->stack), 'u'))
+	flags = fxToString(the, the->stack);
+	if (c_strchr(flags, 'u'))
 		unicodeFlag = 1;
+	if (!c_strchr(flags, 'y')) {
+		mxPushStringC("y");
+		fxConcatString(the, the->stack + 1, the->stack);
+		mxPop();
+	}
 	mxRunCount(2);
 	splitter = the->stack;
 	
