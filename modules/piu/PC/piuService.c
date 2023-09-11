@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -263,8 +263,8 @@ void ServiceThreadCreate(xsMachine* the)
     pthread_mutex_init(&(thread->mutex), NULL);
     pthread_mutex_lock(&(thread->mutex));
 	
-	pthread_t self = pthread_self();
-	size_t size = pthread_get_stacksize_np(self);
+	// pthread_t self = pthread_self();
+	// size_t size = pthread_get_stacksize_np(self);
 	pthread_attr_init(&attr);
 	// pthread_attr_setstacksize(&attr, size); // Sanitize check needs huge stack
 	
