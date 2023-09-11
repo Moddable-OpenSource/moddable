@@ -317,6 +317,7 @@ NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrfx_power.o \
 	$(LIB_DIR)\nrfx_ppi.o \
 	$(LIB_DIR)\nrfx_prs.o \
+	$(LIB_DIR)\nrfx_pwm.o \
 	$(LIB_DIR)\nrfx_qdec.o \
 	$(LIB_DIR)\nrfx_saadc.o \
 	$(LIB_DIR)\nrfx_spim.o \
