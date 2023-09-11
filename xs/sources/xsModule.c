@@ -1199,8 +1199,7 @@ void fxLoadVirtualModuleSource(txMachine* the, txSlot* record, txSlot* instance)
 			mxGetID(mxID(_export));
 			if (!mxIsUndefined(the->stack)) {
 				export++;
-				fxToString(the, the->stack);
-				nameID = fxNewName(the, the->stack);
+				nameID = fxToID(the, the->stack);
 			}
 			mxPop();
 			
@@ -1208,16 +1207,14 @@ void fxLoadVirtualModuleSource(txMachine* the, txSlot* record, txSlot* instance)
 			mxGetID(mxID(_import));
 			if (!mxIsUndefined(the->stack)) {
 				import++;
-				fxToString(the, the->stack);
-				nameID = fxNewName(the, the->stack);
+				nameID = fxToID(the, the->stack);
 			}
 			mxPop();
 		
 			mxPushSlot(item);
 			mxGetID(mxID(_as));
 			if (!mxIsUndefined(the->stack)) {
-				fxToString(the, the->stack);
-				asID = fxNewName(the, the->stack);
+				asID = fxToID(the, the->stack);
 			}
 			else
 				asID = nameID;
@@ -1986,8 +1983,7 @@ txID fxResolveSpecifier(txMachine* the, txSlot* realm, txID moduleID, txSlot* na
 			mxPushSlot(name);
 			fxPushKeyString(the, moduleID, C_NULL);
 			mxRunCount(2);
-			fxToString(the, the->stack);
-			moduleID = fxNewName(the, the->stack);
+			moduleID = fxToID(the, the->stack);
 			mxPop();
 		}
 	}
