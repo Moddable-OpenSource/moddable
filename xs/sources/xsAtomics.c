@@ -533,12 +533,12 @@ void fx_Atomics_wait(txMachine* the)
 	result = (*dispatch->value.typedArray.atomics->wait)(the, host, offset, the->stack, timeout);
 	fxUnlinkSharedChunk(the);
 	if (result < 0)
-		mxResult->value.string = "not-equal";
+		mxPushStringX("not-equal");
 	else if (result > 0)
-		mxResult->value.string = "ok";
+		mxPushStringX("ok");
 	else
-		mxResult->value.string = "timed-out";
-	mxResult->kind = XS_STRING_X_KIND;
+		mxPushStringX("timed-out");
+	mxPullSlot(mxResult);
 }
 
 void fx_Atomics_xor(txMachine* the)
