@@ -50,7 +50,7 @@ class ConsolePaneBehavior extends Behavior {
 	}
 	onMachineChanged(container, machine) {
 		const row = container.first.next;
-		if (machine.broken) {
+		if (machine && machine.broken) {
 			if (!row.visible) {
 				const scroller = container.first.first;
 				scroller.coordinates = { left:0, right:0, top:27, bottom:31 }
@@ -81,9 +81,11 @@ class ConsolePaneBehavior extends Behavior {
 	onMachineSelected(container, machine) {
 		let scroller = container.first.first;
 		let code = scroller.first;
-		if (!machine) machine = this.data; 
+		if (!machine)
+			machine = this.data; 
 		code.behavior.doLog(code, machine.consoleText, machine.consoleLines);
 		scroller.scroll = machine.consoleScroll;
+		this.onMachineChanged(container, machine);
 	}
 	onMouseEntered(container, x, y) {
 		this.reveal(container, true);

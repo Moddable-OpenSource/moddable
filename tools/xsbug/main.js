@@ -684,7 +684,7 @@ var HorizontalLayout = Layout.template($ => ({
 		}),
 		HorizontalDivider($, {  
 			anchor:"HORIZONTAL_MAIN_DIVIDER",  width:6, bottom:$.horizontalMainDividerStatus ? $.horizontalMainDividerCurrent - 3 : 23, 
-			before:160, current:$.horizontalMainDividerCurrent, after:26, status:$.horizontalMainDividerStatus,
+			before:160, current:$.horizontalMainDividerCurrent, after:56, status:$.horizontalMainDividerStatus,
 		}),
 	],
 }));
