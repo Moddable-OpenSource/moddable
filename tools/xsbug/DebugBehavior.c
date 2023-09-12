@@ -35,6 +35,8 @@
  *       limitations under the License.
  */
 
+#include "xsAll.h"
+#include "xsScript.h"
 #include "piuAll.h"
 #if mxLinux
 #include <gio/gio.h>
@@ -184,6 +186,7 @@ enum {
 	mxStopProfilingCommand,
 	mxToggleCommand,
 	mxImportCommand,
+	mxEvalCommand,
 	mxScriptCommand,
 	mxModuleCommand,
 };
@@ -383,6 +386,99 @@ void PiuDebugBehaviorStop(PiuDebugBehavior self)
 		self->window = NULL;
 	}
 #endif
+}
+
+size_t gxBufferSize = 0;
+static txString gxBuffer = C_NULL;
+static const char gxHexaDigits[] = "0123456789ABCDEF";
+
+txString fxBinHex(txString string, void* data, size_t size)
+{
+	txU1* src = data;
+	while(size) {
+		txU1 byte = *src++;
+		*string++ = gxHexaDigits[byte >> 4];
+		*string++ = gxHexaDigits[byte & 0x0F];
+		size--;
+	}
+	return string;
+}
+
+void PiuDebugBehavior_compile(xsMachine* the)
+{
+	txParser _parser;
+	txParser* parser = &_parser;
+	txParserJump jump;
+	txUnsigned flags = mxProgramFlag | mxEvalFlag | mxDebugFlag | mxStrictFlag;
+	txStringStream stream;	
+	txScript* script = NULL;
+	txSize size;
+	size_t stringSize;
+	txString string;
+	txByte byte;
+	
+	stream.offset = 0;
+	stream.size = c_strlen(fxToString(the, mxArgv(0)));
+	stream.slot = mxArgv(0);
+	fxInitializeParser(parser, the, 1024*1024, 1993);
+	parser->firstJump = &jump;
+	jump.nextJump = C_NULL;
+	if (c_setjmp(jump.jmp_buf) == 0) {
+		fxParserTree(parser, &stream, (txGetter)fxStringGetter, flags, C_NULL);
+		fxParserHoist(parser);
+		fxParserBind(parser);
+		script = fxParserCode(parser);
+// 		if (parser->errorCount > 0)
+// 			fprintf(stderr, "%s\n", parser->errorMessage);
+		
+		size = 8 + 8 + 4 + 8 + script->symbolsSize + 8 + script->codeSize;
+		
+		stringSize = (size * 2) + 1;
+		if (gxBuffer == NULL) {
+			gxBuffer = c_malloc(stringSize);
+			gxBufferSize = stringSize;
+		}
+		else if (gxBufferSize < stringSize) {
+			gxBuffer = c_realloc(gxBuffer, stringSize);
+			gxBufferSize = stringSize;
+		}
+		string = gxBuffer;
+		
+		size = htonl(size);
+		string = fxBinHex(string, &size, 4);
+		string = fxBinHex(string, "XS_B", 4);
+
+		size = 8 + 4;
+		size = htonl(size);
+		string = fxBinHex(string, &size, 4);
+		string = fxBinHex(string, "VERS", 4);
+		byte = XS_MAJOR_VERSION;
+		string = fxBinHex(string, &byte, 1);
+		byte = XS_MINOR_VERSION;
+		string = fxBinHex(string, &byte, 1);
+		byte = XS_PATCH_VERSION;
+		string = fxBinHex(string, &byte, 1);
+		byte = (script->hostsBuffer) ? -1 : 0;
+		string = fxBinHex(string, &byte, 1);
+
+		size = 8 + script->symbolsSize;
+		size = htonl(size);
+		string = fxBinHex(string, &size, 4);
+		string = fxBinHex(string, "SYMB", 4);
+		string = fxBinHex(string, script->symbolsBuffer, script->symbolsSize);
+
+		size = 8 + script->codeSize;
+		size = htonl(size);
+		string = fxBinHex(string, &size, 4);
+		string = fxBinHex(string, "CODE", 4);
+		string = fxBinHex(string, script->codeBuffer, script->codeSize);
+		
+		*string = 0;
+		
+		mxPushString(gxBuffer);
+		mxPullSlot(mxResult);
+	}
+	fxTerminateParser(parser);
 }
 
 void PiuDebugBehavior_start(xsMachine* the)
@@ -945,9 +1041,9 @@ void PiuDebugMachineParseData(PiuDebugMachine self, char* theData)
 {	
 	xsMachine* the = self->the;
 	if (self->logging) {
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		xsResult = xsCall1(xsResult, xsID_concat, xsString(theData));
-		xsSet(self->itemSlot, xsID_data, xsResult);
+		xsSet(self->listSlot, xsID_data, xsResult);
 	}
 }
 
@@ -1041,16 +1137,16 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 {
 	xsMachine* the = self->the;
 	if (strcmp(theName, "break") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "samples") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "log") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "bubble") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "breakpoint") == 0) {
 		(void)xsCall1(self->listSlot, xsID_push, self->itemSlot);
@@ -1079,6 +1175,9 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 		xsVar(1) = xsGet(self->itemSlot, xsID_value);
 		(void)xsCall2(self->thisSlot, xsID_onTitleChanged, xsVar(0), xsVar(1));
 	}
+	else if (strcmp(theName, "result") == 0) {
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
+	}
 	else if (strcmp(theName, "node") == 0) {
 		(void)xsCall1(self->listSlot, xsID_push, self->itemSlot);
 	}
@@ -1086,12 +1185,12 @@ void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName)
 		(void)xsCall1(self->listSlot, xsID_push, self->itemSlot);
 	}
 	else if (strcmp(theName, "eval") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "pr") == 0) {
 	}
 	else if (strcmp(theName, "ps") == 0) {
-		xsDefine(self->itemSlot, xsID_data, xsString(""), xsDefault);
+		xsDefine(self->listSlot, xsID_data, xsString(""), xsDefault);
 	}
 	else if (strcmp(theName, "pt") == 0) {
 	}
@@ -1105,15 +1204,17 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 	}
 	else if (strcmp(theName, "samples") == 0) {
         self->logging = 0;
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall1(self->thisSlot, xsID_onSampled, xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "log") == 0) {
 		self->logging = 0;
 		xsVar(0) = xsGet(self->itemSlot, xsID_path);
 		xsVar(1) = xsGet(self->itemSlot, xsID_line);
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall3(self->thisSlot, xsID_onLogged, xsVar(0), xsVar(1), xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "bubble") == 0) {
         self->logging = 0;
@@ -1121,16 +1222,18 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 		xsVar(1) = xsGet(self->itemSlot, xsID_line);
 		xsVar(2) = xsGet(self->itemSlot, xsID_name);
 		xsVar(3) = xsGet(self->itemSlot, xsID_value);
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall5(self->thisSlot, xsID_onBubbled, xsVar(0), xsVar(1), xsVar(2), xsVar(3), xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "break") == 0) {
 		self->logging = 0;
 		xsVar(0) = xsGet(self->itemSlot, xsID_path);
 		xsVar(1) = xsGet(self->itemSlot, xsID_line);
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall3(self->thisSlot, xsID_onLogged, xsVar(0), xsVar(1), xsResult);
 		(void)xsCall3(self->thisSlot, xsID_onBroken, xsVar(0), xsVar(1), xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "breakpoints") == 0) {
 		(void)xsCall2(self->thisSlot, xsID_onViewChanged, xsInteger(mxBreakpointsView), self->listSlot);
@@ -1160,6 +1263,12 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 		(void)xsCall2(self->thisSlot, xsID_onViewChanged, xsInteger(mxLocalsView), self->listSlot);
 		self->listSlot = xsUndefined;
 	}	
+	else if (strcmp(theName, "result") == 0) {
+		self->logging = 0;
+		xsResult = xsGet(self->listSlot, xsID_data);
+		(void)xsCall2(self->thisSlot, xsID_onResult, self->listSlot, xsResult);
+		self->listSlot = xsUndefined;
+	}
 	else if (strcmp(theName, "node") == 0) {
 		self->column--;
 	}
@@ -1173,8 +1282,9 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 	else if (strcmp(theName, "eval") == 0) {
 		self->logging = 0;
 		xsVar(0) = xsGet(self->itemSlot, xsID_path);
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall2(self->thisSlot, xsID_onEval, xsVar(0), xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "pr") == 0) {
 		xsVar(0) = xsGet(self->itemSlot, xsID_name);
@@ -1185,8 +1295,9 @@ void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName)
 	}
 	else if (strcmp(theName, "ps") == 0) {
 		self->logging = 0;
-		xsResult = xsGet(self->itemSlot, xsID_data);
+		xsResult = xsGet(self->listSlot, xsID_data);
 		(void)xsCall1(self->thisSlot, xsID_onProfileSample, xsResult);
+		self->listSlot = xsUndefined;
 	}
 	else if (strcmp(theName, "pt") == 0) {
 		xsVar(0) = xsGet(self->itemSlot, xsID_name);
@@ -1205,15 +1316,19 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 	}
 	else if (strcmp(theName, "samples") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "log") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "bubble") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "break") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "breakpoints") == 0) {
 		self->listSlot = xsNewArray(0);
@@ -1239,6 +1354,11 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 		self->column = -1;
 		self->listSlot = xsNewArray(0);
 	}
+	else if (strcmp(theName, "result") == 0) {
+		self->column = -1;
+		self->logging = 1;
+		self->listSlot = xsNewArray(0);
+	}
 	else if (strcmp(theName, "node") == 0) {
 		self->column++;
 		xsDefine(self->itemSlot, xsID_column, xsInteger(self->column), xsDefault);
@@ -1249,11 +1369,13 @@ void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName)
 	}
 	else if (strcmp(theName, "eval") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "pr") == 0) {
 	}
 	else if (strcmp(theName, "ps") == 0) {
 		self->logging = 1;
+		self->listSlot = self->itemSlot;
 	}
 	else if (strcmp(theName, "pt") == 0) {
 	}
@@ -1387,6 +1509,15 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		case mxStopProfilingCommand:
 			c_strcat(buffer, "<stop-profiling/>");
+			break;
+		case mxEvalCommand:
+			c_strcat(buffer, "<eval id=\"");
+			c_strcat(buffer, xsToString(xsArg(1)));
+			c_strcat(buffer, "\" path=\"");
+			c_strcat(buffer, xsToString(xsArg(2)));
+			c_strcat(buffer, "\" line=\"");
+			c_strcat(buffer, xsToString(xsArg(3)));
+			c_strcat(buffer, "\"/>");
 			break;
 		}
 		c_strcat(buffer, "\15\12");

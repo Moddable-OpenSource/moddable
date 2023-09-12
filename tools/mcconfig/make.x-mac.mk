@@ -94,7 +94,7 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 MACOS_ARCH ?=
-MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
+MACOS_VERSION_MIN ?=
 
 # XS_C_FLAGS = -c -arch i386
 XS_C_FLAGS = -c $(MACOS_ARCH) $(MACOS_VERSION_MIN)

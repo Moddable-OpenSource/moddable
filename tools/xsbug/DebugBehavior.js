@@ -63,8 +63,9 @@ const mxStepOutCommand = 11;
 const mxStopProfilingCommand = 12;
 const mxToggleCommand = 13;
 const mxImportCommand = 14;
-const mxScriptCommand = 15;
-const mxModuleCommand = 16;
+const mxEvalCommand = 15;
+const mxScriptCommand = 16;
+const mxModuleCommand = 17;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 const consoleColorCodes = [{ code: "<info>", color: 3 }, { code: "<warn>", color: 1 }, { code: "<error>", color: 2 }];
 
@@ -236,6 +237,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
 	}
+	compile(expression) @ "PiuDebugBehavior_compile"
 	doAbort() {
 		let machine = this.currentMachine;
 		machine.doCommand(mxAbortCommand);
@@ -277,6 +279,13 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		machine.running = false;
 		machine.timeout = Date.now() + 500;
 		machine.doCommand(mxGoCommand);
+	}
+	doEval(application, source, code) {
+		let machine = this.currentMachine;
+		machine.consoleLines.push({ path:undefined, line:undefined, offset:machine.consoleText.length, color:0 }); 
+		machine.onLoggedAux(machine, '> ' + source + '\n');
+		this.onLogged(machine);
+		machine.doCommand(mxEvalCommand, machine.frame, code, 0);
 	}
 	doSelectItem(application, value) {
 		this.currentMachine.doCommand(mxSelectCommand, value);
@@ -812,6 +821,49 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			this.profiling = false;
 			application.distribute("onMachineChanged", this);
 		}
+	}
+	onResult(lines, data) {
+		const length = lines.length;
+		let result;
+		let color;
+		if (length == 0) {
+			result = data;
+			color = 2;
+		}
+		else {
+			let property = lines[0];
+			if (property.state == 0) 
+				result = property.value;
+			else {
+    			let flag = true;
+    			result = "{ ";
+				for (let i = 1; i < length; i++) {
+					property = lines[i];
+					if ((property.column == 1) && (property.name != "(..)")) {
+						if (flag)
+							flag = false;
+						else {
+							result += ", ";
+							if (result.length > 256) {
+								result += " …}";
+								break;
+							}
+						}
+						result += property.name;
+						result += ": ";
+						if (property.state == 0)
+							result += property.value;
+						else
+							result += "{…}";
+					}
+				}
+				result += " }";
+			}
+			color = 1;
+		}
+		this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color }); 
+		this.onLoggedAux(this, result + "\n");
+		this.behavior.onLogged(this);
 	}
 	onSampled(data) {
 		var samples = data.split(",");
