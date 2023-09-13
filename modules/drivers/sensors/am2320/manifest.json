@@ -1,7 +1,7 @@
 {
+	"include": "$(MODULES)/data/crc/manifest.json",
 	"modules": {
-		"embedded:sensor/Humidity-Temperature/AM2320": "$(MODDABLE)/modules/drivers/sensors/am2320/am2320",
-		"crc": "$(MODDABLE)/modules/data/crc/crc"
+		"embedded:sensor/Humidity-Temperature/AM2320": "$(MODDABLE)/modules/drivers/sensors/am2320/am2320"
 	},
 	"preload": [
 		"embedded:sensor/Humidity-Temperature/AM2320"

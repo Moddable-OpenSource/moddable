@@ -1,10 +1,11 @@
 {
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	],
 	"modules": {
-		"embedded:sensor/Humidity-Temperature/SHT3x": "$(MODDABLE)/modules/drivers/sensors/sht3x/sht3x",
-		"crc": "$(MODDABLE)/modules/data/crc/crc"
+		"embedded:sensor/Humidity-Temperature/SHT3x": "$(MODDABLE)/modules/drivers/sensors/sht3x/sht3x"
 	},
 	"preload": [
-		"embedded:sensor/Humidity-Temperature/SHT3x",
-		"crc"
+		"embedded:sensor/Humidity-Temperature/SHT3x"
 	]
 }
