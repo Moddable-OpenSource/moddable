@@ -544,7 +544,8 @@ txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag f
 		aSymbol->sum = aSum;
 		aSymbol->flag = flag;
 		linker->symbolArray[anID] = aSymbol;
-		linker->symbolTable[aModulo] = aSymbol;
+		if (anID >= XS_SYMBOL_ID_COUNT)
+			linker->symbolTable[aModulo] = aSymbol;
 		linker->symbolIndex++;
 	}
 	else
