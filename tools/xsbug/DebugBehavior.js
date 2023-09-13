@@ -845,7 +845,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 						else {
 							result += ", ";
 							if (result.length > 256) {
-								result += " …}";
+								result += " …";
 								break;
 							}
 						}
