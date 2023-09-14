@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"data/tinyint": "./tinyint"
+	},
+	"preload": [
+		"data/tinyint"
+	]
+}

@@ -28,7 +28,6 @@ class Worker @ "xs_worker_destructor" {
 	postMessage(message) @ "xs_worker_postfromworkerinstantiator";
 	terminate() @ "xs_worker_terminate";
 };
-Object.freeze(Worker.prototype);
 
 /*
 	shared worker
@@ -37,6 +36,5 @@ Object.freeze(Worker.prototype);
 export class SharedWorker @ "xs_worker_destructor" {
 	constructor(module, options) @ "xs_sharedworker";
 };
-Object.freeze(SharedWorker.prototype);
 
 export default Worker;

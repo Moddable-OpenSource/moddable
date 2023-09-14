@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/network/websocket/manifest.json"
 	],
 	"modules": {

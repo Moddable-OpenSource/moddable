@@ -2,38 +2,34 @@
 	"build": {
 		"ETHERNET": "$(MODDABLE)/modules/network/ethernet"
 	},
-	"include": "$(ETHERNET)/manifest.json",
+	"include": [
+		"$(ETHERNET)/manifest.json",
+		"$(MODDABLE)/modules/network/net/manifest.json",
+		"$(MODDABLE)/modules/network/sntp/manifest.json"
+	],
 	"platforms": {
 		"esp32": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lwip/*"
 				],
 				"setup/ethernet": "$(ETHERNET)/esp32/setup/ethernet"
 			},
 			"preload": [
 				"socket",
-				"setup/ethernet",
-				"sntp",
-				"net"
+				"setup/ethernet"
 			]
 		},
 		"lin": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lin/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/lin/*"
+					"$(MODULES)/network/socket/lin/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"net"
+				"socket"
 			]
 		},
 		"mac": {
@@ -42,30 +38,22 @@
 					"$(MODULES)/network/socket/*",
 					"$(MODULES)/network/socket/mac/*",
 					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/mac/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/net/mac/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"sntp",
-				"net"
+				"socket"
 			]
 		},
 		"win": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/win/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/win/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"sntp",
-				"net"
+				"socket"
 			]
 		},
 		"...": {

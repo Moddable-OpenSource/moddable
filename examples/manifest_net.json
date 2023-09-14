@@ -1,5 +1,9 @@
 {
-	"include": "$(MODULES)/network/wifi/manifest.json",
+	"include": [
+		"$(MODULES)/network/net/manifest.json",
+		"$(MODULES)/network/sntp/manifest.json",
+		"$(MODULES)/network/wifi/manifest.json"
+	],
 	"config": {
 		"sntp": "pool.ntp.org"
 	},
@@ -8,36 +12,26 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lwip/*"
 				],
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
-				"sntp",
-				"net"
+				"setup/network"
 			]
 		},
 		"esp32": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lwip/*"
 				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
-				"sntp",
-				"net"
+				"setup/network"
 			]
 		},
 		"esp32/wt32_eth01": {
@@ -47,18 +41,13 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lwip/*"
 				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
-				"sntp",
-				"net"
+				"setup/network"
 			]
 		},
 		"nrf52": {
@@ -68,84 +57,59 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/pico/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lwip/*"
 				],
 				"setup/network": "$(BUILD)/devices/pico/setup/network"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
-				"sntp",
-				"net"
+				"setup/network"
 			]
 		},
 		"lin": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lin/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/lin/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/lin/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"sntp",
-				"net"
+				"socket"
 			]
 		},
 		"mac": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/mac/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/mac/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/mac/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"sntp",
-				"net"
+				"socket"
 			]
 		},
 		"win": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/win/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/win/*"
 				]
 			},
 			"preload": [
-				"socket",
-				"sntp",
-				"net"
+				"socket"
 			]
 		},
 		"qca4020": {
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/qca4020/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/qca4020/*",
-					"$(MODULES)/network/sntp/*"
+					"$(MODULES)/network/socket/qca4020/*"
 				],
 				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
 			"preload": [
 				"socket",
-				"setup/network",
-				"sntp",
-				"net"
+				"setup/network"
 			]
 		},	
 		"...": {

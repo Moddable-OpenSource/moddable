@@ -1,6 +1,5 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/network/ble/manifest_client.json"
 	],
 	"modules": {
