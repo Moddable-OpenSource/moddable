@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,6 @@
  */
 
 import {} from "piu/MC";
-
 import Timeline from "piu/Timeline";
 import WipeTransition from "piu/WipeTransition";
 
@@ -67,35 +66,25 @@ let BarsPort = Port.template($ => ({
 let BarsContainer = Container.template($ => ({
 	left:0, right:0, top:0, bottom:0, skin:whiteSkin,
 	Behavior: class extends Behavior {
-		onDisplayed(container) {
-			this.reverse = false;
+		startAnimation(container) {
 			this.timeline = (new Timeline)
-				.to(container.first.next, { y:180 }, 500, Math.quadEaseOut, 0)
+				.to(container.first.next, { y:application.height - ((application.height-120) >> 1) }, 500, Math.quadEaseOut, 0)
 				.to(container.first, { x:application.width }, 1000, Math.quadEaseOut, 0)
 				.to(container.last, { x:(application.width - 120) >> 1 }, 1000, Math.quadEaseOut, -1000)
 			container.duration = this.timeline.duration + 1000;
 			container.start();	
 		}
 		onFinished(container) {
-			//if (this.reverse)
-				container.bubble("onStep");
-// 			else {
-// 				this.reverse = true;
-// 				container.time = 0;
-// 				container.start();	
-// 			}
+			container.bubble("onStep");
 		}
 		onTimeChanged(container) {
-			let time = container.time;
-			if (this.reverse)
-				time = container.duration - time;
-			this.timeline.seekTo(time);
+			this.timeline.seekTo(container.time);
 		}
 	},
 	contents:[
-		BarsPort($, { left:0, width:application.width, top:60, height:120, }),
-		Label($, { left:0, right:0, top:240, style:labelStyle, string:teamStrings[$] }),
-		Content($, { left:-120, width:120, top:60, height:120, skin:teamSkin, variant:$ }),
+		BarsPort($, { left:0, width:application.width, top:(application.height-120) >> 1, height:120, }),
+		Label($, { left:0, right:0, top:application.height, style:labelStyle, string:teamStrings[$] }),
+		Content($, { left:-120, width:120, top:(application.height-120) >> 1, height:120, skin:teamSkin, variant:$ }),
 	],
 }));
 
@@ -104,7 +93,7 @@ let BarsApplication = Application.template($ => ({
 		onCreate(application) {
 			this.index = 0;
 			application.add(new BarsContainer(this.index));
-			application.first.delegate("onDisplayed");
+			application.first.delegate("startAnimation");
 		}
 		onDisplaying(application) {
 			if (application.height != 240 || application.width != 320)
@@ -116,10 +105,8 @@ let BarsApplication = Application.template($ => ({
 				this.index = 0;
 			application.run(new WipeTransition(1000, Math.quadEaseOut, "top"), application.first, new BarsContainer(this.index));
 		}
-		onTransitionBeginning(application) {
-		}
 		onTransitionEnded(application) {
-			application.first.delegate("onDisplayed");
+			application.first.delegate("startAnimation");
 		}
 	}, 
 }));

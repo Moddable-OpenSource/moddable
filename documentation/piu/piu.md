@@ -1,6 +1,6 @@
 # Piu JavaScript Reference
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 24, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## About This Document
 
@@ -47,7 +47,7 @@ Piu is a user interface framework designed to run on microcontrollers. The progr
 
 ## Inheritance Hierarchy
 
-Figure 1 summarizes the inheritance hierarchy for the objects described in this document. 
+Figure 1 summarizes the inheritance hierarchy for the objects described in this document.
 
 **Figure 1.** Piu Inheritance Hierarchy
 
@@ -58,7 +58,7 @@ The basic relationship between these objects in the context of a Piu application
 - Graphical parts of the user interface are all `content` objects
 - `skin`, `style`, and `texture` objects customize the look (colors, fonts, etc.) of `content` objects
 - `behavior` objects are bound to `content` objects to handle events
-- `timeline` and `transition` objects animate `content` objects 
+- `timeline` and `transition` objects animate `content` objects
 
 
 ## Introduction to Important Concepts
@@ -77,7 +77,7 @@ Applications use constructors to define `content` and `container` objects. These
 
 #### Bound and Unbound Contents
 
-Contents that are not attached to the containment hierarchy are called *unbound* contents; contents attached to the containment hierarchy, *bound* contents. Only objects that are part of the containment hierarchy appear on screen. 
+Contents that are not attached to the containment hierarchy are called *unbound* contents; contents attached to the containment hierarchy, *bound* contents. Only objects that are part of the containment hierarchy appear on screen.
 
 Unbound contents do not participate in layout. They are neither measured nor fitted; consequently, their position and size are `undefined` and cannot be changed.
 
@@ -90,7 +90,7 @@ let after = content.position;	// {x: 160, y:120} (assuming the application is 32
 
 #### Constraints
 
-The coordinates of an object define implicit constraints on its position and size. 
+The coordinates of an object define implicit constraints on its position and size.
 
 For example, centered content and contents whose sizes/position are dependent on their container's size/position cannot move.
 
@@ -99,12 +99,12 @@ For example, centered content and contents whose sizes/position are dependent on
 let centeredContent = new Content(null, {
 	width: 10, height: 10
 });
-let dependentOnContainerContent = new Content(null, { 
+let dependentOnContainerContent = new Content(null, {
     top: 0, left: 0, bottom: 100, right: 100,
 });
 
 // Can move
-let unconstrainedContent = new Content(null, { 
+let unconstrainedContent = new Content(null, {
     top: 0, left: 0, height: 100, width: 100
 });
 ```
@@ -117,27 +117,27 @@ let unconstrainedContent = new Content(null, {
 All contents have a *measured width* and *measured height*, which are the default width and height computed by the content itself. For example, the measured width of the following content object will be 100.
 
 ```javascript
-let sampleContent = new Content(null, { 
-	width: 100 
+let sampleContent = new Content(null, {
+	width: 100
 });
 ```
 
 The measured width of the following content will be 0, because the content has no default width.
 
 ```javascript
-let sampleContent = new Content(null, { 
-	left: 0, right: 0 
+let sampleContent = new Content(null, {
+	left: 0, right: 0
 });
 ```
 
 The `coordinates` property of a `content` object reflect the content's measured size. This property can be changed at any time.
 
 ```javascript
-sampleContent.coordinates = { 
+sampleContent.coordinates = {
 	left: 0,
 	width: 100,
 	top: 0,
-	height: 100 
+	height: 100
 };
 ```
 
@@ -149,8 +149,8 @@ All contents also have a *fitted width* and *fitted height*, which are the effec
 If both `left` and `right` coordinates are defined, the content stretches horizontally with its container, and the fitted width of the content depends on the fitted width of its container. Similarly, if both `top` and `bottom` coordinates are defined, the content stretches vertically with its container, and the fitted height of the content depends on the fitted height of its container. For example, the fitted width and fitted height of the `sampleContent` object here will both be 100.
 
 ```javascript
-let sampleContent = new Content(null, { 
-	left: 0, right: 0 
+let sampleContent = new Content(null, {
+	left: 0, right: 0
 });
 let sampleContainer = new Container(null, {
 	height: 100, width: 100,
@@ -163,8 +163,8 @@ let sampleContainer = new Container(null, {
 If a `left` or `right` coordinate (but not both) is defined, or if neither `left` nor `right` is defined, the fitted width equals the measured width. Similarly, if a `top` or `bottom` coordinate (but not both) is defined, or if neither `top` nor `bottom` is defined, the fitted width equals the measured height. For example, the fitted width and fitted height of the `sampleContent` object here will both be 50.
 
 ```javascript
-let sampleContent = new Content(null, { 
-	left: 0, top: 0, width: 50, height: 50 
+let sampleContent = new Content(null, {
+	left: 0, top: 0, width: 50, height: 50
 });
 let sampleContainer = new Container(null, {
 	height: 100, width: 100,
@@ -331,7 +331,7 @@ Traces the specified string in the virtual machine of the hosted application.
 > Note: Strings will not be traced until a line break ("\n") has also been traced.
 
 ```javascript
-trace("Hello world\n");	
+trace("Hello world\n");
 
 let sampleVariable = 2;
 trace(`sampleVariable value is: ${sampleVariable}\n`);    // "sampleVariable value is 2"
@@ -391,7 +391,7 @@ application.add(new SampleContainer({ title: "Tap to update", color: "blue" }));
 A `color` parameter can be passed into the dictionaries of `skin` and `style` constructors.
 
 To specify a color, you can use CSS names (Level 2) or hexadecimal notations (`"#RGB"`, `"#RGBA"`, `"#RRGGBB"`, `"#RRGGBBAA"`):
-	
+
 ```javascript
 const whiteSkin = new Skin({ fill:"white" });
 const redSkin = new Skin({ fill:"#F00" });
@@ -421,7 +421,7 @@ In dictionaries, colors can be a single color or an array of 2, 3, or 4 colors. 
 
 ### Coordinates
 
-All `content` objects have a `coordinates` property. The coordinates property is an object with `left`, `width`, `right`, `top`, `height`, and `bottom` properties, all of which can be `undefined`.  The coordinates of contents determine their position and size relative to their container and their `previous` and `next` properties (other `content` objects in the same container). 
+All `content` objects have a `coordinates` property. The coordinates property is an object with `left`, `width`, `right`, `top`, `height`, and `bottom` properties, all of which can be `undefined`.  The coordinates of contents determine their position and size relative to their container and their `previous` and `next` properties (other `content` objects in the same container).
 
 When a content's container is an `application`, `container`, `scroller`, or `layout` object:
 
@@ -447,8 +447,8 @@ When a content's container is a `row` object:
 
 Every content in the containment hierarchy can be used as a clock to control time-based animation behaviors using its `duration`, `fraction`, `interval`, and `time` properties.
 
-- The `duration` property is the duration of the animation, expressed in milliseconds. 
-- The `time` property provides the current time of the content’s clock. 
+- The `duration` property is the duration of the animation, expressed in milliseconds.
+- The `time` property provides the current time of the content’s clock.
 - The `fraction` property is the ratio of the clock’s current time to the content’s duration.
 - The `interval` property is the time between frames (frame rate) of the animation, expressed in milliseconds.
 
@@ -549,7 +549,7 @@ let expandingButton = new Content(null, {
 
 A `font` parameter must be passed into the dictionary of `style` constructors.
 
-Piu uses bitmap fonts. The metrics are provided by binary FNT files, the glyphs are provided by PNG files. 
+Piu uses bitmap fonts. The metrics are provided by binary FNT files, the glyphs are provided by PNG files.
 
 Fonts are assets and must be defined in the resources of your manifest. Use the default target or the `-alpha` or `-color` pseudo targets for fonts.
 
@@ -576,7 +576,7 @@ In order to cascade styles, you may want to use something similar to the [CSS fo
 const style = new Style({ font:"italic bold 16px Open Sans" });
 ```
 
-In Piu, the font property has five optional parts, in that order: 
+In Piu, the font property has five optional parts, in that order:
 
 1. style: `italic` | `normal` | `inherit`
 2. weight: `100` | `ultralight` | `200` | `thin` | `300` | `light` | `400` | `normal` | `500` | `medium` | `600` | `semibold` | `700` | `bold` |  `800` | `heavy` | `900` | `black` | `lighter`  | `bolder`  | `inherit `
@@ -600,7 +600,7 @@ For Piu to find the corresponding bitmap font files in your assets, you have to 
 * the family, without spaces,
 * `-`,
 * the capitalized name of the stretch, if not `normal`,
-* the capitalized name of the computed weight, if not `normal`, 
+* the capitalized name of the computed weight, if not `normal`,
 * the capitalized name of the style, if not `normal`,
 * `Regular`, if the stretch, the computed weight and the style are all `normal`,
 * `-`,
@@ -618,26 +618,26 @@ Applications can tile skins using their `tiles` property. The size of the tiles 
 - Else if only the `top` or `bottom` values are defined, the skin becomes a vertical 3-part pattern. The top part is drawn at the top of the content, the bottom part is drawn at the bottom of the content, and the middle part is repeated to fill the middle of the content.
 - Else the skin becomes a 9-part pattern. Corner parts are drawn in the corresponding corners of the content, side parts are repeated in the sides, and the middle part is repeated to fill the middle. The `left`, `right`, `top` and `bottom` values can all be defined to 0 to fill the content with the skin.
 
-Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitarily sized contents.
+Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitrarily sized contents.
 
 ![](../assets/piu/roundedRectangle.png)
 
 ```javascript
 let roundedRectangleTexture = new Texture("roundedRectangle.png");
-let roundedRectangleSkin = new Skin({ 
-	texture: roundedRectangleTexture, 
-	x: 0, y: 0, width: 30, height: 30, 
+let roundedRectangleSkin = new Skin({
+	texture: roundedRectangleTexture,
+	x: 0, y: 0, width: 30, height: 30,
 	tiles: { left: 5, right: 5, top: 5, bottom: 5 }
 });
 
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: "white" });
 
 let smallText = new Label(null, {
-	skin: roundedRectangleSkin, top: 20, left: 20, height: 30, width: 30, 
+	skin: roundedRectangleSkin, top: 20, left: 20, height: 30, width: 30,
 	style: sampleStyle, string: "Hi"
 });
 let bigText = new Text(null, {
-	skin: roundedRectangleSkin, top: 70, left: 20, height: 120, width: 100,  
+	skin: roundedRectangleSkin, top: 70, left: 20, height: 120, width: 100,
 	style: sampleStyle, string: "This is a long string"
 });
 
@@ -649,7 +649,7 @@ application.add(bigText);
 
 ### Variant, Variants, State, and States
 
-Applications often use the `state` and `variant` properties of `content` objects to update their appearance. Beacuse they can change dynamically, they can be used to animate `content` objects and provide visual feedback to touch events, for example.
+Applications often use the `state` and `variant` properties of `content` objects to update their appearance. Because they can change dynamically, they can be used to animate `content` objects and provide visual feedback to touch events, for example.
 
 #### Colored skins and styles
 
@@ -657,17 +657,17 @@ A common way that the `state` property is used is to update the color of content
 
 ```javascript
 let multiColoredSkin = new Skin({ fill: ["black", "white", "red"] });
-let blackContent = new Content(null, { 
-	top: 20, left: 20, width: 80, height: 80, 
-	skin: multiColoredSkin, state: 0, 
+let blackContent = new Content(null, {
+	top: 20, left: 20, width: 80, height: 80,
+	skin: multiColoredSkin, state: 0,
 });
-let redContent = new Content(null, { 
-	top: 20, left: 120, width: 80, height: 80, 
+let redContent = new Content(null, {
+	top: 20, left: 120, width: 80, height: 80,
 	skin: multiColoredSkin, state: 2
 });
-let grayContent = new Content(null, { 
-	top: 20, left: 220, width: 80, height: 80, 
-	skin: multiColoredSkin, state: 0.5 
+let grayContent = new Content(null, {
+	top: 20, left: 220, width: 80, height: 80,
+	skin: multiColoredSkin, state: 0.5
 });
 application.add(blackContent);
 application.add(redContent);
@@ -678,7 +678,7 @@ application.add(grayContent);
 
 #### Reusing textures
 
-It is often convenient to store several icons or other user interface elements in a single image. Specifying `states` and `variants` properties in the dictionary of `skin` constructors enables you to reference different sections of the same texture. This prevents an application from having to reference similar images and create multiple skins. 
+It is often convenient to store several icons or other user interface elements in a single image. Specifying `states` and `variants` properties in the dictionary of `skin` constructors enables you to reference different sections of the same texture. This prevents an application from having to reference similar images and create multiple skins.
 
 The `states` and `variants` properties of a skin are numerical values used to define the size of a single element in the texture. The `states` property represents the vertical offset between states, and the `variants` property represents the horizontal offset between variants. Here is an example of an asset that includes ten 28x28 pixel icons in one image, and a `skin` that will allow applications to reference each icon separately.
 
@@ -686,9 +686,9 @@ The `states` and `variants` properties of a skin are numerical values used to de
 
 ```javascript
 const wiFiStripTexture = new Texture({ path:"wifi-strip.png" });
-const wiFiSkin = new Skin({ 
-	texture: wiFiStripTexture, 
-	width: 28, height: 28, 
+const wiFiSkin = new Skin({
+	texture: wiFiStripTexture,
+	width: 28, height: 28,
 	states: 28, variants: 28
 });
 ```
@@ -745,7 +745,7 @@ For the complete JavaScript programming interface, see [`piuAll.js`][0].
 - **Source code:** [`piuApplication.c`][2]
 - **Relevant Examples:** all
 
-All Piu applications must have an `application` object at the root of their containment hierarchy. All other `content` objects must be added to the `application` to appear on screen. 
+All Piu applications must have an `application` object at the root of their containment hierarchy. All other `content` objects must be added to the `application` to appear on screen.
 
 There is no default object, so you have to create one yourself and export it in the main module.
 
@@ -753,7 +753,7 @@ There is no default object, so you have to create one yourself and export it in 
 export default new Application();
 ```
 
-Alternatively, you can export a function that returns an `application` object. 
+Alternatively, you can export a function that returns an `application` object.
 
 ```javascript
 export default function() {
@@ -842,7 +842,7 @@ class SampleBehavior extends Behavior {
 	}
 }
 
-let sampleContent = new Content({ name: "Moddable" }, { 
+let sampleContent = new Content({ name: "Moddable" }, {
     active: true, height: 100, width: 100,
     skin: new Skin({fill: "blue"}),
     Behavior: SampleBehavior
@@ -952,7 +952,7 @@ let ColoredSquare = Content.template($ => ({
 	skin: new Skin({ fill: $ })
 }));
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({fill: "white"}),
 	contents: [
@@ -980,7 +980,7 @@ let ColoredSquare = Content.template($ => ({
 	skin: new Skin({ fill: $ })
 }));
 
-let SampleContainer = Container.template($ => ({ 
+let SampleContainer = Container.template($ => ({
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: $.backgroundColor }),
 	contents: [
@@ -1003,7 +1003,7 @@ Same as for `content` object (see [Dictionary](#content-dictionary) in the secti
 
 #### Prototype Description
 
-Prototype inherits from `Content.prototype`. 
+Prototype inherits from `Content.prototype`.
 
 <a id="container-properties"></a>
 ##### Properties
@@ -1034,7 +1034,7 @@ let ColoredSquare = Content.template($ => ({
 	height: 100, width: 100,
 	skin: new Skin({ fill: $ })
 }));
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 });
@@ -1086,7 +1086,7 @@ let ColoredSquare = Content.template($ => ({
 	skin: new Skin({ fill: $ })
 }));
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	contents: [
@@ -1120,7 +1120,7 @@ class SampleBehavior extends Behavior {
 	}
 }
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	contents: [
@@ -1154,7 +1154,7 @@ let ColoredSquare = Content.template($ => ({
     skin: new Skin({ fill: $ })
 }));
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
     top: 0, bottom: 0, left: 0, right: 0,
     skin: new Skin({ fill: "white" }),
     contents: [
@@ -1188,7 +1188,7 @@ class SampleBehavior extends Behavior {
 	}
 }
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	contents: [
@@ -1210,7 +1210,7 @@ application.add(sampleContainer);
 **`remove(content)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `content` | `content` | The `content` object to remove. Its container must be this container.
 
 Removes the specified `content` object from this container
@@ -1224,7 +1224,7 @@ let ColoredSquare = Content.template($ => ({
 let redSquare = new ColoredSquare("red");
 let blueSquare = new ColoredSquare("blue");
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	contents: [
@@ -1258,7 +1258,7 @@ let ColoredSquare = Content.template($ => ({
 let redSquare = new ColoredSquare("red");
 let blueSquare = new ColoredSquare("blue");
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	contents: [
@@ -1296,11 +1296,11 @@ class SwitchScreenBehavior extends Behavior {
 	}
 }
 let ColoredScreen = Container.template($ => ({
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: $.color }),
 	contents: [
 		Content($, {
-			active: true, height: 100, width: 100, 
+			active: true, height: 100, width: 100,
 			skin: new Skin({ fill: $.nextColor }),
 			Behavior: SwitchScreenBehavior
 		})
@@ -1327,7 +1327,7 @@ let ColoredSquare = Content.template($ => ({
     skin: new Skin({ fill: $ })
 }));
 
-let sampleContainer = new Container(null, { 
+let sampleContainer = new Container(null, {
     active: true, top: 0, bottom: 0, left: 0, right: 0,
     skin: new Skin({ fill: "white" }),
     contents: [
@@ -1365,7 +1365,7 @@ This event is triggered when a `transition` object starts in the specified `cont
 **`onTransitionEnded(container)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `container` | `container` | The `container` object that triggered the event
 
 This event is triggered when a `transition` object ends in the specified `container` object.
@@ -1384,14 +1384,14 @@ Applications use `content` objects for graphical parts of their user interface, 
 ##### `Content([behaviorData, dictionary])`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `behaviorData` | `*` | A parameter that is passed into the `onCreate` function of this content's `behavior`. This may be any type of object, including `null` or a dictionary with arbitrary parameters.
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#content-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a `content` instance, an object that inherits from `Content.prototype`
 
 ```javascript
-let sampleContent = new Content("Hello", { 
+let sampleContent = new Content("Hello", {
 	top: 0, right: 50, height: 100, width: 100,
 	skin: new Skin({fill: "blue"}),
 	Behavior: class extends Behavior {
@@ -1404,7 +1404,7 @@ application.add(sampleContent);
 ```
 
 ![](../assets/piu/sampleContent1.png)
- 
+
 ##### `Content.template(anonymous)`
 
 | Arguments | Type | Description
@@ -1414,7 +1414,7 @@ application.add(sampleContent);
 Returns a constructor, a function that creates instances of `Content.prototype`. The `prototype` property of the result is `Content.prototype`. The result also provides a `template` function.
 
 ```javascript
-let SampleContent = Content.template($ => ({ 
+let SampleContent = Content.template($ => ({
 	height: 100, width: 100,
 	skin: new Skin({fill: $.color}),
 	Behavior: class extends Behavior {
@@ -1437,7 +1437,7 @@ application.add(new SampleContent({color: "blue"}));
 | `active` | `boolean` | If `true`, this content can be touched; that is, it triggers touch events. |
 | `anchor` | `string` | Creates an anchor, a reference to the created `content` object in the instantiating data
 | `backgroundTouch ` | `boolean` | If `true`, this container receives any touch events that are received by its contents; that is, it will trigger touch events when one of its contents has been touched.
-| `Behavior` | `function` | A function that creates instances of `Behavior.prototype`; generally a class that extends the `Behavior` class. This content will create an instance of this `behavior`, set its `behavior` parameter to the created instance, and trigger the `onCreate` method. 
+| `Behavior` | `function` | A function that creates instances of `Behavior.prototype`; generally a class that extends the `Behavior` class. This content will create an instance of this `behavior`, set its `behavior` parameter to the created instance, and trigger the `onCreate` method.
 | `bottom` | `number` | This content's `bottom` coordinate, in pixels (setting `bottom` in the created instance's `coordinates` property)
 | `duration` | `number` |This content's duration, in milliseconds. This content triggers the `onFinished` event when its clock is running and its time equals its duration.
 | `exclusiveTouch` | `boolean` | If `true`, this content always captures touches; that is, `captureTouch` is implicitly invoked on `onTouchDown` for this content. Setting `exclusiveTouch` to `true` is equivalent to calling `captureTouch` in response to the `onTouchDown` event for every touch id.
@@ -1462,7 +1462,7 @@ application.add(new SampleContent({color: "blue"}));
 
 #### Prototype Description
 
-Prototype inherits from `Object.prototype`. 
+Prototype inherits from `Object.prototype`.
 
 <a id="content-properties"></a>
 ##### Properties
@@ -1491,14 +1491,14 @@ Prototype inherits from `Object.prototype`.
 | `previous` | `object` | | ✓ | The previous `content` object in this content's container; `null` if this content is the first `content` object of this content's container or if this content has no container
 | `running` | `boolean` | | ✓ | If `true`, this content's clock is running.
 | `size` | `object` | | | This content's size, as an object with `width` and `height` number properties, specified in pixels
-| `skin` | `skin` | `null` | | This content's skin or `null` 
+| `skin` | `skin` | `null` | | This content's skin or `null`
 `state` | `number` | 0 |  | This content's state. If this content's skin defines states, setting the state changes the appearance of this content.
 | `style` | `style` | `null` |  |This content's style or `null`
 | `time` | `number` | 0 |  |This content's time, in milliseconds. When its time is set, this content triggers the `onTimeChanged` event.
 | `variant` | `number` | 0 |  |This content's variant. If this content's skin defines variants, setting the variant changes the appearance of this content.
 | `visible` | `boolean` | `true` | |If `true`, this content is visible.
 | `width` | `number` | |  |This content's width, in pixels
-| `x` | `number` | |  | This content's global x position. If this content is unbound, the getters return `undefined` and the setters are ignored. 
+| `x` | `number` | |  | This content's global x position. If this content is unbound, the getters return `undefined` and the setters are ignored.
 | `y` | `number` | |  |This content's global y position. If this content is unbound, the getters return `undefined` and the setters are ignored.
 
 <a id="content-functions"></a>
@@ -1507,7 +1507,7 @@ Prototype inherits from `Object.prototype`.
 **`bubble(id [, ...])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `id` | `string` | The name of the event to trigger
 | `...` | `*` | Zero or more extra parameters
 
@@ -1542,7 +1542,7 @@ application.add(outerContainer);
 **`captureTouch(id, x, y, ticks)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `id` | `number` | The identifier of the touch
 | `x, y` | `number` | The global position of the touch, in pixels
 | `ticks` | `number` | The global time of the touch
@@ -1559,7 +1559,7 @@ class BlueBehavior extends Behavior {
     	trace("Blue touch ended\n");
     }
 }
-let blueCapturingContent = new Content(null, { 
+let blueCapturingContent = new Content(null, {
     active: true, top: 25, left: 25, height: 50, width: 50,
     skin: new Skin({fill: "blue"}),
     Behavior: BlueBehavior
@@ -1576,7 +1576,7 @@ class RedBehavior extends Behavior {
     	trace("Red touch ended\n");
     }
 }
-let redContainer = new Container(null, { 
+let redContainer = new Container(null, {
     active: true, backgroundTouch: true,
     top: 0, left: 0, height: 100, width: 100,
     skin: new Skin({fill: "red"}),
@@ -1693,8 +1693,8 @@ Returns this content if this content is active, bound, and contains the position
 > Note that this function should only be used after a content has been measured and fitted; otherwise it will always return `undefined`.
 
 ```javascript
-let sampleContent = new Content(null, { 
-    active: true, top: 0, left: 0, height: 100, width: 100, 
+let sampleContent = new Content(null, {
+    active: true, top: 0, left: 0, height: 100, width: 100,
     skin: new Skin({fill: "blue"}),
     Behavior: class extends Behavior {
         onDisplaying(content) {
@@ -1706,7 +1706,7 @@ let sampleContent = new Content(null, {
 ```
 
 ***
- 
+
 **`measure()`**
 
 Returns the [measured size](#measured-size) of this content, as an object with `width` and `height` parameters.
@@ -1714,8 +1714,8 @@ Returns the [measured size](#measured-size) of this content, as an object with `
 Example 1:
 
 ```javascript
-let sampleContent = new Content(null, { 
-    top: 0, left: 0, height: 100, width: 100, 
+let sampleContent = new Content(null, {
+    top: 0, left: 0, height: 100, width: 100,
     skin: new Skin({fill: "blue"})
 });
 application.add(sampleContent);
@@ -1728,7 +1728,7 @@ let fittedWidth = sampleContent.width;			// 100
 Example 2:
 
 ```javascript
-let sampleContent = new Content(null, { 
+let sampleContent = new Content(null, {
     top: 0, bottom: 0, left: 0, right: 0,
     skin: new Skin({fill: "blue"})
 });
@@ -1740,24 +1740,24 @@ let fittedWidth = sampleContent.width;			// 240 (assuming running on 240x320 scr
 ```
 
 ***
- 
+
 **`moveBy(x, y)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y` | `number` | The deltas by which to move this content, in pixels
 
 Moves this content as specified by the parameters. If the content's coordinates constrain its position, the `moveBy` function ignores the corresponding horizontal or vertical deltas.
 
 ```javascript
-let unconstrainedContent = new Content(null, { 
+let unconstrainedContent = new Content(null, {
     top: 0, left: 0, height: 100, width: 100,
     skin: new Skin({fill: "blue"}),
 });
 application.add(unconstrainedContent);
 unconstrainedContent.moveBy(100,100);	// Moves unconstrainedContent 100 pixels in the x and y directions
 
-let constrainedContent = new Content(null, { 
+let constrainedContent = new Content(null, {
     top: 0, left: 0, bottom: 140, right: 220,
     skin: new Skin({fill: "red"}),
 });
@@ -1778,14 +1778,14 @@ constrainedContent.moveBy(100,100);	// Does nothing
 Sizes this content as specified by the parameters. If this content's coordinates constrain its size, the `sizeBy` function ignores the corresponding horizontal or vertical deltas.
 
 ```javascript
-let unconstrainedContent = new Content(null, { 
+let unconstrainedContent = new Content(null, {
     top: 0, left: 0, height: 100, width: 100,
     skin: new Skin({fill: "blue"}),
 })
 application.add(unconstrainedContent);
-unconstrainedContent.sizeBy(100,100);	// Makes unconstrainedContent 100 pixels wider and taller 
+unconstrainedContent.sizeBy(100,100);	// Makes unconstrainedContent 100 pixels wider and taller
 
-let constrainedContent = new Content(null, { 
+let constrainedContent = new Content(null, {
     top: 0, left: 0, bottom: 140, right: 220,
     skin: new Skin({fill: "red"}),
 })
@@ -1815,7 +1815,7 @@ class SampleBehavior extends Behavior {
 		content.state = state;
 	}
 }
-let sampleContent = new Content(null, { 
+let sampleContent = new Content(null, {
 	height: 100, width: 100,
 	skin: new Skin({fill: ["red", "orange", "yellow", "green"]}),
 	Behavior: SampleBehavior
@@ -1849,7 +1849,7 @@ class SampleBehavior extends Behavior {
 		content.start();
 	}
 }
-let sampleContent = new Content(null, { 
+let sampleContent = new Content(null, {
 	active: true, height: 100, width: 100,
 	skin: new Skin({ fill: ["blue", "white"]}),
 	Behavior: SampleBehavior
@@ -1862,7 +1862,7 @@ application.add(sampleContent);
 <a id="content-events"></a>
 #### Events
 
-The following standard events are triggered by `content` objects. 
+The following standard events are triggered by `content` objects.
 
 **`onCreate(content, data, context)`**
 
@@ -1908,10 +1908,10 @@ This event is triggered when the time of the specified `content` object changes.
 **`onTouchBegan(content, id, x, y, ticks)`**
 
 **`onTouchCancelled(content, id)`**
-  
+
 **`onTouchEnded(content, id, x, y, ticks)`**
- 
-**`onTouchMoved(content, id, x, y, ticks)`** 
+
+**`onTouchMoved(content, id, x, y, ticks)`**
 
 | Argument | Type | Description |
 | --- | --- | :--- |
@@ -1929,9 +1929,9 @@ These events are triggered when the specified `content` object is active and tou
 
 The `die` object is a `layout` object that allows you to “die cut” its contents with a region, minimizing the areas to invalidate and to update. These are useful for building animations and transitions on constrained devices that cannot update every screen pixel at every frame.
 
-The `die` object maintains two regions: 
+The `die` object maintains two regions:
 
-- the work region that the available operations build, 
+- the work region that the available operations build,
 - the clip region that clips the contents of the `die` object
 
 Both regions are initially empty.
@@ -1957,15 +1957,15 @@ let sampleDie = new Die(null, {
         }
     },
     contents: [
-        new Content(null, { 
-            left:0, right:0, top:0, bottom:0, 
+        new Content(null, {
+            left:0, right:0, top:0, bottom:0,
             skin: new Skin({ fill: "white" }),
         }),
     ]
 });
 
 let sampleScreenWithDie = new Container(null, {
-    left:0, right:0, top:0, bottom:0, 
+    left:0, right:0, top:0, bottom:0,
     contents: [
     	Content(null, {
     		top: 0, bottom: 120, left: 0, right: 0,
@@ -2001,15 +2001,15 @@ let SampleDie = Die.template($ => ({
         }
     },
     contents: [
-        new Content(null, { 
-            left:0, right:0, top:0, bottom:0, 
+        new Content(null, {
+            left:0, right:0, top:0, bottom:0,
             skin: new Skin({ fill: "white" }),
         }),
     ]
 }));
 
 let sampleScreenWithDie = new Container(null, {
-    left:0, right:0, top:0, bottom:0, 
+    left:0, right:0, top:0, bottom:0,
     contents: [
     	Content(null, {
     		top: 0, bottom: 0, left: 0, right: 0,
@@ -2060,8 +2060,8 @@ let sampleContainer = new Container(null, {
                 }
             },
             contents: [
-                new Content(null, { 
-                	left:0, right:0, top:0, bottom:0, 
+                new Content(null, {
+                	left:0, right:0, top:0, bottom:0,
                 	skin: new Skin({ fill: "white" }),
                 }),
             ]
@@ -2084,8 +2084,8 @@ application.add(sampleContainer);
 Binds the `die` object to the containment hierarchy by replacing the specified `content` object in the content's container with this `die` object and adding the `content` object to this `die` object.
 
 ```javascript
-let whiteScreen = new Content(null, { 
-	left:0, right:0, top:0, bottom:0, 
+let whiteScreen = new Content(null, {
+	left:0, right:0, top:0, bottom:0,
 	skin: new Skin({ fill: "white" }),
     Behavior: class extends Behavior {
     	onDisplaying(content) {
@@ -2098,8 +2098,8 @@ let whiteScreen = new Content(null, {
     	}
     }
 });
-let blueScreen = new Content(null, { 
-	left:0, right:0, top:0, bottom:0, 
+let blueScreen = new Content(null, {
+	left:0, right:0, top:0, bottom:0,
 	skin: new Skin({ fill: "blue" }),
 });
 application.add(whiteScreen);
@@ -2120,8 +2120,8 @@ Copies the work region into the current region, and invalidates only the differe
 Unbind this `die` object from the content hierarchy by removing the first `content` object from this `die` object and replacing this `die` object in its container with the removed `content` object.
 
 ```
-let whiteScreen = new Content(null, { 
-	active: true, left:0, right:0, top:0, bottom:0, 
+let whiteScreen = new Content(null, {
+	active: true, left:0, right:0, top:0, bottom:0,
 	skin: new Skin({ fill: "white" }),
 	Behavior: class extends Behavior {
     	onTouchBegan(content) {
@@ -2139,8 +2139,8 @@ let whiteScreen = new Content(null, {
     	}
 	}
 });
-let blueScreen = new Content(null, { 
-	active: true, left:0, right:0, top:0, bottom:0, 
+let blueScreen = new Content(null, {
+	active: true, left:0, right:0, top:0, bottom:0,
 	skin: new Skin({ fill: "blue" }),
 });
 application.add(whiteScreen);
@@ -2184,8 +2184,8 @@ let sampleContainer = new Container(null, {
                 }
             },
             contents: [
-                new Content(null, { 
-                	left:0, right:0, top:0, bottom:0, 
+                new Content(null, {
+                	left:0, right:0, top:0, bottom:0,
                 	skin: new Skin({ fill: "white" }),
                 }),
             ]
@@ -2202,7 +2202,7 @@ application.add(sampleContainer);
 **`set(x, y, width, height)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y, width, height` | `number` | A local rectangle, in pixels
 
 Sets the work region to the rectangle and returns `this`.
@@ -2220,8 +2220,8 @@ let sampleContainer = new Container(null, {
                 }
             },
             contents: [
-                new Content(null, { 
-                	left:0, right:0, top:0, bottom:0, 
+                new Content(null, {
+                	left:0, right:0, top:0, bottom:0,
                 	skin: new Skin({ fill: "white" }),
                 }),
             ]
@@ -2238,7 +2238,7 @@ application.add(sampleContainer);
 **`sub(x, y, width, height)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y, width, height` | `number` | A local rectangle, in pixels
 
 
@@ -2260,8 +2260,8 @@ let sampleContainer = new Container(null, {
                 }
             },
             contents: [
-                new Content(null, { 
-                	left:0, right:0, top:0, bottom:0, 
+                new Content(null, {
+                	left:0, right:0, top:0, bottom:0,
                 	skin: new Skin({ fill: "white" }),
                 }),
             ]
@@ -2278,7 +2278,7 @@ application.add(sampleContainer);
 **`xor(x, y, width, height)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y, width, height` | `number` | A local rectangle, in pixels
 
 Exclusively unions the work region with the rectangle and returns `this`.
@@ -2297,8 +2297,8 @@ let sampleContainer = new Container(null, {
                 }
             },
             contents: [
-                new Content(null, { 
-                	left:0, right:0, top:0, bottom:0, 
+                new Content(null, {
+                	left:0, right:0, top:0, bottom:0,
                 	skin: new Skin({ fill: "white" }),
                 }),
             ]
@@ -2313,7 +2313,7 @@ application.add(sampleContainer);
 ### Image Object
 
 - **Source code:** [`piuImage.c`][30]
-- **Relevant Examples:** [images][31] 
+- **Relevant Examples:** [images][31]
 
 The `image` object is a `content` object that displays images.
 
@@ -2417,7 +2417,7 @@ Prototype inherits from `Content.prototype`.
 - **Source code:** [`piuLabel.c`][8]
 - **Relevant Examples:** [cards][24], [keyboard][20]
 
-The `label` object is a `content` object that renders a string on a single line with a single style. The string is truncated if it does not fit the bounds of the `label` object. 
+The `label` object is a `content` object that renders a string on a single line with a single style. The string is truncated if it does not fit the bounds of the `label` object.
 
 #### Constructor Description
 
@@ -2433,7 +2433,7 @@ Returns a `label` instance, an object that inherits from `Label.prototype`
 ```javascript
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: "blue" });
 let sampleLabel = new Label(null, {
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	style: sampleStyle, string: "Hello, World!"
 });
@@ -2607,7 +2607,7 @@ Same as for `container` object (see [Events](#container-events) in the section [
 | `layout` | `object` | The `layout` object that triggered the event
 | `width` | `number` | The fitted width of the `layout` object, in pixels
 
-This event is triggered when the [fitted width](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels. 
+This event is triggered when the [fitted width](#fitted-size) of the `layout` object is calculated. Once this is triggered, the behavior can modify the coordinates of its contents. Returns the fitted width of the `layout` object, in pixels.
 
 ***
 
@@ -2721,22 +2721,22 @@ Prototype inherits from `Content.prototype`.
 **`drawContent(x, y, width, height) `**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
 
 Draws this port's skin in the position specified
 
 ```javascript
-let heartSkin = new Skin({ 
-	texture: new Texture("heart.png"), 
+let heartSkin = new Skin({
+	texture: new Texture("heart.png"),
 	color: "red",
-	x: 0, y: 0, width: 60, height: 60, 
+	x: 0, y: 0, width: 60, height: 60,
 });
 
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: ["red", "yellow", "green", "blue"] });
 let samplePort = new Port(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
-	skin: heartSkin, 
+	skin: heartSkin,
 	Behavior: class extends Behavior {
 		onDraw(port) {
 			let size = 60;
@@ -2757,7 +2757,7 @@ application.add(samplePort);
 **`drawLabel(string, x, y, width, height)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `string ` | `string ` | The string to draw
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
 
@@ -2786,7 +2786,7 @@ application.add(samplePort);
 **`drawSkin(skin, x, y, width, height [, variant, state])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `skin ` | `skin ` | The skin to draw
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
 | `variant` | `number` | The variant of the skin to draw. If the specified skin defines variants, setting the variant changes the appearance.
@@ -2795,10 +2795,10 @@ application.add(samplePort);
 Draws the skin the way a `content` instance would, with the state, variant, and position specified.
 
 ```javascript
-let heartSkin = new Skin({ 
-	texture: new Texture("heart.png"), 
+let heartSkin = new Skin({
+	texture: new Texture("heart.png"),
 	color: ["red", "blue"],
-	x: 0, y: 0, width: 60, height: 60, 
+	x: 0, y: 0, width: 60, height: 60,
 });
 
 let samplePort = new Port(null, {
@@ -2806,7 +2806,7 @@ let samplePort = new Port(null, {
 	skin: new Skin({ fill: "white" }),
 	Behavior: class extends Behavior {
 		onDraw(port) {
-			port.drawSkin(heartSkin, 20, 20, 60, 60, 0, 1); 
+			port.drawSkin(heartSkin, 20, 20, 60, 60, 0, 1);
 		}
 	}
 })
@@ -2820,7 +2820,7 @@ application.add(samplePort);
 **`drawString(string, style, color, x, y, width, height)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `string` | `string` | The string to draw
 | `style` | `style` | The style to use to draw the string
 | `color` | `string` | The color to draw the string, as a string of the form specified in the [Color](#color) section of this document
@@ -2850,7 +2850,7 @@ application.add(samplePort);
 **`drawStyle(string, style, x, y, w, h [, ellipsis, state])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `string` | `string` | The string to draw
 | `style` | `style` | The style to use to draw the string
 | `x, y, width, height` | `number` | The local position and size of the area in which to draw, in pixels
@@ -2863,7 +2863,7 @@ Draws a string with the style, position, and state specified.
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: ["red", "yellow", "green", "blue"] });
 let samplePort = new Port(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
-	skin: new Skin({ fill: "white" }), 
+	skin: new Skin({ fill: "white" }),
 	Behavior: class extends Behavior {
 		onDraw(port) {
 			let string = "Hello, World!";
@@ -2947,7 +2947,7 @@ application.add(samplePort);
 **`fillTexture(texture, color, x, y, width, height, sx, sy, sw, sh)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `texture ` | `texture` | The filling image
 | `x, y, width, height` | `number` | The destination area--the local position and size of the area to copy pixels to, in pixels
 | `sx, sy, sw, sh` | `number` | The source area--the position and size of the area to copy pixels from, in pixels.
@@ -2979,7 +2979,7 @@ application.add(samplePort);
 **`invalidate([x, y, width, height])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `x, y, width, height` | `number` | The local position and size of the area to invalidate, in pixels
 
 Invalidates the specified area of this port (or the entire port if no area is specified), which triggers the `onDraw` event.
@@ -3011,7 +3011,7 @@ application.add(samplePort);
 **`measureString(string, style)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `string` | `string` | The string to measure
 | `style` | `style` | The style to use when measuring the string
 
@@ -3055,7 +3055,7 @@ Restores the current clip rectangle from this port's clip rectangles stack
 **`pushClip([x, y, width, height])`**
 
 | Argument | Type | Description |
-| --- | --- | --- 
+| --- | --- | ---
 | `x, y, width, height` | `number` | The local position and size of the clip rectangle
 
 Saves the specified clip rectangle to this port's clip rectangles stack
@@ -3186,7 +3186,7 @@ import { VerticalScrollerBehavior } from "scroller";	// See "scroller.js" from t
 
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: "white" });
 let scrollerSample = new Scroller(null, {
-	left: 0, right: 0, top: 0, bottom: 0, 
+	left: 0, right: 0, top: 0, bottom: 0,
 	style: sampleStyle, skin: new Skin({ fill: "blue" }),
 	active: true, backgroundTouch: true, clip: true,
 	Behavior: VerticalScrollerBehavior,
@@ -3233,7 +3233,7 @@ let ScrollerSample = Scroller.template($ => ({
 }));
 let screenWithScrollerSample = new Column(null, {
 	top: 0, bottom: 0, left: 0, right: 0,
-	style: sampleStyle, 
+	style: sampleStyle,
 	contents: [
 		Text(null, {
 			top: 0, height: 40, left: 0, right: 0,
@@ -3294,7 +3294,7 @@ let ScrollerItem = Label.template($ => ({
 	style: sampleStyle, string: "Item" + $
 }));
 let scrollerSample = new Scroller(null, {
-	left: 0, right: 0, top: 0, bottom: 0, 
+	left: 0, right: 0, top: 0, bottom: 0,
 	skin: new Skin({ fill: "black" }),
 	Behavior: SampleScrollerBehavior,
 	contents:[
@@ -3340,7 +3340,7 @@ let ColoredSquare = Content.template($ => ({
 	skin: new Skin({ fill: $ })
 }));
 let scrollerSample = new Scroller(null, {
-	left: 0, right: 0, top: 0, bottom: 0, 
+	left: 0, right: 0, top: 0, bottom: 0,
 	skin: new Skin({ fill: "black" }),
 	active: true, backgroundTouch: true, clip: true,
 	Behavior: SampleScrollerBehavior,
@@ -3389,7 +3389,7 @@ let ColoredSquare = Content.template($ => ({
 	}
 }));
 let scrollerSample = new Scroller(null, {
-	left: 0, right: 0, top: 0, bottom: 0, 
+	left: 0, right: 0, top: 0, bottom: 0,
 	skin: new Skin({ fill: "black" }),
 	contents:[
 		Column(null, {
@@ -3420,10 +3420,10 @@ Same as for `container` object (see [Events](#container-events) in the section [
 ##### `onScrolled(scroller)`
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `scroller` | `scroller` | The `scroller` object that triggered the event
 
-This event is triggered when the specified `scroller` object scrolls. 
+This event is triggered when the specified `scroller` object scrolls.
 
 When triggered by a scroller, this event is also triggered by all the contents of the scroller. This makes it easier to implement scrollbars, for example.
 
@@ -3468,7 +3468,7 @@ application.add(borderedContent);
 ##### `Skin.template([dictionary])`
 
 | Arguments | Type | Description
-| --- | --- | --- 
+| --- | --- | ---
 | `dictionary` | `object` | An object with properties to initialize the result. Only parameters specified in the [Dictionary](#skin-dictionary) section below will have an effect; other parameters will be ignored.
 
 Returns a constructor, a function that creates instances of `Skin.prototype`. The `prototype` property of the result is `Skin.prototype`.
@@ -3619,7 +3619,7 @@ Sound.close();
 **`play([stream, repeat, callback]) `**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `stream` | `number` | The stream to play the sound on. Defaults to `0`.
 | `repeat` | `number` | The number of times to repeat the sound. Defaults to `1`. Set the `repeat` property to `Infinity` to repeat the sound indefinitely.
 | `callback` | `function` | An optional callback function to invoke after the audio resource completes playback.
@@ -3631,7 +3631,7 @@ Plays the audio sample on the specified stream `repeat` times. If the `callback`
 sampleSound.play();
 
 // Play sampleSound 5 times
-sampleSound.play(0, 5);	
+sampleSound.play(0, 5);
 
 // Play sampleSound once and print to the console when finished
 sampleSound.play(0, 1, () => {
@@ -3661,7 +3661,7 @@ Returns `style` instance, an object that inherits from `Style.prototype`
 ```javascript
 let sampleStyle = new Style({ font:"600 28px Open Sans", color: "blue" });
 let sampleLabel = new Label(null, {
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	style: sampleStyle, string: "Hello, World!"
 });
@@ -3682,12 +3682,12 @@ Returns a constructor, a function that creates instances of `Style.prototype`. T
 let RedStyle = Style.template({ font:"600 28px Open Sans", color: "red" });
 let BlueStyle = Style.template({ font:"600 28px Open Sans", color: "blue" });
 let sampleLabel = new Label(null, {
-	top: 0, height:30, left: 0, right: 0, 
+	top: 0, height:30, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	Style: RedStyle, string: "Hello, World!"	// Note the capital "S" in "Style"
 });
 let sampleLabel2 = new Label(null, {
-	top: 30, height: 30, left: 0, right: 0, 
+	top: 30, height: 30, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }),
 	style: new BlueStyle, string: "Hello, World!"	// Note the lowercase "s" in "style"
 });
@@ -3731,7 +3731,7 @@ application.add(sampleLabel2);
 #### Prototype Description
 
 Prototype inherits from `Object.prototype`.
-	
+
 ##### Properties
 
 All properties of a `style` object are read-only, but you can change the style of content objects at any time.
@@ -3773,7 +3773,7 @@ let size = normalStyle.measure("Moddable");	// {"width":134,"height":38}
 ```
 
 ***
-	
+
 ### Text Object
 
 - **Source code:** [`piuText.c`][15]
@@ -3964,7 +3964,7 @@ Returns a `texture` instance, an object that inherits from `Object.prototype`
 const logoTexture = new Texture({ path: "logo.png" });
 const logoSkin = new Skin({ texture: logoTexture, x: 0, y: 0, width: 100, height: 20 });
 ```
- 
+
 ##### `Texture.template(dictionary)`
 
 | Argument | Type | Description |
@@ -3990,7 +3990,7 @@ const AnotherLogoSkin = Skin.template({ texture: new AnotherLogoTexture(), x: 0,
 | Parameter | Type | Description |
 | --- | --- | :--- |
 | `path` | `string` | The URL of the image file. It must be a file URL.
- 
+
 #### Prototype Description
 
 Prototype inherits from `Object.prototype`.
@@ -3999,7 +3999,7 @@ Prototype inherits from `Object.prototype`.
 
 | Name | Type | Read Only | Description |
 | --- | --- | --- | :--- |
-| `height` | `number` | ✓ | This texture's height, in physical pixels           
+| `height` | `number` | ✓ | This texture's height, in physical pixels          
 | `width` | `number` | ✓ | This texture's width, in physical pixels
 
 ### Timeline Object
@@ -4043,14 +4043,14 @@ let timeline = new Timeline();
 
 ##### Functions
 
-<!-- The add function doesn't seem possible to use right now, because the Tween sub-class is not exported. Any reason to describe this in the docs? 
+<!-- The add function doesn't seem possible to use right now, because the Tween sub-class is not exported. Any reason to describe this in the docs?
 
 **`add(tween, when)`** -->
 
 **`from(target, fromProperties, duration, [easing, delay])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `target` | `object` | The object that will have its properties tweened by the timeline.
 | `fromProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the starting values the properties of the `target` object will have at the begining of the tween.
 | `duration` | `number` | The duration of the tween in ms.
@@ -4064,7 +4064,7 @@ Returns this timeline, useful for chaining together multiple `to`, `from`, and `
 ```javascript
 let sampleStyle = new Style({ font: "600 28px Open Sans", color: ["blue", "white"] });
 let sampleColumn = new Column(null, {
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }), style: sampleStyle,
 	contents: [
 		Label(null, { top: 90, height: 28, left: 80, string: "Hello", state: 0 }),
@@ -4093,7 +4093,7 @@ application.add(sampleColumn);
 **`on(target, onProperties, duration, easing, delay, when)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `target` | `object` | The object that will have its properties tweened by the timeline.
 | `onProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are arrays of values that the tween will ease between over the duration of the timeline.
 | `duration` | `number` | The duration of the tween in ms.
@@ -4142,7 +4142,7 @@ application.add(sampleContainer);
 **`seekTo(time)`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `time` | `number` | The position in the Timeline to seek to.
 
 Causes this timeline to jump its tweens to the specified time. This sets the properties of the tweens' target objects.
@@ -4150,7 +4150,7 @@ Causes this timeline to jump its tweens to the specified time. This sets the pro
 **`to(target, toProperties, duration, [easing, delay])`**
 
 | Argument | Type | Description |
-| --- | --- | :--- | 
+| --- | --- | :--- |
 | `target` | `object` | The object that will have its properties tweened by the timeline.
 | `toProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the destination values the properties of the `target` object will have when the tween is complete.
 | `duration` | `number` | The duration of the tween in ms.
@@ -4164,7 +4164,7 @@ Returns this timeline, useful for chaining together multiple `to`, `from`, and `
 ```javascript
 let sampleStyle = new Style({ font: "600 28px Open Sans", color: ["blue", "white"] });
 let sampleColumn = new Column(null, {
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: "white" }), style: sampleStyle,
 	contents: [
 		Label(null, { top: 90, height: 28, left: 80, string: "Hello", state: 0 }),
@@ -4195,7 +4195,7 @@ application.add(sampleColumn);
 - **Source code:** [`piuTransition.c`][17]
 - **Relevant Examples:** N/A
 
-The `transition` object is used to animate modifications of the containment hierarchy. 
+The `transition` object is used to animate modifications of the containment hierarchy.
 
 #### Constructor Description
 
@@ -4241,11 +4241,11 @@ class SwitchScreenBehavior extends Behavior {
 	}
 }
 let ColoredScreen = Container.template($ => ({
-	top: 0, bottom: 0, left: 0, right: 0, 
+	top: 0, bottom: 0, left: 0, right: 0,
 	skin: new Skin({ fill: $.color }),
 	contents: [
 		Content($, {
-			active: true, height: 100, width: 100, 
+			active: true, height: 100, width: 100,
 			skin: new Skin({ fill: $.nextColor }),
 			Behavior: SwitchScreenBehavior
 		})
@@ -4318,7 +4318,7 @@ Called while this transition is running; called at least twice (with a `fraction
 [15]: ../../modules/piu/All/piuText.c "piuText.c"
 [16]: ../../modules/piu/MC/piuTexture.c "piuTexture.c"
 [17]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
-[30]: ../../modules/piu/MC/piuImage.c "piuImage.c"
+[30]: ../../modules/piu/MC/colorcell/piuImage.c "piuImage.c"
 [33]: ../../modules/piu/All/piuTransition.c "piuTransition.c"
 [36]: ../../modules/piu/All/piuTimeline.js "piuTimeline.js"
 [37]: ../../modules/piu/MC/piuSound.c "piuSound.c"

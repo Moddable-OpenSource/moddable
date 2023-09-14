@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -48,9 +48,36 @@ static PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitma
 
 void xs_poco_destructor(void *data)
 {
-	if (data)
-		c_free(((uint8_t *)data) - offsetof(PocoRecord, pixels));
+	if (data) {
+		Poco poco = (Poco)(((uint8_t *)data) - offsetof(PocoRecord, pixels));
+		if (poco->reservedPocoJS)
+			c_free(poco->reservedPocoJS);
+		c_free(poco);
+	}
 }
+
+static void xs_poco_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	Poco poco = (Poco)((uintptr_t)it - offsetof(PocoRecord, pixels));
+
+	void **holdings = poco->reservedPocoJS;
+	if (!holdings)
+		return;
+	
+	int count = (uintptr_t)*holdings++;
+	while (count--) {
+		void *holding = *holdings++;
+		if (!holding)
+			return;
+		markRoot(the, holding);
+	}
+}
+
+const xsHostHooks ICACHE_RODATA_ATTR xsPocoHooks = {
+	xs_poco_destructor,
+	xs_poco_mark,
+	NULL
+};
 
 void xs_poco_build(xsMachine *the)
 {
@@ -71,6 +98,9 @@ void xs_poco_build(xsMachine *the)
 	if (!poco)
 		xsErrorPrintf("no memory");
 	xsmcSetHostBuffer(xsThis, poco->pixels, pixelsLength);
+
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsPocoHooks);
+	poco->reservedPocoJS = NULL;
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
 	poco->height = (PocoDimension)xsmcToInteger(xsArg(1));
@@ -182,6 +212,8 @@ void xs_poco_begin(xsMachine *the)
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doBeginFrameBuffer)(poco->outputRefcon, &pixels, &rowBytes);
 		else {
+			xsUnsignedValue dataSize;
+
 #if MODDEF_DISPLAY_VERSION == 2
 			*(int *)0 = 0;		// to do
 #else
@@ -193,13 +225,13 @@ void xs_poco_begin(xsMachine *the)
 			xsmcSetInteger(xsVar(4), poco->h);
 			xsResult = xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
 #endif
-			pixels = xsmcGetHostBuffer(xsResult);
+			xsmcGetBufferWritable(xsResult, (void *)&pixels, &dataSize);
 
-			xsmcSetInteger(xsResult, xsmcGetHostBufferLength(xsResult));
+			xsmcSetInteger(xsResult, dataSize);
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
-			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->height);
+			rowBytes = (int16_t)(dataSize / poco->height);
 #elif (90 == kPocoRotation) || (270 == kPocoRotation)
-			rowBytes = (int16_t)(xsmcToInteger(xsVar(0)) / poco->width);
+			rowBytes = (int16_t)(dataSize / poco->width);
 #endif
 		}
 
@@ -226,13 +258,12 @@ void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+	int result;
 
 	if (!(poco->flags & kPocoFlagDidBegin))
 		xsUnknownError("inactive");
 
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
-		int result;
-
 		xsmcVars(5);
 
 		if (pixelsOutDispatch) {
@@ -270,19 +301,10 @@ void xs_poco_end(xsMachine *the)
 			xsVar(3) = xsThis;		// Poco doubles as pixels
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, pixelReceiver, the);
 		}
-		if (result) {
-			if (1 == result)
-				xsErrorPrintf("display list overflowed");
-			if (2 == result)
-				xsErrorPrintf("clip/origin stack not cleared");
-			if (3 == result)
-				xsErrorPrintf("clip/origin stack under/overflow");
-			xsErrorPrintf("unknown error");
-		}
 	}
 	else {
 #if kPocoFrameBuffer
-		PocoDrawingEndFrameBuffer(poco);
+		result = PocoDrawingEndFrameBuffer(poco);
 
 		if (NULL == pixelsOutDispatch) {
 			xsmcVars(1);
@@ -291,6 +313,18 @@ void xs_poco_end(xsMachine *the)
 #else
 		xsErrorPrintf("frameBuffer disabled");
 #endif
+	}
+
+	if (result) {
+		if (1 == result)
+			xsErrorPrintf("display list overflow");
+		if (2 == result)
+			xsErrorPrintf("clip/origin stack not cleared");
+		if (3 == result)
+			xsErrorPrintf("clip/origin stack under/overflow");
+		if (5 == result)
+			xsErrorPrintf("drawFrame unavailable");
+		xsErrorPrintf("unknown error");
 	}
 
 	if (poco->flags & kPocoFlagGCDisabled) {
@@ -322,6 +356,12 @@ void xs_poco_end(xsMachine *the)
 	}
 
 	CFELockCache(gCFE, false);
+
+	void **holdings = poco->reservedPocoJS; 
+	if (holdings) {
+		int count = (uintptr_t)*holdings++;
+		c_memset(holdings, 0, count * sizeof(void *));
+	}
 }
 
 void xs_poco_makeColor(xsMachine *the)
@@ -977,6 +1017,37 @@ PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, i
 	xsmcGetBufferReadable(buffer, &data, &dataSize);
 	PocoDisableGC(poco);
 	return (PocoPixel *)(offset + (char *)data);
+}
+
+void PocoHold(xsMachine *the, Poco poco, xsSlot *holding)
+{
+	#define kPocoHoldIncrement (8)
+	void **holdings = poco->reservedPocoJS;
+	if (!holdings) {
+		holdings = c_calloc(kPocoHoldIncrement, sizeof(void *));
+		if (!holdings)
+			xsUnknownError("no memory");
+		*holdings = (void *)(kPocoHoldIncrement - 1);
+		poco->reservedPocoJS = holdings;
+	}
+
+	int count = (uintptr_t)*holdings++;
+	while (count--) {
+		if (NULL == *holdings++) {
+			holdings[-1] = holding;
+			return;
+		}
+	}
+
+	count = (uintptr_t)*(void **)poco->reservedPocoJS;
+	holdings = c_realloc(poco->reservedPocoJS, (1 + count + kPocoHoldIncrement) * sizeof(void *));
+	if (!holdings)
+		xsUnknownError("no memory");
+	
+	poco->reservedPocoJS = holdings;
+	c_memset(&holdings[1 + count], 0, kPocoHoldIncrement * sizeof(void *));
+	*holdings = (void *)(kPocoHoldIncrement + (uintptr_t)*holdings);
+	holdings[count + 1] = holding;
 }
 
 void xs_rectangle_get_x(xsMachine *the)

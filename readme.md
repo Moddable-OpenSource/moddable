@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: October 13, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: March 25, 2023
 
 ## Modern software development for microcontrollers
 
@@ -48,7 +48,7 @@ The Moddable SDK implements a variety of hardware protocols including digital (G
 
 ### Source level debugger
 
-The `xsbug` JavaScript source level debugger is a full-featured debugger that supports debugging modules and applications for XS platforms. 
+The `xsbug` JavaScript source level debugger is a full-featured debugger that supports debugging modules and applications for XS platforms.
 
 Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, and inspection of the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
@@ -59,7 +59,7 @@ Similar to other debuggers, `xsbug` supports setting breakpoints, browsing sourc
 1. To do anything with the Moddable SDK, you have to install it on your computer. This involves downloading this repository, installing some development tools, configuring settings over the command line, and building the Moddable SDK tools.
 
 	The [Getting Started Guide](./documentation/Moddable%20SDK%20-%20Getting%20Started.md) in the `documentation` directory walks you through the whole process of installing the Moddable SDK.
-	
+
 2. With the Moddable SDK installed, you can build and run apps on hardware simulators.
 
 3. To develop for a particular device, you need to install additional tools and SDKs for that device. The setup process for each device is different, but usually involves installing some additional SDKs, drivers, and development tools.
@@ -127,6 +127,25 @@ The Moddable SDK supports [many devices](./documentation/devices/pico.md#platfor
 | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-adafruit-qt-py-rp2040.png" width=85></a><BR>Adafruit QT Py | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=160></a><BR>Sparkfun Pro Micro | <a href="./documentation/devices/pico.md"><img src="./documentation/assets/devices/pico-lilygo-t-display-rp2040.png" width=160></a><BR> LILYGO T-Display
 
 
+### nRF52 by Nordic Semiconductor
+
+To use the Moddable SDK with nRF52 devices, you need to:
+
+1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [nRF5 tools](./documentation/devices/nrf52.md)
+3. Install [a bootloader](./documentation/devices/nrf52.md#install-bootloader). This is not necessary for the Moddable Four as the bootloader is pre-installed on Moddable Four.
+
+The Moddable SDK supports [many devices](./documentation/devices/nrf52.md#platforms) built with the nRF52, including the boards shown below:
+
+| | | |
+| :---: | :---: | :---: |
+| <a href="./documentation/devices/moddable-four.md"><img src="./documentation/assets/devices/moddable-four.png" width=125></a><BR>Moddable Four<sup>[[10](#footnotes4)]</sup> | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-pca10056.png" width=125></a><BR>Nordic DK pca10056 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-sparkfun.png" width=125></a><BR>Sparkfun Pro nRF52840 |
+| <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-makerdiary.png" width=125></a><BR>Makerdiary nRF52840 MDK | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-xiao.png" width=125></a><BR>seeed XIAO-nRF52840 | <a href="./documentation/devices/nrf52.md"><img src="./documentation/assets/devices/nrf52-itsybitsy.png" width=125></a><BR>Adafruit ItsyBitsy nRF52840 |
+
+<a id="footnotes4"></a>
+> <sup>[10]</sup> *See also: [Moddable Four Developer Guide](./documentation/devices/moddable-four.md), Moddable [product page](https://www.moddable.com/product)*<BR>
+
+
 ### Gecko by Silicon Labs
 
 To use the Moddable SDK with Gecko devices, you need to:
@@ -143,7 +162,7 @@ The Moddable SDK supports four Gecko boards, shown below.
 
 | | | | |
 | :---: | :---: | :---: | :---: |
-| <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125></a><BR>Giant Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125></a><BR>Mighty Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125></a><BR>Thunderboard Sense 2 | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125></a><BR>Blue Gecko 
+| <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://www.silabs.com/content/dam/siliconlabs/images/products/microcontrollers/32-bit_mcus/giant_gecko/giant-gecko-starter-kit.jpg" width=125></a><BR>Giant Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://blog.moddable.com/blog/wp-content/uploads/2018/05/gecko-1-300x179.jpg" width=125></a><BR>Mighty Gecko | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/thunderboard/thunderbord-sense-down-2.jpg?" width=125></a><BR>Thunderboard Sense 2 | <a href="./documentation/devices/gecko/GeckoBuild.md"><img src="https://siliconlabs-h.assetsadobe.com/is/image//content/dam/siliconlabs/images/products/Bluetooth/bluetooth_low_energy/bluegiga_bluetooth_low_energy_modules/blue-gecko-soc-kit.jpg?" width=125></a><BR>Blue Gecko
 
 ### QCA4020 by Qualcomm
 
@@ -194,7 +213,7 @@ The Moddable SDK repository contains the following top level directories:
 
 The JavaScript APIs supported by the Moddable SDK are documented in a suite of documents in the [documentation](./documentation) directory. The documentation is an extensive reference, with numerous examples. The primary [Piu document](./documentation/piu/piu.md) alone is over 100 pages. All documentation is provided in markdown format.
 
-See the [readme](./documentation#api-documentation-for-modules) document in that directory for an overview of the API documents. 
+See the [readme](./documentation#api-documentation-for-modules) document in that directory for an overview of the API documents.
 
 ## Resources
 
@@ -225,7 +244,7 @@ If you're an independent developer, we recommend you [start a discussion](./disc
 
 To learn more about Moddable, see [our website](http://www.moddable.com).
 
-For companies interested in the benefits of using JavaScript and the Moddable SDK to power your products, Moddable provides consulting services to help you get started. We're available to help with design, implementation, training, and support. 
+For companies interested in the benefits of using JavaScript and the Moddable SDK to power your products, Moddable provides consulting services to help you get started. We're available to help with design, implementation, training, and support.
 
 You can also reach out to us on Twitter ([@moddabletech](https://twitter.com/moddabletech)). Following us on Twitter is the best way to keep up with what we’re doing—we post announcements about new blog posts there, along with other Moddable news.
 

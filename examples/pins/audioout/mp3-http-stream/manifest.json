@@ -1,0 +1,28 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
+		"$(MODDABLE)/modules/data/mp3/manifest.json",
+		"./manifest_mp3streamer.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"../http-stream/calculatePower"
+		],
+		"pins/*": [
+			"$(MODULES)/pins/i2s/*"
+		]
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"queueLength": 12
+		}
+	},
+	"config": {
+		"startupSound": false
+	}
+}

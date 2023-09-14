@@ -178,8 +178,6 @@ static void fxRunContext(txPool* pool, txContext* context);
 static int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
 
-static void fx_agent_get_safeBroadcast(xsMachine* the);
-static void fx_agent_set_safeBroadcast(xsMachine* the);
 static void fx_agent_broadcast(xsMachine* the);
 static void fx_agent_getReport(xsMachine* the);
 static void fx_agent_leaving(xsMachine* the);
@@ -236,10 +234,12 @@ static char *gxAbortStrings[] = {
 
 static txAgentCluster gxAgentCluster;
 
+#ifdef mxMetering
 static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
 {
 	return 1;
 }
+#endif
 
 #if OSSFUZZ
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
@@ -324,8 +324,8 @@ int main(int argc, char* argv[])
 			1 * 1024 * 1024, 	/* initialHeapCount */
 			1 * 1024 * 1024, 	/* incrementalHeapCount */
 			256 * 1024, 		/* stackCount */
-			256 * 1024, 		/* initialKeyCount */
-			0,					/* incrementalKeyCount */
+			1024, 				/* initialKeyCount */
+			1024,				/* incrementalKeyCount */
 			1993, 				/* nameModulo */
 			127, 				/* symbolModulo */
 			64 * 1024,			/* parserBufferSize */
@@ -335,7 +335,6 @@ int main(int argc, char* argv[])
 		xsMachine* machine;
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
- 		fxBuildAgent(machine);
  		if (profiling)
 			fxStartProfiling(machine);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
@@ -345,6 +344,7 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
+ 				fxBuildAgent(machine);
 #if FUZZING
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
 								buffer[size] = 0;
 								fclose(file);
 								file = C_NULL;
-								xsResult = xsArrayBuffer(buffer, size);
+								xsResult = xsArrayBuffer(buffer, (txInteger)size);
 								c_free(buffer);
 								buffer = C_NULL;
 								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
@@ -584,7 +584,6 @@ void fxBuildAgent(xsMachine* the)
 	txSlot* global;
 
 	slot = fxLastProperty(the, fxNewHostObject(the, NULL));
-	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_agent_get_safeBroadcast), mxCallback(fx_agent_set_safeBroadcast), xsID("safeBroadcast"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
@@ -981,7 +980,7 @@ void fxRunContext(txPool* pool, txContext* context)
 				strict = 0;
 				module = 0;
 			}
-			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsTrue")) {
+			else if (!strcmp((char*)node->data.scalar.value, "CanBlockIsFalse")) {
 				sloppy = 0;
 				strict = 0;
 				module = 0;
@@ -997,18 +996,24 @@ void fxRunContext(txPool* pool, txContext* context)
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
+ 			||	!strcmp((char*)node->data.scalar.value, "Array.fromAsync")
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
+ 			||	!strcmp((char*)node->data.scalar.value, "FinalizationRegistry.prototype.cleanupSome")
   			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
+  			||	!strcmp((char*)node->data.scalar.value, "String.prototype.isWellFormed")
+  			||	!strcmp((char*)node->data.scalar.value, "String.prototype.toWellFormed")
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
  			||	!strcmp((char*)node->data.scalar.value, "array-grouping")
  			||	!strcmp((char*)node->data.scalar.value, "decorators")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
  			||	!strcmp((char*)node->data.scalar.value, "json-modules")
+ 			||	!strcmp((char*)node->data.scalar.value, "regexp-duplicate-named-groups")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
 			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
+// 			||	!strcmp((char*)node->data.scalar.value, "symbols-as-weakmap-keys")
 			) {
 				sloppy = 0;
 				strict = 0;
@@ -1101,8 +1106,8 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		256 * 1024, 		/* stackCount */
-		256 * 1024, 		/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024, 				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127,				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1112,7 +1117,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	xsMachine* machine;
 	char buffer[C_PATH_MAX];
 	int success = 0;	
-	machine = xsCreateMachine(creation, "xst", NULL);
+	machine = xsCreateMachine(creation, "xst262", NULL);
 	xsBeginHost(machine);
 	{
 		xsVars(1);
@@ -1210,15 +1215,6 @@ int fxStringEndsWith(const char *string, const char *suffix)
 }
 
 /* $262 */
-
-void fx_agent_get_safeBroadcast(xsMachine* the)
-{
-	xsResult = xsGet(xsThis, xsID("broadcast"));
-}
-
-void fx_agent_set_safeBroadcast(xsMachine* the)
-{
-}
 
 void fx_agent_broadcast(xsMachine* the)
 {
@@ -1335,6 +1331,13 @@ void fx_agent_start(xsMachine* the)
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #if mxWindows
 	agent->thread = (HANDLE)_beginthreadex(NULL, 0, fx_agent_start_aux, agent, 0, NULL);
+#elif mxMacOSX
+	pthread_attr_t attr; 
+	pthread_t self = pthread_self();
+	size_t size = pthread_get_stacksize_np(self);
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, size);
+    pthread_create(&(agent->thread), &attr, &fx_agent_start_aux, agent);
 #else	
     pthread_create(&(agent->thread), NULL, &fx_agent_start_aux, agent);
 #endif
@@ -1352,8 +1355,8 @@ void* fx_agent_start_aux(void* it)
 		1 * 1024 * 1024, 	/* initialHeapCount */
 		1 * 1024 * 1024, 	/* incrementalHeapCount */
 		4096, 				/* stackCount */
-		4096*3, 			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024, 				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1765,8 +1768,8 @@ int fuzz(int argc, char* argv[])
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024,				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1797,7 +1800,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
-		xsMachine* machine = xsCreateMachine(&_creation, "xst", NULL);
+		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{
 		xsBeginHost(machine);
@@ -1905,8 +1908,8 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 		32768, 				/* initialHeapCount */
 		32768,			 	/* incrementalHeapCount */
 		64 * 1024,	 		/* stackCount */
-		8 * 1024,			/* initialKeyCount */
-		0,					/* incrementalKeyCount */
+		1024,				/* initialKeyCount */
+		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
 		127, 				/* symbolModulo */
 		64 * 1024,			/* parserBufferSize */
@@ -1921,7 +1924,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
 	fxInitializeSharedCluster();
-	machine = xsCreateMachine(creation, "xst", NULL);
+	machine = xsCreateMachine(creation, "xst_fuzz_oss", NULL);
 
 	xsBeginMetering(machine, xsWithinComputeLimit, 1);
 	{
@@ -2277,11 +2280,14 @@ void fxConnect(txMachine* the)
 	return;
 #endif
 #ifdef mxMultipleThreads
-#else
+	if (!c_strcmp(the->name, "xst262"))
+		return;
+	if (!c_strcmp(the->name, "xst-agent"))
+		return;
+#endif		
 	char name[256];
 	char* colon;
 	int port;
-	struct sockaddr_in address;
 #if mxWindows
 	if (GetEnvironmentVariable("XSBUG_HOST", name, sizeof(name))) {
 #else
@@ -2302,22 +2308,21 @@ void fxConnect(txMachine* the)
 		strcpy(name, "localhost");
 		port = 5002;
 	}
-	memset(&address, 0, sizeof(address));
-  	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(name);
-	if (address.sin_addr.s_addr == INADDR_NONE) {
-		struct hostent *host = gethostbyname(name);
-		if (!host)
-			return;
-		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
-	}
-  	address.sin_port = htons(port);
 #if mxWindows
 {  	
 	WSADATA wsaData;
+	struct hostent *host;
+	struct sockaddr_in address;
 	unsigned long flag;
 	if (WSAStartup(0x202, &wsaData) == SOCKET_ERROR)
 		return;
+	host = gethostbyname(name);
+	if (!host)
+		goto bail;
+	memset(&address, 0, sizeof(address));
+	address.sin_family = AF_INET;
+	memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+  	address.sin_port = htons(port);
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection == INVALID_SOCKET)
 		return;
@@ -2342,7 +2347,18 @@ void fxConnect(txMachine* the)
 }
 #else
 {  	
+	struct sockaddr_in address;
 	int	flag;
+	memset(&address, 0, sizeof(address));
+  	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = inet_addr(name);
+	if (address.sin_addr.s_addr == INADDR_NONE) {
+		struct hostent *host = gethostbyname(name);
+		if (!host)
+			return;
+		memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+	}
+  	address.sin_port = htons(port);
 	the->connection = socket(AF_INET, SOCK_STREAM, 0);
 	if (the->connection <= 0)
 		goto bail;
@@ -2382,7 +2398,6 @@ void fxConnect(txMachine* the)
 	return;
 bail:
 	fxDisconnect(the);
-#endif		
 }
 
 void fxDisconnect(txMachine* the)

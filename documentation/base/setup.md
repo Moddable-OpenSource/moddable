@@ -1,6 +1,6 @@
 # Setup
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: February 1, 2023
+Revised: June 28, 2023
 
 ## Background
 The use of JavaScript on a minimal MCU requires an extremely lightweight runtime. One obvious way to keep the runtime small is to only include functionality which is required by the application being run. For example, while a modern Linux, macOS, or Windows distribution includes drivers for a wide variety of displays to support whatever the user may connect, an efficient MCU distribution only includes a single display driver to support the built-in display of the device. Consequently, each device configuration (MCU + display + network capabilities, etc) is distinct.
@@ -9,7 +9,7 @@ While an infinite number of hardware configurations with supporting software fra
 
 In some deployments, the configuration and instantiation is performed by the application. Often however, it is convenient to share these tasks for a given hardware configuration across applications. This is the case with example code, which should be kept as simple and focused as possible, and early versions of device applications which can accept the default configuration.
 
-### setup module
+## setup modules
 The configuration and instantiation may be implemented in one or more setup modules. Set up modules are identified by having a module specified that begins with `setup/`. All setup modules run before the main module, preparing the environment the main module requires. For example, there are two primary set-up modules for Moddable Zero. The `setup/network` module establishes a Wi-Fi connection, retrieves an IP address, and sets the real time clock. The `setup/piu` module instantiates the display and touch drivers and binds them to the global variable `screen`.
 
 Usually applications do not need to explicitly include the setup modules in their manifest as they are included by the manifests that require them. For example the `example/manifest_network.json` manifest includes `setup/network`, and the `example/manifest_piu.json` manifest includes `setup/piu`.
@@ -29,5 +29,15 @@ To minimize RAM use and speed start-up time, the main module and any setup modul
 
 ## Additional notes
 
-- The idea for setup modules is loosely modeled on the setup function in the Arduino application model. 
+- The idea for setup modules is loosely modeled on the setup function in the Arduino application model.
 - The simulator implicitly performs the work of setup already, initializing the screen global variable before running the main module.
+- The setup modules are only run on the first (main) virtual machine instantiated. For example, when using Workers, the setup modules are not run in the workers.
+- Sometimes it is useful to remove a setup module provided by the host, for example to replace the default `setup/network` module so that the application script can manage the Wi-Fi connection itself. This is accomplished using the `"~"` option of manifests.
+
+```json
+"modules": {
+	"~": [
+		"$(MODDABLE)/build/devices/esp32/setup/network"
+	]
+}
+```

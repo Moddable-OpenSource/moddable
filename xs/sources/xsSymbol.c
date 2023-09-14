@@ -55,7 +55,9 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_for), 1, mxID(_for), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_keyFor), 1, mxID(_keyFor), XS_DONT_ENUM_FLAG);
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncDispose), mxID(_asyncDispose), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncIterator), mxID(_asyncIterator), XS_GET_ONLY);
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_dispose), mxID(_dispose), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_hasInstance), mxID(_hasInstance), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_isConcatSpreadable), mxID(_isConcatSpreadable), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_iterator), mxID(_iterator), XS_GET_ONLY);
@@ -81,25 +83,28 @@ txSlot* fxNewSymbolInstance(txMachine* the)
 
 void fx_Symbol(txMachine* the)
 {
-	txID id;
-	txSlot* description;
+	txSlot* instance;
+	txSlot* slot;
+	txSlot* property;
 	if (mxTarget->kind != XS_UNDEFINED_KIND)
 		mxTypeError("new Symbol");
+	instance = fxNewInstance(the);
+	property = fxNextUndefinedProperty(the, instance, XS_NO_ID, XS_INTERNAL_FLAG);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
 		fxToString(the, mxArgv(0));
-		description = fxNewSlot(the);
-		description->kind = mxArgv(0)->kind;
-		description->value.string = mxArgv(0)->value.string;
-	}
+		fxNextSlotProperty(the, property, mxArgv(0), XS_NO_ID, XS_INTERNAL_FLAG);
+	}	
 	else
-		description = C_NULL;
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
-	the->keyArray[id - the->keyOffset] = description;
-	the->keyIndex++;
+		fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+	slot = fxFindKey(the);
+	slot->flag = XS_INTERNAL_FLAG;
+	slot->kind = XS_REFERENCE_KIND;
+	slot->value.reference = instance;
+	property->kind = XS_SYMBOL_KIND;
+	property->value.symbol = slot->ID;
+	mxPop();
 	mxResult->kind = XS_SYMBOL_KIND;
-	mxResult->value.symbol = id;
+	mxResult->value.symbol = slot->ID;
 }
 
 void fx_Symbol_for(txMachine* the)
@@ -109,7 +114,6 @@ void fx_Symbol_for(txMachine* the)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID id;
 	if (mxArgc < 1)
 		mxSyntaxError("no key parameter");
 	string = fxToString(the, mxArgv(0));
@@ -128,17 +132,12 @@ void fx_Symbol_for(txMachine* the)
 		result = result->next;
 	}
 	if (result == C_NULL) {
-		id = the->keyIndex;
-		if (id == the->keyCount)
-			fxGrowKeys(the, 1);
-		result = fxNewSlot(the);
+		result = fxFindKey(the);
 		result->next = the->symbolTable[modulo];
+		result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
 		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
-		result->ID = id;
 		result->value.key.string = mxArgv(0)->value.string;
 		result->value.key.sum = sum;
-		the->keyArray[id - the->keyOffset] = result;
-		the->keyIndex++;
 		the->symbolTable[modulo] = result;
 	}
 	mxResult->kind = XS_SYMBOL_KIND;
@@ -151,7 +150,7 @@ void fx_Symbol_keyFor(txMachine* the)
 	if ((mxArgc == 0) || (mxArgv(0)->kind != XS_SYMBOL_KIND))
 		mxTypeError("sym is no symbol");
 	key = fxGetKey(the, mxArgv(0)->value.symbol);
-	if (key && ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
+	if (((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
 		mxResult->kind = (key->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
 		mxResult->value.string = key->value.key.string;
 	}
@@ -162,15 +161,14 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 	txSlot* slot = fxCheckSymbol(the, mxThis);
 	if (!slot) mxTypeError("this is no symbol");
 	slot = fxGetKey(the, slot->value.symbol);
-	if (slot) {
-		if ((slot->kind == XS_KEY_KIND) || (slot->kind == XS_KEY_X_KIND)) {
-			mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
-			mxResult->value.string = slot->value.key.string;
-		}
-		else if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
-			mxResult->kind = slot->kind;
-			mxResult->value = slot->value;
-		}
+	if ((slot->kind == XS_KEY_KIND) || (slot->kind == XS_KEY_X_KIND)) {
+		mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
+		mxResult->value.string = slot->value.key.string;
+	}
+	else if (slot->kind == XS_REFERENCE_KIND) {
+		slot = slot->value.reference->next->next;
+		mxResult->kind = slot->kind;
+		mxResult->value = slot->value;
 	}
 }
 
@@ -217,10 +215,11 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 {
 	txSlot* key = fxGetKey(the, slot->value.symbol);
 	fxStringX(the, slot, "Symbol(");
-	if (key) {
-		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
-			fxConcatString(the, slot, key);
-		else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
+	if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
+		fxConcatString(the, slot, key);
+	else if (key->kind == XS_REFERENCE_KIND) {
+		key = key->value.reference->next->next;
+		if (key->kind != XS_UNDEFINED_KIND)
 			fxConcatString(the, slot, key);
 	}
 	fxConcatStringC(the, slot, ")");
@@ -228,27 +227,62 @@ void fxSymbolToString(txMachine* the, txSlot* slot)
 
 txSlot* fxGetKey(txMachine* the, txID theID)
 {
-	if ((0 < theID) && (theID < the->keyCount)) {
-		if (theID < the->keyOffset)
-			return the->keyArrayHost[theID];
-		else
-			return the->keyArray[theID - the->keyOffset];
-	}
-	return C_NULL;
+	txSlot* key;
+	mxCheck(the, 0 < theID);
+	mxCheck(the, theID < the->keyIndex);
+	if (theID < the->keyOffset)
+		key = the->keyArrayHost[theID];
+	else
+		key = the->keyArray[theID - the->keyOffset];
+	mxCheck(the, key->kind != XS_UNDEFINED_KIND);
+	return key;
 }
 
 char* fxGetKeyName(txMachine* the, txID theID)
 {
-	txSlot* key;
-	if ((0 < theID) && (theID < the->keyCount)) {
-		if (theID < the->keyOffset)
-			key = the->keyArrayHost[theID];
-		else
-			key = the->keyArray[theID - the->keyOffset];
-		if (key)
-			return key->value.string;
-	}
+	txSlot* key = fxGetKey(the, theID);
+	if (key->flag & XS_DONT_ENUM_FLAG)
+		return key->value.string;
 	return C_NULL;
+}
+
+char* fxGetKeyString(txMachine* the, txID theID, txBoolean* adorn)
+{
+	txString result = mxEmptyString.value.string;
+	txSlot* key = fxGetKey(the, theID);
+	txKind kind = key->kind;
+	if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
+		result = key->value.key.string;
+	else if (key->kind == XS_REFERENCE_KIND) {
+		key = key->value.reference->next->next;
+		if (key->kind != XS_UNDEFINED_KIND)
+			result = key->value.string;
+	}
+	if (adorn)
+		*adorn = (key->flag & XS_DONT_ENUM_FLAG) ? 0 : 1;
+	return result;
+}
+
+void fxPushKeyString(txMachine* the, txID theID, txBoolean* adorn)
+{
+	txSlot* key = fxGetKey(the, theID);
+	txKind kind = key->kind;
+	if (adorn)
+		*adorn = (key->flag & XS_DONT_ENUM_FLAG) ? 0 : 1;
+	if (kind == XS_KEY_KIND)
+		mxPushString(key->value.key.string);
+	else if (kind == XS_KEY_X_KIND)
+		mxPushStringX(key->value.key.string);
+	else {
+		mxCheck(the, key->kind == XS_REFERENCE_KIND);
+		key = key->value.reference->next->next;
+		if (key->kind == XS_UNDEFINED_KIND) {
+			*adorn = 0;
+			mxPush(mxEmptyString);
+		}
+		else
+			mxPushSlot(key);
+	}
 }
 
 txID fxFindName(txMachine* the, txString theString)
@@ -278,13 +312,13 @@ txID fxFindName(txMachine* the, txString theString)
 txBoolean fxIsKeyName(txMachine* the, txID theID)
 {
 	txSlot* key = fxGetKey(the, theID);
-	return (key && (key->flag & XS_DONT_ENUM_FLAG)) ? 1 : 0;
+	return (key->flag & XS_DONT_ENUM_FLAG) ? 1 : 0;
 }
 
 txBoolean fxIsKeySymbol(txMachine* the, txID theID)
 {
 	txSlot* key = fxGetKey(the, theID);
-	return (!key || !(key->flag & XS_DONT_ENUM_FLAG)) ? 1 : 0;
+	return (key->flag & XS_DONT_ENUM_FLAG) ? 0 : 1;
 }
 
 txID fxNewName(txMachine* the, txSlot* theSlot)
@@ -293,7 +327,6 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID id;
 
 	string = (txU1*)theSlot->value.string;
 	sum = 0;
@@ -310,19 +343,12 @@ txID fxNewName(txMachine* the, txSlot* theSlot)
 		}
 		result = result->next;
 	}
-
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
-	result = fxNewSlot(the);
+	result = fxFindKey(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
-	result->ID = id;
 	result->value.key.string = theSlot->value.string;
 	result->value.key.sum = sum;
-	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
 }
@@ -333,7 +359,6 @@ txID fxNewNameC(txMachine* the, txString theString)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID id;
 
 	string = (txU1*)theString;
 	sum = 0;
@@ -345,24 +370,21 @@ txID fxNewNameC(txMachine* the, txString theString)
 	result = the->nameTable[modulo];
 	while (result != C_NULL) {
 		if (result->value.key.sum == sum) {
-			if (c_strcmp(result->value.key.string, theString) == 0)
-				return mxGetKeySlotID(result);
+			if (c_strcmp(result->value.key.string, theString) == 0) {
+				txID id = mxGetKeySlotID(result);
+				if (id >= the->keyOffset)
+					result->flag |= XS_DONT_DELETE_FLAG;
+				return id;
+			}
 		}
 		result = result->next;
 	}
-
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
-	result = fxNewSlot(the);
+	result = fxFindKey(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_KIND;
-	result->ID = id;
 	result->value.key.string = C_NULL;
 	result->value.key.sum = sum;
-	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	result->value.key.string = (txString)fxNewChunk(the, mxStringLength(theString) + 1);
 	c_strcpy(result->value.key.string, theString);
@@ -375,7 +397,6 @@ txID fxNewNameX(txMachine* the, txString theString)
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
-	txID id;
 	
 	string = (txU1*)theString;
 	sum = 0;
@@ -387,24 +408,21 @@ txID fxNewNameX(txMachine* the, txString theString)
 	result = the->nameTable[modulo];
 	while (result != C_NULL) {
 		if (result->value.key.sum == sum) {
-			if (c_strcmp(result->value.key.string, theString) == 0)
-				return mxGetKeySlotID(result);
+			if (c_strcmp(result->value.key.string, theString) == 0) {
+				txID id = mxGetKeySlotID(result);
+				if (id >= the->keyOffset)
+					result->flag |= XS_DONT_DELETE_FLAG;
+				return id;
+			}
 		}
 		result = result->next;
 	}
-
-	id = the->keyIndex;
-	if (id == the->keyCount)
-		fxGrowKeys(the, 1);
-	result = fxNewSlot(the);
+	result = fxFindKey(the);
 	result->next = the->nameTable[modulo];
-	result->flag = XS_DONT_ENUM_FLAG;
+	result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_ENUM_FLAG;
 	result->kind = XS_KEY_X_KIND;
-	result->ID = id;
 	result->value.key.string = theString;
 	result->value.key.sum = sum;
-	the->keyArray[id - the->keyOffset] = result;
-	the->keyIndex++;
 	the->nameTable[modulo] = result;
 	return result->ID;
 }
@@ -454,7 +472,7 @@ void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot)
 {
 	if (id) {
 		txSlot* key = fxGetKey(the, id);
-		if (key && (key->flag & XS_DONT_ENUM_FLAG)) {
+		if (key->flag & XS_DONT_ENUM_FLAG) {
 			if (key->kind == XS_KEY_KIND) {
 				slot->kind = XS_STRING_KIND;
 				slot->value.string = key->value.key.string;
@@ -477,24 +495,13 @@ void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot)
 
 void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize theSize)
 {
-	if ((0 < id) && (id < the->keyCount)) {
-		txSlot* key;
-
-		if (id < the->keyOffset)
-			key = the->keyArrayHost[id];
+	if (id != XS_NO_ID) {
+		txBoolean adorn;
+		txString string = fxGetKeyString(the, id, &adorn);
+		if (adorn)
+			c_snprintf(theBuffer, theSize, "[%s]", string);
 		else
-			key = the->keyArray[id - the->keyOffset];
-		if (key) {
-			txKind kind = mxGetKeySlotKind(key);
-			if ((kind == XS_KEY_KIND) || (kind == XS_KEY_X_KIND))
-				c_snprintf(theBuffer, theSize, "%s", key->value.key.string);
-			else if ((kind == XS_STRING_KIND) || (kind == XS_STRING_X_KIND))
-				c_snprintf(theBuffer, theSize, "[%s]", key->value.string);
-			else
-				*theBuffer = 0;
-		}
-		else
-			*theBuffer = 0;
+			c_snprintf(theBuffer, theSize, "%s", string);
 	}
 	else {
 		theBuffer[0] = '?';

@@ -14,6 +14,11 @@
 				"*": "$(MODULES)/pins/analog/esp32/*"
 			}
 		},
+		"nrf52": {
+			"modules": {
+				"*": "$(MODULES)/pins/analog/nrf52/*"
+			}
+		},
 		"pico": {
 			"modules": {
 				"*": "$(MODULES)/pins/analog/pico/*"

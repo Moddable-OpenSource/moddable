@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -125,6 +125,10 @@ const EasingFunctionApplication = Application.template($ => ({
 	Behavior: class extends Behavior {
 		onCreate(application, data) {
 			this.data = data;
+		}
+		onDisplaying(application) {
+			if (application.height != 320 || application.width != 240)
+				trace("WARNING: This application was designed to run on a 240x320 screen.\n");
 		}
 		onStartAnimation(application, easeInFunction, easeOutFunction) {
 			this.data.TRANSITION_CONTAINER.delegate("onStartAnimation", easeInFunction, easeOutFunction);

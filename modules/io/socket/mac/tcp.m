@@ -508,8 +508,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 		int bytesRead = read(tcp->skt, tcp->readBuf + tcp->bytesReadable, kBufferSize - tcp->bytesReadable);
 		if (bytesRead > 0) {
 			tcp->bytesReadable += bytesRead;
-			if (bytesRead)
-				tcpTrigger(tcp, kTCPReadable);
+			tcpTrigger(tcp, kTCPReadable);
 		}
 		else {		// bytes read 0 indicates connection closed
 			tcp->error = 1;

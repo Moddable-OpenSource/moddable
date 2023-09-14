@@ -48,7 +48,8 @@
 		"$(MODDABLE)/modules/network/http/manifest.json",
 		"$(MODDABLE)/modules/network/mqtt/manifest.json",
 		"$(MODDABLE)/modules/network/ping/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json"
+		"$(MODDABLE)/modules/network/websocket/manifest.json",
+		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -63,6 +64,7 @@
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
+		"commodetto/PocoDraw": "$(MODULES)/commodetto/commodettoPocoDraw",
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
@@ -129,7 +131,7 @@
 			},
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
-				"flashParition": "xs",
+				"flashPartition": "xs_test",
 				"i2c": {
 					"hz": 100000,
 					"address": 53,

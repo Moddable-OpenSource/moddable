@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"$(BUILD)/devices/nrf52/modules/microseconds/*"
+		]
+	},
+	"preload": [
+		"microseconds"
+	]
+}

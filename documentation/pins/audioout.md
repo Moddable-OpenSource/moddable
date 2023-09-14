@@ -1,6 +1,6 @@
 # AudioOut
-Copyright 2021-2022 Moddable Tech, Inc.<BR>
-Revised: December 4, 2022
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
+Revised: April 25, 2023
 
 ## class AudioOut
 The `AudioOut` class provides audio playback with a four stream mixer.
@@ -93,7 +93,7 @@ This is done by using the ability to repeat a sample an infinite number of times
 audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.attackStart, aSample.attackCount);
 audio.enqueue(0, AudioOut.Samples, aSample, Infinity, aSample.sustainStart, aSample.sustainCount);
 ```
-	
+
 When it is time to end playback of the sample, enqueue the decay section. This will terminate the enqueue sustain section when it completes the current repetition:
 
 ```js
@@ -101,7 +101,7 @@ audio.enqueue(0, AudioOut.Samples, aSample, 1, aSample.decayStart, aSample.decay
 ```
 
 ### constructor(dictionary)
-The constructor accepts a dictionary to configure the audio output. 
+The constructor accepts a dictionary to configure the audio output.
 
 ```js
 let audio = new AudioOut({sampleRate: 11025, bitsPerSample: 16, numChannels: 2, streams: 3});
@@ -132,7 +132,7 @@ audio.start();
 ```
 
 ### stop()
-Call the `stop` function to immediately suspend audio playback. 
+Call the `stop` function to immediately suspend audio playback.
 
 ```js
 audio.stop();
@@ -174,12 +174,12 @@ audio.enqueue(0, AudioOut.Samples, bufferTwo, Infinity);
 ```
 
 If the repeat count is `Infinity`, the buffer is repeated until the audio out instance is closed, the streaming is flushed, or another buffer of audio is enqueued. In the final case, the currently playing buffer plays to completion, and then the following buffer is played.
-	
+
 A subset of the samples in the buffer may be selected for playback by using the optional `offset` and `count` parameters. Both parameters are in units of samples, not bytes. The `offset` parameter indicates the number of samples into the buffer to begin playback. If the `count` parameter is not provided, playback proceeds to the end of the buffer. It the `count` parameter is provided, only the number of samples it specifies are played.
 
 #### Enqueuing tones and silence
 
-To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`. 
+To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`.
 
 ```js
 audio.enqueue(0, AudioOut.Tone, 440, 8000);
@@ -326,6 +326,7 @@ The `audioOut` module is configured at build time.
 - `MODDEF_AUDIOOUT_I2S_DAC` - Enable built-in Digital-to-Analog (DAC) output. Set to 1 to enable DAC. Default is 0.
 - `MODDEF_AUDIOOUT_I2S_DAC_CHANNEL` - Controls DAC output - left (1), right (2), or both (3). Defaults to both.
 - `MODDEF_AUDIOOUT_I2S_PDM` - Enable built-in PDM encoder. Set to 1 to enable PDM. Default is 0.
+- `MODDEF_AUDIOOUT_I2S_MIXERBYTES` - Number of bytes to allocate for the mixing buffer. This value is also used to size the two DMA buffers for the audio driver. Even when there is only a single stream of audio, there is a mixing buffer. Defaults to 512 for 8-bit audio and 768 bytes otherwise. Smaller values reduce memory use, while slightly increasing the audio processing overhead. Smaller buffers are more likely to glitch under high CPU load in the overall system.
 
 ### Defines for ESP8266
 - `MODDEF_AUDIOOUT_I2S_PDM` -- If zero, PCM samples are transmitted over I2S. If non-zero, samples are transmitted using PDM. Set to 32 for no oversampling, 64 for 2x oversampling, and 128 for 4x oversampling. Default is 0.

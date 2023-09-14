@@ -31,20 +31,6 @@ UPLOAD_PORT = COM3
 DEBUGGER_SPEED = 921600
 !ENDIF
 
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
-MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
-SERIAL2XSBUG = $(MODDABLE_TOOLS_DIR)\serial2xsbug
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
-XSBUG = $(MODDABLE_TOOLS_DIR)\xsbug
-XSC = $(MODDABLE_TOOLS_DIR)\xsc
-XSL = $(MODDABLE_TOOLS_DIR)\xsl
-
 ARCHIVE = $(BIN_DIR)\$(NAME).xsa
 
 !IF "$(DEBUG)"=="1"
@@ -58,11 +44,11 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(XSBUG).exe && echo Starting xsbug... && timeout /nobreak /t 7 > nul)
-	echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
-	echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
-	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) -u / $(DATA) $(MODULES) $(RESOURCES)
+	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) -u / $(DATA) $(MODULES) $(RESOURCES)

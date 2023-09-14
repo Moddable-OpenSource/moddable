@@ -79,6 +79,7 @@
 			"sampleRate": 11025,
 			"bitsPerSample": 16,
 			"i2s": {
+				"num": 0,
 				"bck_pin": 12,
 				"lr_pin": 0,
 				"datain": 34,
@@ -104,5 +105,17 @@
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
 	}
 }

@@ -233,6 +233,24 @@ void xs_ILI9341(xsMachine *the)
 			MODDEF_ILI9341_CS_PORT, -1, ili9341ChipSelect);
 	sd->spiConfig.mode = MODDEF_ILI9341_SPI_MODE;
 
+#ifdef MODDEF_SPI_HIGH_POWER
+	nrf_gpio_cfg(
+		MODDEF_ILI9341_CS_PIN,
+		NRF_GPIO_PIN_DIR_OUTPUT,
+		NRF_GPIO_PIN_INPUT_DISCONNECT,
+		NRF_GPIO_PIN_NOPULL,
+		NRF_GPIO_PIN_H0H1,
+		NRF_GPIO_PIN_NOSENSE);
+
+	nrf_gpio_cfg(
+		MODDEF_ILI9341_DC_PIN,
+		NRF_GPIO_PIN_DIR_OUTPUT,
+		NRF_GPIO_PIN_INPUT_DISCONNECT,
+		NRF_GPIO_PIN_NOPULL,
+		NRF_GPIO_PIN_H0H1,
+		NRF_GPIO_PIN_NOSENSE);
+#endif
+
 	sd->dispatch = (PixelsOutDispatch)&gPixelsOutDispatch;
 
 	SCREEN_CS_INIT;
@@ -543,6 +561,8 @@ void ili9341Init(spiDisplay sd)
 			modDelayMilliseconds(ms);
 		}
 		else {
+			if (0x00 == cmd)		// escape so we can use register 0xFF
+				cmd = c_read8(cmds++);
 			if (0x36 == cmd)
 				sd->memoryAccessControl = c_read8(cmds + 1);
 			uint8_t count = c_read8(cmds++);

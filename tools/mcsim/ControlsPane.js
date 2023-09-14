@@ -281,11 +281,14 @@ export var SliderRow = Row.template(function($) { return {
 				}
 				onValueChanged(container) {
 					let data = this.data;
-					model.DEVICE.first.delegate(data.event, data);
+					if (data.event)
+						model.DEVICE.first.delegate(data.event, data);
 				}
 				onValueChanging(container) {
 					let data = this.data;
 					container.next.string = data.value + data.unit;
+					if (data.track)
+						model.DEVICE.first.delegate(data.track, data);
 				}
 			},
 		}),

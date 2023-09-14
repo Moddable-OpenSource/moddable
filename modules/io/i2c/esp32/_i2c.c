@@ -272,6 +272,59 @@ void _xs_i2c_write(xsMachine *the)
 		xsUnknownError("write failed");
 }
 
+void _xs_i2c_writeRead(xsMachine *the)
+{
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	int err;
+	xsUnsignedValue lengthWrite, lengthRead;
+	i2c_cmd_handle_t cmd;
+	void *bufferWrite, *bufferRead;
+	uint8_t stop = true;
+
+	if (xsmcArgc > 2)
+		stop = xsmcToBoolean(xsArg(2));
+
+	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
+		xsResult = xsArg(1);
+		xsmcGetBufferWritable(xsResult, &bufferRead, &lengthRead);
+		xsmcSetInteger(xsResult, lengthRead);
+	}
+	else {
+ 		lengthRead = xsmcToInteger(xsArg(1));
+		bufferRead = xsmcSetArrayBuffer(xsResult, NULL, lengthRead);
+	}
+
+	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
+
+	if (!i2cActivate(i2c))
+		xsUnknownError("activate failed");
+
+	cmd = i2c_cmd_link_create();
+	i2c_master_start(cmd);
+	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
+	if (lengthWrite)
+		i2c_master_write(cmd, (uint8_t *)bufferWrite, lengthWrite, 1);
+	if (stop)
+		i2c_master_stop(cmd);
+
+	i2c_master_start(cmd);
+	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
+	if (lengthRead > 1)
+		i2c_master_read(cmd, bufferRead, lengthRead - 1, I2C_MASTER_ACK);
+	i2c_master_read(cmd, ((uint8_t *)bufferRead) + lengthRead - 1, 1, I2C_MASTER_NACK);
+	i2c_master_stop(cmd);
+
+	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_RATE_MS);
+	i2c_cmd_link_delete(cmd);
+
+	xSemaphoreGive(gI2CMutex);
+
+	if (ESP_OK != err) {
+	xsLog("err %d\n", (int)err);
+		xsUnknownError("writeRead failed");
+	}
+}
+
 uint8_t i2cActivate(I2C i2c)
 {
 	i2c_config_t conf;

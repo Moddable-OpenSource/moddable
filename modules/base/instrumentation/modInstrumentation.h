@@ -26,6 +26,22 @@
 
 #include "stdint.h"
 
+#if ESP32
+	#define kModInstrumentationHasSPIFlashErases 1
+#endif
+
+#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32
+	#define kModInstrumentationHasTurns 1
+#endif
+
+#if nrf52 || ESP32
+	#define kModInstrumentationHasCPU 1
+#endif
+
+#if !nrf52
+	#define kModInstrumentationHasNetwork 1
+#endif
+
 enum {
 	// Counters
 
@@ -33,10 +49,12 @@ enum {
 	kModInstrumentationPixelsDrawn = 1,
 	kModInstrumentationFramesDrawn,
 
+#if kModInstrumentationHasNetwork
 	/* network */
 	kModInstrumentationNetworkBytesRead,
 	kModInstrumentationNetworkBytesWritten,
 	kModInstrumentationNetworkSockets,
+#endif
 
 	/* timers */
 	kModInstrumentationTimers,
@@ -50,11 +68,11 @@ enum {
 	/* Piu */
 	kModInstrumentationPiuCommandListUsed,
 
-#if ESP32
+#if kModInstrumentationHasSPIFlashErases
 	/* SPI flash */
 	kModInstrumentationSPIFlashErases,
 #endif
-#if PICO_BUILD || defined(__ets__) || ESP32
+#if kModInstrumentationHasTurns
 	/* turns */
 	kModInstrumentationTurns,
 #endif
@@ -64,7 +82,7 @@ enum {
 	/* system */
 	kModInstrumentationSystemFreeMemory,
 
-#if ESP32
+#if kModInstrumentationHasCPU
 	/* CPU utilization */
 	kModInstrumentationCPU0,
 	#if kTargetCPUCount > 1
@@ -79,9 +97,10 @@ enum {
 	kModInstrumentationGarbageCollectionCount,
 	kModInstrumentationModulesLoaded,
 	kModInstrumentationStackRemain,
+	kModInstrumentationPromisesSettledCount,	
 
 	kModInstrumentationCallbacksBegin = kModInstrumentationSystemFreeMemory,
-	kModInstrumentationCallbacksEnd = kModInstrumentationStackRemain,
+	kModInstrumentationCallbacksEnd = kModInstrumentationPromisesSettledCount,
 
 	kModInstrumentationLast = kModInstrumentationCallbacksEnd
 };

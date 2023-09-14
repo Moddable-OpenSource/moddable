@@ -5,13 +5,13 @@ The XS profiler is a sample based JavaScript profiler. The XS profiler also repo
 
 There are two implementations of the profiler:
 
-- **Instrument**: XS sends profile records and samples to **xsbug**. The instrument profiler is used by Moddable SDK applications in the simulator and on devices. 
+- **Instrument**: XS sends profile records and samples to **xsbug**. The instrument profiler is used by Moddable SDK applications in the simulator and on devices.
 
 > Build XS with `mxInstrument` defined.
 
-- **File**: XS accumulates profile records and samples in RAM then saves them into a [`.cpuprofile`](https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile) file. The file profiler is used by command line tools including **xst** and **xsnap**. 
+- **File**: XS accumulates profile records and samples in RAM then saves them into a [`.cpuprofile`](https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile) file. The file profiler is used by command line tools including **xst** and **xsnap**.
 
-> Build XS with `mxProfile` defined and xsProfile.c included. 
+> Build XS with `mxProfile` defined and xsProfile.c included.
 
 Both profilers require debugging information, so scripts must be built with debugging enabled. The instrument profiler requires a connection to **xsbug**. Therefore, profiling is only supported in builds of XS with debugging support enabled.
 
@@ -33,7 +33,7 @@ for (let i = 0; i < 10; i++) {
 ```
 
 For function instances, the profile ID is stored in the ID of the internal home slot. For function primitives, the profile ID is stored in the slot itself. This approach means that profile IDs require no additional RAM or storage space. All debug builds are ready to be profiled.
- 
+
 The profile ID of the host is 0. The profile ID of the garbage collector is 1. For newly created machines, function profile IDs start incrementing from 2; for cloned machines, from the profile ID stored in the preparation.
 
 ### Record
@@ -47,7 +47,7 @@ A profile record is created for each function observed to run during a profile s
 
 Profile records are only stored once by the file profiler and only sent once to **xsbug** by the instrument profiler.
 
-The home slot allows function identifiers to be more detailed for function instances (`Array.prototype.push`) than for function primitives (`push`). 
+The home slot allows function identifiers to be more detailed for function instances (`Array.prototype.push`) than for function primitives (`push`).
 
 ### Sample
 
@@ -56,7 +56,7 @@ A profile sample is created for each sample taken during a profile session. The 
 - Time delta: microseconds since the last sample.
 - Profile ID stack: sequence of profile ID in stack order. The first profile ID is the function hit by the profiler. The last profile ID is always the host (0).
 
-For each sample, The instrument profiler simply  sends the sample to **xsbug**, which updates the call graph and the durations of the profile records. The file profiler updates the call graph and stores the time delta and the first profile ID. 
+For each sample, The instrument profiler simply  sends the sample to **xsbug**, which updates the call graph and the durations of the profile records. The file profiler updates the call graph and stores the time delta and the first profile ID.
 
 ### Time
 
@@ -78,12 +78,12 @@ Both the instrument and file profilers allocate their buffers outside the XS hea
 
 The instrument profiler uses:
 
-- A bitmap to remember which profile records have already been sent to **xsbug**, i.e. one bit for each profile ID. 
+- A bitmap to remember which profile records have already been sent to **xsbug**, i.e. one bit for each profile ID.
 - Buffers for profile samples. The size of the buffers is the size of the XS stack divided by the size of a frame and multiplied by the size of a profile ID.
 
 ### File Profiler
 
-The file profiler uses growing buffers to store profile records and samples. 
+The file profiler uses growing buffers to store profile records and samples.
 
 <a id="howtouse"></a>
 ## How To Use
@@ -109,7 +109,7 @@ Use the `xsStartProfiling` and `xsStopProfiling` macros to start and stop the pr
 
 Because you can open the `.cpuprofile` file created by the File Profiler with at least three different applications, you get somewhat different views of the same data.
 
-In the three viewers, the first column is the "Self Time", the second column is the "Total Time". 
+In the three viewers, the first column is the "Self Time", the second column is the "Total Time".
 
 Google Chrome DevTools and xsbug can toggle between a "Bottom Up" viewer (from callees to callers) and a "Top Down" viewer (from callers to callees).
 

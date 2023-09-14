@@ -1,0 +1,50 @@
+{
+	"build": {
+		"USE_USB": "1",
+		"UF2_VOLUME_NAME": "MODDABLEnRF"
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+
+		"led1_pin": 11,
+		"led2_pin": 12,
+		"led3_pin": 13
+	},
+	"defines": {
+		"xdebugger": {
+			"tx_pin": 43,
+			"rx_pin": 44,
+			"baud": "NRF_UART_BAUDRATE_115200"
+		},
+		"spi": {
+			"interface": "3",
+			"hz": "32000000",
+			"mosi_pin": "NRF_GPIO_PIN_MAP(1,15)",
+			"miso_pin": "NRF_GPIO_PIN_MAP(1,14)",
+			"sck_pin": "NRF_GPIO_PIN_MAP(1,13)"
+		},
+		"i2c": {
+			"interface": "0",
+			"scl_pin": 5,
+			"sda_pin": 4
+		},
+		"ili9341": {
+			"hz": "32000000",
+			"cs_pin": "NRF_GPIO_PIN_MAP(1,12)",
+			"dc_pin": "NRF_GPIO_PIN_MAP(1,11)",
+			"interface": "3"
+		}
+	}
+}

@@ -66,8 +66,10 @@ void xs_digital_monitor_destructor(void *data)
 	gpio_set_irq_enabled(monitor->pin, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, false);
 
 	// remove ISR
-	if (NULL == gMonitors)
+	if (NULL == gMonitors) {
 		gpio_set_irq_enabled_with_callback(monitor->pin, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, false, NULL);
+		irq_set_enabled(IO_IRQ_BANK0, false);
+	}
 
 	gpio_init(monitor->pin);
 
@@ -125,8 +127,10 @@ void xs_digital_monitor(xsMachine *the)
 	modGPIOSetMode(&config, mode);
 
 	// install ISR
-	if (NULL == gMonitors)
+	if (NULL == gMonitors) {
 		gpio_set_irq_enabled_with_callback(pin, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, false, gpioISR);
+		irq_set_enabled(IO_IRQ_BANK0, true);
+	}
 
 	modCriticalSectionBegin();
 	monitor->next = gMonitors;

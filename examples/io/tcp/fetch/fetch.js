@@ -18,44 +18,8 @@
  *
  */
  
+import Headers from "headers";
 import URL from "url";
-
-let clients;
-function Client(url) {
-	clients ??= new Map;
-	let origin = url.origin;
-	let client = clients.get(origin);
-	if (!client) {
-		const protocol = url.protocol;
-		const host = url.hostname;
-		if (protocol == "http:") {
-			const port = url.port || 80;
-			client = new device.network.http.io({ 
-				...device.network.http,
-				host, 
-				port,  
-				onError() {
-					clients.delete(origin);
-					this.close();
-				}
-			});
-		}
-		else {
-			const port = url.port || 443;
-			client = new device.network.https.io({ 
-				...device.network.https,
-				host, 
-				port,  
-				onError() {
-					clients.delete(origin);
-					this.close();
-				}
-			});
-		}
-		clients.set(origin, client);
-	}
-	return client;
-}
 
 const statusTexts = {
 	100: "Continue",
@@ -102,31 +66,18 @@ const statusTexts = {
 };
 Object.freeze(statusTexts);
 
-class Headers extends Map {
-	delete(key) {
-		return super.delete(key.toString().toLowerCase());
-	}
-	get(key) {
-		return super.get(key.toString().toLowerCase());
-	}
-	has(key) {
-		return super.has(key.toString().toLowerCase());
-	}
-	set(key, value) {
-		return super.set(key.toString().toLowerCase(), value.toString());
-	}
-}
-
 class Response {
 	#url;
 	#status;
 	#headers;
 	#body;
-	constructor(url, status, headers, body) {
+	#redirected;
+	constructor(url, status, headers, body, redirected) {
 		this.#url = url;
 		this.#status = status;
 		this.#headers = new Headers(headers);
 		this.#body = body;
+		this.#redirected = redirected;
 	}
 	get bodyUsed() {
 		return this.#body ? false : true;
@@ -136,6 +87,9 @@ class Response {
 	}
 	get ok() {
 		return 200 <= this.#status && this.#status <= 299;
+	}
+	get redirected() {
+		return this.#redirected;
 	}
 	get status() {
 		return this.#status;
@@ -175,20 +129,57 @@ class Response {
 	}
 }
 
+let clients;
+function fetchClientRequest(url, options) {
+	clients ??= new Map;
+	let origin = url.origin;
+	let client = clients.get(origin);
+	if (!client) {
+		const protocol = url.protocol;
+		const host = url.hostname;
+		if (protocol == "http:") {
+			const port = url.port || 80;
+			client = new device.network.http.io({ 
+				...device.network.http,
+				host, 
+				port,  
+				onError() {
+					clients.delete(origin);
+					this.close();
+				}
+			});
+		}
+		else {
+			const port = url.port || 443;
+			client = new device.network.https.io({ 
+				...device.network.https,
+				host, 
+				port,  
+				onError() {
+					clients.delete(origin);
+					this.close();
+				}
+			});
+		}
+		clients.set(origin, client);
+	}
+	let path = url.pathname;
+	let query = url.search;
+	if (query)
+		path += query;
+	options.path = path;
+	client.request(options);
+}
+
 function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
-		const url = new URL(href);
+		let url = new URL(href);
 		if ((url.protocol != "http:") && (url.protocol != "https:"))
 			rejectResponse(new URLError("only http or https"));
-		const responseBody = new Promise((resolveBody, rejectBody) => {
-			let path = url.pathname;
-			let query = url.search;
-			if (query)
-				path += query;
+		const promiseBody = new Promise((resolveBody, rejectBody) => {
 			let method = info.method;
 			let headers = info.headers;
 			let body = info.body;
-			let offset = 0;
 			let length = 0;
 			if ((method == "POST") || (method == "PUT")) {
 				body = info.body;
@@ -201,6 +192,12 @@ function fetch(href, info = {}) {
 				if (!headers)
 					headers = new Headers();
 				else {
+					if (!(headers instanceof Headers)) {
+						const h = new Headers();
+						for (const name in headers)
+							h.set(name.toLowerCase(), headers[name]);
+						headers = h;
+					}
 					length = headers.get("content-length");
 					if (length == undefined) {
 						headers = new Headers(headers);
@@ -209,44 +206,58 @@ function fetch(href, info = {}) {
 					}
 				}
 			}
-			const client = Client(url);
+			
+			let redirected = false;
+			let offset = 0;
 			let buffer = null;
-			client.request({
+			const options = {
 				method,
-				path,
 				headers,
 				onHeaders(status, headers) {
-					resolveResponse(new Response(url, status, headers, responseBody));
-				},
-				onReadable(count) {
-					if (buffer)
-						buffer = buffer.concat(this.read(count));
-					else
-						buffer = this.read(count);
+					if ((301 === status) || (308 === status) || (302 === status) || (303 === status) || (307 === status)) {
+						url = new URL(headers.get("location"));
+						redirected = this.redirected = true;
+						offset = 0;
+						return;
+					}
+					resolveResponse(new Response(url, status, headers, promiseBody, redirected));
 				},
 				onWritable(count) {
 					if (body) {
-						if (length > 0) {
-							if (count > length)
-								count = length;
+						let remain = length - offset;
+						if (remain > 0) {
+							if (count > remain)
+								count = remain;
 							let view = new DataView(body, offset, count);
 							this.write(view);
 							offset += count;
-							length -= count;
 						}
 						else
 							this.write();
 					}
 				},
+				onReadable(count) {
+					if (count == 0)
+						return;
+					if (this.redirected)
+						this.read();
+					else if (buffer)
+						buffer = buffer.concat(this.read(count));
+					else
+						buffer = this.read(count);
+				},
 				onDone(error) {
+					if (this.redirected) {
+						fetchClientRequest(url, options);
+						return;
+					}
 					resolveBody(buffer ?? new ArrayBuffer);
 				}
-			});
+			};
+			fetchClientRequest(url, options);
 		});
 	});
 }
 
 export { fetch, Headers }
 export default fetch;
-
-

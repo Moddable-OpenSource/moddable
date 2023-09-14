@@ -77,7 +77,7 @@ static void createTimer(xsMachine *the, int interval, int repeat)
 	modTimerScriptRecord ts;
 
 	ts.the = the;
-	ts.callback = xsToReference(xsArg(0));
+	ts.callback = xsmcToReference(xsArg(0));
 	ts.self = xsNewHostObject(NULL);
 	timer = modTimerAdd(interval, repeat, xs_timer_callback, &ts, sizeof(ts));
 	if (!timer)

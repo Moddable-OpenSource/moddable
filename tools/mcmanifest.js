@@ -79,6 +79,11 @@ export class MakeFile extends FILE {
 			this.write(tool.slash);
 			this.write(result.target);
 		}
+		tool.nodeRedExtracts?.forEach((source, target) => {
+			this.write("\\\n\t$(DATA_DIR)");
+			this.write(tool.slash);
+			this.write(target);
+		});
 		this.line("");
 		this.line("");
 	}
@@ -93,6 +98,11 @@ export class MakeFile extends FILE {
 			else
 				this.line("\tcp $< $@");
 		}
+		tool.nodeRedExtracts?.forEach((source, target) => {
+			this.line("$(DATA_DIR)", tool.slash, target, ": ", source);
+			this.echo(tool, "extract from Node-RED ", target);
+			this.line(`\tnodered2mcu -e ${target} -o $(@D) ${source}`);
+		});
 		this.line("");
 	}
 	setConfigOption(sdkconfig, option) {
@@ -137,10 +147,11 @@ export class MakeFile extends FILE {
 		let partitions = tool.readFileString(PARTITIONS_FILE);
 
 		const usesMods = tool.defines.xs?.mods || tool.defines.XS_MODS;
+		const wantsTest = tool.defines.xs?.test || tool.defines.XS_TEST
 		const wantsOTA = tool.defines.ota?.autosplit;
 		const wantsStorage = tool.defines.file?.partition;
 
-		if (wantsOTA || usesMods || wantsStorage) {
+		if (wantsOTA || usesMods || wantsStorage || wantsTest) {
 			let factoryLine, hasOTA, hasMod, hasStorage, storagePartition = wantsStorage?.slice(1);
 
 			function parse(value) {
@@ -176,6 +187,7 @@ export class MakeFile extends FILE {
 				const OTADATA_SIZE = 0x2000;
 				const MODS_SIZE = 0x40000;
 				const STORAGE_SIZE = 0x10000;
+				const TEST_SIZE = 0x10000;
 				let line = partitions[factoryLine].split(",").map(item => item.trim());
 				let size = parse(line[4]);
 
@@ -185,6 +197,8 @@ export class MakeFile extends FILE {
 					size -= MODS_SIZE;		// space for mods
 				if (!hasStorage && wantsStorage)
 					size -= STORAGE_SIZE;	// space for files
+				if (wantsTest)
+					size -= TEST_SIZE;		// scratch space for flash unit tests
 
 				if (!hasOTA && wantsOTA) {
 					const size1 = Math.idiv(size >> 1, 0x10000) * 0x10000;		// "Partitions of type app have to be placed at offsets aligned to 0x10000"
@@ -205,6 +219,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				if (!hasStorage && wantsStorage) {
 					partitions[factoryLine] += "\n" + `storage, data, spiffs, , 0x${STORAGE_SIZE.toString(16)},`,
 					tool.report(`mcconfig: file storage partition of size 0x${STORAGE_SIZE.toString(16)} created from factory app partition`)
+				}
+				if (wantsTest) {
+					partitions[factoryLine] += "\n" + `xs_test, data, 1, , 0x${TEST_SIZE.toString(16)},`,
+					tool.report(`mcconfig: xs_test partition of size 0x${TEST_SIZE.toString(16)} created from factory app partition`)
 				}
 			}
 			partitions = partitions.join("\n");
@@ -402,7 +420,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line(`\ttouch ${tool.moddablePath}/modules/network/ble/${platform}/modBLEClient.c`);
 			}
 		}
-		this.write("\t$(BLES2GATT)");
+		this.write("\tbles2gatt");
 		if (tool.bleServicesFiles.length)
 			this.write(tool.windows ? " $**" : " $^");
 		if (client)
@@ -549,6 +567,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
+			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
 			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "xsc ", target);
@@ -559,7 +578,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -d";
 			if (tool.nativeCode)
 				options += " -c";
-			this.line("\t$(XSC) ", source, options, " -e -o $(@D) -r ", targetParts.name);
+			this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name);
 		}
 		this.line("");
 		
@@ -597,7 +616,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					options += " -d";
 				if (tool.nativeCode)
 					options += " -c";
-				this.line("\t$(XSC) $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)
 					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
 				temporaries.push("%" + temporary);
@@ -722,7 +741,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 				this.echo(tool, "buildclut ", target);
-				this.line("\t$(BUILDCLUT) ", source, " -o $(@D)");
+				this.line("\tbuildclut ", source, " -o $(@D)");
 			}
 		}
 
@@ -743,7 +762,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				}
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
 				this.echo(tool, "png2bmp ", target);
-				this.write("\t$(PNG2BMP) ");
+				this.write("\tpng2bmp ");
 				this.write(source);
 				this.write(" -a");
 				if (result.monochrome)
@@ -797,7 +816,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("");
 			else
 				this.line("\"");
-			this.write("\t$(PNG2BMP) ");
+			this.write("\tpng2bmp ");
 			this.write(source);
 			if (!alphaTarget)
 				this.write(" -c");
@@ -831,10 +850,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", bmpSource, " ", rotationPath);
 			this.echo(tool, "compressbmf ", target);
-			this.line("\t$(COMPRESSBMF) ", source, " -i ", bmpSource, " -o $(@D) -r ", tool.rotation);
+			this.line("\tcompressbmf ", source, " -i ", bmpSource, " -o $(@D) -r ", tool.rotation);
 			this.line(bmpSource, ": ", pngSource, " ", rotationPath);
 			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\t$(PNG2BMP) ", pngSource, " -a -o $(@D) -r ", tool.rotation, " -t");
+			this.line("\tpng2bmp ", pngSource, " -a -o $(@D) -r ", tool.rotation, " -t");
 		}
 
 		for (var result of tool.bmpMaskFiles) {
@@ -845,7 +864,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
 			this.echo(tool, "rle4encode ", target);
-			this.line("\t$(RLE4ENCODE) ", bmpSource, " -o $(@D)");
+			this.line("\trle4encode ", bmpSource, " -o $(@D)");
 			var sources = result.sources;
 			var manifest = "";
 			var name = " -n " + parts.name.slice(0, -6);
@@ -856,7 +875,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
 			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\t$(PNG2BMP) ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
+			this.line("\tpng2bmp ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
 		}
 
 		for (var result of tool.imageFiles) {
@@ -866,7 +885,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var temporary = target + result.quality;
 				this.line("$(RESOURCES_DIR)", tool.slash, temporary, ": ", source, " ", rotationPath);
 				this.echo(tool, "image2cs ", temporary);
-				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -q ", result.quality, " -r ", tool.rotation);
+				this.line("\timage2cs ", source, " -o $(@D) -q ", result.quality, " -r ", tool.rotation);
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, temporary);
 				this.echo(tool, "copy ", target);
 				if (tool.windows)
@@ -877,7 +896,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			else {
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
 				this.echo(tool, "image2cs ", target);
-				this.line("\t$(IMAGE2CS) ", source, " -o $(@D) -r ", tool.rotation);
+				this.line("\timage2cs ", source, " -o $(@D) -r ", tool.rotation);
 			}
 		}
 
@@ -926,11 +945,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} --chars-file "$(RESOURCES_DIR)${tool.slash}${name}.txt" ${localization}`);
 				if ("-alpha" === face.suffix) {
 					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
 				}
 				else if ("-mask" === face.suffix) {
-					this.line("\t$(PNG2BMP) ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
-					this.line("\t$(COMPRESSBMF) ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
+					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
+					this.line("\tcompressbmf ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
 				}
 			});
 		}
@@ -951,7 +970,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var target = result.target;
 			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "wav2maud ", target);
-			this.line("\t$(WAV2MAUD) ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
+			this.line("\twav2maud ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
 		}
 
 		for (var result of tool.stringFiles)
@@ -965,7 +984,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 		this.line("");
 		this.echo(tool, "mclocal strings");
-		this.write("\t$(MCLOCAL)");
+		this.write("\tmclocal");
 		for (var result of tool.stringFiles) {
 			this.write(" ");
 			this.write(result.source);
@@ -996,13 +1015,13 @@ export class TSConfigFile extends FILE {
 			compilerOptions: {
 				baseUrl: "./",
 				forceConsistentCasingInFileNames: true,
-				module: "es2020",
+				module: "es2022",
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2020"],
+				lib: ["es2022"],
 				sourceMap: true,
-				target: "ES2020",
+				target: "ES2022",
 				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
@@ -1010,7 +1029,7 @@ export class TSConfigFile extends FILE {
 		}
 		var paths = json.compilerOptions.paths;
 		for (var result of tool.dtsFiles) {
-			var specifier = result.target.slice(0, -2);
+			var specifier = result.target;
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
 			specifier = tool.unresolvePrefix(specifier);
@@ -1020,6 +1039,7 @@ export class TSConfigFile extends FILE {
 			var specifier = result.target.slice(0, -4);
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
 		}
@@ -1105,12 +1125,12 @@ class Rule {
 	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
 		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
-		var slash = source.lastIndexOf(tool.slash);
-		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
+		var sourceParts = tool.splitPath(source);
+		var directory = this.tool.resolveDirectoryPath(sourceParts.directory);
 		if (directory) {
 			this.count = 0;
-			var star = source.lastIndexOf("*");
-			var prefix = (star >= 0) ? source.slice(slash + 1, star) : source.slice(slash + 1);
+			var star = sourceParts.name.lastIndexOf("*");
+			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name + sourceParts.extension;
 			var names = tool.enumerateDirectory(directory);
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -1119,6 +1139,10 @@ class Rule {
 					continue;
 				var path = directory + tool.slash + name;
 				var parts = tool.splitPath(path);
+				if ((".ts" === parts.extension) && parts.name.endsWith(".d")) {
+					parts.name = parts.name.slice(0, parts.name.length - 2);
+					parts.extension = ".d.ts";
+				} 
 				if (star >= 0) {
 					if (prefix) {
 						if (parts.name.startsWith(prefix))
@@ -1132,6 +1156,8 @@ class Rule {
 				else {
 					if (parts.name == prefix)
 						name = prefix;
+					else if (parts.name + parts.extension == prefix)
+						name = sourceParts.name;
 					else
 						continue;
 				}
@@ -1237,7 +1263,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if (parts.extension == ".js")
+		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
@@ -1263,14 +1289,10 @@ class ModulesRule extends Rule {
 			else if (parts.name.endsWith(".cdv"))
 				this.appendFile(tool.cdvFiles, target.slice(0, -4), source, include);
 		}
-		else if (parts.extension == ".ts") {
-			if (parts.name.endsWith(".d")) {
-				this.appendFile(tool.dtsFiles, target, source, include);
-			}
-			else {
-				this.appendFile(tool.tsFiles, target + ".xsb", source, include);
-			}
-		}
+		else if (parts.extension == ".ts")
+			this.appendFile(tool.tsFiles, target + ".xsb", source, include);
+		else if (parts.extension == ".d.ts")
+			this.appendFile(tool.dtsFiles, target, source, include);
 		else if (parts.extension == ".json") {
 			if ("nodered2mcu" === query.transform)
 				this.appendFile(tool.nodered2mcuFiles, target, source, include);
@@ -1686,11 +1708,12 @@ export class Tool extends TOOL {
 		else if (!this.format)
 			this.format = "UNDEFINED";
 		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/debug/mcsim.app";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\debug\\mcsim.exe";
+			this.environment.SIMULATOR = `${this.moddablePath}\\build\\bin\\win\\${this.build}\\mcsim.exe`;
 		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/debug/mcsim";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/lin/${this.build}/mcsim`;
+			
 		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
@@ -1827,6 +1850,19 @@ export class Tool extends TOOL {
 		this.currentDirectory = currentDirectory;
 	}
 	mergeNodeRed(manifests) {
+		if (!this.environment.NODEREDMCU)
+			return;
+		this.nodeRedExtracts = new Map;
+		let nodeTypes = {};
+
+		try {
+			const path = this.resolveFilePath(this.resolveVariable("$(NODEREDMCU)/node_types.json"));
+			if (path)
+				nodeTypes = JSON.parse(this.readFileString(path));
+		}
+		catch {
+		}
+
 		manifests.forEach(manifest => {
 			const modules = manifest.modules?.["*"];
 			if (!modules) return;
@@ -1841,9 +1877,35 @@ export class Tool extends TOOL {
 				this.currentDirectory = manifest.directory;
 				const source = this.resolveFilePath(this.resolveVariable(module.source) + ".json");
 				const flows = JSON.parse(this.readFileString(source));
+
+				let credentials;
+				if (source.toLowerCase().endsWith(".json")) {
+					const path = source.slice(0, -5) + "_cred_mcu.json";
+					if (this.resolveFilePath(path))
+						credentials = JSON.parse(this.readFileString(path)).credentials;
+				}
+
 				flows.forEach((node, i) => {
+					let manifest;
 					if (node.moddable_manifest)
-						this.parseManifest(source, {...node.moddable_manifest, directory: this.currentDirectory});
+						manifest = {...node.moddable_manifest};
+					else if (nodeTypes[node.type])
+						manifest = {include: nodeTypes[node.type]};
+					else
+						return;
+
+					switch (node.type) {
+						case "tls-config":
+							if (node.ca || credentials?.[node.id]?.cadata)
+								this.nodeRedExtracts.set(`${node.id}-ca.der`, source)
+							break;
+					}
+
+					manifest.directory = this.currentDirectory; 
+					const save = this.currentDirectory;
+					this.currentDirectory = this.resolveVariable("$(NODEREDMCU)");
+					this.parseManifest(source, manifest);
+					this.currentDirectory = save;
 				});
 			}
 		});
@@ -1916,11 +1978,12 @@ export class Tool extends TOOL {
 			for (let name in properties) {
 				let value = properties[name];
 				if (typeof value == "string") {
+					const dotSlash = "." + this.slash;
 					value = this.resolveVariable(value);
-					if (value.startsWith("./")) {
-						const path = this.resolveDirectoryPath("./");
+					if (value.startsWith(dotSlash)) {
+						const path = this.resolveDirectoryPath(dotSlash);
 						if (path) {
-							if ("./" == value)
+							if (dotSlash == value)
 								value = path;
 							else
 								value = path + value.slice(1);

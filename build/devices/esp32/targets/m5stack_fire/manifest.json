@@ -1,11 +1,16 @@
 {
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+		"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue"
+	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/pins/smbus/manifest.json",
 		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
 	],
 	"config": {
-		"screen": "ili9341",
+		"screen": "m5stack/screen",
 		"touch": "",
 		"autorotate": 300,
 		"startupSound": "bflatmajor.maud"
@@ -92,19 +97,33 @@
 			"./m5button"
 		],
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
-		"setup/target": "./setup-target"
+		"setup/target": "./setup-target",
+		"m5stack/screen": "../m5stack/screen"
 	},
 	"preload": [
 		"neopixel",
 		"pins/audioout",
 		"audioin",
 		"setup/target",
+		"m5stack/screen",
 		"mpu6050",
 		"mag3110",
 		"m5button"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
 	}
 }
 

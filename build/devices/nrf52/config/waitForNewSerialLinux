@@ -1,0 +1,25 @@
+#!/bin/bash
+
+volumefile=$(cat "$2")
+
+# wait for the M4 to go away
+echo -n "Installing to $volumefile..."
+while [ -d "$volumefile" ]; do
+     echo -n "."
+     sleep 0.1
+done
+echo
+
+if [ $1 -eq 0 ]; then
+	echo "Release build installed."
+	exit
+fi
+
+port=$(find /dev -type c -name "ttyACM*" 2> /dev/null)
+while [ "" == "${port}" ]; do
+	sleep 0.5
+	port=$(find /dev -type c -name "ttyACM*" 2> /dev/null)
+done
+
+echo "Debug build installed."
+${MODDABLE}/build/bin/lin/release/serial2xsbug ${port} 921600 8N1 -dtr

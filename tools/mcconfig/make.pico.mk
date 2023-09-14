@@ -23,6 +23,7 @@ XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2>
 
 PICO_ROOT ?= $(HOME)/pico
 PICO_SDK_DIR ?= $(HOME)/pico/pico-sdk
+PICO_EXTRAS_DIR ?= $(HOME)/pico/pico-extras
 PICO_GCC_ROOT ?= /usr/local
 
 PIOASM ?= $(HOME)/pico/pico-sdk/build/pioasm/pioasm
@@ -353,6 +354,9 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/lib/tinyusb/src		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
+	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/include	\
+	$(PICO_EXTRAS_DIR)/src/common/pico_audio/include	\
+	$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
@@ -504,7 +508,10 @@ PICO_OBJ = \
 	$(LIB_DIR)/tusb.c.o \
 	$(LIB_DIR)/tusb_fifo.c.o \
  	$(LIB_DIR)/uart.c.o \
- 	$(LIB_DIR)/unique_id.c.o
+ 	$(LIB_DIR)/unique_id.c.o \
+	\
+	$(LIB_DIR)/audio_i2s.c.o \
+	$(LIB_DIR)/audio.cpp.o
 
 #	$(LIB_DIR)/divider.S.o \
 #	$(LIB_DIR)/dfu_rt_device.c.o \
@@ -648,6 +655,13 @@ PICO_SRC_DIRS += \
 #	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
 #	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
 
+PICO_SRC_DIRS += \
+	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s	\
+	$(PICO_EXTRAS_DIR)/src/common/pico_audio	\
+
+PIO_STUFF += \
+	$(TMP_DIR)/audio_i2s.pio.h
+
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/debugger.c.o \
@@ -676,18 +690,6 @@ SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
 
 AR_FLAGS = crs
 
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)/buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)/compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)/rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)/mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)/mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)/png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)/image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)/wav2maud
-XSC = $(MODDABLE_TOOLS_DIR)/xsc
-XSID = $(MODDABLE_TOOLS_DIR)/xsid
-XSL = $(MODDABLE_TOOLS_DIR)/xsl
-
 #	-DmxNoConsole=1
 #	-DPICO_DEBUG_MALLOC=1
 
@@ -697,7 +699,9 @@ PICO_SDK_DEFINES= \
 	-DPICO_STDIO_DEFAULT_CRLF=0 \
 	-DPICO_DEBUG_MALLOC_LOW_WATER=0	\
 	-DPICO_DEFAULT_UART_BAUD_RATE=$(DEBUGGER_SPEED) \
-	-DPICO_HEAP_SIZE=0xC000
+	-DPICO_HEAP_SIZE=0xC000 \
+-DPICO_AUDIO_I2S_MONO_INPUT=1 \
+-DPICO_MAX_SHARED_IRQ_HANDLERS=6u
 
 PICO_C_DEFINES= \
 	$(PICO_SDK_DEFINES) \
@@ -797,6 +801,8 @@ endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
+
+ASMFLAGS += $(PICO_C_DEFINES)
 
 cr := '\n'
 sp :=  
@@ -939,6 +945,10 @@ $(LIB_DIR)/%.c.o: %.c
 	@echo "# library: " $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
 
+$(LIB_DIR)/%.cpp.o: %.cpp
+	@echo "# library: " $(<F)
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+
 $(LIB_DIR)/%.S.o %.s.o: %.S
 	@echo "# asm " $(<F)
 	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
@@ -953,11 +963,11 @@ $(TMP_DIR)/mc.%.c.o: $(TMP_DIR)/mc.%.c
 
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p pico -r mc.resources.c
+	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p pico -r mc.resources.c
 
 $(LIB_DIR)/hardware_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
 	@echo "# asm (special) " $(PICO_SDK_DIR)/src/rp2_common/hardware_divider/divider.S
@@ -975,6 +985,8 @@ $(TMP_DIR)/%.pio.h: %.pio
 	@echo "# compile pio: " $(<F)
 	$(PIOASM) -o c-sdk $< $@
 
+$(TMP_DIR)/audio_i2s.pio.h: $(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/audio_i2s.pio
+	$(PIOASM) -o c-sdk $< $@
 
 CYW43_FW_FILE=43439A0-7.95.49.00.combined
 CYW43_FW_PATH=$(PICO_SDK_DIR)/lib/cyw43-driver/firmware

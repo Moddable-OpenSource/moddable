@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: March 3, 2023
+Revised: May 12, 2023
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
@@ -24,6 +24,7 @@ This document provides a guide to building apps for the ESP32 line of SoCs from 
 	| •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting)<BR>•  [Updating](#mac-update) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting)<BR>•  [Updating](#win-update) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)<BR>•  [Updating](#lin-update)
 
 * [Troubleshooting](#troubleshooting)
+* [Using USB on ESP32](#using_usb)
 
 <a id="overview"></a>
 ## Overview
@@ -101,6 +102,8 @@ The Moddable SDK supports two ESP32-S2 development kits from Espressif. The foll
 | :---: | :--- | :--- | :--- |
 |  <img src="https://dl.espressif.com/dl/schematics/pictures/esp32-s2-kaluga-1-kit-v1.0-3d.png" width=125><BR>Kaluga | `esp32/kaluga` | **3.2" LCD display**<BR>320 x 240 QVGA<BR>16-bit color<BR><BR>2 MB SRAM<BR>Speaker and Audio Playback<BR>Touch Pad Panel<BR>NeoPixel LED | <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit.html)</li> |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/_images/esp32-s2-saola-1-v1.2-isometric.png" width=125><BR>Saola<BR>(WROOM & WROVER versions) | `esp32/saola_wroom` <BR> `esp32/saola_wrover`| NeoPixel LED<BR>2 MB SRAM (WROVER version only)| <li>[Moddable blog post](https://blog.moddable.com/blog/espidf42/)</li><li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)</li> |
+| <img src="./../assets/devices/adafruit-qtpys2.png" width=125><BR>Adafruit<BR>QT Py ESP32-S2 | `esp32/qtpys2` |  Neopixel, 1 button, STEMMA/QWIIC | <li>[Product page](https://www.adafruit.com/product/5325)</li>|
+| <img src="./../assets/devices/lolin-s2-mini.png" width=100><BR>Lolin<BR>S2 Mini | `esp32/s2mini` |  1 button |
 
 <a id="platforms-esp32-s3"></a>
 ### ESP32-S3
@@ -119,10 +122,12 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
-|  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` |  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
+|  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` | Neopixel, 1 button, STEMMA/QWIIC  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
 |  <img src="./../assets/devices/adafruit-esp32-s3-tft-feather.png" width=125><BR>Adafruit ESP32-S3 TFT Feather | `esp32/s3_tft_feather` | 1.14" TFT display<BR> 240 x 135 16-bit color | <li>[Product page](https://www.adafruit.com/product/5483)</li>|
 |<img src="./../assets/devices/atoms3.png" width=125><BR>AtomS3| `esp32/m5atom_s3` |  0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR> IMU |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3)</li>| 
 |<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
+| <img src="./../assets/devices/lilygo-qt-pro-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_t_qt` | 0.85" LCD display<br>128 x 128 16 bit color<br>2 buttons<br>Qwiic connector | <li>[Product page](https://www.lilygo.cc/products/t-qt-v1-1)</li>|
+| <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
 
 <a id="platforms-esp32-c3"></a>
 ### ESP32-C3
@@ -140,19 +145,30 @@ The Moddable SDK supports three ESP32-C3 development kits:
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 |  <img src="https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/_images/esp32-c3-devkitm-1-v1-isometric.png" width=125><BR>ESP32-C3-DevKitM-1 | `esp32/esp32c3` |  | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)</li> |
+|  <img src="./../assets/devices/esp32c3-dual.png" width=125><BR>ESP32 C3 DevKit clone| `esp32/esp32c3_cdc` |  | <li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)</li> |
+|  <img src="./../assets/devices/c3_devkit_rust.png" width=125><BR>ESP32-C3-DevKit-RUST-1 | `esp32/c3_devkit_rust` |  | <li>[Product page](https://www.espressif.com/en/dev-board/esp32-c3-devkit-rust-1-en)</li> |
+| <img src="./../assets/devices/xiao-esp32c3.png" width=125><BR>Seeed Studio<BR>XIAO ESP32C3 | `esp32/xiao_esp32c3` | 1 button | <li>[Product page](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html)</li>|
+| <img src="./../assets/devices/adafruit-qtpyc3.png" width=125><BR>Adafruit<BR>QT Py ESP32-C3 | `esp32/qtpyc3` |  Neopixel, 1 button, STEMMA/QWIIC | <li>[Product page](https://www.adafruit.com/product/5405)</li>|
 | AI Thinker ESP-C3-32S-Kit <BR> (1 MB and 2 MB versions) | `esp32/c3_32s_kit` <BR> `esp32/c3_32s_kit_2m`| RGB LED  | <li>[Product specification](https://docs.ai-thinker.com/_media/esp32/docs/esp-c3-32s-kit-v1.0_specification.pdf)</li> |
 
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest
 
-The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` property in the `build` section of the manifest. This is usually set by the manifest for the target build device. The following example shows how to set the subclass to ESP32-S2. Use `"esp32s3"` for the ESP32-S3 and `"esp32"` for the original ESP32.
+The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` property in the `build` section of the manifest. This is usually set by the manifest for the target build device. The following example shows how to set the subclass to ESP32-S2.
 
 
 ```
 "build":{
 	"ESP32_SUBCLASS": "esp32s2"
 },
-``` 
+```
+
+| `ESP32_SUBCLASS` | Device |
+|:---:|:---:|
+| `esp32` or not set | ESP32 |
+| `esp32s2` | ESP32-S2 |
+| `esp32s3` | ESP32-S3 |
+| `esp32c3` | ESP32-C3 |
 
 <a id="builds"></a>
 ## Build Types
@@ -244,6 +260,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
+	<a id="upload_port_mac"></a>
 	There is one optional environment variables for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
@@ -466,6 +483,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 		- Variable name: `IDF_PATH`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\esp32\esp-idf`
 
+	<a id="upload_port_win"></a>
 	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable following the same procedure as above.
 
@@ -703,6 +721,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v4.4.3 (commit `6407ecb`
 	export IDF_PATH=$HOME/esp32/esp-idf
 	```
 
+	<a id="upload_port_lin"></a>
 	There is an optional environment variable for advanced users: `UPLOAD_PORT`.
 
 	The ESP-IDF build/config tool `idf.py` automatically detects the serial port in most cases. If it does not, set the path of the port to use in the `UPLOAD_PORT` environment variable.
@@ -944,3 +963,90 @@ To manually put your ESP32 into bootloader mode, follow these steps:
 3. Plug the device into your computer.
 4. Enter the `mcconfig` command.
 5. Wait a few seconds and release the BOOT button.
+
+
+<a id="using_usb"></a>
+## Using USB on ESP32
+
+Originally, programming and debugging with the ESP32 was done over a serial connection. Some devices contain an integrated serial-to-USB chip, and some use an external programmer.
+
+In newer devices, Espressif has added USB support. Starting with the ESP32-S2, TinyUSB support was added. TinyUSB support continued with ESP32-S3.
+
+Starting with the ESP32-S3 and ESP32-C3, support for USB was integrated into the device with a USB Serial/JTAG driver.
+
+
+#### Build configuration
+
+In a device's manifest.json file, the `USE_USB` build option specifies which USB implementation to use. The `SDKCONFIGPATH` is also specified to pick up the ESP-IDF config files specific to this device:
+
+```
+	"build": {
+		"ESP32_SUBCLASS": "esp32s2",
+		"USE_USB": "1",
+		"SDKCONFIGPATH": "./sdkconfig"
+		...
+```
+
+### `USE_USB: 1` - TinyUSB
+
+TinyUSB works with the ESP32-S2 and ESP32-S3 devices.
+
+With TinyUSB, we need to set the `UPLOAD_PORT`. For example:
+
+```
+export UPLOAD_PORT=/dev/cu.usbmodem01
+```
+
+> See the section for your build platform [macOS](#upload_port_mac), [Windows](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#upload_port_win), or [Linux](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#upload_port_lin) which describes how to find your device's `UPLOAD_PORT`.
+
+Build your application:
+
+`mcconfig -d -m -p esp32/esp32s3_usb`
+
+> Note: if your device is not in programming mode, there will be a notice in the build console:
+
+```
+# looking for UPLOAD_PORT: /dev/cu.usbmodem01
+** Put device in programming mode **
+```
+
+When the console says `Done`, press the __Reset__ button on the device.
+
+```
+Executing "ninja flash"...
+Done
+```
+
+After you press __Reset__ on the device, the device will restart and connect to `xsbug`.
+
+These devices use this technique:
+
+| Platform | Device |
+| :---: | :--- |
+| `esp32/esp32s3_usb` | Espressif ESP32-S3-DevKitC |
+| `esp32/m5atom_s3` | M5 Atom S3 |
+| `esp32/m5atom_s3_lite` | M5 Atom S3 Lite |
+| `esp32/qtpys2` | Adafruit QT Py S2 |
+| `esp32/qtpys3` | Adafruit QT Py S3 |
+| `esp32/s2mini` | Lolin S2 mini |
+| `esp32/s3_tft_feather` | Adafruit ESP32-S3 TFT Feather |
+
+### `USE_USB: 2` - SERIAL-JTAG
+
+The built-in SERIAL-JTAG driver can be used with the ESP32-S3 and ESP32-C3 devices.
+
+There is usually no need to set the `UPLOAD_PORT`, or press buttons on your device. However, if you have multiple devices connected simultaneously, you will have to use the `UPLOAD_PORT` to specify which one to use.
+
+Build your application:
+
+`mcconfig -d -m -p esp32/esp32s3_cdc`
+
+These devices use this technique:
+
+| Platform | Device |
+| :---: | :--- |
+| `esp32/c3_devkit_rust` | Espressif C3 DevKit Rust |
+| `esp32/esp32c3_cdc` | Espressif C3 DevKitM |
+| `esp32/esp32s3_cdc` | Espressif ESP32-S3-DevKitC |
+| `esp32/qtpyc3` | Adafruit QT Py C3 |
+| `esp32/xiao_esp32c3` | Seeed Xiao ESP32C3 |

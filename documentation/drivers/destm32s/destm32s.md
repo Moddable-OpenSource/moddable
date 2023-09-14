@@ -66,11 +66,11 @@ For 104 x 212 black, white, gray, and red:
 	}
 
 ### Configuring SPI
-The `defines` object must contain the `spi_port`, along with the `DC`, `CS`, and `BUSY`. pin numbers. If a `RST` pin is provided, the device will be reset when the constructor is invoked. If the `cs_port`, `dc_port`, `rst_port`, or `busy_port` properties are not provided, they default to NULL. 
+The `defines` object must contain the `spi_port`, along with the `DC`, `CS`, and `BUSY`. pin numbers. If a `RST` pin is provided, the device will be reset when the constructor is invoked. If the `cs_port`, `dc_port`, `rst_port`, or `busy_port` properties are not provided, they default to NULL.
 
 	"defines": {
 		"ssd1351": {
-			/* other properties here */	
+			/* other properties here */
 			"cs_pin": 4,
 			"dc_pin": 2,
 			"rst_pin": 0,

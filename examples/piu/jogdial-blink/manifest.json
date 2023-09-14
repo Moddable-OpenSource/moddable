@@ -1,0 +1,28 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"resources": {
+		"*-mask": [
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Semibold",
+				"size": 36,
+				"blocks": ["Basic Latin"],
+				"monochrome": true
+			}
+		]
+	},
+	"platforms":{
+		"nrf52/moddable_four": {},
+		"lin/moddable_four": {},
+		"mac/moddable_four": {},
+		"win/moddable_four": {},
+		"...": {
+			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
+		}
+	}
+}

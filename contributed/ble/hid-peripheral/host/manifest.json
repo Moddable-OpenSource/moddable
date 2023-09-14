@@ -11,13 +11,6 @@
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODULES)/base/modules/manifest.json"
 	],
-	"creation": {
-		"static": 90000,
-		"stack": 720,
-		"keys": {
-			"available": 512
-		}
-	},
 	"modules": {
 		"*": [
 			"./main",

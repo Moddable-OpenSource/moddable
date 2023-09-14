@@ -95,7 +95,7 @@ extern int mainXSC(int argc, char* argv[]) ;
 int main(int argc, char* argv[]) 
 {
 	int error = 0;
-	if (!strcmp(argv[1], "cp")) {
+	if ((argc > 1) && !strcmp(argv[1], "cp")) {
 #ifdef XSTOOLS
 		char buffer[1024];
 		FILE* src = NULL;
@@ -121,12 +121,12 @@ int main(int argc, char* argv[])
 			fclose(src);
 #endif
 	}
-	else if (!strcmp(argv[1], "xsa")) {
+	else if ((argc > 1) && !strcmp(argv[1], "xsa")) {
 #ifdef XSTOOLS
 		error = mainXSA(argc - 1, &argv[1]);
 #endif
 	}
-	else if (!strcmp(argv[1], "xsc")) {
+	else if ((argc > 1) && !strcmp(argv[1], "xsc")) {
 #ifdef XSTOOLS
 		error = mainXSC(argc - 1, &argv[1]);
 #endif
@@ -152,6 +152,10 @@ int main(int argc, char* argv[])
 						xsResult = fxPop();
 						xsCall0(xsResult, xsID_run);
 					}
+                    else {
+                        fprintf(stderr, "### no tool to run!\n");
+                        error = 1;
+                    }
 				}
 				xsCatch {
 					xsStringValue message = xsToString(xsException);
@@ -287,6 +291,15 @@ void FILE_prototype_writeString(xsMachine* the)
 	size_t size = strlen(buffer);
 	size = fwrite(buffer, 1, size, file);		
 	xsResult = xsInteger(size);
+}
+
+void Tool_prototype_get_build(xsMachine* the)
+{
+	#if mxDebug
+		xsResult = xsString("debug");
+	#else
+		xsResult = xsString("release");
+	#endif
 }
 
 void Tool_prototype_get_ipAddress(xsMachine* the)

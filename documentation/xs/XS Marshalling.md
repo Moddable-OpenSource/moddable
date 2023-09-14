@@ -1,16 +1,16 @@
 # XS Marshalling
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: March 15, 2021
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## Introduction
 
-To exchange data between machines that can run in separate threads, XS always supported marshalling thru the **XS in C** programming interface. 
+To exchange data between machines that can run in separate threads, XS always supported marshalling thru the **XS in C** programming interface.
 
 Even if you do not write C code, this document is useful if you write JavaScript code using the standard `Worker` programming interface provided by the [worker](../base/worker.md) module of the Moddable SDK.
 
 ## What Is Marshalling?
 
-Similar to what `JSON.stringify` and `JSON.parse` do with a string, *marshalling* creates a memory block from a JavaScript value and *demarshalling* creates a JavaScript value from a memory block. The format of the memory block is binary. 
+Similar to what `JSON.stringify` and `JSON.parse` do with a string, *marshalling* creates a memory block from a JavaScript value and *demarshalling* creates a JavaScript value from a memory block. The format of the memory block is binary.
 
 XS machines can be created from scratch or cloned from a read-only machine. Typically on micro-controllers, multiple small machines can be created in RAM based based on one large read-only machine in ROM.
 
@@ -23,7 +23,7 @@ When two machines are created from scratch or cloned from different read-only ma
 
 > In **mcsim**, the simulator and the app are alien machines. They communicate using the standard `Worker` programming interface, which is implemented here with `xsMarshallAlien` and `xsDemarshallAlien`.
 
-When two machines are cloned from the same read-ony machinee, marshalling can take advantage of what is shared by the two machines and the **full** programming interface can be used:
+When two machines are cloned from the same read-ony machine, marshalling can take advantage of what is shared by the two machines and the **full** programming interface can be used:
 
 	void* xsMarshall(xsSlot slot);
 	xsSlot xsDemarshall(void* data);
@@ -34,10 +34,10 @@ When two machines are cloned from the same read-ony machinee, marshalling can ta
 
 What can be exchanged between alien machines?
 
-Firstly, everything that can be exchanged thru JSON: 
+Firstly, everything that can be exchanged thru JSON:
 
 - `false`
-- `null` 
+- `null`
 - `true`
 - numbers
 - strings
@@ -49,10 +49,9 @@ Firstly, everything that can be exchanged thru JSON:
 
 XS can also marshall other values not possible using JSON:
 
-- `undefined` 
+- `undefined`
 - bigints
-- symbols 
-- instances of 
+- instances of
 	- `Boolean`, `Error`, `EvalError`, `RangeError`, `ReferenceError`, `SyntaxError`, `TypeError`, `URIError`, `AggregateError`
 	- `Number`, `Date`
 	- `String`, `RegExp`
@@ -73,38 +72,6 @@ Furthermore, XS can marshall cyclic references:
 		trace(`${ a.b.a === a }\n`); // true
 	}
 
-### Symbols Caveat
-
-Symbols are consistent inside a marshalled memory block: 
-
-##### main.js
-	const symbol = Symbol();
-	const object = { [symbol]: null }
-	worker.postMessage({ symbol, object });
-
-##### worker.js
-	self.onmessage = function(m) {
-		trace(`${m.object[m.symbol]}\n`); // null
-	}
-
-However, successive marshallings of the same symbol result in successive demarshalling of different symbols:
-
-##### main.js
-	let step = 0;
-	const symbol = Symbol();
-	worker.postMessage({ step, symbol });
-	step++;
-	worker.postMessage({ step, symbol });
-
-##### worker.js
-	let symbol;
-	self.onmessage = function(m) {
-		if (m.step == 0)
-			symbol = m.symbol;
-		else
-			trace(`${symbol === m.symbol}`) // false
-	}
-
 ### No Way
 
 Marshalling is for data. Objects related to code, or to the execution of code, cannot be marshalled: accessors, arguments, classes, functions, generators, modules and promises.
@@ -120,7 +87,7 @@ In these cases, XS tries to report a meaningful error:
 	catch {
 	}
 
-breaks into **xsbug** with 
+breaks into **xsbug** with
 
 	main.js (2) # Break: (host): marshall [0].p.x: accessor!
 
@@ -143,7 +110,7 @@ Like what happens with `JSON.stringify` and `JSON.parse`, custom prototypes are 
 	const o = new C();
 	trace(`${o.constructor.name}\n`); // C
 	worker.postMessage(o);
-	
+
 ##### worker.js
 	self.onmessage = function(m) {
 		trace(`${m.constructor.name}\n`); // Object
@@ -159,7 +126,7 @@ But if custom prototypes are in the read-only machine, they are kept:
 	const o = new C();
 	trace(`${o.constructor.name}\n`); // C
 	worker.postMessage(o);
-	
+
 ##### worker.js
 	self.onmessage = function(m) {
 		trace(`${m.constructor.name}\n`); // C
@@ -168,7 +135,7 @@ But if custom prototypes are in the read-only machine, they are kept:
 ### Private Fields
 
 Similarly, private fields are ignored when marshalled.
-	
+
 ##### main.js
 	class C {
 		#x;
@@ -181,7 +148,7 @@ Similarly, private fields are ignored when marshalled.
 	}
 	const o = new C("oops");
 	worker.postMessage(o);
-	
+
 ##### worker.js
 	self.onmessage = function(m) {
 		trace(`${m.toString()}\n`); // [object Object]
@@ -199,12 +166,12 @@ Except when the class is in the read-only machine:
 			return this.#x;
 		}
 	}
-	
+
 ##### main.js
 	import { C } from "preload";
 	const o = new C("wow");
 	worker.postMessage(o);
-	
+
 ##### worker.js
 	self.onmessage = function(m) {
 		trace(`${m.toString()}\n`); // wow
@@ -220,7 +187,7 @@ References to instances in the read-only machine are preserved:
 ##### main.js
 	import { o } from "preload";
 	worker.postMessage({ o });
-	
+
 ##### worker.js
 	import { o } from "preload";
 	self.onmessage = function(m) {
@@ -238,7 +205,7 @@ That is especially useful for exchanging references to objects with methods, lik
 	    return Reflect.get(...arguments);
 	  }
 	});
-	
+
 ##### main.js
 	const target = {
 	  message1: "hello",
@@ -246,13 +213,30 @@ That is especially useful for exchanging references to objects with methods, lik
 	};
 	import { handler } from "preload";
 	worker.postMessage(new Proxy(target, handler));
-	
+
 ##### worker.js
 	self.onmessage = function(m) {
 		trace(`${m.message1}\n`); // hello
 		trace(`${m.message2}\n`); // world
 	}
 
+### Symbols
+
+Like private fields, properties keyed by symbols are ignored when marshalled, except when the symbol is created in the read-only machine.
+
+##### preload.js
+	export const s = Symbol();
+
+##### main.js
+	import { s } from "preload";
+	const o = { [s]: "wow" };
+	worker.postMessage(o);
+
+##### worker.js
+	import { s } from "preload";
+	self.onmessage = function(m) {
+		trace(`${m[s]}\n`); // wow
+	}
 
 ### Exchange Data, Share Code
 

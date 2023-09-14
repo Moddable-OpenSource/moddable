@@ -19,6 +19,7 @@
  */
 
 import { FILE, TOOL } from "tool";
+import Transform from "transform"
 
 //	Regular Expression by Mathias Bynens
 //		https://github.com/mathiasbynens/mothereff.in/blob/master/js-properties/eff.js
@@ -73,7 +74,15 @@ export default class extends TOOL {
 		let argc = argv.length;
 		for (let argi = 1; argi < argc; argi++) {
 			let option = argv[argi], name, path;
-			switch (option) {				
+			
+			switch (option) {
+			case "-e":
+				argi++;	
+				if (argi >= argc)
+					throw new Error("-e: no extract path");
+				this.extract = argv[argi];
+				break;
+
 			case "-o":
 				argi++;	
 				if (argi >= argc)
@@ -111,6 +120,19 @@ export default class extends TOOL {
 			const path = this.sourcePath.slice(0, -5) + "_cred_mcu.json";
 			if (this.resolveFilePath(path))
 				credentials = JSON.parse(this.readFileString(path)).credentials;
+		}
+
+		if (this.extract) {
+			const data = this.extractOne(flows, this.extract, credentials);
+			const parts = {
+				directory: this.outputDirectory,
+				name: this.extract.substring(0, this.extract.lastIndexOf(".")),
+				extension: this.extract.substring(this.extract.lastIndexOf("."))
+			};
+			const output = new FILE(this.joinPath(parts), "wb");
+			output.writeBuffer(data);
+			output.close();
+			return;
 		}
 
 		flows = this.transformFlows(flows, credentials);
@@ -1072,12 +1094,15 @@ export default class extends TOOL {
 							break;
 
 						case "mqtt":
+							if (config.usetls)
+								throw new Error(`TLS configuration not allowed for mqtt URLs - disable "Use TLS"`);
 							break;
 
 						case "mqtts":
-							throw new Error("MQTT TLS unimplemented")
+							if (!config.usetls || !config.tls)
+								throw new Error(`TLS configuration required for mqtts URLs - enable "Use TLS"`)
 							break;
-						
+
 						default:
 							// Node-RED ignores all unrecognized schemes.
 							break;
@@ -1085,8 +1110,12 @@ export default class extends TOOL {
 					
 					config.broker = config.broker.slice(index + 3);
 				}
+				
+				if (!config.usetls) {
+					delete config.usetls;
+					delete config.tls;
+				}
 
-				config.port = config.port ? parseInt(config.port) : 1883;
 				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
 
 			} break;
@@ -1119,6 +1148,24 @@ export default class extends TOOL {
 					delete config.base64;
 				if (config.newline)
 					config.newline = (config.newline).replaceAll("\\n","\n").replaceAll("\\r","\r").replaceAll("\\t","\t");
+			} break;
+			
+			case "tls-config": {
+				if (config.alpnprotocol)
+					throw new Error("ALPN not yet implemented");
+
+				delete config.ca;				// processed separately
+				delete config.cert;				// processed separately
+				delete config.key;				// processed separately
+				delete config.credentials;		// processed separately
+
+				delete config.alpnprotocol;
+				delete config.certname;
+				delete config.keyname;
+				delete config.caname;
+
+				if (!config.servername)
+					delete config.servername;
 			} break;
 
 			case "rpi-gpio in": {
@@ -1897,5 +1944,60 @@ export default class extends TOOL {
 		if (undefined !== value)
 			return `"${name}", ${value}`;
 		return `"${name}"`;
+	}
+	extractOne(flows, what, credentials) {
+		const parts = what.substring(0, what.lastIndexOf(".")).split("-");
+		let data;
+		
+		flows.some(config => {
+			if (config.id !== parts[0])
+				return;
+			
+			switch (config.type) {
+				case "tls-config": {
+					switch (parts[1]) {
+						case "ca":
+							if (config.ca)
+								data = this.readFileString(config.ca);
+							else if (credentials?.[config.id]?.cadata)
+								data = credentials?.[config.id].cadata;
+
+							if (data) {
+								data = Transform.pemToDER(data);
+								return true;
+							}
+							break;
+						case "cert":
+							if (config.cert)
+								data = this.readFileString(config.cert);
+							else if (credentials?.[config.id]?.certdata)
+								data = credentials?.[config.id].certdata;
+
+							if (data) {
+								data = Transform.pemToDER(data);
+								return true;
+							}
+							break;
+						case "key":
+							if (config.key)
+								data = this.readFileString(config.key);
+							else if (credentials?.[config.id]?.keydata)
+								data = credentials?.[config.id].keydata;
+
+							if (data) {
+								data = Transform.privateKeyToPrivateKeyInfo(Transform.pemToDER(data));
+								return true;
+							}
+							break;
+					}
+				}
+				break;
+			}
+		});
+		
+		if (!data)
+			throw new Error("cannot extract " + what);
+		
+		return data;
 	}
 }

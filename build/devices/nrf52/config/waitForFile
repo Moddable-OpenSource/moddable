@@ -1,0 +1,9 @@
+#!/bin/bash
+echo -n "Waiting for $1."
+while [ ! -d "$1" ]; do
+	echo -n "."
+    sleep 1
+done
+sleep 1
+echo
+

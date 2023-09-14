@@ -160,7 +160,6 @@ SDK_SRC = \
 	$(CORE_DIR)\core_esp8266_noniso.c \
 	$(CORE_DIR)\core_esp8266_phy.c \
 	$(CORE_DIR)\core_esp8266_postmortem.c \
-	$(CORE_DIR)\core_esp8266_si2c.c \
 	$(CORE_DIR)\core_esp8266_timer.c \
 	$(CORE_DIR)\core_esp8266_wiring.c \
 	$(CORE_DIR)\core_esp8266_wiring_digital.c \
@@ -179,6 +178,7 @@ SDK_SRC = \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
 	$(PLATFORM_DIR)\lib\bsearch\bsearch.c \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+	$(PLATFORM_DIR)\lib\i2c\core_esp8266_si2c_patched.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
 	$(PLATFORM_DIR)\lib\tinyuart\tinyuart.c \
@@ -192,7 +192,6 @@ SDK_OBJ = \
 	$(LIB_DIR)\core_esp8266_noniso.o \
 	$(LIB_DIR)\core_esp8266_phy.o \
 	$(LIB_DIR)\core_esp8266_postmortem.o \
-	$(LIB_DIR)\core_esp8266_si2c.o \
 	$(LIB_DIR)\core_esp8266_timer.o \
 	$(LIB_DIR)\core_esp8266_wiring.o \
 	$(LIB_DIR)\core_esp8266_wiring_digital.o \
@@ -210,12 +209,12 @@ SDK_OBJ = \
 	$(LIB_DIR)\umm_malloc.o \
 	$(LIB_DIR)\bsearch.o \
 	$(LIB_DIR)\e_fmod.o \
+	$(LIB_DIR)\core_esp8266_si2c_patched.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
 	$(LIB_DIR)\tinyuart.o \
 	$(LIB_DIR)\tinyi2s.o \
-	$(LIB_DIR)\Schedule.o \
-	$(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	$(LIB_DIR)\Schedule.o
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
@@ -230,19 +229,6 @@ AR  = $(TOOLS_BIN)\xtensa-lx106-elf-ar
 ESPTOOL = python $(ESPRESSIF_SDK_ROOT)\components\esptool_py\esptool\esptool.py
 
 AR_OPTIONS = rcs
-
-MODDABLE_TOOLS_DIR = $(BUILD_DIR)\bin\win\release
-BUILDCLUT = $(MODDABLE_TOOLS_DIR)\buildclut
-COMPRESSBMF = $(MODDABLE_TOOLS_DIR)\compressbmf
-RLE4ENCODE = $(MODDABLE_TOOLS_DIR)\rle4encode
-MCLOCAL = $(MODDABLE_TOOLS_DIR)\mclocal
-MCREZ = $(MODDABLE_TOOLS_DIR)\mcrez
-PNG2BMP = $(MODDABLE_TOOLS_DIR)\png2bmp
-IMAGE2CS = $(MODDABLE_TOOLS_DIR)\image2cs
-WAV2MAUD = $(MODDABLE_TOOLS_DIR)\wav2maud
-XSC = $(MODDABLE_TOOLS_DIR)\xsc
-XSID = $(MODDABLE_TOOLS_DIR)\xsid
-XSL = $(MODDABLE_TOOLS_DIR)\xsl
 
 LD_DIRS = \
 	-L$(MODDABLE)\build\devices\esp\sdk\ld\win \
@@ -449,6 +435,11 @@ $(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
+$(LIB_DIR)\core_esp8266_si2c_patched.o: $(PLATFORM_DIR)\lib\i2c\core_esp8266_si2c_patched.c
+	@echo # cc $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
 $(LIB_DIR)\rtctime.o: $(PLATFORM_DIR)\lib\rtc\rtctime.c
 	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
@@ -494,11 +485,11 @@ $(TMP_DIR)\main.o: $(BUILD_DIR)\devices\esp\main.cpp
 
 $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo # xsl modules
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) -u / $(MODULES)
 
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
-	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
+	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p esp -r mc.resources.c
 	
 $(TMP_DIR)\mc.resources.o: $(TMP_DIR)\mc.resources.c
 	$(CC) $? $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS_NODATASECTION) -o $@.unmapped

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2020  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,58 +18,11 @@
  *
  */
 
-import Digital from "pins/digital";
-import Monitor from "pins/digital/monitor";
-
 class PulseCount @ "xs_pulsecount_destructor" {
-	#onChanged;
-	#monitor;
-	#pin;
-	constructor(dictionary) {
-		build.call(this, dictionary);
-		this.#pin = dictionary.signal;
-	}
-	close() {
-		terminate.call(this);
-		if (this.#monitor)
-			this.#monitor.close();
-		this.#monitor = undefined;
-	}
-	get() @ "xs_pulsecount_get";
-	set() @ "xs_pulsecount_set";
-	set onChanged(value) {
-		this.#onChanged = value;
-		if (this.#onChanged) {
-			if (this.#monitor)
-				return;
-			this.#monitor = new Monitor({
-				pin: this.#pin,
-				mode: Digital.InputPullUp,
-				edge: Monitor.Falling | Monitor.Rising,
-			});
-			this.#monitor.previous = this.get();
-			this.#monitor.target = this;
-			this.#monitor.onChanged = () => {
-				const value = this.get();
-				if (value === this.#monitor.previous)
-					return;
-
-				this.#monitor.previous = value;
-				this.#onChanged();
-			}
-		}
-		else if (this.#monitor) {
-			this.#monitor.close();
-			this.#monitor = undefined;
-		}
-	}
-	get onChanged() {
-		return this.#onChanged;
-	}
-};
-Object.freeze(PulseCount.prototype);
-
-function build(dictionary) @ "xs_pulsecount"
-function terminate() @ "xs_pulsecount_close";
+	constructor(dictionary) @ "xs_pulsecount";
+	close() @ "xs_pulsecount_close";
+	read() @ "xs_pulsecount_read";
+	write() @ "xs_pulsecount_write";
+}
 
 export default PulseCount;

@@ -93,6 +93,7 @@ struct sxTargetCode {
 	txInteger scopeLevel;
 	txInteger offset;
 	txTargetCode* original;
+	txBoolean used;
 };
 	
 struct sxVariableCode {
@@ -121,6 +122,12 @@ struct sxCoder {
 	txClassNode* classNode;
 	txTargetCode* chainTarget;
 };
+
+typedef struct {
+	txInteger exception;
+	txInteger selector;
+	txTargetCode* catchTarget;
+} txUsingContext;
 
 typedef void (*txCompound)(void* it, void* param, txByte step);
 
@@ -158,6 +165,10 @@ static void fxScopeCodeReset(txScope* self, txCoder* coder);
 static void fxScopeCodeRetrieve(txScope* self, txCoder* coder);
 static void fxScopeCodeStore(txScope* self, txCoder* coder);
 static void fxScopeCodeStoreAll(txScope* self, txCoder* coder);
+static void fxScopeCodeUsed(txScope* self, txCoder* coder, txUsingContext* context);
+static void fxScopeCodeUsedReverse(txScope* self, txCoder* coder, txDeclareNode* node, txInteger exception, txInteger selector);
+static void fxScopeCodeUsing(txScope* self, txCoder* coder, txUsingContext* context);
+static void fxScopeCodeUsingStatement(txScope* self, txCoder* coder, txNode* statement);
 
 static void fxNodeDispatchCode(void* it, void* param);
 static void fxNodeDispatchCodeAssign(void* it, void* param, txFlag flag);
@@ -326,6 +337,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_LOCAL_1:
 		case XS_CODE_SET_PRIVATE_1:
 		case XS_CODE_STORE_1:
+		case XS_CODE_USED_1:
 		case XS_CODE_VAR_CLOSURE_1:
 		case XS_CODE_VAR_LOCAL_1:
 			value = ((txIndexCode*)code)->index + 1;
@@ -442,7 +454,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SYMBOL:
 			symbol = ((txSymbolCode*)code)->symbol;
 			if (symbol && symbol->string)
-				symbol->usage++;
+				symbol->usage |= 1;
 			size += 1 + sizeof(txID);
 			break;
 		case XS_CODE_PROFILE:
@@ -470,9 +482,10 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_LOCAL_1:
 		case XS_CODE_SET_PRIVATE_1:
 		case XS_CODE_STORE_1:
+		case XS_CODE_UNWIND_1:
+		case XS_CODE_USED_1:
 		case XS_CODE_VAR_CLOSURE_1:
 		case XS_CODE_VAR_LOCAL_1:
-		case XS_CODE_UNWIND_1:
 			size += 2;
 			break;
 		case XS_CODE_CONST_CLOSURE_2:
@@ -496,9 +509,10 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_LOCAL_2:
 		case XS_CODE_SET_PRIVATE_2:
 		case XS_CODE_STORE_2:
+		case XS_CODE_UNWIND_2:
+		case XS_CODE_USED_2:
 		case XS_CODE_VAR_CLOSURE_2:
 		case XS_CODE_VAR_LOCAL_2:
-		case XS_CODE_UNWIND_2:
 			size += 3;
 			break;
 		
@@ -550,7 +564,7 @@ txScript* fxParserCode(txParser* parser)
 	node = parser->firstHostNode;
 	while (node) {
 		if (node->symbol)
-			node->symbol->usage++;
+			node->symbol->usage |= 1;
 		node = node->nextHostNode;
 	}
 	
@@ -561,7 +575,7 @@ txScript* fxParserCode(txParser* parser)
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
-			if (symbol->usage) {
+			if (symbol->usage & 1) {
 				symbol->ID = id;
 				id++;
 				total += symbol->length;
@@ -700,6 +714,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_LOCAL_1:
 		case XS_CODE_SET_PRIVATE_1:
 		case XS_CODE_STORE_1:
+		case XS_CODE_USED_1:
 		case XS_CODE_VAR_CLOSURE_1:
 		case XS_CODE_VAR_LOCAL_1:
 			u1 = (txU1)(((txIndexCode*)code)->index + 1);
@@ -725,6 +740,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_LOCAL_2:
 		case XS_CODE_SET_PRIVATE_2:
 		case XS_CODE_STORE_2:
+		case XS_CODE_USED_2:
 		case XS_CODE_VAR_CLOSURE_2:
 		case XS_CODE_VAR_LOCAL_2:
 			u2 = (txU2)(((txIndexCode*)code)->index + 1);
@@ -911,6 +927,8 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_SET_PRIVATE_2:
 		case XS_CODE_STORE_1:
 		case XS_CODE_STORE_2:
+		case XS_CODE_USED_1:
+		case XS_CODE_USED_2:
 		case XS_CODE_VAR_CLOSURE_1:
 		case XS_CODE_VAR_CLOSURE_2:
 		case XS_CODE_VAR_LOCAL_1:
@@ -989,7 +1007,7 @@ txScript* fxParserCode(txParser* parser)
 	for (i = 0; i < c; i++) {
 		txSymbol* symbol = *address;
 		while (symbol) {
-			if (symbol->usage) {
+			if (symbol->usage & 1) {
 				c_memcpy(p, symbol->string, symbol->length);
 				p += symbol->length;
 			}
@@ -1062,6 +1080,7 @@ void fxCoderAddBranch(txCoder* self, txInteger delta, txInteger id, txTargetCode
 	fxCoderAdd(self, delta, code);
 	code->id = id;
 	code->target = target;
+	target->used = 1;
 }
 
 void fxCoderAddByte(txCoder* self, txInteger delta, txInteger id)
@@ -1228,11 +1247,13 @@ txTargetCode* fxCoderFinalizeTargets(txCoder* self, txTargetCode* alias, txInteg
 	if (alias) {
 		result = alias->original;
 		while (alias) {
-			fxCoderAdd(self, 0, alias);
-			fxCoderAddInteger(self, 1, XS_CODE_INTEGER_1, selection);
-			fxCoderAddIndex(self, 0, XS_CODE_SET_LOCAL_1, selector);
-			fxCoderAddByte(self, -1, XS_CODE_POP);
-			fxCoderAddBranch(self, 0, XS_CODE_BRANCH_1, finallyTarget);
+			if (alias->used) {
+				fxCoderAdd(self, 0, alias);
+				fxCoderAddInteger(self, 1, XS_CODE_INTEGER_1, selection);
+				fxCoderAddIndex(self, -1, XS_CODE_PULL_LOCAL_1, selector);
+				fxCoderAddBranch(self, 0, XS_CODE_BRANCH_1, finallyTarget);
+				alias->original->used = 1;
+			}
 			alias = alias->nextTarget;
 			selection++;
 		}
@@ -1245,15 +1266,17 @@ void fxCoderJumpTargets(txCoder* self, txTargetCode* target, txInteger selector,
 {
 	txInteger selection = *address;
 	while (target) {
-		txTargetCode* elseTarget = fxCoderCreateTarget(self);
-		fxCoderAddInteger(self, 1, XS_CODE_INTEGER_1, selection);
-		fxCoderAddIndex(self, 1, XS_CODE_GET_LOCAL_1, selector);
-		fxCoderAddByte(self, -1, XS_CODE_STRICT_EQUAL);
-		fxCoderAddBranch(self, -1, XS_CODE_BRANCH_ELSE_1, elseTarget);
-		fxCoderAdjustEnvironment(self, target);
-		fxCoderAdjustScope(self, target);
-		fxCoderAddBranch(self, 0, XS_CODE_BRANCH_1, target);
-		fxCoderAdd(self, 0, elseTarget);
+		if (target->used) {
+			txTargetCode* elseTarget = fxCoderCreateTarget(self);
+			fxCoderAddInteger(self, 1, XS_CODE_INTEGER_1, selection);
+			fxCoderAddIndex(self, 1, XS_CODE_GET_LOCAL_1, selector);
+			fxCoderAddByte(self, -1, XS_CODE_STRICT_EQUAL);
+			fxCoderAddBranch(self, -1, XS_CODE_BRANCH_ELSE_1, elseTarget);
+			fxCoderAdjustEnvironment(self, target);
+			fxCoderAdjustScope(self, target);
+			fxCoderAddBranch(self, 0, XS_CODE_BRANCH_1, target);
+			fxCoderAdd(self, 0, elseTarget);
+		}
 		target = target->nextTarget;
 		selection++;
 	}
@@ -1389,7 +1412,10 @@ void fxScopeCodingBlock(txScope* self, txCoder* coder)
 			}
 			else {
 				node->index = coder->scopeLevel++;
-				fxCoderAddVariable(coder, 0, XS_CODE_NEW_LOCAL, node->symbol, node->index);
+				if (node->symbol)
+					fxCoderAddVariable(coder, 0, XS_CODE_NEW_LOCAL, node->symbol, node->index);
+				else
+					fxCoderAddIndex(coder, 0, XS_CODE_NEW_TEMPORARY, node->index);
 				if (node->description->token == XS_TOKEN_VAR) {
 					fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
 					fxCoderAddIndex(coder, 0, XS_CODE_VAR_LOCAL_1, node->index);
@@ -1447,7 +1473,10 @@ void fxScopeCodingBody(txScope* self, txCoder* coder)
 		while (node) {
 			if ((node->description->token != XS_TOKEN_DEFINE) && (node->description->token != XS_TOKEN_VAR)) {
 				node->index = coder->scopeLevel++;
-				fxCoderAddVariable(coder, 0, XS_CODE_NEW_CLOSURE, node->symbol, node->index);
+				if (node->symbol)
+					fxCoderAddVariable(coder, 0, XS_CODE_NEW_CLOSURE, node->symbol, node->index);
+				else
+					fxCoderAddIndex(coder, 0, XS_CODE_NEW_TEMPORARY, node->index);
 			}
 			node = node->nextDeclareNode;
 		}
@@ -1455,8 +1484,10 @@ void fxScopeCodingBody(txScope* self, txCoder* coder)
 		fxCoderAddByte(coder, 0, XS_CODE_WITH);
 		node = self->firstDeclareNode;
 		while (node) {
-			if ((node->description->token != XS_TOKEN_DEFINE) && (node->description->token != XS_TOKEN_VAR))
-				fxCoderAddIndex(coder, 0, XS_CODE_STORE_1, node->index);
+			if ((node->description->token != XS_TOKEN_DEFINE) && (node->description->token != XS_TOKEN_VAR)) {
+				if (node->symbol)
+					fxCoderAddIndex(coder, 0, XS_CODE_STORE_1, node->index);
+			}
 			node = node->nextDeclareNode;
 		}
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
@@ -1707,8 +1738,12 @@ void fxScopeCodeReset(txScope* self, txCoder* coder)
 	while (node) {
 		if (node->flags & mxDeclareNodeClosureFlag)
 			fxCoderAddIndex(coder, 0, XS_CODE_RESET_CLOSURE_1, node->index);
-		else
+		else if (node->symbol)
 			fxCoderAddIndex(coder, 0, XS_CODE_RESET_LOCAL_1, node->index);
+		else {
+			fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
+			fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, node->index);
+		}
 		node = node->nextDeclareNode;
 	}
 }
@@ -1771,6 +1806,109 @@ void fxScopeCodeStoreAll(txScope* self, txCoder* coder)
 			break;
 		scope = scope->scope;
 	}
+}
+
+void fxScopeCodeUsed(txScope* self, txCoder* coder, txUsingContext* context) 
+{
+	txTargetCode* normalTarget = fxCoderCreateTarget(coder);
+	txTargetCode* uncatchTarget = fxCoderCreateTarget(coder);
+	txTargetCode* finallyTarget = fxCoderCreateTarget(coder);
+	txTargetCode* elseTarget = fxCoderCreateTarget(coder);
+	txInteger selection;
+	
+	fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_1, normalTarget);
+	fxCoderAdd(coder, 0, context->catchTarget);
+	fxCoderAddByte(coder, 1, XS_CODE_EXCEPTION);
+	fxCoderAddIndex(coder, 0, XS_CODE_PULL_LOCAL_1, context->exception);
+	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, 0);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, context->selector);
+	fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_1, finallyTarget);
+	selection = 1;
+	coder->firstBreakTarget = fxCoderFinalizeTargets(coder, coder->firstBreakTarget, context->selector, &selection, uncatchTarget);
+	coder->firstContinueTarget = fxCoderFinalizeTargets(coder, coder->firstContinueTarget, context->selector, &selection, uncatchTarget);
+	coder->returnTarget = fxCoderFinalizeTargets(coder, coder->returnTarget, context->selector, &selection, uncatchTarget);
+	fxCoderAdd(coder, 0, normalTarget);
+	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, selection);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, context->selector);
+	fxCoderAdd(coder, 0, uncatchTarget);
+	fxCoderAddByte(coder, 0, XS_CODE_UNCATCH);
+	fxCoderAdd(coder, 0, finallyTarget);
+	
+	fxScopeCodeUsedReverse(self, coder, self->firstDeclareNode, context->exception, context->selector);
+	
+	fxCoderAddIndex(coder, 1, XS_CODE_GET_LOCAL_1, context->selector);
+	fxCoderAddBranch(coder, -1, XS_CODE_BRANCH_IF_1, elseTarget);
+	fxCoderAddIndex(coder, 1, XS_CODE_GET_LOCAL_1, context->exception);
+	fxCoderAddByte(coder, -1, XS_CODE_THROW);
+	fxCoderAdd(coder, 0, elseTarget);
+	selection = 1;
+	fxCoderJumpTargets(coder, coder->firstBreakTarget, context->selector, &selection);
+	fxCoderJumpTargets(coder, coder->firstContinueTarget, context->selector, &selection);
+	fxCoderJumpTargets(coder, coder->returnTarget, context->selector, &selection);
+	fxCoderUnuseTemporaryVariables(coder, 2);
+}
+
+void fxScopeCodeUsedReverse(txScope* self, txCoder* coder, txDeclareNode* node, txInteger exception, txInteger selector) 
+{
+	if (node) {
+		fxCheckParserStack(coder->parser, node->line);
+		fxScopeCodeUsedReverse(self, coder, node->nextDeclareNode, exception, selector);
+		if (node->description->token == XS_TOKEN_USING) {
+			txTargetCode* catchTarget = fxCoderCreateTarget(coder);
+			txTargetCode* chainTarget = fxCoderCreateTarget(coder);
+			txTargetCode* normalTarget = fxCoderCreateTarget(coder);
+			
+			fxCoderAddIndex(coder, 1, XS_CODE_GET_LOCAL_1, node->index + 1);
+			fxCoderAddByte(coder, 1, XS_CODE_UNDEFINED);
+			fxCoderAddByte(coder, -1, XS_CODE_STRICT_EQUAL);
+			fxCoderAddBranch(coder, -1, XS_CODE_BRANCH_IF_1, normalTarget);
+			
+			fxCoderAddBranch(coder, 0, XS_CODE_CATCH_1, catchTarget);
+			
+			fxCoderAddIndex(coder, 1, (node->flags & mxDeclareNodeClosureFlag) ? XS_CODE_GET_CLOSURE_1: XS_CODE_GET_LOCAL_1, node->index);
+			fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_CHAIN_1, chainTarget);
+			fxCoderAddIndex(coder, 1, XS_CODE_GET_LOCAL_1, node->index + 1);
+			fxCoderAddByte(coder, 1, XS_CODE_CALL);
+			fxCoderAddInteger(coder, -2, XS_CODE_RUN_1, 0);
+			
+			fxCoderAdd(coder, 0, chainTarget);
+			if (node->flags & mxAwaitingFlag) {
+				fxCoderAddByte(coder, 0, XS_CODE_AWAIT);
+				fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
+			}
+			fxCoderAddByte(coder, -1, XS_CODE_POP);
+			
+			fxCoderAddByte(coder, 0, XS_CODE_UNCATCH);
+			fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_1, normalTarget);
+			fxCoderAdd(coder, 0, catchTarget);
+			fxCoderAddIndex(coder, 1, XS_CODE_USED_1, selector);
+			
+			fxCoderAdd(coder, 0, normalTarget);
+		}
+	}
+}
+
+void fxScopeCodeUsing(txScope* self, txCoder* coder, txUsingContext* context) 
+{
+	context->exception = fxCoderUseTemporaryVariable(coder);
+	context->selector = fxCoderUseTemporaryVariable(coder);
+	coder->firstBreakTarget = fxCoderAliasTargets(coder, coder->firstBreakTarget);
+	coder->firstContinueTarget = fxCoderAliasTargets(coder, coder->firstContinueTarget);
+	coder->returnTarget = fxCoderAliasTargets(coder, coder->returnTarget);
+	context->catchTarget = fxCoderCreateTarget(coder);
+	fxCoderAddBranch(coder, 0, XS_CODE_CATCH_1, context->catchTarget);
+}
+
+void fxScopeCodeUsingStatement(txScope* self, txCoder* coder, txNode* statement) 
+{
+	if (self->disposableNodeCount) {
+		txUsingContext context;
+		fxScopeCodeUsing(self, coder, &context);
+		fxNodeDispatchCode(statement, coder);
+		fxScopeCodeUsed(self, coder, &context);
+	}
+	else
+		fxNodeDispatchCode(statement, coder);
 }
 
 void fxNodeDispatchCode(void* it, void* param)
@@ -2050,14 +2188,14 @@ void fxArrayNodeCode(void* it, void* param)
 					break;
 				item = item->next;
 			}
-			if (!item) {
-				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, array);
-				fxCoderAddByte(param, 1, XS_CODE_DUB);
-				fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->fillSymbol);
-				fxCoderAddByte(param, 1, XS_CODE_CALL);
-				fxCoderAddInteger(param, -2, XS_CODE_RUN_1, 0);
-				fxCoderAddByte(param, -1, XS_CODE_POP);
-			}
+// 			if (!item) {
+// 				fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, array);
+// 				fxCoderAddByte(param, 1, XS_CODE_DUB);
+// 				fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->fillSymbol);
+// 				fxCoderAddByte(param, 1, XS_CODE_CALL);
+// 				fxCoderAddInteger(param, -2, XS_CODE_RUN_1, 0);
+// 				fxCoderAddByte(param, -1, XS_CODE_POP);
+// 			}
 			item = self->items->first;
 			while (item) {
 				if (item->description->token != XS_TOKEN_ELISION) {
@@ -2065,8 +2203,8 @@ void fxArrayNodeCode(void* it, void* param)
 					fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, index);
 					fxCoderAddByte(param, 0, XS_CODE_AT);
 					fxNodeDispatchCode(item, param);
-					fxCoderAddByte(param, -2, XS_CODE_SET_PROPERTY_AT);
-					fxCoderAddByte(param, -1, XS_CODE_POP);
+					fxCoderAddByte(param, -3, XS_CODE_NEW_PROPERTY_AT);
+					fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
 				}
 				item = item->next;
 				index++;
@@ -2350,7 +2488,7 @@ void fxBlockNodeCode(void* it, void* param)
 	txBlockNode* self = it;
 	fxScopeCodingBlock(self->scope, param);
 	fxScopeCodeDefineNodes(self->scope, param);
-	fxNodeDispatchCode(self->statement, param);
+	fxScopeCodeUsingStatement(self->scope, param, self->statement);
 	fxScopeCoded(self->scope, param);
 }
 
@@ -2363,7 +2501,7 @@ void fxBodyNodeCode(void* it, void* param)
 		coder->evalFlag = 1;
 	fxScopeCodingBody(self->scope, param);
 	fxScopeCodeDefineNodes(self->scope, param);
-	fxNodeDispatchCode(self->statement, param);
+	fxScopeCodeUsingStatement(self->scope, param, self->statement);
 	fxScopeCodedBody(self->scope, param);
 	if ((self->flags & mxEvalFlag) && !(self->flags & mxStrictFlag))
 		coder->evalFlag = evalFlag;
@@ -2413,14 +2551,14 @@ void fxCatchNodeCode(void* it, void* param)
 		fxCoderAddByte(param, -1, XS_CODE_POP);
 		fxScopeCodingBlock(self->statementScope, param);
 		fxScopeCodeDefineNodes(self->statementScope, param);
-		fxNodeDispatchCode(self->statement, param);
+		fxScopeCodeUsingStatement(self->statementScope, param, self->statement);
 		fxScopeCoded(self->statementScope, param);
 		fxScopeCoded(self->scope, param);
 	}
 	else {
 		fxScopeCodingBlock(self->statementScope, param);
 		fxScopeCodeDefineNodes(self->statementScope, param);
-		fxNodeDispatchCode(self->statement, param);
+		fxScopeCodeUsingStatement(self->statementScope, param, self->statement);
 		fxScopeCoded(self->statementScope, param);
 	}
 }
@@ -2666,6 +2804,8 @@ void fxDeclareNodeCode(void* it, void* param)
 		fxNodeDispatchCodeAssign(self, param, 0);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
 	}
+	else if (self->description->token == XS_TOKEN_USING)
+		fxReportParserError(coder->parser, self->line, "invalid using");
 }
 
 void fxDeclareNodeCodeAssign(void* it, void* param, txFlag flag) 
@@ -2679,6 +2819,14 @@ void fxDeclareNodeCodeAssign(void* it, void* param, txFlag flag)
 			fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_CONST_CLOSURE_1: XS_CODE_CONST_LOCAL_1, declaration->index);
 		else if (self->description->token == XS_TOKEN_LET)
 			fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_LET_CLOSURE_1: XS_CODE_LET_LOCAL_1, declaration->index);
+		else if (self->description->token == XS_TOKEN_USING) {
+			fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_CONST_CLOSURE_1: XS_CODE_CONST_LOCAL_1, declaration->index);
+			if (self->flags & mxAwaitingFlag)
+				fxCoderAddByte(param, 0, XS_CODE_USING_ASYNC);
+			else
+				fxCoderAddByte(param, 0, XS_CODE_USING);
+			fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, declaration->index + 1);
+		}
 		else
 			fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_VAR_CLOSURE_1 : XS_CODE_VAR_LOCAL_1, declaration->index);
 	}
@@ -2960,10 +3108,19 @@ void fxForNodeCode(void* it, void* param)
 {
 	txForNode* self = it;
 	txCoder* coder = param;
+	txTargetCode* continueTarget;
 	txTargetCode* nextTarget;
 	txTargetCode* doneTarget;
+	txUsingContext context;
+	
+	continueTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget->nextTarget;
+	continueTarget->nextTarget = C_NULL;
+	
 	fxScopeCodingBlock(self->scope, param);
 	fxScopeCodeDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxScopeCodeUsing(self->scope, coder, &context);	
 	nextTarget = fxCoderCreateTarget(param);
 	doneTarget = fxCoderCreateTarget(param);
 	if (self->initialization)
@@ -2978,10 +3135,17 @@ void fxForNodeCode(void* it, void* param)
 		fxNodeDispatchCode(self->expression, param);
 		fxCoderAddBranch(param, -1, XS_CODE_BRANCH_ELSE_1, doneTarget);
 	}
-	coder->firstContinueTarget->environmentLevel = coder->environmentLevel;
-	coder->firstContinueTarget->scopeLevel = coder->scopeLevel;
+	
+	continueTarget->environmentLevel = coder->environmentLevel;
+	continueTarget->scopeLevel = coder->scopeLevel;
+	continueTarget->stackLevel = coder->stackLevel;
+	continueTarget->nextTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget;
 	fxNodeDispatchCode(self->statement, param);
-	fxCoderAdd(param, 0, coder->firstContinueTarget);
+	fxCoderAdd(param, 0, continueTarget);
+	coder->firstContinueTarget = continueTarget->nextTarget;
+	continueTarget->nextTarget = C_NULL;
+	
 	if (self->iteration) {
 		fxScopeCodeRefresh(self->scope, param);
 		self->iteration->flags |= mxExpressionNoValue;
@@ -2990,7 +3154,12 @@ void fxForNodeCode(void* it, void* param)
 	}
 	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_1, nextTarget);
 	fxCoderAdd(param, 0, doneTarget);
+	if (self->scope->disposableNodeCount)
+		fxScopeCodeUsed(self->scope, coder, &context);
 	fxScopeCoded(self->scope, param);
+	
+	continueTarget->nextTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget;
 }
 
 void fxForInForOfNodeCode(void* it, void* param) 
@@ -2998,10 +3167,12 @@ void fxForInForOfNodeCode(void* it, void* param)
 	txForInForOfNode* self = it;
 	txCoder* coder = param;
 	txBoolean async = (self->description->code == XS_CODE_FOR_AWAIT_OF) ? 1 : 0;
+	txTargetCode* continueTarget;
 	txInteger iterator;
 	txInteger next;
 	txInteger done;
 	txInteger result;
+	txInteger exception;
 	txInteger selector;
 	txInteger selection;
 	txTargetCode* nextTarget;
@@ -3009,16 +3180,24 @@ void fxForInForOfNodeCode(void* it, void* param)
 	txTargetCode* doneTarget;
 	txTargetCode* catchTarget;
 	txTargetCode* normalTarget;
+	txTargetCode* uncatchTarget;
 	txTargetCode* finallyTarget;
+	txTargetCode* elseTarget;
 	
 	iterator = fxCoderUseTemporaryVariable(param);
 	next = fxCoderUseTemporaryVariable(param);
 	done = fxCoderUseTemporaryVariable(param);
 	result = fxCoderUseTemporaryVariable(param);
+	exception = fxCoderUseTemporaryVariable(coder);
 	selector = fxCoderUseTemporaryVariable(coder);
+	
+	continueTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget->nextTarget;
+	continueTarget->nextTarget = C_NULL;
+	
 	fxScopeCodingBlock(self->scope, param);
-
 	fxScopeCodeDefineNodes(self->scope, param);
+
 	if (coder->programFlag) {
 		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
 		fxCoderAddByte(param, -1, XS_CODE_SET_RESULT);
@@ -3027,21 +3206,17 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderAddByte(param, 0, self->description->code);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, iterator);
 	fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->nextSymbol);
-	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, next);
-	fxCoderAddByte(param, -1, XS_CODE_POP);
-	
+	fxCoderAddIndex(param, 0, XS_CODE_PULL_LOCAL_1, next);
+
 	coder->firstBreakTarget = fxCoderAliasTargets(param, coder->firstBreakTarget);
-	coder->firstContinueTarget->nextTarget = fxCoderAliasTargets(param, coder->firstContinueTarget->nextTarget);
+	coder->firstContinueTarget = fxCoderAliasTargets(param, coder->firstContinueTarget);
 	coder->returnTarget = fxCoderAliasTargets(param, coder->returnTarget);
 	catchTarget = fxCoderCreateTarget(param);
 	normalTarget = fxCoderCreateTarget(param);
-	finallyTarget = fxCoderCreateTarget(param);
-	nextTarget = fxCoderCreateTarget(param);
-	
-	fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, 0);
-	fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, selector);
 	fxCoderAddBranch(param, 0, XS_CODE_CATCH_1, catchTarget);
 	
+// LOOP	
+	nextTarget = fxCoderCreateTarget(param);
 	fxCoderAdd(param, 0, nextTarget);
 	fxCoderAddByte(param, 1, XS_CODE_TRUE);
 	fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, done);
@@ -3058,7 +3233,7 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->doneSymbol);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, done);
 	fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, normalTarget);
-	
+
 	fxScopeCodeReset(self->scope, param);
 	fxNodeDispatchCodeReference(self->reference, param);
 	fxCoderAddByte(param, 1, XS_CODE_TRUE);
@@ -3070,35 +3245,47 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxNodeDispatchCodeAssign(self->reference, param, 0);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 
-	coder->firstContinueTarget->environmentLevel = coder->environmentLevel;
-	coder->firstContinueTarget->scopeLevel = coder->scopeLevel;
+	continueTarget->environmentLevel = coder->environmentLevel;
+	continueTarget->scopeLevel = coder->scopeLevel;
+	continueTarget->stackLevel = coder->stackLevel;
+	continueTarget->nextTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget;
 	fxNodeDispatchCode(self->statement, param);
-	
 	fxCoderAdd(param, 0, coder->firstContinueTarget);
+	coder->firstContinueTarget = continueTarget->nextTarget;
+	continueTarget->nextTarget = C_NULL;
+	
+	fxScopeCodeUsedReverse(self->scope, coder, self->scope->firstDeclareNode, exception, selector);
+
 	fxCoderAddBranch(param, 0, XS_CODE_BRANCH_1, nextTarget);
 
+//	 PRE FINALLY
+	uncatchTarget = fxCoderCreateTarget(param);
+	finallyTarget = fxCoderCreateTarget(param);
+
+	fxCoderAdd(coder, 0, catchTarget);
+	fxCoderAddByte(coder, 1, XS_CODE_EXCEPTION);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, exception);
+	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, 0);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, selector);
+	fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_1, finallyTarget);
 	selection = 1;
-	coder->firstBreakTarget = fxCoderFinalizeTargets(param, coder->firstBreakTarget, selector, &selection, finallyTarget);
-	coder->firstContinueTarget->nextTarget = fxCoderFinalizeTargets(param, coder->firstContinueTarget->nextTarget, selector, &selection, finallyTarget);
-	coder->returnTarget = fxCoderFinalizeTargets(param, coder->returnTarget, selector, &selection, finallyTarget);
+	coder->firstBreakTarget = fxCoderFinalizeTargets(param, coder->firstBreakTarget, selector, &selection, uncatchTarget);
+	coder->firstContinueTarget = fxCoderFinalizeTargets(param, coder->firstContinueTarget, selector, &selection, uncatchTarget);
+	coder->returnTarget = fxCoderFinalizeTargets(param, coder->returnTarget, selector, &selection, uncatchTarget);
 	fxCoderAdd(param, 0, normalTarget);
 	fxCoderAddInteger(param, 1, XS_CODE_INTEGER_1, selection);
-	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, selector);
-	fxCoderAddByte(param, -1, XS_CODE_POP);
-	fxCoderAdd(param, 0, finallyTarget);
+	fxCoderAddIndex(param, -1, XS_CODE_PULL_LOCAL_1, selector);
+	fxCoderAdd(coder, 0, uncatchTarget);
 	fxCoderAddByte(param, 0, XS_CODE_UNCATCH);
-	fxCoderAdd(param, 0, catchTarget);
+	fxCoderAdd(param, 0, finallyTarget);
 	
-	nextTarget = fxCoderCreateTarget(param);
-	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, selector);
-	fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, nextTarget);
-	fxCoderAddByte(param, 1, XS_CODE_EXCEPTION);
-	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, result);
-	fxCoderAddByte(param, -1, XS_CODE_POP);
+//	 FINALLY
 	catchTarget = fxCoderCreateTarget(param);
+	normalTarget = fxCoderCreateTarget(param);
+
 	fxCoderAddBranch(param, 0, XS_CODE_CATCH_1, catchTarget);
-	fxCoderAdd(param, 0, nextTarget);
-	
+
 	doneTarget = fxCoderCreateTarget(param);
 	returnTarget = fxCoderCreateTarget(param);
 	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, done);
@@ -3118,23 +3305,38 @@ void fxForInForOfNodeCode(void* it, void* param)
 	fxCoderAdd(param, 0, returnTarget);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 	fxCoderAdd(param, 0, doneTarget);
-
-	nextTarget = fxCoderCreateTarget(param);
-	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, selector);
-	fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, nextTarget);
-	fxCoderAddByte(param, 0, XS_CODE_UNCATCH);
-	fxCoderAdd(param, 0, catchTarget);
-	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, result);
-	fxCoderAddByte(param, -1, XS_CODE_THROW);
-	fxCoderAdd(param, 0, nextTarget);
 	
+	fxCoderAddByte(coder, 0, XS_CODE_UNCATCH);
+	fxCoderAddBranch(coder, 0, XS_CODE_BRANCH_1, normalTarget);
+	
+	fxCoderAdd(coder, 0, catchTarget);
+	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, selector);
+	fxCoderAddBranch(param, -1, XS_CODE_BRANCH_ELSE_1, normalTarget);
+	fxCoderAddByte(coder, 1, XS_CODE_EXCEPTION);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, exception);
+	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, 0);
+	fxCoderAddIndex(coder, -1, XS_CODE_PULL_LOCAL_1, selector);
+	fxCoderAdd(param, 0, normalTarget);
+
+	fxScopeCodeUsedReverse(self->scope, coder, self->scope->firstDeclareNode, exception, selector);
+
+//	 POST FINALLY
+	elseTarget = fxCoderCreateTarget(param);
+	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, selector);
+	fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, elseTarget);
+	fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, exception);
+	fxCoderAddByte(param, -1, XS_CODE_THROW);
+	fxCoderAdd(param, 0, elseTarget);
 	selection = 1;
 	fxCoderJumpTargets(param, coder->firstBreakTarget, selector, &selection);
-	fxCoderJumpTargets(param, coder->firstContinueTarget->nextTarget, selector, &selection);
+	fxCoderJumpTargets(param, coder->firstContinueTarget, selector, &selection);
 	fxCoderJumpTargets(param, coder->returnTarget, selector, &selection);
 	
 	fxScopeCoded(self->scope, param);
-	fxCoderUnuseTemporaryVariables(param, 5);
+	continueTarget->nextTarget = coder->firstContinueTarget;
+	coder->firstContinueTarget = continueTarget;
+	
+	fxCoderUnuseTemporaryVariables(param, 6);
 }
 
 void fxFunctionNodeCode(void* it, void* param) 
@@ -3207,6 +3409,8 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxCoderAddIndex(param, 0, XS_CODE_RESERVE_1, self->scopeCount);
 	fxScopeCodeRetrieve(self->scope, param);
 	fxScopeCodingParams(self->scope, param);
+	if ((self->flags & mxAsyncFlag) && !(self->flags & mxGeneratorFlag))
+		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 	if (self->flags & mxBaseFlag) {
 		if (coder->classNode->instanceInitAccess) {
 			fxCoderAddByte(param, 1, XS_CODE_THIS);
@@ -3216,8 +3420,6 @@ void fxFunctionNodeCode(void* it, void* param)
 			fxCoderAddByte(param, -1, XS_CODE_POP);
 		}
 	}
-	if ((self->flags & mxAsyncFlag) && !(self->flags & mxGeneratorFlag))
-		fxCoderAddByte(param, 0, XS_CODE_START_ASYNC);
 	fxNodeDispatchCode(self->params, param);
 	fxScopeCodeDefineNodes(self->scope, param);
 	coder->returnTarget = fxCoderCreateTarget(param);
@@ -4141,8 +4343,11 @@ void fxSwitchNodeCode(void* it, void* param)
 	txTargetCode* breakTarget;
 	txCaseNode* caseNode;
 	txCaseNode* defaultNode = NULL;
+	txUsingContext context;
 	fxNodeDispatchCode(self->expression, param);
 	fxScopeCodingBlock(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxScopeCodeUsing(self->scope, coder, &context);
 	breakTarget = fxCoderCreateTarget(coder);
 	breakTarget->label = fxNewParserChunkClear(coder->parser, sizeof(txLabelNode));
 	breakTarget->nextTarget = coder->firstBreakTarget;
@@ -4177,6 +4382,8 @@ void fxSwitchNodeCode(void* it, void* param)
 	}
 	fxCoderAdd(param, 0, coder->firstBreakTarget);
 	coder->firstBreakTarget = breakTarget->nextTarget;
+	if (self->scope->disposableNodeCount)
+		fxScopeCodeUsed(self->scope, coder, &context);
 	fxScopeCoded(self->scope, param);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 }
@@ -4464,13 +4671,15 @@ void fxYieldNodeCode(void* it, void* param)
 	txBoolean async = (self->flags & mxAsyncFlag) ? 1 : 0;
 	txCoder* coder = param;
 	txTargetCode* target = fxCoderCreateTarget(coder);
-	
-	if (!async) {
+	if (async) {
+		fxNodeDispatchCode(self->expression, param);
+		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
+		fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
+	}
+	else {
 		fxCoderAddByte(param, 1, XS_CODE_OBJECT);
 		fxCoderAddByte(param, 1, XS_CODE_DUB);
-	}
-	fxNodeDispatchCode(self->expression, param);
-	if (!async) {
+		fxNodeDispatchCode(self->expression, param);
 		fxCoderAddSymbol(param, -2, XS_CODE_NEW_PROPERTY, coder->parser->valueSymbol);
 		fxCoderAddInteger(param, 0, XS_CODE_INTEGER_1, 0);
 		fxCoderAddByte(param, 1, XS_CODE_DUB);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,7 +29,7 @@ extern "C" {
 	#include "modTimer.h"
 #endif
 
-extern xsMachine *modCloneMachine(uint32_t allocation, uint32_t stack, uint32_t slotCount, uint32_t keyCount, const char *name);
+extern xsMachine *modCloneMachine(xsCreation *creation, const char *name);
 extern void modRunMachineSetup(xsMachine *the);
 
 extern char *modGetModAtom(xsMachine *the, uint32_t atomTypeIn, int *atomSizeOut);
@@ -40,6 +40,7 @@ extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *stat
 	extern void modInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);
 	extern void modInstrumentMachineEnd(xsMachine *the);
 	extern void modInstrumentMachineReset(xsMachine *the);
+	extern void modInstrumentationSetup(xsMachine *the);
 
 	extern int32_t modInstrumentationSlotHeapSize(xsMachine *the);
 	extern int32_t modInstrumentationChunkHeapSize(xsMachine *the);
@@ -47,6 +48,7 @@ extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *stat
 	extern int32_t modInstrumentationGarbageCollectionCount(xsMachine *the);
 	extern int32_t modInstrumentationModulesLoaded(xsMachine *the);
 	extern int32_t modInstrumentationStackRemain(xsMachine *the);
+	extern int32_t modInstrumentationPromisesSettledCount(xsMachine *the);
 #endif
 
 #ifdef __cplusplus

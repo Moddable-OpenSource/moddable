@@ -1,0 +1,86 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
+		"$(MODDABLE)/examples/pins/audioout/mp3-http-stream/manifest_mp3streamer.json"
+	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 100352,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 3072,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./channels",
+			"./ScrollerBehaviors"
+		]
+	},
+	"preload": [
+		"channels",
+		"ScrollerBehaviors"
+	],
+	"resources":{
+		"*": [
+			"./images/*"
+		],
+		"*-alpha": [
+			"./assets/*",
+			{
+				"source": "./fonts/FiraSansCondensed-Regular",
+				"size": 40,
+				"characters": "soma fm"
+			},
+			{
+				"source": "./fonts/FiraSansCondensed-Bold",
+				"size": 20,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/FiraSansCondensed-Regular",
+				"size": 18,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/FiraSansCondensed-Regular",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+			}
+		]
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 44100,
+			"queueLength": 12,
+			"streams": 1,
+			"mixerBytes": 256
+		}
+	},
+	"config": {
+		"startupSound": false
+	},
+	"platforms": {
+		"mac": {
+			"creation": {
+				"chunk": {
+					"incremental": 32768
+				},
+				"heap": {
+					"incremental": 1024
+				}
+			}
+		}
+	}
+}

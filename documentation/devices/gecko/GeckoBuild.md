@@ -78,7 +78,7 @@ gecko | blue | **-p gecko/blue** | Blue Gecko
 The platform flag is used with `mcconfig`.
 
 	$ mcconfig -d -m -p gecko/mighty
-	
+
 If the platform flag specifies a subplatform, then `mcconfig` will load the build rules from `$MODDABLE/tools/mcconfig/`*platform*`/mk.`*subplatform*`.mk`.
 
 In the `manifest.json` file, the `platforms` section can specify both `platform` and `platform/subplatform` subsections. The items are merged with more specific `platform/subplatform` specifications overriding general `platform` specifications.
@@ -94,7 +94,7 @@ To get started, install [Simplicity Studio](https://www.silabs.com/products/deve
 Plug in your board when launching for the first time so that Simplicity Studio updates with the correct SDKs. Install 32 bit MCU, Flex and Bluetooth.
 
 As of this writing, the current versions are:
-	
+
 	Gecko SDK Suite - 2.2.2
 	32-bit MCU SDK - 5.4.0.0
 	Flex SDK - 2.2.2.1
@@ -125,7 +125,7 @@ Blue Gecko | `soc-ibeacon`, `soc-thermometer`
 Build, install and run the sample to become familiar with the process.
 
 > Note: It is necessary to start with an example project with your board connected so that Simplicity Studio will populate the build rules for the project with the appropriate values for your device.
-> 
+>
 > Also note: There are many variants of a family of devices.
 
 Please note the board (4) and part (2).
@@ -152,11 +152,11 @@ Use `mcconfig` to build the moddable library and application for your Gecko sub-
 
 	$ cd $(MODDABLE)/examples/helloworld
 	$ mcconfig -d -m -p gecko/mighty
-	
+
 Note: the `-d` option to mcconfig builds the debug version. **helloworld** uses the debugger to display its output.
 
 See the **Debugging** section below for instructions on connecting to xsbug.
-	
+
 
 #### Modifications to the Simplicity Studio project for the Moddable sdk.
 
@@ -175,7 +175,7 @@ Open the properties window for the project and select *C/C++ Build->Settings*.
 It is located in $MODDABLE/build/bin/gecko/_platform_/debug/_application_/xs_gecko.a
 
 > You will need to change this file path to match the application you are building.
- 
+
 You may also need to add the `math` library:
 
 Open the properties window for the project and select *C/C++ Build->Settings*.
@@ -195,7 +195,7 @@ In the Simplicity Studio sample app's **main.c**, add a few things:
 
 	int gResetCause = 0;
 	uint32_t gWakeupPin = 0;
-	
+
 	void assertEFM() { } // maybe  void assertEFM(const char *file, int line) {} depending on your SDK
 
 
@@ -323,7 +323,7 @@ By default, Moddable uses Sleep level EM3 while waiting. Certain Gecko interface
 
 #### EM4 Sleep
 
-Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer expiration using a low power clock. When awoken, the device reboots. 
+Gecko devices also have a deep sleep level EM4. At this level, the device is almost entirely shut off, including RAM, peripherals and most clocks. While in this state, the device can be awoken by a signal on an external GPIO pin or a timer expiration using a low power clock. When awoken, the device reboots.
 
 During EM4 sleep, a small amount of memory can be kept active at the expense of a slightly increased power draw. The GPIO state can also be retained.
 
@@ -389,10 +389,10 @@ Sleep.WatchdogReset     = 0b01000000;		// watchdog timer expired
 
 #### Storing data for retention during EM4 sleep
 
-During EM4 sleep, RAM is shut off. A small amount of memory persists, and is available for retreival after wakeup.
+During EM4 sleep, RAM is shut off. A small amount of memory persists, and is available for retrieval after wakeup.
 
 		let index;
-		
+
 		index = Sleep.getPersistentValue(0);
 		Sleep.setPersistentValue(0, ++index);
 
@@ -441,7 +441,7 @@ Gecko devices have a number of analog inputs and can be configured to use variou
 						"$(BUILD)/devices/gecko/analog/*",
 					],
 				},
-			
+
 
 **interface** specifies which ADC interface to use.
 
@@ -486,7 +486,7 @@ The `manifest.json` file contains defines for the base SPI pins
 					"dc": { "pin": 6, "port": "gpioPortB", },
 				}
 			},
-			
+
 This section of the `manifest.json` defines the **SPI** pins, ports, and locations, and which interface to use.
 
 The **interface** definition specifies which USART interface to use.
@@ -510,7 +510,7 @@ Gecko devices have a number of I2C interfaces.
 					"sda": { "pin": 11, "port": "gpioPortC", "location": 16 },
 					"scl": { "pin": 10, "port": "gpioPortC", "location": 14 },
 				},
-				
+
 The **interface** definition specifies which I2C interface to use.
 
 In this example, **I2C0** is used. The pin PC11 is the SDA pin for I2C0 at location 16 (I2C0_SDA#16). The pin PC10 is the SCL pin for I2C0 at location 14.
@@ -555,14 +555,14 @@ The Moddable SDK includes Bluetooth Low Energy (BLE) protocol support for Blue G
 - During the final link, if Simplicity Studio does not find the Cryotimer routines or defines,  copy the code and header files to your project.
 
 `em_cryotimer.h` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/inc/em_cryotimer.h`
-	
+
 `em_cryotimer.c` is located in: `/Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.2/platform/emlib/src/em_cryotimer.c`
 
 - During the final link, if Simplicity Studio does not find the `xs_gecko.a` file, either the library path is incorrect, or you have not built the `xs_gecko.a` file with **mcconfig**.
 
 		$ cd .../application_path
 		$ mcconfig -d -m -p gecko/mighty
-	
+
 - Unexplainable crashes can occur if Stack or Heap space run out:
 
 Depending on the processor and project configuration, you may need to adjust the stack size and heap size of the project.
@@ -578,7 +578,7 @@ You can increase that by changing the Radio Profile. When starting a new radio p
 
 ![ISC Custom Settings](assets/ISC-RadioConfig.png)
 
-Scroll down to **Profile options->Packet** and select the **Frame Fixed Length** tab. 
+Scroll down to **Profile options->Packet** and select the **Frame Fixed Length** tab.
 
 ![Frame Fixed Length](assets/FrameLength.png)
 
@@ -736,13 +736,13 @@ base/sleep | sleep | x | x | x
 network/ble/* | BLE |  |  |  | x
 drivers/TMP102 | I2C | x | x |
 drivers/HMC5883L | I2C | x | x |
-drivers/ls013b4dn04 | Sharp Memory Display | x | x | x 
-pins/monitor | GPIO Interrupt |   | x | 
-pins/simpleAnalog | analog |   | x | 
+drivers/ls013b4dn04 | Sharp Memory Display | x | x | x
+pins/monitor | GPIO Interrupt |   | x |
+pins/simpleAnalog | analog |   | x |
 piu/balls | SPI / ili9341 | x | x |
 piu/transitions | SPI / ili9341 | x | x |
 piu/cards | SPI / ili9341 | x | x |
 piu/love-e-ink | SPI / destm32s | x | x |
 drivers/radio/radiotest | radio |   | x |
 
-	
+

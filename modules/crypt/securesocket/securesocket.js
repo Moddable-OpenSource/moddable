@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -58,7 +58,7 @@ class SecureSocket {
 			try {
 				switch (message) {
 					case Socket.connected:
-						this.ssl.initiateHandshake(this.sock);
+						this.ssl.initiateHandshake();
 						this.messageHandler(0);
 						break;
 					case Socket.readable:

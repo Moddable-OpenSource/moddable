@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/tmp102/manifest.json"
 	],
@@ -15,6 +16,11 @@
 		"esp32": {
 			"config": {
 				"interrupt_pin": 13
+			}
+		},
+		"nrf52": {
+			"config": {
+				"interrupt_pin": 22
 			}
 		}
 	}	

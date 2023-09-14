@@ -1,0 +1,38 @@
+#!/bin/bash
+
+DEVTYPE=cu.usbmodem
+
+if [ "$1" = "0" ]; then
+	echo "Release build installed."
+	exit
+fi
+
+if [ "$UPLOAD_PORT" = "" ]; then
+	echo "** Please set the UPLOAD_PORT environment variable **"
+	exit
+fi
+
+for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
+	if [ "$UPLOAD_PORT" = "$port" ]; then
+		echo "-- device in programming mode --"
+		exit
+	fi
+	# echo port: $port
+done
+
+echo "# looking for UPLOAD_PORT: $UPLOAD_PORT"
+echo "** Put device in programming mode **"
+
+# wait for usbd serial port to enumerate
+while [ 1 ]; do
+	sleep 0.5
+	for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
+		if [ "$UPLOAD_PORT" = "$port" ]; then
+			echo "-- device in programming mode --"
+			exit
+		fi
+		# echo port: $port
+	done
+done
+
+

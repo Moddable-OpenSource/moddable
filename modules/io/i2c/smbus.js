@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -33,40 +33,30 @@ class SMBus {
 			this.#stop = true;
     }
     close() {
-		if (!this.#io)
-			return;
-
-		this.#io.close();
+		this.#io?.close();
 		this.#io = undefined;
     }
 
     readUint8(register) {
-		const io = this.#io, buffer = this.#byteBuffer;
+		const buffer = this.#byteBuffer;
 
         buffer[0] = register;
-        io.write(buffer, this.#stop);
-
-        io.read(buffer);
-        return buffer[0];
+        this.#io.writeRead(buffer, buffer, this.#stop);
+		return buffer[0];
     }
 
     readUint16(register, bigEndian) {
 		const io = this.#io, buffer = this.#wordBuffer;
 
         this.#byteBuffer[0] = register;
-        io.write(this.#byteBuffer, this.#stop);
+        io.writeRead(this.#byteBuffer, buffer, this.#stop);
 
-        io.read(buffer);
 		return bigEndian ? ((buffer[0] << 8) | buffer[1]) : ((buffer[1] << 8) | buffer[0]);
     }
 
     readBuffer(register, buffer) {
-		const io = this.#io;
-
         this.#byteBuffer[0] = register;
-        io.write(this.#byteBuffer, this.#stop);
-
-        return io.read(buffer);
+        return this.#io.writeRead(this.#byteBuffer, buffer, this.#stop);
     }
 
     writeUint8(register, byte) {
@@ -128,10 +118,21 @@ class SMBus {
 	}
 	set format(value) {
 		if ("buffer" !== value)
-			throw new Error;
+			throw new RangeError;
 	}
 
-	// compatibility
+	// inherited from i2c
+	read(count, stop = true) {
+		return this.#io.read(count, stop);
+	}
+	write(buffer, stop = true) {
+		return this.#io.write(buffer, stop);
+	}
+	writeRead(buffer, count, stop = true) {
+		return this.#io.writeRead(buffer, count, stop);
+	}
+
+	// compatibility - to be removed
 	readByte(register) {
 		trace("readByte renamed to readUint8\n");
 		return this.readUint8(register);

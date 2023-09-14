@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/files/flash/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"resources": {
+		"*-mask": [
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Bold",
+				"size": 32,
+				"blocks": ["Basic Latin"],
+				"monochrome": true
+			}
+		]
+	}
+}

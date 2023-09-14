@@ -3530,8 +3530,8 @@ strtod2(const char *s00, char **se __XS__d)
 	int bexact, erv;
 #endif
 #ifdef Avoid_Underflow
-	ULong Lsb;
 #ifndef ROUND_BIASED
+	ULong Lsb;
 	ULong Lsb1;
 #endif
 #endif
@@ -4396,8 +4396,8 @@ strtod2(const char *s00, char **se __XS__d)
 			bs2++;
 #endif
 #ifdef Avoid_Underflow
-		Lsb = LSB;
 #ifndef ROUND_BIASED
+		Lsb = LSB;
 		Lsb1 = 0;
 #endif
 		j = bbe - bc.scale;
@@ -4406,9 +4406,9 @@ strtod2(const char *s00, char **se __XS__d)
 		if (i < Emin) {	/* denormal */
 			i = Emin - i;
 			j -= i;
+#ifndef ROUND_BIASED
 			if (i < 32)
 				Lsb <<= i;
-#ifndef ROUND_BIASED
 			else if (i < 52)
 				Lsb1 = Lsb << (i-32);
 			else
@@ -6530,7 +6530,8 @@ txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSi
 			theSize -= 2 - decpt + (mxPtrDiff(stop - start));
 			if (theSize < 0) goto error;
 			*result++ = '0';
-			*result++ = '.';
+			if ((decpt < 0) || (start < stop) || (pad > 0))
+				*result++ = '.';
 			while (decpt < 0) {
 				*result++ = '0';
 				decpt++;

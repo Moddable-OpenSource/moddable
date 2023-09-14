@@ -17,12 +17,25 @@
 		"monitor",
 		"setup/target"
 	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
 	"defines": {
 		"i2c": {
 			"sda_pin": 21,
 			"scl_pin": 22
 		},
 		"spi": {
+			"miso_pin": -1,
 			"mosi_pin": 19,
 			"sck_pin": 18
 		},
@@ -32,6 +45,7 @@
 			"height": 135,
 			"cs_pin": 5,
 			"dc_pin": 16,
+			"rst_pin": 23,
 			"column_offset": 40,
 			"row_offset": 53,
 			"spi_port": "VSPI_HOST",

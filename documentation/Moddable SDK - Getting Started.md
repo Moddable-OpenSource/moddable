@@ -1,7 +1,7 @@
 # Moddable SDK – Getting Started
 ### A guide to installing the Moddable SDK and building its tools
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: January 9, 2023
+Revised: August 31, 2023
 
 This document provides instructions to install the Moddable SDK and build its tools on the computer you use for development.
 
@@ -96,7 +96,7 @@ The Moddable SDK requires macOS Sierra (Version 10.12) or newer and a full insta
 	open ~/.zshrc
 	```
 
-	> Note: If executing the above command gives you an error saying that your shell startup/initializaiton file does not exist, you can create the appropriate file using the `touch` command. For example, `touch ~/.zshrc`.
+	> Note: If executing the above command gives you an error saying that your shell startup/initialization file does not exist, you can create the appropriate file using the `touch` command. For example, `touch ~/.zshrc`.
 
 5. Add the following lines to the file you just opened and save. This sets up the `MODDABLE` environment variable to point at your local Moddable SDK repository directory and edits the `PATH` environment variable to include the build directory.
 
@@ -382,6 +382,8 @@ The Moddable SDK has been tested on the Ubuntu 16.04 LTS (64-bit) and Raspberry 
 	mcconfig -d -m -p lin
 	```
 
+	> [See this discussion](https://github.com/Moddable-OpenSource/moddable/discussions/1097) for a description of what you should expect to see.
+
 11. **IMPORTANT:** You can now build and run applications for the desktop simulator. To build and run applications on a development board or MCU, you need to install additional SDKs, drivers, and development tools for your target platform. See the [What's Next](#dev-boards-and-mcus) (Building and Running Apps on Development Boards and MCUs) section of this document for more details and links to instructions.
 
 <!--<a id="lin-troubleshooting"></a>
@@ -462,3 +464,4 @@ The table below links to some of the documents in the `devices` folder to help y
 | Giant Gecko, Mighty Gecko,<BR>Thunderboard Sense 2, or Blue Gecko | [Using the Moddable SDK with Gecko](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/gecko/GeckoBuild.md)
 | QCA4020 | [Using the Moddable SDK with QCA4020](./devices/qca4020/README.md)
 | Raspberry Pi Pico | [Using the Moddable SDK with Pico](./devices/pico.md) |
+| Nordic nRF52 | [Using the Moddable SDK with nRF52](./devices/nrf52.md) |

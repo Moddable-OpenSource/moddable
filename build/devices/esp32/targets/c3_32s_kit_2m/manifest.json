@@ -2,8 +2,8 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32c3",
 		"UPLOAD_SPEED": "460800",
-		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/c3_32s_kit_2m/sdkconfig",
-		"PARTITIONS_FILE": "$(MODDABLE)/build/devices/esp32/targets/c3_32s_kit_2m/sdkconfig/partitions.csv"
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
@@ -20,6 +20,18 @@
 		"led": {
 			"pin": 19
 		}
+	},
+	"creation": {
+		"static": 94208,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64
+		},
+		"stack": 384
 	},
 	"defines": {
 		"i2c": {

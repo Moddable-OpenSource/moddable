@@ -1,0 +1,596 @@
+<!-- 
+
+   Copyright (c) 2019-2021  Moddable Tech, Inc.
+
+   This file is part of the Moddable SDK Tools.
+
+   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   The Moddable SDK Tools is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
+
+ -->
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="Description" content="M4 TEST">
+	<title>M4 TEST</title>
+<style>
+html, body, div, pre {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+}
+html, body, div {
+	font-size: 100%;
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+}
+
+#header {
+  background-color: #062f87;
+  width: 100%;
+  height: 56px;
+}
+	
+#header img {
+	height: 46px;
+	padding-top: 5px;
+	padding-left: 10px;
+}
+#body {
+	clear: both;
+  	position: fixed;
+	overflow-y: scroll;
+	width: 100%;
+	top:56px; bottom:42px;
+}
+	
+#footer {
+	position: fixed;
+	width: 100%;
+	bottom:0; height:42px;
+}
+#footer .copyright {
+  border-top: 1px solid #999;
+  width: 100%;
+  font-size: .8rem;
+  color: #999;
+  padding-left: 10px;
+}
+
+#info {
+	margin-left: auto;
+	margin-right: auto;
+	padding: 10px;
+	line-height: 1.2rem;
+	max-width:880px;
+}
+
+#pane-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap:wrap;
+}
+
+.pane {
+	text-align: center;
+	float: left;
+	border: 1px solid #C0C0C0;
+	border-radius: 10px;
+	background: #F0F0F0;
+	margin: 10px;
+	position:relative;
+	width: 160px;
+	height: 200px;
+}
+.pane-body {
+	position:absolute;
+	left:15px; width: 130px;
+	top:15px; height: 130px;
+}
+.pane-canvas {
+	position:absolute;
+	left:1px; width: 128px;
+	top:1px; height: 128;
+}
+.pane-footer {
+	line-height: 30px;
+	text-align: center;
+	position:absolute;
+	left:0px; right:0px;
+	bottom:10px; height:30px;
+}
+
+.button {
+  	background: white;
+	border: 1px solid #C0C0C0;
+	border-radius: 10px;
+	color: #444444;
+	cursor: default;
+	font-size: 16px;
+	line-height: 30px;
+	text-align: center;
+	user-select: none;
+	-webkit-user-select: none;
+	padding-left:10px;
+	padding-right:10px;
+	padding-top:2px;
+	padding-bottom:2px;
+}
+.button:hover {
+	background: #f8f8f8;
+}
+.button:active {
+	background: #002f87;
+	border: 1px solid #002f87;
+	color: white;
+}
+
+#navigation-pane {
+	display: none;
+}
+#accelerometer-pane {
+	display: none;
+}
+#image-pane {
+	display: none;
+}
+#image-drop {
+	text-align: center;
+}
+#image-placeholder {
+	color: #C0C0C0;
+	text-align: center;
+	position:absolute;
+	left:0px; right:0px;
+	top:60px; height:30px;
+}
+.image-drag {
+	border: 1px solid white;
+}
+.image-drag-over {
+	border: 1px solid #444444;
+}
+#image-file {
+	display: none;
+}
+
+#time-name-pane {
+	display: none;
+}
+#date-time {
+	font-size: 16px;
+	line-height: 30px;
+	position:absolute;
+	left:0px; right:0px;
+	top:20px; height:30px;
+}
+.pane-header {
+	border-bottom: 1px solid #C0C0C0;
+	padding-bottom: 10px;
+	line-height: 30px;
+	text-align: center;
+	position:absolute;
+	left:0px; right:0px;
+	top:60px; height:30px;
+}
+#name-input {
+	font-size: 16px;
+	line-height: 30px;
+	position:absolute;
+	left:15px; width:120px;
+	top:120px; height:24px;
+}
+.alert-text {
+	color: #fb4700;
+}
+hr.alert-divider {
+	border-top: 1px solid #C0C0C0;
+	border-bottom: none;
+}
+
+</style>
+</head>
+<body>
+	<div id="header">
+		<img src="http://moddable.com/images/white-moddable.svg" alt="Moddable logo"/> 
+	</div>
+	<div id="body">
+		<div id="info">
+			<p>Use this web page to interact with the First Run app on <a href="https://www.moddable.com/moddable-four" target="_blank">Moddable Four</a>. This page communicates with Moddable Four using BLE through the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank">Web Bluetooth</a> APIs. If you don't already have the First Run app installed on your Moddable Four, you can build it from the source code at <a href="https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/first-run-moddable-four">$MODDABLE/contributed/first-run-moddable-four</a>.</p>
+		</div>
+		<div id="pane-container">
+			<div id="connect-pane" class="pane">
+				<div class="pane-body">
+					<img id="connect-image" src="./device.png" height="128"/>
+				</div>
+				<div class="pane-footer">
+					<label id="connect-button" class="button" onclick="gxView.onConnect()">Connect</label>
+				</div>
+			</div>
+	
+			<div id="navigation-pane" class="pane">
+				<div class="pane-body">
+					<canvas id="navigation-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">NAVIGATION</div>
+			</div>
+			<div id="accelerometer-pane" class="pane">
+				<div class="pane-body">
+					<canvas id="accelerometer-canvas" class="pane-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">ACCELEROMETER</div>
+			</div>
+		
+			<div id="image-pane" class="pane">
+				<div id="image-drop" class="pane-body image-drag" ondrop="gxView.drop(event);" ondragenter="gxView.dragEnter(event);" ondragleave="gxView.dragLeave(event);" ondragover="gxView.dragOver(event);">
+					<div id="image-placeholder">DROP</div>
+					<canvas id="image-canvas" class="pane-canvas" width="128" height="128"></canvas>
+				</div>
+				<div class="pane-footer">IMAGE
+					<label class="button" for="image-file">Open<input type="file" id="image-file" onchange="gxView.onOpenFile(event)"/></label>
+				</div>
+			</div>
+		
+			<div id="time-name-pane" class="pane">
+				<div id="date-time"></div>
+				<div class="pane-header">
+					<label class="button" onclick="gxView.onSetTime()">Set Time</label>
+				</div>
+				<input id="name-input"/>
+				<div class="pane-footer">
+					<label class="button" onclick="gxView.onSetName()">Set Name</label>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="footer">
+		<div class="copyright">
+			<p>Copyright &copy; <script>document.write(new Date().getFullYear())</script>, Moddable Tech, Inc.</p>
+		</div>
+	</div>
+
+<script>
+
+class View {
+	constructor() {
+		this.dragCounter = 0;
+		this.dropElement = document.getElementById('image-drop');
+		this.fileReader	= new FileReader();
+		this.fileReader.onload = (event) => this.onLoadFile(event);
+		this.textEncoder = new TextEncoder();
+		this.textDecoder = new TextDecoder();
+		
+		this.navigationCanvas = document.getElementById('navigation-canvas');
+		this.drawNavigation(this.navigationCanvas.getContext("2d"), 0, 0, 0);
+		this.accelerometerCanvas = document.getElementById('accelerometer-canvas');
+		this.drawAccelerometer(this.accelerometerCanvas.getContext("2d"), 0, 0, 0);
+		this.imageCanvas = document.getElementById('image-canvas');
+		
+		this.dateTime = document.getElementById('date-time');
+		setInterval(() => { this.onTimeChanged() }, 1000);
+		this.onTimeChanged();
+		
+		this.nameInput = document.getElementById('name-input');
+	}
+	
+	drawAccelerometer(ctx, x, y, z) {
+		ctx.fillStyle = 'white';
+		ctx.fillRect(0, 0, 128, 128);
+		ctx.font = "12px sans-serif";
+		
+		ctx.fillStyle = 'green';
+		ctx.strokeStyle = 'green';
+		ctx.save();
+		ctx.translate(64, 64);
+		ctx.rotate(-Math.PI / 6);
+		this.drawAccelerometerAxis(ctx, x, "X");
+		ctx.restore();
+		
+		ctx.fillStyle = 'blue';
+		ctx.strokeStyle = 'blue';
+		ctx.save();
+		ctx.translate(64, 64);
+		ctx.rotate(Math.PI / 6);
+		this.drawAccelerometerAxis(ctx, y, "Y");
+		ctx.restore();
+		
+		ctx.fillStyle = 'red';
+		ctx.strokeStyle = 'red';
+		ctx.save();
+		ctx.translate(64, 64);
+		ctx.rotate(Math.PI / 2);
+		this.drawAccelerometerAxis(ctx, z, "Z");
+		ctx.restore();
+	}
+	drawAccelerometerAxis(ctx, v, l) {
+		const g = 9.81;
+		const max = 56;
+		v = v * max / g;
+		if (v > max) v = max;
+
+		ctx.beginPath();
+		ctx.moveTo(-64, 0);
+		ctx.lineTo(64, 0);
+		ctx.closePath();
+		ctx.lineWidth = 1;
+		ctx.setLineDash([1, 4]);
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.moveTo(64, 0);
+		ctx.lineTo(56, -6);
+		ctx.lineTo(56, 6);
+		ctx.lineTo(64, 0);
+		ctx.closePath();
+		ctx.fill();
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(v, 0);
+		ctx.closePath();
+		ctx.lineWidth = 2;
+		ctx.setLineDash([]);
+		ctx.stroke();
+		
+		ctx.fillText(l, -64, -4);
+		
+	}
+	drawNavigation(ctx, back, dial, enter) {
+			
+		ctx.fillStyle = 'white';
+		ctx.fillRect(0, 0, 128, 128);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = '#444';
+		
+		const center = 64;
+		
+		const notches = 10;
+		const pi2 = 2 * Math.PI;
+		const cx = enter ? center + 6 : center;
+		const cy = 80;
+		const ro = 32;
+		const ri = 24;
+		let a = dial * 5 * Math.PI / 180	
+		
+		ctx.strokeRect(back ? center - 20 + 6 : center - 20, 16, 40, 16)
+
+		ctx.beginPath();
+		ctx.moveTo(
+			cx + (ro * Math.cos(a)), 
+			cy + (ro * Math.sin(a))
+		);
+		const c = 2 * notches;
+		const da = pi2 / c;
+		const ca = da / 2;
+		let io = false;
+		for (let i = 0; i < c; i++) {
+			if (io) {
+				ctx.bezierCurveTo(
+					cx + (ri * Math.cos(a + ca)),
+					cy + (ri * Math.sin(a + ca)),
+					cx + (ro * Math.cos(a + da - ca)),
+					cy + (ro * Math.sin(a + da - ca)),
+					cx + (ro * Math.cos(a + da)),
+					cy + (ro * Math.sin(a + da))
+				);
+			}
+			else {
+				ctx.bezierCurveTo(
+					cx + (ro * Math.cos(a + ca)),
+					cy + (ro * Math.sin(a + ca)),
+					cx + (ri * Math.cos(a + da - ca)),
+					cy + (ri * Math.sin(a + da - ca)),
+					cx + (ri * Math.cos(a + da)),
+					cy + (ri * Math.sin(a + da))
+				);
+			}
+			io = !io;
+			a += da;
+		}
+		ctx.moveTo(cx + 8, cy);
+		ctx.arc(cx, cy, 8, 0, pi2);
+		ctx.closePath();
+		ctx.stroke();
+		
+		ctx.beginPath();
+		ctx.moveTo(center - 8, 0);
+		ctx.lineTo(center - 8, 127);
+		ctx.closePath();
+		ctx.stroke();
+		ctx.fillStyle = 'rgba(255,255,255,0.8)';
+		ctx.fillRect(center - 8, 0, 128 - center + 8, 128)
+	}
+	
+	async onConnect() {
+		if (navigator.bluetooth === undefined) {
+			alert("This browser does not support Bluetooth.\rPlease use Google Chrome or Microsoft Edge.");
+			return;
+		}
+		if (this.device) {
+			this.device.gatt.disconnect();
+		}
+		else {
+			const serviceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+			const rxUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+			const txUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+			const options = {
+			  filters: [
+				{ name: "M4 UART" },
+				{ services: [serviceUuid] }
+			  ]
+			};
+			try {
+				const device = await navigator.bluetooth.requestDevice(options);
+				this.nameInput.value = device.name;
+    			device.addEventListener('gattserverdisconnected', () => this.onDisconnected());
+				const server = await device.gatt.connect();
+				const service = await server.getPrimaryService(serviceUuid);
+				const rxCharacteristic = await service.getCharacteristic(rxUuid);
+				const txCharacteristic = await service.getCharacteristic(txUuid);
+				await txCharacteristic.startNotifications();
+				txCharacteristic.addEventListener('characteristicvaluechanged',
+					(event) => this.onReceived(event.target.value));
+				this.device = device;	
+				this.rxCharacteristic = rxCharacteristic;	
+				document.getElementById('connect-button').innerHTML = "Disconnect";
+				document.getElementById('navigation-pane').style.display = "block";
+				document.getElementById('accelerometer-pane').style.display = "block";
+			}
+			catch(error) {
+				if (!(error instanceof NotFoundError))
+					alert(`${error}`);
+			}
+		}
+	}
+	onDisconnected() {
+		this.device.forget();	
+		this.device = null;	
+		this.rxCharacteristic = null;	
+		document.getElementById('connect-button').innerHTML = "Connect";
+		document.getElementById('navigation-pane').style.display = "none";
+		document.getElementById('accelerometer-pane').style.display = "none";
+		document.getElementById('image-pane').style.display = "none";
+		document.getElementById('time-name-pane').style.display = "none";
+		let canvas = this.imageCanvas;
+		let ctx = canvas.getContext("2d");
+		ctx.clearRect(0, 0, 128, 128);
+	}
+	dragEnter(event) {
+		event.preventDefault();
+		if (this.dragCounter == 0)
+			this.dropElement.classList.add("image-drag-over");
+		this.dragCounter++;
+	}
+	dragLeave(event) {
+		event.preventDefault();
+		this.dragCounter--;
+		if (this.dragCounter == 0)
+			this.dropElement.classList.remove("image-drag-over");
+	}
+	dragOver(event) {
+		event.preventDefault();
+	}
+	drop(event) {
+		event.preventDefault();
+		this.dragCounter = 0;
+		this.dropElement.classList.remove("image-drag-over");
+    	this.fileReader.readAsDataURL(event.dataTransfer.files[0]);
+	}
+	onLoadFile(event) {
+		let img = new Image();
+		img.src = event.target.result;
+  		img.onload = () => {
+			let canvas = this.imageCanvas;
+			let ctx = canvas.getContext("2d");
+			let scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+			let width = img.width * scale;
+			let height = img.height * scale;
+			let x = (canvas.width / 2) - (width / 2);
+			let y = (canvas.height / 2) - (height / 2);
+			ctx.drawImage(img, x, y, width, height);
+		
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			const data = imageData.data;
+			const c = data.length;
+			const rowBytes = 4 * 128;
+			for (var i = 0; i <= c; i += 4) {
+				data[i] = data[i + 1] = data[i + 2] = Math.round(data[i] * 0.21 + data[i + 1] * 0.71 + data[i + 2] * 0.07);
+			}
+			for (var i = 0; i <= c; i += 4) {
+				const color = (data[i] <= 128) ? 0 : 255;
+				const error = Math.round((data[i] - color) / 8);
+				data[i] = color;
+				data[i + 4] += error;
+				data[i + 8] += error;
+				data[i + rowBytes - 4] += error;
+				data[i + rowBytes] += error;
+				data[i + rowBytes + 4] += error;
+				data[i + (2 * rowBytes)] += error;
+				data[i + 1] = data[i + 2] = data[i];
+			}
+			const buffer = new Uint8Array(16 * 128);
+			let k = 0;
+			for (var i = 0; i <= c; i += 4 * 8) {
+				let result = 0;
+				for (var j = 0; j < 8; j++) {
+					if (data[i + (j * 4)] == 0) {
+						result |= 0x80 >> j;
+					}
+				}
+				buffer[k] = result;
+				k++;
+			} 
+			this.transmit(buffer);
+			ctx.putImageData(imageData, 0, 0);
+		}
+	}
+	onOpenFile(event) {
+    	this.fileReader.readAsDataURL(event.target.files[0]);
+	}
+	onReceived(value) {
+		const message = this.textDecoder.decode(value);
+		const json = JSON.parse(message);
+		document.getElementById('image-pane').style.display = json.auth ? "block" : "none";
+		document.getElementById('time-name-pane').style.display = json.auth ? "block" : "none";
+		this.drawNavigation(this.navigationCanvas.getContext("2d"), json.back, json.dial, json.enter);
+		this.drawAccelerometer(this.accelerometerCanvas.getContext("2d"), json.x, json.y, json.z);
+	}
+	async onSetName() {
+		try {
+			let value = this.nameInput.value;
+			await this.rxCharacteristic.writeValueWithoutResponse(this.textEncoder.encode(JSON.stringify({ name:"name", value })));
+		}
+		catch(error) {
+			alert(`${error}`);
+		}
+	}
+	async onSetTime() {
+		try {
+			await this.rxCharacteristic.writeValueWithoutResponse(this.textEncoder.encode(JSON.stringify({ name:"time", value:Date.now() })));
+		}
+		catch(error) {
+			alert(`${error}`);
+		}
+	}
+	onTimeChanged() {
+		const date = new Date();
+		let year = date.getFullYear();
+		let month = String(date.getMonth() + 1).padStart(2, '0');
+		let day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		this.dateTime.innerHTML = year + "/" + month + "/" + day + " " + hours + ":" + minutes;
+	}
+	async transmit(buffer) {
+		const delta = 128;
+		this.rxCharacteristic.writeValueWithoutResponse(this.textEncoder.encode(JSON.stringify({ name:"image" })));
+		try {
+			const size = buffer.byteLength;
+			for (let offset = 0; offset < size; offset += delta) {
+				const tmp = buffer.subarray(offset, offset + delta);
+				await this.rxCharacteristic.writeValueWithoutResponse(tmp);
+			}
+		}
+		catch(error) {
+			console.error(`Something went wrong. ${error}`);
+		}
+	}
+}
+
+window.gxView = new View();
+</script>
+</body>
+</html>

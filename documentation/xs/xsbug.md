@@ -1,5 +1,5 @@
-
 # xsbug
+Updated June 16, 2023
 
 The `xsbug` JavaScript source level debugger is a full featured debugger that supports debugging modules and applications for [XS platforms](../xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
@@ -33,7 +33,7 @@ Figure 2 shows the Breakpoints tab view. Select the first tab (highlighted in re
 
 To disable/enable a breakpoint, click on the breakpoint in the breakpoint tab then select the **Disable Breakpoint** or **Enable Breakpoint** option in the **Debug** menu.
 
-To add files and folders to **xsbug**, select the **Open File...** and **Open Folder...** items in the **File** menu, or drag and drop files and folders into the **xsbug** window. 
+To add files and folders to **xsbug**, select the **Open File...** and **Open Folder...** items in the **File** menu, or drag and drop files and folders into the **xsbug** window.
 
 To remove files and folders from **xsbug**, use the **Close** ![](../assets/xsbug/close.png) button in the header of a files and folders panel.
 
@@ -43,8 +43,8 @@ To remove files and folders from **xsbug**, use the **Close** ![](../assets/xsbu
 
 The left pane displays:
 
-* The **Breakpoints** themselves. Tap a row in this panel to see where the breakpoint is. In the header of this panel, there is a **Trash** ![](../assets/xsbug/trash.png) button to clear all breakpoints. 
-* The **Search** panel. Use this to recursively search all the files in all the folders added to **xsbug**. 
+* The **Breakpoints** themselves. Tap a row in this panel to see where the breakpoint is. In the header of this panel, there is a **Trash** ![](../assets/xsbug/trash.png) button to clear all breakpoints.
+* The **Search** panel. Use this to recursively search all the files in all the folders added to **xsbug**.
 * Zero or more files and folders panels. Tap folder rows to browse, select a file row to display the file.
 
 The right pane displays:
@@ -54,7 +54,7 @@ The right pane displays:
 
 ## File Pane
 
-Figure 3. shows the File pane (highlighted in red). Selecting a row in the **Breakpoints** or **Calls** panels, or selecting a file in a folder panel opens a right pane with source code. 
+Figure 3. shows the File pane (highlighted in red). Selecting a row in the **Breakpoints** or **Calls** panels, or selecting a file in a folder panel opens a right pane with source code.
 
 **Figure 3.** File pane
 
@@ -65,12 +65,12 @@ In the header of the pane:
 * Tapping the parts of the path open folders in the Finder or Explorer.
 * The **Edit** ![](../assets/xsbug/edit.png) button opens the file in its default editor.
 * The **Find** ![](../assets/xsbug/find.png) button extends the header with a field to search the file.
-* The **Close** ![](../assets/xsbug/close.png) button closes the file pane. 
+* The **Close** ![](../assets/xsbug/close.png) button closes the file pane.
 
 
 ## Preferences Pane
 
-Figure 4. shows the Preferences pane. Selecting the **Preferences** item from the **xsbug** menu opens a right pane with preferences panels. 
+Figure 4. shows the Preferences pane. Selecting the **Preferences** item from the **xsbug** menu opens a right pane with preferences panels.
 
 **Figure 4.** Preferences pane
 
@@ -81,6 +81,16 @@ The **Break** preferences panel toggles the **Break On Start** and **Break On Ex
 The **Instruments** preferences panel allows you to select whether you want the instrumentation panel to automatically show while all virtual machines are running and hide when a virtual machine breaks.
 
 The **Network** preferences panel displays the interfaces **xsbug** is listening on, and provides an edit field to change the port number **xsbug** is listening with. The default port number is **5002**. Changing the port number kills all connected virtual machines.
+
+## Performance Profiler
+xsbug has an integrated performance profiler that is invaluable for identifying performance hotspots in JavaScript code. The profiler works on JavaScript running on embedded device targets and the simulator.
+
+These resources will help you get started:
+
+- [High level introduction](https://blog.moddable.com/blog/profiler/) to the profiler on the Moddable blog
+- [Step-by-step walkthrough](https://blog.moddable.com/blog/optimizing-life/) showing how the XS profiler was used to identify performance hotspots, guide optimizations, and verify performance improvements
+- [Technical details](./XS%20Profiler.md) on the XS performance profiler including implementation notes and how the displayed time values are calculated
+
 
 ## Colorizing console/log with trace
 

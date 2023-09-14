@@ -37,8 +37,24 @@ static uint16_t gSda;
 static uint16_t gScl;
 static i2c_inst_t *gInst;
 
+static uint8_t checkValidI2C(uint32_t data, uint32_t clock, uint8_t *port)
+{
+    if ((data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20 || data == 24 || data == 28) &&
+         (clock == 1 || clock == 5 || clock == 9 || clock == 13 || clock == 17 || clock == 21 || clock == 25 || clock == 29)) {
+            *port = 0;
+            return 1;
+    }
+    if ((data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 22 || data == 26) &&
+         (clock == 3 || clock == 7 || clock == 11 || clock == 15 || clock == 19 || clock == 23 || clock == 27)) {
+            *port = 1;
+            return 1;
+    }
+    return 0;
+}
+
 void modI2CInit(modI2CConfiguration config)
 {
+	uint8_t port;
 #if defined(MODDEF_I2C_SDA_PIN) && defined(MODDEF_I2C_SCL_PIN)
 	if (-1 == config->sda)
 		config->sda = MODDEF_I2C_SDA_PIN;
@@ -48,8 +64,8 @@ void modI2CInit(modI2CConfiguration config)
 
 	config->inst = NULL;
 
-	if ((config->scl & 1) && !(config->sda & 1)  && ((config->scl >> 1) & 1) == ((config->sda >> 1) & 1)) {
-		config->inst = ((config->scl >> 1) & 1) ? &i2c1_inst : &i2c0_inst;
+	if (checkValidI2C(config->sda, config->scl, &port)) {
+		config->inst = port ? &i2c1_inst : &i2c0_inst;
 		if (!config->hz)
 			config->hz = 100000;
 	}

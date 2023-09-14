@@ -2,7 +2,7 @@
 Copyright 2018 Moddable Tech, Inc.<BR>
 Revised: January 3, 2018
 
-The DotStar display controller drives strings of color LED lights. The displays are available from [Adafuit](https://learn.adafruit.com/adafruit-dotstar-leds/overview) in various lengths and configurations
+The DotStar display controller drives strings of color LED lights. The displays are available from [Adafruit](https://learn.adafruit.com/adafruit-dotstar-leds/overview) in various lengths and configurations
 
 These LEDs are not strictly a display, but they can be seen as one row of a display. There are options to purchase them in a organized in a rectangular grid, which is like a display.
 
@@ -31,11 +31,11 @@ In the `defines` object, the optional `brightness` property may be set, where 25
 	}
 
 ### Configuring SPI
-The `defines` object must contain the `spi_port`. 
+The `defines` object must contain the `spi_port`.
 
 	"defines": {
 		"dotstar": {
-			/* other properties here */	
+			/* other properties here */
 			"spi_port": "#HSPI"
 		}
 	}

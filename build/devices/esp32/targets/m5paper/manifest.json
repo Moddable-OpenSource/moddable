@@ -1,6 +1,6 @@
 {
 	"build":{
-		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/m5paper/sdkconfig",
+		"SDKCONFIGPATH": "./sdkconfig",
 		"DEBUGGER_SPEED": "115200"
 	},
 	"include": [
@@ -20,5 +20,17 @@
 	"config": {
 		"format": "Gray16",
 		"screen": "it8951"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
 	}
 }

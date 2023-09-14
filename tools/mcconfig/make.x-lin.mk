@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2021  Moddable Tech, Inc.
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -111,20 +111,6 @@ LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs freetype2 gtk+-3.0) -ldl -l
 
 LINK_OPTIONS = -fPIC
 
-ifeq ($(DEBUG),1)
-MCLOCAL = $(BUILD_DIR)/bin/mac/debug/mclocal
-MCREZ = $(BUILD_DIR)/bin/lin/debug/mcrez
-XSC = $(BUILD_DIR)/bin/lin/debug/xsc
-XSID = $(BUILD_DIR)/bin/lin/debug/xsid
-XSL = $(BUILD_DIR)/bin/lin/debug/xsl
-else
-MCLOCAL = $(BUILD_DIR)/bin/mac/release/mclocal
-MCREZ = $(BUILD_DIR)/bin/lin/release/mcrez
-XSC = $(BUILD_DIR)/bin/lin/release/xsc
-XSID = $(BUILD_DIR)/bin/lin/release/xsid
-XSL = $(BUILD_DIR)/bin/lin/release/xsl
-endif
-
 VPATH += $(XS_DIRECTORIES)
 
 .PHONY: all	
@@ -156,7 +142,7 @@ $(TMP_DIR)/mc.xs.c.o: $(TMP_DIR)/mc.xs.c $(HEADERS)
 
 $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	@echo "# xsl modules"
-	$(XSL) -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
+	xsl -b $(MODULES_DIR) -o $(TMP_DIR) $(PRELOADS) $(STRIPS) $(CREATION) $(MODULES)
 
 $(TMP_DIR)/mc.resources.o: $(RESOURCES_DIR)/mc.resources.c
 	@echo "# cc" $(<F)
@@ -168,7 +154,7 @@ $(RESOURCES_DIR)/mc.resources.c: $(RESOURCES_DIR)/mc.resources.xml
 
 $(RESOURCES_DIR)/mc.resources.xml: $(RESOURCES) $(MANIFEST)
 	@echo "# mcrez resources"
-	$(MCREZ) $(RESOURCES) -o $(RESOURCES_DIR) -p x-lin -r mc.resources.xml -s $(SLASH_SIGNATURE)
+	mcrez $(RESOURCES) -o $(RESOURCES_DIR) -p x-lin -r mc.resources.xml -s $(SLASH_SIGNATURE)
 
 INSTALL_BIN_DIR = /usr/bin
 INSTALL_DESKTOP_DIR = /usr/share/applications/

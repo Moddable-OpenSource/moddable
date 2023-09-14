@@ -355,20 +355,17 @@ txProfilerRecord* fxNewProfilerRecord(txMachine* the, txID recordID)
 
 void fxPrintID(txMachine* the, FILE* file, txID id)
 {
-	txSlot* key = fxGetKey(the, id);
-	if (key) {
-		if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) {
-			fxPrintString(the, file,  key->value.key.string);
-			return;
-		}
-		if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND)) {
+	if (id != XS_NO_ID) {
+		txBoolean adorn;
+		txString string = fxGetKeyString(the, id, &adorn);
+		if (adorn)
 			fprintf(file, "[");
-			fxPrintString(the, file, key->value.string);
+		fxPrintString(the, file, string);
+		if (adorn)
 			fprintf(file, "]");
-			return;
-		}
 	}
-	fprintf(file, "?");
+	else
+		fprintf(file, "?");
 }
 
 void fxPrintProfiler(txMachine* the, void* stream)

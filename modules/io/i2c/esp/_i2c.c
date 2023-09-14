@@ -30,6 +30,8 @@
 
 #ifdef __ets__
 	#include "twi.h"			// i2c
+
+	extern unsigned char twi_writeRead(unsigned char address, unsigned char* buf, unsigned int len, unsigned char* bufRead, unsigned int lenRead, unsigned char sendStop);
 #endif
 
 #include "builtinCommon.h"
@@ -217,6 +219,35 @@ void _xs_i2c_write(xsMachine *the)
 	}
 	else if (err)
 		xsUnknownError("i2c write failed");
+}
+
+void _xs_i2c_writeRead(xsMachine *the)
+{
+	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	int err;
+	xsUnsignedValue lengthWrite, lengthRead;
+	void *bufferWrite, *bufferRead;
+	uint8_t stop = true;
+
+	if (xsmcArgc > 2)
+		stop = xsmcToBoolean(xsArg(2));
+
+	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
+		xsResult = xsArg(1);
+		xsmcGetBufferWritable(xsResult, &bufferRead, &lengthRead);
+		xsmcSetInteger(xsResult, lengthRead);
+	}
+	else {
+ 		lengthRead = xsmcToInteger(xsArg(1));
+		bufferRead = xsmcSetArrayBuffer(xsResult, NULL, lengthRead);
+	}
+
+	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
+
+	i2cActivate(i2c);
+	err = twi_writeRead(i2c->address, bufferWrite, lengthWrite, bufferRead, lengthRead, stop);
+	if (err)
+		xsUnknownError("writeRead failed");
 }
 
 void i2cActivate(I2C i2c)

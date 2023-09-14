@@ -170,6 +170,12 @@ void fxScopeAddDeclareNode(txScope* self, txDeclareNode* node)
 			self->firstDeclareNode = node;
 		self->lastDeclareNode = node;
 	}
+	if (node->description->token == XS_TOKEN_USING) {
+		txDeclareNode* node = fxDeclareNodeNew(self->parser, XS_TOKEN_CONST, C_NULL);
+		node->flags |= mxDeclareNodeDisposableFlag;
+		fxScopeAddDeclareNode(self, node);
+		self->disposableNodeCount++;
+	}
 }
 
 void fxScopeAddDefineNode(txScope* self, txDefineNode* node) 
@@ -210,7 +216,8 @@ void fxScopeBound(txScope* self, txBinder* binder)
 	if (self->token == XS_TOKEN_MODULE) {
 		txDeclareNode* node = self->firstDeclareNode;
 		while (node) {
-			node->flags |= mxDeclareNodeClosureFlag |  mxDeclareNodeUseClosureFlag;
+			if (!(node->flags & mxDeclareNodeDisposableFlag))
+				node->flags |= mxDeclareNodeClosureFlag |  mxDeclareNodeUseClosureFlag;
 			node = node->nextDeclareNode;
 		}
 	}
@@ -353,6 +360,7 @@ void fxScopeLookup(txScope* self, txAccessNode* access, txBoolean closureFlag)
 		}
 		else {
 			access->declaration = C_NULL;
+			access->symbol->usage |= 2;
 		}
 	}
 }
@@ -538,7 +546,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 			fxScopeAddDeclareNode(hoister->functionScope, self);
 		}
 	}
-	else if ((self->description->token == XS_TOKEN_CONST) || (self->description->token == XS_TOKEN_LET)) {
+	else if ((self->description->token == XS_TOKEN_CONST) || (self->description->token == XS_TOKEN_LET) || (self->description->token == XS_TOKEN_USING)) {
 		node = fxScopeGetDeclareNode(hoister->scope, self->symbol);
 		if (!node && (hoister->scope == hoister->bodyScope)) {
 			node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
@@ -556,7 +564,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 		while (scope != hoister->bodyScope) {
 			node = fxScopeGetDeclareNode(scope, self->symbol);
 			if (node) {
-				if ((node->description->token == XS_TOKEN_CONST) || (node->description->token == XS_TOKEN_LET) || (node->description->token == XS_TOKEN_DEFINE))
+				if ((node->description->token == XS_TOKEN_CONST) || (node->description->token == XS_TOKEN_LET) || (node->description->token == XS_TOKEN_USING) || (node->description->token == XS_TOKEN_DEFINE))
 					break;
 				node = C_NULL;
 			}
@@ -565,7 +573,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 		if (!node) {
 			node = fxScopeGetDeclareNode(scope, self->symbol);
 			if (node) {
-				if ((node->description->token != XS_TOKEN_CONST) && (node->description->token != XS_TOKEN_LET))
+				if ((node->description->token != XS_TOKEN_CONST) && (node->description->token != XS_TOKEN_LET) && (node->description->token != XS_TOKEN_USING))
 					node = C_NULL;
 			}
 		}
@@ -881,7 +889,7 @@ void fxAssignNodeBind(void* it, void* param)
 	txAssignNode* self = it;
 	txToken token = self->reference->description->token;
 	fxNodeDispatchBind(self->reference, param);
-	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_VAR))
+	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_USING) || (token == XS_TOKEN_VAR))
 		fxFunctionNodeRename(self->value, ((txAccessNode*)self->reference)->symbol);
 	fxNodeDispatchBind(self->value, param);
 }
@@ -891,7 +899,7 @@ void fxBindingNodeBind(void* it, void* param)
 	txBindingNode* self = it;
 	txToken token = self->target->description->token;
 	fxNodeDispatchBind(self->target, param);
-	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_VAR))
+	if ((token == XS_TOKEN_ACCESS) || (token == XS_TOKEN_ARG) || (token == XS_TOKEN_CONST) || (token == XS_TOKEN_LET) || (token == XS_TOKEN_USING) || (token == XS_TOKEN_VAR))
 		fxFunctionNodeRename(self->initializer, ((txAccessNode*)self->target)->symbol);
 	fxNodeDispatchBind(self->initializer, param);
 }
@@ -901,7 +909,11 @@ void fxBlockNodeBind(void* it, void* param)
 	txBlockNode* self = it;
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPushVariables(param, 2);
 	fxNodeDispatchBind(self->statement, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
 }
 
@@ -913,14 +925,22 @@ void fxCatchNodeBind(void* it, void* param)
 		fxNodeDispatchBind(self->parameter, param);
 		fxScopeBinding(self->statementScope, param);
 		fxScopeBindDefineNodes(self->statementScope, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->statement, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxScopeBound(self->statementScope, param);
 		fxScopeBound(self->scope, param);
 	}
 	else {
 		fxScopeBinding(self->statementScope, param);
 		fxScopeBindDefineNodes(self->statementScope, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxNodeDispatchBind(self->statement, param);
+		if (self->statementScope->disposableNodeCount)
+			fxBinderPushVariables(param, 2);
 		fxScopeBound(self->statementScope, param);
 	}
 }
@@ -1021,6 +1041,8 @@ void fxForNodeBind(void* it, void* param)
 	txForNode* self = it;
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPushVariables(param, 2);
 	if (self->initialization)
 		fxNodeDispatchBind(self->initialization, param);
 	if (self->expression)
@@ -1028,20 +1050,22 @@ void fxForNodeBind(void* it, void* param)
 	if (self->iteration)
 		fxNodeDispatchBind(self->iteration, param);
 	fxNodeDispatchBind(self->statement, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
 }
 
 void fxForInForOfNodeBind(void* it, void* param) 
 {
 	txForInForOfNode* self = it;
-	fxBinderPushVariables(param, 5);
+	fxBinderPushVariables(param, 6);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->reference, param);
 	fxNodeDispatchBind(self->expression, param);
 	fxNodeDispatchBind(self->statement, param);
 	fxScopeBound(self->scope, param);
-	fxBinderPopVariables(param, 5);
+	fxBinderPopVariables(param, 6);
 }
 
 void fxFunctionNodeBind(void* it, void* param) 
@@ -1250,7 +1274,11 @@ void fxSwitchNodeBind(void* it, void* param)
 	fxNodeDispatchBind(self->expression, param);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPushVariables(param, 2);
 	fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
+	if (self->scope->disposableNodeCount)
+		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
 }
 

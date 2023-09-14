@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,14 +15,10 @@
 import Instrumentation from "instrumentation";
 import Debug from "debug";
 
-// see modInstrumentation.h starting at kModInstrumentationSlotHeapSize
+// get instrumentation indicies for memory
 const xsInstrumentation = {
-	slot_used: 0,
-	chunk_used: 1,
-	keys_used: 2,
-	garbage_collections: 3,
-	modules_loaded: 4,
-	stack_used: 5
+	slot_used: Instrumentation.map("XS Slot Heap Used"),
+	chunk_used: Instrumentation.map("XS Chunk Heap Used"),
 };
 
 let proxyTarget = {}, proxyObject = {};
@@ -34,20 +30,10 @@ function* idMaker() {
         yield index++;
 }
 
-// xs instrumentation is at the end, by convention, so find the end and back-up
-let xsInstrumentationOffset;
-for (let i = 0; true; i++) {
-	if (undefined !== Instrumentation.get(i))
-		continue;
-	
-	xsInstrumentationOffset = i - 6;
-	break;
-}
-
 // determine the size of one slot -- assumes Object is one slot
-let slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset);
+let slots = Instrumentation.get(xsInstrumentation.slot_used);
 const holdOneSlot = {};
-const slotSize = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset) - slots; 
+const slotSize = Instrumentation.get(xsInstrumentation.slot_used) - slots; 
 Debug.gc();
 
 measure("Boolean", () => true);
@@ -114,15 +100,15 @@ function measure(name, what)
 
 	Debug.gc();
 
-	slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset);
-	chunks = Instrumentation.get(xsInstrumentation.chunk_used + xsInstrumentationOffset);
+	slots = Instrumentation.get(xsInstrumentation.slot_used);
+	chunks = Instrumentation.get(xsInstrumentation.chunk_used);
 
 	result = what();
 
 	Debug.gc();
 
-	slots = Instrumentation.get(xsInstrumentation.slot_used + xsInstrumentationOffset) - slots;
-	chunks = Instrumentation.get(xsInstrumentation.chunk_used + xsInstrumentationOffset) - chunks;
+	slots = Instrumentation.get(xsInstrumentation.slot_used) - slots;
+	chunks = Instrumentation.get(xsInstrumentation.chunk_used) - chunks;
 
 	if (slots && chunks)
 		trace(`${name}: ${slots / slotSize} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)

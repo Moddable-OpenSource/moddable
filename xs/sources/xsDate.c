@@ -609,8 +609,9 @@ void fx_Date_UTC(txMachine* the)
 
 txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txSlot* instance = mxThis->value.reference;
 	txNumber number;
+#if mxAliasInstance
+	txSlot* instance = mxThis->value.reference;
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias) {
@@ -618,6 +619,7 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 			slot = instance->next;
 		}
 	}
+#endif
 	number = slot->value.number;
 	if (c_isnan(number)) {
 		mxResult->value.number = C_NAN;
@@ -630,8 +632,9 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 
 void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txSlot* instance = mxThis->value.reference;
 	txNumber number;
+#if mxAliasInstance
+	txSlot* instance = mxThis->value.reference;
 	if (instance->ID) {
 		txSlot* alias = the->aliasArray[instance->ID];
 		if (alias)
@@ -640,6 +643,7 @@ void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, tx
 			instance = fxAliasInstance(the, instance);
 		slot = instance->next;
 	}
+#endif
 	number = slot->value.number;
 	if (c_isnan(number))
 		return;

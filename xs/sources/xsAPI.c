@@ -454,12 +454,15 @@ txSlot* fxToReference(txMachine* the, txSlot* theSlot)
 
 /* Instances and Prototypes */
 
-txSlot* fxNewArray(txMachine* the, txInteger size)
+txSlot* fxNewArray(txMachine* the, txIndex size)
 {
 	txSlot* instance;
+	txSlot* array;
 	mxPush(mxArrayPrototype);
 	instance = fxNewArrayInstance(the);
-	fxSetIndexSize(the, instance->next, size, XS_CHUNK);
+	array = instance->next;
+	fxSetIndexSize(the, array, size, XS_CHUNK);
+	fxIndexArray(the, array);
 	return instance;
 }
 
@@ -941,18 +944,20 @@ void fxEnumerate(txMachine* the)
 	mxRunCount(0);
 }
 
-void fxGetAll(txMachine* the, txID id, txIndex index)
+void fxGetAll(txMachine* the, txSlot* stack, txID id, txIndex index)
 {
-	txBoolean flag = mxIsReference(the->stack) ? 1 : 0;
-	txSlot* instance = (flag) ? the->stack->value.reference : fxToInstance(the, the->stack);
+	txBoolean flag = mxIsReference(stack) ? 1 : 0;
+	txSlot* instance = (flag) ? stack->value.reference : fxToInstance(the, stack);
 	txSlot* property = mxBehaviorGetProperty(the, instance, (txID)id, index, XS_ANY);
 	if (!property) {
-		the->stack->kind = XS_UNDEFINED_KIND;
+		the->stack = stack;
+		stack->kind = XS_UNDEFINED_KIND;
 	}
 	else if (property->kind == XS_ACCESSOR_KIND) {
 		txSlot* function = property->value.accessor.getter;
 		if (mxIsFunction(function)) {
 			txSlot* slot;
+			the->stack = stack;
 			mxOverflow(-5);
             the->stack -= 5;
 			slot = the->stack;
@@ -969,12 +974,15 @@ void fxGetAll(txMachine* the, txID id, txIndex index)
 			}
 			mxRunCount(0);
 		}
-		else
-			the->stack->kind = XS_UNDEFINED_KIND;
+		else {
+			the->stack = stack;
+			stack->kind = XS_UNDEFINED_KIND;
+		}
 	}
 	else {
-		the->stack->kind = property->kind;
-		the->stack->value = property->value;
+		the->stack = stack;
+		stack->kind = property->kind;
+		stack->value = property->value;
 	}
 }
 
@@ -995,10 +1003,11 @@ void fxGetIndex(txMachine* the, txIndex index)
 	mxGetAll(XS_NO_ID, index);
 }
 
-txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
+txBoolean fxHasAll(txMachine* the, txSlot* stack, txID id, txIndex index)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
+	txSlot* instance = fxToInstance(the, stack);
 	txBoolean result = mxBehaviorHasProperty(the, instance, id, index);
+	the->stack = stack;
 	mxPop();
 	return result;
 }
@@ -1006,25 +1015,24 @@ txBoolean fxHasAll(txMachine* the, txID id, txIndex index)
 txBoolean fxHasAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	mxPop();
-	return mxHasAll(at->value.at.id, at->value.at.index);
+	return fxHasAll(the, the->stack + 1, at->value.at.id, at->value.at.index);
 }
 
 txBoolean fxHasID(txMachine* the, txID id)
 {
-	return mxHasAll(id, 0);
+	return fxHasAll(the, the->stack, id, 0);
 }
 
 txBoolean fxHasIndex(txMachine* the, txIndex index)
 {
-	return mxHasAll(XS_NO_ID, index);
+	return fxHasAll(the, the->stack, XS_NO_ID, index);
 }
 
-void fxSetAll(txMachine* the, txID id, txIndex index)
+void fxSetAll(txMachine* the, txSlot* stack, txID id, txIndex index)
 {
-	txSlot* value = the->stack + 1;
-	txSlot* instance = fxToInstance(the, the->stack);
-	txSlot* property = mxBehaviorSetProperty(the, instance, (txID)id, index, XS_ANY);
+	txSlot* value = stack + 1;
+	txSlot* instance = fxToInstance(the, stack);
+	txSlot* property = mxBehaviorSetProperty(the, instance, id, index, XS_ANY);
 	if (!property)
 		mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not extensible", id);
 	if (property->kind == XS_ACCESSOR_KIND) {
@@ -1032,6 +1040,7 @@ void fxSetAll(txMachine* the, txID id, txIndex index)
 		txSlot* function = property->value.accessor.setter;
 		if (!mxIsFunction(function))
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: no setter", id);
+		the->stack = stack;
 		mxOverflow(-5);
 		the->stack -= 5;
 		slot = the->stack;
@@ -1053,6 +1062,7 @@ void fxSetAll(txMachine* the, txID id, txIndex index)
 			mxDebugID(XS_TYPE_ERROR, "C: xsSet %s: not writable", id);
 		property->kind = value->kind;
 		property->value = value->value;
+		the->stack = stack;
 		mxPop();
 	}
 }
@@ -1060,54 +1070,47 @@ void fxSetAll(txMachine* the, txID id, txIndex index)
 void fxSetAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	mxPop();
-	mxSetAll(at->value.at.id, at->value.at.index);
+	fxSetAll(the, the->stack + 1, at->value.at.id, at->value.at.index);
 }
 
 void fxSetID(txMachine* the, txID id)
 {
-	mxSetAll(id, 0);
+	fxSetAll(the, the->stack, id, 0);
 }
 
 void fxSetIndex(txMachine* the, txIndex index)
 {
-	mxSetAll(XS_NO_ID, index);
+	fxSetAll(the, the->stack, XS_NO_ID, index);
 }
 
-void fxDeleteAll(txMachine* the, txID id, txIndex index)
+void fxDeleteAll(txMachine* the, txSlot* stack, txID id, txIndex index)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	if (!mxBehaviorDeleteProperty(the, instance, (txID)id, index))
+	txSlot* instance = fxToInstance(the, stack);
+	if (!mxBehaviorDeleteProperty(the, instance, id, index))
 		mxDebugID(XS_TYPE_ERROR, "delete %s: not configurable", id);
+	the->stack = stack;
 }
 
 void fxDeleteAt(txMachine* the)
 {
 	txSlot* at = fxAt(the, the->stack);
-	txSlot* instance = fxToInstance(the, the->stack + 1);
-	mxPop();
-	if (!mxBehaviorDeleteProperty(the, instance, at->value.at.id, at->value.at.index))
-		mxDebugID(XS_TYPE_ERROR, "delete %s: not configurable", at->value.at.id);
+	fxDeleteAll(the, the->stack + 1, at->value.at.id, at->value.at.index);
 }
 
 void fxDeleteID(txMachine* the, txID id)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	if (!mxBehaviorDeleteProperty(the, instance, (txID)id, 0))
-		mxDebugID(XS_TYPE_ERROR, "delete %s: not configurable", id);
+	fxDeleteAll(the, the->stack, id, 0);
 }
 
 void fxDeleteIndex(txMachine* the, txIndex index)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	if (!mxBehaviorDeleteProperty(the, instance, XS_NO_ID, index))
-		mxTypeError("delete %ld: not configurable", index);
+	fxDeleteAll(the, the->stack, XS_NO_ID, index);
 }
 
-void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mask)
+void fxDefineAll(txMachine* the, txSlot* stack, txID id, txIndex index, txFlag flag, txFlag mask)
 {
-	txSlot* instance = fxToInstance(the, the->stack);
-	txSlot* slot = the->stack + 1;
+	txSlot* instance = fxToInstance(the, stack);
+	txSlot* slot = stack + 1;
 	if (mask & XS_GETTER_FLAG) {
 		slot->value.accessor.getter = slot->value.reference;
 		slot->value.accessor.setter = C_NULL;
@@ -1121,23 +1124,24 @@ void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mas
 	slot->flag = flag & XS_GET_ONLY;
 	if (!mxBehaviorDefineOwnProperty(the, instance, id, index, slot, mask))
 		mxTypeError("define %ld: not configurable", id);
+	the->stack = stack;
 	mxPop();
 }
 
 void fxDefineAt(txMachine* the, txFlag flag, txFlag mask)
 {
-	txSlot* at = fxAt(the, the->stack++);
-	mxDefineAll(at->value.at.id, at->value.at.index, flag, mask);
+	txSlot* at = fxAt(the, the->stack);
+	fxDefineAll(the, the->stack + 1, at->value.at.id, at->value.at.index, flag, mask);
 }
 
 void fxDefineID(txMachine* the, txID id, txFlag flag, txFlag mask)
 {
-	mxDefineAll(id, 0, flag, mask);
+	fxDefineAll(the, the->stack, id, 0, flag, mask);
 }
 
 void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask)
 {
-	mxDefineAll(XS_NO_ID, index, flag, mask);
+	fxDefineAll(the, the->stack, XS_NO_ID, index, flag, mask);
 }
 
 void fxCall(txMachine* the)
@@ -1304,14 +1308,15 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     va_list arguments;
     txSlot* slot;
 #ifdef mxDebug
-	fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
+ 	if (!the->debugEval)
+		fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
 	length = mxStringLength(message);
 #endif
     va_start(arguments, format);
     c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
     va_end(arguments);
 
-	length = c_strlen(message) - 1;
+	length = (txSize)c_strlen(message) - 1;
 	while (length && (0x80 & message[length]))
 		message[length--] = 0;
 
@@ -1572,6 +1577,7 @@ void fxDeleteMachine(txMachine* the)
 		gxDefaults.terminateSharedCluster();
 }
 
+#if mxAliasInstance
 txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext)
 {
 	txMachine* the = (txMachine *)c_calloc(sizeof(txMachine), 1);
@@ -1784,12 +1790,13 @@ void fxShareMachine(txMachine* the)
 		the->shared = 1;
 	}
 }
+#endif
 
 /* Garbage Collector */
 
 void fxCollectGarbage(txMachine* the)
 {
-	fxCollect(the, XS_COMPACT_FLAG);
+	fxCollect(the, XS_COMPACT_FLAG | XS_COLLECT_KEYS_FLAG);
 }
 
 void fxEnableGarbageCollection(txMachine* the, txBoolean enableIt)
@@ -1876,6 +1883,8 @@ txMachine* fxBeginHost(txMachine* the)
 		the->breakOnStartFlag = 0;
 		the->stack->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
 	}
+	if (the->frame && (the->frame->flag & XS_STEP_INTO_FLAG))
+		the->stack->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
 #endif
 	the->stack->kind = XS_FRAME_KIND;
 	the->stack->value.frame.code = the->code;

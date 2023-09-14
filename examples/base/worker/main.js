@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,15 +19,26 @@ trace("hello\n");
 let index = 0
 
 function start() {
-	// note: allocation and stackCount are very small - most real workers will require a larger allocation and stackCount
-	let aWorker = new Worker("simpleworker", {allocation: 6 * 1024, stackCount: 64, slotCount: 32});
+	// note: chunk, heap (slots), and stack are very small - most real-world workers will require different settings
+	const aWorker = new Worker("simpleworker", {
+		static: 6 * 1024,
+		chunk: {
+			initial: 1536,
+			incremental: 256
+		},
+		heap: {
+			initial: 64,
+			incremental: 32
+		},
+		stack: 64
+	});
 
 	aWorker.postMessage({hello: "world", index: ++index});
 	aWorker.postMessage("hello, again");
 	aWorker.postMessage([1, 2, 3]);
 
 	aWorker.onmessage = function(message) {
-		if (3 == message.counter) {
+		if (3 === message.counter) {
 			trace(`start worker ${index}\n`);
 			aWorker.terminate();
 			start();

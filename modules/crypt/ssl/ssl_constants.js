@@ -62,7 +62,7 @@ export const NONE = 0;
 export const CBC = 1;
 export const GCM = 2;
 
-export const protocolVersion = (3 << 8) | 1;	// default protocol version
+export const protocolVersion = (3 << 8) | 3;	// default protocol version
 export const minProtocolVersion = (3 << 8) | 1;
 export const maxProtocolVersion = (3 << 8) | 3;
 

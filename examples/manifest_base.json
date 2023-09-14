@@ -6,18 +6,9 @@
 		"PIU": "$(MODULES)/piu"
 	},
 	"creation": {
-		"static": 32768,
-		"chunk": {
-			"initial": 1536,
-			"incremental": 512
-		},
-		"heap": {
-			"initial": 512,
-			"incremental": 64
-		},
-		"stack": 256,
 		"keys": {
-			"available": 32,
+			"initial": 32,
+			"incremental": 32,
 			"name": 53,
 			"symbol": 3
 		},
@@ -59,34 +50,31 @@
 		},
 		"esp32": {
 			"include": "$(BUILD)/devices/esp32/manifest.json",
-			"creation": {
-				"static": 0,
-				"chunk": {
-					"initial": 78848,
-					"incremental": 0
-				},
-				"heap": {
-					"initial": 4928,
-					"incremental": 0
-				},
-				"stack": 512
-			},
 			"modules": {
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
 			}
 		},
 		"pico": {
-			"include": "$(BUILD)/devices/pico/manifest.json",
-			"creation": {
-				"static": 131072,
-				"stack": 512
-			}
+			"include": "$(BUILD)/devices/pico/manifest.json"
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"
 		},
 		"qca4020": {
 			"include": "$(BUILD)/devices/qca4020/manifest.json"
+		},
+		"nrf52": {
+			"include": "$(BUILD)/devices/nrf52/manifest.json",
+			"creation": {
+				"static": 131072,
+				"chunk": {
+					"initial": 32768
+				},
+				"heap": {
+					"initial": 2048
+				},
+				"stack": 512
+			}
 		},
 		"lin": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"

@@ -1,6 +1,6 @@
 # XS Platforms
-Copyright 2016-2020 Moddable Tech, Inc.<BR>
-Revised: September 2, 2020
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## History
 
@@ -8,11 +8,11 @@ A platform is a combination of hardware and system software. For each platform, 
 
 Historically, XS used one interface file, `xsPlatform.h` splitting the implementation into two files: `xsPlatform.c` and `xsHost.c`. Many platforms shared the same interface and implementation files, based either on the KinomaJS platform abstraction, or on an adhoc platform abstraction for command line tools.
 
-Further, an XS machine had many ways to find and load modules and programs: from JS files, from stand alone compiled XSB files with or without companion DLL or SO files, and from a linked XSA file with a companion DLL or SO file... The XS platform was in charge of providing such options. 
+Further, an XS machine had many ways to find and load modules and programs: from JS files, from stand alone compiled XSB files with or without companion DLL or SO files, and from a linked XSA file with a companion DLL or SO file... The XS platform was in charge of providing such options.
 
 When we started working on microcontrollers, the main inspiration for XS platforms was the adhoc platform abstraction for command line tools, which was the most complex version.
 
-Today the XS runtime has been significantly streamlined, especially on microcontrollers. XS machines are always cloned from a read-only machine prepared by the XS linker. There are only modules, byte coded by the XS compiler. Modules are either preloaded or prepared to be loaded and unloaded at runtime. 
+Today the XS runtime has been significantly streamlined, especially on microcontrollers. XS machines are always cloned from a read-only machine prepared by the XS linker. There are only modules, byte coded by the XS compiler. Modules are either preloaded or prepared to be loaded and unloaded at runtime.
 
 Consequently, it is now much simpler to build an XS platform. This document describes the necessary interface and implementation files.
 
@@ -32,7 +32,7 @@ XS uses a few basic types that the interface file has to define.
 
 ### C defines and includes
 
-XS mostly relies on constants and functions from the C stantard library, accessed thru macros with `C_` or `c_` prefixes:
+XS mostly relies on constants and functions from the C standard library, accessed thru macros with `C_` or `c_` prefixes:
 
 	#include <math.h>
 	#define C_NAN NAN
@@ -42,7 +42,7 @@ XS mostly relies on constants and functions from the C stantard library, accesse
 	#define c_free free
 	#define c_malloc malloc
 	//...
-	
+
 Such definitions, and the corresponding includes, are the most significant part of the interface file. The macros allows a platform to provide its own constants and functions. See any of the provided `xsPlatform.h` for the list of macros to define.
 
 ### ESP macros
@@ -52,7 +52,7 @@ The Xtensa instruction set and architecture, used most notably in microcontrolle
 	#define c_read8(POINTER) *((txU1 *)(POINTER))
 	#define c_read16(POINTER) *((txU2 *)(POINTER))
 	#define c_read32(POINTER) *((txU4 *)(POINTER))
-	
+
 	#define ICACHE_FLASH_ATTR
 	#define ICACHE_RODATA_ATTR
 	#define ICACHE_XS6RO_ATTR
@@ -87,7 +87,7 @@ On Windows, the `mxMachinePlatform` macro adds the socket and message window han
 
 The implementation file first includes `xsAll.h`, which contains the definitions of all XS macros and types, and the declarations of all XS extern functions. Then the platform has to implement the functions described here under.
 
-XS machines do not support multiple threads, though platforms can support multiple threads, each with their own XS machines. All calls and callbacks described here must happen in the thread that created or cloned the machine. 
+XS machines do not support multiple threads, though platforms can support multiple threads, each with their own XS machines. All calls and callbacks described here must happen in the thread that created or cloned the machine.
 
 The functions are grouped into meaningful sections. The xsPlatform.c file can also provide POSIX functions that the platform is missing.
 
@@ -112,7 +112,7 @@ The functions in this section are only necessary for the debug version of XS. Th
 	#ifdef mxDebug
 	// debug functions
 	#endif
-	
+
 If the platform does not support the communication with **xsbug**, functions in this section can be empty, except  `fxIsConnected` and `fxIsReadable`, which must return `0`.
 
 Communication between **xsbug** and the XS machine can be done over either a TCP/IP or serial connection. In the case of a TCP/IP connection, **xsbug** is the server and XS machines are clients. When using a serial connection, **xsbug** continues to communication over TCP/IP and a bridge running on the computer relays data between the serial and TCP connections. In the case of the ESP8266, this relay is performed by **serial2xsbug**.
@@ -150,7 +150,7 @@ On Windows the platform uses `WSAAsyncSelect` with the `WM_XSBUG` message:
 
 - `void fxConnect(txMachine* the)`
 
-XS calls `fxConnect` to connect `the` machine to **xsbug**. 
+XS calls `fxConnect` to connect `the` machine to **xsbug**.
 
 For TCP/IP connections, platforms create a socket and connect it to **xsbug**. On Mac and Windows the address of **xsbug** is usually `localhost`, on other platforms it is usually defined by an environment variable. The port of **xsbug** defaults to `5002` by convention.
 
@@ -160,7 +160,7 @@ Machines are connect to **xsbug** after being created, i.e. `fxConnect` happens 
 
 - `void fxDisconnect(txMachine* the)`
 
-XS calls `fxDisconnect` to disconnect `the` machine from **xsbug**. 
+XS calls `fxDisconnect` to disconnect `the` machine from **xsbug**.
 
 For TCP/IP connections, platforms close the socket.
 
@@ -176,7 +176,7 @@ XS calls `fxIsConnected` to know if `the` machine is connected to **xsbug**.
 
 - `txBoolean fxIsReadable(txMachine* the)`
 
-XS calls `fxIsReadable` to know if `the` machine received a message from **xsbug**. Platforms must return 1 or 0 depending on the availability of bytes to read. 
+XS calls `fxIsReadable` to know if `the` machine received a message from **xsbug**. Platforms must return 1 or 0 depending on the availability of bytes to read.
 
 The performance of the implementation of `fxIsReadable` is important since XS calls `fxIsReadable` at every `LINE` byte code (e.g. for each line of JavaScript source code executed).
 
@@ -184,7 +184,7 @@ The performance of the implementation of `fxIsReadable` is important since XS ca
 
 - `void fxReceive(txMachine* the)`
 
-XS calls `fxReceive` to receive a message from **xsbug**. The implementation reads bytes into `the->debugBuffer` and sets `the->debugOffset` to the number of bytes received. 
+XS calls `fxReceive` to receive a message from **xsbug**. The implementation reads bytes into `the->debugBuffer` and sets `the->debugOffset` to the number of bytes received.
 
 XS calls `fxReceive` repeatedly until the entire message is received. The maximum number of bytes that can be read by `fxReceive` is `sizeof(the->debugBuffer) - 1`.
 
@@ -192,15 +192,15 @@ XS calls `fxReceive` repeatedly until the entire message is received. The maximu
 
 - `void fxSend(txMachine* the, txBoolean more)`
 
-XS calls `fxSend` to send a message to **xsbug**. The implementation gets the number of bytes to send from `the->echoOffset` and write bytes from `the->echoBuffer`. 
+XS calls `fxSend` to send a message to **xsbug**. The implementation gets the number of bytes to send from `the->echoOffset` and write bytes from `the->echoBuffer`.
 
-XS calls `fxSend ` repeatedly until the entire message is sent, `more` equals `1` while the message is incomplete, `0` when the message is complete. 
+XS calls `fxSend ` repeatedly until the entire message is sent, `more` equals `1` while the message is incomplete, `0` when the message is complete.
 
 --
 
 ### Eval
 
-The standard `eval` function, `Function` constructor and `Generator` constructor must transform source code into byte codes and keys. 
+The standard `eval` function, `Function` constructor and `Generator` constructor must transform source code into byte codes and keys.
 
 XS lets the platform decides is such feature is worth the memory it takes.
 
@@ -248,7 +248,7 @@ Keys are the names and symbols that XS uses to identify properties.
 
 `fxBuildKeys` is called only when creating an XS machine, in order to initialize the default keys used by the standard ECMAScript host functions.
 
-On most platforms today, XS machines are cloned. The default keys are available and ready to be used in the read-only machine. So `fxBuildKeys` is never called and can be empty. 
+On most platforms today, XS machines are cloned. The default keys are available and ready to be used in the read-only machine. So `fxBuildKeys` is never called and can be empty.
 
 If the platform supports the creation of XS machines from scratch, `fxBuildKeys` must be implemented as:
 
@@ -271,7 +271,7 @@ If the platform supports the creation of XS machines from scratch, `fxBuildKeys`
 
 ### Memory
 
-XS machines use two heaps: the chunks heap and the slots heap. 
+XS machines use two heaps: the chunks heap and the slots heap.
 
 Chunks are blocks of variable size that the garbage collector can move to compact memory. XS stores strings, buffers, arrays, etc into chunks. On microcontrollers without a dedicated memory management unit, chunks are also useful to store any kind of data. For instance Piu uses chunks to store its containment hierarchy.
 
@@ -325,15 +325,15 @@ On platforms that support several ways to get modules, the implementation of `fx
 
 - `txID fxFindModule(txMachine* the, txID moduleID, txSlot* slot)`
 
-XS calls `fxFindModule` to find an imported or required module. 
+XS calls `fxFindModule` to find an imported or required module.
 
 The `moduleID` argument is the importing or requiring module identifier. It is `XS_NO_ID` when the machine itself requires a module.
 
-The `slot` argument is the imported or required module name. It is the module specifier of the `import` syntactical construct or the module parameter of the `require` host function. 
+The `slot` argument is the imported or required module name. It is the module specifier of the `import` syntactical construct or the module parameter of the `require` host function.
 
 If the module is found, `fxFindModule` returns the module identifier, otherwise `fxFindModule` returns `XS_NO_ID`.
 
-A module identifier is a unique `txID`, but the platform defines the format of its corresponding key: it can be a path, a URL, a URI... 
+A module identifier is a unique `txID`, but the platform defines the format of its corresponding key: it can be a path, a URL, a URI...
 
 The platform defines also how the importing or requiring module identifier and the imported or required module name are merged. The usual convention is based on absolute (`/*`), relative (`./*`, `../*`) or search (*) paths.
 
@@ -349,15 +349,15 @@ Finding modules can involve looking for various kinds of files, using a set of p
 		txSlot *key;
 		txString slash;
 		txID id;
-		
+
 		fxToStringBuffer(the, slot, name, sizeof(name));
 		if (!c_strncmp(name, "/", 1)) {
 			absolute = 1;
-		}	
+		}
 		else if (!c_strncmp(name, "./", 2)) {
 			dot = 1;
 			relative = 1;
-		}	
+		}
 		else if (!c_strncmp(name, "../", 3)) {
 			dot = 2;
 			relative = 1;
@@ -401,7 +401,7 @@ Finding modules can involve looking for various kinds of files, using a set of p
 		}
 		return XS_NO_ID;
 	}
-	
+
 	txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	{
 		txPreparation* preparation = the->archive;
@@ -436,7 +436,7 @@ Preparing modules can involve reading and mapping files, parsing, scoping and by
 		txScript* script = fxLoadScript(the, path);
 		fxResolveModule(the, moduleID, script, C_NULL, C_NULL);
 	}
-	
+
 	txScript* fxLoadScript(txMachine* the, txString path)
 	{
 		txPreparation* preparation = the->archive;
@@ -460,7 +460,7 @@ Promises are essentially asynchronous. The `then` method of a `Promise` object t
 
 > *A Job is an abstract operation that initiates an ECMAScript computation when no other ECMAScript computation is currently in progress.* (ECMAScript® 2015 Language Specification, Section 8.4).
 
-XS takes care queuing and running Jobs but relies on platforms for their scheduling. 
+XS takes care queuing and running Jobs but relies on platforms for their scheduling.
 
 --
 
@@ -475,7 +475,7 @@ For instance on Mac the platform uses a run loop source and `CFRunLoopSourceSign
 		txMachine* the = info;
 		fxRunPromiseJobs(the);
 	}
-	
+
 	void fxQueuePromiseJobs(txMachine* the)
 	{
 		CFRunLoopSourceSignal(the->promiseSource);
@@ -495,7 +495,7 @@ On Windows the platform uses a message window and `PostMessage`:
 		}
 		return 0;
 	}
-	
+
 	void fxQueuePromiseJobs(txMachine* the)
 	{
 		PostMessage(the->window, WM_PROMISE, 0, 0);
@@ -529,7 +529,7 @@ Applications that use `Atomics.wait` and `Atomics.wake` must call `xsTerminateSh
 
 	void* fxCreateSharedChunk(txInteger byteLength);
 
-`fxCreateSharedChunk` allocates a shared chunk, `byteLength` is the size of its data, which must be initialised to zero. 
+`fxCreateSharedChunk` allocates a shared chunk, `byteLength` is the size of its data, which must be initialised to zero.
 
 Typically platforms use a reference count to track how many machines are referencing the shared chunk. `fxCreateSharedChunk` must initialise the reference count to one.
 
@@ -537,7 +537,7 @@ Typically platforms use a reference count to track how many machines are referen
 
 	void fxLockSharedChunk(void* data);
 
-`fxLockSharedChunk` locks the shared chunk, `data` is a pointer to the data of the shared chunk. 
+`fxLockSharedChunk` locks the shared chunk, `data` is a pointer to the data of the shared chunk.
 
 `fxLockSharedChunk` is never called if the platform supports GCC atomics.
 
@@ -551,7 +551,7 @@ Machines call `fxReleaseSharedChunk` when they do not reference the shared chunk
 
 Typically platforms use an atomic operation to decrement the reference count of the shared chunk and free the shared chunk when the reference count is zero.
 
-`fxReleaseSharedChunk` is the destructor of the host slot. 
+`fxReleaseSharedChunk` is the destructor of the host slot.
 
 	void* fxRetainSharedChunk(void* data);
 
@@ -561,7 +561,7 @@ Typically platforms use an atomic operation to increment the reference count of 
 
 	void fxUnlockSharedChunk(void* data);
 
-`fxUnlockSharedChunk` unlocks the shared chunk. `data` is a pointer to the data of the shared chunk. 
+`fxUnlockSharedChunk` unlocks the shared chunk. `data` is a pointer to the data of the shared chunk.
 
 `fxUnlockSharedChunk` is never called if the platform supports GCC atomics.
 
@@ -569,11 +569,11 @@ Typically platforms use an atomic operation to increment the reference count of 
 
 If the application did not call `fxInitializeSharedCluster` or if the current thread is the thread that called `fxInitializeSharedCluster`, `fxWaitSharedChunk` throws a `TypeError` object.
 
-If the 32-bit signed integer at `byteOffset` in `data` is not equal to `value`, `fxWaitSharedChunk` returns `-1` immediately. Else `fxWaitSharedChunk` suspends the current thread. 
+If the 32-bit signed integer at `byteOffset` in `data` is not equal to `value`, `fxWaitSharedChunk` returns `-1` immediately. Else `fxWaitSharedChunk` suspends the current thread.
 
 If a matching call to `fxWakeSharedChunk` resumed the thread, `fxWaitSharedChunk` returns `1`. A matching call is a call with the same `data` and `byteOffset`.
 
-If `timeout` expired, `fxWaitSharedChunk` returns `0`. `timeout` is a number between `Date.now()` and `C_INFINITY`. 
+If `timeout` expired, `fxWaitSharedChunk` returns `0`. `timeout` is a number between `Date.now()` and `C_INFINITY`.
 
 	txInteger fxWakeSharedChunk(txMachine* the, void* data, txInteger byteOffset, txInteger count);
 

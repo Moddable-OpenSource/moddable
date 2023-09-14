@@ -1,6 +1,6 @@
 # Commodetto
-Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: October 26, 2021
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## About This Document
 
@@ -26,7 +26,7 @@ This document provides a high-level overview of the parts of Commodetto, informa
 	* [JPEG](#jpeg)
 	* [PNG](#png)
 	* [BMFont](#bmfont)
-* [Rendering](#rendering)	
+* [Rendering](#rendering)
 	* [Render class](#render-class)
 * [Pixel format conversion](#pixel-format-conversion)
 	* [Convert Class](#convert-class)
@@ -101,7 +101,7 @@ typedef enum {
 |  kCommodettoBitmapMonochrome | Pixels are 1-bit data, packed into bytes in which the high bit of the byte is the leftmost pixel.
 | kCommodettoBitmapGray16 | Pixels are 4-bit data, where 0 represents white, 15 represents black, and the values in between are proportionally interpolated gray levels. The pixels are packed into bytes in which the high nybble is the leftmost pixel.
 | kCommodettoBitmapGray16 \| kCommodettoBitmapPacked | Pixels are the same as in `kCommodettoBitmapGray16`, and compressed using a weighted RLE algorithm.
-| kCommodettoBitmapGray256 | Pixels are 8-bit data, where 0 represents white, 255 represents black, and the values in between are proportionally interpolated gray levels. 
+| kCommodettoBitmapGray256 | Pixels are 8-bit data, where 0 represents white, 255 represents black, and the values in between are proportionally interpolated gray levels.
 | kCommodettoBitmapRGB332 | Pixels are 8-bit data, with packed RGB values. The high three bits are red, followed by three bits of green, and two bits of blue.
 | kCommodettoBitmapRGB565LE | Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in little-endian byte order.
 | kCommodettoBitmapRGB565BE | Pixels are 16-bit data, with packed RGB values. The high five are red, followed by six bits of green, and five bits of blue. The 16-bit value is stored in big-endian byte order.
@@ -288,7 +288,7 @@ A `PixelsOut` instance is initialized with a dictionary of values. The dictionar
 ```javascript
 let display = new SPIOut({width: 320, height: 240,
 		pixelFormat: Bitmap.RGB565BE, orientation: 90, dataPin: 30});
-	
+
 let offScreen = new BufferOut({width: 40, height: 40,
 		pixelFormat: Bitmap.RGB565LE});
 
@@ -304,15 +304,15 @@ Once constructed, a `PixelsOut` instance can receive pixels. Three function call
 let x = 10, y = 20;
 let width = 40, height = 50;
 display.begin(x, y, width, height);
-	
+
 let scanLine = new ArrayBuffer(display.pixelsToBytes(width));
 for (let line = 0; line < height; line++)
 	display.send(scanLine);
-	
+
 display.end();
 ```
 
-The `begin` call indicates the area of the `PixelsOut` bitmap to update. Following that are one or more calls to `send` that contain the pixels. In the example above, `send` is called 50 times, each time with a buffer of 40 black (all 0) pixels. The number of bytes of data passed by the combined calls to `send` must be exactly the number of bytes needed to fill the area specified in the call to `begin`. Once all data has been provided, call `end`. 
+The `begin` call indicates the area of the `PixelsOut` bitmap to update. Following that are one or more calls to `send` that contain the pixels. In the example above, `send` is called 50 times, each time with a buffer of 40 black (all 0) pixels. The number of bytes of data passed by the combined calls to `send` must be exactly the number of bytes needed to fill the area specified in the call to `begin`. Once all data has been provided, call `end`.
 
 The `PixelsOut` API does not define when the data is transmitted to the output. Different `PixelsOut` subclasses implement it differently: some transmit the data immediately and synchronously, some use asynchronous transfers, and others buffer the data to display only when `end` is called.
 
@@ -339,7 +339,7 @@ class PixelsOut {
 
 ##### `constructor(dictionary)`
 
-The `PixelsOut` constructor takes a single argument: a dictionary of property names and values. The `PixelsOut` base class defines three properties that are defined for all subclasses of `PixelsOut`: 
+The `PixelsOut` constructor takes a single argument: a dictionary of property names and values. The `PixelsOut` base class defines three properties that are defined for all subclasses of `PixelsOut`:
 
 | Name | Description |
 | :---: | :--- |
@@ -386,7 +386,7 @@ is almost the same as this:
 out.end();
 out.begin(10, 20, 30, 40);
 ```
-	
+
 The difference is that when `continue` is used, all output pixels are part of the same frame, whereas with `end`/`begin` pixels transmitted before `end` are part of one frame and pixels transmitted after it are part of the following frame.
 
 For some outputs--for example, `BufferOut`--there is no difference. For others--for example, a hardware-accelerated renderer--the results are visually different.
@@ -423,7 +423,7 @@ The `adaptInvalid` function takes a rectangle argument specifying an area inside
 
 ##### `pixelsToBytes(count)`
 
-The `pixelsToBytes` function calculates the number of bytes required to store the number of pixels specified by the `count` argument. The following allocates an `ArrayBuffer` corresponding to a single scanline of pixels: 
+The `pixelsToBytes` function calculates the number of bytes required to store the number of pixels specified by the `count` argument. The following allocates an `ArrayBuffer` corresponding to a single scanline of pixels:
 
 ```javascript
 let buffer = new ArrayBuffer(out.pixelsToBytes(width));
@@ -458,7 +458,7 @@ class SPIOut extends PixelsOut
 <a id="bufferout-class"></a>
 ### BufferOut Class
 
-`BufferOut` is a subclass of `PixelsOut` that implements an offscreen in-memory bitmap. 
+`BufferOut` is a subclass of `PixelsOut` that implements an offscreen in-memory bitmap.
 
 ```javascript
 class BufferOut extends PixelsOut;
@@ -659,7 +659,7 @@ while (decoder.ready) {
 
 The PNG image format is commonly used for the assets of user interface elements such as buttons and sliders. Because the PNG file format is heavily compressed, PNG images must be decompressed to a `BufferOut` instance for use. Also because of the compression used in PNG, a significant amount of memory is required for decompressing the image. Nonetheless, because PNG is so common in user interface work, Commodetto implements a PNG module for use on devices and scenarios where it is practical.
 
-The PNG decoder in Commodetto supports most variations of the PNG file format, with two exceptions: 
+The PNG decoder in Commodetto supports most variations of the PNG file format, with two exceptions:
 
 - Interlaced images are not supported, as interlacing is incompatible with progressive decoding.
 
@@ -728,7 +728,7 @@ The PNG decoder uses up to 45 KB of memory while decoding an image. This amount 
 <a id="bmfont"></a>
 ### BMFont
 
-[BMFont](http://www.angelcode.com/products/bmfont/) is a format for storing bitmap fonts. It is widely used to embed distinctive fonts in games in a format that is efficiently rendered using OpenGL. BMFont is well designed and straightforward to support. Commodetto uses BMFont to store both anti-aliased and multicolor fonts. In addition, BMFont has good tool support--in particular the excellent [Glyph Designer](https://71squared.com/glyphdesigner), which converts macOS fonts to a Commodetto-compatible BMFont.  For Windows and Linux users, the command line [bmfont](https://github.com/vladimirgamalyan/fontbm) has been used  successfully. 
+[BMFont](http://www.angelcode.com/products/bmfont/) is a format for storing bitmap fonts. It is widely used to embed distinctive fonts in games in a format that is efficiently rendered using OpenGL. BMFont is well designed and straightforward to support. Commodetto uses BMFont to store both anti-aliased and multicolor fonts. In addition, BMFont has good tool support--in particular the excellent [Glyph Designer](https://71squared.com/glyphdesigner), which converts macOS fonts to a Commodetto-compatible BMFont.  For Windows and Linux users, the command line [bmfont](https://github.com/vladimirgamalyan/fontbm) has been used  successfully.
 
 BMFont stores a font's metrics data separately from the font's glyph atlas (bitmap). This means that loading a BMFont requires two steps: loading the metrics and loading the glyph atlas. BMFont allows the metrics data to be stored in a variety of formats, including text, XML, and binary. Commodetto supports the binary format for metrics.
 
@@ -744,7 +744,7 @@ palatino36.bitmap = parseBMP(new Resource("palatino36.bmp");
 
 After the metrics are prepared with `parseBMF`, the glyph atlas is prepared using `parseBMP` and is attached to the metrics as the `bitmap` property.
 
- BMFont files with discontiguous ranges of characters are supported. Commodetto may be configured to use the kerning data that may be  prseent in a BMFont, though it is disabled by default. 
+BMFont files with discontiguous ranges of characters are supported. Commodetto may be configured to use the kerning data that may be present in a BMFont, though it is disabled by default.
 
 For anti-aliased text, the BMP file containing the glyph atlas bitmap must be in 4-bit gray format. For multicolor text, the bitmap must be in `Bitmap.default` format (e.g. the pixel format Commodetto is configured to render to).
 
@@ -794,10 +794,10 @@ The following example shows using the Poco renderer with `SPIOut` to render a sc
 let display = new SPIOut({width: 320, height: 240,
 		pixelFormat: Bitmap.RGB565LE, dataPin: 30});
 let render = new Poco(display);
-	
+
 let white = poco.makeColor(255, 255, 255);
 let red = poco.makeColor(255, 0, 0);
-	
+
 render.begin();
 render.fillRectangle(white, 0, 0, display.width, display.height);
 render.fillRectangle(red, 5, 5, 10, 10);
@@ -827,7 +827,7 @@ Calling `begin` with no arguments is equivalent to calling it with `x` and `y` e
 ```javascript
 render.begin()
 ```
-	
+
 is equivalent to this:
 
 ```javascript

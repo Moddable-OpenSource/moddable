@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,6 +46,8 @@ import Bin from "bin";
 import BER from "ber";
 import PKCS8 from "pkcs8"
 
+const globalCerts = [];
+
 class CertificateManager {
 	#verify;
 	#registeredCerts = [];
@@ -66,9 +68,9 @@ class CertificateManager {
 	getKey(cert) {
 		// look for the key corresponding to the cert
 		// first, search in the registed cert
-		for (let i = 0; i < this.#registeredCerts.length; i++) {
-			if (0 === Bin.comp(this.#registeredCerts[i], cert)) {
-				const x509 = X509.decode(this.#registeredCerts[i]);
+		for (let i = 0, registeredCerts = this.#registeredCerts.concat(globalCerts); i < registeredCerts.length; i++) {
+			if (0 === Bin.comp(registeredCerts[i], cert)) {
+				const x509 = X509.decode(registeredCerts[i]);
 				return x509.spki;	// public key only
 			}
 		}
@@ -114,6 +116,7 @@ class CertificateManager {
 			return true;
 
 		let length = certs.length - 1, x509, validity, now = Date.now(), spki;
+		const registeredCerts = this.#registeredCerts.concat(globalCerts);
 
 		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
 		for (let i = 0; i < length; i++) {
@@ -129,9 +132,9 @@ class CertificateManager {
 			x509 = undefined;
 
 			let aki = X509.decodeAKI(certs[i + 1]);
-			for (let j = 0; j < this.#registeredCerts.length; j++) {
-				if (Bin.comp(X509.decodeSKI(this.#registeredCerts[j]), aki) == 0) {
-					spki = X509.decodeSPKI(this.#registeredCerts[j]);
+			for (let j = 0; j < registeredCerts.length; j++) {
+				if (Bin.comp(X509.decodeSKI(registeredCerts[j]), aki) == 0) {
+					spki = X509.decodeSPKI(registeredCerts[j]);
 					if (spki && this._verify(spki, X509.decode(certs[i + 1])))
 						return true;
 					spki = undefined;
@@ -158,8 +161,8 @@ class CertificateManager {
 			return true;
 			// else fall thru
 
-		for (let i = 0; i < this.#registeredCerts.length; i++) {
-			spki = X509.decodeSPKI(this.#registeredCerts[i]);
+		for (let i = 0; i < registeredCerts.length; i++) {
+			spki = X509.decodeSPKI(registeredCerts[i]);
 			if (spki && this._verify(spki, x509))
 				return true;
 		}
@@ -244,6 +247,14 @@ class CertificateManager {
 			let g = ber.getInteger();
 			return {p, g};
 		}
+	}
+
+	static register(cert) {
+		for (let i = 0; i < globalCerts.length; i++) {
+			if (!Bin.comp(globalCerts[i], cert))
+				return;
+		}
+		globalCerts.push(cert);
 	}
 }
 

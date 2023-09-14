@@ -1,0 +1,28 @@
+{
+	"include": [
+		"./manifest_streamer.json"
+	],
+	"data": {
+		"*": [
+			"$(MODDABLE)/examples/assets/sounds/startup"
+		]
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"../http-stream/calculatePower"
+		]
+	},
+	"creation": {
+		"static": 32768,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 1536
+		},
+		"heap": {
+			"initial": 128,
+			"incremental": 64
+		},
+		"stack": 256
+	}
+}

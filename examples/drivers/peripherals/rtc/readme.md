@@ -30,6 +30,6 @@ in the `manifest.json` file, change the `include` for your device. For example:
 
 ```
 	"include": [
-		"$(MODDABLE)/modules/drivers/peripherals/ds1307/manifest.json"	
+		"$(MODDABLE)/modules/drivers/peripherals/ds1307/manifest.json"
 	]
 ```

@@ -53,7 +53,7 @@ const Codes79 = ["right", "left", "down", "up"];					// key codes 79 - 82 (arrow
 const Codes84 = [47,42,45,43,13];									// key codes 84 - 88
 const Codes89 = [35,40,34,37,53,39,36,38,33,45,46];					// key codes 89 - 99
 const ShiftCodes45 = [95,43,123,125,124,126,58,34,126,60,62,63];	// shifted key codes 45 - 56
-const ShiftCodes30 = [33,64,35,36,37,94,38,42,40],					// shifted key codes 30 - 38
+const ShiftCodes30 = [33,64,35,36,37,94,38,42,40];					// shifted key codes 30 - 38
 const NumLockCodes89 = [49,50,51,52,53,54,55,56,57,48,46];			// num lock key codes 89 - 99
 Object.freeze({Codes40, Codes45, Codes79, Codes84, Codes89, ShiftCodes45, ShiftCodes30, NumLockCodes89}, true);
 

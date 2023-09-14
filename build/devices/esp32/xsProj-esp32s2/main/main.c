@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
 
 
 #define __XS6PLATFORMMINIMAL__
-#define ESP32 1
+#define ESP32 2
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,6 @@
 #include "freertos/task.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-// #include "esp_event_loop.h"
 #include "esp_task_wdt.h"
 #include "lwip/inet.h"
 #include "lwip/ip4_addr.h"
@@ -42,7 +41,23 @@
 	#include "esp_bt.h"
 #endif
 
-#include "driver/uart.h"
+#if USE_USB
+	#if USE_USB == 1
+		#include "sdkconfig.h"
+		#include "tinyusb.h"
+		#include "tusb_cdc_acm.h"
+
+		static void setupDebuggerUSB(void);
+	#else
+		#error esp32s2 doesnt support JTAG-CDC
+	#endif
+#else
+	#include "driver/uart.h"
+
+	#define USE_UART	UART_NUM_0
+	#define USE_UART_TX	43
+	#define USE_UART_RX	44
+#endif
 
 #include "modInstrumentation.h"
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
@@ -51,6 +66,8 @@
 #include "xsHost.h"
 #include "xsHosts.h"
 
+#include "mc.defines.h"
+
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
 #endif
@@ -58,7 +75,10 @@
 extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
-static xsMachine *gThe;		// the main XS virtual machine running
+#if !MODDEF_XS_TEST
+static
+#endif
+	xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -79,16 +99,84 @@ static xsMachine *gThe;		// the main XS virtual machine running
 	unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
-#if 0
-	#define USE_UART	UART_NUM_2
-	#define USE_UART_TX	17
-	#define USE_UART_RX	16
-#else
-	#define USE_UART	UART_NUM_0
-	#define USE_UART_TX	43
-	#define USE_UART_RX	44
-//		#define USE_UART_TX	1
-//		#define USE_UART_RX	3
+#if USE_USB
+typedef struct {
+    uint8_t     *buf;
+    uint32_t    size_mask;
+    volatile uint32_t read;
+    volatile uint32_t write;
+} fifo_t;
+
+QueueHandle_t usbDbgQueue;
+static uint32_t usbEvtPending = 0;
+static fifo_t rx_fifo;
+static uint8_t *rx_fifo_buffer;
+static uint8_t usb_rx_buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE];
+
+static uint32_t F_length(fifo_t *fifo) {
+	uint32_t tmp = fifo->read;
+	return fifo->write - tmp;
+}
+
+static void F_put(fifo_t *fifo, uint8_t c) {
+	fifo->buf[fifo->write & fifo->size_mask] = c;
+	fifo->write++;
+}
+
+static void F_get(fifo_t *fifo, uint8_t *c) {
+	*c = fifo->buf[fifo->read & fifo->size_mask];
+	fifo->read++;
+}
+
+/*
+void fifo_flush(fifo_t *fifo) {
+	fifo->read = fifo->write;
+}
+*/
+
+uint32_t fifo_length(fifo_t *fifo) {
+	return F_length(fifo);
+}
+
+uint32_t fifo_remain(fifo_t *fifo) {
+	return (fifo->size_mask + 1) - F_length(fifo);
+}
+
+int fifo_get(fifo_t *fifo, uint8_t *c) {
+	if (F_length(fifo) == 0)
+		return -1;
+	F_get(fifo, c);
+	return 0;
+}
+
+int fifo_put(fifo_t *fifo, uint8_t c) {
+	if (0 == (fifo->size_mask - F_length(fifo) + 1))
+{
+//printf("fifo_put failed\r\n");
+		return -1;
+}
+	F_put(fifo, c);
+	return 0;
+}
+
+int fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
+	if (0 == buf)
+		return -1;
+
+	if (! ((0 != size) && (0 == ((size - 1) & size))))
+{
+//printf("fifo_init - bad size: %d\r\n", size);
+		return -2;		// bad size - needs to be base 2
+}
+
+	fifo->buf = buf;
+	fifo->size_mask = size - 1;
+	fifo->read = 0;
+	fifo->write = 0;
+
+	return 0;
+}
+
 #endif
 
 #ifdef mxDebug
@@ -96,21 +184,35 @@ static xsMachine *gThe;		// the main XS virtual machine running
 static void debug_task(void *pvParameter)
 {
 	while (true) {
-		uart_event_t event;
 
+#if USE_USB
+		uint32_t count;
+		if (!fifo_length(&rx_fifo)) {
+			usbEvtPending = 0;
+			xQueueReceive((QueueHandle_t)pvParameter, (void * )&count, portMAX_DELAY);
+		}
+
+		fxReceiveLoop();
+
+#else	// !USE_USB
+		uart_event_t event;
 		if (!xQueueReceive((QueueHandle_t)pvParameter, (void * )&event, portMAX_DELAY))
 			continue;
 
 		if (UART_DATA == event.type)
 			fxReceiveLoop();
+#endif	// !USE_USB
 	}
 }
 #endif
 
 void setup(void)
 {
+#if USE_USB
+	setupDebuggerUSB();
+#else // !USE_USB
 	esp_err_t err;
-	uart_config_t uartConfig;
+	uart_config_t uartConfig = {0};
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
@@ -122,6 +224,7 @@ void setup(void)
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
 //	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
+	uartConfig.source_clk = UART_SCLK_APB;
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -137,24 +240,36 @@ void setup(void)
 #else
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
-
-	gThe = modCloneMachine(0, 0, 0, 0, NULL);
-
-	modRunMachineSetup(gThe);
-
-#if CONFIG_ESP_TASK_WDT
-	esp_task_wdt_add(NULL);
-#endif
+#endif	// ! USE_USB
 }
 
 void loop_task(void *pvParameter)
 {
-	setup();
+#if CONFIG_ESP_TASK_WDT
+	esp_task_wdt_add(NULL);
+#endif
 
 	while (true) {
-		modTimersExecute();
-		modMessageService(gThe, modTimersNext());
-		modInstrumentationAdjust(Turns, +1);
+		gThe = modCloneMachine(NULL, NULL);
+
+		modRunMachineSetup(gThe);
+
+#if MODDEF_XS_TEST
+		xsMachine *the = gThe;
+		while (gThe) {
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
+
+		xsDeleteMachine(the);
+#else
+		while (true) {
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
+#endif
 	}
 }
 
@@ -183,6 +298,120 @@ void modLog_transmit(const char *msg)
 	}
 }
 
+#if USE_USB
+static uint8_t DTR = 1;
+static uint8_t RTS = 1;
+
+void checkLineState() {
+	uint8_t seq = (DTR ? 1 : 0) + (RTS ? 2 : 0);
+	if (seq == 3) {				// normal run mode
+		;
+	}
+	else if (seq == 2) {		// DTR dropped, RTS asserted
+		esp_restart();
+	}
+	else if (seq == 1) {		// DTR raised, RTS off - programming mode
+		;	// can't get here (we just reset)
+	}
+	else {
+	}
+}
+
+void line_state_callback(int itf, cdcacm_event_t *event) {
+	DTR = event->line_state_changed_data.dtr;
+	RTS = event->line_state_changed_data.rts;
+//	printf("[%d] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
+	checkLineState();
+}
+
+void cdc_rx_callback(int itf, cdcacm_event_t *event) {
+    portBASE_TYPE xTaskWoken = 0;
+	size_t space, read;
+	int i;
+
+	space = fifo_remain(&rx_fifo);
+	esp_err_t ret = tinyusb_cdcacm_read(itf, usb_rx_buf, space, &read);
+	if (ESP_OK == ret) {
+		for (i=0; i<read; i++)
+			fifo_put(&rx_fifo, usb_rx_buf[i]);
+	}
+
+	i = 0;
+
+#if mxDebug
+	if (0 == usbEvtPending++) {
+		xQueueSendToBackFromISR(usbDbgQueue, &i, &xTaskWoken);
+		if (xTaskWoken == pdTRUE)
+			portYIELD_FROM_ISR();
+	}
+#endif
+}
+
+void setupDebuggerUSB() {
+	tinyusb_config_t tusb_cfg = {};
+	ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
+	tinyusb_config_cdcacm_t acm_cfg = {
+		.usb_dev = TINYUSB_USBDEV_0,
+		.cdc_port = TINYUSB_CDC_ACM_0,
+		.rx_unread_buf_sz = 64,
+		.callback_rx = &cdc_rx_callback,
+		.callback_rx_wanted_char = NULL,
+		.callback_line_state_changed = &line_state_callback,
+		.callback_line_coding_changed = NULL
+	};
+
+	rx_fifo_buffer = c_malloc(1024);
+	fifo_init(&rx_fifo, rx_fifo_buffer, 1024);
+
+#if mxDebug
+	usbDbgQueue = xQueueCreate(8, sizeof(uint32_t));
+	xTaskCreate(debug_task, "debug", 2048, usbDbgQueue, 8, NULL);
+#endif
+
+	ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+
+	uint32_t count;
+	for (count = 0; count < 100; count++) {
+		if (tud_cdc_connected()) {
+//			printf("USB CONNECTED!\r\n");
+			break;
+		}
+		modDelayMilliseconds(50);	// give USB time to come up
+	}
+}
+
+void ESP_put(uint8_t *c, int count) {
+	if (!tud_cdc_connected())
+		return;
+	while (count) {
+		uint32_t amt = count > CONFIG_TINYUSB_CDC_RX_BUFSIZE ? CONFIG_TINYUSB_CDC_RX_BUFSIZE : count;
+		tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, c, amt);
+		if (ESP_ERR_TIMEOUT == tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 50)) {
+//			printf("write_flush timeout\n");
+		}
+		c += amt;
+		count -= amt;
+	}
+}
+
+void ESP_putc(int c) {
+	uint8_t ch = c;
+	ESP_put(&ch, 1);
+}
+
+int ESP_getc(void) {
+	uint8_t c;
+
+	if (0 == fifo_get(&rx_fifo, &c))
+		return c;
+	return -1;
+}
+
+uint8_t ESP_setBaud(int baud) {
+	return 0;
+}
+#else
+
 void ESP_put(uint8_t *c, int count) {
 	uart_write_bytes(USE_UART, (char *)c, count);
 }
@@ -208,6 +437,7 @@ uint8_t ESP_setBaud(int baud) {
 	uart_wait_tx_done(USE_UART, 5 * 1000);
 	return ESP_OK == uart_set_baudrate(USE_UART, baud);
 }
+#endif
 
 void app_main() {
 	modPrelaunch();
@@ -217,15 +447,14 @@ void app_main() {
 	esp_log_level_set("I2S", ESP_LOG_ERROR);
 
 	ESP_ERROR_CHECK(nvs_flash_init());
-#if CONFIG_BT_ENABLED
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-#endif
 
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#else
 		#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 	#endif
+
+	setup();
 
     xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
 }

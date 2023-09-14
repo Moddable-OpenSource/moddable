@@ -126,6 +126,8 @@ void fx_lockdown(txMachine* the)
 	fxDuplicateInstance(the, mxMathObject.value.reference);
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
+	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
 	mxPull(instance->next->value.array.address[_Math]);
 
 	mxPull(mxCompartmentGlobal);
@@ -706,27 +708,17 @@ void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, t
 		fxConcatStringC(the, slot, "]]");
 	}
 	else if (id != XS_NO_ID) {
-		txSlot* key = fxGetKey(the, id);
-		if (key) {
-			if (key->flag & XS_DONT_ENUM_FLAG) {
-				c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.key.string);
-				fxConcatStringC(the, slot, ".");
-				fxConcatStringC(the, slot, the->nameBuffer);
-			}
-			else {
-				if ((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND))
-					c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.key.string);
-				else if ((key->kind == XS_STRING_KIND) || (key->kind == XS_STRING_X_KIND))
-					c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", key->value.string);
-				else
-					the->nameBuffer[0] = 0;
-				fxConcatStringC(the, slot, "[Symbol(");
-				fxConcatStringC(the, slot, the->nameBuffer);
-				fxConcatStringC(the, slot, ")]");
-			}
+		txBoolean adorn;
+		txString string = fxGetKeyString(the, id, &adorn);
+		c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", string);
+		if (adorn) {
+			fxConcatStringC(the, slot, "[Symbol(");
+			fxConcatStringC(the, slot, the->nameBuffer);
+			fxConcatStringC(the, slot, ")]");
 		}
 		else {
-			fxConcatStringC(the, slot, "[Symbol()]");
+			fxConcatStringC(the, slot, ".");
+			fxConcatStringC(the, slot, the->nameBuffer);
 		}
 	}
 	else {

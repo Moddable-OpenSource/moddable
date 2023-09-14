@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: April 9, 2023
+Revised: August 3, 2023
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -75,20 +75,33 @@ When you build an application, the default output directory name is taken from t
 	"NAME": "balls"
 }
 ```
-	
+
 #### ESP32-specific environment variables
 
-The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK build for ESP32 and ESP32-S2:
+The `esp32` platform object supports a number of optional environment variables applications can use to customize the Moddable SDK build for ESP32 devices:
 
 | Variable | Description |
-| --- | :--- | 
-| `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries. 
-| `PARTITIONS_FILE` | Full pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
+| --- | :--- |
+| `ESP32_SUBCLASS` | If a device other than the `esp32`, set `esp32s2`, `esp32s3` or `esp32c3`
+| `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries.
+| `PARTITIONS_FILE` | Pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
 | `BOOTLOADERPATH` | Pathname to a directory containing a custom [ESP-IDF bootloader component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/bootloader.html#custom-bootloader).
 | `C_FLAGS_SUBPLATFORM` | C compiler flags to use when compiling Moddable SDK sources.
+| `USE_USB` | Configure the device to use the USB port for programming and debugging.
 
 > Note: This document does not cover native code ESP32 and ESP-IDF build details. Refer to the [ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/get-started/index.html) for additional information.
- 
+
+#### `ESP32_SUBCLASS`
+
+The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` property.
+
+Valid `ESP32_SUBCLASS`:
+|   |
+| :--- |
+| `esp32s2` |
+| `esp32s3` |
+| `esp32c3` |
+
 The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/modClock) example app leverages the `SDKCONFIGPATH` and `PARTITIONS_FILE` environment variables:
 
 ```json
@@ -168,6 +181,16 @@ The Moddable SDK sdkconfig defaults files are located in the `$MODDABLE/build/de
 5. On release builds, the application `$(SDKCONFIGPATH)/sdkconfig.defaults.release` options, when provided,  are merged.
 6. On release instrumented builds, the application `$(SDKCONFIGPATH)/sdkconfig.inst` options, when provided, are merged.
 
+### `USE_USB`
+
+Some ESP32 devices support USB directly instead of using a USB-to-serial chip to program. For example, the `esp32-s2`, `esp32-s3` and `esp32-c3` class devices. The `esp32` does not support USB.
+
+1. `esp32-s2` devices support TinyUSB. Set `"USE_USB": "1"`.
+2. `esp32-s3` devices support both TinyUSB and JTAG-CDC. Set `"USE_USB"` to either `1` for TinyUSB or `2` for JTAG-CDC.
+3. `esp32c3` devices support JTAG-CDC. Set `"USE_USB": "2"`.
+
+
+
 ***
 
 <a id="include"></a>
@@ -216,12 +239,12 @@ The default value of the `"include"` property is `"manifest.json"`. The `"includ
 		{
 			"git":"$(URL)/test0.git"
 		},
-		{ 
-			"git":"$(URL)/test1.git", 
+		{
+			"git":"$(URL)/test1.git",
 			"include":"modules/test1/manifest.json"
 		},
-		{ 
-			"git":"$(URL)/test23.git", 
+		{
+			"git":"$(URL)/test23.git",
 			"include": [
 				"test2/module.json",
 				"test3/module.json"
@@ -368,8 +391,8 @@ The `strip` object in a manifest is a string or array that specifies which built
 	```json
 	"strip": "*",
 	```
-	
-- If you only want certain objects or functions to be stripped, pass in an array of JavaScript class and function names. Items in the array will be stripped. Anything not included in the array will not be stripped. 
+
+- If you only want certain objects or functions to be stripped, pass in an array of JavaScript class and function names. Items in the array will be stripped. Anything not included in the array will not be stripped.
 
 	The following strips the `RegExp` class, `eval` function, and the two `Array` reduce functions.
 
@@ -385,7 +408,7 @@ The `strip` object in a manifest is a string or array that specifies which built
 - You can also specify that specific items be stripped in addition to anything unused.
 
 	The `"*"` means to strip everything unused. Because the two `Array` reduce functions are explicitly listed, they will also be stripped, whether or not they are used.
-	
+
 	```json
 	"strip": [
 		"*",
@@ -718,10 +741,10 @@ The second pass matches files with the properties of the combined `modules` and 
 - The name of each property is the target file, the value of the property is the source file or an array of source files.
 - Targets and sources can use the `*` wildcard to represent all files that match.
 
-There are no extensions:
+These are the supported extensions:
 
-- In the `modules` object, `mcconfig` matches `.c`, `.cc`, `.cpp`, `.h`, `.js` and `.m` files. 
-- In the `resources` object, `mcconfig` matches `.act`, `.bmp`, `.cct`, `.dat`, `.der`, `.fnt`, `.jpg`, `.json`, `.nfnt`, `.pk8`, `.png`, `.rle`, `.ski` and `.ttf`  files. 
+- In the `modules` object, `mcconfig` matches `.c`, `.cc`, `.cpp`, `.h`, `.js` and `.m` files.
+- In the `resources` object, `mcconfig` matches `.act`, `.bmp`, `.cct`, `.dat`, `.der`, `.fnt`, `.jpg`, `.json`, `.nfnt`, `.pk8`, `.png`, `.rle`, `.ski` and `.ttf`  files.
 
 ### Generate
 
