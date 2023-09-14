@@ -153,6 +153,8 @@ void fxAbort(xsMachine* the, int status)
 			why = "not enough keys";
 			break;
 		case XS_DEAD_STRIP_EXIT:
+			if (the->debugEval)
+				mxUnknownError("dead strip");
 			why = "dead strip";
 			break;
 		case XS_DEBUGGER_EXIT:
