@@ -4,17 +4,9 @@
 		"$(MODULES)/network/mdns/manifest.json"
 	],
 	"modules": {
-		"~": [
-			"$(MODULES)/network/net/net"
-		],
-		"*": [
-			"./webthings",
-			"$(MODULES)/network/dns/moddnsparser"
-		],
-		"net": "$(MODULES)/network/net/netmdns"
+		"*": "./webthings"
 	},
 	"preload": [
-		"net",
 		"webthings"
 	],
 	"platforms": {
