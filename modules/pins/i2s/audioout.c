@@ -1434,24 +1434,23 @@ void audioOutLoop(void *pvParameter)
 	uint8_t installed = false, stopped = true;
 
 #if MODDEF_AUDIOOUT_I2S_PDM
-	i2s_config_t i2s_config = {
-		.mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_PDM,
-		.sample_rate = out->sampleRate,
-		.bits_per_sample = MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE,
-		.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT /* I2S_CHANNEL_FMT_RIGHT_LEFT */,
-		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
-		.dma_buf_count = 2,
-		.dma_buf_len = sizeof(out->buffer) / out->bytesPerFrame,		// dma_buf_len is in frames, not bytes
-		.use_apll = 0,
-		.intr_alloc_flags = 0
+    i2s_chan_config_t tx_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+    tx_chan_cfg.auto_clear = true;
+
+	i2s_pdm_tx_config_t tx_cfg = {
+		.clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(out->sampleRate),
+		.slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+		.gpio_cfg = {
+			.clk = -1,
+			.dout = MODDEF_AUDIOOUT_I2S_PDM_PIN,
+			.invert_flags = {
+				.clk_inv = false,
+			},
+		},
 	};
-	i2s_pin_config_t pin_config = {
-		.bck_io_num = I2S_PIN_NO_CHANGE,
-		.ws_io_num = I2S_PIN_NO_CHANGE,
-		.data_out_num = MODDEF_AUDIOOUT_I2S_PDM_PIN,
-		.data_in_num = I2S_PIN_NO_CHANGE,
-		.mck_io_num = I2S_PIN_NO_CHANGE
-	};
+	i2s_new_channel(&tx_chan_cfg, &out->tx_handle, NULL);
+	i2s_channel_init_pdm_tx_mode(out->tx_handle, &tx_cfg);
+
 #elif !MODDEF_AUDIOOUT_I2S_DAC
 	// I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role)
 	i2s_chan_config_t chan_cfg = {
