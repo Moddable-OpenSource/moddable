@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,7 +21,7 @@
 import Bitmap from "commodetto/Bitmap";
 import parseBMP from "commodetto/parseBMP";
 import parseRLE from "commodetto/parseRLE";
-import Poco from "commodetto/Poco";
+import Poco from "commodetto/PocoCore";
 import _Resource from "Resource";
 globalThis.Resource = _Resource;
 
