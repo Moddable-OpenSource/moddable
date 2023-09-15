@@ -378,6 +378,10 @@ void fxAbort(txMachine* the, int status)
 		break;
 	case XS_DEAD_STRIP_EXIT:
 		why = "dead strip";
+#ifdef mxDebug
+		if (the->debugEval)
+			mxUnknownError(why);
+#endif
 		break;
 	case XS_DEBUGGER_EXIT:
 		break;
