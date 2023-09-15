@@ -148,7 +148,7 @@ MODULES = \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
 	$(TMP_DIR)\commodettoConvert.xsi \
-	$(TMP_DIR)\commodettoPoco.xsi \
+	$(TMP_DIR)\commodettoPocoCore.xsi \
 	$(TMP_DIR)\commodettoPocoBlit.xsi \
 	$(TMP_DIR)\commodettoParseBMP.xsi \
 	$(TMP_DIR)\commodettoParseBMF.xsi \
@@ -193,7 +193,7 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoConvert.obj \
 	$(TMP_DIR)\commodettoParseBMP.obj \
 	$(TMP_DIR)\commodettoParseBMF.obj \
-	$(TMP_DIR)\commodettoPoco.obj \
+	$(TMP_DIR)\commodettoPocoCore.obj \
 	$(TMP_DIR)\commodettoPocoBlit.obj \
 	$(TMP_DIR)\commodettoReadJPEG.obj \
 	$(TMP_DIR)\commodettoReadPNG.obj \

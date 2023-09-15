@@ -153,7 +153,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
 	$(TMP_DIR)/commodettoParseBMP.c.xsi \
-	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoCore.c.xsi \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
@@ -198,7 +198,7 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \
 	$(TMP_DIR)/commodettoParseBMP.c.o \
-	$(TMP_DIR)/commodettoPoco.c.o \
+	$(TMP_DIR)/commodettoPocoCore.c.o \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
