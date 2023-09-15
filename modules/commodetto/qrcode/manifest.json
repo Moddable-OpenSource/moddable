@@ -1,9 +1,9 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_commodetto.json",
 	"modules": {
 		"*": [
 			"./pocoqrcode"
-		]
+		],
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
 	},
 	"preload": "pocoqrcode"
 }
