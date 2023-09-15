@@ -3,7 +3,6 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {

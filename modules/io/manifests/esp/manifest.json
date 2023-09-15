@@ -4,7 +4,6 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/spi/manifest.json"
 	],
 	"modules": {
@@ -12,7 +11,8 @@
 			"$(IO)/common/builtinCommon",
 			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*"
+			"$(IO)/spi/$(PLATFORM)/*",
+			"$(MODULES)/pins/digital/esp/modGPIO.c"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
