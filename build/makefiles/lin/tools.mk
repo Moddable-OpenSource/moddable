@@ -117,6 +117,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ParseBMP.xsb \
 	$(MOD_DIR)/commodetto/PixelsOut.xsb \
 	$(MOD_DIR)/commodetto/Poco.xsb \
+	$(MOD_DIR)/commodetto/PocoCore.xsb \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
@@ -171,6 +172,7 @@ PRELOADS =\
 	-p commodetto/ParseBMF.xsb\
 	-p commodetto/ParseBMP.xsb\
 	-p commodetto/Poco.xsb\
+	-p commodetto/PocoCore.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
