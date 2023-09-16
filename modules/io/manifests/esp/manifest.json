@@ -12,7 +12,7 @@
 			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
 			"$(IO)/spi/$(PLATFORM)/*",
-			"$(MODULES)/pins/digital/esp/modGPIO.c"
+			"$(MODULES)/pins/digital/esp/modGPIO"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
