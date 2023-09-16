@@ -4,56 +4,20 @@
 	},
 	"include": [
 		"$(ETHERNET)/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/sntp/manifest.json"
+		"$(MODULES)/network/net/manifest.json",
+		"$(MODULES)/network/sntp/manifest.json",
+		"$(MODULES)/network/socket/manifest.json"
 	],
 	"platforms": {
 		"esp32": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*"
-				],
 				"setup/ethernet": "$(ETHERNET)/esp32/setup/ethernet"
 			},
-			"preload": [
-				"socket",
-				"setup/ethernet"
-			]
+			"preload": "setup/ethernet"
 		},
-		"lin": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lin/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/mac/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
-		},
+		"lin": {},
+		"mac": {},
+		"win": {},
 		"...": {
 			"error": "manifest_net_ethernet - unsupported platform"
 		}

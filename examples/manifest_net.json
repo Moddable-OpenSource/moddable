@@ -1,6 +1,7 @@
 {
 	"include": [
 		"$(MODULES)/network/net/manifest.json",
+		"$(MODULES)/network/socket/manifest.json",
 		"$(MODULES)/network/sntp/manifest.json",
 		"$(MODULES)/network/wifi/manifest.json"
 	],
@@ -10,108 +11,43 @@
 	"platforms": {
 		"esp": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network"
-			]
+			"preload": "setup/network"
 		},
 		"esp32": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network"
-			]
+			"preload": "setup/network"
 		},
 		"esp32/wt32_eth01": {
 			"include": [
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
 			],
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network"
-			]
+			"preload": "setup/network"
 		},
 		"nrf52": {
 			"error": "manifest_net - no Wi-Fi or Ethernet on nRF52"
 		},
 		"pico": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*"
-				],
 				"setup/network": "$(BUILD)/devices/pico/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network"
-			]
-		},
-		"lin": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lin/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/mac/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*"
-				]
-			},
-			"preload": [
-				"socket"
-			]
+			"preload": "setup/network"
 		},
 		"qca4020": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/qca4020/*"
-				],
 				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network"
-			]
+			"preload": "setup/network"
 		},	
+		"mac": {},
+		"lin": {},
+		"win": {},
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}

@@ -9,8 +9,7 @@
 	"modules":{
 		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",
 		"*": [
-			"$(MODULES)/crypt/arith/*",
-			"$(MODULES)/crypt/securesocket/*"
+			"$(MODULES)/crypt/arith/*"
 		],
 		"ber": "$(MODULES)/crypt/etc/ber",
 		"curve": "$(MODULES)/crypt/etc/curve",
@@ -26,7 +25,6 @@
 		"x509": "$(MODULES)/crypt/etc/x509"
 	},
 	"preload": [
-		"securesocket",
 		"ssl",
 		"ssl/*",
 		"ber",

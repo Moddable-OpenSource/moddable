@@ -1,6 +1,14 @@
 {
-	"include": "./tls_common.json",
+	"include": [
+		"./tls_common.json",
+		"$(MODULES)/network/socket/manifest.json"
+	],
 	"modules": {
+		"securesocket": "$(MODULES)/crypt/securesocket/*",
 		"ssl/session": "$(MODULES)/crypt/ssl/session_original"
-	}
+	},
+	"preload": [
+		"securesocket",
+		"ssl/session"
+	]
 }
