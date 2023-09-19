@@ -65,6 +65,9 @@ ifeq ($(shell which cmake),)
 $(error cmake not found. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
 endif
 
+DO_XSBUG =
+CONNECT_XSBUG =
+NORESTART =
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -73,24 +76,27 @@ ifeq ($(HOST_OS),Darwin)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			CONNECT_XSBUG=@echo "Connect to xsbug-log @ $(PICO_VID):$(PICO_PID)." && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		else
-			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 			CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; export XSBUG_PORT=$(XSBUG_PORT) ; export XSBUG_HOST=$(XSBUG_HOST) ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			endif
 		endif
 #		NORESTART=-norestart
 #		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 
 ### Linux
 else
+	XSBUG_LOG = 0
+	ifeq ("$(XSBUG_LAUNCH)","log")
+		XSBUG_LOG = 1
+	endif
+
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
@@ -99,17 +105,14 @@ else
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 		else
-			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			endif
 		endif
-		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
 #		NORESTART=-norestart
-	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 	endif
 endif
 KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)

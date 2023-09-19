@@ -286,21 +286,24 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 ifeq ($(DEBUG),1)
 	LAUNCH = debug
+	START_XSBUG =
 	ifeq ($(HOST_OS),Darwin)
-		ifeq ($(XSBUG_LOG),1)
-			START_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 		else
-			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+			endif
 		endif
 	else
-		ifeq ($(XSBUG_LOG),1)
-			START_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 		else
-			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+			endif
 		endif
 	endif
 else

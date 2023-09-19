@@ -58,6 +58,9 @@ UF2_VOLUME_NAME ?= MODDABLE4
 M4_VID ?= beef
 M4_PID ?= cafe
 
+DO_XSBUG =
+CONNECT_XSBUG =
+NORESTART =
 ifeq ($(HOST_OS),Darwin)
 	DO_COPY = cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -66,21 +69,19 @@ ifeq ($(HOST_OS),Darwin)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			CONNECT_XSBUG=@echo "Connect to xsbug." ; cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
 		else
-			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 			CONNECT_XSBUG=@echo "Connect to xsbug." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
+			ifeq ("$(XSBUG_LAUNCH)","app")			
+				DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			endif
 		endif
 	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 else
@@ -91,19 +92,16 @@ else
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			CONNECT_XSBUG = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
 			NORESTART=-norestart
 		else
-			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
 			NORESTART=-norestart
+			ifeq ("$(XSBUG_LAUNCH)","app")			
+				DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			endif
 		endif
-	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 	endif
 endif
 

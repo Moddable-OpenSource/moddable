@@ -361,8 +361,12 @@ PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
 
 ifeq ($(DEBUG),1)
+	DO_XSBUG = 
 	ifeq ($(HOST_OS),Darwin)
-		DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		ifeq ("$(XSBUG_LAUNCH)","app")
+			DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		endif
+
 		ifeq ($(USE_USB),0)
 			DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
@@ -375,17 +379,25 @@ ifeq ($(DEBUG),1)
 			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		endif
 
-		ifeq ($(XSBUG_LOG),1)
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 		endif
 
 	### Linux
 	else
-		DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		XSBUG_LOG = 0
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			XSBUG_LOG = 1
+		endif
+
+		ifeq ("$(XSBUG_LAUNCH)","app")
+			DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		endif
+
 		ifeq ($(USE_USB),0)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
 
-			ifeq ($(XSBUG_LOG),1)
+			ifeq ("$(XSBUG_LAUNCH)","log")
 				DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 			else
 				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
@@ -397,10 +409,6 @@ ifeq ($(DEBUG),1)
 			endif
 			DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
 		endif
-	endif
-
-	ifeq ($(XSBUG_LOG),1)
-		DO_XSBUG = 
 	endif
 
 else	# release

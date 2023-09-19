@@ -472,8 +472,17 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("XSBUG_HOST = ", tool.xsbug?.host ?? "localhost");
 		this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
-		if (tool.xsbugLog)
-			this.line("XSBUG_LOG = 1");
+		if (tool.debug) {
+			if ("default" === tool.xsbugLaunch) {
+				if ("vscode" === tool.getenv("TERM_PROGRAM"))
+					tool.xsbugLaunch = "none";
+				else
+					tool.xsbugLaunch = "app";
+			}
+			this.line("XSBUG_LAUNCH = ", tool.xsbugLaunch);
+			if ("log" === tool.xsbugLaunch)
+				this.line("XSBUG_LOG = 1");
+		}
 		
 		this.line("");
 
@@ -1500,6 +1509,7 @@ export class Tool extends TOOL {
 		}
 		this.config = {};
 		this.debug = false;
+		this.xsbugLaunch = "none";
 		this.environment = { "MODDABLE": this.moddablePath }
 		this.format = null;
 		this.instrument = false;
@@ -1525,6 +1535,22 @@ export class Tool extends TOOL {
 			case "-d":
 				this.debug = true;
 				this.instrument = true;
+				this.xsbugLaunch = "default";
+				break;
+			case "-dn":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "none";
+				break;
+			case "-dx":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "app";
+				break;
+			case "-dl":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "log";
 				break;
 			case "-f":
 				argi++;
@@ -1632,7 +1658,8 @@ export class Tool extends TOOL {
 				};
 				break;
 			case "-l":
-				this.xsbugLog = true;
+				this.xsbugLaunch = "log";
+				this.reportWarning(null, 0, "-l deprecated. use -dl instead.");				
 				break;
 			default:
 				name = argv[argi];
