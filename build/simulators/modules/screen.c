@@ -441,7 +441,9 @@ void fxScreenLaunch(txScreen* screen)
 	fxScreenSampleInstrumentation(screen);
 #endif	
 
+#ifdef mxDebug
 	breakOnStartFlag = ((txMachine*)screen->machine)->breakOnStartFlag;
+#endif
 	xsBeginHost(screen->machine);
 	{
 		xsVars(2);
@@ -518,7 +520,9 @@ void fxScreenLaunch(txScreen* screen)
 				if (dot)
 					*dot = 0;
 
+#ifdef mxDebug
 				breakOnStartFlag = 0;
+#endif
 				xsResult = xsAwaitImport(path, XS_IMPORT_DEFAULT);
 				if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype)) {
 					gSetupPending += 1;
@@ -532,7 +536,9 @@ void fxScreenLaunch(txScreen* screen)
 	}
 	xsEndHost(screen->machine);
 	
+#ifdef mxDebug
 	((txMachine*)screen->machine)->breakOnStartFlag = breakOnStartFlag;
+#endif
 	setStepDone(screen->machine);
 }
 
