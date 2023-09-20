@@ -92,8 +92,6 @@ else
 		XSBUG_LOG = 1
 	endif
 
-	DEBUGGER_PORT=$(shell findUSBLinux $(M4_VID) $(M4_PID) cdc_acm )
-
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
@@ -103,7 +101,17 @@ else
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 	ifeq ($(DEBUG),1)
-		CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) $(XSBUG_LOG)
+		ifeq ($(USE_USB),1)
+			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) $(XSBUG_LOG)
+		else
+			# not usb
+			ifeq ($(XSBUG_LOG),1)
+				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(MODDABLE_TOOLS_DIR)/serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+			else
+				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(MODDABLE_TOOLS_DIR)/serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+			endif
+		endif
+
 		ifeq ("$(XSBUG_LAUNCH)","app")			
 			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		endif
@@ -147,7 +155,7 @@ ifeq ($(DEBUG),1)
 	else
 		DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
 		FTDI_TRACE ?= -DUSE_FTDI_TRACE=1
-		CONNECT_XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+#		CONNECT_XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
 	endif
 else
 	DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
@@ -673,7 +681,7 @@ ifeq ($(DEBUG),1)
 #		-DDEBUG_NRF
 else
 	C_DEFINES += \
-		-DUSE_DEBUGGER_USBD=1 \
+		$(DEBUGGER_USBD) \
 		-DUSE_WATCHDOG=0 \
 		-Os
 	C_FLAGS += $(HW_OPT)
@@ -744,7 +752,7 @@ all: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
 	$(DO_COPY)
 	$(WAIT_FOR_COPY_COMPLETE)
-	$(CONNECT_XSBUG) $(NORESTART)
+	$(CONNECT_XSBUG)
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL_2_XSBUG)
