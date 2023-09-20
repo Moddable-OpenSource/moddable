@@ -769,8 +769,8 @@ C_DEFINES = \
 	$(PICO_C_DEFINES) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1
 
 #	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi 

@@ -238,8 +238,8 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DmxNoConsole=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 endif

@@ -141,8 +141,8 @@ class MakeFile extends MAKEFILE {
 		}	
 		this.line("");
 		if (tool.format) {
-			this.line("DISPLAY = ", formatValues[tool.format]);
-			this.line("ROTATION = ", tool.rotation);
+			this.line("COMMODETTOBITMAPFORMAT = ", formatValues[tool.format]);
+			this.line("POCOROTATION = ", tool.rotation);
 		}
 		this.write("HEADERS =");
 		for (var header of tool.hFiles) {

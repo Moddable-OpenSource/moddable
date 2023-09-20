@@ -102,8 +102,8 @@ C_DEFINES = \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
 	-DmxFewGlobalsTable=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif

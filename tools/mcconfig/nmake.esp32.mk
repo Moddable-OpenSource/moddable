@@ -336,8 +336,8 @@ C_DEFINES = \
 	-DESP32=$(ESP32_TARGET) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 
 !IF "$(DEBUG)"=="1"
 C_DEFINES = $(C_DEFINES) -DmxDebug=1

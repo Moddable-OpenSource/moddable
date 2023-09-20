@@ -538,8 +538,8 @@ C_DEFINES = \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1 \
 	$(FTDI_TRACE)
 !IF "$(INSTRUMENT)"=="1"
