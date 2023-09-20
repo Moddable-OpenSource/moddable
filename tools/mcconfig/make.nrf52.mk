@@ -68,13 +68,20 @@ ifeq ($(HOST_OS),Darwin)
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
 	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
+	START_NODE = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log
+	ifeq ($(USE_USB),1)
+		START_SERIAL2XSBUG = serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+	else
+		START_SERIAL2XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+	endif
+
 	ifeq ($(DEBUG),1)
 		ifeq ("$(XSBUG_LAUNCH)","log")
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_NODE) $(START_SERIAL2XSBUG)
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
 		else
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_SERIAL2XSBUG)
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
 			ifeq ("$(XSBUG_LAUNCH)","app")			
