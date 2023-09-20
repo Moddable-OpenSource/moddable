@@ -36,6 +36,7 @@ TOOLS_PREFIX = arm-none-eabi-
 DEBUGGER_SPEED ?= 115200
 DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
 
+
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
@@ -92,27 +93,23 @@ ifeq ($(HOST_OS),Darwin)
 
 ### Linux
 else
-	XSBUG_LOG = 0
 	ifeq ("$(XSBUG_LAUNCH)","log")
 		XSBUG_LOG = 1
 	endif
 
+	DEBUGGER_PORT=$(shell findUSBLinux $(PICO_VID) $(PICO_PID) cdc_acm )
+
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
-#	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
 	PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		ifeq ("$(XSBUG_LAUNCH)","log")
-		else
-			CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
-			ifeq ("$(XSBUG_LAUNCH)","app")
-				DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-			endif
+		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
+		ifeq ("$(XSBUG_LAUNCH)","app")
+			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		endif
-#		NORESTART=-norestart
 	endif
 endif
 KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
