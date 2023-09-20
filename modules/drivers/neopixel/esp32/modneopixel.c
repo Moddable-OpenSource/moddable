@@ -42,7 +42,7 @@ static void setPixel(xsNeoPixel np, uint16_t index, uint32_t color);
 void xs_neopixel_destructor(void *data)
 {
 	if (data) {
-		xsNeoPixel np = data;
+		xsNeoPixel np = ((void *)((char *)data - offsetof(xsNeoPixelRecord, pixels)));
 
 		np_clear(&np->px);
 		np_show(&np->px);
@@ -147,7 +147,7 @@ void xs_neopixel(xsMachine *the)
 
 void xs_neopixel_close(xsMachine *the)
 {
-	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
+	xsNeoPixel np = xsmcGetHostData(xsThis);
 	if (!np) return;
 	xs_neopixel_destructor(np);
 	xsmcSetHostData(xsThis, NULL);
