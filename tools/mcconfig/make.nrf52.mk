@@ -84,23 +84,28 @@ ifeq ($(HOST_OS),Darwin)
 	else
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
+# END of Darwin
 else
+# START of Linux
+
+	ifeq ("$(XSBUG_LAUNCH)","log")
+		XSBUG_LOG = 1
+	endif
+
+	DEBUGGER_PORT=$(shell findUSBLinux $(M4_VID) $(M4_PID) cdc_acm )
+
 	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
+
 	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(M4_VID) $(M4_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
+	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
 	ifeq ($(DEBUG),1)
-		ifeq ("$(XSBUG_LAUNCH)","log")
-			CONNECT_XSBUG = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-			NORESTART=-norestart
-		else
-			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-			NORESTART=-norestart
-			ifeq ("$(XSBUG_LAUNCH)","app")			
-				DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-			endif
+		CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) $(XSBUG_LOG)
+		ifeq ("$(XSBUG_LAUNCH)","app")			
+			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		endif
 	endif
 endif
