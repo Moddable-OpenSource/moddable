@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: August 28, 2023
+Revised: September 21, 2023
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
 
@@ -563,14 +563,12 @@ If your device shows up on a COM port other than COM3, you need to edit the `UPL
 set UPLOAD_PORT=COM5
 ```
 
-<!-- update option when this is mainline
-
 <a id="win-update"></a>	
 ### Updating
 
 To ensure that your build environment is up to date, perform the following steps:
 
-1. Download and run the Espressif [ESP-IDF Windows Installer](https://dl.espressif.com/dl/esp-idf/?idf=4.4). This will update the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
+1. Download and run the Espressif [ESP-IDF Windows Installer](https://dl.espressif.com/dl/idf-installer/esp-idf-tools-setup-online-2.23.exe). This will update the ESP32 Xtensa gcc toolchain, Ninja Build, OpenOCD, and a KConfig Frontend. This tool will also set your `PATH` to include the newly downloaded tools, as necessary.
 
     It is safe to accept all of the default options in the installer, or to change install locations as necessary.
 
@@ -621,13 +619,13 @@ To ensure that your build environment is up to date, perform the following steps
     rmdir /S /Q tmp\esp32
     ```
 
-6. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 4.4 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 4.4 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
+6. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 5.1 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 5.1 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
 	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
 	```
 
-	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the "ESP-IDF 4.4 CMD" shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF 4.4 CMD" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
+	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the "ESP-IDF 5.1 CMD" shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF 5.1 CMD" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
 
 	```text
 	C:\WINDOWS\system32\cmd.exe /k "C:\Users\<username>\.espressif\idf_cmd_init.bat"
@@ -641,17 +639,15 @@ To ensure that your build environment is up to date, perform the following steps
 
 	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
 
-	> Note: These instructions assume you only have one copy of the ESP-IDF installed. `idf_cmd_init.bat` can also take an argument to specify a particular ESP-IDF installation, if necessary. This argument should be set up in the default "ESP-IDF 4.4 CMD" shortcut.
+	> Note: These instructions assume you only have one copy of the ESP-IDF installed. `idf_cmd_init.bat` can also take an argument to specify a particular ESP-IDF installation, if necessary. This argument should be set up in the default "ESP-IDF 5.1 CMD" shortcut.
 
 
-7. In the "ESP-IDF 4.4 CMD" command prompt, verify the setup by building `helloworld` for your device target:
+7. In the "ESP-IDF 5.1 CMD" command prompt, verify the setup by building `helloworld` for your device target:
 
 	```text
 	cd %MODDABLE%\examples\helloworld
 	mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
-
--->
 
 <a id="esp32-linux"></a>
 ## Linux
