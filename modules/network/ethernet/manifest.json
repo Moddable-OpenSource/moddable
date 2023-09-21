@@ -23,25 +23,13 @@
             }
         },
         "lin": {
-            "modules": {
-                "*": [
-                    "$(MODULES)/network/wifi/sim/*"
-                ]
-            }
+            "include": "$(MODULES)/network/wifi/manifest.json"
         },
         "mac": {
-            "modules": {
-                "*": [
-                    "$(MODULES)/network/wifi/sim/*"
-                ]
-            }
+            "include": "$(MODULES)/network/wifi/manifest.json"
         },
         "win": {
-            "modules": {
-                "*": [
-                    "$(MODULES)/network/wifi/sim/*"
-                ]
-            }
+            "include": "$(MODULES)/network/wifi/manifest.json"
         },
         "...": {
             "error": "ethernet - unsupported platform"

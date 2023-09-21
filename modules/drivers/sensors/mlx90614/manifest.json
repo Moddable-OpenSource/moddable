@@ -1,7 +1,9 @@
 {
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	],
 	"modules": {
-		"embedded:sensor/Temperature/MLX90614": "$(MODDABLE)/modules/drivers/sensors/mlx90614/mlx90614",
-		"crc": "$(MODDABLE)/modules/data/crc/crc"
+		"embedded:sensor/Temperature/MLX90614": "$(MODDABLE)/modules/drivers/sensors/mlx90614/mlx90614"
 	},
 	"preload": [
 		"embedded:sensor/Temperature/MLX90614"

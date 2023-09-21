@@ -111,8 +111,8 @@ C_DEFINES = \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
-	/D kCommodettoBitmapFormat=$(DISPLAY) \
-	/D kPocoRotation=$(ROTATION)
+	/D kCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	/D kPocoRotation=$(POCOROTATION)
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \

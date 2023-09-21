@@ -423,7 +423,7 @@ The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a l
 The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest.
 
 ```json
-"includes": {
+"include": {
 	"$MODDABLE/modules/files/file/manifest_littlefs.json"
 }
 ```

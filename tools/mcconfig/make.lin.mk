@@ -18,24 +18,26 @@
 #
 
 PKGCONFIG = $(shell which pkg-config)
+DISPLAY ?= $(shell printenv DISPLAY)
 
 IMPLEMENTOR = $(shell grep -m 1 "CPU implementer" /proc/cpuinfo | cut -c 19-22)
 ARCH = $(shell grep -m 1 "CPU architecture" /proc/cpuinfo | cut -c 19-22)
 CHECK_ARCH = $(shell [ $1 -lt 8 ] && echo "YES")
 
+START_XSBUG =
+KILL_SERIAL2XSBUG =
 ifeq ($(DEBUG),1)
-	ifeq ($(XSBUG_LOG),1)
-		START_XSBUG =
-		START_SIMULATOR = export DISPLAY=:0.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+	ifeq ("$(XSBUG_LAUNCH)","log")
+#		START_SIMULATOR = export DISPLAY=:0.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+		START_SIMULATOR = export DISPLAY=:2.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 		KILL_SIMULATOR = $(shell pkill mcsim)
 	else
-		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		ifeq ("$(XSBUG_LAUNCH)","app")
+			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		endif
 		START_SIMULATOR = $(shell export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 	endif
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-else
-	START_XSBUG =
-	KILL_SERIAL2XSBUG =
 endif
 
 XS_DIRECTORIES = \
@@ -108,8 +110,8 @@ C_DEFINES = \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
 	-DmxFewGlobalsTable=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 C_DEFINES += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough

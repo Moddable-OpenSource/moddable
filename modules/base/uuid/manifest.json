@@ -1,0 +1,7 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"modules": {
+		"*": "$(MODULES)/base/uuid/*"
+	},
+	"preload": "uuid"
+}

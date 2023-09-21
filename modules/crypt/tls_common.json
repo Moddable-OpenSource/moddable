@@ -1,15 +1,15 @@
 {
+	"include": [
+		"$(MODULES)/crypt/bin/manifest.json",
+		"$(MODULES)/crypt/digest/manifest.json",
+		"$(MODULES)/data/base64/manifest.json",
+		"$(MODULES)/data/hex/manifest.json",
+		"$(MODULES)/files/resource/manifest.json"
+	],
 	"modules":{
 		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",
 		"*": [
-			"$(MODULES)/crypt/arith/*",
-			"$(MODULES)/crypt/bin/*",
-			"$(MODULES)/crypt/digest/*",
-			"$(MODULES)/crypt/digest/kcl/*",
-			"$(MODULES)/crypt/securesocket/*",
-			"$(MODULES)/data/base64/*",
-			"$(MODULES)/data/hex/*",
-			"$(MODULES)/files/resource/*"
+			"$(MODULES)/crypt/arith/*"
 		],
 		"ber": "$(MODULES)/crypt/etc/ber",
 		"curve": "$(MODULES)/crypt/etc/curve",
@@ -25,13 +25,8 @@
 		"x509": "$(MODULES)/crypt/etc/x509"
 	},
 	"preload": [
-		"securesocket",
 		"ssl",
 		"ssl/*",
-		"crypt",
-		"base64",
-		"hex",
-		"Resource",
 		"ber",
 		"curve",
 		"dsa",

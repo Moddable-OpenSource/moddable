@@ -1,7 +1,9 @@
 {
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	],
 	"modules": {
-		"embedded:sensor/Humidity-Temperature/HTU21D": "$(MODDABLE)/modules/drivers/sensors/htu21d/htu21d",
-		"crc": "$(MODDABLE)/modules/data/crc/crc"
+		"embedded:sensor/Humidity-Temperature/HTU21D": "$(MODDABLE)/modules/drivers/sensors/htu21d/htu21d"
 	},
 	"preload": [
 		"embedded:sensor/Humidity-Temperature/HTU21D"

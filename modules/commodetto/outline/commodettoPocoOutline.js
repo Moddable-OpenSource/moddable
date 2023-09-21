@@ -1,4 +1,4 @@
-import Poco from "commodetto/Poco";
+import Poco from "commodetto/PocoCore";
 
 function blendOutline(color, blend, outline, x, y) @ "xs_outlinerenderer_blendOutline";
 function blendPolygon(color, blend, polygon) @ "xs_outlinerenderer_blendPolygon";

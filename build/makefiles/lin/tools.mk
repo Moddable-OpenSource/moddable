@@ -117,6 +117,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ParseBMP.xsb \
 	$(MOD_DIR)/commodetto/PixelsOut.xsb \
 	$(MOD_DIR)/commodetto/Poco.xsb \
+	$(MOD_DIR)/commodetto/PocoCore.xsb \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
@@ -152,7 +153,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
 	$(TMP_DIR)/commodettoParseBMP.c.xsi \
-	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoCore.c.xsi \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
@@ -171,6 +172,7 @@ PRELOADS =\
 	-p commodetto/ParseBMF.xsb\
 	-p commodetto/ParseBMP.xsb\
 	-p commodetto/Poco.xsb\
+	-p commodetto/PocoCore.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
@@ -196,7 +198,7 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \
 	$(TMP_DIR)/commodettoParseBMP.c.o \
-	$(TMP_DIR)/commodettoPoco.c.o \
+	$(TMP_DIR)/commodettoPocoCore.c.o \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \

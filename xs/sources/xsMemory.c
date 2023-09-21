@@ -527,7 +527,13 @@ void fxFree(txMachine* the)
 		the->firstBlock = C_NULL;
 	}
 #endif
-	
+
+#ifdef mxDebug
+	if (the->pathValue)
+		c_free(the->pathValue);
+	the->pathValue = C_NULL;
+#endif
+
 #ifdef mxNever
 	stopTime(&gxLifeTime);
 	reportTime(&gxLifeTime);

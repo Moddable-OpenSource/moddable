@@ -1,14 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/pins/i2c/manifest.json",
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"modules": {
-		"MCP230XX": "$(MODULES)/drivers/mcp230xx/mcp230xx",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
+		"MCP230XX": "$(MODULES)/drivers/mcp230xx/mcp230xx"
 	},
 	"preload": [
-		"MCP230XX",
-		"pins/smbus"
+		"MCP230XX"
 	]
 }

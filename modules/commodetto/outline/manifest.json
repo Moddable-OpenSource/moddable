@@ -7,7 +7,8 @@
 			"./freetype/include/freetype/internal/*"
 		],
 		"commodetto/outline": "./commodettoOutline",
-		"commodetto/pocoOutline": "./commodettoPocoOutline"
+		"commodetto/pocoOutline": "./commodettoPocoOutline",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
 	},
 	"preload": [
 		"commodetto/outline",

@@ -12,16 +12,13 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/commodetto/gif/manifest.json",
-		"$(MODULES)/commodetto/qrcode/manifest.json",
-		"$(MODULES)/data/qrcode/manifest.json"
+		"$(MODULES)/piu/mc/gif/manifest.json",
+		"$(MODULES)/piu/mc/qrcode/manifest.json"
 	],
 	"creation": {
 		"stack": 512
 	},
 	"modules": {
-		"piu/GIFImage": "$(MODULES)/piu/MC/gif/piuGIFImage",
-		"piu/QRCode": "$(MODULES)/piu/MC/qrcode/piuQRCode",
 		"*": [
 			"./Controller",
 			"./Transition",

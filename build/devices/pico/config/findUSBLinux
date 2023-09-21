@@ -6,7 +6,7 @@ if [ "$#" -lt 2 ] ; then
 	exit 1
 fi
 
-for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev 2>/dev/null); do
     (
         syspath="${sysdevpath%/dev}"
         devname="$(udevadm info -q name -p $syspath)"
