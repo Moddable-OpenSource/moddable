@@ -108,7 +108,9 @@ void loop(void)
 		if (delayMS)
 			modDelayMilliseconds(delayMS);
 	}
+#ifdef mxInstrument
 	modInstrumentationAdjust(Turns, +1);
+#endif
 }
 
 /*
