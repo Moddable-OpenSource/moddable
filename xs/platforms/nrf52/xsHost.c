@@ -587,30 +587,36 @@ void *modInstallMods(void *preparationIn, uint8_t *status)
 
 #endif /* MODDEF_XS_MODS */
 
-#ifndef MODDEF_FILE_LFS_PARITION_SIZE  
-	#define MODDEF_FILE_LFS_PARITION_SIZE (65536)
+#ifndef MODDEF_FILE_LFS_PARTITION_SIZE
+	#define MODDEF_FILE_LFS_PARTITION_SIZE (65536)
 #endif
 
 uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
 {
 	uint32_t offset, size;
 	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
-		offset = kModulesStart;
-		size = 0;
+		uint32_t modSize = 0, storageSize = 0;
 
-#if !MODDEF_XS_MODS
+		offset = kModulesStart;
+
+#if MODDEF_XS_MODS
+		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
+			modSize = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+#else
 		if (which == kPartitionMod)
 			return 0;
-#else
-		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
-			size = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
 #endif
 
+		if ((kModulesEnd - (offset + modSize)) >= MODDEF_FILE_LFS_PARTITION_SIZE)
+			storageSize = (((MODDEF_FILE_LFS_PARTITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+
 		if (kPartitionStorage == which) {
-			if ((kModulesEnd - (offset + size)) < MODDEF_FILE_LFS_PARITION_SIZE)
-				return 0;
-			size = (((MODDEF_FILE_LFS_PARITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
-			offset = kModulesEnd - size;
+			offset = kModulesEnd - storageSize;
+			size = storageSize;
+		}
+		else {
+//			offset = kModulesStart;		// set above
+			size = (kModulesEnd - offset) - MODDEF_FILE_LFS_PARTITION_SIZE;
 		}
 	}
 	else if (kPartitionBLEState == which) {
