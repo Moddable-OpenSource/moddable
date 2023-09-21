@@ -528,7 +528,7 @@ For other issues that are common on macOS, Windows, and Linux, see the [Troubles
 
 #### ESP-IDF Build is Extremely Slow
 
-The built-in anti-virus software included with Windows 10 and 11 (Microsoft Defender, formerly Windows Defender) can significantly slow down ESP-IDF builds. Espressif's [ESP-IDF Windows Installer](https://dl.espressif.com/dl/esp-idf/?idf=4.4) includes an option to automatically configure Microsoft Defender with all the exclusions needed to bypass realtime scanning during builds. If your build is slow, try re-running the ESP-IDF Windows Installer to verify that that option is selected. You may also need to manually exclude your Moddable build folder or other custom build output directories by following [these instructions](https://support.microsoft.com/en-us/windows/add-an-exclusion-to-windows-security-811816c0-4dfd-af4a-47e4-c301afe13b26).
+The built-in anti-virus software included with Windows 10 and 11 (Microsoft Defender, formerly Windows Defender) can significantly slow down ESP-IDF builds. Espressif's [ESP-IDF Windows Installer](https://dl.espressif.com/dl/idf-installer/esp-idf-tools-setup-online-2.23.exe) includes an option to automatically configure Microsoft Defender with all the exclusions needed to bypass realtime scanning during builds. If your build is slow, try re-running the ESP-IDF Windows Installer to verify that that option is selected. You may also need to manually exclude your Moddable build folder or other custom build output directories by following [these instructions](https://support.microsoft.com/en-us/windows/add-an-exclusion-to-windows-security-811816c0-4dfd-af4a-47e4-c301afe13b26).
 
 #### Python Versions
 
@@ -562,6 +562,12 @@ If your device shows up on a COM port other than COM3, you need to edit the `UPL
 ```text
 set UPLOAD_PORT=COM5
 ```
+
+#### Other Errors
+
+Many ESP32 errors on Windows can be corrected by updating the Espressif tools. This is especially true of errors reported during initialization of the "ESP-IDF CMD" Command Prompt and Python version errors during builds. 
+
+To update the Espressif tools, download and run the most recent [ESP-IDF Windows Installer](https://dl.espressif.com/dl/idf-installer/esp-idf-tools-setup-online-2.23.exe). Do not use the tool to clone a new ESP-IDF tree if you already have one installed. Instead, choose the option to use an existing ESP-IDF tree and point it to `%IDF_PATH%`.
 
 <a id="win-update"></a>	
 ### Updating
