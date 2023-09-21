@@ -351,7 +351,8 @@ else
 	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 endif
 
-BUILD_AND_FLASH_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) build flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
+
 BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py $(PORT_SET) -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
@@ -360,11 +361,25 @@ RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
 
+BUILD_IDF_PARTS = cd $(PROJ_DIR) ; \
+	$(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1) ; \
+	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null ; \
+	cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null || true ; \
+	cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null || true ; \
+	cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR) 2> /dev/null || true ; \
+	cp $(PARTITIONS_PATH) $(BIN_DIR) 2> /dev/null || true ; \
+	cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null || true ; \
+	cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null || true 
+
+DO_PROGRAM = cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
+
+
+CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+
 ifeq ($(DEBUG),1)
-	DO_XSBUG = 
 	ifeq ($(HOST_OS),Darwin)
 		ifeq ("$(XSBUG_LAUNCH)","app")
-			DO_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		endif
 
 		ifeq ($(USE_USB),0)
@@ -372,7 +387,7 @@ ifeq ($(DEBUG),1)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		else
 			ifeq ($(USE_USB),1)
-				PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
+				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
 				# USE_USB == 2 doesn't use PROGRAMMING_MODE
 			endif
 			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
@@ -391,7 +406,7 @@ ifeq ($(DEBUG),1)
 		endif
 
 		ifeq ("$(XSBUG_LAUNCH)","app")
-			DO_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		endif
 
 		ifeq ($(USE_USB),0)
@@ -404,7 +419,7 @@ ifeq ($(DEBUG),1)
 			endif
 		else
 			ifeq ($(USE_USB),1)
-				PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
+				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
 				# USE_USB == 2 doesn't use PROGRAMMING_MODE
 			endif
 			DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
@@ -414,47 +429,37 @@ ifeq ($(DEBUG),1)
 else	# release
 	ifeq ($(USE_USB),1)
 		ifeq ($(HOST_OS),Darwin)
-			PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
-			PROGRAMMING_MODE =
+			# PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
+			SET_PROGRAMMING_MODE =
 		endif
 	endif
 
-	DO_XSBUG = 
 	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
+	CONNECT_XSBUG = $(DO_LAUNCH)
 endif
-KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
 
 SDKCONFIGPATH ?= $(PROJ_DIR)
 SDKCONFIG = $(SDKCONFIGPATH)/sdkconfig.defaults
 SDKCONFIG_H = $(SDKCONFIG_H_DIR)/sdkconfig.h
 
 all: precursor
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
-	cd $(PROJ_DIR) ; $(BUILD_CMD) || (echo $(BUILD_ERR) && exit 1)
-	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
-	-cp $(BLD_DIR)/xs_esp32.map $(BIN_DIR) 2> /dev/null
-	-cp $(BLD_DIR)/xs_esp32.bin $(BIN_DIR) 2> /dev/null
-	-cp $(BLD_DIR)/xs_esp32.elf $(BIN_DIR) 2> /dev/null
-	-cp $(PARTITIONS_PATH) $(BIN_DIR) 2> /dev/null
-	-cp $(BLD_DIR)/bootloader/bootloader.bin $(BIN_DIR) 2> /dev/null
-	-cp $(BLD_DIR)/ota_data_initial.bin $(BIN_DIR) 2>/dev/null
-	$(PROGRAMMING_MODE)
-	cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
-	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
-	cd $(PROJ_DIR); \
-	$(DO_LAUNCH)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(BUILD_IDF_PARTS)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
+	$(CONNECT_XSBUG)
 
 deploy: 
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
-	$(KILL_SERIAL_2_XSBUG)
+	$(KILL_SERIAL2XSBUG)
 	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
 
 xsbug:
 	@echo "# starting xsbug"
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
 	$(DO_LAUNCH)
 

@@ -66,15 +66,13 @@ ifeq ($(shell which cmake),)
 $(error cmake not found. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
 endif
 
-DO_XSBUG =
 CONNECT_XSBUG =
 NORESTART =
 ifeq ($(HOST_OS),Darwin)
-	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
 
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
+	SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
 
 	ifeq ($(DEBUG),1)
 		ifeq ("$(XSBUG_LAUNCH)","log")
@@ -82,14 +80,15 @@ ifeq ($(HOST_OS),Darwin)
 		else
 			CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; export XSBUG_PORT=$(XSBUG_PORT) ; export XSBUG_HOST=$(XSBUG_HOST) ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 			ifeq ("$(XSBUG_LAUNCH)","app")
-				DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+				START_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 			endif
 		endif
 #		NORESTART=-norestart
-#		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	else
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
+
+	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 
 ### Linux
 else
@@ -99,20 +98,22 @@ else
 
 	DEBUGGER_PORT=$(shell findUSBLinux $(PICO_VID) $(PICO_PID) cdc_acm )
 
-	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
-	PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	SET_PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
 		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
 		ifeq ("$(XSBUG_LAUNCH)","app")
-			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			START_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		endif
 	endif
+
+	DO_PROGRAM = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
 endif
-KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
@@ -838,21 +839,20 @@ VPATH += $(PICO_SRC_DIRS) $(PIO_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 .PRECIOUS: %.d %.o
 
 all: precursor $(BIN_DIR)/xs_pico.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	$(DO_XSBUG)
-	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
-#	$(CONNECT_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(SET_PROGRAMMING_MODE)
+#	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
+	$(DO_PROGRAM)
+#	$(WAIT_FOR_COPY_COMPLETE)
 	$(CONNECT_XSBUG) $(NORESTART)
 
 deploy: precursor $(BIN_DIR)/xs_pico.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
+	$(KILL_SERIAL2XSBUG)
+	$(SET_PROGRAMMING_MODE)
+#	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
+	$(DO_PROGRAM)
+#	$(WAIT_FOR_COPY_COMPLETE)
 
 build: precursor $(BIN_DIR)/xs_pico.uf2
 	@echo Target built: $(BIN_DIR)/xs_pico.uf2
@@ -887,8 +887,8 @@ $(BIN_DIR)/xs_pico.uf2: $(BIN_DIR)/xs_pico.elf
 	$(UF2CONV) $(BIN_DIR)/xs_pico.elf $(BIN_DIR)/xs_pico.uf2
 
 xsbug:
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(CONNECT_XSBUG)
 
 $(TMP_DIR):
