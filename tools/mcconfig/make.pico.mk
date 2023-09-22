@@ -92,9 +92,6 @@ ifeq ($(HOST_OS),Darwin)
 
 ### Linux
 else
-	ifeq ("$(XSBUG_LAUNCH)","log")
-		XSBUG_LOG = 1
-	endif
 
 	DEBUGGER_PORT=$(shell findUSBLinux $(PICO_VID) $(PICO_PID) cdc_acm )
 
@@ -104,7 +101,11 @@ else
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			CONNECT_XSBUG = @echo "Connect to xsbug-log @ $(PICO_VID):$(PICO_PID)." && PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) 1
+		else
+			CONNECT_XSBUG = @echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." && PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
+		endif
 		ifeq ("$(XSBUG_LAUNCH)","app")
 			START_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
 		endif
