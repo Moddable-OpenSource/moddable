@@ -109,17 +109,12 @@ ifeq ($(HOST_OS),Darwin)
 		SET_PROGRAMMING_MODE = @echo Use the target installDFU or debugDFU.
 		DO_PROGRAM =
 	else
-		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ;
- cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ; cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 	endif
 
 # END of Darwin
 else
 # START of Linux
-
-	ifeq ("$(XSBUG_LAUNCH)","log")
-		XSBUG_LOG = 1
-	endif
 
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
@@ -129,7 +124,12 @@ else
 
 	ifeq ($(DEBUG),1)
 		ifeq ($(USE_USB),1)
-			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) $(XSBUG_LOG)
+			ifeq ("$(XSBUG_LAUNCH)","log")
+				CONNECT_XSBUG = @echo "Connect to xsbug-log @ $(M4_VID):$(M4_PID)." && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) 1
+			else
+				CONNECT_XSBUG = @echo "Connect to xsbug @ $(M4_VID):$(M4_PID)." && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			endif
+
 		else
 			# not usb
 			ifeq ($(XSBUG_LOG),1)
@@ -144,7 +144,13 @@ else
 		endif
 	endif
 
-	DO_PROGRAM = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
+
+	ifeq ($(USE_USB),0)
+		SET_PROGRAMMING_MODE = echo "  Use the target installDFU or debugDFU."
+		DO_PROGRAM =
+	else
+		DO_PROGRAM = @ Programming: $(BIN_DIR)/xs_nrf52.hex to $(M4_VID):$(M4_PID); DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
+	endif
 
 endif
 
