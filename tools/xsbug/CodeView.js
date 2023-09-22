@@ -172,7 +172,7 @@ const LINE_MODE = 1;
 const WORD_MODE = 2;
 
 class CodeBehavior extends _CodeBehavior {
-	canDisableBreakpoint(code, item) {
+	canEnableDisableBreakpoint(code, item) {
 		let location = code.locate(code.selectionOffset);
 		var lines = this.data.LINES;
 		var line = lines.content(Math.floor(location.y / code.lineHeight));
@@ -191,11 +191,11 @@ class CodeBehavior extends _CodeBehavior {
 		item.state = content.state & 1;
 		return true;
 	}
-	doDisableBreakpoint(code, item) {
+	doEnableDisableBreakpoint(code, item) {
 		let data = this.data;
 		let location = code.locate(code.selectionOffset);
 		let at = Math.floor(location.y / code.lineHeight) + 1;
-		data.doDisableBreakpoint(data.path, at);
+		data.doEnableDisableBreakpoint(data.path, at);
 	}
 	doToggleBreakpoint(code, item) {
 		let data = this.data;

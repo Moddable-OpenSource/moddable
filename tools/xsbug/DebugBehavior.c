@@ -158,6 +158,7 @@ static void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* buffer, size_t length);
+static void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, xsStringValue tag);
 
 enum {
 	mxFramesView = 0,
@@ -1420,6 +1421,7 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 	PiuDebugMachine self = xsGetHostData(xsThis);
 	xsIntegerValue c = xsToInteger(xsArgc), i;
 	xsIntegerValue command = xsToInteger(xsArg(0));
+	xsVars(1);
 	if (self) {
 		buffer[0] = 0;
 	}
@@ -1438,9 +1440,11 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		case mxClearBreakpoint:
 			c_strcat(buffer, "<clear-breakpoint path=\"");
-			c_strcat(buffer, xsToString(xsArg(1)));
+			c_strcat(buffer, xsToString(xsGet(xsArg(1), xsID("path"))));
 			c_strcat(buffer, "\" line=\"");
-			c_strcat(buffer, xsToString(xsArg(2)));
+			c_strcat(buffer, xsToString(xsGet(xsArg(1), xsID("line"))));
+			c_strcat(buffer, "\" id=\"@");
+			c_strcat(buffer, xsToString(xsGet(xsArg(1), xsID("id"))));
 			c_strcat(buffer, "\"/>");
 			break;
 		case mxGoCommand:
@@ -1457,27 +1461,16 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		case mxSetAllBreakpointsCommand:
 			c_strcat(buffer, "<set-all-breakpoints>");
-			if ((c > 2) && (xsTest(xsArg(2))))
-				c_strcat(buffer, "<breakpoint path=\"start\" line=\"0\"/>");
-			if ((c > 3) && (xsTest(xsArg(3))))
-				c_strcat(buffer, "<breakpoint path=\"exceptions\" line=\"0\"/>");
 			c = xsToInteger(xsGet(xsArg(1), xsID("length")));
 			for (i = 0; i < c; i++) {
 				xsResult = xsGetAt(xsArg(1), xsInteger(i));
-				c_strcat(buffer, "<breakpoint path=\"");
-				c_strcat(buffer, xsToString(xsGet(xsResult, xsID("path"))));
-				c_strcat(buffer, "\" line=\"");
-				c_strcat(buffer, xsToString(xsGet(xsResult, xsID("line"))));
-				c_strcat(buffer, "\"/>");
+				PiuDebugMachine_doCommandBreakpoint(the, "breakpoint");
 			}
 			c_strcat(buffer, "</set-all-breakpoints>");
 			break;
 		case mxSetBreakpointCommand:
-			c_strcat(buffer, "<set-breakpoint path=\"");
-			c_strcat(buffer, xsToString(xsArg(1)));
-			c_strcat(buffer, "\" line=\"");
-			c_strcat(buffer, xsToString(xsArg(2)));
-			c_strcat(buffer, "\"/>");
+			xsResult = xsArg(1);
+			PiuDebugMachine_doCommandBreakpoint(the, "set-breakpoint");
 			break;
 		case mxStepCommand:
 			c_strcat(buffer, "<step/>");
@@ -1580,6 +1573,47 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	else {
 		xsResult = xsGet(xsThis, xsID_connection);
 		xsCall1(xsResult, xsID_write, xsArrayBuffer(buffer, (xsIntegerValue)length));
+	}
+}
+
+void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, xsStringValue tag)
+{
+	xsIntegerValue id = xsToInteger(xsGet(xsResult, xsID("id")));
+	c_strcat(buffer, "<");
+	c_strcat(buffer, tag);
+	c_strcat(buffer, " path=\"");
+	c_strcat(buffer, xsToString(xsGet(xsResult, xsID("path"))));
+	c_strcat(buffer, "\" line=\"");
+	c_strcat(buffer, xsToString(xsGet(xsResult, xsID("line"))));
+	c_strcat(buffer, "\" id=\"@");
+	c_strcat(buffer, xsToString(xsGet(xsResult, xsID("id"))));
+	c_strcat(buffer, "\"");
+	if (id & 1) {
+		c_strcat(buffer, ">");
+		xsVar(0) = xsGet(xsResult, xsID("condition"));
+		if (xsTest(xsVar(0))) {
+			c_strcat(buffer, "<breakpoint-condition path=\"");
+			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, "\"/>");
+		}
+		xsVar(0) = xsGet(xsResult, xsID("hitCount"));
+		if (xsTest(xsVar(0))) {
+			c_strcat(buffer, "<breakpoint-hit-count path=\"");
+			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, "\"/>");
+		}
+		xsVar(0) = xsGet(xsResult, xsID("trace"));
+		if (xsTest(xsVar(0))) {
+			c_strcat(buffer, "<breakpoint-trace path=\"");
+			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, "\"/>");
+		}
+		c_strcat(buffer, "</");
+		c_strcat(buffer, tag);
+		c_strcat(buffer, ">");
+	}
+	else {
+		c_strcat(buffer, "/>");
 	}
 }
 
