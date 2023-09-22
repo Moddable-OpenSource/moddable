@@ -1,6 +1,6 @@
 # JavaScript language considerations on embedded devices using the XS engine
 Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: August 31, 2023
+Revised: September 22, 2023
 
 ## Ultra-light JavaScript
 XS is the JavaScript engine at the core of Moddable applications and tools. XS has existed since the beginning of this century. You can get the latest version on [GitHub](https://github.com/Moddable-OpenSource/moddable).
@@ -90,7 +90,7 @@ Here are a few incompatibilities that you should be aware of:
 
 - **RegExp**: By default the Unicode property escapes are not built-in because of the size of the tables they require.
 
-- **String**: Strings are UTF-8 encoded, their length is the number of code points instead of the number of code units they contain and they are indexed by code points instead of code units.
+- **String**: Strings are UTF-8 encoded internally by default, their length is the number of code points instead of the number of code units they contain and they are indexed by code points instead of code units. Defining the `mxCESU8` build flag encodes strings using [CESU-8](https://en.wikipedia.org/wiki/CESU-8) which provides full conformance. When using CESU-8, XS encodes the NUL character using Java's [Modified UTF-8](https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8).
 
 - **Tagged Template**: XS supports tagged templates but does not currently implement the tagged templates cache.
 
