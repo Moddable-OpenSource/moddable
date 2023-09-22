@@ -140,6 +140,7 @@ MODULES = \
 	$(MOD_DIR)/mcconfig.xsb \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
+	$(MOD_DIR)/mcpack.xsb \
 	$(MOD_DIR)/mcprintski.xsb \
 	$(MOD_DIR)/mcrez.xsb \
 	$(MOD_DIR)/nodered2mcu.xsb \
@@ -225,6 +226,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsBigIntEx.c.o \
 	$(TMP_DIR)/ec.c.o \
 	$(TMP_DIR)/image2cs.c.o \
+	$(TMP_DIR)/mcpack.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modCrypt.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
@@ -251,6 +253,7 @@ COMMANDS = \
 	$(BIN_DIR)/mcbundle \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mclocal \
+	$(BIN_DIR)/mcpack \
 	$(BIN_DIR)/mcprintski \
 	$(BIN_DIR)/mcrez \
 	$(BIN_DIR)/nodered2mcu \
@@ -422,6 +425,11 @@ $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
 	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
+	
+$(BIN_DIR)/mcpack: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mcpack"
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcpack "$$@"' > $(BIN_DIR)/mcpack
+	chmod +x $(BIN_DIR)/mcpack
 
 $(BIN_DIR)/mcprintski: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcprintski"

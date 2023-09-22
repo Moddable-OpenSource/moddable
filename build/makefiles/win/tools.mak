@@ -132,6 +132,7 @@ MODULES = \
 	$(MOD_DIR)\mcconfig.xsb \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
+	$(MOD_DIR)\mcpack.xsb \
 	$(MOD_DIR)\mcrez.xsb \
 	$(MOD_DIR)\nodered2mcu.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
@@ -199,6 +200,7 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoReadPNG.obj \
 	$(TMP_DIR)\cfeBMF.obj \
 	$(TMP_DIR)\image2cs.obj \
+	$(TMP_DIR)\mcpack.obj \
 	$(TMP_DIR)\miniz.obj \
 	$(TMP_DIR)\modBase64.obj \
 	$(TMP_DIR)\modInstrumentation.obj \
@@ -215,6 +217,7 @@ COMMANDS = \
 	$(BIN_DIR)\mcbundle.bat \
 	$(BIN_DIR)\mcconfig.bat \
 	$(BIN_DIR)\mclocal.bat \
+	$(BIN_DIR)\mcpack.bat \
 	$(BIN_DIR)\mcrez.bat \
 	$(BIN_DIR)\nodered2mcu.bat \
 	$(BIN_DIR)\png2bmp.bat \
@@ -441,6 +444,9 @@ $(BIN_DIR)\mcconfig.bat :
 $(BIN_DIR)\mclocal.bat :
 	@echo # mclocal.bat
 	echo @%~dp0\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
+$(BIN_DIR)\mcpack.bat :
+	@echo # mcpack.bat
+	echo @%~dp0\tools mcpack %%* 1> $(BIN_DIR)\mcpack.bat
 $(BIN_DIR)\mcrez.bat :
 	@echo # mcrez.bat
 	echo @%~dp0\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
