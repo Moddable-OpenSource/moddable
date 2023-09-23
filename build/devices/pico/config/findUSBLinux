@@ -6,13 +6,13 @@ if [ "$#" -lt 2 ] ; then
 	exit 1
 fi
 
-for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev 2>/dev/null); do
     (
         syspath="${sysdevpath%/dev}"
-        devname="$(udevadm info -q name -p $syspath)"
+        devname="$(udevadm info -q name -p $syspath 2>/dev/null)"
         [[ "$devname" == "bus/"* ]] && exit
 # echo "$(udevadm info -q property --export -p $syspath)"
-        eval "$(udevadm info -q property --export -p $syspath)"
+        eval "$(udevadm info -q property --export -p $syspath 2>/dev/null)"
 	[[ "$ID_VENDOR_ID" != "$1" || "$ID_MODEL_ID" != "$2" ]] && exit
 	[[ "$3" != "" && "$ID_USB_DRIVER" != "$3" ]] && exit
         echo "/dev/$devname"

@@ -1,12 +1,7 @@
 {
+	"include": "$(MODULES)/files/resource/manifest.json",
 	"modules": {
-		"*": [
-			"$(MODULES)/files/resource/*",
-			"./ResourceIterator"
-		]
+		"*": "./ResourceIterator"
 	},
-	"preload": [
-		"Resource",
-		"ResourceIterator"
-	]
+	"preload": "ResourceIterator"
 }

@@ -238,8 +238,8 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DmxNoConsole=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(DEBUG),1)
 	C_DEFINES += -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 endif
@@ -286,21 +286,24 @@ VPATH += $(SDK_DIRS) $(XS_DIRS)
 
 ifeq ($(DEBUG),1)
 	LAUNCH = debug
+	START_XSBUG =
 	ifeq ($(HOST_OS),Darwin)
-		ifeq ($(XSBUG_LOG),1)
-			START_XSBUG =
-			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			CONNECT_XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
 		else
-			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+			CONNECT_XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)/main.elf -bin $(TOOLS_BIN)
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+			endif
 		endif
 	else
-		ifeq ($(XSBUG_LOG),1)
-			START_XSBUG =
-			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			CONNECT_XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
 		else
-			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-			START_SERIAL2XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+			CONNECT_XSBUG = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+			endif
 		endif
 	endif
 else
@@ -328,7 +331,8 @@ ESPTOOL_FLASH_OPT = \
 	0x1000 $(BIN_DIR)/main.bin \
 	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
 
-UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
+SET_PROGRAMMING_MODE =
+DO_PROGRAM = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write_flash $(ESPTOOL_FLASH_OPT)
 
 .PHONY: all
 
@@ -339,24 +343,26 @@ build: $(LIB_DIR) $(BIN_DIR)/main.bin
 deploy:
 	@echo "# uploading to esp"
 	$(KILL_SERIAL2XSBUG)
-	$(UPLOAD_TO_ESP)
-
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
 
 xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
-	$(START_SERIAL2XSBUG)
+	$(CONNECT_XSBUG)
 
 debug: build
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
-	$(UPLOAD_TO_ESP)
-	$(START_SERIAL2XSBUG)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
+	$(CONNECT_XSBUG)
 
 release: $(LIB_DIR) $(BIN_DIR)/main.bin
 	$(KILL_SERIAL2XSBUG)
-	$(UPLOAD_TO_ESP)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
 
 clean:
 	echo "# Clean project"

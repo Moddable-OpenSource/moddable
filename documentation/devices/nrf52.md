@@ -1,6 +1,6 @@
 # Using the Moddable SDK with nRF52
 
-Copyright 2021-2023 Moddable Tech, Inc.
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
 Revised: September 7, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.

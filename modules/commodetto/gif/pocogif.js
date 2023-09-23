@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2023  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -18,7 +18,7 @@
 *
 */
 
-import Poco from "commodetto/Poco";
+import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap";
 
 function drawBitmapWithKeyColor(bits, x, y, color) @ "xs_poco_drawGIF";

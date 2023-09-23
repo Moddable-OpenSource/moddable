@@ -1,0 +1,72 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*"
+				]
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*"
+				]
+			}
+		},
+		"esp32/wt32_eth01": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*"
+				]
+			}
+		},
+		"pico": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lwip/*"
+				]
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*"
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/mac/*"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/win/*"
+				]
+			}
+		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/qca4020/*"
+				]
+			}
+		},	
+		"...": {
+			"error": "socket - unsupported platform"
+		}
+	},
+	"preload": "socket"
+}

@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"bin": "./bin"
+	},
+	"preload": [
+		"bin"
+	]
+}

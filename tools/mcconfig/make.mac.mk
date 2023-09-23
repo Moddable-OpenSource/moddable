@@ -20,10 +20,10 @@
 START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 
 ifeq ($(DEBUG),1)
-	ifeq ($(XSBUG_LOG),1)
-		START_XSBUG = 
+	START_XSBUG = 
+	ifeq ("$(XSBUG_LAUNCH)","log")
 		START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
-	else
+	else ifeq ("$(XSBUG_LAUNCH)","app")
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	endif	
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
@@ -102,8 +102,8 @@ C_DEFINES = \
 	-DmxNoFunctionName=1 \
 	-DmxHostFunctionPrimitive=1 \
 	-DmxFewGlobalsTable=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif

@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/commodetto/gif/manifest.json"
+	],
+	"modules": {
+		"piu/GIFImage": "./piuGIFImage"
+	},
+	"preload": "piu/GIFImage"
+}

@@ -1,4 +1,5 @@
 {
+	"include": "$(MODDABLE)/examples/manifest_net.json",
 	"platforms": {
 		"qca4020": {
 			"modules": {

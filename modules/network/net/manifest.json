@@ -1,0 +1,76 @@
+{
+	"include": "$(MODDABLE)/examples/manifest_net.json",
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/esp/*"
+				]
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/esp/*"
+				]
+			}
+		},
+		"esp32/wt32_eth01": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/esp/*"
+				]
+			}
+		},
+		"nrf52": {
+			"error": "manifest_net - no Wi-Fi or Ethernet on nRF52"
+		},
+		"pico": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/pico/*"
+				]
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/lin/*"
+				]
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/mac/*"
+				]
+			}
+		},
+		"win": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/win/*"
+				]
+			}
+		},
+		"qca4020": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/qca4020/*"
+				]
+			}
+		},	
+		"...": {
+			"error": "net - unsupported platform"
+		}
+	},
+	"preload": "net"
+}

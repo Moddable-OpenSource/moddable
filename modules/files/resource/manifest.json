@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/files/resource/*"
+		]
+	},
+	"preload": [
+		"Resource"
+	]
+}

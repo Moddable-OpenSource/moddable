@@ -9,7 +9,7 @@ then
 	DEVICE_NAME=`serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} -showPath`
 	if [[ "timeout" != "${DEVICE_NAME}" ]]
 	then
-		echo -n "Setting programming mode"
+		echo "# Setting programming mode"
 		serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} 921600 8N1 -programming
 	else
 		echo "Hold the BOOTSEL button and power-cycle the device."

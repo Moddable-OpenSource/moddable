@@ -117,6 +117,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ParseBMP.xsb \
 	$(MOD_DIR)/commodetto/PixelsOut.xsb \
 	$(MOD_DIR)/commodetto/Poco.xsb \
+	$(MOD_DIR)/commodetto/PocoCore.xsb \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
@@ -134,6 +135,7 @@ MODULES = \
 	$(MOD_DIR)/mcconfig.xsb \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
+	$(MOD_DIR)/mcpack.xsb \
 	$(MOD_DIR)/mcrez.xsb \
 	$(MOD_DIR)/nodered2mcu.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
@@ -152,7 +154,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
 	$(TMP_DIR)/commodettoParseBMP.c.xsi \
-	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoCore.c.xsi \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
@@ -171,6 +173,7 @@ PRELOADS =\
 	-p commodetto/ParseBMF.xsb\
 	-p commodetto/ParseBMP.xsb\
 	-p commodetto/Poco.xsb\
+	-p commodetto/PocoCore.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
@@ -196,12 +199,13 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \
 	$(TMP_DIR)/commodettoParseBMP.c.o \
-	$(TMP_DIR)/commodettoPoco.c.o \
+	$(TMP_DIR)/commodettoPocoCore.c.o \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
 	$(TMP_DIR)/cfeBMF.c.o \
 	$(TMP_DIR)/image2cs.c.o \
+	$(TMP_DIR)/mcpack.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
@@ -217,6 +221,7 @@ COMMANDS = \
 	$(BIN_DIR)/mcbundle \
 	$(BIN_DIR)/mcconfig \
 	$(BIN_DIR)/mclocal \
+	$(BIN_DIR)/mcpack \
 	$(BIN_DIR)/mcrez \
 	$(BIN_DIR)/nodered2mcu \
 	$(BIN_DIR)/png2bmp \
@@ -376,6 +381,11 @@ $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
 	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
+
+$(BIN_DIR)/mcpack: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mcpack"
+	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcpack "$$@"' > $(BIN_DIR)/mcpack
+	chmod +x $(BIN_DIR)/mcpack
 
 $(BIN_DIR)/mcrez: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"

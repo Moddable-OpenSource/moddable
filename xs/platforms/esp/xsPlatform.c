@@ -230,6 +230,11 @@ void fxAbort(txMachine* the, int status)
 	}
 #endif
 
+#ifdef mxDebug
+	if ((XS_DEAD_STRIP_EXIT == status) && the->debugEval)
+		mxUnknownError("dead strip");
+#endif
+
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
 

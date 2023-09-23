@@ -178,11 +178,11 @@ void modInstallBase64(xsMachine *the)
 	xsmcVars(2);
 
 	xsVar(kNamespace) = xsNewObject();
-	xsmcSet(xsGlobal, xsID("Base64"), xsVar(kNamespace));
+	xsmcDefine(xsGlobal, xsID("Base64"), xsVar(kNamespace), xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_base64_encode, 1);
-	xsmcSet(xsVar(kNamespace), xsID("encode"), xsVar(kScratch));
+	xsmcDefine(xsVar(kNamespace), xsID("encode"), xsVar(kScratch), xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_base64_decode, 1);
-	xsmcSet(xsVar(kNamespace), xsID("decode"), xsVar(kScratch));
+	xsmcDefine(xsVar(kNamespace), xsID("decode"), xsVar(kScratch), xsDontEnum);
 
 	xsEndHost(the);
 }

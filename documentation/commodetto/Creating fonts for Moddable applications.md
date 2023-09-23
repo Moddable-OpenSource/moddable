@@ -1,6 +1,6 @@
 # Creating fonts for applications built on the Moddable SDK
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: March 28, 2023
+Revised: September 13, 2023
 
 Moddable uses the [BMFont](http://www.angelcode.com/products/bmfont/doc/file_format.html) format for fonts
 
@@ -180,7 +180,7 @@ The Poco renderer does not kern by default in order to maximize performance. Ker
 ```
 
 #### Monochrome
-By default, the glyphs output are anti-aliased. Monochrome output can be generated (perfect for 1-bit displays like Moddable Three) by setting the `monochrome` property to `true`:
+By default, the glyphs output are anti-aliased. Monochrome output can be generated (perfect for 1-bit displays like Moddable Three and Moddable Four) by setting the `monochrome` property to `true`:
 
 ```json
 "resources": {

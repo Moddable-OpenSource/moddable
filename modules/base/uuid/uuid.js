@@ -30,10 +30,10 @@ import Net from "net";
 function UUID() {
 	let time = new Date().getTime();
 	if (time < 1542410693111) {
-		trace("Time not set. Generating random UUID.\n");
+		// trace("Time not set. Generating random UUID.\n");
 		return UUIDv4();
 	} else {
-		trace("Generating time-based UUID.\n");
+		// trace("Generating time-based UUID.\n");
 		return UUIDv1(time);
 	}
 }
