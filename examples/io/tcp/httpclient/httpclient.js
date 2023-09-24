@@ -338,12 +338,13 @@ class HTTPClient {
 						this.#headers = undefined;
 					}
 					else {
-						const name = item.value[0];
+						let name = item.value[0];
 						this.#pendingWrite = name + ": " + item.value[1] + "\r\n";
+						name = name.toLowerCase();
 						if ("content-length" === name)
 							this.#requestBody = parseInt(item.value[1]);
 						else if ("transfer-encoding" === name) {
-							if ("chunked" === item.value[1])
+							if ("chunked" === item.value[1].toLowerCase())
 								this.#requestBody = true;
 						}
 					}
