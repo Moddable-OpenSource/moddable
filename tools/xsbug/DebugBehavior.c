@@ -158,7 +158,7 @@ static void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePopTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachinePushTag(PiuDebugMachine self, char* theName);
 static void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* buffer, size_t length);
-static void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, xsStringValue tag);
+static void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, void* buffer, xsStringValue tag);
 
 enum {
 	mxFramesView = 0,
@@ -1464,13 +1464,13 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			c = xsToInteger(xsGet(xsArg(1), xsID("length")));
 			for (i = 0; i < c; i++) {
 				xsResult = xsGetAt(xsArg(1), xsInteger(i));
-				PiuDebugMachine_doCommandBreakpoint(the, "breakpoint");
+				PiuDebugMachine_doCommandBreakpoint(the, buffer, "breakpoint");
 			}
 			c_strcat(buffer, "</set-all-breakpoints>");
 			break;
 		case mxSetBreakpointCommand:
 			xsResult = xsArg(1);
-			PiuDebugMachine_doCommandBreakpoint(the, "set-breakpoint");
+			PiuDebugMachine_doCommandBreakpoint(the, buffer, "set-breakpoint");
 			break;
 		case mxStepCommand:
 			c_strcat(buffer, "<step/>");
@@ -1576,7 +1576,7 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 	}
 }
 
-void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, xsStringValue tag)
+void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, void* buffer, xsStringValue tag)
 {
 	xsIntegerValue id = xsToInteger(xsGet(xsResult, xsID("id")));
 	c_strcat(buffer, "<");
@@ -1593,19 +1593,19 @@ void PiuDebugMachine_doCommandBreakpoint(xsMachine* the, xsStringValue tag)
 		xsVar(0) = xsGet(xsResult, xsID("condition"));
 		if (xsTest(xsVar(0))) {
 			c_strcat(buffer, "<breakpoint-condition path=\"");
-			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, xsToString(xsVar(0)));
 			c_strcat(buffer, "\"/>");
 		}
 		xsVar(0) = xsGet(xsResult, xsID("hitCount"));
 		if (xsTest(xsVar(0))) {
 			c_strcat(buffer, "<breakpoint-hit-count path=\"");
-			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, xsToString(xsVar(0)));
 			c_strcat(buffer, "\"/>");
 		}
 		xsVar(0) = xsGet(xsResult, xsID("trace"));
 		if (xsTest(xsVar(0))) {
 			c_strcat(buffer, "<breakpoint-trace path=\"");
-			c_strcat(buffer, xsToString(sVar(0)));
+			c_strcat(buffer, xsToString(xsVar(0)));
 			c_strcat(buffer, "\"/>");
 		}
 		c_strcat(buffer, "</");

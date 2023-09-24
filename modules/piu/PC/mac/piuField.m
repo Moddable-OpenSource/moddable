@@ -243,6 +243,7 @@ void PiuField_create(xsMachine* the)
     [textField setDrawsBackground:YES];
 	[textField setFocusRingType:NSFocusRingTypeNone];
 	[textField setMaximumNumberOfLines:1];
+	[textField setUsesSingleLineMode:YES];
 	textField.piuField = self;
 
 	NSPiuClipView *clipView = [[NSPiuClipView alloc] init];

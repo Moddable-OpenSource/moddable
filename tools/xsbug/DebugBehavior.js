@@ -279,10 +279,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	}
 	doClearBreakpoint(breakpoint) {
 		if (this.machines.length) {
-			const { path, line, id } = breakpoint;
-			const item = { path, line, id };
+			const item = { path:breakpoint.path, line:breakpoint.line, id:breakpoint.id };
 			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, item));
-			path = this.unmapPath(path);
+			let path = this.unmapPath(breakpoint.path);
 			if (path) {
 				item.path = path;
 				this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, item));
@@ -337,11 +336,35 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	doSelectItem(application, value) {
 		this.currentMachine.doCommand(mxSelectCommand, value);
 	}
+	sortBreakpoints(a, b) {
+		let result = a.name.localeCompare(b.name);
+		if (result == 0)
+			result = a.line - b.line;
+		return result;
+	}
+	doAddBreakpoint(breakpoint) {
+		let breakpoints = this.breakpoints.items;
+		breakpoints.push(breakpoint);
+		breakpoints.sort(this.sortBreakpoints);
+		if (breakpoint.enabled)
+			this.doSetBreakpoint(breakpoint);
+		application.distribute("onBreakpointsChanged");
+	}
+	doRemoveBreakpoint(breakpoint) {
+		let breakpoints = this.breakpoints.items;
+		let index = breakpoints.indexOf(breakpoint);
+		if (index >= 0) {
+			breakpoints.splice(index, 1);
+			if (breakpoint.enabled)
+				this.doClearBreakpoint(breakpoint);
+		}
+		application.distribute("onBreakpointsChanged");
+	}
 	doSetBreakpoint(breakpoint) {
 		if (this.machines.length) {
 			const item = this.compileBreakpoint(breakpoint);
 			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
-			path = this.unmapPath(breakpoint.path);
+			let path = this.unmapPath(breakpoint.path);
 			if (path) {
 				item.path = path;
 				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
@@ -372,18 +395,20 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	doToggleBreakpoint(path, line) {
 		let breakpoints = this.breakpoints.items;
 		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
+		let breakpoint;
 		if (index >= 0) {
-			const breakpoint = breakpoints[index];
+			breakpoint = breakpoints[index];
 			breakpoints.splice(index, 1);
 			this.doClearBreakpoint(breakpoint);
 		}
 		else {
-			const breakpoint = { path, line, id:0, name:system.getPathName(path), enabled:true };
+			breakpoint = { path, line, id:0, name:system.getPathName(path), enabled:true };
 			breakpoints.push(breakpoint);
 			breakpoints.sort(this.sortBreakpoints);
 			this.doSetBreakpoint(breakpoint);
 		}
 		application.distribute("onBreakpointsChanged");
+		return breakpoint;
 	}
 	doToggleItem(application, value) {
 		this.currentMachine.doCommand(mxToggleCommand, value);
@@ -810,7 +835,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 				items.push({ path:"exceptions", line:0, id:0 });
 			behavior.breakpoints.items.forEach(breakpoint => {
 				if (breakpoint.enabled) {
-					item = behavior.compileBreakpoint(breakpoint);
+					let item = behavior.compileBreakpoint(breakpoint);
 					items.push(item);
 					let path = behavior.unmapPath(item.path);
 					if (path) {

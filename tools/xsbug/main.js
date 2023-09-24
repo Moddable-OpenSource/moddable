@@ -553,7 +553,7 @@ class ApplicationBehavior extends DebugBehavior {
 				if ("breakpoints" in preferences) {
 					this.breakpoints.expanded = preferences.breakpoints.expanded;
 					preferences.breakpoints.items.forEach(item => { 
-						if (system.fileExists(item.path))
+						if ((item.line == 0) || system.fileExists(item.path))
 							this.breakpoints.items.push(item);
 					});
 				}

@@ -44,9 +44,8 @@ import {
 } from "behaviors";
 
 import {
-	Switch,
-	SwitchBehavior,
-} from "piu/Switches";	
+	EditBreakpoint,
+} from "BreakpointDialog";	
 
 class CodeViewBehavior extends Behavior {
 	canFind(container) {
@@ -572,52 +571,14 @@ class LineNumbersBehavior extends Behavior {
 		const breakpoint = data.breakpoints.items.find(it => (it.line == line) && (it.path == path));
 		if (breakpoint) {
 			if (shiftKey) {
-				model.doToggleBreakpoint(path, line, true);
+				model.doEnableDisableBreakpoint(path, line);
 			}
 			else {
-				const data = {
-					path, 
-					line,
-					enabled: {
-						get value() {
-							return breakpoint.enabled;
-						},
-						set value(it) {
-							model.doToggleBreakpoint(path, line, true);
-						}
-					},
-					condition: {
-						get value() {
-							return breakpoint.condition ?? "";
-						},
-						set value(it) {
-							breakpoint.condition = it;
-						}
-					},
-					hitCount: {
-						get value() {
-							return breakpoint.hitCount ?? "";
-						},
-						set value(it) {
-							breakpoint.hitCount = it;
-						}
-					},
-					trace: {
-						get value() {
-							return breakpoint.trace ?? "";
-						},
-						set value(it) {
-							breakpoint.trace = it;
-						}
-					},
-				};
-				data.x = column.x + column.width;
-				data.y = column.y + ((line - 1) * this.lineHeight);
-				application.add(new BreakpointDialog(data));
+				EditBreakpoint(breakpoint, column.x + column.width + 8, column.y + ((line - 1) * this.lineHeight)); 
 			}
 		}
 		else
-			model.doToggleBreakpoint(path, line, false);
+			model.doToggleBreakpoint(path, line);
 		
 	}
 	onTouchMoved(column, id, x, y, ticks) {
@@ -712,128 +673,6 @@ export var CodeView = Container.template($ => ({
 				IconButton($, { variant:6, state:1, active:true, Behavior:ButtonBehavior, name:"doCloseFile" }),
 			],
 		}),
-	],
-}));
-
-class BreakpointDialogBehavior extends Behavior {	
-	doClearBreakpoint(layout) {
-		let data = this.data;
-		model.doToggleBreakpoint(data.path, data.line, false);
-		application.remove(application.last);
-	}
-	doCloseDialog(layout) {
-		let data = this.data;
-		application.remove(application.last);
-	}
-	onCreate(layout, data) {
-		this.data = data;
-		this.once = true;
-	}
-	onFitVertically(layout, value) {
-		if (this.once) {
-			this.once = false;
-			let data = this.data;
-			let button = data.button;
-			let container = layout.first;
-			let scroller = container.first;
-			let size = scroller.first.measure();
-			let x = Math.max(data.x, 0);
-			let width = Math.min(320, application.width - x - 20);
-			let y = Math.max(data.y, 0);
-			let height = Math.min(size.height, application.height - y - 20);
-			container.coordinates = { left:x, width:width + 30, top:y - 8, height:height + 10 };
-			scroller.coordinates = { left:10, width:width + 10, top:0, height:height };
-			return value;
-		}
-		this.doCloseDialog(layout);
-	}
-	onTouchEnded(layout, id, x, y, ticks) {
-		var content = layout.first;
-		if (!content.hit(x, y))
-			this.doCloseDialog(layout);
-	}
-};
-
-class BreakpointFieldBehavior extends Behavior {
-	onCreate(field, data) {
-		this.data = data;
-		field.string = data.value;
-	}
-	onStringChanged(field) {
-		var data = this.data;
-		data.value = field.string;
-	}
-}
-
-export var BreakpointDialog = Layout.template($ => ({
-	left:0, right:0, top:0, bottom:0, active:true, backgroundTouch:true,
-	Behavior: BreakpointDialogBehavior,
-	contents: [
-		Container($, { skin:skins.popupMenuShadow, contents:[
-			Scroller($, { clip:true, active:true, skin:skins.lineNumber, contents:[
-				BreakpointColumn($, { }),
-			]}),
-		]}),
-	],
-}));
-
-var BreakpointColumn = Column.template($ => ({
-	left:6, right:2, top:0, 
-	contents: [
-		Content($, { height:2 }),
-		Row($, {
-			left:0, right:0, height:30,
-			contents: [
-				Label($, { left:0, width:80, style:styles.tableHeader, string:"BREAKPOINT" }),
-				Switch($.enabled, { 
-					Behavior: class extends SwitchBehavior {
-						onValueChanged(control) {
-							control.next.string = this.data.value ? "Enabled" : "Disabled"
-						}
-					},
-				}),
-				Label($, { left:0, right:0, style:styles.tableRow, string:$.enabled.value ? "Enabled" : "Disabled" }),
-				IconButton($, { variant:5, name:"doClearBreakpoint" }), 
-				IconButton($, { variant:6, name:"doCloseDialog" }),
-			],
-		}),
-		Row($, {
-			left:0, right:0, height:30,
-			contents: [
-				Label($, { left:0, width:80, style:styles.tableRow, string:"Condition" }),
-				Container($, {
-					left:4, right:4, top:4, bottom:4, skin:skins.fieldScroller,
-					contents: [
-						Field($.condition, { left:1, right:1, top:1, bottom:1, clip:true, active:true, skin:skins.field, style:styles.field, Behavior:BreakpointFieldBehavior })
-					],
-				}),
-			],
-		}),
-		Row($, {
-			left:0, right:0, height:30,
-			contents: [
-				Label($, { left:0, width:80, style:styles.tableRow, string:"Hit Count" }),
-				Container($, {
-					left:4, right:4, top:4, bottom:4, skin:skins.fieldScroller,
-					contents: [
-						Field($.hitCount, { left:1, right:1, top:1, bottom:1, clip:true, active:true, skin:skins.field, style:styles.field, Behavior:BreakpointFieldBehavior }),
-					],
-				}),
-			],
-		}),
-		Row($, {
-			left:0, right:0, height:30,
-			contents: [
-				Label($, { left:0, width:80, style:styles.tableRow, string:"Trace" }),
-				Container($, {
-					left:4, right:4, top:4, bottom:4, skin:skins.fieldScroller,
-					contents: [
-						Field($.trace, { left:1, right:1, top:1, bottom:1, clip:true, active:true, skin:skins.field, style:styles.field, Behavior:BreakpointFieldBehavior })
-					],
-				}),
-			],
-		}),
-		Content($, { height:4 }),
 	],
 }));
 
