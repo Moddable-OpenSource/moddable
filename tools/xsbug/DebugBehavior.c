@@ -476,10 +476,29 @@ void PiuDebugBehavior_compile(xsMachine* the)
 		
 		*string = 0;
 		
-		mxPushString(gxBuffer);
+		mxPushStringC(gxBuffer);
 		mxPullSlot(mxResult);
 	}
 	fxTerminateParser(parser);
+}
+
+void PiuDebugBehavior_get_xsIDSize(xsMachine* the)
+{
+#ifdef mx32bitID
+	xsResult = xsInteger(32);
+#else
+	xsResult = xsInteger(16);
+#endif
+}
+
+void PiuDebugBehavior_get_xsMajorVersion(xsMachine* the)
+{
+	xsResult = xsInteger(XS_MAJOR_VERSION);
+}
+
+void PiuDebugBehavior_get_xsMinorVersion(xsMachine* the)
+{
+	xsResult = xsInteger(XS_MINOR_VERSION);
 }
 
 void PiuDebugBehavior_start(xsMachine* the)
@@ -1514,7 +1533,7 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		}
 		c_strcat(buffer, "\15\12");
-//     	fprintf(stderr, "%s", buffer);
+    	fprintf(stderr, "%s", buffer);
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
 	else {

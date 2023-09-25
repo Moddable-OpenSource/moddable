@@ -238,21 +238,21 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		return machine && machine.broken;
 	}
 	compile(expression) @ "PiuDebugBehavior_compile"
-	compileBreakpoint(breakpoint) {
+	compileBreakpoint(machine, breakpoint) {
 		const path = breakpoint.path;
 		const line = breakpoint.line;
 		let id = breakpoint.id || 0;
 		let condition = breakpoint.condition || null;
 		let hitCount = breakpoint.hitCount || null;
 		let trace = breakpoint.trace || null;
-		if (condition) {
+		if (condition && machine.compatible) {
 			condition = this.compile(condition);
 			id |= 1;
 		}
 		if (hitCount) {
 			id |= 1;
 		}
-		if (trace) {
+		if (trace && machine.compatible) {
 			trace = this.compile(trace);
 			id |= 1;
 		}
@@ -326,12 +326,15 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		}
 		application.distribute("onBreakpointsChanged");
 	}
-	doEval(application, source, code) {
+	doEval(application, source) {
 		let machine = this.currentMachine;
-		machine.consoleLines.push({ path:undefined, line:undefined, offset:machine.consoleText.length, color:0 }); 
-		machine.onLoggedAux(machine, '> ' + source + '\n');
-		this.onLogged(machine);
-		machine.doCommand(mxEvalCommand, machine.frame, code, 0);
+		if (machine.compatible) {
+			machine.consoleLines.push({ path:undefined, line:undefined, offset:machine.consoleText.length, color:0 }); 
+			machine.onLoggedAux(machine, '> ' + source + '\n');
+			this.onLogged(machine);
+			const code = this.data.compile(source);
+			machine.doCommand(mxEvalCommand, machine.frame, code, 0);
+		}
 	}
 	doSelectItem(application, value) {
 		this.currentMachine.doCommand(mxSelectCommand, value);
@@ -362,11 +365,14 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	}
 	doSetBreakpoint(breakpoint) {
 		if (this.machines.length) {
-			const item = this.compileBreakpoint(breakpoint);
-			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
+			this.machines.forEach(machine => {
+				const item = this.compileBreakpoint(machine, breakpoint);
+				machine.doBreakpointCommand(mxSetBreakpointCommand, item);
+			});
 			let path = this.unmapPath(breakpoint.path);
 			if (path) {
 				item.path = path;
+				const item = this.compileBreakpoint(machine, breakpoint);
 				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
 			}
 		}
@@ -583,6 +589,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		if (flag)
 			return path;
 	}
+	get xsIDSize() @ "PiuDebugBehavior_get_xsIDSize"
+	get xsMajorVersion() @ "PiuDebugBehavior_get_xsMajorVersion"
+	get xsMinorVersion() @ "PiuDebugBehavior_get_xsMinorVersion"
 }
 
 let temporary = 0;
@@ -592,6 +601,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	onCreate(application, behavior) {
 		this.behavior = behavior;
 		this.broken = false;
+		this.compatible = false;
 		this.once = false;
 		this.parsing = false;
 		this.profile = new Profile(this);
@@ -835,7 +845,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 				items.push({ path:"exceptions", line:0, id:0 });
 			behavior.breakpoints.items.forEach(breakpoint => {
 				if (breakpoint.enabled) {
-					let item = behavior.compileBreakpoint(breakpoint);
+					let item = behavior.compileBreakpoint(this, breakpoint);
 					items.push(item);
 					let path = behavior.unmapPath(item.path);
 					if (path) {
@@ -965,10 +975,35 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.behavior.onSampled(this);
 	}
 	onTitleChanged(title, tag) {
+		const behavior = this.behavior;
+		const words = tag.split(" ");
+		let xsMajorVersion, xsMinorVersion, xsIDSize;
+		
+		if (words.length == 6) {
+			let version = words[1].split(".");
+			xsMajorVersion = parseInt(version[0]);
+			xsMinorVersion = parseInt(version[1]);
+			xsIDSize = parseInt(words[4]);
+			this.compatible = (behavior.xsMajorVersion == xsMajorVersion) && (behavior.xsMinorVersion == xsMinorVersion) && (behavior.xsIDSize == xsIDSize) 
+		}
+		if (!this.compatible) {
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			if (xsMajorVersion)
+				this.onLoggedAux(this, `# ${title} (XS ${xsMajorVersion}.${xsMinorVersion} ${xsIDSize}-bit ID)`);
+			else
+				this.onLoggedAux(this, `# ${title} (?)`);
+			this.onLoggedAux(this, ' is incompatible with ');
+			this.onLoggedAux(this, `xsbug (XS ${behavior.xsMajorVersion}.${behavior.xsMinorVersion} ${behavior.xsIDSize}-bit ID)\n`);
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			this.onLoggedAux(this, `# - Breakpoint condition expressions and trace messages are ignored\n`);
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			this.onLoggedAux(this, `# - Console REPL is unavailable\n`);
+			behavior.onLogged(this);
+		}
 		this.tag = tag;
 		this.title = title;
 		this.once = true;
-		this.behavior.onTitleChanged(this, title, tag);
+		behavior.onTitleChanged(this, title, tag);
 	}
 	onViewChanged(viewIndex, lines) {
 		if ((viewIndex == mxLocalsView) || (viewIndex == mxModulesView) || (viewIndex == mxGlobalsView))

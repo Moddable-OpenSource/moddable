@@ -50,7 +50,7 @@ class ConsolePaneBehavior extends Behavior {
 	}
 	onMachineChanged(container, machine) {
 		const row = container.first.next;
-		if (machine && machine.broken) {
+		if (machine && machine.broken && machine.compatible) {
 			if (!row.visible) {
 				const scroller = container.first.first;
 				scroller.coordinates = { left:0, right:0, top:27, bottom:31 }
@@ -210,9 +210,7 @@ export var ConsolePane = Container.template($ => ({
 									 this.data = data;
 								}
 								onEnter(field) {
-									const source = field.string;
-									const code = this.data.compile(source);
-									field.bubble("doEval", source, code);
+									field.bubble("doEval", field.string);
 								}
 								onStringChanged(field) {
 									const button = field.container.previous;
