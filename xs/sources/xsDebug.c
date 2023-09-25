@@ -251,6 +251,8 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index
 // #if mxDebugEval
 	txSlot* result;
 	txSlot* expression;
+	mxHostInspectors.value.list.first = C_NULL;
+	mxHostInspectors.value.list.last = C_NULL;
 	mxTemporary(result);
 	mxTemporary(expression);
 	fxDebugEvalBuffer(the, buffer, expression);
