@@ -561,48 +561,52 @@ void fxDebugLine(txMachine* the, txID path, txInteger line, txID function)
 				if (skip)
 					breakpoint = C_NULL;
 			}
-			property = property->next;
-			if (!mxIsUndefined(property)) {
-				txInteger offset = property->value.dataView.offset + 1;
-				txInteger size = property->value.dataView.size;
-				txBoolean skip = 1;
-				switch (property->ID) {
-				case XS_CODE_EQUAL: if (offset == size) skip = 0; break;
-				case XS_CODE_LESS: if (offset < size) skip = 0; break;
-				case XS_CODE_LESS_EQUAL: if (offset <= size) skip = 0; break;
-				case XS_CODE_MODULO: if ((offset % size) == 0) skip = 0; break;
-				case XS_CODE_MORE: if (offset > size) skip = 0; break;
-				case XS_CODE_MORE_EQUAL: if (offset >= size) skip = 0; break;
+			if (breakpoint) {
+				property = property->next;
+				if (!mxIsUndefined(property)) {
+					txInteger offset = property->value.dataView.offset + 1;
+					txInteger size = property->value.dataView.size;
+					txBoolean skip = 1;
+					switch (property->ID) {
+					case XS_CODE_EQUAL: if (offset == size) skip = 0; break;
+					case XS_CODE_LESS: if (offset < size) skip = 0; break;
+					case XS_CODE_LESS_EQUAL: if (offset <= size) skip = 0; break;
+					case XS_CODE_MODULO: if ((offset % size) == 0) skip = 0; break;
+					case XS_CODE_MORE: if (offset > size) skip = 0; break;
+					case XS_CODE_MORE_EQUAL: if (offset >= size) skip = 0; break;
+					}
+					property->value.dataView.offset = offset;
+					if (skip)
+						breakpoint = C_NULL;
 				}
-				property->value.dataView.offset = offset;
-				if (skip)
-					breakpoint = C_NULL;
 			}
-			property = property->next;
-			if (!mxIsUndefined(property)) {
-				txSlot* result;
-				mxTemporary(result);
-				if (fxDebugEvalExpression(the, the->frame, property, result)) {
-					fxToString(the, result);
-					fxEchoStart(the);
-					fxEcho(the, "<log");
-					fxEchoPathLine(the, fxGetKeyName(the, path), line);
-					fxEcho(the, ">");
-					fxEchoString(the, result->value.string);
-					fxEcho(the, "\n</log>");
-					fxEchoStop(the);
+			if (breakpoint) {
+				property = property->next;
+				if (!mxIsUndefined(property)) {
+					txSlot* result;
+					mxTemporary(result);
+					if (fxDebugEvalExpression(the, the->frame, property, result)) {
+						fxToString(the, result);
+						fxEchoStart(the);
+						fxEcho(the, "<log");
+						fxEchoPathLine(the, fxGetKeyName(the, path), line);
+						fxEcho(the, ">");
+						fxEchoString(the, result->value.string);
+						fxEcho(the, "\n</log>");
+						fxEchoStop(the);
+					}
+					else {
+						fxEchoStart(the);
+						fxEcho(the, "<log");
+						fxEchoPathLine(the, fxGetKeyName(the, path), line);
+						fxEcho(the, "># ");
+						fxEchoException(the, result);
+						fxEcho(the, "\n</log>");
+						fxEchoStop(the);
+					}
+					mxPop();
+					breakpoint = C_NULL;
 				}
-				else {
-					fxEchoStart(the);
-					fxEcho(the, "<log");
-					fxEchoPathLine(the, fxGetKeyName(the, path), line);
-					fxEcho(the, "># ");
-					fxEchoException(the, result);
-					fxEcho(the, "\n</log>");
-					fxEchoStop(the);
-				}
-				mxPop();
-				breakpoint = C_NULL;
 			}
 		}
 	}
