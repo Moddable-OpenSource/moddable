@@ -135,18 +135,18 @@ void PocoOutlineUnrotate(PocoOutline pOutline)
 
 static xsIntegerValue xs_argToFixed(xsMachine* the, xsIntegerValue c, xsIntegerValue i, xsStringValue name)
 {
-	xsIntegerValue result;
 	if (c <= i) xsTypeError("missing %s", name);
-	if (xsTypeOf(xsArg(i)) == xsIntegerType) {
-		xsIntegerValue value = xsToInteger(xsArg(i));
-		result = value << 6;
+	xsType t = xsTypeOf(xsArg(i)); 
+	if (xsIntegerType == t) {
+		return xsToInteger(xsArg(i)) << 6;
 	}
-	else {
+	if (xsNumberType == t) {
 		xsNumberValue value = xsToNumber(xsArg(i));
-		if (!c_isfinite(value)) xsTypeError("invalid %s", name);
-		result = value * 64;
-	}	
-	return result;
+		if (c_isfinite(value))
+			return value * 64;
+	}
+
+	xsTypeError("invalid %s", name);
 }
 
 static xsNumberValue xs_argToFloat(xsMachine* the, xsIntegerValue c, xsIntegerValue i, xsStringValue name)
