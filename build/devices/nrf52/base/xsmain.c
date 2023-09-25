@@ -66,8 +66,8 @@ void loop_task(void *pvParameter)
 	setupDebugger();
 #endif
 
-#if MODDEF_XS_TEST
 	while (true) {
+#if MODDEF_XS_TEST
 	    gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);

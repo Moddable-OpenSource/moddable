@@ -416,16 +416,16 @@ void modInstallTextDecoder(xsMachine *the)
 
 	xsVar(kPrototype) = xsNewHostObject(NULL);
 	xsVar(kConstructor) = xsNewHostConstructor(xs_textdecoder, 2, xsVar(kPrototype));
-	xsmcSet(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor));
+	xsmcDefine(xsGlobal, xsID("TextDecoder"), xsVar(kConstructor), xsDontEnum);
 
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_decode, 1);
-	xsmcSet(xsVar(kPrototype), xsID("decode"), xsVar(kScratch));
+	xsmcDefine(xsVar(kPrototype), xsID("decode"), xsVar(kScratch), xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_encoding, 0);
-	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsVar(kScratch), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("encoding"), xsVar(kScratch), xsIsGetter | xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_ignoreBOM, 0);
-	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsVar(kScratch), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("ignoreBOM"), xsVar(kScratch), xsIsGetter | xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_textdecoder_get_fatal, 0);
-	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsVar(kScratch), xsIsGetter);
+	xsmcDefine(xsVar(kPrototype), xsID("fatal"), xsVar(kScratch), xsIsGetter | xsDontEnum);
 
 	xsEndHost(the);
 }

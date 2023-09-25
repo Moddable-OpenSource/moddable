@@ -251,6 +251,8 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index
 // #if mxDebugEval
 	txSlot* result;
 	txSlot* expression;
+	mxHostInspectors.value.list.first = C_NULL;
+	mxHostInspectors.value.list.last = C_NULL;
 	mxTemporary(result);
 	mxTemporary(expression);
 	fxDebugEvalBuffer(the, buffer, expression);
@@ -372,13 +374,15 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 				current = current->next;
 			if (current)
 				scope = current->value.frame.scope;
+			else
+				scope = C_NULL;
 		}
 	
-		txSlot* _this = mxThis;
+		txSlot* _this = frame + 4;
 		txSlot* environment = mxFrameToEnvironment(frame);
-		txSlot* function = mxFunction;
-		txSlot* home = mxFunctionInstanceHome(function->value.reference);
-		txSlot* target = mxTarget;
+		txSlot* function = frame + 3;
+		txSlot* home = (function->kind == XS_REFERENCE_KIND) ? mxFunctionInstanceHome(function->value.reference) : C_NULL;
+		txSlot* target = frame + 2;
 		txSlot* closures;
 		txSlot* property;
 	
@@ -424,8 +428,10 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		property = mxFunctionInstanceCode(expression->value.reference);
 		property->value.code.closures = closures;
 		property = mxFunctionInstanceHome(expression->value.reference);
-		property->value.home.object = home->value.home.object;
-		property->value.home.module = home->value.home.module;
+		if (home) {
+			property->value.home.object = home->value.home.object;
+			property->value.home.module = home->value.home.module;
+		}
 		if (property->value.home.module == C_NULL)
 			property->value.home.module = mxProgram.value.reference;
 	

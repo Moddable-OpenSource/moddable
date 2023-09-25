@@ -2617,6 +2617,7 @@ void fx_Compartment(txMachine* the)
 		if (the->sharedMachine == C_NULL) {
 			txSlot* instance;
 			txSlot* property;
+			txSlot* callback;
 			mxPush(mxObjectPrototype);
 	#ifdef mxLink
 			global = fxNewObjectInstance(the);
@@ -2644,7 +2645,8 @@ void fx_Compartment(txMachine* the)
 				}
 			}
 			
-			instance = fxBuildHostFunction(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
+			callback = mxFunctionInstanceCode(mxCompartmentConstructor.value.reference);
+			instance = fxBuildHostFunction(the, callback->value.callback.address, 1, mxID(_Compartment));
 			instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 			property = fxLastProperty(the, instance);
 			fxNextSlotProperty(the, property, &mxCompartmentPrototype, mxID(_prototype), XS_GET_ONLY);
@@ -2652,7 +2654,8 @@ void fx_Compartment(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Compartment), XS_DONT_ENUM_FLAG);
 			mxPop();
 			
-			instance = fxBuildHostFunction(the, mxCallback(fx_Function), 1, mxID(_Function));
+			callback = mxFunctionInstanceCode(mxFunctionConstructor.value.reference);
+			instance = fxBuildHostFunction(the, callback->value.callback.address, 1, mxID(_Function));
 			instance->flag |= XS_CAN_CONSTRUCT_FLAG;
 			property = fxLastProperty(the, instance);
 			fxNextSlotProperty(the, property, &mxFunctionPrototype, mxID(_prototype), XS_GET_ONLY);
@@ -2660,7 +2663,8 @@ void fx_Compartment(txMachine* the)
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_Function), XS_DONT_ENUM_FLAG);
 			mxPop();
 			
-			instance = fxBuildHostFunction(the, mxCallback(fx_eval), 1, mxID(_eval));
+			callback = mxFunctionInstanceCode(mxEvalFunction.value.reference);
+			instance = fxBuildHostFunction(the, callback->value.callback.address, 1, mxID(_eval));
 			fxPrepareCompartmentFunction(the, program, instance);
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_eval), XS_DONT_ENUM_FLAG);
 			mxPop();

@@ -4158,11 +4158,7 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_EVAL_ENVIRONMENT)
 			mxNextCode(1);
 			mxSaveState;
-		#ifdef mxDebug
-			fxRunEvalEnvironment(the);
-		#else	
 			gxDefaults.runEvalEnvironment(the);
-		#endif
 			mxRestoreState;
 			mxBreak;
 		mxCase(XS_CODE_EVAL_PRIVATE)

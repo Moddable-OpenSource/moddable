@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -23,7 +23,7 @@ let render = new Poco(screen);
 
 let margin = 10;
 let available = Math.min(render.width - (margin * 2), render.height - (margin * 2));
-let pixels = Math.floor(available / size);
+let pixels = Math.idiv(available, size);
 margin += (available - (pixels * size)) >> 1;
 
 render.begin();
