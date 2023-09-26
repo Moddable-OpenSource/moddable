@@ -11,9 +11,19 @@
 		"XS_MODS": 1
 	},
 	"creation": {
+		"static": 32768,
+		"chunk": {
+			"initial": 1536,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64
+		},
 		"keys": {
 			"available": 256
-		}
+		},
+		"stack": 256
 	},
 	"modules": {
 		"*": [

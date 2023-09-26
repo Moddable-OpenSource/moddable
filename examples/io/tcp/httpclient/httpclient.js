@@ -248,17 +248,22 @@ class HTTPClient {
 						this.#line = "";
 					}
 					else {					
-						if (undefined !== this.#chunk)
+						if ((204 === this.#status) || (205 === this.#status))
+							this.#remaining = 0;
+						else if (undefined !== this.#chunk)
 							this.#remaining = undefined;		// ignore content-length if chunked
 						else if (undefined === this.#remaining)
 							this.#remaining = Infinity;
-							
+
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
 						if (!this.#current) return;			// closed in callback
 
 						this.#headers = undefined;
 						this.#state = "receiveBody";
 						this.#line = (undefined == this.#chunk) ? undefined : "";
+						
+						if (0 === this.#remaining)
+							return void this.#done();
 					}
 					break;
 
@@ -338,12 +343,13 @@ class HTTPClient {
 						this.#headers = undefined;
 					}
 					else {
-						const name = item.value[0];
+						let name = item.value[0];
 						this.#pendingWrite = name + ": " + item.value[1] + "\r\n";
+						name = name.toLowerCase();
 						if ("content-length" === name)
 							this.#requestBody = parseInt(item.value[1]);
 						else if ("transfer-encoding" === name) {
-							if ("chunked" === item.value[1])
+							if ("chunked" === item.value[1].toLowerCase())
 								this.#requestBody = true;
 						}
 					}

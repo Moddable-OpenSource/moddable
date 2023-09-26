@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -135,18 +135,18 @@ void PocoOutlineUnrotate(PocoOutline pOutline)
 
 static xsIntegerValue xs_argToFixed(xsMachine* the, xsIntegerValue c, xsIntegerValue i, xsStringValue name)
 {
-	xsIntegerValue result;
 	if (c <= i) xsTypeError("missing %s", name);
-	if (xsTypeOf(xsArg(i)) == xsIntegerType) {
-		xsIntegerValue value = xsToInteger(xsArg(i));
-		result = value << 6;
+	xsType t = xsTypeOf(xsArg(i)); 
+	if (xsIntegerType == t) {
+		return xsToInteger(xsArg(i)) << 6;
 	}
-	else {
+	if (xsNumberType == t) {
 		xsNumberValue value = xsToNumber(xsArg(i));
-		if (!c_isfinite(value)) xsTypeError("invalid %s", name);
-		result = value * 64;
-	}	
-	return result;
+		if (c_isfinite(value))
+			return value * 64;
+	}
+
+	xsTypeError("invalid %s", name);
 }
 
 static xsNumberValue xs_argToFloat(xsMachine* the, xsIntegerValue c, xsIntegerValue i, xsStringValue name)
@@ -188,8 +188,12 @@ void xs_outline_clone(xsMachine *the)
 	uint16_t n_points = header->n_points, n_contours = header->n_contours;
 	int byteLength = sizeof(PocoOutlineRecord) + (n_points * 8) + (n_contours * 2) + n_points;
 	void *data = c_malloc(byteLength);
-	if (NULL == data)
-		xsUnknownError("no memory");
+	if (NULL == data) {
+		xsCollectGarbage();
+		data = c_malloc(byteLength);
+		if (NULL == data)
+			xsUnknownError("no memory");
+	}
 	c_memcpy(data, buffer, byteLength);
 	xsResult = xsNew0(xsThis, xsID_constructor);
 	xsSetHostData(xsResult, data);
@@ -317,8 +321,12 @@ void xs_outline_fill(xsMachine* the)
 
 	size = sizeof(PocoOutlineRecord) + (pointCount * 2 * 4) + (contourCount * 2) + (pointCount * 1);
 	buffer = c_malloc(size);
-	if (!buffer)
-		xsUnknownError("no memory");
+	if (!buffer) {
+		xsCollectGarbage();
+		buffer = c_malloc(size);
+		if (!buffer)
+			xsUnknownError("no memory");
+	}
 	
 	outline = (PocoOutline)buffer;
 	outline->n_points = pointCount;
@@ -422,8 +430,11 @@ void xs_outline_stroke(xsMachine* the)
 	memory.free = ftFree;
 	memory.realloc = ftRealloc;
 	library.memory = &memory;
-	if (FT_Stroker_New(&library, &stroker))
-		xsUnknownError("no memory");
+	if (FT_Stroker_New(&library, &stroker)) {
+		xsCollectGarbage();
+		if (FT_Stroker_New(&library, &stroker))
+			xsUnknownError("no memory");
+	}
 		
 	FT_Stroker_Set(stroker, width >> 1, cap, join, miterlimit);
 	
@@ -474,8 +485,12 @@ void xs_outline_stroke(xsMachine* the)
 	size = sizeof(PocoOutlineRecord) + (pointCount * 2 * 4) + (contourCount * 2) + (pointCount * 1);
 	buffer = c_malloc(size);
 	if (!buffer) {
-		FT_Stroker_Done(stroker);
-		xsUnknownError("no memory");
+		xsCollectGarbage();
+		buffer = c_malloc(size);
+		if (!buffer) {
+			FT_Stroker_Done(stroker);
+			xsUnknownError("no memory");
+		}
 	}
 	((PocoOutline)buffer)->n_points = pointCount;
 	((PocoOutline)buffer)->n_contours = contourCount;

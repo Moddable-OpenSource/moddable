@@ -1,6 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/commodetto/qrcode/manifest.json",
 		"$(MODDABLE)/modules/data/qrcode/manifest.json"
 	],
