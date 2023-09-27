@@ -25,7 +25,7 @@ HOST_OS = win
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v4.4.3
+EXPECTED_ESP_IDF = v5.1.1
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -42,10 +42,40 @@ IDF_PY_LOG_FLAG = -n
 ESP32_SUBCLASS = esp32
 !ENDIF
 
-!IF "$(ESP32_SUBCLASS)"=="esp32c3"
-ESP_ARCH = riscv
-!ELSE
 ESP_ARCH = xtensa
+GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+ESP32_BT_SUBCLASS = $(ESP32_SUBCLASS)
+
+!IF "$(ESP32_SUBCLASS)"=="esp32h2"
+ESP32_TARGET = 5
+ESP_ARCH = riscv
+GXX_PREFIX = riscv32-esp
+!ELSE
+!IF "$(ESP32_SUBCLASS)"=="esp32c6"
+ESP32_TARGET = 5
+ESP_ARCH = riscv
+GXX_PREFIX = riscv32-esp
+!ELSE
+!IF "$(ESP32_SUBCLASS)"=="esp32c3"
+ESP32_TARGET = 4
+ESP_ARCH = riscv
+GXX_PREFIX = riscv32-esp
+!ELSE
+!IF "$(ESP32_SUBCLASS)"=="esp32s3"
+ESP32_TARGET = 3
+ESP32_BT_SUBCLASS = esp32
+!ELSE
+!IF "$(ESP32_SUBCLASS)"=="esp32s2"
+ESP32_TARGET = 2
+# no BT on esp32s2
+!ELSE
+# regular esp32
+ESP32_TARGET = 1
+USB_OPTION =
+!ENDIF
+!ENDIF
+!ENDIF
+!ENDIF
 !ENDIF
 
 !IF "$(USE_USB)"==""
@@ -53,6 +83,7 @@ USE_USB = 0
 !ENDIF
 
 !IF "$(USE_USB)"=="1"
+TINY_USB_BITS=$(PROJ_DIR)/managed_components
 !IF "$(USB_VENDOR_ID)"==""
 USB_VENDOR_ID = beef
 !ENDIF
@@ -159,13 +190,26 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components \
  	-I$(IDF_PATH)\components\bootloader_support\include \
  	-I$(IDF_PATH)\components\bt\include \
-	-I$(IDF_PATH)\components\bt\include\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\bt\include\$(ESP32_BT_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include \
  	-I$(IDF_PATH)\components\bt\host\bluedroid\api\include\api \
+ 	-I$(IDF_PATH)\components\driver\gpio\include \
+ 	-I$(IDF_PATH)\components\driver\gptimer\include \
+ 	-I$(IDF_PATH)\components\driver\i2c\include \
+ 	-I$(IDF_PATH)\components\driver\i2s\include \
+ 	-I$(IDF_PATH)\components\driver\ledc\include \
+ 	-I$(IDF_PATH)\components\driver\mcpwm\include \
+ 	-I$(IDF_PATH)\components\driver\pcnt\include \
+ 	-I$(IDF_PATH)\components\driver\rmt\include \
+ 	-I$(IDF_PATH)\components\driver\spi\include \
+ 	-I$(IDF_PATH)\components\driver\uart\include \
  	-I$(IDF_PATH)\components\driver\include \
 	-I$(IDF_PATH)\components\driver\include\driver \
 	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include\driver \
+	-I$(IDF_PATH)\components\esp_app_format\include \
+	-I$(IDF_PATH)\components\esp_adc\include \
+	-I$(IDF_PATH)\components\esp_adc\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\esp_common\include \
  	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS) \
@@ -174,6 +218,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
  	-I$(IDF_PATH)\components\esp_netif\include \
+ 	-I$(IDF_PATH)\components\esp_partition\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
 	-I$(IDF_PATH)\components\esp_rom\include \
@@ -183,14 +228,16 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_wifi\include \
  	-I$(IDF_PATH)\components\$(ESP_ARCH)\include \
 	-I$(IDF_PATH)\components\$(ESP_ARCH)\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\portable\$(ESP_ARCH)\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\include \
+ 	-I$(IDF_PATH)\components\freertos\FreeRTOS-Kernel\include\freertos \
+	-I$(IDF_PATH)\components\freertos\esp_additions\arch\$(ESP_ARCH)\include \
+	-I$(IDF_PATH)\components\freertos\esp_additions\include \
+	-I$(IDF_PATH)\components\freertos\esp_additions\include\freertos \
  	-I$(IDF_PATH)\components\freertos \
  	-I$(IDF_PATH)\components\freertos\include \
  	-I$(IDF_PATH)\components\freertos\include\freertos \
-	-I$(IDF_PATH)\components\freertos\port \
- 	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include \
-	-I$(IDF_PATH)\components\freertos\port\$(ESP_ARCH)\include\freertos \
-	-I$(IDF_PATH)\components\freertos\include\esp_additions \
-	-I$(IDF_PATH)\components\freertos\include\esp_additions\freertos \
 	-I$(IDF_PATH)\components\hal\include \
 	-I$(IDF_PATH)\components\hal\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\hal\platform_port\include \
@@ -199,7 +246,10 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\lwip\include\apps \
 	-I$(IDF_PATH)\components\lwip\include\apps\sntp \
 	-I$(IDF_PATH)\components\lwip\lwip\src\include \
-	-I$(IDF_PATH)\components\lwip\port\esp32\include \
+	-I$(IDF_PATH)\components\lwip\port\include \
+	-I$(IDF_PATH)\components\lwip\port\esp32xx \
+	-I$(IDF_PATH)\components\lwip\port\esp32xx\include \
+	-I$(IDF_PATH)\components\lwip\port\freertos\include \
 	-I$(IDF_PATH)\components\mbedtls\include \
 	-I$(IDF_PATH)\components\newlib\include \
 	-I$(IDF_PATH)\components\newlib\platform_include \
@@ -209,6 +259,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\host\src \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\include\nimble \
+	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\transport\nimble \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\nimble\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\npl\freertos\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\port\include \
@@ -224,7 +275,8 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
-	-I$(IDF_PATH)\components\vfs\include
+	-I$(IDF_PATH)\components\vfs\include \
+	-I$(IDF_PATH)\components\tinyusb\additions\include
 
 XS_OBJ = \
 	$(LIB_DIR)\xsHost.o \
@@ -312,19 +364,11 @@ SDKCONFIG_H = $(SDKCONFIG_H_DIR)\sdkconfig.h
 HEADERS = $(HEADERS) $(XS_HEADERS)
 
 TOOLS_BIN = 
-!IF "$(ESP32_SUBCLASS)"=="esp32c3"
-CC = $(TOOLS_BIN)riscv32-esp-elf-gcc
-CPP = $(TOOLS_BIN)riscv32-esp-elf-g++
+CC = $(TOOLS_BIN)$(GXX_PREFIX)-elf-gcc
+CPP = $(TOOLS_BIN)$(GXX_PREFIX)-elf-g++
 LD = $(CPP)
-AR = $(TOOLS_BIN)riscv32-esp-elf-ar
-OBJCOPY = $(TOOLS_BIN)riscv32-esp-elf-objcopy
-!ELSE
-CC = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-gcc
-CPP = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-g++
-LD = $(CPP)
-AR = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-ar
-OBJCOPY = $(TOOLS_BIN)xtensa-$(ESP32_SUBCLASS)-elf-objcopy
-!ENDIF
+AR = $(TOOLS_BIN)$(GXX_PREFIX)-elf-ar
+OBJCOPY = $(TOOLS_BIN)$(GXX_PREFIX)-elf-objcopy
 
 AR_OPTIONS = crs
 
@@ -376,7 +420,7 @@ C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
 
 C_FLAGS = $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99 \
+	-std=gnu17 \
 	$(C_FLAGS_SUBPLATFORM)
 
 CPP_FLAGS = $(C_COMMON_FLAGS)
@@ -514,7 +558,8 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION) - continuing")
+#	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
 xidfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
@@ -523,7 +568,10 @@ xidfVersionCheck:
 		exit 1
 	)
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
+$(PROJ_DIR)\managed_components:
+	echo "# Configure tinyusb..."; cd $(PROJ_DIR) ; idf.py add-dependency "espressif/esp_tinyusb"
+
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 

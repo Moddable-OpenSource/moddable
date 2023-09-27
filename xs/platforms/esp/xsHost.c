@@ -52,16 +52,19 @@
 
 	#define INSTRUMENT_CPULOAD 1
 	#if INSTRUMENT_CPULOAD
-		#include "driver/timer.h"
+		#include "driver/gptimer.h"
 
 		static uint16_t gCPUCounts[kTargetCPUCount * 2];
 		static TaskHandle_t gIdles[kTargetCPUCount];
-		static void IRAM_ATTR timer_group0_isr(void *para);
+		static bool timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx);
 
 		volatile uint32_t gCPUTime;
 	#endif
 
 	#include "freertos/task.h"
+	#if MODDEF_XS_MODS
+		#include "spi_flash/include/spi_flash_mmap.h"
+	#endif
 #else
 	#include "Arduino.h"
 	#include "rtctime.h"
@@ -806,6 +809,8 @@ static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 }
 
 #if INSTRUMENT_CPULOAD
+static gptimer_handle_t gLoadTimer = NULL;
+
 static int32_t modInstrumentationCPU0(void *theIn)
 {
 	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
@@ -855,7 +860,7 @@ void espInitInstrumentation(txMachine *the)
 #if kTargetCPUCount > 1
 	modInstrumentationSetCallback(CPU1, modInstrumentationCPU1);
 #endif
-	
+/*
 	timer_config_t config = {
 		.divider = 16,
 		.counter_dir = TIMER_COUNT_UP,
@@ -863,21 +868,32 @@ void espInitInstrumentation(txMachine *the)
 		.alarm_en = TIMER_ALARM_EN,
 		.auto_reload = 1,
 	};
+*/
+	gptimer_config_t config = {
+		.clk_src = GPTIMER_CLK_SRC_DEFAULT,
+		.direction = GPTIMER_COUNT_UP,
+		.resolution_hz = 1000 * 1000,		// 1 tick = 1 us
+	};
+	gptimer_alarm_config_t alarm = {
+		.reload_count = 0,
+		.alarm_count = 800,
+		.flags.auto_reload_on_alarm = true,
+	};
+	gptimer_event_callbacks_t callbacks = {
+		.on_alarm = timer_group0_isr
+	};
 
 	gIdles[0] = xTaskGetIdleTaskHandleForCPU(0);
 #if kTargetCPUCount > 1
 	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
 #endif
 
-	timer_init(TIMER_GROUP_0, TIMER_0, &config);
+	gptimer_new_timer(&config, &gLoadTimer);
+	gptimer_set_alarm_action(gLoadTimer, &alarm);
+	gptimer_register_event_callbacks(gLoadTimer, &callbacks, NULL);
+	gptimer_enable(gLoadTimer);
+	gptimer_start(gLoadTimer);
 
-	timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / (config.divider * 800));
-	timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-	timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void *)TIMER_0, ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_IRAM, NULL);
-
-	timer_start(TIMER_GROUP_0, TIMER_0);
 #endif
 
 #if ESP32
@@ -921,10 +937,10 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 }
 
 #if INSTRUMENT_CPULOAD
-void IRAM_ATTR timer_group0_isr(void *para)
+bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *event, void *ctx)
 {
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
+//    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
+//    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
 
 	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
 #if kTargetCPUCount > 1
@@ -935,123 +951,6 @@ void IRAM_ATTR timer_group0_isr(void *para)
 }
 #endif
 #endif
-
-/*
-	64-bit atomics
-*/
-
-#if kTargetCPUCount == 2
-bool __atomic_compare_exchange_8(txU8 *ptr, txU8 *expected, txU8 desired, bool weak, int success_memorder, int failure_memorder)
-{
-	modCriticalSectionBegin();
-
-	bool result;
-	if (*ptr == *expected) {
-		*ptr = desired;
-		result = true;
-	}
-	else {
-		*expected = *ptr;
-		result = false;
-	}
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_load_8(txU8 *ptr, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_fetch_add_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = result + val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_fetch_and_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = result & val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_exchange_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_fetch_or_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = result | val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-void __atomic_store_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	*ptr = val;
-
-	modCriticalSectionEnd();
-}
-
-txU8 __atomic_fetch_sub_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = result - val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-
-txU8 __atomic_fetch_xor_8(txU8 *ptr, txU8 val, int memorder)
-{
-	modCriticalSectionBegin();
-
-	txU8 result = *ptr;
-	*ptr = result ^ val;
-
-	modCriticalSectionEnd();
-
-	return result;
-}
-#endif // kTargetCPUCount == 2
 
 /*
 	messages

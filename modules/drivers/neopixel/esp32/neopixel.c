@@ -1,58 +1,5 @@
 /*
- * neopixel.c started as a file in the MicroPython ESP32 project.
- * It was modified to work in the Moddable environment.
- * A later revision incorporated vast changes from ideas and
- * concepts gleaned from the FastLED project, https://github.com/FastLED
- */
-/*
- * This file is part of the MicroPython ESP32 project, https://github.com/loboris/MicroPython_ESP32_psRAM_LoBo
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2018 LoBo (https://github.com/loboris)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-/*
- * The MIT License (MIT)
- * 
- * Copyright (c) 2013 FastLED
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-/*
- * Copyright (c) 2018-2019  Moddable Tech, Inc.
+ * Copyright (c) 2018-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -78,40 +25,16 @@
 #include <string.h>
 
 #include "driver/gpio.h"
-#include "driver/rmt.h"
-
-#include "log/include/esp_log.h"
+#include "driver/rmt_tx.h"
+#include "led_strip_encoder.h"
 
 #include "neopixel.h"
 
-static pixel_settings_t *gControllers[MODDEF_NEOPIXEL_STRINGS_MAX];
-static pixel_settings_t *gOnChannel[MODDEF_NEOPIXEL_CHANNELS_MAX];
-
-static int gNumControllers = 0;
-static int gNumStarted = 0;
-static int gNumDone = 0;
-static int gNext = 0;
-
-static intr_handle_t gRMT_intr_handle = NULL;
-static xSemaphoreHandle gTX_sem = NULL;
-static bool gInitialized = false;
-
-void initRMT();
-static void interruptHandler(void *arg);
-static void startNext(int channel);
-static void doneOnChannel(rmt_channel_t channel, void *arg);
-void fillHalfRMTBuffer(pixel_settings_t *px);
-void startOnChannel(pixel_settings_t *px, int channel);
-static void copyPixelData(pixel_settings_t *px);
-
-
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	#define NEOPIXEL_PREPARE_DATA(px) copyPixelData(px)
-#else
-	#define NEOPIXEL_PREPARE_DATA(px) convertAllPixelData(px)
-	static void convertAllPixelData(pixel_settings_t *px);
+#ifndef MODDEF_NEOPIXEL_CORE
+	#define MODDEF_NEOPIXEL_CORE	1
 #endif
-
+#define	NP_QUEUE_LEN 2
+#define NP_QUEUE_ITEM_SIZE	4
 
 #if mxInstrument
 	#include "modInstrumentation.h"
@@ -120,351 +43,110 @@ static void copyPixelData(pixel_settings_t *px);
 	#define countPixels(what, value)
 #endif
 
+static uint8_t rmt_num;
 
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-// which core to run on
-#ifndef MODDEF_NEOPIXEL_CORE
-#define MODDEF_NEOPIXEL_CORE	1
-#endif
+static void displayTask(void *param);
 
-static TaskHandle_t neopixelDisplayTaskHandle = NULL;
-static TaskHandle_t userTaskHandle = NULL;
+led_strip_encoder_config_t encoder_config = {
+	.resolution = RMT_LED_STRIP_RESOLUTION_HZ
+};
 
-void neopixelDisplayTaskShow() {
-	if (gNumStarted == 0) {
-		// first one sets everything up
-		initRMT();
-		xSemaphoreTake(gTX_sem, portMAX_DELAY);
-	}
-
-	gNumStarted++;
-
-	// only after the last call to showPixels do we start the work
-	if (gNumStarted == gNumControllers) {
-		gNext = 0;
-
-		// -- First, fill all the available channels
-		int channel = 0;
-		while (channel < MODDEF_NEOPIXEL_CHANNELS_MAX && gNext < gNumControllers) {
-			startNext(channel);
-			channel++;
-		}
-
-		// wait until data is sent. Interrupt handler will refill
-		// the RMT until all is sent, then it returns the semaphore
-		xSemaphoreTake(gTX_sem, portMAX_DELAY);
-		xSemaphoreGive(gTX_sem);
-
-		gNumStarted = 0;
-		gNumDone = 0;
-	}
-
-}
-
-void neopixelDisplayTask(void *pvParameters) {
-	for (;;) {
-		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-		neopixelDisplayTaskShow();
-		xTaskNotifyGive(userTaskHandle);
-	}
-}
-
-void puntToNeopixelDisplayTask() {
-	if (userTaskHandle == NULL) {
-		userTaskHandle = xTaskGetCurrentTaskHandle();
-		xTaskNotifyGive(neopixelDisplayTaskHandle);
-
-		const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200);
-		ulTaskNotifyTake(pdTRUE, xMaxBlockTime);
-		userTaskHandle = 0;
-	}
-}
-#endif
-
-
-void neopixel_deinit(pixel_settings_t *px) {
-	xSemaphoreTake(gTX_sem, portMAX_DELAY);
-	vSemaphoreDelete(gTX_sem);
-	gTX_sem = NULL;
-
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	rmt_set_tx_intr_en(px->rmtChannel, false);
-
-	// kill task if none left 
-	vTaskDelete(neopixelDisplayTaskHandle);
-	neopixelDisplayTaskHandle = NULL;
-#else
-	rmt_driver_uninstall(px->rmtChannel);
-#endif
-
-	if (px->rmtPixelData) {
-		c_free(px->rmtPixelData);
-		px->rmtPixelData = NULL;
-	}
-
-	gInitialized = false;
-}
+rmt_transmit_config_t tx_config = {
+	.loop_count = 0,
+};
 
 int neopixel_init(pixel_settings_t *px) {
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	if (!neopixelDisplayTaskHandle) {
-		xTaskCreatePinnedToCore(neopixelDisplayTask, "neopixelDisplayTask", 2048, NULL, 2, &neopixelDisplayTaskHandle, MODDEF_NEOPIXEL_CORE);
-	}
-#endif
+	if (rmt_num == (SOC_RMT_GROUPS * SOC_RMT_TX_CANDIDATES_PER_GROUP))
+		return -1;
+	rmt_num++;
+	px->neopixel_msgQueue = xQueueCreate(NP_QUEUE_LEN, NP_QUEUE_ITEM_SIZE);
+	px->caller_task = xTaskGetCurrentTaskHandle();
 
-	// T1H
-	px->rmtOne.level0 = 1;
-	px->rmtOne.duration0 = px->timings.mark.duration0;
-	// T1L
-	px->rmtOne.level1 = 0;
-	px->rmtOne.duration1 = px->timings.mark.duration1;
-	// T0H
-	px->rmtZero.level0 = 1;
-	px->rmtZero.duration0 = px->timings.space.duration0;
-	// T0L
-	px->rmtZero.level1 = 0;
-	px->rmtZero.duration1 = px->timings.space.duration1;
+	xTaskCreatePinnedToCore(displayTask, "neoPixelDispayTask", 2048, px, 2, &px->neopixel_task, MODDEF_NEOPIXEL_CORE);
+	ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 	// wait for creation
 
-	gControllers[gNumControllers++] = px;
+	return 0;
 }
 
-static IRAM_ATTR void interruptHandler(void *arg) {
-	uint32_t intr_st = RMT.int_st.val;
-	uint8_t channel;
+static void displayTask(void *param)
+{
+	pixel_settings_t *px = (pixel_settings_t*)param;
+	bool done = false;
 
-	for (channel=0; channel<MODDEF_NEOPIXEL_CHANNELS_MAX; channel++) {
-		if (gOnChannel[channel] != NULL) {
-			pixel_settings_t *px = gOnChannel[channel];
-			int tx_done_bit = channel * (px->nbits/8);
-			int tx_next_bit = channel + (px->nbits);
+	px->byte_count = px->pixel_count * (px->nbits / 8);
+	// RMT transmit configuration
+	rmt_tx_channel_config_t tx_chan_config = {
+		.clk_src = RMT_CLK_SRC_DEFAULT,
+		.gpio_num = px->pin,
+		.mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+		.resolution_hz = RMT_LED_STRIP_RESOLUTION_HZ,
+		.trans_queue_depth = 4,
+		.flags.invert_out = false,
+		.flags.with_dma = false,
+	};
 
-			if (intr_st & BIT(tx_next_bit)) {
-				RMT.int_clr.val |= BIT(tx_next_bit);
-				fillHalfRMTBuffer(px);
-			}
-			else {
-				if (intr_st & BIT(tx_done_bit)) {
-					RMT.int_clr.val |= BIT(tx_done_bit);
-					doneOnChannel((rmt_channel_t)channel, 0);
-				}
-			}
+	ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &px->rmtChannel));
+	rmt_enable(px->rmtChannel);
+	ESP_ERROR_CHECK(rmt_new_led_strip_encoder(&encoder_config, &px->led_encoder));
+	px->initialized = true;
+
+	xTaskNotifyGive(px->caller_task);
+
+	while (!done) {
+		uint8_t *src = px->pixels;
+		uint8_t *dst = px->modPixels;
+		int i;
+		int msg = 0;
+		xQueueReceive(px->neopixel_msgQueue, (void*)&msg, portMAX_DELAY);
+		switch (msg) {
+			case NEOPIXEL_MSG_STOP:
+				done = true;
+				break;
+			case NEOPIXEL_MSG_DRAW:
+				// adjust for brightness
+				// could do gamma correction here
+				ESP_ERROR_CHECK(rmt_tx_wait_all_done(px->rmtChannel, portMAX_DELAY));
+				for (i=0; i<px->byte_count; i++)
+					*dst++ = ((*src++) * px->brightness) >> 8;
+				countPixels(PixelsDrawn, px->pixel_count);
+
+				xTaskNotifyGive(px->caller_task);
+				ESP_ERROR_CHECK(rmt_transmit(px->rmtChannel, px->led_encoder, px->modPixels, px->byte_count, &tx_config));
+
+				break;
 		}
 	}
+
+	px->initialized = false;
+	xTaskNotifyGive(px->caller_task);
+    vTaskDelete( NULL );
 }
 
-void initRMT() {
-	if (gInitialized) return;
-	for (int i=0; i<MODDEF_NEOPIXEL_CHANNELS_MAX; i++) {
-		gOnChannel[i] = NULL;
+void neopixel_deinit(pixel_settings_t *px) {
+	int msg = NEOPIXEL_MSG_STOP;
+	if (px->initialized) {
+		px->caller_task = xTaskGetCurrentTaskHandle();
+		xQueueSend(px->neopixel_msgQueue, &msg, portMAX_DELAY);
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 	// wait for task to stop
+	
+		rmt_disable(px->rmtChannel);
+		rmt_del_channel(px->rmtChannel);
+		rmt_del_encoder(px->led_encoder);
 
-		// RMT transmit configuration
-		rmt_config_t rmt_tx = {};
-		rmt_tx.channel = (rmt_channel_t)i;
-		rmt_tx.rmt_mode = RMT_MODE_TX;
-		rmt_tx.gpio_num = 0;
-		rmt_tx.mem_block_num = 1;
-		rmt_tx.clk_div = DIVIDER;
-		rmt_tx.tx_config.loop_en = false;
-		rmt_tx.tx_config.carrier_level = RMT_CARRIER_LEVEL_LOW;
-		rmt_tx.tx_config.carrier_en = false;
-		rmt_tx.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
-		rmt_tx.tx_config.idle_output_en = true;
+		vQueueDelete(px->neopixel_msgQueue);
 
-		rmt_config(&rmt_tx);
-
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-		rmt_set_tx_thr_intr_en((rmt_channel_t)i, true, 32);
-#else
-		rmt_driver_install((rmt_channel_t)i, 0, 0);
-#endif
+		rmt_num--;
+		px->initialized = false;
 	}
-
-	if (gTX_sem == NULL) {
-		gTX_sem = xSemaphoreCreateBinary();
-		xSemaphoreGive(gTX_sem);
-	}
-
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	if (gRMT_intr_handle == NULL)
-		esp_intr_alloc(ETS_RMT_INTR_SOURCE, 0, interruptHandler, 0, &gRMT_intr_handle);
-#endif
-
-	gInitialized = true;
 }
 
 void np_show(pixel_settings_t *px) {
-	countPixels(PixelsDrawn, px->pixel_count);
-#if MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	NEOPIXEL_PREPARE_DATA(px);
-	puntToNeopixelDisplayTask();
-#else
-	if (gNumStarted == 0) {
-		initRMT();
-		xSemaphoreTake(gTX_sem, portMAX_DELAY);
+	int msg = NEOPIXEL_MSG_DRAW;
+	if (px->initialized) {
+		px->caller_task = xTaskGetCurrentTaskHandle();
+		xQueueSend(px->neopixel_msgQueue, &msg, portMAX_DELAY);
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 	// wait for rmt start
 	}
-
-	NEOPIXEL_PREPARE_DATA(px);
-
-	gNumStarted++;
-
-	if (gNumStarted == gNumControllers) {
-		gNext = 0;
-
-		// -- First, fill all the available channels
-		int channel = 0;
-		while (channel < MODDEF_NEOPIXEL_CHANNELS_MAX && gNext < gNumControllers)
-			startNext(channel++);
-
-		// wait until data is sent. Interrupt handler will refill
-		// the RMT until all is sent, then it returns the semaphore
-		xSemaphoreTake(gTX_sem, portMAX_DELAY);
-		xSemaphoreGive(gTX_sem);
-
-		gNumStarted = 0;
-		gNumDone = 0;
-		gNext = 0;
-	}
-#endif
-}
-
-#if ! MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-void convertByte(pixel_settings_t *px, uint32_t byteval) {
-	// -- Write one byte's worth of RMT pulses to the big buffer
-	byteval <<= 24;
-	for (register uint32_t j = 0; j < 8; j++) {
-		px->rmtBuffer[px->curPulse] = (byteval & 0x80000000L) ? px->rmtOne : px->rmtZero;
-		byteval <<= 1;
-		px->curPulse++;
-	}
-}
-
-void convertAllPixelData(pixel_settings_t *px) {
-	px->rmtBufferSize = px->pixel_count * px->nbits;
-	if (px->rmtBuffer == NULL)
-		px->rmtBuffer = (rmt_item32_t *)calloc(px->rmtBufferSize, sizeof(rmt_item32_t));
-
-	px->curPulse = 0;
-	int cur = 0;
-	uint8_t *loc = px->pixels;
-	uint32_t byteval;
-	while (cur < px->pixel_count) {
-		byteval = (*loc++ * px->brightness) / 255;
-		convertByte(px, byteval);
-		byteval = (*loc++ * px->brightness) / 255;
-		convertByte(px, byteval);
-		byteval = (*loc++ * px->brightness) / 255;
-		convertByte(px, byteval);
-		if (px->nbits == 32) {
-			byteval = (*loc++ * px->brightness) / 255;
-			convertByte(px, byteval);
-		}
-		cur++;
-	}
-
-	px->rmtBuffer[px->curPulse-1].duration1 = px->timings.reset.duration0;
-}
-#else
-void copyPixelData(pixel_settings_t *px) {
-	int cur = 0, pix = 0;
-	int size_needed = px->pixel_count * (px->nbits / 8);
-
-	if (size_needed > px->rmtPixelDataSize) {
-		if (px->rmtPixelData != NULL)
-			c_free(px->rmtPixelData);
-		px->rmtPixelDataSize = size_needed;
-		px->rmtPixelData = (uint8_t*)c_malloc(px->rmtPixelDataSize);
-	}
-
-	while (cur < size_needed) {
-		uint32_t byteval = px->pixels[cur];
-		byteval = (byteval * px->brightness) / 255;
-		px->rmtPixelData[cur++] = byteval & 0xff;
-	}
-}
-
-#endif
-
-void startNext(int channel) {
-	if (gNext < gNumControllers) {
-		pixel_settings_t *px = gControllers[gNext];
-		startOnChannel(px, channel);
-		gNext++;
-	}
-}
-
-void startOnChannel(pixel_settings_t *px, int channel) {
-	px->rmtChannel = (rmt_channel_t)channel;
-	gOnChannel[channel] = px;
-
-	// set the pin (on demand)
-	rmt_set_gpio(px->rmtChannel, RMT_MODE_TX, px->pin, false);
-
-#if ! MODDEF_NEOPIXEL_CUSTOM_RMT_DRIVER
-	rmt_register_tx_end_callback(doneOnChannel, 0);
-	rmt_write_items(px->rmtChannel, px->rmtBuffer, px->rmtBufferSize, false);
-#else
-	px->curPulse = 0;
-	px->curByte = 0;
-
-	fillHalfRMTBuffer(px);
-	fillHalfRMTBuffer(px);
-
-	// turn on interrupts
-	rmt_set_tx_intr_en(px->rmtChannel, true);
-
-	// start it up
-	rmt_tx_start(px->rmtChannel, true);
-#endif
-}
-
-void IRAM_ATTR doneOnChannel(rmt_channel_t channel, void *arg) {
-	pixel_settings_t *px = gOnChannel[channel];
-	portBASE_TYPE HPTaskAwoken = 0;
-
-	gOnChannel[channel] = NULL;
-	gNumDone++;
-
-	if (gNumDone == gNumControllers) {
-		xSemaphoreGiveFromISR(gTX_sem, &HPTaskAwoken);
-		if (HPTaskAwoken == pdTRUE)
-			portYIELD_FROM_ISR();
-	}
-	else {
-		if (gNext < gNumControllers)
-			startNext(channel);
-	}
-}
-
-void IRAM_ATTR fillHalfRMTBuffer(pixel_settings_t *px) {
-	uint32_t one_val = px->rmtOne.val;
-	uint32_t zero_val = px->rmtZero.val;
-
-	int pulses = 0;
-	uint8_t byteval;
-	register uint32_t j;
-
-	while ((pulses < 32) && (px->curByte < px->rmtPixelDataSize)) {
-		byteval = px->rmtPixelData[px->curByte++];
-
-		for (j=0; j<8; j++) {
-			uint32_t val = (byteval & 0x80L) ? one_val : zero_val;
-			RMTMEM.chan[px->rmtChannel].data32[px->curPulse].val = val;
-			byteval <<= 1;
-			px->curPulse++;
-		}
-		pulses += 8;
-	}
-
-	if (px->curByte == px->rmtPixelDataSize) {
-		while (pulses < 32) {
-			RMTMEM.chan[px->rmtChannel].data32[px->curPulse].val = 0;
-			px->curPulse++;
-			pulses++;
-		}
-	}
-
-	if (px->curPulse >= 64)
-		px->curPulse = 0;
 }
 
 

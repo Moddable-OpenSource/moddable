@@ -2969,6 +2969,9 @@ void fxVReportWarning(void* console, txString thePath, txInteger theLine, txStri
 }
 
 #ifdef mxInstrument	
+#if kCPUESP32C6
+#define ICACHE_XS6STRING_ATTR
+#endif
 #define xsInstrumentCount 12
 static char* const xsInstrumentNames[xsInstrumentCount] ICACHE_XS6STRING_ATTR = {
 	"Chunk used",

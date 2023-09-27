@@ -4,9 +4,6 @@
 		"$(MODDABLE)/modules/pins/audioin/manifest.json",
 		"$(MODDABLE)/modules/pins/i2s/manifest.json"
 	],
-	"config": {
-		"speaker": false
-	},
 	"modules": {
 		"*": [
 			  "./main"

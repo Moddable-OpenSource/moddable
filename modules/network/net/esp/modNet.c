@@ -40,7 +40,7 @@ void twoHex(uint8_t value, char *out)
 }
 
 #if ESP32
-tcpip_adapter_if_t
+esp_netif_t *
 #else
 uint8_t
 #endif
@@ -54,17 +54,26 @@ getNIF(xsMachine *the)
 		wantsStation = 0 == c_strcmp(nif, "station");
 #if ESP32
 		if (0 == c_strcmp(nif, "ethernet"))
-			return TCPIP_ADAPTER_IF_ETH;
+			return esp_netif_get_handle_from_ifkey("ETH_DEF");	// TCPIP_ADAPTER_IF_ETH;
 		if (!wantsAP && !wantsStation) {	// if argument is IP address, find adapter that matches
 			ip_addr_t dst;
 			if (ipaddr_aton(nif, &dst)) {
-				uint8_t ifc;
+//				uint8_t ifc;
+				esp_netif_t *ifc = NULL;
 				dst.u_addr.ip4.addr &= 0x00ffffff;		//@@ this only works for IPv4
+				do {
+					esp_netif_ip_info_t info = {0};
+					if ((ESP_OK == esp_netif_get_ip_info(ifc, &info)) && ((info.ip.addr & 0x00ffffff) == dst.u_addr.ip4.addr))
+						return ifc;
+				} while (ifc != NULL);
+
+/*
 				for (ifc = 0; ifc <= TCPIP_ADAPTER_IF_ETH; ifc++) {
 					tcpip_adapter_ip_info_t info = {0};
 					if ((ESP_OK == tcpip_adapter_get_ip_info(ifc, &info)) && ((info.ip.addr & 0x00ffffff) == dst.u_addr.ip4.addr))
 						return ifc;
 				}
+*/
 			}
 		}
 #endif
@@ -75,23 +84,25 @@ getNIF(xsMachine *the)
 	esp_err_t err = esp_wifi_get_mode(&mode);
 
 	if (err == ESP_ERR_WIFI_NOT_INIT) {
-		if (tcpip_adapter_is_netif_up(TCPIP_ADAPTER_IF_ETH))
-			return TCPIP_ADAPTER_IF_ETH;
+		esp_netif_t *eth = esp_netif_get_handle_from_ifkey("ETH_DEF");
+		if (esp_netif_is_netif_up(eth))
+			return eth;
 	} 
 	
 	if (err != ESP_OK)
-		return 255;
+		return NULL;
 
 	if (wantsStation && ((WIFI_MODE_STA == mode) || (WIFI_MODE_APSTA == mode)))
-		return TCPIP_ADAPTER_IF_STA;
+		return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 	if (wantsAP && ((WIFI_MODE_AP == mode) || (WIFI_MODE_APSTA == mode)))
-		return TCPIP_ADAPTER_IF_AP;
+		return esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
 	if (wantsAP || wantsStation)
-		return 255;
+		return NULL;
 	if (WIFI_MODE_AP == mode)
-		return TCPIP_ADAPTER_IF_AP;
+		return esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
 	if (WIFI_MODE_STA == mode)
-		return TCPIP_ADAPTER_IF_STA;
+		return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+	return NULL;
 #else
 	uint8 mode = wifi_get_opmode();
 	if (wantsStation && ((STATION_MODE == mode) || (STATIONAP_MODE == mode)))
@@ -104,8 +115,8 @@ getNIF(xsMachine *the)
 		return SOFTAP_IF;
 	if (STATION_MODE == mode)
 		return STATION_IF;
-#endif
 	return 255;
+#endif
 }
 
 void xs_net_get(xsMachine *the)
@@ -114,13 +125,13 @@ void xs_net_get(xsMachine *the)
 
 	if (0 == espStrCmp(prop, "IP")) {
 #if ESP32
-		tcpip_adapter_ip_info_t info = {0};
-		tcpip_adapter_if_t nif = getNIF(the);
+		esp_netif_ip_info_t info = {0};
+		esp_netif_t *nif = getNIF(the);
 
-		if (255 == nif)
+		if (NULL == nif)
 			return;
 
-		if ((ESP_OK == tcpip_adapter_get_ip_info(nif, &info)) && info.ip.addr) {
+		if ((ESP_OK == esp_netif_get_ip_info(nif, &info)) && info.ip.addr) {
 #else
 		struct ip_info info;
 		uint8_t nif = getNIF(the);
@@ -132,7 +143,8 @@ void xs_net_get(xsMachine *the)
 #endif
 			char addrStr[40];
 #if LWIP_IPV4 && LWIP_IPV6
-			ip4addr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
+			ip4_addr_t t = {info.ip.addr};
+			ip4addr_ntoa_r(&t, addrStr, sizeof(addrStr));
 #else
 			ipaddr_ntoa_r(&info.ip, addrStr, sizeof(addrStr));
 #endif
@@ -143,19 +155,21 @@ void xs_net_get(xsMachine *the)
 	else if (0 == espStrCmp(prop, "MAC")) {
 		uint8_t macaddr[6];
 #if ESP32
-		tcpip_adapter_if_t nif = getNIF(the);
-		esp_netif_t *netif = NULL;
+//		esp_netif_t nif = getNIF(the);
+		esp_netif_t *netif = getNIF(the);
 
+/*
 		if (TCPIP_ADAPTER_IF_STA == nif)
 			netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 		else if (TCPIP_ADAPTER_IF_AP == nif)
 			netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
 		else if (TCPIP_ADAPTER_IF_ETH == nif)
 			netif = esp_netif_get_handle_from_ifkey("ETH_DEF");
-
+*/
 		if (!netif)
 			return;
 
+//		if (ESP_OK == esp_netif_get_mac(netif, macaddr))
 		if (ESP_OK == esp_netif_get_mac(netif, macaddr))
 #else
 		if (wifi_get_macaddr(getNIF(the), macaddr))

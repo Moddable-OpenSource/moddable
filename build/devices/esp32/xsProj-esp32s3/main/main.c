@@ -41,6 +41,8 @@
 	#include "esp_bt.h"
 #endif
 
+#include "driver/uart.h"
+
 #include "modInstrumentation.h"
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
@@ -169,7 +171,7 @@ int fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
 
 	if (! ((0 != size) && (0 == ((size - 1) & size))))
 {
-printf("fifo_init - bad size: %d\r\n", size);
+printf("fifo_init - bad size: %ld\r\n", size);
 		return -2;		// bad size - needs to be base 2
 }
 
@@ -235,7 +237,8 @@ void loop_task(void *pvParameter)
 		xsMachine *the = gThe;
 		while (gThe) {
 			modTimersExecute();
-			modMessageService(gThe, modTimersNext());
+			if (gThe)
+				modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
 		}
 
@@ -297,7 +300,7 @@ void checkLineState() {
 void line_state_callback(int itf, cdcacm_event_t *event) {
 	DTR = event->line_state_changed_data.dtr;
 	RTS = event->line_state_changed_data.rts;
-	printf("[%d] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
+	printf("[%ld] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
 	checkLineState();
 }
 
@@ -479,8 +482,14 @@ void app_main() {
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
-	uartConfig.source_clk = UART_SCLK_APB;
+	uartConfig.source_clk = UART_SCLK_DEFAULT;
+
+#ifdef mxDebug
+	QueueHandle_t uartQueue;
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
+#else
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
+#endif
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -490,11 +499,7 @@ void app_main() {
 		printf("uart_set_pin err %d\r\n", err);
 
 #ifdef mxDebug
-	QueueHandle_t uartQueue;
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
-#else
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
 
 #endif	// ! USE_USB

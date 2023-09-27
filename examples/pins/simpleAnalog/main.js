@@ -16,7 +16,7 @@ import Analog from "pins/analog";
 import Timer from "timer";
 
 Timer.repeat(id => {
-	let value1 = Analog.read(26);
+	let value1 = Analog.read(5);
 	trace(`value1: ${value1}\n`);
 //	let value2 = Analog.read(2);
 //	trace("value1: " + value1 + " value2: " + value2 + "\n");

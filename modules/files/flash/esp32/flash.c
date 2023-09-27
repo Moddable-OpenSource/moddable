@@ -24,6 +24,7 @@
 
 #include "esp_partition.h"
 #include "app_update/include/esp_ota_ops.h"
+#include "spi_flash_mmap.h"
 
 struct modFlashRecord {
 	const esp_partition_t *partition;

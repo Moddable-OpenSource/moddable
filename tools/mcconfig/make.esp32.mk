@@ -38,20 +38,49 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v4.4.3
+EXPECTED_ESP_IDF ?= v5.1.1
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
 ESP32_SUBCLASS ?= esp32
 # $(warning ESP32_SUBCLASS $(ESP32_SUBCLASS))
 
-ifeq ("$(ESP32_SUBCLASS)","esp32c3")
+ESP_ARCH = xtensa
+GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+ESP32_BT_SUBCLASS = $(ESP32_SUBCLASS)
+
+ifeq ("$(ESP32_SUBCLASS)","esp32h2")
+	ESP32_TARGET = 5
 	ESP_ARCH = riscv
 	GXX_PREFIX = riscv32-esp
 else
-	ESP_ARCH = xtensa
-	GXX_PREFIX = xtensa-$(ESP32_SUBCLASS)
+	ifeq ("$(ESP32_SUBCLASS)","esp32c6")
+		ESP32_TARGET = 5
+		ESP_ARCH = riscv
+		GXX_PREFIX = riscv32-esp
+	else
+		ifeq ("$(ESP32_SUBCLASS)","esp32c3")
+			ESP32_TARGET = 4
+			ESP_ARCH = riscv
+			GXX_PREFIX = riscv32-esp
+		else
+			ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+				ESP32_BT_SUBCLASS = esp32
+				ESP32_TARGET = 3
+			else
+				ifeq ("$(ESP32_SUBCLASS)","esp32s2")
+					# esp32s2 doesn't support BlueTooth
+					ESP32_TARGET = 2
+				else
+					# basic esp32 doesn't support USB
+					ESP32_TARGET = 1
+					USB_OPTION =
+				endif
+			endif
+		endif
+	endif
 endif
+
 
 ifeq ($(VERBOSE),1)
 	CMAKE_LOG_LEVEL = VERBOSE
@@ -94,34 +123,38 @@ else
 	USB_OPTION = -DUSE_USB=$(USE_USB)
 endif
 
-ifeq ("$(ESP32_SUBCLASS)","esp32c3")
-	ESP32_TARGET = 4
-else
-ifeq ("$(ESP32_SUBCLASS)","esp32s3")
-	ESP32_TARGET = 3
-else
-	ifeq ("$(ESP32_SUBCLASS)","esp32s2")
-		ESP32_TARGET = 2
-	else
-		# basic esp32 doesn't support USB
-		ESP32_TARGET = 1
-		USB_OPTION =
-	endif
-endif
+ifeq ($(USE_USB),1) 
+	TINY_USB_BITS=$(PROJ_DIR)/managed_components
 endif
 
+# 	$(IDF_PATH)/components/driver/deprecated
 
 INC_DIRS = \
 	$(IDF_PATH)/components \
 	$(IDF_PATH)/components/bootloader_support/include \
 	$(IDF_PATH)/components/bt/include \
-	$(IDF_PATH)/components/bt/include/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
+	$(IDF_PATH)/components/esp_adc/include \
+	$(IDF_PATH)/components/driver/dac/include \
+	$(IDF_PATH)/components/driver/gpio/include \
+	$(IDF_PATH)/components/driver/gptimer/include \
+	$(IDF_PATH)/components/driver/i2c/include \
+	$(IDF_PATH)/components/driver/i2s/include \
+	$(IDF_PATH)/components/driver/ledc/include \
+	$(IDF_PATH)/components/driver/mcpwm/include \
+	$(IDF_PATH)/components/driver/pcnt/include \
+	$(IDF_PATH)/components/driver/rmt/include \
+	$(IDF_PATH)/components/driver/spi/include \
+	$(IDF_PATH)/components/driver/uart/include \
 	$(IDF_PATH)/components/driver/include \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
+ 	$(IDF_PATH)/components/esp_adc/include \
+ 	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/esp_app_format/include \
 	$(IDF_PATH)/components/esp_common/include \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
@@ -131,6 +164,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_netif/include \
+ 	$(IDF_PATH)/components/esp_partition/include \
 	$(IDF_PATH)/components/esp_pm/include \
 	$(IDF_PATH)/components/esp_ringbuf/include \
 	$(IDF_PATH)/components/esp_rom/include \
@@ -140,11 +174,17 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_wifi/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
+	$(IDF_PATH)/components/freertos/esp_additions/arch/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/esp_additions/include \
+	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
 	$(IDF_PATH)/components/freertos \
 	$(IDF_PATH)/components/freertos/include \
 	$(IDF_PATH)/components/freertos/include/freertos \
 	$(IDF_PATH)/components/freertos/port \
-	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/freertos/include/esp_additions \
 	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
 	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
@@ -156,8 +196,10 @@ INC_DIRS = \
 	$(IDF_PATH)/components/lwip/include/apps/ \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
-	$(IDF_PATH)/components/lwip/port/esp32/ \
-	$(IDF_PATH)/components/lwip/port/esp32/include/ \
+	$(IDF_PATH)/components/lwip/port/include/ \
+	$(IDF_PATH)/components/lwip/port/esp32xx/ \
+	$(IDF_PATH)/components/lwip/port/esp32xx/include/ \
+	$(IDF_PATH)/components/lwip/port/freertos/include/ \
 	$(IDF_PATH)/components/mbedtls/mbedtls/include/ \
 	$(IDF_PATH)/components/newlib/include \
 	$(IDF_PATH)/components/newlib/platform_include \
@@ -167,6 +209,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/host/src \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/include/nimble \
+	$(IDF_PATH)/components/bt/host/nimble/nimble/nimble/transport/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/nimble/include \
 	$(IDF_PATH)/components/bt/host/nimble/nimble/porting/npl/freertos/include \
 	$(IDF_PATH)/components/bt/host/nimble/port/include \
@@ -183,8 +226,8 @@ INC_DIRS = \
 	$(IDF_PATH)/components/spi_flash/include \
 	$(IDF_PATH)/components/tcpip_adapter/include \
 	$(IDF_PATH)/components/tcpip_adapter \
-	$(IDF_PATH)/components/tinyusb/additions/include
-	
+ 	$(IDF_PATH)/components/tinyusb/additions/include
+
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
@@ -304,7 +347,7 @@ endif
 
 C_FLAGS ?= $(C_COMMON_FLAGS) \
 	-Wno-implicit-function-declaration \
-	-std=gnu99 \
+	-std=gnu17 \
 	$(C_FLAGS_SUBPLATFORM)
 
 #	--machine-fix-esp32-psram-cache-issue --machine-fix-esp32-psram-cache-strategy=memw
@@ -537,18 +580,23 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
+$(PROJ_DIR)/managed_components:
+	echo "# Configure tinyusb..."; cd $(PROJ_DIR) ; idf.py add-dependency "espressif/esp_tinyusb"
+
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
+
+$(TMP_DIR)/buildinfo.h:
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
+	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld xs_esp32.bin"
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
-	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 
@@ -569,8 +617,7 @@ else
 endif
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
-
+	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/
@@ -631,7 +678,7 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST) $(SDKCONFIG_H)
 $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H) 
 	@echo "# mcrez resources"
 	mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -p $(ESP32_SUBCLASS) -r mc.resources.c
-	
+
 MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

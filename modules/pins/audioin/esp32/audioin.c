@@ -30,7 +30,10 @@
 
 #if ESP32
 	#include "freertos/FreeRTOS.h"
-	#include "driver/i2s.h"
+	#include "driver/i2s_std.h"
+	#include "driver/i2s_pdm.h"
+	#include "esp_adc/adc_continuous.h"
+	#include "soc/soc_caps.h"
 #else
 	#error unsupported target
 #endif
@@ -44,7 +47,7 @@
 
 #if ESP32
 	#ifndef MODDEF_AUDIOIN_I2S_NUM
-		#define MODDEF_AUDIOIN_I2S_NUM (1)
+		#define MODDEF_AUDIOIN_I2S_NUM (0)
 	#endif
 	#ifndef MODDEF_AUDIOIN_I2S_BCK_PIN
 		#define MODDEF_AUDIOIN_I2S_BCK_PIN (32)
@@ -58,86 +61,123 @@
 	#ifndef MODDEF_AUDIOIN_I2S_ADC
 		#define MODDEF_AUDIOIN_I2S_ADC (0)
 	#endif
+
+	#if MODDEF_AUDIOIN_SAMPLERATE < SOC_ADC_SAMPLE_FREQ_THRES_LOW
+		#error "sample rate too low"
+	#elif MODDEF_AUDIOIN_SAMPLERATE > SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+		#error "sample rate too high"
+	#endif
 #endif
+
+#define kADCSampleLength (256)
 
 void xs_audioin_destructor(void *data)
 {
 	if (data) {
-		i2s_stop(MODDEF_AUDIOIN_I2S_NUM);
-
 #if MODDEF_AUDIOIN_I2S_ADC
-		i2s_adc_disable(MODDEF_AUDIOIN_I2S_NUM);
+		adc_continuous_handle_t adcHandle = data;
+		adc_continuous_stop(adcHandle);
+		adc_continuous_deinit(adcHandle);
+#else
+		i2s_chan_handle_t rx_handle = data;
+		i2s_channel_disable(rx_handle);
+		i2s_del_channel(rx_handle);
 #endif
-
-		i2s_driver_uninstall(MODDEF_AUDIOIN_I2S_NUM);
 	}
 }
 
 void xs_audioin(xsMachine *the)
 {
-	esp_err_t err;
-
-#if !MODDEF_AUDIOIN_I2S_ADC
-	i2s_config_t i2s_config = {
-		  mode: (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-		  sample_rate: MODDEF_AUDIOIN_SAMPLERATE,
-		  bits_per_sample: I2S_BITS_PER_SAMPLE_32BIT,
-		  channel_format: I2S_CHANNEL_FMT_ONLY_RIGHT,
-		  communication_format: (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_MSB),
-		  intr_alloc_flags: 0,
-		  dma_buf_count: 4,
-		  dma_buf_len: 1024
+#if MODDEF_AUDIOIN_I2S_ADC
+	adc_continuous_handle_t adcHandle;
+	adc_continuous_handle_cfg_t adc_config = {
+		.max_store_buf_size = 1024,
+		.conv_frame_size = kADCSampleLength,
 	};
+	ESP_ERROR_CHECK(adc_continuous_new_handle(&adc_config, &adcHandle));
+
+    adc_continuous_config_t dig_cfg = {
+        .sample_freq_hz = MODDEF_AUDIOIN_SAMPLERATE,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DIGI_OUTPUT_FORMAT_TYPE1,
+    };
+
+	adc_digi_pattern_config_t adc_pattern[1] = {0};
+	adc_pattern[0].atten = ADC_ATTEN_DB_11;		// if this is ADC_ATTEN_DB_0 M5Stack Fire is overdriven like crazy
+	adc_pattern[0].channel = ADC_CHANNEL_6;		//@@ config
+	adc_pattern[0].unit = ADC_UNIT_1;				//@@ config
+	adc_pattern[0].bit_width = ADC_BITWIDTH_12;
+	dig_cfg.pattern_num = 1;
+	dig_cfg.adc_pattern = adc_pattern;
+	ESP_ERROR_CHECK(adc_continuous_config(adcHandle, &dig_cfg));
+
+	ESP_ERROR_CHECK(adc_continuous_start(adcHandle));
+	xsmcSetHostData(xsThis, (void *)adcHandle);
+#else
+	esp_err_t err;
+	i2s_chan_handle_t rx_handle;
+
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(MODDEF_AUDIOIN_I2S_NUM, I2S_ROLE_MASTER);
+
+    err = i2s_new_channel(&chan_cfg, NULL, &rx_handle);
+	if (err) xsUnknownError("i2s_new_channel failed");
 
 #if MODDEF_AUDIOIN_I2S_PDM
-	i2s_config.mode |= I2S_MODE_PDM;
-#endif
+    i2s_pdm_rx_config_t pdm_rx_cfg = {
+        .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(MODDEF_AUDIOIN_SAMPLERATE),
+        .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .gpio_cfg = {
+            .clk = MODDEF_AUDIOIN_I2S_LR_PIN,
+            .din = MODDEF_AUDIOIN_I2S_DATAIN,
+            .invert_flags = {
+                .clk_inv = false,
+            }
+        }
+    };
 
-	i2s_pin_config_t pin_config = {
-		.bck_io_num = MODDEF_AUDIOIN_I2S_BCK_PIN,
-		.ws_io_num = MODDEF_AUDIOIN_I2S_LR_PIN,
-		.data_out_num = I2S_PIN_NO_CHANGE,
-		.data_in_num = MODDEF_AUDIOIN_I2S_DATAIN
-	};
+    pdm_rx_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
 
-	err = i2s_driver_install(MODDEF_AUDIOIN_I2S_NUM, &i2s_config, 0, NULL);
-	if (err) xsUnknownError("driver install failed");
-
-	err = i2s_set_pin(MODDEF_AUDIOIN_I2S_NUM, &pin_config);
-	if (err) xsUnknownError("pin config failed");
-
-	err = i2s_start(MODDEF_AUDIOIN_I2S_NUM);
-	if (err) xsUnknownError("i2s start failed");
+    err = i2s_channel_init_pdm_rx_mode(rx_handle, &pdm_rx_cfg);
+	if (err) {
+		i2s_del_channel(rx_handle);
+		xsUnknownError("i2s_channel_init_pdm_rx_mode failed");
+	}
 #else
-	i2s_config_t i2s_config = {
-		//@@ playback modes set too!!
-		  mode: (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX  | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN),
-		  sample_rate: MODDEF_AUDIOIN_SAMPLERATE,
-		  bits_per_sample: I2S_BITS_PER_SAMPLE_16BIT,
-		  channel_format: I2S_CHANNEL_FMT_RIGHT_LEFT,
-		  communication_format: I2S_COMM_FORMAT_STAND_I2S,
-		  intr_alloc_flags: 0,
-		  dma_buf_count: 4,
-		  dma_buf_len: 1024
-	};
+	#error STD untested
 
-//	//@@ adc1_config_* may be unnecessary
-	adc1_config_width(ADC_WIDTH_BIT_12);
-	adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_0);
+    i2s_std_config_t rx_std_cfg = {
+        .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(MODDEF_AUDIOIN_SAMPLERATE),
+        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = MODDEF_AUDIOIN_I2S_BCK_PIN,
+            .ws   = MODDEF_AUDIOIN_I2S_LR_PIN,
+            .dout = I2S_GPIO_UNUSED,
+            .din  = MODDEF_AUDIOIN_I2S_DATAIN,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv   = false,
+            }
+        }
+    };
+    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;		//@@
 
-	err = i2s_driver_install(MODDEF_AUDIOIN_I2S_NUM, &i2s_config, 0, NULL);
-	if (err) xsUnknownError("driver install failed");
-
-	err = i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_6);
-	if (err) xsUnknownError("set adc mode failed");
-
-	err = i2s_adc_enable(MODDEF_AUDIOIN_I2S_NUM);
-	if (err) xsUnknownError("adc enable failed");
-
-	//@@ note: no i2s_start
+    err = i2s_channel_init_std_mode(rx_handle, &rx_std_cfg);
+	if (err) {
+		i2s_del_channel(rx_handle);
+		xsUnknownError("i2s_channel_init_std_mode failed");
+	}
 #endif
 
-	xsmcSetHostData(xsThis, (void *)-1);
+    err = i2s_channel_enable(rx_handle);
+	if (err) {
+		i2s_del_channel(rx_handle);
+		xsUnknownError("i2s_channel_enable failed");
+	}
+
+	xsmcSetHostData(xsThis, (void *)rx_handle);
+#endif
 }
 
 void xs_audioin_close(xsMachine *the)
@@ -145,24 +185,25 @@ void xs_audioin_close(xsMachine *the)
 	void *data = xsmcGetHostData(xsThis);
 	if (!data)
 		return;
+
 	xs_audioin_destructor(data);
 	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_audioin_read(xsMachine *the)
 {
-	int argc = xsmcArgc;
-	int sampleCount = xsmcToInteger(xsArg(0));
-	int i, byteCount;
-#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
-	int16_t *samples;
-
-	byteCount = sampleCount * sizeof(int16_t);
+#if MODDEF_AUDIOIN_I2S_ADC
+	adc_continuous_handle_t adcHandle = xsmcGetHostData(xsThis);
 #else
-	int8_t *samples;
-
-	byteCount = sampleCount * sizeof(int8_t);
+	i2s_chan_handle_t rx_handle = xsmcGetHostData(xsThis);
 #endif
+	esp_err_t err;
+	int argc = xsmcArgc;
+	size_t bytes_read;
+	int sampleCount = xsmcToInteger(xsArg(0));
+	void *samples;
+	int byteCount = (sampleCount * MODDEF_AUDIOIN_BITSPERSAMPLE) >> 3;
+
 	if (1 == argc) {
 		xsmcSetArrayBuffer(xsResult, NULL, byteCount);
 		samples = xsmcToArrayBuffer(xsResult);
@@ -182,32 +223,58 @@ void xs_audioin_read(xsMachine *the)
 		xsResult = xsArg(1);
 	}
 
-	for (i = 0; i < sampleCount; ) {
-		size_t bytes_read = 0;
-		int32_t buf32[64];
-		int j;
-		int need = sampleCount - i;
-		if (need > 64)
-			need = 64;
-
-		i2s_read(MODDEF_AUDIOIN_I2S_NUM, (void *)buf32, need << 2, &bytes_read, portMAX_DELAY);
-		need = bytes_read >> 2;
-		for (j = 0; j < need; j++) {
 #if MODDEF_AUDIOIN_I2S_ADC
-#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
-			samples[i++] = (buf32[j] << 4) ^ 0x8000;
-#else	/* 8-bit */
-			samples[i++] = buf32[j] >> 4;
-#endif
-#else	/* !MODDEF_AUDIOIN_I2S_ADC */
-#if 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
-			samples[i++] = buf32[j] >> 15;	// "The Data Format is I2S, 24 bit, 2’s compliment, MSB first. The Data Precision is 18 bits, unused bits are zeros"
-#else	/* 8-bit */
-			samples[i++] = (buf32[j] >> (15 + 8)) ^ 0x80;
-#endif
-#endif
+	uint8_t input[kADCSampleLength];
+
+	while (sampleCount) {
+		uint32_t use = sizeof(input);
+		uint32_t needed = sampleCount * sizeof(adc_digi_output_data_t);
+		if (use > needed) use = needed;
+		uint32_t used;
+
+      err = adc_continuous_read(adcHandle, input, use, &used, 17);
+		if (err) break;
+
+		used /= sizeof(adc_digi_output_data_t);
+		sampleCount -= used;
+
+		adc_digi_output_data_t *in = (adc_digi_output_data_t *)input;
+#if 8 == MODDEF_AUDIOIN_BITSPERSAMPLE
+		uint8_t *out = (uint8_t *)samples;
+		while (used--) {
+			*out++ = in->type1.data >> 4;
+			in++;
 		}
+		samples = (void *)out;
+#else // 16 == MODDEF_AUDIOIN_BITSPERSAMPLE
+		uint16_t *out = (uint16_t *)samples;
+		while (used--) {
+			*out++ = (in->type1.data - 2048) * 8;
+			in++;
+		}
+		samples = (void *)out;
+#endif
 	}
+#elif MODDEF_AUDIOIN_I2S_PDM && (8 == MODDEF_AUDIOIN_BITSPERSAMPLE)
+	int8_t *out = samples;
+	int i;
+	while (sampleCount) {
+		const int tmpCount = 512;
+		int16_t tmp[tmpCount];
+		int use = sampleCount;
+		if (use > tmpCount)
+			use = tmpCount;
+		err = i2s_channel_read(rx_handle, (char *)tmp, use << 1, &bytes_read, portMAX_DELAY);
+		if (err) break;
+	
+		for (i = 0; i < use; i++) 
+			*out++ = (tmp[i] >> 8) ^ 0x80;
+		sampleCount -= use;
+	}
+#else
+	err = i2s_channel_read(rx_handle, (char *)samples, byteCount, &bytes_read, portMAX_DELAY);
+#endif
+	if (err) xsUnknownError("i2s_channel_read failed");
 }
 
 void xs_audioin_get_sampleRate(xsMachine *the)

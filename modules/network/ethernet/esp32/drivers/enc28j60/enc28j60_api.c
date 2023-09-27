@@ -21,14 +21,12 @@
 #include "esp_eth_enc28j60.h"
 #include "mc.defines.h"
 
-esp_eth_mac_t* mod_ethernet_get_mac(spi_device_handle_t spi_handle, int interrupt_pin)
+esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, int interrupt_pin)
 {
-    eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(spi_handle);
+    eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(MODDEF_ETHERNET_SPI_PORT, &spi_devcfg);
     enc28j60_config.int_gpio_num = interrupt_pin;
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.smi_mdc_gpio_num = -1;
-    mac_config.smi_mdio_gpio_num = -1;
     mac_config.rx_task_prio = 2;
     return esp_eth_mac_new_enc28j60(&enc28j60_config, &mac_config);
 }

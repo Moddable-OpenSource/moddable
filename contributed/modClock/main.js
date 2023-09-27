@@ -296,6 +296,8 @@ trace(`uiState: SHOW_TIME\n`);
 					break;
 
 				case WiFi.disconnected:
+					if (this.connecting)
+						return;
                     this.unconfigServer();
                     this.scanner?.close();
                     delete this.scanner;
@@ -435,7 +437,7 @@ trace(`uiState: SHOW_TIME\n`);
 						clock.prefs.tail_brightness = parseInt(this.userReq.tail_brightness);
 						clock.prefs.tail_order = clock.checkFormat(clock.display.supportedFormats, this.userReq.tail_order);
 						clock.prefs.extra = parseInt(this.userReq.extra);
-						clock.prefs.tail_on = parseInt(this.userReq.tail_on);
+						clock.prefs.tail_on = this.userReq.tail_on ? parseInt(this.userReq.tail_on) : 0;
 						clock.prefs.tail_sched = parseInt(this.userReq.tail_sched);
 						clock.prefs.tail_time_on = clock.parseTimeReq(this.userReq.tail_time_on);
 						clock.prefs.tail_time_off = clock.parseTimeReq(this.userReq.tail_time_off);

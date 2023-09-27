@@ -26,6 +26,7 @@
 #include "mc.defines.h"
 
 #include "esp_eth.h"
+#include "esp_mac.h"
 #include "esp_netif.h"
 
 #include "ethernet.h"
@@ -42,8 +43,8 @@ esp_netif_t *gNetif = NULL;
 static esp_err_t initEthernet(void);
 
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-static spi_device_handle_t init_spi();
-static void uninit_spi(spi_device_handle_t);
+static void init_spi();
+static void uninit_spi();
 #endif
 
 void xs_ethernet_start(xsMachine *the)
@@ -229,7 +230,6 @@ static void doIPEvent(void* arg, esp_event_base_t event_base, int32_t event_id, 
 
 esp_err_t initEthernet(void)
 {
-	spi_device_handle_t spi_handle;
 	uint8_t macaddr[6];
 	esp_err_t err = ESP_OK;
 	esp_eth_mac_t *mac;
@@ -242,14 +242,15 @@ esp_err_t initEthernet(void)
 	gNetif = esp_netif_new(&netif_cfg);
 
 #ifdef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-	eth_mac_config_t mac_config =  ETH_MAC_DEFAULT_CONFIG();
-	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+	eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+	eth_esp32_emac_config_t esp32_mac_config =  ETH_ESP32_EMAC_DEFAULT_CONFIG();
+	esp32_mac_config.smi_mdc_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDC;
+	esp32_mac_config.smi_mdio_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDIO;
+	mac = esp_eth_mac_new_esp32(&esp32_mac_config, &mac_config);
 
+	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 	phy_config.phy_addr = MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS;
 	phy_config.reset_gpio_num = MODDEF_ETHERNET_INTERNAL_PHY_RESET;
-	mac_config.smi_mdc_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDC;
-	mac_config.smi_mdio_gpio_num = MODDEF_ETHERNET_INTERNAL_MAC_MDIO;
-	mac = esp_eth_mac_new_esp32(&mac_config);
 #if MODDEF_ETHERNET_INTERNAL_PHY_IP101
     phy = esp_eth_phy_new_ip101(&phy_config);
 #elif MODDEF_ETHERNET_INTERNAL_PHY_RTL8201
@@ -268,9 +269,18 @@ esp_err_t initEthernet(void)
 		gpio_install_isr_service(0);
 		gEthernetState = -1;
 	}
-		
-	spi_handle = init_spi();
-	mac = mod_ethernet_get_mac(spi_handle, MODDEF_ETHERNET_INT_PIN);
+	
+	spi_device_interface_config_t devcfg = {
+        .command_bits = 3,
+        .address_bits = 5,
+        .mode = 0,
+        .clock_speed_hz = MODDEF_ETHERNET_HZ,
+        .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
+        .queue_size = 20
+    };
+
+	init_spi();
+	mac = mod_ethernet_get_mac(devcfg, MODDEF_ETHERNET_INT_PIN);
 	phy = mod_ethernet_get_phy();
 #endif
 	
@@ -283,8 +293,7 @@ esp_err_t initEthernet(void)
 		if (phy)
 			phy->del(phy);
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-		if (spi_handle)
-			uninit_spi(spi_handle);
+		uninit_spi();
 #endif
 		return err;
 	}
@@ -310,9 +319,7 @@ esp_err_t initEthernet(void)
 
 
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
-static spi_device_handle_t init_spi() {
-	spi_device_handle_t spi_handle = NULL;
-
+static void init_spi() {
 #ifdef MODDEF_ETHERNET_SPI_MISO_PIN
 	spi_bus_config_t buscfg = {
 		.miso_io_num = MODDEF_ETHERNET_SPI_MISO_PIN,
@@ -322,15 +329,6 @@ static spi_device_handle_t init_spi() {
         .quadhd_io_num = -1,
 	};
 	ESP_ERROR_CHECK(spi_bus_initialize(MODDEF_ETHERNET_SPI_PORT, &buscfg, 2));
-	spi_device_interface_config_t devcfg = {
-        .command_bits = 3,
-        .address_bits = 5,
-        .mode = 0,
-        .clock_speed_hz = MODDEF_ETHERNET_HZ,
-        .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
-        .queue_size = 20
-    };
-    ESP_ERROR_CHECK(spi_bus_add_device(MODDEF_ETHERNET_SPI_PORT, &devcfg, &spi_handle));
 #else
 	modSPIConfigurationRecord config = {0};
 	config.cs_pin = MODDEF_ETHERNET_SPI_CS_PIN;
@@ -342,15 +340,11 @@ static spi_device_handle_t init_spi() {
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIInit(&config);
-	spi_handle = config.spi_dev;
 #endif
-
-	return spi_handle;
 }
 
-static void uninit_spi(spi_device_handle_t spi_handle) {
+static void uninit_spi() {
 #ifdef MODDEF_ETHERNET_SPI_MISO_PIN
-	spi_bus_remove_device(spi_handle);
     spi_bus_free(MODDEF_ETHERNET_SPI_PORT);
 #else
 	modSPIConfigurationRecord config = {0};

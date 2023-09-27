@@ -234,6 +234,7 @@ void app_main() {
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
+	uartConfig.source_clk = UART_SCLK_DEFAULT;
 //	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
 	uartConfig.source_clk = UART_SCLK_APB;
 

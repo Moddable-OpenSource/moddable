@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -40,6 +40,7 @@
 //#include "soc/uart_caps.h"
 #include "soc/uart_struct.h"
 
+#if 0
 // local versions of UART register management to avoid issues with uart.c
 #define uart_disable_intr_mask(dev, disable_mask) _uart_disable_intr_mask(dev, disable_mask)
 #define uart_enable_intr_mask(dev, enable_mask) _uart_enable_intr_mask(dev, enable_mask)
@@ -54,6 +55,7 @@ static void _uart_enable_rx_intr(uart_dev_t *dev);
 static void _uart_disable_rx_intr(uart_dev_t *dev);
 static void _uart_disable_tx_intr(uart_dev_t *dev);
 static void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh);
+#endif
 
 typedef struct SerialRecord SerialRecord;
 typedef struct SerialRecord *Serial;
@@ -195,21 +197,21 @@ void xs_serial_constructor(xsMachine *the)
 		if (hasReadable) {
 			serial->onReadable = onReadable;
 
-			uart_enable_rx_intr(serial->uart_reg);
+			uart_enable_rx_intr(serial->uart);
 			uart_set_rx_timeout(serial->uart, 4);
 		}
 		else {
-			uart_disable_rx_intr(serial->uart_reg);
+			uart_disable_rx_intr(serial->uart);
 			serial->onReadable = NULL;
 		}
 
 		if (hasWritable) {
 			serial->onWritable = onWritable;
 
-			uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
+			uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 		}
 		else {
-			uart_disable_tx_intr(serial->uart_reg);
+			uart_disable_tx_intr(serial->uart);
 			serial->onWritable = NULL;
 		}
 	}
@@ -227,10 +229,10 @@ void xs_serial_destructor(void *data)
 	Serial serial = data;
 	if (!serial) return;
 
-	uart_disable_tx_intr(serial->uart_reg);
-	uart_disable_rx_intr(serial->uart_reg);
+	uart_disable_tx_intr(serial->uart);
+	uart_disable_rx_intr(serial->uart);
 
-	uart_isr_free(serial->uart);
+//	uart_isr_free(serial->uart);
 
 	if (UART_PIN_NO_CHANGE != serial->transmit)
 		builtinFreePin(serial->transmit);
@@ -313,7 +315,7 @@ void xs_serial_read(xsMachine *the)
 	}
 
 	if (serial->onReadable)
-		uart_enable_rx_intr(serial->uart_reg);
+		uart_enable_rx_intr(serial->uart);
 }
 
 void xs_serial_write(xsMachine *the)
@@ -343,7 +345,7 @@ void xs_serial_write(xsMachine *the)
 
 	if (serial->onWritable && !serial->txInterruptEnabled) {
 		serial->txInterruptEnabled = 1;
-		uart_enable_tx_intr(serial->uart_reg, 1, kTransmitTreshold);
+		uart_enable_tx_intr(serial->uart, 1, kTransmitTreshold);
 	}
 }
 
@@ -365,13 +367,13 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 		post |= (0 == serial->isWritable);
 		serial->isWritable = 1;
 		serial->txInterruptEnabled = 0;
-		uart_disable_tx_intr(serial->uart_reg);
+		uart_disable_tx_intr(serial->uart);
 	}
 
 	if ((status & (UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL)) && serial->onReadable) {
 		post |= (0 == serial->isReadable);
 		serial->isReadable = 1;
-		uart_disable_rx_intr(serial->uart_reg);
+		uart_disable_rx_intr(serial->uart);
 	}
 
 	if (post) {
@@ -400,7 +402,7 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
-		uart_enable_rx_intr(serial->uart_reg);
+		uart_enable_rx_intr(serial->uart);
 	}
 
 	if (serial->isWritable) {
@@ -436,6 +438,8 @@ void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	
 	https://github.com/Moddable-OpenSource/moddable/issues/931
 */
+
+#if 0
 
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -483,3 +487,5 @@ void _uart_enable_tx_intr(uart_dev_t *dev, int enable, int thresh)
 		portEXIT_CRITICAL(&spinlock);
     }
 }
+
+#endif
