@@ -43,7 +43,9 @@
 
 /* CPU */
 
-#if ESP32 == 5
+#if !ESP32
+	// esp8266
+#elif ESP32 == 5
 	#define kCPUESP32C6 1
 	#define kTargetCPUCount 1
 	#define kESP32TimerDef	int_clr
