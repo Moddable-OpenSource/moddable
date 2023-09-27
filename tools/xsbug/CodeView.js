@@ -316,10 +316,12 @@ class CodeBehavior extends _CodeBehavior {
 		var scroller = code.container;
 		var t = Date.now();
 		scroller.scrollBy(this.dx * this.acceleration * (t - this.tx), this.dy * this.acceleration * (t - this.ty));
-		this.onTouchSelect(code, this.x, this.y);
+		if (this.captured == code)
+			this.onTouchSelect(code, this.x, this.y);
 	}
 	onTouchBegan(code, id, x, y, ticks) {
 		code.captureTouch(id, x, y, ticks);
+		this.captured = code; 
 		this.onTouchBeganMode(code, id, x, y, ticks, CHAR_MODE);
 	}
 	onTouchBeganMode(code, id, x, y, ticks, mode) {
@@ -558,32 +560,110 @@ class LineNumbersBehavior extends Behavior {
 		this.onBreakpointsChanged(column);
 	}
 	onTouchBegan(column, id, x, y, ticks) {
-		this.data.CODE.focus();
+		const data = this.data;
+		const code = data.CODE;
+		const behavior = code.behavior;
+		const scroller = code.container;
+		code.focus();
 		column.captureTouch(id, x, y, ticks);
-		//var code = this.data.CODE;
-		//code.behavior.onTouchBeganMode(code, id, x, y, ticks, LINE_MODE);
+		behavior.captured = column; 
+		
+		const index = Math.floor((y - column.y) / this.lineHeight);
+		const container = column.content(index);
+		const content = container.first.next;
+		this.anchorIndex = index;
+		this.anchorState = content.state;
+		content.state = content.next.state = 1;
+		this.trackFlag = false
+		this.trackIndex = index
+		this.trackState = 0
 	}
 	onTouchEnded(column, id, x, y, ticks) {
-		let data = this.data;
-		let path = data.path;
-		let line = Math.floor((y - column.y) / this.lineHeight) + 1;
+		const data = this.data;
+		const code = data.CODE;
+		code.stop();
 		
-		const breakpoint = data.breakpoints.items.find(it => (it.line == line) && (it.path == path));
-		if (breakpoint) {
-			if (shiftKey) {
-				model.doEnableDisableBreakpoint(path, line);
+		if (this.trackFlag) {
+			if (this.trackIndex >= 0) {
+				if (this.anchorState == 0) {
+					if (this.trackState == 0) {
+						model.doToggleBreakpoint(data.path, this.trackIndex + 1);
+					}			
+				}
+				else {
+					const path = data.path;
+					const anchorLine = this.anchorIndex + 1;
+					const trackLine = this.trackIndex + 1;
+					const breakpoints = data.breakpoints.items;
+					const breakpoint = breakpoints.find(breakpoint => (breakpoint.path == path) && (breakpoint.line == anchorLine));
+					model.doClearBreakpoint(breakpoint);
+					if (this.trackState == 1) {
+						const index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == trackLine));
+						breakpoints.splice(index, 1);
+					}
+					breakpoint.line = trackLine;
+					breakpoints.sort(data.sortBreakpoints);
+					model.doSetBreakpoint(breakpoint);
+					application.distribute("onBreakpointsChanged");
+				}		
+			}
+			else if (this.anchorState == 1) {
+				model.doToggleBreakpoint(data.path, this.anchorIndex + 1);
+			}		
+		}
+		else {
+			if (this.anchorState == 0) {
+				model.doToggleBreakpoint(data.path, this.anchorIndex + 1);
 			}
 			else {
-				EditBreakpoint(breakpoint, column.x + column.width + 8, column.y + ((line - 1) * this.lineHeight)); 
+				if (shiftKey) {
+					model.doEnableDisableBreakpoint(data.path, this.anchorIndex + 1);
+				}
+				else {
+					const path = data.path;
+					const line = this.anchorIndex + 1;
+					const breakpoint = data.breakpoints.items.find(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
+					EditBreakpoint(breakpoint, column.x + column.width + 8, column.y + (this.anchorIndex * this.lineHeight)); 
+				}
 			}
 		}
-		else
-			model.doToggleBreakpoint(path, line);
-		
 	}
 	onTouchMoved(column, id, x, y, ticks) {
-		//var code = this.data.CODE;
-		//code.behavior.onTouchMoved(code, id, x, y, ticks);
+		const data = this.data;
+		const code = data.CODE;
+		const behavior = code.behavior;
+		const scroller = code.container;
+		let dy = 0;
+		if (y < scroller.y) 
+			dy = -1;
+		else if (scroller.y + scroller.height < y) 
+			dy = 1;
+		behavior.dx = 0;
+		if (behavior.dy != dy) {
+			behavior.dy = dy;
+			behavior.ty = Date.now();
+		}
+		if (dy)
+			code.start();
+		else
+			code.stop();
+
+		const index = column.hit(x, y) ? Math.floor((y - column.y) / this.lineHeight) : -1;
+		if (this.trackIndex != index) {
+			if (this.trackIndex >= 0) {
+				let container = column.content(this.trackIndex);
+				let content = container.first.next;
+				content.state = content.next.state = this.trackState;
+			}
+			this.trackFlag = true;
+			this.trackIndex = index;
+			if (this.trackIndex >= 0) {
+				let container = column.content(this.trackIndex);
+				let content = container.first.next;
+				this.trackState = content.state;
+				content.state = content.next.state = 1;
+			}
+		}
 	}
 };
 
