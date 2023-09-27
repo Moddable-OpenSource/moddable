@@ -4,7 +4,9 @@
 		"USE_USB": "1",
 		"PROGRAMMING_VID": "303a",
 		"PROGRAMMING_PID": "0002",
-		"SDKCONFIGPATH": "./sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the Boot button and press then release the Reset button to begin.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",

@@ -4,7 +4,9 @@
 		"USE_USB": "1",
 		"PROGRAMMING_VID": "303a",
 		"PROGRAMMING_PID": "0002",
-		"SDKCONFIGPATH": "./sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the 0 button and press then release the RST button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
