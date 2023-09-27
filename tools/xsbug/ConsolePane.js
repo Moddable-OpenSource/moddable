@@ -48,6 +48,25 @@ class ConsolePaneBehavior extends Behavior {
 	onCreate(container, data) {
 		this.data = data;
 	}
+	onMachineChanged(container, machine) {
+		const row = container.first.next;
+		if (machine && machine.broken && machine.compatible) {
+			if (!row.visible) {
+				const scroller = container.first.first;
+				scroller.coordinates = { left:0, right:0, top:27, bottom:31 }
+				row.coordinates = { left:0, right:0, height:31, bottom:0 }
+				row.visible = true;
+			}
+		}
+		else {
+			if (row.visible) {
+				const scroller = container.first.first;
+				scroller.coordinates = { left:0, right:0, top:27, bottom:0 }
+				row.coordinates = { left:0, right:0, height:31, bottom:-31 }
+				row.visible = false;
+			}
+		}
+	}
 	onMachineDeselected(container, machine) {
 		let scroller = container.first.first;
 		if (!machine) machine = this.data; 
@@ -62,9 +81,11 @@ class ConsolePaneBehavior extends Behavior {
 	onMachineSelected(container, machine) {
 		let scroller = container.first.first;
 		let code = scroller.first;
-		if (!machine) machine = this.data; 
+		if (!machine)
+			machine = this.data; 
 		code.behavior.doLog(code, machine.consoleText, machine.consoleLines);
 		scroller.scroll = machine.consoleScroll;
+		this.onMachineChanged(container, machine);
 	}
 	onMouseEntered(container, x, y) {
 		this.reveal(container, true);
@@ -161,6 +182,46 @@ export var ConsolePane = Container.template($ => ({
 					],
 				}),
 				Content($, { left:0, right:0, top:26, height:1, skin:skins.paneBorder, }),
+			],
+		}),
+		Container($, {
+			left:0, right:0, bottom:-31, height:31, skin:skins.paneHeader, visible:false,
+			contents: [
+				IconButton($, {
+					left:2, width:26, top:3, height:26, variant:8, active:false,
+					Behavior: class extends ButtonBehavior {
+						onTap(button) {
+							button.next.first.delegate("onEnter");
+						}
+					},
+				}),
+				Container($, {
+					left:30, right:30, top:5, bottom:4, skin:skins.fieldScroller,
+					contents: [
+						Field($, {
+							left:1, right:1, top:1, bottom:1,
+							clip:true,
+							active:true,
+							skin:skins.field,
+							style:styles.field,
+							placeholder:"EVAL",
+							Behavior: class extends Behavior {
+								onCreate(field, data) {
+									 this.data = data;
+								}
+								onEnter(field) {
+									field.bubble("doEval", field.string);
+								}
+								onStringChanged(field) {
+									const button = field.container.previous;
+									button.active = field.string.length > 0;
+									button.behavior.onStateChanged(button);
+								}
+						},
+						}),
+					],
+				}),
+				Content($, { left:0, right:0, top:0, height:1, skin:skins.paneBorder, }),
 			],
 		}),
 		Row($, {
