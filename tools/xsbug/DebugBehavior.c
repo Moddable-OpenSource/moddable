@@ -1533,7 +1533,7 @@ void PiuDebugMachine_doCommand(xsMachine* the)
 			break;
 		}
 		c_strcat(buffer, "\15\12");
-    	fprintf(stderr, "%s", buffer);
+//     	fprintf(stderr, "%s", buffer);
 		PiuDebugMachine_doCommandAux(the, self, buffer, c_strlen(buffer));
 	}
 	else {

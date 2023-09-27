@@ -332,7 +332,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			machine.consoleLines.push({ path:undefined, line:undefined, offset:machine.consoleText.length, color:0 }); 
 			machine.onLoggedAux(machine, '> ' + source + '\n');
 			this.onLogged(machine);
-			const code = this.data.compile(source);
+			const code = this.compile(source);
 			machine.doCommand(mxEvalCommand, machine.frame, code, 0);
 		}
 	}
