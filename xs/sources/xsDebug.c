@@ -1042,6 +1042,9 @@ void fxDebugPopTag(txMachine* the)
 		break;
 	case XS_BREAKPOINT_TRACE_TAG:
 		break;
+	case XS_CLEAR_ALL_BREAKPOINTS_TAG:
+		the->debugExit |= 1;
+		break;
 	case XS_CLEAR_BREAKPOINTS_TAG:
 		the->debugExit |= 1;
 		break;
