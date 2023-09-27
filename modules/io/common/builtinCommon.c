@@ -32,7 +32,9 @@
 
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		SOC_GPIO_VALID_GPIO_MASK & 0xFFFFFFFF,
+#if kPinBanks > 1
 		SOC_GPIO_VALID_GPIO_MASK >> 32
+#endif
 	};
 #elif defined(__ets__)
 	static uint32_t gDigitalAvailable[kPinBanks] = {

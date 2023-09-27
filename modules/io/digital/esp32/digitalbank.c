@@ -106,7 +106,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
+#if kPinBanks > 1
 	mask = bank ? (SOC_GPIO_VALID_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
+#else
+	mask = (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
+#endif
 	if (!pins || (pins != (pins & mask)))
 		xsUnknownError("invalid pin");
 
@@ -136,7 +140,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 		}
 	}
 	else if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
+#if kPinBanks > 1
 		mask = bank ? (SOC_GPIO_VALID_OUTPUT_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_OUTPUT_GPIO_MASK; 
+#else
+		mask = (uint32_t)SOC_GPIO_VALID_OUTPUT_GPIO_MASK; 
+#endif
 		if (pins != (pins & mask))
 			xsRangeError("input only");
 	}
