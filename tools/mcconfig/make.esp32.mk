@@ -111,7 +111,7 @@ PROJ_DIR = $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)
 BLD_DIR = $(PROJ_DIR)/build
 
 ifeq ($(MAKEFLAGS_JOBS),)
-	MAKEFLAGS_JOBS = --jobs
+	MAKEFLAGS_JOBS = --jobs -l 2.5
 endif
 
 USB_OPTION=
@@ -387,13 +387,18 @@ ifneq ($(BOOTLOADERPATH),)
 endif
 
 ifeq ($(UPLOAD_PORT),)
-	PORT_SET =
+	ifeq ($(USE_USB),1) 
+		PORT_SET = -p `cat /tmp/_default_port.tmp`
+	else
+		PORT_SET = 
+	endif
 	SERIAL2XSBUG_PORT = $$PORT_USED
 else
 	PORT_SET = -p $(UPLOAD_PORT)
 	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
 endif
 
+PORT_NAME_PATH = /tmp/_default_port.tmp
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
@@ -430,10 +435,16 @@ ifeq ($(DEBUG),1)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		else
 			ifeq ($(USE_USB),1)
-				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 1 
-				# USE_USB == 2 doesn't use PROGRAMMING_MODE
+				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
+				DO_LAUNCH = $(PLATFORM_DIR)/config/waitForNewSerial $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)
+				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+			else
+				# USE_USB == 2
+				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
+				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE) ; echo ; bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			endif
-			DO_LAUNCH = bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+
 			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		endif
 
@@ -453,6 +464,7 @@ ifeq ($(DEBUG),1)
 		endif
 
 		ifeq ($(USE_USB),0)
+			# serial connection
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
 
 			ifeq ("$(XSBUG_LAUNCH)","log")
@@ -460,24 +472,51 @@ ifeq ($(DEBUG),1)
 			else
 				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 			endif
+
 		else
+
+			# USB connection
 			ifeq ($(USE_USB),1)
-				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; programmingModeLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(XSBUG_LOG)"
+				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
+				DO_LAUNCH = $(PLATFORM_DIR)/config/waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)
+				CONNECT_XSBUG = $(DO_LAUNCH) && serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
+			else
 				# USE_USB == 2 doesn't use PROGRAMMING_MODE
+				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)"
+				DO_LAUNCH =
+				CONNECT_XSBUG = serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
-			DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; connectToXsbugLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(XSBUG_LOG)"
+
+			ifeq ("$(XSBUG_LAUNCH)","log")
+				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE); echo ; \
+			 		XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
+					cd $(MODDABLE)/tools/xsbug-log && node xsbug-log 	\
+					 serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
+			endif
 		endif
 	endif
 
 else	# release
+	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
+
 	ifeq ($(USE_USB),1)
+		## USB 1 (tinyusb) used on S2 and possibly S3
 		ifeq ($(HOST_OS),Darwin)
-			# PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial 0 
-			SET_PROGRAMMING_MODE =
+			SET_PROGRAMMING_MODE := $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
+			ifeq ($(INSTRUMENT),1)
+				DO_LAUNCH := echo $(BEFORE_DEBUGGING_MESSAGE) ; \
+					$(PLATFORM_DIR)/config/waitForNewSerial $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGING_MESSAGE) ; \
+					cd $(PROJ_DIR) ; $(RELEASE_LAUNCH_CMD)
+			endif
+		else
+			SET_PROGRAMMING_MODE := bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
+			ifeq ($(INSTRUMENT),1)
+				DO_LAUNCH := bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)" ;  \
+					cd $(PROJ_DIR) ; $(RELEASE_LAUNCH_CMD)
+			endif
 		endif
 	endif
 
-	DO_LAUNCH = cd $(PROJ_DIR); $(RELEASE_LAUNCH_CMD)
 	CONNECT_XSBUG = $(DO_LAUNCH)
 endif
 
@@ -502,14 +541,13 @@ deploy:
 xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
+	@echo " a"
 	$(START_XSBUG)
-	PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); \
-	$(DO_LAUNCH)
+	$(CONNECT_XSBUG)
 
 prepareOutput:
 	-@rm $(PROJ_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
-#	-@mkdir -p $(PROJ_DIR) 2>/dev/null
 
 DUMP_VARS:
 	echo "#\n#\n# vars\n#\n#\n"

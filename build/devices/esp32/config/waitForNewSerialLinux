@@ -1,0 +1,56 @@
+#!/bin/bash
+
+VENDOR_ID=$1
+PRODUCT_ID=$2
+PORT_NAME_PATH=$3
+WAIT_RESET=$4
+RESET_INSTRUCTIONS=$5
+
+## Check for device
+DEVICE_NAME=$( findUSBLinux $VENDOR_ID $PRODUCT_ID cdc_acm )
+
+echo
+echo "### $RESET_INSTRUCTIONS"
+
+if [ -z "$DEVICE_NAME" ];
+then
+	echo -n "Waiting for serial ${VENDOR_ID}:${PRODUCT_ID}"
+else
+	if [[ "1" == "$WAIT_RESET" ]]; then
+		while [ 1 ]; do
+			if [[ -c "$DEVICE_NAME" ]]; then
+				# still mounted
+				echo -n "."
+				sleep 0.5
+			else
+				break;
+			fi
+		done
+	fi
+fi
+while [ -z "$DEVICE_NAME"  ]; do
+	echo -n "."
+	sleep 1
+	DEVICE_NAME=$( findUSBLinux $VENDOR_ID $PRODUCT_ID cdc_acm )
+done
+
+while [ 1 ]; do
+	if [[ -c "$DEVICE_NAME" ]]; then
+		break;
+	else
+		echo -n "."
+		sleep 0.5
+	fi
+done
+
+echo
+
+if [[ "" != "$PORT_NAME_PATH" ]]; then
+	echo "$DEVICE_NAME" > $PORT_NAME_PATH
+fi
+sleep 1
+
+echo "### Press Ctrl-C to quit."
+
+exit 0
+

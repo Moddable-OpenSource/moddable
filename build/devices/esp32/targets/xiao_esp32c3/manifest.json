@@ -2,7 +2,9 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32c3",
 		"USE_USB": "2",
-		"SDKCONFIGPATH": "./sdkconfig"
+		"SDKCONFIGPATH": "./sdkconfig",
+        "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the B button and press then release the R button.",
+        "BEFORE_DEBUGGING_MESSAGE": "Press and release the R button."
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json"

@@ -48,6 +48,18 @@
                 "DEBUGGER_SPEED": "1500000"
             }
         },
+		"esp32/qtpys2_ili9341": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/m5atom_s3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
         "nrf52/moddable_four": {
 			"config": {
 				"format": "Gray256"

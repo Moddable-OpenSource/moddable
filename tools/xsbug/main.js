@@ -449,7 +449,7 @@ class ApplicationBehavior extends DebugBehavior {
 		return true;
 	}
 	doSupport() {
-		system.launchURL("http://moddable.tech");
+		system.launchURL("https://www.moddable.com/documentation/xs/xsbug");
 	}
 
 	doOpenView() {
@@ -553,7 +553,7 @@ class ApplicationBehavior extends DebugBehavior {
 				if ("breakpoints" in preferences) {
 					this.breakpoints.expanded = preferences.breakpoints.expanded;
 					preferences.breakpoints.items.forEach(item => { 
-						if (system.fileExists(item.path))
+						if ((item.line == 0) || system.fileExists(item.path))
 							this.breakpoints.items.push(item);
 					});
 				}
@@ -684,7 +684,7 @@ var HorizontalLayout = Layout.template($ => ({
 		}),
 		HorizontalDivider($, {  
 			anchor:"HORIZONTAL_MAIN_DIVIDER",  width:6, bottom:$.horizontalMainDividerStatus ? $.horizontalMainDividerCurrent - 3 : 23, 
-			before:160, current:$.horizontalMainDividerCurrent, after:26, status:$.horizontalMainDividerStatus,
+			before:160, current:$.horizontalMainDividerCurrent, after:56, status:$.horizontalMainDividerStatus,
 		}),
 	],
 }));
@@ -782,7 +782,7 @@ let DebuggerApplication = Application.template($ => ({
 				{ title:"Step Out", key:"O", command:"StepOut" },
 				null,
 				{ state:0, titles: ["Set Breakpoint", "Clear Breakpoint"], shift:true, key:"B", command:"ToggleBreakpoint" },
-				{ state:0, titles: ["Enable Breakpoint", "Disable Breakpoint"], command:"DisableBreakpoint" },
+				{ state:0, titles: ["Enable Breakpoint", "Disable Breakpoint"], command:"EnableDisableBreakpoint" },
 				{ title:"Clear All Breakpoints", option:true, key:"B", command:"ClearAllBreakpoints" },
 			],
 		},

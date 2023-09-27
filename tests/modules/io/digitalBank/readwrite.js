@@ -28,12 +28,13 @@ output.write(value);
 read = input.read() << 1;
 assert.sameValue(read, value, `Read value should be 0b${value.toString(2)}, but is 0b${read.toString(2)}`);
 
+assert(1 !== OUTPUT_PIN, "output pin of 1 incompatible with test");
+
 const values = [
 	(1 << (OUTPUT_PIN-1)),
 	(1 << (OUTPUT_PIN+1)),
 	0.5,
 	-0,
-	-1,
 	false,
 	true,
 	null,

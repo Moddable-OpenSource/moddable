@@ -238,6 +238,8 @@ class ApplicationBehavior extends Behavior {
 		this.DEVICE.first.delegate("onKeyUp", key);
 	}
 	launchScreen() {
+		if (this.screenOnce)
+			return;
 		if (this.libraryPath) {
 			system.copyFile(this.libraryPath, this.localLibraryPath);
 			if (this.archivePath) {
@@ -252,6 +254,8 @@ class ApplicationBehavior extends Behavior {
 		application.distribute("onInfoChanged");
 	}
 	quitScreen() {
+		if (this.screenOnce)
+			return;
 		if (this.SCREEN)
 			this.SCREEN.quit();
 		if (system.fileExists(this.localArchivePath))
@@ -372,11 +376,27 @@ class ApplicationBehavior extends Behavior {
 		}
 	}
 	onOpenFile(application, path) {
-		let info = system.getFileInfo(path);
-		if (info.directory)
-			application.defer("doLocateSimulatorsCallback", new String(path));
-		else
-			application.defer("doOpenFileCallback", new String(path));
+		if (this.onOpenFileList)
+			this.onOpenFileList.push(new String(path));
+		else {
+			this.onOpenFileList = [new String(path)];
+			application.defer("onOpenFileCallback");
+		}
+	}
+	onOpenFileCallback(application) {
+		const paths = this.onOpenFileList;
+		delete this.onOpenFileList;
+		this.quitScreen();
+		this.screenOnce = true;
+		for (let path of paths) {
+			let info = system.getFileInfo(path);
+			if (info.directory)
+				this.doLocateSimulatorsCallback(application, path);
+			else
+				this.doOpenFileCallback(application, path);
+		}
+		delete this.screenOnce;
+		this.launchScreen();
 	}
 	onQuit(application) {
 		this.quitScreen();
@@ -454,7 +474,7 @@ class ApplicationBehavior extends Behavior {
 	doOpenFile() {
 		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
 	}
-	doOpenFileCallback(application, path) {
+	doOpenFileCallback(application, path, flag = true) {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
 			this.quitScreen();
