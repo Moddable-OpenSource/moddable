@@ -202,6 +202,11 @@ void xs_socket(xsMachine *the)
 	int ttl = 0;
 	char addr[64];
 
+#if ESP32
+	if (!esp_netif_get_default_netif())
+		xsUnknownError("no network");
+#endif
+
 	xsmcVars(2);
 	if (xsmcHas(xsArg(0), xsID_listener)) {
 		xsListener xsl;
@@ -652,7 +657,7 @@ void xs_socket_write(xsMachine *the)
 		if (!p)
 			xsUnknownError("no buffer");
 		c_memcpy(p->payload, data, needed);
-		err = raw_sendto(xss->raw, p, &dst);
+		err = raw_sendto(xss->raw, p, &dst);		//@@ safe version?
 		pbuf_free_safe(p);
 		if (ERR_OK != err)
 			xsUnknownError("RAW send failed");
