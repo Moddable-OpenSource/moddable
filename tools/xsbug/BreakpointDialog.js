@@ -213,7 +213,7 @@ var BreakpointColumn = Column.template($ => ({
 		($.breakpoint.id & 2) ? BreakpointRow($.name, { placeholder:"FUNCTION NAME", string:"Function", variant:0 }) : BreakpointPathLineRow($),
 		BreakpointRow($.condition, { placeholder:"CONDITION EXPRESSION", string:"Condition", variant:1 }),
 		BreakpointRow($.hitCount, { placeholder:"HIT COUNT", string:"Hit Count", variant:2 }),
-		BreakpointRow($.trace, { placeholder:"TRACE MESSAGE", string:"Trace", variant:3 }),
+		BreakpointRow($.trace, { placeholder:"TRACE EXPRESSION", string:"Trace", variant:3 }),
 		Content($, { height:4 }),
 	],
 }));

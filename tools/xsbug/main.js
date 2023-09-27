@@ -449,7 +449,7 @@ class ApplicationBehavior extends DebugBehavior {
 		return true;
 	}
 	doSupport() {
-		system.launchURL("http://moddable.tech");
+		system.launchURL("https://www.moddable.com/documentation/xs/xsbug");
 	}
 
 	doOpenView() {
