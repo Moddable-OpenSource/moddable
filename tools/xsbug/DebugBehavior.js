@@ -279,7 +279,7 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	}
 	doClearBreakpoint(breakpoint) {
 		if (this.machines.length) {
-			const item = { path:breakpoint.path, line:breakpoint.line, id:breakpoint.id };
+			const item = { path:breakpoint.path, line:breakpoint.line, id:breakpoint.id || 0 };
 			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, item));
 			let path = this.unmapPath(breakpoint.path);
 			if (path) {
