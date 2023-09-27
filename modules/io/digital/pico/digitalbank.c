@@ -265,6 +265,8 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
+	builtinCriticalSectionEnd();
+
 	if ((0 == digital->bank) && digital->pins) {
 		int pin;
 
@@ -286,8 +288,6 @@ void xs_digitalbank_destructor(void *data)
 		builtinFreePins(digital->bank, digital->pins);
 	}
 #endif
-
-	builtinCriticalSectionEnd();
 
 //	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
 	if (0 == --digital->useCount)
