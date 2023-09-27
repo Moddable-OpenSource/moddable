@@ -438,6 +438,9 @@ static void PiuViewAdjustAux(GtkWidget *widget, gpointer it)
 		PiuRectangleRecord bounds = (*content)->bounds;
 		PiuRectangleRecord clipBounds = bounds;
 		PiuContainer* container = (*content)->container;
+		GtkRequisition minimum;
+		GtkRequisition natural;
+		
 		while (container) {
 			bounds.x += (*container)->bounds.x;
 			bounds.y += (*container)->bounds.y;
@@ -447,15 +450,30 @@ static void PiuViewAdjustAux(GtkWidget *widget, gpointer it)
 				PiuRectangleIntersect(&clipBounds, &clipBounds, &(*container)->bounds);
 			container = (*container)->container;
 		}
-		gtk_fixed_move(gtkFixed, widget, clipBounds.x, clipBounds.y);
+		double x = clipBounds.x;
+		double y = clipBounds.y;
+// 		if (minimum.width > bounds.width)
+// 			x -= (minimum.width - bounds.width) / 2;
+// 		if (minimum.height > bounds.height)
+// 			y -= (minimum.height - bounds.height) / 2;
+		gtk_fixed_move(gtkFixed, widget, x, y);
 		gtk_widget_set_size_request(widget, clipBounds.width, clipBounds.height);
-		widget = gtkClip->widget;
-		gtk_widget_set_size_request(widget, bounds.width, bounds.height);
-		if (PiuRectangleContains(&clipBounds, &bounds))
-    		gtk_widget_show(widget);
+		gtk_widget_set_size_request(gtkClip->widget, bounds.width, bounds.height);
+		if (PiuRectangleContains(&clipBounds, &bounds)) {
+    		gtk_widget_show(gtkClip->widget);
+			gtk_widget_get_preferred_size(gtkClip->widget, &minimum, &natural);
+			if (minimum.height > bounds.height) {
+				y -= (minimum.height - bounds.height) / 2;
+				gtk_fixed_move(gtkFixed, widget, x, y);
+			}
+			
+			fprintf(stderr, "clipBounds %d %d %d %d bounds %d %d %d %d min %d %d\n",
+				clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height,
+				bounds.x, bounds.y, bounds.width, bounds.height,
+				minimum.width, minimum.height);
+    	}
 		else
-	    	gtk_widget_hide(widget);
-    	
+	    	gtk_widget_hide(gtkClip->widget);
 	}
 }
 
