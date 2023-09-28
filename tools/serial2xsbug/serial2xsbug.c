@@ -512,8 +512,21 @@ void fxReadNetworkBuffer(txSerialMachine machine, char* buffer, int size)
 			current++;
 		}
 		offset = limit - former;
-		if (offset)
+		if (offset) {
+			static char* logout = "logout/>\r\n";
+			static int c = 10;
 			fxWriteSerial(self, former, offset);
+			if (offset >= c) {
+				int i;
+				for (i = 0; i < c; i++) {
+					if (former[i] != logout[i])
+						break;
+				}
+				if (i == c) {
+					exit(0);
+				}
+			}
+		}
 	}
 }
 
