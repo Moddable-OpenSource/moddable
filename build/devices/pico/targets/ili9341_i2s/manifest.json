@@ -2,7 +2,8 @@
     "include": [
         "$(MODDABLE)/modules/drivers/ili9341/manifest.json",
         "$(MODDABLE)/modules/drivers/xpt2046/manifest.json",
-        "$(MODULES)/drivers/button/manifest.json"
+        "$(MODULES)/drivers/button/manifest.json",
+        "$(MODULES)/pins/i2s/manifest.json"
     ],
 	"modules": {
 		"setup/target": "./setup-target"

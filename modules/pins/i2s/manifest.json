@@ -8,5 +8,14 @@
 	},
 	"preload": [
 		"pins/audioout"
-	]
+	],
+	"platforms": {
+		"pico": {
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/i2s/pico/*"
+				]
+			}
+		}
+	}
 }
