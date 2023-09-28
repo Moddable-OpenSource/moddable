@@ -267,8 +267,12 @@ void fxDebugEval(txMachine* the, txSlot* frame, txString buffer, txInteger index
 			txSlot* instanceInspector = fxToInstanceInspector(the, instance);
 			if (!instanceInspector)
 				fxToggle(the, instance);
+			fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
+			if (!instanceInspector)
+				fxToggle(the, instance);
 		}
-		fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
+		else
+			fxEchoProperty(the, result, &aList, C_NULL, -1, C_NULL);
 		fxEcho(the, "</result>");
 		fxListLocal(the);
 		fxListGlobal(the);
