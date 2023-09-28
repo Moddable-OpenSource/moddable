@@ -12,6 +12,8 @@ This document provides a guide to building apps for the ESP32 line of SoCs from 
 	* [ESP32-S2](#platforms-esp32-s2)
 	* [ESP32-S3](#platforms-esp32-s3)
 	* [ESP32-C3](#platforms-esp32-c3)
+	* [ESP32-C6](#platforms-esp32-c6)
+	* [ESP32-H2](#platforms-esp32-h2)
 	* [Specifying ESP32 Subclass in Manifest](#platforms-manifest)
 * [Build Types](#builds)
 	* [Debug](#build-debug)
@@ -153,6 +155,39 @@ The Moddable SDK supports three ESP32-C3 development kits:
 | <img src="./../assets/devices/adafruit-qtpyc3.png" width=125><BR>Adafruit<BR>QT Py ESP32-C3 | `esp32/qtpyc3` |  Neopixel, 1 button, STEMMA/QWIIC | <li>[Product page](https://www.adafruit.com/product/5405)</li>|
 | AI Thinker ESP-C3-32S-Kit <BR> (1 MB and 2 MB versions) | `esp32/c3_32s_kit` <BR> `esp32/c3_32s_kit_2m`| RGB LED  | <li>[Product specification](https://docs.ai-thinker.com/_media/esp32/docs/esp-c3-32s-kit-v1.0_specification.pdf)</li> |
 
+<a id="platforms-esp32-c6"></a>
+### ESP32-C6
+
+ESP32-C6 has the following features:
+
+- 160 MHz RISC-V MCU
+- Wi-Fi
+- BLE
+- 512 KB RAM
+- 4 MB flash on popular modules
+
+The Moddable SDK supports three ESP32-C6 development kits:
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="./../assets/devices/esp32-c6-devkitc.png" width=125><BR>ESP32-C6-DevKitC-1 | `esp32/esp32c6` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html)</li> |
+
+<a id="platforms-esp32-h2"></a>
+### ESP32-H2
+
+ESP32-H2 has the following features:
+
+- 96 MHz RISC-V MCU
+- BLE
+- 320 KB RAM
+- 4 MB flash on popular modules
+
+The Moddable SDK supports three ESP32-H2 development kits:
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+|  <img src="./../assets/devices/esp32-h2-devkitm.png" width=125><BR>ESP32-H2-DevKitM-1 | `esp32/esp32h2` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32h2/esp32-h2-devkitm-1/user_guide.html)</li> |
+
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest
 
@@ -171,6 +206,8 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 | `esp32s2` | ESP32-S2 |
 | `esp32s3` | ESP32-S3 |
 | `esp32c3` | ESP32-C3 |
+| `esp32c6` | ESP32-C6 |
+| `esp32h2` | ESP32-H2 |
 
 <a id="builds"></a>
 ## Build Types
@@ -697,7 +734,7 @@ cd ~/esp32
 git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-v5.1.1
 	```
 
-<!--
+	<!--
 	If you already have a clone of the ESP-IDF, update to the `v5.1.1` tag by using the [update instructions below](#lin-update).
 
 	```text
@@ -706,7 +743,7 @@ git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git esp-idf
 	git checkout v5.1.1
 	git submodule update --init --recursive
 	```
--->
+	-->
 
 5. Connect the ESP32 device to your Linux host with a USB cable.
 
