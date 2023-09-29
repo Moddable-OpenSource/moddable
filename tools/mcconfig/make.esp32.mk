@@ -580,7 +580,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(PROJ_DIR)/managed_components:
+$(PROJ_DIR)/managed_components: $(PROJ_DIR)/main
 	echo "# Configure tinyusb..."; cd $(PROJ_DIR) ; idf.py add-dependency "espressif/esp_tinyusb"
 
 $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)

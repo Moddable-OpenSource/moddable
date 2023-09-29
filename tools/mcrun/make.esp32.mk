@@ -76,7 +76,7 @@ ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		ifneq ($(USE_USB),0)
-			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
 		else
 		endif
 	else
@@ -90,6 +90,7 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
+	@echo "## $(DO_MOD_UPLOAD)"
 	$(DO_MOD_UPLOAD)
 	
 release: $(ARCHIVE)

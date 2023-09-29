@@ -21,18 +21,6 @@
 	"config": {
 		"screen": ""
 	},
-	"creation": {
-		"static": 524288,
-		"chunk": {
-			"initial": 131072,
-			"incremental": 512
-		},
-		"heap": {
-			"initial": 8192,
-			"incremental": 64
-		},
-		"stack": 512
-	},
 	"defines": {
 		"i2c": {
 			"sda_pin": 4,
