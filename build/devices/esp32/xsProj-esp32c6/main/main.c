@@ -79,9 +79,9 @@ extern void fx_putc(void *refcon, char c);		//@@
 extern void mc_setup(xsMachine *the);
 
 #if 0 == CONFIG_LOG_DEFAULT_LEVEL
-	#define kStack (((8 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
-#else
 	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+#else
+	#define kStack (((12 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 #endif
 
 #if !MODDEF_XS_TEST

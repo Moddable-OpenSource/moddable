@@ -1,6 +1,7 @@
 {
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/gc9a01/manifest.json",
 		"$(MODULES)/drivers/neopixel/manifest.json"
 	],
 	"build":{
@@ -14,7 +15,7 @@
 		"neopixel"
 	],
 	"config": {
-		"screen": "",
+		"screen": "ili9341",
 		"led": {
 			"pin": 8,
 			"rainbow": false,
@@ -28,8 +29,13 @@
 		},
 		"spi": {
 			"miso_pin":2,
-			"mosi_pin":7,
-			"sck_pin": 6
+			"mosi_pin":18,
+			"sck_pin": 19
+		},
+		"ili9341": {
+			"cs_pin": 16,
+			"dc_pin": 17,
+			"spi_port": 1
 		}
 	}
 }
