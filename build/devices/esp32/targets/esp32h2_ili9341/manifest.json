@@ -6,7 +6,8 @@
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/neopixel/manifest.json"
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
@@ -16,7 +17,7 @@
 		"neopixel"
 	],
 	"config": {
-		"screen": "",
+		"screen": "ili9341",
 		"led": {
 			"pin": 8,
 			"rainbow": false,
@@ -44,6 +45,11 @@
 			"miso_pin":0,
 			"mosi_pin":5,
 			"sck_pin": 4
+		},
+		"ili9341": {
+			"cs_pin": 1,
+			"dc_pin": 13,
+			"spi_port": 1
 		}
 	}
 }
