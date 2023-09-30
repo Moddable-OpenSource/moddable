@@ -18,8 +18,8 @@
 		"screen": "ili9341",
 		"led": {
 			"pin": 8,
-			"rainbow": false,
-			"brightness": 32
+			"rainbow": true,
+			"brightness": 16
 		}
 	},
 	"defines": {

@@ -500,7 +500,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 
 /* READ MEMORY */
 
-#if ESP32
+#if ESP32 && !defined(kCPUESP32C6)
 	#define c_read8(POINTER) (*((uint8_t *)(POINTER)))
 	#define c_read16(POINTER) (*((uint16_t *)(POINTER)))
 	#define c_read32(POINTER) (*((uint32_t *)(POINTER)))
