@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: March 23, 2023
+Revised: October 1, 2023
 
 ## About this Document
 
@@ -63,10 +63,13 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 ```
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
-- `-d`: to build a debug instrumented version.
+- `-d`: to build a debug instrumented version and launch the default debugger (usually xsbug)
+- `-dx`: to build a debug instrumented version and launch the xsbug debugger
+- `-dl`: to build a debug instrumented version and launch the xsbug-log debugger
+- `-dn`: to build a debug instrumented version and not launch any debugger
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
-- `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below).
+- `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below). `-l` is deprecated in favor of `-dl`.
 - `-x`: overrides the default host and port (localhost:5002) debug builds use to connect to xsbug.
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
@@ -80,7 +83,9 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 > **Note**: To generate a release build, exclude both `-d` and `-i` from the command line.
 
-> **Note**: The `-l` option requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
+> **Note**: The `-l` and `-dl` options requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
+
+> **Note**: The `-dn` option is currently unsupported on Windows. It will be implemented in the near future.
 
 <a id="buildtargets"></a>
 **Build Targets**
