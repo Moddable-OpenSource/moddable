@@ -71,6 +71,7 @@ nRF52840 has the following features:
 | <img src="./../assets/devices/nrf52-makerdiary.png" width=125><BR>Makerdiary nRF58240 MDK | `nrf52/makerdiary` | - 1  3-color LED<BR>- 1 Button<BR>- BLE<BR>- 12 GPIO pins  | <li>[Product page](https://makerdiary.com/products/nrf52840-mdk-usb-dongle)</li> |
 | <img src="./../assets/devices/nrf52-xiao.png" width=125><BR>Seeed Studio XIAO nRF52840 | `nrf52/xiao` | - 1 3-color LED<BR>- 1 Button<BR>- BLE<BR>- 11 GPIO pins  | <li>[Product page](https://www.seeedstudio.com/Seeed-XIAO-BLE-nRF52840-p-5201.html)</li> |
 | <img src="./../assets/devices/nrf52-itsybitsy.png" width=125><BR>Adafruit ItsyBitsy nRF52840 Express | `nrf52/itsybitsy` | - 1 LED<BR>- 1 Button<BR>- BLE<BR>- 21 GPIO pins  | <li>[Product page](https://www.adafruit.com/product/4481)</li> |
+| <img src="../assets/devices/xiao-qtpy-ili9341-thumbnail.png" width=140></a><BR>ili9341 | `nrf52/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 
 <a id="builds"></a>
 ## Build Types
