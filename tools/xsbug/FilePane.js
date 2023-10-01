@@ -195,16 +195,6 @@ class BreakpointHeaderBehavior extends HeaderBehavior {
 };
 
 class BreakpointRowBehavior extends RowBehavior {
-	onMouseEntered(row, x, y) {
-		super.onMouseEntered(row, x, y);
-// 		let button = row.last;
-// 		button.behavior.onRowEntered(button);
-	}
-	onMouseExited(row, x, y) {
-		super.onMouseExited(row, x, y);
-// 		let button = row.last;
-// 		button.behavior.onRowExited(button);
-	}
 	onTap(row) {
 		let data = this.data;
 		if (data.id & 2)
@@ -220,19 +210,9 @@ class BreakpointEnabledBehavior extends Behavior {
 		button.variant = data.enabled ? 1 : 0;
 	}
 	onMouseEntered(button, x, y) {
-		button.variant |= 4;
-	}
-	onMouseExited(button, x, y) {
-		button.variant &= ~4;
-	}
-	onRowEntered(button) {
-		if (button.variant & 4)
-			return;
 		button.variant |= 2;
 	}
-	onRowExited(button) {
-		if (button.variant & 4)
-			return;
+	onMouseExited(button, x, y) {
 		button.variant &= ~2;
 	}
 	onTap(button) {
@@ -241,7 +221,7 @@ class BreakpointEnabledBehavior extends Behavior {
 	}
 	onTouchBegan(button, id, x, y, ticks) {
 		this.outVariant = button.variant;
-		this.inVariant = this.data.enabled ? this.outVariant & ~1 : this.outVariant | 1;
+		this.inVariant = this.data.enabled ? 2 : 3;
 		button.variant = this.inVariant;
 		button.captureTouch(id, x, y, ticks);
 	}

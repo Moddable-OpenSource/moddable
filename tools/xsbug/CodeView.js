@@ -573,10 +573,12 @@ class LineNumbersBehavior extends Behavior {
 		const content = container.first.next;
 		this.anchorIndex = index;
 		this.anchorState = content.state;
+		this.anchorVariant = content.variant;
 		content.state = content.next.state = 1;
 		this.trackFlag = false
 		this.trackIndex = index
 		this.trackState = 0
+		this.trackVariant = 0
 	}
 	onTouchEnded(column, id, x, y, ticks) {
 		const data = this.data;
@@ -654,6 +656,7 @@ class LineNumbersBehavior extends Behavior {
 				let container = column.content(this.trackIndex);
 				let content = container.first.next;
 				content.state = content.next.state = this.trackState;
+				content.variant = this.trackVariant;
 			}
 			this.trackFlag = true;
 			this.trackIndex = index;
@@ -661,7 +664,9 @@ class LineNumbersBehavior extends Behavior {
 				let container = column.content(this.trackIndex);
 				let content = container.first.next;
 				this.trackState = content.state;
+				this.trackVariant = content.variant;
 				content.state = content.next.state = 1;
+				content.variant = this.anchorVariant;
 			}
 		}
 	}

@@ -276,7 +276,7 @@ function buildTheme($, codeFont) {
 	styles.breakpointRowName = new Style({ color:$.tableRow.color });
 	styles.breakpointRowLine = new Style({ font:"light", color:$.tableRow.color });
 	styles.functionBreakpointRowName = new Style({ font:"italic", color:$.tableRow.color });
-	skins.breakpointEnabled = new Skin({ texture:textures.glyphs, color:$.lineBreakpoint.fill, x:0, y:64, width:16, height:16, variants:16 });
+	skins.breakpointEnabled = new Skin({ texture:textures.glyphs, color:$.lineBreakpoint.fill, x:0, y:64, width:24, height:16, variants:24 });
 	skins.breakpointButton = new Skin({ fill:$.breakpointButton.fill });
 	styles.breakpointButton = new Style({ font:"bold", color:$.breakpointButton.color });
 	skins.breakpointGlyphs = new Skin({ texture:textures.glyphs, color:[$.tableRow.color, $.infoRow.color], x:0, y:80, width:16, height:16, variants:16 });
