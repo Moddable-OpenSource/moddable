@@ -23,7 +23,7 @@ trace(`Using pins 2 and 16\n`);
 let count = 0;
 Timer.repeat(() => {
 	trace(`repeat ${++count} \n`);
-	Digital.write(25, ~count & 1);
-//	Digital.write(16, count & 1);
+	Digital.write(2, ~count & 1);
+	Digital.write(16, count & 1);
 }, 200);
 
