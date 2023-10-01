@@ -59,7 +59,7 @@ typedef struct AnalogRecord *Analog;
 		3,
 		4
 	};
-#elif kCPUESP32C6
+#elif kCPUESP32C6 || kCPUESP32H2
 	// From espressif doc:
 	#define ADC_RESOLUTION (12)
 	#define ADC_WIDTH 		ADC_BITWIDTH_12

@@ -22,7 +22,7 @@
 #define __BUILTINCOMMON_H__
 
 #if ESP32
-	#if kCPUESP32C3 || kCPUESP32C6
+	#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
 		#define kPinBanks (1)
 	#else
 		#define kPinBanks (2)

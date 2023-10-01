@@ -29,7 +29,7 @@ let white = render.makeColor(255, 255, 255);
 let black = render.makeColor(0, 0, 0);
 
 Timer.repeat(id => {
-	let value = 1024 - Analog.read(0);
+	let value = 1024 - Analog.read(1);
 	trace(value + "\n");
 
 	value = value.toString();

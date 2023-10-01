@@ -19,11 +19,10 @@
  */
 
 import config from "mc/config";
-// import NeoPixel from "neopixel";
+import NeoPixel from "neopixel";
 import Timer from "timer";
 import Button from "button";
 
-/*
 class NeoPixelLED extends NeoPixel {
 	#value = 0;
 	read() {
@@ -45,7 +44,6 @@ class NeoPixelLED extends NeoPixel {
 		this.write(0);
 	}
 }
-*/
 
 class Flash {
 	constructor(options) {
@@ -59,7 +57,6 @@ class Flash {
 
 
 globalThis.Host = Object.freeze({
-/*
     LED: {
         Default: class {
             constructor(options) {
@@ -74,25 +71,21 @@ globalThis.Host = Object.freeze({
             }
         }
     },
-*/
 	Button: {
 		Default: Flash,
 		Flash
 	}
 }, true);
 
-/*
 const phases = Object.freeze([
 	//red, purple, blue, cyan, green, orange, white, black
 	[1, 0, -1, 0, 0, 1, 0, -1],
 	[0, 0, 0, 1, 0, 0, 0, -1],
 	[0, 1, 0, 0, -1, 0, 1, -1]
 ], true);
-*/
 
 export default function (done) {
-/*
-	if (config.led?.rainbow){
+	if (config.led?.rainbow) {
 		const neopixel = new Host.LED.Default;
 		const STEP = 3;
 		
@@ -122,7 +115,6 @@ export default function (done) {
 			neopixel.update();
 		}, 33);
 	}
-*/
 
 	done?.();
 }

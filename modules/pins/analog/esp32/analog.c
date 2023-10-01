@@ -26,7 +26,7 @@
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
 
-#if kCPUESP32C6 || kCPUESP32C3 || kCPUESP32S3 || kCPUESP32
+#if kCPUESP32H2 || kCPUESP32C6 || kCPUESP32C3 || kCPUESP32S3 || kCPUESP32
 	#define ADC_RESOLUTION	ADC_BITWIDTH_12
 #elif kCPUESP32S2
 	#define ADC_RESOLUTION	ADC_BITWIDTH_13

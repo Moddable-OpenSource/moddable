@@ -20,7 +20,7 @@
 		"screen": "ili9341",
 		"led": {
 			"pin": 8,
-			"rainbow": false,
+			"rainbow": true,
 			"brightness": 32
 		}
 	},
@@ -38,8 +38,8 @@
 	},
 	"defines": {
 		"i2c": {
-			"sda_pin": 2,
-			"scl_pin": 3
+			"sda_pin": 23,
+			"scl_pin": 24
 		},
 		"spi": {
 			"miso_pin":0,

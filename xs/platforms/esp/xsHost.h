@@ -45,6 +45,12 @@
 
 #if !ESP32
 	// esp8266
+#elif ESP32 == 6
+	#define kCPUESP32H2 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
 #elif ESP32 == 5
 	#define kCPUESP32C6 1
 	#define kTargetCPUCount 1
@@ -230,7 +236,7 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
-#if kCPUESP32C3 || kCPUESP32C6
+#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
 	#define modCriticalSectionBegin()	portENTER_CRITICAL_SAFE(&gCriticalMux)
 	#define modCriticalSectionEnd()		portEXIT_CRITICAL_SAFE(&gCriticalMux)
 #else
@@ -500,7 +506,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 
 /* READ MEMORY */
 
-#if ESP32 && !defined(kCPUESP32C6)
+#if ESP32 && !defined(kCPUESP32C6) && !defined(kCPUESP32H2)
 	#define c_read8(POINTER) (*((uint8_t *)(POINTER)))
 	#define c_read16(POINTER) (*((uint16_t *)(POINTER)))
 	#define c_read32(POINTER) (*((uint32_t *)(POINTER)))
