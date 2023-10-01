@@ -356,9 +356,6 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/lib/tinyusb/src		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
-	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/include	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_audio/include	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
@@ -366,8 +363,6 @@ INC_DIRS = \
 	$(PLATFORM_DIR)/base \
 	$(PLATFORM_DIR)/config \
 	$(LIB_DIR)
-
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
 
 INC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
@@ -511,14 +506,6 @@ PICO_OBJ = \
 	$(LIB_DIR)/tusb_fifo.c.o \
  	$(LIB_DIR)/uart.c.o \
  	$(LIB_DIR)/unique_id.c.o \
-	\
-	$(LIB_DIR)/audio_i2s.c.o \
-	$(LIB_DIR)/audio.cpp.o
-
-#	$(LIB_DIR)/divider.S.o \
-#	$(LIB_DIR)/dfu_rt_device.c.o \
-#	$(LIB_DIR)/msc_device.c.o \
-#	$(LIB_DIR)/stdio_uart.c.o \
 
 LWIP_OBJ = \
 	$(LIB_DIR)/cyw43_lwip.c.o	\
@@ -564,9 +551,7 @@ LWIP_OBJ = \
 	$(LIB_DIR)/bridgeif_fdb.c.o	\
 	$(LIB_DIR)/slipif.c.o	\
 	$(LIB_DIR)/zepif.c.o	\
-	$(LIB_DIR)/timeouts.c.o	\
-
-#	$(LIB_DIR)/cyw43_resource.o
+	$(LIB_DIR)/timeouts.c.o
 
 PICO_OBJ += \
 	$(LWIP_OBJ)	\
@@ -579,8 +564,6 @@ PICO_OBJ += \
 	$(LIB_DIR)/lwip_nosys.c.o	\
 	$(LIB_DIR)/cyw43_arch_poll.c.o
 
-
-#	$(LIB_DIR)/cyw43_arch_threadsafe_background.c.o
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_sync				\
@@ -643,10 +626,6 @@ PICO_SRC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver	\
 
-PICO_SRC_DIRS += \
-	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_audio
-
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/debugger.c.o \
@@ -666,7 +645,6 @@ OTHER_STUFF += \
 
 CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
-# LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
@@ -738,8 +716,6 @@ PICO_C_DEFINES += \
 	-DLIB_PICO_CYW43_ARCH=1		\
 	-DPICO_CYW43_ARCH_POLL=1
 
-#	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
-
 ifeq ($(WIFI_GPIO),1)
 PICO_C_DEFINES += \
 	-DPICO_BOARD=\"pico_w\"		\
@@ -757,8 +733,6 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1
-
-#	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi 
 
 C_FLAGS=\
 	-c	\

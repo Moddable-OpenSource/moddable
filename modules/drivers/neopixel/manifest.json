@@ -13,7 +13,10 @@
 		},
 		"pico": {
 			"modules": {
-				"*": "./pico/*"
+				"*": [
+					"./pico/*",
+					"$(PICO_EXAMPLES_DIR)/pio/ws2812/ws2812.pio"
+				]
 			}
 		}
 	}

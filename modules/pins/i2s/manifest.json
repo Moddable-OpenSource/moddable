@@ -13,7 +13,12 @@
 		"pico": {
 			"modules": {
 				"*": [
-					"$(MODULES)/pins/i2s/pico/*"
+					"$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/*",
+					"$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/include/",
+					"$(PICO_EXTRAS_DIR)/src/common/pico_audio/audio.cpp",
+					"$(PICO_EXTRAS_DIR)/src/common/pico_audio/include/",
+					"$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/*",
+					"$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/include/"
 				]
 			}
 		}
