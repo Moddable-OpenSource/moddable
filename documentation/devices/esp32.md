@@ -1,8 +1,8 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: September 21, 2023
+Revised: September 30, 2023
 
-This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), and [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3).
+This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
 ## Table of Contents
 
@@ -256,7 +256,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v5.1.1 (commit `e088c37`
 	git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git esp-idf-v5.1.1
 	```
 
-5. Update homebrew and then install Python, cmake, ninja, the pip package management system, and pyserial. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
+5. (Optional) Update homebrew and then install Python, cmake, ninja, the pip package management system, and pyserial. Also run a `brew upgrade` on those packages, in case you already had older versions installed:
 
 	```text
 	brew update
@@ -392,32 +392,27 @@ pip install cryptography
 ```
 	
 
-<!-- update option when this is mainline
-
 <a id="mac-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to the `v5.1.1` tag.
+This is a substantial update. We have found it best to start with a clean clone.
+
+0. If you have the disk space, you may want to back up your old ESP-IDF.
 
 	```text
-	cd ~/esp32/esp-idf
-	git fetch --all --tags
-	git checkout v5.1.1
-	git submodule update --init --recursive
-	```
+	cd ~/esp32/
+	mv esp-idf esp-idf.old
+	```	
 
-	If you experience any problems updating the ESP-IDF, you can simply delete the `esp-idf` directory and re-clone it instead:
+1. Remove the directory and clone the repository.
 
 	```text
 	cd ~/esp32
 	rm -rf esp-idf
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	cd esp-idf
-	git checkout v5.1.1
-	git submodule update --init --recursive
+	git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git
 	```
 	
-2. Update homebrew and then verify that you have all the necessary tools and that they are up to date:
+2. (Optional - you probably don't have to do this.) Update homebrew and then verify that you have all the necessary tools and that they are up to date:
 
 	```text
 	brew update
@@ -446,7 +441,8 @@ pip install cryptography
 	```
 
 	If you prefer to automate this process for new shell instances, follow the instructions from Step 3 above and add the `source` command at the end of your shell startup/initialization script. Make sure it is after the `export IDF_PATH` command.
-	
+
+<!-- Tools autobuild now
 6. If you have existing ESP32 build output in `$MODDABLE/build/bin/esp32` or `$MODDABLE/build/tmp/esp32`, delete those directories:
 
     ```text
@@ -622,26 +618,12 @@ To ensure that your build environment is up to date, perform the following steps
 	If you use the installer to clone the ESP-IDF, please follow the instructions in the next step to update to the `v5.1.1` tag.
 
 
-2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option. Then checkout the `v5.1.1` tag:
+2. If you did not clone the ESP-IDF using the ESP-IDF Windows Installer, clone  the `ESP-IDF` Github repository into your `~/esp32` directory. Make sure to specify the `--recursive` option and branch `v5.1.1` tag:
 
     ```text
     cd %USERPROFILE%\esp32
-    git clone --recursive https://github.com/espressif/esp-idf.git
-	cd esp-idf
-	git checkout v5.1.1
-	git submodule update --init --recursive
+	git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git
     ```
-
-	If you already have an ESP-IDF directory that you want to update in place, you can do so with these commands:
-
-	```text
-	cd %IDF_PATH%
-	git fetch --all --tags
-	git checkout v5.1.1
-	git submodule update --init --recursive
-	```
-
-	If you experience any problems updating the ESP-IDF, you can simply delete the `esp-idf` directory and re-clone it instead as described above.
 
 3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog, verify the `IDF_PATH` Windows environment variable is set correctly.
 
@@ -654,6 +636,7 @@ To ensure that your build environment is up to date, perform the following steps
 	install.bat
 	```
 
+<!--
 5. If you have existing ESP32 build output in `%MODDABLE%\build\bin\esp32` or `%MODDABLE%\build\tmp\esp32`, delete those directories. For instance, using the "x86 Native Tools Command Prompt for VS 2022" command line console:
 
     ```text
@@ -661,6 +644,7 @@ To ensure that your build environment is up to date, perform the following steps
     rmdir /S /Q bin\esp32
     rmdir /S /Q tmp\esp32
     ```
+-->
 
 6. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 5.1 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 5.1 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
@@ -844,33 +828,29 @@ If it is recognized, you now have the device name and you need to edit the `UPLO
 ```text
 export UPLOAD_PORT=/dev/ttyUSB1
 ```
-
-<!-- update option when this is mainline
-
 <a id="lin-update"></a>	
 ### Updating
 
-1. If you already have a clone of the ESP-IDF, update to the `v5.1.1` tag.
+### Updating
+
+This is a substantial update. We have found it best to start with a clean clone.
+
+0. If you have the disk space, you may want to back up your old ESP-IDF.
 
 	```text
-	cd ~/esp32/esp-idf
-	git fetch --all --tags
-	git checkout v5.1.1
-	git submodule update --init --recursive
-	```
+	cd ~/esp32/
+	mv esp-idf esp-idf.old
+	```	
 
-	If you experience any problems updating the ESP-IDF, you can simply delete the `esp-idf` directory and re-clone it instead:
+1. Remove the directory and clone the repository.
 
 	```text
 	cd ~/esp32
 	rm -rf esp-idf
-	git clone --recursive https://github.com/espressif/esp-idf.git
-	cd esp-idf
-	git checkout v5.1.1
-	git submodule update --init --recursive
+	git clone -b v5.1.1 --recursive https://github.com/espressif/esp-idf.git
 	```
 
-2. Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
+2. (optional) Update apt, then install any missing packages (and upgrade existing packages) required to compile with the `ESP-IDF`. The packages to install vary based on your distribution's default Python version.
 
 	For Ubuntu 20.04 or newer (and other Linux distributions that default to Python 3):
 
@@ -931,7 +911,6 @@ export UPLOAD_PORT=/dev/ttyUSB1
 
 	> Note that the first time you build an application for the ESP32 target, the toolchain may prompt you to enter configuration options. If this happens, accept the defaults.
 
--->
 
 <a id="troubleshooting"></a>
 ## Troubleshooting
@@ -1086,3 +1065,6 @@ These devices use this technique:
 | `esp32/esp32s3_cdc` | Espressif ESP32-S3-DevKitC |
 | `esp32/qtpyc3` | Adafruit QT Py C3 |
 | `esp32/xiao_esp32c3` | Seeed Xiao ESP32C3 |
+
+
+
