@@ -40,6 +40,10 @@ import {
 	Profile,
 } from "ProfilePane";
 
+import { 
+	EditBreakpoint,
+} from "BreakpointDialog";
+
 export const mxFramesView = 0;
 export const mxLocalsView = 1;
 export const mxGlobalsView = 2;
@@ -216,14 +220,20 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let bubbles = this.bubbles.items;
 		return bubbles.length > 0;
 	}
-	canDisableBreakpoint(path, line) {
+	canDisableAllBreakpoints(path, line) {
 		let breakpoints = this.breakpoints.items;
-		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
-		return index >= 0;
+		return breakpoints.length > 0;
+	}
+	canEnableAllBreakpoints(path, line) {
+		let breakpoints = this.breakpoints.items;
+		return breakpoints.length > 0;
 	}
 	canGo() {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
+	}
+	canSetFunctionBreakpoint() {
+		return true;
 	}
 	canStep() {
 		let machine = this.currentMachine;
@@ -261,6 +271,14 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	doAbort() {
 		let machine = this.currentMachine;
 		machine.doCommand(mxAbortCommand);
+	}
+	doAddBreakpoint(breakpoint) {
+		let breakpoints = this.breakpoints.items;
+		breakpoints.push(breakpoint);
+		breakpoints.sort(this.sortBreakpoints);
+		if (breakpoint.enabled)
+			this.doSetBreakpoint(breakpoint);
+		application.distribute("onBreakpointsChanged");
 	}
 	doBreak() {
 		let machine = this.currentMachine;
@@ -301,8 +319,25 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			application.distribute("onMachineLogged", this.consoleText, this.consoleLines);
 		}
 	}
-	doDisableBreakpoint(path, line) {
-		this.doToggleBreakpoint(path, line, true);
+	doDisableAllBreakpoints() {
+		const breakpoints = this.breakpoints.items;
+		breakpoints.forEach(breakpoint => {
+			if (breakpoint.enabled) {
+				breakpoint.enabled = false;
+				this.doClearBreakpoint(breakpoint);
+			}
+		});
+		application.distribute("onBreakpointsChanged");
+	}
+	doEnableAllBreakpoints() {
+		const breakpoints = this.breakpoints.items;
+		breakpoints.forEach(breakpoint => {
+			if (!breakpoint.enabled) {
+				breakpoint.enabled = true;
+				this.doSetBreakpoint(breakpoint);
+			}
+		});
+		application.distribute("onBreakpointsChanged");
 	}
 	doGo() {
 		let machine = this.currentMachine;
@@ -339,20 +374,6 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	doSelectItem(application, value) {
 		this.currentMachine.doCommand(mxSelectCommand, value);
 	}
-	sortBreakpoints(a, b) {
-		let result = a.name.localeCompare(b.name);
-		if (result == 0)
-			result = a.line - b.line;
-		return result;
-	}
-	doAddBreakpoint(breakpoint) {
-		let breakpoints = this.breakpoints.items;
-		breakpoints.push(breakpoint);
-		breakpoints.sort(this.sortBreakpoints);
-		if (breakpoint.enabled)
-			this.doSetBreakpoint(breakpoint);
-		application.distribute("onBreakpointsChanged");
-	}
 	doRemoveBreakpoint(breakpoint) {
 		let breakpoints = this.breakpoints.items;
 		let index = breakpoints.indexOf(breakpoint);
@@ -376,6 +397,10 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
 			}
 		}
+	}
+	doSetFunctionBreakpoint() {
+		const breakpoint = { path:"", line:0, id:2, name:"", enabled:true };
+		EditBreakpoint(breakpoint);
 	}
 	doStep() {
 		let machine = this.currentMachine;
@@ -556,6 +581,12 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			application.distribute("onMachineViewChanged", mxModulesView);
 			application.distribute("onMachineViewChanged", mxGlobalsView);
 		}
+	}
+	sortBreakpoints(a, b) {
+		let result = a.name.localeCompare(b.name);
+		if (result == 0)
+			result = a.line - b.line;
+		return result;
 	}
 	start() @ "PiuDebugBehavior_start"
 	stop() {

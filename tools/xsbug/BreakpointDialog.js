@@ -85,10 +85,9 @@ export function EditBreakpoint(breakpoint, x, y) {
 			},
 			set value(it) {
 				breakpoint.condition = it;
-				if (breakpoint.enabled && breakpoint.path) {
+				if (breakpoint.enabled && breakpoint.path)
 					model.doSetBreakpoint(breakpoint);
-					application.distribute("onBreakpointsChanged");
-				}
+				application.distribute("onBreakpointsChanged");
 			}
 		},
 		hitCount: {
@@ -97,10 +96,9 @@ export function EditBreakpoint(breakpoint, x, y) {
 			},
 			set value(it) {
 				breakpoint.hitCount = it;
-				if (breakpoint.enabled && breakpoint.path) {
+				if (breakpoint.enabled && breakpoint.path)
 					model.doSetBreakpoint(breakpoint);
-					application.distribute("onBreakpointsChanged");
-				}
+				application.distribute("onBreakpointsChanged");
 			}
 		},
 		trace: {
@@ -109,10 +107,9 @@ export function EditBreakpoint(breakpoint, x, y) {
 			},
 			set value(it) {
 				breakpoint.trace = it;
-				if (breakpoint.enabled && breakpoint.path) {
+				if (breakpoint.enabled && breakpoint.path)
 					model.doSetBreakpoint(breakpoint);
-					application.distribute("onBreakpointsChanged");
-				}
+				application.distribute("onBreakpointsChanged");
 			}
 		},
 	};

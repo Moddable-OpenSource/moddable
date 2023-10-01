@@ -177,6 +177,7 @@ class CodeBehavior extends _CodeBehavior {
 		var line = lines.content(Math.floor(location.y / code.lineHeight));
 		var content = line.first.next;
 		if (content.state === 0) {
+			item.state = 1;
 			return false;
 		}
 		item.state = (content.variant & 1) ? 0 : 1;

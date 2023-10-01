@@ -577,7 +577,7 @@ var BreakpointRow = Row.template(function($) { return {
 		$.condition ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:1 }) : null,
 		$.hitCount ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:2 }) : null,
 		$.trace ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:3 }) : null,
-		Content($, { width:rowHeight, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
+		Content($, { width:24, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
 		Content($, { width:8 }),
 	]
 }});
@@ -592,7 +592,7 @@ var FunctionBreakpointRow = Row.template(function($) { return {
 		$.condition ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:1 }) : null,
 		$.hitCount ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:2 }) : null,
 		$.trace ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:3 }) : null,
-		Content($, { width:rowHeight, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
+		Content($, { width:24, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
 		Content($, { width:8 }),
 	]
 }});
