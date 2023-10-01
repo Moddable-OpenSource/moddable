@@ -1194,8 +1194,13 @@ class Rule {
 				else
 					this.appendSource(target + name, path, include, suffix, parts, kind, query);
 			}
-			if (!this.count)
-				this.noFilesMatch(source, star);
+			if (!this.count) {
+				var trailingSlash = source.lastIndexOf("/");
+				if (trailingSlash == source.length - 1)
+					this.appendFolder(tool.cFolders, source);
+				else 
+					this.noFilesMatch(source, star);
+			}
 		}
 		else
 			tool.reportError(null, 0, "directory not found: " + source);
