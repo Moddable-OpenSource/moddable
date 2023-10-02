@@ -4076,18 +4076,26 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, count);
 #endif
-			byte = (mxEnvironment->value.environment.line == 0) ? 1 : 0;
-			mxEnvironment->value.environment.line = count;
-			if (fxIsReadable(the)) {
-				mxSaveState;
-				fxDebugCommand(the);
-				mxRestoreState;
+			if (count == 0) {
+				count = mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID;
+				if ((mxEnvironment->ID != XS_NO_ID) && (count != XS_NO_ID) && mxBreakpoints.value.list.first) {
+					mxSaveState;
+					fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, count);
+					mxRestoreState;
+				}
 			}
-			count = (byte) ? mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID : XS_NO_ID;
-			if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
-				mxSaveState;
-				fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, count);
-				mxRestoreState;
+			else {
+				mxEnvironment->value.environment.line = count;
+				if (fxIsReadable(the)) {
+					mxSaveState;
+					fxDebugCommand(the);
+					mxRestoreState;
+				}
+				if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
+					mxSaveState;
+					fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, XS_NO_ID);
+					mxRestoreState;
+				}
 			}
 		#endif
 		#if defined(mxInstrument) || defined(mxProfile)

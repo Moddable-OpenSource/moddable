@@ -1129,7 +1129,7 @@ void fxCoderAddLine(txCoder* self, txInteger delta, txInteger id, txNode* node)
 		else if (self->line != node->line) {
 			if (self->path) {
 				txIndexCode* code = (txIndexCode*)self->lastCode;
-				if (code && (code->id == id))
+				if (code && (code->id == id) && (code->index != 0))
 					code->index = node->line;
 				else
 					fxCoderAddIndex(self, 0, id, node->line);
@@ -3421,6 +3421,8 @@ void fxFunctionNodeCode(void* it, void* param)
 		}
 	}
 	fxNodeDispatchCode(self->params, param);
+	if ((coder->parser->flags & mxDebugFlag) && coder->path)
+		fxCoderAddIndex(coder, 0, XS_CODE_LINE, 0);
 	fxScopeCodeDefineNodes(self->scope, param);
 	coder->returnTarget = fxCoderCreateTarget(param);
 	if (self->flags & mxGeneratorFlag) {
