@@ -48,13 +48,16 @@ else
 	BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_nrf52_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
 endif
 
+PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
+
+UF2_VOLUME_NAME ?= MODDABLE4
+M4_VID ?= beef
+M4_PID ?= cafe
+
 ifeq ($(USE_USB),0)
 	ifeq ($(HOST_OS),Darwin)
-		ifeq ($(findstring _13.,_$(shell sw_vers -productVersion)),_13.)
-			UPLOAD_PORT ?= /dev/cu.usbserial-0001
-		else ifeq ($(findstring _12.,_$(shell sw_vers -productVersion)),_12.)
-			UPLOAD_PORT ?= /dev/cu.usbserial-0001
-		else ifeq ($(findstring _11.,_$(shell sw_vers -productVersion)),_11.)
+		VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
+		ifeq ($(shell test $(VERS) -gt 10; echo $$?), 0)
 			UPLOAD_PORT ?= /dev/cu.usbserial-0001
 		else
 			UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
@@ -63,12 +66,6 @@ ifeq ($(USE_USB),0)
 		UPLOAD_PORT ?= /dev/ttyUSB0
 	endif
 endif
-
-PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
-
-UF2_VOLUME_NAME ?= MODDABLE4
-M4_VID ?= beef
-M4_PID ?= cafe
 
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 

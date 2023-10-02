@@ -19,12 +19,9 @@
 
 HOST_OS := $(shell uname)
 
-PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj-$(ESP32_SUBCLASS)
-
-UPLOAD_PORT ?= $(shell bash -c "python $(PROJ_DIR_TEMPLATE)/getPort.py")
-
 ifeq ($(HOST_OS),Darwin)
-	ifeq ($(findstring _11.,_$(shell sw_vers -productVersion)),_11.)
+	VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
+	ifeq ($(shell test $(VERS) -gt 10; echo $$?), 0)
 		UPLOAD_PORT ?= /dev/cu.usbserial-0001
 	else
 		UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
