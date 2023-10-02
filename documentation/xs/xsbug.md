@@ -1,5 +1,5 @@
 # xsbug
-Updated October 1, 2023
+Updated October 2, 2023
 
 The `xsbug` JavaScript source level debugger is a full featured debugger that supports debugging modules and applications for [XS platforms](../xs/XS%20Platforms.md). The `xsbug` debugger is automatically launched when deploying debug builds and connects to devices via USB or over Wi-Fi. Similar to other debuggers, `xsbug` supports setting breakpoints and browsing source code, the call stack, local variables, and global variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption. There is also an integrated [performance profiler](#profiler) for identifying performance hot-spots.
 
@@ -75,6 +75,10 @@ In the header of the pane:
 To edit a breakpoint, tap the breakpoint's arrow in the File Pane to display the editor.
 
 ![](../assets/xsbug/breakpoint-editor.png)
+
+Breakpoints may be moved by dragging the breakpoint's arrow up and down.
+
+Breakpoints may be deleted by dragging the breakpoint's arrow to the left.
 
 ## Preferences Pane
 
