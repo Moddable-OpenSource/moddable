@@ -1,0 +1,43 @@
+{
+	"name": "@moddable/example-run-mod",
+	"version": "1.0.0",
+	"dependencies": {
+	},
+	"main": "./main.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"moddable": {
+		"manifest": {
+			"resources": {
+				"*-alpha": [
+					"./main",
+					"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
+				]
+			},
+			"defines": {
+				"XS_MODS": 1
+			},
+			"strip": [
+				"Atomics",
+				"BigInt",
+				"eval",
+				"Function",
+				"Generator",
+				"Promise",
+				"Proxy",
+				"Reflect",
+				"RegExp",
+				"Set",
+				"SharedArrayBuffer",
+				"WeakMap",
+				"WeakSet"
+			],
+			"preload": "@moddable/example-run-mod/main"
+		}
+	}
+}

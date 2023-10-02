@@ -1,0 +1,10 @@
+{
+	"config": {
+		"touchCount": 0
+	},
+	"resources":{
+		"*": [
+			"./balls"
+		]
+	}
+}

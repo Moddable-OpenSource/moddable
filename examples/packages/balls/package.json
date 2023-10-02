@@ -1,0 +1,14 @@
+{
+	"name": "@moddable/example-balls",
+	"version": "1.0.0",
+	"dependencies": {
+	},
+	"main": "./main.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": ""
+}

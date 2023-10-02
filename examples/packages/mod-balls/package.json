@@ -1,0 +1,21 @@
+{
+	"name": "@moddable/example-mod-balls",
+	"version": "1.0.0",
+	"dependencies": {
+	},
+	"main": "./mod.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"moddable": {
+		"manifest": {
+			"resources": {
+				"*": "./balls"
+			}
+		}
+	}
+}

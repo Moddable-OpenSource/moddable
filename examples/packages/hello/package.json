@@ -1,0 +1,23 @@
+{
+  "name": "@moddable/example-hello",
+  "version": "1.0.0",
+  "dependencies": {
+    "mustache": "^4.2.0",
+    "@moddable/example-hello1": "^1.0.2",
+    "@moddable/example-hello2": "^1.0.2"
+  },
+  "imports": {
+    "#test": {
+      "moddable": "./test-xs.js",
+      "default": "./test-node.js"
+    }
+  },
+  "main": "./main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
