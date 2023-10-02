@@ -342,7 +342,6 @@ void xs_digitalbank_write(xsMachine *the)
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else
 	if (digital->bank) {
-#error
 #if kCPUESP32C6
 		hw->out1_w1ts.val = value;
 		hw->out1_w1tc.val = ~value & digital->pins;
