@@ -82,7 +82,7 @@ The `esp32` platform object supports a number of optional environment variables 
 
 | Variable | Description |
 | --- | :--- |
-| `ESP32_SUBCLASS` | If a device other than the `esp32`, set `esp32s2`, `esp32s3` or `esp32c3`
+| `ESP32_SUBCLASS` | If a device other than the `esp32`, set `esp32s2`, `esp32s3`, `esp32c3`, `esp32c6`, or `esp32h2`
 | `SDKCONFIGPATH` | Pathname to a directory containing custom [sdkconfig defaults](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults) entries.
 | `PARTITIONS_FILE` | Pathname to a [partition table](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html) in CSV format.
 | `BOOTLOADERPATH` | Pathname to a directory containing a custom [ESP-IDF bootloader component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/bootloader.html#custom-bootloader).
@@ -101,6 +101,8 @@ Valid `ESP32_SUBCLASS`:
 | `esp32s2` |
 | `esp32s3` |
 | `esp32c3` |
+| `esp32c6` |
+| `esp32h2` |
 
 The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/modClock) example app leverages the `SDKCONFIGPATH` and `PARTITIONS_FILE` environment variables:
 
