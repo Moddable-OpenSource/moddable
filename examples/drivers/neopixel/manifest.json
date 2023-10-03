@@ -9,6 +9,8 @@
 		]
 	},
 	"config": {
-		"rainbow": false
+		"led": {
+			"rainbow": false
+		}
 	}
 }
