@@ -11,7 +11,8 @@
 			"$(IO)/common/builtinCommon",
 			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*"
+			"$(IO)/spi/$(PLATFORM)/*",
+			"$(MODULES)/pins/digital/esp32/modGPIO"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
