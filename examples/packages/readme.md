@@ -1,5 +1,5 @@
 # Package Examples
-Updated September 26, 2023
+Updated October 4, 2023
 
 This directory contains example projects that use `package.json` to describe the build dependencies. These are intended to be used with `mcpack`, a tool in the Moddable SDK to package embedded applications. `mcpack` is front-end to the Moddable build process. It starts with `package.json`, scans the dependencies, and generates a Moddable `manifest.json` file which is built, deployed, and run using `mcconfig`.
 
@@ -60,6 +60,9 @@ This import is automatically detected and the `manifest_piu.json` is included in
 > mcpack mcconfig -d -m
 # mcpack include: $(MODDABLE)/examples/manifest_piu.json
 ```
+
+### eventemitter
+This example demonstrates use of the `@moddable/eventemitter3` package, a Moddable SDK port of the popular [`eventemitter3`](https://www.npmjs.com/package/eventemitter3) npm package.
 
 ### fetch
 This example makes several HTTP requests using the `fetch()` API. In main.js, the application accesses `fetch`, `URL`, `Headers`, and `console.log` globals so these are automatically included by `mcpack`.
