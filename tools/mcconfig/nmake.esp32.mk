@@ -260,6 +260,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\include\nimble \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\transport\nimble \
+	-I$(IDF_PATH)\components\bt\host\nimble\nimble\nimble\transport\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\nimble\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\nimble\porting\npl\freertos\include \
 	-I$(IDF_PATH)\components\bt\host\nimble\port\include \
