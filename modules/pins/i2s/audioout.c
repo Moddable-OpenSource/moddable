@@ -1485,7 +1485,7 @@ void audioOutLoop(void *pvParameter)
 	// I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bitwidth, mode) (i2s_std.h)
 	int msb_right = true;
 #if MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 32
-	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_32BIT;
+	i2s_config.slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_16BIT;
 	i2s_config.slot_cfg.ws_width = I2S_DATA_BIT_WIDTH_32BIT;
 	msb_right = false;
 #elif MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE == 16
@@ -1596,10 +1596,8 @@ void audioOutLoop(void *pvParameter)
 		}
 
 		dac_continuous_write(out->dacHandle, out->buffer8, count, NULL, -1);		// -1 for portMAX_DELAY
-#elif 16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+#elif (16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE)
 		i2s_channel_write(out->tx_handle, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
-#elif 32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-		i2s_write_expand(MODDEF_AUDIOOUT_I2S_NUM, (const char *)out->buffer, sizeof(out->buffer), 16, 32, &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
