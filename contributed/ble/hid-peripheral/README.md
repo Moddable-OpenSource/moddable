@@ -1,6 +1,6 @@
 This folder contains a host and mods that demonstrate how to build BLE HID Keyboards and Media Controllers with the Moddable SDK.
 
-For a high-level overview, refer to [this blog post](https://blog.moddable.com/blog/ble-keyboards-media/). This document is documentation for using the BLE HID Host to make new keyboard and media controller apps.
+For a high-level overview, refer to [this blog post](https://blog.moddable.com/blog/bleremotes/). This document is documentation for using the BLE HID Host to make new keyboard and media controller apps.
 
 ## Using the BLE HID Host
 
