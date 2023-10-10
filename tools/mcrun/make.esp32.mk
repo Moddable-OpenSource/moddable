@@ -19,15 +19,11 @@
 
 HOST_OS := $(shell uname)
 
-ifeq ($(HOST_OS),Darwin)
-	VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
-	ifeq ($(shell test $(VERS) -gt 10; echo $$?), 0)
-		UPLOAD_PORT ?= /dev/cu.usbserial-0001
-	else
-		UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
-	endif
-else
-	UPLOAD_PORT ?= /dev/ttyUSB0
+USE_USB ?= 0
+ifeq ($(USE_USB),0)
+ifeq ($(UPLOAD_PORT),)
+	UPLOAD_PORT ?= $(shell bash -c "$(BUILD_DIR)/devices/esp32/config/idfSerialPort")
+endif
 endif
 
 URL ?= "~"
@@ -55,7 +51,6 @@ endif
 
 #	USE_USB = 1
 
-USE_USB ?= 0
 ifeq ($(USE_USB),1)
 	USB_VENDOR_ID ?= beef
 	USB_PRODUCT_ID ?= 1cee
@@ -67,7 +62,7 @@ PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+DO_MOD_UPLOAD = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -87,7 +82,6 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
-	@echo "## $(DO_MOD_UPLOAD)"
 	$(DO_MOD_UPLOAD)
 	
 release: $(ARCHIVE)

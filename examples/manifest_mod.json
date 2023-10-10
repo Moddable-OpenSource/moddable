@@ -90,7 +90,7 @@
 				"DEBUGGER_SPEED": "1500000"
 			}
         },
-		"esp32/m5stack_core3": {
+		"esp32/m5stack_cores3": {
 			"build": {
 				"USE_USB": "2"
 			}
