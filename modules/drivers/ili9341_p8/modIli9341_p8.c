@@ -219,7 +219,11 @@ void xs_ILI9341p8(xsMachine *the)
             MODDEF_ILI9341P8_DATA7_PIN,
         },
         .bus_width = 8,
-        .max_transfer_bytes = 65536
+        .max_transfer_bytes = 65536,
+        
+        .clk_src = LCD_CLK_SRC_DEFAULT,
+        .psram_trans_align = 64,
+        .sram_trans_align = 4,        
     };
 
     err = esp_lcd_new_i80_bus(&bus_config, &sd->i80_bus_handle);
@@ -590,7 +594,7 @@ void tearingEffectISR(void *refcon)
 	spiDisplay sd = refcon;
 
 	if (sd->te_pixels) {
-		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, sd->te_pixels, sd->te_byteLength);		//@@ ISR safe!?!?!?
+		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, (void *)sd->te_pixels, sd->te_byteLength);		//@@ ISR safe!?!?!?
 
 		sd->yMin += (sd->te_byteLength >> 1) / sd->updateWidth;  
 
