@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
 		if (archiving) {
-			fxNewLinkerSymbol(linker, gxIDStrings[0], 0);
+			fxNewLinkerSymbol(linker, gxIDStrings[0], 0, 0);
 			resource = linker->firstResource;
 			while (resource) {
 				fxBaseResource(linker, resource, base, size);

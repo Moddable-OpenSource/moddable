@@ -168,8 +168,11 @@ void fxBufferSymbols(txLinker* linker)
 void fxDefaultSymbols(txLinker* linker)
 {
 	int i;
-	for (i = 0; i < XS_ID_COUNT; i++) {
-		fxNewLinkerSymbol(linker, gxIDStrings[i], 0);
+	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
+		fxNewLinkerSymbol(linker, gxIDStrings[i], 0, 0);
+	}
+	for (; i < XS_ID_COUNT; i++) {
+		fxNewLinkerSymbol(linker, gxIDStrings[i], 0, 1);
 	}
 }
 
@@ -346,7 +349,7 @@ txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag)
 	symbols = fxNewLinkerChunk(linker, c * sizeof(txID*));
 	symbols[0] = XS_NO_ID;
 	for (i = 1; i < c; i++) {
-		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag);
+		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag, 1);
 		symbols[i] = symbol->ID;
 		p += mxStringLength((char*)p) + 1;
 	}
@@ -506,7 +509,7 @@ txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name)
 	return result;
 }
 
-txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag)
+txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag, txBoolean table)
 {
 	txString aString;
 	txSize aLength;
@@ -544,7 +547,7 @@ txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag f
 		aSymbol->sum = aSum;
 		aSymbol->flag = flag;
 		linker->symbolArray[anID] = aSymbol;
-		if (anID >= XS_SYMBOL_ID_COUNT)
+		if (table)
 			linker->symbolTable[aModulo] = aSymbol;
 		linker->symbolIndex++;
 	}
