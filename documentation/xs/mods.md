@@ -1,6 +1,6 @@
 # Mods - User Installed Extensions
 Copyright 2020-2023 Moddable Tech, Inc.<BR>
-Revised: May 16, 2023
+Revised: October 11, 2023
 
 Mods are scripts that users can install on their IoT products to add new features and change existing behaviors. A mod is one or more JavaScript modules together with assets like images, audio, and certificates. A mod augments the software of a product without changing the factory installed firmware. To minimize safety, security, and privacy risks, products may sandbox mods using Secure ECMAScript (aka Hardened JavaScript). Mods are a new core feature of the Moddable SDK supported by the XS JavaScript engine.
 
@@ -394,23 +394,36 @@ The Moddable SDK solves this problem by storing the mod starting at the first fl
 
 ### XS Archive Format
 
-The XS archive file format uses the Box (aka Atom) structuring mechanism of the [ISO Base Media File Format](https://www.loc.gov/preservation/digital/formats/fdd/fdd000079.shtml) to structure data. The basic structure is shown in the following table.
+The XS archive file format uses the Box (aka Atom) structuring mechanism of the [ISO Base Media File Format](https://www.loc.gov/preservation/digital/formats/fdd/fdd000079.shtml) to structure data. The atom structure of the XS archive file is shown in the following table:
 
 ```
 XS_A - signature of the XS archive file
     VERS - XS version number used in byte code
-    SIGN - the MD5 checksum of this mod's modules and data
-    CHKS - MD5 checksum of the host symbol table remapped against, zero before remapping
-    NAME - the dotted name of the mod (null terminated)
+    SIGN - the MD5 checksum of this mod's modules and data (before mapping)
+    NAME - the dotted name of the mod (null terminated string)
     SYMB - the XS symbol table for the mods
+    IDEN - host identifiers in the order of the symbol table (array of XS ID values)
+    MAPS - symbol table indexes in the order of their occurrence in the CODE atoms
     MODS - the modules of this mod
-        PATH - the path of this module (null terminated)
+        PATH - the path of this module (null terminated string)
         CODE - the byte code of of this module
         (Additional PATH / CODE pairs follow - one per module]
     RSRC - the data of this mod
-        PATH - the path of this module (null terminated)
+        PATH - the path of this module (null terminated string)
         DATA - the data of this resource
         (Additional PATH / DATA pairs follow - one per piece of data]
 ```
 
-The order of the items that precede `MODS` must be as shown because the microcontroller implementation expects this layout.
+The order of the atoms that precedes the `MODS` atom must be as shown because the microcontroller implementation expects this layout.
+
+When loading the archive, XS iterates on the symbol table to build a mapped identifiers array. If the mapped identifiers array matches the `IDEN` atom, there is nothing else to do. Otherwise, the mapped identifiers table is written into the `IDEN` atom and XS traverses the `MAPS` and `CODE` atoms to map identifiers in the byte code, updating the CODE atoms accordingly.
+
+#### About the Box / Atom structuring mechanism
+
+The atom structuring mechanism is a lightweight way of structuring binary data.
+
+Each atom begins with an 8 byte header consisting of two 32-bit big-endian values. The first value is an unsigned integer that indicates the size of the atom, including the header, in bytes.  The second value is a [four-character code](https://en.wikipedia.org/wiki/FourCC), typically consisting of human-readable ASCII values, that indentifies the content of the atom. For example, for the sole atom at the root of an XS archive file, the first value is the length of the file in bytes and the second value is `XS_A` indicating an atom containing an XS archive.
+
+Each atom may contain atoms and/or other data. The content of an atom is defined by its four-character code. For example, the `RSRC` atom above is defined to contain zero or more pairs of `PATH` and `DATA` atoms, whereas the `NAME` atom is defined to contain a null terminated string.
+
+File readers that do not recognize the four-character code of the atom can skip over the atom using the first value in the atom header. This approach allows new atoms to be introduced without breaking existing readers.
