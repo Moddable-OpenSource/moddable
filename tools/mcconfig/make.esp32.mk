@@ -541,7 +541,6 @@ deploy:
 xsbug:
 	@echo "# starting xsbug"
 	$(KILL_SERIAL2XSBUG)
-	@echo " a"
 	$(START_XSBUG)
 	$(CONNECT_XSBUG)
 
