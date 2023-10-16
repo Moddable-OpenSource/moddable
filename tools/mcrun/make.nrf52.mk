@@ -19,8 +19,9 @@
 
 HOST_OS := $(shell uname)
 
-M4_VID ?= beef
-M4_PID ?= cafe
+USE_USB ?= 0
+
+DEBUGGER_SPEED ?= 921600
 
 ifeq ($(HOST_OS),Darwin)
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -39,6 +40,8 @@ SERIAL2XSBUG = $(MODDABLE_TOOLS_DIR)/serial2xsbug
 XSC = $(MODDABLE_TOOLS_DIR)/xsc
 XSL = $(MODDABLE_TOOLS_DIR)/xsl
 
+SCRIPTS_DIR = $(BUILD_DIR)/devices/nrf52/config
+
 ARCHIVE = $(BIN_DIR)/$(NAME).xsa
 
 ifeq ($(DEBUG),1)
@@ -47,25 +50,47 @@ else
 	LAUNCH = release
 endif
 
-ifeq ($(HOST_OS),Darwin)
-	INSTALL_ARCHIVE = $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) 921600 8N1 -install $(ARCHIVE)
-else
-	ifeq ($(DEBUGGER_PORT),)
-		INSTALL_ARCHIVE = $(SERIAL2XSBUG) `$(MODDABLE_TOOLS_DIR)/findUSBLinux $(M4_VID) $(M4_PID) cdc_acm` 921600 8N1 -install $(ARCHIVE)
+#	USE_USB = 1
+
+ifeq ($(USE_USB),1)
+	M4_VID ?= beef
+	M4_PID ?= cafe
+endif
+
+KILL_SERIAL2XBUG = $(shell pkill serial2xsbug)
+
+ifeq ($(DEBUG),1)
+	ifeq ($(HOST_OS),Darwin)
+		DO_MOD_UPLOAD = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "\#\#\#  No port. Set UPLOAD_PORT" ; exit 1; fi && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
+
+		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		ifneq ($(USE_USB),0)
+			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+		else
+		endif
 	else
-		INSTALL_ARCHIVE = $(SERIAL2XSBUG) $(DEBUGGER_PORT) 921600 8N1 -install $(ARCHIVE)
+		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		DO_MOD_UPLOAD = if [ ! -c "$(UPLOAD_PORT)" ]; then echo "\#\#\#  Set UPLOAD_PORT" ; exit 1; fi && $(SERIAL2XSBUG) $(DEBUGGER_PORT) 921600 8N1 -install $(ARCHIVE) -norestart
+
+		ifeq ($(UPLOAD_PORT),)
+			ifeq ($(USE_USB),1)
+				DO_MOD_UPLOAD = echo a ; $(SERIAL2XSBUG) `$(SCRIPTS_DIR)/findUSBLinux $(M4_VID) $(M4_PID) cdc_acm` 921600 8N1 -install $(ARCHIVE)
+			endif	
+		endif
 	endif
 endif
+
 
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
-	$(INSTALL_ARCHIVE)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(DO_MOD_UPLOAD)
 
 release: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
-	$(INSTALL_ARCHIVE)
+	$(KILL_SERIAL2XSBUG)
+	$(DO_MOD_UPLOAD)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"

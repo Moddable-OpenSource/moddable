@@ -169,6 +169,9 @@
 			}
 		},
         "nrf52/moddable_four": {
+			"build": {
+				"USE_USB": "1"
+			},
 			"config": {
 				"format": "Gray256"
 			}
