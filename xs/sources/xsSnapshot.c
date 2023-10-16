@@ -2084,6 +2084,9 @@ int fxWriteSnapshot(txMachine* the, txSnapshot* snapshot)
 	
 	mxTry(the) {
 		snapshot->error = 0;
+		
+		mxAssert(the->profiler == C_NULL, "# snapshot: not while profiling!\n");
+		
 		fxCollectGarbage(the);
 		fxUnlinkChunks(the);
 		
