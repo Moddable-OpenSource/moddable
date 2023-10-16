@@ -54,6 +54,17 @@
 			"cs_pin": 16,
 			"dc_pin": 5,
 			"spi_port": 2
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"volume_divider": 2,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 9,
+				"lr_pin": 8,
+				"dataout_pin": 17
+			}
 		}
 	}
 }
