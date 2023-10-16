@@ -25,7 +25,7 @@ declare module 'pins/digital' {
   type InputPullUpDown = 3
   type Output = 8
   type OutputOpenDrain = 9
-  type Mode = Input | InputPullUp | InputPullDown | InputPullUpDown | Output | OutputOpenDrain
+  export type Mode = Input | InputPullUp | InputPullDown | InputPullUpDown | Output | OutputOpenDrain
   export class Digital {
     public constructor(dictionary: { pin: number; mode: number; port?: string })
     public constructor(pin: number, mode: number)

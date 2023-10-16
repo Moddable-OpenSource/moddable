@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2023 Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -44,12 +44,12 @@ declare module "wifi" {
   }
 
   class WiFi {
-    static gotIP: "gotIP";
-    static lostIP: "lostIP";
-    static connected: "connect";
-    static disconnected: "disconnect";
+    static readonly gotIP: "gotIP";
+    static readonly lostIP: "lostIP";
+    static readonly connected: "connect";
+    static readonly disconnected: "disconnect";
     
-    constructor(options: WiFiOptions, callback: WiFiCallback);
+    constructor(options: WiFiOptions, callback?: WiFiCallback);
     close(): void;
     static scan(options: ScanOptions, callback: WiFiScanCallback): void;
     static mode: StationMode | AccessPointMode;
