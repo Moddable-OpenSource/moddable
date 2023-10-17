@@ -490,8 +490,10 @@ void fxLinkCircularities(txMachine* the, txSlot* module, txSlot* circularities, 
 	}
 	transfers = mxModuleTransfers(module);
 	if (transfers->kind == XS_REFERENCE_KIND) {
+		txBoolean starFlag = 0;
 		transfer = transfers->value.reference->next;
 		while (transfer) {
+			local = mxTransferLocal(transfer);
 			aliases = mxTransferAliases(transfer);
 			if (aliases->kind == XS_REFERENCE_KIND) {
 				alias = aliases->value.reference->next;
@@ -503,69 +505,94 @@ void fxLinkCircularities(txMachine* the, txSlot* module, txSlot* circularities, 
 					alias = alias->next;
 				}
 			}
+			else if (local->kind == XS_NULL_KIND)
+				starFlag = 1;
 			transfer = transfer->next;
 		}
-		transfer = transfers->value.reference->next;
-		while (transfer) {
-			local = mxTransferLocal(transfer);
-			aliases = mxTransferAliases(transfer);
-			if ((local->kind == XS_NULL_KIND) && (aliases->kind == XS_NULL_KIND)) {
-				from = mxTransferFrom(transfer);
-				fxNewInstance(the);
-				circularitiesCopy = the->stack;
-				circularity = circularitiesInstance->next;
-				circularityCopy = circularitiesCopy->value.reference;
-				while (circularity) {
-					circularityCopy = circularityCopy->next = fxDuplicateSlot(the, circularity);
-					circularity = circularity->next;
-				}
-				fxNewInstance(the);
-				stars = the->stack;
-				fxLinkCircularities(the, from, circularitiesCopy, stars);
-				star = stars->value.reference->next;
-				while (star) {
-					if (star->ID != mxID(_default)) {
-						txSlot* ambiguous = mxBehaviorGetProperty(the, exportsInstance, star->ID, 0, XS_OWN);
-						if (ambiguous) {
-							txSlot* ambiguousModule;
-							txSlot* starModule;
-							if (ambiguous->kind == XS_EXPORT_KIND)
-								ambiguousModule = ambiguous->value.export.module;
-							else {
-								txSlot* ambiguousClosure = mxTransferClosure(ambiguous);
-								if (ambiguousClosure->kind == XS_EXPORT_KIND)
-									ambiguousModule = ambiguousClosure->value.export.module;
-								else
-									ambiguousModule = mxTransferFrom(ambiguous)->value.reference;
-							}
-							if (star->kind == XS_EXPORT_KIND)
-								starModule = star->value.export.module;
-							else {
-								txSlot* starClosure = mxTransferClosure(star);
-								if (starClosure->kind == XS_EXPORT_KIND)
-									starModule = starClosure->value.export.module;
-								else
-									starModule = mxTransferFrom(star)->value.reference;
-							}
-							if ((ambiguousModule != module->value.reference) && (ambiguousModule != starModule)) {
-								ambiguous->kind = XS_EXPORT_KIND;
-								ambiguous->value.export.closure = C_NULL;
-								ambiguous->value.export.module = C_NULL;
-							}
-						}
-						else {
-							export = export->next = fxNewSlot(the);
-							export->ID = star->ID;
-							export->kind = star->kind;
-							export->value = star->value;
-						}
+		if (starFlag) {
+			txSlot* reexportsInstance;
+			txSlot* reexport;
+			fxNewInstance(the);
+			reexportsInstance = the->stack->value.reference;
+			reexport = reexportsInstance;
+			transfer = transfers->value.reference->next;
+			while (transfer) {
+				local = mxTransferLocal(transfer);
+				aliases = mxTransferAliases(transfer);
+				if ((local->kind == XS_NULL_KIND) && (aliases->kind == XS_NULL_KIND)) {
+					from = mxTransferFrom(transfer);
+					fxNewInstance(the);
+					circularitiesCopy = the->stack;
+					circularity = circularitiesInstance->next;
+					circularityCopy = circularitiesCopy->value.reference;
+					while (circularity) {
+						circularityCopy = circularityCopy->next = fxDuplicateSlot(the, circularity);
+						circularity = circularity->next;
 					}
-					star = star->next;
+					fxNewInstance(the);
+					stars = the->stack;
+					fxLinkCircularities(the, from, circularitiesCopy, stars);
+					star = stars->value.reference->next;
+					while (star) {
+						if (star->ID != mxID(_default)) {
+							txSlot* ambiguous = mxBehaviorGetProperty(the, exportsInstance, star->ID, 0, XS_OWN);
+							if (!ambiguous) {
+								ambiguous = mxBehaviorGetProperty(the, reexportsInstance, star->ID, 0, XS_OWN);
+								if (ambiguous) {
+									txSlot* ambiguousModule;
+									txSlot* starModule;
+									if (ambiguous->kind == XS_EXPORT_KIND)
+										ambiguousModule = ambiguous->value.export.module;
+									else {
+										txSlot* ambiguousClosure = mxTransferClosure(ambiguous);
+										if (ambiguousClosure->kind == XS_EXPORT_KIND)
+											ambiguousModule = ambiguousClosure->value.export.module;
+										else {
+											txSlot* ambiguousFrom = mxTransferFrom(ambiguous);
+											if (ambiguousFrom->kind == XS_REFERENCE_KIND)
+												ambiguousModule = ambiguousFrom->value.reference;
+											else
+												ambiguousModule = C_NULL;
+										}
+									}
+									if (star->kind == XS_EXPORT_KIND)
+										starModule = star->value.export.module;
+									else {
+										txSlot* starClosure = mxTransferClosure(star);
+										if (starClosure->kind == XS_EXPORT_KIND)
+											starModule = starClosure->value.export.module;
+										else {
+											txSlot* starFrom = mxTransferFrom(star);
+											if (starFrom->kind == XS_REFERENCE_KIND)
+												starModule = starFrom->value.reference;
+											else
+												starModule = C_NULL;
+										}
+									}
+									if (ambiguousModule != starModule) {
+										ambiguous->kind = XS_EXPORT_KIND;
+										ambiguous->value.export.closure = C_NULL;
+										ambiguous->value.export.module = C_NULL;
+									}
+								}
+								else {
+									reexport = reexport->next = fxNewSlot(the);
+									reexport->ID = star->ID;
+									reexport->kind = star->kind;
+									reexport->value = star->value;
+								}
+							}
+						}
+						star = star->next;
+					}
+					mxPop();
+					mxPop();
 				}
-				mxPop();
-				mxPop();
+				transfer = transfer->next;
 			}
-			transfer = transfer->next;
+			export->next = reexportsInstance->next;
+			reexportsInstance->next = C_NULL;
+			mxPop();
 		}
 	}
 }
