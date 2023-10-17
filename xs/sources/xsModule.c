@@ -167,12 +167,12 @@ void fxBuildModule(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "Module", mxID(_Symbol_toStringTag), XS_GET_ONLY);
 	mxModulePrototype = *the->stack;
-    mxPop();
+	mxPop();
 	
 	mxPush(mxObjectPrototype);
 	fxNewObjectInstance(the);
 	mxTransferPrototype = *the->stack;
-    mxPop();
+	mxPop();
 
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -185,8 +185,8 @@ void fxBuildModule(txMachine* the)
 	mxCompartmentPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Compartment), 1, mxID(_Compartment));
 	mxCompartmentConstructor = *the->stack;
-    mxPop();
-    
+	mxPop();
+	
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ModuleSource_prototype_get_bindings), C_NULL, mxID(_bindings), XS_DONT_ENUM_FLAG);
@@ -196,7 +196,7 @@ void fxBuildModule(txMachine* the)
 	mxModuleSourcePrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_ModuleSource), 1, mxID(_ModuleSource));
 	mxModuleSourceConstructor = *the->stack;
-    mxPop();
+	mxPop();
 }
 
 void fxCompleteModule(txMachine* the, txSlot* module, txSlot* exception)
@@ -928,8 +928,8 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxCall();
 						fxPushKeyString(the, moduleID, C_NULL);
 						mxRunCount(1);
-                        if (!mxIsReference(the->stack))
-                            mxTypeError("loadHook returned no object");
+						if (!mxIsReference(the->stack))
+							mxTypeError("loadHook returned no object");
 						promise = the->stack->value.reference;
 						if (!mxIsPromise(promise))
 							mxTypeError("loadHook returned no promise");
@@ -1520,8 +1520,8 @@ void fxMapModuleDescriptor(txMachine* the, txSlot* realm, txID moduleID, txSlot*
 			aliasOwn = mxOwnModules(aliasRealm)->value.reference;
 			mxPop();
 			aliasModuleID = fxResolveSpecifier(the, aliasRealm, XS_NO_ID, property);
-	//             if ((aliasRealm == realm) && (aliasModuleID == moduleID))
-	//                 mxTypeError("descriptor.specifier is circular");
+	//			 if ((aliasRealm == realm) && (aliasModuleID == moduleID))
+	//				 mxTypeError("descriptor.specifier is circular");
 			
 			aliasModule = mxBehaviorGetProperty(the, aliasOwn, aliasModuleID, 0, XS_ANY);
 			if (aliasModule) {
@@ -1773,7 +1773,7 @@ void fxOrderModule(txMachine* the, txSlot* queue, txSlot* order, txSlot* module)
 			module->next = C_NULL;
 			break;
 		}
-        fromAddress = &(from->next);
+		fromAddress = &(from->next);
 	}
 	if (mxModuleStatus(module) == XS_MODULE_STATUS_LINKING) {
 		txSlot* transfer = mxModuleTransfers(module)->value.reference->next;
@@ -1795,7 +1795,7 @@ void fxOrderModule(txMachine* the, txSlot* queue, txSlot* order, txSlot* module)
 	while ((to = *toAddress)) {
 		if (to->value.reference == module->value.reference)
 			return;
-        toAddress = &(to->next);
+		toAddress = &(to->next);
 	}
 	*toAddress = module;
 }
@@ -1807,7 +1807,7 @@ void fxOverrideModule(txMachine* the, txSlot* queue, txSlot* result, txSlot* mod
 	txSlot* slot;
 	while ((slot = *address)) {
 		if (slot->value.reference == module) {
-//             slot->value.reference = record;
+//			 slot->value.reference = record;
 			*address = slot->next;
 		}
 		else {
@@ -2377,7 +2377,7 @@ txBoolean fxModuleDeleteProperty(txMachine* the, txSlot* instance, txID id, txIn
 				property = property->next;
 			}
 		}
-    }
+	}
 	return 1;
 }
 
@@ -2499,7 +2499,7 @@ txBoolean fxModuleHasProperty(txMachine* the, txSlot* instance, txID id, txIndex
 				property = property->next;
 			}
 		}
-    }
+	}
 	return 0;
 }
 
