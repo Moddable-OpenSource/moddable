@@ -525,19 +525,29 @@ void fxLinkCircularities(txMachine* the, txSlot* module, txSlot* circularities, 
 				star = stars->value.reference->next;
 				while (star) {
 					if (star->ID != mxID(_default)) {
-                        txSlot* ambiguous = mxBehaviorGetProperty(the, exportsInstance, star->ID, 0, XS_OWN);
+						txSlot* ambiguous = mxBehaviorGetProperty(the, exportsInstance, star->ID, 0, XS_OWN);
 						if (ambiguous) {
 							txSlot* ambiguousModule;
 							txSlot* starModule;
 							if (ambiguous->kind == XS_EXPORT_KIND)
 								ambiguousModule = ambiguous->value.export.module;
-							else
-								ambiguousModule = mxTransferClosure(ambiguous)->value.export.module;
+							else {
+								txSlot* ambiguousClosure = mxTransferClosure(ambiguous);
+								if (ambiguousClosure->kind == XS_EXPORT_KIND)
+									ambiguousModule = ambiguousClosure->value.export.module;
+								else
+									ambiguousModule = mxTransferFrom(ambiguous)->value.reference;
+							}
 							if (star->kind == XS_EXPORT_KIND)
 								starModule = star->value.export.module;
-							else
-								starModule = mxTransferClosure(star)->value.export.module;
-							if (ambiguousModule != starModule) {
+							else {
+								txSlot* starClosure = mxTransferClosure(star);
+								if (starClosure->kind == XS_EXPORT_KIND)
+									starModule = starClosure->value.export.module;
+								else
+									starModule = mxTransferFrom(star)->value.reference;
+							}
+							if ((ambiguousModule != module->value.reference) && (ambiguousModule != starModule)) {
 								ambiguous->kind = XS_EXPORT_KIND;
 								ambiguous->value.export.closure = C_NULL;
 								ambiguous->value.export.module = C_NULL;
