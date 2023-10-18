@@ -1959,7 +1959,7 @@ typedef struct {
 	txBoolean dirty;
 } txMapper;
 
-static void fxMapperMapID(txMapper* self);
+static void fxMapperMapID(txMapper* self, txID id);
 static void fxMapperMapIDs(txMapper* self);
 static txU1 fxMapperRead1(txMapper* self);
 static txU2 fxMapperRead2(txMapper* self);
@@ -2379,9 +2379,8 @@ bail:
 	return self->archive;
 }
 
-void fxMapperMapID(txMapper* self)
+void fxMapperMapID(txMapper* self, txID id)
 {
-	txID id = self->ids[*(self->map++)];
 	if (self->bufferOffset == self->bufferSize)
 		fxMapperStep(self);
 	*(self->buffer + self->bufferOffset) = (txU1)(id & 0x00FF);
@@ -2397,15 +2396,21 @@ void fxMapperMapID(txMapper* self)
 void fxMapperMapIDs(txMapper* self)
 {
 	register const txS1* bytes = gxCodeSizes;
+	txU1 code;
 	txS1 offset;
 	txU4 index;
 	while (self->bufferOffset < self->bufferCode) {
 		//fprintf(stderr, "%s", gxCodeNames[*((txU1*)p)]);
-		offset = (txS1)c_read8(bytes + fxMapperRead1(self));
-		if (0 < offset)
-			fxMapperSkip(self, offset - 1);
+		code = fxMapperRead1(self);
+		offset = (txS1)c_read8(bytes + code);
+		if (0 < offset) {
+			if (self->machine && (XS_CODE_PROFILE == code))
+				fxMapperMapID(self, fxGenerateProfileID(self->machine));
+			else
+				fxMapperSkip(self, offset - 1);
+		}
 		else if (0 == offset)
-			fxMapperMapID(self);
+			fxMapperMapID(self, self->ids[*(self->map++)]);
 		else if (-1 == offset) {
 			index = fxMapperRead1(self);
 			fxMapperSkip(self, index);
