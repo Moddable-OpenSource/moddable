@@ -116,8 +116,36 @@ export default class extends TOOL {
 		
 		let name, path;
 		let argc = argv.length;
+		let argi = 1;
+		for (; argi < argc; argi++) {
+			name = argv[argi];
+			if ((name == "mcconfig") || (name == "mcrun") || (name == "list"))
+				break;
+			path = this.resolveFilePath(name);
+			if (!path)
+				throw new Error("" + name + "': package not found!");
+			let parts = this.splitPath(path);
+			if ((parts.name != "package") || (parts.extension != ".json"))
+				throw new Error("" + name + "': invalid package name!");
+			this.packagePath = parts.directory;
+			this.currentDirectory = this.packagePath;
+		}
+		if (name == "mcconfig") {
+			this.hasCreationMain = true;
+		}
+		else if (name == "mcrun") {
+			this.hasCreationMain = false;
+		}
+		else if (name == "list") {
+			this.hasCreationMain = undefined;
+		}
+		else {
+			throw new Error("no action!");
+		}
 		
-		for (var argi = 2; argi < argc; argi++) {
+		argi++;
+		this.argv = argv.slice(argi);
+		for (; argi < argc; argi++) {
 			var option = argv[argi];
 			switch (option) {
 			case "-o":
@@ -203,22 +231,6 @@ export default class extends TOOL {
 		if (!this.outputPath)
 			this.outputPath = this.buildPath;
 		
-		if (argc < 2) {
-			throw new Error("no action!");
-		}
-		else {
-			name = argv[1];
-			if (name == "mcconfig")
-				this.hasCreationMain = true;
-			else if (name == "mcrun")
-				this.hasCreationMain = false;
-			else if (name == "list")
-				this.hasCreationMain = undefined;
-			else
-				throw new Error("invalid action: " + name);
-		}
-		
-		this.argv = argv.slice(2);
 		this.verbose = this.argv.indexOf("-v") >= 0;
 		
 		this.includes = {
