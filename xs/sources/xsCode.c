@@ -1760,7 +1760,7 @@ void fxScopeCodeRetrieve(txScope* self, txCoder* coder)
 		}
 		node = node->nextDeclareNode;
 	}
-	if (self->node->flags & mxArrowFlag) {
+	if ((self->node->flags & mxArrowFlag) && ((self->node->flags & mxDefaultFlag) || (self->flags & mxEvalFlag))) {
 		fxCoderAddIndex(coder, 0, XS_CODE_RETRIEVE_1, count);
 		fxCoderAddByte(coder, 0, XS_CODE_RETRIEVE_TARGET);
 		fxCoderAddByte(coder, 0, XS_CODE_RETRIEVE_THIS);
@@ -1781,7 +1781,7 @@ void fxScopeCodeStore(txScope* self, txCoder* coder)
 		}
 		node = node->nextDeclareNode;
 	}
-	if (self->node->flags & mxArrowFlag)
+	if ((self->node->flags & mxArrowFlag) && ((self->node->flags & mxDefaultFlag) || (self->flags & mxEvalFlag)))
 		fxCoderAddByte(coder, 0, XS_CODE_STORE_ARROW);
 	if (self->flags & mxEvalFlag)
 		fxScopeCodeStoreAll(self->scope, coder);
@@ -3451,7 +3451,7 @@ void fxFunctionNodeCode(void* it, void* param)
 		fxScopeCodeStore(self->scope, param);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
 	}
-	else if (self->scope->closureNodeCount || (self->flags & mxArrowFlag)) {
+	else if (self->scope->closureNodeCount || ((self->flags & mxArrowFlag) && (self->flags & mxDefaultFlag))) {
 		fxCoderAddByte(coder, 1, XS_CODE_ENVIRONMENT);
 		fxScopeCodeStore(self->scope, param);
 		fxCoderAddByte(coder, -1, XS_CODE_POP);
