@@ -2398,7 +2398,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							mxBreak;
 						}
 						quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
-						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : quantifier->max - 1;
+						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : (quantifier->max == 0) ? 0 : quantifier->max - 1;
 						mxBreak;
 					mxCase(cxWordBreakStep):
 						step = *pointer;
