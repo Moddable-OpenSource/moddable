@@ -418,9 +418,10 @@ void fxScreenLaunch(txScreen* screen)
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, C_NULL);
 	if (!screen->machine)
 		return;
-	if (screen->archive)
-		fxMapArchive(screen->machine, preparation, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite);
-	fxSetArchive(screen->machine, screen->archive);
+	if (screen->archive) {
+		if (fxMapArchive(screen->machine, preparation, screen->archive, 4 * 1024, fxArchiveRead, fxArchiveWrite))
+			fxSetArchive(screen->machine, screen->archive);
+	}
 	((txMachine*)(screen->machine))->host = screen;
 	screen->idle = fxScreenIdle;
 	screen->invoke = fxScreenInvoke;
