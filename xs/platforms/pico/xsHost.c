@@ -541,13 +541,15 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
 }
 
-void *modInstallMods(void *preparationIn, uint8_t *status)
+void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
 
-	if (fxMapArchive(preparation, (void *)kModulesStart, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
 		result = (void *)kModulesStart;
+		fxSetArchive(the, result);
+	}
 
 	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
 		*status = *(8 + (uint8_t *)kModulesStart);

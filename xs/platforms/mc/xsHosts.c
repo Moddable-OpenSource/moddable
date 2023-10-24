@@ -482,14 +482,6 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	xsCreation *creation = creationIn;
 	void *preparation = xsPreparationAndCreation(creation ? NULL : &creation);
 
-#if MODDEF_XS_MODS
-	uint8_t modStatus = 0;
-	void *archive;
-	archive = modInstallMods(preparation, &modStatus);
-#else
-	#define archive (NULL)
-#endif
-
 	if (!name)
 		name = ((txPreparation *)preparation)->main;
 
@@ -503,7 +495,7 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		}
 		context[1] = context[0] + creation->staticSize;
 
-		the = xsPrepareMachine(creation, preparation, (char *)name, context, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, context, NULL);
 		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);
@@ -513,15 +505,18 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		xsSetContext(the, NULL);
 	}
 	else {
-		the = xsPrepareMachine(creation, preparation, (char *)name, NULL, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, NULL, NULL);
 		if (NULL == the)
 			return NULL;
 	}
 
 #if MODDEF_XS_MODS
-	extern const char *gXSAbortStrings[];
-	if (modStatus)
+	uint8_t modStatus = 0;
+	modInstallMods(the, preparation, &modStatus);
+	if (modStatus) {
+		extern const char *gXSAbortStrings[];
 		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
+}
 #endif
 
 	return the;

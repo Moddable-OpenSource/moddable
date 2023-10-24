@@ -34,7 +34,7 @@ extern void modRunMachineSetup(xsMachine *the);
 
 extern char *modGetModAtom(xsMachine *the, uint32_t atomTypeIn, int *atomSizeOut);
 
-extern void *modInstallMods(/* txPreparation */ void *preparation, uint8_t *status);
+extern void *modInstallMods(xsMachine *the, /* txPreparation */ void *preparation, uint8_t *status);
 
 #ifdef mxInstrument
 	extern void modInstrumentMachineBegin(xsMachine *the, modTimerCallback instrumentationCallback, int count, char **names, char **units);

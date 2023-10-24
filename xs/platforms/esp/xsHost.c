@@ -64,6 +64,9 @@
 	#include "freertos/task.h"
 	#if MODDEF_XS_MODS
 		#include "spi_flash/include/spi_flash_mmap.h"
+
+		const esp_partition_t *gPartition;
+		const uint8_t *gPartitionAddress;
 	#endif
 #else
 	#include "Arduino.h"
@@ -1091,6 +1094,18 @@ void modMachineTaskInit(xsMachine *the)
 	xQueueAddToSet(the->msgQueue, the->queues);
 	xQueueAddToSet(the->dbgQueue, the->queues);
 #endif
+
+#if MODDEF_XS_MODS
+	#if ESP32
+		spi_flash_mmap_handle_t handle;
+
+		gPartition = esp_partition_find_first(0x40, 1,  NULL);
+		if (gPartition) {
+			esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle);
+		}
+	#endif
+#endif
+
 }
 
 void modMachineTaskUninit(xsMachine *the)
@@ -1307,9 +1322,6 @@ void fxQueuePromiseJobs(txMachine* the)
 
 #if ESP32
 
-const esp_partition_t *gPartition;
-const uint8_t *gPartitionAddress;
-
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	const esp_partition_t *partition = src;
@@ -1333,18 +1345,17 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 	return 1;
 }
 
-void *modInstallMods(void *preparationIn, uint8_t *status)
+void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn; 
-	spi_flash_mmap_handle_t handle;
 	void *result = NULL;
 
-	gPartition = esp_partition_find_first(0x40, 1,  NULL);
-	if (gPartition) {
-		if (ESP_OK == esp_partition_mmap(gPartition, 0, gPartition->size, SPI_FLASH_MMAP_DATA, (const void **)&gPartitionAddress, &handle)) {
-			if (fxMapArchive(C_NULL, preparation, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite))
-				result = (void *)gPartitionAddress;
-		}
+	if (!gPartitionAddress)
+		return NULL;
+
+	if (fxMapArchive(the, preparation, (void *)gPartition, kFlashSectorSize, spiRead, spiWrite)) {
+		result = (void *)gPartitionAddress;
+		fxSetArchive(the, result);
 	}
 
 	if (XS_ATOM_ERROR == c_read32be(4 + kModulesStart)) {
@@ -1379,12 +1390,14 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
 }
 
-void *modInstallMods(void *preparationIn, uint8_t *status)
+void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn; 
 
-	if (fxMapArchive(C_NULL, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite))
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
+		fxSetArchive(the, kModulesStart);
 		return kModulesStart;
+	}
 
 	return NULL;
 }
