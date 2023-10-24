@@ -2484,6 +2484,22 @@ void fxMapperStep(txMapper* self)
 	self->bufferOffset = 0;
 }
 
+void fxSetArchive(txMachine* the, void* archive)
+{
+	the->archive = archive;
+	if (archive) {
+		fxNewHostObject(the, C_NULL);
+		the->stack->value.reference->next->value.host.data = archive;
+		mxPush(mxGlobal);
+		mxDefineID(fxID(the, "archive"), XS_DONT_ENUM_FLAG, XS_GET_ONLY);
+		mxPop();
+	}
+	else {
+		mxPush(mxGlobal);
+		mxDeleteID(fxID(the, "archive"));
+	}
+}
+
 txBoolean fxIsProfiling(txMachine* the)
 {
 #if defined(mxInstrument) || defined(mxProfile)
