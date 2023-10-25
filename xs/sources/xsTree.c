@@ -1391,6 +1391,16 @@ static const txNodeDispatch gxSwitchNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeReference,
 	fxNodeCodeThis
 };
+static const txNodeDispatch gxTargetNodeDispatch ICACHE_FLASH_ATTR = {
+	fxNodeDistribute,
+	fxTargetNodeBind,
+	fxNodeHoist,
+	fxValueNodeCode,
+	fxNodeCodeAssign,
+	fxNodeCodeDelete,
+	fxNodeCodeReference,
+	fxNodeCodeThis
+};
 static const txNodeDispatch gxTemplateNodeDispatch ICACHE_FLASH_ATTR = {
 	fxTemplateNodeDistribute,
 	fxTemplateNodeBind,
@@ -1413,7 +1423,7 @@ static const txNodeDispatch gxTemplateItemNodeDispatch ICACHE_FLASH_ATTR = {
 };
 static const txNodeDispatch gxThisNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeDistribute,
-	fxNodeBind,
+	fxThisNodeBind,
 	fxNodeHoist,
 	fxThisNodeCode,
 	fxNodeCodeAssign,
@@ -1656,7 +1666,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_CODE_SUBTRACT, XS_TOKEN_SUBTRACT_ASSIGN, "SubtractAssign", sizeof(txAssignNode), &gxCompoundExpressionNodeDispatch },
 	{ XS_CODE_SUPER, XS_TOKEN_SUPER, "Super", sizeof(txSuperNode), &gxSuperNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_SWITCH, "Switch", sizeof(txSwitchNode), &gxSwitchNodeDispatch },
-	{ XS_CODE_TARGET, XS_TOKEN_TARGET, "Target", sizeof(txNode), &gxValueNodeDispatch },
+	{ XS_CODE_TARGET, XS_TOKEN_TARGET, "Target", sizeof(txNode), &gxTargetNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_TEMPLATE, "Template", sizeof(txTemplateNode), &gxTemplateNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_TEMPLATE_HEAD, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_TEMPLATE_MIDDLE, "TemplateItem", sizeof(txTemplateItemNode), &gxTemplateItemNodeDispatch },

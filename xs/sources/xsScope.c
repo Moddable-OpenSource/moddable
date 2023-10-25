@@ -70,6 +70,7 @@ static void fxBinderPushVariables(txBinder* self, txInteger count);
 static txScope* fxScopeNew(txHoister* hoister, txNode* node, txToken token);
 static void fxScopeAddDeclareNode(txScope* self, txDeclareNode* node);
 static void fxScopeAddDefineNode(txScope* self, txDefineNode* node);
+static void fxScopeArrow(txScope* self);
 static void fxScopeBindDefineNodes(txScope* self, void* param);
 static void fxScopeBinding(txScope* self, txBinder* binder);
 static void fxScopeBound(txScope* self, txBinder* binder);
@@ -186,6 +187,24 @@ void fxScopeAddDefineNode(txScope* self, txDefineNode* node)
 	else
 		self->firstDefineNode = node;
 	self->lastDefineNode = node;
+}
+
+void fxScopeArrow(txScope* self)
+{
+	if (self->token == XS_TOKEN_EVAL) {
+	}
+	else if (self->token == XS_TOKEN_FUNCTION) {
+		if (self->node->flags & mxArrowFlag) {
+			self->node->flags |= mxDefaultFlag;
+			if (self->scope)
+				fxScopeArrow(self->scope);
+		}
+	}
+	else if (self->token == XS_TOKEN_PROGRAM) {
+	}
+	else if (self->scope) {
+		fxScopeArrow(self->scope);
+	}
 }
 
 void fxScopeBindDefineNodes(txScope* self, void* param) 
@@ -1262,6 +1281,7 @@ void fxSuperNodeBind(void* it, void* param)
 {
 	txSuperNode* self = it;
 	txBinder* binder = param;
+	fxScopeArrow(binder->scope);
 	fxNodeDispatchBind(self->params, param);
 	if (binder->classNode->instanceInitAccess) {
 		fxScopeLookup(binder->scope, binder->classNode->instanceInitAccess, 0);
@@ -1282,6 +1302,12 @@ void fxSwitchNodeBind(void* it, void* param)
 	fxScopeBound(self->scope, param);
 }
 
+void fxTargetNodeBind(void* it, void* param)
+{
+	txBinder* binder = param;
+	fxScopeArrow(binder->scope);
+}
+
 void fxTemplateNodeBind(void* it, void* param) 
 {
 	txTemplateNode* self = it;
@@ -1294,6 +1320,12 @@ void fxTemplateNodeBind(void* it, void* param)
 	else {
 		fxNodeListDistribute(self->items, fxNodeDispatchBind, param);
 	}
+}
+
+void fxThisNodeBind(void* it, void* param)
+{
+	txBinder* binder = param;
+	fxScopeArrow(binder->scope);
 }
 
 void fxTryNodeBind(void* it, void* param) 
