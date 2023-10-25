@@ -180,14 +180,14 @@ void xs_SSD1306_destructor(void *data)
 	if (data) {
 		ssd1606 ssd = (ssd1606)data;
 #if MODDEF_SSD1306_SPI
-		modGPIOUninit(&ssd->config.cs);
-		modGPIOUninit(&ssd->config.dc);
+		modGPIOUninit(&ssd->cs);
+		modGPIOUninit(&ssd->dc);
 		modSPIUninit(&ssd->config.spi);
 #elif MODDEF_SSD1306_I2C
 		modI2CUninit(&ssd->config.i2c);
 #endif
 #ifdef MODDEF_SSD1306_RST_PIN
-		modGPIOUninit(&ssd->config.rst);
+		modGPIOUninit(&ssd->rst);
 #endif
 		c_free(data);
 	}
