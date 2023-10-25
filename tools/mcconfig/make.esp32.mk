@@ -146,6 +146,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/driver/mcpwm/include \
 	$(IDF_PATH)/components/driver/pcnt/include \
 	$(IDF_PATH)/components/driver/rmt/include \
+	$(IDF_PATH)/components/driver/sdmmc/include \
 	$(IDF_PATH)/components/driver/spi/include \
 	$(IDF_PATH)/components/driver/uart/include \
 	$(IDF_PATH)/components/driver/include \
@@ -222,7 +223,6 @@ INC_DIRS = \
 	$(IDF_PATH)/components/fatfs/src \
 	$(IDF_PATH)/components/fatfs/vfs \
 	$(IDF_PATH)/components/wear_levelling/include \
-	$(IDF_PATH)/components/sdmmc/include \
 	$(IDF_PATH)/components/spi_flash/include \
 	$(IDF_PATH)/components/tcpip_adapter/include \
 	$(IDF_PATH)/components/tcpip_adapter \
