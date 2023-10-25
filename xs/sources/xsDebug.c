@@ -1995,6 +1995,7 @@ void fxEchoPropertyHost(txMachine* the, txInspectorNameList* theList, txSlot* th
 							txSlot* aFunction = aParentProperty->value.accessor.getter;
 							if (mxIsFunction(aFunction)) {
 								fxBeginHost(the);
+								the->frame->flag &= ~(XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG);
 								/* THIS */
 								mxPushReference(theInstance);
 								/* FUNCTION */
