@@ -30,9 +30,10 @@ function* idMaker() {
         yield index++;
 }
 
-// determine the size of one slot -- assumes Object is one slot
-let slots = Instrumentation.get(xsInstrumentation.slot_used);
+// determine the size of one slot -- assumes number property takes one slot
 const holdOneSlot = {};
+let slots = Instrumentation.get(xsInstrumentation.slot_used);
+holdOneSlot.a = 1;
 const slotSize = Instrumentation.get(xsInstrumentation.slot_used) - slots; 
 Debug.gc();
 
@@ -48,8 +49,16 @@ measure("Object {x: 1, y: 2, z: 3}",  () => {return {x: 1, y: 2, z: 3}});
 measure("Date",  () => new Date);
 measure("BigInt 1n", () => 1n);
 measure("BigInt 100000000001n", () => 100000000001n);
-measure("Function () => {}",  () => {return () => {}});
-measure("Function closure (1 variable)",  () => {let a = 1; return function() {return a}});
+measure("Arrow Function () => {}",  () => {return () => {}});
+measure("Arrow Function () => {return Date}",  () => {return () => {return Date}});
+measure("Arrow Function () => {return this}",  () => {return () => {return this}});
+measure("Arrow Function closure (1 variable)",  () => {let a = 1; return () => {return a;l}});
+measure("Arrow Function closure (2 variables)",  () => {let a = 1, b = 2; return () => {return a + b;}});
+measure("Arrow Function closure (3 variables)",  () => {let a = 1, b = 2, c = 3; return () => {return a + b + c;}});
+measure("Function {}",  () => {return function() {}});
+measure("Function {return Date;]",  () => {return function() {return Date;}});
+measure("Function {return this;}",  () => {return function() {return this;}});
+measure("Function closure (1 variable)",  () => {let a = 1; return function() {return a;}});
 measure("Function closure (2 variables)",  () => {let a = 1, b = 2; return function() {return a + b;}});
 measure("Function closure (3 variables)",  () => {let a = 1, b = 2, c = 3; return function() {return a + b + c;}});
 measure("Generator",  () => idMaker());
