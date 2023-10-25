@@ -1644,7 +1644,7 @@ typedef ptrdiff_t  FT_PtrDist;
     const TCoord  yMin = ras.min_ey;
     const TCoord  yMax = ras.max_ey;
 
-#if ESP32
+#if ESP32 && kCPUESP32
     static ICACHE_RAM_ATTR TCell    buffer[FT_MAX_GRAY_POOL];		//@@ not thread safe, but avoids having to allocate a big stack
 #elif nrf52
     static TCell    *buffer;		//@@ not thread safe, but avoids having to allocate a big stack
