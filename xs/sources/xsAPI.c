@@ -1601,7 +1601,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->dtoa = fxNew_dtoa(the);
 			the->preparation = theMachine->preparation;
 			the->context = theContext;
-			the->archive = theMachine->archive;
 			the->sharedMachine = theMachine;
 			fxCreateMachinePlatform(the);
 
@@ -1618,7 +1617,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			the->keyIndex = theMachine->keyIndex;
 			the->keyOffset = the->keyIndex;
 			the->keyArrayHost = theMachine->keyArray;
-			fxBuildArchiveKeys(the);
 			
 			the->aliasCount = theMachine->aliasCount;
 			if (the->aliasCount) {
@@ -1665,12 +1663,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			slot = fxNextSlotProperty(the, slot, the->stack, mxID(_globalThis), XS_DONT_ENUM_FLAG);
 			mxGlobal.value = the->stack->value;
 			mxGlobal.kind = the->stack->kind;
-			if (the->archive) {
-				fxNewHostObject(the, C_NULL);
-				the->stack->value.reference->next->value.host.data = the->archive;
-				slot = fxNextSlotProperty(the, slot, the->stack, fxID(the, "archive"), XS_DONT_ENUM_FLAG);
-				mxPop();
-			}
 			
 			fxNewInstance(the);
 			mxPush(theMachine->stackTop[-1 - mxProgramStackIndex]); //@@
@@ -1719,7 +1711,6 @@ txMachine* fxPrepareMachine(txCreation* creation, txPreparation* preparation, tx
 		return C_NULL;
 	c_memset(root, 0, sizeof(txMachine));
 	root->preparation = preparation;
-	root->archive = archive;
 	root->keyArray = preparation->keys;
 	root->colors = preparation->colors;
 	root->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.initialKeyCount;
@@ -1984,31 +1975,6 @@ static void fxMapperStep(txMapper* self);
 
 #define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
-void fxBuildArchiveKeys(txMachine* the)
-{
-	txPreparation* preparation = the->preparation;
-	if (preparation) {
-		txU1* p = the->archive;
-		if (p) {
-			txU4 atomSize;
-			txID c, i;
-			p += mxArchiveHeaderSize;
-			// NAME
-			atomSize = c_read32be(p);
-			p += atomSize;
-			// SYMB
-			p += sizeof(Atom);
-			c = (txID)c_read16(p);
-			p += 2;
-			p += mxStringLength((txString)p) + 1;
-			for (i = 1; i < c; i++) {
-				fxNewNameX(the, (txString)p);
-				p += mxStringLength((txString)p) + 1;
-			}
-		}
-	}
-}
-
 static txU1 *fxGetArchiveModules(txMachine *the, void* archive, txU4 *size)
 {
 	txPreparation* preparation = the->preparation;
@@ -2247,39 +2213,18 @@ void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, si
 		id = (txID)preparation->keyCount;
 		for (i = 0; i < c; i++) {
 			txU1 byte;
-			txU4 sum = 0;
-			txU4 modulo = 0;
-			txSlot* result;
 			p = self->scratch;
 			q = p + self->scratchSize;
 			while ((byte = fxMapperRead1(self))) {
 				mxElseFatalCheck(p < q);
 				*p++ = byte;
-				sum = (sum << 1) + byte;
 			}
 			mxElseFatalCheck(p < q);
 			*p = 0;
 			if (i == 0)
 				self->ids[i] = XS_NO_ID;
-			else if (the)
+			else
 				self->ids[i] = fxID(the, (txString)self->scratch);
-			else {
-				sum &= 0x7FFFFFFF;
-				modulo = sum % preparation->nameModulo;
-				result = preparation->names[modulo];
-				while (result != C_NULL) {
-					if (result->value.key.sum == sum)
-						if (c_strcmp(result->value.key.string, (txString)self->scratch) == 0)
-							break;
-					result = result->next;
-				}
-				if (result)
-					self->ids[i] = result->ID;
-				else {
-					self->ids[i] = id;
-					id++;
-				}
-			}
 		}
 		
 		fxMapperReadAtom(self, &atom);
@@ -2404,7 +2349,7 @@ void fxMapperMapIDs(txMapper* self)
 		code = fxMapperRead1(self);
 		offset = (txS1)c_read8(bytes + code);
 		if (0 < offset) {
-			if (self->machine && (XS_CODE_PROFILE == code))
+			if (XS_CODE_PROFILE == code)
 				fxMapperMapID(self, fxGenerateProfileID(self->machine));
 			else
 				fxMapperSkip(self, offset - 1);

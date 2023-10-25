@@ -689,7 +689,6 @@ mxExport void fxAccess(txMachine*, txSlot*);
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 
-mxExport void fxBuildArchiveKeys(txMachine* the);
 mxExport void* fxGetArchiveCode(txMachine* the, void* archive, txString path, size_t* size);
 mxExport txInteger fxGetArchiveCodeCount(txMachine* the, void* archive);
 mxExport void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index);
