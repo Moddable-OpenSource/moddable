@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1111,12 +1111,12 @@ void fx_String_prototype_replace(txMachine* the)
 	txSlot* match;
 	txSize size;
 	txSize matchLength;
-	txSlot* function = C_NULL;
+	txSlot* function;
 	txSlot* replace;
 
 	if (fx_String_prototype_withRegexp(the, mxID(_Symbol_replace), 0, 2))
 		return;
-	string = fxToString(the, mxThis);
+	fxToString(the, mxThis);
 	if (mxArgc <= 0)
 		mxPushUndefined();
 	else
@@ -1127,11 +1127,14 @@ void fx_String_prototype_replace(txMachine* the)
 		mxPushUndefined();
 	else
 		mxPushSlot(mxArgv(1));
-	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))
+	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference)) {
 		function = the->stack;
+		replace = C_NULL;
+	}
 	else {		
 		replace = the->stack;
 		fxToString(the, replace);
+		function = C_NULL;
 	}
 	size = mxStringLength(mxThis->value.string);
 	matchLength = mxStringLength(match->value.string);
@@ -1158,7 +1161,7 @@ void fx_String_prototype_replace(txMachine* the)
 void fx_String_prototype_replaceAll(txMachine* the)
 {
 	txSlot* match;
-	txSlot* function = C_NULL;
+	txSlot* function;
 	txSlot* replace;
 	txInteger size;
 	txInteger matchLength;
@@ -1180,11 +1183,14 @@ void fx_String_prototype_replaceAll(txMachine* the)
 		mxPushUndefined();
 	else
 		mxPushSlot(mxArgv(1));
-	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))
+	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference)) {
 		function = the->stack;
+		replace = C_NULL;
+	}
 	else {		
 		replace = the->stack;
 		fxToString(the, replace);
+		function = C_NULL;
 	}
 	size = mxStringLength(mxThis->value.string);
 	matchLength = mxStringLength(match->value.string);
