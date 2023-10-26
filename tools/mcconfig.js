@@ -1044,7 +1044,14 @@ export default class extends Tool {
 	run() {
 		this.localsName = "locals";
 		super.run();
-		
+
+		if (!this.manifest.creation.has)  {
+			trace("WARNING: No 'creation' found in manifests.\n");
+			trace("   Did you intend to build using mcrun?\n");
+			throw new Error("project manifest or included manifest must include creation")
+		}
+		delete this.manifest.creation.has; 
+
 		this.filterCommonjs(this.manifest.commonjs);
 		this.filterConfig(this.manifest.config);
 		this.filterCreation(this.manifest.creation);

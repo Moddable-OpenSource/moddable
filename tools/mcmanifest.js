@@ -1972,6 +1972,8 @@ export class Tool extends TOOL {
 	mergePlatform(all, platform) {
 		this.mergeProperties(all.config, platform.config);
 		this.mergeProperties(all.creation, platform.creation);
+		if (platform.creation)
+			all.creation.has = true;	// indicates that at least  one manifest contains a creation. used by mcconfig.
 		this.mergeProperties(all.defines, platform.defines);
 
 		this.concatProperties(all.data, platform.data, true);
