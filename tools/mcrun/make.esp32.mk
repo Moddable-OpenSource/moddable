@@ -20,10 +20,10 @@
 HOST_OS := $(shell uname)
 
 USE_USB ?= 0
-ifeq ($(USE_USB),0)
+# ifeq ($(USE_USB),0)
 ifeq ($(UPLOAD_PORT),)
 	UPLOAD_PORT ?= $(shell bash -c "$(BUILD_DIR)/devices/esp32/config/idfSerialPort")
-endif
+# endif
 endif
 
 URL ?= "~"
@@ -62,17 +62,16 @@ PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-DO_MOD_UPLOAD = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		ifneq ($(USE_USB),0)
-			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
-		else
-		endif
+		CHECK_FOR_PORT = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi
+		DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -forcerestart
 	else
 		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		CHECK_FOR_PORT = if [ ! -c "$(UPLOAD_PORT)" ]; then echo "No port." ; exit 1; fi
+		DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -forcerestart
 	endif
 endif
 
@@ -82,10 +81,12 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
+	$(CHECK_FOR_PORT)
 	$(DO_MOD_UPLOAD)
 	
 release: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
+	$(CHECK_FOR_PORT)
 	$(DO_MOD_UPLOAD)
 
 debugURL: $(ARCHIVE)

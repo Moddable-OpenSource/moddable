@@ -477,6 +477,9 @@ void fxReceiveLoop(void)
 		else if (state == 16) {
 			if (c == '>') {
 				current = (txMachine*)value;
+				// for soft-restart, if the machine is 00000000, reboot
+				if (current == NULL)
+					c_exit();
 				if (binary)
 					state = 20;
 				else {
@@ -785,7 +788,8 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 	switch (cmdID) {
 		case 1:		// restart
 			fxDisconnect(the);
-			modDelayMilliseconds(1000);
+//			modDelayMilliseconds(1000);
+			modDelayMilliseconds(1);
 
 			nrf52_reset();
 

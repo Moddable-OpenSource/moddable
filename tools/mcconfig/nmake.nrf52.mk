@@ -94,27 +94,62 @@ OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
 SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
+ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE) $(NRF52_HEAP_SIZE)
+
+!IF "$(USE_USB)"=="1"
 !IF "$(UF2_VOLUME_NAME)"==""
 UF2_VOLUME_NAME = MODDABLE4
 !ENDIF
-WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
-DO_COPY = -for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
-ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE) $(NRF52_HEAP_SIZE)
+SET_PROGRAMMING_MODE = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
+START_SERIAL2XSBUG = serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
+xDO_PROGRAM = $(PLATFORM_DIR)\config\nrfDeploy.bat $(BIN_DIR)\xs_nrf52 $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp
+DO_PROGRAM = -for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
+WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
+
+!ELSE
+	# not USB
+WAIT_FOR_NEW_SERIAL =
+
+!IF "$(UPLOAD_PORT)"==""
+SET_PROGRAMMING_MODE = echo "Set UPLOAD_PORT variable and run the command again." 
+DO_PROGRAM=""
+NOT_READY=1
+!ELSE
+SET_PROGRAMMING_MODE = echo "Double tap reset on the device until LED blinks. Then run the command again."
+START_SERIAL2XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+!IF "$(DEBUGGER_PORT)"==""
+DEBUGGER_PORT = $(UPLOAD_PORT)
+!ENDIF
+DO_PROGRAM = $(PLATFORM_DIR)\config\nrfSerialDeploy $(UPLOAD_PORT) $(BIN_DIR)\xs_nrf52.hex $(BIN_DIR)\dfu-package.zip
+!ENDIF
+!ENDIF
+
+!IF "$(NOT_READY)"=="1"
+CONNECT_XSBUG=
+!ELSE
+!IF "$(XSBUG_LAUNCH)"=="log"
+CONNECT_XSBUG=@echo "Connect to log." && $(START_NODE) $(START_SERIAL2XSBUG)
+NORESTART=-norestart
+!ELSE
+NORESTART=-norestart
+CONNECT_XSBUG=@echo "Connect to xsbug. Press RESET to connect." && $(START_SERIAL2XSBUG) $(NORESTART)
+!ENDIF
+!ENDIF
+
 
 !IF "$(DEBUG)"=="1"
-KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
+KILL_SERIAL2XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 NORESTART = 
 !IF "$(XSBUG_LOG)"=="1"
-DO_XSBUG =
+START_XSBUG =
 SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && cd $(MODDABLE)\tools\xsbug-log && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && node xsbug-log start /B $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
 !ELSE
-DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
+START_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
 !ENDIF
 !ELSE
-DO_XSBUG =
-KILL_SERIAL_2_XSBUG =
+START_XSBUG =
+KILL_SERIAL2XSBUG =
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 0 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 SERIAL_2_XSBUG = 
 NORESTART =
@@ -631,13 +666,20 @@ C_INCLUDES = $(GCC_INCLUDES) $(C_INCLUDES) $(DIRECTORIES) $(SDK_GLUE_INCLUDES) $
 precursor: $(BLE) $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)\xs_nrf52.hex
 
 all: precursor $(BIN_DIR)\xs_nrf52.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(WAIT_FOR_M4)
-	$(DO_XSBUG)
-	@echo Copying: $(BIN_DIR)\xs_nrf52.hex to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
 	$(WAIT_FOR_NEW_SERIAL)
-	$(SERIAL_2_XSBUG) $(NORESTART)
+	$(CONNECT_XSBUG)
+
+deploy: precursor $(BIN_DIR)\xs_nrf52.uf2
+	$(KILL_SERIAL2XSBUG)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
+
+build: precursor $(BIN_DIR)\xs_nrf52.uf2
+	@echo Target built: $(BIN_DIR)\xs_nrf52.uf2
 
 clean:
 	echo # Clean project
@@ -662,21 +704,29 @@ flash: precursor $(BIN_DIR)\xs_nrf52.hex
 	$(NRFJPROG) --reset
 
 debugger:
-	$(DO_XSBUG)
+	$(START_XSBUG)
 	$(MODDABLE_TOOLS_DIR)\serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1 -dtr $(NORESTART)
-
-build: precursor $(BIN_DIR)\xs_nrf52.uf2
-	@echo Target built: $(BIN_DIR)\xs_nrf52.uf2
-
-brin: flash debugger
 
 use_jlink: flash debugger
 
+dfu-package: $(BIN_DIR)/xs_nrf52.hex
+	@echo "# Packaging xs_nrf52.hex"
+	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
+
+installDFU: precursor dfu-package
+	@echo "# Flashing xs_nrf52.hex"
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(UPLOAD_PORT) -b 115200 --singlebank --touch 1200
+
+debugDFU: installDFU
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(CONNECT_XSBUG)
+
 xsbug:
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(WAIT_FOR_NEW_SERIAL)
-	$(SERIAL_2_XSBUG)
+	$(CONNECT_XSBUG)
 
 $(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
 	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex

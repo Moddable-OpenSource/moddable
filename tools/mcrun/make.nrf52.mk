@@ -50,32 +50,54 @@ else
 	LAUNCH = release
 endif
 
-#	USE_USB = 1
+ifneq ("$(UPLOAD_PORT)","")
+	DEBUGGER_PORT ?= $(UPLOAD_PORT)
+endif
 
-ifeq ($(USE_USB),1)
+ifeq ($(USE_USB),0)
+	ifeq ($(HOST_OS),Darwin)
+		VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
+		ifeq ($(shell test $(VERS) -gt 10; echo $$?), 0)
+			DEBUGGER_PORT ?= /dev/cu.usbserial-0001
+		else
+			DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
+		endif
+	else
+		DEBUGGER_PORT ?= /dev/ttyUSB0
+	endif
+else
 	M4_VID ?= beef
 	M4_PID ?= cafe
 endif
 
 KILL_SERIAL2XBUG = $(shell pkill serial2xsbug)
+CHECK_FOR_PORT =
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
-		DO_MOD_UPLOAD = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "\#\#\#  No port. Set UPLOAD_PORT" ; exit 1; fi && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
 
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		ifneq ($(USE_USB),0)
-			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+		ifeq ($(USE_USB),0)
+			CHECK_FOR_PORT = if [[ ! -c "$(DEBUGGER_PORT)" ]]; then echo "\#\#\#  No port. Set DEBUGGER_PORT" ; exit 1; fi
+			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -forcerestart
 		else
+			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 		endif
 	else
-		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-		DO_MOD_UPLOAD = if [ ! -c "$(UPLOAD_PORT)" ]; then echo "\#\#\#  Set UPLOAD_PORT" ; exit 1; fi && $(SERIAL2XSBUG) $(DEBUGGER_PORT) 921600 8N1 -install $(ARCHIVE) -norestart
+		# Linux
 
-		ifeq ($(UPLOAD_PORT),)
+		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		ifeq ($(USE_USB),0)
+			CHECK_FOR_PORT = if [ ! -c "$(DEBUGGER_PORT)" ]; then echo "\#\#\#  No port. Set DEBUGGER_PORT" ; exit 1; fi
+			DO_MOD_UPLOAD = $(SERIAL2XSBUG) $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -forcerestart
+		else
+			DO_MOD_UPLOAD = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL2XSBUG) $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+		endif
+
+		ifeq ($(DEBUGGER_PORT),)
 			ifeq ($(USE_USB),1)
-				DO_MOD_UPLOAD = echo a ; $(SERIAL2XSBUG) `$(SCRIPTS_DIR)/findUSBLinux $(M4_VID) $(M4_PID) cdc_acm` 921600 8N1 -install $(ARCHIVE)
-			endif	
+				DO_MOD_UPLOAD = $(SERIAL2XSBUG) `$(SCRIPTS_DIR)/findUSBLinux $(M4_VID) $(M4_PID) cdc_acm` $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+			endif
 		endif
 	endif
 endif
@@ -86,10 +108,12 @@ all: $(LAUNCH)
 debug: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
+	$(CHECK_FOR_PORT)
 	$(DO_MOD_UPLOAD)
 
 release: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
+	$(CHECK_FOR_PORT)
 	$(DO_MOD_UPLOAD)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)

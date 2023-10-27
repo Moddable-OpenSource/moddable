@@ -3,7 +3,7 @@ echo off
 REM Wait for the Moddable Four volume to unmount.
 echo | set /p moddableFourTemp=Installing to %2.
 :DoWhile
-wmic logicaldisk get caption, description, VolumeName | (find /i "%2")
+wmic logicaldisk get caption, description, VolumeName 2> nul | (find /i "%2")
 IF %ERRORLEVEL% NEQ 0 (GOTO Done)
 echo | set /p moddableFourTemp=.
 timeout /T 1 /NOBREAK > nul

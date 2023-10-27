@@ -124,6 +124,7 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 	if (getenv("XSBUG_PORT"))
 		self->port = atoi(getenv("XSBUG_PORT"));
 	self->restartOnConnect = 1;
+	self->forceRestart = 0;
 	self->showPath = 0;
 	self->timeout = 5000;	// for showpath
 	
@@ -232,6 +233,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-norestart")) {
 			self->restartOnConnect = 0;
 		}
+		else if (!strcmp(argv[argi], "-forcerestart")) {
+			self->forceRestart = 1;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;
@@ -334,6 +338,17 @@ int fxInitializeTarget(txSerialTool self)
 	return 0;
 }
 
+/*
+	-1 - unknown
+	-2 - write for uninstall failed
+	-3 - install part failed
+	-4 - get pref failed because password
+	-5 - set pref failed
+	-6 - get pref failed
+	-7 - unknown command (mods enabled)
+	-8 - unknown command (mods disabled)
+
+*/
 void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 {
 	uint8_t *buffer = bufferIn;
@@ -587,6 +602,33 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 			}
 			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 				txSerialMachine machine = self->currentMachine;
+
+//				if (0 == machine->receiveCount) {		// first message must be login. this check avoids getting spoofed by data from previous boot
+				if (!machine->didLogin && !self->firstMachine->nextMachine) {
+					int j = offset - 14;
+					while (j >= 0) {
+						char c = dst[-(offset - j)];
+						if (c == '>') 
+							j = -1;		// unexpected, exit this loop
+						else if (c == '<') {
+							if (j >= 7) { // length of "<xsbug>" that precedes "<login "
+								char *p = &dst[-(offset - (j - 7))];
+								if (0 == strncmp(p, "<xsbug><login ", 14)) {
+									machine->didLogin = 1;
+									break;		// success
+								}
+							}
+							j = -1;		// unexpected, exit this loop
+						}
+						j--;
+					}
+					if (j < 0) {		// didn't find login, reset destination buffer and continue looking
+						dst = self->buffer;
+						offset = 0;
+						continue;
+					}
+				}
+
 				if ((1 == machine->receiveCount) && !self->firstMachine->nextMachine) {	// first command when after transitioning from 0 to 1 machines
 					if (fxInitializeTarget(self))
 						self->currentMachine->suppress = 1;
@@ -752,10 +794,12 @@ void fxRestart(txSerialTool self)
 	fprintf(stderr, "### fxRestart\n");
 #endif
 
-	if (self->currentMachine) {	// send a software restart request for boards with no RTS to toggle
+
+	if (self->forceRestart || self->currentMachine) {
 		char out[32];
 
-		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+//		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
+		sprintf(out, "\r\n<?xs#%8.8X?>", 0);
 		fxWriteSerial(self, out, strlen(out));
 
 		out[0] = 0;

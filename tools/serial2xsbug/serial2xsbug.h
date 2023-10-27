@@ -110,6 +110,7 @@ struct txSerialMachineStruct {
 #endif
 	txSerialTool tool;
 	txSerialMachine nextMachine;
+	int didLogin;
 	uint32_t value;
 	uint8_t suppress;
 	int receiveCount;
@@ -159,6 +160,7 @@ struct txSerialToolStruct {
 	int dtr;
 	int programming;
 	int restartOnConnect;
+	int forceRestart;
 	int showPath;
 	int timeout;
 	txSerialMachine firstMachine;

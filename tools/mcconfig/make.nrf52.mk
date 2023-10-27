@@ -30,7 +30,6 @@ NRFJPROG_ARGS ?= -f nrf52 --qspiini $(QSPI_INI_PATH)
 
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 921600
-DEBUGGER_PORT ?= $(UPLOAD_PORT)
 
 # for memory calculation
 SOFTDEVICE_ADDR = 0x27000
@@ -70,7 +69,6 @@ endif
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 CONNECT_XSBUG =
-NORESTART =
 
 ifeq ($(HOST_OS),Darwin)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
@@ -87,12 +85,10 @@ ifeq ($(HOST_OS),Darwin)
 
 	ifeq ($(DEBUG),1)
 		ifeq ("$(XSBUG_LAUNCH)","log")
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_NODE) $(START_SERIAL2XSBUG)
-			NORESTART=-norestart
+			CONNECT_XSBUG=@echo "Connect to xsbug." && $(START_NODE) $(START_SERIAL2XSBUG) -forcerestart
 			WAIT_FOR_COPY_COMPLETE =
 		else
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_SERIAL2XSBUG)
-			NORESTART=-norestart
+			CONNECT_XSBUG=@echo "Connect to xsbug." && $(START_SERIAL2XSBUG)
 			WAIT_FOR_COPY_COMPLETE =
 			ifeq ("$(XSBUG_LAUNCH)","app")			
 				START_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
@@ -103,10 +99,10 @@ ifeq ($(HOST_OS),Darwin)
 	endif
 
 	ifeq ($(USE_USB),0)
-		SET_PROGRAMMING_MODE = @echo Use the target installDFU or debugDFU.
-		DO_PROGRAM =
+		SET_PROGRAMMING_MODE = @echo Double tap reset on the device until LED blinks. Then run the command again.
+		DO_PROGRAM = $(PLATFORM_DIR)/config/nrfSerialDeploy $(UPLOAD_PORT) $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
 	else
-		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ; cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+		DO_PROGRAM = cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 	endif
 
 # END of Darwin
@@ -143,8 +139,8 @@ else
 
 
 	ifeq ($(USE_USB),0)
-		SET_PROGRAMMING_MODE = echo "  Use the target installDFU or debugDFU."
-		DO_PROGRAM =
+		SET_PROGRAMMING_MODE = echo "Double tap reset on the device until LED blinks. Then run the command again."
+		DO_PROGRAM = $(PLATFORM_DIR)/config/nrfSerialDeploy $(UPLOAD_PORT) $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
 	else
 		DO_PROGRAM = @ Programming: $(BIN_DIR)/xs_nrf52.hex to $(M4_VID):$(M4_PID); DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
 	endif
@@ -158,6 +154,8 @@ ifeq ($(HOST_OS),Darwin)
 else
 	NRF52_GCC_ROOT ?= $(NRF_ROOT)/arm-gnu-toolchain-12.2.rel1-$(HOST_CPU)-arm-none-eabi
 endif
+
+DEBUGGER_PORT ?= $(UPLOAD_PORT)
 
 NRFJPROG ?= $(NRF_ROOT)/nrfjprog/nrfjprog
 UF2CONV ?= $(NRF_ROOT)/uf2conv.py
