@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
 // 						}
 						preload = linker->firstPreload;
 						while (preload) {
-							if (c_strncmp(preload->name, "lockdown-", 9)) {
+							if (c_strncmp(preload->name, "lockdown/", 9)) {
 								fxSlashPath(preload->name, mxSeparator, url[0]);
 								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
 								xsCollectGarbage();
@@ -373,7 +373,7 @@ int main(int argc, char* argv[])
 						}
 						preload = linker->firstPreload;
 						while (preload) {
-							if (!c_strncmp(preload->name, "lockdown-", 9)) {
+							if (!c_strncmp(preload->name, "lockdown/", 9)) {
 								fxSlashPath(preload->name, mxSeparator, url[0]);
 								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
 								xsCollectGarbage();
