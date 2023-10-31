@@ -138,12 +138,8 @@ void fxBuildArray(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_sort), 1, mxID(_sort), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_splice), 2, mxID(_splice), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toLocaleString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toReversed), 0, mxID(_toReversed), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toSorted), 1, mxID(_toSorted), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toSpliced), 2, mxID(_toSpliced), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_unshift), 1, mxID(_unshift), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_with), 2, mxID(_with), XS_DONT_ENUM_FLAG);
 	property = slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_values), 0, mxID(_values), XS_DONT_ENUM_FLAG);
 	mxPushSlot(property);
 	mxPull(mxArrayIteratorFunction);
@@ -161,11 +157,19 @@ void fxBuildArray(txMachine* the)
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_flatMap), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_includes), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_keys), XS_NO_FLAG);
+	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_values), XS_NO_FLAG);
+#if mxECMAScript2023
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_toReversed), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_toSorted), XS_NO_FLAG);
 	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_toSpliced), XS_NO_FLAG);
-	unscopable = fxNextBooleanProperty(the, unscopable, 1, mxID(_values), XS_NO_FLAG);
+#endif
 	slot = fxNextSlotProperty(the, slot, the->stack++, mxID(_Symbol_unscopables), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+#if mxECMAScript2023
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toReversed), 0, mxID(_toReversed), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toSorted), 1, mxID(_toSorted), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_toSpliced), 2, mxID(_toSpliced), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_prototype_with), 2, mxID(_with), XS_DONT_ENUM_FLAG);
+#endif
 	mxArrayPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Array), 1, mxID(_Array));
 	mxArrayConstructor = *the->stack;

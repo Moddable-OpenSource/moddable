@@ -194,7 +194,8 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 
 	the->stackBottom = fxAllocateSlots(the, theCreation->stackCount);
 	the->stackTop = the->stackBottom + theCreation->stackCount;
-	the->stackPrototypes = the->stackTop;
+	the->stackIntrinsics = the->stackTop;
+	the->stackPrototypes = the->stackTop - XS_INTRINSICS_COUNT;
 	the->stack = the->stackTop;
 #ifdef mxInstrument
 	the->stackPeak = the->stackTop;
@@ -503,6 +504,7 @@ void fxFree(txMachine* the)
 		fxFreeSlots(the, the->stackBottom);
 	the->stackBottom = C_NULL;
 	the->stackTop = C_NULL;
+	the->stackIntrinsics = C_NULL;
 	the->stackPrototypes = C_NULL;
 	the->stack = C_NULL;
 	

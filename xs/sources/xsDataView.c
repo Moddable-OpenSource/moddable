@@ -198,7 +198,9 @@ void fxBuildDataView(txMachine* the)
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_get_byteLength), C_NULL, mxID(_byteLength), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2023
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_get_detached), C_NULL, mxID(_detached), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_get_maxByteLength), C_NULL, mxID(_maxByteLength), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_get_resizable), C_NULL, mxID(_resizable), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_concat), 1, mxID(_concat), XS_DONT_ENUM_FLAG);
@@ -299,13 +301,15 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_sort), 1, mxID(_sort), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_subarray), 2, mxID(_subarray), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toLocaleString), 0, mxID(_toLocaleString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toReversed), 0, mxID(_toReversed), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toSorted), 1, mxID(_toSorted), XS_DONT_ENUM_FLAG);
 	property = mxBehaviorGetProperty(the, mxArrayPrototype.value.reference, mxID(_toString), 0, XS_OWN);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_toString), XS_DONT_ENUM_FLAG);
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_with), 2, mxID(_with), XS_DONT_ENUM_FLAG);
 	property = slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_values), 0, mxID(_values), XS_DONT_ENUM_FLAG);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2023
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toReversed), 0, mxID(_toReversed), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_toSorted), 1, mxID(_toSorted), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_TypedArray_prototype_with), 2, mxID(_with), XS_DONT_ENUM_FLAG);
+#endif
 	mxTypedArrayPrototype = *the->stack;	
 	constructor = fxBuildHostConstructor(the, mxCallback(fx_TypedArray), 0, mxID(_TypedArray));
 	mxTypedArrayConstructor = *the->stack;
@@ -318,7 +322,7 @@ void fxBuildDataView(txMachine* the)
 		slot = fxLastProperty(the, fxNewObjectInstance(the));
 		slot = fxNextIntegerProperty(the, slot, dispatch->size, mxID(_BYTES_PER_ELEMENT), XS_GET_ONLY);
 		slot = fxBuildHostConstructor(the, mxCallback(fx_TypedArray), 3, mxID(dispatch->constructorID));
-		the->stackPrototypes[-1 - (txInteger)dispatch->constructorID] = *the->stack; //@@
+		the->stackIntrinsics[-1 - (txInteger)dispatch->constructorID] = *the->stack; //@@
 		slot->value.instance.prototype = constructor;
 		property = mxFunctionInstanceHome(slot);
 		slot = property->next;
@@ -1290,7 +1294,7 @@ void fxCreateTypedArraySpecies(txMachine* the)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
 	txSlot* dispatch = instance->next;
-	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	txSlot* constructor = &the->stackIntrinsics[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_constructor));
 	fxToSpeciesConstructor(the, constructor);
@@ -2355,7 +2359,7 @@ void fx_TypedArray_prototype_toReversed(txMachine* the)
 {
 	mxTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	txSlot* constructor = &the->stackIntrinsics[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
 	mxPushSlot(constructor);
 	mxNew();
 	mxPushInteger(length);
@@ -2380,7 +2384,7 @@ void fx_TypedArray_prototype_toSorted(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	txSlot* constructor = &the->stackIntrinsics[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
 	txSlot* function = C_NULL;
 	if (mxArgc > 0) {
 		txSlot* slot = mxArgv(0);
@@ -2441,7 +2445,7 @@ void fx_TypedArray_prototype_values(txMachine* the)
 void fx_TypedArray_prototype_with(txMachine* the)
 {
 	mxTypedArrayDeclarations;
-	txSlot* constructor = &the->stackPrototypes[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
+	txSlot* constructor = &the->stackIntrinsics[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
 	txInteger index = (txInteger)fxArgToRelativeIndex(the, 0, 0, length);
 	txSlot* value;
 	if (mxArgc > 1)

@@ -96,7 +96,7 @@ void fx_lockdown(txMachine* the)
 	}
 
 	instance = fxNewArray(the, _Compartment);
-	property = the->stackPrototypes - 1;
+	property = the->stackIntrinsics - 1;
 	item = instance->next->value.array.address;
 	for (id = 0; id < XS_SYMBOL_ID_COUNT; id++) {
 		*((txIndex*)item) = id;
@@ -126,8 +126,10 @@ void fx_lockdown(txMachine* the)
 	fxDuplicateInstance(the, mxMathObject.value.reference);
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+#if mxECMAScript2023
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
+#endif	
 	mxPull(instance->next->value.array.address[_Math]);
 
 	mxPull(mxCompartmentGlobal);
@@ -138,10 +140,10 @@ void fx_lockdown(txMachine* the)
 	mxPullSlot(harden);
 	
 	for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++) {
-		mxHardenBuiltInCall; mxPush(the->stackPrototypes[-1 - id]); mxHardenBuiltInRun;
+		mxHardenBuiltInCall; mxPush(the->stackIntrinsics[-1 - id]); mxHardenBuiltInRun;
 	}
 	for (id = _Compartment; id < XS_INTRINSICS_COUNT; id++) {
-		mxHardenBuiltInCall; mxPush(the->stackPrototypes[-1 - id]); mxHardenBuiltInRun;
+		mxHardenBuiltInCall; mxPush(the->stackIntrinsics[-1 - id]); mxHardenBuiltInRun;
 	}
 	
 	mxHardenBuiltInCall; mxPush(mxArgumentsSloppyPrototype); mxHardenBuiltInRun;

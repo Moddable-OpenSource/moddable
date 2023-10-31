@@ -443,9 +443,9 @@ int main(int argc, char* argv[])
 					
 					property = fxLastProperty(the, fxNewInstance(the));
 					for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+						property = fxNextSlotProperty(the, property, &the->stackIntrinsics[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 					for (; id < _Compartment; id++)
-						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+						property = fxNextSlotProperty(the, property, &the->stackIntrinsics[-1 - id], mxID(id), XS_GET_ONLY);
 					mxPull(mxCompartmentGlobal);
 					
 					mxGlobal.value.reference->value.instance.prototype = C_NULL;
@@ -949,7 +949,6 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxSharedArrayBufferPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxSuppressedErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSymbolPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSyntaxErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxTransferPrototype); mxFreezeBuiltInRun;
@@ -959,10 +958,14 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxWeakMapPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxWeakRefPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxWeakSetPrototype); mxFreezeBuiltInRun;
-	
+#if mxExplicitResourceManagement
+	mxFreezeBuiltInCall; mxPush(mxSuppressedErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxDisposableStackPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncDisposableStackPrototype); mxFreezeBuiltInRun;
+#endif	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
 		mxFreezeBuiltInCall; 
-		mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
+		mxPush(the->stackIntrinsics[-1 - (txInteger)dispatch->constructorID]);
 		mxGetID(mxID(_prototype));
 		mxFreezeBuiltInRun;
 	}

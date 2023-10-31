@@ -310,7 +310,7 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 						case XS_STRING_KIND: theResult->value.instance.prototype = mxStringPrototype.value.reference; break;
 						case XS_TYPED_ARRAY_KIND: {
 							txTypeDispatch* dispatch = (txTypeDispatch*)&gxTypeDispatches[aSlot->value.integer];
-							mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
+							mxPush(the->stackIntrinsics[-1 - (txInteger)dispatch->constructorID]);
 							mxGetID(mxID(_prototype));
 							theResult->value.instance.prototype = the->stack->value.reference;
 							mxPop();
