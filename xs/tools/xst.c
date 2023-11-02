@@ -350,6 +350,7 @@ int main(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+#endif
 
 				xsResult = xsNewHostFunction(fx_harden, 1);
 				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
@@ -359,7 +360,6 @@ int main(int argc, char* argv[])
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
-#endif
 
 				xsVar(0) = xsUndefined;
 				the->rejection = &xsVar(0);
