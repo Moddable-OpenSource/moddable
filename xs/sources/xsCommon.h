@@ -112,18 +112,20 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#if mxExplicitResourceManagement
-#define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 4
-#define XS_PATCH_VERSION 1
-#elif mxECMAScript2023
-#define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 3
-#define XS_PATCH_VERSION 1
+#if mxECMAScript2023
+	#define XS_MAJOR_VERSION 14
 #else
-#define XS_MAJOR_VERSION 13
-#define XS_MINOR_VERSION 3
-#define XS_PATCH_VERSION 1
+	#define XS_MAJOR_VERSION 13
+#endif
+#if mxExplicitResourceManagement
+	#define XS_MINOR_VERSION 4
+#else
+	#define XS_MINOR_VERSION 3
+#endif
+#if mxKeysGarbageCollection
+	#define XS_PATCH_VERSION 1
+#else
+	#define XS_PATCH_VERSION 0
 #endif
 
 #define XS_DIGEST_SIZE 16
