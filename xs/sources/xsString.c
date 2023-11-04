@@ -36,16 +36,11 @@
  */
 
 #include "xsAll.h"
-#if mxWindows
-	#include <Winnls.h>
-#elif mxMacOSX
-	#include <CoreServices/CoreServices.h>
-#elif mxiOS
-	#include <CoreFoundation/CoreFoundation.h>
-#endif
 
 #define mxStringInstanceLength(INSTANCE) ((txIndex)fxUnicodeLength(instance->next->value.string))
 
+static txString fx_String_prototype_includes_aux(txMachine* the, txString string, txSize stringLength, txString searchString, txSize searchLength);
+static txInteger fx_String_prototype_indexOf_aux(txMachine* the, txString theString, txInteger theLength, txInteger theOffset, txString theSubString, txInteger theSubLength, txInteger* theOffsets);
 static void fx_String_prototype_replaceAux(txMachine* the, txInteger size, txInteger offset, txSlot* function, txSlot* match, txInteger matchLength, txSlot* replace);
 static txSlot* fx_String_prototype_split_aux(txMachine* the, txSlot* theString, txSlot* theArray, txSlot* theItem, txInteger theStart, txInteger theStop);
 
@@ -738,27 +733,6 @@ void fx_String_prototype_endsWith(txMachine* the)
 		mxResult->value.boolean = 1;
 }
 
-static txString fx_String_prototype_includes_aux(txMachine* the, txString string, txSize stringLength, txString searchString, txSize searchLength)
-{
-	txString result = string;
-	txString limit = string + stringLength - searchLength;
-	while (result <= limit) {
-		txU1 c;
-		txU1* p = (txU1*)result;
-		txU1* q = (txU1*)searchString;
-		while ((c = c_read8(q)) && (c_read8(p) == c)) {
-			mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
-			p++;
-			q++;
-		}
-		if (c)
-			result++;
-		else
-			return result;
-	}
-	return C_NULL;
-}
-
 void fx_String_prototype_includes(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
@@ -779,10 +753,31 @@ void fx_String_prototype_includes(txMachine* the)
 	searchString = mxArgv(0)->value.string;
 	searchLength = mxStringLength(searchString);
 	offset = fxUnicodeToUTF8Offset(string, offset);
-	if ((length - offset) < searchLength)
-		return;
 	if (fx_String_prototype_includes_aux(the, string + offset, length - offset, searchString, searchLength))
 		mxResult->value.boolean = 1;
+}
+
+txString fx_String_prototype_includes_aux(txMachine* the, txString string, txSize stringLength, txString searchString, txSize searchLength)
+{
+	if (stringLength >= searchLength) {
+		txString result = string;
+		txString limit = string + stringLength - searchLength;
+		while (result <= limit) {
+			txU1 c;
+			txU1* p = (txU1*)result;
+			txU1* q = (txU1*)searchString;
+			while ((c = c_read8(q)) && (c_read8(p) == c)) {
+				mxMeterSome(((c & 0xC0) != 0x80) ? 1 : 0);
+				p++;
+				q++;
+			}
+			if (c)
+				result++;
+			else
+				return result;
+		}
+	}
+	return C_NULL;
 }
 
 void fx_String_prototype_indexOf(txMachine* the)
