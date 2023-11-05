@@ -202,7 +202,7 @@ void xs_socket(xsMachine *the)
 	int ttl = 0;
 	char addr[64];
 
-#if ESP32
+#if ESP32 && (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 1)
 	if (!esp_netif_get_default_netif())
 		xsUnknownError("no network");
 #endif
