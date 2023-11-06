@@ -869,6 +869,10 @@ installDFU: precursor dfu-package
 	@echo "# Flashing $<"
 	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(UPLOAD_PORT) -b 115200 --singlebank --touch 1200
 
+ble-package: $(BIN_DIR)/xs_nrf52.hex
+	@echo "# Packaging $< for BLE"
+	adafruit-nrfutil dfu genpkg --dev-type 0x52 --sd-req 0x100 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/ble-package.zip
+
 debugDFU: installDFU
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
@@ -904,7 +908,9 @@ libdir:
 
 $(LIB_DIR): libdir
 	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
+
+$(TMP_DIR)/buildinfo.h:
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	
 $(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.bin
@@ -939,11 +945,11 @@ $(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo "# link to .out file"
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
-$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(TMP_DIR)/buildinfo.h
 	@echo "# buildinfo"
-	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@
+	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(TMP_DIR)/buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c

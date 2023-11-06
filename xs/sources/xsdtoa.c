@@ -5343,6 +5343,8 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 #ifndef SET_INEXACT
 #ifdef Check_FLT_ROUNDS
 	try_quick = Rounding == 1;
+#else
+	try_quick = 1;
 #endif
 #endif /*SET_INEXACT*/
 #endif

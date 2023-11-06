@@ -51,7 +51,7 @@ static void fxReadSlotTable(txMachine* the, txSnapshot* snapshot, txSlot** addre
 static void fxUnlinkChunks(txMachine* the);
 
 #define mxUnprojectChunk(ADDRESS) (snapshot->firstChunk + ((size_t)ADDRESS));
-static txCallback fxUnprojectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback);
+extern txCallback fxUnprojectCallback(txMachine* the, txSnapshot* snapshot, txCallback callback);
 static txSlot* fxUnprojectSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot);
 
 static void fxWriteChunk(txMachine* the, txSnapshot* snapshot, txSlot* slot);
