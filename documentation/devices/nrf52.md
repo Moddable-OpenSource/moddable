@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: September 7, 2023
+Revised: November 6, 2023
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -22,12 +22,20 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
 
 * [Troubleshooting](#troubleshooting)
 * [Debugging Over Serial](#serial-debugging)
+* [Updating over BLE](#ble-update)
+	* [Ensure your nRF52 device has version 8 of the Bootloader ](#ble-update-1)
+	* [Update the nRF52 Bootloader](#ble-update-bootloader)
+	* [Build an update package](#ble-update-2)
+	* [Transfer the package to your mobile](#ble-update-3)
+	* [Put the device in DFU OTA mode](#ble-update-4)
+	* [Use nRF Connect for Mobile to Wirelessly update device](#ble-update-5)
 * [Installing Apps via Serial](#install-apps-via-serial)
 * [Debugging Native Code](#debugging-native-code)
 * [Bootloader](#bootloader)
 	* [Installing the bootloader](#install-bootloader)
 	* [Updating the bootloader](#update-bootloader)
 * [nRF5 SDK modifications](#nrf5-sdk-mods)
+
 
 <a id="overview"></a>
 ## Overview
@@ -469,7 +477,7 @@ The device needs to be in firmware update mode in order to receive the installat
 mcconfig -d -m -p nrf52/<boardname> -t debugDFU
 ```
 
-After the build information, the console will progress to installing:
+After the build information scrolls by, the console will progress to installing:
 
 ```
 Sending DFU start packet
@@ -486,6 +494,142 @@ DFU upgrade took 69.43805122375488s
 Device programmed.
 ```
 
+<a id="ble-update"></a>
+## Updating nRF52 over BLE (DFU OTA)
+
+The Moddable SDK supports updating nRF52 firmware over BLE using Nordic's "nRF Connect for Mobile" apps on iOS and Android. This works with Moddable Four and other supported nRF52-powered boards.
+
+These are the five steps to prepare your device and update the nRF52 firmware over BLE. 
+
+1. [Ensure that your nRF52 device has version 8](#ble-update-1) (or later) of the [Moddable fork of the AdaFruit bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader).
+2. [Build your project firmware](#ble-update-2) into an update package
+3. [Transfer the update package](#ble-update-3) to your mobile device
+4. [Put the target device into DFU OTA mode](#ble-update-4)
+5. [Use "nRF Connect for Mobile" to install the firmware](#ble-update-5) onto the device wirelessly with BLE
+
+The following sections explain these steps in detail.
+
+<a id="ble-update-1"></a>
+### 1) Ensure your nRF52 device has version 8 of the Bootloader
+
+Put your device into Programming mode (double-tap the reset button) and open the volume that appears on your desktop. Open the INFO_UF2.TXT file. Look for
+
+```
+Bootloader: Moddable 8.0
+Date: Nov  6 2023
+```
+
+If the version is earlier than 8.0, update your bootloader.
+
+<a id="ble-update-bootloader"></a>
+#### Update the nRF52 Bootloader
+
+You can update your Moddable nRF52 Bootloader with a prebuilt version for your board, or you can customize it and build it yourself.
+
+The [Moddable Four Bootloader](https://github.com/Moddable-OpenSource/moddable/tree/public/build/devices/nrf52/bootloader) can be found in the repository at `$MODDABLE/build/devices/nrf52/bootloader/`. Put your device into Programming mode and copy the current.uf2 file to the device.
+
+If you've got a different device, build and install the updated bootloader to your nRF52 device by first configuring, then building the Bootloader.
+
+Use the [Moddable fork of the Adafruit nRF52 bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader). The minimum version to use for DFU OTA is version 8.
+
+#### Configure the Bootloader
+
+You can configure the bootloader to check the state of a GPIO pin during boot to put the device into DFU OTA mode.
+
+Set the `BUTTON_DFU` define in your board.h file to specify which GPIO to use. The board.h file is located in `Adafruit_nRF52_Bootloader/src/boards/<boardname>/board.h`.
+
+If you do not define a GPIO, you can programmatically set the device to reboot in DFU OTA mode. [See below](#dfu-software-switch)
+
+#### Build and install the Bootloader using USB
+
+For devices that communicate over USB, build the bootloader update file:
+
+```
+cd .../Adafruit_nRF52_Bootloader
+rm -rf _build
+git pull --rebase
+make BOARD=moddable_four bootloaderuf2
+```
+Put your device into Programming mode and copy the `current.uf2` file to the device:
+
+```
+cp current.uf2 /Volumes/MODDABLE4
+```
+
+#### Or Build and install the Bootloader using JTAG for a UART device
+
+For devices that update over serial, use JTAG to push install the new bootloader:
+
+```
+cd .../Adafruit_nRF52_Bootloader
+rm -rf _build
+git pull --rebase
+make SERIAL_DFU=1 BOARD=test flash
+```
+
+> Note: With `SERIAL_DFU=1`, the example above is for a device that uses serial instead of USB for programming. Installing this bootloader will disable updating over USB.
+
+
+<a id="ble-update-2"></a>
+### 2) Build an update package
+
+Build your application with the `-t ble-package` target. The build will complete and indicate where the `ble-package.zip ` file can be found.
+
+```
+ % cd .../my_app
+ % mcconfig -d -m -p nrf52/moddable_four -t ble-package
+ ....
+ # Packaging .../my_app/xs_nrf52.hex for BLE
+Zip created at .../my_app/ble-package.zip
+```
+
+<a id="ble-update-3"></a>
+### 3) Transfer the package to your mobile
+
+Transfer the `ble-package.zip` file to your mobile device so that it can be accessed by "nRF Connect for Mobile".
+
+<a id="ble-update-4"></a>
+### 4) Put the device in DFU OTA mode
+
+<a id="dfu-software-switch"></a>
+#### Put nRF52 into Update Mode (programmatically)
+
+Put the nRF52 device into BLE DFU update mode by calling the `nrf52_rebootToOTA()` C function. The `$(MODDABLE)/build/devices/nrf52/examples/BLE_DFU` app is an example of how to use it from an app.
+
+```
+cd $MODDABLE/build/devices/nrf52/examples/BLE_DFU
+mcconfig -d -m -p nrf52/moddable_four
+```
+#### Put nRF52 into Update Mode (GPIO)
+
+If your device and bootloader have a button defined as the `BUTTON_DFU`, hold that button and reset the device.
+
+<a id="ble-update-5"></a>
+#### 5) Use nRF Connect for Mobile to Wirelessly update device
+
+Once the nRF52 is in BLE DFU update mode, use the [nRF Connect for Mobile](https://www.nordicsemi.com/Products/Development-tools/nrf-connect-for-mobile) to transfer the firmware contained in the `ble-package.zip` file to the nRF52 device.
+
+Launch the application and follow these steps:
+
+1. Open the filter
+2. Enable Nordic DFU Service
+3. Enable "Remove Unconnectable"
+4. Connect to the AdaDFU device
+	<img src=../assets/dfu/nrfConnect0.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect1.jpeg width=40%>
+5. Select the DFU tab
+6. Click the "Connect" button
+When the device has connected,
+7. Click "Open Document Picker"
+	<img src=../assets/dfu/nrfConnect2.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect3.jpeg width=40%>
+8. Choose your upload package
+9. Press the "Start" button
+	<img src=../assets/dfu/nrfConnect4.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect5.jpeg width=40%>
+10. The Status area will display "Starting" for some time as the flash area is erased.
+11. After the area is erased, the status changes to "Uploading" and progress will be displayed as the upload continues.
+	<img src=../assets/dfu/nrfConnect6.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect7.jpeg width=40%>
+12. When the transfer has completed, "Success!" is displayed. The device will reboot to the newly install firmware image.
+
+	<img src=../assets/dfu/nrfConnect8.jpeg width=40%>
 
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
@@ -606,8 +750,10 @@ Drag a `.uf2` file to the **MODDABLE4** disk to program it.
 
 > Note: The bootloader can be updated in the same way.
 
+> Note: The disk that appears may be named **MODDABLEnRF**
+
 <a id="install-bootloader"></a>
-### Installing the bootloader
+### Installing the bootloader the first time
 
 To use a nRF52840 device with the Moddable SDK, you will have to install the bootloader to that device. This will replace the functionality of the previous bootloader.
 
@@ -615,7 +761,7 @@ To use a nRF52840 device with the Moddable SDK, you will have to install the boo
 
 > Note: You may brick your device.
 
-You will need a Segger J-Link or equivalent to program the bootloader.
+You will need a Segger J-Link or equivalent to program the bootloader for the first time. Once a Moddable bootloader is installed, you can use the UF2 installation method.
 
 1. Connect your device to the J-Link in the same way that you would for the debugger. See the
 [Debugging Native Code](#debugging-native-code)
@@ -652,8 +798,19 @@ section.
 
 5. Double-tap the reset button to set the device to Programming mode. The LED will blink regularly, and the `MODDABLEnRF` volume will appear on the desktop.
 
-You can now program the device.
+   You can now program the device.
 
+   <a id="bootloader-update-file"></a>
+6. Once a Moddable bootloader has been installed on your device, you can use the **bootloaderuf2** Makefile target to build an update file and copy the file to your device.
+
+   Build the bootloader with the `bootloaderuf2` target
+
+   ```
+   cd .../Adafruit_nRF52_Bootloader
+   make BOARD=moddable_four bootloaderuf2
+   ```
+
+   Put your device into Programming mode and copy the `current.uf2` file to your device.
 
 ----
 
@@ -726,3 +883,5 @@ Or you can make your own by following these steps to modify the SDK:
         return false;
     }
     ```
+
+
