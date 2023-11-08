@@ -12,8 +12,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/piu/mc/gif/manifest.json",
-		"$(MODULES)/piu/mc/qrcode/manifest.json"
+		"$(PIU)/MC/gif/manifest.json",
+		"$(PIU)/MC/qrcode/manifest.json"
 	],
 	"creation": {
 		"stack": 512
