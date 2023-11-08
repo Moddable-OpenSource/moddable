@@ -1074,6 +1074,22 @@ mxExport void fx_TypeError(txMachine* the);
 mxExport void fx_URIError(txMachine* the);
 mxExport void fx_Error_prototype_get_stack(txMachine* the);
 
+enum {
+	XS_NO_ERROR = 0,
+	XS_UNKNOWN_ERROR,
+	XS_EVAL_ERROR,
+	XS_RANGE_ERROR,
+	XS_REFERENCE_ERROR,
+	XS_SYNTAX_ERROR,
+	XS_TYPE_ERROR,
+	XS_URI_ERROR,
+	XS_AGGREGATE_ERROR,
+	XS_SUPPRESSED_ERROR,
+	XS_ERROR_COUNT
+};
+extern const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT];
+#define mxErrorPrototypes(THE_ERROR) (the->stackIntrinsics[-1 - gxErrorWhichPrototypeStackIndex[THE_ERROR]])
+
 extern void fxBuildError(txMachine* the);
 extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
 
@@ -1891,20 +1907,6 @@ extern void fxSuspendProfiler(txMachine* the);
 #endif
 
 enum {
-	XS_NO_ERROR = 0,
-	XS_UNKNOWN_ERROR,
-	XS_EVAL_ERROR,
-	XS_RANGE_ERROR,
-	XS_REFERENCE_ERROR,
-	XS_SYNTAX_ERROR,
-	XS_TYPE_ERROR,
-	XS_URI_ERROR,
-	XS_AGGREGATE_ERROR,
-	XS_SUPPRESSED_ERROR,
-	XS_ERROR_COUNT
-};
-
-enum {
 	XS_IMMUTABLE = 0,
 	XS_MUTABLE = 1,
 };
@@ -2509,6 +2511,8 @@ enum {
 	mxHostInspectorsStackIndex,
 	mxInstanceInspectorsStackIndex,
 
+// xs.h 
+// begin
 	mxObjectPrototypeStackIndex = XS_INTRINSICS_COUNT,
 	mxFunctionPrototypeStackIndex,
 	mxArrayPrototypeStackIndex,
@@ -2538,6 +2542,8 @@ enum {
 	mxWeakSetPrototypeStackIndex,
 	mxPromisePrototypeStackIndex,
 	mxProxyPrototypeStackIndex,
+// end
+	
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
 	mxCompartmentPrototypeStackIndex,
@@ -2701,7 +2707,6 @@ enum {
 #define mxRegExpPrototype the->stackIntrinsics[-1 - mxRegExpPrototypeStackIndex]
 #define mxHostPrototype the->stackIntrinsics[-1 - mxHostPrototypeStackIndex]
 
-#define mxErrorPrototypes(THE_ERROR) (the->stackIntrinsics[-mxErrorPrototypeStackIndex-(THE_ERROR)])
 #define mxErrorPrototype the->stackIntrinsics[-1 - mxErrorPrototypeStackIndex]
 #define mxEvalErrorPrototype the->stackIntrinsics[-1 - mxEvalErrorPrototypeStackIndex]
 #define mxRangeErrorPrototype the->stackIntrinsics[-1 - mxRangeErrorPrototypeStackIndex]
