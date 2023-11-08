@@ -337,8 +337,8 @@ void fx_harden(txMachine* the)
 	txSlot* list;
 	txSlot* item;
 
-	if (!(mxProgram.value.reference->flag & XS_DONT_MARSHALL_FLAG))
-		mxTypeError("call lockdown before harden");
+// 	if (!(mxProgram.value.reference->flag & XS_DONT_MARSHALL_FLAG))
+// 		mxTypeError("call lockdown before harden");
 
 	if (mxArgc == 0)
 		return;
