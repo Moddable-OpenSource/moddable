@@ -6,8 +6,9 @@ features: [Symbol.toStringTag]
 
 lockdown();
 
-assert.sameValue(Compartment.prototype[Symbol.toStringTag], 'Compartment');
-
-verifyNotEnumerable(Compartment.prototype, Symbol.toStringTag);
-verifyNotWritable(Compartment.prototype, Symbol.toStringTag);
-verifyNotConfigurable(Compartment.prototype, Symbol.toStringTag);
+verifyProperty(Compartment.prototype, Symbol.toStringTag, {
+  value: 'Compartment',
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
