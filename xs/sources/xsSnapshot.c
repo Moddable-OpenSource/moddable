@@ -1230,8 +1230,10 @@ void fxReadCode(txMachine* the, txSnapshot* snapshot, txByte* data, txSize size)
 			p++;
 			if (0 == offset) {
 				mxDecodeID(p, id);
-				slot = the->keyArray[id];
-				slot->flag |= XS_DONT_DELETE_FLAG;
+				if (id < the->keyIndex) {
+					slot = the->keyArray[id];
+					slot->flag |= XS_DONT_DELETE_FLAG;
+				}
 			}
 			else if (-1 == offset) {
 				txU1 value = *((txU1*)p++);
@@ -1467,9 +1469,18 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			}
 			fxReadKeyhole(the, snapshot);
 			if ((patch != XS_PATCH_VERSION) && (snapshot->patch)) {
+				int result = 0;
 				fxBeginHost(the);
-				mxThrowIf((*snapshot->patch)(the, patch));
+				{
+					mxTry(the) {
+						result = (*snapshot->patch)(the, patch);
+					}
+					mxCatch(the) {
+						result = 1;
+					}
+				}
 				fxEndHost(the);
+				mxThrowIf(result);
 			}
 		
 		#ifdef mxDebug
