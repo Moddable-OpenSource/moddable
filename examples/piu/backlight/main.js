@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -56,7 +56,8 @@ class DimmingBehavior extends Behavior {
 		this.adjustBrightness(content);
 	}
 	adjustBrightness(content) {
-		const fraction = content.first.height / content.height;
+		let fraction = content.first.height / content.height;
+		if (fraction <= 0) fraction = 0.01;		// don't turn off backlight completely
 		this.backlight.write(fraction * 100);
 	}
 };
