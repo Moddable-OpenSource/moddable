@@ -840,13 +840,6 @@ static int32_t modInstrumentationCPU1(void *theIn)
 
 void espInitInstrumentation(txMachine *the)
 {
-#if MODDEF_XS_TEST
-	static uint8_t initialized = 0;
-	if (initialized)
-		return;
-	initialized = 1;
-#endif
-
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
