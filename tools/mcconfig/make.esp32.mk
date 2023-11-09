@@ -198,6 +198,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
 	$(IDF_PATH)/components/lwip/port/include/ \
+	$(IDF_PATH)/components/lwip/port/esp32/include \
 	$(IDF_PATH)/components/lwip/port/esp32xx/ \
 	$(IDF_PATH)/components/lwip/port/esp32xx/include/ \
 	$(IDF_PATH)/components/lwip/port/freertos/include/ \
