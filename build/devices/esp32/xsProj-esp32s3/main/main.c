@@ -52,6 +52,8 @@
 
 #include "mc.defines.h"
 
+#define WEAK __attribute__((weak))
+
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
 #endif
@@ -102,7 +104,7 @@ static
 #endif
 
 #ifdef mxDebug
-	unsigned char gXSBUG[4] = {DEBUG_IP};
+	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
 #if (USE_USB == 1)
@@ -258,7 +260,7 @@ void loop_task(void *pvParameter)
 	to enable serial port for diagnostic information and debugging
 */
 
-void modLog_transmit(const char *msg)
+WEAK void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
@@ -393,7 +395,7 @@ uint8_t ESP_setBaud(int baud) {
 
 #else
 
-void ESP_put(uint8_t *c, int count) {
+WEAK void ESP_put(uint8_t *c, int count) {
 #if (USE_USB == 2)
 	int sent = 0;
 	while (count > 0) {
@@ -406,7 +408,7 @@ void ESP_put(uint8_t *c, int count) {
 #endif
 }
 
-void ESP_putc(int c) {
+WEAK void ESP_putc(int c) {
 	char cx = c;
 #if (USE_USB == 2)
     usb_serial_jtag_write_bytes(&cx, 1, 1);
@@ -415,7 +417,7 @@ void ESP_putc(int c) {
 #endif
 }
 
-int ESP_getc(void) {
+WEAK int ESP_getc(void) {
 	int amt;
 	uint8_t c;
 #if (USE_USB == 2)
@@ -426,7 +428,7 @@ int ESP_getc(void) {
 	return (1 == amt) ? c : -1;
 }
 
-uint8_t ESP_isReadable() {
+WEAK uint8_t ESP_isReadable() {
 #if (USE_USB == 2)
 	return true;
 #else
@@ -436,7 +438,7 @@ uint8_t ESP_isReadable() {
 #endif
 }
 
-uint8_t ESP_setBaud(int baud) {
+WEAK uint8_t ESP_setBaud(int baud) {
 #if (USE_USB == 2)
 	return 1;
 #else
