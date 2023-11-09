@@ -891,16 +891,19 @@ void espInitInstrumentation(txMachine *the)
 	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
 #endif
 
-	gptimer_new_timer(&config, &gLoadTimer);
-	gptimer_set_alarm_action(gLoadTimer, &alarm);
-	gptimer_register_event_callbacks(gLoadTimer, &callbacks, NULL);
-	gptimer_enable(gLoadTimer);
-	gptimer_start(gLoadTimer);
+	if (!gLoadTimer) {
+		gptimer_new_timer(&config, &gLoadTimer);
+		gptimer_set_alarm_action(gLoadTimer, &alarm);
+		gptimer_register_event_callbacks(gLoadTimer, &callbacks, NULL);
+		gptimer_enable(gLoadTimer);
+		gptimer_start(gLoadTimer);
+	}
 
 #endif
 
 #if ESP32
-	gInstrumentMutex = xSemaphoreCreateMutex();
+	if (!gInstrumentMutex)
+		gInstrumentMutex = xSemaphoreCreateMutex();
 #endif
 }
 
