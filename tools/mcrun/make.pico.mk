@@ -45,6 +45,9 @@ release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
 	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
 
+build: $(ARCHIVE)
+	@echo "# Target built: $(ARCHIVE)"
+
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)

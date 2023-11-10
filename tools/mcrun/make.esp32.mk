@@ -49,8 +49,6 @@ else
 endif
 endif
 
-#	USE_USB = 1
-
 ifeq ($(USE_USB),1)
 	USB_VENDOR_ID ?= beef
 	USB_PRODUCT_ID ?= 1cee
@@ -87,6 +85,9 @@ debug: $(ARCHIVE)
 release: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(DO_MOD_UPLOAD)
+
+build: $(ARCHIVE)
+	@echo "# Target built: $(ARCHIVE)"
 
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)
