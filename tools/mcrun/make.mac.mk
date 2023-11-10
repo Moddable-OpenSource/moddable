@@ -25,14 +25,17 @@ else
 	KILL_SERIAL2XSBUG =
 endif
 
+ARCHIVE = $(BIN_DIR)/mc.xsa
+
 .PHONY: all	
 
 all: $(BIN_DIR)/mc.xsa
 	$(KILL_SERIAL2XSBUG) 
 	$(START_XSBUG) 
-	open -a $(SIMULATOR) $(BIN_DIR)/mc.xsa
+	open -a $(SIMULATOR) $(ARCHIVE)
 
-build: $(BIN_DIR)/mc.xsa
+build: $(ARCHIVE)
+	@echo "# Target built: $(ARCHIVE)"
 
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"

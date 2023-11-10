@@ -116,6 +116,9 @@ release: $(ARCHIVE)
 	$(CHECK_FOR_PORT)
 	$(DO_MOD_UPLOAD)
 
+build: $(ARCHIVE)
+	@echo "# Target built: $(ARCHIVE)"
+
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
 	$(XSL) -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) $(DATA) $(MODULES) $(RESOURCES)
