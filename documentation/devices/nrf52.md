@@ -509,17 +509,19 @@ These are the five steps to prepare your device and update the nRF52 firmware ov
 
 The following sections explain these steps in detail.
 
+> Note: If the OTA firmware update fails, the device will reboot to DFU OTA mode until software has been successfully updated.
+
 <a id="ble-update-1"></a>
-### 1) Ensure your nRF52 device has version 8 of the Bootloader
+### 1) Ensure your nRF52 device has version 8.1 of the Bootloader
 
 Put your device into Programming mode (double-tap the reset button) and open the volume that appears on your desktop. Open the INFO_UF2.TXT file. Look for
 
 ```
-Bootloader: Moddable 8.0
-Date: Nov  6 2023
+Bootloader: Moddable 8.1
+Date: Nov  8 2023
 ```
 
-If the version is earlier than 8.0, update your bootloader.
+If the version is earlier than 8.1, update your bootloader.
 
 <a id="ble-update-bootloader"></a>
 #### Update the nRF52 Bootloader
@@ -590,6 +592,8 @@ Transfer the `ble-package.zip` file to your mobile device so that it can be acce
 
 <a id="ble-update-4"></a>
 ### 4) Put the device in DFU OTA mode
+
+When the device is in DFU OTA mode, the status LED will double-blink regularly.
 
 <a id="dfu-software-switch"></a>
 #### Put nRF52 into Update Mode (programmatically)
