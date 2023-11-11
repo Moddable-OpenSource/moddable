@@ -5,7 +5,7 @@ import UDP from "embedded:io/socket/udp";
 import Resolver from "embedded:network/dns/resolver/udp";
 
 import HTTPClient from "embedded:network/http/client";
-import TLSSocket from "tlssocket";
+import TLSSocket from "embedded:io/socket/tlssocket";
 
 const dns = {
 	io: Resolver,
