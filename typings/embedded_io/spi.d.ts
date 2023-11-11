@@ -20,19 +20,20 @@
 
 declare module "embedded:io/spi" {
   import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  export interface Options {
+    out?: PinSpecifier;
+    in?: PinSpecifier;
+    clock: PinSpecifier;
+    select?: PinSpecifier;
+    active?: 1 | 0;
+    hz: number;
+    mode?: number;
+    port?: PortSpecifier;
+    format?: "buffer";
+    target?: any;
+  }
   class SPI {
-    constructor(options: {
-      out?: PinSpecifier;
-      in?: PinSpecifier;
-      clock: PinSpecifier;
-      select?: PinSpecifier;
-      active?: 1 | 0;
-      hz: number;
-      mode?: number;
-      port?: PortSpecifier;
-      format?: "buffer";
-      target?: any;
-    })
+    constructor(options: Options);
     read(byteLength: number): ArrayBuffer;
     read(buffer: Buffer): void;
     write(buffer: Buffer): void;
