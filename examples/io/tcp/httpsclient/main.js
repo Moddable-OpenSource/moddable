@@ -13,7 +13,7 @@
  */
 
 import TextDecoder from "text/decoder"
-import TLSSocket from "tlssocket";
+import TLSSocket from "embedded:io/socket/tlssocket";
 
 const http = new device.network.http.io({ 
 	...device.network.http,

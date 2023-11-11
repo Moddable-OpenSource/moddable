@@ -32,6 +32,18 @@
 		],
 		"embedded:io/socket/*": [
 			"$(TYPINGS)/embedded_io/socket/*"
+		],
+		"embedded:network/http/*": [
+			"$(TYPINGS)/embedded_network/http/*"
+		],
+		"embedded:network/mqtt/*": [
+			"$(TYPINGS)/embedded_network/mqtt/*"
+		],
+		"embedded:network/dns/resolver/*": [
+			"$(TYPINGS)/embedded_network/dns/resolver/*"
+		],
+		"embedded:network/*": [
+			"$(TYPINGS)/embedded_network/*"
 		]
 	}
 }
