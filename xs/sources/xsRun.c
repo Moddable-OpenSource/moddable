@@ -4040,7 +4040,7 @@ XS_CODE_JUMP:
 					*mxStack = mxObjectString;
 			}
 		#ifdef mxHostFunctionPrimitive
-			else if (slot->kind == XS_HOST_FUNCTION_KIND)
+			else if (XS_HOST_FUNCTION_KIND == byte)
 				*mxStack = mxFunctionString;
 		#endif
 			mxNextCode(1);
