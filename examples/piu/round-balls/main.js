@@ -25,7 +25,7 @@ class BallBehavior extends Behavior {
 		this.dy = Math.sin(a) * $;
 	}
 	onDisplaying(ball) {
-		this.r = (ball.container.width - ball.width) / 2;
+		this.r = Math.round((ball.container.width - ball.width) / 2);
 		this.x = ball.x;
 		this.y = ball.y;
 		ball.start();
@@ -56,14 +56,17 @@ class BallBehavior extends Behavior {
 	}
 };
 
+const size = Math.min(screen.width, screen.height);
 let BallApplication = Application.template($ => ({
 	skin:backgroundSkin,
 	contents: [
-		Content(2, { left:50, top:50, skin:ballSkin, variant:0, Behavior: BallBehavior } ),
-		Content(3, { right:50, top:50, skin:ballSkin, variant:1, Behavior: BallBehavior } ),
-		Content(4, { left:50, bottom:50, skin:ballSkin, variant:2, Behavior: BallBehavior } ),
-		Content(5, { right:50, bottom:50, skin:ballSkin, variant:3, Behavior: BallBehavior } ),
+		Content(2, { left:size >> 1, top:50, skin:ballSkin, variant:0, Behavior: BallBehavior } ),
+		Content(3, { left:50, top:size >> 1, skin:ballSkin, variant:1, Behavior: BallBehavior } ),
+		Content(4, { left:size - 50, top: size >> 1, skin:ballSkin, variant:2, Behavior: BallBehavior } ),
+		Content(5, { left:size >> 1, top: size - 50, skin:ballSkin, variant:3, Behavior: BallBehavior } ),
 	]
 }));
 
 export default new BallApplication(null, { touchCount:0, pixels: screen.width * 4 });
+
+trace("This project, piu/round-balls, is designed to run on a circular display. ")
