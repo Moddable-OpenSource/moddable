@@ -3281,6 +3281,7 @@ XS_CODE_JUMP:
 						if (__builtin_add_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("add");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
@@ -3346,6 +3347,7 @@ XS_CODE_JUMP:
 						if (__builtin_sub_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("subtract");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
@@ -3356,6 +3358,7 @@ XS_CODE_JUMP:
 						if (((a ^ c) & (b ^ c)) < 0) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("subtract");
 						}
 						else
 							slot->value.integer = c;
@@ -3485,12 +3488,14 @@ XS_CODE_JUMP:
 						if (__builtin_mul_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("multiply");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
 					#else
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
+						mxFloatingPointOp("multiply");
 					#endif
 				#ifdef mxMinusZero
 					}
@@ -4040,7 +4045,7 @@ XS_CODE_JUMP:
 					*mxStack = mxObjectString;
 			}
 		#ifdef mxHostFunctionPrimitive
-			else if (slot->kind == XS_HOST_FUNCTION_KIND)
+			else if (XS_HOST_FUNCTION_KIND == byte)
 				*mxStack = mxFunctionString;
 		#endif
 			mxNextCode(1);

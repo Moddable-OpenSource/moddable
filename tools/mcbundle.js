@@ -19,6 +19,7 @@ const devices = [
 	{ platform:"esp32/m5atom_lite", id:"com.m5atom.lite", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5atom_matrix", id:"com.m5atom.matrix", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5atom_u", id:"com.m5atom.u", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
+	{ platform:"esp32/m5dial", id:"com.m5dial", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stack_cores3", id:"com.m5stack.cores3", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stack_core2", id:"com.m5stack.core2", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
 	{ platform:"esp32/m5stack_fire", id:"com.m5stack.fire", targets:[ "bootloader.bin", "partition-table.bin", "xs_esp32.bin" ] },
