@@ -534,6 +534,7 @@ If you've got a different device, build and install the updated bootloader to yo
 
 Use the [Moddable fork of the Adafruit nRF52 bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader). The minimum version to use for DFU OTA is version 8.
 
+<a id="configure-the-bootloader"></a>
 #### Configure the Bootloader
 
 You can configure the bootloader to check the state of a GPIO pin during boot to put the device into DFU OTA mode.
