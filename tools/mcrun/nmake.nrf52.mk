@@ -78,6 +78,9 @@ release: $(ARCHIVE)
 	$(KILL_SERIAL2XSBUG)
 	$(DO_MOD_UPLOAD)
 
+build: $(ARCHIVE)
+	echo "# Target built: $(ARCHIVE)"
+
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl "$(NAME)".xsa"
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) -u / $(DATA) $(MODULES) $(RESOURCES)
