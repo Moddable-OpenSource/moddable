@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"config": {
+		"touchCount": 0
+	},
+	"resources":{
+		"*": [
+			"./balls"
+		]
+	},
+	"platforms": {
+		"mac": {
+			"build": {
+				"NAME": "pico_ws_round_balls"
+			}
+		}
+	}
+}
