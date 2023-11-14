@@ -13,12 +13,5 @@
 		"*": [
 			"./balls"
 		]
-	},
-	"platforms": {
-		"mac": {
-			"build": {
-				"NAME": "pico_ws_round_balls"
-			}
-		}
 	}
 }

@@ -64,7 +64,7 @@ class LEDBehavior extends Behavior {
 }
 
 export default {
-	applicationName: "pico_ws_round.*",
+	applicationName: "pico_ws_round/debug/.*",
 	title:"WaveShare Pico RP2040",
 	Workers: {
 	},
