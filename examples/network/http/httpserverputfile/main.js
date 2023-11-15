@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,11 +15,12 @@
 import {Server} from "http"
 import {File} from "file";
 import Net from "net";
+import config from "mc/config";
 
 (new Server({})).callback = function(message, value) {
 	switch (message) {
 		case Server.status:					// request status received
-			let path = value;				// file path is HTTP path
+			const path = config.file.root + value.slice(1);		// file path is HTTP path. strip leading "/" and add file system prefix
 			File.delete(path);
 			this.file = new File(path, true);
 			break;
@@ -38,4 +39,4 @@ import Net from "net";
 }
 
 trace(`Available on Wi-Fi "${Net.get("SSID")}"\n`)
-trace(`curl --data-binary "@/users/[your directory path here]/test.txt"  http://${Net.get("IP")}/test.txt -v\n`);
+trace(`curl http://${Net.get("IP")}/test.txt --upload-file "@/users/[your directory path here]/test.txt" -v\n`);
