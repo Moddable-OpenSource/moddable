@@ -323,7 +323,7 @@ void fxCollect(txMachine* the, txFlag theFlag)
 							(*(bSlot->value.host.variant.destructor))(bSlot->value.host.data);
 					}
 				#if mxInstrument
-					if (bSlot->kind == XS_MODULE_KIND)
+					if ((bSlot->kind == XS_MODULE_KIND) && (bSlot->ID == XS_MODULE_BEHAVIOR))
 						the->loadedModulesCount--;
 				#endif
 					bSlot->kind = XS_UNDEFINED_KIND;
@@ -1993,7 +1993,7 @@ void fxSweep(txMachine* the)
 // 					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);
 // 				}
 			#if mxInstrument
-				if (bSlot->kind == XS_MODULE_KIND)
+				if ((bSlot->kind == XS_MODULE_KIND) && (bSlot->ID == XS_MODULE_BEHAVIOR))
 					the->loadedModulesCount--;
 			#endif
 				bSlot->kind = XS_UNDEFINED_KIND;
