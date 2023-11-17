@@ -253,7 +253,7 @@ void setup(void)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	esp_task_wdt_add(NULL);
 #endif
 
