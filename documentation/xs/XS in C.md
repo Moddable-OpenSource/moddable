@@ -2060,6 +2060,14 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 
 This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
+The central concept for the macros below is a Host Object. A Host Object is an XS object that has data that can only be accessed in C. Host objects are created either using `xsNewHostObject` or using the XS `@` syntax in JavaScript `(class Foo @ "aDestructorFunction" {....`. Internally, a Host Object has a single dedicated slot which holds both the destructor and Host Data/Chunk. Non-host objects don't have space for Host Data or Host Chunk, so objects that have a JavaScript constructor but also have some methods implemented in C cannot host Host Data or a Host Chunk.
+
+Host Data is a pointer stored by XS in a Host Object. The pointer value and data it points to are managed entirely by the C code. XS doesn't do anything beyond storing the pointer. Host Data is usually allocated with malloc/calloc, but this isn't required. The Host Data is usually disposed in the object's destructor.
+
+Host Chunk is memory allocated by XS in its chunk heap for use by native C code. XS garbage collects the storage when the object is garbage collected. The memory is relocatable (like all XS chunks). Unlike Host Data this can avoid loosing memory to fragmentation but it requires some extra attention because the pointer can be invalidated by GC due to compaction. Consequently, C code needs to refresh the pointer if it performs an operation which could trigger a GC. Also, because the block can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving.
+
+> Note that an object has either host data or a host chunk but never both.
+
 **Table 2.** Host-Related Macros
 
 <table class="normalTable">
@@ -2179,7 +2187,6 @@ Use the `xsNewHostInstance` macro to create an instance of a host object.
 
 Creates a host object instance, and returns a reference to the new host object instance
 
-
 ***
 
 #### xsGetHostData and xsSetHostData
@@ -2193,7 +2200,7 @@ To get and set the data of a host object, use the `xsGetHostData` and `xsSetHost
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns the data
+Returns the Host Data pointer.
 
 ***
 
@@ -2204,6 +2211,8 @@ Returns the data
 | --- | :-- |
 | `theThis` | A reference to a host object
 | `theData` | The data to set
+
+Sets the Host Data pointer.
 
 ***
 
@@ -2218,7 +2227,7 @@ To get and set the data of a host object as a chunk, use the `xsGetHostChunk` an
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns the data
+Returns a pointer to the Host Chunk data
 
 ***
 
@@ -2231,7 +2240,7 @@ Returns the data
 | `theData` | The data to set or `NULL` to leave the chunk data uninitialized
 | `theSize` | The size of the data in bytes
 
-> Note that an object has either host data or a host chunk but never both.
+Allocates chunks to store the data and optionally initializes it.
 
 ***
 
@@ -2299,7 +2308,7 @@ xsEndHost(the);
 
 The `xs_file_constructor` function implements the host constructor. The constructor instantiates an instance of the `File` object prototype, opens the requested file, and stores the associated `xsFileRecord`, containing the stdio `FILE` pointer, as host data.
 
-Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
+Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
 
 ```c
 typedef struct {
