@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: June 11, 2023
+Revised: November 17, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -2060,11 +2060,13 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 
 This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
-The central concept for the macros below is a Host Object. A Host Object is an XS object that has data that can only be accessed in C. Host objects are created either using `xsNewHostObject` or using the XS `@` syntax in JavaScript `(class Foo @ "aDestructorFunction" {....`. Internally, a Host Object has a single dedicated slot which holds both the destructor and Host Data/Chunk. Non-host objects don't have space for Host Data or Host Chunk, so objects that have a JavaScript constructor but also have some methods implemented in C cannot host Host Data or a Host Chunk.
+A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
 
-Host Data is a pointer stored by XS in a Host Object. The pointer value and data it points to are managed entirely by the C code. XS doesn't do anything beyond storing the pointer. Host Data is usually allocated with malloc/calloc, but this isn't required. The Host Data is usually disposed in the object's destructor.
+Host data is a pointer stored by XS in a host object. The pointer and data it points to are managed entirely by the host object's C code. XS stores the pointer but does not access it in any way. Host data is usually allocated with `malloc`/`calloc`, but this isn't required. Host data is disposed by the host object's destructor.
 
-Host Chunk is memory allocated by XS in its chunk heap for use by native C code. XS garbage collects the storage when the object is garbage collected. The memory is relocatable (like all XS chunks). Unlike Host Data this can avoid loosing memory to fragmentation but it requires some extra attention because the pointer can be invalidated by GC due to compaction. Consequently, C code needs to refresh the pointer if it performs an operation which could trigger a GC. Also, because the block can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving.
+A host chunk is memory allocated by XS in its chunk heap for use by a host object from its native C code. XS garbage collects this storage when the host object is garbage collected. The memory is relocatable (like all XS chunks), so unlike Host Data it avoids losing memory to fragmentation. However, it requires some extra attention because the pointer may be invalidated when the garbage collector compacts memory. Therefore, C code needs to refetch the pointer after any operation which might trigger a garbage collection. Because the chunk pointer can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving. The [Rectangle example](#rectangle-example) shows how to use a host chunk. 
+
+Implementing a host object using host data is easier than a host chunk, but potentially less memory efficient.
 
 > Note that an object has either host data or a host chunk but never both.
 
@@ -2200,7 +2202,7 @@ To get and set the data of a host object, use the `xsGetHostData` and `xsSetHost
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns the Host Data pointer.
+Returns the host data pointer.
 
 ***
 
@@ -2212,7 +2214,7 @@ Returns the Host Data pointer.
 | `theThis` | A reference to a host object
 | `theData` | The data to set
 
-Sets the Host Data pointer.
+Sets the host data pointer.
 
 ***
 
@@ -2227,7 +2229,7 @@ To get and set the data of a host object as a chunk, use the `xsGetHostChunk` an
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns a pointer to the Host Chunk data
+Returns a pointer to the host chunk data
 
 ***
 
@@ -2273,6 +2275,7 @@ The `xsBeginHost` macro sets up the stack, and the `xsEndHost` macro cleans up t
 
 Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHost `do not propagate beyond `xsEndHost`.
 
+<a id="file-example"></a>
 ##### Example
 
 This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) to declare classes because it is simpler.
@@ -2377,6 +2380,8 @@ static void xs_file_get_isOpen(xsMachine *the)
 ### JavaScript `@` language syntax extension
 
 XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
+
+<a id="rectangle-example"></a>
 
 ```javascript
 class Rectangle @ "xs_rectangle_destructor" {
