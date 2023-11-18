@@ -1,0 +1,8 @@
+{
+  "include": ["$(MODDABLE)/examples/manifest_typings.json"],
+  "modules": {
+    "embedded:display/ssd1306": "./ssd1306",
+    "commodetto/Bitmap": "$(MODDABLE)/modules/commodetto/commodettoBitmap"
+  },
+  "preload": ["embedded:display/ssd1306", "commodetto/Bitmap"]
+}
