@@ -23,9 +23,15 @@
 !CMDSWITCHES +S
 !ENDIF
 
-all: $(BIN_DIR)\mc.xsa
-	start $(SIMULATOR) $(BIN_DIR)\mc.xsa
+ARCHIVE = $(BIN_DIR)\mc.xsa
 
-$(BIN_DIR)\mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
+all: $(ARCHIVE)
+	start $(SIMULATOR) $(ARCHIVE)
+
+build: $(ARCHIVE)
+	echo "# Target built: $(ARCHIVE)"
+
+$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+

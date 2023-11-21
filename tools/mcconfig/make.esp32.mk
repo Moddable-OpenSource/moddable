@@ -198,6 +198,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/lwip/include/apps/sntp \
 	$(IDF_PATH)/components/lwip/lwip/src/include/ \
 	$(IDF_PATH)/components/lwip/port/include/ \
+	$(IDF_PATH)/components/lwip/port/esp32/include \
 	$(IDF_PATH)/components/lwip/port/esp32xx/ \
 	$(IDF_PATH)/components/lwip/port/esp32xx/include/ \
 	$(IDF_PATH)/components/lwip/port/freertos/include/ \
@@ -561,6 +562,11 @@ precursor: idfVersionCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(BLD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
+buildArchive: precursor
+	echo "#"
+	echo "# Built archive at $(BIN_DIR)"
+	echo "#"
+
 build: precursor
 	-cd $(PROJ_DIR) ; $(BUILD_CMD)
 	$(OBJDUMP) -t $(BLD_DIR)/xs_esp32.elf > $(BIN_DIR)/xs_$(ESP32_SUBCLASS).sym 2> /dev/null
@@ -595,7 +601,7 @@ $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
 $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
-	@echo "# ld xs_esp32.bin"
+	@echo "# ar xs_$(ESP32_SUBCLASS).a"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
 

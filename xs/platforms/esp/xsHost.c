@@ -840,13 +840,6 @@ static int32_t modInstrumentationCPU1(void *theIn)
 
 void espInitInstrumentation(txMachine *the)
 {
-#if MODDEF_XS_TEST
-	static uint8_t initialized = 0;
-	if (initialized)
-		return;
-	initialized = 1;
-#endif
-
 	modInstrumentationInit();
 	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
 
@@ -891,16 +884,19 @@ void espInitInstrumentation(txMachine *the)
 	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
 #endif
 
-	gptimer_new_timer(&config, &gLoadTimer);
-	gptimer_set_alarm_action(gLoadTimer, &alarm);
-	gptimer_register_event_callbacks(gLoadTimer, &callbacks, NULL);
-	gptimer_enable(gLoadTimer);
-	gptimer_start(gLoadTimer);
+	if (!gLoadTimer) {
+		gptimer_new_timer(&config, &gLoadTimer);
+		gptimer_set_alarm_action(gLoadTimer, &alarm);
+		gptimer_register_event_callbacks(gLoadTimer, &callbacks, NULL);
+		gptimer_enable(gLoadTimer);
+		gptimer_start(gLoadTimer);
+	}
 
 #endif
 
 #if ESP32
-	gInstrumentMutex = xSemaphoreCreateMutex();
+	if (!gInstrumentMutex)
+		gInstrumentMutex = xSemaphoreCreateMutex();
 #endif
 }
 

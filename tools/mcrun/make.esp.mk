@@ -71,6 +71,9 @@ release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
 	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
+build: $(ARCHIVE)
+	@echo "# Target built: $(BIN_DIR)/$(NAME).xsa"
+
 debugURL: $(ARCHIVE)
 	@echo "# curl "$(NAME)".xsa "$(URL)
 	curl -X PUT $(URL) -H "Content-Type: application/octet-stream" -H "Expect:" --data-binary '@$(ARCHIVE)' --retry 2 --retry-delay 30

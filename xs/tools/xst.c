@@ -351,10 +351,6 @@ int main(int argc, char* argv[])
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
 
-				xsResult = xsNewHostFunction(fx_harden, 1);
-				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
-				xsResult = xsNewHostFunction(fx_lockdown, 0);
-				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_petrify, 1);
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);

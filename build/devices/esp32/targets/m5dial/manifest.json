@@ -1,0 +1,54 @@
+{
+  "build": {
+    "ESP32_SUBCLASS": "esp32s3",
+    "USE_USB": "2",
+    "SDKCONFIGPATH": "./sdkconfig",
+    "PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+    "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the button until the LED lights.",
+    "BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
+  },
+  "include": [
+    "$(MODDABLE)/modules/io/manifest.json",
+    "$(MODDABLE)/modules/drivers/gc9a01/manifest.json",
+    "$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
+    "$(MODDABLE)/modules/drivers/peripherals/bm8563/manifest.json",
+    "$(MODULES)/drivers/button/manifest.json"
+  ],
+  "modules": {
+    "setup/target": "./setup-target"
+  },
+  "preload": ["setup/target"],
+  "config": {
+    "screen": "gc9a01"
+  },
+  "creation": {
+    "static": 0,
+    "chunk": {
+      "initial": 78848,
+      "incremental": 0
+    },
+    "heap": {
+      "initial": 4928,
+      "incremental": 0
+    },
+    "stack": 512
+  },
+  "defines": {
+    "i2c": {
+      "sda_pin": 11,
+      "scl_pin": 12
+    },
+    "spi": {
+      "mosi_pin": 5,
+      "sck_pin": 6
+    },
+    "ili9341": {
+      "spi_port": "SPI3_HOST",
+      "cs_pin": 7,
+      "dc_pin": 4,
+      "rst_pin": 8,
+      "backlight_pin": 9,
+      "backlight_on": 1
+    }
+  }
+}

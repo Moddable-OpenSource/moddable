@@ -51,12 +51,16 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
-	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(XSBUG).exe && echo Starting xsbug... && timeout /nobreak /t 7 > nul)
+	tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start xsbug.exe && echo Starting xsbug... && timeout /nobreak /t 7 > nul)
 	echo "Running serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 	
 release: $(ARCHIVE)
 	echo "Running serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
+build: $(ARCHIVE)
+	echo "# Target built: $(ARCHIVE)"
+
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
-	@echo "# xsl "$(NAME)".xsa"
+	@echo "# xsl $(ARCHIVE)"
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) -r $(NAME) -u / $(DATA) $(MODULES) $(RESOURCES)
+

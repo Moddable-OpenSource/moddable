@@ -62,7 +62,7 @@ int neopixel_init(pixel_settings_t *px) {
 	px->neopixel_msgQueue = xQueueCreate(NP_QUEUE_LEN, NP_QUEUE_ITEM_SIZE);
 	px->caller_task = xTaskGetCurrentTaskHandle();
 
-	xTaskCreatePinnedToCore(displayTask, "neoPixelDispayTask", 2048, px, 2, &px->neopixel_task, MODDEF_NEOPIXEL_CORE);
+	xTaskCreatePinnedToCore(displayTask, "neoPixelDispayTask", 3072, px, 2, &px->neopixel_task, MODDEF_NEOPIXEL_CORE);
 	ulTaskNotifyTake(pdTRUE, portMAX_DELAY); 	// wait for creation
 
 	return 0;
