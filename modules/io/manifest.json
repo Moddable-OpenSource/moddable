@@ -2,6 +2,11 @@
 	"build": {
 		"IO": "$(MODDABLE)/modules/io"
 	},
+	"defines": {
+		"ECMA419": {
+			"enabled": 1
+		}
+	},
 	"platforms": {
 		"esp": {
 			"include": "./manifests/esp/manifest.json"

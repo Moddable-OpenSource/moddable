@@ -53,6 +53,10 @@
 
 #include "mc.defines.h"
 
+#if MODDEF_ECMA419_ENABLED
+	#include "common/builtinCommon.h"
+#endif
+
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
 #endif
@@ -249,6 +253,10 @@ void app_main() {
 	QueueHandle_t uartQueue;
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
+	#if MODDEF_ECMA419_ENABLED
+		builtinUsePin(USE_UART_TX);
+		builtinUsePin(USE_UART_RX);
+	#endif
 #else
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif
