@@ -21,7 +21,7 @@
 import Timer from "timer";
 import URL from "url";
 
-const TypedArray = Object.getPrototypeOf(Int8Array);
+const TypedArray = Object.getPrototypeOf(Uint8Array);
 
 const CLOSED = 0;
 const CONNECTING = 1;
