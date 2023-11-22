@@ -1285,7 +1285,7 @@ void fxPatchKeys(txMachine* the)
 			mxPop();
 		}
 		slot->flag |= XS_INTERNAL_FLAG;
-		if (id < XS_ID_COUNT)
+		if ((id < XS_ID_COUNT) || ((slot->flag & XS_DONT_ENUM_FLAG) == 0))
 			slot->flag |= XS_DONT_DELETE_FLAG;
 		p++;
 		id++;
@@ -1466,6 +1466,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 					}
 					slot++;
 				}
+				//@@ regexp code capture keys
 			}
 			fxReadKeyhole(the, snapshot);
 			if ((patch != XS_PATCH_VERSION) && (snapshot->patch)) {
