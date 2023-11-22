@@ -1,23 +1,25 @@
-import Timer from "timer";
+/*
+ * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
-let urlRegExp = null;
-let authorityRegExp = null;
-function URLParts(url) {
-	if (!urlRegExp)
-		urlRegExp = new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-	const urlParts = url.match(urlRegExp);
-	if (!authorityRegExp)
-		authorityRegExp = new RegExp("^([^:]+)(:(.*))?");
-	const authorityParts = urlParts[4].match(authorityRegExp);
-	return {
-    	scheme:urlParts[2],
-		host:authorityParts[1],
-		port:authorityParts[3] ?? 1883,
-		path:urlParts[5],
-    	query:urlParts[7],
-		fragment:urlParts[9],
-	}
-}
+import Timer from "timer";
+import URL from "url";
 
 const TypedArray = Object.getPrototypeOf(Int8Array);
 
@@ -58,10 +60,20 @@ export class Client {
 	#wait = false;
 	#writable = 0;
 	
-	constructor(url, options) {
-		const parts = URLParts(url);
-		if (parts.scheme != "mqtt")
-			throw new URIError("mqtt only");
+	constructor(href, options) {
+		let url = new URL(href);
+		let protocol = url.protocol;
+		let port, config;
+		if (protocol == "mqtt:") {
+			port = url.port || 1883;
+			config = device.network.mqtt;
+		}
+		else if (protocol == "mqtts:") {
+			port = url.port || 8883;
+			config = device.network.mqtts;
+		}
+		else
+			throw new URIError("only mqtt or mqtts");
 		let keepalive = 60_000;
 		let id = "mqttxs_"  + Math.random().toString(16).substr(2, 8);
 		let user = undefined;
@@ -90,8 +102,8 @@ export class Client {
 				this.#resubscribe = options.resubscribe
 		}
 		this.#options = {
-			...device.network.mqtt,
-			host: parts.host, port: parts.port,
+			...config,
+			host: url.hostname, port,
 			keepalive, id, user, password, will,
 			onControl: (msg) => {
 				if (msg.operation == device.network.mqtt.io.CONNACK) {
