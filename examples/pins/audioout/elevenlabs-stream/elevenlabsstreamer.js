@@ -24,11 +24,11 @@ import MP3Streamer from "mp3streamer";
 
 export default class {
 	constructor(options) {
-		const {key, voice, latency, text, model, ...o} = options;
+		const {key, voice, latency, format, text, model, voice_settings, ...o} = options;
 		const body = ArrayBuffer.fromString(JSON.stringify({
 			text,
 			model_id: model ?? "eleven_monolingual_v1",
-			voice_settings: {
+			voice_settings: voice_settings ?? {
 				stability: 0,
 				similarity_boost: 0
 			}
@@ -53,7 +53,7 @@ export default class {
 			},
 			port: 443,
 			host: "api.elevenlabs.io",
-			path: `/v1/text-to-speech/${voice}/stream?optimize_streaming_latency=${latency ?? 0}`,
+			path: `/v1/text-to-speech/${voice}/stream?optimize_streaming_latency=${latency ?? 0}&output_format=${format ?? 'mp3_44100_128'}`,
 		})
 	}
 }
