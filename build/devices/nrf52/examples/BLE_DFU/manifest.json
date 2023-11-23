@@ -8,13 +8,6 @@
 		"otaReboot": "./otaReboot"
 	},
 	"resources": {
-		"*-mask": [
-			{
-				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Bold",
-				"size": 32,
-				"blocks": ["Basic Latin"],
-				"monochrome": true
-			}
-		]
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
 	}
 }
