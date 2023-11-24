@@ -18,6 +18,14 @@
 	],
 	"creation":{
 		"static": 69152,
+		"chunk": {
+			"initial": 8192,
+			"incremental": 1024
+		},
+		"heap": {
+			"initial": 512,
+			"incremental": 64
+		},
 		"stack": 360
 	},
 	"x-config": {
