@@ -379,6 +379,8 @@ void xs_serial_format_set_aux(xsMachine *the, xsSerial s, char *format)
 		s->bufferFormat = 1;
 	else if (!strcmp(format, "string;ascii"))
 		s->bufferFormat = 0;
+	else if (!strcmp(format, "number"))
+		xsUnknownError("unimplemented format");
 	else
 		xsUnknownError("invalid format");
 }

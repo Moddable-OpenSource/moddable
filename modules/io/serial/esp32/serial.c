@@ -136,7 +136,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	format = builtinInitializeFormat(the, kIOFormatNumber);
+	format = builtinInitializeFormat(the, kIOFormatBuffer);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
