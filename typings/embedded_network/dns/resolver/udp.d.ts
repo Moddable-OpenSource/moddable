@@ -28,8 +28,8 @@ declare module "embedded:network/dns/resolver/udp" {
 
   class Resolver {
     constructor(options: Record<string, any>)
-    close(): null
-    resolve(options: Options): null
+    close(): void
+    resolve(options: Options): void
 
   }
 
