@@ -98,7 +98,7 @@ class WebSocket {
 				}
 			},
 			onReadable: (count, options) => {
-				trace(`onReadable ${count} binary ${options.binary} more ${options.more}\n`);
+// 				trace(`onReadable ${count} binary ${options.binary} more ${options.more}\n`);
 				if (!count)
 					return;
 				let data = this.#client.read(count);
@@ -162,10 +162,10 @@ class WebSocket {
 				}
 			},
 			onClose: () => {
-				trace(`onClose\n`);
+// 				trace(`onClose\n`);
 			},
 			onError: () => {
-				trace(`onError\n`);
+// 				trace(`onError\n`);
 				this.#state = 3;
 				const event = {
 					// ?? 
