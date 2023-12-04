@@ -1,0 +1,8 @@
+{
+  "modules": {
+    "*": [
+      "./jsonparser"
+    ]
+  },
+  "preload": "jsonparser"
+}
