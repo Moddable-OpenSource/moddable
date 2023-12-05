@@ -483,6 +483,8 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 		}
 		address = &(property->next);
 	}
+	if (instance->flag & XS_MARK_FLAG)
+		return 0;
 	if (!property) {
 		property = fxNewSlot(the);
 		property->next = *address;
