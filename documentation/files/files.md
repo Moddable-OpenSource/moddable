@@ -46,6 +46,7 @@ The `System.config()` function, described below, provides the length of the long
 - **Relevant Examples:** [files](../../examples/files/files/)
 
 The `File` class provides access to files.
+On error the methods of the class raise an `UnknownError` exception passing an error message as argument.
 
 ```js
 import {File} from "file";
