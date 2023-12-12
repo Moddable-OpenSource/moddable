@@ -430,15 +430,14 @@ let server = new Server({port: 8080});
 
 ***
 
-### `close()`
+### `close(connections)`
 
 The `close` function immediately terminates the HTTP server, freeing the server listener socket and any other associated memory.
+If connections is true it also closes all active connections to the server.
 
 ```js
 server.close();
 ```
-
-> **Note:** The `close` function does not close active connections to the server.
 
 ***
 
