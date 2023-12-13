@@ -92,6 +92,9 @@
 		"nrf52": {
 			"include": "./manifest_littlefs.json"
 		},
+		"pico": {
+			"include": "./manifest_littlefs.json"
+		},
 		"...": {
 			"error": "File module unsupported"
 		}

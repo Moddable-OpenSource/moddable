@@ -300,7 +300,7 @@ double __ieee754_fmod_patch(double x, double y);
 #if !ESP32
 	#define modWatchDogReset() system_soft_wdt_feed()
 #else
-	#if CONFIG_ESP_TASK_WDT
+	#if CONFIG_ESP_TASK_WDT_EN
 		#define modWatchDogReset() esp_task_wdt_reset()
 	#else
 		#define modWatchDogReset()

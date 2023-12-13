@@ -18,28 +18,10 @@
  *
  */
  
- import Timer from "timer"
- 
-let urlRegExp = null;
-let authorityRegExp = null;
-function URLParts(url) {
-	if (!urlRegExp)
-		urlRegExp = new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-	const urlParts = url.match(urlRegExp);
-	if (!authorityRegExp)
-		authorityRegExp = new RegExp("^([^:]+)(:(.*))?");
-	const authorityParts = urlParts[4].match(authorityRegExp);
-	return {
-    	scheme:urlParts[2],
-		host:authorityParts[1],
-		port:authorityParts[3] ?? 80,
-		path:urlParts[5],
-    	query:urlParts[7],
-		fragment:urlParts[9],
-	}
-}
+import Timer from "timer"
+import URL from "url";
 
-const TypedArray = Object.getPrototypeOf(Int8Array);
+const TypedArray = Object.getPrototypeOf(Uint8Array);
 
 class WebSocket {
 	#buffers = [];
@@ -57,28 +39,37 @@ class WebSocket {
 	#writable = 0;
 	#keepalive;
 	
-	constructor(url, protocol) {
+	constructor(href, protocol) {
 		let options, keepalive;
-		if (url instanceof Object) {
-			options = url;
-			url = options.url;
+		if (href instanceof Object) {
+			options = href;
+			href = options.url;
 			protocol = options.protocol;
 			keepalive = options.keepalive; 
 		}
-		if (url) {
-			const parts = URLParts(url);
-			if (parts.scheme !== "ws")
-				throw new URIError("ws only");
-			this.#url = url;
+		if (href) {
+			let url = new URL(href);
+			let scheme = url.protocol;
+			let port, config;
+			if (scheme == "ws:") {
+				port = url.port || 80;
+				config = device.network.ws;
+			}
+			else if (scheme == "wss:") {
+				port = url.port || 443;
+				config = device.network.wss;
+			}
+			else
+				throw new URIError("only ws or wss");
+			let host = url.hostname;
+			let path = url.pathname;
+			let query = url.search;
+			if (query)
+				path += query;
+			this.#url = href;
 			if (protocol)
 				this.#protocol = protocol;
-			options = {
-				...device.network.ws,
-				host: parts.host,
-				port: parts.port,
-				path: parts.path,
-				protocol: protocol
-			}
+			options = { ...config, host, port, path, protocol }
 		}
 		this.#client = new device.network.ws.io({
 			...options,
@@ -107,7 +98,7 @@ class WebSocket {
 				}
 			},
 			onReadable: (count, options) => {
-				trace(`onReadable ${count} binary ${options.binary} more ${options.more}\n`);
+// 				trace(`onReadable ${count} binary ${options.binary} more ${options.more}\n`);
 				if (!count)
 					return;
 				let data = this.#client.read(count);
@@ -171,10 +162,10 @@ class WebSocket {
 				}
 			},
 			onClose: () => {
-				trace(`onClose\n`);
+// 				trace(`onClose\n`);
 			},
 			onError: () => {
-				trace(`onError\n`);
+// 				trace(`onError\n`);
 				this.#state = 3;
 				const event = {
 					// ?? 

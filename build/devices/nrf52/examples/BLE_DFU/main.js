@@ -34,7 +34,7 @@ function notify(msg) {
 
 		render.black = render.makeColor(0, 0, 0);
 		render.white = render.makeColor(255, 255, 255);
-		render.font = parseBMF(new Resource("OpenSans-Bold-32.bf4"));
+		render.font = parseBMF(new Resource("OpenSans-Semibold-28.bf4"));
 	}
 
 	render.begin();

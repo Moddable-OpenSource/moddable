@@ -2127,8 +2127,6 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_HOST_KIND:
 		if (theSlot->value.host.data) {
-			if ((theSlot->flag & XS_HOST_HOOKS_FLAG) && (theSlot->value.host.variant.hooks->sweeper))
-				(*theSlot->value.host.variant.hooks->sweeper)(the, theSlot->value.host.data, fxSweepValue);
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxSweepChunk(theSlot->value.host.data, void*);
 		}

@@ -726,6 +726,16 @@ void* fxGetHostChunk(txMachine* the, txSlot* slot)
 	return NULL;
 }
 
+void* fxGetHostChunkIf(txMachine* the, txSlot* slot)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (host->flag & XS_HOST_CHUNK_FLAG)
+			return host->value.host.data;
+	}
+	return NULL;
+}
+
 void* fxGetHostChunkValidate(txMachine* the, txSlot* slot, void* validator)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
@@ -741,16 +751,6 @@ void* fxGetHostChunkValidate(txMachine* the, txSlot* slot, void* validator)
 	return NULL;
 }
 
-void* fxGetHostChunkIf(txMachine* the, txSlot* slot)
-{
-	txSlot* host = fxCheckHostObject(the, slot);
-	if (host) {
-		if (host->flag & XS_HOST_CHUNK_FLAG)
-			return host->value.host.data;
-	}
-	return NULL;
-}
-
 void* fxGetHostData(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
@@ -760,6 +760,16 @@ void* fxGetHostData(txMachine* the, txSlot* slot)
 		mxSyntaxError("C: xsGetHostData: no host data");
 	}
 	mxSyntaxError("C: xsGetHostData: no host object");
+	return NULL;
+}
+
+void* fxGetHostDataIf(txMachine* the, txSlot* slot)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (!(host->flag & XS_HOST_CHUNK_FLAG))
+			return host->value.host.data;
+	}
 	return NULL;
 }
 
@@ -775,16 +785,6 @@ void* fxGetHostDataValidate(txMachine* the, txSlot* slot, void* validator)
 		mxSyntaxError("C: xsGetHostData: no host data");
 	}
 	mxSyntaxError("C: xsGetHostData: no host object");
-	return NULL;
-}
-
-void* fxGetHostDataIf(txMachine* the, txSlot* slot)
-{
-	txSlot* host = fxCheckHostObject(the, slot);
-	if (host) {
-		if (!(host->flag & XS_HOST_CHUNK_FLAG))
-			return host->value.host.data;
-	}
 	return NULL;
 }
 
@@ -816,6 +816,32 @@ txHostHooks* fxGetHostHooks(txMachine* the, txSlot* slot)
 	if (host) {
 		if (host->flag & XS_HOST_HOOKS_FLAG)
 			return host->value.host.variant.hooks;
+		mxSyntaxError("C: xsGetHostHooks: no host hooks");
+	}
+	mxSyntaxError("C: xsGetHostHooks: no host object");
+	return NULL;
+}
+
+txHostHooks* fxGetHostHooksIf(txMachine* the, txSlot* slot)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (host->flag & XS_HOST_HOOKS_FLAG)
+			return host->value.host.variant.hooks;
+	}
+	return NULL;
+}
+
+txHostHooks* fxGetHostHooksValidate(txMachine* the, txSlot* slot, txString validator)
+{
+	txSlot* host = fxCheckHostObject(the, slot);
+	if (host) {
+		if (host->flag & XS_HOST_HOOKS_FLAG) {
+			txString signature = host->value.host.variant.hooks->signature;
+			if ((signature != C_NULL) && (!c_strcmp(signature, validator)))
+				return host->value.host.variant.hooks;
+			mxSyntaxError("C: xsGetHostHooks: invalid");
+		}
 		mxSyntaxError("C: xsGetHostHooks: no host hooks");
 	}
 	mxSyntaxError("C: xsGetHostHooks: no host object");

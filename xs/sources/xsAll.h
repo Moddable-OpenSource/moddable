@@ -237,7 +237,7 @@ typedef struct {
 struct sxHostHooks {
 	txDestructor destructor;
 	txMarker marker;
-	txSweeper sweeper;
+	txString signature;
 };
 
 typedef union {
@@ -609,11 +609,15 @@ mxExport txSlot* fxNewHostObject(txMachine*, txDestructor);
 mxExport txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot);
 mxExport void* fxGetHostChunk(txMachine*, txSlot*);
 mxExport void* fxGetHostChunkIf(txMachine*, txSlot*);
+mxExport void* fxGetHostChunkValidate(txMachine*, txSlot*, void* validator);
 mxExport void* fxGetHostData(txMachine*, txSlot*);
 mxExport void* fxGetHostDataIf(txMachine*, txSlot*);
+mxExport void* fxGetHostDataValidate(txMachine* the, txSlot* slot, void* validator);
 mxExport void* fxGetHostHandle(txMachine*, txSlot*);
 mxExport txDestructor fxGetHostDestructor(txMachine*, txSlot*);
 mxExport txHostHooks* fxGetHostHooks(txMachine*, txSlot*);
+mxExport txHostHooks* fxGetHostHooksIf(txMachine* the, txSlot* slot);
+mxExport txHostHooks* fxGetHostHooksValidate(txMachine* the, txSlot* slot, txString validator);
 mxExport void fxPetrifyHostBuffer(txMachine* the, txSlot* slot);
 mxExport void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize);
 mxExport void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize);

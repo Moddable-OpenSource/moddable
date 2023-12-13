@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -95,7 +95,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	format = builtinInitializeFormat(the, kIOFormatNumber);
+	format = builtinInitializeFormat(the, kIOFormatBuffer);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
