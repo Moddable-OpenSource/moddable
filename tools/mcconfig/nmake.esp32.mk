@@ -276,6 +276,8 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\spi_flash\include \
 	-I$(IDF_PATH)\components\tcpip_adapter\include \
 	-I$(IDF_PATH)\components\tcpip_adapter \
+	-I$(IDF_PATH)\components\driver\touch_sensor\include \
+	-I$(IDF_PATH)\components\driver\touch_sensor\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\vfs\include \
 	-I$(IDF_PATH)\components\tinyusb\additions\include
 
