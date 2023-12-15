@@ -675,7 +675,7 @@ function server(message, value, etc) {
 							byteLength = parseInt(headers[i + 1]);
 					}
 
-					this.body = response.body;
+					this.body = (response.body instanceof String) ? response.body.valueOf() : response.body; // #1269
 					if (true === response.body) {
 						if (undefined === byteLength) {
 							this.flags = 2;
