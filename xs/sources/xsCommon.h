@@ -395,6 +395,7 @@ enum {
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
 	XS_CODE_PROFILE,
+	XS_CODE_YIELD_STAR,
 // mxExplicitResourceManagement	
 	XS_CODE_USED_1,
 	XS_CODE_USED_2,

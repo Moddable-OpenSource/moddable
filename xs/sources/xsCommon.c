@@ -279,6 +279,7 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_WITHOUT */ "without",
 	/* XS_CODE_YIELD */ "yield",
 	/* XS_CODE_PROFILE */ "profile",
+	/* XS_CODE_YIELD_STAR */ "yield*",
 // mxExplicitResourceManagement	
 	/* XS_CODE_USED_1 */ "used_1",
 	/* XS_CODE_USED_2 */ "used_2",
@@ -528,6 +529,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 #else
 	3 /* XS_CODE_PROFILE */,
 #endif
+	1 /* XS_CODE_YIELD_STAR */,
 // mxExplicitResourceManagement	
 	2 /* XS_CODE_USED_1 */,
 	3 /* XS_CODE_USED_2 */,

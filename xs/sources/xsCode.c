@@ -2904,7 +2904,7 @@ void fxDelegateNodeCode(void* it, void* param)
 	fxCoderAdd(param, 0, nextTarget);
 	if (async)
 		fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->valueSymbol);
-	fxCoderAddByte(coder, 0, XS_CODE_YIELD);
+	fxCoderAddByte(coder, 0, XS_CODE_YIELD_STAR);
 	fxCoderAddIndex(param, 0, XS_CODE_SET_LOCAL_1, result);
 	fxCoderAddByte(param, -1, XS_CODE_POP);
 	fxCoderAddBranch(param, 0, XS_CODE_CATCH_1, catchTarget);
@@ -4678,8 +4678,6 @@ void fxYieldNodeCode(void* it, void* param)
 	txTargetCode* target = fxCoderCreateTarget(coder);
 	if (async) {
 		fxNodeDispatchCode(self->expression, param);
-		fxCoderAddByte(param, 0, XS_CODE_AWAIT);
-		fxCoderAddByte(coder, 0, XS_CODE_THROW_STATUS);
 	}
 	else {
 		fxCoderAddByte(param, 1, XS_CODE_OBJECT);

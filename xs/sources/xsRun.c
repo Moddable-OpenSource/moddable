@@ -654,6 +654,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_WITHOUT,
 		&&XS_CODE_YIELD,
 		&&XS_CODE_PROFILE,
+		&&XS_CODE_YIELD_STAR,
 		&&XS_CODE_USED_1,
 		&&XS_CODE_USED_2,
 		&&XS_CODE_USING,
@@ -1176,6 +1177,7 @@ XS_CODE_JUMP:
  			
 		mxCase(XS_CODE_AWAIT)
 		mxCase(XS_CODE_YIELD)
+		mxCase(XS_CODE_YIELD_STAR)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
 			slot = mxFrameEnd;
