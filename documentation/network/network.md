@@ -1,6 +1,6 @@
 # Networking
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 31, 2023
+Revised: December 15, 2023
 
 ## Table of Contents
 
@@ -322,7 +322,7 @@ The HTTP `Request` class implements a client for making HTTP requests. It is bui
 import {Request} from "http"
 ```
 
-<!-- Maybe body property should be named request to parallel response. And HTTP Request should be renamed HTTP Client -->
+> **Note**: Strings passed for the request body may only contain characters in the ASCII range 0 to 127. To use full UTF-8, convert the strings to a buffer using `ArrayBuffer.fromString` or `TextEncoder`.
 
 ### `constructor(dictionary)`
 
@@ -411,6 +411,8 @@ The HTTP `Server` class implements a server to respond to HTTP requests. It is b
 ```js
 import {Server} from "http"
 ```
+
+> **Note**: Strings passed for the response body may only contain characters in the ASCII range 0 to 127. To use full UTF-8, convert the strings to a buffer using `ArrayBuffer.fromString` or `TextEncoder`.
 
 ### `constructor(dictionary)`
 
@@ -548,23 +550,24 @@ The following example implements an HTTP server that receives PUT requests, and 
 
 ```js
 import {File} from "file";
+import config from "mc/config";
 
 (new Server({})).callback = function(message, value) {
 	switch (message) {
-		case 2:								// request status received
-			let path = value;				// file path is HTTP path
+		case Server.status:						// request status received
+			const path = config.file.root + value.slice(1);
 			File.delete(path);
 			this.file = new File(path, true);
 			break;
 
-		case 4:								// prepare for request body
-			return true;					// provide request body in fragments
+		case Server.headersComplete:			// prepare for request body
+			return true;						// provide request body in fragments
 
-		case 5:								// request body fragment
+		case Server.requestFragment:			// request body fragment
 			this.file.write(this.read(ArrayBuffer));
 			break;
 
-		case 6:								// request body received
+		case Server.requestComplete				// request body received
 			this.file.close();
 			break;
 	}
