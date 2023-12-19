@@ -480,6 +480,9 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	}
 	if (instance->flag & XS_MARK_FLAG)
 		return 0;
+#else
+	if (instance->flag & XS_DONT_MARSHALL_FLAG)
+		return 0;
 #endif
 	address = &(instance->next);
 	while ((property = *address)) {
