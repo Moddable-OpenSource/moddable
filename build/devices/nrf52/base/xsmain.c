@@ -36,7 +36,7 @@
 
 xsMachine *gThe = NULL;        // main VM
 
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	TaskHandle_t gMainTask = NULL;
 #endif
 
@@ -61,7 +61,7 @@ void loop_task(void *pvParameter)
 {
 	taskYIELD();
 
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	gMainTask = xTaskGetCurrentTaskHandle();
 	setupDebugger();
 #endif
@@ -116,8 +116,8 @@ void modLog_transmit(const char *msg)
 	{
 		while (0 != (c = c_read8(msg++)))
 			ESP_putc(c);
-		ESP_putc('\r');
-		ESP_putc('\n');
+//		ESP_putc('\r');
+//		ESP_putc('\n');
 	}
 }
 

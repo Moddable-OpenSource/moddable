@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -87,7 +87,7 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	NULL
 };
 
-#if mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(1);
 #else
 const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(0);
@@ -192,7 +192,7 @@ void xs_serial_constructor(xsMachine *the)
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
-	serial = c_malloc((hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
+	serial = c_calloc(1, (hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
 		xsRangeError("no memory");
 
@@ -433,13 +433,12 @@ static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 			}
 			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
 		}
+	}
 
-//		if (post) {
-		if (post && !serial->postedMessage) {
-			serial->postedMessage = 1;
+	if (post && !serial->postedMessage) {
+		serial->postedMessage = 1;
 //			__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
-			modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-		}
+		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -312,7 +312,8 @@ extern void *pvPortRealloc(void *ptr, size_t size);
 #define c_strtol strtol
 #define c_strtoul strtoul
 #define c_vprintf vprintf
-#define c_printf printf
+#define c_printf(...) myprintf(0, __VA_ARGS__)
+// #define c_printf printf
 #define c_vsnprintf vsnprintf
 #define c_snprintf snprintf
 //#define c_fprintf fprintf
@@ -416,7 +417,6 @@ extern void *pvPortRealloc(void *ptr, size_t size);
 
 uint16_t espRead16be(const void *addr);
 uint32_t espRead32be(const void *addr);
-
 
 #include <string.h>
 #define c_memcpy memcpy
