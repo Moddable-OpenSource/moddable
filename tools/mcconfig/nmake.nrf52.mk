@@ -136,6 +136,10 @@ CONNECT_XSBUG=@echo "Connect to xsbug. Press RESET to connect." && $(START_SERIA
 !ENDIF
 !ENDIF
 
+!IF "$(INSTRUMENT)"=="1"
+CONNECT_XSBUG=@echo "Connect a serial terminal for instrumentation."
+!ENDIF
+
 
 !IF "$(DEBUG)"=="1"
 KILL_SERIAL2XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
@@ -177,7 +181,15 @@ DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
 !ENDIF
 !ELSE
+!IF "$(INSTRUMENT)"=="1"
+!IF "$(USE_USB)"=="1"
+DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=1
+!ELSE
 DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
+!ENDIF
+!ELSE
+DEBUGGER_USBD = -DUSE_DEBUGGER_USBD=0
+!ENDIF
 !ENDIF
 
 !IF "$(USE_QSPI)"=="1"
