@@ -725,13 +725,13 @@ else
 		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
-endif
-ifeq ($(INSTRUMENT),1)
-	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
-endif
-
 ifeq ($(USE_WDT),1)
 	C_FLAGS += -DUSE_WATCHDOG=1
+endif
+endif
+
+ifeq ($(INSTRUMENT),1)
+	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 
 C_DEFINES += -DkPocoFrameBuffer=1
