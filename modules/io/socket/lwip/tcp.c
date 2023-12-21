@@ -636,7 +636,7 @@ static void listenerTrigger(Listener listener, uint8_t trigger);
 
 static void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static const xsHostHooks ICACHE_RODATA_ATTR xsListenerHooks = {
-	xs_listener_destructor,
+	xs_listener_destructor_,
 	xs_listener_mark,
 	NULL
 };

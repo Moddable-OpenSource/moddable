@@ -70,10 +70,11 @@ extern void mc_setup(xsMachine *the);
 	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 #endif
 
-#if !MODDEF_XS_TEST
-static
+#if MODDEF_SOFTRESET
+	uint8_t gSoftReset;
 #endif
-	xsMachine *gThe;		// the main XS virtual machine running
+
+static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -127,13 +128,17 @@ void loop_task(void *pvParameter)
 #endif
 
 	while (true) {
+#if MODDEF_SOFTRESET
+		gSoftReset = 0;
+#endif
+
 		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
-#if MODDEF_XS_TEST
+#if MODDEF_SOFTRESET
 		xsMachine *the = gThe;
-		while (gThe) {
+		while (!gSoftReset) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);

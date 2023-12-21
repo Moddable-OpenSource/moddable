@@ -500,7 +500,7 @@ void fx_ArrayBuffer_fromString(txMachine* the)
 	
 	txString c = mxArgv(0)->value.string;
 	txInteger nulls = 0;
-	while (true) {
+	while (1) {
 		uint8_t b = (uint8_t)c_read8(c++);
 		if (!b) break;
 

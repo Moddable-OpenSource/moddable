@@ -101,6 +101,7 @@
 		"esp32": {
 			"defines": {
 				"XS_TEST": 1,
+				"softreset": 1,
 				"audioOut": {
 					"bitsPerSample": 16,
 					"numChannels": 1,

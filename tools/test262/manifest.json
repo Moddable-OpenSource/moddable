@@ -40,7 +40,8 @@
 		},
 		"esp32": {
 			"defines": {
-				"XS_TEST": 1
+				"XS_TEST": 1,
+				"softreset": 1
 			},
 			"modules": {
 				"*": [
