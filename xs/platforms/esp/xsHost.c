@@ -1029,9 +1029,12 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	modMessageRecord msg;
+	uint32_t startTime = modMilliseconds();
+	uint32_t maxDuration = (uint32_t)maxDelayMS;
+	unsigned portBASE_TYPE count = uxQueueMessagesWaiting(the->msgQueue);
+	if (!count) count = 1;		// if no messages pending on entry, service no more than 1 (cannot exit immediately - debug queue messages, and caller expects delay to avoid busy wait)
 
 #if CONFIG_ESP_TASK_WDT_EN
-	modWatchDogReset();
     #ifndef CONFIG_ESP_TASK_WDT_TIMEOUT_S
 		// The default timeout is 5s, but it can be changed using this CONFIG decl as well as
 		// dynamically via esp_task_wdt_reconfigure, we assume "worst case" 1s here if it's not
@@ -1049,7 +1052,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 #endif
 
 #ifdef mxDebug
-	while (true) {
+	do {
 		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, maxDelayMS);
 		if (!queue)
 			break;
@@ -1057,20 +1060,29 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 		if (!xQueueReceive(queue, &msg, 0))
 			break;
 
+		modWatchDogReset();
 		(msg.callback)(the, msg.refcon, msg.message, msg.length);
 		if (msg.message)
 			c_free(msg.message);
 
+		if ((queue == the->msgQueue) && !--count)
+			break;
 		maxDelayMS = 0;
-	}
+	} while ((modMilliseconds() - startTime) < maxDuration);
 #else
-	while (xQueueReceive(the->msgQueue, &msg, maxDelayMS)) {
+	do {
+		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
+			break;
+
+		modWatchDogReset();
 		(msg.callback)(the, msg.refcon, msg.message, msg.length);
 		if (msg.message)
 			c_free(msg.message);
 
+		if (!--count)
+			break;
 		maxDelayMS = 0;
-	}
+	} while ((modMilliseconds() - startTime) < maxDuration);
 #endif
 
 	modWatchDogReset();
