@@ -715,13 +715,16 @@ ifeq ($(DEBUG),1)
 else
 	C_DEFINES += \
 		$(DEBUGGER_USBD) \
-		-DUSE_WATCHDOG=0 \
 		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
+endif
+
+ifeq ($(USE_WDT),1)
+	C_FLAGS += -DUSE_WATCHDOG=1
 endif
 
 C_DEFINES += -DkPocoFrameBuffer=1
