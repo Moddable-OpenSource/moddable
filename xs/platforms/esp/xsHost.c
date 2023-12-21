@@ -1030,8 +1030,15 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 {
 	modMessageRecord msg;
 
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	modWatchDogReset();
+    #ifndef CONFIG_ESP_TASK_WDT_TIMEOUT_S
+		// The default timeout is 5s, but it can be changed using this CONFIG decl as well as
+		// dynamically via esp_task_wdt_reconfigure, we assume "worst case" 1s here if it's not
+		// defined (could actually be set lower dynamically). There is no way to extract the
+		// current timeout value from esp-idf.
+		#define CONFIG_ESP_TASK_WDT_TIMEOUT_S (1)
+	#endif
 	if (maxDelayMS >= (CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000)) {
 		#if CONFIG_ESP_TASK_WDT_TIMEOUT_S <= 1
 			maxDelayMS = 500;

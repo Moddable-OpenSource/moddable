@@ -109,12 +109,12 @@ class GT911 {
 
 		const touchCount = status & 0b0000_1111;
 		if (!touchCount) {
-			delete this.#io.last;
+			delete this.#io.last;		//@@ remove .last
 			io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
 			return [];
 		}
 
-		const data = this.#io.last = new Uint8Array(touchCount << 3);
+		const data = this.#io.last = new Uint8Array(touchCount << 3);		//@@ remove .last
 		io.read(data);
 
 		const result = new Array(touchCount);
@@ -132,6 +132,11 @@ class GT911 {
 		io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
 
 		return result;
+	}
+	get configuration() {
+		return {
+			interrupt: !!this.#io.interrupt
+		};
 	}
 }
 

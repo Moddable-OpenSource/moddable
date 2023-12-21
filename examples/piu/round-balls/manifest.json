@@ -1,0 +1,17 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"config": {
+		"touchCount": 0
+	},
+	"resources":{
+		"*": [
+			"./balls"
+		]
+	}
+}

@@ -325,6 +325,12 @@ The Moddable SDK has been tested on the Ubuntu 16.04-22.04 LTS (64-bit) and Rasp
 	sudo apt-get install libgtk-3-dev
 	```
 
+	> Note: If you are installing for WSL2 on Windows, install the following icon pack:
+
+	```text
+	sudo apt-get install adwaita-icon-theme-full
+	```
+
 3. Create a `Projects` directory in your home directory at `~/Projects` for the Moddable SDK repository.
 
 	> Note: The Moddable SDK repository can be downloaded to any directory. These instructions assume the Moddable SDK is downloaded to the `~/Projects` directory.

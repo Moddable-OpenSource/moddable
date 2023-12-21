@@ -586,8 +586,22 @@ void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddr
 	symbolsSize = atom.atomSize - sizeof(atom);
 	symbolsBuffer = fxNewLinkerChunk(linker, symbolsSize);
 	mxThrowElse(fread(symbolsBuffer, symbolsSize, 1, aFile) == 1);
-	fxMapSymbols(linker, symbolsBuffer, flag);
-	
+	{
+		txByte* p = symbolsBuffer;
+		txID c, i = 0;
+		mxDecodeID(p, c);
+		if (flag == 0) { // incremental
+			for (; i < XS_SYMBOL_ID_COUNT; i++) {
+				fxNewLinkerSymbol(linker, (txString)p, flag, 0);
+				p += mxStringLength((char*)p) + 1;
+			}
+		}
+		i++;
+		for (; i < c; i++) {
+			fxNewLinkerSymbol(linker, (txString)p, flag, 1);
+			p += mxStringLength((char*)p) + 1;
+		}
+	}
 	fclose(aFile);
 	*fileAddress = NULL;
 }

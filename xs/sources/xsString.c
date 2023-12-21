@@ -348,7 +348,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 	txSlot* arrayBuffer = C_NULL, *sharedArrayBuffer = C_NULL;
 	txSlot* bufferInfo;
 	txInteger limit, offset;
-	txInteger inLength, outLength = 0;
+	txInteger inLength, outLength = 0, nulls = 0;
 	unsigned char *in;
 	txString string;
 	if (mxArgc < 1)
@@ -381,7 +381,7 @@ void fx_String_fromArrayBuffer(txMachine* the)
 		unsigned char first = c_read8(in++), clen;
 		if (first < 0x80){
 			if (0 == first)
-				break;
+				nulls += 1;
 			inLength -= 1;
 			outLength += 1;
 			continue;
@@ -408,9 +408,23 @@ void fx_String_fromArrayBuffer(txMachine* the)
 		} while (--clen > 0);
 	}
 
-	string = fxNewChunk(the, outLength + 1);
-	c_memcpy(string, offset + (txString)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data), outLength);
-	string[outLength] = 0;
+	string = fxNewChunk(the, outLength + nulls + 1);
+	if (!nulls)
+		c_memcpy(string, offset + (txString)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data), outLength);
+	else {
+		txString c = string, end = c + outLength + nulls;
+		txString buf = offset + (txString)(arrayBuffer ? arrayBuffer->value.arrayBuffer.address : sharedArrayBuffer->value.host.data);
+		while (c < end) {
+			txByte b = c_read8(buf++);
+			if (b)
+				*c++ = b;
+			else {
+				*c++ = 0xC0;
+				*c++ = 0x80;
+			}
+		}
+	}
+	string[outLength + nulls] = 0;
 	mxResult->value.string = string;
 	mxResult->kind = XS_STRING_KIND;
 

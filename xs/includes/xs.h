@@ -952,6 +952,12 @@ typedef void (*xsDestructor)(void*);
 #define xsGetHostChunk(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetHostChunk(the, &(the->scratch)))
+#define xsGetHostChunkIf(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetHostChunkIf(the, &(the->scratch)))
+#define xsGetHostChunkValidate(_SLOT, validator) \
+	(the->scratch = (_SLOT), \
+	fxGetHostChunkValidate(the, &(the->scratch), validator))	
 #define xsSetHostChunk(_SLOT,_DATA,_SIZE) \
 	(the->scratch = (_SLOT), \
 	fxSetHostChunk(the, &(the->scratch), _DATA, _SIZE))
@@ -959,13 +965,15 @@ typedef void (*xsDestructor)(void*);
 #define xsGetHostData(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetHostData(the, &(the->scratch)))
+#define xsGetHostDataIf(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetHostDataIf(the, &(the->scratch)))
+#define xsGetHostDataValidate(_SLOT, validator) \
+	(the->scratch = (_SLOT), \
+	fxGetHostDataValidate(the, &(the->scratch), validator))	
 #define xsSetHostData(_SLOT,_DATA) \
 	(the->scratch = (_SLOT), \
 	fxSetHostData(the, &(the->scratch), _DATA))
-	
-#define xsGetHostDataValidate(_SLOT, validator) \
-	(the->scratch = (_SLOT), \
-	fxGetHostDataValidate(the, &(the->scratch), validator))
 
 #define xsGetHostDestructor(_SLOT) \
 	(the->scratch = (_SLOT), \
@@ -977,6 +985,16 @@ typedef void (*xsDestructor)(void*);
 #define xsGetHostHandle(_SLOT) \
 	(the->scratch = (_SLOT), \
 	fxGetHostHandle(the, &(the->scratch)))
+
+#define xsGetHostHooks(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetHostHooks(the, &(the->scratch)))
+#define xsGetHostHooksIf(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxGetHostHooksIf(the, &(the->scratch)))
+#define xsGetHostHooksValidate(_SLOT,_SIGNATURE) \
+	(the->scratch = (_SLOT), \
+	fxGetHostHooksValidate(the, &(the->scratch), _SIGNATURE))
 	
 typedef void (*xsMarkRoot)(xsMachine*, xsSlot*);
 typedef void (*xsMarker)(xsMachine*, void*, xsMarkRoot);
@@ -985,7 +1003,7 @@ typedef void (*xsSweeper)(xsMachine*, void*, xsMarkRoot);
 struct xsHostHooksStruct {
 	xsDestructor destructor;
 	xsMarker marker;
-	xsSweeper sweeper;
+	xsStringValue signature;
 };
 	
 #define xsGetHostHooks(_SLOT) \
@@ -1428,17 +1446,21 @@ mxImport void fxNewHostInstance(xsMachine*);
 mxImport xsSlot* fxNewHostObject(xsMachine*, xsDestructor);
 mxImport xsIntegerValue fxGetHostBufferLength(xsMachine*, xsSlot*);
 mxImport void* fxGetHostChunk(xsMachine*, xsSlot*);
+mxImport void* fxGetHostChunkIf(xsMachine*, xsSlot*);
 mxImport void* fxGetHostChunkValidate(xsMachine*, xsSlot*, void*);
 mxImport void *fxSetHostChunk(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void* fxGetHostData(xsMachine*, xsSlot*);
+mxImport void* fxGetHostDataIf(xsMachine*, xsSlot*);
 mxImport void* fxGetHostDataValidate(xsMachine* the, xsSlot* slot, void*);
+mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
+mxImport void* fxGetHostHandle(xsMachine*, xsSlot*);
+mxImport xsHostHooks* fxGetHostHooks(xsMachine*, xsSlot*);
+mxImport xsHostHooks* fxGetHostHooksIf(xsMachine*, xsSlot*);
+mxImport xsHostHooks* fxGetHostHooksValidate(xsMachine*, xsSlot*, xsStringValue);
 mxImport void fxPetrifyHostBuffer(xsMachine* the, xsSlot* slot);
 mxImport void fxSetHostBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue);
 mxImport void fxSetHostData(xsMachine*, xsSlot*, void*);
-mxImport xsDestructor fxGetHostDestructor(xsMachine*, xsSlot*);
 mxImport void fxSetHostDestructor(xsMachine*, xsSlot*, xsDestructor);
-mxImport void* fxGetHostHandle(xsMachine*, xsSlot*);
-mxImport xsHostHooks* fxGetHostHooks(xsMachine*, xsSlot*);
 mxImport void fxSetHostHooks(xsMachine*, xsSlot*, const xsHostHooks*);
 
 mxImport xsIdentifier fxID(xsMachine*, const char*);

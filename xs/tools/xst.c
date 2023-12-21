@@ -1564,6 +1564,8 @@ static txHostHooks gxTimerHooks = {
 
 void fx_clearTimer(txMachine* the)
 {
+	if (mxIsNull(mxArgv(0)))
+		return;
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
 		txJob* job = fxGetHostData(the, mxArgv(0));

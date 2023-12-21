@@ -6,6 +6,8 @@ flags: [module]
 import Resource from "Resource";
 
 const r = new Resource("image-info.txt");
+if (386 === r.byteLength)
+	assert(false, "incorrect resource size. try using unix line endings instead of DOS when checking out repository.")
 assert.sameValue(r.byteLength, 368, "bad resource size");
 
 let arrayBuffer = r.slice(0, r.byteLength >> 1, true);

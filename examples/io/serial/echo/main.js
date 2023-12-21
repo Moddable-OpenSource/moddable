@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -31,6 +31,7 @@ else {		// using bytes
 	let serial = new device.io.Serial({
 		...device.Serial.default,
 		baud: 115200 * 8,
+		format: "number",
 		onReadable: function(count) {
 			while (count--)
 				this.write(this.read());

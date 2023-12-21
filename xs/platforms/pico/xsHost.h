@@ -397,6 +397,14 @@ extern uint8_t *espFindUnusedFlashStart(void);
 #define kModulesStart ((uintptr_t)espFindUnusedFlashStart())
 
 extern uint8_t _MODPREF_start;		// from linker
+
+enum {
+	kPartitionMod = 1,
+	kPartitionStorage
+};
+
+extern uint8_t modGetPartition(uint8_t which, uint32_t *offset, uint32_t *size);
+
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);

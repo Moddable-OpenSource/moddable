@@ -534,6 +534,7 @@ If you've got a different device, build and install the updated bootloader to yo
 
 Use the [Moddable fork of the Adafruit nRF52 bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader). The minimum version to use for DFU OTA is version 8.
 
+<a id="configure-the-bootloader"></a>
 #### Configure the Bootloader
 
 You can configure the bootloader to check the state of a GPIO pin during boot to put the device into DFU OTA mode.
@@ -618,18 +619,18 @@ Launch the application and follow these steps:
 1. Open the filter
 2. Enable Nordic DFU Service
 3. Enable "Remove Unconnectable"
-4. Connect to the AdaDFU device
+4. Connect to the AdaDFU device<br>
 	<img src=../assets/dfu/nrfConnect0.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect1.jpeg width=40%>
 5. Select the DFU tab
 6. Click the "Connect" button
 When the device has connected,
-7. Click "Open Document Picker"
+7. Click "Open Document Picker"<br>
 	<img src=../assets/dfu/nrfConnect2.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect3.jpeg width=40%>
 8. Choose your upload package
-9. Press the "Start" button
+9. Press the "Start" button<br>
 	<img src=../assets/dfu/nrfConnect4.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect5.jpeg width=40%>
 10. The Status area will display "Starting" for some time as the flash area is erased.
-11. After the area is erased, the status changes to "Uploading" and progress will be displayed as the upload continues.
+11. After the area is erased, the status changes to "Uploading" and progress will be displayed as the upload continues.<br>
 	<img src=../assets/dfu/nrfConnect6.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect7.jpeg width=40%>
 12. When the transfer has completed, "Success!" is displayed. The device will reboot to the newly install firmware image.
 

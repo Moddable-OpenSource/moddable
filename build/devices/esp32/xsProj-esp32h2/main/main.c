@@ -52,6 +52,10 @@
 
 #include "mc.defines.h"
 
+#if MODDEF_ECMA419_ENABLED
+	#include "common/builtinCommon.h"
+#endif
+
 #define XS_STACK_EXTRA	512
 #define XS_STACK_EXTRA_CLIB	1024
 
@@ -227,7 +231,7 @@ static void debug_task(void *pvParameter)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	esp_task_wdt_add(NULL);
 #endif
 
@@ -504,6 +508,10 @@ void app_main() {
 
 #ifdef mxDebug
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
+	#if MODDEF_ECMA419_ENABLED
+		builtinUsePin(USE_UART_TX);
+		builtinUsePin(USE_UART_RX);
+	#endif
 #endif
 
 #endif	// ! USE_USB

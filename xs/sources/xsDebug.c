@@ -2502,10 +2502,22 @@ void fxLogin(txMachine* the)
 #endif
 	fxEcho(the, "\"/>");
 	fxEchoStop(the);
-	if (the->sharedMachine) {
-		fxToggle(the, the->sharedMachine->stackTop[-1 - mxGlobalStackIndex].value.reference);
-		fxToggle(the, the->sharedMachine->stackTop[-1 - mxCompartmentGlobalStackIndex].value.reference);
+#if mxAliasInstance
+	{
+		txSlot* slot = &mxGlobal;
+		if (mxIsReference(slot)) {
+			slot = slot->value.reference->value.instance.prototype;
+			if (slot != mxObjectPrototype.value.reference)
+				fxToggle(the, slot);
+		}
+		slot = &mxCompartmentGlobal;
+		if (mxIsReference(slot)) {
+			slot = slot->value.reference->value.instance.prototype;
+			if (slot != mxObjectPrototype.value.reference)
+				fxToggle(the, slot);
+		}
 	}
+#endif
 	fxDebugCommand(the);
 }
 

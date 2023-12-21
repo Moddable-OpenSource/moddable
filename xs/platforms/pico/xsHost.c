@@ -564,6 +564,51 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 #endif /* MODDEF_XS_MODS */
 
 /*
+	flash partitions
+ */
+
+#ifndef MODDEF_FILE_LFS_PARTITION_SIZE
+	#define MODDEF_FILE_LFS_PARTITION_SIZE	(65536)
+#endif
+
+uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
+{
+	uint32_t offset, size;
+	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
+		uint32_t modSize = 0, storageSize = 0;
+
+		offset = kModulesStart;
+
+#if MODDEF_XS_MODS
+		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
+			modSize = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+#else
+		if (which == kPartitionMod)
+			return 0;
+#endif
+
+		if ((kModulesEnd - (offset + modSize)) >= MODDEF_FILE_LFS_PARTITION_SIZE)
+			storageSize = (((MODDEF_FILE_LFS_PARTITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+
+		if (kPartitionStorage == which) {
+			offset = kModulesEnd - storageSize;
+			size = storageSize;
+		}
+		else {
+//			offset = kModulesStart; 	// set above
+			size = (kModulesEnd - offset) - MODDEF_FILE_LFS_PARTITION_SIZE;
+		}
+	}
+	else
+		return 0;
+
+	if (offsetOut) *offsetOut = offset - kFlashStart;
+	if (sizeOut) *sizeOut = size;
+
+	return 1;
+}
+
+/*
 	flash
  */
 
@@ -574,6 +619,10 @@ uint8_t modSPIFlashInit(void)
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
+	if (!modSPIFlashInit()) {
+		return 0;
+	}
+
 	c_memcpy(dst, (void *)(offset + kFlashStart), size);
 	return 1;
 }
@@ -647,6 +696,7 @@ uint8_t modSPIErase(uint32_t offset, uint32_t size)
 	if (!modSPIFlashInit()) {
 		return 0;
 	}
+
 
 	if ((offset & (FLASH_SECTOR_SIZE -1)) || (size & (FLASH_SECTOR_SIZE -1))) {
 		return 0;
