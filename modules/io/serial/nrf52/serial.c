@@ -88,18 +88,20 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 };
 
 #if defined(mxDebug) || defined(mxInstrument)
-const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(1);
+#define kSerialUartInstance	1
 #else
-const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(0);
+#define kSerialUartInstance	0
 #endif
+const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(kSerialUartInstance);
 
 void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	uint8_t receivePullup = 0, transmitPullup = 0;
 	xsSlot *onReadable, *onWritable;
-	int transmitPin = kInvalidPin, receivePin = kInvalidPin, port = 0;
+	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
 
 	xsmcVars(1);
 
@@ -117,12 +119,12 @@ void xs_serial_constructor(xsMachine *the)
 			xsUnknownError("in use");
 	}
 	else if (kInvalidPin == transmitPin)
-		xsUnknownError("invalid");
+		xsUnknownError("invalid");		// need at least one of tx or rx
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_port);
-	port = xsmcToInteger(xsVar(0));
-	if ((port < 0) || (port > 3))
-		xsUnknownError("invalid port");
+	if (xsmcHas(xsArg(0), xsID_receivePullup)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_receivePullup);
+		receivePullup = xsmcToInteger(xsVar(0));
+	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
@@ -213,6 +215,9 @@ void xs_serial_constructor(xsMachine *the)
 		c_free(serial);
 		xsRangeError("init failed");
 	}
+
+	if (receivePullup)
+		nrf_gpio_cfg_input(receivePin, NRF_GPIO_PIN_PULLUP);
 
 	xsmcSetHostData(xsThis, serial);
 
@@ -395,7 +400,7 @@ void xs_serial_purge(xsMachine *the)
 	serial->transmitPosition = 0;
 }
 
-static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
+static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 {
 	Serial serial = p_context;
 	uint8_t post = 0;
@@ -426,10 +431,7 @@ static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 			serial->receiveCount += length;
 			if (serial->onReadable && !serial->receiveTriggered) {
 				post = 1;
-				if (!serial->transmitTriggered) {
-					serial->receiveTriggered = true;
-//					modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-				}
+				serial->receiveTriggered = true;
 			}
 			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
 		}
@@ -437,7 +439,7 @@ static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 
 	if (post && !serial->postedMessage) {
 		serial->postedMessage = 1;
-//			__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
+//		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
 }
