@@ -136,7 +136,7 @@ CONNECT_XSBUG=@echo "Connect to xsbug. Press RESET to connect." && $(START_SERIA
 !ENDIF
 !ENDIF
 
-!IF "$(INSTRUMENT)"=="1"
+!IF "$(INSTRUMENT)"=="1" && "$(DEBUG)"!="1"
 CONNECT_XSBUG=@echo "Connect a serial terminal for instrumentation."
 !ENDIF
 
@@ -595,7 +595,7 @@ C_DEFINES = $(C_DEFINES) -DMODINSTRUMENTATION=1 -DmxInstrument=1
 !IF "$(DEBUG)"=="1"
 C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUG=1 $(DEBUGGER_USBD) -g2 -Os
 !ELSE
-C_DEFINES = $(C_DEFINES) -Os -DUSE_WATCHDOG=0
+C_DEFINES = $(C_DEFINES) -Os
 !ENDIF
 
 HW_DEBUG_OPT = $(FP_OPTS)
@@ -628,8 +628,15 @@ C_FLAGS = \
 	-nostdinc
 !IF "$(DEBUG)"=="1"
 C_FLAGS = $(C_FLAGS) $(HW_DEBUG_OPT)
+!ELSEIF "$(INSTRUMENT)"=="1"
+C_FLAGS = $(C_FLAGS) $(HW_OPT)
 !ELSE
 C_FLAGS = $(C_FLAGS) $(HW_OPT)
+!ENDIF
+
+!IF "$(USE_WDT)"=="1" && "$(DEBUG)"!="1"
+C_FLAGS = $(C_FLAGS) \
+	-DUSE_WATCHDOG=1
 !ENDIF
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
