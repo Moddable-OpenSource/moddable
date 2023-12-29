@@ -1,7 +1,7 @@
 # Moddable SDK - Commodetto Examples
 
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: November 4, 2021
+Copyright 2023 Moddable Tech, Inc.<BR>
+Revised: December 29, 2023
 
 These examples demonstrate how to use features of [Commodetto](../../documentation/commodetto/commodetto.md), a bitmap graphics library that provides a 2D graphics API. Commodetto includes the lightweight [Poco rendering engine](../../documentation/commodetto/poco.md), a display list renderer able to efficiently render a single scanline at a time, saving considerable memory by eliminating the need for a frame buffer.
 
@@ -98,6 +98,18 @@ The `image-frames` example shows an animated flag. It demonstrates how to render
 ![](https://www.moddable.com/assets/commodetto-gifs/jpeghttp.gif) ![](https://www.moddable.com/assets/commodetto-gifs/jpegstream.gif)
 
 The `jpeghttp` and `jpegstream` examples fetch images from moddable.com and display them on screen. These examples run on the ESP8266, which doesn't have enough memory to hold the compressed JPEG images. Async/await is used to decode and render the JPEG images as they arrive, allowing the application to overcome the RAM limits.
+
+***
+
+### `logo`
+
+The `logo` example shows how to draw a rectangular color bitmap image. It uses a PNG image for the logo.
+
+***
+
+### `logo-alpha`
+
+The `logo` example shows how to draw a color bitmap image with an alpha channel. It uses a PNG image for the logo. The alpha channel is taken from the PNG image. The background color changes randonly to show the alpha channel is being used.
 
 ***
 
