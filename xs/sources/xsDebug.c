@@ -1633,7 +1633,7 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 				aSlot = aSlot->next;
 			}
 			aProperty = aProperty->next;
-           	fxEchoProperty(the, aProperty, theList, "(result)", -1, C_NULL);
+           	fxEchoProperty(the, aProperty, theList, "(value)", -1, C_NULL);
 			aProperty = aProperty->next;
 			break;
 		case XS_MAP_KIND:

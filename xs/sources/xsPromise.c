@@ -586,7 +586,7 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 	}
 	if (resolveFunction) {
 		slot = slot->next = fxNewSlot(the);
-		slot->ID = mxID(__promise_);
+		slot->ID = mxID(__result_);
 		slot->kind = mxResult->kind;
 		slot->value = mxResult->value;
 	}

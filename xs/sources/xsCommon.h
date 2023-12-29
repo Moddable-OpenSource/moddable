@@ -1169,7 +1169,7 @@ enum {
 #endif
 	__onFullfilled_,
 	__onRejected_,
-	__promise_,
+	__result_,
 	XS_ID_COUNT
 };
 #define XS_SYMBOL_ID_COUNT _AggregateError

@@ -1781,7 +1781,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #endif
 	"(onFullfilled)",
 	"(onRejected)",
-	"(promise)",
+	"(result)",
 };
 
 #if mxCanonicalNaN
