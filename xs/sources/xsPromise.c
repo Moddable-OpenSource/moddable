@@ -561,24 +561,34 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 	
 	reaction = fxNewInstance(the);
 	slot = reaction->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG;
 	if (resolveFunction) {
 		slot->kind = resolveFunction->kind;
 		slot->value = resolveFunction->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG;
 	if (rejectFunction) {
 		slot->kind = rejectFunction->kind;
 		slot->value = rejectFunction->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->ID = mxID(__onFullfilled_);
 	if (onFullfilled) {
 		slot->kind = onFullfilled->kind;
 		slot->value = onFullfilled->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->ID = mxID(__onRejected_);
 	if (onRejected) {
 		slot->kind = onRejected->kind;
 		slot->value = onRejected->value;
+	}
+	if (resolveFunction) {
+		slot = slot->next = fxNewSlot(the);
+		slot->ID = mxID(__promise_);
+		slot->kind = mxResult->kind;
+		slot->value = mxResult->value;
 	}
 		
 	status = mxPromiseStatus(promise);

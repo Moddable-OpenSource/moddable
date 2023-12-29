@@ -1779,6 +1779,9 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"suppressed",
 	"use",
 #endif
+	"(onFullfilled)",
+	"(onRejected)",
+	"(promise)",
 };
 
 #if mxCanonicalNaN
