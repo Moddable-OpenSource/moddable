@@ -202,6 +202,7 @@ void fx_nop(xsMachine *the);
 void fx_assert_throws(xsMachine *the);
 #endif
 static void fx_gc(xsMachine* the);
+static void fx_runScript(xsMachine* the);
 static void fx_print(xsMachine* the);
 
 extern void fx_clearTimer(txMachine* the);
@@ -602,6 +603,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxLastProperty(the, fxToInstance(the, global));
 	slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_runScript, 1, xsID("runScript"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
@@ -1555,6 +1557,20 @@ void fx_print(xsMachine* the)
 	fprintf(stdout, "\n");
 }
 
+void fx_runScript(xsMachine* the)
+{
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+	char path[C_PATH_MAX];
+	txUnsigned flags = mxProgramFlag | mxDebugFlag;
+	if (!c_realpath(fxToString(the, mxArgv(0)), path))
+		xsURIError("file not found");
+	txScript* script = fxLoadScript(the, path, flags);
+	mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
+	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+	mxPullSlot(mxResult);
+}
+
+
 /* TIMER */
 
 static txHostHooks gxTimerHooks = {
@@ -1613,6 +1629,8 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 	c_memset(job, 0, sizeof(txJob));
 	job->the = the;
 	c_gettimeofday(&tv, NULL);
+	if (c_isnan(interval) || (interval < 0))
+		interval = 0;
 	if (repeat)
 		job->interval = interval;
 	job->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + interval;
