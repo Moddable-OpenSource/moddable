@@ -84,7 +84,8 @@ if (result === JSONParser.success) {
     });
     trace(JSON.stringify(parser.data) + "\n");
     trace("success!\n");
-} else
+}
+else
     trace(`result: ${result}\n`);
 
 parser.close();

@@ -1,6 +1,7 @@
 # JSONParser
 
-Mark Wharton, December 20, 2023
+Mark Wharton, December 20, 2023\
+Revised: December 31, 2023
 
 ## JSONParser Module
 
@@ -29,15 +30,16 @@ The JSONParser class serves as a JSON parsing engine with customizable parsing o
 ##### Constructor Options
 - `initialBufferSize`: Initial size of the buffer for storing text, set to 64 by default. The buffer size is doubled each time more memory is needed. If there is not enough memory for the new buffer, an exception is thrown.
 - `initialStackDepth`: Initial depth of the stack used for parsing, set to 8 by default. The stack size is doubled each time more memory is needed. If there is not enough memory for the new stack, an exception is thrown.
-- `keys`: An optional property representing a list of keys used during parsing. This feature is functionally equivalent to the Moddable SDK's JSON.parse() keys.
+- `keys`: An optional property representing a list of keys used during parsing. This feature is equivalent to the Moddable SDK's JSON.parse() keys.
 - `matcher`: An optional property representing a custom matcher for parsing.
+- `patterns`: An optional property representing a list of patterns for parsing.
 
 ##### Public Properties and Methods
-- `data`: Retrieves data from the Virtual Parse Tree (VPT) associated with a matcher.
+- `data`: Retrieves data from the Virtual Parse Tree (VPT) associated with a matcher or patterns.
 - `root`: Retrieves the root from the Virtual Parse Tree (VPT) using the default tree behavior.
 - `status`: Retrieves the parsing result status. This can be called at any time before closing the parsing process.
 - `close()`: Closes the parsing process and deallocates the associated memory. Subsequent calls to parser methods will throw an exception.
-- `receive(string, start, end)`: Callback for receiving data strings during parsing. The optional start and end values are functionally equivalent to string slice(), used to extract a part of the string. Returns the number of characters parsed.
+- `receive(string, start, end)`: Receives data into the parse tree. Optional start and end values act like string slice(), extracting a portion of the string. Returns the parsed character count.
 
 #### Matcher Class
 
@@ -52,10 +54,21 @@ The Matcher class is used for matching nodes. It is configured with options to b
 The Node class represents a basic node in the parse tree. It is part of the Virtual Parse Tree (VPT) structure and can hold data associated with the node.
 
 ##### Public Properties and Methods
-- `data`: Retrieves or initializes the data associated with the node.
+- `data`: Retrieves or initializes user data associated with the node.
 - `next`: Limited to field nodes with primitive values, retrieves the next node in the parse tree; returns undefined otherwise.
 - `text`: Limited to field, number, and string nodes, retrieves the text associated with the node; returns undefined otherwise.
 - `up(count, nodeType, nodeText)`: Moves up the parse tree by a specified count of nodes, filtering by type and text if provided.
+
+#### Pattern Class
+
+The Pattern class is used for matching nodes with a pattern. It is configured with options to match and setup functions and a pattern value string.
+
+##### Constructor Options
+- `match`: A function called when a node matching the pattern is popped during parsing.
+- `setup`: A function called when a node matching the pattern is pushed or text is set during parsing.
+- `value`: The pattern value string follows the format `type(:text)?(/type(:text)?)*`.
+
+> **Note**: The characters `/` and `:` in the pattern value act as delimiters, and the behavior for field names containing these characters is undefined.
 
 ### Constants
 
@@ -83,7 +96,7 @@ The module defines an enumeration for different node types in the parse tree:
 2. Create an instance of `JSONParser` to initiate the parsing process.
 3. Use the provided methods to receive data into the parse tree and, on success, extract information. 
 
-Script
+Example Script
 ```javascript
 import { JSONParser } from "jsonparser";
 
@@ -102,70 +115,110 @@ else
 parser.close();
 ```
 
-Output
+Example Output
 ```text
 Hello, Moddable SDK!
 success!
 ```
 
-### Advanced Usage
+### Matcher Usage
 
-1. Import the necessary classes: `JSONParser`, `Matcher`, `NodeType`.
+1. Import the necessary classes: `JSONParser`, `Matcher`, and `NodeType`.
 2. Customize the parsing behavior by implementing a `Matcher` with appropriate functions.
 3. Create an instance of `JSONParser`, passing the `matcher` instance, to initiate the parsing process.
-4. Use the provided methods to manipulate the parse tree and extract information.
+4. Use provided methods to receive data into the parse tree and handle 'begin' and 'match' events for extraction and construction.
 
-Explore advanced functionality with the following example:
-```json
-{
-  "workingHours": {
-    "daysOfWeek": [
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday"
-    ],
-    "startTime": "08:00:00.0000000",
-    "endTime": "17:00:00.0000000",
-    "timeZone": {
-      "name": "Pacific Standard Time"
+Example Script
+```javascript
+import { JSONParser, Matcher, NodeType } from "jsonparser";
+
+const matcher = new Matcher({
+    begin(vpt) {
+        vpt.data = {};
+    },
+    match(vpt, node) {
+        switch (node.type) {
+            case NodeType.string:
+                vpt.data.value = node.text;
+                break;
+        }
     }
-  }
-}
+});
+
+const parser = new JSONParser({ matcher });
+
+const data = '"Hello, Moddable SDK!"';
+
+parser.receive(data);
+
+let result = parser.status;
+if (result === JSONParser.success)
+    trace(`${parser.data.value}\nsuccess!\n`);
+else
+    trace(`result: ${result}\n`);
+
+parser.close();
 ```
+
+Example Output
+```text
+Hello, Moddable SDK!
+success!
+```
+
+Explore advanced functionality with the following JSON example:
+```json
+ 1 {
+ 2   "workingHours": {
+ 3     "daysOfWeek": [
+ 4       "monday",
+ 5       "tuesday",
+ 6       "wednesday",
+ 7       "thursday",
+ 8       "friday"
+ 9     ],
+10     "startTime": "08:00:00.0000000",
+11     "endTime": "17:00:00.0000000",
+12     "timeZone": {
+13       "name": "Pacific Standard Time"
+14     }
+15   }
+16 }
+```
+
+> **Note**: Line numbers for explanation only.
 
 The Virtual Parse Tree (VPT) process:
 
 1. VPT constructor creates a root node.
-1. Parser reads `{` (line 1) and pushes an object node.
-1. Parser reads `workingHours` (line 2) and pushes a field node.
-1. Parser reads `{` (line 2) and pushes an object node.
-1. Parser reads `daysOfWeek` (line 3) and pushes a field node.
-1. Parser reads `[` (line 3) and pushes an array node.
-1. Parser reads `monday` (line 4), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `tuesday` (line 5), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `wednesday` (line 6), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `thursday` (line 7), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `friday` (line 8), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `]` (line 9) and pops the array node.
-1. Parser reads `,` (line 9) and pops the field node (`daysOfWeek`).
-1. Parser reads `startTime` (line 10) and pushes a field node.
-1. Parser reads `08:00:00.0000000` (line 10), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `,` (line 10) and pops the field node (`startTime`).
-1. Parser reads `endTime` (line 11) and pushes a field node.
-1. Parser reads `17:00:00.0000000` (line 11), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `,` (line 11) and pops the field node (`endTime`).
-1. Parser reads `timeZone` (line 12) and pushes a field node.
-1. Parser reads `{` (line 12) and pushes an object node.
-1. Parser reads `name` (line 13) and pushes a field node.
-1. Parser reads `Pacific Standard Time` (line 13), pushes a string node, sets the node text, and then pops it.
-1. Parser reads `}` (line 14), pops the field node (`name`), and then pops the object node.
-1. Parser reads `}` (line 15), pops the field node (`timeZone`), and then pops the object node.
-1. Parser reads `}` (line 16), pops the field node (`workingHours`), and then pops the object node.
-1. The VPT node is now the root node, and parsing is complete.
+2. Parser reads `{` _(line 1)_ and pushes an object node.
+3. Parser reads `workingHours` _(line 2)_ and pushes a field node.
+4. Parser reads `{` _(line 2)_ and pushes an object node.
+5. Parser reads `daysOfWeek` _(line 3)_ and pushes a field node.
+6. Parser reads `[` _(line 3)_ and pushes an array node.
+7. Parser reads `monday` _(line 4)_, pushes a string node, sets the node text, and then pops it _(#1)_.
+8. Parser reads `tuesday` _(line 5)_, pushes a string node, sets the node text, and then pops it _(#2)_.
+9. Parser reads `wednesday` _(line 6)_, pushes a string node, sets the node text, and then pops it _(#3)_.
+10. Parser reads `thursday` _(line 7)_, pushes a string node, sets the node text, and then pops it _(#4)_.
+11. Parser reads `friday` _(line 8)_, pushes a string node, sets the node text, and then pops it _(#5)_.
+12. Parser reads `]` _(line 9)_ and pops the array node _(#6)_.
+13. Parser reads `,` _(line 9)_ and pops the field node _(`daysOfWeek`)_ _(#7)_.
+14. Parser reads `startTime` _(line 10)_ and pushes a field node.
+15. Parser reads `08:00:00.0000000` _(line 10)_, pushes a string node, sets the node text, and then pops it _(#8)_.
+16. Parser reads `,` _(line 10)_ and pops the field node _(`startTime`)_ _(#9)_.
+17. Parser reads `endTime` _(line 11)_ and pushes a field node.
+18. Parser reads `17:00:00.0000000` _(line 11)_, pushes a string node, sets the node text, and then pops it _(#10)_.
+19. Parser reads `,` _(line 11)_ and pops the field node _(`endTime`)_ _(#11)_.
+20. Parser reads `timeZone` _(line 12)_ and pushes a field node.
+21. Parser reads `{` _(line 12)_ and pushes an object node.
+22. Parser reads `name` _(line 13)_ and pushes a field node.
+23. Parser reads `Pacific Standard Time` _(line 13)_, pushes a string node, sets the node text, and then pops it _(#12)_.
+24. Parser reads `}` _(line 14)_, pops the field node _(`name`)_ _(#13)_, and then pops the object node _(#14)_.
+25. Parser reads `}` _(line 15)_, pops the field node _(`timeZone`)_ _(#15)_, and then pops the object node _(#16)_.
+26. Parser reads `}` _(line 16)_, pops the field node _(`workingHours`)_ _(#17)_, and then pops the object node _(#18)_.
+27. The VPT node is now the root node, and parsing is complete.
 
-Accompanied by an explanation of the Type, Text, and Active List for each call:
+Accompanied by an explanation of the Type, Text, and Active List for each call to the Matcher's match function:
 
 | #  | Type     | Text                  | Active List                                                                                                             | → |
 |----|----------|-----------------------|-------------------------------------------------------------------------------------------------------------------------|---|
@@ -188,23 +241,9 @@ Accompanied by an explanation of the Type, Text, and Active List for each call:
 | 17 | `field`  | workingHours          | root ← object ← **`field` workingHours**                                                                                |   |
 | 18 | `object` |                       | root ← **`object`**                                                                                                     |   |
 
-\* Special "lookahead" feature (node.next) for added convenience, as illustrated in the [schedule](./examples/schedule/main.js) example.
+\* Special _lookahead_ feature (node.next) for added convenience, as illustrated in the [schedule](./examples/schedule/main.js) example.
 
-Matchers are configured with options to begin and match functions:
-
-Script
-```javascript
-const matcher = new Matcher({
-    begin(vpt) {
-        ...
-    },
-    match(vpt, node) {
-        ...
-    }
-});
-```
-
-Example to extract start and end times:
+Example to extract start and end times using the JSON example:
 
 Script
 ```javascript
@@ -226,7 +265,7 @@ const matcher = new Matcher({
 });
 ```
 
-This example demonstrates the use of "lookahead" to access the next node in the Active List. When performing the pop() operation, the implementation keeps the tail node (node.next) for fields with primitive values and discards it for non-primitive fields, as it doesn't offer any value.
+This example demonstrates the use of _lookahead_ to access the next node in the Active List. When performing the pop() operation, the implementation keeps the tail node (node.next) for fields with primitive values and discards it for non-primitive fields, as it doesn't offer any value.
 
 Output
 ```text
@@ -251,6 +290,8 @@ const matcher = new Matcher({
 });
 ```
 
+This example demonstrates using the `up()` method to lookup previous nodes in the Active List.
+
 Output
 ```text
 monday
@@ -259,8 +300,6 @@ wednesday
 thursday
 friday
 ```
-
-This example demonstrates using the `up()` method to lookup previous nodes in the Active List.
 
 Example to extract the time zone name:
 
@@ -283,7 +322,7 @@ const matcher = new Matcher({
 });
 ```
 
-This example demonstrates confirming the object `timeZone` as there could be many `name` fields.
+This example demonstrates checking that the `name` field is found within the context of a `timeZone` field.
 
 Output
 ```text
@@ -328,23 +367,131 @@ const matcher = new Matcher({
 });
 ```
 
-Transformed Data: `parser.data.workingWeek`
+Parser Data
 ```json
 {
-  "days": [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday"
-  ],
-  "start": "08:00",
-  "stop": "17:00",
-  "tz": "Pacific Standard Time"
+  "workingWeek": {
+    "days": [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday"
+    ],
+    "start": "08:00",
+    "end": "17:00",
+    "tz": "Pacific Standard Time"
+  }
 }
 ```
 
-> **Note**: Certain transformations within the tree may require aggregating information in a parent node prior to updating the data. Refer to the [schedule](./examples/schedule/main.js) for a concrete example of how this approach can be implemented.
+> **Note**: Certain transformations within the tree may require aggregating information in a parent node prior to updating the data. Refer to [schedule](./examples/schedule/main.js) for a concrete example of how this approach can be implemented.
+
+### Pattern Usage
+
+1. Import the necessary classes: `JSONParser` and `Pattern`.
+2. Customize parsing by implementing `Patterns` with relevant functions and values.
+3. Create an instance of `JSONParser`, passing a list of `patterns`, to initiate the parsing process.
+4. Use provided methods to receive data into the parse tree and handle 'setup' and 'match' events for extraction and construction.
+
+Example Script
+```javascript
+import { JSONParser, Pattern } from "jsonparser";
+
+const patterns = [
+    new Pattern({
+        match(vpt, node) {
+            vpt.data.value = node.text;
+        },
+        setup(vpt, node) {
+            vpt.data = {};
+        },
+        value: "root/string"
+    })
+];
+
+const parser = new JSONParser({ patterns });
+
+const data = '"Hello, Moddable SDK!"';
+
+parser.receive(data);
+
+let result = parser.status;
+if (result === JSONParser.success)
+    trace(`${parser.data.value}\nsuccess!\n`);
+else
+    trace(`result: ${result}\n`);
+
+parser.close();
+```
+
+Example Output
+```text
+Hello, Moddable SDK!
+success!
+```
+
+Patterns for the JSON example from 'Matcher Usage' section (see above):
+
+Script
+```javascript
+const patterns = [
+    new Pattern({
+        setup(vpt) {
+            vpt.data = {
+                workingWeek: {
+                    days: []
+                }
+            };
+        },
+        value: "field:workingHours"
+    }),
+    new Pattern({
+        match(vpt, node) {
+            vpt.data.workingWeek.days.push(node.text);
+        },
+        value: "field:daysOfWeek/array/string"
+    }),
+    new Pattern({
+        match(vpt, node) {
+            vpt.data.workingWeek.start = node.text.slice(0, 5);
+        },
+        value: "field:startTime/string"
+    }),
+    new Pattern({
+        match(vpt, node) {
+            vpt.data.workingWeek.end = node.text.slice(0, 5);
+        },
+        value: "field:endTime/string"
+    }),
+    new Pattern({
+        match(vpt, node) {
+            vpt.data.workingWeek.tz = node.text;
+        },
+        value: "field:timeZone/object/field:name/string"
+    })
+];
+```
+
+Parser Data
+```json
+{
+  "workingWeek": {
+    "days": [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday"
+    ],
+    "start": "08:00",
+    "end": "17:00",
+    "tz": "Pacific Standard Time"
+  }
+}
+```
+
+> **Note**: Certain transformations within the tree may require caching information prior to updating the data. Refer to [pattern](./examples/pattern/main.js) for a concrete example of how this approach can be implemented.
 
 ### Code Generation
 

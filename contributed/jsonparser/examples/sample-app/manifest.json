@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODULES)/network/http/manifest.json",
+		"$(MODDABLE)/contributed/jsonparser/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	}
+}

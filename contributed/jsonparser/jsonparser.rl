@@ -6,8 +6,9 @@
 #include "mc.xs.h" // for xsID_ values
 
 enum {
-	XS_VALUE = 0,
-	XS_KEYS,
+	XS_KEYS = 0,
+	XS_OPTIONS,
+	XS_VALUE,
 	XS_VPT,
 	XS_COUNT
 };
@@ -21,7 +22,6 @@ struct jsonparser
 	int *stack;
 
 	int mark;
-
 	int n, nx;
 	uint16_t w1;
 	uint16_t w2;
@@ -51,6 +51,7 @@ int *grow_stack( int *stack, int *psd )
 	return ns;
 }
 
+static const char execute_on_closed[] ICACHE_XS6STRING_ATTR = "execute on closed jsonparser";
 static const char not_enough_memory[] ICACHE_XS6STRING_ATTR = "jsonparser out of memory";
 
 void before_buffer_char( xsMachine *the, struct jsonparser *fsm )
@@ -469,6 +470,7 @@ void xs_jsonparser_constructor(xsMachine *the)
 	int initialStackDepth = 8;
 
 	xsmcVars(XS_COUNT);
+	xsmcSetNewObject(xsVar(XS_OPTIONS));
 	if (xsmcArgc >= 1 && xsmcTypeOf(xsArg(0)) != xsUndefinedType) {
 		if (xsmcHas(xsArg(0), xsID_initialBufferSize)) {
 			xsmcGet(xsVar(XS_VALUE), xsArg(0), xsID_initialBufferSize);
@@ -482,24 +484,29 @@ void xs_jsonparser_constructor(xsMachine *the)
 			xsmcGet(xsVar(XS_KEYS), xsArg(0), xsID_keys);
 			xsmcSet(xsThis, xsID_keys, xsVar(XS_KEYS));
 		}
-		if (xsmcHas(xsArg(0), xsID_matcher)) {
-			if (xsmcHas(xsArg(0), xsID_vpt))
-				xsUnknownError("cannot specify vpt and matcher together");
-			xsmcGet(xsVar(XS_VALUE), xsArg(0), xsID_matcher);
-			xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeVPT, &xsVar(XS_VALUE), C_NULL);
-			xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
-		}
-		else if (xsmcHas(xsArg(0), xsID_vpt)) {
+		if (xsmcHas(xsArg(0), xsID_vpt)) {
 			xsmcGet(xsVar(XS_VPT), xsArg(0), xsID_vpt);
 			xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
 		}
+		else if (xsmcHas(xsArg(0), xsID_patterns)) {
+			xsmcGet(xsVar(XS_VALUE), xsArg(0), xsID_patterns);
+			xsmcSet(xsVar(XS_OPTIONS), xsID_patterns, xsVar(XS_VALUE));
+			xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeVPT, &xsVar(XS_OPTIONS), C_NULL);
+			xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
+		}
+		else if (xsmcHas(xsArg(0), xsID_matcher)) {
+			xsmcGet(xsVar(XS_VALUE), xsArg(0), xsID_matcher);
+			xsmcSet(xsVar(XS_OPTIONS), xsID_matcher, xsVar(XS_VALUE));
+			xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeVPT, &xsVar(XS_OPTIONS), C_NULL);
+			xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
+		}
 		else {
-			xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeJSONTree, C_NULL);
+			xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeJSONTree, &xsVar(XS_OPTIONS), C_NULL);
 			xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
 		}
 	}
 	else {
-		xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeJSONTree, C_NULL);
+		xsmcCall(xsVar(XS_VPT), xsThis, xsID_makeJSONTree, &xsVar(XS_OPTIONS), C_NULL);
 		xsmcSet(xsThis, xsID_vpt, xsVar(XS_VPT));
 	}
 
@@ -558,7 +565,7 @@ void xs_jsonparser_close(xsMachine *the)
 	struct jsonparser *fsm = xsmcGetHostData(xsThis);
 
 	if (fsm == C_NULL)
-		xsUnknownError("close on closed jsonparser");
+		xsUnknownError((char *)execute_on_closed);
 
 	xsmcSetHostData(xsThis, C_NULL);
 	xs_jsonparser_destructor(fsm);
@@ -569,7 +576,7 @@ void xs_jsonparser_receive(xsMachine *the)
 	struct jsonparser *fsm = xsmcGetHostData(xsThis);
 
 	if (fsm == C_NULL)
-		xsUnknownError("receive on closed jsonparser");
+		xsUnknownError((char *)execute_on_closed);
 
 	int count = 0;
 	if (fsm->cs != JSON_error) {
@@ -620,7 +627,7 @@ void xs_jsonparser_status(xsMachine *the)
 	struct jsonparser *fsm = xsmcGetHostData(xsThis);
 
 	if (fsm == C_NULL)
-		xsUnknownError("status on closed jsonparser");
+		xsUnknownError((char *)execute_on_closed);
 
 	xsmcGet(xsResult, xsThis, xsID_constructor);
 	if (fsm->cs == JSON_error)
