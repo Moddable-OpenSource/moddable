@@ -15,7 +15,8 @@ if (result === JSONParser.success) {
     trace(parser.root.value["Hello, Japanese!"] + "\n");
     trace(parser.root.value["G clef character"] + "\n");
     trace("success!\n");
-} else
+}
+else
     trace(`result: ${result}\n`);
 
 parser.close();

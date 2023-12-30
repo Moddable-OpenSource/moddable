@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "BadRequest",
+    "message": "Currently Graph only supports passing $query requests as $query requests to backend services. The target workload Microsoft.Exchange doesn't support $query requests.",
+    "innerError": {
+      "date": "2023-09-21T02:52:09",
+      "request-id": "00000000-0000-0000-0000-000000000000",
+      "client-request-id": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

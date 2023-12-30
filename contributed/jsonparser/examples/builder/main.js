@@ -12,8 +12,6 @@ const keys = ["value", "scheduleItems", "status", "start", "end", "dateTime", "e
 
 class BuilderVPT extends VPT {
     constructor(options) {
-        if (options !== undefined && options.matcher !== undefined)
-            throw new Error("invalid options");
         super(options);
         this.keys = options.keys;
         this.mark = 0;
@@ -47,7 +45,8 @@ class BuilderVPT extends VPT {
                         this.pop(this.node.type);
                         this.mark++;
                     }
-                } else
+                }
+                else
                     want = true;
                 if (want)
                     trace(`${text}\n`);
