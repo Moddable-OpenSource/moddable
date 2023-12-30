@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Light-Proximity/LTR553ALS": "$(MODDABLE)/modules/drivers/sensors/ltr553als/ltr553als"
+	},
+	"preload": [
+		"embedded:sensor/Light-Proximity/LTR553ALS"
+	]
+}
