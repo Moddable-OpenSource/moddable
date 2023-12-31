@@ -18,7 +18,7 @@
  *
  */
 /*
-    LTR553ALS  Light & Proximity Sensor
+    LTR553ALS AmbientLight & Proximity Sensor
 	https://optoelectronics.liteon.com/upload/download/DS86-2014-0007/LTR-553ALS-01_DS_V1.pdf
 */
 
@@ -196,8 +196,6 @@ class LTR553ALS {
       alsIntegrationTime: AlsIntegrationTiime.ALS_INTEGRATION_TIME_100MS,
       alsMeasureRate: AlsMeasureRate.ALS_MEASUREMENT_RATE_500MS,
     });
-
-    this.#onError = options.onError;
   }
 
   #setPsMode(mode) {
@@ -302,39 +300,30 @@ class LTR553ALS {
     this.#setAlsMode(AlsMode.ALS_ACTIVE_MODE);
   }
   close() {
-    this.#io.close();
+    this.#io.close?.()
     this.#io = undefined;
   }
 
-  get psValue() {
+  sample() {
     const buffer = new Uint8Array(2);
     this.#io.readBuffer(Register.PS_DATA_LOW, buffer);
-    return (
-      ((buffer[1] & PS_DATA_HIGH_MASK) << 8) | (buffer[0] & PS_DATA_LOW_MASK)
-    );
-  }
+    const ps =  ((buffer[1] & PS_DATA_HIGH_MASK) << 8) | (buffer[0] & PS_DATA_LOW_MASK);
 
-  get alsCh0Value() {
-    const buffer = new Uint8Array(2);
-    this.#io.readBuffer(Register.ALS_DATA_CH0_0, buffer);
-    return (buffer[1] << 8) | buffer[0];
-  }
-
-  get alsCh1Value() {
-    const buffer = new Uint8Array(2);
     this.#io.readBuffer(Register.ALS_DATA_CH1_0, buffer);
-    return (buffer[1] << 8) | buffer[0];
-  }
+    const alsCh1 = (buffer[1] << 8) | buffer[0];
 
-  sample() {
-    const ps = this.psValue;
-    const alsCh1 = this.alsCh1Value;
-    const alsCh0 = this.alsCh0Value;
+    this.#io.readBuffer(Register.ALS_DATA_CH0_0, buffer);
+    const alsCh0 = (buffer[1] << 8) | buffer[0];
+
     const als = (alsCh0 + alsCh1) >> 1;
 
     return {
-      ps,
-      als,
+      proximity: {
+        distance: ps,
+      },
+      lightmeter: {
+        illuminance: als,
+      },
     };
   }
 }
