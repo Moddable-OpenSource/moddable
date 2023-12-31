@@ -12,15 +12,15 @@
  *
  */
 
-import Proximity from "embedded:sensor/Light-Proximity/LTR553ALS";
+import Proximity from "embedded:sensor/AmbientLight-Proximity/LTR553ALS";
 import Timer from "timer";
 
 const sensor = new Proximity({
-  sensor: { ...device.I2C.internal, io: device.io.SMBus },
+  sensor: { ...(device.I2C.internal ?? device.I2C.default), io: device.io.SMBus },
 });
 
 Timer.repeat(() => {
 	const sample = sensor.sample();
 
-	trace(`Ps: ${sample.ps} / Als: ${sample.als}\n`);
+	trace(`proximity: ${sample.proximity.distance} / lightmeter: ${sample.lightmeter.illuminance}\n`);
 }, 100);
