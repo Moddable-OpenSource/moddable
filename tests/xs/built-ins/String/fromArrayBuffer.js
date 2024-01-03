@@ -29,4 +29,4 @@ assert.throws(TypeError, () => String.fromArrayBuffer("string"), "string");
 assert.throws(TypeError, () => String.fromArrayBuffer(), "no argument");
 assert.throws(TypeError, () => String.fromArrayBuffer(String.fromArrayBuffer), "host function");
 assert.throws(TypeError, () => String.fromArrayBuffer(new Uint8Array(12)), "Uint8Array");
-assert.sameValue("", String.fromArrayBuffer(new $TESTMC.HostBuffer(16)), "empty HostBuffer");
+assert.sameValue("\0\0\0\0", String.fromArrayBuffer(new $TESTMC.HostBuffer(4)), "HostBuffer with nulls");

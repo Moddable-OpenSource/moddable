@@ -211,7 +211,7 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 */
 
 #if USE_WATCHDOG
-	#define modWatchDogReset() nrf_drv_wdt_feed()
+	#define modWatchDogReset() nrfx_wdt_feed()
 #else
 	#define modWatchDogReset()
 #endif

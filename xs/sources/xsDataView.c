@@ -498,12 +498,36 @@ void fx_ArrayBuffer_fromBigInt(txMachine* the)
 #ifndef mxCESU8
 void fx_ArrayBuffer_fromString(txMachine* the)
 {
-	txSize length;
+	txSize length = 0;
 	if (mxArgc < 1)
 		mxTypeError("no argument");
-	length = mxStringLength(fxToString(the, mxArgv(0)));
-	fxConstructArrayBufferResult(the, mxThis, length);
-	c_memcpy(mxResult->value.reference->next->value.arrayBuffer.address, mxArgv(0)->value.string, length);
+	
+	txString c = fxToString(the, mxArgv(0));
+	txInteger nulls = 0;
+	while (1) {
+		uint8_t b = (uint8_t)c_read8(c++);
+		if (!b) break;
+
+		length += 1;
+		if ((0xc0 == b) && (0x80 == (uint8_t)c_read8(c)))
+			nulls += 1;
+	} 
+	
+	fxConstructArrayBufferResult(the, mxThis, length - nulls);
+	if (!nulls)
+		c_memcpy(mxResult->value.reference->next->value.arrayBuffer.address, mxArgv(0)->value.string, length);
+	else {
+		txString c = mxArgv(0)->value.string, end = c + length;
+		txByte *out = mxResult->value.reference->next->value.arrayBuffer.address;
+		while (c < end) {
+			uint8_t b = (uint8_t)c_read8(c++);
+			if ((0xc0 == (uint8_t)b) && (0x80 == (uint8_t)c_read8(c))) {
+				b = 0;
+				c += 1;
+			}
+			*out++ = b;
+		}
+	}
 }
 #endif
 
@@ -1369,7 +1393,7 @@ void fx_TypedArray(txMachine* the)
 			size = fxArgToByteLength(the, 2, -1);
 			info = fxGetBufferInfo(the, mxArgv(0));
 			if (size >= 0) {
-				txInteger delta = size << shift;
+				txInteger delta = size << shift;		//@@ overflow
 				txInteger end = fxAddChunkSizes(the, offset, delta);
 				if ((info->value.bufferInfo.length < end) || (end < offset))
 					mxRangeError("out of range length %ld", size);

@@ -347,6 +347,9 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 	#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
 #endif
 
+extern uint8_t gSoftReset;
+#define modSoftReset() gSoftReset = 1
+
 /*
 	c libraries
 */

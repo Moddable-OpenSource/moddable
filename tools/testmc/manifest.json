@@ -27,6 +27,7 @@
 		"main": "main"
 	},
 	"include": [
+		"$(MODDABLE)/contributed/jsonparser/manifest.json",
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
@@ -100,6 +101,7 @@
 		"esp32": {
 			"defines": {
 				"XS_TEST": 1,
+				"softreset": 1,
 				"audioOut": {
 					"bitsPerSample": 16,
 					"numChannels": 1,
