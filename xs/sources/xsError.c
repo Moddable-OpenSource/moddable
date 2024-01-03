@@ -39,7 +39,7 @@
 
 static txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i);
 
-const txS4 gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT] ICACHE_FLASH_ATTR = {
+const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT] ICACHE_FLASH_ATTR = {
 	mxErrorPrototypeStackIndex,
 	mxErrorPrototypeStackIndex,
 	mxEvalErrorPrototypeStackIndex,
