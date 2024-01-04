@@ -4061,9 +4061,11 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_DEBUGGER)
 			mxNextCode(1);
 		#ifdef mxDebug
-			mxSaveState;
-			fxDebugLoop(the, C_NULL, 0, "debugger");
-			mxRestoreState;
+			if (!the->debugEval) {
+				mxSaveState;
+				fxDebugLoop(the, C_NULL, 0, "debugger");
+				mxRestoreState;
+			}
 		#endif
 			mxBreak;
 		mxCase(XS_CODE_FILE)
