@@ -558,7 +558,7 @@ ULONG GetCurrentThreadStackLimits_Win7( _Out_ PULONG_PTR LowLimit, _Out_ PULONG_
 
     if (!GetCurrentThreadStackLimits)
     {
-        *(void**)&GetCurrentThreadStackLimits = GetProcAddress(GetModuleHandle(L"kernel32"), "GetCurrentThreadStackLimits");
+        *(void**)&GetCurrentThreadStackLimits = GetProcAddress(GetModuleHandle("kernel32"), "GetCurrentThreadStackLimits");
 
         if (!GetCurrentThreadStackLimits)
         {
