@@ -1,6 +1,5 @@
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
-"use strict";
 
 import { JSONParser } from "jsonparser";
 

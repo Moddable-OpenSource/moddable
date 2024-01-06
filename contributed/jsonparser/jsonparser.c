@@ -1,6 +1,6 @@
 
 #line 1 "jsonparser.rl"
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
 #include "xsmc.h"

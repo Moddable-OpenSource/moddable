@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
 #include "xsmc.h"
@@ -416,7 +416,7 @@ void set_text( xsMachine *the, struct jsonparser *fsm, char *buffer, int size )
 
 			( '\\'^([\"\\/bfnrtu]|0..0x1f) )
 		)*
-		'"' @{ if ( fsm->n || fsm->nx ) fgoto *JSON_error; } # TODO: review
+		'"' @{ if ( fsm->n || fsm->nx ) fgoto *JSON_error; } # unfinished escape sequences
 	) >string_enter @string_exit;
 
 	primitive = ( number | string | 'true' @true | 'false' @false | 'null' @null );

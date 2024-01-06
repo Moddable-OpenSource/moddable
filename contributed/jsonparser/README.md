@@ -1,7 +1,7 @@
 # JSONParser
 
 Mark Wharton, December 20, 2023\
-Revised: December 31, 2023
+Revised: January 7, 2024
 
 ## JSONParser Module
 
@@ -21,6 +21,143 @@ The JSON Parser module uses Ragel to generate robust parser code. Ragel was desi
 
 Special thanks to [HeliMods](https://www.helimods.com) and [Marc Treble](https://github.com/mtreble) for initiating and supporting the Meeting Room Display project. It turned out that the project required parsing JSON data streams greater than the available memory on a [Moddable Three](https://www.moddable.com/moddable-three) device. Thanks to [Jethro Wharton](https://github.com/jethrowharton) for developing the Meeting Room Display app and testing this code.
 
+## Cookbook
+
+### Sample Apps
+
+The sample apps demonstrate how to use the streaming JSON parser in your own applications. They show how to parse a large JSON file and extract specific data from it, without having to load the entire file into memory at once.
+
+#### Sample Weather App
+
+The [sample-weather-app](./examples/cookbook/sample-weather-app/main.js) uses the Request class to send a GET request to the OpenWeatherMap API and retrieve weather data for a zip code in the United States. The response is parsed using the JSONParser class, which extracts specific values from the JSON data stream based on their keys. The extracted values are then displayed in the console.
+
+##### 1. Create JSON Parser with Keys
+```javascript
+const keys = ["main", "name", "temp", "weather"];
+this.parser = new JSONParser({ keys });
+```
+In this example, passing `keys` to JSONParser simplifies [sample-weather.json](./examples/cookbook/sample-weather-app/sample-weather.json) to include only the specified properties. For example:
+```json
+{
+  "weather": [
+    {
+      "main": "Clouds"
+    }
+  ],
+  "main": {
+    "temp": 48.94
+  },
+  "name": "Menlo Park"
+}
+```
+
+##### 2. Receive Variable Amounts of Data
+```javascript
+const string = this.read(String);
+this.parser.receive(string);
+```
+Receive data into the parse tree. Optional start and end values act like string slice(), extracting a portion of the string. Returns the parsed character (byte) count. Call receive whenever there is new JSON data to process.
+
+##### 3. On Completion, Process the Result and Close
+```javascript
+let result = this.parser.status;
+if (result === JSONParser.success) {
+    const value = this.parser.root.value;
+    trace(`The temperature in ${value.name} is ${value.main.temp} F.\n`);
+    trace(`The weather condition is ${value.weather[0].main}.\n`);
+}
+else {
+    trace(`result: ${result}\n`);
+}
+this.parser.close();
+```
+On successful completion, `parser.root` holds the simplified JSON tree.
+
+#### Sample Schedule Info App
+
+The [sample-schedule-info-app](./examples/cookbook/sample-schedule-info-app/main.js) will send a GET request to the specified URL and parse the JSON data stream using the provided patterns. The parsed data is then displayed in the console. If an error occurs, it will be logged to the console as well.
+
+##### 1. Define Patterns
+```javascript
+const patterns = [
+    // base pattern for data setup
+    new Pattern({
+        setup(vpt) {
+            vpt.data = {
+                error: false,
+                schedule: {
+                    count: 0,
+                    meetings: []
+                }
+            };
+        },
+        value: "root/object/field:value"
+    }),
+    // ... (more patterns, see sample-schedule-info-app)
+    // pattern match to check for errors
+    new Pattern({
+        match(vpt, node) {
+            vpt.data = {
+                error: true,
+                errorCode: node.text
+            };
+        },
+        value: "field:error/object/field:code/string"
+    })
+];
+```
+In this example, the `patterns` snippet includes a base pattern for data setup and a pattern match to check for errors. Refer to the [sample-schedule-info-app](./examples/cookbook/sample-schedule-info-app/main.js) for the complete list of patterns.
+###### 1.1. Example Patterns
+The `root/object/field:value` (or `/object/field:value`) pattern matches the root of the JSON data stream:
+```json
+{ "value":
+```
+The `field:error/object/field:code/string` pattern matches anywhere in the JSON data stream:
+```json
+  "error": { "code": ""
+```
+
+##### 2. Create JSON Parser with Patterns
+```javascript
+this.parser = new JSONParser({ keys, patterns });
+```
+Keys can also be derived from patterns. For example, `keys = patterns.map(pattern => pattern.names).flat()`. However, be careful, as patterns do not always contain all the necessary keys.
+
+##### 3. Receive Variable Amounts of Data
+```javascript
+let size = 64, start = 0, string = this.read(String);
+while (this.parser.receive(string, start, start + size) > 0) {
+    start += size;
+}
+```
+HTTP response fragments have been observed to be almost 1K in size. In this example, the string is sliced using 'start' and 'end' to process no more than 64 bytes at a time. This approach helps to avoid out-of-memory issues, especially in low-memory environments.
+
+##### 4. On Completion, Process the Result and Close
+```javascript
+let result = this.parser.status;
+if (result === JSONParser.success) {
+    const data = this.parser.data;
+    if (data.error) {
+        trace(`An error occurred: ${data.errorCode}\n`);
+    }
+    else {
+        const schedule = data.schedule;
+        trace(`Logged ${schedule.count} meetings.\n`);
+        trace(`Here are the top ${schedule.meetings.length} for further processing:\n`);
+        schedule.meetings.forEach((meeting, index) => {
+            trace(`${index + 1}. From ${meeting.start.toLocaleDateString()} ${meeting.start.toLocaleTimeString()} to ${meeting.end.toLocaleTimeString()}\n`);
+        });
+    }
+}
+else {
+    trace(`result: ${result}\n`);
+}
+this.parser.close();
+```
+On successful completion, `parser.data` holds only the information processed by the patterns, keeping it lean without any extra data. This example is interesting because it limits the number of meetings to 3, regardless of how many appear in the JSON data stream.
+
+## Reference
+
 ### Classes
 
 #### JSONParser Class
@@ -39,7 +176,7 @@ The JSONParser class serves as a JSON parsing engine with customizable parsing o
 - `root`: Retrieves the root from the Virtual Parse Tree (VPT) using the default tree behavior.
 - `status`: Retrieves the parsing result status. This can be called at any time before closing the parsing process.
 - `close()`: Closes the parsing process and deallocates the associated memory. Subsequent calls to parser methods will throw an exception.
-- `receive(string, start, end)`: Receives data into the parse tree. Optional start and end values act like string slice(), extracting a portion of the string. Returns the parsed character count.
+- `receive(string, start, end)`: Receives data into the parse tree. Optional start and end values act like string slice(), extracting a portion of the string. Returns the parsed character (byte) count.
 
 #### Matcher Class
 
@@ -66,7 +203,7 @@ The Pattern class is used for matching nodes with a pattern. It is configured wi
 ##### Constructor Options
 - `match`: A function called when a node matching the pattern is popped during parsing.
 - `setup`: A function called when a node matching the pattern is pushed or text is set during parsing.
-- `value`: The pattern value string follows the format `type(:text)?(/type(:text)?)*`.
+- `value`: The pattern value string follows the format `/?type(:text)?(/type(:text)?)*`.
 
 > **Note**: The characters `/` and `:` in the pattern value act as delimiters, and the behavior for field names containing these characters is undefined.
 
@@ -241,7 +378,7 @@ Accompanied by an explanation of the Type, Text, and Active List for each call t
 | 17 | `field`  | workingHours          | root ← object ← **`field` workingHours**                                                                                |   |
 | 18 | `object` |                       | root ← **`object`**                                                                                                     |   |
 
-\* Special _lookahead_ feature (node.next) for added convenience, as illustrated in the [schedule](./examples/schedule/main.js) example.
+\* Special _lookahead_ feature (node.next) for added convenience, as illustrated in the [schedule](./examples/reference/schedule/main.js) example.
 
 Example to extract start and end times using the JSON example:
 
@@ -385,7 +522,7 @@ Parser Data
 }
 ```
 
-> **Note**: Certain transformations within the tree may require aggregating information in a parent node prior to updating the data. Refer to [schedule](./examples/schedule/main.js) for a concrete example of how this approach can be implemented.
+> **Note**: Certain transformations within the tree may require aggregating information in a parent node prior to updating the data. Refer to [schedule](./examples/reference/schedule/main.js) for a concrete example of how this approach can be implemented.
 
 ### Pattern Usage
 
@@ -403,10 +540,10 @@ const patterns = [
         match(vpt, node) {
             vpt.data.value = node.text;
         },
-        setup(vpt, node) {
+        setup(vpt) {
             vpt.data = {};
         },
-        value: "root/string"
+        value: "/string"
     })
 ];
 
@@ -491,7 +628,7 @@ Parser Data
 }
 ```
 
-> **Note**: Certain transformations within the tree may require caching information prior to updating the data. Refer to [pattern](./examples/pattern/main.js) for a concrete example of how this approach can be implemented.
+> **Note**: Certain transformations within the tree may require caching information prior to updating the data. Refer to [pattern](./examples/reference/pattern/main.js) for a concrete example of how this approach can be implemented.
 
 ### Code Generation
 
@@ -546,7 +683,7 @@ Unit tests for JavaScript are provided in the [contributed tests](../../tests/co
 - There are no [jsonparser.d.ts](../../typings/jsonparser.d.ts) type definitions ~~and no [jsonparser](../../tests/contributed/jsonparser) tests~~.
 - JSON.parse() like reviver functionality is not supported.
 - ~~xsUnknownError with and without xsTry/xsCatch.~~
-- Some `TODO: review` items to address.
+- ~~Some `TODO: review` items to address.~~
 
 ### References
 
