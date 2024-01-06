@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -124,6 +124,9 @@ struct ls013b4dn04Record {
 #if MODDEF_LS013B4DN04_PULSE
 	modTimer		timer;
 #endif
+
+	uint32_t		flip;		// true if 180 rotation (32-bit value to align array that folows)
+	uint8_t			mirror[MODDEF_LS013B4DN04_WIDTH];
 };
 typedef struct ls013b4dn04Record ls013b4dn04Record;
 typedef ls013b4dn04Record *ls013b4dn04;
@@ -215,6 +218,8 @@ void xs_LS013B4DN04(xsMachine *the)
 #if MODDEF_LS013B4DN04_CLEARONSTART
 	ls_clear(ls);
 #endif
+
+	ls->flip = 0;
 }
 
 void xs_LS013B4DN04_close(xsMachine *the)
@@ -302,7 +307,8 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon)
 	flags = MODE_FLAG | (ls->updateCycle ? FRAME_FLAG : 0);
 
 	for (int i = ls->onRow + 1; i <= (ls->onRow + lines); i++) {
-		PocoPixel *dest;
+		PocoPixel *src;
+		PocoPixel *rowEnd;
 #if MODDEF_LS013B4DN04_DITHER
 		int16_t *thisLineErrors, *nextLineErrors;
 
@@ -324,15 +330,27 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon)
 		}
 #endif
 
-		dest = data + MODDEF_LS013B4DN04_WIDTH;
 		*toSend++ = flags;
-		*toSend++ = c_read8(gReversedBytes + i);
+		if (ls->flip) {
+			int j;
+			src = ls->mirror;
+			data += MODDEF_LS013B4DN04_WIDTH;
+			for (j = 0; j < MODDEF_LS013B4DN04_WIDTH; j++)
+				src[j] = data[-(j + 1)];
+			*toSend++ = c_read8(gReversedBytes + (MODDEF_LS013B4DN04_HEIGHT + 1 - i));
+		}
+		else {
+			src = data;
+			data += MODDEF_LS013B4DN04_WIDTH;
+			*toSend++ = c_read8(gReversedBytes + i);
+		}
+		rowEnd = src + MODDEF_LS013B4DN04_WIDTH;
 
 #if MODDEF_LS013B4DN04_DITHER
 		if (ls->flags) {
 			uint8_t pixels = 0, mask = 0x80;
 			do {
-				int16_t thisPixel = *data++ + (thisLineErrors[0] >> DITHER_INITIAL_SHIFT);
+				int16_t thisPixel = *src++ + (thisLineErrors[0] >> DITHER_INITIAL_SHIFT);
 
 				if (thisPixel >= 128) {
 					pixels |= mask;
@@ -366,7 +384,7 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon)
 				mask >>= 1;
 				if (!mask) {
 					*toSend++ = pixels;	
-					if (data >= dest)
+					if (src >= rowEnd)
 						break;
 					mask = 0x80;
 					pixels = 0;
@@ -376,10 +394,10 @@ void ls013b4dn04Send(PocoPixel *data, int count, void *refCon)
 		else
 #endif
 
-		while (data < dest) {
-			uint32_t d =	(0x80808080 & *(uint32_t *)data) |
-								((0x80808080 & *(uint32_t *)(data + 4)) >> 4);
-			data += 8;
+		while (src < rowEnd) {
+			uint32_t d =	(0x80808080 & *(uint32_t *)src) |
+								((0x80808080 & *(uint32_t *)(src + 4)) >> 4);
+			src += 8;
 
 			d |= (d >> 9) | (d >> 18) | (d >> 27);
 			*toSend++ = (uint8_t)d;
@@ -587,6 +605,21 @@ void xs_ls013b4dn04_get_height(xsMachine *the)
 void xs_ls013b4dn04_get_c_dispatch(xsMachine *the)
 {
 	xsResult = xsThis;
+}
+
+void xs_ls013b4dn04_get_rotation(xsMachine *the)
+{
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, ls->flip ? 180 : 0);
+}
+
+void xs_ls013b4dn04_set_rotation(xsMachine *the)
+{
+	ls013b4dn04 ls = xsmcGetHostData(xsThis);
+	xsIntegerValue rotation = xsmcToInteger(xsArg(0));
+	if ((0 != rotation) && (180 != rotation))
+		xsUnknownError("inavlid");
+	ls->flip = rotation == 180;
 }
 
 void ls013b4dn04ChipSelect(uint8_t active, modSPIConfiguration config)
