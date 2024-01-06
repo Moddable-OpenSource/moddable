@@ -1,9 +1,9 @@
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
 export class JSONParser @ "xs_jsonparser_destructor" {
     // Constructor for the JSONParser class, invokes "xs_jsonparser_constructor".
-    constructor(options) @ "xs_jsonparser_constructor";
+    constructor(options) @ "xs_jsonparser_constructor"
 
     // Getter for the 'data' property, representing the matcher or patterns.
     get data() { return this.vpt.data; }
@@ -12,10 +12,10 @@ export class JSONParser @ "xs_jsonparser_destructor" {
     get root() { return this.vpt.root; }
 
     // Getter for the 'status' property, invokes "xs_jsonparser_status".
-    get status() @ "xs_jsonparser_status";
+    get status() @ "xs_jsonparser_status"
 
     // Closes the JSONParser instance, invokes "xs_jsonparser_close".
-    close() @ "xs_jsonparser_close";
+    close() @ "xs_jsonparser_close"
 
     // Creates a new JSONTree instance.
     makeJSONTree(options) {
@@ -28,7 +28,7 @@ export class JSONParser @ "xs_jsonparser_destructor" {
     }
 
     // Receives input string and parses it from the specified start to end position, invokes "xs_jsonparser_receive".
-    receive(string, start, end) @ "xs_jsonparser_receive";
+    receive(string, start, end) @ "xs_jsonparser_receive"
 }
 // Static properties representing parsing outcomes.
 JSONParser.failure = -1;
@@ -109,9 +109,13 @@ export class Pattern extends Matcher {
         super(options);
         this.setup = options.setup; // setup function
         this.value = options.value; // pattern value string
-        this.items = this.value.split("/").reverse().map(item => {
-            const pair = item.split(":");
-            const text = pair[1];
+        const itemDelimiter = options.itemDelimiter || "/";
+        const nameDelimiter = options.nameDelimiter || ":";
+        this.items = this.value.split(itemDelimiter).map((item, index) => {
+            if (index === 0 && item === "" && this.value.startsWith(itemDelimiter))
+                return { type: NodeType.root };
+            const pair = item.split(nameDelimiter);
+            const text = pair[1]; // field name
             switch (pair[0]) {
                 case "null":
                     return { type: NodeType.null };
@@ -132,7 +136,7 @@ export class Pattern extends Matcher {
                 case "root":
                     return { type: NodeType.root };
             }
-        });
+        }).reverse().filter(item => item !== undefined);
     }
 
     // Gets an array of field names from the pattern.
@@ -147,20 +151,15 @@ export class Pattern extends Matcher {
 }
 
 export class VPT {
-    // VPT class constructor initializes with optional matcher, invokes 'begin' or optional patterns, and invokes 'setup'.
-    // Please note that instances of VPT with a matcher or patterns cannot be shared. The constructor must run separately for each new parser.
+    // The VPT class constructor initializes with an optional matcher or patterns, always invoking 'begin' for the matcher and only for patterns matching the root pattern.
+    // Note: Instances of VPT with a matcher or patterns cannot be shared; VPT constructor must execute for each new parser.
     constructor(options) {
         if (options === undefined)
             throw new Error("invalid options");
         this.node = this.makeNode(NodeType.root);
-        if (options.patterns !== undefined) {
-            this.patterns = options.patterns;
-            this.doEvent("onSetup");
-        }
-        else if (options.matcher !== undefined) {
-            this.matcher = options.matcher;
-            this.doEvent("onBegin");
-        }
+        this.matcher = options.matcher;
+        this.patterns = options.patterns;
+        this.doEvent("onBegin");
     }
 
     // Execute 'matcher events' unconditionally and 'pattern events' selectively when nodes match a pattern.
@@ -229,13 +228,13 @@ export class VPT {
         return true;
     }
 
-    // Pushes a new node with the specified type onto the stack.
+    // Pushes a new node with the specified type onto the stack and invokes 'setup'.
     push(nodeType) {
         this.node = this.makeNode(nodeType, this.node);
         this.doEvent("onSetup");
     }
 
-    // Sets the text property of the current node.
+    // Sets the text property of the current node and invokes 'setup'.
     setText(text) {
         this.node.text = text;
         this.doEvent("onSetup");

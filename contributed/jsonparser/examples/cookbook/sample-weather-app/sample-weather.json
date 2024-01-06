@@ -1,0 +1,44 @@
+{
+  "coord": {
+    "lon": -122.1864,
+    "lat": 37.4396
+  },
+  "weather": [
+    {
+      "id": 801,
+      "main": "Clouds",
+      "description": "few clouds",
+      "icon": "02n"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 48.94,
+    "feels_like": 45.91,
+    "temp_min": 44.42,
+    "temp_max": 52.77,
+    "pressure": 1024,
+    "humidity": 85
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 7,
+    "deg": 298,
+    "gust": 14
+  },
+  "clouds": {
+    "all": 20
+  },
+  "dt": 1704350444,
+  "sys": {
+    "type": 2,
+    "id": 2081987,
+    "country": "US",
+    "sunrise": 1704295404,
+    "sunset": 1704330146
+  },
+  "timezone": -28800,
+  "id": 0,
+  "name": "Menlo Park",
+  "cod": 200
+}

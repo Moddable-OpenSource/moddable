@@ -2,7 +2,7 @@
 flags: [module]
 ---*/
 
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
 import { JSONParser, Pattern } from "jsonparser";
@@ -19,7 +19,7 @@ const patterns = [
                 }
             };
         },
-        value: "field:value"
+        value: "/object/field:value"
     }),
     new Pattern({
         match(vpt) {
