@@ -175,6 +175,14 @@
 			"config": {
 				"format": "Gray256"
 			}
+        },
+        "nrf52/moddable_display_4": {
+			"build": {
+				"USE_USB": "1"
+			},
+			"config": {
+				"format": "Gray256"
+			}
         }
 	},
 	"typescript": {
