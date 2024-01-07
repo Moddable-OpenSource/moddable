@@ -1,40 +1,6 @@
 {
-    "include": [
-        "$(MODULES)/drivers/destm32s/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json"
-    ],
-	"build": {
-		"FLASH_MODE": "qio",
-		"FLASH_SPEED": "80"
-	},
+    "include": "../moddable_three/manifest.json",
     "config": {
-        "screen": "destm32s",
-        "touch": "",
-        "format": "Gray256",
-        "rotate": "180"
-    },
-    "defines": {
-		"i2c": {
-			"sda_pin": 5,
-			"scl_pin": 4
-		},
-        "destm32s": {
-            "width": 122,
-            "height": 250,
-            "moddable_three": 1,
-            "colors": "kePaperBlackWhite",
-            "cs_pin": 15,
-            "dc_pin": 2,
-            "rst_pin": 0,
-            "busy_pin": 16,
-            "spi_port": "#HSPI"
-        }
-    },
-	"modules": {
-		 "setup/target": "../moddable_one/setup-target"
-	},
-	 "preload": [
-		 "setup/target"
-	]
+        "rotate": 180
+    }
 }
