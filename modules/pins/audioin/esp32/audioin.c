@@ -27,6 +27,7 @@
 #include "xsmc.h"
 #include "mc.defines.h"
 #include "mc.xs.h"
+#include "xsHost.h"
 
 #if ESP32
 	#include "freertos/FreeRTOS.h"
@@ -62,10 +63,16 @@
 		#define MODDEF_AUDIOIN_I2S_ADC (0)
 	#endif
 
-	#if MODDEF_AUDIOIN_SAMPLERATE < SOC_ADC_SAMPLE_FREQ_THRES_LOW
-		#error "sample rate too low"
-	#elif MODDEF_AUDIOIN_SAMPLERATE > SOC_ADC_SAMPLE_FREQ_THRES_HIGH
-		#error "sample rate too high"
+	#if MODDEF_AUDIOIN_I2S_ADC
+		#if MODDEF_AUDIOIN_SAMPLERATE < SOC_ADC_SAMPLE_FREQ_THRES_LOW
+			#warning "SOC reqires higher audioin sample rate. automatically increasing."
+			#undef MODDEF_AUDIOIN_SAMPLERATE
+			#define MODDEF_AUDIOIN_SAMPLERATE SOC_ADC_SAMPLE_FREQ_THRES_LOW
+		#elif MODDEF_AUDIOIN_SAMPLERATE > SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+			#warning "SOC requires lower audioin sample rate. automatically decreasing."
+			#undef MODDEF_AUDIOIN_SAMPLERATE
+			#define MODDEF_AUDIOIN_SAMPLERATE SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+		#endif
 	#endif
 #endif
 
