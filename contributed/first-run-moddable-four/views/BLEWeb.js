@@ -41,6 +41,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onButtonReleased(container, delta) {
+		application.stop();
 		const view = this.view;
 		if (this.connected) {
 			if (view.PASSKEY.visible) {
@@ -108,6 +109,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onJogDialReleased(container, delta) {
+		application.stop();
 		if (this.connected) {
 			this.event.enter = 0;
 			this.transmit();
@@ -115,6 +117,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onJogDialTurned(container, delta) {
+		application.stop();
 		if (this.connected) {
 			this.event.dial = delta;
 			this.transmit();

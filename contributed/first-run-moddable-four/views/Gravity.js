@@ -24,6 +24,12 @@ class GravityBehavior extends View.Behavior {
 	onDisplayed(container) {
 		application.stop();
 	}
+	onJogDialReleased(container, delta) {
+		application.stop();
+	}
+	onJogDialTurned(container, delta) {
+		application.stop();
+	}
 }
 
 class BallBehavior extends View.Behavior {
