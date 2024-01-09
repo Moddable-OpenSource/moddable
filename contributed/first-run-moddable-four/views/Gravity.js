@@ -21,6 +21,9 @@ class GravityBehavior extends View.Behavior {
 	onCreate(container, view) {
 		super.onCreate(container, view);
 	}
+	onDisplayed(container) {
+		application.stop();
+	}
 }
 
 class BallBehavior extends View.Behavior {

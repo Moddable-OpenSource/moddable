@@ -90,6 +90,7 @@ class BLEWebBehavior extends View.Behavior {
 		this.event.auth = 0;
 	}
 	onDisplayed(container) {
+		application.stop();
 		this.server = new UARTServer(container, this.imageBuffer, controller.bluetoothName);
 		container.interval = 100;
 		container.start();
