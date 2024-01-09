@@ -182,9 +182,11 @@ static void usb_debug_task(void *pvParameter)
 
 		if (!xQueueReceive((QueueHandle_t)pvParameter, (void *)&event, portMAX_DELAY))
 			continue;
+#if mxDebug
 		if (1 == event) {
 			fxReceiveLoop();
 		}
+#endif
 	}
 }
 
@@ -672,7 +674,7 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     }
 }
 
-#ifdef mxDebug		// moved from way-up. We want usb for the programmer
+#ifdef mxDebug || mxInstrument		// moved from way-up. We want usb for the programmer
 
 void ESP_putc(int c)
 {
