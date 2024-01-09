@@ -40,6 +40,7 @@
 		"Gravity",
 		"Home",
 		"Menu",
+		"NoSleep",
 		"SetDate",
 		"SetTime",
 		"Splash",
@@ -194,7 +195,7 @@
 				"power"
 			]
 		},
-		"nrf52/moddable_four": {
+		"nrf52": {
 			"include": [
 				"$(MODDABLE)/modules/network/ble/manifest_server.json",
 				"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
@@ -216,7 +217,7 @@
 			]
 		},
 		"...": {
-			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
+			"error": "use -p nrf52/moddable_four, nrf52/moddable_display_4, or -p sim/moddable_four"
 		}
 	}
 }

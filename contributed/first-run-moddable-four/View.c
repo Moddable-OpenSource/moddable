@@ -20,6 +20,15 @@
 
 #include "mc.xs.h"
 
+void xs_canSleep(xsMachine *the)
+{
+#ifdef mxDebug
+	xsResult = xsFalse;
+#else
+	xsResult = xsTrue;
+#endif
+}
+
 void xs_importNow(xsMachine *the)
 {
 	xsTrace("importNow ");

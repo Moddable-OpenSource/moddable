@@ -1,34 +1,34 @@
-// Copyright (c) 2023 Mark Wharton
+// Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
 export class JSONParser @ "xs_jsonparser_destructor" {
     // Constructor for the JSONParser class, invokes "xs_jsonparser_constructor".
-    constructor(options) @ "xs_jsonparser_constructor";
+    constructor(options) @ "xs_jsonparser_constructor"
 
-    // Getter for the 'data' property, representing the matcher.
+    // Getter for the 'data' property, representing the matcher or patterns.
     get data() { return this.vpt.data; }
 
     // Getter for the 'root' property, representing the tree.
     get root() { return this.vpt.root; }
 
     // Getter for the 'status' property, invokes "xs_jsonparser_status".
-    get status() @ "xs_jsonparser_status";
+    get status() @ "xs_jsonparser_status"
 
     // Closes the JSONParser instance, invokes "xs_jsonparser_close".
-    close() @ "xs_jsonparser_close";
+    close() @ "xs_jsonparser_close"
 
     // Creates a new JSONTree instance.
-    makeJSONTree() {
-        return new JSONTree({});
+    makeJSONTree(options) {
+        return new JSONTree(options);
     }
 
-    // Creates a new VPT instance with an optional matcher.
-    makeVPT(matcher = undefined) {
-        return new VPT({ matcher });
+    // Creates a new VPT instance.
+    makeVPT(options) {
+        return new VPT(options);
     }
 
     // Receives input string and parses it from the specified start to end position, invokes "xs_jsonparser_receive".
-    receive(string, start, end) @ "xs_jsonparser_receive";
+    receive(string, start, end) @ "xs_jsonparser_receive"
 }
 // Static properties representing parsing outcomes.
 JSONParser.failure = -1;
@@ -40,8 +40,24 @@ export class Matcher {
     constructor(options) {
         if (options === undefined)
             throw new Error("invalid options");
-        this.begin = options.begin; // Beginning function
-        this.match = options.match; // Matching function
+        this.begin = options.begin; // begin function
+        this.match = options.match; // match function
+        this.setup = undefined; // nop setup function
+    }
+
+    // Executes the begin function if defined.
+    onBegin(vpt, node) {
+        this.begin?.(vpt);
+    }
+
+    // Executes the match function if defined.
+    onMatch(vpt, node) {
+        this.match?.(vpt, node);
+    }
+
+    // Executes the setup function if defined.
+    onSetup(vpt, node) {
+        this.setup?.(vpt, node);
     }
 }
 
@@ -87,14 +103,86 @@ export const NodeType = Object.freeze({
     root: 9
 });
 
+export class Pattern extends Matcher {
+    // Constructor for the Pattern class, validates options and establishes pattern value items.
+    constructor(options) {
+        super(options);
+        this.setup = options.setup; // setup function
+        this.value = options.value; // pattern value string
+        const itemDelimiter = options.itemDelimiter || "/";
+        const nameDelimiter = options.nameDelimiter || ":";
+        this.items = this.value.split(itemDelimiter).map((item, index) => {
+            if (index === 0 && item === "" && this.value.startsWith(itemDelimiter))
+                return { type: NodeType.root };
+            const pair = item.split(nameDelimiter);
+            const text = pair[1]; // field name
+            switch (pair[0]) {
+                case "null":
+                    return { type: NodeType.null };
+                case "false":
+                    return { type: NodeType.false };
+                case "true":
+                    return { type: NodeType.true };
+                case "number":
+                    return { type: NodeType.number, text };
+                case "string":
+                    return { type: NodeType.string, text };
+                case "array":
+                    return { type: NodeType.array };
+                case "object":
+                    return { type: NodeType.object };
+                case "field":
+                    return { type: NodeType.field, text };
+                case "root":
+                    return { type: NodeType.root };
+            }
+        }).reverse().filter(item => item !== undefined);
+    }
+
+    // Gets an array of field names from the pattern.
+    get names() {
+        const value = [];
+        this.items.forEach(item => {
+            if (item !== undefined && item.type === NodeType.field)
+                value.push(item.text);
+        });
+        return value;
+    }
+}
+
 export class VPT {
-    // Constructor for the VPT class, initializes with an optional matcher and invokes 'begin'.
+    // The VPT class constructor initializes with an optional matcher or patterns, always invoking 'begin' for the matcher and only for patterns matching the root pattern.
+    // Note: Instances of VPT with a matcher or patterns cannot be shared; VPT constructor must execute for each new parser.
     constructor(options) {
         if (options === undefined)
             throw new Error("invalid options");
         this.node = this.makeNode(NodeType.root);
         this.matcher = options.matcher;
-        this.matcher?.begin?.(this);
+        this.patterns = options.patterns;
+        this.doEvent("onBegin");
+    }
+
+    // Execute 'matcher events' unconditionally and 'pattern events' selectively when nodes match a pattern.
+    doEvent(event) {
+        this.matcher?.[event](this, this.node);
+        this.patterns?.forEach(pattern => {
+            let node = this.node;
+            for (const item of pattern.items) {
+                if (item !== undefined && node !== undefined) {
+                    if (item.type === node.type && (item.text === undefined || item.text === node.text)) {
+                        if (node.type === NodeType.root)
+                            break;
+                        node = node.prev;
+                    }
+                    else {
+                        node = undefined;
+                        break;
+                    }
+                }
+            }
+            if (node !== undefined)
+                pattern[event](this, this.node);
+        });
     }
 
     // Creates a new Node with the specified type and previous node.
@@ -102,11 +190,37 @@ export class VPT {
         return new Node({ type: nodeType, prev });
     }
 
+    /*
+    // Uncomment this helper method for trace messages when needed.
+    nodeText(nodeType) {
+        switch (nodeType) {
+            case NodeType.null:
+                return "null";
+            case NodeType.false:
+                return "false";
+            case NodeType.true:
+                return "true";
+            case NodeType.number:
+                return "number";
+            case NodeType.string:
+                return "string";
+            case NodeType.array:
+                return "array";
+            case NodeType.object:
+                return "object";
+            case NodeType.field:
+                return "field";
+            case NodeType.root:
+                return "root";
+        }
+    }
+    */
+
     // Pops the current node if its type matches 'nodeType', invokes 'match', and updates the current node.
     pop(nodeType) {
         if (this.node.type !== nodeType)
             return false;
-        this.matcher?.match?.(this, this.node);
+        this.doEvent("onMatch");
         this.node = this.node.prev;
         // Keeps down node (node.next) for any field with a primitive value, else drops it (provides no value).
         if (!(this.node.type === NodeType.field && this.node.next.type <= NodeType.string))
@@ -114,22 +228,22 @@ export class VPT {
         return true;
     }
 
-    // Pushes a new node with the specified type onto the stack.
+    // Pushes a new node with the specified type onto the stack and invokes 'setup'.
     push(nodeType) {
         this.node = this.makeNode(nodeType, this.node);
+        this.doEvent("onSetup");
     }
 
-    // Sets the text property of the current node.
+    // Sets the text property of the current node and invokes 'setup'.
     setText(text) {
         this.node.text = text;
+        this.doEvent("onSetup");
     }
 }
 
 class JSONTree extends VPT {
     // Constructor for the JSONTree class, initializes with an empty root node and a stack.
     constructor(options) {
-        if (options === undefined)
-            throw new Error("invalid options");
         super(options);
         this.root = this.node;
         this.stack = [];

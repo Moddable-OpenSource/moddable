@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -49,6 +49,9 @@ export default class LS013B4DN04 @ "xs_ls013b4dn04_destructor" {
 
 	get frameBuffer() @ "xs_ls013b4dn04_frameBuffer_get";
 	get c_dispatch() @ "xs_ls013b4dn04_get_c_dispatch";
+	
+	get rotation() @ "xs_ls013b4dn04_get_rotation";
+	set rotation() @ "xs_ls013b4dn04_set_rotation";
 }
 
 Object.freeze(LS013B4DN04.prototype);

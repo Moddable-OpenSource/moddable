@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -72,6 +72,7 @@ struct SerialRecord {
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
 	uint8_t		postedMessage;
+	uint8_t		*parityTable;
 };
 
 static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context);
@@ -80,6 +81,18 @@ static void serialDeliver(void *the, void *refcon, uint8_t *message, uint16_t me
 static void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 #define kInvalidPin (-1)
+
+// While the nRF52 doesn't natively support 7 bit or parity,
+// this implementation adds support for 7E1 and 7O1
+uint8_t kOddParity[16] = {
+	0x69, 0x96, 0x96, 0x69, 0x96, 0x69, 0x69, 0x96, 
+	0x96, 0x69, 0x69, 0x96, 0x69, 0x96, 0x96, 0x69
+};
+
+uint8_t kEvenParity[16] = {
+	0x96, 0x69, 0x69, 0x96, 0x69, 0x96, 0x96, 0x69, 
+	0x69, 0x96, 0x96, 0x69, 0x96, 0x69, 0x69, 0x96
+};
 
 static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	xs_serial_destructor,
@@ -94,14 +107,51 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 #endif
 const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(kSerialUartInstance);
 
+int parityCheck(Serial serial, int byte) {
+#if 0				// ignore parity check
+	if (!serial->parityTable)
+		return byte;
+	else
+		return byte & 0x7f;
+#else
+	int ok = 0, check;
+
+	if (!serial->parityTable)
+		return byte;
+	check = byte & 0x7f;
+
+	if (serial->parityTable[check/8] & (1 << (check % 8))) {
+		if (byte & 0x80)
+			ok = 1;
+	}
+	else {
+		if (!(byte & 0x80))
+			ok = 1;
+	}
+
+	if (!ok) {
+		modLog_transmit("bad parity");
+	}
+	return check;
+#endif
+}
+
+int paritySet(Serial serial, int byte) {
+	if (!serial->parityTable)
+		return byte;
+	else
+		return byte | ((serial->parityTable[byte / 8] & (1 << (byte % 8))) ? 0x80 : 0);
+}
+
 void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
-	uint8_t receivePullup = 0, transmitPullup = 0;
+	uint8_t receivePullup = 0;
 	xsSlot *onReadable, *onWritable;
 	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
+	int data = 8, parity = 0;
 
 	xsmcVars(1);
 
@@ -182,6 +232,28 @@ void xs_serial_constructor(xsMachine *the)
 			break;
 	}
 
+	if (xsmcHas(xsArg(0), xsID_data)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_data);
+		data = xsmcToInteger(xsVar(0));
+		if ((7 != data) && (8 != data))
+			xsRangeError("invalid data");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_parity)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_parity);
+		char *p = xsmcToString(xsVar(0));
+		if (!c_strcmp(p, "odd"))
+			parity = 1;
+		else if (!c_strcmp(p, "even"))
+			parity = 2;
+		else if (!c_strcmp(p, "none"))
+			parity = 0;
+		else
+			xsRangeError("invalid parity");
+	}
+	if (((8 == data) && parity) || ((7 == data) && !parity))
+		xsRangeError("unsupported");
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	onWritable = builtinGetCallback(the, xsID_onWritable);
 
@@ -228,6 +300,10 @@ void xs_serial_constructor(xsMachine *the)
 	serial->format = format;
 	serial->useCount = 1;
 	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
+	if (1 == parity)
+		serial->parityTable = kOddParity;
+	else if (2 == parity)
+		serial->parityTable = kEvenParity;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
@@ -307,7 +383,7 @@ void xs_serial_set_format(xsMachine *the)
 void xs_serial_read(xsMachine *the)
 {
 	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-	int available;
+	int available, byte;
 
 	if (!serial)
 		xsUnknownError("closed");
@@ -317,7 +393,9 @@ void xs_serial_read(xsMachine *the)
 		return;
 
 	if (kIOFormatNumber == serial->format) {
-		xsmcSetInteger(xsResult, serial->receive[0]);
+		byte = parityCheck(serial, serial->receive[0]);
+//		xsmcSetInteger(xsResult, serial->receive[0]);
+		xsmcSetInteger(xsResult, byte);
 
 		builtinCriticalSectionBegin();
 			serial->receiveCount -= 1;
@@ -348,7 +426,15 @@ void xs_serial_read(xsMachine *the)
 		if (allocate)
 			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
 
-		c_memcpy(buffer, serial->receive, requested);
+		if (!serial->parityTable)
+			c_memcpy(buffer, serial->receive, requested);
+		else {
+			int i;
+			for (i=0; i<requested; i++) {
+				byte = parityCheck(serial, serial->receive[i]);
+				buffer[i] = byte;
+			}
+		}
 	
 		builtinCriticalSectionBegin();
 			serial->receiveCount -= requested;
@@ -372,6 +458,7 @@ void xs_serial_write(xsMachine *the)
 			xsUnknownError("output full: count == 0");
 
 		byte = (uint8_t)xsmcToInteger(xsArg(0));
+		byte = paritySet(serial, byte);
 		src = &byte;
 		count = 1;
 	}
@@ -382,6 +469,10 @@ void xs_serial_write(xsMachine *the)
 		if (requested > count)
 			xsUnknownError("output full: requested > count");
 
+		for (count=0; count<requested; count++) {
+			byte = paritySet(serial, ((uint8_t*)src)[count]);
+			((uint8_t*)src)[count] = byte;
+		}
 		count = requested;
 	}
 

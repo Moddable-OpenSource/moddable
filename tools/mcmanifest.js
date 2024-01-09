@@ -1957,6 +1957,10 @@ export class Tool extends TOOL {
 						case "tls-config":
 							if (node.ca || credentials?.[node.id]?.cadata)
 								this.nodeRedExtracts.set(`${node.id}-ca.der`, source)
+							if (node.cert || credentials?.[node.id]?.certdata)
+								this.nodeRedExtracts.set(`${node.id}-cert.der`, source)
+							if (node.key || credentials?.[node.id]?.keydata)
+								this.nodeRedExtracts.set(`${node.id}-key.der`, source)
 							break;
 					}
 

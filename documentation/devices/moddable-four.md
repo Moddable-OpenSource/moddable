@@ -1,7 +1,7 @@
 # Moddable Four Developer Guide
 
-Copyright 2021-2023 Moddable Tech, Inc.<BR>
-Revised: August 7, 2023
+Copyright 2021-2024 Moddable Tech, Inc.<BR>
+Revised: January 6, 2024
 
 This document provides information about Moddable Four, including details about its pins and other components, how to build and deploy apps, and links to other development resources.
 
@@ -77,8 +77,8 @@ The Moddable Four is a 3.3V device. 5V power is regulated to 3.3V by a AP2112K-3
 Power can be supplied to the Moddable Four via the following:
 
 * 5V - Micro USB connector
-* 5V - VIN on 16 pin external header
-* 3.3V - 3.3V on 16 pin external header
+* 5V - VIN on pin 14 or external header
+* 3.3V - 3.3V on pin 16 of external header
 * 3V - CR2032 battery
 
 Power provided by the CR2032 battery connector can be turned on and off with the sliding switch.
@@ -138,6 +138,7 @@ The hardware and software in Moddable Four have been carefully designed to work 
 * Jog dial
 * Display power
 * Display dither
+* Display rotation
 * Accelerometer
 * Energy Management
 
@@ -171,6 +172,8 @@ new Host.JogDial({
 });
 ```
 
+**Note**: The delta values provided by the jog dial respect the screen rotation (see [Display Rotation](#display-rotation)) and so are negated when the screen rotation is 180 degrees.
+
 #### Display Power
 To use the Moddable Four display, the LCD power pin must be enabled. In the `moddable_four/setup-target.js` file, the screen is enabled if the `autobacklight` config variable is set:
 
@@ -198,6 +201,26 @@ screen.dither = true;
 screen.dither = false;
 ```
 
+<a id="display-rotation"></a>
+#### Display Rotation
+The ls013b4dn04 display driver in Moddable Four provides support for 0 and 180 degree rotation. 180 degree rotation is useful when the display is mounted upside down. The default is 0. The rotation may be set at build time or at runtime.
+
+To set the rotation at build time, include `driverRotation` in the `config` section of the manifest:
+
+```
+	"config": {
+		"driverRotation": 180
+	},
+```
+
+To set the rotation At runtime, change the `rotation` property of the `screen` global.
+
+```js
+screen.rotation = 180
+```
+
+Setting the `rotation` at runtime does not immediately update the display. Your application must force an update after setting the rotation.
+
 #### Accelerometer
 
 ```
@@ -210,6 +233,8 @@ Timer.repeat(() => {
     trace(`sample x: ${sample.x}, y: ${sample.y}, z: ${sample.z}\n`);
 }, 100);
 ```
+
+**Note**: The accelerometer values respect the screen rotation (see [Display Rotation](#display-rotation)), so `x` and `y` are negated when the screen rotation is 180 degrees.
 
 #### Energy Management
 

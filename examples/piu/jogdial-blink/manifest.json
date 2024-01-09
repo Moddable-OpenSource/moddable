@@ -18,11 +18,12 @@
 	},
 	"platforms":{
 		"nrf52/moddable_four": {},
+		"nrf52/moddable_display_4": {},
 		"lin/moddable_four": {},
 		"mac/moddable_four": {},
 		"win/moddable_four": {},
 		"...": {
-			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
+			"error": "use -p nrf52/moddable_four, -p nrf52/moddable_display_4, or -p sim/moddable_four"
 		}
 	}
 }

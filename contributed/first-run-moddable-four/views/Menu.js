@@ -43,6 +43,10 @@ class MenuBehavior extends View.Behavior {
 	onJogDialReleased(container) {
 		const view = this.view;
 		const item = view.items[view.index];
+		if (!controller.canSleep() && (item.icon == "wake")) {
+			controller.goTo("NoSleep");
+			return true;
+		}
 		controller.goWith(item);
 		return true;
 	}

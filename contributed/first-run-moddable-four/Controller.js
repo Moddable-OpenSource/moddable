@@ -68,6 +68,7 @@ class Controller extends Behavior {
 			}
 		});
 	}
+	canSleep() @ "xs_canSleep";
 	display(container, view, backwards) {
 		if (this.view) {
 			this.onScreenUndisplaying(container, this.view);
@@ -282,10 +283,12 @@ class Controller extends Behavior {
 		container.first.distribute("onUndisplaying");
 	}
 	onTimeout(container) {
-// 		controller.sleep(undefined, 666);
-		controller.goTo("Asleep");
-// 		container.time = 0;
-// 		container.start();
+		if (this.canSleep())
+			controller.goTo("Asleep");
+		else {
+			container.time = 0;
+			container.start();
+		}
 	}
 	onTransitionEnded(container) {
 		application.purge();

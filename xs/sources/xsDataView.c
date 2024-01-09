@@ -498,7 +498,7 @@ void fx_ArrayBuffer_fromString(txMachine* the)
 	if (mxArgc < 1)
 		mxTypeError("no argument");
 	
-	txString c = mxArgv(0)->value.string;
+	txString c = fxToString(the, mxArgv(0));
 	txInteger nulls = 0;
 	while (1) {
 		uint8_t b = (uint8_t)c_read8(c++);
