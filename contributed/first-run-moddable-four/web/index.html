@@ -1,6 +1,6 @@
 <!-- 
 
-   Copyright (c) 2019-2021  Moddable Tech, Inc.
+   Copyright (c) 2019-2024  Moddable Tech, Inc.
 
    This file is part of the Moddable SDK Tools.
 
@@ -456,8 +456,8 @@ class View {
 		}
 	}
 	onDisconnected() {
-		this.device.forget();	
-		this.device = null;	
+		this.device?.forget?.();
+		this.device = null;
 		this.rxCharacteristic = null;	
 		document.getElementById('connect-button').innerHTML = "Connect";
 		document.getElementById('navigation-pane').style.display = "none";
