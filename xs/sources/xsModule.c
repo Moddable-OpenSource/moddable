@@ -2680,9 +2680,9 @@ void fx_Compartment(txMachine* the)
 			slot = fxLastProperty(the, global);
 			if (mxCompartmentGlobal.kind == XS_UNDEFINED_KIND) {
 				for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+					slot = fxNextSlotProperty(the, slot, &the->stackIntrinsics[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 				for (; id < _Compartment; id++)
-					slot = fxNextSlotProperty(the, slot, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+					slot = fxNextSlotProperty(the, slot, &the->stackIntrinsics[-1 - id], mxID(id), XS_GET_ONLY);
 			}
 			else {
 				txSlot* item = mxCompartmentGlobal.value.reference->next;
@@ -2728,7 +2728,7 @@ void fx_Compartment(txMachine* the)
 			slot = fxLastProperty(the, global);
 			id = _Compartment;
 			for (; id < XS_INTRINSICS_COUNT; id++) {
-				txSlot* instance = fxDuplicateInstance(the, the->stackPrototypes[-1 - id].value.reference);
+				txSlot* instance = fxDuplicateInstance(the, the->stackIntrinsics[-1 - id].value.reference);
 				mxFunctionInstanceHome(instance)->value.home.module = program;
 				slot = fxNextSlotProperty(the, slot, the->stack, mxID(id), XS_DONT_ENUM_FLAG);
 				mxPop();

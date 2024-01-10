@@ -369,7 +369,7 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 	if (mxIsFunction(expression->value.reference)) {
 	// #if mxDebugEval
 		
-		txSlot* scope = scope;
+		txSlot* scope = C_NULL;
 		if (frame == the->frame)
 			scope = the->scope;
 		else {
@@ -1620,6 +1620,21 @@ void fxEchoInstance(txMachine* the, txSlot* theInstance, txInspectorNameList* th
 		case XS_PROMISE_KIND:
            	fxEchoProperty(the, aProperty, theList, "(promise)", -1, C_NULL);
 			aProperty = aProperty->next;
+			anIndex = 0;
+			aSlot = aProperty->value.reference->next;
+			if (aSlot) {
+				fxEchoProperty(the, aSlot, theList, "(then)", -1, C_NULL);
+				anIndex++;
+				aSlot = aSlot->next;
+			}
+			while (aSlot) {
+				fxEchoProperty(the, aSlot, theList, "(", anIndex, ")");
+				anIndex++;
+				aSlot = aSlot->next;
+			}
+			aProperty = aProperty->next;
+           	fxEchoProperty(the, aProperty, theList, "(value)", -1, C_NULL);
+			aProperty = aProperty->next;
 			break;
 		case XS_MAP_KIND:
 			aProperty = aProperty->next;
@@ -1854,7 +1869,24 @@ void fxEchoProperty(txMachine* the, txSlot* theProperty, txInspectorNameList* th
 			break;
 		case XS_CODE_KIND:
 		case XS_CODE_X_KIND:
-			fxEcho(the, " value=\"(XS code)\"/>");
+			fxEcho(the, " value=\"");
+			{
+				txByte* p = theProperty->value.code.address + 2;
+				if (*p == XS_CODE_FILE) {
+					txID file;
+					txS2 line;
+					p++;
+					mxDecodeID(p, file);
+					p++;
+					mxDecode2(p, line);
+					fxEchoString(the, fxGetKeyName(the, file));
+					fxEcho(the, "\" line=\"");
+					fxEchoInteger(the, line);
+				}
+				else
+					fxEcho(the, "(XS code)");
+			}
+			fxEcho(the, "\"/>");
 			break;
 	#ifdef mxHostFunctionPrimitive
 		case XS_HOST_FUNCTION_KIND:

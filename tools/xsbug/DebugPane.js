@@ -188,7 +188,10 @@ class DebugHeaderBehavior extends HeaderBehavior {
 
 class DebugRowBehavior extends RowBehavior {
 	onTap(row) {
-		row.bubble("doToggleItem", this.data.value);
+		if (this.data.line)
+			model.selectFile(this.data.value, { line: this.data.line });
+		else
+			row.bubble("doToggleItem", this.data.value);
 	}
 };
 
@@ -511,13 +514,14 @@ var DebugFooter = Row.template(function($) { return {
 }});
 
 var DebugRow = Row.template(function($) { return {
-	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:$.state > 0, 
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:$.state > 0 || $.line, 
 	Behavior:DebugRowBehavior,
 	contents: [
 		Content($, { width:rowIndent + ($.column * 20) }),
 		Content($, { skin:skins.glyphs, variant:$.state }),
 		Label($, { style:styles.debugRowName, string:$.name, state:$.variant }),
 		Label($, { style:styles.debugRowValue, string:$.state == 0 ? (" = " + $.value) : "", state:$.variant }),
+		$.line ? Label($, { style:styles.debugRowValue, string:" (" + $.line + ")", state:$.variant }) : null,
 	]
 }});
 

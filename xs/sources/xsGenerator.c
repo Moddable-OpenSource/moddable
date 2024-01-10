@@ -455,6 +455,15 @@ void fxAsyncGeneratorStep(txMachine* the, txSlot* generator, txFlag status)
 				fxPromiseThen(the, the->stack->value.reference, resolveAwaitFunction, rejectAwaitFunction, C_NULL, C_NULL);
 			}
 			else if (state->value.integer == XS_CODE_YIELD) {
+				mxPushUndefined();
+				mxPush(mxPromiseConstructor);
+				mxPushSlot(value);
+				fx_Promise_resolveAux(the);
+				mxPop();
+				mxPop();
+				fxPromiseThen(the, the->stack->value.reference, resolveYieldFunction, rejectYieldFunction, C_NULL, C_NULL);
+			}
+			else if (state->value.integer == XS_CODE_YIELD_STAR) {
 				txSlot* current = queue->value.list.first;
 				if (current) {
 					mxPushUndefined();

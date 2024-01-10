@@ -108,8 +108,10 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			fxUnstripCallback(linker, fx_RegExp);
 			
 		fxUnstripCallback(linker, fx_RangeError);
+#if mxExplicitResourceManagement
 		if (fxIsCodeUsed(XS_CODE_USED_1) || fxIsCodeUsed(XS_CODE_USED_2))
 			fxUnstripCallback(linker, fx_SuppressedError);
+#endif
 		fxUnstripCallback(linker, fx_SyntaxError);
 	}
 	linkerStrip = linker->firstStrip;

@@ -645,10 +645,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_UNSIGNED_RIGHT_SHIFT,
 		&&XS_CODE_UNWIND_1,
 		&&XS_CODE_UNWIND_2,
-		&&XS_CODE_USED_1,
-		&&XS_CODE_USED_2,
-		&&XS_CODE_USING,
-		&&XS_CODE_USING_ASYNC,
 		&&XS_CODE_VAR_CLOSURE_1,
 		&&XS_CODE_VAR_CLOSURE_2,
 		&&XS_CODE_VAR_LOCAL_1,
@@ -658,6 +654,11 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_WITHOUT,
 		&&XS_CODE_YIELD,
 		&&XS_CODE_PROFILE,
+		&&XS_CODE_YIELD_STAR,
+		&&XS_CODE_USED_1,
+		&&XS_CODE_USED_2,
+		&&XS_CODE_USING,
+		&&XS_CODE_USING_ASYNC,
 	};
 	register void * const *bytes = gxBytes;
 #endif
@@ -1176,6 +1177,7 @@ XS_CODE_JUMP:
  			
 		mxCase(XS_CODE_AWAIT)
 		mxCase(XS_CODE_YIELD)
+		mxCase(XS_CODE_YIELD_STAR)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
 			slot = mxFrameEnd;
@@ -4059,9 +4061,11 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_DEBUGGER)
 			mxNextCode(1);
 		#ifdef mxDebug
-			mxSaveState;
-			fxDebugLoop(the, C_NULL, 0, "debugger");
-			mxRestoreState;
+			if (!the->debugEval) {
+				mxSaveState;
+				fxDebugLoop(the, C_NULL, 0, "debugger");
+				mxRestoreState;
+			}
 		#endif
 			mxBreak;
 		mxCase(XS_CODE_FILE)
@@ -4966,6 +4970,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 
 void fxRunUsed(txMachine* the, txSlot* selector)
 {
+#if mxExplicitResourceManagement
 	txSlot* exception = selector + 1;
 	fxBeginHost(the);
 	{
@@ -4984,10 +4989,14 @@ void fxRunUsed(txMachine* the, txSlot* selector)
 		mxException = mxUndefined;
 	}
 	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
 }
 
 void fxRunUsing(txMachine* the)
 {
+#if mxExplicitResourceManagement
 	txSlot* resource = the->stack;
 	fxBeginHost(the);
 	mxPushSlot(resource);
@@ -5000,10 +5009,14 @@ void fxRunUsing(txMachine* the)
 		the->stack->kind = XS_NULL_KIND;
 	mxPullSlot(resource);
 	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
 }
 
 void fxRunUsingAsync(txMachine* the)
 {
+#if mxExplicitResourceManagement
 	txSlot* resource = the->stack;
 	fxBeginHost(the);
 	mxPushSlot(resource);
@@ -5021,6 +5034,9 @@ void fxRunUsingAsync(txMachine* the)
 		the->stack->kind = XS_NULL_KIND;
 	mxPullSlot(resource);
 	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
 }
 
 

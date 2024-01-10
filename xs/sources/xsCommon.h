@@ -53,6 +53,14 @@
 	#define __has_builtin(x) 0
 #endif
 
+#ifndef mxECMAScript2023
+	#define mxECMAScript2023 1
+#endif
+
+#ifndef mxExplicitResourceManagement
+	#define mxExplicitResourceManagement 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -104,9 +112,21 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 2
-#define XS_PATCH_VERSION 0
+#if mxECMAScript2023
+	#define XS_MAJOR_VERSION 14
+#else
+	#define XS_MAJOR_VERSION 13
+#endif
+#if mxExplicitResourceManagement
+	#define XS_MINOR_VERSION 4
+#else
+	#define XS_MINOR_VERSION 3
+#endif
+#if mxKeysGarbageCollection
+	#define XS_PATCH_VERSION 1
+#else
+	#define XS_PATCH_VERSION 0
+#endif
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -366,10 +386,6 @@ enum {
 	XS_CODE_UNSIGNED_RIGHT_SHIFT,
 	XS_CODE_UNWIND_1,
 	XS_CODE_UNWIND_2,
-	XS_CODE_USED_1,
-	XS_CODE_USED_2,
-	XS_CODE_USING,
-	XS_CODE_USING_ASYNC,
 	XS_CODE_VAR_CLOSURE_1,
 	XS_CODE_VAR_CLOSURE_2,
 	XS_CODE_VAR_LOCAL_1,
@@ -379,6 +395,12 @@ enum {
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
 	XS_CODE_PROFILE,
+	XS_CODE_YIELD_STAR,
+// mxExplicitResourceManagement	
+	XS_CODE_USED_1,
+	XS_CODE_USED_2,
+	XS_CODE_USING,
+	XS_CODE_USING_ASYNC,
 	XS_CODE_COUNT
 };
 
@@ -656,9 +678,7 @@ extern void fxBigIntParseX(txBigInt* bigint, txString string, txSize length);
 
 enum {
 	XS_NO_ID = 0,
-	_Symbol_asyncDispose = 1,
-	_Symbol_asyncIterator,
-	_Symbol_dispose,
+	_Symbol_asyncIterator = 1,
 	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,
 	_Symbol_iterator,
@@ -671,10 +691,13 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
+#if mxExplicitResourceManagement	
+	_Symbol_asyncDispose,
+	_Symbol_dispose,
+#endif
 	_AggregateError,
 	_Array,
 	_ArrayBuffer,
-	_AsyncDisposableStack,
 	_Atomics,
 	_BigInt,
 	_BigInt64Array,
@@ -682,7 +705,6 @@ enum {
 	_Boolean,
 	_DataView,
 	_Date,
-	_DisposableStack,
 	_Error,
 	_EvalError,
 	_FinalizationRegistry,
@@ -706,7 +728,6 @@ enum {
 	_Set,
 	_SharedArrayBuffer,
 	_String,
-	_SuppressedError,
 	_Symbol,
 	_SyntaxError,
 	_TypeError,
@@ -733,6 +754,11 @@ enum {
 	_Infinity,
 	_NaN,
 	_undefined,
+#if mxExplicitResourceManagement	
+	_AsyncDisposableStack,
+	_DisposableStack,
+	_SuppressedError,
+#endif	
 	_Compartment,
 	_Function,
 	_eval,
@@ -766,7 +792,6 @@ enum {
 	_acos,
 	_acosh,
 	_add,
-	_adopt,
 	_aliases,
 	_all,
 	_allSettled,
@@ -781,7 +806,6 @@ enum {
 	_asin,
 	_asinh,
 	_assign,
-	_asyncDispose,
 	_asyncIterator,
 	_at,
 	_atan,
@@ -829,17 +853,12 @@ enum {
 	_count,
 	_create,
 	_default,
-	_defer,
 	_defineProperties,
 	_defineProperty,
 	_delete,
 	_deleteProperty,
 	_deref,
 	_description,
-	_detached,
-	_dispose,
-	_disposeAsync,
-	_disposed,
 	_done,
 	_dotAll,
 	_eachDown,
@@ -848,7 +867,6 @@ enum {
 	_entries,
 	_enumerable,
 	_enumerate,
-	_error,
 	_errors,
 	_evaluate,
 	_every,
@@ -930,6 +948,7 @@ enum {
 	_hypot_,
 	_id,
 	_idiv,
+	_idivmod,
 	_ignoreCase,
 	_imod,
 	_import,
@@ -942,7 +961,6 @@ enum {
 	_indexOf,
 	_indices,
 	_input,
-	_irandom,
 	_irem,
 	_is,
 	_isArray,
@@ -981,7 +999,6 @@ enum {
 	_min,
 	_mod,
 	_module,
-	_move,
 	_multiline,
 	_name,
 	_needsImport,
@@ -1082,7 +1099,6 @@ enum {
 	_subarray,
 	_substr,
 	_substring,
-	_suppressed,
 	_tan,
 	_tanh,
 	_test,
@@ -1103,9 +1119,6 @@ enum {
 	_toLowerCase,
 	_toPrecision,
 	_toPrimitive,
-	_toReversed,
-	_toSorted,
-	_toSpliced,
 	_toString,
 	_toStringTag,
 	_toTimeString,
@@ -1124,18 +1137,39 @@ enum {
 	_unscopables,
 	_unshift,
 	_uri,
-	_use,
 	_value,
 	_valueOf,
 	_values,
 	_wait,
 	_wake,
 	_weak,
-	_with,
 	_writable,
 	_xor,
 	__empty_string_,
 	__xsbug_script_,
+#if mxECMAScript2023	
+	_detached,
+	_irandom,
+	_toReversed,
+	_toSorted,
+	_toSpliced,
+	_with,
+#endif
+#if mxExplicitResourceManagement	
+	_adopt,
+	_asyncDispose,
+	_defer,
+	_dispose,
+	_disposeAsync,
+	_disposed,
+	_error,
+	_move,
+	_suppressed,
+	_use,
+#endif
+	__onFullfilled_,
+	__onRejected_,
+	__result_,
 	XS_ID_COUNT
 };
 #define XS_SYMBOL_ID_COUNT _AggregateError
@@ -1162,10 +1196,6 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #ifndef mxDebugEval
 	#define mxDebugEval 0
-#endif
-
-#ifndef mxExplicitResourceManagement
-	#define mxExplicitResourceManagement 0
 #endif
 
 #ifndef mxIntegerDivideOverflowException

@@ -39,6 +39,23 @@
 
 static txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i);
 
+const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT] ICACHE_FLASH_ATTR = {
+	mxErrorPrototypeStackIndex,
+	mxErrorPrototypeStackIndex,
+	mxEvalErrorPrototypeStackIndex,
+	mxRangeErrorPrototypeStackIndex,
+	mxReferenceErrorPrototypeStackIndex,
+	mxSyntaxErrorPrototypeStackIndex,
+	mxTypeErrorPrototypeStackIndex,
+	mxURIErrorPrototypeStackIndex,
+	mxAggregateErrorPrototypeStackIndex,
+#if mxExplicitResourceManagement
+	mxSuppressedErrorPrototypeStackIndex,
+#else
+	mxErrorPrototypeStackIndex,
+#endif
+};
+
 void fxBuildError(txMachine* the)
 {
 	txSlot* slot;
@@ -96,15 +113,6 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "SuppressedError", mxID(_name), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
-	mxSuppressedErrorPrototype = *the->stack;
-	instance = fxBuildHostConstructor(the, mxCallback(fx_SuppressedError), 3, mxID(_SuppressedError));
-	instance->value.instance.prototype = prototype;
-	mxSuppressedErrorConstructor = *the->stack;
-	mxPop();
-	mxPush(mxErrorPrototype);
-	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextStringXProperty(the, slot, "SyntaxError", mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxSyntaxErrorPrototype = *the->stack;
@@ -132,6 +140,16 @@ void fxBuildError(txMachine* the)
 	mxPop();
 
 #if mxExplicitResourceManagement
+	mxPush(mxErrorPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextStringXProperty(the, slot, "SuppressedError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
+	mxSuppressedErrorPrototype = *the->stack;
+	instance = fxBuildHostConstructor(the, mxCallback(fx_SuppressedError), 3, mxID(_SuppressedError));
+	instance->value.instance.prototype = prototype;
+	mxSuppressedErrorConstructor = *the->stack;
+	mxPop();
+
 	mxPush(mxObjectPrototype);
     slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
@@ -331,13 +349,6 @@ void fx_ReferenceError(txMachine* the)
 	fx_Error_aux(the, XS_REFERENCE_ERROR, 0);
 }
 
-void fx_SuppressedError(txMachine* the)
-{
-	txSlot* property = fx_Error_aux(the, XS_SUPPRESSED_ERROR, 2);
-	property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_error), XS_DONT_ENUM_FLAG);
-	property = fxNextSlotProperty(the, property, mxArgv(1), mxID(_suppressed), XS_DONT_ENUM_FLAG);
-}
-
 void fx_SyntaxError(txMachine* the)
 {
 	fx_Error_aux(the, XS_SYNTAX_ERROR, 0);
@@ -405,6 +416,13 @@ void fx_Error_prototype_get_stack(txMachine* the)
 }
 
 #if mxExplicitResourceManagement
+
+void fx_SuppressedError(txMachine* the)
+{
+	txSlot* property = fx_Error_aux(the, XS_SUPPRESSED_ERROR, 2);
+	property = fxNextSlotProperty(the, property, mxArgv(0), mxID(_error), XS_DONT_ENUM_FLAG);
+	property = fxNextSlotProperty(the, property, mxArgv(1), mxID(_suppressed), XS_DONT_ENUM_FLAG);
+}
 
 static txSlot* fxCheckDisposableStackInstance(txMachine* the, txSlot* slot, txBoolean mutable, txBoolean disposable);
 static void fxDisposableStackPush(txMachine* the, txSlot* property);

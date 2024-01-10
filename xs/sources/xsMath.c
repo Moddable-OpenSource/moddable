@@ -61,10 +61,13 @@ void fxBuildMath(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_fround), 1, mxID(_fround), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_hypot), 2, mxID(_hypot_), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_idiv), 2, mxID(_idiv), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_idivmod), 2, mxID(_idivmod), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imod), 2, mxID(_imod), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imul), 2, mxID(_imul), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_imuldiv), 2, mxID(_imuldiv), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2023
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_irandom), 0, mxID(_irandom), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_irem), 2, mxID(_irem), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log), 1, mxID(_log), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_log1p), 1, mxID(_log1p), XS_DONT_ENUM_FLAG);
@@ -310,6 +313,11 @@ void fx_Math_idiv(txMachine* the)
 #endif
 			mxResult->value.integer = x / y;
 	}
+}
+
+void fx_Math_idivmod(txMachine* the)
+{
+	mxTypeError("not available");
 }
 
 void fx_Math_imod(txMachine* the)

@@ -55,9 +55,7 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_for), 1, mxID(_for), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_keyFor), 1, mxID(_keyFor), XS_DONT_ENUM_FLAG);
-	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncDispose), mxID(_asyncDispose), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncIterator), mxID(_asyncIterator), XS_GET_ONLY);
-	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_dispose), mxID(_dispose), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_hasInstance), mxID(_hasInstance), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_isConcatSpreadable), mxID(_isConcatSpreadable), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_iterator), mxID(_iterator), XS_GET_ONLY);
@@ -70,6 +68,10 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toPrimitive), mxID(_toPrimitive), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toStringTag), mxID(_toStringTag), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_unscopables), mxID(_unscopables), XS_GET_ONLY);
+#if mxExplicitResourceManagement	
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncDispose), mxID(_asyncDispose), XS_GET_ONLY);
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_dispose), mxID(_dispose), XS_GET_ONLY);
+#endif
 	mxPop();
 }
 

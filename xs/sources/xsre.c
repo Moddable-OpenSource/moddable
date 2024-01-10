@@ -1675,7 +1675,7 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
     while (offset > 80) {
 		txInteger character;
 		txString p = mxStringByteDecode(pattern, &character);
-    	offset -= p - pattern;
+    	offset -= (txInteger)(p - pattern);
     	pattern = p;
     }
 	while (offset) {

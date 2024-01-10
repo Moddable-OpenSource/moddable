@@ -45,6 +45,7 @@ struct sxSnapshot {
 	txSlot* firstSlot;
 	txSize slotSize;
 	txSlot** slots;
+	int (*patch)(txMachine*, int version);
 };
 
 extern txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theContext);

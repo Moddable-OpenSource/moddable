@@ -319,35 +319,33 @@ typedef txU4 xsUnsignedValue;
 
 /* Instances and Prototypes */
 
-#define prototypesStackIndex -81
-#define xsObjectPrototype (the->stackPrototypes[prototypesStackIndex - 1])
-#define xsFunctionPrototype (the->stackPrototypes[prototypesStackIndex - 2])
-#define xsArrayPrototype (the->stackPrototypes[prototypesStackIndex - 3])
-#define xsStringPrototype (the->stackPrototypes[prototypesStackIndex - 4])
-#define xsBooleanPrototype (the->stackPrototypes[prototypesStackIndex - 5])
-#define xsNumberPrototype (the->stackPrototypes[prototypesStackIndex - 6])
-#define xsDatePrototype (the->stackPrototypes[prototypesStackIndex - 7])
-#define xsRegExpPrototype (the->stackPrototypes[prototypesStackIndex - 8])
-#define xsHostPrototype (the->stackPrototypes[prototypesStackIndex - 9])
-#define xsErrorPrototype (the->stackPrototypes[prototypesStackIndex - 10])
-#define xsEvalErrorPrototype (the->stackPrototypes[prototypesStackIndex - 11])
-#define xsRangeErrorPrototype (the->stackPrototypes[prototypesStackIndex - 12])
-#define xsReferenceErrorPrototype (the->stackPrototypes[prototypesStackIndex - 13])
-#define xsSyntaxErrorPrototype (the->stackPrototypes[prototypesStackIndex - 14])
-#define xsTypeErrorPrototype (the->stackPrototypes[prototypesStackIndex - 15])
-#define xsURIErrorPrototype (the->stackPrototypes[prototypesStackIndex - 16])
-#define xsAggregateErrorPrototype (the->stackPrototypes[prototypesStackIndex - 17])
-#define xsSuppressedErrorPrototype (the->stackPrototypes[prototypesStackIndex - 18])
-#define xsSymbolPrototype (the->stackPrototypes[prototypesStackIndex - 19])
-#define xsArrayBufferPrototype (the->stackPrototypes[prototypesStackIndex - 20])
-#define xsDataViewPrototype (the->stackPrototypes[prototypesStackIndex - 21])
-#define xsTypedArrayPrototype (the->stackPrototypes[prototypesStackIndex - 22])
-#define xsMapPrototype (the->stackPrototypes[prototypesStackIndex - 23])
-#define xsSetPrototype (the->stackPrototypes[prototypesStackIndex - 24])
-#define xsWeakMapPrototype (the->stackPrototypes[prototypesStackIndex - 25])
-#define xsWeakSetPrototype (the->stackPrototypes[prototypesStackIndex - 26])
-#define xsPromisePrototype (the->stackPrototypes[prototypesStackIndex - 27])
-#define xsProxyPrototype (the->stackPrototypes[prototypesStackIndex - 28])
+#define xsObjectPrototype (the->stackPrototypes[-1])
+#define xsFunctionPrototype (the->stackPrototypes[-2])
+#define xsArrayPrototype (the->stackPrototypes[-3])
+#define xsStringPrototype (the->stackPrototypes[-4])
+#define xsBooleanPrototype (the->stackPrototypes[-5])
+#define xsNumberPrototype (the->stackPrototypes[-6])
+#define xsDatePrototype (the->stackPrototypes[-7])
+#define xsRegExpPrototype (the->stackPrototypes[-8])
+#define xsHostPrototype (the->stackPrototypes[-9])
+#define xsErrorPrototype (the->stackPrototypes[-10])
+#define xsEvalErrorPrototype (the->stackPrototypes[-11])
+#define xsRangeErrorPrototype (the->stackPrototypes[-12])
+#define xsReferenceErrorPrototype (the->stackPrototypes[-13])
+#define xsSyntaxErrorPrototype (the->stackPrototypes[-14])
+#define xsTypeErrorPrototype (the->stackPrototypes[-15])
+#define xsURIErrorPrototype (the->stackPrototypes[-16])
+#define xsAggregateErrorPrototype (the->stackPrototypes[-17])
+#define xsSymbolPrototype (the->stackPrototypes[-18])
+#define xsArrayBufferPrototype (the->stackPrototypes[-19])
+#define xsDataViewPrototype (the->stackPrototypes[-20])
+#define xsTypedArrayPrototype (the->stackPrototypes[-21])
+#define xsMapPrototype (the->stackPrototypes[-22])
+#define xsSetPrototype (the->stackPrototypes[-23])
+#define xsWeakMapPrototype (the->stackPrototypes[-24])
+#define xsWeakSetPrototype (the->stackPrototypes[-25])
+#define xsPromisePrototype (the->stackPrototypes[-26])
+#define xsProxyPrototype (the->stackPrototypes[-27])
 
 #define xsNewArray(_LENGTH) \
 	(fxNewArray(the,_LENGTH), \
@@ -1194,6 +1192,7 @@ struct xsMachineRecord {
 	xsByte* code;
 	xsSlot* stackBottom;
 	xsSlot* stackTop;
+	xsSlot* stackIntrinsics;
 	xsSlot* stackPrototypes;
 	xsJump* firstJump;
 	void* context;
