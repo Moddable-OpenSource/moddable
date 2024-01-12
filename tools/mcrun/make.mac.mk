@@ -29,13 +29,19 @@ ARCHIVE = $(BIN_DIR)/mc.xsa
 
 .PHONY: all	
 
-all: $(BIN_DIR)/mc.xsa
+all: build xsbug
+
+build: $(ARCHIVE)
+
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+	
+xsbug:
 	$(KILL_SERIAL2XSBUG) 
 	$(START_XSBUG) 
 	open -a $(SIMULATOR) $(ARCHIVE)
-
-build: $(ARCHIVE)
-	@echo "# Target built: $(ARCHIVE)"
 
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"

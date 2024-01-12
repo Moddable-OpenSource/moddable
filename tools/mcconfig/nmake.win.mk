@@ -152,9 +152,7 @@ LINK_OPTIONS = /incremental:no /nologo /dll
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
-all: build
-	$(START_XSBUG)
-	$(START_COMMAND)
+all: build xsbug
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 
@@ -170,6 +168,9 @@ clean:
 	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
 
+xsbug:
+	$(START_XSBUG)
+	$(START_COMMAND)
 
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)

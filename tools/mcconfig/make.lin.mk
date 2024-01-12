@@ -148,27 +148,25 @@ VPATH += $(XS_DIRECTORIES)
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
-all: precursor xsbug
-	$(KILL_SERIAL2XSBUG)
-	$(KILL_SIMULATOR)
-	$(START_XSBUG)
-	$(START_SIMULATOR)
+all: build xsbug
 
 #	$(shell XSBUG_PORT=$(XSBUG_PORT) ; XSBUG_HOST=$(XSBUG_HOST) ; nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 #	echo "gdb $(SIMULATOR)\nr $(BIN_DIR)/mc.so"
 
-precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
-
-xsbug:
-	$(START_XSBUG)
-#	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
-
-build: precursor
+build: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 clean:
-	echo "# Clean project"
+	@echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
+
+xsbug:
+	$(KILL_SERIAL2XSBUG)
+	$(KILL_SIMULATOR)
+	$(START_XSBUG)
+	$(START_SIMULATOR)
+	
+#	$(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
