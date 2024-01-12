@@ -6,7 +6,7 @@ flags: [module]
 // https://opensource.org/license/mit/
 
 import { JSONParser, Pattern } from "jsonparser";
-import { fragment1, fragment2, fragment3 } from "./jsonparser_FIXTURE.js";
+import { fragment1, fragment2, fragment3, timeZoneOffset } from "./jsonparser_FIXTURE.js";
 
 const patterns = [
     new Pattern({
@@ -27,8 +27,8 @@ const patterns = [
                 const schedule = vpt.data.schedule;
                 if (schedule.count < 3) {
                     schedule.meetings.push({
-                        start: new Date(vpt.cache.startDateTime),
-                        end: new Date(vpt.cache.endDateTime)
+                        start: new Date(vpt.cache.startDateTime + timeZoneOffset),
+                        end: new Date(vpt.cache.endDateTime + timeZoneOffset)
                     });
                 }
                 schedule.count++;
