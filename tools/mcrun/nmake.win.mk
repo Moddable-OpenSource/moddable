@@ -25,11 +25,21 @@
 
 ARCHIVE = $(BIN_DIR)\mc.xsa
 
-all: $(ARCHIVE)
-	start $(SIMULATOR) $(ARCHIVE)
+all: build xsbug
 
 build: $(ARCHIVE)
-	echo "# Target built: $(ARCHIVE)"
+
+clean:
+	@echo "# Clean project"
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
+xsbug:
+	start $(SIMULATOR) $(ARCHIVE)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa

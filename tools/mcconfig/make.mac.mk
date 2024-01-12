@@ -131,19 +131,19 @@ VPATH += $(XS_DIRECTORIES)
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 	
-all: precursor
-	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG)
-	$(START_SIMULATOR)
+all: build xsbug
 
-precursor: $(LIB_DIR) $(BIN_DIR)/mc.so
+build: $(LIB_DIR) $(BIN_DIR)/mc.so
 
 clean:
-	echo "# Clean project"
+	@echo "# Clean project"
 	-rm -rf $(BIN_DIR) 2>/dev/null
 	-rm -rf $(TMP_DIR) 2>/dev/null
 
-build: precursor
+xsbug:
+	$(KILL_SERIAL2XSBUG) 
+	$(START_XSBUG)
+	$(START_SIMULATOR)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)

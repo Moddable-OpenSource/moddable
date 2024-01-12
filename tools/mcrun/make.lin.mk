@@ -21,11 +21,17 @@
 
 ARCHIVE = $(BIN_DIR)/mc.xsa
 
-all: $(ARCHIVE)
-	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
+all: build xsbug
 
 build: $(ARCHIVE)
-	@echo "# Target built: $(ARCHIVE)"
+
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
+xsbug:
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
