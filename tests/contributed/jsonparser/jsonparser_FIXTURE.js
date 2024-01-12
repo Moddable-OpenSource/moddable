@@ -6,3 +6,5 @@ export const fragment2 = '"2023-12-05T13:00:00.0000000","timeZone":"E. Australia
 export const fragment3 = 'lse,"isException":false,"isReminderSet":false,"start":{"dateTime":"2023-12-05T23:00:00.0000000","timeZone":"E. Australia Standard Time"},"end":{"dateTime":"2023-12-05T23:01:00.0000000","timeZone":"E. Australia Standard Time"}}],"workingHours":{"daysOfWeek":["monday","tuesday","wednesday","thursday","friday"],"startTime":"08:00:00.0000000","endTime":"17:00:00.0000000","timeZone":{"name":"Pacific Standard Time"}}}]}';
 
 export const keys = ["value", "scheduleItems", "status", "start", "end", "dateTime", "error"];
+
+export const timeZoneOffset = "+10:00";
