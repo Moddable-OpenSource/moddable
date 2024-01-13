@@ -204,7 +204,7 @@ void xs_tcp_constructor(xsMachine *the)
 			address.sin_family = AF_INET;
 			address.sin_port = htons(port);
 
-			CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)10);
+			CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)-1);
 			if (err)
 				xsUnknownError("can't connect");
 		}
