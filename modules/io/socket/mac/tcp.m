@@ -80,7 +80,6 @@ static void tcpHold(TCP tcp);
 static void tcpRelease(TCP tcp);
 static void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void doClose(xsMachine *the, xsSlot *instance);
-static void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *error, void *info);
 static void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, const void *data, void *info);
 static void tcpTrigger(TCP tcp, uint8_t trigger);
 
@@ -199,25 +198,15 @@ void xs_tcp_constructor(xsMachine *the)
 			tcp->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, tcp->cfSkt, 0);
 			CFRunLoopAddSource(CFRunLoopGetCurrent(), tcp->cfRunLoopSource, kCFRunLoopCommonModes);
 
-			char *str;
-			CFStringRef host;
-			CFHostRef cfHost;
+			struct hostent *host = gethostbyname(addrStr);
+			struct sockaddr_in address;
+			c_memcpy(&(address.sin_addr), host->h_addr, host->h_length);
+			address.sin_family = AF_INET;
+			address.sin_port = htons(port);
 
-			xsmcGet(xsVar(0), xsArg(0), xsID_address);
-			str = xsmcToString(xsVar(0));
-			host = CFStringCreateWithCString(NULL, (const char *)str, kCFStringEncodingUTF8);
-			cfHost = CFHostCreateWithName(kCFAllocatorDefault, host);
-			CFRelease(host);
-
-			CFHostClientContext context = {0};
-			context.info = tcp;
-
-			CFHostSetClient(cfHost, resolved, &context);
-			CFHostScheduleWithRunLoop(cfHost, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-
-			CFStreamError streamErr;
-			if (!CFHostStartInfoResolution(cfHost, kCFHostAddresses, &streamErr))
-				xsUnknownError("cannot resolve host address");
+			CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&address, sizeof(address)), (CFTimeInterval)10);
+			if (err)
+				xsUnknownError("can't connect");
 		}
 	}
 
@@ -452,33 +441,6 @@ void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, tcp->onWritable);
 	if (tcp->onError)
 		(*markRoot)(the, tcp->onError);
-}
-
-void resolved(CFHostRef cfHost, CFHostInfoType typeInfo, const CFStreamError *error, void *info)
-{
-	TCP tcp = info;
-
-	if (tcp->done) {
-		tcpRelease(tcp);
-		return;
-	}
-
-	CFArrayRef cfArray = CFHostGetAddressing(cfHost, NULL);
-	if (NULL == cfArray) {	// failed to resolve
-		tcpTrigger(tcp, kTCPError);
-		return;
-	}
-	NSData *address = CFArrayGetValueAtIndex(cfArray, CFArrayGetCount(cfArray) - 1);
-
-	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
-	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
-	addr.sin_port = htons(tcp->port);
-
-	CFSocketError err = CFSocketConnectToAddress(tcp->cfSkt, CFDataCreate(kCFAllocatorDefault, (const UInt8*)&addr, sizeof(addr)), (CFTimeInterval)-1);
-	if (err) {
-		tcpTrigger(tcp, kTCPError);
-		return;
-	}
 }
 
 void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, const void *data, void *info)
