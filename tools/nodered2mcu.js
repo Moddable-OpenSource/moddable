@@ -350,7 +350,7 @@ export default class extends TOOL {
 					parts.push(``)
 				}
 				catch (e) {
-					trace(`Error translating node ID "${id}, type "${type}", name "${name}": ${e}\n`);
+					trace(`Error translating node ID "${id}", type "${type}", name "${name}": ${e}\n`);
 					throw e;
 				}
 			});
@@ -1948,56 +1948,64 @@ export default class extends TOOL {
 	extractOne(flows, what, credentials) {
 		const parts = what.substring(0, what.lastIndexOf(".")).split("-");
 		let data;
-		
-		flows.some(config => {
-			if (config.id !== parts[0])
-				return;
-			
-			switch (config.type) {
-				case "tls-config": {
-					switch (parts[1]) {
-						case "ca":
-							if (config.ca)
-								data = this.readFileString(config.ca);
-							else if (credentials?.[config.id]?.cadata)
-								data = credentials?.[config.id].cadata;
 
-							if (data) {
-								data = Transform.pemToDER(data);
-								return true;
-							}
-							break;
-						case "cert":
-							if (config.cert)
-								data = this.readFileString(config.cert);
-							else if (credentials?.[config.id]?.certdata)
-								data = credentials?.[config.id].certdata;
+		try {
+			flows.some(config => {
+				if (config.id !== parts[0])
+					return;
+				
+				switch (config.type) {
+					case "tls-config": {
+						switch (parts[1]) {
+							case "ca":
+								if (config.ca)
+									data = this.readFileString(config.ca);
+								else if (credentials?.[config.id]?.cadata)
+									data = credentials?.[config.id].cadata;
 
-							if (data) {
-								data = Transform.pemToDER(data);
-								return true;
-							}
-							break;
-						case "key":
-							if (config.key)
-								data = this.readFileString(config.key);
-							else if (credentials?.[config.id]?.keydata)
-								data = credentials?.[config.id].keydata;
+								if (data) {
+									data = Transform.pemToDER(data);
+									return true;
+								}
+								break;
+							case "cert":
+								if (config.cert)
+									data = this.readFileString(config.cert);
+								else if (credentials?.[config.id]?.certdata)
+									data = credentials?.[config.id].certdata;
 
-							if (data) {
-								data = Transform.privateKeyToPrivateKeyInfo(Transform.pemToDER(data));
-								return true;
-							}
-							break;
+								if (data) {
+									data = Transform.pemToDER(data);
+									return true;
+								}
+								break;
+							case "key":
+								if (config.key)
+									data = this.readFileString(config.key);
+								else if (credentials?.[config.id]?.keydata)
+									data = credentials?.[config.id].keydata;
+
+								if (data) {
+									if (data.indexOf("-----BEGIN RSA PRIVATE KEY-----") >= 0)
+										data = Transform.privateKeyToPrivateKeyInfo(Transform.pemToDER(data));
+									else
+										data = Transform.pemToDER(data);
+									return true;
+								}
+								break;
+						}
 					}
+					break;
 				}
-				break;
-			}
-		});
-		
-		if (!data)
-			throw new Error("cannot extract " + what);
-		
+			});
+			
+			if (!data)
+				throw new Error("data to extract not found");
+		}
+		catch (e) {
+			trace(`Error extracting "${parts[1]}" from node ID "${parts[0]}": ${e}\n`);
+			throw e;
+		}
 		return data;
 	}
 }
