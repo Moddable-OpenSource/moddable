@@ -21,7 +21,10 @@
 
 ARCHIVE = $(BIN_DIR)/mc.xsa
 
-all: build xsbug
+.PHONY: all	build clean xsbug
+
+all: build
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
 
 build: $(ARCHIVE)
 

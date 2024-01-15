@@ -152,7 +152,9 @@ LINK_OPTIONS = /incremental:no /nologo /dll
 LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
-all: build xsbug
+all: build
+	$(START_XSBUG)
+	$(START_COMMAND)
 
 build: $(LIB_DIR) $(BIN_DIR)\mc.dll
 

@@ -25,7 +25,8 @@
 
 ARCHIVE = $(BIN_DIR)\mc.xsa
 
-all: build xsbug
+all: build
+	start $(SIMULATOR) $(ARCHIVE)
 
 build: $(ARCHIVE)
 

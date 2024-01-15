@@ -17,19 +17,12 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ifeq ($(DEBUG),1)
-	START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-else
-	START_XSBUG =
-	KILL_SERIAL2XSBUG =
-endif
-
 ARCHIVE = $(BIN_DIR)/mc.xsa
 
-.PHONY: all	
+.PHONY: all	build clean xsbug
 
-all: build xsbug
+all: build
+	open -a $(SIMULATOR) $(ARCHIVE)
 
 build: $(ARCHIVE)
 
@@ -39,8 +32,6 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	
 xsbug:
-	$(KILL_SERIAL2XSBUG) 
-	$(START_XSBUG) 
 	open -a $(SIMULATOR) $(ARCHIVE)
 
 $(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)

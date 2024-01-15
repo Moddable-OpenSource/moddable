@@ -143,12 +143,16 @@ LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 
 VPATH += $(XS_DIRECTORIES)
 
-.PHONY: all	
-
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
-all: build xsbug
+.PHONY: all	build clean xsbug
+
+all: build
+	$(KILL_SERIAL2XSBUG)
+	$(KILL_SIMULATOR)
+	$(START_XSBUG)
+	$(START_SIMULATOR)
 
 #	$(shell XSBUG_PORT=$(XSBUG_PORT) ; XSBUG_HOST=$(XSBUG_HOST) ; nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 #	echo "gdb $(SIMULATOR)\nr $(BIN_DIR)/mc.so"

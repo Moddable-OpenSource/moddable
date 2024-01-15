@@ -126,12 +126,15 @@ LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_sym
 
 VPATH += $(XS_DIRECTORIES)
 
-.PHONY: all	
-
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+
+.PHONY: all	build clean xsbug
 	
-all: build xsbug
+all: build
+	$(KILL_SERIAL2XSBUG) 
+	$(START_XSBUG)
+	$(START_SIMULATOR)
 
 build: $(LIB_DIR) $(BIN_DIR)/mc.so
 
