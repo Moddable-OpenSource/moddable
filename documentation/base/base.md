@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 16, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: January 15, 2024
 
 ## Table of Contents
 
@@ -26,6 +26,8 @@ The `Timer` class provides both time-based callbacks and a delay function.
 ```js
 import Timer from "timer";
 ```
+
+Timer callbacks are invoked with `this` set to `globalThis`. Use an arrow function or `Function.prototype.bind` to bind the callback's `this` to another value.
 
 ### `Timer.set(callback[, interval, repeat])`
 
