@@ -646,7 +646,7 @@ class MQTTClient {
 			delete options.will;
 
 			if (keepalive) {
-				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 500);
+				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 250);
 				options.keepalive.interval = keepalive * 1000;
 				options.last = Date.now();
 			}
