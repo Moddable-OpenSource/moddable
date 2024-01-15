@@ -396,11 +396,11 @@ struct sxMachine {
 	txSlot* stackBottom; /* xs.h */
 	txSlot* stackTop; /* xs.h */
 	txSlot* stackIntrinsics; /* xs.h */
-	txSlot* stackPrototypes; /* xs.h */
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
 	void* archive; /* xs.h */
 	txSlot scratch; /* xs.h */
+	txSlot* stackPrototypes; /* xs.h */
 	mxMachinePlatform /* xs.h */
 	txFlag status;
 	

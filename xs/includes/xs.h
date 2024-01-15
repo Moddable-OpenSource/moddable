@@ -1193,11 +1193,11 @@ struct xsMachineRecord {
 	xsSlot* stackBottom;
 	xsSlot* stackTop;
 	xsSlot* stackIntrinsics;
-	xsSlot* stackPrototypes;
 	xsJump* firstJump;
 	void* context;
 	void* archive;
 	xsSlot scratch;
+	xsSlot* stackPrototypes;
 #ifndef __XSALL__
 	xsMachinePlatform
 #endif
