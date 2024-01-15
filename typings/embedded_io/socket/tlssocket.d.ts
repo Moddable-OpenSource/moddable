@@ -1,4 +1,4 @@
-declare module "embedded:io/socket/tlssocket" {
+declare module "embedded:io/socket/tcp/tls" {
   import { Options as TCPOptions } from "embedded:io/socket/tcp"
   export type Options = TCPOptions & {
     host: string
