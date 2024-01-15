@@ -3,11 +3,9 @@
 		"$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json"
 	],
 	"modules": {
-		"embedded:network/mqtt/mqtt": [
-			"./mqtt"
-		]
+		"mqtt/js": "./mqtt"
 	},
 	"preload": [
-		"embedded:network/mqtt/mqtt"
+		"mqtt/js"
 	]
 }

@@ -3,7 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/data/url/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/modules/io/manifest.json",
+		"./manifest_mqtt.json"
 	],
 	"creation": {
 		"stack": 384,
@@ -13,22 +14,11 @@
 		"*": [
 			"./config",
 			"./data",
-			"./mqtt",
-			"./main",
-			"$(MODULES)/network/dns/moddnsparser"
-		],
-		"embedded:network/dns/resolver/udp": "../../udp/dns/dns",
-		"dns": "$(MODULES)/network/dns/dns",
-		"dns/parser": "$(MODULES)/network/dns/dnsparser",
-		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
-		"embedded:network/mqtt/client": "./../mqttclient/mqttclient"
+			"./main"
+		]
 	},
 	"preload": [
 		"config",
-		"embedded:network/dns/resolver",
-		"dns",
-		"dns/parser",
-		"dns/serializer",
-		"embedded:network/mqtt/client"
+		"data"
 	]
 }
