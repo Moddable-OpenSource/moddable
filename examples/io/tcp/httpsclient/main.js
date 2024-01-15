@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,7 @@
  */
 
 import TextDecoder from "text/decoder"
-import TLSSocket from "embedded:io/socket/tlssocket";
+import TLSSocket from "embedded:io/socket/tcp/tls";
 
 const http = new device.network.http.io({ 
 	...device.network.http,
