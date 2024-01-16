@@ -26,11 +26,11 @@ CHECK_ARCH = $(shell [ $1 -lt 8 ] && echo "YES")
 
 START_XSBUG =
 KILL_SERIAL2XSBUG =
+KILL_SIMULATOR =
 ifeq ($(DEBUG),1)
 	ifeq ("$(XSBUG_LAUNCH)","log")
 #		START_SIMULATOR = export DISPLAY=:0.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 		START_SIMULATOR = export DISPLAY=:2.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
-		KILL_SIMULATOR = $(shell pkill mcsim)
 	else
 		ifeq ("$(XSBUG_LAUNCH)","app")
 			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -38,6 +38,7 @@ ifeq ($(DEBUG),1)
 		START_SIMULATOR = $(shell export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && nohup $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so > /dev/null 2>&1 &)
 	endif
 	KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
+	KILL_SIMULATOR = $(shell pkill mcsim)
 endif
 
 XS_DIRECTORIES = \

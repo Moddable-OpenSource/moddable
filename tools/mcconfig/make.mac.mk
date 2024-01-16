@@ -18,6 +18,7 @@
 #
 
 START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+KILL_SIMULATOR = osascript -e 'quit app "mcsim"'
 
 ifeq ($(DEBUG),1)
 	START_XSBUG = 
@@ -133,6 +134,7 @@ XSBUG_PORT ?= 5002
 	
 all: build
 	$(KILL_SERIAL2XSBUG) 
+	$(KILL_SIMULATOR) 
 	$(START_XSBUG)
 	$(START_SIMULATOR)
 
@@ -145,6 +147,7 @@ clean:
 
 xsbug:
 	$(KILL_SERIAL2XSBUG) 
+	$(KILL_SIMULATOR) 
 	$(START_XSBUG)
 	$(START_SIMULATOR)
 

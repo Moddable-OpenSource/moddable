@@ -38,6 +38,7 @@ START_COMMAND = cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMU
 !ELSE
 START_COMMAND = start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 !ENDIF
+KILL_COMMAND = taskkill /im mcsim.exe /F 2> nul || (call )
 
 XS_DIRECTORIES = \
 	/I$(XS_DIR)\includes \
@@ -153,6 +154,7 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 all: build
+	$(KILL_COMMAND)
 	$(START_XSBUG)
 	$(START_COMMAND)
 
@@ -171,6 +173,7 @@ clean:
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
 
 xsbug:
+	$(KILL_COMMAND)
 	$(START_XSBUG)
 	$(START_COMMAND)
 
