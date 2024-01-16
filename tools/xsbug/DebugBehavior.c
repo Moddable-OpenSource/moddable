@@ -1141,7 +1141,8 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 				c = (c << 6) | (*q++ & 0x3F);
 			}
 			c &= sequence->lmask;
-			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
+// 			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
+			if ((0x00000000 < c) && (c < 0x00110000))
 				p = q;
 			else {
 				while (p < q)
