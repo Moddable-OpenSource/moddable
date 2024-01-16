@@ -158,6 +158,8 @@ void xs_textdecoder_decode(xsMachine *the)
 				goto fatal;
 
 			outLength += 3;
+			if (!src)		// flush
+				break;
 			continue;
 		}
 
@@ -289,6 +291,8 @@ void xs_textdecoder_decode(xsMachine *the)
 			*dst++ = 0xEF;
 			*dst++ = 0xBF;
 			*dst++ = 0xBD;
+			if (!src)
+				break;	// flush
 			continue;
 		}
 
@@ -369,9 +373,13 @@ void xs_textdecoder_decode(xsMachine *the)
 	}
 	*dst++ = 0;
 
-	c_memcpy(td->buffer, buffer, bufferLength);
-	c_memcpy(td->buffer + bufferLength, src, srcEnd - src);
-	td->bufferLength = bufferLength + (srcEnd - src);
+	if (src) {
+		c_memcpy(td->buffer, buffer, bufferLength);
+		c_memcpy(td->buffer + bufferLength, src, srcEnd - src);
+		td->bufferLength = bufferLength + (srcEnd - src);
+	}
+	else 
+		td->bufferLength =  0;		// flush
 
 	return;
 
