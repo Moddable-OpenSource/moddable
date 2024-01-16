@@ -26,14 +26,14 @@ declare module "embedded:network/http/client" {
     port?:number
     host: string
     dns: any
-    onError: (err:any)=>void
+    onError?: (err:any)=>void
   }
 
   export interface RequestOptions {
     method?: string
     path?: string
     headers?: Map<string, string|string[]>
-    onHeaders?: (this: HTTPRequest, status:number, headers:Record<string, string>) => void
+    onHeaders?: (this: HTTPRequest, status:number, headers: Map<String, string>) => void
     onReadable?: (this: HTTPRequest, count: number) => void
     onWritable?: (this: HTTPRequest, count: number) => void
     onDone?: (this: HTTPRequest, error: Error|null) => void // note: error is empty Error object
