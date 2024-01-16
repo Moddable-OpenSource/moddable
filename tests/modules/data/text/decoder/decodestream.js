@@ -43,3 +43,6 @@ assert.sameValue("\uFFFD", decoder.decode());
 
 assert.sameValue("", decoder.decode(Uint8Array.of(0xE9, 0xA1), {stream: true}));
 assert.sameValue("\uFFFD", decoder.decode());
+
+assert.sameValue("", decoder.decode(Uint8Array.of(0xF0, 0x9F, 0x92), {stream: true}));
+assert.sameValue("\uFFFD", decoder.decode());
