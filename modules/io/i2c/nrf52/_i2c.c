@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Moddable Tech, Inc.
+ * Copyright (c) 2019-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -141,14 +141,6 @@ void _xs_i2c_constructor(xsMachine *the)
 	else if (!builtinIsPinFree(data) || !builtinIsPinFree(clock))
 		xsRangeError("inUse");
 
-	nrf_drv_twi_config_t twi_config = {
-		.scl = clock,
-		.sda = data,
-		.frequency = 0,
-		.interrupt_priority = APP_IRQ_PRIORITY_HIGH,
-		.clear_bus_init = false
-	};
-
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
 	address = builtinGetPin(the, &xsVar(0));
 	if ((address < 0) || (address > 127))
@@ -170,8 +162,6 @@ void _xs_i2c_constructor(xsMachine *the)
 		nrfHz = NRF_DRV_TWI_FREQ_250K;
 	else
 		nrfHz = NRF_DRV_TWI_FREQ_100K;
-
-	twi_config.frequency = nrfHz;
 
 	if (xsmcHas(xsArg(0), xsID_timeout)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
@@ -204,7 +194,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->clock = clock;
 	i2c->data = data;
 	i2c->hz = hz;
-	i2c->nrfHz = hz;
+	i2c->nrfHz = nrfHz;
 	i2c->address = address;
 	i2c->timeout = timeout;
 	i2c->pullup = pullup;
@@ -386,9 +376,8 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 uint8_t i2cActivate(I2C i2c)
 {
-
 	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
+		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->nrfHz == i2c->nrfHz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
 		return 1;
 
 	if (gI2CActive) {
@@ -405,8 +394,7 @@ uint8_t i2cActivate(I2C i2c)
 		.clear_bus_init = false
 	};
 
-int err;
-	err = nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL);
+	int err = nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL);
 	if (0 == err)
 		nrf_drv_twi_enable(&gTwi);
 	else {
