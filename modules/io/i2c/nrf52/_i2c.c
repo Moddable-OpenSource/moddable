@@ -391,7 +391,8 @@ uint8_t i2cActivate(I2C i2c)
 		.sda = i2c->data,
 		.frequency = i2c->nrfHz,
 		.interrupt_priority = APP_IRQ_PRIORITY_HIGH,
-		.clear_bus_init = false
+		.clear_bus_init = false,
+		.hold_bus_uninit = false
 	};
 
 	int err = nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL);
