@@ -200,9 +200,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	if (!i2c)
 		xsRangeError("no memory");
 
-	xsmcSetHostData(xsThis, i2c);
 	i2c->obj = xsThis;
-	xsRemember(i2c->obj);
 	i2c->clock = clock;
 	i2c->data = data;
 	i2c->hz = hz;
@@ -212,19 +210,20 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->pullup = pullup;
 	i2c->port = (uint8_t)port;
 
+	if (!i2cActivate(i2c)) {
+		c_free(i2c);
+		xsUnknownError("I2CErr init");
+	}
+
+	xsmcSetHostData(xsThis, i2c);
+
 	i2c->next = gI2C;
 	gI2C = i2c;
 
+	xsRemember(i2c->obj);
+
 	builtinUsePin(data);
 	builtinUsePin(clock);
-
-	if (0 == nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL))
-		nrf_drv_twi_enable(&gTwi);
-	else {
-		modLog("I2CErr init");
-	}
-
-	gI2CActive = i2c;
 
 	if (!gTWIQueue)
 		gTWIQueue = xQueueCreate(TWI_QUEUE_LEN, TWI_QUEUE_ITEM_SIZE);
