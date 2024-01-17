@@ -12,9 +12,7 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"touch": "M5StackCoreTouch",
-		"startupSound": "bflatmajor.maud",
-		"startupVibration": 600
+		"touch": "M5StackCoreTouch"
 	},
 	"defines": {
 		"i2c": {
