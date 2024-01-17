@@ -218,14 +218,6 @@ void _xs_i2c_constructor(xsMachine *the)
 	builtinUsePin(data);
 	builtinUsePin(clock);
 
-	if (0 == nrf_drv_twi_init(&gTwi, &twi_config, twi_handler, NULL))
-		nrf_drv_twi_enable(&gTwi);
-	else {
-		modLog("I2CErr init");
-	}
-
-	gI2CActive = i2c;
-
 	if (!gTWIQueue)
 		gTWIQueue = xQueueCreate(TWI_QUEUE_LEN, TWI_QUEUE_ITEM_SIZE);
 }
