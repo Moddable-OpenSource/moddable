@@ -1,6 +1,6 @@
 # Tools
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: October 1, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: January 18, 2024
 
 ## About this Document
 
@@ -19,6 +19,7 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 * [xsc](#xsc)
 * [xsl](#xsl)
 * [mcbundle](#mcbundle)
+* [mchex](#mchex)
 * [Simulator](#simulator) (mcsim)
 
 <a id="mcconfig"></a>
@@ -235,7 +236,7 @@ The C code can then be compiled and linked with the implementation of the host f
 ### Arguments
 
 ```text
-xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]... [u url]
+xsl files... [-a name] [-b directory] [-c creation] [-o directory] [-p modules]... [u url]
 ```
 
 - `files`: the paths of the XS binary files to link.
@@ -309,6 +310,23 @@ mcbundle [manifest] [-d] [-m] [-o directory]
 - `-d`: to build debug instrumented versions.
 - `-m`: to run `bash` automatically, otherwise **mcbundle** just generates the shell script.
 - `-o directory`: the output directory. Defaults to the current directory.
+
+<a id="mchex"></a>
+## mchex
+
+**mchex** is a command line tool to convert a file to the Intel [Hexadecimal Object File Format](https://archive.org/details/IntelHEXStandard).
+
+
+### Arguments
+
+```text
+mchex file -a address [-n name] [-o directory]
+```
+
+- `file`: the file to convert.
+- `-n name`: the output filename. `.hex` is appended.
+- `-o directory`: the output directory. Defaults to the current directory.
+
 
 <a id="simulator"></a>
 ## Simulator

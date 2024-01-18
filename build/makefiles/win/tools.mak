@@ -130,6 +130,7 @@ MODULES = \
 	$(MOD_DIR)\image2cs.xsb \
 	$(MOD_DIR)\mcbundle.xsb \
 	$(MOD_DIR)\mcconfig.xsb \
+	$(MOD_DIR)\mchex.xsb \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcpack.xsb \
@@ -216,6 +217,7 @@ COMMANDS = \
 	$(BIN_DIR)\image2cs.bat \
 	$(BIN_DIR)\mcbundle.bat \
 	$(BIN_DIR)\mcconfig.bat \
+	$(BIN_DIR)\mchex.bat \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcpack.bat \
 	$(BIN_DIR)\mcrez.bat \
@@ -441,6 +443,9 @@ $(BIN_DIR)\mcbundle.bat :
 $(BIN_DIR)\mcconfig.bat :
 	@echo # mcconfig.bat
 	echo @%~dp0\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
+$(BIN_DIR)\mchex.bat :
+	@echo # mchex.bat
+	echo @%~dp0\tools mchex %%* 1> $(BIN_DIR)\mchex.bat
 $(BIN_DIR)\mclocal.bat :
 	@echo # mclocal.bat
 	echo @%~dp0\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat

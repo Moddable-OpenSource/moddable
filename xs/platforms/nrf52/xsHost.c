@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -579,8 +579,13 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 		fxSetArchive(the, result);
 	}
 
-	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart)))
+	modLog("mods start at ");
+	modLogHex(kModulesStart);
+
+	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart))) {
 		*status = *(8 + (uint8_t *)kModulesStart);
+		modLog("mod failed");
+	}
 	else
 		*status = 0;
 
