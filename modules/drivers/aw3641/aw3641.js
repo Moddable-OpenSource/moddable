@@ -2,7 +2,8 @@ import Digital from "pins/digital";
 import Timer from "timer";
 
 class AW3641 extends Digital {
-    const 
+    #timer;
+
 	constructor(options = {}) {
 		super({
 			pin: options.pin,
@@ -10,13 +11,27 @@ class AW3641 extends Digital {
 		});
 	}
     flash(value){
+        if (this.#timer) {
+                this.#timer.next = value;	// wait until previous setting is complete
+                return;
+        }
+
         for(let i=0;i<value;i++){
             super.write(0);
             super.write(1);
         }
-        if((value>0)&&(value<9))Timer.delay(220);
-        if((value>8)&&(value<17))Timer.delay(1300);
-        super.write(0);
+	
+       let delay = 0;
+        if((value>0)&&(value<9)) delay = 220;
+        if((value>8)&&(value<17)) delay = 1300;
+        this.#timer = Timer.set(() => {
+			super.write(0);
+
+			const next = this.#timer.next;
+			this.#timer = undefined;
+			if (undefined !== next)
+				this.flash(next);
+        }, delay);
    }
 }
 AW3641.off=0;
