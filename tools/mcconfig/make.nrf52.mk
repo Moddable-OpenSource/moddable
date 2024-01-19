@@ -617,6 +617,7 @@ CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
+NM  = $(TOOLS_BIN)/$(TOOLS_PREFIX)nm
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
 OBJDUMP = $(TOOLS_BIN)/$(TOOLS_PREFIX)objdump
 SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
@@ -758,6 +759,15 @@ time_string = $(shell perl -e 'use POSIX qw(strftime); print strftime($(1), loca
 BUILD_DATE = $(call time_string,"%Y-%m-%d")
 BUILD_TIME = $(call time_string,"%H:%M:%S")
 #      $$h += $$1 if /^\.(?:ucHeap)\s+(\d+)/;
+
+MOD_START = \
+	'while (<>) { \
+		my $$addr = +(split /\/ /,$$_)[0] ; \
+		$$addr += 4095;				\
+		$$addr -= ($$addr % 4096);	\
+		$$addr += 4096;				\
+		print "\# mods start at " ; \
+		print sprintf("0x%X\n", $$addr); } '
 MEM_USAGE = \
   'while (<>) { \
 	  $$r += $$1 if /^\.(?:no_init|data|fs_data|bss|stack_dummy)\s+(\d+)/;\
@@ -817,6 +827,9 @@ env_vars:
 ifndef NRF_SDK_DIR
 	$(error NRF_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
 endif
+
+modLocation: $(TMP_DIR)/xs_nrf52.out
+	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
 
 clean:
 	echo "# Clean project"
@@ -924,6 +937,7 @@ $(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
 	@echo "# Version"
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	$(SIZE) -A $(TMP_DIR)/xs_nrf52.out | perl -e $(MEM_USAGE)
+	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
 	$(OBJCOPY) -O ihex $< $@
 
 FINAL_LINK_OBJ:=\
