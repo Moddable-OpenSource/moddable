@@ -579,9 +579,6 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 		fxSetArchive(the, result);
 	}
 
-	modLog("mods start at ");
-	modLogHex(kModulesStart);
-
 	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart))) {
 		*status = *(8 + (uint8_t *)kModulesStart);
 		modLog("mod failed");

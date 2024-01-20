@@ -90,6 +90,7 @@ CC = $(TOOLS_BIN)\arm-none-eabi-gcc
 CPP = $(TOOLS_BIN)\arm-none-eabi-g++
 LD = $(TOOLS_BIN)\arm-none-eabi-gcc
 AR = $(TOOLS_BIN)\arm-none-eabi-ar
+NM = $(TOOLS_BIN)\arm-none-eabi-nm
 OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
 SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
@@ -682,6 +683,10 @@ $(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
 	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex
 	python $(UF2CONV) $(BIN_DIR)\xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)\xs_nrf52.uf2
 
+modLocation: $(TMP_DIR)\xs_nrf52.out
+	$(NM) $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_sym.tmp
+	$(PLATFORM_DIR)\config\echoModStart.bat $(TMP_DIR)\_sym.tmp
+
 $(TMP_DIR):
 	if not exist $(TMP_DIR)\$(NULL) mkdir $(TMP_DIR)
 
@@ -697,6 +702,8 @@ $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
 	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_size.tmp
 	$(ECHO_GIT_AND_SIZE) $(USE_QSPI)
+	$(NM) $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_sym.tmp
+	$(PLATFORM_DIR)\config\echoModStart.bat $(TMP_DIR)\_sym.tmp
 	$(OBJCOPY) -O ihex $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.hex
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)
