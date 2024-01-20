@@ -78,6 +78,9 @@
 			#define MODDEF_AUDIOOUT_I2S_DAC_CHANNEL 3
 		#endif
 	#endif
+	#ifndef MODDEF_AUDIOOUT_I2S_SLOT
+		#define MODDEF_AUDIOOUT_I2S_SLOT 0
+	#endif
 #endif
 
 #if PICO_BUILD
@@ -1509,7 +1512,11 @@ void audioOutLoop(void *pvParameter)
 	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
 #else
 	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_MONO;
-	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
+	#if MODDEF_AUDIOOUT_I2S_SLOT == 1
+		i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
+	#else
+		i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
+	#endif
 #endif
 	i2s_config.slot_cfg.ws_pol = false;
 	i2s_config.slot_cfg.bit_shift = false;
