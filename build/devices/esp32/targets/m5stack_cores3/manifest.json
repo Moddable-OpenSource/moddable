@@ -106,7 +106,7 @@
 			"volume_divider": 1,
 			"i2s": {
 				"num": 1,
-				"slot": 1,
+				"slot": "I2S_STD_SLOT_LEFT",
 				"bitsPerSample": 16,
 				"bck_pin": 34,
 				"lr_pin": 33,
