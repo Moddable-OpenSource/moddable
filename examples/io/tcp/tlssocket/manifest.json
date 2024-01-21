@@ -5,5 +5,5 @@
 	"modules": {
 		"embedded:io/socket/tcp/tls": "./tlssocket"
 	},
-	"preload": "tlssocket"
+	"preload": "embedded:io/socket/tcp/tls"
 }
