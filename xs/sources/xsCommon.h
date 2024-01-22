@@ -57,6 +57,10 @@
 	#define mxECMAScript2023 1
 #endif
 
+#ifndef mxECMAScript2024
+	#define mxECMAScript2024 1
+#endif
+
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0
 #endif
@@ -112,10 +116,14 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#if mxECMAScript2023
-	#define XS_MAJOR_VERSION 14
+#if mxECMAScript2024
+	#define XS_MAJOR_VERSION 15
 #else
-	#define XS_MAJOR_VERSION 13
+	#if mxECMAScript2023
+		#define XS_MAJOR_VERSION 14
+	#else
+		#define XS_MAJOR_VERSION 13
+	#endif
 #endif
 #if mxExplicitResourceManagement
 	#define XS_MINOR_VERSION 4
@@ -505,6 +513,8 @@ enum {
 	XS_REGEXP_U = 1 << 5,
 	XS_REGEXP_Y = 1 << 6,
 	XS_REGEXP_D = 1 << 7,
+	XS_REGEXP_V = 1 << 8,
+	XS_REGEXP_UV = XS_REGEXP_U | XS_REGEXP_V,
 };
 mxExport txInteger* fxAllocateRegExpData(void* the, txInteger* code);
 mxExport txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInteger** code, txInteger** data, txString errorBuffer, txInteger errorSize);
@@ -1170,6 +1180,9 @@ enum {
 	__onFullfilled_,
 	__onRejected_,
 	__result_,
+#if mxECMAScript2024
+	_unicodeSets,	
+#endif
 	XS_ID_COUNT
 };
 #define XS_SYMBOL_ID_COUNT _AggregateError

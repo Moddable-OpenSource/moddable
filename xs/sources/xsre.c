@@ -1820,12 +1820,14 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 				parser->flags |= XS_REGEXP_M;
 			else if ((c == 's') && !(parser->flags & XS_REGEXP_S))
 				parser->flags |= XS_REGEXP_S;
-			else if ((c == 'u') && !(parser->flags & XS_REGEXP_U))
+			else if ((c == 'u') && !(parser->flags & XS_REGEXP_U) && !(parser->flags & XS_REGEXP_V))
 				parser->flags |= XS_REGEXP_U;
 			else if ((c == 'y') && !(parser->flags & XS_REGEXP_Y))
 				parser->flags |= XS_REGEXP_Y;
 			else if ((c == 'd') && !(parser->flags & XS_REGEXP_D))
 				parser->flags |= XS_REGEXP_D;
+			else if ((c == 'v') && !(parser->flags & XS_REGEXP_U) && !(parser->flags & XS_REGEXP_V))
+				parser->flags |= XS_REGEXP_V;
 			else
 				break;
 		}

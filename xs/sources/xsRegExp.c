@@ -311,6 +311,10 @@ void fx_RegExp_prototype_get_flags(txMachine* the)
 	if (fxToBoolean(the, the->stack++))
 		flags[index++] = 'u';
 	mxPushSlot(mxThis);
+	mxGetID(mxID(_unicodeSets));
+	if (fxToBoolean(the, the->stack++))
+		flags[index++] = 'v';
+	mxPushSlot(mxThis);
 	mxGetID(mxID(_sticky));
 	if (fxToBoolean(the, the->stack++))
 		flags[index++] = 'y';
@@ -441,6 +445,13 @@ void fx_RegExp_prototype_get_unicode(txMachine* the)
 {
 #if mxRegExp
 	fx_RegExp_prototype_get_flag(the, XS_REGEXP_U);
+#endif
+}
+
+void fx_RegExp_prototype_get_unicodeSets(txMachine* the)
+{
+#if mxRegExp
+	fx_RegExp_prototype_get_flag(the, XS_REGEXP_V);
 #endif
 }
 
@@ -637,7 +648,7 @@ void fx_RegExp_prototype_match(txMachine* the)
 	flags = the->stack;
 	if (c_strchr(fxToString(the, flags), 'g')) {
 		txIndex count = 0;
-		txBoolean unicodeFlag = c_strchr(fxToString(the, flags), 'u') ? 1 : 0;
+		txBoolean unicodeFlag = (c_strchr(fxToString(the, flags), 'u') || c_strchr(fxToString(the, flags), 'v')) ? 1 : 0;
 		mxPushInteger(0);
 		mxPushSlot(mxThis);
 		mxSetID(mxID(_lastIndex));
@@ -708,7 +719,7 @@ void fx_RegExp_prototype_matchAll(txMachine* the)
 	mxGetID(mxID(_flags));
 	if (c_strchr(fxToString(the, the->stack), 'g'))
 		globalFlag = 1;
-	if (c_strchr(fxToString(the, the->stack), 'u'))
+	if (c_strchr(fxToString(the, the->stack), 'u') || c_strchr(fxToString(the, the->stack), 'v'))
 		unicodeFlag = 1;
 	mxRunCount(2);
 	matcher = the->stack;
@@ -829,7 +840,7 @@ void fx_RegExp_prototype_replace(txMachine* the)
 	if (c_strchr(fxToString(the, flags), 'g'))
 		globalFlag = 1;
 	if (globalFlag) {
-		if (c_strchr(fxToString(the, flags), 'u'))
+		if (c_strchr(fxToString(the, flags), 'u') || c_strchr(fxToString(the, flags), 'v'))
 			unicodeFlag = 1;
 		mxPushInteger(0);
 		mxPushSlot(mxThis);
@@ -1038,7 +1049,7 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_flags));
 	flags = fxToString(the, the->stack);
-	if (c_strchr(flags, 'u'))
+	if (c_strchr(flags, 'u') || c_strchr(flags, 'v'))
 		unicodeFlag = 1;
 	if (!c_strchr(flags, 'y')) {
 		mxPushStringC("y");
