@@ -2368,6 +2368,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " min=%d", quantifier->min);
 							if (quantifier->max != 0x7FFFFFFF)
 								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " offset=%d", quantifier->offset);
 						#endif
 						if (quantifier->max == 0) {
 							step = sequel;
@@ -2392,13 +2393,21 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " #%d", *pointer);
 						#endif
 						quantifier = quantifiers + *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " min=%d", quantifier->min);
+							if (quantifier->max != 0x7FFFFFFF)
+								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " offset=%d", quantifier->offset);
+						#endif
 						sequel = *pointer;
 						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
+							firstState = fxPopStates(the, firstState, firstState->nextState);
 							step = sequel;
 							mxBreak;
 						}
 						quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
 						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : (quantifier->max == 0) ? 0 : quantifier->max - 1;
+						quantifier->offset = offset;
 						mxBreak;
 					mxCase(cxWordBreakStep):
 						step = *pointer;
