@@ -25,6 +25,7 @@ import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
+import SPI from "embedded:io/spi";
 
 const device = {
 	I2C: {
@@ -42,7 +43,17 @@ const device = {
 			transmit: 30
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus},
+	SPI: {
+		default: {
+			io: SPI,
+			hz: 2000000,
+			clock: 46,
+			in: 47,
+			out: 2,
+			port: 3
+		}
+	},
+	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pin: {
 		lcdPwr: 23,
 		button: 13,
