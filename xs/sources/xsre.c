@@ -269,8 +269,18 @@ typedef struct {
 
 typedef struct {
 	txTermPart;
+	txInteger stringsSize;
 	txInteger characters[1];
 } txCharSet;
+
+enum {
+	mxCharSetUnionOp = 0,
+	mxCharSetSubtractOp = 1,
+	mxCharSetIntersectionOp = 3,
+};
+
+mxCharSetStrings(CHARSET)
+	((txString)CHARSET + sizeof(txCharSet) + (CHARSET->characters[0] * sizeof(txInteger)))
 
 typedef struct {
 	txTermPart;
@@ -327,11 +337,11 @@ struct sxPatternParser {
 };
 
 static void* fxCharSetAny(txPatternParser* parser);
+static void* fxCharSetCombine(txPatternParser* parser, txCharSet* set1, txCharSet* set2, txInteger op)
 static void* fxCharSetDigits(txPatternParser* parser);
 static void* fxCharSetEmpty(txPatternParser* parser);
 static void* fxCharSetNot(txPatternParser* parser, txCharSet* set);
-static void* fxCharSetOr(txPatternParser* parser, txCharSet* set1, txCharSet* set2);
-static void* fxCharSetParseEscape(txPatternParser* parser);
+static void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator);
 static void* fxCharSetParseItem(txPatternParser* parser);
 static void* fxCharSetParseList(txPatternParser* parser);
 static void* fxCharSetRange(txPatternParser* parser, txCharSet* set1, txCharSet* set2);
@@ -568,12 +578,14 @@ void* fxCharSetAny(txPatternParser* parser)
 	txCharSet* result;
 	if (parser->flags & XS_REGEXP_S) {
 		result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
+		result->stringsSize = 0;
 		result->characters[0] = 2;
 		result->characters[1] = 0x0000;
 		result->characters[2] = 0x7FFFFFFF;
 	}
 	else {
 		result = fxTermCreate(parser, sizeof(txCharSet) + (8 * sizeof(txInteger)), fxCharSetMeasure);
+		result->stringsSize = 0;
 		result->characters[0] = 8;
 		result->characters[1] = 0x0000;
 		result->characters[2] = 0x000A;
@@ -597,52 +609,7 @@ void* fxCharSetCanonicalizeSingle(txPatternParser* parser, txCharSet* set)
 	return set;
 }
 
-void* fxCharSetDigits(txPatternParser* parser)
-{
-	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
-	result->characters[0] = 2;
-	result->characters[1] = '0';
-	result->characters[2] = '9' + 1;
-	return result;
-}
-
-void* fxCharSetEmpty(txPatternParser* parser)
-{
-	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet), fxCharSetMeasure);
-	result->characters[0] = 0;
-	return result;
-}
-
-void* fxCharSetNot(txPatternParser* parser, txCharSet* set)
-{
-	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + ((set->characters[0] + 2) * sizeof(txInteger)), fxCharSetMeasure);
-	txInteger* current1 = set->characters + 1;
-	txInteger* limit1 = current1 + set->characters[0];
-	txInteger count0 = 0;
-	txInteger* current0 = result->characters + 1;
-	txInteger character = 0;
-	while (current1 < limit1) {
-		txInteger begin = *current1++;
-		txInteger end = *current1++;
-		if (character < begin) {
-			count0++;
-			*current0++ = character;
-			count0++;
-			*current0++ = begin;
-		}
-        character = end;
-	}
-	if (character < 0x7FFFFFFF) {
-		count0++;
-		*current0++ = character;
-		count0++;
-		*current0++ = 0x7FFFFFFF;
-	}
-	result->characters[0] = count0;
-	return result;
-}
-
-void* fxCharSetOr(txPatternParser* parser, txCharSet* set1, txCharSet* set2)
+void* fxCharSetCombine(txPatternParser* parser, txCharSet* set1, txCharSet* set2, txInteger op)
 {
 	txInteger flag = 0;
 	txInteger old = 0;
@@ -650,10 +617,9 @@ void* fxCharSetOr(txPatternParser* parser, txCharSet* set1, txCharSet* set2)
 	txInteger* limit1 = current1 + set1->characters[0];
 	txInteger* current2 = set2->characters + 1;
 	txInteger* limit2 = current2 + set2->characters[0];
-	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + ((set1->characters[0] + set2->characters[0]) * sizeof(txInteger)), fxCharSetMeasure);
+	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + ((set1->characters[0] + set2->characters[0]) * sizeof(txInteger)) + set1->stringsSize + set2->stringsSize, fxCharSetMeasure);
 	txInteger count0 = 0;
 	txInteger* current0 = result->characters + 1;
-	
 	while ((current1 < limit1) && (current2 < limit2)) {
 		txInteger test = *current1 - *current2;
 		txInteger character;
@@ -667,25 +633,171 @@ void* fxCharSetOr(txPatternParser* parser, txCharSet* set1, txCharSet* set2)
 			flag ^= 2;
 			current2++;
 		}
-		if ((flag == 0) || (old == 0)) {
+		if ((flag == op) || (old == op)) {
 			count0++;
 			*current0++ = character;
 		}
 		old = flag;
 	}
-	while (current1 < limit1) {
-		count0++;
-		*current0++ = *current1++;
+	if ((op & 2) == 0) {
+		while (current1 < limit1) {
+			count0++;
+			*current0++ = *current1++;
+		}
 	}
-	while (current2 < limit2) {
-		count0++;
-		*current0++ = *current2++;
+	if ((op & 1) == 0) {
+		while (current2 < limit2) {
+			count0++;
+			*current0++ = *current2++;
+		}
 	}
+	result->stringsSize = 0;
 	result->characters[0] = count0;
+	
+	if (set1->stringsSize) {
+		if (set2->stringsSize) {
+			txInteger size0 = 0;
+			txInteger size1 = set1->stringsSize;
+			txInteger size2 = set2->stringsSize;
+			txString string0 = mxCharSetStrings(result);
+			txString string1 = mxCharSetStrings(set1);
+			txString string2 = mxCharSetStrings(set1);
+			txInteger length1 = c_strlen(string1) + 1;
+			txInteger length2 = c_strlen(string2) + 1;
+			while (length1 || length2) {
+				txInteger copy = 0;
+				txInteger advance = 0;
+				if (length1 > length2) {
+					if (op != mxCharSetIntersectionOp)
+						copy = 1;
+					advance = 1;
+				}
+				else if (length1 < length2) {
+					if (op == mxCharSetUnionOp)
+						copy = 2;
+					advance = 2;
+				}
+				else {
+					txInteger delta = c_strcmp(string1, string2);
+					if (delta > 0) {
+						if (op != mxCharSetIntersectionOp)
+							copy = 1;
+						advance = 1;
+					}
+					else if (delta < 0) {
+						if (op == mxCharSetUnionOp)
+							copy = 2;
+						advance = 2;
+					}
+					else {
+						if (op != mxCharSetSubtractOp)
+							copy = 1;
+						advance = 3;
+					}
+				}
+				if (copy == 1) {
+					c_memcpy(string0, string1, length1);
+					size0 += length1;
+					string0 += length1;
+				}
+				else if (copy == 2) {
+					c_memcpy(string0, string2, length2);
+					size0 += length2;
+					string0 += length2;
+				}
+				if (advance & 1) {
+					size1 -= length1;
+					if (size1 == 0) {
+						string1 = C_NULL;
+						length1 = 0;
+					}
+					else {
+						string1 += length1;
+						length1 = c_strlen(string1) + 1;
+					}
+				}
+				if (advance & 2) {
+					size2 -= length2;
+					if (size2 == 0) {
+						string2 = C_NULL;
+						length2 = 0;
+					}
+					else {
+						string2 += length2;
+						length2 = c_strlen(string2) + 1;
+					}
+				}
+			}
+			result->stringsSize = size0;
+		}
+		else {
+			if (op != mxCharSetIntersectionOp) {
+				c_memcpy(mxCharSetStrings(result), mxCharSetStrings(set1), set1->stringsSize);
+				result->stringsSize = set1->stringsSize;
+			}
+		}
+	}
+	else if (set2->stringsSize) {
+		if (op == mxCharSetUnionOp) {
+			c_memcpy(mxCharSetStrings(result), mxCharSetStrings(set2), set2->stringsSize);
+			result->stringsSize = set2->stringsSize;
+		}
+	}
+}
+
+void* fxCharSetDigits(txPatternParser* parser)
+{
+	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
+	result->stringsSize = 0;
+	result->characters[0] = 2;
+	result->characters[1] = '0';
+	result->characters[2] = '9' + 1;
 	return result;
 }
 
-void* fxCharSetParseEscape(txPatternParser* parser)
+void* fxCharSetEmpty(txPatternParser* parser)
+{
+	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet), fxCharSetMeasure);
+	result->stringsSize = 0;
+	result->characters[0] = 0;
+	return result;
+}
+
+void* fxCharSetNot(txPatternParser* parser, txCharSet* set)
+{
+	if (set->stringsSize == 0) {
+		txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + ((set->characters[0] + 2) * sizeof(txInteger)), fxCharSetMeasure);
+		txInteger* current1 = set->characters + 1;
+		txInteger* limit1 = current1 + set->characters[0];
+		txInteger count0 = 0;
+		txInteger* current0 = result->characters + 1;
+		txInteger character = 0;
+		while (current1 < limit1) {
+			txInteger begin = *current1++;
+			txInteger end = *current1++;
+			if (character < begin) {
+				count0++;
+				*current0++ = character;
+				count0++;
+				*current0++ = begin;
+			}
+			character = end;
+		}
+		if (character < 0x7FFFFFFF) {
+			count0++;
+			*current0++ = character;
+			count0++;
+			*current0++ = 0x7FFFFFFF;
+		}
+		result->stringsSize = 0;
+		result->characters[0] = count0;
+		return result;
+	}
+	fxPatternParserError(parser, gxErrors[mxInvalidPattern]);
+	return C_NULL;
+}
+
+void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator)
 {
 	void* result = NULL;
 	switch(parser->character) {
@@ -724,6 +836,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		result = fxCharSetNot(parser, fxCharSetUnicodeProperty(parser));
 		fxPatternParserNext(parser);
 		break;
+		
 	// control escapes
 	case 'f':
 		result = fxCharSetSingle(parser, '\f');
@@ -745,6 +858,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		result = fxCharSetSingle(parser, '\v');
 		fxPatternParserNext(parser);
 		break;
+		
 	// control letters
 	case 'c': {
 		txInteger value;
@@ -761,8 +875,6 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		if ((parser->character < '0') || ('9' < parser->character))
 			result = fxCharSetSingle(parser, 0);
 	} break;
-
-	
 	case 'x': {
 		txString p = parser->pattern + parser->offset;
 		if (fxParseHexEscape(&p, &parser->character)) {
@@ -775,7 +887,6 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 			fxPatternParserNext(parser);
 		}
 	} break;
-
 	case 'u': {
 		txString p = parser->pattern + parser->offset;
 		if (fxParseUnicodeEscape(&p, &parser->character, (parser->flags & XS_REGEXP_U) ? 1 : 0, (parser->flags & XS_REGEXP_U) ? '\\' : 0)) {
@@ -788,6 +899,7 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 			fxPatternParserNext(parser);
 		}
 	} break;
+	
 	case '^':
 	case '$':
 	case '\\':
@@ -807,7 +919,32 @@ void* fxCharSetParseEscape(txPatternParser* parser)
 		fxPatternParserNext(parser);
 		break;
 	default:
-		if (!(parser->flags & XS_REGEXP_U)) {
+		if (punctuator) {
+			switch(parser->character) {
+			case 'b':
+				result = fxCharSetSingle(parser, '\b');
+				fxPatternParserNext(parser);
+				break;
+			case '&':
+			case '-':
+			case '!':
+			case '#':
+			case '%':
+			case ',':
+			case ':':
+			case ';':
+			case '<':
+			case '=':
+			case '>':
+			case '@':
+			case '`':
+			case '~':
+				result = fxCharSetSingle(parser, parser->character);
+				fxPatternParserNext(parser);
+				break;
+			}
+		}
+		else if (!(parser->flags & XS_REGEXP_U)) {
 			result = fxCharSetSingle(parser, parser->character); // UnicodeIDContinue?
 			fxPatternParserNext(parser);
 		}
@@ -836,7 +973,7 @@ void* fxCharSetParseItem(txPatternParser* parser)
 			result = fxCharSetSingle(parser, '-');
 		}
 		else
-			result = fxCharSetParseEscape(parser);
+			result = fxCharSetParseEscape(parser, 0);
 	}
 	else if (parser->character == ']') {
 		result = fxCharSetEmpty(parser);
@@ -863,7 +1000,7 @@ void* fxCharSetParseList(txPatternParser* parser)
 			fxPatternParserNext(parser);
 			if (parser->character == ']') {
 				result = fxCharSetCanonicalizeSingle(parser, result);
-				result = fxCharSetOr(parser, result, fxCharSetSingle(parser, '-'));
+				result = fxCharSetCombine(parser, result, fxCharSetSingle(parser, '-'), mxCharSetUnionOp);
 			}
 			else {
 				result = fxCharSetRange(parser, result, fxCharSetParseItem(parser));
@@ -872,7 +1009,7 @@ void* fxCharSetParseList(txPatternParser* parser)
 		else
 			result = fxCharSetCanonicalizeSingle(parser, result);
 		if (former)
-			result = fxCharSetOr(parser, former, result);
+			result = fxCharSetCombine(parser, former, result, mxCharSetUnionOp);
 		former = result;
 		if (parser->character == ']')
 			break;
@@ -884,49 +1021,57 @@ void* fxCharSetParseList(txPatternParser* parser)
 
 void* fxCharSetRange(txPatternParser* parser, txCharSet* set1, txCharSet* set2)
 {
-	txCharSet* result;
-	if (set1->characters[0] == 0)
-		return set2;
-	if (set2->characters[0] == 0)
-		return set1;
-	if ((set1->characters[0] != 2) || (set2->characters[0] != 2))
-		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-	if ((set1->characters[1] + 1 != set1->characters[2]) || (set2->characters[1] + 1 != set2->characters[2]))
-		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-	if ((set1->characters[1] > set2->characters[1]))
-		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-	if (parser->flags & XS_REGEXP_I) {
-		txBoolean flag = (parser->flags & XS_REGEXP_U) ? 1 : 0;
-		txInteger begin = set1->characters[1];
-		txInteger end = set2->characters[1];
-		struct {
-			txTermPart;
-			txInteger characters[3];
-		} _set;
-		txCharSet* set = (txCharSet*)&_set;
-		set->next = C_NULL;
-		set->dispatch.code = fxCharSetCode;
-		set->characters[0] = 2;
-		result = fxCharSetEmpty(parser);
-		while (begin <= end) {
-			set->characters[1] = fxCharCaseCanonicalize(begin, flag);
-			set->characters[2] = set->characters[1] + 1;
-			result = fxCharSetOr(parser, result, set);
-			begin++;
+	if ((set1->stringsSize == 0) && (set2->stringsSize == 0)) {
+		txCharSet* result;
+		if (set1->characters[0] == 0)
+			return set2;
+		if (set2->characters[0] == 0)
+			return set1;
+		if ((set1->characters[0] != 2) || (set2->characters[0] != 2))
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+		if ((set1->characters[1] + 1 != set1->characters[2]) || (set2->characters[1] + 1 != set2->characters[2]))
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+		if ((set1->characters[1] > set2->characters[1]))
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+		if (parser->flags & XS_REGEXP_I) {
+			txBoolean flag = (parser->flags & XS_REGEXP_U) ? 1 : 0;
+			txInteger begin = set1->characters[1];
+			txInteger end = set2->characters[1];
+			struct {
+				txTermPart;
+				txInteger;
+				txInteger characters[3];
+			} _set;
+			txCharSet* set = (txCharSet*)&_set;
+			set->next = C_NULL;
+			set->dispatch.code = fxCharSetCode;
+			set->stringSize = 0;
+			set->characters[0] = 2;
+			result = fxCharSetEmpty(parser);
+			while (begin <= end) {
+				set->characters[1] = fxCharCaseCanonicalize(begin, flag);
+				set->characters[2] = set->characters[1] + 1;
+				result = fxCharSetCombine(parser, result, set, mxCharSetUnionOp);
+				begin++;
+			}
 		}
+		else {
+			result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
+			result->stringsSize = 0;
+			result->characters[0] = 2;
+			result->characters[1] = set1->characters[1];
+			result->characters[2] = set2->characters[2];
+		}
+		return result;
 	}
-	else {
-		result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
-		result->characters[0] = 2;
-		result->characters[1] = set1->characters[1];
-		result->characters[2] = set2->characters[2];
-	}
-	return result;
+	fxPatternParserError(parser, gxErrors[mxInvalidPattern]);
+	return C_NULL;
 }
 
 void* fxCharSetSingle(txPatternParser* parser, txInteger character)
 {
 	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (2 * sizeof(txInteger)), fxCharSetMeasure);
+	result->stringsSize = 0;
 	result->characters[0] = 2;
 	result->characters[1] = character;
 	result->characters[2] = character + 1;
@@ -936,6 +1081,7 @@ void* fxCharSetSingle(txPatternParser* parser, txInteger character)
 void* fxCharSetSpaces(txPatternParser* parser)
 {
 	txCharSet* result = fxTermCreate(parser, sizeof(txCharSet) + (20 * sizeof(txInteger)), fxCharSetMeasure);
+	result->stringsSize = 0;
 	result->characters[0] = 20;
 	result->characters[1] = 0x0009;
 	result->characters[2] = 0x000D + 1;
@@ -966,6 +1112,7 @@ void* fxCharSetWords(txPatternParser* parser)
 	if (parser->flags & XS_REGEXP_I) {
 		if (parser->flags & XS_REGEXP_U) {
 			result = fxTermCreate(parser, sizeof(txCharSet) + (6 * sizeof(txInteger)), fxCharSetMeasure);
+			result->stringsSize = 0;
 			result->characters[0] = 6;
 			result->characters[1] = '0';
 			result->characters[2] = '9' + 1;
@@ -976,6 +1123,7 @@ void* fxCharSetWords(txPatternParser* parser)
 		}
 		else {
 			result = fxTermCreate(parser, sizeof(txCharSet) + (6 * sizeof(txInteger)), fxCharSetMeasure);
+			result->stringsSize = 0;
 			result->characters[0] = 6;
 			result->characters[1] = '0';
 			result->characters[2] = '9' + 1;
@@ -987,6 +1135,7 @@ void* fxCharSetWords(txPatternParser* parser)
 	}
 	else {
 		result = fxTermCreate(parser, sizeof(txCharSet) + (8 * sizeof(txInteger)), fxCharSetMeasure);
+		result->stringsSize = 0;
 		result->characters[0] = 8;
 		result->characters[1] = '0';
 		result->characters[2] = '9' + 1;
@@ -1000,6 +1149,90 @@ void* fxCharSetWords(txPatternParser* parser)
 	return result;
 }
 
+void* fxClassSetParseList(txPatternParser* parser)
+{
+	txBoolean not = 0;
+	void* former = NULL;
+	void* result = NULL;
+	if (parser->character == '^') {
+		fxPatternParserNext(parser);
+		not = 1;
+	}
+	while (parser->character != C_EOF) {
+		result = fxClassSetParseItem(parser);
+		if (parser->character == '-') {
+			fxPatternParserNext(parser);
+			if (parser->character == '-') {
+				
+			}
+			else {
+			
+				result = fxCharSetRange(parser, result, fxClassSetParseItem(parser));
+			}
+		}
+		else if (parser->character == '&') {
+			
+		
+		}
+		else {
+			result = fxCharSetCanonicalizeSingle(parser, result);
+		}
+		if (former) {
+			if (mode
+		
+			result = fxCharSetCombine(parser, former, result, mxCharSetUnionOp);
+			
+		}
+		former = result;
+		if (parser->character == ']')
+			break;
+	}
+}
+
+void* fxClassSetOperand(txPatternParser* parser)
+{
+	if (parser->character == '[') {
+		fxPatternParserNext(parser);
+		result = fxNestedClassSet(parser);
+	}
+	else if (parser->character == '\\') {
+		fxPatternParserNext(parser);
+		if (parser->character == 'q') {
+			fxPatternParserNext(parser);
+			result = fxClassStringDisjunction(parser);
+		}
+		else if (parser->character == 'b') {
+			fxPatternParserNext(parser);
+			result = fxCharSetSingle(parser, 8);
+		}
+		else
+			result = fxCharSetParseEscape(parser, 1);
+	}
+	return result;
+}
+
+void* fxClassSetCharacter(txPatternParser* parser)
+{
+	if (parser->character == '\\') {
+		fxPatternParserNext(parser);
+		if (parser->character == 'b') {
+			fxPatternParserNext(parser);
+			result = fxCharSetSingle(parser, 8);
+		}
+		else
+			result = fxCharSetParseEscape(parser, 1);
+	}
+	else if (fxIsClassSetReservedPunctuator(parser->character)) {
+		txInteger former = parser->character;
+		fxPatternParserNext(parser);
+		if (former == parser->character) {
+			fxPatternParserError(parser, gxErrors[mxInvalidEscape]);
+		}
+		else {
+			result = fxCharSetSingle(parser, former);
+		}
+	}
+}
 
 void* fxDisjunctionParse(txPatternParser* parser, txInteger character)
 {
@@ -1162,7 +1395,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 			else {
-				current = fxCharSetCanonicalizeSingle(parser, fxCharSetParseEscape(parser));
+				current = fxCharSetCanonicalizeSingle(parser, fxCharSetParseEscape(parser, 0));
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 		}
