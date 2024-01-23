@@ -459,13 +459,16 @@ mxExport txString fxUTF8Encode(txString string, txInteger character);
 mxExport txSize fxUTF8Length(txInteger character);
 
 #if mxCESU8
+mxExport int fxCESU8Compare(txString p1, txString p2);
 mxExport txString fxCESU8Decode(txString string, txInteger* character);
 mxExport txString fxCESU8Encode(txString string, txInteger character);
 mxExport txSize fxCESU8Length(txInteger character);
+#define mxStringUnicodeCompare fxCESU8Compare
 #define mxStringByteDecode fxCESU8Decode
 #define mxStringByteEncode fxCESU8Encode
 #define mxStringByteLength fxCESU8Length
 #else
+#define mxStringUnicodeCompare fxUTF8Compare
 #define mxStringByteDecode fxUTF8Decode
 #define mxStringByteEncode fxUTF8Encode
 #define mxStringByteLength fxUTF8Length

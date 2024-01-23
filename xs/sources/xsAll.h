@@ -1899,6 +1899,7 @@ mxExport void fx_harden(txMachine* the);
 mxExport void fx_lockdown(txMachine* the);
 mxExport void fx_petrify(txMachine* the);
 mxExport void fx_mutabilities(txMachine* the);
+mxExport void fx_unicodeCompare(txMachine* the);
 #endif
 
 /* xsProfile.c */
