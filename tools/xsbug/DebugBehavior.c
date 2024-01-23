@@ -151,7 +151,9 @@ static void PiuDebugMachineDisconnect(PiuDebugMachine self);
 static void PiuDebugMachineMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength);
 static void PiuDebugMachineParseAttribute(PiuDebugMachine self, char* theName, char* theValue);
-static void PiuDebugMachineParseData(PiuDebugMachine self, char* theData);
+static void PiuDebugMachineParseDataBegin(PiuDebugMachine self);
+static void PiuDebugMachineParseDataContinue(PiuDebugMachine self);
+static void PiuDebugMachineParseDataEnd(PiuDebugMachine self);
 static void PiuDebugMachineParseProcessingInstruction(PiuDebugMachine self, char* theName);
 static void PiuDebugMachineParseString(PiuDebugMachine self, char* theString);
 static void PiuDebugMachineParseTag(PiuDebugMachine self, char* theName);
@@ -795,8 +797,7 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 		case XS_DATA_STATE:
 			if (c == '<') {
 				self->data[self->dataIndex] = 0;
-				PiuDebugMachineParseString(self, self->data);
-				PiuDebugMachineParseData(self, self->data);
+				PiuDebugMachineParseDataEnd(self);
 				self->dataIndex = 0;
 				self->state = XS_TAG_STATE;
 			}
@@ -807,8 +808,7 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 			else {
 				if (self->dataIndex == XS_BUFFER_COUNT) {
 					self->data[self->dataIndex] = 0;
-					PiuDebugMachineParseString(self, self->data);
-					PiuDebugMachineParseData(self, self->data);
+					PiuDebugMachineParseDataContinue(self);
 					self->dataIndex = 0;
 				}
 				self->data[self->dataIndex] = c;
@@ -856,6 +856,7 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 				PiuDebugMachineParseTag(self, self->tag);
 				self->state = XS_DATA_STATE;
 				self->dataIndex = 0;
+				PiuDebugMachineParseDataBegin(self);
 			}
 			else if (!mxIsSpace(c))
 				self->state = XS_ERROR_STATE;
@@ -978,7 +979,7 @@ void PiuDebugMachineParse(PiuDebugMachine self, char* theString, int theLength)
 			else if (c == ';') {
 				if (self->dataIndex == XS_BUFFER_COUNT) {
 					self->data[self->dataIndex] = 0;
-					PiuDebugMachineParseData(self, self->data);
+					PiuDebugMachineParseDataContinue(self);
 					self->dataIndex = 0;
 				}
 				self->data[self->dataIndex] = (char)self->entityNumber;
@@ -1057,12 +1058,32 @@ void PiuDebugMachineParseAttribute(PiuDebugMachine self, char* theName, char* th
 		xsDefine(self->itemSlot, xsID_value, xsString(theValue), xsDefault);
 }
 
-void PiuDebugMachineParseData(PiuDebugMachine self, char* theData)
+void PiuDebugMachineParseDataBegin(PiuDebugMachine self)
+{	
+	xsMachine* the = self->the;
+	if (self->logging) {
+		xsResult = xsString("");
+		xsSet(self->listSlot, xsID_data, xsResult);
+	}
+}
+
+void PiuDebugMachineParseDataContinue(PiuDebugMachine self)
 {	
 	xsMachine* the = self->the;
 	if (self->logging) {
 		xsResult = xsGet(self->listSlot, xsID_data);
-		xsResult = xsCall1(xsResult, xsID_concat, xsString(theData));
+		fxConcatStringC(the, mxResult, self->data);
+		xsSet(self->listSlot, xsID_data, xsResult);
+	}
+}
+
+void PiuDebugMachineParseDataEnd(PiuDebugMachine self)
+{	
+	xsMachine* the = self->the;
+	if (self->logging) {
+		xsResult = xsGet(self->listSlot, xsID_data);
+		fxConcatStringC(the, mxResult, self->data);
+		PiuDebugMachineParseString(self, xsToString(xsResult));
 		xsSet(self->listSlot, xsID_data, xsResult);
 	}
 }
@@ -1141,8 +1162,7 @@ void PiuDebugMachineParseString(PiuDebugMachine self, char* theString)
 				c = (c << 6) | (*q++ & 0x3F);
 			}
 			c &= sequence->lmask;
-// 			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
-			if ((0x00000000 < c) && (c < 0x00110000))
+			if (((0x00000000 < c) && (c < 0x0000D800)) || ((0x0000DFFF < c) && (c < 0x00110000)))
 				p = q;
 			else {
 				while (p < q)
