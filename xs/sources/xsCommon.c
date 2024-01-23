@@ -1066,8 +1066,8 @@ int fxCESU8Compare(txString p1, txString p2)
 		if (c1 < c2) return -1;
 		if (c1 > c2) return 1;
 	}
-	if (*p1 < *p2) return -1;
-	if (*p1 > *p2) return 1;
+	if (*p1) return 1;
+	if (*p2) return -1;
 	return 0;
 }
 
