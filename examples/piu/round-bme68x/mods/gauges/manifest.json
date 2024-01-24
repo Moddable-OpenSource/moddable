@@ -1,0 +1,19 @@
+{
+	"modules": {
+		"*": "./*"
+	},
+	"resources":{
+		"*-mask": [
+			{
+				"source": "../../fonts/FiraSansCondensed-Regular",
+				"size": 24,
+				"characters": "°C%hPaBAROHYGROTHERMO"
+			},
+			{
+				"source": "../../fonts/FiraSansCondensed-Bold",
+				"size": 32,
+				"characters": "-0123456789"
+			}
+		]
+	}
+}

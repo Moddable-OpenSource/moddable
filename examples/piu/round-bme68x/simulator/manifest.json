@@ -1,0 +1,19 @@
+{
+	"include": [
+		"$(MODULES)/base/structuredClone/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(BUILD_SIMULATOR)/modules/control",
+			"$(BUILD_SIMULATOR)/modules/button",
+			"./modules/host"
+		],
+		"embedded:sensor/Barometer-Humidity-Temperature/BME68x": "./modules/bme68x"
+	},
+	"preload": [
+		"control",
+		"button",
+		"host",
+		"embedded:sensor/Barometer-Humidity-Temperature/BME68x"
+	]
+}
