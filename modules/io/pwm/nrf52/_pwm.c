@@ -173,6 +173,25 @@ static nrf_pwm_clk_t freq2nrfFreq(int freq)
 	return NRF_PWM_CLK_16MHz;		// 16777216
 }
 
+static int nrfFreq2Freq(nrf_pwm_clk_t clk)
+{
+	if (clk == NRF_PWM_CLK_125kHz)
+		return 125000;
+	if (clk == NRF_PWM_CLK_250kHz)
+		return 250000;
+	if (clk == NRF_PWM_CLK_500kHz)
+		return 500000;
+	if (clk == NRF_PWM_CLK_1MHz)
+		return 1000000;
+	if (clk == NRF_PWM_CLK_2MHz)
+		return 2000000;
+	if (clk == NRF_PWM_CLK_4MHz)
+		return 4000000;
+	if (clk == NRF_PWM_CLK_8MHz)
+		return 8000000;
+	return -1;
+}
+
 void xs_pwm_constructor_(xsMachine *the)
 {
 	PWM pwm = NULL;
@@ -240,7 +259,7 @@ void xs_pwm_constructor_(xsMachine *the)
 				port = i;
 				break;
 			}
-			if (0xf == gPWMChannels[i])		// no used channels, free to config
+			if (0xf == gPWMChannels[i])			// no used channels, free to config
 				freePort = i;
 		}
 	}
@@ -368,7 +387,7 @@ void xs_pwm_get_hz_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
 
-	xsmcSetInteger(xsResult, gPWMPorts[pwm->port].hz);
+	xsmcSetInteger(xsResult, nrfFreq2Freq(gPWMPorts[pwm->port].nrfHz));
 }
 
 void xs_pwm_get_resolution_(xsMachine *the)
