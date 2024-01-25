@@ -1,0 +1,18 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"./manifest_fetch.json"
+	],
+	"creation": {
+		"stack": 1024
+	},
+	"modules": {
+		"*": "./main"
+	},
+	"data": { 
+		"*": [
+			"$(MODULES)/crypt/data/ca222"
+		]
+	}
+}
