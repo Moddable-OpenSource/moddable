@@ -144,7 +144,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 		if (isLeapYear(gTM.tm_year))
 			daysInYear += 1;
 
-		if ((days + daysInYear) >= t)
+		if ((days + daysInYear) > t)
 			break;
 		gTM.tm_year += 1;
 		days += daysInYear;
