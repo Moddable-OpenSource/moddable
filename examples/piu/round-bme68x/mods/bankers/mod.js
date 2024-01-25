@@ -301,7 +301,7 @@ class ForeCenterBehavior extends Behavior {
 
 
 const BarometerContainer = Container.template($ => ({
-	left:0, top:0, width:240, height:240, Behavior:BarometerBehavior,
+	left:0, top:0, width:240, height:240, clip:true, Behavior:BarometerBehavior,
 	contents: [
 		Shape({ a:2*180/7, da:180/7, i:11, j:11}, { left:0, top:0, width:240, height:240, Behavior:DialBehavior, skin:{ fill:LITE, stroke:BLACK } } ),
 		Text($, { left:78, width:20, top:140, style:labelStyle, string:"09\n60" } ),
@@ -320,7 +320,7 @@ const BarometerContainer = Container.template($ => ({
 }));
 
 const HygrometerContainer = Container.template($ => ({
-	left:0, top:0, width:240, height:240, Behavior:HygrometerBehavior,
+	left:0, top:0, width:240, height:240, clip:true, Behavior:HygrometerBehavior,
 	contents: [
 		Shape({ a:90, da:22.5, i:9, j:10}, { left:0, top:0, width:240, height:240, Behavior:DialBehavior, skin:{ fill:LITE, stroke:BLACK } } ),
 		Label($, { left:65, top:112, style:labelStyle, string:"20" } ),
@@ -338,7 +338,7 @@ const HygrometerContainer = Container.template($ => ({
 }));
 
 const ThermometerContainer = Container.template($ => ({
-	left:0, top:0, width:240, height:240, Behavior:ThermometerBehavior,
+	left:0, top:0, width:240, height:240, clip:true, Behavior:ThermometerBehavior,
 	contents: [
 		Shape({ a:90-22.5, da:22.5, i:11, j:11}, { left:0, top:0, width:240, height:240, Behavior:DialBehavior, skin:{ fill:LITE, stroke:BLACK } } ),
 		Label($, { left:72, top:112, style:labelStyle, string:"0" } ),
