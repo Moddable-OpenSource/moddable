@@ -1656,7 +1656,7 @@ void __sanitizer_cov_reset_edgeguards()
 	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
 		*x = ++N;
 }
-#ifndef __linux__
+
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
 {
 	// Avoid duplicate initialization
@@ -1708,7 +1708,7 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
 	__shmem->edges[index / 8] |= 1 << (index % 8);
 	*guard = 0;
 }
-#endif
+
 
 #define REPRL_CRFD 100
 #define REPRL_CWFD 101
