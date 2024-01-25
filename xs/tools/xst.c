@@ -1725,10 +1725,15 @@ void fx_fuzzilli(xsMachine* the)
 				*((volatile char *)0) = 0;
 				break;
  			case 1: {
-				// check ASAN
-				char *data = malloc(64);
-				free(data);
-				data[0]++;
+				// check sanitizer
+				// this code is so buggy its bound to trip
+				// different sanitizers
+				size_t s = -1;
+				txSize txs = s + 1;
+				char buf[2];
+				char* bufptr = &buf;
+				bufptr[4] = (buf[0] == buf[1]) ? 0 : 1;
+				*((volatile char *)0) = 0;
 				} break;
  			case 2:
 				// check assert
