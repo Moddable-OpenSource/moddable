@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -155,22 +155,22 @@ typedef struct PWMRecord *PWM;
 
 static nrf_pwm_clk_t freq2nrfFreq(int freq)
 {
-	if (freq <= 131072)
+	if (freq <= 125000)
 		return NRF_PWM_CLK_125kHz;
-	if (freq <= 262144)
+	if (freq <= 250000)
 		return NRF_PWM_CLK_250kHz;
-	if (freq <= 524288)
+	if (freq <= 500000)
 		return NRF_PWM_CLK_500kHz;
-	if (freq <= 1048576)
+	if (freq <= 1000000)
 		return NRF_PWM_CLK_1MHz;
-	if (freq <= 2097152)
+	if (freq <= 2000000)
 		return NRF_PWM_CLK_2MHz;
-	if (freq <= 4194304)
+	if (freq <= 4000000)
 		return NRF_PWM_CLK_4MHz;
-	if (freq <= 8388608)
+	if (freq <= 8000000)
 		return NRF_PWM_CLK_8MHz;
 
-	return NRF_PWM_CLK_16MHz;		// 16777216
+	return NRF_PWM_CLK_16MHz;
 }
 
 static int nrfFreq2Freq(nrf_pwm_clk_t clk)
@@ -189,6 +189,8 @@ static int nrfFreq2Freq(nrf_pwm_clk_t clk)
 		return 4000000;
 	if (clk == NRF_PWM_CLK_8MHz)
 		return 8000000;
+	if (clk == NRF_PWM_CLK_16MHz)
+		return 16000000;
 	return -1;
 }
 
@@ -198,6 +200,7 @@ void xs_pwm_constructor_(xsMachine *the)
 	int pin;
 	int hz = 125000, nrfHz = -1;
 	int resolution = 10;
+	int top_value = -1;
 	int8_t i, port = -1, freePort = -1;
 	int channel = -1, duty = 0;
 
@@ -248,16 +251,28 @@ void xs_pwm_constructor_(xsMachine *the)
 			xsRangeError("invalid resolution");
     }
 
+	if (xsmcHas(xsArg(0), xsID_top_value)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_top_value);
+		top_value = xsmcToInteger(xsVar(0));
+	}
+
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
 	if (-1 == port) {
 		for (i = 0; i<MOD_PWM_PORTS; i++) {
-			if ( (resolution == gPWMPorts[i].resolution)
+//			if ( ((-1 != top_value) && (pwmPortConfig[i].top_value == top_value))
+			if ((resolution == gPWMPorts[i].resolution)
 				&& (freq2nrfFreq(hz) == gPWMPorts[i].nrfHz)
 				&& gPWMChannels[i]) {
-				port = i;
-				break;
+				if (-1 == top_value) {
+					port = i;
+					break;
+				}
+				else if (pwmPortConfig[i].top_value == top_value) {
+					port = i;
+					break;
+				}
 			}
 			if (0xf == gPWMChannels[i])			// no used channels, free to config
 				freePort = i;
@@ -280,7 +295,10 @@ void xs_pwm_constructor_(xsMachine *the)
 	}
 
 	pwmPortConfig[port].output_pins[channel] = pin;
-	pwmPortConfig[port].top_value = (1 << resolution) - 1;
+	if (-1 != top_value)
+		pwmPortConfig[port].top_value = top_value;
+	else
+		pwmPortConfig[port].top_value = (1 << resolution) - 1;
 
 	pwmPortConfig[port].base_clock = nrfHz;			// need to map the value the change
 
@@ -358,10 +376,12 @@ void xs_pwm_write_(xsMachine *the)
 {
 	PWM pwm = xsmcGetHostDataValidate(xsThis, xs_pwm_destructor_);
 	int max = (1 << gPWMPorts[pwm->port].resolution) - 1;
-	int value = xsmcToInteger(xsArg(0));
+	float value = xsmcToInteger(xsArg(0));
 	nrf_pwm_values_individual_t *values;
 
-	if ((value < 0) || (value > max))
+	value = value * ((float)pwmPortConfig[pwm->port].top_value / (float)(1 << gPWMPorts[pwm->port].resolution));
+
+	if ((value < 0) || (value > pwmPortConfig[pwm->port].top_value))
 		xsRangeError("invalid value");
 
 	pwm->duty = value;
