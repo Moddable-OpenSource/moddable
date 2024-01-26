@@ -394,7 +394,9 @@
 #ifndef c_atanh
 	#define c_atanh atanh
 #endif
+#ifndef c_atan2
 	#define c_atan2 atan2
+#endif
 #ifndef c_cbrt
 	#define c_cbrt cbrt
 #endif
@@ -410,7 +412,9 @@
 #ifndef c_exp
 	#define c_exp exp
 #endif
+#ifndef c_expm1
 	#define c_expm1 expm1
+#endif
 #ifndef c_fabs
 	#define c_fabs fabs
 #endif
