@@ -1,7 +1,8 @@
 {
 	"build": {
 		"USE_USB": "0",
-		"FTDI_TRACE": "-DUSE_FTDI_TRACE=0"
+		"FTDI_TRACE": "-DUSE_FTDI_TRACE=0",
+		"NRF52_CUSTOM_PWM_FREQ": "1"
 	},
 	"include": [
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",

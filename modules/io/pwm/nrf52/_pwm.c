@@ -27,6 +27,10 @@
 
 #include "nrf_drv_pwm.h"
 
+#ifndef NRF52_CUSTOM_PWM_FREQ
+#define NRF52_CUSTOM_PWM_FREQ	0
+#endif
+
 #define NRF52_PWM_RESOLUTION_MAX 15
 
 #define MOD_PWM_PORTS	4
@@ -200,7 +204,6 @@ void xs_pwm_constructor_(xsMachine *the)
 	int pin;
 	int hz = 125000, nrfHz = -1;
 	int resolution = 10;
-	int top_value = -1;
 	int8_t i, port = -1, freePort = -1;
 	int channel = -1, duty = 0;
 
@@ -251,20 +254,23 @@ void xs_pwm_constructor_(xsMachine *the)
 			xsRangeError("invalid resolution");
     }
 
+#if NRF52_CUSTOM_PWM_FREQ
+	int top_value = -1;
 	if (xsmcHas(xsArg(0), xsID_top_value)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_top_value);
 		top_value = xsmcToInteger(xsVar(0));
 	}
+#endif
 
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
 	if (-1 == port) {
 		for (i = 0; i<MOD_PWM_PORTS; i++) {
-//			if ( ((-1 != top_value) && (pwmPortConfig[i].top_value == top_value))
 			if ((resolution == gPWMPorts[i].resolution)
 				&& (freq2nrfFreq(hz) == gPWMPorts[i].nrfHz)
 				&& gPWMChannels[i]) {
+#if NRF52_CUSTOM_PWM_FREQ
 				if (-1 == top_value) {
 					port = i;
 					break;
@@ -273,6 +279,10 @@ void xs_pwm_constructor_(xsMachine *the)
 					port = i;
 					break;
 				}
+#else
+				port = i;
+				break;
+#endif
 			}
 			if (0xf == gPWMChannels[i])			// no used channels, free to config
 				freePort = i;
@@ -295,9 +305,11 @@ void xs_pwm_constructor_(xsMachine *the)
 	}
 
 	pwmPortConfig[port].output_pins[channel] = pin;
+#if NRF52_CUSTOM_PWM_FREQ
 	if (-1 != top_value)
 		pwmPortConfig[port].top_value = top_value;
 	else
+#endif
 		pwmPortConfig[port].top_value = (1 << resolution) - 1;
 
 	pwmPortConfig[port].base_clock = nrfHz;			// need to map the value the change

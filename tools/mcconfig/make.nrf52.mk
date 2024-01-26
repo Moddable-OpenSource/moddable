@@ -731,6 +731,10 @@ ifeq ($(USE_WDT),1)
 endif
 endif
 
+ifeq ($(NRF52_CUSTOM_PWM_FREQ),1)
+	C_DEFINES += -DNRF52_CUSTOM_PWM_FREQ=1
+endif
+
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
