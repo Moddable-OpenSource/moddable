@@ -4328,13 +4328,12 @@ void fxStringNodeCode(void* it, void* param)
 void fxSuperNodeCode(void* it, void* param)
 {
 	txSuperNode* self = it;
-	txCoder* coder = param;
 	fxCoderAddByte(param, 3, XS_CODE_SUPER);
 	fxNodeDispatchCode(self->params, param);
 	fxCoderAddByte(param, 0, XS_CODE_SET_THIS);
-	if (coder->classNode->instanceInitAccess) {
+	if (self->instanceInitAccess) {
 		fxCoderAddByte(param, 1, XS_CODE_GET_THIS);
-		fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, coder->classNode->instanceInitAccess->declaration->index);
+		fxCoderAddIndex(param, 1, XS_CODE_GET_CLOSURE_1, self->instanceInitAccess->declaration->index);
 		fxCoderAddByte(param, 1, XS_CODE_CALL);
 		fxCoderAddInteger(param, -2, XS_CODE_RUN_1, 0);
 		fxCoderAddByte(param, -1, XS_CODE_POP);
