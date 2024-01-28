@@ -154,7 +154,7 @@ async function* listen(options) {
 					_connection_.accept({
 						onRequest(_request_) {
 							const { method, path, headers } = _request_;
-							const request = new Request(new URL(path, base), { method, path, headers, requestPromise });
+							const request = new Request(new URL(path, base), { method, path, headers, body:requestPromise });
 							const connection = {
 								close() {
 									_connection_.close();
