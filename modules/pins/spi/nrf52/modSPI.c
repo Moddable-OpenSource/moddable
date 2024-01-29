@@ -140,7 +140,7 @@ void modSPIInit(modSPIConfiguration config)
 {
 	int ret;
 
-	if (!gSPIInited) {
+	if (!gSPIInited++) {
 		config->spi_config.sck_pin = (254 == config->clock_pin) ? MODDEF_SPI_SCK_PIN : ((255 == config->clock_pin) ? NRFX_SPIM_PIN_NOT_USED : config->clock_pin);
 		config->spi_config.mosi_pin = (254 == config->mosi_pin) ? MODDEF_SPI_MOSI_PIN : ((255 == config->mosi_pin) ? NRFX_SPIM_PIN_NOT_USED : config->mosi_pin);
 		config->spi_config.miso_pin = (254 == config->miso_pin) ?  MODDEF_SPI_MISO_PIN : ((255 == config->miso_pin) ? NRFX_SPIM_PIN_NOT_USED : config->miso_pin);
@@ -223,8 +223,6 @@ void modSPIInit(modSPIConfiguration config)
 		config->transfer[1].tx_length = 0;
 		config->transfer[1].p_rx_buffer = (uint8_t*)gSPIRxBuffer;
 		config->transfer[1].rx_length = 0;
-
-		gSPIInited = true;
 	}
 
 	if (NULL == gConfig) {
@@ -245,12 +243,16 @@ void modSPIUninit(modSPIConfiguration config)
 		modSPIActivateConfiguration(NULL);
 
 //@@ should only be done on last SPI client closing
-	nrfx_spim_uninit(&gSPI);
-	if (gSPITxBuffer) {
-		c_free(gSPITxBuffer);
-		gSPITxBuffer = gSPIRxBuffer = NULL;
+	if (0 == --gSPIInited) {
+		nrfx_spim_uninit(&gSPI);
+		nrf_gpio_cfg_default(config->clock_pin);	// set SPI pins to default config
+		nrf_gpio_cfg_default(config->mosi_pin);
+		nrf_gpio_cfg_default(config->miso_pin);
+		if (gSPITxBuffer) {
+			c_free(gSPITxBuffer);
+			gSPITxBuffer = gSPIRxBuffer = NULL;
+		}
 	}
-	gSPIInited = false;
 }
 
 void modSPIActivateConfiguration(modSPIConfiguration config)

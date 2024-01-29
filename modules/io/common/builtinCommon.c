@@ -51,6 +51,7 @@
 		(1 << 16)
 	};
 #elif nrf52
+	#include "nrf_drv_gpiote.h"
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		0xFFFFFFFF,
 		0x0000FFFF
@@ -85,8 +86,16 @@ uint8_t builtinUsePins(uint32_t bank, uint32_t pins)
 
 void builtinFreePins(uint32_t bank, uint32_t pins)
 {
-	if (bank < kPinBanks)
+	if (bank < kPinBanks) {
+#if nrf52
+		int i;
+		for (i=0; i<32; i++) {
+			if (pins & (1 << i))
+				nrf_gpio_cfg_default((bank * 32) + i);
+		}
+#endif
 		gDigitalAvailable[bank] |= pins;
+	}
 }
 #endif /* kPinBanks */
 
