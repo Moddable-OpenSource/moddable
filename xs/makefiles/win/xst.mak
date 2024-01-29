@@ -60,10 +60,13 @@ C_OPTIONS = \
 	/D mxRegExpUnicodePropertyEscapes=1 \
 	/D mxStringNormalize=1 \
 	/D mxMinusZero=1 \
+	/D _IEEE_LIBM=1 \
+	/D __LITTLE_ENDIAN=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \
 	/I$(TLS_DIR) \
+	/I$(TLS_DIR)\fdlibm \
 	/I$(TLS_DIR)\yaml \
 	/nologo \
 	/MP
@@ -147,7 +150,36 @@ OBJECTS = \
 	$(TMP_DIR)\textdecoder.obj \
 	$(TMP_DIR)\textencoder.obj \
 	$(TMP_DIR)\modBase64.obj \
-	$(TMP_DIR)\xst.obj
+	$(TMP_DIR)\xst.obj \
+	$(TMP_DIR)\e_acos.obj \
+	$(TMP_DIR)\e_acosh.obj \
+	$(TMP_DIR)\e_asin.obj \
+	$(TMP_DIR)\e_atan2.obj \
+	$(TMP_DIR)\e_atanh.obj \
+	$(TMP_DIR)\e_cosh.obj \
+	$(TMP_DIR)\e_exp.obj \
+	$(TMP_DIR)\e_fmod.obj \
+	$(TMP_DIR)\e_hypot.obj \
+	$(TMP_DIR)\e_log.obj \
+	$(TMP_DIR)\e_log10.obj \
+	$(TMP_DIR)\e_pow.obj \
+	$(TMP_DIR)\e_rem_pio2.obj \
+	$(TMP_DIR)\e_sinh.obj \
+	$(TMP_DIR)\k_cos.obj \
+	$(TMP_DIR)\k_rem_pio2.obj \
+	$(TMP_DIR)\k_sin.obj \
+	$(TMP_DIR)\k_tan.obj \
+	$(TMP_DIR)\s_asinh.obj \
+	$(TMP_DIR)\s_atan.obj \
+	$(TMP_DIR)\s_cos.obj \
+	$(TMP_DIR)\s_expm1.obj \
+	$(TMP_DIR)\s_ilogb.obj \
+	$(TMP_DIR)\s_log1p.obj \
+	$(TMP_DIR)\s_logb.obj \
+	$(TMP_DIR)\s_scalbn.obj \
+	$(TMP_DIR)\s_sin.obj \
+	$(TMP_DIR)\s_tan.obj \
+	$(TMP_DIR)\s_tanh.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 
@@ -175,6 +207,9 @@ $(OBJECTS) : $(SRC_DIR)\xsScript.h
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
 {$(TLS_DIR)\}.c{$(TMP_DIR)\}.obj::
+	cd $(TMP_DIR)
+	cl $< $(C_OPTIONS)
+{$(TLS_DIR)\fdlibm\}.c{$(TMP_DIR)\}.obj::
 	cd $(TMP_DIR)
 	cl $< $(C_OPTIONS)
 {$(TLS_DIR)\yaml\}.c{$(TMP_DIR)\}.obj::

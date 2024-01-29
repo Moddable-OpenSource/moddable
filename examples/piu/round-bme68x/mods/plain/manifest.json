@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"*": "./*"
+	},
+	"resources":{
+		"*-mask": [
+			{
+				"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Semibold",
+				"size": 40,
+				"characters": " -0123456789.°C%RHhPa"
+			}
+		]
+	}
+}

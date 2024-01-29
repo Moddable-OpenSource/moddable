@@ -68,11 +68,14 @@ C_OPTIONS = \
 	-DmxRegExpUnicodePropertyEscapes=1 \
 	-DmxStringNormalize=1 \
 	-DmxMinusZero=1 \
+	-D_IEEE_LIBM \
+	-D__LITTLE_ENDIAN \
 	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
 	-I$(SRC_DIR) \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
+	-I$(TLS_DIR)/fdlibm \
 	-I$(TMP_DIR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
@@ -169,9 +172,38 @@ OBJECTS = \
 	$(TMP_DIR)/textdecoder.o \
 	$(TMP_DIR)/textencoder.o \
 	$(TMP_DIR)/modBase64.o \
-	$(TMP_DIR)/xst.o
+	$(TMP_DIR)/xst.o \
+	$(TMP_DIR)/e_acos.o \
+	$(TMP_DIR)/e_acosh.o \
+	$(TMP_DIR)/e_asin.o \
+	$(TMP_DIR)/e_atan2.o \
+	$(TMP_DIR)/e_atanh.o \
+	$(TMP_DIR)/e_cosh.o \
+	$(TMP_DIR)/e_exp.o \
+	$(TMP_DIR)/e_fmod.o \
+	$(TMP_DIR)/e_hypot.o \
+	$(TMP_DIR)/e_log.o \
+	$(TMP_DIR)/e_log10.o \
+	$(TMP_DIR)/e_pow.o \
+	$(TMP_DIR)/e_rem_pio2.o \
+	$(TMP_DIR)/e_sinh.o \
+	$(TMP_DIR)/k_cos.o \
+	$(TMP_DIR)/k_rem_pio2.o \
+	$(TMP_DIR)/k_sin.o \
+	$(TMP_DIR)/k_tan.o \
+	$(TMP_DIR)/s_asinh.o \
+	$(TMP_DIR)/s_atan.o \
+	$(TMP_DIR)/s_cos.o \
+	$(TMP_DIR)/s_expm1.o \
+	$(TMP_DIR)/s_ilogb.o \
+	$(TMP_DIR)/s_log1p.o \
+	$(TMP_DIR)/s_logb.o \
+	$(TMP_DIR)/s_scalbn.o \
+	$(TMP_DIR)/s_sin.o \
+	$(TMP_DIR)/s_tan.o \
+	$(TMP_DIR)/s_tanh.o
 
-VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/yaml
+VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/fdlibm $(TLS_DIR)/yaml
 VPATH += $(MODDABLE)/modules/data/text/decoder
 VPATH += $(MODDABLE)/modules/data/text/encoder
 VPATH += $(MODDABLE)/modules/data/base64

@@ -2636,7 +2636,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						#endif
 						sequel = *pointer;
 						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
-							firstState = fxPopStates(the, firstState, firstState->nextState);
+                            if (firstState)
+                                firstState = fxPopStates(the, firstState, firstState->nextState);
 							step = sequel;
 							mxBreak;
 						}

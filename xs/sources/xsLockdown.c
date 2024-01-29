@@ -925,3 +925,31 @@ void fxVerifyQueue(txMachine* the, txSlot* list, txSlot* path, txSlot* instance,
 	}
 	name->next = path;
 }
+
+void fx_unicodeCompare(txMachine* the)
+{
+	txString aString;
+	txString bString;
+
+	if (mxArgc < 1)
+		aString = "undefined";
+	else
+		aString = fxToString(the, mxArgv(0));
+	if (mxArgc < 2)
+		bString = "undefined";
+	else
+		bString = fxToString(the, mxArgv(1));
+#ifdef mxMetering
+	{
+		txSize aLength = fxUnicodeLength(aString);
+		txSize bLength = fxUnicodeLength(bString);
+		if (aLength < bLength)
+			the->meterIndex += aLength;
+		else
+			the->meterIndex += bLength;
+	}
+#endif	
+	mxResult->value.integer = mxStringUnicodeCompare(aString, bString);
+	mxResult->kind = XS_INTEGER_KIND;
+}
+

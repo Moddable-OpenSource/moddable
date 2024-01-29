@@ -58,6 +58,16 @@ const device = {
 			transmit: 30
 		}
 	},
+	SPI: {
+		default: {
+			io: SPI,
+			hz: 2000000,
+			clock: 46,
+			in: 47,
+			out: 2,
+			port: 3
+		}
+	},
 	io: {Analog, Digital, DigitalBank, I2C, PWM, PulseCount, Serial, SMBus, SPI},
 	pin: {
 		button: 13,

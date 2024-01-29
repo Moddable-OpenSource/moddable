@@ -69,6 +69,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <fdlibm.h>
+
 #if mxWindows
 	#include <winsock2.h>
 	typedef SOCKET txSocket;

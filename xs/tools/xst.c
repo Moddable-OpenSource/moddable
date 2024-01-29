@@ -611,6 +611,8 @@ void fxBuildAgent(xsMachine* the)
 	
 	slot = fxNextHostFunctionProperty(the, slot, fx_harden, 1, xsID("harden"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_lockdown, 0, xsID("lockdown"), XS_DONT_ENUM_FLAG);
+	
+	slot = fxNextHostFunctionProperty(the, slot, fx_unicodeCompare, 2, xsID("unicodeCompare"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();

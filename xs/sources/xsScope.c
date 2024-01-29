@@ -1284,7 +1284,8 @@ void fxSuperNodeBind(void* it, void* param)
 	fxScopeArrow(binder->scope);
 	fxNodeDispatchBind(self->params, param);
 	if (binder->classNode->instanceInitAccess) {
-		fxScopeLookup(binder->scope, binder->classNode->instanceInitAccess, 0);
+		self->instanceInitAccess = fxAccessNodeNew(binder->parser, XS_TOKEN_ACCESS, binder->classNode->instanceInitAccess->symbol);
+		fxScopeLookup(binder->scope, self->instanceInitAccess, 0);
 	}
 }
 

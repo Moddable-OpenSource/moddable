@@ -65,10 +65,10 @@ static modSPIBufferLoader gSPIBufferLoader;
 //static uint16_t *gCLUT16;		//@@ unused
 
 
-uint32_t *gSPITxBuffer;
-uint32_t *gSPIRxBuffer;
+uint32_t *gSPITxBuffer = NULL;
+uint32_t *gSPIRxBuffer = NULL;
 
-static uint8_t gSPIInited;
+static uint8_t gSPIInited = 0;
 
 static const nrfx_spim_t gSPI = NRFX_SPIM_INSTANCE(MODDEF_SPI_INTERFACE);
 
@@ -246,6 +246,10 @@ void modSPIUninit(modSPIConfiguration config)
 
 //@@ should only be done on last SPI client closing
 	nrfx_spim_uninit(&gSPI);
+	if (gSPITxBuffer) {
+		c_free(gSPITxBuffer);
+		gSPITxBuffer = gSPIRxBuffer = NULL;
+	}
 	gSPIInited = false;
 }
 

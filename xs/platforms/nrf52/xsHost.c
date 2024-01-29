@@ -144,7 +144,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 		if (isLeapYear(gTM.tm_year))
 			daysInYear += 1;
 
-		if ((days + daysInYear) >= t)
+		if ((days + daysInYear) > t)
 			break;
 		gTM.tm_year += 1;
 		days += daysInYear;
@@ -578,9 +578,6 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 		result = (void *)kModulesStart;
 		fxSetArchive(the, result);
 	}
-
-	modLog("mods start at ");
-	modLogHex(kModulesStart);
 
 	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart))) {
 		*status = *(8 + (uint8_t *)kModulesStart);

@@ -1056,6 +1056,21 @@ txSize fxUTF8Length(txInteger character)
 }
 
 #if mxCESU8
+
+int fxCESU8Compare(txString p1, txString p2)
+{
+	txInteger c1, c2;
+	while (*p1 && *p2) {
+		p1 = fxCESU8Decode(p1, &c1);
+		p2 = fxCESU8Decode(p2, &c2);
+		if (c1 < c2) return -1;
+		if (c1 > c2) return 1;
+	}
+	if (*p1) return 1;
+	if (*p2) return -1;
+	return 0;
+}
+
 txString fxCESU8Decode(txString string, txInteger* character)
 {
 	txInteger result;

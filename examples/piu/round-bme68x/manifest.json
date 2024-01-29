@@ -1,0 +1,77 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"preload": [
+	],
+	"resources":{
+		"*-alpha": [
+			"./main",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
+		]
+	},
+	"defines": {
+		"XS_MODS": 1
+	},
+	"strip": [
+		"Atomics",
+		"BigInt",
+		"eval",
+		"Function",
+		"Generator",
+		"Promise",
+		"Proxy",
+		"Reflect",
+		"RegExp",
+		"Set",
+		"SharedArrayBuffer",
+		"WeakMap",
+		"WeakSet"
+ 	 ],
+	"platforms": {
+		"esp32": {
+			"include": [
+				"$(MODDABLE)/modules/io/manifest.json",
+				"$(MODDABLE)/modules/drivers/sensors/bme68x/manifest.json"
+			],
+			"creation": {
+				"static": 0,
+				"chunk": {
+					"initial": 65536,
+					"incremental": 0
+				},
+				"heap": {
+					"initial": 4096,
+					"incremental": 0
+				},
+				"keys": {
+					"available": 128
+				},
+				"stack": 600
+			}
+		},
+		"mac": {
+			"build": {
+				"SIMULATORS": "./simulator"
+			},
+			"include": "./simulator/manifest.json"
+		},
+		"lin": {
+			"build": {
+				"SIMULATORS": "./simulator"
+			},
+			"include": "./simulator/manifest.json"
+		},
+		"win": {
+			"build": {
+				"SIMULATORS": "./simulator"
+			},
+			"include": "./simulator/manifest.json"
+		}
+	}
+}

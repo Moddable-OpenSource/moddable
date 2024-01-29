@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"*": "./*"
+	},
+	"resources":{
+		"*-mask": [
+			{
+				"source": "../../fonts/FiraSansCondensed-Bold",
+				"size": 20,
+				"characters": "-0123456789°C% hPa"
+			}
+		]
+	}
+}

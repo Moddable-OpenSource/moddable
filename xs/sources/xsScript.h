@@ -510,6 +510,7 @@ struct sxStringNode {
 typedef struct {
 	mxNodePart;
 	txNode* params;
+	txAccessNode* instanceInitAccess;
 } txSuperNode;
 
 typedef struct {
