@@ -20,6 +20,7 @@
 			"./forms",
 			"./identifiers",
 			"./properties",
+			"./strings",
 			"./tests"
 		]
 	}

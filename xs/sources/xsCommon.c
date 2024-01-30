@@ -1797,6 +1797,9 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"(onFullfilled)",
 	"(onRejected)",
 	"(result)",
+#if mxECMAScript2024
+	"unicodeSets",	
+#endif
 };
 
 #if mxCanonicalNaN
