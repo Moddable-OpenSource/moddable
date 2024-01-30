@@ -343,8 +343,6 @@ static void* fxCharSetCombine(txPatternParser* parser, txCharSet* set1, txCharSe
 static void* fxCharSetDigits(txPatternParser* parser);
 static void* fxCharSetEmpty(txPatternParser* parser);
 static void* fxCharSetExpression(txPatternParser* parser);
-static void* fxCharSetExpressionDisjunction(txPatternParser* parser, txCharSet* set);
-static void* fxCharSetExpressionSequence(txPatternParser* parser, txString string);
 static void* fxCharSetNot(txPatternParser* parser, txCharSet* set);
 static void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator);
 static void* fxCharSetParseItem(txPatternParser* parser);
@@ -353,6 +351,8 @@ static void* fxCharSetRange(txPatternParser* parser, txCharSet* set1, txCharSet*
 static void* fxCharSetSingle(txPatternParser* parser, txInteger character);
 static void* fxCharSetSpaces(txPatternParser* parser);
 static void* fxCharSetStrings(txPatternParser* parser);
+static void* fxCharSetStringsDisjunction(txPatternParser* parser, txCharSet* set);
+static void* fxCharSetStringsSequence(txPatternParser* parser, txString string);
 static void* fxCharSetUnicodeProperty(txPatternParser* parser);
 static void* fxCharSetWords(txPatternParser* parser);
 static void* fxDisjunctionParse(txPatternParser* parser, txInteger character);
@@ -682,8 +682,6 @@ void* fxCharSetCombine(txPatternParser* parser, txCharSet* set1, txCharSet* set2
 			count = (count1 < count2) ? count1 : count2;
 		result->strings = fxPatternParserCreateChunk(parser, count * sizeof(txString));
 		count = 0;
-		if (!result->strings)
-			fxAbort(parser->the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		while ((index1 < count1) && (index2 < count2)) {
 			txInteger copy = 0;
 			txInteger advance = 0;
@@ -886,66 +884,6 @@ void* fxCharSetExpression(txPatternParser* parser)
 	}
 	if (not && result)
 		result = fxCharSetNot(parser, result);
-	return result;
-}
-
-void* fxCharSetExpressionDisjunction(txPatternParser* parser, txCharSet* set)
-{
-	void* result = set;
-	if (set->strings) {
-		txDisjunction* disjunction;
-		txInteger index = 0;
-		void* left = NULL;
-		void* right = NULL;
-		while (index < set->stringCount) {
-			right = fxCharSetExpressionSequence(parser, set->strings[index]);
-			if (left) {
-				disjunction = fxPatternParserCreateTerm(parser, sizeof(txDisjunction), fxDisjunctionMeasure);
-				disjunction->left = left;
-				disjunction->right = right;
-				result = disjunction;
-			}
-			else {
-				result = right;
-			}
-			left = result;
-			index++;
-		}
-		if (set->characters[0]) {
-			disjunction = fxPatternParserCreateTerm(parser, sizeof(txDisjunction), fxDisjunctionMeasure);
-			disjunction->left = result;
-			disjunction->right = (txTerm*)set;
-			result = disjunction;
-		}
-	}
-	return result;
-}
-
-void* fxCharSetExpressionSequence(txPatternParser* parser, txString string)
-{
-	void* result = NULL;
-	void* former = NULL;
-	void* current = NULL;
-	txSequence* formerBranch = NULL;
-	txSequence* currentBranch = NULL;
-	while (*string) {
-		txInteger character;
-		string = fxUTF8Decode(string, &character);
-		current = fxCharSetCanonicalizeSingle(parser, fxCharSetSingle(parser, character));
-		if (former) {
-			currentBranch = fxPatternParserCreateTerm(parser, sizeof(txSequence), fxSequenceMeasure);
-			currentBranch->left = former;
-			currentBranch->right = current;
-			if (formerBranch)
-				formerBranch->right = (txTerm*)currentBranch;
-			else
-				result = currentBranch;
-			formerBranch = currentBranch;	
-		}
-		else
-			result = current;
-		former = current;
-	}
 	return result;
 }
 
@@ -1204,27 +1142,34 @@ static int fxCharSetStringsCompare(const void *p1, const void *p2)
 
 void* fxCharSetStrings(txPatternParser* parser)
 {
-	txCharSet* result = fxPatternParserCreateTerm(parser, sizeof(txCharSet), fxCharSetMeasure);
+	txCharSet* result = C_NULL;
+	txString buffer = C_NULL;
+	txInteger bufferSize = 0;
 	txString* strings = C_NULL;
-	txInteger count = 0, length = 0, offset = 0, character, size;
-	char buffer[256];
-	result->stringCount = 0;
-	result->strings = C_NULL;
-	result->characters[0] = 0;
+	txInteger stringCount = 0;
+	txInteger offset, size, length, character;
+	txString string;
+	
 	fxPatternParserNext(parser);
 	if (parser->character != '{')
 		fxPatternParserError(parser, gxErrors[mxInvalidEscape]);
+		
 	offset = parser->offset;
 	fxPatternParserNext(parser);
+	size = 0;	
+	length = 0;	
 	for (;;) {
 		if (parser->character == EOF)
 			fxPatternParserError(parser, gxErrors[mxInvalidEscape]);	
 		if ((parser->character == '}') || (parser->character == '|')) {
-			if (length > 1)
-				count++;
-			length = 0;	
+			if (length > 1) {
+				bufferSize += size + 1;
+				stringCount++;
+			}
 			if (parser->character == '}')
 				break;
+			size = 0;	
+			length = 0;	
 			fxPatternParserNext(parser);
 		}
 		else {
@@ -1232,17 +1177,27 @@ void* fxCharSetStrings(txPatternParser* parser)
 				fxPatternParserNext(parser);
 				fxPatternParserEscape(parser, 1);
 			}
+			size += fxUTF8Length(parser->character); // no surrogate
 			length++;
 			fxPatternParserNext(parser);
 		}		
-	}		
-	if (count > 0) {
-		strings = fxPatternParserCreateChunk(parser, count * sizeof(txString));
-		count = 0;
 	}
+	
+	result = fxPatternParserCreateTerm(parser, sizeof(txCharSet), fxCharSetMeasure);
+	result->stringCount = 0;
+	result->strings = C_NULL;
+	result->characters[0] = 0;
+	if (stringCount > 0) {
+		buffer = fxPatternParserCreateChunk(parser, bufferSize);
+		strings = fxPatternParserCreateChunk(parser, stringCount * sizeof(txString));
+		stringCount = 0;
+	}
+	
 	parser->offset = offset;
-	offset = 0;
 	fxPatternParserNext(parser);
+	offset = 0;
+	string = buffer;
+	length = 0;
 	for (;;) {
 		if ((parser->character == '}') || (parser->character == '|')) {
 			if (length == 0) {
@@ -1254,36 +1209,32 @@ void* fxCharSetStrings(txPatternParser* parser)
 			else {
 				txInteger index = 0;
 				buffer[offset] = 0;
-				if (count > 0) {
-					while (index < count) {
-						if (!c_strcmp(strings[index], buffer))
+				offset++;
+				if (stringCount > 0) {
+					while (index < stringCount) {
+						if (!c_strcmp(strings[index], string))
 							break;
 						index++;
 					}
 				}
-				if (index == count) {
-					txString string = fxPatternParserCreateChunk(parser, offset + 1);
-					if (!string)
-						fxAbort(parser->the, XS_NOT_ENOUGH_MEMORY_EXIT);
-					c_memcpy(string, buffer, offset + 1);
-					strings[count] = string;
-					count++;
+				if (index == stringCount) {
+					strings[stringCount] = string;
+					stringCount++;
 				}
 			}
-			length = 0;
-			offset = 0;
 			if (parser->character == '}') {
 				fxPatternParserNext(parser);
 				if (strings) {
-					if (count > 1)
-						qsort(strings, count, sizeof(txString), fxCharSetStringsCompare);
-					result->stringCount = count;
+					if (stringCount > 1)
+						qsort(strings, stringCount, sizeof(txString), fxCharSetStringsCompare);
+					result->stringCount = stringCount;
 					result->strings = strings;
 				}
 				return result;
 			}
-			else
-				fxPatternParserNext(parser);
+			fxPatternParserNext(parser);
+			string = buffer + offset;
+			length = 0;
 		}
 		else {
 			if (parser->character == '\\') {
@@ -1293,15 +1244,73 @@ void* fxCharSetStrings(txPatternParser* parser)
 			character = parser->character;
 			if (parser->flags & XS_REGEXP_I)
 				character = fxCharCaseCanonicalize(character, 1);
-			size = fxUTF8Length(character);
-			if ((offset + size + 1) > (txInteger)sizeof(buffer))
-				fxAbort(parser->the, XS_NOT_ENOUGH_MEMORY_EXIT);
-			fxUTF8Encode(buffer + offset, character);
+			size = fxUTF8Length(character); // no surrogate
+			fxUTF8Encode(buffer + offset, character); // no surrogate
 			offset += size;
 			length++;
 			fxPatternParserNext(parser);
 		}
 	}
+}
+
+void* fxCharSetStringsDisjunction(txPatternParser* parser, txCharSet* set)
+{
+	void* result = set;
+	if (set->strings) {
+		txDisjunction* disjunction;
+		txInteger index = 0;
+		void* left = NULL;
+		void* right = NULL;
+		while (index < set->stringCount) {
+			right = fxCharSetStringsSequence(parser, set->strings[index]);
+			if (left) {
+				disjunction = fxPatternParserCreateTerm(parser, sizeof(txDisjunction), fxDisjunctionMeasure);
+				disjunction->left = left;
+				disjunction->right = right;
+				result = disjunction;
+			}
+			else {
+				result = right;
+			}
+			left = result;
+			index++;
+		}
+		if (set->characters[0]) {
+			disjunction = fxPatternParserCreateTerm(parser, sizeof(txDisjunction), fxDisjunctionMeasure);
+			disjunction->left = result;
+			disjunction->right = (txTerm*)set;
+			result = disjunction;
+		}
+	}
+	return result;
+}
+
+void* fxCharSetStringsSequence(txPatternParser* parser, txString string)
+{
+	void* result = NULL;
+	void* former = NULL;
+	void* current = NULL;
+	txSequence* formerBranch = NULL;
+	txSequence* currentBranch = NULL;
+	while (*string) {
+		txInteger character;
+		string = fxUTF8Decode(string, &character); // no surrogate
+		current = fxCharSetCanonicalizeSingle(parser, fxCharSetSingle(parser, character));
+		if (former) {
+			currentBranch = fxPatternParserCreateTerm(parser, sizeof(txSequence), fxSequenceMeasure);
+			currentBranch->left = former;
+			currentBranch->right = current;
+			if (formerBranch)
+				formerBranch->right = (txTerm*)currentBranch;
+			else
+				result = currentBranch;
+			formerBranch = currentBranch;	
+		}
+		else
+			result = current;
+		former = current;
+	}
+	return result;
 }
 
 void* fxCharSetWords(txPatternParser* parser)
@@ -1513,7 +1522,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			else {
 				current = fxCharSetCanonicalizeSingle(parser, fxCharSetParseEscape(parser, 0));
 				if (parser->flags & XS_REGEXP_V)
-					current = fxCharSetExpressionDisjunction(parser, current);
+					current = fxCharSetStringsDisjunction(parser, current);
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 		}
@@ -1620,7 +1629,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 			fxPatternParserNext(parser);
 			if (parser->flags & XS_REGEXP_V) {
 				current = fxCharSetExpression(parser);
-				current = fxCharSetExpressionDisjunction(parser, current);
+				current = fxCharSetStringsDisjunction(parser, current);
 			}
 			else
 				current = fxCharSetParseList(parser);
