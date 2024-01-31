@@ -490,9 +490,9 @@ mxExport txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset);
 mxExport txSize fxUnicodeLength(txString theString);
 mxExport txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset);
 
-txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex);
-txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
-txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
+txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex);
+txFlag fxNumberToIndex(void* the, txNumber theNumber, txIndex* theIndex);
+txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
@@ -503,12 +503,10 @@ mxExport void fxVReportError(void* console, txString thePath, txInteger theLine,
 mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
 /* xsdtoa.c */
-extern void* fxNew_dtoa(void*);
-extern void fxDelete_dtoa(void*);
-mxExport txString fxIntegerToString(void* dtoa, txInteger theValue, txString theBuffer, txSize theSize);
+mxExport txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, txSize theSize);
 mxExport txInteger fxNumberToInteger(txNumber theValue);
-mxExport txString fxNumberToString(void* dtoa, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
-mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole);
+mxExport txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
+mxExport txNumber fxStringToNumber(void* the, txString theString, txFlag whole);
 
 /* xsre.c */
 enum {

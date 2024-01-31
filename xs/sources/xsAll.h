@@ -456,7 +456,6 @@ struct sxMachine {
 	txMachine* sharedMachine;
 
 	txBoolean collectFlag;
-	void* dtoa;
 	void* preparation;
 
 	txInteger tag;

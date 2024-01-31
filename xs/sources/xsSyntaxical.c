@@ -3184,29 +3184,29 @@ void fxPropertyName(txParser* parser, txSymbol** theSymbol, txToken* theToken0, 
 		aToken1 = XS_TOKEN_PRIVATE_PROPERTY;
 	}
 	else if (parser->token == XS_TOKEN_INTEGER) {
-		if (fxIntegerToIndex(parser->dtoa, parser->integer, &index)) {
+		if (fxIntegerToIndex(parser->console, parser->integer, &index)) {
 			fxPushIndexNode(parser, index, aLine);
 			aToken1 = XS_TOKEN_PROPERTY_AT;
 		}
 		else {
-			aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->dtoa, parser->integer, parser->buffer, parser->bufferSize));
+			aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->console, parser->integer, parser->buffer, parser->bufferSize));
 			fxPushSymbol(parser, aSymbol);
 			aToken1 = XS_TOKEN_PROPERTY;
 		}
 	}
 	else if (parser->token == XS_TOKEN_NUMBER) {
-		if (fxNumberToIndex(parser->dtoa, parser->number, &index)) {
+		if (fxNumberToIndex(parser->console, parser->number, &index)) {
 			fxPushIndexNode(parser, index, aLine);
 			aToken1 = XS_TOKEN_PROPERTY_AT;
 		}
 		else {
-			aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->dtoa, parser->number, parser->buffer, parser->bufferSize, 0, 0));
+			aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->console, parser->number, parser->buffer, parser->bufferSize, 0, 0));
 			fxPushSymbol(parser, aSymbol);
 			aToken1 = XS_TOKEN_PROPERTY;
 		}
 	}
 	else if (parser->token == XS_TOKEN_STRING) {
-		if (fxStringToIndex(parser->dtoa, parser->string, &index)) {
+		if (fxStringToIndex(parser->console, parser->string, &index)) {
 			fxPushIndexNode(parser, index, aLine);
 			aToken1 = XS_TOKEN_PROPERTY_AT;
 		}
@@ -3242,31 +3242,31 @@ void fxPropertyName(txParser* parser, txSymbol** theSymbol, txToken* theToken0, 
 			fxGetNextToken(parser);
 		}
 		else if (parser->token == XS_TOKEN_INTEGER) {
-			if (fxIntegerToIndex(parser->dtoa, parser->integer, &index)) {
+			if (fxIntegerToIndex(parser->console, parser->integer, &index)) {
 				fxPushIndexNode(parser, index, aLine);
 				aToken1 = XS_TOKEN_PROPERTY_AT;
 			}
 			else {
-				aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->dtoa, parser->integer, parser->buffer, parser->bufferSize));
+				aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->console, parser->integer, parser->buffer, parser->bufferSize));
 				fxPushSymbol(parser, aSymbol);
 				aToken1 = XS_TOKEN_PROPERTY;
 			}
 			fxGetNextToken(parser);
 		}
 		else if (parser->token == XS_TOKEN_NUMBER) {
-			if (fxNumberToIndex(parser->dtoa, parser->number, &index)) {
+			if (fxNumberToIndex(parser->console, parser->number, &index)) {
 				fxPushIndexNode(parser, index, aLine);
 				aToken1 = XS_TOKEN_PROPERTY_AT;
 			}
 			else {
-				aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->dtoa, parser->number, parser->buffer, parser->bufferSize, 0, 0));
+				aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->console, parser->number, parser->buffer, parser->bufferSize, 0, 0));
 				fxPushSymbol(parser, aSymbol);
 				aToken1 = XS_TOKEN_PROPERTY;
 			}
 			fxGetNextToken(parser);
 		}
 		else if (parser->token == XS_TOKEN_STRING) {
-			if (fxStringToIndex(parser->dtoa, parser->string, &index)) {
+			if (fxStringToIndex(parser->console, parser->string, &index)) {
 				fxPushIndexNode(parser, index, aLine);
 				aToken1 = XS_TOKEN_PROPERTY_AT;
 			}
@@ -3543,29 +3543,29 @@ txUnsigned fxObjectBinding(txParser* parser, txToken theToken)
 			aToken = XS_TOKEN_PROPERTY_BINDING;
 		}
 		else if (parser->token == XS_TOKEN_INTEGER) {
-			if (fxIntegerToIndex(parser->dtoa, parser->integer, &index)) {
+			if (fxIntegerToIndex(parser->console, parser->integer, &index)) {
 				fxPushIndexNode(parser, index, aPropertyLine);
 				aToken = XS_TOKEN_PROPERTY_BINDING_AT;
 			}
 			else {
-				aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->dtoa, parser->integer, parser->buffer, parser->bufferSize));
+				aSymbol = fxNewParserSymbol(parser, fxIntegerToString(parser->console, parser->integer, parser->buffer, parser->bufferSize));
 				fxPushSymbol(parser, aSymbol);
 				aToken = XS_TOKEN_PROPERTY_BINDING;
 			}
 		}
 		else if (parser->token == XS_TOKEN_NUMBER) {
-			if (fxNumberToIndex(parser->dtoa, parser->number, &index)) {
+			if (fxNumberToIndex(parser->console, parser->number, &index)) {
 				fxPushIndexNode(parser, index, aPropertyLine);
 				aToken = XS_TOKEN_PROPERTY_BINDING_AT;
 			}
 			else {
-				aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->dtoa, parser->number, parser->buffer, parser->bufferSize, 0, 0));
+				aSymbol = fxNewParserSymbol(parser, fxNumberToString(parser->console, parser->number, parser->buffer, parser->bufferSize, 0, 0));
 				fxPushSymbol(parser, aSymbol);
 				aToken = XS_TOKEN_PROPERTY_BINDING;
 			}
 		}
 		else if (parser->token == XS_TOKEN_STRING) {
-			if (fxStringToIndex(parser->dtoa, parser->string, &index)) {
+			if (fxStringToIndex(parser->console, parser->string, &index)) {
 				fxPushIndexNode(parser, index, aPropertyLine);
 				aToken = XS_TOKEN_PROPERTY_BINDING_AT;
 			}

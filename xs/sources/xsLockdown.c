@@ -724,7 +724,7 @@ void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, t
 		}
 	}
 	else {
-		fxNumberToString(the->dtoa, index, the->nameBuffer, sizeof(the->nameBuffer), 0, 0);
+		fxNumberToString(the, index, the->nameBuffer, sizeof(the->nameBuffer), 0, 0);
 		fxConcatStringC(the, slot, "[");
 		fxConcatStringC(the, slot, the->nameBuffer);
 		fxConcatStringC(the, slot, "]");

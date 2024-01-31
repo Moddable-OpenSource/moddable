@@ -6319,15 +6319,6 @@ fx_dtoa(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve __XS
 static void fxDTOACleanup(txMachine* the, ThInfo* DTOA);
 static void fxDTOASetup(txMachine* the, ThInfo* DTOA);
 
-void* fxNew_dtoa(void* the) 
-{
-	return the;
-}
-
-void fxDelete_dtoa(void* dtoa) 
-{
-}
-
 void fxDTOACleanup(txMachine* the, ThInfo* DTOA)
 {
 	if (DTOA->dirty) {
@@ -6370,6 +6361,8 @@ static void* fxDTOAMalloc(size_t size, void* it)
 		block = c_malloc(size);
 		DTOA->dirty = 1;
 	}
+	if (!block)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	//fprintf(stderr, "malloc %zu %p\n", size, block);
 	return block;
 }

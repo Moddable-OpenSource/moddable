@@ -1531,7 +1531,7 @@ void fxEchoInteger(txMachine* the, txInteger theInteger)
 {
 	char aBuffer[256];
 
-	fxIntegerToString(the->dtoa, theInteger, aBuffer, sizeof(aBuffer));
+	fxIntegerToString(the, theInteger, aBuffer, sizeof(aBuffer));
 	fxEcho(the, aBuffer);
 }
 
@@ -1803,7 +1803,7 @@ void fxEchoNumber(txMachine* the, txNumber theNumber)
 {
 	char aBuffer[256];
 
-	fxNumberToString(the->dtoa, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
+	fxNumberToString(the, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
 	fxEcho(the, aBuffer);
 }
 

@@ -94,7 +94,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->console = console;
 	parser->stackLimit = fxCStackLimit();
 	
-	parser->dtoa = fxNew_dtoa(NULL);
 	parser->symbolModulo = symbolModulo;
 	parser->symbolTable = fxNewParserChunkClear(parser, parser->symbolModulo * sizeof(txSymbol*));
 
@@ -272,8 +271,6 @@ void fxReportParserError(txParser* parser, txInteger line, txString theFormat, .
 void fxTerminateParser(txParser* parser)
 {
 	fxDisposeParserChunks(parser);
-	if (parser->dtoa)
-		fxDelete_dtoa(parser->dtoa);
 }
 
 

@@ -67,7 +67,6 @@ typedef struct {
 
 struct sxLinker {
 	c_jmp_buf jmp_buf;
-	void* dtoa;
 	int error;
 	int twice;
 	txLinkerChunk* firstChunk;

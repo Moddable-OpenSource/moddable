@@ -203,7 +203,6 @@ void fxInitializeLinker(txLinker* linker)
 	c_memset(gxCodeUsages, 0, sizeof(gxCodeUsages));
 	
 	c_memset(linker, 0, sizeof(txLinker));
-	linker->dtoa = fxNew_dtoa(NULL);
 	linker->symbolModulo = 1993;
 	linker->symbolCount = 0x10000;
 	linker->symbolArray = fxNewLinkerChunkClear(linker, linker->symbolCount * sizeof(txLinkerSymbol*));
@@ -737,8 +736,6 @@ void fxTerminateLinker(txLinker* linker)
 		c_free(block);
 		block = nextChunk;
 	}
-	if (linker->dtoa)
-		fxDelete_dtoa(linker->dtoa);
 // 	{
 // 		txU1 code;
 // 		for (code = 0; code < XS_CODE_COUNT; code++) {
