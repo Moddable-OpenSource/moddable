@@ -799,10 +799,11 @@ void fxVerifyInstance(txMachine* the, txSlot* list, txSlot* path, txSlot* instan
 				}
 				break;
 			case XS_CODE_KIND:
-			case XS_CODE_X_KIND:
 				if (property->value.code.closures)
 					fxVerifyQueue(the, list, path, property->value.code.closures, XS_NO_ID, 0, "Environment");
                 fxVerifyCode(the, list, path, property->value.code.address, ((txChunk*)(((txByte*)(property->value.code.address)) - sizeof(txChunk)))->size);
+				break;
+			case XS_CODE_X_KIND:
 				break;
 			case XS_DATA_VIEW_KIND:
 				property = property->next;
