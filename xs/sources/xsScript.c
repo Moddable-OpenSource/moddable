@@ -36,13 +36,14 @@
  */
 
 #include "xsScript.h"
+extern void fxAbort(void* console, int status);
 
 void fxCheckParserStack(txParser* parser, txInteger line)
 {
     char x;
     char *stack = &x;
     if (stack <= parser->stackLimit) {
-    	fxReportMemoryError(parser, line, "stack overflow");
+    	fxAbort(parser->console, XS_STACK_OVERFLOW_EXIT);
     }
 }
 
@@ -166,7 +167,7 @@ void* fxNewParserChunk(txParser* parser, txSize size)
 {
 	txParserChunk* block = c_malloc(sizeof(txParserChunk) + size);
 	if (!block)
-		fxReportMemoryError(parser, parser->line, "heap overflow");
+    	fxAbort(parser->console, XS_NOT_ENOUGH_MEMORY_EXIT);
 	parser->total += sizeof(txParserChunk) + size;
 	block->next = parser->first;
 	parser->first = block;

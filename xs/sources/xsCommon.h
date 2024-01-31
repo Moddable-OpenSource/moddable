@@ -438,6 +438,18 @@ enum {
 	mxGeneratorFlag = 1 << 21,
 };
 
+enum {
+	XS_DEBUGGER_EXIT = 0,
+	XS_NOT_ENOUGH_MEMORY_EXIT,
+	XS_STACK_OVERFLOW_EXIT,
+	XS_FATAL_CHECK_EXIT,
+	XS_DEAD_STRIP_EXIT,
+	XS_UNHANDLED_EXCEPTION_EXIT,
+	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
+};
+
 extern void fxDeleteScript(txScript* script);
 
 extern const txUTF8Sequence gxUTF8Sequences[];
