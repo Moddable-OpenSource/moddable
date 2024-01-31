@@ -1379,6 +1379,7 @@ mxExport void fx_RegExp_prototype_get_multiline(txMachine* the);
 mxExport void fx_RegExp_prototype_get_source(txMachine* the);
 mxExport void fx_RegExp_prototype_get_sticky(txMachine* the);
 mxExport void fx_RegExp_prototype_get_unicode(txMachine* the);
+mxExport void fx_RegExp_prototype_get_unicodeSets(txMachine* the);
 mxExport void fx_RegExp_prototype_compile(txMachine* the);
 mxExport void fx_RegExp_prototype_exec(txMachine* the);
 mxExport void fx_RegExp_prototype_match(txMachine* the);

@@ -70,6 +70,7 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_source), C_NULL, mxID(_source), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_sticky), C_NULL, mxID(_sticky), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_unicode), C_NULL, mxID(_unicode), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_RegExp_prototype_get_unicodeSets), C_NULL, mxID(_unicodeSets), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxRegExpPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_RegExp), 2, mxID(_RegExp));
 	mxRegExpConstructor = *the->stack;

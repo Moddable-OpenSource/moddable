@@ -421,11 +421,13 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_source);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_sticky);
 			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
+			fxUnstripCallback(linker, fx_RegExp_prototype_get_unicodeSets);
 			fxUnstripCallback(linker, fx_RegExp_prototype_toString);
 			fxUnstripCallback(linker, fxInitializeRegExp);
 			if (!fxIsCallbackStripped(linker, fx_String_prototype_replace) || !fxIsCallbackStripped(linker, fx_String_prototype_replaceAll)) {
 				fxUnstripCallback(linker, fx_RegExp_prototype_get_global);
 				fxUnstripCallback(linker, fx_RegExp_prototype_get_unicode);
+				fxUnstripCallback(linker, fx_RegExp_prototype_get_unicodeSets);
 				fxUnstripCallback(linker, fx_RegExp_prototype_replace);
 				fxUnstripCallback(linker, fx_RegExp_prototype_exec);
 			}

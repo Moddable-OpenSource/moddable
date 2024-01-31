@@ -344,7 +344,8 @@ static void* fxCharSetDigits(txPatternParser* parser);
 static void* fxCharSetEmpty(txPatternParser* parser);
 static void* fxCharSetExpression(txPatternParser* parser);
 static void* fxCharSetNot(txPatternParser* parser, txCharSet* set);
-static void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator);
+static void* fxCharSetOperand(txPatternParser* parser, txInteger* kind);
+static void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator, txInteger* kind);
 static void* fxCharSetParseItem(txPatternParser* parser);
 static void* fxCharSetParseList(txPatternParser* parser);
 static void* fxCharSetRange(txPatternParser* parser, txCharSet* set1, txCharSet* set2);
@@ -754,7 +755,10 @@ void* fxCharSetCombine(txPatternParser* parser, txCharSet* set1, txCharSet* set2
 				}
 			}
 		}
-		result->stringCount = count;
+		if (count)
+			result->stringCount = count;
+		else
+			result->strings = C_NULL;
 	}
 	else if (set1->strings) {
 		if (op != mxCharSetIntersectionOp) {
@@ -794,92 +798,75 @@ void* fxCharSetEmpty(txPatternParser* parser)
 void* fxCharSetExpression(txPatternParser* parser)
 {
 	txBoolean not = 0;
-	txInteger mode = mxCharSetUnionOp;
 	void* result = NULL;
+	void* left = NULL;
+	txInteger leftKind = 0;
+	void* right = NULL;
+	txInteger rightKind = 0;
+	txString string;
 	if (parser->character == '^') {
 		fxPatternParserNext(parser);
 		not = 1;
 	}
-	while (parser->character != C_EOF) {
-		void* former = result;
-	again:
-		if (parser->character == ']') {
-			break;		
-		}
-		else if (parser->character == '[') {
+	left = fxCharSetOperand(parser, &leftKind);
+	string = parser->pattern + parser->offset;
+	if ((parser->character == '-') && (*string == '-')) {
+		for (;;) {
 			fxPatternParserNext(parser);
-			result = fxCharSetExpression(parser);	
-			if (parser->character != ']')
-				fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 			fxPatternParserNext(parser);
-	
-		}
-		else if (parser->character == '\\') {
-			fxPatternParserNext(parser);
-			if (parser->character == 'q')
-				result = fxCharSetStrings(parser);
-			else
-				result = fxCharSetParseEscape(parser, 1);
-		}
-		else if (parser->character == '-') {
-			fxPatternParserNext(parser);
-			if (parser->character == '-') {
-				fxPatternParserNext(parser);
-				if (mode == mxCharSetUnionOp)
-					mode = mxCharSetSubtractOp;
-				else if (mode != mxCharSetSubtractOp)
-					fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-				result = NULL;
+			right = fxCharSetOperand(parser, &rightKind);	
+			result = fxCharSetCombine(parser, left, right, mxCharSetSubtractOp);
+			if (parser->character == ']')
+				break;		
+			string = parser->pattern + parser->offset;
+			if ((parser->character == '-') && (*string == '-')) {
+				left = result;
+				continue;
 			}
-			else {
-				if (mode != mxCharSetUnionOp)
-					fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-				mode = mxCharSetRangeOp;
-				result = NULL;
-			}
-			goto again;
-		}
-		else if (parser->character == '&') {
-			fxPatternParserNext(parser);
-			if (parser->character == '&') {
-				fxPatternParserNext(parser);
-				if (mode == mxCharSetUnionOp)
-					mode = mxCharSetIntersectionOp;
-				else if (mode != mxCharSetIntersectionOp)
-					fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-				result = NULL;
-				goto again;
-			}
-			else
-				result = fxCharSetSingle(parser, '&');
-		}
-		else if (c_strchr("&!#$%*+,.:;<=>?@^`~", parser->character)) {
-			txInteger character = parser->character;
-			fxPatternParserNext(parser);
-			if (character == parser->character)
-				fxPatternParserError(parser, gxErrors[mxInvalidRange]);
-			result = fxCharSetSingle(parser, character);
-		}
-		else if (c_strchr("(){}/\\|", parser->character)) {
 			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 		}
-		else {
-			result = fxCharSetSingle(parser, parser->character);
+	}
+	else if ((parser->character == '&') && (*string == '&')) {
+		for (;;) {
 			fxPatternParserNext(parser);
+			fxPatternParserNext(parser);
+			right = fxCharSetOperand(parser, &rightKind);	
+			result = fxCharSetCombine(parser, left, right, mxCharSetIntersectionOp);
+			if (parser->character == ']')
+				break;		
+			string = parser->pattern + parser->offset;
+			if ((parser->character == '&') && (*string == '&')) {
+				left = result;
+				continue;
+			}
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 		}
-		if (result) {
-			if (mode == mxCharSetRangeOp) {
-				if (former) {
-					result = fxCharSetRange(parser, former, result);
-					mode = mxCharSetUnionOp;
-				}
-				else
+	}
+	else {
+		for (;;) {
+			if (parser->character == '-') {
+				fxPatternParserNext(parser);
+				right = fxCharSetOperand(parser, &rightKind);
+				if ((leftKind != 0) && (rightKind != 0))
 					fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+				left = fxCharSetRange(parser, left, right);
+				if (result)
+					result = fxCharSetCombine(parser, result, right, mxCharSetUnionOp);
+				else
+					result = left;
 			}
-			else if (former) {
-				result = fxCharSetCombine(parser, former, result, mode);
-				former = C_NULL;
+			if (parser->character == ']')
+				break;		
+			right = fxCharSetOperand(parser, &rightKind);
+			if (parser->character == '-') {
+				result = left;
+				left = right;
+				leftKind = rightKind;
+				continue;
 			}
+			result = fxCharSetCombine(parser, left, right, mxCharSetUnionOp);
+			left = result;
+			leftKind = 1;
 		}
 	}
 	if (not && result)
@@ -922,10 +909,52 @@ void* fxCharSetNot(txPatternParser* parser, txCharSet* set)
 	return C_NULL;
 }
 
-
-void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator)
+void* fxCharSetOperand(txPatternParser* parser, txInteger* kind)
 {
 	void* result = NULL;
+	if (parser->character == EOF) {
+		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+	}
+	else if (parser->character == '[') {
+		fxPatternParserNext(parser);
+		result = fxCharSetExpression(parser);	
+		*kind = 1;
+		if (parser->character != ']')
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+		fxPatternParserNext(parser);
+	}
+	else if (parser->character == '\\') {
+		fxPatternParserNext(parser);
+		if (parser->character == 'q') {
+			result = fxCharSetStrings(parser);
+			*kind = 1;
+		}
+		else
+			result = fxCharSetParseEscape(parser, 1, kind);
+	}
+	else if (c_strchr("&!#$%*+,.:;<=>?@^`~", parser->character)) {
+		txInteger character = parser->character;
+		fxPatternParserNext(parser);
+		if (character == parser->character)
+			fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+		result = fxCharSetSingle(parser, character);
+		*kind = 0;
+	}
+	else if (c_strchr("(){}/\\|", parser->character)) {
+		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
+	}
+	else {
+		result = fxCharSetSingle(parser, parser->character);
+		fxPatternParserNext(parser);
+		*kind = 0;
+	}
+	return result;
+}
+
+void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator, txInteger* kind)
+{
+	void* result = NULL;
+	txInteger flag = 1;
 	switch(parser->character) {
 	case C_EOF:
 		break;
@@ -962,14 +991,17 @@ void* fxCharSetParseEscape(txPatternParser* parser, txBoolean punctuator)
 		result = fxCharSetNot(parser, fxCharSetUnicodeProperty(parser));
 		fxPatternParserNext(parser);
 		break;
-	default: 
-		fxPatternParserEscape(parser, 0);
+	default:
+		fxPatternParserEscape(parser, punctuator);
 		result = fxCharSetSingle(parser, parser->character);
 		fxPatternParserNext(parser);
+		flag = 0;
 		break;
 	}
 	if (result == NULL)
 		fxPatternParserError(parser, gxErrors[mxInvalidEscape]);
+	if (kind)
+		*kind = flag;
 	return result;
 }
 
@@ -991,7 +1023,7 @@ void* fxCharSetParseItem(txPatternParser* parser)
 			result = fxCharSetSingle(parser, '-');
 		}
 		else
-			result = fxCharSetParseEscape(parser, 0);
+			result = fxCharSetParseEscape(parser, 0, C_NULL);
 	}
 	else if (parser->character == ']') {
 		result = fxCharSetEmpty(parser);
@@ -1156,19 +1188,17 @@ void* fxCharSetStrings(txPatternParser* parser)
 		
 	offset = parser->offset;
 	fxPatternParserNext(parser);
-	size = 0;	
 	length = 0;	
 	for (;;) {
 		if (parser->character == EOF)
 			fxPatternParserError(parser, gxErrors[mxInvalidEscape]);	
 		if ((parser->character == '}') || (parser->character == '|')) {
 			if (length > 1) {
-				bufferSize += size + 1;
+				bufferSize++;
 				stringCount++;
 			}
 			if (parser->character == '}')
 				break;
-			size = 0;	
 			length = 0;	
 			fxPatternParserNext(parser);
 		}
@@ -1177,7 +1207,10 @@ void* fxCharSetStrings(txPatternParser* parser)
 				fxPatternParserNext(parser);
 				fxPatternParserEscape(parser, 1);
 			}
-			size += fxUTF8Length(parser->character); // no surrogate
+			character = parser->character;
+			if (parser->flags & XS_REGEXP_I)
+				character = fxCharCaseCanonicalize(character, 1);
+			bufferSize += fxUTF8Length(character); // no surrogate
 			length++;
 			fxPatternParserNext(parser);
 		}		
@@ -1187,8 +1220,10 @@ void* fxCharSetStrings(txPatternParser* parser)
 	result->stringCount = 0;
 	result->strings = C_NULL;
 	result->characters[0] = 0;
-	if (stringCount > 0) {
+	if (bufferSize > 0) {
 		buffer = fxPatternParserCreateChunk(parser, bufferSize);
+	}
+	if (stringCount > 0) {
 		strings = fxPatternParserCreateChunk(parser, stringCount * sizeof(txString));
 		stringCount = 0;
 	}
@@ -1520,7 +1555,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 				current = fxQuantifierParse(parser, current, currentIndex);
 			}
 			else {
-				current = fxCharSetCanonicalizeSingle(parser, fxCharSetParseEscape(parser, 0));
+				current = fxCharSetCanonicalizeSingle(parser, fxCharSetParseEscape(parser, 0, C_NULL));
 				if (parser->flags & XS_REGEXP_V)
 					current = fxCharSetStringsDisjunction(parser, current);
 				current = fxQuantifierParse(parser, current, currentIndex);

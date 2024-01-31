@@ -74,6 +74,8 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxCallbacksLength 523
 #elif mxECMAScript2023
 #define mxCallbacksLength 506
+#elif mxECMAScript2024
+#define mxCallbacksLength 507
 #else
 #define mxCallbacksLength 496
 #endif
@@ -605,6 +607,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_DisposableStack_prototype_use,
 	fx_Iterator_dispose,
 	fx_SuppressedError,
+#endif
+#if mxECMAScript2024
+	fx_RegExp_prototype_get_unicode,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
