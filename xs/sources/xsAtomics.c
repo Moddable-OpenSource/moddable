@@ -349,8 +349,10 @@ void fx_SharedArrayBuffer(txMachine* the)
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOST_KIND;
 	property->value.host.data = fxCreateSharedChunk(byteLength);
-	if (!property->value.host.data)
+	if (!property->value.host.data) {
+		property->value.host.variant.destructor = NULL;
 		mxRangeError("cannot allocate SharedArrayBuffer");
+	}
 	property->value.host.variant.destructor = fxReleaseSharedChunk;
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
