@@ -940,7 +940,7 @@ void* fxCharSetOperand(txPatternParser* parser, txInteger* kind)
 		result = fxCharSetSingle(parser, character);
 		*kind = 0;
 	}
-	else if (c_strchr("(){}/\\|", parser->character)) {
+	else if (c_strchr("()[]{}/-\\|", parser->character)) {
 		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 	}
 	else {
