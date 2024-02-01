@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -39,12 +39,8 @@
 extern void fxAbort(void* console, int status);
 
 #if defined(__clang__) || defined (__GNUC__)
-# define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
-#else
-# define ATTRIBUTE_NO_SANITIZE_ADDRESS
+	__attribute__((no_sanitize_address))
 #endif
-
-ATTRIBUTE_NO_SANITIZE_ADDRESS
 void fxCheckParserStack(txParser* parser, txInteger line)
 {
     char x;

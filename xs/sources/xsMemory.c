@@ -253,6 +253,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 	return C_NULL;
 }
 
+#if defined(__clang__) || defined (__GNUC__)
+	__attribute__((no_sanitize_address))
+#endif
 void fxCheckCStack(txMachine* the)
 {
     char x;
