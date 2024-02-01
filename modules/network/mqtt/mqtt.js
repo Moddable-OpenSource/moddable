@@ -21,6 +21,7 @@
 import {Client as WSClient} from "websocket";
 import {Socket} from "socket";
 import Timer from "timer";
+import Time from "time";
 
 /*
  * Implements a basic MQTT client. Upon creation of a client instance, provides methods for
@@ -206,7 +207,7 @@ export default class Client {
 						}
 						else if (0xD0 === parse.state) {	// PINGRESP
 							if (this.#timer)
-								this.#timer.read = Date.now();
+								this.#timer.read = Time.ticks;
 						}
 						else if (0xE0 === parse.state) {	// DISCONNECT
 							return;
@@ -495,7 +496,7 @@ export default class Client {
 
 		if (timeout) {
 			this.#timer = Timer.repeat(this.keepalive.bind(this), this.timeout >> 2);
-			this.#timer.read = this.#timer.write = Date.now();
+			this.#timer.read = this.#timer.write = Time.ticks;
 		}
 
 		delete this.connect;
@@ -575,12 +576,12 @@ export default class Client {
 		this.state = -1;
 	}
 	keepalive() {
-		const now = Date.now();
-		if ((now - this.#timer.read) >= (this.timeout + (this.timeout >> 1)))
+		const now = Time.ticks;
+		if (Time.delta(this.#timer.read, now) >= (this.timeout + (this.timeout >> 1)))
 			return void this.fail("read time out");	// nothing received in 1.5x keep alive interval is fail for client and server (in write-only client, it means client didn't receive ping response)
 
 		if (!this.server) {	// client must send something within the keepalive interval. we always ping within that interval (ensures that write-only client occassionally receives something from server)
-			if ((now - this.#timer.write) >= (((this.timeout >> 2) * 3) - 500)) {		// haven't sent a ping in (just under) 3/4 the keep alive interval
+			if (Time.delta(this.#timer.write, now) >= (((this.timeout >> 2) * 3) - 500)) {		// haven't sent a ping in (just under) 3/4 the keep alive interval
 				try {
 					this.#timer.write = now;
 					this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping

@@ -25,6 +25,7 @@
 */
 
 import Timer from "timer";
+import Time from "time";
 
 const Overhead = 8;
 const BufferFormat = "buffer";
@@ -249,7 +250,7 @@ class MQTTClient {
 
 			case MQTTClient.PINGREQ:
 				if (this.#options.keepalive)
-					this.#options.keepalive.write = Date.now();
+					this.#options.keepalive.write = Time.ticks;
 				// fall through
 			case MQTTClient.DISCONNECT:
 				if (2 > this.#writable)
@@ -664,7 +665,7 @@ class MQTTClient {
 			if (keepalive) {
 				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 250);
 				options.keepalive.interval = keepalive * 1000;
-				options.keepalive.read = options.keepalive.write = Date.now();
+				options.keepalive.read = options.keepalive.write = Time.ticks;
 			}
 
 			this.#state = "login";
@@ -694,7 +695,7 @@ class MQTTClient {
 // 		traceOperation(false, operation);
 
 		if ((operation == MQTTClient.PINGRESP) && this.#options.keepalive)
-			this.#options.keepalive.read = Date.now();
+			this.#options.keepalive.read = Time.ticks;
 
 		if (MQTTClient.CONNACK === operation) {
 			if (msg.returnCode)
@@ -730,12 +731,12 @@ class MQTTClient {
 	}
 	#keepalive() {
 		const options = this.#options, keepalive = options.keepalive, interval = keepalive.interval;
-		const now = Date.now();
+		const now = Time.ticks;
 
-		if ((now - keepalive.read) >= (keepalive.interval + (keepalive.interval >> 1)))
+		if (Time.delta(keepalive.read, now) >= (keepalive.interval + (keepalive.interval >> 1)))
 			return void this.#onError("time out");	// no control packet received in 1.5x keepalive interval (expected PINGRESP)
 
-		if ((now - keepalive.write) < (((keepalive.interval >> 2) * 3) - 500))
+		if (Time.delta(keepalive.write, now) < (((keepalive.interval >> 2) * 3) - 500))
 			return;
 
 		// haven't sent a ping in (just under) 3/4 the keep alive interval
