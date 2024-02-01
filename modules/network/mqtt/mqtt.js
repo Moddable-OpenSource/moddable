@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -47,7 +47,7 @@ const SUBSCRIBE = 0x80;
 const UNSUBSCRIBE = 0xA0;
 
 export default class Client {
-	#timer;
+	#timer;		// keepalive
 	#messages;
 
 	constructor(dictionary) {
@@ -200,6 +200,21 @@ export default class Client {
 				case 1:
 					parse.state = buffer[position] & 0x80 ? 2 : parse.code;
 					parse.length = buffer[position++] & 0x7F;
+					if ((2 !== parse.state) && !parse.length) {
+						if (0xC0 === parse.state) {		// PINGREQ
+							this.ws.write(Uint8Array.of(0xD0, 0x00).buffer);		// PINGRESP
+						}
+						else if (0xD0 === parse.state) {	// PINGRESP
+							if (this.#timer)
+								this.#timer.read = Date.now();
+						}
+						else if (0xE0 === parse.state) {	// DISCONNECT
+							return;
+						}
+						else
+							return this.fail("bad state");
+						parse = this.parse = {state: 0};
+					}
 					break;
 
 				case 2:
@@ -418,26 +433,10 @@ export default class Client {
 						parse = this.parse = {state: 0};		// not dispatched
 					break;
 
-				case 0xC0:		// PINGREQ
-					this.ws.write(Uint8Array.of(0xD0, 0x00).buffer);		// PINGRESP
-					parse = this.parse = {state: 0};
-					break;
-
-				case 0xD0:		// PINGRESP (ignored)
-					parse = this.parse = {state: 0};
-					break;
-
-				case 0xE0:		// DISCONNECT
-					debugger;		//@@ mosquitto_pub doesn't transmit this?
-					break;
-
 				default:
 					return this.fail("bad parse state");
 			}
 		}
-
-		if (this.#timer)
-			this.last = Date.now();
 	}
 	connected() {
 		this.onConnected?.();
@@ -496,7 +495,7 @@ export default class Client {
 
 		if (timeout) {
 			this.#timer = Timer.repeat(this.keepalive.bind(this), this.timeout >> 2);
-			this.last = Date.now();
+			this.#timer.read = this.#timer.write = Date.now();
 		}
 
 		delete this.connect;
@@ -577,19 +576,20 @@ export default class Client {
 	}
 	keepalive() {
 		const now = Date.now();
-		if ((this.last + this.timeout) > now)
-			return;		// received data within the timeout interval
+		if ((now - this.#timer.read) >= (this.timeout + (this.timeout >> 1)))
+			return void this.fail("read time out");	// nothing received in 1.5x keep alive interval is fail for client and server (in write-only client, it means client didn't receive ping response)
 
-		if ((this.last + (this.timeout + (this.timeout >> 1))) > now) {
-			try {
-				this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
-			}
-			catch {
-				this.fail("write failed");
+		if (!this.server) {	// client must send something within the keepalive interval. we always ping within that interval (ensures that write-only client occassionally receives something from server)
+			if ((now - this.#timer.write) >= (((this.timeout >> 2) * 3) - 500)) {		// haven't sent a ping in (just under) 3/4 the keep alive interval
+				try {
+					this.#timer.write = now;
+					this.ws.write(Uint8Array.of(0xC0, 0x00).buffer);		// ping
+				}
+				catch {
+					this.fail("write failed");
+				}
 			}
 		}
-		else
-			this.fail("time out"); // timed out after 1.5x waiting
 	}
 	fail(msg = "") {
 		trace("MQTT FAIL: ", msg, "\n");
