@@ -2121,12 +2121,12 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, mxStack, XS_STRING_HINT);
 				mxRestoreState;
 			}
-			if ((mxStack->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, mxStack->value.integer, &(scratch.value.at.index))) {
+			if ((mxStack->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the, mxStack->value.integer, &(scratch.value.at.index))) {
 				mxStack->kind = XS_AT_KIND;
 				mxStack->value.at.id = XS_NO_ID;
 				mxStack->value.at.index = scratch.value.at.index;
 			}
-			else if ((mxStack->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, mxStack->value.number, &(scratch.value.at.index))) {
+			else if ((mxStack->kind == XS_NUMBER_KIND) && fxNumberToIndex(the, mxStack->value.number, &(scratch.value.at.index))) {
 				mxStack->kind = XS_AT_KIND;
 				mxStack->value.at.id = XS_NO_ID;
 				mxStack->value.at.index = scratch.value.at.index;
@@ -2141,7 +2141,7 @@ XS_CODE_JUMP:
 
 				mxToString(mxStack);
 				mxSaveState;
-				flag = fxStringToIndex(the->dtoa, mxStack->value.string, &(scratch.value.at.index));
+				flag = fxStringToIndex(the, mxStack->value.string, &(scratch.value.at.index));
 				mxRestoreState;
 				if (flag) {
 #ifdef mxMetering

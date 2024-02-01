@@ -94,8 +94,15 @@ ifneq ("x$(SDKROOT)", "x")
 endif
 
 ifeq ($(GOAL),debug)
-	C_OPTIONS += -DmxASANStackMargin=131072 -fsanitize=address -fno-omit-frame-pointer -fsanitize-blacklist=xst_no_asan.txt
-	LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+	ifeq ($(SANITIZER), undefined)
+		C_OPTIONS += -fsanitize=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
+		LINK_OPTIONS += -fsanitize=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
+	else
+		C_OPTIONS += -fsanitize=address -fsanitize-blacklist=xst_no_asan.txt
+		LINK_OPTIONS += -fsanitize=address
+	endif
+	C_OPTIONS += -DmxASANStackMargin=131072 -fno-omit-frame-pointer
+	LINK_OPTIONS += -fno-omit-frame-pointer
 
 	ifneq ($(FUZZING),0)
 		C_OPTIONS += -DmxNoChunks=1

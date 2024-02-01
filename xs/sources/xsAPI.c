@@ -187,7 +187,7 @@ again:
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
-		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		theSlot->value.number = fxStringToNumber(the, theSlot->value.string, 1);
 		mxMeterOne();
 		goto again;
 	case XS_SYMBOL_KIND:
@@ -238,7 +238,7 @@ again:
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
-		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		theSlot->value.number = fxStringToNumber(the, theSlot->value.string, 1);
 		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
@@ -298,11 +298,11 @@ again:
 			fxStringX(the, theSlot, "true");
 		break;
 	case XS_INTEGER_KIND:
-		fxCopyStringC(the, theSlot, fxIntegerToString(the->dtoa, theSlot->value.integer, aBuffer, sizeof(aBuffer)));
+		fxCopyStringC(the, theSlot, fxIntegerToString(the, theSlot->value.integer, aBuffer, sizeof(aBuffer)));
 		mxMeterOne();
 		break;
 	case XS_NUMBER_KIND:
-		fxCopyStringC(the, theSlot, fxNumberToString(the->dtoa, theSlot->value.number, aBuffer, sizeof(aBuffer), 0, 0));
+		fxCopyStringC(the, theSlot, fxNumberToString(the, theSlot->value.number, aBuffer, sizeof(aBuffer), 0, 0));
 		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
@@ -402,7 +402,7 @@ again:
 	case XS_STRING_KIND:
 	case XS_STRING_X_KIND:
 		theSlot->kind = XS_NUMBER_KIND;
-		theSlot->value.number = fxStringToNumber(the->dtoa, theSlot->value.string, 1);
+		theSlot->value.number = fxStringToNumber(the, theSlot->value.string, 1);
 		mxMeterOne();
 		goto again;
 	case XS_SYMBOL_KIND:
@@ -1402,7 +1402,6 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			if (gxDefaults.initializeSharedCluster)
 				gxDefaults.initializeSharedCluster();
 				
-			the->dtoa = fxNew_dtoa(the);
 			the->context = theContext;
 			fxCreateMachinePlatform(the);
 
@@ -1594,7 +1593,6 @@ void fxDeleteMachine(txMachine* the)
 		aSlot = aSlot->next;
 	}
 #endif
-	fxDelete_dtoa(the->dtoa);
 	fxDeleteMachinePlatform(the);
 	fxFree(the);
 	c_free(the);
@@ -1624,7 +1622,6 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			if (gxDefaults.initializeSharedCluster)
 				gxDefaults.initializeSharedCluster();
 
-			the->dtoa = fxNew_dtoa(the);
 			the->preparation = theMachine->preparation;
 			the->context = theContext;
 			the->sharedMachine = theMachine;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -200,6 +200,7 @@ static void fx_evalScript(xsMachine* the);
 static void fx_fillBuffer(txMachine *the);
 void fx_nop(xsMachine *the);
 void fx_assert_throws(xsMachine *the);
+extern int gxStress;
 #endif
 static void fx_gc(xsMachine* the);
 static void fx_runScript(xsMachine* the);
@@ -356,6 +357,7 @@ int main(int argc, char* argv[])
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+				gxStress = 0;
 #endif
 
 				xsVar(0) = xsUndefined;
@@ -1471,10 +1473,9 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
-#if !FUZZING
+#if !FUZZILLI
 	xsCollectGarbage();
 #else
-	extern int gxStress;
 	xsResult = xsInteger(gxStress);
 
 	xsIntegerValue c = xsToInteger(xsArgc);
@@ -1675,7 +1676,7 @@ void __sanitizer_cov_reset_edgeguards()
 	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
 		*x = ++N;
 }
-#ifndef __linux__
+
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
 {
 	// Avoid duplicate initialization
@@ -1727,7 +1728,6 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
 	__shmem->edges[index / 8] |= 1 << (index % 8);
 	*guard = 0;
 }
-#endif
 
 #define REPRL_CRFD 100
 #define REPRL_CWFD 101
@@ -1744,6 +1744,16 @@ void fx_fuzzilli(xsMachine* the)
 				*((volatile char *)0) = 0;
 				break;
  			case 1: {
+				// check sanitizer
+				// this code is so buggy its bound to trip
+				// different sanitizers
+				size_t s = -1;
+				txSize txs = s + 1;
+				char buf[2];
+				char* bufptr = &buf;
+				bufptr[4] = (buf[0] == buf[1]) ? 0 : 1;
+				*((volatile char *)0) = 0;
+
 				// check ASAN
 				char *data = malloc(64);
 				free(data);
@@ -1820,6 +1830,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
+		gxStress = 0;
 		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{

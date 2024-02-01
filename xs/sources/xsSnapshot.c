@@ -1361,7 +1361,6 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			if (gxDefaults.initializeSharedCluster)
 				gxDefaults.initializeSharedCluster();
 				
-			the->dtoa = fxNew_dtoa(the);
 			the->context = theContext;
 			fxCreateMachinePlatform(the);
 

@@ -448,7 +448,7 @@ void fxGetNextNumberE(txParser* parser, int dot)
 			fxReportParserError(parser, parser->line, "invalid number");			
 	}	
 	else
-		fxGetNextNumber(parser, fxStringToNumber(parser->dtoa, parser->buffer, 1));
+		fxGetNextNumber(parser, fxStringToNumber(parser->console, parser->buffer, 1));
 }
 
 void fxGetNextNumberO(txParser* parser, int c, int legacy)

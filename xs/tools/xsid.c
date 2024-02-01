@@ -79,6 +79,15 @@ txString fxRealFilePath(txString path, txString buffer)
 	return NULL;
 }
 
+void fxAbort(void* console, int status)
+{
+	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
+		fprintf(stderr, "# error: memory full!\n");
+	else if (XS_STACK_OVERFLOW_EXIT == status)
+		fprintf(stderr, "# error: stack overflow!\n");
+	c_exit(1);
+}
+
 void fxReportError(txString theFormat, ...)
 {
 	c_va_list arguments;

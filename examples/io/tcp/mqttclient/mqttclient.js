@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -265,17 +265,33 @@ class MQTTClient {
 
 		return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
 	}
-	read(count) {
+	read(count = this.#payload) {
+		let buffer;
+		if ("object" === typeof count) {
+			buffer = count;
+			count = buffer.byteLength;
+
+			if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+				throw new Error("invalid buffer");
+		}
+
 		if (count > this.#payload) {
 			count = this.#payload;
 			if (!count)
 				return;
+
+			if (buffer && (count !== buffer.byteLength)) {
+				if (ArrayBuffer.isView(buffer))
+					buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
+				else
+					buffer = new Uint8Array(buffer, 0, count);
+			}
 		}
 
 		this.#readable -= count;
 		this.#payload -= count;
 		this.#socket.format = BufferFormat;
-		const result = this.#socket.read(count);
+		const result = this.#socket.read(buffer ?? count);
 
 		if ((0 === this.#payload) && this.#parse) {	// full message read and not currently running the parser
 			this.#options.timer ??= Timer.set(() => {

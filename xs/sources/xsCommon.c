@@ -1260,7 +1260,7 @@ txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
 		return -1;
 }
 
-txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
+txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex)
 {
 	if (0 <= theInteger) {
 		*theIndex = (txIndex)theInteger;
@@ -1269,7 +1269,7 @@ txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
 	return 0;
 }
 
-txFlag fxNumberToIndex(void* dtoa, txNumber number, txIndex* theIndex)
+txFlag fxNumberToIndex(void* the, txNumber number, txIndex* theIndex)
 {
 	txIndex integer = (txIndex)number;
 	txNumber check = integer;
@@ -1280,7 +1280,7 @@ txFlag fxNumberToIndex(void* dtoa, txNumber number, txIndex* theIndex)
 	return 0;
 }
 
-txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
+txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex)
 {
 	char buffer[256], c;
 	txNumber number;
@@ -1290,11 +1290,11 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
 	c = c_read8(theString);
 	if (('+' != c) && ('-' != c) && ('.' != c) && !(('0' <= c) && ('9' >= c)))
 		return 0;
-	number = fxStringToNumber(dtoa, theString, 1);
+	number = fxStringToNumber(the, theString, 1);
 	integer = (txIndex)number;
 	check = integer;
 	if ((number == check) && (integer < 4294967295u)) {
-		fxNumberToString(dtoa, number, buffer, sizeof(buffer), 0, 0);
+		fxNumberToString(the, number, buffer, sizeof(buffer), 0, 0);
 		if (!c_strcmp(theString, buffer)) {
 			*theIndex = integer;
 			return 1;

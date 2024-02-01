@@ -272,7 +272,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 				mxSyntaxError("%ld: number overflow", theParser->line);
 			c_memcpy(the->nameBuffer, s, size);
 			the->nameBuffer[size] = 0;
-			theParser->number = fxStringToNumber(the->dtoa, the->nameBuffer, 0);
+			theParser->number = fxStringToNumber(the, the->nameBuffer, 0);
 			theParser->integer = (txInteger)theParser->number;
 			number = theParser->integer;
 			if ((theParser->number == number) && (theParser->number != -0))
@@ -473,7 +473,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 		index = 0;
 		if (theParser->keys) {
 			at->kind = XS_UNDEFINED_KIND;
-			if (fxStringToIndex(the->dtoa, at->value.string, &index))
+			if (fxStringToIndex(the, at->value.string, &index))
 				id = 0;
 			else
 				id = fxFindName(the, at->value.string);
@@ -491,7 +491,7 @@ void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 			}
 		}
 		else {
-			if (fxStringToIndex(the->dtoa, at->value.string, &index))
+			if (fxStringToIndex(the, at->value.string, &index))
 				id = 0;
 			else
 				id = fxNewName(the, at);
@@ -748,7 +748,7 @@ void fxStringifyJSONIndent(txMachine* the, txJSONStringifier* theStringifier)
 void fxStringifyJSONInteger(txMachine* the, txJSONStringifier* theStringifier, txInteger theInteger)
 {
 	char aBuffer[256];
-	fxIntegerToString(the->dtoa, theInteger, aBuffer, sizeof(aBuffer));
+	fxIntegerToString(the, theInteger, aBuffer, sizeof(aBuffer));
 	fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 }
 
@@ -781,7 +781,7 @@ void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, tx
 	int fpclass = c_fpclassify(theNumber);
 	if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE)) {
 		char aBuffer[256];
-		fxNumberToString(the->dtoa, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
+		fxNumberToString(the, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
 		fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));
 	}
 	else
@@ -1032,7 +1032,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 		slot = the->stack;
 	again:
 		if ((slot->kind == XS_STRING_KIND) || (slot->kind == XS_STRING_X_KIND)) {
-			if (fxStringToIndex(the->dtoa, slot->value.string, &index))
+			if (fxStringToIndex(the, slot->value.string, &index))
 				flag = 1;
 			else {
 				if (slot->kind == XS_STRING_X_KIND)
@@ -1043,7 +1043,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 			}
 		}
 		else if (slot->kind == XS_INTEGER_KIND) {
-			if (fxIntegerToIndex(the->dtoa, slot->value.integer, &index))
+			if (fxIntegerToIndex(the, slot->value.integer, &index))
 				flag = 1;
 			else {
 				fxToString(the, slot);
@@ -1051,7 +1051,7 @@ txSlot* fxToJSONKeys(txMachine* the, txSlot* reference)
 			}
 		}
 		else if (slot->kind == XS_NUMBER_KIND){
-			if (fxNumberToIndex(the->dtoa, slot->value.number, &index))
+			if (fxNumberToIndex(the, slot->value.number, &index))
 				flag = 1;
 			else {
 				fxToString(the, slot);

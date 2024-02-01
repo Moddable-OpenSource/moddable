@@ -593,8 +593,6 @@ struct sxParser {
 	int error;
 	char* stackLimit;
 	
-	void* dtoa;
-	
 	txSize symbolModulo;
 	txSymbol** symbolTable;
 	

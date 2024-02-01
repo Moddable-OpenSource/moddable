@@ -41,8 +41,7 @@ SRC_DIR = $(XS_DIR)/sources
 TLS_DIR = $(XS_DIR)/tools
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
-MACOS_ARCH ?= -arch i386
-MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
+ARCH := $(shell uname -m)
 LINK_OPTIONS = -rdynamic
 
 C_OPTIONS = \
@@ -94,8 +93,26 @@ ifeq ($(GOAL),debug)
 		endif
 	else
 		C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter 
-		LINK_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
-		C_OPTIONS += -fsanitize=address -fno-omit-frame-pointer
+		# use asan by default, unless another sanitizer is
+		# requested via sanitizer
+		ifeq ($(SANITIZER), memory)
+			C_OPTIONS += -fsanitize=memory -fsanitize-memory-track-origins
+			LINK_OPTIONS += -fsanitize=memory
+		else ifeq ($(SANITIZER), undefined)
+			C_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fsanitize-recover=undefined
+			LINK_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fsanitize-recover=undefined
+
+			# function and other ubsan checks not available in some arch, such as arm
+			ifneq ($(ARCH), aarch64)
+				C_OPTIONS += -fsanitize=array-bounds,function,unsigned-integer-overflow
+				LINK_OPTIONS += -fsanitize=array-bounds,function,unsigned-integer-overflow
+			endif
+		else
+			C_OPTIONS += -fsanitize=address
+			LINK_OPTIONS += -fsanitize=address
+		endif
+		C_OPTIONS += -fno-omit-frame-pointer
+		LINK_OPTIONS += -fno-omit-frame-pointer
 	endif
 
 	ifneq ($(FUZZILLI),0)

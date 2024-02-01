@@ -57,6 +57,15 @@ static void fxWriteIDs(txScript* script, FILE* file);
 
 #ifndef XSTOOLS
 
+void fxAbort(void* console, int status)
+{
+	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
+		fprintf(stderr, "# error: memory full!\n");
+	else if (XS_STACK_OVERFLOW_EXIT == status)
+		fprintf(stderr, "# error: stack overflow!\n");
+	c_exit(1);
+}
+
 txID fxGenerateProfileID(void* console)
 {
 	return XS_NO_ID;
@@ -309,7 +318,7 @@ int main(int argc, char* argv[])
 	txByte byte;
 	txBoolean embed = 0;
 
-	fxInitializeParser(parser, (void  *)-1, 1024*1024, 1993);
+	fxInitializeParser(parser, NULL, 1024*1024, 1993);
 	parser->firstJump = &jump;
 	if (c_setjmp(jump.jmp_buf) == 0) {
 		for (argi = 1; argi < argc; argi++) {

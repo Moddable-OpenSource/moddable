@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,13 +36,17 @@
  */
 
 #include "xsScript.h"
+extern void fxAbort(void* console, int status);
 
+#if defined(__clang__) || defined (__GNUC__)
+	__attribute__((no_sanitize_address))
+#endif
 void fxCheckParserStack(txParser* parser, txInteger line)
 {
     char x;
     char *stack = &x;
     if (stack <= parser->stackLimit) {
-    	fxReportMemoryError(parser, line, "stack overflow");
+    	fxAbort(parser->console, XS_STACK_OVERFLOW_EXIT);
     }
 }
 
@@ -93,7 +97,6 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->console = console;
 	parser->stackLimit = fxCStackLimit();
 	
-	parser->dtoa = fxNew_dtoa(NULL);
 	parser->symbolModulo = symbolModulo;
 	parser->symbolTable = fxNewParserChunkClear(parser, parser->symbolModulo * sizeof(txSymbol*));
 
@@ -166,7 +169,7 @@ void* fxNewParserChunk(txParser* parser, txSize size)
 {
 	txParserChunk* block = c_malloc(sizeof(txParserChunk) + size);
 	if (!block)
-		fxReportMemoryError(parser, parser->line, "heap overflow");
+    	fxAbort(parser->console, XS_NOT_ENOUGH_MEMORY_EXIT);
 	parser->total += sizeof(txParserChunk) + size;
 	block->next = parser->first;
 	parser->first = block;
@@ -271,8 +274,6 @@ void fxReportParserError(txParser* parser, txInteger line, txString theFormat, .
 void fxTerminateParser(txParser* parser)
 {
 	fxDisposeParserChunks(parser);
-	if (parser->dtoa)
-		fxDelete_dtoa(parser->dtoa);
 }
 
 

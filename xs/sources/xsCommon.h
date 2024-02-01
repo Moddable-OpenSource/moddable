@@ -446,6 +446,18 @@ enum {
 	mxGeneratorFlag = 1 << 21,
 };
 
+enum {
+	XS_DEBUGGER_EXIT = 0,
+	XS_NOT_ENOUGH_MEMORY_EXIT,
+	XS_STACK_OVERFLOW_EXIT,
+	XS_FATAL_CHECK_EXIT,
+	XS_DEAD_STRIP_EXIT,
+	XS_UNHANDLED_EXCEPTION_EXIT,
+	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
+};
+
 extern void fxDeleteScript(txScript* script);
 
 extern const txUTF8Sequence gxUTF8Sequences[];
@@ -486,9 +498,9 @@ mxExport txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset);
 mxExport txSize fxUnicodeLength(txString theString);
 mxExport txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset);
 
-txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex);
-txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
-txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
+txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex);
+txFlag fxNumberToIndex(void* the, txNumber theNumber, txIndex* theIndex);
+txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
@@ -499,12 +511,10 @@ mxExport void fxVReportError(void* console, txString thePath, txInteger theLine,
 mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
 /* xsdtoa.c */
-extern void* fxNew_dtoa(void*);
-extern void fxDelete_dtoa(void*);
-mxExport txString fxIntegerToString(void* dtoa, txInteger theValue, txString theBuffer, txSize theSize);
+mxExport txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, txSize theSize);
 mxExport txInteger fxNumberToInteger(txNumber theValue);
-mxExport txString fxNumberToString(void* dtoa, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
-mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole);
+mxExport txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
+mxExport txNumber fxStringToNumber(void* the, txString theString, txFlag whole);
 
 /* xsre.c */
 enum {
