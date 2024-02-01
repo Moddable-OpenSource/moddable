@@ -200,6 +200,7 @@ static void fx_evalScript(xsMachine* the);
 static void fx_fillBuffer(txMachine *the);
 void fx_nop(xsMachine *the);
 void fx_assert_throws(xsMachine *the);
+extern int gxStress;
 #endif
 static void fx_gc(xsMachine* the);
 static void fx_runScript(xsMachine* the);
@@ -356,6 +357,7 @@ int main(int argc, char* argv[])
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+				gxStress = 0;
 #endif
 
 				xsVar(0) = xsUndefined;
@@ -1472,10 +1474,9 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
-#if !FUZZING
+#if !FUZZILLI
 	xsCollectGarbage();
 #else
-	extern int gxStress;
 	xsResult = xsInteger(gxStress);
 
 	xsIntegerValue c = xsToInteger(xsArgc);
@@ -1821,6 +1822,7 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
+		gxStress = 0;
 		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{
