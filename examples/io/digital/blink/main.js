@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -11,6 +11,9 @@
  *   Mountain View, CA 94042, USA.
  *
  */
+
+if (undefined === device?.pin?.led)
+	throw new Error("no LED pin provided by device");
 
 const Digital = device.io.Digital;
 const led = new Digital({

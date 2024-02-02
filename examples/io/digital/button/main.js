@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,18 +12,26 @@
  *
  */
 
+if (undefined === device?.pin?.button)
+	throw new Error("no button pin provided by device");
+
 const Digital = device.io.Digital;
-const led = new Digital({
-   pin: device.pin.led,
-   mode: Digital.Output,
-});
-led.write(1);
+let led;
+
+if (undefined !== device.pin.led) {
+	led = new Digital({
+	   pin: device.pin.led,
+	   mode: Digital.Output,
+	});
+	led.write(1);
+}
 
 new Digital({
 	pin: device.pin.button,
 	mode: Digital.InputPullUp,
 	edge: Digital.Rising | Digital.Falling,
 	onReadable() {
-		led.write(this.read());
+		led?.write(this.read());
+		trace(`Button: ${this.read()}\n`);
 	}
 });
