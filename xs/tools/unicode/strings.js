@@ -38,11 +38,18 @@ export default class extends TOOL {
 		let c = strings.length;
 		this.report(`#define mxStrings_${name} ${c}`);
 		this.report(`static const txString ICACHE_RODATA_ATTR gxStrings_${name}[mxStrings_${name}] = {`);
+		let buffer = "\t";
 		for (let i = 0; i < c; i++) {
-			let string = strings[i];
-			let bytes = encodeURI(string.bytes).replaceAll("%", "\\x");
-			this.report(`\t"${bytes}",`);
+			let string = '"';
+			string += encodeURI(strings[i].bytes).replaceAll("%", "\\x");
+			string += '",';
+			if ((buffer.length + string.length) > 160) {
+				this.report(buffer);
+				buffer = "\t";
+			}
+			buffer += string;
 		}
+		this.report(buffer);
 		this.report("};");
 	}
 	buildRanges(singles) {
@@ -60,6 +67,7 @@ export default class extends TOOL {
 				}
 				former = single;
 			}
+			ranges.push(former + 1);
 		}
 		return ranges;
 	}
