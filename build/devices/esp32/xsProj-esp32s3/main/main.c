@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -69,7 +69,6 @@
 		#include "tusb_cdc_acm.h"
 	#elif (USE_USB == 2)
 		#include "driver/usb_serial_jtag.h"
-		#include "hal/usb_serial_jtag_ll.h"
 	#endif
 #else
 	#include "driver/uart.h"
@@ -214,8 +213,8 @@ static void debug_task(void *pvParameter)
 
 #elif (USE_USB == 2)
 		fxReceiveLoop();
-		usb_serial_jtag_ll_txfifo_flush();
 		modDelayMilliseconds(5);
+
 #else	// !USE_USB
 
 		uart_event_t event;
@@ -420,7 +419,7 @@ WEAK void ESP_put(uint8_t *c, int count) {
 WEAK void ESP_putc(int c) {
 	char cx = c;
 #if (USE_USB == 2)
-	usb_serial_jtag_write_bytes(&cx, 1, 1);
+    usb_serial_jtag_write_bytes(&cx, 1, 1);
 #else
 	uart_write_bytes(USE_UART, &cx, 1);
 #endif

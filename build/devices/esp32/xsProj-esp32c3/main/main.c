@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,7 +45,6 @@
 #if USE_USB
 	#if USE_USB == 2
 		#include "driver/usb_serial_jtag.h"
-		#include "hal/usb_serial_jtag_ll.h"
 	#else
 		#error esp32c3 doesnt support TinyUSB
 	#endif
@@ -121,7 +120,6 @@ static void debug_task(void *pvParameter)
 
 	while (true) {
 		fxReceiveLoop();
-		usb_serial_jtag_ll_txfifo_flush();
 		modDelayMilliseconds(5);
 	}
 }
