@@ -103,6 +103,9 @@ void fxBuildMapSet(txMachine* the)
 	mxMapConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_groupBy), 2, mxID(_groupBy), XS_DONT_ENUM_FLAG);
+#endif
 	mxPop();
 	
 	mxPush(mxIteratorPrototype);
@@ -286,6 +289,37 @@ void fx_Map(txMachine* the)
 			fxIteratorReturn(the, iterator);
 			fxJump(the);
 		}
+	}
+}
+
+static void fx_Map_groupByAux(txMachine* the)
+{
+	txSlot* instance = mxResult->value.reference;
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txSlot* key = the->stack;
+	txSlot* entry = fxGetEntry(the, table, key);
+	if (entry)
+		mxPushSlot(entry->next);
+	else {
+		mxPush(mxArrayPrototype);
+		fxNewArrayInstance(the);
+		fxSetEntry(the, table, list, key, the->stack);
+	}
+}
+
+void fx_Map_groupBy(txMachine* the)
+{
+	txSlot *instance, *key, *value;
+	mxPush(mxMapPrototype);
+	instance = fxNewMapInstance(the);
+	mxPullSlot(mxResult);
+	fxGroupBy(the, fx_Map_groupByAux);
+	key = instance->next->next->value.list.first;
+	while (key) {
+		value = key->next;
+		fxCacheArray(the, value->value.reference);
+		key = value->next;
 	}
 }
 

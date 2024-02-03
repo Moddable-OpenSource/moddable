@@ -926,6 +926,8 @@ extern txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlo
 extern txSlot* fxGetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
 extern txSlot* fxSetPrivateProperty(txMachine* the, txSlot* instance, txSlot* check, txID id);
 
+extern void fxGroupBy(txMachine* the, txCallback aux);
+
 /* xsGlobal.c */
 extern const txBehavior gxGlobalBehavior;
 extern void fxBuildGlobal(txMachine* the);
@@ -989,6 +991,7 @@ mxExport void fx_Object_getOwnPropertyDescriptors(txMachine* the);
 mxExport void fx_Object_getOwnPropertyNames(txMachine* the);
 mxExport void fx_Object_getOwnPropertySymbols(txMachine* the);
 mxExport void fx_Object_getPrototypeOf(txMachine* the);
+mxExport void fx_Object_groupBy(txMachine* the);
 mxExport void fx_Object_hasOwn(txMachine* the);
 mxExport void fx_Object_is(txMachine* the);
 mxExport void fx_Object_isExtensible(txMachine* the);
@@ -1719,6 +1722,7 @@ mxExport void fx_Atomics_xor(txMachine* the);
 
 /* xsMapSet.c */
 mxExport void fx_Map(txMachine* the);
+mxExport void fx_Map_groupBy(txMachine* the);
 mxExport void fx_Map_prototype_clear(txMachine* the);
 mxExport void fx_Map_prototype_delete(txMachine* the);
 mxExport void fx_Map_prototype_entries(txMachine* the);

@@ -78,6 +78,9 @@ void fxBuildObject(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertyNames), 1, mxID(_getOwnPropertyNames), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getOwnPropertySymbols), 1, mxID(_getOwnPropertySymbols), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_getPrototypeOf), 1, mxID(_getPrototypeOf), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_groupBy), 2, mxID(_groupBy), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_hasOwn), 2, mxID(_hasOwn), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_is), 2, mxID(_is), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Object_isExtensible), 1, mxID(_isExtensible), XS_DONT_ENUM_FLAG);
@@ -867,6 +870,40 @@ void fx_Object_getPrototypeOf(txMachine* the)
 	if ((mxArgc < 1) || (mxArgv(0)->kind == XS_UNDEFINED_KIND) || (mxArgv(0)->kind == XS_NULL_KIND))
 		mxTypeError("invalid object");
 	mxBehaviorGetPrototype(the, fxToInstance(the, mxArgv(0)), mxResult);
+}
+
+static void fx_Object_groupByAux(txMachine* the)
+{
+	txSlot* instance = mxResult->value.reference;
+	txSlot* at = the->stack;
+	fxAt(the, at);
+	mxPushUndefined();
+	if (!mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack)) {
+		mxPop();
+		mxPush(mxArrayPrototype);
+		fxNewArrayInstance(the);
+		if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, XS_GET_ONLY))
+			mxTypeError("invalid descriptor");
+	}
+}
+
+void fx_Object_groupBy(txMachine* the)
+{
+	txSlot *instance, *at, *property;
+	instance = fxNewInstance(the);
+	mxPullSlot(mxResult);
+	fxGroupBy(the, fx_Object_groupByAux);
+	at = fxNewInstance(the);
+	mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
+	mxPushUndefined();
+	property = the->stack;
+	while ((at = at->next)) {
+		if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
+			fxCacheArray(the, property->value.reference);
+		}
+	}
+	mxPop();
+	mxPop();
 }
 
 void fx_Object_hasOwn(txMachine* the)
