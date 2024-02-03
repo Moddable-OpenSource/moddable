@@ -144,6 +144,10 @@ void fxBuildString(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_match), 1, mxID(_match), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_matchAll), 1, mxID(_matchAll), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_search), 1, mxID(_search), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_isWellFormed), 0, mxID(_isWellFormed), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_String_prototype_toWellFormed), 0, mxID(_toWellFormed), XS_DONT_ENUM_FLAG);
+#endif
 	mxStringPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_String), 1, mxID(_String));
 	mxStringConstructor = *the->stack;
@@ -875,6 +879,21 @@ static txInteger fx_String_prototype_indexOf_aux(txMachine* the, txString theStr
 	return 0;
 }
 
+void fx_String_prototype_isWellFormed(txMachine* the)
+{
+	txString p = fxCoerceToString(the, mxThis);
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = 1;
+	while (*p) {
+		txInteger c;
+		p = mxStringByteDecode(p, &c);
+		if ((0x0000D800 <= c) && (c <= 0x0000DFFF)) {
+			mxResult->value.boolean = 0;
+			break;
+		}
+	}
+}
+
 void fx_String_prototype_lastIndexOf(txMachine* the)
 {
 	txString aString;
@@ -1500,6 +1519,24 @@ void fx_String_prototype_toUpperCase(txMachine* the)
 {
 	fxCoerceToString(the, mxThis);
 	fx_String_prototype_toCase(the, 1);
+}
+
+void fx_String_prototype_toWellFormed(txMachine* the)
+{
+	txString string = fxCoerceToString(the, mxThis);
+	txSize length = mxStringLength(string);
+	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
+	mxResult->kind = XS_STRING_KIND;
+	txString p = string;
+	txString q = mxResult->value.string;
+	while (*p) {
+		txInteger c;
+		p = mxStringByteDecode(p, &c);
+		if ((0x0000D800 <= c) && (c <= 0x0000DFFF))
+			c = 0x0000FFFD;
+		q = mxStringByteEncode(q, c);
+	}
+	*q = 0;
 }
 
 void fx_String_prototype_trim(txMachine* the)

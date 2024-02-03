@@ -1194,6 +1194,8 @@ enum {
 	__onRejected_,
 	__result_,
 #if mxECMAScript2024
+	_isWellFormed,	
+	_toWellFormed,	
 	_unicodeSets,	
 #endif
 	XS_ID_COUNT

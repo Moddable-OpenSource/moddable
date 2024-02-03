@@ -1798,6 +1798,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"(onRejected)",
 	"(result)",
 #if mxECMAScript2024
+	"isWellFormed",	
+	"toWellFormed",	
 	"unicodeSets",	
 #endif
 };

@@ -70,15 +70,23 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #define mxThrowIf(_ERROR) { if (_ERROR) { snapshot->error = _ERROR; fxJump(the); } }
 #define mxChunkFlag 0x80000000
 
-#if mxExplicitResourceManagement
-#define mxCallbacksLength 523
-#elif mxECMAScript2023
-#define mxCallbacksLength 506
-#elif mxECMAScript2024
-#define mxCallbacksLength 507
+#if mxECMAScript2023
+	#define mxECMAScript2023Additions 10
 #else
-#define mxCallbacksLength 496
+	#define mxECMAScript2023Additions 0
 #endif
+#if mxExplicitResourceManagement
+	#define mxExplicitResourceManagementAdditions 17
+#else
+	#define mxExplicitResourceManagementAdditions 0
+#endif
+#if mxECMAScript2024
+	#define mxECMAScript2024Additions 3
+#else
+	#define mxECMAScript2024Additions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions)
+
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
 	fx_Array_from,
@@ -609,7 +617,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_SuppressedError,
 #endif
 #if mxECMAScript2024
-	fx_RegExp_prototype_get_unicode,
+	fx_RegExp_prototype_get_unicodeSets,
+	fx_String_prototype_isWellFormed,
+	fx_String_prototype_toWellFormed
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
