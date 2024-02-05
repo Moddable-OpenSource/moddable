@@ -1800,8 +1800,10 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #if mxECMAScript2024
 	"groupBy",	
 	"isWellFormed",	
+	"promise",	
 	"toWellFormed",	
-	"unicodeSets",	
+	"unicodeSets",
+	"withResolvers",
 #endif
 };
 

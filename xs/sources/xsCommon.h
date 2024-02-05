@@ -1196,8 +1196,10 @@ enum {
 #if mxECMAScript2024
 	_groupBy,	
 	_isWellFormed,	
+	_promise,	
 	_toWellFormed,	
 	_unicodeSets,	
+	_withResolvers,	
 #endif
 	XS_ID_COUNT
 };

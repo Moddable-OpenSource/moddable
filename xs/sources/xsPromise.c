@@ -72,6 +72,9 @@ void fxBuildPromise(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_race), 1, mxID(_race), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_reject), 1, mxID(_reject), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_resolve), 1, mxID(_resolve), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_withResolvers), 0, mxID(_withResolvers), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
 	fxNewHostFunction(the, mxCallback(fxOnRejectedPromise), 1, XS_NO_ID, XS_NO_ID);
@@ -942,6 +945,29 @@ void fx_Promise_resolveAux(txMachine* the)
 	mxPop();
     mxPop(); // rejectFunction
     mxPop(); // resolveFunction
+}
+
+void fx_Promise_withResolvers(txMachine* the)
+{
+	txSlot* resolveFunction;
+	txSlot* rejectFunction;
+	txSlot* promise;
+	txSlot* slot;
+	mxTemporary(resolveFunction);
+	mxTemporary(rejectFunction);
+	mxPushSlot(mxThis);
+	fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+	promise = the->stack;
+	mxPush(mxObjectPrototype);
+	slot = fxNewObjectInstance(the);
+	mxPullSlot(mxResult);
+	slot = fxLastProperty(the, slot);
+	slot = fxNextSlotProperty(the, slot, promise, mxID(_promise), XS_NO_FLAG);
+	slot = fxNextSlotProperty(the, slot, resolveFunction, mxID(_resolve), XS_NO_FLAG);
+	slot = fxNextSlotProperty(the, slot, rejectFunction, mxID(_reject), XS_NO_FLAG);
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Promise_prototype_catch(txMachine* the)
