@@ -1399,14 +1399,17 @@ void fx_TypedArray(txMachine* the)
 					mxRangeError("out of range length %ld", size);
 				size = delta;
 			}
+			else if (info->value.bufferInfo.maxLength >= 0) {
+				if (info->value.bufferInfo.length < offset)
+					mxRangeError("out of range offset %ld", offset);
+				size = -1;
+			}
 			else {
 				if (info->value.bufferInfo.length & ((1 << shift) - 1))
 					mxRangeError("invalid byteLength %ld", info->value.bufferInfo.length);
 				size = info->value.bufferInfo.length - offset;
 				if (size < 0)
 					mxRangeError("out of range byteLength %ld", size);
-				if (info->value.bufferInfo.maxLength >= 0)
-					size = -1;
 			}
 			view->value.dataView.offset = offset;
 			view->value.dataView.size = size;
@@ -2252,22 +2255,35 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 			mxTypeError("insufficient buffer");
 		if (count) {
 			length = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
-			mxPushUndefined();
-			while ((start < length) && (start < end)) {
-				(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (start * delta), the->stack, EndianNative);
-				(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
-				start++;
-				index++;
+			if ((end <= length) && (resultDispatch->value.typedArray.dispatch->constructorID == dispatch->value.typedArray.dispatch->constructorID)) {
+				txInteger shift = dispatch->value.typedArray.dispatch->shift;
+				txSlot* data = buffer->value.reference->next;
+				txSlot* resultData = resultBuffer->value.reference->next;
+				txByte* address = data->value.arrayBuffer.address;
+				txByte* resultAddress = resultData->value.arrayBuffer.address;
+				address += view->value.dataView.offset;
+				resultAddress += resultView->value.dataView.offset;
+				c_memcpy(resultAddress, address + (start << shift), count << shift);
+				mxMeterSome(((txU4)(count)) * 2);
 			}
-			while (start < end) {
-				the->stack->kind = XS_UNDEFINED_KIND;
-				(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
-				(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
-				start++;
-				index++;
+			else {
+				mxPushUndefined();
+				while ((start < length) && (start < end)) {
+					(*dispatch->value.typedArray.dispatch->getter)(the, buffer->value.reference->next, view->value.dataView.offset + (start * delta), the->stack, EndianNative);
+					(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
+					(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
+					start++;
+					index++;
+				}
+				while (start < end) {
+					the->stack->kind = XS_UNDEFINED_KIND;
+					(*resultDispatch->value.typedArray.dispatch->coerce)(the, the->stack);
+					(*resultDispatch->value.typedArray.dispatch->setter)(the, resultBuffer->value.reference->next, resultView->value.dataView.offset + (index << resultDispatch->value.typedArray.dispatch->shift), the->stack, EndianNative);
+					start++;
+					index++;
+				}
+				mxPop();
 			}
-			mxPop();
 		}
 	}
 }
