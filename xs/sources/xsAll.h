@@ -1536,6 +1536,7 @@ mxExport void fx_ArrayBuffer_prototype_concat(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_resize(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_slice(txMachine* the);
 mxExport void fx_ArrayBuffer_prototype_transfer(txMachine* the);
+mxExport void fx_ArrayBuffer_prototype_transferToFixedLength(txMachine* the);
 
 mxExport void fx_DataView(txMachine* the);
 mxExport void fx_DataView_prototype_buffer_get(txMachine* the);

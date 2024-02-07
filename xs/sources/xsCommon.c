@@ -1802,6 +1802,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"isWellFormed",	
 	"promise",	
 	"toWellFormed",	
+	"transferToFixedLength",
 	"unicodeSets",
 	"withResolvers",
 #endif

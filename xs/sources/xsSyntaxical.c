@@ -3785,12 +3785,19 @@ txBoolean fxCheckReference(txParser* parser, txToken theToken)
 	txNode* node = parser->root;
 	txToken aToken = (node && node->description) ? node->description->token : XS_NO_TOKEN;
 	if (aToken == XS_TOKEN_EXPRESSIONS) {
-		txNode* item = ((txExpressionsNode*)node)->items->first;
+		txNode* item;
+	again:
+		item = ((txExpressionsNode*)node)->items->first;
 		if (item && !item->next) {
 			aToken = (item->description) ? item->description->token : XS_NO_TOKEN;
 			if ((aToken == XS_TOKEN_ACCESS) || (aToken == XS_TOKEN_MEMBER) || (aToken == XS_TOKEN_MEMBER_AT) || (aToken == XS_TOKEN_PRIVATE_MEMBER) || (aToken == XS_TOKEN_UNDEFINED)) {
 				item->next = node->next;
 				node = parser->root = item;
+			}
+			else if (aToken == XS_TOKEN_EXPRESSIONS) {
+				item->next = node->next;
+				node = item;
+				goto again;
 			}
 			else
 				aToken = XS_TOKEN_EXPRESSIONS;

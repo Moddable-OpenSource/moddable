@@ -1198,6 +1198,7 @@ enum {
 	_isWellFormed,	
 	_promise,	
 	_toWellFormed,	
+	_transferToFixedLength,
 	_unicodeSets,	
 	_withResolvers,	
 #endif

@@ -760,6 +760,28 @@ void fxAsyncFromSyncIteratorDone(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
+void fxAsyncFromSyncIteratorFailed(txMachine* the)
+{
+	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* instance = slot->value.home.object;
+	txSlot* iterator = instance->next;
+// 	txSlot* nextFunction = iterator->next;
+// 	txSlot* doneFunction = nextFunction->next;
+// 	txSlot* doneFlag = doneFunction->next;
+// 	txSlot* failedFunction = doneFlag->next;
+// 	mxException.kind = mxArgv(0)->kind;
+// 	mxException.value = mxArgv(0)->value;
+// 	fxThrow(the, NULL, 0);
+	mxPushReference(instance);
+	mxPushSlot(iterator);
+	mxGetID(mxID(_throw));
+	if (mxIsUndefined(the->stack) || mxIsNull(the->stack))
+		return;
+	mxCall();
+	mxPushSlot(mxArgv(0));
+	mxRunCount(1);
+}
+
 txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
@@ -797,6 +819,12 @@ txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the)
 	mxPop();
 	
     slot = fxNextBooleanProperty(the, slot, 0, XS_NO_ID, XS_INTERNAL_FLAG);
+    
+	function = fxNewHostFunction(the, fxAsyncFromSyncIteratorFailed, 1, XS_NO_ID, mxAsyncFromSyncIteratorDoneProfileID);
+	home = mxFunctionInstanceHome(function);
+	home->value.home.object = instance;
+    slot = fxNextSlotProperty(the, slot, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
+	mxPop();
 
 	mxPullSlot(iterator);
 	return instance;
@@ -860,6 +888,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 			if (stepFunction) {
 				txSlot* doneFunction = iterator->next->next;
 				txSlot* doneFlag = doneFunction->next;
+				txSlot* failedFunction = doneFlag->next;
 				mxPushSlot(iterator);
 				mxPushSlot(stepFunction);
 				mxCall();
@@ -885,7 +914,7 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				fx_Promise_resolveAux(the);
 				mxPop();
 				mxPop();
-				fxPromiseThen(the, the->stack->value.reference, doneFunction, C_NULL, resolveFunction, rejectFunction);
+				fxPromiseThen(the, the->stack->value.reference, doneFunction, failedFunction, resolveFunction, rejectFunction);
 			}
 		}
 		mxCatch(the) {

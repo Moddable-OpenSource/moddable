@@ -81,7 +81,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxExplicitResourceManagementAdditions 0
 #endif
 #if mxECMAScript2024
-	#define mxECMAScript2024Additions 6
+	#define mxECMAScript2024Additions 7
 #else
 	#define mxECMAScript2024Additions 0
 #endif
@@ -617,6 +617,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_SuppressedError,
 #endif
 #if mxECMAScript2024
+	fx_ArrayBuffer_prototype_transferToFixedLength,
 	fx_Map_groupBy,
 	fx_Object_groupBy,
 	fx_Promise_withResolvers,

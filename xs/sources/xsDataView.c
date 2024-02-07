@@ -207,6 +207,9 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_resize), 1, mxID(_resize), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_slice), 2, mxID(_slice), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_transfer), 0, mxID(_transfer), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_ArrayBuffer_prototype_transferToFixedLength), 0, mxID(_transferToFixedLength), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextStringXProperty(the, slot, "ArrayBuffer", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxArrayBufferPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_ArrayBuffer), 1, mxID(_ArrayBuffer));
@@ -683,7 +686,7 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
 }
 
-void fx_ArrayBuffer_prototype_transfer(txMachine* the)
+static void fx_ArrayBuffer_prototype_transferAux(txMachine* the, txBoolean fixed)
 {
 	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
@@ -702,7 +705,17 @@ void fx_ArrayBuffer_prototype_transfer(txMachine* the)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
 	arrayBuffer->value.arrayBuffer.address = C_NULL;
 	bufferInfo->value.bufferInfo.length = 0;
-	resultBuffer->next->value.bufferInfo.maxLength = maxByteLength;
+	resultBuffer->next->value.bufferInfo.maxLength = (fixed) ? -1 : maxByteLength;
+}
+
+void fx_ArrayBuffer_prototype_transfer(txMachine* the)
+{
+	fx_ArrayBuffer_prototype_transferAux(the, 0);
+}
+
+void fx_ArrayBuffer_prototype_transferToFixedLength(txMachine* the)
+{
+	fx_ArrayBuffer_prototype_transferAux(the, 1);
 }
 
 txSlot* fxCheckDataViewInstance(txMachine* the, txSlot* slot)

@@ -1009,11 +1009,14 @@ void fxRunContext(txPool* pool, txContext* context)
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
  			||	!strcmp((char*)node->data.scalar.value, "decorators")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
+ 			||	!strcmp((char*)node->data.scalar.value, "import-attributes")
+ 			||	!strcmp((char*)node->data.scalar.value, "iterator-helpers")
  			||	!strcmp((char*)node->data.scalar.value, "json-modules")
  			||	!strcmp((char*)node->data.scalar.value, "regexp-duplicate-named-groups")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
+ 			||	!strcmp((char*)node->data.scalar.value, "set-methods")
 			) {
 				sloppy = 0;
 				strict = 0;
