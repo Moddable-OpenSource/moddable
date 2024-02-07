@@ -469,35 +469,21 @@ export default class extends TOOL {
 				let source = fileURL.slice(this.windows ? 8 : 7);
 				let target = from.slice(0, from.lastIndexOf('.'));
 				item.specifiers = item.specifiers.filter(specifier => {
-					if (specifier == from) {
-						this.manifest.modules[target] = `${source}`;
-						source = null;
-						return false;
-					}
-					return true;
+					if (specifier.startsWith('#'))
+						specifier = packageName + "/" + specifier;
+					return (specifier !== from);
 				});
 				item.specifiers.forEach(specifier => {
-					let target;
 					if (specifier.startsWith('#'))
-						target = packageName + "/" + specifier;
-					else
-						target = specifier;
-					if (source) {
-						this.manifest.modules[target] = `${source}`;
-						source = null;
-					}
-					else { //@@ alias
-						let string = `export * from "${from}";`;
-						if (item.default)
-							string += ` import _ from "${from}"; export default _;`;
-						this.writeDirectoryFileString(tmpPath, `${target}.js`, string);
-						this.manifest.modules[target] = `./${target}.js`;
-					}
+						specifier = packageName + "/" + specifier;
+					//@@ alias
+					let string = `export * from "${from}";`;
+					if (item.default)
+						string += ` import _ from "${from}"; export default _;`;
+					this.writeDirectoryFileString(tmpPath, `${specifier}.js`, string);
+					this.manifest.modules[specifier] = `./${specifier}.js`;
 				});
-				if (source) {
-					this.manifest.modules[target] = `${source}`;
-					source = null;
-				}
+				this.manifest.modules[target] = `${source}`;
 				if (this.hasCreationMain && (fileURL == mainURL)) {
 					this.manifest.creation = { main: target };
 // 					if (item.async)
