@@ -324,7 +324,7 @@ void fx_AggregateError(txMachine* the)
 			length++;
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}

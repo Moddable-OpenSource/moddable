@@ -239,24 +239,30 @@ txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot*
 	return 1;
 }
 
-void fxIteratorReturn(txMachine* the, txSlot* iterator)
+void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt)
 {
-	mxPush(mxException);
+	if (abrupt)
+		mxPush(mxException);
 	mxTry(the) {
 		mxPushSlot(iterator);
 		mxDub();
 		mxGetID(mxID(_return));
-		if (mxIsUndefined(the->stack)) 
+		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) 
 			mxPop();
 		else {
 			mxCall();
 			mxRunCount(0);
+			if (!mxIsReference(the->stack))
+				mxTypeError("iterator result is no object");
 		}
 		mxPop();
 	}
 	mxCatch(the) {
+		if (!abrupt)
+			fxJump(the);
 	}
-	mxPull(mxException);
+	if (abrupt)
+		mxPull(mxException);
 }
 
 txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional)
@@ -302,7 +308,7 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 #if mxExplicitResourceManagement
 void fx_Iterator_dispose(txMachine* the)
 {	
-	fxIteratorReturn(the, mxThis);
+	fxIteratorReturn(the, mxThis, 1);
 }
 #endif
 

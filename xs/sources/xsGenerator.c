@@ -49,7 +49,7 @@ static txSlot* fxCheckAsyncGeneratorInstance(txMachine* the, txSlot* slot);
 static void fx_AsyncGenerator_prototype_aux(txMachine* the, txFlag status);
 
 static txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot);
-static void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status);
+static void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status, txSlot* iterator, txBoolean* flag);
 
 void fxBuildGenerator(txMachine* the)
 {
@@ -765,21 +765,21 @@ void fxAsyncFromSyncIteratorFailed(txMachine* the)
 	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
 	txSlot* instance = slot->value.home.object;
 	txSlot* iterator = instance->next;
-// 	txSlot* nextFunction = iterator->next;
-// 	txSlot* doneFunction = nextFunction->next;
-// 	txSlot* doneFlag = doneFunction->next;
-// 	txSlot* failedFunction = doneFlag->next;
-// 	mxException.kind = mxArgv(0)->kind;
-// 	mxException.value = mxArgv(0)->value;
-// 	fxThrow(the, NULL, 0);
-	mxPushReference(instance);
-	mxPushSlot(iterator);
-	mxGetID(mxID(_throw));
-	if (mxIsUndefined(the->stack) || mxIsNull(the->stack))
-		return;
-	mxCall();
-	mxPushSlot(mxArgv(0));
-	mxRunCount(1);
+	mxTry(the) {
+		mxPushSlot(iterator);
+		mxPushSlot(iterator);
+		mxGetID(mxID(_return));
+		if (!mxIsUndefined(the->stack) && !mxIsNull(the->stack)) {
+			mxCall();
+			mxRunCount(0);
+		}
+		mxPop();
+	}
+	mxCatch(the) {
+	}
+	mxException.kind = mxArgv(0)->kind;
+	mxException.value = mxArgv(0)->value;
+	fxThrow(the, NULL, 0);
 }
 
 txSlot* fxCheckAsyncFromSyncIteratorInstance(txMachine* the, txSlot* slot)
@@ -830,14 +830,12 @@ txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the)
 	return instance;
 }
 
-void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
+void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status, txSlot* iterator, txBoolean* flag)
 {
 	txSlot* stack = the->stack;
 	txSlot* resolveFunction;
     txSlot* rejectFunction;
 	txSlot* slot;
-	txSlot* instance;
-	txSlot* iterator;
 	txSlot* stepFunction = C_NULL;
 	
 	mxTemporary(resolveFunction);
@@ -850,8 +848,6 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 #endif
     {
 		mxTry(the) {
-			instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
-			iterator = instance->next;
 			if (status == XS_NO_STATUS) {
 				stepFunction = iterator->next;
 			}
@@ -873,14 +869,9 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 				mxPushSlot(iterator);
 				mxGetID(mxID(_throw));
 				if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
-					mxPushUndefined();
-					mxPushSlot(rejectFunction);
-					mxCall();
-					if (mxArgc == 0)
-						mxPushUndefined();
-					else
-						mxPushSlot(mxArgv(0));
-					mxRunCount(1);
+					*flag = 0;
+					fxIteratorReturn(the, iterator, 0);
+					mxTypeError("no throw");
 				}
 				else
 					stepFunction = the->stack;
@@ -918,6 +909,8 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 			}
 		}
 		mxCatch(the) {
+			if (*flag)
+				fxIteratorReturn(the, iterator, 1);
 			fxRejectException(the, rejectFunction);
 		}
     }
@@ -926,17 +919,23 @@ void fx_AsyncFromSyncIterator_prototype_aux(txMachine* the, txFlag status)
 
 void fx_AsyncFromSyncIterator_prototype_next(txMachine* the)
 {
-	fx_AsyncFromSyncIterator_prototype_aux(the, XS_NO_STATUS);
+	txBoolean flag = 1;
+	txSlot* instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_NO_STATUS, instance->next, &flag);
 }
 
 void fx_AsyncFromSyncIterator_prototype_return(txMachine* the)
 {
-	fx_AsyncFromSyncIterator_prototype_aux(the, XS_RETURN_STATUS);
+	txBoolean flag = 1;
+	txSlot* instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_RETURN_STATUS, instance->next, &flag);
 }
 
 void fx_AsyncFromSyncIterator_prototype_throw(txMachine* the)
 {
-	fx_AsyncFromSyncIterator_prototype_aux(the, XS_THROW_STATUS);
+	txBoolean flag = 1;
+	txSlot* instance = fxCheckAsyncFromSyncIteratorInstance(the, mxThis);
+	fx_AsyncFromSyncIterator_prototype_aux(the, XS_THROW_STATUS, instance->next, &flag);
 }
 
 

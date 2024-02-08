@@ -286,7 +286,7 @@ void fx_Map(txMachine* the)
 			mxPop();
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}
@@ -584,7 +584,7 @@ void fx_Set(txMachine* the)
 			mxPop();
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}
@@ -1121,7 +1121,7 @@ void fx_WeakMap(txMachine* the)
 			mxPop();
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}
@@ -1244,7 +1244,7 @@ void fx_WeakSet(txMachine* the)
 			mxPop();
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}

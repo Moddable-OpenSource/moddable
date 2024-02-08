@@ -1188,7 +1188,7 @@ void fx_Array_from(txMachine* the)
 					length++;
 				}
 				mxCatch(the) {
-					fxIteratorReturn(the, iterator);
+					fxIteratorReturn(the, iterator, 1);
 					fxJump(the);
 				}
 			}

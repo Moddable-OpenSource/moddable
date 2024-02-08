@@ -959,7 +959,7 @@ extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
 extern txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result);
 extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
 extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
-extern void fxIteratorReturn(txMachine* the, txSlot* iterator);
+extern void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt);
 extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);

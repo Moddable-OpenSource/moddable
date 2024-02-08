@@ -767,7 +767,7 @@ void fx_Object_fromEntries(txMachine* the)
 			mxPop();
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}

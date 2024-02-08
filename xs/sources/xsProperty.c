@@ -681,7 +681,7 @@ void fxGroupBy(txMachine* the, txCallback aux)
 			k++;
 		}
 		mxCatch(the) {
-			fxIteratorReturn(the, iterator);
+			fxIteratorReturn(the, iterator, 1);
 			fxJump(the);
 		}
 	}

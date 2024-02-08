@@ -356,7 +356,7 @@ void fxCombinePromises(txMachine* the, txInteger which)
 					index++;
 				}
 				mxCatch(the) {
-					fxIteratorReturn(the, iterator);
+					fxIteratorReturn(the, iterator, 1);
 					fxJump(the);
 				}
 			}
