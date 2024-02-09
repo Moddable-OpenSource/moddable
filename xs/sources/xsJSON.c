@@ -713,7 +713,7 @@ void fxStringifyJSONCharacter(txMachine* the, txJSONStringifier* theStringifier,
 		theStringifier->size += ((size / 1024) + 1) * 1024;
 		aBuffer = c_realloc(theStringifier->buffer, theStringifier->size);
 		if (!aBuffer)
-			mxUnknownError("out of memory");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		theStringifier->buffer = aBuffer;
 	}
 	mxStringByteEncode(theStringifier->buffer + theStringifier->offset, character);
@@ -728,7 +728,7 @@ void fxStringifyJSONChars(txMachine* the, txJSONStringifier* theStringifier, cha
 		theStringifier->size += ((theSize / 1024) + 1) * 1024;
 		aBuffer = c_realloc(theStringifier->buffer, theStringifier->size);
 		if (!aBuffer)
-			mxUnknownError("out of memory");
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		theStringifier->buffer = aBuffer;
 	}
 	c_memcpy(theStringifier->buffer + theStringifier->offset, s, theSize);
