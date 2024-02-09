@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -223,6 +223,10 @@ static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID
 	return 0;
 }
 
+#ifndef mxSeparator
+	#define mxSeparator ('/')
+#endif
+	
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 #if MODDEF_XS_TEST
@@ -231,17 +235,24 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char name[PATH_MAX];
 	char buffer[PATH_MAX];
 	txInteger dot = 0;
+	txInteger i = 0;
 	txInteger hash = 0;
 	txString slash;
 	txString path;
 	txID id;
 	fxToStringBuffer(the, slot, name, sizeof(name));
 	if (name[0] == '.') {
-		if (name[1] == '/') {
+		if (name[1] == mxSeparator) {
 			dot = 1;
+			i = 1;
 		}
-		else if ((name[1] == '.') && (name[2] == '/')) {
+		else if ((name[1] == '.') && (name[2] == mxSeparator)) {
 			dot = 2;
+			i = 2;
+			while ((name[i + 1] == '.') && (name[i + 2] == '.') && (name[i + 3] == mxSeparator)) {
+				dot++;
+				i += 3;
+			}
 		}
 	}
 	else if (name[0] == '#') {
@@ -250,7 +261,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	else if (c_strncmp(name, "moddable:", 9) == 0)
 		c_memmove(name, name + 9, c_strlen(name) - 8);
 
-	slash = c_strrchr(name, '/');
+	slash = c_strrchr(name, mxSeparator);
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
@@ -260,34 +271,38 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 		*slash = 0;
 	}
-	if (dot) {
+	if (dot > 0) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
-		buffer[0] = '/';
+		buffer[0] = mxSeparator;
 		path = buffer + 1;
 		c_strcpy(path, fxGetKeyName(the, moduleID));
-		slash = c_strrchr(buffer, '/');
+		slash = c_strrchr(buffer, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
-		if (dot == 2) {
-			*slash = 0;
-			slash = c_strrchr(buffer, '/');
+		*slash = 0;
+		dot--;
+		while (dot > 0) {
+			slash = c_strrchr(buffer, mxSeparator);
 			if (!slash)
 				return XS_NO_ID;
+			*slash = 0;
+			dot--;
 		}
-		*slash = 0;
-		c_strcat(buffer, name + dot);
+		if ((c_strlen(buffer) + c_strlen(name + i)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name + i);
 	}
 	else if (hash) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
 		path = buffer;
 		c_strcpy(path, fxGetKeyName(the, moduleID));
-		slash = c_strchr(buffer, '/');
+		slash = c_strchr(buffer, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
 		if (path[0] == '@') {
-			slash = c_strchr(slash + 1, '/');
+			slash = c_strchr(slash + 1, mxSeparator);
 			if (!slash)
 				return XS_NO_ID;
 		}

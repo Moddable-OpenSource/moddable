@@ -1,6 +1,7 @@
 {
     "include": [
-        "$(MODDABLE)/examples/manifest_piu.json"
+        "$(MODDABLE)/examples/manifest_piu.json",
+        "$(MODDABLE)/examples/manifest_commodetto.json"
     ],
     "modules": {
         "color-picker": "./color-picker",

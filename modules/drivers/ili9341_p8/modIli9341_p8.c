@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,7 +44,7 @@
 
 #include "driver/gpio.h"
 
-#if !defined(MODDEF_ILI9341P8_DC_PIN) || !defined(MODDEF_ILI9341P8_CS_PIN) || !defined(MODDEF_ILI9341P8_PCLK_PIN)
+#if !defined(MODDEF_ILI9341P8_DC_PIN) || !defined(MODDEF_ILI9341P8_PCLK_PIN)
 	#error required pin not defined
 #endif
 #if !defined(MODDEF_ILI9341P8_DATA0_PIN) || !defined(MODDEF_ILI9341P8_DATA1_PIN) || !defined(MODDEF_ILI9341P8_DATA2_PIN) || !defined(MODDEF_ILI9341P8_DATA3_PIN) || !defined(MODDEF_ILI9341P8_DATA4_PIN) || !defined(MODDEF_ILI9341P8_DATA5_PIN) || !defined(MODDEF_ILI9341P8_DATA6_PIN) || !defined(MODDEF_ILI9341P8_DATA7_PIN)
@@ -229,9 +229,12 @@ void xs_ILI9341p8(xsMachine *the)
     err = esp_lcd_new_i80_bus(&bus_config, &sd->i80_bus_handle);
     if (err)
     	xsUnknownError("esp_lcd_new_i80_bus failed");
-
     esp_lcd_panel_io_i80_config_t io_config = {
+#ifdef MODDEF_ILI9341P8_CS_PIN
         .cs_gpio_num = MODDEF_ILI9341P8_CS_PIN,
+#else
+        .cs_gpio_num = -1,	// "-1 will declaim exclusively use of I80 bus"
+#endif
         .pclk_hz = MODDEF_ILI9341P8_HZ,
         .trans_queue_depth = MODDEF_ILI9341P8_OPQUEUE,
         .on_color_trans_done = colorDone,

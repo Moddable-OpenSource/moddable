@@ -157,6 +157,9 @@
 	#error
 #endif
 
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+	#include "modGPIO.h"
+#endif
 	enum {
 		kStateIdle = 0,
 		kStatePlaying = 1,
@@ -279,6 +282,11 @@ typedef struct {
 #else
 	i2s_chan_handle_t 		tx_handle;
 #endif
+
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+	modGPIOConfigurationRecord	amplifierPower;
+#endif
+
 	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
 #elif defined(__ets__)
 	uint8_t					i2sActive;
@@ -491,6 +499,10 @@ void xs_audioout(xsMachine *the)
 
 #if defined(__APPLE__)
 	out->runLoop = CFRunLoopGetCurrent();
+#endif
+
+#if ESP32 && defined(MODDEF_AUDIOOUT_AMPLIFIER_POWER)
+	modGPIOInit(&out->amplifierPower, NULL, MODDEF_AUDIOOUT_AMPLIFIER_POWER, kModGPIOOutput);
 #endif
 }
 
@@ -1434,7 +1446,7 @@ DWORD WINAPI directSoundProc(LPVOID lpParameter)
 void audioOutLoop(void *pvParameter)
 {
 	modAudioOut out = pvParameter;
-	uint8_t installed = false, stopped = true;
+	uint8_t stopped = true;
 
 #if MODDEF_AUDIOOUT_I2S_PDM
     i2s_chan_config_t tx_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
@@ -1545,11 +1557,18 @@ void audioOutLoop(void *pvParameter)
 
 	while (true) {
 		size_t bytes_written;
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+		uint8_t powerUp = false;
+#endif
 
 		if ((kStatePlaying != out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
 
 			if (!stopped) {
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+				modGPIOWrite(&out->amplifierPower, 0);
+#endif
+
 #if MODDEF_AUDIOOUT_I2S_DAC
 				dac_continuous_disable(out->dacHandle);
 #else
@@ -1565,21 +1584,16 @@ void audioOutLoop(void *pvParameter)
 			continue;
 		}
 
-		if (!installed) {
+		if (stopped) {
 #if MODDEF_AUDIOOUT_I2S_DAC
 			dac_continuous_enable(out->dacHandle);
 #else
 			i2s_channel_enable(out->tx_handle);
 #endif
-			installed = true;
+
 			stopped = false;
-		}
-		else if (stopped) {
-			stopped = false;
-#if MODDEF_AUDIOOUT_I2S_DAC
-			dac_continuous_enable(out->dacHandle);
-#else
-			i2s_channel_enable(out->tx_handle);
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+			powerUp = true;
 #endif
 		}
 
@@ -1604,7 +1618,18 @@ void audioOutLoop(void *pvParameter)
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
 #endif
+
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+		if (powerUp) {
+			modDelayMilliseconds(250);		//@@
+			modGPIOWrite(&out->amplifierPower, 1);
+		}
+#endif
 	}
+
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+	modGPIOWrite(&out->amplifierPower, 0);
+#endif
 
 #if MODDEF_AUDIOOUT_I2S_DAC
 	if (out->dacHandle) {

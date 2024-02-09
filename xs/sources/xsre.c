@@ -1704,6 +1704,17 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 		result = fxPatternParserCreateTerm(parser, sizeof(txTerm), fxEmptyMeasure);
 	return result;
 }
+
+void* fxTermCreate(txPatternParser* parser, size_t size, txTermMeasure measure)
+{
+	txTerm* term = c_malloc(size);
+	if (!term)
+		fxAbort(parser->the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	term->next = parser->first;
+	term->dispatch.measure = measure;
+	parser->first = term;
+	return term;
+}
 	
 void fxAssertionMeasure(txPatternParser* parser, void* it, txInteger direction)
 {
@@ -2288,15 +2299,17 @@ txInteger* fxAllocateRegExpData(void* the, txInteger* code)
 					+ quantifierCount * sizeof(txQuantifierData);
 	txInteger* data;
 #ifdef mxRun
-	if (the) {
+	if (the)
 		data = fxNewChunk(the, size);
-	#ifdef mxSnapshot
-		c_memset(data, 0, size);
-	#endif
-	}
-	else
 #endif
+	{
 		data = c_malloc(size);
+		if (!data)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+#ifdef mxSnapshot
+	c_memset(data, 0, size);
+#endif
 	return data;
 }
 
@@ -2361,17 +2374,18 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the) {
+			if (the)
 				*data = fxNewChunk(the, size);
-			#ifdef mxSnapshot
-				c_memset(*data, 0, size);
-			#endif
-			}
 			else
 		#endif
+			{
 				*data = c_malloc(size);
-			if (!*data)
-				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+				if (!*data)
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			}	
+		#ifdef mxSnapshot
+			c_memset(*data, 0, size);
+		#endif
 		}
 		if (code) {
 			txInteger offset;
@@ -2379,17 +2393,16 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			offset = parser->size;
 			parser->size += sizeof(txInteger);
 		#ifdef mxRun
-			if (the) {
+			if (the)
 				*code = fxNewChunk(the, parser->size);
-// 			#ifdef mxSnapshot
-				c_memset(*code, 0, parser->size);
-// 			#endif
-			}
 			else
 		#endif
+			{
 				*code = c_malloc(parser->size);
-			if (!*code)
-				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+				if (!*code)
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			}
+			c_memset(*code, 0, parser->size);
 			parser->code = code;
 			buffer = *code;
 			buffer[0] = parser->flags;
@@ -2549,10 +2562,8 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 	}
 	if (!state) {
 		state = c_malloc(size);
-		if (!state) {
-			fxPopStates(the, firstState, C_NULL);
-			return C_NULL;
-		}
+		if (!state)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		state->the = C_NULL;
 	}	
 	state->nextState = firstState;
