@@ -563,6 +563,9 @@ int main262(int argc, char* argv[])
 				else
 					value = (10000 * result->pendingCount) / result->testCount;
 				fprintf(stderr, " (%d.%.2d%%)", value / 100, value % 100);
+				
+				value = (10000 * result->successCount) / (result->testCount - result->pendingCount);
+				fprintf(stderr, " [%d.%.2d%%]", value / 100, value % 100);
 			}
 		}
 		else

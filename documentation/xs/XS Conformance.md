@@ -1,6 +1,6 @@
 # XS Conformance
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: February 8, 2024
+Revised: February 9, 2024
 
 ## Caveat
 
@@ -57,7 +57,9 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
 
-Currently, on macOS, XS passes **99.41%** of the language tests and **82.04%** of the built-ins tests. Mostly because of `Temporal`, XS skips **17.86%** of the built-ins tests.
+Currently, on macOS, XS passes **99.41%** of the language tests and **82.04%** of the built-ins tests.
+
+Mostly because of `Temporal`, the number of skipped cases is significant. For implemented features, XS passes **99.92%** of the language tests and **99.88%** of the built-ins tests.
 
 Details are here under. The numbers of skipped cases are between parentheses. The following section lists the failed tests with some explanations.
 
