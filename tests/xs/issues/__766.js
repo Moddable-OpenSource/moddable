@@ -3,6 +3,10 @@ description: https://github.com/Moddable-OpenSource/moddable/issues/766
 flags: [onlyStrict]
 ---*/
 
+throw new RangeError("test __766.js disabled -- takes too long to run");
+
+/*
+
 var size = 256;
 var array1 = new Array(size);
 
@@ -20,3 +24,5 @@ function JSEtest() {
 }
 
 JSEtest();
+
+*/

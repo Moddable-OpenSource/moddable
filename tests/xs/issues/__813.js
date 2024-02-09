@@ -2,8 +2,10 @@
 description: https://github.com/Moddable-OpenSource/moddable/issues/813
 flags: [onlyStrict]
 negative:
-  type: RangeError
+  type: TypeError
 ---*/
+
+// obsolete Compartment programming interface
 
 function main() {
 const v0 = Uint16Array;

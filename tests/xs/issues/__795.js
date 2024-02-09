@@ -2,8 +2,10 @@
 description: https://github.com/Moddable-OpenSource/moddable/issues/795
 flags: [noStrict]
 negative:
-  type: RangeError
+  type: TypeError
 ---*/
+
+// obsolete Compartment programming interface
 
 function main() {
 const v1 = [3427974311,3427974311,3427974311,3427974311];
