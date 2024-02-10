@@ -436,6 +436,8 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 #endif
 #if mxNoChunks
 	chunk = c_malloc(size);
+	if (!chunk)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	chunk->size = size;
 	chunk->temporary = (txByte*)the->firstBlock;
 	the->firstBlock = (txBlock*)chunk;
@@ -1874,6 +1876,8 @@ void fxSweep(txMachine* the)
 		if (aSize & mxChunkFlag) {
 			aSize &= ~mxChunkFlag;
 			temporary = c_malloc(aSize);
+			if (!temporary)
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 			c_memcpy(temporary, chunk, aSize);
 			((txChunk*)temporary)->size = aSize;
 			chunk->temporary = temporary;

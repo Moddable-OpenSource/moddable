@@ -1661,6 +1661,37 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 #include <fcntl.h>
 #include <assert.h>
 
+int gxAllocFail = 50;
+
+void *fxMemMalloc(size_t size)
+{
+	if (gxAllocFail && !--gxAllocFail)
+		return NULL;
+
+	return malloc(size);
+}
+
+void *fxMemCalloc(size_t a, size_t b)
+{
+	if (gxAllocFail && !--gxAllocFail)
+		return NULL;
+
+	return calloc(a, b);
+}
+
+void *fxMemRealloc(void *a, size_t b)
+{
+	if (gxAllocFail && !--gxAllocFail)
+		return NULL;
+ 
+	return realloc(a, b);
+}
+
+void fxMemFree(void *m)
+{
+	free(m);
+}
+
 #define SHM_SIZE 0x100000
 #define MAX_EDGES ((SHM_SIZE - 4) * 8)
 
