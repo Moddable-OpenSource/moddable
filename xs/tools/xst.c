@@ -200,7 +200,9 @@ static void fx_evalScript(xsMachine* the);
 static void fx_fillBuffer(txMachine *the);
 void fx_nop(xsMachine *the);
 void fx_assert_throws(xsMachine *the);
+static void fx_memoryFail(txMachine *the);
 extern int gxStress;
+static int gxMemoryFail;
 #endif
 static void fx_gc(xsMachine* the);
 static void fx_runScript(xsMachine* the);
@@ -352,12 +354,18 @@ int main(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+#if FUZZILLI
+				xsResult = xsNewHostFunction(fx_memoryFail, 1);
+				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
+#endif
 
 				xsResult = xsNewHostFunction(fx_petrify, 1);
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
 				gxStress = 0;
+				gxMemoryFail = 0;
 #endif
 
 				xsVar(0) = xsUndefined;
@@ -1660,11 +1668,9 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 #include <fcntl.h>
 #include <assert.h>
 
-int gxAllocFail = 50;
-
 void *fxMemMalloc(size_t size)
 {
-	if (gxAllocFail && !--gxAllocFail)
+	if (gxMemoryFail && !--gxMemoryFail)
 		return NULL;
 
 	return malloc(size);
@@ -1672,7 +1678,7 @@ void *fxMemMalloc(size_t size)
 
 void *fxMemCalloc(size_t a, size_t b)
 {
-	if (gxAllocFail && !--gxAllocFail)
+	if (gxMemoryFail && !--gxMemoryFail)
 		return NULL;
 
 	return calloc(a, b);
@@ -1680,7 +1686,7 @@ void *fxMemCalloc(size_t a, size_t b)
 
 void *fxMemRealloc(void *a, size_t b)
 {
-	if (gxAllocFail && !--gxAllocFail)
+	if (gxMemoryFail && !--gxMemoryFail)
 		return NULL;
  
 	return realloc(a, b);
@@ -1863,6 +1869,8 @@ int fuzz(int argc, char* argv[])
 		buffer[script_size] = 0;	// required when debugger active
 
 		gxStress = 0;
+		gxMemoryFail = 0;
+
 		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{
@@ -1890,6 +1898,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("print"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+				xsResult = xsNewHostFunction(fx_memoryFail, 1);
+				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
 
 				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 				txStringCStream aStream;
@@ -1908,10 +1918,12 @@ int fuzz(int argc, char* argv[])
 				error = 1;
 			}
 		}
+		gxMemoryFail = 0;
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
 		}
 		xsEndMetering(machine);
+		gxMemoryFail = 0;
 		fxDeleteScript(machine->script);
 		int status = (machine->abortStatus & 0xff) << 8;
 		if (!status && error)
@@ -2057,7 +2069,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 
 #endif 
 
-#if 1 || FUZZING || FUZZILLI
+#if FUZZING || FUZZILLI
 
 void fx_fillBuffer(txMachine *the)
 {
@@ -2083,6 +2095,18 @@ void fx_assert_throws(xsMachine *the)
 	}
 	mxCatch(the) {
 	}
+}
+
+void fx_memoryFail(txMachine *the)
+{
+	xsResult = xsInteger(gxMemoryFail);
+	if (!xsToInteger(xsArgc))
+		return;
+
+	int count = xsToInteger(xsArg(0));
+	if (count < 0)
+		xsUnknownError("invalid");
+	gxMemoryFail = count;
 }
 
 #endif

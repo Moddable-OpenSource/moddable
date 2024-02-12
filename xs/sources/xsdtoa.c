@@ -6387,7 +6387,13 @@ void fxDTOASetup(txMachine* the, ThInfo* DTOA)
 	c_memset(DTOA, 0, sizeof(ThInfo));
 	if (the) {
 		DTOA->the = the;
+#if mxNoChunks
+		// use XS stack for initial allocations, then switch to malloc.
+		// this tests both cases and allows ASAN to watch for out-of-bounds accesses in the malloc blocks
+		DTOA->current = (txByte*)(the->stack) - 192;
+#else
 		DTOA->current = (txByte*)(the->stackBottom);
+#endif
 	}
 }
 
