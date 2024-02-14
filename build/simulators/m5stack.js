@@ -51,11 +51,12 @@ class MockupBehavior extends DeviceBehavior {
 		this.postJSON(container, { cButton:0 });
 	}
 	onKeyDown(container, key) {
-		const f = "on" + key.toUpperCase() + "ButtonDown";
+		const f = "on" + key.toLowerCase() + "ButtonDown";
+		debugger
 		this[f]?.();
 	}
 	onKeyUp(container, key) {
-		const f = "on" + key.toUpperCase() + "ButtonUp";
+		const f = "on" + key.toLowerCase() + "ButtonUp";
 		this[f]?.();
 	}
 	onJSON(container, json) {
@@ -78,9 +79,9 @@ export default {
 			ButtonsRow({ 
 				label: "Button",
 				buttons: [
-					{ eventDown:"onAButtonDown", eventUp:"onAButtonUp", label:"A" },
-					{ eventDown:"onBButtonDown", eventUp:"onBButtonUp", label:"B" },
-					{ eventDown:"onCButtonDown", eventUp:"onCButtonUp", label:"C" },
+					{ eventDown:"onAButtonDown", eventUp:"onAButtonUp", label:"a" },
+					{ eventDown:"onBButtonDown", eventUp:"onBButtonUp", label:"b" },
+					{ eventDown:"onCButtonDown", eventUp:"onCButtonUp", label:"c" },
 				],
 			}),
 			SwitchRow({ 
