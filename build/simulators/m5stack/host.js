@@ -1,6 +1,6 @@
 import Button from "button";
 
-class A {
+class a {
   constructor(options) {
     return new Button({
       ...options,
@@ -8,7 +8,7 @@ class A {
     });
   }
 }
-class B {
+class b {
   constructor(options) {
     return new Button({
       ...options,
@@ -16,7 +16,7 @@ class B {
     });
   }
 }
-class C {
+class c {
   constructor(options) {
     return new Button({
       ...options,
@@ -25,13 +25,14 @@ class C {
   }
 }
 
+debugger
 globalThis.Host = Object.freeze(
   {
     Button: {
-      Default: A,
-      A,
-      B,
-      C,
+      Default: a,
+      a,
+      b,
+      c,
     },
   },
   true
