@@ -59,7 +59,7 @@ declare module "commodetto/outline" {
     clone(): Outline
     rotate(angle: number): Outline
     rotate(angle: number, cx: number, cy: number): Outline
-    scale(x: number, y: number): Outline
+    scale(x: number, y?: number): Outline
     translate(x: number, y: number): Outline
 
     readonly bounds: {
