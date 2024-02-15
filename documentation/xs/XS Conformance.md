@@ -1,6 +1,6 @@
 # XS Conformance
 Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: February 9, 2024
+Revised: February 15, 2024
 
 ## Caveat
 
@@ -452,7 +452,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
          
 ### Built-ins
 
-     33879/41292 (7375) built-ins
+     34077/41392 (7275) built-ins
          5763/5869 (94) Array
              8/8 Symbol.species
              90/90 from
@@ -534,7 +534,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              32/32 throw
          8/8 AsyncIteratorPrototype
              8/8 Symbol.asyncIterator
-         536/638 (102) Atomics
+         736/738 (2) Atomics
              30/30 add
                  6/6 bigint
              30/30 and
@@ -557,8 +557,8 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  6/6 bigint
              148/150 (2) wait
                  48/49 (1) bigint
-             0/100 (100) waitAsync
-                 0/44 (44) bigint
+             200/200 waitAsync
+                 88/88 bigint
              30/30 xor
                  6/6 bigint
          150/150 BigInt
@@ -946,10 +946,10 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  18/18 growable
                  20/20 maxByteLength
                  64/64 slice
-         2357/2359 (2) String
+         2355/2359 (2) String
              30/30 fromCharCode
              22/22 fromCodePoint
-             2062/2064 (2) prototype
+             2060/2064 (2) prototype
                  12/12 Symbol.iterator
                  22/22 at
                  60/60 charAt
@@ -962,7 +962,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  94/94 indexOf
                  16/16 isWellFormed
                  48/48 lastIndexOf
-                 26/26 localeCompare
+                 24/26 localeCompare
                  88/90 (2) match
                  40/40 matchAll
                  28/28 normalize
