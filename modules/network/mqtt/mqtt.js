@@ -638,8 +638,14 @@ function socket_callback(state, message) {
 			// at this point we need to begin the MQTT protocol handshake
 			this.state = this.server ? 2 : 1;
 			const reply = this.connected();
-			if (reply)
-				this.ws.write(reply);
+			if (reply) {
+				try {
+					this.ws.write(reply);
+				}
+				catch {
+					this.fail();
+				}
+			}
 			break;
 
 		case 2: // data received
