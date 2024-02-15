@@ -81,7 +81,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxExplicitResourceManagementAdditions 0
 #endif
 #if mxECMAScript2024
-	#define mxECMAScript2024Additions 7
+	#define mxECMAScript2024Additions 8
 #else
 	#define mxECMAScript2024Additions 0
 #endif
@@ -618,6 +618,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #endif
 #if mxECMAScript2024
 	fx_ArrayBuffer_prototype_transferToFixedLength,
+	fx_Atomics_waitAsync,
 	fx_Map_groupBy,
 	fx_Object_groupBy,
 	fx_Promise_withResolvers,
@@ -1373,7 +1374,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 		the->firstJump = &aJump;
 		if (c_setjmp(aJump.buffer) == 0) {
 			if (gxDefaults.initializeSharedCluster)
-				gxDefaults.initializeSharedCluster();
+				gxDefaults.initializeSharedCluster(the);
 				
 			the->context = theContext;
 			fxCreateMachinePlatform(the);
@@ -1509,12 +1510,11 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 			the->firstJump = C_NULL;
 		}
 		else {
+			if (gxDefaults.terminateSharedCluster)
+				gxDefaults.terminateSharedCluster(the);
 			fxFree(the);
 			c_free(the);
 			the = NULL;
-			
-			if (gxDefaults.terminateSharedCluster)
-				gxDefaults.terminateSharedCluster();
 		}
 	}
 	else {

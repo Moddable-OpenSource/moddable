@@ -186,9 +186,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		void *dbgQueue; \
 		void *queues; \
 		void *task; \
-		void* waiterCondition; \
-		void* waiterData; \
-		void* waiterLink; \
 		mxMachineDebug \
 		mxMachineInstrument
 #else

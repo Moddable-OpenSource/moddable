@@ -83,9 +83,6 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	void* host; \
 	void* thread; \
 	void (*threadCallback)(void*); \
-	void* waiterCondition; \
-	void* waiterData; \
-	void* waiterLink; \
 	CRITICAL_SECTION workerMutex; \
 	txWorkerJob* workerQueue; \
 	void* demarshall;

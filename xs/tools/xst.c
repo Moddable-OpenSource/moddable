@@ -39,6 +39,7 @@
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
 	#define fxWakeAllCondition(CONDITION) WakeAllConditionVariable(CONDITION)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
+	#define mxCurrentThread() xTaskGetCurrentTaskHandle()
 #else
 	#include <dirent.h>
 	#include <pthread.h>
@@ -55,6 +56,7 @@
 	#define fxSleepCondition(CONDITION,MUTEX) pthread_cond_wait(CONDITION,MUTEX)
 	#define fxWakeAllCondition(CONDITION) pthread_cond_broadcast(CONDITION)
 	#define fxWakeCondition(CONDITION) pthread_cond_signal(CONDITION)
+	#define mxCurrentThread() pthread_self()
 #endif
 
 typedef struct sxAgent txAgent;
@@ -117,13 +119,10 @@ struct sxContext {
 };
 
 struct sxJob {
-	txJob* next;
 	txMachine* the;
-	txNumber when;
 	txSlot self;
 	txSlot function;
 	txSlot argument;
-	txNumber interval;
 };
 
 struct sxPool {
@@ -147,6 +146,16 @@ struct sxResult {
 	int successCount;
 	int pendingCount;
 	char path[1];
+};
+
+struct sxSharedTimer {
+	txSharedTimer* next;
+	txThread thread;
+	txNumber when;
+	txNumber interval;
+	txSharedTimerCallback callback;
+	txInteger refconSize;
+	char refcon[1];
 };
 
 static int main262(int argc, char* argv[]);
@@ -220,7 +229,6 @@ static void fxRunProgramFile(txMachine* the, txString path, txUnsigned flags);
 static void fxRunLoop(txMachine* the);
 
 static txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
-
 
 static char *gxAbortStrings[] = {
 	"debugger",
@@ -335,7 +343,6 @@ int main(int argc, char* argv[])
 		};
 		xsCreation* creation = &_creation;
 		xsMachine* machine;
-		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
  		if (profiling)
 			fxStartProfiling(machine);
@@ -435,7 +442,6 @@ int main(int argc, char* argv[])
 			error = 1;
 		}
 		xsDeleteMachine(machine);
-		fxTerminateSharedCluster();
 	}
 	return error;
 }
@@ -475,7 +481,8 @@ int main262(int argc, char* argv[])
 		#endif
 		}
 	}
-	fxInitializeSharedCluster();
+	
+	fxInitializeSharedCluster(C_NULL);
 
 	separator[0] = mxSeparator;
 	separator[1] = 0;
@@ -539,7 +546,7 @@ int main262(int argc, char* argv[])
 	#endif
 	}
 	
-	fxTerminateSharedCluster();
+	fxTerminateSharedCluster(C_NULL);
 	
 	c_gettimeofday(&to, NULL);
 	if (argj) {
@@ -588,6 +595,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxLastProperty(the, fxNewHostObject(the, NULL));
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_broadcast, 2, xsID("broadcast"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_getReport, 0, xsID("getReport"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_agent_monotonicNow, 0, xsID("monotonicNow"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_sleep, 1, xsID("sleep"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_start, 1, xsID("start"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_agent_stop, 1, xsID("stop"), XS_DONT_ENUM_FLAG);
@@ -1005,7 +1013,6 @@ void fxRunContext(txPool* pool, txContext* context)
 			yaml_node_t* node = yaml_document_get_node(document, *item);
 			if (0
  			||	!strcmp((char*)node->data.scalar.value, "Array.fromAsync")
- 			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
  			||	!strcmp((char*)node->data.scalar.value, "FinalizationRegistry.prototype.cleanupSome")
   			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
@@ -1403,6 +1410,7 @@ void* fx_agent_start_aux(void* it)
 			stream.offset = 0;
 			stream.size = agent->scriptLength;
 			fxRunScript(the, fxParseScript(the, &stream, fxStringCGetter, mxProgramFlag), mxThis, C_NULL, C_NULL, C_NULL, mxProgram.value.reference);
+			fxRunLoop(the);
 		}
 		xsCatch {
 		}
@@ -1582,17 +1590,44 @@ static txHostHooks gxTimerHooks = {
 	fx_markTimer
 };
 
+void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
+{
+	txJob* job = (txJob*)refcon;
+	txMachine* the = job->the;
+	fxBeginHost(the);
+	mxTry(the) {
+		mxPushUndefined();
+		mxPush(job->function);
+		mxCall();
+		mxPush(job->argument);
+		mxRunCount(1);
+		mxPop();
+	}
+	mxCatch(the) {
+		*((txSlot*)the->rejection) = mxException;
+		timer->interval = 0;
+	}
+	if (timer->interval == 0) {
+		fxAccess(the, &job->self);
+		*mxResult = the->scratch;
+		fxForget(the, &job->self);
+		fxSetHostData(the, mxResult, NULL);
+	}
+	fxEndHost(the);
+}
+
 void fx_clearTimer(txMachine* the)
 {
 	if (mxIsNull(mxArgv(0)))
 		return;
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
-		txJob* job = fxGetHostData(the, mxArgv(0));
-		if (job) {
+		txSharedTimer* timer = fxGetHostData(the, mxArgv(0));
+		if (timer) {
+			txJob* job = (txJob*)&(timer->refcon[0]);
 			fxForget(the, &job->self);
 			fxSetHostData(the, mxArgv(0), NULL);
-			job->the = NULL;
+			fxUnscheduleSharedTimer(timer);
 		}
 	}
 	else
@@ -1624,20 +1659,17 @@ void fx_setTimeout(txMachine* the)
 
 void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 {
-	c_timeval tv;
+	txJob _job;
 	txJob* job;
-	txJob** address = (txJob**)&(the->timerJobs);
-	while ((job = *address))
-		address = &(job->next);
-	job = *address = malloc(sizeof(txJob));
-	c_memset(job, 0, sizeof(txJob));
-	job->the = the;
-	c_gettimeofday(&tv, NULL);
+	txSharedTimer* timer;
 	if (c_isnan(interval) || (interval < 0))
 		interval = 0;
-	if (repeat)
-		job->interval = interval;
-	job->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + interval;
+	c_memset(&_job, 0, sizeof(txJob));
+	timer = fxScheduleSharedTimer(interval, (repeat) ? interval : 0, fx_callbackTimer, &_job, sizeof(txJob));	
+	if (!timer)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	job = (txJob*)&(timer->refcon[0]);
+	job->the = the;
 	fxNewHostObject(the, NULL);
     mxPull(job->self);
 	job->function = *mxArgv(0);
@@ -1645,7 +1677,7 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 		job->argument = *mxArgv(2);
 	else
 		job->argument = mxUndefined;
-	fxSetHostData(the, &job->self, job);
+	fxSetHostData(the, &job->self, timer);
 	fxSetHostHooks(the, &job->self, &gxTimerHooks);
 	fxRemember(the, &job->self);
 	fxAccess(the, &job->self);
@@ -1839,8 +1871,6 @@ int fuzz(int argc, char* argv[])
 		1993,				/* parserTableModulo */
 	};
 
-	fxInitializeSharedCluster();
-
 	while (1) {
 		int error = 0;
 		char action[4];
@@ -1929,7 +1959,6 @@ int fuzz(int argc, char* argv[])
 		__sanitizer_cov_reset_edgeguards();
 	}
 
-	fxTerminateSharedCluster();
 
 	return 0;
 }
@@ -1987,7 +2016,6 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 
 	xsCreation* creation = &_creation;
 	xsMachine* machine;
-	fxInitializeSharedCluster();
 	machine = xsCreateMachine(creation, "xst_fuzz_oss", NULL);
 
 	xsBeginMetering(machine, xsWithinComputeLimit, 1);
@@ -2051,7 +2079,6 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsEndMetering(machine);
 	fxDeleteScript(machine->script);
 	xsDeleteMachine(machine);
-	fxTerminateSharedCluster();
 	free(buffer);
 	return 0;
 }
@@ -2106,12 +2133,90 @@ void fxQueuePromiseJobs(txMachine* the)
 	the->promiseJobs = 1;
 }
 
-void fxRunLoop(txMachine* the)
+/* SHARED TIMERS */
+
+typedef struct sxSharedTimers txSharedTimers;
+struct sxSharedTimers {
+	txSharedTimer* first;
+	txMutex mutex;
+};
+static txSharedTimers gxSharedTimers;
+
+void fxInitializeSharedTimers()
+{
+	c_memset(&gxSharedTimers, 0, sizeof(txSharedTimers));
+	fxCreateMutex(&(gxSharedTimers.mutex));
+}
+
+void fxTerminateSharedTimers()
+{
+	fxDeleteMutex(&(gxSharedTimers.mutex));
+	if (gxSharedTimers.first != C_NULL) {
+		fprintf(stderr, "# shared timers mismatch!\n");
+		exit(1);
+	}
+}
+
+void fxRescheduleSharedTimer(txSharedTimer* timer, txNumber timeout, txNumber interval)
 {
 	c_timeval tv;
+    fxLockMutex(&(gxSharedTimers.mutex));
+	c_gettimeofday(&tv, NULL);
+	timer->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + timeout;
+	timer->interval = interval;
+    fxUnlockMutex(&(gxSharedTimers.mutex));
+}
+
+void* fxScheduleSharedTimer(txNumber timeout, txNumber interval, txSharedTimerCallback callback, void* refcon, txInteger refconSize)
+{
+	txSharedTimer* timer;
+	c_timeval tv;
+	txSharedTimer** address;
+	txSharedTimer* link;
+	timer = c_calloc(1, sizeof(txSharedTimer) + refconSize - 1);
+	if (timer) {
+		timer->thread =  mxCurrentThread();
+		c_gettimeofday(&tv, NULL);
+		timer->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + timeout;
+		timer->interval = interval;
+		timer->callback = callback;
+		timer->refconSize = refconSize;
+		c_memcpy(timer->refcon, refcon, refconSize);
+		
+		fxLockMutex(&(gxSharedTimers.mutex));
+		address = (txSharedTimer**)&(gxSharedTimers.first);
+		while ((link = *address))
+			address = &(link->next);
+		*address = timer;
+		fxUnlockMutex(&(gxSharedTimers.mutex));
+    }
+    return timer;
+}
+
+void fxUnscheduleSharedTimer(txSharedTimer* timer)
+{
+	txSharedTimer** address;
+	txSharedTimer* link;
+    fxLockMutex(&(gxSharedTimers.mutex));
+    address = (txSharedTimer**)&(gxSharedTimers.first);
+	while ((link = *address)) {
+		if (link == timer) {
+			*address = link->next;
+			c_free(timer);
+			break;
+		}
+		address = &(link->next);
+	}
+    fxUnlockMutex(&(gxSharedTimers.mutex));
+}
+
+void fxRunLoop(txMachine* the)
+{
+	txThread thread = mxCurrentThread();
+	c_timeval tv;
 	txNumber when;
-	txJob* job;
-	txJob** address;
+	txInteger count;
+	txSharedTimer* timer;
 	
 	for (;;) {
 		fxEndJob(the);
@@ -2124,52 +2229,28 @@ void fxRunLoop(txMachine* the)
 		}
 		c_gettimeofday(&tv, NULL);
 		when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0);
-		address = (txJob**)&(the->timerJobs);
-		if (!*address)
-			break;
-		while ((job = *address)) {
-			txMachine* the = job->the;
-			if (the) {
-				if (job->when <= when) {
-					fxBeginHost(the);
-					mxTry(the) {
-						mxPushUndefined();
-						mxPush(job->function);
-						mxCall();
-						mxPush(job->argument);
-						mxRunCount(1);
-						mxPop();
-						if (job->the) {
-							if (job->interval) {
-								job->when += job->interval;
-							}
-							else {
-								fxAccess(the, &job->self);
-								*mxResult = the->scratch;
-								fxForget(the, &job->self);
-								fxSetHostData(the, mxResult, NULL);
-								job->the = NULL;
-							}
-						}
-					}
-					mxCatch(the) {
-						*((txSlot*)the->rejection) = mxException;
-						fxAccess(the, &job->self);
-						*mxResult = the->scratch;
-						fxForget(the, &job->self);
-						fxSetHostData(the, mxResult, NULL);
-						job->the = NULL;
-					}
-					fxEndHost(the);
-					break; // to run promise jobs queued by the timer in the same "tick"
-				}
-				address = &(job->next);
+		fxLockMutex(&(gxSharedTimers.mutex));
+		count = 0;
+		timer = gxSharedTimers.first;
+		while (timer) {
+			if (timer->thread == thread) {
+				count++;
+				if (timer->when <= when)
+					break; // one timer at time to run promise jobs queued by the timer in the same "tick"
 			}
-			else {
-				*address = job->next;
-				c_free(job);
-			}
+			timer = timer->next;
 		}
+		fxUnlockMutex(&(gxSharedTimers.mutex));
+		if (timer) {
+			(timer->callback)(timer, timer->refcon, timer->refconSize);
+			if (timer->interval == 0)
+				fxUnscheduleSharedTimer(timer);
+			else
+				timer->when += timer->interval;
+			continue;
+		}
+		if (count == 0)
+			break;
 	}
 }
 

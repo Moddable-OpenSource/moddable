@@ -84,9 +84,6 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	void* host; \
 	GSocket* socket; \
 	GSource* source; \
-	void* waiterCondition; \
-	void* waiterData; \
-	void* waiterLink; \
 	GMainContext* workerContext; \
 	GMutex workerMutex; \
 	txWorkerJob* workerQueue; \

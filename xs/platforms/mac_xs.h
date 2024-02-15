@@ -81,9 +81,6 @@ extern void fxQueueWorkerJob(void* machine, void* job);
 	CFRunLoopSourceRef connectionSource; \
 	void* host; \
 	CFRunLoopSourceRef promiseSource; \
-	void* waiterCondition; \
-	void* waiterData; \
-	void* waiterLink; \
 	pthread_mutex_t workerMutex; \
 	CFRunLoopRef workerLoop; \
 	txWorkerJob* workerQueue; \

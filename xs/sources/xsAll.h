@@ -121,8 +121,8 @@ typedef struct {
 	void (*runEval)(txMachine*);
 	void (*runEvalEnvironment)(txMachine*);
 	void (*runProgramEnvironment)(txMachine*);
-	void (*initializeSharedCluster)();
-	void (*terminateSharedCluster)();
+	void (*initializeSharedCluster)(txMachine* the);
+	void (*terminateSharedCluster)(txMachine* the);
 	txSlot* (*newFunctionLength)(txMachine* the, txSlot* instance, txNumber length);
 	txSlot* (*newFunctionName)(txMachine* the, txSlot* instance, txID id, txIndex index, txID former, txString prefix);
     void (*runImport)(txMachine* the, txSlot* realm, txID id);
@@ -749,18 +749,16 @@ extern txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* s
 extern void fxLoadModule(txMachine* the, txSlot* module, txID moduleID);
 extern txScript* fxParseScript(txMachine* the, void* stream, txGetter getter, txUnsigned flags);
 extern void fxQueuePromiseJobs(txMachine* the);
-extern void fxInitializeSharedCluster();
-extern void fxTerminateSharedCluster();
+extern void fxInitializeSharedCluster(txMachine* the);
+extern void fxTerminateSharedCluster(txMachine* the);
 extern void* fxCreateSharedChunk(txInteger byteLength);
 extern void fxLockSharedChunk(void* data);
-extern void fxLinkSharedChunk(txMachine* the);
 extern txInteger fxMeasureSharedChunk(void* data);
-extern txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger offset, txInteger count);
+extern txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger count);
 extern void fxReleaseSharedChunk(void* data);
 extern void* fxRetainSharedChunk(void* data);
-extern void fxUnlinkSharedChunk(txMachine* the);
 extern void fxUnlockSharedChunk(void* data);
-extern txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout);
+extern txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout, txSlot* resolveFunction);
 extern void fxAbort(txMachine* the, int status);
 #ifdef mxDebug
 extern void fxConnect(txMachine* the);
@@ -1719,6 +1717,7 @@ mxExport void fx_Atomics_notify(txMachine* the);
 mxExport void fx_Atomics_store(txMachine* the);
 mxExport void fx_Atomics_sub(txMachine* the);
 mxExport void fx_Atomics_wait(txMachine* the);
+mxExport void fx_Atomics_waitAsync(txMachine* the);
 mxExport void fx_Atomics_xor(txMachine* the);
 
 /* xsMapSet.c */

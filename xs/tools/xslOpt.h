@@ -93,9 +93,6 @@
 #define mxMachinePlatform \
 	txSocket connection; \
 	void* host; \
-	void* waiterCondition; \
-	void* waiterData; \
-	txMachine* waiterLink; \
 	txCallback fakeCallback;
 
 #define mxUseDefaultChunkAllocation 1

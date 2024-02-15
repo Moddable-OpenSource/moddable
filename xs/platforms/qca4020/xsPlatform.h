@@ -150,9 +150,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 		uint8_t *heap_pend; \
 		void *msgQueue; \
 		void *task;	\
-		void *waiterCondition;	\
-		void *waiterData;		\
-		void *waiterLink;		\
 		mxMachineDebug \
 		mxMachineInstrument
 		

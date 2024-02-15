@@ -90,11 +90,7 @@
 #endif
 #define mxMachinePlatform \
 	txSocket connection; \
-	void* waiterCondition; \
-	void* waiterData; \
-	void* waiterLink; \
 	int promiseJobs; \
-	void* timerJobs; \
 	int abortStatus; \
 	void* rejection; \
 	void *script;		// txScript*
@@ -104,6 +100,22 @@
 #define mxUseDefaultSlotAllocation 1
 #define mxUseDefaultParseScript 1
 #define mxUseDefaultSharedChunks 1
+
+typedef struct sxSharedTimer txSharedTimer;
+typedef void (*txSharedTimerCallback)(txSharedTimer* timer, void *refcon, int refconSize);
+
+extern void fxInitializeSharedTimers();
+extern void fxTerminateSharedTimers();
+extern void fxRescheduleSharedTimer(txSharedTimer* timer, double timeout, double interval);
+extern void* fxScheduleSharedTimer(double timeout, double interval, txSharedTimerCallback callback, void* refcon, int refconSize);
+extern void fxUnscheduleSharedTimer(txSharedTimer* timer);
+
+#define mxInitializeSharedTimers fxInitializeSharedTimers
+#define mxTerminateSharedTimers fxTerminateSharedTimers
+#define mxRescheduleSharedTimer fxRescheduleSharedTimer
+#define mxScheduleSharedTimer fxScheduleSharedTimer
+#define mxUnscheduleSharedTimer fxUnscheduleSharedTimer
+
 
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1

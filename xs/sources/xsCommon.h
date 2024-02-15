@@ -1194,12 +1194,14 @@ enum {
 	__onRejected_,
 	__result_,
 #if mxECMAScript2024
+	_async,
 	_groupBy,	
 	_isWellFormed,	
 	_promise,	
 	_toWellFormed,	
 	_transferToFixedLength,
 	_unicodeSets,	
+	_waitAsync,	
 	_withResolvers,	
 #endif
 	XS_ID_COUNT

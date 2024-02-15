@@ -90,7 +90,7 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	}
 	
 #define mxAtomicsTailWait() \
-	return (result != value) ? -1 : fxWaitSharedChunk(the, address, timeout)
+	return (result != value) ? -1 : (timeout == 0) ? 0 : 1;
 
 #define mxAtomicsDeclarations(onlyInt32, onlyShared) \
 	txSlot* dispatch = fxCheckAtomicsTypedArray(the, onlyInt32); \
@@ -217,6 +217,9 @@ void fxBuildAtomics(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_store), 3, mxID(_store), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_sub), 3, mxID(_sub), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_wait), 4, mxID(_wait), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2024
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_waitAsync), 4, mxID(_waitAsync), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_notify), 3, mxID(_wake), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Atomics_xor), 3, mxID(_xor), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Atomics", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
@@ -498,7 +501,7 @@ void fx_Atomics_notify(txMachine* the)
 		mxResult->value.integer = 0;
 	}
 	else {
-		mxResult->value.integer = fxNotifySharedChunk(the, host->value.host.data, offset, count);
+		mxResult->value.integer = fxNotifySharedChunk(the, (txByte*)host->value.host.data + offset, count);
 	}
 	mxResult->kind = XS_INTEGER_KIND;
 }
@@ -531,15 +534,54 @@ void fx_Atomics_wait(txMachine* the)
 		timeout = C_INFINITY;
 	else if (timeout < 0)
 		timeout = 0;
-	fxLinkSharedChunk(the);
 	result = (*dispatch->value.typedArray.atomics->wait)(the, host, offset, the->stack, timeout);
-	fxUnlinkSharedChunk(the);
 	if (result < 0)
 		mxPushStringX("not-equal");
-	else if (result > 0)
-		mxPushStringX("ok");
-	else
-		mxPushStringX("timed-out");
+	else {
+		result = fxWaitSharedChunk(the, (txByte*)host->value.host.data + offset, timeout, C_NULL);
+		if (result == 0)
+			mxPushStringX("timed-out");
+		else
+			mxPushStringX("ok");
+	}
+	mxPullSlot(mxResult);
+}
+extern void fxQueueTimeoutJob(txMachine* the, txNumber timeout, txSlot* function, txSlot* argument);
+
+void fx_Atomics_waitAsync(txMachine* the)
+{
+	mxAtomicsDeclarations(1, 1);
+	txNumber timeout;
+	txInteger result;
+	txSlot* slot;
+	fxPushAtomicsValue(the, 2, dispatch->value.typedArray.dispatch->constructorID);
+	timeout = (mxArgc > 3) ? fxToNumber(the, mxArgv(3)) : C_NAN;
+	if (c_isnan(timeout))
+		timeout = C_INFINITY;
+	else if (timeout < 0)
+		timeout = 0;
+	result = (*dispatch->value.typedArray.atomics->wait)(the, host, offset, the->stack, timeout);
+	
+	mxPush(mxObjectPrototype);
+	slot = fxLastProperty(the, fxNewObjectInstance(the));
+	slot = fxNextBooleanProperty(the, slot, (result <= 0) ? 0 : 1, mxID(_async), XS_NO_FLAG);
+	if (result < 0)
+		fxNextStringXProperty(the, slot, "not-equal", mxID(_value), XS_NO_FLAG);
+	else if (result == 0)
+		fxNextStringXProperty(the, slot, "timed-out", mxID(_value), XS_NO_FLAG);
+	else {
+		txSlot* resolveFunction;
+		txSlot* rejectFunction;
+		mxTemporary(resolveFunction);
+		mxTemporary(rejectFunction);
+		mxPush(mxPromiseConstructor);
+		fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+		fxNextSlotProperty(the, slot, the->stack, mxID(_value), XS_NO_FLAG);
+		mxPop(); // promise
+		fxWaitSharedChunk(the, (txByte*)host->value.host.data + offset, timeout, resolveFunction);
+		mxPop(); // rejectFunction
+		mxPop(); // resolveFunction
+	}
 	mxPullSlot(mxResult);
 }
 
@@ -624,17 +666,14 @@ void fx_Atomics_xor(txMachine* the)
 	#define mxCurrentThread() C_NULL
 #endif
 
-typedef struct sxSharedCluster txSharedCluster;
 typedef struct sxSharedChunk txSharedChunk;
+typedef struct sxSharedCluster txSharedCluster;
+typedef struct sxSharedWaiter txSharedWaiter;
 
-struct sxSharedCluster {
-	txThread mainThread;
-	txSize usage;
-#if mxThreads
-	txMachine* waiterLink; 
-	txMutex waiterMutex; 
-#endif
-};
+typedef void (*txTimerCallback)(void* timer, void *refcon, txInteger refconSize);
+extern void fxRescheduleTimer(void* timer, txNumber timeout, txNumber interval);
+extern void* fxScheduleTimer(txNumber timeout, txNumber interval, txTimerCallback callback, void* refcon, txInteger refconSize);
+extern void fxUnscheduleTimer(void* timer);
 
 struct sxSharedChunk {
 #if mxThreads && !defined(mxUseGCCAtomics)
@@ -644,9 +683,28 @@ struct sxSharedChunk {
 	txSize usage;
 };
 
+struct sxSharedCluster {
+	txThread mainThread;
+	txSize usage;
+#if mxThreads
+	txSharedWaiter* first; 
+	txMutex waiterMutex; 
+#endif
+};
+
+struct sxSharedWaiter {
+	txSharedWaiter* next;
+	txMachine* the;
+	void* data;
+	void* condition;
+	void* timer;
+	txSlot resolve;
+	txBoolean ok;
+};
+
 txSharedCluster* gxSharedCluster = C_NULL;
 
-void fxInitializeSharedCluster()
+void fxInitializeSharedCluster(txMachine* the)
 {
 	if (gxSharedCluster) {
 		gxSharedCluster->usage++;
@@ -659,15 +717,40 @@ void fxInitializeSharedCluster()
 		#if mxThreads
 			mxCreateMutex(&gxSharedCluster->waiterMutex);
 		#endif
+		#ifdef mxInitializeSharedTimers
+			mxInitializeSharedTimers();
+		#endif
 		}
 	}
 }
 
-void fxTerminateSharedCluster()
+void fxTerminateSharedCluster(txMachine* the)
 {
 	if (gxSharedCluster) {
+	#ifdef mxUnscheduleSharedTimer
+		if (the) {
+			txSharedWaiter** address;
+			txSharedWaiter* waiter;
+			mxLockMutex(&gxSharedCluster->waiterMutex);
+			address = &(gxSharedCluster->first);
+			while ((waiter = *address)) {
+				if (waiter->the == the) {
+					*address = waiter->next;
+					if (waiter->timer)
+						mxUnscheduleSharedTimer(waiter->timer);
+					c_free(waiter);					
+				}
+				else
+					address = &(waiter->next);
+			}
+			mxUnlockMutex(&gxSharedCluster->waiterMutex);
+		}
+	#endif
 		gxSharedCluster->usage--;
 		if (gxSharedCluster->usage == 0) {
+		#ifdef mxTerminateSharedTimers
+			mxTerminateSharedTimers();
+		#endif
 		#if mxThreads
 			mxDeleteMutex(&gxSharedCluster->waiterMutex);
 		#endif
@@ -693,24 +776,6 @@ void* fxCreateSharedChunk(txInteger size)
 	return C_NULL;
 }
 
-void fxLinkSharedChunk(txMachine* the)
-{
-	if (gxSharedCluster && (gxSharedCluster->mainThread != mxCurrentThread())) {
-#if mxThreads
-		txMachine** machineAddress;
-		txMachine* machine;
-		mxLockMutex(&gxSharedCluster->waiterMutex);
-		machineAddress = &gxSharedCluster->waiterLink;
-		while ((machine = *machineAddress))
-			machineAddress = (txMachine**)&machine->waiterLink;
-		*machineAddress = the;
-#endif
-	}
-	else {
-		mxTypeError("main thread cannot wait");
-	}
-}
-
 void fxLockSharedChunk(void* data)
 {
 #if mxThreads && !defined(mxUseGCCAtomics)
@@ -725,25 +790,48 @@ txInteger fxMeasureSharedChunk(void* data)
 	return chunk->size;
 }
 
-txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger offset, txInteger count)
+txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger count)
 {
-	txInteger* address = (txInteger*)((txByte*)data + offset);
 	txInteger result = 0;
 	if (gxSharedCluster) {
 	#if mxThreads
-		txMachine* machine;
+		txSharedWaiter* first = C_NULL;
+		txSharedWaiter* last = C_NULL;
+		txSharedWaiter** address;
+		txSharedWaiter* waiter;
 		mxLockMutex(&gxSharedCluster->waiterMutex);
-		machine = gxSharedCluster->waiterLink;
-		while (machine) {
-			if (machine->waiterData == address) {
+		address = &(gxSharedCluster->first);
+		while ((waiter = *address)) {
+			if (waiter->data == data) {
 				if (count == 0)
 					break;
 				count--;
-				machine->waiterData = C_NULL;
-				mxWakeCondition((txCondition*)machine->waiterCondition);
-				result++;
+				if (first)
+					last->next = waiter;
+				else
+					first = waiter;
+				last = waiter;
+				*address = waiter->next;
+				waiter->next = C_NULL;
 			}
-			machine = machine->waiterLink;
+			else
+				address = &(waiter->next);
+		}
+		waiter = first;
+		while (waiter) {
+			waiter->data = C_NULL;
+			if (waiter->condition)
+				mxWakeCondition((txCondition*)waiter->condition);
+			else {
+				waiter->ok = 1;
+			#ifdef mxRescheduleSharedTimer
+				mxRescheduleSharedTimer(waiter->timer, 0, 0);
+			#else
+				fxAbort(the, XS_DEAD_STRIP_EXIT);
+			#endif
+			}
+			result++;
+			waiter = waiter->next;
 		}
 		mxUnlockMutex(&gxSharedCluster->waiterMutex);
 	#endif	
@@ -789,73 +877,133 @@ void fxUnlockSharedChunk(void* data)
 #endif
 }
 
-void fxUnlinkSharedChunk(txMachine* the)
+void fxWaitSharedChunkCallback(void* timer, void* refcon, txInteger refconSize)
 {
-#if mxThreads
-	txMachine** machineAddress;
-	txMachine* machine;
-	machineAddress = &gxSharedCluster->waiterLink;
-	while ((machine = *machineAddress)) {
-		if (machine == the) {
-			*machineAddress = the->waiterLink;
-			the->waiterLink = C_NULL;
-			break;
-		}
-		machineAddress = (txMachine**)&machine->waiterLink;
+	txSharedWaiter** address = (txSharedWaiter**)refcon;
+	txSharedWaiter* waiter = *address;
+	txSharedWaiter* link;
+	txMachine* the;
+	mxLockMutex(&gxSharedCluster->waiterMutex);
+	address = &(gxSharedCluster->first);
+	while ((link = *address)) {
+		if (link == waiter)
+			*address = link->next;
+		else
+			address = &(link->next);
 	}
 	mxUnlockMutex(&gxSharedCluster->waiterMutex);
-#endif
+	the = waiter->the;
+	fxBeginHost(waiter->the);
+	mxTry(the) {
+		mxPushUndefined();
+		mxPush(waiter->resolve);
+		mxCall();
+		if (waiter->ok)
+			mxPushStringX("ok");
+		else
+			mxPushStringX("timed-out");
+		mxRunCount(1);
+		mxPop();
+	}
+	mxCatch(the) {
+	}
+	fxForget(the, &waiter->resolve);
+	fxEndHost(the);
+	c_free(waiter);
 }
 
-txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout)
+txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot* resolveFunction)
 {
 	txInteger result = 1;
-#if mxThreads
-	txCondition condition;
-	mxCreateCondition(&condition);
-	the->waiterCondition = &condition;
-	the->waiterData = address;
-	if (timeout == C_INFINITY) {
-	#if defined(mxUsePOSIXThreads)
-		while (the->waiterData == address)
-			pthread_cond_wait(&condition, &gxSharedCluster->waiterMutex);
-	#elif defined(mxUseFreeRTOSTasks)
-		mxUnlockMutex(&gxSharedCluster->waiterMutex);
-		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+	if (gxSharedCluster) {
+		txSharedWaiter* waiter;
+		txSharedWaiter** address;
+		txSharedWaiter* link;
+		waiter = c_calloc(1, sizeof(txSharedWaiter));
+		if (!waiter)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		waiter->the = the;
+		waiter->data = data;
 		mxLockMutex(&gxSharedCluster->waiterMutex);
-	#else
-		while (the->waiterData == address)
-			SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, INFINITE);
+		address = &(gxSharedCluster->first);
+		while ((link = *address))
+			address = &(link->next);
+		*address = waiter;
+		
+		if (resolveFunction) {
+			mxUnlockMutex(&gxSharedCluster->waiterMutex);
+			waiter->resolve = *resolveFunction;
+			fxRemember(the, &waiter->resolve);
+		#ifdef mxScheduleSharedTimer
+			waiter->timer = mxScheduleSharedTimer(timeout, 0, (txSharedTimerCallback)fxWaitSharedChunkCallback, &waiter, sizeof(txSharedWaiter*));
+			if (!waiter->timer)
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+		#else
+			fxAbort(the, XS_DEAD_STRIP_EXIT);
+		#endif
+		}
+		else if (gxSharedCluster->mainThread != mxCurrentThread()) {
+		#if mxThreads
+			txCondition condition;
+			mxCreateCondition(&condition);
+			waiter->condition = &condition;
+			if (timeout == C_INFINITY) {
+			#if defined(mxUsePOSIXThreads)
+				while (waiter->data == data)
+					pthread_cond_wait(&condition, &gxSharedCluster->waiterMutex);
+			#elif defined(mxUseFreeRTOSTasks)
+				mxUnlockMutex(&gxSharedCluster->waiterMutex);
+				ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+				mxLockMutex(&gxSharedCluster->waiterMutex);
+			#else
+				while (waiter->data == data)
+					SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, INFINITE);
+			#endif
+			}
+			else {
+			#if defined(mxUsePOSIXThreads)
+				struct timespec ts;
+				timeout += fxDateNow();
+				ts.tv_sec = c_floor(timeout / 1000);
+				ts.tv_nsec = c_fmod(timeout, 1000) * 1000000;
+				while (waiter->data == data) {
+					result = (pthread_cond_timedwait(&condition, &gxSharedCluster->waiterMutex, &ts) == ETIMEDOUT) ? 0 : 1;
+					if (!result)
+						break;
+				}
+			#elif defined(mxUseFreeRTOSTasks)
+				mxUnlockMutex(&gxSharedCluster->waiterMutex);
+				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(timeout));
+				mxLockMutex(&gxSharedCluster->waiterMutex);
+				result = (the->waiterData == data) ? 0 : 1;
+			#else
+				timeout += fxDateNow();
+				while (waiter->data == data) {
+					result = (SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, (DWORD)(timeout - fxDateNow()))) ? 1 : 0;
+					if (!result)
+						break;
+				}
+			#endif
+			}
+			address = &(gxSharedCluster->first);
+			while ((link = *address)) {
+				if (link == waiter)
+					*address = link->next;
+				else
+					address = &(link->next);
+			}
+			mxUnlockMutex(&gxSharedCluster->waiterMutex);
+			c_free(waiter);
+			mxDeleteCondition(&condition);
 	#endif
+		}
+		else {
+			mxTypeError("main thread cannot wait");
+		}
 	}
 	else {
-	#if defined(mxUsePOSIXThreads)
-		struct timespec ts;
-		timeout += fxDateNow();
-		ts.tv_sec = c_floor(timeout / 1000);
-		ts.tv_nsec = c_fmod(timeout, 1000) * 1000000;
-		while (the->waiterData == address) {
-			result = (pthread_cond_timedwait(&condition, &gxSharedCluster->waiterMutex, &ts) == ETIMEDOUT) ? 0 : 1;
-			if (!result)
-				break;
-		}
-	#elif defined(mxUseFreeRTOSTasks)
-		mxUnlockMutex(&gxSharedCluster->waiterMutex);
-		ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(timeout));
-		mxLockMutex(&gxSharedCluster->waiterMutex);
-		result = (the->waiterData == address) ? 0 : 1;
-	#else
-		timeout += fxDateNow();
-		while (the->waiterData == address) {
-			result = (SleepConditionVariableCS(&condition, &gxSharedCluster->waiterMutex, (DWORD)(timeout - fxDateNow()))) ? 1 : 0;
-			if (!result)
-				break;
-		}
-	#endif
+		mxTypeError("no shared cluster");
 	}
-	the->waiterCondition = C_NULL;
-	mxDeleteCondition(&condition);
-#endif
 	return result;
 }
 

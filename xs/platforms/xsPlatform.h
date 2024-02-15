@@ -106,9 +106,7 @@
 		#define mxUsePOSIXThreads 1
 	#endif
 	#define mxMachinePlatform \
-		void* waiterCondition; \
-		void* waiterData; \
-		txMachine* waiterLink;
+		void* host;
 	#define mxUseDefaultMachinePlatform 1
 	#define mxUseDefaultBuildKeys 1
 	#define mxUseDefaultChunkAllocation 1

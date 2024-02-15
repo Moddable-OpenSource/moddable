@@ -71,9 +71,6 @@
 #define mxUseDefaultSharedChunks 1
 
 #define mxMachinePlatform \
-	void* host; \
-	void* waiterCondition; \
-	void* waiterData; \
-	void* waiterLink;
+	void* host;
 
 #endif /* __WASM_XS__ */

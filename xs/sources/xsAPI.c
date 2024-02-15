@@ -1400,7 +1400,7 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			txSlot* slot;
 
 			if (gxDefaults.initializeSharedCluster)
-				gxDefaults.initializeSharedCluster();
+				gxDefaults.initializeSharedCluster(the);
 				
 			the->context = theContext;
 			fxCreateMachinePlatform(the);
@@ -1541,12 +1541,11 @@ txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theC
 			the->firstJump = C_NULL;
 		}
 		else {
+			if (gxDefaults.terminateSharedCluster)
+				gxDefaults.terminateSharedCluster(the);
 			fxFree(the);
 			c_free(the);
 			the = NULL;
-			
-			if (gxDefaults.terminateSharedCluster)
-				gxDefaults.terminateSharedCluster();
 		}
 	}
 	return the;
@@ -1594,11 +1593,10 @@ void fxDeleteMachine(txMachine* the)
 	}
 #endif
 	fxDeleteMachinePlatform(the);
+	if (gxDefaults.terminateSharedCluster)
+		gxDefaults.terminateSharedCluster(the);
 	fxFree(the);
 	c_free(the);
-
-	if (gxDefaults.terminateSharedCluster)
-		gxDefaults.terminateSharedCluster();
 }
 
 #if mxAliasInstance
@@ -1620,7 +1618,7 @@ txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txStri
 			txSlot* slot;
 
 			if (gxDefaults.initializeSharedCluster)
-				gxDefaults.initializeSharedCluster();
+				gxDefaults.initializeSharedCluster(the);
 
 			the->preparation = theMachine->preparation;
 			the->context = theContext;
