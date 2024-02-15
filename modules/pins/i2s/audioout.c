@@ -1555,11 +1555,12 @@ void audioOutLoop(void *pvParameter)
 	dac_continuous_new_channels(&cont_cfg, &out->dacHandle);
 #endif
 
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+	i2s_channel_enable(out->tx_handle);
+#endif
+
 	while (true) {
 		size_t bytes_written;
-#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
-		uint8_t powerUp = false;
-#endif
 
 		if ((kStatePlaying != out->state) || (0 == out->activeStreamCount)) {
 			uint32_t newState;
@@ -1567,9 +1568,7 @@ void audioOutLoop(void *pvParameter)
 			if (!stopped) {
 #ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
 				modGPIOWrite(&out->amplifierPower, 0);
-#endif
-
-#if MODDEF_AUDIOOUT_I2S_DAC
+#elif MODDEF_AUDIOOUT_I2S_DAC
 				dac_continuous_disable(out->dacHandle);
 #else
 				i2s_channel_disable(out->tx_handle);
@@ -1585,16 +1584,15 @@ void audioOutLoop(void *pvParameter)
 		}
 
 		if (stopped) {
-#if MODDEF_AUDIOOUT_I2S_DAC
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+			modGPIOWrite(&out->amplifierPower, 1);
+#elif MODDEF_AUDIOOUT_I2S_DAC
 			dac_continuous_enable(out->dacHandle);
 #else
 			i2s_channel_enable(out->tx_handle);
 #endif
 
 			stopped = false;
-#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
-			powerUp = true;
-#endif
 		}
 
 		xSemaphoreTake(out->mutex, portMAX_DELAY);
@@ -1617,13 +1615,6 @@ void audioOutLoop(void *pvParameter)
 		i2s_channel_write(out->tx_handle, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
-#endif
-
-#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
-		if (powerUp) {
-			modDelayMilliseconds(250);		//@@
-			modGPIOWrite(&out->amplifierPower, 1);
-		}
 #endif
 	}
 
