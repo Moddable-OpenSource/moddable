@@ -1613,7 +1613,6 @@ Invalid test.
 `xst` skips cases with the following features:
 
 - Array.fromAsync
-- Atomics.waitAsync
 - FinalizationRegistry.prototype.cleanupSome
 - ShadowRealm
 - Temporal
