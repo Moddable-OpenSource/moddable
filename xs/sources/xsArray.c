@@ -590,7 +590,7 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 		length = 0;
 		while (result && (result->flag & XS_INTERNAL_FLAG)) {
 			if (result->kind == XS_ARRAY_KIND) {
-				length = array->value.array.length;
+				length = result->value.array.length;
 				break;
 			}
 			result = result->next;

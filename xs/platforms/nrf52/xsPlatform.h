@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -60,7 +60,6 @@
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif
-#define mxMisalignedSettersCrash 1		//@@@ ?
 #define mxUseFreeRTOSTasks	1
 // #define mxUseGCCAtomics		1		// undefine
 

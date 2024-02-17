@@ -1875,9 +1875,9 @@ void fxSweep(txMachine* the)
 		aSize = chunk->size;
 		if (aSize & mxChunkFlag) {
 			aSize &= ~mxChunkFlag;
-			temporary = c_malloc(aSize);
+			temporary = malloc(aSize);		// not c_malloc, to avoid failures when shuffling heap during fuzzing
 			if (!temporary)
-				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);		// should never happen
 			c_memcpy(temporary, chunk, aSize);
 			((txChunk*)temporary)->size = aSize;
 			chunk->temporary = temporary;

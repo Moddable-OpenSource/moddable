@@ -41,7 +41,7 @@ class GT911 {
 		if (interrupt && onSample) {
 			io.interrupt = new interrupt.io({
 				...interrupt,
-				edge: interrupt.io.Falling,
+				edge: interrupt.io.Rising,
 				onReadable: onSample.bind(this)
 			});
 		}
