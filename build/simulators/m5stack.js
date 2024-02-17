@@ -51,12 +51,11 @@ class MockupBehavior extends DeviceBehavior {
 		this.postJSON(container, { cButton:0 });
 	}
 	onKeyDown(container, key) {
-		const f = "on" + key.toLowerCase() + "ButtonDown";
-		debugger
+		const f = "on" + key.toUpperCase() + "ButtonDown";
 		this[f]?.();
 	}
 	onKeyUp(container, key) {
-		const f = "on" + key.toLowerCase() + "ButtonUp";
+		const f = "on" + key.toUpperCase() + "ButtonUp";
 		this[f]?.();
 	}
 	onJSON(container, json) {
