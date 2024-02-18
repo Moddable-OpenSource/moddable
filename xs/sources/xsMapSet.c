@@ -950,15 +950,19 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 			sum = *((txU8*)&slot->value.number);
 		}
 		else if (XS_NUMBER_KIND == kind) {
-			if (slot->value.number == 0)
-				slot->value.number = 0;
-			else if (c_isnan(slot->value.number))
-			#if mxCanonicalNaN
-				slot->value.number = *gxCanonicalNaN64;
-			#else				
-				slot->value.number = C_NAN;
-			#endif
-			sum = *((txU8*)&slot->value.number);
+			if (slot->value.number == 0) {
+				sum = 0;
+			}
+			else {
+				if (c_isnan(slot->value.number)) {
+				#if mxCanonicalNaN
+					slot->value.number = *gxCanonicalNaN64;
+				#else				
+					slot->value.number = C_NAN;
+				#endif
+				}
+				sum = *((txU8*)&slot->value.number);
+			}
 		}
 		else if ((XS_BIGINT_KIND == kind) || (XS_BIGINT_X_KIND == kind)) {
 			sum = fxToBigUint64(the, slot);
