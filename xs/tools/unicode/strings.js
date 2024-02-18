@@ -12,17 +12,21 @@ export default class extends TOOL {
 	reportRanges(name, ranges) {
 		let c = ranges.length;
 		this.report(`#define mxCharSet_${name} ${c}`);
-		let string = `static const txInteger ICACHE_RODATA_ATTR gxCharSet_${name}[mxCharSet_${name}] = {`
-		for (let i = 0; i < c; i++) {
-			if (i % 16 == 0) {
-				this.report(string);
-				string = "\t";
+		if (c) {
+			let string = `static const txInteger ICACHE_RODATA_ATTR gxCharSet_${name}[mxCharSet_${name}] = {`
+			for (let i = 0; i < c; i++) {
+				if (i % 16 == 0) {
+					this.report(string);
+					string = "\t";
+				}
+				let range = ranges[i];
+				string += `0x${this.toHex(range)}, `;
 			}
-			let range = ranges[i];
-			string += `0x${this.toHex(range)}, `;
+			this.report(string);
+			this.report("};");
 		}
-		this.report(string);
-		this.report("};");
+		else
+			this.report(`#define gxCharSet_${name} C_NULL`);
 	}
 	reportNames(names) {
 		let c = names.length;

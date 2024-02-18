@@ -7969,8 +7969,7 @@ static const txString ICACHE_RODATA_ATTR gxStrings_Basic_Emoji[mxStrings_Basic_E
 	"\xC2\xA9\xEF\xB8\x8F",
 };
 #define mxCharSet_Emoji_Keycap_Sequence 0
-static const txInteger ICACHE_RODATA_ATTR gxCharSet_Emoji_Keycap_Sequence[mxCharSet_Emoji_Keycap_Sequence] = {
-};
+#define gxCharSet_Emoji_Keycap_Sequence C_NULL
 #define mxStrings_Emoji_Keycap_Sequence 12
 static const txString ICACHE_RODATA_ATTR gxStrings_Emoji_Keycap_Sequence[mxStrings_Emoji_Keycap_Sequence] = {
 	"9\xEF\xB8\x8F\xE2\x83\xA3","8\xEF\xB8\x8F\xE2\x83\xA3","7\xEF\xB8\x8F\xE2\x83\xA3","6\xEF\xB8\x8F\xE2\x83\xA3","5\xEF\xB8\x8F\xE2\x83\xA3",
@@ -9179,8 +9178,7 @@ static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji[mxStrings_RGI_Emoji
 	"\xE2\x84\xA2\xEF\xB8\x8F","\xE2\x81\x89\xEF\xB8\x8F","\xE2\x80\xBC\xEF\xB8\x8F","\xC2\xAE\xEF\xB8\x8F","\xC2\xA9\xEF\xB8\x8F",
 };
 #define mxCharSet_RGI_Emoji_Flag_Sequence 0
-static const txInteger ICACHE_RODATA_ATTR gxCharSet_RGI_Emoji_Flag_Sequence[mxCharSet_RGI_Emoji_Flag_Sequence] = {
-};
+#define gxCharSet_RGI_Emoji_Flag_Sequence C_NULL
 #define mxStrings_RGI_Emoji_Flag_Sequence 258
 static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Flag_Sequence[mxStrings_RGI_Emoji_Flag_Sequence] = {
 	"\xF0\x9F\x87\xBF\xF0\x9F\x87\xBC","\xF0\x9F\x87\xBF\xF0\x9F\x87\xB2","\xF0\x9F\x87\xBF\xF0\x9F\x87\xA6","\xF0\x9F\x87\xBE\xF0\x9F\x87\xB9",
@@ -9250,8 +9248,7 @@ static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Flag_Sequence[mxStr
 	"\xF0\x9F\x87\xA6\xF0\x9F\x87\xA9","\xF0\x9F\x87\xA6\xF0\x9F\x87\xA8",
 };
 #define mxCharSet_RGI_Emoji_Modifier_Sequence 0
-static const txInteger ICACHE_RODATA_ATTR gxCharSet_RGI_Emoji_Modifier_Sequence[mxCharSet_RGI_Emoji_Modifier_Sequence] = {
-};
+#define gxCharSet_RGI_Emoji_Modifier_Sequence C_NULL
 #define mxStrings_RGI_Emoji_Modifier_Sequence 655
 static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Modifier_Sequence[mxStrings_RGI_Emoji_Modifier_Sequence] = {
 	"\xF0\x9F\xAB\xB8\xF0\x9F\x8F\xBF","\xF0\x9F\xAB\xB8\xF0\x9F\x8F\xBE","\xF0\x9F\xAB\xB8\xF0\x9F\x8F\xBD","\xF0\x9F\xAB\xB8\xF0\x9F\x8F\xBC",
@@ -9419,8 +9416,7 @@ static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Modifier_Sequence[m
 	"\xE2\x98\x9D\xF0\x9F\x8F\xBB",
 };
 #define mxCharSet_RGI_Emoji_Tag_Sequence 0
-static const txInteger ICACHE_RODATA_ATTR gxCharSet_RGI_Emoji_Tag_Sequence[mxCharSet_RGI_Emoji_Tag_Sequence] = {
-};
+#define gxCharSet_RGI_Emoji_Tag_Sequence C_NULL
 #define mxStrings_RGI_Emoji_Tag_Sequence 3
 static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Tag_Sequence[mxStrings_RGI_Emoji_Tag_Sequence] = {
 	"\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2\xF3\xA0\x81\xB7\xF3\xA0\x81\xAC\xF3\xA0\x81\xB3\xF3\xA0\x81\xBF",
@@ -9428,8 +9424,7 @@ static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_Tag_Sequence[mxStri
 	"\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2\xF3\xA0\x81\xA5\xF3\xA0\x81\xAE\xF3\xA0\x81\xA7\xF3\xA0\x81\xBF",
 };
 #define mxCharSet_RGI_Emoji_ZWJ_Sequence 0
-static const txInteger ICACHE_RODATA_ATTR gxCharSet_RGI_Emoji_ZWJ_Sequence[mxCharSet_RGI_Emoji_ZWJ_Sequence] = {
-};
+#define gxCharSet_RGI_Emoji_ZWJ_Sequence C_NULL
 #define mxStrings_RGI_Emoji_ZWJ_Sequence 1350
 static const txString ICACHE_RODATA_ATTR gxStrings_RGI_Emoji_ZWJ_Sequence[mxStrings_RGI_Emoji_ZWJ_Sequence] = {
 	"\xF0\x9F\xA7\x91\xF0\x9F\x8F\xBF\xE2\x80\x8D\xE2\x9D\xA4\xEF\xB8\x8F\xE2\x80\x8D\xF0\x9F\x92\x8B\xE2\x80\x8D\xF0\x9F\xA7\x91\xF0\x9F\x8F\xBE",

@@ -39,7 +39,7 @@
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
 	#define fxWakeAllCondition(CONDITION) WakeAllConditionVariable(CONDITION)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
-	#define mxCurrentThread() xTaskGetCurrentTaskHandle()
+	#define mxCurrentThread() GetCurrentThread()
 #else
 	#include <dirent.h>
 	#include <pthread.h>
