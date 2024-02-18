@@ -674,7 +674,7 @@ txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot)
 {
 	txBigInt* bigint = &slot->value.bigint;
 	txNumber number = slot->value.number;
-	txNumber limit = c_pow(2, 32);
+	txNumber limit = c_pow(2.0, 32.0);
 	txU1 sign = 0;
 	txU2 size = 1;
 	if (number < 0) {

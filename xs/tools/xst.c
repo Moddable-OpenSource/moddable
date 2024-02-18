@@ -29,7 +29,7 @@
 	#include <process.h>
 	typedef CONDITION_VARIABLE txCondition;
 	typedef CRITICAL_SECTION txMutex;
-    typedef HANDLE txThread;
+    typedef DWORD txThread;
 	#define fxCreateCondition(CONDITION) InitializeConditionVariable(CONDITION)
 	#define fxCreateMutex(MUTEX) InitializeCriticalSection(MUTEX)
 	#define fxDeleteCondition(CONDITION) (void)(CONDITION)
@@ -39,7 +39,8 @@
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
 	#define fxWakeAllCondition(CONDITION) WakeAllConditionVariable(CONDITION)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
-	#define mxCurrentThread() GetCurrentThread()
+	#define mxCurrentThread() GetCurrentThreadId()
+	#define mxMonotonicNow() ((txNumber)GetTickCount64())
 #else
 	#include <dirent.h>
 	#include <pthread.h>
@@ -57,6 +58,7 @@
 	#define fxWakeAllCondition(CONDITION) pthread_cond_broadcast(CONDITION)
 	#define fxWakeCondition(CONDITION) pthread_cond_signal(CONDITION)
 	#define mxCurrentThread() pthread_self()
+	#define mxMonotonicNow() fxDateNow()
 #endif
 
 typedef struct sxAgent txAgent;
@@ -132,7 +134,11 @@ struct sxPool {
 	txMutex countMutex;
 	txResult* current;
 	txMutex resultMutex;
-	txThread threads[mxPoolSize];
+#if mxWindows
+	HANDLE threads[mxPoolSize];
+#else
+	pthread_t threads[mxPoolSize];
+#endif
 	char harnessPath[C_PATH_MAX];
 	int testPathLength;
 };
@@ -1279,14 +1285,7 @@ void fx_agent_leaving(xsMachine* the)
 
 void fx_agent_monotonicNow(xsMachine* the)
 {
-	xsResult = xsNumber(fxDateNow());
-// #if mxWindows
-//     xsResult = xsNumber((txNumber)GetTickCount64());
-// #else	
-// 	struct timespec now;
-// 	clock_gettime(CLOCK_MONOTONIC, &now);
-//     xsResult = xsNumber(((txNumber)(now.tv_sec) * 1000.0) + ((txNumber)(now.tv_nsec / 1000000)));
-// #endif
+	xsResult = xsNumber(mxMonotonicNow());
 }
 
 void fx_agent_receiveBroadcast(xsMachine* the)
@@ -2183,10 +2182,8 @@ void fxTerminateSharedTimers()
 
 void fxRescheduleSharedTimer(txSharedTimer* timer, txNumber timeout, txNumber interval)
 {
-	c_timeval tv;
     fxLockMutex(&(gxSharedTimers.mutex));
-	c_gettimeofday(&tv, NULL);
-	timer->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + timeout;
+	timer->when = mxMonotonicNow() + timeout;
 	timer->interval = interval;
     fxUnlockMutex(&(gxSharedTimers.mutex));
 }
@@ -2194,14 +2191,12 @@ void fxRescheduleSharedTimer(txSharedTimer* timer, txNumber timeout, txNumber in
 void* fxScheduleSharedTimer(txNumber timeout, txNumber interval, txSharedTimerCallback callback, void* refcon, txInteger refconSize)
 {
 	txSharedTimer* timer;
-	c_timeval tv;
 	txSharedTimer** address;
 	txSharedTimer* link;
 	timer = c_calloc(1, sizeof(txSharedTimer) + refconSize - 1);
 	if (timer) {
-		timer->thread =  mxCurrentThread();
-		c_gettimeofday(&tv, NULL);
-		timer->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + timeout;
+		timer->thread = mxCurrentThread();
+		timer->when = mxMonotonicNow() + timeout;
 		timer->interval = interval;
 		timer->callback = callback;
 		timer->refconSize = refconSize;
@@ -2237,7 +2232,6 @@ void fxUnscheduleSharedTimer(txSharedTimer* timer)
 void fxRunLoop(txMachine* the)
 {
 	txThread thread = mxCurrentThread();
-	c_timeval tv;
 	txNumber when;
 	txInteger count;
 	txSharedTimer* timer;
@@ -2251,8 +2245,7 @@ void fxRunLoop(txMachine* the)
 			}
 			fxEndJob(the);
 		}
-		c_gettimeofday(&tv, NULL);
-		when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0);
+		when = mxMonotonicNow();
 		fxLockMutex(&(gxSharedTimers.mutex));
 		count = 0;
 		timer = gxSharedTimers.first;
