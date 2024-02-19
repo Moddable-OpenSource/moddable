@@ -206,7 +206,10 @@ void fx_Math_clz32(txMachine* the)
 	txInteger r;
 	if (x)
 #if mxWindows
-		_BitScanForward(&r, x);
+	{
+		_BitScanReverse(&r, x);
+		r = 31 - r;
+	}
 #else
 		r = __builtin_clz(x);
 #endif	

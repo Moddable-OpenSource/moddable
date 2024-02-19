@@ -569,7 +569,7 @@ void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txU4 total, txBoolean s
 txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 {
 	txBigInt* bigint = &slot->value.bigint;
-	txNumber base = c_pow(2, 32);
+	txNumber base = 4294967296;
 	txNumber number = 0;
 	int i;
 	for (i = bigint->size; --i >= 0;)
@@ -674,7 +674,7 @@ txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot)
 {
 	txBigInt* bigint = &slot->value.bigint;
 	txNumber number = slot->value.number;
-	txNumber limit = c_pow(2.0, 32.0);
+	txNumber limit = 4294967296;
 	txU1 sign = 0;
 	txU2 size = 1;
 	if (number < 0) {

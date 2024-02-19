@@ -2670,7 +2670,7 @@ void fx_TypedArray_prototype_with(txMachine* the)
 #else
 	static txU8 mxEndian64_Swap(txU8 a)
 	{
-		txU4 b;
+		txU8 b;
 		txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
 		int i;
 		for (i = 0; i < 8; i++)
