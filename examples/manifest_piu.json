@@ -1,4 +1,7 @@
 {
+	"include": [
+		"$(MODULES)/base/easing/manifest.json"
+	],
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
