@@ -26,7 +26,6 @@ USE_USB ?= 0
 FTDI_TRACE ?= -DUSE_FTDI_TRACE=0
 
 NRF_ROOT ?= $(HOME)/nrf5
-NRFJPROG_ARGS ?= -f nrf52 --qspiini $(QSPI_INI_PATH)
 
 UPLOAD_SPEED ?= 921600
 DEBUGGER_SPEED ?= 921600
@@ -860,6 +859,10 @@ flash: precursor $(BIN_DIR)/xs_nrf52.hex
 	"$(NRFJPROG)" $(NRFJPROG_ARGS) --program $(BIN_DIR)/xs_nrf52.hex $(NRFJPROG_ERASE)
 	"$(NRFJPROG)" $(NRFJPROG_ARGS) --verify $(BIN_DIR)/xs_nrf52.hex
 	"$(NRFJPROG)" --reset
+
+readuicr:
+	@echo Read UICR
+	"$(NRFJPROG)" $(NRFJPROG_ARGS) --readuicr $(BIN_DIR)/uicr.bin
 
 debugger:
 	@echo Starting xsbug. Reset device to connect.
