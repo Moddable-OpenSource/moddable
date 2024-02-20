@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -260,10 +260,10 @@ txBoolean fxStringGetOwnProperty(txMachine* the, txSlot* instance, txID id, txIn
 	if (!id && (mxStringInstanceLength(instance) > index)) {
 		txSlot* string = instance->next;
 		txInteger from = fxUnicodeToUTF8Offset(string->value.key.string, index);
-		txInteger to = fxUnicodeToUTF8Offset(string->value.key.string, index + 1);
-		descriptor->value.string = fxNewChunk(the, to - from + 1);
-		c_memcpy(descriptor->value.string, string->value.key.string + from, to - from);
-		descriptor->value.string[to - from] = 0;
+		txInteger length = fxUnicodeToUTF8Offset(string->value.key.string + from, 1);
+		descriptor->value.string = fxNewChunk(the, length + 1);
+		c_memcpy(descriptor->value.string, string->value.key.string + from, length);
+		descriptor->value.string[length] = 0;
 		descriptor->kind = XS_STRING_KIND;
 		descriptor->flag = XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
 		return 1;
@@ -602,22 +602,23 @@ void fx_String_raw(txMachine* the)
 void fx_String_prototype_at(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
-	txNumber length = fxUnicodeLength(string);
 	txNumber index = (mxArgc > 0) ? c_trunc(fxToNumber(the, mxArgv(0))) : C_NAN;
 	if (c_isnan(index) || (index == 0))
 		index = 0;
-	if (index < 0)
-		index = length + index;
-	if ((0 <= index) && (index < length)) {
-		txInteger from = fxUnicodeToUTF8Offset(mxThis->value.string, (txIndex)index);
-		if (from >= 0) {
-			txInteger to = fxUnicodeToUTF8Offset(mxThis->value.string, (txIndex)(index + 1));
-			if (to >= 0) {
-				mxResult->value.string = fxNewChunk(the, to - from + 1);
-				c_memcpy(mxResult->value.string, mxThis->value.string + from, to - from);
-				mxResult->value.string[to - from] = 0;
-				mxResult->kind = XS_STRING_KIND;
-			}
+	else if (index < 0) {
+		index += fxUnicodeLength(string);
+		if (index < 0)
+			return;
+	}
+	txInteger from = fxUnicodeToUTF8Offset(mxThis->value.string, (txIndex)index);
+	if (from >= 0) {
+		txInteger to = fxUnicodeToUTF8Offset(mxThis->value.string + from, 1);
+		if (to >= 0) {
+			to += from;
+			mxResult->value.string = fxNewChunk(the, to - from + 1);
+			c_memcpy(mxResult->value.string, mxThis->value.string + from, to - from);
+			mxResult->value.string[to - from] = 0;
+			mxResult->kind = XS_STRING_KIND;
 		}
 	}
 }
@@ -1111,7 +1112,6 @@ void fx_String_prototype_repeat(txMachine* the)
 		}
 	}
 	*result = 0;
-	string = mxThis->value.string;		//@@ unused!
 }
 
 void fx_String_prototype_replace(txMachine* the)
