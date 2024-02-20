@@ -26,6 +26,9 @@
 		"*": [
 		]
 	},
+	"include": [
+		"$(MODULES)/base/easing/manifest.json"
+	],
 	"modules": {
 		"~": [
 			"$(SIMULATOR)/modules/screen"
