@@ -67,11 +67,13 @@ struct SerialRecord {
 	uint16_t	transmitPosition;
 	uint16_t	transmitSent;
 	uint8_t		transmitTriggered;
+	uint8_t		postedMessage;
+
+	int			errors;
 
 	xsMachine	*the;
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
-	uint8_t		postedMessage;
 	uint8_t		*parityTable;
 };
 
@@ -142,6 +144,7 @@ int paritySet(Serial serial, int byte) {
 	else
 		return byte | ((serial->parityTable[byte / 8] & (1 << (byte % 8))) ? 0x80 : 0);
 }
+
 
 void xs_serial_constructor(xsMachine *the)
 {
@@ -266,7 +269,7 @@ void xs_serial_constructor(xsMachine *the)
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
-	serial = c_calloc(1, (hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
+	serial = c_calloc(1, sizeof(SerialRecord));
 	if (!serial)
 		xsRangeError("no memory");
 
@@ -310,20 +313,14 @@ void xs_serial_constructor(xsMachine *the)
 	if (serial->hasOnReadableOrWritable) {
 		serial->the = the;
 
-		if (hasReadable) {
+		if (hasReadable)
 			serial->onReadable = onReadable;
-		}
-		else
-			serial->onReadable = NULL;
 
-		if (hasWritable) {
+		if (hasWritable)
 			serial->onWritable = onWritable;
-		}
-		else
-			serial->onWritable = NULL;
 	}
 
-	ret = nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
+	ret = nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));
 
 	xsRemember(serial->obj);
 
@@ -496,13 +493,19 @@ static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 	Serial serial = p_context;
 	uint8_t post = 0;
 
-	if (NRFX_UARTE_EVT_TX_DONE == p_event->type) {
+	if (NRFX_UARTE_EVT_ERROR == p_event->type) {
+		post = 1;
+		serial->errors += 1;
+	}
+	else if (NRFX_UARTE_EVT_TX_DONE == p_event->type) {
 		serial->transmitSent += p_event->data.rxtx.bytes;
 
 		if (serial->transmitSent == serial->transmitPosition) {
-			post = 1;
 			serial->transmitSent = serial->transmitPosition = 0;
-			serial->transmitTriggered = true;
+			if (serial->onWritable && !serial->transmitTriggered) {
+				post = 1;
+				serial->transmitTriggered = true;
+			}
 		}
 		else {
 			c_memmove(serial->transmit, &serial->transmit[serial->transmitSent], serial->transmitPosition - serial->transmitSent);
@@ -512,19 +515,24 @@ static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 		}
 	}
 	else if (NRFX_UARTE_EVT_RX_DONE == p_event->type) {
-		if (kReceiveBytes == serial->receiveCount)
-			;	// overflow!
+		if (kReceiveBytes == serial->receiveCount) {	// overflow!
+			post = 1;
+			serial->errors += 1;
+		}
 		else {
 			size_t length = p_event->data.rxtx.bytes;
-			if (length > (kReceiveBytes - serial->receiveCount))
+			if (length > (kReceiveBytes - serial->receiveCount)) {	// overflow!
 				length = kReceiveBytes - serial->receiveCount;
+				post = 1;
+				serial->errors += 1;
+			}
 			c_memmove(&serial->receive[serial->receiveCount], p_event->data.rxtx.p_data, length);
 			serial->receiveCount += length;
 			if (serial->onReadable && !serial->receiveTriggered) {
 				post = 1;
 				serial->receiveTriggered = true;
 			}
-			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
+			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));
 		}
 	}
 
@@ -539,32 +547,43 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 {
 	xsMachine *the = (xsMachine *)theIn;
 	Serial serial = (Serial)refcon;
-	int count;
-	uint8_t post = 0;
+	uint8_t receiveTriggered, transmitTriggered;
+	uint16_t receiveCount;
+	int errors;
 
-	serial->postedMessage = 0;
+	builtinCriticalSectionBegin();
+		serial->postedMessage = 0;
+		receiveCount = serial->receiveCount;
+		receiveTriggered = serial->receiveTriggered; 
+		transmitTriggered = serial->transmitTriggered; 
+		serial->receiveTriggered = false;
+		serial->transmitTriggered = false;
+		
+		errors = serial->errors;
+		serial->errors = 0;
+	builtinCriticalSectionEnd();
+
+	if (errors) {
+		xsLog("Serial errors: %d\n", errors);
+		nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));		//re-prime serial receive
+	}
+
 //	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
 //		c_free(serial);
 //		return;
 //	}
 
-	if (serial->receiveTriggered) {
-		builtinCriticalSectionBegin();
-			count = serial->receiveCount;
-			serial->receiveTriggered = false;
-		builtinCriticalSectionEnd();
-
-		if (serial->onReadable && count) {
+	if (receiveTriggered) {
+		if (receiveCount) {
 			xsBeginHost(the);
-				xsmcSetInteger(xsResult, count);
+				xsmcSetInteger(xsResult, receiveCount);
 				xsCallFunction1(xsReference(serial->onReadable), serial->obj, xsResult);
 			xsEndHost(the);
 		}
 	}
 
-	if (serial->transmitTriggered) {
-		serial->transmitTriggered = false;
-		if (serial->onWritable && (0 == serial->transmitPosition)) {
+	if (transmitTriggered) {
+		if (0 == serial->transmitPosition) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, kTransmitBytes);
 				xsCallFunction1(xsReference(serial->onWritable), serial->obj, xsResult);
