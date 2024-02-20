@@ -80,6 +80,7 @@ void modGPIOUninit(modGPIOConfiguration config)
 		nrf_gpio_input_disconnect(config->pin);
 		config->direction = -1;
 	}
+	nrf_gpio_cfg_default(config->pin);
 	config->pin = kUninitializedPin;
 }
 
