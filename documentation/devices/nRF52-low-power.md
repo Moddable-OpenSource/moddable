@@ -9,7 +9,7 @@ Warning: These notes are preliminary. Omissions and errors are likely. If you en
 - [Low Power Modes](#low-power-modes)
 	- [System ON Power Mode](#system-on-power-mode)
 	- [System OFF Power Mode](#system-off-power-mode)
-- [FreeRTOS and Low Power](#free-rtos-and-low-power)
+- [FreeRTOS and Low Power](#freertos-and-low-power)
 - [Low Power Constraints](#low-power-constraints)
 - [RAM Retention](#ram-retention)
 - [RAM Power Control](#ram-power-control)
