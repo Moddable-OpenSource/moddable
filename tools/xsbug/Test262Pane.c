@@ -148,19 +148,18 @@ void Test262Context_getMetadata(xsMachine* the)
  			||	!strcmp((char*)node->data.scalar.value, "Atomics.waitAsync")
  			||	!strcmp((char*)node->data.scalar.value, "FinalizationRegistry.prototype.cleanupSome")
   			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
-  			||	!strcmp((char*)node->data.scalar.value, "String.prototype.isWellFormed")
-  			||	!strcmp((char*)node->data.scalar.value, "String.prototype.toWellFormed")
  			||	!strcmp((char*)node->data.scalar.value, "Temporal")
  			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
- 			||	!strcmp((char*)node->data.scalar.value, "array-grouping")
  			||	!strcmp((char*)node->data.scalar.value, "decorators")
  			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
- 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
+  			||	!strcmp((char*)node->data.scalar.value, "import-attributes")
+ 			||	!strcmp((char*)node->data.scalar.value, "iterator-helpers")
+			||	!strcmp((char*)node->data.scalar.value, "json-modules")
  			||	!strcmp((char*)node->data.scalar.value, "regexp-duplicate-named-groups")
 #ifndef mxRegExpUnicodePropertyEscapes
  			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
 #endif
-			||	!strcmp((char*)node->data.scalar.value, "regexp-v-flag")
+ 			||	!strcmp((char*)node->data.scalar.value, "set-methods")
 			) {
 				sloppy = 0;
 				strict = 0;
