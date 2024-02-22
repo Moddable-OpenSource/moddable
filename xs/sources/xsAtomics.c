@@ -878,6 +878,7 @@ void fxUnlockSharedChunk(void* data)
 #endif
 }
 
+#if mxThreads
 void fxWaitSharedChunkCallback(void* timer, void* refcon, txInteger refconSize)
 {
 	txSharedWaiter** address = (txSharedWaiter**)refcon;
@@ -912,11 +913,13 @@ void fxWaitSharedChunkCallback(void* timer, void* refcon, txInteger refconSize)
 	fxEndHost(the);
 	c_free(waiter);
 }
+#endif
 
 txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot* resolveFunction)
 {
 	txInteger result = 1;
 	if (gxSharedCluster) {
+	#if mxThreads
 		txSharedWaiter* waiter;
 		txSharedWaiter** address;
 		txSharedWaiter* link;
@@ -944,7 +947,6 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 		#endif
 		}
 		else if (gxSharedCluster->mainThread != mxCurrentThread()) {
-		#if mxThreads
 			txCondition condition;
 			mxCreateCondition(&condition);
 			waiter->condition = &condition;
@@ -996,11 +998,11 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 			mxUnlockMutex(&gxSharedCluster->waiterMutex);
 			c_free(waiter);
 			mxDeleteCondition(&condition);
-	#endif
 		}
 		else {
 			mxTypeError("main thread cannot wait");
 		}
+	#endif	
 	}
 	else {
 		mxTypeError("no shared cluster");
