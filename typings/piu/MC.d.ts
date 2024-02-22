@@ -543,38 +543,3 @@ declare module "piu/MC" {
     const rgba: rgba
   }
  }
-
- type PiuInterpolator = (value: number) => number;
- 
- interface Math {
-  backEaseIn: PiuInterpolator,
-  backEaseInOut: PiuInterpolator,
-  backEaseOut: PiuInterpolator,
-  bounceEaseIn: PiuInterpolator,
-  bounceEaseInOut: PiuInterpolator,
-  bounceEaseOut: PiuInterpolator,
-  circularEaseIn: PiuInterpolator,
-  circularEaseInOut: PiuInterpolator,
-  circularEaseOut: PiuInterpolator,
-  cubicEaseIn: PiuInterpolator,
-  cubicEaseInOut: PiuInterpolator,
-  cubicEaseOut: PiuInterpolator,
-  elasticEaseIn: PiuInterpolator,
-  elasticEaseInOut: PiuInterpolator,
-  elasticEaseOut: PiuInterpolator,
-  exponentialEaseIn: PiuInterpolator,
-  exponentialEaseInOut: PiuInterpolator,
-  exponentialEaseOut: PiuInterpolator,
-  quadEaseIn: PiuInterpolator,
-  quadEaseInOut: PiuInterpolator,
-  quadEaseOut: PiuInterpolator,
-  quartEaseIn: PiuInterpolator,
-  quartEaseInOut: PiuInterpolator,
-  quartEaseOut: PiuInterpolator,
-  quintEaseIn: PiuInterpolator,
-  quintEaseInOut: PiuInterpolator,
-  quintEaseOut: PiuInterpolator,
-  sineEaseIn: PiuInterpolator,
-  sineEaseInOut: PiuInterpolator,
-  sineEaseOut: PiuInterpolator
-}
