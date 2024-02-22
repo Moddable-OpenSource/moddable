@@ -820,8 +820,9 @@ txInteger fxNotifySharedChunk(txMachine* the, void* data, txInteger count)
 		waiter = first;
 		while (waiter) {
 			waiter->data = C_NULL;
-			if (waiter->condition)
+			if (waiter->condition) {
 				mxWakeCondition((txCondition*)waiter->condition);
+			}
 			else {
 				waiter->ok = 1;
 			#ifdef mxRescheduleSharedTimer
@@ -975,7 +976,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 				mxUnlockMutex(&gxSharedCluster->waiterMutex);
 				ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(timeout));
 				mxLockMutex(&gxSharedCluster->waiterMutex);
-				result = (the->waiterData == data) ? 0 : 1;
+				result = (waiter->data == data) ? 0 : 1;
 			#else
 				timeout += fxDateNow();
 				while (waiter->data == data) {
