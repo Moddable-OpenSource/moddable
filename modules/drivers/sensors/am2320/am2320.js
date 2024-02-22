@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -37,7 +37,6 @@ class AM2320  {
 	#cmdBuffer = new Uint8Array(3);
 	#valueBuffer = new Uint8Array(6);
 	#crc;
-	#onError;
 
 	constructor(options) {
 		const io = this.#io = new options.sensor.io({
@@ -46,28 +45,26 @@ class AM2320  {
 			...options.sensor
 		});
 
-		this.#onError = options.onError;
-
 		this.#crc = new CRC16(0x8005, 0xFFFF, true, true);
 	}
 	configure(options) {
 	}
 	close() {
-		this.#io.close();
+		this.#io?.close();
 		this.#io = undefined;
 	}
 	sample() {
 		let ret = { hygrometer: {}, thermometer: {} };
 
-		let humid = this.#readValue(Register.HUMID_MEASURE);
+		let humidity = this.#readValue(Register.HUMID_MEASURE);
 		if (undefined !== humid)
-			ret.hygrometer.humidity = (humid / 10.0);
+			ret.hygrometer.humidity = (humidity / 10.0);
 
-		let temp = this.#readValue(Register.TEMP_MEASURE);
-		if (undefined !== temp) {
-			if (temp & 0x8000)
-				temp = -(temp & 0x7fff);
-			ret.thermometer.temperature = (temp / 10.0);
+		let temperature = this.#readValue(Register.TEMP_MEASURE);
+		if (undefined !== temperature) {
+			if (temperature & 0x8000)
+				temperature = -(temperature & 0x7fff);
+			ret.thermometer.temperature = (temperature / 10.0);
 		}
 
 		return ret;
