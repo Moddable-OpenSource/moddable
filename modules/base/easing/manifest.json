@@ -2,5 +2,14 @@
 	"modules": {
 		"*": "./easing"
 	},
-	"preload": "easing"
+	"preload": "easing",
+	"typescript": {
+		"tsconfig": {
+			"compilerOptions": {
+				"types": [
+					"$(MODDABLE)/typings/easing"
+				]
+			}
+		}
+	}
 }
