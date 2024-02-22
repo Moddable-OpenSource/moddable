@@ -546,8 +546,8 @@ void fx_Atomics_wait(txMachine* the)
 	}
 	mxPullSlot(mxResult);
 }
-extern void fxQueueTimeoutJob(txMachine* the, txNumber timeout, txSlot* function, txSlot* argument);
 
+#if mxECMAScript2024
 void fx_Atomics_waitAsync(txMachine* the)
 {
 	mxAtomicsDeclarations(1, 1);
@@ -584,6 +584,7 @@ void fx_Atomics_waitAsync(txMachine* the)
 	}
 	mxPullSlot(mxResult);
 }
+#endif
 
 void fx_Atomics_xor(txMachine* the)
 {

@@ -947,6 +947,7 @@ void fx_Promise_resolveAux(txMachine* the)
     mxPop(); // resolveFunction
 }
 
+#if mxECMAScript2024
 void fx_Promise_withResolvers(txMachine* the)
 {
 	txSlot* resolveFunction;
@@ -969,6 +970,7 @@ void fx_Promise_withResolvers(txMachine* the)
 	mxPop();
 	mxPop();
 }
+#endif
 
 void fx_Promise_prototype_catch(txMachine* the)
 {
