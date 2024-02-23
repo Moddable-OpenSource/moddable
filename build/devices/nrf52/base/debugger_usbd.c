@@ -674,7 +674,8 @@ void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst, app_usbd_cdc_
     }
 }
 
-#ifdef mxDebug || mxInstrument		// moved from way-up. We want usb for the programmer
+// moved from way-up. We want usb for the programmer
+#if defined(mxDebug) || defined(mxInstrument)
 
 void ESP_putc(int c)
 {
