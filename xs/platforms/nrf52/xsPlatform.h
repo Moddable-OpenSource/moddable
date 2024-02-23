@@ -60,7 +60,7 @@
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif
-#define mxMisalignedSettersCrash 1		//@@@ ?
+// #define mxMisalignedSettersCrash 1		//@@@ ?
 #define mxUseFreeRTOSTasks	1
 // #define mxUseGCCAtomics		1		// undefine
 
