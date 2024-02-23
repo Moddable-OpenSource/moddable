@@ -885,7 +885,7 @@ void fx_String_prototype_isWellFormed(txMachine* the)
 	txString p = fxCoerceToString(the, mxThis);
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 1;
-	while (*p) {
+	while (c_read8(p)) {
 		txInteger c;
 		p = mxStringByteDecode(p, &c);
 		if ((0x0000D800 <= c) && (c <= 0x0000DFFF)) {
@@ -1527,9 +1527,9 @@ void fx_String_prototype_toWellFormed(txMachine* the)
 	txSize length = mxStringLength(string);
 	mxResult->value.string = (txString)fxNewChunk(the, length + 1);
 	mxResult->kind = XS_STRING_KIND;
-	txString p = string;
+	txString p = mxThis->value.string;
 	txString q = mxResult->value.string;
-	while (*p) {
+	while (c_read8(p)) {
 		txInteger c;
 		p = mxStringByteDecode(p, &c);
 		if ((0x0000D800 <= c) && (c <= 0x0000DFFF))
