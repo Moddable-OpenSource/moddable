@@ -285,7 +285,7 @@ void fx_RegExp_prototype_get_flag(txMachine* the, txU4 flag)
 void fx_RegExp_prototype_get_flags(txMachine* the)
 {
 #if mxRegExp
-	char flags[8];
+	char flags[9];
 	txIndex index = 0;
 	if (mxThis->kind != XS_REFERENCE_KIND)
 		mxTypeError("this is no object");
