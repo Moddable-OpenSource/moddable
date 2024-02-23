@@ -133,6 +133,7 @@ MODULES = \
 	$(MOD_DIR)/image2cs.xsb \
 	$(MOD_DIR)/mcbundle.xsb \
 	$(MOD_DIR)/mcconfig.xsb \
+	$(MOD_DIR)/mchex.xsb \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcpack.xsb \
@@ -220,6 +221,7 @@ COMMANDS = \
 	$(BIN_DIR)/image2cs \
 	$(BIN_DIR)/mcbundle \
 	$(BIN_DIR)/mcconfig \
+	$(BIN_DIR)/mchex \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcpack \
 	$(BIN_DIR)/mcrez \
@@ -351,6 +353,11 @@ $(BIN_DIR)/cdv: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": cdv"
 	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools cdv "$$@"' > $(BIN_DIR)/cdv
 	chmod +x $(BIN_DIR)/cdv
+
+$(BIN_DIR)/mchex: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mchex"
+	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mchex "$$@"' > $(BIN_DIR)/mchex
+	chmod +x $(BIN_DIR)/mchex
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
