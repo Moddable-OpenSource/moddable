@@ -80,7 +80,7 @@ void modGPIOUninit(modGPIOConfiguration config)
 		nrf_gpio_input_disconnect(config->pin);
 		config->direction = -1;
 	}
-	nrf_gpio_cfg_default(config->pin);
+//	nrf_gpio_cfg_default(config->pin);	// this breaks the static Digital.write
 	config->pin = kUninitializedPin;
 }
 
