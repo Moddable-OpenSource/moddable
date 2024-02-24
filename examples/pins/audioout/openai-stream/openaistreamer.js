@@ -19,20 +19,37 @@
  */
 
 import MP3Streamer from "mp3streamer";
+import WavStreamer from "wavstreamer";
 
 // https://platform.openai.com/docs/api-reference/audio/createSpeech
 
 export default class {
 	constructor(options) {
-		const {key, model, voice, input, speed,  ...o} = options;
-		const body = ArrayBuffer.fromString(JSON.stringify({
+		const {key, model, voice, input, speed, response_format, ...o} = options;
+		const reuest = {
 			input,
-			model, 
+			model,
 			voice,
-			speed: speed ?? 1
-		}));
+			speed: speed ?? 1,
+			response_format: response_format ?? "mp3",
+		};
+		const body = ArrayBuffer.fromString(JSON.stringify(reuest));
+		let streamer;
+		if (reuest.response_format == "mp3") {
+			streamer = MP3Streamer;
+		} else if (reuest.response_format == "wav") {
+			streamer = WavStreamer;
+		} else {
+			const error = new Error(`invalid response_format:${reuest.response_format}`);
+			if (options.onError) {
+				options.onError(error);
+				return;
+			} else {
+				throw error;
+			}
+		}
 	
-		return new MP3Streamer({
+		return new streamer({
 			...o,
 			http: device.network.https,
 			request: {
@@ -51,6 +68,7 @@ export default class {
 			port: 443,
 			host: "api.openai.com",
 			path: "/v1/audio/speech",
+			waveHeaderBytes: reuest.response_format == "wav" ? 44 : undefined,
 		})
 	}
 }
