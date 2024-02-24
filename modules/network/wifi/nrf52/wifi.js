@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,44 +18,14 @@
  *
  */
 
-#include "xs.h"
+/*
+	wifi
+*/
 
-void xs_wifi_set_mode(xsMachine *the)
-{
-}
-
-void xs_wifi_get_mode(xsMachine *the)
-{
-}
-
-void xs_wifi_scan(xsMachine *the)
-{
-}
-
-void xs_wifi_status(xsMachine *the)
-{
-}
-
-void xs_wifi_connect(xsMachine *the)
-{
-}
-
-void xs_wifi_destructor(void *data)
-{
-}
-
-void xs_wifi_constructor(xsMachine *the)
-{
-}
-
-void xs_wifi_close(xsMachine *the)
-{
-}
-
-void xs_wifi_set_onNotify(xsMachine *the)
-{
-}
-
-void xs_wifi_accessPoint(xsMachine *the)
-{
+export default class WiFi {
+	constructor(dictionary, onNotify) {
+		throw new Error("no Wi-Fi!");
+	}
+	
+	static Modes = Object.freeze({});
 }

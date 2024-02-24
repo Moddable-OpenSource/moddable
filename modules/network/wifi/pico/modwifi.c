@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -75,11 +75,12 @@ typedef struct apScanRecord apScanRecord;
 static apScanRecord *gScanResult = NULL;
 
 enum {
-	WIFI_OFF = 0,
+	WIFI_OFF = -5,
+	WIFI_NONE = 0,
 	WIFI_STA = 1,
 	WIFI_AP = 2
 };
-int gWiFiMode = WIFI_OFF;
+int gWiFiMode = WIFI_NONE;
 
 static modTimer gMonitorWiFiTimer = NULL;
 void wifiMonitorCallback(modTimer timer, void *refcon, int refconSize);
@@ -96,18 +97,20 @@ void xs_wifi_set_mode(xsMachine *the)
 {
 	int mode = xsmcToInteger(xsArg(0));
 
-	if (WIFI_OFF == mode)
-		pico_unuse_cyw43();
-
 	if (gWiFiMode == mode)
 		return;
 
-	int err = pico_use_cyw43();
-	if (err) {
-		modLog_transmit("pico_use_cyw43 failed:");
-		modLogInt(err);
+	if( (WIFI_OFF == mode) || (WIFI_NONE == mode))  {
+		pico_unuse_cyw43();
+		gWiFiMode = mode;
+		return;
 	}
 
+	int err = pico_use_cyw43();
+	if (err) {
+		modLogInt(err);
+		xsUnknownError("pico_use_cyw43 failed");
+	}
 
 	if (WIFI_STA == mode) {
 		cyw43_arch_enable_sta_mode();

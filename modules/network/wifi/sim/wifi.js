@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,7 +26,7 @@ let state = "idle";
 let state_next = "idle";
 let timer;
 let scanning = false;
-let mode = 0;
+let mode = 0;	// WiFi.mode.off
 
 export default class WiFi {
     #onNotify;
@@ -79,15 +79,14 @@ export default class WiFi {
             WiFi.connect(dictionary);
     }
     close() {
-        if (timer)
-            Timer.clear(timer)
+		Timer.clear(timer)
 		timer = undefined;
     }
     set onNotify(value) {
         this.#onNotify = value ?? function () { };
     }
     static set mode(value) {
-		if ((0 !== value) && (1 !== value) && (2 !== value) && (3 !== value))
+		if ((WiFi.Mode.off !== value) && (WiFi.Mode.station !== value) && (WiFi.Mode.accessPoint !== value) && ((WiFi.Mode.station | WiFi.Mode.accessPoint) !== value))
 			throw new Error("invalid wi-fi mode");
         mode = value;
     }
@@ -144,11 +143,20 @@ export default class WiFi {
     static close() { WiFi.connect(); }
 	
 	static disconnect() {WiFi.connect();}
+
+	static Mode = Object.freeze({
+		// off: -5,			// reserved. ESP32-only now. Could be extended to others.
+		none: 0,
+		station: 1,
+		accessPoint: 2
+		// 3 reserved for station & accessPoint (WiFi.mode.station | WiFi.mode.accessPoint) 
+	});
+
+	static gotIP = "gotIP";
+	static lostIP = "lostIP";
+	static connected = "connect";
+	static disconnected = "disconnect";
 }
-WiFi.gotIP = "gotIP";
-WiFi.lostIP = "lostIP";
-WiFi.connected = "connect";
-WiFi.disconnected = "disconnect";
 
 const accessPoints = [
    {

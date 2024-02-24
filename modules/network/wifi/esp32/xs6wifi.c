@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,6 +24,7 @@
 
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
+#include "modInstrumentation.h"
 
 #include "esp_wifi.h"
 
@@ -36,7 +37,8 @@ int8_t gDisconnectReason = 0;		// -1 = password rejected
 int8_t gWiFiConnectRetryRemaining;
 int8_t gWiFiIP;		// 0x01 == IP4, 0x02 == IP6
 
-static void initWiFi(int mode);
+static void initWiFi(wifi_mode_t mode);
+static void deinitWiFi(void);
 
 struct wifiScanRecord {
 	xsSlot			callback;
@@ -53,23 +55,38 @@ void xs_wifi_set_mode(xsMachine *the)
 {
 	int mode = xsmcToInteger(xsArg(0));
 
-	initWiFi(mode);
-
 	if (1 == mode)
-		esp_wifi_set_mode(WIFI_MODE_STA);
+		mode = WIFI_MODE_STA;
 	else if (2 == mode)
-		esp_wifi_set_mode(WIFI_MODE_AP);
+		mode = WIFI_MODE_AP;
 	else if (3 == mode)
-		esp_wifi_set_mode(WIFI_MODE_APSTA);
+		mode = WIFI_MODE_APSTA;
 	else if (0 == mode)
-		esp_wifi_set_mode(WIFI_MODE_NULL);
+		mode = WIFI_MODE_NULL;
+	else if (-5 == mode) {
+#if MODINSTRUMENTATION
+		int32_t sockets = modInstrumentationGet(the, NetworkSockets);
+		if (sockets)
+			xsLog("WARNING: close all sockets before setting Wi-Fi mode to off. %d active sockets.\n", (int)sockets);
+#endif 
+		deinitWiFi();
+		return;
+	}
 	else
 		xsUnknownError("invalid mode");
+
+	initWiFi((wifi_mode_t)mode);
+	esp_wifi_set_mode((wifi_mode_t)mode);
 }
 
 void xs_wifi_get_mode(xsMachine *the)
 {
 	wifi_mode_t mode;
+
+	if (gWiFiState <= 0) {
+		xsmcSetInteger(xsResult, -5);
+		return;
+	}
 
 	initWiFi(WIFI_MODE_NULL);
 
@@ -297,46 +314,62 @@ struct xsWiFiRecord {
 
 static xsWiFi gWiFi;
 
+static uint8_t isValidWiFi(xsWiFi wifi)
+{
+	xsWiFi walker;
+
+	for (walker = gWiFi; NULL != walker; walker = walker->next) {
+		if (walker == wifi)
+			return 1;
+	}
+	
+	return 0;
+}
+
 static void wifiEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-    xsWiFi wifi = refcon;
-    int32_t event_id = *(int32_t *)message;
-    const char *msg;
+	xsWiFi wifi = refcon;
+	int32_t event_id = *(int32_t *)message;
+	const char *msg;
 
-    switch (event_id) {
-        case WIFI_EVENT_STA_START:          msg = "start"; break;
-        case WIFI_EVENT_STA_CONNECTED:      msg = "connect"; break;
-        case WIFI_EVENT_STA_DISCONNECTED:   msg = "disconnect"; break;
+	if (!isValidWiFi(wifi)) return;
+
+	switch (event_id) {
+		case WIFI_EVENT_STA_START:          msg = "start"; break;
+		case WIFI_EVENT_STA_CONNECTED:      msg = "connect"; break;
+		case WIFI_EVENT_STA_DISCONNECTED:   msg = "disconnect"; break;
 		case WIFI_EVENT_AP_STACONNECTED:	msg = "station_connect"; break;
 		case WIFI_EVENT_AP_STADISCONNECTED: msg = "station_disconnect"; break;
-        default: return;
-    }
+		default: return;
+	}
 
-    xsBeginHost(the);
-        if (WIFI_EVENT_STA_DISCONNECTED != event_id)
-            xsCall1(wifi->obj, xsID_callback, xsString(msg));
-        else {
-            xsmcSetInteger(xsResult, gDisconnectReason);
-            xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
-        }
-    xsEndHost(the);
+	xsBeginHost(the);
+		if (WIFI_EVENT_STA_DISCONNECTED != event_id)
+			xsCall1(wifi->obj, xsID_callback, xsString(msg));
+		else {
+			xsmcSetInteger(xsResult, gDisconnectReason);
+			xsCall2(wifi->obj, xsID_callback, xsString(msg), xsResult);
+		}
+	xsEndHost(the);
 }
 
 static void ipEventPending(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-    xsWiFi wifi = refcon;
-    int32_t event_id = *(int32_t *)message;
-    const char *msg;
+	xsWiFi wifi = refcon;
+	int32_t event_id = *(int32_t *)message;
+	const char *msg;
 
-    switch (event_id) {
-        case IP_EVENT_STA_GOT_IP:            msg = "gotIP"; break;
-//        case IP_EVENT_STA_CHANGED_IP:        msg = "changedIP"; break;
-        default: return;
-    }
+	if (!isValidWiFi(wifi)) return;
 
-    xsBeginHost(the);
-        xsCall1(wifi->obj, xsID_callback, xsString(msg));
-    xsEndHost(the);
+	switch (event_id) {
+		case IP_EVENT_STA_GOT_IP:            msg = "gotIP"; break;
+//		case IP_EVENT_STA_CHANGED_IP:        msg = "changedIP"; break;
+		default: return;
+	}
+
+	xsBeginHost(the);
+		xsCall1(wifi->obj, xsID_callback, xsString(msg));
+	xsEndHost(the);
 }
 
 void xs_wifi_destructor(void *data)
@@ -373,9 +406,9 @@ void xs_wifi_close(xsMachine *the)
 	if (wifi) {
 		if (wifi->haveCallback)
 			xsForget(wifi->obj);
+		xs_wifi_destructor(wifi);
+		xsmcSetHostData(xsThis, NULL);
 	}
-	xs_wifi_destructor(wifi);
-	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_wifi_set_onNotify(xsMachine *the)
@@ -418,7 +451,7 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 		case WIFI_EVENT_STA_START:
 			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
 #ifdef MODDEF_WIFI_HOSTNAME
-                esp_netif_set_hostname(gStation, MODDEF_WIFI_HOSTNAME);
+				esp_netif_set_hostname(gStation, MODDEF_WIFI_HOSTNAME);
 #endif
 
 				gWiFiState = 3;
@@ -439,7 +472,7 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 			gWiFiState = 4;
 			gWiFiConnectRetryRemaining = 0;
 			gWiFiIP = 0;
-            if (ESP_OK != esp_netif_create_ip6_linklocal(gStation))
+			if (ESP_OK != esp_netif_create_ip6_linklocal(gStation))
 				gWiFiIP = 0x02;		// don't wait for IP6 address if esp_netif_create_ip6_linklocal failed
 			break;
 		case WIFI_EVENT_STA_DISCONNECTED: {
@@ -462,12 +495,12 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 		case WIFI_EVENT_SCAN_DONE:
 			if (gScan)
 				modMessagePostToMachine(gScan->the, NULL, 0, reportScan, NULL);
-            return;
+			return;
 		case WIFI_EVENT_AP_STACONNECTED:
 		case WIFI_EVENT_AP_STADISCONNECTED:
 			break;
 		default:
-            return;
+			return;
 	}
 
 	for (walker = gWiFi; NULL != walker; walker = walker->next)
@@ -476,40 +509,41 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 
 static void doIPEvent(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    wifi_config_t wifi_config;
-    xsWiFi walker;
+	wifi_config_t wifi_config;
+	xsWiFi walker;
 
-    switch (event_id) {
-        case IP_EVENT_GOT_IP6:
-            if (0x03 == gWiFiIP)
-                return;
-            gWiFiIP |= 0x02;
-            if (0x03 != gWiFiIP)
-                return;
-            event_id = IP_EVENT_STA_GOT_IP;
-            gWiFiState = 5;
-            break;
+	switch (event_id) {
+		case IP_EVENT_GOT_IP6:
+			if (0x03 == gWiFiIP)
+				return;
+			gWiFiIP |= 0x02;
+			if (0x03 != gWiFiIP)
+				return;
+			event_id = IP_EVENT_STA_GOT_IP;
+			gWiFiState = 5;
+			break;
 
-        case IP_EVENT_STA_GOT_IP:
-            gWiFiIP |= 0x01;
-            if (0x03 != gWiFiIP)
-                return;
-//@@            if (((ip_event_got_ip_t *)event_data)->ip_changed && (5 == gWiFiState))        // N.B. ip_changed is set when initial IP address received.
-//@@                event_id = IP_EVENT_STA_CHANGED_IP;
-            gWiFiState = 5;
-            break;
-    }
+		case IP_EVENT_STA_GOT_IP:
+			gWiFiIP |= 0x01;
+			if (0x03 != gWiFiIP)
+				return;
+//@@			if (((ip_event_got_ip_t *)event_data)->ip_changed && (5 == gWiFiState))		// N.B. ip_changed is set when initial IP address received.
+//@@				event_id = IP_EVENT_STA_CHANGED_IP;
+			gWiFiState = 5;
+			break;
+	}
 
-    for (walker = gWiFi; NULL != walker; walker = walker->next)
-        modMessagePostToMachine(walker->the, (uint8_t *)&event_id, sizeof(event_id), ipEventPending, walker);
+	for (walker = gWiFi; NULL != walker; walker = walker->next)
+		modMessagePostToMachine(walker->the, (uint8_t *)&event_id, sizeof(event_id), ipEventPending, walker);
 }
 
-void initWiFi(int mode)
+// mode is applied only when intializing. otherwise, left unchanged.
+void initWiFi(wifi_mode_t mode)
 {
 	if (gWiFiState > 0) return;
 
 	if (gWiFiState <= -2) {
-        esp_netif_init();
+		esp_netif_init();
 		esp_err_t err = esp_event_loop_create_default();
 		if (ESP_ERR_INVALID_STATE != err)		// ESP_ERR_INVALID_STATE indicates the default event loop has already been created
 			ESP_ERROR_CHECK(err);
@@ -517,19 +551,44 @@ void initWiFi(int mode)
 
 	gWiFiState = 1;
 
+	gStation = esp_netif_create_default_wifi_sta();
+
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	cfg.nvs_enable = 0;		// we manage the Wi-Fi connection. don't want surprises from what may be in NVS.
-	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-	esp_wifi_set_mode(mode);
+	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+	ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
 
-    gStation = esp_netif_create_default_wifi_sta();
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL));
 
-	ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, NULL, NULL));
-    
-    ESP_ERROR_CHECK( esp_wifi_start() );
+	ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+void deinitWiFi(void)
+{
+	if (gWiFiState < 1)
+		return;
+
+	if (gWiFiState > 1) {
+		gWiFiState = 2;
+		gDisconnectReason = 0;
+	}
+
+	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent));
+	ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent));
+
+	ESP_ERROR_CHECK(esp_wifi_stop());
+
+	ESP_ERROR_CHECK(esp_wifi_deinit());
+
+	esp_netif_destroy_default_wifi(gStation);
+	gStation = NULL;
+
+	// esp_netif_deinit is unimplemented by lwip and we don't dare destroy the default event loop
+		
+	gWiFiState = 0;
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
@@ -537,7 +596,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 	wifi_mode_t mode;
 	wifi_config_t config;
 	wifi_ap_config_t *ap;
-    esp_netif_ip_info_t info;
+	esp_netif_ip_info_t info;
 	char *str;
 	uint8_t station = 0;
 
@@ -600,19 +659,19 @@ void xs_wifi_accessPoint(xsMachine *the)
 		station = xsmcToBoolean(xsVar(0));
 	}
 
-    if (!gAP)
-        gAP = esp_netif_create_default_wifi_ap();
+	if (!gAP)
+		gAP = esp_netif_create_default_wifi_ap();
 
-    esp_wifi_get_mode(&mode);
+	esp_wifi_get_mode(&mode);
 	if ((WIFI_MODE_AP != mode) && (WIFI_MODE_APSTA != mode)) {
 		if (ESP_OK != esp_wifi_set_mode(station ? WIFI_MODE_APSTA : WIFI_MODE_AP))
 			xsUnknownError("esp_wifi_set_mode failed");
 	}
 
-    if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
+	if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
 		xsUnknownError("esp_wifi_set_config failed");
 
-    if (ESP_OK != esp_wifi_start())
+	if (ESP_OK != esp_wifi_start())
 		xsUnknownError("esp_wifi_start failed");
 	if (ESP_OK != esp_netif_get_ip_info(gAP, &info))
 		xsUnknownError("esp_netif_get_ip_info failed");

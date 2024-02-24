@@ -43,7 +43,7 @@ export default class WiFi @ "xs_wifi_destructor" {
 	static disconnect() {WiFi.connect();}
 
 	static Mode = Object.freeze({
-		// off: -5,			// reserved. ESP32-only now. Could be extended to others.
+		off: -5,
 		none: 0,
 		station: 1,
 		accessPoint: 2

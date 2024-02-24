@@ -1,6 +1,6 @@
 # Networking
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: December 15, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: Febrary 23, 2024
 
 ## Table of Contents
 
@@ -856,7 +856,9 @@ The Wi-Fi scan runs for a fixed period of time, approximately two seconds. Durin
 
 ### `mode` property
 
-The `mode` property is set to 1 for station mode (e.g. device acts as Wi-Fi client), 2 for access point mode (e.g. device acts as Wi-Fi base station), and 3 for simultaneous operation of station and access point modes.
+The `mode` property is set to `WiFi.Mode.station` for station mode (e.g. device acts as Wi-Fi client), `WiFi.Mode.accessPoint` for access point mode (e.g. device acts as Wi-Fi base station), and `WiFi.Mode.station | WiFi.Mode.accessPoint` for simultaneous operation of station and access point modes.
+
+`mode` may be set to `WiFi.Mode.none` to disable both station and accessPoint modes. Depending on the platform, Wi-Fi may still be powered when mode is set to `WiFi.Mode.none`. Some platforms support `WiFi.Mode.off` to power-down Wi-Fi. Use `"off" in WiFi.Mode` at runtime to test to see if the feature is supported.
 
 ***
 
