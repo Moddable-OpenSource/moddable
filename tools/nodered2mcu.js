@@ -470,8 +470,9 @@ export default class extends TOOL {
 				config.active = !!config.active;
 			} break;
 
-			case "function":
 			case "mcu_code":
+				config.type = "function";
+			case "function":
 			{
 				const params = "node, context, flow, global, libs, env"
 
