@@ -1946,13 +1946,11 @@ export class Tool extends TOOL {
 
 				flows.forEach((node, i) => {
 					let manifest;
-					if (node.moddable_manifest){
-						try{
+					if (node.moddable_manifest) {
+						if ("string" === typeof node.moddable_manifest)
 							manifest = JSON.parse(node.moddable_manifest);
-						}
-						catch{
+						else
 							manifest = {...node.moddable_manifest};
-						}
 					}
 					else if (nodeTypes[node.type])
 						manifest = {include: nodeTypes[node.type]};
