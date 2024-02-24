@@ -605,7 +605,7 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 	*p = 0;
 	parser->modifierLength = mxPtrDiff(p - parser->buffer);
 	parser->modifier = fxNewParserString(parser, parser->buffer, parser->modifierLength);
-	if (!fxCompileRegExp(C_NULL, parser->string, parser->modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
+	if (!fxCompileRegExp(parser->console, parser->string, parser->modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
 		fxReportParserError(parser, parser->line, "%s", parser->buffer);
 	parser->token = XS_TOKEN_REGEXP;
 }
