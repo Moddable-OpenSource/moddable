@@ -34,69 +34,86 @@ const Register = Object.freeze({
 
 class AM2320  {
 	#io;
-	#cmdBuffer = new Uint8Array(3);
 	#valueBuffer = new Uint8Array(6);
-	#crc;
+	#cmdBuffer = this.#valueBuffer.subarray(0, 3);
+	#crc = new CRC16(0x8005, 0xFFFF, true, true);
 
 	constructor(options) {
-		const io = this.#io = new options.sensor.io({
+		this.#io = new options.sensor.io({
 			hz: 100_000,
 			address: 0x5C,
 			...options.sensor
 		});
-
-		this.#crc = new CRC16(0x8005, 0xFFFF, true, true);
 	}
-	configure(options) {
+	configure(/* options */) {
 	}
 	close() {
 		this.#io?.close();
 		this.#io = undefined;
 	}
 	sample() {
-		let ret = { hygrometer: {}, thermometer: {} };
+		const result = { hygrometer: {}, thermometer: {} };
 
 		let humidity = this.#readValue(Register.HUMID_MEASURE);
-		if (undefined !== humid)
-			ret.hygrometer.humidity = (humidity / 10.0);
+		if (undefined !== humidity)
+			result.hygrometer.humidity = (humidity / 10.0);
 
 		let temperature = this.#readValue(Register.TEMP_MEASURE);
 		if (undefined !== temperature) {
 			if (temperature & 0x8000)
 				temperature = -(temperature & 0x7fff);
-			ret.thermometer.temperature = (temperature / 10.0);
+			result.thermometer.temperature = (temperature / 10.0);
 		}
 
-		return ret;
+		return result;
 	}
+	// retry and timing behavior based on https://github.com/adafruit/Adafruit_AM2320/blob/master/Adafruit_AM2320.cpp
 	#readValue(reg) {
 		const io = this.#io;
-		const cBuf = this.#cmdBuffer;
-		const vBuf = this.#valueBuffer;
+		const cmdBuffer = this.#cmdBuffer;
+		const valueBuffer = this.#valueBuffer;
 
 		// wake device
-		io.write(new ArrayBuffer);	// write 0 length buffer
-		Timer.delay(10);
-		
-		// start conversion
-		cBuf[0] = Register.COMMAND_READ;
-		cBuf[1] = reg;
-		cBuf[2] = 0x02;
-		io.write(cBuf);
+		for (let i = 0; i < 3; i++) {
+			try {
+				io.write(new ArrayBuffer(1));
+				Timer.delay(10);
+				break;
+			}
+			catch {
+				if (2 === i)
+					return;
+				Timer.delay(100);
+			}
+		}
 
-		Timer.delay(2);
+		// start conversion
+		cmdBuffer[0] = Register.COMMAND_READ;
+		cmdBuffer[1] = reg;
+		cmdBuffer[2] = 0x02;
+		for (let i = 0; i < 3; i++) {
+			try {
+				io.write(cmdBuffer);
+				Timer.delay(2);
+				break;
+			}
+			catch {
+				if (2 === i)
+					return;
+				Timer.delay(5);
+			}
+		}
 
 		// read data
-		io.read(vBuf);
+		io.read(valueBuffer);
 
 		// check crc
 		this.#crc.reset();
-		let calcCRC = this.#crc.checksum(vBuf.subarray(0,4));
-
-		if ((vBuf[5] != (calcCRC >> 8)) || (vBuf[4] != (calcCRC & 0xFF)))
+		const crc = this.#crc.checksum(valueBuffer.subarray(0,4));
+		if ((valueBuffer[5] != (crc >> 8)) || (valueBuffer[4] != (crc & 0xFF)))
 			return;
 
-		return (vBuf[2] << 8) | vBuf[3];
+		return (valueBuffer[2] << 8) | valueBuffer[3];
 	}
 }
 
