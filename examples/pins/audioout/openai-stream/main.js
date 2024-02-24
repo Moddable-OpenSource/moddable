@@ -36,6 +36,6 @@ new OpenAIStreamer({
 	},
 	onDone() {
 		trace("OpenAI Done\n");
-		this.close();
+		this.close?.();
 	}
 })
