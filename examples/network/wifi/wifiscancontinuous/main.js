@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,7 +15,7 @@
 import Scanner from "wifiscanner";
 import WiFi from "wifi";
 
-WiFi.mode = 1;
+WiFi.mode = WiFi.Mode.station;
 
 trace("Scan start\n");
 new Scanner({

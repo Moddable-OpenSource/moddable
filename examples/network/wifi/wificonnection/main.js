@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,7 +14,7 @@
 
 import WiFi from "wifi/connection";
 
-WiFi.mode = 1; // station mode
+WiFi.mode = WiFi.Mode.station;
 
 if (1) {
 	// single access point

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -31,7 +31,7 @@ export default function (done) {
 		return done();
 	}
 
-	WiFi.mode = 1;
+	WiFi.mode = WiFi.Mode.station;
 
 	new WiFi({ssid: config.ssid, password: config.password}, function(msg, code) {
 	   switch (msg) {

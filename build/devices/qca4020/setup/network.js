@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2014  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,7 +25,7 @@ import Net from "net";
 import SNTP from "sntp";
 
 export default function (done) {
-	WiFi.mode = 1;
+	WiFi.mode = WiFi.Mode.station;
 
 	if (!config.ssid) {
 		trace("no wi-fi ssid\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,7 +16,7 @@ import WiFi from "wifi";
 
 let aps = [];
 
-WiFi.mode = 1;
+WiFi.mode = WiFi.Mode.station;
 
 function scan() {
 	WiFi.scan({}, ap => {
