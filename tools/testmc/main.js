@@ -154,7 +154,7 @@ Object.defineProperty(globalThis, "screen", {
 globalThis.$NETWORK = {
 	get connected() {
 		if (1 !== WiFi.mode)
-			WiFi.mode = 1;
+			WiFi.mode = WiFi.Mode.station;
 
 		if (Net.get("IP"))
 			return Promise.resolve();
