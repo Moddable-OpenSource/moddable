@@ -1,0 +1,11 @@
+{
+  "include": [
+    "$(MODDABLE)/modules/io/manifest.json",
+    "$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
+    "$(MODDABLE)/modules/data/wavreader/manifest.json"
+  ],
+  "modules": {
+    "*": ["./wavstreamer"]
+  },
+  "preload": ["wavstreamer"]
+}

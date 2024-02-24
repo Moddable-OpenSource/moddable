@@ -1,9 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
-		"$(MODDABLE)/modules/data/wavreader//manifest.json"
+		"./manifest_sbcstreamer.json",
+		"./manifest_wavstreamer.json"
 	],
 	"creation": {
 		"static": 32768,
@@ -19,18 +18,12 @@
 	"modules": {
 		"*": [
 			"./main",
-			"./sbcstreamer",
-			"./wavstreamer",
 			"./calculatePower"
 		],
 		"pins/*": [
 			"$(MODULES)/pins/i2s/*"
 		]
 	},
-	"preload": [
-		"sbcstreamer",
-		"wavstreamer"
-	],
 	"defines": {
 		"audioOut": {
 			"bitsPerSample": 16,
