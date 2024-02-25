@@ -2641,8 +2641,14 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 				txInteger which = *pointer++;
 				#ifdef mxTrace 
 				{
-					txInteger captureIndex;
-					fprintf(stderr, "\n#%d [%d,%d]", step, start, offset);
+					txInteger captureIndex = 0;
+					txStateData* state = firstState;
+					while (state) {
+						captureIndex++;
+						state = state->nextState;
+					}					
+					
+					fprintf(stderr, "\n#%d (%d) [%d,%d]", step, captureIndex, start, offset);
 					for (captureIndex = 1; captureIndex < captureCount; captureIndex++) 
 						fprintf(stderr, " [%d,%d]", captures[captureIndex].from, captures[captureIndex].to);
 					fprintf(stderr, " %s", gxStepNames[which]);
@@ -2813,6 +2819,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						mxBreak;
 					mxCase(cxEmptyStep):
 						step = *pointer;
+						if (offset != stop)
+							goto mxPopState;
 						mxBreak;
 					mxCase(cxLineBeginStep):
 						step = *pointer;
@@ -2851,6 +2859,9 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " min=%d", quantifier->min);
 							if (quantifier->max != 0x7FFFFFFF)
 								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " from=%d", from);
+							fprintf(stderr, " to=%d", to);
+							fprintf(stderr, " offset=%d", quantifier->offset);
 						#endif
 						if (quantifier->max == 0) {
 							step = sequel;
@@ -2879,6 +2890,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " min=%d", quantifier->min);
 							if (quantifier->max != 0x7FFFFFFF)
 								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " from=%d", from);
+							fprintf(stderr, " to=%d", to);
 							fprintf(stderr, " offset=%d", quantifier->offset);
 						#endif
 						if (quantifier->max == 0) {
@@ -2912,10 +2925,6 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						#endif
 						sequel = *pointer;
 						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
-                            if (firstState) {
-								c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
-								firstState = fxPopStates(the, firstState, firstState->nextState);
-                            }
 							step = sequel;
 							mxBreak;
 						}
