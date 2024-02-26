@@ -1670,6 +1670,7 @@ void fxThrowStatement(txParser* parser)
 void fxTryStatement(txParser* parser)
 {
 	txInteger aLine = parser->line;
+	txBoolean ok = 0;
 	fxMatchToken(parser, XS_TOKEN_TRY);
 	fxBlock(parser);
 	if (parser->token == XS_TOKEN_CATCH) {
@@ -1686,6 +1687,7 @@ void fxTryStatement(txParser* parser)
 		fxStatements(parser);
 		fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 		fxPushNodeStruct(parser, 2, XS_TOKEN_CATCH, aCatchLine);
+		ok = 1;
 	}
 	else {
 		fxPushNULL(parser);
@@ -1693,10 +1695,13 @@ void fxTryStatement(txParser* parser)
 	if (parser->token == XS_TOKEN_FINALLY) {
 		fxMatchToken(parser, XS_TOKEN_FINALLY);
 		fxBlock(parser);
+		ok = 1;
 	}
 	else {
 		fxPushNULL(parser);
 	}
+	if (!ok)
+		fxReportParserError(parser, parser->line, "missing catch or finally");
 	fxPushNodeStruct(parser, 3, XS_TOKEN_TRY, aLine);
 }
 
