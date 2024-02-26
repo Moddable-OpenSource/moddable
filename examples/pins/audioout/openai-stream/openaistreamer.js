@@ -26,27 +26,21 @@ import WavStreamer from "wavstreamer";
 export default class {
 	constructor(options) {
 		const {key, model, voice, input, speed, response_format, ...o} = options;
-		const reuest = {
+		const request = {
 			input,
 			model,
 			voice,
 			speed: speed ?? 1,
 			response_format: response_format ?? "mp3",
 		};
-		const body = ArrayBuffer.fromString(JSON.stringify(reuest));
+		const body = ArrayBuffer.fromString(JSON.stringify(request));
 		let streamer;
-		if (reuest.response_format == "mp3") {
+		if (request.response_format == "mp3") {
 			streamer = MP3Streamer;
-		} else if (reuest.response_format == "wav") {
+		} else if (request.response_format == "wav") {
 			streamer = WavStreamer;
 		} else {
-			const error = new Error(`invalid response_format:${reuest.response_format}`);
-			if (options.onError) {
-				options.onError(error);
-				return;
-			} else {
-				throw error;
-			}
+			throw new Error(`invalid response_format:${request.response_format}`);
 		}
 	
 		return new streamer({
@@ -68,7 +62,7 @@ export default class {
 			port: 443,
 			host: "api.openai.com",
 			path: "/v1/audio/speech",
-			waveHeaderBytes: reuest.response_format == "wav" ? 44 : undefined,
+			waveHeaderBytes: request.response_format == "wav" ? 44 : undefined,
 		})
 	}
 }
