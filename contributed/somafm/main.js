@@ -307,7 +307,8 @@ const ChannelItem = Container.template($ => ({
 		Column($, {
 			left:80, right:0, 
 			contents: [
-				Text($, { left:0, right:0, style:listTitleStyle, string:$.title }),
+				$.wrap ? Text($, { left:0, right:0, style:listTitleStyle, string:$.title })
+					: Label($, { left:0, right:0, style:listTitleStyle, string:$.title }),
 				Label($, { left:0, right:0, style:listGenreStyle, string:$.genre }),
 			]
 		})

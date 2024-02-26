@@ -124,6 +124,7 @@ export default Object.freeze([
 		genre: "ambient electronic",
 		image: { texture:{ path:"gsclassic.png" }, width:80, height:80 },
 		color: { fill:["#5c7e55", "#000000"] },
+		wrap: true,
 	},
 	{
 		id: "reggae",
@@ -132,6 +133,7 @@ export default Object.freeze([
 		genre: "reggae",
 		image: { texture:{ path:"reggae.png" }, width:80, height:80 },
 		color: { fill:["#565953", "#000000"] },
+		wrap: true,
 	},
 	{
 		id: "illstreet",
@@ -140,6 +142,7 @@ export default Object.freeze([
 		genre: "lounge",
 		image: { texture:{ path:"illstreet.png" }, width:80, height:80 },
 		color: { fill:["#5f9099", "#000000"] },
+		wrap: true,
 	},
 	{
 		id: "indiepop",
@@ -268,6 +271,7 @@ export default Object.freeze([
 		genre: "electronic",
 		image: { texture:{ path:"spacestation.png" }, width:80, height:80 },
 		color: { fill:["#81756f", "#000000"] },
+		wrap: true,
 	},
 	{
 		id: "suburbsofgoa",
