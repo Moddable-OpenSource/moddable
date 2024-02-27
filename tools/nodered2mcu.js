@@ -189,6 +189,14 @@ export default class extends TOOL {
 			const config = flows[i];
 			if ("tab" === config.type)
 				continue;
+			if(("comment" === config.type)&&("moddable_import" === config.name)&&(config.info?.startsWith("{"))){
+				trace("*** Imports addition by comment ***\n");
+				const arr = JSON.parse(config.info);
+				for(let key in arr) {
+					trace("import "+key +" from " + arr[key] +"\n");
+					imports.set(key, arr[key]);
+				}
+			}
 			if (config.d || ("comment" === config.type)) {
 				flows.splice(i, 1);
 				i -= 1;
