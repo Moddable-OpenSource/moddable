@@ -1197,6 +1197,7 @@ void fx_String_prototype_replaceAll(txMachine* the)
 	txSlot* list;
 	txSlot* item;
 	txInteger offset = 0;
+	txBoolean flag = 0;
 
 	if (fx_String_prototype_withRegexp(the, mxID(_Symbol_replace), 1, 2))
 		return;
@@ -1232,6 +1233,7 @@ void fx_String_prototype_replaceAll(txMachine* the)
 		mxPullSlot(item);
 		item->value.key.sum = mxStringLength(item->value.string);
 		resultSize += item->value.key.sum;
+		flag = 1;
 	}
 	while (offset < size) {
 		txInteger current;
@@ -1248,11 +1250,9 @@ void fx_String_prototype_replaceAll(txMachine* the)
 		if (offset < current) {
 			txInteger length = current - offset;
 			item = item->next = fxNewSlot(the);
-			item->value.string = (txString)fxNewChunk(the, length + 1);
-			c_memcpy(item->value.string, mxThis->value.string + offset, length);
-			item->value.string[length] = 0;
-			item->kind = XS_STRING_KIND;
-			item->value.key.sum = length;
+			item->value.dataView.offset = offset;
+			item->value.dataView.size = length;
+			item->kind = XS_DATA_VIEW_KIND;
 			resultSize += length;
 		}
 		if ((!matchLength) || (current < size)) {
@@ -1261,20 +1261,33 @@ void fx_String_prototype_replaceAll(txMachine* the)
             mxPullSlot(item);
 			item->value.key.sum = mxStringLength(item->value.string);
 			resultSize += item->value.key.sum;
+			flag = 1;
 		}
 		offset = current + matchLength;
 	}		
-	resultSize++;
-	mxResult->value.string = (txString)fxNewChunk(the, resultSize);
-	offset = 0;
-	item = list->next;
-	while (item) {
-		c_memcpy(mxResult->value.string + offset, item->value.string, item->value.key.sum);
-		offset += item->value.key.sum;
-		item = item->next;
+	if (flag) {
+		resultSize++;
+		mxResult->value.string = (txString)fxNewChunk(the, resultSize);
+		offset = 0;
+		item = list->next;
+		while (item) {
+			if (item->kind == XS_DATA_VIEW_KIND) {
+				c_memcpy(mxResult->value.string + offset, mxThis->value.string + item->value.dataView.offset, item->value.dataView.size);
+				offset += item->value.dataView.size;
+			}
+			else {
+				c_memcpy(mxResult->value.string + offset, item->value.string, item->value.key.sum);
+				offset += item->value.key.sum;
+			}
+			item = item->next;
+		}
+		mxResult->value.string[offset] = 0;
+		mxResult->kind = XS_STRING_KIND;
 	}
-	mxResult->value.string[offset] = 0;
-	mxResult->kind = XS_STRING_KIND;
+	else {
+		mxResult->value = mxThis->value;
+		mxResult->kind = mxThis->kind;
+	}
 	
 	mxPop();
 	
