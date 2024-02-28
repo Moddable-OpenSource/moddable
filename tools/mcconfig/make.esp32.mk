@@ -539,7 +539,7 @@ deploy:
 	if ! test -e $(BIN_DIR)/xs_esp32.bin ; then (echo "Please build before deploy" && exit 1) fi
 	@echo "# uploading to $(ESP32_SUBCLASS)"
 	$(KILL_SERIAL2XSBUG)
-	-cd $(PROJ_DIR) ; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput
+	$(DO_PROGRAM)
 
 xsbug:
 	@echo "# starting xsbug"
