@@ -18,11 +18,6 @@
  *
  */
  
-/*
-	to do:
-		update tearing effect support 
-*/
-
 #include "xsmc.h"
 #include "xsHost.h"
 
@@ -97,9 +92,7 @@ typedef struct {
 	modGPIOConfigurationRecord	readEn;
 #endif
 #ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
-	modGPIOConfigurationRecord	tearingEffect;
-	uint32_t					te_byteLength;
-	volatile void				*te_pixels;
+	SemaphoreHandle_t			startSend;
 #endif
 
 	int updateWidth;
@@ -167,6 +160,11 @@ void xs_ILI9341p8_destructor(void *data)
 
 	if (sd->ops)
 		vQueueDelete(sd->ops);
+	
+#ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
+	if (sd->startSend)
+		vSemaphoreDelete(sd->startSend);
+#endif
 
 	if (sd->colorsInFlight)
 		vSemaphoreDelete(sd->colorsInFlight);
@@ -180,9 +178,10 @@ static bool colorDone(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event
 	BaseType_t high_task_woken = pdFALSE, doYield = pdFALSE;
 	int op;
 
-	xQueueReceiveFromISR(sd->ops, &op, &high_task_woken);
-	if (op)
-		xSemaphoreGiveFromISR(sd->colorsInFlight, &doYield);
+	if (pdTRUE == xQueueReceiveFromISR(sd->ops, &op, &high_task_woken)) {		// assert - should never be pdFALSE
+		if (op)
+			xSemaphoreGiveFromISR(sd->colorsInFlight, &doYield);
+	}
 
 	return doYield || high_task_woken;
 }
@@ -274,7 +273,6 @@ void xs_ILI9341p8(xsMachine *the)
 #endif
 
 #ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
-//	modGPIOInit(&sd->tearingEffect, NULL, MODDEF_ILI9341P8_TEARINGEFFECT_PIN, kModGPIOInput);
 	gpio_pad_select_gpio(MODDEF_ILI9341P8_TEARINGEFFECT_PIN);
 	gpio_set_direction(MODDEF_ILI9341P8_TEARINGEFFECT_PIN, GPIO_MODE_INPUT);
 	gpio_set_pull_mode(MODDEF_ILI9341P8_TEARINGEFFECT_PIN, GPIO_FLOATING);
@@ -287,6 +285,10 @@ void xs_ILI9341p8(xsMachine *the)
 	sd->opZero = 0;
 
 	sd->colorsInFlight = xSemaphoreCreateCounting(2, 2);		// async client uses two pixel buffers
+#ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
+	sd->startSend = xSemaphoreCreateBinary();
+	xSemaphoreGive(sd->startSend);
+#endif
 
 	ili9341Init(sd);
 
@@ -399,15 +401,15 @@ void ili9341Send(PocoPixel *pixels, int byteLength, void *refcon)
 #ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
 	if (sd->firstBuffer) {
 		sd->firstBuffer = 0;
-//		while (0 == modGPIORead(&sd->tearingEffect))
-//			;
-
-		sd->te_byteLength = byteLength;
-		sd->te_pixels = pixels;
-
-//	esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, pixels, byteLength);
+		if (0 == gpio_get_level(MODDEF_ILI9341P8_TEARINGEFFECT_PIN)) {
+#if 0
+			while (0 == gpio_get_level(MODDEF_ILI9341P8_TEARINGEFFECT_PIN))
+				;
+#else
+			xSemaphoreTake(sd->startSend, portMAX_DELAY);
+#endif
+		}
 	}
-	else
  #endif
 	{
 		int one = 1;
@@ -593,22 +595,10 @@ void ili9341End(void *refcon)
 void tearingEffectISR(void *refcon)
 {
 	spiDisplay sd = refcon;
+	BaseType_t high_task_woken = pdFALSE;
 
-	if (sd->te_pixels) {
-		esp_lcd_panel_io_tx_color(sd->io_handle, 0x2C, (void *)sd->te_pixels, sd->te_byteLength);		//@@ ISR safe!?!?!?
-
-		sd->yMin += (sd->te_byteLength >> 1) / sd->updateWidth;  
-
-		// reversing endian!
-		uint8_t *data = sd->data + (4 * (sd->ping++ & 7)); 
-		data[0] = sd->yMin & 0xff;
-		data[1] = sd->yMin >> 8;;
-		data[2] = sd->yMax & 0xff;
-		data[3] = sd->yMax >> 8;;
-		ili9341CommandAsync(sd, 0x2b, data, 4);		//@@ not ISR safe!
-
-		sd->te_pixels = NULL;
-	}
+	xSemaphoreGiveFromISR(sd->startSend, &high_task_woken);
+	portYIELD_FROM_ISR(high_task_woken);
 }
 
 #endif
