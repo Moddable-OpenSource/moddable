@@ -266,10 +266,10 @@ txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 		c = c_read8(string);
 		if (('+' != c) && ('-' != c) && ('.' != c) && ('I' != c) && ('N' != c) && !(('0' <= c) && ('9' >= c)))
 			return 0;
-		number = fxStringToNumber(C_NULL, string, 1);
+		number = fxStringToNumber(the, string, 1);
 		if (number == -0)
 			return 1;
-		fxNumberToString(C_NULL, number, buffer, sizeof(buffer), 0, 0);
+		fxNumberToString(the, number, buffer, sizeof(buffer), 0, 0);
 		if (!c_strcmp(string, buffer)) {
 			return 1;
 		}
