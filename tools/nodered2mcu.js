@@ -190,7 +190,6 @@ export default class extends TOOL {
 			if ("tab" === config.type)
 				continue;
 			if(("comment" === config.type)&&(config.name?.startsWith("moddable_import"))&&(config.info?.startsWith("{"))){
-				trace("*** Imports addition by comment ***\n");
 				const arr = JSON.parse(config.info);
 				for(let key in arr) {
 					imports.set(key, arr[key]);
