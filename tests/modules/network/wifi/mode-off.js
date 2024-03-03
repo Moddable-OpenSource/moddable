@@ -29,6 +29,7 @@ if ("off" in WiFi.Mode) {
 		throw new RangeError("unexpected");
 	});
 	w.close();
+	WiFi.disconnect();
 
 	assert.sameValue(WiFi.mode, WiFi.Mode.station);  
 }
