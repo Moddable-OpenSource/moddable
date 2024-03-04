@@ -1,0 +1,6 @@
+{
+	"include": "../moddable_four/manifest.json",
+	"config": {
+		"driverRotation": 180
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json"
+	],
+	"modules": {
+		"mqtt/js": "./mqtt"
+	},
+	"preload": [
+		"mqtt/js"
+	]
+}

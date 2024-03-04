@@ -19,11 +19,15 @@
 
 
 file(TO_CMAKE_PATH "$ENV{MODDABLE}" ENV_MODDABLE)
+file(TO_CMAKE_PATH "$ENV{IDF_PATH}" ENV_IDF_PATH)
 file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
-set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${C_TMP_DIR})
 
-register_component()
+# register_component()
+
+idf_component_register(
+			SRCS "main.c"
+			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/modules/io ${C_TMP_DIR}
+			)
 
 if (mxDebug EQUAL "1")
     target_compile_options(${COMPONENT_TARGET} PRIVATE -DmxDebug=1)
@@ -36,7 +40,15 @@ if (INSTRUMENT EQUAL "1")
 endif()
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-             PRIV_REQUIRES driver nvs_flash esp_adc_cal vfs spiffs fatfs bt esp_eth)
+		REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs
+				)
+
+#			REQUIRES spi_flash bt
+#						 gp_timer lwip driver nvs_flash )
+#						vfs spiffs fatfs bt	
+#						esp_wifi esp_event esp_netif esp_eth esp_phy)
+
+# esp_partition esp_timer esp_adc_cal
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)
 

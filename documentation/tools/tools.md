@@ -1,6 +1,6 @@
 # Tools
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: March 23, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: January 18, 2024
 
 ## About this Document
 
@@ -19,6 +19,7 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 * [xsc](#xsc)
 * [xsl](#xsl)
 * [mcbundle](#mcbundle)
+* [mchex](#mchex)
 * [Simulator](#simulator) (mcsim)
 
 <a id="mcconfig"></a>
@@ -63,10 +64,13 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 ```
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
-- `-d`: to build a debug instrumented version.
+- `-d`: to build a debug instrumented version and launch the default debugger (usually xsbug)
+- `-dx`: to build a debug instrumented version and launch the xsbug debugger
+- `-dl`: to build a debug instrumented version and launch the xsbug-log debugger
+- `-dn`: to build a debug instrumented version and not launch any debugger
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
-- `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below).
+- `-l`: to log xsbug console output to the terminal rather than to xsbug (see note below). `-l` is deprecated in favor of `-dl`.
 - `-x`: overrides the default host and port (localhost:5002) debug builds use to connect to xsbug.
 - `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
@@ -80,7 +84,9 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 > **Note**: To generate a release build, exclude both `-d` and `-i` from the command line.
 
-> **Note**: The `-l` option requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
+> **Note**: The `-l` and `-dl` options requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
+
+> **Note**: The `-dn` option is currently unsupported on Windows. It will be implemented in the near future.
 
 <a id="buildtargets"></a>
 **Build Targets**
@@ -230,7 +236,7 @@ The C code can then be compiled and linked with the implementation of the host f
 ### Arguments
 
 ```text
-xsl files... [-a name] [-b directory] [c creation] [-o directory] [-p modules]... [u url]
+xsl files... [-a name] [-b directory] [-c creation] [-o directory] [-p modules]... [u url]
 ```
 
 - `files`: the paths of the XS binary files to link.
@@ -304,6 +310,23 @@ mcbundle [manifest] [-d] [-m] [-o directory]
 - `-d`: to build debug instrumented versions.
 - `-m`: to run `bash` automatically, otherwise **mcbundle** just generates the shell script.
 - `-o directory`: the output directory. Defaults to the current directory.
+
+<a id="mchex"></a>
+## mchex
+
+**mchex** is a command line tool to convert a file to the Intel [Hexadecimal Object File Format](https://archive.org/details/IntelHEXStandard).
+
+
+### Arguments
+
+```text
+mchex file -a address [-n name] [-o directory]
+```
+
+- `file`: the file to convert.
+- `-n name`: the output filename. `.hex` is appended.
+- `-o directory`: the output directory. Defaults to the current directory.
+
 
 <a id="simulator"></a>
 ## Simulator

@@ -510,6 +510,7 @@ struct sxStringNode {
 typedef struct {
 	mxNodePart;
 	txNode* params;
+	txAccessNode* instanceInitAccess;
 } txSuperNode;
 
 typedef struct {
@@ -591,8 +592,6 @@ struct sxParser {
 	void* console;
 	int error;
 	char* stackLimit;
-	
-	void* dtoa;
 	
 	txSize symbolModulo;
 	txSymbol** symbolTable;
@@ -939,6 +938,7 @@ enum {
 
 	mxDefineNodeBoundFlag = 1 << 15,
 	mxDefineNodeCodedFlag = 1 << 16,
+	mxDeclareNodeDisposableFlag = 1 << 14,
 	
 
 	mxStringEscapeFlag = 1 << 0,
@@ -1055,7 +1055,9 @@ extern void fxStringNodeHoist(void* it, void* param);
 extern void fxSuperNodeBind(void* it, void* param);
 extern void fxSwitchNodeBind(void* it, void* param); 
 extern void fxSwitchNodeHoist(void* it, void* param); 
+extern void fxTargetNodeBind(void* it, void* param);
 extern void fxTemplateNodeBind(void* it, void* param);
+extern void fxThisNodeBind(void* it, void* param);
 extern void fxTryNodeBind(void* it, void* param);
 extern void fxWithNodeBind(void* it, void* param);
 extern void fxWithNodeHoist(void* it, void* param);

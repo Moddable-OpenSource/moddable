@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"*": "./easing"
+	},
+	"preload": "easing"
+}

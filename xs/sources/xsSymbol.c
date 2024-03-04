@@ -56,7 +56,6 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_for), 1, mxID(_for), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Symbol_keyFor), 1, mxID(_keyFor), XS_DONT_ENUM_FLAG);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncIterator), mxID(_asyncIterator), XS_GET_ONLY);
-	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_dispose), mxID(_dispose), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_hasInstance), mxID(_hasInstance), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_isConcatSpreadable), mxID(_isConcatSpreadable), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_iterator), mxID(_iterator), XS_GET_ONLY);
@@ -69,6 +68,10 @@ void fxBuildSymbol(txMachine* the)
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toPrimitive), mxID(_toPrimitive), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_toStringTag), mxID(_toStringTag), XS_GET_ONLY);
 	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_unscopables), mxID(_unscopables), XS_GET_ONLY);
+#if mxExplicitResourceManagement	
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_asyncDispose), mxID(_asyncDispose), XS_GET_ONLY);
+	slot = fxNextSymbolProperty(the, slot, mxID(_Symbol_dispose), mxID(_dispose), XS_GET_ONLY);
+#endif
 	mxPop();
 }
 
@@ -431,11 +434,11 @@ txSlot* fxAt(txMachine* the, txSlot* slot)
 	txIndex index;
 	txString string;
 again:
-	if ((slot->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, slot->value.integer, &index)) {
+	if ((slot->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the, slot->value.integer, &index)) {
 		slot->value.at.id = XS_NO_ID;
 		slot->value.at.index = index;
 	}
-	else if ((slot->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, slot->value.number, &index)) {
+	else if ((slot->kind == XS_NUMBER_KIND) && fxNumberToIndex(the, slot->value.number, &index)) {
 		slot->value.at.id = XS_NO_ID;
 		slot->value.at.index = index;
 	}
@@ -449,7 +452,7 @@ again:
             goto again;
         }
         string = fxToString(the, slot);
-        if (fxStringToIndex(the->dtoa, string, &index)) {
+        if (fxStringToIndex(the, string, &index)) {
             slot->value.at.id = XS_NO_ID;
             slot->value.at.index = index;
         }
@@ -488,7 +491,7 @@ void fxKeyAt(txMachine* the, txID id, txIndex index, txSlot* slot)
 	}
 	else {
 		char buffer[16];
-		fxCopyStringC(the, slot, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));
+		fxCopyStringC(the, slot, fxNumberToString(the, index, buffer, sizeof(buffer), 0, 0));
 	}
 }
 

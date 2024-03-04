@@ -67,6 +67,13 @@ export class MakeFile extends FILE {
 				tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
 		if (undefined === tool.fragmentPath)
 			throw new Error("unknown platform: MAKE_FRAGMENT not found!");
+
+		for (var result of tool.pioFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("PIO_HEADERS += $(TMP_DIR)", tool.slash, target, ".pio.h");
+		}
+
 		this.write(tool.readFileString(tool.fragmentPath));
 		this.line("");
 		this.generateRules(tool)
@@ -472,8 +479,17 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		this.line("XS_DIR = ", tool.xsPath);
 		this.line("XSBUG_HOST = ", tool.xsbug?.host ?? "localhost");
 		this.line("XSBUG_PORT = ", tool.xsbug?.port ?? 5002);
-		if (tool.xsbugLog)
-			this.line("XSBUG_LOG = 1");
+		if (tool.debug) {
+			if ("default" === tool.xsbugLaunch) {
+				if ("vscode" === tool.getenv("TERM_PROGRAM"))
+					tool.xsbugLaunch = "none";
+				else
+					tool.xsbugLaunch = "app";
+			}
+			this.line("XSBUG_LAUNCH = ", tool.xsbugLaunch);
+			if ("log" === tool.xsbugLaunch)
+				this.line("XSBUG_LOG = 1");
+		}
 		
 		this.line("");
 
@@ -567,6 +583,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
+			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
 			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
 			this.echo(tool, "xsc ", target);
@@ -628,6 +645,16 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
 		}
+
+		for (var result of tool.pioFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("$(TMP_DIR)", tool.slash, target, ".pio.h: ", source);
+			this.echo(tool, "pioasm ", target);
+			this.line("\t$(PIOASM) -o c-sdk $< $@");
+			this.line("");
+		}
+
 	}
 	generateObjectsDefinitions(tool) {
 	}
@@ -1124,12 +1151,12 @@ class Rule {
 	iterate(target, sourceIn, include, suffix, straight) {
 		var tool = this.tool;
 		var source = (typeof sourceIn == "string") ? sourceIn : sourceIn.source;
-		var slash = source.lastIndexOf(tool.slash);
-		var directory = this.tool.resolveDirectoryPath(source.slice(0, slash));
+		var sourceParts = tool.splitPath(source);
+		var directory = this.tool.resolveDirectoryPath(sourceParts.directory);
 		if (directory) {
 			this.count = 0;
-			var star = source.lastIndexOf("*");
-			var prefix = (star >= 0) ? source.slice(slash + 1, star) : source.slice(slash + 1);
+			var star = sourceParts.name.lastIndexOf("*");
+			var prefix = (star >= 0) ? sourceParts.name.slice(0, star) : sourceParts.name + sourceParts.extension;
 			var names = tool.enumerateDirectory(directory);
 			var c = names.length;
 			for (var i = 0; i < c; i++) {
@@ -1155,6 +1182,8 @@ class Rule {
 				else {
 					if (parts.name == prefix)
 						name = prefix;
+					else if (parts.name + parts.extension == prefix)
+						name = sourceParts.name;
 					else
 						continue;
 				}
@@ -1165,8 +1194,13 @@ class Rule {
 				else
 					this.appendSource(target + name, path, include, suffix, parts, kind, query);
 			}
-			if (!this.count)
-				this.noFilesMatch(source, star);
+			if (!this.count) {
+				var trailingSlash = source.lastIndexOf("/");
+				if (trailingSlash == source.length - 1)
+					this.appendFolder(tool.cFolders, source);
+				else 
+					this.noFilesMatch(source, star);
+			}
 		}
 		else
 			tool.reportError(null, 0, "directory not found: " + source);
@@ -1260,7 +1294,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if (parts.extension == ".js")
+		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
@@ -1294,6 +1328,8 @@ class ModulesRule extends Rule {
 			if ("nodered2mcu" === query.transform)
 				this.appendFile(tool.nodered2mcuFiles, target, source, include);
 		}
+		else if (parts.extension == ".pio")
+			this.appendFile(tool.pioFiles, target, source, include);
 	}
 	appendTarget(target) {
 		this.appendFolder(this.tool.jsFolders, target);
@@ -1413,6 +1449,10 @@ class ResourcesRule extends Rule {
 		var tool = this.tool;
 		this.appendFile(tool.soundFiles, name + ".maud", path, include);
 	}
+	appendPIO(name, path, include, suffix) {
+		var tool = this.tool;
+		this.appendFile(tool.pioFiles, name + ".h", path, include);
+	}
 	appendSource(target, source, include, suffix, parts, kind, query) {
 		var tool = this.tool;
 		if (kind < 0) {
@@ -1469,6 +1509,10 @@ class ResourcesRule extends Rule {
 				this.appendOutlineFont(target, source, include, suffix, query);
 				return;
 			}
+			if (parts.extension == "pio") {
+				this.appendPIO(target, source, include, suffix);
+				return;
+			}
 		}
 		if (moduleExtensions.indexOf(parts.extension) >= 0)
 			return;
@@ -1497,6 +1541,7 @@ export class Tool extends TOOL {
 		}
 		this.config = {};
 		this.debug = false;
+		this.xsbugLaunch = "none";
 		this.environment = { "MODDABLE": this.moddablePath }
 		this.format = null;
 		this.instrument = false;
@@ -1522,6 +1567,22 @@ export class Tool extends TOOL {
 			case "-d":
 				this.debug = true;
 				this.instrument = true;
+				this.xsbugLaunch = "default";
+				break;
+			case "-dn":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "none";
+				break;
+			case "-dx":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "app";
+				break;
+			case "-dl":
+				this.debug = true;
+				this.instrument = true;
+				this.xsbugLaunch = "log";
 				break;
 			case "-f":
 				argi++;
@@ -1629,7 +1690,8 @@ export class Tool extends TOOL {
 				};
 				break;
 			case "-l":
-				this.xsbugLog = true;
+				this.xsbugLaunch = "log";
+				this.reportWarning(null, 0, "-l deprecated. use -dl instead.");				
 				break;
 			default:
 				name = argv[argi];
@@ -1705,11 +1767,12 @@ export class Tool extends TOOL {
 		else if (!this.format)
 			this.format = "UNDEFINED";
 		if (this.platform == "mac")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/mac/release/mcsim.app";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
-			this.environment.SIMULATOR = this.moddablePath + "\\build\\bin\\win\\release\\mcsim.exe";
+			this.environment.SIMULATOR = `${this.moddablePath}\\build\\bin\\win\\${this.build}\\mcsim.exe`;
 		else if (this.platform == "lin")
-			this.environment.SIMULATOR = this.moddablePath + "/build/bin/lin/release/mcsim";
+			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/lin/${this.build}/mcsim`;
+			
 		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
 	}
 	concatProperties(object, properties, flag) {
@@ -1894,6 +1957,10 @@ export class Tool extends TOOL {
 						case "tls-config":
 							if (node.ca || credentials?.[node.id]?.cadata)
 								this.nodeRedExtracts.set(`${node.id}-ca.der`, source)
+							if (node.cert || credentials?.[node.id]?.certdata)
+								this.nodeRedExtracts.set(`${node.id}-cert.der`, source)
+							if (node.key || credentials?.[node.id]?.keydata)
+								this.nodeRedExtracts.set(`${node.id}-key.der`, source)
 							break;
 					}
 
@@ -1909,6 +1976,8 @@ export class Tool extends TOOL {
 	mergePlatform(all, platform) {
 		this.mergeProperties(all.config, platform.config);
 		this.mergeProperties(all.creation, platform.creation);
+		if (platform.creation)
+			all.creation.has = true;	// indicates that at least  one manifest contains a creation. used by mcconfig.
 		this.mergeProperties(all.defines, platform.defines);
 
 		this.concatProperties(all.data, platform.data, true);
@@ -2164,6 +2233,8 @@ export class Tool extends TOOL {
 		this.stringFiles.already = {};
 		this.bleServicesFiles = [];
 		this.bleServicesFiles.already = {};
+		this.pioFiles = [];
+		this.pioFiles.already = {};
 
 		var rule = new DataRule(this);
 		rule.process(this.manifest.data);

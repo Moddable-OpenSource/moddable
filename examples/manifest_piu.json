@@ -1,7 +1,10 @@
 {
+	"include": [
+		"$(MODULES)/base/easing/manifest.json"
+	],
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 		"commodetto/cfe": "$(COMMODETTO)/cfeBMF",
 		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",

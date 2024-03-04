@@ -70,15 +70,15 @@ interface BigIntConstructor {
 	fromArrayBuffer(buffer: ArrayBufferLike): BigInt
 }
 
+// integer math proposal
 interface Math {
-	idiv(x: number, y: number): number
-	imod(x: number, y: number): number // (x%y+y)%y (always pos results)
-	irem(x: number, y: number): number // x%y (neg x -> neg result)
-	idivmod(x: number, y: number): [number, number] // [x/y, (x%y+y)%y]
-	imuldiv(x: number, y: number, z: number): number // (x * y) / z
-	mod(x: number, y: number): number // (x%y+y)%y (floating point)
- }
-
+	idiv(a: number, b: number): number
+	imod(a: number, b: number): number
+	imuldiv(a: number, b: number, c: number): number
+	irandom(a: number, b: number): number
+	irem(a: number, b: number): number
+	mod(a: number, b: number): number
+}
 
 // already defined by TypeScript (because Web)
 // interface Error {

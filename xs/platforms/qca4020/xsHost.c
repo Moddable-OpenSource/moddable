@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -136,7 +136,7 @@ struct modTm *modGmTime(const modTime_t *timep)
 		int daysInYear = 365;
 		if (isLeapYear(gTM.tm_year))
 			daysInYear += 1;
-		if ((days + daysInYear) >= t)
+		if ((days + daysInYear) > t)
 			break;
 		gTM.tm_year += 1;
 		days += daysInYear;

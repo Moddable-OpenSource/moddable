@@ -1,38 +1,55 @@
 #!/bin/bash
 
-DEVTYPE=cu.usbmodem
+VENDOR_ID=$1
+PRODUCT_ID=$2
+PORT_NAME_PATH=$3
+WAIT_RESET=$4
+RESET_INSTRUCTIONS=$5
 
-if [ "$1" = "0" ]; then
-	echo "Release build installed."
-	exit
-fi
+## Check for device
+DEVICE_NAME=`serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} -showPath`
 
-if [ "$UPLOAD_PORT" = "" ]; then
-	echo "** Please set the UPLOAD_PORT environment variable **"
-	exit
-fi
+echo
+echo "### ${RESET_INSTRUCTIONS}"
 
-for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
-	if [ "$UPLOAD_PORT" = "$port" ]; then
-		echo "-- device in programming mode --"
-		exit
+if [[ "timeout" == "${DEVICE_NAME}" ]]
+then
+	echo -n "Waiting for serial ${VENDOR_ID}:${PRODUCT_ID}"
+else
+	if [[ "1" == "${WAIT_RESET}" ]]; then
+		while [ 1 ]; do
+			if [[ -c "${DEVICE_NAME}" ]]; then
+				# still mounted
+				echo -n "."
+				sleep 0.5
+			else
+				break;
+			fi
+		done
 	fi
-	# echo port: $port
+fi
+while [[ "timeout" == "${DEVICE_NAME}" ]]; do
+	echo -n "."
+	DEVICE_NAME=`serial2xsbug ${VENDOR_ID}:${PRODUCT_ID} -showPath`
 done
 
-echo "# looking for UPLOAD_PORT: $UPLOAD_PORT"
-echo "** Put device in programming mode **"
-
-# wait for usbd serial port to enumerate
 while [ 1 ]; do
-	sleep 0.5
-	for port in $(find /dev -type c -name $DEVTYPE* 2> /dev/null); do
-		if [ "$UPLOAD_PORT" = "$port" ]; then
-			echo "-- device in programming mode --"
-			exit
-		fi
-		# echo port: $port
-	done
+	if [[ -c "${DEVICE_NAME}" ]]; then
+		break;
+	else
+		echo -n "."
+		sleep 0.5
+	fi
 done
 
+echo 
 
+if [[ "" != "${PORT_NAME_PATH}" ]]
+then
+	echo "${DEVICE_NAME}" > ${PORT_NAME_PATH}
+fi
+sleep 1
+
+echo "### Press Ctrl-C to quit."
+
+exit 0

@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: June 28, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: January 19, 2024
 
 ## Table of Contents
 
@@ -27,9 +27,19 @@ The `Timer` class provides both time-based callbacks and a delay function.
 import Timer from "timer";
 ```
 
-### `Timer.set(callback[, interval, repeat])`
+Timer callbacks are invoked with `this` set to `globalThis`. Use an arrow function or `Function.prototype.bind` to bind the callback's `this` to another value.
 
-The `set` function is used to request a function be called once after a certain period.
+Each timer has two intervals: the initial interval and a repeat interval. The intervals are in milliseconds. The initial interval is the time until the callback is first invoked. The repeat interval is the time between successive invocations of the callback after the initial interval. The API reference that follows indicates how each API modifies the initial and repeat intervals.
+
+If the repeat interval is zero when the timer's callback returns, the timer is automatically cleared and can no longer be used. The repeat interval may be changed by the callback using `Timer.schedule`.
+
+The `Timer.set` and `Timer.repeat` functions create a new timer and return the ID of the timer. Timer IDs are opaque that are only useful for passing to `Timer` functions.
+
+Timer callbacks can provide the basic behaviors of `setImmediate`, `setTimeout` and `setInterval`. The [timers example]() shows how to do this.
+
+### `Timer.set(callback[, initialInterval, repeatInterval])`
+
+The `set` function requests a function be called once after a certain period. `Timer.set` returns the new timer's ID.
 
 An immediate timer is called on the next cycle through the run loop. To set an immediate timer, call `set` with a single argument.
 
@@ -51,11 +61,13 @@ Timer.set(id => trace("repeat fired\n"), 1000, 100);
 
 The callback function receives the timer id as the first argument.
 
+If `Timer.set` is called without the initial interval and repeat interval, it is an immediate one-shot timer (initial and repeat intervals are set to 0). If `Timer.set` is called with only an initial interval, it is a one-shot timer (repeat interval is set to 0). If `Timer.set` is called with both an initial and a non-zero repeat interval, it is a repeating timer.
+
 ***
 
-### `Timer.repeat(callback, interval)`
+### `Timer.repeat(callback, repeatInterval)`
 
-A repeating timer is called continuously until stopped using the `Timer.clear` function.
+A repeating timer is called continuously until stopped using the `Timer.clear` function. `Timer.repeat` returns the new timer's ID.
 
 ```js
 Timer.repeat(id => trace("repeat fired\n"), 1000);
@@ -63,13 +75,15 @@ Timer.repeat(id => trace("repeat fired\n"), 1000);
 
 The callback function receives the timer id as the first argument.
 
+This function sets both the initial interval and repeat interval to the value specified by `repeatInterval`. Use `Timer.set` to create a timer with an initial interval that is different from the repeat interval.
+
 ***
 
-### `Timer.schedule(id [, interval[, repeat]])`
+### `Timer.schedule(id [, initialInterval[, repeatInterval]])`
 
-The `schedule` function is used to reschedule an existing timer.
+The `schedule` function reschedules or unschedules an existing timer.
 
-If called with an `interval` but no `repeat`, the timer behaves like a one shot timer created with `Timer.set`. If called with both an `interval` and `repeat`, it behaves like a repeating timer created with `Timer.set` with both `interval` and `repeat` arguments. If called with neither `interval` nor `repeat` arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule`.
+If called with an initial interval but no repeat interval, the timer behaves like a one shot timer created with `Timer.set`. If called with both an initial interval and non-zero repeat interval, it behaves like a repeating timer created with `Timer.set` with both initial interval and repeat interval arguments. If called without interval arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule` (an unscheduled timer is considered to have infinite initial and repeat intervals).
 
 In the following example, the callback function is triggered twice at one second intervals and then rescheduled to once every two seconds.
 
@@ -84,6 +98,8 @@ Timer.repeat(id => {
 	}
 }, 1000);
 ```
+
+When `Timer.schedule` is used to set the initial interval, the callback is next invoked after the new initial interval has elapsed.
 
 > **Note**: If the next trigger time is unknown, unscheduling a timer is preferred to scheduling for a long time in the future. Unscheduling and rescheduling a timer can more efficient than clearing a timer and later allocating a new one.
 
@@ -111,6 +127,8 @@ The `delay` function delays execution for the specified number of milliseconds.
 ```js
 Timer.delay(500);	// delay 1/2 second
 ```
+
+**Note**: In general, the preferred style of JavaScript programming is to avoid long delays that block execution. `Timer.delay` is provided because in embedded development it is common to need short delays when interacting with hardware. For longer delays, using an alternative such as a Timer callback or asynchronous execution with Promises may be more appropriate.
 
 ***
 
@@ -377,13 +395,14 @@ The table below describes the instrumented items that are available. The followi
 | `Turns` | The number of times the event loop has run in the current interval.
 | `CPU 0` | The load on CPU 0 during the current interval.
 | `CPU 1` | The load on CPU 1 during the current interval.
-| `System Free Memory` | The number of free bytes in the system memory heap. This value is not available on the simulator.
+| `System Free Memory` | The number of free bytes in the system memory heap. This value is not available in the simulator.
 | `XS Slot Heap Used` | Number of bytes in use in the slot heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
 | `XS Chunk Heap Used` | Number of bytes in use in the chunk heap of the primary XS machine. Some of these bytes may be freed when the garbage collector next runs.
 | `XS Keys Used` | Number of runtime keys allocated by the primary XS machine. Once allocated keys are never deallocated.
 | `XS Garbage Collection Count` | The number of times the garbage collector has run in the current interval.
 | `XS Modules Loaded` | The number of JavaScript modules that are currently loaded in the primary XS machine. This number does not include modules which are preloaded.
 | `XS Stack Used` | The maximum depth in bytes of the stack of the primary XS virtual machine during the current interval.
+| `XS Promises Settled` | The number of Promises settled. This is useful as a measure of Promisee/async/await activity.
 
 
 ***

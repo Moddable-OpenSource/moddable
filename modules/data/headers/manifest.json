@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"headers": "./headers"
+	},
+	"preload": [
+		"headers"
+	]
+}

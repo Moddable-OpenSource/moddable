@@ -32,57 +32,45 @@
 // import Render from "Render"
 // class Poco extends Render
 
-export default class Poco @ "xs_poco_destructor" {
-	constructor(pixelsOut, options = {}) {
-		this.pixelsOut = pixelsOut;
+import Poco from "commodetto/PocoCore";
 
-		let pixels = pixelsOut.width << 1;								// default is enough for double buffering at full width to allow async pixel transmission
-		if (options.pixels >= pixelsOut.width)							// caller can request larger or smaller (down to a single scan line)
-			pixels = options.pixels;
-
-		build.call(this,
-					pixelsOut.width,
-					pixelsOut.height,
-					pixelsOut.pixelsToBytes(pixels),
-					pixelsOut.pixelFormat,
-					options.displayListLength ?? 1024,
-					options.rotation ?? 0,
-					pixelsOut.async,
-					pixelsOut.adaptInvalid,
-					pixelsOut.c_dispatch,
-					pixelsOut.frameBuffer,
-					pixelsOut.clut);
-	}
-	close() @ "xs_poco_close"
-
-	// for drawing calls, see commodettoPocoDraw.js
-
-	// rectangle
-	rectangle(x, y, width, height) {
-		if (undefined !== height)
-			return new Rectangle(x, y, width, height);
-		return new Rectangle(0, 0, 0, 0);
-	}
+Poco.prototype.begin = function (x, y, width, height) @ "xs_poco_begin";
+Poco.prototype.end = function () @ "xs_poco_end";
+Poco.prototype.continue = function (x, y, w, h) {
+	this.end(true);
+	this.begin(x, y, w, h);
 }
 
-function build(width, height, byteLength, pixelFormat, displayListLength, rotation) @ "xs_poco_build";
+// // clip and origin stacks
+Poco.prototype.clip = function (x, y, width, height) @ "xs_poco_clip";
+Poco.prototype.origin = function(x, y) @ "xs_poco_origin";
 
-class Rectangle @ "xs_rectangle_destructor" {
-	constructor(x, y, w, h) @ "xs_rectangle_constructor"
-	set(x, y, w, h) @ "xs_rectangle_set"
-	get x() @ "xs_rectangle_get_x"
-	get y() @ "xs_rectangle_get_y"
-	get w() @ "xs_rectangle_get_w"
-	get h() @ "xs_rectangle_get_h"
-	set x() @ "xs_rectangle_set_x"
-	set y() @ "xs_rectangle_set_y"
-	set w() @ "xs_rectangle_set_w"
-	set h() @ "xs_rectangle_set_h"
+// // rendering calls
+Poco.prototype.makeColor = function (r, g, b) @ "xs_poco_makeColor";
+Poco.prototype.fillRectangle = function(color, x, y, width, height) @ "xs_poco_fillRectangle";
+Poco.prototype.blendRectangle = function(color, blend, x, y, width, height) @ "xs_poco_blendRectangle";
+Poco.prototype.drawPixel = function(color, x, y) @ "xs_poco_drawPixel";
+Poco.prototype.drawBitmap = function(bits, x, y, sx, sy, sw, sh) @ "xs_poco_drawBitmap";
+Poco.prototype.drawMonochrome = function(monochrome, fore, back, x, y, sx, sy, sw, sh) @ "xs_poco_drawMonochrome";
+Poco.prototype.drawGray = function(bits, color, x, y, sx, sy, sw, sh, blend) @ "xs_poco_drawGray";
+Poco.prototype.drawMasked = function(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) @ "xs_poco_drawMasked";
+Poco.prototype.fillPattern = function(bits, x, y, w, h, sx, sy, sw, sh) @ "xs_poco_fillPattern";
 
-	// for Ecma-419 adaptInvalid
-	get width() @ "xs_rectangle_get_w"
-	get height() @ "xs_rectangle_get_h"
-	set width() @ "xs_rectangle_set_w"
-	set height() @ "xs_rectangle_set_h"
-}
+Poco.prototype.drawFrame = function(frame, stream, x, y) @ "xs_poco_drawFrame";
 
+Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_poco_drawText";
+
+// // metrics
+Poco.prototype.getTextWidth = function(text, font) @ "xs_poco_getTextWidth";
+
+// // invalidate area
+Poco.prototype.adaptInvalid = function(rectangle) @ "xs_poco_adaptInvalid";
+
+Object.defineProperty(Poco.prototype, "width", {
+	get: function() @ "xs_poco_get_width"
+});
+Object.defineProperty(Poco.prototype, "height", {
+	get: function() @ "xs_poco_get_height",
+});
+
+export default Poco;

@@ -100,12 +100,9 @@ class HTTPClient {
 				if ((byteLength + 8) > client.#writable)
 					throw new Error("too much");
 
-				client.#writable -= byteLength + 8;
-				client.#socket.write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"));
-				client.#socket.write(data);
-				let remain = client.#socket.write(ArrayBuffer.fromString("\r\n"));
-				if (undefined !== remain)
-					client.#writable = remain;
+				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"));
+				client.#write(data);
+				client.#write(ArrayBuffer.fromString("\r\n"));
 
 				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
@@ -113,8 +110,7 @@ class HTTPClient {
 				if ((byteLength > client.#writable) || (byteLength > client.#requestBody))
 					throw new Error("too much");
 
-				client.#writable -= byteLength;
-				client.#socket.write(data);
+				client.#write(data);
 
 				client.#requestBody -= byteLength;
 				if (0 === client.#requestBody) {
@@ -248,17 +244,22 @@ class HTTPClient {
 						this.#line = "";
 					}
 					else {					
-						if (undefined !== this.#chunk)
+						if ((204 === this.#status) || (205 === this.#status))
+							this.#remaining = 0;
+						else if (undefined !== this.#chunk)
 							this.#remaining = undefined;		// ignore content-length if chunked
 						else if (undefined === this.#remaining)
 							this.#remaining = Infinity;
-							
+
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
 						if (!this.#current) return;			// closed in callback
 
 						this.#headers = undefined;
 						this.#state = "receiveBody";
 						this.#line = (undefined == this.#chunk) ? undefined : "";
+						
+						if (0 === this.#remaining)
+							return void this.#done();
 					}
 					break;
 
@@ -303,15 +304,13 @@ class HTTPClient {
 			if (this.#pendingWrite) {
 				let use = this.#pendingWrite.byteLength - this.#writePosition;
 				if (use > count) {
-					this.#socket.write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
+					this.#write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
 					this.#writePosition += count;
-					this.#writable = 0;
 					return;
 				}
 				
-				this.#socket.write(this.#pendingWrite);
+				this.#write(this.#pendingWrite);
 				this.#pendingWrite = undefined;
-				this.#writable -= use;
 			}
 
 			switch (this.#state) {
@@ -338,12 +337,13 @@ class HTTPClient {
 						this.#headers = undefined;
 					}
 					else {
-						const name = item.value[0];
+						let name = item.value[0];
 						this.#pendingWrite = name + ": " + item.value[1] + "\r\n";
+						name = name.toLowerCase();
 						if ("content-length" === name)
 							this.#requestBody = parseInt(item.value[1]);
 						else if ("transfer-encoding" === name) {
-							if ("chunked" === item.value[1])
+							if ("chunked" === item.value[1].toLowerCase())
 								this.#requestBody = true;
 						}
 					}
@@ -419,6 +419,13 @@ class HTTPClient {
 		this.#remaining = undefined;
 		this.#chunk = undefined;
 		this.#requestBody = false;
+	}
+	#write(data) {
+		const result = this.#socket.write(data);
+		if (undefined !== result)
+			this.#writable = result;
+		else
+			this.#writable -= data.byteLength;
 	}
 }
 

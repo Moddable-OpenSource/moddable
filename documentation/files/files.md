@@ -1,6 +1,6 @@
 # Files
 Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 3, 2023
+Revised: September 7, 2023
 
 ## Table of Contents
 
@@ -46,6 +46,7 @@ The `System.config()` function, described below, provides the length of the long
 - **Relevant Examples:** [files](../../examples/files/files/)
 
 The `File` class provides access to files.
+On error the methods of the class raise an `UnknownError` exception passing an error message as argument.
 
 ```js
 import {File} from "file";
@@ -423,7 +424,7 @@ The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a l
 The Moddable SDK supports littlefs using the APIs described above. To use littlefs, include its manifest.
 
 ```json
-"includes": {
+"include": {
 	"$MODDABLE/modules/files/file/manifest_littlefs.json"
 }
 ```
@@ -705,3 +706,5 @@ for (let key of wifiKeys)
 ## class Flash
 
 This class is not yet documented.
+
+N.B. The `readString()` API is considered experimental. It assumes that the input is a valid UTF-8 string.

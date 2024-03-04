@@ -125,6 +125,7 @@ static const char *gInstrumentationNames[kModInstrumentationLast + 1 + 1 + 1] = 
 	"XS Garbage Collection Count",
 	"XS Modules Loaded",
 	"XS Stack Used",
+	"XS Promises Settled",
 	NULL
 };
 

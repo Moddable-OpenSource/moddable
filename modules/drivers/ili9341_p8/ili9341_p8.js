@@ -22,6 +22,10 @@
 	MIPI - 8-bit parallel
 */
 
+const frameRate = Uint8Array.of(
+	119, 111, 105, 99, 94, 90, 86, 82, 78, 75, 72, 69, 67, 64, 62, 60,
+	58, 57, 55, 53, 52, 50, 49, 48, 46, 45, 44, 43, 42, 41, 40, 30);
+
 export default class ILI9341 @ "xs_ILI9341p8_destructor" {
 	constructor(options) @ "xs_ILI9341p8";
 
@@ -43,6 +47,14 @@ export default class ILI9341 @ "xs_ILI9341p8_destructor" {
 
 	// driver specific
 	command(id, data) @ "xs_ILI9341p8_command";
+	set frameRate(value) {
+		let i = 0, length = frameRate.length - 1;
+		for (; i < length; i++) {
+			if (frameRate[i] <= value)
+				break;
+		}
+		return this.command(0xc6, Uint8Array.of(i))
+	}
 
 	close() @ "xs_ILI9341p8_close";
 }

@@ -1,0 +1,20 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json"
+	],
+	"creation": {
+		"stack": 1024
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"../../modules/streams",
+			"../../modules/sensorstream"
+		]
+	},
+	"preload": [
+		"streams",
+		"sensorstream"
+	]
+}

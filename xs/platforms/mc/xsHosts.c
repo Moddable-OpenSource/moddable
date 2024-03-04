@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -142,6 +142,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 #endif
 	}
 
+	the->growHeapDirection = -1;
 	txSlot *result = (txSlot *)mc_xs_slot_allocator(the, needed);
 	if (!result && the->firstBlock) {
 #ifdef mxDebug
@@ -222,6 +223,10 @@ static txBoolean fxFindScript(txMachine* the, txSlot* realm, txString path, txID
 	return 0;
 }
 
+#ifndef mxSeparator
+	#define mxSeparator ('/')
+#endif
+	
 txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 {
 #if MODDEF_XS_TEST
@@ -230,19 +235,33 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char name[PATH_MAX];
 	char buffer[PATH_MAX];
 	txInteger dot = 0;
+	txInteger i = 0;
+	txInteger hash = 0;
 	txString slash;
 	txString path;
 	txID id;
 	fxToStringBuffer(the, slot, name, sizeof(name));
 	if (name[0] == '.') {
-		if (name[1] == '/') {
+		if (name[1] == mxSeparator) {
 			dot = 1;
+			i = 1;
 		}
-		else if ((name[1] == '.') && (name[2] == '/')) {
+		else if ((name[1] == '.') && (name[2] == mxSeparator)) {
 			dot = 2;
+			i = 2;
+			while ((name[i + 1] == '.') && (name[i + 2] == '.') && (name[i + 3] == mxSeparator)) {
+				dot++;
+				i += 3;
+			}
 		}
 	}
-	slash = c_strrchr(name, '/');
+	else if (name[0] == '#') {
+		hash = 1;
+	}
+	else if (c_strncmp(name, "moddable:", 9) == 0)
+		c_memmove(name, name + 9, c_strlen(name) - 8);
+
+	slash = c_strrchr(name, mxSeparator);
 	if (!slash)
 		slash = name;
 	slash = c_strrchr(slash, '.');
@@ -252,23 +271,45 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #endif
 		*slash = 0;
 	}
-	if (dot) {
+	if (dot > 0) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
-		buffer[0] = '/';
+		buffer[0] = mxSeparator;
 		path = buffer + 1;
 		c_strcpy(path, fxGetKeyName(the, moduleID));
-		slash = c_strrchr(buffer, '/');
+		slash = c_strrchr(buffer, mxSeparator);
 		if (!slash)
 			return XS_NO_ID;
-		if (dot == 2) {
+		*slash = 0;
+		dot--;
+		while (dot > 0) {
+			slash = c_strrchr(buffer, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
 			*slash = 0;
-			slash = c_strrchr(buffer, '/');
+			dot--;
+		}
+		if ((c_strlen(buffer) + c_strlen(name + i)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name + i);
+	}
+	else if (hash) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		path = buffer;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strchr(buffer, mxSeparator);
+		if (!slash)
+			return XS_NO_ID;
+		if (path[0] == '@') {
+			slash = c_strchr(slash + 1, mxSeparator);
 			if (!slash)
 				return XS_NO_ID;
 		}
-		*slash = 0;
-		c_strcat(buffer, name + dot);
+		*(slash + 1) = 0;
+		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name);
 	}
 	else
 		path = name;
@@ -324,7 +365,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 		script++;
 	}
 	
-#if MODDEF_XS_TEST
+#if defined(mxDebug) && MODDEF_XS_TEST
 	if (!c_strncmp(path, "xsbug://", 8))
 		fxDebugImport(the, module, path);
 #endif
@@ -450,47 +491,26 @@ char *findNthAtom(uint32_t atomTypeIn, int index, const uint8_t *xsb, int xsbSiz
 	create VM
 */
 
-txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t slotCount, uint32_t keyCount, const char *name)
+txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 {
 	txMachine *the;
-	xsCreation *creationP;
-	void *preparation = xsPreparationAndCreation(&creationP);
-
-#if MODDEF_XS_MODS
-	uint8_t modStatus = 0;
-	void *archive;
-	archive = modInstallMods(preparation, &modStatus);
-#else
-	#define archive (NULL)
-#endif
+	xsCreation *creation = creationIn;
+	void *preparation = xsPreparationAndCreation(creation ? NULL : &creation);
 
 	if (!name)
 		name = ((txPreparation *)preparation)->main;
 
-	if (0 == allocation)
-		allocation = creationP->staticSize;
-
-	if (allocation) {
-		xsCreation creation = *creationP;
+	if (creation->staticSize) {
 		uint8_t *context[2];
 
-		if (stackCount)
-			creation.stackCount = stackCount;
-
-		if (slotCount)
-			creation.initialHeapCount = slotCount;
-		
-		if (keyCount)
-			creation.initialKeyCount = keyCount;
-
-		context[0] = c_malloc(allocation);
+		context[0] = c_malloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
 		}
-		context[1] = context[0] + allocation;
+		context[1] = context[0] + creation->staticSize;
 
-		the = xsPrepareMachine(&creation, preparation, (char *)name, context, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, context, NULL);
 		if (NULL == the) {
 			if (context[0])
 				c_free(context[0]);
@@ -500,15 +520,18 @@ txMachine *modCloneMachine(uint32_t allocation, uint32_t stackCount, uint32_t sl
 		xsSetContext(the, NULL);
 	}
 	else {
-		the = xsPrepareMachine(NULL, preparation, (char *)name, NULL, archive);
+		the = xsPrepareMachine(creation, preparation, (char *)name, NULL, NULL);
 		if (NULL == the)
 			return NULL;
 	}
 
 #if MODDEF_XS_MODS
-	extern const char *gXSAbortStrings[];
-	if (modStatus)
+	uint8_t modStatus = 0;
+	modInstallMods(the, preparation, &modStatus);
+	if (modStatus) {
+		extern const char *gXSAbortStrings[];
 		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
+}
 #endif
 
 	return the;
@@ -520,8 +543,8 @@ static uint16_t gSetupPending = 0;
 static void setStepDoneFulfilled(xsMachine *the)
 {
 	xsResult = xsGet(xsArg(0), xsID("default"));
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
+	if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
+		xsCallFunction0(xsResult, xsGlobal);
 }
 
 static void setStepDoneRejected(xsMachine *the)
@@ -538,14 +561,16 @@ static void setStepDone(txMachine *the)
 	xsBeginHost(the);
 #if MODDEF_MAIN_ASYNC
 		xsVars(2);
-		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_ASYNC);
+		xsResult = xsImport(((txPreparation *)xsPreparationAndCreation(NULL))->main);
 		xsVar(0) = xsNewHostFunction(setStepDoneFulfilled, 1);
 		xsVar(1) = xsNewHostFunction(setStepDoneRejected, 1);
 		xsCall2(xsResult, xsID("then"), xsVar(0), xsVar(1));
 #else	
-		xsResult = xsAwaitImport(((txPreparation *)xsPreparationAndCreation(NULL))->main, XS_IMPORT_DEFAULT);
-		if (xsTest(xsResult) && xsIsInstanceOf(xsResult, xsFunctionPrototype))
-			xsCallFunction0(xsResult, xsGlobal);
+		xsVars(1);
+		xsVar(0) = xsImportNow(((txPreparation *)xsPreparationAndCreation(NULL))->main);
+		xsVar(0) = xsGet(xsVar(0), xsID("default"));
+		if (xsTest(xsVar(0)) && xsIsInstanceOf(xsVar(0), xsFunctionPrototype))
+			xsCallFunction0(xsVar(0), xsGlobal);
 #endif
 	xsEndHost(the);
 }
@@ -636,6 +661,7 @@ void modInstrumentMachineReset(xsMachine *the)
 	the->stackPeak = the->stack;
 	the->peakParserSize = 0;
 	the->floatingPointOps = 0;
+	the->promisesSettledCount = 0;
 }
 
 int32_t modInstrumentationSlotHeapSize(xsMachine *the)
@@ -668,6 +694,11 @@ int32_t modInstrumentationStackRemain(xsMachine *the)
 	if (the->stackPeak > the->stack)
 		the->stackPeak = the->stack;
 	return (the->stackTop - the->stackPeak) * sizeof(txSlot);
+}
+
+int32_t modInstrumentationPromisesSettledCount(xsMachine *the)
+{
+	return the->promisesSettledCount;
 }
 
 #endif

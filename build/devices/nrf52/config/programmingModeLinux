@@ -4,7 +4,7 @@ vid=$1
 pid=$2
 name=$3
 volumefile=$4
-serial=$( findUSBLinux beef cafe cdc_acm )
+serial=$( findUSBLinux $vid $pid cdc_acm )
 
 rm "$volumefile" 2> /dev/null
 

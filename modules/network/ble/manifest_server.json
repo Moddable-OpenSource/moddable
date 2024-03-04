@@ -40,6 +40,12 @@
 				]
 			}
 		},
+		"esp": {
+			"error": "ble is unavailable on esp8266"
+		},
+		"pico": {
+			"error": "ble is unsupported on pico"
+		},
 		"esp32/kaluga": {
 			"error": "ble is unsupported on esp32s2"
 		}

@@ -90,7 +90,7 @@ class MakeFile extends MAKEFILE {
 		for (var result of [].concat(tool.jsFiles, tool.tsFiles)) {
 			this.write("\\\n\t$(MODULES_DIR)");
 			this.write(tool.slash);
-			this.write(result.target);
+			this.write(result.target.replaceAll('#', '\\#'));
 		}	
 		for (var result of tool.cFiles) {
 			var sourceParts = tool.splitPath(result.source);
@@ -141,8 +141,8 @@ class MakeFile extends MAKEFILE {
 		}	
 		this.line("");
 		if (tool.format) {
-			this.line("DISPLAY = ", formatValues[tool.format]);
-			this.line("ROTATION = ", tool.rotation);
+			this.line("COMMODETTOBITMAPFORMAT = ", formatValues[tool.format]);
+			this.line("POCOROTATION = ", tool.rotation);
 		}
 		this.write("HEADERS =");
 		for (var header of tool.hFiles) {
@@ -1044,7 +1044,14 @@ export default class extends Tool {
 	run() {
 		this.localsName = "locals";
 		super.run();
-		
+
+		if (!this.manifest.creation.has)  {
+			trace("WARNING: No 'creation' found in manifests.\n");
+			trace("   Did you intend to build using mcrun?\n");
+			throw new Error("project manifest or included manifest must include creation")
+		}
+		delete this.manifest.creation.has; 
+
 		this.filterCommonjs(this.manifest.commonjs);
 		this.filterConfig(this.manifest.config);
 		this.filterCreation(this.manifest.creation);

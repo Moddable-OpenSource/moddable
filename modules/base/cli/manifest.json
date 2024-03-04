@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"cli": "$(MODULES)/base/cli/cli"
+	},
+	"preload": [
+		"cli"
+	]
+}

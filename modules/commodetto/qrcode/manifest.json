@@ -2,7 +2,8 @@
 	"modules": {
 		"*": [
 			"./pocoqrcode"
-		]
+		],
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
 	},
 	"preload": "pocoqrcode"
 }

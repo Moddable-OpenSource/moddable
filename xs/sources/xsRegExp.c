@@ -369,7 +369,7 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 			txString pattern;
 			txInteger escape = 0;
 			txInteger count = 0;
-			txU1 c, *s, *r;
+			txU1 c, d, *s, *r;
             slot = slot->next;
 			pattern = slot->value.key.string;
 			if (*pattern == 0) {
@@ -377,11 +377,15 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 				return;
 			}
 			s = (txU1*)pattern;
+			d = 0;
 			while ((c = *s++)) {
-				if ((c == 10) || (c == 13) || (c == '/'))
+				if ((c == '/') && (d != '\\'))
+					escape++;
+				else if ((c == 10) || (c == 13)/* || (c == '/')*/)
 					escape++;
 				else if ((c == 0xE2) && (s[0] == 0x80) && ((s[1] == 0xA8) || (s[1] == 0xA9))) /* LS || PS */
 					escape += 3;
+				d = c;
 				count++;
 			}
 			if (escape) {
@@ -389,15 +393,16 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 				mxResult->kind = XS_STRING_KIND;
 				s = (txU1*)slot->value.key.string;
 				r = (txU1*)mxResult->value.string;
+				d = 0;
 				while ((c = *s++)) {
-					if (c == 10) {
+					if ((c == '/') && (d != '\\')) {
+						*r++ = '\\'; *r++ = '/';
+					}
+					else if (c == 10) {
 						*r++ = '\\'; *r++ = 'n';
 					}
 					else if (c == 13) {
 						*r++ = '\\'; *r++ = 'r';
-					}
-					else if (c == '/') {
-						*r++ = '\\'; *r++ = '/';
 					}
 					else if ((c == 0xE2) && (s[0] == 0x80) && (s[1] == 0xA8)) {
 						*r++ = '\\'; *r++ = 'u'; *r++ = '2'; *r++ = '0'; *r++ = '2'; *r++ = '8';
@@ -410,6 +415,7 @@ void fx_RegExp_prototype_get_source(txMachine* the)
 					else {
 						*r++ = c;	
 					}
+					d = c;
 				}
 				*r = 0;
 			}
@@ -1006,8 +1012,9 @@ void fx_RegExp_prototype_split(txMachine* the)
 {
 #if mxRegExp
 	txSlot* argument;
-	txBoolean unicodeFlag = 0;
 	txIndex limit;
+	txString flags;
+	txBoolean unicodeFlag = 0;
 	txSlot* splitter;
 	txSlot* array;
 	txSlot* item;
@@ -1030,10 +1037,14 @@ void fx_RegExp_prototype_split(txMachine* the)
 	mxPushSlot(mxThis);
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_flags));
-	if (!c_strchr(fxToString(the, the->stack), 'y'))
-		fxConcatStringC(the, the->stack, "y");
-	if (c_strchr(fxToString(the, the->stack), 'u'))
+	flags = fxToString(the, the->stack);
+	if (c_strchr(flags, 'u'))
 		unicodeFlag = 1;
+	if (!c_strchr(flags, 'y')) {
+		mxPushStringC("y");
+		fxConcatString(the, the->stack + 1, the->stack);
+		mxPop();
+	}
 	mxRunCount(2);
 	splitter = the->stack;
 	

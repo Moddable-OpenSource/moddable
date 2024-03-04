@@ -1,6 +1,6 @@
 # JavaScript language considerations on embedded devices using the XS engine
-Copyright 2018 Moddable Tech, Inc.<BR>
-Revised: October 10, 2018
+Copyright 2018-2023 Moddable Tech, Inc.<BR>
+Revised: September 22, 2023
 
 ## Ultra-light JavaScript
 XS is the JavaScript engine at the core of Moddable applications and tools. XS has existed since the beginning of this century. You can get the latest version on [GitHub](https://github.com/Moddable-OpenSource/moddable).
@@ -73,7 +73,7 @@ For applications that expect to be customized or updated with separate modules, 
 
 That may seem contradictory when talking about a JavaScript engine! But the simplicity of [XS in C](./XS%20in%20C.md), the C programming interface of XS, has always been essential to develop efficient applications.
 
-Web development often claims to be "pure" Javascript while it is in fact relying on the huge amount of native code required to implement web browsers. The reality is of course that web development is restricted to JavaScript on the client side.
+Web development often claims to be "pure" JavaScript while it is in fact relying on the huge amount of native code required to implement web browsers. The reality is of course that web development is restricted to JavaScript on the client side.
 
 At Moddable, we use native code only when necessary, for instance to build drivers, or when the memory footprint or performance gains are obvious, for instance in our graphics library and user interface framework.
 
@@ -90,7 +90,7 @@ Here are a few incompatibilities that you should be aware of:
 
 - **RegExp**: By default the Unicode property escapes are not built-in because of the size of the tables they require.
 
-- **String**: Strings are UTF-8 encoded, their length is the number of code points instead of the number of code units they contain and they are indexed by code points instead of code units.
+- **String**: Strings are UTF-8 encoded internally by default, their length is the number of code points instead of the number of code units they contain and they are indexed by code points instead of code units. Defining the `mxCESU8` build flag encodes strings using [CESU-8](https://en.wikipedia.org/wiki/CESU-8) which provides full conformance. When using CESU-8, XS encodes the NUL character using Java's [Modified UTF-8](https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8).
 
 - **Tagged Template**: XS supports tagged templates but does not currently implement the tagged templates cache.
 

@@ -1318,7 +1318,7 @@ void* fxTermCreate(txPatternParser* parser, size_t size, txTermMeasure measure)
 {
 	txTerm* term = c_malloc(size);
 	if (!term)
-		fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+		fxAbort(parser->the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	term->next = parser->first;
 	term->dispatch.measure = measure;
 	parser->first = term;
@@ -1672,13 +1672,11 @@ void fxPatternParserError(txPatternParser* parser, txString format, ...)
 	txString pattern = parser->pattern;
 	txString error = parser->error;
 	txInteger offset = parser->offset;
-    if (offset > 80) {
-        pattern += offset - 80;
-        offset = 80;
-		while (0x80 & *pattern) {
-			pattern++;
-			offset--;
-		}
+    while (offset > 80) {
+		txInteger character;
+		txString p = mxStringByteDecode(pattern, &character);
+    	offset -= (txInteger)(p - pattern);
+    	pattern = p;
     }
 	while (offset) {
 		*error++ = c_read8(pattern++);
@@ -1791,15 +1789,17 @@ txInteger* fxAllocateRegExpData(void* the, txInteger* code)
 					+ quantifierCount * sizeof(txQuantifierData);
 	txInteger* data;
 #ifdef mxRun
-	if (the) {
+	if (the)
 		data = fxNewChunk(the, size);
-	#ifdef mxSnapshot
-		c_memset(data, 0, size);
-	#endif
-	}
-	else
 #endif
+	{
 		data = c_malloc(size);
+		if (!data)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+	}
+#ifdef mxSnapshot
+	c_memset(data, 0, size);
+#endif
 	return data;
 }
 
@@ -1863,17 +1863,18 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
 		#ifdef mxRun
-			if (the) {
+			if (the)
 				*data = fxNewChunk(the, size);
-			#ifdef mxSnapshot
-				c_memset(*data, 0, size);
-			#endif
-			}
 			else
 		#endif
+			{
 				*data = c_malloc(size);
-			if (!*data)
-				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+				if (!*data)
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			}	
+		#ifdef mxSnapshot
+			c_memset(*data, 0, size);
+		#endif
 		}
 		if (code) {
 			txInteger offset;
@@ -1881,17 +1882,16 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			offset = parser->size;
 			parser->size += sizeof(txInteger);
 		#ifdef mxRun
-			if (the) {
+			if (the)
 				*code = fxNewChunk(the, parser->size);
-// 			#ifdef mxSnapshot
-				c_memset(*code, 0, parser->size);
-// 			#endif
-			}
 			else
 		#endif
+			{
 				*code = c_malloc(parser->size);
-			if (!*code)
-				fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
+				if (!*code)
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+			}
+			c_memset(*code, 0, parser->size);
 			parser->code = code;
 			buffer = *code;
 			buffer[0] = parser->flags;
@@ -2051,10 +2051,8 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 	}
 	if (!state) {
 		state = c_malloc(size);
-		if (!state) {
-			fxPopStates(the, firstState, C_NULL);
-			return C_NULL;
-		}
+		if (!state)
+			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 		state->the = C_NULL;
 	}	
 	state->nextState = firstState;
@@ -2370,6 +2368,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " min=%d", quantifier->min);
 							if (quantifier->max != 0x7FFFFFFF)
 								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " offset=%d", quantifier->offset);
 						#endif
 						if (quantifier->max == 0) {
 							step = sequel;
@@ -2394,13 +2393,22 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							fprintf(stderr, " #%d", *pointer);
 						#endif
 						quantifier = quantifiers + *pointer++;
+						#ifdef mxTrace 
+							fprintf(stderr, " min=%d", quantifier->min);
+							if (quantifier->max != 0x7FFFFFFF)
+								fprintf(stderr, " max=%d", quantifier->max);
+							fprintf(stderr, " offset=%d", quantifier->offset);
+						#endif
 						sequel = *pointer;
 						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
+                            if (firstState)
+                                firstState = fxPopStates(the, firstState, firstState->nextState);
 							step = sequel;
 							mxBreak;
 						}
 						quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
-						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : quantifier->max - 1;
+						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : (quantifier->max == 0) ? 0 : quantifier->max - 1;
+						quantifier->offset = offset;
 						mxBreak;
 					mxCase(cxWordBreakStep):
 						step = *pointer;

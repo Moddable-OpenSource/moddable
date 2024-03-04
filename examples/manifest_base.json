@@ -18,15 +18,14 @@
 		},
 		"main": "main"
 	},
+	"include": [
+		"$(MODULES)/files/resource/manifest.json"
+	],
 	"modules": {
 		"*": [
-			"$(MODULES)/files/resource/*",
 			"$(MODULES)/base/instrumentation/modInstrumentation"
 		]
 	},
-	"preload": [
-		"Resource"
-	],
 	"strip": "*",
 	"typescript": {
 		"tsconfig": {

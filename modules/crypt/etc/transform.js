@@ -37,6 +37,13 @@ class Transform {
 				start += 32;
 				end = source.indexOf("-----END RSA PRIVATE KEY-----", start)
 			}
+			else {
+				start = source.indexOf("-----BEGIN PRIVATE KEY-----");
+				if (start >= 0) {
+					start += 28;
+					end = source.indexOf("-----END PRIVATE KEY-----", start)
+				}
+			}
 		}
 
 		if (end < 0)

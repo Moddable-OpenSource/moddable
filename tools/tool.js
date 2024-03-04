@@ -76,6 +76,7 @@ export class TOOL {
 		}
 		this.run = function() {};
 	}
+	get build() @ "Tool_prototype_get_build";
 	get ipAddress() @ "Tool_prototype_get_ipAddress";
 	get currentDirectory() @ "Tool_prototype_get_currentDirectory";
 	set currentDirectory(it) @ "Tool_prototype_set_currentDirectory";

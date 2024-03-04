@@ -178,12 +178,13 @@ bail:
 void xs_preference_keys(xsMachine *the)
 {
 	int i = 0;
-	nvs_iterator_t it;
+	nvs_iterator_t it = NULL;
+	esp_err_t result;
 	
 	xsmcSetNewArray(xsResult, 0);
 	
-	it = nvs_entry_find(NVS_DEFAULT_PART_NAME, xsmcToString(xsArg(0)), NVS_TYPE_ANY);
-	if (!it)
+	result = nvs_entry_find(NVS_DEFAULT_PART_NAME, xsmcToString(xsArg(0)), NVS_TYPE_ANY, &it);
+	if (ESP_OK != result)
 		return;
 
 	xsmcVars(1);
@@ -196,8 +197,10 @@ void xs_preference_keys(xsMachine *the)
 		xsmcSetString(xsVar(0), info.key);
 		xsmcSetIndex(xsResult, i++, xsVar(0));
 
-        it = nvs_entry_next(it);
+        result = nvs_entry_next(&it);
 	}
+
+	nvs_release_iterator(it);
 }
 
 uint8_t modPreferenceSet(char *domain, char *key, uint8_t prefType, uint8_t *value, uint16_t byteCount)

@@ -270,9 +270,6 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_UNSIGNED_RIGHT_SHIFT */ "unsigned_right_shift",
 	/* XS_CODE_UNWIND_1 */ "unwind",
 	/* XS_CODE_UNWIND_2 */ "unwind_2",
-	/* XS_CODE_USED_1 */ "used_1",
-	/* XS_CODE_USED_2 */ "used_2",
-	/* XS_CODE_USING */ "using",
 	/* XS_CODE_VAR_CLOSURE_1 */ "var_closure_1",
 	/* XS_CODE_VAR_CLOSURE_2 */ "var_closure_2",
 	/* XS_CODE_VAR_LOCAL_1 */ "var_local_1",
@@ -281,7 +278,13 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_WITH */ "with",
 	/* XS_CODE_WITHOUT */ "without",
 	/* XS_CODE_YIELD */ "yield",
-	/* XS_CODE_PROFILE */ "profile"
+	/* XS_CODE_PROFILE */ "profile",
+	/* XS_CODE_YIELD_STAR */ "yield*",
+// mxExplicitResourceManagement	
+	/* XS_CODE_USED_1 */ "used_1",
+	/* XS_CODE_USED_2 */ "used_2",
+	/* XS_CODE_USING */ "using",
+	/* XS_CODE_USING_ASYNC */ "await using",
 };
 
 const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
@@ -491,7 +494,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	-4 /* XS_CODE_STRING_4 */,
 	-1 /* XS_CODE_STRING_ARCHIVE_1 */,
 	-2 /* XS_CODE_STRING_ARCHIVE_2 */,
-	-4 /* XS_CODE_STRING_ARCHIVE_2 */,
+	-4 /* XS_CODE_STRING_ARCHIVE_4 */,
 	1 /* XS_CODE_SUBTRACT */,
 	1 /* XS_CODE_SUPER */,
 	1 /* XS_CODE_SWAP */,
@@ -513,9 +516,6 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_UNSIGNED_RIGHT_SHIFT */,
 	2 /* XS_CODE_UNWIND_1 */,
 	3 /* XS_CODE_UNWIND_2 */,
-	2 /* XS_CODE_USED_1 */,
-	3 /* XS_CODE_USED_2 */,
-	1 /* XS_CODE_USING */,
 	2 /* XS_CODE_VAR_CLOSURE_1 */,
 	3 /* XS_CODE_VAR_CLOSURE_2 */,
 	2 /* XS_CODE_VAR_LOCAL_1 */,
@@ -525,10 +525,16 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	1 /* XS_CODE_WITHOUT */,
 	1 /* XS_CODE_YIELD */,
 #ifdef mx32bitID
-	5 /* XS_CODE_PROFILE */
+	5 /* XS_CODE_PROFILE */,
 #else
-	3 /* XS_CODE_PROFILE */
+	3 /* XS_CODE_PROFILE */,
 #endif
+	1 /* XS_CODE_YIELD_STAR */,
+// mxExplicitResourceManagement	
+	2 /* XS_CODE_USED_1 */,
+	3 /* XS_CODE_USED_2 */,
+	1 /* XS_CODE_USING */,
+	1 /* XS_CODE_USING_ASYNC */,
 };
 
 #if mxUseDefaultCStackLimit
@@ -552,7 +558,7 @@ ULONG GetCurrentThreadStackLimits_Win7( _Out_ PULONG_PTR LowLimit, _Out_ PULONG_
 
     if (!GetCurrentThreadStackLimits)
     {
-        *(void**)&GetCurrentThreadStackLimits = GetProcAddress(GetModuleHandle(L"kernel32"), "GetCurrentThreadStackLimits");
+        *(void**)&GetCurrentThreadStackLimits = GetProcAddress(GetModuleHandle("kernel32"), "GetCurrentThreadStackLimits");
 
         if (!GetCurrentThreadStackLimits)
         {
@@ -604,7 +610,7 @@ char* fxCStackLimit()
 		return 192 + (char *)g_cont.stack;
 	#elif defined(__ets__) && ESP32
 		TaskStatus_t info;
-		vTaskGetTaskInfo(NULL, &info, pdFALSE, eReady);
+		vTaskGetInfo(NULL, &info, pdFALSE, eReady);
 		return 512 + (char *)info.pxStackBase;
 	#else
 		return C_NULL;
@@ -639,7 +645,6 @@ const txUTF8Sequence gxUTF8Sequences[] ICACHE_RODATA_ATTR = {
 
 static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";
 static const char gxHexUpper[] ICACHE_FLASH_ATTR = "0123456789ABCDEF";
-static txBoolean fxParseHex(txU1 c, txU4* value);
 
 txBoolean fxIsIdentifierFirst(txU4 c)
 {
@@ -1051,6 +1056,21 @@ txSize fxUTF8Length(txInteger character)
 }
 
 #if mxCESU8
+
+int fxCESU8Compare(txString p1, txString p2)
+{
+	txInteger c1, c2;
+	while (*p1 && *p2) {
+		p1 = fxCESU8Decode(p1, &c1);
+		p2 = fxCESU8Decode(p2, &c2);
+		if (c1 < c2) return -1;
+		if (c1 > c2) return 1;
+	}
+	if (*p1) return 1;
+	if (*p2) return -1;
+	return 0;
+}
+
 txString fxCESU8Decode(txString string, txInteger* character)
 {
 	txInteger result;
@@ -1240,7 +1260,7 @@ txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset)
 		return -1;
 }
 
-txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
+txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex)
 {
 	if (0 <= theInteger) {
 		*theIndex = (txIndex)theInteger;
@@ -1249,7 +1269,7 @@ txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex)
 	return 0;
 }
 
-txFlag fxNumberToIndex(void* dtoa, txNumber number, txIndex* theIndex)
+txFlag fxNumberToIndex(void* the, txNumber number, txIndex* theIndex)
 {
 	txIndex integer = (txIndex)number;
 	txNumber check = integer;
@@ -1260,7 +1280,7 @@ txFlag fxNumberToIndex(void* dtoa, txNumber number, txIndex* theIndex)
 	return 0;
 }
 
-txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
+txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex)
 {
 	char buffer[256], c;
 	txNumber number;
@@ -1270,11 +1290,11 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
 	c = c_read8(theString);
 	if (('+' != c) && ('-' != c) && ('.' != c) && !(('0' <= c) && ('9' >= c)))
 		return 0;
-	number = fxStringToNumber(dtoa, theString, 1);
+	number = fxStringToNumber(the, theString, 1);
 	integer = (txIndex)number;
 	check = integer;
 	if ((number == check) && (integer < 4294967295u)) {
-		fxNumberToString(dtoa, number, buffer, sizeof(buffer), 0, 0);
+		fxNumberToString(the, number, buffer, sizeof(buffer), 0, 0);
 		if (!c_strcmp(theString, buffer)) {
 			*theIndex = integer;
 			return 1;
@@ -1286,7 +1306,6 @@ txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex)
 const txString gxIDStrings[XS_ID_COUNT] = {
 	"@",
 	"Symbol.asyncIterator",
-	"Symbol.dispose",
 	"Symbol.hasInstance",
 	"Symbol.isConcatSpreadable",
 	"Symbol.iterator",
@@ -1299,6 +1318,10 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Symbol.toPrimitive",
 	"Symbol.toStringTag",
 	"Symbol.unscopables",
+#if mxExplicitResourceManagement	
+	"Symbol.asyncDispose",
+	"Symbol.dispose",
+#endif
 	"AggregateError",
 	"Array",
 	"ArrayBuffer",
@@ -1309,7 +1332,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Boolean",
 	"DataView",
 	"Date",
-	"DisposableStack",
 	"Error",
 	"EvalError",
 	"FinalizationRegistry",
@@ -1333,7 +1355,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Set",
 	"SharedArrayBuffer",
 	"String",
-	"SuppressedError",
 	"Symbol",
 	"SyntaxError",
 	"TypeError",
@@ -1360,6 +1381,11 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Infinity",
 	"NaN",
 	"undefined",
+#if mxExplicitResourceManagement	
+	"AsyncDisposableStack",
+	"DisposableStack",
+	"SuppressedError",
+#endif	
 	"Compartment",
 	"Function",
 	"eval",
@@ -1393,7 +1419,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"acos",
 	"acosh",
 	"add",
-	"adopt",
 	"aliases",
 	"all",
 	"allSettled",
@@ -1455,16 +1480,12 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"count",
 	"create",
 	"default",
-	"defer",
 	"defineProperties",
 	"defineProperty",
 	"delete",
 	"deleteProperty",
 	"deref",
 	"description",
-	"detached",
-	"dispose",
-	"disposed",
 	"done",
 	"dotAll",
 	"eachDown",
@@ -1473,7 +1494,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"entries",
 	"enumerable",
 	"enumerate",
-	"error",
 	"errors",
 	"evaluate",
 	"every",
@@ -1606,7 +1626,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"min",
 	"mod",
 	"module",
-	"move",
 	"multiline",
 	"name",
 	"needsImport",
@@ -1707,7 +1726,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"subarray",
 	"substr",
 	"substring",
-	"suppressed",
 	"tan",
 	"tanh",
 	"test",
@@ -1728,9 +1746,6 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"toLowerCase",
 	"toPrecision",
 	"toPrimitive",
-	"toReversed",
-	"toSorted",
-	"toSpliced",
 	"toString",
 	"toStringTag",
 	"toTimeString",
@@ -1749,18 +1764,39 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"unscopables",
 	"unshift",
 	"uri",
-	"use",
 	"value",
 	"valueOf",
 	"values",
 	"wait",
 	"wake",
 	"weak",
-	"with",
 	"writable",
 	"xor",
 	"",
-	"<xsbug:script>"
+	"<xsbug:script>",
+#if mxECMAScript2023	
+	"detached",
+	"irandom",
+	"toReversed",
+	"toSorted",
+	"toSpliced",
+	"with",
+#endif
+#if mxExplicitResourceManagement	
+	"adopt",
+	"asyncDispose",
+	"defer",
+	"dispose",
+	"disposeAsync",
+	"disposed",
+	"error",
+	"move",
+	"suppressed",
+	"use",
+#endif
+	"(onFullfilled)",
+	"(onRejected)",
+	"(result)",
 };
 
 #if mxCanonicalNaN

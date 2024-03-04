@@ -294,11 +294,11 @@ void fxRegisterSerial(void *refcon, io_iterator_t iterator)
 					strcpy(self->path, description->path);
 
 					if (self->showPath) {
-						fprintf(stderr, "%s\n", description->path);
+						printf("%s\n", description->path);
 						exit(0);
 					}
 					else {
-						fprintf(stderr, "product/vendor match: %s\n", description->path);
+						// fprintf(stderr, "product/vendor match: %s\n", description->path);
 						fxOpenSerial(self);
 					}
 				}

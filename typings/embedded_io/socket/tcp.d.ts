@@ -20,23 +20,25 @@
 
 declare module "embedded:io/socket/tcp" {
   import type { Buffer } from "embedded:io/_common";
-  class TCP {
-    constructor(options: ((({
-      address: string;
-    } | {
-      host: string;
-    }) & {
-      port: number;
-    }) | {
-      from: TCP;
-    }) & {
-      nodelay?: boolean;
-      onReadable?: (this: TCP, bytes: number) => void;
-      onWritable?: (this: TCP, bytes: number) => void;
-      onError?: (this: TCP) => void;
-      format?: "number" | "buffer";
-      target?: any;
-    })
+  export type Options = ((({
+    address: string;
+  } | {
+    host: string;
+  }) & {
+    port: number;
+  }) | {
+    from: TCP;
+  }) & {
+    nodelay?: boolean;
+    onReadable?: (this: TCP, bytes: number) => void;
+    onWritable?: (this: TCP, bytes: number) => void;
+    onError?: (this: TCP) => void;
+    format?: "number" | "buffer";
+    target?: any;
+  };
+  
+  export default class TCP {
+    constructor(options: Options)
     readonly remoteAddress: string | undefined;
     readonly remotePort: number | undefined;
     read(byteLength?: number): number | ArrayBuffer;
@@ -46,6 +48,4 @@ declare module "embedded:io/socket/tcp" {
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }
-
-  export default TCP;
 }

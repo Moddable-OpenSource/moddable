@@ -3,7 +3,8 @@
 		"*": [
 			"./pocogif"
 		],
-		"commodetto/ReadGIF": "./commodettoReadGIF"
+		"commodetto/ReadGIF": "./commodettoReadGIF",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
 	},
 	"preload": [
 		"commodetto/ReadGIF",

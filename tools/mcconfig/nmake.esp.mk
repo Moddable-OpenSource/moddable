@@ -160,7 +160,6 @@ SDK_SRC = \
 	$(CORE_DIR)\core_esp8266_noniso.c \
 	$(CORE_DIR)\core_esp8266_phy.c \
 	$(CORE_DIR)\core_esp8266_postmortem.c \
-	$(CORE_DIR)\core_esp8266_si2c.c \
 	$(CORE_DIR)\core_esp8266_timer.c \
 	$(CORE_DIR)\core_esp8266_wiring.c \
 	$(CORE_DIR)\core_esp8266_wiring_digital.c \
@@ -179,6 +178,7 @@ SDK_SRC = \
 	$(CORE_DIR)\umm_malloc\umm_malloc.c \
 	$(PLATFORM_DIR)\lib\bsearch\bsearch.c \
 	$(PLATFORM_DIR)\lib\fmod\e_fmod.c \
+	$(PLATFORM_DIR)\lib\i2c\core_esp8266_si2c_patched.c \
 	$(PLATFORM_DIR)\lib\rtc\rtctime.c \
 	$(PLATFORM_DIR)\lib\tinyprintf\tinyprintf.c \
 	$(PLATFORM_DIR)\lib\tinyuart\tinyuart.c \
@@ -192,7 +192,6 @@ SDK_OBJ = \
 	$(LIB_DIR)\core_esp8266_noniso.o \
 	$(LIB_DIR)\core_esp8266_phy.o \
 	$(LIB_DIR)\core_esp8266_postmortem.o \
-	$(LIB_DIR)\core_esp8266_si2c.o \
 	$(LIB_DIR)\core_esp8266_timer.o \
 	$(LIB_DIR)\core_esp8266_wiring.o \
 	$(LIB_DIR)\core_esp8266_wiring_digital.o \
@@ -210,12 +209,12 @@ SDK_OBJ = \
 	$(LIB_DIR)\umm_malloc.o \
 	$(LIB_DIR)\bsearch.o \
 	$(LIB_DIR)\e_fmod.o \
+	$(LIB_DIR)\core_esp8266_si2c_patched.o \
 	$(LIB_DIR)\rtctime.o \
 	$(LIB_DIR)\tinyprintf.o \
 	$(LIB_DIR)\tinyuart.o \
 	$(LIB_DIR)\tinyi2s.o \
-	$(LIB_DIR)\Schedule.o \
-	$(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	$(LIB_DIR)\Schedule.o
 
 CPP_INCLUDES = \
 	-I$(TOOLS_DIR)\xtensa-lx106-elf\include\c++\4.8.5
@@ -252,8 +251,8 @@ C_DEFINES = \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
 	-DmxNoConsole=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION)
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION)
 !IF "$(DEBUG)"=="1"
 C_DEFINES = $(C_DEFINES) -DmxDebug=1 -DDEBUGGER_SPEED=$(DEBUGGER_SPEED)
 !ENDIF
@@ -432,6 +431,11 @@ $(LIB_DIR)\bsearch.o: $(PLATFORM_DIR)\lib\bsearch\bsearch.c
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
 
 $(LIB_DIR)\e_fmod.o: $(PLATFORM_DIR)\lib\fmod\e_fmod.c
+	@echo # cc $(@F)
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
+	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@
+
+$(LIB_DIR)\core_esp8266_si2c_patched.o: $(PLATFORM_DIR)\lib\i2c\core_esp8266_si2c_patched.c
 	@echo # cc $(@F)
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $? -o $@
 	$(AR) $(AR_OPTIONS) $(LIB_ARCHIVE) $@

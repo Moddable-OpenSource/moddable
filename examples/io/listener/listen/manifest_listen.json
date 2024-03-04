@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODDABLE)/modules/data/headers/manifest.json",
 		"$(MODDABLE)/modules/data/url/manifest.json",
 		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json"
 	],

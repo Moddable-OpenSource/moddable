@@ -1,6 +1,6 @@
 # Commodetto
-Copyright 2016-2021 Moddable Tech, Inc.<BR>
-Revised: October 26, 2021
+Copyright 2016-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## About This Document
 
@@ -744,7 +744,7 @@ palatino36.bitmap = parseBMP(new Resource("palatino36.bmp");
 
 After the metrics are prepared with `parseBMF`, the glyph atlas is prepared using `parseBMP` and is attached to the metrics as the `bitmap` property.
 
- BMFont files with discontiguous ranges of characters are supported. Commodetto may be configured to use the kerning data that may be  prseent in a BMFont, though it is disabled by default.
+BMFont files with discontiguous ranges of characters are supported. Commodetto may be configured to use the kerning data that may be present in a BMFont, though it is disabled by default.
 
 For anti-aliased text, the BMP file containing the glyph atlas bitmap must be in 4-bit gray format. For multicolor text, the bitmap must be in `Bitmap.default` format (e.g. the pixel format Commodetto is configured to render to).
 

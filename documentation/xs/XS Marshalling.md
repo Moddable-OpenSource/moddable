@@ -1,6 +1,6 @@
 # XS Marshalling
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: March 15, 2021
+Copyright 2021-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## Introduction
 
@@ -23,7 +23,7 @@ When two machines are created from scratch or cloned from different read-only ma
 
 > In **mcsim**, the simulator and the app are alien machines. They communicate using the standard `Worker` programming interface, which is implemented here with `xsMarshallAlien` and `xsDemarshallAlien`.
 
-When two machines are cloned from the same read-ony machinee, marshalling can take advantage of what is shared by the two machines and the **full** programming interface can be used:
+When two machines are cloned from the same read-ony machine, marshalling can take advantage of what is shared by the two machines and the **full** programming interface can be used:
 
 	void* xsMarshall(xsSlot slot);
 	xsSlot xsDemarshall(void* data);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Moddable Tech, Inc.
+ * Copyright (c) 2016-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,9 +53,9 @@ void xs_servo(xsMachine *the)
 	double d;
 	ledc_timer_config_t ledc_timer = {
 #if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
- 		.bit_num = LEDC_TIMER_15_BIT,
+ 		.duty_resolution = LEDC_TIMER_15_BIT,
 #else
-		.bit_num = LEDC_TIMER_14_BIT,
+		.duty_resolution = LEDC_TIMER_14_BIT,
 #endif
 		.freq_hz = 50,
 #if SOC_LEDC_SUPPORT_HS_MODE

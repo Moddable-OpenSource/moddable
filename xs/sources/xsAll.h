@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -237,7 +237,7 @@ typedef struct {
 struct sxHostHooks {
 	txDestructor destructor;
 	txMarker marker;
-	txSweeper sweeper;
+	txString signature;
 };
 
 typedef union {
@@ -279,6 +279,7 @@ typedef union {
 	
 	struct { txSlot* getter; txSlot* setter; } accessor;
 	struct { txU4 index; txID id; } at;
+	struct { txSlot* info; txInteger line; } breakpoint;
 	struct { txSlot* slot; txU4 sum; } entry;
 	struct { txSlot* first; txIndex length; } errors;
 	struct { txSlot* object; txSlot* module; } home;
@@ -376,7 +377,10 @@ struct sxSlot {
 struct sxInspectorNameLink {
 	txInspectorNameLink* previous;
 	txInspectorNameLink* next;
-	txString name;
+	txID id;
+	txIndex index;
+	txString prefix;
+	txString suffix;
 };
 
 struct sxInspectorNameList {
@@ -391,11 +395,12 @@ struct sxMachine {
 	txByte* code; /* xs.h */
 	txSlot* stackBottom; /* xs.h */
 	txSlot* stackTop; /* xs.h */
-	txSlot* stackPrototypes; /* xs.h */
+	txSlot* stackIntrinsics; /* xs.h */
 	txJump* firstJump; /* xs.h */
 	void* context; /* xs.h */
 	void* archive; /* xs.h */
 	txSlot scratch; /* xs.h */
+	txSlot* stackPrototypes; /* xs.h */
 	mxMachinePlatform /* xs.h */
 	txFlag status;
 	
@@ -442,6 +447,7 @@ struct sxMachine {
 	txSize peakHeapCount;
 	txSize maximumHeapCount;
 	txSize minimumHeapCount;
+	txKind growHeapDirection;
 	
 	txSize parserBufferSize;
 	txSize parserTableModulo;
@@ -450,7 +456,6 @@ struct sxMachine {
 	txMachine* sharedMachine;
 
 	txBoolean collectFlag;
-	void* dtoa;
 	void* preparation;
 
 	txInteger tag;
@@ -460,15 +465,17 @@ struct sxMachine {
 	txFlag breakOnExceptionsFlag;
 	txFlag breakOnStartFlag;
 	txFlag debugAttribute;
+	txFlag debugEval;
 	txFlag debugExit;
 	txFlag debugState;
 	txFlag debugTag;
 	txFlag nameIndex;
-	txFlag pathIndex;
 	txSlot* debugModule;
 	size_t idValue;
 	txInteger lineValue;
-	char pathValue[256];
+	txInteger pathCount;
+	txInteger pathIndex;
+	txString pathValue;
 	txSize debugOffset;
 	char debugBuffer[256];
 	txSize echoOffset;
@@ -484,6 +491,7 @@ struct sxMachine {
 	txSize peakParserSize;
 	txSlot* stackPeak;
 	txSize floatingPointOps;
+	txSize promisesSettledCount;
 	void (*onBreak)(txMachine*, txU1 stop);
 #endif
 #ifdef mxMetering
@@ -600,11 +608,15 @@ mxExport txSlot* fxNewHostObject(txMachine*, txDestructor);
 mxExport txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot);
 mxExport void* fxGetHostChunk(txMachine*, txSlot*);
 mxExport void* fxGetHostChunkIf(txMachine*, txSlot*);
+mxExport void* fxGetHostChunkValidate(txMachine*, txSlot*, void* validator);
 mxExport void* fxGetHostData(txMachine*, txSlot*);
 mxExport void* fxGetHostDataIf(txMachine*, txSlot*);
+mxExport void* fxGetHostDataValidate(txMachine* the, txSlot* slot, void* validator);
 mxExport void* fxGetHostHandle(txMachine*, txSlot*);
 mxExport txDestructor fxGetHostDestructor(txMachine*, txSlot*);
 mxExport txHostHooks* fxGetHostHooks(txMachine*, txSlot*);
+mxExport txHostHooks* fxGetHostHooksIf(txMachine* the, txSlot* slot);
+mxExport txHostHooks* fxGetHostHooksValidate(txMachine* the, txSlot* slot, txString validator);
 mxExport void fxPetrifyHostBuffer(txMachine* the, txSlot* slot);
 mxExport void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize);
 mxExport void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize);
@@ -620,23 +632,23 @@ mxExport txID fxToID(txMachine* the, txSlot* theSlot);
 mxExport txString fxName(txMachine*, txID);
 
 mxExport void fxEnumerate(txMachine* the);
-mxExport txBoolean fxHasAll(txMachine* the, txID id, txIndex index);
+extern txBoolean fxHasAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport txBoolean fxHasAt(txMachine* the);
 mxExport txBoolean fxHasID(txMachine*, txID);
 mxExport txBoolean fxHasIndex(txMachine* the, txIndex index);
-mxExport void fxGetAll(txMachine* the, txID id, txIndex index);
+extern void fxGetAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxGetAt(txMachine*);
 mxExport void fxGetID(txMachine*, txID);
 mxExport void fxGetIndex(txMachine*, txIndex);
-mxExport void fxSetAll(txMachine* the, txID id, txIndex index);
+extern void fxSetAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxSetAt(txMachine*);
 mxExport void fxSetID(txMachine*, txID);
 mxExport void fxSetIndex(txMachine*, txIndex);
-mxExport void fxDefineAll(txMachine* the, txID id, txIndex index, txFlag flag, txFlag mask);
+extern void fxDefineAll(txMachine* the, txSlot* stack, txID id, txIndex index, txFlag flag, txFlag mask);
 mxExport void fxDefineAt(txMachine* the, txFlag flag, txFlag mask);
 mxExport void fxDefineID(txMachine* the, txID id, txFlag flag, txFlag mask);
 mxExport void fxDefineIndex(txMachine* the, txIndex index, txFlag flag, txFlag mask);
-mxExport void fxDeleteAll(txMachine*, txID, txIndex);
+extern void fxDeleteAll(txMachine* the, txSlot* stack, txID id, txIndex index);
 mxExport void fxDeleteAt(txMachine*);
 mxExport void fxDeleteID(txMachine*, txID);
 mxExport void fxDeleteIndex(txMachine*, txIndex);
@@ -681,7 +693,6 @@ mxExport void fxAccess(txMachine*, txSlot*);
 mxExport void fxDemarshall(txMachine* the, void* theData, txBoolean alien);
 mxExport void* fxMarshall(txMachine* the, txBoolean alien);
 
-mxExport void fxBuildArchiveKeys(txMachine* the);
 mxExport void* fxGetArchiveCode(txMachine* the, void* archive, txString path, size_t* size);
 mxExport txInteger fxGetArchiveCodeCount(txMachine* the, void* archive);
 mxExport void* fxGetArchiveCodeName(txMachine* the, void* archive, txInteger index);
@@ -690,12 +701,15 @@ mxExport txInteger fxGetArchiveDataCount(txMachine* the, void* archive);
 mxExport void* fxGetArchiveDataName(txMachine* the, void* archive, txInteger index);
 mxExport void* fxGetArchiveName(txMachine* the, void* archive);
 mxExport void* fxMapArchive(txMachine* the, txPreparation* preparation, void* archive, size_t bufferSize, txArchiveRead read, txArchiveWrite write);
+mxExport void fxSetArchive(txMachine* the, void* archive);
 
 mxExport txBoolean fxIsProfiling(txMachine* the);
 mxExport void fxStartProfiling(txMachine* the);
 mxExport void fxStopProfiling(txMachine* the, void* stream);
 
 mxExport void fxAwaitImport(txMachine*, txBoolean defaultFlag);
+mxExport void fxImport(txMachine*);
+mxExport void fxImportNow(txMachine*);
 
 #ifdef mxMetering
 mxExport void fxBeginMetering(txMachine* the, txBoolean (*callback)(txMachine*, txU4), txU4 interval);
@@ -779,6 +793,8 @@ extern int fxStringCGetter(void*);
 extern void fxJump(txMachine*) XS_FUNCTION_NORETURN;
 
 /* xsRun.c */
+extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
+extern void fxRemapScript(txMachine* the, txScript* script);
 extern void fxRunEval(txMachine* the);
 extern void fxRunForAwaitOf(txMachine* the);
 extern void fxRunID(txMachine* the, txSlot* generator, txInteger count);
@@ -809,7 +825,7 @@ extern void fxShare(txMachine* the);
 #ifdef mxDebug
 mxExport void fxCheck(txMachine* the, txString thePath, txInteger theLine);
 extern void fxDebugCommand(txMachine* the);
-extern void fxDebugLine(txMachine* the, txID id, txInteger line);
+extern void fxDebugLine(txMachine* the, txID path, txInteger line, txID function);
 extern void fxDebugLoop(txMachine* the, txString thePath, txInteger theLine, txString message);
 extern void fxDebugThrow(txMachine* the, txString thePath, txInteger theLine, txString message);
 mxExport void fxLogin(txMachine* the);
@@ -919,6 +935,9 @@ extern txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID i
 extern txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 extern txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 
+#if mxExplicitResourceManagement
+mxExport void fx_Iterator_dispose(txMachine* the);
+#endif
 mxExport void fx_Iterator_iterator(txMachine* the);
 mxExport void fx_Enumerator(txMachine* the);
 mxExport void fx_Enumerator_next(txMachine* the);
@@ -1053,16 +1072,33 @@ mxExport void fx_AggregateError(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);
 mxExport void fx_RangeError(txMachine* the);
 mxExport void fx_ReferenceError(txMachine* the);
-mxExport void fx_SuppressedError(txMachine* the);
 mxExport void fx_SyntaxError(txMachine* the);
 mxExport void fx_TypeError(txMachine* the);
 mxExport void fx_URIError(txMachine* the);
 mxExport void fx_Error_prototype_get_stack(txMachine* the);
 
+enum {
+	XS_NO_ERROR = 0,
+	XS_UNKNOWN_ERROR,
+	XS_EVAL_ERROR,
+	XS_RANGE_ERROR,
+	XS_REFERENCE_ERROR,
+	XS_SYNTAX_ERROR,
+	XS_TYPE_ERROR,
+	XS_URI_ERROR,
+	XS_AGGREGATE_ERROR,
+	XS_SUPPRESSED_ERROR,
+	XS_ERROR_COUNT
+};
+extern const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT];
+#define mxErrorPrototypes(THE_ERROR) (the->stackIntrinsics[-1 - gxErrorWhichPrototypeStackIndex[THE_ERROR]])
+
 extern void fxBuildError(txMachine* the);
 extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
 
 #if mxExplicitResourceManagement
+mxExport void fx_SuppressedError(txMachine* the);
+
 mxExport void fx_DisposableStack(txMachine* the);
 mxExport void fx_DisposableStack_prototype_get_disposed(txMachine* the);
 mxExport void fx_DisposableStack_prototype_adopt(txMachine* the);
@@ -1070,6 +1106,14 @@ mxExport void fx_DisposableStack_prototype_defer(txMachine* the);
 mxExport void fx_DisposableStack_prototype_dispose(txMachine* the);
 mxExport void fx_DisposableStack_prototype_move(txMachine* the);
 mxExport void fx_DisposableStack_prototype_use(txMachine* the);
+
+mxExport void fx_AsyncDisposableStack(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_get_disposed(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_adopt(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_defer(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_disposeAsync(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_move(txMachine* the);
+mxExport void fx_AsyncDisposableStack_prototype_use(txMachine* the);
 #endif
 
 /* xsNumber.c */
@@ -1119,6 +1163,8 @@ mxExport void fx_Math_idivmod(txMachine* the);
 mxExport void fx_Math_imod(txMachine* the);
 mxExport void fx_Math_imul(txMachine* the);
 mxExport void fx_Math_imuldiv(txMachine* the);
+mxExport void fx_Math_irandom(txMachine* the);
+mxExport void fx_Math_irandom_secure(txMachine* the);
 mxExport void fx_Math_irem(txMachine* the);
 mxExport void fx_Math_log(txMachine* the);
 mxExport void fx_Math_log1p(txMachine* the);
@@ -1734,6 +1780,9 @@ mxExport void fx_AsyncGenerator_prototype_return(txMachine* the);
 mxExport void fx_AsyncGenerator_prototype_throw(txMachine* the);
 mxExport void fx_AsyncGeneratorFunction(txMachine* the);
 
+#if mxExplicitResourceManagement
+mxExport void fx_AsyncIterator_asyncDispose(txMachine* the);
+#endif
 mxExport void fx_AsyncIterator_asyncIterator(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_next(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_return(txMachine* the);
@@ -1849,6 +1898,7 @@ mxExport void fx_harden(txMachine* the);
 mxExport void fx_lockdown(txMachine* the);
 mxExport void fx_petrify(txMachine* the);
 mxExport void fx_mutabilities(txMachine* the);
+mxExport void fx_unicodeCompare(txMachine* the);
 #endif
 
 /* xsProfile.c */
@@ -1859,20 +1909,6 @@ extern void fxDeleteProfiler(txMachine* the, void* stream);
 extern void fxResumeProfiler(txMachine* the);
 extern void fxSuspendProfiler(txMachine* the);
 #endif
-
-enum {
-	XS_NO_ERROR = 0,
-	XS_UNKNOWN_ERROR,
-	XS_EVAL_ERROR,
-	XS_RANGE_ERROR,
-	XS_REFERENCE_ERROR,
-	XS_SYNTAX_ERROR,
-	XS_TYPE_ERROR,
-	XS_URI_ERROR,
-	XS_AGGREGATE_ERROR,
-	XS_SUPPRESSED_ERROR,
-	XS_ERROR_COUNT
-};
 
 enum {
 	XS_IMMUTABLE = 0,
@@ -1933,6 +1969,10 @@ enum {
 	XS_BASE_FLAG = 32,
 	XS_DERIVED_FLAG = 64,
 	/* XS_MARK_FLAG = 128, */
+	
+	/* host property flags */
+	XS_HOST_CHUNK_FLAG = 32,
+	XS_HOST_HOOKS_FLAG = 64,
 
 	/* mxBehaviorOwnKeys flags */
 	XS_EACH_NAME_FLAG = 1,
@@ -1953,10 +1993,10 @@ enum {
 	XS_COMPACT_FLAG = 1,
 	XS_ORGANIC_FLAG = 2,
 	XS_COLLECTING_FLAG = 4,
-	XS_TRASHING_FLAG = 8,
+	XS_TRASHING_SLOTS_FLAG = 8,
 	XS_SKIPPED_COLLECT_FLAG = 16,
-	XS_HOST_CHUNK_FLAG = 32,
-	XS_HOST_HOOKS_FLAG = 64,
+	XS_COLLECT_KEYS_FLAG = 32,
+	XS_TRASHING_CHUNKS_FLAG = 64,
 	
 	/* finalization registry flags */
 	XS_FINALIZATION_REGISTRY_CHANGED = 1,
@@ -2034,18 +2074,10 @@ enum {
 	XS_BUFFER_INFO_KIND,
 	XS_MODULE_SOURCE_KIND,
 	XS_IDS_KIND,
+// 
 	XS_DISPOSABLE_STACK_KIND,
-};
-enum {
-	XS_DEBUGGER_EXIT = 0,
-	XS_NOT_ENOUGH_MEMORY_EXIT,
-	XS_STACK_OVERFLOW_EXIT,
-	XS_FATAL_CHECK_EXIT,
-	XS_DEAD_STRIP_EXIT,
-	XS_UNHANDLED_EXCEPTION_EXIT,
-	XS_NO_MORE_KEYS_EXIT,
-	XS_TOO_MUCH_COMPUTATION_EXIT,
-	XS_UNHANDLED_REJECTION_EXIT,
+	XS_ASYNC_DISPOSABLE_STACK_KIND,
+	XS_BREAKPOINT_KIND,
 };
 
 #if mxBigEndian
@@ -2179,22 +2211,22 @@ enum {
 	fxCall(the))
 	
 #define mxDefineAll(ID, INDEX, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, ID, INDEX, FLAG, MASK))
+	(mxMeterOne(), fxDefineAll(the, the->stack, ID, INDEX, FLAG, MASK))
 #define mxDefineAt(FLAG, MASK) \
 	(mxMeterOne(), fxDefineAt(the, FLAG, MASK))
 #define mxDefineID(ID, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, ID, 0, FLAG, MASK))
+	(mxMeterOne(), fxDefineID(the, ID, FLAG, MASK))
 #define mxDefineIndex(INDEX, FLAG, MASK) \
-	(mxMeterOne(), fxDefineAll(the, XS_NO_ID, INDEX, FLAG, MASK))
+	(mxMeterOne(), fxDefineIndex(the, INDEX, FLAG, MASK))
 	
 #define mxDeleteAll(ID, INDEX) \
-	(mxMeterOne(), fxDeleteAll(the, ID, INDEX))
+	(mxMeterOne(), fxDeleteAll(the, the->stack, ID, INDEX))
 #define mxDeleteAt() \
 	(mxMeterOne(), fxDeleteAt(the))
 #define mxDeleteID(ID) \
-	(mxMeterOne(), fxDeleteAll(the, ID, 0))
+	(mxMeterOne(), fxDeleteID(the, ID))
 #define mxDeleteIndex(INDEX) \
-	(mxMeterOne(), fxDeleteAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxDeleteIndex(the, INDEX))
 	
 #define mxDub() \
 	(mxOverflow(-1), \
@@ -2204,22 +2236,22 @@ enum {
 	the->stack->value = (the->stack + 1)->value))
 	
 #define mxGetAll(ID, INDEX) \
-	(mxMeterOne(), fxGetAll(the, ID, INDEX))
+	(mxMeterOne(), fxGetAll(the, the->stack, ID, INDEX))
 #define mxGetAt() \
 	(mxMeterOne(), fxGetAt(the))
 #define mxGetID(ID) \
-	(mxMeterOne(), fxGetAll(the, ID, 0))
+	(mxMeterOne(), fxGetID(the, ID))
 #define mxGetIndex(INDEX) \
-	(mxMeterOne(), fxGetAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxGetIndex(the, INDEX))
 	
 #define mxHasAll(ID, INDEX) \
-	(mxMeterOne(), fxHasAll(the, ID, INDEX))
+	(mxMeterOne(), fxHasAll(the, the->stack, ID, INDEX))
 #define mxHasAt() \
 	(mxMeterOne(), fxHasAt(the))
 #define mxHasID(ID) \
-	(mxMeterOne(), fxHasAll(the, ID, 0))
+	(mxMeterOne(), fxHasID(the, ID))
 #define mxHasIndex(INDEX) \
-	(mxMeterOne(), fxHasAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxHasIndex(the, INDEX))
 	
 #define mxNew() \
 	(mxOverflow(-5), \
@@ -2229,13 +2261,13 @@ enum {
 	(mxMeterOne(), fxRunID(the, C_NULL, _COUNT))
 	
 #define mxSetAll(ID, INDEX) \
-	(mxMeterOne(), fxSetAll(the, ID, INDEX))
+	(mxMeterOne(), fxSetAll(the, the->stack, ID, INDEX))
 #define mxSetAt() \
 	(mxMeterOne(), fxSetAt(the))
 #define mxSetID(ID) \
-	(mxMeterOne(), fxSetAll(the, ID, 0))
+	(mxMeterOne(), fxSetID(the, ID))
 #define mxSetIndex(INDEX) \
-	(mxMeterOne(), fxSetAll(the, XS_NO_ID, INDEX))
+	(mxMeterOne(), fxSetIndex(the, INDEX))
 
 #define mxPush(THE_SLOT) \
 	(mxOverflow(-1), \
@@ -2473,6 +2505,8 @@ enum {
 	mxHostInspectorsStackIndex,
 	mxInstanceInspectorsStackIndex,
 
+// xs.h 
+// begin
 	mxObjectPrototypeStackIndex = XS_INTRINSICS_COUNT,
 	mxFunctionPrototypeStackIndex,
 	mxArrayPrototypeStackIndex,
@@ -2491,7 +2525,6 @@ enum {
 	mxTypeErrorPrototypeStackIndex,
 	mxURIErrorPrototypeStackIndex,
 	mxAggregateErrorPrototypeStackIndex,
-	mxSuppressedErrorPrototypeStackIndex,
 	
 	mxSymbolPrototypeStackIndex,
 	mxArrayBufferPrototypeStackIndex,
@@ -2503,13 +2536,14 @@ enum {
 	mxWeakSetPrototypeStackIndex,
 	mxPromisePrototypeStackIndex,
 	mxProxyPrototypeStackIndex,
+// end
+	
 	mxSharedArrayBufferPrototypeStackIndex,
 	mxBigIntPrototypeStackIndex,
 	mxCompartmentPrototypeStackIndex,
 	mxModuleSourcePrototypeStackIndex,
 	mxWeakRefPrototypeStackIndex,
 	mxFinalizationRegistryPrototypeStackIndex,
-	mxDisposableStackPrototypeStackIndex,
 
 	mxEnumeratorFunctionStackIndex,
 	mxAssignObjectFunctionStackIndex,
@@ -2565,6 +2599,12 @@ enum {
 	mxStringStringStackIndex,
 	mxSymbolStringStackIndex,
 	mxUndefinedStringStackIndex,
+	
+#if mxExplicitResourceManagement	
+	mxSuppressedErrorPrototypeStackIndex,
+	mxDisposableStackPrototypeStackIndex,
+	mxAsyncDisposableStackPrototypeStackIndex,
+#endif
 
 	mxStackIndexCount
 };
@@ -2583,163 +2623,169 @@ enum {
 #define mxHostInspectors the->stackTop[-1 - mxHostInspectorsStackIndex]
 #define mxInstanceInspectors the->stackTop[-1 - mxInstanceInspectorsStackIndex]
 
-#define mxAggregateErrorConstructor the->stackPrototypes[-1 - _AggregateError]
-#define mxArrayConstructor the->stackPrototypes[-1 - _Array]
-#define mxArrayBufferConstructor the->stackPrototypes[-1 - _ArrayBuffer]
-#define mxAtomicsObject the->stackPrototypes[-1 - _Atomics]
-#define mxBigIntConstructor the->stackPrototypes[-1 - _BigInt]
-#define mxBigInt64ArrayConstructor the->stackPrototypes[-1 - _BigInt64Array]
-#define mxBigUint64ArrayConstructor the->stackPrototypes[-1 - _BigUint64Array]
-#define mxBooleanConstructor the->stackPrototypes[-1 - _Boolean]
-#define mxCompartmentConstructor the->stackPrototypes[-1 - _Compartment]
-#define mxDataViewConstructor the->stackPrototypes[-1 - _DataView]
-#define mxDateConstructor the->stackPrototypes[-1 - _Date]
-#define mxDisposableStackConstructor the->stackPrototypes[-1 - _DisposableStack]
-#define mxErrorConstructor the->stackPrototypes[-1 - _Error]
-#define mxEvalErrorConstructor the->stackPrototypes[-1 - _EvalError]
-#define mxFinalizationRegistryConstructor the->stackPrototypes[-1 - _FinalizationRegistry]
-#define mxFloat32ArrayConstructor the->stackPrototypes[-1 - _Float32Array]
-#define mxFloat64ArrayConstructor the->stackPrototypes[-1 - _Float64Array]
-#define mxFunctionConstructor the->stackPrototypes[-1 - _Function]
-#define mxInfinity the->stackPrototypes[-1 - _Infinity]
-#define mxInt16ArrayConstructor the->stackPrototypes[-1 - _Int16Array]
-#define mxInt32ArrayConstructor the->stackPrototypes[-1 - _Int32Array]
-#define mxInt8ArrayConstructor the->stackPrototypes[-1 - _Int8Array]
-#define mxJSONObject the->stackPrototypes[-1 - _JSON]
-#define mxMapConstructor the->stackPrototypes[-1 - _Map]
-#define mxMathObject the->stackPrototypes[-1 - _Math]
-#define mxNaN the->stackPrototypes[-1 - _NaN]
-#define mxNumberConstructor the->stackPrototypes[-1 - _Number]
-#define mxObjectConstructor the->stackPrototypes[-1 - _Object]
-#define mxPromiseConstructor the->stackPrototypes[-1 - _Promise]
-#define mxProxyConstructor the->stackPrototypes[-1 - _Proxy]
-#define mxRangeErrorConstructor the->stackPrototypes[-1 - _RangeError]
-#define mxReferenceErrorConstructor the->stackPrototypes[-1 - _ReferenceError]
-#define mxReflectObject the->stackPrototypes[-1 - _Reflect]
-#define mxRegExpConstructor the->stackPrototypes[-1 - _RegExp]
-#define mxSetConstructor the->stackPrototypes[-1 - _Set]
-#define mxSharedArrayBufferConstructor the->stackPrototypes[-1 - _SharedArrayBuffer]
-#define mxModuleSourceConstructor the->stackPrototypes[-1 - _ModuleSource]
-#define mxStringConstructor the->stackPrototypes[-1 - _String]
-#define mxSuppressedErrorConstructor the->stackPrototypes[-1 - _SuppressedError]
-#define mxSymbolConstructor the->stackPrototypes[-1 - _Symbol]
-#define mxSyntaxErrorConstructor the->stackPrototypes[-1 - _SyntaxError]
-#define mxTypeErrorConstructor the->stackPrototypes[-1 - _TypeError]
-#define mxTypedArrayConstructor the->stackPrototypes[-1 - _TypedArray]
-#define mxURIErrorConstructor the->stackPrototypes[-1 - _URIError]
-#define mxUint16ArrayConstructor the->stackPrototypes[-1 - _Uint16Array]
-#define mxUint32ArrayConstructor the->stackPrototypes[-1 - _Uint32Array]
-#define mxUint8ArrayConstructor the->stackPrototypes[-1 - _Uint8Array]
-#define mxUint8ClampedArrayConstructor the->stackPrototypes[-1 - _Uint8ClampedArray]
-#define mxWeakMapConstructor the->stackPrototypes[-1 - _WeakMap]
-#define mxWeakRefConstructor the->stackPrototypes[-1 - _WeakRef]
-#define mxWeakSetConstructor the->stackPrototypes[-1 - _WeakSet]
-#define mxDecodeURIFunction the->stackPrototypes[-1 - _decodeURI]
-#define mxDecodeURIComponentFunction the->stackPrototypes[-1 - _decodeURIComponent]
-#define mxEncodeURIFunction the->stackPrototypes[-1 - _encodeURI]
-#define mxEncodeURIComponentFunction the->stackPrototypes[-1 - _encodeURIComponent]
-#define mxEscapeFunction the->stackPrototypes[-1 - _escape]
-#define mxEvalFunction the->stackPrototypes[-1 - _eval]
-#define mxIsFiniteFunction the->stackPrototypes[-1 - _isFinite]
-#define mxIsNaNFunction the->stackPrototypes[-1 - _isNaN]
-#define mxParseFloatFunction the->stackPrototypes[-1 - _parseFloat]
-#define mxParseIntFunction the->stackPrototypes[-1 - _parseInt]
-#define mxTraceFunction the->stackPrototypes[-1 - _trace]
-#define mxUndefined the->stackPrototypes[-1 - _undefined]
-#define mxUnescapeFunction the->stackPrototypes[-1 - _unescape]
+#define mxAggregateErrorConstructor the->stackIntrinsics[-1 - _AggregateError]
+#define mxArrayConstructor the->stackIntrinsics[-1 - _Array]
+#define mxArrayBufferConstructor the->stackIntrinsics[-1 - _ArrayBuffer]
+#define mxAtomicsObject the->stackIntrinsics[-1 - _Atomics]
+#define mxBigIntConstructor the->stackIntrinsics[-1 - _BigInt]
+#define mxBigInt64ArrayConstructor the->stackIntrinsics[-1 - _BigInt64Array]
+#define mxBigUint64ArrayConstructor the->stackIntrinsics[-1 - _BigUint64Array]
+#define mxBooleanConstructor the->stackIntrinsics[-1 - _Boolean]
+#define mxCompartmentConstructor the->stackIntrinsics[-1 - _Compartment]
+#define mxDataViewConstructor the->stackIntrinsics[-1 - _DataView]
+#define mxDateConstructor the->stackIntrinsics[-1 - _Date]
+#define mxErrorConstructor the->stackIntrinsics[-1 - _Error]
+#define mxEvalErrorConstructor the->stackIntrinsics[-1 - _EvalError]
+#define mxFinalizationRegistryConstructor the->stackIntrinsics[-1 - _FinalizationRegistry]
+#define mxFloat32ArrayConstructor the->stackIntrinsics[-1 - _Float32Array]
+#define mxFloat64ArrayConstructor the->stackIntrinsics[-1 - _Float64Array]
+#define mxFunctionConstructor the->stackIntrinsics[-1 - _Function]
+#define mxInfinity the->stackIntrinsics[-1 - _Infinity]
+#define mxInt16ArrayConstructor the->stackIntrinsics[-1 - _Int16Array]
+#define mxInt32ArrayConstructor the->stackIntrinsics[-1 - _Int32Array]
+#define mxInt8ArrayConstructor the->stackIntrinsics[-1 - _Int8Array]
+#define mxJSONObject the->stackIntrinsics[-1 - _JSON]
+#define mxMapConstructor the->stackIntrinsics[-1 - _Map]
+#define mxMathObject the->stackIntrinsics[-1 - _Math]
+#define mxNaN the->stackIntrinsics[-1 - _NaN]
+#define mxNumberConstructor the->stackIntrinsics[-1 - _Number]
+#define mxObjectConstructor the->stackIntrinsics[-1 - _Object]
+#define mxPromiseConstructor the->stackIntrinsics[-1 - _Promise]
+#define mxProxyConstructor the->stackIntrinsics[-1 - _Proxy]
+#define mxRangeErrorConstructor the->stackIntrinsics[-1 - _RangeError]
+#define mxReferenceErrorConstructor the->stackIntrinsics[-1 - _ReferenceError]
+#define mxReflectObject the->stackIntrinsics[-1 - _Reflect]
+#define mxRegExpConstructor the->stackIntrinsics[-1 - _RegExp]
+#define mxSetConstructor the->stackIntrinsics[-1 - _Set]
+#define mxSharedArrayBufferConstructor the->stackIntrinsics[-1 - _SharedArrayBuffer]
+#define mxModuleSourceConstructor the->stackIntrinsics[-1 - _ModuleSource]
+#define mxStringConstructor the->stackIntrinsics[-1 - _String]
+#define mxSymbolConstructor the->stackIntrinsics[-1 - _Symbol]
+#define mxSyntaxErrorConstructor the->stackIntrinsics[-1 - _SyntaxError]
+#define mxTypeErrorConstructor the->stackIntrinsics[-1 - _TypeError]
+#define mxTypedArrayConstructor the->stackIntrinsics[-1 - _TypedArray]
+#define mxURIErrorConstructor the->stackIntrinsics[-1 - _URIError]
+#define mxUint16ArrayConstructor the->stackIntrinsics[-1 - _Uint16Array]
+#define mxUint32ArrayConstructor the->stackIntrinsics[-1 - _Uint32Array]
+#define mxUint8ArrayConstructor the->stackIntrinsics[-1 - _Uint8Array]
+#define mxUint8ClampedArrayConstructor the->stackIntrinsics[-1 - _Uint8ClampedArray]
+#define mxWeakMapConstructor the->stackIntrinsics[-1 - _WeakMap]
+#define mxWeakRefConstructor the->stackIntrinsics[-1 - _WeakRef]
+#define mxWeakSetConstructor the->stackIntrinsics[-1 - _WeakSet]
+#define mxDecodeURIFunction the->stackIntrinsics[-1 - _decodeURI]
+#define mxDecodeURIComponentFunction the->stackIntrinsics[-1 - _decodeURIComponent]
+#define mxEncodeURIFunction the->stackIntrinsics[-1 - _encodeURI]
+#define mxEncodeURIComponentFunction the->stackIntrinsics[-1 - _encodeURIComponent]
+#define mxEscapeFunction the->stackIntrinsics[-1 - _escape]
+#define mxEvalFunction the->stackIntrinsics[-1 - _eval]
+#define mxIsFiniteFunction the->stackIntrinsics[-1 - _isFinite]
+#define mxIsNaNFunction the->stackIntrinsics[-1 - _isNaN]
+#define mxParseFloatFunction the->stackIntrinsics[-1 - _parseFloat]
+#define mxParseIntFunction the->stackIntrinsics[-1 - _parseInt]
+#define mxTraceFunction the->stackIntrinsics[-1 - _trace]
+#define mxUndefined the->stackIntrinsics[-1 - _undefined]
+#define mxUnescapeFunction the->stackIntrinsics[-1 - _unescape]
+#if mxExplicitResourceManagement	
+#define mxAsyncDisposableStackConstructor the->stackIntrinsics[-1 - _AsyncDisposableStack]
+#define mxDisposableStackConstructor the->stackIntrinsics[-1 - _DisposableStack]
+#define mxSuppressedErrorConstructor the->stackIntrinsics[-1 - _SuppressedError]
+#endif	
 
-#define mxObjectPrototype the->stackPrototypes[-1 - mxObjectPrototypeStackIndex]
-#define mxFunctionPrototype the->stackPrototypes[-1 - mxFunctionPrototypeStackIndex]
-#define mxArrayPrototype the->stackPrototypes[-1 - mxArrayPrototypeStackIndex]
-#define mxStringPrototype the->stackPrototypes[-1 - mxStringPrototypeStackIndex]
-#define mxBooleanPrototype the->stackPrototypes[-1 - mxBooleanPrototypeStackIndex]
-#define mxNumberPrototype the->stackPrototypes[-1 - mxNumberPrototypeStackIndex]
-#define mxDatePrototype the->stackPrototypes[-1 - mxDatePrototypeStackIndex]
-#define mxRegExpPrototype the->stackPrototypes[-1 - mxRegExpPrototypeStackIndex]
-#define mxHostPrototype the->stackPrototypes[-1 - mxHostPrototypeStackIndex]
+#define mxObjectPrototype the->stackIntrinsics[-1 - mxObjectPrototypeStackIndex]
+#define mxFunctionPrototype the->stackIntrinsics[-1 - mxFunctionPrototypeStackIndex]
+#define mxArrayPrototype the->stackIntrinsics[-1 - mxArrayPrototypeStackIndex]
+#define mxStringPrototype the->stackIntrinsics[-1 - mxStringPrototypeStackIndex]
+#define mxBooleanPrototype the->stackIntrinsics[-1 - mxBooleanPrototypeStackIndex]
+#define mxNumberPrototype the->stackIntrinsics[-1 - mxNumberPrototypeStackIndex]
+#define mxDatePrototype the->stackIntrinsics[-1 - mxDatePrototypeStackIndex]
+#define mxRegExpPrototype the->stackIntrinsics[-1 - mxRegExpPrototypeStackIndex]
+#define mxHostPrototype the->stackIntrinsics[-1 - mxHostPrototypeStackIndex]
 
-#define mxErrorPrototypes(THE_ERROR) (the->stackPrototypes[-mxErrorPrototypeStackIndex-(THE_ERROR)])
-#define mxErrorPrototype the->stackPrototypes[-1 - mxErrorPrototypeStackIndex]
-#define mxEvalErrorPrototype the->stackPrototypes[-1 - mxEvalErrorPrototypeStackIndex]
-#define mxRangeErrorPrototype the->stackPrototypes[-1 - mxRangeErrorPrototypeStackIndex]
-#define mxReferenceErrorPrototype the->stackPrototypes[-1 - mxReferenceErrorPrototypeStackIndex]
-#define mxSyntaxErrorPrototype the->stackPrototypes[-1 - mxSyntaxErrorPrototypeStackIndex]
-#define mxTypeErrorPrototype the->stackPrototypes[-1 - mxTypeErrorPrototypeStackIndex]
-#define mxURIErrorPrototype the->stackPrototypes[-1 - mxURIErrorPrototypeStackIndex]
-#define mxAggregateErrorPrototype the->stackPrototypes[-1 - mxAggregateErrorPrototypeStackIndex]
-#define mxSuppressedErrorPrototype the->stackPrototypes[-1 - mxSuppressedErrorPrototypeStackIndex]
+#define mxErrorPrototype the->stackIntrinsics[-1 - mxErrorPrototypeStackIndex]
+#define mxEvalErrorPrototype the->stackIntrinsics[-1 - mxEvalErrorPrototypeStackIndex]
+#define mxRangeErrorPrototype the->stackIntrinsics[-1 - mxRangeErrorPrototypeStackIndex]
+#define mxReferenceErrorPrototype the->stackIntrinsics[-1 - mxReferenceErrorPrototypeStackIndex]
+#define mxSyntaxErrorPrototype the->stackIntrinsics[-1 - mxSyntaxErrorPrototypeStackIndex]
+#define mxTypeErrorPrototype the->stackIntrinsics[-1 - mxTypeErrorPrototypeStackIndex]
+#define mxURIErrorPrototype the->stackIntrinsics[-1 - mxURIErrorPrototypeStackIndex]
+#define mxAggregateErrorPrototype the->stackIntrinsics[-1 - mxAggregateErrorPrototypeStackIndex]
 
-#define mxSymbolPrototype the->stackPrototypes[-1 - mxSymbolPrototypeStackIndex]
-#define mxArrayBufferPrototype the->stackPrototypes[-1 - mxArrayBufferPrototypeStackIndex]
-#define mxDataViewPrototype the->stackPrototypes[-1 - mxDataViewPrototypeStackIndex]
-#define mxTypedArrayPrototype the->stackPrototypes[-1 - mxTypedArrayPrototypeStackIndex]
-#define mxMapPrototype the->stackPrototypes[-1 - mxMapPrototypeStackIndex]
-#define mxSetPrototype the->stackPrototypes[-1 - mxSetPrototypeStackIndex]
-#define mxWeakMapPrototype the->stackPrototypes[-1 - mxWeakMapPrototypeStackIndex]
-#define mxWeakSetPrototype the->stackPrototypes[-1 - mxWeakSetPrototypeStackIndex]
-#define mxPromisePrototype the->stackPrototypes[-1 - mxPromisePrototypeStackIndex]
-#define mxProxyPrototype the->stackPrototypes[-1 - mxProxyPrototypeStackIndex]
-#define mxSharedArrayBufferPrototype the->stackPrototypes[-1 - mxSharedArrayBufferPrototypeStackIndex]
-#define mxBigIntPrototype the->stackPrototypes[-1 - mxBigIntPrototypeStackIndex]
-#define mxCompartmentPrototype the->stackPrototypes[-1 - mxCompartmentPrototypeStackIndex]
-#define mxModuleSourcePrototype the->stackPrototypes[-1 - mxModuleSourcePrototypeStackIndex]
-#define mxWeakRefPrototype the->stackPrototypes[-1 - mxWeakRefPrototypeStackIndex]
-#define mxFinalizationRegistryPrototype the->stackPrototypes[-1 - mxFinalizationRegistryPrototypeStackIndex]
-#define mxDisposableStackPrototype the->stackPrototypes[-1 - mxDisposableStackPrototypeStackIndex]
+#define mxSymbolPrototype the->stackIntrinsics[-1 - mxSymbolPrototypeStackIndex]
+#define mxArrayBufferPrototype the->stackIntrinsics[-1 - mxArrayBufferPrototypeStackIndex]
+#define mxDataViewPrototype the->stackIntrinsics[-1 - mxDataViewPrototypeStackIndex]
+#define mxTypedArrayPrototype the->stackIntrinsics[-1 - mxTypedArrayPrototypeStackIndex]
+#define mxMapPrototype the->stackIntrinsics[-1 - mxMapPrototypeStackIndex]
+#define mxSetPrototype the->stackIntrinsics[-1 - mxSetPrototypeStackIndex]
+#define mxWeakMapPrototype the->stackIntrinsics[-1 - mxWeakMapPrototypeStackIndex]
+#define mxWeakSetPrototype the->stackIntrinsics[-1 - mxWeakSetPrototypeStackIndex]
+#define mxPromisePrototype the->stackIntrinsics[-1 - mxPromisePrototypeStackIndex]
+#define mxProxyPrototype the->stackIntrinsics[-1 - mxProxyPrototypeStackIndex]
+#define mxSharedArrayBufferPrototype the->stackIntrinsics[-1 - mxSharedArrayBufferPrototypeStackIndex]
+#define mxBigIntPrototype the->stackIntrinsics[-1 - mxBigIntPrototypeStackIndex]
+#define mxCompartmentPrototype the->stackIntrinsics[-1 - mxCompartmentPrototypeStackIndex]
+#define mxModuleSourcePrototype the->stackIntrinsics[-1 - mxModuleSourcePrototypeStackIndex]
+#define mxWeakRefPrototype the->stackIntrinsics[-1 - mxWeakRefPrototypeStackIndex]
+#define mxFinalizationRegistryPrototype the->stackIntrinsics[-1 - mxFinalizationRegistryPrototypeStackIndex]
 
-#define mxEmptyCode the->stackPrototypes[-1 - mxEmptyCodeStackIndex]
-#define mxEmptyString the->stackPrototypes[-1 - mxEmptyStringStackIndex]
-#define mxEmptyRegExp the->stackPrototypes[-1 - mxEmptyRegExpStackIndex]
-#define mxBigIntString the->stackPrototypes[-1 - mxBigIntStringStackIndex]
-#define mxBooleanString the->stackPrototypes[-1 - mxBooleanStringStackIndex]
-#define mxDefaultString the->stackPrototypes[-1 - mxDefaultStringStackIndex]
-#define mxFunctionString the->stackPrototypes[-1 - mxFunctionStringStackIndex]
-#define mxNumberString the->stackPrototypes[-1 - mxNumberStringStackIndex]
-#define mxObjectString the->stackPrototypes[-1 - mxObjectStringStackIndex]
-#define mxStringString the->stackPrototypes[-1 - mxStringStringStackIndex]
-#define mxSymbolString the->stackPrototypes[-1 - mxSymbolStringStackIndex]
-#define mxUndefinedString the->stackPrototypes[-1 - mxUndefinedStringStackIndex]
+#define mxEmptyCode the->stackIntrinsics[-1 - mxEmptyCodeStackIndex]
+#define mxEmptyString the->stackIntrinsics[-1 - mxEmptyStringStackIndex]
+#define mxEmptyRegExp the->stackIntrinsics[-1 - mxEmptyRegExpStackIndex]
+#define mxBigIntString the->stackIntrinsics[-1 - mxBigIntStringStackIndex]
+#define mxBooleanString the->stackIntrinsics[-1 - mxBooleanStringStackIndex]
+#define mxDefaultString the->stackIntrinsics[-1 - mxDefaultStringStackIndex]
+#define mxFunctionString the->stackIntrinsics[-1 - mxFunctionStringStackIndex]
+#define mxNumberString the->stackIntrinsics[-1 - mxNumberStringStackIndex]
+#define mxObjectString the->stackIntrinsics[-1 - mxObjectStringStackIndex]
+#define mxStringString the->stackIntrinsics[-1 - mxStringStringStackIndex]
+#define mxSymbolString the->stackIntrinsics[-1 - mxSymbolStringStackIndex]
+#define mxUndefinedString the->stackIntrinsics[-1 - mxUndefinedStringStackIndex]
 
-#define mxEnumeratorFunction the->stackPrototypes[-1 - mxEnumeratorFunctionStackIndex]
-#define mxAssignObjectFunction the->stackPrototypes[-1 - mxAssignObjectFunctionStackIndex]
-#define mxCopyObjectFunction the->stackPrototypes[-1 - mxCopyObjectFunctionStackIndex]
+#define mxEnumeratorFunction the->stackIntrinsics[-1 - mxEnumeratorFunctionStackIndex]
+#define mxAssignObjectFunction the->stackIntrinsics[-1 - mxAssignObjectFunctionStackIndex]
+#define mxCopyObjectFunction the->stackIntrinsics[-1 - mxCopyObjectFunctionStackIndex]
 
-#define mxAsyncFunctionPrototype the->stackPrototypes[-1 - mxAsyncFunctionPrototypeStackIndex]
-#define mxGeneratorPrototype the->stackPrototypes[-1 - mxGeneratorPrototypeStackIndex]
-#define mxGeneratorFunctionPrototype the->stackPrototypes[-1 - mxGeneratorFunctionPrototypeStackIndex]
-#define mxModulePrototype the->stackPrototypes[-1 - mxModulePrototypeStackIndex]
-#define mxTransferPrototype the->stackPrototypes[-1 - mxTransferPrototypeStackIndex]
-#define mxOnRejectedPromiseFunction the->stackPrototypes[-1 - mxOnRejectedPromiseFunctionStackIndex]
-#define mxOnResolvedPromiseFunction the->stackPrototypes[-1 - mxOnResolvedPromiseFunctionStackIndex]
-#define mxOnThenableFunction the->stackPrototypes[-1 - mxOnThenableFunctionStackIndex]
-#define mxArrayLengthAccessor the->stackPrototypes[-1 - mxArrayLengthAccessorStackIndex]
-#define mxModuleAccessor the->stackPrototypes[-1 - mxModuleAccessorStackIndex]
-#define mxProxyAccessor the->stackPrototypes[-1 - mxProxyAccessorStackIndex]
-#define mxStringAccessor the->stackPrototypes[-1 - mxStringAccessorStackIndex]
-#define mxTypedArrayAccessor the->stackPrototypes[-1 - mxTypedArrayAccessorStackIndex]
+#define mxAsyncFunctionPrototype the->stackIntrinsics[-1 - mxAsyncFunctionPrototypeStackIndex]
+#define mxGeneratorPrototype the->stackIntrinsics[-1 - mxGeneratorPrototypeStackIndex]
+#define mxGeneratorFunctionPrototype the->stackIntrinsics[-1 - mxGeneratorFunctionPrototypeStackIndex]
+#define mxModulePrototype the->stackIntrinsics[-1 - mxModulePrototypeStackIndex]
+#define mxTransferPrototype the->stackIntrinsics[-1 - mxTransferPrototypeStackIndex]
+#define mxOnRejectedPromiseFunction the->stackIntrinsics[-1 - mxOnRejectedPromiseFunctionStackIndex]
+#define mxOnResolvedPromiseFunction the->stackIntrinsics[-1 - mxOnResolvedPromiseFunctionStackIndex]
+#define mxOnThenableFunction the->stackIntrinsics[-1 - mxOnThenableFunctionStackIndex]
+#define mxArrayLengthAccessor the->stackIntrinsics[-1 - mxArrayLengthAccessorStackIndex]
+#define mxModuleAccessor the->stackIntrinsics[-1 - mxModuleAccessorStackIndex]
+#define mxProxyAccessor the->stackIntrinsics[-1 - mxProxyAccessorStackIndex]
+#define mxStringAccessor the->stackIntrinsics[-1 - mxStringAccessorStackIndex]
+#define mxTypedArrayAccessor the->stackIntrinsics[-1 - mxTypedArrayAccessorStackIndex]
 
-#define mxIteratorPrototype the->stackPrototypes[-1 - mxIteratorPrototypeStackIndex]
-#define mxArrayIteratorPrototype the->stackPrototypes[-1 - mxArrayIteratorPrototypeStackIndex]
-#define mxMapIteratorPrototype the->stackPrototypes[-1 - mxMapIteratorPrototypeStackIndex]
-#define mxRegExpStringIteratorPrototype the->stackPrototypes[-1 - mxRegExpStringIteratorPrototypeStackIndex]
-#define mxSetIteratorPrototype the->stackPrototypes[-1 - mxSetIteratorPrototypeStackIndex]
-#define mxStringIteratorPrototype the->stackPrototypes[-1 - mxStringIteratorPrototypeStackIndex]
+#define mxIteratorPrototype the->stackIntrinsics[-1 - mxIteratorPrototypeStackIndex]
+#define mxArrayIteratorPrototype the->stackIntrinsics[-1 - mxArrayIteratorPrototypeStackIndex]
+#define mxMapIteratorPrototype the->stackIntrinsics[-1 - mxMapIteratorPrototypeStackIndex]
+#define mxRegExpStringIteratorPrototype the->stackIntrinsics[-1 - mxRegExpStringIteratorPrototypeStackIndex]
+#define mxSetIteratorPrototype the->stackIntrinsics[-1 - mxSetIteratorPrototypeStackIndex]
+#define mxStringIteratorPrototype the->stackIntrinsics[-1 - mxStringIteratorPrototypeStackIndex]
 
-#define mxAsyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncIteratorPrototypeStackIndex]
-#define mxAsyncFromSyncIteratorPrototype the->stackPrototypes[-1 - mxAsyncFromSyncIteratorPrototypeStackIndex]
-#define mxAsyncGeneratorPrototype the->stackPrototypes[-1 - mxAsyncGeneratorPrototypeStackIndex]
-#define mxAsyncGeneratorFunctionPrototype the->stackPrototypes[-1 - mxAsyncGeneratorFunctionPrototypeStackIndex]
+#define mxAsyncIteratorPrototype the->stackIntrinsics[-1 - mxAsyncIteratorPrototypeStackIndex]
+#define mxAsyncFromSyncIteratorPrototype the->stackIntrinsics[-1 - mxAsyncFromSyncIteratorPrototypeStackIndex]
+#define mxAsyncGeneratorPrototype the->stackIntrinsics[-1 - mxAsyncGeneratorPrototypeStackIndex]
+#define mxAsyncGeneratorFunctionPrototype the->stackIntrinsics[-1 - mxAsyncGeneratorFunctionPrototypeStackIndex]
 
-#define mxArgumentsSloppyPrototype the->stackPrototypes[-1 - mxArgumentsSloppyPrototypeStackIndex]
-#define mxArgumentsStrictPrototype the->stackPrototypes[-1 - mxArgumentsStrictPrototypeStackIndex]
-#define mxThrowTypeErrorFunction the->stackPrototypes[-1 - mxThrowTypeErrorFunctionStackIndex]
+#define mxArgumentsSloppyPrototype the->stackIntrinsics[-1 - mxArgumentsSloppyPrototypeStackIndex]
+#define mxArgumentsStrictPrototype the->stackIntrinsics[-1 - mxArgumentsStrictPrototypeStackIndex]
+#define mxThrowTypeErrorFunction the->stackIntrinsics[-1 - mxThrowTypeErrorFunctionStackIndex]
 
-#define mxHookInstance the->stackPrototypes[-1 - mxHookInstanceIndex]
-#define  mxExecuteRegExpFunction the->stackPrototypes[-1 - mxExecuteRegExpFunctionIndex]
-#define  mxInitializeRegExpFunction the->stackPrototypes[-1 - mxInitializeRegExpFunctionIndex]
-#define  mxArrayIteratorFunction the->stackPrototypes[-1 - mxArrayIteratorFunctionIndex]
-#define mxOrdinaryToPrimitiveFunction the->stackPrototypes[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
-#define mxCompartmentGlobal the->stackPrototypes[-1 - mxCompartmentGlobalStackIndex]
+#define mxHookInstance the->stackIntrinsics[-1 - mxHookInstanceIndex]
+#define  mxExecuteRegExpFunction the->stackIntrinsics[-1 - mxExecuteRegExpFunctionIndex]
+#define  mxInitializeRegExpFunction the->stackIntrinsics[-1 - mxInitializeRegExpFunctionIndex]
+#define  mxArrayIteratorFunction the->stackIntrinsics[-1 - mxArrayIteratorFunctionIndex]
+#define mxOrdinaryToPrimitiveFunction the->stackIntrinsics[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
+#define mxCompartmentGlobal the->stackIntrinsics[-1 - mxCompartmentGlobalStackIndex]
+
+#if mxExplicitResourceManagement
+#define mxSuppressedErrorPrototype the->stackIntrinsics[-1 - mxSuppressedErrorPrototypeStackIndex]
+#define mxDisposableStackPrototype the->stackIntrinsics[-1 - mxDisposableStackPrototypeStackIndex]
+#define mxAsyncDisposableStackPrototype the->stackIntrinsics[-1 - mxAsyncDisposableStackPrototypeStackIndex]
+#endif
 
 #define mxID(ID) ((txID)(ID))
 

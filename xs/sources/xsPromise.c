@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,6 +38,9 @@
 #include "xsAll.h"
 
 //#define mxPromisePrint 1
+#ifndef mxReportUnhandledRejections
+#define mxReportUnhandledRejections 0
+#endif
 
 static void fxAddUnhandledRejection(txMachine* the, txSlot* promise);
 static void fxCombinePromises(txMachine* the, txInteger which);
@@ -115,7 +118,7 @@ txSlot* fxNewPromiseInstance(txMachine* the)
 	/* RESULT */
 	slot = slot->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG;
-#ifdef mxDebug
+#if mxReportUnhandledRejections
 	/* ENVIRONMENT */
 	slot = slot->next = fxNewSlot(the);
 	slot->flag = XS_INTERNAL_FLAG;
@@ -226,13 +229,27 @@ void fxCheckUnhandledRejections(txMachine* the, txBoolean atExit)
 	txSlot** address = &list->value.reference->next;
 	txSlot* slot;
 	if (atExit) {
+		txIndex count = 0;
 		while ((slot = *address)) {
+		#if mxReportUnhandledRejections
+			if (slot->value.weakRef.target == C_NULL) {
+				fprintf(stderr, "# garbage collected promise\n");
+			}
+			else {
+				txSlot* property = mxPromiseEnvironment(slot->value.weakRef.target);
+				if (property && property->ID) {
+					fprintf(stderr, "%s:%d\n", fxGetKeyName(the, property->ID), property->value.environment.line);
+				}
+			}
+		#endif
 			slot = slot->next;
 			*address = slot->next;
 			mxException.value = slot->value;
 			mxException.kind = slot->kind;
-			fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
+			count++;
 		}
+		if (count > 0)
+			fxAbort(the, XS_UNHANDLED_REJECTION_EXIT);
 	}
 	else {
 		while ((slot = *address)) {
@@ -561,24 +578,34 @@ void fxPromiseThen(txMachine* the, txSlot* promise, txSlot* onFullfilled, txSlot
 	
 	reaction = fxNewInstance(the);
 	slot = reaction->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG;
 	if (resolveFunction) {
 		slot->kind = resolveFunction->kind;
 		slot->value = resolveFunction->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->flag = XS_INTERNAL_FLAG;
 	if (rejectFunction) {
 		slot->kind = rejectFunction->kind;
 		slot->value = rejectFunction->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->ID = mxID(__onFullfilled_);
 	if (onFullfilled) {
 		slot->kind = onFullfilled->kind;
 		slot->value = onFullfilled->value;
 	}
 	slot = slot->next = fxNewSlot(the);
+	slot->ID = mxID(__onRejected_);
 	if (onRejected) {
 		slot->kind = onRejected->kind;
 		slot->value = onRejected->value;
+	}
+	if (resolveFunction) {
+		slot = slot->next = fxNewSlot(the);
+		slot->ID = mxID(__result_);
+		slot->kind = mxResult->kind;
+		slot->value = mxResult->value;
 	}
 		
 	status = mxPromiseStatus(promise);
@@ -1136,6 +1163,9 @@ void fxQueueJob(txMachine* the, txInteger count, txSlot* promise)
 		}
 #ifdef mxPromisePrint
 		fprintf(stderr, "fxQueueJob %d\n", promise->next->ID);
+#endif
+#ifdef mxInstrument	
+	the->promisesSettledCount += 1;
 #endif
 	}
 	if (mxPendingJobs.value.reference->next == NULL) {

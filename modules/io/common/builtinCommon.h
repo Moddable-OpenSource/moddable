@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Moddable Tech, Inc.
+ * Copyright (c) 2019-2023 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,7 +22,7 @@
 #define __BUILTINCOMMON_H__
 
 #if ESP32
-	#if kCPUESP32C3
+	#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
 		#define kPinBanks (1)
 	#else
 		#define kPinBanks (2)

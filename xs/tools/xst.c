@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -200,8 +200,12 @@ static void fx_evalScript(xsMachine* the);
 static void fx_fillBuffer(txMachine *the);
 void fx_nop(xsMachine *the);
 void fx_assert_throws(xsMachine *the);
+static void fx_memoryFail(txMachine *the);
+extern int gxStress;
+static int gxMemoryFail;
 #endif
 static void fx_gc(xsMachine* the);
+static void fx_runScript(xsMachine* the);
 static void fx_print(xsMachine* the);
 
 extern void fx_clearTimer(txMachine* the);
@@ -335,7 +339,6 @@ int main(int argc, char* argv[])
 		xsMachine* machine;
 		fxInitializeSharedCluster();
         machine = xsCreateMachine(creation, "xst", NULL);
- 		fxBuildAgent(machine);
  		if (profiling)
 			fxStartProfiling(machine);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
@@ -345,20 +348,24 @@ int main(int argc, char* argv[])
 		{
 			xsVars(2);
 			xsTry {
+ 				fxBuildAgent(machine);
 #if FUZZING
 				xsResult = xsNewHostFunction(fx_gc, 0);
 				xsSet(xsGlobal, xsID("gc"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+#if FUZZILLI
+				xsResult = xsNewHostFunction(fx_memoryFail, 1);
+				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
+#endif
 
-				xsResult = xsNewHostFunction(fx_harden, 1);
-				xsDefine(xsGlobal, xsID("harden"), xsResult, xsDontEnum);
-				xsResult = xsNewHostFunction(fx_lockdown, 0);
-				xsDefine(xsGlobal, xsID("lockdown"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_petrify, 1);
 				xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 				xsResult = xsNewHostFunction(fx_mutabilities, 1);
 				xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+				gxStress = 0;
+				gxMemoryFail = 0;
 #endif
 
 				xsVar(0) = xsUndefined;
@@ -606,10 +613,16 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxLastProperty(the, fxToInstance(the, global));
 	slot = fxNextSlotProperty(the, slot, the->stack, xsID("$262"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_print, 1, xsID("print"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_runScript, 1, xsID("runScript"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_clearTimer, 1, xsID("clearTimeout"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setInterval, 1, xsID("setInterval"), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, fx_setTimeout, 1, xsID("setTimeout"), XS_DONT_ENUM_FLAG);
+	
+	slot = fxNextHostFunctionProperty(the, slot, fx_harden, 1, xsID("harden"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_lockdown, 0, xsID("lockdown"), XS_DONT_ENUM_FLAG);
+	
+	slot = fxNextHostFunctionProperty(the, slot, fx_unicodeCompare, 2, xsID("unicodeCompare"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();
@@ -1469,10 +1482,9 @@ void fx_done(xsMachine* the)
 
 void fx_gc(xsMachine* the)
 {
-#if !FUZZING
+#if !FUZZILLI
 	xsCollectGarbage();
 #else
-	extern int gxStress;
 	xsResult = xsInteger(gxStress);
 
 	xsIntegerValue c = xsToInteger(xsArgc);
@@ -1556,6 +1568,20 @@ void fx_print(xsMachine* the)
 	fprintf(stdout, "\n");
 }
 
+void fx_runScript(xsMachine* the)
+{
+	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
+	char path[C_PATH_MAX];
+	txUnsigned flags = mxProgramFlag | mxDebugFlag;
+	if (!c_realpath(fxToString(the, mxArgv(0)), path))
+		xsURIError("file not found");
+	txScript* script = fxLoadScript(the, path, flags);
+	mxModuleInstanceInternal(mxProgram.value.reference)->value.module.id = fxID(the, path);
+	fxRunScript(the, script, mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, mxProgram.value.reference);
+	mxPullSlot(mxResult);
+}
+
+
 /* TIMER */
 
 static txHostHooks gxTimerHooks = {
@@ -1565,6 +1591,8 @@ static txHostHooks gxTimerHooks = {
 
 void fx_clearTimer(txMachine* the)
 {
+	if (mxIsNull(mxArgv(0)))
+		return;
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
 		txJob* job = fxGetHostData(the, mxArgv(0));
@@ -1612,6 +1640,8 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 	c_memset(job, 0, sizeof(txJob));
 	job->the = the;
 	c_gettimeofday(&tv, NULL);
+	if (c_isnan(interval) || (interval < 0))
+		interval = 0;
 	if (repeat)
 		job->interval = interval;
 	job->when = ((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec) / 1000.0) + interval;
@@ -1638,6 +1668,35 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 #include <fcntl.h>
 #include <assert.h>
 
+void *fxMemMalloc(size_t size)
+{
+	if (gxMemoryFail && !--gxMemoryFail)
+		return NULL;
+
+	return malloc(size);
+}
+
+void *fxMemCalloc(size_t a, size_t b)
+{
+	if (gxMemoryFail && !--gxMemoryFail)
+		return NULL;
+
+	return calloc(a, b);
+}
+
+void *fxMemRealloc(void *a, size_t b)
+{
+	if (gxMemoryFail && !--gxMemoryFail)
+		return NULL;
+ 
+	return realloc(a, b);
+}
+
+void fxMemFree(void *m)
+{
+	free(m);
+}
+
 #define SHM_SIZE 0x100000
 #define MAX_EDGES ((SHM_SIZE - 4) * 8)
 
@@ -1655,7 +1714,7 @@ void __sanitizer_cov_reset_edgeguards()
 	for (uint32_t *x = __edges_start; x < __edges_stop && N < MAX_EDGES; x++)
 		*x = ++N;
 }
-#ifndef __linux__
+
 void __sanitizer_cov_trace_pc_guard_init(uint32_t *start, uint32_t *stop)
 {
 	// Avoid duplicate initialization
@@ -1707,7 +1766,6 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard)
 	__shmem->edges[index / 8] |= 1 << (index % 8);
 	*guard = 0;
 }
-#endif
 
 #define REPRL_CRFD 100
 #define REPRL_CWFD 101
@@ -1724,6 +1782,16 @@ void fx_fuzzilli(xsMachine* the)
 				*((volatile char *)0) = 0;
 				break;
  			case 1: {
+				// check sanitizer
+				// this code is so buggy its bound to trip
+				// different sanitizers
+				size_t s = -1;
+				txSize txs = s + 1;
+				char buf[2];
+				char* bufptr = &buf;
+				bufptr[4] = (buf[0] == buf[1]) ? 0 : 1;
+				*((volatile char *)0) = 0;
+
 				// check ASAN
 				char *data = malloc(64);
 				free(data);
@@ -1800,6 +1868,9 @@ int fuzz(int argc, char* argv[])
 		}
 		buffer[script_size] = 0;	// required when debugger active
 
+		gxStress = 0;
+		gxMemoryFail = 0;
+
 		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
 		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
 		{
@@ -1827,6 +1898,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("print"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+				xsResult = xsNewHostFunction(fx_memoryFail, 1);
+				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
 
 				txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 				txStringCStream aStream;
@@ -1845,10 +1918,12 @@ int fuzz(int argc, char* argv[])
 				error = 1;
 			}
 		}
+		gxMemoryFail = 0;
 		fxCheckUnhandledRejections(machine, 1);
 		xsEndHost(machine);
 		}
 		xsEndMetering(machine);
+		gxMemoryFail = 0;
 		fxDeleteScript(machine->script);
 		int status = (machine->abortStatus & 0xff) << 8;
 		if (!status && error)
@@ -1994,7 +2069,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 
 #endif 
 
-#if 1 || FUZZING || FUZZILLI
+#if FUZZING || FUZZILLI
 
 void fx_fillBuffer(txMachine *the)
 {
@@ -2020,6 +2095,18 @@ void fx_assert_throws(xsMachine *the)
 	}
 	mxCatch(the) {
 	}
+}
+
+void fx_memoryFail(txMachine *the)
+{
+	xsResult = xsInteger(gxMemoryFail);
+	if (!xsToInteger(xsArgc))
+		return;
+
+	int count = xsToInteger(xsArg(0));
+	if (count < 0)
+		xsUnknownError("invalid");
+	gxMemoryFail = count;
 }
 
 #endif

@@ -32,6 +32,11 @@
 			"config": {
 				"rotation": 90
 			}
+		},
+		"esp32/esp32c6_gc9a01": {
+			"config": {
+				"rotation": 0
+			}
 		}
 	}
 }

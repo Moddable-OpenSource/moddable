@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,6 +25,7 @@
 */
 
 import Timer from "timer";
+import Time from "time";
 
 const Overhead = 8;
 const BufferFormat = "buffer";
@@ -132,8 +133,8 @@ class MQTTClient {
 		socket.format = BufferFormat;
 
 		if ("connected" !== this.#state) {
-			const remaining = this.#options.remaining, byteLength = data.byteLength;
-			if (("publishing" !== this.#state) || options || (byteLength > remaining))
+			const byteLength = data.byteLength;
+			if (("publishing" !== this.#state) || options || (byteLength > this.#options.remaining))
 				throw new Error;
 
 			socket.write(data);
@@ -143,7 +144,6 @@ class MQTTClient {
 			if (0 === this.#options.remaining) {
 				delete this.#options.remaining;
 				this.#state = "connected";
-				this.#options.last = Date.now();
 			}
 				
 			return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
@@ -247,8 +247,12 @@ class MQTTClient {
 				this.#writable -= length;
 				} break;
 
-			case MQTTClient.DISCONNECT:
+
 			case MQTTClient.PINGREQ:
+				if (this.#options.keepalive)
+					this.#options.keepalive.write = Time.ticks;
+				// fall through
+			case MQTTClient.DISCONNECT:
 				if (2 > this.#writable)
 					throw new Error("overflow");
 
@@ -260,28 +264,41 @@ class MQTTClient {
 				throw new Error("unknown");
 		}
 
-		if ("connected" === this.#state)
-			this.#options.last = Date.now();
-
 		return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
 	}
-	read(count) {
+	read(count = this.#payload) {
+		let buffer;
+		if ("object" === typeof count) {
+			buffer = count;
+			count = buffer.byteLength;
+
+			if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+				throw new Error("invalid buffer");
+		}
+
 		if (count > this.#payload) {
 			count = this.#payload;
 			if (!count)
 				return;
+
+			if (buffer && (count !== buffer.byteLength)) {
+				if (ArrayBuffer.isView(buffer))
+					buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
+				else
+					buffer = new Uint8Array(buffer, 0, count);
+			}
 		}
 
 		this.#readable -= count;
 		this.#payload -= count;
 		this.#socket.format = BufferFormat;
-		const result = this.#socket.read(count);
+		const result = this.#socket.read(buffer ?? count);
 
 		if ((0 === this.#payload) && this.#parse) {	// full message read and not currently running the parser
 			this.#options.timer ??= Timer.set(() => {
 				delete this.#options.timer;
 				if (this.#readable > 0)
-					this.#onReadable(this.#readable);		// this results in this.#options.last being advanced inaccurately
+					this.#onReadable(this.#readable);
 			});
 		}
 
@@ -598,7 +615,7 @@ class MQTTClient {
 			Timer.clear(options.connecting);
 			delete options.connecting;
 
-			const keepalive = Math.round(options.keepalive / 1000);
+			const keepalive = Math.ceil(options.keepalive / 1000);
 			const id = makeStringBuffer(options.id);
 			const user = makeStringBuffer(options.user);
 			const password = makeStringBuffer(options.password);
@@ -646,9 +663,9 @@ class MQTTClient {
 			delete options.will;
 
 			if (keepalive) {
-				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 500);
+				options.keepalive = Timer.repeat(() => this.#keepalive(), keepalive * 250);
 				options.keepalive.interval = keepalive * 1000;
-				options.last = Date.now();
+				options.keepalive.read = options.keepalive.write = Time.ticks;
 			}
 
 			this.#state = "login";
@@ -676,6 +693,10 @@ class MQTTClient {
 	#parsed(msg) {
 		const operation = msg.operation;
 // 		traceOperation(false, operation);
+
+		if ((operation == MQTTClient.PINGRESP) && this.#options.keepalive)
+			this.#options.keepalive.read = Time.ticks;
+
 		if (MQTTClient.CONNACK === operation) {
 			if (msg.returnCode)
 				return void this.#onError("connection rejected")
@@ -709,17 +730,18 @@ class MQTTClient {
 		return true;
 	}
 	#keepalive() {
-		const options = this.#options;
-		const interval = options.keepalive.interval;
-		const now = Date.now();
-		if ((options.last + (interval >> 1)) > now)
-			return;		// wrote control packet within the keepalive interval
+		const options = this.#options, keepalive = options.keepalive, interval = keepalive.interval;
+		const now = Time.ticks;
 
-		if ((options.last + (interval + (interval >> 1))) < now)
-			return void this.#onError("time out"); // no response in too long
+		if (Time.delta(keepalive.read, now) >= (keepalive.interval + (keepalive.interval >> 1)))
+			return void this.#onError("time out");	// no control packet received in 1.5x keepalive interval (expected PINGRESP)
 
-		for (let i = 0, queue = this.#options.pending, length = queue.length; i < length; i++) {
-			if (queue[i].keepalive && (MQTTClient.PINGREQ === queue[i].operation))
+		if (Time.delta(keepalive.write, now) < (((keepalive.interval >> 2) * 3) - 500))
+			return;
+
+		// haven't sent a ping in (just under) 3/4 the keep alive interval
+		for (let i = 0, pending = options.pending, length = pending.length; i < length; i++) {
+			if (pending[i].keepalive && (MQTTClient.PINGREQ === pending[i].operation))
 				return void this.#onError("time out"); // unsent keepalive ping, exit
 		}
 

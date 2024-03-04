@@ -148,6 +148,9 @@ void fxBuildGlobal(txMachine* the)
 
 	mxPush(mxObjectPrototype);
 	slot = fxNewObjectInstance(the);
+#if mxExplicitResourceManagement
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_dispose), 0, mxID(_Symbol_dispose), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	mxPull(mxIteratorPrototype);
 	
@@ -295,6 +298,13 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	mxPop();
 	return instance;
 }
+
+#if mxExplicitResourceManagement
+void fx_Iterator_dispose(txMachine* the)
+{	
+	fxIteratorReturn(the, mxThis);
+}
+#endif
 
 void fx_Iterator_iterator(txMachine* the)
 {

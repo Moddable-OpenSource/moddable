@@ -22,7 +22,7 @@ then
 	rm "$volumefile" 2> /dev/null
 fi
 
-volume=$( df -P | grep "$name" | awk '{print($6)}' )
+volume=$( df -P 2>/dev/null | grep "$name" | awk '{print($6)}' )
 set -o pipefail
 
 if [[ $MISSING == 0 ]]
@@ -32,14 +32,14 @@ then
 	while [ -z "$volume"  ]; do
 	        echo -n "."
 	        sleep .1
-	        volume=$( df -P | grep "$name" | awk '{print($6)}' )
+	        volume=$( df -P 2>/dev/null | grep "$name" | awk '{print($6)}' )
 	done
 else
 	echo -n "Waiting for copy to complete."
 	while [ ! -z "$volume"  ]; do
 	        echo -n "."
 	        sleep .1
-	        volume=$( df -P | grep "$name" | awk '{print($6)}' )
+	        volume=$( df -P 2>/dev/null | grep "$name" | awk '{print($6)}' )
 	done
 fi
 echo

@@ -67,7 +67,7 @@
 			"pin": 15
 		},
 		"audioIn": {
-			"sampleRate": 11025,
+			"sampleRate": 22050,
 			"bitsPerSample": 16,
 			"i2s": {
 				"adc": 1

@@ -114,6 +114,7 @@ MODULES = \
 	$(MOD_DIR)\commodetto\ParseBMP.xsb \
 	$(MOD_DIR)\commodetto\PixelsOut.xsb \
 	$(MOD_DIR)\commodetto\Poco.xsb \
+	$(MOD_DIR)\commodetto\PocoCore.xsb \
 	$(MOD_DIR)\commodetto\ReadJPEG.xsb \
 	$(MOD_DIR)\commodetto\ReadPNG.xsb \
 	$(MOD_DIR)\commodetto\RLE4Out.xsb \
@@ -129,8 +130,10 @@ MODULES = \
 	$(MOD_DIR)\image2cs.xsb \
 	$(MOD_DIR)\mcbundle.xsb \
 	$(MOD_DIR)\mcconfig.xsb \
+	$(MOD_DIR)\mchex.xsb \
 	$(MOD_DIR)\mclocal.xsb \
 	$(MOD_DIR)\mcmanifest.xsb \
+	$(MOD_DIR)\mcpack.xsb \
 	$(MOD_DIR)\mcrez.xsb \
 	$(MOD_DIR)\nodered2mcu.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
@@ -147,7 +150,7 @@ MODULES = \
 	$(TMP_DIR)\commodettoBufferOut.xsi \
 	$(TMP_DIR)\commodettoColorCellOut.xsi \
 	$(TMP_DIR)\commodettoConvert.xsi \
-	$(TMP_DIR)\commodettoPoco.xsi \
+	$(TMP_DIR)\commodettoPocoCore.xsi \
 	$(TMP_DIR)\commodettoPocoBlit.xsi \
 	$(TMP_DIR)\commodettoParseBMP.xsi \
 	$(TMP_DIR)\commodettoParseBMF.xsi \
@@ -167,6 +170,7 @@ PRELOADS =\
 	-p commodetto\ParseBMF.xsb\
 	-p commodetto\ParseBMP.xsb\
 	-p commodetto\Poco.xsb\
+	-p commodetto\PocoCore.xsb\
 	-p commodetto\ReadPNG.xsb\
 	-p commodetto\RLE4Out.xsb\
 	-p wavreader.xsb\
@@ -191,12 +195,13 @@ OBJECTS = \
 	$(TMP_DIR)\commodettoConvert.obj \
 	$(TMP_DIR)\commodettoParseBMP.obj \
 	$(TMP_DIR)\commodettoParseBMF.obj \
-	$(TMP_DIR)\commodettoPoco.obj \
+	$(TMP_DIR)\commodettoPocoCore.obj \
 	$(TMP_DIR)\commodettoPocoBlit.obj \
 	$(TMP_DIR)\commodettoReadJPEG.obj \
 	$(TMP_DIR)\commodettoReadPNG.obj \
 	$(TMP_DIR)\cfeBMF.obj \
 	$(TMP_DIR)\image2cs.obj \
+	$(TMP_DIR)\mcpack.obj \
 	$(TMP_DIR)\miniz.obj \
 	$(TMP_DIR)\modBase64.obj \
 	$(TMP_DIR)\modInstrumentation.obj \
@@ -212,7 +217,9 @@ COMMANDS = \
 	$(BIN_DIR)\image2cs.bat \
 	$(BIN_DIR)\mcbundle.bat \
 	$(BIN_DIR)\mcconfig.bat \
+	$(BIN_DIR)\mchex.bat \
 	$(BIN_DIR)\mclocal.bat \
+	$(BIN_DIR)\mcpack.bat \
 	$(BIN_DIR)\mcrez.bat \
 	$(BIN_DIR)\nodered2mcu.bat \
 	$(BIN_DIR)\png2bmp.bat \
@@ -347,6 +354,9 @@ $(MOD_DIR)\commodetto\PixelsOut.xsb : $(COMMODETTO)\commodettoPixelsOut.js
 $(MOD_DIR)\commodetto\Poco.xsb : $(COMMODETTO)\commodettoPoco.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
+$(MOD_DIR)\commodetto\PocoCore.xsb : $(COMMODETTO)\commodettoPocoCore.js
+	@echo # xsc $(**F)
+	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
 $(MOD_DIR)\commodetto\ReadJPEG.xsb : $(COMMODETTO)\commodettoReadJPEG.js
 	@echo # xsc $(**F)
 	$(BIN_DIR)\xsc $** -c -d -e -o $(MOD_DIR)\commodetto -r $(@B)
@@ -433,9 +443,15 @@ $(BIN_DIR)\mcbundle.bat :
 $(BIN_DIR)\mcconfig.bat :
 	@echo # mcconfig.bat
 	echo @%~dp0\tools mcconfig %%* 1> $(BIN_DIR)\mcconfig.bat
+$(BIN_DIR)\mchex.bat :
+	@echo # mchex.bat
+	echo @%~dp0\tools mchex %%* 1> $(BIN_DIR)\mchex.bat
 $(BIN_DIR)\mclocal.bat :
 	@echo # mclocal.bat
 	echo @%~dp0\tools mclocal %%* 1> $(BIN_DIR)\mclocal.bat
+$(BIN_DIR)\mcpack.bat :
+	@echo # mcpack.bat
+	echo @%~dp0\tools mcpack %%* 1> $(BIN_DIR)\mcpack.bat
 $(BIN_DIR)\mcrez.bat :
 	@echo # mcrez.bat
 	echo @%~dp0\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat

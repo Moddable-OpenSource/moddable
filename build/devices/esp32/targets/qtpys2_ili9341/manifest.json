@@ -1,0 +1,61 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32s2",
+		"USE_USB": "1",
+		"PROGRAMMING_VID": "303a",
+		"PROGRAMMING_PID": "0002",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RESET button to begin.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RESET button."
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "ili9341",
+		"led": {
+			"power": 38,
+			"pin": 39,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 524288,
+		"chunk": {
+			"initial": 131072,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 8192,
+			"incremental": 64
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 41,
+			"scl_pin": 40
+		},
+		"spi": {
+			"miso_pin":37,
+			"mosi_pin":35,
+			"sck_pin": 36
+		},
+		"ili9341": {
+            "hz": 40000000,
+			"cs_pin": 16,
+			"dc_pin": 5,
+			"spi_port": 2
+		}
+	}
+}

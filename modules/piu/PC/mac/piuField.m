@@ -52,19 +52,21 @@ struct PiuFieldStruct {
     return success;
 }
 - (void)controlTextDidBeginEditing:(NSNotification *)notification {
-//    NSLog(@"controlTextDidBeginEditing: stringValue == %@", [self stringValue]);
+//   NSLog(@"controlTextDidBeginEditing: stringValue == %@", [self stringValue]);
 }
 - (void)controlTextDidEndEditing:(NSNotification *)notification {
 //   NSLog(@"controlTextDidEndEditing: stringValue == %@", [self stringValue]);
-	if ((*piuField)->behavior) {
-		xsBeginHost((*piuField)->the);
-		xsVars(2);
-		xsVar(0) = xsReference((*piuField)->behavior);
-		if (xsFindResult(xsVar(0), xsID_onEnter)) {
-			xsVar(1) = xsReference((*piuField)->reference);
-			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+    if ( [[[notification userInfo] objectForKey:@"NSTextMovement"] intValue] == NSReturnTextMovement ) {
+		if ((*piuField)->behavior) {
+			xsBeginHost((*piuField)->the);
+			xsVars(2);
+			xsVar(0) = xsReference((*piuField)->behavior);
+			if (xsFindResult(xsVar(0), xsID_onEnter)) {
+				xsVar(1) = xsReference((*piuField)->reference);
+				(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+			}
+			xsEndHost((*piuField)->the);
 		}
-		xsEndHost((*piuField)->the);
 	}
 }
 - (void)controlTextDidChange:(NSNotification *)notification {
@@ -241,6 +243,7 @@ void PiuField_create(xsMachine* the)
     [textField setDrawsBackground:YES];
 	[textField setFocusRingType:NSFocusRingTypeNone];
 	[textField setMaximumNumberOfLines:1];
+	[textField setUsesSingleLineMode:YES];
 	textField.piuField = self;
 
 	NSPiuClipView *clipView = [[NSPiuClipView alloc] init];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,6 +53,10 @@
 
 #include "mc.defines.h"
 
+#if MODDEF_ECMA419_ENABLED
+	#include "common/builtinCommon.h"
+#endif
+
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
 #endif
@@ -66,10 +70,11 @@ extern void mc_setup(xsMachine *the);
 	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 #endif
 
-#if !MODDEF_XS_TEST
-static
+#if MODDEF_SOFTRESET
+	uint8_t gSoftReset;
 #endif
-	xsMachine *gThe;		// the main XS virtual machine running
+
+static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -118,18 +123,22 @@ static void debug_task(void *pvParameter)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	esp_task_wdt_add(NULL);
 #endif
 
 	while (true) {
-		gThe = modCloneMachine(0, 0, 0, 0, NULL);
+#if MODDEF_SOFTRESET
+		gSoftReset = 0;
+#endif
+
+		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
-#if MODDEF_XS_TEST
+#if MODDEF_SOFTRESET
 		xsMachine *the = gThe;
-		while (gThe) {
+		while (!gSoftReset) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
@@ -234,6 +243,7 @@ void app_main() {
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
+	uartConfig.source_clk = UART_SCLK_DEFAULT;
 //	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
 	uartConfig.source_clk = UART_SCLK_APB;
 
@@ -248,6 +258,10 @@ void app_main() {
 	QueueHandle_t uartQueue;
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
+	#if MODDEF_ECMA419_ENABLED
+		builtinUsePin(USE_UART_TX);
+		builtinUsePin(USE_UART_RX);
+	#endif
 #else
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif

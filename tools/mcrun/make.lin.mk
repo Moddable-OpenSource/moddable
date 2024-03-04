@@ -19,10 +19,24 @@
 
 .PHONY: all	
 
-all: $(BIN_DIR)/mc.xsa
-	$(shell nohup $(SIMULATOR) $(BIN_DIR)/mc.xsa > /dev/null 2>&1 &)
+ARCHIVE = $(BIN_DIR)/mc.xsa
 
-$(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
+.PHONY: all	build clean xsbug
+
+all: build
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
+
+build: $(ARCHIVE)
+
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+
+xsbug:
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
+
+$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
 

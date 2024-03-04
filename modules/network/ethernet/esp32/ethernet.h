@@ -22,5 +22,5 @@
 #include "esp_eth_phy.h"
 #include "driver/spi_master.h"
 
-esp_eth_mac_t* mod_ethernet_get_mac(spi_device_handle_t spi_handle, int interrupt_pin);
+esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, int interrupt_pin);
 esp_eth_phy_t* mod_ethernet_get_phy();

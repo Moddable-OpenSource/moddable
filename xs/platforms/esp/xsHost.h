@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,6 +40,47 @@
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 #endif
+
+/* CPU */
+
+#if !ESP32
+	// esp8266
+#elif ESP32 == 6
+	#define kCPUESP32H2 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 5
+	#define kCPUESP32C6 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 4
+	#define kCPUESP32C3 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+	#define XT_STACK_EXTRA_CLIB	1024
+	#define XT_STACK_EXTRA 1024
+#elif ESP32 == 3
+	#define kCPUESP32S3 1
+	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr
+#elif ESP32 == 2
+	#define kCPUESP32S2 1
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+#elif ESP32 == 1
+	#define kCPUESP32	1
+	#define kTargetCPUCount 2
+	#define kESP32TimerDef	int_clr_timers
+#else
+	#error undefined platform
+	#define kTargetCPUCount 1
+	#define kESP32TimerDef	int_clr
+#endif
+
 
 /*
 	link locations
@@ -195,8 +236,13 @@ extern int modTimersNext(void);
 #else
 	#define modCriticalSectionDeclare
 	extern portMUX_TYPE gCriticalMux;
-	#define modCriticalSectionBegin() portENTER_CRITICAL(&gCriticalMux)
-	#define modCriticalSectionEnd() portEXIT_CRITICAL(&gCriticalMux)
+#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
+	#define modCriticalSectionBegin()	portENTER_CRITICAL_SAFE(&gCriticalMux)
+	#define modCriticalSectionEnd()		portEXIT_CRITICAL_SAFE(&gCriticalMux)
+#else
+	#define modCriticalSectionBegin() vPortEnterCriticalSafe(&gCriticalMux)
+	#define modCriticalSectionEnd() vPortExitCriticalSafe(&gCriticalMux)
+#endif
 #endif
 
 /*
@@ -254,7 +300,7 @@ double __ieee754_fmod_patch(double x, double y);
 #if !ESP32
 	#define modWatchDogReset() system_soft_wdt_feed()
 #else
-	#if CONFIG_ESP_TASK_WDT
+	#if CONFIG_ESP_TASK_WDT_EN
 		#define modWatchDogReset() esp_task_wdt_reset()
 	#else
 		#define modWatchDogReset()
@@ -300,6 +346,9 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 
 	#define modTaskGetCurrent() ((uintptr_t)xTaskGetCurrentTaskHandle())
 #endif
+
+extern uint8_t gSoftReset;
+#define modSoftReset() gSoftReset = 1
 
 /*
 	c libraries
@@ -460,7 +509,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 
 /* READ MEMORY */
 
-#if ESP32
+#if ESP32 && !defined(kCPUESP32C6) && !defined(kCPUESP32H2)
 	#define c_read8(POINTER) (*((uint8_t *)(POINTER)))
 	#define c_read16(POINTER) (*((uint16_t *)(POINTER)))
 	#define c_read32(POINTER) (*((uint32_t *)(POINTER)))
@@ -534,30 +583,6 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 uint8_t modSPIErase(uint32_t offset, uint32_t size);
-
-/* CPU */
-
-#if ESP32 == 4
-	#define kCPUESP32C3 1
-	#define kTargetCPUCount 1
-	#define kESP32TimerDef	int_clr
-	#define XT_STACK_EXTRA_CLIB	1024
-	#define XT_STACK_EXTRA 1024
-#elif ESP32 == 3
-	#define kCPUESP32S3 1
-	#define kTargetCPUCount 2
-	#define kESP32TimerDef	int_clr
-#elif ESP32 == 2
-	#define kCPUESP32S2 1
-	#define kTargetCPUCount 1
-	#define kESP32TimerDef	int_clr
-#elif ESP32 == 1
-	#define kTargetCPUCount 2
-	#define kESP32TimerDef	int_clr_timers
-#else
-	#define kTargetCPUCount 1
-	#define kESP32TimerDef	int_clr
-#endif
 
 #ifdef __cplusplus
 }

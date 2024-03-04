@@ -44,7 +44,7 @@ class TLSSocket {
 		}; 
 
 		this.#session = new Session({
-			tls_server_name: options.host,
+			serverName: options.host,		// serverName for SNI. This defaults it to host. Caller can override with options.secure.serverName
 			...options.secure,
 			protocolVersion: 0x303,
 			trace: false
@@ -107,7 +107,7 @@ class TLSSocket {
 		}
 
 		if (!this.#data && this.#socket.readable) {
-			this.#doRead = Timer.set(() => {
+			this.#doRead ??= Timer.set(() => {
 				this.#doRead = undefined;
 				if (this.#socket.readable)
 					this.#onReadable(this.#socket.readable);

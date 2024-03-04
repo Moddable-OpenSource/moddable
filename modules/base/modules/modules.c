@@ -37,7 +37,7 @@ void xs_modules_host(xsMachine *the)
 	}
 }
 
-#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
+#define mxArchiveHeaderSize (sizeof(Atom) + sizeof(Atom) + XS_VERSION_SIZE + sizeof(Atom) + XS_DIGEST_SIZE)
 
 void xs_modules_archive(xsMachine *the)
 {
@@ -50,6 +50,10 @@ void xs_modules_archive(xsMachine *the)
 		// NAME
 		p += c_read32be(p);
 		// SYMB
+		p += c_read32be(p);
+		// IDEN
+		p += c_read32be(p);
+		// MAPS
 		p += c_read32be(p);
 		// MODS
 		q = p + c_read32be(p);

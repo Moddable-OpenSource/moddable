@@ -1,6 +1,6 @@
 # Data
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: September 8, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: October 24, 2023
 
 ## Table of Contents
 
@@ -295,6 +295,6 @@ Include the module's manifest to use it in a project:
 
 `URL` implements the [URL class](https://developer.mozilla.org/en-US/docs/Web/API/URL) as [specified by WHATWG](https://url.spec.whatwg.org/#url-class). The implementation fully conforms to the standard with two exceptions: [Punycode](https://en.wikipedia.org/wiki/Punycode) and [IDNA](https://www.unicode.org/reports/tr46/) support are unimplemented. These are used primarily for the display and safe handling of user-entered URLs in browsers, which are not generally a concern on embedded systems. With some effort (and increase in code size), the implementation could support both.
 
-`URLSearchParams` implements the [URLSearchParams class](https://developer.mozilla.org/en-US/docs/Web/API/URL) as [specified by WHATWG](https://url.spec.whatwg.org/#urlsearchparams).
+`URLSearchParams` implements the [URLSearchParams class](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams) as [specified by WHATWG](https://url.spec.whatwg.org/#urlsearchparams).
 
 [Tests for both](https://github.com/Moddable-OpenSource/moddable/tree/public/tests/modules/data/url) are included in the Moddable SDK. They are based on the tests used to validate these APIs in web browsers.

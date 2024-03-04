@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,7 @@
  */
 
 import TextDecoder from "text/decoder"
-import TLSSocket from "tlssocket";
+import TLSSocket from "embedded:io/socket/tcp/tls";
 
 const http = new device.network.http.io({ 
 	...device.network.http,
@@ -42,8 +42,11 @@ for (let i = 0; i < 3; i++) {
 			const buffer = this.read(count);
 			trace(this.decoder.decode(buffer, {stream: true})); 
 		},
-		onDone() {
-			trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
+		onDone(error) {
+			if (error)
+				trace(error, `\n\n **ERROR ${i} **\n\n`);
+			else
+				trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
 		}
 	});
 }

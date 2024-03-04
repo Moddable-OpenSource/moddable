@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,12 +43,15 @@
 #include "mc.defines.h"
 
 #if ESP32
-#if ESP32 != 3
+#if ESP32 < 2
 	#include "esp32/rom/ets_sys.h"
 #endif
 	#include "nvs_flash/include/nvs_flash.h"
 	#include "esp_partition.h"
 	#include "esp_wifi.h"
+	#if MODDEF_XS_MODS
+		#include "spi_flash/include/spi_flash_mmap.h"
+	#endif
 #else
 	#include "tinyprintf.h"
 	#include "spi_flash.h"
@@ -217,18 +220,24 @@ const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
 
 void fxAbort(txMachine* the, int status)
 {
-#if MODDEF_XS_TEST
+#if MODDEF_XS_TEST && MODDEF_SOFTRESET
 	if (XS_DEBUGGER_EXIT == status) {
-		extern txMachine *gThe;
-		if (gThe == the) {
-			gThe = NULL;		// soft reset
-			return;
-		}
+		modSoftReset();
+		return;
 	}
+#endif
+
+#ifdef mxDebug
+	if ((XS_DEAD_STRIP_EXIT == status) && the->debugEval)
+		mxUnknownError("dead strip");
 #endif
 
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
 	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+
+	#ifdef MODDEF_XS_RESTARTON
+		#error RestartOn deprecated. Use abortHook instead.
+	#endif
 
 	#if MODDEF_XS_ABORTHOOK
 		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {

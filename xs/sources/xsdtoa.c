@@ -3705,9 +3705,11 @@ strtod2(const char *s00, char **se __XS__d)
 			if (c > '0' && c <= '9') {
 				L = c - '0';
 				s1 = s;
-				while((c = c_read8(++s)) >= '0' && c <= '9')
-					L = 10*L + c - '0';
-				if (s - s1 > 8 || L > 19999)
+				while((c = *++s) >= '0' && c <= '9') {
+					if (L <= 19999)
+						L = 10*L + c - '0';
+					}
+				if (L > 19999)
 					/* Avoid confusion from exponents
 					 * so large that e might overflow.
 					 */
@@ -5343,6 +5345,8 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 #ifndef SET_INEXACT
 #ifdef Check_FLT_ROUNDS
 	try_quick = Rounding == 1;
+#else
+	try_quick = 1;
 #endif
 #endif /*SET_INEXACT*/
 #endif
@@ -6315,15 +6319,6 @@ fx_dtoa(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve __XS
 static void fxDTOACleanup(txMachine* the, ThInfo* DTOA);
 static void fxDTOASetup(txMachine* the, ThInfo* DTOA);
 
-void* fxNew_dtoa(void* the) 
-{
-	return the;
-}
-
-void fxDelete_dtoa(void* dtoa) 
-{
-}
-
 void fxDTOACleanup(txMachine* the, ThInfo* DTOA)
 {
 	if (DTOA->dirty) {
@@ -6366,6 +6361,8 @@ static void* fxDTOAMalloc(size_t size, void* it)
 		block = c_malloc(size);
 		DTOA->dirty = 1;
 	}
+	if (!block)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	//fprintf(stderr, "malloc %zu %p\n", size, block);
 	return block;
 }
@@ -6390,7 +6387,16 @@ void fxDTOASetup(txMachine* the, ThInfo* DTOA)
 	c_memset(DTOA, 0, sizeof(ThInfo));
 	if (the) {
 		DTOA->the = the;
+#if mxNoChunks
+		// use XS stack for initial allocations, then switch to malloc.
+		// this tests both cases and allows ASAN to watch for out-of-bounds accesses in the malloc blocks
+		int available = (txByte*)(the->stack) - (txByte*)(the->stackBottom);
+		DTOA->current = (txByte*)(the->stack); 
+		if (available >= 192) 
+			DTOA->current -= 192;
+#else
 		DTOA->current = (txByte*)(the->stackBottom);
+#endif
 	}
 }
 

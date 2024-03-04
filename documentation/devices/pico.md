@@ -89,8 +89,11 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 | <img src="../assets/devices/pico-pimoroni-tiny-2040.png" width=150></a><br>Pimoroni<br>Tiny 2040 | `pico/tiny2040` | RGB LED, 1 button| <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2040?variant=39560012234835)</li> |
 | <img src="../assets/devices/ws_round.png" width=150></a><br>WAVESHARE<br>1.28inch Round LCD | `pico/ws_round`<BR>`pico/ws_round_touch` | 1.28" IPS 240×240 Round Display| <li>[WAVESHARE product page](https://www.waveshare.com/rp2040-lcd-1.28.htm)</li><li>[touch LCD version](https://www.waveshare.com/product/rp2040-touch-lcd-1.28.htm)</li> |
 | <img src="../assets/devices/pico-seeed-studio-xiao-rf2040.png" width=150></a><br>Seeed Studio<br>XIAO RP2040 | `pico/xiao_rp2040` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/XIAO-RP2040-v1-0-p-5026.html)</li> |
-| <img src="../assets/devices/pico-xiao-ili9341.png" width=140></a><BR>ili9341 | `pico/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
+| <img src="../assets/devices/pico-xiao-ili9341.png" width=140></a><BR>ili9341 | `pico/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide - Pico](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 | <img src="../assets/devices/pico-ili9341.png" width=140></a><BR>ili9341 | `pico/ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Generic 2.4" & 2.8" Displays (Resistive Touch) Wiring Guide - Pico](../displays/wiring-guide-generic-2.4-spi-pico.md)</li> |
+| <img src="../assets/devices/pico-ili9341-i2s-thumb.png" width=140></a><BR>ili9341 | `pico/ili9341_i2s` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color<br>potentiometer, buttons<br>i2s audio | [Wiring Guide](../displays/images/pico-ili9341-i2s-wiring.png) |
+
+pico-ili9341-i2s-thumb.png
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup

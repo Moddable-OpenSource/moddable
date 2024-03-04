@@ -90,21 +90,29 @@ CC = $(TOOLS_BIN)\arm-none-eabi-gcc
 CPP = $(TOOLS_BIN)\arm-none-eabi-g++
 LD = $(TOOLS_BIN)\arm-none-eabi-gcc
 AR = $(TOOLS_BIN)\arm-none-eabi-ar
+NM = $(TOOLS_BIN)\arm-none-eabi-nm
 OBJCOPY = $(TOOLS_BIN)\arm-none-eabi-objcopy
 SIZE = $(TOOLS_BIN)\arm-none-eabi-size
 
 PLATFORM_DIR = $(MODDABLE)\build\devices\nrf52
+!IF "$(UF2_VOLUME_NAME)"==""
 UF2_VOLUME_NAME = MODDABLE4
+!ENDIF
 WAIT_FOR_M4 = $(PLATFORM_DIR)\config\waitForVolumeWindows.bat $(UF2_VOLUME_NAME) $(TMP_DIR)\_drive.tmp $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
 DO_COPY = -for /F "tokens=1" %%i in ( $(TMP_DIR)\_drive.tmp ) do @copy $(BIN_DIR)\xs_nrf52.uf2 %%i
 ECHO_GIT_AND_SIZE = $(PLATFORM_DIR)\config\echoGitTagAndSizeWindows.bat $(TMP_DIR)\_size.tmp $(MODDABLE) $(NRF52_HEAP_SIZE)
 
 !IF "$(DEBUG)"=="1"
-DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 KILL_SERIAL_2_XSBUG =-tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i "serial2xsbug.exe" > nul) && taskkill /f /t /im "serial2xsbug.exe" >nul 2>&1
 WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2_VOLUME_NAME) $(TMP_DIR)\_port.tmp $(M4_VID) $(M4_PID)
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
 NORESTART = 
+!IF "$(XSBUG_LOG)"=="1"
+DO_XSBUG =
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && cd $(MODDABLE)\tools\xsbug-log && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && node xsbug-log start /B $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
+!ELSE
+DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
+!ENDIF
 !ELSE
 DO_XSBUG =
 KILL_SERIAL_2_XSBUG =
@@ -315,6 +323,7 @@ NRF_DRIVERS_OBJ = \
 	$(LIB_DIR)\nrfx_power.o \
 	$(LIB_DIR)\nrfx_ppi.o \
 	$(LIB_DIR)\nrfx_prs.o \
+	$(LIB_DIR)\nrfx_pwm.o \
 	$(LIB_DIR)\nrfx_qdec.o \
 	$(LIB_DIR)\nrfx_saadc.o \
 	$(LIB_DIR)\nrfx_spim.o \
@@ -530,8 +539,8 @@ C_DEFINES = \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1 \
 	$(FTDI_TRACE)
 !IF "$(INSTRUMENT)"=="1"
@@ -674,6 +683,10 @@ $(BIN_DIR)\xs_nrf52.uf2: $(BIN_DIR)\xs_nrf52.hex
 	@echo Making: $(BIN_DIR)\xs_nrf52.uf2 from xs_nrf52.hex
 	python $(UF2CONV) $(BIN_DIR)\xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)\xs_nrf52.uf2
 
+modLocation: $(TMP_DIR)\xs_nrf52.out
+	$(NM) $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_sym.tmp
+	$(PLATFORM_DIR)\config\echoModStart.bat $(TMP_DIR)\_sym.tmp
+
 $(TMP_DIR):
 	if not exist $(TMP_DIR)\$(NULL) mkdir $(TMP_DIR)
 
@@ -689,6 +702,8 @@ $(BIN_DIR)\xs_nrf52.bin: $(TMP_DIR)\xs_nrf52.hex
 $(BIN_DIR)\xs_nrf52.hex: $(TMP_DIR)\xs_nrf52.out
 	$(SIZE) -A $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_size.tmp
 	$(ECHO_GIT_AND_SIZE) $(USE_QSPI)
+	$(NM) $(TMP_DIR)\xs_nrf52.out > $(TMP_DIR)\_sym.tmp
+	$(PLATFORM_DIR)\config\echoModStart.bat $(TMP_DIR)\_sym.tmp
 	$(OBJCOPY) -O ihex $(TMP_DIR)\xs_nrf52.out $(BIN_DIR)\xs_nrf52.hex
 
 $(TMP_DIR)\xs_nrf52.out: $(FINAL_LINK_OBJ)

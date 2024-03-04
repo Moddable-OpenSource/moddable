@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
-Copyright 2021-2023 Moddable Tech, Inc.
-Revised: August 15, 2023
+Copyright 2021-2024 Moddable Tech, Inc.<BR>
+Revised: January 9, 2024
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -22,11 +22,20 @@ This document is a guide to building apps for the nRF52840 SoC from Nordic using
 
 * [Troubleshooting](#troubleshooting)
 * [Debugging Over Serial](#serial-debugging)
+* [Updating over BLE](#ble-update)
+	* [Ensure your nRF52 device has version 8 of the Bootloader ](#ble-update-1)
+	* [Update the nRF52 Bootloader](#ble-update-bootloader)
+	* [Build an update package](#ble-update-2)
+	* [Transfer the package to your mobile](#ble-update-3)
+	* [Put the device in DFU OTA mode](#ble-update-4)
+	* [Use nRF Connect for Mobile to Wirelessly update device](#ble-update-5)
+* [Installing Apps via Serial](#install-apps-via-serial)
 * [Debugging Native Code](#debugging-native-code)
 * [Bootloader](#bootloader)
 	* [Installing the bootloader](#install-bootloader)
 	* [Updating the bootloader](#update-bootloader)
 * [nRF5 SDK modifications](#nrf5-sdk-mods)
+
 
 <a id="overview"></a>
 ## Overview
@@ -64,16 +73,20 @@ nRF52840 has the following features:
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="./../assets/devices/moddable-four.png" width=125><BR>Moddable Four | `nrf52/moddable_four`<BR>`simulator/moddable_four` | - **1.28" 128x128 Monochrome**<BR>- Sharp Mirror display<BR>- BLE<BR>- Jogdial<BR>- Accelerometer<BR>- Button and LED<BR>- CR2032 coin-cell power<BR>- 12 External GPIO pins  | <li>[Moddable Four developer guide](./moddable-four.md)</li><li>[Moddable product page](https://www.moddable.com/purchase.php)</li> |
+| <img src="./../assets/devices/moddable-four.png" width=125><BR>Moddable Four | `nrf52/moddable_four`<BR>`simulator/moddable_four` | - **1.28" 128x128 Monochrome**<BR>- Sharp Mirror display<BR>- BLE<BR>- Jogdial<BR>- Accelerometer<BR>- Button and LED<BR>- CR2032 coin-cell power<BR>- 12 External GPIO pins  | <li>[Moddable Four developer guide](./moddable-four.md)</li><li>[Moddable product page](https://www.moddable.com/hardware)</li> |
+| <img src="./../assets/devices/moddable-display-4.png" height=150><BR>Moddable Display 4 | `nrf52/moddable_display_4`<BR>`simulator/moddable_four` | - **1.28" 128x128 Monochrome**<BR>- Sharp Mirror display<BR>- BLE<BR>- Jogdial<BR>- Accelerometer<BR>- Button and LED<BR>- CR2032 coin-cell power<BR>- 12 External GPIO pins  | <li>[Moddable Display developer guide](./moddable-display.md)</li><li>[Moddable product page](https://www.moddable.com/hardware)</li> |
 | <img src="./../assets/devices/nrf52-pca10056.png" width=125><BR>Nordic nRF52840 DK pca10056 | `nrf52/dk` | - 4 LEDs<BR>- 4 Buttons<BR>- All pins accessible<BR>- BLE<BR>- CR2032 coin-cell power  | <li>[Product page](https://www.nordicsemi.com/Products/Development-hardware/nrf52840-dk)</li> |
 | <img src="./../assets/devices/nrf52-sparkfun.png" width=125><BR>Sparkfun Pro nRF52840 Mini | `nrf52/sparkfun` | - 1 LED<BR>- 1 Button<BR>- BLE<BR>- JST Power connector<BR>- Qwiic connector<BR>- 17 GPIO pins  | <li>[Product page](https://www.sparkfun.com/products/15025)</li> |
 | <img src="./../assets/devices/nrf52-makerdiary.png" width=125><BR>Makerdiary nRF58240 MDK | `nrf52/makerdiary` | - 1  3-color LED<BR>- 1 Button<BR>- BLE<BR>- 12 GPIO pins  | <li>[Product page](https://makerdiary.com/products/nrf52840-mdk-usb-dongle)</li> |
 | <img src="./../assets/devices/nrf52-xiao.png" width=125><BR>Seeed Studio XIAO nRF52840 | `nrf52/xiao` | - 1 3-color LED<BR>- 1 Button<BR>- BLE<BR>- 11 GPIO pins  | <li>[Product page](https://www.seeedstudio.com/Seeed-XIAO-BLE-nRF52840-p-5201.html)</li> |
 | <img src="./../assets/devices/nrf52-itsybitsy.png" width=125><BR>Adafruit ItsyBitsy nRF52840 Express | `nrf52/itsybitsy` | - 1 LED<BR>- 1 Button<BR>- BLE<BR>- 21 GPIO pins  | <li>[Product page](https://www.adafruit.com/product/4481)</li> |
+| <img src="../assets/devices/xiao-qtpy-ili9341-thumbnail.png" width=140></a><BR>ili9341 | `nrf52/xiao_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 
 <a id="builds"></a>
 ## Build Types
 The nRF52 supports three kinds of builds: debug, instrumented, and release. Each is appropriate for different stages in the product development process. You select which kind of build you want from the command line when running `mcconfig`.
+
+> **Note**: Deep sleep APIs are only available instrumented and release builds.
 
 <a id="build-debug"></a>
 ### Debug
@@ -83,13 +96,13 @@ The `-d` option on the `mcconfig` command line selects a debug build.
 
 <a id="build-instrumented"></a>
 ### Instrumented
-A debug build is used for debugging native code. In an instrumented build, the JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second.
+An instrumented build is used for debugging native code. In an instrumented build, the JavaScript debugger is disabled. The instrumentation data usually available in xsbug is output to the serial console once a second. Deep sleep APIs are available in an instrumented build.
 
 The `-i` option on the `mcconfig` command line selects an instrumented build.
 
 <a id="build-release"></a>
 ### Release
-A release build is for production. In a release build, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed.
+A release build is for production. In a release build, the JavaScript debugger is disabled, instrumentation statistics are not collected, and serial console output is suppressed. Deep sleep APIs are available in a release build.
 
 Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a release. Note that `-r` specifies display rotation rather than selecting a release build.
 
@@ -135,7 +148,7 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
     Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 7. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 
@@ -179,14 +192,14 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
 5. Download the [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip) with Moddable Four modifications.
 
-    Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
+    Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 6. Setup the `NRF52_SDK_PATH` environment variable to point at your nRF5 SDK directory:
 
     ```text
-    set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_17_0_2_d674dde
+    set NRF52_SDK_PATH = %USERPROFILE%\nrf5\nRF5_SDK_17.0.2_d674dde
     ```
 
 7. Download and run the [Python installer](https://www.python.org/ftp/python/2.7.15/python-2.7.15.msi) for Windows. Choose the default options.
@@ -230,9 +243,9 @@ The Moddable SDK build for nRF52 currently uses Nordic nRF5 SDK v17.0.2.
 
 5. Download the [Nordic nRF5 SDK](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/nRF5_SDK_17.0.2_d674dde-mod.zip) with Moddable Four modifications.
 
-    Unzip the archive and copy the `nRF5_SDK_17_0_2_d674dde` directory into the `nrf5` directory.
+    Unzip the archive and copy the `nRF5_SDK_17.0.2_d674dde` directory into the `nrf5` directory.
 
-    > See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK.
+    > FYI – See the section [nRF5 SDK modifications](#nrf5-sdk-mods) for information on the modifications to the nRF5 SDK. These modifications have already been applied to the archive you just downloaded.
 
 6. Setup the `NRF_SDK_DIR` environment variable to point at the nRF5 SDK directory:
 
@@ -366,6 +379,263 @@ serial2xsbug $DEBUGGER_PORT $DEBUGGER_SPEED 8N1
 
 Reset the device, and it will connect to `xsbug`.
 
+<a id="install-apps-via-serial"></a>
+### Installing apps via Serial
+
+The bootloader and Moddable SDK support installation of firmware using the serial port. Note that a build of the bootloader supports either programming via USB or Serial but not both.
+
+To install via serial, you need to take the follow steps:
+
+1. Modify your bootloader `board.h` file
+2. Build and install the bootloader
+3. Build your Moddable apps with a special target
+
+These steps are explained in detail below.
+
+#### Bootloader
+
+The bootloader needs to be built specifically for the device being targeted. You need to modify the `BOARD` definitions file and use a build define.
+
+##### `BOARD` definitions
+
+Add this section to the `src/boards/<boardname>/board.h` file:
+
+```
+//--------------------------------------------------------------------+
+// UART update
+//--------------------------------------------------------------------+
+#define RX_PIN_NUMBER      31
+#define TX_PIN_NUMBER      30
+#define CTS_PIN_NUMBER     0
+#define RTS_PIN_NUMBER     0
+#define HWFC               false
+```
+
+Set the `RX_PIN_NUMBER` and `TX_PIN_NUMBER` to the appropriate values for your board.
+
+The status LED is useful as it blinks rapidly when the device is in programming mode. It is defined as `LED_PRIMARY_PIN` in this file.
+
+##### Build line
+
+When building the bootloader, add `SERIAL_DFU=1` to the build line. For example:
+
+```
+make BOARD=<boardname> SERIAL_DFU=1 flash
+```
+
+See below for more details on building the [bootloader](#bootloader).
+
+#### Moddable application build target
+
+In order to install over the serial port instead of USB, use either of the targets `installDFU` or `debugDFU`.
+
+```
+mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+```
+
+`installDFU` simply installs the app to your device.
+
+`debugDFU` installs the app, launches xsbug, and then connects to it with serial2xsbug.
+
+Installation is done by mcconfig using Adafruit's adafruit-nrfutil.
+
+#### Setup
+
+Install Adafruit's `adafruit-nrfutil` as described at the github repository:
+
+[`https://github.com/adafruit/Adafruit_nRF52_nrfutil`](https://github.com/adafruit/Adafruit_nRF52_nrfutil)
+
+
+Set the environment variable `UPLOAD_PORT` to the serial port that is connected to your device.
+
+```
+export UPLOAD_PORT=/dev/cu.usbserial-0001
+```
+
+#### Device target
+
+In the device target's `manifest.json` file, ensure that the debugger tx and rx pins and baudrate are defined.
+
+The manifest.json file is located at `$MODDABLE/build/devices/nrf52/targets/<boardname>/manifest.json`.
+
+In the `"defines"` section:
+
+```
+"defines": {
+	"debugger": {
+		"tx_pin": "30",
+		"rx_pin": "31",
+		"baudrate": "NRF_UARTE_BAUDRATE_921600"
+	},
+...
+```
+
+#### Build and install
+
+The device needs to be in firmware update mode in order to receive the installation. Double-tap the reset button to put the device into programming mode. The status LED will blink rapidly.
+
+```
+mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+```
+
+After the build information scrolls by, the console will progress to installing:
+
+```
+Sending DFU start packet
+Sending DFU init packet
+Sending firmware file
+########################################
+########################################
+...
+########################################
+###########################
+Activating new firmware
+
+DFU upgrade took 69.43805122375488s
+Device programmed.
+```
+
+<a id="ble-update"></a>
+## Updating nRF52 over BLE (DFU OTA)
+
+The Moddable SDK supports updating nRF52 firmware over BLE using Nordic's "nRF Connect for Mobile" apps on iOS and Android. This works with Moddable Four and other supported nRF52-powered boards.
+
+These are the five steps to prepare your device and update the nRF52 firmware over BLE.
+
+1. [Ensure that your nRF52 device has version 8](#ble-update-1) (or later) of the [Moddable fork of the AdaFruit bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader).
+2. [Build your project firmware](#ble-update-2) into an update package
+3. [Transfer the update package](#ble-update-3) to your mobile device
+4. [Put the target device into DFU OTA mode](#ble-update-4)
+5. [Use "nRF Connect for Mobile" to install the firmware](#ble-update-5) onto the device wirelessly with BLE
+
+The following sections explain these steps in detail.
+
+> Note: If the OTA firmware update fails, the device will reboot to DFU OTA mode until software has been successfully updated.
+
+<a id="ble-update-1"></a>
+### 1) Ensure your nRF52 device has version 8.1 of the Bootloader
+
+Put your device into Programming mode (double-tap the reset button) and open the volume that appears on your desktop. Open the INFO_UF2.TXT file. Look for
+
+```
+Bootloader: Moddable 8.1
+Date: Nov  8 2023
+```
+
+If the version is earlier than 8.1, update your bootloader.
+
+<a id="ble-update-bootloader"></a>
+#### Update the nRF52 Bootloader
+
+You can update your Moddable nRF52 Bootloader with a prebuilt version for your board, or you can customize it and build it yourself.
+
+The [Moddable Four Bootloader](https://github.com/Moddable-OpenSource/moddable/tree/public/build/devices/nrf52/bootloader) can be found in the repository at `$MODDABLE/build/devices/nrf52/bootloader/`. Put your device into Programming mode and copy the current.uf2 file to the device.
+
+If you've got a different device, build and install the updated bootloader to your nRF52 device by first configuring, then building the Bootloader.
+
+Use the [Moddable fork of the Adafruit nRF52 bootloader](https://github.com/Moddable-OpenSource/Adafruit_nRF52_Bootloader). The minimum version to use for DFU OTA is version 8.
+
+<a id="configure-the-bootloader"></a>
+#### Configure the Bootloader
+
+You can configure the bootloader to check the state of a GPIO pin during boot to put the device into DFU OTA mode.
+
+Set the `BUTTON_DFU` define in your board.h file to specify which GPIO to use. The board.h file is located in `Adafruit_nRF52_Bootloader/src/boards/<boardname>/board.h`.
+
+If you do not define a GPIO, you can programmatically set the device to reboot in DFU OTA mode. [See below](#dfu-software-switch)
+
+#### Build and install the Bootloader using USB
+
+For devices that communicate over USB, build the bootloader update file:
+
+```
+cd .../Adafruit_nRF52_Bootloader
+rm -rf _build
+git pull --rebase
+make BOARD=moddable_four bootloaderuf2
+```
+Put your device into Programming mode and copy the `current.uf2` file to the device:
+
+```
+cp current.uf2 /Volumes/MODDABLE4
+```
+
+#### Or Build and install the Bootloader using JTAG for a UART device
+
+For devices that update over serial, use JTAG to push install the new bootloader:
+
+```
+cd .../Adafruit_nRF52_Bootloader
+rm -rf _build
+git pull --rebase
+make SERIAL_DFU=1 BOARD=test flash
+```
+
+> Note: With `SERIAL_DFU=1`, the example above is for a device that uses serial instead of USB for programming. Installing this bootloader will disable updating over USB.
+
+
+<a id="ble-update-2"></a>
+### 2) Build an update package
+
+Build your application with the `-t ble-package` target. The build will complete and indicate where the `ble-package.zip ` file can be found.
+
+```
+ % cd .../my_app
+ % mcconfig -d -m -p nrf52/moddable_four -t ble-package
+ ....
+ # Packaging .../my_app/xs_nrf52.hex for BLE
+Zip created at .../my_app/ble-package.zip
+```
+
+<a id="ble-update-3"></a>
+### 3) Transfer the package to your mobile
+
+Transfer the `ble-package.zip` file to your mobile device so that it can be accessed by "nRF Connect for Mobile".
+
+<a id="ble-update-4"></a>
+### 4) Put the device in DFU OTA mode
+
+When the device is in DFU OTA mode, the status LED will double-blink regularly.
+
+<a id="dfu-software-switch"></a>
+#### Put nRF52 into Update Mode (programmatically)
+
+Put the nRF52 device into BLE DFU update mode by calling the `nrf52_rebootToOTA()` C function. The `$(MODDABLE)/build/devices/nrf52/examples/BLE_DFU` app is an example of how to use it from an app.
+
+```
+cd $MODDABLE/build/devices/nrf52/examples/BLE_DFU
+mcconfig -d -m -p nrf52/moddable_four
+```
+#### Put nRF52 into Update Mode (GPIO)
+
+If your device and bootloader have a button defined as the `BUTTON_DFU`, hold that button and reset the device.
+
+<a id="ble-update-5"></a>
+#### 5) Use nRF Connect for Mobile to Wirelessly update device
+
+Once the nRF52 is in BLE DFU update mode, use the [nRF Connect for Mobile](https://www.nordicsemi.com/Products/Development-tools/nrf-connect-for-mobile) to transfer the firmware contained in the `ble-package.zip` file to the nRF52 device.
+
+Launch the application and follow these steps:
+
+1. Open the filter
+2. Enable Nordic DFU Service
+3. Enable "Remove Unconnectable"
+4. Connect to the AdaDFU device<br>
+	<img src=../assets/dfu/nrfConnect0.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect1.jpeg width=40%>
+5. Select the DFU tab
+6. Click the "Connect" button
+When the device has connected,
+7. Click "Open Document Picker"<br>
+	<img src=../assets/dfu/nrfConnect2.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect3.jpeg width=40%>
+8. Choose your upload package
+9. Press the "Start" button<br>
+	<img src=../assets/dfu/nrfConnect4.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect5.jpeg width=40%>
+10. The Status area will display "Starting" for some time as the flash area is erased.
+11. After the area is erased, the status changes to "Uploading" and progress will be displayed as the upload continues.<br>
+	<img src=../assets/dfu/nrfConnect6.jpeg width=40%>&nbsp;<img src=../assets/dfu/nrfConnect7.jpeg width=40%>
+12. When the transfer has completed, "Success!" is displayed. The device will reboot to the newly install firmware image.
+
+	<img src=../assets/dfu/nrfConnect8.jpeg width=40%>
 
 <a id="debugging-native-code"></a>
 ### Debugging Native Code
@@ -486,8 +756,10 @@ Drag a `.uf2` file to the **MODDABLE4** disk to program it.
 
 > Note: The bootloader can be updated in the same way.
 
+> Note: The disk that appears may be named **MODDABLEnRF**
+
 <a id="install-bootloader"></a>
-### Installing the bootloader
+### Installing the bootloader the first time
 
 To use a nRF52840 device with the Moddable SDK, you will have to install the bootloader to that device. This will replace the functionality of the previous bootloader.
 
@@ -495,7 +767,7 @@ To use a nRF52840 device with the Moddable SDK, you will have to install the boo
 
 > Note: You may brick your device.
 
-You will need a Segger J-Link or equivalent to program the bootloader.
+You will need a Segger J-Link or equivalent to program the bootloader for the first time. Once a Moddable bootloader is installed, you can use the UF2 installation method.
 
 1. Connect your device to the J-Link in the same way that you would for the debugger. See the
 [Debugging Native Code](#debugging-native-code)
@@ -510,7 +782,7 @@ section.
 3. Build for your device
 
    ```
-   cd Adafuit_nRF52_Bootloader
+   cd Adafruit_nRF52_Bootloader
    make BOARD=moddable_four
    ```
 
@@ -532,8 +804,19 @@ section.
 
 5. Double-tap the reset button to set the device to Programming mode. The LED will blink regularly, and the `MODDABLEnRF` volume will appear on the desktop.
 
-You can now program the device.
+   You can now program the device.
 
+   <a id="bootloader-update-file"></a>
+6. Once a Moddable bootloader has been installed on your device, you can use the **bootloaderuf2** Makefile target to build an update file and copy the file to your device.
+
+   Build the bootloader with the `bootloaderuf2` target
+
+   ```
+   cd .../Adafruit_nRF52_Bootloader
+   make BOARD=moddable_four bootloaderuf2
+   ```
+
+   Put your device into Programming mode and copy the `current.uf2` file to your device.
 
 ----
 
@@ -606,3 +889,5 @@ Or you can make your own by following these steps to modify the SDK:
         return false;
     }
     ```
+
+

@@ -168,13 +168,13 @@ void fxBufferFunctionNameAddress(txMachine* the, txString buffer, txSize size, t
 		{
 			c_strncat(buffer, "anonymous-", size - mxStringLength(buffer) - 1);
 			length = mxStringLength(buffer);
-			fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+			fxIntegerToString(the, profileID, buffer + length, size - length - 1);
 		}
 	}
 	else {
 		c_strncat(buffer, "(anonymous-", size - mxStringLength(buffer) - 1);
 		length = mxStringLength(buffer);
-		fxIntegerToString(the->dtoa, profileID, buffer + length, size - length - 1);
+		fxIntegerToString(the, profileID, buffer + length, size - length - 1);
 		c_strncat(buffer, ")", size - mxStringLength(buffer) - 1);
 	}
 }
@@ -266,10 +266,10 @@ txBoolean fxIsCanonicalIndex(txMachine* the, txID id)
 		c = c_read8(string);
 		if (('+' != c) && ('-' != c) && ('.' != c) && ('I' != c) && ('N' != c) && !(('0' <= c) && ('9' >= c)))
 			return 0;
-		number = fxStringToNumber(the->dtoa, string, 1);
+		number = fxStringToNumber(C_NULL, string, 1);
 		if (number == -0)
 			return 1;
-		fxNumberToString(the->dtoa, number, buffer, sizeof(buffer), 0, 0);
+		fxNumberToString(C_NULL, number, buffer, sizeof(buffer), 0, 0);
 		if (!c_strcmp(string, buffer)) {
 			return 1;
 		}

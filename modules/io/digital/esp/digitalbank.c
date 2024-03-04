@@ -315,6 +315,8 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
+	builtinCriticalSectionEnd();
+
 	if (digital->pins) {
 		//@@ what state should pin go to on close...
 		uint8_t pin;
@@ -332,8 +334,6 @@ void xs_digitalbank_destructor(void *data)
 			ETS_GPIO_INTR_DISABLE();
 		builtinFreePins(digital->bank, digital->pins);
 	}
-
-	builtinCriticalSectionEnd();
 
 	c_free(data);
 }

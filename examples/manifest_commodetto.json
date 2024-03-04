@@ -5,7 +5,7 @@
 		"commodetto/parseRLE": "$(COMMODETTO)/commodettoParseRLE",
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
-		"commodetto/PocoDraw": "$(COMMODETTO)/commodettoPocoDraw",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
 		"commodetto/*": "$(COMMODETTO)/commodettoPocoBlit",
 		"commodetto/cfe": "$(COMMODETTO)/cfeBMF"
 	},

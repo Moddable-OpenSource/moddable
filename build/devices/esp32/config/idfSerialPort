@@ -1,0 +1,26 @@
+#!/bin/bash
+
+CACHED_DIR=$MODDABLE/build/tmp/esp32
+
+if [[ -f ${CACHED_DIR}/UPLOAD_PORT ]]; then
+	CACHED_PORT=`cat ${CACHED_DIR}/UPLOAD_PORT`
+	if [[ -c "${CACHED_PORT}" ]]; then
+		# still mounted
+		echo $CACHED_PORT
+		exit
+	fi
+fi
+
+>&2 echo "Please wait - probing for device"
+IGNORED=`esptool.py --connect-attempts 1 flash_id > ${CACHED_DIR}/DEVICE_SCAN`
+UPLOAD_PORT=`grep "Serial port" ${CACHED_DIR}/DEVICE_SCAN | awk 'END{print($3)}' | tee ${CACHED_DIR}/UPLOAD_PORT`
+VALID=`grep "Detected flash" ${CACHED_DIR}/DEVICE_SCAN`
+
+if [[ ! "${VALID}" || ! -c "${UPLOAD_PORT}" ]]; then
+	UPLOAD_PORT=
+	rm ${CACHED_DIR}/UPLOAD_PORT
+	>&2 echo "Failed to find a suitable device. Check your connections or set UPLOAD_PORT"
+	exit 1
+fi
+
+echo $UPLOAD_PORT

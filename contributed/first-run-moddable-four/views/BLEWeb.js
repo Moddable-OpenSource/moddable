@@ -41,6 +41,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onButtonReleased(container, delta) {
+		application.stop();
 		const view = this.view;
 		if (this.connected) {
 			if (view.PASSKEY.visible) {
@@ -90,6 +91,7 @@ class BLEWebBehavior extends View.Behavior {
 		this.event.auth = 0;
 	}
 	onDisplayed(container) {
+		application.stop();
 		this.server = new UARTServer(container, this.imageBuffer, controller.bluetoothName);
 		container.interval = 100;
 		container.start();
@@ -107,6 +109,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onJogDialReleased(container, delta) {
+		application.stop();
 		if (this.connected) {
 			this.event.enter = 0;
 			this.transmit();
@@ -114,6 +117,7 @@ class BLEWebBehavior extends View.Behavior {
 		return true;
 	}
 	onJogDialTurned(container, delta) {
+		application.stop();
 		if (this.connected) {
 			this.event.dial = delta;
 			this.transmit();

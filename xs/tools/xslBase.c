@@ -168,8 +168,11 @@ void fxBufferSymbols(txLinker* linker)
 void fxDefaultSymbols(txLinker* linker)
 {
 	int i;
-	for (i = 0; i < XS_ID_COUNT; i++) {
-		fxNewLinkerSymbol(linker, gxIDStrings[i], 0);
+	for (i = 0; i < XS_SYMBOL_ID_COUNT; i++) {
+		fxNewLinkerSymbol(linker, gxIDStrings[i], 0, 0);
+	}
+	for (; i < XS_ID_COUNT; i++) {
+		fxNewLinkerSymbol(linker, gxIDStrings[i], 0, 1);
 	}
 }
 
@@ -200,7 +203,6 @@ void fxInitializeLinker(txLinker* linker)
 	c_memset(gxCodeUsages, 0, sizeof(gxCodeUsages));
 	
 	c_memset(linker, 0, sizeof(txLinker));
-	linker->dtoa = fxNew_dtoa(NULL);
 	linker->symbolModulo = 1993;
 	linker->symbolCount = 0x10000;
 	linker->symbolArray = fxNewLinkerChunkClear(linker, linker->symbolCount * sizeof(txLinkerSymbol*));
@@ -346,7 +348,7 @@ txID* fxMapSymbols(txLinker* linker, txS1* symbolsBuffer, txFlag flag)
 	symbols = fxNewLinkerChunk(linker, c * sizeof(txID*));
 	symbols[0] = XS_NO_ID;
 	for (i = 1; i < c; i++) {
-		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag);
+		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, (txString)p, flag, 1);
 		symbols[i] = symbol->ID;
 		p += mxStringLength((char*)p) + 1;
 	}
@@ -506,7 +508,7 @@ txLinkerStrip* fxNewLinkerStrip(txLinker* linker, txString name)
 	return result;
 }
 
-txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag)
+txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag flag, txBoolean table)
 {
 	txString aString;
 	txSize aLength;
@@ -544,7 +546,8 @@ txLinkerSymbol* fxNewLinkerSymbol(txLinker* linker, txString theString, txFlag f
 		aSymbol->sum = aSum;
 		aSymbol->flag = flag;
 		linker->symbolArray[anID] = aSymbol;
-		linker->symbolTable[aModulo] = aSymbol;
+		if (table)
+			linker->symbolTable[aModulo] = aSymbol;
 		linker->symbolIndex++;
 	}
 	else
@@ -582,8 +585,22 @@ void fxReadSymbols(txLinker* linker, txString path, txFlag flag, FILE** fileAddr
 	symbolsSize = atom.atomSize - sizeof(atom);
 	symbolsBuffer = fxNewLinkerChunk(linker, symbolsSize);
 	mxThrowElse(fread(symbolsBuffer, symbolsSize, 1, aFile) == 1);
-	fxMapSymbols(linker, symbolsBuffer, flag);
-	
+	{
+		txByte* p = symbolsBuffer;
+		txID c, i = 0;
+		mxDecodeID(p, c);
+		if (flag == 0) { // incremental
+			for (; i < XS_SYMBOL_ID_COUNT; i++) {
+				fxNewLinkerSymbol(linker, (txString)p, flag, 0);
+				p += mxStringLength((char*)p) + 1;
+			}
+		}
+		i++;
+		for (; i < c; i++) {
+			fxNewLinkerSymbol(linker, (txString)p, flag, 1);
+			p += mxStringLength((char*)p) + 1;
+		}
+	}
 	fclose(aFile);
 	*fileAddress = NULL;
 }
@@ -719,8 +736,6 @@ void fxTerminateLinker(txLinker* linker)
 		c_free(block);
 		block = nextChunk;
 	}
-	if (linker->dtoa)
-		fxDelete_dtoa(linker->dtoa);
 // 	{
 // 		txU1 code;
 // 		for (code = 0; code < XS_CODE_COUNT; code++) {

@@ -69,6 +69,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <fdlibm.h>
+
 #if mxWindows
 	#include <winsock2.h>
 	typedef SOCKET txSocket;
@@ -107,5 +110,17 @@
 #endif
 
 #define mxCESU8 1
+
+#if FUZZILLI
+extern void *fxMemMalloc(size_t size);
+extern void *fxMemCalloc(size_t a, size_t b);
+extern void *fxMemRealloc(void *a, size_t b);
+extern void fxMemFree(void *m);
+
+#define c_malloc(a) fxMemMalloc(a)
+#define c_calloc(a, b) fxMemCalloc(a, b)
+#define c_realloc(a, b) fxMemRealloc(a, b)
+#define c_free(p) fxMemFree(p)
+#endif
 
 #endif /* __XST__ */

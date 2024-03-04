@@ -1,0 +1,43 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32c3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the B button and press then release the R button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the R button."
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+		"ir_tx_pin": 4,
+		"ir_rx_pin": 5
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 6,
+			"scl_pin": 7
+		},
+		"spi": {
+			"miso_pin":9,
+			"mosi_pin":10,
+			"sck_pin": 8
+		},
+		"ili9341": {
+			"cs_pin": 20,
+			"dc_pin": 21,
+			"spi_port": "SPI2_HOST"
+		}
+	}
+}

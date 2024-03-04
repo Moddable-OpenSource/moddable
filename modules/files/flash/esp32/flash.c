@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,6 +24,7 @@
 
 #include "esp_partition.h"
 #include "app_update/include/esp_ota_ops.h"
+#include "spi_flash_mmap.h"
 
 struct modFlashRecord {
 	const esp_partition_t *partition;
@@ -81,6 +82,18 @@ void xs_flash_read(xsMachine *the)
 
 	xsmcSetArrayBuffer(xsResult, NULL, byteLength);
 	if (ESP_OK != esp_partition_read(partition, offset, xsmcToArrayBuffer(xsResult), byteLength))
+		xsUnknownError("read failed");
+}
+
+void xs_flash_readString(xsMachine *the)
+{
+	modFlash mrf = xsmcGetHostChunkValidate(xsThis, xs_flash_destructor);
+	const esp_partition_t *partition = mrf->partition;
+	int offset = xsmcToInteger(xsArg(0));
+	int byteLength = xsmcToInteger(xsArg(1));
+
+	xsResult = xsStringBuffer(NULL, byteLength);
+	if (ESP_OK != esp_partition_read(partition, offset, xsmcToString(xsResult), byteLength))
 		xsUnknownError("read failed");
 }
 

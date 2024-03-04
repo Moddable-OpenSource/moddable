@@ -4,19 +4,6 @@
 		"$(MODDABLE)/examples/manifest_net.json"
 	],
 	"modules": {
-		"*": [
-			"./main"
-		]
-	},
-	"platforms": {
-		"esp": {},
-		"esp32": {},
-		"lin": {},
-		"qca4020": {},
-		"mac": {},
-		"win": {},
-		"...": {
-			"error": "Net module unsupported"
-		}
+		"*":  "./main"
 	}
 }

@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
 
 		linker->symbolTable = fxNewLinkerChunkClear(linker, linker->symbolModulo * sizeof(txLinkerSymbol*));
 		if (archiving) {
-			fxNewLinkerSymbol(linker, gxIDStrings[0], 0);
+			fxNewLinkerSymbol(linker, gxIDStrings[0], 0, 0);
 			resource = linker->firstResource;
 			while (resource) {
 				fxBaseResource(linker, resource, base, size);
@@ -364,9 +364,20 @@ int main(int argc, char* argv[])
 // 						}
 						preload = linker->firstPreload;
 						while (preload) {
-							fxSlashPath(preload->name, mxSeparator, url[0]);
-							xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
-							xsCollectGarbage();
+							if (c_strncmp(preload->name, "lockdown/", 9)) {
+								fxSlashPath(preload->name, mxSeparator, url[0]);
+								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
+								xsCollectGarbage();
+							}
+							preload = preload->nextPreload;
+						}
+						preload = linker->firstPreload;
+						while (preload) {
+							if (!c_strncmp(preload->name, "lockdown/", 9)) {
+								fxSlashPath(preload->name, mxSeparator, url[0]);
+								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
+								xsCollectGarbage();
+							}
 							preload = preload->nextPreload;
 						}
 						while (linker->promiseJobsFlag) {
@@ -426,13 +437,15 @@ int main(int argc, char* argv[])
 					fxDuplicateInstance(the, mxMathObject.value.reference);
 					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_random), 0, XS_OWN);
 					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_random_secure), 0, mxID(_random));
+					property = mxBehaviorGetProperty(the, the->stack->value.reference, mxID(_irandom), 0, XS_OWN);
+					fxSetHostFunctionProperty(the, property, mxCallback(fx_Math_irandom_secure), 0, mxID(_irandom));
 					mxPull(mxMathObject);
 					
 					property = fxLastProperty(the, fxNewInstance(the));
 					for (id = XS_SYMBOL_ID_COUNT; id < _Infinity; id++)
-						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
+						property = fxNextSlotProperty(the, property, &the->stackIntrinsics[-1 - id], mxID(id), XS_DONT_ENUM_FLAG);
 					for (; id < _Compartment; id++)
-						property = fxNextSlotProperty(the, property, &the->stackPrototypes[-1 - id], mxID(id), XS_GET_ONLY);
+						property = fxNextSlotProperty(the, property, &the->stackIntrinsics[-1 - id], mxID(id), XS_GET_ONLY);
 					mxPull(mxCompartmentGlobal);
 					
 					mxGlobal.value.reference->value.instance.prototype = C_NULL;
@@ -782,6 +795,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	char buffer[C_PATH_MAX];
 	char separator;
 	txInteger dot = 0;
+	txInteger hash = 0;
 	txString slash;
 	txString path;
 	txID id;
@@ -795,6 +809,12 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			dot = 2;
 		}
 	}
+	else if (name[0] == '#') {
+		hash = 1;
+	}
+	else if (c_strncmp(name, "moddable:", 9) == 0)
+		c_memmove(name, name + 9, c_strlen(name) - 8);
+	
 	separator = linker->base[0];
 	fxSlashPath(name, '/', separator);
 	slash = c_strrchr(name, separator);
@@ -803,6 +823,7 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 	slash = c_strrchr(slash, '.');
 	if (slash && (!c_strcmp(slash, ".js") || !c_strcmp(slash, ".mjs") || !c_strcmp(slash, ".xsb")))
 		*slash = 0;
+		
 	if (dot) {
 		if (moduleID == XS_NO_ID)
 			return XS_NO_ID;
@@ -823,8 +844,27 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 			mxRangeError("path too long");
 		c_strcat(buffer, name + dot);
 	}
+	else if (hash) {
+		if (moduleID == XS_NO_ID)
+			return XS_NO_ID;
+		path = buffer;
+		c_strcpy(path, fxGetKeyName(the, moduleID));
+		slash = c_strchr(buffer, separator);
+		if (!slash)
+			return XS_NO_ID;
+		if (path[0] == '@') {
+			slash = c_strchr(slash + 1, mxSeparator);
+			if (!slash)
+				return XS_NO_ID;
+		}
+		*(slash + 1) = 0;
+		if ((c_strlen(buffer) + c_strlen(name)) >= sizeof(buffer))
+			mxRangeError("path too long");
+		c_strcat(buffer, name);
+	}
 	else
 		path = name;
+		
 	if (fxFindScript(the, path, &id))
 		return id;
 	return XS_NO_ID;
@@ -909,7 +949,6 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxSharedArrayBufferPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringIteratorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxStringPrototype); mxFreezeBuiltInRun;
-	mxFreezeBuiltInCall; mxPush(mxSuppressedErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSymbolPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxSyntaxErrorPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxTransferPrototype); mxFreezeBuiltInRun;
@@ -919,10 +958,14 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxWeakMapPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxWeakRefPrototype); mxFreezeBuiltInRun;
 	mxFreezeBuiltInCall; mxPush(mxWeakSetPrototype); mxFreezeBuiltInRun;
-	
+#if mxExplicitResourceManagement
+	mxFreezeBuiltInCall; mxPush(mxSuppressedErrorPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxDisposableStackPrototype); mxFreezeBuiltInRun;
+	mxFreezeBuiltInCall; mxPush(mxAsyncDisposableStackPrototype); mxFreezeBuiltInRun;
+#endif	
 	for (index = 0, dispatch = &gxTypeDispatches[0]; index < mxTypeArrayCount; index++, dispatch++) {
 		mxFreezeBuiltInCall; 
-		mxPush(the->stackPrototypes[-1 - (txInteger)dispatch->constructorID]);
+		mxPush(the->stackIntrinsics[-1 - (txInteger)dispatch->constructorID]);
 		mxGetID(mxID(_prototype));
 		mxFreezeBuiltInRun;
 	}

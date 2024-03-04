@@ -38,6 +38,7 @@ START_COMMAND = cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMU
 !ELSE
 START_COMMAND = start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll
 !ENDIF
+KILL_COMMAND = taskkill /im mcsim.exe /F 2> nul || (call )
 
 XS_DIRECTORIES = \
 	/I$(XS_DIR)\includes \
@@ -111,8 +112,8 @@ C_DEFINES = \
 	/D mxNoFunctionName=1 \
 	/D mxHostFunctionPrimitive=1 \
 	/D mxFewGlobalsTable=1 \
-	/D kCommodettoBitmapFormat=$(DISPLAY) \
-	/D kPocoRotation=$(ROTATION)
+	/D kCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	/D kPocoRotation=$(POCOROTATION)
 !IF "$(INSTRUMENT)"=="1"
 C_DEFINES = $(C_DEFINES) \
 	/D MODINSTRUMENTATION=1 \
@@ -153,6 +154,7 @@ LINK_OPTIONS = $(LINK_OPTIONS) /debug
 !ENDIF
 
 all: build
+	$(KILL_COMMAND)
 	$(START_XSBUG)
 	$(START_COMMAND)
 
@@ -170,6 +172,10 @@ clean:
 	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
 	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
 
+xsbug:
+	$(KILL_COMMAND)
+	$(START_XSBUG)
+	$(START_COMMAND)
 
 $(LIB_DIR) :
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)

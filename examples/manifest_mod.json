@@ -6,6 +6,50 @@
 		"PIU": "$(MODULES)/piu"
 	},
 	"platforms": {
+		"esp32/esp32s3_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/esp32s3_usb": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/feather_s3_tft": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/lilygo_t_qt": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/lilygo_tdisplay_s3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/lolin_s2mini": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/lolin_c3mini": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/lolin_c3pico": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
         "esp32/m5atom_echo": {
             "build": {
                 "UPLOAD_SPEED": "1500000",
@@ -30,10 +74,25 @@
                 "DEBUGGER_SPEED": "1500000"
             }
         },
+		"esp32/m5atom_s3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/m5atom_s3_lite": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/m5stack_core2": {
 			"build": {
 				"UPLOAD_SPEED": "1500000",
 				"DEBUGGER_SPEED": "1500000"
+			}
+        },
+		"esp32/m5stack_cores3": {
+			"build": {
+				"USE_USB": "2"
 			}
         },
         "esp32/m5stick_c": {
@@ -48,7 +107,79 @@
                 "DEBUGGER_SPEED": "1500000"
             }
         },
+		"esp32/qtpyc3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/qtpyc3_ili9341": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/qtpys2": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/qtpys2_ili9341": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/qtpys3": {
+			"build": {
+				"USE_USB": "1",
+				"PROGRAMMING_VID": "303a",
+				"PROGRAMMING_PID": "0002"
+			}
+		},
+		"esp32/qtpys3_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/qtpys3_ili9341": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/xiao_esp32c3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/xiao_esp32c3_ili9341": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/xiao_esp32s3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/xiao_esp32s3_ili9341": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
         "nrf52/moddable_four": {
+			"build": {
+				"USE_USB": "1"
+			},
+			"config": {
+				"format": "Gray256"
+			}
+        },
+        "nrf52/moddable_display_4": {
+			"build": {
+				"USE_USB": "1"
+			},
 			"config": {
 				"format": "Gray256"
 			}

@@ -548,7 +548,7 @@ txSlot* fxNewFunctionName(txMachine* the, txSlot* instance, txID id, txIndex ind
 	}
 	else if (former) {
 		char buffer[16];
-		fxCopyStringC(the, property, fxNumberToString(the->dtoa, index, buffer, sizeof(buffer), 0, 0));	
+		fxCopyStringC(the, property, fxNumberToString(the, index, buffer, sizeof(buffer), 0, 0));	
 	}
 	if (prefix) 
 		fxAdornStringC(the, prefix, property, C_NULL);
@@ -1321,6 +1321,8 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 	} break;
 #endif
 	default:
+		fprintf(file, ".kind = XS_NULL_KIND}, ");
+		fprintf(file, ".value = { .number = 0 } ");
 		break;
 	}
 	fprintf(file, "},\n");

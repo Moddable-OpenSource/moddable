@@ -116,6 +116,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ParseBMP.xsb \
 	$(MOD_DIR)/commodetto/PixelsOut.xsb \
 	$(MOD_DIR)/commodetto/Poco.xsb \
+	$(MOD_DIR)/commodetto/PocoCore.xsb \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
@@ -137,8 +138,10 @@ MODULES = \
 	$(MOD_DIR)/image2cs.xsb \
 	$(MOD_DIR)/mcbundle.xsb \
 	$(MOD_DIR)/mcconfig.xsb \
+	$(MOD_DIR)/mchex.xsb \
 	$(MOD_DIR)/mclocal.xsb \
 	$(MOD_DIR)/mcmanifest.xsb \
+	$(MOD_DIR)/mcpack.xsb \
 	$(MOD_DIR)/mcprintski.xsb \
 	$(MOD_DIR)/mcrez.xsb \
 	$(MOD_DIR)/nodered2mcu.xsb \
@@ -158,7 +161,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
 	$(TMP_DIR)/commodettoParseBMP.c.xsi \
-	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoCore.c.xsi \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
@@ -183,6 +186,7 @@ PRELOADS =\
 	-p commodetto/ParseBMF.xsb\
 	-p commodetto/ParseBMP.xsb\
 	-p commodetto/Poco.xsb\
+	-p commodetto/PocoCore.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
@@ -215,7 +219,7 @@ OBJECTS = \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \
 	$(TMP_DIR)/commodettoParseBMP.c.o \
-	$(TMP_DIR)/commodettoPoco.c.o \
+	$(TMP_DIR)/commodettoPocoCore.c.o \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
@@ -223,6 +227,7 @@ OBJECTS = \
 	$(TMP_DIR)/xsBigIntEx.c.o \
 	$(TMP_DIR)/ec.c.o \
 	$(TMP_DIR)/image2cs.c.o \
+	$(TMP_DIR)/mcpack.c.o \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modCrypt.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
@@ -248,7 +253,9 @@ COMMANDS = \
 	$(BIN_DIR)/image2cs \
 	$(BIN_DIR)/mcbundle \
 	$(BIN_DIR)/mcconfig \
+	$(BIN_DIR)/mchex \
 	$(BIN_DIR)/mclocal \
+	$(BIN_DIR)/mcpack \
 	$(BIN_DIR)/mcprintski \
 	$(BIN_DIR)/mcrez \
 	$(BIN_DIR)/nodered2mcu \
@@ -391,6 +398,11 @@ $(BIN_DIR)/cdv: $(MAKEFILE_LIST)
 	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools cdv "$$@"' > $(BIN_DIR)/cdv
 	chmod +x $(BIN_DIR)/cdv
 
+$(BIN_DIR)/mchex: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mchex"
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mchex "$$@"' > $(BIN_DIR)/mchex
+	chmod +x $(BIN_DIR)/mchex
+
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
 	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
@@ -420,6 +432,11 @@ $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
 	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
+	
+$(BIN_DIR)/mcpack: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mcpack"
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcpack "$$@"' > $(BIN_DIR)/mcpack
+	chmod +x $(BIN_DIR)/mcpack
 
 $(BIN_DIR)/mcprintski: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcprintski"

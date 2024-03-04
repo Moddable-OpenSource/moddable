@@ -23,9 +23,26 @@
 !CMDSWITCHES +S
 !ENDIF
 
-all: $(BIN_DIR)\mc.xsa
-	start $(SIMULATOR) $(BIN_DIR)\mc.xsa
+ARCHIVE = $(BIN_DIR)\mc.xsa
 
-$(BIN_DIR)\mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
+all: build
+	start $(SIMULATOR) $(ARCHIVE)
+
+build: $(ARCHIVE)
+
+clean:
+	@echo "# Clean project"
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
+xsbug:
+	start $(SIMULATOR) $(ARCHIVE)
+
+$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo # xsl mc.xsa
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+

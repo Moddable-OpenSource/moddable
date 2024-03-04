@@ -1,6 +1,6 @@
 # Networking
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: March 8, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: December 15, 2023
 
 ## Table of Contents
 
@@ -322,7 +322,7 @@ The HTTP `Request` class implements a client for making HTTP requests. It is bui
 import {Request} from "http"
 ```
 
-<!-- Maybe body property should be named request to parallel response. And HTTP Request should be renamed HTTP Client -->
+> **Note**: Strings passed for the request body may only contain characters in the ASCII range 0 to 127. To use full UTF-8, convert the strings to a buffer using `ArrayBuffer.fromString` or `TextEncoder`.
 
 ### `constructor(dictionary)`
 
@@ -412,6 +412,8 @@ The HTTP `Server` class implements a server to respond to HTTP requests. It is b
 import {Server} from "http"
 ```
 
+> **Note**: Strings passed for the response body may only contain characters in the ASCII range 0 to 127. To use full UTF-8, convert the strings to a buffer using `ArrayBuffer.fromString` or `TextEncoder`.
+
 ### `constructor(dictionary)`
 
 A new HTTP server is configured using a dictionary of properties. The dictionary is a super-set of the `Socket` dictionary.
@@ -430,15 +432,14 @@ let server = new Server({port: 8080});
 
 ***
 
-### `close()`
+### `close([connections])`
 
 The `close` function immediately terminates the HTTP server, freeing the server listener socket and any other associated memory.
+If connections is true it also closes all active connections to the server.
 
 ```js
 server.close();
 ```
-
-> **Note:** The `close` function does not close active connections to the server.
 
 ***
 
@@ -447,7 +448,7 @@ server.close();
 The `detach` function accepts an active HTTP connection of the server instance and removes it from the server, returning the socket instance of the connection. This is useful for implementing an HTTP endpoint that accepts both HTTP and WebSocket connections by allowing the existing connection of HTTP server to be handed off to the WebSocket server.
 
 ```js
-server.detach(connnection);
+server.detach(connection);
 ```
 
 ***
@@ -462,7 +463,7 @@ The user of the server receives status information through the callback function
 | 1 | `connection` | New connection received. A new requested has been accepted by the server.
 | 2 | `status` | Status line of request received. The `val1` argument contains the request path (e.g. `index.html`) and `val2` contains the request method (e.g. `GET`).
 | 3 | `header` | One header received. A single HTTP header has been received, with the header name in lowercase letters in `val1` (e.g. `connection`) and the header value (e.g. `close`) in `val2`.
-| 4 | `headersComplete` | All headers received. All HTTP headers have been received. Return `String` or `ArrayBuffer` to receive the complete request body as an argument to the `requestComplete` message as the corresponding type; return `true` to have `requestFragment` invoked as the fragments arrrive. Return `false` or `undefined` to ignore the request body. The behavior for ohter return values is undefined.
+| 4 | `headersComplete` | All headers received. All HTTP headers have been received. Return `String` or `ArrayBuffer` to receive the complete request body as an argument to the `requestComplete` message as the corresponding type; return `true` to have `requestFragment` invoked as the fragments arrive. Return `false` or `undefined` to ignore the request body. The behavior for ohter return values is undefined.
 | 5 | `requestFragment` |
 | 6 | `requestComplete` |
 | 8 | `prepareResponse` | Prepare response. The server is ready to send the response. Callback returns a dictionary with the response status (e.g. 200) in the `status` property, HTTP headers in an array on the `headers` property, and the response body on the `body` property. If the status property is missing, the default value of `200` is used. If the body is a `String` or `ArrayBuffer`, it is the complete response. The server adds the `Content-Length` HTTP header. If the body property is set to `true`, the response is delivered using the `Transfer-encoding` mode `chunked`, and the callback is invoked to retrieve each response fragment.
@@ -549,23 +550,24 @@ The following example implements an HTTP server that receives PUT requests, and 
 
 ```js
 import {File} from "file";
+import config from "mc/config";
 
 (new Server({})).callback = function(message, value) {
 	switch (message) {
-		case 2:								// request status received
-			let path = value;				// file path is HTTP path
+		case Server.status:						// request status received
+			const path = config.file.root + value.slice(1);
 			File.delete(path);
 			this.file = new File(path, true);
 			break;
 
-		case 4:								// prepare for request body
-			return true;					// provide request body in fragments
+		case Server.headersComplete:			// prepare for request body
+			return true;						// provide request body in fragments
 
-		case 5:								// request body fragment
+		case Server.requestFragment:			// request body fragment
 			this.file.write(this.read(ArrayBuffer));
 			break;
 
-		case 6:								// request body received
+		case Server.requestComplete				// request body received
 			this.file.close();
 			break;
 	}

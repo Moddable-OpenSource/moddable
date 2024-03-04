@@ -185,7 +185,7 @@ static void startTouchpad(modTouchpad touchpad)
 	touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
 	touch_pad_fsm_start();
 
-	vTaskDelay(100 / portTICK_RATE_MS); //@@ there does seem to need to be a delay between fsm_start and setting thresholds, but this may not be the best way to implement it
+	vTaskDelay(100 / portTICK_PERIOD_MS); //@@ there does seem to need to be a delay between fsm_start and setting thresholds, but this may not be the best way to implement it
 }
 
 static void setThresholds(uint32_t pins, double sensitivity)

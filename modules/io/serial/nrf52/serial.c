@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -72,6 +72,7 @@ struct SerialRecord {
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
 	uint8_t		postedMessage;
+	uint8_t		*parityTable;
 };
 
 static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context);
@@ -81,25 +82,77 @@ static void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 #define kInvalidPin (-1)
 
+// While the nRF52 doesn't natively support 7 bit or parity,
+// this implementation adds support for 7E1 and 7O1
+uint8_t kOddParity[16] = {
+	0x69, 0x96, 0x96, 0x69, 0x96, 0x69, 0x69, 0x96, 
+	0x96, 0x69, 0x69, 0x96, 0x69, 0x96, 0x96, 0x69
+};
+
+uint8_t kEvenParity[16] = {
+	0x96, 0x69, 0x69, 0x96, 0x69, 0x96, 0x96, 0x69, 
+	0x69, 0x96, 0x96, 0x69, 0x96, 0x69, 0x69, 0x96
+};
+
 static const xsHostHooks ICACHE_RODATA_ATTR xsSerialHooks = {
 	xs_serial_destructor,
 	xs_serial_mark,
 	NULL
 };
 
-#if mxDebug
-const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(1);
+#if defined(mxDebug) || defined(mxInstrument)
+#define kSerialUartInstance	1
 #else
-const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(0);
+#define kSerialUartInstance	0
 #endif
+const nrfx_uarte_t gSerialUARTE = NRFX_UARTE_INSTANCE(kSerialUartInstance);
+
+int parityCheck(Serial serial, int byte) {
+#if 0				// ignore parity check
+	if (!serial->parityTable)
+		return byte;
+	else
+		return byte & 0x7f;
+#else
+	int ok = 0, check;
+
+	if (!serial->parityTable)
+		return byte;
+	check = byte & 0x7f;
+
+	if (serial->parityTable[check/8] & (1 << (check % 8))) {
+		if (byte & 0x80)
+			ok = 1;
+	}
+	else {
+		if (!(byte & 0x80))
+			ok = 1;
+	}
+
+	if (!ok) {
+		modLog_transmit("bad parity");
+	}
+	return check;
+#endif
+}
+
+int paritySet(Serial serial, int byte) {
+	if (!serial->parityTable)
+		return byte;
+	else
+		return byte | ((serial->parityTable[byte / 8] & (1 << (byte % 8))) ? 0x80 : 0);
+}
+
 
 void xs_serial_constructor(xsMachine *the)
 {
 	Serial serial;
 	int baud;
 	uint8_t hasReadable, hasWritable, format;
+	uint8_t receivePullup = 0;
 	xsSlot *onReadable, *onWritable;
-	int transmitPin = kInvalidPin, receivePin = kInvalidPin, port = 0;
+	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
+	int data = 8, parity = 0;
 
 	xsmcVars(1);
 
@@ -117,12 +170,12 @@ void xs_serial_constructor(xsMachine *the)
 			xsUnknownError("in use");
 	}
 	else if (kInvalidPin == transmitPin)
-		xsUnknownError("invalid");
+		xsUnknownError("invalid");		// need at least one of tx or rx
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_port);
-	port = xsmcToInteger(xsVar(0));
-	if ((port < 0) || (port > 3))
-		xsUnknownError("invalid port");
+	if (xsmcHas(xsArg(0), xsID_receivePullup)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_receivePullup);
+		receivePullup = xsmcToInteger(xsVar(0));
+	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
@@ -180,6 +233,28 @@ void xs_serial_constructor(xsMachine *the)
 			break;
 	}
 
+	if (xsmcHas(xsArg(0), xsID_data)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_data);
+		data = xsmcToInteger(xsVar(0));
+		if ((7 != data) && (8 != data))
+			xsRangeError("invalid data");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_parity)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_parity);
+		char *p = xsmcToString(xsVar(0));
+		if (!c_strcmp(p, "odd"))
+			parity = 1;
+		else if (!c_strcmp(p, "even"))
+			parity = 2;
+		else if (!c_strcmp(p, "none"))
+			parity = 0;
+		else
+			xsRangeError("invalid parity");
+	}
+	if (((8 == data) && parity) || ((7 == data) && !parity))
+		xsRangeError("unsupported");
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	onWritable = builtinGetCallback(the, xsID_onWritable);
 
@@ -188,11 +263,11 @@ void xs_serial_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	format = builtinInitializeFormat(the, kIOFormatNumber);
+	format = builtinInitializeFormat(the, kIOFormatBuffer);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
-	serial = c_malloc((hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
+	serial = c_calloc(1, (hasReadable || hasWritable) ?  sizeof(SerialRecord) : offsetof(SerialRecord, the));
 	if (!serial)
 		xsRangeError("no memory");
 
@@ -214,6 +289,9 @@ void xs_serial_constructor(xsMachine *the)
 		xsRangeError("init failed");
 	}
 
+	if (receivePullup)
+		nrf_gpio_cfg_input(receivePin, NRF_GPIO_PIN_PULLUP);
+
 	xsmcSetHostData(xsThis, serial);
 
 	serial->obj = xsThis;
@@ -223,6 +301,10 @@ void xs_serial_constructor(xsMachine *the)
 	serial->format = format;
 	serial->useCount = 1;
 	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
+	if (1 == parity)
+		serial->parityTable = kOddParity;
+	else if (2 == parity)
+		serial->parityTable = kEvenParity;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
@@ -302,7 +384,7 @@ void xs_serial_set_format(xsMachine *the)
 void xs_serial_read(xsMachine *the)
 {
 	Serial serial = xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks);
-	int available;
+	int available, byte;
 
 	if (!serial)
 		xsUnknownError("closed");
@@ -312,7 +394,9 @@ void xs_serial_read(xsMachine *the)
 		return;
 
 	if (kIOFormatNumber == serial->format) {
-		xsmcSetInteger(xsResult, serial->receive[0]);
+		byte = parityCheck(serial, serial->receive[0]);
+//		xsmcSetInteger(xsResult, serial->receive[0]);
+		xsmcSetInteger(xsResult, byte);
 
 		builtinCriticalSectionBegin();
 			serial->receiveCount -= 1;
@@ -343,7 +427,15 @@ void xs_serial_read(xsMachine *the)
 		if (allocate)
 			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
 
-		c_memcpy(buffer, serial->receive, requested);
+		if (!serial->parityTable)
+			c_memcpy(buffer, serial->receive, requested);
+		else {
+			int i;
+			for (i=0; i<requested; i++) {
+				byte = parityCheck(serial, serial->receive[i]);
+				buffer[i] = byte;
+			}
+		}
 	
 		builtinCriticalSectionBegin();
 			serial->receiveCount -= requested;
@@ -367,6 +459,7 @@ void xs_serial_write(xsMachine *the)
 			xsUnknownError("output full: count == 0");
 
 		byte = (uint8_t)xsmcToInteger(xsArg(0));
+		byte = paritySet(serial, byte);
 		src = &byte;
 		count = 1;
 	}
@@ -377,6 +470,10 @@ void xs_serial_write(xsMachine *the)
 		if (requested > count)
 			xsUnknownError("output full: requested > count");
 
+		for (count=0; count<requested; count++) {
+			byte = paritySet(serial, ((uint8_t*)src)[count]);
+			((uint8_t*)src)[count] = byte;
+		}
 		count = requested;
 	}
 
@@ -395,7 +492,7 @@ void xs_serial_purge(xsMachine *the)
 	serial->transmitPosition = 0;
 }
 
-static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
+static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 {
 	Serial serial = p_context;
 	uint8_t post = 0;
@@ -426,20 +523,16 @@ static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 			serial->receiveCount += length;
 			if (serial->onReadable && !serial->receiveTriggered) {
 				post = 1;
-				if (!serial->transmitTriggered) {
-					serial->receiveTriggered = true;
-//					modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-				}
+				serial->receiveTriggered = true;
 			}
 			nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, 1);
 		}
+	}
 
-//		if (post) {
-		if (post && !serial->postedMessage) {
-			serial->postedMessage = 1;
-//			__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
-			modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
-		}
+	if (post && !serial->postedMessage) {
+		serial->postedMessage = 1;
+//		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
+		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
 }
 

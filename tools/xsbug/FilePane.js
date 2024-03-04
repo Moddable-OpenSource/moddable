@@ -59,6 +59,10 @@ import {
 	SpinnerBehavior,
 } from "behaviors";
 
+import { 
+	EditBreakpoint,
+} from "BreakpointDialog";
+
 class FilePaneBehavior extends Behavior {
 	onCreate(container, data) {
 		this.data = data;
@@ -153,8 +157,12 @@ class BreakpointTableBehavior extends TableBehavior {
 		column.empty(1);
 		if (expandIt) {
 			header.behavior.expand(header, true);
-			for (let item of data.items)
-				column.add(new BreakpointRow(item));
+			for (let item of data.items) {
+				if (item.id & 2)
+					column.add(new FunctionBreakpointRow(item));
+				else
+					column.add(new BreakpointRow(item));
+			}
 			column.add(new BreakpointFooter(data));
 		}
 		else {
@@ -172,20 +180,64 @@ class BreakpointTableBehavior extends TableBehavior {
 		var data = this.data;
 		this.expand(column, data.expanded);
 	}
+	onEditFunctionBreakpoint(column, breakpoint) {
+		if (!breakpoint)
+			breakpoint = { path:"", line:0, id:2, name:"", enabled:true };
+		EditBreakpoint(breakpoint);
+	}
 }
 
 class BreakpointHeaderBehavior extends HeaderBehavior {
 	reveal(row, revealIt) {
-		row.last.visible = revealIt;
+		let content = row.last;
+		content.visible = content.previous.visible = revealIt;
 	}
 };
 
 class BreakpointRowBehavior extends RowBehavior {
 	onTap(row) {
 		let data = this.data;
-		model.selectFile(data.path, { line:data.line });
+		if (data.id & 2)
+			row.bubble("onEditFunctionBreakpoint", data);
+		else
+			model.selectFile(data.path, { line:data.line });
 	}
 };
+
+class BreakpointEnabledBehavior extends Behavior {
+	onCreate(button, data) {
+		this.data = data;
+		button.variant = data.enabled ? 1 : 0;
+	}
+	onMouseEntered(button, x, y) {
+		button.variant |= 2;
+	}
+	onMouseExited(button, x, y) {
+		button.variant &= ~2;
+	}
+	onTap(button) {
+		let data = this.data;
+		model.doEnableDisableBreakpoint(data.path, data.line);
+	}
+	onTouchBegan(button, id, x, y, ticks) {
+		this.outVariant = button.variant;
+		this.inVariant = this.data.enabled ? 2 : 3;
+		button.variant = this.inVariant;
+		button.captureTouch(id, x, y, ticks);
+	}
+	onTouchEnded(button, id, x, y, ticks) {
+		if (button.hit(x, y)) {
+			button.variant = this.inVariant;
+			this.onTap(button);
+		}
+		else {
+			button.variant = this.outVariant;
+		}
+	}
+	onTouchMoved(button, id, x, y, ticks) {
+		button.variant = button.hit(x, y) ? this.inVariant : this.outVariant;
+	}
+}
 
 export class FolderTableBehavior extends TableBehavior {
 	expand(column, expandIt) {
@@ -489,6 +541,13 @@ var BreakpointHeader = Row.template(function($) { return {
 		Content($, { width:0 }),
 		Content($, { width:26, top:5, skin:skins.glyphs, variant:1 }),
 		Label($, { left:0, right:0, style:styles.tableHeader, string:"BREAKPOINTS" }),
+		IconButton($, { top:0, variant:25, active:true, visible:false, 
+			Behavior: class extends ButtonBehavior {
+				onTap(button) {
+					button.bubble("onEditFunctionBreakpoint");
+				}
+			},
+		}),
 		IconButton($, { top:0, variant:5, active:true, visible:false, 
 			Behavior: class extends ButtonBehavior {
 				onBreakpointsChanged(button) {
@@ -514,6 +573,27 @@ var BreakpointRow = Row.template(function($) { return {
 		Content($, { width:rowIndent, }),
 		Label($, { style:styles.breakpointRowName, string:$.name }),
 		Label($, { style:styles.breakpointRowLine, string:" (" + $.line + ")" }),
+		Content($, { left:0, right:0 }),
+		$.condition ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:1 }) : null,
+		$.hitCount ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:2 }) : null,
+		$.trace ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:3 }) : null,
+		Content($, { width:24, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
+		Content($, { width:8 }),
+	]
+}});
+
+var FunctionBreakpointRow = Row.template(function($) { return {
+	left:0, right:0, height:rowHeight, skin:skins.tableRow, active:true, 
+	Behavior:BreakpointRowBehavior,
+	contents: [
+		Content($, { width:rowIndent, }),
+		Label($, { style:styles.functionBreakpointRowName, string:$.name }),
+		Content($, { left:0, right:0 }),
+		$.condition ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:1 }) : null,
+		$.hitCount ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:2 }) : null,
+		$.trace ? Content($, { width:rowHeight, skin:skins.breakpointGlyphs, state:1, variant:3 }) : null,
+		Content($, { width:24, skin:skins.breakpointEnabled, active:true, Behavior:BreakpointEnabledBehavior }),
+		Content($, { width:8 }),
 	]
 }});
 

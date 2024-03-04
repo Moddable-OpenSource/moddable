@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -36,7 +36,7 @@
 
 xsMachine *gThe = NULL;        // main VM
 
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	TaskHandle_t gMainTask = NULL;
 #endif
 
@@ -61,14 +61,14 @@ void loop_task(void *pvParameter)
 {
 	taskYIELD();
 
-#ifdef mxDebug
+#if defined(mxDebug) || defined(mxInstrument)
 	gMainTask = xTaskGetCurrentTaskHandle();
 	setupDebugger();
 #endif
 
-#if MODDEF_XS_TEST
 	while (true) {
-	    gThe = modCloneMachine(0, 0, 0, 0, NULL);
+#if MODDEF_XS_TEST
+	    gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 

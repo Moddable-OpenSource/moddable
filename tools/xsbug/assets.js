@@ -69,6 +69,7 @@ const liteColors = {
 	"codeSelection": { "fill": "#d1e0ff" },
 	"error": { "color": "#262626" },
 	
+	"breakpointButton": { "fill": [ "transparent", "#dbdbdb", "#b0b0b0", "#6573c7" ], "color": [ "transparent", "#262626", "#ffffff", "#ffffff" ] },
 	"findMode": { "fill": [ "transparent", "transparent", "#e0e0e0", "#a0a0a0" ], "color": [ "transparent", "#ffffff", "#e0e0e0", "#555555" ] },
 	"resultCount": { "color": "#808080" },
 	"resultRow": { "fill": [ "#ffffff", "#ffffff", "#fafafa", "#f0f0f0" ] },
@@ -134,6 +135,7 @@ const darkColors = {
 	"codeSelection": { "fill": "#666e81" },
 	"error": { "color": "#262626" },
 	
+	"breakpointButton": { "fill": [ "transparent", "#4e4e4e", "#5d5d5d", "#6573c7" ], "color": [ "transparent", "#ffffff", "#ffffff", "#ffffff" ] },
 	"findMode": { "fill": [ "transparent", "transparent", "#4b4b4b", "#5b5b5b" ], "color": [ "transparent", "#e0e0e0", "#ffffff", "#e0e0e0" ] },
 	"resultCount": { "color": "#a0a0a0" },
 	"resultRow": { "fill": [ "#2a2a2a", "#2a2a2a", "#3a3a3a", "#4a4a4a" ] },
@@ -273,6 +275,12 @@ function buildTheme($, codeFont) {
 	// FILES
 	styles.breakpointRowName = new Style({ color:$.tableRow.color });
 	styles.breakpointRowLine = new Style({ font:"light", color:$.tableRow.color });
+	styles.functionBreakpointRowName = new Style({ font:"italic", color:$.tableRow.color });
+	skins.breakpointEnabled = new Skin({ texture:textures.glyphs, color:$.lineBreakpoint.fill, x:0, y:64, width:24, height:16, variants:24 });
+	skins.breakpointButton = new Skin({ fill:$.breakpointButton.fill });
+	styles.breakpointButton = new Style({ font:"bold", color:$.breakpointButton.color });
+	skins.breakpointGlyphs = new Skin({ texture:textures.glyphs, color:[$.tableRow.color, $.infoRow.color], x:0, y:80, width:16, height:16, variants:16 });
+	
 	skins.fileRow = new Skin({ fill:$.fileRow.fill });
 	styles.fileRow = new Style({ font:"semibold", color:$.fileRow.color, horizontal:"left" });
 	styles.infoRow = new Style({ color:$.infoRow.color, horizontal:"left" });

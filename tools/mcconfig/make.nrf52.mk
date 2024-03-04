@@ -48,65 +48,107 @@ else
 	BOOTLOADER_HEX ?= $(PLATFORM_DIR)/bootloader/moddable_nrf52_bootloader-0.2.13-21-g454b281_s140_6.1.1.hex
 endif
 
-UPLOAD_SPEED ?= 921600
-DEBUGGER_SPEED ?= 921600
-DEBUGGER_PORT ?= $(UPLOAD_PORT)
-
 PLATFORM_DIR = $(MODDABLE)/build/devices/nrf52
-
-NRF_SERIAL_PORT ?= /dev/cu.usbmodem0000000000001
 
 UF2_VOLUME_NAME ?= MODDABLE4
 M4_VID ?= beef
 M4_PID ?= cafe
 
+ifeq ($(USE_USB),0)
+	ifeq ($(HOST_OS),Darwin)
+		VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
+		ifeq ($(shell test $(VERS) -gt 10; echo $$?), 0)
+			UPLOAD_PORT ?= /dev/cu.usbserial-0001
+		else
+			UPLOAD_PORT ?= /dev/cu.SLAB_USBtoUART
+		endif
+	else
+		UPLOAD_PORT ?= /dev/ttyUSB0
+	endif
+endif
+
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
+
+CONNECT_XSBUG =
+NORESTART =
+
 ifeq ($(HOST_OS),Darwin)
-	DO_COPY = cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
+	SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(M4_VID) $(M4_PID) $(UF2_VOLUME_PATH)
+	START_NODE = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log
+
+	ifeq ($(USE_USB),1)
+		START_SERIAL2XSBUG = serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+	else
+		START_SERIAL2XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+	endif
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_NODE) $(START_SERIAL2XSBUG)
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
 		else
-			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
-			CONNECT_XSBUG=@echo "Connect to xsbug." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(M4_VID):$(M4_PID) 921600 8N1
+			CONNECT_XSBUG=@echo "Connect to xsbug." ; $(START_SERIAL2XSBUG)
 			NORESTART=-norestart
 			WAIT_FOR_COPY_COMPLETE =
+			ifeq ("$(XSBUG_LAUNCH)","app")			
+				START_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			endif
 		endif
 	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
+
+	ifeq ($(USE_USB),0)
+		SET_PROGRAMMING_MODE = @echo Use the target installDFU or debugDFU.
+		DO_PROGRAM =
+	else
+		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ; cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+	endif
+
+# END of Darwin
 else
-	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION
+# START of Linux
+
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(M4_VID) $(M4_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
-	KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
+	SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingModeLinux $(M4_VID) $(M4_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
-			CONNECT_XSBUG = cd $(MODDABLE)/tools/xsbug-log && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) node xsbug-log $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-			NORESTART=-norestart
+		ifeq ($(USE_USB),1)
+			ifeq ("$(XSBUG_LAUNCH)","log")
+				CONNECT_XSBUG = @echo "Connect to xsbug-log @ $(M4_VID):$(M4_PID)." && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID) 1
+			else
+				CONNECT_XSBUG = @echo "Connect to xsbug @ $(M4_VID):$(M4_PID)." && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
+			endif
+
 		else
-			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
-			CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(PLATFORM_DIR)/config/connectToXsbugLinux $(M4_VID) $(M4_PID)
-			NORESTART=-norestart
+			# not usb
+			ifeq ($(XSBUG_LOG),1)
+				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(MODDABLE_TOOLS_DIR)/serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+			else
+				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(MODDABLE_TOOLS_DIR)/serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+			endif
 		endif
-	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
+
+		ifeq ("$(XSBUG_LAUNCH)","app")			
+			START_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+		endif
 	endif
+
+
+	ifeq ($(USE_USB),0)
+		SET_PROGRAMMING_MODE = echo "  Use the target installDFU or debugDFU."
+		DO_PROGRAM =
+	else
+		DO_PROGRAM = @ Programming: $(BIN_DIR)/xs_nrf52.hex to $(M4_VID):$(M4_PID); DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_nrf52.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
+	endif
+
 endif
 
 NRF52_GNU_VERSION ?= 12.2.1
@@ -146,7 +188,7 @@ ifeq ($(DEBUG),1)
 	else
 		DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
 		FTDI_TRACE ?= -DUSE_FTDI_TRACE=1
-		CONNECT_XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
+#		CONNECT_XSBUG = serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
 	endif
 else
 	DEBUGGER_USBD= -DUSE_DEBUGGER_USBD=0
@@ -575,6 +617,7 @@ CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
+NM  = $(TOOLS_BIN)/$(TOOLS_PREFIX)nm
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
 OBJDUMP = $(TOOLS_BIN)/$(TOOLS_PREFIX)objdump
 SIZE  = $(TOOLS_BIN)/$(TOOLS_PREFIX)size
@@ -626,8 +669,8 @@ C_DEFINES = \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1 \
 	$(FTDI_TRACE)
 
@@ -672,14 +715,17 @@ ifeq ($(DEBUG),1)
 #		-DDEBUG_NRF
 else
 	C_DEFINES += \
-		-DUSE_DEBUGGER_USBD=1 \
-		-DUSE_WATCHDOG=0 \
+		$(DEBUGGER_USBD) \
 		-Os
 	C_FLAGS += $(HW_OPT)
 	ASM_FLAGS += $(HW_OPT)
 endif
 ifeq ($(INSTRUMENT),1)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
+endif
+
+ifeq ($(USE_WDT),1)
+	C_FLAGS += -DUSE_WATCHDOG=1
 endif
 
 C_DEFINES += -DkPocoFrameBuffer=1
@@ -713,6 +759,15 @@ time_string = $(shell perl -e 'use POSIX qw(strftime); print strftime($(1), loca
 BUILD_DATE = $(call time_string,"%Y-%m-%d")
 BUILD_TIME = $(call time_string,"%H:%M:%S")
 #      $$h += $$1 if /^\.(?:ucHeap)\s+(\d+)/;
+
+MOD_START = \
+	'while (<>) { \
+		my $$addr = +(split /\/ /,$$_)[0] ; \
+		$$addr += 4095;				\
+		$$addr -= ($$addr % 4096);	\
+		$$addr += 4096;				\
+		print "\# mods start at " ; \
+		print sprintf("0x%X\n", $$addr); } '
 MEM_USAGE = \
   'while (<>) { \
 	  $$r += $$1 if /^\.(?:no_init|data|fs_data|bss|stack_dummy)\s+(\d+)/;\
@@ -737,20 +792,16 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 .PRECIOUS: %.d %.o
 
 all: precursor $(BIN_DIR)/xs_nrf52.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	$(DO_XSBUG)
-	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
-	$(CONNECT_XSBUG) $(NORESTART)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
+	$(CONNECT_XSBUG)
 
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	@echo Copying: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
+	$(KILL_SERIAL2XSBUG)
+	$(SET_PROGRAMMING_MODE)
+	$(DO_PROGRAM)
 
 build: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Target built: $(BIN_DIR)/xs_nrf52.uf2
@@ -776,6 +827,9 @@ env_vars:
 ifndef NRF_SDK_DIR
 	$(error NRF_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
 endif
+
+modLocation: $(TMP_DIR)/xs_nrf52.out
+	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
 
 clean:
 	echo "# Clean project"
@@ -821,27 +875,36 @@ erase:
 	"$(NRFJPROG)" -f nrf52 --eraseall
 
 $(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
-	@echo CR $<
+	@echo "# make xs_nerf52-merged.hex"
 	@mergehex -q -m $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex -o $@
 
-dfu-package: $(BIN_DIR)/xs_nrf52-merged.hex
+dfu-package: $(BIN_DIR)/xs_nrf52.hex
 	@echo "# Packaging $<"
-#	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip --bootloader $(BOOTLOADER_HEX) --softdevice $(SOFTDEVICE_HEX)
-	adafruit-nrfutil dfu genpkg --sd-req 0xB6 --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52-merged.hex $(BIN_DIR)/dfu-package.zip
+	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
 
-installDFU: all dfu-package
+## adafruit-nrfutil forces 115200
+installDFU: precursor dfu-package
 	@echo "# Flashing $<"
-	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(NRF_SERIAL_PORT) -b $(UPLOAD_SPEED) --singlebank --touch 1200
+	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(UPLOAD_PORT) -b 115200 --singlebank --touch 1200
+
+ble-package: $(BIN_DIR)/xs_nrf52.hex
+	@echo "# Packaging $< for BLE"
+	adafruit-nrfutil dfu genpkg --dev-type 0x52 --sd-req 0x100 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/ble-package.zip
+
+debugDFU: installDFU
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(CONNECT_XSBUG)
 
 xsbug:
 	@echo Starting xsbug.
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(CONNECT_XSBUG)
 
 xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	@echo Flashing xs_nrf52.hex to device.
 	"$(NRFJPROG)" -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
 	@echo Resetting the device.
@@ -863,7 +926,9 @@ libdir:
 
 $(LIB_DIR): libdir
 	mkdir -p $(LIB_DIR)
-	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(LIB_DIR)/buildinfo.h
+
+$(TMP_DIR)/buildinfo.h:
+	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	
 $(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
 	$(OBJCOPY) -O binary $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.bin
@@ -872,6 +937,7 @@ $(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
 	@echo "# Version"
 	@echo "#  XS:    $(XS_GIT_VERSION)"
 	$(SIZE) -A $(TMP_DIR)/xs_nrf52.out | perl -e $(MEM_USAGE)
+	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
 	$(OBJCOPY) -O ihex $< $@
 
 FINAL_LINK_OBJ:=\
@@ -898,11 +964,11 @@ $(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
 	@echo "# link to .out file"
 	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
-$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+$(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(TMP_DIR)/buildinfo.h
 	@echo "# buildinfo"
-	echo '#include "buildinfo.h"' > $(LIB_DIR)/buildinfo.c
-	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(LIB_DIR)/buildinfo.c
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@
+	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
+	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(TMP_DIR)/buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
 $(LIB_DIR)/xs%.c.o: xs%.c

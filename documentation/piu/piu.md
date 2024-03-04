@@ -1,6 +1,6 @@
 # Piu JavaScript Reference
-Copyright 2017-2022 Moddable Tech, Inc.<BR>
-Revised: January 24, 2022
+Copyright 2017-2023 Moddable Tech, Inc.<BR>
+Revised: August 31, 2023
 
 ## About This Document
 
@@ -618,7 +618,7 @@ Applications can tile skins using their `tiles` property. The size of the tiles 
 - Else if only the `top` or `bottom` values are defined, the skin becomes a vertical 3-part pattern. The top part is drawn at the top of the content, the bottom part is drawn at the bottom of the content, and the middle part is repeated to fill the middle of the content.
 - Else the skin becomes a 9-part pattern. Corner parts are drawn in the corresponding corners of the content, side parts are repeated in the sides, and the middle part is repeated to fill the middle. The `left`, `right`, `top` and `bottom` values can all be defined to 0 to fill the content with the skin.
 
-Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitarily sized contents.
+Tiling skins allows content objects of different sizes to share a single asset. Here is an example that uses this 30x30 pixel background to fill arbitrarily sized contents.
 
 ![](../assets/piu/roundedRectangle.png)
 
@@ -649,7 +649,7 @@ application.add(bigText);
 
 ### Variant, Variants, State, and States
 
-Applications often use the `state` and `variant` properties of `content` objects to update their appearance. Beacuse they can change dynamically, they can be used to animate `content` objects and provide visual feedback to touch events, for example.
+Applications often use the `state` and `variant` properties of `content` objects to update their appearance. Because they can change dynamically, they can be used to animate `content` objects and provide visual feedback to touch events, for example.
 
 #### Colored skins and styles
 

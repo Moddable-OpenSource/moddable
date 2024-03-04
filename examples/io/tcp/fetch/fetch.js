@@ -18,6 +18,7 @@
  *
  */
  
+import Headers from "headers";
 import URL from "url";
 
 const statusTexts = {
@@ -64,21 +65,6 @@ const statusTexts = {
 	505: "HTTP Version Not Supported",
 };
 Object.freeze(statusTexts);
-
-class Headers extends Map {
-	delete(key) {
-		return super.delete(key.toString().toLowerCase());
-	}
-	get(key) {
-		return super.get(key.toString().toLowerCase());
-	}
-	has(key) {
-		return super.has(key.toString().toLowerCase());
-	}
-	set(key, value) {
-		return super.set(key.toString().toLowerCase(), value.toString());
-	}
-}
 
 class Response {
 	#url;

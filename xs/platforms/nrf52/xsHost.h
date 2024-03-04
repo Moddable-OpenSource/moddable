@@ -116,6 +116,7 @@ extern uint32_t *dbl_reset_mem;
 #define REBOOT_FAST_RESET		0x4ee5677e
 #define REBOOT_TO_PROGRAMMING	0xbeefcafe
 #define REBOOT_TO_VENDOR		0xf00dcafe
+#define REBOOT_TO_OTA			0xfeed1cee
 
 /* wake */
 #define MOD_GPIO_WAKE_MAGIC		0x04dfcfbf
@@ -124,6 +125,7 @@ extern uint32_t *dbl_reset_mem;
 void nrf52_reboot(uint32_t kind);
 
 #define nrf52_reset()			nrf52_reboot(0)
+#define nrf52_rebootToOTA()		nrf52_reboot(REBOOT_TO_OTA)
 #define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
 #define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
 
@@ -209,7 +211,7 @@ void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 */
 
 #if USE_WATCHDOG
-	#define modWatchDogReset() nrf_drv_wdt_feed()
+	#define modWatchDogReset() nrfx_wdt_feed()
 #else
 	#define modWatchDogReset()
 #endif

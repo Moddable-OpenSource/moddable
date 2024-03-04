@@ -1,0 +1,55 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32h2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "ili9341",
+		"led": {
+			"pin": 8,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 23,
+			"scl_pin": 24
+		},
+		"spi": {
+			"miso_pin":0,
+			"mosi_pin":5,
+			"sck_pin": 4
+		},
+		"ili9341": {
+			"cs_pin": 1,
+			"dc_pin": 13,
+			"spi_port": 1
+		}
+	}
+}

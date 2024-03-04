@@ -70,8 +70,8 @@ class GiphyAppBehavior extends Behavior {
 	}
 	downloadGIF(application, url){
 		let ready = false;
-		let partition = new Flash("xs");
-		let blockSize = partition.blockSize;
+		globalThis.partition ??= new Flash("xs");
+		const blockSize = partition.blockSize;
 		partition.erase(0);
 		const buffer = partition.map();
 		let blockIndex = 1;

@@ -191,7 +191,7 @@ class GIFScreenBehavior extends Behavior {
 		application.purge();
 		let GIF = new GIFImage(this.data, { 
 			anchor: "GIF", top: 65,
-			buffer: (new Flash("xs")).map(), 
+			buffer: partition.map(), 
 			Behavior:GIFImageBehavior 
 		});
 		container.insert(GIF, this.data["FOOTER"]);
@@ -202,7 +202,7 @@ class GIFScreenBehavior extends Behavior {
 		}
 		let GIF = new GIFImage(this.data, { 
 			anchor: "GIF", top: 65,
-			buffer: (new Flash("xs")).map(), 
+			buffer: partition.map(), 
 			Behavior:GIFImageBehavior 
 		});
 		container.insert(GIF, this.data["FOOTER"]);

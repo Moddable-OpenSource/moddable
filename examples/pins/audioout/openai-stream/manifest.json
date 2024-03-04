@@ -1,0 +1,36 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"./manifest_openaistreamer.json"
+	],
+	"modules": {
+		"*": "./main",
+		"pins/*": [
+			"$(MODULES)/pins/i2s/*"
+		]
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000,
+			"queueLength": 24
+		}
+	},
+	"config": {
+		"startupSound": false
+	},
+	"creation": {
+        "static": 65536,
+        "chunk": {
+            "initial": 1536,
+            "incremental": 512
+        },
+		"heap": {
+			"initial": 128,
+			"incremental": 64
+		},
+		"stack": 384
+    }
+}

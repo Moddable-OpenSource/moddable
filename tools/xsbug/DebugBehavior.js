@@ -40,6 +40,10 @@ import {
 	Profile,
 } from "ProfilePane";
 
+import { 
+	EditBreakpoint,
+} from "BreakpointDialog";
+
 export const mxFramesView = 0;
 export const mxLocalsView = 1;
 export const mxGlobalsView = 2;
@@ -63,8 +67,9 @@ const mxStepOutCommand = 11;
 const mxStopProfilingCommand = 12;
 const mxToggleCommand = 13;
 const mxImportCommand = 14;
-const mxScriptCommand = 15;
-const mxModuleCommand = 16;
+const mxEvalCommand = 15;
+const mxScriptCommand = 16;
+const mxModuleCommand = 17;
 const serialConnectStrings = ["Connect", "Disconnect", "Connecting...", "Installing..."];
 const consoleColorCodes = [{ code: "<info>", color: 3 }, { code: "<warn>", color: 1 }, { code: "<error>", color: 2 }];
 
@@ -215,14 +220,20 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let bubbles = this.bubbles.items;
 		return bubbles.length > 0;
 	}
-	canDisableBreakpoint(path, line) {
+	canDisableAllBreakpoints(path, line) {
 		let breakpoints = this.breakpoints.items;
-		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
-		return index >= 0;
+		return breakpoints.length > 0;
+	}
+	canEnableAllBreakpoints(path, line) {
+		let breakpoints = this.breakpoints.items;
+		return breakpoints.length > 0;
 	}
 	canGo() {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
+	}
+	canSetFunctionBreakpoint() {
+		return true;
 	}
 	canStep() {
 		let machine = this.currentMachine;
@@ -236,9 +247,38 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		let machine = this.currentMachine;
 		return machine && machine.broken;
 	}
+	compile(expression) @ "PiuDebugBehavior_compile"
+	compileBreakpoint(machine, breakpoint) {
+		const path = breakpoint.path;
+		const line = breakpoint.line;
+		let id = breakpoint.id || 0;
+		let condition = breakpoint.condition || null;
+		let hitCount = breakpoint.hitCount || null;
+		let trace = breakpoint.trace || null;
+		if (condition && machine.compatible) {
+			condition = this.compile(condition);
+			id |= 1;
+		}
+		if (hitCount) {
+			id |= 1;
+		}
+		if (trace && machine.compatible) {
+			trace = this.compile(trace);
+			id |= 1;
+		}
+		return { path, line, id, condition, hitCount, trace };
+	}
 	doAbort() {
 		let machine = this.currentMachine;
 		machine.doCommand(mxAbortCommand);
+	}
+	doAddBreakpoint(breakpoint) {
+		let breakpoints = this.breakpoints.items;
+		breakpoints.push(breakpoint);
+		breakpoints.sort(this.sortBreakpoints);
+		if (breakpoint.enabled)
+			this.doSetBreakpoint(breakpoint);
+		application.distribute("onBreakpointsChanged");
 	}
 	doBreak() {
 		let machine = this.currentMachine;
@@ -255,6 +295,17 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		application.distribute("onConversationsChanged", this.conversations.items);
 		application.distribute("onBubblesChanged", this.bubbles.items);
 	}
+	doClearBreakpoint(breakpoint) {
+		if (this.machines.length) {
+			const item = { path:breakpoint.path, line:breakpoint.line, id:breakpoint.id || 0 };
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, item));
+			let path = this.unmapPath(breakpoint.path);
+			if (path) {
+				item.path = path;
+				this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, item));
+			}
+		}
+	}
 	doClearConsole() {
 		let machine = this.currentMachine;
 		if (machine) {
@@ -268,8 +319,25 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			application.distribute("onMachineLogged", this.consoleText, this.consoleLines);
 		}
 	}
-	doDisableBreakpoint(path, line) {
-		this.doToggleBreakpoint(path, line, true);
+	doDisableAllBreakpoints() {
+		const breakpoints = this.breakpoints.items;
+		breakpoints.forEach(breakpoint => {
+			if (breakpoint.enabled) {
+				breakpoint.enabled = false;
+				this.doClearBreakpoint(breakpoint);
+			}
+		});
+		application.distribute("onBreakpointsChanged");
+	}
+	doEnableAllBreakpoints() {
+		const breakpoints = this.breakpoints.items;
+		breakpoints.forEach(breakpoint => {
+			if (!breakpoint.enabled) {
+				breakpoint.enabled = true;
+				this.doSetBreakpoint(breakpoint);
+			}
+		});
+		application.distribute("onBreakpointsChanged");
 	}
 	doGo() {
 		let machine = this.currentMachine;
@@ -278,8 +346,61 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		machine.timeout = Date.now() + 500;
 		machine.doCommand(mxGoCommand);
 	}
+	doEnableDisableBreakpoint(path, line) {
+		const breakpoints = this.breakpoints.items;
+		const breakpoint = breakpoints.find(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
+		if (breakpoint) {
+			if (breakpoint.enabled) {
+				breakpoint.enabled = false;
+				this.doClearBreakpoint(breakpoint);
+			}
+			else {
+				breakpoint.enabled = true;
+				this.doSetBreakpoint(breakpoint);
+			}
+		}
+		application.distribute("onBreakpointsChanged");
+	}
+	doEval(application, source) {
+		let machine = this.currentMachine;
+		if (machine.compatible) {
+			machine.consoleLines.push({ path:undefined, line:undefined, offset:machine.consoleText.length, color:0 }); 
+			machine.onLoggedAux(machine, '> ' + source + '\n');
+			this.onLogged(machine);
+			const code = this.compile(source);
+			machine.doCommand(mxEvalCommand, machine.frame, code, 0);
+		}
+	}
 	doSelectItem(application, value) {
 		this.currentMachine.doCommand(mxSelectCommand, value);
+	}
+	doRemoveBreakpoint(breakpoint) {
+		let breakpoints = this.breakpoints.items;
+		let index = breakpoints.indexOf(breakpoint);
+		if (index >= 0) {
+			breakpoints.splice(index, 1);
+			if (breakpoint.enabled)
+				this.doClearBreakpoint(breakpoint);
+		}
+		application.distribute("onBreakpointsChanged");
+	}
+	doSetBreakpoint(breakpoint) {
+		if (this.machines.length) {
+			this.machines.forEach(machine => {
+				const item = this.compileBreakpoint(machine, breakpoint);
+				machine.doBreakpointCommand(mxSetBreakpointCommand, item);
+			});
+			let path = this.unmapPath(breakpoint.path);
+			if (path) {
+				item.path = path;
+				const item = this.compileBreakpoint(machine, breakpoint);
+				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, item));
+			}
+		}
+	}
+	doSetFunctionBreakpoint() {
+		const breakpoint = { path:"", line:0, id:2, name:"", enabled:true };
+		EditBreakpoint(breakpoint);
 	}
 	doStep() {
 		let machine = this.currentMachine;
@@ -302,33 +423,23 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		machine.timeout = Date.now() + 500;
 		machine.doCommand(mxStepOutCommand);
 	}
-	doToggleBreakpoint(path, line, toggleDisabled) {
+	doToggleBreakpoint(path, line) {
 		let breakpoints = this.breakpoints.items;
 		let index = breakpoints.findIndex(breakpoint => (breakpoint.path == path) && (breakpoint.line == line));
+		let breakpoint;
 		if (index >= 0) {
-			if (toggleDisabled) {
-				breakpoints[index].enabled = !breakpoints[index].enabled;
-			}
-			else {
-				breakpoints.splice(index, 1);
-			}
-			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, path, line));
-			path = this.unmapPath(path);
-			if (path)
-				this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, path, line));
+			breakpoint = breakpoints[index];
+			breakpoints.splice(index, 1);
+			this.doClearBreakpoint(breakpoint);
 		}
 		else {
-			if (toggleDisabled) {
-				return;
-			}
-			breakpoints.push({ path, name:system.getPathName(path), line, enabled: true });
+			breakpoint = { path, line, id:0, name:system.getPathName(path), enabled:true };
+			breakpoints.push(breakpoint);
 			breakpoints.sort(this.sortBreakpoints);
-			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, path, line));
-			path = this.unmapPath(path);
-			if (path)
-				this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, path, line));
+			this.doSetBreakpoint(breakpoint);
 		}
 		application.distribute("onBreakpointsChanged");
+		return breakpoint;
 	}
 	doToggleItem(application, value) {
 		this.currentMachine.doCommand(mxToggleCommand, value);
@@ -471,6 +582,12 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 			application.distribute("onMachineViewChanged", mxGlobalsView);
 		}
 	}
+	sortBreakpoints(a, b) {
+		let result = a.name.localeCompare(b.name);
+		if (result == 0)
+			result = a.line - b.line;
+		return result;
+	}
 	start() @ "PiuDebugBehavior_start"
 	stop() {
 		this.machines.forEach(machine => machine.doCommand(mxAbortCommand));
@@ -480,9 +597,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 	toggleBreakOnExceptions(it) {
 		this.breakOnExceptions = it;
 		if (it)
-			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, "exceptions", 0));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxSetBreakpointCommand, { path:"exceptions", line:0, id:0 }));
 		else
-			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, "exceptions", 0));
+			this.machines.forEach(machine => machine.doBreakpointCommand(mxClearBreakpointCommand, { path:"exceptions", line:0, id:0 }));
 	}
 	toggleBreakOnStart(it) {
 		this.breakOnStart = it;
@@ -503,6 +620,9 @@ export class DebugBehavior @ "PiuDebugBehaviorDelete" {
 		if (flag)
 			return path;
 	}
+	get xsIDSize() @ "PiuDebugBehavior_get_xsIDSize"
+	get xsMajorVersion() @ "PiuDebugBehavior_get_xsMajorVersion"
+	get xsMinorVersion() @ "PiuDebugBehavior_get_xsMinorVersion"
 }
 
 let temporary = 0;
@@ -512,6 +632,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 	onCreate(application, behavior) {
 		this.behavior = behavior;
 		this.broken = false;
+		this.compatible = false;
 		this.once = false;
 		this.parsing = false;
 		this.profile = new Profile(this);
@@ -588,11 +709,11 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		})
 	}
 	doBinaryCommandAux(command, id, payload) @ "PiuDebugMachine_doBinaryCommandAux"
-	doBreakpointCommand(command, path, line) {
-		const pathTag = this.pathToTag.get(path);
+	doBreakpointCommand(command, item) {
+		const pathTag = this.pathToTag.get(item.path);
 		if (pathTag !== undefined)
-			path = pathTag;
-		this.doCommand(command, path, line);
+			item.path = pathTag;
+		this.doCommand(command, item);
 	}
 	doCommand(command) @ "PiuDebugMachine_doCommand"
 	doGo() {
@@ -748,17 +869,23 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		var behavior = this.behavior;
 		if (this.once) {
 			this.once = false;
-			var items = behavior.breakpoints.items.concat();
-			behavior.breakpoints.items.forEach(item => {
-				let path = behavior.unmapPath(item.path);
-				if (path) {
-					let line = item.line;
-					items.push({ path, line, enabled:item.enabled });
+			var items = [];
+			if (behavior.breakOnStart)
+				items.push({ path:"start", line:0, id:0 });
+			if (behavior.breakOnExceptions)
+				items.push({ path:"exceptions", line:0, id:0 });
+			behavior.breakpoints.items.forEach(breakpoint => {
+				if (breakpoint.enabled) {
+					let item = behavior.compileBreakpoint(this, breakpoint);
+					items.push(item);
+					let path = behavior.unmapPath(item.path);
+					if (path) {
+						const { line, id, condition, hitCount, trace } = item;
+						items.push({ path, line, id, condition, hitCount, trace });
+					}
 				}
 			});
-			this.doCommand(mxSetAllBreakpointsCommand, items.filter(
-				item => item.enabled
-			), behavior.breakOnStart, behavior.breakOnExceptions);
+			this.doCommand(mxSetAllBreakpointsCommand, items);
 			if (behavior.profileOnStart)
 				this.doCommand(mxStartProfilingCommand);
 		}
@@ -813,6 +940,49 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 			application.distribute("onMachineChanged", this);
 		}
 	}
+	onResult(lines, data) {
+		const length = lines.length;
+		let result;
+		let color;
+		if (length == 0) {
+			result = data;
+			color = 2;
+		}
+		else {
+			let property = lines[0];
+			if (property.state == 0) 
+				result = property.value;
+			else {
+    			let flag = true;
+    			result = "{ ";
+				for (let i = 1; i < length; i++) {
+					property = lines[i];
+					if ((property.column == 1) && (property.name != "(..)")) {
+						if (flag)
+							flag = false;
+						else {
+							result += ", ";
+							if (result.length > 256) {
+								result += " …";
+								break;
+							}
+						}
+						result += property.name;
+						result += ": ";
+						if (property.state == 0)
+							result += property.value;
+						else
+							result += "{…}";
+					}
+				}
+				result += " }";
+			}
+			color = 1;
+		}
+		this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color }); 
+		this.onLoggedAux(this, result + "\n");
+		this.behavior.onLogged(this);
+	}
 	onSampled(data) {
 		var samples = data.split(",");
 		var samplesIndex = this.samplesIndex + 1;
@@ -836,10 +1006,35 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.behavior.onSampled(this);
 	}
 	onTitleChanged(title, tag) {
+		const behavior = this.behavior;
+		const words = tag.split(" ");
+		let xsMajorVersion, xsMinorVersion, xsIDSize;
+		
+		if (words.length == 6) {
+			let version = words[1].split(".");
+			xsMajorVersion = parseInt(version[0]);
+			xsMinorVersion = parseInt(version[1]);
+			xsIDSize = parseInt(words[4]);
+			this.compatible = (behavior.xsMajorVersion == xsMajorVersion) && (behavior.xsMinorVersion == xsMinorVersion) && (behavior.xsIDSize == xsIDSize) 
+		}
+		if (!this.compatible) {
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			if (xsMajorVersion)
+				this.onLoggedAux(this, `# ${title} (XS ${xsMajorVersion}.${xsMinorVersion} ${xsIDSize}-bit ID)`);
+			else
+				this.onLoggedAux(this, `# ${title} (?)`);
+			this.onLoggedAux(this, ' is incompatible with ');
+			this.onLoggedAux(this, `xsbug (XS ${behavior.xsMajorVersion}.${behavior.xsMinorVersion} ${behavior.xsIDSize}-bit ID)\n`);
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			this.onLoggedAux(this, `# - Breakpoint condition expressions and trace messages are ignored\n`);
+			this.consoleLines.push({ path:undefined, line:undefined, offset:this.consoleText.length, color:2 }); 
+			this.onLoggedAux(this, `# - Console REPL is unavailable\n`);
+			behavior.onLogged(this);
+		}
 		this.tag = tag;
 		this.title = title;
 		this.once = true;
-		this.behavior.onTitleChanged(this, title, tag);
+		behavior.onTitleChanged(this, title, tag);
 	}
 	onViewChanged(viewIndex, lines) {
 		if ((viewIndex == mxLocalsView) || (viewIndex == mxModulesView) || (viewIndex == mxGlobalsView))

@@ -20,16 +20,17 @@ import parseRLE from "commodetto/parseRLE";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import Timer from "timer";
+import Flash from "flash";
 
-let render = new Poco(screen, { displayListLength: 2048, rotation: config.rotation });
+let flash;
 
-let black = render.makeColor(0, 0, 0);
-let white = render.makeColor(255, 255, 255);
+let render;
 
-let OpenSans18 = parseBMF(new Resource("OpenSans-Regular-18.bf4"));
-let OpenSans35 = parseBMF(new Resource("OpenSans-Regular-35.bf4"));
+let black, white;
 
-let arrow = parseRLE(new Resource("arrow-alpha.bm4"));
+let OpenSans18, OpenSans35;
+
+let arrow;
 
 function getTimeEstimate() {
     const API_KEY = config.API_KEY;
@@ -51,16 +52,30 @@ function getTimeEstimate() {
 
     let request = new Request({
         host: "maps.googleapis.com", 
-        path: `/maps/api/directions/json?origin=${HOME}&destination=${WORK}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
-        response: String,
+        path: `/maps/api/directions/json?origin=${encodeURIComponent(HOME)}&destination=${encodeURIComponent(WORK)}&departure_time=now&mode=DRIVING&key=${API_KEY}`,
         port: 443, 
         Socket: SecureSocket, 
         secure: {protocolVersion: 0x303} 
     });
 
     request.callback = function(message, value, etc) {
-        if (Request.responseComplete == message) {
-            let result = JSON.parse(value, ["routes", "legs", "duration", "duration_in_traffic", "text", "value"]);
+		if (Request.status === message) {
+			flash.offset = 0;
+			flash.erase(0);
+		}
+		else if (Request.responseFragment === message) {
+			const buffer = this.read(ArrayBuffer);
+			const byteLength = buffer.byteLength;
+			let start = Math.idiv(flash.offset, flash.blockSize);
+			const end = Math.idiv(flash.offset + byteLength, flash.blockSize);
+			while (start < end)
+				flash.erase(++start);
+			flash.write(flash.offset, buffer.byteLength, buffer);
+			flash.offset += buffer.byteLength;
+		}
+		else if (Request.responseComplete === message) {
+			let result = flash.readString(0, flash.offset);
+            result = JSON.parse(result, ["routes", "legs", "duration", "duration_in_traffic", "text", "value"]);
             let route = result.routes[0];
             if (!route) {
                 trace(`No route found\n`);
@@ -107,7 +122,21 @@ function updateDisplay(time) {
     render.end();
 }
 
-getTimeEstimate();
-Timer.repeat(() => {
-    getTimeEstimate();
-}, 1000*60*10);
+export default function() {
+	flash = new Flash("storage");
+
+	render = new Poco(screen, { displayListLength: 2048, rotation: config.rotation });
+
+	black = render.makeColor(0, 0, 0);
+	white = render.makeColor(255, 255, 255);
+
+	OpenSans18 = parseBMF(new Resource("OpenSans-Regular-18.bf4"));
+	OpenSans35 = parseBMF(new Resource("OpenSans-Regular-35.bf4"));
+
+	arrow = parseRLE(new Resource("arrow-alpha.bm4"));
+
+	getTimeEstimate();
+	Timer.repeat(() => {
+		getTimeEstimate();
+	}, 1000*60*10);
+}

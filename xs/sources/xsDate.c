@@ -47,6 +47,7 @@ typedef struct sxDateTime {
 	txNumber milliseconds;
 	txInteger day;
 	txInteger offset;
+	txNumber value;
 } txDateTime;
 
 static txSlot* fxNewDateInstance(txMachine* the);
@@ -624,6 +625,7 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 	if (c_isnan(number)) {
 		mxResult->value.number = C_NAN;
 		mxResult->kind = XS_NUMBER_KIND;
+		dt->value = C_NAN;
 		return 0;
 	}
 	fxDateSplit(slot->value.number, utc, dt);
@@ -632,7 +634,7 @@ txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* dt, txBoolean ut
 
 void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, txSlot* slot)
 {
-	txNumber number;
+	txNumber number = dt->value;
 #if mxAliasInstance
 	txSlot* instance = mxThis->value.reference;
 	if (instance->ID) {
@@ -644,7 +646,6 @@ void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, tx
 		slot = instance->next;
 	}
 #endif
-	number = slot->value.number;
 	if (c_isnan(number))
 		return;
 	if (slot->flag & XS_DONT_SET_FLAG)
@@ -1293,7 +1294,9 @@ txNumber fxDateFullYear(txMachine* the, txSlot* slot)
 
 txNumber fxDateMerge(txDateTime* dt, txBoolean utc)
 {
-	txInteger year, month, leap;
+	txNumber year, month;
+	txInteger monthIndex;
+	txBoolean leap;
 	txNumber value;
 	if ((!c_isfinite(dt->year))
 	|| (!c_isfinite(dt->month))
@@ -1303,21 +1306,20 @@ txNumber fxDateMerge(txDateTime* dt, txBoolean utc)
 	|| (!c_isfinite(dt->seconds))
 	|| (!c_isfinite(dt->milliseconds)))
 		return C_NAN;
-	year = (txInteger)c_trunc(dt->year);
-	month = (txInteger)c_trunc(dt->month);
-	year += month / 12;
-	month %= 12;
-	if (month < 0) {
-		year--;
-		month += 12;
-	}
-	leap = mxIsLeapYear(year);
+	year = c_trunc(dt->year);
+	month = c_trunc(dt->month);
+	year += c_floor(month / 12);
+	monthIndex = (txInteger)c_fmod(month, 12.0);
+	if (monthIndex < 0)
+		monthIndex += 12;
+	leap = (c_fmod(year, 4) == 0) && ((c_fmod(year, 100) != 0) || (c_fmod(year, 400) == 0));
 	year += mxYearsOffset - 1;
-	value = mxYearDays(year) - mxYearDays(1970 + mxYearsOffset - 1);
+	value = (365 * year) + c_floor(year / 4) - c_floor(year / 100) + c_floor(year / 400) + 1;
+	value -= (txNumber)mxYearDays(1970 + mxYearsOffset - 1);
 	if (leap)
-		value += gxLeapYearMonthsDays[month];
+		value += gxLeapYearMonthsDays[monthIndex];
 	else
-		value += gxCommonYearMonthsDays[month];
+		value += gxCommonYearMonthsDays[monthIndex];
 	value += c_trunc(dt->date) - 1;
 	value *= mxDayMilliseconds;
 	value += c_trunc(dt->hours) * 60 * 60 * 1000;
@@ -1538,6 +1540,7 @@ void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt)
 		dt->year = tm.tm_year + 1900 + year - similar;
 		dt->offset = (txInteger)c_trunc((fxDateMerge(dt, 1) - former) / 60000.0);
 	}
+	dt->value = value;
 }
 
 

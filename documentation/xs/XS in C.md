@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: June 11, 2023
+Revised: November 17, 2023
 
 **See end of document for [copyright and license](#license)**
 
@@ -2060,6 +2060,16 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 
 This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
+A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
+
+Host data is a pointer stored by XS in a host object. The pointer and data it points to are managed entirely by the host object's C code. XS stores the pointer but does not access it in any way. Host data is usually allocated with `malloc`/`calloc`, but this isn't required. Host data is disposed by the host object's destructor.
+
+A host chunk is memory allocated by XS in its chunk heap for use by a host object from its native C code. XS garbage collects this storage when the host object is garbage collected. The memory is relocatable (like all XS chunks), so unlike Host Data it avoids losing memory to fragmentation. However, it requires some extra attention because the pointer may be invalidated when the garbage collector compacts memory. Therefore, C code needs to refetch the pointer after any operation which might trigger a garbage collection. Because the chunk pointer can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving. The [Rectangle example](#rectangle-example) shows how to use a host chunk. 
+
+Implementing a host object using host data is easier than a host chunk, but potentially less memory efficient.
+
+> Note that an object has either host data or a host chunk but never both.
+
 **Table 2.** Host-Related Macros
 
 <table class="normalTable">
@@ -2179,7 +2189,6 @@ Use the `xsNewHostInstance` macro to create an instance of a host object.
 
 Creates a host object instance, and returns a reference to the new host object instance
 
-
 ***
 
 #### xsGetHostData and xsSetHostData
@@ -2193,7 +2202,7 @@ To get and set the data of a host object, use the `xsGetHostData` and `xsSetHost
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns the data
+Returns the host data pointer.
 
 ***
 
@@ -2204,6 +2213,8 @@ Returns the data
 | --- | :-- |
 | `theThis` | A reference to a host object
 | `theData` | The data to set
+
+Sets the host data pointer.
 
 ***
 
@@ -2218,7 +2229,7 @@ To get and set the data of a host object as a chunk, use the `xsGetHostChunk` an
 | --- | :-- |
 | `theThis` | A reference to a host object
 
-Returns the data
+Returns a pointer to the host chunk data
 
 ***
 
@@ -2231,7 +2242,7 @@ Returns the data
 | `theData` | The data to set or `NULL` to leave the chunk data uninitialized
 | `theSize` | The size of the data in bytes
 
-> Note that an object has either host data or a host chunk but never both.
+Allocates chunks to store the data and optionally initializes it.
 
 ***
 
@@ -2264,6 +2275,7 @@ The `xsBeginHost` macro sets up the stack, and the `xsEndHost` macro cleans up t
 
 Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHost `do not propagate beyond `xsEndHost`.
 
+<a id="file-example"></a>
 ##### Example
 
 This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) to declare classes because it is simpler.
@@ -2299,7 +2311,7 @@ xsEndHost(the);
 
 The `xs_file_constructor` function implements the host constructor. The constructor instantiates an instance of the `File` object prototype, opens the requested file, and stores the associated `xsFileRecord`, containing the stdio `FILE` pointer, as host data.
 
-Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
+Note that the implementation of a constructor created by calling `xsNewHostConstructor` is slightly different from one created using the `@` syntax. Specifically, the constructor created by `xsNewHostConstructor` must create the instance whereas XS creates the instance for constructors declared with the `@` syntax. Here the constructor uses `xsNewHostInstance` to create the instance and assign it to the return value `xsResult`. The prototype passed to `xsNewHostInstance` is taken from the prototype of the constructor, accessed through `xsTarget`. The `xsTarget` value is the XS in C equivalent to the [`new.target`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new.target) pseudo-property in JavaScript.
 
 ```c
 typedef struct {
@@ -2368,6 +2380,8 @@ static void xs_file_get_isOpen(xsMachine *the)
 ### JavaScript `@` language syntax extension
 
 XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
+
+<a id="rectangle-example"></a>
 
 ```javascript
 class Rectangle @ "xs_rectangle_destructor" {

@@ -36,6 +36,7 @@ TOOLS_PREFIX = arm-none-eabi-
 DEBUGGER_SPEED ?= 115200
 DEBUGGER_PORT ?= /dev/cu.SLAB_USBtoUART
 
+
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
 
@@ -65,54 +66,55 @@ ifeq ($(shell which cmake),)
 $(error cmake not found. Set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/pico.md)
 endif
 
+CONNECT_XSBUG =
+NORESTART =
 ifeq ($(HOST_OS),Darwin)
-	DO_COPY = cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH)
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/mac/release
 	UF2_VOLUME_PATH = /Volumes/$(UF2_VOLUME_NAME)
 
-	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
+	SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/programmingMode $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_PATH)
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
 			CONNECT_XSBUG=@echo "Connect to xsbug-log @ $(PICO_VID):$(PICO_PID)." && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
 		else
-			DO_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
 			CONNECT_XSBUG=@echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." ; export XSBUG_PORT=$(XSBUG_PORT) ; export XSBUG_HOST=$(XSBUG_HOST) ; serial2xsbug $(PICO_VID):$(PICO_PID) $(DEBUGGER_SPEED) 8N1
+			ifeq ("$(XSBUG_LAUNCH)","app")
+				START_XSBUG = open -a $(MODDABLE_TOOLS_DIR)/xsbug.app -g
+			endif
 		endif
 #		NORESTART=-norestart
-#		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 
+	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+
 ### Linux
 else
-	DO_COPY = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION
+
+	DEBUGGER_PORT=$(shell findUSBLinux $(PICO_VID) $(PICO_PID) cdc_acm )
+
 	MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin/release
 
-#	PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForVolumeLinux $(UF2_VOLUME_PATH)
-	PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
+	SET_PROGRAMMING_MODE = PATH=$(PLATFORM_DIR)/config:$(PATH) ; programmingModeLinux $(PICO_VID) $(PICO_PID) $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 	WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolumeLinux -x $(UF2_VOLUME_NAME) $(TMP_DIR)/volumename
 
 	ifeq ($(DEBUG),1)
-		ifeq ($(XSBUG_LOG),1)
-			DO_XSBUG =
+		ifeq ("$(XSBUG_LAUNCH)","log")
+			CONNECT_XSBUG = @echo "Connect to xsbug-log @ $(PICO_VID):$(PICO_PID)." && PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) 1
 		else
-			DO_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+			CONNECT_XSBUG = @echo "Connect to xsbug @ $(PICO_VID):$(PICO_PID)." && PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID)
 		endif
-		CONNECT_XSBUG = PATH=$(PLATFORM_DIR)/config:$(PATH) ; $(PLATFORM_DIR)/config/connectToXsbugLinux $(PICO_VID) $(PICO_PID) $(XSBUG_LOG)
-#		NORESTART=-norestart
-	else
-		DO_XSBUG =
-		CONNECT_XSBUG =
-		NORESTART =
+		ifeq ("$(XSBUG_LAUNCH)","app")
+			START_XSBUG = $(shell nohup $(MODDABLE_TOOLS_DIR)/xsbug > /dev/null 2>&1 &)
+		endif
 	endif
+
+	DO_PROGRAM = DESTINATION=$$(cat $(TMP_DIR)/volumename); cp $(BIN_DIR)/xs_pico.uf2 $$DESTINATION ; $(WAIT_FOR_COPY_COMPLETE)
 endif
-KILL_SERIAL_2_XSBUG = $(shell pkill serial2xsbug)
+
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
 HW_DEBUG_OPT = $(FP_OPTS) # -flto
 HW_OPT = -O2 $(FP_OPTS) # -flto
@@ -354,9 +356,6 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/lib/tinyusb/src		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/common		\
 	$(PICO_SDK_DIR)/lib/tinyusb/hw		\
-	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/include	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_audio/include	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
@@ -364,8 +363,6 @@ INC_DIRS = \
 	$(PLATFORM_DIR)/base \
 	$(PLATFORM_DIR)/config \
 	$(LIB_DIR)
-
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
 
 INC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
@@ -509,14 +506,6 @@ PICO_OBJ = \
 	$(LIB_DIR)/tusb_fifo.c.o \
  	$(LIB_DIR)/uart.c.o \
  	$(LIB_DIR)/unique_id.c.o \
-	\
-	$(LIB_DIR)/audio_i2s.c.o \
-	$(LIB_DIR)/audio.cpp.o
-
-#	$(LIB_DIR)/divider.S.o \
-#	$(LIB_DIR)/dfu_rt_device.c.o \
-#	$(LIB_DIR)/msc_device.c.o \
-#	$(LIB_DIR)/stdio_uart.c.o \
 
 LWIP_OBJ = \
 	$(LIB_DIR)/cyw43_lwip.c.o	\
@@ -562,9 +551,7 @@ LWIP_OBJ = \
 	$(LIB_DIR)/bridgeif_fdb.c.o	\
 	$(LIB_DIR)/slipif.c.o	\
 	$(LIB_DIR)/zepif.c.o	\
-	$(LIB_DIR)/timeouts.c.o	\
-
-#	$(LIB_DIR)/cyw43_resource.o
+	$(LIB_DIR)/timeouts.c.o
 
 PICO_OBJ += \
 	$(LWIP_OBJ)	\
@@ -577,8 +564,6 @@ PICO_OBJ += \
 	$(LIB_DIR)/lwip_nosys.c.o	\
 	$(LIB_DIR)/cyw43_arch_poll.c.o
 
-
-#	$(LIB_DIR)/cyw43_arch_threadsafe_background.c.o
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/common/pico_sync				\
@@ -641,27 +626,6 @@ PICO_SRC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver	\
 
-PIO_STUFF += \
-	$(TMP_DIR)/cyw43_bus_pio_spi.pio.h
-
-
-PIO_STUFF += \
-	$(TMP_DIR)/ws2812.pio.h
-
-PICO_SRC_DIRS += \
-	$(BUILD_DIR)/devices/pico/pio  \
-
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/class/msc			\
-#	$(PICO_SDK_DIR)/lib/tinyusb/src/class/dfu			\
-#	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
-
-PICO_SRC_DIRS += \
-	$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s	\
-	$(PICO_EXTRAS_DIR)/src/common/pico_audio	\
-
-PIO_STUFF += \
-	$(TMP_DIR)/audio_i2s.pio.h
-
 SDK_GLUE_OBJ = \
 	$(TMP_DIR)/xsmain.c.o \
 	$(TMP_DIR)/debugger.c.o \
@@ -676,12 +640,11 @@ OBJECTS += \
 
 OTHER_STUFF += \
 	env_vars	\
-	pio_stuff
+	pio_headers
 
 
 CC  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 CPP = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
-# LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)gcc
 LD  = $(TOOLS_BIN)/$(TOOLS_PREFIX)g++
 AR  = $(TOOLS_BIN)/$(TOOLS_PREFIX)ar
 OBJCOPY = $(TOOLS_BIN)/$(TOOLS_PREFIX)objcopy
@@ -753,8 +716,6 @@ PICO_C_DEFINES += \
 	-DLIB_PICO_CYW43_ARCH=1		\
 	-DPICO_CYW43_ARCH_POLL=1
 
-#	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
-
 ifeq ($(WIFI_GPIO),1)
 PICO_C_DEFINES += \
 	-DPICO_BOARD=\"pico_w\"		\
@@ -769,11 +730,9 @@ C_DEFINES = \
 	$(PICO_C_DEFINES) \
 	-DmxUseDefaultSharedChunks=1 \
 	-DmxRun=1 \
-	-DkCommodettoBitmapFormat=$(DISPLAY) \
-	-DkPocoRotation=$(ROTATION) \
+	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
+	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1
-
-#	--sysroot=$(NRF52_GCC_ROOT)/arm-none-eabi 
 
 C_FLAGS=\
 	-c	\
@@ -838,21 +797,20 @@ VPATH += $(PICO_SRC_DIRS) $(PIO_DIRS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 .PRECIOUS: %.d %.o
 
 all: precursor $(BIN_DIR)/xs_pico.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	$(DO_XSBUG)
-	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
-#	$(CONNECT_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
+	$(SET_PROGRAMMING_MODE)
+#	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
+	$(DO_PROGRAM)
+#	$(WAIT_FOR_COPY_COMPLETE)
 	$(CONNECT_XSBUG) $(NORESTART)
 
 deploy: precursor $(BIN_DIR)/xs_pico.uf2
-	$(KILL_SERIAL_2_XSBUG)
-	$(PROGRAMMING_MODE)
-	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
-	$(DO_COPY)
-	$(WAIT_FOR_COPY_COMPLETE)
+	$(KILL_SERIAL2XSBUG)
+	$(SET_PROGRAMMING_MODE)
+#	@echo Copying: $(BIN_DIR)/xs_pico.elf to $(UF2_VOLUME_NAME)
+	$(DO_PROGRAM)
+#	$(WAIT_FOR_COPY_COMPLETE)
 
 build: precursor $(BIN_DIR)/xs_pico.uf2
 	@echo Target built: $(BIN_DIR)/xs_pico.uf2
@@ -864,7 +822,7 @@ ifndef PICO_SDK_DIR
 	$(error PICO_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/ for details.)
 endif
 
-pio_stuff: $(PIO_STUFF)
+pio_headers: $(PIO_HEADERS)
 
 $(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
 	cp $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)
@@ -887,8 +845,8 @@ $(BIN_DIR)/xs_pico.uf2: $(BIN_DIR)/xs_pico.elf
 	$(UF2CONV) $(BIN_DIR)/xs_pico.elf $(BIN_DIR)/xs_pico.uf2
 
 xsbug:
-	$(KILL_SERIAL_2_XSBUG)
-	$(DO_XSBUG)
+	$(KILL_SERIAL2XSBUG)
+	$(START_XSBUG)
 	$(CONNECT_XSBUG)
 
 $(TMP_DIR):
@@ -976,17 +934,6 @@ $(LIB_DIR)/hardware_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/hardware_divider
 $(LIB_DIR)/pico_divider.S.o: $(PICO_SDK_DIR)/src/rp2_common/pico_divider/divider.S
 	@echo "# asm  (special)" $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $(LIB_DIR)/pico_divider.S.o
-#	$(CC) -c -x assembler-with-cpp $(ASMFLAGS) $(C_INCLUDES) $< -o $@
-
-$(TMP_DIR)/cyw43_bus_pio_spi.pio.h: $(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver/cyw43_bus_pio_spi.pio
-	$(PIOASM) -o c-sdk $< $@
-
-$(TMP_DIR)/%.pio.h: %.pio
-	@echo "# compile pio: " $(<F)
-	$(PIOASM) -o c-sdk $< $@
-
-$(TMP_DIR)/audio_i2s.pio.h: $(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/audio_i2s.pio
-	$(PIOASM) -o c-sdk $< $@
 
 CYW43_FW_FILE=43439A0-7.95.49.00.combined
 CYW43_FW_PATH=$(PICO_SDK_DIR)/lib/cyw43-driver/firmware

@@ -106,7 +106,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
 	pins = xsmcToInteger(tmp);
+#if kPinBanks > 1
 	mask = bank ? (SOC_GPIO_VALID_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
+#else
+	mask = (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
+#endif
 	if (!pins || (pins != (pins & mask)))
 		xsUnknownError("invalid pin");
 
@@ -136,7 +140,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 		}
 	}
 	else if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
+#if kPinBanks > 1
 		mask = bank ? (SOC_GPIO_VALID_OUTPUT_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_OUTPUT_GPIO_MASK; 
+#else
+		mask = (uint32_t)SOC_GPIO_VALID_OUTPUT_GPIO_MASK; 
+#endif
 		if (pins != (pins & mask))
 			xsRangeError("input only");
 	}
@@ -253,6 +261,8 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
+	builtinCriticalSectionEnd();
+
 	if (digital->pins) {
 		int pin, lastPin = digital->bank ? GPIO_NUM_MAX - 1 : 31;
 
@@ -268,8 +278,6 @@ void xs_digitalbank_destructor(void *data)
 			gpio_uninstall_isr_service();
 		builtinFreePins(digital->bank, digital->pins);
 	}
-
-	builtinCriticalSectionEnd();
 
 	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
 		c_free(data);
@@ -306,6 +314,8 @@ void xs_digitalbank_read(xsMachine *the)
 
 #if kCPUESP32C3
 	result = hw->in.data;
+#elif kCPUESP32C6 || kCPUESP32H2
+	result = hw->in.val;
 #else
     if (digital->bank)
         result = hw->in1.data;
@@ -327,17 +337,27 @@ void xs_digitalbank_write(xsMachine *the)
 	gpio_dev_t *hw = &GPIO;
 	value = xsmcToInteger(xsArg(0)) & digital->pins;
 
-#if kCPUESP32C3
+#if kCPUESP32C3 || kCPUESP32H2
 	hw->out_w1ts.out_w1ts = value;
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else
 	if (digital->bank) {
+#if kCPUESP32C6
+		hw->out1_w1ts.val = value;
+		hw->out1_w1tc.val = ~value & digital->pins;
+#else
 		hw->out1_w1ts.data = value;
 		hw->out1_w1tc.data = ~value & digital->pins;
+#endif
 	}
 	else {
+#if kCPUESP32C6
+		hw->out_w1ts.val = value;
+		hw->out_w1tc.val = ~value & digital->pins;
+#else
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
+#endif
 	}
 #endif
 }
@@ -393,6 +413,8 @@ uint32_t modDigitalBankRead(Digital digital)
 
 #if kCPUESP32C3
 	return hw->in.data & digital->pins;
+#elif kCPUESP32C6 || kCPUESP32H2
+	return hw->in.val & digital->pins;
 #else
     if (digital->bank)
         return hw->in1.data & digital->pins;
@@ -407,7 +429,7 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 	gpio_dev_t *hw = &GPIO;
 	value &= digital->pins;
 
-#if kCPUESP32C3
+#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
 	hw->out_w1ts.out_w1ts = value;
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else

@@ -1,7 +1,9 @@
 {
+	"include": [
+		"$(MODULES)/data/crc/manifest.json"
+	],
 	"modules": {
-		"embedded:sensor/Humidity-Temperature/SI7020": "$(MODDABLE)/modules/drivers/sensors/si7020/si7020",
-		"crc": "$(MODDABLE)/modules/data/crc/crc"
+		"embedded:sensor/Humidity-Temperature/SI7020": "$(MODDABLE)/modules/drivers/sensors/si7020/si7020"
 	},
 	"preload": [
 		"embedded:sensor/Humidity-Temperature/SI7020"

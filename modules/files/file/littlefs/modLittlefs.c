@@ -29,9 +29,11 @@
 #if ESP32
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/semphr.h"
+	#include "spi_flash/include/spi_flash_mmap.h"
 #elif nrf52
 	#include "FreeRTOS.h"
 	#include "semphr.h"
+#elif PICO_BUILD
 #endif
 
 #ifndef MODDEF_FILE_PARTITION 
@@ -60,7 +62,7 @@
 	#if !ESP32
 		#define MOD_LFS_COPYTORAM 1
 	#endif
-#elif nrf52
+#elif nrf52 || PICO_BUILD
 #else
 	#define MOD_LFS_RAMDISK 1
 
@@ -90,7 +92,7 @@ typedef struct {
 
 #if ESP32
 	const esp_partition_t	*partition;
-#elif nrf52
+#elif nrf52 || PICO_BUILD
 	uint32_t				offset;
 #endif
 } xsLittleFSRecord, *xsLittleFS;
@@ -625,7 +627,7 @@ static int lfs_sync(const struct lfs_config *cfg)
 	return 0;
 }
 
-#elif nrf52
+#elif nrf52 || PICO_BUILD
 
 static int lfs_read(const struct lfs_config *cfg, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -721,7 +723,7 @@ void startLittlefs(xsMachine *the)
 #endif
 		xsUnknownError("can't find partition");
 	}
-#elif nrf52
+#elif nrf52 || PICO_BUILD
 	uint32_t storageOffset, storageSize;
 	if (!modGetPartition(kPartitionStorage, &storageOffset, &storageSize))
 		xsUnknownError("no storage");
@@ -762,7 +764,7 @@ void startLittlefs(xsMachine *the)
 #elif defined(__ets__)
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = SPIFFS_PHYS_SIZE / kFlashSectorSize;
-#elif nrf52
+#elif nrf52 || PICO_BUILD
 	lfs->offset = storageOffset;
     lfs->config.block_size = kFlashSectorSize;
     lfs->config.block_count = storageSize / kFlashSectorSize;

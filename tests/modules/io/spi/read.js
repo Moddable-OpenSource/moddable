@@ -5,10 +5,18 @@ flags: [onlyStrict]
 
 const SPI = device.io.SPI;
 
-let spi = new SPI({
+const options = {
 	...device.SPI.default,
 	hz: 10_000_000
-});
+};
+
+// if in and out are jumpered together, move in to another pin (N.B. this should be removed when spi.read() doesn't also transmit)
+if (((options.in === $TESTMC.config.digital[0]) || (options.in === $TESTMC.config.digital[1])) &&
+	((options.out === $TESTMC.config.digital[0]) || (options.out === $TESTMC.config.digital[1]))) {
+	options.in = $TESTMC.config.digital[3];
+}
+
+let spi = new SPI(options);
 
 let buffer = new ArrayBuffer(256);
 

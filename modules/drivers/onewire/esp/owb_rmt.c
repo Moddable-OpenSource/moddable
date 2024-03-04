@@ -63,6 +63,7 @@ sample code bearing this copyright.
 
 #include "driver/rmt.h"
 #include "driver/gpio.h"
+#include "soc/gpio_periph.h"
 
 #include "xsHost.h"			// esp platform support
 
@@ -385,7 +386,7 @@ static owb_status _init(owb_rmt_driver_info *info, uint8_t gpio_num,
     }
 
     // attach GPIO to previous pin
-#if kCPUESP32C3
+#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
         GPIO.enable_w1ts.val = (0x1 << gpio_num);
 #else
     if (gpio_num < 32)

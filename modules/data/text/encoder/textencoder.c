@@ -221,11 +221,12 @@ void modInstallTextEncoder(xsMachine *the)
 
 	xsmcSetNewObject(xsVar(kPrototype));
 	xsVar(kConstructor) = xsNewHostConstructor(xs_textencoder, 1, xsVar(kPrototype));
-	xsmcSet(xsGlobal, xsID("TextEncoder"), xsVar(kConstructor));
+	xsmcDefine(xsGlobal, xsID("TextEncoder"), xsVar(kConstructor), xsDontEnum);
+
 	xsVar(kScratch) = xsNewHostFunction(xs_textencoder_encode, 1);
-	xsmcSet(xsVar(kPrototype), xsID("encode"), xsVar(kScratch));
+	xsmcDefine(xsVar(kPrototype), xsID("encode"), xsVar(kScratch), xsDontEnum);
 	xsVar(kScratch) = xsNewHostFunction(xs_textencoder_encodeInto, 2);
-	xsmcSet(xsVar(kPrototype), xsID("encodeInto"), xsVar(kScratch));
+	xsmcDefine(xsVar(kPrototype), xsID("encodeInto"), xsVar(kScratch), xsDontEnum);
 
 	xsEndHost(the);
 }

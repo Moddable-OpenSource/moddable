@@ -252,6 +252,8 @@ void xs_digitalbank_destructor(void *data)
 		}
 	}
 
+	builtinCriticalSectionEnd();
+
 	if (digital->pins) {
 		int pin, lastPin = digital->bank ? GPIO_NUM_MAX - 1 : 31;
 
@@ -269,8 +271,6 @@ void xs_digitalbank_destructor(void *data)
 
 		builtinFreePins(digital->bank, digital->pins);
 	}
-
-	builtinCriticalSectionEnd();
 
 	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
 		c_free(data);

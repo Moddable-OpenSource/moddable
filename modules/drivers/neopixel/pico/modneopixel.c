@@ -39,11 +39,14 @@ typedef struct {
 
 	PIO			pio;
 	int			sm;
+	uint		offset;
 
 	uint32_t	pixels[1];		// these must be at the end of the structure
 } xsNeoPixelRecord, *xsNeoPixel;
 
 static void setPixel(xsNeoPixel np, uint16_t index, uint32_t color);
+void np_deinit(xsNeoPixel np);
+void np_show(xsNeoPixel np);
 
 #define xsmcGetHostDataNeoPixel(slot) ((void *)((char *)xsmcGetHostData(slot) - offsetof(xsNeoPixelRecord, pixels)))
 uint32_t hsb_to_rgb_int(int hue, int sat, int brightness);
@@ -53,12 +56,24 @@ static int gNeoPixelsInited = 0;
 void xs_neopixel_destructor(void *data)
 {
 	if (data) {
-		xsNeoPixel np = data;
+		xsNeoPixel np = ((void*)((char*)data - offsetof(xsNeoPixelRecord, pixels)));
 
-//		np_clear(&np->px);
-//		np_show(&np->px);
-		// neopixel_deinit(&np->px);
+		// np_clear(&np->px);
+		c_memset(np->pixels, 0, np->length * 4);
+		np_show(np);
+		np_deinit(np);
 	}
+}
+
+void np_deinit(xsNeoPixel np)
+{
+	if (! gNeoPixelsInited)
+		return;
+
+	pio_sm_set_enabled(np->pio, np->sm, false);
+	pio_remove_program(np->pio, &ws2812_program, np->offset);
+
+	gNeoPixelsInited = 0;
 }
 
 void np_init(xsNeoPixel np)
@@ -66,9 +81,9 @@ void np_init(xsNeoPixel np)
 	if (1 == gNeoPixelsInited)
 		return;
 
-	uint offset = pio_add_program(np->pio, &ws2812_program);
+	np->offset = pio_add_program(np->pio, &ws2812_program);
 
-	ws2812_program_init(np->pio, np->sm, offset, np->pin, 800000, np->nbits == 32 ? 1 : 0);
+	ws2812_program_init(np->pio, np->sm, np->offset, np->pin, 800000, np->nbits == 32 ? 1 : 0);
 	gNeoPixelsInited = 1;
 }
 
@@ -87,8 +102,6 @@ void np_show(xsNeoPixel np)
 	shift = np->nbits == 32 ? 0 : 8;
 	for (i=0; i<np->length; i++)
 		pio_sm_put_blocking(np->pio, np->sm, np_bright(np, np->pixels[i] << shift));
-
-	sleep_ms(10);
 }
 
 void xs_neopixel(xsMachine *the)
@@ -177,7 +190,7 @@ void xs_neopixel(xsMachine *the)
 
 void xs_neopixel_close(xsMachine *the)
 {
-	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
+	xsNeoPixel np = xsmcGetHostData(xsThis);
 	if (!np) return;
 	xs_neopixel_destructor(np);
 	xsmcSetHostData(xsThis, NULL);
@@ -309,7 +322,7 @@ void xs_neopixel_makeHSB(xsMachine *the)
 void setPixel(xsNeoPixel np, uint16_t index, uint32_t color)
 {
 	if (24 == np->nbits) {
-		uint8_t *p = (index * 3) + (uint8_t *)np->pixels;
+		uint8_t *p = (index * 4) + (uint8_t *)np->pixels;
 		p[0] = (uint8_t)(color >> 16);
 		p[1] = (uint8_t)(color >>  8);
 		p[2] = (uint8_t)color;

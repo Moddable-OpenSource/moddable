@@ -42,7 +42,6 @@
 
 #define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
 
-extern void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theIDs);
 static void fxRunArguments(txMachine* the, txIndex offset);
 static void fxRunBase(txMachine* the);
 static void fxRunConstructor(txMachine* the);
@@ -58,6 +57,7 @@ static void fxRunProxy(txMachine* the, txSlot* instance);
 static void fxRunInstanceOf(txMachine* the);
 static void fxRunUsed(txMachine* the, txSlot* selector);
 static void fxRunUsing(txMachine* the);
+static void fxRunUsingAsync(txMachine* the);
 static txBoolean fxIsScopableSlot(txMachine* the, txSlot* instance, txID id);
 static txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot);
 static txBoolean fxToNumericIntegerUnary(txMachine* the, txSlot* theSlot, txBigIntUnary op);
@@ -121,6 +121,12 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 	mxEnvironment = mxFrameToEnvironment(mxFrame); \
 	mxCode = the->code; \
 }
+#define mxRestoreStateKeepStack { \
+	mxScope = the->scope; \
+	mxFrame = the->frame; \
+	mxEnvironment = mxFrameToEnvironment(mxFrame); \
+	mxCode = the->code; \
+}
 #if defined(mxFrequency)
 	#define mxSaveState { \
 		the->exits[byte]++; \
@@ -129,9 +135,20 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 		the->frame = mxFrame; \
 		the->code = mxCode; \
 	}
+	#define mxSaveStateKeepStack { \
+		the->exits[byte]++; \
+		the->scope = mxScope; \
+		the->frame = mxFrame; \
+		the->code = mxCode; \
+	}
 #else
 	#define mxSaveState { \
 		the->stack = mxStack; \
+		the->scope = mxScope; \
+		the->frame = mxFrame; \
+		the->code = mxCode; \
+	}
+	#define mxSaveStateKeepStack { \
 		the->scope = mxScope; \
 		the->frame = mxFrame; \
 		the->code = mxCode; \
@@ -628,9 +645,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_UNSIGNED_RIGHT_SHIFT,
 		&&XS_CODE_UNWIND_1,
 		&&XS_CODE_UNWIND_2,
-		&&XS_CODE_USED_1,
-		&&XS_CODE_USED_2,
-		&&XS_CODE_USING,
 		&&XS_CODE_VAR_CLOSURE_1,
 		&&XS_CODE_VAR_CLOSURE_2,
 		&&XS_CODE_VAR_LOCAL_1,
@@ -640,6 +654,11 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_WITHOUT,
 		&&XS_CODE_YIELD,
 		&&XS_CODE_PROFILE,
+		&&XS_CODE_YIELD_STAR,
+		&&XS_CODE_USED_1,
+		&&XS_CODE_USED_2,
+		&&XS_CODE_USING,
+		&&XS_CODE_USING_ASYNC,
 	};
 	register void * const *bytes = gxBytes;
 #endif
@@ -687,11 +706,6 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		}
 		variable = slot - (mxStack++)->value.integer;
 		variable->next = mxFrame;
-		variable->flag &= XS_STRICT_FLAG;
-#ifdef mxDebug
-		if (mxFrame && (mxFrame->flag & XS_STEP_INTO_FLAG))
-			variable->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
-#endif
 		variable->value.frame.code = the->code;
 		variable->value.frame.scope = mxScope;
 		mxFrame = variable;
@@ -921,7 +935,7 @@ XS_CODE_JUMP:
 			mxBreak;
 			
 		mxCase(XS_CODE_BEGIN_SLOPPY)
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
+            if ((mxFrameTarget->kind != XS_UNDEFINED_KIND) && (mxFrameFunction->value.reference->flag & XS_CAN_CONSTRUCT_FLAG)) {
 				mxSaveState;
 				fxRunConstructor(the);
 				mxRestoreState;
@@ -947,7 +961,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_BEGIN_STRICT)
 			mxFrame->flag |= XS_STRICT_FLAG;
-            if (mxFrameTarget->kind != XS_UNDEFINED_KIND) {
+            if ((mxFrameTarget->kind != XS_UNDEFINED_KIND) && (mxFrameFunction->value.reference->flag & XS_CAN_CONSTRUCT_FLAG)) {
 				mxSaveState;
 				fxRunConstructor(the);
 				mxRestoreState;
@@ -1163,6 +1177,7 @@ XS_CODE_JUMP:
  			
 		mxCase(XS_CODE_AWAIT)
 		mxCase(XS_CODE_YIELD)
+		mxCase(XS_CODE_YIELD_STAR)
 			generator->next->next->value.integer = byte;
 			mxSkipCode(1);
 			slot = mxFrameEnd;
@@ -2082,6 +2097,12 @@ XS_CODE_JUMP:
 			fxRunUsing(the);
 			mxRestoreState;
 			mxBreak;
+		mxCase(XS_CODE_USING_ASYNC)
+			mxNextCode(1);
+			mxSaveState;
+			fxRunUsingAsync(the);
+			mxRestoreState;
+			mxBreak;
 				
 	/* PROPERTIES */	
 		mxCase(XS_CODE_CHECK_INSTANCE)
@@ -2100,12 +2121,12 @@ XS_CODE_JUMP:
 				fxToPrimitive(the, mxStack, XS_STRING_HINT);
 				mxRestoreState;
 			}
-			if ((mxStack->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the->dtoa, mxStack->value.integer, &(scratch.value.at.index))) {
+			if ((mxStack->kind == XS_INTEGER_KIND) && fxIntegerToIndex(the, mxStack->value.integer, &(scratch.value.at.index))) {
 				mxStack->kind = XS_AT_KIND;
 				mxStack->value.at.id = XS_NO_ID;
 				mxStack->value.at.index = scratch.value.at.index;
 			}
-			else if ((mxStack->kind == XS_NUMBER_KIND) && fxNumberToIndex(the->dtoa, mxStack->value.number, &(scratch.value.at.index))) {
+			else if ((mxStack->kind == XS_NUMBER_KIND) && fxNumberToIndex(the, mxStack->value.number, &(scratch.value.at.index))) {
 				mxStack->kind = XS_AT_KIND;
 				mxStack->value.at.id = XS_NO_ID;
 				mxStack->value.at.index = scratch.value.at.index;
@@ -2120,7 +2141,7 @@ XS_CODE_JUMP:
 
 				mxToString(mxStack);
 				mxSaveState;
-				flag = fxStringToIndex(the->dtoa, mxStack->value.string, &(scratch.value.at.index));
+				flag = fxStringToIndex(the, mxStack->value.string, &(scratch.value.at.index));
 				mxRestoreState;
 				if (flag) {
 #ifdef mxMetering
@@ -2167,6 +2188,7 @@ XS_CODE_JUMP:
 			variable = (mxStack + 1)->value.reference;
 			offset = mxStack->value.at.id;
 			index = mxStack->value.at.index;
+			the->stack = mxStack;
 			mxStack++;
 			mxNextCode(1);
 			goto XS_CODE_DELETE_PROPERTY_ALL;
@@ -2174,15 +2196,16 @@ XS_CODE_JUMP:
 			mxToInstance(mxStack);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_DELETE_PROPERTY_ALL:	
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset, index);
 #endif
-			mxSaveState;
+			mxSaveStateKeepStack;
 			index = (txU4)fxRunDelete(the, variable, (txID)offset, index);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 			if (!index && (mxFrame->flag & XS_STRICT_FLAG))
 				mxRunDebugID(XS_TYPE_ERROR, "delete %s: no permission (strict mode)", (txID)offset);
 			mxStack->kind = XS_BOOLEAN_KIND;
@@ -2313,14 +2336,18 @@ XS_CODE_JUMP:
 			offset = slot->ID;
 			index = 0;
 			slot = slot->value.closure->value.reference;
+			the->stack = mxStack;
 			goto XS_CODE_NEW_PROPERTY_ALL;
 		mxCase(XS_CODE_NEW_PROPERTY_AT)
 			mxToInstance(mxStack + 2);
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
 			slot = C_NULL;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_NEW_PROPERTY_ALL;
 		mxCase(XS_CODE_NEW_PROPERTY)
@@ -2328,10 +2355,11 @@ XS_CODE_JUMP:
 			offset = mxRunID(1);
 			index = 0;
 			slot = C_NULL;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 		XS_CODE_NEW_PROPERTY_ALL:
 			byte = mxRunU1(1);
-			mxSaveState;
+			mxSaveStateKeepStack;
 			if (byte & XS_GETTER_FLAG) {
 				mxStack->value.accessor.getter = fxToInstance(the, mxStack);
 				mxStack->value.accessor.setter = C_NULL;
@@ -2344,7 +2372,7 @@ XS_CODE_JUMP:
 			}
 			mxStack->flag = byte & XS_GET_ONLY;
 			index = fxRunDefine(the, variable, slot, (txID)offset, index, mxStack, byte | XS_GET_ONLY);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 			mxStack += 2;
 			if (!index)
 				mxRunDebugID(XS_TYPE_ERROR, "set %s: const", (txID)offset);
@@ -2372,14 +2400,18 @@ XS_CODE_JUMP:
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_SET_SUPER_ALL;
 		mxCase(XS_CODE_SET_SUPER)
 			mxToInstance(mxStack + 1);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_SET_SUPER_ALL:
@@ -2391,9 +2423,9 @@ XS_CODE_JUMP:
 				mxRunDebugID(XS_TYPE_ERROR, "set super %s: no prototype", (txID)offset);
 			slot = mxBehaviorGetProperty(the, slot, (txID)offset, index, XS_ANY);
 			if (!slot || (slot->kind != XS_ACCESSOR_KIND)) {
-				mxSaveState;
+				mxSaveStateKeepStack;
 				slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_OWN);
-				mxRestoreState;
+				mxRestoreStateKeepStack;
 			}
 			goto XS_CODE_SET_ALL;
 		mxCase(XS_CODE_SET_PRIVATE_2)
@@ -2421,20 +2453,24 @@ XS_CODE_JUMP:
 			variable = (mxStack + 2)->value.reference;
 			offset = (mxStack + 1)->value.at.id;
 			index = (mxStack + 1)->value.at.index;
-			*(mxStack + 1) = *mxStack;
+			the->stack = mxStack;
 			mxStack++;
+			scratch = *(the->stack);
+			*(the->stack) = *mxStack;
+			*mxStack = scratch;
 			mxNextCode(1);
 			goto XS_CODE_SET_PROPERTY_ALL;
 		mxCase(XS_CODE_SET_PROPERTY)
 			mxToInstance(mxStack + 1);
 			offset = mxRunID(1);
 			index = 0;
+			the->stack = mxStack;
 			mxNextCode(1 + sizeof(txID));
 			/* continue */
 		XS_CODE_SET_PROPERTY_ALL:	
-			mxSaveState;
+			mxSaveStateKeepStack;
 			slot = mxBehaviorSetProperty(the, variable, (txID)offset, index, XS_ANY);
-			mxRestoreState;
+			mxRestoreStateKeepStack;
 		XS_CODE_SET_ALL:	
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceID(the, (txID)offset, index);
@@ -3247,6 +3283,7 @@ XS_CODE_JUMP:
 						if (__builtin_add_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) + (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("add");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
@@ -3312,6 +3349,7 @@ XS_CODE_JUMP:
 						if (__builtin_sub_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("subtract");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
@@ -3322,6 +3360,7 @@ XS_CODE_JUMP:
 						if (((a ^ c) & (b ^ c)) < 0) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) - (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("subtract");
 						}
 						else
 							slot->value.integer = c;
@@ -3451,12 +3490,14 @@ XS_CODE_JUMP:
 						if (__builtin_mul_overflow(slot->value.integer, mxStack->value.integer, &scratch.value.integer)) {
 							slot->kind = XS_NUMBER_KIND;
 							slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
+							mxFloatingPointOp("multiply");
 						}
 						else
 							slot->value.integer = scratch.value.integer;
 					#else
 						slot->kind = XS_NUMBER_KIND;
 						slot->value.number = (txNumber)(slot->value.integer) * (txNumber)(mxStack->value.integer);
+						mxFloatingPointOp("multiply");
 					#endif
 				#ifdef mxMinusZero
 					}
@@ -4006,7 +4047,7 @@ XS_CODE_JUMP:
 					*mxStack = mxObjectString;
 			}
 		#ifdef mxHostFunctionPrimitive
-			else if (slot->kind == XS_HOST_FUNCTION_KIND)
+			else if (XS_HOST_FUNCTION_KIND == byte)
 				*mxStack = mxFunctionString;
 		#endif
 			mxNextCode(1);
@@ -4020,9 +4061,11 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_DEBUGGER)
 			mxNextCode(1);
 		#ifdef mxDebug
-			mxSaveState;
-			fxDebugLoop(the, C_NULL, 0, "debugger");
-			mxRestoreState;
+			if (!the->debugEval) {
+				mxSaveState;
+				fxDebugLoop(the, C_NULL, 0, "debugger");
+				mxRestoreState;
+			}
 		#endif
 			mxBreak;
 		mxCase(XS_CODE_FILE)
@@ -4032,6 +4075,7 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceID(the, count, 0);
 #endif
 			mxEnvironment->ID = count;
+			mxEnvironment->value.environment.line = 0;
 		#endif
 			mxNextCode(1 + sizeof(txID));
 			mxBreak;
@@ -4041,16 +4085,26 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, count);
 #endif
-			mxEnvironment->value.environment.line = count;
-			if (fxIsReadable(the)) {
-				mxSaveState;
-				fxDebugCommand(the);
-				mxRestoreState;
+			if (count == 0) {
+				count = mxFunctionInstanceCode(mxFrameFunction->value.reference)->ID;
+				if ((mxEnvironment->ID != XS_NO_ID) && (count != XS_NO_ID) && mxBreakpoints.value.list.first) {
+					mxSaveState;
+					fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, count);
+					mxRestoreState;
+				}
 			}
-			if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
-				mxSaveState;
-				fxDebugLine(the, mxEnvironment->ID, count);
-				mxRestoreState;
+			else {
+				mxEnvironment->value.environment.line = count;
+				if (fxIsReadable(the)) {
+					mxSaveState;
+					fxDebugCommand(the);
+					mxRestoreState;
+				}
+				if ((mxEnvironment->ID != XS_NO_ID) && ((mxFrame->flag & XS_STEP_OVER_FLAG) || mxBreakpoints.value.list.first)) {
+					mxSaveState;
+					fxDebugLine(the, mxEnvironment->ID, mxEnvironment->value.environment.line, XS_NO_ID);
+					mxRestoreState;
+				}
 			}
 		#endif
 		#if defined(mxInstrument) || defined(mxProfile)
@@ -4729,6 +4783,31 @@ void fxRemapIDs(txMachine* the, txByte* codeBuffer, txSize codeSize, txID* theID
 	}
 }
 
+void fxRemapScript(txMachine* the, txScript* script)
+{
+	mxPushUndefined();
+	if (script->symbolsBuffer) {
+		txByte* p = script->symbolsBuffer;
+		txID c, i;
+		mxDecodeID(p, c);
+		the->stack->value.callback.address = C_NULL;
+		the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
+		the->stack->kind = XS_IDS_KIND;
+		the->stack->value.IDs[0] = XS_NO_ID;
+		for (i = 1; i < c; i++) {
+			txID id = fxNewNameC(the, (txString)p);
+			the->stack->value.IDs[i] = id;
+			p += mxStringLength((char*)p) + 1;
+		}
+		fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
+		the->stack->value.IDs = C_NULL;
+	}	
+	else {
+		the->stack->value.IDs = C_NULL;
+		the->stack->kind = XS_IDS_KIND;
+	}
+}
+
 txBoolean fxToNumericInteger(txMachine* the, txSlot* theSlot)
 {
 	if (theSlot->kind == XS_REFERENCE_KIND)
@@ -4810,27 +4889,7 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			txSlot* instance;
 			txSlot* property;
 			__JUMP__.code = C_NULL;
-			mxPushUndefined();
-			if (script->symbolsBuffer) {
-				txByte* p = script->symbolsBuffer;
-				txID c, i;
-				mxDecodeID(p, c);
-				the->stack->value.callback.address = C_NULL;
-				the->stack->value.IDs = (txID*)fxNewChunk(the, c * sizeof(txID));
-				the->stack->kind = XS_IDS_KIND;
-				the->stack->value.IDs[0] = XS_NO_ID;
-				for (i = 1; i < c; i++) {
-					txID id = fxNewNameC(the, (txString)p);
-					the->stack->value.IDs[i] = id;
-					p += mxStringLength((char*)p) + 1;
-				}
-				fxRemapIDs(the, script->codeBuffer, script->codeSize, the->stack->value.IDs);
-				the->stack->value.IDs = C_NULL;
-			}	
-			else {
-				the->stack->value.IDs = C_NULL;
-				the->stack->kind = XS_IDS_KIND;
-			}
+			fxRemapScript(the, script);
 			if (script->callback) {
 				property = the->stack;
 				/* THIS */
@@ -4911,39 +4970,33 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 
 void fxRunUsed(txMachine* the, txSlot* selector)
 {
+#if mxExplicitResourceManagement
 	txSlot* exception = selector + 1;
-	txSlot* resource = the->stack;
-	txSlot* dispose = the->stack + 1;
 	fxBeginHost(the);
 	{
-		mxTry(the) {
-			mxPushSlot(resource);
-			mxPushSlot(dispose);
-			mxCall();
-			mxRunCount(0);
-			mxPop();
+		if (selector->value.integer == 0) {
+			mxPush(mxSuppressedErrorConstructor);
+			mxNew();
+			mxPush(mxException);
+			mxPushSlot(exception);
+			mxRunCount(2);
+			mxPullSlot(exception);
 		}
-		mxCatch(the) {
-			if (selector->value.integer == 0) {
-				mxPush(mxSuppressedErrorConstructor);
-				mxNew();
-				mxPush(mxException);
-				mxPushSlot(exception);
-				mxRunCount(2);
-				mxPullSlot(exception);
-			}
-			else {
-				*exception = mxException;
-				selector->value.integer = 0;
-			}
-			mxException = mxUndefined;
+		else {
+			*exception = mxException;
+			selector->value.integer = 0;
 		}
+		mxException = mxUndefined;
 	}
 	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
 }
 
 void fxRunUsing(txMachine* the)
 {
+#if mxExplicitResourceManagement
 	txSlot* resource = the->stack;
 	fxBeginHost(the);
 	mxPushSlot(resource);
@@ -4952,8 +5005,38 @@ void fxRunUsing(txMachine* the)
 		if (!fxIsCallable(the, the->stack))
 			mxTypeError("no [Symbol.dispose] method");
 	}
+	else
+		the->stack->kind = XS_NULL_KIND;
 	mxPullSlot(resource);
 	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
+}
+
+void fxRunUsingAsync(txMachine* the)
+{
+#if mxExplicitResourceManagement
+	txSlot* resource = the->stack;
+	fxBeginHost(the);
+	mxPushSlot(resource);
+	if (!mxIsNull(resource) && !mxIsUndefined(resource)) {
+		mxGetID(mxID(_Symbol_asyncDispose));
+		if (!fxIsCallable(the, the->stack)) {
+			mxPop();
+			mxPushSlot(resource);
+			mxGetID(mxID(_Symbol_dispose));
+		}
+		if (!fxIsCallable(the, the->stack))
+			mxTypeError("no [Symbol.asyncDispose] method, no [Symbol.dispose] method");
+	}
+	else
+		the->stack->kind = XS_NULL_KIND;
+	mxPullSlot(resource);
+	fxEndHost(the);
+#else
+	mxTypeError("not available");
+#endif
 }
 
 

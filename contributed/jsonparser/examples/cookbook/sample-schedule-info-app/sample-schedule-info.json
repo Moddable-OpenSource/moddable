@@ -1,0 +1,223 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#Collection(microsoft.graph.scheduleInformation)",
+  "value": [
+    {
+      "scheduleId": "rm03_boardroom@example.com",
+      "availabilityView": "2",
+      "scheduleItems": [
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 1",
+          "location": "RM-03 \u2013 Boardroom (AU)",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T08:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T09:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 2",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T09:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T09:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 3",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T09:45:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T10:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 3",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T10:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T11:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 4",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T11:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T12:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 5",
+          "location": "RM-03 \u2013 Boardroom (AU)",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T12:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T12:55:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 6",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T13:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T13:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 6",
+          "location": "Microsoft Teams Meeting; RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T13:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T14:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 6",
+          "location": "RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T15:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T16:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 7",
+          "location": "RM-03 \u2013 Boardroom",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T16:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T16:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        },
+        {
+          "isPrivate": false,
+          "status": "busy",
+          "subject": "Example User 8",
+          "location": "RM-03 \u2013 Boardroom (AU)",
+          "isMeeting": true,
+          "isRecurring": false,
+          "isException": false,
+          "isReminderSet": false,
+          "start": {
+            "dateTime": "2023-09-21T18:00:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          },
+          "end": {
+            "dateTime": "2023-09-21T18:30:00.0000000",
+            "timeZone": "E. Australia Standard Time"
+          }
+        }
+      ],
+      "workingHours": {
+        "daysOfWeek": [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday"
+        ],
+        "startTime": "08:00:00.0000000",
+        "endTime": "17:00:00.0000000",
+        "timeZone": {
+          "name": "Pacific Standard Time"
+        }
+      }
+    }
+  ]
+}

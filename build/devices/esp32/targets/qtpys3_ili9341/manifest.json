@@ -1,0 +1,70 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+        "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RESET button.",
+        "BEFORE_DEBUGGING_MESSAGE": "Press and release the RESET button."
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "ili9341",
+		"led": {
+			"power": 38,
+			"pin": 39,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 41,
+			"scl_pin": 40
+		},
+		"spi": {
+			"miso_pin":37,
+			"mosi_pin":35,
+			"sck_pin": 36
+		},
+		"ili9341": {
+			"cs_pin": 16,
+			"dc_pin": 5,
+			"spi_port": 2
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"volume_divider": 2,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 9,
+				"lr_pin": 8,
+				"dataout_pin": 17
+			}
+		}
+	}
+}

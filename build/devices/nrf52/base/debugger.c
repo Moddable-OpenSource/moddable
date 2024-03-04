@@ -33,8 +33,7 @@
 #include "nrfx_uarte.h"
 #include "app_fifo.h"
 
-#ifdef mxDebug
-
+#if defined(mxDebug) || defined(mxInstrument)
 #define DEBUGGER_STACK	2048
 #define kDebuggerTaskPriority	5		// (tskIDLE_PRIORITY + 1)
 
@@ -150,8 +149,10 @@ static void debug_task(void *pvParameter) {
 		}
 
 		// necessary to allow xsbug to break a running app
+#ifdef mxDebug
 		if (fifo_length(&m_rx_fifo))
 			fxReceiveLoop();
+#endif
 	}
 }
 

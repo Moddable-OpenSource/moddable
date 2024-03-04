@@ -1,10 +1,8 @@
 {
     "include": [
-        "$(MODDABLE)/examples/manifest_base.json",
-        "$(MODULES)/pins/i2c/manifest.json"
+        "$(MODULES)/pins/smbus/manifest.json"
     ],
     "modules": {
-        "pins/smbus": "$(MODULES)/pins/smbus/smbus",
         "qwiictwist": "./qwiictwist"
     }
 }

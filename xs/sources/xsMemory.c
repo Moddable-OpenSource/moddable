@@ -92,11 +92,9 @@ static void fxSweepValue(txMachine* the, txSlot* theSlot);
 
 #ifdef mxNever
 
-long gxRenewChunkCases[4] = { 0, 0, 0, 0 };
-
 typedef struct sxSample txSample;
 struct sxSample {
-	txNumber time;
+	struct timespec time;
 	txNumber duration;
 	long count;
 	char* label;
@@ -104,42 +102,32 @@ struct sxSample {
 
 void reportTime(txSample* theSample) 
 {
-	txNumber duration = theSample->duration;
-	txNumber minutes;
-	txNumber seconds;
-
-	minutes = c_floor(duration / 60000000);
-	duration -= minutes * 60000000;
-	seconds = c_floor(duration / 1000000);
-	duration -= seconds * 1000000;
-	duration = c_floor(duration / 1000);
-	fprintf(stderr, "%s * %ld = %ld:%02ld.%03ld\n", theSample->label, theSample->count, 
-			(long)minutes, (long)seconds, (long)duration);
+	fprintf(stderr, " %s %ld %f", theSample->label, theSample->count, theSample->duration); 
 }
 
 void startTime(txSample* theSample) 
 {
-	c_timeval tv;
-	c_gettimeofday(&tv, NULL);
-	theSample->time = ((txNumber)(tv.tv_sec) * 1000000.0) + ((txNumber)tv.tv_usec);
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(theSample->time));
 }
 
 void stopTime(txSample* theSample) 
 {
-	c_timeval tv;
-	txNumber time;
-	c_gettimeofday(&tv, NULL);
-	time = ((txNumber)(tv.tv_sec) * 1000000.0) + ((txNumber)tv.tv_usec);
-	theSample->duration += time - theSample->time;
+	struct timespec time;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
+	theSample->duration += ((double)(time.tv_sec) - (double)(theSample->time.tv_sec))
+			+ (((double)(time.tv_nsec) - (double)(theSample->time.tv_nsec)) / 1000000000.0);
 	theSample->count++;
 }
 
-txSample gxLifeTime = { 0, 0, 0, "life" };
-txSample gxMarkTime = { 0, 0, 0, "mark" };
-txSample gxSweepChunkTime = { 0, 0, 0, "sweep chunk" };
-txSample gxSweepSlotTime = { 0, 0, 0, "sweep slot" };
-txSample gxCompactChunkTime = { 0, 0, 0, "compact chunk" };
-
+txSample gxLifeTime = { { 0, 0 }, 0, 0, "life" };
+txSample gxMarkTime = { { 0, 0 }, 0, 0, "mark" };
+txSample gxSweepChunkTime = { { 0, 0 }, 0, 0, "sweep chunk" };
+txSample gxSweepSlotTime = { { 0, 0 }, 0, 0, "sweep slot" };
+txSample gxCompactChunkTime = { { 0, 0 }, 0, 0, "compact" };
+txSample gxChunksGarbageCollectionTime = { { 0, 0 }, 0, 0, "chunks" };
+txSample gxKeysGarbageCollectionTime = { { 0, 0 }, 0, 0, "keys" };
+txSample gxSlotsGarbageCollectionTime = { { 0, 0 }, 0, 0, "slots" };
+txSample gxForcedGarbageCollectionTime = { { 0, 0 }, 0, 0, "forced" };
 #endif
 
 txSize fxAddChunkSizes(txMachine* the, txSize a, txSize b)
@@ -194,7 +182,8 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 
 	the->stackBottom = fxAllocateSlots(the, theCreation->stackCount);
 	the->stackTop = the->stackBottom + theCreation->stackCount;
-	the->stackPrototypes = the->stackTop;
+	the->stackIntrinsics = the->stackTop;
+	the->stackPrototypes = the->stackTop - XS_INTRINSICS_COUNT;
 	the->stack = the->stackTop;
 #ifdef mxInstrument
 	the->stackPeak = the->stackTop;
@@ -224,6 +213,13 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->cRoot = C_NULL;
 	the->parserBufferSize = theCreation->parserBufferSize;
 	the->parserTableModulo = theCreation->parserTableModulo;
+	
+#ifdef mxDebug
+	the->pathCount = 256;
+	the->pathValue = c_malloc(the->pathCount);
+	if (!the->pathValue)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
+#endif
 }
 
 void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
@@ -257,6 +253,9 @@ void* fxCheckChunk(txMachine* the, txChunk* chunk, txSize size, txSize offset)
 	return C_NULL;
 }
 
+#if defined(__clang__) || defined (__GNUC__)
+	__attribute__((no_sanitize_address))
+#endif
 void fxCheckCStack(txMachine* the)
 {
     char x;
@@ -278,17 +277,34 @@ void fxCollect(txMachine* the, txFlag theFlag)
 		the->collectFlag |= XS_SKIPPED_COLLECT_FLAG;
 		return;
 	}
-	the->collectFlag |= theFlag & XS_ORGANIC_FLAG;
+	the->collectFlag |= theFlag & (XS_COLLECT_KEYS_FLAG | XS_ORGANIC_FLAG);
 
+#ifdef mxNever
+	if (theFlag & XS_ORGANIC_FLAG) {
+		if (theFlag & XS_COMPACT_FLAG)
+			startTime(&gxChunksGarbageCollectionTime);
+		else if (theFlag & XS_COLLECT_KEYS_FLAG)
+			startTime(&gxKeysGarbageCollectionTime);
+		else
+			startTime(&gxSlotsGarbageCollectionTime);
+	}
+	else
+		startTime(&gxForcedGarbageCollectionTime);
+	startTime(&gxMarkTime);
+#endif
 	if (theFlag & XS_COMPACT_FLAG) {
 		fxMark(the, fxMarkValue);
 		fxMarkWeakStuff(the);
+	#ifdef mxNever
+		stopTime(&gxMarkTime);
+	#endif
 		fxSweep(the);
 	}
 	else {
 		fxMark(the, fxMarkReference);
 		fxMarkWeakStuff(the);
 	#ifdef mxNever
+		stopTime(&gxMarkTime);
 		startTime(&gxSweepSlotTime);
 	#endif
 		aCount = 0;
@@ -316,7 +332,7 @@ void fxCollect(txMachine* the, txFlag theFlag)
 							(*(bSlot->value.host.variant.destructor))(bSlot->value.host.data);
 					}
 				#if mxInstrument
-					if (bSlot->kind == XS_MODULE_KIND)
+					if ((bSlot->kind == XS_MODULE_KIND) && (bSlot->ID == XS_MODULE_BEHAVIOR))
 						the->loadedModulesCount--;
 				#endif
 					bSlot->kind = XS_UNDEFINED_KIND;
@@ -343,16 +359,33 @@ void fxCollect(txMachine* the, txFlag theFlag)
 		aSlot++;
 	}
 	
-	if (theFlag) 
-		the->collectFlag &= ~XS_TRASHING_FLAG;
-	else  {
-		if ((the->maximumHeapCount - the->currentHeapCount) < the->minimumHeapCount)
-				the->collectFlag |= XS_TRASHING_FLAG;
-			else
-				the->collectFlag &= ~XS_TRASHING_FLAG;
-	}
-	the->collectFlag &= ~XS_ORGANIC_FLAG;
+	the->collectFlag &= ~(XS_COLLECT_KEYS_FLAG | XS_ORGANIC_FLAG);
 	
+	if (theFlag & XS_COMPACT_FLAG) {
+		if ((the->maximumChunksSize - the->currentChunksSize) < the->minimumChunksSize)
+			the->collectFlag |= XS_TRASHING_CHUNKS_FLAG;
+		else
+			the->collectFlag &= ~XS_TRASHING_CHUNKS_FLAG;
+	}
+	
+	if ((the->maximumHeapCount - the->currentHeapCount) < the->minimumHeapCount)
+		the->collectFlag |= XS_TRASHING_SLOTS_FLAG;
+	else
+		the->collectFlag &= ~XS_TRASHING_SLOTS_FLAG;
+	
+#ifdef mxNever
+	if (theFlag & XS_ORGANIC_FLAG) {
+		if (theFlag & XS_COMPACT_FLAG)
+			stopTime(&gxChunksGarbageCollectionTime);
+		else if (theFlag & XS_COLLECT_KEYS_FLAG)
+			stopTime(&gxKeysGarbageCollectionTime);
+		else
+			stopTime(&gxSlotsGarbageCollectionTime);
+	}
+	else
+		stopTime(&gxForcedGarbageCollectionTime);
+#endif
+
 #if mxReport
 	if (theFlag)
 		fxReport(the, "# Chunk collection: reserved %ld used %ld peak %ld bytes\n", 
@@ -367,7 +400,7 @@ void fxCollect(txMachine* the, txFlag theFlag)
 		(long)((the->maximumHeapCount - aCount) * sizeof(txSlot)),
 		(long)(the->currentHeapCount * sizeof(txSlot)),
 		(long)(the->peakHeapCount * sizeof(txSlot)),
-		the->collectFlag & XS_TRASHING_FLAG);
+		the->collectFlag & XS_TRASHING_SLOTS_FLAG);
 #endif
 #ifdef mxInstrument
 	the->garbageCollectionCount++;
@@ -403,6 +436,8 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 #endif
 #if mxNoChunks
 	chunk = c_malloc(size);
+	if (!chunk)
+		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 	chunk->size = size;
 	chunk->temporary = (txByte*)the->firstBlock;
 	the->firstBlock = (txBlock*)chunk;
@@ -420,8 +455,12 @@ again:
 		block = block->nextBlock;
 	}
 	if (*once) {
+		txBoolean wasThrashing = ((the->collectFlag & XS_TRASHING_CHUNKS_FLAG) != 0), isThrashing;
 		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
+		isThrashing = ((the->collectFlag & XS_TRASHING_CHUNKS_FLAG) != 0);
 		*once = 0;
+		if (wasThrashing && isThrashing)
+			return C_NULL;
 		goto again;
 	}
 	return C_NULL;
@@ -453,7 +492,7 @@ again:
 		return result;
 	}
 	if (once) {
-		fxCollect(the, XS_ORGANIC_FLAG);
+		fxCollect(the, XS_COLLECT_KEYS_FLAG | XS_ORGANIC_FLAG);
 		once = 0;
 		goto again;
 	}
@@ -496,6 +535,7 @@ void fxFree(txMachine* the)
 		fxFreeSlots(the, the->stackBottom);
 	the->stackBottom = C_NULL;
 	the->stackTop = C_NULL;
+	the->stackIntrinsics = C_NULL;
 	the->stackPrototypes = C_NULL;
 	the->stack = C_NULL;
 	
@@ -520,21 +560,26 @@ void fxFree(txMachine* the)
 		the->firstBlock = C_NULL;
 	}
 #endif
-	
+
+#ifdef mxDebug
+	if (the->pathValue)
+		c_free(the->pathValue);
+	the->pathValue = C_NULL;
+#endif
+
 #ifdef mxNever
 	stopTime(&gxLifeTime);
-	reportTime(&gxLifeTime);
-	fprintf(stderr, "chunk: %d bytes\n", the->maximumChunksSize);
-	fprintf(stderr, "slot: %ld bytes\n", the->maximumHeapCount * sizeof(txSlot));
-	reportTime(&gxMarkTime);
-	reportTime(&gxSweepChunkTime);
-	reportTime(&gxSweepSlotTime);
-	reportTime(&gxCompactChunkTime);
-	fprintf(stderr, "renew: %ld %ld %ld %ld\n", 
-			gxRenewChunkCases[0], 
-			gxRenewChunkCases[1], 
-			gxRenewChunkCases[2], 
-			gxRenewChunkCases[3]);
+// 	fprintf(stderr, "###");
+// 	reportTime(&gxLifeTime);
+// 	reportTime(&gxForcedGarbageCollectionTime);
+// 	reportTime(&gxChunksGarbageCollectionTime);
+// 	reportTime(&gxKeysGarbageCollectionTime);
+// 	reportTime(&gxSlotsGarbageCollectionTime);
+// 	reportTime(&gxMarkTime);
+// 	reportTime(&gxSweepChunkTime);
+// 	reportTime(&gxSweepSlotTime);
+// 	reportTime(&gxCompactChunkTime);
+// 	fprintf(stderr, "\n");
 #endif
 }
 
@@ -590,6 +635,7 @@ void* fxGrowChunks(txMachine* the, txSize size)
 			(long)the->maximumChunksSize, (long)the->currentChunksSize, (long)the->peakChunksSize);
 	#endif
 	}
+	the->collectFlag &= ~XS_TRASHING_CHUNKS_FLAG;
 	return block;
 }
 
@@ -621,18 +667,20 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	if ((void *)-1 == aHeap)
 		return;
 		
-	if (the->firstHeap && (the->firstHeap->value.reference == aHeap)) {
-		the->firstHeap->value.reference = aHeap + theCount;
-		the->maximumHeapCount += theCount;		
-		theCount -= 1;
-		aSlot = aHeap;
-	}
-	else if ((aHeap + theCount) == the->firstHeap) {
-		*aHeap = *(the->firstHeap);
-		the->maximumHeapCount += theCount;
-		theCount -= 1;
-		the->firstHeap = aHeap;
-		aSlot = aHeap + 1;
+	if (the->firstHeap && the->growHeapDirection) {
+		if (the->growHeapDirection > 0) {
+			the->firstHeap->value.reference = aHeap + theCount;
+			the->maximumHeapCount += theCount;		
+			theCount -= 1;
+			aSlot = aHeap;
+		}
+		else {
+			*aHeap = *(the->firstHeap);
+			the->maximumHeapCount += theCount;
+			theCount -= 1;
+			the->firstHeap = aHeap;
+			aSlot = aHeap + 1;
+		}
 	}
 	else {
 		the->maximumHeapCount += theCount - 1;
@@ -662,7 +710,7 @@ void fxGrowSlots(txMachine* the, txSize theCount)
 	ASAN_POISON_MEMORY_REGION(&aSlot->value, sizeof(aSlot->value));
 #endif
 	the->freeHeap = aHeap + 1;
-	the->collectFlag &= ~XS_TRASHING_FLAG;
+	the->collectFlag &= ~XS_TRASHING_SLOTS_FLAG;
 #if mxReport
 	fxReport(the, "# Slot allocation: reserved %ld used %ld peak %ld bytes\n", 
 		(long)(the->maximumHeapCount * sizeof(txSlot)),
@@ -676,9 +724,6 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 	txSlot** p;
 	txSlot** q;
 	txSlot* slot;
-#if mxKeysGarbageCollection
-	txInteger deletions = 0;
-#endif
 
 #if mxAliasInstance
 	p = the->aliasArray;
@@ -704,70 +749,71 @@ void fxMark(txMachine* the, void (*theMarker)(txMachine*, txSlot*))
 	}
 	
 #if mxKeysGarbageCollection
-	p = the->keyArray;
-	q = p + the->keyIndex - the->keyOffset;
-	while (p < q) {
-		slot = *p++;
-		if (!(slot->flag & XS_MARK_FLAG)) {
-			if (slot->flag & XS_DONT_DELETE_FLAG)
-				slot->flag |= XS_MARK_FLAG;
-			else if (slot->flag & XS_DONT_ENUM_FLAG)
-				deletions++;
-		}
-	}
-	
-// 	fprintf(stderr, "\n### KEYS GC %d", deletions);
-	p = the->nameTable;
-	q = the->nameTable + the->nameModulo;
-	while ((p < q) && deletions) {
-		txSlot** address = p;
-		while (((slot = *address)) && deletions) {
-			if (slot->flag & XS_MARK_FLAG)
-				address = &(slot->next);
-			else {
-				*address = slot->next;
-				deletions--;
+	if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+		txInteger deletions = 0;
+		p = the->keyArray;
+		q = p + the->keyIndex - the->keyOffset;
+		while (p < q) {
+			slot = *p++;
+			if (!(slot->flag & XS_MARK_FLAG)) {
+				if (slot->flag & XS_DONT_DELETE_FLAG)
+					slot->flag |= XS_MARK_FLAG;
+				else if (slot->flag & XS_DONT_ENUM_FLAG)
+					deletions++;
 			}
 		}
-		p++;
-	}
-// 	fprintf(stderr, " => %d", deletions);
 	
-	the->keyholeCount = 0;
-	the->keyholeList = C_NULL;
-	p = the->keyArray;
-	q = p + the->keyIndex - the->keyOffset;
-	while (p < q) {
-		slot = *p;
-		if (slot->flag & XS_MARK_FLAG)
-			(*theMarker)(the, slot);
-		else {
-// 			if (slot->kind != XS_UNDEFINED_KIND) {	
-// 				fxIDToString(the, slot->ID, the->nameBuffer, sizeof(the->nameBuffer));
-// 				fprintf(stderr, "\n%p %d %s", slot, slot->ID, the->nameBuffer);
-// 			}
-			slot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
-			slot->next = the->keyholeList;
-			slot->kind = XS_UNDEFINED_KIND;
-			the->keyholeCount++;
-			the->keyholeList = slot;
+	// 	fprintf(stderr, "\n### KEYS GC %d", deletions);
+		p = the->nameTable;
+		q = the->nameTable + the->nameModulo;
+		while ((p < q) && deletions) {
+			txSlot** address = p;
+			while (((slot = *address)) && deletions) {
+				if (slot->flag & XS_MARK_FLAG)
+					address = &(slot->next);
+				else {
+					*address = slot->next;
+					deletions--;
+				}
+			}
+			p++;
 		}
-		p++;
-	}
-// 	fprintf(stderr, "\n");
-#else
-	p = the->keyArray;
-	q = p + the->keyIndex - the->keyOffset;
-	while (p < q) {
-		slot = *p++;
-		slot->flag |= XS_MARK_FLAG;
-		(*theMarker)(the, slot);
-	}
-#endif
+	// 	fprintf(stderr, " => %d", deletions);
 	
-#ifdef mxNever
-	stopTime(&gxMarkTime);
+		the->keyholeCount = 0;
+		the->keyholeList = C_NULL;
+		p = the->keyArray;
+		q = p + the->keyIndex - the->keyOffset;
+		while (p < q) {
+			slot = *p;
+			if (slot->flag & XS_MARK_FLAG)
+				(*theMarker)(the, slot);
+			else {
+	// 			if (slot->kind != XS_UNDEFINED_KIND) {	
+	// 				fxIDToString(the, slot->ID, the->nameBuffer, sizeof(the->nameBuffer));
+	// 				fprintf(stderr, "\n%p %d %s", slot, slot->ID, the->nameBuffer);
+	// 			}
+				slot->flag = XS_INTERNAL_FLAG | XS_MARK_FLAG;
+				slot->next = the->keyholeList;
+				slot->kind = XS_UNDEFINED_KIND;
+				the->keyholeCount++;
+				the->keyholeList = slot;
+			}
+			p++;
+		}
+	// 	fprintf(stderr, "\n");
+	}
+	else
 #endif
+	{
+		p = the->keyArray;
+		q = p + the->keyIndex - the->keyOffset;
+		while (p < q) {
+			slot = *p++;
+			slot->flag |= XS_MARK_FLAG;
+			(*theMarker)(the, slot);
+		}
+	}
 }
 
 #if mxKeysGarbageCollection
@@ -830,8 +876,10 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					break;
 				case XS_REFERENCE_KIND:
 				#if mxKeysGarbageCollection
-					if (!(aProperty->flag & XS_INTERNAL_FLAG))
-						fxMarkID(the, aProperty->ID);
+					if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+						if (!(aProperty->flag & XS_INTERNAL_FLAG))
+							fxMarkID(the, aProperty->ID);
+					}
 				#endif
 					aTemporary = aProperty->value.reference;
 					if (!(aTemporary->flag & XS_MARK_FLAG)) {
@@ -868,8 +916,10 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 					
 				case XS_CLOSURE_KIND:
 				#if mxKeysGarbageCollection
-					if (!(aProperty->flag & XS_INTERNAL_FLAG))
-						fxMarkID(the, aProperty->ID);
+					if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+						if (!(aProperty->flag & XS_INTERNAL_FLAG))
+							fxMarkID(the, aProperty->ID);
+					}
 				#endif
 					aTemporary = aProperty->value.closure;
 					if (aTemporary && !(aTemporary->flag & XS_MARK_FLAG)) {
@@ -896,7 +946,8 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 				case XS_CALLBACK_KIND:
 				case XS_CODE_KIND:
 				#if mxKeysGarbageCollection
-					fxMarkID(the, aProperty->ID);
+					if (the->collectFlag & XS_COLLECT_KEYS_FLAG)
+						fxMarkID(the, aProperty->ID);
 				#endif
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
@@ -904,8 +955,10 @@ void fxMarkInstance(txMachine* the, txSlot* theCurrent, void (*theMarker)(txMach
 				
 				default:
 				#if mxKeysGarbageCollection
-					if (!(aProperty->flag & XS_INTERNAL_FLAG))
-						fxMarkID(the, aProperty->ID);
+					if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+						if (!(aProperty->flag & XS_INTERNAL_FLAG))
+							fxMarkID(the, aProperty->ID);
+					}
 				#endif
 					(*theMarker)(the, aProperty);
 					aProperty = aProperty->next;
@@ -1048,7 +1101,8 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
 #if mxKeysGarbageCollection
-		fxMarkID(the, theSlot->value.module.id);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG)
+			fxMarkID(the, theSlot->value.module.id);
 #endif
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
@@ -1081,11 +1135,17 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
 		
+	case XS_BREAKPOINT_KIND:
+		aSlot = theSlot->value.breakpoint.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.error.info;
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
 			fxMarkInstance(the, aSlot, fxMarkReference);
 		break;
+	case XS_ASYNC_DISPOSABLE_STACK_KIND:
 	case XS_DISPOSABLE_STACK_KIND:
 	case XS_LIST_KIND:
 		fxCheckCStack(the);
@@ -1193,11 +1253,14 @@ void fxMarkReference(txMachine* the, txSlot* theSlot)
 		break;	
 #if mxKeysGarbageCollection
 	case XS_SYMBOL_KIND:
-		if (!(theSlot->flag & XS_INTERNAL_FLAG))
-			fxMarkID(the, theSlot->value.symbol);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+			if (!(theSlot->flag & XS_INTERNAL_FLAG))
+				fxMarkID(the, theSlot->value.symbol);
+		}
 		break;	
 	case XS_AT_KIND:
-		fxMarkID(the, theSlot->value.at.id);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG)
+			fxMarkID(the, theSlot->value.at.id);
 		break;	
 #endif
 	}
@@ -1331,7 +1394,8 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_MODULE_KIND:
 	case XS_PROGRAM_KIND:
 #if mxKeysGarbageCollection
-		fxMarkID(the, theSlot->value.module.id);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG)
+			fxMarkID(the, theSlot->value.module.id);
 #endif
 		aSlot = theSlot->value.module.realm;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {
@@ -1354,11 +1418,17 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 			mxMarkChunk(theSlot->value.key.string);
 		break;
 		
+	case XS_BREAKPOINT_KIND:
+		aSlot = theSlot->value.breakpoint.info;
+		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
+			fxMarkInstance(the, aSlot, fxMarkValue);
+		break;
 	case XS_ERROR_KIND:
 		aSlot = theSlot->value.error.info;
 		if (aSlot && (!(aSlot->flag & XS_MARK_FLAG)))
 			fxMarkInstance(the, aSlot, fxMarkValue);
 		break;
+	case XS_ASYNC_DISPOSABLE_STACK_KIND:
 	case XS_DISPOSABLE_STACK_KIND:
 	case XS_LIST_KIND:
 		aSlot = theSlot->value.list.first;
@@ -1468,11 +1538,14 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 		
 #if mxKeysGarbageCollection
 	case XS_SYMBOL_KIND:
-		if (!(theSlot->flag & XS_INTERNAL_FLAG))
-			fxMarkID(the, theSlot->value.symbol);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG) {
+			if (!(theSlot->flag & XS_INTERNAL_FLAG))
+				fxMarkID(the, theSlot->value.symbol);
+		}
 		break;	
 	case XS_AT_KIND:
-		fxMarkID(the, theSlot->value.at.id);
+		if (the->collectFlag & XS_COLLECT_KEYS_FLAG)
+			fxMarkID(the, theSlot->value.at.id);
 		break;	
 #endif
 	}
@@ -1629,11 +1702,11 @@ again:
 		return aSlot;
 	}
 	if (once) {
-		txBoolean wasThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0), isThrashing;
+		txBoolean wasThrashing = ((the->collectFlag & XS_TRASHING_SLOTS_FLAG) != 0), isThrashing;
 
 		fxCollect(the, XS_ORGANIC_FLAG);
 
-		isThrashing = ((the->collectFlag & XS_TRASHING_FLAG) != 0);
+		isThrashing = ((the->collectFlag & XS_TRASHING_SLOTS_FLAG) != 0);
 		allocate = wasThrashing && isThrashing;
 
 		once = 0;
@@ -1673,9 +1746,6 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 		if (the->peakChunksSize < the->currentChunksSize)
 			the->peakChunksSize = the->currentChunksSize;
 		aChunk->size = size;
-	#ifdef mxNever
-		gxRenewChunkCases[0]++;
-	#endif
 		return theData;
 	}
 	while (aBlock) {
@@ -1691,23 +1761,14 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 			#ifdef mxSnapshot
 				c_memset(aData + capacity, 0, delta);
 			#endif
-			#ifdef mxNever
-				gxRenewChunkCases[1]++;
-			#endif
 				return theData;
 			}
 			else {
-			#ifdef mxNever
-				gxRenewChunkCases[2]++;
-			#endif
 				return C_NULL;
 			}
 		}
 		aBlock = aBlock->nextBlock;
 	}
-#ifdef mxNever
-	gxRenewChunkCases[3]++;
-#endif
 	return C_NULL;
 #endif
 }
@@ -1814,7 +1875,9 @@ void fxSweep(txMachine* the)
 		aSize = chunk->size;
 		if (aSize & mxChunkFlag) {
 			aSize &= ~mxChunkFlag;
-			temporary = c_malloc(aSize);
+			temporary = malloc(aSize);		// not c_malloc, to avoid failures when shuffling heap during fuzzing
+			if (!temporary)
+				fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);		// should never happen
 			c_memcpy(temporary, chunk, aSize);
 			((txChunk*)temporary)->size = aSize;
 			chunk->temporary = temporary;
@@ -1949,7 +2012,7 @@ void fxSweep(txMachine* the)
 // 					fprintf(stderr, "gc module %d %s\n", bSlot->value.module.id, name);
 // 				}
 			#if mxInstrument
-				if (bSlot->kind == XS_MODULE_KIND)
+				if ((bSlot->kind == XS_MODULE_KIND) && (bSlot->ID == XS_MODULE_BEHAVIOR))
 					the->loadedModulesCount--;
 			#endif
 				bSlot->kind = XS_UNDEFINED_KIND;
@@ -2071,8 +2134,6 @@ void fxSweepValue(txMachine* the, txSlot* theSlot)
 		break;
 	case XS_HOST_KIND:
 		if (theSlot->value.host.data) {
-			if ((theSlot->flag & XS_HOST_HOOKS_FLAG) && (theSlot->value.host.variant.hooks->sweeper))
-				(*theSlot->value.host.variant.hooks->sweeper)(the, theSlot->value.host.data, fxSweepValue);
 			if (theSlot->flag & XS_HOST_CHUNK_FLAG)
 				mxSweepChunk(theSlot->value.host.data, void*);
 		}

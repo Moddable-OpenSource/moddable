@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,20 +26,42 @@ import JogDial from "jogdial";
 import LIS3DH from "lis3dh";
 
 globalThis.Host = {
-	JogDial: class {
+	JogDial: class extends JogDial {
+		#onTurn;
+		#onPushAndTurn;
 		constructor(options) {
-			return new JogDial({
+			super({
 				...options,
-				jogdial: config.jogdial
+				jogdial: config.jogdial,
+				onTurn: delta => {
+					if (180 === screen?.rotation)
+						delta = -delta;
+					this.#onTurn?.(delta);
+				}, 
+				onPushAndTurn: delta => {
+					if (180 === screen?.rotation)
+						delta = -delta;
+					this.#onPushAndTurn?.(delta);
+				} 
 			});
+			this.#onTurn = options.onTurn ?? this.onTurn;
+			this.#onPushAndTurn = options.onPushAndTurn ?? this.onPushAndTurn ?? this.#onTurn;
 		}
 	},
-	Accelerometer: class {
+	Accelerometer: class extends LIS3DH {
 		constructor(options) {
-			return new LIS3DH({
+			super({
 				...options,
 				address: 0x19,
 			});
+		}
+		sample() {
+			const result = super.sample();
+			if (180 === screen?.rotation) {
+				result.x = -result.x;
+				result.y = -result.y;
+			}
+			return result;
 		}
 	},
 	LED: {

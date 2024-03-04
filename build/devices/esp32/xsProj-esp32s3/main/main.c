@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,6 +41,8 @@
 	#include "esp_bt.h"
 #endif
 
+#include "driver/uart.h"
+
 #include "modInstrumentation.h"
 #include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
@@ -49,6 +51,12 @@
 #include "xsHosts.h"
 
 #include "mc.defines.h"
+
+#if MODDEF_ECMA419_ENABLED
+	#include "common/builtinCommon.h"
+#endif
+
+#define WEAK __attribute__((weak))
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
@@ -61,6 +69,7 @@
 		#include "tusb_cdc_acm.h"
 	#elif (USE_USB == 2)
 		#include "driver/usb_serial_jtag.h"
+		#include "hal/usb_serial_jtag_ll.h"
 	#endif
 #else
 	#include "driver/uart.h"
@@ -79,10 +88,11 @@ extern void mc_setup(xsMachine *the);
 	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 #endif
 
-#if !MODDEF_XS_TEST
-static
+#if MODDEF_SOFTRESET
+	uint8_t gSoftReset;
 #endif
-	xsMachine *gThe;		// the main XS virtual machine running
+
+static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -100,7 +110,7 @@ static
 #endif
 
 #ifdef mxDebug
-	unsigned char gXSBUG[4] = {DEBUG_IP};
+	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
 #if (USE_USB == 1)
@@ -169,7 +179,7 @@ int fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
 
 	if (! ((0 != size) && (0 == ((size - 1) & size))))
 {
-printf("fifo_init - bad size: %d\r\n", size);
+printf("fifo_init - bad size: %ld\r\n", size);
 		return -2;		// bad size - needs to be base 2
 }
 
@@ -187,7 +197,7 @@ printf("fifo_init - bad size: %d\r\n", size);
 static void debug_task(void *pvParameter)
 {
 #if (USE_USB == 2)
-	const usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 4096, .tx_buffer_size = 2048 };
+	const usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 2048, .tx_buffer_size = 64 };
 	usb_serial_jtag_driver_install(&cfg);
 #endif
 
@@ -222,18 +232,22 @@ static void debug_task(void *pvParameter)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	esp_task_wdt_add(NULL);
 #endif
 
 	while (true) {
-		gThe = modCloneMachine(0, 0, 0, 0, NULL);
+#if MODDEF_SOFTRESET
+		gSoftReset = 0;
+#endif
+
+		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
-#if MODDEF_XS_TEST
+#if MODDEF_SOFTRESET
 		xsMachine *the = gThe;
-		while (gThe) {
+		while (!gSoftReset) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
@@ -255,7 +269,7 @@ void loop_task(void *pvParameter)
 	to enable serial port for diagnostic information and debugging
 */
 
-void modLog_transmit(const char *msg)
+WEAK void modLog_transmit(const char *msg)
 {
 	uint8_t c;
 
@@ -297,7 +311,7 @@ void checkLineState() {
 void line_state_callback(int itf, cdcacm_event_t *event) {
 	DTR = event->line_state_changed_data.dtr;
 	RTS = event->line_state_changed_data.rts;
-	printf("[%d] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
+	printf("[%ld] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
 	checkLineState();
 }
 
@@ -390,29 +404,46 @@ uint8_t ESP_setBaud(int baud) {
 
 #else
 
-void ESP_put(uint8_t *c, int count) {
+#define WRITE_CHUNK	64
+#define FAIL_RETRY	2
+WEAK void ESP_put(uint8_t *c, int count) {
 #if (USE_USB == 2)
-	int sent = 0;
 	while (count > 0) {
-		sent = usb_serial_jtag_write_bytes(c, count, 10);
-		c += sent;
-		count -= sent;
-	}   
+		int len = count > WRITE_CHUNK ? WRITE_CHUNK : count;
+		int wrote;
+		int fail = FAIL_RETRY;
+		while ((wrote = usb_serial_jtag_ll_write_txfifo(c, len)) < 1) {
+			if (0 == --fail)
+				goto done;
+			modDelayMilliseconds(1);
+			continue;
+		}
+		usb_serial_jtag_ll_txfifo_flush();
+		c += wrote;
+		count -= wrote;
+	}
+done:
 #else
 	uart_write_bytes(USE_UART, (char *)c, count);
 #endif
 }
 
-void ESP_putc(int c) {
-	char cx = c;
+WEAK void ESP_putc(int c) {
+	uint8_t cx = c;
 #if (USE_USB == 2)
-    usb_serial_jtag_write_bytes(&cx, 1, 1);
+	int fail = FAIL_RETRY;
+	while (usb_serial_jtag_ll_write_txfifo(&cx, 1) < 1) {
+		if (0 == --fail)
+			break;
+		modDelayMilliseconds(1);
+	}
+	usb_serial_jtag_ll_txfifo_flush();
 #else
 	uart_write_bytes(USE_UART, &cx, 1);
 #endif
 }
 
-int ESP_getc(void) {
+WEAK int ESP_getc(void) {
 	int amt;
 	uint8_t c;
 #if (USE_USB == 2)
@@ -423,7 +454,7 @@ int ESP_getc(void) {
 	return (1 == amt) ? c : -1;
 }
 
-uint8_t ESP_isReadable() {
+WEAK uint8_t ESP_isReadable() {
 #if (USE_USB == 2)
 	return true;
 #else
@@ -433,7 +464,7 @@ uint8_t ESP_isReadable() {
 #endif
 }
 
-uint8_t ESP_setBaud(int baud) {
+WEAK uint8_t ESP_setBaud(int baud) {
 #if (USE_USB == 2)
 	return 1;
 #else
@@ -479,8 +510,14 @@ void app_main() {
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
-	uartConfig.source_clk = UART_SCLK_APB;
+	uartConfig.source_clk = UART_SCLK_DEFAULT;
+
+#ifdef mxDebug
+	QueueHandle_t uartQueue;
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
+#else
+	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
+#endif
 
 	err = uart_param_config(USE_UART, &uartConfig);
 	if (err)
@@ -490,11 +527,11 @@ void app_main() {
 		printf("uart_set_pin err %d\r\n", err);
 
 #ifdef mxDebug
-	QueueHandle_t uartQueue;
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
-#else
-	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
+	#if MODDEF_ECMA419_ENABLED
+		builtinUsePin(USE_UART_TX);
+		builtinUsePin(USE_UART_RX);
+	#endif
 #endif
 
 #endif	// ! USE_USB

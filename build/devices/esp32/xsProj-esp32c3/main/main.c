@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,6 +45,7 @@
 #if USE_USB
 	#if USE_USB == 2
 		#include "driver/usb_serial_jtag.h"
+		#include "hal/usb_serial_jtag_ll.h"
 	#else
 		#error esp32c3 doesnt support TinyUSB
 	#endif
@@ -61,6 +62,10 @@
 
 #include "mc.defines.h"
 
+#if MODDEF_ECMA419_ENABLED
+	#include "common/builtinCommon.h"
+#endif
+
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 921600
 #endif
@@ -74,10 +79,11 @@ extern void mc_setup(xsMachine *the);
 	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
 #endif
 
-#if !MODDEF_XS_TEST
-static
+#if MODDEF_SOFTRESET
+	uint8_t gSoftReset;
 #endif
-	xsMachine *gThe;		// the main XS virtual machine running
+
+static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
 	xsbug IP address
@@ -110,7 +116,7 @@ static
 #if USE_USB
 static void debug_task(void *pvParameter)
 {
-	const usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 4096, .tx_buffer_size = 2048 };
+	const usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 2048, .tx_buffer_size = 64 };
 	usb_serial_jtag_driver_install(&cfg);
 
 	while (true) {
@@ -137,18 +143,22 @@ static void debug_task(void *pvParameter)
 
 void loop_task(void *pvParameter)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 	esp_task_wdt_add(NULL);
 #endif
 
 	while (true) {
-		gThe = modCloneMachine(0, 0, 0, 0, NULL);
+#if MODDEF_SOFTRESET
+		gSoftReset = 0;
+#endif
+
+		gThe = modCloneMachine(NULL, NULL);
 
 		modRunMachineSetup(gThe);
 
-#if MODDEF_XS_TEST
+#if MODDEF_SOFTRESET
 		xsMachine *the = gThe;
-		while (gThe) {
+		while (!gSoftReset) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
@@ -190,23 +200,40 @@ void modLog_transmit(const char *msg)
 	}
 }
 
+#define WRITE_CHUNK		64
+#define FAIL_RETRY		2
 void ESP_put(uint8_t *c, int count) {
 #if USE_USB
-    int sent = 0;
     while (count > 0) {
-        sent = usb_serial_jtag_write_bytes(c, count, 10);
-        c += sent;
-        count -= sent;
+        int len = count > WRITE_CHUNK ? WRITE_CHUNK : count;
+		int wrote;
+		int fail = FAIL_RETRY;
+		while ((wrote = usb_serial_jtag_ll_write_txfifo(c, len)) < 1) {
+			if (0 == --fail)
+				goto done;
+			modDelayMilliseconds(1);
+			continue;
+		}
+		usb_serial_jtag_ll_txfifo_flush();
+		c += wrote;
+		count -= wrote;
     }
+done:
 #else
 	uart_write_bytes(USE_UART, (char *)c, count);
 #endif
 }
 
 void ESP_putc(int c) {
-	char cx = c;
+	uint8_t cx = c;
 #if USE_USB
-	usb_serial_jtag_write_bytes(&cx, 1, 1);
+	int fail = FAIL_RETRY;
+	while (usb_serial_jtag_ll_write_txfifo(&cx, 1) < 1) {
+		if (0 == --fail)
+				break;
+		modDelayMilliseconds(1);
+	}
+	usb_serial_jtag_ll_txfifo_flush();
 #else
 	uart_write_bytes(USE_UART, &cx, 1);
 #endif
@@ -290,6 +317,10 @@ void app_main() {
 	QueueHandle_t uartQueue;
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 8, &uartQueue, 0);
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
+	#if MODDEF_ECMA419_ENABLED
+		builtinUsePin(USE_UART_TX);
+		builtinUsePin(USE_UART_RX);
+	#endif
 #else
 	uart_driver_install(USE_UART, UART_FIFO_LEN * 2, 0, 0, NULL, 0);
 #endif

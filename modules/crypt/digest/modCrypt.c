@@ -145,7 +145,7 @@ struct xsCryptDigestRecord {
 	CryptHandlePart;
 #endif
 	uint32_t		digest;
-	unsigned char	ctx[1];
+	unsigned char	ctx[];
 };
 
 void xs_crypt_Digest(xsMachine *the)
@@ -162,7 +162,7 @@ void xs_crypt_Digest(xsMachine *the)
 	if (NULL == digest->name)
 		xsUnknownError("crypt: unsupported digest");
 
-	cd = xsmcSetHostChunk(xsThis, NULL, digest->ctxSize + sizeof(xsCryptDigestRecord) - sizeof(unsigned char));
+	cd = xsmcSetHostChunk(xsThis, NULL, sizeof(xsCryptDigestRecord) + digest->ctxSize);
 #if mxNoFunctionLength
 	cd->reference = xsmcToReference(xsThis);
 #endif
@@ -179,27 +179,27 @@ void xs_crypt_Digest_write(xsMachine *the)
 {
 	xsCryptDigest cd;
 	unsigned char *data;
-	uint32_t size;
+	xsUnsignedValue size;
 
 	if (xsStringType == xsmcTypeOf(xsArg(0))) {
 		data = (unsigned char *)xsmcToString(xsArg(0));
 		size = c_strlen((char *)data);
 	}
 	else
-		resolveBuffer(the, &xsArg(0), &data, &size);
+		xsmcGetBufferReadable(xsArg(0), (void **)&data, &size);
 
 	cd = xsmcGetHostChunk(xsThis);
 	if (!cd)
 		xsUnknownError("crypt: can't call digest write after close");
 
-#ifdef __ets__
+#if defined(__ets__) && !ESP32
 	while (size) {
 		unsigned char buffer[32];
 		int use = size;
 		if (use > sizeof(buffer))
 			use = sizeof(buffer);
 
-		c_memcpy(buffer, data, use);		// spool through RAM as it may be in ROM
+		c_memcpy(buffer, data, use);		// spool through RAM as source data may be in ROM
 		(gDigests[cd->digest].doUpdate)(cd->ctx, buffer, use);
 
 		data += use;

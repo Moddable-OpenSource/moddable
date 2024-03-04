@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -136,7 +136,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	format = builtinInitializeFormat(the, kIOFormatNumber);
+	format = builtinInitializeFormat(the, kIOFormatBuffer);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("invalid format");
 
@@ -149,7 +149,6 @@ void xs_serial_constructor(xsMachine *the)
 	uartConfig.stop_bits = UART_STOP_BITS_1;
 	uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
 	uartConfig.rx_flow_ctrl_thresh = 120;		// unused. no hardware flow control.
-//	uartConfig.use_ref_tick = 0;	 // deprecated in 4.x
 
 	err = uart_param_config(uart, &uartConfig);
 	if (err)
@@ -230,7 +229,7 @@ void xs_serial_destructor(void *data)
 	uart_disable_tx_intr(serial->uart_reg);
 	uart_disable_rx_intr(serial->uart_reg);
 
-	uart_isr_free(serial->uart);
+//	uart_isr_free(serial->uart);
 
 	if (UART_PIN_NO_CHANGE != serial->transmit)
 		builtinFreePin(serial->transmit);

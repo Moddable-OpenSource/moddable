@@ -470,6 +470,20 @@ txBoolean fxDefinePrivateProperty(txMachine* the, txSlot* instance, txSlot* chec
 	txSlot** address;
 	txSlot* property;
 	mxCheck(the, instance->kind == XS_INSTANCE_KIND);
+#if mxAliasInstance
+	if (instance->ID) {
+		txSlot* alias = the->aliasArray[instance->ID];
+		if (alias)
+			instance = alias;
+		else
+			instance = fxAliasInstance(the, instance);
+	}
+	if (instance->flag & XS_MARK_FLAG)
+		return 0;
+#else
+	if (instance->flag & XS_DONT_MARSHALL_FLAG)
+		return 0;
+#endif
 	address = &(instance->next);
 	while ((property = *address)) {
 		if (!(property->flag & XS_INTERNAL_FLAG)) {

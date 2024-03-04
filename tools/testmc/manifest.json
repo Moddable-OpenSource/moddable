@@ -27,6 +27,7 @@
 		"main": "main"
 	},
 	"include": [
+		"$(MODDABLE)/contributed/jsonparser/manifest.json",
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
@@ -64,7 +65,6 @@
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
-		"commodetto/PocoDraw": "$(MODULES)/commodetto/commodettoPocoDraw",
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
@@ -100,6 +100,7 @@
 		"esp32": {
 			"defines": {
 				"XS_TEST": 1,
+				"softreset": 1,
 				"audioOut": {
 					"bitsPerSample": 16,
 					"numChannels": 1,

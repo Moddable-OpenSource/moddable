@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,13 +44,21 @@
 	#define mx_dtoa 1
 #endif
 #if __GNUC__ >= 5
-	#if ESP32
+	#if ESP32 && (__GNUC__ < 11)		// ESP-IDF v5 uses GNUC 11... this is here for ESP-IDF v4
 		#undef __has_builtin
 		#define __has_builtin(x) 1
 	#endif
 #endif
 #if !defined(__has_builtin)
 	#define __has_builtin(x) 0
+#endif
+
+#ifndef mxECMAScript2023
+	#define mxECMAScript2023 1
+#endif
+
+#ifndef mxExplicitResourceManagement
+	#define mxExplicitResourceManagement 0
 #endif
 
 #ifdef __cplusplus
@@ -104,9 +112,21 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#define XS_MAJOR_VERSION 14
-#define XS_MINOR_VERSION 1
-#define XS_PATCH_VERSION 0
+#if mxECMAScript2023
+	#define XS_MAJOR_VERSION 14
+#else
+	#define XS_MAJOR_VERSION 13
+#endif
+#if mxExplicitResourceManagement
+	#define XS_MINOR_VERSION 4
+#else
+	#define XS_MINOR_VERSION 3
+#endif
+#if mxKeysGarbageCollection
+	#define XS_PATCH_VERSION 1
+#else
+	#define XS_PATCH_VERSION 0
+#endif
 
 #define XS_DIGEST_SIZE 16
 #define XS_VERSION_SIZE 4
@@ -366,9 +386,6 @@ enum {
 	XS_CODE_UNSIGNED_RIGHT_SHIFT,
 	XS_CODE_UNWIND_1,
 	XS_CODE_UNWIND_2,
-	XS_CODE_USED_1,
-	XS_CODE_USED_2,
-	XS_CODE_USING,
 	XS_CODE_VAR_CLOSURE_1,
 	XS_CODE_VAR_CLOSURE_2,
 	XS_CODE_VAR_LOCAL_1,
@@ -378,6 +395,12 @@ enum {
 	XS_CODE_WITHOUT,
 	XS_CODE_YIELD,
 	XS_CODE_PROFILE,
+	XS_CODE_YIELD_STAR,
+// mxExplicitResourceManagement	
+	XS_CODE_USED_1,
+	XS_CODE_USED_2,
+	XS_CODE_USING,
+	XS_CODE_USING_ASYNC,
 	XS_CODE_COUNT
 };
 
@@ -415,6 +438,18 @@ enum {
 	mxGeneratorFlag = 1 << 21,
 };
 
+enum {
+	XS_DEBUGGER_EXIT = 0,
+	XS_NOT_ENOUGH_MEMORY_EXIT,
+	XS_STACK_OVERFLOW_EXIT,
+	XS_FATAL_CHECK_EXIT,
+	XS_DEAD_STRIP_EXIT,
+	XS_UNHANDLED_EXCEPTION_EXIT,
+	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
+};
+
 extern void fxDeleteScript(txScript* script);
 
 extern const txUTF8Sequence gxUTF8Sequences[];
@@ -424,6 +459,7 @@ extern txBoolean fxIsIdentifierNext(txU4 c);
 extern txBoolean fxIsSpace(txInteger character);
 extern txString fxSkipSpaces(txString string);
 
+extern txBoolean fxParseHex(txU1 c, txU4* value);
 extern txBoolean fxParseHexEscape(txString* string, txInteger* character);
 extern txBoolean fxParseUnicodeEscape(txString* string, txInteger* character, txInteger braces, txInteger separator);
 extern txString fxStringifyHexEscape(txString string, txInteger character);
@@ -435,13 +471,16 @@ mxExport txString fxUTF8Encode(txString string, txInteger character);
 mxExport txSize fxUTF8Length(txInteger character);
 
 #if mxCESU8
+mxExport int fxCESU8Compare(txString p1, txString p2);
 mxExport txString fxCESU8Decode(txString string, txInteger* character);
 mxExport txString fxCESU8Encode(txString string, txInteger character);
 mxExport txSize fxCESU8Length(txInteger character);
+#define mxStringUnicodeCompare fxCESU8Compare
 #define mxStringByteDecode fxCESU8Decode
 #define mxStringByteEncode fxCESU8Encode
 #define mxStringByteLength fxCESU8Length
 #else
+#define mxStringUnicodeCompare fxUTF8Compare
 #define mxStringByteDecode fxUTF8Decode
 #define mxStringByteEncode fxUTF8Encode
 #define mxStringByteLength fxUTF8Length
@@ -451,9 +490,9 @@ mxExport txSize fxUTF8ToUnicodeOffset(txString theString, txSize theOffset);
 mxExport txSize fxUnicodeLength(txString theString);
 mxExport txSize fxUnicodeToUTF8Offset(txString theString, txSize theOffset);
 
-txFlag fxIntegerToIndex(void* dtoa, txInteger theInteger, txIndex* theIndex);
-txFlag fxNumberToIndex(void* dtoa, txNumber theNumber, txIndex* theIndex);
-txFlag fxStringToIndex(void* dtoa, txString theString, txIndex* theIndex);
+txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex);
+txFlag fxNumberToIndex(void* the, txNumber theNumber, txIndex* theIndex);
+txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex);
 
 /* ? */
 mxExport char* fxCStackLimit();
@@ -464,12 +503,10 @@ mxExport void fxVReportError(void* console, txString thePath, txInteger theLine,
 mxExport void fxVReportWarning(void* console, txString thePath, txInteger theLine, txString theFormat, c_va_list theArguments);
 
 /* xsdtoa.c */
-extern void* fxNew_dtoa(void*);
-extern void fxDelete_dtoa(void*);
-mxExport txString fxIntegerToString(void* dtoa, txInteger theValue, txString theBuffer, txSize theSize);
+mxExport txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, txSize theSize);
 mxExport txInteger fxNumberToInteger(txNumber theValue);
-mxExport txString fxNumberToString(void* dtoa, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
-mxExport txNumber fxStringToNumber(void* dtoa, txString theString, txFlag whole);
+mxExport txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision);
+mxExport txNumber fxStringToNumber(void* the, txString theString, txFlag whole);
 
 /* xsre.c */
 enum {
@@ -655,7 +692,6 @@ extern void fxBigIntParseX(txBigInt* bigint, txString string, txSize length);
 enum {
 	XS_NO_ID = 0,
 	_Symbol_asyncIterator = 1,
-	_Symbol_dispose,
 	_Symbol_hasInstance,
 	_Symbol_isConcatSpreadable,
 	_Symbol_iterator,
@@ -668,6 +704,10 @@ enum {
 	_Symbol_toPrimitive,
 	_Symbol_toStringTag,
 	_Symbol_unscopables,
+#if mxExplicitResourceManagement	
+	_Symbol_asyncDispose,
+	_Symbol_dispose,
+#endif
 	_AggregateError,
 	_Array,
 	_ArrayBuffer,
@@ -678,7 +718,6 @@ enum {
 	_Boolean,
 	_DataView,
 	_Date,
-	_DisposableStack,
 	_Error,
 	_EvalError,
 	_FinalizationRegistry,
@@ -702,7 +741,6 @@ enum {
 	_Set,
 	_SharedArrayBuffer,
 	_String,
-	_SuppressedError,
 	_Symbol,
 	_SyntaxError,
 	_TypeError,
@@ -729,6 +767,11 @@ enum {
 	_Infinity,
 	_NaN,
 	_undefined,
+#if mxExplicitResourceManagement	
+	_AsyncDisposableStack,
+	_DisposableStack,
+	_SuppressedError,
+#endif	
 	_Compartment,
 	_Function,
 	_eval,
@@ -762,7 +805,6 @@ enum {
 	_acos,
 	_acosh,
 	_add,
-	_adopt,
 	_aliases,
 	_all,
 	_allSettled,
@@ -824,16 +866,12 @@ enum {
 	_count,
 	_create,
 	_default,
-	_defer,
 	_defineProperties,
 	_defineProperty,
 	_delete,
 	_deleteProperty,
 	_deref,
 	_description,
-	_detached,
-	_dispose,
-	_disposed,
 	_done,
 	_dotAll,
 	_eachDown,
@@ -842,7 +880,6 @@ enum {
 	_entries,
 	_enumerable,
 	_enumerate,
-	_error,
 	_errors,
 	_evaluate,
 	_every,
@@ -975,7 +1012,6 @@ enum {
 	_min,
 	_mod,
 	_module,
-	_move,
 	_multiline,
 	_name,
 	_needsImport,
@@ -1076,7 +1112,6 @@ enum {
 	_subarray,
 	_substr,
 	_substring,
-	_suppressed,
 	_tan,
 	_tanh,
 	_test,
@@ -1097,9 +1132,6 @@ enum {
 	_toLowerCase,
 	_toPrecision,
 	_toPrimitive,
-	_toReversed,
-	_toSorted,
-	_toSpliced,
 	_toString,
 	_toStringTag,
 	_toTimeString,
@@ -1118,18 +1150,39 @@ enum {
 	_unscopables,
 	_unshift,
 	_uri,
-	_use,
 	_value,
 	_valueOf,
 	_values,
 	_wait,
 	_wake,
 	_weak,
-	_with,
 	_writable,
 	_xor,
 	__empty_string_,
 	__xsbug_script_,
+#if mxECMAScript2023	
+	_detached,
+	_irandom,
+	_toReversed,
+	_toSorted,
+	_toSpliced,
+	_with,
+#endif
+#if mxExplicitResourceManagement	
+	_adopt,
+	_asyncDispose,
+	_defer,
+	_dispose,
+	_disposeAsync,
+	_disposed,
+	_error,
+	_move,
+	_suppressed,
+	_use,
+#endif
+	__onFullfilled_,
+	__onRejected_,
+	__result_,
 	XS_ID_COUNT
 };
 #define XS_SYMBOL_ID_COUNT _AggregateError
@@ -1154,8 +1207,8 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 	#define mxAliasInstance 1
 #endif
 
-#ifndef mxExplicitResourceManagement
-	#define mxExplicitResourceManagement 0
+#ifndef mxDebugEval
+	#define mxDebugEval 0
 #endif
 
 #ifndef mxIntegerDivideOverflowException

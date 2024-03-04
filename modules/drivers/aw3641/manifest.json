@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODULES)/pins/digital/manifest.json"
+	],
+	"modules": {
+		"aw3641": "$(MODULES)/drivers/aw3641/*"
+	},
+	"preload": [
+		"aw3641"
+	]
+}

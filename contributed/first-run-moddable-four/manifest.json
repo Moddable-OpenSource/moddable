@@ -12,16 +12,13 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/commodetto/gif/manifest.json",
-		"$(MODULES)/commodetto/qrcode/manifest.json",
-		"$(MODULES)/data/qrcode/manifest.json"
+		"$(PIU)/MC/gif/manifest.json",
+		"$(PIU)/MC/qrcode/manifest.json"
 	],
 	"creation": {
 		"stack": 512
 	},
 	"modules": {
-		"piu/GIFImage": "$(MODULES)/piu/MC/gif/piuGIFImage",
-		"piu/QRCode": "$(MODULES)/piu/MC/qrcode/piuQRCode",
 		"*": [
 			"./Controller",
 			"./Transition",
@@ -43,6 +40,7 @@
 		"Gravity",
 		"Home",
 		"Menu",
+		"NoSleep",
 		"SetDate",
 		"SetTime",
 		"Splash",
@@ -197,7 +195,7 @@
 				"power"
 			]
 		},
-		"nrf52/moddable_four": {
+		"nrf52": {
 			"include": [
 				"$(MODDABLE)/modules/network/ble/manifest_server.json",
 				"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
@@ -219,7 +217,7 @@
 			]
 		},
 		"...": {
-			"error": "use -p nrf52/moddable_four or -p sim/moddable_four"
+			"error": "use -p nrf52/moddable_four, nrf52/moddable_display_4, or -p sim/moddable_four"
 		}
 	}
 }

@@ -1,153 +1,53 @@
 {
-	"include": "$(MODULES)/network/wifi/manifest.json",
+	"include": [
+		"$(MODULES)/network/net/manifest.json",
+		"$(MODULES)/network/socket/manifest.json",
+		"$(MODULES)/network/sntp/manifest.json",
+		"$(MODULES)/network/wifi/manifest.json"
+	],
 	"config": {
 		"sntp": "pool.ntp.org"
 	},
 	"platforms": {
 		"esp": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"net"
-			]
+			"preload": "setup/network"
 		},
 		"esp32": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"net"
-			]
+			"preload": "setup/network"
 		},
 		"esp32/wt32_eth01": {
 			"include": [
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
 			],
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/esp/*",
-					"$(MODULES)/network/sntp/*"
-				],
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"net"
-			]
+			"preload": "setup/network"
 		},
 		"nrf52": {
 			"error": "manifest_net - no Wi-Fi or Ethernet on nRF52"
 		},
 		"pico": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lwip/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/pico/*",
-					"$(MODULES)/network/sntp/*"
-				],
 				"setup/network": "$(BUILD)/devices/pico/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"net"
-			]
-		},
-		"lin": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/lin/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/lin/*",
-					"$(MODULES)/network/sntp/*"
-				]
-			},
-			"preload": [
-				"socket",
-				"sntp",
-				"net"
-			]
-		},
-		"mac": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/mac/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/mac/*",
-					"$(MODULES)/network/sntp/*"
-				]
-			},
-			"preload": [
-				"socket",
-				"sntp",
-				"net"
-			]
-		},
-		"win": {
-			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/win/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/win/*",
-					"$(MODULES)/network/sntp/*"
-				]
-			},
-			"preload": [
-				"socket",
-				"sntp",
-				"net"
-			]
+			"preload": "setup/network"
 		},
 		"qca4020": {
 			"modules": {
-				"*": [
-					"$(MODULES)/network/socket/*",
-					"$(MODULES)/network/socket/qca4020/*",
-					"$(MODULES)/network/net/net",
-					"$(MODULES)/network/net/qca4020/*",
-					"$(MODULES)/network/sntp/*"
-				],
 				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
-			"preload": [
-				"socket",
-				"setup/network",
-				"sntp",
-				"net"
-			]
+			"preload": "setup/network"
 		},	
+		"mac": {},
+		"lin": {},
+		"win": {},
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}
