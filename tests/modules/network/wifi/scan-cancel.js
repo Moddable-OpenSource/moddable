@@ -16,11 +16,9 @@ WiFi.scan({}, ap => {
 });
 WiFi.scan();
 
-let once = false;;
 WiFi.scan({}, ap => {
-	if (once) return;
-	once = true;
-	$DONE();
+	if (!ap)
+		$DONE();
 });
 
 $TESTMC.timeout($TESTMC.wifiScanTimeout);

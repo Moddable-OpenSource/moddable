@@ -36,9 +36,11 @@ int8_t gWiFiState = -2;	// -2 = uninitialized, -1 - wifi task uninitialized, 0 =
 int8_t gDisconnectReason = 0;		// -1 = password rejected
 int8_t gWiFiConnectRetryRemaining;
 int8_t gWiFiIP;		// 0x01 == IP4, 0x02 == IP6
+int8_t gWiFiCredentials = 0;
 
 static void initWiFi(wifi_mode_t mode);
 static void deinitWiFi(void);
+static void clearConfig(void);
 
 struct wifiScanRecord {
 	xsSlot			callback;
@@ -61,8 +63,10 @@ void xs_wifi_set_mode(xsMachine *the)
 		mode = WIFI_MODE_AP;
 	else if (3 == mode)
 		mode = WIFI_MODE_APSTA;
-	else if (0 == mode)
+	else if (0 == mode) {
 		mode = WIFI_MODE_NULL;
+		clearConfig();
+	}
 	else if (-5 == mode) {
 #if MODINSTRUMENTATION
 		int32_t sockets = modInstrumentationGet(the, NetworkSockets);
@@ -172,8 +176,8 @@ void xs_wifi_connect(xsMachine *the)
 	if (gWiFiState > 1) {
 		gWiFiState = 2;
 		gDisconnectReason = 0;
-		esp_wifi_disconnect();
 	}
+	clearConfig();
 
 	if (0 == argc)
 		return;
@@ -219,11 +223,14 @@ void xs_wifi_connect(xsMachine *the)
 	}
 
 	//@@ does this need to be different for WIFI_MODE_APSTA?
-	esp_wifi_set_config(WIFI_IF_STA, &config); 
+	esp_wifi_set_config(WIFI_IF_STA, &config);
+	gWiFiCredentials = 1; 
 
 	gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
-	if (0 != esp_wifi_connect())
+	if (ESP_OK != esp_wifi_connect()) {
+		clearConfig();
 		xsUnknownError("esp_wifi_connect failed");
+	}
 }
 
 static void reportScan(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -449,17 +456,15 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 
 	switch (event_id) {
 		case WIFI_EVENT_STA_START:
-			if (ESP_OK == esp_wifi_get_config(WIFI_IF_STA, &wifi_config)) {
+			gWiFiState = 2;
 #ifdef MODDEF_WIFI_HOSTNAME
-				esp_netif_set_hostname(gStation, MODDEF_WIFI_HOSTNAME);
+			esp_netif_set_hostname(gStation, MODDEF_WIFI_HOSTNAME);
 #endif
-
-				gWiFiState = 3;
+			if (gWiFiCredentials) {
 				gWiFiConnectRetryRemaining = MODDEF_WIFI_ESP32_CONNECT_RETRIES;
-				esp_wifi_connect();
+				if (ESP_OK == esp_wifi_connect())
+					gWiFiState = 3;
 			}
-			else
-				gWiFiState = 2;
 			break;
 		case WIFI_EVENT_STA_STOP:
 			gWiFiState = 1;
@@ -484,8 +489,10 @@ static void doWiFiEvent(void* arg, esp_event_base_t event_base, int32_t event_id
 								(WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT == reason) ||
 								(WIFI_REASON_IE_IN_4WAY_DIFFERS == reason) ||
 								(WIFI_REASON_HANDSHAKE_TIMEOUT == reason)) ? -1 : gDisconnectReason;
+			if (!gWiFiCredentials)
+				gWiFiConnectRetryRemaining = 0;
 			if (gWiFiConnectRetryRemaining > 0) {
-				if (0 == esp_wifi_connect()) {
+				if (ESP_OK == esp_wifi_connect()) {
 					gWiFiConnectRetryRemaining -= 1;
 					return;
 				}
@@ -575,6 +582,7 @@ void deinitWiFi(void)
 		gWiFiState = 2;
 		gDisconnectReason = 0;
 	}
+	clearConfig();
 
 	ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent));
 	ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent));
@@ -589,6 +597,18 @@ void deinitWiFi(void)
 	// esp_netif_deinit is unimplemented by lwip and we don't dare destroy the default event loop
 		
 	gWiFiState = 0;
+}
+
+// clears the Wi-Fi settings for connecting and disconnects
+void clearConfig(void)
+{
+	wifi_config_t config = {0};
+	config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+	config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+	esp_wifi_set_config(WIFI_IF_STA, &config); 
+	gWiFiCredentials = 0;
+
+	esp_wifi_disconnect();
 }
 
 void xs_wifi_accessPoint(xsMachine *the)
@@ -670,6 +690,7 @@ void xs_wifi_accessPoint(xsMachine *the)
 
 	if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &config))
 		xsUnknownError("esp_wifi_set_config failed");
+	gWiFiCredentials = 1;
 
 	if (ESP_OK != esp_wifi_start())
 		xsUnknownError("esp_wifi_start failed");

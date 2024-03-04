@@ -153,7 +153,7 @@ Object.defineProperty(globalThis, "screen", {
 
 globalThis.$NETWORK = {
 	get connected() {
-		if (1 !== WiFi.mode)
+		if (WiFi.Mode.station !== WiFi.mode)
 			WiFi.mode = WiFi.Mode.station;
 
 		if (Net.get("IP"))
@@ -219,8 +219,8 @@ globalThis.$TESTMC = {
 	HostObjectChunk,
 	HostBuffer,
 	config,
-	wifiInvalidConnectionTimeout: 20_000,
-	wifiConnectionTimeout: 10_000,
+	wifiInvalidConnectionTimeout: 30_000,
+	wifiConnectionTimeout: 20_000,
 	wifiScanTimeout: 10_000,
 	Behavior: TestBehavior
 };
