@@ -221,6 +221,7 @@
 			"$(MODULES)/crypt/data/ca35",
 			"$(MODULES)/crypt/data/ca109",
 			"$(MODULES)/crypt/data/ca222",
+			"$(MODULES)/crypt/data/ca233",
 			"./assets/bflatmajor-ima-12000",
 			"./assets/bflatmajor-ima-16000",
 			"./assets/bflatmajor-sbc",
