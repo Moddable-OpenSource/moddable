@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,6 +25,8 @@
 #define MINIZ_HEADER_FILE_ONLY
 #include "miniz.c"
 
+#define kOutputBufferSize (1024)
+
 static void *zAlloc(void *opaque, size_t items, size_t size)
 {
 	return c_malloc(items * size);
@@ -39,7 +41,7 @@ static void zFree(void *opaque, void *address)
 void xs_deflate_destructor(void *data)
 {
 	if (data) {
-		deflateEnd((z_stream *)data);
+		deflateEnd((z_stream *)(kOutputBufferSize + (char *)data));
 		c_free(data);
 	}
 }
@@ -47,6 +49,7 @@ void xs_deflate_destructor(void *data)
 void xs_deflate(xsMachine *the)
 {
 	int windowBits = Z_DEFAULT_WINDOW_BITS, level = MZ_DEFAULT_COMPRESSION, strategy = Z_DEFAULT_STRATEGY;
+	uint8_t *output;
 	z_stream *zlib;
 
 	xsmcVars(1);
@@ -71,26 +74,27 @@ void xs_deflate(xsMachine *the)
 			xsRangeError("invalid level");
 	}
 
-	zlib = c_malloc(sizeof(z_stream));
-	if (!zlib)
+	output = (uint8_t *)c_malloc(kOutputBufferSize + sizeof(z_stream));
+	if (!output)
 		xsUnknownError("no memory");
 
+	zlib = (z_stream *)(kOutputBufferSize + output);
 	zlib->zalloc = zAlloc;
 	zlib->zfree = zFree;
 	
 	if (Z_OK != deflateInit2(zlib, level, MZ_DEFLATED, windowBits, 1, strategy)) {
-		c_free(zlib);
+		c_free(output);
 		xsUnknownError("deflateInit2 failed");
 	}
 
-	xsmcSetHostData(xsThis, zlib);
+	xsmcSetHostData(xsThis, output);
 }
 
 void xs_deflate_close(xsMachine *the)
 {
-	z_stream *zlib = xsmcGetHostData(xsThis);
-	if (zlib && xsmcGetHostDataValidate(xsThis, xs_deflate_destructor)) {
-		xs_deflate_destructor(zlib);
+	uint8_t *buffer = xsmcGetHostData(xsThis);
+	if (buffer && xsmcGetHostDataValidate(xsThis, xs_deflate_destructor)) {
+		xs_deflate_destructor(buffer);
 		xsmcSetHostData(xsThis, NULL);
 		xsmcSetHostDestructor(xsThis, NULL);
 	}
@@ -98,8 +102,8 @@ void xs_deflate_close(xsMachine *the)
 
 void xs_deflate_push(xsMachine *the)
 {
-	z_stream *zlib = xsmcGetHostDataValidate(xsThis, xs_deflate_destructor);
-	uint8_t output[1024];
+	uint8_t *output = xsmcGetHostDataValidate(xsThis, xs_deflate_destructor);
+	z_stream *zlib = (z_stream *)(kOutputBufferSize + (char *)output); 
 	int inputOffset = 0;
 	xsUnsignedValue inputRemaining;
 	void *input;
@@ -114,7 +118,7 @@ void xs_deflate_push(xsMachine *the)
 
 	while ((0 != inputRemaining) || (Z_OK == status)) {
 		zlib->next_out	= output;
-		zlib->avail_out	= sizeof(output);
+		zlib->avail_out	= kOutputBufferSize;
 		zlib->total_out	= 0;
 
 		if (isString)
