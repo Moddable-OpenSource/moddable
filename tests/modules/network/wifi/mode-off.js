@@ -16,7 +16,7 @@ if ("off" in WiFi.Mode) {
 
 	// Wi-Fi operations like scan & connect power Wi-Fi back up
 	WiFi.scan({}, ap => {
-		return $DONE("unexpected callback");
+		return $DONE("unexpected scan callback");
 	});
 	WiFi.scan();
 
@@ -26,7 +26,7 @@ if ("off" in WiFi.Mode) {
 	assert.sameValue(WiFi.mode, WiFi.Mode.off);  
 
 	let w = new WiFi(options, (msg, value) => {
-		throw new RangeError("unexpected");
+		return $DONE("unexpected WiFi callback " + msg);
 	});
 	w.close();
 	WiFi.disconnect();
