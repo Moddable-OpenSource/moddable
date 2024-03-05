@@ -23,7 +23,7 @@ WiFi.scan(options, ap => {
 		options.bssid = target.bssid;
 		const monitor = new WiFi(options, (msg, value) => {
 			try {
-				if (WiFi.gotIP == msg) {
+				if (WiFi.connected == msg) {
 					let bssid = Net.get("BSSID").split(":").map(i => parseInt(i, 16));
 					bssid = Uint8Array.from(bssid);
 					let t = new Uint8Array(target.bssid);
@@ -39,8 +39,10 @@ WiFi.scan(options, ap => {
 			}
 		});
 	}
-	else if (ap.ssid === options.ssid)
-		target = ap;
+	else if (ap.ssid === options.ssid) {
+		if (!target || (ap.rssi > target.rssi))		// choose strongest signal
+			target = ap;
+	}
 });
 
 $TESTMC.timeout($TESTMC.wifiConnectionTimeout);
