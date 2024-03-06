@@ -552,6 +552,11 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	uint16_t receiveCount;
 	int errors;
 
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(serial);
+		return;
+	}
+
 	builtinCriticalSectionBegin();
 		serial->postedMessage = 0;
 		receiveCount = serial->receiveCount;
@@ -566,11 +571,6 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	if (errors) {
 		xsLog("Serial errors: %d\n", errors);
 		nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));		//re-prime serial receive
-	}
-
-	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
-		c_free(serial);
-		return;
 	}
 
 	if (receiveTriggered) {
