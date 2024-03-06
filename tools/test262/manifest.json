@@ -1,7 +1,8 @@
 {
 	"build": {
 		"BUILD": "$(MODDABLE)/build",
-		"MODULES": "$(MODDABLE)/modules"
+		"MODULES": "$(MODDABLE)/modules",
+		"ESP32_SUBCLASS": "esp32s3"
 	},
 	"creation": {
 		"static": 65536,
@@ -39,6 +40,24 @@
 			"error": "test262 is unsupported on esp8266"
 		},
 		"esp32": {
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+					"$(MODULES)/network/socket/lwip/modLwipSafe",
+					"$(MODULES)/files/preference/*",
+					"$(MODULES)/files/preference/esp32/*"
+				]
+			}
+		},
+		"esp32/esp32s3": {
+			"build": {
+				"ESP32_SUBCLASS": "esp32s3"
+			},
 			"defines": {
 				"XS_TEST": 1,
 				"softreset": 1
