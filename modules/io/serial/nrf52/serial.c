@@ -330,6 +330,7 @@ void xs_serial_constructor(xsMachine *the)
 		builtinUsePin(receivePin);
 
 	if (serial->onWritable) {
+		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 		serial->transmitTriggered = true;
 		modMessagePostToMachine(serial->the, NULL, 0, serialDeliver, serial);
 	}
@@ -347,7 +348,7 @@ void xs_serial_destructor(void *data)
 	if (kInvalidPin != serial->receivePin)
 		builtinFreePin(serial->receivePin);
 
-//	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
 		c_free(serial);
 }
 
@@ -538,7 +539,7 @@ static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 
 	if (post && !serial->postedMessage) {
 		serial->postedMessage = 1;
-//		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
+		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
 }
@@ -558,7 +559,6 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		transmitTriggered = serial->transmitTriggered; 
 		serial->receiveTriggered = false;
 		serial->transmitTriggered = false;
-		
 		errors = serial->errors;
 		serial->errors = 0;
 	builtinCriticalSectionEnd();
@@ -568,10 +568,10 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 		nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));		//re-prime serial receive
 	}
 
-//	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
-//		c_free(serial);
-//		return;
-//	}
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+		c_free(serial);
+		return;
+	}
 
 	if (receiveTriggered) {
 		if (receiveCount) {
@@ -590,7 +590,6 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 			xsEndHost(the);
 		}
 	}
-
 }
 
 void xs_serial_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
