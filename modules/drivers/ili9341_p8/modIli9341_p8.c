@@ -478,6 +478,7 @@ void ili9341Send(PocoPixel *pixels, int byteLength, void *refcon)
 		0x36, 1, 0,		// MY,MV,MX,RGB
 		0x3a, 1, 0x05,	// Pixel Format
 		0x21, 1, 1,		// pixel invert
+		0x35, 1, 0x00,	// tearing effect pin on (v-blanking only)
 
 		// Rongstar: ---- ST7789V Frame rate setting ----
 		0xb2, 5, 0x0c, 0x0c, 0x00, 0x33, 0x33,
@@ -490,6 +491,7 @@ void ili9341Send(PocoPixel *pixels, int byteLength, void *refcon)
 		0xc3, 1, 0x0b,
 		0xc4, 1, 0x20,
 		0xc6, 1, 0x0f,
+		0xc6, 1, 0x15,	// frame rate (50 FPS)
 		0xd0, 2, 0xa4, 0xa1,
 
 		// Rongstar: ---- ST7789V Gamma setting ----
