@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -274,8 +274,8 @@ void xs_digitalbank_destructor(void *data)
 			}
 		}
 
-		if (NULL == gDigitals)
-			gpio_uninstall_isr_service();
+//		if (NULL == gDigitals)
+//			gpio_uninstall_isr_service();		// cannot uninstall ISR service as other modules may be relying on it (not reference counted by ESP-IDF)
 		builtinFreePins(digital->bank, digital->pins);
 	}
 
