@@ -21,6 +21,7 @@
 // https://html.spec.whatwg.org/#server-sent-events
 
 import Timer from "timer";
+import Headers from "headers";
 import URL from "url";
 
 const CR = -1;
@@ -45,6 +46,9 @@ class EventSource {
 	#readystate = this.CLOSED;
 	#reconnectionTime = 10000;
 	#url;
+	#method;
+	#headers;
+	#body;
 	
 	constructor(href, options) {
 		const url = new URL(href);
@@ -68,6 +72,24 @@ class EventSource {
 			path += query;
 		this.#path = path;
 		this.#url = url.href;
+		this.#method = options.method || "GET";
+		this.#headers = new Headers();
+		this.#headers.set("accept", "text/event-stream");
+		options.headers?.forEach((value, name) => this.#headers.set(name.toLowerCase(), value));
+		if ((this.#method == "POST") || (this.#method == "PUT")) {
+			let body = options.body;
+			if (!body) 
+				rejectResponse(new URLError(this.#method + " no body"));
+			else if (!(body instanceof ArrayBuffer)) {
+				body = body.toString();
+				body = ArrayBuffer.fromString(body);
+			}
+			this.#body = body;
+			const length = this.#headers.get("content-length");
+			if (length == undefined) {
+				this.#headers.set("content-length", body.byteLength);
+			}
+		}
 		this.#connect();
 	}
 	get readystate() {
@@ -139,13 +161,16 @@ class EventSource {
 				this.#onError();
 			}
 		});
-		let headers = new Map();
-		headers.set("accept", "text/event-stream");
+		let method = this.#method;
+		let headers = this.#headers;
+		let body = this.#body;
+		let length = body.byteLength;
+		let offset = 0;
 		let buffer = null;
 		let index = 0, nameStart, nameStop, valueStart, valueStop;
 		let state = BODY;
 		let request = client.request({
-			method: "GET",
+			method,
 			path,
 			headers,
 			onHeaders: (status, headers) => {
@@ -157,6 +182,20 @@ class EventSource {
 				else {
 					client.close();
 					this.#onError();
+				}
+			},
+			onWritable(count) {
+				if (body) {
+					let remain = length - offset;
+					if (remain > 0) {
+						if (count > remain)
+							count = remain;
+						let view = new DataView(body, offset, count);
+						this.write(view);
+						offset += count;
+					}
+					else
+						this.write();
 				}
 			},
 			onReadable: (count) => {
