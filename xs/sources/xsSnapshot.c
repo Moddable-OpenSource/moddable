@@ -1092,10 +1092,7 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 				destructor = slot->value.host.variant.hooks->destructor;
 			else
 				destructor = slot->value.host.variant.destructor;
-		    if (dladdr(destructor, &info)) {
-				mxAssert(0, "# snapshot: no host destructor: %s!\n", info.dli_sname);
-			}
-			else {
+		    if (dladdr(destructor, &info) == 0) {
 				mxAssert(0, "# snapshot: no host destructor!\n");
 			}
 		}
