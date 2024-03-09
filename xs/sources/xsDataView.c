@@ -2276,7 +2276,7 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 				txByte* resultAddress = resultData->value.arrayBuffer.address;
 				address += view->value.dataView.offset;
 				resultAddress += resultView->value.dataView.offset;
-				c_memcpy(resultAddress, address + (start << shift), count << shift);
+				c_memmove(resultAddress, address + (start << shift), count << shift);
 				mxMeterSome(((txU4)(count)) * 2);
 			}
 			else {
