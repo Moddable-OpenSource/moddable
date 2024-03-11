@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Moddable Tech, Inc.
+ * Copyright (c) 2019-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -253,7 +253,7 @@ void xs_analog_constructor_(xsMachine *the)
 
     builtinUsePin(pin);
 
-	adc_oneshot_unit_init_cfg_t unit_cfg;
+	adc_oneshot_unit_init_cfg_t unit_cfg = {0};
 	adc_oneshot_chan_cfg_t config = {
 		.bitwidth = ADC_WIDTH,
 		.atten = ADC_ATTEN_DB_11,
