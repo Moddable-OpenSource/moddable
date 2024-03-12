@@ -2033,7 +2033,9 @@ void fxWordContinueCode(txPatternParser* parser, void* it, txInteger direction, 
 	*buffer++ = sequel;
 }
 
-
+#if defined(__clang__) || defined (__GNUC__)
+	__attribute__((no_sanitize_address))
+#endif
 void fxPatternParserCheckStack(txPatternParser* parser)
 {
     char x;
