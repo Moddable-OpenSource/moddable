@@ -85,6 +85,14 @@ void PiuShapeBind(void* it, PiuApplication* application, PiuView* view)
 
 void PiuShapeDictionary(xsMachine* the, void* it) 
 {
+	PiuContainer* self = it;
+	xsBooleanValue boolean;
+	if (xsFindBoolean(xsArg(1), xsID_clip, &boolean)) {
+		if (boolean)
+			(*self)->flags |= piuClip;
+		else
+			(*self)->flags &= ~piuClip;
+	}
 }
 
 void PiuShapeDraw(void* it, PiuView* view, PiuRectangle area) 
@@ -107,11 +115,15 @@ void PiuShapeDraw(void* it, PiuView* view, PiuRectangle area)
 			(*self)->strokeBlend = color.a;
 		}
 		if ((*self)->fillOutline || (*self)->strokeOutline) {
-			PiuRectangleRecord bounds;
-			PiuRectangleSet(&bounds, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
-			PiuViewPushClip(view, 0, 0, bounds.width, bounds.height);
-			PiuViewDrawContent(view, PiuShapeDrawAux, it, 0, 0, bounds.width, bounds.height);
-			PiuViewPopClip(view);
+			if ((*self)->flags & piuClip) {
+				PiuRectangleRecord bounds;
+				PiuRectangleSet(&bounds, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
+				PiuViewPushClip(view, 0, 0, bounds.width, bounds.height);
+				PiuViewDrawContent(view, PiuShapeDrawAux, it, 0, 0, bounds.width, bounds.height);
+				PiuViewPopClip(view);
+			}
+			else 
+				PiuViewDrawContent(view, PiuShapeDrawAux, it, 0, 0, (*self)->bounds.width, (*self)->bounds.height);
 		}
 	}
 }
@@ -221,7 +233,7 @@ void PiuShape_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuShapeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuShapeDispatchRecord;
-	(*self)->flags = piuVisible;
+	(*self)->flags = piuVisible | piuClip;
 	PiuContentDictionary(the, self);
 	PiuShapeDictionary(the, self);
 	PiuBehaviorOnCreate(self);
