@@ -1092,7 +1092,7 @@ void fxMeasureSlot(txMachine* the, txSnapshot* snapshot, txSlot* slot, txSize* c
 				destructor = slot->value.host.variant.hooks->destructor;
 			else
 				destructor = slot->value.host.variant.destructor;
-		    if (dladdr(destructor, &info)) {
+		    if (dladdr(destructor, &info) && info.dli_sname) {
 				mxAssert(0, "# snapshot: no host destructor: %s!\n", info.dli_sname);
 			}
 			else {
@@ -1164,7 +1164,7 @@ txCallback fxProjectCallback(txMachine* the, txSnapshot* snapshot, txCallback ca
 		{
 #if mxMacOSX || mxLinux
 			Dl_info info;
-		    if (dladdr(callback, &info)) {
+		    if (dladdr(callback, &info) && info.dli_sname) {
 				mxAssert(0, "# snapshot: unknown callback: %s!\n", info.dli_sname);
 			}
 		    else
