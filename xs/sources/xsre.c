@@ -804,6 +804,7 @@ void* fxCharSetExpression(txPatternParser* parser)
 	void* right = NULL;
 	txInteger rightKind = 0;
 	txString string;
+	fxPatternParserCheckStack(parser);
 	if (parser->character == '^') {
 		fxPatternParserNext(parser);
 		not = 1;
