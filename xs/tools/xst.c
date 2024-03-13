@@ -316,6 +316,8 @@ int main(int argc, char* argv[])
 #endif
 		else if (!strcmp(argv[argi], "-j"))
 			option = 6;
+		else if (!strcmp(argv[argi], "-b"))
+			option = 7;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d %zu %zu\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -395,7 +397,7 @@ int main(int argc, char* argv[])
 						if (!c_realpath(argv[argi], path))
 							xsURIError("file not found: %s", argv[argi]);
 						dot = strrchr(path, '.');
-						if (option == 6) {
+						if ((option == 6) || (option == 7)) {
 							FILE* file = C_NULL;
 							char *buffer = C_NULL;
 							xsTry {
@@ -418,8 +420,13 @@ int main(int argc, char* argv[])
 								buffer = C_NULL;
 								xsVar(1) = xsNew0(xsGlobal, xsID("TextDecoder"));
 								xsResult = xsCall1(xsVar(1), xsID("decode"), xsResult);
-								xsVar(1) = xsGet(xsGlobal, xsID("JSON"));
-								xsResult = xsCall1(xsVar(1), xsID("parse"), xsResult);
+								if (option == 6) {
+									xsVar(1) = xsGet(xsGlobal, xsID("JSON"));
+									xsResult = xsCall1(xsVar(1), xsID("parse"), xsResult);
+								}
+								else {
+									xsResult = xsCall1(xsGlobal, xsID("eval"), xsResult);
+								}
 							}
 							xsCatch {
 								if (buffer)
