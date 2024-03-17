@@ -19,12 +19,14 @@
  */
  
 import AXP192 from "axp192";
+import AXP2101 from "axp2101";
 import MPU6886 from "mpu6886";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import Timer from "timer";
 import config from "mc/config";
 import I2C from "pins/i2c";
+import SMBus from "pins/smbus";
 
 const INTERNAL_I2C = Object.freeze({
 	sda: 21,
@@ -70,7 +72,14 @@ export default function (done) {
 	};
 
 	// power
-	globalThis.power = new Power();
+  debugger;
+  const powerICID = new SMBus({
+    ...INTERNAL_I2C,
+    address: 0x34,
+  }).readByte(0x03)
+
+	globalThis.power =
+    powerICID === 0x03 ? new PowerAXP192() : new PowerAXP2101() /* expects 0x4a */;
 
 	// speaker
 	power.speaker.enable = true;
@@ -197,7 +206,7 @@ export default function (done) {
   done?.();
 }
 
-class Power extends AXP192 {
+class PowerAXP192 extends AXP192 {
   constructor() {
     super(INTERNAL_I2C);
 
@@ -265,6 +274,70 @@ class Power extends AXP192 {
   
   get brightness() {
     return (this.lcd.voltage - 2500) / 800 * 100;
+  }
+}
+
+class PowerAXP2101 extends AXP2101 {
+  constructor() {
+    super(INTERNAL_I2C);
+
+    this.writeByte(0x27, 0x00); // PowerKey Hold=1sec / PowerOff=4sec
+    this.writeByte(0x10, 0x30); // PMU common config (internal off-discharge enable)
+    this.writeByte(0x12, 0x00); // BATFET disable
+    this.writeByte(0x68, 0x01); // Battery detection enabled.
+    this.writeByte(0x69, 0x13); // CHGLED setting
+    this.writeByte(0x99, 0x00); // DLDO1 set 0.5v (vibration motor)
+
+    // DCDC1&3  Enable
+    this.writeByte(0x80, this.readByte(0x00) | 0x04);
+
+    // main power line
+    this._dcdc1.voltage = 3350;
+    //this.chargeEnable = true; // これがあるとなぜか動かない
+
+    // LCD
+    this.lcd = this._bldo1;
+    this.lcd.voltage = 2800;
+    this.lcd.enable = true;
+
+    // internal LCD logic
+    this._aldo4.voltage = 3300;
+    this._aldo4.enable = true;
+
+    // Vibration
+    this.vibration = this._dldo1;
+    this.vibration.voltage = 2000;
+
+    // Speaker
+    this.speaker = this._aldo3;
+    this.speaker.voltage = 3300;
+
+    // LCD Reset
+    this._aldo2.voltage = 3300;
+    this.resetLcd();
+
+    // bus power mode_output
+    this._bldo2.voltage = 3300;
+    this._bldo2.enable = true;
+    Timer.delay(200);
+  }
+
+  resetLcd() {
+    this._aldo2.enable = false;
+    Timer.delay(20);
+    this._aldo2.enable = true;
+  }
+
+  // value 0 - 100 %
+  set brightness(value) {
+    if (value <= 0) value = 2500;
+    else if (value >= 100) value = 3300;
+    else value = (value / 100) * 800 + 2500;
+    this.lcd.voltage = value;
+  }
+
+  get brightness() {
+    return ((this.lcd.voltage - 2500) / 800) * 100;
   }
 }
 
