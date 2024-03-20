@@ -1,0 +1,8 @@
+{
+  "include": [],
+  "modules": {
+    "embedded:sensor/ADC/HX711": "./hx711",
+    "embedded:sensor/ADC/HX711c": ["./hx711c", "./modHX711c.c"]
+  },
+  "preload": ["embedded:sensor/ADC/HX711"]
+}
