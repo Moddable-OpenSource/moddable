@@ -21,16 +21,19 @@
 
 declare module "embedded:io/i2c" {
   import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
+
+  export interface Options {
+    data: PinSpecifier;
+    clock: PinSpecifier;
+    hz: number;
+    address: number;
+    port?: PortSpecifier;
+    format?: "buffer";
+    target?: any;
+  }
+
   class I2C {
-    constructor(options: {
-      data: PinSpecifier;
-      clock: PinSpecifier;
-      hz: number;
-      address: number;
-      port?: PortSpecifier;
-      format?: "buffer";
-      target?: any;
-    });
+    constructor(options: Options);
     readonly resolution: number;
     
     write(value: Buffer, stop?: boolean): void;
