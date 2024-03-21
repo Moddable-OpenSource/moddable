@@ -1,6 +1,6 @@
 # Creating fonts for applications built on the Moddable SDK
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: September 13, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: March 21, 2024
 
 Moddable uses the [BMFont](http://www.angelcode.com/products/bmfont/doc/file_format.html) format for fonts
 
@@ -56,7 +56,7 @@ To use a TrueType font, it looks like this:
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 20
 		}
 	]
@@ -81,7 +81,7 @@ To use a TrueType font, it looks like this:
 "resources": {
 	"*-alpha": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 24
 		}
 	]
@@ -97,17 +97,17 @@ Often the name of a TrueType font file isn't exactly how you want to name your f
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/segoe",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/FiraMono/FiraMono-Regular",
 			"size": 22,
-			"name": "Segoe-Regular"
+			"name": "FiraMono-Regular"
 		}
 	]
 }
 ```
-This generates one resource, `Segoe-Regular-22.bm4`.
+This generates one resource, `FiraMono-Regular-22.bm4`.
 
 #### Selecting Glyphs to Include
-By default, the font output by the conversion process includes Unicode characters from 32 to 127 (inclusive). There are three properties you can use to override this behavior: `characters`, `blocks`, and `localization`. If more than one of these properties is present, all the characters they select are included.
+By default, the font output by the conversion process includes Unicode characters from 32 to 127 (inclusive). There are four properties that override this behavior: `characters`, `characterFiles`, `blocks`, and `localization`. When more than one of these properties is present, all characters they select are included.
 
 ##### Character List
 The `characters` property is a string that indicates which characters to include. This example include only the characters used to display decimal numbers:
@@ -116,9 +116,26 @@ The `characters` property is a string that indicates which characters to include
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 72,
 			"characters": "0123456789-+.e"
+		}
+	]
+}
+```
+
+##### Character List Files
+The `characterFiles` property is an array of paths to UTF-8 encoded text files. All of the characters used in the file are included. 
+
+```json
+"resources": {
+	"*-mask": [
+		{
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/SourceCodePro/SourceCodePro-Regular",
+			"size": 32,
+			"characterFiles": [
+				"$(MODDABLE)/examples/helloworld/main.js"
+			]
 		}
 	]
 }
@@ -131,7 +148,7 @@ The `blocks` property is an array of [Unicode block](https://en.wikipedia.org/wi
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 24,
 			"blocks": ["Basic Latin", "Cyrillic"],
 		}
@@ -146,7 +163,7 @@ The Piu user interface framework has built-in support for localization. As part 
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 24,
 			"localization": true
 		}
@@ -162,7 +179,7 @@ By default, kerning tables are not output. Kerning is enabled by setting the `ke
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 24,
 			"kern": true
 		}
@@ -186,7 +203,7 @@ By default, the glyphs output are anti-aliased. Monochrome output can be generat
 "resources": {
 	"*-mask": [
 		{
-			"source": "$(MODDABLE)/tools/xsbug/fonts/OpenSans-Regular",
+			"source": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/OpenSans-Regular",
 			"size": 24,
 			"monochrome": true
 		}
