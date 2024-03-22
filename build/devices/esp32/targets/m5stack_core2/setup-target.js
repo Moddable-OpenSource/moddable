@@ -292,7 +292,6 @@ class PowerAXP2101 extends AXP2101 {
 
     // main power line
     this._dcdc1.voltage = 3350;
-    //this.chargeEnable = true; // これがあるとなぜか動かない
 
     // LCD
     this.lcd = this._bldo1;
