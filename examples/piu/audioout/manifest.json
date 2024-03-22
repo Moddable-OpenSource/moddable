@@ -1,0 +1,53 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+	],
+	"config": {
+		"rotation": 90,
+		"autorotate": false,
+	},
+	"modules": {
+		"*": [
+			"./main"
+		],
+		"pins/*": [
+			"$(MODULES)/pins/i2s/*"
+		],
+		"piu/Sound": [
+			"$(MODULES)/piu/MC/piuSound"
+		]
+	},
+	"resources": {
+		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor",
+		"*-mask": [
+			"./volume-down",
+			"./volume-up",
+			"./play"
+		]
+	},
+	"platforms": {
+		"esp32/m5stack_fire": {},
+		"esp32/moddable_two": {
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 32000,
+					"format": "ima",
+					"streams": 1,
+					"queueLength": 4,
+					"i2s": {
+						"dac": 1
+					}
+				}
+			},
+		},
+		"mac": {},
+		"win": {},
+		"...": {
+			"error": "Platform not supported"
+		},
+	}
+}
+
