@@ -87,7 +87,6 @@ class LDO {
   #offsetEn;
   #points;
   #steps;
-  // offsetVを削除し、#registerEnの自動判別コードを追加
   constructor({ registerV, registerEn, parent, offsetEn, points, steps }) {
     this.#parent = parent;
     this.#registerV = registerV;
