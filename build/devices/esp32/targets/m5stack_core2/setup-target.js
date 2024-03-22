@@ -72,7 +72,6 @@ export default function (done) {
 	};
 
 	// power
-  debugger;
   const powerICID = new SMBus({
     ...INTERNAL_I2C,
     address: 0x34,
