@@ -72,10 +72,12 @@ export default function (done) {
 	};
 
 	// power
-  const powerICID = new SMBus({
+  const s = new SMBus({
     ...INTERNAL_I2C,
     address: 0x34,
-  }).readByte(0x03)
+  })
+  const powerICID = s.readByte(0x03)
+  s.close();
 
 	globalThis.power =
     powerICID === 0x03 ? new PowerAXP192() : new PowerAXP2101() /* expects 0x4a */;
