@@ -813,16 +813,22 @@ again:
 	return &slot->value.bigint;
 }
 
-void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 value)
+void fxFromBigInt64(txMachine* the, txSlot* slot, txS8 it)
 {
 	txU1 sign = 0;
-	if (value < 0) {
-		value = -value;
+	txU8 value = 0;
+	if (it < 0) {
+		if (it & 0x7FFFFFFFFFFFFFFFll)
+			value = -it;
+		else
+			value = (txU8)it;
 		sign = 1;
 	}
+	else
+		value = it;
 	if (value > 0x00000000FFFFFFFFll) {
 		slot->value.bigint.data = fxNewChunk(the, 2 * sizeof(txU4));
-		slot->value.bigint.data[0] = (txU4)(value);
+		slot->value.bigint.data[0] = (txU4)value;
 		slot->value.bigint.data[1] = (txU4)(value >> 32);
 		slot->value.bigint.size = 2;
 	}
