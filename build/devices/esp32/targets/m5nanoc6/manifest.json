@@ -1,0 +1,33 @@
+{
+  "include": [
+    "$(MODULES)/drivers/button/manifest.json",
+    "$(MODULES)/drivers/led/manifest.json",
+    "$(MODULES)/drivers/neopixel/manifest.json"
+  ],
+  "build":{
+    "ESP32_SUBCLASS": "esp32c6",
+    "USE_USB": "2"
+  },
+  "modules": {
+    "setup/target": "./setup-target"
+  },
+  "preload": ["setup/target", "neopixel"],
+  "config": {
+    "i2c": {
+      "sda_pin": 2,
+      "scl_pin": 1
+    },
+    "screen": "",
+    "led": {
+      "rgb": {
+        "power_pin": 19,
+        "data_pin": 20,
+        "rainbow": false,
+        "brightness": 32
+      },
+      "blue": {
+        "pin": 7
+      }
+    }
+  }
+}
