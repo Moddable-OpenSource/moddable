@@ -25,7 +25,7 @@ Some of the software in the Moddable SDK, primarily that related to the XS JavaS
 The [`license/NOTICE`](NOTICE) file contains the license grant by Marvell Semiconductor, from the [KinomaJS](https://github.com/Kinoma/kinomajs/) repository on GitHub.
 
 ### SIL OPEN FONT LICENSE Version 1.1
-Some of the fonts in the Moddable SDK are provided under the SIL OPEN FONT LICENSE Version 1.1 license. The text of this license is provided in [OFL.txt](./OFT.txt).
+Some of the fonts in the Moddable SDK are provided under the SIL OPEN FONT LICENSE Version 1.1 license. The text of this license is provided in [OFL.txt](./OFL.txt).
 
 ### Contributor License Agreement
 Moddable welcomes third party contributions to the Moddable SDK. Before we can accept a change, we ask that you complete a Contributor License Agreement. This ensures all users of the Moddable SDK that you have the right to make the contribution, and that they can continue to use the Moddable SDK with your changes under the existing licenses. The contributor license agreements are in the files [Moddable CLA - individual.pdf](Moddable%20CLA%20-%20individual.pdf) and [Moddable CLA - corporate.pdf](Moddable%20CLA%20-%20corporate.pdf).

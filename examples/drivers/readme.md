@@ -130,7 +130,7 @@ A simple example to demonstrate built-in hardware features of the M5Atom Matrix 
 
 Draws a basic digital clock on an ePaper display that updates once a minute. Only runs on M5 Paper and M5Core Ink because they are battery powered. Uses special power management techniques, including one to eliminate drawing flicker on the M5Core Ink.
 
-> See the [blog post](ADDLINK) Getting the Most from ePaper Displays for more information about this example.
+> See the [blog post](https://moddable.com/blog/epaper/) Getting the Most from ePaper Displays for more information about this example.
 
 ***
 
@@ -282,6 +282,6 @@ Reads the [Texas Instruments TMP102 digital temperature sensor](https://www.spar
 ***
 
 ### [`xpt2046calibrate`](./xpt2046calibrate)
-[Commodetto](../../documentation/commodetto/commodetto.md) app that calibrates the [XPT2046 touch screen controller](../../modules/drivers/xpt2046) used by the [Moddable Zero](../../documentation/etc/moddablezero.md) device. The app saves the calibration data in persistent storage.
+[Commodetto](../../documentation/commodetto/commodetto.md) app that calibrates the [XPT2046 touch screen controller](../../modules/drivers/xpt2046) used by the [Moddable Zero](../../documentation/devices/moddable-zero.md) device. The app saves the calibration data in persistent storage.
 
 ***

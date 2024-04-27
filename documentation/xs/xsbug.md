@@ -29,7 +29,7 @@ The right panes display:
 
 * The selected file.
 * The console. Each virtual machine has its own console.
-* A field to enter JavaScript expressions to be evaluated. This field is labeled "EVAL" and is only available when stopped at a breakpoint. See [Interactive Console](repl) for more information.
+* A field to enter JavaScript expressions to be evaluated. This field is labeled "EVAL" and is only available when stopped at a breakpoint. See [Interactive Console](#repl) for more information.
 
 ## Breakpoints Tab
 
