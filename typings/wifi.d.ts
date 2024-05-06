@@ -24,7 +24,7 @@ declare module "wifi" {
     ssid: string,
     password?: string
   }
-  export type WiFiCallback = (message: "connect" | "gotIP" | "lostIP" | "disconnect") => void
+  export type WiFiCallback = (message: "connect" | "gotIP" | "lostIP" | "disconnect" | "station_connect" | "station_disconnect") => void
   export type WiFiScanCallback = (item: {
     ssid: string,
     authentication: string,
@@ -48,8 +48,10 @@ declare module "wifi" {
     static readonly lostIP: "lostIP";
     static readonly connected: "connect";
     static readonly disconnected: "disconnect";
-    
-    constructor(options: WiFiOptions, callback?: WiFiCallback);
+    static readonly station_connected: "station_connect";
+    static readonly station_disconnected: "station_disconnect";
+
+    constructor(options?: WiFiOptions, callback?: WiFiCallback);
     close(): void;
     static scan(options: ScanOptions, callback: WiFiScanCallback): void;
     static mode: StationMode | AccessPointMode;

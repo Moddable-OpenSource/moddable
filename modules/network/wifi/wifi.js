@@ -54,4 +54,6 @@ export default class WiFi @ "xs_wifi_destructor" {
 	static lostIP = "lostIP";
 	static connected = "connect";
 	static disconnected = "disconnect";
+	static station_connect = "station_connect"
+	static station_disconnect = "station_disconnect"
 }
