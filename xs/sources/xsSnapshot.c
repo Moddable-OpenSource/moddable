@@ -629,7 +629,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Promise_withResolvers,
 	fx_RegExp_prototype_get_unicodeSets,
 	fx_String_prototype_isWellFormed,
-	fx_String_prototype_toWellFormed
+	fx_String_prototype_toWellFormed,
+#endif
+#if mxUint8ArrayBase64
+	fx_Uint8Array_fromBase64,
+	fx_Uint8Array_fromHex,
+	fx_Uint8Array_prototype_setFromBase64,
+	fx_Uint8Array_prototype_setFromHex,
+	fx_Uint8Array_prototype_toBase64,
+	fx_Uint8Array_prototype_toHex
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
