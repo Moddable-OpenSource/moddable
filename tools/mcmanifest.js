@@ -1051,6 +1051,7 @@ export class TSConfigFile extends FILE {
 	}
 	generate(tool) {
 		let json = {
+			...tool.typescript.tsconfig,
 			compilerOptions: {
 				baseUrl: "./",
 				forceConsistentCasingInFileNames: true,
@@ -2044,6 +2045,7 @@ export class Tool extends TOOL {
 					return value;
 				});
 
+				this.mergeProperties(all.typescript.tsconfig, tsconfig, ['compilerOptions']);
 				const compilerOptions = tsconfig.compilerOptions;
 				for (let name in compilerOptions) {
 					let value = compilerOptions[name];
@@ -2068,9 +2070,11 @@ export class Tool extends TOOL {
 		}
 		return;
 	}
-	mergeProperties(targets, sources) {
+	mergeProperties(targets, sources, exclude) {
 		if (sources) {
 			for (let name in sources) {
+				if (exclude && exclude.includes(name))
+					continue;
 				let target = targets[name];
 				let source = sources[name];
 				if (target && source && (typeof target == "object") && (typeof source == "object"))
@@ -2210,7 +2214,7 @@ export class Tool extends TOOL {
 			typescript: {compiler: "tsc", tsconfig: {compilerOptions: {}}}
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
-
+	
 		if (this.manifest.errors.length) {
 			this.manifest.errors.forEach(error => { this.reportError(null, 0, error); });
 			throw new Error("incompatible platform!");
