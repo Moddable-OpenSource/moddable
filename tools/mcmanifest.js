@@ -583,9 +583,9 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
-			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
-			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
+			let escapedHash = tool.windows ? "^#" : "\\#";
+			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": ", source.replaceAll("#", escapedHash));
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
