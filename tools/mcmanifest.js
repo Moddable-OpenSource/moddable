@@ -579,12 +579,13 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 		}
 
+		let escapedHash = tool.windows ? "^#" : "\\#";
+
 		for (var result of tool.jsFiles) {
 			var source = result.source;
 			var sourceParts = tool.splitPath(source);
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
-			let escapedHash = tool.windows ? "^#" : "\\#";
 			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": ", source.replaceAll("#", escapedHash));
 			this.echo(tool, "xsc ", target);
 			var options = "";
@@ -623,7 +624,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				var targetParts = tool.splitPath(target);
 				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
+				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", escapedHash));
 				this.echo(tool, "xsc ", target);
 				var options = "";
 				if (result.commonjs)
