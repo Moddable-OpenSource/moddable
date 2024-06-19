@@ -2073,7 +2073,7 @@ export class Tool extends TOOL {
 	mergeProperties(targets, sources, exclude) {
 		if (sources) {
 			for (let name in sources) {
-				if (exclude && exclude.includes(name))
+				if (exclude?.includes(name))
 					continue;
 				let target = targets[name];
 				let source = sources[name];
