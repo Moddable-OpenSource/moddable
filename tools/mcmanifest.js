@@ -635,7 +635,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					options += " -c";
 				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)
-					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
+					this.line("$(MODULES_DIR)", temporary.replaceAll("#", escapedHash), ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
 			if (tool.windows)
