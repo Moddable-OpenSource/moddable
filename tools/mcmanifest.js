@@ -579,11 +579,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 		}
 
-		let escapedHash = tool.windows ? "^#" : "\\#";
+		const escapedHash = tool.windows ? "^#" : "\\#";
 
 		for (var result of tool.jsFiles) {
 			var source = result.source;
-			var sourceParts = tool.splitPath(source);
+			// var sourceParts = tool.splitPath(source);  <-- is this line needed?
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
 			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": ", source.replaceAll("#", escapedHash));
@@ -595,7 +595,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -d";
 			if (tool.nativeCode)
 				options += " -c";
-			this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name);
+			this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
 		}
 		this.line("");
 		
