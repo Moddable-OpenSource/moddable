@@ -579,14 +579,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 		}
 
-		const escapedHash = tool.windows ? "^#" : "\\#";
-
 		for (var result of tool.jsFiles) {
 			var source = result.source;
 			// var sourceParts = tool.splitPath(source);  <-- is this line needed?
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
-			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": ", source.replaceAll("#", escapedHash));
+			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash));
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
@@ -624,7 +622,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				var targetParts = tool.splitPath(target);
 				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", escapedHash));
+				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
 				this.echo(tool, "xsc ", target);
 				var options = "";
 				if (result.commonjs)
@@ -635,7 +633,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					options += " -c";
 				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
 				if (tool.windows)
-					this.line("$(MODULES_DIR)", temporary.replaceAll("#", escapedHash), ": TSCONFIG");
+					this.line("$(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash), ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
 			if (tool.windows)
@@ -1569,6 +1567,7 @@ export class Tool extends TOOL {
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
+		this.escapedHash = this.windows ? "^#" : "\\#";
 
 		this.buildPath = this.moddablePath + this.slash + "build";
 		this.xsPath = this.moddablePath + this.slash + "xs";

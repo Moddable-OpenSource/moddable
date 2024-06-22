@@ -107,11 +107,12 @@ class MakeFile extends MAKEFILE {
 			this.write(sourceParts.name);
 			this.write(".h.xsi");
 		}
+
 		this.line("");
 		this.write("PRELOADS =");
 		for (var result of tool.preloads) {
 			this.write("\\\n\t-p ");
-			this.write(result);
+			this.write(result.replaceAll('#', tool.escapedHash));
 		}	
 		this.line("");
 		this.line("");
