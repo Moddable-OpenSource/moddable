@@ -86,6 +86,8 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 > **Note**: The `-l` and `-dl` options requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
 
+> **Note**: `xsbug-log` supports an optional plug-in to allow for customizing output and control flow. Use the environment variable `XSBUG_LOGMACHINE` to set the path of a custom `LogMachine` class implementation (that extends `Machine`).  See `$MODDABLE/tools/xsbug-log/xsbug-machine.js` for the base class, and `$MODDABLE/tools/xsbug-log/xsbug-logmachine.js` for the default implementation.
+
 > **Note**: The `-dn` option is currently unsupported on Windows. It will be implemented in the near future.
 
 <a id="buildtargets"></a>
