@@ -435,8 +435,8 @@ The backing store for littlefs varies depending the host platform:
 
 - **ESP32** - littlefs uses the "storage" partition to hold the file system.
 - **ESP8266** - the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS).
-- **nRF52** - littlefs uses the free space following the firmware image and installed mod. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest `defines`. If there is not enough space, an exception is thrown when accessing the file system.
-- **Others**, littlefs uses a static memory buffer to hold the file system. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest. This RAM disk mode allows littlefs to be used with the simulator.
+- **nRF52** - littlefs uses the free space following the firmware image and installed mod. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARTITION_SIZE` in the manifest `defines`. If there is not enough space, an exception is thrown when accessing the file system.
+- **Others**, littlefs uses a static memory buffer to hold the file system. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARTITION_SIZE` in the manifest. This RAM disk mode allows littlefs to be used with the simulator.
 
 ```json
 	"defines": {

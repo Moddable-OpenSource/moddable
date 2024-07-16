@@ -54,8 +54,8 @@
 #ifndef MODDEF_FILE_LFS_BLOCK_CYCLES
 	#define MODDEF_FILE_LFS_BLOCK_CYCLES 500
 #endif
-#ifndef MODDEF_FILE_LFS_PARITION_SIZE  
-	#define MODDEF_FILE_LFS_PARITION_SIZE (65536)
+#ifndef MODDEF_FILE_LFS_PARTITION_SIZE  
+	#define MODDEF_FILE_LFS_PARTITION_SIZE (65536)
 #endif
 
 #ifdef __ets__
@@ -67,7 +67,7 @@
 	#define MOD_LFS_RAMDISK 1
 
 	#define kBlockSize (4096)
-	#define kBlockCount ((MODDEF_FILE_LFS_PARITION_SIZE + kBlockSize - 1) / kBlockSize)
+	#define kBlockCount ((MODDEF_FILE_LFS_PARTITION_SIZE + kBlockSize - 1) / kBlockSize)
 	
 	uint8_t gRAMDisk[kBlockSize * kBlockCount]; 
 #endif
