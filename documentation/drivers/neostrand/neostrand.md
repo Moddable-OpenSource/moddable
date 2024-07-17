@@ -51,7 +51,7 @@ const strand = new NeoStrand({length: 50, pin: 22, order: "RGB",
 > Note: You may want to tone down your lights during development so you don't blind yourself.
 >
 > ```js
-> strand.brightness(10);
+> strand.brightness = 10;
 > ```
 > This diminishes your color range, so use with care. The default brightness is *64* and maximum is 255.
 
@@ -90,7 +90,7 @@ A scheme can contain more than one effect.
 
 ```js
 schemes.push( [ new NeoStrand.Marquee( marqueeDictionary ),
-                new NeoStrand.Marquee( marquee2 ) ]) );
+                new NeoStrand.Marquee( marquee2 ) ]);
 ```
 
 ### Control
