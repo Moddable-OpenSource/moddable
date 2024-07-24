@@ -37,19 +37,19 @@ Pre-made manifests are available for the BLE client and BLE server. Add them to 
 
 To add the BLE client to a project:
 
-```json
+```
 "include": [
 	/* other includes here */
-	"$(MODDABLE)/modules/network/ble/manifest_client.json",
+	"$(MODDABLE)/modules/network/ble/manifest_client.json"
 ],
 ```
 
 To add the BLE server to a project:
 
-```json
+```
 "include": [
 	/* other includes here */
-	"$(MODDABLE)/modules/network/ble/manifest_server.json",
+	"$(MODDABLE)/modules/network/ble/manifest_server.json"
 ],
 ```
 

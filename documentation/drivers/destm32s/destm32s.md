@@ -17,10 +17,10 @@ The [love-e-ink](../../../examples/piu/love-e-ink) example is designed to work w
 ### Adding DESTM32 to a project
 To add the SSD1351 driver to a project, include its manifest:
 
-```json
+```
 "include": [
 	/* other includes here */
-	"$(MODULES)/drivers/destm32s/manifest.json",
+	"$(MODULES)/drivers/destm32s/manifest.json"
 ],
 ```
 
@@ -29,7 +29,7 @@ If using Commodetto or Piu, set the `screen` property of the `config` object in 
 ```json
 "config": {
 	"screen": "destm32s",
-	"touch": "",
+	"touch": ""
 },
 ```
 
@@ -48,18 +48,18 @@ For 122 x 250 black and white:
 "defines": {
 	"destm32s": {
 		"width": 122,
-		"height": 250,
+		"height": 250
 	}
 }
 ```
 
 For 128 x 296 black, white, and red:
 
-```js
+```json
 "defines": {
 	"destm32s": {
 		"width": 128,
-		"height": 296,
+		"height": 296
 	}
 }
 ```
@@ -71,7 +71,7 @@ For 104 x 212 black, white, gray, and red:
 "defines": {
 	"destm32s": {
 		"width": 104,
-		"height": 212,
+		"height": 212
 	}
 }
 ```
@@ -79,7 +79,7 @@ For 104 x 212 black, white, gray, and red:
 ### Configuring SPI
 The `defines` object must contain the `spi_port`, along with the `DC`, `CS`, and `BUSY`. pin numbers. If a `RST` pin is provided, the device will be reset when the constructor is invoked. If the `cs_port`, `dc_port`, `rst_port`, or `busy_port` properties are not provided, they default to NULL.
 
-```json
+```
 "defines": {
 	"ssd1351": {
 		/* other properties here */

@@ -56,7 +56,7 @@ Most of the [networking examples](../../examples/network) in the Moddable SDK en
 
 If you want to use Ethernet in these examples, you can simply replace `manifest_net.json` with `manifest_net_ethernet.json`. Note that you should not include both `manifest_net.json` and `manifest_net_ethernet.json`; only include one or the other.
 
-```json
+```
 "include": [
 	/* other included manifests here */,
 	"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"

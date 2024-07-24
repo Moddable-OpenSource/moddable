@@ -11,7 +11,7 @@ This static configuration approach is used instead of a dynamic mechanism which 
 ### #defines for ILI9341 display driver
 The following shows the use of the defines block for the ILI9341 display driver.
 
-```json
+```
 {
 	"build": {
 		"BUILD": "$(MODDABLE)/build",
@@ -60,7 +60,7 @@ The GPIO pin connections (CS, DC) include both a port name and a pin number. In 
 ### Optional defines
 A device driver may support optional #defines. The ILI9341, for example, allows the SPI bus speed to be configured, the horizontal and vertical flip to be enabled, and the Reset pin to be supported.
 
-```c
+```
 "defines": {
 	"ili9341": {
 		"width": 240,
@@ -126,7 +126,7 @@ The ESP8266 platform does not use a port name for GPIO pins, so the ILI9341 sets
 
 This allows a more concise statement of the pin connections:
 
-```json
+```
 "defines": {
 	"ili9341": {
 		...
@@ -143,7 +143,7 @@ This allows a more concise statement of the pin connections:
 
 Or simply:
 
-```json
+```
 "defines": {
 	"ili9341": {
 		...
@@ -172,7 +172,7 @@ The portion of the ILI9341 configuration shared across all devices could be:
 
 Here is the platform defines block ESP8266, Gecko, and Zephyr platforms:
 
-```json
+```
 "platforms": {
 	"esp": {
 		"modules": {
@@ -313,12 +313,12 @@ The manifest can contain #define data for several devices:
 "defines": {
 	"ili9341": {
 		"width": 240,
-		"height": 320,
+		"height": 320
 	},
 	"xpt2046": {
 		"width": 240,
 		"height": 320,
-		"hz": 1000000,
+		"hz": 1000000
 	}
 },
 ```

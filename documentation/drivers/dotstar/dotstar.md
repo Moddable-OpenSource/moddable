@@ -11,10 +11,10 @@ The [dotstar](../../../examples/drivers/dotstar) example works with a 144 LED Do
 ### Adding DotStar to a project
 To add the DotStar driver to a project, include its manifest:
 
-```json
+```
 "include": [
 	/* other includes here */
-	"$(MODULES)/drivers/dotstar/manifest.json",
+	"$(MODULES)/drivers/dotstar/manifest.json"
 ],
 ```
 
@@ -29,7 +29,7 @@ In the `defines` object, the optional `brightness` property may be set, where 25
 ```json
 "defines": {
 	"dotstar": {
-		"brightness": 64,
+		"brightness": 64
 	}
 }
 ```
@@ -37,7 +37,7 @@ In the `defines` object, the optional `brightness` property may be set, where 25
 ### Configuring SPI
 The `defines` object must contain the `spi_port`.
 
-```json
+```
 "defines": {
 	"dotstar": {
 		/* other properties here */
