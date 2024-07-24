@@ -17,17 +17,21 @@ The [love-e-ink](../../../examples/piu/love-e-ink) example is designed to work w
 ### Adding DESTM32 to a project
 To add the SSD1351 driver to a project, include its manifest:
 
-	"include": [
-		/* other includes here */
-		"$(MODULES)/drivers/destm32s/manifest.json",
-	],
+```json
+"include": [
+	/* other includes here */
+	"$(MODULES)/drivers/destm32s/manifest.json",
+],
+```
 
 If using Commodetto or Piu, set the `screen` property of the `config` object in the manifest to `destm32s` to make SSD1351 the default display driver. Since there is no touch input, set the touch driver name to an empty string to disable it.
 
-	"config": {
-		"screen": "destm32s",
-		"touch": "",
-	},
+```json
+"config": {
+	"screen": "destm32s",
+	"touch": "",
+},
+```
 
 ### Pixel format
 The DESTM32S driver requires 8-bit gray or, when the display supports color (e.g. red), 8-bit color pixels as input. When building with `mcconfig`, set the pixel format to `gray256` or `rgb332` on the command line:
@@ -40,43 +44,52 @@ In the `defines` object, declare the pixel `width` and `height`. The dimensions 
 
 For 122 x 250 black and white:
 
-	"defines": {
-		"destm32s": {
-			"width": 122,
-			"height": 250,
-		}
+```json
+"defines": {
+	"destm32s": {
+		"width": 122,
+		"height": 250,
 	}
+}
+```
 
 For 128 x 296 black, white, and red:
 
-	"defines": {
-		"destm32s": {
-			"width": 128,
-			"height": 296,
-		}
+```js
+"defines": {
+	"destm32s": {
+		"width": 128,
+		"height": 296,
 	}
+}
+```
 
 For 104 x 212 black, white, gray, and red:
 
-	"defines": {
-		"destm32s": {
-			"width": 104,
-			"height": 212,
-		}
+
+```json
+"defines": {
+	"destm32s": {
+		"width": 104,
+		"height": 212,
 	}
+}
+```
 
 ### Configuring SPI
 The `defines` object must contain the `spi_port`, along with the `DC`, `CS`, and `BUSY`. pin numbers. If a `RST` pin is provided, the device will be reset when the constructor is invoked. If the `cs_port`, `dc_port`, `rst_port`, or `busy_port` properties are not provided, they default to NULL.
 
-	"defines": {
-		"ssd1351": {
-			/* other properties here */
-			"cs_pin": 4,
-			"dc_pin": 2,
-			"rst_pin": 0,
-			"busy_pin": 5,
-			"spi_port": "#HSPI"
-		}
+```json
+"defines": {
+	"ssd1351": {
+		/* other properties here */
+		"cs_pin": 4,
+		"dc_pin": 2,
+		"rst_pin": 0,
+		"busy_pin": 5,
+		"spi_port": "#HSPI"
 	}
+}
+```
 
 The `hz` property, when present, specifies the SPI bus speed. The default value is 500,000 Hz which is near the maximum SPI speed supported by the controllers.

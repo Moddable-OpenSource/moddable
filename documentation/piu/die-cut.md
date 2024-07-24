@@ -54,35 +54,37 @@ But of course the `die` object is mostly interesting to build animations and tra
 
 Let us build a "venitian blind" transition:
 
-	class VenitianBlindTransition extends Transition {
-		constructor(duration) {
-			super(duration);
-		}
-		onBegin(container, former, current) {
-			container.add(current);
-			this.container = container;
-			this.die = new Die(null, {});
-			this.die.attach(current);
-		}
-		onEnd(container, former, current) {
-			this.die.detach();
-			container.remove(former);
-		}
-		onStep(fraction) {
-			let die = this.die;
-			die.empty();
-			let width = die.width;
-			let height = die.height;
-			let y = 0;
-			let step = height >> 3;
-			let delta = Math.round(fraction * step);
-			for (let i = 0; i < 8; i++) {
-				die.or(0, y, width, delta);
-				y += step;
-			}
-			die.cut();
-		}
+```js
+class VenitianBlindTransition extends Transition {
+	constructor(duration) {
+		super(duration);
 	}
+	onBegin(container, former, current) {
+		container.add(current);
+		this.container = container;
+		this.die = new Die(null, {});
+		this.die.attach(current);
+	}
+	onEnd(container, former, current) {
+		this.die.detach();
+		container.remove(former);
+	}
+	onStep(fraction) {
+		let die = this.die;
+		die.empty();
+		let width = die.width;
+		let height = die.height;
+		let y = 0;
+		let step = height >> 3;
+		let delta = Math.round(fraction * step);
+		for (let i = 0; i < 8; i++) {
+			die.or(0, y, width, delta);
+			y += step;
+		}
+		die.cut();
+	}
+}
+```
 
 The `attach` and `detach` methods allow to temporarily insert a `die` object in the containment hierarchy. At every step of the transition the region changes to progressively close the "venitian blind".
 

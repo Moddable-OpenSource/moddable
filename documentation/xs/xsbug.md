@@ -47,7 +47,7 @@ To remove files and folders from **xsbug**, use the **Close** ![](../assets/xsbu
 
 The left pane displays:
 
-* The **Breakpoints** themselves. Tap a row in this panel to see where the breakpoint is. Each breakpoint row shows icons corresponding to features used by the breakpoint - a question mark for Conditional breakpoints, a tally for Hit Count breakpoints, and a "$" prompt for Trace Expressions. In the header of this panel, there are two icons. The first is an "f" button for setting Function Name breakpoints. The second is a **Trash** ![](../assets/xsbug/trash.png) button to clear all breakpoints. 
+* The **Breakpoints** themselves. Tap a row in this panel to see where the breakpoint is. Each breakpoint row shows icons corresponding to features used by the breakpoint - a question mark for Conditional breakpoints, a tally for Hit Count breakpoints, and a "$" prompt for Trace Expressions. In the header of this panel, there are two icons. The first is an "f" button for setting Function Name breakpoints. The second is a **Trash** ![](../assets/xsbug/trash.png) button to clear all breakpoints.
 
 * The **Search** panel. Use this to recursively search all the files in all the folders added to **xsbug**.
 * Zero or more files and folders panels. Tap folder rows to browse, select a file row to display the file.
@@ -159,14 +159,14 @@ xsbug-log is an alternative to xsbug. Instead of a graphical user interface, it 
 
 xsbug-log is implemented in Node.js. To use it, you must first install the dependencies:
 
-```
+```shell
 cd $MODDABLE/tools/xsbug-log
 npm install
 ```
 
 To use xsbug-log with `mcconfig` use `-dl` (for debug log) in place of`-d` on the command line.
 
-```
+```shell
 mcconfig -dl -m -p esp32/moddable_two
 ```
 

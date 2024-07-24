@@ -5,29 +5,29 @@ Revised: June 25, 2024
 
 The best way to understand what XS does is to follow the execution of byte codes and see what happens to the stack and the heap. So that is mostly what this document does.
 
-The overview is adapted from [XS7 @ TC-39](https://moddable.com/XS7-TC-39). That is the text of the presentation given in 2017 to introduce XS to TC39. Then there are four examples that explore some details about how XS handles scopes at runtime. 
+The overview is adapted from [XS7 @ TC-39](https://moddable.com/XS7-TC-39). That is the text of the presentation given in 2017 to introduce XS to TC39. Then there are four examples that explore some details about how XS handles scopes at runtime.
 
-<a id="overview"></a>	
+<a id="overview"></a>
 ## Overview
 
 The overview mostly defines the vocabulary used when talking about XS, and presents its essential structures
 
 ### Machine
 
-The main XS runtime structure is the machine. Each machine is its own ECMAScript realm and has its own heap, stack, keys, names table, symbols table, connection to the debugger, etc. 
+The main XS runtime structure is the machine. Each machine is its own ECMAScript realm and has its own heap, stack, keys, names table, symbols table, connection to the debugger, etc.
 
 XS can run several machines concurrently in several threads but one machine can only run in one thread at a time. XS provides a C programming interface for machines to communicate.
 
 ### Slot
 
-The most ubiquitous XS runtime structure is the slot. Slots store booleans, numbers, references, etc. 
+The most ubiquitous XS runtime structure is the slot. Slots store booleans, numbers, references, etc.
 
-The size of a slot is four times the size of a pointer, so 16 bytes on 32-bit processors. 
+The size of a slot is four times the size of a pointer, so 16 bytes on 32-bit processors.
 
-- The first field of a slot is a pointer to the `next` slot. Slots are mostly used as linked lists. For example, objects are linked lists of properties. 
+- The first field of a slot is a pointer to the `next` slot. Slots are mostly used as linked lists. For example, objects are linked lists of properties.
 - The second field of a slot is its `id`, an index into the keys of the machine that owns the slot. For example, properties and variables have an `id`.
 - The third field of a slot is its `flag`, with for instance bits for configurable, enumerable and writable. The garbage collector also uses the flag to mark the slot.
-- The fourth field of a slot is its `kind`. It defines what is in the fifth field, the `value` of the slot. For example, if the `kind` is number, the value contains a double. 
+- The fourth field of a slot is its `kind`. It defines what is in the fifth field, the `value` of the slot. For example, if the `kind` is number, the value contains a double.
 - The fifth field of a slot is its `value`.
 
 In the machine heap, there is a linked list of free slots, using the `next` field of the slots. The slot allocator remove slots from that list. The garbage collector sweeps unreachable slots by adding them to that list.
@@ -36,7 +36,7 @@ In the machine heap, there is a linked list of free slots, using the `next` fiel
 
 What does not fit into a slot goes into a chunk. Chunks store byte codes, strings, arrays, array buffers, bigints, etc. Chunks are always accessed thru slots. The kind field of a slot that points to the chunk defines what the chunk contains.
 
-The size of chunks varies. The first four bytes of a chunk is the size of its data. The garbage collector uses the high-order bit of the size to mark the chunk. 
+The size of chunks varies. The first four bytes of a chunk is the size of its data. The garbage collector uses the high-order bit of the size to mark the chunk.
 
 In the machine heap, chunks are allocated inside a memory block. In order to compact the memory block, the garbage collector sweeps unreachable chunks by relocating reachable chunks, then update slots that point to them with their relocated addresses.
 
@@ -54,8 +54,8 @@ In fact most byte codes do not look at all like assembly instructions. Most byte
 
 A lot of byte codes have no values and take just 1 byte. Most byte codes with values have variations depending on the size of their values. A few examples:
 
-- the integer byte code has variations for 1, 2 and 4 bytes values, 
-- the branches byte codes have also variations for 1, 2 and 4 bytes values, depending on how far the interpreter has to jump. 
+- the integer byte code has variations for 1, 2 and 4 bytes values,
+- the branches byte codes have also variations for 1, 2 and 4 bytes values, depending on how far the interpreter has to jump.
 - since ECMAScript functions with more than 255 arguments and variables are rare, related byte codes have variations too, so most accesses and assignments take only two bytes.
 
 Each machine has its current code pointer, which can be null if the machine is not executing byte code.
@@ -154,7 +154,7 @@ XS implements built-in functions in C and modules can implement their functions 
 
 ### Script, Module and Function Scopes
 
-At compile time, XS parses modules and scripts into syntax trees, then hoists definitions and variables, then scopes identifiers, then generates byte code. 
+At compile time, XS parses modules and scripts into syntax trees, then hoists definitions and variables, then scopes identifiers, then generates byte code.
 
 The first objective of scoping identifiers is to access and assign variables by index, on the stack, directly in locals, or indirectly in closures, instead of having to lookup identifiers. That is for performance.
 
@@ -166,13 +166,13 @@ In non-strict mode, when there is a direct call to `eval` or a `with` statement,
 
 ### Block Scopes
 
-Each function reserves slots on the stack for its variables. The number of reserved slots is the maximum number of variables used by the function and its blocks. 
+Each function reserves slots on the stack for its variables. The number of reserved slots is the maximum number of variables used by the function and its blocks.
 
 Several byte codes move the current scope pointer down and up when entering and leaving blocks. Parallel blocks use the same indices.
 
 #### Source code
 
-```
+```js
 {
 	let x = 0;
 	{
@@ -204,14 +204,14 @@ Several byte codes move the current scope pointer down and up when entering and 
 
 Initially, the current scope and stack pointers are the same. **reserve** moves the stack down but not the scope, **new_local** move the scope down, **unwind** moves the scope up and sets the slots to have no IDs, no flags and `undefined` values.
 
-<a id="example1"></a>	
+<a id="example1"></a>
 ## Example 1
 
 Let us start with something simple.
 
 #### Source code
 
-```
+```js
 let x = 0;
 let y = 1;
 const f = function(z) {
@@ -317,7 +317,7 @@ Function instances have a byte code pointer and, if they have closures, an envir
 
 ### Step 4: Function execution
 
-Let us call `f(2)`. 
+Let us call `f(2)`.
 
 #### Byte Codes
 
@@ -366,13 +366,13 @@ Let us call `f(2)`.
 |8|➔ 9|x|-|Closure |Value reference ➔ 0|
 |9|-|y|-|Closure |Value reference ➔ 1|
 
-<a id="example2"></a>	
+<a id="example2"></a>
 ## Example 2
 
 Here is a typical example of closure.
 
 #### Source code
-```
+```js
 let counter = 0;
 const decrement = function() {
   counter--;
@@ -449,14 +449,14 @@ const increment = function() {
 
 Both `decrement` and `increment` functions have environments with closures that reference the same value.
 
-<a id="example3"></a>	
+<a id="example3"></a>
 ## Example 3
 
 Here is the example in the document quoted here above.
 
 #### Source code
 
-```
+```js
 function f(x) {
 	const xx = x**2;
 	return function(y) {
@@ -473,7 +473,7 @@ function f(x) {
 	- **reserve 2**: Reserve 2 slots on the stack for locals and closures
 	- **[0] new_local x**: Create  local 0 with ID **x** and uninitialized value
 	- **argument 0**: Push the value of the first argument if any, else `undefined`
-	- **var_local [0]**: Initialize local 0 (**x**) with the stack value as a `var` 
+	- **var_local [0]**: Initialize local 0 (**x**) with the stack value as a `var`
 	- **pop**: Pop the stack
 	- **[1] new_closure xx**: Create closure 1 with ID **xx** and uninitialized value
 	- **get_local [0]**: Push the value of local 0 (**x**)
@@ -488,7 +488,7 @@ function f(x) {
 		- **[0] retrieve**: Initialize closure  0 with ID and value from the environment (**xx**)
 		- **[1] new_local y**: Create local 1 with ID **y** and uninitialized value
 		- **argument 0**: Push the value of the first argument if any, or `undefined`
-		- **var_local [1]**: Initialize local 1 (**y**) with the stack value as a `var` 
+		- **var_local [1]**: Initialize local 1 (**y**) with the stack value as a `var`
 		- **pop**: Pop the stack
 		- **[2] new_local yy**: Create a new local 2 with ID **yy** and uninitialized value
 		- **get_local [1]**: Push the value of local 1 (**y**)
@@ -496,7 +496,7 @@ function f(x) {
 		- **exponentiation**: Apply the binary operator
 		- **const_local [2]**: Initialize local 2 (**yy**) with the stack value as a `const`
 		- **pop**: Pop the stack
-		- **get_closure [0]**: Push the value of closure 0 (**xx**) 
+		- **get_closure [0]**: Push the value of closure 0 (**xx**)
 		- **get_local [2]**: Push the value of local 2 (**yy**)
 		- **add**: Apply the binary operator
 		- **number 0.5**: Push number `0.5` on the stack
@@ -506,7 +506,7 @@ function f(x) {
 	- **environment**: Push a new environment and assign it to the function on the stack
 	- **store [1]**: Store ID and value of closure 1 (**xx**) into the environment
 	- **pop**: Pop the stack
-	- **set_result**: Pull the stack value into into the result 
+	- **set_result**: Pull the stack value into into the result
 	- **end**:
 
 
@@ -534,17 +534,17 @@ Here are slots created by calling `f(3)`
 |10|➔ 11|-| internal |Environment|-|
 |11|-|xx|-|Closure |Value reference ➔ 4|
 
-<a id="example4"></a>	
+<a id="example4"></a>
 ## Example 4
 
-Generators, like async function and async generators, do not change the way XS handles scopes at runtime.  
+Generators, like async function and async generators, do not change the way XS handles scopes at runtime.
 
 When suspending and resuming the execution of a generator, XS stores and retrieves relevant stack slots with code and scope offsets into and from the generator instance.
 
 Closures in such stack slots will be alive as long as the generator instance itself is alive.
 
 #### Source code
-```
+```js
 let index = 0;
 const infinite = function*() {
 	for (;;) {
@@ -677,10 +677,10 @@ Internally, the `next` method retrieves stack slots with code and scope offsets 
 > XS jumps to the next byte code of the called generator function
 
 - **object**: Push a new ordinary object
-- **dub**: Re-push the stack value 
+- **dub**: Re-push the stack value
 - **get_closure [0]**:
 - **new_property value**: Create a new property with ID `value` and pull the stack value into the property
-- **dub**: Re-push the stack value 
+- **dub**: Re-push the stack value
 - **false**: Push boolean `false`
 - **new_property done**: Create a new property with ID `done` and pull the stack value into the property
 - **yield**:  Pull the stack value into the result and exit like **end**

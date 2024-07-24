@@ -140,7 +140,7 @@ Notice that most assets are used directly from flash storage.
 
 ### Arguments
 
-```text
+```shell
 mcrez files... [-o output] [-r name] [-p platform]
 ```
 
@@ -177,7 +177,7 @@ png2bmp balls.png -o ~/Desktop -f gray256 -r 90
 
 ### Arguments
 
-```text
+```shell
 png2bmp file.png [-a] [-c] [f format] [-o directory] [-r rotation]
 ```
 
@@ -196,7 +196,7 @@ By default **xsc** parses the JavaScript file as an ECMAScript module. Optionall
 
 With the `-c` option, **xsc** accepts the `@` constructs that reference host functions and host objects. For instance:
 
-```c
+```js
 class Point @ "Point_destructor" {
 	constructor(x, y) @ "Point_constructor"
 	moveBy(x, y) @ "Point_moveBy"
@@ -213,7 +213,7 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-```text
+```shell
 xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
 ```
 
@@ -237,7 +237,7 @@ The C code can then be compiled and linked with the implementation of the host f
 
 ### Arguments
 
-```text
+```shell
 xsl files... [-a name] [-b directory] [-c creation] [-o directory] [-p modules]... [u url]
 ```
 
@@ -304,7 +304,7 @@ The shell script, the app archive folder, and the app archive file are located i
 
 ### Arguments
 
-```text
+```shell
 mcbundle [manifest] [-d] [-m] [-o directory]
 ```
 
@@ -321,7 +321,7 @@ mcbundle [manifest] [-d] [-m] [-o directory]
 
 ### Arguments
 
-```text
+```shell
 mchex file -a address [-n name] [-o directory]
 ```
 

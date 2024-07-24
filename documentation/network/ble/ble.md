@@ -37,17 +37,21 @@ Pre-made manifests are available for the BLE client and BLE server. Add them to 
 
 To add the BLE client to a project:
 
-	"include": [
-		/* other includes here */
-		"$(MODDABLE)/modules/network/ble/manifest_client.json",
-	],
+```json
+"include": [
+	/* other includes here */
+	"$(MODDABLE)/modules/network/ble/manifest_client.json",
+],
+```
 
 To add the BLE server to a project:
 
-	"include": [
-		/* other includes here */
-		"$(MODDABLE)/modules/network/ble/manifest_server.json",
-	],
+```json
+"include": [
+	/* other includes here */
+	"$(MODDABLE)/modules/network/ble/manifest_server.json",
+],
+```
 
 <a id="usingble"></a>
 ## Using BLE
@@ -93,11 +97,13 @@ let htm = new HealthThermometerService;
 ## BLE Client
 A BLE client can connect to one or more BLE peripherals. The maximum number of concurrent connections is defined at build time and ultimately limited by what the underlying embedded platform supports. To override the default maximum of two connections, override the `max_connections` value in the manifest `defines` section:
 
-	"defines": {
-		"ble": {
-			"max_connections": 3
-		}
-	},
+```json
+"defines": {
+	"ble": {
+		"max_connections": 3
+	}
+},
+```
 
 A BLE client typically performs the following steps to receive notifications from a BLE peripheral:
 

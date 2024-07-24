@@ -1428,7 +1428,7 @@ A new MQTT `Client` is configured using a dictionary of properties. The dictiona
 | `Socket` | The socket constructor to use to create the MQTT connection. Use `SecureSocket` to establish a secure connection using TLS. |
 | `secure` | Dictionary of options for a TLS connection when using `SecureSocket` |
 
-```
+```js
 let mqtt = new Client({
 	host: "test.mosquitto.org",
 	id: "iot_" + Net.get("MAC"),
@@ -1443,7 +1443,7 @@ let mqtt = new Client({
 
 The `onReady` callback is invoked when a connection is successfully established to the server. No messages may be published or subscriptions created before `onReady` is called.
 
-```
+```js
 mqtt.onReady = function () {
 	trace("connection established\n");
 }
@@ -1455,7 +1455,7 @@ mqtt.onReady = function () {
 
 To subscribe to a topic, use the `subscribe` method. Your client can subscribe to multiple clients by calling `subscribe` more than once.
 
-```
+```js
 mqtt.subscribe("test/string");
 mqtt.subscribe("test/binary");
 mqtt.subscribe("test/json");
@@ -1466,7 +1466,7 @@ mqtt.subscribe("test/json");
 Use the `unsubscribe` method to unsubscribe to a topic.
 
 
-```
+```js
 mqtt.unsubscribe("test/string");
 ```
 
@@ -1474,7 +1474,7 @@ mqtt.unsubscribe("test/string");
 
 The `onMessage` callback is invoked when a message is received for any topic that your client has subscribed to. The `topic` argument is the name of the topic and the `data` argument is the complete message.
 
-```
+```js
 mqtt.onMessage = function(topic, data) {
 	trace(`received message on topic "${topic}"\n`);
 }
@@ -1482,7 +1482,7 @@ mqtt.onMessage = function(topic, data) {
 
 The `data` argument is an `ArrayBuffer`. For messages containing only UTF-8 text, you can convert it to a string using `String.fromArrayBuffer`.
 
-```
+```js
 mqtt.onMessage = function(topic, data) {
 	trace(`received message on topic "${topic}"\n`);
 	trace(`data: ${String.fromArrayBuffer(data)}\n`);
@@ -1495,14 +1495,14 @@ mqtt.onMessage = function(topic, data) {
 
 To send a message to a topic, use the `publish` method. The `message` argument may be either a string or an `ArrayBuffer`.
 
-```
+```js
 mqtt.publish("test/string", "hello");
 mqtt.publish("test/binary", Uint8Array.of(1, 2, 3).buffer);
 ```
 
 To publish JSON, first convert it to a string.
 
-```
+```js
 mqtt.publish("test/json", JSON.stringify({
 	message: "hello",
 	version: 1
@@ -1515,7 +1515,7 @@ mqtt.publish("test/json", JSON.stringify({
 
 The `onClose` callback is invoked when the connection is lost, because of a network error or because the MQTT broker closed the connection.
 
-```
+```js
 mqtt.onClose = function() {
 	trace("connection lost\n");
 }

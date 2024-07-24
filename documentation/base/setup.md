@@ -18,10 +18,12 @@ The implementation of a setup is straightforward. The module exports a single fu
 
 The setup function receives a single argument, a done function to call when setup is complete. The `done` function allows setup to perform asynchronous operations, such as establishing a network connection.
 
-	export default function (done) {
-		setupOperation();
-		done();
-	}
+```js
+export default function (done) {
+	setupOperation();
+	done();
+}
+```
 
 ## Preload
 

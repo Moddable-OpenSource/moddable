@@ -21,14 +21,18 @@ This document contains a standalone description of the `Worker` class implemente
 ## class Worker
 Scripts import the `Worker` class to be able to create a new worker.
 
-	import Worker from "worker";
+```js
+import Worker from "worker";
+```
 
 > **Note**: The memory for a Worker's virtual machine is allocated from global system memory.
 
 ### Launching a worker
 To launch a worker, create an instance of the `Worker` class, passing the name of the module to invoke when the worker starts to run. In the following example, the module run at worker start is `simpleworker`.
 
-	let aWorker = new Worker("simpleworker");
+```js
+let aWorker = new Worker("simpleworker");
+```
 
 The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has completed initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
@@ -42,7 +46,7 @@ let aWorker = new Worker("simpleworker", {
 	heap: {
 		initial: 64,
 		incremental: 32
-	}		
+	}
 });
 ```
 
@@ -59,52 +63,68 @@ Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`)
 ### Receiving a message from a worker
 The worker instance has an `onmessage` function which receives all messages from the worker. It is typically assigned immediately after the worker is constructed:
 
-	aWorker.onmessage = function(message) {
-		trace(message, "\n");
-	}
+```js
+aWorker.onmessage = function(message) {
+	trace(message, "\n");
+}
+```
 
 An alternative approach is to create a subclass of `Worker` which contains the `onmessage` function. This uses less memory and runs somewhat faster.
 
-	class MyWorker extends Worker {
-		onmessage(message) {
-			trace(message, "\n");
-		}
+```js
+class MyWorker extends Worker {
+	onmessage(message) {
+		trace(message, "\n");
 	}
-	...
-	let aWorker = new MyWorker("simpleworker");
+}
+...
+let aWorker = new MyWorker("simpleworker");
+```
 
 ### Terminating a worker
 The script that instantiates a worker may terminate the worker.
 
-	aWorker.terminate();
+```js
+aWorker.terminate();
+```
 
 Once a worker is terminated, no further calls should be made to the worker instance. Attempting to post a message to a terminated work throws an exception.
 
 ### Worker script start-up
 When the Worker constructor is called, the module at the path specified (`simpleworker` in the preceding examples) is loaded and run. The worker itself typically performs two tasks. The first is initialization and the second is installing a function to receive messages. The receiving function is installed on the global object `self` and is named `onmessage`.
 
-	let count = 1;
-	let state = INITIALIZED;
+```js
+let count = 1;
+let state = INITIALIZED;
 
-	self.onmessage = function (message) {
-		trace(message, "\n");
-	}
+self.onmessage = function (message) {
+	trace(message, "\n");
+}
+```
 
 ### Sending a message from worker script
 The messages sent by a worker script may be a JavaScript object or an `ArrayBuffer`, just as with messages sent to a worker script. Messages are sent using the `postMessage` function on the global object `self`.
 
-	self.postMessage({hello: "from  worker", counter: count++});
+```js
+self.postMessage({hello: "from  worker", counter: count++});
+```
 
 ### Worker script terminating itself
 A worker script terminates itself by calling `close` on the global object `self`.  This is equivalent to the instantiating script calling `terminate` on the worker instance.
 
-	self.close()
+
+```js
+self.close()
+```
 
 ### API Reference
 #### constructor(modulePath[, dictionary])
 The `Worker` constructor takes a path to the module used to initialize the new worker instance.
 
-	let aWorker = new Worker("simpleworker");
+
+```js
+let aWorker = new Worker("simpleworker");
+```
 
 An optional dictionary contains creation properties for the new worker. If the dictionary is not provided, the default parameters are used. These defaults vary by host runtime, so it is recommended to always provide a memory configuration. The creation properties are the same as the `creation` section of a manifest. See the [manifest documentation](../tools/manifest.md#creation) for details.
 
@@ -115,7 +135,7 @@ let aWorker = new Worker("simpleworker", {
 	heap: {
 		initial: 64,
 		incremental: 32
-	}		
+	}
 });
 ```
 
@@ -126,16 +146,22 @@ If an error occurs or an exception is thrown during execution of the module, the
 #### terminate()
 The `terminate` function immediately ends execution of the worker instance, freeing all resources owned by the worker.
 
-	aWorker.terminate();
+
+```js
+aWorker.terminate();
+```
 
 Once a worker has been terminated, no further calls should be made to it.
 
 #### postMessage(msg)
 The `postMessage` function queues a message for delivery to the worker. Messages can be anything supported in JSON, binary buffers (`TypedArray`, `ArrayBuffer`, `SharedArrayBuffer`, `DataView`) and anything else supported by [XS Marshalling](../xs/XS%20Marshalling.md).
 
-	aWorker.postMessage("hello");
-	aWorker.postMessage({msg: "hello", when: Date.now()});
-	aWorker.postMessage(new ArrayBuffer(8));
+
+```js
+aWorker.postMessage("hello");
+aWorker.postMessage({msg: "hello", when: Date.now()});
+aWorker.postMessage(new ArrayBuffer(8));
+```
 
 Messages are delivered in the same order they are sent.
 
@@ -144,9 +170,12 @@ Messages are passed by copy (with a few exceptions, such as `SharedArrayBuffer`,
 #### onmessage property
 The worker `onmessage` property contains a function which receives messages from the worker.
 
-	aWorker.onmessage = function(msg) {
-		trace(msg, "\n");
-	}
+
+```js
+aWorker.onmessage = function(msg) {
+	trace(msg, "\n");
+}
+```
 
 ## Shared Workers
 The `SharedWorker` class is an API for working with shared virtual machines. The implementation is based on the [Shared Workers](https://html.spec.whatwg.org/multipage/workers.html#shared-workers-introduction) API from the web with some differences, including:
@@ -158,7 +187,10 @@ The `SharedWorker` class is an API for working with shared virtual machines. The
 ## class SharedWorker
 Scripts import the `SharedWorker` class to be able to connect to a shared worker, creating the shared worker if it is not currently instantiated.
 
-	import {SharedWorker} from "worker";
+
+```js
+import {SharedWorker} from "worker";
+```
 
 **Note**: Examples and documentation needed.
 

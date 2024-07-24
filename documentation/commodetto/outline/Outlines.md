@@ -37,7 +37,7 @@ Projects using Outlines with Piu should include the `manifest_outline_piu.json` 
 
 The `Outline` class has several different ways to build paths.
 
-```
+```js
 import Outline from "commodetto/outline";
 ```
 

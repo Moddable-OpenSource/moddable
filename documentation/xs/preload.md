@@ -13,15 +13,17 @@ Not all modules can be preloaded because not all operations may be performed on 
 ## Specifying Modules to Preload
 A project's build manifest, usually a file named `manifest.json`, lists the modules to include together with [many other options](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/manifest.md). A list of modules to preload is one optional part of the manifest.
 
-	"modules": {
-		"*": [
-			"./main",
-			"$(MODULES)/network/http/*"
-		]
-	},
-	"preload": [
-		"http"
+```json
+"modules": {
+	"*": [
+		"./main",
+		"$(MODULES)/network/http/*"
 	]
+},
+"preload": [
+	"http"
+]
+```
 
 In this example, the `http` network protocol module is preloaded but the `main` module is not. For convenience most of the examples in the Moddable SDK do not preload their `main` module, though with a little additional work they could. The details of how are described below.
 

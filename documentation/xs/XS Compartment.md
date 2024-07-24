@@ -32,10 +32,12 @@ For the sake of security, it is the responsibility of a real host that creates c
 
 A parent compartment can create child compartments.
 
-	const parent = new Compartment();
-	parent.evaluate(`
-		const child = new Compartment();
-	`);
+```js
+const parent = new Compartment();
+parent.evaluate(`
+	const child = new Compartment();
+`);
+```
 
 A compartment can only provide to its child compartments the features provided by its parent compartment (and new features based on the features provided by its parent compartment).
 

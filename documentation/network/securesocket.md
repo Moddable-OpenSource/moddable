@@ -124,7 +124,7 @@ TLS Certificates are used to encrypt the data you send to a server. `SecureSocke
 #### Using a Built-in Certificate
 The certificate store is located in the [`modules/crypt/data` directory](../../modules/crypt/data) of the Moddable SDK. Not every certificate is used by every application, so it would be a waste of limited flash memory to include all of them by default. Instead, certificates are explicitly included in the `resources` section of manifests.
 
-```text
+```json
 "resources": {
     "*": [
         "$(MODULES)/crypt/data/ca9",
@@ -138,7 +138,7 @@ If you are unsure which certificate you need to include, just run your applicati
 
 In this case, `ca109.der` needs to be included, so it should be added in the manifest’s `resources` object.
 
-```test
+```json
 "resources": {
     "*": [
         "$(MODULES)/crypt/data/ca109"
@@ -213,7 +213,7 @@ When working with HTTPS, it is best to use streaming mode to retrieve the respon
 
 The TLS implementation defaults to enabling cipher suites that use DHE and ECDHE. These modes are computationally complex and therefore can take a long time to run on slower microcontrollers. The use of these suites is controlled by the `config` section of the manifest. To disable these suites, include the following in your project manifest:
 
-```text
+```json
 "config": {
 	"tls": {
 		"DHE_RSA": false,

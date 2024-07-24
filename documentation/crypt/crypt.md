@@ -8,26 +8,36 @@ Revised: June 14, 2022
 
 The Digest class creates cryptographic hashes using a variety of algorithms.
 
-	import {Digest} from "crypt";
+
+```js
+import {Digest} from "crypt";
+```
 
 ### MD5 Hash
 
-	let digest = new Digest("MD5");
-	digest.write("hello, world);
-	trace(`MD5 Hash: ${digest.close()}\n`);
+
+```js
+let digest = new Digest("MD5");
+digest.write("hello, world);
+trace(`MD5 Hash: ${digest.close()}\n`);
+```
 
 ### SHA1 Hash
 
-	let digest = new Digest("SHA1");
-	digest.write("hello,");
-	digest.write(" world");
-	trace(`SHA1 Hash: ${digest.close()}\n`);
+```js
+let digest = new Digest("SHA1");
+digest.write("hello,");
+digest.write(" world");
+trace(`SHA1 Hash: ${digest.close()}\n`);
+```
 
 ### new Digest(type)
 
 The `Digest` constructor takes the type of the hash to calculate as its sole argument.
 
-	let digest = new Digest("SHA1");
+```js
+let digest = new Digest("SHA1");
+```
 
 The following hash functions are supported:
 
@@ -42,8 +52,10 @@ The following hash functions are supported:
 
 The `write` function adds a message to the hash being calculated. There is no restriction on the length of the message. The message argument to write may be a `String` or `ArrayBuffer`. The `write` function may be called more than once for a given digest calculation.
 
-	digest.write("123");
-	digest.write("456");
+```js
+digest.write("123");
+digest.write("456");
+```
 
 ### close()
 
@@ -66,7 +78,9 @@ BlockCipher, StreamCipher and Mode classes need to be documented. They are used 
 
 The `Transform` class contains static methods to perform common transformations of certificate data.
 
-	import Transform from "crypt/transform";
+```js
+import Transform from "crypt/transform";
+```
 
 Whenever possible, transformation of data should not be performed at runtime because it uses additional time and memory. Instead, the data should be stored in the optimal format for the target device. These transformation functions are provided for situations where the transformation must be performed at runtime, such as some device provisioning flows.
 

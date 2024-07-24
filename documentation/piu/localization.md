@@ -6,20 +6,22 @@ Revised: March 3, 2017
 
 When using JavaScript, the most obvious format to localize strings is a dictionary. Applications use common keys to access localized strings.
 
-	var en = {
-		"I love you": "I love you",
-		"Me neither": "Me neither",
-	};
+```js
+var en = {
+	"I love you": "I love you",
+	"Me neither": "Me neither",
+};
 
-	var fr = {
-		"I love you": "Je t'aime",
-		"Me neither": "Moi non plus",
-	};
+var fr = {
+	"I love you": "Je t'aime",
+	"Me neither": "Moi non plus",
+};
 
-	var language = fr;
-	function localize(it) {
-		return language[it];
-	}
+var language = fr;
+function localize(it) {
+	return language[it];
+}
+```
 
 It is not always possible to use the English string as the key, because of homonyms, contexts, etc. However, when it is possible, it is recommended: the code is easier to read and obvious redundancies are avoided.
 
@@ -31,11 +33,15 @@ Since usually applications need only one language at a time, dictionaries can be
 
 #### en.json
 
-	{"I love you":"I love you","Me neither":"Me neither"}
+```json
+{"I love you":"I love you","Me neither":"Me neither"}
+```
 
 #### fr.json
 
-	{"I love you":"Je t'aime","Me neither":"Moi non plus"}
+```json
+{"I love you":"Je t'aime","Me neither":"Moi non plus"}
+```
 
 Storing JSON files in ROM is a waste since all dictionaries have to define all keys. For instance here above the keys `I love you` and `Me neither` are repeated in the English and French dictionaries.
 
@@ -59,11 +65,15 @@ Instead of JSON files, dictionaries could be JavaScript modules that XS can comp
 
 #### en.js
 
-	export default {"I love you":"I love you","Me neither":"Me neither"}
+```js
+export default {"I love you":"I love you","Me neither":"Me neither"}
+```
 
 #### fr.js
 
-	export default {"I love you":"Je t'aime","Me neither":"Moi non plus"}
+```js
+export default {"I love you":"Je t'aime","Me neither":"Moi non plus"}
+```
 
 That would avoid redundant keys in ROM and would use no RAM. However the process would still populate the XS symbols table with keys, use six slots by dictionary for the module, export and object, and use one slot by entry.
 
@@ -102,16 +112,18 @@ Now something is of course necessary to map keys to indexes into the tables, so 
 
 Again a dictionary could be used, at least there would be only one dictionary for all languages.
 
-	var locals = {
-		"I love you": 0,
-    	"Me neither": 1,
-	};
-	var en = new StringTable("locals.en.mhr");
-	var fr = new StringTable("locals.fr.mhr");
-	var language = fr;
-	function localize(it) {
-		return language.get(locals[it]);
-	}
+```js
+var locals = {
+	"I love you": 0,
+	"Me neither": 1,
+};
+var en = new StringTable("locals.en.mhr");
+var fr = new StringTable("locals.fr.mhr");
+var language = fr;
+function localize(it) {
+	return language.get(locals[it]);
+}
+```
 
 But such a dictionary would have the already mentioned drawbacks: populating the XS symbols table and taking time to lookup an index.
 
@@ -178,23 +190,24 @@ By convention, **mcconfig** will generate a make file with a rule to call **mclo
 
 Piu defines a class, `Locals`, to get localized strings and to switch languages.
 
-	var locals = new Locals;
+```js
+var locals = new Locals;
+```
 
 The constructor takes two arguments, `name` and `language`. The defaults are `locals` and `en`. Resources are accessed by combining `name`, `language` and the `.mhi` or `.mhr` extensions.
 
 Applications switch the language with an accessor.
 
+```js
 	var what = locals.get("I love you"); // what == "I love you"
 	locals.language = "fr";
 	var quoi = locals.get("I love you");	 // quoi == "Je t'aime"
+```
 
 For convenience, applications can define a global function to localize strings.
 
-	global.localize = function(it) {
-		return locals.get(it);
-	}
-
-
-
-
-
+```js
+global.localize = function(it) {
+	return locals.get(it);
+}
+```

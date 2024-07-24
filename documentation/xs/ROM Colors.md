@@ -103,15 +103,17 @@ Now the two objects are intertwined to reduce the memory footprint. There are us
 
 Here is a simple test.
 
-	const math = Math;
-	const now = Date.now();
-	for (let i = 0; i < 100000; i++) {
-		math.imul(i, 1)
-		math.max(i, 0)
-		math.min(i, 0)
-		math.sign(i)
-	}
-	trace((Date.now() - now) + "\n");
+```js
+const math = Math;
+const now = Date.now();
+for (let i = 0; i < 100000; i++) {
+	math.imul(i, 1)
+	math.max(i, 0)
+	math.min(i, 0)
+	math.sign(i)
+}
+trace((Date.now() - now) + "\n");
+```
 
 
 
