@@ -227,8 +227,8 @@ const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
 
 // trace QR Code to console
 code = new Uint8Array(code);
-for (let y = 0; y < = code.size; y++) {
-    for (let x = 0; x < = code.size; x++)
+for (let y = 0; y <= code.size; y++) {
+    for (let x = 0; x <= code.size; x++)
         trace(code[(y * code.size) + x] ? "X" : ".", "\n");
     trace("\n");
 }

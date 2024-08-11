@@ -216,7 +216,6 @@ For UDP sockets, the callback for `dataReceived` has three additional arguments 
 
 ```js
 callback(message, byteLength, remoteIP, remotePort) {}
-}
 ```
 
 For RAW sockets, the callback for `dataReceived` has two additional arguments after the message identifier . The first is the number of bytes available to read, as with TCP sockets. The second is a string containing the IP address of the sender.
@@ -767,7 +766,7 @@ In station mode, the default value for the interface is `"station"`; in access p
 The `resolve` function performs performs an asynchronous [DNS](https://en.wikipedia.org/wiki/Domain_Name_System) look-up for the specified `host` and invokes the `callback` to deliver the result.
 
 ```js
-Net.resolve("moddable.tech", (name, address) => trace(`${name} IP address is ${address}\n`);
+Net.resolve("moddable.tech", (name, address) => trace(`${name} IP address is ${address}\n`));
 ```
 
 The IP address is provided as a `String` in dotted IP address notation. If `host` cannot be resolved, the `address` parameter is `undefined`.
@@ -1181,7 +1180,7 @@ The following example redirects all DNS look-ups for "example.com" to the IP add
 ```js
 new DNSServer((message, value) => {
 	if ((1 == message) && ("example.com" == value))
-		return Net.get("IP", 'ap");
+		return Net.get("IP", "ap");
 })
 ```
 

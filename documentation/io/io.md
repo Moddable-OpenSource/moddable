@@ -418,7 +418,7 @@ let count = touch.read(1);
 count = (new Uint8Array(count))[0];
 trace(`Touch points ${count}.\n`);
 
-if (count)
+if (count) {
 	touch.write(Uint8Array.of(3), false);
 	const data = new Uint8Array(touch.read(6 * count));
 	// decode touch data points...

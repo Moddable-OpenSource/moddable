@@ -132,11 +132,11 @@ The `WebThings` class uses mDNS to announce the Web Thing on the local network. 
 
 ```js
 const mdns = new MDNS({hostName: "my light"}, (message, value) => {
-	if (1 == message) && value) {
+	if (1 == message && value) {
 		const things = new WebThings(mdns);
 		things.add(Light);
 	}
-}
+})
 ```
 
 The mDNS name claiming process must be completed before the `WebThings` host can be instantiated. The code above waits for the claiming process to complete successfully, then instantiates the `WebThings` host, and finally registers the `Light` by passing its constructor.

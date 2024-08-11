@@ -883,7 +883,7 @@ To identify an advertised device with the complete name "Zip":
 ```javascript
 onDiscovered(device) {
 	let completeName = device.scanResponse.completeName;
-	if (completeName == "ZIP")
+	if (completeName == "ZIP") {
 		trace("Found ZIP device\n");
 	}
 }
@@ -913,7 +913,7 @@ To search for the "TX Power Level" advertisement data type in the scan response 
 onDiscovered(device) {
 	let scanResponse = device.scanResponse;
 	let index = scanResponse.findIndex(GAP.ADType.TX_POWER_LEVEL);
-	if (-1 !== index)
+	if (-1 !== index) {
 		trace(`Found advertisement tx power level data at index ${index}\n`);
 		const bytes = new Uint8Array(scanResponse.buffer);
 		const txPowerLevel = bytes[index + 2];

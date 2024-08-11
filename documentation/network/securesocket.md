@@ -101,7 +101,7 @@ The MQTT `Client` class accepts an optional `Socket` property in the dictionary 
 
 ```js
 const mqtt = new MQTT({
-	host: "iot.aws.com,
+	host: "iot.aws.com",
 	id: "unique mqtt client id",
 	port: 8883,
 	Socket: SecureSocket,

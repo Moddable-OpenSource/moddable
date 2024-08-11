@@ -271,7 +271,7 @@ let c = new Compartment(
 	{
 		"mod": "mod"
 	}
-});
+);
 let exports = c.importNow("mod");
 ```
 
@@ -289,7 +289,7 @@ let c = new Compartment(
 	{
 		"modExample": "mod"
 	}
-});
+);
 let exports = c.importNow("modExample");
 ```
 
@@ -307,7 +307,7 @@ let c = new Compartment(
 	{
 		"modExample": "mod"
 	}
-});
+);
 let exports = c.importNow("modExample");
 ```
 
@@ -322,7 +322,7 @@ let c = new Compartment(
 	{
 		"modExample": "mod"
 	}
-});
+);
 let exports = c.importNow("modExample");
 ```
 
@@ -334,7 +334,7 @@ let c = new Compartment(
 	{
 		"modExample": "mod"
 	}
-});
+);
 c.globalThis.sharedSecret = globalThis.secret;
 let exports = c.importNow("modExample");
 ```

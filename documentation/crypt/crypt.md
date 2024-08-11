@@ -18,7 +18,7 @@ import {Digest} from "crypt";
 
 ```js
 let digest = new Digest("MD5");
-digest.write("hello, world);
+digest.write("hello, world");
 trace(`MD5 Hash: ${digest.close()}\n`);
 ```
 

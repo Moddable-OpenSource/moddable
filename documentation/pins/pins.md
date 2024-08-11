@@ -108,7 +108,7 @@ The static `Digital.read` and `Digital.write` do not allow configuring all pin m
 
 ```js
 let button = new Digital(0, Digital.InputPullUp);
-trace(`button state is ${button.read()}`;
+trace(`button state is ${button.read()}`);
 ```
 
 ***
