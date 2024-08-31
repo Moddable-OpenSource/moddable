@@ -45,7 +45,7 @@ function UUIDv1(time) {
 		hex((time & 0xFFFF0) >> 4, 4),
 		hex((time & 0xFFF00000 >> 20) | 0x1000, 4),
 		hex((Math.random() * 32767), 4),
-		Net.get("MAC").split(":").join("")
+		Net.get("MAC")?.split(":").join("") ?? hex(Math.random() * 4294967295, 8) + hex((Math.random() * 32767), 4)
 	].join("-").toUpperCase();
 }
 
