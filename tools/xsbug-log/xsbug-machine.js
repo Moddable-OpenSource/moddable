@@ -47,6 +47,14 @@ class Machine {
 		this.output = output;
 		this.profile = new Profile();
 		this.profiling = false;
+
+		input.on('error', (err) => {
+			input.unpipe(parser);
+		});
+
+		input.on('close', () => {
+			input.unpipe(parser);
+		});
 	}
 	
 	onStartElement(name, attributes) {
