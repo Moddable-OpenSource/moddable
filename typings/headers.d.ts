@@ -19,7 +19,7 @@
 */
 
 declare module "headers" {
-    class Headers extends Map<String, String> {}
+    class Headers extends Map<string, string> {}
 
     export { Headers as default };
 }
