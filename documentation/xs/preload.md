@@ -296,7 +296,7 @@ The `main` module is the first application script executed. To do its work, the 
 Here's a trivial example of an application that turns on one LED using a Digital pin at start-up and sets a repeating timer to toggle the state of another LED.
 
 ```js
-import Digital from "pins/digital:
+import Digital from "pins/digital";
 
 let toggle = false;
 
@@ -310,7 +310,7 @@ Timer.repeat(() => {
 In the Moddable SDK runtime, if the `main` module returns a function, that function is executed immediately. This can be used to make `main` support preloading. Here is a naive example of doing that:
 
 ```js
-import Digital from "pins/digital:
+import Digital from "pins/digital";
 
 export default function() {
 	let toggle = false;
@@ -326,7 +326,7 @@ export default function() {
 It is sometimes useful to organize `main` with a simple class that is instantiated from the exported function. This structures the code more cleanly and any needed state, such as `toggle` in the above example, is part of the instance state accessed using `this`.
 
 ```js
-import Digital from "pins/digital:
+import Digital from "pins/digital";
 
 class App {
 	constructor() {

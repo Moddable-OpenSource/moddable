@@ -752,7 +752,7 @@ For a device operating as both a Wi-Fi station (client) and a Wi-Fi access point
 
 On ESP32, the optional second argument can also be used to explicitly request information about the Ethernet interface by providing the value `"ethernet"`.
 
-```
+```js
 trace(`IP default ${Net.get("IP")}\n`);
 trace(`IP station ${Net.get("IP", "station")}\n`);
 trace(`IP AP ${Net.get("IP", "ap")}\n`);
@@ -1383,7 +1383,7 @@ The following example pings the server at `example.com` every 1000ms, tracing th
 let ping = new Ping({host: "example.com", id: 1, interval: 1000}, (message, value, etc) => {
 	if (1 == message)
 		trace(`${value} bytes from ${etc.address}: icmp_seq=${etc.icmp_seq}\n`);
-}
+})
 ```
 
 ***

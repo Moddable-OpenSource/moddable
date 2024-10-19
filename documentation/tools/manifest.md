@@ -608,7 +608,7 @@ For example, if the `platforms` object of a manifest is as follows, building for
 		"warning": "module XYZ not fully tested on esp32",
 		/* modules and resources for ESP32 go here */
 	},
-	"..." {
+	"...": {
 		"error": "module XYZ unsupported"
 	}
 }
@@ -629,7 +629,7 @@ The `esp32` platform has an additional property `dependency` which can be used t
 
 `namespace` is optional and defaults to `espressif`.
 
-The library and include files from the dependencies will be loaded from the ESP Registry and made available to you. You can then write your module with a native part to interface with the component. 
+The library and include files from the dependencies will be loaded from the ESP Registry and made available to you. You can then write your module with a native part to interface with the component.
 
 The [onewire module](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/drivers/onewire) demonstrates the use of `dependency`.
 
@@ -790,7 +790,7 @@ The make fragment can be specified in a platform's `build` section.
 	"gecko/*": {
 		"build": {
 			"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk"
-		}
+		},
 		"include": "./targets/$(SUBPLATFORM)/manifest.json"
 	}
 }

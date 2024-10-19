@@ -180,7 +180,7 @@ The `SecureSocket` implementation requires certificates to be provided in DER (b
 
 Whenever possible, convert the PEM file to DER format before adding it to your project. There are many tools that can perform the conversion. A reliable choice is `openssl`. The following command line works for many certificates (substitute your PEM file path for `data.pem` and the desired output file path for `data.der`):
 
-```
+```shell
 openssl x509 -inform pem -in data.pem -out data.der -outform der
 ```
 

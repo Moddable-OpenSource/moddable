@@ -412,11 +412,11 @@ XS_A - signature of the XS archive file
     MODS - the modules of this mod
         PATH - the path of this module (null terminated string)
         CODE - the byte code of of this module
-        (Additional PATH / CODE pairs follow - one per module]
+        (Additional PATH / CODE pairs follow - one per module)
     RSRC - the data of this mod
         PATH - the path of this module (null terminated string)
         DATA - the data of this resource
-        (Additional PATH / DATA pairs follow - one per piece of data]
+        (Additional PATH / DATA pairs follow - one per piece of data)
 ```
 
 The order of the atoms that precedes the `MODS` atom must be as shown because the microcontroller implementation expects this layout.

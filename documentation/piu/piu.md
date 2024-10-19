@@ -2119,7 +2119,7 @@ Copies the work region into the current region, and invalidates only the differe
 
 Unbind this `die` object from the content hierarchy by removing the first `content` object from this `die` object and replacing this `die` object in its container with the removed `content` object.
 
-```
+```javascript
 let whiteScreen = new Content(null, {
 	active: true, left:0, right:0, top:0, bottom:0,
 	skin: new Skin({ fill: "white" }),
@@ -2321,7 +2321,7 @@ Image assets may be a GIF, JPEG, or PNG file, or a folder of JPEG and PNG files.
 
 Assets must be defined in the resources of your manifest. The quality of JPEG and PNG files can be set to a value between 1 and 100; higher numbers correspond to higher quality.
 
-```javascript
+```json
 "resources":{
 	"*-image(100)": [
 		"$(MODDABLE)/examples/assets/images/screen1",
@@ -2334,7 +2334,7 @@ Assets must be defined in the resources of your manifest. The quality of JPEG an
 
 Images in a folder are used as frames of a single animated image. The frame rate is determined by the name of the folder. For example, the `fish.15fps` folder from [the example images folder](../../examples/assets/images) tells the application to run at 15 frames per second. In the manifest, the `.15fps` is dropped from the path.
 
-```javascript
+```json
 "resources":{
 	"*-image": [
 		"$(MODDABLE)/examples/assets/images/fish",

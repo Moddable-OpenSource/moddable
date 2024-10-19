@@ -101,7 +101,7 @@ For PEM files containing more than one certificate, `pemToDER` converts only the
 
 This function is similar to the following `openssl` command line:
 
-```
+```shell
 openssl x509 -inform pem -in data.pem -out data.der -outform der
 ```
 
@@ -114,6 +114,6 @@ The `privateKeyToPrivateKeyInfo ` function transforms a Private Key to a Private
 
 Using `pemToDER` and `privateKeyToPrivateKeyInfo ` together is similar to the following `openssl` command line:
 
-```
+```shell
 openssl pkcs8 -topk8 -in private_key.pem -inform pem -out private_key.pk8.der -outform der -nocrypt
 ```
