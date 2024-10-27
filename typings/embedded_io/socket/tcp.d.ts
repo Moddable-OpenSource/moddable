@@ -43,7 +43,7 @@ declare module "embedded:io/socket/tcp" {
 		readonly remoteAddress: string | undefined;
 		readonly remotePort: number | undefined;
 		read(): number;
-		read(byteLength: number): ArrayBuffer;
+		read(byteLength: number): ArrayBuffer | undefined;
 		read(buffer: Buffer): void;
 		write(value: number | Buffer): void;
 		close(): void;

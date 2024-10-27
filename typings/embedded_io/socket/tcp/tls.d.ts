@@ -1,5 +1,5 @@
 declare module "embedded:io/socket/tcp/tls" {
-	import { TCPOptions } from "embedded:io/socket/tcp";
+	import TCP, { TCPOptions } from "embedded:io/socket/tcp";
 	import UDP from "embedded:io/socket/udp";
 
 	export type SSLSessionOptions = {
@@ -21,12 +21,5 @@ declare module "embedded:io/socket/tcp/tls" {
 	};
 	export type TLSDevice = TCPOptions & { io: typeof UDP };
 
-	export default class TLSSocket {
-		constructor(options: TLSOptions);
-		close(): undefined;
-		read(count: number | ArrayBufferLike): undefined | ArrayBufferLike;
-		write(buffer: ArrayBufferLike): number;
-		set format(format: string);
-		get format(): string;
-	}
+	export default class TLSSocket extends TCP {}
 }

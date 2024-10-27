@@ -44,7 +44,7 @@ declare module "embedded:network/websocket/client" {
 	export default class WebSocketClient {
 		constructor(options: WebSocketClientOptions);
 		close(): void;
-		read(count?: number): ArrayBuffer;
+		read(count?: number): ArrayBuffer | undefined;
 		write(message: Buffer, options?: WebSocketClientWriteOptions): number;
 
 		static readonly text: 1;
