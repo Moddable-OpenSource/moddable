@@ -103,6 +103,8 @@ export default class extends TOOL {
 		let properties = platform.build;
 		if (properties) {
 			for (let name in properties) {
+				if (this.environment[name])
+					continue;
 				let value = properties[name];
 				if (typeof value == "string")
 					this.environment[name] = this.resolveVariable(value);
