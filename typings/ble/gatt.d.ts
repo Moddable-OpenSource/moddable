@@ -116,6 +116,7 @@ declare module "gatt" {
     name: string;
     type: string;
     descriptors: Descriptor[];
+    properties: number;
 
     /**
      * Discover all the characteristic's descriptors.
