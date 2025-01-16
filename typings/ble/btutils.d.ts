@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Richard Lea
+* Copyright (c) 2022-2025 Richard Lea, Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,22 +18,22 @@
 *
 */
 
+type ManufacturerSpec = {
+  /**
+   * The `identifier` property is a number corresponding to the
+   * _Company Identifier Code_.
+   */
+  identifier: string | number,
+
+  /**
+   * The `data` property is an array of numbers corresponding
+   * to additional manufacturer specific data.
+   */
+  data: number[],
+};
+
 declare module "btutils" {
 
-  type ManufacturerSpec = {
-    /**
-     * The `identifier` property is a number corresponding to the
-     * _Company Identifier Code_.
-     */
-    identifier: string | number,
-  
-    /**
-     * The `data` property is an array of numbers corresponding
-     * to additional manufacturer specific data.
-     */
-    data: number[],
-  };
-  
   export interface Bytes extends ArrayBuffer {
     /**
      * The `equals` function returns `true` if the instance
@@ -43,6 +43,12 @@ declare module "btutils" {
      * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#equalsbuffer
      */
     equals(bytes: Bytes): boolean;
+
+    /**
+     * The `toString` function returns a printable hex string of the Bytes contents. The string is formatted in big endian order with separators.
+     * https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#tostring
+     */
+    toString(): string;
   }
 
   /**
@@ -57,6 +63,11 @@ declare module "btutils" {
      * Contains the raw advertisement data bytes.
      */
     buffer: ArrayBuffer;
+
+    /**
+     * Number corresponding to the Appearance.
+     */
+    appearance: number;
 
     /**
      * The advertised complete local name.
@@ -87,17 +98,19 @@ declare module "btutils" {
      * The advertised incomplete 16-bit UUID list.
      */
     incompleteUUID16List: Array<string | number>;
+
+    findIndex(type: number, index?: number): number;
   }
 
   /**
    * Convert a Bluetooth UUID expressed as a hex string to a `Bytes` instance.
    * @param strings 
    */
-  export function uuid(...strings: string[]): Bytes;
+  export function uuid(strings: TemplateStringsArray): Bytes;
 
   /**
    * Convert a Bluetooth address expressed as a hex string to a `Bytes` instance.
    * @param strings 
    */
-  export function address(...strings: string[]): Bytes;
+  export function address(strings: TemplateStringsArray): Bytes;
 }

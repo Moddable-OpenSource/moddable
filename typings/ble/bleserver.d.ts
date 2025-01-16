@@ -18,26 +18,26 @@
 *
 */
 
-type ManufacturerSpec = {
-  /**
-   * The `identifier` property is a number corresponding to the
-   * _Company Identifier Code_.
-   */
-  identifier: string | number,
-
-  /**
-   * The `data` property is an array of numbers corresponding
-   * to additional manufacturer specific data.
-   */
-  data: number[],
-};
-
 declare module "bleserver" {
 
   import { GAP } from "gap";
   import { Bytes } from "btutils";
   import { Characteristic, Client } from "gatt";
   import { IOCapability } from "sm";
+
+  type ManufacturerSpec = {
+    /**
+     * The `identifier` property is a number corresponding to the
+     * _Company Identifier Code_.
+     */
+    identifier: string | number,
+  
+    /**
+     * The `data` property is an array of numbers corresponding
+     * to additional manufacturer specific data.
+     */
+    data: number[],
+  };
 
   type gapScanFilterPolicies =
     typeof GAP.ScanFilterPolicy.NONE |

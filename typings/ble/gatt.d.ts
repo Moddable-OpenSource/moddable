@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Richard Lea
+* Copyright (c) 2022-2025 Richard Lea, Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -22,6 +22,7 @@ declare module "gatt" {
 
   import { Bytes, Advertisement } from "btutils";
   import { GAP } from "gap";
+  import { Authorization } from "sm";
 
   type getAddressType = (typeof GAP.AddressType);
 
@@ -60,13 +61,10 @@ declare module "gatt" {
     findServiceByUUID(uuid: Bytes): void;
 
     /**
-     * Called when service discovery completes.
-     * If `findServiceByUUID` was called to find a single service,
-     * the `services` array contains the single service found.
-     * 
-     * @param services 
+     * Request a higher MTU once the peripheral connection has been established.
+     * @param mtu 
      */
-    onServices(services: Service[]): void;
+    exchangeMTU(mtu: number): void
 
     /**
      * Terminates the peripheral function.
@@ -99,13 +97,10 @@ declare module "gatt" {
     discoverCharacteristic(uuid: Bytes): void;
 
     /**
-     * Called when characteristic discovery completes.
-     * If `findCharacteristicByUUID` was called to find a single characteristic,
-     * the `characteristics` array contains the single characteristic found.
-     *
-     * @param characteristics 
+     * finds and returns the characteristic identified by `uuid`. 
+     * @param uuid 
      */
-    onCharacteristics(characteristics: Characteristic[]): void;
+    findCharacteristicByUUID(uuid: Bytes): void;
   }
 
   /**
@@ -128,12 +123,12 @@ declare module "gatt" {
      */
     discoverAllDescriptors(): void;
 
-    /**
-     * Called when descriptor discovery completes.
+    
+    /* Enable characteristic value change notifications.
      *
-     * @param descriptors 
+     * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#enablenotifications
      */
-    onDescriptors(descriptors: Descriptor[]): void;
+    enableNotifications(): void;
 
     /**
      * Enable characteristic value change notifications.
@@ -141,6 +136,20 @@ declare module "gatt" {
      * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#enablenotifications
      */
     disableNotifications(): void;
+
+    /**
+     * Disable characteristic value change notifications.
+     * @param auth 
+     * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#disablenotifications
+     */
+    readValue(auth: Authorization): void;
+
+    /**
+     * Write a characteristic value on demand.
+     * @param value 
+     * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#writewithoutresponsevalue
+     */
+    writeWithoutResponse(value: any): void;
   }
 
   /**
@@ -163,5 +172,14 @@ declare module "gatt" {
      * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#readvalueauth-1
      */
     readValue(auth?: number): void;
+
+    writeWithoutResponse(value: any): void;
+
+    /**
+     * Write a descriptor value.
+     * @param value 
+     * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#writevaluevalue
+     */
+    writeValue(value: any): void;
   }
 }

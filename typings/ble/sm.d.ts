@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Richard Lea
+* Copyright (c) 2022-2025 Richard Lea, Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -33,6 +33,14 @@ declare module "sm" {
     KeyboardOnly = 2,
     KeyboardDisplay = 3,
     DisplayYesNo = 4,
+  }
+
+  export const enum Authorization {
+    None = 0,
+    NoMITM = 1,
+    MITM = 2,
+    SignedNoMITM = 3,
+    SignedMITM = 4
   }
 
   /**
