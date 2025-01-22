@@ -34,7 +34,8 @@ type ManufacturerSpec = {
 
 declare module "btutils" {
 
-  export interface Bytes extends ArrayBuffer {
+  export class Bytes extends ArrayBuffer {
+    constructor(bytes: string | ArrayBufferLike, littleEndian?: boolean)
     /**
      * The `equals` function returns `true` if the instance
      * ArrayBuffer data equals the data contained in `buffer`.
