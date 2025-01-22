@@ -154,7 +154,8 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | <img src="../assets/devices/lilygo_t_camera_plus_s3.jpg" width=140></a><BR>Lilygo T Camera Plus S3 | `esp32/lilygo_t_camera_plus_s3` | OV2640 Camera<br>1.3" IPS display<br>240 x 240 Touchscreen<br>Microphone<br>Speaker<br> | <li>[Product info](https://www.lilygo.cc/products/t-camera-plus-s3)</li> |
-| <img src="../assets/devices/m5atom_s3r.jpg" width=140></a><BR>M5 Atom S3R M12 | `esp32/m5atom_s3r` | OV3660 Camera<br>Microphone<br>BMI270 IMU<Br>8MB PSRAM| <li>[Product info](https://shop.m5stack.com/products/atoms3r-camera-kit-m12-version-ov3660)</li> |
+| <img src="../assets/devices/m5atom_s3r_cam.png" width=140></a><BR>M5 Atom S3R Camera | `esp32/m5atom_s3r_cam` | GC0308 Camera<br>BMI270 IMU<Br>8MB PSRAM| <li>[Product info](https://shop.m5stack.com/products/atoms3r-camera-kit)</li> |
+| <img src="../assets/devices/m5atom_s3r_m12.jpg" width=140></a><BR>M5 ATOMS3R Camera Kit M12 Version | `esp32/m5atom_s3r_m12` | OV3660 Camera<br>BMI270 IMU<Br>8MB PSRAM| <li>[Product info](https://shop.m5stack.com/products/atoms3r-camera-kit-m12-version-ov3660)</li> |
 | <img src="../assets/devices/m5stack_cores3.jpg" width=140></a><BR>M5Stack Core S3 | `esp32/m5stack_cores3` | GC0308 Camera<br>Microphone<br>Speaker<br>ili9341 QVGA Touchscreen<BR>320 x 240<BR>BMI270 IMU<Br>BM8563 RTC<BR>8MB PSRAM | <li>[Product info](https://shop.m5stack.com/products/m5stack-cores3-esp32s3-lotdevelopment-kit)</li> |
 | <img src="../assets/devices/xiao_esp32s3_sense.jpg" width=140></a><BR>Seed Studio<br>XIAO ESP32S3 Sense | `esp32/xiao_esp32s3_sense` | OV2640 Camera<br>Microphone<br>8MB PSRAM | <li>[Getting Started](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)</li><li>[Display Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 
