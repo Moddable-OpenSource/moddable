@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -304,17 +304,17 @@ CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcForma
 
 void ccCopy4(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, (pixelCount + 1) >> 1);
+	c_memcpy(dst, src, (pixelCount + 1) >> 1);
 }
 
 void ccCopy8(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, pixelCount);
+	c_memcpy(dst, src, pixelCount);
 }
 
 void ccCopy16(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, pixelCount << 1);
+	c_memcpy(dst, src, pixelCount << 1);
 }
 
 void ccGray256toMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
@@ -737,6 +737,7 @@ void cc32RGBAtoBGRA32(uint32_t pixelCount, void *srcPixels, void *dstPixels, voi
 	}
 }
 
+#if 1
 // https://learn.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)?redirectedfrom=MSDN#example-converting-8-bit-yuv-to-rgb888
 void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
 {
@@ -771,3 +772,45 @@ void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels,
 		dst++;
 	}
 }
+#else
+// http://readthesourceluke.blogspot.com/2014/08/replacing-floating-point-multiplication_81.html
+void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+// no multiply but more operations... may be faster on some CPU architectures
+//#define CLIPY(Y) ((Y <= 16) ? 16 : ((Y > 235) ? 235 : Y))
+//#define CLIPUV(UV) ((UV <= 16) ? 16 : ((UV > 240) ? 240 : UV))
+#define CLIPY(Y) (Y)
+#define CLIPUV(UV) (UV)
+#define CLIPRGB(c) ((c <= 0) ? 0 : ((c > 255) ? 255 : c))
+	int16_t r, g, b;
+	uint32_t *src = (uint32_t *)srcPixels;
+	uint16_t *dst = (uint16_t *)dstPixels;
+	pixelCount >>= 1;		// two pixels per loop
+	while (pixelCount--) {
+		int TMP = *src++;
+		int Y0 = TMP & 0xff;
+		int U =  (TMP >> 8) & 0xff;
+		int Y1 = (TMP >> 16) & 0xff;
+		int V =  (TMP >> 24) & 0xff;
+		int cbm = CLIPUV(U) - 128;
+		int crm = CLIPUV(V) - 128;
+
+		Y0 = CLIPY(Y0) - 16;
+		Y0 += (Y0 >> 3) + (Y0 >> 5) + (Y0 >> 7);
+		Y1 = CLIPY(Y1) - 16;
+		Y1 += (Y1 >> 3) + (Y1 >> 5) + (Y1 >> 7);
+
+		r = (Y0 + crm + (crm >> 3) + (crm >> 4)); r = CLIPRGB(r) >> 3;
+		g = (Y0 - ((cbm >> 3) + (cbm >> 4) + (cbm >> 5)) - ((crm >> 1) + (crm >> 5))); g = CLIPRGB(g) >> 2;
+		b = (Y0 + ((cbm << 1) + (cbm >> 4) + (cbm >> 5) + (cbm >> 6))); b = CLIPRGB(b) >> 3;
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+
+		r = Y1 + crm + (crm >> 3) + (crm >> 4); r = CLIPRGB(r) >> 3;
+		g = Y1 - ((cbm >> 3) + (cbm >> 4) + (cbm >> 5)) - ((crm >> 1) + (crm >> 5)); g = CLIPRGB(g) >> 2;
+		b = Y1 + ((cbm << 1) + (cbm >> 4) + (cbm >> 5) + (cbm >> 6)); b = CLIPRGB(b) >> 3;
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+	}
+}
+#endif
