@@ -963,7 +963,7 @@ bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_even
 
 #ifndef MODDEF_TASK_QUEUEWAIT
 	#ifdef mxDebug
-		#define MODDEF_TASK_QUEUEWAIT (1000)
+		#define MODDEF_TASK_QUEUEWAIT (20)
 	#else
 		#define MODDEF_TASK_QUEUEWAIT (portMAX_DELAY)
 	#endif
