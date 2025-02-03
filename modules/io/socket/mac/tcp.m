@@ -507,7 +507,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 {
 	TCP tcp = info;
 	xsMachine *the = tcp->the;
-	uint8_t triggered = tcp->triggered;
+	uint8_t triggered = tcp->triggered & tcp->triggerable;
 
 	tcp->triggered = 0;
 	if (tcp->cfTriggeredTimer) {
