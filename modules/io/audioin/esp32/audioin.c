@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -77,8 +77,6 @@
 #define MAX_INPUT_BLOCK		2048
 #define AUDIO_IN_BUFFERSIZE	(8192 * 2)
 
-static char debugStr[128];
-
 enum {
 	kStateIdle = 0,
 	kStateRecording = 1,
@@ -126,8 +124,10 @@ static void xs_audioin_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void audioInLoop(void *pvParameter);
 static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
+/*
 static void blockDump(uint8_t *block, uint32_t amt)
 {
+	char debugStr[128];
 	int i;
 	uint16_t *blk = (uint16_t*)block;
 	char *pos = debugStr;
@@ -142,6 +142,7 @@ static void blockDump(uint8_t *block, uint32_t amt)
 	if (pos != debugStr)
 		modLog_transmit(debugStr);
 }
+*/
 
 static const xsHostHooks xsAudioInHooks = {
 	xs_audioin_destructor,
@@ -230,8 +231,6 @@ void xs_audioin_constructor(xsMachine *the)
 	input->endPos = input->buffer + bufferSize;
 	input->numChannels = numChannels;
 
-sprintf(debugStr, "samplerate: %d, bitsPerSample: %d, numChannels: %d", sampleRate, bitsPerSample, numChannels);
-modLog_transmit(debugStr);
 	input->the = the;
 	input->object = xsThis;
 	xsRemember(input->object);
@@ -353,7 +352,7 @@ void xs_audioin_read(xsMachine *the)
 	countBytes(AudioInConsumed, requested);
 
 	double bias = 0.0;
-	int16_t	*samples = buffer;
+	int16_t	*samples = (int16_t	*)buffer;
 
 	xsUnsignedValue remaining = requested;
 	xSemaphoreTake(input->mutex, portMAX_DELAY);
@@ -403,7 +402,7 @@ void xs_audioin_read(xsMachine *the)
 	xSemaphoreGive(input->mutex);
 
 	int32_t i;
-	samples = buffer;
+	samples = (uint16_t *)buffer;
 	requested /= 2;		// samples
 	bias /= requested;
 
@@ -453,7 +452,7 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 void audioInLoop(void *pvParameter)
 {
 	AudioInput input = pvParameter;
-	uint8_t stopped = true;
+	uint8_t stopped = true, enabled = false;
 
 // ### HW CONFIGURATION
 #if MODDEF_AUDIOIN_I2S_ADC
@@ -545,6 +544,7 @@ void audioInLoop(void *pvParameter)
 		input->handle = C_NULL;
 		modLog("i2s_channel_enable failed");
 	}
+	enabled = true;
 #endif
 
 	if (C_NULL == input->handle)
@@ -560,7 +560,9 @@ void audioInLoop(void *pvParameter)
 #if MODDEF_AUDIOIN_I2S_ADC
 				adc_continuous_stop(input->handle);
 #else
-				i2s_channel_disable(input->handle);
+				if (enabled)
+					i2s_channel_disable(input->handle);
+				enabled = false;
 #endif
 				stopped = true;
 
@@ -578,7 +580,9 @@ void audioInLoop(void *pvParameter)
 #if MODDEF_AUDIOIN_I2S_ADC
 			adc_continuous_enable(input->handle);
 #else
-			i2s_channel_enable(input->handle);
+			if (!enabled)
+				i2s_channel_enable(input->handle);
+			enabled = true;
 #endif
 
 			stopped = false;
@@ -668,7 +672,8 @@ void audioInLoop(void *pvParameter)
 #if MODDEF_AUDIOOUT_I2S_ADC
 		adc_continuous_deinit(input->handle);
 #else
-		i2s_channel_disable(input->handle);
+		if (enabled)
+			i2s_channel_disable(input->handle);
 		i2s_del_channel(input->handle);
 #endif
 	}

@@ -222,8 +222,12 @@ void xs_audioout_constructor_(xsMachine *the)
     tx_chan_cfg.auto_clear = true;
 
 	// number of DMA buffers and their size in samples (default is 6 and 240)
-//	tx_chan_cfg.dma_desc_num = 6;
-//    tx_chan_cfg.dma_frame_num = 480;		// maximum of 4096
+#ifndef I2S_DMA_BUFFER_MAX_SIZE
+	#define I2S_DMA_BUFFER_MAX_SIZE     (4092)
+#endif
+
+	tx_chan_cfg.dma_desc_num = 6;
+	tx_chan_cfg.dma_frame_num = I2S_DMA_BUFFER_MAX_SIZE / 2;
 
 #ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	if (gPDMAudioOutBusy)
