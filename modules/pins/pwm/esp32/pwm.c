@@ -80,7 +80,7 @@ void xs_pwm(xsMachine *the)
 {
 	static uint8_t initialized = false;
 	int gpio;
-	ledc_channel_config_t ledcConfig;
+	ledc_channel_config_t ledcConfig = {0};
 	PWM pwm;
 	int ledc;
 
