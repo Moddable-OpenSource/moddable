@@ -91,7 +91,7 @@ static uint8_t buffer1[128];
 static int8_t isUART = 0;		// 0 CDC, 1 UART
 static int8_t gProbing = 1;
 
-static char *strstr_l(const char *src, int src_l, const char *search)
+static const char *strstr_l(const char *src, int src_l, const char *search)
 {
 	const char *srcEnd = src + src_l;
 
