@@ -327,10 +327,8 @@ void xs_audioin_read(xsMachine *the)
 	if (input->numChannels == 1)
 		available /= 2;					// strip left channel
 
-	if (0 == available) {
-		xsmcSetInteger(xsResult, 0);
-		return;
-	}
+	if (0 == available)
+		return;		// read returns undefined if nothing available
 
 	if (0 == xsmcArgc)
 		requested = available;
