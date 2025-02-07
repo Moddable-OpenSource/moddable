@@ -4,7 +4,7 @@ class Flash @ "xs_flashstorage_destructor" {
 
 	eraseBlock(start, end) @ "xs_flashstorage_eraseBlock"
 
-	read(byeLength, byteOffset) @  "xs_flashstorage_read"
+	read(byteLength, byteOffset) @  "xs_flashstorage_read"
 	write(buffer, byteOffset) @  "xs_flashstorage_write"
 
 	status() @ "xs_flashstorage_status"
