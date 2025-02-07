@@ -116,7 +116,7 @@ class Connection {
 			throw new Error("bad state");
 
 		if (!data) {
-			if (true !== this.#remaining)
+			if ("number" === typeof this.#remaining)
 				throw new Error("bad data");
 
 //@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
