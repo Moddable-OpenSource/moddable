@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -289,10 +289,16 @@ class WebSocketClient {
 							return void this.#onError();
 						this.#state = "connected";
 						delete this.#options.flags;
+						delete this.#options.host;
+						delete this.#options.path;
+						delete this.#options.port;
 						this.#socket.format = BufferFormat;
 
-						if (this.#writable > 8)
+						if (this.#writable > 8) {
 							this.#options.onWritable?.call(this, this.#writable - 8);
+							if (!this.#socket)
+								return;
+						}
 
 						if (count)
 							return void this.#onReadable(count);	// more data to read - run "connected"
@@ -398,14 +404,15 @@ class WebSocketClient {
 						const opcode = options.tag & 0x0F;
 						try {
 							this.#options.onControl?.call(this, opcode, control.buffer);
+							if (!this.#socket)
+								return;
 						}
 						catch {
 						}
 						if (8 === opcode) {
 							if (options.close & 1) {		// sent close, now receiving response: done
 								this.close();
-								this.#options.onClose?.call(this);
-								return;
+								return void this.#options.onClose?.call(this);
 							}
 							else {						
 								options.close = 2;			// received request for clean close: reply
@@ -478,6 +485,8 @@ class WebSocketClient {
 					}
 					delete options.unread;
 					options.onReadable?.call(this, this.#data, {more, binary});
+					if (!this.#socket)
+						break;
 					
 					count -= (read - this.#data);
 					if (this.#data) {
