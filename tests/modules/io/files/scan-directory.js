@@ -4,8 +4,8 @@ flags: [module]
 includes: [compareArray.js]
 ---*/
 
-import files from "./files-fixture.js";
-import {deleteTree, scan} from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
+import {deleteTree, scan} from "./files_FIXTURE.js";
 
 const paths = [
 	"scantest",
