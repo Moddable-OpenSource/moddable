@@ -1,6 +1,6 @@
 {
 	"preload": [
-		"embedded:*"
+		"embedded:io/audioin"
 	],
 	"platforms": {
 		"mac": {

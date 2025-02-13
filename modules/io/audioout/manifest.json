@@ -1,6 +1,6 @@
 {
 	"preload": [
-		"embedded:*"
+		"embedded:io/audioout"
 	],
 	"platforms": {
 		"lin": {
