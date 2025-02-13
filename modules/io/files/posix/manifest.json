@@ -2,16 +2,18 @@
 	"platforms": {
 		"mac": {
 			"modules": {
-				"embedded:x-files": "./files-posix"
+				"embedded:x-files-implementation": "./files-posix",
+				"embedded:storage/files": "./files"
 			}
 		},
 		"lin": {
 			"modules": {
-				"embedded:x-files": "./files-posix"
+				"embedded:x-files-implementation": "./files-posix",
+				"embedded:storage/files": "./files"
 			}
 		}
 	},
 	"preload": [
-		"embedded:x-files"
+		"embedded:x-files-implementation"
 	]
 }

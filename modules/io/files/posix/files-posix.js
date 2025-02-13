@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,21 +43,20 @@ class File @ "xs_fileposix_destructor"{
 }
 
 
-class Scan @ "xs_scanposix_destructor" {
-	constructor(options) @ "xs_scanposix"
-	close() @ "xs_scanposix_close"
-
-	read() @ "xs_scanposix_read"
+class DirectoryIterator @ "xs_directory_iterator_posix_destructor" {
+	constructor(directory, path) @ "xs_directory_iterator_posix"
+	next() @ "xs_directory_iterator_posix_next"
+	return() @ "xs_directory_iterator_posix_return"
 }
+Object.setPrototypeOf(DirectoryIterator.prototype, Iterator.prototype);
 
-function openFile(options) @ "xs_direectoryposix_openFile"
-function openDirectory(options) @ "xs_direectoryposix_openDirectory"
-function scan(path /* OR OPTIONS */) @ "xs_direectoryposix_scan"
-function status(path) @ "xs_direectoryposix_status"
+function openFile(options) @ "xs_directoryposix_openFile"
+function openDirectory(options) @ "xs_directoryposix_openDirectory"
+function status(path) @ "xs_directoryposix_status"
 
-class Directory @ "xs_direectoryposix_destructor" {
-	constructor(options) @ "xs_direectoryposix"
-	close() @ "xs_direectoryposix_close"
+class Directory @ "xs_directoryposix_destructor" {
+	constructor(options) @ "xs_directoryposix"
+	close() @ "xs_directoryposix_close"
 
 	openFile(options) {
 		return openFile.call(this, options, File.prototype);
@@ -66,22 +65,23 @@ class Directory @ "xs_direectoryposix_destructor" {
 		return openDirectory.call(this, options, Directory.prototype);
 	}
 
-	delete(path) @ "xs_direectoryposix_delete"
+	delete(path) @ "xs_directoryposix_delete"
 
-	move(from, to) @ "xs_direectoryposix_move"
+	move(from, to) @ "xs_directoryposix_move"
 
 	status(path, options) {
 		return status.call(this, path, options, new Status);
 	}
 
-	createDirectory(options) @ "xs_direectoryposix_createDirectory"
-	createLink(path, target) @ "xs_direectoryposix_createLink"
+	createDirectory(options) @ "xs_directoryposix_createDirectory"
+	createLink(path, target) @ "xs_directoryposix_createLink"
 
-	readLink(path) @ "xs_direectoryposix_readLink"
+	readLink(path) @ "xs_directoryposix_readLink"
 
-	scan(path) {
-		return scan.call(this, path, Scan.prototype);
+	scan(...path) {
+		return new DirectoryIterator(this, ...path);
 	}
 }
+Directory.prototype[Symbol.iterator] = Directory.prototype.scan;
 
 export {Directory}
