@@ -1067,7 +1067,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #ifdef mxDebug
 	do {
-		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, maxDelayMS);
+		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, pdMS_TO_TICKS(maxDelayMS));
 		if (!queue)
 			break;
 
@@ -1089,7 +1089,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	} while ((modMilliseconds() - startTime) < maxDuration);
 #else
 	do {
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
+		if (!xQueueReceive(the->msgQueue, &msg, pdMS_TO_TICKS(maxDelayMS)))
 			break;
 
 		modWatchDogReset();
