@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -84,7 +84,7 @@ class Connection {
 			return;
 					
 		const available = Math.min(this.#readable, (undefined === this.#chunk) ? this.#remaining : this.#chunk);
-		if (count > available)
+		if ((count > available) || (undefined === count))
 			count = available;
 		if (!count)
 			return;
