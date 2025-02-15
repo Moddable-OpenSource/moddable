@@ -1,0 +1,12 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:storage/key-value": "./storage-esp32"
+			}
+		}
+	},
+	"preload": [
+		"embedded:storage/key-value"
+	]
+}
