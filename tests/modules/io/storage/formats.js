@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import storage from "./storage-fixture.js";
-import {emptyDomain, keys} from "./storage-fixture.js";
+import storage from "./storage_FIXTURE.js";
+import {emptyDomain, keys} from "./storage_FIXTURE.js";
 
 function supportsFormat(store, format) {
 	try {

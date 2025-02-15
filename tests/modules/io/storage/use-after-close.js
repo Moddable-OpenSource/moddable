@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import storage from "./storage-fixture.js";
+import storage from "./storage_FIXTURE.js";
 
 const path = "test";
 let store = storage.open({path});
