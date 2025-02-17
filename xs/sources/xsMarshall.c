@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -183,6 +183,7 @@ void fxDemarshallReference(txMachine* the, txSlot* theSlot, txSlot** theSlotAddr
 	else if (theSlot->value.instance.garbage)
 		*theSlotAddress = theSlot->value.instance.garbage;
 	else {
+		mxCheckCStack();
 		*theSlotAddress = fxNewSlot(the);
 		fxDemarshallSlot(the, theSlot, *theSlotAddress, theSymbolMap, alien);
 	}
@@ -596,8 +597,10 @@ void fxMarshallReference(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 		*theSlotAddress = theSlot;
 	else if (theSlot->value.instance.garbage)
 		*theSlotAddress = theSlot->value.instance.garbage;
-	else
+	else {
+		mxCheckCStack();
 		fxMarshallSlot(the, theSlot, theSlotAddress, theBuffer, alien);
+	}
 }
 
 txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddress, txMarshallBuffer* theBuffer, txBoolean alien)
