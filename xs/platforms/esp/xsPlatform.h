@@ -56,11 +56,11 @@
 #endif
 #if !ESP32
 	#define mxMisalignedSettersCrash 1
-#elif ESP32 == 1
+#else
 	#define mxUseFreeRTOSTasks 1
-	#define mxUseGCCAtomics 1
-#elif ESP32 == 2
-	#define mxUseFreeRTOSTasks 1
+	#if (ESP32 != 2) && (ESP32 != 6)
+		#define mxUseGCCAtomics 1
+	#endif
 #endif
 
 #ifdef __ets__
