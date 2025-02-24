@@ -29,7 +29,16 @@
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"embedded:*",
+		"embedded:io/analog",
+		"embedded:io/digital",
+		"embedded:io/digitalbank",
+		"embedded:io/i2c",
+		"embedded:implementation/i2csync",
+		"embedded:io/smbus",
+		"embedded:io/implementation/smbussync",
+		"embedded:io/pwm",
+		"embedded:io/serial",
+		"embedded:io/spi",
 		"system"
 	],
 	"platforms": {
@@ -45,7 +54,14 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/pulsecount",
+				"embedded:io/pulsewidth",
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"esp32/esp32c3": {
 			"include": [
@@ -57,7 +73,12 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"esp32/esp32c3_cdc": {
 			"include": [
@@ -69,7 +90,12 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"esp32/esp32c6": {
 			"include": [
@@ -81,7 +107,12 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"esp32/esp32c6_cdc": {
 			"include": [
@@ -93,7 +124,12 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"esp32/esp32h2": {
 			"modules": {
@@ -117,7 +153,14 @@
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
-			}
+			},
+			"preload": [
+				"embedded:io/pulsecount",
+				"embedded:io/pulsewidth",
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp",
+				"embedded:io/socket/listener"
+			]
 		},
 		"...": {
 			"error": "ESP32 manifest"
