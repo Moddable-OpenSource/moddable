@@ -3,11 +3,11 @@
 		"esp32": {
 			"include": "../../flash/manifest.json",
 			"modules": {
-				"embedded:x-update": "./update-esp32"
+				"embedded:update": "./update-esp32"
 			}
 		}
 	},
 	"preload": [
-		"embedded:x-flash"
+		"embedded:update"
 	]
 }

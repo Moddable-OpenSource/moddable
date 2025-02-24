@@ -3,11 +3,11 @@
 		"mac": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-update": "./update-mac"
+				"embedded:update": "./update-mac"
 			}
 		}
 	},
 	"preload": [
-		"embedded:x-update"
+		"embedded:update"
 	]
 }

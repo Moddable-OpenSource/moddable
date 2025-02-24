@@ -2,11 +2,11 @@
 	"platforms": {
 		"esp32": {
 			"modules": {
-				"embedded:x-flash": "./flash-esp32"
+				"embedded:storage/flash": "./flash-esp32"
 			}
 		}
 	},
 	"preload": [
-		"embedded:x-flash"
+		"embedded:storage/flash"
 	]
 }

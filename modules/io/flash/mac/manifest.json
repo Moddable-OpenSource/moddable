@@ -3,11 +3,11 @@
 		"mac": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-flash": "./flash-mac"
+				"embedded:storage/flash": "./flash-mac"
 			}
 		}
 	},
 	"preload": [
-		"embedded:x-flash"
+		"embedded:storage/flash"
 	]
 }

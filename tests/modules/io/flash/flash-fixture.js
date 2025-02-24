@@ -1,4 +1,4 @@
-import flash from "embedded:x-flash"
+import flash from "embedded:storage/flash"
 
 const path = "xs_test";
 
