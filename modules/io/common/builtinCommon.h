@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Moddable Tech, Inc.
+ * Copyright (c) 2019-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -33,6 +33,14 @@
 	extern portMUX_TYPE gCommonCriticalMux;
 	#define builtinCriticalSectionBegin() portENTER_CRITICAL(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd() portEXIT_CRITICAL(&gCommonCriticalMux)
+
+	#if ESP32 && (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 1)
+		// IDF invokes abort() when creating socket if no network configured
+		#define CHECK_NETWORK_SAFE() \
+			if (!esp_netif_get_default_netif()) { \
+				xsUnknownError("no network"); \
+			}
+	#endif
 #elif defined(__ets__)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
@@ -74,6 +82,11 @@ enum {
 
 	kIOFormatInvalid = 0xFF,
 };
+
+
+#ifndef CHECK_NETWORK_SAFE
+	#define CHECK_NETWORK_SAFE()
+#endif
 
 #ifdef __cplusplus
 extern "C" {

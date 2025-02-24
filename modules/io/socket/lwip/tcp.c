@@ -107,6 +107,8 @@ void xs_tcp_constructor(xsMachine *the)
 	xsmcVars(1);
 
 	if (create) {
+		CHECK_NETWORK_SAFE();
+
 		format = builtinInitializeFormat(the, format);
 		if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 			xsRangeError("unimplemented");
@@ -670,6 +672,8 @@ void xs_listener_constructor(xsMachine *the)
 	int port = 0;
 	xsSlot *onReadable;
 
+	CHECK_NETWORK_SAFE();
+
 	xsmcVars(1);
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -686,7 +690,7 @@ void xs_listener_constructor(xsMachine *the)
 	if (kIOFormatSocketTCP != builtinInitializeFormat(the, kIOFormatSocketTCP))
 		xsRangeError("unimplemented");
 
-	skt = tcp_new();
+	skt = tcp_new_safe();
 	if (!skt)
 		xsUnknownError("no socket");
 
