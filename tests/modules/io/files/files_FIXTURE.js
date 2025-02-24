@@ -21,5 +21,6 @@ function deleteTree(files, path) {
 	files.delete(path);
 }
 
+files.createDirectory("tmp");
 const tmp = files.openDirectory({path: "tmp"});
 export {tmp as default, deleteTree, scan}
