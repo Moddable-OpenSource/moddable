@@ -19,7 +19,7 @@
 		"$(MODDABLE)/modules/io/files/manifest.json",
 		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json",
 		"$(MODDABLE)/modules/io/flash/manifest.json",
-		"$(MODDABLE)/modules/files/storage/manifest.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json",
 		"$(MODDABLE)/modules/io/audioout/manifest.json",
 		"$(MODDABLE)/modules/io/update/manifest.json",
 		"$(MODDABLE)/modules/io/flash/manifest.json"

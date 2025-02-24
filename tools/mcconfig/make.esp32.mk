@@ -38,7 +38,7 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v5.3.1
+EXPECTED_ESP_IDF ?= v5.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -184,6 +184,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_ringbuf/include \
 	$(IDF_PATH)/components/esp_rom/include \
 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_system/include \
 	$(IDF_PATH)/components/esp_timer/include \
 	$(IDF_PATH)/components/esp_wifi/include \
@@ -225,6 +226,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include/soc \
+	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/register \
 	$(IDF_PATH)/components/soc/include \
 	$(IDF_PATH)/components/soc/include/soc \
 	$(IDF_PATH)/components/spiffs/include \
