@@ -12,24 +12,29 @@ let out = new AudioOut({
 		if (!count)
 			return $DONE("invalid - count of 0")
 
-		do {
-			let buffer = samples.buffer;
-			let use = buffer.byteLength - position;
-			if (use > count) use = count;
-			this.write(new Uint8Array(buffer, position, use));
-			position += use;
-			if (position === buffer.byteLength)
-				position = 0;
+		try {
+			do {
+				let buffer = samples.buffer;
+				let use = buffer.byteLength - position;
+				if (use > count) use = count;
+				this.write(new Uint8Array(buffer, position, use));
+				position += use;
+				if (position === buffer.byteLength)
+					position = 0;
 
-			total += use;
-			if (total >= (sampleRate * 2 * 2)) {
-				this.close();
-				$DONE();
-				break;
-			}
+				total += use;
+				if (total >= (sampleRate * 2 * 2)) {
+					this.close();
+					$DONE();
+					break;
+				}
 
-			count -= use;
-		} while (count);
+				count -= use;
+			} while (count);
+		}
+		catch (e) {
+			$DONE(e);
+		}
 	}
 });
 
