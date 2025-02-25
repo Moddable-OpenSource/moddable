@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -69,6 +69,7 @@ struct SerialRecord {
 	uint8_t		txInterruptEnabled;
 	uint8_t		hasOnReadableOrWritable;
 	uint8_t		uart_intr;
+	intr_handle_t	interrupt;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -174,6 +175,7 @@ void xs_serial_constructor(xsMachine *the)
 	serial->uart = (uint8_t)uart;
 	serial->isReadable = 0;
 	serial->isWritable = 0;
+	serial->interrupt = C_NULL;
 #if UART_NUM_MAX > 2
 	if (2 == uart) {
 		serial->uart_reg = &UART2;
@@ -194,7 +196,7 @@ void xs_serial_constructor(xsMachine *the)
 		serial->the = the;
 
 		// store callbacks & configure interrupts
-		err = esp_intr_alloc(serial->uart_intr, 0, serial_isr, serial, NULL);
+		err = esp_intr_alloc(serial->uart_intr, 0, serial_isr, serial, &serial->interrupt);
 		if (err)
 			xsUnknownError("uart_isr_register failed");
 
@@ -236,7 +238,8 @@ void xs_serial_destructor(void *data)
 	uart_disable_tx_intr(serial->uart_reg);
 	uart_disable_rx_intr(serial->uart_reg);
 
-//	uart_isr_free(serial->uart);
+	if (serial->interrupt)
+		esp_intr_free(serial->interrupt);
 
 	if (UART_PIN_NO_CHANGE != serial->transmit)
 		builtinFreePin(serial->transmit);
