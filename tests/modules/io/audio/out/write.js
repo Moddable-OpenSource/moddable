@@ -8,15 +8,16 @@ import AudioOut from "embedded:io/audioout";
 let position = 0;
 let total = 0;
 let out = new AudioOut({
-	onWritable(count) {
-		if (!count)
-			return $DONE("invalid - count of 0")
+	onWritable(bytes) {
+		if (bytes <= 0)
+			return $DONE(`invalid - bytes of ${bytes}`)
 
 		try {
 			do {
 				let buffer = samples.buffer;
 				let use = buffer.byteLength - position;
-				if (use > count) use = count;
+				if (use > bytes) use = bytes;
+
 				this.write(new Uint8Array(buffer, position, use));
 				position += use;
 				if (position === buffer.byteLength)
@@ -29,8 +30,8 @@ let out = new AudioOut({
 					break;
 				}
 
-				count -= use;
-			} while (count);
+				bytes -= use;
+			} while (bytes);
 		}
 		catch (e) {
 			$DONE(e);
