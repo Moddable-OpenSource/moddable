@@ -81,5 +81,6 @@ class Directory @ "xs_directorylittlefs_destructor" {
 		return new DirectoryIterator(this, ...path);
 	}
 }
+Directory.prototype[Symbol.iterator] = Directory.prototype.scan;
 
 export {Directory}
