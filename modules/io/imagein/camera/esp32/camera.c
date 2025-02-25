@@ -212,9 +212,6 @@ static void cameraLoop(void *pvParameter)
 	Camera camera = pvParameter;
 	uint8_t running = 0;
 
-	// free up i2c control port	//@@
-	i2c_driver_delete(camera_config.sccb_i2c_port);
-
 	camera->initErr = esp_camera_init(&camera_config);
 	if (ESP_OK != camera->initErr) {
 		xSemaphoreTake(camera->mutex, portMAX_DELAY);
