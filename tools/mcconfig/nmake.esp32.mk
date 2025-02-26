@@ -25,7 +25,7 @@ HOST_OS = win
 !ENDIF
 
 !IF "$(EXPECTED_ESP_IDF)"==""
-EXPECTED_ESP_IDF = v5.3.1
+EXPECTED_ESP_IDF = v5.4
 !ENDIF
 
 !IF "$(VERBOSE)"=="1"
@@ -245,6 +245,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_ringbuf\include \
 	-I$(IDF_PATH)\components\esp_rom\include \
  	-I$(IDF_PATH)\components\esp_rom\include\$(ESP32_SUBCLASS) \
+ 	-I$(IDF_PATH)\components\esp_rom\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\esp_system\include \
  	-I$(IDF_PATH)\components\esp_timer\include \
  	-I$(IDF_PATH)\components\esp_wifi\include \
@@ -287,6 +288,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\bt\host\nimble\port\include \
 	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\include\soc \
+	-I$(IDF_PATH)\components\soc\$(ESP32_SUBCLASS)\register \
 	-I$(IDF_PATH)\components\soc\include \
 	-I$(IDF_PATH)\components\soc\include\soc \
 	-I$(IDF_PATH)\components\spiffs\include \
