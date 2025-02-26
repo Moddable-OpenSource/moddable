@@ -7,6 +7,7 @@
 		"$(MODDABLE)/modules/data/headers/manifest.json",
 		"$(MODDABLE)/examples/io/tcp/httpsclient//manifest_httpsclient.json",
 		"$(MODDABLE)/examples/io/tcp/websocket//manifest_websocket.json",
+		"$(MODDABLE)/examples/io/tcp/websocketsclient//manifest_wssclient.json",
 		"$(MODDABLE)/modules/io/audioin/manifest.json",
 		"$(MODDABLE)/modules/io/audioout/manifest.json"
 	],
@@ -34,8 +35,7 @@
 	"modules": {
 		"*": [
 			"./ChatAudioIO",
-			"./workers/*",
-			"./wssconfig"
+			"./workers/*"
 		]
 	},
 	"preload": [
@@ -43,7 +43,6 @@
 		"ChatWorker",
 		"ChatWebSocketWorker",
 		"JSONBase64Parser",
-		"alaw-encode",
-		"wssconfig"
+		"alaw-encode"
 	]
 }
