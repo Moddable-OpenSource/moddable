@@ -456,7 +456,7 @@ const ListeningContainer = Container.template($ => ({
 const SpeakingContainer = Container.template($ => ({
 	anchor:"SPEAKING", visible:false, left:0, right:0, top:50, bottom:50,
 	contents: [
-		Label($, { top:5, style:assets.styles.homePrompt, string:$.prompt }),
+		Text($, { left:10, right:10, top:5, style:assets.styles.homePrompt, string:$.prompt }),
 		Content($, { skin:assets.skins.microphone, active:true, Behavior:MicrophoneButtonBehavior }),
 		Port($, { anchor:"LEVEL", width:100, height:30, bottom:20, Behavior:LevelPortBehavior, direction:1 }),
 // 		Container($, {
