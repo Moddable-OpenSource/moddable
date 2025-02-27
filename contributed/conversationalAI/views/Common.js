@@ -174,6 +174,18 @@ const StarsContainer = Scroller.template($ => ({
 		Content($, { left:65, top:175, skin:assets.skins.star3 }),
 		Content($, { left:47, top:206, skin:assets.skins.star6 }),
 		Content($, { left:137, top:289, skin:assets.skins.star3 }),
+		Content($, { left:89, top:66, skin:assets.skins.star2_2 }),
+		Content($, { left:106, top:208, skin:assets.skins.star2_3 }),
+		Content($, { left:181, top:122, skin:assets.skins.star2_6 }),
+		Content($, { left:36, top:101, skin:assets.skins.star2_9 }),
+		Content($, { left:45, top:300, skin:assets.skins.star2_3 }),
+		Content($, { left:84, top:240, skin:assets.skins.star2_3 }),
+		Content($, { left:90, top:248, skin:assets.skins.star2_3 }),
+		Content($, { left:200, top:310, skin:assets.skins.star2_3 }),
+		Content($, { left:120, top:150, skin:assets.skins.star2_3 }),
+		Content($, { left:64, top:126, skin:assets.skins.star2_3 }),
+		Content($, { left:198, top:155, skin:assets.skins.star2_3 }),
+		Content($, { left:75, top:144, skin:assets.skins.star2_3 }),
 	]
 }));
 

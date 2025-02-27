@@ -47,6 +47,10 @@ const assets = {
 		star3: { texture:{ path: "star-5x5.png" }, width:5, height:5, variants:5 },
 		star6: { texture:{ path: "star-8x8.png" }, width:8, height:8, variants:8 },
 		star9: { texture:{ path: "star-11x11.png" }, width:11, height:11, variants:11 },
+		star2_2: { texture:{ path: "star2-4x4.png" }, width:4, height:4, variants:4 },
+		star2_3: { texture:{ path: "star2-5x5.png" }, width:5, height:5, variants:5 },
+		star2_6: { texture:{ path: "star2-8x8.png" }, width:8, height:8, variants:8 },
+		star2_9: { texture:{ path: "star2-11x11.png" }, width:11, height:11, variants:11 },
 
 		personaRow: { fill:[WHITE,LITE], stroke:LITE, bottom:1 },
 		homeTitle: { stroke:GRAY, bottom:1, }, 
