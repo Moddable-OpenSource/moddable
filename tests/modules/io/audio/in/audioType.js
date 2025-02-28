@@ -3,17 +3,17 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let out = new AudioOut({});
-assert.sameValue(typeof out.audioType, "string");
-assert.sameValue(out.audioType, "LPCM");
-out.close();
+let input = new AudioIn({});
+assert.sameValue(typeof input.audioType, "string");
+assert.sameValue(input.audioType, "LPCM");
+input.close();
 
-out = new AudioOut({audioType: "LPCM"});
-assert.sameValue(typeof out.audioType, "string");
-assert.sameValue(out.audioType, "LPCM");
+input = new AudioIn({audioType: "LPCM"});
+assert.sameValue(typeof input.audioType, "string");
+assert.sameValue(input.audioType, "LPCM");
 
-assert.throws(TypeError, () => out.audioType = "xyzzy");
+assert.throws(TypeError, () => input.audioType = "xyzzy");
 
-out.close();
+input.close();

@@ -3,19 +3,19 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let out = new AudioOut({});
+let input = new AudioIn({});
 
-out.stop(); // stop before start
-out.start()
-assert.throws(Error, () => out.start(), "start while started");
-out.stop();
-out.stop(); // stop after stop
+input.stop(); // stop before start
+input.start()
+assert.throws(Error, () => input.start(), "start while started");
+input.stop();
+input.stop(); // stop after stop
 
-out.start();		// start again
-out.stop();
+input.start();		// start again
+input.stop();
 
-out.start();
+input.start();
 
-out.close();		// close while started
+input.close();		// close while started

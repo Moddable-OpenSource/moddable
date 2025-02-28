@@ -3,11 +3,11 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let out = new AudioOut({});
-let channels = out.channels;
+let input = new AudioIn({});
+let channels = input.channels;
 assert.sameValue(typeof channels, "number");
-assert((1 <= channels) && (channels <= 2), "channels out of range");
-assert.throws(TypeError, () => out.channels = channels, "channels is read-only");
-out.close();
+assert((1 <= channels) && (channels <= 2), "channels input of range");
+assert.throws(TypeError, () => input.channels = channels, "channels is read-only");
+input.close();

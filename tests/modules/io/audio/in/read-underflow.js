@@ -17,6 +17,7 @@ let input = new AudioIn({
 				bytes -= 8;
 
 				let samples = this.read();
+				assert.sameValue(this.read(), undefined, "nothing to read immedately after full read")
 				total += samples.byteLength;
 				assert(bytes <= samples.byteLength, "read less than expected");
 				if (total >= (sampleRate * 2 * 2)) {
@@ -39,3 +40,4 @@ const {sampleRate, channels, bitsPerSample} = input;
 assert.sameValue(bitsPerSample, 16, "test assumes 16-bit samples");
 
 input.start();
+assert.sameValue(input.read(), undefined, "nothing to read immedately after start")

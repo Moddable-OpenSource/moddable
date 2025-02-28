@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let out = new AudioOut({});
-out.close();
-out.close();
+let input = new AudioIn({});
+input.close();
+input.close();

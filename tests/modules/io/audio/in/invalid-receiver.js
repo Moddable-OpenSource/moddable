@@ -3,7 +3,7 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
 function callWithInvalidReceivers(obj, functionName, ...args)
 {
@@ -13,16 +13,16 @@ function callWithInvalidReceivers(obj, functionName, ...args)
 	assert.throws(SyntaxError, () => obj[functionName].apply([], args), `${functionName} with array`);
 }
 
-let out = new AudioOut({
-	onWritable(count) {
+let input = new AudioIn({
+	onReadable(count) {
 		$DO(() => {
-			callWithInvalidReceivers(this, "write", new ArrayBuffer(16));
+			callWithInvalidReceivers(this, "read", new ArrayBuffer(16));
 			callWithInvalidReceivers(this, "close");
 			this.close();
 		})();
 	}
 });
 
-callWithInvalidReceivers(out, "start");
-out.start();
-callWithInvalidReceivers(out, "stop");
+callWithInvalidReceivers(input, "start");
+input.start();
+callWithInvalidReceivers(input, "stop");

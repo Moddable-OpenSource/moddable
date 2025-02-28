@@ -3,11 +3,11 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let out = new AudioOut({});
-let sampleRate = out.sampleRate;
+let input = new AudioIn({});
+let sampleRate = input.sampleRate;
 assert.sameValue(typeof sampleRate, "number");
 assert((0 < sampleRate) && (sampleRate < 65536), "sampleRate out of range");
-assert.throws(TypeError, () => out.sampleRate = sampleRate, "sampleRate is read-only");
-out.close();
+assert.throws(TypeError, () => input.sampleRate = sampleRate, "sampleRate is read-only");
+input.close();

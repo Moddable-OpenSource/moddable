@@ -3,35 +3,30 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audioin";
 
-let position = 0;
 let total = 0;
-let out = new AudioOut({
-	onWritable(bytes) {
+let input = new AudioIn({
+	onReadable(bytes) {
 		if (bytes <= 0)
 			return $DONE(`invalid - bytes of ${bytes}`)
 
 		try {
 			do {
-				let buffer = samples.buffer;
-				let use = buffer.byteLength - position;
-				if (use > bytes) use = bytes;
+				total += this.read(new Uint8Array(8));
+				bytes -= 8;
 
-				this.write(new Uint8Array(buffer, position, use));
-				position += use;
-				if (position === buffer.byteLength)
-					position = 0;
-
-				total += use;
+				let samples = this.read();
+				total += samples.byteLength;
+				assert(bytes <= samples.byteLength, "read less than expected");
 				if (total >= (sampleRate * 2 * 2)) {
 					this.close();
 					$DONE();
 					break;
 				}
 
-				bytes -= use;
-			} while (bytes);
+				bytes -= samples.byteLength;
+			} while (bytes > 0);
 		}
 		catch (e) {
 			$DONE(e);
@@ -39,13 +34,8 @@ let out = new AudioOut({
 	}
 });
 
-const {sampleRate, channels, bitsPerSample} = out;
+const {sampleRate, channels, bitsPerSample} = input;
 
 assert.sameValue(bitsPerSample, 16, "test assumes 16-bit samples");
 
-const samples = new Int16Array(sampleRate >> 2);
-const scaler = (sampleRate / (Math.PI * 2)) * 440;
-for (let i = 0, length = samples.length; i < length; i++)
-	samples[i] = Math.sin(i * scaler) * 32767;
-
-out.start();
+input.start();
