@@ -80,7 +80,6 @@ static const xsHostHooks xsAudioOutHooks = {
 void xs_audioout_constructor_(xsMachine *the)
 {
 	uint8_t format = kIOFormatBuffer;
-	xsStringValue type;
 	int bitsPerSample = 0;
 	int numChannels = 0;
 	int sampleRate = 0;
@@ -108,9 +107,9 @@ void xs_audioout_constructor_(xsMachine *the)
 	format = builtinInitializeFormat(the, format);
 	if (kIOFormatBuffer != format)
 		xsRangeError("invalid format");
-	if (xsmcHas(xsArg(0), xsID_type)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_type);
-		type = xsmcToString(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_audioType)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_audioType);
+		xsStringValue type = xsmcToString(xsVar(0));
 		if (c_strcmp(type, "LPCM"))
 			xsRangeError("invalid type");
 	}
