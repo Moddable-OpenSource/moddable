@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -77,10 +77,9 @@ static const xsHostHooks xsAudioInHooks = {
 void xs_audioin_constructor(xsMachine *the)
 {
 	uint8_t format = kIOFormatBuffer;
-	xsStringValue type;
-	uint8_t bitsPerSample = 0;
-	uint8_t numChannels = 0;
-	uint16_t sampleRate = 0;
+	uint32_t bitsPerSample = 16;
+	uint32_t numChannels = 1;
+	uint32_t sampleRate = 22050;
 	uint16_t queueLength = 4;
 	uint16_t bytesPerFrame = 0;
 	uint32_t bufferSize = 0;
@@ -104,11 +103,11 @@ void xs_audioin_constructor(xsMachine *the)
 	format = builtinInitializeFormat(the, format);
 	if (kIOFormatBuffer != format)
 		xsRangeError("invalid format");
-	if (xsmcHas(xsArg(0), xsID_type)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_type);
-		type = xsmcToString(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_audioType)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_audioType);
+		xsStringValue type = xsmcToString(xsVar(0));
 		if (c_strcmp(type, "LPCM"))
-			xsRangeError("invalid type");
+			xsRangeError("invalid audioType");
 	}
 	if (xsmcHas(xsArg(0), xsID_bitsPerSample)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_bitsPerSample);
@@ -220,6 +219,8 @@ void xs_audioin_read(xsMachine *the)
 	xsBooleanValue allocate = 1;
 	void* buffer;
 	available = input->size - input->offset;
+	if (0 == available)
+		return;
 	if (0 == xsmcArgc)
 		requested = available;
 	else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {

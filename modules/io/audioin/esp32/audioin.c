@@ -160,9 +160,9 @@ static int amtReadable(AudioInput input) {
 void xs_audioin_constructor(xsMachine *the)
 {
 	uint8_t format = kIOFormatBuffer;
-	uint8_t bitsPerSample = 0;
-	uint8_t numChannels = 0;
-	uint16_t sampleRate = 0;
+	int32_t bitsPerSample = 16;
+	int32_t numChannels = 1;
+	int32_t sampleRate = 8000;
 	uint32_t bytesPerFrame, bufferSize;
 	AudioInput input;
 	int i;
@@ -200,7 +200,7 @@ void xs_audioin_constructor(xsMachine *the)
 		xsRangeError("invalid sample rate");
 	if (xsmcHas(xsArg(0), xsID_audioType)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_audioType);
-		char *type = xsmcToString(xsArg(0));
+		char *type = xsmcToString(xsVar(0));
 		if (c_strcmp(type, "LPCM"))
 			xsRangeError("invalid audioType");
 	}
@@ -272,11 +272,13 @@ void xs_audioin_destructor(void *it)
 
 void xs_audioin_close(xsMachine *the)
 {
-	AudioInput input = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioInHooks);
-	xsmcSetHostData(xsThis, C_NULL);
-	xsmcSetHostDestructor(xsThis, C_NULL);
-	xsForget(input->object);
-	xs_audioin_destructor(input);
+	AudioInput input = xsmcGetHostData(xsThis);
+	if (input && xsmcGetHostDataValidate(xsThis, (void *)&xsAudioInHooks)) {
+		xsmcSetHostData(xsThis, C_NULL);
+		xsmcSetHostDestructor(xsThis, C_NULL);
+		xsForget(input->object);
+		xs_audioin_destructor(input);
+	}
 }
 
 void xs_audioin_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
