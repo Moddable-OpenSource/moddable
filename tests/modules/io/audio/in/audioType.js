@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import AudioIn from "embedded:io/audioin";
+import AudioIn from "embedded:io/audio/in";
 
 let input = new AudioIn({});
 assert.sameValue(typeof input.audioType, "string");

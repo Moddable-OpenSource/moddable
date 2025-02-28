@@ -27,8 +27,8 @@
 	},
 	"modules": {
 		"setup/target": "./setup-target",
-		"embedded:io/audioout-original": "$(MODULES)/io/audioout/esp32/*",
-		"embedded:io/audioout": "./M5StackCoreS3AudioOut",
+		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
+		"embedded:io/audio/out": "./M5StackCoreS3AudioOut",
 		"*": [
 			"./M5StackCoreS3Touch"
 		]

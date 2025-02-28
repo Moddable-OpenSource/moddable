@@ -3,7 +3,7 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 let position = 0;
 let total = 0;

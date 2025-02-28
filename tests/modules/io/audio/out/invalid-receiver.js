@@ -3,7 +3,7 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 function callWithInvalidReceivers(obj, functionName, ...args)
 {

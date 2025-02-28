@@ -18,8 +18,8 @@
  *
  */
 
-import AudioIn from "embedded:io/audioin";
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audio/in";
+import AudioOut from "embedded:io/audio/out";
 import Worker from "worker";
 
 function computeLevel(buffer) @ "xs_computeLevel";

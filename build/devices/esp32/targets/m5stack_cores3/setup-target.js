@@ -23,7 +23,7 @@ import config from "mc/config";
 import Timer from "timer";
 
 import AXP2101 from "embedded:peripheral/Power/axp2101";
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 const state = {
   handleRotation: nop,

@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 let out = new AudioOut({});
 assert.sameValue(out.target, undefined, "no target");

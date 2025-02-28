@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 [8000, 22050, 24000, 32000, 44100, 48000].forEach(sampleRate => {
 	let out = new AudioOut({

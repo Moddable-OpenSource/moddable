@@ -12,7 +12,7 @@
  *
  */
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 import {MAUD, SampleFormat} from "maudHeader";
 import Resource from "Resource";
 
