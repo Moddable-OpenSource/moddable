@@ -26,6 +26,8 @@ import ChatAudioIO from "ChatAudioIO";
 const halfPI = Math.PI / 2;
 const twoPI = 2 * Math.PI;
 
+const interval = 20;
+
 class HomeBehavior extends View.Behavior {
 	onCreate(container, view) {
 		super.onCreate(container, view);
@@ -255,6 +257,7 @@ class LevelPortBehavior extends Behavior {
 class ListenContentBehavior extends Behavior {
 	onCreate(content, data) {
 		content.duration = 2000;
+		content.interval = interval;
 		this.variant = content.variant = 9;
     }
     onChange(content, variant) {
@@ -272,6 +275,7 @@ class ListenContentBehavior extends Behavior {
 class ListenContainerBehavior extends Behavior {
 	onCreate(content, data) {
 		content.duration = 4000;
+		content.interval = interval;
 		this.variant = 9;
     }
 	onDisplaying(container) {
@@ -364,6 +368,7 @@ class WaitContainerBehavior extends Behavior {
 			delay = -1400;
 		}
 		container.duration = this.timeline.duration;
+		container.interval = interval;
 	}
 	onFinished(container) {
 		container.time = 0;

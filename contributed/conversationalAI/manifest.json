@@ -12,11 +12,11 @@
 	"creation": {
 		"static": 0,
         "chunk": {
-            "initial": 1048576,
+            "initial": 262144,
             "incremental": 0
         },
 		"heap": {
-			"initial": 8192,
+			"initial": 4096,
 			"incremental": 0
 		},
 		"stack": 512
