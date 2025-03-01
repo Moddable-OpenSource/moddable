@@ -53,6 +53,9 @@
 #ifndef MODDEF_AUDIOIN_I2S_BIAS
 	#define MODDEF_AUDIOIN_I2S_BIAS			(0)
 #endif
+#ifndef MODDEF_AUDIOIN_I2S_SLOT
+	#define MODDEF_AUDIOIN_I2S_SLOT (I2S_STD_SLOT_RIGHT)
+#endif
 
 #if MODDEF_AUDIOIN_I2S_ADC
 	#if MODDEF_AUDIOIN_SAMPLERATE < SOC_ADC_SAMPLE_FREQ_THRES_LOW
@@ -503,7 +506,7 @@ void audioInLoop(void *pvParameter)
 		}
 	};
 
-	pdm_rx_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
+	pdm_rx_cfg.slot_cfg.slot_mask = MODDEF_AUDIOIN_I2S_SLOT;
 	pdm_rx_cfg.clk_cfg.dn_sample_mode = I2S_PDM_DSR_16S;
 
 	err = i2s_channel_init_pdm_rx_mode(input->handle, &pdm_rx_cfg);
