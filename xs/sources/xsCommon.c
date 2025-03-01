@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -642,13 +642,13 @@ void fxDeleteScript(txScript* script)
 
 
 const txUTF8Sequence gxUTF8Sequences[] ICACHE_RODATA_ATTR = {
-	{1, 0x80, 0x00, 0*6, 0x0000007F, 0x00000000},
-	{2, 0xE0, 0xC0, 1*6, 0x000007FF, 0x00000080},
-	{3, 0xF0, 0xE0, 2*6, 0x0000FFFF, 0x00000800},
-	{4, 0xF8, 0xF0, 3*6, 0x001FFFFF, 0x00010000},
-	{5, 0xFC, 0xF8, 4*6, 0x03FFFFFF, 0x00200000},
-	{6, 0xFE, 0xFC, 5*6, 0x7FFFFFFF, 0x04000000},
-	{0, 0, 0, 0, 0, 0},
+	{1, 0x80, 0x00, 0*6, 0x0000007F},
+	{2, 0xE0, 0xC0, 1*6, 0x000007FF},
+	{3, 0xF0, 0xE0, 2*6, 0x0000FFFF},
+	{4, 0xF8, 0xF0, 3*6, 0x001FFFFF},
+	{5, 0xFC, 0xF8, 4*6, 0x03FFFFFF},
+	{6, 0xFE, 0xFC, 5*6, 0x7FFFFFFF},
+	{0, 0, 0, 0, 0},
 };
 
 static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";

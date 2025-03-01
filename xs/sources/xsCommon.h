@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -192,7 +192,6 @@ typedef struct {
 	txU4 cval;
 	txS4 shift;
 	txU4 lmask;
-	txU4 lval;
 } txUTF8Sequence;
 
 enum {
