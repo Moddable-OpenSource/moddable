@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -500,6 +500,12 @@ void fxDecodeURI(txMachine* the, txString theSet)
 					size--;
 				}
 				d &= sequence->lmask;
+				if (sequence != gxUTF8Sequences) {
+					if ((sequence[-1].lmask >= (txU4)d) ||		// over-encoding
+						((d >= 0xD800) & (d <= 0xDFFF)))		// half of surrogate pair
+						mxURIError("invalid URI");
+				}
+
 				length += mxStringByteLength(d);
 			}
 		}
