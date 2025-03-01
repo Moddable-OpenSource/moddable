@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import flash from "./flash-fixture.js";
-import {path} from "./flash-fixture.js";
+import flash from "./flash-FIXTURE.js";
+import {path} from "./flash-FIXTURE.js";
 
 let f = flash.open({path});
 const status = f.status();

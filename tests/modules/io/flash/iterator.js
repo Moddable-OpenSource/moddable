@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import flash from "./flash-fixture.js";
+import flash from "./flash-FIXTURE.js";
 
 let found = false;
 let s = new Set;
