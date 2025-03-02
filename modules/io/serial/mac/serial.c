@@ -40,13 +40,6 @@
 
 #include "modTimer.h"
 
-/*
-	to do:
-
-		string;ascii doesn't ensure data is valid
-
-*/
-
 #define kWriteBufferSize (1024)		// 1024 is the default on macOS (it seems)
 
 typedef struct {
@@ -226,16 +219,12 @@ void xs_serial_read(xsMachine *the)
 		read(s->fd, &byte, 1);
 		xsResult = xsInteger(byte);
 	}
-	else {
-		xsResult = xsStringBuffer(NULL, count);
-		read(s->fd, xsToString(xsResult), count);
-	}
 }
 
 void xs_serial_write(xsMachine *the)
 {
 	xsSerial s = xsGetHostData(xsThis);
-	int count;
+	int count = 0;
 	char *data;
 	char byte;
 
@@ -247,10 +236,6 @@ void xs_serial_write(xsMachine *the)
 		count = 1;
 		byte = xsToInteger(xsArg(0));
 		data = &byte;
-	}
-	else {
-		data = xsToString(xsArg(0));
-		count = strlen(data);
 	}
 	if (!count)
 		return;
@@ -311,8 +296,6 @@ void xs_serial_format_get(xsMachine *the)
 		xsResult = xsString("number");
 	else if (1 == s->bufferFormat)
 		xsResult = xsString("buffer");
-	else
-		xsResult = xsString("string;ascii");
 }
 
 void xs_serial_format_set(xsMachine *the)
@@ -393,8 +376,6 @@ void fxSerialSetFormat(xsMachine *the, xsSerial s, char *format)
 		s->bufferFormat = 1;
 	else if (!strcmp(format, "number"))
 		s->bufferFormat = 2;
-	else if (!strcmp(format, "string;ascii"))
-		s->bufferFormat = 0;
 	else
 		xsUnknownError("invalid");
 }
