@@ -34,12 +34,13 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	configure(message) {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
+		const voiceName = message.voiceName ?? "Aoede";
 		this.setup = {
 			model: "models/gemini-2.0-flash-exp",
 			generationConfig: {
 				responseModalities: "audio",
 				speechConfig: {
-					voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+					voiceConfig: { prebuiltVoiceConfig: { voiceName } },
 				},
 			},
 			systemInstruction: {

@@ -38,13 +38,14 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	configure(message) {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
+		const voice = message.voiceName ?? "alloy";
 		tools.forEach(tool => {
 			tool.type = "function";
 			tool.parameters.additionalProperties = false;
 		});
  		this.session = {
-			instructions: instructions,
-			voice: 'alloy',
+			instructions,
+			voice,
 			turn_detection: {
 				type: "server_vad",
 				threshold: 0.5,
