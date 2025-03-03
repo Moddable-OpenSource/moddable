@@ -79,9 +79,9 @@ class HomeBehavior extends View.Behavior {
 		this.chat.disconnect();
 	}
 	onDisplaying(container) {
-// 		const view = this.view;
-// 		if (view.transcript)
-// 			this.onTranscript(container, LeftBubbleRow, this.leftData, view.prompt);
+		const view = this.view;
+		if (view.transcript)
+			this.onTranscript(container, LeftBubbleRow, this.leftData, view.prompt);
 	}
 	onDisplayed(container) {
 		if (this.view.service.key)
@@ -154,6 +154,11 @@ class HomeBehavior extends View.Behavior {
 				view.TRANSCRIPT_COLUMN.remove(this.microphoneRow);
 			}
 			else {
+				let content = view.SPEAKING.first;
+				content.visible = false;
+				content = content.next;
+				content.y = container.y + ((container.height - content.height) >> 1);
+				content.next.y = content.y + content.height + 10;
 				view.LISTENING.visible = true;
 				listen.start();
 			}
@@ -461,15 +466,21 @@ const ListeningContainer = Container.template($ => ({
 const SpeakingContainer = Container.template($ => ({
 	anchor:"SPEAKING", visible:false, left:0, right:0, top:50, bottom:50,
 	contents: [
-		Text($, { left:10, right:10, top:5, style:assets.styles.homePrompt, string:$.prompt }),
-		Content($, { skin:assets.skins.microphone, active:true, Behavior:MicrophoneButtonBehavior }),
-		Port($, { anchor:"LEVEL", width:100, height:30, bottom:20, Behavior:LevelPortBehavior, direction:1 }),
-// 		Container($, {
-// 			width:120, height:50, bottom:-50, skin:$.skins.button, active:true, Behavior:DisconnectButtonBehavior,
-// 			contents: [
-// 				Label($, { string:"Disconnect" }),
-// 			],
-// 		}),
+		Container($, {
+			left:0, width:208, top:0, clip:true,
+			contents: [
+				Content($, { left:0, right:0, top:2, bottom:2, skin:$.skins.bubble } ), 
+				Column($, { left:18, right:12, clip:true,
+					contents:[
+						Content($, { height:10 }),
+						Text($, { anchor:"TEXT", left:0, right:0, top:0, style:$.styles.bubble, string:$.prompt }),
+						Content($, { height:10 }),
+					]
+				}),
+			],
+		}),
+		Content($, { bottom:10, skin:assets.skins.microphone, active:true, Behavior:MicrophoneButtonBehavior }),
+		Port($, { anchor:"LEVEL", width:100, height:30, bottom:-30, Behavior:LevelPortBehavior, direction:1 }),
 	],
 }));
 
@@ -482,14 +493,6 @@ const TranscriptContainer = Container.template($ => ({
 				Column($, { 
 					anchor:"TRANSCRIPT_COLUMN", left:0, right:0, top:0, 
 					contents: [
-						Column($, {
-							left:0, right:0,
-							contents: [
-								Content($, { height:10 }),
-								Text($, { left:10, right:10, top:0, style:assets.styles.homePrompt, string:$.prompt }),
-								Content($, { height:10 }),
-							]
-						})
 					],
 				}),
 				View.VerticalScrollbar($, {}),
