@@ -39,8 +39,12 @@ class HomeBehavior extends View.Behavior {
 				this.onStateChanged(container, state);
 			},
 			onInputLevelChanged: level => {
-// 				container.distribute("onOutputLevelChanged", level);
 				container.distribute("onInputLevelChanged", level);
+				if (this.silence) {
+					if (level > 1000) {
+						this.view.SPEAKING.start();
+					}
+				}
 			},
 			onOutputLevelChanged: level => {
 				container.distribute("onOutputLevelChanged", level);
@@ -53,6 +57,7 @@ class HomeBehavior extends View.Behavior {
 			},
 		})
 		this.closing = false;
+		this.silence = false;
 		if (view.transcript) {
 			this.leftData = null;
 			this.rightData = null;
@@ -106,14 +111,19 @@ class HomeBehavior extends View.Behavior {
 			return;
 		const view = this.view;
 		const listen = view.LISTEN;
+		const speak = view.SPEAKING;
 		const wait = view.WAIT;
 		let content = container.last.first;
 		while (content) {
 			content.visible = false;
 			content = content.next;
 		}
-		if (!view.transcript)
+		if (!view.transcript) {
 			listen.stop();
+			if (speak.running) {
+				speak.time = speak.duration;
+			}
+		}
 		wait.stop();
 		switch (state) {
 		case ChatAudioIO.DISCONNECTED:
@@ -146,8 +156,10 @@ class HomeBehavior extends View.Behavior {
 				view.TRANSCRIPT_COLUMN.add(this.microphoneRow);
 				view.TRANSCRIPT_COLUMN.container.scrollTo(0, 0x7fff);
 			}
-			else
+			else {
+				this.silence = view.SPEAKING.first.visible;
 				view.SPEAKING.visible = true;
+			}
 			break;
 		case ChatAudioIO.LISTENING:
 			if (view.transcript) {
@@ -155,11 +167,6 @@ class HomeBehavior extends View.Behavior {
 				view.TRANSCRIPT_COLUMN.remove(this.microphoneRow);
 			}
 			else {
-				let content = view.SPEAKING.first;
-				content.visible = false;
-				content = content.next;
-				content.y = container.y + ((container.height - content.height) >> 1);
-				content.next.y = content.y + content.height + 10;
 				view.LISTENING.visible = true;
 				listen.start();
 			}
@@ -259,6 +266,21 @@ class LevelPortBehavior extends Behavior {
     	}
     }
 }
+    
+class MicrophoneButtonBehavior extends View.ButtonBehavior {
+	onTap(content) {
+		if (content.variant == 0) {
+			content.variant = 1;
+			content.bubble("onChangeMicrophone", 0);
+		}
+		else {
+			content.variant = 0;
+			content.bubble("onChangeMicrophone", 1);
+		}
+		this.changeState(content, 0);
+	}
+}
+
 
 class ListenContentBehavior extends Behavior {
 	onCreate(content, data) {
@@ -324,19 +346,27 @@ class ListenContainerBehavior extends Behavior {
     }
 }
 
-class MicrophoneButtonBehavior extends View.ButtonBehavior {
-	onTap(content) {
-		if (content.variant == 0) {
-			content.variant = 1;
-			content.bubble("onChangeMicrophone", 0);
-		}
-		else {
-			content.variant = 0;
-			content.bubble("onChangeMicrophone", 1);
-		}
-		this.changeState(content, 0);
-	}
-}
+class SpeakContainerBehavior extends Behavior {
+	onDisplaying(container) {
+		const timeline = new Timeline();
+		const bubble = container.first;
+		const microphone = bubble.next;
+		const level = microphone.next;
+		const y = container.y + (container.height - (microphone.height + 10 + level.height)) >> 1;
+		const duration = 250;
+		timeline.to(bubble, { y: container.y - bubble.height }, duration, Math.quadEaseOut, 0);
+		timeline.to(microphone, { y }, duration, Math.quadEaseOut, -(duration >> 1));
+		timeline.to(level, { y: y + microphone.height + 10 }, duration, Math.quadEaseOut, -(duration >> 1));
+		this.timeline = timeline;
+		container.duration = timeline.duration;
+    }
+    onFinished(container) {
+		container.first.visible = false;
+    }
+    onTimeChanged(container) {
+		this.timeline.fraction = container.fraction;
+    }
+}    
 
 class TranscriptRowBehavior extends Behavior {
 	onCreate(row, data) {
@@ -455,17 +485,11 @@ const ListeningContainer = Container.template($ => ({
 			]
 		}),
 		Content($, { skin:$.service.icon }),
-// 		Container($, {
-// 			width:120, height:50, bottom:-50, skin:$.skins.button, active:true, Behavior:ConnectButtonBehavior,
-// 			contents: [
-// 				Label($, { string:"Disconnect" }),
-// 			],
-// 		}),
 	],
 }));
 
 const SpeakingContainer = Container.template($ => ({
-	anchor:"SPEAKING", visible:false, left:0, right:0, top:50, bottom:50,
+	anchor:"SPEAKING", visible:false, left:0, right:0, top:50, bottom:0, clip:true, Behavior:SpeakContainerBehavior,
 	contents: [
 		Container($, {
 			left:0, width:208, top:0, clip:true,
@@ -480,8 +504,8 @@ const SpeakingContainer = Container.template($ => ({
 				}),
 			],
 		}),
-		Content($, { bottom:10, skin:assets.skins.microphone, active:true, Behavior:MicrophoneButtonBehavior }),
-		Port($, { anchor:"LEVEL", width:100, height:30, bottom:-30, Behavior:LevelPortBehavior, direction:1 }),
+		Content($, { bottom:60, skin:assets.skins.microphone, active:true, Behavior:MicrophoneButtonBehavior }),
+		Port($, { anchor:"LEVEL", width:100, height:30, bottom:20, Behavior:LevelPortBehavior, direction:1 }),
 	],
 }));
 
