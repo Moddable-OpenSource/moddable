@@ -105,6 +105,13 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 			event_id: this.generateId('event_'),
 		});
 	}
+	onJSON(json) {
+		if ("failed" === json.response?.status) {
+			this.postMessage({ id:"failed", string: json.response.status_details?.error?.message ?? `${json.type} failed`});
+			return void this.close();
+		}
+		return super.onJSON(json)
+	}
 	'conversation.item.input_audio_transcription.completed'(message) {
 		this.postMessage({ id:"receiveInputText", text:message.transcript });
 	}
