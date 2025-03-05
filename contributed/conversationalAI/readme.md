@@ -35,7 +35,11 @@ mcconfig -d -m -p esp32/moddable_six_cdc ssid="my wifi" password="secret"
 ```
 
 ## Microphone
-The application is generally very straightforward to use. There is one nice feature that you might not notice immediately. The microphone icon is shown only when the AI service is listening. If you don't see the microphone on-screen, the service cannot hear what you say. This allows the application to support embedded hardware, like the ESP32-S3, that does not support PDM audio input and output simultaneously. If you tap the microphone icon, it mutes the microphone while maintaining the connection to the service. This is great for privacy and demos. Tap the icon again to unmute it.
+There are a couple of nice features of the microphone that you might not notice immediately:
+
+1. The microphone icon is shown only when the AI service is listening. If you don't see the microphone on-screen, the service cannot hear what you say. This allows the application to support embedded hardware, like the ESP32-S3, that does not support PDM audio input and output simultaneously.
+
+2. If you tap the microphone icon, it mutes the microphone while maintaining the connection to the service. This is great for privacy and demos. Tap the icon again to unmute it.
 
 ## Navigating the Code
 The AI assistants are defined in [`model.json`](./model.json). You can edit this file to enhance the predefined agents and add your own.
