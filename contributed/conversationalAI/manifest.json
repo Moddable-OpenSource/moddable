@@ -6,8 +6,8 @@
 	],
 	"config": {
 		"startupSound": false,
-		"geminiAPIKey": "AIzaSyAGRJKdtAiPe2f6QRJwF8b6eawJj1tDjBw",
-		"openAIKey": "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"
+		"geminiAPIKey": "",
+		"openAIKey": ""
 	},
 	"creation": {
 		"static": 0,
