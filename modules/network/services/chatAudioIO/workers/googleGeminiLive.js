@@ -113,10 +113,12 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			}
 		}
 		if (data.turnComplete) {
-			this.parser.copy(this.silence);
-			this.parser.done();
-			this.speaking = true;
-			this.post("speak");
+			if (!this.speaking) {
+				this.parser.copy(this.silence);
+				this.parser.done();
+				this.speaking = true;
+				this.post("speak");
+			}
 		}
 	}
 	'setupComplete'(data) {
