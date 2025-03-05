@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -286,6 +286,11 @@ void doClose(xsMachine *the, xsSlot *instance)
 
 		if (tcp->cfSkt)
 			CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack);
+
+		if (tcp->cfTriggeredTimer) {
+			CFRunLoopTimerInvalidate(tcp->cfTriggeredTimer);
+			tcp->cfTriggeredTimer = NULL;
+		}
 
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
