@@ -45,3 +45,11 @@ Conversational AI is built using the Piu user interface framework. The [`views`]
 The sophisticated mobile-like scrolling on the [assistant chooser view](./views/Personas.js) is implemented entirely in JavaScript in [`ScrollBehaviors.js`](./ScrollBehaviors.js).
 
 The bitmap fonts are created as part of the build process from TrueType fonts in the [`fonts`](./fonts) directory. See the [documentation](./../../documentation/commodetto/Creating%20fonts%20for%20Moddable%20applications.md#fontbm) on using `fontbm` for details on the process and using your own fonts.
+
+## Simulator
+
+You can also run Conversational AI on the Moddable SDK's built-in simulator, `mcsim`. This is a great way to explore how the code works and even develop new features. The simulator is available on macOS, Windows, and Linux. To build and run, just use the Moddable Six simulator target with your AI service keys:
+
+```
+mcconfig -d -m -p sim/moddable_six openAIKey=$openAIKey geminiAPIKey=$geminiAPIKey
+```
