@@ -5,6 +5,9 @@
 		"$(MODDABLE)/modules/network/services/chatAudioIO/manifest.json"
 	],
 	"config": {
+		"led": {
+			"rainbow": false
+		},
 		"startupSound": false,
 		"geminiAPIKey": "",
 		"openAIKey": ""
