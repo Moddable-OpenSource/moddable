@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -3465,8 +3465,34 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		return 5;
 #endif
 
-	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
+	if (poco->flags & kPocoFlagErrorDisplayListOverflow) {
+#if MODDEF_POCO_LOGOVERFLOW
+		static const char *gPocoCommandNames[kPocoCommandDrawMax] = {
+			"FillRectangle",
+			"BlendRectangle",
+			"DrawPixel",
+			"DrawBitmap",
+			"DrawMonochromeBitmapPart",
+			"DrawMonochromeForegroundBitmapPart",
+			"DrawGray16BitmapPart",
+			"DrawGray16RLEBitmapPart",
+			"DrawGray16RLEBlendBitmapPart",
+			"DrawMaskedBitmap",
+			"DrawPattern",
+			"DrawFrame",
+			"DrawExternal",
+		};
+
+		displayList = (PocoCommand)poco->displayList;
+		displayListEnd = poco->next;
+
+		for (walker = displayList; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker)) {
+			printf("%s - %d bytes, at {%d, %d} of size {%d, %d}\n", gPocoCommandNames[walker->command], (int)walker->length, (int)walker->x, (int)walker->y, (int)walker->w, (int)walker->h);
+		}
+#endif
+
 		return 1;
+	}
 
 	if (poco->flags & kPocoFlagErrorStackProblem)
 		return 3;
