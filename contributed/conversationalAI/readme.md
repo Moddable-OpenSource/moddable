@@ -50,6 +50,10 @@ The sophisticated mobile-like scrolling on the [assistant chooser view](./views/
 
 The bitmap fonts are created as part of the build process from TrueType fonts in the [`fonts`](./fonts) directory. See the [documentation](./../../documentation/commodetto/Creating%20fonts%20for%20Moddable%20applications.md#fontbm) on using `fontbm` for details on the process and using your own fonts.
 
+## Compatibility
+
+Conversational AI is incredibly efficient, but it still requires more resources, particularly RAM, than some embedded devices have. We've primarily tested on ESP32-S3 devices with extended memory (PSRAM). 2 MB of extended PSRAM should be enough, though many devices now provide 8 MB. Moddable Six is our favorite, but others work (or could work with a little input or output driver configuration work). 
+
 ## Simulator
 
 You can also run Conversational AI on the Moddable SDK's built-in simulator, `mcsim`. This is a great way to explore how the code works and even develop new features. The simulator is available on macOS, Windows, and Linux. To build and run, just use the Moddable Six simulator target with your AI service keys:
