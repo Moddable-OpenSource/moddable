@@ -45,8 +45,8 @@ export default function() {
 		}, 
 		{
 			skin:assets.skins.screen,
-			commandListLength: 10000,
-			displayListLength: 10000,
+			commandListLength: 6000,
+			displayListLength: 9000,
 			touchCount: 1,
 			behavior: controller
 		}
