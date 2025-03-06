@@ -1328,6 +1328,8 @@ void PiuView_create(xsMachine* the)
 	xsIntegerValue commandListLength, regionLength;
 	if (!xsFindInteger(xsArg(1), xsID_commandListLength, &commandListLength))
 		commandListLength = 1024;
+	if (sizeof(void *) > 4)
+		commandListLength += commandListLength >> 1;		// compensate for bigger pointers on 64-bit systems
 	if (!xsFindInteger(xsArg(1), xsID_regionLength, &regionLength))
 		regionLength = 512;
 	size = sizeof(PiuViewRecord) + commandListLength;

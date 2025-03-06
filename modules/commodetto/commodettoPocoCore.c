@@ -94,6 +94,8 @@ void xs_poco_build(xsMachine *the)
 	int pixelFormat = xsmcToInteger(xsArg(3));
 	int displayListLength = xsmcToInteger(xsArg(4));
 	int rotation = xsmcToInteger(xsArg(5));
+	if (sizeof(void *) > 4)
+		displayListLength += displayListLength >> 1;		// compensate for bigger pointers on 64-bit systems
 	int byteLength = pixelsLength + displayListLength;
 
 	if (kPocoPixelFormat != pixelFormat)
