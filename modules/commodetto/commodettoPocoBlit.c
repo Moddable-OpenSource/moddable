@@ -1520,7 +1520,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 #endif
 		bits = SwapLong(bits);
 
-		while (tw--) {
+		do {
 			if (0 == tm) {
 				tm = 0x80000000;
 				bits = *srcLong++;
@@ -1557,7 +1557,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 #endif
 
 			tm >>= 1;
-		}
+		} while (--tw);
 
 		src += srcBits->rowBump;
 #if 4 != kPocoPixelSize
@@ -1594,7 +1594,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 #endif
 		bits = SwapLong(bits);
 
-		while (tw--) {
+		do {
 			if (0 == tm) {
 				tm = 0x80000000;
 				bits = *srcLong++;
@@ -1616,7 +1616,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 			xphase ^= 1;
 #endif
 			tm >>= 1;
-		}
+		} while (--tw);
 
 		src += srcBits->rowBump;
 #if 4 != kPocoPixelSize
@@ -3530,12 +3530,17 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 	displayList = (PocoCommand)poco->displayList;
 	displayListEnd = poco->next;
 
-	for (walker = displayList; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker)) {
-		walker->x -= poco->x;
-#if 4 == kPocoPixelSize
-		walker->xphase = walker->x & 1;
-		walker->x >>= 1;
+#if 4 != kPocoPixelSize
+	if (poco->x)
 #endif
+	{
+		for (walker = displayList; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker)) {
+			walker->x -= poco->x;
+#if 4 == kPocoPixelSize
+			walker->xphase = walker->x & 1;
+			walker->x >>= 1;
+#endif
+		}
 	}
 
 	// walk through a slab of displayList at a time
