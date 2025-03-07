@@ -1362,12 +1362,11 @@ void doBlendRectangle(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h)
 		PocoCoordinate tw = w;
 
 		while (tw--) {
-			int	dst, src;
+			int	dst;
 
 			dst = *d;
 			dst |= dst << 16;
 			dst &= 0x001C00E3;
-			src = src32 - dst;
 			dst = blend * (src32 - dst) + (dst << 3) - dst;
 //@@ half bit precision			dst += 0x02008010;
 			dst += (dst >> 3) & 0x000C00E3;
