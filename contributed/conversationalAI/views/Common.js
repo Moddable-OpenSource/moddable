@@ -129,8 +129,8 @@ class StarsBehavior extends Behavior {
 	}
 }
 
-const StarsContainer = Scroller.template($ => ({
-	left:0, width:240, top:0, height:320, Behavior:StarsBehavior, looping:true,
+const StarsContainer = Container.template($ => ({
+	left:0, width:240, top:0, height:320, Behavior:StarsBehavior,
 	contents: [
 		Content($, { left:28, top:309, skin:assets.skins.star9 }),
 		Content($, { left:71, top:244, skin:assets.skins.star3 }),
