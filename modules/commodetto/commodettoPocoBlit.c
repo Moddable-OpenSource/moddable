@@ -3472,7 +3472,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 
 	if (poco->flags & kPocoFlagErrorDisplayListOverflow) {
 #if MODDEF_POCO_LOGOVERFLOW
-		logDisplayListpoco);
+		logDisplayList(poco);
 #endif
 		return 1;
 	}
@@ -3754,8 +3754,8 @@ void logDisplayList(Poco poco)
 		pixels += walker->w * walker->h; 
 	}
 	printf("  End Pcoo display list\n");
-	printf("  %d commands\n", commands);
-	printf("  %f operations per pixel\n", (double)pixels / (double)(poco->w * poco->h));
-	printf("  %d pixel area - %d x %d\n", (int)(poco->w * poco->h), (int)poco->w, (int)poco->h);
+	printf("    %d commands\n", commands);
+	printf("    %f operations per pixel\n", (double)pixels / (double)(poco->w * poco->h));
+	printf("    %d pixel area - %d x %d\n", (int)(poco->w * poco->h), (int)poco->w, (int)poco->h);
 }
 #endif
