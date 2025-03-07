@@ -78,5 +78,10 @@
 				"blocks": ["Basic Latin"]
 			}
 		]
+    },
+    "defines": {
+		"poco": {
+			"log": false
+		}
     }
 }
