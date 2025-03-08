@@ -550,7 +550,7 @@ class WebSocketClient {
 					Timer.clear(this.#options.pending);
 					this.#options.pending = undefined;
 
-					this.write(this.#options.pendingControl, {opcode: this.#options.pendingControl.opcode});
+					this.#writable = this.write(this.#options.pendingControl, {opcode: this.#options.pendingControl.opcode});
 					delete this.#options.pendingControl;
 				}
 				this.#options.onWritable?.call(this, (this.#writable <= 8) ? 0 : (this.#writable - 8));
