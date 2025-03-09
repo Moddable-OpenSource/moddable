@@ -93,8 +93,7 @@ void xs_crypt_bin_comp(xsMachine *the)
 			break;
 		}
 	}
-'
-done:'
+
+done:
 	xsmcSetInteger(xsResult, result);
 }
-
