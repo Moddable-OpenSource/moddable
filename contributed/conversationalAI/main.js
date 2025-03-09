@@ -44,7 +44,6 @@ export default function() {
 			model
 		}, 
 		{
-			skin:assets.skins.screen,
 			commandListLength: 6000,
 			displayListLength: 10000,
 			touchCount: 1,
