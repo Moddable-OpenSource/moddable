@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024=2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -112,12 +112,12 @@ static void audioOutRelease(AudioOut audioOut)
 			modDelayMilliseconds(1);
 	}
 
-#ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	if (audioOut->tx_handle) {
 		i2s_channel_disable(audioOut->tx_handle);
 		i2s_del_channel(audioOut->tx_handle);
 		audioOut->tx_handle = NULL;
 	}
+#ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	gPDMAudioOutBusy = 0;
 #endif
 
@@ -417,8 +417,10 @@ void xs_audioout_writeSync_(xsMachine *the)
 		xsUnknownError("full samples only");
 
 	err = doWrite(audioOut, buffer, requested);
-	if (err)
+	if (err) {
+xsLog("error %d\n", (int)err);
 		xsUnknownError("write failed");
+	}
 }
  
  void xs_audioout_writeAsync_(xsMachine *the)
