@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,6 +46,9 @@ void printColor(xsStringValue name, NSColor* color) {
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+}
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)application {
+    return YES;
 }
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
     if (shouldQuit)
