@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -844,9 +844,26 @@ extern void fxCreateProfiler(txMachine* the);
 extern void fxDeleteProfiler(txMachine* the, void* stream);
 extern void fxResumeProfiler(txMachine* the);
 extern void fxSuspendProfiler(txMachine* the);
-#define mxFloatingPointOp(operation) \
-		/* fprintf(stderr, "float: %s\n", operation); */ \
-		the->floatingPointOps += 1
+#define mxFloatingPointOp(operation) { \
+		if (0) { \
+			txSlot* environment = C_NULL; \
+			txSlot *frame = the->frame; \
+			while (frame) { \
+				environment = mxFrameToEnvironment(frame); \
+				if (environment->ID != XS_NO_ID) \
+					break; \
+				frame = frame->next; \
+			} \
+			if (frame) { \
+				char *path = fxGetKeyName(the, environment->ID); \
+				int line = environment->value.environment.line; \
+				fprintf(stderr, "float: %s @ %s:%d\n", operation, path ? path : "(no path)", line); \
+			} \
+			else \
+				fprintf(stderr, "float: %s\n", operation); \
+		} \
+		the->floatingPointOps += 1; \
+		}
 #else
 #define mxFloatingPointOp(operation)
 #endif
