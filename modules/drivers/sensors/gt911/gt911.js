@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,8 +20,12 @@
 
 import Timer from "timer";
 
+const ADDR = Object.freeze(Uint8Array.of(0x81, 0x4E).buffer);
+const NEXT = Object.freeze(Uint8Array.of(0x81, 0x4E, 0).buffer);
+
 class GT911 {
 	#io;
+	#one = new Uint8Array(1);
 
 	constructor(options) {
 		const {sensor, interrupt, onSample, config} = options;
@@ -88,7 +92,7 @@ class GT911 {
 			}
 		}
 
-		io.write(Uint8Array.of(0x81, 0x4E, 0));		// ready for next reading
+		io.write(NEXT);		// ready for next reading
 	}
 	close() {
 		this.#io?.close();
@@ -102,19 +106,20 @@ class GT911 {
 	sample() {
 		const io = this.#io;
 
-		io.write(Uint8Array.of(0x81, 0x4E)); 		// GOODIX_READ_COOR_ADDR
-		const status = (new Uint8Array(io.read(1)))[0];
+		io.write(ADDR); 		// GOODIX_READ_COOR_ADDR
+		io.read(this.#one)
+		const status = this.#one[0];
 		if (!(0x80 & status))	// not-ready
 			return;
 
 		const touchCount = status & 0b0000_1111;
 		if (!touchCount) {
 			delete this.#io.last;		//@@ remove .last
-			io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
+			io.write(NEXT);	// ready for next reading
 			return [];
 		}
 
-		const data = this.#io.last = new Uint8Array(touchCount << 3);		//@@ remove .last
+		const data = this.#io.last = (this.#io.last?.length == (touchCount << 3)) ? this.#io.last : new Uint8Array(touchCount << 3) 
 		io.read(data);
 
 		const result = new Array(touchCount);
@@ -129,7 +134,7 @@ class GT911 {
 			result[i] = {x, y, id, size};
 		}
 
-		io.write(Uint8Array.of(0x81, 0x4E, 0));	// ready for next reading
+		io.write(NEXT);	// ready for next reading
 
 		return result;
 	}
