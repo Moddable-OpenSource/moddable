@@ -47,6 +47,7 @@ struct JSONBase64ParserRecord {
 	uint32_t dataStart;
 	uint32_t dataStep;
 	uint32_t dataStop;
+	uint32_t dataSkip;
 };
 typedef struct JSONBase64ParserRecord JSONBase64ParserRecord;
 typedef struct JSONBase64ParserRecord *JSONBase64Parser;
@@ -202,6 +203,10 @@ static void JSONBase64ParserContinueBase64(xsMachine* the, JSONBase64Parser pars
 		buffer[2] = ((buffer[2] & 0x03) << 6) | (buffer[3] & 0x3F);
 		bufferLength -= padLength;
 		bufferIndex = 0;
+		while ((parser->dataSkip > 0) && (bufferIndex < bufferLength)) {
+			parser->dataSkip--;
+			bufferIndex++;
+		}		
 		while (bufferIndex < bufferLength) {
 			if (dataPointer == dataLimit)
 				dataPointer = parser->dataBuffer;
@@ -260,6 +265,7 @@ WS_VALUE:
 				if (xsmcTest(xsResult)) {
 					parser->base64BufferLength = 0;
 					parser->base64PadLength = 1;
+					parser->dataSkip = (xsmcTypeOf(xsResult) == xsIntegerType) ? xsmcToInteger(xsResult) : 0;
 					JSONBase64ParserBeginBase64(the, parser, length - index);
 					state = JSON_BASE64;
 				}
