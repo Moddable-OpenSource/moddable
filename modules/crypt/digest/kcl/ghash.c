@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,40 +44,14 @@
 void
 _ghash_fix128(uint128_t *v)
 {
-#if mxLittleEndian
 	uint64_t t;
 
 	t = v->_64[1];
 	v->_64[1] = SWAP64(v->_64[0]);
 	v->_64[0] = SWAP64(t);
-#endif
 }
 
-static void
-rightshift(uint128_t *v)
-{
-#if mxLittleEndian
-	v->_64[0] >>= 1;
-	v->_64[0] |= (v->_64[1] & 1) << 63;
-	v->_64[1] >>= 1;
-#else
-	v->_64[1] >>= 1;
-	v->_64[1] |= (v->_64[0] & 1) << 63;
-	v->_64[0] >>= 1;
-#endif
-}
-
-static int
-isset128(const uint128_t *v, int i)
-{
-#if mxLittleEndian
-	return (v->_8[15 - (i / 8)] >> (7 - (i % 8))) & 1;
-#else
-	return (v->_8[i / 8] >> (7 - (i % 8))) & 1;
-#endif
-}
-
-static void
+static inline void
 xor128(uint128_t *r, const uint128_t *t)
 {
 	r->_64[0] ^= t->_64[0];
@@ -87,27 +61,31 @@ xor128(uint128_t *r, const uint128_t *t)
 static void
 ghash_mul(const uint128_t *x, const uint128_t *y, uint128_t *z)
 {
-	uint128_t v;
-	int i;
-#define R	0xe1
+    const uint8_t R = 0xe1;
+    uint128_t v = *x;
 
-	/* take into consideration x = z */
-	c_memcpy(&v, x, sizeof(uint128_t));
-	c_memset(z, 0, sizeof(uint128_t));
-	for (i = 0; i < 128; i++) {
-		if (isset128(y, i))
-			xor128(z, &v);
-		if (isset128(&v, 127)) {
-			rightshift(&v);
-#if mxLittleEndian
-			v._8[15] ^= R;
-#else
-			v._8[0] ^= R;
-#endif
-		}
-		else
-			rightshift(&v);
-	}
+    z->_64[0] = 0;
+    z->_64[1] = 0;
+
+    for (int i = 0; i < 16; i++) {
+        uint8_t byte = y->_8[15 - i];
+
+        for (int j = 0x80; j; j >>= 1) {
+            uint64_t lo = v._64[0];
+            uint64_t hi = v._64[1];
+
+            if (byte & j) {
+                z->_64[0] ^= lo;
+                z->_64[1] ^= hi;
+            }
+
+            v._64[0] = (lo >> 1) | (hi << 63);
+            v._64[1] = hi >> 1;
+
+            if (lo & 1)
+                v._8[15] ^= R;
+        }
+    }
 }
 
 void
