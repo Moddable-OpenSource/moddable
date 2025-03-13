@@ -2325,7 +2325,7 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		}
 		else 
 			mxPushUndefined();
-		if (dispatch == sourceDispatch) {
+		if (dispatch->value.typedArray.dispatch == sourceDispatch->value.typedArray.dispatch) {
 			c_memcpy(data->value.arrayBuffer.address + offset, sourceData->value.arrayBuffer.address + sourceOffset, limit - offset);
 			mxMeterSome(((txU4)(limit - offset)) * 2);
 		}
