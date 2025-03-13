@@ -205,6 +205,27 @@ txNumber fxArgToIndex(txMachine* the, txInteger argi, txNumber index, txNumber l
 	return index;
 }
 
+txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, txInteger length)
+{
+	if (mxArgc <= argi)
+		return index;
+
+	txSlot *slot = mxArgv(argi);
+	if (slot->kind != XS_INTEGER_KIND)
+		return fxArgToIndex(the, argi, index, length);
+
+	index = slot->value.integer;
+	if (index < 0) {
+		index = length + index;
+		if (index < 0)
+			index = 0;
+	}
+	else if (index > length)
+		index = length;
+
+	return index;
+}
+
 txNumber fxArgToLastIndex(txMachine* the, txInteger argi, txNumber index, txNumber length)
 {
 	if (mxArgc > argi) {

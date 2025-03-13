@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -745,8 +745,8 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_IMMUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
 	txInteger length = bufferInfo->value.bufferInfo.length;
-	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
-	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
+	txInteger start = fxArgToIndexInteger(the, 0, 0, length);
+	txInteger stop = fxArgToIndexInteger(the, 1, length, length);
 	txSlot* resultBuffer;
 	if (stop < start) 
 		stop = start;
@@ -1836,9 +1836,9 @@ void fx_TypedArray_prototype_copyWithin(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txInteger target = (txInteger)fxArgToIndex(the, 0, 0, length);
-	txInteger start = (txInteger)fxArgToIndex(the, 1, 0, length);
-	txInteger end = (txInteger)fxArgToIndex(the, 2, length, length);
+	txInteger target = fxArgToIndexInteger(the, 0, 0, length);
+	txInteger start = fxArgToIndexInteger(the, 1, 0, length);
+	txInteger end = fxArgToIndexInteger(the, 2, length, length);
 	txInteger count = end - start;
 	if (count > length - target)
 		count = length - target;
@@ -1898,8 +1898,8 @@ void fx_TypedArray_prototype_fill(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txInteger start = (txInteger)fxArgToIndex(the, 1, 0, length);
-	txInteger end = (txInteger)fxArgToIndex(the, 2, length, length);
+	txInteger start = fxArgToIndexInteger(the, 1, 0, length);
+	txInteger end = fxArgToIndexInteger(the, 2, length, length);
 	start *= delta;
 	end *= delta;
 	start += view->value.dataView.offset;
@@ -2045,7 +2045,7 @@ void fx_TypedArray_prototype_includes(txMachine* the)
 	mxTypedArrayDeclarations;
 	fxBoolean(the, mxResult, 0);
 	if (length) {
-		txInteger index = (txInteger)fxArgToIndex(the, 1, 0, length);
+		txInteger index = fxArgToIndexInteger(the, 1, 0, length);
 		txSlot* argument;
 		if (mxArgc > 0)
 			mxPushSlot(mxArgv(0));
@@ -2071,7 +2071,7 @@ void fx_TypedArray_prototype_indexOf(txMachine* the)
 	mxTypedArrayDeclarations;
 	fxInteger(the, mxResult, -1);
 	if (length) {
-		txInteger index = (txInteger)fxArgToIndex(the, 1, 0, length);
+		txInteger index = fxArgToIndexInteger(the, 1, 0, length);
 		txSlot* argument;
 		if (mxArgc > 0)
 			mxPushSlot(mxArgv(0));
@@ -2373,8 +2373,8 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 {
 	mxTypedArrayDeclarations;
 	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
-	txInteger end = (txInteger)fxArgToIndex(the, 1, length, length);
+	txInteger start = fxArgToIndexInteger(the, 0, 0, length);
+	txInteger end = fxArgToIndexInteger(the, 1, length, length);
 	txInteger count = (end > start) ? end - start : 0;
 	txInteger index = 0;
 	fxCreateTypedArraySpecies(the);
@@ -2460,7 +2460,7 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 	txSlot* buffer = view->next;
     txU2 shift = dispatch->value.typedArray.dispatch->shift;
     txInteger length = fxGetDataViewSize(the, view, buffer) >> shift;
-	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
+	txInteger start = fxArgToIndexInteger(the, 0, 0, length);
 	if ((view->value.dataView.size < 0) && ((mxArgc < 2) || mxIsUndefined(mxArgv(1)))) {
 		fxCreateTypedArraySpecies(the);
 		mxPushSlot(buffer);
@@ -2468,7 +2468,7 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 		mxRunCount(2);
 	}
 	else {
-		txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
+		txInteger stop = fxArgToIndexInteger(the, 1, length, length);
 		if (stop < start) 
 			stop = start;
 		fxCreateTypedArraySpecies(the);

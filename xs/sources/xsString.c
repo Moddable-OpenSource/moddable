@@ -675,22 +675,25 @@ void fx_String_fromCharCode(txMachine* the)
 	txInteger c; 
 	txString p;
 	while (index < count) {
-		txNumber number = fxToNumber(the, mxArgv(index));
-		switch (c_fpclassify(number)) {
-		case C_FP_INFINITE:
-		case C_FP_NAN:
-		case C_FP_ZERO:
-			mxArgv(index)->value.integer = 0;
-			break;
-		default:
-			#define MODULO 65536.0
-			number = c_fmod(c_trunc(number), MODULO);
-			if (number < 0)
-				number += MODULO;
-			mxArgv(index)->value.integer = (txInteger)number;
-			break;
+		txSlot *slot = mxArgv(index);
+		if (XS_INTEGER_KIND != slot->kind) {
+			txNumber number = fxToNumber(the, slot);
+			switch (c_fpclassify(number)) {
+			case C_FP_INFINITE:
+			case C_FP_NAN:
+			case C_FP_ZERO:
+				slot->value.integer = 0;
+				break;
+			default:
+				#define MODULO 65536.0
+				number = c_fmod(c_trunc(number), MODULO);
+				if (number < 0)
+					number += MODULO;
+				slot->value.integer = (txInteger)number;
+				break;
+			}
+			slot->kind = XS_INTEGER_KIND;
 		}
-		mxArgv(index)->kind = XS_INTEGER_KIND;
 		index++;
 	}
 	index = 0;
@@ -1689,7 +1692,7 @@ void fx_String_prototype_substr(txMachine* the)
 {
 	txString string = fxCoerceToString(the, mxThis);
 	txInteger size = fxCacheUnicodeLength(the, string);
-	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, size);
+	txInteger start = fxArgToIndexInteger(the, 0, 0, size);
 	txInteger stop = size;
 	if ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) {
 		stop = start + fxToInteger(the, mxArgv(1));

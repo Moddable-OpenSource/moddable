@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -453,11 +453,32 @@ void fx_Math_log2(txMachine* the)
 
 void fx_Math_max(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txInteger c = mxArgc, i = 0;
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = -((txNumber)C_INFINITY);
-	for (i = 0; i < c; i++) {
-		txNumber n = fxToNumber(the, mxArgv(i));
+	if (0 == c)
+		return;
+
+	if (XS_INTEGER_KIND == mxArgv(0)->kind) {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = mxArgv(0)->value.integer;
+		i = 1;
+	}
+
+	for (; i < c; i++) {
+		txSlot *slot = mxArgv(i);
+		if (XS_INTEGER_KIND == mxResult->kind) {
+			if (XS_INTEGER_KIND == slot->kind) {
+				if (mxResult->value.integer < slot->value.integer) {
+					mxResult->value.integer = slot->value.integer;
+				}
+				continue;
+			}
+			mxResult->kind = XS_NUMBER_KIND;
+			mxResult->value.number = mxResult->value.integer;
+		}
+
+		txNumber n = fxToNumber(the, slot);
 		if (c_isnan(n)) {
 			for (; i < c; i++)
 				fxToNumber(the, mxArgv(i));
@@ -475,11 +496,31 @@ void fx_Math_max(txMachine* the)
 
 void fx_Math_min(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txInteger c = mxArgc, i = 0;
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = (txNumber)C_INFINITY;
-	for (i = 0; i < c; i++) {
-		txNumber n = fxToNumber(the, mxArgv(i));
+	if (0 == c)
+		return;
+
+	if (XS_INTEGER_KIND == mxArgv(0)->kind) {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = mxArgv(0)->value.integer;
+		i = 1;
+	}
+
+	for (; i < c; i++) {
+		txSlot *slot = mxArgv(i);
+		if (XS_INTEGER_KIND == mxResult->kind) {
+			if (XS_INTEGER_KIND == slot->kind) {
+				if (mxResult->value.integer > slot->value.integer)
+					mxResult->value.integer = slot->value.integer;
+				continue;
+			}
+			mxResult->kind = XS_NUMBER_KIND;
+			mxResult->value.number = mxResult->value.integer;
+		}
+	
+		txNumber n = fxToNumber(the, slot);
 		if (c_isnan(n)) {
 			for (; i < c; i++)
 				fxToNumber(the, mxArgv(i));

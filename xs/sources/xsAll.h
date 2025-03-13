@@ -1488,6 +1488,7 @@ mxExport void fx_Array_prototype_with(txMachine* the);
 mxExport void fx_ArrayIterator_prototype_next(txMachine* the);
 
 extern txNumber fxArgToIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
+extern txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, txInteger length);
 extern txNumber fxArgToLastIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);
 extern txNumber fxArgToRange(txMachine* the, txInteger argi, txNumber index, txNumber min, txNumber max);
 extern txNumber fxArgToRelativeIndex(txMachine* the, txInteger argi, txNumber index, txNumber length);

@@ -255,7 +255,14 @@ void* fxCheckAtomicsArrayBufferDetached(txMachine* the, txSlot* slot, txBoolean 
 
 txInteger fxCheckAtomicsIndex(txMachine* the, txInteger i, txInteger length)
 {
-	txNumber index = (mxArgc > i) ? c_trunc(fxToNumber(the, mxArgv(i))) : C_NAN; 
+	txSlot *slot = (mxArgc > i) ? mxArgv(i) : C_NULL;
+	if (slot && (XS_INTEGER_KIND == slot->kind)) {
+		int index = slot->value.integer;
+		if ((0 <= index) && (index < length))
+			return index;
+	}
+
+	txNumber index = slot ? c_trunc(fxToNumber(the, slot)) : C_NAN; 
 	if (c_isnan(index))
 		index = 0;
 	if (index < 0)
@@ -314,7 +321,7 @@ void fxPushAtomicsValue(txMachine* the, int i, txID id)
 	slot = the->stack;
 	if ((id == _BigInt64Array) || (id == _BigUint64Array))
 		fxBigIntCoerce(the, slot);
-	else {
+	else if (XS_INTEGER_KIND != slot->kind) {
 		txNumber value;
 		fxNumberCoerce(the, slot);
 		value = c_trunc(slot->value.number); 
@@ -422,8 +429,8 @@ void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
 	txSlot* host = fxCheckSharedArrayBuffer(the, mxThis, "this");
 	txSlot* bufferInfo = host->next; 
 	txInteger length = bufferInfo->value.bufferInfo.length;
-	txInteger start = (txInteger)fxArgToIndex(the, 0, 0, length);
-	txInteger stop = (txInteger)fxArgToIndex(the, 1, length, length);
+	txInteger start = fxArgToIndexInteger(the, 0, 0, length);
+	txInteger stop = fxArgToIndexInteger(the, 1, length, length);
 	txSlot* result;
 	if (stop < start) 
 		stop = start;
