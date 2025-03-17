@@ -1448,6 +1448,14 @@ class ResourcesRule extends Rule {
 		else if (suffix == "-mask") {
 			alphaFile = this.appendFile(tool.bmpMaskFiles, name + "-alpha.bm4", path, include);
 		}
+		else if (suffix == "-monochrome") {
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
+			colorFile.monochrome = true;
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
+			alphaFile.monochrome = true;
+			alphaFile.colorFile = colorFile;
+			colorFile.alphaFile = alphaFile;
+		}
 		else {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);

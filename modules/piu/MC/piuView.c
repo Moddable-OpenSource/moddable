@@ -537,8 +537,25 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 	PocoBitmap bits = (flags & piuTextureColor) ? &((*texture)->bits) : NULL;
 	PocoBitmap mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
 	if (mask) {
-		if (bits)
-			PocoBitmapDrawMasked(poco, blend, bits, x, y, sx, sy, sw, sh, mask, sx, sy);
+		if (bits) {
+			if (kCommodettoBitmapMonochrome == bits->format) {
+				PocoColor black = PocoMakeColor((*self)->poco, 0, 0, 0);
+				PocoColor white = PocoMakeColor((*self)->poco, 255, 255, 255);
+				PocoColor background, foreground;
+				if (color == black) {
+					background = white;
+					foreground = black;
+				}
+				else {
+					background = black;
+					foreground = white;
+				}
+				PocoMonochromeBitmapDraw(poco, mask, kPocoMonochromeForeground, foreground, foreground, x, y, sx, sy, sw, sh);
+				PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeBackground, background, background, x, y, sx, sy, sw, sh);
+			}
+			else
+				PocoBitmapDrawMasked(poco, blend, bits, x, y, sx, sy, sw, sh, mask, sx, sy);
+		}
 		else
 			PocoGrayBitmapDraw(poco, mask, color, blend, x, y, sx, sy, sw, sh);
 	}
