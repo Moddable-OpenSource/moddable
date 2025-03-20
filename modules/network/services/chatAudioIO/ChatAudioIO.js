@@ -27,11 +27,11 @@ function computeLevel(buffer) @ "xs_computeLevel";
 class ChatAudioIO {
 	static FAILED = -1;
 	static DISCONNECTED = 0;
-	static DISCONNECTING = 1;
-	static CONNECTED = 2;
 	static CONNECTING = 3;
+	static DISCONNECTING = 1;
+	static SPEAKING = 2;
 	static LISTENING = 4;
-	static SPEAKING = 5;
+	static WAITING = 5;
 
 	constructor(options) {
 		this.error = "";
@@ -134,7 +134,7 @@ class ChatAudioIO {
 		this.onStateChanged(this.state);
 	}
 	connected() {
-		this.state = ChatAudioIO.CONNECTED;
+		this.state = ChatAudioIO.SPEAKING;
 		if (this.ready)
 			this.onStateChanged(this.state);
 	}
@@ -156,7 +156,7 @@ class ChatAudioIO {
 		this.onStateChanged(this.state);
 	}
 	listen() {
-		if (this.state == ChatAudioIO.CONNECTED) {
+		if (this.state == ChatAudioIO.SPEAKING) {
 			this.state = ChatAudioIO.LISTENING;
 // 			this.outputBufferStart = undefined;
 			this.ensureOutput();
@@ -182,7 +182,7 @@ class ChatAudioIO {
 		this.data.worker.postMessage({  id: "sendText", text });
 	}
 	speak() {
-		this.state = ChatAudioIO.SPEAKING;
+		this.state = ChatAudioIO.WAITING;
 	}
 	
 	ensureInput() {
@@ -216,7 +216,7 @@ class ChatAudioIO {
 					this.level = level;
 					this.onInputLevelChanged(level);
 				}
-				if (this.state == ChatAudioIO.CONNECTED) {
+				if (this.state == ChatAudioIO.SPEAKING) {
 					this.worker.postMessage({ id:"sendAudio", offset:this.inputBufferOffset, size });
 				}
 				this.inputBufferOffset += size;
@@ -268,9 +268,9 @@ class ChatAudioIO {
 				Atomics.store(this.barrier, 0, start);
 				Atomics.notify(this.barrier, 0);
 
-				if ((start == stop) && (this.state == ChatAudioIO.SPEAKING)) {
+				if ((start == stop) && (this.state == ChatAudioIO.WAITING)) {
 					this.worker.postMessage({ id:"listened" });
-					this.state = ChatAudioIO.CONNECTED;
+					this.state = ChatAudioIO.SPEAKING;
 					this.ensureInput();
 				}
 				if (this.level != level) {

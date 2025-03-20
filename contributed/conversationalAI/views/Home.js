@@ -150,7 +150,7 @@ class HomeBehavior extends View.Behavior {
 			wait.time = 1000;
 			wait.start();
 			break;
-		case ChatAudioIO.CONNECTED:
+		case ChatAudioIO.SPEAKING:
 			if (view.transcript) {
 				view.TRANSCRIPT.visible = true;
 				view.TRANSCRIPT_COLUMN.add(this.microphoneRow);
