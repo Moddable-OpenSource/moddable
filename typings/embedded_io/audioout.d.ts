@@ -28,10 +28,13 @@ declare module "embedded:io/audio/out" {
     sampleRate?: number;
     audioType?: AudioType;
     format?: "buffer";
+    target?: any;
   }
 
   class AudioOut {
-    constructor(options?: AudioOutOptions);
+    constructor(options?: AudioOutOptions & {
+      onWritable?: (this: AudioOut, byteLength: number, sampleCount?: number) => void;
+    });
     write(buffer: Buffer): void;
     start(): void;
     stop(options?: { flush?: boolean }): void;
