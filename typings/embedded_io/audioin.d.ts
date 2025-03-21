@@ -28,16 +28,17 @@ declare module "embedded:io/audio/in" {
     sampleRate?: number;
     audioType?: AudioType;
     format?: "buffer";
+    target?: any;
   }
 
   class AudioIn {
     constructor(options: AudioInOptions & {
-      onReadable?: (this: AudioIn, bytes: number) => void;
+      onReadable?: (this: AudioIn, byteLength: number, sampleCount?: number) => void;
     });
     read(byteLength?: number): ArrayBuffer
-    read(buffer: Buffer): void;
+    read(buffer: Buffer): number
     start(): void;
-    stop(flush?: boolean): void;
+    stop(options?: { flush?: boolean }): void
     close(): void;
     readonly bitsPerSample: 8 | 16;
     readonly channels: 1 | 2;
