@@ -53,16 +53,25 @@ static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 uint8_t checkValidI2C(uint32_t data, uint32_t clock, uint8_t *port)
 {
-	if ((data == 0 || data == 4 || data == 8 || data == 12 || data == 16 || data == 20 || data == 24 || data == 28) &&
-		 (clock == 1 || clock == 5 || clock == 9 || clock == 13 || clock == 17 || clock == 21 || clock == 25 || clock == 29)) {
+#if PICO_RP2350
+	if ((0 == (clock % 4)) && (data == clock + 1) && (clock <= 28)) {
 			*port = 0;
 			return 1;
 	}
-	if ((data == 2 || data == 6 || data == 10 || data == 14 || data == 18 || data == 22 || data == 26) &&
-		 (clock == 3 || clock == 7 || clock == 11 || clock == 15 || clock == 19 || clock == 23 || clock == 27)) {
+	if ((2 == (clock % 4)) && (data == clock + 1) && (clock <= 26)) {
 			*port = 1;
 			return 1;
 	}
+#else
+	if ((0 == (data % 4)) && (clock == data + 1) && (data <= 28)) {
+			*port = 0;
+			return 1;
+	}
+	if ((2 == (data % 4)) && (clock == data + 1) && (data <= 26)) {
+			*port = 1;
+			return 1;
+	}
+#endif
 	return 0;
 }
 

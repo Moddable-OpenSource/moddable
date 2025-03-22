@@ -66,39 +66,39 @@ input[type="file"] {
 }
 #simulator-device {
   	position: absolute;
-  	left: 60px;
+  	left: 140px;
   	top: 0px;
-	width: 480px;
-	height: 320px;
+	width: 320px;
+	height: 480px;
 }
 #simulator-screen {
   	position: absolute;
-  	left: 140px;
-  	top: 40px;
-	width: 320px;
-	height: 240px;
+  	left: 180px;
+  	top: 80px;
+	width: 240px;
+	height: 320px;
 }
 
 </style>
 	<body> 
 		<div id="header">
 			<div id="header-center">
-				<a href="https://www.moddable.com"/><img id="logo" src="https://www.moddable.com/images/white-moddable.svg" height="40"></img></a>
+				<a href="https://www.moddable.com"/><img id="logo" src="https://www.moddable.com/assets/images/white-moddable.svg" height="40"></img></a>
 				<canvas id="button" width="40" height="40" onclick="gxView.rotate()"></canvas>
 			</div>
 		</div>
 		<div id="simulator">
 			<div id="simulator-info">Loading...</div>
 			<div id="simulator-body">
-				<canvas id="simulator-device" width="480" height="320"></canvas>
-				<canvas id="simulator-screen" width="320" height="240"></canvas>
+				<canvas id="simulator-device" width="320" height="480"></canvas>
+				<canvas id="simulator-screen" width="240" height="320"></canvas>
 			</div>
 		</div>
 		<script>
 		
 	class View {
 		constructor() {
-			this.orientation = 0;
+			this.orientation = 90;
 			this.image = null;
 			this.interval = 0;
 			this.tracking = 0;

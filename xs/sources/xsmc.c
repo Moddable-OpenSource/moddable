@@ -335,6 +335,6 @@ txInteger _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *
 	}
 
 bail:
-	mxTypeError("this is no buffer");
+	mxTypeError("invalid buffer");
 	return xsBufferNonrelocatable;
 }

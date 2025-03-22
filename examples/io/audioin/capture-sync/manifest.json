@@ -1,0 +1,29 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io/audioin/manifest.json",
+		"$(MODDABLE)/modules/io/audioout/manifest.json"
+	],
+	"config": {
+		"led": {
+			"rainbow": false
+		},
+		"startupSound": false
+	},
+	"defines": {
+		"audioIn": {
+			"sampleRate": 22050,
+			"numChannels": 1,
+			"bitsPerSample": 16
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 22050
+		}
+	},
+	"modules": {
+		"*": "./main"
+	}
+}

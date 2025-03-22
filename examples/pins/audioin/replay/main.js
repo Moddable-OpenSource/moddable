@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023  Moddable Tech, Inc.
+ * Copyright (c) 2020-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,8 +19,8 @@ import Timer from "timer"
 const samples = [];
 
 const input = new AudioIn;
-const sampleRate = input.sampleRate;
-if (16 !== input.bitsPerSample)
+const {numChannels, sampleRate, bitsPerSample} = input;
+if (16 !== bitsPerSample)
 	throw new Error("expects 16 bit samples");
 
 trace("start recording\n");
@@ -28,7 +28,7 @@ trace("start recording\n");
 try {
 	while (true) {
 		const s = new SharedArrayBuffer(4096);
-		input.read(s.byteLength >> 1, s, 0);
+		input.read((s.byteLength >> 1) / numChannels, s, 0);
 		samples.push(s);
 		if (samples.length > 40)
 			break;
@@ -41,15 +41,18 @@ input.close();
 
 let speaker = new AudioOut({
 	streams: 1,
-	sampleRate
+	sampleRate,
+	numChannels
 });
 
 const playing = [];
 function enqueue() {
-	speaker.enqueue(0, AudioOut.RawSamples, samples[0], 1, 0, samples[0].byteLength >> 1);
+	speaker.enqueue(0, AudioOut.RawSamples, samples[0]);
 	speaker.enqueue(0, AudioOut.Callback, 0);
 	playing.push(samples.shift());
 }
+enqueue();
+enqueue();
 enqueue();
 enqueue();
 speaker.callback = function() {

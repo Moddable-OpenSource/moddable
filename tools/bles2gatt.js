@@ -1760,6 +1760,8 @@ function typedValueToBuffer(type, value) {
 	switch(type) {
 		case "Array":
 		case "Uint8Array":
+			if (!Array.isArray(value))
+				throw new Error(`value of "${type}" must be Array (not "${value})"`);
 			buffer = new Uint8Array(value).buffer;
 			break;
 		case "String":

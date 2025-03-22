@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"config": {
+		"led": {
+			"rainbow": false
+		}
+	},
+	"resources":{
+		"*": [
+			"./assets/color"
+		],
+		"*-alpha": [
+			"./assets/brightness"
+		]
+	}
+}

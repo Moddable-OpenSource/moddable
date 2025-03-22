@@ -46,6 +46,10 @@
 #include "xsHost.h"
 #include "pico/sem.h"
 
+#if SFE_ALLOC
+	#include "sparkfun_pico/sfe_pico_alloc.h"
+#endif
+
 #ifdef mxDebug
 	#include "modPreference.h"
 #endif
@@ -72,6 +76,14 @@ static int gDebugMutexInited = 0;
 #define mxDebugMutexTake()	sem_acquire_blocking(&gDebugMutex)
 #define mxDebugMutexGive()	sem_release(&gDebugMutex)
 #define mxDebugMutexAllocated() (gDebugMutexInited)
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
+int modMessageService(xsMachine *the, int maxDelayMS);
+void modMachineTaskInit(xsMachine *the);
+void modMachineTaskUninit(xsMachine *the);
+void modMachineTaskWait(xsMachine *the);
+void modMachineTaskWake(xsMachine *the);
 
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -754,7 +766,13 @@ uint8_t fxInNetworkDebugLoop(txMachine *the)
 }
 
 uint32_t pico_memory_remaining() {
+#if SFE_ALLOC
+	uint32_t max = sfe_mem_size();
+	uint32_t cur = sfe_mem_used();
+	return (max - cur);
+#else
 	return (1024);
+#endif
 }
 
 

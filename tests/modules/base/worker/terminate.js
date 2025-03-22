@@ -4,22 +4,7 @@ flags: [module]
 ---*/
 
 import Worker from "worker";
-
-const minimumOptions = {
-	static: 8192,
-	heap: {
-		initial: 64,
-		incremental: 64
-	},
-	chunk: {
-		initial: 1024,
-		incremental: 512
-	},
-	stack: 64,
-	keys: {
-		initial: 1
-	}
-};
+import minimumOptions from "./minimumOptions_FIXTURE.js"
 
 let worker = new Worker("testworker", minimumOptions);
 

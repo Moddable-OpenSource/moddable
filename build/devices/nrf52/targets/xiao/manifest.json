@@ -14,9 +14,9 @@
 		"setup/target"
 	],
 	"config": {
-		"led1_pin": 11,
-		"led2_pin": 12,
-		"led3_pin": 13
+		"led1_pin": 26,
+		"led2_pin": 30,
+		"led3_pin": 6
 	},
 	"defines": {
 		"xdebugger": {

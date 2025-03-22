@@ -163,9 +163,9 @@ txSlot* fxCheckProxyFunction(txMachine* the, txSlot* proxy, txID index)
 	txSlot* function;
 	mxCheckCStack();
 	if (!proxy->value.proxy.handler)
-		mxTypeError("(proxy).%s: handler is no object", fxName(the, mxID(index)));
+		mxTypeError("(proxy).%s: no handler", fxName(the, mxID(index)));
 	if (!proxy->value.proxy.target)
-		mxTypeError("(proxy).%s: target is no object", fxName(the, mxID(index)));
+		mxTypeError("(proxy).%s: no target", fxName(the, mxID(index)));
 	mxPushReference(proxy->value.proxy.target);
 	mxPushReference(proxy->value.proxy.handler);
 	mxDub();
@@ -174,7 +174,7 @@ txSlot* fxCheckProxyFunction(txMachine* the, txSlot* proxy, txID index)
 	if (mxIsUndefined(function) || (mxIsNull(function)))
 		function = C_NULL;
 	else if (!fxIsCallable(the, function))
-		mxTypeError("(proxy).%s: no function", fxName(the, mxID(index)));
+		mxTypeError("(proxy).%s: not a function", fxName(the, mxID(index)));
 	return function;
 }
 
@@ -249,7 +249,7 @@ void fxProxyConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlo
 		mxRunCount(3);
 		mxPullSlot(mxResult);
 		if (!mxIsReference(mxResult))
-			mxTypeError("(proxy).construct: no object");
+			mxTypeError("(proxy).construct: not an object");
 	}
 	else 
 		mxBehaviorConstruct(the, target->value.reference, arguments, newTarget);
@@ -777,18 +777,18 @@ void fx_Proxy(txMachine* the)
 	mxPullSlot(mxResult);
 	proxy = instance->next;
 	if (!proxy || (proxy->kind != XS_PROXY_KIND))
-		mxTypeError("this is no proxy");
-#ifdef mxHostFunctionPrimitive
+		mxTypeError("this: not a Proxy instance");
+#if mxHostFunctionPrimitive
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(0));
 	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(1));
 #endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	target = mxArgv(0)->value.reference;
 	if ((mxArgc < 2) || (mxArgv(1)->kind != XS_REFERENCE_KIND))
-		mxTypeError("handler is no object");
+		mxTypeError("handler: not an object");
 	handler = mxArgv(1)->value.reference;
 	instance->flag |= target->flag & (XS_CAN_CALL_FLAG | XS_CAN_CONSTRUCT_FLAG);
 	proxy->value.proxy.target = target;
@@ -803,17 +803,17 @@ void fx_Proxy_revocable(txMachine* the)
 	txSlot* instance;
 	txSlot* slot;
 	
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(0));
 	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(1));
 #endif
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	target = mxArgv(0)->value.reference;
 	if ((mxArgc < 2) || (mxArgv(1)->kind != XS_REFERENCE_KIND))
-		mxTypeError("handler is no object");
+		mxTypeError("handler: not an object");
 	handler = mxArgv(1)->value.reference;
 		
 	mxPush(mxObjectPrototype);
@@ -842,9 +842,9 @@ void fx_Proxy_revoke(txMachine* the)
 		txSlot* instance = property->value.reference;
 		txSlot* proxy = instance->next;
 		if (!proxy || (proxy->kind != XS_PROXY_KIND))
-			mxTypeError("no proxy");
+			mxTypeError("(proxy).revoke: not a Proxy instance");
 		if (proxy->flag & XS_MARK_FLAG)
-			mxTypeError("Proxy instance is read-only");
+			mxTypeError("(proxy).revoke: read-only Proxy instance");
 		proxy->value.proxy.target = C_NULL;
 		proxy->value.proxy.handler = C_NULL;
 		property->kind = XS_NULL_KIND;
@@ -854,9 +854,9 @@ void fx_Proxy_revoke(txMachine* the)
 void fx_Reflect_apply(txMachine* the)
 {
 	if ((mxArgc < 1) || !(fxIsCallable(the, mxArgv(0))))
-		mxTypeError("target is no function");
+		mxTypeError("target: not a function");
 	if ((mxArgc < 3) || (mxArgv(2)->kind != XS_REFERENCE_KIND))
-		mxTypeError("argumentsList is no object");
+		mxTypeError("argumentsList: not an object");
 	mxBehaviorCall(the, fxToInstance(the, mxArgv(0)), mxArgv(1), mxArgv(2));
 }
 
@@ -864,13 +864,13 @@ void fx_Reflect_construct(txMachine* the)
 {
     txSlot* target;
 	if ((mxArgc < 1) || !mxIsReference(mxArgv(0)) || !mxIsConstructor(mxArgv(0)->value.reference))
-		mxTypeError("target is no constructor");
+		mxTypeError("target: not a constructor");
 	if ((mxArgc < 2) || (mxArgv(1)->kind != XS_REFERENCE_KIND))
-		mxTypeError("argumentsList is no object");
+		mxTypeError("argumentsList: not an object");
 	if (mxArgc < 3)
 		target = mxArgv(0);
 	else if (!mxIsReference(mxArgv(2)) || !mxIsConstructor(mxArgv(2)->value.reference))
-		mxTypeError("newTarget is no constructor");
+		mxTypeError("newTarget: not a constructor");
 	else
 		target = mxArgv(2);
 	mxBehaviorConstruct(the, fxToInstance(the, mxArgv(0)), mxArgv(1), target);
@@ -881,7 +881,7 @@ void fx_Reflect_defineProperty(txMachine* the)
 	txSlot* at;
 	txFlag mask;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -896,7 +896,7 @@ void fx_Reflect_deleteProperty(txMachine* the)
 {
 	txSlot* at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -908,7 +908,7 @@ void fx_Reflect_get(txMachine* the)
 {
 	txSlot* at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -919,7 +919,7 @@ void fx_Reflect_getOwnPropertyDescriptor(txMachine* the)
 {
 	txSlot* at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -934,7 +934,7 @@ void fx_Reflect_getOwnPropertyDescriptor(txMachine* the)
 void fx_Reflect_getPrototypeOf(txMachine* the)
 {
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	mxBehaviorGetPrototype(the, mxArgv(0)->value.reference, mxResult);
 }
 
@@ -942,7 +942,7 @@ void fx_Reflect_has(txMachine* the)
 {
 	txSlot* at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -953,7 +953,7 @@ void fx_Reflect_has(txMachine* the)
 void fx_Reflect_isExtensible(txMachine* the)
 {
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	mxResult->value.boolean = mxBehaviorIsExtensible(the, mxArgv(0)->value.reference);
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
@@ -964,7 +964,7 @@ void fx_Reflect_ownKeys(txMachine* the)
 	txSlot* array;
 	txSlot* item;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	mxPush(mxArrayPrototype);
 	result = fxNewArrayInstance(the);
 	mxPullSlot(mxResult);
@@ -981,7 +981,7 @@ void fx_Reflect_ownKeys(txMachine* the)
 void fx_Reflect_preventExtensions(txMachine* the)
 {
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	mxResult->value.boolean = mxBehaviorPreventExtensions(the, mxArgv(0)->value.reference);
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
@@ -990,7 +990,7 @@ void fx_Reflect_set(txMachine* the)
 {
 	txSlot* at;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc < 2)
 		mxTypeError("no key");
 	at = fxAt(the, mxArgv(1));
@@ -1006,7 +1006,7 @@ void fx_Reflect_set(txMachine* the)
 void fx_Reflect_setPrototypeOf(txMachine* the)
 {
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if ((mxArgc < 2) || ((mxArgv(1)->kind != XS_NULL_KIND) && (mxArgv(1)->kind != XS_REFERENCE_KIND)))
 		mxTypeError("invalid prototype");
 	mxResult->value.boolean = mxBehaviorSetPrototype(the, mxArgv(0)->value.reference, mxArgv(1));

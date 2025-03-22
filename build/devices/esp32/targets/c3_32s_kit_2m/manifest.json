@@ -3,7 +3,7 @@
 		"ESP32_SUBCLASS": "esp32c3",
 		"UPLOAD_SPEED": "460800",
 		"SDKCONFIGPATH": "./sdkconfig",
-		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",

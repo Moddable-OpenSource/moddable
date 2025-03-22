@@ -1,0 +1,35 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"./data"
+		]
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000,
+			"queueLength": 24
+		}
+	},
+	"config": {
+		"led": {
+			"rainbow": false
+		},
+		"startupSound": false
+	},
+    "data": {
+    	"*": "./data/*"
+    },
+    "preload": [
+    	"data"
+    ]
+}

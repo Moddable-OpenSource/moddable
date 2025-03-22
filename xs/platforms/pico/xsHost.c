@@ -46,7 +46,10 @@
 #include <stdio.h>
 
 #include "hardware/sync.h"
+
+#if CYW43_LWIP
 #include "pico/cyw43_arch.h"
+#endif
 
 #ifdef mxInstrument
 	#include "modTimer.h"

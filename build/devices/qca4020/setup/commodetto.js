@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,7 +21,7 @@
 import config from "mc/config";
 
 export default function (done) {
-	if (!global.screen)
+	if (!global.screen && config.Screen)
 		global.screen = new config.Screen({});
 	done();
 }

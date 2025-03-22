@@ -1,7 +1,7 @@
 {
 	"build": {
 		"SDKCONFIGPATH": "./sdkconfig",
-		"PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
 		"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue"
 	},
 	"include": [

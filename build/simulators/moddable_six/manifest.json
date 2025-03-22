@@ -1,0 +1,25 @@
+{
+	"modules": {
+		"*": [
+			"../modules/control",
+			"../modules/button",
+			"./backlight",
+			"./led",
+			"./host"
+		],
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"control",
+		"backlight",
+		"button",
+		"led",
+		"host",
+		"setup/target"
+	],
+	"config": {
+		"led": {
+			"rainbow": true
+		}
+	}
+}

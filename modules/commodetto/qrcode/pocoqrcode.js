@@ -20,5 +20,5 @@
 
 import Poco from "commodetto/PocoCore";
 
-Poco.prototype.drawQRCode = function (bits, x, y, scale, fore, back) @ "xs_poco_drawQRCode";
+Poco.prototype.drawQRCode = function (bits, x, y, scale, fore) @ "xs_poco_drawQRCode";
 

@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import files from "./files-fixture.js";
-import {deleteTree} from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
+import {deleteTree} from "./files_FIXTURE.js";
 
 const paths = [
 	"test",
@@ -15,7 +15,7 @@ const paths = [
 ];
 
 deleteTree(files, paths[0]);
-paths.forEach(path => files.create(path));
+paths.forEach(path => files.createDirectory(path));
 paths.reverse();
 paths.forEach(path => assert(files.delete(path)));
 paths.forEach(path => assert.throws(Error, () => files.status(path)));

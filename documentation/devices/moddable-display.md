@@ -1,6 +1,6 @@
 # Moddable Display Developer Guide
 Copyright 2024 Moddable Tech, Inc.<BR>
-Revised: January 9, 2024
+Revised: July 19, 2024
 
 This document provides information about the Moddable Display family of products.
 
@@ -11,6 +11,7 @@ This document provides information about the Moddable Display family of products
 - [Moddable Display 2](#display-2)
 - [Moddable Display 3](#display-3)
 - [Moddable Display 4](#display-4)
+- [Moddable Display 6](#display-6)
 
 <a id="about-moddable-display"></a>
 ## About Moddable Display
@@ -19,7 +20,7 @@ This document provides information about the Moddable Display family of products
 
 Moddable Display is the beautiful way to bring your latest project from the workbench to the real world. Each Moddable Display wraps an elegant stand around one of our powerful development boards. The sleek design fits right into your home or office. The intriguing, maker-friendly open back makes it easy to incorporate any additional hardware components your project requires.
 
-There are four different Moddable Displays, one for each Moddable development board. Moddable Display 1 is built on the Moddable One development board, for example.
+There are five different Moddable Displays, one for each Moddable development board. Moddable Display 6 is built on the Moddable Six development board, for example.
 
 <a id="display-1"></a>
 ## Moddable Display 1
@@ -172,3 +173,30 @@ screen.rotation = 0;
 ```
 
 Changing the rotation from JavaScript does not immediately update the screen; your project must redraw the screen.
+
+
+<a id="display-6"></a>
+## Moddable Display 6
+
+Moddable Display 6 is built around the Moddable Six development board. See the [Moddable Six Developer Guide](./moddable-six.md) for more information about developing with Moddable Display 6.
+
+### Building
+
+To build for Moddable Display 6, use the `esp32/moddable_display_6` build target. For example:
+
+```
+mcconfig -d -m -p esp32/moddable_display_6
+```
+
+### Display Rotation
+
+Moddable Display 6 contains a Moddable Six development board that is unrotated (0 degrees) when in portrait orientation. To run in landscape orientation, set the rotation to either 90 or 270. To run in touch orientation, set the rotation to 180. 
+
+Rotation may be set on the command line:
+
+```
+mcconfig -d -m -p esp32/moddable_display_6 -r 270
+```
+
+**Note**: The touch input on Moddable Display 6 is automatically rotated when using the Piu user interface framework. When using Commodetto, the project code must apply display rotation.
+

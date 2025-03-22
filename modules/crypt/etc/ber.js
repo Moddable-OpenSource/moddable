@@ -45,7 +45,10 @@ export default class BER {
 		else if (buffer instanceof Uint8Array)
 			this.#a = buffer;
 		else
-			this.#a = new Uint8Array(new ArrayBuffer(0, {maxByteLength: 0x10000000}));
+			this.#a = new Uint8Array(new ArrayBuffer(0, {maxByteLength: 16896}));
+	}
+	get readable() {
+		return this.#a.byteLength - this.#i;
 	}
 	getTag() {
 		return this.#a[this.#i++];
@@ -73,7 +76,7 @@ export default class BER {
 	}
 	next() {
 		const i = this.#i;
-		this.getTag();
+		this.skip(1);
 		this.skip(this.getLength());
 		return this.#a.subarray(i, this.#i)
 	}
@@ -432,8 +435,8 @@ export default class BER {
 		case 0x16:	// IA5 string
 			res = String.fromArrayBuffer(b.getChunk(len).slice().buffer);
 			break;
-		case 0x17:	// ITC time
 /*
+		case 0x17:	// ITC time
 		case 0x18: {// generalized time
 			let s = String.fromArrayBuffer(b.getChunk(len));
 			let prefix = ""

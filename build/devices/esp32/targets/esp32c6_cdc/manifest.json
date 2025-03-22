@@ -5,7 +5,9 @@
 	],
 	"build":{
 		"ESP32_SUBCLASS": "esp32c6",
-		"USE_USB": "2"
+		"USE_USB": "2",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RST button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
 	},
 	"modules": {
 		"setup/target": "./setup-target"

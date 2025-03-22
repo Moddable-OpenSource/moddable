@@ -49,6 +49,28 @@ void fxSetHostFunctionProperty(txMachine* the, txSlot* property, txCallback call
 	mxPop();
 }
 
+static void fx_lockdown_aux(txMachine* the, txInteger length, txSlot* prototype, txSlot* slot)
+{
+	if (slot) {
+		txSlot* constructor;
+		txSlot* instance;
+		txSlot* property;
+		fxDuplicateInstance(the, mxThrowTypeErrorFunction.value.reference);
+		constructor = the->stack;
+		instance = constructor->value.reference;
+		instance->flag |= XS_CAN_CONSTRUCT_FLAG;
+		mxFunctionInstanceCode(instance)->ID = XS_NO_ID; 
+		mxFunctionInstanceHome(instance)->value.home.object = NULL;
+		property = mxBehaviorGetProperty(the, instance, mxID(_length), 0, XS_OWN);
+		property->value.integer = length;
+		property = fxLastProperty(the, instance);
+		fxNextSlotProperty(the, property, prototype, mxID(_prototype), XS_GET_ONLY);
+		slot->kind = constructor->kind;
+		slot->value = constructor->value;
+		mxPop();
+	}
+}
+
 void fx_lockdown(txMachine* the)
 {
 #define mxHardenBuiltInCall \
@@ -59,7 +81,6 @@ void fx_lockdown(txMachine* the)
 	mxRunCount(1); \
 	mxPop()
 
-	txSlot* constructor;
 	txSlot* instance;
 	txSlot* property;
 	txSlot* item;
@@ -69,38 +90,17 @@ void fx_lockdown(txMachine* the)
 	if (mxProgram.value.reference->flag & XS_DONT_MARSHALL_FLAG)
 		mxTypeError("lockdown already called");
 	mxProgram.value.reference->flag |= XS_DONT_MARSHALL_FLAG;
-
-	fxDuplicateInstance(the, mxThrowTypeErrorFunction.value.reference);
-	constructor = the->stack;
-	constructor->value.reference->flag |= XS_CAN_CONSTRUCT_FLAG;
-	mxFunctionInstanceCode(constructor->value.reference)->ID = XS_NO_ID; 
-	mxFunctionInstanceHome(constructor->value.reference)->value.home.object = NULL;
 	
 	property = mxBehaviorSetProperty(the, mxAsyncFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 1, &mxAsyncFunctionPrototype, property);
 	property = mxBehaviorSetProperty(the, mxAsyncGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 1, &mxAsyncGeneratorFunctionPrototype, property);
 	property = mxBehaviorSetProperty(the, mxFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 1, &mxFunctionPrototype, property);
 	property = mxBehaviorSetProperty(the, mxGeneratorFunctionPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 1, &mxGeneratorFunctionPrototype, property);
 	property = mxBehaviorSetProperty(the, mxCompartmentPrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 1, &mxCompartmentPrototype, property);
 
 	instance = fxNewArray(the, _Compartment);
 	property = the->stackIntrinsics - 1;
@@ -124,10 +124,7 @@ void fx_lockdown(txMachine* the)
 	property = mxBehaviorSetProperty(the, the->stack->value.reference, mxID(_now), 0, XS_OWN);
 	fxSetHostFunctionProperty(the, property, mxCallback(fx_Date_now_secure), 0, mxID(_now));
 	property = mxBehaviorSetProperty(the, mxDatePrototype.value.reference, mxID(_constructor), 0, XS_OWN);
-	if (property) {
-		property->kind = constructor->kind;
-		property->value = constructor->value;
-	}
+	fx_lockdown_aux(the, 7, &mxDatePrototype, property);
 	mxPull(instance->next->value.array.address[_Date]);
 	
 	fxDuplicateInstance(the, mxMathObject.value.reference);
@@ -199,10 +196,12 @@ void fx_lockdown(txMachine* the)
 	
 	mxHardenBuiltInCall; mxPush(mxCompartmentGlobal); mxHardenBuiltInRun;
 	
+	mxHardenBuiltInCall; mxPushSlot(harden); mxHardenBuiltInRun;
+	mxHardenBuiltInCall; mxPushSlot(mxFunction); mxHardenBuiltInRun;
+	
 	mxFunctionInstanceCode(mxThrowTypeErrorFunction.value.reference)->ID = XS_NO_ID; 
 	mxFunctionInstanceHome(mxThrowTypeErrorFunction.value.reference)->value.home.object = NULL;
 
-	mxPop();
 	mxPop();
 }
 
@@ -952,10 +951,12 @@ void fx_unicodeCompare(txMachine* the)
 	{
 		txSize aLength = fxUnicodeLength(aString, C_NULL);
 		txSize bLength = fxUnicodeLength(bString, C_NULL);
-		if (aLength < bLength)
-			the->meterIndex += aLength;
-		else
-			the->meterIndex += bLength;
+		if (aLength < bLength) {
+			the->meterIndex += aLength * XS_STRING_METERING;
+		}
+		else {
+			the->meterIndex += bLength * XS_STRING_METERING;
+		}
 	}
 #endif	
 	mxResult->value.integer = mxStringUnicodeCompare(aString, bString);

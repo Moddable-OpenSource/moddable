@@ -127,6 +127,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->idSymbol = fxNewParserSymbol(parser, "id");
 	parser->includeSymbol = fxNewParserSymbol(parser, "include");
 	parser->InfinitySymbol = fxNewParserSymbol(parser, "Infinity");
+	parser->jsonSymbol = fxNewParserSymbol(parser, "json");
 	parser->lengthSymbol = fxNewParserSymbol(parser, "length");
 	parser->letSymbol = fxNewParserSymbol(parser, "let");
 	parser->metaSymbol = fxNewParserSymbol(parser, "meta");

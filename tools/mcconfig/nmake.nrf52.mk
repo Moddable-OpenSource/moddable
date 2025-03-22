@@ -548,7 +548,6 @@ C_DEFINES = \
 	$(NRF_C_DEFINES) \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1 \

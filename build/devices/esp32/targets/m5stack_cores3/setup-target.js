@@ -18,18 +18,12 @@
  *
  */
 
-import AXP2101 from "axp2101";
-import SMBus from "pins/smbus";
-import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import config from "mc/config";
 import Timer from "timer";
 
-const INTERNAL_I2C = Object.freeze({
-  sda: 12,
-  scl: 11,
-  hz: 400_000,
-});
+import AXP2101 from "embedded:peripheral/Power/axp2101";
+import AudioOut from "embedded:io/audio/out";
 
 const state = {
   handleRotation: nop,
@@ -71,22 +65,35 @@ export default function (done) {
   }
 
   // power
-  globalThis.power = new Power();
-  globalThis.amp = new AW88298();
+  globalThis.power = new Power({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
+  globalThis.amp = new AW88298({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
 
   // start-up sound
   if (config.startupSound) {
-    const speaker = new AudioOut({ streams: 1 });
-    speaker.callback = function () {
+	const buf = new Resource(config.startupSound);
+	let playing = new Uint8Array(buf, 0, buf.byteLength);
+	playing.position = 0;
+    const speaker = new AudioOut({
+		onWritable(size) {
+			do {
+				let use = playing.byteLength - playing.position;
+				if (use) {
+					if (use > size) use = size;
+					this.write(playing.subarray(playing.position, playing.position + use));
+					playing.position += use;
+				}
+				if (playing.position === playing.byteLength) {
       this.stop();
       this.close();
       Timer.set(this.done);
-    };
+					break;
+				}
+				size -= use;
+			} while (size);
+		}
+	});
     speaker.done = done;
     done = undefined;
-
-    speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound));
-    speaker.enqueue(0, AudioOut.Callback, 0);
     speaker.start();
   }
 
@@ -96,15 +103,22 @@ export default function (done) {
 /**
  * AW88298 amplifier IC
  */
-class AW88298 extends SMBus {
+class AW88298 {
+	#io;
   #rateTable;
   #sampleRate;
-  constructor() {
-    super({ address: 0x36, ...INTERNAL_I2C });
+
+  constructor(options) {
+	const io = this.#io = new options.sensor.io ({
+		hz: 400_000,
+		address: 0x36,
+		...options.sensor
+	});
+
     this.#rateTable = [4, 5, 6, 8, 10, 11, 15, 20, 22, 44];
-    this.writeWord(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
-    this.writeWord(0x61, 0x0673, true); // boost mode disabled
-    this.writeWord(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
+    io.writeUint16(0x05, 0x0008, true); // RMSE=0 HAGCE=0 HDCCE=0 HMUTE=0
+    io.writeUint16(0x61, 0x0673, true); // boost mode disabled
+    io.writeUint16(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
     this.volume = 250;
     this.sampleRate = 24000;
   }
@@ -125,12 +139,12 @@ class AW88298 extends SMBus {
       ++rateData < this.#rateTable.length
     );
     rateData |= 0x14c0; // I2SRXEN=1 CHSEL=01(left) I2SFS=11(32bits)
-    this.writeWord(0x06, rateData, true);
+    this.#io.writeUint16(0x06, rateData, true);
   }
 
   set volume(volume) {
     const vdata = Math.round(Math.min(256, Math.max(0, volume)));
-    this.writeWord(0x0c, ((256 - vdata) << 8) | 0x64, true);
+    this.#io.writeUint16(0x0c, ((256 - vdata) << 8) | 0x64, true);
   }
 
   get volume() {
@@ -139,19 +153,21 @@ class AW88298 extends SMBus {
   }
 }
 
-class Power extends AXP2101 {
-  constructor() {
-    super(INTERNAL_I2C);
-    this.writeByte(0x90, 0xbf);
-    this.writeByte(0x92, 13);
-    this.writeByte(0x93, 28);
-    this.writeByte(0x94, 28);
-    this.writeByte(0x95, 28);
-    this.writeByte(0x27, 0);
-    this.writeByte(0x69, 0x11);
-    this.writeByte(0x10, 0x30);
+class Power {	// extends AXP2101 {
+	#axp2101;
 
-    this.expander = new AW9523(INTERNAL_I2C);
+	constructor(options) {
+		const axp2101 = this.#axp2101 = new AXP2101({ address:0x34, ...options });
+		axp2101.writeByte(0x90, 0xbf);
+    	axp2101.writeByte(0x92, 13);
+		axp2101.writeByte(0x93, 28);
+		axp2101.writeByte(0x94, 28);
+		axp2101.writeByte(0x95, 28);
+		axp2101.writeByte(0x27, 0);
+		axp2101.writeByte(0x69, 0x11);
+		axp2101.writeByte(0x10, 0x30);
+
+    this.expander = new AW9523({ ...options });
     this.expander.writeByte(0x02, 0b00000111);
     this.expander.writeByte(0x03, 0b10000011);
     this.expander.writeByte(0x04, 0b00011000);
@@ -168,20 +184,30 @@ class Power extends AXP2101 {
     Timer.delay(20);
     this.expander.writeByteMask(0x03, 0b00100000, 0xff);
   }
+
 }
 
 /**
  * AW9523 Expander IC
  */
-class AW9523 extends SMBus {
-  constructor(it) {
-    super({ address: 0x58, ...it });
+class AW9523 {
+	#io;
+
+  constructor(options) {
+	this.#io = new options.sensor.io ({
+		hz: 400_000,
+		address: 0x58,
+		...options.sensor
+	});
   }
 
   writeByteMask(address, data, mask) {
-    const tmp = this.readByte(address);
+    const tmp = this.#io.readUint8(address);
     const newData = (tmp & mask) | data;
-    this.writeByte(address, newData);
+    this.#io.writeUint8(address, newData);
+  }
+	writeByte(address, data) {
+		this.#io.writeUint8(address, data);
   }
 }
 

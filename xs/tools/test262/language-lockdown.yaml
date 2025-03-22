@@ -1,0 +1,308 @@
+mode: lockdown
+skip:
+    - Array.fromAsync
+    - FinalizationRegistry.prototype.cleanupSome
+    - ShadowRealm
+    - Temporal
+    - arbitrary-module-namespace-names
+    - decorators
+    - import-assertions
+    - import-attributes
+    - iterator-helpers
+    - json-modules
+    - regexp-duplicate-named-groups
+    - set-methods
+fail:
+    - language:
+            - arguments-object:
+                    - 10.6-11-b-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - 10.6-7-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+            - comments:
+                    - hashbang:
+                            - function-constructor.js: "Test262Error:  Call argument Expected a SyntaxError but got a TypeError"
+            - eval-code:
+                    - indirect:
+                            - realm.js: "Test262Error: Expected SameValue(«number», «undefined») to be true"
+            - expressions:
+                    - addition:
+                            - S11.6.1_A2.2_T3.js: "TypeError: (anonymous-614): set valueOf: not writable"
+                    - array:
+                            - 11.1.4_4-5-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - 11.1.4_5-6-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - arrow-function:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                    - assignment:
+                            - 8.12.5-3-b_1.js: "TypeError: (anonymous-607): set reduce: not writable"
+                            - fn-name-lhs-cover.js: "Test262Error: descriptor value should be ; object value should be "
+                            - target-member-computed-reference-null.js: "Test262Error: Expected a DummyError but got a TypeError"
+                            - target-member-computed-reference-undefined.js: "Test262Error: Expected a DummyError but got a TypeError"
+                    - async-generator:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - named-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - named-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - named-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - named-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                            - named-yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-615): set then: not extensible"
+                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-615): set then: not extensible"
+                    - await:
+                            - await-monkey-patched-promise.js: "TypeError: (anonymous-617): set then: not writable"
+                    - class:
+                            - async-gen-method:
+                                    - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-616): set then: not extensible"
+                            - async-gen-method-static:
+                                    - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-616): set then: not extensible"
+                            - dstr:
+                                    - async-gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                            - elements:
+                                    - async-gen-private-method:
+                                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-618): set then: not extensible"
+                                    - async-gen-private-method-static:
+                                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-618): set then: not extensible"
+                            - poisoned-underscore-proto.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - delete:
+                            - 11.4.1-4.a-10.js: "TypeError: (anonymous-606): delete stringify: no permission (strict mode)"
+                            - 11.4.1-5-a-28-s.js: "TypeError: (anonymous-606): delete length: no permission (strict mode)"
+                    - dynamic-import:
+                            - assignment-expression:
+                                    - array-literal.js: "TypeError: fn: set toString: not writable"
+                                    - arrow-function.js: "TypeError: (anonymous-617): set toString: not writable"
+                                    - new-target.js: "TypeError: (anonymous-617): set toString: not writable"
+                                    - object-literal.js: "TypeError: fn: set toString: not writable"
+                    - function:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                    - generators:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                    - import.meta:
+                            - syntax:
+                                    - goal-async-function-params-or-body.js: "Test262Error: import.meta in AsyncFunctionBody Expected a SyntaxError but got a TypeError"
+                                    - goal-async-generator-params-or-body.js: "Test262Error: import.meta in AsyncGeneratorBody Expected a SyntaxError but got a TypeError"
+                                    - goal-generator-params-or-body.js: "Test262Error: import.meta in GeneratorBody Expected a SyntaxError but got a TypeError"
+                    - instanceof:
+                            - S11.8.6_A7_T3.js: "Test262Error: #2: If instanceof returns true then GetValue(RelationalExpression) was constructed with ShiftExpression"
+                            - primitive-prototype-with-object.js: "TypeError: (anonymous-607): set prototype: not extensible"
+                            - primitive-prototype-with-primitive.js: "TypeError: (anonymous-606): set prototype: not extensible"
+                            - prototype-getter-with-object-throws.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - prototype-getter-with-object.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - prototype-getter-with-primitive.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - object:
+                            - 11.1.5_3-3-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - 11.1.5_4-5-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - __proto__-poisoned-object-prototype.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - dstr:
+                                    - async-gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                            - literal-property-name-bigint.js: "SyntaxError: missing identifier"
+                            - method-definition:
+                                    - async-gen-yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-615): set then: not extensible"
+                                    - generator-super-prop-body.js: "TypeError: (anonymous-607): set toString: not writable"
+                                    - generator-super-prop-param.js: "TypeError: (anonymous-607): set toString: not writable"
+                                    - name-super-prop-body.js: "TypeError: (anonymous-607): set toString: not writable"
+                                    - name-super-prop-param.js: "TypeError: (anonymous-607): set toString: not writable"
+                    - optional-chaining:
+                            - member-expression-async-identifier.js: "TypeError: checkAssertions: set x: not extensible"
+                    - super:
+                            - call-poisoned-underscore-proto.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - call-proto-not-ctor.js: "Test262Error: performs ArgumentsListEvaluation"
+                            - prop-poisoned-underscore-proto.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - yield:
+                            - star-in-rltn-expr.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not extensible"
+            - function-code:
+                    - 10.4.3-1-103.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - 10.4.3-1-104.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - 10.4.3-1-106.js: "TypeError: Object.defineProperty: invalid descriptor"
+            - identifier-resolution:
+                    - assign-to-global-undefined.js: "Expected a ReferenceError but got no errors"
+            - statements:
+                    - async-generator:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-610): set [Symbol.iterator]: not writable"
+                            - yield-star-async-from-sync-iterator-inaccessible.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-615): set then: not extensible"
+                    - class:
+                            - async-gen-method:
+                                    - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-616): set then: not extensible"
+                            - async-gen-method-static:
+                                    - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-616): set then: not extensible"
+                            - dstr:
+                                    - async-gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-gen-meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - async-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - async-private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-613): set [Symbol.iterator]: not writable"
+                                    - gen-meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - gen-meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-static-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - meth-static-dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-609): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-gen-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-static-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                                    - private-meth-static-dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-611): set [Symbol.iterator]: not writable"
+                            - elements:
+                                    - async-gen-private-method:
+                                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-618): set then: not extensible"
+                                    - async-gen-private-method-static:
+                                            - yield-star-next-non-object-ignores-then.js: "TypeError: (anonymous-618): set then: not extensible"
+                            - poisoned-underscore-proto.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - subclass:
+                                    - builtin-objects:
+                                            - Error:
+                                                    - message-property-assignment.js: "TypeError: (anonymous-620): set message: not writable"
+                                            - GeneratorFunction:
+                                                    - instance-length.js: "TypeError: @fxThrowTypeError: secure mode"
+                                                    - instance-name.js: "TypeError: @fxThrowTypeError: secure mode"
+                                                    - instance-prototype.js: "TypeError: @fxThrowTypeError: secure mode"
+                                                    - regular-subclassing.js: "TypeError: @fxThrowTypeError: secure mode"
+                                                    - super-must-be-called.js: "TypeError: @fxThrowTypeError: secure mode"
+                                            - NativeError:
+                                                    - EvalError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                                    - RangeError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                                    - ReferenceError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                                    - SyntaxError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                                    - TypeError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                                    - URIError-message.js: "TypeError: (anonymous-620): set message: not writable"
+                                    - default-constructor-spread-override.js: "TypeError: (anonymous-609): set [Symbol.iterator]: not writable"
+                    - const:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                    - for:
+                            - dstr:
+                                    - const-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - const-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                                    - let-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - let-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                                    - var-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - var-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                    - for-await-of:
+                            - head-lhs-async.js: "SyntaxError: invalid for await"
+                            - ticks-with-async-iter-resolved-promise-and-constructor-lookup-two.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - ticks-with-async-iter-resolved-promise-and-constructor-lookup.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - ticks-with-sync-iter-resolved-promise-and-constructor-lookup.js: "TypeError: Object.defineProperty: invalid descriptor"
+                    - for-of:
+                            - dstr:
+                                    - const-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - const-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                                    - let-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - let-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                                    - var-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - var-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                    - function:
+                            - 13.2-17-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - 13.2-18-1.js: "TypeError: Object.defineProperty: invalid descriptor"
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                    - generators:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                                    - dflt-ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-608): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - dflt-ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-608): set [Symbol.iterator]: not writable"
+                    - let:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                    - try:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+                            - tco-catch.js: "stack overflow"
+                    - variable:
+                            - dstr:
+                                    - ary-init-iter-get-err-array-prototype.js: "TypeError: (anonymous-607): delete [Symbol.iterator]: no permission (strict mode)"
+                                    - ary-ptrn-elem-id-iter-val-array-prototype.js: "TypeError: (anonymous-607): set [Symbol.iterator]: not writable"
+            - types:
+                    - reference:
+                            - get-value-prop-base-primitive-realm.js: "TypeError: (anonymous-606): set test262: not extensible"
+                            - get-value-prop-base-primitive.js: "TypeError: (anonymous-606): set test262: not extensible"
+                            - put-value-prop-base-primitive-realm.js: "TypeError: Object.setPrototypeOf: invalid prototype"
+                            - put-value-prop-base-primitive.js: "TypeError: Object.setPrototypeOf: invalid prototype"

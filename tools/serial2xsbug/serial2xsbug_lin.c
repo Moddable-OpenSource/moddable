@@ -173,9 +173,8 @@ void fxOpenSerial(txSerialTool self)
 	usleep(5000);
 
 	if (self->programming) {
-#if mxTraceCommands
-		fprintf(stderr, "### programming mode\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### programming mode\n");
 		fxProgrammingModeSerial(self);
 		exit(0);
 	}
@@ -253,9 +252,9 @@ void fxWriteNetwork(txSerialMachine machine, char* buffer, int size)
 
 void fxWriteSerial(txSerialTool self, char* buffer, int size)
 {
-#if mxTrace
-	fprintf(stderr, "%.*s", size, buffer);
-#endif
+	if (self->trace)
+		fprintf(stderr, "%.*s", size, buffer);
+
 	int count;
 	while (size) {
     	count = write(self->serialConnection, buffer, size);

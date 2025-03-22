@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Moddable Tech, Inc.
+ * Copyright (c) 2019-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,6 +22,8 @@
 #define __BUILTINCOMMON_H__
 
 #if ESP32
+	#include "freertos/FreeRTOS.h"
+
 	#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
 		#define kPinBanks (1)
 	#else
@@ -31,6 +33,14 @@
 	extern portMUX_TYPE gCommonCriticalMux;
 	#define builtinCriticalSectionBegin() portENTER_CRITICAL(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd() portEXIT_CRITICAL(&gCommonCriticalMux)
+
+	#if ESP32 && (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 1)
+		// IDF invokes abort() when creating socket if no network configured
+		#define CHECK_NETWORK_SAFE() \
+			if (!esp_netif_get_default_netif()) { \
+				xsUnknownError("no network"); \
+			}
+	#endif
 #elif defined(__ets__)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
@@ -56,13 +66,31 @@
 enum {
 	kIOFormatNumber = 1,
 	kIOFormatBuffer = 2,
-	kIOFormatStringASCII = 3,
-	kIOFormatStringUTF8 = 4,
-	kIOFormatSocketTCP = 5,
+	kIOFormatString = 3,
+	kIOFormatSocketTCP = 4,
 
-	kIOFormatNext,
+	kIOFormatUint8 = 5,
+	kIOFormatInt8 = 6,
+	kIOFormatUint16 = 7,
+	kIOFormatInt16 = 8,
+	kIOFormatUint32 = 9,
+	kIOFormatInt32 = 10,
+	kIOFormatUint64 = 11,
+	kIOFormatInt64 = 12,
+
+	kIOFormatBufferDisposable = 13,
+
 	kIOFormatInvalid = 0xFF,
 };
+
+
+#ifndef CHECK_NETWORK_SAFE
+	#define CHECK_NETWORK_SAFE()
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void builtinGetFormat(xsMachine *the, uint8_t format);
 uint8_t builtinSetFormat(xsMachine *the);
@@ -74,6 +102,10 @@ int32_t builtinGetSignedInteger(xsMachine *the, xsSlot *slot);
 uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot);
 
 xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #if kPinBanks
 	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))

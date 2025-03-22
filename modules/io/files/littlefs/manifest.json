@@ -2,20 +2,22 @@
 	"platforms": {
 		"mac": {
 			"modules": {
-				"embedded:x-files": "./files-littlefs",
+				"embedded:x-files-implementation": "./files-littlefs",
 				"*": [
 					"./lfs_util",
 					"./lfs"
-				]
+				],
+				"embedded:storage/files": "./files"
 			}
 		},
 		"esp32": {
 			"modules": {
-				"embedded:x-files": "./files-littlefs",
+				"embedded:x-files-implementation": "./files-littlefs",
 				"*": [
 					"./lfs_util",
 					"./lfs"
-				]
+				],
+				"embedded:storage/files": "./files"
 			},
 			"defines": {
 				"file": {
@@ -25,7 +27,7 @@
 		}
 	},
 	"preload": [
-		"embedded:x-files"
+		"embedded:x-files-implementation"
 	],
 	"defines": {
 		"file": {

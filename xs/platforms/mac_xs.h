@@ -55,6 +55,7 @@
 #include <pthread.h>
 #include <CoreServices/CoreServices.h>
 
+#define mxUseFloat16 1
 #define mxUseGCCAtomics 1
 #define mxUsePOSIXThreads 1
 

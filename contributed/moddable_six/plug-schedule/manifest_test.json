@@ -1,0 +1,105 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
+		"$(MODULES)/files/preference/manifest.json",
+		"$(MODULES)/input/expanding-keyboard/vertical/manifest.json",
+		"$(MODULES)/network/wifi/manifest.json"
+	],
+	"creation": {
+		"stack": 512
+	},
+	"defines": {
+		"cfe": { "kern": true }
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/data/binaryMessage/*",
+			"./Controller",
+			"./ScrollerBehaviors",
+			"./Retention",
+			"./ToggleBehavior",
+			"./Transition",
+			"./View",
+			"./assets",
+			"./main",
+			"./model",
+			"./views/Common",
+			"./views/GetTime",
+			"./views/Networks",
+			"./views/Password",
+			"./views/Settings"
+		]
+	},
+	"preload": [
+		"BinaryMessage",
+		"Controller",
+		"Retention",
+		"ScrollerBehaviors",
+		"ToggleBehavior",
+		"Transition",
+		"View",
+		"Common",
+		"GetTime",
+		"Networks",
+		"Password",
+		"Settings",
+		"assets",
+		"model"
+	],
+	"resources":{
+		"*": [
+			"./assets/name",
+			"./assets/top-arc-2",
+			"./assets/wifi-strip"
+		],
+		"timezone-*-alpha": [
+			"./assets/timezones/*"
+		],
+		"*-alpha": [
+			"./assets/alert",
+			"./assets/back",
+			"./assets/delete",
+			"./assets/plug-title",
+			"./assets/settings",
+			"./assets/smart-title",
+			"./assets/thumb",
+ 			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+ 			{
+ 				"source": "./fonts/Roboto-Italic",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+ 			{
+ 				"source": "./fonts/Roboto-Bold",
+				"size": 16,
+				"characters": "0123456789: amp"
+ 			},
+  			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 20,
+				"blocks": ["Basic Latin"]
+ 			},
+			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 24,
+				"blocks": ["Basic Latin"]
+ 			},
+			{
+ 				"source": "./fonts/Roboto-Medium",
+				"size": 44,
+				"characters": "0123456789:"
+ 			}
+		]
+    }
+}

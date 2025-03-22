@@ -1,11 +1,11 @@
 # Streams
 Revised: January 24, 2024
 
-This directory contains an experimental implementation of [web streams](https://streams.spec.whatwg.org). It is based on the [reference implementation](https://github.com/whatwg/streams). 
+This directory contains an experimental implementation of [web streams](https://streams.spec.whatwg.org). It is based on the [reference implementation](https://github.com/whatwg/streams).
 
 The purpose of this work is to evaluate the feasibility and usefulness of web streams on resource-constrained embedded devices.
 
-Starting with the reference implementation helps to ensure that the behaviors are conformant with the web streams specification. To verify conformance, the implementation has been tested using the Web Platform Tests for web streams ([more below](#tests)). 
+Starting with the reference implementation helps to ensure that the behaviors are conformant with the web streams specification. To verify conformance, the implementation has been tested using the Web Platform Tests for web streams ([more below](#tests)).
 
 The reference implementation has many opportunities for optimization of both memory use and performance. This is an area for future work.
 
@@ -51,10 +51,10 @@ for (let key in streams)
 	globalThis[key] = streams[key];
 ```
 
-For compatibility with web platform tests, the `TextDecoderStream` and `TextEncoderStream` classes currently access the `TextDecoder` and `TextEncoder` classes as globals. 
+For compatibility with web platform tests, the `TextDecoderStream` and `TextEncoderStream` classes currently access the `TextDecoder` and `TextEncoder` classes as globals.
 
 If you want to use the `TextDecoderStream` and `TextEncoderStream` classes in a Moddable application, please provide the `TextDecoder` and `TextEncoder` classes as globals:
-	
+
 ```js
 import TextDecoder from "text/decoder";
 globalThis.TextDecoder = TextDecoder;
@@ -84,40 +84,40 @@ There is also a `TransformStream` to invert the value.
 
 To build:
 
-```
+```shell
 cd /path/to/streams/examples/button
 mcconfig -d -m -p esp32/moddable_two_io
 ```
-	
+
 Note that there is no console output when the LED changes state; you must watch the LED itself to see the state changes.
-	
+
 ### touch
 
-Thanks to the mixin exported by `sensorstream.js`, the `Touch` class from `embedded:sensor/Touch/FT6x06` becomes a `ReadableStream` subclass. 
+Thanks to the mixin exported by `sensorstream.js`, the `Touch` class from `embedded:sensor/Touch/FT6x06` becomes a `ReadableStream` subclass.
 
 Since `ReadableStream` provides an async iterator, the stream of points is read with a `for await` loop
 
 To build:
 
-```
+```shell
 cd /path/to/streams/examples/touch
 mcconfig -d -m -p esp32/moddable_two_io
-```	
+```
 
 ### fetch
 
-This example implements the web standard[ `fetch()` function](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to make an HTTP request, using Moddable SDK's implementation of the [ECMA-419 HTTP Client class pattern](https://419.ecma-international.org/#-20-http-client-class-pattern) and the `ReadableStream` class. 
+This example implements the web standard[ `fetch()` function](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to make an HTTP request, using Moddable SDK's implementation of the [ECMA-419 HTTP Client class pattern](https://419.ecma-international.org/#-20-http-client-class-pattern) and the `ReadableStream` class.
 
 To build:
 
-```
+```shell
 cd /path/to/streams/examples/fetch
 mcconfig -d -m -p esp32/moddable_two_io ssid=<SSID> password=<PASSWORD>
 ```
 
 The fetch example also runs on the simulator:
 
-```
+```shell
 mcconfig -d -m
 ```
 
@@ -128,7 +128,7 @@ This directory contains web stream unit tests extracted from the [Web Platform T
 
 To run the tests, you need to build [xst](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/xs/xst.md), the XS test tool. Then:
 
-```
+```shell
 cd /path/to/streams/wpt
 ./iterate.sh
 ```

@@ -2,9 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"../httpclient/manifest_httpclient.json",
-		"../tlssocket/manifest.json",
-		"$(MODDABLE)/modules/crypt/tls_419.json",
+		"../httpsclient/manifest_httpsclient.json",
 		"$(MODDABLE)/modules/data/text/decoder/manifest.json"
 	],
 	"modules": {
@@ -12,7 +10,8 @@
 	},
 	"data": { 
 		"*": [
-			"$(MODULES)/crypt/data/ca233"
+			"$(MODULES)/crypt/data/ca233",
+			"$(MODULES)/crypt/data/ca170"
 		]
 	}
 }

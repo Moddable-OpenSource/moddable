@@ -413,7 +413,7 @@ void fx_Object_prototype_toString(txMachine* the)
             	tag = "Object";
 		}
 		break;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND:
 		instance = mxFunctionPrototype.value.reference;
 		tag = "Function";
@@ -511,6 +511,7 @@ void fx_Object_copy(txMachine* the)
 				mxPop();
 			}
 		}
+		mxCheckMetering();
 	}
 	mxPop(); // property
 	mxPop(); // at
@@ -598,7 +599,7 @@ void fx_Object_defineProperty(txMachine* the)
 	if ((mxArgc < 3) || (mxArgv(2)->kind != XS_REFERENCE_KIND))
 		mxTypeError("invalid descriptor");
 	mask = fxDescriptorToSlot(the, mxArgv(2));
-	if(!mxBehaviorDefineOwnProperty(the, mxArgv(0)->value.reference, at->value.at.id, at->value.at.index, mxArgv(2), mask))
+	if (!mxBehaviorDefineOwnProperty(the, mxArgv(0)->value.reference, at->value.at.id, at->value.at.index, mxArgv(2), mask))
 		mxTypeError("invalid descriptor");
 	*mxResult = *mxArgv(0);
 }
@@ -756,7 +757,7 @@ void fx_Object_fromEntries(txMachine* the)
 	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
 			if (value->kind != XS_REFERENCE_KIND)
-				mxTypeError("item is no object");
+				mxTypeError("item: not an object");
 			mxPushSlot(value);
 			mxGetIndex(0);
 			mxPushSlot(value);

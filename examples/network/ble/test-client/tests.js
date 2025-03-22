@@ -167,10 +167,13 @@ class ReadDescriptor extends Test {
         }
     }
     onDescriptorValue(descriptor, value) {
-        if (descriptor?.uuid?.equals(uuid`2908`) && value === 3) {
-            super.complete();
+        if (!descriptor?.uuid?.equals(uuid`2908`)) {
+            super.complete("incorrect descriptor");
+		}
+		else if ((1 !== value.length) || (3 !== value[0])) {
+            super.complete("incorrect data");
         } else {
-            super.complete("incorrect descriptor data");
+            super.complete();
         }
     }
 }

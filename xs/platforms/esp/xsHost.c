@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -50,7 +50,11 @@
 
 	portMUX_TYPE gCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
-	#define INSTRUMENT_CPULOAD 1
+	#if (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 3)
+		#define INSTRUMENT_CPULOAD 1
+	#else
+		volatile uint32_t gCPUTime;
+	#endif
 	#if INSTRUMENT_CPULOAD
 		#include "driver/gptimer.h"
 
@@ -879,9 +883,9 @@ void espInitInstrumentation(txMachine *the)
 		.on_alarm = timer_group0_isr
 	};
 
-	gIdles[0] = xTaskGetIdleTaskHandleForCPU(0);
+	gIdles[0] = xTaskGetIdleTaskHandleForCore(0);
 #if kTargetCPUCount > 1
-	gIdles[1] = xTaskGetIdleTaskHandleForCPU(1);
+	gIdles[1] = xTaskGetIdleTaskHandleForCore(1);
 #endif
 
 	if (!gLoadTimer) {
@@ -941,9 +945,9 @@ bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_even
 //    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
 //    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
 
-	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCPU(0) == gIdles[0])] += 1;
+	gCPUCounts[0 + (xTaskGetCurrentTaskHandleForCore(0) == gIdles[0])] += 1;
 #if kTargetCPUCount > 1
-	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCPU(1) == gIdles[1])] += 1;
+	gCPUCounts[2 + (xTaskGetCurrentTaskHandleForCore(1) == gIdles[1])] += 1;
 #endif
 
 	gCPUTime += 1250;
@@ -959,7 +963,7 @@ bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_even
 
 #ifndef MODDEF_TASK_QUEUEWAIT
 	#ifdef mxDebug
-		#define MODDEF_TASK_QUEUEWAIT (1000)
+		#define MODDEF_TASK_QUEUEWAIT (20)
 	#else
 		#define MODDEF_TASK_QUEUEWAIT (portMAX_DELAY)
 	#endif
@@ -973,6 +977,7 @@ struct modMessageRecord {
 	modMessageDeliver	callback;
 	void				*refcon;
 	uint16_t			length;
+	uint8_t				embeddedMessage;	// message property contains the message 	
 };
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
@@ -990,14 +995,22 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	}
 #endif
 
+	msg.embeddedMessage = 0;
 	if (message && messageLength) {
-		msg.message = c_malloc(messageLength);
-		if (!msg.message) return -1;
+		if (messageLength <= sizeof(msg.message)) {
+			msg.embeddedMessage = 1;
+			c_memmove(&msg.message, message, messageLength);			
+		}
+		else {
+			msg.message = c_malloc(messageLength);
+			if (!msg.message) return -1;
 
-		c_memmove(msg.message, message, messageLength);
+			c_memmove(msg.message, message, messageLength);
+		}
 	}
 	else
 		msg.message = NULL;
+
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
@@ -1005,7 +1018,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	if (pdTRUE == xQueueSendToBack(the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
 		return 0;
 
-	if (msg.message)
+	if (msg.message && !msg.embeddedMessage)
 		c_free(msg.message);
 
 	return -2;
@@ -1020,6 +1033,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.length = 0;
 	msg.callback = callback;
 	msg.refcon = refcon;
+	msg.embeddedMessage = 0;
 
 	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
 
@@ -1053,7 +1067,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #ifdef mxDebug
 	do {
-		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, maxDelayMS);
+		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, pdMS_TO_TICKS(maxDelayMS));
 		if (!queue)
 			break;
 
@@ -1061,9 +1075,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 			break;
 
 		modWatchDogReset();
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
+		if (msg.embeddedMessage)
+			(msg.callback)(the, msg.refcon, (uint8_t *)&msg.message, msg.length);
+		else {
+			(msg.callback)(the, msg.refcon, msg.message, msg.length);
+			if (msg.message)
+				c_free(msg.message);
+		}
 
 		if ((queue == the->msgQueue) && !--count)
 			break;
@@ -1071,13 +1089,17 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	} while ((modMilliseconds() - startTime) < maxDuration);
 #else
 	do {
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
+		if (!xQueueReceive(the->msgQueue, &msg, pdMS_TO_TICKS(maxDelayMS)))
 			break;
 
 		modWatchDogReset();
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
+		if (msg.embeddedMessage)
+			(msg.callback)(the, msg.refcon, (uint8_t *)&msg.message, msg.length);
+		else {
+			(msg.callback)(the, msg.refcon, msg.message, msg.length);
+			if (msg.message)
+				c_free(msg.message);
+		}
 
 		if (!--count)
 			break;
@@ -1129,7 +1151,7 @@ void modMachineTaskUninit(xsMachine *the)
 
 	if (the->msgQueue) {
 		while (xQueueReceive(the->msgQueue, &msg, 0)) {
-			if (msg.message)
+			if (msg.message && !msg.embeddedMessage)
 				c_free(msg.message);
 		}
 

@@ -8,7 +8,6 @@
 		"$(MODULES)/drivers/neopixel/manifest.json",
 		"$(MODULES)/pins/analog/manifest.json",
 		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/touchpad/manifest.json",
 		"$(MODULES)/pins/i2c/manifest.json"
 	],
 	"modules": {
@@ -42,16 +41,6 @@
 		"buttonArray": {
 			"pin": 5,
 			"delay": 50
-		},
-		"touchpad": {
-			"sensitivity": 0.2,
-			"pins":{
-				"B": 2,
-				"C": 5,
-				"E": 1,
-				"F": 3
-			},
-			"guard": 4
 		},
 		"es8311": {
 			"i2c": {

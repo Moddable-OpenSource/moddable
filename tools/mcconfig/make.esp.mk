@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,12 +17,12 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ESP_BASE ?= $(HOME)/esp
+# ESP_BASE ?= $(HOME)/esp
 HOST_OS := $(shell uname)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2>/dev/null)
 ESP_SDK_RELEASE ?= esp8266-2.3.0
-ARDUINO_ROOT ?= $(ESP_BASE)/$(ESP_SDK_RELEASE)
+# ARDUINO_ROOT ?= $(ESP_BASE)/$(ESP_SDK_RELEASE)
 ESPRESSIF_SDK_ROOT ?= $(ESP_BASE)/ESP8266_RTOS_SDK
 ESP_TOOLS_SDK_ROOT = $(ARDUINO_ROOT)/tools/sdk
 ARDUINO_ESP8266 = $(ARDUINO_ROOT)/cores/esp8266
@@ -233,7 +233,6 @@ C_DEFINES = \
 	-DESP8266 \
 	-DCONT_STACKSIZE=4608 \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DmxNoConsole=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)

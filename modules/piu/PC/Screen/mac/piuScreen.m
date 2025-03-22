@@ -50,9 +50,6 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 	txScreen* screen;
     NSTimeInterval time;
 	NSTimer *timer;
-    NSImage *touchImage;
-	id *touches;
-	BOOL touching;
 }
 @property (assign) PiuScreen* piuScreen;
 @property (assign) void* library;
@@ -61,9 +58,6 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 @property (assign) txScreen *screen;
 @property (assign) NSTimeInterval time;
 @property (assign) NSTimer *timer;
-@property (retain) NSImage *touchImage;
-@property (assign) id *touches;
-@property (assign) BOOL touching;
 - (void)abortMachine:(NSObject *)object;
 - (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath;
 - (void)quitMachine;
@@ -73,6 +67,7 @@ static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
+static void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y);
 static void fxScreenStart(txScreen* screen, double interval);
 static void fxScreenStop(txScreen* screen);
 
@@ -88,11 +83,18 @@ struct PiuScreenStruct {
 	xsIntegerValue rotation;
 	xsNumberValue transparency;
 	xsBooleanValue circular;
+	PiuPointRecord fingerprint;
 };
 
 struct PiuScreenMessageStruct {
 	void* buffer;
 	int size;
+};
+
+enum {
+	piuRecordingTouches = 1 << 24,
+	piuPlayingTouches = 1 << 25,
+	piuDisplayFingerprint = 1 << 26,
 };
 
 @implementation NSPiuScreenView
@@ -103,13 +105,9 @@ struct PiuScreenMessageStruct {
 @synthesize screen;
 @synthesize time;
 @synthesize timer;
-@synthesize touchImage;
-@synthesize touches;
-@synthesize touching;
 - (void)dealloc {
 	if (library)
     	dlclose(library);
-    [touchImage release];
     [super dealloc];
 }
 - (void)abortMachine:(NSObject *)object {
@@ -154,12 +152,18 @@ struct PiuScreenMessageStruct {
 	CGImageRelease(image);
 	CGDataProviderRelease(provider);
 	CGColorSpaceRelease(colorSpace);
-	if (touching) {
-		int i;
-		for (i = 0; i < 10;  i++) {
-			TouchFinger *finger = touches[i];
-			if (finger) {
-				[touchImage drawAtPoint:finger.point fromRect:NSZeroRect operation:NSCompositingOperationSourceOver fraction:1.0];
+	if ((*piuScreen)->flags & piuDisplayFingerprint) {
+		PiuSkin* skin = (*piuScreen)->skin;
+		if (skin) {
+			PiuTexture* texture = (*skin)->data.pattern.texture;
+			if (skin) {
+				NSImage* image = (*texture)->image;
+				if (image) {
+					NSSize size = [image size];
+					NSRect source = NSMakeRect(0, 0, size.width, size.height);
+					NSRect destination = NSMakeRect((*piuScreen)->fingerprint.x - (size.width / 2), srcRect.size.height - (*piuScreen)->fingerprint.y - (size.height / 2), size.width, size.height);
+					[image drawInRect:destination fromRect:source operation:NSCompositingOperationSourceOver fraction:1 respectFlipped:YES hints:nil];
+				}
 			}
 		}
 	}
@@ -248,34 +252,40 @@ bail:
 	free(message->buffer);
 }
 - (void)mouseDown:(NSEvent *)event {
-	if (touching)
+	if ((*piuScreen)->flags & piuPlayingTouches) 
 		return;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	NSPoint point = [event locationInWindow];
-	point = [self convertPoint:point fromView:nil];
-	point = [self rotatePoint:point];
-	if (self.screen->touch) 
-		(*self.screen->touch)(self.screen, touchEventBeganKind, 0, point.x, point.y, when);
+	if (self.screen->touch) {
+		NSPoint point = [event locationInWindow];
+		point = [self convertPoint:point fromView:nil];
+		point = [self rotatePoint:point];
+		if ((*piuScreen)->flags & piuRecordingTouches) 
+			fxScreenRecordTouch(self.screen, touchEventBeganKind, 0, point.x, point.y);
+		(*self.screen->touch)(self.screen, touchEventBeganKind, 0, point.x, point.y, 0);
+	}
 }
 - (void)mouseDragged:(NSEvent *)event {
-	if (touching)
+	if ((*piuScreen)->flags & piuPlayingTouches) 
 		return;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	NSPoint point = [event locationInWindow];
-	point = [self convertPoint:point fromView:nil];
-	point = [self rotatePoint:point];
-	if (self.screen->touch) 
-		(*self.screen->touch)(self.screen, touchEventMovedKind, 0, point.x, point.y, when);
+	if (self.screen->touch)  {
+		NSPoint point = [event locationInWindow];
+		point = [self convertPoint:point fromView:nil];
+		point = [self rotatePoint:point];
+		if ((*piuScreen)->flags & piuRecordingTouches) 
+			fxScreenRecordTouch(self.screen, touchEventMovedKind, 0, point.x, point.y);
+		(*self.screen->touch)(self.screen, touchEventMovedKind, 0, point.x, point.y, 0);
+	}
 }
 - (void)mouseUp:(NSEvent *)event {
-	if (touching)
+	if ((*piuScreen)->flags & piuPlayingTouches) 
 		return;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	NSPoint point = [event locationInWindow];
-	point = [self convertPoint:point fromView:nil];
-	point = [self rotatePoint:point];
-	if (self.screen->touch) 
-		(*self.screen->touch)(self.screen, touchEventEndedKind, 0, point.x, point.y, when);
+	if (self.screen->touch) {
+		NSPoint point = [event locationInWindow];
+		point = [self convertPoint:point fromView:nil];
+		point = [self rotatePoint:point];
+		if ((*piuScreen)->flags & piuRecordingTouches) 
+			fxScreenRecordTouch(self.screen, touchEventEndedKind, 0, point.x, point.y);
+		(*self.screen->touch)(self.screen, touchEventEndedKind, 0, point.x, point.y, 0);
+	}
 }
 - (void)quitMachine {
 	if (self.screen->quit) 
@@ -319,110 +329,6 @@ bail:
 - (void)timerCallback:(NSTimer*)theTimer {
 	if (self.screen->idle) 
 		(*self.screen->idle)(self.screen);
-}
-- (void)touchesBeganWithEvent:(NSEvent *)event {
-	if (!touching)
-		return;
-    NSSet *set = [event touchesMatchingPhase:NSTouchPhaseBegan inView:nil];
-    NSEnumerator *enumerator = [set objectEnumerator];
-    NSTouch* touch;
-    int i;
-	NSSize size = [self frame].size;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	while ((touch = [enumerator nextObject])) {
-		NSPoint point = touch.normalizedPosition;
-		point.x *= size.width;
-		point.y *= size.height;
-		for (i = 0; i < 10;  i++) {
-			if (touches[i] == nil) {
-				TouchFinger *finger = [TouchFinger alloc];
-				finger.identity = touch.identity;
-				finger.point = point;
-    			touches[i] = [finger retain];
-  				break;
-			}
-		}
-		point = [self rotatePoint:point];
-		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventBeganKind, i, point.x, point.y, when);
-	}  
-}
-- (void)touchesCancelledWithEvent:(NSEvent *)event {
-	if (!touching)
-		return;
-    NSSet *set = [event touchesMatchingPhase:NSTouchPhaseCancelled inView:nil];
-    NSEnumerator *enumerator = [set objectEnumerator];
-    NSTouch* touch;
-    int i;
-	NSSize size = [self frame].size;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	while ((touch = [enumerator nextObject])) {
-		NSPoint point = touch.normalizedPosition;
-		point.x *= size.width;
-		point.y *= size.height;
-		for (i = 0; i < 10;  i++) {
-			TouchFinger *finger = touches[i];
-    		if (finger && ([finger.identity isEqual:touch.identity])) {
-    			[finger release];
-				touches[i] = nil;
-   				break;
-			}
-		}
-		point = [self rotatePoint:point];
-		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventCancelledKind, i, point.x, point.y, when);
-	}
-}
-- (void)touchesEndedWithEvent:(NSEvent *)event {
-	if (!touching)
-		return;
-    NSSet *set = [event touchesMatchingPhase:NSTouchPhaseEnded inView:nil];
-    NSEnumerator *enumerator = [set objectEnumerator];
-    NSTouch* touch;
-    int i;
-	NSSize size = [self frame].size;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	while ((touch = [enumerator nextObject])) {
-		NSPoint point = touch.normalizedPosition;
-		point.x *= size.width;
-		point.y *= size.height;
-		for (i = 0; i < 10;  i++) {
-			TouchFinger *finger = touches[i];
-    		if (finger && ([finger.identity isEqual:touch.identity])) {
-    			[finger release];
-				touches[i] = nil;
-    			break;
-			}
-		}
-		point = [self rotatePoint:point];
-		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventEndedKind, i, point.x, point.y, when);
-	}
-}
-- (void)touchesMovedWithEvent:(NSEvent *)event {
-	if (!touching)
-		return;
-    NSSet *set = [event touchesMatchingPhase:NSTouchPhaseMoved inView:nil];
-    NSEnumerator *enumerator = [set objectEnumerator];
-    NSTouch* touch;
-    int i;
-	NSSize size = [self frame].size;
-	NSTimeInterval when = 1000 * (time + [event timestamp]);
-	while ((touch = [enumerator nextObject])) {
-		NSPoint point = touch.normalizedPosition;
-		point.x *= size.width;
-		point.y *= size.height;
-		for (i = 0; i < 10;  i++) {
-			TouchFinger *finger = touches[i];
-    		if (finger && ([finger.identity isEqual:touch.identity])) {
-				finger.point = point;
-   				break;
-			}
-		}
-		point = [self rotatePoint:point];
-		if (self.screen->touch) 
-			(*self.screen->touch)(self.screen, touchEventMovedKind, i, point.x, point.y, when);
-	}
 }
 @end
 
@@ -506,14 +412,6 @@ void PiuScreenBind(void* it, PiuApplication* application, PiuView* view)
     NSDate* date = [NSDate dateWithTimeIntervalSinceNow:-time];
     screenView.time = [date timeIntervalSince1970];
     screenView.timer = nil;
-  
-    screenView.touchImage = [NSImage imageNamed:@"fingerprint"];
-	screenView.touches = (id *)malloc(10 * sizeof(id));
-    int i;
-    for (i = 0; i < 10; i++)
-		screenView.touches[i] = nil;
-	 screenView.touching = NO;
-	 
     [(*view)->nsView addSubview:clipView];
 }
 
@@ -620,6 +518,36 @@ void PiuScreen_get_pixelFormat(xsMachine* the)
 	xsResult = xsInteger((*self)->screen->pixelFormat);
 }
 
+void PiuScreen_get_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuPlayingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuPlayingTouches;
+	else
+		(*self)->flags &= ~piuPlayingTouches;
+}
+
+void PiuScreen_get_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuRecordingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuRecordingTouches;
+	else
+		(*self)->flags &= ~piuRecordingTouches;
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -671,6 +599,26 @@ void PiuScreen_quit(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
     [(*self)->nsScreenView quitMachine];
+}
+
+void PiuScreen_touch(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	txScreen* screen = (*self)->screen;
+	if (screen->touch) {
+		xsIntegerValue kind = xsToInteger(xsArg(0));
+		xsIntegerValue index = xsToInteger(xsArg(1));
+		xsIntegerValue x = xsToInteger(xsArg(2));
+		xsIntegerValue y = xsToInteger(xsArg(3));
+		if (kind == 0)
+			(*self)->flags |= piuDisplayFingerprint;
+		else if ((kind == 1) || (kind == 2))
+			(*self)->flags &= ~piuDisplayFingerprint;
+		(*self)->fingerprint.x = x;
+		(*self)->fingerprint.y = y;
+		fxScreenBufferChanged(screen);
+		(*screen->touch)(screen, kind, index, x, y, 0);
+	}
 }
 
 void PiuScreen_writePNG(xsMachine* the)
@@ -726,6 +674,26 @@ void fxScreenPost(txScreen* screen, char* buffer, int size)
 	if (message.buffer) {
 		NSData* data = [NSData dataWithBytes:&message length:sizeof(PiuScreenMessageRecord)];
 		[screenView performSelectorOnMainThread:@selector(messageToHost:) withObject:data waitUntilDone:NO];
+	}
+}
+
+void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y)
+{
+	NSPiuScreenView *screenView = screen->view;
+	PiuScreen* self = screenView.piuScreen;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(6);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onRecordTouch)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(kind);
+			xsVar(3) = xsInteger(index);
+			xsVar(4) = xsInteger(x);
+			xsVar(5) = xsInteger(y);
+			(void)xsCallFunction5(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3), xsVar(4), xsVar(5));
+		}
+		xsEndHost((*self)->the);
 	}
 }
 

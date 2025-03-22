@@ -5,7 +5,7 @@ flags: [module,async]
 
 import AudioOut from "pins/audioout"
 import Resource from "Resource";
-import {MAUD, SampleFormat} from "./maud.js"
+import {MAUD, SampleFormat} from "./maud_FIXTURE.js"
 import Timer from "timer";
 
 const ima = new Resource("bflatmajor-ima-16000.maud");

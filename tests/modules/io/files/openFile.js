@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import files from "./files-fixture.js";
-import {deleteTree} from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
+import {deleteTree} from "./files_FIXTURE.js";
 
 const dirPath = "test";
 const path = "test.bin";
@@ -41,5 +41,5 @@ assert.throws(TypeError, () => f.openFile());
 assert.throws(TypeError, () => f.openFile.call(new $TESTMC.HostObject, {path}));
 
 deleteTree(files, dirPath);
-files.create(dirPath);
+files.createDirectory(dirPath);
 assert.throws(Error, () => files.openFile({path: dirPath}));

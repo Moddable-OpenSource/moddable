@@ -89,7 +89,7 @@ void fx_Symbol(txMachine* the)
 	txSlot* slot;
 	txSlot* property;
 	if (mxTarget->kind != XS_UNDEFINED_KIND)
-		mxTypeError("new Symbol");
+		mxTypeError("new: Symbol");
 	instance = fxNewInstance(the);
 	property = fxNextUndefinedProperty(the, instance, XS_NO_ID, XS_INTERNAL_FLAG);
 	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
@@ -117,7 +117,7 @@ void fx_Symbol_for(txMachine* the)
 	txU4 modulo;
 	txSlot* result;
 	if (mxArgc < 1)
-		mxSyntaxError("no key parameter");
+		mxSyntaxError("no key");
 	string = fxToString(the, mxArgv(0));
 	p = (txU1*)string;
 	sum = 0;
@@ -150,7 +150,7 @@ void fx_Symbol_keyFor(txMachine* the)
 {
 	txSlot* key;
 	if ((mxArgc == 0) || (mxArgv(0)->kind != XS_SYMBOL_KIND))
-		mxTypeError("sym is no symbol");
+		mxTypeError("sym: not a symbol");
 	key = fxGetKey(the, mxArgv(0)->value.symbol);
 	if (((key->kind == XS_KEY_KIND) || (key->kind == XS_KEY_X_KIND)) && ((key->flag & XS_DONT_ENUM_FLAG) == 0)) {
 		mxResult->kind = (key->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
@@ -161,7 +161,7 @@ void fx_Symbol_keyFor(txMachine* the)
 void fx_Symbol_prototype_get_description(txMachine* the)
 {
 	txSlot* slot = fxCheckSymbol(the, mxThis);
-	if (!slot) mxTypeError("this is no symbol");
+	if (!slot) mxTypeError("this: not a symbol");
 	slot = fxGetKey(the, slot->value.symbol);
 	if ((slot->kind == XS_KEY_KIND) || (slot->kind == XS_KEY_X_KIND)) {
 		mxResult->kind = (slot->kind == XS_KEY_KIND) ? XS_STRING_KIND : XS_STRING_X_KIND;
@@ -177,7 +177,7 @@ void fx_Symbol_prototype_get_description(txMachine* the)
 void fx_Symbol_prototype_toPrimitive(txMachine* the)
 {
 	txSlot* slot = fxCheckSymbol(the, mxThis);
-	if (!slot) mxTypeError("this is no symbol");
+	if (!slot) mxTypeError("this: not a symbol");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 }
@@ -185,7 +185,7 @@ void fx_Symbol_prototype_toPrimitive(txMachine* the)
 void fx_Symbol_prototype_toString(txMachine* the)
 {
 	txSlot* slot = fxCheckSymbol(the, mxThis);
-	if (!slot) mxTypeError("this is no symbol");
+	if (!slot) mxTypeError("this: not a symbol");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 	fxSymbolToString(the, mxResult);
@@ -194,7 +194,7 @@ void fx_Symbol_prototype_toString(txMachine* the)
 void fx_Symbol_prototype_valueOf(txMachine* the)
 {
 	txSlot* slot = fxCheckSymbol(the, mxThis);
-	if (!slot) mxTypeError("this is no symbol");
+	if (!slot) mxTypeError("this: not a symbol");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 }

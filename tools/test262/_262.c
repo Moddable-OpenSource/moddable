@@ -25,23 +25,57 @@
 
 #ifdef mxUseFreeRTOSTasks	
 	#include "FreeRTOS.h"
+#ifdef ESP32
 	#include "freertos/queue.h"
 	#include "freertos/semphr.h"
+#else
+	#include "queue.h"
+	#include "semphr.h"
+#endif
 
 	typedef TaskHandle_t txCondition;
 	typedef struct {
+#if nrf52
+		SemaphoreHandle_t sem;
+#else
 		QueueHandle_t handle;
 		StaticSemaphore_t buffer;
+#endif
 	} txMutex;
 	typedef TaskHandle_t txThread;
 	#define fxCreateCondition(CONDITION) *(CONDITION) = xTaskGetCurrentTaskHandle()
+#if nrf52
+	#define fxCreateMutex(MUTEX) (MUTEX)->sem = xSemaphoreCreateMutex()
+#else
 	#define fxCreateMutex(MUTEX) (MUTEX)->handle = xSemaphoreCreateMutexStatic(&((MUTEX)->buffer))
+#endif
 	#define fxDeleteCondition(CONDITION) *(CONDITION) = NULL
+#if nrf52
+	#define fxDeleteMutex(MUTEX) vSemaphoreDelete((MUTEX)->sem)
+	#define fxLockMutex(MUTEX) xSemaphoreTake((MUTEX)->sem, portMAX_DELAY)
+	#define fxUnlockMutex(MUTEX) xSemaphoreGive((MUTEX)->sem)
+	#define fxSleepCondition(CONDITION,MUTEX) (xSemaphoreGive((MUTEX)->sem), ulTaskNotifyTake(pdTRUE, portMAX_DELAY), xSemaphoreTake((MUTEX)->sem, portMAX_DELAY))
+#else
 	#define fxDeleteMutex(MUTEX) vSemaphoreDelete((MUTEX)->handle)
 	#define fxLockMutex(MUTEX) xSemaphoreTake((MUTEX)->handle, portMAX_DELAY)
 	#define fxUnlockMutex(MUTEX) xSemaphoreGive((MUTEX)->handle)
 	#define fxSleepCondition(CONDITION,MUTEX) (xSemaphoreGive((MUTEX)->handle), ulTaskNotifyTake(pdTRUE, portMAX_DELAY), xSemaphoreTake((MUTEX)->handle, portMAX_DELAY))
+#endif
 	#define fxWakeCondition(CONDITION) xTaskNotifyGive(*(CONDITION));
+#elif PICO_BUILD
+	#include "pico/mutex.h"
+
+	typedef uint32_t txCondition;
+	typedef mutex_t txMutex;
+	typedef void *txThread;
+	#define fxCreateCondition(CONDITION)
+	#define fxSleepCondition(CONDITION,MUTEX)
+	#define fxWakeCondition(CONDITION)
+
+	#define fxCreateMutex(MUTEX)    mutex_init(MUTEX)
+	#define fxDeleteMutex(MUTEX)
+	#define fxLockMutex(MUTEX)      mutex_enter_blocking(MUTEX)
+	#define fxUnlockMutex(MUTEX)    mutex_exit(MUTEX)
 #elif mxWindows
 	#include <direct.h>
 	#include <errno.h>
@@ -220,7 +254,8 @@ void _xsbug_import_(txMachine* the)
 {
 	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushSlot(mxArgv(0));
-	fxRunImport(the, realm, XS_NO_ID);
+	mxPushUndefined();
+	fxRunImport(the, realm, NULL);
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
@@ -346,6 +381,7 @@ void _262_agent_broadcast(txMachine* the)
 		gxAgentCluster.dataValue = xsToInteger(xsArg(1));
 #if mxWindows
 	WakeAllConditionVariable(&(gxAgentCluster.dataCondition));
+#elif PICO_BUILD
 #else
 	pthread_cond_broadcast(&(gxAgentCluster.dataCondition));
 #endif
@@ -432,6 +468,8 @@ void _262_agent_sleep(txMachine* the)
 	xsIntegerValue delay = xsToInteger(xsArg(0));
 #ifdef mxUseFreeRTOSTasks
 	vTaskDelay(pdMS_TO_TICKS(delay));
+#elif PICO_BUILD
+	modDelayMilliseconds(delay);
 #elif mxWindows
 	Sleep(delay);
 #else	
@@ -463,6 +501,8 @@ void _262_agent_start(txMachine* the)
 	xTaskCreate(_262_agent_start_aux, "agent", kStack, agent, 8, &(agent->thread));
 #elif mxWindows
 	agent->thread = (HANDLE)_beginthreadex(NULL, 0, _262_agent_start_aux, agent, 0, NULL);
+#elif PICO_BUILD
+	_262_agent_start_aux(agent);
 #else	
     pthread_create(&(agent->thread), NULL, &_262_agent_start_aux, agent);
 #endif
@@ -548,6 +588,7 @@ void _262_agent_stop(txMachine* the)
 				#if mxWindows
 					WaitForSingleObject(agent->thread, INFINITE);
 					CloseHandle(agent->thread);
+				#elif PICO_BUILD
 				#else
 					pthread_join(agent->thread, NULL);
 				#endif

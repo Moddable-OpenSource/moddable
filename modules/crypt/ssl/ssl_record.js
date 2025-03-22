@@ -122,13 +122,13 @@ const recordProtocol = {
 			return hmac.close();
 		},
 		aeadAdditionalData(seqNum, type, version, len) {
-			let tmps = new SSLStream();
-			let c = ArrayBuffer.fromBigInt(seqNum, 8);
+			const c = ArrayBuffer.fromBigInt(seqNum, 8);
+			let tmps = new SSLStream(undefined, c.byteLength + 1 + 2 + 2);
 			tmps.writeChunk(c);
 			tmps.writeChar(type);
 			tmps.writeChars(version, 2);
 			tmps.writeChars(len, 2);
-			return tmps.readChunk(tmps.bytesAvailable);
+			return tmps.getChunk().buffer;
 		},
 		unpacketize(session, s) {
 			session.traceProtocol(this);
@@ -182,14 +182,14 @@ const recordProtocol = {
 		packetize(session, type, fragment) {
 			session.traceProtocol(this);
 			let cipher = session.connectionEnd ? session.clientCipher : session.serverCipher;
-			let stream;
+			let prefix;
 			if (cipher) {
 				switch (session.chosenCipher.encryptionMode) {
 				case NONE:
 				case CBC: {
 					let mac = this.calculateMac(cipher.hmac, session.writeSeqNum, type, session.protocolVersion, fragment);
 					let blksz = session.chosenCipher.cipherBlockSize, iv;
-					let stream = new SSLStream();
+					let stream = new SSLStream(undefined, fragment.byteLength + mac.byteLength + blksz);
 					stream.writeChunk(fragment);
 					stream.writeChunk(mac);
 					if (blksz) {
@@ -206,8 +206,7 @@ const recordProtocol = {
 						cipher.enc.setIV(iv);
 					}
 					fragment = cipher.enc.encrypt(stream.getChunk());
-					if (iv)
-						fragment = iv.concat(fragment);
+					prefix = iv;
 					}
 					break;
 				case GCM: {
@@ -216,16 +215,19 @@ const recordProtocol = {
 					let nonce = cipher.iv.concat(explicit_nonce);
 					let additional_data = this.aeadAdditionalData(session.writeSeqNum, type, session.protocolVersion, fragment.byteLength);
 					fragment = cipher.enc.process(fragment, null, nonce, additional_data, true);
-					fragment = explicit_nonce.concat(fragment);
+					prefix = explicit_nonce;
 					}
 					break;
 				}
 				session.writeSeqNum++;
 			}
-			stream = new SSLStream();
+
+			const stream = new SSLStream(undefined, 1 + 2 + 2 + (prefix?.byteLength ?? 0) + fragment.byteLength);
 			stream.writeChar(type);
 			stream.writeChars(session.protocolVersion, 2);
-			stream.writeChars(fragment.byteLength, 2);
+			stream.writeChars(fragment.byteLength + (prefix?.byteLength ?? 0), 2);
+			if (prefix)
+				stream.writeChunk(prefix);
 			stream.writeChunk(fragment);
 			return stream.getChunk();
 		},

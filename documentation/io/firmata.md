@@ -344,7 +344,7 @@ I2C is a bit more complicated than Analog and Digital pins as it is a transactio
 ```js
 let i2c = new firmata.I2C({
 	address: 0x38,
-}
+})
 i2c.write(Uint8Array.of(3, 11, 5));
 ```
 
@@ -396,7 +396,7 @@ new FirmataClientTCP({
 			poco.fillRectangle(blue, 0, 0, poco.width, poco.height);
 		poco.end();
 	}
-}
+})
 ````
 
 The instance created by calling the `this.Poco` constructor presents a subset of the full Poco JavaScript API. The code to erase the local display on a Moddable One is identical, beyond the constructor:
@@ -432,7 +432,7 @@ new FirmataClientTCP({
 			}
 		});
 	}
-}
+})
 ```
 
 <a id="poco-implementation-notes"></a>

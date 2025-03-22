@@ -4,8 +4,8 @@ flags: [module]
 includes: [compareArray.js]
 ---*/
 
-import files from "./files-fixture.js";
-import {deleteTree, scan} from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
+import {deleteTree, scan} from "./files_FIXTURE.js";
 
 const paths = [
 	"scantest",
@@ -24,7 +24,7 @@ paths.forEach(path => {
 	if (path.includes(".")) 
 		files.openFile({path, mode: "w+"}).close();
 	else
-		files.create(path);
+		files.createDirectory(path);
 });
 
 assert.compareArray(scan(files, "scantest/foo/bar"), ["test", "test1.bin", "test2.bin", "test3.bin"]);

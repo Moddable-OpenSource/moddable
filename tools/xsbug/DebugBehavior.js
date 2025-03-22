@@ -728,6 +728,7 @@ export class DebugMachine @ "PiuDebugMachineDelete" {
 		this.doCommand(mxModuleCommand, path, wait, system.readFileBuffer(path));
 	}
 	doStartProfiling() {
+		this.doCommand(mxGoCommand);
 		this.doCommand(mxStartProfilingCommand);
 	}
 	doStopProfiling() {

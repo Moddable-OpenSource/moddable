@@ -1,31 +1,21 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json"
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/drivers/onewire/manifest.json"
 	],
 	"modules": {
 		"*": [
-
-			"$(MODULES)/drivers/onewire/*",
 			"./main"
 		]
 	},
 	"preload": [
-		"onewire",
 		"DS18X20"
 	],
 	"platforms": {
 		"esp": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json"
-			],
-			"modules": {
-				"*": [
-					"$(MODULES)/drivers/onewire/esp/*"
-				]
-			},
 			"config": {
 				"onewire": {
-					"pin": "4"
+					"pin": 4
 				}
 			},
 			"defines": {
@@ -35,37 +25,18 @@
 			}
 		},
 		"esp32": {
-			"include": [
-				"$(MODULES)/pins/digital/manifest.json"
-			],
-			"modules": {
-				"*": "$(MODULES)/drivers/onewire/esp/*"
-			},
 			"config": {
 				"onewire": {
-					"pin": "16"
-				}
-			},
-			"defines": {
-				"onewire": {
-					"driver_rmt": "RMT",
-					"rmt_rx_channel": "RMT_CHANNEL_2",
-					"rmt_tx_channel": "RMT_CHANNEL_3"
+					"pin": 16
 				}
 			}
 		},
 		"win": {
-			"modules": {
-				"*": "$(MODULES)/drivers/onewire/sim/*"
-			},
 			"config": {
 				"onewire": {
-					"pin": "1"
+					"pin": 1
 				}
 			}
-		},
-		"...": {
-			"error": "unsupported platform"
 		}
 	}
 }

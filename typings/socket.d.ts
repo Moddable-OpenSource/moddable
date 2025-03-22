@@ -86,6 +86,7 @@ declare module "socket" {
     constructor(options: ListenerOptions);
     callback: (this: Listener) => void;
   }
+  type Socket = RawSocket | TCPSocket | UDPSocket;
   var Socket: {
     new <T extends RawSocketOptions | TCPSocketOptions | UDPSocketOptions>(
       dictionary: T

@@ -31,7 +31,11 @@
 #include "neopixel.h"
 
 #ifndef MODDEF_NEOPIXEL_CORE
+#if configNUMBER_OF_CORES == 1
+	#define MODDEF_NEOPIXEL_CORE	tskNO_AFFINITY
+#else
 	#define MODDEF_NEOPIXEL_CORE	1
+#endif
 #endif
 #define	NP_QUEUE_LEN 2
 #define NP_QUEUE_ITEM_SIZE	4

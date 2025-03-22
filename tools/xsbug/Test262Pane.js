@@ -689,7 +689,7 @@ class Test262HomeHeaderBehavior extends HeaderBehavior {
 
 class Test262HomeFieldBehavior extends Behavior {
 	onCreate(field, data) {
-		 this.data = data;
+		this.data = data;
 	}
 	onStringChanged(field) {
 		var data = this.data;
@@ -697,14 +697,10 @@ class Test262HomeFieldBehavior extends Behavior {
 	}
 	onSave(field) {
 		var data = this.data;
-		field.placeholder = "";
-		field.string = "";
 		data.SELECT_FOCUS = null;
 	}
 	onRestore(field) {
 		var data = this.data;
-		field.placeholder = "SELECT";
-		field.string = this.data.name;
 		data.SELECT_FOCUS = field;
 	}
 	onTest262FilterChanged(field, filter) {

@@ -1,0 +1,53 @@
+{
+	"preload": [
+		"embedded:io/audio/out"
+	],
+	"platforms": {
+		"lin": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/out": "./lin/audioout_"
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/out": "./mac/audioout"
+			}
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/out": "./win/audioout"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/out": "./esp32/audioout-esp32"
+			}
+		},
+		"pico": {
+			"modules": {
+				"embedded:io/audio/out": "./pico/audioout-pico",
+				"*": [
+					"$(MODDABLE)/modules/io/common/builtinCommon",
+                    "$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/*",
+                    "$(PICO_EXTRAS_DIR)/src/rp2_common/pico_audio_i2s/include/",
+                    "$(PICO_EXTRAS_DIR)/src/common/pico_audio/audio.cpp",
+                    "$(PICO_EXTRAS_DIR)/src/common/pico_audio/include/",
+                    "$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/*",
+                    "$(PICO_EXTRAS_DIR)/src/common/pico_util_buffer/include/"
+				]
+			}
+		},
+		"...": {
+			"include": [
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"modules": {
+				"embedded:io/audio/out": "./pins/_audioout"
+			}
+		}
+	}
+}

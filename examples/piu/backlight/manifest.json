@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_piu.json"
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/base/modules/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -20,6 +21,22 @@
 			"./led-dim",
 			"./led-bright"
 		]
+	},
+	"defines": {
+		"audioOut": {
+			"streams": 2
+		}
+	},
+	"platforms": {
+		"esp32/moddable_six": {
+			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
+		},
+		"esp32/moddable_six_cdc": {
+			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
+		},
+		"mac/moddable_six": {
+			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
+		}
 	},
 	"bundle": {
 		"id": "tech.moddable.backlight",

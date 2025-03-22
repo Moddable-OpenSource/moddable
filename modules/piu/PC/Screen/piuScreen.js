@@ -29,15 +29,20 @@ export const Screen = Template(Object.freeze({
 	
 	get hole() @ "PiuScreen_get_hole",
 	get pixelFormat() @ "PiuScreen_get_pixelFormat",
+	get playingTouches() @ "PiuScreen_get_playingTouches",
+	get recordingTouches() @ "PiuScreen_get_recordingTouches",
 	get running() @ "PiuScreen_get_running",
 	get transparency() @ "PiuScreen_get_transparency",
 	
 	set hole(it) @ "PiuScreen_set_hole",
+	set playingTouches() @ "PiuScreen_set_playingTouches",
+	set recordingTouches() @ "PiuScreen_set_recordingTouches",
 	set transparency(it) @ "PiuScreen_set_transparency",
 	
 	launch(path) @ "PiuScreen_launch",
 	postMessage(json) @ "PiuScreen_postMessage",
 	quit() @ "PiuScreen_quit",
+	touch(kind, index, x, y) @ "PiuScreen_touch",
 	writePNG(path) @ "PiuScreen_writePNG",
 }));
 

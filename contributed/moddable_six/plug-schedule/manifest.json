@@ -1,0 +1,138 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
+		"$(MODULES)/files/preference/manifest.json",
+		"$(MODULES)/input/expanding-keyboard/vertical/manifest.json",
+		"$(MODULES)/network/wifi/manifest.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json"
+	],
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000,
+			"queueLength": 4
+		},
+		"cfe": { "kern": true }
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/data/binaryMessage/*",
+			"./Controller",
+			"./ScrollerBehaviors",
+			"./Retention",
+			"./ToggleBehavior",
+			"./Transition",
+			"./View",
+			"./assets",
+			"./main",
+			"./model",
+			"./views/*"
+		],
+		"piu/Sound": [
+			"$(MODULES)/piu/MC/piuSound"
+		]
+	},
+	"preload": [
+		"BinaryMessage",
+		"Controller",
+		"Retention",
+		"ScrollerBehaviors",
+		"ToggleBehavior",
+		"Transition",
+		"View",
+		"Common",
+		"GetTime",
+		"Home",
+		"Networks",
+		"Password",
+		"Schedule",
+		"SetTime",
+		"Settings",
+		"Timezone",
+		"assets",
+		"model"
+	],
+    "data": {
+    },
+	"resources":{
+		"*": [
+			"./assets/bottom-shadow",
+			"./assets/dialog",
+			"./assets/lamp",
+			"./assets/meridiem",
+			"./assets/oval",
+			"./assets/plug",
+			"./assets/power",
+			"./assets/top-arc-1",
+			"./assets/top-arc-2",
+			"./assets/top-arc-3",
+			"./assets/top-shadow",
+			"./assets/toggle",
+			"./assets/tumbler",
+    		"../sounds/tap",
+    		"../sounds/tap-back",
+    		"../sounds/toggle",
+    		"../sounds/tumbler"
+		],
+		"timezone-*-alpha": [
+			"./assets/timezones/*"
+		],
+		"*-alpha": [
+			"./assets/alert",
+			"./assets/back",
+			"./assets/delete",
+			"./assets/left-arc-1",
+			"./assets/timezone-map",
+			"./assets/plug-title",
+			"./assets/settings",
+			"./assets/smart-title",
+			"./assets/thumb",
+			"./assets/wait",
+			"./assets/wifi-strip",
+ 			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+ 			{
+ 				"source": "./fonts/Roboto-Light",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+ 			{
+ 				"source": "./fonts/Roboto-Italic",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+ 			{
+ 				"source": "./fonts/Roboto-Bold",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+ 			},
+  			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 20,
+				"blocks": ["Basic Latin"]
+ 			},
+			{
+ 				"source": "./fonts/Roboto-Regular",
+				"size": 24,
+				"blocks": ["Basic Latin"]
+ 			},
+			{
+ 				"source": "./fonts/Roboto-Medium",
+				"size": 44,
+				"characters": "0123456789:"
+ 			}
+		]
+    }
+}

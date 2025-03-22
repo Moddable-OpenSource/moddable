@@ -24,7 +24,6 @@
 
 extern int fuzz(int argc, char* argv[]);
 extern void fx_print(xsMachine* the);
-extern void fxAbortFuzz(xsMachine* the);
 extern void fxBuildAgent(xsMachine* the);
 extern void fxBuildFuzz(xsMachine* the);
 extern txScript* fxLoadScript(txMachine* the, txString path, txUnsigned flags);
@@ -71,6 +70,7 @@ static void fx_createRealm(xsMachine* the);
 static void fx_detachArrayBuffer(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_gc(xsMachine* the);
+static void fx_isLockedDown(xsMachine* the);
 static void fx_metering(xsMachine* the);
 static void fx_runScript(xsMachine* the);
 
@@ -130,11 +130,25 @@ int main(int argc, char* argv[])
 	for (argi = 1; argi < argc; argi++) {
 		if (argv[argi][0] != '-')
 			continue;
-		if (!strcmp(argv[argi], "-l"))
-			continue;
-		if (!strcmp(argv[argi], "-lc"))
-			continue;
-		if (!strcmp(argv[argi], "-h"))
+	
+		if (!strcmp(argv[argi], "-c"))
+			option = 4;
+		else if (!strcmp(argv[argi], "-i")) {
+			argi++;
+			option = 4;
+		}
+		else if (!strcmp(argv[argi], "-l"))
+			option = 4;
+		else if (!strcmp(argv[argi], "-lc"))
+			option = 4;
+		else if (!strcmp(argv[argi], "-o")) {
+			argi++;
+			option = 4;
+		}
+		else if (!strcmp(argv[argi], "-t"))
+			option = 4;
+
+		else if (!strcmp(argv[argi], "-h"))
 			fxPrintUsage();
 		else if (!strcmp(argv[argi], "-b"))
 			option = 7;
@@ -150,8 +164,6 @@ int main(int argc, char* argv[])
 			profiling = 1;
 		else if (!strcmp(argv[argi], "-s"))
 			option = 3;
-		else if (!strcmp(argv[argi], "-t"))
-			option = 4;
 		else if (!strcmp(argv[argi], "-v"))
 			printf("XS %d.%d.%d, slot %zu bytes, ID %zu bytes\n", XS_MAJOR_VERSION, XS_MINOR_VERSION, XS_PATCH_VERSION, sizeof(txSlot), sizeof(txID));
 		else {
@@ -272,8 +284,8 @@ int main(int argc, char* argv[])
 			fxStopProfiling(machine, C_NULL);
 		}
 		xsEndMetering(machine);
-		if (machine->abortStatus) {
-			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+		if (machine->exitStatus) {
+			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
 			fprintf(stderr, "Error: %s\n", why);
 			error = 1;
 		}
@@ -310,6 +322,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_gc, 1, xsID("gc"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_evalScript, 1, xsID("evalScript"), XS_DONT_ENUM_FLAG); 
+	slot = fxNextHostFunctionProperty(the, slot, fx_isLockedDown, 1, xsID("isLockedDown"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextHostFunctionProperty(the, slot, fx_metering, 1, xsID("metering"), XS_DONT_ENUM_FLAG); 
 	slot = fxNextSlotProperty(the, slot, global, xsID("global"), XS_GET_ONLY);
 
@@ -354,11 +367,6 @@ void fxPrintUsage()
 	printf("\telse strings are paths to scripts\n");
 }
 
-void fx_gc(xsMachine* the)
-{
-	xsCollectGarbage();
-}
-
 void fx_evalScript(xsMachine* the)
 {
 	txSlot* realm;
@@ -371,6 +379,16 @@ void fx_evalScript(xsMachine* the)
 	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxDebugFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
+}
+
+void fx_gc(xsMachine* the)
+{
+	xsCollectGarbage();
+}
+
+void fx_isLockedDown(xsMachine* the)
+{
+	xsResult = (mxProgram.value.reference->flag & XS_DONT_MARSHALL_FLAG) ? xsTrue : xsFalse;
 }
 
 void fx_metering(xsMachine* the)
@@ -908,7 +926,8 @@ void fxRunModuleFile(txMachine* the, txString path)
 {
 	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRunImport(the, realm, XS_NO_ID);
+	mxPushUndefined();
+	fxRunImport(the, realm, C_NULL);
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
@@ -931,10 +950,9 @@ void fxAbort(txMachine* the, int status)
 {
 	if (XS_DEBUGGER_EXIT == status)
 		c_exit(1);
-	if (the->abortStatus) // xsEndHost calls fxAbort!
+	if (the->exitStatus) // xsEndHost calls fxAbort!
 		return;
-	the->abortStatus = status;
-	fxAbortFuzz(the);
+	the->exitStatus = status;
 	fxExitToHost(the);
 }
 
@@ -992,6 +1010,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	char path[C_PATH_MAX];
 	char real[C_PATH_MAX];
+	txString dot;
 	txScript* script;
 #ifdef mxDebug
 	txUnsigned flags = mxDebugFlag;
@@ -1001,6 +1020,23 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 	c_strncpy(path, fxGetKeyName(the, moduleID), C_PATH_MAX - 1);
 	path[C_PATH_MAX - 1] = 0;
 	if (c_realpath(path, real)) {
+#if mxWindows
+		DWORD attributes;
+		attributes = GetFileAttributes(path);
+		if (attributes != 0xFFFFFFFF) {
+			if (attributes & FILE_ATTRIBUTE_DIRECTORY)
+				return;
+		}
+#else
+		struct stat a_stat;
+		if (stat(path, &a_stat) == 0) {
+			if (S_ISDIR(a_stat.st_mode)) 
+				return;
+		}
+#endif	
+		dot = c_strrchr(real, '.');
+		if (dot && !c_strcmp(dot, ".json"))
+			flags |= mxJSONModuleFlag;
 		script = fxLoadScript(the, real, flags);
 		if (script)
 			fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);

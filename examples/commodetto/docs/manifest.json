@@ -1,14 +1,13 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_commodetto.json"
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(COMMODETTO)/jpeg/manifest.json"
 	],
 	"modules": {
 		"*": "./main",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
-		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
-		"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
-		"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG"
+		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut"
 	},
 	"resources": {
 		"*": [

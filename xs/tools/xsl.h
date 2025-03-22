@@ -211,6 +211,9 @@ struct sxLinkerSymbol {
 /* xslBase.c */
 extern void fx_BigInt64Array(txMachine* the);
 extern void fx_BigUint64Array(txMachine* the);
+#if mxFloat16
+extern void fx_Float16Array(txMachine* the);
+#endif
 extern void fx_Float32Array(txMachine* the);
 extern void fx_Float64Array(txMachine* the);
 extern void fx_Int8Array(txMachine* the);

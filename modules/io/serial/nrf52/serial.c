@@ -22,15 +22,14 @@
 	to do:
 		!! format: ascii
 		onError - framing errors?
-		drain transmit? (onWritable when threshold is 0)
 		flush transmit, flush receive?
 		other pins, hardware flow control
 */
 
-
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_* values
+#include "mc.defines.h"
 
 #include "xsHost.h"
 
@@ -39,6 +38,15 @@
 #include "nrfx_uarte.h"
 #include "queue.h"
 //#include "sdk_config.h"
+
+#if MODDEF_SERIAL_TXACTIVE
+	#include "nrf_drv_gpiote.h"
+
+	enum {
+		kDigitalOutput = 8,
+		kDigitalOutputOpenDrain = 9,
+	};
+#endif
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
@@ -66,6 +74,7 @@ struct SerialRecord {
 	uint8_t		transmit[kTransmitBytes];
 	uint16_t	transmitPosition;
 	uint16_t	transmitSent;
+	uint16_t	transmitNotifyThreshold;
 	uint8_t		transmitTriggered;
 	uint8_t		postedMessage;
 
@@ -75,6 +84,11 @@ struct SerialRecord {
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
 	uint8_t		*parityTable;
+
+#if MODDEF_SERIAL_TXACTIVE
+	int32_t		txActivePin;
+	uint8_t		txActiveEnable;
+#endif
 };
 
 static void io_uart_handler(const nrfx_uarte_event_t *p_event, void *p_context);
@@ -155,8 +169,14 @@ void xs_serial_constructor(xsMachine *the)
 	xsSlot *onReadable, *onWritable;
 	int transmitPin = kInvalidPin, receivePin = kInvalidPin;
 	int data = 8, parity = 0;
+	uint16_t transmitNotifyThreshold;
+#if MODDEF_SERIAL_TXACTIVE
+	int32_t		txActivePin = kInvalidPin;
+	uint8_t		txActiveEnable = 1;
+	uint8_t		txActiveMode = kDigitalOutput;
+#endif
 
-	xsmcVars(1);
+	xsmcVars(2);
 
 	if (xsmcHas(xsArg(0), xsID_transmit)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_transmit);
@@ -181,6 +201,7 @@ void xs_serial_constructor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
 	baud = xsmcToInteger(xsVar(0));
+	transmitNotifyThreshold = (baud >> 3) * 0.0025;
 	switch (baud) {
 		case 1200:
 			baud = NRF_UARTE_BAUDRATE_1200;
@@ -257,6 +278,28 @@ void xs_serial_constructor(xsMachine *the)
 	if (((8 == data) && parity) || ((7 == data) && !parity))
 		xsRangeError("unsupported");
 
+#if MODDEF_SERIAL_TXACTIVE
+	xsmcGet(xsVar(0), xsArg(0), xsID_txActive);
+	if (xsReferenceType == xsmcTypeOf(xsVar(0))) {
+		xsmcGet(xsVar(1), xsVar(0), xsID_pin);
+		txActivePin = builtinGetPin(the, &xsVar(1));
+		if (!builtinIsPinFree(txActivePin))
+			xsUnknownError("in use");
+		
+		if (xsmcHas(xsVar(0), xsID_active)) {
+			xsmcGet(xsVar(1), xsVar(0), xsID_active);
+			txActiveEnable = xsmcToInteger(xsVar(1));
+		}
+
+		if (xsmcHas(xsVar(0), xsID_mode)) {
+			xsmcGet(xsVar(1), xsVar(0), xsID_mode);
+			txActiveMode = xsmcToInteger(xsVar(1));
+			if ((kDigitalOutput != txActiveMode) || (kDigitalOutputOpenDrain != txActiveMode))
+				xsUnknownError("invalid mode");
+		}
+	}
+#endif
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	onWritable = builtinGetCallback(the, xsID_onWritable);
 
@@ -307,6 +350,7 @@ void xs_serial_constructor(xsMachine *the)
 		serial->parityTable = kOddParity;
 	else if (2 == parity)
 		serial->parityTable = kEvenParity;
+	serial->transmitNotifyThreshold = transmitNotifyThreshold;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsSerialHooks);
 
@@ -323,6 +367,24 @@ void xs_serial_constructor(xsMachine *the)
 	ret = nrfx_uarte_rx(&gSerialUARTE, serial->rx_buffer, sizeof(serial->rx_buffer));
 
 	xsRemember(serial->obj);
+
+#if MODDEF_SERIAL_TXACTIVE
+	serial->txActivePin = txActivePin;
+	if (kInvalidPin != txActivePin) {
+		builtinUsePin(txActivePin);
+		serial->txActiveEnable = txActiveEnable;
+
+		if (kDigitalOutput == txActiveMode)
+			nrf_gpio_cfg_output(txActivePin);
+		else
+			nrf_gpio_cfg(txActivePin, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+
+		if (txActiveEnable)
+			nrf_gpio_port_out_clear(NRF_P0, 1 << txActivePin);		// disable (active high)
+		else
+			nrf_gpio_port_out_set(NRF_P0, 1 << txActivePin);		// disable (active low)
+	}
+#endif
 
 	if (kInvalidPin != transmitPin)
 		builtinUsePin(transmitPin);
@@ -347,6 +409,12 @@ void xs_serial_destructor(void *data)
 		builtinFreePin(serial->transmitPin);
 	if (kInvalidPin != serial->receivePin)
 		builtinFreePin(serial->receivePin);
+#if MODDEF_SERIAL_TXACTIVE
+	if (kInvalidPin != serial->txActivePin) {
+		builtinFreePin(serial->txActivePin);
+		nrf_drv_gpiote_out_uninit(serial->txActivePin);
+	}
+#endif
 
 	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
 		c_free(serial);
@@ -474,12 +542,21 @@ void xs_serial_write(xsMachine *the)
 		count = requested;
 	}
 
+#if MODDEF_SERIAL_TXACTIVE
+		if (kInvalidPin != serial->txActivePin) {
+			if (serial->txActiveEnable)
+				nrf_gpio_port_out_set(NRF_P0, 1 << serial->txActivePin);		// enable (active high)
+			else
+				nrf_gpio_port_out_clear(NRF_P0, 1 << serial->txActivePin);		// enable (active low)
+		}
+#endif
+
 	builtinCriticalSectionBegin();
 		c_memmove(&serial->transmit[serial->transmitPosition], src, count);
 		serial->transmitPosition += count;
 
 		if (count == serial->transmitPosition)
-			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, serial->transmitPosition);
+			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, (serial->transmitPosition > serial->transmitNotifyThreshold) ? (serial->transmitPosition - serial->transmitNotifyThreshold) : serial->transmitPosition);
 	builtinCriticalSectionEnd();
 }
 
@@ -507,12 +584,25 @@ static void io_uart_handler(nrfx_uarte_event_t const *p_event, void *p_context)
 				post = 1;
 				serial->transmitTriggered = true;
 			}
+
+#if MODDEF_SERIAL_TXACTIVE
+			if (kInvalidPin != serial->txActivePin) {
+				if (serial->txActiveEnable)
+					nrf_gpio_port_out_clear(NRF_P0, 1 << serial->txActivePin);		// disable (active high)
+				else
+					nrf_gpio_port_out_set(NRF_P0, 1 << serial->txActivePin);		// disable (active low)
+			}
+#endif
 		}
 		else {
 			c_memmove(serial->transmit, &serial->transmit[serial->transmitSent], serial->transmitPosition - serial->transmitSent);
 			serial->transmitPosition -= serial->transmitSent;
 			serial->transmitSent = 0;
-			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, serial->transmitPosition);
+			nrfx_uarte_tx(&gSerialUARTE, serial->transmit, (serial->transmitPosition > serial->transmitNotifyThreshold) ? (serial->transmitPosition - serial->transmitNotifyThreshold) : serial->transmitPosition);
+			if ((serial->transmitPosition <= serial->transmitNotifyThreshold) && (serial->onWritable && !serial->transmitTriggered)) {
+				post = 1;
+				serial->transmitTriggered = true;
+			}
 		}
 	}
 	else if (NRFX_UARTE_EVT_RX_DONE == p_event->type) {
@@ -583,12 +673,10 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	}
 
 	if (transmitTriggered) {
-		if (0 == serial->transmitPosition) {
-			xsBeginHost(the);
-				xsmcSetInteger(xsResult, kTransmitBytes);
-				xsCallFunction1(xsReference(serial->onWritable), serial->obj, xsResult);
-			xsEndHost(the);
-		}
+		xsBeginHost(the);
+			xsmcSetInteger(xsResult, kTransmitBytes - serial->transmitPosition);
+			xsCallFunction1(xsReference(serial->onWritable), serial->obj, xsResult);
+		xsEndHost(the);
 	}
 }
 

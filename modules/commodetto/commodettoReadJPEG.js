@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,6 +22,7 @@ import Bitmap from "commodetto/Bitmap";
 
 export default class JPEG @ "xs_JPEG_destructor" {
 	constructor(buffer) @ "xs_JPEG_constructor"
+	close() {}
 	read() @ "xs_JPEG_read"
 	push(buffer) @ "xs_JPEG_push"
 	get ready() @ "xs_JPEG_get_ready"

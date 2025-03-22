@@ -50,7 +50,13 @@ export class TOOL {
 			args.forEach(arg => argv.push(arg));
 		}
 		
-		let path = this.getenv("MODDABLE") + "/tools/VERSION";
+		let path = this.getenv("MODDABLE");
+		if (!path)
+			throw new Error("missing MODDABLE environment variable")
+		path = this.resolveDirectoryPath(path);
+		if (!path)
+			throw new Error("invalid MODDABLE environment variable")
+		path += "/tools/VERSION";
 		if ("win" === this.currentPlatform)
 			path = path.replaceAll("/", "\\");
 		const fileVersion = (this.isDirectoryOrFile(path) == 1) ? this.readFileString(path) : undefined;

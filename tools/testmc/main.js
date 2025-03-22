@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021  Moddable Tech, Inc.
+ * Copyright (c) 2018-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -22,12 +22,14 @@ import {} from "_262";
 import {} from "harness";
 import ChecksumOut from "commodetto/checksumOut";
 import Timer from "timer";
-import WiFi from "wifi";
-import Net from "net";
 import config from "mc/config";
 import { URL, URLSearchParams } from "url";
 globalThis.URL = URL;
 globalThis.URLSearchParams = URLSearchParams;
+/* comment out the import of WiFi or Net if your platform doesn't support it */
+import WiFi from "wifi";
+import Net from "net";
+/* end network */
 
 globalThis.$DO = function(f) {
 	return function(...args) {
@@ -151,8 +153,12 @@ Object.defineProperty(globalThis, "screen", {
 	}
 });
 
+/* *** WiFi */
 globalThis.$NETWORK = {
-	get connected() {
+    get connected() {
+		if (WiFi === undefined)
+			return false;
+
 		if (WiFi.Mode.station !== WiFi.mode)
 			WiFi.mode = WiFi.Mode.station;
 
@@ -177,11 +183,22 @@ globalThis.$NETWORK = {
 		});
 	},
 	async wifi(options) {
-		// could be async to allow time to bring up an AP 
+		// could be async to allow time to bring up an AP
 		return {ssid: config.ssid, password: config.password};
+	},
+	async resolve(domain) {
+		return new Promise((resolve, reject) => {
+			Net.resolve(domain, (name, address) => {
+				if (address)
+					resolve(address);
+				else
+					reject();
+			});
+		});
 	},
 	invalidDomain: "fail.moddable.com",
 };
+/* *** WiFi */
 
 class HostObject @ "xs_hostobject_destructor" {
 	constructor() @ "xs_hostobject"
@@ -195,7 +212,7 @@ class HostBuffer @ "xs_hostbuffer_destructor" {
 	constructor() @ "xs_hostbuffer"
 }
 
-class TestBehavior extends Behavior {
+class TestBehavior extends (globalThis.Behavior ?? Object) {
 	constructor() {
 		super();
 

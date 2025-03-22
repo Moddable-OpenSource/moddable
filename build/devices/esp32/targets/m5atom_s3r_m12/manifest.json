@@ -1,0 +1,63 @@
+{
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2"
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"Screen": "",
+		"button_pin": 41,
+		"power_pin": 18,
+		"ir_pin": 47
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 45,
+			"scl_pin": 0
+		},
+		"camera": {
+			"powerdown": -1,
+			"reset": -1,
+			"xclk": 21,
+			"xclk_freq_hz": 20000000,
+			"pclk": 40,
+			"href": 14,
+			"vsync": 10,
+			"scl": 9,
+			"sda": 12,
+			"i2c_port": 1,
+			"d0": 3,
+			"d1": 42,
+			"d2": 46,
+			"d3": 48,
+			"d4": 4,
+			"d5": 17,
+			"d6": 11,
+			"d7": 13
+		}
+	}
+}
+

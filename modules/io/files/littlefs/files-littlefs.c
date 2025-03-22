@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -54,8 +54,8 @@
 #ifndef MODDEF_FILE_LFS_BLOCK_CYCLES
 	#define MODDEF_FILE_LFS_BLOCK_CYCLES 500
 #endif
-#ifndef MODDEF_FILE_LFS_PARITION_SIZE  
-	#define MODDEF_FILE_LFS_PARITION_SIZE (131072)
+#ifndef MODDEF_FILE_LFS_PARTITION_SIZE  
+	#define MODDEF_FILE_LFS_PARTITION_SIZE (131072)
 #endif
 
 #ifdef __ets__
@@ -67,7 +67,7 @@
 	#define MOD_LFS_RAMDISK 1
 
 	#define kBlockSize (4096)
-	#define kBlockCount ((MODDEF_FILE_LFS_PARITION_SIZE + kBlockSize - 1) / kBlockSize)
+	#define kBlockCount ((MODDEF_FILE_LFS_PARTITION_SIZE + kBlockSize - 1) / kBlockSize)
 
 	uint8_t gRAMDisk[kBlockSize * kBlockCount]; 
 #endif
@@ -280,7 +280,7 @@ void xs_filelittlefs_flush(xsMachine *the)
 	Directory
 */
 
-void xs_direectorylittlefs_destructor(void *data)
+void xs_directorylittlefs_destructor(void *data)
 {
 	if (data) {
 		c_free(data);
@@ -289,39 +289,61 @@ void xs_direectorylittlefs_destructor(void *data)
 }
 
 // directory storage is the directory path, always with a trailing "/" for concatenation with relative paths
-#define getDirectory(slot) ((char *)xsmcGetHostDataValidate(slot, xs_direectorylittlefs_destructor))
+#define getDirectory(slot) ((char *)xsmcGetHostDataValidate(slot, xs_directorylittlefs_destructor))
 
-void xs_direectorylittlefs(xsMachine *the)
+void xs_directorylittlefs(xsMachine *the)
 {
-	xsTrace("Directory constructor is temporary for bootstrapping. Will throw in the future.\n");
-
-	xsmcGet(xsResult, xsArg(0), xsID_path);
-	char *path = xsmcToString(xsResult);			//@@ not checked with getPath.... for bootstrap
-	size_t len = c_strlen(path) + 1;
-	int needsSlash = path[len - 1] != '/';
-	char *p = c_malloc(len + needsSlash);
-	if (!p) xsUnknownError("no memory");
-	c_memcpy(p, path, len);
-	if (needsSlash) {
-		p[len - 1] = '/';
-		p[len] = 0;
-	}
-
-	xsmcSetHostData(xsThis, p);
-	startLittlefs(the);
+	xsUnknownError("use openDirectory");
 }
 
-void xs_direectorylittlefs_close(xsMachine *the)
+void xs_directorylittlefs_bootstrap(xsMachine *the)
+{
+	char *path = "/";
+
+    if (xsmcTest(xsArg(1)))
+		path = xsmcToString(xsArg(1));
+
+	startLittlefs(the);
+
+	struct lfs_info info;
+	int result = lfs_stat(&gLFS->lfs, path, &info);
+	if (result < 0) {
+		stopLittlefs();
+		throwIf(result);
+	}
+
+	if (LFS_TYPE_DIR != info.type) {
+		stopLittlefs();
+		xsUnknownError("not directory");
+	}
+
+	size_t len = c_strlen(path);
+	int needsSlash = (0 == len) || ('/' != path[len - 1]);
+	char *p = c_malloc(len + 1 + needsSlash);
+	if (!p) {
+		stopLittlefs();
+		xsUnknownError("no memory");
+	}
+	c_memcpy(p, path, len + 1);
+	if (needsSlash) {
+		p[len] = '/';
+		p[len + 1] = 0;
+	}
+
+	xsmcSetHostData(xsArg(0), p);
+}
+
+void xs_directorylittlefs_close(xsMachine *the)
 {
 	if (!xsGetHostDataIf(xsThis)) 
 		return;
 
-	xs_direectorylittlefs_destructor(xsmcGetHostData(xsThis));
+	xs_directorylittlefs_destructor(xsmcGetHostData(xsThis));
 	xsmcSetHostData(xsThis, NULL);
 	xsSetHostDestructor(xsThis, NULL);
 }
 
-void xs_direectorylittlefs_openFile(xsMachine *the)
+void xs_directorylittlefs_openFile(xsMachine *the)
 {
 	char *dirPath = getDirectory(xsThis);
 
@@ -374,7 +396,7 @@ void xs_direectorylittlefs_openFile(xsMachine *the)
 	startLittlefs(the);
 }
 
-void xs_direectorylittlefs_openDirectory(xsMachine *the)
+void xs_directorylittlefs_openDirectory(xsMachine *the)
 {
 	char *dirPath = getDirectory(xsThis);
 
@@ -404,7 +426,7 @@ void xs_direectorylittlefs_openDirectory(xsMachine *the)
 	startLittlefs(the);
 }
 
-void xs_direectorylittlefs_delete(xsMachine *the)
+void xs_directorylittlefs_delete(xsMachine *the)
 {
 	char *dirPath = getDirectory(xsThis);
 	char *path = appendPath(dirPath, xsArg(0));
@@ -423,7 +445,7 @@ void xs_direectorylittlefs_delete(xsMachine *the)
 	xsmcSetTrue(xsResult);
 }
 
-void xs_direectorylittlefs_move(xsMachine *the)
+void xs_directorylittlefs_move(xsMachine *the)
 {
 	char *fromPath = C_NULL, *toPath = C_NULL;
 
@@ -451,7 +473,7 @@ void xs_direectorylittlefs_move(xsMachine *the)
 
 }
 
-void xs_direectorylittlefs_status(xsMachine *the)
+void xs_directorylittlefs_status(xsMachine *the)
 {
 	char *dirPath = getDirectory(xsThis);
 	struct lfs_info info;
@@ -469,7 +491,7 @@ void xs_direectorylittlefs_status(xsMachine *the)
 	xsmcSet(xsResult, xsID_mode, xsVar(0));
 }
 
-void xs_direectorylittlefs_create(xsMachine *the)
+void xs_directorylittlefs_createDirectory(xsMachine *the)
 {
 	char *dirPath = getDirectory(xsThis);
 	char *path = appendPath(dirPath, xsArg(0));
@@ -485,7 +507,7 @@ void xs_direectorylittlefs_create(xsMachine *the)
 	xsmcSetTrue(xsResult);
 }
 
-void xs_direectorylittlefs_readLink(xsMachine *the)
+void xs_directorylittlefs_link(xsMachine *the)
 {
 	getDirectory(xsThis);	// reject instance with invalid "this" first, as exepected by tests
 	xsUnknownError("unsupported");
@@ -495,13 +517,11 @@ void xs_direectorylittlefs_readLink(xsMachine *the)
 	Scan
 */
 
-void xs_direectorylittlefs_scan(xsMachine *the)
+void xs_directory_iterator_littlefs(xsMachine *the)
 {
-	char *dirPath = getDirectory(xsThis);
-
-	xsResult = xsNewHostInstance(xsArg(1));
-
-	char *path = appendPath(dirPath, xsArg(0));
+	char *dirPath = getDirectory(xsArg(0)), *path = dirPath;
+	if (xsmcArgc > 1)
+		path = appendPath(dirPath, xsArg(1));
 
 	struct lfs_info info;
 	throwIf(lfs_stat(&gLFS->lfs, path, &info));
@@ -518,54 +538,61 @@ void xs_direectorylittlefs_scan(xsMachine *the)
 		c_free(d);
 		throwIf(result);
 	}
-	xsmcSetHostData(xsResult, d);
+
+	xsmcSetHostData(xsThis, d);
 	startLittlefs(the);
 }
 
-void xs_scanlittlefs_destructor(void *data)
+void xs_directory_iterator_littlefs_destructor(void *data)
 {
-	lfs_dir_t *d = data;
-	if (!d) return;
-
-	lfs_dir_close(&gLFS->lfs, d);
-	c_free(d);
+	if (!data)
+		return;
+	lfs_dir_close(&gLFS->lfs, (lfs_dir_t *)data);
+	c_free(data);
 	stopLittlefs();
 }
 
-#define getScan(slot) ((lfs_dir_t *)xsmcGetHostDataValidate(slot, xs_scanlittlefs_destructor))
-
-void xs_scanlittlefs(xsMachine *the)
+void xs_directory_iterator_littlefs_next(xsMachine *the)
 {
-	xsUnknownError("use scan");
-}
+	xsmcVars(2);
+	xsmcSetTrue(xsVar(0));
+	xsmcSetUndefined(xsVar(1));
 
-void xs_scanlittlefs_close(xsMachine *the)
-{
-	if (!xsGetHostDataIf(xsThis)) 
-		return;
-
-	xs_scanlittlefs_destructor(xsmcGetHostDataValidate(xsThis, xs_scanlittlefs_destructor));
-	xsmcSetHostData(xsThis, NULL);
-	xsSetHostDestructor(xsThis, NULL);
-}
-
-void xs_scanlittlefs_read(xsMachine *the)
-{
-	lfs_dir_t *d = getScan(xsThis);
-
-	while (true) {
+	lfs_dir_t *d = xsmcGetHostDataValidate(xsThis, xs_directory_iterator_littlefs_destructor);
+	while (d) {
 		struct lfs_info info;
 		if (lfs_dir_read(&gLFS->lfs, d, &info) <= 0) {
-			xs_scanlittlefs_close(the);
-			return;
+			xs_directory_iterator_littlefs_destructor(d);
+			xsmcSetHostData(xsThis, C_NULL);
+			break;
 		}
 
 		if (!c_strcmp(info.name, ".") || !c_strcmp(info.name, ".."))
 			continue;
 
-		xsmcSetString(xsResult, info.name);
+		xsmcSetString(xsVar(1), info.name);
+		xsmcSetFalse(xsVar(0));
 		break;
 	}
+
+	xsResult = xsNewObject();
+	xsmcDefine(xsResult, xsID_done, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_value, xsVar(1), xsDefault);
+}
+
+void xs_directory_iterator_littlefs_return(xsMachine *the)
+{
+	xsmcVars(2);
+	xsmcSetTrue(xsVar(0));
+	xsmcSetUndefined(xsVar(1));
+
+	lfs_dir_t *d = xsmcGetHostDataValidate(xsThis, xs_directory_iterator_littlefs_destructor);
+	xs_directory_iterator_littlefs_destructor(d);
+	xsmcSetHostData(xsThis, C_NULL);
+
+	xsResult = xsNewObject();
+	xsmcDefine(xsResult, xsID_done, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_value, xsVar(1), xsDefault);
 }
 
 /*

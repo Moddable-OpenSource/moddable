@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,8 @@
  
 import Timer from "timer";
 
+const more = Object.freeze({more: true});
+
 class HTTPClient {
 	static #Request = class {
 		#client;
@@ -39,13 +41,14 @@ class HTTPClient {
 			if ("object" === typeof count) {
 				buffer = count;
 				count = buffer.byteLength;
+
+				if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+					throw new Error("invalid buffer");
 			}			
 			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
 			if (count > available) {
 				count = available;
 				if (buffer) {
-					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
-						throw new Error("invalid buffer");
 					if (ArrayBuffer.isView(buffer))
 						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
 					else
@@ -98,17 +101,17 @@ class HTTPClient {
 			const byteLength = data.byteLength;
 			if (true === client.#requestBody) {
 				if ((byteLength + 8) > client.#writable)
-					throw new Error("too much");
+					throw new Error("would block");
 
-				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"));
-				client.#write(data);
+				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"), more);
+				client.#write(data, more);
 				client.#write(ArrayBuffer.fromString("\r\n"));
 
 				return (client.#writable > 8) ? (client.#writable - 8) : 0 
 			}
 			else {
 				if ((byteLength > client.#writable) || (byteLength > client.#requestBody))
-					throw new Error("too much");
+					throw new Error("would block");
 
 				client.#write(data);
 
@@ -117,9 +120,10 @@ class HTTPClient {
 					client.#state = "receiveResponseStatus";
 					client.#line = "";
 					client.#requestBody = false;
+					return 0;		// no more writable after request body has been sent
 				}
 
-				return client.#writable;
+				return Math.min(client.#writable, client.#requestBody);
 			}
 		}
 	}
@@ -302,14 +306,12 @@ class HTTPClient {
 
 		do {
 			if (this.#pendingWrite) {
-				let use = this.#pendingWrite.byteLength - this.#writePosition;
-				if (use > count) {
-					this.#write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
-					this.#writePosition += count;
+				const use = Math.min(this.#pendingWrite.byteLength - this.#writePosition, this.#writable);
+				this.#write(new Uint8Array(this.#pendingWrite, this.#writePosition, use));
+				this.#writePosition += use;
+				if (this.#writePosition !== this.#pendingWrite.byteLength)
 					return;
-				}
-				
-				this.#write(this.#pendingWrite);
+
 				this.#pendingWrite = undefined;
 			}
 
@@ -359,6 +361,8 @@ class HTTPClient {
 							if (writable <= 0)
 								return;
 						}
+						else
+							writable = Math.min(writable, this.#requestBody);
 						this.#current.onWritable?.call(this.#current.request, writable);
 					}
 					else {
@@ -420,12 +424,8 @@ class HTTPClient {
 		this.#chunk = undefined;
 		this.#requestBody = false;
 	}
-	#write(data) {
-		const result = this.#socket.write(data);
-		if (undefined !== result)
-			this.#writable = result;
-		else
-			this.#writable -= data.byteLength;
+	#write(data, options) {
+		this.#writable = this.#socket.write(data, options);
 	}
 }
 

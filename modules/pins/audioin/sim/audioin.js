@@ -26,19 +26,21 @@ class AudioIn  {
 	#wav;
 	#reader;
 
-	constructor() {
-		this.#wav = new Resource("sim.wav");		
+	constructor(options) {
+		this.#wav = new Resource(config.audioInWave ?? "sim.wav");		
 		this.#reader = new WavReader(this.#wav);
 	}
 	close() {
 		this.#wav = this.#reader = undefined;
 	}
-	read(count, buffer = new ArrayBuffer(count * 2), offset = 0) {
-		const output = new Int16Array(buffer, offset, count);
+	read(count, buffer, offset = 0) {
+		const numChannels = this.numChannels;
+		buffer ??= new ArrayBuffer(count * 2 * numChannels);
+		const output = new Int16Array(buffer, offset, count * numChannels);
 		let position = 0;
 		while (count) {
 			const use = Math.min(count, this.#reader.samples);
-			this.#reader.getSamples(output.subarray(position, position + use), use);
+			this.#reader.getSamples(output.subarray(position * numChannels, (position + use) * numChannels), use);
 			count -= use;
 			position += use;
 

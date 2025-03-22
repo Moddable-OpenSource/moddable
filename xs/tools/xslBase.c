@@ -65,6 +65,9 @@ static txCallback gxTypeCallbacks[1 + mxTypeArrayCount] = {
 	fx_TypedArray,
 	fx_BigInt64Array,
 	fx_BigUint64Array,
+#if mxFloat16
+	fx_Float16Array,
+#endif
 	fx_Float32Array,
 	fx_Float64Array,
 	fx_Int8Array,
@@ -79,6 +82,9 @@ static int gxTypeCallbacksIndex = 0;
 
 void fx_BigInt64Array(txMachine* the) { fx_TypedArray(the); }
 void fx_BigUint64Array(txMachine* the) { fx_TypedArray(the); }
+#if mxFloat16
+void fx_Float16Array(txMachine* the) { fx_TypedArray(the); }
+#endif
 void fx_Float32Array(txMachine* the) { fx_TypedArray(the); }
 void fx_Float64Array(txMachine* the) { fx_TypedArray(the); }
 void fx_Int8Array(txMachine* the) { fx_TypedArray(the); }

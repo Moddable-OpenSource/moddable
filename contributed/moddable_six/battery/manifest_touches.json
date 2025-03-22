@@ -1,0 +1,17 @@
+{
+	"include": [
+		"./manifest.json"
+	],
+	"modules": {
+		"*": "../touches/main_touches"
+	},
+	"creation": {
+		"main": "main_touches"
+	},
+    "data": {
+		"*": "../touches/battery/touches"
+    },
+	"resources":{
+		"*": "$(MODDABLE)/tools/mcsim/assets/fingerprint"
+	}
+}

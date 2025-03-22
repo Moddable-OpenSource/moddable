@@ -112,7 +112,7 @@ static const txKeyword ICACHE_RODATA_ATTR gxStrictKeywords[XS_STRICT_KEYWORD_COU
 static txString fxUTF8Buffer(txParser* parser, txInteger character, txString string, txString limit)
 {
 	if (string + mxStringByteLength(character) > limit) {
-		fxReportMemoryError(parser, parser->line, "buffer overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "buffer overflow");
 	}
 	return mxStringByteEncode(string, character);
 } 
@@ -125,13 +125,13 @@ void fxCheckStrictKeyword(txParser* parser)
 		anIndex = low + ((high - low) / 2);
 		aDelta = c_strcmp(gxStrictKeywords[anIndex].text, parser->buffer);
 		if (aDelta == 0) {
-			parser->token = gxStrictKeywords[anIndex].token;
+			parser->states[0].token = gxStrictKeywords[anIndex].token;
 			goto bail;
 		}
 	}
 bail:
-	if (parser->escaped2)
-		fxReportParserError(parser, parser->line, "escaped keyword");			
+	if (parser->states[0].escaped)
+		fxReportParserError(parser, parser->states[0].line, "escaped keyword");			
 }
 
 void fxGetNextCharacter(txParser* parser)
@@ -168,7 +168,7 @@ txU4 fxGetNextCode(txParser* parser)
 				break;
 		}
 		if (sequence->size == 0) {
-			fxReportParserError(parser, parser->line, "invalid character %d", code);
+			fxReportParserError(parser, parser->states[2].line, "invalid character %d", code);
 			code = (txU4)C_EOF;
 		}
 		else {
@@ -205,7 +205,7 @@ txString fxGetNextDigits(txParser* parser, txString (*f)(txParser*, txString, tx
 			break;
 	}
 	if (empty || separator)
-		fxReportParserError(parser, parser->line, "invalid number");	
+		fxReportParserError(parser, parser->states[2].line, "invalid number");	
 	return p;
 }
 
@@ -271,16 +271,16 @@ void fxGetNextKeyword(txParser* parser)
 {
 	int low, high, anIndex, aDelta;
 	
-	parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
-	parser->token2 = XS_TOKEN_IDENTIFIER;
-	if ((parser->token == XS_TOKEN_DOT) || (parser->token == XS_TOKEN_CHAIN))
+	parser->states[2].symbol = fxNewParserSymbol(parser, parser->buffer);
+	parser->states[2].token = XS_TOKEN_IDENTIFIER;
+	if ((parser->states[0].token == XS_TOKEN_DOT) || (parser->states[0].token == XS_TOKEN_CHAIN))
 		return;
 	for (low = 0, high = XS_KEYWORD_COUNT; high > low;
 			(aDelta < 0) ? (low = anIndex + 1) : (high = anIndex)) {
 		anIndex = low + ((high - low) / 2);
 		aDelta = c_strcmp(gxKeywords[anIndex].text, parser->buffer);
 		if (aDelta == 0) {
-			parser->token2 = gxKeywords[anIndex].token;
+			parser->states[2].token = gxKeywords[anIndex].token;
 			return;
 		}
 	}
@@ -290,20 +290,20 @@ void fxGetNextKeyword(txParser* parser)
 			anIndex = low + ((high - low) / 2);
 			aDelta = c_strcmp(gxStrictKeywords[anIndex].text, parser->buffer);
 			if (aDelta == 0) {
-				parser->token2 = gxStrictKeywords[anIndex].token;
+				parser->states[2].token = gxStrictKeywords[anIndex].token;
 				return;
 			}
 		}
 	}
 	if (c_strcmp("await", parser->buffer) == 0) {
 		if (parser->flags & mxAsyncFlag) {
-			parser->token2 = XS_TOKEN_AWAIT;
+			parser->states[2].token = XS_TOKEN_AWAIT;
 			return;
 		}
 	}	
 	if (c_strcmp("yield", parser->buffer) == 0) {
 		if ((parser->flags & mxGeneratorFlag)){
-			parser->token2 = XS_TOKEN_YIELD;
+			parser->states[2].token = XS_TOKEN_YIELD;
 			return;
 		}
 	}	
@@ -346,13 +346,13 @@ txBoolean fxGetNextIdentiferX(txParser* parser, txU4* value)
 
 void fxGetNextNumber(txParser* parser, txNumber theNumber)
 {
-	parser->number2 = theNumber;
-	parser->integer2 = (txInteger)parser->number2;
-	theNumber = parser->integer2;
-	if (parser->number2 == theNumber)
-		parser->token2 = XS_TOKEN_INTEGER;
+	parser->states[2].number = theNumber;
+	parser->states[2].integer = (txInteger)parser->states[2].number;
+	theNumber = parser->states[2].integer;
+	if (parser->states[2].number == theNumber)
+		parser->states[2].token = XS_TOKEN_INTEGER;
 	else
-		parser->token2 = XS_TOKEN_NUMBER;
+		parser->states[2].token = XS_TOKEN_NUMBER;
 }
 
 void fxGetNextNumberB(txParser* parser)
@@ -364,19 +364,19 @@ void fxGetNextNumberB(txParser* parser)
 	p = fxGetNextDigits(parser, fxGetNextDigitsB, p, q, 1);
 	c = parser->character;
 	if (p == q) {
-		fxReportMemoryError(parser, parser->line, "number overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "number overflow");
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		fxReportParserError(parser, parser->line, "invalid number");
+		fxReportParserError(parser, parser->states[2].line, "invalid number");
 	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumB(mxPtrDiff(p - q)));
-		fxBigIntParseB(&parser->bigint2, q, mxPtrDiff(p - q));
-		parser->token2 = XS_TOKEN_BIGINT;
+		parser->states[2].bigint.data = fxNewParserChunk(parser, fxBigIntMaximumB(mxPtrDiff(p - q)));
+		fxBigIntParseB(&parser->states[2].bigint, q, mxPtrDiff(p - q));
+		parser->states[2].token = XS_TOKEN_BIGINT;
 	}
 	else {
 		txNumber n = 0;
@@ -429,23 +429,23 @@ void fxGetNextNumberE(txParser* parser, int dot)
 		c = parser->character;
 	}
 	if (p == q) {
-		fxReportMemoryError(parser, parser->line, "number overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "number overflow");
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		fxReportParserError(parser, parser->line, "invalid number");
+		fxReportParserError(parser, parser->states[2].line, "invalid number");
 	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
 		if (dot == 0) {
-			parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximum(mxPtrDiff(p - q)));
-			fxBigIntParse(&parser->bigint2, q, mxPtrDiff(p - q), 0);
-			parser->token2 = XS_TOKEN_BIGINT;
+			parser->states[2].bigint.data = fxNewParserChunk(parser, fxBigIntMaximum(mxPtrDiff(p - q)));
+			fxBigIntParse(&parser->states[2].bigint, q, mxPtrDiff(p - q), 0);
+			parser->states[2].token = XS_TOKEN_BIGINT;
 		}
 		else
-			fxReportParserError(parser, parser->line, "invalid number");			
+			fxReportParserError(parser, parser->states[2].line, "invalid number");			
 	}	
 	else
 		fxGetNextNumber(parser, fxStringToNumber(parser->console, parser->buffer, 1));
@@ -458,9 +458,9 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	if (legacy) {
 		p = fxGetNextDigitsD(parser, p, q, &legacy);
 		if (parser->character == '_')
-			fxReportParserError(parser, parser->line, "invalid number");			
+			fxReportParserError(parser, parser->states[2].line, "invalid number");			
 		if (parser->character == 'n')
-			fxReportParserError(parser, parser->line, "invalid number");			
+			fxReportParserError(parser, parser->states[2].line, "invalid number");			
 	}
 	else {
 		fxGetNextCharacter(parser);
@@ -469,19 +469,19 @@ void fxGetNextNumberO(txParser* parser, int c, int legacy)
 	}
 	c = parser->character;
 	if (p == q) {
-		fxReportMemoryError(parser, parser->line, "number overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "number overflow");
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		fxReportParserError(parser, parser->line, "invalid number");
+		fxReportParserError(parser, parser->states[2].line, "invalid number");
 	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumO(mxPtrDiff(p - q)));
-		fxBigIntParseO(&parser->bigint2, q, mxPtrDiff(p - q));
-		parser->token2 = XS_TOKEN_BIGINT;
+		parser->states[2].bigint.data = fxNewParserChunk(parser, fxBigIntMaximumO(mxPtrDiff(p - q)));
+		fxBigIntParseO(&parser->states[2].bigint, q, mxPtrDiff(p - q));
+		parser->states[2].token = XS_TOKEN_BIGINT;
 	}
 	else {	
 		txNumber n = 0;
@@ -500,19 +500,19 @@ void fxGetNextNumberX(txParser* parser)
 	p = fxGetNextDigits(parser, fxGetNextDigitsX, p, q, 1);
 	c = parser->character;
 	if (p == q) {
-		fxReportMemoryError(parser, parser->line, "number overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "number overflow");
 	}
 	if (c == 'n')
 		fxGetNextCharacter(parser);
 	if (fxIsIdentifierFirst(parser->character)) {
-		fxReportParserError(parser, parser->line, "invalid number");
+		fxReportParserError(parser, parser->states[2].line, "invalid number");
 	}
 	*p = 0;
 	q = parser->buffer;
 	if (c == 'n') {
-		parser->bigint2.data = fxNewParserChunk(parser, fxBigIntMaximumX(mxPtrDiff(p - q)));
-		fxBigIntParseX(&parser->bigint2, q, mxPtrDiff(p - q));
-		parser->token2 = XS_TOKEN_BIGINT;
+		parser->states[2].bigint.data = fxNewParserChunk(parser, fxBigIntMaximumX(mxPtrDiff(p - q)));
+		fxBigIntParseX(&parser->states[2].bigint, q, mxPtrDiff(p - q));
+		parser->states[2].token = XS_TOKEN_BIGINT;
 	}
 	else {
 		txNumber n = 0;
@@ -544,16 +544,16 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
     }
 	for (;;) {
 		if (c == (txU4)C_EOF) {
-			fxReportParserError(parser, parser->line, "end of file in regular expression");			
+			fxReportParserError(parser, parser->states[0].line, "end of file in regular expression");			
 			break;
 		}
 		else if ((c == 10) || (c == 13) || (c == 0x2028) || (c == 0x2029)) {
-			fxReportParserError(parser, parser->line, "end of line in regular expression");			
+			fxReportParserError(parser, parser->states[0].line, "end of line in regular expression");			
 			break;
 		}
 		else if (c == '*') {
 			if (first) {
-				fxReportParserError(parser, parser->line, "invalid regular expression");
+				fxReportParserError(parser, parser->states[0].line, "invalid regular expression");
 				break;
 			}
 			backslash = 0;
@@ -591,8 +591,8 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 		first = 0;
 	}
 	*p = 0;
-	parser->stringLength = mxPtrDiff(p - parser->buffer);
-	parser->string = fxNewParserString(parser, parser->buffer, parser->stringLength);
+	parser->states[0].stringLength = mxPtrDiff(p - parser->buffer);
+	parser->states[0].string = fxNewParserString(parser, parser->buffer, parser->states[0].stringLength);
 	p = parser->buffer;
 	q = p + parser->bufferSize - 1;
 	for (;;) {
@@ -603,11 +603,11 @@ void fxGetNextRegExp(txParser* parser, txU4 c)
 			break;
 	}
 	*p = 0;
-	parser->modifierLength = mxPtrDiff(p - parser->buffer);
-	parser->modifier = fxNewParserString(parser, parser->buffer, parser->modifierLength);
-	if (!fxCompileRegExp(parser->console, parser->string, parser->modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
-		fxReportParserError(parser, parser->line, "%s", parser->buffer);
-	parser->token = XS_TOKEN_REGEXP;
+	parser->states[0].modifierLength = mxPtrDiff(p - parser->buffer);
+	parser->states[0].modifier = fxNewParserString(parser, parser->buffer, parser->states[0].modifierLength);
+	if (!fxCompileRegExp(parser->console, parser->states[0].string, parser->states[0].modifier, C_NULL, C_NULL, parser->buffer, parser->bufferSize))
+		fxReportParserError(parser, parser->states[0].line, "%s", parser->buffer);
+	parser->states[0].token = XS_TOKEN_REGEXP;
 }
 
 void fxGetNextString(txParser* parser, int c)
@@ -616,22 +616,22 @@ void fxGetNextString(txParser* parser, int c)
 	txString q = p + parser->bufferSize - 1;
 	for (;;) {
 		if (parser->character == (txU4)C_EOF) {
-			fxReportParserError(parser, parser->line, "end of file in string");			
+			fxReportParserError(parser, parser->states[2].line, "end of file in string");			
 			break;
 		}
 		else if (parser->character == 10) {
-			parser->line2++;
+			parser->states[2].line++;
 			if (c == '`') {
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 				fxGetNextCharacter(parser);
 			}
 			else {
-				fxReportParserError(parser, parser->line, "end of line in string");			
+				fxReportParserError(parser, parser->states[2].line, "end of line in string");			
 				break;
 			}
 		}
 		else if (parser->character == 13) {
-			parser->line2++;
+			parser->states[2].line++;
 			if (c == '`') {
 				p = fxUTF8Buffer(parser, 10, p, q);
 				fxGetNextCharacter(parser);
@@ -639,12 +639,12 @@ void fxGetNextString(txParser* parser, int c)
 					fxGetNextCharacter(parser);
 			}
 			else {
-				fxReportParserError(parser, parser->line, "end of line in string");			
+				fxReportParserError(parser, parser->states[2].line, "end of line in string");			
 				break;
 			}
 		}
 		else if ((parser->character == 0x2028) || (parser->character == 0x2029)) {
-			parser->line2++;
+			parser->states[2].line++;
 			p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);
 		}
@@ -658,19 +658,19 @@ void fxGetNextString(txParser* parser, int c)
 			p = fxUTF8Buffer(parser, '$', p, q);
 		}
 		else if (parser->character == '\\') {
-			parser->escaped2 = 1;
+			parser->states[2].escaped = 1;
 			p = fxUTF8Buffer(parser, '\\', p, q);
 			fxGetNextCharacter(parser);
 			switch (parser->character) {
 			case 10:
 			case 0x2028:
 			case 0x2029:
-				parser->line2++;
+				parser->states[2].line++;
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 				fxGetNextCharacter(parser);
 				break;
 			case 13:
-				parser->line2++;
+				parser->states[2].line++;
 				p = fxUTF8Buffer(parser, 10, p, q);
 				fxGetNextCharacter(parser);
 				if (parser->character == 10)
@@ -689,20 +689,20 @@ void fxGetNextString(txParser* parser, int c)
 	}	
 	*p = 0;
 	if (p == q) {
-		fxReportMemoryError(parser, parser->line, "string overflow");
+		fxReportMemoryError(parser, parser->states[2].line, "string overflow");
 	}
-	parser->rawLength2 = mxPtrDiff(p - parser->buffer);
-	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
-	if (parser->escaped2) {
+	parser->states[2].rawLength = mxPtrDiff(p - parser->buffer);
+	parser->states[2].raw = fxNewParserString(parser, parser->buffer, parser->states[2].rawLength);
+	if (parser->states[2].escaped) {
 		txInteger character;
 		txString s;
 		txU1* u;
 		p = parser->buffer;
 		q = p + parser->bufferSize - 1;	
-		s = parser->raw2;
+		s = parser->states[2].raw;
 		while (*s) {
 			if (p == q) {
-				fxReportMemoryError(parser, parser->line, "buffer overflow");
+				fxReportMemoryError(parser, parser->states[2].line, "buffer overflow");
 			}
 			if (*s == '\\') {
 				s++;
@@ -746,14 +746,14 @@ void fxGetNextString(txParser* parser, int c)
 					if (fxParseHexEscape(&s, &character))
 						p = fxUTF8Buffer(parser, character, p, q);
 					else
-						parser->escaped2 |= mxStringErrorFlag;
+						parser->states[2].escaped |= mxStringErrorFlag;
 					break;
 				case 'u':
 					s++;
 					if (fxParseUnicodeEscape(&s, &character, 1, '\\'))
 						p = fxUTF8Buffer(parser, character, p, q);
 					else
-						parser->escaped2 |= mxStringErrorFlag;
+						parser->states[2].escaped |= mxStringErrorFlag;
 					break;
 				case '0':
 				case '1':
@@ -767,7 +767,7 @@ void fxGetNextString(txParser* parser, int c)
 					if ((character == 0) && ((*s < '0') || ('9' < *s)))
 						p = fxUTF8Buffer(parser, character, p, q);
 					else {	
-						parser->escaped2 |= mxStringLegacyFlag;
+						parser->states[2].escaped |= mxStringLegacyFlag;
 						if ((0 <= character) && (character <= 3)) {
 							if (('0' <= *s) && (*s <= '7'))
 								character = (character * 8) + *s++ - '0';
@@ -779,7 +779,7 @@ void fxGetNextString(txParser* parser, int c)
 					break;
 				case '8':
 				case '9':
-					parser->escaped2 |= mxStringLegacyFlag;
+					parser->states[2].escaped |= mxStringLegacyFlag;
 					*p++ = *s++;
 					break;
 				default:
@@ -797,14 +797,14 @@ void fxGetNextString(txParser* parser, int c)
 			}
 		}
 		*p = 0;
-		parser->stringLength2 = mxPtrDiff(p - parser->buffer);
-		parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
-		if ((c == '`') && (parser->escaped2 & mxStringLegacyFlag))
-			parser->escaped2 |= mxStringErrorFlag;
+		parser->states[2].stringLength = mxPtrDiff(p - parser->buffer);
+		parser->states[2].string = fxNewParserString(parser, parser->buffer, parser->states[2].stringLength);
+		if ((c == '`') && (parser->states[2].escaped & mxStringLegacyFlag))
+			parser->states[2].escaped |= mxStringErrorFlag;
 	}
 	else {
-		parser->stringLength2 = parser->rawLength2;
-		parser->string2 = parser->raw2;
+		parser->states[2].stringLength = parser->states[2].rawLength;
+		parser->states[2].string = parser->states[2].raw;
 	}
 }
 
@@ -832,30 +832,42 @@ txBoolean fxGetNextStringX(int c, txU4* value)
 
 void fxGetNextToken(txParser* parser)
 {
-	if (!parser->ahead)
+	if (parser->ahead == 0) {
 		fxGetNextTokenAux(parser);
-	parser->line = parser->line2;
-	parser->crlf = parser->crlf2;
-	parser->escaped = parser->escaped2;
-	parser->bigint = parser->bigint2;
-	parser->integer = parser->integer2;
-	parser->modifierLength = parser->modifierLength2;
-	parser->modifier = parser->modifier2;
-	parser->number = parser->number2;
-	parser->rawLength = parser->rawLength2;
-	parser->raw = parser->raw2;
-	parser->stringLength = parser->stringLength2;
-	parser->string = parser->string2;
-	parser->symbol = parser->symbol2;
-	parser->token = parser->token2;
-	parser->ahead = 0;
+		parser->states[0] = parser->states[2];
+	}
+	else if (parser->ahead == 1) {
+		parser->states[0] = parser->states[1];
+		parser->ahead = 0;
+	}
+	else if (parser->ahead == 2) {
+		parser->states[0] = parser->states[1];
+		parser->states[1] = parser->states[2];
+		parser->ahead = 1;
+	}
 }
 
-void fxGetNextToken2(txParser* parser)
+void fxLookAheadOnce(txParser* parser)
 {
-	if (!parser->ahead)
+	if (parser->ahead == 0) {
 		fxGetNextTokenAux(parser);
-	parser->ahead = 1;
+		parser->states[1] = parser->states[2];
+		parser->ahead = 1;
+	}	
+}
+
+void fxLookAheadTwice(txParser* parser)
+{
+	if (parser->ahead == 0) {
+		fxGetNextTokenAux(parser);
+		parser->states[1] = parser->states[2];
+		fxGetNextTokenAux(parser);
+		parser->ahead = 2;
+	}	
+	else if (parser->ahead == 1) {
+		fxGetNextTokenAux(parser);
+		parser->ahead = 2;
+	}	
 }
 
 void fxGetNextTokenAux(txParser* parser)
@@ -864,39 +876,39 @@ void fxGetNextTokenAux(txParser* parser)
 	txString p;
 	txString q;
 	txU4 t = 0;
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->bigint2.data = C_NULL;
-	parser->bigint2.size = 0;
-	parser->bigint2.sign = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->rawLength2 = 0;
-	parser->raw2 = parser->emptyString;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
-	while (parser->token2 == XS_NO_TOKEN) {
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].bigint.data = C_NULL;
+	parser->states[2].bigint.size = 0;
+	parser->states[2].bigint.sign = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].rawLength = 0;
+	parser->states[2].raw = parser->emptyString;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
+	while (parser->states[2].token == XS_NO_TOKEN) {
 		switch (parser->character) {
 		case C_EOF:
-			parser->token2 = XS_TOKEN_EOF;
+			parser->states[2].token = XS_TOKEN_EOF;
 			break;
 		case 10:	
 		case 0x2028: // <LS>
 		case 0x2029: // <PS>	
-			parser->line2++;
+			parser->states[2].line++;
 			fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 		case 13:	
-			parser->line2++;
+			parser->states[2].line++;
 			fxGetNextCharacter(parser);
 			if (parser->character == 10)
 				fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 			
 		case '\t':
@@ -932,8 +944,8 @@ void fxGetNextTokenAux(txParser* parser)
 				if ((('0' <= c) && (c <= '9')) || (c == 'e') || (c == 'E'))
 					fxGetNextNumberE(parser, 1);
 				else {
-					parser->number2 = 0;
-					parser->token2 = XS_TOKEN_NUMBER;
+					parser->states[2].number = 0;
+					parser->states[2].token = XS_TOKEN_NUMBER;
 				}
 			}
 			else if ((c == 'b') || (c == 'B')) {
@@ -953,12 +965,12 @@ void fxGetNextTokenAux(txParser* parser)
 			}
 			else if (('0' <= c) && (c <= '9')) {
 				if ((parser->flags & mxStrictFlag))
-					fxReportParserError(parser, parser->line, "octal number (strict mode)");			
+					fxReportParserError(parser, parser->states[2].line, "octal number (strict mode)");			
 				fxGetNextNumberO(parser, c, 1);
 			}
 			else {
-				parser->integer2 = 0;
-				parser->token2 = XS_TOKEN_INTEGER;
+				parser->states[2].integer = 0;
+				parser->states[2].token = XS_TOKEN_INTEGER;
 			}
 			break;
 		case '1':
@@ -978,73 +990,73 @@ void fxGetNextTokenAux(txParser* parser)
 			if (c == '.') {	
 				fxGetNextCharacter(parser);
 				if (parser->character == '.') {	
-					parser->token2 = XS_TOKEN_SPREAD;
+					parser->states[2].token = XS_TOKEN_SPREAD;
 					fxGetNextCharacter(parser);
 				}
 				else {
-					fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
+					fxReportParserError(parser, parser->states[2].line, "invalid character %d", parser->character);
 				}		
 			}		
 			else if (('0' <= c) && (c <= '9'))
 				fxGetNextNumberE(parser, 1);
 			else
-				parser->token2 = XS_TOKEN_DOT;
+				parser->states[2].token = XS_TOKEN_DOT;
 			break;	
 		case ',':
-			parser->token2 = XS_TOKEN_COMMA;
+			parser->states[2].token = XS_TOKEN_COMMA;
 			fxGetNextCharacter(parser);
 			break;	
 		case ';':
-			parser->token2 = XS_TOKEN_SEMICOLON;
+			parser->states[2].token = XS_TOKEN_SEMICOLON;
 			fxGetNextCharacter(parser);
 			break;	
 		case ':':
-			parser->token2 = XS_TOKEN_COLON;
+			parser->states[2].token = XS_TOKEN_COLON;
 			fxGetNextCharacter(parser);
 			break;	
 		case '?':
 			fxGetNextCharacter(parser);
 			if (parser->character == '.') {	
 				if ((parser->lookahead < '0') || ('9' < parser->lookahead)) {
-					parser->token2 = XS_TOKEN_CHAIN;
+					parser->states[2].token = XS_TOKEN_CHAIN;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_QUESTION_MARK;
+					parser->states[2].token = XS_TOKEN_QUESTION_MARK;
 			}
 			else if (parser->character == '?') {		
-				parser->token2 = XS_TOKEN_COALESCE;
+				parser->states[2].token = XS_TOKEN_COALESCE;
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {	
-					parser->token2 = XS_TOKEN_COALESCE_ASSIGN;
+					parser->states[2].token = XS_TOKEN_COALESCE_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 			}
 			else	
-				parser->token2 = XS_TOKEN_QUESTION_MARK;
+				parser->states[2].token = XS_TOKEN_QUESTION_MARK;
 			break;	
 		case '(':
-			parser->token2 = XS_TOKEN_LEFT_PARENTHESIS;
+			parser->states[2].token = XS_TOKEN_LEFT_PARENTHESIS;
 			fxGetNextCharacter(parser);
 			break;	
 		case ')':
-			parser->token2 = XS_TOKEN_RIGHT_PARENTHESIS;
+			parser->states[2].token = XS_TOKEN_RIGHT_PARENTHESIS;
 			fxGetNextCharacter(parser);
 			break;	
 		case '[':
-			parser->token2 = XS_TOKEN_LEFT_BRACKET;
+			parser->states[2].token = XS_TOKEN_LEFT_BRACKET;
 			fxGetNextCharacter(parser);
 			break;	
 		case ']':
-			parser->token2 = XS_TOKEN_RIGHT_BRACKET;
+			parser->states[2].token = XS_TOKEN_RIGHT_BRACKET;
 			fxGetNextCharacter(parser);
 			break;	
 		case '{':
-			parser->token2 = XS_TOKEN_LEFT_BRACE;
+			parser->states[2].token = XS_TOKEN_LEFT_BRACE;
 			fxGetNextCharacter(parser);
 			break;	
 		case '}':
-			parser->token2 = XS_TOKEN_RIGHT_BRACE;
+			parser->states[2].token = XS_TOKEN_RIGHT_BRACE;
 			fxGetNextCharacter(parser);
 			break;	
 		case '=':
@@ -1052,36 +1064,36 @@ void fxGetNextTokenAux(txParser* parser)
 			if (parser->character == '=') {			
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {
-					parser->token2 = XS_TOKEN_STRICT_EQUAL;
+					parser->states[2].token = XS_TOKEN_STRICT_EQUAL;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_EQUAL;
+					parser->states[2].token = XS_TOKEN_EQUAL;
 			}
 			else if (parser->character == '>') {	
-				parser->token2 = XS_TOKEN_ARROW;
+				parser->states[2].token = XS_TOKEN_ARROW;
 				fxGetNextCharacter(parser);
 			}
 			else	
-				parser->token2 = XS_TOKEN_ASSIGN;
+				parser->states[2].token = XS_TOKEN_ASSIGN;
 			break;
 		case '<':
 			fxGetNextCharacter(parser);
 			if (parser->character == '<') {
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {
-					parser->token2 = XS_TOKEN_LEFT_SHIFT_ASSIGN;
+					parser->states[2].token = XS_TOKEN_LEFT_SHIFT_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_LEFT_SHIFT;
+					parser->states[2].token = XS_TOKEN_LEFT_SHIFT;
 			}
 			else  if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_LESS_EQUAL;
+				parser->states[2].token = XS_TOKEN_LESS_EQUAL;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_LESS;
+				parser->states[2].token = XS_TOKEN_LESS;
 			break;	
 		case '>':
 			fxGetNextCharacter(parser);
@@ -1090,130 +1102,130 @@ void fxGetNextTokenAux(txParser* parser)
 				if (parser->character == '>') {			
 					fxGetNextCharacter(parser);
 					if (parser->character == '=') {
-						parser->token2 = XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN;
+						parser->states[2].token = XS_TOKEN_UNSIGNED_RIGHT_SHIFT_ASSIGN;
 						fxGetNextCharacter(parser);
 					}
 					else
-						parser->token2 = XS_TOKEN_UNSIGNED_RIGHT_SHIFT;
+						parser->states[2].token = XS_TOKEN_UNSIGNED_RIGHT_SHIFT;
 				}
 				else if (parser->character == '=') {
-					parser->token2 = XS_TOKEN_SIGNED_RIGHT_SHIFT_ASSIGN;
+					parser->states[2].token = XS_TOKEN_SIGNED_RIGHT_SHIFT_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_SIGNED_RIGHT_SHIFT;
+					parser->states[2].token = XS_TOKEN_SIGNED_RIGHT_SHIFT;
 			}
 			else if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_MORE_EQUAL;
+				parser->states[2].token = XS_TOKEN_MORE_EQUAL;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_MORE;
+				parser->states[2].token = XS_TOKEN_MORE;
 			break;	
 		case '!':
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {			
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {
-					parser->token2 = XS_TOKEN_STRICT_NOT_EQUAL;
+					parser->states[2].token = XS_TOKEN_STRICT_NOT_EQUAL;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_NOT_EQUAL;
+					parser->states[2].token = XS_TOKEN_NOT_EQUAL;
 			}
 			else
-				parser->token2 = XS_TOKEN_NOT;
+				parser->states[2].token = XS_TOKEN_NOT;
 			break;
 		case '~':
-			parser->token2 = XS_TOKEN_BIT_NOT;
+			parser->states[2].token = XS_TOKEN_BIT_NOT;
 			fxGetNextCharacter(parser);
 			break;
 		case '&':
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {	
-				parser->token2 = XS_TOKEN_BIT_AND_ASSIGN;
+				parser->states[2].token = XS_TOKEN_BIT_AND_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '&') {
-				parser->token2 = XS_TOKEN_AND;
+				parser->states[2].token = XS_TOKEN_AND;
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {	
-					parser->token2 = XS_TOKEN_AND_ASSIGN;
+					parser->states[2].token = XS_TOKEN_AND_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 			}
 			else
-				parser->token2 = XS_TOKEN_BIT_AND;
+				parser->states[2].token = XS_TOKEN_BIT_AND;
 			break;
 		case '|':
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_BIT_OR_ASSIGN;
+				parser->states[2].token = XS_TOKEN_BIT_OR_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '|') {
-				parser->token2 = XS_TOKEN_OR;
+				parser->states[2].token = XS_TOKEN_OR;
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {	
-					parser->token2 = XS_TOKEN_OR_ASSIGN;
+					parser->states[2].token = XS_TOKEN_OR_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 			}
 			else
-				parser->token2 = XS_TOKEN_BIT_OR;
+				parser->states[2].token = XS_TOKEN_BIT_OR;
 			break;
 		case '^':
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_BIT_XOR_ASSIGN;
+				parser->states[2].token = XS_TOKEN_BIT_XOR_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_BIT_XOR;
+				parser->states[2].token = XS_TOKEN_BIT_XOR;
 			break;
 		case '+':	
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_ADD_ASSIGN;
+				parser->states[2].token = XS_TOKEN_ADD_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '+') {
-				parser->token2 = XS_TOKEN_INCREMENT;
+				parser->states[2].token = XS_TOKEN_INCREMENT;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_ADD;
+				parser->states[2].token = XS_TOKEN_ADD;
 			break;
 		case '-':	
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_SUBTRACT_ASSIGN;
+				parser->states[2].token = XS_TOKEN_SUBTRACT_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '-') {
-				parser->token2 = XS_TOKEN_DECREMENT;
+				parser->states[2].token = XS_TOKEN_DECREMENT;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_SUBTRACT;
+				parser->states[2].token = XS_TOKEN_SUBTRACT;
 			break;
 		case '*':	
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_MULTIPLY_ASSIGN;
+				parser->states[2].token = XS_TOKEN_MULTIPLY_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '*') {
 				fxGetNextCharacter(parser);
 				if (parser->character == '=') {
-					parser->token2 = XS_TOKEN_EXPONENTIATION_ASSIGN;
+					parser->states[2].token = XS_TOKEN_EXPONENTIATION_ASSIGN;
 					fxGetNextCharacter(parser);
 				}
 				else
-					parser->token2 = XS_TOKEN_EXPONENTIATION;
+					parser->states[2].token = XS_TOKEN_EXPONENTIATION;
 			}
 			else
-				parser->token2 = XS_TOKEN_MULTIPLY;
+				parser->states[2].token = XS_TOKEN_MULTIPLY;
 			break;
 		case '/':
 			fxGetNextCharacter(parser);
@@ -1221,20 +1233,20 @@ void fxGetNextTokenAux(txParser* parser)
 				fxGetNextCharacter(parser);
 				for (;;) {
 					if (parser->character == (txU4)C_EOF) {
-						fxReportParserError(parser, parser->line, "end of file in comment");			
+						fxReportParserError(parser, parser->states[2].line, "end of file in comment");			
 						break;
 					}
 					else if ((parser->character == 10) || (parser->character == 0x2028) || (parser->character == 0x2029)) {
-						parser->line2++;
+						parser->states[2].line++;
 						fxGetNextCharacter(parser);
-						parser->crlf2 = 1;
+						parser->states[2].crlf = 1;
 					}
 					else if (parser->character == 13) {
-						parser->line2++;
+						parser->states[2].line++;
 						fxGetNextCharacter(parser);
 						if (parser->character == 10)
 							fxGetNextCharacter(parser);
-						parser->crlf2 = 1;
+						parser->states[2].crlf = 1;
 					}
 					else if (parser->character == '*') {
 						fxGetNextCharacter(parser);
@@ -1279,7 +1291,7 @@ void fxGetNextTokenAux(txParser* parser)
 							*(--q) = 0;
 							parser->path = fxNewParserSymbol(parser, p);
 						}
-						parser->line2 = t - 1;
+						parser->states[2].line = t - 1;
 					}
 					else if (!c_strncmp(p, "# sourceMappingURL=", 19) || !c_strncmp(p, "@ sourceMappingURL=", 19)) {
 						p += 19;
@@ -1302,20 +1314,20 @@ void fxGetNextTokenAux(txParser* parser)
 				;
 			}
 			else if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_DIVIDE_ASSIGN;
+				parser->states[2].token = XS_TOKEN_DIVIDE_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else 
-				parser->token2 = XS_TOKEN_DIVIDE;
+				parser->states[2].token = XS_TOKEN_DIVIDE;
 			break;
 		case '%':	
 			fxGetNextCharacter(parser);
 			if (parser->character == '=') {
-				parser->token2 = XS_TOKEN_MODULO_ASSIGN;
+				parser->states[2].token = XS_TOKEN_MODULO_ASSIGN;
 				fxGetNextCharacter(parser);
 			}
 			else
-				parser->token2 = XS_TOKEN_MODULO;
+				parser->states[2].token = XS_TOKEN_MODULO;
 			break;
 		
 		case '"':
@@ -1323,7 +1335,7 @@ void fxGetNextTokenAux(txParser* parser)
 			c = parser->character;
 			fxGetNextCharacter(parser);
 			fxGetNextString(parser, c);
-			parser->token2 = XS_TOKEN_STRING;
+			parser->states[2].token = XS_TOKEN_STRING;
 			fxGetNextCharacter(parser);
 			break;
 			
@@ -1331,17 +1343,17 @@ void fxGetNextTokenAux(txParser* parser)
 			fxGetNextCharacter(parser);
 			fxGetNextString(parser, '`');
 			if (parser->character == '{')
-				parser->token2 = XS_TOKEN_TEMPLATE_HEAD;
+				parser->states[2].token = XS_TOKEN_TEMPLATE_HEAD;
 			else
-				parser->token2 = XS_TOKEN_TEMPLATE;
+				parser->states[2].token = XS_TOKEN_TEMPLATE;
 			fxGetNextCharacter(parser);
 			break;
 			
 		case '@':
 			if (parser->flags & mxCFlag)
-				parser->token2 = XS_TOKEN_HOST;
+				parser->states[2].token = XS_TOKEN_HOST;
             else
-                fxReportParserError(parser, parser->line, "invalid character @");
+                fxReportParserError(parser, parser->states[2].line, "invalid character @");
             fxGetNextCharacter(parser);
 			break;
 			
@@ -1357,7 +1369,7 @@ void fxGetNextTokenAux(txParser* parser)
 				fxGetNextCharacter(parser);
 			}
 			else if (parser->character == '\\') {
-				parser->escaped2 = 1;
+				parser->states[2].escaped = 1;
 				t = 0;
 				if (fxGetNextIdentiferX(parser, &t) && fxIsIdentifierFirst(t))
 					p = fxUTF8Buffer(parser, t, p, q);				
@@ -1369,14 +1381,14 @@ void fxGetNextTokenAux(txParser* parser)
 			if (p) {
 				for (;;) {
 					if (p == q) {
-						fxReportMemoryError(parser, parser->line, "identifier overflow");
+						fxReportMemoryError(parser, parser->states[2].line, "identifier overflow");
 					}
 					if (fxIsIdentifierNext(parser->character)) {
 						p = fxUTF8Buffer(parser, parser->character, p, q);				
 						fxGetNextCharacter(parser);
 					}
 					else if (parser->character == '\\') {
-						parser->escaped2 = 1;
+						parser->states[2].escaped = 1;
 						t = 0;
 						if (fxGetNextIdentiferX(parser, &t) && fxIsIdentifierNext(t))
 							p = fxUTF8Buffer(parser, t, p, q);				
@@ -1388,8 +1400,8 @@ void fxGetNextTokenAux(txParser* parser)
 					else {
 						*p = 0;
 						if (parser->buffer[0] == '#') {
-							parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
-							parser->token2 = XS_TOKEN_PRIVATE_IDENTIFIER;
+							parser->states[2].symbol = fxNewParserSymbol(parser, parser->buffer);
+							parser->states[2].token = XS_TOKEN_PRIVATE_IDENTIFIER;
 						}
 						else {
 							fxGetNextKeyword(parser);
@@ -1399,7 +1411,7 @@ void fxGetNextTokenAux(txParser* parser)
 				}
 			}
 			if (!p) {
-				fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
+				fxReportParserError(parser, parser->states[2].line, "invalid character %d", parser->character);
 				fxGetNextCharacter(parser);
 			}
 			break;
@@ -1409,37 +1421,25 @@ void fxGetNextTokenAux(txParser* parser)
 
 void fxGetNextTokenTemplate(txParser* parser)
 {
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->rawLength2 = 0;
-	parser->raw2 = parser->emptyString;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].rawLength = 0;
+	parser->states[2].raw = parser->emptyString;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
 	fxGetNextString(parser, '`');
 	if (parser->character == '{')
-		parser->token2 = XS_TOKEN_TEMPLATE_MIDDLE;
+		parser->states[2].token = XS_TOKEN_TEMPLATE_MIDDLE;
 	else
-		parser->token2 = XS_TOKEN_TEMPLATE_TAIL;
+		parser->states[2].token = XS_TOKEN_TEMPLATE_TAIL;
 	fxGetNextCharacter(parser);
-	parser->line = parser->line2;
-	parser->crlf = parser->crlf2;
-	parser->escaped = parser->escaped2;
-	parser->integer = parser->integer2;
-	parser->modifierLength = parser->modifierLength2;
-	parser->modifier = parser->modifier2;
-	parser->number = parser->number2;
-	parser->rawLength = parser->rawLength2;
-	parser->raw = parser->raw2;
-	parser->stringLength = parser->stringLength2;
-	parser->string = parser->string2;
-	parser->symbol = parser->symbol2;
-	parser->token = parser->token2;
+	parser->states[0] = parser->states[2];
 	parser->ahead = 0;
 }
 
@@ -1449,50 +1449,37 @@ void fxGetNextTokenJSON(txParser* parser)
 	txString p;
 	txString q;
 
-	parser->line = parser->line2;
+	parser->states[0] = parser->states[2];
 	
-	parser->crlf = parser->crlf2;
-	parser->escaped = parser->escaped2;
-	parser->integer = parser->integer2;
-	parser->modifierLength = parser->modifierLength2;
-	parser->modifier = parser->modifier2;
-	parser->number = parser->number2;
-	parser->rawLength = parser->rawLength2;
-	parser->raw = parser->raw2;
-	parser->stringLength = parser->stringLength2;
-	parser->string = parser->string2;
-	parser->symbol = parser->symbol2;
-	parser->token = parser->token2;
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].rawLength = 0;
+	parser->states[2].raw = parser->emptyString;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
 	
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->rawLength2 = 0;
-	parser->raw2 = parser->emptyString;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
-	
-	while (parser->token2 == XS_NO_TOKEN) {
+	while (parser->states[2].token == XS_NO_TOKEN) {
 		switch (parser->character) {
 		case C_EOF:
-			parser->token2 = XS_TOKEN_EOF;
+			parser->states[2].token = XS_TOKEN_EOF;
 			break;
 		case 10:	
-			parser->line2++;
+			parser->states[2].line++;
 			fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 		case 13:	
-			parser->line2++;
+			parser->states[2].line++;
 			fxGetNextCharacter(parser);
 			if (parser->character == 10)
 				fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 			
 		case '\t':
@@ -1509,8 +1496,8 @@ void fxGetNextTokenJSON(txParser* parser)
 				if ((('0' <= c) && (c <= '9')) || (c == 'e') || (c == 'E'))
 					fxGetNextNumberE(parser, 1);
 				else {
-					parser->number2 = 0;
-					parser->token2 = XS_TOKEN_NUMBER;
+					parser->states[2].number = 0;
+					parser->states[2].token = XS_TOKEN_NUMBER;
 				}
 			}
 			else if ((c == 'b') || (c == 'B')) {
@@ -1526,8 +1513,8 @@ void fxGetNextTokenJSON(txParser* parser)
 				fxGetNextNumberX(parser);
 			}
 			else {
-				parser->integer2 = 0;
-				parser->token2 = XS_TOKEN_INTEGER;
+				parser->states[2].integer = 0;
+				parser->states[2].token = XS_TOKEN_INTEGER;
 			}
 			break;
 		case '1':
@@ -1539,37 +1526,44 @@ void fxGetNextTokenJSON(txParser* parser)
 		case '7':
 		case '8':
 		case '9':
-		case '-':	
 			fxGetNextNumberE(parser, 0);
 			break;
+		case '-':	
+			fxGetNextCharacter(parser);
+			fxGetNextNumberE(parser, 0);
+			if (parser->states[2].token == XS_TOKEN_INTEGER)
+				parser->states[2].integer = 0 - parser->states[2].integer;
+			else
+				parser->states[2].number = 0 - parser->states[2].number;
+			break;
 		case ',':
-			parser->token2 = XS_TOKEN_COMMA;
+			parser->states[2].token = XS_TOKEN_COMMA;
 			fxGetNextCharacter(parser);
 			break;	
 		case ':':
-			parser->token2 = XS_TOKEN_COLON;
+			parser->states[2].token = XS_TOKEN_COLON;
 			fxGetNextCharacter(parser);
 			break;	
 		case '[':
-			parser->token2 = XS_TOKEN_LEFT_BRACKET;
+			parser->states[2].token = XS_TOKEN_LEFT_BRACKET;
 			fxGetNextCharacter(parser);
 			break;	
 		case ']':
-			parser->token2 = XS_TOKEN_RIGHT_BRACKET;
+			parser->states[2].token = XS_TOKEN_RIGHT_BRACKET;
 			fxGetNextCharacter(parser);
 			break;	
 		case '{':
-			parser->token2 = XS_TOKEN_LEFT_BRACE;
+			parser->states[2].token = XS_TOKEN_LEFT_BRACE;
 			fxGetNextCharacter(parser);
 			break;	
 		case '}':
-			parser->token2 = XS_TOKEN_RIGHT_BRACE;
+			parser->states[2].token = XS_TOKEN_RIGHT_BRACE;
 			fxGetNextCharacter(parser);
 			break;	
 		case '"':
 			fxGetNextCharacter(parser);
 			fxGetNextString(parser, '"');
-			parser->token2 = XS_TOKEN_STRING;
+			parser->states[2].token = XS_TOKEN_STRING;
 			fxGetNextCharacter(parser);
 			break;
 		default:
@@ -1578,7 +1572,7 @@ void fxGetNextTokenJSON(txParser* parser)
 				q = p + parser->bufferSize - 1;
 				for (;;) {
 					if (p == q) {
-						fxReportMemoryError(parser, parser->line, "identifier overflow");
+						fxReportMemoryError(parser, parser->states[2].line, "identifier overflow");
 					}
 					*p++ = (char)parser->character;
 					fxGetNextCharacter(parser);
@@ -1587,18 +1581,18 @@ void fxGetNextTokenJSON(txParser* parser)
 				}
 				*p = 0;
 				if (!c_strcmp("false", parser->buffer)) 
-					parser->token2 = XS_TOKEN_FALSE;
+					parser->states[2].token = XS_TOKEN_FALSE;
 				else if (!c_strcmp("null", parser->buffer)) 
-					parser->token2 = XS_TOKEN_NULL;
+					parser->states[2].token = XS_TOKEN_NULL;
 				else if (!c_strcmp("true", parser->buffer)) 
-					parser->token2 = XS_TOKEN_TRUE;
+					parser->states[2].token = XS_TOKEN_TRUE;
 				else {
-					parser->symbol2 = fxNewParserSymbol(parser, parser->buffer);
-					parser->token2 = XS_TOKEN_IDENTIFIER;
+					parser->states[2].symbol = fxNewParserSymbol(parser, parser->buffer);
+					parser->states[2].token = XS_TOKEN_IDENTIFIER;
 				}
 			}
 			else {
-				fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
+				fxReportParserError(parser, parser->states[2].line, "invalid character %d", parser->character);
 				fxGetNextCharacter(parser);
 			}
 			break;
@@ -1705,34 +1699,34 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize - 1;
 	txU4 quote = 0;
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->rawLength2 = 0;
-	parser->raw2 = parser->emptyString;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
-	while (parser->token2 == XS_NO_TOKEN) {
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].rawLength = 0;
+	parser->states[2].raw = parser->emptyString;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
+	while (parser->states[2].token == XS_NO_TOKEN) {
 		switch (parser->character) {
 		case C_EOF:
-			parser->token2 = XS_TOKEN_EOF;
+			parser->states[2].token = XS_TOKEN_EOF;
 			break;
 		case 10:	
 		case 0x2028: // <LS>
 		case 0x2029: // <PS>	
-			parser->line2++;
+			parser->states[2].line++;
 			if (quote)
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 		case 13:	
-			parser->line2++;
+			parser->states[2].line++;
 			if (quote)
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);
@@ -1741,7 +1735,7 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 					p = fxUTF8Buffer(parser, parser->character, p, q);
 				fxGetNextCharacter(parser);
 			}
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 		case '\t':
 		case 11:
@@ -1773,7 +1767,7 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 			if (quote)
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 			else
-				parser->token2 = XS_TOKEN_LEFT_BRACE;
+				parser->states[2].token = XS_TOKEN_LEFT_BRACE;
 			fxGetNextCharacter(parser);
 			break;
 			
@@ -1781,9 +1775,9 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 		case '\'':
 			if (quote) {
 				if (quote == parser->character) {
-					parser->stringLength2 = mxPtrDiff(p - parser->buffer);
-					parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
-					parser->token2 = XS_TOKEN_STRING;
+					parser->states[2].stringLength = mxPtrDiff(p - parser->buffer);
+					parser->states[2].string = fxNewParserString(parser, parser->buffer, parser->states[2].stringLength);
+					parser->states[2].token = XS_TOKEN_STRING;
 				}
 				else
 					p = fxUTF8Buffer(parser, parser->character, p, q);
@@ -1797,7 +1791,7 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 			if (quote)
 				p = fxGetNextEntity(parser, p, q);
 			else {
-				fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
+				fxReportParserError(parser, parser->states[2].line, "invalid character %d", parser->character);
 				fxGetNextCharacter(parser);
 			}
 			break;
@@ -1806,24 +1800,12 @@ void fxGetNextTokenJSXAttribute(txParser* parser)
 			if (quote)
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 			else
-				fxReportParserError(parser, parser->line, "invalid character %d", parser->character);
+				fxReportParserError(parser, parser->states[2].line, "invalid character %d", parser->character);
 			fxGetNextCharacter(parser);
 			break;	
 		}	
 	}
-	parser->line = parser->line2;
-	parser->crlf = parser->crlf2;
-	parser->escaped = parser->escaped2;
-	parser->integer = parser->integer2;
-	parser->modifierLength = parser->modifierLength2;
-	parser->modifier = parser->modifier2;
-	parser->number = parser->number2;
-	parser->rawLength = parser->rawLength2;
-	parser->raw = parser->raw2;
-	parser->stringLength = parser->stringLength2;
-	parser->string = parser->string2;
-	parser->symbol = parser->symbol2;
-	parser->token = parser->token2;
+	parser->states[0] = parser->states[2];
 	parser->ahead = 0;
 }
 
@@ -1836,57 +1818,57 @@ void fxGetNextTokenJSXChild(txParser* parser)
 	txString after = C_NULL;
 	txString before = C_NULL;
 	txString text = C_NULL;
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->rawLength2 = 0;
-	parser->raw2 = parser->emptyString;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
-	while (parser->token2 == XS_NO_TOKEN) {
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].rawLength = 0;
+	parser->states[2].raw = parser->emptyString;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
+	while (parser->states[2].token == XS_NO_TOKEN) {
 		switch (parser->character) {
 		case C_EOF:
-			parser->token2 = XS_TOKEN_EOF;
+			parser->states[2].token = XS_TOKEN_EOF;
 			break;
 		case 10:	
 		case 0x2028: // <LS>
 		case 0x2029: // <PS>	
-			parser->line2++;
+			parser->states[2].line++;
 			p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 		case 13:	
-			parser->line2++;
+			parser->states[2].line++;
 			p = fxUTF8Buffer(parser, parser->character, p, q);
 			fxGetNextCharacter(parser);
 			if (parser->character == 10) {
 				p = fxUTF8Buffer(parser, parser->character, p, q);
 				fxGetNextCharacter(parser);
 			}
-			parser->crlf2 = 1;
+			parser->states[2].crlf = 1;
 			break;
 			
 		case '<':
 			fxGetNextCharacter(parser);
-			parser->token2 = XS_TOKEN_LESS;
+			parser->states[2].token = XS_TOKEN_LESS;
 			break;
 		case '>':
 			fxGetNextCharacter(parser);
-			parser->token2 = XS_TOKEN_MORE;
+			parser->states[2].token = XS_TOKEN_MORE;
 			break;
 		case '{':
 			fxGetNextCharacter(parser);
-			parser->token2 = XS_TOKEN_LEFT_BRACE;
+			parser->states[2].token = XS_TOKEN_LEFT_BRACE;
 			break;
 		case '}':
 			fxGetNextCharacter(parser);
-			parser->token2 = XS_TOKEN_RIGHT_BRACE;
+			parser->states[2].token = XS_TOKEN_RIGHT_BRACE;
 			break;
 		case '&':
 			p = fxGetNextEntity(parser, p, q);
@@ -1897,12 +1879,12 @@ void fxGetNextTokenJSXChild(txParser* parser)
 			break;	
 		}	
 	}
-	parser->rawLength2 = mxPtrDiff(p - parser->buffer);
-	parser->raw2 = fxNewParserString(parser, parser->buffer, parser->rawLength2);
-	if (parser->crlf2) {
+	parser->states[2].rawLength = mxPtrDiff(p - parser->buffer);
+	parser->states[2].raw = fxNewParserString(parser, parser->buffer, parser->states[2].rawLength);
+	if (parser->states[2].crlf) {
 		p = parser->buffer;
 		q = p + parser->bufferSize - 1;
-		s = parser->raw2;
+		s = parser->states[2].raw;
 		c = *s++;
 		while (c) {
 			if ((c == 10) || (c == 13)) {
@@ -1933,22 +1915,10 @@ void fxGetNextTokenJSXChild(txParser* parser)
 		if (after)
 			p = after;
 	}
-	parser->stringLength2 = mxPtrDiff(p - parser->buffer);
-	parser->string2 = fxNewParserString(parser, parser->buffer, parser->stringLength2);
+	parser->states[2].stringLength = mxPtrDiff(p - parser->buffer);
+	parser->states[2].string = fxNewParserString(parser, parser->buffer, parser->states[2].stringLength);
 	
-	parser->line = parser->line2;
-	parser->crlf = parser->crlf2;
-	parser->escaped = parser->escaped2;
-	parser->integer = parser->integer2;
-	parser->modifierLength = parser->modifierLength2;
-	parser->modifier = parser->modifier2;
-	parser->number = parser->number2;
-	parser->rawLength = parser->rawLength2;
-	parser->raw = parser->raw2;
-	parser->stringLength = parser->stringLength2;
-	parser->string = parser->string2;
-	parser->symbol = parser->symbol2;
-	parser->token = parser->token2;
+	parser->states[0] = parser->states[2];
 	parser->ahead = 0;
 }
 

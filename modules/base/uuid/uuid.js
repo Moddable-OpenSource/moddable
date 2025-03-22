@@ -23,7 +23,7 @@
 	uuid
 */
 
-// https://tools.ietf.org/html/rfc4122
+// Compliant with UUIDv1 and UUIDv4 for RFC 9562 (supercedes RFC 5122) https://datatracker.ietf.org/doc/html/rfc9562 
 
 import Net from "net";
 
@@ -37,37 +37,41 @@ function UUID() {
 		return UUIDv1(time);
 	}
 }
-
 // Version 1 (Time-Based) UUID
 function UUIDv1(time) {
-	return [
-		hex((time & 0xF) << 24, 1).substring(0, 1) + hex(Math.random() * 268435455, 7),		// add random number since we don't have 100-nanosecond precision
-		hex((time & 0xFFFF0) >> 4, 4),
-		hex((time & 0xFFF00000 >> 20) | 0x1000, 4),
-		hex((Math.random() * 32767), 4),
-		Net.get("MAC").split(":").join("")
-	].join("-").toUpperCase();
+    return [
+        hex((time & 0xf) << 24, 1).substring(0, 1) +
+            hex(Math.random() * 0xfffffff, 7), // add random number since we don't have 100-nanosecond precision
+        hex((time & 0xffff0) >> 4, 4),
+        "1" + hex(time & (0xfff00000 >> 20), 3),
+        hex(Math.random() * 0x3fff | 0x8000, 4),
+        Net.get('MAC')?.split(':').join('') ??
+            hex((Math.random() * 0xffffffff) | 0x02000000, 8) +
+                hex(Math.random() * 0xffff, 4),
+    ]
+        .join('-')
+        .toUpperCase();
 }
 
 // Version 4 (Random) UUID
 function UUIDv4() {
-	return [
-		hex(Math.random() * 4294967295, 8),
-		hex((Math.random() * 32767), 4),
-		"4" + hex((Math.random() * 4095), 3),
-		hex(0b10000000 + Math.random() * 0b111111) + hex((Math.random() * 255), 2),
-		hex(Math.random() * 4294967295, 8) + hex((Math.random() * 32767), 4),
-	].join("-").toUpperCase();
+    return [
+        hex(Math.random() * 0xffffffff, 8),
+        hex(Math.random() * 0xffff, 4),
+        '4' + hex(Math.random() * 0xfff, 3),
+        hex(Math.random() * 0x3fff | 0x8000, 4),
+        hex(Math.random() * 0xffffffff, 8) + hex(Math.random() * 0xffff, 4),
+    ]
+        .join('-')
+        .toUpperCase();
 }
 
-
-function hex(value, count)
-{
-	if (value < 0) {
-		value = -value;
-	}
-	value = value.toString(16);
-	return value.padStart(count, "0");
+function hex(value, count) {
+    if (value < 0) {
+        value = -value;
+    }
+    value = (value | 0).toString(16);
+    return value.padStart(count, '0').slice(-count);
 }
 
 export default UUID;

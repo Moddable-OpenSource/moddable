@@ -81,7 +81,7 @@ static txBoolean ICACHE_RODATA_ATTR gxSpecialKinds[XS_IDS_KIND + 1] = {
 	0, // XS_STACK_KIND
 	0, // XS_VAR_KIND
 	1, // XS_CALLBACK_X_KIND
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	0, // XS_HOST_FUNCTION_KIND
 #endif
 	0, // XS_HOST_INSPECTOR_KIND
@@ -575,7 +575,7 @@ again:
 			else
 				result = fx_deepEqualInstances(the, limit, strict);
 		}
-	#ifdef mxHostFunctionPrimitive
+	#if mxHostFunctionPrimitive
 		else if (XS_HOST_FUNCTION_KIND == left->kind)
 			result = left->value.hostFunction.builder == right->value.hostFunction.builder;
 	#endif

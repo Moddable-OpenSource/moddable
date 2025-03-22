@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,5 +24,3 @@ export default class Convert @ "xs_Convert_destructor" {
 	constructor(src, dst) @ "xs_Convert";
 	process(src, dst) @ "xs_convert_process";
 }
-
-Object.freeze(Convert.prototype);

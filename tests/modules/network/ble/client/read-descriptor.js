@@ -30,6 +30,10 @@ class Client extends BLEClient {
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
+		if (!services.length) {
+			$DONE("no services discovered");
+			return;
+		}
         services[0].discoverCharacteristic(CONFIG.CHARACTERISTIC);
     }
     onCharacteristics(characteristics) {
@@ -41,7 +45,7 @@ class Client extends BLEClient {
             descriptors[i].readValue();
     }
     onDescriptorValue(descriptor, value) {
-        const view = new Uint8Array(value);
+        const view = ArrayBuffer.isView(value) ? value : new Uint8Array(value);
         const index = CONFIG.EXPECTED_DESCRIPTORS.findIndex(element => element.equals(descriptor.uuid));
         
         try {

@@ -27,6 +27,7 @@ class Listener @ "xs_listener_destructor_" {
 		return read.call(this, new TCP);
 	}
 
+	get port() @ "xs_listener_get_port";
 	get format() {
 		return "socket/tcp";
 	}

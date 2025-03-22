@@ -10,7 +10,7 @@ await $NETWORK.connected;
 const request = new Request({host: "www.example.com", path: "/test_not__found", response: String});
 request.callback = function(message, value, etc) {
 	if (Request.status === message) {
-		if (404 === value) {
+		if ((404 === value) || (500 === value)) {		// server now returning 500 instead of 404....
 			$DONE()
 			this.close();
 		}

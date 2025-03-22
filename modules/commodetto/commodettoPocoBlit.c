@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -32,6 +32,11 @@
 #endif
 #include "commodettoPocoBlit.h"
 
+#if MODDEF_POCO_LOGOVERFLOW || MODDEF_POCO_LOG
+	static void logDisplayList(Poco poco);
+#else
+	#define logDisplayList(poco)
+#endif
 
 enum {
 	kPocoCommandRectangleFill = 0,		// must start at 0 to match gDrawRenderCommand
@@ -1357,12 +1362,11 @@ void doBlendRectangle(Poco poco, PocoCommand pc, PocoPixel *d, PocoDimension h)
 		PocoCoordinate tw = w;
 
 		while (tw--) {
-			int	dst, src;
+			int	dst;
 
 			dst = *d;
 			dst |= dst << 16;
 			dst &= 0x001C00E3;
-			src = src32 - dst;
 			dst = blend * (src32 - dst) + (dst << 3) - dst;
 //@@ half bit precision			dst += 0x02008010;
 			dst += (dst >> 3) & 0x000C00E3;
@@ -1520,7 +1524,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 #endif
 		bits = SwapLong(bits);
 
-		while (tw--) {
+		do {
 			if (0 == tm) {
 				tm = 0x80000000;
 				bits = *srcLong++;
@@ -1557,7 +1561,7 @@ void doDrawMonochromeBitmapPart(Poco poco, PocoCommand pc, PocoPixel *dst, PocoD
 #endif
 
 			tm >>= 1;
-		}
+		} while (--tw);
 
 		src += srcBits->rowBump;
 #if 4 != kPocoPixelSize
@@ -1594,7 +1598,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 #endif
 		bits = SwapLong(bits);
 
-		while (tw--) {
+		do {
 			if (0 == tm) {
 				tm = 0x80000000;
 				bits = *srcLong++;
@@ -1616,7 +1620,7 @@ void doDrawMonochromeForegroundBitmapPart(Poco poco, PocoCommand pc, PocoPixel *
 			xphase ^= 1;
 #endif
 			tm >>= 1;
-		}
+		} while (--tw);
 
 		src += srcBits->rowBump;
 #if 4 != kPocoPixelSize
@@ -3465,8 +3469,12 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		return 5;
 #endif
 
-	if (poco->flags & kPocoFlagErrorDisplayListOverflow)
+	if (poco->flags & kPocoFlagErrorDisplayListOverflow) {
+#if MODDEF_POCO_LOGOVERFLOW
+		logDisplayList(poco);
+#endif
 		return 1;
+	}
 
 	if (poco->flags & kPocoFlagErrorStackProblem)
 		return 3;
@@ -3475,6 +3483,7 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 		return 0;
 
 	pocoInstrumentationMax(PocoDisplayListUsed, (char *)poco->next - (char *)poco->displayList);
+	logDisplayList(poco);
 
 	rowBytes = ((poco->w * kPocoPixelSize) + 7) >> 3;
 	poco->rowBytes = rowBytes;
@@ -3504,12 +3513,17 @@ int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPix
 	displayList = (PocoCommand)poco->displayList;
 	displayListEnd = poco->next;
 
-	for (walker = displayList; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker)) {
-		walker->x -= poco->x;
-#if 4 == kPocoPixelSize
-		walker->xphase = walker->x & 1;
-		walker->x >>= 1;
+#if 4 != kPocoPixelSize
+	if (poco->x)
 #endif
+	{
+		for (walker = displayList; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker)) {
+			walker->x -= poco->x;
+#if 4 == kPocoPixelSize
+			walker->xphase = walker->x & 1;
+			walker->x >>= 1;
+#endif
+		}
 	}
 
 	// walk through a slab of displayList at a time
@@ -3707,5 +3721,40 @@ void PocoOriginPop(Poco poco)
 	poco->stackDepth--;
 }
 
+#ifndef logDisplayList
+void logDisplayList(Poco poco)
+{
+	static const char *gPocoCommandNames[kPocoCommandDrawMax] = {
+		"FillRectangle",
+		"BlendRectangle",
+		"DrawPixel",
+		"DrawBitmap",
+		"DrawMonochromeBitmapPart",
+		"DrawMonochromeForegroundBitmapPart",
+		"DrawMonochromeBothBitmapPart",
+		"DrawGray16BitmapPart",
+		"DrawGray16RLEBitmapPart",
+		"DrawGray16RLEBlendBitmapPart",
+		"DrawMaskedBitmap",
+		"DrawPattern",
+		"DrawFrame",
+		"DrawExternal",
+	};
 
+	PocoCommand displayList = (PocoCommand)poco->displayList;
+	PocoCommand displayListEnd = poco->next;
+	int commands = 0, pixels = 0;
 
+	printf("Begin Poco display list - %d bytes\n", (int)((uintptr_t)displayListEnd - (uintptr_t)displayList));
+
+	PocoCommand walker = displayList;
+	for (; walker != displayListEnd; walker = (PocoCommand)(walker->length + (char *)walker), ++commands) {
+		printf("  %s - %d bytes, {%d, %d, %d, %d}\n", gPocoCommandNames[walker->command], (int)walker->length, (int)walker->x, (int)walker->y, (int)walker->w, (int)walker->h);
+		pixels += walker->w * walker->h; 
+	}
+	printf("  End Pcoo display list\n");
+	printf("    %d commands\n", commands);
+	printf("    %f operations per pixel\n", (double)pixels / (double)(poco->w * poco->h));
+	printf("    %d pixel area - %d x %d\n", (int)(poco->w * poco->h), (int)poco->w, (int)poco->h);
+}
+#endif

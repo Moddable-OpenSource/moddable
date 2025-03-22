@@ -1,6 +1,6 @@
 # Testing the Moddable SDK
-Copyright 2020-2022 Moddable Tech, Inc.<BR>
-Revised: August 31, 2022
+Copyright 2020-2024 Moddable Tech, Inc.<BR>
+Revised: September 16, 2024
 
 ## Table of Contents
 
@@ -585,6 +585,13 @@ await $NETWORK.connected;
 
 #### `invalidDomain`
 The `invalidDomain` property is a string containing a DNS hostname guaranteed to fail to resolve. This is useful for testing error handling of network code.
+
+#### `resolve(hostname)`
+The `resolve` function returns a promise which resolves to the IP address corresponding to the DNS hostname provided.
+
+```js
+const address = await $NETWORK.resolve("www.example.com");
+```
 
 #### `wifi()`
 The `wifi` function returns a promise which resolves to an object with the options object to establish a Wi-Fi connection for testing.

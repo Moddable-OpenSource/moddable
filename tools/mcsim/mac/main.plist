@@ -39,5 +39,9 @@
 	</array>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires microphone access</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires camera access</string>
 </dict>
 </plist>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,8 +18,8 @@
  *
  */
 
-#include "xsmc.h"
 #include "xsPlatform.h"
+#include "xsmc.h"
 #include "mc.xs.h"
 
 #include "esp_adc/adc_oneshot.h"
@@ -51,7 +51,7 @@
 #endif
 
 
-#define ADC_ATTEN		ADC_ATTEN_DB_11
+#define ADC_ATTEN		ADC_ATTEN_DB_12
 
 typedef struct modAnalogConfigurationRecord modAnalogConfigurationRecord;
 typedef struct modAnalogConfigurationRecord *modAnalogConfiguration;

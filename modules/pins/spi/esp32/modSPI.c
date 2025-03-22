@@ -30,7 +30,7 @@
 #include "esp_attr.h"		// IRAM_ATTR
 #include "esp_heap_caps.h"	// MALLOC_CAP_DMA, heap_caps_malloc
 
-#include "semphr.h"
+#include "freertos/semphr.h"
 
 #ifndef MODDEF_SPI_MISO_PIN
 	#define MODDEF_SPI_MISO_PIN	12

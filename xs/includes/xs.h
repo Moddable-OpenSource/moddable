@@ -151,11 +151,7 @@
 #endif /* !INCLUDE_XSPLATFORM */
 
 #ifndef mxBoundsCheck
-	#ifdef mxDebug
-		#define mxBoundsCheck 1
-	#else
-		#define mxBoundsCheck 0
-	#endif
+	#define mxBoundsCheck 1
 #endif
 #ifndef NULL
 	#define NULL 0
@@ -1198,6 +1194,7 @@ struct xsMachineRecord {
 	void* archive;
 	xsSlot scratch;
 	xsSlot* stackPrototypes;
+	int exitStatus;
 #ifndef __XSALL__
 	xsMachinePlatform
 #endif
@@ -1303,6 +1300,38 @@ struct xsCreationRecord {
 	#define xsBeginMetering(_THE, _CALLBACK, _STEP)
 	#define xsEndMetering(_THE)
 #endif
+
+#define xsNormalExit (-1)
+
+#define xsBeginHostExit(_THE) \
+	do { \
+		xsMachine* __HOST_THE__ = _THE; \
+		xsJump __HOST_JUMP__; \
+		__HOST_JUMP__.nextJump = (__HOST_THE__)->firstJump; \
+		__HOST_JUMP__.stack = (__HOST_THE__)->stack; \
+		__HOST_JUMP__.scope = (__HOST_THE__)->scope; \
+		__HOST_JUMP__.frame = (__HOST_THE__)->frame; \
+		__HOST_JUMP__.environment = NULL; \
+		__HOST_JUMP__.code = (__HOST_THE__)->code; \
+		__HOST_JUMP__.flag = 0; \
+		(__HOST_THE__)->firstJump = &__HOST_JUMP__; \
+		(__HOST_THE__)->exitStatus = xsNormalExit; \
+		if (setjmp(__HOST_JUMP__.buffer) == 0) { \
+			xsMachine* the = fxBeginHost(__HOST_THE__)
+
+#define xsEndHostExit(_THE) \
+			fxEndHost(the); \
+			the = NULL; \
+		} \
+		else if ((__HOST_THE__)->exitStatus == xsNormalExit) \
+			(__HOST_THE__)->exitStatus = xsUnhandledExceptionExit; \
+		(__HOST_THE__)->stack = __HOST_JUMP__.stack, \
+		(__HOST_THE__)->scope = __HOST_JUMP__.scope, \
+		(__HOST_THE__)->frame = __HOST_JUMP__.frame, \
+		(__HOST_THE__)->code = __HOST_JUMP__.code, \
+		(__HOST_THE__)->firstJump = __HOST_JUMP__.nextJump; \
+		break; \
+	} while(1)
 
 enum {	
 	xsNoID = 0,
@@ -1417,6 +1446,10 @@ mxImport xsStringValue fxToStringBuffer(xsMachine*, xsSlot*, xsStringValue, xsIn
 mxImport xsStringValue fxToStringX(xsMachine*, xsSlot*);
 mxImport void fxUnsigned(xsMachine*, xsSlot*, xsUnsignedValue);
 mxImport xsUnsignedValue fxToUnsigned(xsMachine*, xsSlot*);
+mxImport void fxFromBigInt64(xsMachine* the, xsSlot* slot, int64_t value);
+mxImport int64_t fxToBigInt64(xsMachine* the, xsSlot* slot);
+mxImport void fxFromBigUint64(xsMachine* the, xsSlot* slot, uint64_t value);
+mxImport uint64_t fxToBigUint64(xsMachine* the, xsSlot* slot);
 
 mxImport void *fxArrayBuffer(xsMachine*, xsSlot*, void*, xsIntegerValue, xsIntegerValue);
 mxImport void fxGetArrayBufferData(xsMachine*, xsSlot*, xsIntegerValue, void*, xsIntegerValue);
@@ -1439,9 +1472,9 @@ mxImport void fxArrayCacheEnd(xsMachine*, xsSlot*);
 mxImport void fxArrayCacheItem(xsMachine*, xsSlot*, xsSlot*);
 
 mxImport void fxBuildHosts(xsMachine*, xsIntegerValue, xsHostBuilder*);
-mxImport void fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);
-mxImport void fxNewHostFunction(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue, xsIntegerValue);
-mxImport void fxNewHostInstance(xsMachine*);
+mxImport xsSlot* fxNewHostConstructor(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue);
+mxImport xsSlot* fxNewHostFunction(xsMachine*, xsCallback, xsIntegerValue, xsIntegerValue, xsIntegerValue);
+mxImport xsSlot* fxNewHostInstance(xsMachine*);
 mxImport xsSlot* fxNewHostObject(xsMachine*, xsDestructor);
 mxImport xsIntegerValue fxGetHostBufferLength(xsMachine*, xsSlot*);
 mxImport void* fxGetHostChunk(xsMachine*, xsSlot*);

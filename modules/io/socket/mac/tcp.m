@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -169,10 +169,12 @@ void xs_tcp_constructor(xsMachine *the)
 			char addrStr[32];
 
 			xsmcGet(xsVar(0), xsArg(0), xsID_address);
+			if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
+				xsUnknownError("invalid address");
 			xsmcToStringBuffer(xsVar(0), addrStr, sizeof(addrStr));
 
 			xsmcGet(xsVar(0), xsArg(0), xsID_port);
-			port = xsmcToInteger(xsVar(0));
+			port = builtinGetSignedInteger(the, &xsVar(0)); 
 			if ((port < 0) || (port > 65535))
 				xsRangeError("invalid port");
 
@@ -285,6 +287,11 @@ void doClose(xsMachine *the, xsSlot *instance)
 		if (tcp->cfSkt)
 			CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack);
 
+		if (tcp->cfTriggeredTimer) {
+			CFRunLoopTimerInvalidate(tcp->cfTriggeredTimer);
+			tcp->cfTriggeredTimer = NULL;
+		}
+
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
@@ -381,11 +388,14 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+
+	xsmcSetInteger(xsResult, tcp->bytesWritable);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	if (!tcp->cfSkt) return;
 	CFDataRef address = CFSocketCopyPeerAddress(tcp->cfSkt);
 	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
 	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
@@ -397,22 +407,25 @@ void xs_tcp_get_remoteAddress(xsMachine *the)
 void xs_tcp_get_remotePort(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	if (!tcp->cfSkt) return;
 	CFDataRef address = CFSocketCopyPeerAddress(tcp->cfSkt);
 	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
 	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
 
-	xsmcSetInteger(xsResult, htons(addr.sin_port));
+	xsmcSetInteger(xsResult, ntohs(addr.sin_port));
 }
 
 void xs_tcp_get_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	if (!tcp->cfSkt) return;
 	builtinGetFormat(the, tcp->format);
 }
 
 void xs_tcp_set_format(xsMachine *the)
 {
 	TCP tcp = xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks);
+	if (!tcp->cfSkt) return;
 	uint8_t format = builtinSetFormat(the);
 	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 		xsRangeError("unimplemented");
@@ -499,7 +512,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 {
 	TCP tcp = info;
 	xsMachine *the = tcp->the;
-	uint8_t triggered = tcp->triggered;
+	uint8_t triggered = tcp->triggered & tcp->triggerable;
 
 	tcp->triggered = 0;
 	if (tcp->cfTriggeredTimer) {
@@ -595,14 +608,16 @@ static const xsHostHooks xsListenerHooks = {
 void xs_listener_constructor(xsMachine *the)
 {
 	Listener listener;
-	uint16_t port = 0;
+	int port = 0;
 	xsSlot *onReadable;
 
 	xsmcVars(1);
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
-		port = (uint16_t)xsmcToInteger(xsVar(0));
+		port = builtinGetSignedInteger(the, &xsVar(0)); 
+		if ((port < 0) || (port > 65535))
+			xsRangeError("invalid port");
 	}
 
 	onReadable = builtinGetCallback(the, xsID_onReadable);
@@ -695,6 +710,7 @@ void xs_listener_close_(xsMachine *the)
 		xsForget(listener->obj);
 		xs_listener_destructor_(listener);
 		xsmcSetHostData(xsThis, NULL);
+		xsmcSetHostDestructor(xsThis, NULL);
 	}
 }
 
@@ -721,6 +737,17 @@ void xs_listener_read(xsMachine *the)
 
 	tcp->cfRunLoopSource = CFSocketCreateRunLoopSource(NULL, tcp->cfSkt, 0);
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), tcp->cfRunLoopSource, kCFRunLoopCommonModes);
+}
+
+void xs_listener_get_port(xsMachine *the)
+{
+	Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
+	if (!listener->cfSkt) return;
+	CFDataRef address = CFSocketCopyAddress(listener->cfSkt);
+	const UInt8 *bytes = CFDataGetBytePtr((__bridge CFDataRef)address);
+	struct sockaddr_in addr = *(struct sockaddr_in *)bytes;
+
+	xsmcSetInteger(xsResult, ntohs(addr.sin_port));
 }
 
 void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot)

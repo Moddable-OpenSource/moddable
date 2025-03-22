@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,12 +21,13 @@
 import TCP from "embedded:io/socket/tcp"
 
 class Listener @ "xs_listener_destructor_" {
-	constructor(dictionary) @ "xs_listener_constructor";
+	constructor(options) @ "xs_listener_constructor";
 	close() @ "xs_listener_close_"
 	read() {
 		return read.call(this, new TCP);
 	}
 
+	get port() @ "xs_listener_get_port";
 	get format() {
 		return "socket/tcp";
 	}
@@ -35,7 +36,6 @@ class Listener @ "xs_listener_destructor_" {
 			throw new RangeError;
 	}
 }
-Object.freeze(Listener.prototype);
 
 function read() @ "xs_listener_read";
 

@@ -658,7 +658,7 @@ The optional `blend` argument applies an additional blend level to all pixels in
 
 ***
 
-#### `fillPattern(bits, x, y, w, h [, sx, sx, sx, sh])`
+#### `fillPattern(bits, x, y, w, h [, sx, sy, sw, sh])`
 
 The `fillPattern` function fills an area by repeatedly drawing all or part of a bitmap with pixels of type `Bitmap.Default`. The bitmap is specified by the `bits` argument. The location of the area to fill is specified by the `x` and `y` arguments, and the dimensions of the area are specified by the `w` and `h` arguments.
 
@@ -960,7 +960,7 @@ void PocoBitmapDrawMasked(Poco poco, PocoBitmap bits, uint8_t blend,
 		PocoBitmap mask, PocoDimension mask_sx, PocoDimension mask_sy);
 ```
 
-`PocoBitmapDrawMasked` renders the pixels of bitmap `bits`, of type `kCommodettoBitmapDefault`, enclosed by `sx`, `sy`, `sw`, and `sh` at the location specified by `x` and `y`. The pixels are drawn using the corresponding pixels of the bitmap `mask`, of type `kCommodettoBitmapGray16`, enclosed by `mask_x`, `mask_y`, `sw`, and `sh` as alpha blending levels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
+`PocoBitmapDrawMasked` renders the pixels of bitmap `bits`, of type `kCommodettoBitmapDefault`, enclosed by `sx`, `sy`, `sw`, and `sh` at the location specified by `x` and `y`. The pixels are drawn using the corresponding pixels of the bitmap `mask`, of type `kCommodettoBitmapGray16`, enclosed by `mask_sx`, `mask_sy`, `sw`, and `sh` as alpha blending levels. The `blend` argument is applied to the blend level of each pixel, with values ranging from 0 for transparent to 255 for opaque.
 
 ***
 
@@ -974,7 +974,7 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits,
 		PocoDimension sw, PocoDimension sh);
 ```
 
-`PocoBitmapPattern ` fills the area enclosed by the `x`, `y`, `w`, and `h` arguments with repeating copies of the area of the bitmap `bits` enclosed by the `sx`, `sy`, `sw`, and `sh` arguments. The bitmap must be of type `kCommodettoBitmapDefault`.
+`PocoBitmapPattern` fills the area enclosed by the `x`, `y`, `w`, and `h` arguments with repeating copies of the area of the bitmap `bits` enclosed by the `sx`, `sy`, `sw`, and `sh` arguments. The bitmap must be of type `kCommodettoBitmapDefault`.
 
 ***
 
@@ -1040,17 +1040,17 @@ void PocoDrawingBeginFrameBuffer(Poco poco, PocoCoordinate x, PocoCoordinate y,
 	PocoPixel *pixels, int16_t rowBytes);
 ```
 
-`PocoDrawingBeginFrameBuffer ` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to the first scanline of output pixels. The `rowBytes` parameters is the stride in bytes between each scanline.
+`PocoDrawingBeginFrameBuffer` begins the immediate mode rendering process for an update area of pixels bounded by the `x`, `y`, `w`, and `h` parameters. The `pixels` parameter points to the first scanline of output pixels. The `rowBytes` parameters is the stride in bytes between each scanline.
 
 ***
 
 ##### `PocoDrawingEndFrameBuffer`
 
 ```c
-int PocoDrawingEndFrameBuffer(Poco poco;
+int PocoDrawingEndFrameBuffer(Poco poco);
 ```
 
-`PocoDrawingEndFrameBuffer ` indicates that all drawing is complete for the current frame.
+`PocoDrawingEndFrameBuffer` indicates that all drawing is complete for the current frame.
 
 ***
 

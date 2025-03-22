@@ -185,6 +185,7 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->firstHeap = C_NULL;
 
 #if mxNoChunks
+	the->maximumChunksSize = theCreation->initialChunkSize;
 #else
 	fxGrowChunks(the, theCreation->initialChunkSize);
 #endif
@@ -447,6 +448,11 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 	}
 #endif
 #if mxNoChunks
+	if ((the->currentChunksSize + size > the->maximumChunksSize)) {
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
+		if (the->collectFlag & XS_TRASHING_CHUNKS_FLAG)
+			the->maximumChunksSize += the->minimumChunksSize;
+	}
 	chunk = c_malloc_noforcefail(size);
 	if (!chunk)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
@@ -1655,6 +1661,9 @@ void* fxNewChunk(txMachine* the, txSize size)
 	if (!chunk) {
 		chunk = fxGrowChunk(the, size);
 	}
+#ifdef mxMetering
+	the->meterIndex += size * XS_CHUNK_ALLOCATION_METERING;
+#endif
 	return fxCheckChunk(the, chunk, size, offset);
 }
 
@@ -1678,6 +1687,9 @@ void* fxNewGrowableChunk(txMachine* the, txSize size, txSize capacity)
 			}
 		}
 	}
+#ifdef mxMetering
+	the->meterIndex += size * XS_CHUNK_ALLOCATION_METERING;
+#endif
 	return fxCheckChunk(the, chunk, size, offset);
 #endif
 }
@@ -1713,6 +1725,9 @@ again:
 		the->currentHeapCount++;
 		if (the->peakHeapCount < the->currentHeapCount)
 			the->peakHeapCount = the->currentHeapCount;
+#ifdef mxMetering
+		the->meterIndex += XS_SLOT_ALLOCATION_METERING;
+#endif
 		return aSlot;
 	}
 	if (once) {
@@ -1760,6 +1775,9 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 		if (the->peakChunksSize < the->currentChunksSize)
 			the->peakChunksSize = the->currentChunksSize;
 		aChunk->size = size;
+	#ifdef mxMetering
+		the->meterIndex += size * XS_CHUNK_ALLOCATION_METERING;
+	#endif
 		return theData;
 	}
 	while (aBlock) {
@@ -1774,6 +1792,9 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 				aChunk->size = size;
 			#ifdef mxSnapshot
 				c_memset(aData + capacity, 0, delta);
+			#endif
+			#ifdef mxMetering
+				the->meterIndex += size * XS_CHUNK_ALLOCATION_METERING;
 			#endif
 				return theData;
 			}

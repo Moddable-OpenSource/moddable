@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,12 +40,13 @@ class WebSocket {
 	#keepalive;
 	
 	constructor(href, protocol) {
-		let options, keepalive;
+		let options, keepalive, headers;
 		if (href instanceof Object) {
 			options = href;
 			href = options.url;
 			protocol = options.protocol;
 			keepalive = options.keepalive; 
+			headers = options.headers; 
 		}
 		if (href) {
 			let url = new URL(href);
@@ -53,11 +54,11 @@ class WebSocket {
 			let port, config;
 			if (scheme == "ws:") {
 				port = url.port || 80;
-				config = device.network.ws;
+				config = {...(options?.ws ?? device.network.ws)};
 			}
 			else if (scheme == "wss:") {
 				port = url.port || 443;
-				config = device.network.wss;
+				config = {...(options?.wss ?? device.network.wss)};
 			}
 			else
 				throw new URIError("only ws or wss");
@@ -69,8 +70,10 @@ class WebSocket {
 			this.#url = href;
 			if (protocol)
 				this.#protocol = protocol;
-			options = { ...config, host, port, path, protocol }
+			options = { ...config, host, port, path, protocol, headers }
 		}
+		else if (!options?.attach)
+			throw new URIError("no URL");
 		this.#client = new device.network.ws.io({
 			...options,
 			onControl: (opcode, data) => {
@@ -88,7 +91,6 @@ class WebSocket {
 						break;
 
 					case this.#client.constructor.ping:
-						trace("PING!\n");
 						break;
 
 					case this.#client.constructor.pong:

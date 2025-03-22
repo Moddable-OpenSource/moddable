@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -232,6 +232,12 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-norestart")) {
 			self->restartOnConnect = 0;
 		}
+		else if (!strcmp(argv[argi], "-trace")) {
+			self->trace = 1;
+		}
+		else if (!strcmp(argv[argi], "-tracecommands")) {
+			self->traceCommands = 1;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;
@@ -277,9 +283,8 @@ int fxInitializeTarget(txSerialTool self)
 
 	// run command
 	if (!strcmp("uninstall", gCmd)) {
-#if mxTraceCommands
-		fprintf(stderr, "### uninstall\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### uninstall\n");
 
 		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 		fxWriteSerial(self, out, strlen(out));
@@ -292,15 +297,17 @@ int fxInitializeTarget(txSerialTool self)
 		fxWriteSerial(self, out, out[1] + 2);
 	}
 	else if (!strcmp("install", gCmd)) {
-#if mxTraceCommands
-		fprintf(stderr, "### install\n");
-#else
-		fprintf(stderr, "Installing mod.");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### install\n");
+		else
+			fprintf(stderr, "Installing mod.");
 		gInstallOffset = 0;
 
 		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 		fxWriteSerial(self, out, strlen(out));
+
+		if (self->traceCommands)
+			fprintf(stderr, "### get install space\n");
 
 		out[0] = 0;
 		out[1] = 3;		// length
@@ -313,9 +320,8 @@ int fxInitializeTarget(txSerialTool self)
 		return 1;
 	}
 	else if (!strcmp("load", gCmd)) {
-#if mxTraceCommands
-		fprintf(stderr, "### load '%s'\n", gModuleName);
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### load '%s'\n", gModuleName);
 
 		sprintf(out, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 		fxWriteSerial(self, out, strlen(out));
@@ -344,15 +350,12 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		fprintf(stderr, "### fxCommandReceived: remote operation id %#04x failed with resultCode %d\n", (int)resultId, (int)resultCode);
 		exit(-1);
 	}
-#if mxTraceCommands
-	else
+	else if (self->traceCommands)
 		fprintf(stderr, "### fxCommandReceived: remote operation id %#04x SUCCESS with resultCode %d\n", (int)resultId, (int)resultCode);
-#endif
 
 	if (0xff02 == resultId) {	// uninstall
-#if mxTraceCommands
-		fprintf(stderr, "### uninstalled\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### uninstalled\n");
 		fxRestart(self);
 		usleep(50000);
 		return;
@@ -375,9 +378,9 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 				gInstallFragmentSize = kInstallFragmentSizeMax;
 		}
 
-#if mxTraceCommands
-		fprintf(stderr, "### installSpace: %d, fragment size %d\n", (int)installSpace, (int)gInstallFragmentSize);
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### installSpace: %d, fragment size %d\n", (int)installSpace, (int)gInstallFragmentSize);
+
 		if (installSpace < gInstallArchiveSize) {
 			fprintf(stderr, "install failed. mod needs %d bytes, only %d available\n", (int)gInstallArchiveSize, (int)installSpace);
 			return;
@@ -394,9 +397,9 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		return;
 	}
 	if (0xe8e8 == resultId) {	// install complete
-#if mxTraceCommands
-		fprintf(stderr, "### install complete\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### install complete\n");
+
 		fprintf(stderr, "..complete\n");
 		fclose(gInstallFD);
 		gInstallFD = NULL;
@@ -537,9 +540,10 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 	int offset = self->index;
 	char* dst = self->buffer + offset;
 	char* dstLimit = self->buffer + mxBufferSize;
-#if mxTrace
-	fprintf(stderr, "%.*s", size, buffer);
-#endif
+
+	if (self->trace)
+		fprintf(stderr, "%.*s", size, buffer);
+
 	while (src < srcLimit) {
 		if (dst == dstLimit) {
 			txSerialMachine machine = self->currentMachine;
@@ -587,7 +591,7 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 			}
 			else if ((offset >= 10) && (dst[-10] == '<') && (dst[-9] == '/') && (dst[-8] == 'x') && (dst[-7] == 's') && (dst[-6] == 'b') && (dst[-5] == 'u') && (dst[-4] == 'g') && (dst[-3] == '>')) {
 				txSerialMachine machine = self->currentMachine;
-				if ((1 == machine->receiveCount) && !self->firstMachine->nextMachine) {	// first command when after transitioning from 0 to 1 machines
+				if (machine && (1 == machine->receiveCount) && !self->firstMachine->nextMachine) {	// first command when after transitioning from 0 to 1 machines
 					if (fxInitializeTarget(self))
 						self->currentMachine->suppress = 1;
 				}
@@ -748,9 +752,8 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 
 void fxRestart(txSerialTool self)
 {
-#if mxTraceCommands
-	fprintf(stderr, "### fxRestart\n");
-#endif
+	if (self->traceCommands)
+		fprintf(stderr, "### fxRestart\n");
 
 	if (self->currentMachine) {	// send a software restart request for boards with no RTS to toggle
 		char out[32];
@@ -775,9 +778,8 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 	int dst = 0;
 	char out[32];
 
-#if mxTraceCommands
-	fprintf(stderr, "### set time\n");
-#endif
+	if (self->traceCommands)
+		fprintf(stderr, "### set time\n");
 
 #if mxWindows
 	{
@@ -843,18 +845,16 @@ void fxInstallFragment(txSerialTool self)
 	fseek(gInstallFD, gInstallOffset, SEEK_SET);
 	use = fread(out + 9, 1, use, gInstallFD);
 	if (0 == use) {
-#if mxTraceCommands
-		fprintf(stderr, "### update install header\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### update install header\n");
 		gInstallOffset = kInstallInitialFragmentSize;
 		fseek(gInstallFD, gInstallOffset, SEEK_SET);
 		use = fread(out + 9, 1, kInstallSkipFragmentSize, gInstallFD);
 		id = 0xe8;
 	}
 
-#if mxTraceCommands
-	fprintf(stderr, "### install fragment @ %d size %d\n", gInstallOffset, use);
-#endif
+	if (self->traceCommands)
+		fprintf(stderr, "### install fragment @ %d size %d\n", gInstallOffset, use);
 
 	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 	fxWriteSerial(self, preamble, strlen(preamble));
@@ -896,9 +896,8 @@ void fxSetPref(txSerialTool self)
 
 	gPrefs = p->next;
 
-#if mxTraceCommands
-	fprintf(stderr, "### set preference %s.%s=%s\n", p->domain, p->name, p->value);
-#endif
+	if (self->traceCommands)
+		fprintf(stderr, "### set preference %s.%s=%s\n", p->domain, p->name, p->value);
 
 	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 	fxWriteSerial(self, preamble, strlen(preamble));

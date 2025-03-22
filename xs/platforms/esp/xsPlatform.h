@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,6 +40,7 @@
 
 #include "stdint.h"
 #include "stdbool.h"
+#include "mc.defines.h"
 
 #if ESP32
 	#define ICACHE_FLASH_ATTR __attribute__((section(".rodata.mod.0")))
@@ -49,26 +50,23 @@
 	#define ICACHE_FLASH1_ATTR __attribute__((section(".irom.text.mod")))
 #endif
 
-#define mxRegExp 1
-//#define mxReport 1
-#define mxNoFunctionLength 1
-#define mxNoFunctionName 1
-#define mxHostFunctionPrimitive 1
-#define mxFewGlobalsTable 1
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif
-#if !ESP32
-	#define mxMisalignedSettersCrash 1
-#elif ESP32 == 1
-	#define mxUseFreeRTOSTasks 1
-	#define mxUseGCCAtomics 1
-#elif ESP32 == 2
-	#define mxUseFreeRTOSTasks 1
-#endif
 
-#ifdef __ets__
+#if !ESP32
 	#define mxUnalignedAccess 0
+	#define mxMisalignedSettersCrash 1
+#else
+	#define mxUnalignedAccess 1
+
+	#define mxUseFreeRTOSTasks 1
+	#if (ESP32 != 4) && (ESP32 != 5) && (ESP32 != 6)		// riscv doesn't support GCC atomics yet
+		#define mxUseGCCAtomics 1
+	#endif
+	#if ESP32 > 7
+		#error unexpected ESP32 CPU family
+	#endif
 #endif
 
 #define mxIntegerDivideOverflowException 0

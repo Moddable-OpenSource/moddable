@@ -1,0 +1,28 @@
+{
+	"include": [
+                "$(MODDABLE)/modules/network/ble/manifest_client.json",
+                "$(MODDABLE)/modules/network/ble/manifest_server.json"
+	],
+    "config" : {
+        "ble": {
+            "client": {
+                "timeout": 10000,
+                "targetDevice": "Moddable Server"
+            },
+            "server": {
+                "timeout": 20000,
+                "deviceName": "testmc Server"
+            }
+        }
+    },
+	"modules": {
+		"*": [
+			"./BLE-server/*"
+		]
+	},
+	"ble": {
+		"*": [
+			"./BLE-server/bleservices/*"
+		]
+	}
+}

@@ -207,7 +207,7 @@ export default class extends TOOL {
 					if (imaBuffer.samplesInBuffer < imaSamplesPerChunk)
 						break;
 
-					outputFile.writeBuffer(this.compressIMA(imaBuffer.buffer, imaSamplesPerChunk));
+					outputFile.writeBuffer(this.compressIMA(imaBuffer.buffer, imaSamplesPerChunk, this.output.sampleRate));
 					imaBuffer.samplesInBuffer = 0;
 					pos += needed;
 					totalOut += imaSamplesPerChunk;

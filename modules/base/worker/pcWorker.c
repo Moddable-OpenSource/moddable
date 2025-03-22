@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+ 
 #include "mc.xs.h"
 #include "screen.h"
 
@@ -16,6 +36,9 @@ struct sxWorker {
 	txMutex runningMutex;
 #if mxLinux
 	GMainLoop* main_loop;
+#endif
+#if defined(mxInstrument) && mxMacOSX
+	CFRunLoopTimerRef cfTimer;
 #endif
 	char name[1];
 };
@@ -79,11 +102,25 @@ static void* fxWorkerLoop(void* it)
 }
 #endif
 
+extern void fxSetArchive(xsMachine* the, void* archive);
+
+#if defined(mxInstrument) && mxMacOSX
+static void fxWorkerInstrumentationTimer(CFRunLoopTimerRef timer, void *info)
+{
+	xsMachine *machine = info;
+	fxSampleInstrumentation(machine, 0, NULL);
+
+//	extern void modInstrumentMachineReset(xsMachine *the);
+//	modInstrumentMachineReset(machine);
+}
+#endif
+
 void fxWorkerInitialize(txWorker* worker)
 {
 	void* preparation = xsPreparation();
 	worker->machine = fxPrepareMachine(NULL, preparation, worker->name, worker, NULL);
     worker->machine->host = worker->ownerMachine->host;
+    fxSetArchive(worker->machine, worker->ownerMachine->archive);
 	xsBeginHost(worker->machine);
 	{
 		xsVars(3);
@@ -102,8 +139,13 @@ void fxWorkerInitialize(txWorker* worker)
 			xsCallFunction0(xsVar(0), xsGlobal);
 	}
 	xsEndHost(worker->machine);
-#if mxInstrument
+#if defined(mxInstrument) && mxMacOSX
 	fxDescribeInstrumentation(worker->machine, 0, NULL, NULL);
+
+	CFRunLoopTimerContext context = {0};
+	context.info = worker->machine;
+    worker->cfTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 1.0, 1.0, 0, 0, fxWorkerInstrumentationTimer, &context);
+    CFRunLoopAddTimer(CFRunLoopGetCurrent(), worker->cfTimer, kCFRunLoopCommonModes);
 #endif
 	mxLockMutex(&worker->runningMutex);
 	worker->running = 1;
@@ -118,7 +160,6 @@ void fxWorkerMessage(void* machine, void* it)
 	{
 		xsVars(1);
 		xsTry {
-			xsCollectGarbage();
 			xsResult = xsDemarshall(job->argument);
 			xsVar(0) = xsAccess(*(job->reference));
 			xsCall1(xsVar(0), xsID_onmessage, xsResult);
@@ -127,7 +168,8 @@ void fxWorkerMessage(void* machine, void* it)
 		}
 	}
 	xsEndHost(machine);
-#if mxInstrument
+
+#if defined(mxInstrument) && !mxMacOSX
 	if (((txScreen*)(((xsMachine*)machine)->host))->mainThread != mxCurrentThread())
 		fxSampleInstrumentation(machine, 0, NULL);
 #endif
@@ -179,6 +221,10 @@ void xs_worker_destructor(void *data)
 		#elif mxWindows
 			PostMessage(worker->machine->window, WM_QUIT, 0, 0);
 		#else
+			#if defined(mxInstrument) && mxMacOSX
+				CFRunLoopTimerInvalidate(worker->cfTimer);
+				CFRelease(worker->cfTimer);
+			#endif
 			CFRunLoopStop(worker->machine->workerLoop);
 		#endif
 			mxLockMutex(&worker->runningMutex);

@@ -187,7 +187,7 @@ The `sprite` example displays a simple spinning animation, useful for loading sc
 
 ![](https://www.moddable.com/assets/commodetto-gifs/static.gif)
 
-The `static` example demonstrates how to use Poco to efficiently render static.
+The `static` example demonstrates how to use Poco to efficiently render [video static](https://en.wikipedia.org/wiki/Noise_(video)). More information [here](https://github.com/Moddable-OpenSource/moddable/issues/1396).
 
 ***
 

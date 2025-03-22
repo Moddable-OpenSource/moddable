@@ -6,6 +6,21 @@
 		"PIU": "$(MODULES)/piu"
 	},
 	"platforms": {
+		"esp32/esp32c3_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/esp32c6_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/esp32h2_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/esp32s3_cdc": {
 			"build": {
 				"USE_USB": "2"
@@ -50,30 +65,30 @@
 				"USE_USB": "2"
 			}
 		},
-        "esp32/m5atom_echo": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
-        "esp32/m5atom_lite": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
-        "esp32/m5atom_matrix": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
-        "esp32/m5atom_u": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
+		"esp32/m5atom_echo": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
+		"esp32/m5atom_lite": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
+		"esp32/m5atom_matrix": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
+		"esp32/m5atom_u": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
 		"esp32/m5atom_s3": {
 			"build": {
 				"USE_USB": "2"
@@ -84,29 +99,39 @@
 				"USE_USB": "2"
 			}
 		},
+		"esp32/m5dial": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/m5stack_core2": {
 			"build": {
 				"UPLOAD_SPEED": "1500000",
-				"DEBUGGER_SPEED": "1500000"
+				"DEBUGGER_SPEED": "921600"
 			}
-        },
+		},
 		"esp32/m5stack_cores3": {
 			"build": {
 				"USE_USB": "2"
 			}
-        },
-        "esp32/m5stick_c": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
-        "esp32/m5stick_cplus": {
-            "build": {
-                "UPLOAD_SPEED": "1500000",
-                "DEBUGGER_SPEED": "1500000"
-            }
-        },
+		},
+		"esp32/m5stick_c": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
+		"esp32/m5stick_cplus": {
+			"build": {
+				"UPLOAD_SPEED": "1500000",
+				"DEBUGGER_SPEED": "1500000"
+			}
+		},
+		"esp32/moddable_six_cdc": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/qtpyc3": {
 			"build": {
 				"USE_USB": "2"
@@ -168,22 +193,22 @@
 				"USE_USB": "2"
 			}
 		},
-        "nrf52/moddable_four": {
+		"nrf52/moddable_four": {
 			"build": {
 				"USE_USB": "1"
 			},
 			"config": {
 				"format": "Gray256"
 			}
-        },
-        "nrf52/moddable_display_4": {
+		},
+		"nrf52/moddable_display_4": {
 			"build": {
 				"USE_USB": "1"
 			},
 			"config": {
 				"format": "Gray256"
 			}
-        }
+		}
 	},
 	"typescript": {
 		"tsconfig": {

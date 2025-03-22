@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -81,7 +81,7 @@ const X509 = {
 		return tbs;
 	},
 	getSPK(spki) {		// Subject Public Key Info
-		spki = this._decodeSPKI(spki);
+		spki = decodeSPKI(spki);
 		if (!spki)
 			throw new Error("x509: no SPKI");
 		spki = new BER(spki);
@@ -130,9 +130,15 @@ const X509 = {
 					throw new Error("x509: support named curves only for now");
 				ber = new BER(spk.param);
 				switch (ber.getObjectIdentifier().toString()) {
-					case "1,2,840,10045,3,1,7":
+					case "1,2,840,10045,3,1,7":		// secp256r1
 						return {
 							curve: new Curve("secp256r1"),
+							pub: ECPoint.fromOctetString(spk),
+							algo: spk.algo,
+						};
+					case "1,3,132,0,34":		// secp384r1 http://www.secg.org/sec2-v2.pdf
+						return {
+							curve: new Curve("secp384r1"),
 							pub: ECPoint.fromOctetString(spk),
 							algo: spk.algo,
 						};
@@ -169,17 +175,34 @@ const X509 = {
 			let len = ber.getLength();
 			let endp = ber.i + len;
 			while (ber.i < endp) {
-				if ((ber.getTag() & 0x1f) == 0) {
-					len = ber.getLength();
-					return ber.getChunk(len);
-				}
+				if ((ber.getTag() & 0x1f) == 0)
+					return ber.getChunk(ber.getLength());
 				ber.skip(ber.getLength());
 			}
 		}
 	},
-	_decodeSPKI(buf) @ "xs_x509_decodeSPKI",
+	decodeSAN(buf) {
+		let b = this.decodeExtension(buf, [2, 5, 29, 17]);	// Subject Alternative Name
+		if (!b) return;
+
+		b = new BER((new BER(b)).getSequence());
+
+		const names = [];
+		while (b.readable) {
+			const tag = b.getTag() & 0x7F;
+			let value = b.getChunk(b.getLength()).slice().buffer;
+			if ((2 === tag) || (1 === tag) || (6 === tag))		// IA5String: dNSName, rfc822Name, uniformResourceIdentifier
+				value = String.fromArrayBuffer(value); 
+			names.push({tag, value});
+		}
+		
+		return names;
+	},
 	decodeExtension(buf, extid) @ "xs_x509_decodeExtension",
 };
+
+function decodeSPKI(buf) @ "xs_x509_decodeSPKI";
+
 Object.freeze(X509);
 
 function parseDate(date) {

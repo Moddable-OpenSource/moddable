@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -56,6 +56,13 @@ static void xs_logical_op(xsMachine *the, int operation)
 		default:
 			xsUnknownError("unsupported source");
 			break;
+	}
+	
+	if (xsmcArgc > 2) {
+		int count = xsmcToInteger(xsArg(2));
+		if ((count <= 0) || (((xsUnsignedValue)count) > dstLen))
+			xsRangeError("invalid count");
+		dstLen = (xsUnsignedValue)count;
 	}
 
 	if (kOpXor == operation) {

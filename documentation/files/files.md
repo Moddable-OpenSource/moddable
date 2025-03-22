@@ -1,6 +1,6 @@
 # Files
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: September 7, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: August 9, 2024
 
 ## Table of Contents
 
@@ -356,7 +356,7 @@ On ESP32, the SPIFFS file system is mounted at a specified path and all files/di
 ```JSON
 "defines": {
 	"file":{
-		"root": "#/myroot"
+		"root": "/myroot/"
 	}
 }
 ```
@@ -412,7 +412,7 @@ By default, the FAT32 file system is mounted at `/mod`. To change the default ro
 ```JSON
 "defines": {
 	"file":{
-		"root": "#/myroot"
+		"root": "/myroot/"
 	}
 }
 ```
@@ -435,8 +435,8 @@ The backing store for littlefs varies depending the host platform:
 
 - **ESP32** - littlefs uses the "storage" partition to hold the file system.
 - **ESP8266** - the file system is stored in the upper 3 MB of flash (the same area used by SPIFFS).
-- **nRF52** - littlefs uses the free space following the firmware image and installed mod. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest `defines`. If there is not enough space, an exception is thrown when accessing the file system.
-- **Others**, littlefs uses a static memory buffer to hold the file system. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARITION_SIZE` in the manifest. This RAM disk mode allows littlefs to be used with the simulator.
+- **nRF52** - littlefs uses the free space following the firmware image and installed mod. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARTITION_SIZE` in the manifest `defines`. If there is not enough space, an exception is thrown when accessing the file system.
+- **Others**, littlefs uses a static memory buffer to hold the file system. The default size is 64 KB, which may be overridden by `MODDEF_FILE_LFS_PARTITION_SIZE` in the manifest. This RAM disk mode allows littlefs to be used with the simulator.
 
 ```json
 	"defines": {
@@ -705,6 +705,46 @@ for (let key of wifiKeys)
 <a id="flash"></a>
 ## class Flash
 
-This class is not yet documented.
+- **Source code:** [file](../../modules/files/flash)
 
-N.B. The `readString()` API is considered experimental. It assumes that the input is a valid UTF-8 string.
+The `Flash` class provides access to flash memory partitions.
+
+### `constructor(name)`
+The Flash constructor creates an instance bound to the partition indicated by the `name` argument. The names of available partitions, if any, are host-dependent.
+
+***
+### `close()`
+
+Releases all resources held by the Flash instance. Calls to any methods of the instance made after calling `close()` throw.
+
+***
+### `erase(block)`
+
+Erases one block of the flash partition. The `block` argument is the index of the block within the partition, starting with block 0. To convert from block number to index, multiply by the instance's `blockSize`.
+
+***
+### `read(offset, byteLength)`
+
+Reads `byteLength` bytes starting at byte `offset` in the partition into an `ArrayBuffer`.
+
+***
+### `write(offset, byteLength, buffer)`
+
+Writes the first `byteLength` bytes from `buffer` starting at byte `offset` in the partition. The `buffer` argument may be any byte buffer.
+
+***
+### `map()`
+Returns a read-only host buffer that may be wrapped in a view to read directly from the flash partition. If `map()` is not supported by the host, the function throws an exception.
+
+***
+
+### `byteLength`
+The read-only `byteLength` property provides the size of the flash partition.
+
+***
+### `blockSize`
+The read-only `blockSize` property provides the size of a block (aka sector) in the flash partition. Using this value is recommended instead of hard-coding the common flash block size of `4096`.
+
+***
+
+**Note**. The `readString()` API is experimental and should not be used in production. It is potentially unsafe because it assumes that the input is a valid UTF-8 string.

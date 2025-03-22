@@ -1,0 +1,34 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"commodetto/readJPEG": "./esp32/commodettoReadJPEG",
+				"commodetto/loadJPEG": "./esp32/commodettoLoadJPEG"
+			},
+			"preload": [
+				"commodetto/readJPEG",
+				"commodetto/loadJPEG"
+			],
+			"dependency": [ {
+				"name": "esp_new_jpeg",
+				"version": "^0.5.0",
+				"includes": [
+				]
+			}]
+		},
+		"...": {
+			"modules": {
+				"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
+				"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut",
+				"commodetto/readJPEG": "$(COMMODETTO)/commodettoReadJPEG",
+				"commodetto/loadJPEG": "$(COMMODETTO)/commodettoLoadJPEG"
+			},
+			"preload": [
+				"commodetto/BufferOut",
+				"commodetto/PixelsOut",
+				"commodetto/readJPEG",
+				"commodetto/loadJPEG"
+			]
+		}
+	}
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 Moddable Tech, Inc.
+ * Copyright (c) 2018-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -289,6 +289,7 @@ typedef struct {
 
 #ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
 	modGPIOConfigurationRecord	amplifierPower;
+	int						bytesInFlight;
 #endif
 
 	uint32_t				buffer[MODDEF_AUDIOOUT_MIXERBYTES >> 2];
@@ -1455,6 +1456,22 @@ DWORD WINAPI directSoundProc(LPVOID lpParameter)
 }
 
 #elif ESP32
+
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER	
+static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
+{
+	modAudioOut out = user_ctx;
+
+	int bytesInFlight = __atomic_fetch_sub(&out->bytesInFlight, event->size, __ATOMIC_SEQ_CST);
+	if (bytesInFlight <= event->size) {
+		if (bytesInFlight >= 0)
+			modGPIOWrite(&out->amplifierPower, 0);
+	}
+
+    return false;
+}
+#endif
+
 void audioOutLoop(void *pvParameter)
 {
 	modAudioOut out = pvParameter;
@@ -1567,7 +1584,15 @@ void audioOutLoop(void *pvParameter)
 	dac_continuous_new_channels(&cont_cfg, &out->dacHandle);
 #endif
 
-#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER	
+	i2s_event_callbacks_t cbs = {
+		.on_recv = NULL,
+		.on_recv_q_ovf = NULL,
+		.on_sent = playedBuffer,
+		.on_send_q_ovf = NULL,
+	};
+	i2s_channel_register_event_callback(out->tx_handle, &cbs, out);
+
 	i2s_channel_enable(out->tx_handle);
 #endif
 
@@ -1579,7 +1604,7 @@ void audioOutLoop(void *pvParameter)
 
 			if (!stopped) {
 #ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
-				modGPIOWrite(&out->amplifierPower, 0);
+				// amplifier turned off in playedBuffer
 #elif MODDEF_AUDIOOUT_I2S_DAC
 				dac_continuous_disable(out->dacHandle);
 #else
@@ -1597,7 +1622,13 @@ void audioOutLoop(void *pvParameter)
 
 		if (stopped) {
 #ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
-			modGPIOWrite(&out->amplifierPower, 1);
+			if (out->bytesInFlight <= 0) {
+				out->bytesInFlight = sizeof(out->buffer) * 1000;		// don't turn off amplifier during disable/enable
+				modGPIOWrite(&out->amplifierPower, 1);
+				i2s_channel_disable(out->tx_handle);
+				i2s_channel_enable(out->tx_handle);
+			}
+			out->bytesInFlight = out->sampleRate >> 3;		// 1/8th of a second
 #elif MODDEF_AUDIOOUT_I2S_DAC
 			dac_continuous_enable(out->dacHandle);
 #else
@@ -1624,6 +1655,9 @@ void audioOutLoop(void *pvParameter)
 
 		dac_continuous_write(out->dacHandle, out->buffer8, count, NULL, -1);		// -1 for portMAX_DELAY
 #elif (16 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE) || (32 == MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE)
+	#ifdef MODDEF_AUDIOOUT_AMPLIFIER_POWER
+		__atomic_add_fetch(&out->bytesInFlight, sizeof(out->buffer), __ATOMIC_SEQ_CST);
+	#endif
 		i2s_channel_write(out->tx_handle, (const char *)out->buffer, sizeof(out->buffer), &bytes_written, portMAX_DELAY);
 #else
 	#error invalid MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE

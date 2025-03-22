@@ -29,6 +29,10 @@ class Client extends BLEClient {
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
+		if (!services.length) {
+			$DONE("no services discovered");
+			return;
+		}
         services[0].discoverCharacteristic(CONFIG.CHARACTERISTIC);
     }
     onCharacteristics(characteristics) {
@@ -39,10 +43,10 @@ class Client extends BLEClient {
         this.close();
         try {
             if (!CONFIG.CHARACTERISTIC.equals(characteristic.uuid))
-                throw 'uuid mismatch'
+                throw new Error('uuid mismatch');
             
-            if (new Uint8Array(value)[0] != CONFIG.EXPECTED_VALUE)
-                throw 'value mismatch'
+            if (value != CONFIG.EXPECTED_VALUE)
+                throw new Error('value mismatch');
                 
             $DONE();
         } catch (error) {

@@ -1,0 +1,34 @@
+{
+	"preload": [
+		"embedded:io/audio/in"
+	],
+	"platforms": {
+		"mac": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/in": "./mac/audioin"
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/in": "./lin/audioin"
+			}
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/in": "./win/audioin"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:io/audio/in": "./esp32/audioin"
+			}
+		},
+		"...": {
+			"error": "Experimental TC53 IO modules"
+		}
+	}
+}

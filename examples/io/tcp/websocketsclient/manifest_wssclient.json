@@ -1,0 +1,13 @@
+{
+	"include": [
+		"../websocketclient/manifest_websocketclient.json",
+		"../tlssocket/manifest.json",
+		"$(MODDABLE)/modules/crypt/tls_419.json"
+	],
+	"modules": {
+		"wssclient/config": "./config"
+	},
+	"preload": [
+		"wssclient/config"
+	]
+}

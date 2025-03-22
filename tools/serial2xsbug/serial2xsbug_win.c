@@ -202,9 +202,8 @@ void fxOpenSerial(txSerialTool self)
 	fxReadSerial(self, fxReadSerialAux(self));
 	
 	if (self->programming) {
-#if mxTraceCommands
-		fprintf(stderr, "### programming mode\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### programming mode\n");
 		fxProgrammingModeSerial(self);
 		exit(0);
 	}
@@ -306,9 +305,8 @@ void fxWriteSerial(txSerialTool self, char* buffer, int size)
 {
 	OVERLAPPED overlapped;
 	DWORD offset;
-#if mxTrace
-	fprintf(stderr, "%.*s", size, buffer);
-#endif
+	if (self->trace)
+		fprintf(stderr, "%.*s", size, buffer);
 	ResetEvent(self->serialEvent);
 	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.hEvent = self->serialEvent;

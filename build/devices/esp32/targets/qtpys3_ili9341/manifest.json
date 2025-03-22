@@ -3,7 +3,7 @@
 		"ESP32_SUBCLASS": "esp32s3",
 		"USE_USB": "2",
 		"SDKCONFIGPATH": "./sdkconfig",
-		"PARTITIONS_FILE": "./sdkconfig/partitions.csv",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
         "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RESET button.",
         "BEFORE_DEBUGGING_MESSAGE": "Press and release the RESET button."
 	},

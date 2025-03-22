@@ -93,7 +93,6 @@ class MockupBehavior extends DeviceBehavior {
 
 export default {
   applicationName: 'm5paper/debug/.*',
-  sortingTitle: '0004',
   title: 'M5Paper',
   Workers: {},
   ControlsTemplate: ControlsColumn.template(($) => ({

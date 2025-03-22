@@ -4,8 +4,13 @@ flags: [async, module]
 ---*/
 
 import BLEClient from "bleclient";
+import {uuid} from "btutils";
 
-$TESTMC.timeout($TESTMC.config.ble.client.timeout, "BLE connect/disconnect timeout");
+$TESTMC.timeout($TESTMC.config.ble.client.timeout, "BLE rssi timeout");
+
+const CONFIG = {
+    SERVICE_UUID: uuid`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+};
 
 class Scanner extends BLEClient {
     onReady() {
@@ -18,9 +23,12 @@ class Scanner extends BLEClient {
         }
     }
     onConnected(device) {
-        device.readRSSI();
+		this.device = device;
+        device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
-
+    onServices(services) {
+        this.device.readRSSI();
+    }
     onRSSI(device, rssi) {
         device.close();
         this.close();

@@ -1,0 +1,135 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"OPEN_SANS": "$(MODDABLE)/examples/assets/scalablefonts/OpenSans/",
+		"MODULES": "$(MODDABLE)/modules"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
+		"$(MODULES)/files/preference/manifest.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json"
+	],
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000,
+			"queueLength": 4
+		},
+		"cfe": { "kern": true }
+	},
+	"config": {
+		"startupSound": false
+	},
+	"modules": {
+		"*": [
+			"$(MODULES)/data/binaryMessage/*",
+			"./Controller",
+			"./ScrollerBehaviors",
+			"./ToggleBehavior",
+			"./Retention",
+			"./Transition",
+			"./View",
+			"./assets",
+			"./main",
+			"./model",
+			"./views/*"
+		],
+		"piu/Sound": [
+			"$(MODULES)/piu/MC/piuSound"
+		]
+	},
+	"preload": [
+		"BinaryMessage",
+		"Controller",
+		"Retention",
+		"ScrollerBehaviors",
+		"Transition",
+		"View",
+		"Charge",
+		"Common",
+		"FloatPad",
+		"Home",
+		"InputOutput",
+		"IntPad",
+		"Settings",
+		"StateOfCharge",
+		"Status",
+		"TemperatureUnit",
+		"Type",
+		"assets",
+		"model"
+	],
+    "data": {
+    },
+	"resources":{
+		"*": [
+			"./assets/arrows",
+			"./assets/home",
+			"./assets/input",
+			"./assets/output",
+			"./assets/sun",
+			"./assets/type",
+    		"../sounds/tap",
+    		"../sounds/tap-back",
+    		"../sounds/toggle"
+		],
+		"*-alpha": [
+			"./assets/button",
+			"./assets/icons",
+			"./assets/scrollbarX",
+			"./assets/scrollbarY",
+			"./assets/status",
+ 			{
+ 				"source": "$(OPEN_SANS)/OpenSans-Bold",
+				"size": 10,
+				"characters": "0123456789%.VnowReset"
+ 			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Regular",
+				"size": 18,
+				"blocks": ["Basic Latin"],
+				"characters": "°"
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Bold",
+				"size": 18,
+				"characters": "0123456789-.°CF"
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Regular",
+				"size": 24,
+				"blocks": ["Basic Latin"],
+				"characters": "°"
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Bold",
+				"size": 24,
+				"characters": "0123456789-."
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Regular",
+				"size": 26,
+				"characters": "%Ah"
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Bold",
+				"size": 26,
+				"characters": "0123456789-."
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Regular",
+				"size": 30,
+				"characters": "0123456789."
+			},
+			{
+				"source": "$(OPEN_SANS)/OpenSans-Regular",
+				"size": 66,
+				"characters": "0123456789"
+			}
+		]
+    }
+}

@@ -40,11 +40,11 @@
 static void fxSourceMapLines(txParser* parser, txString mappings);
 static txInteger fxSourceMapValue(txParser* parser, txString* p);
 
-#define mxAssert(ASSERTION,MESSAGE) if (!(ASSERTION)) { fxReportParserError(parser, parser->line, MESSAGE); return; }
+#define mxAssert(ASSERTION,MESSAGE) if (!(ASSERTION)) { fxReportParserError(parser, parser->states[0].line, MESSAGE); return; }
 
 void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, txUnsigned flags, txString* name)
 {
-	txInteger line = parser->line;
+	txInteger line = parser->states[0].line;
 	txNode* root = parser->root;
 	txNode* object;
     txNode* item;
@@ -55,22 +55,22 @@ void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, tx
 	txString source = NULL;
 	txString mappings = NULL;
 	
-	parser->line = 0;
+	parser->states[0].line = 0;
 	parser->root = NULL;
 	parser->stream = theStream;
 	parser->getter = theGetter;
 	
-	parser->line2 = 1;
-	parser->crlf2 = 0;
-	parser->escaped2 = 0;
-	parser->integer2 = 0;
-	parser->modifierLength2 = 0;
-	parser->modifier2 = parser->emptyString;
-	parser->number2 = 0;
-	parser->stringLength2 = 0;
-	parser->string2 = parser->emptyString;
-	parser->symbol2 = C_NULL;
-	parser->token2 = XS_NO_TOKEN;
+	parser->states[2].line = 1;
+	parser->states[2].crlf = 0;
+	parser->states[2].escaped = 0;
+	parser->states[2].integer = 0;
+	parser->states[2].modifierLength = 0;
+	parser->states[2].modifier = parser->emptyString;
+	parser->states[2].number = 0;
+	parser->states[2].stringLength = 0;
+	parser->states[2].string = parser->emptyString;
+	parser->states[2].symbol = C_NULL;
+	parser->states[2].token = XS_NO_TOKEN;
 	
 	parser->lookahead = 0;
 #if mxCESU8
@@ -84,7 +84,7 @@ void fxParserSourceMap(txParser* parser, void* theStream, txGetter theGetter, tx
 	if (parser->errorCount)
 		return;
 	object = parser->root;
-	parser->line = line;
+	parser->states[0].line = line;
 	parser->root = root;
 	
 	mxAssert(object->description->token == XS_TOKEN_OBJECT, "source map: no object");
@@ -136,7 +136,7 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 	while ((c = *p)) {
 		if (c == ';') {
 			p++;
-			if ((state >= NAME) && (generatedLine < parser->line))
+			if ((state >= NAME) && (generatedLine < parser->states[0].line))
 				parser->lines[1 + generatedLine] = 1 + sourceLine;
 			generatedLine++;
 //			generatedColumn = 0;
@@ -144,7 +144,7 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 		}
 		else if (c == ',') {
 			p++;
-			if ((state >= NAME) && (generatedLine < parser->line))
+			if ((state >= NAME) && (generatedLine < parser->states[0].line))
 				parser->lines[1 + generatedLine] = 1 + sourceLine;
 			state = BEGIN;
 		}
@@ -199,7 +199,7 @@ txInteger fxSourceMapValue(txParser* parser, txString* p)
 		else if (c == '/')
 			digit = 63;
 		else
-			fxReportParserError(parser, parser->line, "source map: unexpected character"); 
+			fxReportParserError(parser, parser->states[0].line, "source map: unexpected character"); 
 		continuation = digit & VLQ_CONTINUATION_BIT;
 		digit &= VLQ_MASK_BITS;
 		result += (digit << shift);

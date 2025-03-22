@@ -323,7 +323,7 @@ import structuredClone from "structuredClone";
 The `structuredClone` function in the Moddable SDK implements the [algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) defined by WHATWG for the web platform as much as practical, including circular references and the `transferables` option.
 
 ```js
-const a = {a: 1, b: Uint8Array.of(1, 2, 3,)}
+const a = {a: 1, b: Uint8Array.of(1, 2, 3)}
 const aCopy = structuredClone(a);
 ```
 

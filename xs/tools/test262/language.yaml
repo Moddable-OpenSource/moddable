@@ -1,0 +1,60 @@
+mode: default
+skip:
+    - Array.fromAsync
+    - FinalizationRegistry.prototype.cleanupSome
+    - ShadowRealm
+    - Temporal
+    - arbitrary-module-namespace-names
+    - decorators
+    - import-assertions
+    - import-attributes
+    - iterator-helpers
+    - json-modules
+    - regexp-duplicate-named-groups
+    - set-methods
+fail:
+    - language:
+            - eval-code:
+                    - indirect:
+                            - realm.js: "Test262Error: Expected SameValue(«number», «undefined») to be true"
+            - expressions:
+                    - assignment:
+                            - fn-name-lhs-cover.js: "Test262Error: descriptor value should be ; object value should be "
+                            - target-member-computed-reference-null.js: "Test262Error: Expected a DummyError but got a TypeError"
+                            - target-member-computed-reference-undefined.js: "Test262Error: Expected a DummyError but got a TypeError"
+                    - async-function:
+                            - named-reassign-fn-name-in-body-in-arrow.js: "TypeError: (anonymous-612): set BindingIdentifier: const"
+                            - named-reassign-fn-name-in-body-in-eval.js: "TypeError: (anonymous-614): set BindingIdentifier: const"
+                            - named-reassign-fn-name-in-body.js: "TypeError: BindingIdentifier: set BindingIdentifier: const"
+                    - async-generator:
+                            - named-no-strict-reassign-fn-name-in-body-in-arrow.js: "TypeError: (anonymous-612): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body-in-eval.js: "TypeError: (anonymous-614): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body.js: "TypeError: BindingIdentifier: set BindingIdentifier: const"
+                    - call:
+                            - eval-realm-indirect.js: "Test262Error: Expected SameValue(«inside», «outside») to be true"
+                    - function:
+                            - named-no-strict-reassign-fn-name-in-body-in-arrow.js: "TypeError: (anonymous-604): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body-in-eval.js: "TypeError: (anonymous-605): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body.js: "TypeError: BindingIdentifier: set BindingIdentifier: const"
+                            - scope-name-var-open-non-strict.js: "TypeError: setParams: set f: const"
+                    - generators:
+                            - named-no-strict-reassign-fn-name-in-body-in-arrow.js: "TypeError: (anonymous-604): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body-in-eval.js: "TypeError: (anonymous-605): set BindingIdentifier: const"
+                            - named-no-strict-reassign-fn-name-in-body.js: "TypeError: BindingIdentifier: set BindingIdentifier: const"
+                            - scope-name-var-open-non-strict.js: "TypeError: setParams: set g: const"
+                    - object:
+                            - literal-property-name-bigint.js: "SyntaxError: missing identifier"
+                    - super:
+                            - call-proto-not-ctor.js: "Test262Error: performs ArgumentsListEvaluation"
+            - global-code:
+                    - script-decl-lex-var-declared-via-eval-sloppy.js: "Test262Error: variable Expected a SyntaxError to be thrown but no exception was thrown at all"
+            - identifier-resolution:
+                    - assign-to-global-undefined.js: "Expected a ReferenceError but got no errors"
+            - statements:
+                    - class:
+                            - subclass:
+                                    - default-constructor-spread-override.js: "Test262Error: @@iterator invoked"
+                    - for-await-of:
+                            - head-lhs-async.js: "SyntaxError: invalid for await"
+                    - try:
+                            - tco-catch.js: "stack overflow"

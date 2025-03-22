@@ -1,0 +1,38 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io/audioout/manifest.json"
+	],
+	"config": {
+		"startupSound": false
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 24000
+		}
+	},
+	"modules": {
+		"*": [
+			"./main",
+			{
+				"source": "$(MODDABLE)/modules/data/views/maud/maudHeader",
+				"transform": "cdv",
+				"json": false,
+				"get": true,
+				"set": false
+			}
+		]
+	},
+	"preload": [
+		"maudHeader"
+	],
+    "resources": {
+		"*": [
+    		"$(MODDABLE)/examples/assets/sounds/one",
+    		"$(MODDABLE)/examples/assets/sounds/two"
+		]
+    }
+}

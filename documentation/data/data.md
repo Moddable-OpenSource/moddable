@@ -26,9 +26,9 @@ import Base64 from "base64";
 Include the module's manifest to use it in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/base64/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/base64/manifest.json"
+]
 ```
 
 ### `static decode(str)`
@@ -65,9 +65,9 @@ import Hex from "hex";
 Include the module's manifest to use it in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/hex/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/hex/manifest.json"
+]
 ```
 
 ### `static toBuffer(string [, separator])`
@@ -110,7 +110,7 @@ let s0 = Hex.toString(buffer, "-", "0123456789abwxyz");
 
 The `CRC8` and `CRC16` classes calculate CRC checksums on data.
 
-```
+```js
 import {CRC8} from "crc";
 import {CRC16} from "crc";
 ```
@@ -118,9 +118,9 @@ import {CRC16} from "crc";
 Include the module's manifest to use it in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/crc/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/crc/manifest.json"
+]
 ```
 
 #### `CRC8(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
@@ -202,9 +202,9 @@ import qrCode from "qrcode";
 Include the module's manifest to use them in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/qrcode/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/qrcode/manifest.json"
+]
 ```
 
 For additional details see the article [QR Code module for the Moddable SDK](https://blog.moddable.com/blog/qrcode/).
@@ -227,8 +227,8 @@ const code = qrCode({input: "Welcome to Moddable", maxVersion: 4});
 
 // trace QR Code to console
 code = new Uint8Array(code);
-for (let y = 0; y < = code.size; y++) {
-    for (let x = 0; x < = code.size; x++)
+for (let y = 0; y <= code.size; y++) {
+    for (let x = 0; x <= code.size; x++)
         trace(code[(y * code.size) + x] ? "X" : ".", "\n");
     trace("\n");
 }
@@ -247,10 +247,10 @@ import TextEncoder from "text/encoder";
 Include the modules' manifest to use them in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/text/decoder/manifest.json",
-		"$(MODULES)/data/text/encoder/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/text/decoder/manifest.json",
+	"$(MODULES)/data/text/encoder/manifest.json"
+]
 ```
 
 The `TextDecoder` implements the [TextDecoder class](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) as [specified by WHATWG](https://encoding.spec.whatwg.org/#interface-textdecoder). It accepts only UTF-8 input data.
@@ -270,10 +270,10 @@ import Deflate from "deflate";
 Include the modules' manifest to use them in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/zlib/manifest_deflate.json",
-		"$(MODULES)/data/zlib/manifest_inflate.json"
-	]
+"include": [
+	"$(MODULES)/data/zlib/manifest_deflate.json",
+	"$(MODULES)/data/zlib/manifest_inflate.json"
+]
 ```
 
 The [inflate example](../../examples/data/inflate/main.js) demonstrates how to decompress data as a one-shot operation and using the `onData` callback for streaming.
@@ -292,9 +292,9 @@ import {URL, URLSearchParams} from "url";
 Include the module's manifest to use it in a project:
 
 ```json
-	"include": [
-		"$(MODULES)/data/url/manifest.json"
-	]
+"include": [
+	"$(MODULES)/data/url/manifest.json"
+]
 ```
 
 `URL` implements the [URL class](https://developer.mozilla.org/en-US/docs/Web/API/URL) as [specified by WHATWG](https://url.spec.whatwg.org/#url-class). The implementation fully conforms to the standard with two exceptions: [Punycode](https://en.wikipedia.org/wiki/Punycode) and [IDNA](https://www.unicode.org/reports/tr46/) support are unimplemented. These are used primarily for the display and safe handling of user-entered URLs in browsers, which are not generally a concern on embedded systems. With some effort (and increase in code size), the implementation could support both.

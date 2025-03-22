@@ -913,11 +913,19 @@ void PiuViewReschedule(PiuView* self)
 	}
 }
 
+#ifndef mxPiuSloMo
+	#define mxPiuSloMo 0
+#endif
+
 PiuTick PiuViewTicks(PiuView* self)
 {
 	if ((*self)->idleTicks)
 		return (*self)->idleTicks;
+#if mxPiuSloMo
+	return modMilliseconds() / 60;
+#else
 	return modMilliseconds();
+#endif
 }
 
 void PiuViewUpdate(PiuView* self, PiuApplication* application)
@@ -936,9 +944,18 @@ void PiuViewUpdate(PiuView* self, PiuApplication* application)
 	PiuRectangleSet(&area, data[1], data[2], data[3], data[4]);
 	if (!PiuRectangleIsEmpty(&area)) {
 #endif
-		PiuViewBegin(self);
-		(*(*application)->dispatch->update)(application, self, &area);
-		PiuViewEnd(self);
+	#if mxPiuSloMo
+		static PiuTick former = 0;
+		PiuTick current = modMilliseconds();
+		if (current - former >= 1000) {
+			former = current;
+	#endif
+			PiuViewBegin(self);
+			(*(*application)->dispatch->update)(application, self, &area);
+			PiuViewEnd(self);
+	#if mxPiuSloMo
+		}
+	#endif
 	}
 }
 
@@ -1311,6 +1328,8 @@ void PiuView_create(xsMachine* the)
 	xsIntegerValue commandListLength, regionLength;
 	if (!xsFindInteger(xsArg(1), xsID_commandListLength, &commandListLength))
 		commandListLength = 1024;
+	if (sizeof(void *) > 4)
+		commandListLength += commandListLength >> 1;		// compensate for bigger pointers on 64-bit systems
 	if (!xsFindInteger(xsArg(1), xsID_regionLength, &regionLength))
 		regionLength = 512;
 	size = sizeof(PiuViewRecord) + commandListLength;
@@ -1355,6 +1374,15 @@ void PiuView_get_rotation(xsMachine* the)
 	xsResult = xsInteger(180);
 #elif 270 == kPocoRotation
 	xsResult = xsInteger(270);
+#endif
+}
+
+void PiuView_get_ticks(xsMachine* the) 
+{
+#if mxPiuSloMo
+	xsResult = xsNumber(modMilliseconds() / 60);
+#else
+	xsResult = xsNumber(modMilliseconds());
 #endif
 }
 
@@ -1414,6 +1442,21 @@ void PiuView_onMessage(xsMachine* the)
 	PiuViewUpdate(self, application);
 	PiuApplicationIdleCheck(application);
 	(*self)->idleTicks = 0;
+}
+
+void PiuView_onQuit(xsMachine* the)
+{
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	if (!application) return;
+	if ((*application)->behavior) {
+		xsVars(2);
+		xsVar(0) = xsReference((*application)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onQuit)) {
+			xsVar(1) = xsReference((*application)->reference);
+			(void)xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+		}
+	}
 }
 
 void PiuView_onTouchBegan(xsMachine* the)

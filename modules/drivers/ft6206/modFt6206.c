@@ -128,7 +128,7 @@ void xs_FT6202(xsMachine *the)
 	if (err) xsUnknownError("write FT6206_REG_VENDID failed");
 	err = modI2CRead(&ft->i2c, data, 1, true);
 	if (err) xsUnknownError("read FT6206_REG_VENDID failed");
-	if ((0 != data[0]) && (1 != data[0]) && (2 != data[0]) && (17 != data[0])) xsUnknownError("bad FT6206_REG_VENDID");
+	if ((0 != data[0]) && (1 != data[0]) && (2 != data[0]) && (17 != data[0]) && (32 != data[0])) xsUnknownError("bad FT6206_REG_VENDID");
 
 	data[0] = FT6206_REG_CHIPID;
 	err = modI2CWrite(&ft->i2c, data, 1, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -57,6 +57,9 @@ void fxBuildMath(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_cosh), 1, mxID(_cosh), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_exp), 1, mxID(_exp), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_expm1), 1, mxID(_expm1), XS_DONT_ENUM_FLAG);
+#if mxFloat16
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_f16round), 1, mxID(_f16round), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_floor), 1, mxID(_floor), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_fround), 1, mxID(_fround), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_hypot), 2, mxID(_hypot_), XS_DONT_ENUM_FLAG);
@@ -450,11 +453,32 @@ void fx_Math_log2(txMachine* the)
 
 void fx_Math_max(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txInteger c = mxArgc, i = 0;
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = -((txNumber)C_INFINITY);
-	for (i = 0; i < c; i++) {
-		txNumber n = fxToNumber(the, mxArgv(i));
+	if (0 == c)
+		return;
+
+	if (XS_INTEGER_KIND == mxArgv(0)->kind) {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = mxArgv(0)->value.integer;
+		i = 1;
+	}
+
+	for (; i < c; i++) {
+		txSlot *slot = mxArgv(i);
+		if (XS_INTEGER_KIND == mxResult->kind) {
+			if (XS_INTEGER_KIND == slot->kind) {
+				if (mxResult->value.integer < slot->value.integer) {
+					mxResult->value.integer = slot->value.integer;
+				}
+				continue;
+			}
+			mxResult->kind = XS_NUMBER_KIND;
+			mxResult->value.number = mxResult->value.integer;
+		}
+
+		txNumber n = fxToNumber(the, slot);
 		if (c_isnan(n)) {
 			for (; i < c; i++)
 				fxToNumber(the, mxArgv(i));
@@ -472,11 +496,31 @@ void fx_Math_max(txMachine* the)
 
 void fx_Math_min(txMachine* the)
 {
-	txInteger c = mxArgc, i;
+	txInteger c = mxArgc, i = 0;
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = (txNumber)C_INFINITY;
-	for (i = 0; i < c; i++) {
-		txNumber n = fxToNumber(the, mxArgv(i));
+	if (0 == c)
+		return;
+
+	if (XS_INTEGER_KIND == mxArgv(0)->kind) {
+		mxResult->kind = XS_INTEGER_KIND;
+		mxResult->value.integer = mxArgv(0)->value.integer;
+		i = 1;
+	}
+
+	for (; i < c; i++) {
+		txSlot *slot = mxArgv(i);
+		if (XS_INTEGER_KIND == mxResult->kind) {
+			if (XS_INTEGER_KIND == slot->kind) {
+				if (mxResult->value.integer > slot->value.integer)
+					mxResult->value.integer = slot->value.integer;
+				continue;
+			}
+			mxResult->kind = XS_NUMBER_KIND;
+			mxResult->value.number = mxResult->value.integer;
+		}
+	
+		txNumber n = fxToNumber(the, slot);
 		if (c_isnan(n)) {
 			for (; i < c; i++)
 				fxToNumber(the, mxArgv(i));
@@ -519,9 +563,10 @@ void fx_Math_pow(txMachine* the)
 
 void fx_Math_random(txMachine* the)
 {
-	uint32_t result = c_rand();
-	while (result == C_RAND_MAX)
+	uint32_t result;
+	do {
 		result = c_rand();
+	} while (result == C_RAND_MAX);
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = (double)result / (double)C_RAND_MAX;
 }

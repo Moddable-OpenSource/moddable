@@ -1,0 +1,51 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/drivers/onewire/*"
+		]
+	},
+	"preload": [
+		"onewire"
+	],
+	"platforms": {
+		"esp": {
+			"include": [
+				"$(MODULES)/pins/digital/manifest.json"
+			],
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/esp/*"
+			},
+			"defines": {
+				"onewire": {
+					"driver_gpio": "GPIO"
+				}
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/esp32/*"
+			},
+			"dependency": [
+				{ "name": "onewire_bus", "version": "^1.0.2" }
+			]
+		},
+		"win": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/sim/*"
+			}
+		},
+		"mac": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/sim/*"
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": "$(MODULES)/drivers/onewire/sim/*"
+			}
+		},
+		"...": {
+			"error": "unsupported platform"
+		}
+	}
+}

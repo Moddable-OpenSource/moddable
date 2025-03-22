@@ -1,5 +1,14 @@
 #!/bin/bash
 
+
+if [[ "$UPLOAD_PORT" ]]; then
+	>&2 echo "Using <env> UPLOAD_PORT $UPLOAD_PORT"
+	if [[ -c "$UPLOAD_PORT" ]]; then
+		echo $UPLOAD_PORT
+		exit
+	fi
+fi
+
 CACHED_DIR=$MODDABLE/build/tmp/esp32
 
 if [[ -f ${CACHED_DIR}/UPLOAD_PORT ]]; then

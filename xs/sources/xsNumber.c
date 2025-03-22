@@ -314,7 +314,7 @@ void fx_Number_prototype_toExponential(txMachine* the)
 	txNumber precision = 0;
 	txNumber value;
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	value = slot->value.number;
 	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0))) {
 		precision = fxToNumber(the, mxArgv(0));
@@ -347,7 +347,7 @@ void fx_Number_prototype_toFixed(txMachine* the)
 	txNumber precision = 0;
 	txNumber value;
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	value = slot->value.number;
 	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0))) {
 		precision = fxToNumber(the, mxArgv(0));
@@ -371,7 +371,7 @@ void fx_Number_prototype_toFixed(txMachine* the)
 void fx_Number_prototype_toLocaleString(txMachine* the)
 {
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 	fxToString(the, mxResult);
@@ -384,7 +384,7 @@ void fx_Number_prototype_toPrecision(txMachine* the)
 	txNumber precision = 0;
 	txNumber value;
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	value = slot->value.number;
 	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0))) {
 		precision = fxToNumber(the, mxArgv(0));
@@ -410,7 +410,7 @@ void fx_Number_prototype_toString(txMachine* the)
 {
 	txInteger radix;
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	if ((mxArgc > 0) && (!mxIsUndefined(mxArgv(0)))) {
 		radix = fxToInteger(the, mxArgv(0));
 		if ((radix < 2) || (36 < radix))
@@ -536,7 +536,7 @@ void fx_Number_prototype_toString(txMachine* the)
 void fx_Number_prototype_valueOf(txMachine* the)
 {
 	txSlot* slot = fxCheckNumber(the, mxThis);
-	if (!slot) mxTypeError("this is no number");
+	if (!slot) mxTypeError("this: not a number");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 }

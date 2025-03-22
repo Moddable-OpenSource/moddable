@@ -59,6 +59,19 @@
 			"raw_right": 232,
 			"raw_top": 8,
 			"raw_bottom": 315
+		},
+		"audioIn": {
+			"bitsPerSample": 16,
+			"sampleRate": 24000,
+			"i2s": {
+				"pdm": 1,
+				"num": 0,
+				"bias": 1,
+				"lr_pin": 32,
+				"datain": 33,
+				"multiplier": 32,
+				"slot": "I2S_STD_SLOT_LEFT"
+			}
 		}
 	}
 }

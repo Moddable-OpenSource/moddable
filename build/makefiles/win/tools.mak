@@ -189,6 +189,7 @@ HEADERS =\
 	$(INSTRUMENTATION)\modInstrumentation.h
 OBJECTS = \
 	$(TMP_DIR)\adpcm-lib.obj \
+	$(TMP_DIR)\adpcm-dns.obj \
 	$(TMP_DIR)\commodettoBitmap.obj \
 	$(TMP_DIR)\commodettoBufferOut.obj \
 	$(TMP_DIR)\commodettoColorCellOut.obj \
@@ -241,12 +242,6 @@ C_OPTIONS = \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
 	/D XSTOOLS=1 \
-	/D mxRun=1 \
-	/D mxParse=1 \
-	/D mxNoFunctionLength=1 \
-	/D mxNoFunctionName=1 \
-	/D mxHostFunctionPrimitive=1 \
-	/D mxFewGlobalsTable=1 \
 	/D mxStringInfoCacheLength=4 \
 	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
 	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\" \

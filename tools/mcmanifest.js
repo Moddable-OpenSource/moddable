@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2024 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -62,11 +62,10 @@ export class MakeFile extends FILE {
 	}
 	generate(tool) {
 		this.generateDefinitions(tool)
-		if (tool.environment)				// override default .mk file
-			if (tool.environment.MAKE_FRAGMENT)
-				tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
+		if (tool.environment?.MAKE_FRAGMENT)				// override default .mk file
+			tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
 		if (undefined === tool.fragmentPath)
-			throw new Error("unknown platform: MAKE_FRAGMENT not found!");
+			throw new Error(`MAKE_FRAGMENT not found: unknown platform "${tool.platform}"!`);
 
 		for (var result of tool.pioFiles) {
 			var source = result.source;
@@ -146,7 +145,7 @@ export class MakeFile extends FILE {
 		const outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME + tool.slash + "xsProj-" + ESP32_SUBCLASS;
 		tool.createDirectory(outputConfigDirectory);
 
-		let PARTITIONS_FILE = tool.environment.PARTITIONS_FILE;
+		let PARTITIONS_FILE = tool.environment.PARTITIONS_FILE ?? tool.environment.PARTITIONS_FILE_FOR_TARGET;
 		if (!PARTITIONS_FILE) {
 			const PROJ_DIR_TEMPLATE = `${tool.buildPath}/devices/esp32/xsProj-${tool.environment.ESP32_SUBCLASS}`;
 			PARTITIONS_FILE = `${PROJ_DIR_TEMPLATE}/partitions.csv`
@@ -269,7 +268,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				mergedConfig = mergedConfig.concat(instConfig.split(regex));
 			}
 		}
-		
+
 		// Merge any application sdkconfig files
 		if (tool.environment.SDKCONFIGPATH != baseConfigDirectory) {
 			let appConfigFile = tool.environment.SDKCONFIGPATH + tool.slash + "sdkconfig.defaults";
@@ -374,16 +373,19 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				}
 			}
 		}
-		
+
 		// Write the result, if it has changed
 		let buildConfigFile = outputConfigDirectory + tool.slash + "sdkconfig.mc";
 		tool.setenv("SDKCONFIG_FILE", buildConfigFile);
 		this.line("SDKCONFIG_FILE=", buildConfigFile);
 		if (tool.isDirectoryOrFile(buildConfigFile) == 1){
 			const oldConfig = tool.readFileString(buildConfigFile);
-			if (oldConfig == baseConfig) return;
+			if (oldConfig != baseConfig)
+				tool.writeFileString(buildConfigFile, baseConfig);
 		}
-		tool.writeFileString(buildConfigFile, baseConfig);
+		else
+			tool.writeFileString(buildConfigFile, baseConfig);
+
 	}
 	generateBLEDefinitions(tool) {
 		this.write("BLE =");
@@ -493,12 +495,16 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		
 		this.line("");
 
+		const ESP32_SUBCLASS = tool.environment.ESP32_SUBCLASS ?? "esp32";
+		tool.outputConfigDirectory = tool.outputPath + tool.slash + "tmp" + tool.slash + "esp32" + tool.slash + (tool.subplatform ?? "") + tool.slash + (tool.debug ? "debug" : (tool.instrument ? "instrument" : "release")) + tool.slash + tool.environment.NAME; //  + tool.slash + "xsProj-" + ESP32_SUBCLASS;
+
 		this.generateManifestDefinitions(tool);
 		this.generateModulesDefinitions(tool);
 		this.generateObjectsDefinitions(tool);
 		this.generateDataDefinitions(tool);
 		this.generateBLEDefinitions(tool);
 		this.generateResourcesDefinitions(tool);
+		this.generateDependenciesDefinitions(tool);
 	}
 	generateManifestDefinitions(tool) {
 		this.write("MANIFEST =");
@@ -581,11 +587,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 		for (var result of tool.jsFiles) {
 			var source = result.source;
-			var sourceParts = tool.splitPath(source);
+			// var sourceParts = tool.splitPath(source);
 			var target = result.target;
-			target = target.replaceAll('#', '\\#');
 			var targetParts = tool.splitPath(target);
-			this.line("$(MODULES_DIR)", tool.slash, target, ": ", source);
+			this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash));
 			this.echo(tool, "xsc ", target);
 			var options = "";
 			if (result.commonjs)
@@ -594,7 +599,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -d";
 			if (tool.nativeCode)
 				options += " -c";
-			this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name);
+			this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
 		}
 		this.line("");
 		
@@ -623,7 +628,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				var targetParts = tool.splitPath(target);
 				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target, ": $(MODULES_DIR)", temporary);
+				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
 				this.echo(tool, "xsc ", target);
 				var options = "";
 				if (result.commonjs)
@@ -632,9 +637,9 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					options += " -d";
 				if (tool.nativeCode)
 					options += " -c";
-				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name);
+				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
 				if (tool.windows)
-					this.line("$(MODULES_DIR)", temporary, ": TSCONFIG");
+					this.line("$(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash), ": TSCONFIG");
 				temporaries.push("%" + temporary);
 			}
 			if (tool.windows)
@@ -731,6 +736,60 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 		this.line("");
 		this.line("");
+	}
+	generateDependenciesDefinitions(tool) {
+		if ("mcrun" == tool.toolName)
+			return;
+
+		if ("esp32" == tool.platform) {
+			if (tool.dependencies?.length) {
+				var projBase = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}managed_components${tool.slash}`;
+				this.write("MANAGED_COMPONENT_DIRS = \\\n");
+				for (var dep of tool.dependencies) {
+ 					const depBase = `${projBase}${dep.namespace}__${dep.name}${tool.slash}`;
+					var depLine = "\t";
+					if (tool.windows)
+						depLine += "-I";
+					depLine += depBase + "include \\\n";
+					if (dep.includes) {
+						for (var inc of dep.includes) {
+							if (tool.windows)
+								depLine += "-I";
+							depLine += `${depBase}${tool.resolveSlash(inc)} \\\n`;
+						}
+					}
+					this.write(depLine);
+				}
+				this.write("\n");
+			}
+		}
+		if ("esp32" == tool.platform) {
+			var dep, did = 0;
+			let depStr = "BUILD_DEPENDENCIES = ";
+			for (dep of tool.dependencies) {
+				if (did++)
+					depStr += "& ";
+				depStr += `idf.py add-dependency \"${dep.namespace}/${dep.name}${dep.version}\" `;
+			}
+			if (tool.environment.USE_USB == 1) {
+				if (did++)
+					depStr += "& ";
+				depStr += "idf.py add-dependency \"espressif/esp_tinyusb\"";
+			}
+			this.line(depStr);
+			this.line();
+
+			let cmakeTweakFile = tool.outputConfigDirectory + tool.slash + "xs_idf_deps.txt";
+			let tweakStr = "set(ESP_COMPONENTS ";
+			for (dep of tool.dependencies)
+				tweakStr += `${dep.namespace}__${dep.name} `;
+			if (tool.environment.USE_USB == 1)
+				tweakStr += "espressif__esp_tinyusb";
+			tweakStr += ")\n";
+			tool.writeFileString(cmakeTweakFile, tweakStr);
+		}
+	}
+	generateDependencyRules(tool) {
 	}
 	generateResourcesRules(tool) {
 		var formatPath = "$(TMP_DIR)" + tool.slash + "mc.format.h";
@@ -1042,6 +1101,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		this.generateConfigurationRules(tool);
 		this.generateBLERules(tool);
 		this.generateResourcesRules(tool);
+		this.generateDependencyRules(tool);
 	}
 }
 
@@ -1051,6 +1111,7 @@ export class TSConfigFile extends FILE {
 	}
 	generate(tool) {
 		let json = {
+			...tool.typescript.tsconfig,
 			compilerOptions: {
 				baseUrl: "./",
 				forceConsistentCasingInFileNames: true,
@@ -1307,7 +1368,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
+		else if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
@@ -1338,8 +1399,12 @@ class ModulesRule extends Rule {
 		else if (parts.extension == ".d.ts")
 			this.appendFile(tool.dtsFiles, target, source, include);
 		else if (parts.extension == ".json") {
-			if ("nodered2mcu" === query.transform)
+			if (parts.name.startsWith("manifest"))
+				;
+			else if ("nodered2mcu" === query.transform)
 				this.appendFile(tool.nodered2mcuFiles, target, source, include);
+			else
+				this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		}
 		else if (parts.extension == ".pio")
 			this.appendFile(tool.pioFiles, target, source, include);
@@ -1568,6 +1633,7 @@ export class Tool extends TOOL {
 		this.verbose = false;
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
+		this.escapedHash = this.windows ? "^#" : "\\#";
 
 		this.buildPath = this.moddablePath + this.slash + "build";
 		this.xsPath = this.moddablePath + this.slash + "xs";
@@ -1846,8 +1912,8 @@ export class Tool extends TOOL {
 		if ("string" == typeof it) {
 			this.includeManifestPath(this.resolveVariable(it));
 		}
-		else if (this.buildTarget != "clean") {
-			let { git, branch, tag, include = "manifest.json" } = it;
+		else {
+			let { git, branch, tag, manifest = [ "manifest.json" ] } = it;
 			if (!git)
 				throw new Error("no git!");
 			let repo = this.resolveVariable(git);
@@ -1867,24 +1933,26 @@ export class Tool extends TOOL {
 			let path = this.createDirectories(this.outputPath, "tmp", this.environment.NAME);
 			directory = path + this.slash + parts.join(this.slash);
 			
-			if (this.isDirectoryOrFile(directory) == 0) {
-				for (let part of parts) {
-					path += this.slash + part;
-					this.createDirectory(path);
-				}
-				this.currentDirectory = path;
-				this.report("# git clone " + repo + " to path " + path);
-				let result;
-				if (branch)
-					result = this.spawn("git", "clone", "-b", branch, repo, ".");
-				else
-					result = this.spawn("git", "clone", repo, ".");
-				if (result != 0)
-					throw new Error("git failed!");
-				if (tag) {
-					result = this.spawn("git", "-c", "advice.detachedHead=false", "checkout", tag);
+			if (this.buildTarget != "clean") {
+				if (this.isDirectoryOrFile(directory) == 0) {
+					for (let part of parts) {
+						path += this.slash + part;
+						this.createDirectory(path);
+					}
+					this.currentDirectory = path;
+					this.report("# git clone " + repo + " to path " + path);
+					let result;
+					if (branch)
+						result = this.spawn("git", "clone", "-b", branch, repo, ".");
+					else
+						result = this.spawn("git", "clone", repo, ".");
 					if (result != 0)
 						throw new Error("git failed!");
+					if (tag) {
+						result = this.spawn("git", "-c", "advice.detachedHead=false", "checkout", tag);
+						if (result != 0)
+							throw new Error("git failed!");
+					}
 				}
 			}
 // 			else {
@@ -1892,10 +1960,16 @@ export class Tool extends TOOL {
 // 				this.report("# git pull " + name);
 // 				this.spawn("git", "pull");
 // 			}
-			if (include instanceof Array)
-				include.forEach(it => this.includeManifestPath(directory + this.slash + this.resolveVariable(it)));
-			else
-				this.includeManifestPath(directory + this.slash + this.resolveVariable(include));
+			if (this.isDirectoryOrFile(directory) < 0) {
+				if (typeof manifest == "string") {
+					this.includeManifestPath(directory + this.slash + this.resolveVariable(manifest));
+				}
+				else {
+					this.currentDirectory = directory;
+					manifest = this.parseManifest(null, manifest);
+					manifest.directory = directory;
+				}
+			}
 		}
 		this.currentDirectory = currentDirectory;
 	}
@@ -1947,6 +2021,20 @@ export class Tool extends TOOL {
 			delete manifest.platforms;
 		}
 		this.currentDirectory = currentDirectory;
+	}
+	mergeDependencies(manifests) {
+		manifests.forEach(manifest => {
+			manifest.dependencies?.forEach(dep => {
+				var found = false;
+				for (const cmp in this.manifest.dependency) {
+					if (cmp.namespace != dep.namespace) continue;
+					if (cmp.name != dep.name) continue;
+					found = true;
+				}
+				if (!found)
+					this.manifest.dependency.push(dep);
+			});
+		});
 	}
 	mergeNodeRed(manifests) {
 		if (!this.environment.NODEREDMCU)
@@ -2044,6 +2132,7 @@ export class Tool extends TOOL {
 					return value;
 				});
 
+				this.mergeProperties(all.typescript.tsconfig, tsconfig, ['compilerOptions']);
 				const compilerOptions = tsconfig.compilerOptions;
 				for (let name in compilerOptions) {
 					let value = compilerOptions[name];
@@ -2068,9 +2157,11 @@ export class Tool extends TOOL {
 		}
 		return;
 	}
-	mergeProperties(targets, sources) {
+	mergeProperties(targets, sources, exclude) {
 		if (sources) {
 			for (let name in sources) {
+				if (exclude?.includes(name))
+					continue;
 				let target = targets[name];
 				let source = sources[name];
 				if (target && source && (typeof target == "object") && (typeof source == "object"))
@@ -2120,7 +2211,8 @@ export class Tool extends TOOL {
 				throw new Error("'" + path + "': invalid manifest!");;
 			}
 		}
-		this.manifests.already[path] = manifest;
+		if (path)
+			this.manifests.already[path] = manifest;
 		this.parseBuild(manifest);
 		if ("platforms" in manifest) {
 			let platforms = manifest.platforms;
@@ -2135,6 +2227,15 @@ export class Tool extends TOOL {
 						if ("string" === typeof manifest.include)
 							manifest.include = [manifest.include];
 						manifest.include = manifest.include.concat(platformInclude);
+					}
+				}
+				if (platform.dependency && ("esp32" == this.platform)) {
+					manifest.dependencies = [];
+					for (let i=0; i<platform.dependency.length; i++) {
+						var dep = platform.dependency[i];
+						if (undefined === dep.namespace)
+							dep.namespace = "espressif";
+						manifest.dependencies.push(dep);
 					}
 				}
 			}
@@ -2196,6 +2297,7 @@ export class Tool extends TOOL {
 			config:{},
 			creation:{},
 			defines:{},
+			dependency:[],
 			data:{},
 			modules:{},
 			resources:{},
@@ -2211,6 +2313,8 @@ export class Tool extends TOOL {
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
+		this.mergeDependencies(this.manifests);
+	
 		if (this.manifest.errors.length) {
 			this.manifest.errors.forEach(error => { this.reportError(null, 0, error); });
 			throw new Error("incompatible platform!");
@@ -2278,6 +2382,8 @@ export class Tool extends TOOL {
 		this.bleServicesFiles.already = {};
 		this.pioFiles = [];
 		this.pioFiles.already = {};
+
+		this.dependencies = this.manifest.dependency;
 
 		var rule = new DataRule(this);
 		rule.process(this.manifest.data);

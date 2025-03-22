@@ -101,6 +101,9 @@ export default class extends TOOL {
 		this.moddablePath = this.getenv("MODDABLE");
 		if (!this.moddablePath)
 			throw new Error("MODDABLE: variable not found!");
+		this.moddablePath = this.resolveDirectoryPath(this.moddablePath);
+		if (!this.moddablePath)
+			throw new Error("invalid MODDABLE environment variable!");
 		this.windows = this.currentPlatform == "win";
 		this.slash = this.windows ? "\\" : "/";
 		this.buildPath = this.moddablePath + this.slash + "build";

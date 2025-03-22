@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -38,7 +38,7 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v5.1.2
+EXPECTED_ESP_IDF ?= v5.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -74,7 +74,6 @@ else
 				else
 					# basic esp32 doesn't support USB
 					ESP32_TARGET = 1
-					USB_OPTION =
 				endif
 			endif
 		endif
@@ -114,29 +113,16 @@ ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs -l 2.5
 endif
 
-USB_OPTION=
+IDF_BUILD_OPTIONS =
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config
 
 ifeq ($(USE_USB),0) 
 else
-	USB_OPTION = -DUSE_USB=$(USE_USB)
+	IDF_BUILD_OPTIONS += -DUSE_USB=$(USE_USB)
 endif
 
-ifeq ($(USE_USB),1) 
-	TINY_USB_BITS=$(PROJ_DIR)/managed_components
-endif
-
-# 	$(IDF_PATH)/components/driver/deprecated
-
-INC_DIRS = \
-	$(IDF_PATH)/components \
-	$(IDF_PATH)/components/bootloader_support/include \
-	$(IDF_PATH)/components/bt/include \
-	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
-	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
-	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
-	$(IDF_PATH)/components/esp_adc/include \
+DRIVER_DIRS_OLD = \
 	$(IDF_PATH)/components/driver/dac/include \
 	$(IDF_PATH)/components/driver/gpio/include \
 	$(IDF_PATH)/components/driver/gptimer/include \
@@ -149,13 +135,41 @@ INC_DIRS = \
 	$(IDF_PATH)/components/driver/sdmmc/include \
 	$(IDF_PATH)/components/driver/spi/include \
 	$(IDF_PATH)/components/driver/uart/include \
+	$(IDF_PATH)/components/driver/touch_sensor/include \
+	$(IDF_PATH)/components/driver/touch_sensor/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/driver/include \
 	$(IDF_PATH)/components/driver/include/driver \
 	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include \
-	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver \
+	$(IDF_PATH)/components/driver/$(ESP32_SUBCLASS)/include/driver
+
+DRIVER_DIRS = \
+	$(IDF_PATH)/components/driver/i2c/include \
+	$(IDF_PATH)/components/esp_driver_dac/include \
+	$(IDF_PATH)/components/esp_driver_gpio/include \
+	$(IDF_PATH)/components/esp_driver_gptimer/include \
+	$(IDF_PATH)/components/esp_driver_i2c/include \
+	$(IDF_PATH)/components/esp_driver_i2s/include \
+	$(IDF_PATH)/components/esp_driver_ledc/include \
+	$(IDF_PATH)/components/esp_driver_mcpwm/include \
+	$(IDF_PATH)/components/esp_driver_pcnt/include \
+	$(IDF_PATH)/components/esp_driver_rmt/include \
+	$(IDF_PATH)/components/esp_driver_sdmmc/include \
+	$(IDF_PATH)/components/esp_driver_spi/include \
+	$(IDF_PATH)/components/esp_driver_uart/include
+ 
+INC_DIRS = \
+	$(DRIVER_DIRS) \
+	$(MANAGED_COMPONENT_DIRS) \
+	$(IDF_PATH)/components \
+	$(IDF_PATH)/components/bootloader_support/include \
+	$(IDF_PATH)/components/bt/include \
+	$(IDF_PATH)/components/bt/include/$(ESP32_BT_SUBCLASS)/include \
+	$(IDF_PATH)/components/bt/host/bluedroid/api/include \
+	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/esp_adc/include \
  	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_app_format/include \
+	$(IDF_PATH)/components/esp_bootloader_format/include \
 	$(IDF_PATH)/components/esp_common/include \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
@@ -170,25 +184,19 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_ringbuf/include \
 	$(IDF_PATH)/components/esp_rom/include \
 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_system/include \
 	$(IDF_PATH)/components/esp_timer/include \
 	$(IDF_PATH)/components/esp_wifi/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/include \
 	$(IDF_PATH)/components/$(ESP_ARCH)/$(ESP32_SUBCLASS)/include \
-	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
- 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/config/include \
+	$(IDF_PATH)/components/freertos/config/include/freertos \
+	$(IDF_PATH)/components/freertos/config/$(ESP_ARCH)/include \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
-	$(IDF_PATH)/components/freertos/esp_additions/arch/$(ESP_ARCH)/include \
+ 	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/freertos/esp_additions/include \
-	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
-	$(IDF_PATH)/components/freertos \
-	$(IDF_PATH)/components/freertos/include \
-	$(IDF_PATH)/components/freertos/include/freertos \
-	$(IDF_PATH)/components/freertos/port \
-	$(IDF_PATH)/components/freertos/include/esp_additions \
-	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
-	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/hal/platform_port/include \
@@ -218,6 +226,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include/soc \
+	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/register \
 	$(IDF_PATH)/components/soc/include \
 	$(IDF_PATH)/components/soc/include/soc \
 	$(IDF_PATH)/components/spiffs/include \
@@ -227,9 +236,22 @@ INC_DIRS = \
 	$(IDF_PATH)/components/spi_flash/include \
 	$(IDF_PATH)/components/tcpip_adapter/include \
 	$(IDF_PATH)/components/tcpip_adapter \
-	$(IDF_PATH)/components/driver/touch_sensor/include \
-	$(IDF_PATH)/components/driver/touch_sensor/$(ESP32_SUBCLASS)/include \
  	$(IDF_PATH)/components/tinyusb/additions/include
+
+# paths for prior idf
+INC_DIRS += \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/esp_additions/arch/$(ESP_ARCH)/include \
+	$(IDF_PATH)/components/freertos/esp_additions/include/freertos \
+	$(IDF_PATH)/components/freertos \
+	$(IDF_PATH)/components/freertos/include \
+	$(IDF_PATH)/components/freertos/include/freertos \
+	$(IDF_PATH)/components/freertos/port \
+	$(IDF_PATH)/components/freertos/include/esp_additions \
+	$(IDF_PATH)/components/freertos/include/esp_additions/freertos \
+	$(IDF_PATH)/components/freertos/port/$(ESP_ARCH)/include/freertos \
+
 
 XS_OBJ = \
 	$(LIB_DIR)/xsAll.c.o \
@@ -309,13 +331,14 @@ C_DEFINES = \
 	-U__STRICT_ANSI__ \
 	-DESP32=$(ESP32_TARGET) \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(DEBUG),1)
+	IDF_BUILD_OPTIONS += -DmxDebug=1
 	C_DEFINES += -DmxDebug=1
 endif
 ifeq ($(INSTRUMENT),1)
+	IDF_BUILD_OPTIONS += -DINSTRUMENT=1
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(DIRECTORIES)
@@ -341,7 +364,8 @@ C_COMMON_FLAGS ?= -c -Os -g \
 
 ifeq ("$(ESP_ARCH)","riscv")
 C_COMMON_FLAGS +=	\
-	-march=rv32imc
+	-march=rv32imc	\
+	-D_NO_ATOMICS
 else
 C_COMMON_FLAGS +=	\
  	-mlongcalls \
@@ -374,7 +398,7 @@ MEM_USAGE = \
 
 VPATH += $(SDK_DIRS) $(XS_DIRS)
 
-.PHONY: all bootloaderCheck
+.PHONY: all bootloaderCheck prepareOutput
 
 PROJ_DIR_TEMPLATE = $(BUILD_DIR)/devices/esp32/xsProj-$(ESP32_SUBCLASS)
 PROJ_DIR_FILES = \
@@ -384,6 +408,22 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/CMakeLists.txt \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
+
+ifeq ("$(DEBUGGER)$(INSTRUMENT)","")
+	DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_none.c
+else
+	ifeq ($(USE_USB),1) 
+		DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_tinyusb.c
+	else
+		ifeq ($(USE_USB),2)
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+		else
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+		endif
+	endif
+endif
+
+PROJ_DIR_FILES += $(DEBUGGER_SRC_FILE)
 
 ifneq ($(BOOTLOADERPATH),)
 	PROJ_DIR_FILES += $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
@@ -395,19 +435,27 @@ ifeq ($(UPLOAD_PORT),)
 	else
 		PORT_SET = 
 	endif
-	SERIAL2XSBUG_PORT = $$PORT_USED
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $$PORT_USED
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 else
 	PORT_SET = -p $(UPLOAD_PORT)
-	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 endif
 
 PORT_NAME_PATH = /tmp/_default_port.tmp
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
-BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
+BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32=$(ESP32_TARGET) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py -p `$(PLATFORM_DIR)/config/idfSerialPort` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
+IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(IDF_BUILD_OPTIONS)
 RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
@@ -425,7 +473,8 @@ BUILD_IDF_PARTS = cd $(PROJ_DIR) ; \
 DO_PROGRAM = cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 
 
-CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+# CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$($(PLATFORM_DIR)/config/idfSerialPort) ; $(DO_LAUNCH)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -550,6 +599,7 @@ xsbug:
 prepareOutput:
 	-@rm $(PROJ_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
+	-@rm $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)/main/idf_component.yml
 
 DUMP_VARS:
 	echo "#\n#\n# vars\n#\n#\n"
@@ -560,7 +610,12 @@ DUMP_VARS:
 	echo "# IDF_RECONFIGURE_CMD is $(IDF_RECONFIGURE_CMD)"
 	echo "# SDKCONFIG_H_DIR is $(SDKCONFIG_H_DIR)"
 
-precursor: idfVersionCheck prepareOutput $(PROJ_DIR_FILES) bootloaderCheck $(BLE) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
+dependencies: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/../xs_idf_deps.txt
+	echo "# Configure dependencies..."
+	-rm -f $(PROJ_DIR)/main/idf_component.yml
+	cd $(PROJ_DIR) ; $(BUILD_DEPENDENCIES)
+
+precursor: prepareOutput idfVersionCheck $(PROJ_DIR_FILES) bootloaderCheck $(BLE) dependencies $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a
 	cp $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $(BLD_DIR)/.
 	touch $(PROJ_DIR)/main/main.c
 
@@ -587,10 +642,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(PROJ_DIR)/managed_components: $(PROJ_DIR)/main
-	echo "# Configure tinyusb..."; cd $(PROJ_DIR) ; idf.py add-dependency "espressif/esp_tinyusb"
-
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) $(TINY_USB_BITS)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) dependencies
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
@@ -602,7 +654,7 @@ $(TMP_DIR)/buildinfo.h:
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
 	@echo "# ar xs_$(ESP32_SUBCLASS).a"
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
 	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
@@ -634,6 +686,18 @@ $(PROJ_DIR)/main:
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
+
+$(PROJ_DIR)/main/debugger_none.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_none.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_none.c $@
+
+$(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart.c $@
+
+$(PROJ_DIR)/main/debugger_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c $@
+
+$(PROJ_DIR)/main/debugger_tinyusb.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c $@
 
 $(PROJ_DIR)/main/component.mk: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/component.mk
 	cp -f $(PROJ_DIR_TEMPLATE)/main/component.mk $@

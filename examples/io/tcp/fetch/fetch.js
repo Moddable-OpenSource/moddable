@@ -198,12 +198,13 @@ function fetch(href, info = {}) {
 							h.set(name.toLowerCase(), headers[name]);
 						headers = h;
 					}
-					length = headers.get("content-length");
-					if (length == undefined) {
-						headers = new Headers(headers);
-						length = body.byteLength;
+				}
+				length = headers.get("content-length");
+				if (length == undefined) {
+					length = body.byteLength;
+					const transferEncoding = headers.get("transfer-encoding");
+					if (transferEncoding?.toLowerCase() != "chunked")
 						headers.set("content-length", length);
-					}
 				}
 			}
 			

@@ -47,6 +47,7 @@ struct PiuScreenStruct {
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
 	xsNumberValue transparency;
+	PiuPointRecord fingerprint;
 };
 
 struct PiuScreenMessageStruct {
@@ -68,8 +69,15 @@ static void fxScreenAbort(txScreen* screen, int status);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
 static void fxScreenPost(txScreen* screen, char* message, int size);
+static void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y);
 static void fxScreenStart(txScreen* screen, double interval);
 static void fxScreenStop(txScreen* screen);
+
+enum {
+	piuRecordingTouches = 1 << 24,
+	piuPlayingTouches = 1 << 25,
+	piuDisplayFingerprint = 1 << 26,
+};
 
 LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -83,19 +91,27 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		SetCapture(window);
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		txScreen* screen = (*self)->screen;
-		if (screen && screen->touch)  {
-			PiuPointRecord point;
-			PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
-			(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+		if (!((*self)->flags & piuPlayingTouches)) {
+			if (screen && screen->touch)  {
+				PiuPointRecord point;
+				PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+				if ((*self)->flags & piuRecordingTouches) 
+					fxScreenRecordTouch(screen, touchEventBeganKind, 0, point.x, point.y);
+				(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+			}
 		}
 	} break;
 	case WM_LBUTTONUP: {
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		txScreen* screen = (*self)->screen;
-		if (screen && screen->touch)  {
-			PiuPointRecord point;
-			PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
-			(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+		if (!((*self)->flags & piuPlayingTouches)) {
+			if (screen && screen->touch)  {
+				PiuPointRecord point;
+				PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+				if ((*self)->flags & piuRecordingTouches) 
+					fxScreenRecordTouch(screen, touchEventEndedKind, 0, point.x, point.y);
+				(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+			}
 		}
 		ReleaseCapture();
 	} break;
@@ -103,10 +119,14 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
         if (wParam & MK_LBUTTON) {
 			PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 			txScreen* screen = (*self)->screen;
-			if (screen && screen->touch)  {
-				PiuPointRecord point;
-				PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
-				(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+			if (!((*self)->flags & piuPlayingTouches)) {
+				if (screen && screen->touch)  {
+					PiuPointRecord point;
+					PiuScreenRotatePoint(self, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), &point);
+					if ((*self)->flags & piuRecordingTouches) 
+						fxScreenRecordTouch(screen, touchEventMovedKind, 0, point.x, point.y);
+					(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+				}
 			}
 		}
 	} break;
@@ -124,11 +144,11 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
    			HRGN hRegion = region.GetHRGN(&graphics);
  			graphics.SetClip(hRegion, CombineModeExclude);
 		}
-		graphics.TranslateTransform(((REAL)(*self)->bounds.width)/2.0, ((REAL)(*self)->bounds.height)/2.0);
+		graphics.TranslateTransform((REAL)((*self)->bounds.width/2.0), (REAL)((*self)->bounds.height/2.0));
 		graphics.RotateTransform((REAL)(*self)->rotation);
-		graphics.TranslateTransform(-((REAL)screen->width)/2.0, -((REAL)screen->height)/2.0);
+		graphics.TranslateTransform((REAL)-(screen->width/2.0), (REAL)-(screen->height/2.0));
 		if ((*self)->transparency) {
-			RectF bounds(0, 0, screen->width, screen->height);
+			RectF bounds(0, 0, (REAL)screen->width, (REAL)screen->height);
 			(*self)->colorMatrix->m[0][0] = 1;
 			(*self)->colorMatrix->m[1][1] = 1;
 			(*self)->colorMatrix->m[2][2] = 1;
@@ -139,6 +159,22 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		}
 		else
   			graphics.DrawImage((*self)->bitmap, PointF(0.0f, 0.0f));
+		if ((*self)->flags & piuDisplayFingerprint) {
+			PiuSkin* skin = (*self)->skin;
+			if (skin) {
+				PiuTexture* texture = (*skin)->data.pattern.texture;
+				if (skin) {
+					Image* image = (*texture)->image;
+					if (image) {
+						PiuDimension width = (*texture)->width;
+						PiuDimension height = (*texture)->height;
+						RectF source(0, 0, (REAL)width, (REAL)height);
+						RectF destination((REAL)(*self)->fingerprint.x - (width / 2), (REAL)(*self)->fingerprint.y - (height / 2), (REAL)width, (REAL)height);
+						graphics.DrawImage(image, destination, source, UnitPixel, NULL);
+					}
+				}
+			}
+		}
 		EndPaint(window, &ps);
 		return TRUE;
 	} break;
@@ -156,7 +192,7 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onAbort)) {
 				xsVar(1) = xsReference((*self)->reference);
-				xsVar(2) = xsInteger(wParam);
+				xsVar(2) = xsInteger((xsIntegerValue)wParam);
 				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
 			}
 			xsEndHost((*self)->the);
@@ -290,7 +326,7 @@ PiuScreenMessage PiuScreenCreateMessage(PiuScreen* self, char* buffer, int size)
 		message->buffer = buffer;
 	else {
 		if (!size)
-			size = strlen(buffer) + 1;;
+			size = (int)strlen(buffer) + 1;;
 		message->buffer = (char*)malloc(size);
 		if (!message->buffer) {
 			free(message);
@@ -458,6 +494,36 @@ void PiuScreen_get_pixelFormat(xsMachine* the)
 	xsResult = xsInteger((*self)->screen->pixelFormat);
 }
 
+void PiuScreen_get_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuPlayingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuPlayingTouches;
+	else
+		(*self)->flags &= ~piuPlayingTouches;
+}
+
+void PiuScreen_get_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuRecordingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuRecordingTouches;
+	else
+		(*self)->flags &= ~piuRecordingTouches;
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -554,6 +620,26 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
+void PiuScreen_touch(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	txScreen* screen = (*self)->screen;
+	if (screen->touch) {
+		xsIntegerValue kind = xsToInteger(xsArg(0));
+		xsIntegerValue index = xsToInteger(xsArg(1));
+		xsIntegerValue x = xsToInteger(xsArg(2));
+		xsIntegerValue y = xsToInteger(xsArg(3));
+		if (kind == 0)
+			(*self)->flags |= piuDisplayFingerprint;
+		else if ((kind == 1) || (kind == 2))
+			(*self)->flags &= ~piuDisplayFingerprint;
+		(*self)->fingerprint.x = x;
+		(*self)->fingerprint.y = y;
+		fxScreenBufferChanged(screen);
+		(*screen->touch)(screen, kind, index, x, y, 0);
+	}
+}
+
 static int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 {
    UINT  num = 0;          // number of image encoders
@@ -644,6 +730,25 @@ void fxScreenPost(txScreen* screen, char* buffer, int size)
 	PiuScreenMessage message = PiuScreenCreateMessage(self, buffer, size);
 	if (message)
 		PostMessage((*self)->control, WM_MESSAGE_TO_HOST, (WPARAM)sizeof(message), (LPARAM)message);
+}
+
+void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y)
+{
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(6);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onRecordTouch)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(kind);
+			xsVar(3) = xsInteger(index);
+			xsVar(4) = xsInteger(x);
+			xsVar(5) = xsInteger(y);
+			(void)xsCallFunction5(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3), xsVar(4), xsVar(5));
+		}
+		xsEndHost((*self)->the);
+	}
 }
 
 void fxScreenStart(txScreen* screen, double interval)

@@ -30,7 +30,6 @@ MAKEFLAGS += --silent
 endif
 
 CC = emcc
-OPT = wasm-opt
 XS_DIR ?= $(realpath ../../../xs)
 BUILD_DIR ?= $(realpath ../..)
 
@@ -118,6 +117,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ParseBMP.xsb \
 	$(MOD_DIR)/commodetto/PixelsOut.xsb \
 	$(MOD_DIR)/commodetto/Poco.xsb \
+	$(MOD_DIR)/commodetto/PocoCore.xsb \
 	$(MOD_DIR)/commodetto/ReadJPEG.xsb \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
@@ -145,7 +145,7 @@ MODULES = \
 	$(TMP_DIR)/commodettoConvert.c.xsi \
 	$(TMP_DIR)/commodettoParseBMF.c.xsi \
 	$(TMP_DIR)/commodettoParseBMP.c.xsi \
-	$(TMP_DIR)/commodettoPoco.c.xsi \
+	$(TMP_DIR)/commodettoPocoCore.c.xsi \
 	$(TMP_DIR)/commodettoPocoBlit.c.xsi \
 	$(TMP_DIR)/commodettoReadJPEG.c.xsi \
 	$(TMP_DIR)/commodettoReadPNG.c.xsi \
@@ -163,6 +163,7 @@ PRELOADS =\
 	-p commodetto/ParseBMF.xsb\
 	-p commodetto/ParseBMP.xsb\
 	-p commodetto/Poco.xsb\
+	-p commodetto/PocoCore.xsb\
 	-p commodetto/ReadPNG.xsb\
 	-p commodetto/RLE4Out.xsb\
 	-p wavreader.xsb\
@@ -177,13 +178,14 @@ HEADERS = \
 	$(INSTRUMENTATION)/modInstrumentation.h
 OBJECTS = \
 	$(TMP_DIR)/adpcm-lib.c.o \
+	$(TMP_DIR)/adpcm-dns.c.o \
 	$(TMP_DIR)/commodettoBitmap.c.o \
 	$(TMP_DIR)/commodettoBufferOut.c.o \
 	$(TMP_DIR)/commodettoColorCellOut.c.o \
 	$(TMP_DIR)/commodettoConvert.c.o \
 	$(TMP_DIR)/commodettoParseBMF.c.o \
 	$(TMP_DIR)/commodettoParseBMP.c.o \
-	$(TMP_DIR)/commodettoPoco.c.o \
+	$(TMP_DIR)/commodettoPocoCore.c.o \
 	$(TMP_DIR)/commodettoPocoBlit.c.o \
 	$(TMP_DIR)/commodettoReadJPEG.c.o \
 	$(TMP_DIR)/commodettoReadPNG.c.o \
@@ -206,12 +208,6 @@ C_DEFINES = \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"wasm_xs.h\" \
 	-DXSTOOLS=1 \
-	-DmxRun=1 \
-	-DmxParse=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
@@ -249,9 +245,9 @@ else
 MODDABLE_TOOLS_DIR = $(BUILD_DIR)/bin/lin
 endif
 
-XSC = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsc
-XSID = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsid
-XSL = $(MODDABLE_TOOLS_DIR)/$(GOAL)/xsl
+XSC = $(MODDABLE_TOOLS_DIR)/release/xsc
+XSID = $(MODDABLE_TOOLS_DIR)/release/xsid
+XSL = $(MODDABLE_TOOLS_DIR)/release/xsl
 	
 VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/wavreader $(TOOLS)
 
@@ -274,9 +270,7 @@ $(BIN_DIR):
 
 $(BIN_DIR)/$(NAME): $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o
 	@echo "#" $(NAME) $(GOAL) ": cc" $(@F)
-	$(CC) $(LINK_FLAGS) $(LIBRARIES) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o -o $@.js
-	@echo "#" $(NAME) $(GOAL) ": wasm-opt" $(@F)
-	$(OPT) -O2 $(BIN_DIR)/$(NAME).wasm -o $(BIN_DIR)/$(NAME).wasm
+	$(CC) -O2 $(LINK_FLAGS) $(LIBRARIES) $(XS_OBJECTS) $(OBJECTS) $(TMP_DIR)/mc.xs.c.o -o $@.js
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
@@ -297,7 +291,7 @@ $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 
 $(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
-	$(BIN_DIR)/xsc $< -c -d -e -o $(MOD_DIR) -r $*
+	$(XSC) $< -c -d -e -o $(MOD_DIR) -r $*
 
 $(MOD_DIR)/%.xsb: $(TOOLS)/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)

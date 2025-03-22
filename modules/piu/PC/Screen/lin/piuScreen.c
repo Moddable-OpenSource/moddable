@@ -49,6 +49,7 @@ struct PiuScreenStruct {
 	xsIntegerValue rotation;
 	xsIntegerValue status;
 	xsNumberValue transparency;
+	PiuPointRecord fingerprint;
 };
 
 struct PiuScreenMessageStruct {
@@ -74,12 +75,18 @@ static void fxScreenAbort(txScreen* screen, int status);
 static gboolean fxScreenAbortAux(gpointer data);
 static void fxScreenBufferChanged(txScreen* screen);
 static void fxScreenFormatChanged(txScreen* screen);
-static gboolean fxScreenIdle(gpointer data);
+static gboolean fxScreenIdle(GtkWidget* widget, GdkFrameClock* frame_clock, gpointer data);
 static void fxScreenPost(txScreen* screen, char* message, int size);
 static gboolean fxScreenPostAux(gpointer data);
+static void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y);
 static void fxScreenStart(txScreen* screen, double interval);
 static void fxScreenStop(txScreen* screen);
 
+enum {
+	piuRecordingTouches = 1 << 24,
+	piuPlayingTouches = 1 << 25,
+	piuDisplayFingerprint = 1 << 26,
+};
 
 gboolean onScreenDraw(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
@@ -104,6 +111,33 @@ gboolean onScreenDraw(GtkWidget *widget, cairo_t *cr, gpointer data)
 		cairo_paint_with_alpha(cr, 1.0 - (*self)->transparency);
 	else
 		cairo_paint(cr);
+		
+	if ((*self)->flags & piuDisplayFingerprint) {
+		PiuSkin* skin = (*self)->skin;
+		if (skin) {
+			PiuTexture* texture = (*skin)->data.pattern.texture;
+			if (skin) {
+				cairo_surface_t* image = (*texture)->image;
+				if (image) {
+					PiuDimension width = (*texture)->width;
+					PiuDimension height = (*texture)->height;
+					PiuDimension x = (*self)->fingerprint.x - (width / 2);
+					PiuDimension y = (*self)->fingerprint.y - (height / 2);
+					cairo_set_source_surface(cr, image, 0, 0);
+					cairo_pattern_t *pattern = cairo_get_source(cr);	
+					cairo_matrix_t matrix;
+					cairo_matrix_init_identity(&matrix);
+					cairo_matrix_translate(&matrix, 0 - x, 0 - y);
+					cairo_pattern_set_matrix (pattern, &matrix);
+					cairo_rectangle(cr, x, y, width, height);
+					cairo_fill(cr);
+				}
+			}
+		}
+	}
+		
+		
+		
 	return TRUE;
 }
 
@@ -112,10 +146,14 @@ gboolean onScreenMouseDown(GtkWidget *widget, GdkEvent *event, gpointer data)
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
     (*self)->touching = TRUE;
-	if (screen && screen->touch) {
-		PiuPointRecord point;
-		PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
-		(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+	if (!((*self)->flags & piuPlayingTouches)) {
+		if (screen && screen->touch) {
+			PiuPointRecord point;
+			PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+			if ((*self)->flags & piuRecordingTouches) 
+				fxScreenRecordTouch(screen, touchEventBeganKind, 0, point.x, point.y);
+			(*screen->touch)(screen, touchEventBeganKind, 0, point.x, point.y, 0);
+		}
 	}
 	return TRUE;
 }
@@ -125,10 +163,14 @@ gboolean onScreenMouseMoved(GtkWidget *widget, GdkEvent *event, gpointer data)
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
 	if ((*self)->touching) {
-		if (screen && screen->touch) {
-			PiuPointRecord point;
-			PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
-			(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+		if (!((*self)->flags & piuPlayingTouches)) {
+			if (screen && screen->touch) {
+				PiuPointRecord point;
+				PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+				if ((*self)->flags & piuRecordingTouches) 
+					fxScreenRecordTouch(screen, touchEventMovedKind, 0, point.x, point.y);
+				(*screen->touch)(screen, touchEventMovedKind, 0, point.x, point.y, 0);
+			}
 		}
 	}
 	return FALSE;
@@ -138,12 +180,16 @@ gboolean onScreenMouseUp(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	PiuScreen* self = (PiuScreen*)data;
 	txScreen* screen = (*self)->screen;
-	if (screen && screen->touch) {
-		PiuPointRecord point;
-		PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
-		(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+	if (!((*self)->flags & piuPlayingTouches)) {
+		if (screen && screen->touch) {
+			PiuPointRecord point;
+			PiuScreenRotatePoint(self, ((GdkEventButton*)event)->x, ((GdkEventButton*)event)->y, &point);
+			if ((*self)->flags & piuRecordingTouches) 
+				fxScreenRecordTouch(screen, touchEventEndedKind, 0, point.x, point.y);
+			(*screen->touch)(screen, touchEventEndedKind, 0, point.x, point.y, 0);
+		}
  	}
-   (*self)->touching = FALSE;
+	(*self)->touching = FALSE;
 	return TRUE;
 }
 
@@ -433,6 +479,36 @@ void PiuScreen_get_pixelFormat(xsMachine* the)
 	xsResult = xsInteger((*self)->screen->pixelFormat);
 }
 
+void PiuScreen_get_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuPlayingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_playingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuPlayingTouches;
+	else
+		(*self)->flags &= ~piuPlayingTouches;
+}
+
+void PiuScreen_get_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	xsResult = ((*self)->flags & piuRecordingTouches) ? xsTrue : xsFalse;
+}
+
+void PiuScreen_set_recordingTouches(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	if (xsTest(xsArg(0)))
+		(*self)->flags |= piuRecordingTouches;
+	else
+		(*self)->flags &= ~piuRecordingTouches;
+}
+
 void PiuScreen_get_running(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -539,6 +615,26 @@ void PiuScreen_quit(xsMachine* the)
 	PiuScreenQuit(self);
 }
 
+void PiuScreen_touch(xsMachine* the)
+{
+	PiuScreen* self = PIU(Screen, xsThis);
+	txScreen* screen = (*self)->screen;
+	if (screen->touch) {
+		xsIntegerValue kind = xsToInteger(xsArg(0));
+		xsIntegerValue index = xsToInteger(xsArg(1));
+		xsIntegerValue x = xsToInteger(xsArg(2));
+		xsIntegerValue y = xsToInteger(xsArg(3));
+		if (kind == 0)
+			(*self)->flags |= piuDisplayFingerprint;
+		else if ((kind == 1) || (kind == 2))
+			(*self)->flags &= ~piuDisplayFingerprint;
+		(*self)->fingerprint.x = x;
+		(*self)->fingerprint.y = y;
+		fxScreenBufferChanged(screen);
+		(*screen->touch)(screen, kind, index, x, y, 0);
+	}
+}
+
 void PiuScreen_writePNG(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
@@ -595,7 +691,9 @@ void fxScreenFormatChanged(txScreen* screen)
 	}
 }
 
-gboolean fxScreenIdle(gpointer data)
+
+gboolean fxScreenIdle(GtkWidget* widget, GdkFrameClock* frame_clock, gpointer data)
+// gboolean fxScreenIdle(gpointer data)
 {
 	txScreen* screen = (txScreen*)data;
 	if (screen->idle) 
@@ -633,11 +731,30 @@ gboolean fxScreenPostAux(gpointer data)
     return FALSE;
 }
 
+void fxScreenRecordTouch(txScreen* screen, int kind, int index, int x, int y)
+{
+	PiuScreen* self = (PiuScreen*)screen->view;
+	if ((*self)->behavior) {
+		xsBeginHost((*self)->the);
+		xsVars(6);
+		xsVar(0) = xsReference((*self)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onRecordTouch)) {
+			xsVar(1) = xsReference((*self)->reference);
+			xsVar(2) = xsInteger(kind);
+			xsVar(3) = xsInteger(index);
+			xsVar(4) = xsInteger(x);
+			xsVar(5) = xsInteger(y);
+			(void)xsCallFunction5(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3), xsVar(4), xsVar(5));
+		}
+		xsEndHost((*self)->the);
+	}
+}
+
 void fxScreenStart(txScreen* screen, double interval)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
     if (!(*self)->timerRunning) {
-        (*self)->timer = g_timeout_add(20, fxScreenIdle, (*self)->screen);
+    	(*self)->timer = gtk_widget_add_tick_callback((*self)->gtkDrawingArea, fxScreenIdle, (*self)->screen, NULL); 
         (*self)->timerRunning = TRUE;
 	}
 }
@@ -646,7 +763,7 @@ void fxScreenStop(txScreen* screen)
 {
 	PiuScreen* self = (PiuScreen*)screen->view;
     if ((*self)->timerRunning) {
-        g_source_remove((*self)->timer);
+    	gtk_widget_remove_tick_callback((*self)->gtkDrawingArea, (*self)->timer);
         (*self)->timerRunning = FALSE;
 	}
 }

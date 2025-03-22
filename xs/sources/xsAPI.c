@@ -53,7 +53,7 @@ txKind fxTypeOf(txMachine* the, txSlot* theSlot)
 		return XS_STRING_KIND;
 	if (theSlot->kind == XS_BIGINT_X_KIND)
 		return XS_BIGINT_KIND;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if (theSlot->kind == XS_HOST_FUNCTION_KIND)
 		return XS_REFERENCE_KIND;
 #endif
@@ -120,7 +120,7 @@ txBoolean fxToBoolean(txMachine* the, txSlot* theSlot)
 		else
 			theSlot->value.boolean = 1;
 		break;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND:
 #endif
 	case XS_SYMBOL_KIND:
@@ -129,7 +129,7 @@ txBoolean fxToBoolean(txMachine* the, txSlot* theSlot)
 		theSlot->value.boolean = 1;
 		break;
 	default:
-		mxTypeError("Cannot coerce to boolean");
+		mxTypeError("cannot coerce to boolean");
 		break;
 	}
 	return theSlot->value.boolean;
@@ -191,13 +191,13 @@ again:
 		mxMeterOne();
 		goto again;
 	case XS_SYMBOL_KIND:
-		mxTypeError("Cannot coerce symbol to integer");
+		mxTypeError("cannot coerce symbol to integer");
 		break;
 	case XS_REFERENCE_KIND:
 		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
 		goto again;
 	default:
-		mxTypeError("Cannot coerce to integer");
+		mxTypeError("cannot coerce to integer");
 		break;
 	}
 	return theSlot->value.integer;
@@ -242,13 +242,13 @@ again:
 		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
-		mxTypeError("Cannot coerce symbol to number");
+		mxTypeError("cannot coerce symbol to number");
 		break;
 	case XS_REFERENCE_KIND:
 		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
 		goto again;
 	default:
-		mxTypeError("Cannot coerce to number");
+		mxTypeError("cannot coerce to number");
 		break;
 	}
 	return theSlot->value.number;
@@ -306,7 +306,7 @@ again:
 		mxMeterOne();
 		break;
 	case XS_SYMBOL_KIND:
-		mxTypeError("Cannot coerce symbol to string");
+		mxTypeError("cannot coerce symbol to string");
 		break;
 	case XS_BIGINT_KIND:
 	case XS_BIGINT_X_KIND:
@@ -319,7 +319,7 @@ again:
 		fxToPrimitive(the, theSlot, XS_STRING_HINT);
 		goto again;
 	default:
-		mxTypeError("Cannot coerce to string");
+		mxTypeError("cannot coerce to string");
 		break;
 	}
 	return theSlot->value.string;
@@ -333,7 +333,7 @@ txString fxToStringBuffer(txMachine* the, txSlot* theSlot, txString theBuffer, t
 	aString = fxToString(the, theSlot);
 	aSize = mxStringLength(aString) + 1;
 	if (aSize > theSize)
-		mxRangeError("Cannot buffer string");
+		mxRangeError("cannot buffer string");
 	c_memcpy(theBuffer, aString, aSize);
 	return theBuffer;
 }
@@ -407,14 +407,14 @@ again:
 		goto again;
 	case XS_SYMBOL_KIND:
 		result = 0;
-		mxTypeError("Cannot coerce symbol to unsigned");
+		mxTypeError("cannot coerce symbol to unsigned");
 		break;
 	case XS_REFERENCE_KIND:
 		fxToPrimitive(the, theSlot, XS_NUMBER_HINT);
 		goto again;
 	default:
 		result = 0;
-		mxTypeError("Cannot coerce to unsigned");
+		mxTypeError("cannot coerce to unsigned");
 		break;
 	}
 	return result;
@@ -545,7 +545,7 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 	fxArrayCacheBegin(the, the->stack);
 	while (c) {
 		if (builder->length >= 0) {
-		#ifdef mxHostFunctionPrimitive
+		#if mxHostFunctionPrimitive
 			mxPushUndefined();
 			the->stack->kind = XS_HOST_FUNCTION_KIND;
 			the->stack->value.hostFunction.builder = builder;
@@ -707,10 +707,10 @@ txInteger fxGetHostBufferLength(txMachine* the, txSlot* slot)
 		if (host->flag & XS_HOST_CHUNK_FLAG)
 			mxSyntaxError("C: xsGetHostBufferLength: no host data");
 		if (!bufferInfo || (bufferInfo->kind != XS_BUFFER_INFO_KIND))
-			mxSyntaxError("C: xsGetHostBufferLength: no host buffer");
+			mxSyntaxError("C: xsGetHostBufferLength: not a host buffer");
 		return bufferInfo->value.bufferInfo.length;
 	}
-	mxSyntaxError("C: xsGetHostData: no host object");
+	mxSyntaxError("C: xsGetHostData: not a host object");
 	return 0;
 }
 
@@ -722,7 +722,7 @@ void* fxGetHostChunk(txMachine* the, txSlot* slot)
 			return host->value.host.data;
 		mxSyntaxError("C: xsGetHostChunk: no host data");
 	}
-	mxSyntaxError("C: xsGetHostChunk: no host object");
+	mxSyntaxError("C: xsGetHostChunk: not a host object");
 	return NULL;
 }
 
@@ -743,11 +743,11 @@ void* fxGetHostChunkValidate(txMachine* the, txSlot* slot, void* validator)
 		if (host->flag & XS_HOST_CHUNK_FLAG) {
 			if (validator == host->value.host.variant.destructor)
 				return host->value.host.data;
-			mxSyntaxError("C: xsGetHostChunk: invalid");
+			mxSyntaxError("C: xsGetHostChunk: invalid host data");
 		}
 		mxSyntaxError("C: xsGetHostChunk: no host data");
 	}
-	mxSyntaxError("C: xsGetHostChunk: no host object");
+	mxSyntaxError("C: xsGetHostChunk: not a host object");
 	return NULL;
 }
 
@@ -759,7 +759,7 @@ void* fxGetHostData(txMachine* the, txSlot* slot)
 			return host->value.host.data;
 		mxSyntaxError("C: xsGetHostData: no host data");
 	}
-	mxSyntaxError("C: xsGetHostData: no host object");
+	mxSyntaxError("C: xsGetHostData: not a host object");
 	return NULL;
 }
 
@@ -780,11 +780,11 @@ void* fxGetHostDataValidate(txMachine* the, txSlot* slot, void* validator)
 		if (!(host->flag & XS_HOST_CHUNK_FLAG)) {
 			if (validator == host->value.host.variant.destructor)
 				return host->value.host.data;
-			mxSyntaxError("C: xsGetHostData: invalid");
+			mxSyntaxError("C: xsGetHostData: invalid host data");
 		}
 		mxSyntaxError("C: xsGetHostData: no host data");
 	}
-	mxSyntaxError("C: xsGetHostData: no host object");
+	mxSyntaxError("C: xsGetHostData: not a host object");
 	return NULL;
 }
 
@@ -796,7 +796,7 @@ txDestructor fxGetHostDestructor(txMachine* the, txSlot* slot)
 			return host->value.host.variant.destructor;
 		mxSyntaxError("C: xsGetHostDestructor: no host destructor");
 	}
-	mxSyntaxError("C: xsGetHostDestructor: no host object");
+	mxSyntaxError("C: xsGetHostDestructor: not a host object");
 	return NULL;
 }
 
@@ -806,7 +806,7 @@ void* fxGetHostHandle(txMachine* the, txSlot* slot)
 	if (host) {
 		return &host->value.host.data;
 	}
-	mxSyntaxError("C: xsGetHostData: no host object");
+	mxSyntaxError("C: xsGetHostData: not a host object");
 	return NULL;
 }
 
@@ -818,7 +818,7 @@ txHostHooks* fxGetHostHooks(txMachine* the, txSlot* slot)
 			return host->value.host.variant.hooks;
 		mxSyntaxError("C: xsGetHostHooks: no host hooks");
 	}
-	mxSyntaxError("C: xsGetHostHooks: no host object");
+	mxSyntaxError("C: xsGetHostHooks: not a host object");
 	return NULL;
 }
 
@@ -844,7 +844,7 @@ txHostHooks* fxGetHostHooksValidate(txMachine* the, txSlot* slot, txString valid
 		}
 		mxSyntaxError("C: xsGetHostHooks: no host hooks");
 	}
-	mxSyntaxError("C: xsGetHostHooks: no host object");
+	mxSyntaxError("C: xsGetHostHooks: not a host object");
 	return NULL;
 }
 
@@ -852,7 +852,7 @@ void fxPetrifyHostBuffer(txMachine* the, txSlot* slot)
 {
 	txSlot* host = fxCheckHostObject(the, slot);
 	if (!host)
-		mxSyntaxError("C: xsPetrifyHostBuffer: no host object");
+		mxSyntaxError("C: xsPetrifyHostBuffer: not a host object");
 	if (host->flag & XS_HOST_CHUNK_FLAG)
 		mxSyntaxError("C: xsPetrifyHostBuffer: no host data");
 	host->flag |= XS_DONT_SET_FLAG;
@@ -877,7 +877,7 @@ void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize
 		bufferInfo->value.bufferInfo.length = theSize;
 	}
 	else
-		mxSyntaxError("C: xsSetHostData: no host object");
+		mxSyntaxError("C: xsSetHostBuffer: not a host object");
 }
 
 void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize)
@@ -885,15 +885,19 @@ void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSiz
 	txSlot* host = fxCheckHostObject(the, slot);
 	if (host) {
 		host->flag |= XS_HOST_CHUNK_FLAG;
-		host->value.host.data = fxNewChunk(the, theSize);
-		if (theValue)
-			c_memcpy(host->value.host.data, theValue, theSize);
+		if (theSize) {
+			host->value.host.data = fxNewChunk(the, theSize);
+			if (theValue)
+				c_memcpy(host->value.host.data, theValue, theSize);
+			else
+				c_memset(host->value.host.data, 0, theSize);
+		}
 		else
-			c_memset(host->value.host.data, 0, theSize);
+			host->value.host.data = NULL;
 		return host->value.host.data;
 	}
 	else
-		mxSyntaxError("C: xsSetHostData: no host object");
+		mxSyntaxError("C: xsSetHostData: not a host object");
 
 	return NULL;
 }
@@ -906,7 +910,7 @@ void fxSetHostData(txMachine* the, txSlot* slot, void* theData)
 		host->value.host.data = theData;
 	}
 	else
-		mxSyntaxError("C: xsSetHostData: no host object");
+		mxSyntaxError("C: xsSetHostData: not a host object");
 }
 
 void fxSetHostDestructor(txMachine* the, txSlot* slot, txDestructor theDestructor)
@@ -917,7 +921,7 @@ void fxSetHostDestructor(txMachine* the, txSlot* slot, txDestructor theDestructo
 		host->value.host.variant.destructor = theDestructor;
 	}
 	else
-		mxSyntaxError("C: xsSetHostDestructor: no host object");
+		mxSyntaxError("C: xsSetHostDestructor: not a host object");
 }
 
 void fxSetHostHooks(txMachine* the, txSlot* slot, const txHostHooks* theHooks)
@@ -928,7 +932,7 @@ void fxSetHostHooks(txMachine* the, txSlot* slot, const txHostHooks* theHooks)
 		host->value.host.variant.hooks = (txHostHooks *) theHooks;
 	}
 	else
-		mxSyntaxError("C: xsSetHostHooks: no host object");
+		mxSyntaxError("C: xsSetHostHooks: not a host object");
 }
 
 /* Identifiers */
@@ -1333,18 +1337,22 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 	txSize length = 0;
     va_list arguments;
     txSlot* slot;
-#ifdef mxDebug
- 	if (!the->debugEval)
-		fxBufferFrameName(the, message, sizeof(message), the->frame, ": ");
-	length = mxStringLength(message);
-#endif
     va_start(arguments, format);
-    c_vsnprintf(message + length, sizeof(message) - length, format, arguments);
+    c_vsnprintf(message, sizeof(message), format, arguments);
     va_end(arguments);
 
+	//??
 	length = (txSize)c_strlen(message) - 1;
 	while (length && (0x80 & message[length]))
 		message[length--] = 0;
+		
+#ifdef mxDebug
+ 	if (!the->debugEval) {
+		c_strncat(message, " (in ", sizeof(message) - mxStringLength(message) - 1);
+		length = (txSize)c_strlen(message);
+		fxBufferFrameName(the, message + length, sizeof(message) - length, the->frame, ")");
+	}
+#endif
 
 	if ((error <= XS_NO_ERROR) || (XS_ERROR_COUNT <= error))
 		error = XS_UNKNOWN_ERROR;
@@ -1364,7 +1372,7 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
 		gxDefaults.captureErrorStack(the, slot, the->frame);
 	slot = fxNextStringProperty(the, slot, message, mxID(_message), XS_DONT_ENUM_FLAG);
 #ifdef mxDebug
-	fxDebugThrow(the, path, line, message);
+	fxDebugThrow(the, path, line, "throw");
 #endif
 	fxJump(the);
 }

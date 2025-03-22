@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -55,8 +55,8 @@ struct sxProfiler {
 	txU8 stop;
 	txU4 interval;
 #ifdef mxMetering
-	txU4 formerMeter;
-	txU4 startMeter;
+	txU8 formerMeter;
+	txU8 startMeter;
 #endif
 	txU4 recordCount;
 	txProfilerRecord** records;
@@ -404,7 +404,7 @@ void fxPrintProfiler(txMachine* the, void* stream)
 		timer = time(NULL);
 		tm_info = localtime(&timer);
 		strftime(buffer, 22, "XS-%y-%m-%d-%H-%M-%S-", tm_info);
-		snprintf(name, sizeof(name), "%s%03llu.cpuprofile", buffer, (profiler->stop / 1000) % 1000);
+		snprintf(name, sizeof(name), "%s%03llu.cpuprofile", buffer, (long long unsigned int)((profiler->stop / 1000) % 1000));
 		file = fopen(name, "w");
 	}
 	
@@ -463,9 +463,9 @@ void fxPrintProfiler(txMachine* the, void* stream)
 		}
 		recordIndex++;
 	}
-	fprintf(file, "],\"startTime\":%llu,\"endTime\":%llu,", fxTicksToMicroseconds(profiler->start), fxTicksToMicroseconds(profiler->when));
+	fprintf(file, "],\"startTime\":%llu,\"endTime\":%llu,", (long long unsigned int)fxTicksToMicroseconds(profiler->start), (long long unsigned int)fxTicksToMicroseconds(profiler->when));
 #ifdef mxMetering
-	fprintf(file, "\"startMeter\":%u,\"endMeter\":%u,", profiler->startMeter, the->meterIndex);
+	fprintf(file, "\"startMeter\":%llu,\"endMeter\":%llu,", profiler->startMeter, the->meterIndex);
 #endif
 	fprintf(file, "\"samples\":[");
 	{
@@ -485,7 +485,7 @@ void fxPrintProfiler(txMachine* the, void* stream)
 			txProfilerSample* sample = profiler->samples + sampleIndex;
 			if (sampleIndex > 0)
 				fprintf(file, ",");
-			fprintf(file, "%llu", fxTicksToMicroseconds(sample->delta));
+			fprintf(file, "%llu", (long long unsigned int)fxTicksToMicroseconds(sample->delta));
 			sampleIndex++;
 		}
 	}

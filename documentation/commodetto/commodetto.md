@@ -739,7 +739,7 @@ import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 
 let palatino36 = parseBMF(new Resource("palatino36.fnt"));
-palatino36.bitmap = parseBMP(new Resource("palatino36.bmp");
+palatino36.bitmap = parseBMP(new Resource("palatino36.bmp"));
 ```
 
 After the metrics are prepared with `parseBMF`, the glyph atlas is prepared using `parseBMP` and is attached to the metrics as the `bitmap` property.

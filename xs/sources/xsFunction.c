@@ -84,7 +84,7 @@ void fxCheckCallable(txMachine* the, txSlot* slot)
 {
 	if (fxIsCallable(the, slot))
 		return;
-	mxTypeError("this is no Function instance");
+	mxTypeError("this: not a Function instance");
 }
 
 txSlot* fxCheckFunctionInstance(txMachine* the, txSlot* slot)
@@ -94,7 +94,7 @@ txSlot* fxCheckFunctionInstance(txMachine* the, txSlot* slot)
 		if (fxIsFunction(the, slot))
 			return slot;
 	}
-	mxTypeError("this is no Function instance");
+	mxTypeError("this: not a Function instance");
 	return C_NULL;
 }
 
@@ -102,7 +102,7 @@ txBoolean fxIsCallable(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND)
 		return fxIsFunction(the, slot->value.reference);
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if (slot->kind == XS_HOST_FUNCTION_KIND)
 		return 1;
 #endif
@@ -188,9 +188,9 @@ txSlot* fxGetPrototypeFromConstructor(txMachine* the, txSlot* defaultPrototype)
 		txSlot* proxy = instance->next;
 		if (proxy->kind == XS_PROXY_KIND) {
 			if (!proxy->value.proxy.handler)
-				mxTypeError("(proxy).%s: handler is no object", fxName(the, mxID(_prototype)));
+				mxTypeError("(proxy).%s: no handler", fxName(the, mxID(_prototype)));
 			if (!proxy->value.proxy.target)
-				mxTypeError("(proxy).%s: target is no object", fxName(the, mxID(_prototype)));
+				mxTypeError("(proxy).%s: no target", fxName(the, mxID(_prototype)));
 		}
 		the->stack->kind = defaultPrototype->kind;
 		the->stack->value = defaultPrototype->value;
@@ -311,7 +311,7 @@ void fx_Function_prototype_apply(txMachine* the)
 		c = 0;
 	else {
 		if (mxArgv(1)->kind != XS_REFERENCE_KIND)
-			mxTypeError("argArray is no object");
+			mxTypeError("argArray: not an object");
 		fxToInstance(the, mxArgv(1));
 		mxPushSlot(mxArgv(1));
 		mxGetID(mxID(_length));
@@ -534,7 +534,7 @@ void fx_Function_prototype_hasInstance(txMachine* the)
 	prototype = fxGetInstance(the, the->stack);
 	mxPop();
 	if (!prototype)
-		mxTypeError("prototype is no object");
+		mxTypeError("this.prototype: not an object");
 #if mxAliasInstance
 	if (prototype->ID) {
 		txSlot* alias = the->aliasArray[prototype->ID];

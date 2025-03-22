@@ -651,9 +651,9 @@ void fxGroupBy(txMachine* the, txCallback aux)
 	txSlot *function, *iterable, *iterator, *next, *value, *slot;
 	txNumber k = 0;
 	if ((mxArgc < 1) || mxIsUndefined(mxArgv(0)) || mxIsUndefined(mxArgv(1)))
-		mxTypeError("items is no object");
+		mxTypeError("items: not an object");
 	if ((mxArgc < 2) || (!fxIsCallable(the, mxArgv(1))))
-		mxTypeError("callback is no function");
+		mxTypeError("callback: not a function");
 	function = mxArgv(1);
 	iterable = mxArgv(0);
 	mxTemporary(iterator);

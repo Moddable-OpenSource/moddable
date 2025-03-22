@@ -27,10 +27,10 @@
 					"shortDesc": {
 						"uuid": "2908",
 						"maxBytes": 1,
-						"type": "Uint8",
+						"type": "Uint8Array",
 						"permissions": "read",
 						"properties": "read",
-						"value": 3
+						"value": [3]
 					}
 				}
 			}

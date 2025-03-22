@@ -377,9 +377,15 @@ int main(int argc, char* argv[])
 		parser->origin = parser->path = fxNewParserSymbol(parser, input);
 		file = fopen(input, "r");
 		mxParserThrowElse(file);
+		
+		dot = c_strrchr(input, '.');
+		if (dot && !c_strcmp(dot, ".json"))
+			flags |= mxJSONModuleFlag;
+		
 		fxParserTree(parser, file, (txGetter)fgetc, flags, &name);
 		fclose(file);
 		file = NULL;
+		
 		if (name) {
 			char *combined = fxCombinePath(parser, input, name);
 			map = fxRealFilePathIf(parser, combined);

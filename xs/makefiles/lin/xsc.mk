@@ -55,14 +55,13 @@ TLS_DIR = $(XS_DIR)/tools
 TMP_DIR = $(BUILD_DIR)/tmp/lin/$(GOAL)/$(NAME)
 
 C_OPTIONS =\
-	-fno-common\
-	-I$(INC_DIR)\
+	-fno-common \
+	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
-	-I$(SRC_DIR)\
-	-I$(TLS_DIR)\
-	-I$(TMP_DIR)\
-	-DmxCompile=1\
-	-DmxParse=1
+	-I$(SRC_DIR) \
+	-I$(TLS_DIR) \
+	-I$(TMP_DIR) \
+	-DmxCompile=1
 C_OPTIONS += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough

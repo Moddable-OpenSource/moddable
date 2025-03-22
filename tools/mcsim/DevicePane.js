@@ -72,11 +72,57 @@ export class DeviceWorker extends ScreenWorker {
 }
 
 class DeviceScreenBehavior extends Behavior {
+	doStartPlayingTouches(screen, path) {
+		this.touchBuffer = system.readFileBuffer(path);
+		this.touchArray = new Uint32Array(this.touchBuffer);
+		this.touchCount = this.touchArray.length;
+		this.touchIndex = 0;
+		screen.playingTouches = true;
+		screen.time = 0;
+		screen.start();
+		screen.bubble("onPlayingTouches", true);
+		screen.postMessage(JSON.stringify({ touches:"startPlaying" }));
+	}
+	doStopPlayingTouches(screen) {
+		screen.stop();
+		screen.playingTouches = false;
+		delete this.touchIndex;
+		delete this.touchCount;
+		delete this.touchArray;
+		delete this.touchBuffer;
+		screen.bubble("onPlayingTouches", false);
+		screen.postMessage(JSON.stringify({ touches:"stopPlaying" }));
+	}
+	doStartRecordingTouches(screen, path) {
+		this.touchPath = path;
+		this.touchIndex = 0;
+		this.touchCount = 1024;
+		this.touchBuffer = new ArrayBuffer(this.touchCount * 4, { maxByteLength: 1024 * 1024 });
+		this.touchArray = new Uint32Array(this.touchBuffer);
+		this.touchZero = this.touchWhen = Date.now();
+		screen.recordingTouches = true;
+		screen.bubble("onRecordingTouches", true);
+		screen.postMessage(JSON.stringify({ touches:"startRecording" }));
+	}
+	doStopRecordingTouches(screen) {
+		this.touchBuffer.resize(this.touchIndex * 4);
+		system.writeFileBuffer(this.touchPath, this.touchBuffer);
+		screen.recordingTouches = false;
+		delete this.touchZero;
+		delete this.touchWhen;
+		delete this.touchArray;
+		delete this.touchBuffer;
+		delete this.touchCount;
+		delete this.touchIndex;
+		screen.bubble("onRecordingTouches", false);
+		screen.postMessage(JSON.stringify({ touches:"stopRecording"  }));
+	}
 	onAbort(screen, status) {
 		screen.container.bubble("onAbort", status);
 	}
 	onCreate(screen, device) {
 		model.SCREEN = screen;
+		screen.skin = skins.fingerprint;
 		this.device = device;
 		this.workers = [];
 	}
@@ -103,6 +149,45 @@ class DeviceScreenBehavior extends Behavior {
 	}
 	onPixelFormatChanged(screen, pixelFormat) {
 		application.distribute("onInfoChanged");
+	}
+	onRecordTouch(screen, kind, id, x, y) {
+		const when = Date.now();
+		if ((kind == 3) && (this.touchWhen >= when))
+			return;
+		if (this.touchIndex == this.touchCount) {
+			this.touchCount += 1024;
+			this.touchBuffer.resize(this.touchCount * 4);
+		}
+		let index = this.touchIndex;
+		this.touchArray[index++] = when - this.touchZero;
+		this.touchArray[index++] = kind;
+		this.touchArray[index++] = x;
+		this.touchArray[index++] = y;
+		this.touchIndex = index;
+		this.touchWhen = when;
+	}
+	onTimeChanged(screen) {
+		if (screen.playingTouches) {
+			const time = screen.time;
+			const count = this.touchCount;
+			let index = this.touchIndex;
+			while (index < count) {
+				const when = this.touchArray[index++];
+				const kind = this.touchArray[index++];
+				const x = this.touchArray[index++];
+				const y = this.touchArray[index++];
+				if (time >= when) {
+					screen.touch(kind, 0, x, y);
+				}
+				else {
+					index -= 4;
+					break;
+				} 
+			} 
+			this.touchIndex = index;
+			if (index == count)
+				this.doStopPlayingTouches(screen);
+		}
 	}
 }
 

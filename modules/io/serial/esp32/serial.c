@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -39,6 +39,7 @@
 #include "hal/uart_types.h"
 //#include "soc/uart_caps.h"
 #include "soc/uart_struct.h"
+#include "soc/interrupts.h"
 
 // local versions of UART register management to avoid issues with uart.c
 #define uart_disable_intr_mask(dev, disable_mask) _uart_disable_intr_mask(dev, disable_mask)
@@ -67,6 +68,8 @@ struct SerialRecord {
 	uint8_t		useCount;
 	uint8_t		txInterruptEnabled;
 	uint8_t		hasOnReadableOrWritable;
+	uint8_t		uart_intr;
+	intr_handle_t	interrupt;
 	uart_dev_t	*uart_reg;
 	uint32_t	transmit;
 	uint32_t	receive;
@@ -172,12 +175,18 @@ void xs_serial_constructor(xsMachine *the)
 	serial->uart = (uint8_t)uart;
 	serial->isReadable = 0;
 	serial->isWritable = 0;
+	serial->interrupt = C_NULL;
 #if UART_NUM_MAX > 2
-	if (2 == uart)
+	if (2 == uart) {
 		serial->uart_reg = &UART2;
+		serial->uart_intr = ETS_UART2_INTR_SOURCE;
+	}
 	else
 #endif
+	{
 		serial->uart_reg = uart ? &UART1 : &UART0;
+		serial->uart_intr = uart ? ETS_UART1_INTR_SOURCE : ETS_UART0_INTR_SOURCE;
+	}
 	serial->useCount = 1;
 	serial->hasOnReadableOrWritable = hasReadable || hasWritable;
 
@@ -187,7 +196,7 @@ void xs_serial_constructor(xsMachine *the)
 		serial->the = the;
 
 		// store callbacks & configure interrupts
-		err = esp_intr_alloc(uart_periph_signal[uart].irq, 0, serial_isr, serial, NULL);
+		err = esp_intr_alloc(serial->uart_intr, 0, serial_isr, serial, &serial->interrupt);
 		if (err)
 			xsUnknownError("uart_isr_register failed");
 
@@ -229,14 +238,19 @@ void xs_serial_destructor(void *data)
 	uart_disable_tx_intr(serial->uart_reg);
 	uart_disable_rx_intr(serial->uart_reg);
 
-//	uart_isr_free(serial->uart);
+	if (serial->interrupt)
+		esp_intr_free(serial->interrupt);
 
 	if (UART_PIN_NO_CHANGE != serial->transmit)
 		builtinFreePin(serial->transmit);
 	if (UART_PIN_NO_CHANGE != serial->receive)
 		builtinFreePin(serial->receive);
 
+#if defined(_NO_ATOMICS)
+	if (0 == --serial->useCount)
+#else
 	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+#endif
 		c_free(serial);
 }
 
@@ -374,7 +388,11 @@ void ICACHE_RAM_ATTR serial_isr(void * arg)
 	}
 
 	if (post) {
+#if defined(_NO_ATOMICS)
+		serial->useCount++;
+#else
 		__atomic_add_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST);
+#endif
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
 }
@@ -385,7 +403,12 @@ void serialDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t message
 	Serial serial = (Serial)refcon;
 	int count;
 
-	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST)) {
+#if defined(_NO_ATOMICS)
+	if (0 == --serial->useCount)
+#else
+	if (0 == __atomic_sub_fetch(&serial->useCount, 1, __ATOMIC_SEQ_CST))
+#endif
+	{
 		c_free(serial);
 		return;
 	}

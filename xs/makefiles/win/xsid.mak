@@ -42,6 +42,7 @@ C_OPTIONS = \
 	/D _CONSOLE \
 	/D WIN32 \
 	/D _CRT_SECURE_NO_DEPRECATE \
+	/D mxCompile=1 \
 	/I$(INC_DIR) \
 	/I$(PLT_DIR) \
 	/I$(SRC_DIR) \

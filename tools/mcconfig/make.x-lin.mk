@@ -85,12 +85,6 @@ C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"lin_xs.h\" \
-	-DmxRun=1 \
-	-DmxParse=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DmxStringInfoCacheLength=4
 C_DEFINES += \
 	-Wno-misleading-indentation \

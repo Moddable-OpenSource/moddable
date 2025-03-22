@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import files from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
 
 const pathFile = "testfile.dat";
 const pathDir = "testdir";
@@ -14,7 +14,7 @@ files.delete(pathDir);
 assert.throws(Error, () => files.status(pathFile));
 assert.throws(Error, () => files.status(pathDir));
 
-files.create(pathDir);
+files.createDirectory(pathDir);
 files.openFile({path: pathFile, mode: "w+"}).close();
 
 assert.sameValue(files.status(pathFile).isFile(), true);

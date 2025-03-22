@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2022-2024 Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -28,9 +28,10 @@ declare module "embedded:io/socket/listener" {
       format?: "socket/tcp";
       target?: any;
     })
-    read(): TCP
+    read(): TCP | undefined
     get format(): "socket/tcp"
     set format(value: "socket/tcp")
+    readonly port: number;
   }
   export default Listener;
 }

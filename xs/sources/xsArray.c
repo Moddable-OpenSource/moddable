@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -202,6 +202,27 @@ txNumber fxArgToIndex(txMachine* the, txInteger argi, txNumber index, txNumber l
 			i = length;
 		index = i;
 	}
+	return index;
+}
+
+txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, txInteger length)
+{
+	if (mxArgc <= argi)
+		return index;
+
+	txSlot *slot = mxArgv(argi);
+	if (slot->kind != XS_INTEGER_KIND)
+		return fxArgToIndex(the, argi, index, length);
+
+	index = slot->value.integer;
+	if (index < 0) {
+		index = length + index;
+		if (index < 0)
+			index = 0;
+	}
+	else if (index > length)
+		index = length;
+
 	return index;
 }
 
@@ -471,12 +492,8 @@ void fxConstructArrayEntry(txMachine* the, txSlot* entry)
 
 txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 {
-    txBoolean resize = 1;
-	if (mxIsReference(mxThis) && mxIsConstructor(mxThis->value.reference)) {
+	if (mxIsReference(mxThis) && mxIsConstructor(mxThis->value.reference))
 		mxPushSlot(mxThis);
-		if (the->stack->value.reference != mxArrayConstructor.value.reference)
-			resize = 0;
-	}
 	else
 		mxPush(mxArrayConstructor);
 	mxNew();
@@ -487,8 +504,6 @@ txSlot* fxCreateArray(txMachine* the, txFlag flag, txIndex length)
 	else
 		mxRunCount(0);
 	mxPullSlot(mxResult);
-	if (resize)
-		fxSetIndexSize(the, mxResult->value.reference->next, length, XS_CHUNK);
 	return fxCheckArray(the, mxResult, XS_MUTABLE);
 }
 
@@ -576,9 +591,10 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	if (array && (array->kind == XS_TYPED_ARRAY_KIND) && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
 		txSlot* view = array->next;
 		txSlot* buffer = view->next;
-		txSlot* data = buffer->value.reference->next;
-		if (data->value.arrayBuffer.address == C_NULL)
-			mxTypeError("detached buffer");
+		if (mxThis->value.reference != instance) { // iterator
+			if (fxIsDataViewOutOfBound(the, view, buffer))
+				mxTypeError("out of bound buffer");
+		}
 		return fxGetDataViewSize(the, view, buffer) >> array->value.typedArray.dispatch->shift;
 	}
 	mxPushReference(instance);
@@ -1196,7 +1212,7 @@ void fx_Array_from(txMachine* the)
 		}
 	}
 	else {
-		fxCreateArray(the, 1, length);
+		fxCreateArray(the, 1, 0);
 	}
 	mxPushUnsigned(length);
 	mxPushSlot(mxResult);
@@ -1461,6 +1477,7 @@ void fx_Array_prototype_copyWithin(txMachine* the)
 			from += direction;
 			to += direction;
 			count--;
+			mxCheckMetering();
 		}	
 	}	
 	mxResult->kind = mxThis->kind;
@@ -1536,6 +1553,7 @@ void fx_Array_prototype_fill(txMachine* the)
 					mxMeterSome(5);
 				}
 				start++;
+				mxCheckMetering();
 			}
 			
 		}
@@ -1547,6 +1565,7 @@ void fx_Array_prototype_fill(txMachine* the)
 				mxPop();
 				mxMeterSome(1);
 				start++;
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1562,6 +1581,7 @@ void fx_Array_prototype_fill(txMachine* the)
 			mxSetAt();
 			mxPop();
 			start++;
+			mxCheckMetering();
 		}
 	}
 	mxPop();
@@ -1800,6 +1820,7 @@ void fx_Array_prototype_includes(txMachine* the)
 					break;
 				}
 				index++;
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1816,6 +1837,7 @@ void fx_Array_prototype_includes(txMachine* the)
 					break;
 				}
 				index++;
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1847,6 +1869,7 @@ void fx_Array_prototype_indexOf(txMachine* the)
 					}
 				}
 				index++;
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1867,6 +1890,7 @@ void fx_Array_prototype_indexOf(txMachine* the)
 					}
 				}
 				index++;
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1911,6 +1935,8 @@ void fx_Array_prototype_join(txMachine* the)
 		}
 		mxPop();
 		index++;
+
+		mxCheckMetering();
 	}
 	mxPop();
 	string = mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, size, 1));
@@ -1960,6 +1986,7 @@ void fx_Array_prototype_lastIndexOf(txMachine* the)
 						break;
 					}
 				}
+				mxCheckMetering();
 			}
 		}
 	}
@@ -1980,6 +2007,7 @@ void fx_Array_prototype_lastIndexOf(txMachine* the)
 						break;
 					}
 				}
+				mxCheckMetering();
 			}
 		}
 	}
@@ -2236,6 +2264,7 @@ void fx_Array_prototype_reverse(txMachine* the)
 			mxPop();
 		}
 		lower++;
+		mxCheckMetering();
 	}
 	*mxResult = *mxThis;
 }
@@ -2289,6 +2318,7 @@ void fx_Array_prototype_shift(txMachine* the)
 					mxPop();
 				}
 				index++;
+				mxCheckMetering();
 			}
 			length--;
 			mxPushSlot(mxThis);
@@ -2341,6 +2371,7 @@ void fx_Array_prototype_slice(txMachine* the)
 			}
 			INDEX++;
 			START++;
+			mxCheckMetering();
 		}
 		mxPushNumber(COUNT);
 		mxPushSlot(mxResult);
@@ -2377,7 +2408,7 @@ void fx_Array_prototype_sort(txMachine* the)
 			if (fxIsCallable(the, slot))
 				function = slot;
 			else
-				mxTypeError("compare is no function");
+				mxTypeError("compare: not a function");
 		}
 	}
 //	if (function)
@@ -2457,6 +2488,7 @@ void fx_Array_prototype_splice(txMachine* the)
 			address++;
 			mxMeterSome(5);
 			index++;
+			mxCheckMetering();
 		}
 		fxIndexArray(the, array);
 		mxMeterSome(4);
@@ -2477,6 +2509,7 @@ void fx_Array_prototype_splice(txMachine* the)
 				mxPop();
 			}
 			INDEX++;
+			mxCheckMetering();
 		}
 		mxPushNumber(DELETIONS);
 		mxPushSlot(mxResult);
@@ -2487,6 +2520,7 @@ void fx_Array_prototype_splice(txMachine* the)
 			while (INDEX < (LENGTH - DELETIONS)) {
 				fxMoveThisItem(the, INDEX + DELETIONS, INDEX + INSERTIONS);
 				INDEX++;
+				mxCheckMetering();
 			}
 			INDEX = LENGTH;
 			while (INDEX > (LENGTH - DELETIONS + INSERTIONS)) {
@@ -2495,6 +2529,7 @@ void fx_Array_prototype_splice(txMachine* the)
 				mxDeleteAt();
 				mxPop();
 				INDEX--;
+				mxCheckMetering();
 			}
 		}
 		else if (INSERTIONS > DELETIONS) {
@@ -2502,6 +2537,7 @@ void fx_Array_prototype_splice(txMachine* the)
 			while (INDEX > START) {
 				fxMoveThisItem(the, INDEX + DELETIONS - 1, INDEX + INSERTIONS - 1);
 				INDEX--;
+				mxCheckMetering();
 			}
 		}
 		INDEX = 0;
@@ -2512,6 +2548,7 @@ void fx_Array_prototype_splice(txMachine* the)
 			mxSetAt();
 			mxPop();
 			INDEX++;
+			mxCheckMetering();
 		}
 		mxPushNumber(LENGTH - DELETIONS + INSERTIONS);
 		mxPushSlot(mxThis);
@@ -2555,6 +2592,8 @@ void fx_Array_prototype_toLocaleString(txMachine* the)
 		}
 		mxPop();
 		index++;
+		
+		mxCheckMetering();
 	}
 	string = mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, size, 1));
 	slot = list->next;
@@ -2589,6 +2628,7 @@ void fx_Array_prototype_toReversed(txMachine* the)
 		mxPop();
 		from--;
 		to++;
+		mxCheckMetering();
 	}
 }
 
@@ -2602,7 +2642,7 @@ void fx_Array_prototype_toSorted(txMachine* the)
 			if (fxIsCallable(the, slot))
 				function = slot;
 			else
-				mxTypeError("compare is no function");
+				mxTypeError("compare: not a function");
 		}
 	}
 	LENGTH = fxGetArrayLength(the, mxThis);
@@ -2668,6 +2708,7 @@ void fx_Array_prototype_toSpliced(txMachine* the)
 			resultAddress->value = argument->value;
 			resultAddress++;
 			mxMeterSome(5);
+			mxCheckMetering();
 		}
 		address += skip;
 		if (rest > 0) {
@@ -2692,6 +2733,7 @@ void fx_Array_prototype_toSpliced(txMachine* the)
 			mxPop();
 			from++;
 			to++;
+			mxCheckMetering();
 		}
 		for (i = 2; i < c; i++) {
 			mxPushSlot(mxArgv(i));
@@ -2700,6 +2742,7 @@ void fx_Array_prototype_toSpliced(txMachine* the)
 			mxDefineAt(0, XS_GET_ONLY);
 			mxPop();
 			to++;
+			mxCheckMetering();
 		}
 		from += SKIP;
 		while (from < LENGTH) {
@@ -2712,6 +2755,7 @@ void fx_Array_prototype_toSpliced(txMachine* the)
 			mxPop();
 			from++;
 			to++;
+			mxCheckMetering();
 		}
 	}
 }
@@ -2758,6 +2802,7 @@ void fx_Array_prototype_unshift(txMachine* the)
 				address++;
 				mxMeterSome(4);
 				i++;
+				mxCheckMetering();
 			}
 			fxIndexArray(the, array);
 		}
@@ -2773,6 +2818,7 @@ void fx_Array_prototype_unshift(txMachine* the)
 			while (index > 0) {
 				fxMoveThisItem(the, index - 1, index + c - 1);
 				index--;
+				mxCheckMetering();
 			}
 			i = 0;
 			while (i < c) {
@@ -2781,6 +2827,7 @@ void fx_Array_prototype_unshift(txMachine* the)
 				mxSetIndex(i);
 				mxPop();
 				i++;
+				mxCheckMetering();
 			}
 		}
 		mxPushNumber(length + c);
@@ -2823,6 +2870,7 @@ void fx_Array_prototype_with(txMachine* the)
 		mxDefineAt(0, XS_GET_ONLY);
 		mxPop();
 		i++;
+		mxCheckMetering();
 	}
 	if (mxArgc > 1)
 		mxPushSlot(mxArgv(1));
@@ -2842,6 +2890,7 @@ void fx_Array_prototype_with(txMachine* the)
 		mxDefineAt(0, XS_GET_ONLY);
 		mxPop();
 		i++;
+		mxCheckMetering();
 	}
 }
 

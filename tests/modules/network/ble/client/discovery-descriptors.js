@@ -29,6 +29,10 @@ class Client extends BLEClient {
         device.discoverPrimaryService(CONFIG.SERVICE_UUID);
     }
     onServices(services) {
+		if (!services.length) {
+			$DONE("no services discovered");
+			return;
+		}
         services[0].discoverCharacteristic(CONFIG.CHARACTERISTIC);
     }
     onCharacteristics(characteristics) {

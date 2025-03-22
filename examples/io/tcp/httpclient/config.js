@@ -12,8 +12,8 @@ const dns = {
 		"1.1.1.1", //...
 	],
 	socket: {
-		io: UDP,
-	},
+		io: UDP
+	}
 };
 globalThis.device = Object.freeze({
 	...globalThis.device,
@@ -23,9 +23,9 @@ globalThis.device = Object.freeze({
 			io: HTTPClient,
 			dns,
 			socket: {
-				io: TCP,
+				io: TCP
 			},		
-		},
+		}
 	},
 }, true);
 

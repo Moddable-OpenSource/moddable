@@ -1,6 +1,6 @@
 # Audio Streamers
-Copyright 2022-2023 Moddable Tech, Inc.<BR>
-Revised: March 13, 2023
+Copyright 2022-2024 Moddable Tech, Inc.<BR>
+Revised: August 7, 2024
 
 The `WavStream` and `SBCStream` classes plays audio streams delivered over HTTP. The `WavStream` class plays uncompressed WAV audio files and `Audio/L16`; the `SBCStream` class plays [SBC compressed](https://en.wikipedia.org/wiki/SBC_%28codec%29) audio. SBC is a low-complexity format used primarily by Bluetooth. Its relatively high quality and simple decoder make it well suited for microcontrollers.
 
@@ -36,8 +36,6 @@ To stream SBC instead, change the constructor from `WavStream` to `SBCStream` an
 The streamer API provides several callbacks to manage the streaming session, including notification of streaming stalls and playback completion. The callbacks are documented below as part of the options object of the constructor.
 
 The streamers try to keep one second of audio buffers queued with the audio output. Once one second of audio is buffered, playback begins. Should the buffered bytes drop to 0, playback stops until one second of audio is again buffered.
-
-The `HTTPClient` does not yet implement `TLS`. When it does, `WavStream` and `SBCStream` will support streaming over HTTPS.
 
 ### `Audio/L16` Streams
 Uncompressed audio streams are the data portion of a WAVE file with the sample rate and channel count specified in the MIME type. These are useful for live-streaming of uncompressed audio, and is also used for live transcoding of compressed data to lightweight clients. It is specified by [RFC 2586](https://datatracker.ietf.org/doc/html/rfc2586). The data is delivered in network byte order (big-endian) and the WavStreamer converts it to little-endian for playback.

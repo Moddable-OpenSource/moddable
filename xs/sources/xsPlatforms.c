@@ -512,7 +512,6 @@ int c_gettimeofday(c_timeval *tp, struct c_timezone *tzp)
   return (0);
 }
 
-#ifdef mxParse
 char *c_realpath(const char *path, char *real)
 {
 	if (_fullpath(real, path, C_PATH_MAX) != NULL) {
@@ -523,6 +522,5 @@ char *c_realpath(const char *path, char *real)
 	}
 	return C_NULL;
 }
-#endif
 
 #endif

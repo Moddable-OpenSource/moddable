@@ -386,6 +386,7 @@ export default class extends Tool {
 		}
 	}
 	run() {
+		this.toolName = "mcrun";
 		this.localsName = "modLocals";
 		super.run();
 

@@ -193,17 +193,15 @@ void fxOpenSerial(txSerialTool self)
 	CFRunLoopAddSource(CFRunLoopGetCurrent(), self->serialSource, kCFRunLoopCommonModes);
 
 	if (self->programming) {
-#if mxTraceCommands
-		fprintf(stderr, "### programming mode\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### programming mode\n");
 		fxProgrammingModeSerial(self);
 		exit(0);
 	}
 
 	if (self->restartOnConnect) {
-#if mxTraceCommands
-		fprintf(stderr, "### restart\n");
-#endif
+		if (self->traceCommands)
+			fprintf(stderr, "### restart\n");
 		self->restartOnConnect = 0;
 		fxRestart(self);
 	}
@@ -351,9 +349,9 @@ void fxWriteNetwork(txSerialMachine machine, char* buffer, int size)
 
 void fxWriteSerial(txSerialTool self, char* buffer, int size)
 {
-#if mxTrace
-	fprintf(stderr, "%.*s", size, buffer);
-#endif
+	if (self->trace)
+		fprintf(stderr, "%.*s", size, buffer);
+
 	while (size) {
 		int result = write(CFSocketGetNative(self->serialSocket), buffer, size);
 		if (result < 0) {

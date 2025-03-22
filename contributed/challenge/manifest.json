@@ -1,0 +1,69 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json"
+	],
+	"modules": {
+		"*": "./main",
+		"slip": "./web/js/slip"
+	},
+	"preload": "slip",
+	"data":{
+		"*": "./scripts/*"
+	},
+	"resources":{
+		"*-mask": [
+			"./assets/glyphs",
+			"./assets/Hyperspace-Bold-32",
+			"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-16"
+		]
+	},
+	"strip":[],
+	"platforms": {
+		"mac/moddable_six": {
+			"modules": {
+				"*": [
+					"./simulator/uart"
+				]
+			},
+			"preload": [
+				"uart"
+			]
+		},
+		"lin/moddable_six": {
+			"modules": {
+				"*": [
+					"./simulator/uart"
+				]
+			},
+			"preload": [
+				"uart"
+			]
+		},
+		"win/moddable_six": {
+			"modules": {
+				"*": [
+					"./simulator/uart"
+				]
+			},
+			"preload": [
+				"uart"
+			]
+		},
+		"...": {
+			"include": [
+				"$(MODDABLE)/modules/network/ble/manifest_server.json"
+			],
+			"ble":{
+				"*": [
+					"./bleservices/*"
+				]
+			},
+			"modules": {
+				"*": [
+					"./device/uart"
+				]
+			}
+		}
+	}
+}

@@ -1,38 +1,9 @@
 {
-	"build": {
-		"BUILD": "$(MODDABLE)/build",
-		"MODULES": "$(MODDABLE)/modules",
-		"TEST262": "$(MODDABLE)/tools/test262"
-	},
-	"creation": {
-		"static": 65536,
-		"chunk": {
-			"initial": 16384,
-			"incremental": 512
-		},
-		"heap": {
-			"initial": 2048,
-			"incremental": 64
-		},
-		"stack": 384,
-		"keys": {
-			"available": 2048,
-			"name": 127,
-			"symbol": 127
-		},
-		"parser": {
-			"buffer": 9000,
-			"table": 127
-		},
-		"main": "main"
-	},
 	"include": [
-		"$(MODDABLE)/contributed/jsonparser/manifest.json",
-		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/examples/manifest_net.json",
+		"./manifest_common.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/contributed/jsonparser/manifest.json",
 		"$(MODULES)/base/deepEqual/manifest.json",
-		"$(MODULES)/base/modules/manifest.json",
 		"$(MODULES)/base/structuredClone/manifest.json",
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/crc/manifest.json",
@@ -45,24 +16,23 @@
 		"$(MODULES)/data/zlib/manifest_inflate.json",
 		"$(MODULES)/files/preference/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
-		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(MODDABLE)/modules/io/files/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json",
-		"$(MODDABLE)/modules/network/mqtt/manifest.json",
-		"$(MODDABLE)/modules/network/ping/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json",
-		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json"
+		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json",
+		"$(MODDABLE)/modules/io/audioout/manifest.json",
+		"$(MODDABLE)/modules/io/update/manifest.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(TEST262)/_262",
-			"$(TEST262)/harness",
-			"./main",
-			"./hosttest",
 			"./testworker",
 			"./testsharedworker",
 			"./testthrowworker",
 			"$(MODULES)/base/instrumentation/*"
+		],
+		"~": [
+			"$(MODDABLE)/tools/testmc/commodettoChecksumOut-nop"
 		],
 		"commodetto/Bitmap": "$(MODULES)/commodetto/commodettoBitmap",
 		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco",
@@ -73,35 +43,21 @@
         "piu/Sound": "$(MODULES)/piu/MC/piuSound"
 	},
 	"preload": [
-		"main",
-		"hosttest",
-		"harness",
 		"commodetto/*",
-		"instrumentation",
 		"piu/Sound"
 	],
-	"strip": [],
-	"config" : {
-		"ble": {
-			"client": {
-				"timeout": 10000,
-				"targetDevice": "Moddable Server"
-			},
-			"server": {
-				"timeout": 20000,
-				"deviceName": "testmc Server"
+	"platforms": {
+		"mac": {
+			"config": {
+				"flash": {
+					"xs_test": { "blocks":10, "blockLength":1024 },
+					"running": { "blocks":20, "blockLength":1024, "bytes":[ 249 ] },
+					"nextota": { "blocks":10, "blockLength":1024 }
+				}
 			}
 		},
-		"startupSound": ""
-	},
-	"platforms": {
-		"esp": {
-			"error": "testmc is unsupported on esp8266"
-		},
-		"esp32": {
+		"pico": {
 			"defines": {
-				"XS_TEST": 1,
-				"softreset": 1,
 				"audioOut": {
 					"bitsPerSample": 16,
 					"numChannels": 1,
@@ -113,23 +69,95 @@
 			"include": [
 				"$(MODULES)/base/worker/manifest.json",
 				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/network/ble/manifest_client.json",
-				"$(MODDABLE)/modules/network/ble/manifest_server.json",
 				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
-			"modules": {
-				"~": [
-					"$(BUILD)/devices/esp32/setup/piu",
-					"$(BUILD)/devices/esp32/setup/network"
-				],
-				"*": [
-					"./BLE-server/*"
+			"config": {
+				"digital": [12, 13, 16, 17, 26, 27],
+				"flashPartition": "xs_test",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [18, 12, 13],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 17]
+				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
+				},
+			 	"invalidPins": [
+					-10,
+					500
 				]
+			}
+		},
+		"esp32": {
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			},
-			"ble": {
-				"*": [
-					"./BLE-server/bleservices/*"
+			"include": [
+				"$(MODULES)/base/worker/manifest.json",
+				"$(MODULES)/files/flash/manifest.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"config": {
+				"digital": [0, 1, 2, 3, 18, 19],
+				"flashPartition": "xs_test",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [16, 20, 21],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 17]
+				},
+				"spi": {
+					"select": 9,
+					"ports": [0, 1],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
+				},
+			 	"invalidPins": [
+					-10,
+					500
 				]
+			}
+		},
+		"esp32": {
+			"include": [
+				"./manifest_net.json",
+				"./manifest_ble.json",
+				"$(MODULES)/base/worker/manifest.json",
+				"$(MODULES)/files/flash/manifest.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
 			},
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
@@ -145,7 +173,7 @@
 					"ports": [4, 5],
 					"invalidPorts": [0, 1],
 					"resolutions": [10, 11, 12],
-					"hzs": [10000, 200, 1]
+					"hzs": [10000, 200, 17]
 				},
 				"spi": {
 					"select": 18,
@@ -159,37 +187,14 @@
 				]
 			}
 		},
-		"lin": {
-			"build": {
-				"SIMULATOR": "$(BUILD)/bin/lin/debug/mcsim"
-			},
+		"esp32/moddable_six": {
 			"include": [
+				"./manifest_net.json",
+				"./manifest_ble.json",
+				"$(MODULES)/base/worker/manifest.json",
+				"$(MODULES)/files/flash/manifest.json",
 				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
-			"modules": {
-				"*": [
-					"$(BUILD)/simulators/modules/screen",
-					"$(MODULES)/base/timer/timer",
-					"$(MODULES)/base/timer/lin/*"
-				]
-			}
-		},
-		"mac": {
-			"build": {
-				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
-			},
-			"include": [
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
-			],
-			"modules": {
-				"*": [
-					"$(BUILD)/simulators/modules/screen",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/mac/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/mac/*"
-				]
-			},
 			"defines": {
 				"audioOut": {
 					"bitsPerSample": 16,
@@ -198,22 +203,77 @@
 					"streams": 2,
 					"queueLength": 4
 				}
+			},
+			"config": {
+				"digital": [16, 17, 0, 1, 2, 3],
+				"flashPartition": "xs_test",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [1, 16],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 17]
+				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
+				},
+			 	"invalidPins": [
+					-10,
+					500
+				]
 			}
 		},
-		"win": {
-			"build": {
-				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
-			},
+		"esp32/moddable_six_cdc": {
 			"include": [
+				"./manifest_net.json",
+				"./manifest_ble.json",
+				"$(MODULES)/base/worker/manifest.json",
+				"$(MODULES)/files/flash/manifest.json",
 				"$(MODDABLE)/modules/pins/i2s/manifest.json"
 			],
-			"modules": {
-				"*": [
-					"$(BUILD)/simulators/modules/screen",
-					"$(MODULES)/base/time/*",
-					"$(MODULES)/base/time/win/*",
-					"$(MODULES)/base/timer/*",
-					"$(MODULES)/base/timer/win/*"
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
+			},
+			"config": {
+				"digital": [16, 17, 0, 1, 2, 3],
+				"flashPartition": "xs_test",
+				"i2c": {
+					"hz": 100000,
+					"address": 53,
+					"unusedAddress": 99
+				},
+				"pwm": {
+					"from": true,
+					"pins": [1, 16],
+					"ports": [4, 5],
+					"invalidPorts": [0, 1],
+					"resolutions": [10, 11, 12],
+					"hzs": [10000, 200, 17]
+				},
+				"spi": {
+					"select": 18,
+					"ports": [1, 2],
+					"invalidPorts": [3, -1],
+					"hzs": [1000, 10000, 20000]
+				},
+			 	"invalidPins": [
+					-10,
+					500
 				]
 			}
 		}
@@ -224,8 +284,10 @@
 			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca35",
 			"$(MODULES)/crypt/data/ca109",
+			"$(MODULES)/crypt/data/ca170",
 			"$(MODULES)/crypt/data/ca222",
 			"$(MODULES)/crypt/data/ca233",
+			"$(MODULES)/crypt/data/ca236",
 			"./assets/bflatmajor-ima-12000",
 			"./assets/bflatmajor-ima-16000",
 			"./assets/bflatmajor-sbc",

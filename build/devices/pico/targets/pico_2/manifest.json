@@ -1,0 +1,38 @@
+{
+	"build": {
+		"PICO_SUBCLASS":"rp2350",
+		"PICO_BOARD_FILE":"$(PICO_SDK_DIR)/src/boards/include/boards/pico2.h"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "",
+		"led": {
+			"pin": 25
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 4,
+			"scl_pin": 5
+		},
+		"spi": {
+			"miso_pin": 20,
+			"mosi_pin": 19,
+			"sck_pin": 18
+		},
+		"ili9341": {
+			"cs_pin": 21,
+			"dc_pin": 16
+		}
+	}
+}

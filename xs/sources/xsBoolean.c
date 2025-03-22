@@ -80,7 +80,7 @@ void fx_Boolean(txMachine* the)
 void fx_Boolean_prototype_toString(txMachine* the)
 {
 	txSlot* slot = fxCheckBoolean(the, mxThis);
-	if (!slot) mxTypeError("this is no boolean");
+	if (!slot) mxTypeError("this: not a boolean");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 	fxToString(the, mxResult);
@@ -89,7 +89,7 @@ void fx_Boolean_prototype_toString(txMachine* the)
 void fx_Boolean_prototype_valueOf(txMachine* the)
 {
 	txSlot* slot = fxCheckBoolean(the, mxThis);
-	if (!slot) mxTypeError("this is no boolean");
+	if (!slot) mxTypeError("this: not a boolean");
 	mxResult->kind = slot->kind;
 	mxResult->value = slot->value;
 }

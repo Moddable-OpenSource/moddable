@@ -57,15 +57,55 @@
 				"wifi": "./simulator/wifisim"
 			}
 		},
+		"esp/moddable_display_1": {
+			"creation":{
+				"static": 35840
+			},
+			"config": {
+				"driverRotation": 90
+			}
+		},
 		"esp/moddable_one": {
 			"creation":{
 				"static": 35840
 			},			
 			"config": {
+				"driverRotation": 90
+			}
+		},
+		"esp32/moddable_display_2": {
+			"creation": {
+				"static": 50000
+			},
+			"config": {
 				"rotation": 90
 			}
 		},
 		"esp32/moddable_two": {
+			"creation":{
+				"static": 50000
+			},
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32/moddable_display_6": {
+			"creation": {
+				"static": 50000
+			},
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32/moddable_six": {
+			"creation":{
+				"static": 50000
+			},
+			"config": {
+				"rotation": 90
+			}
+		},
+		"esp32/moddable_six_cdc": {
 			"creation":{
 				"static": 50000
 			},

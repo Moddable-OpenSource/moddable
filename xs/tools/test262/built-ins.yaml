@@ -1,0 +1,72 @@
+mode: default
+skip:
+    - Array.fromAsync
+    - FinalizationRegistry.prototype.cleanupSome
+    - ShadowRealm
+    - Temporal
+    - arbitrary-module-namespace-names
+    - decorators
+    - import-assertions
+    - import-attributes
+    - iterator-helpers
+    - json-modules
+    - regexp-duplicate-named-groups
+    - set-methods
+fail:
+    - built-ins:
+            - Array:
+                    - prototype:
+                            - concat:
+                                    - create-proto-from-ctor-realm-array.js: "Test262Error: The value of callCount is expected to be 0 Expected SameValue(«1», «0») to be true"
+                            - filter:
+                                    - create-proto-from-ctor-realm-array.js: "Test262Error: Species constructor is not referenced Expected SameValue(«1», «0») to be true"
+                            - map:
+                                    - create-proto-from-ctor-realm-array.js: "Test262Error: Species constructor is not referenced Expected SameValue(«1», «0») to be true"
+                            - reduceRight:
+                                    - length-near-integer-limit.js: "Test262Error: The value of acc.length is expected to be 2 Expected SameValue(«undefined», «2») to be true"
+                            - slice:
+                                    - create-proto-from-ctor-realm-array.js: "Test262Error: Species constructor is not referenced Expected SameValue(«1», «0») to be true"
+                            - splice:
+                                    - create-proto-from-ctor-realm-array.js: "Test262Error: Species constructor is not referenced Expected SameValue(«1», «0») to be true"
+            - Function:
+                    - prototype:
+                            - toString:
+                                    - method-computed-property-name.js: "Test262Error: Conforms to NativeFunction Syntax: \"undefined\" ([ { a(){} }.a ](){ })"
+            - JSON:
+                    - stringify:
+                            - replacer-function-object-deleted-property.js: "Test262Error: Expected SameValue(«{\"a\":1}», «{\"a\":1,\"b\":\"<replaced>\"}») to be true"
+            - RegExp:
+                    - lookahead-quantifier-match-groups.js: "Test262Error: Expected [a, abc] and [a, undefined] to have the same contents. ? quantifier"
+                    - prototype:
+                            - dotAll:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - global:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - hasIndices:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - ignoreCase:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - multiline:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - source:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - sticky:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - unicode:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+                            - unicodeSets:
+                                    - cross-realm.js: "Test262Error: cross-realm RegExp.prototype Expected a TypeError to be thrown but no exception was thrown at all"
+            - String:
+                    - prototype:
+                            - localeCompare:
+                                    - 15.5.4.9_CE.js: "Test262Error: String.prototype.localeCompare considers ö (\\u006f\\u0308) ≠ ö (\\u00f6)."
+            - Symbol:
+                    - for:
+                            - cross-realm.js: "Test262Error: Expected SameValue(«function [\"for\"] (){[native code]}», «function [\"for\"] (){[native code]}») to be false"
+                    - keyFor:
+                            - cross-realm.js: "Test262Error: Expected SameValue(«function [\"keyFor\"] (){[native code]}», «function [\"keyFor\"] (){[native code]}») to be false"
+            - TypedArrayConstructors:
+                    - from:
+                            - BigInt:
+                                    - custom-ctor-returns-smaller-instance-throws.js: "Test262Error: source is using iterator Expected a TypeError to be thrown but no exception was thrown at all (Testing with BigInt64Array.)"
+                            - custom-ctor-returns-smaller-instance-throws.js: "Test262Error: source is using iterator Expected a TypeError to be thrown but no exception was thrown at all (Testing with Float64Array.)"

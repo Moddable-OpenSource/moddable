@@ -1,6 +1,6 @@
 # Ethernet
 Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: November 16, 2021
+Revised: September 10, 2024
 
 ## Overview
 
@@ -47,7 +47,7 @@ You can use other ESP32-based development boards too. Many developers use NodeMC
 
 Most of the [networking examples](../../examples/network) in the Moddable SDK enable Wi-Fi by default. They do this by including the `manifest_net.json` manifest.
 
-```js
+```jsonc
 "include": [
 	/* other included manifests here */
 	"$(MODDABLE)/examples/manifest_net.json"
@@ -56,7 +56,7 @@ Most of the [networking examples](../../examples/network) in the Moddable SDK en
 
 If you want to use Ethernet in these examples, you can simply replace `manifest_net.json` with `manifest_net_ethernet.json`. Note that you should not include both `manifest_net.json` and `manifest_net_ethernet.json`; only include one or the other.
 
-```js
+```jsonc
 "include": [
 	/* other included manifests here */,
 	"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"

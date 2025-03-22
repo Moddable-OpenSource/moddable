@@ -39,6 +39,7 @@ extern int main262(int argc, char* argv[]);
 #endif
 
 typedef struct sxContext txContext;
+typedef struct sxFeature txFeature;
 typedef struct sxPool txPool;
 typedef struct sxResult txResult;
 
@@ -51,8 +52,24 @@ struct sxContext {
 	char path[1];
 };
 
+struct sxFeature {
+	txFeature* next;
+	int count;
+	char name[1];
+};
+
+enum {
+	XST_NO_FLAG = 0,
+	XST_LOCKDOWN_FLAG = 1,
+	XST_COMPARTMENT_FLAG = 2,
+	XST_REPORT_FLAG = 4,
+	XST_TRACE_FLAG = 8,
+};
+
 struct sxPool {
-	txContext* first;
+	txContext* firstContext;
+	txFeature* firstFeature;
+	txUnsigned flags;
 	txInteger count;
 	txCondition countCondition;
 	txMutex countMutex;
@@ -71,24 +88,46 @@ struct sxResult {
 	txResult* next;
 	txResult* parent;
 	txResult* first;
-	txResult* last;
-	int testCount;
-	int successCount;
-	int pendingCount;
+	union {
+		struct {
+			int flag;
+			int count;
+			int offset;
+		} file;
+		struct {
+			int testCount;
+			int successCount;
+			int pendingCount;
+		} folder;
+	};
 	char path[1];
 };
 
 static void fx_agent_stop(xsMachine* the);
 static void fx_done(xsMachine* the);
-static void fxCountResult(txPool* pool, txContext* context, int success, int pending);
+
+static void fxCheckEvent(yaml_event_t* event, yaml_event_type_t type, char* value);
+static void fxCompareResults(txResult* input, txResult* output);
+static void fxCountResult(txPool* pool, txContext* context, int success, int pending, char* message);
+static void fxDefaultFeatures(txPool* pool);
+static int fxFilterResult(txResult* result);
+static void fxFreeFeatures(txPool* pool);
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
+static txFeature* fxNewFeature(char* name);
+static txResult* fxNewResult(char* path, char* message);
 static void fxPopResult(txPool* pool);
-#ifdef mxMultipleThreads
 static void fxPrintBusy(txPool* pool);
 static void fxPrintClear(txPool* pool);
-#endif
+static void fxPrintFailure(txResult* output);
+static void fxPrintFeatures(txPool* pool);
+static void fxPrintPath(txResult* result);
 static void fxPrintResult(txPool* pool, txResult* result, int c);
+static void fxPrintSuccess(txResult* input);
 static void fxPushResult(txPool* pool, char* path);
+static txResult* fxReadConfiguration(txPool* pool, char* path);
+static txResult* fxReadResult(yaml_parser_t* parser, char* path);
 static void fxRunDirectory(txPool* pool, char* path);
 static void fxRunFile(txPool* pool, char* path);
 #if mxWindows
@@ -99,29 +138,51 @@ static void* fxRunFileThread(void* it);
 static void fxRunContext(txPool* pool, txContext* context);
 static int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message);
 static int fxStringEndsWith(const char *string, const char *suffix);
+static void fxWriteConfiguration(txPool* pool, char* path);
+static void fxWriteResult(FILE* file, txResult* result, int c);
 
 static void fxBuildCompartmentGlobals(txMachine* the);
 static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-static int lockdown = 0;
+#define mxFeaturesCount 14
+static char* gxFeatures[mxFeaturesCount] = { 
+	"Array.fromAsync",
+	"Atomics.pause",
+	"FinalizationRegistry.prototype.cleanupSome",
+ 	"Math.sumPrecise",
+ 	"RegExp.escape",
+ 	"ShadowRealm",
+	"Temporal",
+	"arbitrary-module-namespace-names",
+	"decorators",
+	"import-assertions",
+	"iterator-sequencing",
+	"json-parse-with-source",
+	"source-phase-imports",
+	"source-phase-imports-module-source"
+};
 
 int main262(int argc, char* argv[]) 
 {
-	txPool pool;
+	txPool _pool;
+	txPool* pool = &_pool;
 	char separator[2];
 	char path[C_PATH_MAX];
+	char inputPath[C_PATH_MAX] = "";
+	char outputPath[C_PATH_MAX] = "";
 	int error = 0;
 	int argi = 1;
 	int argj = 0;
 	c_timeval from;
 	c_timeval to;
+	txResult* input = NULL;
 
-	c_memset(&pool, 0, sizeof(txPool));
-	fxCreateCondition(&(pool.countCondition));
-	fxCreateMutex(&(pool.countMutex));
-	fxCreateMutex(&(pool.resultMutex));
+	c_memset(pool, 0, sizeof(txPool));
+	fxCreateCondition(&(pool->countCondition));
+	fxCreateMutex(&(pool->countMutex));
+	fxCreateMutex(&(pool->resultMutex));
 	{
 	#if mxWindows
 	#elif mxMacOSX
@@ -134,14 +195,15 @@ int main262(int argc, char* argv[])
 	#endif	
 		for (argi = 0; argi < mxPoolSize; argi++) {
 		#if mxWindows
-			pool.threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, &pool, 0, NULL);
+			pool->threads[argi] = (HANDLE)_beginthreadex(NULL, 0, fxRunFileThread, pool, 0, NULL);
 		#elif mxMacOSX
-			pthread_create(&(pool.threads[argi]), &attr, &fxRunFileThread, &pool);
+			pthread_create(&(pool->threads[argi]), &attr, &fxRunFileThread, pool);
 		#else
-			pthread_create(&(pool.threads[argi]), NULL, &fxRunFileThread, &pool);
+			pthread_create(&(pool->threads[argi]), NULL, &fxRunFileThread, pool);
 		#endif
 		}
 	}
+	fxDefaultFeatures(pool);
 	
 	fxInitializeSharedCluster(C_NULL);
 
@@ -150,104 +212,182 @@ int main262(int argc, char* argv[])
 	c_strcpy(path, "..");
 	c_strcat(path, separator);
 	c_strcat(path, "harness");
-	if (!c_realpath(path, pool.harnessPath)) {
+	if (!c_realpath(path, pool->harnessPath)) {
 		fprintf(stderr, "### directory not found: %s\n", path);
 		return 1;
 	}
-	c_strcat(pool.harnessPath, separator);
+	c_strcat(pool->harnessPath, separator);
 	if (!c_realpath(".", path)) {
 		fprintf(stderr, "### directory not found: .\n");
 		return 1;
 	}
 	c_strcat(path, separator);
-	pool.testPathLength = mxStringLength(path);
-	pool.current = NULL;
-	fxPushResult(&pool, "");
+	pool->testPathLength = mxStringLength(path);
+	pool->current = NULL;
+	fxPushResult(pool, "");
 	
 	c_gettimeofday(&from, NULL);
 	for (argi = 1; argi < argc; argi++) {
-		if (!strcmp(argv[argi], "-l")) {
-			lockdown = 1;
-			continue;
+		if (!strcmp(argv[argi], "-c")) {
+			// reserved
 		}
-		if (!strcmp(argv[argi], "-lc")) {
-			lockdown = -1;
-			continue;
-		}
-		if (argv[argi][0] == '-')
-			continue;
-		if (c_realpath(argv[argi], path)) {
-			argj++;
-#if mxWindows
-			DWORD attributes = GetFileAttributes(path);
-			if (attributes != 0xFFFFFFFF) {
-				if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
-#else		
-			struct stat a_stat;
-			if (stat(path, &a_stat) == 0) {
-				if (S_ISDIR(a_stat.st_mode)) {
-#endif
-					fxPushResult(&pool, path + pool.testPathLength);
-					fxRunDirectory(&pool, path);
-					fxPopResult(&pool);
+		else if (!strcmp(argv[argi], "-i")) {
+			argi++;
+			if (argi < argc) {
+				if (!c_realpath(argv[argi], inputPath)) {
+					fprintf(stderr, "### input not found: %s\n", argv[argi]);
+					return 1;
 				}
-				else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
-					fxRunFile(&pool, path);
+				input = fxReadConfiguration(pool, inputPath);
+			}
+			else {
+				fprintf(stderr, "### no input path\n");
+				return 1;
 			}
 		}
-		else {
-			fprintf(stderr, "### test not found: %s\n", argv[argi]);
-			error = 1;
+		else if (!strcmp(argv[argi], "-o")) {
+			argi++;
+			if (argi < argc) {
+				char* slash;
+				c_strcpy(path, argv[argi]);
+				slash = c_strrchr(path, mxSeparator);
+				if (slash) {
+					*slash = 0;
+					if (!c_realpath(path, outputPath)) {
+						fprintf(stderr, "### output not found: %s\n", path);
+						return 1;
+					}
+					*slash = mxSeparator;
+					c_strcat(outputPath, slash);
+				}
+				else
+					c_strcpy(outputPath, path);
+			}
+			else {
+				fprintf(stderr, "### no output path\n");
+				return 1;
+			}
+		}
+		else if (!strcmp(argv[argi], "-l"))
+			pool->flags |= XST_LOCKDOWN_FLAG;
+		else if (!strcmp(argv[argi], "-lc"))
+			pool->flags |= XST_LOCKDOWN_FLAG | XST_COMPARTMENT_FLAG;
+		else if (!strcmp(argv[argi], "-t")) {
+			#ifdef mxMultipleThreads
+				pool->flags |= XST_REPORT_FLAG;
+			#else
+				pool->flags |= XST_TRACE_FLAG;
+			#endif
 		}
 	}
-    fxLockMutex(&(pool.countMutex));
-    while (pool.count > 0)
-		fxSleepCondition(&(pool.countCondition), &(pool.countMutex));
-	pool.count = -1;
-	fxWakeAllCondition(&(pool.countCondition));
-    fxUnlockMutex(&(pool.countMutex));
+	if (input) {
+		txResult* result = input->first;
+		while (result) {
+			if (c_realpath(result->path, path)) {
+				argj++;
+				fxPushResult(pool, path + pool->testPathLength);
+				fxRunDirectory(pool, path);
+				fxPopResult(pool);
+			}
+			result = result->next;
+		}
+	}
+	else {
+		for (argi = 1; argi < argc; argi++) {
+			if (!strcmp(argv[argi], "-i")) {
+				argi++;
+				continue;
+			}
+			if (!strcmp(argv[argi], "-o")) {
+				argi++;
+				continue;
+			}
+			if (argv[argi][0] == '-')
+				continue;
+			if (c_realpath(argv[argi], path)) {
+				argj++;
+#if mxWindows
+				DWORD attributes = GetFileAttributes(path);
+				if (attributes != 0xFFFFFFFF) {
+					if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+#else		
+				struct stat a_stat;
+				if (stat(path, &a_stat) == 0) {
+					if (S_ISDIR(a_stat.st_mode)) {
+#endif
+						fxPushResult(pool, path + pool->testPathLength);
+						fxRunDirectory(pool, path);
+						fxPopResult(pool);
+					}
+					else if (fxStringEndsWith(path, ".js") && !fxStringEndsWith(path, "_FIXTURE.js"))
+						fxRunFile(pool, path);
+				}
+			}
+			else {
+				fprintf(stderr, "### test not found: %s\n", argv[argi]);
+				error = 1;
+			}
+		}
+	}
+	
+    fxLockMutex(&(pool->countMutex));
+    while (pool->count > 0)
+		fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
+	pool->count = -1;
+	fxWakeAllCondition(&(pool->countCondition));
+    fxUnlockMutex(&(pool->countMutex));
 	for (argi = 0; argi < mxPoolSize; argi++) {
 	#if mxWindows
-		WaitForSingleObject(pool.threads[argi], INFINITE);
-		CloseHandle(pool.threads[argi]);
+		WaitForSingleObject(pool->threads[argi], INFINITE);
+		CloseHandle(pool->threads[argi]);
 	#else
-		pthread_join(pool.threads[argi], NULL);
+		pthread_join(pool->threads[argi], NULL);
 	#endif
 	}
-	
-	fxTerminateSharedCluster(C_NULL);
 	
 	c_gettimeofday(&to, NULL);
-	if (argj) {
-		int seconds = to.tv_sec - from.tv_sec;
-		int minutes = seconds / 60;
-		int hours = minutes / 60;
-		txResult* result = pool.current;
-		int value;
-		
-	#ifdef mxMultipleThreads	
-		fxPrintClear(&pool);
-	#endif
-		fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
-		
-		if (result->testCount) {
-			value = (10000 * result->successCount) / result->testCount;
-			fprintf(stderr, "# %d.%.2d%%", value / 100, value % 100);
-			if (result->pendingCount) {
-				if (result->successCount + result->pendingCount == result->testCount)
-					value = 10000 - value;
-				else
-					value = (10000 * result->pendingCount) / result->testCount;
-				fprintf(stderr, " (%d.%.2d%%)", value / 100, value % 100);
-				
-				value = (10000 * result->successCount) / (result->testCount - result->pendingCount);
-				fprintf(stderr, " [%d.%.2d%%]", value / 100, value % 100);
-			}
-		}
-		else
-			fprintf(stderr, "# 0.00%%");
-		fxPrintResult(&pool, result, 0);
+	fxTerminateSharedCluster(C_NULL);
+	
+	int seconds = to.tv_sec - from.tv_sec;
+	int minutes = seconds / 60;
+	int hours = minutes / 60;
+	if (!(pool->flags & XST_TRACE_FLAG))
+		fxPrintClear(pool);
+	fprintf(stderr, "# %d:%.2d:%.2d\n", hours, minutes % 60, seconds % 60);
+	
+	if (input) {
+		fxFilterResult(pool->current);
+		fxCompareResults(input, pool->current);
 	}
+	else if (argj) {
+		txResult* result = pool->current;
+		if (pool->flags & (XST_REPORT_FLAG | XST_TRACE_FLAG)) {
+			if (result->folder.testCount) {
+				int value = (10000 * result->folder.successCount) / result->folder.testCount;
+				fprintf(stderr, "# %d.%.2d%%", value / 100, value % 100);
+				if (result->folder.pendingCount) {
+					if (result->folder.successCount + result->folder.pendingCount == result->folder.testCount)
+						value = 10000 - value;
+					else
+						value = (10000 * result->folder.pendingCount) / result->folder.testCount;
+					fprintf(stderr, " (%d.%.2d%%)", value / 100, value % 100);
+					
+					value = (10000 * result->folder.successCount) / (result->folder.testCount - result->folder.pendingCount);
+					fprintf(stderr, " [%d.%.2d%%]", value / 100, value % 100);
+				}
+			}
+			else
+				fprintf(stderr, "# 0.00%%");
+			fxPrintResult(pool, result, 0);
+			fxPrintFeatures(pool);
+		}
+		if (!(pool->flags & XST_TRACE_FLAG))
+			fxPrintFailure(pool->current);
+		if (*outputPath)
+			fxWriteConfiguration(pool, outputPath);
+	}
+	fxFreeResults(pool);
+	fxFreeFeatures(pool);
 	return error;
 }
 
@@ -289,18 +429,155 @@ void fx_done(xsMachine* the)
 		*((txSlot*)the->rejection) = xsUndefined;
 }
 
-void fxCountResult(txPool* pool, txContext* context, int success, int pending) 
+void fxCheckEvent(yaml_event_t* event, yaml_event_type_t type, char* value)
+{
+	if (event->type != type) {
+		fprintf(stderr, "### invalid yaml type\n");
+		c_exit(1);
+	}
+	if (value) {
+		if (c_strcmp((char*)event->data.scalar.value, value) ){
+			fprintf(stderr, "### invalid yaml: %s instead of %s\n", (char*)event->data.scalar.value, value);
+			c_exit(1);
+		}
+	}
+}
+
+void fxCompareResults(txResult* input, txResult* output)
+{
+	if (input->file.flag < 0) {
+		return;
+	}
+	input = input->first;
+	output = output->first;
+	while (input && output) {
+		int comparison = c_strcmp(input->path, output->path);
+		if (comparison < 0) {
+			fxPrintSuccess(input);
+			input = input->next;
+		}
+		else if (comparison > 0) {
+			fxPrintFailure(output);
+			output = output->next;
+		}
+		else {
+			fxCompareResults(input, output);
+			input = input->next;
+			output = output->next;
+		}
+	}
+	while (input) {
+		fxPrintSuccess(input);
+		input = input->next;
+	}
+	while (output) {
+		fxPrintFailure(output);
+		output = output->next;
+	}
+}
+
+void fxCountResult(txPool* pool, txContext* context, int success, int pending, char* message) 
 {
 	txResult* result = context->result;
-    fxLockMutex(&(pool->resultMutex));
+	fxLockMutex(&(pool->resultMutex));
+	if (!success && !pending) {
+		char* name = c_strrchr(context->path, mxSeparator) + 1;
+		txResult* former = C_NULL;
+		txResult* current = result->first;
+		int comparison = 1;
+		while (current) {
+			comparison = c_strcmp(current->path, name);
+			if (comparison >= 0)
+				break;
+			comparison = 1;
+			former = current;
+			current = current->next;
+		}
+		if (comparison > 0) {
+			txResult* failure = fxNewResult(name, message + 2);
+			failure->next = current;
+			failure->parent = result;
+			failure->file.count = 1;
+			if (former)
+				former->next = failure;
+			else
+				result->first = failure;
+		}
+		else if (comparison == 0)
+			current->file.count++;
+	}
 	while (result) {
-		result->testCount++;
-		result->successCount += success;
-		result->pendingCount += pending;
+		result->folder.testCount++;
+		result->folder.successCount += success;
+		result->folder.pendingCount += pending;
 		result = result->parent;
 	}
-    fxUnlockMutex(&(pool->resultMutex));
+	fxUnlockMutex(&(pool->resultMutex));
 }
+
+void fxDefaultFeatures(txPool* pool)
+{
+	txFeature** address = &(pool->firstFeature);
+	int i;
+	for (i = 0; i < mxFeaturesCount; i++) {
+		txFeature* feature = fxNewFeature(gxFeatures[i]);
+		*address = feature;
+		address = &(feature->next);
+	}
+}
+
+int fxFilterResult(txResult* result)
+{
+	txResult** address = &(result->first);
+	int flag = 0;
+	if (result->file.flag < 0) 
+		return 1;
+	while ((result = *address)) {
+		if (fxFilterResult(result)) {
+			address = &(result->next);
+			flag = 1;
+		}
+		else {
+			*address = result->next;
+			c_free(result);
+		}
+	}
+	return flag;
+}
+
+void fxFreeFeatures(txPool* pool)
+{
+	txFeature** address = &(pool->firstFeature);
+	txFeature* feature;
+	while ((feature = *address)) {
+		*address = feature->next;
+		c_free(feature);
+	}
+}
+
+void fxFreeResult(txResult* result)
+{
+	txResult** address = &(result->first);
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+void fxFreeResults(txPool* pool)
+{
+	txResult** address = &(pool->current);
+	txResult* result;
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
 
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
 {
@@ -315,6 +592,54 @@ yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, 
 	return NULL;
 }
 
+txFeature* fxNewFeature(char* name)
+{
+	int nameLength = mxStringLength(name);
+	txFeature* feature = c_malloc(sizeof(txFeature) + nameLength);
+	if (!feature) {
+		c_exit(1);
+	}
+	feature->next = NULL;
+	feature->count = 0;
+	c_memcpy(feature->name, name, nameLength + 1);
+	return feature;
+}
+
+txResult* fxNewResult(char* path, char* message)
+{
+	int pathLength = mxStringLength(path);
+	txResult* result = NULL;
+	if (message) {
+    	int messageLength = mxStringLength(message);
+		result = c_malloc(sizeof(txResult) + pathLength + 1 + messageLength);
+		if (!result) {
+			c_exit(1);
+		}
+		result->next = NULL;
+		result->parent = NULL;
+		result->first = NULL;
+		result->file.flag = -1;
+		result->file.count = 0;
+		result->file.offset = pathLength + 1;
+    	c_memcpy(result->path, path, pathLength + 1);
+    	c_memcpy(result->path + pathLength + 1, message, messageLength + 1);
+	}
+	else {
+		result = c_malloc(sizeof(txResult) + pathLength);
+		if (!result) {
+			c_exit(1);
+		}
+		result->next = NULL;
+		result->parent = NULL;
+		result->first = NULL;
+		result->folder.testCount = 0;
+		result->folder.successCount = 0;
+		result->folder.pendingCount = 0;
+    	c_memcpy(result->path, path, pathLength + 1);
+	}
+	return result;
+}
+
 void fxPopResult(txPool* pool) 
 {
 	pool->current = pool->current->parent;
@@ -323,29 +648,28 @@ void fxPopResult(txPool* pool)
 void fxPushResult(txPool* pool, char* path) 
 {
 	txResult* parent = pool->current;
-	txResult* result = c_malloc(sizeof(txResult) + mxStringLength(path));
-	if (!result) {
-		c_exit(1);
-	}
-	result->next = NULL;
+	txResult* result = fxNewResult(path, NULL);
 	result->parent = parent;
-	result->first = NULL;
-	result->last = NULL;
-	result->testCount = 0;
-	result->successCount = 0;
-	result->pendingCount = 0;
-	c_strcpy(result->path, path);
 	if (parent) {
-		if (parent->last)
-			parent->last->next = result;
+		fxLockMutex(&(pool->resultMutex));
+		txResult* former = C_NULL;
+		txResult* current = parent->first;
+		while (current) {
+			if (c_strcmp(current->path, path) >= 0)
+				break;
+			former = current;
+			current = current->next;
+		}
+		if (former)
+			former->next = result;
 		else
 			parent->first = result;
-		parent->last = result;
+		result->next = current;
+		fxUnlockMutex(&(pool->resultMutex));
 	}
 	pool->current = result;
 }
 
-#ifdef mxMultipleThreads
 static int c = 0;
 
 void fxPrintBusy(txPool* pool)
@@ -358,25 +682,189 @@ void fxPrintClear(txPool* pool)
 	fprintf(stderr, "\b\b\b\b\b\b\b\b");
 	c++;
 }
-#endif
+
+void fxPrintFailure(txResult* output)
+{
+	if (output->file.flag < 0) {
+		fxPrintPath(output);
+		fprintf(stderr, ": %s\n", output->path + output->file.offset);
+	}
+	else {
+		output = output->first;
+		while (output) {
+			fxPrintFailure(output);
+			output = output->next;
+		}
+	}
+}
+
+void fxPrintFeatures(txPool* pool)
+{
+	txFeature* feature = pool->firstFeature;
+	while (feature) {
+		if (feature->count)
+			fprintf(stderr, "- %s (%d)\n", feature->name, feature->count);
+		feature = feature->next;
+	}
+}
+
+void fxPrintPath(txResult* result)
+{
+	if (result->parent && (result->parent->path[0])) {
+		fxPrintPath(result->parent);
+		fprintf(stderr, "/");
+	}
+	else
+		fprintf(stderr, "### ");
+	fprintf(stderr, "%s", result->path);
+}
 
 void fxPrintResult(txPool* pool, txResult* result, int c)
 {
-	int i = 0;
-	while (i < c) {
-		fprintf(stderr, "    ");
-		i++;
+	if (result->file.flag >= 0) {
+		int i = 0;
+		while (i < c) {
+			fprintf(stderr, "    ");
+			i++;
+		}
+		fprintf(stderr, " %d/%d", result->folder.successCount, result->folder.testCount);
+		if (result->folder.pendingCount)
+			fprintf(stderr, " (%d)", result->folder.pendingCount);
+		fprintf(stderr, " %s\n", result->path);
+		c++;
+		result = result->first;
+		while (result) {
+			fxPrintResult(pool, result, c);
+			result = result->next;
+		}
 	}
-	fprintf(stderr, " %d/%d", result->successCount, result->testCount);
-	if (result->pendingCount)
-		fprintf(stderr, " (%d)", result->pendingCount);
-	fprintf(stderr, " %s\n", result->path);
-	result = result->first;
-	c++;
-	while (result) {
-		fxPrintResult(pool, result, c);
-		result = result->next;
+}
+
+void fxPrintSuccess(txResult* input)
+{
+	if (input->file.flag < 0) {
+		fxPrintPath(input);
+		fprintf(stderr, ": OK\n");
 	}
+	else {
+		input = input->first;
+		while (input) {
+			fxPrintSuccess(input);
+			input = input->next;
+		}
+	}
+}
+
+txResult* fxReadConfiguration(txPool* pool, char* path)
+{
+	txFeature** address = &(pool->firstFeature);
+	txFeature* feature = NULL;
+	txResult* result = NULL;
+	
+	FILE* input = fopen(path, "r");
+	if (!input) {
+		fprintf(stderr, "### cannot open: %s\n", path);
+		c_exit(1);
+	}
+	yaml_parser_t _parser;
+	yaml_parser_t* parser = NULL;
+	yaml_event_t _event;
+	yaml_event_t* event = &_event;
+	if (!yaml_parser_initialize(&_parser)) goto bail;
+	parser = &_parser;
+	yaml_parser_set_input_file(parser, input);
+	yaml_parser_parse(parser, event);
+	yaml_event_delete(event);
+	yaml_parser_parse(parser, event);
+	yaml_event_delete(event);
+	
+	yaml_parser_parse(parser, event);	
+	fxCheckEvent(event, YAML_MAPPING_START_EVENT, NULL);
+	yaml_event_delete(event);
+	
+	yaml_parser_parse(parser, event);
+	fxCheckEvent(event, YAML_SCALAR_EVENT, "mode");
+	yaml_event_delete(event);
+	yaml_parser_parse(parser, event);
+	fxCheckEvent(event, YAML_SCALAR_EVENT, NULL);
+	if (!c_strcmp((char*)event->data.scalar.value, "lockdown"))
+		pool->flags |= XST_LOCKDOWN_FLAG;
+	else if (!c_strcmp((char*)event->data.scalar.value, "lockdown compartment"))
+		pool->flags |= XST_LOCKDOWN_FLAG | XST_COMPARTMENT_FLAG;
+	else if (c_strcmp((char*)event->data.scalar.value, "default"))
+		fprintf(stderr, "### invalid kind: %s\n", (char*)event->data.scalar.value);
+	yaml_event_delete(event);
+
+	yaml_parser_parse(parser, event);
+	fxCheckEvent(event, YAML_SCALAR_EVENT, "skip");
+	yaml_event_delete(event);
+	yaml_parser_parse(parser, event);	
+	fxCheckEvent(event, YAML_SEQUENCE_START_EVENT, NULL);
+	yaml_event_delete(event);
+	yaml_parser_parse(parser, event);
+	while (event->type != YAML_SEQUENCE_END_EVENT) {
+		fxCheckEvent(event, YAML_SCALAR_EVENT, NULL);
+		*address = feature = fxNewFeature((char*)event->data.scalar.value);
+		address = &(feature->next);
+		yaml_event_delete(event);
+		yaml_parser_parse(parser, event);
+	}
+	yaml_event_delete(event);
+	
+	yaml_parser_parse(parser, event);
+	fxCheckEvent(event, YAML_SCALAR_EVENT, "fail");
+	yaml_event_delete(event);
+	
+	result = fxReadResult(parser, "");
+	
+	yaml_parser_parse(parser, event);
+	fxCheckEvent(event, YAML_MAPPING_END_EVENT, NULL);
+	yaml_event_delete(event);
+	
+bail:
+	if (parser)
+		yaml_parser_delete(parser);
+	fclose(input);
+	return result;
+}
+
+txResult* fxReadResult(yaml_parser_t* parser, char* path)
+{
+	txResult* result = NULL;
+	txResult** address;
+	yaml_event_t _event;
+	yaml_event_t* event = &_event;
+	yaml_parser_parse(parser, event);	
+	if (event->type == YAML_SEQUENCE_START_EVENT) {
+		result = fxNewResult(path, NULL);
+		address = &(result->first);
+		yaml_event_delete(event);
+		yaml_parser_parse(parser, event);
+		while (event->type != YAML_SEQUENCE_END_EVENT) {
+			txResult* child;
+			fxCheckEvent(event, YAML_MAPPING_START_EVENT, NULL);
+			yaml_event_delete(event);
+			yaml_parser_parse(parser, event);
+			fxCheckEvent(event, YAML_SCALAR_EVENT, NULL);
+			*address = child = fxReadResult(parser, (char*)event->data.scalar.value);
+			child->parent = result;
+			address = &(child->next);
+			yaml_event_delete(event);
+			yaml_parser_parse(parser, event);
+			fxCheckEvent(event, YAML_MAPPING_END_EVENT, NULL);
+			yaml_event_delete(event);
+			yaml_parser_parse(parser, event);
+		}
+	}
+	else {
+		fxCheckEvent(event, YAML_SCALAR_EVENT, NULL);
+		if (event->data.scalar.length > 0)
+			result = fxNewResult(path, (char*)event->data.scalar.value);
+		else
+			result = fxNewResult(path, NULL);
+	} 
+	yaml_event_delete(event);
+	return result;
 }
 
 void fxRunDirectory(txPool* pool, char* path)
@@ -501,7 +989,7 @@ void fxRunFile(txPool* pool, char* path)
     fxLockMutex(&(pool->countMutex));
     while (pool->count == mxPoolSize)
 		fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
-	address = &(pool->first);	
+	address = &(pool->firstContext);	
 	while ((former = *address))
 		address = &(former->next);
 	*address = context;
@@ -523,8 +1011,8 @@ void* fxRunFileThread(void* it)
     	while (pool->count == 0)
 			fxSleepCondition(&(pool->countCondition), &(pool->countMutex));
 		if (pool->count > 0) {
-			context = pool->first;
-			pool->first = context->next;
+			context = pool->firstContext;
+			pool->firstContext = context->next;
 			pool->count--;
 			fxWakeAllCondition(&(pool->countCondition));
 			fxUnlockMutex(&(pool->countMutex));
@@ -635,6 +1123,7 @@ void fxRunContext(txPool* pool, txContext* context)
 				strict = 0;
 				module = 0;
 				pending = 1;
+				snprintf(message, sizeof(message), "flag: CanBlockIsFalse");
 			}
 			item++;
 		}
@@ -645,27 +1134,18 @@ void fxRunContext(txPool* pool, txContext* context)
 		yaml_node_item_t* item = value->data.sequence.items.start;
 		while (item < value->data.sequence.items.top) {
 			yaml_node_t* node = yaml_document_get_node(document, *item);
-			if (0
- 			||	!strcmp((char*)node->data.scalar.value, "Array.fromAsync")
- 			||	!strcmp((char*)node->data.scalar.value, "FinalizationRegistry.prototype.cleanupSome")
-  			||	!strcmp((char*)node->data.scalar.value, "ShadowRealm")
- 			||	!strcmp((char*)node->data.scalar.value, "Temporal")
- 			||	!strcmp((char*)node->data.scalar.value, "arbitrary-module-namespace-names")
- 			||	!strcmp((char*)node->data.scalar.value, "decorators")
- 			||	!strcmp((char*)node->data.scalar.value, "import-assertions")
- 			||	!strcmp((char*)node->data.scalar.value, "import-attributes")
- 			||	!strcmp((char*)node->data.scalar.value, "iterator-helpers")
- 			||	!strcmp((char*)node->data.scalar.value, "json-modules")
- 			||	!strcmp((char*)node->data.scalar.value, "regexp-duplicate-named-groups")
-#ifndef mxRegExpUnicodePropertyEscapes
- 			||	!strcmp((char*)node->data.scalar.value, "regexp-unicode-property-escapes")
-#endif
- 			||	!strcmp((char*)node->data.scalar.value, "set-methods")
-			) {
-				sloppy = 0;
-				strict = 0;
-				module = 0;
-				pending = 1;
+			txFeature* feature = pool->firstFeature;
+			while (feature) {
+				if (!c_strcmp((char*)node->data.scalar.value, feature->name)) {
+					sloppy = 0;
+					strict = 0;
+					module = 0;
+					pending = 1;
+					snprintf(message, sizeof(message), "feature: %s", (char*)node->data.scalar.value);
+					feature->count++;
+					break;
+				}
+				feature = feature->next;
 			}
 			if (!strcmp((char*)node->data.scalar.value, "Atomics")) {
 				atomics = 1;
@@ -677,66 +1157,51 @@ void fxRunContext(txPool* pool, txContext* context)
 		fxLockMutex(&(agentCluster->mainMutex));
 	}
 
-	if (lockdown) {
+	if (pool->flags & XST_LOCKDOWN_FLAG) {
 		if (sloppy) {
 			sloppy = 0;
 			pending = 1;
+			snprintf(message, sizeof(message), "flag: noStrict");
 		}
 	}
 	
 	if (sloppy) {
-#ifdef mxMultipleThreads
-		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message)) {
-			fxPrintClear(pool);
-			fprintf(stderr, "### %s (sloppy): %s\n", path + pool->testPathLength, message);
-		}
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "### %s (sloppy): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message);
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "%s\n", message);
 		else
 			fxPrintBusy(pool);
-#else
-		fprintf(stderr, "### %s (sloppy): ", path + pool->testPathLength);
-		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag, async, message);
-		fprintf(stderr, "%s\n", message);
-#endif
 	}
 	if (strict) {
-#ifdef mxMultipleThreads
-		if (!fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message)) {
-			fxPrintClear(pool);
-			fprintf(stderr, "### %s (strict): %s\n", path + pool->testPathLength, message);
-		}
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "### %s (strict): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message);
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "%s\n", message);
 		else
 			fxPrintBusy(pool);
-#else
-		fprintf(stderr, "### %s (strict): ", path + pool->testPathLength);
-		fxRunTestCase(pool, context, path, mxProgramFlag | mxDebugFlag | mxStrictFlag, async, message);
-		fprintf(stderr, "%s\n", message);
-#endif
 	}
 	if (module) {
-#ifdef mxMultipleThreads
-		if (!fxRunTestCase(pool, context, path, 0, async, message)) {
-			fxPrintClear(pool);
-			fprintf(stderr, "### %s (module): %s\n", path + pool->testPathLength, message);
-		}
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "### %s (module): ", path + pool->testPathLength);
+		fxRunTestCase(pool, context, path, 0, async, message);
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "%s\n", message);
 		else
 			fxPrintBusy(pool);
-#else
-		fprintf(stderr, "### %s (module): ", path + pool->testPathLength);
-		fxRunTestCase(pool, context, path, 0, async, message);
-		fprintf(stderr, "%s\n", message);
-#endif
 	}
 	if (atomics) {
 		fxUnlockMutex(&(agentCluster->mainMutex));
 	}
 
 	if (pending) {
-		fxCountResult(pool, context, 0, 1);
-#ifdef mxMultipleThreads
-		fxPrintBusy(pool);
-#else
-		fprintf(stderr, "### %s: SKIP\n", path + pool->testPathLength);
-#endif
+		fxCountResult(pool, context, 0, 1, message);
+		if (pool->flags & XST_TRACE_FLAG)
+			fprintf(stderr, "### %s (skip): %s\n", path + pool->testPathLength, message);
+		else
+			fxPrintBusy(pool);
 	}
 bail:	
 	context->negative = NULL;
@@ -801,17 +1266,17 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 				}
 			}
 			mxPop();
-			if (lockdown)
+			if (pool->flags & XST_LOCKDOWN_FLAG)
 				xsCall0(xsGlobal, xsID("lockdown"));
 			the->rejection = &xsVar(0);
 			if (flags) {
-				if (lockdown < 0)
+				if (pool->flags & XST_COMPARTMENT_FLAG)
 					fxRunProgramFileInCompartment(the, path, flags);
 				else
 					fxRunProgramFile(the, path, flags);
 			}
 			else {
-				if (lockdown < 0)
+				if (pool->flags & XST_COMPARTMENT_FLAG)
 					fxRunModuleFileInCompartment(the, path);
 				else
 					fxRunModuleFile(the, path);
@@ -845,9 +1310,9 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 		}
 	}
 	xsEndHost(machine);
-	if (machine->abortStatus) {
+	if (machine->exitStatus) {
 		success = 0;
-		if ((machine->abortStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->abortStatus == XS_STACK_OVERFLOW_EXIT)) {
+		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_STACK_OVERFLOW_EXIT)) {
 			if (context->negative) {
 				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
 					snprintf(message, 1024, "OK");
@@ -856,7 +1321,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 			}
 		}
 		if (!success) {
-			char *why = (machine->abortStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->abortStatus] : "unknown";
+			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
 			snprintf(message, 1024, "# %s", why);
 			success = 0;
 		}
@@ -864,7 +1329,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	fx_agent_stop(machine);
 	xsDeleteMachine(machine);
 
-	fxCountResult(pool, context, success, 0);
+	fxCountResult(pool, context, success, 0, message);
 	return success;
 }
 
@@ -873,6 +1338,73 @@ int fxStringEndsWith(const char *string, const char *suffix)
 	size_t stringLength = strlen(string);
 	size_t suffixLength = strlen(suffix);
 	return (stringLength >= suffixLength) && (0 == strcmp(string + (stringLength - suffixLength), suffix));
+}
+
+void fxWriteConfiguration(txPool* pool, char* path)
+{
+	FILE* file = fopen(path, "w");
+	txResult* result;
+	if (!file)
+		fprintf(stderr, "### cannot create: %s\n", path);
+	if (pool->flags & XST_LOCKDOWN_FLAG) {
+		if (pool->flags & XST_COMPARTMENT_FLAG)
+			fprintf(file, "mode: lockdown compartment\n");
+		else
+			fprintf(file, "mode: lockdown\n");
+	}
+	else
+		fprintf(file, "mode: default\n");
+	fprintf(file, "skip:\n");
+	txFeature* feature = pool->firstFeature;
+	while (feature) {
+		fprintf(file, "    - %s\n", feature->name);
+		feature = feature->next;
+	}
+	fprintf(file, "fail:\n");
+	result = pool->current->first;
+	while (result) {
+		fxFilterResult(result);
+		fxWriteResult(file, result, 1);
+		result = result->next;
+	}
+	fclose(file);
+}
+
+void fxWriteResult(FILE* file, txResult* result, int c)
+{
+	int i = 0;
+	while (i < c) {
+		fprintf(file, "    ");
+		i++;
+	}
+	if (result->file.flag < 0) {
+		char buffer[16];
+		char *p = result->path + result->file.offset, *q;
+		fprintf(file, "- %s: \"", result->path);
+		while (((p = mxStringByteDecode(p, &c))) && (c != C_EOF)) {
+			q = buffer;
+			if ((c == '\\') || (c == '"')) {
+				q = fxUTF8Encode(q, '\\');
+				q = fxUTF8Encode(q, c);
+			}
+			else if ((0xD800 <= c) && (c <= 0xDFFF))
+				q = fxUTF8Encode(q, 0xFFFD);
+			else
+				q = fxUTF8Encode(q, c);
+			*q = 0;
+			fprintf(file, "%s", buffer);
+		}
+		fprintf(file, "\"\n");
+	}
+	else {
+		fprintf(file, "- %s:\n", result->path);
+		c++;
+		result = result->first;
+		while (result) {
+			fxWriteResult(file, result, c + 1);
+			result = result->next;
+		}
+	}
 }
 
 void fxBuildCompartmentGlobals(txMachine* the)

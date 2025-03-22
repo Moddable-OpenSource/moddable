@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -189,10 +189,11 @@ const handshakeProtocol = {
 	},
 	packetize(session, msgType, body) {
 		session.traceProtocol(this);
-		let s = new SSLStream();
+		body = body.getChunk();
+		let s = new SSLStream(undefined, 1 + 3 + body.byteLength);
 		s.writeChar(msgType);
-		s.writeChars(body.bytesWritten, 3);
-		s.writeChunk(body.getChunk());
+		s.writeChars(body.byteLength, 3);
+		s.writeChunk(body);
 		let msg = s.getChunk();
 		handshakeDigestUpdate(session, msg);
 		return recordProtocol.packetize(session, recordProtocol.handshake, msg);
@@ -477,42 +478,19 @@ const handshakeProtocol = {
 	certificate: {
 		name: "certificate",
 		msgType: certificate,
-//		matchName(re, name) {
-//			re = re.replace(/\./g, "\\.").replace(/\*/g, "[^.]*");
-//			var a = name.match(new RegExp("^" + re + "$", "i"));
-//			return a && a.length == 1;
-//		},
-//		verifyHost(session, cert) {
-//			//@@ this fails because session.socket.host doesn't exist
-//			var altNames = X509.decodeExtension(cert, 'subjectAlternativeName');
-//			var hostname = session.socket.host;
-//			for (var i = 0; i < altNames.length; i++) {
-//				var name = altNames[i];
-//				if (typeof name == "string" && this.matchName(name, hostname))
-//					return true;
-//			}
-//			var arr = X509.decodeTBS(cert).subject.match(/CN=([^,]*)/);
-//			return arr && arr.length > 1 && this.matchName(arr[1], hostname);
-//		},
 
 		unpacketize(session, s) {
 			session.traceProtocol(this);
-			let certs = [];
+			const certs = [];
 			let ttlSize = s.readChars(3);
 			while (ttlSize > 0 && s.bytesAvailable > 0) {
-				let certSize = s.readChars(3);
-				certs.push(s.readChunk(certSize, true));
-				ttlSize -= certSize + 3;
+				const size = s.readChars(3);
+				certs.push(s.readChunk(size, true));
+				ttlSize -= size + 3;
 			}
-			if (!session.certificateManager.verify(certs))
+			if (!session.certificateManager.verify(certs, session.options))
 				throw new TLSError("certificate: auth err");
 
-/*
-			if (session.options.verifyHost) {
-				if (!this.verifyHost(session, certs[0]))
-					throw new TLSError("certificate: bad host");
-			}
-*/
 			session.peerCert = certs[0].slice(0).buffer;		// could we store only the key?
 			return session.certificateManager.register(session.peerCert);	// tail call optimization
 		},
@@ -744,6 +722,10 @@ const handshakeProtocol = {
 					break;
 				}
 			}
+
+			if (session.protocolVersion >= 0x303)
+				s.readChunk(s.readChars(2));		// skip signature hash algorithms list in TLS 1.2 and later
+
 			let ttlSize = s.readChars(2);
 			const names = [];
 			while (ttlSize > 0) {

@@ -53,8 +53,13 @@ void xs_analog_constructor_(xsMachine *the)
     if (!builtinIsPinFree(pin))
 		xsRangeError("in use");
 
+#if PICO_RP2350
+	if (! ( ((pin >= 26) && (pin <= 29)) || ((pin >= 40) && (pin <= 47))))
+		xsRangeError("not analog pin");
+#else
 	if ((pin < 26) || (pin > 28))
 		xsRangeError("not analog pin");
+#endif
 
 	builtinInitializeTarget(the);
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
@@ -71,7 +76,14 @@ void xs_analog_constructor_(xsMachine *the)
 
 	adc_init();
 	adc_gpio_init(pin);
+#if PICO_RP2350
+	if (pin > 30)
+		adc_select_input(pin - 40);
+	else
+		adc_select_input(pin - 26);
+#else
 	adc_select_input(pin - 26);
+#endif
 
     builtinUsePin(pin);
 }

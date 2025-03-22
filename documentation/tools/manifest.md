@@ -1,6 +1,6 @@
 # Manifest
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 3, 2023
+Copyright 2017-2024 Moddable Tech, Inc.<BR>
+Revised: September 16, 2024
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -110,7 +110,7 @@ The [modClock](https://github.com/Moddable-OpenSource/moddable/tree/public/contr
 "build": {
 	"SDKCONFIGPATH": "$(MODDABLE)/contributed/modClock/sdkconfig",
 	"PARTITIONS_FILE": "$(MODDABLE)/contributed/modClock/sdkconfig/partitions.csv"
-},
+}
 ```
 
 In this example, the modClock [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/modClock/sdkconfig/partitions.csv) file completely replaces the base Moddable SDK [partitions.csv](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/partitions.csv) file at build time to provide additional partitions for OTA updates. The `sdkconfig` directory contains sdkconfig files that override and supplement the base Moddable SDK [sdkconfig.defaults](https://github.com/Moddable-OpenSource/moddable/blob/public/build/devices/esp32/xsProj-esp32/sdkconfig.defaults) entries. The following section describes how the Moddable ESP32 build processes sdkconfig files.
@@ -120,7 +120,7 @@ The `C_FLAGS_SUBPLATFORM` environment variable is for use in manifests of subpla
 ```json
 "build": {
 	"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
-},
+}
 ```
 
 #### How partitions.csv is processed
@@ -228,9 +228,11 @@ A manifest may directly include git repositories. The repositories are cloned as
 Each git repository to fetch is specified by an object in the `include` array of a manifest:
 
 - The object must have a `"git"` property, which is the git URL of the repo.
-- The object can have an `"include"` property, which is the path of the manifest to include.
+- The object can have an `"manifest"` property, which is either the path of the manifest file to include, or the manifest object itself.
 
-The default value of the `"include"` property is `"manifest.json"`. The `"include"` property can also be an array of paths in order to include several manifests from the same repository.
+The default value of the `"manifest"` property is `"manifest.json"`.
+
+> **Note**: When mconfig or mcrun evaluate the manifest file or object, the current directory is the directory of the git repository.
 
 ```json
 {
@@ -243,14 +245,27 @@ The default value of the `"include"` property is `"manifest.json"`. The `"includ
 		},
 		{
 			"git":"$(URL)/test1.git",
-			"include":"modules/test1/manifest.json"
+			"manifest":"./modules/test1/manifest.json"
 		},
 		{
 			"git":"$(URL)/test23.git",
-			"include": [
-				"test2/module.json",
-				"test3/module.json"
-			]
+			"manifest": {
+				"includes": [
+					"./modules/test2/manifest.json",
+					"./modules/test3/manifest.json"
+				]
+			}
+		},
+		{
+			"git":"$(URL)/test45.git",
+			"manifest": {
+				"modules": {
+					"*" :[
+						"./modules/test4/module",
+						"./modules/test5/module"
+					]
+				}
+			}
 		}
 	]
 }
@@ -273,7 +288,7 @@ Specific branches and tags are accessed using the optional `branch` and `tag` pr
 		"git":"$(URL)/test2.git",
 		"tag":"3.5.0",
 		"branch":"feature-test"
-	},
+	}
 ```
 
 The hostname, pathname. branch, and tag are included in the path where the cloned repositories are stored to avoid conflicts.
@@ -391,7 +406,7 @@ The `strip` object in a manifest is a string or array that specifies which built
 - `"*"` means anything unused by the application can be stripped. This is the value used by `manifest_base.json`.
 
 	```json
-	"strip": "*",
+	"strip": "*"
 	```
 
 - If you only want certain objects or functions to be stripped, pass in an array of JavaScript class and function names. Items in the array will be stripped. Anything not included in the array will not be stripped.
@@ -436,7 +451,7 @@ The `*` parameter of the `modules` object is an array of paths.
 		"./main",
 		"./assets"
 	]
-},
+}
 ```
 
 These modules are imported into other script modules using the file name.
@@ -450,10 +465,10 @@ If you want to use a different name with the `import` statement, you can include
 ```json
 "modules": {
 	"*": [
-		"./main",
+		"./main"
 	],
 	"newNameForAssets": "./assets"
-},
+}
 ```
 
 These modules are imported into other script modules using the name given by the manifest.
@@ -496,7 +511,7 @@ GIF and JPEG files should be included in the `*` array.
 	"*": [
 		"$(MODDABLE)/examples/assets/images/screen2"
 	]
-},
+}
 ```
 
 PNG files are converted by `png2bmp`. This converts them into BMP files that Moddable apps can use directly from flash storage. `png2bmp` can convert to alpha bitmaps and color bitmaps.
@@ -518,7 +533,7 @@ The Moddable SDK uses bitmap fonts. The metrics are provided by binary FNT files
 	"*-mask": [
 		"$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-28"
 	]
-},
+}
 ```
 
 For more information about creating fonts for Moddable applications, see the [font documentation](../commodetto/Creating%20fonts%20for%20Moddable%20applications.md).
@@ -599,7 +614,7 @@ The "`...`" platform identifier is a fallback for when no matching platform is f
 
 For example, if the `platforms` object of a manifest is as follows, building for the `esp` platform will not generate a warning/error, building for the `esp32` platform will generate a warning, and building for any other platform will generate an error.
 
-```json
+```jsonc
 "platforms":{
 	"esp": {
 		/* modules and resources for ESP8266 go here */
@@ -608,11 +623,30 @@ For example, if the `platforms` object of a manifest is as follows, building for
 		"warning": "module XYZ not fully tested on esp32",
 		/* modules and resources for ESP32 go here */
 	},
-	"..." {
+	"...": {
 		"error": "module XYZ unsupported"
 	}
 }
 ```
+
+The `esp32` platform has an additional property `dependency` which can be used to [add ESP Registry components](../devices/esp32.md#idf-components) to your project.
+
+```json
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "name": "onewire_bus", "version": "^1.0.2" },
+				{ "namespace": "waveshare", "name": "esp_lcd_jd9365_8", "version": "^0.0.2" }
+			]
+		}
+	}
+```
+
+`namespace` is optional and defaults to `espressif`.
+
+The library and include files from the dependencies will be loaded from the ESP Registry and made available to you. You can then write your module with a native part to interface with the component.
+
+The [onewire module](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/drivers/onewire) demonstrates the use of `dependency`.
 
 <a id="subplatforms"></a>
 #### Subplatforms
@@ -660,6 +694,8 @@ The `SUBPLATFORM` variable is automatically defined by `mcconfig`. A wildcard is
 		}
 	}
 ```
+
+
 ***
 
 <a id="bundle"></a>
@@ -700,7 +736,7 @@ In the `modules` and `resources` objects, paths can be relative to the manifest 
 
 When combining properties with the same name, the combined value is the concatenation of the two values. For example, consider the following snippet of a manifest for an application. The `include`  object specifies that the properties from `manifest_base.json` should be included. The `modules` object specifies just one module called `main`.
 
-```json
+```jsonc
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json"
@@ -720,7 +756,7 @@ The `modules` object from `manifest_base.json` includes additional modules from 
 			"$(MODULES)/files/resource/*",
 			"$(MODULES)/base/instrumentation/*"
 		]
-	},
+	}
 ```
 
 The concatenation of the two `modules` objects includes the `main` module from the application, and the resource and instrumentation modules specified in `manifest_base.json`.
@@ -769,7 +805,7 @@ The make fragment can be specified in a platform's `build` section.
 	"gecko/*": {
 		"build": {
 			"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk"
-		}
+		},
 		"include": "./targets/$(SUBPLATFORM)/manifest.json"
 	}
 }

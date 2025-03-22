@@ -281,7 +281,12 @@ void fxAbort(txMachine* the, int status)
 	#endif
 #endif
 
+#if MODDEF_XS_ABORT_EXITTOHOST
+	the->exitStatus = status;
+	fxExitToHost(the);
+#else
 	c_exit(status);
+#endif
 }
 
 #ifdef mxDebug

@@ -88,8 +88,6 @@
 #define mxNetworkBufferSize 1024
 #define mxSerialBufferSize 1024
 #define mxTagSize 17
-#define mxTrace 0
-#define mxTraceCommands 0
 
 typedef struct txSerialMachineStruct txSerialMachineRecord, *txSerialMachine;
 typedef struct txSerialToolStruct txSerialToolRecord, *txSerialTool;
@@ -165,6 +163,8 @@ struct txSerialToolStruct {
 	txSerialMachine currentMachine;
 	int index;
 	int state;
+	uint8_t trace;
+	uint8_t traceCommands;
 	char buffer[mxBufferSize + 1];
 };
 

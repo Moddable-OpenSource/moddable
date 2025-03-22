@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,7 +53,7 @@ typedef struct sxDateTime {
 static txSlot* fxNewDateInstance(txMachine* the);
 
 static void fx_Date_aux(txMachine* the, txFlag secure);
-static txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString);
+static txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString, txBoolean* overflow);
 static txInteger fx_Date_parse_fraction(txByte* theCharacter, txString* theString);
 static txBoolean fx_Date_prototype_get_aux(txMachine* the, txDateTime* td, txBoolean utc, txSlot* slot);
 static void fx_Date_prototype_set_aux(txMachine* the, txDateTime* td, txBoolean utc, txSlot* slot);
@@ -237,14 +237,22 @@ void fx_Date_now_secure(txMachine* the)
 	mxTypeError("secure mode");
 }
 
-txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString)
+txInteger fx_Date_parse_number(txByte* theCharacter, txString* theString, txBoolean* overflow)
 {
 	txByte c = *theCharacter;
 	txString p = *theString;
 	txInteger aResult = c - '0';
 	c = c_read8(p++);
 	while (('0' <= c) && (c <= '9')) {
+#if __has_builtin(__builtin_add_overflow) && __has_builtin(__builtin_mul_overflow)
+		if (__builtin_mul_overflow(aResult, 10, &aResult) ||
+			__builtin_add_overflow(aResult, c - '0', &aResult))
+			*overflow = 1;
+#else
 		aResult = (aResult * 10) + c - '0';
+		if (aResult < 0)
+			*overflow = 1;
+#endif
 		c = c_read8(p++);
 	}
 	*theCharacter = c;
@@ -313,6 +321,7 @@ void fx_Date_parse(txMachine* the)
 	};
 	
 	txString aString;
+	txBoolean overflow = 0;
 	txDateTime dt;
 	txString p;
 	txString q;
@@ -373,7 +382,7 @@ void fx_Date_parse(txMachine* the)
 				aSign = 1;
 			c = c_read8(aString++);
 			if (('0' <= c) && (c <= '9')) {
-				aValue = fx_Date_parse_number(&c, &aString);
+				aValue = fx_Date_parse_number(&c, &aString, &overflow);
 				if (c == '-') {
 					if (dt.year >= 0)
 						goto fail;
@@ -381,11 +390,11 @@ void fx_Date_parse(txMachine* the)
 					yearSign = aSign;
 					c = c_read8(aString++);
 					if (('0' <= c) && (c <= '9')) {
-						dt.month = fx_Date_parse_number(&c, &aString) - 1;
+						dt.month = fx_Date_parse_number(&c, &aString, &overflow) - 1;
 						if (c == '-') {
 							c = c_read8(aString++);
 							if (('0' <= c) && (c <= '9'))
-								dt.date = fx_Date_parse_number(&c, &aString);
+								dt.date = fx_Date_parse_number(&c, &aString, &overflow);
 							else
 								dt.date = 1;
 						}
@@ -400,7 +409,7 @@ void fx_Date_parse(txMachine* the)
 						aDelta = 60 * aValue;
 						c = c_read8(aString++);
 						if (('0' <= c) && (c <= '9')) {
-							aDelta += fx_Date_parse_number(&c, &aString);
+							aDelta += fx_Date_parse_number(&c, &aString, &overflow);
 						}
 					}
 					else {
@@ -416,18 +425,18 @@ void fx_Date_parse(txMachine* the)
 				goto fail;
 		}		
 		else if (('0' <= c) && (c <= '9')) {
-			aValue = fx_Date_parse_number(&c, &aString);
+			aValue = fx_Date_parse_number(&c, &aString, &overflow);
 			if (c == ':') {
 				if (dt.hours >= 0) 
 					goto fail;
 				dt.hours = aValue;	
 				c = c_read8(aString++);
 				if (('0' <= c) && (c <= '9')) {
-					dt.minutes = fx_Date_parse_number(&c, &aString);
+					dt.minutes = fx_Date_parse_number(&c, &aString, &overflow);
 					if (c == ':') {
 						c = c_read8(aString++);
 						if (('0' <= c) && (c <= '9')) {
-							dt.seconds = fx_Date_parse_number(&c, &aString);
+							dt.seconds = fx_Date_parse_number(&c, &aString, &overflow);
 							if (c == '.') {
 								c = c_read8(aString++);
 								if (('0' <= c) && (c <= '9')) {
@@ -448,11 +457,11 @@ void fx_Date_parse(txMachine* the)
 				dt.year = /*(aValue < 100) ? aValue + 1900 :*/ aValue;
 				c = c_read8(aString++);
 				if (('0' <= c) && (c <= '9')) {
-					dt.month = fx_Date_parse_number(&c, &aString) - 1;
+					dt.month = fx_Date_parse_number(&c, &aString, &overflow) - 1;
 					if (c == '/') {
 						c = c_read8(aString++);
 						if (('0' <= c) && (c <= '9')) {
-							dt.date = fx_Date_parse_number(&c, &aString);
+							dt.date = fx_Date_parse_number(&c, &aString, &overflow);
 						}
 						else
 							dt.date = 1;
@@ -467,11 +476,11 @@ void fx_Date_parse(txMachine* the)
 				dt.year = /*(aValue < 100) ? aValue + 1900 :*/ aValue;
 				c = c_read8(aString++);
 				if (('0' <= c) && (c <= '9')) {
-					dt.month = fx_Date_parse_number(&c, &aString) - 1;
+					dt.month = fx_Date_parse_number(&c, &aString, &overflow) - 1;
 					if (c == '-') {
 						c = c_read8(aString++);
 						if (('0' <= c) && (c <= '9'))
-							dt.date = fx_Date_parse_number(&c, &aString);
+							dt.date = fx_Date_parse_number(&c, &aString, &overflow);
 						else
 							dt.date = 1;
 					}
@@ -563,6 +572,8 @@ void fx_Date_parse(txMachine* the)
 		else
 			goto fail;
 	}
+   if (overflow)
+       goto fail;
    if (dt.year < 0)
        goto fail;
 	if ((yearSign < 0) && (dt.year == 0))
@@ -649,7 +660,7 @@ void fx_Date_prototype_set_aux(txMachine* the, txDateTime* dt, txBoolean utc, tx
 	if (c_isnan(number))
 		return;
 	if (slot->flag & XS_DONT_SET_FLAG)
-		mxTypeError("Date instance is read-only");
+		mxTypeError("this: read-only Date instance");
 	mxResult->value.number = slot->value.number = fxDateMerge(dt, utc);
 	mxResult->kind = XS_NUMBER_KIND;
 }
@@ -938,7 +949,8 @@ void fx_Date_prototype_setFullYear(txMachine* the)
 void fx_Date_prototype_setTime(txMachine* the)
 {
 	txSlot* slot = fxDateCheck(the);
-	if (!slot) mxTypeError("this is no date");
+	if (slot->flag & XS_DONT_SET_FLAG)
+		mxTypeError("this: read-only Date instance");
 	if (mxArgc < 1)
 		slot->value.number = C_NAN;
 	else {
@@ -1073,7 +1085,7 @@ void fx_Date_prototype_toISOString(txMachine* the)
 		*p = 0;
 	}
 	else
-        mxRangeError("invalid date");
+        mxRangeError("Invalid Date");
 	fxCopyStringC(the, mxResult, buffer);
 }
 
@@ -1263,7 +1275,7 @@ txSlot* fxDateCheck(txMachine* the)
 		if ((it) && (it->flag & XS_INTERNAL_FLAG) && (it->kind == XS_DATE_KIND))
 			return it;
 	}
-	mxTypeError("this is no date");
+	mxTypeError("this: not a Date instance");
 	return C_NULL;
 }
 

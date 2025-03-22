@@ -18,18 +18,14 @@ class Scanner extends BLEClient {
             this.stopScanning();
             this.isScanning = false;
             this.timer = Timer.set(id => {
-                delete this.timer;
-                this.finish();
+				this.close();
+				$DONE();
             }, 3_000);
         } else {
-            this.finish("received scan result after calling stopScanning");
-        }
-    }
-    finish(error) {
-        if (this.timer)
             Timer.clear(this.timer);
-        this.close();
-        $DONE(error);
+			this.close();
+            $DONE("received scan result after calling stopScanning");
+        }
     }
 }
 

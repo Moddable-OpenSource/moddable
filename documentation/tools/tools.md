@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: January 18, 2024
+Revised: July 29, 2024
 
 ## About this Document
 
@@ -86,6 +86,8 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 > **Note**: The `-l` and `-dl` options requires Node.js on your build system. You must also first run `npm install` in `$MODDABLE/tools/xsbug-log`.
 
+> **Note**: `xsbug-log` supports an optional plug-in to allow for customizing output and control flow. Use the environment variable `XSBUG_LOGMACHINE` to set the path of a custom `LogMachine` class implementation (that extends `Machine`).  See `$MODDABLE/tools/xsbug-log/xsbug-machine.js` for the base class, and `$MODDABLE/tools/xsbug-log/xsbug-logmachine.js` for the default implementation.
+
 > **Note**: The `-dn` option is currently unsupported on Windows. It will be implemented in the near future.
 
 <a id="buildtargets"></a>
@@ -110,7 +112,7 @@ When using **mcconfig** with microcontrollers that use a serial port for JavaScr
 There are a few important differences between `mcrun` and `mcconfig`:
 
 - The manifest used by `mcrun` must not reference any files which build to native code (e.g. `.c` or `.cpp` files) as a mod can only contain JavaScript
-- `mcrun` does not support the `-t` option
+- `mcrun` supports `-t build`` (but not other [target values](#buildtargets)). 
 - `config` properties are available from the `mod/config` module instead of `mc/config` (see the `config` section of the [Manifest](./manifest.md) documentation for more information about `config` properties)
 
 ### Arguments
@@ -138,7 +140,7 @@ Notice that most assets are used directly from flash storage.
 
 ### Arguments
 
-```text
+```shell
 mcrez files... [-o output] [-r name] [-p platform]
 ```
 
@@ -175,7 +177,7 @@ png2bmp balls.png -o ~/Desktop -f gray256 -r 90
 
 ### Arguments
 
-```text
+```shell
 png2bmp file.png [-a] [-c] [f format] [-o directory] [-r rotation]
 ```
 
@@ -194,7 +196,7 @@ By default **xsc** parses the JavaScript file as an ECMAScript module. Optionall
 
 With the `-c` option, **xsc** accepts the `@` constructs that reference host functions and host objects. For instance:
 
-```c
+```js
 class Point @ "Point_destructor" {
 	constructor(x, y) @ "Point_constructor"
 	moveBy(x, y) @ "Point_moveBy"
@@ -211,7 +213,7 @@ With the  `-e` option, **xsc** embeds the references to host functions and host 
 
 ### Arguments
 
-```text
+```shell
 xsc file [-c] [-d] [-e] [-o directory] [-p] [-r name] [-t directory]
 ```
 
@@ -235,7 +237,7 @@ The C code can then be compiled and linked with the implementation of the host f
 
 ### Arguments
 
-```text
+```shell
 xsl files... [-a name] [-b directory] [-c creation] [-o directory] [-p modules]... [u url]
 ```
 
@@ -302,7 +304,7 @@ The shell script, the app archive folder, and the app archive file are located i
 
 ### Arguments
 
-```text
+```shell
 mcbundle [manifest] [-d] [-m] [-o directory]
 ```
 
@@ -319,7 +321,7 @@ mcbundle [manifest] [-d] [-m] [-o directory]
 
 ### Arguments
 
-```text
+```shell
 mchex file -a address [-n name] [-o directory]
 ```
 

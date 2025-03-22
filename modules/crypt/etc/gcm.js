@@ -38,19 +38,21 @@
 import {Mode, GHASH} from "crypt";
 import Bin from "bin";
 
+const one = Uint8Array.of(0, 0, 0, 1).buffer;		// 32-bit, big endian, 1 
+
 export default class GCM {
+
 	constructor(cipher, tagLength = 16) {
 		this.block = cipher;
 		this.ctr = new Mode("CTR", this.block);
 		this.tagLength = tagLength;
+		this.zero = new ArrayBuffer(this.block.blockSize);
 	};
 	init(iv, aad) {
-		let h = this.block.encrypt(new ArrayBuffer(this.block.blockSize));
+		let h = this.block.encrypt(this.zero);
 		this.ghash = new GHASH(h, aad);
 		if (iv.byteLength == 12) {
-			let one = new DataView(new ArrayBuffer(4));
-			one.setUint32(0, 1);	// big endian
-			iv = iv.concat(one.buffer);
+			iv = iv.concat(one);
 		}
 		else {
 			let ghash = new GHASH(h);
@@ -95,5 +97,3 @@ export default class GCM {
 		}
 	};
 };
-
-Object.freeze(GCM.prototype);

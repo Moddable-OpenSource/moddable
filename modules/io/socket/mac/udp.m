@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -228,11 +228,6 @@ void xs_udp_write(xsMachine *the)
 	xsUnsignedValue byteLength;
 	int port;
 	struct sockaddr_in dest_addr = {0};
-
-	if (!udp->skt) {
-		xsTrace("write to closed socket\n");
-		return;
-	}
 
 	dest_addr.sin_family = AF_INET;
 	dest_addr.sin_addr.s_addr = inet_addr(xsmcToString(xsArg(0)));

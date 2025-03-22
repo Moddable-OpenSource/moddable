@@ -31,6 +31,7 @@ const Overhead = 8;
 const BufferFormat = "buffer";
 const NumberFormat = "number";
 
+const more = Object.freeze({more: true});
 // const operationNames = [
 // 	undefined,
 // 	"CONNECT",
@@ -63,6 +64,11 @@ class MQTTClient {
 	#id = 1;
 
 	constructor(options) {
+		this.format = options.format ?? BufferFormat;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
+
 		this.#options = {
 			host: options.host,
 			port: options.port,
@@ -128,6 +134,13 @@ class MQTTClient {
 		this.#payload = 0;
 		this.#options = undefined;
 	}
+	set format(value) {
+		if (BufferFormat !== value)
+			throw new RangeError;
+	}
+	get format() {
+		return BufferFormat;
+	}
 	write(data, options) {
 		const socket = this.#socket;
 		socket.format = BufferFormat;
@@ -137,8 +150,7 @@ class MQTTClient {
 			if (("publishing" !== this.#state) || options || (byteLength > this.#options.remaining))
 				throw new Error;
 
-			socket.write(data);
-			this.#writable -= byteLength;
+			this.#writable = socket.write(data);
 
 			this.#options.remaining -= byteLength;
 			if (0 === this.#options.remaining) {
@@ -172,19 +184,17 @@ class MQTTClient {
 				if (options.duplicate)
 					flags |= 8;
 
-				socket.write(Uint8Array.of((MQTTClient.PUBLISH << 4) | flags));
-				writeRemainingLength(socket, payload);
-				socket.write(topic);
+				socket.write(Uint8Array.of((MQTTClient.PUBLISH << 4) | flags), {more: true, byteLength: length});
+				writeRemainingLength(socket, payload, more);
+				socket.write(topic, {more: true});
 				if (QoS)
-					socket.write(Uint8Array.of(id >> 8, id));
-				socket.write(data);
+					socket.write(Uint8Array.of(id >> 8, id), more);
+				this.#writable = socket.write(data);
 
 				if (data.byteLength < byteLength) {
 					this.#state = "publishing";
 					this.#options.remaining = byteLength - data.byteLength;  
 				}
-
-				this.#writable -= length;
 				} break;
 
 			case MQTTClient.SUBSCRIBE: {
@@ -199,15 +209,14 @@ class MQTTClient {
 				if (length > this.#writable)
 					throw new Error("overflow");
 
-				socket.write(Uint8Array.of((MQTTClient.SUBSCRIBE << 4) | 2));
-				writeRemainingLength(socket, payload);
-				socket.write(Uint8Array.of(id >> 8, id));
+				socket.write(Uint8Array.of((MQTTClient.SUBSCRIBE << 4) | 2), {more: true, byteLength: length});
+				writeRemainingLength(socket, payload, more);
+				this.#writable = socket.write(Uint8Array.of(id >> 8, id), more);
 				for (let i = 0; i < count; i++) {
 					const QoS = items[i].QoS ?? 0;
-					socket.write(topics[i]);
-					socket.write(Uint8Array.of(QoS & 3));
+					socket.write(topics[i], more);
+					this.#writable = socket.write(Uint8Array.of(QoS & 3), (i === count - 1) ? undefined : more);
 				}
-				this.#writable -= length;
 				} break;
 
 			case MQTTClient.UNSUBSCRIBE: {
@@ -222,13 +231,11 @@ class MQTTClient {
 				if (length > this.#writable)
 					throw new Error("overflow");
 
-				socket.write(Uint8Array.of((MQTTClient.UNSUBSCRIBE << 4) | 2));
-				writeRemainingLength(socket, payload);
-				socket.write(Uint8Array.of(id >> 8, id));
+				socket.write(Uint8Array.of((MQTTClient.UNSUBSCRIBE << 4) | 2), {more: true, byteLength: length});
+				writeRemainingLength(socket, payload, more);
+				this.#writable = socket.write(Uint8Array.of(id >> 8, id));
 				for (let i = 0; i < count; i++)
-					socket.write(topics[i]);
-
-				this.#writable -= length;
+					this.#writable = socket.write(topics[i], (i === count - 1) ? undefined : more);
 				} break;
 
 			case MQTTClient.PUBREL:
@@ -240,13 +247,10 @@ class MQTTClient {
 				if (length > this.#writable)
 					throw new Error("overflow");
 
-				socket.write(Uint8Array.of((operation << 4) | ((MQTTClient.PUBREL === operation) ? 2 : 0)));
-				writeRemainingLength(socket, payload);
-				socket.write(Uint8Array.of(id >> 8, id));
-
-				this.#writable -= length;
+				socket.write(Uint8Array.of((operation << 4) | ((MQTTClient.PUBREL === operation) ? 2 : 0)), {more: true, byteLength: length});
+				writeRemainingLength(socket, payload, more);
+				this.#writable = socket.write(Uint8Array.of(id >> 8, id));
 				} break;
-
 
 			case MQTTClient.PINGREQ:
 				if (this.#options.keepalive)
@@ -256,8 +260,7 @@ class MQTTClient {
 				if (2 > this.#writable)
 					throw new Error("overflow");
 
-				socket.write(Uint8Array.of(operation << 4, 0));
-				this.#writable -= 2;
+				this.#writable = socket.write(Uint8Array.of(operation << 4, 0));
 				break;
 
 			default:
@@ -622,6 +625,12 @@ class MQTTClient {
 			const will = options.will;
 			const topic = makeStringBuffer(will?.topic);
 			const message = makeStringBuffer(will?.message);
+			const t = [];
+			if (id.length) t.push(id);
+			if (topic.length) t.push(topic);
+			if (message.length) t.push(message);
+			if (user.length) t.push(user);
+			if (password.length) t.push(password);
 
 			const flags =	(options.clean ? 2 : 0) |		// CleanSession
 							(user.length ? 0x80 : 0) | 
@@ -634,24 +643,19 @@ class MQTTClient {
 			const length = 1 + getRemainingLength(payload) + payload;
 
 // 			traceOperation(true, MQTTClient.CONNECT);
-			socket.write(Uint8Array.of(MQTTClient.CONNECT << 4));
-			writeRemainingLength(socket, payload);
+			socket.write(Uint8Array.of(MQTTClient.CONNECT << 4), {more: true, byteLength: length});
+			writeRemainingLength(socket, payload, more);
 
-			socket.write(Uint8Array.of(
+			this.#writable = socket.write(Uint8Array.of(
 				0x00, 0x04,
 				77, 81, 84, 84,							// protocol name MQTT
 				0x04,									// protocol level 4 (MQTT version 3.1.1)
 				flags,
 				keepalive >> 8, keepalive				// keepalive in seconds
-			));
+			), t.length ? more: undefined);
 
-			if (id.length) socket.write(id);
-			if (topic.length) socket.write(topic);
-			if (message.length) socket.write(message);
-			if (user.length) socket.write(user);
-			if (password.length) socket.write(password);
-
-			this.#writable -= length;
+			for (let i = 0; i < t.length; i++)
+				this.#writable = socket.write(t[i], (i === t.length - 1) ? undefined : more);
 
 			delete options.host;
 			delete options.address;
@@ -733,10 +737,10 @@ class MQTTClient {
 		const options = this.#options, keepalive = options.keepalive, interval = keepalive.interval;
 		const now = Time.ticks;
 
-		if (Time.delta(keepalive.read, now) >= (keepalive.interval + (keepalive.interval >> 1)))
+		if (Time.delta(keepalive.read, now) >= (interval + (interval >> 1)))
 			return void this.#onError("time out");	// no control packet received in 1.5x keepalive interval (expected PINGRESP)
 
-		if (Time.delta(keepalive.write, now) < (((keepalive.interval >> 2) * 3) - 500))
+		if (Time.delta(keepalive.write, now) < (((interval >> 2) * 3) - 500))
 			return;
 
 		// haven't sent a ping in (just under) 3/4 the keep alive interval
@@ -801,17 +805,18 @@ function getRemainingLength(length) {
 	return 4;
 }
 
-function writeRemainingLength(socket, length) {
+function writeRemainingLength(socket, length, options) {
 	if (length < 128)
-		socket.write(Uint8Array.of(length));
+		socket.write(Uint8Array.of(length), options);
 	else if (length < 16384)
-		socket.write(Uint8Array.of(0x80 | (length & 0x7F), length >> 7));
+		socket.write(Uint8Array.of(0x80 | (length & 0x7F), length >> 7), options);
 	else if (length < 2097152)
-		socket.write(Uint8Array.of(0x80 | (length & 0x7F), 0x80 | ((length >> 7) & 0x7F), length >> 14));
+		socket.write(Uint8Array.of(0x80 | (length & 0x7F), 0x80 | ((length >> 7) & 0x7F), length >> 14), options);
 	else
-		socket.write(Uint8Array.of(0x80 | (length & 0x7F), 0x80 | ((length >> 7) & 0x7F), 0x80 | ((length >> 14) & 0x7F), length >> 21));
+		socket.write(Uint8Array.of(0x80 | (length & 0x7F), 0x80 | ((length >> 7) & 0x7F), 0x80 | ((length >> 14) & 0x7F), length >> 21), options);
 }
 
+/*
 function getBuffer(buffer) {
 	const position = buffer.position;
 	const length = (buffer[position] << 8) | buffer[position + 1];
@@ -819,5 +824,6 @@ function getBuffer(buffer) {
 	buffer.position += 2 + length;
 	return result;
 }
+*/
 
 export default MQTTClient;

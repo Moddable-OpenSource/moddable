@@ -1,0 +1,46 @@
+{
+	"build": {
+		"PICO_SUBCLASS":"rp2350",
+		"USE_SFE":"1",
+		"SFE_CS_PIN":"19",
+		"SFE_DIR":"$(MODDABLE)/build/devices/pico/lib/sparkfun-pico",
+		"PICO_BOARD_FILE":"$(SFE_DIR)/sparkfun_pico/sfe_pico.h"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/gc9a01/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target",
+		"neopixel"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+		"led": {
+			"pin": 25,
+			"rainbow": false,
+			"brightness": 32
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 17,
+			"scl_pin": 16
+		},
+		"spi": {
+			"miso_pin": 23,
+			"mosi_pin": 20,
+			"sck_pin": 22
+		},
+		"ili9341": {
+			"cs_pin": 21,
+			"dc_pin": 7
+		}
+	}
+}

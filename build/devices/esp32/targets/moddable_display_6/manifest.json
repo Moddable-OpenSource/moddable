@@ -1,0 +1,6 @@
+{
+	"build": {
+		"SUBPLATFORM": "moddable_six"
+	},
+	"include": "../moddable_six/manifest.json"
+}

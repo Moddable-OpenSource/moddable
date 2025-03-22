@@ -13,8 +13,9 @@
  */
 import NeoPixel from "neopixel";
 import Timer from "timer";
+import config from "mc/config";
 
-const np = new NeoPixel({length: 20, pin: 15, order: "GRB"});
+const np = new NeoPixel({length: 20, pin: config?.led?.pin ?? 15, order: "GRB"});
 
 np.brightness = 128;
 

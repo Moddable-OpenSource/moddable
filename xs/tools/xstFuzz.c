@@ -24,7 +24,6 @@
 
 extern int fuzz(int argc, char* argv[]);
 extern void fx_print(xsMachine* the);
-extern void fxAbortFuzz(xsMachine* the);
 extern void fxBuildAgent(xsMachine* the);
 extern void fxBuildFuzz(xsMachine* the);
 extern void fxRunLoop(txMachine* the);
@@ -38,6 +37,7 @@ static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #if FUZZING
 static void fx_fillBuffer(txMachine *the);
 static void fx_fuzz_gc(xsMachine* the);
+static void fx_fuzz_doMarshall(xsMachine* the);
 #if OSSFUZZ
 static void fx_nop(xsMachine *the);
 static void fx_assert_throws(xsMachine *the);
@@ -50,10 +50,6 @@ int gxMemoryFail;		// not thread safe
 #endif
 /* native memory stress */
 
-void fxAbortFuzz(xsMachine* the) 
-{
-}
-
 void fxBuildFuzz(xsMachine* the) 
 {
 #if FUZZING
@@ -61,6 +57,8 @@ void fxBuildFuzz(xsMachine* the)
 	xsSet(xsGlobal, xsID("gc"), xsResult);
 	xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 	xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+	xsResult = xsNewHostFunction(fx_fuzz_doMarshall, 1);
+	xsSet(xsGlobal, xsID("doMarshall"), xsResult);
 #if FUZZILLI
 	xsResult = xsNewHostFunction(fx_memoryFail, 1);
 	xsSet(xsGlobal, xsID("memoryFail"), xsResult);
@@ -116,8 +114,17 @@ static uint8_t hashAddress(void *addr)
 	return (uint8_t)sum;
 }
 
+#define kBlockOverhead (64)
+
+static txMutex gLinkMemoryMutex;
+
 static void linkMemoryBlock(void *address, size_t size)
 {
+	static uint8_t first = 1;
+	if (first) {
+		first = 0;
+		fxCreateMutex(&gLinkMemoryMutex);
+	}
 	uint8_t index = hashAddress(address);
 	txMemoryBlock *block = malloc(sizeof(txMemoryBlock));		// assuming this will never fail (nearly true)
 
@@ -125,18 +132,23 @@ static void linkMemoryBlock(void *address, size_t size)
 	block->prev = C_NULL;
 	block->size = size;
 
+    fxLockMutex(&gLinkMemoryMutex);
+
 	block->next = gBlocks[index];
 	if (gBlocks[index])
 		gBlocks[index]->prev = block;
 	gBlocks[index] = block;
 	
-	gBlocksSize += size;
+	gBlocksSize += (size + kBlockOverhead) + (sizeof(txMemoryBlock) + kBlockOverhead);
+
+    fxUnlockMutex(&gLinkMemoryMutex);
 }
 
 static void unlinkMemoryBlock(void *address)
 {
 	uint8_t index = hashAddress(address);
 
+    fxLockMutex(&gLinkMemoryMutex);
 	txMemoryBlock *block = gBlocks[index];
 	while (block && (block->address != address))
 		block = block->next;
@@ -149,7 +161,9 @@ static void unlinkMemoryBlock(void *address)
 	else
 		gBlocks[index] = block->next;
 
-	gBlocksSize -= block->size;
+	gBlocksSize -= (block->size + kBlockOverhead) + (sizeof(txMemoryBlock) + kBlockOverhead);
+
+    fxUnlockMutex(&gLinkMemoryMutex);
 
 	free(block);
 }
@@ -157,10 +171,13 @@ static void unlinkMemoryBlock(void *address)
 static size_t getMemoryBlockSize(void *address)
 {
 	uint8_t index = hashAddress(address);
+    fxLockMutex(&gLinkMemoryMutex);
 	txMemoryBlock *block = gBlocks[index];
 	while (block && (block->address != address))
 		block = block->next;
-	return block->size;
+	int size = block->size;
+    fxUnlockMutex(&gLinkMemoryMutex);
+    return size;
 }
 
 void freeMemoryBlocks(void)
@@ -410,7 +427,7 @@ void fx_fuzzilli(xsMachine* the)
 }
 
 #ifdef mxMetering
-static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+static xsBooleanValue xsAlwaysWithinComputeLimit(xsMachine* machine, uint64_t index)
 {
 	return 1;
 }
@@ -453,7 +470,7 @@ int fuzz(int argc, char* argv[])
 		gxMemoryFail = 0;
 
 		xsMachine* machine = xsCreateMachine(&_creation, "xst_fuzz", NULL);
-		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0x7FFFFFFF);
+		xsBeginMetering(machine, xsAlwaysWithinComputeLimit, 0);		// interval/step of zero means "never invoke callback" 
 		{
 		xsBeginHost(machine);
 		{
@@ -479,6 +496,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("print"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+				xsResult = xsNewHostFunction(fx_fuzz_doMarshall, 1);
+				xsSet(xsGlobal, xsID("doMarshall"), xsResult);				
 				xsResult = xsNewHostFunction(fx_memoryFail, 1);
 				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
 
@@ -528,7 +547,7 @@ int fuzz(int argc, char* argv[])
 		xsEndMetering(machine);
 		gxMemoryFail = 0;
 		fxDeleteScript(machine->script);
-		int status = (machine->abortStatus & 0xff) << 8;
+		int status = (machine->exitStatus & 0xff) << 8;
 		if (!status && error)
 			status = XS_UNHANDLED_EXCEPTION_EXIT << 8;
 		if (write(REPRL_CWFD, &status, 4) != 4) {
@@ -561,7 +580,7 @@ int fuzz(int argc, char* argv[])
 	#define mxFuzzMeter (214748380)
 #endif
 
-static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, xsUnsignedValue index)
+static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, uint64_t index)
 {
 	// may be useful to print current index for debugging
 //	fprintf(stderr, "Current index: %u\n", index);
@@ -600,7 +619,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsMachine* machine;
 	machine = xsCreateMachine(creation, "xst_fuzz_oss", NULL);
 
-	xsBeginMetering(machine, xsWithinComputeLimit, 1);
+	xsBeginMetering(machine, xsWithinComputeLimit, 65536);
 	{
 		xsBeginHost(machine);
 		{
@@ -661,14 +680,14 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	xsEndMetering(machine);
 	fxDeleteScript(machine->script);
 #if mxXSMemoryLimit
-	int abortStatus = machine->abortStatus;
+	int exitStatus = machine->exitStatus;
 #endif
 	xsDeleteMachine(machine);
 	free(buffer);
 
 #if mxXSMemoryLimit
-	if ((XS_TOO_MUCH_COMPUTATION_EXIT == abortStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == abortStatus))
-		freeMemoryBlocks();		// clean-up if computation or memory limits exceeded
+	if ((XS_TOO_MUCH_COMPUTATION_EXIT == exitStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == exitStatus) || (XS_STACK_OVERFLOW_EXIT == exitStatus))
+		freeMemoryBlocks();		// clean-up if computation or memory limits exceeded, or stack overflow
 #endif
 
 	return 0;
@@ -702,6 +721,18 @@ void fx_fuzz_gc(xsMachine* the)
 	
 	int count = xsToInteger(xsArg(0));
 	gxStress = (count < 0) ? count : -count;
+}
+
+void fx_fuzz_doMarshall(xsMachine *the)
+{
+	char *message;
+	xsIntegerValue c = xsToInteger(xsArgc);
+	if (c > 0)
+		message = xsMarshallAlien(xsArg(0));
+	else
+		message = xsMarshallAlien(xsUndefined);
+	xsResult = xsDemarshallAlien(message);
+	c_free(message);
 }
 
 #if OSSFUZZ

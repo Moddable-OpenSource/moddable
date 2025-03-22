@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="Description" content="Challenge">
+	<title>Challenge</title>
+<style>
+html, body, div, pre, textarea {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+}
+html, body, div {
+	font-size: 100%;
+	font-family: sans-serif;
+	font-weight: normal;
+	font-style: normal;
+}
+
+#header {
+  background-color: #062f87;
+  width: 100%;
+  height: 56px;
+}
+	
+#header img {
+	height: 46px;
+	padding-top: 5px;
+	padding-left: 10px;
+}
+#body {
+	clear: both;
+  	position: fixed;
+	overflow-y: scroll;
+	width: 100%;
+	top:56px; bottom:42px;
+}
+	
+#footer {
+	position: fixed;
+	width: 100%;
+	bottom:0; height:42px;
+}
+#footer .copyright {
+  border-top: 1px solid #999;
+  width: 100%;
+  font-size: .8rem;
+  color: #999;
+  padding-left: 10px;
+}
+
+#pane-container {
+	display: flex;
+/* 
+	align-items: center;
+	justify-content: center;
+ */
+	flex-direction:column;
+	margin-left: auto;
+	margin-right: auto;
+	max-width:880px;
+	height:100%;
+}
+
+#info {
+	padding: 10px;
+	line-height: 1.2rem;
+}
+
+.pane {
+	border: 1px solid #999;
+	margin-left:10px;
+	margin-right:10px;
+	margin-bottom:10px;
+	position:relative;
+	width: calc(100% - 20px);
+}
+.title {
+	background: #F0F0F0;
+	border-bottom: 1px solid #999;
+	padding-left: 10px;
+	font-size: 14px;
+	color: #000;
+	line-height: 30px;
+	width: calc(100% - 10px); height:28px;
+}
+
+.pane textarea {
+	resize: none;
+	font-size: 14px;
+	margin:5px;
+	position:absolute;
+	left:0px; right:0px;
+	top:30px; bottom:0px;
+}
+
+#script-pane {
+	flex-grow: 1;
+}
+#log-pane {
+	flex-grow: 1;
+}
+
+</style>
+</head>
+<body>
+	<div id="header">
+		<img src="https://moddable.com/assets/images/white-moddable.svg" alt="Moddable logo"/> 
+	</div>
+	<div id="body">
+		
+		<div id="pane-container">
+			<div id="info">
+				<p>Use this web page to interact with the Challenge app on <a href="https://www.moddable.com/moddable-six" target="_blank">Moddable Six</a>.
+				This page communicates with Moddable Six using BLE through the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank">Web Bluetooth</a> APIs.
+				If you don't already have the Challenge app installed on your Moddable Six, you can build it from the source code at <a href="https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/challenge">$MODDABLE/contributed/challenge</a>.</p>
+			<button id="connect">Connect</button>
+			<button id="disconnect" hidden>Disconnect</button>
+			<button id="attack" hidden>Attack</button>
+			</div>
+			
+			<div class="pane" id="script-pane">
+				<div class="title">SCRIPT</div>
+				<textarea id="script" wrap="off">function*() {
+  guess('123456789A');
+}</textarea>
+			</div>
+			<div class="pane" id="log-pane">
+				<div class="title">LOG</div>
+				<textarea id="log" wrap="off" readonly></textarea>
+			</div>
+		</div>
+	</div>
+	<div id="footer">
+		<div class="copyright">
+			<p>Copyright &copy; <script>document.write(new Date().getFullYear())</script>, Moddable Tech, Inc.</p>
+		</div>
+	</div>
+
+		
+</body>
+<script type="module" src="./js/code-eval.js"></script>
+</html>

@@ -1,0 +1,9 @@
+{
+	"include": [
+		"./manifest_common.json",
+		"$(MODDABLE)/build/devices/esp32/modules/ota/manifest.json",
+		"$(MODULES)/files/flash/manifest.json",
+		"$(MODDABLE)/modules/io/update/manifest.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json"
+	]
+}

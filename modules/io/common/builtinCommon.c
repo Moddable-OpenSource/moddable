@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -106,37 +106,45 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 	return fxToReference(the, &slot);
 }
 
+static const char *gFormats[] = {
+	"number",
+	"buffer",
+	"string",
+	"socket/tcp",
+
+	"uint8",
+	"int8",
+	"uint16",
+	"int16",
+	"uint32",
+	"int32",
+	"uint64",
+	"int64",
+
+	"buffer/disposable",
+
+	C_NULL
+};
+
 void builtinGetFormat(xsMachine *the, uint8_t format)
 {
-	if (kIOFormatNumber == format)
-		xsmcSetString(xsResult, "number");
-	else if (kIOFormatBuffer == format)
-		xsmcSetString(xsResult, "buffer");
-	else if (kIOFormatStringASCII == format)
-		xsmcSetString(xsResult, "string;ascii");
-	else if (kIOFormatStringUTF8 == format)
-		xsmcSetString(xsResult, "string;utf8");
-	else if (kIOFormatSocketTCP == format)
-		xsmcSetString(xsResult, "socket/tcp");
-	else
+	if ((0 == format) || (format > kIOFormatBufferDisposable))
 		xsRangeError("bad format");
+
+	xsmcSetString(xsResult, (char *)gFormats[format - 1]);
 }
 
 uint8_t builtinSetFormat(xsMachine *the)
 {
 	char *format = xsmcToString(xsArg(0));
+	uint8_t i;
+	
+	for (i = 0; i < kIOFormatBufferDisposable; i++) {
+		if (!c_strcmp(gFormats[i], format))
+			return i + 1;
+	}
 
-	if (!c_strcmp("number", format))
-		return kIOFormatNumber;
-	if (!c_strcmp("buffer", format))
-		return kIOFormatBuffer;
-	if (!c_strcmp("string;ascii", format))
-		return kIOFormatStringASCII;
-	if (!c_strcmp("string;utf8", format))
-		return kIOFormatStringUTF8;
-	if (!c_strcmp("socket/tcp", format))
-		return kIOFormatSocketTCP;
-	xsRangeError("unimplemented");
+	xsRangeError("unknown");
 }
 
 void builtinInitializeTarget(xsMachine *the)
@@ -153,23 +161,18 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 {
 	if (xsmcHas(xsArg(0), xsID_format)) {
 		xsSlot slot;
-		char *fmt;
 
 		xsmcGet(slot, xsArg(0), xsID_format);
 		if (!xsmcTest(slot))
 			return format;
 
-		fmt = xsmcToString(slot);
-		if (!c_strcmp("number", fmt))
-			return kIOFormatNumber;
-		if (!c_strcmp("buffer", fmt))
-			return kIOFormatBuffer;
-		if (!c_strcmp("string;ascii", fmt))
-			return kIOFormatStringASCII;
-		if (!c_strcmp("string;utf8", fmt))
-			return kIOFormatStringUTF8;
-		if (!c_strcmp("socket/tcp", fmt))
-			return kIOFormatSocketTCP;
+		char *fmt = xsmcToString(slot);
+		uint8_t i;
+		for (i = 0; i < kIOFormatBufferDisposable; i++) {
+			if (!c_strcmp(gFormats[i], fmt))
+				return i + 1;
+		}
+
 		return kIOFormatInvalid;
 	}
 

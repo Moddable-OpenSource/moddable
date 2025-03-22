@@ -13,13 +13,13 @@ function next() {
 	if (0 === closers.length)
 		return $DONE();
 
-	const close = closers.shift();
+	const closer = closers.shift();
 	const request = new Request({host: "www.example.com", path: "/"});
 	request.callback = function(message, value, etc) {
 		if (this.CLOSED)
 			$DONE("unexpected callback after close");
 
-		if (message === close) {
+		if (message === closer) {
 			this.close();
 			this.CLOSED = true;
 			next();

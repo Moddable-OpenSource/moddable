@@ -19,21 +19,45 @@
  */
 
 declare module "worker" {
-	export interface Self {
+	export interface WorkerOptions {
+		static?: number;
+		chunk?: {
+			initial?: number;
+			incremental?: number;
+		};
+		heap?: {
+			initial?: number;
+			incremental?: number;
+		};
+		stack?: number;
+		keys?: {
+			initial?: number;
+			incremental?: number;
+			name?: number;
+			symbol?: number;
+		};
+	}
+
+	interface MessagePort {
 		onmessage(message: any): void;
 		postMessage(message: any): void;
 	}
 
-	class Worker implements Self  {
-		constructor(module: string, options?: object)
-		terminate(): void;
-
+	class Worker implements MessagePort {
+		constructor(module: string, options?: WorkerOptions)
 		onmessage(message: any): void;
 		postMessage(message: any): void;
+		terminate(): void;
 	}
 
 	export class SharedWorker {
 		constructor(module: string, options?: object)
+		get port(): MessagePort
+	}
+
+
+	export interface Self extends MessagePort {
+		close(): void;
 	}
 
 	global {

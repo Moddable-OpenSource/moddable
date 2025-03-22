@@ -1,0 +1,28 @@
+{
+	"preload": [
+		"embedded:x-io/imagein/camera"
+	],
+	"platforms": {
+        "pico": {
+            "include": [
+                {   
+                    "git":"https://github.com/mkellner/hm01b0-library-for-pico.git",
+					"manifest": {
+            			"modules": {
+			                "*": [
+								"./src/hm01b0.c",
+								"./src/include/"
+							]
+						}
+					}
+				}
+			],  
+			"modules": {
+                "embedded:x-io/imagein/camera": "./pico/*"
+            }
+        },
+		"...": {
+			"error": "Experimental TC53 IO modules"
+		}
+	}
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,7 +51,10 @@ class WavReader {
 		while ("data" !== this.readFourCC())
 			this.seekBy(this.readUint32());
 
-		this.samples = Math.floor(this.readUint32() / ((this.numChannels * this.bitsPerSample) >> 3));
+		let bytes = this.readUint32();
+		if (bytes > (this.waveSize - this.position))
+			bytes = this.waveSize - this.position;
+		this.samples = Math.floor(bytes / ((this.numChannels * this.bitsPerSample) >> 3));
 	}
 
 	getSamples(buffer, count) {		// always returns signed 16-bit sample values
@@ -66,7 +69,7 @@ class WavReader {
 				buffer[i++] = this.readInt16();
 		}
 		else
-		if (8 == this.bitsPerSample) {
+		if (8 === this.bitsPerSample) {
 			while (count--) {
 				let value = this.readInt8();
 				buffer[i++] = value << 8;		// write Uint8 representation of value into low bits
@@ -118,9 +121,15 @@ class WavReader {
 		return result;
 	}
 	seekBy(count) {
-		this.position += count;
+		const position = this.position + count;
+		if ((position >= this.waveSize) || (position < 0))
+			throw new RangeError;
+
+		this.position = position
 	}
 	seekTo(position) {
+		if (position >= this.waveSize)
+			throw new RangeError;
 		this.position = position;
 	}
 }

@@ -12,6 +12,7 @@ const source = new ModuleSource(`
 	import * as ns1 from "mod";	
 	import { x1 } from "mod";	
 	import { v1 as w1 } from "mod";	
+	import "mod";
 
 	export { x2 } from "mod";
 	export { v2 as w2 } from "mod";
@@ -48,6 +49,9 @@ const bindings = [
 		import: "v1",
 		as: "w1",
 		from: "mod"
+	},
+	{
+		importFrom: "mod"
 	},
 	{
 		export: "x2",

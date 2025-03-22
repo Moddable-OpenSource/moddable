@@ -2,7 +2,7 @@
 	"build":{
 		"ESP32_SUBCLASS": "esp32h2",
 		"SDKCONFIGPATH": "./sdkconfig",
-		"PARTITIONS_FILE": "./sdkconfig/partitions.csv"
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
 		"$(MODULES)/drivers/button/manifest.json",

@@ -773,7 +773,7 @@ void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 	//fprintf(stderr, "PiuViewGetSize %d %d\n", *width, *height);
 }
 
-static gboolean PiuViewIdle(gpointer data)
+static gboolean PiuViewIdle(GtkWidget* widget, GdkFrameClock* frame_clock, gpointer data)
 {
 	PiuView* self = data;
 	xsBeginHost((*self)->the);
@@ -794,10 +794,10 @@ void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
 	PiuBoolean running = (idle > 0) ? 1 : 0;
 	if ((*self)->running != running) {
 		(*self)->running = running;
-		if (idle)
-			(*self)->timer = g_timeout_add(20, PiuViewIdle, self);
+		if (running)
+			(*self)->timer = gtk_widget_add_tick_callback((*self)->gtkView, PiuViewIdle, self, NULL); 
 		else
-			g_source_remove((*self)->timer);
+			gtk_widget_remove_tick_callback((*self)->gtkView, (*self)->timer);
 	}
 }
 

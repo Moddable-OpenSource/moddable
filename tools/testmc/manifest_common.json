@@ -1,0 +1,250 @@
+{
+	"build": {
+		"BUILD": "$(MODDABLE)/build",
+		"MODULES": "$(MODDABLE)/modules",
+		"TEST262": "$(MODDABLE)/tools/test262"
+	},
+	"creation": {
+		"static": 65536,
+		"chunk": {
+			"initial": 16384,
+			"incremental": 512
+		},
+		"heap": {
+			"initial": 2048,
+			"incremental": 64
+		},
+		"stack": 384,
+		"keys": {
+			"available": 2048,
+			"name": 127,
+			"symbol": 127
+		},
+		"parser": {
+			"buffer": 9000,
+			"table": 127
+		},
+		"main": "main"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODULES)/base/modules/manifest.json",
+		"$(MODULES)/data/url/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(TEST262)/_262",
+			"$(TEST262)/harness",
+			"./main",
+			"./hosttest"
+		],
+		"commodetto/checksumOut": "./commodettoChecksumOut-nop"
+	},
+	"preload": [
+		"main",
+		"hosttest",
+		"harness",
+		"instrumentation",
+		"commodetto/checksumOut"
+		
+	],
+	"strip": [],
+	"config" : {
+		"startupSound": ""
+	},
+	"platforms": {
+		"esp": {
+			"error": "testmc is unsupported on esp8266"
+		},
+		"pico": {
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/pico/setup/piu",
+					"$(BUILD)/devices/pico/setup/network"
+				]
+			}
+		},
+		"pico/pico_w": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/pico/setup/piu",
+					"$(BUILD)/devices/pico/setup/network"
+				]
+			}
+		},
+		"nrf52": {
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/nrf52/setup/piu",
+					"$(BUILD)/devices/nrf52/setup/network"
+				]
+			}
+		},
+		"esp32": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/esp32/setup/piu",
+					"$(BUILD)/devices/esp32/setup/network"
+				]
+			}
+		},
+		"esp32/moddable_six": {
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/esp32/setup/piu",
+					"$(BUILD)/devices/esp32/setup/network"
+				]
+			}
+		},
+		"esp32/moddable_six_cdc": {
+			"build": {
+				"ESP32_SUBCLASS": "esp32s3",
+				"USE_USB": "2",
+				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six_cdc/sdkconfig"
+			},
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json"
+			],
+			"creation": {
+				"static": 0,
+				"chunk": {
+					"initial": 3670016,
+					"incremental": 0 
+				},
+				"heap": {
+					"initial": 229376,
+					"incremental": 0 
+				},
+				"stack": 16384,
+				"keys": {
+					"available": 16386,
+					"name": 127,
+					"symbol": 127
+				},
+				"parser": {
+					"buffer": 32768,
+					"table": 127
+				},
+				"main": "main"
+			},
+			"defines": {
+				"XS_TEST": 1,
+				"softreset": 1
+			},
+			"modules": {
+				"~": [
+					"$(BUILD)/devices/esp32/setup/piu",
+					"$(BUILD)/devices/esp32/setup/network"
+				]
+			}
+		},
+		"lin": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/lin/debug/mcsim"
+			},
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/timer/timer",
+					"$(MODULES)/base/timer/lin/*"
+				]
+			},
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
+			}
+		},
+		"mac": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/mac/debug/mcsim.app"
+			},
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/mac/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mac/*"
+				]
+			},
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
+			}
+		},
+		"win": {
+			"build": {
+				"SIMULATOR": "$(BUILD)/bin/win/debug/mcsim.exe"
+			},
+			"include": [
+				"$(MODDABLE)/examples/manifest_net.json",
+				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(BUILD)/simulators/modules/screen",
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/win/*",
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/win/*"
+				]
+			},
+			"defines": {
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 12000,
+					"streams": 2,
+					"queueLength": 4
+				}
+			}
+		}
+	}
+}

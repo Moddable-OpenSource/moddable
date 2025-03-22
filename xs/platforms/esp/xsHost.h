@@ -205,14 +205,15 @@ extern uint8_t ESP_setBaud(int baud);
 */
 
 #if ESP32
-	#define modMilliseconds() ((uint32_t)xTaskGetTickCount())
+	// we prefer CONFIG_FREERTOS_HZ of 1000, but should work work other values, such as the default of 100
+	#define modMilliseconds() ((uint32_t)pdTICKS_TO_MS(xTaskGetTickCount()))
 	#define modMicroseconds() ((uint32_t)esp_timer_get_time())
 
 	extern volatile uint32_t gCPUTime;
 	#define modMicrosecondsInstrumentation() (gCPUTime)
 
-	#define modDelayMilliseconds(ms) vTaskDelay(ms)
-	#define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
+	#define modDelayMilliseconds(ms) vTaskDelay(pdMS_TO_TICKS(ms))
+	#define modDelayMicroseconds(us) vTaskDelay(pdMS_TO_TICKS(((us) + 500) / 1000))
 
 #else
 	#define modMilliseconds() ((uint32_t)(millis()))
@@ -524,7 +525,11 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 
 /* STRING */
 
-#define c_memcpy espMemCpy
+#if ESP32
+	#define c_memcpy memcpy
+#else
+	#define c_memcpy espMemCpy
+#endif	
 #define c_memmove memmove
 #define c_memset memset
 #define c_memcmp espMemCmp

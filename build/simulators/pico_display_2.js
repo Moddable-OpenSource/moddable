@@ -93,7 +93,6 @@ class LEDBehavior extends Behavior {
 
 export default {
 	applicationName: "pico_display_2/debug/.*",
-	sortingTitle:"0004",
 	title:"Pico Display 2 (Pimoroni)",
 	Workers: {
 	},

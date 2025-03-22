@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+/* * Copyright (c) 2019-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,7 +34,11 @@
 	#define MODDEF_PWM_LEDC_CHANNEL_MAP 0xF0
 #endif
 
-#define kSpeedMode (LEDC_LOW_SPEED_MODE)
+// #if CONFIG_IDF_TARGET_ESP32
+// #define kSpeedMode (LEDC_HIGH_SPEED_MODE)
+// #else
+#define kSpeedMode	(LEDC_LOW_SPEED_MODE)
+// #endif
 
 struct LEDCTimerRecord {
 	uint16_t	useCount;
@@ -59,13 +62,36 @@ struct PWMRecord {
 typedef struct PWMRecord PWMRecord;
 typedef struct PWMRecord *PWM;
 
+#define LOW_RES	8
+#define HI_RES	14
+
+#if (ESP32 == 1) || (ESP32 == 2) || (ESP32 == 5) || (ESP32 == 6)
+	// esp32, esp32s2, esp32c6, esp32h2
+	static uint8_t MIN_HZ[HI_RES - LOW_RES + 1] = { 65, 33, 17, 9, 5, 3, 2 };
+#elif (ESP32 == 4)
+	// esp32c3
+	static uint8_t MIN_HZ[HI_RES - LOW_RES + 1] = { 71, 36, 18, 9, 5, 3, 2 };
+#elif (ESP32 == 3)
+	// esp32s3
+	static uint8_t MIN_HZ[HI_RES - LOW_RES + 1] = { 68, 34, 17, 9, 5, 3, 2 };
+#else
+	#error esp32 variant needs PWM measurement
+#endif
+
+static int INVALID_HZ(int hz, int resolution) 
+{
+	if (hz < MIN_HZ[resolution - LOW_RES])
+		return -1;
+	return 0;
+}
+
 void xs_pwm_constructor_(xsMachine *the)
 {
 	PWM pwm = NULL;
 	int pin;
 	int hz = 1024;
 	int resolution = 10;
-	int8_t i, free = -1, timerIndex = -1;
+	int8_t i, freeTimer = -1, timerIndex = -1;
 	int ledc = -1, duty = 0;
 	ledc_channel_config_t ledcConfig = {0};
 
@@ -114,6 +140,9 @@ void xs_pwm_constructor_(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
+	if (INVALID_HZ(hz, resolution))
+		xsRangeError("invalid combination of hz and resolution");
+
 	if (-1 == ledc) {
 		for (ledc = 0; ledc < 8; ledc++) {
 			if (gLEDC & (1 << ledc))
@@ -124,11 +153,11 @@ void xs_pwm_constructor_(xsMachine *the)
 	}
 
 	if (pwm && (1 == gTimers[pwm->timerIndex].useCount))
-		free = pwm->timerIndex; // reuse, but reinitialize
+		freeTimer = pwm->timerIndex; // reuse, but reinitialize
 	else {
 		for (i = 0; i < LEDC_TIMER_MAX; i++) {
 			if (!gTimers[i].useCount)
-				free = i;
+				freeTimer = i;
 			else if ((resolution == gTimers[i].resolution) && (hz == gTimers[i].hz)) {
 				timerIndex = i;
 				break;
@@ -137,12 +166,12 @@ void xs_pwm_constructor_(xsMachine *the)
 	}
 
 	if (-1 == timerIndex) {
-		ledc_timer_config_t t;
+		ledc_timer_config_t t = {0};
 
-		if (-1 == free)
+		if (-1 == freeTimer)
 			xsRangeError("no timer");
 
-		timerIndex = free;
+		timerIndex = freeTimer;
 
 		t.speed_mode = kSpeedMode;
 		t.duty_resolution = resolution;
@@ -150,9 +179,15 @@ void xs_pwm_constructor_(xsMachine *the)
 		t.freq_hz = hz;
 		t.clk_cfg = LEDC_AUTO_CLK;
 
+		ledc_timer_pause(kSpeedMode, timerIndex);
+
+//		ledc_timer_rst(kSpeedMode, timerIndex);
+
 		if (ESP_OK != ledc_timer_config(&t))
 			xsUnknownError("configure ledc timer failed");
+
 	}
+	ledc_timer_resume(kSpeedMode, timerIndex);
 
 	builtinInitializeTarget(the);
 
@@ -204,8 +239,29 @@ void xs_pwm_destructor_(void *data)
 	gLEDC |= 1 << pwm->ledc;
 
 	gTimers[pwm->timerIndex].useCount -= 1;
-	if (0 == gTimers[pwm->timerIndex].useCount)
+	if (0 == gTimers[pwm->timerIndex].useCount) {
 		gpio_set_direction(pwm->pin, GPIO_MODE_OUTPUT);		// this seems to disconnect pin from ledc / timer
+		gTimers[pwm->timerIndex].resolution = 0;
+		gTimers[pwm->timerIndex].hz = 0;
+
+		esp_err_t err;
+		err =		ledc_timer_pause(kSpeedMode, pwm->timerIndex);
+		if (err)
+			modLog("ledc_timer_pause failed");
+
+		ledc_timer_config_t t = {0};
+
+		t.speed_mode = kSpeedMode;
+		t.timer_num = pwm->timerIndex;
+		t.duty_resolution = gTimers[pwm->timerIndex].resolution;
+		t.freq_hz = gTimers[pwm->timerIndex].hz;
+		t.clk_cfg = LEDC_AUTO_CLK;
+		t.deconfigure = true;		// introduced in 5.2.1
+
+		err = ledc_timer_config(&t);
+		if (err)
+			modLog("ledc_timer_config failed");
+	}
 
     builtinFreePin(pwm->pin);
 

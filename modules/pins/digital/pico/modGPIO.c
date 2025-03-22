@@ -43,7 +43,11 @@ int modGPIOInit(modGPIOConfiguration config, const char *port, uint8_t pin, uint
 	}
 	else
 #endif
+#if PICO_RP2350
+	if ((pin > 47) || port) {
+#else
 	if ((pin > 29) || port) {
+#endif
 		config->pin = kUninitializedPin;
 		return -1;
 	}

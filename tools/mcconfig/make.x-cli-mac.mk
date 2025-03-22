@@ -84,12 +84,6 @@ C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"mac_xs.h\" \
-	-DmxRun=1 \
-	-DmxParse=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DmxStringInfoCacheLength=4 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(INSTRUMENT),1)
@@ -109,7 +103,7 @@ endif
 C_FLAGS = $(XS_C_FLAGS)
  
 LIBRARIES = -framework CoreFoundation
-# LIBRARIES = -framework CoreFoundation -lcurl -lpng16
+# LIBRARIES = -framework CoreFoundation -lcurl -L/opt/homebrew/opt/libpng/lib/ -lpng16
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = $(MACOS_ARCH)
