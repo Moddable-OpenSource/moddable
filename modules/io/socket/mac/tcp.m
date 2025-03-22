@@ -525,6 +525,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 			xsmcSetInteger(xsResult, tcp->bytesReadable);
 			xsCallFunction1(xsReference(tcp->onReadable), tcp->obj, xsResult);
 		xsEndHost(the);
+		if (tcp->done) triggered = 0;
 	}
 
 	if ((triggered & kTCPWritable) && tcp->bytesWritable && !tcp->error) {
@@ -532,6 +533,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 			xsmcSetInteger(xsResult, tcp->bytesWritable);
 			xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
 		xsEndHost(the);
+		if (tcp->done) triggered = 0;
 	}
 
 	if (triggered & kTCPError) {
