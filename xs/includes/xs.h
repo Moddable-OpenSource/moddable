@@ -1213,6 +1213,7 @@ struct xsCreationRecord {
 	xsIntegerValue parserBufferSize;
 	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
+	xsIntegerValue nativeStackSize;
 };
 
 #define xsCreateMachine(_CREATION,_NAME,_CONTEXT) \

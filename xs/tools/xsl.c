@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-c: no creation");
-				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
+				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%[^,],%d", 
 					&linker->creation.initialChunkSize,
 					&linker->creation.incrementalChunkSize,
 					&linker->creation.initialHeapCount,
@@ -183,7 +183,8 @@ int main(int argc, char* argv[])
 					&linker->creation.parserBufferSize,
 					&linker->creation.parserTableModulo,
 					&linker->creation.staticSize,
-					linker->main);
+					linker->main,
+					&linker->creation.nativeStackSize);
 				linker->symbolModulo = linker->creation.nameModulo;
 			}		
 			else if (!c_strcmp(argv[argi], "-n")) {
@@ -720,7 +721,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
 			fprintf(file, "\t%d,\n", the->profileID);
-			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
+			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d},\n",
 				linker->creation.initialChunkSize,
 				linker->creation.incrementalChunkSize,
 				linker->creation.initialHeapCount,
@@ -732,7 +733,8 @@ int main(int argc, char* argv[])
 				linker->creation.symbolModulo,
 				linker->creation.parserBufferSize,
 				linker->creation.parserTableModulo,
-				linker->creation.staticSize
+				linker->creation.staticSize,
+				linker->creation.nativeStackSize
 			);
 			fprintf(file, "\t\"%s\",\n", linker->main);
 			fprintf(file, "\t{ 0x%.2X", linker->symbolsChecksum[0]);

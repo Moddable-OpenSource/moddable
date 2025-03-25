@@ -61,7 +61,8 @@ class MakeFile extends MAKEFILE {
 				creation.parser.buffer, ",",
 				creation.parser.table, ",",
 				creation.static, ",", 
-				creation.main);
+				creation.main, ",",
+				creation.nativeStack);
 		this.line("");
 		this.write("MANIFEST =");
 		for (var result in tool.manifests.already) {
@@ -906,6 +907,7 @@ export default class extends Tool {
 		if ((this.platform == "x-android") || (this.platform == "x-android-simulator") || (this.platform == "x-ios") || (this.platform == "x-ios-simulator")) {
 			creation.main = this.ipAddress;
 		}
+		creation.nativeStack ??= 0;
 		this.creation = creation;
 	}
 	filterPreload(preload) {

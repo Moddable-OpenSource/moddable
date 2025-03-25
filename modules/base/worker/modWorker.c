@@ -263,6 +263,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				getIntegerProperty(the, &xsVar(0), xsID_name, &worker->creation.nameModulo);
 				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
 			}
+			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
 		}
 	}
 
@@ -270,28 +271,19 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack (((5 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+		#define kStack ((5 * 1024) + XT_STACK_EXTRA_CLIB)
 	#else
-		#define kStack (((6 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+		#define kStack ((6 * 1024) + XT_STACK_EXTRA_CLIB)
 	#endif
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
 #elif qca4020
-	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((9 * 1024) / sizeof(StackType_t))
-	#else
-		#define kStack ((10 * 1024) / sizeof(StackType_t))
-	#endif
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
+	#define kStack ((9 * 1024)
 #elif nrf52
-	#define kStack ((10 * 1024) / sizeof(StackType_t))
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
+	#define kStack (10 * 1024)
 #endif
+	xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+							worker, kWorkerTaskPriority, &worker->task);
 
 	modMachineTaskWait(the);
-
 #else // !INC_FREERTOS_H
 	workerStart(worker);
 #endif

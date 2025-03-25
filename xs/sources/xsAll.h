@@ -521,6 +521,7 @@ struct sxCreation {
 	txSize parserBufferSize; /* xs.h */
 	txSize parserTableModulo; /* xs.h */
 	txSize staticSize; /* xs.h */
+	txSize nativeStackSize; /* xs.h */
 };
 
 struct sxPreparation {
@@ -1102,6 +1103,8 @@ enum {
 };
 extern const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT];
 #define mxErrorPrototypes(THE_ERROR) (the->stackIntrinsics[-1 - gxErrorWhichPrototypeStackIndex[THE_ERROR]])
+
+extern const char *const gxErrorNames[XS_ERROR_COUNT];
 
 extern void fxBuildError(txMachine* the);
 extern void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame);
