@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -349,27 +349,16 @@ class ApplicationBehavior extends Behavior {
 	}
 	
 /* EVENTS */
-	onAbort(application, status) {
+	onAbort(application, status, reason) {
 		this.archivePath = "";
 		this.libraryPath = "";
 		this.quitScreen();
 		this.launchScreen();
 		if (status) {
-			const reasons = [
-				"debugger",
-				"memory full",
-				"stack overflow",
-				"fatal check",
-				"dead strip",
-				"unhandled exception",
-				"not enough keys",
-				"too much computation",
-				"unhandled rejection",
-			];
 			system.alert({ 
 				type:"stop",
 				prompt:"mcsim",
-				info:`XS abort: ${reasons[status]}!`,
+				info:`XS abort: ${reason}!`,
 				buttons:["Cancel"]
 			}, ok => {
 			});

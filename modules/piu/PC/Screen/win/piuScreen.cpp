@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -188,12 +188,13 @@ LRESULT CALLBACK PiuScreenControlProc(HWND window, UINT message, WPARAM wParam, 
 		PiuScreen* self = (PiuScreen*)GetWindowLongPtr(window, 0);
 		if ((*self)->behavior) {
 			xsBeginHost((*self)->the);
-			xsVars(3);
+			xsVars(4);
 			xsVar(0) = xsReference((*self)->behavior);
 			if (xsFindResult(xsVar(0), xsID_onAbort)) {
 				xsVar(1) = xsReference((*self)->reference);
 				xsVar(2) = xsInteger((xsIntegerValue)wParam);
-				(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+				xsVar(3) = xsString(fxAbortString((xsIntegerValue)wParam)))
+				(void)xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
 			}
 			xsEndHost((*self)->the);
 		}

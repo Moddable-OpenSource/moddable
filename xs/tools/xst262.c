@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -1312,7 +1312,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	xsEndHost(machine);
 	if (machine->exitStatus) {
 		success = 0;
-		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_STACK_OVERFLOW_EXIT)) {
+		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_STACK_OVERFLOW_EXIT) || (machine->exitStatus == XS_NATIVE_STACK_OVERFLOW_EXIT)) {
 			if (context->negative) {
 				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
 					snprintf(message, 1024, "OK");
@@ -1321,8 +1321,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 			}
 		}
 		if (!success) {
-			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
-			snprintf(message, 1024, "# %s", why);
+			snprintf(message, 1024, "# %s", fxAbortString(machine->exitStatus));
 			success = 0;
 		}
 	}

@@ -468,6 +468,27 @@ void fx_Error_prototype_set_stack(txMachine* the)
 	mxPop();
 }
 
+static const txString gXSAbortStrings[] = {
+	"debugger",
+	"memory full",
+	"JavaScript stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection",
+	"native stack overflow",
+};
+
+txString fxAbortString(int status)
+{
+	if ((status < 0) || (status >= (int)(sizeof(gXSAbortStrings) / sizeof(txString))))
+		return "unknown";
+
+	return gXSAbortStrings[status];
+}
+
 #if mxExplicitResourceManagement
 
 void fx_SuppressedError(txMachine* the)

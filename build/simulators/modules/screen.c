@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -141,43 +141,12 @@ void fxAbort(xsMachine* the, int status)
 		txScreen* screen = the->host;
 		if (!screen)
 			screen = the->context;
-		char* why = NULL;
-		switch (status) {
-		case XS_STACK_OVERFLOW_EXIT:
-			why = "stack overflow";
-			break;
-		case XS_NOT_ENOUGH_MEMORY_EXIT:
-			why = "memory full";
-			break;
-		case XS_NO_MORE_KEYS_EXIT:
-			why = "not enough keys";
-			break;
-		case XS_DEAD_STRIP_EXIT:
-			why = "dead strip";
+		xsStringValue why = fxAbortString(status);
 #ifdef mxDebug
-			if (the->debugEval)
+			if ((XS_DEAD_STRIP_EXIT == status) && the->debugEval)
 				mxUnknownError(why);
 #endif
-			break;
-		case XS_DEBUGGER_EXIT:
-			break;
-		case XS_FATAL_CHECK_EXIT:
-			break;
-		case XS_UNHANDLED_EXCEPTION_EXIT:
-			why = "unhandled exception";
-			break;
-		case XS_UNHANDLED_REJECTION_EXIT:
-			why = "unhandled rejection";
-			break;
-		case XS_TOO_MUCH_COMPUTATION_EXIT:
-			why = "too much computation";
-			break;
-		default:
-			why = "unknown";
-			break;
-		}
-		if (why)
-			xsLog("XS abort: %s\n", why);
+		xsLog("XS abort: %s\n", why);
 
 #if MODDEF_XS_ABORTHOOK
 		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {

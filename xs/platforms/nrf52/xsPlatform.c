@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -195,18 +195,6 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
-const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
-
 void fxAbort(txMachine* the, int status)
 {
 #if MODDEF_XS_TEST
@@ -228,10 +216,10 @@ void fxAbort(txMachine* the, int status)
 #endif
 
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
-	const char *msg = (status < XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+	const char *msg = fxAbortString(status);
 
 	#if MODDEF_XS_ABORTHOOK
-		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
+	if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_NATIVE_STACK_OVERFLOW_EXIT != status) & (XS_DEBUGGER_EXIT != status)) {
 			xsBooleanValue ignore = false;
 
 			fxBeginHost(the);

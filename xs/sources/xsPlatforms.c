@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -374,43 +374,15 @@ void fxQueuePromiseJobs(txMachine* the)
 
 void fxAbort(txMachine* the, int status)
 {
-	txString why = C_NULL;
-	switch (status) {
-	case XS_STACK_OVERFLOW_EXIT:
-		why = "stack overflow";
-		break;
-	case XS_NOT_ENOUGH_MEMORY_EXIT:
-		why = "memory full";
-		break;
-	case XS_NO_MORE_KEYS_EXIT:
-		why = "not enough keys";
-		break;
-	case XS_DEAD_STRIP_EXIT:
-		why = "dead strip";
+	txString fxAbortString(int status);
+	txString why = fxAbortString(status);
 #ifdef mxDebug
-		if (the->debugEval)
-			mxUnknownError(why);
+		if (status == XS_DEAD_STRIP_EXIT)  {
+			if (the->debugEval)
+				mxUnknownError(why);
+		}
 #endif
-		break;
-	case XS_DEBUGGER_EXIT:
-		break;
-	case XS_FATAL_CHECK_EXIT:
-		break;
-	case XS_UNHANDLED_EXCEPTION_EXIT:
-		why = "unhandled exception";
-		break;
-	case XS_UNHANDLED_REJECTION_EXIT:
-		why = "unhandled rejection";
-		break;
-	case XS_TOO_MUCH_COMPUTATION_EXIT:
-		why = "too much computation";
-		break;
-	default:
-		why = "unknown";
-		break;
-	}
-	if (why)
-		fprintf(stderr, "Error: %s\n", why);
+	fprintf(stderr, "Error: %s\n", why);
 	c_exit(status);
 }
 

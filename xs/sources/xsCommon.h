@@ -491,6 +491,7 @@ enum {
 	XS_NO_MORE_KEYS_EXIT,
 	XS_TOO_MUCH_COMPUTATION_EXIT,
 	XS_UNHANDLED_REJECTION_EXIT,
+	XS_NATIVE_STACK_OVERFLOW_EXIT,
 };
 
 extern void fxDeleteScript(txScript* script);

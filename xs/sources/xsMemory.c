@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -273,7 +273,7 @@ void fxCheckCStack(txMachine* the)
     char x;
     char *stack = &x;
 	if (stack <= the->stackLimit) {
-		fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+		fxAbort(the, XS_NATIVE_STACK_OVERFLOW_EXIT);
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -80,19 +80,6 @@ static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
 static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
-
-
-char *gxAbortStrings[] = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
 
 txAgentCluster gxAgentCluster;
 
@@ -285,8 +272,7 @@ int main(int argc, char* argv[])
 		}
 		xsEndMetering(machine);
 		if (machine->exitStatus) {
-			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
-			fprintf(stderr, "Error: %s\n", why);
+			fprintf(stderr, "Error: %s\n", fxAbortString(machine->exitStatus));
 			error = 1;
 		}
 		xsDeleteMachine(machine);

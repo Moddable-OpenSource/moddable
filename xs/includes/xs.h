@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1128,6 +1128,8 @@ struct xsJumpRecord {
 	#define xsURIError(...) fxThrowMessage(the, NULL, 0, XS_URI_ERROR, __VA_ARGS__)
 #endif
 
+extern xsStringValue fxAbortString(int status);
+
 /* Platform */
 
 #ifdef mxDebug
@@ -1420,6 +1422,7 @@ enum {
 	xsNoMoreKeysExit,
 	xsTooMuchComputationExit,
 	xsUnhandledRejectionExit,
+	xsNativeStackOverflowExit,
 };
 
 #ifndef __XSALL__
