@@ -23,6 +23,9 @@ import ChatWebSocketWorker from "ChatWebSocketWorker";
 
 function toALaw(src, dst) @ "xs_alaw_encode";
 
+const audioPrefix = Object.freeze(new Uint8Array(ArrayBuffer.fromString(`{"type":"input_audio_buffer.append","audio":"`)), true);
+const audioSuffix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}')), true);
+
 class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
@@ -32,8 +35,8 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 			["OpenAI-Beta", "realtime=v1"],
 			["Authorization", `Bearer ${config.openAIKey}`]
 		];
-        this.audioPrefix = ArrayBuffer.fromString('{"type":"input_audio_buffer.append","audio":"');
-		this.audioSuffix = ArrayBuffer.fromString('"}');
+        this.audioPrefix = audioPrefix;
+		this.audioSuffix = audioSuffix;
 	}
 	configure(message) {
 		const instructions = message.instructions ?? "";
