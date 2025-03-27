@@ -176,10 +176,10 @@ class WebSocketClient {
 		if (mask) {
 			payload[1] |= 0x80;
 
-			mask[0] = Math.random() * 256;
-			mask[1] = Math.random() * 256;
-			mask[2] = Math.random() * 256;
-			mask[3] = Math.random() * 256;
+			mask[0] = Math.irandom(256);
+			mask[1] = Math.irandom(256)
+			mask[2] = Math.irandom(256)
+			mask[3] = Math.irandom(256)
 			Logical.xor(payload.subarray(header), mask.buffer);
 			payload.set(mask, header - 4);
 		}
@@ -508,7 +508,7 @@ class WebSocketClient {
 			case "connecting": {
 				const key = new Uint8Array(16);
 				for (let i = 0; i < 16; i++)
-					key[i] = (Math.random() * 256) | 0;
+					key[i] = Math.irandom(256);
 				
 				const options = this.#options;
 				let message = [
