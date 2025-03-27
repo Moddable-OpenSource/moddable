@@ -221,7 +221,7 @@ void fxAbort(txMachine* the, int status)
 #endif
 
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
-	char *msg = fxAbortString(status);
+	char *msg = (char*)fxAbortString(status);
 
 	#ifdef MODDEF_XS_RESTARTON
 		#error RestartOn deprecated. Use abortHook instead.

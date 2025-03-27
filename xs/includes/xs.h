@@ -1128,7 +1128,6 @@ struct xsJumpRecord {
 	#define xsURIError(...) fxThrowMessage(the, NULL, 0, XS_URI_ERROR, __VA_ARGS__)
 #endif
 
-extern xsStringValue fxAbortString(int status);
 
 /* Platform */
 
@@ -1595,6 +1594,7 @@ mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValu
 mxImport xsBooleanValue fxMatchRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data, xsStringValue subject, xsIntegerValue offset);
 
 mxImport void fxAbort(xsMachine* the, int status);
+extern xsStringValue fxAbortString(int status);
 
 #ifdef __cplusplus
 }
