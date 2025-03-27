@@ -26,12 +26,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
 #include "esp_task_wdt.h"
-#include "lwip/inet.h"
-#include "lwip/ip4_addr.h"
-#include "lwip/dns.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
@@ -48,21 +43,14 @@
 #include "xsHosts.h"
 
 #include "mc.defines.h"
+#include "mc.xs.h"
 
-#if MODDEF_ECMA419_ENABLED
-	#include "common/builtinCommon.h"
-#endif
-
-#define XT_STACK_EXTRA	512
-#define XT_STACK_EXTRA_CLIB	1024
-
-extern void mc_setup(xsMachine *the);
 extern void	setupDebugger();
 
 #if 0 == CONFIG_LOG_DEFAULT_LEVEL
-	#define kStack (((10 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+	#define kStack (8 * 1024)
 #else
-	#define kStack (((12 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+	#define kStack (10 * 1024)
 #endif
 
 #if MODDEF_SOFTRESET
@@ -138,10 +126,13 @@ void app_main() {
 
 	ESP_ERROR_CHECK(nvs_flash_init());
 #if CONFIG_BT_ENABLED
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+	ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
 
 	setupDebugger();
 
-	xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
+	xsCreation *creation;
+	xsPreparationAndCreation(&creation);
+
+	xTaskCreate(loop_task, "main", ((creation->nativeStackSize ? creation->nativeStackSize : kStack) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t), NULL, 4, NULL);
 }

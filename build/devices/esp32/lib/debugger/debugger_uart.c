@@ -75,7 +75,6 @@
 
 
 extern void fx_putc(void *refcon, char c);		//@@
-extern void mc_setup(xsMachine *the);
 
 #ifndef UART_HW_FIFO_LEN
 	#define UART_HW_FIFO_LEN(USE_UART) UART_FIFO_LEN
