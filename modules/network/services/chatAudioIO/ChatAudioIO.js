@@ -29,8 +29,8 @@ class ChatAudioIO {
 	static DISCONNECTED = 0;
 	static CONNECTING = 3;
 	static DISCONNECTING = 1;
-	static SPEAKING = 2;
-	static LISTENING = 4;
+	static SPEAKING = 2;		// user is speaking (transmitting audio to cloud)
+	static LISTENING = 4;		// user is listening (receiving audio from cloud) 
 	static WAITING = 5;
 
 	constructor(options) {
