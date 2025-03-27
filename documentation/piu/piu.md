@@ -51,7 +51,7 @@ Figure 1 summarizes the inheritance hierarchy for the objects described in this 
 
 **Figure 1.** Piu Inheritance Hierarchy
 
-![](../assets/piu/inheritanceHierarchy.png)
+![This image shows a prototype inheritance diagram for a UI component system. At the root is Object.prototype, which branches out to eight main prototype objects: Behavior, Content, Skin, Sound, Style, Texture, Timeline, and Transition. Content.prototype further connects to Container.prototype, which links to four components: Image, Label, Port, and Text. Container.prototype also connects to Application, Column, Layout, and Row. Layout.prototype connects to Die.prototype, and Row.prototype connects to Scroller.prototype. All nodes are represented as rectangular boxes with blue borders connected by lines showing the inheritance relationships.](../assets/piu/inheritanceHierarchy.png)
 
 The basic relationship between these objects in the context of a Piu application is as follows:
 
