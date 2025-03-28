@@ -1,6 +1,6 @@
 {
 	"preload": [
-		"embedded:x-io/imagein/camera"
+		"embedded:io/image/in/camera"
 	],
 	"platforms": {
         "pico": {
@@ -18,7 +18,7 @@
 				}
 			],  
 			"modules": {
-                "embedded:x-io/imagein/camera": "./pico/*"
+                "embedded:io/image/in/camera": "./pico/*"
             }
         },
 		"...": {

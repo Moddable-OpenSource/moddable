@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,7 +15,7 @@
 import {Server} from "http"
 import BMPSpooler from "bmpSpooler"
 import Bitmap from "commodetto/Bitmap";
-import Camera from "embedded:x-io/imagein/camera";
+import Camera from "embedded:io/image/in/camera";
 import Net from "net";
 
 let width = 176, height = 144;
