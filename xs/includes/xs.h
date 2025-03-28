@@ -1594,7 +1594,7 @@ mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValu
 mxImport xsBooleanValue fxMatchRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data, xsStringValue subject, xsIntegerValue offset);
 
 mxImport void fxAbort(xsMachine* the, int status);
-extern xsStringValue fxAbortString(int status);
+mxImport xsStringValue fxAbortString(int status);
 
 #ifdef __cplusplus
 }

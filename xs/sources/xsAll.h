@@ -763,6 +763,7 @@ extern void* fxRetainSharedChunk(void* data);
 extern void fxUnlockSharedChunk(void* data);
 extern txInteger fxWaitSharedChunk(txMachine* the, void* address, txNumber timeout, txSlot* resolveFunction);
 extern void fxAbort(txMachine* the, int status);
+extern txString fxAbortString(int status);
 #ifdef mxDebug
 extern void fxConnect(txMachine* the);
 extern void fxDisconnect(txMachine* the);
