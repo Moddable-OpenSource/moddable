@@ -177,6 +177,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_eth/include \
 	$(IDF_PATH)/components/esp_hw_support/include \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
+	$(IDF_PATH)/components/esp_hw_support/port/$(ESP32_SUBCLASS)/private_include \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_partition/include \
