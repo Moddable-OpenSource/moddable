@@ -126,10 +126,16 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 			switch (aSlot->kind) {
 			case XS_STRING_KIND:
 			case XS_BIGINT_KIND:
-			case XS_ARRAY_BUFFER_KIND:
 				aChunk = (txChunk*)p;
 				p += aChunk->size;
 				mxMarshallAlign(p, aChunk->size);
+				break;
+			case XS_ARRAY_BUFFER_KIND:
+				if (aSlot->value.arrayBuffer.address) {
+					aChunk = (txChunk*)p;
+					p += aChunk->size;
+					mxMarshallAlign(p, aChunk->size);
+				}
 				break;
 			case XS_REGEXP_KIND:
 				if (aSlot->value.regexp.code) {
