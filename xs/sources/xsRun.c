@@ -4434,7 +4434,7 @@ XS_CODE_JUMP:
 
 STACK_OVERFLOW:
 	mxSaveState;
-	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+	fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 }
 
 #ifdef mxMetering

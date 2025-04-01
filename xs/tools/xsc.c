@@ -61,7 +61,7 @@ void fxAbort(void* console, int status)
 {
 	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
 		fprintf(stderr, "# error: memory full!\n");
-	else if (XS_STACK_OVERFLOW_EXIT == status)
+	else if (XS_JAVASCRIPT_STACK_OVERFLOW_EXIT == status)
 		fprintf(stderr, "# error: JavaScript stack overflow!\n");
 	else if (XS_NATIVE_STACK_OVERFLOW_EXIT == status)
 		fprintf(stderr, "# error: native stack overflow!\n");

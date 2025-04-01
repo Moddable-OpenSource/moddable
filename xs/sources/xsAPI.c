@@ -1310,13 +1310,13 @@ void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger 
 	if (theCount < 0) {
 		if (aStack < the->stackBottom) {
 			fxReport(the, "JavaScript stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
-			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 		}
 	}
 	else if (theCount > 0) {
 		if (aStack > the->stackTop) {
 			fxReport(the, "JavaScript stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
-			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 		}
 	}
 }

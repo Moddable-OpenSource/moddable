@@ -1414,7 +1414,7 @@ typedef unsigned char xsAttribute;
 enum {
 	xsDebuggerExit = 0,
 	xsNotEnoughMemoryExit,
-	xsStackOverflowExit,
+	xsJavaScriptStackOverflowExit,
 	xsFatalCheckExit,
 	xsDeadStripExit,
 	xsUnhandledExceptionExit,

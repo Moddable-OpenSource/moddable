@@ -1312,7 +1312,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	xsEndHost(machine);
 	if (machine->exitStatus) {
 		success = 0;
-		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_STACK_OVERFLOW_EXIT) || (machine->exitStatus == XS_NATIVE_STACK_OVERFLOW_EXIT)) {
+		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_JAVASCRIPT_STACK_OVERFLOW_EXIT) || (machine->exitStatus == XS_NATIVE_STACK_OVERFLOW_EXIT)) {
 			if (context->negative) {
 				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
 					snprintf(message, 1024, "OK");
