@@ -88,6 +88,15 @@ const assets = {
 			specifier: "googleGeminiLive",
 			transcript: false,
 		},
+		hume: {
+			color: "#9a8dea",
+			icon:  { texture:{ path: "hume-logo.png" }, width:64, height:64 },
+			iconSmall: { texture:{ path: "hume-logo-small.png" }, width:24, height:24 },
+			key: config.humeAIKey,
+			title: "Hume AI EVI",
+			specifier: "humeAIEVI",
+			transcript: true,
+		},
 		openai: {
 			color: "#00afba",
 			icon:  { texture:{ path: "openai-logo.png" }, width:64, height:64 },
