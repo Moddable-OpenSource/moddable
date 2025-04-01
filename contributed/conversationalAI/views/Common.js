@@ -70,8 +70,8 @@ class VerticalScrollbarBehavior extends Behavior {
 		var range = scroller.first.height;
 		if (size < range) {
 			var height = scrollbar.height;
-			thumb.y = scrollbar.y + Math.round(scroller.scroll.y * height / range);
-			thumb.height = Math.round(height * size / range);
+			thumb.y = scrollbar.y + Math.idiv(scroller.scroll.y * height, range);
+			thumb.height = Math.idiv(height * size, range);
 			scrollbar.visible = scrollbar.active = true;
 		}
 		else {
