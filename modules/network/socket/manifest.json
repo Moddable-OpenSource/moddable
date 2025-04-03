@@ -40,6 +40,14 @@
 				]
 			}
 		},
+		"linemb": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/socket/*",
+					"$(MODULES)/network/socket/lin/*"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [

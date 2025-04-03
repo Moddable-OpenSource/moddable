@@ -69,6 +69,16 @@
 				}
 			}
 		},
+		"linemb": {
+			"modules": {
+				"*": "$(MODULES)/files/file/lin/*"
+			},
+			"config": {
+				"file": {
+					"root": "/tmp/"
+				}
+			}
+		},
 		"qca4020": {
 			"modules": {
 				"*": "$(MODULES)/files/file/qca4020/*"

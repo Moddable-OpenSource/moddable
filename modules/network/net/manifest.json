@@ -45,6 +45,14 @@
 				]
 			}
 		},
+		"linemb": {
+			"modules": {
+				"*": [
+					"$(MODULES)/network/net/net",
+					"$(MODULES)/network/net/lin/*"
+				]
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": [

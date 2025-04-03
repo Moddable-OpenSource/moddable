@@ -37,6 +37,13 @@
                 ]
             }
         },
+        "linemb": {
+            "modules": {
+                "*": [
+                    "$(MODULES)/network/wifi/sim/*"
+                ]
+            }
+        },
         "mac": {
             "modules": {
                 "*": [

@@ -47,6 +47,7 @@
 		},	
 		"mac": {},
 		"lin": {},
+		"linemb": {},
 		"win": {},
 		"...": {
 			"error": "manifest_net - unsupported platform"
