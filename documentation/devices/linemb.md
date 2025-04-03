@@ -14,49 +14,70 @@ cd $MODDABLE/build/makefiles/lin
 make
 ```
 
-# Intall tool chain
-There are 3 types of CPU supported by linemb (Linux Embedded), and use the following command to install the tool chain for each CPU type.
+# Install toolchain
+There are several CPU types supported. Use the following commands to install the corresponding toolchain:
 
-## ARM(32-bit)
-```
+## ARM(32-bit) - armhf
+```bash
 sudo apt-get update
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-
 ```
-## ARM(64-bit)
+
+## ARM(64-bit) - arm64
+```bash
 sudo apt-get update
 sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+```
 
-## amd64(x86_64, the host)
+## amd64(x86_64, the host) - x86_64
+```bash
 sudo apt-get install build-essential
-
-# The sample project
-this is sample project for ARM32 CPU:
-```
-cd $MODDABLE/examples/devices/linemb
-mcconfig -m -p linemb
 ```
 
-The generated executable is here:
-`$MODDABLE/build/bin/linemb/release/hello-linemb/hello-linemb`
+# Sample project
+Below are the build commands for different CPU types:
 
-Find a way to copy this file to the target board (like scp):
+## x86_64 example
+```bash
+cd $MODDABLE/examples/helloworld
+mcconfig -d -m -p linemb/x86_64
+```
 
-```
-scp $MODDABLE/build/bin/linemb/release/hello-linemb/hello-linemb root@172.32.0.93:/root/
+The generated executable can be found at:
+`$MODDABLE/build/bin/linemb/x86_64/debug/helloworld/helloworld`
+
+## ARM(32-bit) example
+```bash
+cd $MODDABLE/examples/helloworld
+mcconfig -d -m -p linemb/armhf
 ```
 
-should see output like this:
+The generated executable can be found at:
+`$MODDABLE/build/bin/linemb/armhf/debug/helloworld/helloworld`
+
+## ARM(64-bit) example
+```bash
+cd $MODDABLE/examples/helloworld
+mcconfig -d -m -p linemb/arm64
 ```
-# ./hello-linemb
-Hello, Linux Embedded!!!
-immediate
-oneshot
-repeat 0
-repeat 1
-repeat 2
-repeat 3
-repeat 4
+
+The generated executable can be found at:
+`$MODDABLE/build/bin/linemb/arm64/debug/helloworld/helloworld`
+
+Find a way to copy this file to the target board (e.g., using scp):
+
+```bash
+scp $MODDABLE/build/bin/linemb/armhf/debug/helloworld/helloworld root@172.32.0.93:/root/
+```
+
+You should see output like this:
+```
+# ./helloworld
+instruments key: Chunk used,Chunk available,Slot used,Slot available,Stack used,Stack available,Garbage collections,Keys used,Modules loaded,Parser used,Floating Point,Promises settled
+Hello, world - sample
+instruments: 248,32768,2432,65504,1344,12288,0,2,1,0,0,0
+instruments: 248,32768,2432,65504,416,12288,0,2,1,0,0,0
+instruments: 248,32768,2432,65504,416,12288,0,2,1,0,0,0
 
 
 ```

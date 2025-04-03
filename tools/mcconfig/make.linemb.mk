@@ -1,31 +1,41 @@
 # ==================== START OF make.linemb.mk ====================
 all: build
 
-ifeq ("$(CPU)","arm64") # ARM64 toolchain
-CC = /usr/bin/aarch64-linux-gnu-gcc
-CXX = /usr/bin/aarch64-linux-gnu-g++
+ifeq ("$(SUBPLATFORM)","arm64") # ARM64 toolchain
+ARCH_PREFIX = aarch64-linux-gnu-
 endif
 
-ifeq ("$(CPU)","arm") # ARM toolchain
-CC = /usr/bin/arm-linux-gnueabihf-gcc
-CXX = /usr/bin/arm-linux-gnueabihf-g++
+ifeq ("$(SUBPLATFORM)","armhf") # ARM toolchain
+ARCH_PREFIX = arm-linux-gnueabihf-
 endif
 
-ifeq ("$(CPU)","x86") # x86 toolchain
-CC = gcc
-CXX = g++
+ifeq ("$(SUBPLATFORM)","rv1106") # ARM toolchain
+ARCH_PREFIX = arm-rockchip830-linux-uclibcgnueabihf-
 endif
 
-ifndef CC # check if the toolchain is set
-$(error CPU is not set. Please set CPU to arm, arm64 or x86)
+ifeq ("$(SUBPLATFORM)","x86_64") # x86 toolchain
+ARCH_PREFIX = ""
+endif
+
+ifndef ARCH_PREFIX # check if the toolchain is set
+$(error SUBPLATFORM is not set. Please set SUBPLATFORM to arm, arm64 or x86)
+endif
+
+ifeq ("$(SUBPLATFORM)","rv1106") # ARM toolchain
+CC = $(ARCH_PREFIX)gcc
+CXX = $(ARCH_PREFIX)g++
+LD = $(ARCH_PREFIX)gcc
+else 
+CC = /usr/bin/$(ARCH_PREFIX)gcc
+CXX = /usr/bin/$(ARCH_PREFIX)g++
 endif
 
 # -DINCLUDE_XSPLATFORM=1 \
 # -DXSPLATFORM=\"linarm_xs.h\"
 
 C_DEFINES = \
-	-DINCLUDE_XSPLATFORM \
-	-DXSPLATFORM=\"xsPlatform_linemb.h\" \
+	-DINCLUDE_XSPLATFORM=1 \
+	-DXSPLATFORM=\"lin_xs.h\" \
 	-DXS_ARCHIVE=1 \
 	-DmxRun=1 \
 	-DmxNoFunctionLength=1 \
@@ -39,22 +49,43 @@ C_DEFINES += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough
 
-C_FLAGS = -fPIC -c
-LINK_LIBRARIES = -lpthread -lm -lc -ldl -latomic
-LINK_OPTIONS = -fPIC
+PKGCONFIG = $(shell which $(ARCH_PREFIX)pkg-config)
 
+ifeq ("$(SUBPLATFORM)","rv1106") # ARM toolchain
+	INCLUDE_PATH = /opt/arm-rockchip830-linux-uclibcgnueabihf/arm-rockchip830-linux-uclibcgnueabihf/include
+	C_FLAGS = -fPIC -c -I$(INCLUDE_PATH)/libmount -I$(INCLUDE_PATH)/blkid -I$(INCLUDE_PATH)/glib-2.0 
+	LINK_LIBRARIES = -lgio-2.0 -lgobject-2.0 -lgmodule-2.0 -lglib-2.0 -lpthread -lm -lc -ldl -lffi
+else
+	C_FLAGS = -fPIC -c $(shell $(PKGCONFIG) --cflags glib-2.0 gio-2.0 gmodule-2.0)
+	LINK_LIBRARIES = $(shell $(PKGCONFIG) --libs glib-2.0 gio-2.0 gmodule-2.0) -lpthread -lm -lc -ldl -latomic -lresolv -lz -lmount -lblkid -lffi -lselinux -lpcre
+endif
+
+ifeq ("$(SUBPLATFORM)","armhf") # ARM toolchain
+	LINK_OPTIONS += -static
+endif
+
+# DEBUG and INSTRUMENT
+ifeq ($(DEBUG),)
+	C_FLAGS += -D_RELEASE=1 -O3
+else
+	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+#	C_FLAGS += -DMC_MEMORY_DEBUG=1
+endif
+
+ifeq ($(INSTRUMENT),1)
+	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
+endif
 
 #
 # Include the XS engine
 #
 XS_DIRECTORIES = \
 	$(XS_DIR)/includes \
-	$(XS_DIR)/sources \
-	$(XS_DIR)/platforms/linemb \
-	$(XS_DIR)/platforms/mc \
-	$(XS_DIR)/platforms
+	$(XS_DIR)/platforms \
+	$(XS_DIR)/sources
 
 XS_HEADERS = \
+	$(XS_DIR)/platforms/lin_xs.h \
 	$(XS_DIR)/platforms/mc/xsHosts.h \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
@@ -64,6 +95,7 @@ XS_HEADERS = \
 	$(XS_DIR)/sources/xsScript.h
 
 XS_OBJECTS = \
+	$(LIB_DIR)/lin_xs.c.o \
 	$(LIB_DIR)/xsAll.c.o \
 	$(LIB_DIR)/xsAPI.c.o \
 	$(LIB_DIR)/xsArguments.c.o \
@@ -106,7 +138,6 @@ XS_OBJECTS = \
 	$(LIB_DIR)/xsdtoa.c.o \
 	$(LIB_DIR)/xsmc.c.o \
 	$(LIB_DIR)/xsre.c.o \
-	$(LIB_DIR)/xsHosts.c.o
 
 MODULE_DIRS = \
 	$(MODDABLE)/modules/base/timer\
@@ -141,13 +172,13 @@ $(TMP_DIR)/mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST) $(SDKCONFIG_H)
 	@mcrez $(DATA) $(RESOURCES) -o $(TMP_DIR) -r mc.resources.c
 
 # The exectuable
-$(TMP_DIR)/xs_main.o: $(BUILD_DIR)/devices/linemb/xsProj/main.c
+$(TMP_DIR)/xs_main.o: $(BUILD_DIR)/devices/linemb/xsProj-glib/main.c
 	@echo "# cc" $(<F)
 	@$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -c $< -o $@
 
 $(BIN_DIR)/$(NAME): ${XS_OBJECTS} $(TMP_DIR)/mc.xs.c.o $(OBJECTS) $(TMP_DIR)/xs_main.o $(TMP_DIR)/mc.resources.o
 	@echo "# ld " $@
-	$(CC) $(LINK_OPTIONS) $^ $(LINK_LIBRARIES) -static -o $@
+	@$(CC) $(LINK_OPTIONS) $^ $(LINK_LIBRARIES) -o $@
 
 build: $(PROJ_DIR) $(BIN_DIR)/$(NAME)
 
