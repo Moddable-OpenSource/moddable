@@ -4,7 +4,7 @@ The camera module supports image input with readily available camera modules and
 
 There are a number of ESP32-S3 devices which integrate a camera and include PSRAM. We've tried, and included target platforms for the following devices:
 
-- `m5atom_s3r`: This small camera has no display, so the server applications will be of interest. There are two versions of this device. The smaller device has a GC0308 camera sensor. The M12 version has an OV3660 camera sensor which supports JPEG output.
+- `m5atom_s3r_cam`, `m5atom_s3r_m12`: This small camera has no display, so the server applications will be of interest. There are two versions of this device. The smaller device has a GC0308 camera sensor. The M12 version has an OV3660 camera sensor which supports JPEG output.
 
 - `m5stack_cores3`: This all-in-one device includes a touch-screen, battery and other sensors. It has a GC0308 camera sensor. This camera does not support JPEG output.
 
@@ -76,7 +76,7 @@ Server ready at: http://10.0.1.58:8080
 This example must be built with the `ssid` and `password` configuration parameters to provide the network connection parameters.
 
 ```
-mcconfig -d -m -p esp32/m5atom_s3r ssid=xxx password=xxx
+mcconfig -d -m -p esp32/m5atom_s3r_cam ssid=xxx password=xxx
 ```
 
 ### camera-server-jpeg
