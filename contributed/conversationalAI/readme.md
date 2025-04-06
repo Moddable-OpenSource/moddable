@@ -16,7 +16,7 @@ You will need your own keys for the AI services used by the Conversational AL. I
 It is recommended that you specify the API keys on the command line, though there is also a place to put them in the `config` section of [manifest.json](./manifest.json). On the command line, you can specify the keys directly:
 
 ```
-mcconfig -d -m -p esp32/moddable_six_cdc openAIKey="xyzzy" geminiAPIKey="abcde" humeAPIKey="empath"
+mcconfig -d -m -p esp32/moddable_six_cdc openAIKey="xyzzy" geminiAPIKey="abcde" humeAIKey="empath"
 ```
 
 You can also add the keys to your environment, so that they can be accessed by name.
@@ -25,7 +25,7 @@ You can also add the keys to your environment, so that they can be accessed by n
 export OPENAI_API_KEY="xyzzy"
 export GEMINI_API_KEY ="abcde"
 export HUME_API_KEY ="empath"
-mcconfig -d -m -p esp32/moddable_six_cdc openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAPIKey=$HUME_API_KEY
+mcconfig -d -m -p esp32/moddable_six_cdc openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAIKey=$HUME_API_KEY
 ```
 
 > **Note**: All API keys are optional: you can omit the key for any service you are not using. Of course, only services with a valid key will work.
@@ -62,5 +62,5 @@ Conversational AI is incredibly efficient, but it still requires more resources,
 You can also run Conversational AI on the Moddable SDK's built-in simulator, `mcsim`. This is a great way to explore how the code works and even develop new features. The simulator is available on macOS, Windows, and Linux. To build and run, just use the Moddable Six simulator target with your AI service keys:
 
 ```
-mcconfig -d -m -p sim/moddable_six openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAPIKey=$HUME_API_KEY
+mcconfig -d -m -p sim/moddable_six openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAIKey=$HUME_API_KEY
 ```
