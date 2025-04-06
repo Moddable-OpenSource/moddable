@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -55,7 +55,11 @@ export default class ILI9341 @ "xs_ILI9341p8_destructor" {
 			if (frameRate[i] <= value)
 				break;
 		}
+		this._frameRate = frameRate[i];
 		return this.command(0xc6, Uint8Array.of(i))
+	}
+	get frameRate() {
+		return this._frameRate ?? 50;
 	}
 	set syncFrames(value) @ "xs_ili9341p8_set_syncFrames";
 	get syncFrames() @ "xs_ili9341p8_get_syncFrames";
