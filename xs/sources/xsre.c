@@ -3044,8 +3044,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						mxBreak;
 					mxCase(cxEmptyStep):
 						step = *pointer;
-						if ((offset != stop) && firstState)
-							goto mxPopState;
+// 						if ((offset != stop) && firstState)
+// 							goto mxPopState;
 						mxBreak;
 					mxCase(cxLineBeginStep):
 						step = *pointer;
