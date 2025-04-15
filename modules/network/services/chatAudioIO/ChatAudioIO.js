@@ -179,7 +179,7 @@ class ChatAudioIO {
 		this.worker.postMessage({ id: "sendFunctionResult", call, result });
 	}
 	sendText(text) {
-		this.data.worker.postMessage({  id: "sendText", text });
+		this.worker.postMessage({  id: "sendText", text });
 	}
 	speak() {
 		this.state = ChatAudioIO.WAITING;
