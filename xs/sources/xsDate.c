@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -956,7 +956,7 @@ void fx_Date_prototype_setTime(txMachine* the)
 	else {
 		txNumber number = fxToNumber(the, mxArgv(0));
 		int fpclass = c_fpclassify(number);
-		if (fpclass != FP_NAN) {
+		if (fpclass != C_FP_NAN) {
 			if (c_fabs(number) > 8.64e15)
 				number = C_NAN;
 			else

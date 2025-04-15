@@ -95,8 +95,8 @@ txBoolean fxToBoolean(txMachine* the, txSlot* theSlot)
 	case XS_NUMBER_KIND:
 		theSlot->kind = XS_BOOLEAN_KIND;
 		switch (c_fpclassify(theSlot->value.number)) {
-		case FP_NAN:
-		case FP_ZERO:
+		case C_FP_NAN:
+		case C_FP_ZERO:
 			theSlot->value.boolean = 0;
 			break;
 		default:
@@ -1252,8 +1252,8 @@ txBoolean fxRunTest(txMachine* the)
 		break;
 	case XS_NUMBER_KIND:
 		switch (c_fpclassify(the->stack->value.number)) {
-		case FP_NAN:
-		case FP_ZERO:
+		case C_FP_NAN:
+		case C_FP_ZERO:
 			result = 0;
 			break;
 		default:

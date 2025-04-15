@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -40,7 +40,7 @@
 //#define mxTrace 1
 //#define mxTraceCall 1
 
-#define c_iszero(NUMBER) (FP_ZERO == c_fpclassify(NUMBER))
+#define c_iszero(NUMBER) (C_FP_ZERO == c_fpclassify(NUMBER))
 
 static void fxRunArguments(txMachine* the, txIndex offset);
 static void fxRunBase(txMachine* the);
