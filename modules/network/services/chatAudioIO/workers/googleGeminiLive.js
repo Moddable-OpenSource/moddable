@@ -28,7 +28,7 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "generativelanguage.googleapis.com";
-		this.path = `/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${config.geminiAPIKey}`;
+		this.path = `/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${config.geminiAPIKey}`;
 		this.headers = null;
 		this.audioPrefix = audioPrefix;
 		this.audioSuffix = audioSuffix;
@@ -39,7 +39,7 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		const tools = message.functions ?? [];
 		const voiceName = message.voiceName ?? "Aoede";
 		this.setup = {
-			model: "models/gemini-2.0-flash-exp",
+			model: "models/gemini-2.0-flash-live-001",
 			generationConfig: {
 				responseModalities: "audio",
 				speechConfig: {
@@ -53,6 +53,10 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			},
 			tools: {
 				functionDeclarations: tools
+			},
+			inputAudioTranscription: {
+			},
+			outputAudioTranscription: {
 			}
 		};
 	}
@@ -121,7 +125,11 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 				this.parser.done();
 				this.speaking = true;
 				this.post("speak");
+				this.postMessage({ id:"receiveOutputText", text:"" });
 			}
+		}
+		if (data.outputTranscription) {
+			this.postMessage({ id:"receiveOutputText", text:data.outputTranscription.text, more:true });
 		}
 	}
 	'setupComplete'(data) {
