@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"../dns/manifest_dns.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
