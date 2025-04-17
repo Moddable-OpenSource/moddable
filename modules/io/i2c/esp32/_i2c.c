@@ -20,9 +20,10 @@
 
 /*
 	I2C - uing ESP-IDF
+	
+	- stop handling
+	- readQuick / writeQuick
 
-	to do:
-		- update to latest ESP-IDF API
 */
 
 #include "xsmc.h"			// xs bindings for microcontroller
@@ -30,7 +31,7 @@
 #include "xsHost.h"			// esp platform support
 #include "_i2c.h"			// I2C host hooks
 
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -45,10 +46,13 @@ struct I2CRecord {
 	uint32_t					timeout;
 	uint8_t						address;		// 7-bit
 	uint8_t						pullup;
-	uint8_t						port;
-	uint8_t						stop;			// SMBus
+	int8_t						port;
+	uint8_t						stop;			// SMBus @@ not supported in curent ESP-IDF API
 	xsSlot						obj;
 	struct I2CRecord			*next;
+
+	i2c_master_bus_handle_t 	bus;
+	i2c_master_dev_handle_t		device;
 };
 typedef struct I2CRecord I2CRecord;
 typedef struct I2CRecord *I2C;
@@ -80,9 +84,12 @@ void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
 	int data, clock, hz, address;
-	int timeout = 32000;		// 400 ms (same as default I2C_SLAVE_TIMEOUT_DEFAULT)
-	uint8_t pullup = GPIO_PULLUP_ENABLE;
-	int port = I2C_NUM_0;
+	int timeout = 400;		// -1 no timeout - wait forever
+	uint8_t pullup = 1;
+	int port = -1;			// none requested
+	uint8_t busIsNew = 0;
+	i2c_master_bus_handle_t bus = C_NULL;
+	i2c_master_dev_handle_t device = C_NULL;
 
 	if (NULL == gI2CMutex)
 		gI2CMutex = xSemaphoreCreateMutex();
@@ -95,6 +102,8 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("clock required");
 	if (!xsmcHas(xsArg(0), xsID_address))
 		xsRangeError("address required");
+	if (!xsmcHas(xsArg(0), xsID_hz))
+		xsRangeError("hz required");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_data);
 	data = builtinGetPin(the, &xsVar(0));
@@ -124,12 +133,14 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_timeout)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
-		timeout = xsmcToInteger(xsVar(0)) * (80000000 / 1000);
+		timeout = xsmcToInteger(xsVar(0));
+		if (timeout < 0)
+			xsRangeError("invalid timeout");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
-		pullup = xsmcToBoolean(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+		pullup = xsmcToBoolean(xsVar(0)) ? 1 : 0;
 	}
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -143,9 +154,58 @@ void _xs_i2c_constructor(xsMachine *the)
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
 
+//printf("Bus request: data %d, clock %d, port %d, pullup %d\n", (int)data, (int)clock, (int)port, (int)pullup);
+
+	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
+
+	I2C walker;
+	for (walker = gI2C; walker; walker = walker->next) {
+		if ((walker->data == data) && (walker->clock == clock) && (walker->port == port) && (walker->pullup == pullup)) {
+			bus = walker->bus;
+//printf("  re-use existing bus\n");
+			break;
+		}
+	}
+
+	xSemaphoreGive(gI2CMutex);
+
+	if (!bus) {
+		i2c_master_bus_config_t busC = {
+			.i2c_port = port,
+			.sda_io_num = data,
+			.scl_io_num = clock,
+			.clk_source = I2C_CLK_SRC_DEFAULT
+		};
+		busC.flags.enable_internal_pullup = pullup;
+		if (ESP_OK != i2c_new_master_bus(&busC, &bus))
+			xsUnknownError("can't create bus");
+		busIsNew = 1;		
+//printf("  create new bus\n");
+	}
+
+	i2c_device_config_t deviceC = {
+		.dev_addr_length = I2C_ADDR_BIT_LEN_7,
+		.device_address = address,
+		.scl_speed_hz = hz,
+	};
+	if (ESP_OK != i2c_master_bus_add_device(bus, &deviceC, &device)) {
+		if (busIsNew)
+			i2c_del_master_bus(bus);
+		xsUnknownError("can't create device");
+	}
+
+//	if (ESP_OK == i2c_master_probe(bus, address, 1000))
+//		printf("probe OK\n");
+//	else
+//		printf("probe FAIL\n");
+
 	i2c = c_malloc(sizeof(I2CRecord));
-	if (!i2c)
+	if (!i2c) {
+		i2c_master_bus_rm_device(device);
+		if (busIsNew)
+			i2c_del_master_bus(bus);
 		xsRangeError("no memory");
+	}
 
 	xsmcSetHostData(xsThis, i2c);
 	i2c->obj = xsThis;
@@ -156,7 +216,9 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->address = address;
 	i2c->timeout = timeout;
 	i2c->pullup = pullup;
-	i2c->port = (uint8_t)port;
+	i2c->port = (int8_t)port;
+	i2c->bus = bus;
+	i2c->device = device;
 
 	i2c->next = gI2C;
 	gI2C = i2c;
@@ -173,15 +235,26 @@ void _xs_i2c_destructor(void *data)
 	if (!i2c)
 		return;
 
-	if (i2c == gI2CActive) {
-		gI2CActive = NULL;
-		i2c_driver_delete(i2c->port);
+	if (i2c->device)
+		i2c_master_bus_rm_device(i2c->device);
+
+	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
+	I2C walker;
+	int busCount = 0;
+	for (walker = gI2C; walker; walker = walker->next) {
+		if (walker->bus == i2c->bus)
+			busCount++;
 	}
+	if (1 == busCount) {
+//printf("Bus delete: data %d, clock %d, port %d, pullup %d\n", (int)i2c->data, (int)i2c->clock, (int)i2c->port, (int)i2c->pullup);
+		i2c_del_master_bus(i2c->bus);
+		i2c->bus = C_NULL;
+	}
+	xSemaphoreGive(gI2CMutex);
 
 	if (gI2C == i2c)
 		gI2C = i2c->next;
 	else {
-		I2C walker;
 		for (walker = gI2C; walker; walker = walker->next) {
 			if (walker->next == i2c) {
 				walker->next = i2c->next;
@@ -219,11 +292,10 @@ void _xs_i2c_read(xsMachine *the)
 	xsUnsignedValue length;
 	int err;
 	uint8_t stop = true;
-	i2c_cmd_handle_t cmd;
 	void *buffer;
 
 	if (xsmcArgc > 1)
-		stop = xsmcToBoolean(xsArg(1));
+		stop = xsmcToBoolean(xsArg(1));		//@@ IGNORED
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
 		xsResult = xsArg(0);
@@ -238,18 +310,7 @@ void _xs_i2c_read(xsMachine *the)
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 
-	cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (length > 0) {
-		if (length > 1)
-			i2c_master_read(cmd, buffer, length - 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, ((uint8_t *)buffer) + length - 1, 1, I2C_MASTER_NACK);
-	}
-	if (stop)
-		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+	err = i2c_master_receive(i2c->device, buffer, length, i2c->timeout);
 
 	xSemaphoreGive(gI2CMutex);
 
@@ -263,27 +324,20 @@ void _xs_i2c_write(xsMachine *the)
 	int err;
 	xsUnsignedValue length;
 	uint8_t stop = true;
-	i2c_cmd_handle_t cmd;
 	void *buffer;
 
 	if (xsmcArgc > 1)
-		stop = xsmcToBoolean(xsArg(1));
+		stop = xsmcToBoolean(xsArg(1));		//@@ unused
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 
-	cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
 	if (length)
-		i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
-
-	if (stop)
-		i2c_master_stop(cmd);
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+		err = i2c_master_transmit(i2c->device, buffer, length, i2c->timeout);
+	else //@@ write quick unsupported thorugh transmit, but probe seems similar-ish
+		err = i2c_master_probe(i2c->bus, i2c->address, 1000);
 
 	xSemaphoreGive(gI2CMutex);
 
@@ -300,12 +354,11 @@ void _xs_i2c_writeRead(xsMachine *the)
 	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	int err;
 	xsUnsignedValue lengthWrite, lengthRead;
-	i2c_cmd_handle_t cmd;
 	void *bufferWrite, *bufferRead;
 	uint8_t stop = true;
 
 	if (xsmcArgc > 2)
-		stop = xsmcToBoolean(xsArg(2));
+		stop = xsmcToBoolean(xsArg(2));		//@@ unused
 
 	if (xsReferenceType == xsmcTypeOf(xsArg(1))) {
 		xsResult = xsArg(1);
@@ -322,72 +375,17 @@ void _xs_i2c_writeRead(xsMachine *the)
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 
-	cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	if (lengthWrite)
-		i2c_master_write(cmd, (uint8_t *)bufferWrite, lengthWrite, 1);
-	if (stop)
-		i2c_master_stop(cmd);
-
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (lengthRead > 1)
-		i2c_master_read(cmd, bufferRead, lengthRead - 1, I2C_MASTER_ACK);
-	i2c_master_read(cmd, ((uint8_t *)bufferRead) + lengthRead - 1, 1, I2C_MASTER_NACK);
-	i2c_master_stop(cmd);
-
-	err = i2c_master_cmd_begin(i2c->port, cmd, 1000 / portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+	err = i2c_master_transmit_receive(i2c->device, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
 
 	xSemaphoreGive(gI2CMutex);
 
-	if (ESP_OK != err) {
-	xsLog("err %d\n", (int)err);
+	if (ESP_OK != err)
 		xsUnknownError("writeRead failed");
-	}
 }
 
 uint8_t i2cActivate(I2C i2c)
 {
 	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
-
-	if (gI2CActive) {
-		if ((i2c == gI2CActive) ||
-			(i2c && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
-			return 1;
-
-		i2c_driver_delete(gI2CActive->port);
-		gI2CActive = NULL;
-	}
-
-	if (i2c) {
-		i2c_config_t conf;
-
-		conf.mode = I2C_MODE_MASTER;
-		conf.sda_io_num = i2c->data;
-		conf.scl_io_num = i2c->clock;
-		conf.master.clk_speed = i2c->hz;
-		conf.sda_pullup_en = i2c->pullup;
-		conf.scl_pullup_en = i2c->pullup;
-		conf.clk_flags = 0;
-		if (ESP_OK != i2c_param_config(i2c->port, &conf)) {
-			xSemaphoreGive(gI2CMutex);
-			return 0;
-		}
-
-		if (ESP_OK != i2c_driver_install(i2c->port, I2C_MODE_MASTER, 0, 0, 0)) {
-			xSemaphoreGive(gI2CMutex);
-			return 0;
-		}
-
-		gI2CActive = i2c;
-
-		i2c_set_timeout(i2c->port, i2c->timeout);
-	}
-	else
-		xSemaphoreGive(gI2CMutex);
-
 	return 1;
 }
 
@@ -440,12 +438,12 @@ struct TransactionRecord {
 	xsMachine			*the;
 	xsSlot				callback;
 	xsSlot				readBuffer;
-	i2c_cmd_handle_t	cmd;
 	uint8_t				hasCallback;
 	uint8_t				hasReadBuffer;
 	uint8_t				operation;
 	uint8_t				bufferLength;
 	uint8_t				processing;		// 0 unstarted, 1 i2c transaction in progress, 2 i2c transaction done
+	uint8_t				reg;			// smbus register
 	int					err;
 
 	uint8_t				buffer[];
@@ -588,15 +586,49 @@ static void i2cTask(void *pvParameter)
 			else if (kOperationCancelled == transaction->operation)
 				transaction->err = -2;
 			else if (i2cActivate(transaction->i2c)) {
-				transaction->err = i2c_master_cmd_begin(transaction->i2c->port, transaction->cmd, 1000 / portTICK_PERIOD_MS);
+				I2C i2c = transaction->i2c;
+				switch (transaction->operation) {
+					case kOperationRead:
+					case kOperationReceiveByte:
+					case kOperationReadQuick:
+						transaction->err = i2c_master_receive(i2c->device, transaction->buffer, transaction->bufferLength, i2c->timeout);
+						break;
+
+					case kOperationReadUint8:
+					case kOperationReadUint16:
+					case kOperationReadBuffer:
+						transaction->err = i2c_master_transmit_receive(i2c->device, &transaction->reg, 1, transaction->buffer, transaction->bufferLength, i2c->timeout);
+						break;
+
+					case kOperationWrite:
+					case kOperationSendByte:
+						if (transaction->bufferLength)
+							transaction->err = i2c_master_transmit(i2c->device, transaction->buffer, transaction->bufferLength, i2c->timeout);
+						else //@@ write quick unsupported thorugh transmit, but probe seems similar-ish
+							transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
+						break;
+
+					case kOperationWriteUint8:
+					case kOperationWriteUint16:
+					case kOperationWriteBuffer: {
+						i2c_master_transmit_multi_buffer_info_t buffers[2] = {
+							{.write_buffer = (uint8_t*)&transaction->reg, .buffer_size = 1},
+							{.write_buffer = (uint8_t*)transaction->buffer, .buffer_size = transaction->bufferLength},
+						};
+						transaction->err = i2c_master_multi_buffer_transmit(i2c->device, buffers, 2, i2c->timeout);
+						} break;
+
+					case kOperationWriteQuick:	//@@ write quick unsupported thorugh transmit, but probe seems similar-ish
+						transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
+						break;
+				}
+
 				xSemaphoreGive(gI2CMutex);
 			}
 			else
 				transaction->err = -1;
 
 			transaction->processing = 2;
-
-			i2c_cmd_link_delete(transaction->cmd);
 
 			if (transaction->hasCallback || transaction->hasReadBuffer)
 				modMessagePostToMachine(transaction->the, NULL, 0, i2cDeliver, transaction);
@@ -625,7 +657,6 @@ static Transaction newI2CTransaction(xsMachine *the, I2C i2c, uint8_t operation,
 		transaction->callback = xsArg(callbackIndex);
 		xsRemember(transaction->callback);
 	}
-	transaction->cmd = i2c_cmd_link_create();
 	transaction->operation = operation;
 	transaction->bufferLength = (uint8_t)bufferLength;
 	
@@ -635,13 +666,8 @@ static Transaction newI2CTransaction(xsMachine *the, I2C i2c, uint8_t operation,
 static Transaction newSMBusTransaction(xsMachine *the, I2C i2c, uint8_t operation, xsUnsignedValue bufferLength, xsIntegerValue callbackIndex, uint8_t reg)
 {
 	Transaction transaction = newI2CTransaction(the, i2c, operation, bufferLength, callbackIndex);
-
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write_byte(cmd, reg, 1);
-	if (i2c->stop)
-		i2c_master_stop(cmd);
+	
+	transaction->reg = reg;
 
 	return transaction;
 }
@@ -703,6 +729,7 @@ void _xs_i2casync_destructor(void *data)
 void _xs_i2casync_constructor(xsMachine *the)
 {
 	_xs_i2c_constructor(the);
+	xsmcSetHostDestructor(xsThis, _xs_i2casync_destructor);
 
 	if (NULL == gI2CTaskMutex) {
 		gI2CTaskMutex = xSemaphoreCreateMutex();
@@ -743,7 +770,7 @@ void _xs_i2casync_read(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2casync_destructor);
 	xsUnsignedValue length;
-	uint8_t stop = true;
+	uint8_t stop = true;		//@@ ignored
 	uint8_t hasCallback = false, hasReadBuffer = false;
 	int callbackIndex = -1;
 	Transaction transaction;
@@ -774,18 +801,6 @@ void _xs_i2casync_read(xsMachine *the)
 		xsRemember(transaction->readBuffer);
 	}
 
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (length > 0) {
-		if (length > 1)
-			i2c_master_read(cmd, transaction->buffer, length - 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, transaction->buffer + length - 1, 1, I2C_MASTER_NACK);
-	}
-	if (stop)
-		i2c_master_stop(cmd);
-
 	queueTransaction(transaction);
 }
 
@@ -793,7 +808,7 @@ void _xs_i2casync_write(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2casync_destructor);
 	xsUnsignedValue length;
-	uint8_t stop = true;
+	uint8_t stop = true;		//@@ ignored
 	void *buffer;
 	Transaction transaction;
 	int callbackIndex = -1;
@@ -813,18 +828,10 @@ void _xs_i2casync_write(xsMachine *the)
 	// set-up transaction record
 	transaction = newI2CTransaction(the, i2c, kOperationWrite, length, callbackIndex);
 	c_memmove(transaction->buffer, buffer, length);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	if (length)
-		i2c_master_write(cmd, transaction->buffer, length, 1);
-	if (stop)
-		i2c_master_stop(cmd);
 	
 	queueTransaction(transaction);
 }
+
 
 void _xs_smbusasync_destructor(void *data)
 {
@@ -836,7 +843,8 @@ void _xs_smbusasync_constructor(xsMachine *the)
 	I2C i2c;
 
 	_xs_i2casync_constructor(the);
-	
+	xsmcSetHostDestructor(xsThis, _xs_smbusasync_destructor);
+
 	i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	i2c->stop = 0;
 	if (xsmcHas(xsArg(0), xsID_stop)) {
@@ -858,13 +866,6 @@ void _xs_smbusasync_readUint8(xsMachine *the)
 
 	// set-up transaction record
 	transaction = newSMBusTransaction(the, i2c, kOperationReadUint8, sizeof(uint8_t), (xsmcArgc > 1) ? 1 : -1, reg);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	i2c_master_read(cmd, transaction->buffer, 1, I2C_MASTER_NACK);
-	i2c_master_stop(cmd);
 
 	queueTransaction(transaction);
 }
@@ -890,20 +891,6 @@ void _xs_smbusasync_readUint16(xsMachine *the)
 	// set-up transaction record
 	transaction = newSMBusTransaction(the, i2c, kOperationReadUint16, sizeof(uint16_t), callbackIndex, reg);
 
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (bigEndian) {
-		i2c_master_read(cmd, transaction->buffer + 1, 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, transaction->buffer + 0, 1, I2C_MASTER_NACK);
-	}
-	else {
-		i2c_master_read(cmd, transaction->buffer + 0, 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, transaction->buffer + 1, 1, I2C_MASTER_NACK);
-	}
-	i2c_master_stop(cmd);
-
 	queueTransaction(transaction);
 }
 
@@ -912,17 +899,11 @@ void _xs_smbusasync_writeUint8(xsMachine *the)
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
 	int reg = xsmcToInteger(xsArg(0));
-	int byte = xsmcToInteger(xsArg(1));
+	uint8_t byte = (uint8_t)xsmcToInteger(xsArg(1));
 
 	// set-up transaction record
-	transaction = newSMBusTransaction(the, i2c, kOperationWriteUint8, 0, (xsmcArgc > 2) ? 2 : -1, reg);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write_byte(cmd, byte, 1);
-	i2c_master_stop(cmd);
+	transaction = newSMBusTransaction(the, i2c, kOperationWriteUint8, sizeof(uint8_t), (xsmcArgc > 2) ? 2 : -1, reg);
+	c_memmove(transaction->buffer, &byte, sizeof(byte));
 
 	queueTransaction(transaction);
 }
@@ -948,20 +929,7 @@ void _xs_smbusasync_writeUint16(xsMachine *the)
 
 	// set-up transaction record
 	transaction = newSMBusTransaction(the, i2c, kOperationWriteUint16, 0, callbackIndex, reg);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (bigEndian) {
-		i2c_master_write_byte(cmd, word >> 8, 1);
-		i2c_master_write_byte(cmd, word & 0xff, 1);
-	}
-	else {
-		i2c_master_write_byte(cmd, word & 0xff, 1);
-		i2c_master_write_byte(cmd, word >> 8, 1);
-	}
-	i2c_master_stop(cmd);
+	c_memmove(transaction->buffer, &word, sizeof(word));
 
 	queueTransaction(transaction);
 }
@@ -987,17 +955,6 @@ void _xs_smbusasync_readBuffer(xsMachine *the)
 		xsRemember(transaction->readBuffer);
 	}
 
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	if (length > 0) {
-		if (length > 1)
-			i2c_master_read(cmd, transaction->buffer, length - 1, I2C_MASTER_ACK);
-		i2c_master_read(cmd, transaction->buffer + length - 1, 1, I2C_MASTER_NACK);
-	}
-	i2c_master_stop(cmd);
-
 	queueTransaction(transaction);
 }
 
@@ -1015,14 +972,6 @@ void _xs_smbusasync_writeBuffer(xsMachine *the)
 	transaction = newSMBusTransaction(the, i2c, kOperationWriteBuffer, length, (xsmcArgc > 2) ? 2 : -1, reg);
 	c_memmove(transaction->buffer, buffer, length);
 
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	if (length)
-		i2c_master_write(cmd, transaction->buffer, length, 1);
-	i2c_master_stop(cmd);
-
 	queueTransaction(transaction);
 }
 
@@ -1033,13 +982,7 @@ void _xs_smbusasync_sendByte(xsMachine *the)
 	uint8_t command = xsmcToInteger(xsArg(0));
 	// set-up transaction record
 	transaction = newI2CTransaction(the, i2c, kOperationSendByte, 1, (xsmcArgc > 1) ? 1 : -1);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write_byte(cmd, command, 1);
-	i2c_master_stop(cmd);
+	c_memmove(transaction->buffer, &command, sizeof(command));
 
 	queueTransaction(transaction);
 }
@@ -1053,13 +996,6 @@ void _xs_smbusasync_receiveByte(xsMachine *the)
 	// set-up transaction record
 	transaction = newI2CTransaction(the, i2c, kOperationReceiveByte, sizeof(uint8_t), (xsmcArgc > 1) ? 1 : -1);
 
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 1);
-	i2c_master_read(cmd, transaction->buffer, 1, I2C_MASTER_NACK);
-	i2c_master_stop(cmd);
-
 	queueTransaction(transaction);
 }
 
@@ -1067,16 +1003,9 @@ void _xs_smbusasync_readQuick(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_smbusasync_destructor);
 	Transaction transaction;
-	int reg = xsmcToInteger(xsArg(0));
 
 	// set-up transaction record
-	transaction = newI2CTransaction(the, i2c, kOperationReadQuick, sizeof(uint8_t), xsmcArgc ? 0 : -1);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_READ, 0);
-	i2c_master_stop(cmd);
+	transaction = newI2CTransaction(the, i2c, kOperationReadQuick, 0, xsmcArgc ? 0 : -1);
 
 	queueTransaction(transaction);
 }
@@ -1087,13 +1016,7 @@ void _xs_smbusasync_writeQuick(xsMachine *the)
 	Transaction transaction;
 
 	// set-up transaction record
-	transaction = newI2CTransaction(the, i2c, kOperationWriteQuick, 1, xsmcArgc ? 0 : -1);
-
-	// build command
-	i2c_cmd_handle_t cmd = transaction->cmd;
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (i2c->address << 1) | I2C_MASTER_WRITE, 0);
-	i2c_master_stop(cmd);
+	transaction = newI2CTransaction(the, i2c, kOperationWriteQuick, 0, xsmcArgc ? 0 : -1);
 
 	queueTransaction(transaction);
 }
