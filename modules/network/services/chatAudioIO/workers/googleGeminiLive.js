@@ -54,8 +54,6 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			tools: {
 				functionDeclarations: tools
 			},
-			inputAudioTranscription: {
-			},
 			outputAudioTranscription: {
 			}
 		};
