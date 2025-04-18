@@ -416,7 +416,7 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyDisplay"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -434,7 +434,7 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyConfirm"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -452,9 +452,9 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSetArrayBuffer(xsVar(1), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	if (gBLE->iocap == KeyboardOnly)
-		xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyInput"), xsVar(0));
 	else {
-		xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyRequested"), xsVar(0));
+		xsResult = xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyRequested"), xsVar(0));
 		passkey = xsmcToInteger(xsResult);
 		esp_ble_passkey_reply(gBLE->remote_bda, true, passkey);
 	}
@@ -470,7 +470,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	xsVar(0) = xsmcNewObject();
 	xsmcSetBoolean(xsVar(1), auth_cmpl->auth_mode & ESP_LE_AUTH_BOND);
 	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -485,7 +485,7 @@ static void gapRemoveBondCompleteEvent(void *the, void *refcon, uint8_t *message
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), kBLEAddressTypePublic);	// @@
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -598,7 +598,7 @@ static void gattsRegisterEvent(void *the, void *refcon, uint8_t *message, uint16
 
 	// Stack is ready
 	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsStringX("onReady"));
 	xsEndHost(gBLE->the);
 
 	// Set appearance from app GAP service when available
@@ -651,7 +651,7 @@ static void gattsConnectEvent(void *the, void *refcon, uint8_t *message, uint16_
 	addressToBuffer(&connect->remote_bda, buffer);
 	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -672,7 +672,7 @@ static void gattsDisconnectEvent(void *the, void *refcon, uint8_t *message, uint
 	addressToBuffer(&disconnect->remote_bda, buffer);
 	xsmcSetArrayBuffer(xsVar(2), buffer, 6);
 	xsmcSet(xsVar(0), xsID_address, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onDisconnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -752,7 +752,7 @@ static void gattsReadEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsmcSetString(xsVar(4), (char*)char_name->type);
 		xsmcSet(xsVar(0), xsID_type, xsVar(4));
 	}
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsStringX("onCharacteristicRead"), xsVar(0));
 	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
 		esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)c_calloc(sizeof(esp_gatt_rsp_t), 1);
 		if (gatt_rsp != NULL) {
@@ -846,7 +846,7 @@ static void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 		xsmcSet(xsVar(0), xsID_handle, xsVar(2));
 		xsmcSetArrayBuffer(xsVar(3), value, write->len);
 		xsmcSet(xsVar(0), xsID_value, xsVar(3));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onCharacteristicWritten"), xsVar(0));
 	}
 bail:
 	c_free(value);
@@ -864,7 +864,7 @@ static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, ui
 	xsBeginHost(gBLE->the);
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), mtu->mtu);
-	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onMTUExchanged"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 

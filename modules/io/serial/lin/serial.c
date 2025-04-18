@@ -361,9 +361,9 @@ void xs_serial_format_get(xsMachine *the)
 	xsSerial s = xsGetHostData(xsThis);
 	if (!s) return;
 	if (s->bufferFormat)
-		xsResult = xsString("buffer");
+		xsResult = xsStringX("buffer");
 	else
-		xsResult = xsString("string;ascii");
+		xsResult = xsStringX("string;ascii");
 }
 
 void xs_serial_format_set(xsMachine *the)

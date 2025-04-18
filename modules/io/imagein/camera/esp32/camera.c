@@ -594,7 +594,7 @@ void xs_camera_get_imageType(xsMachine *the)
 {
     Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
     if (camera->isJPEG)
-		xsmcSetString(xsResult, "jpeg");
+		xsmcSetStringX(xsResult, "jpeg");
    else
 		xsmcSetInteger(xsResult, camera->imageType);
 }

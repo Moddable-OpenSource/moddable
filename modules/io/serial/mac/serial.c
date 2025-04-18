@@ -296,9 +296,9 @@ void xs_serial_format_get(xsMachine *the)
 	xsSerial s = xsmcGetHostData(xsThis);
 	if (!s) return;
 	if (2 == s->bufferFormat)
-		xsResult = xsString("number");
+		xsResult = xsStringX("number");
 	else if (1 == s->bufferFormat)
-		xsResult = xsString("buffer");
+		xsResult = xsStringX("buffer");
 }
 
 void xs_serial_format_set(xsMachine *the)

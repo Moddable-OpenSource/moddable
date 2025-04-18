@@ -664,7 +664,7 @@ void lfs_error(xsMachine *the, int code)
 void lfs_error(xsMachine *the, int code)
 {
 	char msg[64];
-	xsmcSetString(xsResult, "LFS_ERR: ");
+	xsmcSetStringX(xsResult, "LFS_ERR: ");
 	xsResult = xsCall1(xsResult, xsID_concat, xsInteger(code));
 	xsmcToStringBuffer(xsResult, msg, sizeof(msg));
 	xsUnknownError(msg);

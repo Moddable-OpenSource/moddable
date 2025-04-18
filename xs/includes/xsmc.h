@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -69,6 +69,7 @@ extern "C" {
 #define xsmcSetNumber(_SLOT, _VALUE)	fxNumber(the, &_SLOT, _VALUE)
 #define xsmcSetString(_SLOT, _VALUE)	fxString(the, &_SLOT, _VALUE)
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
+#define xsmcSetStringX(_SLOT, _VALUE)	fxStringX(the, &_SLOT, _VALUE)
 
 #undef xsArrayBuffer
 #define xsmcSetArrayBuffer(_SLOT, _BUFFER, _SIZE)	fxArrayBuffer(the, &_SLOT, _BUFFER, _SIZE, -1)
@@ -241,7 +242,7 @@ mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data
 	#pragma GCC poison xsGetHostChunk
 	#pragma GCC poison xsSetHostChunk
 	#pragma GCC poison xsGetHostChunkValidate
-	#pragma GCC poison xsVars 
+	#pragma GCC poison xsVars
 #endif
 
 #ifdef __cplusplus

@@ -739,7 +739,7 @@ void modBLEServerBondingRemoved(ble_gap_addr_t *peer_addr)
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), peer_addr->addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -748,7 +748,7 @@ void bleServerReadyEvent(void *the, void *refcon, uint8_t *message, uint16_t mes
 	if (!gBLE) return;
 	
 	xsBeginHost(the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsStringX("onReady"));
 	xsEndHost(the);
 
 	// Set appearance from app GAP service when available
@@ -812,7 +812,7 @@ void gapConnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t messa
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), gBLE->remote_bda.addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onConnected"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -836,7 +836,7 @@ void gapDisconnectedEvent(void *the, void *refcon, uint8_t *message, uint16_t me
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), gBLE->remote_bda.addr_type);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onDisconnected"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -850,7 +850,7 @@ void gapAuthKeyRequestEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcSetNewObject(xsVar(0));
 	xsmcSetArrayBuffer(xsVar(1), gBLE->remote_bda.addr, BLE_GAP_ADDR_LEN);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyInput"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyInput"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -914,7 +914,7 @@ void gattsWriteEvent(void *the, void *refcon, uint8_t *message, uint16_t message
 	if (0xFF == notify) {
 		xsmcSetArrayBuffer(xsVar(1), (uint8_t*)p_evt_write->data, p_evt_write->len);
 		xsmcSet(xsVar(0), xsID_value, xsVar(1));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onCharacteristicWritten"), xsVar(0));
 	}
 	else {
 		xsmcSetInteger(xsVar(1), notify);
@@ -952,7 +952,7 @@ void gattsReadAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint16
 		xsmcSetString(xsVar(1), (char*)char_name->type);
 		xsmcSet(xsVar(0), xsID_type, xsVar(1));
 	}
-	xsResult = xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicRead"), xsVar(0));
+	xsResult = xsCall2(gBLE->obj, xsID_callback, xsStringX("onCharacteristicRead"), xsVar(0));
 	if (xsUndefinedType != xsmcTypeOf(xsResult)) {
 		ble_gatts_rw_authorize_reply_params_t auth_reply;
 		c_memset(&auth_reply, 0, sizeof(auth_reply));
@@ -994,7 +994,7 @@ void gattsWriteAuthRequestEvent(void *the, void *refcon, uint8_t *message, uint1
 	}
 	xsmcSetArrayBuffer(xsVar(1), (uint8_t*)write->data, write->len);
 	xsmcSet(xsVar(0), xsID_value, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onCharacteristicWritten"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onCharacteristicWritten"), xsVar(0));
 	
 	ble_gatts_rw_authorize_reply_params_t auth_reply;
 	c_memset(&auth_reply, 0, sizeof(auth_reply));
@@ -1016,7 +1016,7 @@ static void gattsMTUExchangedEvent(void *the, void *refcon, uint8_t *message, ui
 	xsBeginHost(gBLE->the);
 	xsmcVars(1);
 	xsmcSetInteger(xsVar(0), mtu);
-	xsCall2(gBLE->obj, xsID_callback, xsString("onMTUExchanged"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onMTUExchanged"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -1037,7 +1037,7 @@ static void pmConnSecSucceededEvent(void *the, void *refcon, uint8_t *message, u
 	uint8_t bonded = (PM_CONN_SEC_PROCEDURE_ENCRYPTION == conn_sec_succeeded->procedure || PM_CONN_SEC_PROCEDURE_BONDING == conn_sec_succeeded->procedure);
 	xsmcSetBoolean(xsVar(1), bonded);
 	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -1046,7 +1046,7 @@ static void bleRadioOffEvent(void *the, void *refcon, uint8_t *message, uint16_t
 	if (!gBLE) return;
 
 	xsBeginHost(gBLE->the);
-	xsCall1(gBLE->obj, xsID_callback, xsString("onAdvertisementSent"));
+	xsCall1(gBLE->obj, xsID_callback, xsStringX("onAdvertisementSent"));
 	xsEndHost(gBLE->the);
 }
 

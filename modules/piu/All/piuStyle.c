@@ -538,10 +538,10 @@ void PiuStyle_get_horizontal(xsMachine* the)
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleHorizontal) {
 		switch((*self)->horizontal) {
-		case piuCenter: xsResult = xsString("center"); break;
-		case piuLeft: xsResult = xsString("left"); break;
-		case piuRight: xsResult = xsString("right"); break;
-		case piuLeftRight: xsResult = xsString("justify"); break;
+		case piuCenter: xsResult = xsStringX("center"); break;
+		case piuLeft: xsResult = xsStringX("left"); break;
+		case piuRight: xsResult = xsStringX("right"); break;
+		case piuLeftRight: xsResult = xsStringX("justify"); break;
 		}
 	}
 }
@@ -605,9 +605,9 @@ void PiuStyle_get_size(xsMachine* the)
 	}
 	else if ((*self)->flags & piuStyleRelativeSize) {
 		if ((*self)->size < 0)
-			xsResult = xsString("smaller");
+			xsResult = xsStringX("smaller");
 		else
-			xsResult = xsString("larger");
+			xsResult = xsStringX("larger");
 	}
 }
 
@@ -616,9 +616,9 @@ void PiuStyle_get_stretch(xsMachine* the)
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleCondensed) {
 		if ((*self)->flags & piuStyleCondensedBit)
-			xsResult = xsString("condensed");
+			xsResult = xsStringX("condensed");
 		else
-			xsResult = xsString("normal");
+			xsResult = xsStringX("normal");
 	}
 }
 
@@ -627,9 +627,9 @@ void PiuStyle_get_style(xsMachine* the)
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleItalic) {
 		if ((*self)->flags & piuStyleItalicBit)
-			xsResult = xsString("italic");
+			xsResult = xsStringX("italic");
 		else
-			xsResult = xsString("normal");
+			xsResult = xsStringX("normal");
 	}
 }
 
@@ -645,9 +645,9 @@ void PiuStyle_get_vertical(xsMachine* the)
 	PiuStyle* self = PIU(Style, xsThis);
 	if ((*self)->flags & piuStyleVertical) {
 		switch((*self)->vertical) {
-		case piuMiddle: xsResult = xsString("middle"); break;
-		case piuTop: xsResult = xsString("top"); break;
-		case piuBottom: xsResult = xsString("bottom"); break;
+		case piuMiddle: xsResult = xsStringX("middle"); break;
+		case piuTop: xsResult = xsStringX("top"); break;
+		case piuBottom: xsResult = xsStringX("bottom"); break;
 		}
 	}
 }
@@ -660,9 +660,9 @@ void PiuStyle_get_weight(xsMachine* the)
 	}
 	else if ((*self)->flags & piuStyleRelativeWeight) {
 		if ((*self)->size < 0)
-			xsResult = xsString("lighter");
+			xsResult = xsStringX("lighter");
 		else
-			xsResult = xsString("bolder");
+			xsResult = xsStringX("bolder");
 	}
 }
 

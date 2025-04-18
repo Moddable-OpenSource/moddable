@@ -262,6 +262,9 @@ typedef txU4 xsUnsignedValue;
 #define xsString(_VALUE) \
 	(fxString(the, &the->scratch, (xsStringValue)(_VALUE)), \
 	the->scratch)
+#define xsStringX(_VALUE) \
+	(fxStringX(the, &the->scratch, (xsStringValue)(_VALUE)), \
+	the->scratch)
 #define xsStringBuffer(_BUFFER,_SIZE) \
 	(fxStringBuffer(the, &the->scratch, _BUFFER ,_SIZE), \
 	the->scratch)
