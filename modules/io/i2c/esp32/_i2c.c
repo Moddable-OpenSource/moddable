@@ -21,8 +21,11 @@
 /*
 	I2C - uing ESP-IDF
 	
-	- stop handling
-	- readQuick / writeQuick
+	- i2c_master_execute_defined_operations (ESP-IDF v5.5 or later?)
+		- stop handling
+		- readQuick / writeQuick
+
+	- Can probably remove semaphore around read/write (see Thread Safety)
 
 */
 
