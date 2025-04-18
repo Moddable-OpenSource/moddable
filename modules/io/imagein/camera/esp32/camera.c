@@ -106,6 +106,8 @@ struct CameraRecord {
 	uint32_t	frameID;
 	CameraFrameRecord	frames[kCameraFrameCount];
 
+	uint8_t				sensorInitialized;
+	camera_status_t		sensorHas;		// 0 if not supported; 1 otherwise
 };
 typedef struct CameraRecord CameraRecord;
 typedef struct CameraRecord *Camera;
@@ -607,6 +609,103 @@ void xs_camera_get_height(xsMachine *the)
 {
     Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
 	xsmcSetInteger(xsResult, camera->height);
+}
+
+void xs_camera_get_identification(xsMachine *the)
+{
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+	camera_sensor_info_t *info = esp_camera_sensor_get_info(&esp_camera_sensor_get()->id);
+
+	xsmcVars(1);
+	xsmcSetNewObject(xsResult);
+	xsmcSetString(xsVar(0), (char *)info->name);
+	xsmcSet(xsResult, xsID_model, xsVar(0));
+}
+
+static void ensureSensor(Camera camera)
+{
+	if (camera->sensorInitialized)
+		return;
+
+	sensor_t *sensor = esp_camera_sensor_get();
+
+	camera->sensorHas.brightness = 0 == sensor->set_brightness(sensor, sensor->status.brightness);
+	camera->sensorHas.contrast = 0 == sensor->set_contrast(sensor, sensor->status.contrast);
+	camera->sensorHas.saturation = 0 == sensor->set_saturation(sensor, sensor->status.saturation);
+	camera->sensorHas.sharpness = 0 == sensor->set_sharpness(sensor, sensor->status.sharpness);
+	camera->sensorHas.denoise = 0 == sensor->set_denoise(sensor, sensor->status.denoise);
+	camera->sensorHas.wb_mode = 0 == sensor->set_whitebal(sensor, sensor->status.wb_mode);
+
+	camera->sensorInitialized = true;
+}
+
+void xs_camera_get_configuration(xsMachine *the)
+{
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+	ensureSensor(camera);
+
+	sensor_t *sensor = esp_camera_sensor_get();
+	xsSlot tmp;
+
+	xsmcSetNewObject(xsResult);
+	if (camera->sensorHas.brightness) {
+		xsmcSetInteger(tmp, sensor->status.brightness);
+		xsmcSet(xsResult, xsID_brightness, tmp);
+	}
+	if (camera->sensorHas.contrast) {
+		xsmcSetInteger(tmp, sensor->status.contrast);
+		xsmcSet(xsResult, xsID_conrast, tmp);
+	}
+	if (camera->sensorHas.saturation) {
+		xsmcSetInteger(tmp, sensor->status.saturation);
+		xsmcSet(xsResult, xsID_saturation, tmp);
+	}
+	if (camera->sensorHas.sharpness) {
+		xsmcSetInteger(tmp, sensor->status.sharpness);
+		xsmcSet(xsResult, xsID_sharpness, tmp);
+	}
+	if (camera->sensorHas.denoise) {
+		xsmcSetInteger(tmp, sensor->status.denoise);
+		xsmcSet(xsResult, xsID_denoise, tmp);
+	}
+	if (camera->sensorHas.wb_mode) {
+		xsmcSetInteger(tmp, sensor->status.wb_mode);
+		xsmcSet(xsResult, xsID_whiteBalance, tmp);
+	}
+}
+
+void xs_camera_configure(xsMachine *the)
+{
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+	ensureSensor(camera);
+
+	sensor_t *sensor = esp_camera_sensor_get();
+	xsSlot tmp;
+
+	if (camera->sensorHas.brightness && xsmcHas(xsArg(0), xsID_brightness)) {
+		xsmcGet(tmp, xsArg(0), xsID_brightness);
+		sensor->set_brightness(sensor, xsmcToInteger(tmp));
+	}
+	if (camera->sensorHas.contrast && xsmcHas(xsArg(0), xsID_contrast)) {
+		xsmcGet(tmp, xsArg(0), xsID_contrast);
+		sensor->set_contrast(sensor, xsmcToInteger(tmp));
+	}
+	if (camera->sensorHas.saturation && xsmcHas(xsArg(0), xsID_saturation)) {
+		xsmcGet(tmp, xsArg(0), xsID_saturation);
+		sensor->set_saturation(sensor, xsmcToInteger(tmp));
+	}
+	if (camera->sensorHas.sharpness && xsmcHas(xsArg(0), xsID_sharpness)) {
+		xsmcGet(tmp, xsArg(0), xsID_sharpness);
+		sensor->set_sharpness(sensor, xsmcToInteger(tmp));
+	}
+	if (camera->sensorHas.denoise && xsmcHas(xsArg(0), xsID_denoise)) {
+		xsmcGet(tmp, xsArg(0), xsID_denoise);
+		sensor->set_denoise(sensor, xsmcToInteger(tmp));
+	}
+	if (camera->sensorHas.wb_mode && xsmcHas(xsArg(0), xsID_whiteBalance)) {
+		xsmcGet(tmp, xsArg(0), xsID_whiteBalance);
+		sensor->set_wb_mode(sensor, xsmcToInteger(tmp));
+	}
 }
 
 /*
