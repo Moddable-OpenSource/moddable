@@ -20,14 +20,11 @@
 
 /*
 	UDP socket - uing lwip low level callback API
-
-	To do:
-
-		- multicast
 */
 
 #include "lwip/udp.h"
 #include "lwip/raw.h"
+#include "lwip/igmp.h"
 
 #include "modLwipSafe.h"
 
@@ -37,6 +34,10 @@
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
+
+#if ESP32
+	#include "esp_wifi.h"
+#endif
 
 struct UDPPacketRecord {
 	struct UDPPacketRecord *next;
@@ -72,6 +73,7 @@ void xs_udp_constructor(xsMachine *the)
 {
 	UDP udp;
 	int port = 0;
+	int ttl = -1;
 	struct udp_pcb *skt;
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 
@@ -84,6 +86,13 @@ void xs_udp_constructor(xsMachine *the)
 		port = xsmcToInteger(xsVar(0));
 		if ((port < 0) || (port > 65535))
 			xsRangeError("invalid port");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_timeToLive)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeToLive);
+		ttl = xsmcToInteger(xsVar(0));
+		if ((ttl <= 0) || (ttl > 255))
+			xsRangeError("invalid timeToLive");
 	}
 
 	builtinInitializeTarget(the);
@@ -112,6 +121,9 @@ void xs_udp_constructor(xsMachine *the)
 	xsRemember(udp->obj);
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
+
+	if (ttl > 0)
+		skt->ttl = ttl;
 
 	udp->onReadable = onReadable;
 
@@ -196,6 +208,79 @@ void xs_udp_write(xsMachine *the)
 		xsUnknownError("UDP send failed");
 
 	modInstrumentationAdjust(NetworkBytesWritten, byteLength);
+}
+
+void xs_udp_add(xsMachine *the)
+{
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
+	ip_addr_t multicastIP;
+
+	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
+		xsUnknownError("invalid IP address");
+
+#if LWIP_IPV4 && LWIP_IPV6
+	if (!IP_IS_V4(&multicastIP))
+		xsUnknownError("invalid IP address");
+#endif
+
+#if ESP32
+	if (0xffffffff == *(uint32_t *)&multicastIP.u_addr.ip4)
+		xsUnknownError("broadcast is not multicast");
+
+	esp_netif_t *ifc = NULL;
+	while ((ifc = esp_netif_next_unsafe(ifc))) {
+		esp_netif_ip_info_t info = {0};
+		if (ESP_OK == esp_netif_get_ip_info(ifc, &info))
+			igmp_joingroup((ip4_addr_t *)&info.ip, &multicastIP.u_addr.ip4);
+	}
+#elif CYW43_LWIP
+	//@@ MDK - multicast
+	ip_addr_t ifaddr;
+	struct netif *netif;
+	netif = netif_get_by_index(0);
+	ifaddr.addr = netif->ip_addr.addr;
+	igmp_joingroup(&ifaddr, &multicastIP);
+#else
+	if (0xffffffff == multicastIP.addr)
+		xsUnknownError("broadcast is not multicast");
+
+	ip_addr_t ifaddr;
+	struct ip_info staIpInfo;
+	wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+	ifaddr.addr = staIpInfo.ip.addr;
+	igmp_joingroup(&ifaddr, &multicastIP);
+#endif
+}
+
+void xs_udp_remove(xsMachine *the)
+{
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
+	ip_addr_t multicastIP;
+
+	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
+		xsUnknownError("invalid IP address");
+
+#if ESP32
+	esp_netif_t *ifc = NULL;
+	while ((ifc = esp_netif_next_unsafe(ifc))) {
+		esp_netif_ip_info_t info = {0};
+		if (ESP_OK == esp_netif_get_ip_info(ifc, &info))
+			igmp_leavegroup((ip4_addr_t *)&info.ip, &multicastIP.u_addr.ip4);
+	}
+#elif CYW43_LWIP
+	//@@ MDK - multicast
+	ip_addr_t ifaddr;
+	struct netif *netif;
+	netif = netif_get_by_index(0);
+	ifaddr.addr = netif->ip_addr.addr;
+	igmp_leavegroup(&ifaddr, &multicastIP);
+#else
+	ip_addr_t ifaddr;
+	struct ip_info staIpInfo;
+	wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+	ifaddr.addr = staIpInfo.ip.addr;
+	igmp_leavegroup(&ifaddr, &multicastIP);
+#endif
 }
 
 void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
