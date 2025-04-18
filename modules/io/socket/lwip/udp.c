@@ -53,6 +53,7 @@ struct UDPRecord {
 	xsSlot			obj;
 	xsMachine		*the;
 	xsSlot			*onReadable;
+	uint8_t			readablePending;
 };
 typedef struct UDPRecord UDPRecord;
 typedef struct UDPRecord *UDP;
@@ -160,6 +161,7 @@ void xs_udp_read(xsMachine *the)
 		builtinCriticalSectionEnd();
 		return;
 	}
+	udp->packets = packet->next;
 	builtinCriticalSectionEnd();
 
 	xsmcSetArrayBuffer(xsResult, packet->pb->payload, packet->pb->len);
@@ -172,10 +174,6 @@ void xs_udp_read(xsMachine *the)
 	ipaddr_ntoa_r(&packet->address, xsmcToString(xsVar(0)), 32);
 	xsmcSet(xsResult, xsID_address, xsVar(0));
 
-	builtinCriticalSectionBegin();
-	udp->packets = packet->next;
-	builtinCriticalSectionEnd();
-
 	pbuf_free_safe(packet->pb);
 	c_free(packet);
 }
@@ -183,15 +181,13 @@ void xs_udp_read(xsMachine *the)
 void xs_udp_write(xsMachine *the)
 {
 	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
-	char temp[32];
 	uint16_t port = xsmcToInteger(xsArg(1));
 	ip_addr_t dst;
 	xsUnsignedValue byteLength;
 	err_t err;
 	void *buffer;
 
-	xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-	if (!ipaddr_aton(temp, &dst))
+	if (!ipaddr_aton(xsmcToString(xsArg(0)), &dst))
 		xsRangeError("invalid IP address");
 
 	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
@@ -228,6 +224,7 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	modInstrumentationAdjust(NetworkBytesRead, p->len);
 
 	builtinCriticalSectionBegin();
+	uint8_t readablePending = udp->readablePending;
 	if (udp->packets) {
 		UDPPacket walker;
 
@@ -240,9 +237,11 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	else {
 		udp->packets = packet;
 		builtinCriticalSectionEnd();
+	}
 
-		if (udp->onReadable)
-			modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
+	if (!readablePending) {
+		udp->readablePending = true;
+		modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
 	}
 }
 
@@ -250,10 +249,10 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 {
 	UDP udp = refcon;
 	int count;
-	UDPPacket walker;
 
 	builtinCriticalSectionBegin();
-	walker = udp->packets;
+	udp->readablePending = false;
+	UDPPacket walker = udp->packets;
 	if (!walker) {
 		builtinCriticalSectionEnd();
 		return;
