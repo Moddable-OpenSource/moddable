@@ -328,7 +328,7 @@ static int formatToCamFormat(int commodettoFormat)
 	return -1;
 }
 
-static int sizeToFrameSize(int width, int height)
+static int dimensionsToFrameSize(int width, int height)
 {
 	int i;
 	for (i = 0; FRAMESIZE_INVALID != FrameSizes[i].id; i++) {
@@ -394,7 +394,7 @@ void xs_camera_constructor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_prototype);
 	camera->hostBufferPrototype = xsmcToReference(xsVar(0));
-	int frameSizeIndex = sizeToFrameSize(width, height);
+	int frameSizeIndex = dimensionsToFrameSize(width, height);
 	if (-1 == frameSizeIndex)
 		xsUnknownError("unsupported dimensions");
 
@@ -599,13 +599,13 @@ void xs_camera_get_imageType(xsMachine *the)
 
 void xs_camera_get_width(xsMachine *the)
 {
-	Camera camera = xsmcGetHostData(xsThis);
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
 	xsmcSetInteger(xsResult, camera->width);
 }
 
 void xs_camera_get_height(xsMachine *the)
 {
-	Camera camera = xsmcGetHostData(xsThis);
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
 	xsmcSetInteger(xsResult, camera->height);
 }
 
