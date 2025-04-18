@@ -27,19 +27,13 @@ function constructor(options) @ "xs_camera_constructor";
 
 class Camera @ "xs_camera_destructor" {
 	constructor(options) {
-		const bus = new device.I2C.default.io({
-			...device.I2C.default,
-			address: 1,
-			hz: 100_000
-		});
-		constructor.call(this, {...options, prototype: DisposableHostBuffer.prototype, i2cControl: bus});
-		bus.close();
+		constructor.call(this, {...options, prototype: DisposableHostBuffer.prototype});
 	} 
 	close() @ "xs_camera_close";
 	read(samples) @ "xs_camera_read";
 	start() @ "xs_camera_start";
 	stop() @ "xs_camera_stop";
-	
+
 	get format() @ "xs_camera_get_format";
 	set format(it) @ "xs_camera_set_format";
 	get imageType() @ "xs_camera_get_imageType";

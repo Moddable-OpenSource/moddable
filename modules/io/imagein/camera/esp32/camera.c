@@ -414,13 +414,6 @@ void xs_camera_constructor(xsMachine *the)
 	camera->swap16 = (imageType == kCommodettoBitmapRGB565LE);
 	camera->isJPEG = isJPEG;
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_i2cControl);
-	xsI2CHostHooks i2c = (xsI2CHostHooks)xsGetHostHooks(xsVar(0));
-	if (!i2c || !i2c->hooks.signature || (0 != c_strcmp(i2c->hooks.signature, "i2c")))
-		xsUnknownError("invalid i2c");
-	void *instanceData = i2c->doValidate(the, &xsVar(0));
-	i2c->doDeactivate(instanceData);
-
 	xTaskCreate(cameraLoop, "camera", 8 * 1024 + XT_STACK_EXTRA_CLIB, camera, 10, &camera->task);
 	
 	while (kStateInitializing == camera->state)
