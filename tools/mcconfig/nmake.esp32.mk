@@ -437,8 +437,7 @@ C_COMMON_FLAGS = -c -Os -g \
 
 !IF "$(ESP_ARCH)"=="riscv"
 C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
-	-march=rv32imc \
-	-D_NO_ATOMICS
+	-march=rv32imc
 !ELSE
 C_COMMON_FLAGS = $(C_COMMON_FLAGS) \
 	-mlongcalls \

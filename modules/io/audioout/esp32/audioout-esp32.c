@@ -355,7 +355,7 @@ void xs_audioout_close_(xsMachine *the)
 	if (audioOut && xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks)) {
 		xsForget(audioOut->obj);
 		
-#if defined(_NO_ATOMICS)
+#if !mxUseGCCAtomics
 		uint8_t useCount = --audioOut->useCount;
 #else
 		uint8_t useCount = __atomic_sub_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
