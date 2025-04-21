@@ -338,7 +338,6 @@ void fxSerialReadable(CFSocketRef socketRef, CFSocketCallBackType cbType, CFData
 			return;
 
 		xsBeginHost(s->the);
-			ioctl(s->fd, FIONREAD, &count);
 			xsCallFunction1(s->onReadable, s->obj, xsInteger(count));
 		xsEndHost();
 	}
