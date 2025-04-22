@@ -175,8 +175,8 @@ class ChatAudioIO {
 	receiveOutputText(message) {
 		this.onOutputTranscript(message.text, message.more);
 	}
-	sendFunctionResult(call, result) {
-		this.worker.postMessage({ id: "sendFunctionResult", call, result });
+	sendFunctionResult(call, name, result) {
+		this.worker.postMessage({ id: "sendFunctionResult", call, name, result });
 	}
 	sendText(text) {
 		this.worker.postMessage({  id: "sendText", text });
