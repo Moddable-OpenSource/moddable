@@ -327,7 +327,7 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 		builtinCriticalSectionEnd();
 	}
 
-	if (!readablePending) {
+	if (!readablePending && udp->onReadable) {
 		udp->readablePending = true;
 		modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
 	}
