@@ -32,7 +32,7 @@ declare module "embedded:io/socket/udp" {
       multicast: string;
       timeToLive: number;
     }))
-    write(buffer: Buffer, address: string, port: number): void;
+    write(address: string, port: number, buffer: Buffer): void;
     read(): ArrayBuffer & {
       address: string;
       port: number;
