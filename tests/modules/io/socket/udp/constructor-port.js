@@ -28,7 +28,7 @@ let u = new UDP({
 });
 
 let uu = new UDP({});
-uu.write(address, port, ArrayBuffer.fromString(testString));
+uu.write(ArrayBuffer.fromString(testString), address, port);
 uu.close();
 
 assert.throws(TypeError, () => new UDP({port: Symbol()}));

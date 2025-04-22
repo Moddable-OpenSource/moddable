@@ -29,11 +29,11 @@ let u = new UDP({
 
 let uu = new UDP({});
 
-assert.throws(TypeError, () => uu.write(address, Symbol(), new ArrayBuffer(1)));
-assert.throws(TypeError, () => uu.write(Symbol(), port, new ArrayBuffer(1)));
-assert.throws(TypeError, () => uu.write(address, port, Symbol()));
+assert.throws(TypeError, () => uu.write(new ArrayBuffer(1), address, Symbol()));
+assert.throws(TypeError, () => uu.write(new ArrayBuffer(1), Symbol(), port));
+assert.throws(TypeError, () => uu.write(Symbol(), address, port));
 assert.throws(ReferenceError, () => uu.write(Uin8Array.of(1,2,3)));
 
 const bytes = new Uint8Array(ArrayBuffer.fromString("__" + testString + "__"));
-uu.write(address, port, bytes.subarray(2, -2));
+uu.write(bytes.subarray(2, -2), address, port);
 uu.close();

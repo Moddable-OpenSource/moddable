@@ -35,7 +35,7 @@ listener.add(multicastAddress);
 // send a single probe
 const probe = new Serializer({query: true, opcode: DNS.OPCODE.QUERY, authoritative: true});
 probe.add(DNS.SECTION.QUESTION, "_services._dns-sd._udp.local", DNS.RR.PTR, DNS.CLASS.IN);
-listener.write(multicastAddress, port, probe.build());
+listener.write(probe.build(), multicastAddress, port);
 
 
 function dumpPacket(packet, address)
