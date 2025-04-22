@@ -34,6 +34,80 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 		this.audioSuffix = audioSuffix;
 		this.speaking = true;
 	}
+	connect(message) {
+		const client = new device.network.https.io({ 
+			...device.network.https,
+			host: this.host
+		});
+		const headers = new Map([
+			[ "X-Hume-Api-Key", config.humeAIKey ],
+			[ "Content-Type", "application/json" ],
+		]);
+		const request = (method, path, body) => {
+			let buffer = null;
+			let length = 0;
+			let offset = 0;
+			if (body) {
+				length = body.byteLength;
+				headers.set("content-length", length);
+			}
+			client.request({
+				method, path, headers,
+				onWritable(count) {
+					if (body) {
+						let remain = length - offset;
+						if (remain > 0) {
+							if (count > remain)
+								count = remain;
+							let view = new DataView(body, offset, count);
+							this.write(view);
+							offset += count;
+						}
+						else
+							this.write();
+					}
+				},
+				onReadable(count) {
+					if (buffer)
+						buffer = buffer.concat(this.read(count));
+					else
+						buffer = this.read(count);
+				},
+				onDone(error) {
+					if (buffer)
+						buffer = JSON.parse(String.fromArrayBuffer(buffer));
+					callback(buffer);
+				}
+			})
+		};
+		let state = -1;
+		const callback = json => {
+			for (;;) {
+				state++;
+				switch (state) {
+				case 0: 
+					request("GET", "/v0/evi/configs?name=Moddable", null);
+					return;
+				case 1: 
+					if (json && json.configs_page && (json.configs_page.length > 0)) {
+						request("DELETE", `/v0/evi/configs/${json.configs_page[0].id}`, null);
+						return;
+					}
+					break;
+				case 2: 
+					const body = ArrayBuffer.fromString(JSON.stringify(this.body));
+					request("POST", "/v0/evi/configs", body);
+					return;
+				case 3: 
+					client.close();
+					this.path += `&config_id=${json.id}`;
+					super.connect(message);
+					return;
+				}
+			}
+		};
+		callback(null);
+	}
 	configure(message) {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
@@ -50,7 +124,20 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			},
 			system_prompt: instructions,
 			tools,
-		}
+		};
+ 		this.body = {
+			evi_version: "2",
+  			name: "Moddable",
+  			voice: {
+   				 provider: "HUME_AI",
+   				 name: message.voiceName ?? "ITO",
+  			},
+			language_model: {
+				model_provider: "ANTHROPIC",
+				model_resource: "claude-3-7-sonnet-latest",
+// 				temperature: 1
+			},
+  		};
 	}
 	isBase64(result, current, name) {
 		return (result?.type == "audio_output") && (name == "data") ? 44 : false;
