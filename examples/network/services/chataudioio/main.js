@@ -29,7 +29,7 @@ const chat = new ChatAudioIO({
 	voiceName: "Sunny",
 	instructions: "You're a hostile firsherman with a salty sense of humor. You dislike people and care even less for fish.",
 	onStateChanged(state) {
-		trace(`State: ${states[state]}\n`);
+		trace(`State: ${states[state]} ${this.error ?? ""}\n`);
 	},
 	onInputTranscript(text) {
 		trace(`User: ${text}\n`);

@@ -89,6 +89,10 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 					request("GET", "/v0/evi/configs?name=Moddable", null);
 					return;
 				case 1: 
+					if (json?.fault) {
+						this.postMessage({ id:"failed", string:json.fault.faultstring });
+						return void client.close();
+					}
 					if (json && json.configs_page && (json.configs_page.length > 0)) {
 						request("DELETE", `/v0/evi/configs/${json.configs_page[0].id}`, null);
 						return;
