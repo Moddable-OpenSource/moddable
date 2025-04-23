@@ -9,6 +9,7 @@
 			"rainbow": false
 		},
 		"startupSound": false,
+		"elevenLabsKey": "",
 		"geminiAPIKey": "",
 		"openAIKey": "",
 		"humeAIKey": ""

@@ -79,6 +79,15 @@ const assets = {
 	},
 	
 	services: {
+		elevenLabs: {
+			color: "#959595",
+			icon:  { texture:{ path: "elevenLabs-logo.png" }, width:64, height:64 },
+			iconSmall: { texture:{ path: "elevenLabs-logo-small.png" }, width:24, height:24 },
+			key: config.elevenLabsKey,
+			title: "ElevenLabs Agent",
+			specifier: "elevenLabsAgent",
+			transcript: true,
+		},
 		gemini: {
 			color: "#4e87d3",
 			icon:  { texture:{ path: "gemini-logo.png" }, width:64, height:64 },
