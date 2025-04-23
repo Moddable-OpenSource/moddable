@@ -1,0 +1,22 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/network/services/chatAudioIO/manifest.json"
+	],
+	"creation": {
+		"static": 0,
+        "chunk": {
+            "initial": 262144,
+            "incremental": 0
+        },
+		"heap": {
+			"initial": 4096,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"modules": {
+		"*": "./main"
+	}
+}
