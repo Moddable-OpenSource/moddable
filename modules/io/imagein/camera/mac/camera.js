@@ -29,6 +29,10 @@ class Camera @ "xs_camera_destructor" {
 	get width() @ "xs_camera_get_width";
 	get height() @ "xs_camera_get_height";
 	get imageType() @ "xs_camera_get_imageType";
+	
+	get identification() @ "xs_camera_get_identification";
+	get configuration() @ "xs_camera_get_configuration";
+	configure(options) @ "xs_camera_configure";
 }
 
 export default Camera;
