@@ -131,9 +131,16 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 					request("GET", "/v1/convai/agents", null);
 					return;
 				case 1: 
-					let agent = json.agents.find(agent => agent.name == "Moddable");
-					if (agent) {
-						request("DELETE", `/v1/convai/agents/${agent.agent_id}`, null);
+					if (json?.agents) {
+						let agent = json.agents.find(agent => agent.name == "Moddable");
+						if (agent) {
+							request("DELETE", `/v1/convai/agents/${agent.agent_id}`, null);
+							return;
+						}
+					}
+					else {
+						this.postMessage({ id:"failed", string:json?.detail?.message ?? "failed" });
+						client.close();
 						return;
 					}
 					break;
