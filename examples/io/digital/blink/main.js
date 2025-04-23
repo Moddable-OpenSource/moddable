@@ -12,6 +12,7 @@
  *
  */
 
+/*
 if (undefined === device?.pin?.led)
 	throw new Error("no LED pin provided by device");
 
@@ -27,3 +28,18 @@ System.setInterval(() => {
 	led.write(state);
 	state ^= 1;
 }, 200);
+*/
+
+const Digital = device.io.Digital;
+const amp = new Digital({
+   pin: 45,
+   mode: Digital.Output,
+});
+amp.write(1);
+
+let state = 0;
+System.setInterval(() => {
+	amp.write(state);
+	state ^= 1;
+}, 2000);
+

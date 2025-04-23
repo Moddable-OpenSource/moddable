@@ -16,8 +16,8 @@ import AudioOut from "embedded:io/audio/out";
 import {MAUD, SampleFormat} from "maudHeader";
 import Resource from "Resource";
 
-const one = loadSound("one.maud");
-const two = loadSound("two.maud");
+const one = loadSound("one-voice.maud");
+const two = loadSound("two-tone.maud");
 let playing = one;
 
 const output = new AudioOut({
