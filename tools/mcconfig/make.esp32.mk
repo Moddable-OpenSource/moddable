@@ -599,7 +599,7 @@ xsbug:
 prepareOutput:
 	-@rm $(PROJ_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
-	-@rm $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)/main/idf_component.yml
+#	-@rm $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)/main/idf_component.yml
 
 DUMP_VARS:
 	echo "#\n#\n# vars\n#\n#\n"
@@ -612,7 +612,7 @@ DUMP_VARS:
 
 dependencies: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/../xs_idf_deps.txt
 	echo "# Configure dependencies..."
-	-rm -f $(PROJ_DIR)/main/idf_component.yml
+#	-rm -f $(PROJ_DIR)/main/idf_component.yml
 	cd $(PROJ_DIR) ; $(BUILD_DEPENDENCIES)
 
 precursor: prepareOutput idfVersionCheck $(PROJ_DIR_FILES) bootloaderCheck $(BLE) dependencies $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a

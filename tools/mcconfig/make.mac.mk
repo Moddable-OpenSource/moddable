@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2023 Moddable Tech, Inc.
+# Copyright (c) 2016-2025 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -117,8 +117,7 @@ else
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
-# LINK_OPTIONS = -arch i386 -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip
-LINK_OPTIONS = -dynamiclib -flat_namespace -undefined suppress -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc $(MACOS_ARCH)
+LINK_OPTIONS = -dynamiclib -flat_namespace -undefined dynamic_lookup -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc $(MACOS_ARCH)
 
 VPATH += $(XS_DIRECTORIES)
 
