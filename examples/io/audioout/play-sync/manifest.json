@@ -31,10 +31,8 @@
 	],
     "resources": {
 		"*": [
-    		"$(MODDABLE)/examples/assets/sounds/one-voice",
-    		"$(MODDABLE)/examples/assets/sounds/two-tone",
-    		"$(MODDABLE)/examples/assets/sounds/bflatmajor.wav",
-			"$(MODDABLE)/examples/assets/sounds/magic-sound.wav"
+    		"$(MODDABLE)/examples/assets/sounds/one",
+    		"$(MODDABLE)/examples/assets/sounds/two"
 		]
     }
 }
