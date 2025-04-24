@@ -110,7 +110,12 @@ PROJ_DIR = $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)
 BLD_DIR = $(PROJ_DIR)/build
 
 ifeq ($(MAKEFLAGS_JOBS),)
-	MAKEFLAGS_JOBS = --jobs -l 2.5
+	ifeq ($(HOST_OS),Darwin)
+		CORES := $(shell sysctl -n hw.ncpu)
+	else
+		CORES := $(shell nproc)
+	endif
+	MAKEFLAGS_JOBS = --jobs=$(CORES)
 endif
 
 IDF_BUILD_OPTIONS =
