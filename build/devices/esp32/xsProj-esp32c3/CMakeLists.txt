@@ -17,7 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 if (WIN32)
 	set(CMAKE_OBJECT_PATH_MAX 260)
 endif ()
