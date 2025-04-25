@@ -542,16 +542,19 @@ void xs_camera_configure(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_brightness)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_brightness);
 		camera->brightness = xsmcToInteger(xsVar(0));
-		camera->filter.brightness = ((double)camera->brightness) / 100.0;
+		if (camera->filter)
+			camera->filter.brightness = ((double)camera->brightness) / 100.0;
 	}
 	if (xsmcHas(xsArg(0), xsID_contrast)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_contrast);
 		camera->contrast = xsmcToInteger(xsVar(0));
-		camera->filter.contrast = 1.0 + (((double)camera->contrast) / 100.0);
+		if (camera->filter)
+			camera->filter.contrast = 1.0 + (((double)camera->contrast) / 100.0);
 	}
 	if (xsmcHas(xsArg(0), xsID_saturation)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_saturation);
 		camera->saturation = xsmcToInteger(xsVar(0));
-		camera->filter.saturation = 1.0 + (((double)camera->saturation) / 100.0);
+		if (camera->filter)
+			camera->filter.saturation = 1.0 + (((double)camera->saturation) / 100.0);
 	}
 }
