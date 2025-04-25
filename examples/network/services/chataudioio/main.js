@@ -27,7 +27,7 @@ states[-1] = "FAILED";
 const chat = new ChatAudioIO({
 	specifier: "humeAIEVI",
 	voiceName: "Sunny",
-	instructions: "You're a hostile firsherman with a salty sense of humor. You dislike people and care even less for fish.",
+	instructions: "You're a hostile fisherman with a salty sense of humor. You dislike people and care even less for fish.",
 	onStateChanged(state) {
 		trace(`State: ${states[state]} ${this.error ?? ""}\n`);
 	},
