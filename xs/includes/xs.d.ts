@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023 Moddable Tech, Inc
+ * Copyright (c) 2020-2025 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -79,11 +79,5 @@ interface Math {
 	irem(a: number, b: number): number
 	mod(a: number, b: number): number
 }
-
-// already defined by TypeScript (because Web)
-// interface Error {
-// 	stack: string
-// }
-
 
 // Compartment?

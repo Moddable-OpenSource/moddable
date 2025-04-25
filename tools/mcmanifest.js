@@ -1119,9 +1119,9 @@ export class TSConfigFile extends FILE {
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2022"],
+				lib: ["es2024"],
 				sourceMap: true,
-				target: "ES2022",
+				target: "es2024",
 				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [
