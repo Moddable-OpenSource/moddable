@@ -24,12 +24,12 @@ declare module "ChatAudioIO" {
 		voiceName?: string;
 		instructions?: string;
 
-		onStateChanged?: (state: number) => void;
-		onInputTranscript?: (text: string, more: boolean) => void;
-		onOutputTranscript?: (text: string, more: boolean) => void;
-		onFunctionCall?: (call: any, name: string, parameters: any) => void;
-		onInputLevelChanged?: (level: number) => void;
-		onOutputLevelChanged?: (level: number) => void;
+		onStateChanged?: (this: ChatAudioIO, state: number) => void;
+		onInputTranscript?: (this: ChatAudioIO, text: string, more: boolean) => void;
+		onOutputTranscript?: (this: ChatAudioIO, text: string, more: boolean) => void;
+		onFunctionCall?: (this: ChatAudioIO, call: any, name: string, parameters: any) => void;
+		onInputLevelChanged?: (this: ChatAudioIO, level: number) => void;
+		onOutputLevelChanged?: (this: ChatAudioIO, level: number) => void;
 	};
 
 	class ChatAudioIO {
