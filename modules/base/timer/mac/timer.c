@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,7 +34,6 @@ struct modTimerRecord {
 	struct modTimerRecord  *next;
 
 	CFRunLoopTimerRef cfTimer;
-	int16_t id;
 	int8_t useCount;
 	modTimerCallback cb;
 	uint32_t refconSize;
@@ -42,7 +41,6 @@ struct modTimerRecord {
 };
 
 static modTimer gTimers = NULL;
-static txS2 gTimerID = 1;		//@@ could id share with other libraries that need unique ID?
 
 static void modTimerExcecuteOne(CFRunLoopTimerRef cfTimer, void *info)
 {
@@ -65,7 +63,6 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 	if (!timer) return NULL;
 
 	timer->next = NULL;
-	timer->id = ++gTimerID;
 	timer->useCount = 1;
 	timer->cb = cb;
 	timer->refconSize = refconSize;
@@ -117,11 +114,6 @@ void modTimerUnschedule(modTimer timer)
 	timer->cfTimer = NULL;
 }
 
-uint16_t modTimerGetID(modTimer timer)
-{
-	return timer->id;
-}
-
 int modTimerGetSecondInterval(modTimer timer)
 {
 	return timer->cfTimer ? CFRunLoopTimerGetInterval(timer->cfTimer) * 1000 : -1;
@@ -140,7 +132,6 @@ void modTimerRemove(modTimer timer)
 
 	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
-			timer->id = 0;		// can't be found again by script
 			timer->cb = NULL;
 
 			timer->useCount--;

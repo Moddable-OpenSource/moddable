@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,7 +34,6 @@ typedef struct modTimerRecord *modTimer;
 typedef void (*modTimerCallback)(modTimer timer, void *refcon, int refconSize);
 extern modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize);
 extern void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval);
-extern uint16_t modTimerGetID(modTimer timer);
 extern int modTimerGetSecondInterval(modTimer timer);
 extern void *modTimerGetRefcon(modTimer timer);
 extern void modTimerRemove(modTimer timer);
