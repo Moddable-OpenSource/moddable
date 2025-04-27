@@ -409,7 +409,7 @@ SDK_GLUE_OBJ = \
 	$(TMP_DIR)\ftdi_trace.o \
 	$(TMP_DIR)\main.o \
 	$(TMP_DIR)\systemclock.o \
-	$(TMP_DIR)\xsmain.o \
+	$(TMP_DIR)\xsmain.o
 
 #	$(TMP_DIR)\nrf52_serial.o 
 
@@ -987,6 +987,6 @@ $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
 
-$(TMP_DIR)\xsmain.c.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
+$(TMP_DIR)\xsmain.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
 	@echo # application: $(@F)
 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
