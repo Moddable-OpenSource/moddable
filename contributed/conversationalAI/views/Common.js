@@ -54,6 +54,51 @@ class CommonButtonBehavior extends Behavior {
 	}
 }
 
+class CommonBackButtonBehavior extends CommonButtonBehavior {
+	onTap(container) {
+		controller.goBack()
+	}
+}
+
+class CommonRowBehavior extends Behavior {
+	changeState(container, state) {
+		container.state = state;
+	}
+	tweenState(container, from, to, duration) {
+		this.from = from;
+		this.to = to;
+		container.duration = duration;
+		container.time = 0;
+		container.start();
+	}
+	onCreate(container, data, it) {
+		this.data = data;
+	}
+	onDisplayed(container) {
+		if (container.state == 1)
+			this.tweenState(container, 1, 0, 250);
+	}
+	onTap(container) {
+		debugger
+	}
+	onTimeChanged(container) {
+		this.changeState(container, this.from + (container.fraction * (this.to - this.from)));
+	}
+	onTouchBegan(container, id, x, y, ticks) {
+		this.tweenState(container, 0, 1, 250);
+	}
+	onTouchCancelled(container) {
+		container.stop();
+		this.tweenState(container, container.fraction, 0, container.time);
+	}
+	onTouchEnded(container) {
+		this.onTap(container);
+	}
+	onUndisplaying(container) {
+// 		container.active = false;
+	}
+}
+
 class CommonHorizontalScrollerBehavior extends HorizontalScrollerBehavior {
 }
 
@@ -110,7 +155,7 @@ class VerticalScrollbarBehavior extends Behavior {
 };
 
 const VerticalScrollbar = Container.template($ => ({
-	width:40, right:0, top:0, bottom:0, active:true, Behavior:VerticalScrollbarBehavior,
+	width:20, right:0, top:0, bottom:0, active:true, Behavior:VerticalScrollbarBehavior,
 	contents: [
 		Content($, { right:0, width:20, top:0, height:0, skin:assets.skins.scrollbarY }),
 	],
@@ -198,6 +243,8 @@ const CommonContainer = Container.template($ => ({
 export default class extends View {
 	static get Behavior() { return CommonBehavior; }
 	static get ButtonBehavior() { return CommonButtonBehavior; }
+	static get BackButtonBehavior() { return CommonBackButtonBehavior; }
+	static get RowBehavior() { return CommonRowBehavior; }
 	static get HorizontalScrollerBehavior() { return CommonHorizontalScrollerBehavior; }
 	static get VerticalScrollerBehavior() { return CommonVerticalScrollerBehavior; }
 	static StarsContainer($, _) { return StarsContainer($, _) }

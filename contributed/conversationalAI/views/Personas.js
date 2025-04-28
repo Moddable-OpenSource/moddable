@@ -23,18 +23,34 @@ import Timeline from "piu/Timeline";
 import View from "Common";
 
 class PersonasBehavior extends View.Behavior {
+	onConfigure(container, persona) {
+		if (controller.going)
+			return;
+		const view = this.view;
+		const selection = view.personas.indexOf(persona);
+		view.option = true;
+		view.selection = selection;
+		controller.goWith({
+			View: "Options",
+			persona
+		});
+	}
 	onDisplaying(container) {
 		const selection = this.view.selection;
 		if (selection >= 0) {
-			const row = container.last.first.content(selection);
+			let row = container.last.first.content(selection);
+			if (this.view.option)
+				row = row.last.previous;
 			row.behavior.changeState(row, 1);
 		}
 	}
 	onSelect(container, persona) {
 		if (controller.going)
 			return;
-		const selection = controller.model.indexOf(persona);
-		this.view.selection = selection;
+		const view = this.view;
+		const selection = view.personas.indexOf(persona);
+		view.option = false;
+		view.selection = selection;
 		controller.goWith({
 			View: "Home",
 			...persona
@@ -42,39 +58,15 @@ class PersonasBehavior extends View.Behavior {
 	}
 }
 
-class PersonaBehavior extends Behavior {
-	changeState(container, state) {
-		container.state = state;
-	}
-	tweenState(container, from, to, duration) {
-		this.from = from;
-		this.to = to;
-		container.duration = duration;
-		container.time = 0;
-		container.start();
-	}
-	onCreate(container, data, it) {
-		this.data = data;
-	}
-	onDisplayed(container) {
-		if (container.state == 1)
-			this.tweenState(container, 1, 0, 250);
-	}
-	onTimeChanged(container) {
-		this.changeState(container, this.from + (container.fraction * (this.to - this.from)));
-	}
-	onTouchBegan(container, id, x, y, ticks) {
-		this.tweenState(container, 0, 1, 250);
-	}
-	onTouchCancelled(container) {
-		container.stop();
-		this.tweenState(container, container.fraction, 0, container.time);
-	}
-	onTouchEnded(container) {
+class PersonaRowBehavior extends View.RowBehavior {
+	onTap(container) {
 		container.bubble("onSelect", this.data);
 	}
-	onUndisplaying(container) {
-// 		container.active = false;
+}
+
+class PersonaButtonBehavior extends View.RowBehavior {
+	onTap(container) {
+		container.bubble("onConfigure", this.data);
 	}
 }
 
@@ -93,7 +85,7 @@ const PersonasContainer = Container.template($ => ({
 			contents: [
 				Column($, { 
 					left:0, right:0, top:0, 
-					contents: controller.model.map($$ => new PersonaContainer($$) ),
+					contents: $.personas.map($$ => new PersonaRow($$) ),
 				}),
 				View.VerticalScrollbar($, {}),
 			]
@@ -101,17 +93,19 @@ const PersonasContainer = Container.template($ => ({
 	],
 }));
 
-const PersonaContainer = Container.template($ => ({
-	left:0, width:240, height:84, skin: assets.skins.personaRow, active:true, Behavior:PersonaBehavior,
+const PersonaRow = Row.template($ => ({
+	left:0, width:240, height:84, skin: assets.skins.personaRow, active:true, Behavior:PersonaRowBehavior,
 	contents: [
+		Content($, { left:8, width:24, skin:assets.services[$.service].iconSmall }),
 		Column($, {
-			left:10, right:25, top:5,
+			left:8, right:8,
 			contents: [
 				Text($, { left:0, right:0, style:assets.styles.personaTitle, string:$.title }),
-				Label($, { left:0, right:0, style:assets.styles.personaSubtitle, string:$.subtitle }),
+				Text($, { left:0, right:0, style:assets.styles.personaSubtitle, string:$.subtitle }),
 			]
 		}),
-		Content($, { right:28, bottom:10, skin:assets.services[$.service].iconSmall }),
+		Content($, { width:40, top:0, bottom:0, skin:assets.skins.gear, active:true, Behavior:PersonaButtonBehavior }),
+		Content($, { width:20 }),
 	]
 }));
 
@@ -132,6 +126,8 @@ class PersonasTimeline extends Timeline {
 export default class extends View {
 	constructor(data) {
 		super(data);
+		this.personas = controller.personas;
+		this.option = false;
 		this.selection = -1;
 		this.scroll = { x:0, y:0 };
 	}

@@ -17,6 +17,9 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+ 
+import assets from "assets";
+import Preference from "preference";
 
 class Controller extends Behavior {
 	constructor() {
@@ -94,7 +97,16 @@ class Controller extends Behavior {
 	}
 	onCreate(container, $) {
 		this.container = container;
-		this.model = $.model;
+		this.options = JSON.parse(Preference.get("model", "options") ?? "[]");
+		this.personas = $.model.map(persona => {
+			persona = { ...persona };
+			controller.readOption(persona);
+			if (!persona.voiceName) {
+				const service = assets.services[persona.service];
+				persona.voiceName = service.defaultVoiceName;
+			}
+			return persona;
+		});
 	}
 	onDisplaying(container) {
 		const id = "Splash";
@@ -116,11 +128,37 @@ class Controller extends Behavior {
 		this.onScreenDisplayed(container, this.view);
 		this.updateScreen();
 	}
+	readOption(persona) {
+		const option = this.options.find(option => option.title == persona.title);
+		if (option) {
+			persona.service = option.service;
+			persona.voiceName = option.voiceName;
+		}
+		return persona;
+	}
 	redisplay() {
 		this.onScreenUndisplaying(application, this.view);
 		this.container.replace(this.container.first, new this.view.Template(this.view));
 		this.onScreenDisplayed(application, this.view);
 	}
+	writeOption(persona) {
+		let option = this.options.find(option => option.title == persona.title);
+		if (option) {
+			option.service = persona.service;
+			option.voiceName = persona.voiceName;
+		}
+		else {
+			option = {
+				title: persona.title,
+				service: persona.service,
+				voiceName: persona.voiceName,
+			};
+			this.options.push(option);
+		}
+		Preference.set("model", "options", JSON.stringify(this.options));
+		return persona;
+	}
+	
 	updateScreen() {
 		if (this.going)
 			return;
