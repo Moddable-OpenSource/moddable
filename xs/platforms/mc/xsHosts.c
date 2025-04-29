@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -153,7 +153,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 		fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 #endif
 		the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
-		the->heap_ptr = the->firstBlock->current;
+		the->heap_ptr = (uint8_t*)the->firstBlock->current;
 		the->firstBlock->limit = the->firstBlock->current;
 
 		result = (txSlot *)mc_xs_slot_allocator(the, needed);
@@ -185,8 +185,9 @@ void fxFreeSlots(txMachine* the, void* theSlots)
 {
 	if (NULL == the->heap)
 		c_free(theSlots);
-	else
+	else {
 		; /* nothing to do */
+	}
 }
 
 void fxBuildKeys(txMachine* the)
@@ -232,8 +233,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #if MODDEF_XS_TEST
 	char extension[5] = "";
 #endif
-	char name[PATH_MAX];
-	char buffer[PATH_MAX];
+	char name[C_PATH_MAX];
+	char buffer[C_PATH_MAX];
 	txInteger dot = 0;
 	txInteger i = 0;
 	txInteger hash = 0;
@@ -529,7 +530,8 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	uint8_t modStatus = 0;
 	modInstallMods(the, preparation, &modStatus);
 	if (modStatus) {
-		xsLog("Mod failed: %s\n", fxAbortString(modStatus));
+		extern const char *gXSAbortStrings[];
+		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
 }
 #endif
 
@@ -592,7 +594,7 @@ void modRunMachineSetup(txMachine *the)
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
-				char path[PATH_MAX];
+				char path[C_PATH_MAX];
 				char *dot;
 
 				c_strcpy(path, script->path);

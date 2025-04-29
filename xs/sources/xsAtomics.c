@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -726,7 +726,7 @@ void fxInitializeSharedCluster(txMachine* the)
 		gxSharedCluster->usage++;
 	}
 	else {
-		gxSharedCluster = c_calloc(sizeof(txSharedCluster), 1);
+		gxSharedCluster = c_calloc(1, sizeof(txSharedCluster));
 		if (gxSharedCluster) {
 			gxSharedCluster->mainThread = mxCurrentThread();
 			gxSharedCluster->usage++;

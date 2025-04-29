@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2023  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -230,8 +230,8 @@ void fx_BigInt_fromArrayBuffer(txMachine* the)
 		sign = 1;
 	if ((mxArgc > 2) && fxToBoolean(the, mxArgv(2)))
 		endian = EndianLittle;
-    if (sign)
-        length--;
+	if (sign)
+		length--;
 	if (length <= 0) {
 		mxSyntaxError("argument: invalid ArrayBuffer instance");
 // 		mxResult->value.bigint = gxBigIntNaN;
@@ -353,8 +353,8 @@ txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoo
 	result = fxBigInt_comp(&left->value.bigint, &right->value.bigint);
 	if (result < 0)
 		return less;
-    if (result > 0)
-        return more;
+	if (result > 0)
+		return more;
 	if (delta > 0)
 		return less;
 	if (delta < 0)

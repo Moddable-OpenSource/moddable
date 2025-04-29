@@ -1,0 +1,23 @@
+def _recurse(ctx):
+    ctx.recurse('cmsis_core')
+    ctx.recurse('freertos')
+    ctx.recurse('nanopb')
+    ctx.recurse('tinymt')
+    ctx.recurse('moddable')
+
+    if ctx.env.MICRO_FAMILY.startswith('STM32'):
+        ctx.recurse('hal_stm32')
+    elif ctx.env.MICRO_FAMILY.startswith('NRF'):
+        ctx.recurse('hal_nordic')
+
+    if ctx.env.bt_controller == 'cc2564x':
+        ctx.recurse('nimble')
+        ctx.recurse('ti_bt_sp')
+    elif ctx.env.bt_controller == 'nrf52':
+        ctx.recurse('nimble')
+
+def configure(conf):
+    _recurse(conf)
+
+def build(bld):
+    _recurse(bld)

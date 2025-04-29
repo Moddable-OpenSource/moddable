@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -96,7 +96,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxModuleStuffAdditions 0
 #endif
 #if mxECMAScript2025
-	#define mxECMAScript2025Additions 31
+	#define mxECMAScript2025Additions 30
 #else
 	#define mxECMAScript2025Additions 0
 #endif
@@ -670,7 +670,6 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxECMAScript2025
 	fx_Error_prototype_set_stack,
 	fx_Iterator,
-	fx_Iterator_from,
 	fx_Iterator_prototype_constructor_get,
 	fx_Iterator_prototype_constructor_set,
 	fx_Iterator_prototype_drop,
@@ -1447,7 +1446,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 	txCreation creation;
 	txSlot* slot;
 	
-	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
+	txMachine* the = (txMachine* )c_calloc(1, sizeof(txMachine));
 	if (the) {
 		txJump aJump;
 		snapshot->error = 0;

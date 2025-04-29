@@ -373,6 +373,7 @@ again:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = theSlot->value.integer;
 		// continue
+		__attribute__((fallthrough));
 	case XS_NUMBER_KIND:
 		theSlot->kind = XS_INTEGER_KIND;
 		switch (c_fpclassify(theSlot->value.number)) {
@@ -1309,14 +1310,14 @@ void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger 
 	txSlot* aStack = the->stack + theCount;
 	if (theCount < 0) {
 		if (aStack < the->stackBottom) {
-			fxReport(the, "JavaScript stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
-			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
+			fxReport(the, "stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
+			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 		}
 	}
 	else if (theCount > 0) {
 		if (aStack > the->stackTop) {
-			fxReport(the, "JavaScript stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
-			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
+			fxReport(the, "stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
+			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
 		}
 	}
 }
@@ -1392,7 +1393,7 @@ const txByte gxNoCode[3] ICACHE_FLASH_ATTR = { XS_CODE_BEGIN_STRICT, 0, XS_CODE_
 
 txMachine* fxCreateMachine(txCreation* theCreation, txString theName, void* theContext, txID profileID)
 {
-	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
+	txMachine* the = (txMachine* )c_calloc(1, sizeof(txMachine));
 	if (the) {
 		txJump aJump;
 
@@ -1610,7 +1611,7 @@ void fxDeleteMachine(txMachine* the)
 #if mxAliasInstance
 txMachine* fxCloneMachine(txCreation* theCreation, txMachine* theMachine, txString theName, void* theContext)
 {
-	txMachine* the = (txMachine *)c_calloc(sizeof(txMachine), 1);
+	txMachine* the = (txMachine *)c_calloc(1, sizeof(txMachine));
 	if (the) {
 		txJump aJump;
 

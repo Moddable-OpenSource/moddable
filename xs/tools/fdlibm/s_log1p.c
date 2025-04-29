@@ -94,7 +94,7 @@ static volatile double vzero = 0.0;
 double
 s_log1p(double x)
 {
-	double hfsq,f,c,s,z,R,u;
+	double hfsq,f,s,z,R,u,c=0.0;
 	int32_t k,hx,hu,ax;
 
 	GET_HIGH_WORD(hx,x);

@@ -390,7 +390,7 @@ void fxGetNextNumberE(txParser* parser, int dot)
 {
 	txString p = parser->buffer;
 	txString q = p + parser->bufferSize;
-	txString r;
+	txString r = NULL;
 	int c;
 	if (dot) {
 		if (p < q) *p++ = '.';

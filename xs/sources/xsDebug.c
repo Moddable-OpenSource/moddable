@@ -1373,7 +1373,17 @@ void fxEchoException(txMachine* the, txSlot* exception)
 		txSlot* instance = exception->value.reference;
 		txSlot* internal = instance->next;
 		if (internal && (internal->kind == XS_ERROR_KIND)) {
-			fxEcho(the, (txString)gxErrorNames[internal->value.error.which]);
+			switch (internal->value.error.which) {
+			case XS_UNKNOWN_ERROR: fxEcho(the, "Error"); break;
+			case XS_EVAL_ERROR: fxEcho(the, "EvalError"); break;
+			case XS_RANGE_ERROR: fxEcho(the, "RangeError"); break;
+			case XS_REFERENCE_ERROR: fxEcho(the, "ReferenceError"); break;
+			case XS_SYNTAX_ERROR: fxEcho(the, "SyntaxError"); break;
+			case XS_TYPE_ERROR: fxEcho(the, "TypeError"); break;
+			case XS_URI_ERROR: fxEcho(the, "URIError"); break;
+			case XS_AGGREGATE_ERROR: fxEcho(the, "AggregateError"); break;
+			case XS_SUPPRESSED_ERROR: fxEcho(the, "SuppressedError"); break;
+			}
 			fxEcho(the, ": ");
 			internal = internal->next;
 			if (internal && ((internal->kind == XS_STRING_KIND) || (internal->kind == XS_STRING_X_KIND))) {
@@ -2825,7 +2835,10 @@ void fxReport(txMachine* the, txString theFormat, ...)
 	fxVReport(the, theFormat, arguments);
 	c_va_end(arguments);
 #ifndef mxNoConsole
+char foo[128];
 	c_va_start(arguments, theFormat);
+c_vsnprintf(foo, 128, theFormat, arguments);
+modLog_transmit(foo);
 	c_vprintf(theFormat, arguments);
 	c_va_end(arguments);
 #endif
@@ -2912,9 +2925,9 @@ void fxGenerateTag(void* console, txString buffer, txInteger bufferSize, txStrin
 {
 	txMachine* the = console;
 	if (path)
-		c_snprintf(buffer, bufferSize, "#%d@%s", the->tag, path);
+		c_snprintf(buffer, bufferSize, "#%d@%s", (int)the->tag, path);
 	else
-		c_snprintf(buffer, bufferSize, "#%d", the->tag);
+		c_snprintf(buffer, bufferSize, "#%d", (int)the->tag);
 	the->tag++;
 }
 

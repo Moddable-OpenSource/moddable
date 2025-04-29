@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1337,7 +1337,7 @@ void fxLoadVirtualModuleSource(txMachine* the, txSlot* record, txSlot* instance)
 			txInteger from = 0;
 			txInteger export = 0;
 			txInteger import = 0;
-			txID nameID, asID;
+			txID nameID = 0, asID;
 			txSlot* specifier = C_NULL;
 			txSlot* former;
 

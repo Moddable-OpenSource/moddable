@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -2914,6 +2914,7 @@ gethex( const char **sp, U *rvp, int rounding, int sign MTd)
 		  case '-':
 			esign = 1;
 			/* no break */
+			__attribute__((fallthrough));
 		  case '+':
 			s++;
 		  }
@@ -3321,7 +3322,7 @@ sulp(U *x, BCinfo *bc)
 bigcomp(U *rv, const char *s0, BCinfo *bc MTd)
 {
 	Bigint *b, *d;
-	int b2, bbits, d2, dd, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
+	int b2, bbits, d2, dd = 0, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
 
 	dsign = bc->dsign;
 	nd = bc->nd;
@@ -3574,10 +3575,12 @@ strtod2(const char *s00, char **se __XS__d)
 		case '-':
 			sign = 1;
 			/* no break */
+			__attribute__((fallthrough));
 		case '+':
 			if (c_read8(++s))
 				goto break2;
 			/* no break */
+			__attribute__((fallthrough));
 		case 0:
 			goto ret0;
 		case '\t':
@@ -3704,6 +3707,7 @@ strtod2(const char *s00, char **se __XS__d)
 		switch(c = c_read8(++s)) {
 			case '-':
 				esign = 1;
+				__attribute__((fallthrough));
 			case '+':
 				c = c_read8(++s);
 			}
@@ -5377,6 +5381,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 2:
 			leftright = 0;
 			/* no break */
+			__attribute__((fallthrough));
 		case 4:
 			if (ndigits <= 0)
 				ndigits = 1;
@@ -5385,6 +5390,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 3:
 			leftright = 0;
 			/* no break */
+			__attribute__((fallthrough));
 		case 5:
 			i = ndigits + k + 1;
 			ilim = i;

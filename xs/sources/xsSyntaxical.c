@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1419,6 +1419,7 @@ void fxStatement(txParser* parser, txInteger blockIt)
 		}
 #endif
 		/* continue */
+		__attribute__((fallthrough));
 	default:
 		if (gxTokenFlags[parser->states[0].token] & XS_TOKEN_BEGIN_EXPRESSION) {
 			fxCommaExpression(parser);
@@ -2315,6 +2316,7 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 	case XS_TOKEN_DIVIDE_ASSIGN:
 		c = '=';
 		// continue
+		__attribute__((fallthrough));
 	case XS_TOKEN_DIVIDE:
 		fxGetNextRegExp(parser, c);
 		fxPushStringNode(parser, parser->states[0].modifierLength, parser->states[0].modifier, aLine);

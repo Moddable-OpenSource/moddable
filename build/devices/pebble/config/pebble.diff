@@ -1,0 +1,36 @@
+diff --git a/src/fw/applib/wscript b/src/fw/applib/wscript
+index 56854d2..8eb155b 100644
+--- a/src/fw/applib/wscript
++++ b/src/fw/applib/wscript
+@@ -89,6 +89,7 @@ def build(bld):
+     bld.stlib(source=sources,
+               target='applib',
+               use=['target_includes',
++                   'libxs',
+                    'libbtutil_includes',
+                    'fw_includes',
+                    'upng',
+diff --git a/src/fw/wscript b/src/fw/wscript
+index ce368a9..02a5c86 100644
+--- a/src/fw/wscript
++++ b/src/fw/wscript
+@@ -323,6 +323,7 @@ def _link_firmware(bld, sources):
+             'root_includes',
+             'startup',
+             'tinymt32',
++            'libxs',
+             'upng']
+ 
+     ldscript = _generate_memory_layout(bld)
+diff --git a/third_party/wscript b/third_party/wscript
+index e5f5644..5ee5cea 100644
+--- a/third_party/wscript
++++ b/third_party/wscript
+@@ -3,6 +3,7 @@ def _recurse(ctx):
+     ctx.recurse('freertos')
+     ctx.recurse('nanopb')
+     ctx.recurse('tinymt')
++    ctx.recurse('moddable')
+ 
+     if ctx.env.MICRO_FAMILY.startswith('STM32'):
+         ctx.recurse('hal_stm32')

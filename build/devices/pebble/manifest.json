@@ -1,0 +1,16 @@
+{
+	"build": {
+	},
+	"include": [
+	],
+	"modules": {
+	},
+	"creation": {
+		"stack": 512
+	},
+	"platforms": {
+		"pebble/*": {
+			"include": "$(BUILD)/devices/pebble/targets/$(SUBPLATFORM)/manifest.json"
+		}
+	}
+}
