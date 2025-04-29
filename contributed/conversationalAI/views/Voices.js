@@ -27,7 +27,7 @@ class VoicesBehavior extends View.Behavior {
 		const view = this.view;
 		if (view.selection >= 0) {
 			const row = view.LIST.content(view.selection);
-			row.last.previous.visible = true;
+			row.first.next.visible = true;
 			view.LIST.container.reveal(row.bounds);
 		}
 	}
@@ -35,16 +35,57 @@ class VoicesBehavior extends View.Behavior {
 		const view = this.view;
 		if (view.selection >= 0) {
 			const former = view.LIST.content(view.selection);
-			former.last.previous.visible = false;
+			former.first.next.visible = false;
 		}
-		current.last.previous.visible = true;
-		view.persona.voiceName = view.voices[current.index].name;
+		current.first.next.visible = true;
+		view.persona.voiceName = view.voices[current.index].id;
 		controller.writeOption(view.persona);
 		controller.goBack();
 	}
 }
 
 class VoiceRowBehavior extends View.RowBehavior {
+	onCreate(row, data) {
+		super.onCreate(row, data);
+		function add(it, state) {
+			if (it) {
+				if (Array.isArray(it)) {
+					it.forEach(item => add(item, state));
+					return;
+				}
+				const label = new VoiceLabel(it);
+				label.state = state;
+				row.add(label);
+			}
+		}
+		add(data.gender, 0);
+		add(data.age, 1);
+		add(data.accent, 1);
+		add(data.description, 2);
+		add(data.usage, 3);
+	}
+	onFitHorizontally(row, rowWidth) {
+		rowWidth -= 20;
+		let label = row.first.next.next;
+		let coordinates = { left:4, top:40, width:0, height:20 };
+		while (label) {
+			const size = label.measure();
+			coordinates.width = size.width;
+			if (coordinates.left + coordinates.width + 4 > rowWidth) {
+				coordinates.left = 4
+				coordinates.top += coordinates.height + 4
+			}
+			label.coordinates = coordinates;
+			coordinates.left += coordinates.width + 4;
+			label = label.next;
+		}
+		if (coordinates.left > 4)
+			coordinates.top += coordinates.height + 4
+		this.rowHeight = coordinates.top;
+	}
+	onMeasureVertically(container, gridHeight) {
+		return this.rowHeight;
+	}
 	onTap(row) {
 		row.bubble("onSelect", row);
 // 		this.tweenState(row, 1, 0, 250);
@@ -76,13 +117,16 @@ const VoicesContainer = Container.template($ => ({
 	],
 }));
 
-const VoiceRow = Row.template($ => ({
-	left:0, width:240, height:45, skin: assets.skins.personaRow, active:true, Behavior:VoiceRowBehavior,
+const VoiceRow = Layout.template($ => ({
+	left:0, width:240, skin: assets.skins.personaRow, active:true, Behavior:VoiceRowBehavior,
 	contents: [
-		Label($, { left:8, right:8, style:assets.styles.personaTitle, string:$.name }),
-		Content($, { width:24, top:0, bottom:0, skin:assets.skins.check, visible:false }),
-		Content($, { width:20 }),
+		Label($, { left:8, right:44, top:12, style:assets.styles.personaTitle, string:$.name }),
+		Content($, { width:24, right:20, top:10, height:20, skin:assets.skins.check, visible:false }),
 	],
+}));
+
+const VoiceLabel = Label.template($ => ({
+	skin:assets.skins.voiceLabel, style:assets.styles.voiceLabel, string:$
 }));
 
 class VoicesTimeline extends Timeline {
@@ -106,7 +150,7 @@ export default class extends View {
 		const voices = assets.services[persona.service].voices;
 		const name = persona.voiceName;
 		this.persona = persona;
-		this.selection = voices.findIndex(voice => voice.name == name);
+		this.selection = voices.findIndex(voice => voice.id == name);
 		this.scroll = { x:0, y:0 };
 		this.voices = voices;
 	}

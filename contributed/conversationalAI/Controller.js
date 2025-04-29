@@ -103,7 +103,7 @@ class Controller extends Behavior {
 			controller.readOption(persona);
 			if (!persona.voiceName) {
 				const service = assets.services[persona.service];
-				persona.voiceName = service.defaultVoiceName;
+				persona.voiceName = service.defaultVoice;
 			}
 			return persona;
 		});
@@ -131,10 +131,14 @@ class Controller extends Behavior {
 	readOption(persona) {
 		const option = this.options.find(option => option.title == persona.title);
 		if (option) {
-			persona.service = option.service;
-			persona.voiceName = option.voiceName;
+			if (option.service in assets.services) {
+				persona.service = option.service;
+				const service = assets.services[option.service];
+				const voiceName = option.voiceName;
+				const voice = service.voices.find(voice => voice.id == voiceName);
+				persona.voiceName = voice ? voiceName : sercice.defaultVoice;
+			}
 		}
-		return persona;
 	}
 	redisplay() {
 		this.onScreenUndisplaying(application, this.view);
@@ -156,7 +160,6 @@ class Controller extends Behavior {
 			this.options.push(option);
 		}
 		Preference.set("model", "options", JSON.stringify(this.options));
-		return persona;
 	}
 	
 	updateScreen() {

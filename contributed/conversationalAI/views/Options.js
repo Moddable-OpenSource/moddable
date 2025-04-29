@@ -87,6 +87,13 @@ const OptionsContainer = Container.template($ => ({
 						Row($, {
 							left:0, right:0, height:64, skin:assets.skins.personaRow, active:true,
 							Behavior: class extends View.RowBehavior {
+								onCreate(row, $) {
+									super.onCreate(row, $);
+									const service = assets.services[$.persona.service];
+									const voiceName = $.persona.voiceName;
+									const voice = service.voices.find(voice => voice.id == voiceName);
+									row.last.previous.last.string = voice.name;
+								}
 								onTap(row) {
 									row.bubble("onSelectVoice");
 								}
@@ -97,7 +104,7 @@ const OptionsContainer = Container.template($ => ({
 									left:8, right:8,
 									contents: [
 										Label($, { left:0, right:0, style:assets.styles.personaSubtitle, string:"Voice" }),
-										Label($, { left:0, right:0, style:assets.styles.personaTitle, string:$.persona.voiceName }),
+										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
 									]
 								}),
 								Content($, { left:8, width:24, skin:assets.skins.forward }),

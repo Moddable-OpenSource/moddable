@@ -38,7 +38,7 @@ class ServicesBehavior extends View.Behavior {
 		const service = assets.services[name];
 		if (persona.service != name) {
 			persona.service = name
-			persona.voiceName = service.defaultVoiceName;
+			persona.voiceName = service.defaultVoice;
 			controller.writeOption(persona);
 		}
 		controller.goBack();
@@ -68,7 +68,12 @@ const ServicesContainer = Container.template($ => ({
 			contents: [
 				Column($, { 
 					anchor:"LIST", left:0, right:0, top:0, 
-					contents: $.names.map($$ => new ServiceRow(assets.services[$$]) ),
+					contents: $.names.map($$ => {
+						const service = assets.services[$$]; 
+						if (service.key)
+							return new ServiceRow(service) 
+						return new NoServiceRow(service) 
+					}),
 				}),
 				View.VerticalScrollbar($, {}),
 			]
@@ -81,6 +86,22 @@ const ServiceRow = Row.template($ => ({
 	contents: [
 		Content($, { left:8, width:24, skin:$.iconSmall }),
 		Label($, { left:8, right:8, style:assets.styles.personaTitle, string:$.title }),
+		Content($, { width:24, top:0, bottom:0, skin:assets.skins.check, visible:false }),
+		Content($, { width:20 }),
+	]
+}));
+
+const NoServiceRow = Row.template($ => ({
+	left:0, width:240, height:65, skin: assets.skins.personaRow, active:true, Behavior:ServiceRowBehavior,
+	contents: [
+		Content($, { left:8, width:24, skin:$.iconSmall }),
+		Column($, {
+			left:8, right:8, 
+			contents: [
+				Label($, { left:0, right:0, style:assets.styles.personaTitle, string:$.title }),
+				Label($, { left:0, right:0, style:assets.styles.personaSubtitle, state:1, string:"No API key" }),
+			]
+		}),
 		Content($, { width:24, top:0, bottom:0, skin:assets.skins.check, visible:false }),
 		Content($, { width:20 }),
 	]
