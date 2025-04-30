@@ -139,10 +139,8 @@ extern void ESP_putc(int c);
 #define xmodLogInt(msg)
 #define xmodLogHex(msg)
 
-extern const char *gXSAbortStrings[];
-
 /* RESERVED MEMORY */
-
+#if 0
 extern uint32_t *dbl_reset_mem;
 
 #define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
@@ -163,7 +161,6 @@ extern uint32_t *dbl_reset_mem;
 
 void nrf52_reboot(uint32_t kind);
 
-#define nrf52_reset()			nrf52_reboot(0)
 #define nrf52_rebootToOTA()		nrf52_reboot(REBOOT_TO_OTA)
 #define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
 #define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
@@ -181,6 +178,9 @@ void nrf52_clear_boot_latch(uint32_t pin);
 uint8_t nrf52_softdevice_enabled(void);
 
 #define nrf52_bootloaderVersion()	(*((uint32_t*)BOOTLOADER_VER_MEM))
+#endif
+
+#define nrf52_reset()			pebble_reset()
 
 /*
     timer
@@ -336,7 +336,7 @@ extern void my_free(void *ptr);
 #define c_realloc realloc
 #define c_free free
 
-#define c_exit(n) { nrf52_reset(); }
+#define c_exit(n) do { pebble_reset(); } while (0)
 #define c_qsort qsort
 #define c_strtod strtod
 #define c_strtol strtol

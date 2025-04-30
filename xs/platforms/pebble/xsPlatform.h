@@ -180,6 +180,8 @@ extern uint32_t nrf52_memory_remaining();
 
 #define delay(x)            nrf52_delay(x)
 
-#include "util/net.h"
+#include "util/net.h"		// htonl, etc.
+//#include "system/logging.h"
+//#define modLog_transmit(s)	PBL_LOG_SYNC(LOG_LEVEL_ALWAYS, "%s", s)
 
 #endif /* __XSPLATFORM__ */

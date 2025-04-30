@@ -2837,10 +2837,13 @@ void fxReport(txMachine* the, txString theFormat, ...)
 #ifndef mxNoConsole
 char foo[128];
 	c_va_start(arguments, theFormat);
+#ifdef pebble
 c_vsnprintf(foo, 128, theFormat, arguments);
 modLog_transmit(foo);
+#else
 	c_vprintf(theFormat, arguments);
 	c_va_end(arguments);
+#endif
 #endif
 }
 

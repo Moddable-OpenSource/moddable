@@ -894,10 +894,6 @@ void my_free(void *ptr) {
 }
 #endif
 
-// #include "nrf_sdh.h"
-
-uint32_t *dbl_reset_mem = ((uint32_t*)DFU_DBL_RESET_MEM);
-
 void nrf52_reboot(uint32_t kind)
 {
 	pebble_reset();
