@@ -81,12 +81,16 @@ def build(bld):
         'moddable/modules/files/resource/Resource.c',
         'moddable/modules/base/timer/modTimer.c',
         'moddable/modules/base/timer/pebble/timer.c',
-        'moddable/build/tmp/pebble/release/%s/mc.xs.c' % bld.env.APP_NAME,
-        'moddable/build/tmp/pebble/release/%s/mc.resources.c' % bld.env.APP_NAME
+        'moddable/build/devices/pebble/modules/button/pebblebutton.c',
+        'moddable/build/tmp/pebble/release/helloworld/mc.xs.c',
+        'moddable/build/tmp/pebble/release/helloworld/mc.resources.c'
 	]
 
 	libxs_includes = [
 		'../../src/fw',
+		'../../src/include',
+		'../../src/libutil/includes',
+		'../../src/libos/include',
 		'moddable/xs/includes',
 		'moddable/xs/sources',
 		'moddable/xs/platforms/mc',
@@ -94,7 +98,7 @@ def build(bld):
 		'moddable/xs/tools/fdlibm',
 		'moddable/modules/base/timer',
 		'moddable/modules/base/instrumentation',
-		'moddable/build/tmp/pebble/release/%s' % bld.env.APP_NAME
+		'moddable/build/tmp/pebble/release/helloworld'
 	]
 
 	libxs_flags = [
