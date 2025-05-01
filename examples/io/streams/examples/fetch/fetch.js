@@ -198,7 +198,7 @@ function fetch(href, info = {}) {
 		let headers = info.headers;
 		let body = info.body;
 		let length = 0;
-		if ((method == "POST") || (method == "PUT")) {
+		if ((method == "POST") || (method == "PUT") || (method == "PATCH")) {
 			body = info.body;
 			if (body == undefined) 
 				rejectResponse(new URLError(method + " no body"));
@@ -293,6 +293,9 @@ function fetch(href, info = {}) {
 			}
 		};
 		fetchClientRequest(url, options);
+		if (headers.get("accept") == "text/event-stream") {
+			clients.delete(url.origin);
+		}	
 	});
 }
 
