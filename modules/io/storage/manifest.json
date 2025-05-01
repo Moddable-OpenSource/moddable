@@ -5,6 +5,9 @@
 		},
 		"mac": {
 			"include": "./mac/manifest.json"
+		},
+		"pebble": {
+			"include": "./pebble/manifest.json"
 		}
 	}
 }
