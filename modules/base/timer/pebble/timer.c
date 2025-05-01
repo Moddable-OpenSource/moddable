@@ -56,7 +56,7 @@
 
  static void modTimerExcecuteOne(void* data)
  {
-	 modTimer timer = evented_timer_get_data((EventedTimerID)data);
+	 modTimer timer = data;
  
 	 timer->useCount++;
 	 (timer->cb)(timer, timer->refcon, timer->refconSize);
