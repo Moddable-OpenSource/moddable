@@ -4,10 +4,24 @@
 	"include": [
 	],
 	"modules": {
+		"*": [
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/pebble/*"
+		]
 	},
+	"preload": [
+		"timer"
+	],
 	"creation": {
-		"stack": 512
-	},
+		"static": 32768,
+		"chunk": {
+			"initial": 4096
+		},
+		"heap": {
+			"initial": 256
+		},
+		"stack": 256
+},
 	"platforms": {
 		"pebble/*": {
 			"include": "$(BUILD)/devices/pebble/targets/$(SUBPLATFORM)/manifest.json"
