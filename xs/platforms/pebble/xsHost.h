@@ -42,6 +42,9 @@
 #include <stddef.h>
 #include "errno.h"
 
+#include "util/time/time.h"
+#include "applib/pbl_std/pbl_std.h"
+
 //#include "FreeRTOS.h"
 //#include "freertos_types.h"
 //#include "semphr.h"
@@ -84,7 +87,6 @@ uint32_t xPortGetFreeHeapSize();
 
 
 
-//#include "nrf_fstorage_sd.h"
 #include "mc.defines.h"
 
 
@@ -207,43 +209,6 @@ extern int modTimersNext(void);
 /*
 	date and time
 */
-typedef uint32_t modTime_t;
-
-struct modTimeVal {
-    modTime_t	tv_sec;     /* seconds */
-    uint32_t	tv_usec;    /* microseconds */
-};
-typedef struct modTimeVal modTimeVal;
-
-struct modTimeZone {
-    int32_t			tz_minuteswest;     /* minutes west of Greenwich */
-    int32_t			tz_dsttime;         /* type of DST correction */
-};
-
-struct modTm {
-  int32_t	tm_sec;
-  int32_t	tm_min;
-  int32_t	tm_hour;
-  int32_t	tm_mday;
-  int32_t	tm_mon;
-  int32_t	tm_year;
-  int32_t	tm_wday;
-  int32_t	tm_yday;
-  int32_t	tm_isdst;
-};
-typedef struct modTm modTm;
-
-void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz);
-struct modTm *modGmTime(const modTime_t *timep);
-struct modTm *modLocalTime(const modTime_t *timep);
-modTime_t modMkTime(struct modTm *tm);
-void modStrfTime(char *s, size_t max, const char *format, const struct modTm *tm);
-
-void modSetTime(uint32_t seconds);							// since 1970 - UNIX time
-int32_t modGetTimeZone(void);								// seconds
-void modSetTimeZone(int32_t timeZoneOffset);				// seconds
-int32_t modGetDaylightSavingsOffset(void);					// seconds
-void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 
 /*
 	watchdog timer
@@ -352,17 +317,24 @@ extern void my_free(void *ptr);
 
 /* DATE */
 
-#define c_tm modTm
-#define c_timeval modTimeVal
-#define c_time_t modTime_t
-#define c_timezone modTimeZone
+struct pbl_timeval {
+	 uint32_t	tv_sec;     /* seconds */
+	 uint32_t	tv_usec;    /* microseconds */	
+};
 
-#define c_gettimeofday modGetTimeOfDay
-#define c_gmtime modGmTime
-#define c_localtime modLocalTime
-#define c_mktime modMkTime
-#define c_strftime modStrfTime
-//#define c_time time
+#define c_tm struct tm
+#define c_timeval struct pbl_timeval
+#define c_time_t time_t
+#define c_timezone timezone
+
+extern int pbl_gettimeofday(void *tv, void *unusedTZ);
+
+#define c_gettimeofday pbl_gettimeofday
+#define c_gmtime pbl_override_gmtime
+#define c_localtime pbl_override_localtime
+#define c_mktime pbl_override_mktime
+#define c_strftime pbl_strftime
+#define c_time pbl_override_time
 
 /* ERROR */
 //#if XS_PEBBLE

@@ -104,141 +104,20 @@
 	SemaphoreHandle_t gInstrumentMutex;
 #endif
 
-
-/*
-	settimeofday, daylightsavingstime
- */
-static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
-static int16_t gDaylightSavings = 60 * 60;          // summer time
-
-//static uint8_t gTimeOfDaySet = 0;
-static uint32_t gTimeOfDayOffset = 0;	// seconds to add to gMS to get TOD
-
-static modTm gTM;		//@@ eliminate with _r calls
-
-static const uint8_t gDaysInMonth[] ICACHE_XS6RO2_ATTR = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-#define isLeapYear(YEAR) (!(YEAR % 4) && ((YEAR % 100) || !(YEAR % 400)))
-
-// Get Day of Year
-int getDOY(int year, int month, int day) {
-    int dayCount[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
-    int dayOfYear = dayCount[month] + day;
-    if(month > 1 && isLeapYear(year)) dayOfYear++;
-    return dayOfYear - 1;		// tm_yday is 0-365
-};
-
-struct modTm *modGmTime(const modTime_t *timep)
+int pbl_gettimeofday(void *tvp, void *unusedTZ)
 {
-	uint32_t t = *timep;
-//	int days = 0;
-	uint32_t days = 0;
-
-	gTM.tm_sec = t % 60;
-	t /= 60;
-	gTM.tm_min = t % 60;
-	t /= 60;
-	gTM.tm_hour = t % 24;
-	t /= 24;
-	gTM.tm_wday = (t + 4) % 7;
-	gTM.tm_year = 1970;
-	while (true) {
-		int daysInYear = 365;
-		if (isLeapYear(gTM.tm_year))
-			daysInYear += 1;
-
-		if ((days + daysInYear) > t)
-			break;
-		gTM.tm_year += 1;
-		days += daysInYear;
+	if (tvp) {
+		struct pbl_timeval *tv = tvp;
+		uint16_t ms = 0;
+		time_t t = 0;
+	
+		time_ms(&t, &ms);
+	
+		tv->tv_sec = t;
+		tv->tv_usec = 1000 * (int)ms;
 	}
-	t -= days;
-	gTM.tm_yday = t;
-	for (gTM.tm_mon = 0; gTM.tm_mon < 12; gTM.tm_mon++) {
-		uint8_t daysInMonth = c_read8(gDaysInMonth + gTM.tm_mon);
-		if ((1 == gTM.tm_mon) && isLeapYear(gTM.tm_year))
-			daysInMonth = 29;
-		if (t < daysInMonth)
-			break;
-		t -= daysInMonth;
-	}
-	gTM.tm_mday = t + 1;
-	gTM.tm_year -= 1900;
 
-	return &gTM;
-}
-
-struct modTm *modLocalTime(const modTime_t *timep)
-{
-	modTime_t t = *timep + gTimeZoneOffset + gDaylightSavings;
-	return modGmTime(&t);
-}
-
-// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_15
-modTime_t modMkTime(struct modTm *tm)
-{
-	modTime_t t;
-	uint16_t yday;
-
-	yday = getDOY(tm->tm_year + 1900, tm->tm_mon, tm->tm_mday);
-
-	t =      tm->tm_sec
-		+   (tm->tm_min * 60)
-		+   (tm->tm_hour * 3600)
-		+   (yday * 86400)
-		+  ((tm->tm_year-70) * 31536000)
-		+ (((tm->tm_year-69)/4) * 86400)
-		- (((tm->tm_year-1)/100) * 86400)
-		+ (((tm->tm_year+299)/400)*86400);
-	t = t - (gTimeZoneOffset + gDaylightSavings);
-
-	return t;
-}
-
-void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
-{
-	modTime_t theTime;
-	uint32_t ms;
-
-	ms = modMilliseconds();
-	theTime = (ms / 1000) + gTimeOfDayOffset;
-
-	if (tv) {
-		tv->tv_sec = theTime;
-		tv->tv_usec = (ms % 1000) * 1000;
-	}
-	if (tz) {
-//		tz->tz_minuteswest = gTimeZoneOffset;
-//		tz->tz_dsttime = gDaylightSavings;
-	}
-}
-
-void modSetTime(uint32_t seconds)
-{
-	uint32_t ms;
-	ms = modMilliseconds();
-
-	gTimeOfDayOffset = seconds - (ms / 1000);
-}
-
-void modSetTimeZone(int32_t timeZoneOffset)
-{
-	gTimeZoneOffset = timeZoneOffset;
-}
-
-int32_t modGetTimeZone(void)
-{
-	return gTimeZoneOffset;
-}
-
-void modSetDaylightSavingsOffset(int32_t daylightSavings)
-{
-	gDaylightSavings = daylightSavings;
-}
-
-int32_t modGetDaylightSavingsOffset(void)
-{
-	return gDaylightSavings;
+	return 0;
 }
 
 /*
