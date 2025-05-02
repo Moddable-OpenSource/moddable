@@ -45,7 +45,6 @@ declare module "embedded:io/socket/udp" {
       address: string;
       port: number;
     };
-    read(buffer: Buffer): number;
     get format(): "buffer"
     set format(value: "buffer")
   }

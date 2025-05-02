@@ -21,5 +21,7 @@ declare module "embedded:io/socket/tcp/tls" {
 	};
 	export type TLSDevice = TCPOptions & { io: typeof UDP };
 
-	export default class TLSSocket extends TCP {}
+	export default class TLSSocket extends TCP {
+		constructor(options: TLSOptions);
+	}
 }
