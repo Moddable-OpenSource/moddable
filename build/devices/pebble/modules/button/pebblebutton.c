@@ -1,57 +1,8 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
-
-
-#if 1
-	#include "applib/event_service_client.h"
-#else
-
-typedef enum {
-  PEBBLE_NULL_EVENT = 0,
-  PEBBLE_ACCEL_SHAKE_EVENT,
-  PEBBLE_ACCEL_DOUBLE_TAP_EVENT,
-  PEBBLE_BT_CONNECTION_EVENT,
-  PEBBLE_BT_CONNECTION_DEBOUNCED_EVENT,
-  PEBBLE_BUTTON_DOWN_EVENT,
-  PEBBLE_BUTTON_UP_EVENT
-} PebbleEventType;
-
-typedef enum {
-  //! Back button
-  BUTTON_ID_BACK = 0,
-  //! Up button
-  BUTTON_ID_UP,
-  //! Select (middle) button
-  BUTTON_ID_SELECT,
-  //! Down button
-  BUTTON_ID_DOWN,
-  //! Total number of buttons
-  NUM_BUTTONS
-} ButtonId;
-
-typedef struct {
-	ButtonId button_id;
- } PebbleButtonEvent;
- 
- typedef struct  {
-	union  {
-	  PebbleButtonEvent button;
-	};
-	PebbleEventType type;
- } PebbleEvent;
-
- typedef void (*EventServiceEventHandler)(PebbleEvent *e, void *context);
-
- typedef struct {
-	PebbleEventType type;
-	EventServiceEventHandler handler;
-	void *context;
- } EventServiceInfo;
-
-static void event_service_client_subscribe(EventServiceInfo * service_info) {}
-static void event_service_client_unsubscribe(EventServiceInfo * service_info) {}
- #endif
+#include "system/logging.h"
+#include "applib/event_service_client.h"
 
 struct PebbleButtonRecord {
 	struct PebbleButtonRecord	*next;
@@ -68,19 +19,28 @@ static PebbleButton gButtons;
 static EventServiceInfo	eventServiceDown;
 static EventServiceInfo	eventServiceUp;
 
-static void buttonEventHandler(PebbleEvent *e, void *context)
+static void buttonEventHandler(int pushed, int button)
 {
 	PebbleButton pb;
 
 	for (pb = gButtons; pb; pb = pb->next) {
-		if (pb->button != e->button.button_id)
+		if (pb->button != button)
 			continue;
 
-		xsMachine *the = pb->the;
-		xsBeginHost(the);
-		xsCallFunction1(xsReference(pb->onPush), pb->obj, xsInteger((e->type == PEBBLE_BUTTON_UP_EVENT) ? 0 : 1));
-		xsEndHost(the);
+		xsBeginHost(pb->the);
+		xsCallFunction1(xsReference(pb->onPush), pb->obj, xsInteger(pushed));
+		xsEndHost(pb->the);
 	}
+}
+
+static void buttonDownEventHandler(PebbleEvent *e, void *context)
+{
+	buttonEventHandler(1, e->button.button_id);
+}
+
+static void buttonUpEventHandler(PebbleEvent *e, void *context)
+{
+	buttonEventHandler(0, e->button.button_id);
 }
 
 void xs_pebblebutton_destructor(void *data)
@@ -149,9 +109,9 @@ void xs_pebblebutton(xsMachine *the)
 	
 	if (NULL == gButtons) {
 		eventServiceDown.type = PEBBLE_BUTTON_DOWN_EVENT;
-		eventServiceDown.handler = buttonEventHandler;
+		eventServiceDown.handler = buttonDownEventHandler;
 		eventServiceUp.type = PEBBLE_BUTTON_UP_EVENT;
-		eventServiceUp.handler = buttonEventHandler;
+		eventServiceUp.handler = buttonUpEventHandler;
 		event_service_client_subscribe(&eventServiceUp);
 		event_service_client_subscribe(&eventServiceDown);
 	}
@@ -169,14 +129,3 @@ void xs_pebblebutton_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 	xsmcSetHostDestructor(xsThis, NULL);
 }
-
-#if 0
-void xs_pebblebutton_trigger(xsMachine *the)
-{
-	PebbleButton pb = xsmcGetHostDataValidate(xsThis, (void *)&xsPebbleButtonHooks);
-	PebbleEvent e;
-	e.button.button_id = pb->button;
-	e.type = xsmcTest(xsArg(0)) ? PEBBLE_BUTTON_DOWN_EVENT : PEBBLE_BUTTON_UP_EVENT;
-	buttonEventHandler(&e, NULL);
-}
-#endif
