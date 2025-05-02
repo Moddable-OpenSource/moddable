@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"pebble/graphics": "./pebblegraphics",
+		"pebble/graphics_path2d": "./pebblegraphics_path2d",
+		"pebble/system": "./pebblesystem"
+	},
+	"preload": [
+		"pebble/*"
+	]
+}
