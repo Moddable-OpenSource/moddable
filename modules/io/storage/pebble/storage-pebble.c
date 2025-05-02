@@ -33,8 +33,6 @@ static void _throwIf(xsMachine *the, status_t err)
 		xsUnknownError("key-value error");
 }
 
-#define getDirectory(slot) ((xsDirectory)xsmcGetHostChunkValidate(slot, xs_directorystorage_destructor))->handle
-
 /*
 	Storage Iterator
 */
@@ -97,7 +95,9 @@ void xs_storageIterator_next(xsMachine *the)
 
 void xs_storageIterator_return(xsMachine *the)
 {
-	xsStorageIterator iterator = xsmcGetHostChunkValidate(xsThis, xs_storageIterator_destructor);
+	xsStorageIterator iterator = xsmcGetHostData(xsThis);
+	if (iterator)
+		xsmcGetHostDataValidate(xsThis, xs_storageIterator_destructor);
 	xs_storageIterator_destructor(iterator);
 	xsmcSetHostData(xsThis, NULL);
 	xs_storageIterator_next(the);
