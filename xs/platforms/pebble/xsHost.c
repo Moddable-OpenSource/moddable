@@ -875,37 +875,43 @@ void modRunOnSleepCallbacks()
 	}
 }
 
-void undefinedFail() { modLog_transmit("unimplemented"); }
+void undefinedFail(const char *what) {
+	char msg[64];
+	c_strcpy(msg, "unimplemented: ");
+	c_strcat(msg, what);
+	 modLog_transmit(msg);
+}
 
 // void vPortFree() {undefinedFail();}
 // void xQueueAddToSet() {undefinedFail();}
-void *xQueueCreate(int, int) { undefinedFail(); return NULL; }
+void *xQueueCreate(int, int) { undefinedFail("xQueueCreate"); return NULL; }
 //void *xQueueCreateSet() {undefinedFail(); return NULL; }
 // void vQueueDelete() {undefinedFail(); }
-void *xQueueSendToBack() {undefinedFail(); return NULL; }
-void *xQueueSendToBackFromISR() {undefinedFail(); return NULL; }
+void *xQueueSendToBack() {undefinedFail("xQueueSendToBack"); return NULL; }
+void *xQueueSendToBackFromISR() {undefinedFail("xQueueSendToBackFromISR"); return NULL; }
 // void *xQueueSelectFromSet() {undefinedFail(); return NULL; }
-void *xQueueReceive() { undefinedFail(); return NULL; }
+void *xQueueReceive() { undefinedFail("xQueueReceive"); return NULL; }
 // void xQueueRemoveFromSet() {undefinedFail(); }
-SemaphoreHandle_t *xSemaphoreCreateMutex() { undefinedFail(); return NULL; }
-StaticSemaphore_t *xSemaphoreCreateMutexStatic(void *x) { undefinedFail(); return NULL; }
-void vSemaphoreDelete() {undefinedFail(); }
-void xSemaphoreGive() {undefinedFail(); }
-void xSemaphoreTake() {undefinedFail(); }
+SemaphoreHandle_t *xSemaphoreCreateMutex() { undefinedFail("xSemaphoreCreateMutex"); return NULL; }
+StaticSemaphore_t *xSemaphoreCreateMutexStatic(void *x) { undefinedFail("xSemaphoreCreateMutexStatic"); return NULL; }
+void vSemaphoreDelete() {undefinedFail("vSemaphoreDelete"); }
+void xSemaphoreGive() {undefinedFail("xSemaphoreGive"); }
+void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
 // void vTaskDelay() {undefinedFail(); }
-void taskYIELD() {undefinedFail(); }
+void taskYIELD() {undefinedFail("taskYIELD"); }
 // void *xTaskGetCurrentTaskHandle() {undefinedFail(); return NULL; }
 // void *xTaskGetIdleTaskHandle() {undefinedFail(); return NULL; }
-void xTaskNotifyGive() {undefinedFail(); }
-uint32_t ulTaskNotifyTake() {undefinedFail(); return 0; }
-uint32_t xPortGetFreeHeapSize() {undefinedFail(); return 0; }
-double fmod(double x, double y) { undefinedFail(); return 0.0; }
-void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail(); }
-void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail(); return NULL; }
-void pebble_reset() {  undefinedFail(); return; }
+void xTaskNotifyGive() {undefinedFail("xTaskNotifyGive"); }
+uint32_t ulTaskNotifyTake() {undefinedFail("ulTaskNotifyTake"); return 0; }
+uint32_t xPortGetFreeHeapSize() {undefinedFail("xPortGetFreeHeapSize"); return 0; }
+double fmod(double x, double y) { undefinedFail("fmod"); return 0.0; }
+void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
+void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
+void pebble_reset() {  undefinedFail("pebble_reset"); return; }
 
-double trunc(double x) {  undefinedFail(); return x; }
-double log1p(double x) {  undefinedFail(); return x; }
+double trunc(double x) {  undefinedFail("trunc"); return x; }
+double log1p(double x) {  undefinedFail("log1p"); return x; }
+double ceil(double x) {  undefinedFail("ceil"); return x; }
 
 int errno;
 int *__errno(void) { return &errno; };
