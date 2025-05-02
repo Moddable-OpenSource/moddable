@@ -904,12 +904,45 @@ void taskYIELD() {undefinedFail("taskYIELD"); }
 void xTaskNotifyGive() {undefinedFail("xTaskNotifyGive"); }
 uint32_t ulTaskNotifyTake() {undefinedFail("ulTaskNotifyTake"); return 0; }
 uint32_t xPortGetFreeHeapSize() {undefinedFail("xPortGetFreeHeapSize"); return 0; }
-double fmod(double x, double y) { undefinedFail("fmod"); return 0.0; }
+double fmod(double a, double b) {
+	if (b == 0.0) return 0.0 / 0.0; // NaN
+
+	double q = a / b;
+	double q_trunc = c_trunc(q);
+	return a - q_trunc * b;
+}
 void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
 void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
 void pebble_reset() {  undefinedFail("pebble_reset"); return; }
 
-double trunc(double x) {  undefinedFail("trunc"); return x; }
+double trunc(double x) {
+	union {
+		double d;
+		uint64_t u;
+	} value = { x };
+
+	// Extract exponent (11 bits starting at bit 52)
+	int exponent = ((value.u >> 52) & 0x7FF) - 1023;
+
+	// If exponent < 0, |x| < 1 → result is ±0
+	if (exponent < 0) {
+		value.u &= 0x8000000000000000ULL; // keep only the sign bit
+		return value.d;
+	}
+
+	// If exponent >= 52, the number is already an integer
+	if (exponent >= 52) {
+		return x;
+	}
+
+	// Create a mask for the fractional bits
+	uint64_t mask = (1ULL << (52 - exponent)) - 1;
+
+	// Zero out the fractional bits
+	value.u &= ~mask;
+
+	return value.d;
+}
 double log1p(double x) {  undefinedFail("log1p"); return x; }
 double ceil(double x) {  undefinedFail("ceil"); return x; }
 
