@@ -3,6 +3,9 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "system/logging.h"
 #include "applib/event_service_client.h"
+#include "applib/ui/window_private.h"
+#include "applib/ui/window_stack.h"
+#include "applib/ui/app_window_stack.h"
 
 struct PebbleButtonRecord {
 	struct PebbleButtonRecord	*next;
@@ -45,7 +48,7 @@ static void buttonUpEventHandler(PebbleEvent *e, void *context)
 
 void xs_pebblebutton_destructor(void *data)
 {
-	PebbleButton pb = data;
+	PebbleButton pb = data, walker;
 	if (!pb) return;
 
 	PebbleButton *p = &gButtons;
@@ -58,6 +61,13 @@ void xs_pebblebutton_destructor(void *data)
 		event_service_client_unsubscribe(&eventServiceUp);
 		event_service_client_unsubscribe(&eventServiceDown);
 	}
+	
+	for (walker = gButtons; walker; walker = walker->next) {
+		if (walker->button == BUTTON_ID_BACK)
+			break;
+	}
+	if (C_NULL == walker)
+		window_set_overrides_back_button(app_window_stack_get_top_window(), false);
 
 	c_free(pb);
 }
@@ -118,6 +128,9 @@ void xs_pebblebutton(xsMachine *the)
 
 	pb->next = gButtons;
 	gButtons = pb;
+
+	if (BUTTON_ID_BACK == button)
+		window_set_overrides_back_button(app_window_stack_get_top_window(), true);
 }
 
 void xs_pebblebutton_close(xsMachine *the)

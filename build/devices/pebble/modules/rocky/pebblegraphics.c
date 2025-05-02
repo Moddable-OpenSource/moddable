@@ -2,7 +2,7 @@
 #include "applib/graphics/gcolor_definitions.h"
 #include "applib/ui/layer.h"
 #include "applib/ui/window.h"
-//@@ #include "applib/ui/window_stack.h"
+#include "applib/ui/app_window_stack.h"
 #include "font_resource_keys.auto.h"
 #include "mc.xs.h"      // for xsID_ values
 #include "system/logging.h"
@@ -385,7 +385,6 @@ void pebble_graphics_context_get_dirty(xsMachine *the)
 void pebble_graphics_context_set_dirty(xsMachine *the)
 {
 	/* PebbleGraphicsContext pgr = */ xsmcGetHostData(xsThis);
-	extern Window* app_window_stack_get_top_window(void);
 	Window *w = app_window_stack_get_top_window();
 	layer_mark_dirty(&w->layer);
 }
