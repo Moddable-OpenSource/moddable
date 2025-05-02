@@ -51,7 +51,8 @@
 //#include "task.h"
 //#include "queue.h"
 #if !defined (portMAX_DELAY)
-#define portMAX_DELAY		(0xffffffff)
+typedef uint32_t TickType_t;
+#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
 
 #define pdTRUE				(1)
 #define pdMS_TO_TICKS(x)	(x)
