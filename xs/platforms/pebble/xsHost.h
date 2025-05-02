@@ -44,6 +44,7 @@
 
 #include "util/time/time.h"
 #include "applib/pbl_std/pbl_std.h"
+#include "system/passert.h"
 
 //#include "FreeRTOS.h"
 //#include "freertos_types.h"
@@ -302,7 +303,7 @@ extern void my_free(void *ptr);
 #define c_realloc realloc
 #define c_free free
 
-#define c_exit(n) do { pebble_reset(); } while (0)
+#define c_exit(n) PBL_CROAK("xs exit %d", (int)n)
 #define c_qsort qsort
 #define c_strtod strtod
 #define c_strtol strtol

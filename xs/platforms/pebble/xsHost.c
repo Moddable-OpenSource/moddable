@@ -913,7 +913,6 @@ double fmod(double a, double b) {
 }
 void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
 void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
-void pebble_reset() {  undefinedFail("pebble_reset"); return; }
 
 double trunc(double x) {
 	union {
