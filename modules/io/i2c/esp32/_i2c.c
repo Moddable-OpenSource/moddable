@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Moddable Tech, Inc.
+ * Copyright (c) 2019-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,11 +22,13 @@
 	I2C - uing ESP-IDF
 
 	to do:
+		- update to latest ESP-IDF API
 */
 
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "mc.xs.h"			// for xsID_* values
 #include "xsHost.h"			// esp platform support
+#include "_i2c.h"			// I2C host hooks
 
 #include "driver/i2c.h"
 
@@ -57,13 +59,28 @@ static I2C gI2CActive;
 static uint8_t i2cActivate(I2C i2c);
 static uint8_t usingPins(uint32_t data, uint32_t clock);
 
+static void _xs_i2c_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
+
 static SemaphoreHandle_t gI2CMutex;
+
+static void *modI2CValidate(xsMachine *the, xsSlot *instance);
+static uint8_t modI2CDeactivate(void *instanceData);
+
+static const xsI2CHostHooksRecord ICACHE_RODATA_ATTR xsI2CHooks = {
+	.hooks = {
+		_xs_i2c_destructor,
+		_xs_i2c_mark,
+		"i2c"
+	},
+	.doValidate = modI2CValidate,
+	.doDeactivate = modI2CDeactivate,
+};
 
 void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
 	int data, clock, hz, address;
-	int timeout = 32000;
+	int timeout = 32000;		// 400 ms (same as default I2C_SLAVE_TIMEOUT_DEFAULT)
 	uint8_t pullup = GPIO_PULLUP_ENABLE;
 	int port = I2C_NUM_0;
 
@@ -144,6 +161,8 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->next = gI2C;
 	gI2C = i2c;
 
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsI2CHooks);
+
 	builtinUsePin(data);
 	builtinUsePin(clock);
 }
@@ -179,10 +198,14 @@ void _xs_i2c_destructor(void *data)
 	c_free(i2c);
 }
 
+void _xs_i2c_mark(xsMachine*, void *, xsMarkRoot)
+{
+}
+
 void _xs_i2c_close(xsMachine *the)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
-	if (i2c && xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor)) {
+	if (i2c && xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks)) {
 		xsForget(i2c->obj);
 		_xs_i2c_destructor(i2c);
 		xsmcSetHostData(xsThis, NULL);
@@ -192,7 +215,7 @@ void _xs_i2c_close(xsMachine *the)
 
 void _xs_i2c_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	xsUnsignedValue length;
 	int err;
 	uint8_t stop = true;
@@ -236,7 +259,7 @@ void _xs_i2c_read(xsMachine *the)
 
 void _xs_i2c_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	int err;
 	xsUnsignedValue length;
 	uint8_t stop = true;
@@ -274,7 +297,7 @@ void _xs_i2c_write(xsMachine *the)
 
 void _xs_i2c_writeRead(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2c_destructor);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	int err;
 	xsUnsignedValue lengthWrite, lengthRead;
 	i2c_cmd_handle_t cmd;
@@ -327,39 +350,43 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 uint8_t i2cActivate(I2C i2c)
 {
-	i2c_config_t conf;
-
 	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
 
-	if ((i2c == gI2CActive) ||
-		(gI2CActive && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
-		return 1;
-
 	if (gI2CActive) {
+		if ((i2c == gI2CActive) ||
+			(i2c && (gI2CActive->data == i2c->data) && (gI2CActive->clock == i2c->clock) && (gI2CActive->hz == i2c->hz) && (gI2CActive->port == i2c->port) && (gI2CActive->pullup == i2c->pullup)))
+			return 1;
+
 		i2c_driver_delete(gI2CActive->port);
 		gI2CActive = NULL;
 	}
 
-	conf.mode = I2C_MODE_MASTER;
-	conf.sda_io_num = i2c->data;
-	conf.scl_io_num = i2c->clock;
-	conf.master.clk_speed = i2c->hz;
-	conf.sda_pullup_en = i2c->pullup;
-	conf.scl_pullup_en = i2c->pullup;
-	conf.clk_flags = 0;
-	if (ESP_OK != i2c_param_config(i2c->port, &conf)) {
-		xSemaphoreGive(gI2CMutex);
-		return 0;
+	if (i2c) {
+		i2c_config_t conf;
+
+		conf.mode = I2C_MODE_MASTER;
+		conf.sda_io_num = i2c->data;
+		conf.scl_io_num = i2c->clock;
+		conf.master.clk_speed = i2c->hz;
+		conf.sda_pullup_en = i2c->pullup;
+		conf.scl_pullup_en = i2c->pullup;
+		conf.clk_flags = 0;
+		if (ESP_OK != i2c_param_config(i2c->port, &conf)) {
+			xSemaphoreGive(gI2CMutex);
+			return 0;
+		}
+
+		if (ESP_OK != i2c_driver_install(i2c->port, I2C_MODE_MASTER, 0, 0, 0)) {
+			xSemaphoreGive(gI2CMutex);
+			return 0;
+		}
+
+		gI2CActive = i2c;
+
+		i2c_set_timeout(i2c->port, i2c->timeout);
 	}
-
-	if (ESP_OK != i2c_driver_install(i2c->port, I2C_MODE_MASTER, 0, 0, 0)) {
+	else
 		xSemaphoreGive(gI2CMutex);
-		return 0;
-	}
-
-	gI2CActive = i2c;
-
-	i2c_set_timeout(i2c->port, i2c->timeout);
 
 	return 1;
 }
@@ -376,6 +403,28 @@ uint8_t usingPins(uint32_t data, uint32_t clock)
 	return 0;
 }
 
+void *modI2CValidate(xsMachine *the, xsSlot *instance)
+{
+	return xsmcGetHostDataValidate(*instance, (xsHostHooks *)&xsI2CHooks);
+}
+
+uint8_t modI2CDeactivate(void *instanceData)
+{
+	I2C i2c = instanceData;
+
+	if (!gI2CActive || !i2c)
+		return 0;
+
+	if ((gI2CActive->data != i2c->data) || (gI2CActive->clock != i2c->clock))
+		return 0;			// an I2C bus is active, but not this one
+
+	if (!i2cActivate(C_NULL))	// unconditionally deactivate this bus
+		return 0;
+
+	xSemaphoreGive(gI2CMutex);
+
+	return 1;
+}
 
 /*
 	async experiment

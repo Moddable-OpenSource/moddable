@@ -20,7 +20,7 @@ function print(...args) {
 	trace(args.join(" ") + "\n");
 }
 
-const client = mqtt.connect('mqtt://test.mosquitto.org')
+const client = mqtt.connect('mqtt://broker.hivemq.com')
 client.subscribe( "xs/test", { qos: 2 }, (err, granted) => { 
 	print("subscribed", err, granted[0].topic, granted[0].qos);
 	client.publish('xs/test', "zero", { qos:0 }, err => { print("published zero", err) });

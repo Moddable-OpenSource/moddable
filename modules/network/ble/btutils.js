@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -133,7 +133,7 @@ export class Bytes extends ArrayBuffer {
 		let byteLength;
 		if ("string" === typeof bytes)
 			byteLength = bytes.length >> 1;
-		else if (("object" === typeof bytes) && (bytes instanceof ArrayBuffer))
+		else if (bytes instanceof ArrayBuffer)
 			byteLength = bytes.byteLength;
 		else
 			throw new Error("unsupported type");
@@ -195,21 +195,20 @@ function serializeString(data) {
 }
 
 function serializeManufacturerSpecificData({identifier, data}) {
-	let length = 2 + (data?.length ?? 0);
-	let result = new Uint8Array(length);
-	result[0] = identifier & 0xFF;
-	result[1] = (identifier >> 8) & 0xFF;
+	const result = new Uint8Array(2 + (data?.length ?? 0));
+	result[0] = identifier;
+	result[1] = identifier >> 8;
 	if (data)
 		result.set(data, 2);
 	return result;
 }
 
 function serializeConnectionInterval({intervalMin, intervalMax}) {
-	let buffer = new ArrayBuffer(4);
-	let result = new DataView(buffer);
+	const bytes = new Uint8Array(4)
+	const result = new DataView(bytes.buffer);
 	result.setUint16(0, intervalMin, true);
 	result.setUint16(2, intervalMax, true);
-	return new Uint8Array(buffer);
+	return bytes;
 }
 
 function serializeServiceData16({uuid, data = null}) {
@@ -392,13 +391,11 @@ export class Advertisement {
 	get manufacturerSpecific() {
 		const index = this.findIndex(GAP.ADType.MANUFACTURER_SPECIFIC_DATA);
 		if (-1 != index) {
-			let start = index + 2;
 			const data = this.#data;
-			const adLength = data[index];
-			const identifier = data[start] | (data[start+1] << 8);
-			start += 2;
-			let end = start + adLength - 1
-			return { identifier, data: new Uint8Array(this.#buffer.slice(start, end)) };
+			const start = index + 2;
+			const end = start + data[index] - 1
+			const identifier = data[start] | (data[start + 1] << 8);
+			return {identifier, data: data.slice(start + 2, end)};
 		}
 	}
 	get flags() {

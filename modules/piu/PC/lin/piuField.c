@@ -145,7 +145,6 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
 	GtkFixed* gtkFixed = (*view)->gtkFixed;
 	GtkWidget* gtkField = gtk_entry_new();
 	g_signal_connect(G_OBJECT(gtkField), "activate", G_CALLBACK(gtk_entry_activate), self);
-	g_signal_connect(G_OBJECT(gtkField), "changed", G_CALLBACK(gtk_entry_changed), self);
 	g_signal_connect(G_OBJECT(gtkField), "focus-in-event", G_CALLBACK(gtk_entry_focused), self);
 // 	gtk_entry_set_attributes(GTK_ENTRY(gtkField), (*font)->pangoAttributes);
 	gtk_widget_set_name(GTK_WIDGET(gtkField), "field");
@@ -160,6 +159,7 @@ void PiuFieldBind(void* it, PiuApplication* application, PiuView* view)
  		xsStringValue string = PiuToString((*self)->string);
    		gtk_entry_set_text(GTK_ENTRY(gtkField), string);
 	}
+	g_signal_connect(G_OBJECT(gtkField), "changed", G_CALLBACK(gtk_entry_changed), self);
 	GtkPiuClip* gtkClip = gtk_piu_clip_new((PiuContent*)self, GTK_WIDGET(gtkField));
 	gtk_container_add(GTK_CONTAINER(gtkClip), GTK_WIDGET(gtkField));
 	gtk_container_add(GTK_CONTAINER(gtkFixed), GTK_WIDGET(gtkClip));

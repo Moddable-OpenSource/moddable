@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,6 +36,7 @@
  */
 
 const Bin = {
+/*
 	comp(a1, a2, n = -1) {
 		var i1 = new Uint8Array(a1), i2 = new Uint8Array(a2);
 		if (n >= 0) {
@@ -67,6 +68,9 @@ const Bin = {
 			r[i] = i1[i] ^ i2[i % len2];
 		return r.buffer;
 	},
+*/
+	xor (a, b) @ "xs_crypt_bin_xor",
+	comp (a, b, n) @ "xs_crypt_bin_comp"
 };
 
 Object.freeze(Bin);

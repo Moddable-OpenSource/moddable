@@ -9,32 +9,31 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io/audioout/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp2101/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
+		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/bm8563/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
+		"driverRotation": 0,
+		"camera": {
+			"frameSize": "QVGA"
+		},
 		"virtualButton": false,
 		"touch": "M5StackCoreS3Touch",
 		"startupSound": "bflatmajor.maud"
 	},
 	"modules": {
 		"setup/target": "./setup-target",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
-		"pins/audioout-original": "$(MODULES)/pins/i2s/*",
-		"pins/audioout": "./M5StackCoreS3AudioOut",
+		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
+		"embedded:io/audio/out": "./M5StackCoreS3AudioOut",
 		"*": [
-			"$(MODULES)/drivers/mpu6886/*",
 			"./M5StackCoreS3Touch"
 		]
 	},
 	"preload": [
-		"pins/smbus",
-		"pins/audioout-original",
-		"pins/audioout",
-		"mpu6886",
 		"M5StackCoreS3Touch",
 		"setup/target"
 	],
@@ -123,6 +122,25 @@
 				"datain": 14,
 				"pdm": 1
 			}
+		},
+		"camera": {
+			"powerdown": -1,
+			"reset": -1,
+			"xclk": 2,
+			"pclk": 45,
+			"href": 38,
+			"vsync": 46,
+			"scl": 11,
+			"sda": 12,
+			"i2c_port": 1,
+			"d0": 39,
+			"d1": 40,
+			"d2": 41,
+			"d3": 42,
+			"d4": 15,
+			"d5": 16,
+			"d6": 48,
+			"d7": 47
 		}
 	}
 }

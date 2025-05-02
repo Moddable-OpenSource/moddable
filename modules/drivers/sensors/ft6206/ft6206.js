@@ -40,7 +40,7 @@ class FT6206  {
 			}
 
 			const vendor = io.readUint8(0xA8);
-			if ((17 !== vendor) && (1 !== vendor))
+			if ((17 !== vendor) && (1 !== vendor) && (2 !== vendor) && (0 != vendor))
 				throw new Error("unexpected vendor");
 
 			const id = io.readUint8(0xA3);

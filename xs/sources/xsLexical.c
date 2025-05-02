@@ -1526,8 +1526,15 @@ void fxGetNextTokenJSON(txParser* parser)
 		case '7':
 		case '8':
 		case '9':
-		case '-':	
 			fxGetNextNumberE(parser, 0);
+			break;
+		case '-':	
+			fxGetNextCharacter(parser);
+			fxGetNextNumberE(parser, 0);
+			if (parser->states[2].token == XS_TOKEN_INTEGER)
+				parser->states[2].integer = 0 - parser->states[2].integer;
+			else
+				parser->states[2].number = 0 - parser->states[2].number;
 			break;
 		case ',':
 			parser->states[2].token = XS_TOKEN_COMMA;

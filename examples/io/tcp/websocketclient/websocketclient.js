@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,8 +18,17 @@
  *
  */
  
+ /*
+	To do:
+	
+		- minimize setting of #socket.format
+*/
+
 import Timer from "timer";
 import Logical from "logical";
+
+const BufferFormat = "buffer";
+const NumberFormat = "number";
 
 class WebSocketClient {
 	#socket;
@@ -27,7 +36,9 @@ class WebSocketClient {
 	#state;
 	#line;
 	#data;
+	#format;		// true for number, false for buffer
 	#writable = 0;
+	#mask;			// write mask
 
 	constructor(options) {
 		this.#options = {
@@ -38,17 +49,24 @@ class WebSocketClient {
 			onError: options.onError,
 		};
 
+		this.format = options.format ?? BufferFormat;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
+
 		const attach = options.attach;
 		if (attach) {
 			this.#socket = new attach.constructor({
 				from: attach,
 				onReadable: count => this.#onReadable(count),
 				onWritable: count => this.#onWritable(count),
-				onError: () => this.#onError('ws: unknown socket error')
+				onError: () => this.#onError()
 			});
 			this.#state = "connected";
 			return;
 		}
+
+		this.#mask = new Uint8Array(4);		// client, so mask (attach case is server, so no mask)
 
 		this.#options.host = options.host; 
 		this.#options.path = options.path; 
@@ -71,15 +89,15 @@ class WebSocketClient {
 						port: this.#options.port,
 						onReadable: count => this.#onReadable(count),
 						onWritable: count => this.#onWritable(count),
-						onError: () => this.#onError('ws: unknown socket error')
+						onError: () => this.#onError()
 					});
 				}
 				catch {
-					this.#onError?.('ws: unknown socket connect error');
+					this.#onError?.();
 				}
 			},
 			onError: () => {
-				this.#onError?.('dns: unknown resolution error');
+				this.#onError?.();
 			},
 		});
 	}
@@ -87,16 +105,20 @@ class WebSocketClient {
 		this.#state = "closed";
 		this.#socket?.close();
 		this.#socket = undefined;
-		Timer.clear(this.#options.closer);
-		Timer.clear(this.#options.timer);
-		Timer.clear(this.#options.pending);
-		delete this.#options.timer;
-		delete this.#options.closer;
-		delete this.#options.pending;
+		const options = this.#options;
+		Timer.clear(options.closer);
+		Timer.clear(options.timer);
+		Timer.clear(options.pending);
+		delete options.timer;
+		delete options.closer;
+		delete options.pending;
 	}
 	write(data, options) {
+		const mask = this.#mask;
 		const byteLength = data.byteLength;
-		if (("connected" !== this.#state) || (byteLength > 65535) || ((byteLength + 8) > this.#writable))
+		const header = ((byteLength < 126) ? 2 : ((byteLength < 65536) ? 4 : 10)) + (mask ? 4 : 0);
+		const total = byteLength + header;
+		if (("connected" !== this.#state) || (total > this.#writable))
 			throw new Error;
 
 		let type;
@@ -105,7 +127,7 @@ class WebSocketClient {
 			if (undefined !== opcode)
 				type = 0x80 | opcode;
 			else {
-				type = this.#options.fragmentedWrite ? 0 : (options.binary ? 2 : 1);
+				type = this.#options.fragmentedWrite ? 0 : ((options.binary ?? true) ? 2 : 1);
 				if (options.more)
 					this.#options.fragmentedWrite = true;
 				else {
@@ -115,36 +137,55 @@ class WebSocketClient {
 			}
 		}
 		else {
-			type = 0x81;
-			delete this.#options.fragmentedWrite;
+			if (this.#options.fragmentedWrite) {
+				type = 0x80;
+				delete this.#options.fragmentedWrite;
+			}
+			else
+				type = 0x82;
 		}
 
-		data = data.slice(0);
-		const format = this.#socket.format;
-		this.#socket.format = "buffer";
-		if (this.#options.attach) {
-			if (byteLength < 126) {
-				this.#socket.write(Uint8Array.of(type, byteLength));
-				this.#writable -= (2 + byteLength);
-			}
-			else {
-				this.#socket.write(Uint8Array.of(type, 126, byteLength >> 8, byteLength));
-				this.#writable -= (4 + byteLength);
-			}
-		} else {
-			const mask = Uint8Array.of(Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256);
-			Logical.xor(data, mask.buffer);
-			if (byteLength < 126) {
-				this.#socket.write(Uint8Array.of(type, byteLength | 0x80, mask[0], mask[1], mask[2], mask[3]));
-				this.#writable -= (6 + byteLength);
-			}
-			else {
-				this.#socket.write(Uint8Array.of(type, 126 | 0x80, byteLength >> 8, byteLength, mask[0], mask[1], mask[2], mask[3]));
-				this.#writable -= (8 + byteLength);
-			}
+		if (ArrayBuffer.isView(data)) {
+			if (data.BYTES_PER_ELEMENT > 1)
+				throw new TypeError;		// not a Byte Buffer
 		}
-		this.#socket.write(data);
-		this.#socket.format = format;
+		else
+			data = new Uint8Array(data);
+		const payload = new Uint8Array(total);
+		payload[0] = type;
+		if (byteLength < 126)
+			payload[1] = byteLength;
+		else if (byteLength < 65536) {
+			payload[1] = 126;
+			payload[2] = byteLength >> 8;
+			payload[3] = byteLength;
+		}
+		else {
+			payload[1] = 127;
+			payload[2] = 0;
+			payload[3] = byteLength >> 48;
+			payload[4] = byteLength >> 40;
+			payload[5] = byteLength >> 32;
+			payload[6] = byteLength >> 24;
+			payload[7] = byteLength >> 16;
+			payload[8] = byteLength >> 8;
+			payload[9] = byteLength;
+		}
+
+		payload.set(data, header);		//@@ incorrect if data is Int8Array or DataView... native function to copy with optional mask?
+		if (mask) {
+			payload[1] |= 0x80;
+
+			mask[0] = Math.irandom(256);
+			mask[1] = Math.irandom(256)
+			mask[2] = Math.irandom(256)
+			mask[3] = Math.irandom(256)
+			Logical.xor(payload.subarray(header), mask.buffer);
+			payload.set(mask, header - 4);
+		}
+
+		this.#socket.format = BufferFormat;
+		this.#writable = this.#socket.write(payload);
 
 		if (0x88 === type) {		// close
 			if (this.#options.close & 2) {		// if we already received close, connection shuts down cleanly
@@ -155,46 +196,68 @@ class WebSocketClient {
 				this.#state = "closing";
 			}
 			else 
-				this.#options.close = 1;		// set 1 to indicate that we've send close
+				this.#options.close = 1;		// set 1 to indicate that we've sent close
 		}
 
-		return (this.#writable > 8) ? (this.#writable - 8) : 0;
+		const writable = this.#writable - (2 + 8 + (mask ? 4 : 0));
+		return (writable > 0) ? writable : 0;
 	}
 	read(count) {
 		if (!this.#data)
 			return;
-		
-		if ((undefined === count) || (count > this.#data))
+
+		if (this.#format) {
+			this.#data--;
+			this.#socket.format = NumberFormat;
+			return this.#socket.read();
+		}
+
+		this.#socket.format = BufferFormat;
+
+		if (undefined === count)
 			count = this.#data;
 
-		const data = this.#socket.read(count);
+		let data, result;
+
+		if (NumberFormat === typeof count) {
+			if (count > this.#data)
+				count = this.#data;
+
+			data = result = this.#socket.read(count);
+		}
+		else {
+			data = count;
+			count = result = this.#socket.read(data);
+		}
 		this.#data -= count;
-		if (this.#options.mask) {
-			const mask = this.#options.mask;
-			Logical.xor(data, mask.buffer);
-			if (this.#options.length) {
+
+		const options = this.#options;
+		if (options.mask) {
+			const mask = options.mask;
+			Logical.xor(data, mask, count);
+			if (this.#data) {
 				switch (count & 3) {
 					case 1:
-						this.#options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
+						options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
 						break;
 					case 2:
-						this.#options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
+						options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
 						break;
 					case 3:
-						this.#options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
+						options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
 						break;
 				}
 			}
 		}
-		
-		if (!this.#data && this.#options.unread) {	// finished this message and have unread data pending on socket
-			this.#options.timer = Timer.set(() => {
+
+		if (!this.#data && options.unread) {	// finished this message and have unread data pending on socket
+			options.timer = Timer.set(() => {
 				delete this.#options.timer;
 				this.#onReadable(this.#options.unread);
 			});
 		}
 
-		return data;
+		return result;
 	}
 	#onReadable(count) {
 		switch (this.#state) {
@@ -214,22 +277,28 @@ class WebSocketClient {
 					if ("receiveStatus" === this.#state) {
 						let status = this.#line.split(" ");
 						if (status.length < 3)
-							return void this.#onError('ws: http upgrade error (http status len < 3)');
+							return void this.#onError();
 						status = parseInt(status[1]);
 						if (101 !== status)
-							return void this.#onError(`ws: http upgrade error (expected status 101, got ${status})`);
+							return void this.#onError();
 						this.#state = "receiveHeader";
 					}
 					else if ("\r\n" === this.#line) {
 						// done
 						if (7 !== this.#options.flags)
-							return void this.#onError(`ws: http upgrade error (insufficient header received)`);
+							return void this.#onError();
 						this.#state = "connected";
 						delete this.#options.flags;
-						this.#socket.format = "buffer";
+						delete this.#options.host;
+						delete this.#options.path;
+						delete this.#options.port;
+						this.#socket.format = BufferFormat;
 
-						if (this.#writable > 8)
+						if (this.#writable > 8) {
 							this.#options.onWritable?.call(this, this.#writable - 8);
+							if (!this.#socket)
+								return;
+						}
 
 						if (count)
 							return void this.#onReadable(count);	// more data to read - run "connected"
@@ -263,22 +332,22 @@ class WebSocketClient {
 
 				while (count) {
 					if (undefined === options.tag) {
-						this.#socket.format = "number";
+						this.#socket.format = NumberFormat;
 						let tag = options.tag = this.#socket.read();
 						count--;
 
 						if (tag & 0x70)
-							return void this.#onError('ws: unsupported reserved bits');
+							return void this.#onError();
 
 						tag &= 0x0F;
-						if (1 === tag)
+						if (1 === tag & 0x0F)
 							options.binary = false;
 						else if (2 === tag)
 							options.binary = true;
 						else if (8 & tag)
 							options.control = true;
 						else if (tag)
-							return void this.#onError('ws: unknown opcode (${tag})');
+							return void this.#onError();
 						continue;
 					}
 					if (undefined === options.length) {
@@ -300,8 +369,13 @@ class WebSocketClient {
 						count--;
 						continue;
 					}
+					if ((127 === options.length[0]) && (options.length.length < 9)) {
+						options.length.push(this.#socket.read());
+						count--;
+						continue;
+					}
 					if (options.mask && options.mask.length < 4) {
-						//@@ it is an error for client to receieve a mask. client should fail here.
+						//@@ it is an error for client to receieve a mask. this code applies to future server. client should fail here.
 						options.mask.push(this.#socket.read());
 						count--;
 						if (4 !== options.mask.length)
@@ -328,19 +402,17 @@ class WebSocketClient {
 							return;
 
 						const opcode = options.tag & 0x0F;
-						if (options.mask) {
-							Logical.xor(control, options.mask.buffer);
-						}
 						try {
 							this.#options.onControl?.call(this, opcode, control.buffer);
+							if (!this.#socket)
+								return;
 						}
 						catch {
 						}
 						if (8 === opcode) {
 							if (options.close & 1) {		// sent close, now receiving response: done
 								this.close();
-								this.#options.onClose?.call(this);
-								return;
+								return void this.#options.onClose?.call(this);
 							}
 							else {						
 								options.close = 2;			// received request for clean close: reply
@@ -368,8 +440,7 @@ class WebSocketClient {
 						else if (10 === opcode)	// pong
 							;
 						else
-							return void this.#onError(`ws: unknown control opcode ${opcode}`);
-
+							return void this.#onError();
 
 						delete options.tag;
 						delete options.control;
@@ -379,11 +450,22 @@ class WebSocketClient {
 
 					if (!options.ready) {
 						options.ready = true;
-						this.#socket.format = "buffer";
-						if (126 === options.length[0])
-							options.length = (options.length[1] << 8) | options.length[2];
-						else
-							options.length = options.length[0];
+						this.#socket.format = BufferFormat;
+						let length = options.length[0];
+						if (127 === length) {
+							let i = 1;
+							while (i < 9) {
+								length = options.length[i++];
+								if (length)
+									break;
+							}
+							while (i < 9)
+								length = (length << 8) | options.length[i++];
+						}
+						else if (126 === length)
+							length = (options.length[1] << 8) | options.length[2];
+// 						trace(`LENGTH ${ options.length[0] } ${ length }\n`);
+						options.length = length;
 					}
 
 					let read, more, binary = options.binary;
@@ -403,6 +485,8 @@ class WebSocketClient {
 					}
 					delete options.unread;
 					options.onReadable?.call(this, this.#data, {more, binary});
+					if (!this.#socket)
+						break;
 					
 					count -= (read - this.#data);
 					if (this.#data) {
@@ -424,7 +508,7 @@ class WebSocketClient {
 			case "connecting": {
 				const key = new Uint8Array(16);
 				for (let i = 0; i < 16; i++)
-					key[i] = (Math.random() * 256) | 0;
+					key[i] = Math.irandom(256);
 				
 				const options = this.#options;
 				let message = [
@@ -450,13 +534,12 @@ class WebSocketClient {
 
 				//@@ if headers exceed count, send in pieces
 				message = ArrayBuffer.fromString(message.join("\r\n"));
-				this.#socket.write(message); 
-				this.#writable -= message.byteLength;
+				this.#writable = this.#socket.write(message); 
 
 				this.#state = "receiveStatus"
 				this.#line = "";
 				options.flags = 0;
-				this.#socket.format = "number";
+				this.#socket.format = NumberFormat;
 				} break;
 			
 			case "connected":
@@ -467,7 +550,7 @@ class WebSocketClient {
 					Timer.clear(this.#options.pending);
 					this.#options.pending = undefined;
 
-					this.write(this.#options.pendingControl, {opcode: this.#options.pendingControl.opcode});
+					this.#writable = this.write(this.#options.pendingControl, {opcode: this.#options.pendingControl.opcode});
 					delete this.#options.pendingControl;
 				}
 				this.#options.onWritable?.call(this, (this.#writable <= 8) ? 0 : (this.#writable - 8));
@@ -478,12 +561,23 @@ class WebSocketClient {
 				break;
 		}
 	}
-	#onError(error) {
+	#onError() {
 		this.close();
 		if (this.#options.close)
 			this.#options.onClose?.call(this);
 		else
-			this.#options.onError?.call(this, error);
+			this.#options.onError?.call(this);
+	}
+	get format() {
+		return this.#format ? NumberFormat : BufferFormat;
+	}
+	set format(value) {
+		if (BufferFormat === value)
+			this.#format = false;
+		else if (NumberFormat === value)
+			this.#format = true;
+		else
+			throw new RangeError;
 	}
 	
 	static text = 1;

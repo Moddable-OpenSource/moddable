@@ -18,6 +18,9 @@
 #
 
 cmake_minimum_required(VERSION 3.5)
+if (WIN32)
+	set(CMAKE_OBJECT_PATH_MAX 260)
+endif ()
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(xs_esp32)

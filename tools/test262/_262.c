@@ -254,7 +254,8 @@ void _xsbug_import_(txMachine* the)
 {
 	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushSlot(mxArgv(0));
-	fxRunImport(the, realm, XS_NO_ID);
+	mxPushUndefined();
+	fxRunImport(the, realm, NULL);
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();

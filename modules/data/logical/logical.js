@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,10 +23,12 @@
 */
 
 export default class {
-	static not(dst) {
-		this.xor(dst, 0xff);
+	static not(dst, count) {
+		if (undefined === count)
+			return this.xor(dst, 0xff);
+		return this.xor(dst, 0xff, count);
 	}
-	static xor(dst, src) @ "xs_logical_xor";
-	static and(dst, src) @ "xs_logical_and";
-	static or(dst, src) @ "xs_logical_or";
+	static xor(dst, src) @ "xs_logical_xor";		// optional third argument count
+	static and(dst, src) @ "xs_logical_and";		// optional third argument count
+	static or(dst, src) @ "xs_logical_or";			// optional third argument count
 }

@@ -2,6 +2,7 @@
 	"build": {
 		"PICO_SUBCLASS":"rp2350",
 		"USE_SFE":"1",
+		"SFE_CS_PIN":"47",
 		"SFE_DIR":"$(MODDABLE)/build/devices/pico/lib/sparkfun-pico",
 		"PICO_BOARD_FILE":"$(SFE_DIR)/sparkfun_pico/sfe_pico.h"
 	},
@@ -35,7 +36,8 @@
 		},
 		"ili9341": {
 			"cs_pin": 17,
-			"dc_pin": 16
+			"dc_pin": 16,
+			"spi_port": 0
 		}
 	}
 }

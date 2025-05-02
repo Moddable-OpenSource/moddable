@@ -67,6 +67,12 @@ export class Texture @ "PiuTextureDelete" {
 				if (Resource.exists(path, archive)) {
 					alphaBitmap = parseBMP(new Resource(path, archive));
 				}
+			}
+			path = name + "-color.bm4";
+			if (Resource.exists(path, archive)) {
+				colorBitmap = parseRLE(new Resource(path, archive));
+			}
+			else {
 				path = name + "-color.bmp";
 				if (Resource.exists(path, archive)) {
 					colorBitmap = parseBMP(new Resource(path, archive));

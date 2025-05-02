@@ -3,9 +3,9 @@ import "system"		// system initializes globalThis.device. this ensures it runs b
 import TCP from "embedded:io/socket/tcp";
 import UDP from "embedded:io/socket/udp";
 import Resolver from "embedded:network/dns/resolver/udp";
+import TLSSocket from "embedded:io/socket/tcp/tls";
 
 import HTTPClient from "embedded:network/http/client";
-import TLSSocket from "embedded:io/socket/tcp/tls";
 
 const dns = {
 	io: Resolver,
@@ -13,8 +13,8 @@ const dns = {
 		"1.1.1.1", //...
 	],
 	socket: {
-		io: UDP,
-	},
+		io: UDP
+	}
 };
 globalThis.device = Object.freeze({
 	...globalThis.device,
@@ -24,17 +24,21 @@ globalThis.device = Object.freeze({
 			io: HTTPClient,
 			dns,
 			socket: {
-				io: TCP,
-			},		
+				io: TCP
+			}
 		},
 		https: {
 			io: HTTPClient,
 			dns,
+			port: 443,
 			socket: {
 				io: TLSSocket,
-				TCP: device.network.http.socket
+				TCP: device.network.http.socket,
+				secure: {
+					applicationLayerProtocolNegotiation: "http/1.1"
+				}
 			}
-		},
+		}
 	},
 }, true);
 

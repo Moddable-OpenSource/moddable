@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <pwd.h>
 #include <unistd.h>
 
 #define kCreateFilePermissions (0666)
@@ -35,13 +36,7 @@
 	helpers
 */
 
-#define throwIf(a) _throwIf(the, a)
-
-static void _throwIf(xsMachine *the, int result)
-{
-	if (result < 0)
-		xsUnknownError(strerror(errno));
-}
+#define throwIf(a) if ((a) < 0) xsUnknownError(strerror(errno))
 
 #define getPath(s) _getPath(the, &s)
 
@@ -221,36 +216,50 @@ struct xsDirectoryRecord {
 typedef struct xsDirectoryRecord xsDirectoryRecord;
 typedef struct xsDirectoryRecord *xsDirectory;
 
-void xs_direectoryposix_destructor(void *data)
+void xs_directoryposix_destructor(void *data)
 {
 	xsDirectory d = data;
 	if (d)
 		close(d->fd);
 }
 
-#define getDirectory(slot) ((xsDirectory)xsmcGetHostChunkValidate(slot, xs_direectoryposix_destructor))->fd
+#define getDirectory(slot) ((xsDirectory)xsmcGetHostChunkValidate(slot, xs_directoryposix_destructor))->fd
 
-void xs_direectoryposix(xsMachine *the)
+void xs_directoryposix(xsMachine *the)
 {
-	xsTrace("Directory constructor is temporary for bootstrapping. Will throw in the future.\n");
+	xsUnknownError("use openDirectory");
+}
 
-	xsmcGet(xsResult, xsArg(0), xsID_path);
-	char *path = xsmcToString(xsResult);		//@@ not checked with getPath.... for bootstrap
+void xs_directoryposix_bootstrap(xsMachine *the)
+{
+    char *path;
+	struct stat buf;
 	xsDirectoryRecord d;
 	
-	struct stat buf;
-	throwIf(stat(path, &buf));
+    if (xsmcTest(xsArg(1))) {
+		path = xsmcToString(xsArg(1));
+    }
+    else {
+		path = getenv("HOME");
+		if (!path) {
+			struct passwd* pwd = getpwuid(getuid());
+			if (pwd)
+			   path = pwd->pw_dir;
+		}
+    }
 	
+	throwIf(stat(path, &buf));
 	if (!S_ISDIR(buf.st_mode))
 		xsUnknownError("not directory");
 
 	d.fd = open(path, O_RDONLY);
 	throwIf(d.fd);
 
-	xsmcSetHostChunk(xsThis, &d, sizeof(d));
+	xsmcSetHostChunk(xsArg(0), &d, sizeof(d));
 }
 
-void xs_direectoryposix_close(xsMachine *the)
+
+void xs_directoryposix_close(xsMachine *the)
 {
 	if (!xsGetHostChunkIf(xsThis)) 
 		return;
@@ -259,7 +268,7 @@ void xs_direectoryposix_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
-void xs_direectoryposix_openFile(xsMachine *the)
+void xs_directoryposix_openFile(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 
@@ -305,7 +314,7 @@ void xs_direectoryposix_openFile(xsMachine *the)
 	xsmcSetHostChunk(xsResult, &f, sizeof(f));
 }
 
-void xs_direectoryposix_openDirectory(xsMachine *the)
+void xs_directoryposix_openDirectory(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 
@@ -328,7 +337,7 @@ void xs_direectoryposix_openDirectory(xsMachine *the)
 	xsmcSetHostChunk(xsResult, &d, sizeof(d));
 }
 
-void xs_direectoryposix_delete(xsMachine *the)
+void xs_directoryposix_delete(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 	char *path = getPath(xsArg(0));
@@ -348,9 +357,11 @@ void xs_direectoryposix_delete(xsMachine *the)
 	xsmcSetTrue(xsResult);
 }
 
-void xs_direectoryposix_move(xsMachine *the)
+void xs_directoryposix_move(xsMachine *the)
 {
 	int fd = getDirectory(xsThis), toFD = fd;
+	xsmcToString(xsArg(0));		// coerce both before getPath to avoid problem if memory moves
+	xsmcToString(xsArg(1));
 	char *fromPath = getPath(xsArg(0));
 	char *toPath = getPath(xsArg(1));
 
@@ -362,7 +373,7 @@ void xs_direectoryposix_move(xsMachine *the)
 	throwIf(renameat(fd, fromPath, toFD, toPath));
 }
 
-void xs_direectoryposix_status(xsMachine *the)
+void xs_directoryposix_status(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 	struct stat statbuf;
@@ -387,7 +398,7 @@ void xs_direectoryposix_status(xsMachine *the)
 	xsmcSet(xsResult, xsID_mode, xsVar(0));
 }
 
-void xs_direectoryposix_createDirectory(xsMachine *the)
+void xs_directoryposix_createDirectory(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 	char *path = getPath(xsArg(0));
@@ -403,16 +414,18 @@ void xs_direectoryposix_createDirectory(xsMachine *the)
 	xsmcSetTrue(xsResult);
 }
 
-void xs_direectoryposix_createLink(xsMachine *the)
+void xs_directoryposix_createLink(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
+	xsmcToString(xsArg(0));		// coerce both before getPath to avoid problem if memory moves
+	xsmcToString(xsArg(1));
 	char *path = getPath(xsArg(0));
 	char *target = getPath(xsArg(1));
 
 	throwIf(symlinkat(target, fd, path));
 }
 
-void xs_direectoryposix_readLink(xsMachine *the)
+void xs_directoryposix_readLink(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
 	char *path = getPath(xsArg(0));
@@ -436,68 +449,78 @@ struct xsScanRecord {
 typedef struct xsScanRecord xsScanRecord;
 typedef struct xsScanRecord *xsScan;
 
-void xs_direectoryposix_scan(xsMachine *the)
+void xs_directory_iterator_posix(xsMachine *the)
 {
-	int fd = getDirectory(xsThis);
-
-	xsResult = xsNewHostInstance(xsArg(1));
-
-	char *path = getPath(xsArg(0));
-
-	struct stat buf;
-	throwIf(fstatat(fd, path, &buf, 0));
-
-	if (!S_ISDIR(buf.st_mode))
-		xsUnknownError("not directory");
-
-	xsScanRecord s;
-	s.fd = openat(fd, path, kOpenDirFlags);
-	throwIf(s.fd);
-
-	s.dir = fdopendir(s.fd);
-	xsmcSetHostChunk(xsResult, &s, sizeof(s));
-}
-
-void xs_scanposix_destructor(void *data)
-{
-	xsScan s = data;
-	if (!s) return;
-
-	closedir(s->dir);
-	close(s->fd);
-}
-
-#define getScan(slot) ((xsScan)xsmcGetHostChunkValidate(slot, xs_scanposix_destructor))->dir
-
-void xs_scanposix(xsMachine *the)
-{
-	xsUnknownError("use scan");
-}
-
-void xs_scanposix_close(xsMachine *the)
-{
-	if (!xsGetHostChunkIf(xsThis)) 
-		return;
-
-	xs_scanposix_destructor(xsmcGetHostChunkValidate(xsThis, xs_scanposix_destructor));
-	xsmcSetHostData(xsThis, NULL);
-}
-
-void xs_scanposix_read(xsMachine *the)
-{
-	DIR *dir = getScan(xsThis);
-	struct dirent *de;
-
-	while (true) {
-		de = readdir(dir);
-		if (!de) {
-			xs_scanposix_close(the);
-			return;
-		}
-		if (c_strcmp(".", de->d_name) && c_strcmp("..", de->d_name))
-			break;
+	xsScanRecord scan;
+	int fd = getDirectory(xsArg(0));
+	if (xsmcArgc > 1) {
+		char *path = getPath(xsArg(1));
+		struct stat buf;
+		throwIf(fstatat(fd, path, &buf, 0));
+		if (!S_ISDIR(buf.st_mode))
+			xsUnknownError("not directory");
+		scan.fd = openat(fd, path, kOpenDirFlags);
+		throwIf(scan.fd);
+		fd = scan.fd;
 	}
-	xsmcSetString(xsResult, de->d_name);
+	else
+		scan.fd = -1; 
+	scan.dir = fdopendir(fd);
+	if (!scan.dir)
+		xsLog("errno %d\n", errno);
+	
+	xsmcSetHostChunk(xsThis, &scan, sizeof(scan));
+}
+
+void xs_directory_iterator_posix_destructor(void *data)
+{
+	xsScan scan = data;
+	if (!scan)
+		return;
+	closedir(scan->dir);
+	if (scan->fd < 0)
+		return;
+	close(scan->fd);
+}
+
+void xs_directory_iterator_posix_next(xsMachine *the)
+{
+	xsmcVars(2);
+	xsmcSetTrue(xsVar(0));
+	xsmcSetUndefined(xsVar(1));
+	if (xsmcGetHostChunkValidate(xsThis, xs_directory_iterator_posix_destructor)) {
+		xsScan scan = (xsScan)xsmcGetHostChunkValidate(xsThis, xs_directory_iterator_posix_destructor);
+		struct dirent *de = NULL;
+		while ((de = readdir(scan->dir))) {
+			if (c_strcmp(".", de->d_name) && c_strcmp("..", de->d_name))
+				break;
+		}
+		if (de) {
+			xsmcSetFalse(xsVar(0));
+			xsmcSetString(xsVar(1), de->d_name);
+		}
+		else {
+			xs_directory_iterator_posix_destructor(scan);
+			xsmcSetHostChunk(xsThis, NULL, 0);
+		}
+	}
+	xsResult = xsNewObject();
+	xsmcDefine(xsResult, xsID_done, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_value, xsVar(1), xsDefault);
+}
+
+void xs_directory_iterator_posix_return(xsMachine *the)
+{
+	xsmcVars(2);
+	xsmcSetTrue(xsVar(0));
+	xsmcSetUndefined(xsVar(1));
+	if (xsmcGetHostChunkValidate(xsThis, xs_directory_iterator_posix_destructor)) {
+		xs_directory_iterator_posix_destructor(xsmcGetHostChunkValidate(xsThis, xs_directory_iterator_posix_destructor));
+		xsmcSetHostChunk(xsThis, NULL, 0);
+	}
+	xsResult = xsNewObject();
+	xsmcDefine(xsResult, xsID_done, xsVar(0), xsDefault);
+	xsmcDefine(xsResult, xsID_value, xsVar(1), xsDefault);
 }
 
 /*

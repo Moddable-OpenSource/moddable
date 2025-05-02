@@ -22,7 +22,7 @@ declare module 'pins/audioin' {
   class AudioIn {
     public constructor()
     public close(): void
-    public read(samples: number): number
+    public read(sampleCount: number, buffer?: ArrayBuffer, offset?: number): ArrayBuffer
     public readonly sampleRate: number
     public readonly bitsPerSample: number
     public readonly numChannels: number

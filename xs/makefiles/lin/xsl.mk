@@ -65,13 +65,7 @@ C_OPTIONS =\
 	-I$(SRC_DIR)\
 	-I$(TLS_DIR)\
 	-I$(TMP_DIR)\
-	-DmxLink=1\
-	-DmxRun=1
-C_OPTIONS +=\
-	-DmxNoFunctionLength=1\
-	-DmxNoFunctionName=1\
-	-DmxHostFunctionPrimitive=1\
-	-DmxFewGlobalsTable=1
+	-DmxLink=1
 C_OPTIONS += \
 	-Wno-misleading-indentation \
 	-Wno-implicit-fallthrough

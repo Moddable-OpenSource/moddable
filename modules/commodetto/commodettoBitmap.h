@@ -69,14 +69,12 @@ typedef struct {
 	#error
 #endif
 
-#define kCommodettoBitmapHaveByteLength (1)
-
 typedef struct {
 	CommodettoDimension		w;
 	CommodettoDimension		h;
 	CommodettoBitmapFormat	format;
 	int8_t					havePointer;
-	int8_t					flags;
+	void					*bufferSlot;
 	union {
 		void				*data;
 		int32_t				offset;
@@ -84,7 +82,7 @@ typedef struct {
 #if COMMODETTO_BITMAP_ID
 	uint32_t				id;
 #endif
-	int32_t					byteLength;			// must be last
+	uint32_t				byteLength;
 } CommodettoBitmapRecord, *CommodettoBitmap;
 
 uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format);

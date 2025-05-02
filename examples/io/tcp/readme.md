@@ -1,7 +1,7 @@
 # Moddable SDK - TCP IO Examples
 
 Copyright 2022-2024 Moddable Tech, Inc.<BR>
-Revised: October 2, 2024
+Revised: December 11, 2024
 
 The examples in this directory use the [TCP socket](https://419.ecma-international.org/#-10-io-classes-tcp-socket) defined by ECMA-419.
 
@@ -13,10 +13,11 @@ The examples in this directory use the [TCP socket](https://419.ecma-internation
 	- [httpsclient](./httpsclient) – Combines `TLS` TCP socket with `httpclient` to make several secure requests to google.com.
 - WebSocket
 	- [websocketclient](./websocketclient) – A WebSocket client API built on TCP socket. The `WebSocketClient` class implements the [specification](https://419.ecma-international.org/#-24-websocket-client-class-pattern) in the 2nd Edition of ECMA-419.
-	- [websocketsclient](./websocketsclient) – Combines `TLS` TCP socket with `websocketclient` to make a secure connection to api.openapi.com.
+	- [websocketsclient](./websocketsclient) – Combines `TLS` TCP socket with `websocketclient` to make a secure connection to `wss://api.openapi.com`.
 	- [websocket](./websocket) – An implementation of the standard HTML `WebSocket` [API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) built on the 2nd Edition ECMA-419 `WebSocketClient` API.
 - MQTT
 	- [mqttclient](./mqttclient) – An MQTT client API built on TCP socket. The `MQTTClient` class implements the [specification](https://419.ecma-international.org/#-25-mqtt-client-class-pattern) for the 2nd Edition of ECMA-419.
+	- [mqttsclient](./mqttsclient) – Combines `TLS` TCP socket with `mqttclient` to make a secure connection to `mqtts://broker.hivemq.com`.
 	- [MQTT.js](./mqtt) – An implementation of the widely used [MQTT.js package](https://www.npmjs.com/package/mqtt) for Node.js and browsers built on the 2nd Edition ECMA-419 `MQTTClient` API.
 - Server Sent Events
 	- [EventSource](./eventsource) – An implementation of the standard HTML `EventSource` [API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) for receiving [Server Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream). Build on the HTTP client API.

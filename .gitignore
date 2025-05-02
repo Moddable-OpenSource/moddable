@@ -21,5 +21,6 @@ build/devices/qca4020/xsProj/build/gcc/app.*
 build/devices/qca4020/xsProj/build/gcc/dbg.*
 build/devices/qca4020/xsProj/build/gcc/dictLog
 build/devices/qca4020/xsProj/build/gcc/output/
-tools/xsbug-log/node_modules/
-tools/xsbug-log/package-lock.json
+**/*.bak
+**/package-lock.json
+**/node_modules/**

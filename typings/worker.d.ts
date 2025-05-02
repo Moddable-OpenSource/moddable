@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Moddable Tech, Inc
+ * Copyright (c) 2020-2025 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -36,6 +36,7 @@ declare module "worker" {
 			name?: number;
 			symbol?: number;
 		};
+		nativeStack?: number;
 	}
 
 	interface MessagePort {

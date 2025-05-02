@@ -24,6 +24,7 @@ static void PiuPortBind(void* it, PiuApplication* application, PiuView* view);
 static void PiuPortCascade(void* it);
 static void PiuPortComputeStyle(PiuPort* self);
 static void PiuPortDraw(void* it, PiuView* view, PiuRectangle area);
+static void PiuPortMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuPortMeasureHorizontally(void* it);
 static void PiuPortMeasureVertically(void* it);
 static void PiuPortUnbind(void* it, PiuApplication* application, PiuView* view);
@@ -53,7 +54,7 @@ const PiuDispatchRecord ICACHE_FLASH_ATTR PiuPortDispatchRecord = {
 
 const xsHostHooks ICACHE_FLASH_ATTR PiuPortHooks = {
 	PiuContentDelete,
-	PiuContentMark,
+	PiuPortMark,
 	NULL
 };
 
@@ -99,6 +100,13 @@ void PiuPortDraw(void* it, PiuView* view, PiuRectangle area)
 	(*self)->view = view;
 	PiuBehaviorOnDraw(it, area);
 	(*self)->view = NULL;
+}
+
+void PiuPortMark(xsMachine* the, void* it, xsMarkRoot markRoot)
+{
+	PiuPort self = it;
+	PiuContentMark(the, it, markRoot);
+	PiuMarkHandle(the, self->computedStyle);
 }
 
 void PiuPortMeasureHorizontally(void* it) 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -46,7 +46,7 @@ void fxCheckParserStack(txParser* parser, txInteger line)
     char x;
     char *stack = &x;
     if (stack <= parser->stackLimit) {
-    	fxAbort(parser->console, XS_STACK_OVERFLOW_EXIT);
+    	fxAbort(parser->console, XS_NATIVE_STACK_OVERFLOW_EXIT);
     }
 }
 
@@ -127,6 +127,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->idSymbol = fxNewParserSymbol(parser, "id");
 	parser->includeSymbol = fxNewParserSymbol(parser, "include");
 	parser->InfinitySymbol = fxNewParserSymbol(parser, "Infinity");
+	parser->jsonSymbol = fxNewParserSymbol(parser, "json");
 	parser->lengthSymbol = fxNewParserSymbol(parser, "length");
 	parser->letSymbol = fxNewParserSymbol(parser, "let");
 	parser->metaSymbol = fxNewParserSymbol(parser, "meta");

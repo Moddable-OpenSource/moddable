@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import files from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
 
 const pathFile = "testfile.dat";
 const pathDir = "testdir";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -116,12 +116,13 @@ enum {
 	[data getBytes:&status length: sizeof(status)];
 	if (piuScreen && (*piuScreen)->behavior) {
 		xsBeginHost((*piuScreen)->the);
-		xsVars(3);
+		xsVars(4);
 		xsVar(0) = xsReference((*piuScreen)->behavior);
 		if (xsFindResult(xsVar(0), xsID_onAbort)) {
 			xsVar(1) = xsReference((*piuScreen)->reference);
 			xsVar(2) = xsInteger(status);
-			(void)xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsVar(2));
+			xsVar(3) = xsString(fxAbortString(status));
+			(void)xsCallFunction3(xsResult, xsVar(0), xsVar(1), xsVar(2), xsVar(3));
 		}
 		xsEndHost((*piuScreen)->the);
 	}

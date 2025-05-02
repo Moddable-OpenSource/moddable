@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,18 +25,14 @@ import {Advertisement, Bytes} from "btutils";
 import {IOCapability} from "sm";
 
 export class BLEClient @ "xs_ble_client_destructor" {
-	constructor() {
-		this.initialize();
-	}
-	
-	initialize() @ "xs_ble_client_initialize"
+	constructor() @ "xs_ble_client_initialize"
 	close() @ "xs_ble_client_close"
-	
-	connect(params) {
-		if ("connection" in params)
-			this._connect(params.address, params.addressType, params.connection);
+
+	connect(options) {
+		if ("connection" in options)
+			connect.call(this, options.address, options.addressType, options.connection);
 		else
-			this._connect(params.address, params.addressType);
+			connect.call(this, options.address, options.addressType);
 	}
 	
 	onReady() {}
@@ -72,71 +68,70 @@ export class BLEClient @ "xs_ble_client_destructor" {
 
 	set localPrivacy(how) @ "xs_ble_client_set_local_privacy"
 	
-	set securityParameters(params) {
-		let {encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput} = params;
-		this._setSecurityParameters(encryption, bonding, mitm, ioCapability);
+	set securityParameters(options) {
+		let { encryption = true, bonding = false, mitm = false, ioCapability = IOCapability.NoInputNoOutput } = options;
+		securityParameters.call(this, encryption, bonding, mitm, ioCapability);
 	}
 	
-	startScanning(params = {}) {
-		let {active = true, duplicates = true, interval = 0x50, window = 0x30, filterPolicy = GAP.ScanFilterPolicy.NONE } = params;
-		this._startScanning(active, duplicates, interval, window, filterPolicy);
+	startScanning(options = {}) {
+		let { active = true, duplicates = true, interval = 0x50, window = 0x30, filterPolicy = GAP.ScanFilterPolicy.NONE } = options;
+		startScanning.call(this, active, duplicates, interval, window, filterPolicy);
 	}
 	stopScanning() @ "xs_ble_client_stop_scanning"
 	
 	passkeyReply() @ "xs_ble_client_passkey_reply"
-
-	_connect() @ "xs_ble_client_connect"
-	_startScanning() @ "xs_ble_client_start_scanning"
-	_setSecurityParameters() @ "xs_ble_client_set_security_parameters"
 	
-	callback(event, params) {
+	callback(event, options) {
 		//trace(`BLE callback ${event}\n`);
 		switch(event) {
 			case "onReady":
 				this.onReady();
 				break;
 			case "onSecurityParameters":
-				this.onSecurityParameters(params);
+				this.onSecurityParameters(options);
 				break;
 			case "onDiscovered": {
-				const address = new Bytes(params.address);
-				const addressType = params.addressType;
-				const rssi = params.rssi;
-				const scanResponse = new Advertisement(params.scanResponse);
+				const address = new Bytes(options.address);
+				const addressType = options.addressType;
+				const rssi = options.rssi;
+				const scanResponse = new Advertisement(options.scanResponse);
 				this.onDiscovered({ address, addressType, rssi, scanResponse });
 				break;
 			}
 			case "onConnected": {
-				const address = new Bytes(params.address);
-				const addressType = params.addressType;
+				const address = new Bytes(options.address);
+				const addressType = options.addressType;
 				const ble = this;
-				const client = new Client({ address, addressType, connection:params.connection, ble });
+				const client = new Client({ address, addressType, connection:options.connection, ble });
 				const connection = new Connection({ address, addressType, client, ble });
 				this.onConnected(client);
 				break;
 			}
 			case "onDisconnected":
-				this.onDisconnected({ address:new Bytes(params.address), addressType:params.addressType, connection:params.connection });
+				this.onDisconnected({ address:new Bytes(options.address), addressType:options.addressType, connection:options.connection });
 				break;
 			case "onPasskeyConfirm":
-				this.onPasskeyConfirm({ address:new Bytes(params.address), passkey:params.passkey });
+				this.onPasskeyConfirm({ address:new Bytes(options.address), passkey:options.passkey });
 				break;
 			case "onPasskeyDisplay":
-				this.onPasskeyDisplay({ address:new Bytes(params.address), passkey:params.passkey });
+				this.onPasskeyDisplay({ address:new Bytes(options.address), passkey:options.passkey });
 				break;
 			case "onPasskeyRequested":
-				return this.onPasskeyRequested({ address:new Bytes(params.address) });
+				return this.onPasskeyRequested({ address:new Bytes(options.address) });
 				break;
 			case "onAuthenticated":
-				this.onAuthenticated({ bonded:params.bonded });
+				this.onAuthenticated({ bonded:options.bonded });
 				break;
 			case "onBondingDeleted": {
-				this.onBondingDeleted({ address:new Bytes(params.address), addressType:params.addressType });
+				this.onBondingDeleted({ address:new Bytes(options.address), addressType:options.addressType });
 				break;
 			}
 		}
 	}
 };
-Object.freeze(BLEClient.prototype);
+
+function connect() @ "xs_ble_client_connect";
+function startScanning() @ "xs_ble_client_start_scanning";
+function securityParameters() @ "xs_ble_client_set_security_parameters";
 
 export default BLEClient;

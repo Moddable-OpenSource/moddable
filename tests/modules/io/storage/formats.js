@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import storage from "./storage-fixture.js";
-import {emptyDomain, keys} from "./storage-fixture.js";
+import storage from "./storage_FIXTURE.js";
+import {emptyDomain, keys} from "./storage_FIXTURE.js";
 
 function supportsFormat(store, format) {
 	try {
@@ -30,6 +30,8 @@ if (supportsFormat(store, "buffer")) {
 	store.write("buffer", new ArrayBuffer(2)); verify();
 	store.write("buffer", new DataView(new ArrayBuffer(2))); verify();
 	store.write("buffer", Uint8Array.of(1, 0, 0).subarray(1)); verify();
+
+	assert.sameValue(store.read("buffer-x"), undefined);
 }
 
 if (supportsFormat(store, "string")) {
@@ -42,6 +44,8 @@ if (supportsFormat(store, "string")) {
 	test("with a space");
 	test("Môddable");
 	test("xy\nzzy");
+
+	assert.sameValue(store.read("string-x"), undefined);
 }
 
 if (supportsFormat(store, "uint8")) {
@@ -54,6 +58,8 @@ if (supportsFormat(store, "uint8")) {
 	test(-1);
 	test(256);
 	test(257);
+
+	assert.sameValue(store.read("uint8-x"), undefined);
 }
 
 if (supportsFormat(store, "int8")) {
@@ -67,6 +73,8 @@ if (supportsFormat(store, "int8")) {
 	test(127);
 	test(128);
 	test(129);
+
+	assert.sameValue(store.read("int8-x"), undefined);
 }
 
 if (supportsFormat(store, "uint16")) {
@@ -78,6 +86,8 @@ if (supportsFormat(store, "uint16")) {
 	test(65535);
 	test(65536);
 	test(-1);
+
+	assert.sameValue(store.read("uint16-x"), undefined);
 }
 
 if (supportsFormat(store, "int16")) {
@@ -89,6 +99,8 @@ if (supportsFormat(store, "int16")) {
 	test(32767);
 	test(32769);
 	test(-32769);
+
+	assert.sameValue(store.read("int16-x"), undefined);
 }
 
 if (supportsFormat(store, "uint32")) {
@@ -100,6 +112,8 @@ if (supportsFormat(store, "uint32")) {
 	test(0xffffffff);
 	test(0x100000000);
 	test(-1);
+
+	assert.sameValue(store.read("uint32-x"), undefined);
 }
 
 if (supportsFormat(store, "int64")) {
@@ -110,6 +124,8 @@ if (supportsFormat(store, "int64")) {
 	test(0n);
 	test(2147483648000n);
 	test(-2147483648000n);
+
+	assert.sameValue(store.read("int64-x"), undefined);
 }
 
 if (supportsFormat(store, "uint64")) {
@@ -120,4 +136,6 @@ if (supportsFormat(store, "uint64")) {
 	test(0n);
 	test(2147483648000n);
 	test(-1n);
+
+	assert.sameValue(store.read("uint64-x"), undefined);
 }

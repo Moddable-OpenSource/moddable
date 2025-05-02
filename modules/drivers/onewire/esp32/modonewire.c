@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -139,7 +139,7 @@ void xs_onewire_read(xsMachine *the)
 		uint8_t *buffer;
 		xsUnsignedValue size;
 
-		xsmcGetBufferWritable(xsResult, &buffer, &size);
+		xsmcGetBufferWritable(xsResult, (void**)&buffer, &size);
 		onewire_bus_read_bytes(onewire->bus, (uint8_t *)buffer, size);
 	}
 }
@@ -189,7 +189,7 @@ void xs_onewire_search(xsMachine *the)
 	while (ESP_OK == err) {
     	err = onewire_device_iter_get_next(iter, &device);
 		if (ESP_OK == err) {
-			swap(&device.address, 8);
+			swap((uint8_t*)&device.address, 8);
 			xsmcSetArrayBuffer(xsVar(0), &device.address, 8);
 			xsCall1(xsResult, xsID_push, xsVar(0));
 		}
@@ -217,7 +217,7 @@ void xs_onewire_isPresent(xsMachine *the)
     	err = onewire_device_iter_get_next(iter, &device);
 		if (ESP_OK != err)
 			break;
-		swap(&device.address, 8);
+		swap((uint8_t*)&device.address, 8);
 		if (0 == espMemCmp(id, (uint8_t*)(&device.address), 8)) {
 			xsResult = xsTrue;
 			return;
@@ -243,7 +243,7 @@ void xs_onewire_crc(xsMachine *the)
 	xsUnsignedValue len;
 	int argc = xsmcArgc;
 
-	xsmcGetBufferReadable(xsArg(0), &src, &len);
+	xsmcGetBufferReadable(xsArg(0), (void**)&src, &len);
 	if (argc > 1) {
 		size_t arg_len = xsmcToInteger(xsArg(1));
 		if (arg_len < len)

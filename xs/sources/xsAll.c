@@ -82,7 +82,7 @@ again:
 				}
 			}
 		}
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 		if (slot->kind == XS_HOST_FUNCTION_KIND)
 			return slot;
 #endif
@@ -123,7 +123,7 @@ void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* fra
 			fxBufferFunctionName(the, buffer, size, function, "");
 		}
 	}
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	else if (function->kind == XS_HOST_FUNCTION_KIND) {
 		fxBufferFunctionNameAddress(the, buffer, size, function->value.hostFunction.builder->id, function->value.hostFunction.builder->callback, function->value.hostFunction.profileID);
 	}

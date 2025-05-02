@@ -83,6 +83,7 @@ struct sxSymbol {
 
 typedef void (*txNodeCall)(void*, void*);
 typedef void (*txNodeCallAssign)(void*, void*, txFlag);
+typedef void (*txNodeCallReference)(void*, void*, txFlag);
 typedef txFlag (*txNodeCallThis)(void*, void*, txFlag);
 typedef void (*txNodeDistribute)(void*, txNodeCall, void*);
 
@@ -93,7 +94,7 @@ typedef struct {
 	txNodeCall code;
 	txNodeCallAssign codeAssign;
 	txNodeCall codeDelete;
-	txNodeCall codeReference;
+	txNodeCallReference codeReference;
 	txNodeCallThis codeThis;
 } txNodeDispatch;
 
@@ -275,6 +276,7 @@ struct sxExportNode {
 	mxNodePart;
 	txNodeList* specifiers;
 	txNode* from;
+	txNode* with;
 };
 
 typedef struct {
@@ -336,7 +338,14 @@ struct sxImportNode {
 	mxNodePart;
 	txNodeList* specifiers;
 	txNode* from;
+	txNode* with;
 };
+
+typedef struct {
+	mxNodePart;
+	txNode* expression;
+	txNode* withExpression;
+} txImportCallNode;
 
 typedef struct {
 	mxNodePart;
@@ -483,6 +492,7 @@ struct sxSpecifierNode {
 	txSymbol* symbol;
 	txSymbol* asSymbol;
 	txNode* from;
+	txNode* with;
 	txDeclareNode* declaration;
 	txSpecifierNode* nextSpecifier;
 };
@@ -676,6 +686,7 @@ struct sxParser {
 	txSymbol* idSymbol;
 	txSymbol* includeSymbol;
 	txSymbol* InfinitySymbol;
+	txSymbol* jsonSymbol;
 	txSymbol* lengthSymbol;
 	txSymbol* letSymbol;
 	txSymbol* metaSymbol;
@@ -898,6 +909,7 @@ enum {
 	/* mxFieldFlag = 1 << 15, */
 	/* mxFunctionFlag = 1 << 16, */
 	/* mxGeneratorFlag = 1 << 21, */
+	/* mxJSONModuleFlag = 1 << 22, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
 
 
@@ -968,6 +980,7 @@ extern void fxLookAheadTwice(txParser* parser);
 extern void fxProgram(txParser* parser);
 extern void fxModule(txParser* parser);
 extern void fxJSONValue(txParser* parser);
+extern void fxJSONModule(txParser* parser);
 
 /* xsTree.c */
 
@@ -1060,13 +1073,13 @@ extern txScript* fxParserCode(txParser* parser);
 extern void fxNodeCode(void* it, void* param); 
 extern void fxNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxNodeCodeDelete(void* it, void* param);
-extern void fxNodeCodeReference(void* it, void* param); 
+extern void fxNodeCodeReference(void* it, void* param, txFlag flag); 
 extern txFlag fxNodeCodeThis(void* it, void* param, txFlag flag); 
 
 extern void fxAccessNodeCode(void* it, void* param); 
 extern void fxAccessNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxAccessNodeCodeDelete(void* it, void* param);
-extern void fxAccessNodeCodeReference(void* it, void* param); 
+extern void fxAccessNodeCodeReference(void* it, void* param, txFlag flag); 
 extern txFlag fxAccessNodeCodeThis(void* it, void* param, txFlag flag);
 extern void fxAndExpressionNodeCode(void* it, void* param); 
 extern void fxArgumentsNodeCode(void* it, void* param);
@@ -1079,7 +1092,7 @@ extern void fxBigIntNodeCode(void* it, void* param);
 extern void fxBinaryExpressionNodeCode(void* it, void* param); 
 extern void fxBindingNodeCode(void* it, void* param);
 extern void fxBindingNodeCodeAssign(void* it, void* param, txFlag flag); 
-extern void fxBindingNodeCodeReference(void* it, void* param);
+extern void fxBindingNodeCodeReference(void* it, void* param, txFlag flag);
 extern void fxBlockNodeCode(void* it, void* param); 
 extern void fxBodyNodeCode(void* it, void* param);
 extern void fxBreakContinueNodeCode(void* it, void* param); 
@@ -1093,7 +1106,7 @@ extern void fxCompoundExpressionNodeCode(void* it, void* param);
 extern void fxDebuggerNodeCode(void* it, void* param);
 extern void fxDeclareNodeCode(void* it, void* param);
 extern void fxDeclareNodeCodeAssign(void* it, void* param, txFlag flag);
-extern void fxDeclareNodeCodeReference(void* it, void* param);
+extern void fxDeclareNodeCodeReference(void* it, void* param, txFlag flag);
 extern void fxDefineNodeCode(void* it, void* param);
 extern void fxDelegateNodeCode(void* it, void* param); 
 extern void fxDeleteNodeCode(void* it, void* param); 
@@ -1117,12 +1130,12 @@ extern void fxLabelNodeCode(void* it, void* param);
 extern void fxMemberNodeCode(void* it, void* param); 
 extern void fxMemberNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxMemberNodeCodeDelete(void* it, void* param);
-extern void fxMemberNodeCodeReference(void* it, void* param); 
+extern void fxMemberNodeCodeReference(void* it, void* param, txFlag flag); 
 extern txFlag fxMemberNodeCodeThis(void* it, void* param, txFlag flag); 
 extern void fxMemberAtNodeCode(void* it, void* param); 
 extern void fxMemberAtNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxMemberAtNodeCodeDelete(void* it, void* param);
-extern void fxMemberAtNodeCodeReference(void* it, void* param); 
+extern void fxMemberAtNodeCodeReference(void* it, void* param, txFlag flag); 
 extern txFlag fxMemberAtNodeCodeThis(void* it, void* param, txFlag flag);
 extern void fxModuleNodeCode(void* it, void* param); 
 extern void fxNewNodeCode(void* it, void* param); 
@@ -1140,7 +1153,7 @@ extern void fxPrivateIdentifierNodeCode(void* it, void* param);
 extern void fxPrivateMemberNodeCode(void* it, void* param); 
 extern void fxPrivateMemberNodeCodeAssign(void* it, void* param, txFlag flag); 
 extern void fxPrivateMemberNodeCodeDelete(void* it, void* param);
-extern void fxPrivateMemberNodeCodeReference(void* it, void* param); 
+extern void fxPrivateMemberNodeCodeReference(void* it, void* param, txFlag flag); 
 extern txFlag fxPrivateMemberNodeCodeThis(void* it, void* param, txFlag flag);
 extern void fxProgramNodeCode(void* it, void* param); 
 extern void fxQuestionMarkNodeCode(void* it, void* param); 
@@ -1158,7 +1171,7 @@ extern void fxTryNodeCode(void* it, void* param);
 extern void fxUnaryExpressionNodeCode(void* it, void* param);
 extern void fxUndefinedNodeCodeAssign(void* it, void* param, txFlag flag);
 extern void fxUndefinedNodeCodeDelete(void* it, void* param);
-extern void fxUndefinedNodeCodeReference(void* it, void* param);
+extern void fxUndefinedNodeCodeReference(void* it, void* param, txFlag flag);
 extern void fxValueNodeCode(void* it, void* param);
 extern void fxWhileNodeCode(void* it, void* param); 
 extern void fxWithNodeCode(void* it, void* param);

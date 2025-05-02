@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Moddable Tech, Inc.
+ * Copyright (c) 2019-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -34,11 +34,30 @@
 
 //#define V_REF 1100
 
+struct AttenuationRecord {
+	uint16_t atten;
+	uint16_t Vmin;
+	uint16_t Vmax;
+};
+typedef struct AttenuationRecord AttenuationRecord;
+typedef struct AttenuationRecord const *Attenuation;
+
+#define maxAtten (4)
+static const AttenuationRecord kAttenuationTable[maxAtten] = {
+	{ ADC_ATTEN_DB_0, 100, 950 },
+	{ ADC_ATTEN_DB_2_5, 100, 1250 },
+	{ ADC_ATTEN_DB_6, 150, 1750 },
+	{ ADC_ATTEN_DB_12, 150, 2450 }
+};
+
+
 struct AnalogRecord {
 	xsSlot		obj;
 	uint32_t	pin;
 	uint8_t 	port;
 	uint8_t		channel;
+	int8_t		calib;
+	Attenuation	attenuation;
 	adc_oneshot_unit_handle_t handle;
 };
 typedef struct AnalogRecord AnalogRecord;
@@ -169,15 +188,45 @@ void xs_analog_constructor_(xsMachine *the)
 {
 	Analog analog;
 	int8_t i, channel = -1;
-	int8_t port = -1;
+	int8_t port = -1, calib = 1;
 	uint32_t pin;
+	esp_err_t err;
+	Attenuation attenuation = &kAttenuationTable[3];
 
-	xsmcVars(1);
+	xsmcVars(3);
 	xsmcGet(xsVar(0), xsArg(0), xsID_pin);
 	pin = builtinGetPin(the, &xsVar(0));
 
     if (!builtinIsPinFree(pin))
 		xsRangeError("in use");
+
+	if (xsmcHas(xsArg(0), xsID_esp32)) {
+		xsmcGet(xsVar(1), xsArg(0), xsID_esp32);
+
+		if (xsmcHas(xsVar(1), xsID_calibrated)) {
+			xsmcGet(xsVar(2), xsVar(1), xsID_calibrated);
+			calib = xsmcTest(xsVar(2));
+		}
+
+		if (xsmcHas(xsVar(1), xsID_attenuation)) {
+			double atten;
+			uint8_t attenIdx;
+			xsmcGet(xsVar(2), xsVar(1), xsID_attenuation);
+			atten = xsmcToNumber(xsVar(2));
+			if (atten == 0)
+				attenIdx = 0;
+			else if (atten == 2.5)
+				attenIdx = 1;
+			else if (atten == 6)
+				attenIdx = 2;
+			else if (atten == 12)
+				attenIdx = 3;
+			else
+				xsRangeError("bad attenuation");
+
+			attenuation = &kAttenuationTable[attenIdx];
+		}
+	}
 
 	for (i = 0; i < SOC_ADC_CHANNEL_NUM(0); i++) {
 		if (gADCMap[i] == pin) {
@@ -206,33 +255,42 @@ void xs_analog_constructor_(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
+
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	if (port == 1) {
-		if (ADC_UNIT_1 != gADC1_cali_config.unit_id) {
+	if (!calib)
+		;
+	else if (port == 1) {
+		if (0 == gADC1_caliCount) {
 			gADC1_cali_config.unit_id = ADC_UNIT_1;
 			gADC1_cali_config.bitwidth = ADC_WIDTH;
-			gADC1_cali_config.atten = ADC_ATTEN_DB_12;
+			gADC1_cali_config.atten = attenuation->atten;
 
 			#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-			adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			err = adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
 			#else
-			adc_cali_create_scheme_line_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			err = adc_cali_create_scheme_line_fitting(&gADC1_cali_config, &gADC1_cali_handle);
 			#endif
+
+			if (err)
+				modLog("analog calibration scheme failed P1");
 		}
 		gADC1_caliCount++;
 	}
 #if ADC_PORTS > (1)
 	 else if (port == 2) {
-		if (ADC_UNIT_2 != gADC2_cali_config.unit_id) {
+		if (0 == gADC2_caliCount) {
 			gADC2_cali_config.unit_id = ADC_UNIT_2;
 			gADC2_cali_config.bitwidth = ADC_WIDTH;
-			gADC2_cali_config.atten = ADC_ATTEN_DB_12;
+			gADC2_cali_config.atten = attenuation->atten;
 
 			#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-			adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
+			err = adc_cali_create_scheme_curve_fitting(&gADC1_cali_config, &gADC1_cali_handle);
 			#else
-			adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
+			err = adc_cali_create_scheme_line_fitting(&gADC2_cali_config, &gADC2_cali_handle);
 			#endif
+
+			if (err)
+				modLog("analog calibration scheme failed P2");
 		}
 		gADC2_caliCount++;
 	}
@@ -250,13 +308,15 @@ void xs_analog_constructor_(xsMachine *the)
 	analog->pin = pin;
 	analog->port = port;
 	analog->channel = channel;
+	analog->calib = calib;
+	analog->attenuation = attenuation;
 
     builtinUsePin(pin);
 
 	adc_oneshot_unit_init_cfg_t unit_cfg = {0};
 	adc_oneshot_chan_cfg_t config = {
 		.bitwidth = ADC_WIDTH,
-		.atten = ADC_ATTEN_DB_12,
+		.atten = attenuation->atten,
 	};
 
 	if (port == 1) {
@@ -282,7 +342,9 @@ void xs_analog_destructor_(void *data)
 	adc_oneshot_del_unit(analog->handle);
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	if (1 == analog->port) {
+	if (!analog->calib)
+		;
+	else if (1 == analog->port) {
 		if (0 == --gADC1_caliCount) {
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
 			adc_cali_delete_scheme_curve_fitting(gADC1_cali_handle);
@@ -324,24 +386,40 @@ void xs_analog_read_(xsMachine *the)
 	int millivolts = -1;
 	int raw;
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
+	esp_err_t err;
 
-	if (ESP_OK != adc_oneshot_read(analog->handle, analog->channel, &raw))
+	if (ESP_OK != adc_oneshot_read(analog->handle, analog->channel, &raw)) {
 		modLog("analog onshot_read failed");
-	
+		return;
+	}
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	if (analog->port == 1) {
-		adc_cali_raw_to_voltage(gADC1_cali_handle, raw, &millivolts);
-	} 
-#if ADC_PORTS > (1)
-	else if (analog->port == 2) {
-		adc_cali_raw_to_voltage(gADC2_cali_handle, raw, &millivolts);
+	if (analog->calib) {
+		if (analog->port == 1) {
+			adc_cali_raw_to_voltage(gADC1_cali_handle, raw, &millivolts);
+		} 
+	#if ADC_PORTS > (1)
+		else if (analog->port == 2) {
+			adc_cali_raw_to_voltage(gADC2_cali_handle, raw, &millivolts);
+		}
+	#endif
+		if (-1 == millivolts) {
+			millivolts = (raw * analog->attenuation->Vmax) / ((1 << ADC_RESOLUTION) - 1);
+			if (millivolts < analog->attenuation->Vmin)
+				millivolts = analog->attenuation->Vmin;
+			else if (millivolts > analog->attenuation->Vmax)
+				millivolts = analog->attenuation->Vmax;
+		}
 	}
 #endif
-#endif
-	if (-1 == millivolts)
-		millivolts = (raw * ((1 << ADC_RESOLUTION) - 1)) / 3300;
 
-	xsmcSetInteger(xsResult, millivolts);
+	if (analog->calib) {
+		// convert calibrated analog back to ADC range
+		raw = millivolts * ((1 << ADC_RESOLUTION)-1) / analog->attenuation->Vmax;	// 3300;
+		if (raw > (1 << ADC_RESOLUTION) - 1)
+			raw = (1 << ADC_RESOLUTION) - 1;
+	}
+
+	xsmcSetInteger(xsResult, raw);
 }
 
 void xs_analog_get_resolution_(xsMachine *the)

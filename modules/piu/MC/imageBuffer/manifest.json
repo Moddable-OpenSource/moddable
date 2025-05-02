@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"piu/ImageBuffer": "./piuImageBuffer"
+	},
+	"preload": "piu/ImageBuffer"
+}

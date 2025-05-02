@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -42,21 +42,20 @@ class File @ "xs_filelittlefs_destructor"{
 	flush() @ "xs_filelittlefs_flush"
 }
 
-class Scan @ "xs_scanlittlefs_destructor" {
-	constructor(options) @ "xs_scanlittlefs"
-	close() @ "xs_scanlittlefs_close"
-
-	read() @ "xs_scanlittlefs_read"
+class DirectoryIterator @ "xs_directory_iterator_littlefs_destructor" {
+	constructor(directory, path) @ "xs_directory_iterator_littlefs"
+	next() @ "xs_directory_iterator_littlefs_next"
+	return() @ "xs_directory_iterator_littlefs_return"
 }
+Object.setPrototypeOf(DirectoryIterator.prototype, Iterator.prototype);
 
-function openFile(options) @ "xs_direectorylittlefs_openFile"
-function openDirectory(options) @ "xs_direectorylittlefs_openDirectory"
-function scan(path /* OR OPTIONS */) @ "xs_direectorylittlefs_scan"
-function status(path) @ "xs_direectorylittlefs_status"
+function openFile(options) @ "xs_directorylittlefs_openFile"
+function openDirectory(options) @ "xs_directorylittlefs_openDirectory"
+function status(path) @ "xs_directorylittlefs_status"
 
-class Directory @ "xs_direectorylittlefs_destructor" {
-	constructor(options) @ "xs_direectorylittlefs"
-	close() @ "xs_direectorylittlefs_close"
+class Directory @ "xs_directorylittlefs_destructor" {
+	constructor(options) @ "xs_directorylittlefs"
+	close() @ "xs_directorylittlefs_close"
 
 	openFile(options) {
 		return openFile.call(this, options, File.prototype);
@@ -65,22 +64,23 @@ class Directory @ "xs_direectorylittlefs_destructor" {
 		return openDirectory.call(this, options, Directory.prototype);
 	}
 
-	delete(path) @ "xs_direectorylittlefs_delete"
+	delete(path) @ "xs_directorylittlefs_delete"
 
-	move(from, to) @ "xs_direectorylittlefs_move"
+	move(from, to) @ "xs_directorylittlefs_move"
 
 	status(path) {
 		return status.call(this, path, new Status);
 	}
 
-	createDirectory(options) @ "xs_direectorylittlefs_createDirectory"
-	createLink(path, target) @ "xs_direectorylittlefs_link"
+	createDirectory(options) @ "xs_directorylittlefs_createDirectory"
+	createLink(path, target) @ "xs_directorylittlefs_link"
 
-	readLink(path) @ "xs_direectorylittlefs_link"
+	readLink(path) @ "xs_directorylittlefs_link"
 
-	scan(path) {
-		return scan.call(this, path, Scan.prototype);
+	scan(...path) {
+		return new DirectoryIterator(this, ...path);
 	}
 }
+Directory.prototype[Symbol.iterator] = Directory.prototype.scan;
 
 export {Directory}

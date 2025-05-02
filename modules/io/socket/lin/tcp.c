@@ -243,6 +243,9 @@ void doClose(xsMachine *the, xsSlot *instance)
 {
 	TCP tcp = xsmcGetHostData(*instance);
 	if (tcp && xsmcGetHostDataValidate(*instance, (void *)&xsTCPHooks)) {
+		if (tcp->triggered)
+			tcpRelease(tcp);
+
 		tcp->done = 1;
 		tcp->triggerable = 0;
 		tcp->triggered = 0;
@@ -344,6 +347,8 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+
+	xsmcSetInteger(xsResult, tcp->bytesWritable);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -415,7 +420,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 	fd_set rfds, wfds;
 	struct timeval tv;
 
-	if ((-1 == tcp->skt) || tcp->done)
+	if ((-1 == tcp->skt) || tcp->done || tcp->error)
 		return;		// closed socket
 
 	tcpHold(tcp);
@@ -450,7 +455,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 				tcpTrigger(tcp, kTCPReadable);
 				modInstrumentationAdjust(NetworkBytesRead, bytesRead);
 			}
-			else if (bytesRead < 0) {
+			else {
 				tcp->error = 1;
 				if (0 == tcp->bytesReadable)
 					tcpTrigger(tcp, kTCPError);

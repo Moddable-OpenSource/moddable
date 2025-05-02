@@ -1,6 +1,6 @@
 # Manifest
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: September 16, 2024
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: March 25, 2025
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -228,9 +228,11 @@ A manifest may directly include git repositories. The repositories are cloned as
 Each git repository to fetch is specified by an object in the `include` array of a manifest:
 
 - The object must have a `"git"` property, which is the git URL of the repo.
-- The object can have an `"include"` property, which is the path of the manifest to include.
+- The object can have an `"manifest"` property, which is either the path of the manifest file to include, or the manifest object itself.
 
-The default value of the `"include"` property is `"manifest.json"`. The `"include"` property can also be an array of paths in order to include several manifests from the same repository.
+The default value of the `"manifest"` property is `"manifest.json"`.
+
+> **Note**: When mconfig or mcrun evaluate the manifest file or object, the current directory is the directory of the git repository.
 
 ```json
 {
@@ -243,14 +245,27 @@ The default value of the `"include"` property is `"manifest.json"`. The `"includ
 		},
 		{
 			"git":"$(URL)/test1.git",
-			"include":"modules/test1/manifest.json"
+			"manifest":"./modules/test1/manifest.json"
 		},
 		{
 			"git":"$(URL)/test23.git",
-			"include": [
-				"test2/module.json",
-				"test3/module.json"
-			]
+			"manifest": {
+				"include": [
+					"./modules/test2/manifest.json",
+					"./modules/test3/manifest.json"
+				]
+			}
+		},
+		{
+			"git":"$(URL)/test45.git",
+			"manifest": {
+				"modules": {
+					"*" :[
+						"./modules/test4/module",
+						"./modules/test5/module"
+					]
+				}
+			}
 		}
 	]
 }
@@ -608,13 +623,13 @@ For example, if the `platforms` object of a manifest is as follows, building for
 		"warning": "module XYZ not fully tested on esp32",
 		/* modules and resources for ESP32 go here */
 	},
-	"..." {
+	"...": {
 		"error": "module XYZ unsupported"
 	}
 }
 ```
 
-The `esp32` platform has an additional property `dependency` which can be used to [add ESP Registry components](../devices/esp32/manifest.md#idf-components) to your project.
+The `esp32` platform has an additional property `dependency` which can be used to [add ESP Registry components](../devices/esp32.md#idf-components) to your project.
 
 ```json
 	"platforms": {
@@ -629,7 +644,7 @@ The `esp32` platform has an additional property `dependency` which can be used t
 
 `namespace` is optional and defaults to `espressif`.
 
-The library and include files from the dependencies will be loaded from the ESP Registry and made available to you. You can then write your module with a native part to interface with the component. 
+The library and include files from the dependencies will be loaded from the ESP Registry and made available to you. You can then write your module with a native part to interface with the component.
 
 The [onewire module](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/drivers/onewire) demonstrates the use of `dependency`.
 
@@ -790,7 +805,7 @@ The make fragment can be specified in a platform's `build` section.
 	"gecko/*": {
 		"build": {
 			"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk"
-		}
+		},
 		"include": "./targets/$(SUBPLATFORM)/manifest.json"
 	}
 }

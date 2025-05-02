@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,13 +19,12 @@
  */
 
 import config from "mc/config";
-import Digital from "pins/digital";
 
 if (!config.Screen)
-	throw new Error("no screen configured");
+	trace("WARNING: no screen configured\n");
 
 export default function (done) {
-	if (!global.screen) {
+	if (!global.screen && config.Screen) {
 		globalThis.screen = new config.Screen({});
 
 		if (config.driverRotation) {

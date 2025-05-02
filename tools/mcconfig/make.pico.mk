@@ -91,7 +91,7 @@ ifeq ($(HOST_OS),Darwin)
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 
-	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp -X $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 
 ### Linux
 else
@@ -361,6 +361,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_xosc/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_atomic/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_async_context/include \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_bootrom/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_double/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
@@ -370,6 +371,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_panic/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_sections/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_printf/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_rand/include \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime_init/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio/include	\
@@ -385,15 +387,15 @@ INC_DIRS = \
 	$(PLATFORM_DIR)/config \
 	$(LIB_DIR)
 
+ifeq ($(WIFI_GPIO),1)
 INC_DIRS += \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_arch/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver/include \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_lwip/include \
-	$(PICO_SDK_DIR)/src/rp2_common/pico_rand/include \
-	$(PICO_SDK_DIR)/src/rp2_common/pico_async_context/include \
 	$(PICO_SDK_DIR)/lib/cyw43-driver/src	\
 	$(PICO_SDK_DIR)/lib/cyw43-driver/firmware	\
 	$(PICO_SDK_DIR)/lib/lwip/src/include
+endif
 
 XS_OBJ = \
 	$(LIB_DIR)/xsHosts.c.o \
@@ -527,6 +529,7 @@ PICO_OBJ = \
 	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o
 
 
+ifeq ($(WIFI_GPIO),1)
 LWIP_OBJ = \
 	$(LIB_DIR)/cyw43_lwip.c.o	\
 	$(LIB_DIR)/def.c.o	\
@@ -584,6 +587,7 @@ PICO_WIFI_OBJ += \
 	$(LIB_DIR)/cyw43_stats.c.o	\
 	$(LIB_DIR)/lwip_nosys.c.o	\
 	$(LIB_DIR)/cyw43_arch_poll.c.o
+endif
 
 PICO_OBJ_RP2040 =\
 	$(LIB_DIR)/divider.S.o \
@@ -693,6 +697,10 @@ PICO_C_DEFINES += \
 	-DSKIP_PICO_MALLOC=1	\
 	-DSFE_PICO_ALLOC_WRAP=1
 
+ifneq ($(SFE_CS_PIN),0)
+PICO_C_DEFINES += -DSFE_RP2350_XIP_CSI_PIN=$(SFE_CS_PIN)
+endif
+
 else
 
 PICO_SRC_DIRS += \
@@ -799,8 +807,9 @@ PICO_C_DEFINES += \
 
 ifeq ("$(PICO_SUBCLASS)","rp2350")
 
+# 	-DSPARKFUN_PROMICRO_RP2350
+
 PICO_C_DEFINES += \
-	-DSPARKFUN_PROMICRO_RP2350 \
 	-DPICO_BOARD=\"pico2\" \
 	-DPICO_RP2350=1 \
 	-mcpu=cortex-m33	\
@@ -875,7 +884,6 @@ endif
 C_DEFINES = \
 	$(PICO_C_DEFINES) \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1
@@ -1041,6 +1049,11 @@ $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_D
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
+
+$(LIB_DIR)/xsBigInt.c.o: xsBigInt.c
+	@echo "# * library xs:" $(<F)
+	$(CC) -Wno-incompatible-pointer-types $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@

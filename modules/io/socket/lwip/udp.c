@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Moddable Tech, Inc.
+ * Copyright (c) 2019-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -73,6 +73,8 @@ void xs_udp_constructor(xsMachine *the)
 	int port = 0;
 	struct udp_pcb *skt;
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
+
+	CHECK_NETWORK_SAFE();
 
 	xsmcVars(1);
 

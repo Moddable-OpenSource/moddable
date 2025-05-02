@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -112,12 +112,12 @@ static void audioOutRelease(AudioOut audioOut)
 			modDelayMilliseconds(1);
 	}
 
-#ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	if (audioOut->tx_handle) {
 		i2s_channel_disable(audioOut->tx_handle);
 		i2s_del_channel(audioOut->tx_handle);
 		audioOut->tx_handle = NULL;
 	}
+#ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	gPDMAudioOutBusy = 0;
 #endif
 
@@ -181,6 +181,13 @@ void xs_audioout_constructor_(xsMachine *the)
 	if ((8 != bitsPerSample) && (16 != bitsPerSample))
 		xsRangeError("bad bitsPerSample");
 
+	if (xsmcHas(xsArg(0), xsID_audioType)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_audioType);
+		char *type = xsmcToString(xsVar(0));
+		if (c_strcmp(type, "LPCM"))
+			xsRangeError("invalid audioType");
+	}
+
 	onWritable = builtinGetCallback(the, xsID_onWritable);
 
 	builtinInitializeTarget(the);
@@ -215,8 +222,12 @@ void xs_audioout_constructor_(xsMachine *the)
     tx_chan_cfg.auto_clear = true;
 
 	// number of DMA buffers and their size in samples (default is 6 and 240)
-//	tx_chan_cfg.dma_desc_num = 6;
-//    tx_chan_cfg.dma_frame_num = 480;		// maximum of 4096
+#ifndef I2S_DMA_BUFFER_MAX_SIZE
+	#define I2S_DMA_BUFFER_MAX_SIZE     (4092)
+#endif
+
+	tx_chan_cfg.dma_desc_num = 6;
+	tx_chan_cfg.dma_frame_num = I2S_DMA_BUFFER_MAX_SIZE / 2;
 
 #ifdef MODDEF_AUDIOOUT_I2S_PDM_PIN
 	if (gPDMAudioOutBusy)
@@ -321,8 +332,9 @@ void xs_audioout_constructor_(xsMachine *the)
 	};
 	i2s_channel_register_event_callback(audioOut->tx_handle, &cbs, audioOut);
 
-	audioOut->dma_buf_size = tx_chan_cfg.dma_frame_num * 2;
-	audioOut->total_dma_buf_size = tx_chan_cfg.dma_frame_num * tx_chan_cfg.dma_desc_num * 2;		//@@ wrong for stereo etc
+	audioOut->dma_buf_size = tx_chan_cfg.dma_frame_num * 2;			//@@ wrong for stereo etc
+	audioOut->total_dma_buf_size = audioOut->dma_buf_size * tx_chan_cfg.dma_desc_num;
+audioOut->total_dma_buf_size >>= 1; //@@
 	audioOut->bytesWritable = audioOut->total_dma_buf_size; 
 
 #if ESP32 && defined(MODDEF_AUDIOOUT_AMPLIFIER_POWER)
@@ -332,7 +344,7 @@ void xs_audioout_constructor_(xsMachine *the)
 
 	if (!audioOut->callbackPending && audioOut->onWritable) {
 		audioOut->callbackPending = true;
-		audioOut->useCount += 1;		//@@ atomic
+		__atomic_add_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachine(audioOut->the, C_NULL, 0, audiooutDeliver, audioOut);
 	}
 }
@@ -372,7 +384,7 @@ void xs_audioout_start_(xsMachine *the)
 	
 	if (!audioOut->callbackPending /* && audioOut->onWritable */) {
 		audioOut->callbackPending = true;
-		audioOut->useCount += 1;		//@@ atomic
+		__atomic_add_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachine(audioOut->the, C_NULL, 0, audiooutDeliver, audioOut);
 	}
 }
@@ -405,8 +417,10 @@ void xs_audioout_writeSync_(xsMachine *the)
 		xsUnknownError("full samples only");
 
 	err = doWrite(audioOut, buffer, requested);
-	if (err)
+	if (err) {
+xsLog("error %d\n", (int)err);
 		xsUnknownError("write failed");
+	}
 }
  
  void xs_audioout_writeAsync_(xsMachine *the)
@@ -526,14 +540,14 @@ static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void
 
 	if (audioOut->elements) {
 		AudioOutElement walker;
-		uint32_t samplesAvailable = 0;
+		uint32_t bytesAvailable = 0;
 		for (walker = audioOut->elements; NULL != walker; walker = walker->next) {
 			if (!walker->bytesAvailable)		// buffer already used
 				continue;
 			if (C_NULL == walker->data)			// relocatable buffer
 				break;
-			samplesAvailable += walker->bytesAvailable;
-			if (samplesAvailable >= audioOut->dma_buf_size) {
+			bytesAvailable += walker->bytesAvailable;
+			if (bytesAvailable >= audioOut->dma_buf_size) {
 				xTaskNotify(audioOut->task, 1, eSetValueWithOverwrite);	// wake task
 				return false;		// won't invoke audiooutDeliver / onWritable 
 			}
@@ -541,7 +555,7 @@ static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void
 	}
 
 	if (!audioOut->callbackPending) {
-audioOut->useCount += 1;		//@@ atomic
+		__atomic_add_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
 		audioOut->callbackPending = true;
 		modMessagePostToMachine(audioOut->the, C_NULL, 0, audiooutDeliver, audioOut);		
 	}
@@ -638,12 +652,7 @@ abort:
 	xsEndHost(the);
 	
 done:
-#if defined(_NO_ATOMICS)
-	if (0 == --audioOut->useCount)
-#else
-	if (0 == __atomic_sub_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST))
-#endif
-	{
+	if (0 == __atomic_sub_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST)) {
 		c_free(audioOut);
 		return;
 	}
@@ -653,14 +662,15 @@ done:
 esp_err_t doWrite(AudioOut audioOut, void *buffer, xsUnsignedValue requested)
 {
 	esp_err_t err;
-	size_t bytes_written;
+	size_t bytes_written = 0;
 
-	const int kTimeout = 100;	//@@ why does this need to be so big? 0 would be nice....
+	const int kTimeout = 100;	//@@ why does this need to be so big? 0 would be nice.... maybe this is just the first write?
 	if (256 == audioOut->volumeFixed) {
 		if (audioOut->started)
 			err = i2s_channel_write(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written, kTimeout);
 		else
 			err = i2s_channel_preload_data(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written);
+		__atomic_fetch_sub(&audioOut->bytesWritable, bytes_written, __ATOMIC_SEQ_CST);
 	}
 	else {
 		int16_t *src = (int16_t *)buffer;
@@ -673,21 +683,18 @@ esp_err_t doWrite(AudioOut audioOut, void *buffer, xsUnsignedValue requested)
 			for (i = 0; i < use; i++)
 				samples[i] = (*src++ * volumeFixed) >> 8;
 
+			bytes_written = 0;
 			if (audioOut->started)
 				err = i2s_channel_write(audioOut->tx_handle, (const char *)samples, use * 2, &bytes_written, kTimeout);
 			else
 				err = i2s_channel_preload_data(audioOut->tx_handle, (const char *)samples, use * 2, &bytes_written);
 			if (err) break;
 
+			__atomic_fetch_sub(&audioOut->bytesWritable, bytes_written, __ATOMIC_SEQ_CST);
 			requestedSamples -= use;
 		}
 	}
 
-	if (err)
-		modLog("write err");
-	else
-		__atomic_fetch_sub(&audioOut->bytesWritable, requested, __ATOMIC_SEQ_CST);
-	
 	return err;
 }
 
@@ -732,7 +739,7 @@ void audioOutLoop(void *pvParameter)
 
 		if (doCallback && !audioOut->callbackPending) {
 			audioOut->callbackPending = true;
-			audioOut->useCount += 1;		//@@ atomic
+			__atomic_add_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
 			modMessagePostToMachine(audioOut->the, C_NULL, 0, audiooutDeliver, audioOut);
 		}
 	}

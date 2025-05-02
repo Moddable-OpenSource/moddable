@@ -601,20 +601,18 @@
 	#define C_EINVAL EINVAL
 #endif
 
-#ifdef mxParse
-	#if mxWindows
-		#ifdef __cplusplus
-		extern "C" {
-		#endif
-			extern char* c_realpath(const char* path, char* real);
-		#ifdef __cplusplus
-		}
-		#endif
-		#define mxParserThrowElse(_ASSERTION) { if (!(_ASSERTION)) { parser->error = GetLastError(); c_longjmp(parser->firstJump->jmp_buf, 1); } }
-	#else
-		#define c_realpath realpath
-		#define mxParserThrowElse(_ASSERTION) { if (!(_ASSERTION)) { parser->error = errno; c_longjmp(parser->firstJump->jmp_buf, 1); } }
+#if mxWindows
+	#ifdef __cplusplus
+	extern "C" {
 	#endif
+		extern char* c_realpath(const char* path, char* real);
+	#ifdef __cplusplus
+	}
+	#endif
+	#define mxParserThrowElse(_ASSERTION) { if (!(_ASSERTION)) { parser->error = GetLastError(); c_longjmp(parser->firstJump->jmp_buf, 1); } }
+#else
+	#define c_realpath realpath
+	#define mxParserThrowElse(_ASSERTION) { if (!(_ASSERTION)) { parser->error = errno; c_longjmp(parser->firstJump->jmp_buf, 1); } }
 #endif
 
 #endif /* __XSPLATFORM__ */

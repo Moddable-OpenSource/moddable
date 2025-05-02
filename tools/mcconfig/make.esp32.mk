@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -38,7 +38,7 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v5.3
+EXPECTED_ESP_IDF ?= v5.4
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -74,7 +74,6 @@ else
 				else
 					# basic esp32 doesn't support USB
 					ESP32_TARGET = 1
-					USB_OPTION =
 				endif
 			endif
 		endif
@@ -114,13 +113,13 @@ ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs -l 2.5
 endif
 
-USB_OPTION=
+IDF_BUILD_OPTIONS =
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config
 
 ifeq ($(USE_USB),0) 
 else
-	USB_OPTION = -DUSE_USB=$(USE_USB)
+	IDF_BUILD_OPTIONS += -DUSE_USB=$(USE_USB)
 endif
 
 DRIVER_DIRS_OLD = \
@@ -157,7 +156,7 @@ DRIVER_DIRS = \
 	$(IDF_PATH)/components/esp_driver_sdmmc/include \
 	$(IDF_PATH)/components/esp_driver_spi/include \
 	$(IDF_PATH)/components/esp_driver_uart/include
-
+ 
 INC_DIRS = \
 	$(DRIVER_DIRS) \
 	$(MANAGED_COMPONENT_DIRS) \
@@ -178,6 +177,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_eth/include \
 	$(IDF_PATH)/components/esp_hw_support/include \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
+	$(IDF_PATH)/components/esp_hw_support/port/$(ESP32_SUBCLASS)/private_include \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_partition/include \
@@ -185,6 +185,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_ringbuf/include \
 	$(IDF_PATH)/components/esp_rom/include \
 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
+	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_system/include \
 	$(IDF_PATH)/components/esp_timer/include \
 	$(IDF_PATH)/components/esp_wifi/include \
@@ -226,6 +227,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/include/soc \
+	$(IDF_PATH)/components/soc/$(ESP32_SUBCLASS)/register \
 	$(IDF_PATH)/components/soc/include \
 	$(IDF_PATH)/components/soc/include/soc \
 	$(IDF_PATH)/components/spiffs/include \
@@ -330,13 +332,14 @@ C_DEFINES = \
 	-U__STRICT_ANSI__ \
 	-DESP32=$(ESP32_TARGET) \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(DEBUG),1)
+	IDF_BUILD_OPTIONS += -DmxDebug=1
 	C_DEFINES += -DmxDebug=1
 endif
 ifeq ($(INSTRUMENT),1)
+	IDF_BUILD_OPTIONS += -DINSTRUMENT=1
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(DIRECTORIES)
@@ -407,6 +410,22 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
 
+ifeq ("$(DEBUGGER)$(INSTRUMENT)","")
+	DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_none.c
+else
+	ifeq ($(USE_USB),1) 
+		DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_tinyusb.c
+	else
+		ifeq ($(USE_USB),2)
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+		else
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+		endif
+	endif
+endif
+
+PROJ_DIR_FILES += $(DEBUGGER_SRC_FILE)
+
 ifneq ($(BOOTLOADERPATH),)
 	PROJ_DIR_FILES += $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
 endif
@@ -417,19 +436,27 @@ ifeq ($(UPLOAD_PORT),)
 	else
 		PORT_SET = 
 	endif
-	SERIAL2XSBUG_PORT = $$PORT_USED
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $$PORT_USED
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 else
 	PORT_SET = -p $(UPLOAD_PORT)
-	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 endif
 
 PORT_NAME_PATH = /tmp/_default_port.tmp
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
-BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
+BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32=$(ESP32_TARGET) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py -p `$(PLATFORM_DIR)/config/idfSerialPort` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
+IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(IDF_BUILD_OPTIONS)
 RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
@@ -447,7 +474,8 @@ BUILD_IDF_PARTS = cd $(PROJ_DIR) ; \
 DO_PROGRAM = cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 
 
-CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+# CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$($(PLATFORM_DIR)/config/idfSerialPort) ; $(DO_LAUNCH)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -657,8 +685,20 @@ $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 $(PROJ_DIR)/main:
 	mkdir -p $(PROJ_DIR)/main
 
-$(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
-	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
+$(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(BUILD_DIR)/devices/esp32/lib/main/main.c
+	cp -f $(BUILD_DIR)/devices/esp32/lib/main/main.c $@
+
+$(PROJ_DIR)/main/debugger_none.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_none.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_none.c $@
+
+$(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart.c $@
+
+$(PROJ_DIR)/main/debugger_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c $@
+
+$(PROJ_DIR)/main/debugger_tinyusb.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c $@
 
 $(PROJ_DIR)/main/component.mk: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/component.mk
 	cp -f $(PROJ_DIR_TEMPLATE)/main/component.mk $@

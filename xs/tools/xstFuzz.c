@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -37,6 +37,7 @@ static int fuzz_oss(const uint8_t *Data, size_t script_size);
 #if FUZZING
 static void fx_fillBuffer(txMachine *the);
 static void fx_fuzz_gc(xsMachine* the);
+static void fx_fuzz_doMarshall(xsMachine* the);
 #if OSSFUZZ
 static void fx_nop(xsMachine *the);
 static void fx_assert_throws(xsMachine *the);
@@ -56,6 +57,8 @@ void fxBuildFuzz(xsMachine* the)
 	xsSet(xsGlobal, xsID("gc"), xsResult);
 	xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 	xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+	xsResult = xsNewHostFunction(fx_fuzz_doMarshall, 1);
+	xsSet(xsGlobal, xsID("doMarshall"), xsResult);
 #if FUZZILLI
 	xsResult = xsNewHostFunction(fx_memoryFail, 1);
 	xsSet(xsGlobal, xsID("memoryFail"), xsResult);
@@ -493,6 +496,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("print"), xsResult);
 				xsResult = xsNewHostFunction(fx_fillBuffer, 2);
 				xsSet(xsGlobal, xsID("fillBuffer"), xsResult);
+				xsResult = xsNewHostFunction(fx_fuzz_doMarshall, 1);
+				xsSet(xsGlobal, xsID("doMarshall"), xsResult);				
 				xsResult = xsNewHostFunction(fx_memoryFail, 1);
 				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
 
@@ -681,7 +686,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	free(buffer);
 
 #if mxXSMemoryLimit
-	if ((XS_TOO_MUCH_COMPUTATION_EXIT == exitStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == exitStatus) || (XS_STACK_OVERFLOW_EXIT == exitStatus))
+	if ((XS_TOO_MUCH_COMPUTATION_EXIT == exitStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == exitStatus) || (XS_JAVASCRIPT_STACK_OVERFLOW_EXIT == exitStatus)|| (XS_NATIVE_STACK_OVERFLOW_EXIT == exitStatus))
 		freeMemoryBlocks();		// clean-up if computation or memory limits exceeded, or stack overflow
 #endif
 
@@ -716,6 +721,18 @@ void fx_fuzz_gc(xsMachine* the)
 	
 	int count = xsToInteger(xsArg(0));
 	gxStress = (count < 0) ? count : -count;
+}
+
+void fx_fuzz_doMarshall(xsMachine *the)
+{
+	char *message;
+	xsIntegerValue c = xsToInteger(xsArgc);
+	if (c > 0)
+		message = xsMarshallAlien(xsArg(0));
+	else
+		message = xsMarshallAlien(xsUndefined);
+	xsResult = xsDemarshallAlien(message);
+	c_free(message);
 }
 
 #if OSSFUZZ

@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2024 Moddable Tech, Inc.<BR>
-Revised: January 9, 2024
+Revised: December 28, 2024
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -513,13 +513,13 @@ The following sections explain these steps in detail.
 > Note: If the OTA firmware update fails, the device will reboot to DFU OTA mode until software has been successfully updated.
 
 <a id="ble-update-1"></a>
-### 1) Ensure your nRF52 device has version 8.1 of the Bootloader
+### 1) Ensure your nRF52 device has version 8.3 of the Bootloader
 
 Put your device into Programming mode (double-tap the reset button) and open the volume that appears on your desktop. Open the INFO_UF2.TXT file. Look for
 
 ```
-Bootloader: Moddable 8.1
-Date: Nov  8 2023
+Bootloader: Moddable 8.3
+Date: Dec 28 2024
 ```
 
 If the version is earlier than 8.1, update your bootloader.

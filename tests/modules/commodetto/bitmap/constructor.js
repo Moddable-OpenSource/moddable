@@ -20,8 +20,8 @@ assert.throws(TypeError, () => new Bitmap(32, 32, Bitmap.Default, Symbol(), 0), 
 assert.throws(TypeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), Symbol()), "Bitmap constructor rejects synbol");
 
 assert.throws(Error, () => new Bitmap(32, 32, 0, new ArrayBuffer(4096), 0), "Bitmap constructor invalid format");	// only 0 is rejected
-assert.throws(Error, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), 4096), "Bitmap constructor invalid offset");
-assert.throws(Error, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), -1), "Bitmap constructor invalid offset");
+assert.throws(RangeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), 4096), "Bitmap constructor invalid offset");
+assert.throws(RangeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), -1), "Bitmap constructor invalid offset");
 
 // accepts string
 new Bitmap("32", 32, Bitmap.Default, new ArrayBuffer(4096), 0);

@@ -3,33 +3,39 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 let position = 0;
 let total = 0;
 let out = new AudioOut({
-	onWritable(count) {
-		if (!count)
-			return $DONE("invalid - count of 0")
+	onWritable(bytes) {
+		if (bytes <= 0)
+			return $DONE(`invalid - bytes of ${bytes}`)
 
-		do {
-			let buffer = samples.buffer;
-			let use = buffer.byteLength - position;
-			if (use > count) use = count;
-			this.write(new Uint8Array(buffer, position, use));
-			position += use;
-			if (position === buffer.byteLength)
-				position = 0;
+		try {
+			do {
+				let buffer = samples.buffer;
+				let use = buffer.byteLength - position;
+				if (use > bytes) use = bytes;
 
-			total += use;
-			if (total >= (sampleRate * 2 * 2)) {
-				this.close();
-				$DONE();
-				break;
-			}
+				this.write(new Uint8Array(buffer, position, use));
+				position += use;
+				if (position === buffer.byteLength)
+					position = 0;
 
-			count -= use;
-		} while (count);
+				total += use;
+				if (total >= (sampleRate * 2 * 2)) {
+					this.close();
+					$DONE();
+					break;
+				}
+
+				bytes -= use;
+			} while (bytes);
+		}
+		catch (e) {
+			$DONE(e);
+		}
 	}
 });
 

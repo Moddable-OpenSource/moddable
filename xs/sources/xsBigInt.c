@@ -37,7 +37,7 @@
 
 #include "xsAll.h"
 
-#ifdef mxRun
+#ifndef mxCompile
 static txSlot* fxBigIntCheck(txMachine* the, txSlot* it);
 static txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot);
 static txBigInt* fxNumberToBigInt(txMachine* the, txSlot* slot);
@@ -71,7 +71,7 @@ static void fxBigInt_meter(txMachine* the, int n);
 
 // BYTE CODE
 
-#ifdef mxRun
+#ifndef mxCompile
 
 void fxBuildBigInt(txMachine* the)
 {
@@ -411,7 +411,7 @@ void fxBigIntEncode(txByte* code, txBigInt* bigint, txSize size)
 #endif
 }
 
-#ifdef mxRun
+#ifndef mxCompile
 txSlot* fxBigIntToInstance(txMachine* the, txSlot* slot)
 {
 	txSlot* instance;
@@ -521,7 +521,7 @@ void fxBigIntParseX(txBigInt* bigint, txString p, txSize length)
 	}
 }
 
-#ifdef mxRun
+#ifndef mxCompile
 
 void fxBigintToArrayBuffer(txMachine* the, txSlot* slot, txU4 total, txBoolean sign, int endian)
 {
@@ -864,7 +864,7 @@ void fxFromBigUint64(txMachine* the, txSlot* slot, txU8 value)
 
 txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 {
-#ifdef mxRun
+#ifndef mxCompile
 	txBigInt* bigint;
 	if (size > 0xFFFF) {
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
@@ -883,7 +883,7 @@ txBigInt *fxBigInt_alloc(txMachine* the, txU4 size)
 
 void fxBigInt_free(txMachine* the, txBigInt *bigint)
 {
-#ifdef mxRun
+#ifndef mxCompile
 	if (bigint == &the->stack->value.bigint)
 		the->stack++;
 // 	else
@@ -1295,7 +1295,7 @@ txBigInt *fxBigInt_ulsr1(txMachine* the, txBigInt *r, txBigInt *a, txU4 sw)
 
 txBigInt *fxBigInt_nop(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-#ifdef mxRun
+#ifndef mxCompile
 	mxTypeError("no such operation");
 #endif
 	return C_NULL;
@@ -1367,19 +1367,27 @@ static int fxBigInt_uadd_prim(txU4 *rp, txU4 *ap, txU4 *bp, int an, int bn)
 
 	for (i = 0; i < an; i++) {
 #ifdef __ets__
-	txU4 r;
+	unsigned int r;
 	if (__builtin_uadd_overflow(ap[i], bp[i], &r)) {
 		rp[i] = r + c;
 		c = 1;
 	}
-	else
-		c = __builtin_uadd_overflow(r, c, &rp[i]);
+	else {
+		unsigned int t;
+		c = __builtin_uadd_overflow(r, c, &t);
+		rp[i] = t;
+	}
 #else
-		c = __builtin_uadd_overflow(ap[i], bp[i], &rp[i]) | (txU4)__builtin_uadd_overflow(rp[i], c, &rp[i]);
+		unsigned int r = rp[i];
+		c = __builtin_uadd_overflow(ap[i], bp[i], &r) | (txU4)__builtin_uadd_overflow(r, c, &r);
+		rp[i] = r;
 #endif
 	}
-	for (; c && (i < bn); i++) {
-		c = __builtin_uadd_overflow(1, bp[i], &rp[i]);
+	for (; c && (i < bn); i++) { {
+		unsigned int t;
+		c = __builtin_uadd_overflow(1, bp[i], &t);
+		rp[i] = t;
+	}
 	}
 	for (; i < bn; i++) {
 		rp[i] = bp[i];
@@ -1561,7 +1569,7 @@ txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b)
 
 txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
-#ifdef mxRun
+#ifndef mxCompile
 	if (b->sign)
 		mxRangeError("negative exponent");
 #endif
@@ -1580,7 +1588,7 @@ txBigInt *fxBigInt_exp(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 		txU4 c = fxBigInt_bitsize(a);
 		txBigInt *t = fxBigInt_umul1(the, NULL, b, c);
 		t = fxBigInt_ulsr1(the, t, t, 5);
-#ifdef mxRun
+#ifndef mxCompile
 		if ((t->size > 1) || (t->data[0] > 0xFFFF))
 			mxRangeError("too big exponent");
 #endif
@@ -1660,7 +1668,7 @@ txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
 
 txBigInt *fxBigInt_div(txMachine* the, txBigInt *q, txBigInt *a, txBigInt *b)
 {
-#ifdef mxRun
+#ifndef mxCompile
 	if (fxBigInt_iszero(b))
 		mxRangeError("zero divider");
 #endif
@@ -1694,7 +1702,7 @@ txBigInt *fxBigInt_mod(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 txBigInt *fxBigInt_rem(txMachine* the, txBigInt *r, txBigInt *a, txBigInt *b)
 {
 	txBigInt *q;
-#ifdef mxRun
+#ifndef mxCompile
 	if (fxBigInt_iszero(b))
 		mxRangeError("zero divider");
 #endif

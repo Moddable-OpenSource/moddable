@@ -72,7 +72,7 @@ class WebSocket {
 				this.#protocol = protocol;
 			options = { ...config, host, port, path, protocol, headers }
 		}
-		else if (!options.attach)
+		else if (!options?.attach)
 			throw new URIError("no URL");
 		this.#client = new device.network.ws.io({
 			...options,
@@ -91,7 +91,6 @@ class WebSocket {
 						break;
 
 					case this.#client.constructor.ping:
-						trace("PING!\n");
 						break;
 
 					case this.#client.constructor.pong:
@@ -312,5 +311,4 @@ class WebSocket {
 }
 
 export default WebSocket;
-
 

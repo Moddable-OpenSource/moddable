@@ -81,7 +81,7 @@ const X509 = {
 		return tbs;
 	},
 	getSPK(spki) {		// Subject Public Key Info
-		spki = this._decodeSPKI(spki);
+		spki = decodeSPKI(spki);
 		if (!spki)
 			throw new Error("x509: no SPKI");
 		spki = new BER(spki);
@@ -175,17 +175,34 @@ const X509 = {
 			let len = ber.getLength();
 			let endp = ber.i + len;
 			while (ber.i < endp) {
-				if ((ber.getTag() & 0x1f) == 0) {
-					len = ber.getLength();
-					return ber.getChunk(len);
-				}
+				if ((ber.getTag() & 0x1f) == 0)
+					return ber.getChunk(ber.getLength());
 				ber.skip(ber.getLength());
 			}
 		}
 	},
-	_decodeSPKI(buf) @ "xs_x509_decodeSPKI",
+	decodeSAN(buf) {
+		let b = this.decodeExtension(buf, [2, 5, 29, 17]);	// Subject Alternative Name
+		if (!b) return;
+
+		b = new BER((new BER(b)).getSequence());
+
+		const names = [];
+		while (b.readable) {
+			const tag = b.getTag() & 0x7F;
+			let value = b.getChunk(b.getLength()).slice().buffer;
+			if ((2 === tag) || (1 === tag) || (6 === tag))		// IA5String: dNSName, rfc822Name, uniformResourceIdentifier
+				value = String.fromArrayBuffer(value); 
+			names.push({tag, value});
+		}
+		
+		return names;
+	},
 	decodeExtension(buf, extid) @ "xs_x509_decodeExtension",
 };
+
+function decodeSPKI(buf) @ "xs_x509_decodeSPKI";
+
 Object.freeze(X509);
 
 function parseDate(date) {

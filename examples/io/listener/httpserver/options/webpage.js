@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,14 +18,53 @@
  *
  */
  
+import TextEncoder from "text/encoder";
+
 export default {
 	onResponse(response) {
-		response.headers.set("content-length", this.route.msg.byteLength);
-		response.headers.set("content-type", this.route.contentType ?? "text/html");
+		const route = this.route, data = route.data;
+		route.state ??= new WeakMap;
+		const state = {data};
+		route.state.set(this, state);
+		if (data instanceof ArrayBuffer) { 
+			state.position = 0;
+			state.byteLength = data.byteLength;
+			response.headers.set("content-length", state.byteLength);
+		}
+		else if (ArrayBuffer.isView(data)) {
+			state.position = data.byteOffset;
+			state.byteLength = data.byteLength;
+			state.data = data.buffer;
+			response.headers.set("content-length", state.byteLength);
+		}
+		else if ("string" === typeof data) {
+			state.encoder = new TextEncoder;
+			state.position = 0;
+			response.headers.set("transfer-encoding", "chunked");
+		}
+		else
+			throw new Error("unsupported data type");
+		response.headers.set("content-type", route.contentType ?? this.route.contentType ?? "text/html");
 		response.status = this.route.status ?? 200;
 		this.respond(response);
 	},
 	onWritable(count) {
-		this.write(this.route.msg);
+		const state = this.route.state.get(this);
+		if (state.encoder) {
+			if (state.position === state.data.length)
+				return void this.write();
+
+			const buffer = new Uint8Array(count);
+			const result = state.encoder.encodeInto(state.data.slice(state.position, state.position + count), buffer);
+			this.write(buffer.subarray(0, result.written));
+			state.position += result.read;
+		}
+		else {
+			if (count > state.byteLength)
+				count = state.byteLength;
+			this.write(new Uint8Array(state.data, state.position, count));
+			state.position += count;
+			state.byteLength -= count;
+		}
 	}
 }

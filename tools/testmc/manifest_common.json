@@ -126,9 +126,36 @@
 			}
 		},
 		"esp32/moddable_six_cdc": {
+			"build": {
+				"ESP32_SUBCLASS": "esp32s3",
+				"USE_USB": "2",
+				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six_cdc/sdkconfig"
+			},
 			"include": [
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
+			"creation": {
+				"static": 0,
+				"chunk": {
+					"initial": 3670016,
+					"incremental": 0 
+				},
+				"heap": {
+					"initial": 229376,
+					"incremental": 0 
+				},
+				"stack": 16384,
+				"keys": {
+					"available": 16386,
+					"name": 127,
+					"symbol": 127
+				},
+				"parser": {
+					"buffer": 32768,
+					"table": 127
+				},
+				"main": "main"
+			},
 			"defines": {
 				"XS_TEST": 1,
 				"softreset": 1

@@ -1,6 +1,6 @@
 # BLE
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: September 10, 2024
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: January 15, 2025
 
 ## About This Document
 This document describes the Moddable SDK Bluetooth Low Energy (BLE) modules. Both client (master) and server (slave) roles are supported on Espressif ESP32, Silicon Labs Blue Gecko, Qualcomm QCA4020, and Nordic nRF52 devices.
@@ -582,6 +582,7 @@ The `Characteristic` class provides access to a single service characteristic.
 | `name` | `string` | Characteristic name defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `type` | `string` | Characteristic type defined in the optional service JSON. When the characteristic is not defined in the service JSON, this property is `undefined`.
 | `descriptors` | `array` | Array of characteristic descriptors discovered.
+| `properties` | `number` | Bit field of GATT Characteristic Properties (`read` = 2, `writeNoResponse` = 4, `write` = 8, `notify` = 16, `indicate` = 32, `extended` = 128)
 
 ### Functions
 

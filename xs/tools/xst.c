@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -80,19 +80,6 @@ static void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot);
 static void fx_setInterval(txMachine* the);
 static void fx_setTimeout(txMachine* the);
 static void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat);
-
-
-char *gxAbortStrings[] = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
 
 txAgentCluster gxAgentCluster;
 
@@ -285,8 +272,7 @@ int main(int argc, char* argv[])
 		}
 		xsEndMetering(machine);
 		if (machine->exitStatus) {
-			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
-			fprintf(stderr, "Error: %s\n", why);
+			fprintf(stderr, "Error: %s\n", fxAbortString(machine->exitStatus));
 			error = 1;
 		}
 		xsDeleteMachine(machine);
@@ -926,7 +912,8 @@ void fxRunModuleFile(txMachine* the, txString path)
 {
 	txSlot* realm = mxProgram.value.reference->next->value.module.realm;
 	mxPushStringC(path);
-	fxRunImport(the, realm, XS_NO_ID);
+	mxPushUndefined();
+	fxRunImport(the, realm, C_NULL);
 	mxDub();
 	fxGetID(the, mxID(_then));
 	mxCall();
@@ -1009,6 +996,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 {
 	char path[C_PATH_MAX];
 	char real[C_PATH_MAX];
+	txString dot;
 	txScript* script;
 #ifdef mxDebug
 	txUnsigned flags = mxDebugFlag;
@@ -1032,6 +1020,9 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 				return;
 		}
 #endif	
+		dot = c_strrchr(real, '.');
+		if (dot && !c_strcmp(dot, ".json"))
+			flags |= mxJSONModuleFlag;
 		script = fxLoadScript(the, real, flags);
 		if (script)
 			fxResolveModule(the, module, moduleID, script, C_NULL, C_NULL);

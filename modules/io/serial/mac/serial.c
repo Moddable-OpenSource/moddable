@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,7 +18,7 @@
  *
  */
 
-#include "xsAll.h"
+#include "xsmc.h"
 #include "mc.xs.h"
 
 #include <stdlib.h>
@@ -39,13 +39,6 @@
 #include <IOKit/serial/ioss.h>
 
 #include "modTimer.h"
-
-/*
-	to do:
-
-		string;ascii doesn't ensure data is valid
-
-*/
 
 #define kWriteBufferSize (1024)		// 1024 is the default on macOS (it seems)
 
@@ -103,39 +96,39 @@ void xs_serial_constructor(xsMachine *the)
 	xsSerial s;
 	xsSlot onReadable, onWritable, onError;
 
-	xsVars(2);
+	xsmcVars(2);
 
-	xsVar(0) = xsGet(xsArg(0), xsID_device);
-	xsToStringBuffer(xsVar(0), device, sizeof(device));
+	xsmcGet(xsVar(0), xsArg(0), xsID_device);
+	xsmcToStringBuffer(xsVar(0), device, sizeof(device));
 
-	xsVar(0) = xsGet(xsArg(0), xsID_baud);
-	baud = xsToInteger(xsVar(0));
+	xsmcGet(xsVar(0), xsArg(0), xsID_baud);
+	baud = xsmcToInteger(xsVar(0));
 
-	onReadable = xsGet(xsArg(0), xsID_onReadable);
-	onWritable = xsGet(xsArg(0), xsID_onWritable);
-	onError = xsGet(xsArg(0), xsID_onError);
+	xsmcGet(onReadable, xsArg(0), xsID_onReadable);
+	xsmcGet(onWritable, xsArg(0), xsID_onWritable);
+	xsmcGet(onError, xsArg(0), xsID_onError);
 
-	if (xsHas(xsArg(0), xsID_format)) {
-		xsVar(0) = xsGet(xsArg(0), xsID_format);
-		xsToStringBuffer(xsVar(0), format, sizeof(format));
+	if (xsmcHas(xsArg(0), xsID_format)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_format);
+		xsmcToStringBuffer(xsVar(0), format, sizeof(format));
 	}
 	else
 		format[0] = 0;
 
-	if (xsHas(xsArg(0), xsID_target)) {
-		xsVar(0) = xsGet(xsArg(0), xsID_target);
-		xsSet(xsThis, xsID_target, xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_target)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_target);
+		xsmcSet(xsThis, xsID_target, xsVar(0));
 	}
 
 	s = calloc(1, sizeof(xsSerialRecord));
 	if (!s)
 		xsUnknownError("no memory");
-	xsSetHostData(xsThis, s);
+	xsmcSetHostData(xsThis, s);
 	s->the = the;
 	s->obj = xsThis;
-	s->hasOnWritable = xsTest(onWritable);
-	s->hasOnReadable = xsTest(onReadable);
-	s->hasOnError = xsTest(onError);
+	s->hasOnWritable = xsmcTest(onWritable);
+	s->hasOnReadable = xsmcTest(onReadable);
+	s->hasOnError = xsmcTest(onError);
 
 	if (format[0])
 		fxSerialSetFormat(the, s, format);
@@ -183,7 +176,7 @@ void xs_serial_constructor(xsMachine *the)
 
 void xs_serial_close(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
+	xsSerial s = xsmcGetHostData(xsThis);
 	if (!s) return;
 
 	xsForget(s->obj);
@@ -196,12 +189,12 @@ void xs_serial_close(xsMachine *the)
 		xsForget(s->onError);
 
 	xs_serial_destructor(s);
-	xsSetHostData(xsThis, NULL);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_serial_read(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
+	xsSerial s = xsmcGetHostData(xsThis);
 	int available = 0;
 	int count;
 
@@ -209,8 +202,8 @@ void xs_serial_read(xsMachine *the)
 	if (0 == available)
 		return;
 
-	if (xsToInteger(xsArgc)) {
-		count = xsToInteger(xsArg(0));
+	if (xsmcArgc) {
+		count = xsmcToInteger(xsArg(0));
 		if (count > available)
 			count = available;
 	}
@@ -218,39 +211,30 @@ void xs_serial_read(xsMachine *the)
 		count = available;
 
 	if (1 == s->bufferFormat) {
-		xsResult = xsArrayBuffer(NULL, count);
-		read(s->fd, xsToArrayBuffer(xsResult), count);
+		xsmcSetArrayBuffer(xsResult, NULL, count);
+		read(s->fd, xsmcToArrayBuffer(xsResult), count);
 	}
 	else if (2 == s->bufferFormat) {
 		uint8_t byte;
 		read(s->fd, &byte, 1);
 		xsResult = xsInteger(byte);
 	}
-	else {
-		xsResult = xsStringBuffer(NULL, count);
-		read(s->fd, xsToString(xsResult), count);
-	}
 }
 
 void xs_serial_write(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
-	int count;
-	char *data;
+	xsSerial s = xsmcGetHostData(xsThis);
+	xsUnsignedValue count = 0;
+	void *data;
 	char byte;
 
 	if (1 == s->bufferFormat) {
-		count = xsGetArrayBufferLength(xsArg(0));
-		data = xsToArrayBuffer(xsArg(0));
+		xsmcGetBufferReadable(xsArg(0), &data, &count);
 	}
 	else if (2 == s->bufferFormat) {
 		count = 1;
-		byte = xsToInteger(xsArg(0));
+		byte = xsmcToInteger(xsArg(0));
 		data = &byte;
-	}
-	else {
-		data = xsToString(xsArg(0));
-		count = strlen(data);
 	}
 	if (!count)
 		return;
@@ -281,20 +265,24 @@ void xs_serial_write(xsMachine *the)
 
 void xs_serial_set(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
+	xsSerial s = xsmcGetHostData(xsThis);
 	int flags;
+
+	xsmcVars(1);
 
 	ioctl(s->fd, TIOCMGET, &flags);
 
-	if (xsHas(xsArg(0), xsID_RTS)) {
-		if (xsTest(xsGet(xsArg(0), xsID_RTS)))
+	if (xsmcHas(xsArg(0), xsID_RTS)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_RTS);
+		if (xsmcTest(xsVar(0)))
 			flags |= TIOCM_RTS;
 		else
 			flags &= ~TIOCM_RTS;
 	}
 
-	if (xsHas(xsArg(0), xsID_DTR)) {
-		if (xsTest(xsGet(xsArg(0), xsID_DTR)))
+	if (xsmcHas(xsArg(0), xsID_DTR)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_DTR);
+		if (xsmcTest(xsVar(0)))
 			flags |= TIOCM_DTR;
 		else
 			flags &= ~TIOCM_DTR;
@@ -305,21 +293,19 @@ void xs_serial_set(xsMachine *the)
 
 void xs_serial_format_get(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
+	xsSerial s = xsmcGetHostData(xsThis);
 	if (!s) return;
 	if (2 == s->bufferFormat)
 		xsResult = xsString("number");
 	else if (1 == s->bufferFormat)
 		xsResult = xsString("buffer");
-	else
-		xsResult = xsString("string;ascii");
 }
 
 void xs_serial_format_set(xsMachine *the)
 {
-	xsSerial s = xsGetHostData(xsThis);
+	xsSerial s = xsmcGetHostData(xsThis);
 	if (!s) return;
-	fxSerialSetFormat(the, s, xsToString(xsArg(0)));
+	fxSerialSetFormat(the, s, xsmcToString(xsArg(0)));
 }
 
 void xs_serial_purge(xsMachine *the)
@@ -393,8 +379,6 @@ void fxSerialSetFormat(xsMachine *the, xsSerial s, char *format)
 		s->bufferFormat = 1;
 	else if (!strcmp(format, "number"))
 		s->bufferFormat = 2;
-	else if (!strcmp(format, "string;ascii"))
-		s->bufferFormat = 0;
 	else
 		xsUnknownError("invalid");
 }

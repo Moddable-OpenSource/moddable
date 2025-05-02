@@ -12,8 +12,8 @@
  *
  */
 
-import AudioIn from "embedded:io/audioin";
-import AudioOut from "embedded:io/audioout";
+import AudioIn from "embedded:io/audio/in";
+import AudioOut from "embedded:io/audio/out";
 
 const samples = [];
 samples.total = 0;

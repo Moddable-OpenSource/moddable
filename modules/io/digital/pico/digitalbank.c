@@ -143,7 +143,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (kIOFormatNumber != builtinInitializeFormat(the, kIOFormatNumber))
 		xsRangeError("invalid format");
 
-	digital = c_malloc(onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
+	digital = c_calloc(1, onReadable ? sizeof(DigitalRecord) : offsetof(DigitalRecord, triggered));
 	if (!digital)
 		xsRangeError("no memory");
 
@@ -207,17 +207,13 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 			for (pin = 0; pin <= 31; pin++) {
 				uint32_t mask = 1 << (pin & 0x1f);
+				uint32_t event_mask = ((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
+							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0);
 				if (pins & mask) {
 					if (callback_installed)
-						gpio_set_irq_enabled(pin,
-							((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
-							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0),
-							true);
+						gpio_set_irq_enabled(pin, event_mask, true);
 					else {
-						gpio_set_irq_enabled_with_callback(pin,
-							((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
-							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0),
-							true, digitalISR);
+						gpio_set_irq_enabled_with_callback(pin, event_mask, true, digitalISR);
 						callback_installed = 1;
 					}
 				}
@@ -270,11 +266,14 @@ void xs_digitalbank_destructor(void *data)
 	if ((0 == digital->bank) && digital->pins) {
 		int pin;
 
-		if (digital->hasOnReadable)
-			gpio_remove_raw_irq_handler_masked(digital->pins, digitalISR);
-
 		for (pin = 0; pin <= 31; pin++) {
-			if (digital->pins & (1 << (pin & 0x1f))) {
+			uint32_t mask = 1 << (pin & 0x1f);
+			if (digital->pins & mask) {
+				if (digital->hasOnReadable) {
+					uint32_t event_mask = ((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
+							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0);
+					gpio_set_irq_enabled_with_callback(pin, event_mask, false, NULL);
+				}
 				gpio_disable_pulls(pin);
 				gpio_deinit(pin);
 			}

@@ -3,12 +3,13 @@ description:
 flags: [async, module]
 ---*/
 
-import AudioOut from "embedded:io/audioout";
+import AudioOut from "embedded:io/audio/out";
 
 let out = new AudioOut({
-	onWritable(count) {
+	onWritable(bytes) {
 		$DO(() => {
-			assert.throws(Error, () => this.write(new ArrayBuffer(count * 2)));
+			bytes += (bytes >> 2) & ~3;
+			assert.throws(Error, () => this.write(new ArrayBuffer(bytes)));
 			this.close();
 		})();
 	}

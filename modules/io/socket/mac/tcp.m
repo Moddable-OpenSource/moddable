@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -287,6 +287,11 @@ void doClose(xsMachine *the, xsSlot *instance)
 		if (tcp->cfSkt)
 			CFSocketDisableCallBacks(tcp->cfSkt, kCFSocketReadCallBack | kCFSocketWriteCallBack | kCFSocketConnectCallBack);
 
+		if (tcp->cfTriggeredTimer) {
+			CFRunLoopTimerInvalidate(tcp->cfTriggeredTimer);
+			tcp->cfTriggeredTimer = NULL;
+		}
+
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
@@ -383,6 +388,8 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+
+	xsmcSetInteger(xsResult, tcp->bytesWritable);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -505,7 +512,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 {
 	TCP tcp = info;
 	xsMachine *the = tcp->the;
-	uint8_t triggered = tcp->triggered;
+	uint8_t triggered = tcp->triggered & tcp->triggerable;
 
 	tcp->triggered = 0;
 	if (tcp->cfTriggeredTimer) {
@@ -518,6 +525,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 			xsmcSetInteger(xsResult, tcp->bytesReadable);
 			xsCallFunction1(xsReference(tcp->onReadable), tcp->obj, xsResult);
 		xsEndHost(the);
+		if (tcp->done) triggered = 0;
 	}
 
 	if ((triggered & kTCPWritable) && tcp->bytesWritable && !tcp->error) {
@@ -525,6 +533,7 @@ static void reportTrigger(CFRunLoopTimerRef cfTimer, void *info)
 			xsmcSetInteger(xsResult, tcp->bytesWritable);
 			xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
 		xsEndHost(the);
+		if (tcp->done) triggered = 0;
 	}
 
 	if (triggered & kTCPError) {

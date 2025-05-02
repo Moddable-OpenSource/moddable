@@ -36,6 +36,9 @@
  */
 
 #include "xsAll.h"
+#ifndef mxRegExp
+	#define mxRegExp 1
+#endif
 #if mxRegExp
 static txNumber fxAdvanceStringIndex(txMachine* the, txString string, txNumber index, txBoolean unicodeFlag);
 static txSlot* fxCheckRegExpInstance(txMachine* the, txSlot* slot);
@@ -520,83 +523,35 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		txSlot* resultProperty;
 		txSlot* indicesObject;
 		txSlot* indicesProperty;
-		txInteger count;
-		txInteger index;
+		txInteger captureCount;
+		txInteger nameCount;
+		txInteger captureIndex;
+		txInteger nameIndex;
 		txInteger length;
 		if (globalFlag || stickyFlag) {
-			index = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, temporary->value.regexp.data[1]);
-			mxPushInteger(index);
+			offset = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, temporary->value.regexp.data[1]);
+			mxPushInteger(offset);
 			mxPushSlot(mxThis);
 			mxSetID(mxID(_lastIndex));
 			mxPop();
 		}
+		captureCount = regexp->value.regexp.code[1];
+		nameCount = regexp->value.regexp.code[2];
 		mxPush(mxArrayPrototype);
 		resultArray = fxNewArrayInstance(the);
 		resultItem = fxLastProperty(the, resultArray);
-		if (hasIndicesFlag) {
-			mxPush(mxArrayPrototype);
-			indicesArray = fxNewArrayInstance(the);
-			indicesItem = fxLastProperty(the, indicesArray);
-		}
-		if (namedFlag) {
-			resultObject = fxNewInstance(the);
-			resultProperty = fxLastProperty(the, resultObject);
-			if (hasIndicesFlag) {
-				indicesObject = fxNewInstance(the);
-				indicesProperty = fxLastProperty(the, indicesObject);
-			}
-		}
-		count = regexp->value.regexp.code[1];
-		for (index = 0; index < count; index++) {
-			txInteger start = temporary->value.regexp.data[2 * index];
+		for (captureIndex = 0; captureIndex < captureCount; captureIndex++) {
+			txInteger start = temporary->value.regexp.data[2 * captureIndex];
 			resultItem = resultItem->next = fxNewSlot(the);
-			if (hasIndicesFlag)
-				indicesItem = indicesItem->next = fxNewSlot(the);
 			if (start >= 0) {
-				txInteger end = temporary->value.regexp.data[(2 * index) + 1];
+				txInteger end = temporary->value.regexp.data[(2 * captureIndex) + 1];
 				length = end - start;
 				resultItem->value.string = (txString)fxNewChunk(the, length + 1);
 				c_memcpy(resultItem->value.string, argument->value.string + start, length);
 				resultItem->value.string[length] = 0;
 				resultItem->kind = XS_STRING_KIND;
-				if (hasIndicesFlag) {
-					start = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, start);
-					end = start + fxUTF8ToUnicodeOffset(argument->value.string + start, length);
-					mxPushInteger(start);
-					mxPushInteger(end);
-					fxConstructArrayEntry(the, indicesItem);
-				}
-			}
-			if (namedFlag) {
-				txInteger tmp = regexp->value.regexp.code[2 + index];
-				txID name = (txID)tmp;
-				if (name != XS_NO_ID) {
-					resultProperty = resultProperty->next = fxNewSlot(the);
-					resultProperty->value = resultItem->value;
-					resultProperty->kind = resultItem->kind;
-					resultProperty->ID = name;
-					if (hasIndicesFlag) {
-						indicesProperty = indicesProperty->next = fxNewSlot(the);
-						indicesProperty->value = indicesItem->value;
-						indicesProperty->kind = indicesItem->kind;
-						indicesProperty->ID = name;
-					}
-				}
 			}
 			resultArray->next->value.array.length++;
-			if (hasIndicesFlag)
-				indicesArray->next->value.array.length++;
-		}
-		if (hasIndicesFlag) {
-			fxCacheArray(the, indicesArray);
-			indicesItem = fxLastProperty(the, indicesArray);
-			indicesItem = indicesItem->next = fxNewSlot(the);
-			indicesItem->ID = mxID(_groups);
-			if (namedFlag) {
-				indicesItem->value.reference = indicesObject;
-				indicesItem->kind = XS_REFERENCE_KIND;
-				mxPop();
-			}
 		}
 		fxCacheArray(the, resultArray);
 		resultItem = fxLastProperty(the, resultArray);
@@ -611,16 +566,62 @@ void fx_RegExp_prototype_exec(txMachine* the)
 		resultItem = resultItem->next = fxNewSlot(the);
 		resultItem->ID = mxID(_groups);
 		if (namedFlag) {
-			resultItem->value.reference = resultObject;
-			resultItem->kind = XS_REFERENCE_KIND;
-			mxPop();
-		}
+			resultObject = fxNewInstance(the);
+			resultProperty = fxLastProperty(the, resultObject);
+			for (nameIndex = 0; nameIndex < nameCount; nameIndex++) {
+				txID name = (txID)(regexp->value.regexp.code[5 + nameIndex]);
+				resultProperty = resultProperty->next = fxNewSlot(the);
+				resultProperty->ID = name;
+				captureIndex = regexp->value.regexp.data[(2 * captureCount) + nameIndex];
+				if (captureIndex >= 0) {
+					mxPushReference(resultArray);
+					mxGetIndex(captureIndex);
+					mxPullSlot(resultProperty);
+				}
+			}
+			mxPullSlot(resultItem);
+		}	
 		if (hasIndicesFlag) {
+			mxPush(mxArrayPrototype);
+			indicesArray = fxNewArrayInstance(the);
+			indicesItem = fxLastProperty(the, indicesArray);
+			for (captureIndex = 0; captureIndex < captureCount; captureIndex++) {
+				txInteger start = temporary->value.regexp.data[2 * captureIndex];
+				indicesItem = indicesItem->next = fxNewSlot(the);
+				if (start >= 0) {
+					txInteger end = temporary->value.regexp.data[(2 * captureIndex) + 1];
+					length = end - start;
+					start = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, start);
+					end = start + fxUTF8ToUnicodeOffset(argument->value.string + start, length);
+					mxPushInteger(start);
+					mxPushInteger(end);
+					fxConstructArrayEntry(the, indicesItem);
+				}
+				indicesArray->next->value.array.length++;
+			}
+			fxCacheArray(the, indicesArray);
+			indicesItem = fxLastProperty(the, indicesArray);
+			indicesItem = indicesItem->next = fxNewSlot(the);
+			indicesItem->ID = mxID(_groups);
+			if (namedFlag) {
+				indicesObject = fxNewInstance(the);
+				indicesProperty = fxLastProperty(the, indicesObject);
+				for (nameIndex = 0; nameIndex < nameCount; nameIndex++) {
+					txID name = (txID)(regexp->value.regexp.code[5 + nameIndex]);
+					indicesProperty = indicesProperty->next = fxNewSlot(the);
+					indicesProperty->ID = name;
+					captureIndex = regexp->value.regexp.data[(2 * captureCount) + nameIndex];
+					if (captureIndex >= 0) {
+						mxPushReference(indicesArray);
+						mxGetIndex(captureIndex);
+						mxPullSlot(indicesProperty);
+					}
+				}
+				mxPullSlot(indicesItem);
+			}
 			resultItem = resultItem->next = fxNewSlot(the);
 			resultItem->ID = mxID(_indices);
-			resultItem->value.reference = indicesArray;
-			resultItem->kind = XS_REFERENCE_KIND;
-			mxPop();
+			mxPullSlot(resultItem);
 		}
 	}
 	else {

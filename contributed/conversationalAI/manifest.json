@@ -1,0 +1,88 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/network/services/chatAudioIO/manifest.json"
+	],
+	"config": {
+		"led": {
+			"rainbow": false
+		},
+		"startupSound": false,
+		"geminiAPIKey": "",
+		"openAIKey": "",
+		"humeAIKey": ""
+	},
+	"creation": {
+		"static": 0,
+        "chunk": {
+            "initial": 262144,
+            "incremental": 0
+        },
+		"heap": {
+			"initial": 4096,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"modules": {
+		"*": [
+			"./Controller",
+			"./ScrollerBehaviors",
+			"./View",
+			"./assets",
+			"./main",
+			"./model",
+			"./views/*"
+		]
+	},
+	"preload": [
+		"Controller",
+		"ScrollerBehaviors",
+		"View",
+		"assets",
+		"model",
+		"Common",
+		"Home",
+		"Personas",
+		"Splash"
+	],
+	"resources":{
+		"*": [
+			"./assets/*"
+		],
+		"*-alpha": [
+			"./assets/masks/*",
+			{
+				"source": "./fonts/Roboto-Regular",
+				"size": 18,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/Roboto-Medium",
+				"size": 16,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/Roboto-Light",
+				"size": 14,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/Roboto-Medium",
+				"size": 14,
+				"blocks": ["Basic Latin"]
+			},
+			{
+				"source": "./fonts/Roboto-Regular",
+				"size": 14,
+				"blocks": ["Basic Latin"]
+			}
+		]
+    },
+    "defines": {
+		"poco": {
+			"log": false
+		}
+    }
+}

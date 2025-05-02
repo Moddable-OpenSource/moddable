@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/crypt/tls_419.json",
+		"../tlssocket/manifest.json",
+		"$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json"
+	],
+	"modules": {
+		"mqttsclient/config": "./config"
+	},
+	"preload": [
+		"mqttsclient/config"
+	]
+}

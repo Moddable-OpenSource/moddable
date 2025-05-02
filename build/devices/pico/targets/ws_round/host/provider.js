@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,6 +22,7 @@ import Analog from "embedded:io/analog";
 import Digital from "embedded:io/digital";
 import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
+import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
@@ -77,7 +78,7 @@ const device = {
 			pin: 29
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PWM, SMBus, SPI },
+	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, SMBus, SPI },
 	pin: {
 		backlight: 25,
 		displayDC: 8,

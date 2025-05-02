@@ -83,6 +83,9 @@ const txBehavior* ICACHE_RAM_ATTR gxBehaviors[XS_BEHAVIOR_COUNT]  = {
 const txTypeDispatch ICACHE_FLASH_ATTR gxTypeDispatches[mxTypeArrayCount] = {
 	{ 8, 3, fxBigInt64Getter, fxBigInt64Setter, fxBigIntCoerce, fxBigInt64Compare, _getBigInt64, _setBigInt64, _BigInt64Array },
 	{ 8, 3, fxBigUint64Getter, fxBigUint64Setter, fxBigIntCoerce, fxBigUint64Compare, _getBigUint64, _setBigUint64, _BigUint64Array },
+#if mxFloat16
+	{ 2, 1, fxFloat16Getter, fxFloat16Setter, fxNumberCoerce, fxFloat16Compare, _getFloat16, _setFloat16, _Float16Array },
+#endif
 	{ 4, 2, fxFloat32Getter, fxFloat32Setter, fxNumberCoerce, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },
 	{ 8, 3, fxFloat64Getter, fxFloat64Setter, fxNumberCoerce, fxFloat64Compare, _getFloat64, _setFloat64, _Float64Array },
 	{ 1, 0, fxInt8Getter, fxInt8Setter, fxIntCoerce, fxInt8Compare, _getInt8, _setInt8, _Int8Array },
@@ -97,6 +100,9 @@ const txTypeDispatch ICACHE_FLASH_ATTR gxTypeDispatches[mxTypeArrayCount] = {
 const txTypeAtomics ICACHE_FLASH_ATTR gxTypeAtomics[mxTypeArrayCount] = {
 	{ fxInt64Add, fxInt64And, fxInt64CompareExchange, fxInt64Exchange, fxInt64Load, fxInt64Or, fxInt64Store, fxInt64Sub, fxInt64Xor, fxInt64Wait },
 	{ fxUint64Add, fxUint64And, fxUint64CompareExchange, fxUint64Exchange, fxUint64Load, fxUint64Or, fxUint64Store, fxUint64Sub, fxUint64Xor, C_NULL },
+#if mxFloat16
+	{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },
+#endif
 	{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },
 	{ C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL, C_NULL },
 	{ fxInt8Add, fxInt8And, fxInt8CompareExchange, fxInt8Exchange, fxInt8Load, fxInt8Or, fxInt8Store, fxInt8Sub, fxInt8Xor, C_NULL },

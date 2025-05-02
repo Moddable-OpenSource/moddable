@@ -31,6 +31,7 @@ class AudioOut @ "xs_audioout_destructor_" {
 	get bitsPerSample() @ "xs_audioout_get_bitsPerSample_";
 	get channels() @ "xs_audioout_get_numChannels_";
 	get sampleRate() @ "xs_audioout_get_sampleRate_";
+	get audioType() {return "LPCM"}
 	
 	get volume() @ "xs_audioout_get_volume_";
 	set volume(it) @ "xs_audioout_set_volume_";

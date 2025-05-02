@@ -18,7 +18,12 @@
 		"$(MODULES)/crypt/digest/manifest.json",
 		"$(MODDABLE)/modules/io/files/manifest.json",
 		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json",
-		"$(MODDABLE)/modules/io/files/manifest.json"
+		"$(MODDABLE)/modules/io/flash/manifest.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json",
+		"$(MODDABLE)/modules/io/audioout/manifest.json",
+		"$(MODDABLE)/modules/io/audioin/manifest.json",
+		"$(MODDABLE)/modules/io/update/manifest.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -43,6 +48,15 @@
 		"piu/Sound"
 	],
 	"platforms": {
+		"mac": {
+			"config": {
+				"flash": {
+					"xs_test": { "blocks":10, "blockLength":1024 },
+					"running": { "blocks":20, "blockLength":1024, "bytes":[ 249 ] },
+					"nextota": { "blocks":10, "blockLength":1024 }
+				}
+			}
+		},
 		"pico": {
 			"defines": {
 				"audioOut": {
@@ -271,6 +285,7 @@
 			"$(MODULES)/crypt/data/ca34",
 			"$(MODULES)/crypt/data/ca35",
 			"$(MODULES)/crypt/data/ca109",
+			"$(MODULES)/crypt/data/ca170",
 			"$(MODULES)/crypt/data/ca222",
 			"$(MODULES)/crypt/data/ca233",
 			"$(MODULES)/crypt/data/ca236",

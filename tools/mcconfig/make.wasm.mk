@@ -86,11 +86,6 @@ C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"wasm_xs.h\" \
-	-DmxRun=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)
 

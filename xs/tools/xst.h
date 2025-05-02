@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -85,6 +85,13 @@
 	#include <unistd.h>
 	typedef int txSocket;
 	#define mxNoSocket -1
+#if mxLinux
+	#if GNUC > 11
+		#define mxUseFloat16 1
+	#endif
+#else
+	#define mxUseFloat16 1
+#endif
 	#define mxUseGCCAtomics 1
 	#define mxUsePOSIXThreads 1
 #endif
@@ -93,6 +100,25 @@
 	int promiseJobs; \
 	void* rejection; \
 	void *script;		// txScript*
+
+#define XS_NO_MODULE 1
+
+#define mxAliasInstance 0
+#define mxCESU8 1
+#define mxCanonicalNaN 1
+#define mxHostFunctionPrimitive 0
+#define mxKeysGarbageCollection 1
+#define mxLockdown 1
+#define mxSnapshot 1
+
+#define mxExplicitResourceManagement 1
+#define mxImmutableArrayBuffers 1
+#define mxModuleStuff 1
+
+#define mxMinusZero 1
+#define mxRegExpUnicodePropertyEscapes 1
+#define mxStringNormalize 1
+#define mxWithHasGetSequence 1
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1
@@ -118,8 +144,6 @@ extern void fxUnscheduleSharedTimer(txSharedTimer* timer);
 #if INTPTR_MAX == INT64_MAX
 	#define mx32bitID 1
 #endif
-
-#define mxCESU8 1
 
 #if FUZZING
 extern void *fxMemMalloc(size_t size);
@@ -214,7 +238,6 @@ struct sxAgentCluster {
 	txMutex reportMutex;
 };
 
-extern char *gxAbortStrings[];
 extern txAgentCluster gxAgentCluster;
 
 #endif /* __XST__ */

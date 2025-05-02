@@ -18,7 +18,7 @@
  *
  */
 
-import Touch from "ft6206";
+import Touch from "embedded:sensor/Touch/FT6x06";
 
 /**
  * A special implementation for M5Stack CoreS3,
@@ -28,6 +28,15 @@ import Touch from "ft6206";
  */
 class M5StackCoreTouch extends Touch {
   #captured; // undefined or pressed button instance
+
+	constructor(options) {
+		super({
+			sensor: {
+				...device.I2C.internal,
+				io: device.io.SMBus
+			}
+		});
+	}
 
   read(points) {
     super.read(points);

@@ -12,7 +12,7 @@
  *
  */
 
-import AudioIn from "embedded:io/audioin";
+import AudioIn from "embedded:io/audio/in";
 
 const input = new AudioIn({
 	onReadable(size) {

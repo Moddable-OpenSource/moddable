@@ -60,16 +60,15 @@ MACOS_ARCH ?=
 MACOS_VERSION_MIN ?= -mmacosx-version-min=10.7
 
 C_OPTIONS =\
-	-fno-common\
-	$(MACOS_ARCH)\
-	$(MACOS_VERSION_MIN)\
-	-I$(INC_DIR)\
+	-fno-common \
+	$(MACOS_ARCH) \
+	$(MACOS_VERSION_MIN) \
+	-I$(INC_DIR) \
 	-I$(PLT_DIR) \
-	-I$(SRC_DIR)\
-	-I$(TLS_DIR)\
-	-I$(TMP_DIR)\
-	-DmxCompile=1\
-	-DmxParse=1
+	-I$(SRC_DIR) \
+	-I$(TLS_DIR) \
+	-I$(TMP_DIR) \
+	-DmxCompile=1
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
 endif

@@ -72,6 +72,9 @@ void fxBuildPromise(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_race), 1, mxID(_race), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_reject), 1, mxID(_reject), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_resolve), 1, mxID(_resolve), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2025
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_try), 1, mxID(_try_), XS_DONT_ENUM_FLAG);
+#endif
 #if mxECMAScript2024
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_withResolvers), 0, mxID(_withResolvers), XS_DONT_ENUM_FLAG);
 #endif
@@ -210,6 +213,7 @@ void fxAddUnhandledRejection(txMachine* the, txSlot* promise)
 	while ((slot = *address)) {
 		if (slot->value.weakRef.target == promise)
 			break;
+		mxMeterSome(1);
 		slot = slot->next;
 		address = &slot->next;
 	}
@@ -912,8 +916,6 @@ void fx_Promise_resolveAux(txMachine* the)
 	txSlot* result = the->stack + 2;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
-// 	if (!mxIsReference(mxThis))
-// 		mxTypeError("this is no object");
 	if (mxIsReference(argument)) {
 		txSlot* promise = argument->value.reference;
 		if (mxIsPromise(promise)) {
@@ -946,6 +948,57 @@ void fx_Promise_resolveAux(txMachine* the)
     mxPop(); // rejectFunction
     mxPop(); // resolveFunction
 }
+
+#if mxECMAScript2025
+void fx_Promise_try(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* resolveFunction;
+	txSlot* rejectFunction;
+	if (!mxIsReference(mxThis))
+		mxTypeError("this: not an object");
+	mxTemporary(resolveFunction);
+	mxTemporary(rejectFunction);
+	mxPushSlot(mxThis);
+	fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+	mxPullSlot(mxResult);
+	{
+		mxTry(the) {
+			txInteger c = mxArgc, i;
+			txSlot* value;
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			if (c > 0)
+				mxPushSlot(mxArgv(0));
+			else
+				mxPushUndefined();
+			mxCall();
+			/* ARGUMENTS */
+			for (i = 1; i < c; i++)
+				mxPushSlot(mxArgv(i));
+			if (c > 0)
+				mxRunCount(c - 1);
+			else
+				mxRunCount(0);
+			value = the->stack;
+			/* THIS */
+			mxPushUndefined();
+			/* FUNCTION */
+			mxPushSlot(resolveFunction);
+			mxCall();
+			/* ARGUMENTS */
+			mxPushSlot(value);
+			/* COUNT */
+			mxRunCount(1);
+		}
+		mxCatch(the) {
+			fxRejectException(the, rejectFunction);
+		}
+	}
+	the->stack = stack;
+}
+#endif
 
 #if mxECMAScript2024
 void fx_Promise_withResolvers(txMachine* the)

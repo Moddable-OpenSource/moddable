@@ -49,6 +49,7 @@ static void fxNodeDistribute(void* it, txNodeCall call, void* param);
 
 static void fxCheckFunction(txParser* parser);
 static void fxCheckGenerator(txParser* parser);
+static void fxSkipShebang(txParser* parser);
 
 static void fxArrayNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxArrayBindingNodeDistribute(void* it, txNodeCall call, void* param);
@@ -71,6 +72,7 @@ static void fxForNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxForInForOfNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxIfNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxImportNodeDistribute(void* it, txNodeCall call, void* param);
+static void fxImportCallNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxIncludeNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxLabelNodeDistribute(void* it, txNodeCall call, void* param);
 static void fxMemberNodeDistribute(void* it, txNodeCall call, void* param);
@@ -176,6 +178,21 @@ void fxCheckGenerator(txParser* parser)
 	fxReportParserError(parser, node->line, "no generator function");
 }
 
+void fxSkipShebang(txParser* parser)
+{
+	if (parser->character == '#') {
+		fxGetNextCharacter(parser);
+		if (parser->character == '!') {
+			fxGetNextCharacter(parser);
+			while ((parser->character != (txU4)C_EOF) && (parser->character != 10) && (parser->character != 13) && (parser->character != 0x2028) && (parser->character != 0x2029)) {
+				fxGetNextCharacter(parser);
+			}	
+		}
+		else
+			fxReportParserError(parser, 1, "invalid character %d", parser->character);
+	}
+}
+
 void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsigned flags, txString* name)
 {
 	mxTryParser(parser) {
@@ -195,31 +212,27 @@ void fxParserTree(txParser* parser, void* theStream, txGetter theGetter, txUnsig
 	
 		parser->root = NULL;
 	
-		parser->flags &= ~(mxEvalFlag | mxFunctionFlag | mxGeneratorFlag);
-		if (!(parser->flags & mxProgramFlag))
-			parser->flags |= mxStrictFlag | mxAsyncFlag;
+		parser->flags &= ~(mxEvalFlag | mxFunctionFlag | mxGeneratorFlag | mxJSONModuleFlag);
 		fxGetNextCharacter(parser);
 		fxGetNextCharacter(parser);
-		if (parser->character == '#') {
-			fxGetNextCharacter(parser);
-			if (parser->character == '!') {
-				fxGetNextCharacter(parser);
-				while ((parser->character != (txU4)C_EOF) && (parser->character != 10) && (parser->character != 13) && (parser->character != 0x2028) && (parser->character != 0x2029)) {
-					fxGetNextCharacter(parser);
-				}	
-			}
-			else
-				fxReportParserError(parser, 1, "invalid character %d", parser->character);
-		}
-		fxGetNextToken(parser);
-		if (parser->flags & mxProgramFlag) {
+		if (flags & mxProgramFlag) {
+			fxSkipShebang(parser);
+			fxGetNextToken(parser);
 			fxProgram(parser);
 			if (flags & mxFunctionFlag)
 				fxCheckFunction(parser);
 			else if (flags & mxGeneratorFlag)
 				fxCheckGenerator(parser);
 		}
+		else if (flags & mxJSONModuleFlag) {
+			fxGetNextTokenJSON(parser);
+			fxGetNextTokenJSON(parser);
+			fxJSONModule(parser);
+		}
 		else {
+			parser->flags |= mxStrictFlag | mxAsyncFlag;
+			fxSkipShebang(parser);
+			fxGetNextToken(parser);
 			fxModule(parser);
 		}
 		parser->flags &= ~mxEvalFlag;
@@ -455,6 +468,14 @@ void fxImportNodeDistribute(void* it, txNodeCall call, void* param)
 	txImportNode* self = it;
 	if (self->specifiers)
 		fxNodeListDistribute(self->specifiers, call, param);
+}
+
+void fxImportCallNodeDistribute(void* it, txNodeCall call, void* param)
+{
+	txImportCallNode* self = it;
+	(*call)(self->expression, param);
+	if (self->withExpression)
+		(*call)(self->withExpression, param);
 }
 
 void fxIncludeNodeDistribute(void* it, txNodeCall call, void* param)
@@ -1026,7 +1047,7 @@ static const txNodeDispatch gxImportNodeDispatch ICACHE_FLASH_ATTR = {
 	fxNodeCodeThis
 };
 static const txNodeDispatch gxImportCallNodeDispatch ICACHE_FLASH_ATTR = {
-	fxStatementNodeDistribute,
+	fxImportCallNodeDistribute,
 	fxNodeBind,
 	fxNodeHoist,
 	fxImportCallNodeCode,
@@ -1592,7 +1613,7 @@ const txNodeDescription gxTokenDescriptions[XS_TOKEN_COUNT] ICACHE_FLASH_ATTR = 
 	{ XS_NO_CODE, XS_TOKEN_IF, "If", sizeof(txIfNode), &gxIfNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_IMPLEMENTS, "", 0, NULL },
 	{ XS_NO_CODE, XS_TOKEN_IMPORT, "Import", sizeof(txImportNode), &gxImportNodeDispatch },
-	{ XS_NO_CODE, XS_TOKEN_IMPORT_CALL, "ImportCall", sizeof(txStatementNode), &gxImportCallNodeDispatch },
+	{ XS_NO_CODE, XS_TOKEN_IMPORT_CALL, "ImportCall", sizeof(txImportCallNode), &gxImportCallNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_IMPORT_META, "ImportMeta", sizeof(txNode), &gxImportMetaNodeDispatch },
 	{ XS_CODE_IN, XS_TOKEN_IN, "In", sizeof(txBinaryExpressionNode), &gxBinaryExpressionNodeDispatch },
 	{ XS_NO_CODE, XS_TOKEN_INCLUDE, "include", sizeof(txIncludeNode), &gxIncludeNodeDispatch },

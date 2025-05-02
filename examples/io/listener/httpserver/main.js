@@ -23,8 +23,8 @@ import WebSocket from "WebSocket";
 
 const router = new Map;
 const notFound = {
-	...WebPage,
-	msg: ArrayBuffer.fromString("Not found"),
+	...WebPage,		// STATIC ROUTE
+	data: ArrayBuffer.fromString("Not found"),
 };
 
 let server = new HTTPServer({
@@ -37,7 +37,7 @@ let server = new HTTPServer({
 			},
 		})
 	}
-})
+});
 
 const reply = ArrayBuffer.fromString("1 2 3 4 5 6 7 8\n");
 router.set("/", {
@@ -87,7 +87,7 @@ router.set("/sse", {
 });
 router.set("/sse.html", { 
 	...WebPage,
-	msg: ArrayBuffer.fromString(`
+	data: ArrayBuffer.fromString(`
 <script>
 console.log("starting EventSource");
 var es = new EventSource("http://localhost/sse");

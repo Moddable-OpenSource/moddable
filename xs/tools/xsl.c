@@ -52,6 +52,7 @@
 
 static txBoolean fxFindScript(txMachine* the, txString path, txID* id);
 static void fxFreezeBuiltIns(txMachine* the);
+static void fxFreezeJSONModule(txMachine* the);
 static txScript* fxLoadScript(txMachine* the, txString path);
 
 int main(int argc, char* argv[]) 
@@ -169,7 +170,7 @@ int main(int argc, char* argv[])
 				argi++;
 				if (argi >= argc)
 					fxReportLinkerError(linker, "-c: no creation");
-				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s", 
+				sscanf(argv[argi], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%[^,],%d", 
 					&linker->creation.initialChunkSize,
 					&linker->creation.incrementalChunkSize,
 					&linker->creation.initialHeapCount,
@@ -182,7 +183,8 @@ int main(int argc, char* argv[])
 					&linker->creation.parserBufferSize,
 					&linker->creation.parserTableModulo,
 					&linker->creation.staticSize,
-					linker->main);
+					linker->main,
+					&linker->creation.nativeStackSize);
 				linker->symbolModulo = linker->creation.nameModulo;
 			}		
 			else if (!c_strcmp(argv[argi], "-n")) {
@@ -367,6 +369,7 @@ int main(int argc, char* argv[])
 							if (c_strncmp(preload->name, "lockdown/", 9)) {
 								fxSlashPath(preload->name, mxSeparator, url[0]);
 								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
+								fxFreezeJSONModule(the);
 								xsCollectGarbage();
 							}
 							preload = preload->nextPreload;
@@ -376,6 +379,7 @@ int main(int argc, char* argv[])
 							if (!c_strncmp(preload->name, "lockdown/", 9)) {
 								fxSlashPath(preload->name, mxSeparator, url[0]);
 								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
+								fxFreezeJSONModule(the);
 								xsCollectGarbage();
 							}
 							preload = preload->nextPreload;
@@ -717,7 +721,7 @@ int main(int argc, char* argv[])
 			fprintf(file, "\tmxScriptsCount,\n");
 			fprintf(file, "\t(txScript*)gxScripts,\n");
 			fprintf(file, "\t%d,\n", the->profileID);
-			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n",
+			fprintf(file, "\t{ %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d},\n",
 				linker->creation.initialChunkSize,
 				linker->creation.incrementalChunkSize,
 				linker->creation.initialHeapCount,
@@ -729,7 +733,8 @@ int main(int argc, char* argv[])
 				linker->creation.symbolModulo,
 				linker->creation.parserBufferSize,
 				linker->creation.parserTableModulo,
-				linker->creation.staticSize
+				linker->creation.staticSize,
+				linker->creation.nativeStackSize
 			);
 			fprintf(file, "\t\"%s\",\n", linker->main);
 			fprintf(file, "\t{ 0x%.2X", linker->symbolsChecksum[0]);
@@ -996,6 +1001,27 @@ void fxFreezeBuiltIns(txMachine* the)
 	mxFreezeBuiltInCall; mxPush(mxHosts); mxFreezeBuiltInRun; //@@
 	
 	mxPop();
+}
+
+void fxFreezeJSONModule(txMachine* the)
+{
+	txSlot* instance = fxGetInstance(the, mxResult);
+	txSlot* internal = instance->next;
+	if (internal && (internal->kind == XS_MODULE_KIND) && (internal->flag & XS_JSON_MODULE_FLAG)) {
+		txID defaultID = mxID(_default);
+		txSlot* export = mxModuleInstanceExports(instance)->value.reference->next;
+		if (export && (export->ID == defaultID)) {
+			mxPush(mxObjectConstructor);
+			mxDub();
+			mxGetID(mxID(_freeze));
+			mxCall();
+			mxPushSlot(export->value.export.closure);
+			mxPushBoolean(1);
+			mxRunCount(2);
+			mxPop();
+		}
+	
+	}
 }
 
 void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)

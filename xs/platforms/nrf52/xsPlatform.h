@@ -50,13 +50,8 @@
 #include "nrf_drv_wdt.h"
 
 
-#define mxRegExp 1
 //#define mxReport 1
-#define mxNoFunctionLength 1
-#define mxNoFunctionName 1
-#define mxHostFunctionPrimitive 1
 //#define mxDebug 1
-#define mxFewGlobalsTable 1
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif

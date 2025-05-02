@@ -256,9 +256,11 @@ void PiuField_set_string(xsMachine *the)
 	xsSlot* string = PiuString(xsArg(0));
 	(*self)->string = string;
 	if ((*self)->application) {
+		DWORD selection = Edit_GetSel((*self)->control);
 		wchar_t* buffer = xsToStringCopyW(*string);
 		SetWindowTextW((*self)->control, buffer);
 		c_free(buffer);
+		Edit_SetSel((*self)->control, LOWORD(selection), HIWORD(selection));
 	}
 }
 

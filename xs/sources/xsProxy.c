@@ -778,7 +778,7 @@ void fx_Proxy(txMachine* the)
 	proxy = instance->next;
 	if (!proxy || (proxy->kind != XS_PROXY_KIND))
 		mxTypeError("this: not a Proxy instance");
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(0));
 	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))
@@ -803,7 +803,7 @@ void fx_Proxy_revocable(txMachine* the)
 	txSlot* instance;
 	txSlot* slot;
 	
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_HOST_FUNCTION_KIND))
 		fxToInstance(the, mxArgv(0));
 	if ((mxArgc > 1) && (mxArgv(1)->kind == XS_HOST_FUNCTION_KIND))

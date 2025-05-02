@@ -121,12 +121,14 @@ static const char *gFormats[] = {
 	"uint64",
 	"int64",
 
+	"buffer/disposable",
+
 	C_NULL
 };
 
 void builtinGetFormat(xsMachine *the, uint8_t format)
 {
-	if ((0 == format) || (format > kIOFormatInt64))
+	if ((0 == format) || (format > kIOFormatBufferDisposable))
 		xsRangeError("bad format");
 
 	xsmcSetString(xsResult, (char *)gFormats[format - 1]);
@@ -137,7 +139,7 @@ uint8_t builtinSetFormat(xsMachine *the)
 	char *format = xsmcToString(xsArg(0));
 	uint8_t i;
 	
-	for (i = 0; i < kIOFormatInt64; i++) {
+	for (i = 0; i < kIOFormatBufferDisposable; i++) {
 		if (!c_strcmp(gFormats[i], format))
 			return i + 1;
 	}
@@ -166,7 +168,7 @@ uint8_t builtinInitializeFormat(xsMachine *the, uint8_t format)
 
 		char *fmt = xsmcToString(slot);
 		uint8_t i;
-		for (i = 0; i < kIOFormatInt64; i++) {
+		for (i = 0; i < kIOFormatBufferDisposable; i++) {
 			if (!c_strcmp(gFormats[i], fmt))
 				return i + 1;
 		}

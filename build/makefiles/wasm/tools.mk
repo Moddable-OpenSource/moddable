@@ -208,12 +208,6 @@ C_DEFINES = \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"wasm_xs.h\" \
 	-DXSTOOLS=1 \
-	-DmxRun=1 \
-	-DmxParse=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(GOAL),debug)
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1

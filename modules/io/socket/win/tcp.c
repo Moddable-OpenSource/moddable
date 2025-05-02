@@ -173,7 +173,7 @@ void xs_tcp_constructor(xsMachine *the)
 // #endif
 
   			u_long nonBlocking = 1;
-  			ioctlsocket(the->connection, FIONBIO, &nonBlocking);
+  			ioctlsocket(tcp->skt, FIONBIO, &nonBlocking);
 
 			tcp->task = modTimerAdd(kTaskInterval, kTaskInterval, tcpTask, &tcp, sizeof(tcp));
 
@@ -236,6 +236,9 @@ void doClose(xsMachine *the, xsSlot *instance)
 {
 	TCP tcp = xsmcGetHostData(*instance);
 	if (tcp && xsmcGetHostDataValidate(*instance, (void *)&xsTCPHooks)) {
+		if (tcp->triggered)
+			tcpRelease(tcp);
+
 		tcp->done = 1;
 		tcp->triggerable = 0;
 		tcp->triggered = 0;
@@ -337,6 +340,8 @@ void xs_tcp_write(xsMachine *the)
 	}
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+
+	xsmcSetInteger(xsResult, tcp->bytesWritable);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -408,7 +413,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 	fd_set rfds, wfds;
 	struct timeval tv;
 
-	if ((INVALID_SOCKET == tcp->skt) || tcp->done)
+	if ((INVALID_SOCKET == tcp->skt) || tcp->done || tcp->error)
 		return;		// closed socket
 
 	tcpHold(tcp);
@@ -443,7 +448,7 @@ void tcpTask(modTimer timer, void *refcon, int refconSize)
 				tcpTrigger(tcp, kTCPReadable);
 				modInstrumentationAdjust(NetworkBytesRead, bytesRead);
 			}
-			else if (bytesRead < 0) {
+			else {
 				tcp->error = 1;
 				if (0 == tcp->bytesReadable)
 					tcpTrigger(tcp, kTCPError);
@@ -539,7 +544,7 @@ static const xsHostHooks xsListenerHooks = {
 
 void xs_listener_constructor(xsMachine *the)
 {
-	Listener listener;
+	Listener listener = C_NULL;
 	int port = 0;
 	xsSlot *onReadable;
 
@@ -574,7 +579,7 @@ void xs_listener_constructor(xsMachine *the)
 			xsUnknownError("create socket failed");
 
 		u_long nonBlocking = 1;
-		ioctlsocket(the->connection, FIONBIO, &nonBlocking);
+		ioctlsocket(listener->skt, FIONBIO, &nonBlocking);
 
 		int yes = 1;
 		setsockopt(listener->skt, SOL_SOCKET, SO_REUSEADDR, (void *)&yes, sizeof(yes));
@@ -593,6 +598,8 @@ void xs_listener_constructor(xsMachine *the)
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 	}
 	xsCatch {
+		if (listener)
+			xsForget(listener->obj);
 		xsmcSetHostData(xsThis, NULL);
 		xs_listener_destructor_(listener);
 		xsThrow(xsException);

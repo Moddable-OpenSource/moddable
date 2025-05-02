@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,12 +43,14 @@ import cacheManager from "ssl/cache";
 import CertificateManager from "ssl/cert";
 import TLSError from "ssl/error";
 import Bin from "bin";
+import SSLStream from "ssl/stream";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
 import {DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 
 const maxFragmentSize = 16384	// maximum record layer framgment size (not a packet size): 2^14
 
 class SSLSession {
+	#buffer;
 	constructor(options) {
 		options = {...options};	// shallow copy so it can be safely modified
 
@@ -206,52 +208,53 @@ class SSLSession {
 			}
 		}
 	}
-	write(s, data) {
+	write(s, data, options) {
+		if (options?.more) {
+			this.#buffer ??= new SSLStream(undefined, options.byteLength);
+			this.#buffer.writeChunk(data);
+			return Math.max(0, s.writable - this.#buffer.bytesAvailable - 32);
+		}
+		if (this.#buffer) {
+			this.#buffer.writeChunk(data);
+			data = this.#buffer.getChunk();
+			this.#buffer = undefined;
+		}
+
 		if (data.byteLength > maxFragmentSize)
-			return -1;	// too large
+			throw new Error("too large");
 		this.startTrace("packetize");
 		const packet = recordProtocol.packetize(this, recordProtocol.application_data, data);
-		s.write(packet);
-		s.writable -= packet.byteLength;
+		s.writable = s.write(packet);
+		return Math.max(0, s.writable - 32);
 	}
 	close(s) {
 		this.startTrace("packetize");
 		const packet = SSLAlert.packetize(this, 0, SSLAlert.close_notify);
-		s.write(packet);
-		s.writable -= packet.byteLength
+		s.writable = s.write(packet);
 	}
 	doProtocol(s, protocol, param1, param2) {
 		this.startTrace("packetize");
 		const packet = protocol.packetize(this, param1, param2);
-		if (packet) {
-			s.write(packet);
-			s.writable -= packet.byteLength; 
-		}
+		if (!packet) return;
+		s.write(packet);
+		s.writable -= packet.byteLength; 
 	}
 	readPacket(s) {
 		let packetBuffer = this.packetBuffer;
-		if (!packetBuffer || (packetBuffer.length < 5)) {
+		if (!packetBuffer || (packetBuffer.offset < 5)) {
 			if (!packetBuffer) {
-				let need = Math.min(5, s.readable);
-				this.packetBuffer = new Uint8Array(s.read(need));
-				s.readable -= need;
+				packetBuffer = this.packetBuffer = new Uint8Array(new ArrayBuffer(5, {maxByteLength: 32768}));
+				packetBuffer.offset = 0;
 			}
-			else {
-				let need = Math.min(5 - packetBuffer.length, s.readable);
-				let c = new Uint8Array(s.read(need));
-				s.readable -= need;
-				this.packetBuffer = new Uint8Array(packetBuffer.length + c.length);
-				this.packetBuffer.set(packetBuffer);
-				this.packetBuffer.set(c, packetBuffer.length);
-			}
-			packetBuffer = this.packetBuffer;
-			if (packetBuffer.length < 5)
+
+			const need = Math.min(5 - packetBuffer.offset, s.readable);
+			s.read(this.packetBuffer.subarray(packetBuffer.offset, packetBuffer.offset + need));
+			s.readable -= need;
+			packetBuffer.offset += need;
+			if (packetBuffer.offset < 5)
 				return;
 
-			this.packetBuffer = new Uint8Array(((packetBuffer[3] << 8) | packetBuffer[4]) + 5);		/* packet length including 5 byte header */
-			this.packetBuffer.set(packetBuffer);
-			packetBuffer = this.packetBuffer;
-			packetBuffer.offset = 5;
+			this.packetBuffer.buffer.resize(((packetBuffer[3] << 8) | packetBuffer[4]) + 5);		/* packet length including 5 byte header */
 		}
 		let need = packetBuffer.length - packetBuffer.offset;
 		if (need) {
@@ -265,12 +268,9 @@ class SSLSession {
 			if (packetBuffer.offset < packetBuffer.length)
 				return;
 		}
-		this.packetBuffer = null;
+		delete this.packetBuffer;
 		return packetBuffer.buffer;
 	}
-//	get bytesAvailable() {
-//		return this.applicationData ? (this.applicationData.end - this.applicationData.position) : 0;
-//	}
 	putData(data) {
 		this.applicationData = data;
 		data.position = data.byteOffset;

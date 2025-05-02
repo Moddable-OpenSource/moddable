@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import files from "./files-fixture.js";
-import {deleteTree} from "./files-fixture.js";
+import files from "./files_FIXTURE.js";
+import {deleteTree} from "./files_FIXTURE.js";
 
 // 3 argument move
 {

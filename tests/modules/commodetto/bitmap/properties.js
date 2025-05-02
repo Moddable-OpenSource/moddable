@@ -12,7 +12,7 @@ const b = new Bitmap(4, 9, Bitmap.Gray256, buffer, 8);
 assert.throws(TypeError, () => b.width = 50, "set width");
 assert.throws(TypeError, () => b.height = 50, "set height");
 assert.throws(TypeError, () => b.pixelFormat = Bitmap.Default, "set pixelFormat");
-assert.throws(TypeError, () => b.buffer = new ArrayBuffer(32), "set buffer");
+assert.throws(RangeError, () => b.buffer = new ArrayBuffer(32), "set buffer");
 assert.throws(TypeError, () => b.offset = 0, "set offset");
 
 assert.sameValue(4, b.width, "width");

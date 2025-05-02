@@ -249,7 +249,6 @@ C_DEFINES = \
 	-DESP8266 \
 	-DCONT_STACKSIZE=4608 \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DmxNoConsole=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)

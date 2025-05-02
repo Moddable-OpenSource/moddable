@@ -83,7 +83,11 @@ class SMBus {
     }
 
     writeBuffer(register, buffer) {
-		if (buffer instanceof ArrayBuffer)
+		if (ArrayBuffer.isView(buffer)) {
+			if (buffer.BYTES_PER_ELEMENT > 1)
+				throw new TypeError;		// not a Byte Buffer
+		}
+		else
 			buffer = new Uint8Array(buffer);
 		const data = new Uint8Array(1 + buffer.length);
 		data[0] = register;

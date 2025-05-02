@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2023  Moddable Tech, Inc.
+ | Copyright (c) 2016-2025  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  |
@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: November 17, 2023
+Revised: March 25, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -1931,6 +1931,7 @@ typedef struct {
 	xsIntegerValue parserBufferSize;
 	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
+	xsIntegerValue nativeStackSize;
 } xsCreation;
 ```
 
@@ -1960,6 +1961,8 @@ Regarding the parameters of the machine that are specified in the `xsCreation` s
 - A symbol binds a string value and an identifier; see [`xsID`](#xs-id). The `initialKeyCount` is the number of symbols the machine will allocate at initialization. When the keys are exhausted `incrementalKeyCount` keys are added; if `incrementalKeyCount` is 0, the VM aborts when the keys are exhausted. `symbolModulo` is the size of the hash table the machine will use for symbols.  The `nameModulo` is the size of the hash table the machine will use for symbol names.
 
 - Some XS hosts attempt to grow the slot and chunk heaps without limit at runtime to accommodate the memory needs of the hosted scripts; others limit the maximum memory that may be allocated to the machine. For the latter, the `staticSize` defines the total number of bytes that may be allocated for the combination of chunks and slots, which includes the stack. In general, only hosts running on resource constrained devices implement `staticSize`.
+
+- When creating the machine also allocates a task,  `nativeStackSize` indicates the mimimum size in bytes for the native stack. 
 
 ***
 
@@ -2535,7 +2538,7 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 
 <a id="license"></a>
 ## License
-    Copyright (c) 2016-2023  Moddable Tech, Inc.
+    Copyright (c) 2016-2025  Moddable Tech, Inc.
 
     This file is part of the Moddable SDK Runtime.
 

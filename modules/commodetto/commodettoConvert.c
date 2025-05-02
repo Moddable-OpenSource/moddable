@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -149,6 +149,8 @@ static void cc32RGBAtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *cl
 static void cc32RGBAtoARGB4444(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoBGRA32(uint32_t pixelCount, void *src, void *dst, void *clut);
 
+static void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
+
 static const CommodettoConverter gFromGray16[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toMonochrome
 	ccCopy4,				// toGray16
@@ -224,15 +226,40 @@ static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-mu
 	cc32RGBAtoBGRA32		// toBGRA32
 };
 
+static const CommodettoConverter gFromYUV422[] ICACHE_XS6RO2_ATTR = { // YUYV
+	C_NULL,					// toMonochrome
+	C_NULL,					// toGray16
+	C_NULL,					// toGray256
+	C_NULL,					// toRGB332
+	cc32YUV422toRGB565LE,	// toRGB565LE
+	C_NULL,					// toRGB565BE
+	C_NULL,					// to24RGB
+	C_NULL,					// to32RGBA
+	C_NULL,					// toCLUT16
+	C_NULL,					// toARGB4444
+	C_NULL,					// toRGB444
+	C_NULL					// toBGRA32
+};
+
 static const CommodettoConverter *gFromConverters[] ICACHE_RODATA_ATTR = {
-	NULL,				// fromMonochrome
+	C_NULL,				// fromMonochrome
 	gFromGray16,		// fromGray16
 	gFromGray256,		// fromGray256
-	NULL,				// fromRGB332
+	C_NULL,				// fromRGB332
 	gFromRGB565LE,		// fromRGB565LE
-	NULL,				// fromRGB565BE
+	C_NULL,				// fromRGB565BE
 	gFrom24RGB,			// from24RGB
-	gFrom32RGBA			// from32RGBA
+	gFrom32RGBA,		// from32RGBA
+	C_NULL,				// fromCLUT16,
+	C_NULL,				// fromARGB4444,
+	C_NULL,				// fromRGB444,
+	C_NULL,				// fromBGRA32,
+	C_NULL,				// fromJPEG,
+	C_NULL,				// fromPNG,
+	C_NULL,				// fromCLUT256,
+	C_NULL,				// fromCLUT32,
+	C_NULL,				// fromColorCell,
+	gFromYUV422,		// fromYUV422,
 };
 
 #define toGray(r, g, b) (((r << 1) + r + (g << 2) + b) >> 3)
@@ -244,10 +271,18 @@ uint8_t CommodettoPixelsConvert(uint32_t pixelCount,
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
 		return 0;
 
-	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapBGRA32))
+	if ((srcFormat > kCommodettoBitmapYUV422) || (dstFormat > kCommodettoBitmapBGRA32))
 		return 0;
 
-	(gFromConverters[srcFormat - kCommodettoBitmapMonochrome])[dstFormat - kCommodettoBitmapMonochrome](pixelCount, srcPixels, dstPixels, NULL);
+	const CommodettoConverter *converters = gFromConverters[srcFormat - kCommodettoBitmapMonochrome];
+	if (!converters)
+		return 0;
+
+	CommodettoConverter converter = converters[dstFormat - kCommodettoBitmapMonochrome];
+	if (!converter)
+		return 0;
+
+	(converter)(pixelCount, srcPixels, dstPixels, NULL);
 
 	return 1;
 }
@@ -255,27 +290,31 @@ uint8_t CommodettoPixelsConvert(uint32_t pixelCount,
 CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcFormat, CommodettoBitmapFormat dstFormat)
 {
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
-		return 0;
+		return C_NULL;
 
-	if ((srcFormat > kCommodettoBitmap32RGBA) || (dstFormat > kCommodettoBitmapBGRA32))
-		return 0;
+	if ((srcFormat > kCommodettoBitmapYUV422) || (dstFormat > kCommodettoBitmapBGRA32))
+		return C_NULL;
 
-	return (gFromConverters[srcFormat - kCommodettoBitmapMonochrome])[dstFormat - kCommodettoBitmapMonochrome];
+	const CommodettoConverter *converters = gFromConverters[srcFormat - kCommodettoBitmapMonochrome];
+	if (!converters)
+		return C_NULL;
+
+	return converters[dstFormat - kCommodettoBitmapMonochrome];
 }
 
 void ccCopy4(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, (pixelCount + 1) >> 1);
+	c_memcpy(dst, src, (pixelCount + 1) >> 1);
 }
 
 void ccCopy8(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, pixelCount);
+	c_memcpy(dst, src, pixelCount);
 }
 
 void ccCopy16(uint32_t pixelCount, void *src, void *dst, void *clut)
 {
-	memcpy(dst, src, pixelCount << 1);
+	c_memcpy(dst, src, pixelCount << 1);
 }
 
 void ccGray256toMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
@@ -698,3 +737,80 @@ void cc32RGBAtoBGRA32(uint32_t pixelCount, void *srcPixels, void *dstPixels, voi
 	}
 }
 
+#if 1
+// https://learn.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)?redirectedfrom=MSDN#example-converting-8-bit-yuv-to-rgb888
+void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+#define CLIP5(COMPONENT) (TMP = (COMPONENT), (((unsigned int)TMP) <= 31) ? TMP : ((TMP > 31) ? 31 : 0))
+#define CLIP6(COMPONENT) (TMP = (COMPONENT), (((unsigned int)TMP) <= 63) ? TMP : ((TMP > 63) ? 63 : 0))
+	int Y0, U, Y1, V, C, D, E, TMP;
+	uint8_t r, g, b;
+	uint32_t *src = (uint32_t *)srcPixels;
+	uint16_t *dst = (uint16_t *)dstPixels;
+	pixelCount >>= 1;		// two pixels per loop
+	while (pixelCount--) {
+		TMP = *src++;
+		Y0 = TMP & 0xff;
+		U =  (TMP >> 8) & 0xff;
+		Y1 = (TMP >> 16) & 0xff;
+		V =  (TMP >> 24) & 0xff;;
+		D = U - 128;
+		E = V - 128;
+		
+		C = (298 * (Y0 - 16)) + 128;
+		r = CLIP5(( C           + 409 * E) >> (8 + 3));
+		g = CLIP6(( C - 100 * D - 208 * E) >> (8 + 2));
+		b = CLIP5(( C + 516 * D          ) >> (8 + 3));
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+		
+		C = (298 * (Y1 - 16)) + 128;
+		r = CLIP5(( C           + 409 * E) >> (8 + 3));
+		g = CLIP6(( C - 100 * D - 208 * E) >> (8 + 2));
+		b = CLIP5(( C + 516 * D          ) >> (8 + 3));
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+	}
+}
+#else
+// http://readthesourceluke.blogspot.com/2014/08/replacing-floating-point-multiplication_81.html
+void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+// no multiply but more operations... may be faster on some CPU architectures
+//#define CLIPY(Y) ((Y <= 16) ? 16 : ((Y > 235) ? 235 : Y))
+//#define CLIPUV(UV) ((UV <= 16) ? 16 : ((UV > 240) ? 240 : UV))
+#define CLIPY(Y) (Y)
+#define CLIPUV(UV) (UV)
+#define CLIPRGB(c) ((c <= 0) ? 0 : ((c > 255) ? 255 : c))
+	int16_t r, g, b;
+	uint32_t *src = (uint32_t *)srcPixels;
+	uint16_t *dst = (uint16_t *)dstPixels;
+	pixelCount >>= 1;		// two pixels per loop
+	while (pixelCount--) {
+		int TMP = *src++;
+		int Y0 = TMP & 0xff;
+		int U =  (TMP >> 8) & 0xff;
+		int Y1 = (TMP >> 16) & 0xff;
+		int V =  (TMP >> 24) & 0xff;
+		int cbm = CLIPUV(U) - 128;
+		int crm = CLIPUV(V) - 128;
+
+		Y0 = CLIPY(Y0) - 16;
+		Y0 += (Y0 >> 3) + (Y0 >> 5) + (Y0 >> 7);
+		Y1 = CLIPY(Y1) - 16;
+		Y1 += (Y1 >> 3) + (Y1 >> 5) + (Y1 >> 7);
+
+		r = (Y0 + crm + (crm >> 3) + (crm >> 4)); r = CLIPRGB(r) >> 3;
+		g = (Y0 - ((cbm >> 3) + (cbm >> 4) + (cbm >> 5)) - ((crm >> 1) + (crm >> 5))); g = CLIPRGB(g) >> 2;
+		b = (Y0 + ((cbm << 1) + (cbm >> 4) + (cbm >> 5) + (cbm >> 6))); b = CLIPRGB(b) >> 3;
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+
+		r = Y1 + crm + (crm >> 3) + (crm >> 4); r = CLIPRGB(r) >> 3;
+		g = Y1 - ((cbm >> 3) + (cbm >> 4) + (cbm >> 5)) - ((crm >> 1) + (crm >> 5)); g = CLIPRGB(g) >> 2;
+		b = Y1 + ((cbm << 1) + (cbm >> 4) + (cbm >> 5) + (cbm >> 6)); b = CLIPRGB(b) >> 3;
+		*dst = (r << 11) | (g << 5) | b;
+		dst++;
+	}
+}
+#endif

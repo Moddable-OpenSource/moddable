@@ -13,19 +13,13 @@
  */
 
 import TextDecoder from "text/decoder"
-import TLSSocket from "embedded:io/socket/tcp/tls";
 
-const http = new device.network.http.io({ 
-	...device.network.http,
-	host: "www.google.com",
-	port: 443,
-	socket: {
-		io: TLSSocket,
-		TCP: device.network.http.socket
-	}
+const https = new device.network.https.io({ 
+	...device.network.https,
+	host: "www.example.edu"
 });
 for (let i = 0; i < 3; i++) {
-	http.request({
+	https.request({
 		path: `/?${i}`,
 		headers: new Map([
 			["date", Date()],

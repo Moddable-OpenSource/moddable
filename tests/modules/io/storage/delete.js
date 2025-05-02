@@ -3,8 +3,8 @@ description:
 flags: [module]
 ---*/
 
-import storage from "./storage-fixture.js";
-import {emptyDomain, keys} from "./storage-fixture.js";
+import storage from "./storage_FIXTURE.js";
+import {emptyDomain, keys} from "./storage_FIXTURE.js";
 
 const aValue = Uint8Array.of(0, 1, 2, 3);
 const bValue = Uint8Array.of(0, 1, 2, 3, 4, 5, 6, 7, 8);

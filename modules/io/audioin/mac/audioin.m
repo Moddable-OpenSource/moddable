@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -35,6 +35,7 @@ struct AudioInputRecord {
 	void* data;
 	uint8_t calling;
 	uint16_t running;
+	uint16_t bytesPerFrame;
 	uint16_t queueLength;
 	AudioQueueBufferRef queueBuffers[1];
 };
@@ -52,7 +53,7 @@ static void AudioInputCallback(void *it, AudioQueueRef queue, AudioQueueBufferRe
 		input->calling = 1;
 		xsBeginHost(input->the);
 		xsResult = xsAccess(input->object);
-		xsCallFunction1(xsReference(input->onReadable), xsResult, xsInteger(input->size));
+		xsCallFunction2(xsReference(input->onReadable), xsResult, xsInteger(input->size), xsInteger(input->size / input->bytesPerFrame));
 		xsEndHost(input->the);
 		if (input->calling)
 			input->calling = 0;
@@ -76,9 +77,9 @@ static const xsHostHooks xsAudioInHooks = {
 void xs_audioin_constructor(xsMachine *the)
 {
 	uint8_t format = kIOFormatBuffer;
-	uint8_t bitsPerSample = 0;
-	uint8_t numChannels = 0;
-	uint16_t sampleRate = 0;
+	uint32_t bitsPerSample = 16;
+	uint32_t numChannels = 1;
+	uint32_t sampleRate = 22050;
 	uint16_t queueLength = 4;
 	uint16_t bytesPerFrame = 0;
 	uint32_t bufferSize = 0;
@@ -102,6 +103,12 @@ void xs_audioin_constructor(xsMachine *the)
 	format = builtinInitializeFormat(the, format);
 	if (kIOFormatBuffer != format)
 		xsRangeError("invalid format");
+	if (xsmcHas(xsArg(0), xsID_audioType)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_audioType);
+		xsStringValue type = xsmcToString(xsVar(0));
+		if (c_strcmp(type, "LPCM"))
+			xsRangeError("invalid audioType");
+	}
 	if (xsmcHas(xsArg(0), xsID_bitsPerSample)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_bitsPerSample);
 		bitsPerSample = xsmcToInteger(xsVar(0));
@@ -149,6 +156,7 @@ void xs_audioin_constructor(xsMachine *the)
 	if (AudioQueueNewInput(&desc, AudioInputCallback, input, CFRunLoopGetCurrent(), NULL, 0, &(input->queue)) != noErr)
 		xsUnknownError("cannot create audio queue");
 	   
+	input->bytesPerFrame = bytesPerFrame;
 	input->queueLength = queueLength;
 	for (i = 0; i < queueLength; i++) {
 		if (AudioQueueAllocateBuffer(input->queue, bufferSize, &input->queueBuffers[i]) != noErr)
@@ -211,6 +219,8 @@ void xs_audioin_read(xsMachine *the)
 	xsBooleanValue allocate = 1;
 	void* buffer;
 	available = input->size - input->offset;
+	if (0 == available)
+		return;
 	if (0 == xsmcArgc)
 		requested = available;
 	else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {

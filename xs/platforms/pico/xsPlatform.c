@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -76,6 +76,14 @@ static int gDebugMutexInited = 0;
 #define mxDebugMutexTake()	sem_acquire_blocking(&gDebugMutex)
 #define mxDebugMutexGive()	sem_release(&gDebugMutex)
 #define mxDebugMutexAllocated() (gDebugMutexInited)
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon);
+int modMessageService(xsMachine *the, int maxDelayMS);
+void modMachineTaskInit(xsMachine *the);
+void modMachineTaskUninit(xsMachine *the);
+void modMachineTaskWait(xsMachine *the);
+void modMachineTaskWake(xsMachine *the);
 
 
 void fxCreateMachinePlatform(txMachine* the)
@@ -184,18 +192,6 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
-char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
-
 void fxAbort(txMachine* the, int status)
 {
 #if MODDEF_XS_TEST
@@ -214,10 +210,11 @@ void fxAbort(txMachine* the, int status)
 #endif
 
 #if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
-	const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
+	const xsStringValue fxAbortString(int status);
+	const char *msg = fxAbortString(status);
 
 	#if MODDEF_XS_ABORTHOOK
-		if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
+		if ((XS_JAVASCRIPT_STACK_OVERFLOW_EXIT != status) && (XS_NATIVE_STACK_OVERFLOW_EXIT != status) & (XS_DEBUGGER_EXIT != status)) {
 			xsBooleanValue ignore = false;
 			
 			fxBeginHost(the);

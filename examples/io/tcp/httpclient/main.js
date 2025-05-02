@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,8 +14,7 @@
 
 import TextDecoder from "text/decoder"
 
-const HTTPClient = device.network.http.io;
-const http = new HTTPClient({ 
+const http = new device.network.http.io({ 
 	...device.network.http,
 	host: "example.com"
 });
@@ -27,14 +26,21 @@ for (let i = 0; i < 3; i++) {
 			["user-agent", "ecma-419 test"]
 		]),
 		onHeaders(status, headers) {
-			trace(`Status ${status}, Content-Type ${headers.get("content-type")}\n`);
+			trace(`Status ${status}\n`);
+			headers.forEach((value, key) => {
+				trace(`${key}: ${value}\n`);
+			});
 			this.decoder = new TextDecoder;
 		},
 		onReadable(count) {
-			trace(this.decoder.decode(this.read(count), {stream: true})); 
+			const buffer = this.read(count);
+			trace(this.decoder.decode(buffer, {stream: true})); 
 		},
-		onDone() {
-			trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
+		onDone(error) {
+			if (error)
+				trace(error, `\n\n **ERROR ${i} **\n\n`);
+			else
+				trace(this.decoder.decode(), `\n\n **DONE ${i} **\n\n`);
 		}
 	});
 }

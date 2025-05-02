@@ -28,4 +28,3 @@ globalThis.device = Object.freeze({
 		},
 	},
 }, true);
-

@@ -657,6 +657,7 @@ void fxExportNodeHoist(void* it, void* param)
 			while (specifier) {
 				txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_LET, C_NULL);
 				specifier->from = self->from;
+				specifier->with = self->with;
 				node->flags |= mxDeclareNodeClosureFlag | mxDeclareNodeUseClosureFlag;
 				node->line = self->line;
 				node->importSpecifier = specifier;
@@ -669,6 +670,7 @@ void fxExportNodeHoist(void* it, void* param)
 			txSpecifierNode* specifier = fxSpecifierNodeNew(hoister->parser, XS_TOKEN_SPECIFIER);
 			txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_LET, C_NULL);
 			specifier->from = self->from;
+			specifier->with = self->with;
 			node->flags |= mxDeclareNodeClosureFlag | mxDeclareNodeUseClosureFlag;
 			node->line = self->line;
 			node->importSpecifier = specifier;
@@ -766,6 +768,7 @@ void fxImportNodeHoist(void* it, void* param)
 			else {
 				specifier->declaration = node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_LET, symbol);
 				specifier->from = self->from;
+				specifier->with = self->with;
 				node->flags |= mxDeclareNodeClosureFlag | mxDeclareNodeUseClosureFlag;
 				node->line = self->line;
 				node->importSpecifier = specifier;
@@ -778,6 +781,7 @@ void fxImportNodeHoist(void* it, void* param)
 		txSpecifierNode* specifier = fxSpecifierNodeNew(hoister->parser, XS_TOKEN_SPECIFIER);
 		txDeclareNode* node = fxDeclareNodeNew(hoister->parser, XS_TOKEN_LET, C_NULL);
 		specifier->from = self->from;
+		specifier->with = self->with;
 		node->flags |= mxDeclareNodeClosureFlag | mxDeclareNodeUseClosureFlag;
 		node->line = self->line;
 		node->importSpecifier = specifier;

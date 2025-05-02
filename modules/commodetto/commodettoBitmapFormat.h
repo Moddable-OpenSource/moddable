@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,6 +41,7 @@
 #define kCommodettoBitmapCLUT256 (17)
 #define kCommodettoBitmapCLUT32 (18)
 #define kCommodettoBitmapColorCell (19)
+#define kCommodettoBitmapYUV422 (20)
 
 
 #define kCommodettoBitmapPacked (0x80)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -50,26 +50,23 @@
 	#define ICACHE_FLASH1_ATTR __attribute__((section(".irom.text.mod")))
 #endif
 
-#define mxRegExp 1
-//#define mxReport 1
-#define mxNoFunctionLength 1
-#define mxNoFunctionName 1
-#define mxHostFunctionPrimitive 1
-#define mxFewGlobalsTable 1
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif
-#if !ESP32
-	#define mxMisalignedSettersCrash 1
-#elif ESP32 == 1
-	#define mxUseFreeRTOSTasks 1
-	#define mxUseGCCAtomics 1
-#elif ESP32 == 2
-	#define mxUseFreeRTOSTasks 1
-#endif
 
-#ifdef __ets__
+#if !ESP32
 	#define mxUnalignedAccess 0
+	#define mxMisalignedSettersCrash 1
+#else
+	#define mxUseFreeRTOSTasks 1
+	#ifdef __riscv
+		// RISC_V does not support GCC atomics or misaligned memory access
+		#define mxUnalignedAccess 0
+		#define mxMisalignedSettersCrash 1
+	#else
+		#define mxUseGCCAtomics 1
+		#define mxUnalignedAccess 1
+	#endif
 #endif
 
 #define mxIntegerDivideOverflowException 0

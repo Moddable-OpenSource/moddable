@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,18 +53,45 @@
 	#define __has_builtin(x) 0
 #endif
 
+// defaults runtime model to Moddable SDK
+#ifndef mxAliasInstance
+	#define mxAliasInstance 1
+#endif
+#ifndef mxCanonicalNaN
+	#define mxCanonicalNaN 0
+#endif
+#ifndef mxHostFunctionPrimitive
+	#define mxHostFunctionPrimitive 1
+#endif
+#ifndef mxKeysGarbageCollection
+	#define mxKeysGarbageCollection 0
+#endif
+
+// defaults ECMASScript edition and proposals to Moddable SDK
+#ifndef mxECMAScript2025
+	#define mxECMAScript2025 1
+#endif
 #ifndef mxECMAScript2024
 	#define mxECMAScript2024 1
 #endif
-
 #ifndef mxECMAScript2023
 	#define mxECMAScript2023 1
 #endif
-
+#ifndef mxErrorIsError
+	#define mxErrorIsError 1
+#endif
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0
 #endif
-
+#ifndef mxFloat16
+	#define mxFloat16 1
+#endif
+#ifndef mxImmutableArrayBuffers
+	#define mxImmutableArrayBuffers 0
+#endif
+#ifndef mxModuleStuff
+	#define mxModuleStuff 0
+#endif
 #ifndef mxUint8ArrayBase64
 	#define mxUint8ArrayBase64 1
 #endif
@@ -120,20 +147,17 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#if mxECMAScript2024
+#if mxECMAScript2025
+	#define XS_MAJOR_VERSION 16
+	#define XS_MINOR_VERSION (2 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64)
+#elif mxECMAScript2024
 	#define XS_MAJOR_VERSION 15
+	#define XS_MINOR_VERSION (3 + mxExplicitResourceManagement + mxUint8ArrayBase64)
+#elif mxECMAScript2023
+	#define XS_MAJOR_VERSION 14
+	#define XS_MINOR_VERSION (3 + mxExplicitResourceManagement)
 #else
-	#if mxECMAScript2023
-		#define XS_MAJOR_VERSION 14
-	#else
-		#define XS_MAJOR_VERSION 13
-	#endif
-#endif
-#if mxExplicitResourceManagement
-	#define XS_MINOR_VERSION 5
-#elif mxUint8ArrayBase64
-	#define XS_MINOR_VERSION 4
-#else
+	#define XS_MAJOR_VERSION 13
 	#define XS_MINOR_VERSION 3
 #endif
 #if mxKeysGarbageCollection
@@ -168,7 +192,6 @@ typedef struct {
 	txU4 cval;
 	txS4 shift;
 	txU4 lmask;
-	txU4 lval;
 } txUTF8Sequence;
 
 enum {
@@ -415,6 +438,10 @@ enum {
 	XS_CODE_USED_2,
 	XS_CODE_USING,
 	XS_CODE_USING_ASYNC,
+	XS_CODE_AT_2,
+	XS_CODE_SUPER_AT,
+	XS_CODE_SUPER_AT_2,
+	XS_CODE_TRANSFER_JSON,
 	XS_CODE_COUNT
 };
 
@@ -429,6 +456,7 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+	XS_JSON_MODULE_FLAG = 16,
 	XS_IMPORT_FLAG = 32,
 	XS_IMPORT_META_FLAG = 64,
 };
@@ -450,18 +478,20 @@ enum {
 	mxFieldFlag = 1 << 15,
 	mxFunctionFlag = 1 << 16,
 	mxGeneratorFlag = 1 << 21,
+	mxJSONModuleFlag = 1 << 22,
 };
 
 enum {
 	XS_DEBUGGER_EXIT = 0,
 	XS_NOT_ENOUGH_MEMORY_EXIT,
-	XS_STACK_OVERFLOW_EXIT,
+	XS_JAVASCRIPT_STACK_OVERFLOW_EXIT,
 	XS_FATAL_CHECK_EXIT,
 	XS_DEAD_STRIP_EXIT,
 	XS_UNHANDLED_EXCEPTION_EXIT,
 	XS_NO_MORE_KEYS_EXIT,
 	XS_TOO_MUCH_COMPUTATION_EXIT,
 	XS_UNHANDLED_REJECTION_EXIT,
+	XS_NATIVE_STACK_OVERFLOW_EXIT,
 };
 
 extern void fxDeleteScript(txScript* script);
@@ -793,16 +823,25 @@ enum {
 	_parseInt,
 	_trace,
 	_unescape,
+#if mxECMAScript2025	
+	_Iterator,
+#endif
 #if mxExplicitResourceManagement	
 	_AsyncDisposableStack,
 	_DisposableStack,
 	_SuppressedError,
 #endif	
+#if mxFloat16	
+	_Float16Array,
+#endif
 	_Infinity,
 	_NaN,
 	_undefined,
 	_Compartment,
 	_Function,
+#if mxModuleStuff
+	_ModuleStuff,
+#endif
 	_eval,
 	_AsyncFunction,
 	_AsyncGeneratorFunction,
@@ -1228,12 +1267,40 @@ enum {
 	_fromBase64,
 	_fromHex,
 	_lastChunkHandling,
+	_omitPadding,
 	_read_,
 	_setFromBase64,
 	_setFromHex,
 	_toBase64,
 	_toHex,
 	_written,
+#endif
+#if mxECMAScript2025
+	_difference,
+	_drop,
+	_intersection,
+	_isDisjointFrom,
+	_isSubsetOf,
+	_isSupersetOf,
+	_options,
+	_symmetricDifference,
+	_take,
+	_toArray,
+	_try_,
+	_type,
+	_union,
+#endif
+#if mxFloat16
+	_f16round,
+	_getFloat16,
+	_setFloat16,
+#endif
+#if mxImmutableArrayBuffers
+	_immutable,
+	_transferToImmutable,
+#endif
+#if mxErrorIsError
+	_isError,
 #endif
 	XS_ID_COUNT
 };
@@ -1255,23 +1322,8 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #define mxPtrDiff(_DIFF) ((txSize)(_DIFF))
 
-#ifndef mxAliasInstance
-	#define mxAliasInstance 1
-#endif
-
-#ifndef mxDebugEval
-	#define mxDebugEval 0
-#endif
-
 #ifndef mxIntegerDivideOverflowException
 	#define mxIntegerDivideOverflowException 1
-#endif
-
-#ifndef mxCanonicalNaN
-	#define mxCanonicalNaN 0
-#else
-	extern float* gxCanonicalNaN32;
-	extern double* gxCanonicalNaN64;
 #endif
 
 #ifdef __cplusplus

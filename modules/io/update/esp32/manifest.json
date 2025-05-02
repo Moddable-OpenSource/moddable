@@ -1,0 +1,13 @@
+{
+	"platforms": {
+		"esp32": {
+			"include": "../../flash/manifest.json",
+			"modules": {
+				"embedded:update": "./update-esp32"
+			}
+		}
+	},
+	"preload": [
+		"embedded:update"
+	]
+}

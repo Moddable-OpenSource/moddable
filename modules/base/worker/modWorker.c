@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -221,9 +221,6 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
 			keyCount = xsmcToInteger(xsVar(0));
 
-			if (allocation)
-				worker->creation.staticSize = allocation;
-
 			if (stackCount)
 				worker->creation.stackCount = stackCount;
 
@@ -232,6 +229,19 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			
 			if (keyCount)
 				worker->creation.initialKeyCount = keyCount;
+
+			if (allocation) {
+				worker->creation.staticSize = allocation;
+				int available = worker->creation.staticSize - (worker->creation.stackCount * sizeof(xsSlot)) - 1024; 
+				if (worker->creation.initialChunkSize > (available / 2)) {
+					worker->creation.initialChunkSize = 512;
+					worker->creation.incrementalChunkSize = 512;
+				}
+				if (worker->creation.initialHeapCount > (available / (2 * sizeof(xsSlot))))
+					worker->creation.initialHeapCount = available / (2 * sizeof(xsSlot));
+				if (worker->creation.incrementalHeapCount > (worker->creation.initialHeapCount / 8) || !worker->creation.incrementalHeapCount)
+					worker->creation.incrementalHeapCount = 8;
+			}
 		}
 		else {
 			getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
@@ -253,35 +263,27 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				getIntegerProperty(the, &xsVar(0), xsID_name, &worker->creation.nameModulo);
 				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
 			}
+			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
 		}
 	}
 
 #ifdef INC_FREERTOS_H
+#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack (((5 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+		#define kStack ((5 * 1024) + XT_STACK_EXTRA_CLIB)
 	#else
-		#define kStack (((6 * 1024) + XT_STACK_EXTRA_CLIB) / sizeof(StackType_t))
+		#define kStack ((6 * 1024) + XT_STACK_EXTRA_CLIB)
 	#endif
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, 8, &worker->task);
 #elif qca4020
-	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((9 * 1024) / sizeof(StackType_t))
-	#else
-		#define kStack ((10 * 1024) / sizeof(StackType_t))
-	#endif
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, 10, &worker->task);
+	#define kStack ((9 * 1024)
 #elif nrf52
-	#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
-	#define kStack ((10 * 1024) / sizeof(StackType_t))
-
-	xTaskCreate(workerLoop, worker->module, kStack, worker, kWorkerTaskPriority, &worker->task);
+	#define kStack (10 * 1024)
 #endif
+	xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+							worker, kWorkerTaskPriority, &worker->task);
 
 	modMachineTaskWait(the);
-
 #else // !INC_FREERTOS_H
 	workerStart(worker);
 #endif
@@ -377,7 +379,6 @@ void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, u
 
 	xsBeginHost(the);
 
-	xsCollectGarbage();
 	xsResult = xsDemarshall(*(char **)message);
 	c_free(*(char **)message);
 
@@ -522,7 +523,6 @@ void workerLoop(void *pvParameter)
 			vTaskDelay(1000);
 	}
 	modMachineTaskWake(worker->parent);
-
 
 	while (true) {
 		modTimersExecute();

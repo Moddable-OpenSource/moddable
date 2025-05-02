@@ -19,6 +19,7 @@
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
 		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/smbus": "$(IO)/i2c/smbus",

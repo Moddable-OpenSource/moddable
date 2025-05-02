@@ -4,22 +4,7 @@ flags: [module]
 ---*/
 
 import Worker from "worker";
-
-const minimumOptions = {
-	static: 8192,
-	heap: {
-		initial: 64,
-		incremental: 64
-	},
-	chunk: {
-		initial: 1024,
-		incremental: 512
-	},
-	stack: 64,
-	keys: {
-		initial: 1
-	}
-};
+import minimumOptions from "./minimumOptions_FIXTURE.js"
 
 assert.throws(SyntaxError, () => new Worker, "Worker constructor requires 1 argument");
 assert.throws(TypeError, () => new Worker(Symbol()), "Worker constructor rejects Symbol");

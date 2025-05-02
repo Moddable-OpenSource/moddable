@@ -1,0 +1,82 @@
+{
+	"build":{
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+        "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the B button and press then release the R button.",
+        "BEFORE_DEBUGGING_MESSAGE": "Press and release the R button."
+	},
+	"include": [
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/ili9341/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "ili9341",
+		"touch": "",
+		"led_pin": 21,
+		"camera": {
+			"frameSize": "HQVGA"
+		}
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 5,
+			"scl_pin": 6
+		},
+		"spi": {
+			"miso_pin":8,
+			"mosi_pin":9,
+			"sck_pin": 7
+		},
+		"ili9341": {
+			"spi_port": "SPI2_HOST",
+			"cs_pin": 44,
+			"dc_pin": 43
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"volume_divider": 2,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 3,
+				"lr_pin": 4,
+				"dataout_pin": 2
+			}
+		},
+		"audioIn": {
+			"sampleRate": 11025,
+			"bitsPerSample": 16,
+			"i2s": {
+				"pdm": 1,
+				"num": 0,
+				"lr_pin": 42,
+				"datain": 41,
+				"xmultiplier": 32
+			}
+		},
+		"camera": {
+			"xclk": 10,
+			"pclk": 13,
+			"href": 47,
+			"vsync": 38,
+			"scl": 39,
+			"sda": 40,
+			"d0": 15,
+			"d1": 17,
+			"d2": 18,
+			"d3": 16,
+			"d4": 14,
+			"d5": 12,
+			"d6": 11,
+			"d7": 48
+		}
+	}
+}

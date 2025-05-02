@@ -5,7 +5,7 @@ flags: [module,async]
 
 import AudioOut from "pins/audioout"
 import Resource from "Resource";
-import {MAUD, SampleFormat} from "./maud.js"
+import {MAUD, SampleFormat} from "./maud_FIXTURE.js"
 import Timer from "timer"
 
 // ffmpeg -i $MODDABLE/examples/assets/sounds/bflatmajor.wav -ac 1 -ar 16000 -b:a 32k ~/bflatmajor-sbc.sbc

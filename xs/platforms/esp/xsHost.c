@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -963,7 +963,7 @@ bool IRAM_ATTR timer_group0_isr(gptimer_handle_t timer, const gptimer_alarm_even
 
 #ifndef MODDEF_TASK_QUEUEWAIT
 	#ifdef mxDebug
-		#define MODDEF_TASK_QUEUEWAIT (1000)
+		#define MODDEF_TASK_QUEUEWAIT (20)
 	#else
 		#define MODDEF_TASK_QUEUEWAIT (portMAX_DELAY)
 	#endif
@@ -977,6 +977,7 @@ struct modMessageRecord {
 	modMessageDeliver	callback;
 	void				*refcon;
 	uint16_t			length;
+	uint8_t				embeddedMessage;	// message property contains the message 	
 };
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
@@ -994,14 +995,22 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	}
 #endif
 
+	msg.embeddedMessage = 0;
 	if (message && messageLength) {
-		msg.message = c_malloc(messageLength);
-		if (!msg.message) return -1;
+		if (messageLength <= sizeof(msg.message)) {
+			msg.embeddedMessage = 1;
+			c_memmove(&msg.message, message, messageLength);			
+		}
+		else {
+			msg.message = c_malloc(messageLength);
+			if (!msg.message) return -1;
 
-		c_memmove(msg.message, message, messageLength);
+			c_memmove(msg.message, message, messageLength);
+		}
 	}
 	else
 		msg.message = NULL;
+
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
@@ -1009,7 +1018,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	if (pdTRUE == xQueueSendToBack(the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
 		return 0;
 
-	if (msg.message)
+	if (msg.message && !msg.embeddedMessage)
 		c_free(msg.message);
 
 	return -2;
@@ -1024,6 +1033,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.length = 0;
 	msg.callback = callback;
 	msg.refcon = refcon;
+	msg.embeddedMessage = 0;
 
 	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
 
@@ -1057,7 +1067,7 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #ifdef mxDebug
 	do {
-		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, maxDelayMS);
+		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, pdMS_TO_TICKS(maxDelayMS));
 		if (!queue)
 			break;
 
@@ -1065,9 +1075,13 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 			break;
 
 		modWatchDogReset();
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
+		if (msg.embeddedMessage)
+			(msg.callback)(the, msg.refcon, (uint8_t *)&msg.message, msg.length);
+		else {
+			(msg.callback)(the, msg.refcon, msg.message, msg.length);
+			if (msg.message)
+				c_free(msg.message);
+		}
 
 		if ((queue == the->msgQueue) && !--count)
 			break;
@@ -1075,13 +1089,17 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	} while ((modMilliseconds() - startTime) < maxDuration);
 #else
 	do {
-		if (!xQueueReceive(the->msgQueue, &msg, maxDelayMS))
+		if (!xQueueReceive(the->msgQueue, &msg, pdMS_TO_TICKS(maxDelayMS)))
 			break;
 
 		modWatchDogReset();
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
+		if (msg.embeddedMessage)
+			(msg.callback)(the, msg.refcon, (uint8_t *)&msg.message, msg.length);
+		else {
+			(msg.callback)(the, msg.refcon, msg.message, msg.length);
+			if (msg.message)
+				c_free(msg.message);
+		}
 
 		if (!--count)
 			break;
@@ -1133,7 +1151,7 @@ void modMachineTaskUninit(xsMachine *the)
 
 	if (the->msgQueue) {
 		while (xQueueReceive(the->msgQueue, &msg, 0)) {
-			if (msg.message)
+			if (msg.message && !msg.embeddedMessage)
 				c_free(msg.message);
 		}
 

@@ -205,6 +205,27 @@ txNumber fxArgToIndex(txMachine* the, txInteger argi, txNumber index, txNumber l
 	return index;
 }
 
+txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, txInteger length)
+{
+	if (mxArgc <= argi)
+		return index;
+
+	txSlot *slot = mxArgv(argi);
+	if (slot->kind != XS_INTEGER_KIND)
+		return fxArgToIndex(the, argi, index, length);
+
+	index = slot->value.integer;
+	if (index < 0) {
+		index = length + index;
+		if (index < 0)
+			index = 0;
+	}
+	else if (index > length)
+		index = length;
+
+	return index;
+}
+
 txNumber fxArgToLastIndex(txMachine* the, txInteger argi, txNumber index, txNumber length)
 {
 	if (mxArgc > argi) {
@@ -570,9 +591,10 @@ txIndex fxGetArrayLimit(txMachine* the, txSlot* reference)
 	if (array && (array->kind == XS_TYPED_ARRAY_KIND) && (array->ID == XS_TYPED_ARRAY_BEHAVIOR)) {
 		txSlot* view = array->next;
 		txSlot* buffer = view->next;
-		txSlot* data = buffer->value.reference->next;
-		if (data->value.arrayBuffer.address == C_NULL)
-			mxTypeError("detached buffer");
+		if (mxThis->value.reference != instance) { // iterator
+			if (fxIsDataViewOutOfBound(the, view, buffer))
+				mxTypeError("out of bound buffer");
+		}
 		return fxGetDataViewSize(the, view, buffer) >> array->value.typedArray.dispatch->shift;
 	}
 	mxPushReference(instance);

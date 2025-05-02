@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -54,6 +54,7 @@ struct sxContext {
 
 struct sxFeature {
 	txFeature* next;
+	int count;
 	char name[1];
 };
 
@@ -110,6 +111,9 @@ static void fxCompareResults(txResult* input, txResult* output);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending, char* message);
 static void fxDefaultFeatures(txPool* pool);
 static int fxFilterResult(txResult* result);
+static void fxFreeFeatures(txPool* pool);
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 static txFeature* fxNewFeature(char* name);
 static txResult* fxNewResult(char* path, char* message);
@@ -117,6 +121,7 @@ static void fxPopResult(txPool* pool);
 static void fxPrintBusy(txPool* pool);
 static void fxPrintClear(txPool* pool);
 static void fxPrintFailure(txResult* output);
+static void fxPrintFeatures(txPool* pool);
 static void fxPrintPath(txResult* result);
 static void fxPrintResult(txPool* pool, txResult* result, int c);
 static void fxPrintSuccess(txResult* input);
@@ -141,20 +146,22 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 12
+#define mxFeaturesCount 14
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
+	"Atomics.pause",
 	"FinalizationRegistry.prototype.cleanupSome",
+ 	"Math.sumPrecise",
+ 	"RegExp.escape",
  	"ShadowRealm",
 	"Temporal",
 	"arbitrary-module-namespace-names",
 	"decorators",
 	"import-assertions",
-	"import-attributes",
-	"iterator-helpers",
-	"json-modules",
-	"regexp-duplicate-named-groups",
-	"set-methods",
+	"iterator-sequencing",
+	"json-parse-with-source",
+	"source-phase-imports",
+	"source-phase-imports-module-source"
 };
 
 int main262(int argc, char* argv[]) 
@@ -372,13 +379,15 @@ int main262(int argc, char* argv[])
 			else
 				fprintf(stderr, "# 0.00%%");
 			fxPrintResult(pool, result, 0);
+			fxPrintFeatures(pool);
 		}
 		if (!(pool->flags & XST_TRACE_FLAG))
 			fxPrintFailure(pool->current);
 		if (*outputPath)
 			fxWriteConfiguration(pool, outputPath);
 	}
-	
+	fxFreeResults(pool);
+	fxFreeFeatures(pool);
 	return error;
 }
 
@@ -536,6 +545,40 @@ int fxFilterResult(txResult* result)
 	return flag;
 }
 
+void fxFreeFeatures(txPool* pool)
+{
+	txFeature** address = &(pool->firstFeature);
+	txFeature* feature;
+	while ((feature = *address)) {
+		*address = feature->next;
+		c_free(feature);
+	}
+}
+
+void fxFreeResult(txResult* result)
+{
+	txResult** address = &(result->first);
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+void fxFreeResults(txPool* pool)
+{
+	txResult** address = &(pool->current);
+	txResult* result;
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
+
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
 {
 	yaml_node_pair_t* pair = mapping->data.mapping.pairs.start;
@@ -557,6 +600,7 @@ txFeature* fxNewFeature(char* name)
 		c_exit(1);
 	}
 	feature->next = NULL;
+	feature->count = 0;
 	c_memcpy(feature->name, name, nameLength + 1);
 	return feature;
 }
@@ -651,6 +695,16 @@ void fxPrintFailure(txResult* output)
 			fxPrintFailure(output);
 			output = output->next;
 		}
+	}
+}
+
+void fxPrintFeatures(txPool* pool)
+{
+	txFeature* feature = pool->firstFeature;
+	while (feature) {
+		if (feature->count)
+			fprintf(stderr, "- %s (%d)\n", feature->name, feature->count);
+		feature = feature->next;
 	}
 }
 
@@ -1088,6 +1142,7 @@ void fxRunContext(txPool* pool, txContext* context)
 					module = 0;
 					pending = 1;
 					snprintf(message, sizeof(message), "feature: %s", (char*)node->data.scalar.value);
+					feature->count++;
 					break;
 				}
 				feature = feature->next;
@@ -1257,7 +1312,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 	xsEndHost(machine);
 	if (machine->exitStatus) {
 		success = 0;
-		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_STACK_OVERFLOW_EXIT)) {
+		if ((machine->exitStatus == XS_NOT_ENOUGH_MEMORY_EXIT) || (machine->exitStatus == XS_JAVASCRIPT_STACK_OVERFLOW_EXIT) || (machine->exitStatus == XS_NATIVE_STACK_OVERFLOW_EXIT)) {
 			if (context->negative) {
 				if (!strcmp("RangeError", (char*)context->negative->data.scalar.value)) {
 					snprintf(message, 1024, "OK");
@@ -1266,8 +1321,7 @@ int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags
 			}
 		}
 		if (!success) {
-			char *why = (machine->exitStatus <= XS_UNHANDLED_REJECTION_EXIT) ? gxAbortStrings[machine->exitStatus] : "unknown";
-			snprintf(message, 1024, "# %s", why);
+			snprintf(message, 1024, "# %s", fxAbortString(machine->exitStatus));
 			success = 0;
 		}
 	}

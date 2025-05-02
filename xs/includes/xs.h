@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1128,6 +1128,7 @@ struct xsJumpRecord {
 	#define xsURIError(...) fxThrowMessage(the, NULL, 0, XS_URI_ERROR, __VA_ARGS__)
 #endif
 
+
 /* Platform */
 
 #ifdef mxDebug
@@ -1213,6 +1214,7 @@ struct xsCreationRecord {
 	xsIntegerValue parserBufferSize;
 	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
+	xsIntegerValue nativeStackSize;
 };
 
 #define xsCreateMachine(_CREATION,_NAME,_CONTEXT) \
@@ -1412,13 +1414,14 @@ typedef unsigned char xsAttribute;
 enum {
 	xsDebuggerExit = 0,
 	xsNotEnoughMemoryExit,
-	xsStackOverflowExit,
+	xsJavaScriptStackOverflowExit,
 	xsFatalCheckExit,
 	xsDeadStripExit,
 	xsUnhandledExceptionExit,
 	xsNoMoreKeysExit,
 	xsTooMuchComputationExit,
 	xsUnhandledRejectionExit,
+	xsNativeStackOverflowExit,
 };
 
 #ifndef __XSALL__
@@ -1591,6 +1594,7 @@ mxImport void fxDeleteRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValu
 mxImport xsBooleanValue fxMatchRegExp(xsMachine* the, xsIntegerValue* code, xsIntegerValue* data, xsStringValue subject, xsIntegerValue offset);
 
 mxImport void fxAbort(xsMachine* the, int status);
+mxImport xsStringValue fxAbortString(int status);
 
 #ifdef __cplusplus
 }

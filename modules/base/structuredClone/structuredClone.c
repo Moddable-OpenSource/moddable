@@ -561,7 +561,7 @@ void fx_structuredCloneSlot(txMachine* the, tx_structuredCloneList* list)
 	case XS_REFERENCE_KIND:
 		fx_structuredCloneInstance(the, list);
 		break;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND:
 		fx_structuredCloneThrow(the, list, "function");
 		break;

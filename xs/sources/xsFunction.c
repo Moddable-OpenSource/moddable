@@ -102,7 +102,7 @@ txBoolean fxIsCallable(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND)
 		return fxIsFunction(the, slot->value.reference);
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	if (slot->kind == XS_HOST_FUNCTION_KIND)
 		return 1;
 #endif

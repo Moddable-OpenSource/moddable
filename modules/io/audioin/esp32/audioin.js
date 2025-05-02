@@ -30,8 +30,9 @@ class AudioIn @ "xs_audioin_destructor" {
 	set format(it) @ "xs_audioin_set_format";
 
 	get bitsPerSample() @ "xs_audioin_get_bitsPerSample";
-	get channels() @ "xs_audioin_get_numChannels";
+	get channels() @ "xs_audioin_get_channels";
 	get sampleRate() @ "xs_audioin_get_sampleRate";
+	get audioType() {return "LPCM"}
 }
 
 export default AudioIn;

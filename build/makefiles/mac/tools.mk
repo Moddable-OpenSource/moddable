@@ -278,12 +278,6 @@ C_DEFINES = \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"mac_xs.h\" \
 	-DXSTOOLS=1 \
-	-DmxRun=1 \
-	-DmxParse=1 \
-	-DmxNoFunctionLength=1 \
-	-DmxNoFunctionName=1 \
-	-DmxHostFunctionPrimitive=1 \
-	-DmxFewGlobalsTable=1 \
 	-DmxStringInfoCacheLength=4 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 ifeq ($(GOAL),debug)

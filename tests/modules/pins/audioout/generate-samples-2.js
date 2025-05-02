@@ -4,7 +4,7 @@ flags: [module]
 ---*/
 
 import {Mixer} from "pins/audioout"
-import {MAUD, SampleFormat} from "./maud.js"
+import {MAUD, SampleFormat} from "./maud_FIXTURE.js"
 
 const bufferSamples = 137;
 const sampleRate = 12000;

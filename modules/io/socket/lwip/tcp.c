@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -107,6 +107,8 @@ void xs_tcp_constructor(xsMachine *the)
 	xsmcVars(1);
 
 	if (create) {
+		CHECK_NETWORK_SAFE();
+
 		format = builtinInitializeFormat(the, format);
 		if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 			xsRangeError("unimplemented");
@@ -404,6 +406,8 @@ void xs_tcp_write(xsMachine *the)
 	tcpTrigger(tcp, kTCPOutput);
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+	
+	xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -668,6 +672,8 @@ void xs_listener_constructor(xsMachine *the)
 	int port = 0;
 	xsSlot *onReadable;
 
+	CHECK_NETWORK_SAFE();
+
 	xsmcVars(1);
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -684,7 +690,7 @@ void xs_listener_constructor(xsMachine *the)
 	if (kIOFormatSocketTCP != builtinInitializeFormat(the, kIOFormatSocketTCP))
 		xsRangeError("unimplemented");
 
-	skt = tcp_new();
+	skt = tcp_new_safe();
 	if (!skt)
 		xsUnknownError("no socket");
 
@@ -705,6 +711,8 @@ void xs_listener_constructor(xsMachine *the)
 		tcp_close_safe(skt);
 		xsRangeError("no memory");
 	}
+
+	modInstrumentationAdjust(NetworkSockets, +1);
 
 	xsmcSetHostData(xsThis, listener);
 	listener->obj = xsThis;
@@ -737,6 +745,8 @@ void xs_listener_destructor_(void *data)
 	}
 
 	c_free(listener);
+
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void xs_listener_close_(xsMachine *the)

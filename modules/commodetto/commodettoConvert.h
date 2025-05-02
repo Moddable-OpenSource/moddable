@@ -26,6 +26,10 @@
 
 #include "commodettoBitmap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*CommodettoConverter)(uint32_t pixelCount, void *src, void *dst, void *clut);
 
 uint8_t CommodettoPixelsConvert(uint32_t pixelCount,
@@ -34,5 +38,8 @@ uint8_t CommodettoPixelsConvert(uint32_t pixelCount,
 
 CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcFormat, CommodettoBitmapFormat dstFormat);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

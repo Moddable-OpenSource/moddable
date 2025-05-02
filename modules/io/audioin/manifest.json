@@ -1,30 +1,30 @@
 {
 	"preload": [
-		"embedded:*"
+		"embedded:io/audio/in"
 	],
 	"platforms": {
 		"mac": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:io/audioin": "./mac/audioin"
+				"embedded:io/audio/in": "./mac/audioin"
 			}
 		},
 		"lin": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:io/audioin": "./lin/audioin"
+				"embedded:io/audio/in": "./lin/audioin"
 			}
 		},
 		"win": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:io/audioin": "./win/audioin"
+				"embedded:io/audio/in": "./win/audioin"
 			}
 		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:io/audioin": "./esp32/audioin"
+				"embedded:io/audio/in": "./esp32/audioin"
 			}
 		},
 		"...": {

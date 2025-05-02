@@ -45,13 +45,8 @@
 #define ICACHE_FLASH1_ATTR __attribute__((section(".flash.xsro")))
 #define ICACHE_RAM_ATTR
 
-#define mxRegExp 1
 //#define mxReport 1
-#define mxNoFunctionLength 1
-#define mxNoFunctionName 1
-#define mxHostFunctionPrimitive 1
 //#define mxDebug 1
-#define mxFewGlobalsTable 1
 #define mxNoConsole 1
 #define mxMisalignedSettersCrash 1
 

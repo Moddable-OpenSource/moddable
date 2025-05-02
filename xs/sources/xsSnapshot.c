@@ -90,7 +90,32 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxUint8ArrayBase64Additions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions)
+#if mxModuleStuff
+	#define mxModuleStuffAdditions 1
+#else
+	#define mxModuleStuffAdditions 0
+#endif
+#if mxECMAScript2025
+	#define mxECMAScript2025Additions 30
+#else
+	#define mxECMAScript2025Additions 0
+#endif
+#if mxFloat16
+	#define mxFloat16Additions 3
+#else
+	#define mxFloat16Additions 0
+#endif
+#if mxImmutableArrayBuffers
+	#define mxImmutableArrayBuffersAdditions 2
+#else
+	#define mxImmutableArrayBuffersAdditions 0
+#endif
+#if mxErrorIsError
+	#define mxErrorIsErrorAdditions 1
+#else
+	#define mxErrorIsErrorAdditions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions  + mxErrorIsErrorAdditions )
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -152,7 +177,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncGenerator_prototype_throw,
 	fx_AsyncGenerator,
 	fx_AsyncGeneratorFunction,
-	fx_AsyncIterator_asyncIterator,
+	fx_AsyncIterator_prototype_asyncIterator,
 	fx_Atomics_add,
 	fx_Atomics_and,
 	fx_Atomics_compareExchange,
@@ -256,7 +281,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_decodeURIComponent,
 	fx_encodeURI,
 	fx_encodeURIComponent,
-	fx_Enumerator_next,
+	fx_Enumerator_prototype_next,
 	fx_Enumerator,
 	fx_Error_prototype_get_stack,
 	fx_Error_toString,
@@ -282,7 +307,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_GeneratorFunction,
 	fx_isFinite,
 	fx_isNaN,
-	fx_Iterator_iterator,
+	fx_Iterator_prototype_iterator,
 	fx_JSON_parse,
 	fx_JSON_stringify,
 	fx_Map_prototype_clear,
@@ -610,7 +635,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncDisposableStack_prototype_disposeAsync,
 	fx_AsyncDisposableStack_prototype_move,
 	fx_AsyncDisposableStack_prototype_use,
-	fx_AsyncIterator_asyncDispose,
+	fx_AsyncIterator_prototype_asyncDispose,
 	fx_DisposableStack,
 	fx_DisposableStack_prototype_get_disposed,
 	fx_DisposableStack_prototype_adopt,
@@ -618,7 +643,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_DisposableStack_prototype_dispose,
 	fx_DisposableStack_prototype_move,
 	fx_DisposableStack_prototype_use,
-	fx_Iterator_dispose,
+	fx_Iterator_prototype_dispose,
 	fx_SuppressedError,
 #endif
 #if mxECMAScript2024
@@ -637,7 +662,54 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Uint8Array_prototype_setFromBase64,
 	fx_Uint8Array_prototype_setFromHex,
 	fx_Uint8Array_prototype_toBase64,
-	fx_Uint8Array_prototype_toHex
+	fx_Uint8Array_prototype_toHex,
+#endif
+#if mxModuleStuff
+	fx_ModuleStuff,
+#endif
+#if mxECMAScript2025
+	fx_Error_prototype_set_stack,
+	fx_Iterator,
+	fx_Iterator_prototype_constructor_get,
+	fx_Iterator_prototype_constructor_set,
+	fx_Iterator_prototype_drop,
+	fx_Iterator_prototype_every,
+	fx_Iterator_prototype_filter,
+	fx_Iterator_prototype_find,
+	fx_Iterator_prototype_flatMap,
+	fx_Iterator_prototype_forEach,
+	fx_Iterator_prototype_map,
+	fx_Iterator_prototype_reduce,
+	fx_Iterator_prototype_some,
+	fx_Iterator_prototype_take,
+	fx_Iterator_prototype_toArray,
+	fx_Iterator_prototype_toStringTag_get,
+	fx_Iterator_prototype_toStringTag_set,
+	fx_IteratorHelper_prototype_next,
+	fx_IteratorHelper_prototype_return,
+	fx_IteratorWrapper_prototype_next,
+	fx_IteratorWrapper_prototype_return,
+	fx_ModuleSource_prototype_get_options,
+	fx_Promise_try,
+	fx_Set_prototype_difference,
+	fx_Set_prototype_intersection,
+	fx_Set_prototype_isDisjointFrom,
+	fx_Set_prototype_isSubsetOf,
+	fx_Set_prototype_isSupersetOf,
+	fx_Set_prototype_symmetricDifference,
+	fx_Set_prototype_union,
+#endif
+#if mxFloat16
+	fx_DataView_prototype_getFloat16,
+	fx_DataView_prototype_setFloat16,
+	fx_Math_f16round,
+#endif
+#if mxImmutableArrayBuffers
+	fx_ArrayBuffer_prototype_get_immutable,
+	fx_ArrayBuffer_prototype_transferToImmutable,
+#endif
+#if mxErrorIsError
+	fx_Error_isError,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

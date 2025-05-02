@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -548,7 +548,6 @@ C_DEFINES = \
 	$(NRF_C_DEFINES) \
 	$(NET_CONFIG_FLAGS) \
 	-DmxUseDefaultSharedChunks=1 \
-	-DmxRun=1 \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION) \
 	-DMODGCC=1 \
@@ -987,3 +986,7 @@ $(TMP_DIR)\mc.xs.c: $(MODULES) $(MANIFEST)
 $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
+
+$(TMP_DIR)\xsmain.c.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
+	@echo # application: $(@F)
+	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@

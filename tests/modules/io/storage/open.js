@@ -3,7 +3,7 @@ description:
 flags: [module]
 ---*/
 
-import storage from "./storage-fixture.js";
+import storage from "./storage_FIXTURE.js";
 
 const path = "test";
 let store = storage.open({path}); 
@@ -14,7 +14,7 @@ let b = storage.open({path});
 store.close();
 b.close();
 
-assert.throws(SyntaxError, () => storage.open(), "no options object");
+assert.throws(TypeError, () => storage.open(), "no options object");
 assert.throws(Error, () => storage.open({}), "no path");
 
 store = storage.open({path, mode: "r"}); 
@@ -36,7 +36,3 @@ store = storage.open({path, format: "string"});
 store.close();
 
 assert.throws(RangeError, () => storage.open({path, format: "xyzzy"}), "invalid format");
-
-store = storage.open({path}); 
-assert.throws(Error, () => store.open({path}), "recursive open unsupported");
-store.close();

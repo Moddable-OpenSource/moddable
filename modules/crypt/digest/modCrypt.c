@@ -141,7 +141,7 @@ typedef struct xsCryptDigestRecord xsCryptDigestRecord;
 typedef xsCryptDigestRecord *xsCryptDigest;
 
 struct xsCryptDigestRecord {
-#if mxNoFunctionLength
+#ifndef XS_NO_MODULE
 	CryptHandlePart;
 #endif
 	uint32_t		digest;
@@ -163,7 +163,7 @@ void xs_crypt_Digest(xsMachine *the)
 		xsUnknownError("crypt: unsupported digest");
 
 	cd = xsmcSetHostChunk(xsThis, NULL, sizeof(xsCryptDigestRecord) + digest->ctxSize);
-#if mxNoFunctionLength
+#ifndef XS_NO_MODULE
 	cd->reference = xsmcToReference(xsThis);
 #endif
 	cd->digest = digest - gDigests;
@@ -251,7 +251,7 @@ void xs_crypt_Digest_get_outputSize(xsMachine *the)
 	xsResult = xsInteger(gDigests[cd->digest].digestSize);
 }
 
-#if !mxNoFunctionLength
+#ifdef XS_NO_MODULE
 
 void xs_cryptdigest(xsMachine *the)
 {

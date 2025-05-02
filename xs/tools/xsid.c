@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -83,8 +83,10 @@ void fxAbort(void* console, int status)
 {
 	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
 		fprintf(stderr, "# error: memory full!\n");
-	else if (XS_STACK_OVERFLOW_EXIT == status)
-		fprintf(stderr, "# error: stack overflow!\n");
+	else if (XS_JAVASCRIPT_STACK_OVERFLOW_EXIT == status)
+		fprintf(stderr, "# error: JavaScript stack overflow!\n");
+	else if (XS_NATIVE_STACK_OVERFLOW_EXIT == status)
+		fprintf(stderr, "# error: native stack overflow!\n");
 	c_exit(1);
 }
 

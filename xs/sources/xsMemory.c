@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -185,6 +185,7 @@ void fxAllocate(txMachine* the, txCreation* theCreation)
 	the->firstHeap = C_NULL;
 
 #if mxNoChunks
+	the->maximumChunksSize = theCreation->initialChunkSize;
 #else
 	fxGrowChunks(the, theCreation->initialChunkSize);
 #endif
@@ -272,7 +273,7 @@ void fxCheckCStack(txMachine* the)
     char x;
     char *stack = &x;
 	if (stack <= the->stackLimit) {
-		fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+		fxAbort(the, XS_NATIVE_STACK_OVERFLOW_EXIT);
 	}
 }
 
@@ -447,6 +448,11 @@ void* fxFindChunk(txMachine* the, txSize size, txBoolean *once)
 	}
 #endif
 #if mxNoChunks
+	if ((the->currentChunksSize + size > the->maximumChunksSize)) {
+		fxCollect(the, XS_COMPACT_FLAG | XS_ORGANIC_FLAG);
+		if (the->collectFlag & XS_TRASHING_CHUNKS_FLAG)
+			the->maximumChunksSize += the->minimumChunksSize;
+	}
 	chunk = c_malloc_noforcefail(size);
 	if (!chunk)
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);

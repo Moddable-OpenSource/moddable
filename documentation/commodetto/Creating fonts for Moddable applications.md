@@ -1,6 +1,6 @@
 # Creating fonts for applications built on the Moddable SDK
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: March 21, 2024
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: March 3, 2025
 
 Moddable uses the [BMFont](http://www.angelcode.com/products/bmfont/doc/file_format.html) format for fonts
 
@@ -17,6 +17,7 @@ Fonts are generated in black. This allows the Moddable SDK build tools to create
 
 There are many tools available for converting TrueType and OpenType fonts on the BMFont format. The Moddable team often uses [Glyph Designer](https://71squared.com/glyphdesigner) (macOS). Another good options is the [fontbm](https://github.com/vladimirgamalyan/fontbm) command line tool by Vladimir Gamalyan. Instructions for using both are provided below.
 
+<a id="glyph-designer"></a>
 ## Glyph Designer instructions
 
 Select font and weight. Set font color to black and no outline.
@@ -31,9 +32,10 @@ Export .png glyph and .fnt font metrics files in the BMFont Binary format.
 
 ![](../assets/create-fonts/screen03.png)
 
+<a id="fontbm"></a>
 ## fontbm instructions
 
-To use fontbm, you must first install it on your system. For Windows users, a binary is [available for download](https://github.com/vladimirgamalyan/fontbm/releases/latest). Instructions are provided for [macOS](https://github.com/vladimirgamalyan/fontbm#building-macos) and [Linux](https://github.com/vladimirgamalyan/fontbm#building-linux) users must currently build it from source code following the instructions.
+To use fontbm, you must first install it on your system. Precompiled binaries are avaiable as part of the Moddable SDK [releases](https://github.com/moddable-OpenSource/moddable/releases/latest) on GitHub. Alternatively, instructions to build it yourself are provided for [macOS](https://github.com/vladimirgamalyan/fontbm#building-macos), [Linux](https://github.com/vladimirgamalyan/fontbm#building-linux), and [Windows](https://github.com/vladimirgamalyan/fontbm?tab=readme-ov-file#building-windows). If you are using xs-dev to manage your Moddable SDK installation, it automatically installs fontbm from the Moddable SDK binaries.
 
 Once you have fontbm, you may use it from the command line to generate the .fnt and .png files needed to add fonts to the Moddable SDK.
 

@@ -253,7 +253,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 	case XS_REFERENCE_KIND:
 		anInstance = theSlot->value.reference;
 		break;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		const txHostFunctionBuilder* builder = theSlot->value.hostFunction.builder;
 		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id, theSlot->value.hostFunction.profileID);
@@ -1258,8 +1258,11 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 			if (result->ID == id) {
 				if (result->kind == XS_CLOSURE_KIND) {
 					result = result->value.closure;
-					if (result->flag & XS_DONT_SET_FLAG)
+					if (result->flag & XS_DONT_SET_FLAG) {
+						if (result->flag & XS_DONT_ENUM_FLAG)
+							return C_NULL;
 						mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+					}
 #if mxAliasInstance
 					else {
 						txID alias = result->ID;
