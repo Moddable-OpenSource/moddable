@@ -235,7 +235,7 @@ class WebSocketClient {
 		if (options.mask) {
 			const mask = options.mask;
 			Logical.xor(data, mask, count);
-			if (this.#data) { 
+			if (this.#data) {
 				switch (count & 3) {
 					case 1:
 						options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
@@ -564,7 +564,7 @@ class WebSocketClient {
 				break;
 		}
 	}
-	#onError(error) {
+	#onError() {
 		this.close();
 		if (this.#options.close)
 			this.#options.onClose?.call(this);
