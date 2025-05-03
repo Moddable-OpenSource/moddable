@@ -40,7 +40,6 @@ struct Context2DStoredState {
 typedef struct Context2DStoredState Context2DStoredState;
 
 struct PebbleGraphicsContextRecord {
-	FrameBuffer		fb;
 	GContext			*ctx;
 
 	uint8_t			redrawPending;
@@ -57,8 +56,6 @@ struct PebbleGraphicsContextRecord {
 
 typedef struct PebbleGraphicsContextRecord PebbleGraphicsContextRecord;
 typedef struct PebbleGraphicsContextRecord *PebbleGraphicsContext;
-
-extern FrameBuffer *PebbleGraphicsGetFrameBuffer(xsMachine *the, xsSlot *context);
 
 extern Fixed_S16_3 prv_fixed_s3_from_double(double d);
 

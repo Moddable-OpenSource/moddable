@@ -6,6 +6,8 @@
 #include "font_resource_keys.auto.h"
 #include "mc.xs.h"      // for xsID_ values
 #include "system/logging.h"
+#include "process_state/app_state/app_state.h"
+
 
 /*
 	Context
@@ -32,15 +34,7 @@ void pebble_graphics_context(xsMachine *the)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, pgr);
 
-	// GSize dimensions = {.w = DISP_COLS, .h = DISP_ROWS}; 
-	// framebuffer_init(&pgr->fb, &dimensions);
-	// framebuffer_clear(&pgr->fb);
-
-	// graphics_context_init(&pgr->ctx, &pgr->fb, GContextInitializationMode_App);
-
-	extern GContext* app_state_get_graphics_context(void);		//@@
 	pgr->ctx = app_state_get_graphics_context();
-	PBL_LOG(LOG_LEVEL_ALWAYS, "pebble_graphics_context init: %p", pgr->ctx);
 }
 
 Fixed_S16_3 prv_fixed_s3_from_double(double d)
@@ -378,8 +372,8 @@ void pebble_graphics_context_set_textAlign(xsMachine *the)
 
 void pebble_graphics_context_get_dirty(xsMachine *the)
 {
-	PebbleGraphicsContext pgr = xsmcGetHostData(xsThis);
-	xsmcSetBoolean(xsResult, framebuffer_is_dirty(&pgr->fb));
+	// PebbleGraphicsContext pgr = xsmcGetHostData(xsThis);
+	xsUnknownError("not implemented");
 }
 
 void pebble_graphics_context_set_dirty(xsMachine *the)
@@ -387,12 +381,6 @@ void pebble_graphics_context_set_dirty(xsMachine *the)
 	/* PebbleGraphicsContext pgr = */ xsmcGetHostData(xsThis);
 	Window *w = app_window_stack_get_top_window();
 	layer_mark_dirty(&w->layer);
-}
-
-FrameBuffer *PebbleGraphicsGetFrameBuffer(xsMachine *the, xsSlot *context)
-{
-	PebbleGraphicsContext pgr = xsmcGetHostData(*context);
-	return pgr ? &pgr->fb : C_NULL;
 }
 
 
