@@ -3,7 +3,7 @@ declare module "embedded:network/http/server/options/webpage" {
     import type { Buffer } from "embedded:io/_common";
 
     export interface HTTPServerRouteWebPage extends HTTPServerRoute {
-        msg: Buffer | string;
+        data: Buffer | string;
         contentType?: string;
         headers?: Map<string, string | string[]>;
         status?: number;

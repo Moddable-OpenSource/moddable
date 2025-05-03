@@ -35,7 +35,8 @@ declare module "embedded:network/http/server" {
   
     export default class HTTPServer {
       constructor(options: HTTPServerOptions);
-      close(): void
+      close(): void;
+	  get port(): number;
     }
   }
   

@@ -46,6 +46,8 @@ declare module "embedded:network/websocket/client" {
 		close(): void;
 		read(count?: number): ArrayBuffer | undefined;
 		write(message: Buffer, options?: WebSocketClientWriteOptions): number;
+		get format(): "number" | "buffer";
+		set format(value: "number" | "buffer");
 
 		static readonly text: 1;
 		static readonly binary: 2;

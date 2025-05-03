@@ -44,7 +44,7 @@ export default {
 		}
 		else
 			throw new Error("unsupported data type");
-		response.headers.set("content-type", route.contentType ?? this.route.contentType ?? "text/html");
+		response.headers.set("content-type", route.contentType ?? "text/html");
 		response.status = this.route.status ?? 200;
 		this.respond(response);
 	},
