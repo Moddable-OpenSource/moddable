@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -90,7 +90,7 @@ router.set("/sse.html", {
 	data: ArrayBuffer.fromString(`
 <script>
 console.log("starting EventSource");
-var es = new EventSource("http://localhost/sse");
+var es = new EventSource("http://localhost:${server.port}/sse");
 es.onmessage = function (event) {
   console.log(event.data);
 };
