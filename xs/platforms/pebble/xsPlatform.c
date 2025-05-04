@@ -50,7 +50,7 @@
 	#include "modPreference.h"
 #endif
 
-// #include "nrf_ficr.h"
+#include "system/logging.h"
 
 #define XSDEBUG_NONE	0,0,0,0
 #define XSDEBUG_SERIAL	127,0,0,7
@@ -198,82 +198,17 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
     }
 }
 
-const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
-
 void fxAbort(txMachine* the, int status)
 {
-#if MODDEF_XS_TEST
-	if (XS_DEBUGGER_EXIT == status) {
-		extern txMachine *gThe;
-		if (gThe == the) {
-			gThe = NULL;		// soft reset
-			return;
-		}
+	char *msg = (char*)fxAbortString(status);
+	char *reason = "";
+	if (XS_UNHANDLED_EXCEPTION_EXIT == status) {
+		mxPush(mxException);
+		mxGetID(mxID(_message));
+		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
+			reason = the->stack->value.string;
 	}
-
-	if (XS_NOT_ENOUGH_MEMORY_EXIT == status)
-		mxUnknownError("fxAbort: out of memory");
-#endif
-
-#ifdef mxDebug
-	if ((XS_DEAD_STRIP_EXIT == status) && the->debugEval)
-		mxUnknownError("dead strip");
-#endif
-
-#if defined(mxDebug) || defined(mxInstrument) || defined(MODDEF_XS_ABORTHOOK)
-	const char *msg = (status < XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
-
-	#if MODDEF_XS_ABORTHOOK
-		if ((XS_JAVASCRIPT_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
-			xsBooleanValue ignore = false;
-
-			fxBeginHost(the);
-			{
-				mxPush(mxException);
-				txSlot *exception = the->stack;
-				mxException = xsUndefined;
-				mxTry(the) {
-					txID abortID = fxFindName(the, "abort");
-					mxOverflow(-8);
-					mxPush(mxGlobal);
-					if (fxHasID(the, abortID)) {
-						mxPush(mxGlobal);
-						fxCallID(the, abortID);
-						mxPushStringC((char *)msg);
-						mxPushSlot(exception);
-						fxRunCount(the, 2);
-						ignore = (XS_BOOLEAN_KIND == the->stack->kind) && !the->stack->value.boolean;
-						mxPop();
-					}
-				}
-				mxCatch(the) {
-				}
-			}
-			fxEndHost(the);
-			if (ignore)
-				return;
-		}
-	#endif
-
-	fxReport(the, "XS abort: %s\n", msg);
-	#if !defined(MODDEF_XS_DEBUGABORT) || MODDEF_XS_DEBUGABORT
-		#if defined(mxDebug) && !MODDEF_XS_TEXT
-			if ((char *)&the <= the->stackLimit)
-				the->stackLimit = NULL;
-			fxDebugger(the, (char *)__FILE__, __LINE__);
-		#endif
-	#endif
-#endif
+	PBL_LOG(LOG_LEVEL_ALWAYS, "fxAbort %s: %s", msg, reason);
 
 	c_exit(status);
 }
