@@ -736,7 +736,7 @@ $(LIB_DIR)\buildinfo.o: $(TMP_DIR)\mc.xs.c $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\
 	@echo # buildinfo
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
 
 $(LIB_DIR)\moddable_startup_nrf52840.o: $(BUILD_DIR)\devices\nrf52\xsProj\moddable_startup_nrf52840.S
 	@echo # asm $(@F)
@@ -987,6 +987,6 @@ $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
 
-$(TMP_DIR)\xsmain.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
-	@echo # application: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+# $(TMP_DIR)\xsmain.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
+# 	@echo # application: $(@F)
+# 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $(TMP_DIR)\xsmain.o
