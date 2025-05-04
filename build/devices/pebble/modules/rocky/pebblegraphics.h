@@ -25,7 +25,7 @@ eral Public License
 #include "applib/fonts/fonts.h"
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/graphics.h"
-#include "applib/graphics/framebuffer.h"
+#include "applib/ui/app_window_stack.h"
 #include "applib/rockyjs/api/rocky_api_graphics_color.h"
 #include "applib/rockyjs/api/rocky_api_graphics_path2d.h"
 #include "applib/rockyjs/api/rocky_api_graphics_text.h"
@@ -41,6 +41,10 @@ typedef struct Context2DStoredState Context2DStoredState;
 
 struct PebbleGraphicsContextRecord {
 	GContext			*ctx;
+	Window 			*w;
+	xsMachine 		*the;
+	xsSlot			obj;
+	xsSlot			*onUpdate;
 
 	uint8_t			redrawPending;
 

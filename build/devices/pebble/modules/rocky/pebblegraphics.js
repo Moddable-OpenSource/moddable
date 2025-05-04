@@ -1,7 +1,7 @@
 import Timer from "timer";
 
 class Context @ "pebble_graphics_context_destructor" {
-	constructor() @ "pebble_graphics_context"
+	constructor(options) @ "pebble_graphics_context"
 	get fillStyle() @ "pebble_graphics_context_get_fillStyle"
 	set fillStyle() @ "pebble_graphics_context_set_fillStyle"
 	get strokeStyle() @ "pebble_graphics_context_get_strokeStyle"
@@ -58,17 +58,18 @@ export class Rocky {
 		"daychange"
 	]);
 	#events = new Map;
-	#ctx = new Context;
+	#ctx = new Context({
+		onUpdate: () => {
+			this.do("draw", {context: this.#ctx});				
+		}
+	});
 	#timeChange;
 
 	constructor(options) {
-		this.#ctx.canvas = new Canvas;		// defineprop
-		this.#ctx.canvas.context = this;	// defineprop
+		this.#ctx.canvas = new Canvas;
+		this.#ctx.canvas.context = this;
 
 		this.#ctx.dirty = true;
-	}
-	update() {		//@@ hack for native code to call without context
-		this.do("draw", {context: this.#ctx});
 	}
 	on(event, callback) {
 		if (!Rocky.events.includes(event))

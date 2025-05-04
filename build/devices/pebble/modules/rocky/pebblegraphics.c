@@ -1,10 +1,12 @@
 #include "pebblegraphics.h"
+#include "mc.xs.h"      // for xsID_ values
+#include "builtinCommon.h"
+
 #include "applib/graphics/gcolor_definitions.h"
 #include "applib/ui/layer.h"
 #include "applib/ui/window.h"
 #include "applib/ui/app_window_stack.h"
 #include "font_resource_keys.auto.h"
-#include "mc.xs.h"      // for xsID_ values
 #include "system/logging.h"
 #include "process_state/app_state/app_state.h"
 
@@ -27,6 +29,30 @@ void pebble_graphics_context_destructor(void *data)
 {	
 }
 
+static void pebble_graphics_context_mark(xsMachine *the, void *it, xsMarkRoot markRoot)
+{
+	PebbleGraphicsContext pgr = it;
+	if (pgr->onUpdate)
+		(*markRoot)(the, pgr->onUpdate);
+}
+
+static const xsHostHooks xsPebbleGraphicsContextHooks = {
+	pebble_graphics_context_destructor,
+	pebble_graphics_context_mark,
+	NULL
+};
+
+//@@ must be a better way to get context here
+static void doUpdate(Layer *layer, GContext *ctx)
+{
+	Window *w = app_window_stack_get_top_window();
+	PebbleGraphicsContext pgr = window_get_user_data(w);
+
+	xsBeginHost(pgr->the);
+	xsCallFunction0(xsReference(pgr->onUpdate), pgr->obj);
+	xsEndHost(pgr->the);
+}
+
 void pebble_graphics_context(xsMachine *the)
 {
 	PebbleGraphicsContext pgr = c_calloc(1, sizeof(PebbleGraphicsContextRecord));
@@ -34,7 +60,21 @@ void pebble_graphics_context(xsMachine *the)
 		xsUnknownError("no memory");
 	xsmcSetHostData(xsThis, pgr);
 
+	pgr->the = the;
+	pgr->obj = xsThis;
+
 	pgr->ctx = app_state_get_graphics_context();
+	pgr->w = app_window_stack_get_top_window();
+	window_set_user_data(pgr->w, pgr);
+
+	xsSetHostHooks(xsThis, &xsPebbleGraphicsContextHooks);
+
+	if (xsmcHas(xsArg(0), xsID_onUpdate)) {
+		pgr->onUpdate = builtinGetCallback(the, xsID_onUpdate);
+
+		Layer *layer = window_get_root_layer(pgr->w);
+		layer_set_update_proc(layer, doUpdate);
+	}
 }
 
 Fixed_S16_3 prv_fixed_s3_from_double(double d)
@@ -378,11 +418,9 @@ void pebble_graphics_context_get_dirty(xsMachine *the)
 
 void pebble_graphics_context_set_dirty(xsMachine *the)
 {
-	/* PebbleGraphicsContext pgr = */ xsmcGetHostData(xsThis);
-	Window *w = app_window_stack_get_top_window();
-	layer_mark_dirty(&w->layer);
+	PebbleGraphicsContext pgr = xsmcGetHostData(xsThis);
+	layer_mark_dirty(&pgr->w->layer);
 }
-
 
 void pebble_graphics_canvas_destructor(void *data)
 {
