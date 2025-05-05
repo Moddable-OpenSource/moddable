@@ -80,6 +80,7 @@ def build(bld):
 		'moddable/xs/tools/fdlibm/s_tanh.c',
 		'moddable/modules/io/common/builtinCommon.c',
 		'moddable/modules/files/resource/Resource.c',
+		'moddable/modules/base/time/pebble/modTime.c',
 		'moddable/modules/base/timer/modTimer.c',
 		'moddable/modules/base/timer/pebble/timer.c',
 		'moddable/modules/io/storage/pebble/storage-pebble.c',

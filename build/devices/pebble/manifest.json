@@ -5,11 +5,14 @@
 	],
 	"modules": {
 		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/pebble/*",
 			"$(MODULES)/base/timer/*",
 			"$(MODULES)/base/timer/pebble/*"
 		]
 	},
 	"preload": [
+		"time",
 		"timer"
 	],
 	"creation": {

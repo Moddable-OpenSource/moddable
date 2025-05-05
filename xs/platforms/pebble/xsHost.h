@@ -45,6 +45,8 @@
 #include "util/time/time.h"
 #include "applib/pbl_std/pbl_std.h"
 #include "system/passert.h"
+#include "drivers/rtc.h"
+
 
 //#include "FreeRTOS.h"
 //#include "freertos_types.h"
@@ -189,10 +191,9 @@ uint8_t nrf52_softdevice_enabled(void);
 /*
     timer
 */
-extern uint32_t nrf52_milliseconds();
 
-#define modMilliseconds() ((uint32_t)(nrf52_milliseconds()))
-#define modMicroseconds() ((uint32_t)(nrf52_milliseconds() * 1000))
+#define modMilliseconds() ((uint32_t)(rtc_get_ticks()))
+#define modMicroseconds() ((uint32_t)(rtc_get_ticks() * 1000))
 
 #define modDelayMilliseconds(ms) vTaskDelay(ms)
 #define modDelayMicroseconds(us) vTaskDelay(((us) + 500) / 1000)
