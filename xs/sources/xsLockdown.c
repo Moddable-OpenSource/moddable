@@ -719,16 +719,23 @@ void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, t
 	else if (id != XS_NO_ID) {
 		txBoolean adorn;
 		txString string = fxGetKeyString(the, id, &adorn);
-		c_snprintf(the->nameBuffer, sizeof(the->nameBuffer), "%s", string);
+		txString buffer = the->nameBuffer;
+		size_t count = c_snprintf(buffer, sizeof(the->nameBuffer), "%s", string);
+		if (count >= sizeof(the->nameBuffer)) {
+			buffer = c_malloc(count + 1);
+			c_memcpy(buffer, string, count + 1);
+		}
 		if (adorn) {
 			fxConcatStringC(the, slot, "[Symbol(");
-			fxConcatStringC(the, slot, the->nameBuffer);
+			fxConcatStringC(the, slot, buffer);
 			fxConcatStringC(the, slot, ")]");
 		}
 		else {
 			fxConcatStringC(the, slot, ".");
-			fxConcatStringC(the, slot, the->nameBuffer);
+			fxConcatStringC(the, slot, buffer);
 		}
+		if (buffer != the->nameBuffer)
+			c_free(buffer);
 	}
 	else {
 		fxNumberToString(the, index, the->nameBuffer, sizeof(the->nameBuffer), 0, 0);
