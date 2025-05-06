@@ -24,6 +24,7 @@ DEBUGGER_SPEED ?= 460800
 
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+XSBUG_LOG_PORT ?= 5002
 
 USE_USB ?= 0
 # USE_USB = 1 - TinyUSB - uses a custom VID/PID
@@ -514,7 +515,7 @@ ifeq ($(DEBUG),1)
 
 			ifeq ("$(XSBUG_LAUNCH)","log")
 				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE); echo ; \
-			 		XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
+			 		XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
 					cd $(MODDABLE)/tools/xsbug-log && node xsbug-log 	\
 					 serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif

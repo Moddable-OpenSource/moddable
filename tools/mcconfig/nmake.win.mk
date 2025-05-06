@@ -41,13 +41,16 @@ START_XSBUG =
 !IFNDEF XSBUG_PORT
 XSBUG_PORT = 5002
 !ENDIF
+!IFNDEF XSBUG_LOG_PORT
+XSBUG_LOG_PORT = 5002
+!ENDIF
 !IFNDEF XSBUG_HOST
 XSBUG_HOST = localhost
 !ENDIF
 
 !IF "$(XSBUG_LOG)"=="1"
 !IF "$(XSBUG_HOST)"=="localhost"
-START_COMMAND = cmd /c "set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll"
+START_COMMAND = cmd /c "set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll"
 !ELSE
 START_COMMAND = cmd /c "set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && start $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)\mc.dll"
 !ENDIF

@@ -23,7 +23,7 @@ KILL_SIMULATOR = osascript -e 'quit app "mcsim"'
 ifeq ($(DEBUG),1)
 	START_XSBUG = 
 	ifeq ("$(XSBUG_LAUNCH)","log")
-		START_SIMULATOR = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+		START_SIMULATOR = export XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log open -a $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 	else ifeq ("$(XSBUG_LAUNCH)","app")
 		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 	endif	
@@ -129,6 +129,7 @@ VPATH += $(XS_DIRECTORIES)
 
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+XSBUG_LOG_PORT ?= 5002
 
 .PHONY: all	build clean xsbug
 	

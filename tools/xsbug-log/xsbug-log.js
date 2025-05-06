@@ -39,7 +39,7 @@ catch (e) {
 	process.exit();
 }
 
-const portIn = process.env.XSBUG_PORT ?? 5002;
+const portIn = process.env.XSBUG_LOG_PORT ?? 5002;
 let connections = 0;
 let autoexit = false;
 
