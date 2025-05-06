@@ -645,7 +645,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (tool.windows)
 				this.line("TSCONFIG:");
 			else
-				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
+				this.line(temporaries.join(" ").replaceAll("#", tool.escapedHash), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
