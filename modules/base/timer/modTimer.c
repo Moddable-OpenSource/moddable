@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -126,14 +126,14 @@ void xs_timer_schedule(xsMachine *the)
 
 void xs_timer_clear(xsMachine *the)
 {
-	modTimerScript ts;
-	modTimer timer;
-
-	if (xsReferenceType != xsmcTypeOf(xsArg(0)))
+	if (0 == xsmcArgc)
 		return;
-	
-	timer = xsmcGetHostDataValidate(xsArg(0), (void *)&modTimerHooks);
-	ts = (modTimerScript)modTimerGetRefcon(timer);
+
+	modTimer timer = xsGetHostDataIf(xsArg(0));
+	if ((C_NULL == timer) || (xsGetHostHooksIf(xsArg(0)) != &modTimerHooks))
+		return;
+
+	modTimerScript ts = (modTimerScript)modTimerGetRefcon(timer);
 	xsForget(ts->self);
 	ts->callback = NULL;
 	modTimerRemove(timer);
