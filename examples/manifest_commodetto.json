@@ -46,7 +46,12 @@
 				"setup/commodetto": "$(BUILD)/devices/nrf52/setup/commodetto"
 			},
 			"preload": "setup/commodetto"
+		},
+		"pebble": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/pebble/setup/commodetto"
+			},
+			"preload": "setup/commodetto"
 		}
-
 	}
 }
