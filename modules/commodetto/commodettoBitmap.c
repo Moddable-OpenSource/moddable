@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -74,7 +74,7 @@ void xs_Bitmap(xsMachine *the)
 	if (((xsUnsignedValue)byteLength) > dataSize)
 		xsRangeError("invalid byteLength");
 
-	cb.byteLength = byteLength ?  byteLength : dataSize;
+	cb.byteLength = byteLength ?  (xsUnsignedValue)byteLength : dataSize;
 
 	if (kCommodettoBitmapPacked & cb.format)
 		neededSize = 0;
