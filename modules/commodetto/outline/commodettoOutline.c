@@ -418,12 +418,11 @@ void xs_outline_stroke(xsMachine* the)
 	struct FT_Outline_ outline;
 	xsVars(2);
 
-	width = (argc > 1) ? xsToNumber(xsArg(1)) : 1;
+	width = (argc > 1) ? xs_argToFixed(the, argc, 1, "weight") : 1;
 	cap = (argc > 2) ? xsToInteger(xsArg(2)) : FT_STROKER_LINECAP_ROUND;
 	join = (argc > 3) ? xsToInteger(xsArg(3)) : FT_STROKER_LINEJOIN_ROUND;
 	miterlimit = (argc > 4) ? xsToNumber(xsArg(4)) : width;
 	
-	width = width * 64;
 	miterlimit = miterlimit * 65536;
 
 	memory.alloc = ftAlloc;
