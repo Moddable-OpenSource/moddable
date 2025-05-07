@@ -1064,6 +1064,16 @@ typedef struct {
 	xsNumberValue number;
 } SVGPathParserRecord, *SVGPathParser;
 
+static void xs_outline_SVGPath_close(xsMachine* the)
+{
+	void *data = xsToArrayBuffer(xsVar(0));
+	xsIntegerValue byteLength = xsGetArrayBufferLength(xsVar(0));
+	byteLength = *(uint32_t *)(byteLength - sizeof(uint32_t) + (uintptr_t)data);
+	xsSetArrayBufferLength(xsVar(0), byteLength + sizeof(uint32_t));
+	data = xsToArrayBuffer(xsVar(0));
+	*(uint32_t *)(byteLength + (uintptr_t)data) = byteLength;
+}
+
 static void xs_outline_SVGPath_next(xsMachine* the, SVGPathParser parser)
 {
 	char buffer[32];
@@ -1154,6 +1164,18 @@ static xsNumberValue xs_outline_SVGPath_number(xsMachine* the, SVGPathParser par
 	return result;
 }
 
+static void xs_outline_SVGPath_open(xsMachine* the, xsIntegerValue x, xsIntegerValue y)
+{
+	if (xsTest(xsVar(0)))
+		xs_outline_SVGPath_close(the);
+	xsVar(0) = xsArrayBufferResizable(NULL, sizeof(uint32_t), 0x7FFFFFFF);
+	xsCall1(xsThis, xsID_push, xsVar(0));
+	int32_t *subpath = getSubpathSpace(the, 3);
+	*subpath++ = 1;
+	*subpath++ = x;
+	*subpath++ = y;
+}
+
 static xsBooleanValue xs_outline_SVGPath_test(xsMachine* the, SVGPathParser parser)
 {
 	xsBooleanValue result = 0;
@@ -1178,15 +1200,22 @@ void xs_outline_SVGPath(xsMachine* the)
 	xs_outline_SVGPath_next(the, parser);
 	for (;;) {
 		xsIntegerValue token = parser->token;
-		if (token == 0)
+		if (token == 0) {
+			xs_outline_SVGPath_close(the);
 			break;
+		}
 		xs_outline_SVGPath_next(the, parser);
 		if ((token != 'M') && (token != 'm')) {
 			if (!xsTest(xsVar(0)))
 				xsSyntaxError("path must start with M");
 		}
 		if ((token == 'Z') || (token == 'z'))  {
-			xs_outline_path_renewSubpath(the);
+			int32_t* initial = (int32_t*)xsToArrayBuffer(xsVar(0));
+			initial[0] = 0;
+			fx = ((xsNumberValue)initial[1]) / 64;
+			fy = ((xsNumberValue)initial[2]) / 64;
+			if ((parser->token != 0) && (parser->token != 'M') && (parser->token != 'm'))
+				xs_outline_SVGPath_open(the, fx*64, fx*64);
 		}
 		else if ((token == 'M') || (token == 'm') || (token == 'L') || (token == 'l'))  {
 			do {
@@ -1199,7 +1228,7 @@ void xs_outline_SVGPath(xsMachine* the)
 					y += fy;
 				}
 				if ((token == 'M') || (token == 'm'))
-					xs_outline_path_newSubpath(the, x*64, y*64, 1);
+					xs_outline_SVGPath_open(the, x*64, y*64);
 				else
 					xs_outline_subpath_push1(the, x*64, y*64);
 				fx1 = x;
