@@ -838,6 +838,7 @@ void xs_poco_drawText(xsMachine *the)
 	else {
 		width = 0;
 		ellipsisWidth = 0;
+		ellipsis = C_NULL;		// appease compiler
 	}
 
 	while (true) {
