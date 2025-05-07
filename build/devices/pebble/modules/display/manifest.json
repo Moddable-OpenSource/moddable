@@ -1,0 +1,14 @@
+{
+	"include": [
+	],
+	"defines": {
+		"pebbledisplay": {
+		}
+	},
+	"modules": {
+		"pebble/display": "./pebble-display"
+	},
+	"preload": [
+		"pebble/display"
+	]
+}
