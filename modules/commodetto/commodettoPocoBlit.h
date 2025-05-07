@@ -24,6 +24,11 @@
 
 #include <stdint.h>
 
+#if pebble
+	#include "applib/graphics/gtypes.h"
+	#include "applib/graphics/gcolor_definitions.h"
+#endif
+
 #if MODINSTRUMENTATION
 	#include "modInstrumentation.h"
 	#define pocoInstrumentationSet modInstrumentationSet
@@ -171,6 +176,8 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565LE(r, g, b)
 #elif kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelCLUT16(r, g, b)
+#elif (kCommodettoBitmapMonochrome == kPocoPixelFormat) && pebble
+	#define PocoMakeColor(poco, r, g, b) ((PocoMakePixelGray256(r, g, b) > 127) ? GColorWhite.argb : GColorBlack.argb)
 #else
 	#error
 #endif
