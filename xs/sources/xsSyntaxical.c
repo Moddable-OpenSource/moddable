@@ -4165,16 +4165,43 @@ void fxJSONModule(txParser* parser)
 	fxPushNodeStruct(parser, 1, XS_TOKEN_MODULE, 1);
 }
 
+static txSymbol* fxJSXName(txParser* parser, txSymbol* before, txSymbol* after)
+{
+	txSize beforeLength = before->length;
+	txSize afterLength = after->length;
+	txSize length = beforeLength + 1 + afterLength + 1;
+	txString string = fxNewParserChunk(parser, length);
+	snprintf(string, length, "%s-%s", before->string, after->string);
+	return fxNewParserSymbol(parser, string);
+}
+
 void fxJSXAttributeName(txParser* parser)
 {
 	txSymbol* symbol = parser->states[0].symbol;
 	fxGetNextToken(parser);
+	while (parser->states[0].token == XS_TOKEN_SUBTRACT) {
+		fxGetNextToken(parser);
+		if (gxTokenFlags[parser->states[0].token] & XS_TOKEN_IDENTIFIER_NAME)
+			symbol = fxJSXName(parser, symbol, parser->states[0].symbol);
+		else
+			fxReportParserError(parser, parser->states[0].line, "missing name");
+		fxGetNextToken(parser);
+	}
 	if (parser->states[0].token == XS_TOKEN_COLON) {
 		fxGetNextToken(parser);
 		if (gxTokenFlags[parser->states[0].token] & XS_TOKEN_IDENTIFIER_NAME)
 			symbol = fxJSXNamespace(parser, symbol, parser->states[0].symbol);
 		else
 			fxReportParserError(parser, parser->states[0].line, "missing name");
+		fxGetNextToken(parser);
+		while (parser->states[0].token == XS_TOKEN_SUBTRACT) {
+			fxGetNextToken(parser);
+			if (gxTokenFlags[parser->states[0].token] & XS_TOKEN_IDENTIFIER_NAME)
+				symbol = fxJSXName(parser, symbol, parser->states[0].symbol);
+			else
+				fxReportParserError(parser, parser->states[0].line, "missing name");
+			fxGetNextToken(parser);
+		}	
 	}
 	fxPushSymbol(parser, symbol);
 }
