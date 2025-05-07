@@ -191,13 +191,10 @@ void pebbledisplaySend(PocoPixel *pixels, int byteLength, void *refcon)
 
 void pebbledisplayBeginFrameBuffer(void *refcon, CommodettoPixel **pixels, int16_t *rowBytes)
 {
-	PBL_LOG(LOG_LEVEL_ALWAYS, "pebbledisplayBeginFrameBuffer");
 	pblDisplay pd = refcon;
 
 	*pixels = pd->ctx->dest_bitmap.addr;
 	*rowBytes = pd->ctx->dest_bitmap.row_size_bytes;		
-
-	PBL_LOG(LOG_LEVEL_ALWAYS, "  pixels %p, rowBytes %d", *pixels, (int)*rowBytes);
 }
 
 void pebbledisplayBegin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
