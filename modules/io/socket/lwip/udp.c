@@ -55,6 +55,7 @@ struct UDPRecord {
 	xsMachine		*the;
 	xsSlot			*onReadable;
 	uint8_t			readablePending;
+	uint8_t			closed;
 };
 typedef struct UDPRecord UDPRecord;
 typedef struct UDPRecord *UDP;
@@ -146,7 +147,8 @@ void xs_udp_destructor(void *data)
 		c_free(packet);
 	}
 
-	c_free(data);
+	if (!udp->closed || !udp->readablePending)		// if closed is not set, was called from destructor when killing VM
+		c_free(data);
 
 	modInstrumentationAdjust(NetworkSockets, -1);
 }
@@ -155,6 +157,7 @@ void xs_udp_close(xsMachine *the)
 {
 	UDP udp = xsmcGetHostData(xsThis);
 	if (udp && xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks)) {
+		udp->closed = true;
 		xsForget(udp->obj);
 		xs_udp_destructor(udp);
 		xsmcSetHostData(xsThis, NULL);
@@ -337,6 +340,11 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 {
 	UDP udp = refcon;
 	int count;
+
+	if (udp->closed) {
+		c_free(udp);
+		return;
+	}
 
 	builtinCriticalSectionBegin();
 	udp->readablePending = false;
