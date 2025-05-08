@@ -723,6 +723,8 @@ void fxVerifyErrorString(txMachine* the, txSlot* slot, txID id, txIndex index, t
 		size_t count = c_snprintf(buffer, sizeof(the->nameBuffer), "%s", string);
 		if (count >= sizeof(the->nameBuffer)) {
 			buffer = c_malloc(count + 1);
+            if (!buffer)
+                fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 			c_memcpy(buffer, string, count + 1);
 		}
 		if (adorn) {
