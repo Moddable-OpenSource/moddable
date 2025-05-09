@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -61,6 +61,11 @@ void xs_poco_destructor(void *data)
 #else
 		c_free(poco);
 #endif
+	}
+
+	if (gCFE) {
+		CFEDispose(gCFE);
+		gCFE = C_NULL;
 	}
 }
 
@@ -163,7 +168,7 @@ void xs_poco_build(xsMachine *the)
 	xsmcSetInteger(xsVar(0), pixelsLength);
 	xsmcDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
-	if (NULL == gCFE)
+	if (C_NULL == gCFE)
 		gCFE = CFENew();
 }
 
