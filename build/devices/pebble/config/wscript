@@ -84,13 +84,22 @@ def build(bld):
 		'moddable/modules/base/timer/modTimer.c',
 		'moddable/modules/base/timer/pebble/timer.c',
 		'moddable/modules/io/storage/pebble/storage-pebble.c',
+		'moddable/modules/commodetto/commodettoParseBMF.c',
+		'moddable/modules/commodetto/commodettoParseBMP.c',
+		'moddable/modules/commodetto/commodettoParseRLE.c',
+		'moddable/modules/commodetto/commodettoBitmap.c',
+		'moddable/modules/commodetto/commodettoPocoCore.c',
+		'moddable/build/devices/pebble/modules/pocoblit/commodettoPocoBlit-pebble.c',
+		'moddable/modules/commodetto/cfeBMF.c',
+		'moddable/build/devices/pebble/modules/display/pebble-display.c',
 		'moddable/build/devices/pebble/modules/rocky/pebblegraphics.c',
 		'moddable/build/devices/pebble/modules/rocky/pebblegraphics_path2d.c',
 		'moddable/build/devices/pebble/modules/rocky/pebblesystem.c',
 		'moddable/build/devices/pebble/modules/button/pebblebutton.c',
 		'../../src/fw/applib/rockyjs/api/rocky_api_graphics_color.c',
 		'moddable/build/tmp/pebble/release/helloworld/mc.xs.c',
-		'moddable/build/tmp/pebble/release/helloworld/mc.resources.c'
+		'moddable/build/tmp/pebble/release/helloworld/mc.resources.c',
+		'moddable/modules/commodetto/gif/commodettoReadGIF.c'
 	]
 
 	libxs_includes = [
@@ -106,6 +115,8 @@ def build(bld):
 		'moddable/xs/tools/fdlibm',
 		'moddable/modules/base/timer',
 		'moddable/modules/base/instrumentation',
+		'moddable/modules/commodetto/gif',
+		'moddable/modules/commodetto',
 		'moddable/modules/io/common',
 		'moddable/build/tmp/pebble/release/helloworld'
 	]
@@ -114,9 +125,9 @@ def build(bld):
 		'-Og',
 		'-Dpebble',
 		'-DmxUseDefaultSharedChunks=1',
-		'-DkCommodettoBitmapFormat=2',
+		'-DkCommodettoBitmapFormat=kCommodettoBitmapMonochromeAligned',
 		'-DkPocoRotation=0',
-		'-DkPocoFrameBuffer=0',
+		'-DkPocoFrameBuffer=1',
 		'-DMODGCC=1',
 		'-DMODINSTRUMENTATION=0',
 		'-DmxUseDefaultSharedChunks=1',
