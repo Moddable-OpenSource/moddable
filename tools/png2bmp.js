@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -28,6 +28,7 @@ import File from "file";
 
 var formatNames = {
 	monochrome: "monochrome",
+	monochromealigned: "monochromealigned",
 	gray16: "gray16",
 	gray256: "gray256",
 	rgb332: "rgb332",
@@ -40,6 +41,7 @@ var formatNames = {
 
 var formatValues = {
 	monochrome: Bitmap.Monochrome,
+	monochromealigned: Bitmap.MonochromeAligned,
 	gray16: Bitmap.Gray16,
 	gray256: Bitmap.Gray256,
 	rgb332: Bitmap.RGB332,
@@ -99,10 +101,11 @@ export default class extends TOOL {
 				this.colorFormat = formatValues[name];
 				break;
 			case "-m":
+			case "-ma":
 				if (this.colorFormat)
-					throw new Error("-m: too many formats!");
-				this.alphaFormat = formatValues.monochrome;
-				this.colorFormat = formatValues.monochrome;
+					throw new Error(`${option}: too many formats!`);
+				this.alphaFormat = ("-m" == option) ? formatValues.monochrome : formatValues.monochromealigned;
+				this.colorFormat = this.alphaFormat;
 				break;
 			case "-n":
 				argi++;	
@@ -172,7 +175,7 @@ export default class extends TOOL {
 		const colorDepth = (this.color) ? Bitmap.depth(this.colorFormat) : 32;
 		const alphaDepth = (this.alpha) ? Bitmap.depth(this.alphaFormat) : 32;
 		const depth = Math.min(colorDepth, alphaDepth);
-		const alignment = this.bm4 ? 8 : 32;
+		const alignment = this.bm4 ? ((this.colorFormat === formatValues.monochromealigned) ? 32 : 8) : 32;
 		const multiple = (depth < alignment) ? (alignment / depth) : 1;
 		const overflow = width & (multiple - 1);
 		if (overflow)
@@ -480,7 +483,8 @@ class BM4Out extends PixelsOut {
 			(Bitmap.RGB565LE != pixelFormat) &&
 			(Bitmap.RGB332 != pixelFormat) &&
 			(Bitmap.CLUT16 != pixelFormat) &&
-			(Bitmap.Monochrome != pixelFormat))
+			(Bitmap.Monochrome != pixelFormat) &&
+			(Bitmap.MonochromeAligned != pixelFormat))
 			throw new Error("unsupported BM4 pixel fornat");
 
 		this.file = new File(dictionary.path, 1);
@@ -499,16 +503,18 @@ class BM4Out extends PixelsOut {
 					this.height & 0xFF);
 	}
 	send(pixels, offset = 0, count = pixels.byteLength - offset) {
-		if ((0 == offset) && (count == pixels.byteLength) && (pixels instanceof ArrayBuffer))		//@@ file.write should support HostBuffer
-			this.file.write(pixels);
-		else {
-			let bytes = new Uint8Array(pixels);
-			while (count--)
-				this.file.write(bytes[offset++]);
-		}
+		pixels = new Uint8Array(pixels);
+		if ((0 !== offset) || (count !== pixels.byteLength))
+			pixels = pixels.slice(offset, offset + count);
+		this.file.write(pixels.buffer);
 	}
 	end() {
 		this.file.close();
 		delete this.file;
+	}
+	pixelsToBytes(count) {
+		if (this.pixelFormat === Bitmap.MonochromeAligned)
+			return ((count + 31) >> 5) << 2;
+		return super.pixelsToBytes(count);
 	}
 }

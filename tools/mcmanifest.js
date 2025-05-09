@@ -851,7 +851,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.write(source);
 				this.write(" -a");
 				if (result.monochrome)
-					this.write(" -m -4");
+					this.write((1 == result.monochrome) ? " -m -4" : " -ma -4");
 				this.write(" -o $(@D) -r ");
 				this.write(tool.rotation);
 				this.line(name);
@@ -1430,9 +1430,9 @@ class ResourcesRule extends Rule {
 		if (suffix == "-color") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
 		}
-		else if (suffix == "-color-monochrome") {
+		else if ((suffix == "-color-monochrome") || (suffix == "-color-monochromealigned")) {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
-			colorFile.monochrome = true;
+			colorFile.monochrome = (suffix == "-color-monochrome") ? 1 : 2;
 		}
 		else if (suffix == "-color-argb4444") {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
@@ -1441,18 +1441,18 @@ class ResourcesRule extends Rule {
 		else if (suffix == "-alpha") {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
 		}
-		else if (suffix == "-alpha-monochrome") {
+		else if ((suffix == "-alpha-monochrome") || (suffix == "-alpha-monochromealigned")) {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
-			alphaFile.monochrome = true;
+			alphaFile.monochrome = (suffix == "-alpha-monochrome") ? 1 : 2;
 		}
 		else if (suffix == "-mask") {
 			alphaFile = this.appendFile(tool.bmpMaskFiles, name + "-alpha.bm4", path, include);
 		}
-		else if (suffix == "-monochrome") {
+		else if ((suffix == "-monochrome") || (suffix == "-monochromealigned")) {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
-			colorFile.monochrome = true;
+			colorFile.monochrome = (suffix == "-monochrome") ? 1 : 2;;
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
-			alphaFile.monochrome = true;
+			alphaFile.monochrome = colorFile.monochrome;
 			alphaFile.colorFile = colorFile;
 			colorFile.alphaFile = alphaFile;
 		}

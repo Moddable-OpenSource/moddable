@@ -30,7 +30,7 @@
 #include "drivers/display/display.h" // FIXME: Need display dimensions
 #include "process_state/app_state/app_state.h"
 
-#if kCommodettoBitmapMonochrome != kCommodettoBitmapFormat
+#if kCommodettoBitmapMonochromeAligned != kCommodettoBitmapFormat
 	#error unsupported display pixels
 #endif
 

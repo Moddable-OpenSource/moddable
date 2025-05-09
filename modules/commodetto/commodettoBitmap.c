@@ -186,7 +186,7 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 
 	format &= ~kCommodettoBitmapPacked;
 
-	if (kCommodettoBitmapMonochrome == format)
+	if ((kCommodettoBitmapMonochrome == format) || (kCommodettoBitmapMonochromeAligned == format))
 		depth = 1;
 	else if ((kCommodettoBitmapGray16 == format) || (kCommodettoBitmapCLUT16 == format))
 		depth = 4;

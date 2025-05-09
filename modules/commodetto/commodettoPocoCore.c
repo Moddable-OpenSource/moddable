@@ -120,6 +120,10 @@ void xs_poco_build(xsMachine *the)
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsPocoHooks);
 	poco->reservedPocoJS = NULL;
 
+#if pebble
+	poco->next = NULL;
+#endif
+
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
 	poco->height = (PocoDimension)xsmcToInteger(xsArg(1));
 	rotateDimensions(poco->width, poco->height);
@@ -939,7 +943,7 @@ void xs_poco_drawText(xsMachine *the)
 #endif
 				bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
-				if (kPocoPixelFormat == cb->format) {
+				if ((kCommodettoBitmapMonochrome != cb->format) && (kCommodettoBitmapMonochromeAligned != cb->format) && (kCommodettoBitmapGray16 != (cb->format & ~kCommodettoBitmapPacked))) {
 					isColor = 1;
 					if (xsReferenceType == xsmcTypeOf(xsArg(2))) {
 						isColor = 2;

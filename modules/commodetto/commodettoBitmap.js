@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -48,6 +48,7 @@ Bitmap.PNG = 16;
 Bitmap.CLUT256 = 17;
 Bitmap.CLUT32 = 18;
 Bitmap.YUV422 = 20;
+Bitmap.MonochromeAligned = 21;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 

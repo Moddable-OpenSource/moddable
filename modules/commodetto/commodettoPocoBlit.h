@@ -176,7 +176,7 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565LE(r, g, b)
 #elif kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelCLUT16(r, g, b)
-#elif (kCommodettoBitmapMonochrome == kPocoPixelFormat) && pebble
+#elif (kCommodettoBitmapMonochromeAligned == kPocoPixelFormat) && pebble
 	#define PocoMakeColor(poco, r, g, b) ((PocoMakePixelGray256(r, g, b) > 127) ? GColorWhite.argb : GColorBlack.argb)
 #else
 	#error
