@@ -1,0 +1,7 @@
+{
+	"modules": {
+		"pebble/poco": "./poco-pebble",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
+	},
+	"preload": "pebble/poco"
+}

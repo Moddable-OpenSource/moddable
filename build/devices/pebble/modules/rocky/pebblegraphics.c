@@ -325,7 +325,7 @@ void pebble_graphics_context_get_font(xsMachine *the)
 		xsmcSetString(xsResult, (char *)pgr->text_state.font_name);
 }
 
-T_STATIC const RockyAPISystemFontDefinition s_font_definitions[] = {
+/* T_STATIC */ const RockyAPISystemFontDefinition s_font_definitions[] = {
   {.js_name = "18px bold Gothic", .res_key = FONT_KEY_GOTHIC_18_BOLD},
   {.js_name = "14px Gothic", .res_key = FONT_KEY_GOTHIC_14},
   {.js_name = "14px bold Gothic", .res_key = FONT_KEY_GOTHIC_14_BOLD},

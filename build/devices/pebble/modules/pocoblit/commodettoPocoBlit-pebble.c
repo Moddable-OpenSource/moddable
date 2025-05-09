@@ -20,8 +20,9 @@
 
 
 #include "xsPlatform.h"
-#include "mc.defines.h"
+#include "xsmc.h"
 #include "commodettoPocoBlit.h"
+#include "commodettoPoco.h"
 
 #include "process_state/app_state/app_state.h"
 #include "system/logging.h"
@@ -62,6 +63,12 @@ static PocoPebble getPocoPebble(Poco poco)
 
 	poco->next = (void *)pp;
 	return pp;
+}
+
+GContext *getPocoGContext(xsMachine *the)
+{
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	return getPocoPebble(poco)->ctx;
 }
 
 /*
