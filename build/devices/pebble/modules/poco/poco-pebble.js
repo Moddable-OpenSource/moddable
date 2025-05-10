@@ -19,6 +19,7 @@
 */
 
 import Poco from "commodetto/PocoCore";
+import Bitmap from "commodetto/Bitmap"
 
 Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
 	constructor(name) @ "xs_pocopebble_Font"
@@ -26,3 +27,13 @@ Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
 
 Poco.prototype.getTextWidth = function(text, font) @ "xs_pocopebble_getTextWidth";
 Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_pocopebbble_drawText";
+
+function build(id) @ "xs_pebblebitmap_build"
+
+Poco.PebbleBitmap = class extends Bitmap {
+	constructor(id) {
+		const b = new Bitmap(0, 0, Bitmap.Pebble);
+		build(b, id);
+		return b;
+	}
+}

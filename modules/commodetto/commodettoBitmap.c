@@ -29,6 +29,10 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "xsHost.h"
 
+#if pebble
+	#include "applib/graphics/gtypes.h"
+#endif
+
 #if COMMODETTO_BITMAP_ID
 	static uint32_t gBitmapID;
 #endif
@@ -43,6 +47,14 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsBitmapHooks = {
 
 void xs_Bitmap_destructor(void *data)
 {
+#if pebble
+	CommodettoBitmap cb = data;
+	if (cb &&
+			(kCommodettoBitmapPebble == cb->format) &&
+			cb->bits.data) {
+			gbitmap_destroy(cb->bits.data);
+	}
+#endif
 }
 
 void xs_Bitmap(xsMachine *the)
@@ -56,6 +68,11 @@ void xs_Bitmap(xsMachine *the)
 	cb.w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb.h = (CommodettoDimension)xsmcToInteger(xsArg(1));
 	cb.format = (CommodettoBitmapFormat)xsmcToInteger(xsArg(2));
+	if (kCommodettoBitmapPebble == cb.format) {
+		cb.havePointer = true;
+		cb.bufferSlot = C_NULL;
+		goto done;
+	}
 	if (kCommodettoBitmapDefault == cb.format)
 		cb.format = kCommodettoBitmapFormat;
 	else if (0 == cb.format)
@@ -89,6 +106,7 @@ void xs_Bitmap(xsMachine *the)
 
 	cb.bufferSlot = xsmcToReference(xsArg(3));
 
+done:
 	xsmcSetHostChunk(xsThis, &cb, sizeof(CommodettoBitmapRecord));
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsBitmapHooks);
 }
@@ -97,7 +115,8 @@ void xs_bitmap_mark(xsMachine *the, void *it, xsMarkRoot markRoot)
 {
 	CommodettoBitmap cb = it;
 
-	(*markRoot)(the, cb->bufferSlot);
+	if (cb->bufferSlot)
+		(*markRoot)(the, cb->bufferSlot);
 }
 
 void xs_bitmap_get_width(xsMachine *the)
@@ -123,7 +142,9 @@ void xs_bitmap_get_offset(xsMachine *the)
 	CommodettoBitmap cb = xsmcGetHostChunkValidate(xsThis, (void *)&xsBitmapHooks);
 	int32_t offset;
 
-	if (cb->havePointer) {
+	if (!cb->bufferSlot)
+		offset = 0;
+	else if (cb->havePointer) {
 		void *data;
 		xsUnsignedValue dataSize;
 

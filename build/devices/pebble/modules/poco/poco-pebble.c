@@ -22,6 +22,7 @@
 #include "xsmc.h"
 #include "mc.xs.h"
 
+#include "commodettoBitmap.h"
 #include "commodettoPoco.h"
 #include "commodettoPocoBlit.h"
 
@@ -100,4 +101,22 @@ void xs_pocopebbble_drawText(xsMachine *the)
 	graphics_draw_text(ctx, xsmcToString(xsArg(0)), font, box,
 		GTextOverflowModeWordWrap, GTextAlignmentLeft, C_NULL);
 	ctx->draw_state.text_color = saveTextColor;
+}
+
+void xs_pebblebitmap_build(xsMachine *the)
+{
+	int id = xsmcToInteger(xsArg(1));
+	GBitmap *bitmap = gbitmap_create_with_resource(id);
+	if (!bitmap)
+		xsUnknownError("not found");
+
+	CommodettoBitmap cb = xsmcGetHostChunk(xsArg(0));
+
+	cb->w = bitmap->bounds.size.w;
+	cb->h = bitmap->bounds.size.h;
+	cb->bits.data = bitmap;
+	cb->format = kCommodettoBitmapPebble;
+	cb->havePointer = true;
+	cb->bufferSlot = C_NULL;
+	cb->byteLength = 0;
 }

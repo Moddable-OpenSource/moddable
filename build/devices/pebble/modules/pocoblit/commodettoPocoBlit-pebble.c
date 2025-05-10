@@ -94,7 +94,20 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 
 void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
-	PBL_CROAK("unexpected PocoBitmapDraw");
+	PBL_ASSERT(kCommodettoBitmapPebble == bits->format, "pebble bitmap required");
+
+	PocoPebble pp = getPocoPebble(poco);
+	GContext *ctx = pp->ctx;
+
+	x += poco->xOrigin, y += poco->yOrigin;
+
+	GRect saveClip = ctx->draw_state.clip_box;
+	ctx->draw_state.compositing_mode = GCompOpAssign;
+	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
+
+	graphics_draw_bitmap_in_rect_processed(ctx, (GBitmap *)bits->pixels, &GRect(x - sx, y - sy, sw + sx, sh + sy), C_NULL);
+
+	ctx->draw_state.clip_box = saveClip;
 }
 
 void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mode, PocoColor fgColor, PocoColor bgColor, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)

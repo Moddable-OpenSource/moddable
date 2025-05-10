@@ -49,6 +49,7 @@ Bitmap.CLUT256 = 17;
 Bitmap.CLUT32 = 18;
 Bitmap.YUV422 = 20;
 Bitmap.MonochromeAligned = 21;
+Bitmap.Pebble = 22;
 
 Bitmap.RLE = 0x80;	// flag applied to pixel types
 
