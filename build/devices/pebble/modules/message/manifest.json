@@ -1,0 +1,10 @@
+{
+	"include": [
+	],
+	"modules": {
+		"pebble/message": "./pebble-appmessage"
+	},
+	"preload": [
+		"pebble/message"
+	]
+}
