@@ -159,14 +159,13 @@ int main(int argc, char *argv[]) {
 
   // Start event loop
   GMainContext *main_context = g_main_context_default();
-  GMainLoop *main_loop = g_main_loop_new(main_context, FALSE);
+  g_main_loop_new(main_context, FALSE);
 
 #if mxInstrument
   g_timeout_add_seconds(1, on_instrumentation_timeout, (void *)the);
 #endif
 
   // g_main_loop_run(main_loop);
-  int testTime = 0;
   while (TRUE)
   {
     // Set timer: trigger SIGALRM on timeout
@@ -177,22 +176,13 @@ int main(int argc, char *argv[]) {
     timer.it_interval.tv_usec = 0;
     setitimer(ITIMER_REAL, &timer, NULL);
 
-    // Record time before event handling
-    guint64 start = g_get_monotonic_time();
-    // Process one event non-blocking
-    gboolean processed = g_main_context_iteration(NULL, FALSE);
-    // Record time after event handling
-    guint64 end = g_get_monotonic_time();
+    // Process one event blocking
+    g_main_context_iteration(NULL, TRUE);
 
     // Disable timer
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = 0;
     setitimer(ITIMER_REAL, &timer, NULL);
-
-    if (processed)
-    {
-      // printf("process time: %" G_GUINT64_FORMAT " us\n", end - start);
-    }
   }
 
   xsDeleteMachine(the);
