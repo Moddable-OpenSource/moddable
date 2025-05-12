@@ -8,10 +8,7 @@
 		]
 	},
 	"preload": [
-		"timer"
-	],
-	"platforms": {
-		"linemb/*": {
-		}
-	}
+		"timer",
+		"time"
+	]
 }
