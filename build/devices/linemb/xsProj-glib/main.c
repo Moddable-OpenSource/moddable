@@ -8,6 +8,7 @@
 #include <execinfo.h> // Add header file for retrieving call stack
 #include <signal.h>   // Add header file for signal handling
 #include <pthread.h>  // Add pthread header file
+#include <string.h>   // Add string.h for strsignal
 
 #define ITERATION_TIMEOUT_US 5000000 // Set 5 second timeout threshold
 #define FATAL_ERROR_TOKEN "\n\n!!!FATAL ERROR!!!\n\n"
@@ -70,20 +71,8 @@ static void fatal_error_exit() {
 }
 
 static void fatal_error_handler(int signum) {
-  const char* signame = "UNKNOWN";
-  switch(signum) {
-    case SIGABRT: signame = "SIGABRT"; break;
-    case SIGFPE:  signame = "SIGFPE"; break;
-    case SIGILL:  signame = "SIGILL"; break;
-    case SIGINT:  signame = "SIGINT"; break;
-    case SIGQUIT: signame = "SIGQUIT"; break;
-    case SIGSEGV: signame = "SIGSEGV"; break;
-    case SIGTERM: signame = "SIGTERM"; break;
-    case SIGBUS:  signame = "SIGBUS"; break;
-    case SIGPIPE: signame = "SIGPIPE"; break;
-  }
-  
-  printf("!!!! Signal %s (%d) caught. Stack trace:\n", signame, signum);
+
+  printf("!!!! Signal %s (%d) caught. Stack trace:\n", strsignal(signum), signum);
   // Reset signal handler to allow default behavior to terminate program
   signal(signum, SIG_DFL);
   fatal_error_exit();  
@@ -190,24 +179,12 @@ int main(int argc, char *argv[]) {
   return error;
 }
 
-const char *gXSAbortStrings[] ICACHE_FLASH_ATTR = {
-	"debugger",
-	"memory full",
-	"stack overflow",
-	"fatal",
-	"dead strip",
-	"unhandled exception",
-	"not enough keys",
-	"too much computation",
-	"unhandled rejection"
-};
 
 void fxAbort(xsMachine *the, int status)
 {
-  const char *msg = (status <= XS_UNHANDLED_REJECTION_EXIT) ? gXSAbortStrings[status] : "unknown";
-#if 0 // MODDEF_XS_ABORTHOOK
-
-  if ((XS_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
+  xsStringValue msg = (char*)fxAbortString(status);
+#if MODDEF_XS_ABORTHOOK
+  if ((XS_JAVASCRIPT_STACK_OVERFLOW_EXIT != status) && (XS_NATIVE_STACK_OVERFLOW_EXIT != status) & (XS_DEBUGGER_EXIT != status)) {
     xsBooleanValue ignore = false;
     
     fxBeginHost(the);
@@ -237,7 +214,7 @@ void fxAbort(xsMachine *the, int status)
       return;
   }
 #endif
-  printf("Aborting with status %d, %s\n", status, msg);
+  xsLog("XS abort: %s\n", msg);
 
   fatal_error_exit();
 }
