@@ -1,5 +1,5 @@
 # Using the Moddable SDK with embedded Linux (Raspberry Pi Zero)
-This is a demo document to demostration how to bring up an embedded Linux device with the Moddable SDK.
+This is a demo document to demostrate how to bring up an embedded Linux device with the Moddable SDK.
 
 # Prepare
 check the general get started guide [Moddable SDK - Getting Started](../Moddable SDK - Getting Started.md)
