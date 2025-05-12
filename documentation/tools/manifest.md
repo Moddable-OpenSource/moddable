@@ -1,6 +1,6 @@
 # Manifest
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: September 16, 2024
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: March 25, 2025
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -250,7 +250,7 @@ The default value of the `"manifest"` property is `"manifest.json"`.
 		{
 			"git":"$(URL)/test23.git",
 			"manifest": {
-				"includes": [
+				"include": [
 					"./modules/test2/manifest.json",
 					"./modules/test3/manifest.json"
 				]

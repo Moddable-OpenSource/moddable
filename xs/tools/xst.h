@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -238,7 +238,6 @@ struct sxAgentCluster {
 	txMutex reportMutex;
 };
 
-extern char *gxAbortStrings[];
 extern txAgentCluster gxAgentCluster;
 
 #endif /* __XST__ */

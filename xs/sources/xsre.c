@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -462,7 +462,7 @@ enum {
 	mxInvalidUTF8,
 	mxNameOverflow,
 	mxNotEnoughMemory,
-	mxStackOverflow,
+	mxNativeStackOverflow,
 	mxUnicodePropertyEscapeNotBuiltIn,
 	mxErrorCount
 };
@@ -483,7 +483,7 @@ static const txString gxErrors[mxErrorCount] ICACHE_XS6RO_ATTR = {
 	"invalid UTF-8",
 	"name overflow",
 	"not enough memory",
-	"stack oveflow",
+	"native stack oveflow",
 	"unicode property escape not built-in",
 };
 
@@ -1285,7 +1285,7 @@ void* fxCharSetStrings(txPatternParser* parser)
 				fxPatternParserNext(parser);
 				if (strings) {
 					if (stringCount > 1)
-						qsort(strings, stringCount, sizeof(txString), fxCharSetStringsCompare);
+						c_qsort(strings, stringCount, sizeof(txString), fxCharSetStringsCompare);
 					result->stringCount = stringCount;
 					result->strings = strings;
 				}
@@ -2250,7 +2250,7 @@ void fxPatternParserCheckStack(txPatternParser* parser)
     char x;
     char *stack = &x;
     if (stack <= parser->stackLimit)
-		fxPatternParserError(parser, gxErrors[mxStackOverflow]);
+		fxPatternParserError(parser, gxErrors[mxNativeStackOverflow]);
 }
 
 void* fxPatternParserCreateChunk(txPatternParser* parser, txSize size)

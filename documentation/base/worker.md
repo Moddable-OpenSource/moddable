@@ -1,6 +1,6 @@
 # Worker
-Copyright 2018-2023 Moddable Tech, Inc.<BR>
-Revised: August 20, 2023
+Copyright 2018-2025 Moddable Tech, Inc.<BR>
+Revised: March 25, 2025
 
 The Moddable runtime integrates with XS to allow a multiple virtual machines to co-exist on a single microcontroller. The majority of projects use only a single virtual machine. However, there are situations where the several independent runtime contexts provided by having several virtual machines is advantageous. This isolation is useful to fully separate a particular set of scripts, for example user installed modules, from the core project functionality for security, privacy, and reliability reasons. Another useful situation is to allow scripts to perform blocking operations in one virtual machine while scripts in another virtual machine remain fully responsive. On microcontrollers with multiple CPU cores, workers may execute in parallel to take full advantage of the available CPU power.
 
@@ -42,11 +42,12 @@ The previous example launches the worker with the default memory creation config
 ```js
 let aWorker = new Worker("simpleworker", {
 	static: 8192,
-	stack: 64,
+	stack: 64,			// JavaScript stack
 	heap: {
 		initial: 64,
 		incremental: 32
-	}
+	},
+	nativeStack: 8192	// host's native "C" stack
 });
 ```
 

@@ -1,6 +1,6 @@
 # Conversation
 Copyright 2025 Moddable Tech, Inc.<BR>
-Updated February 26, 2025
+Updated April 1, 2025
 
 ## Architecture
 
@@ -12,6 +12,7 @@ The conversation example implements support for various AI cloud services using 
 
 - [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime)
 - [Google Gemini Live](https://ai.google.dev/api/multimodal-live)
+- [Hume Empathic Voice Interface](https://dev.hume.ai/docs/empathic-voice-interface-evi/overview)
 
 Because audio samples are transmitted as Base64 encoded data embedded in JSON, workers use a special parser to optimize memory usage and throughput. This document also [describes the `JSONBase64Parser`](#JSONBase64Parser). 
 

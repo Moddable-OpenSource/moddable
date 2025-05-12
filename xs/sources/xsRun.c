@@ -396,6 +396,26 @@ static void fxTraceCallEnd(txMachine* the, txSlot* function)
 }
 #endif
 
+#if defined(mxInstrument) && !defined(mxDebug)
+static void fxTraceException(txMachine *the)
+{
+#ifndef mxNoConsole
+	if (XS_REFERENCE_KIND == mxException.kind) {
+		txSlot* internal = mxException.value.reference->next;
+		if (internal && (internal->kind == XS_ERROR_KIND)) {
+			txSlot* msg = internal->next;
+			if (msg && ((msg->kind == XS_STRING_KIND) || (msg->kind == XS_STRING_X_KIND)))
+				c_printf("Exception %s: %s\n", gxErrorNames[internal->value.error.which], msg->value.string);
+			else
+				c_printf("Exception %s\n", gxErrorNames[internal->value.error.which]);
+		}
+	}
+	else
+		c_printf("Exception\n");
+#endif
+}
+#endif
+
 void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 {
 	register txSlot* stack = the->stack;
@@ -1381,6 +1401,10 @@ XS_CODE_JUMP:
 			mxSaveState;
 			fxDebugThrow(the, C_NULL, 0, "throw");
 			mxRestoreState;
+		#elif mxInstrument
+			mxSaveState;
+			fxTraceException(the);
+			mxRestoreState;
 		#endif
 			mxSaveState;
 			fxJump(the);
@@ -1391,6 +1415,10 @@ XS_CODE_JUMP:
 			#ifdef mxDebug
 				mxSaveState;
 				fxDebugThrow(the, C_NULL, 0, "throw");
+				mxRestoreState;
+			#elif mxInstrument
+				mxSaveState;
+				fxTraceException(the);
 				mxRestoreState;
 			#endif
 				mxSaveState;
@@ -1544,6 +1572,10 @@ XS_CODE_JUMP:
 			#ifdef mxDebug
 				mxSaveState;
 				fxDebugThrow(the, C_NULL, 0, "throw");
+				mxRestoreState;
+			#elif mxInstrument
+				mxSaveState;
+				fxTraceException(the);
 				mxRestoreState;
 			#endif
 				mxSaveState;
@@ -4402,7 +4434,7 @@ XS_CODE_JUMP:
 
 STACK_OVERFLOW:
 	mxSaveState;
-	fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+	fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 }
 
 #ifdef mxMetering

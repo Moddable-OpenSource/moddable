@@ -1,33 +1,33 @@
 {
 	"preload": [
-		"embedded:x-io/imagein/camera"
+		"embedded:io/image/in/camera"
 	],
 	"platforms": {
 		"mac": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-io/imagein/camera": "./mac/camera",
+				"embedded:io/image/in/camera": "./mac/camera",
 				"commodetto/Convert": "$(MODDABLE)/modules/commodetto/commodettoConvert"
 			}
 		},
 		"lin": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-io/imagein/camera": "./lin/camera",
+				"embedded:io/image/in/camera": "./lin/camera",
 				"commodetto/Convert": "$(MODDABLE)/modules/commodetto/commodettoConvert"
 			}
 		},
 		"win": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-io/imagein/camera": "./win/camera",
+				"embedded:io/image/in/camera": "./win/camera",
 				"commodetto/Convert": "$(MODDABLE)/modules/commodetto/commodettoConvert"
 			}
 		},
 		"esp32": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:x-io/imagein/camera": "./esp32/camera"
+				"embedded:io/image/in/camera": "./esp32/camera"
 			},
 			"dependency": [ {
 				"name": "esp32-camera",

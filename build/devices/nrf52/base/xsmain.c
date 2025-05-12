@@ -26,6 +26,7 @@
 #include "xsPlatform.h"
 #include "xsHost.h"
 #include "xsHosts.h"
+#include "mc.xs.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -42,19 +43,14 @@ xsMachine *gThe = NULL;        // main VM
 
 void loop_task(void *pvParameter);
 
-// #define kStack ((10 * 1024) / sizeof(StackType_t))
-#define kStack ((6 * 1024) / sizeof(StackType_t))
+#define kStack (6 * 1024)
 #define kTaskPriority	6	// (tskIDLE_PRIORITY + 1)
 
 void xs_setup(void)
 {
-#if configSUPPORT_STATIC_ALLOCATION
-	static StaticTask_t taskBuffer;
-	static StackType_t stackBuffer[kStack];
-	xTaskCreateStatic(loop_task, "main", kStack, NULL, kTaskPriority, stackBuffer, &taskBuffer);
-#else
-	xTaskCreate(loop_task, "main", kStack, NULL, kTaskPriority, NULL);
-#endif
+	xsCreation *creation;
+	xsPreparationAndCreation(&creation);
+	xTaskCreate(loop_task, "main", (creation->nativeStackSize ? creation->nativeStackSize : kStack) / sizeof(StackType_t), NULL, kTaskPriority, NULL);
 }
 
 void loop_task(void *pvParameter)

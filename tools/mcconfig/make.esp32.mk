@@ -177,6 +177,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_eth/include \
 	$(IDF_PATH)/components/esp_hw_support/include \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
+	$(IDF_PATH)/components/esp_hw_support/port/$(ESP32_SUBCLASS)/private_include \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_partition/include \
@@ -684,8 +685,8 @@ $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 $(PROJ_DIR)/main:
 	mkdir -p $(PROJ_DIR)/main
 
-$(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
-	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
+$(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(BUILD_DIR)/devices/esp32/lib/main/main.c
+	cp -f $(BUILD_DIR)/devices/esp32/lib/main/main.c $@
 
 $(PROJ_DIR)/main/debugger_none.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_none.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_none.c $@

@@ -1,6 +1,6 @@
 # Conversational AI
 Copyright 2025 Moddable Tech, Inc.<BR>
-Updated March 5, 2025
+Updated April 2, 2025
 
 ## Introduction
 The Conversational AI application provides real-time voice chats with over a dozen AI assistants from multiple AI services.
@@ -16,19 +16,22 @@ You will need your own keys for the AI services used by the Conversational AL. I
 It is recommended that you specify the API keys on the command line, though there is also a place to put them in the `config` section of [manifest.json](./manifest.json). On the command line, you can specify the keys directly:
 
 ```
-mcconfig -d -m -p esp32/moddable_six_cdc openAIKey="xyzzy" geminiAPIKey="abcde"
+mcconfig -d -m -p esp32/moddable_six_cdc openAIKey="xyzzy" geminiAPIKey="abcde" humeAPIKey="empath"
 ```
 
 You can also add the keys to your environment, so that they can be accessed by name.
 
 ```
-export openAIKey="xyzzy"
-export geminiAPIKey ="abcde"
-mcconfig -d -m -p esp32/moddable_six_cdc openAIKey=$openAIKey geminiAPIKey=$geminiAPIKey
+export OPENAI_API_KEY="xyzzy"
+export GEMINI_API_KEY ="abcde"
+export HUME_API_KEY ="empath"
+mcconfig -d -m -p esp32/moddable_six_cdc openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAPIKey=$HUME_API_KEY
 ```
 
+> **Note**: All API keys are optional: you can omit the key for any service you are not using. Of course, only services with a valid key will work.
+
 ### Wi-Fi
-The application does not currently have a user interface to connect to Wi-Fi. You will need to set that from the command line when building, using the usual `ssid` and `password` variables:
+The application does not currently have a user interface to connect to Wi-Fi. You need to set that from the command line when building, using the usual `ssid` and `password` variables:
 
 ```
 mcconfig -d -m -p esp32/moddable_six_cdc ssid="my wifi" password="secret"
@@ -52,12 +55,12 @@ The bitmap fonts are created as part of the build process from TrueType fonts in
 
 ## Compatibility
 
-Conversational AI is incredibly efficient, but it still requires more resources, particularly RAM, than some embedded devices have. We've primarily tested on ESP32-S3 devices with extended memory (PSRAM). 2 MB of extended PSRAM should be enough, though many devices now provide 8 MB. Moddable Six is our favorite, but others work (or could work with a little input or output driver configuration work). 
+Conversational AI is incredibly efficient, but it still requires more resources, particularly RAM, than some embedded devices have. We've primarily tested on ESP32-S3 devices with extended memory (PSRAM). 2 MB of extended PSRAM should be enough, though many devices now provide 8 MB. Moddable Six is our favorite, but others work (or could work with a little input or output driver configuration work).
 
 ## Simulator
 
 You can also run Conversational AI on the Moddable SDK's built-in simulator, `mcsim`. This is a great way to explore how the code works and even develop new features. The simulator is available on macOS, Windows, and Linux. To build and run, just use the Moddable Six simulator target with your AI service keys:
 
 ```
-mcconfig -d -m -p sim/moddable_six openAIKey=$openAIKey geminiAPIKey=$geminiAPIKey
+mcconfig -d -m -p sim/moddable_six openAIKey=$OPENAI_API_KEY geminiAPIKey=$GEMINI_API_KEY humeAPIKey=$HUME_API_KEY
 ```

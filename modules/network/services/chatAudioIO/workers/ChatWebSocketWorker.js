@@ -20,13 +20,18 @@
 
 import ChatWorker from "ChatWorker"
 import JSONBase64Parser from "JSONBase64Parser";
+import TextEncoder from "text/encoder";
 
 const WebSocketClient = device.network.ws.io;
+
+const text = Object.freeze({binary: false});
 
 class ChatWebSocketWorker extends ChatWorker {
 	#buffers = [];
 	#state = 0;
 	#writable = 0;
+	#encoder = new TextEncoder;
+
 	constructor(options) {
 		super(options);
 		this.ws = null;
@@ -68,10 +73,10 @@ class ChatWebSocketWorker extends ChatWorker {
 					break;
 					
 				case WebSocketClient.ping:
-					trace("PING!\n");
+//					trace("PING!\n");
 					break;
 				case WebSocketClient.pong:
-					trace("PONG!\n");
+//					trace("PONG!\n");
 					break;
 				}
 			},
@@ -119,9 +124,7 @@ class ChatWebSocketWorker extends ChatWorker {
 	}
 	disconnect() {
 		const code = 1000;
-		const data = new Uint8Array(2);
-		data[0] = code >> 8;
-		data[1] = code & 0xFF;
+		const data = Uint8Array.of(code >> 8, code & 0xFF);
 		this.write(data, { opcode: WebSocketClient.close });	
 		this.#state = 2;
 	}
@@ -151,14 +154,17 @@ class ChatWebSocketWorker extends ChatWorker {
 // 		trace(`=> sendAudio ${ message.offset } ${ message.size }\n`);
 		const samples = new Uint8Array(this.inputBuffer, message.offset, message.size);
 		const string = samples.toBase64();
-		const data = ArrayBuffer.fromString(string);
-		this.write(this.audioPrefix.concat(data, this.audioSuffix), { binary:false });
+		const data = new Uint8Array(this.audioPrefix.length + string.length + this.audioSuffix.length);
+		data.set(this.audioPrefix); 
+		this.#encoder.encodeInto(string, data.subarray(this.audioPrefix.length));
+		data.set(this.audioSuffix, this.audioPrefix.length + string.length);
+		this.write(data, text);
 	}
 	sendJSON(json) {
 		const string = JSON.stringify(json);
 // 		trace(`=> ${ string }\n`);
 		const data = ArrayBuffer.fromString(string);
-		this.write(data, { binary:false });
+		this.write(data, text);
 	}
 	write(data, options) {
 		let buffers = this.#buffers;
@@ -183,3 +189,4 @@ class ChatWebSocketWorker extends ChatWorker {
 }
 
 export default ChatWebSocketWorker;
+

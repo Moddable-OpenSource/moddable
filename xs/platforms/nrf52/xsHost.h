@@ -100,8 +100,6 @@ extern void ESP_putc(int c);
 #define xmodLogInt(msg)
 #define xmodLogHex(msg)
 
-extern const char *gXSAbortStrings[];
-
 /* RESERVED MEMORY */
 
 extern uint32_t *dbl_reset_mem;

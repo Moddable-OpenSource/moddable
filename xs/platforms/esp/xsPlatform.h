@@ -58,14 +58,14 @@
 	#define mxUnalignedAccess 0
 	#define mxMisalignedSettersCrash 1
 #else
-	#define mxUnalignedAccess 1
-
 	#define mxUseFreeRTOSTasks 1
-	#if (ESP32 != 4) && (ESP32 != 5) && (ESP32 != 6)		// riscv doesn't support GCC atomics yet
+	#ifdef __riscv
+		// RISC_V does not support GCC atomics or misaligned memory access
+		#define mxUnalignedAccess 0
+		#define mxMisalignedSettersCrash 1
+	#else
 		#define mxUseGCCAtomics 1
-	#endif
-	#if ESP32 > 7
-		#error unexpected ESP32 CPU family
+		#define mxUnalignedAccess 1
 	#endif
 #endif
 

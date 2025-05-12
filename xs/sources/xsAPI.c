@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1309,14 +1309,14 @@ void fxOverflow(txMachine* the, txInteger theCount, txString thePath, txInteger 
 	txSlot* aStack = the->stack + theCount;
 	if (theCount < 0) {
 		if (aStack < the->stackBottom) {
-			fxReport(the, "stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
-			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+			fxReport(the, "JavaScript stack overflow (%ld)!\n", (the->stack - the->stackBottom) + theCount);
+			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 		}
 	}
 	else if (theCount > 0) {
 		if (aStack > the->stackTop) {
-			fxReport(the, "stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
-			fxAbort(the, XS_STACK_OVERFLOW_EXIT);
+			fxReport(the, "JavaScript stack overflow (%ld)!\n", theCount - (the->stackTop - the->stack));
+			fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 		}
 	}
 }

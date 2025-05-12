@@ -25,13 +25,14 @@ import WavStreamer from "wavstreamer";
 
 export default class {
 	constructor(options) {
-		const {key, model, voice, input, speed, response_format, ...o} = options;
+		const {key, model, voice, input, speed, response_format, instructions,...o} = options;
 		const request = {
 			input,
 			model,
 			voice,
 			speed: speed ?? 1,
 			response_format: response_format ?? "mp3",
+			instructions,
 		};
 		const body = ArrayBuffer.fromString(JSON.stringify(request));
 		let streamer;

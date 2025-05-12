@@ -21,14 +21,17 @@
 import config from "mc/config"
 import ChatWebSocketWorker from "ChatWebSocketWorker";
 
+const audioPrefix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('{"realtimeInput":{"mediaChunks":[{"mimeType":"audio/pcm;rate=24000","data":"')), true);
+const audioSuffix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}]}}')), true);
+
 class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "generativelanguage.googleapis.com";
 		this.path = `/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${config.geminiAPIKey}`;
 		this.headers = null;
-		this.audioPrefix = ArrayBuffer.fromString('{"realtimeInput":{"mediaChunks":[{"mimeType":"audio/pcm;rate=24000","data":"');
-		this.audioSuffix = ArrayBuffer.fromString('"}]}}');
+		this.audioPrefix = audioPrefix;
+		this.audioSuffix = audioSuffix;
 		this.speaking = true;
 	}
 	configure(message) {

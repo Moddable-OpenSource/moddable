@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -56,6 +56,19 @@ const int gxErrorWhichPrototypeStackIndex[XS_ERROR_COUNT] ICACHE_FLASH_ATTR = {
 #endif
 };
 
+const char *const gxErrorNames[XS_ERROR_COUNT] ICACHE_FLASH_ATTR = {
+	"no error",
+	"Error",
+	"EvalError",
+	"RangeError",
+	"ReferenceError",
+	"SyntaxError",
+	"TypeError",
+	"URIError",
+	"AggregateError",
+	"SuppressedError"
+};
+
 void fxBuildError(txMachine* the)
 {
 	txSlot* slot;
@@ -68,7 +81,7 @@ void fxBuildError(txMachine* the)
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_toString), 0, mxID(_toString), XS_DONT_ENUM_FLAG);
-	slot = fxNextStringXProperty(the, slot, "Error", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_UNKNOWN_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Error_prototype_get_stack), mxCallback(fx_Error_prototype_set_stack), mxID(_stack), XS_DONT_ENUM_FLAG);
 	mxErrorPrototype = *the->stack;
@@ -81,7 +94,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "AggregateError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_AGGREGATE_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxAggregateErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_AggregateError), 2, mxID(_AggregateError));
@@ -90,7 +103,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "EvalError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_EVAL_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxEvalErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_EvalError), 1, mxID(_EvalError));
@@ -99,7 +112,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "RangeError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_RANGE_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxRangeErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_RangeError), 1, mxID(_RangeError));
@@ -108,7 +121,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "ReferenceError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_REFERENCE_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxReferenceErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_ReferenceError), 1, mxID(_ReferenceError));
@@ -117,7 +130,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "SyntaxError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_SYNTAX_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxSyntaxErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_SyntaxError), 1, mxID(_SyntaxError));
@@ -126,7 +139,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "TypeError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_TYPE_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxTypeErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_TypeError), 1, mxID(_TypeError));
@@ -135,7 +148,7 @@ void fxBuildError(txMachine* the)
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "URIError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_URI_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxURIErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_URIError), 1, mxID(_URIError));
@@ -146,7 +159,7 @@ void fxBuildError(txMachine* the)
 #if mxExplicitResourceManagement
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextStringXProperty(the, slot, "SuppressedError", mxID(_name), XS_DONT_ENUM_FLAG);
+	slot = fxNextStringXProperty(the, slot, (txString)gxErrorNames[XS_SUPPRESSED_ERROR], mxID(_name), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "", mxID(_message), XS_DONT_ENUM_FLAG);
 	mxSuppressedErrorPrototype = *the->stack;
 	instance = fxBuildHostConstructor(the, mxCallback(fx_SuppressedError), 3, mxID(_SuppressedError));
@@ -453,6 +466,27 @@ void fx_Error_prototype_set_stack(txMachine* the)
 	mxPushSlot(mxThis);
 	mxDefineID(mxID(_stack), XS_NO_FLAG, XS_GET_ONLY);
 	mxPop();
+}
+
+static const txString gXSAbortStrings[] = {
+	"debugger",
+	"memory full",
+	"JavaScript stack overflow",
+	"fatal",
+	"dead strip",
+	"unhandled exception",
+	"not enough keys",
+	"too much computation",
+	"unhandled rejection",
+	"native stack overflow",
+};
+
+txString fxAbortString(int status)
+{
+	if ((status < 0) || (status >= (int)(sizeof(gXSAbortStrings) / sizeof(txString))))
+		return "unknown";
+
+	return gXSAbortStrings[status];
 }
 
 #if mxExplicitResourceManagement

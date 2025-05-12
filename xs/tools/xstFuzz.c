@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -686,7 +686,7 @@ int fuzz_oss(const uint8_t *Data, size_t script_size)
 	free(buffer);
 
 #if mxXSMemoryLimit
-	if ((XS_TOO_MUCH_COMPUTATION_EXIT == exitStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == exitStatus) || (XS_STACK_OVERFLOW_EXIT == exitStatus))
+	if ((XS_TOO_MUCH_COMPUTATION_EXIT == exitStatus) || (XS_NOT_ENOUGH_MEMORY_EXIT == exitStatus) || (XS_JAVASCRIPT_STACK_OVERFLOW_EXIT == exitStatus)|| (XS_NATIVE_STACK_OVERFLOW_EXIT == exitStatus))
 		freeMemoryBlocks();		// clean-up if computation or memory limits exceeded, or stack overflow
 #endif
 

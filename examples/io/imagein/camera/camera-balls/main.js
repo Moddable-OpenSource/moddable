@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -13,7 +13,7 @@
  */
 import {} from "piu/MC";
 import Bitmap from "commodetto/Bitmap";
-import Camera from "embedded:x-io/imagein/camera";
+import Camera from "embedded:io/image/in/camera";
 
 const GRAY = "#808080";
 const RED = "#FF000080";

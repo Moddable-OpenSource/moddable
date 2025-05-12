@@ -10,7 +10,8 @@
 		},
 		"startupSound": false,
 		"geminiAPIKey": "",
-		"openAIKey": ""
+		"openAIKey": "",
+		"humeAIKey": ""
 	},
 	"creation": {
 		"static": 0,

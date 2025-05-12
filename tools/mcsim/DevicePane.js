@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -117,8 +117,8 @@ class DeviceScreenBehavior extends Behavior {
 		screen.bubble("onRecordingTouches", false);
 		screen.postMessage(JSON.stringify({ touches:"stopRecording"  }));
 	}
-	onAbort(screen, status) {
-		screen.container.bubble("onAbort", status);
+	onAbort(screen, status, reason) {
+		screen.container.bubble("onAbort", status, reason);
 	}
 	onCreate(screen, device) {
 		model.SCREEN = screen;
