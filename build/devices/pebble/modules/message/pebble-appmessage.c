@@ -19,9 +19,6 @@
  */
 
 /*
-	handle events for connected / disconnected
-		See: "Pebble comm session events to transition in & out of PostMessageStateDisconnected"
-
 	write Boolean... as uint8_t?
 */
 
