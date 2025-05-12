@@ -21,6 +21,8 @@
 /*
 	handle events for connected / disconnected
 		See: "Pebble comm session events to transition in & out of PostMessageStateDisconnected"
+
+	write Boolean... as uint8_t?
 */
 
 #include "xsmc.h"
@@ -30,22 +32,30 @@
 #include "builtinCommon.h"
 
 #include "applib/app_message/app_message.h"
+#include "applib/event_service_client.h"
 #include "services/common/evented_timer.h"
+#include "syscall/syscall.h"
 #include "util/dict.h"
 
 typedef struct {
-	xsMachine	*the;
-	xsSlot		obj;
-	xsSlot		*onReadable;
-	xsSlot		*onWritable;
-	xsSlot		*keys;		// map from keys as strings to keys as integers
-	xsSlot		*map;
+	xsMachine			*the;
+	xsSlot				obj;
+	xsSlot				*onReadable;
+	xsSlot				*onWritable;
+	xsSlot				*onSuspend;
+	xsSlot				*keys;		// map from keys as strings to keys as integers
+	xsSlot				*map;
+	EventServiceInfo	commSessionEvent;
+	EventedTimerID		initial;
+	uint8_t				active;
 } PebbleMessageRecord, *PebbleMessage;
 
 void xs_appmessage_destructor(void *data)
 {
 	PebbleMessage pm = data;
 	if (!pm) return;
+
+	event_service_client_unsubscribe(&pm->commSessionEvent);
 
 	app_message_close();
 
@@ -60,6 +70,8 @@ void xs_appmessage_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, pm->onReadable);
 	if (pm->onWritable)
 		(*markRoot)(the, pm->onWritable);
+	if (pm->onSuspend)
+		(*markRoot)(the, pm->onSuspend);
 	if (pm->map)
 		(*markRoot)(the, pm->map);
 	if (pm->keys)
@@ -76,6 +88,7 @@ static void initialOnWritable(void *context);
 static void messageReceived(DictionaryIterator *iterator, void *context);
 static void messageSent(DictionaryIterator *iterator, void *context);
 static void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, void *context);
+static void commSessionEvent(PebbleEvent *e, void *unused);
 
 void xs_appmessage(xsMachine *the)
 {
@@ -84,6 +97,7 @@ void xs_appmessage(xsMachine *the)
 
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 	xsSlot *onWritable = builtinGetCallback(the, xsID_onWritable);
+	xsSlot *onSuspend = builtinGetCallback(the, xsID_onSuspend);
 
 	builtinInitializeTarget(the);
 
@@ -121,6 +135,7 @@ void xs_appmessage(xsMachine *the)
 	pm->the = the;
 	pm->onReadable = onReadable;
 	pm->onWritable = onWritable;
+	pm->onSuspend = onSuspend;
 
 	app_message_set_context(pm);
 	app_message_register_inbox_received(messageReceived);
@@ -130,12 +145,19 @@ void xs_appmessage(xsMachine *the)
 		pm->keys = xsmcToReference(tmp);
 	}
 
-	if (pm->onWritable) {		//@@ and connected
-		evented_timer_register(0, false, initialOnWritable, pm);		//@@ memory leak -- need to dispose this...
+	pm->initial = EVENTED_TIMER_INVALID_ID;
+	if (pm->onWritable) {
+		if (sys_app_pp_get_comm_session())
+			pm->initial = evented_timer_register(0, false, initialOnWritable, pm);
 		
 		app_message_register_outbox_sent(messageSent);
 		app_message_register_outbox_failed(messageSendFailed);
 	}
+
+	pm->commSessionEvent.type = PEBBLE_COMM_SESSION_EVENT; 
+	pm->commSessionEvent.handler = commSessionEvent; 
+	pm->commSessionEvent.context = pm;
+	event_service_client_subscribe(&pm->commSessionEvent);
 }
 
 void xs_appmessage_close(xsMachine *the)
@@ -233,6 +255,9 @@ void initialOnWritable(void *context)
 {
 	PebbleMessage pm = context;
 
+	evented_timer_cancel(pm->initial);
+	pm->initial = EVENTED_TIMER_INVALID_ID; 
+
 	xsBeginHost(pm->the);
 		xsCallFunction0(xsReference(pm->onWritable), pm->obj);
 	xsEndHost(pm-the);
@@ -300,4 +325,25 @@ void messageSent(DictionaryIterator *iterator, void *context)
 void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, void *context)
 {
 	messageSent(iterator, context);		//@@ notify of error
+}
+
+void commSessionEvent(PebbleEvent *e, void *context) {
+	PebbleMessage pm = context;
+	PebbleCommSessionEvent *pcse = &e->bluetooth.comm_session_event;
+	if (!pcse->is_system) // Need pkjs, which runs inside the Pebble app, so need system session.
+		return;
+
+	if (pcse->is_open == pm->active)
+		return;
+	
+	pm->active = pcse->is_open;
+	if (pm->active) {
+		if (pm->onWritable)
+			initialOnWritable(pm);
+	}
+	else if (pm->onSuspend) {
+		xsBeginHost(pm->the);
+			xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
+		xsEndHost(pm-the);
+	}
 }
