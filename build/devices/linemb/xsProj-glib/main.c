@@ -119,30 +119,12 @@ int main(int argc, char *argv[]) {
   signal(SIGALRM, timeout_handler); // Used for timeout
 
   int error = 0;
-  static txMachine _root;
-  txMachine *the = &_root;
   txPreparation *preparation = xsPreparation();
 
-  c_memset(the, 0, sizeof(txMachine));
-  the->preparation = preparation;
-  the->keyArray = preparation->keys;
-  the->keyCount = (txID)preparation->keyCount + (txID)preparation->creation.initialKeyCount;
-  the->keyIndex = (txID)preparation->keyCount;
-  the->nameModulo = preparation->nameModulo;
-  the->nameTable = preparation->names;
-  the->symbolModulo = preparation->symbolModulo;
-  the->symbolTable = preparation->symbols;
-
-  the->stack = &preparation->stack[0];
-  the->stackBottom = &preparation->stack[0];
-  the->stackTop = &preparation->stack[preparation->stackCount];
-
-  the->firstHeap = &preparation->heap[0];
-  the->freeHeap = &preparation->heap[preparation->heapCount - 1];
-  the->aliasCount = (txID)preparation->aliasCount;
+  txMachine *the = fxPrepareMachine(NULL, preparation, "linemb", NULL, NULL);
 
   setvbuf(stdout, NULL, _IONBF, 0);
-  the = fxCloneMachine(&preparation->creation, the, "linemb", NULL);
+
   gxMachine = the;  // Save to thread-local storage
 #if mxInstrument
   fxDescribeInstrumentation(the, 0, NULL, NULL);
