@@ -18,6 +18,11 @@
  *
  */
 
+/*
+	handle events for connected / disconnected
+		See: "Pebble comm session events to transition in & out of PostMessageStateDisconnected"
+*/
+
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
@@ -33,6 +38,7 @@ typedef struct {
 	xsSlot		obj;
 	xsSlot		*onReadable;
 	xsSlot		*onWritable;
+	xsSlot		*keys;		// map from keys as strings to keys as integers
 	xsSlot		*map;
 } PebbleMessageRecord, *PebbleMessage;
 
@@ -56,6 +62,8 @@ void xs_appmessage_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, pm->onWritable);
 	if (pm->map)
 		(*markRoot)(the, pm->map);
+	if (pm->keys)
+		(*markRoot)(the, pm->keys);
 }
 
 static const xsHostHooks xsAppMessageHooks = {
@@ -79,9 +87,15 @@ void xs_appmessage(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-//	uint8_t format = builtinInitializeFormat(the, kIOFormatBuffer);
-//	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
-//		xsRangeError("invalid format");
+	if (xsmcHas(xsArg(0), xsID_format)) {
+		xsmcGet(tmp, xsArg(0), xsID_format);
+		if (0 != c_strcmp(xsmcToString(tmp), "map"))
+			xsRangeError("only map");
+	}
+
+	uint8_t format = builtinInitializeFormat(the, kIOFormatBuffer);
+	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
+		xsRangeError("invalid format");
 
 	uint32_t inbound = app_message_inbox_size_maximum(), outbound = app_message_outbox_size_maximum();
 	if (xsmcHas(xsArg(0), xsID_input)) {
@@ -107,11 +121,16 @@ void xs_appmessage(xsMachine *the)
 	pm->the = the;
 	pm->onReadable = onReadable;
 	pm->onWritable = onWritable;
-	
+
 	app_message_set_context(pm);
 	app_message_register_inbox_received(messageReceived);
 
-	if (pm->onWritable) {
+	if (xsmcHas(xsArg(0), xsID_keys)) {
+		xsmcGet(tmp, xsArg(0), xsID_keys);
+		pm->keys = xsmcToReference(tmp);
+	}
+
+	if (pm->onWritable) {		//@@ and connected
 		evented_timer_register(0, false, initialOnWritable, pm);		//@@ memory leak -- need to dispose this...
 		
 		app_message_register_outbox_sent(messageSent);
@@ -133,19 +152,27 @@ void xs_appmessage_close(xsMachine *the)
 void xs_appmessage_read(xsMachine *the)
 {
 	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
-	
-	if (!pm->map)
+
+	if (C_NULL == pm->map)
 		return;
 
-	xsResult = xsReference(pm->map);
+	xsmcSetNewObject(xsResult);
+	xsSlot tmp = xsReference(pm->map);
+	xsmcSet(xsResult, xsID_map, tmp);
+	if (pm->keys) {
+		tmp = xsReference(pm->keys);
+		xsmcSet(xsResult, xsID_keys, tmp);
+	}
 	pm->map = C_NULL;
 }
 
 void xs_appmessage_write(xsMachine *the)
 {
-	/* PebbleMessage pm = */ xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
+	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
 	xsSlot tmp;
 	int length, i;
+
+	xsmcVars(3);
 
 	xsmcGet(tmp, xsArg(1), xsID_length);
 	length = xsmcToInteger(tmp);
@@ -155,37 +182,51 @@ void xs_appmessage_write(xsMachine *the)
 		xsUnknownError("output_begin failed");
 
 	for (i = 0; i < length; i++) {
-		xsmcGetIndex(tmp, xsArg(1), i);
-		int type = xsmcTypeOf(tmp);
-		if (!((type == xsIntegerType) || (type == xsNumberType)))
-			xsUnknownError("invalid key");
-		uint32_t key = (uint32_t)xsmcToInteger(tmp);
-		tmp = xsCall1(xsArg(0), xsID_get, tmp);
-		type = xsmcTypeOf(tmp);
-		if ((xsStringType == type) || (xsStringXType == type)) {
-			if (dict_write_cstring(iter, key, xsmcToString(tmp)))
+		xsmcGetIndex(xsVar(0), xsArg(1), i);
+		xsVar(1) = xsCall1(xsArg(0), xsID_get, xsVar(0));
+
+		int keyType = xsmcTypeOf(xsVar(0));
+		if (!((keyType == xsIntegerType) || (keyType == xsNumberType))) {
+			if (!pm->keys)
+				xsUnknownError("no key map");
+
+			xsmcToString(xsVar(0));
+			xsVar(0) = xsCall1(xsReference(pm->keys), xsID_get, xsVar(0));
+			if (xsmcTypeOf(xsVar(0)) == xsUndefinedType)
+				xsUnknownError("unmapped key");
+		}
+		uint32_t key = (uint32_t)xsmcToInteger(xsVar(0));
+		int valueType = xsmcTypeOf(xsVar(1));
+		if ((xsStringType == valueType) || (xsStringXType == valueType)) {
+			if (dict_write_cstring(iter, key, xsmcToString(xsVar(1))))
 				xsUnknownError("overflow");
 		}
-		else if ((xsReferenceType == type) && xsmcIsInstanceOf(tmp, xsArrayBufferPrototype)) {
+		else if (xsReferenceType == valueType) {		// some kind of buffer
 			void *data;
 			xsUnsignedValue count;
-			xsmcGetBufferReadable(tmp, &data, &count);
+			xsmcGetBufferReadable(xsVar(1), &data, &count);
 			if (dict_write_data(iter, key, data, count))
 				xsUnknownError("overflow");
+		}
+		else if ((xsIntegerType == valueType) || (xsNumberType == valueType)) {
+			int32_t valueD = xsmcToNumber(xsVar(1));
+			if (valueD >= 2147483648.0)
+				dict_write_uint32(iter, key, (uint32_t)valueD);
+			else {
+				int32_t value = xsmcToInteger(xsVar(1));
+				if ((-128 <= value) && (value <= 127))
+					dict_write_int8(iter, key, (int8_t)value);
+				else if ((-32768 <= value) && (value <= 32767))
+					dict_write_int16(iter, key, (int16_t)value);
+				else
+					dict_write_int32(iter, key, value);
+			}
 		}
 		else
 			xsUnknownError("unexpected value");
 	}
 
 	app_message_outbox_send();
-}
-
-void xs_appmessage_get_format(xsMachine *the)
-{
-}
-
-void xs_appmessage_set_format(xsMachine *the)
-{
 }
 
 void initialOnWritable(void *context)
@@ -214,15 +255,34 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 				case TUPLE_BYTE_ARRAY:
 					xsmcSetArrayBuffer(xsVar(1), t->value->data, t->length);
 					break;
-				default:		//@@ fill in integer types
-					PBL_LOG(LOG_LEVEL_ALWAYS, " ignore key %d", (int)t->key);
-					continue;
+				case TUPLE_UINT: {
+					uint32_t i;
+					if (1 == t->length)
+						i = t->value->uint8;
+					else if (2 == t->length)
+						i = t->value->uint16;
+					else
+						i = t->value->uint32;
+					xsmcSetNumber(xsVar(1), i);	// worst cse
+					} break;
+				case TUPLE_INT: {
+					int32_t i;
+					if (1 == t->length)
+						i = t->value->int8;
+					else if (2 == t->length)
+						i = t->value->int16;
+					else
+						i = t->value->int32;
+					xsmcSetInteger(xsVar(1), i);
+					} break;
+				default:
+					PBL_CROAK("unhandled type");
 			}
 			xsmcSetInteger(xsVar(2), t->key);
 			xsCall2(xsVar(0), xsID_set, xsVar(2), xsVar(1));
 		}
 
-		pm->map = xsmcToReference(xsVar(0));		//@@ overwrites last message, if unread
+		pm->map = xsmcToReference(xsVar(0));		// overwrites last message, if unread
 
 		if (pm->onReadable) {
 			xsmcSetInteger(xsResult, 1);

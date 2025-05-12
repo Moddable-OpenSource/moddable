@@ -18,19 +18,37 @@
  *
  */
 
+function read() @ "xs_appmessage_read";
 function write() @ "xs_appmessage_write";
 
 class Message @ "xs_appmessage_destructor" {
 	constructor(options) @ "xs_appmessage";
 	close() @ "xs_appmessage_close";
 
-	read() @ "xs_appmessage_read"
+	read() {
+		const r = read.call(this);
+		const keys = r.keys, map = r.map;
+		if (keys) {
+			for (const [key, code] of keys.entries()) {
+				if (map.has(code)) {
+					map.set(key, map.get(code));
+					map.delete(code);
+				}
+			}
+		}
+		return map;
+	}
 	write(map) {
 		write.call(this, map, Array.from(map.keys()));
 	}
 
-	get format() @ "xs_appmessage_get_format"
-	set format() @ "xs_appmessage_set_format"
+	get format() {
+		return "map";
+	}
+	set format(value) {
+		if ("map" != value)
+				throw new RangeError("only map");
+	}
 }
 
 export default Message;
