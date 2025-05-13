@@ -18,10 +18,6 @@
  *
  */
 
-/*
-	write Boolean... as uint8_t?
-*/
-
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
@@ -41,7 +37,7 @@ typedef struct {
 	xsSlot				*onWritable;
 	xsSlot				*onSuspend;
 	xsSlot				*keys;		// map from keys as strings to keys as integers
-	xsSlot				*map;
+	xsSlot				*map;			// most recent received, unread message
 	EventServiceInfo	commSessionEvent;
 	EventedTimerID		initial;
 	uint8_t				active;
@@ -241,6 +237,8 @@ void xs_appmessage_write(xsMachine *the)
 					dict_write_int32(iter, key, value);
 			}
 		}
+		else if (xsBooleanType == valueType)
+			dict_write_int8(iter, key, (int8_t)xsmcToInteger(xsVar(1)));
 		else
 			xsUnknownError("unexpected value");
 	}
@@ -285,7 +283,7 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 						i = t->value->uint16;
 					else
 						i = t->value->uint32;
-					xsmcSetNumber(xsVar(1), i);	// worst cse
+					xsmcSetNumber(xsVar(1), i);	// worst case (could often be integer)
 					} break;
 				case TUPLE_INT: {
 					int32_t i;
