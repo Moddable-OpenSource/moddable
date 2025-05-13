@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			"./webstorage"
+		]
+	},
+	"preload": [
+		"webstorage"
+	]
+}

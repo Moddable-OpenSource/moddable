@@ -220,8 +220,6 @@ void xs_audioout_mark_(xsMachine* the, void* it, xsMarkRoot markRoot)
 void xs_audioout_start_(xsMachine *the)
 {
 	AudioOutput output = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioOutHooks);
-	if (output->running)
-		xsUnknownError("already started");
 	output->running = 1;
 }
 

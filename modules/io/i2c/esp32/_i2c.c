@@ -61,9 +61,7 @@ typedef struct I2CRecord I2CRecord;
 typedef struct I2CRecord *I2C;
 
 static I2C gI2C;
-static I2C gI2CActive;
 
-static uint8_t i2cActivate(I2C i2c);
 static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 static void _xs_i2c_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -310,13 +308,7 @@ void _xs_i2c_read(xsMachine *the)
 		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
-	if (!i2cActivate(i2c))
-		xsUnknownError("activate failed");
-
 	err = i2c_master_receive(i2c->device, buffer, length, i2c->timeout);
-
-	xSemaphoreGive(gI2CMutex);
-
 	if (ESP_OK != err)
 		xsUnknownError("read failed");
 }
@@ -334,15 +326,10 @@ void _xs_i2c_write(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
-	if (!i2cActivate(i2c))
-		xsUnknownError("activate failed");
-
 	if (length)
 		err = i2c_master_transmit(i2c->device, buffer, length, i2c->timeout);
-	else //@@ write quick unsupported thorugh transmit, but probe seems similar-ish
+	else //@@ write quick unsupported through transmit, but probe seems similar-ish
 		err = i2c_master_probe(i2c->bus, i2c->address, 1000);
-
-	xSemaphoreGive(gI2CMutex);
 
 	if (length == 0) {
 		if (ESP_OK != err)
@@ -375,21 +362,9 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
 
-	if (!i2cActivate(i2c))
-		xsUnknownError("activate failed");
-
 	err = i2c_master_transmit_receive(i2c->device, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
-
-	xSemaphoreGive(gI2CMutex);
-
 	if (ESP_OK != err)
 		xsUnknownError("writeRead failed");
-}
-
-uint8_t i2cActivate(I2C i2c)
-{
-	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
-	return 1;
 }
 
 uint8_t usingPins(uint32_t data, uint32_t clock)
@@ -411,19 +386,6 @@ void *modI2CValidate(xsMachine *the, xsSlot *instance)
 
 uint8_t modI2CDeactivate(void *instanceData)
 {
-	I2C i2c = instanceData;
-
-	if (!gI2CActive || !i2c)
-		return 0;
-
-	if ((gI2CActive->data != i2c->data) || (gI2CActive->clock != i2c->clock))
-		return 0;			// an I2C bus is active, but not this one
-
-	if (!i2cActivate(C_NULL))	// unconditionally deactivate this bus
-		return 0;
-
-	xSemaphoreGive(gI2CMutex);
-
 	return 1;
 }
 
@@ -588,7 +550,7 @@ static void i2cTask(void *pvParameter)
 				;
 			else if (kOperationCancelled == transaction->operation)
 				transaction->err = -2;
-			else if (i2cActivate(transaction->i2c)) {
+			else {
 				I2C i2c = transaction->i2c;
 				switch (transaction->operation) {
 					case kOperationRead:
@@ -625,11 +587,7 @@ static void i2cTask(void *pvParameter)
 						transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
 						break;
 				}
-
-				xSemaphoreGive(gI2CMutex);
 			}
-			else
-				transaction->err = -1;
 
 			transaction->processing = 2;
 

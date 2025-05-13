@@ -63,6 +63,16 @@ UPLOAD_SPEED = 921600
 DEBUGGER_SPEED = 921600
 !ENDIF
 
+!IFNDEF XSBUG_HOST
+XSBUG_HOST = localhost
+!ENDIF
+!IFNDEF XSBUG_PORT
+XSBUG_PORT = 5002
+!ENDIF
+!IFNDEF XSBUG_LOG_PORT
+XSBUG_LOG_PORT = 5002
+!ENDIF
+
 #VERBOSE = 1
 
 !IF "$(VERBOSE)"=="1"
@@ -108,7 +118,7 @@ WAIT_FOR_NEW_SERIAL = $(PLATFORM_DIR)\config\waitForNewSerialWindows.bat 1 $(UF2
 NORESTART = 
 !IF "$(XSBUG_LOG)"=="1"
 DO_XSBUG =
-SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && cd $(MODDABLE)\tools\xsbug-log && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && node xsbug-log start /B $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
+SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && cd $(MODDABLE)\tools\xsbug-log && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && node xsbug-log start /B $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1
 !ELSE
 DO_XSBUG = tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start $(MODDABLE_TOOLS_DIR)\xsbug.exe)
 SERIAL_2_XSBUG = echo Starting serial2xsbug. Type Ctrl-C twice after debugging app. && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(MODDABLE_TOOLS_DIR)\serial2xsbug $(M4_VID):$(M4_PID) $(DEBUGGER_SPEED) 8N1 -dtr
@@ -736,7 +746,7 @@ $(LIB_DIR)\buildinfo.o: $(TMP_DIR)\mc.xs.c $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)\
 	@echo # buildinfo
 	echo #include "buildinfo.h" > $(LIB_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(LIB_DIR)\buildinfo.c
-	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $@
+	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
 
 $(LIB_DIR)\moddable_startup_nrf52840.o: $(BUILD_DIR)\devices\nrf52\xsProj\moddable_startup_nrf52840.S
 	@echo # asm $(@F)
@@ -987,6 +997,6 @@ $(TMP_DIR)\mc.resources.c: $(DATA) $(RESOURCES) $(MANIFEST)
 	@echo # mcrez resources
 	$(MCREZ) $(DATA) $(RESOURCES) -o $(TMP_DIR) -p nrf52 -r mc.resources.c
 
-$(TMP_DIR)\xsmain.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
-	@echo # application: $(@F)
-	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $@
+# $(TMP_DIR)\xsmain.o: $(BUILD_DIR)\devices\nrf52\base\xsmain.c $(TMP_DIR)\mc.xs.c
+# 	@echo # application: $(@F)
+# 	$(CC) $(C_FLAGS) $(C_DEFINES) $(C_INCLUDES) $? -o $(TMP_DIR)\xsmain.o

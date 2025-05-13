@@ -8,8 +8,8 @@ import AudioIn from "embedded:io/audio/in";
 let input = new AudioIn({});
 
 input.stop(); // stop before start
-input.start()
-assert.throws(Error, () => input.start(), "start while started");
+input.start();
+input.start(); // start after start
 input.stop();
 input.stop(); // stop after stop
 

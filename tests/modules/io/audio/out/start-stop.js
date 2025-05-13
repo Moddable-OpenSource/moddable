@@ -8,8 +8,8 @@ import AudioOut from "embedded:io/audio/out";
 let out = new AudioOut({});
 
 out.stop(); // stop before start
-out.start()
-assert.throws(Error, () => out.start(), "start while started");
+out.start();
+out.start(); // start after start
 out.stop();
 out.stop(); // stop after stop
 

@@ -374,7 +374,7 @@ void xs_audioout_start_(xsMachine *the)
 	esp_err_t err;
 
 	if (audioOut->started)
-		xsUnknownError("already started");
+		return;
 
 	err = i2s_channel_enable(audioOut->tx_handle);
 	if (ESP_OK != err)

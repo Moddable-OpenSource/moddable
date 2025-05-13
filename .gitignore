@@ -24,3 +24,4 @@ build/devices/qca4020/xsProj/build/gcc/output/
 **/*.bak
 **/package-lock.json
 **/node_modules/**
+**/dist/**

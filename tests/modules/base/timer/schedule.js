@@ -8,7 +8,7 @@ import Timer from "timer";
 let t = Timer.set(() => {$DONE("should never reach here");}, 1_000_000);
 
 assert.throws(SyntaxError, () => Timer.schedule(), "no argument");
-assert.throws(SyntaxError, () => Timer.clear(new $TESTMC.HostObject), "schedule arbitrary host object");
+assert.throws(SyntaxError, () => Timer.schedule(new $TESTMC.HostObject), "schedule arbitrary host object");
 assert.throws(TypeError, () => Timer.schedule(t, 1n), "big int delay");
 assert.throws(TypeError, () => Timer.schedule(t, Symbol()), "symbol delay");
 assert.throws(TypeError, () => Timer.schedule(t, 1_000_000, 2n), "big int repeat");
