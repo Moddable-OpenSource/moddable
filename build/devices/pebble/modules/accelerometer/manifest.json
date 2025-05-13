@@ -1,0 +1,10 @@
+{
+	"include": [
+	],
+	"modules": {
+		"embedded:sensor/Accelerometer": "./pebble-accelerometer"
+	},
+	"preload": [
+		"embedded:sensor/Accelerometer"
+	]
+}

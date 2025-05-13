@@ -98,6 +98,7 @@ def build(bld):
 		'moddable/build/devices/pebble/modules/rocky/pebblesystem.c',
 		'moddable/build/devices/pebble/modules/button/pebblebutton.c',
 		'moddable/build/devices/pebble/modules/message/pebble-appmessage.c',
+		'moddable/build/devices/pebble/modules/accelerometer/pebble-accelerometer.c',
 		'../../src/fw/applib/rockyjs/api/rocky_api_graphics_color.c',
 		'moddable/build/tmp/pebble/release/helloworld/mc.xs.c',
 		'moddable/build/tmp/pebble/release/helloworld/mc.resources.c',
