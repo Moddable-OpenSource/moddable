@@ -28,6 +28,7 @@
 
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
+#include "applib/graphics/graphics_line.h"
 #include "applib/rockyjs/api/rocky_api_graphics_text.h"
 
 extern const RockyAPISystemFontDefinition s_font_definitions[];
@@ -101,6 +102,28 @@ void xs_pocopebbble_drawText(xsMachine *the)
 	graphics_draw_text(ctx, xsmcToString(xsArg(0)), font, box,
 		GTextOverflowModeWordWrap, GTextAlignmentLeft, C_NULL);
 	ctx->draw_state.text_color = saveTextColor;
+}
+
+void xs_pocopebbble_drawLine(xsMachine *the)
+{
+	GContext *ctx = getPocoGContext(the);
+	GPoint from, to;
+	from.x = xsmcToInteger(xsArg(0));
+	from.y = xsmcToInteger(xsArg(1));
+	to.x = xsmcToInteger(xsArg(2));
+	to.y = xsmcToInteger(xsArg(3));
+	int color = xsmcToInteger(xsArg(4));
+	int width = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 1;
+
+	GColor saveStrokeColor = ctx->draw_state.text_color; 
+	ctx->draw_state.stroke_color.argb = color;
+	uint8_t saveStrokeWidth = ctx->draw_state.stroke_width;
+	ctx->draw_state.stroke_width = (uint8_t)width;
+
+	graphics_draw_line(ctx, from, to);
+
+	ctx->draw_state.stroke_color = saveStrokeColor;
+	ctx->draw_state.stroke_width = saveStrokeWidth;
 }
 
 void xs_pebblebitmap_build(xsMachine *the)

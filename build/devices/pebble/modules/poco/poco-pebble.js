@@ -27,6 +27,7 @@ Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
 
 Poco.prototype.getTextWidth = function(text, font) @ "xs_pocopebble_getTextWidth";
 Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_pocopebbble_drawText";
+Poco.prototype.drawLine = function(x0, y0, x1, y1, color, width) @ "xs_pocopebbble_drawLine";
 
 function build(id) @ "xs_pebblebitmap_build"
 
