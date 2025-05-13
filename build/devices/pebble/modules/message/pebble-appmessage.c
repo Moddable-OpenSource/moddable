@@ -120,15 +120,15 @@ void xs_appmessage(xsMachine *the)
 	if (!pm)
 		xsRangeError("no memory");
 
-	xsmcSetHostData(xsThis, pm);
-	xsSetHostHooks(xsThis, (xsHostHooks *)&xsAppMessageHooks);
-	xsRemember(pm->obj);
-
 	pm->obj = xsThis;
 	pm->the = the;
 	pm->onReadable = onReadable;
 	pm->onWritable = onWritable;
 	pm->onSuspend = onSuspend;
+
+	xsmcSetHostData(xsThis, pm);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsAppMessageHooks);
+	xsRemember(pm->obj);
 
 	app_message_set_context(pm);
 	app_message_register_inbox_received(messageReceived);
