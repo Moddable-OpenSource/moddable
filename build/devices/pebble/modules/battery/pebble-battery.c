@@ -118,9 +118,8 @@ void xs_battery_sample(xsMachine *the)
 		data = pb->sample;
 		pb->haveSample = false;
 	}
-	else {
+	else
 		data = battery_state_service_peek();
-	}
 
 	xsSlot tmp;
 	xsmcSetNewObject(xsResult);
