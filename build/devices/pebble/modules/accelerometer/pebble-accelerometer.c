@@ -85,6 +85,8 @@ void xs_accelerometer(xsMachine *the)
 		xsUnknownError("only one");
 	
 	xsSlot *onSample = builtinGetCallback(the, xsID_onSample);
+	xsSlot *onTap = builtinGetCallback(the, xsID_onTap);
+	xsSlot *onDoubleTap = builtinGetCallback(the, xsID_onDoubleTap);
 
 	builtinInitializeTarget(the);
 
@@ -96,6 +98,8 @@ void xs_accelerometer(xsMachine *the)
 	xsRemember(pa->obj);
 	pa->the = the;
 	pa->onSample = onSample;
+	pa->onTap = onTap;
+	pa->onDoubleTap = onDoubleTap;
 	gAccelerometer = pa;
 
 	xsmcSetHostData(xsThis, pa);
