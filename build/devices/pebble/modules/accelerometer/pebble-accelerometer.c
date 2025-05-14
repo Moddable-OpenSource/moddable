@@ -194,8 +194,8 @@ static void doTap(PebbleAccelerometer pa, AccelAxisType axis, int32_t direction,
 {
 	char msg[3];
 	xsMachine *the = pa->the;
-	msg[0] = (direction >= 0) ? '+' : '-';
-	msg[1] = (ACCEL_AXIS_X == axis) ? 'x' : ((ACCEL_AXIS_Y == axis) ? 'y' : 'z');
+	msg[0] = (ACCEL_AXIS_X == axis) ? 'x' : ((ACCEL_AXIS_Y == axis) ? 'y' : 'z');
+	msg[1] = (direction >= 0) ? '+' : '-';
 	msg[2] = 0;
 
 	xsBeginHost(the);
