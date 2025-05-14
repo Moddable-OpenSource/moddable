@@ -897,7 +897,7 @@ void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSiz
 		return host->value.host.data;
 	}
 	else
-		mxSyntaxError("C: xsSetHostData: not a host object");
+		mxSyntaxError("C: fxSetHostChunk: not a host object");
 
 	return NULL;
 }
