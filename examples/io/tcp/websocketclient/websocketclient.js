@@ -177,9 +177,9 @@ class WebSocketClient {
 			payload[1] |= 0x80;
 
 			mask[0] = Math.irandom(256);
-			mask[1] = Math.irandom(256)
-			mask[2] = Math.irandom(256)
-			mask[3] = Math.irandom(256)
+			mask[1] = Math.irandom(256);
+			mask[2] = Math.irandom(256);
+			mask[3] = Math.irandom(256);
 			Logical.xor(payload.subarray(header), mask.buffer);
 			payload.set(mask, header - 4);
 		}

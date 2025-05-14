@@ -147,6 +147,7 @@ OBJECTS = \
 	$(TMP_DIR)\e_atanh.obj \
 	$(TMP_DIR)\e_cosh.obj \
 	$(TMP_DIR)\e_exp.obj \
+	$(TMP_DIR)\e_fmod.obj \
 	$(TMP_DIR)\e_hypot.obj \
 	$(TMP_DIR)\e_log.obj \
 	$(TMP_DIR)\e_log10.obj \
@@ -160,13 +161,16 @@ OBJECTS = \
 	$(TMP_DIR)\k_tan.obj \
 	$(TMP_DIR)\s_asinh.obj \
 	$(TMP_DIR)\s_atan.obj \
+	$(TMP_DIR)\s_cbrt.obj \
+	$(TMP_DIR)\s_ceil.obj \
 	$(TMP_DIR)\s_cos.obj \
 	$(TMP_DIR)\s_expm1.obj \
 	$(TMP_DIR)\s_log1p.obj \
 	$(TMP_DIR)\s_scalbn.obj \
 	$(TMP_DIR)\s_sin.obj \
 	$(TMP_DIR)\s_tan.obj \
-	$(TMP_DIR)\s_tanh.obj
+	$(TMP_DIR)\s_tanh.obj \
+	$(TMP_DIR)\s_trunc.obj
 
 build : $(TMP_DIR) $(BIN_DIR) $(BIN_DIR)\$(NAME).exe
 

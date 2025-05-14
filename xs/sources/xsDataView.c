@@ -1246,7 +1246,7 @@ txBoolean fxTypedArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID i
 		if (slot->kind != XS_UNINITIALIZED_KIND) {
 			dispatch->value.typedArray.dispatch->coerce(the, slot);
 			if (arrayBuffer->flag & XS_DONT_SET_FLAG)
-				mxTypeError("read-only buffer");
+                return 0;
 			length = fxGetDataViewSize(the, view, buffer) >> shift;
 			if (index < length)
 				(*dispatch->value.typedArray.dispatch->setter)(the, arrayBuffer, view->value.dataView.offset + (index << shift), slot, EndianNative);
@@ -1380,8 +1380,12 @@ txBoolean fxTypedArraySetPropertyValue(txMachine* the, txSlot* instance, txID id
 		txIndex length;
 		if ((receiver->kind == XS_REFERENCE_KIND) && (receiver->value.reference == instance)) {
 			dispatch->value.typedArray.dispatch->coerce(the, value);
-			if (arrayBuffer->flag & XS_DONT_SET_FLAG)
-				mxTypeError("read-only buffer");
+			if (arrayBuffer->flag & XS_DONT_SET_FLAG) {
+				if (the->frame->next->flag & XS_STRICT_FLAG)
+					mxTypeError("read-only buffer");
+				else
+					return 0;
+			}
 			length = fxGetDataViewSize(the, view, buffer) >> shift;
 			if ((!id) && (index < length)) {
 				(*dispatch->value.typedArray.dispatch->setter)(the, buffer->value.reference->next, view->value.dataView.offset + (index << shift), value, EndianNative);
