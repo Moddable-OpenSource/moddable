@@ -381,21 +381,15 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define C_FP_SUBNORMAL 3
 #define C_FP_ZERO 2
 
-#define c_trunc trunc
 #define C_INFINITY (double)INFINITY
 
 #define c_isfinite isfinite
 #define c_isnormal isnormal
 #define c_isnan isnan
 #define c_fabs fabs
-#define c_cbrt cbrt
-#define c_ceil ceil
 #define c_floor floor
-#define c_hypot hypot
 #define c_sqrt sqrt
-#define c_fmod fmod
 #define c_fpclassify fpclassify
-#define c_log10 log10
 #define c_log2 log2
 #define c_rand rand
 #define c_signbit signbit
