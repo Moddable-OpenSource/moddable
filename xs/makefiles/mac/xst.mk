@@ -181,6 +181,7 @@ OBJECTS = \
 	$(TMP_DIR)/e_atanh.o \
 	$(TMP_DIR)/e_cosh.o \
 	$(TMP_DIR)/e_exp.o \
+	$(TMP_DIR)/e_fmod.o \
 	$(TMP_DIR)/e_hypot.o \
 	$(TMP_DIR)/e_log.o \
 	$(TMP_DIR)/e_log10.o \
@@ -194,13 +195,16 @@ OBJECTS = \
 	$(TMP_DIR)/k_tan.o \
 	$(TMP_DIR)/s_asinh.o \
 	$(TMP_DIR)/s_atan.o \
+	$(TMP_DIR)/s_cbrt.o \
+	$(TMP_DIR)/s_ceil.o \
 	$(TMP_DIR)/s_cos.o \
 	$(TMP_DIR)/s_expm1.o \
 	$(TMP_DIR)/s_log1p.o \
 	$(TMP_DIR)/s_scalbn.o \
 	$(TMP_DIR)/s_sin.o \
 	$(TMP_DIR)/s_tan.o \
-	$(TMP_DIR)/s_tanh.o
+	$(TMP_DIR)/s_tanh.o \
+	$(TMP_DIR)/s_trunc.o
 
 VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/fdlibm $(TLS_DIR)/yaml
 VPATH += $(MODDABLE)/modules/data/text/decoder
