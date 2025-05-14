@@ -105,12 +105,12 @@ void xs_accelerometer(xsMachine *the)
 	if (onSample)
 		accel_data_service_subscribe(1, accelerometerData);
 	else
-		accel_data_service_subscribe(0, C_NULL);		// activates accelerometer but not callback or buffer
+		accel_data_service_subscribe(0, C_NULL);		// activates accelerometer but not callback or buffer - see accelerometer_peek_test.c
 
 	if (pa->onTap)
 		accel_tap_service_subscribe(singleTap);
 
-		if (pa->onDoubleTap)
+	if (pa->onDoubleTap)
 		accel_double_tap_service_subscribe(doubleTap);
 }
 
