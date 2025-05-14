@@ -48,8 +48,7 @@ void xs_accelerometer_destructor(void *data)
 	PebbleAccelerometer pa = data;
 	if (!pa) return;
 
-	if (pa->onSample)
-		accel_data_service_unsubscribe();
+	accel_data_service_unsubscribe();
 	if (pa->onTap)
 		accel_tap_service_unsubscribe();
 	if (pa->onDoubleTap)
