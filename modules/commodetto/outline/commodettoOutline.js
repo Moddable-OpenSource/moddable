@@ -5,6 +5,7 @@ class Outline @ "xs_outline_destructor" {
 	rotate(angle, cx, cy) @ "xs_outline_rotate"
 	scale(x, y) @ "xs_outline_scale"
 	translate(x, y) @ "xs_outline_translate"
+	transform(cx, cy, a, sx, sy, tx, ty) @ "xs_outline_transform"
 	
 	get bounds() @ "xs_outline_get_bounds"
 	

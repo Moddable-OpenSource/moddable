@@ -294,6 +294,8 @@ class Connection {
 					if (item.done) {
 						this.#pendingWrite = "\r\n";
 						this.#state = "sendResponseBody";
+						if (101 === this.#options.status)	// 101 Switching Protocols "...the empty line which terminates the 101 response"
+							this.#remaining = 0;
 						delete this.#options.headers;
 					}
 					else {

@@ -259,7 +259,14 @@ void fxAbort(txMachine* the, int status)
 		}
 	#endif
 
-	fxReport(the, "XS abort: %s\n", msg);
+	char *reason = "";
+	if (XS_UNHANDLED_EXCEPTION_EXIT == status) {
+		mxPush(mxException);
+		mxGetID(mxID(_message));
+		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
+			reason = the->stack->value.string;
+	}
+	fxReport(the, "XS abort: %s %s\n", msg, reason);
 	#if !defined(MODDEF_XS_DEBUGABORT) || MODDEF_XS_DEBUGABORT
 		#if defined(mxDebug) && !MODDEF_XS_TEST
 			if ((char *)&the <= the->stackLimit)

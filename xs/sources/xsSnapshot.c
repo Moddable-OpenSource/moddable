@@ -96,7 +96,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxModuleStuffAdditions 0
 #endif
 #if mxECMAScript2025
-	#define mxECMAScript2025Additions 30
+	#define mxECMAScript2025Additions 31
 #else
 	#define mxECMAScript2025Additions 0
 #endif
@@ -670,6 +670,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxECMAScript2025
 	fx_Error_prototype_set_stack,
 	fx_Iterator,
+	fx_Iterator_from,
 	fx_Iterator_prototype_constructor_get,
 	fx_Iterator_prototype_constructor_set,
 	fx_Iterator_prototype_drop,

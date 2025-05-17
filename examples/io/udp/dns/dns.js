@@ -91,10 +91,10 @@ class Resolver {
 
 			if (request.id) {
 				const servers = this.#servers;
-				this.#socket.write(servers[request.state % servers.length], 53, packet.build());
+				this.#socket.write(packet.build(), servers[request.state % servers.length], 53);
 			}
 			else
-				this.#socket.write("224.0.0.251", 5353, packet.build());
+				this.#socket.write(packet.build(), "224.0.0.251", 5353);
 		}
 		catch {
 			if (!this.#timer) {

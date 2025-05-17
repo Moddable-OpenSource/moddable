@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -111,6 +111,16 @@ UPLOAD_SPEED = 921600
 DEBUGGER_SPEED = 460800
 !ENDIF
 
+!IFNDEF XSBUG_HOST
+XSBUG_HOST = localhost
+!ENDIF
+!IFNDEF XSBUG_PORT
+XSBUG_PORT = 5002
+!ENDIF
+!IFNDEF XSBUG_LOG_PORT
+XSBUG_LOG_PORT = 5002
+!ENDIF
+
 !IF "$(BASE_DIR)"==""
 BASE_DIR = $(USERPROFILE)
 !ENDIF
@@ -173,9 +183,9 @@ KILL_SERIAL2XSBUG= -tasklist /nh /fi "imagename eq serial2xsbug.exe" | (find /i 
 
 !IF "$(XSBUG_LOG)"=="1"
 !IF "$(USE_USB)"=="0"
-START_SERIAL2XSBUG = echo Launching app... & set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1 
+START_SERIAL2XSBUG = echo Launching app... && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(BUILD_DIR)\bin\win\release\serial2xsbug $(PORT_TO_USE) $(DEBUGGER_SPEED) 8N1 
 !ELSE
-START_SERIAL2XSBUG = echo Launching app... && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(BUILD_DIR)\bin\win\release\serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1
+START_SERIAL2XSBUG = echo Launching app... && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log start /B $(BUILD_DIR)\bin\win\release\serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1
 !ENDIF
 START_XSBUG =
 !ENDIF
@@ -548,8 +558,6 @@ release: precursor
 	python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) $(PORT_COMMAND) -b $(UPLOAD_SPEED) monitor
 
 prepare:
-	$(KILL_SERIAL2XSBUG)
-	$(START_XSBUG)
 	if exist $(BLD_DIR)\xs_esp32.elf del $(BLD_DIR)\xs_esp32.elf
 	if not exist $(BLD_DIR) mkdir $(BLD_DIR)
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.

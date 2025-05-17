@@ -23,6 +23,8 @@ class UDP @ "xs_udp_destructor" {
 	close() @ "xs_udp_close"
 	read() @ "xs_udp_read"
 	write() @ "xs_udp_write"
+	add() @ "xs_udp_add"
+	remove() @ "xs_udp_remove"
 
 	get format() {
 		return "buffer";

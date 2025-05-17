@@ -678,6 +678,12 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	mxTry(the) {
+		if (timer->interval == 0) {
+			fxAccess(the, &job->self);
+			*mxResult = the->scratch;
+			fxSetHostData(the, mxResult, NULL);
+		}
+
 		mxPushUndefined();
 		mxPush(job->function);
 		mxCall();
@@ -693,15 +699,15 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 		fxAccess(the, &job->self);
 		*mxResult = the->scratch;
 		fxForget(the, &job->self);
-		fxSetHostData(the, mxResult, NULL);
 	}
 	fxEndHost(the);
 }
 
 void fx_clearTimer(txMachine* the)
 {
-	if (mxIsNull(mxArgv(0)))
+	if ((0 == mxArgc) || (XS_REFERENCE_KIND != mxArgv(0)->kind) || (C_NULL == fxGetHostDataIf(the, mxArgv(0))))
 		return;
+
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
 		txSharedTimer* timer = fxGetHostData(the, mxArgv(0));
@@ -712,8 +718,6 @@ void fx_clearTimer(txMachine* the)
 			fxUnscheduleSharedTimer(timer);
 		}
 	}
-	else
-		mxTypeError("no timer");
 }
 
 void fx_destroyTimer(void* data)

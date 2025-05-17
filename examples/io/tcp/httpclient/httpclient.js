@@ -405,8 +405,9 @@ class HTTPClient {
 	#done() {
 		this.#timer = undefined;
 
-		this.#state = "connected";
+		this.#state = "completing";
 		this.#current.onDone?.call(this.#current.request, null);
+		this.#state = "connected";
 		this.#next();
 		if (this.#current)
 			this.#onWritable(this.#writable);

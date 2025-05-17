@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -140,11 +140,6 @@ void modTimerUnschedule(modTimer timer)
 	if (timer->g_timer)
 		g_source_remove(timer->g_timer);
 	timer->g_timer = 0;
-}
-
-uint16_t modTimerGetID(modTimer timer)
-{
-	return timer->id;
 }
 
 int modTimerGetSecondInterval(modTimer timer)

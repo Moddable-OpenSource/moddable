@@ -20,14 +20,11 @@
 
 /*
 	UDP socket - uing lwip low level callback API
-
-	To do:
-
-		- multicast
 */
 
 #include "lwip/udp.h"
 #include "lwip/raw.h"
+#include "lwip/igmp.h"
 
 #include "modLwipSafe.h"
 
@@ -37,6 +34,10 @@
 #include "mc.xs.h"			// for xsID_* values
 
 #include "builtinCommon.h"
+
+#if ESP32
+	#include "esp_wifi.h"
+#endif
 
 struct UDPPacketRecord {
 	struct UDPPacketRecord *next;
@@ -53,6 +54,8 @@ struct UDPRecord {
 	xsSlot			obj;
 	xsMachine		*the;
 	xsSlot			*onReadable;
+	uint8_t			readablePending;
+	uint8_t			closed;
 };
 typedef struct UDPRecord UDPRecord;
 typedef struct UDPRecord *UDP;
@@ -71,6 +74,7 @@ void xs_udp_constructor(xsMachine *the)
 {
 	UDP udp;
 	int port = 0;
+	int ttl = -1;
 	struct udp_pcb *skt;
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 
@@ -83,6 +87,13 @@ void xs_udp_constructor(xsMachine *the)
 		port = xsmcToInteger(xsVar(0));
 		if ((port < 0) || (port > 65535))
 			xsRangeError("invalid port");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_timeToLive)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_timeToLive);
+		ttl = xsmcToInteger(xsVar(0));
+		if ((ttl <= 0) || (ttl > 255))
+			xsRangeError("invalid timeToLive");
 	}
 
 	builtinInitializeTarget(the);
@@ -112,6 +123,9 @@ void xs_udp_constructor(xsMachine *the)
 
 	udp_recv(skt, (udp_recv_fn)udpReceive, udp);
 
+	if (ttl > 0)
+		skt->ttl = ttl;
+
 	udp->onReadable = onReadable;
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsUDPHooks);
@@ -133,7 +147,8 @@ void xs_udp_destructor(void *data)
 		c_free(packet);
 	}
 
-	c_free(data);
+	if (!udp->closed || !udp->readablePending)		// if closed is not set, was called from destructor when killing VM
+		c_free(data);
 
 	modInstrumentationAdjust(NetworkSockets, -1);
 }
@@ -142,6 +157,7 @@ void xs_udp_close(xsMachine *the)
 {
 	UDP udp = xsmcGetHostData(xsThis);
 	if (udp && xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks)) {
+		udp->closed = true;
 		xsForget(udp->obj);
 		xs_udp_destructor(udp);
 		xsmcSetHostData(xsThis, NULL);
@@ -160,6 +176,7 @@ void xs_udp_read(xsMachine *the)
 		builtinCriticalSectionEnd();
 		return;
 	}
+	udp->packets = packet->next;
 	builtinCriticalSectionEnd();
 
 	xsmcSetArrayBuffer(xsResult, packet->pb->payload, packet->pb->len);
@@ -172,10 +189,6 @@ void xs_udp_read(xsMachine *the)
 	ipaddr_ntoa_r(&packet->address, xsmcToString(xsVar(0)), 32);
 	xsmcSet(xsResult, xsID_address, xsVar(0));
 
-	builtinCriticalSectionBegin();
-	udp->packets = packet->next;
-	builtinCriticalSectionEnd();
-
 	pbuf_free_safe(packet->pb);
 	c_free(packet);
 }
@@ -183,23 +196,97 @@ void xs_udp_read(xsMachine *the)
 void xs_udp_write(xsMachine *the)
 {
 	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
-	char temp[32];
-	uint16_t port = xsmcToInteger(xsArg(1));
+	uint16_t port;
 	ip_addr_t dst;
 	xsUnsignedValue byteLength;
 	err_t err;
 	void *buffer;
 
-	xsmcToStringBuffer(xsArg(0), temp, sizeof(temp));
-	if (!ipaddr_aton(temp, &dst))
-		xsRangeError("invalid IP address");
+	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
 
-	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
+	if (!ipaddr_aton(xsmcToString(xsArg(1)), &dst))
+		xsRangeError("invalid IP address");
+	port = xsmcToInteger(xsArg(2));
+
+	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
 	udp_sendto_safe(udp->skt, buffer, byteLength, &dst, port, &err);
 	if (ERR_OK != err)
 		xsUnknownError("UDP send failed");
 
 	modInstrumentationAdjust(NetworkBytesWritten, byteLength);
+}
+
+void xs_udp_add(xsMachine *the)
+{
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
+	ip_addr_t multicastIP;
+
+	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
+		xsUnknownError("invalid IP address");
+
+#if LWIP_IPV4 && LWIP_IPV6
+	if (!IP_IS_V4(&multicastIP))
+		xsUnknownError("invalid IP address");
+#endif
+
+#if ESP32
+	if (0xffffffff == *(uint32_t *)&multicastIP.u_addr.ip4)
+		xsUnknownError("broadcast is not multicast");
+
+	esp_netif_t *ifc = NULL;
+	while ((ifc = esp_netif_next_unsafe(ifc))) {
+		esp_netif_ip_info_t info = {0};
+		if (ESP_OK == esp_netif_get_ip_info(ifc, &info))
+			igmp_joingroup((ip4_addr_t *)&info.ip, &multicastIP.u_addr.ip4);
+	}
+#elif CYW43_LWIP
+	//@@ MDK - multicast
+	ip_addr_t ifaddr;
+	struct netif *netif;
+	netif = netif_get_by_index(0);
+	ifaddr.addr = netif->ip_addr.addr;
+	igmp_joingroup(&ifaddr, &multicastIP);
+#else
+	if (0xffffffff == multicastIP.addr)
+		xsUnknownError("broadcast is not multicast");
+
+	ip_addr_t ifaddr;
+	struct ip_info staIpInfo;
+	wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+	ifaddr.addr = staIpInfo.ip.addr;
+	igmp_joingroup(&ifaddr, &multicastIP);
+#endif
+}
+
+void xs_udp_remove(xsMachine *the)
+{
+	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
+	ip_addr_t multicastIP;
+
+	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
+		xsUnknownError("invalid IP address");
+
+#if ESP32
+	esp_netif_t *ifc = NULL;
+	while ((ifc = esp_netif_next_unsafe(ifc))) {
+		esp_netif_ip_info_t info = {0};
+		if (ESP_OK == esp_netif_get_ip_info(ifc, &info))
+			igmp_leavegroup((ip4_addr_t *)&info.ip, &multicastIP.u_addr.ip4);
+	}
+#elif CYW43_LWIP
+	//@@ MDK - multicast
+	ip_addr_t ifaddr;
+	struct netif *netif;
+	netif = netif_get_by_index(0);
+	ifaddr.addr = netif->ip_addr.addr;
+	igmp_leavegroup(&ifaddr, &multicastIP);
+#else
+	ip_addr_t ifaddr;
+	struct ip_info staIpInfo;
+	wifi_get_ip_info(0, &staIpInfo);		// 0 == STATION_IF
+	ifaddr.addr = staIpInfo.ip.addr;
+	igmp_leavegroup(&ifaddr, &multicastIP);
+#endif
 }
 
 void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -228,6 +315,7 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	modInstrumentationAdjust(NetworkBytesRead, p->len);
 
 	builtinCriticalSectionBegin();
+	uint8_t readablePending = udp->readablePending;
 	if (udp->packets) {
 		UDPPacket walker;
 
@@ -240,9 +328,11 @@ void udpReceive(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t 
 	else {
 		udp->packets = packet;
 		builtinCriticalSectionEnd();
+	}
 
-		if (udp->onReadable)
-			modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
+	if (!readablePending && udp->onReadable) {
+		udp->readablePending = true;
+		modMessagePostToMachine(udp->the, NULL, 0, udpDeliver, udp);
 	}
 }
 
@@ -250,10 +340,15 @@ void udpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 {
 	UDP udp = refcon;
 	int count;
-	UDPPacket walker;
+
+	if (udp->closed) {
+		c_free(udp);
+		return;
+	}
 
 	builtinCriticalSectionBegin();
-	walker = udp->packets;
+	udp->readablePending = false;
+	UDPPacket walker = udp->packets;
 	if (!walker) {
 		builtinCriticalSectionEnd();
 		return;

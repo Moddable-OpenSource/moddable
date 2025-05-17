@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2023  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -30,7 +30,7 @@ KILL_SIMULATOR =
 ifeq ($(DEBUG),1)
 	ifeq ("$(XSBUG_LAUNCH)","log")
 #		START_SIMULATOR = export DISPLAY=:0.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
-		START_SIMULATOR = export DISPLAY=:2.0 && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
+		START_SIMULATOR = export DISPLAY=:2.0 && export XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) && export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SIMULATOR) $(SIMULATORS) $(BIN_DIR)/mc.so
 	else
 		ifeq ("$(XSBUG_LAUNCH)","app")
 			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
@@ -141,6 +141,7 @@ VPATH += $(XS_DIRECTORIES)
 
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+XSBUG_LOG_PORT ?= 5002
 
 .PHONY: all	build clean xsbug
 
