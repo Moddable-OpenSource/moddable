@@ -53,6 +53,10 @@ export default function (done) {
 		}
 	});
 
+	// init M5Atomic Echo Base
+	new ES8311();
+	new PI4IOE5V6408();
+	
 	// start-up sound
 	if (config.startupSound) {
 		const speaker = new AudioOut({streams: 1});
@@ -64,9 +68,6 @@ export default function (done) {
 		};
 		speaker.done = done;
 		done = undefined;
-
-                new ES8311();
-                new PI4IOE5V6408();
 
 		speaker.enqueue(0, AudioOut.Silence, 16000); // enqueue silence for no audio output (1 sec) of ES8311 I2S initial setup
        		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound), 1);
