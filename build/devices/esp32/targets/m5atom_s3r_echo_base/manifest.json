@@ -17,8 +17,6 @@
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*",
 			"../m5stack_fire/m5button"
 		],
 		"setup/target": "./setup-target",
