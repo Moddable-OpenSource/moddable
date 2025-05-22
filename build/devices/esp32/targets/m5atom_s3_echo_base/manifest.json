@@ -21,8 +21,6 @@
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",
-			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*",
 			"../m5stack_fire/m5button"
 		]
 	},
