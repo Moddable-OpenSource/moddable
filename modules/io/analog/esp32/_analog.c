@@ -55,6 +55,7 @@ struct AnalogRecord {
 	xsSlot		obj;
 	uint32_t	pin;
 	uint8_t 	port;
+	adc_unit_t 	unit_id;
 	uint8_t		channel;
 	int8_t		calib;
 	Attenuation	attenuation;
@@ -324,20 +325,21 @@ void xs_analog_constructor_(xsMachine *the)
 	if (port == 2)
 		unit_id = ADC_UNIT_2;
 #endif
+	analog->unit_id = unit_id;
 
-	if (0 == gADCOneShots[port].useCount++) {
+	if (0 == gADCOneShots[unit_id].useCount++) {
 		adc_oneshot_unit_init_cfg_t unit_cfg = {
 			.unit_id = unit_id,
 			.ulp_mode = ADC_ULP_MODE_DISABLE
 		};
-		adc_oneshot_new_unit(&unit_cfg, &gADCOneShots[port].handle);
+		adc_oneshot_new_unit(&unit_cfg, &gADCOneShots[unit_id].handle);
 	}
 
 	adc_oneshot_chan_cfg_t config = {
 		.bitwidth = ADC_WIDTH,
 		.atten = attenuation->atten,
 	};
-	adc_oneshot_config_channel(gADCOneShots[port].handle, channel, &config);
+	adc_oneshot_config_channel(gADCOneShots[unit_id].handle, channel, &config);
 }
 
 void xs_analog_destructor_(void *data)
@@ -346,9 +348,9 @@ void xs_analog_destructor_(void *data)
 	if (!analog)
 		return;
 
-	if (0 == --gADCOneShots[analog->port].useCount) {
-		adc_oneshot_del_unit(gADCOneShots[analog->port].handle);
-		gADCOneShots[analog->port].handle = C_NULL;
+	if (0 == --gADCOneShots[analog->unit_id].useCount) {
+		adc_oneshot_del_unit(gADCOneShots[analog->unit_id].handle);
+		gADCOneShots[analog->unit_id].handle = C_NULL;
 	}
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
@@ -398,7 +400,7 @@ void xs_analog_read_(xsMachine *the)
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 	esp_err_t err;
 
-	if (ESP_OK != adc_oneshot_read(gADCOneShots[analog->port].handle, analog->channel, &raw)) {
+	if (ESP_OK != adc_oneshot_read(gADCOneShots[analog->unit_id].handle, analog->channel, &raw)) {
 		modLog("analog onshot_read failed");
 		return;
 	}
