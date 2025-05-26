@@ -281,6 +281,7 @@ void xs_directorystorage_write(xsMachine *the)
 			uint8_t *buf = c_malloc(length + 1);
 			buf[0] = kIOFormatString;
 			c_memmove(&buf[1], data, length);
+			d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);		// refresh as xsmcToString could move / close
 			throwIf(settings_file_set(&d->file, key, c_strlen(key), buf, length + 1));
 		} break;
 
