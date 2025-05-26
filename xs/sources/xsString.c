@@ -694,6 +694,12 @@ void fx_String_fromCharCode(txMachine* the)
 			}
 			slot->kind = XS_INTEGER_KIND;
 		}
+		else {
+			txInteger integer = slot->value.integer % 65536;
+			if (integer < 0)
+				integer += 65536;
+			slot->value.integer = integer;
+		}
 		index++;
 	}
 	index = 0;
