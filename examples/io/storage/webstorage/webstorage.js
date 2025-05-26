@@ -50,7 +50,7 @@
 		return null;
 	}
 	getItem(key) {
-		return this.#kvp.read(key);
+		return this.#kvp.read(key) ?? null;
 	}
 	setItem(key, value) {
 		this.#kvp.write(key, value);
