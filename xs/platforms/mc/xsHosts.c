@@ -47,6 +47,10 @@
 	#include "modInstrumentation.h"
 #endif
 
+#if pebble
+	#include "kernel/pbl_malloc.h"
+#endif
+
 extern void *xsPreparationAndCreation(xsCreation **creation);
 
 #if MODDEF_XS_MODS
@@ -176,7 +180,12 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 				uint8_t **context = the->context;
 				context[0] = NULL;
 			}
-			c_free(the->heap);		// VM is terminated
+			// VM is terminated
+#if pebble
+			kernel_free(the->heap);
+#else
+			c_free(the->heap);
+#endif
 		}
 	}
 }
@@ -504,7 +513,11 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	if (creation->staticSize) {
 		uint8_t *context[2];
 
+#if pebble
+		context[0] = kernel_malloc(creation->staticSize);
+#else
 		context[0] = c_malloc(creation->staticSize);
+#endif
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
@@ -513,8 +526,13 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 
 		the = xsPrepareMachine(creation, preparation, (char *)name, context, NULL);
 		if (NULL == the) {
-			if (context[0])
+			if (context[0]) {
+#if pebble
+				kernel_free(context[0]);
+#else
 				c_free(context[0]);
+#endif
+			}
 			return NULL;
 		}
 
