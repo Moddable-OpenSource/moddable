@@ -50,6 +50,8 @@
 // #include "queue.h"
 // #include "semphr.h"
 
+#include "system/passert.h"
+
 #ifndef MODDEF_XS_MODS
 	#define MODDEF_XS_MODS	0
 #endif
@@ -118,6 +120,11 @@ int pbl_gettimeofday(void *tvp, void *unusedTZ)
 	}
 
 	return 0;
+}
+
+void modLog_transmit(const char *msg)
+{
+  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
 }
 
 /*
