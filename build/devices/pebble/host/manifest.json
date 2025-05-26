@@ -1,0 +1,30 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/display/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/poco/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/button/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/rocky/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/message/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/accelerometer/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/battery/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/compass/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json"
+	],
+	"config": {
+		"screen": "pebble/display"
+	},
+	"modules": {
+		"*": [
+			"./main",
+			"./main-appinfo",
+			"$(MODDABLE)/examples/io/storage/webstorage/webstorage.js"
+		]
+	},
+	"preload": [
+		"main",
+		"webstorage"
+	]
+}
