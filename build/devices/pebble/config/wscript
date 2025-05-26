@@ -104,10 +104,13 @@ def build(bld):
 		'moddable/build/devices/pebble/modules/message/pebble-appmessage.c',
 		'moddable/build/devices/pebble/modules/accelerometer/pebble-accelerometer.c',
 		'moddable/build/devices/pebble/modules/battery/pebble-battery.c',
+		'moddable/build/devices/pebble/modules/compass/pebble-compass.c',
 		'../../src/fw/applib/rockyjs/api/rocky_api_graphics_color.c',
-		'moddable/build/tmp/pebble/release/helloworld/mc.xs.c',
-		'moddable/build/tmp/pebble/release/helloworld/mc.resources.c',
-		'moddable/modules/commodetto/gif/commodettoReadGIF.c'
+		'moddable/build/tmp/pebble/release/host/mc.xs.c',
+		'moddable/build/tmp/pebble/release/host/mc.resources.c',
+		'moddable/build/devices/pebble/modules/archive-resource/Archive.c',
+		'moddable/build/devices/pebble/modules/archive-resource/ArchivePebbleResource.c',
+		'moddable/build/devices/pebble/host/main-appinfo.c'
 	]
 
 	libxs_includes = [
@@ -123,10 +126,9 @@ def build(bld):
 		'moddable/xs/tools/fdlibm',
 		'moddable/modules/base/timer',
 		'moddable/modules/base/instrumentation',
-		'moddable/modules/commodetto/gif',
 		'moddable/modules/commodetto',
 		'moddable/modules/io/common',
-		'moddable/build/tmp/pebble/release/helloworld'
+		'moddable/build/tmp/pebble/release/host',
 	]
 
 	libxs_flags = [
