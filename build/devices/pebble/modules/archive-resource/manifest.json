@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"pebble/archive-resource": "./ArchivePebbleResource",
+		"*": [
+			"./Archive",
+			"./ArchiveCompartment"
+		]
+	},
+	"preload": [
+		"pebble/archive-resource",
+		"Archive",
+		"ArchiveCompartment"
+	]
+}
