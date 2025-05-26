@@ -80,6 +80,9 @@ void fxBuildRegExp(txMachine* the)
 	slot = fxBuildHostConstructor(the, mxCallback(fx_RegExp), 2, mxID(_RegExp));
 	mxRegExpConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
+#if mxECMAScript2025
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_RegExp_escape), 1, mxID(_escape), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
 	mxPop();
 	fxNewHostFunction(the, mxCallback(fxInitializeRegExp), 2, XS_NO_ID, XS_NO_ID);

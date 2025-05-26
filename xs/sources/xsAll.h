@@ -1403,6 +1403,7 @@ extern txSize fxCacheUnicodeToUTF8Offset(txMachine* the, txString string, txSize
 
 /* xsRegExp.c */
 mxExport void fx_RegExp(txMachine* the);
+mxExport void fx_RegExp_escape(txMachine* the);
 mxExport void fx_RegExp_prototype_get_dotAll(txMachine* the);
 mxExport void fx_RegExp_prototype_get_flags(txMachine* the);
 mxExport void fx_RegExp_prototype_get_global(txMachine* the);
