@@ -91,8 +91,11 @@ void xs_battery(xsMachine *the)
 	xsmcSetHostData(xsThis, pb);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsBatteryHooks);
 
-	if (onSample)
+	if (onSample) {
+		pb->haveSample = true;
+		pb->sample = battery_state_service_peek();
 		battery_state_service_subscribe(batteryData);
+	}
 }
 
 void xs_battery_close(xsMachine *the)

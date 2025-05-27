@@ -131,7 +131,7 @@ void xs_accelerometer_close(xsMachine *the)
 
 void xs_accelerometer_configure(xsMachine *the)
 {
-	PebbleAccelerometer pa = xsmcGetHostDataValidate(xsThis, (void *)&xsAccelerometerHooks);
+	/* PebbleAccelerometer pa = */ xsmcGetHostDataValidate(xsThis, (void *)&xsAccelerometerHooks);
 	xsSlot tmp;
 
 	if (xsmcHas(xsArg(0), xsID_hz)) {
