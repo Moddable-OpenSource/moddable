@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1072,8 +1072,8 @@ void fxCoderAdd(txCoder* self, txInteger delta, void* it)
 	self->lastCode = code;
 	self->stackLevel += delta;
 	code->stackLevel = self->stackLevel;
-	if (self->stackLevel < 0)
-		c_fprintf(stderr, "# oops %d\n", (int)code->id);		//@@
+//	if (self->stackLevel < 0)
+//		c_fprintf(stderr, "# oops %d\n", code->id);		//@@
 }
 
 void fxCoderAddBigInt(txCoder* self, txInteger delta, txInteger id, txBigInt* bigint)

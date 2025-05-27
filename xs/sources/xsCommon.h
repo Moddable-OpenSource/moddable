@@ -149,7 +149,7 @@ typedef struct {
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #if mxECMAScript2025
 	#define XS_MAJOR_VERSION 16
-	#define XS_MINOR_VERSION (2 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64)
+	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64)
 #elif mxECMAScript2024
 	#define XS_MAJOR_VERSION 15
 	#define XS_MINOR_VERSION (3 + mxExplicitResourceManagement + mxUint8ArrayBase64)

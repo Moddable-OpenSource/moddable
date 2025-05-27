@@ -10892,10 +10892,10 @@ txInteger fxFinalSigmaToLower(txMachine* the, txInteger where, txInteger charact
 
 #ifndef mxCompile
 
-static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txString* r, txInteger length, txInteger delta)
+static txInteger fxAdjustResultStringLength(txMachine* the, txSlot* slot, txString* q, txString* r, txInteger length, txInteger delta)
 {
 	if (delta > 0) {
-		txSize qo = mxPtrDiff(*q - mxThis->value.string);
+		txSize qo = mxPtrDiff(*q - slot->value.string);
 		txSize ro = mxPtrDiff(*r - mxResult->value.string);
 		txInteger sum = fxAddChunkSizes(the, length, delta);
 		txString string = fxRenewChunk(the, mxResult->value.string, sum);
@@ -10903,12 +10903,81 @@ static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txS
 			string = (txString)fxNewChunk(the, sum);
 			c_memcpy(string, mxResult->value.string, length);
 		}
-		*q = mxThis->value.string + qo;
+		*q = slot->value.string + qo;
 		*r = string + ro;
 		mxResult->value.string = string;
 		return sum;
 	}
 	return length;
+}
+
+void fx_RegExp_escape(txMachine* the)
+{
+	static const char gxRegExpEscapeFirst[] ICACHE_FLASH_ATTR = "\0\0\0\0\0\0\0\0\0tnvfr\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\1\1\1$\1\1\1()*+\1\1./\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1?\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1[\\]^\0\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1{|}\1\0";
+	static const char gxRegExpEscapeNext[] ICACHE_FLASH_ATTR = "\0\0\0\0\0\0\0\0\0tnvfr\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\1\1\1$\1\1\1()*+\1\1./\0\0\0\0\0\0\0\0\0\0\1\1\1\1\1?\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0[\\]^\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0{|}\1\0";
+	static const char gxHexLower[] ICACHE_FLASH_ATTR = "0123456789abcdef";
+	if ((mxArgc < 1) || !mxIsStringPrimitive(mxArgv(0)))
+		mxTypeError("string: not a string");
+	txSlot* slot = mxArgv(0);
+	txString string = slot->value.string;
+	txInteger stringLength = mxStringLength(string);
+	mxMeterSome(fxUnicodeLength(string, C_NULL));
+	if (stringLength) {
+		txString p, q, r, s;
+		txInteger c;
+		stringLength++;
+		mxResult->value.string = fxNewChunk(the, stringLength);
+		mxResult->kind = XS_STRING_KIND;
+		p = slot->value.string;
+		q = mxStringByteDecode(p, &c);
+		r = mxResult->value.string;
+		s = (txString)gxRegExpEscapeFirst;
+		while (c != C_EOF) {
+			if (c < 128) {
+				txInteger e = c_read8(s + c);
+				if (e == 0)
+					*r++ = c;
+				else if (e == 1) {
+					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - (q - p));
+					*r++ = '\\';
+					*r++ = 'x';
+					*r++ = c_read8(gxHexLower + ((c & 0xf0) >> 4));
+					*r++ = c_read8(gxHexLower + (c & 0x0f));
+				}
+				else {
+					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 2 - (q - p));
+					*r++ = '\\';
+					*r++ = e;
+				}
+			}
+			else if (0x000000A0 == c) {
+				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - (q - p));
+				*r++ = '\\';
+				*r++ = 'x';
+				*r++ = c_read8(gxHexLower + ((c & 0xf0) >> 4));
+				*r++ = c_read8(gxHexLower + (c & 0x0f));
+			}
+			else if ((0x00002028 == c) || (0x00002029 == c) || (0x0000202F == c) || ((0x0000D800 <= c) && (c <= 0x0000DFFF)) || (0x0000FEFF == c)) {
+				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 6 - (q - p));
+				*r++ = '\\'; 
+				*r++ = 'u'; 
+				*r++ = c_read8(gxHexLower + ((c & 0x0000f000) >> 12));
+				*r++ = c_read8(gxHexLower + ((c & 0x00000f00) >> 8));
+				*r++ = c_read8(gxHexLower + ((c & 0x000000f0) >> 4));
+				*r++ = c_read8(gxHexLower + (c & 0x0000000f));
+			}
+			else
+				r = mxStringByteEncode(r, c);
+			p = q;
+			q = mxStringByteDecode(p, &c);
+			s = (txString)gxRegExpEscapeNext;
+		}
+		*r = 0;
+	}
+	else {
+		mxResult->value.string = mxEmptyString.value.string;
+		mxResult->kind = mxEmptyString.kind;
+	}
 }
 
 void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
@@ -10969,7 +11038,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 						d = c - it->delta;
 					else
 						d = (*conditionals[it->delta])(the, mxPtrDiff(p - mxThis->value.string), c);
-					stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
+					stringLength = fxAdjustResultStringLength(the, mxThis, &q, &r, stringLength, mxStringByteLength(d) - mxPtrDiff(q - p));
 					r = mxStringByteEncode(r, d);
 				}
 				else {
@@ -10980,7 +11049,7 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 						specialLength += mxStringByteLength(*special++);
 						specialIndex--;
 					}
-					stringLength = fx_String_prototype_toCase_aux(the, &q, &r, stringLength, specialLength - mxPtrDiff(q - p));
+					stringLength = fxAdjustResultStringLength(the, mxThis, &q, &r, stringLength, specialLength - mxPtrDiff(q - p));
 					special = specials + it->delta;
 					specialIndex = specialCount;
 					while (specialIndex) {

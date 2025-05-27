@@ -55,10 +55,10 @@ struct AnalogRecord {
 	xsSlot		obj;
 	uint32_t	pin;
 	uint8_t 	port;
+	adc_unit_t 	unit_id;
 	uint8_t		channel;
 	int8_t		calib;
 	Attenuation	attenuation;
-	adc_oneshot_unit_handle_t handle;
 };
 typedef struct AnalogRecord AnalogRecord;
 typedef struct AnalogRecord *Analog;
@@ -183,6 +183,13 @@ static int gADC1_caliCount = 0;
 #endif
 
 #endif
+
+struct ADCOneShotUnit {
+	adc_oneshot_unit_handle_t	handle;
+	int							useCount;
+};
+
+static struct ADCOneShotUnit gADCOneShots[ADC_PORTS];
 
 void xs_analog_constructor_(xsMachine *the)
 {
@@ -313,24 +320,26 @@ void xs_analog_constructor_(xsMachine *the)
 
     builtinUsePin(pin);
 
-	adc_oneshot_unit_init_cfg_t unit_cfg = {0};
+	adc_unit_t unit_id = ADC_UNIT_1;
+#if ADC_PORTS > 1
+	if (port == 2)
+		unit_id = ADC_UNIT_2;
+#endif
+	analog->unit_id = unit_id;
+
+	if (0 == gADCOneShots[unit_id].useCount++) {
+		adc_oneshot_unit_init_cfg_t unit_cfg = {
+			.unit_id = unit_id,
+			.ulp_mode = ADC_ULP_MODE_DISABLE
+		};
+		adc_oneshot_new_unit(&unit_cfg, &gADCOneShots[unit_id].handle);
+	}
+
 	adc_oneshot_chan_cfg_t config = {
 		.bitwidth = ADC_WIDTH,
 		.atten = attenuation->atten,
 	};
-
-	if (port == 1) {
-		unit_cfg.unit_id = ADC_UNIT_1;
-	} 
-#if ADC_PORTS > (1)
-	else if (port == 2) {
-		unit_cfg.unit_id = ADC_UNIT_2;
-	}
-#endif
-	unit_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
-
-	adc_oneshot_new_unit(&unit_cfg, &analog->handle);
-	adc_oneshot_config_channel(analog->handle, channel, &config);
+	adc_oneshot_config_channel(gADCOneShots[unit_id].handle, channel, &config);
 }
 
 void xs_analog_destructor_(void *data)
@@ -339,7 +348,10 @@ void xs_analog_destructor_(void *data)
 	if (!analog)
 		return;
 
-	adc_oneshot_del_unit(analog->handle);
+	if (0 == --gADCOneShots[analog->unit_id].useCount) {
+		adc_oneshot_del_unit(gADCOneShots[analog->unit_id].handle);
+		gADCOneShots[analog->unit_id].handle = C_NULL;
+	}
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED || ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
 	if (!analog->calib)
@@ -388,7 +400,7 @@ void xs_analog_read_(xsMachine *the)
 	Analog analog = xsmcGetHostDataValidate(xsThis, xs_analog_destructor_);
 	esp_err_t err;
 
-	if (ESP_OK != adc_oneshot_read(analog->handle, analog->channel, &raw)) {
+	if (ESP_OK != adc_oneshot_read(gADCOneShots[analog->unit_id].handle, analog->channel, &raw)) {
 		modLog("analog onshot_read failed");
 		return;
 	}

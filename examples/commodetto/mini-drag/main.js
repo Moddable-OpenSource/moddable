@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -134,7 +134,9 @@ class Dragger {
 }
 
 let dragger = new Dragger((render.width - button.width) >> 1, (render.height - (button.height >> 1)) >> 1, "Drag Me", button);
+if (!config.Touch) throw new Error("This example does not support ECMA-419 hosts");
 let touch = new config.Touch;
+if (!touch.read) throw new Error("This example does not support ECMA-419 touch driver");
 touch.points = [{}];
 
 render.begin();
