@@ -17,7 +17,7 @@ struct ArchivePebbleResourceStruct {
 
 static void ArchivePebbleResourceMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static xsBooleanValue remapped = 0;
+// static xsBooleanValue remapped = 0;
 
 static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
 {
@@ -27,7 +27,7 @@ static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size
 
 static xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
 {
-	remapped = 1;
+	// remapped = 1;
 	c_memcpy(((txU1*)dst) + offset, buffer, size);
 	return 1;
 }
@@ -57,10 +57,10 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 			xsUnknownError("load resource failed");
 		}
 
-		remapped = 0;
+		// remapped = 0;
 		void *d = fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
-		if (remapped)
-			xsLog("# remap archive %d\n", resource_id);
+		// if (remapped)
+		// 	xsLog("# remap archive %d\n", resource_id);
 
 		mxPushReference(mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module);
 		mxGetID(xsID_Archive);
