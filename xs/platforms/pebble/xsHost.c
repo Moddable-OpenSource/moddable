@@ -50,6 +50,7 @@
 // #include "queue.h"
 // #include "semphr.h"
 
+#include "applib/app_logging.h"
 #include "system/passert.h"
 
 #ifndef MODDEF_XS_MODS
@@ -124,7 +125,8 @@ int pbl_gettimeofday(void *tvp, void *unusedTZ)
 
 void modLog_transmit(const char *msg)
 {
-  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
+//  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
+	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", msg);
 }
 
 /*
