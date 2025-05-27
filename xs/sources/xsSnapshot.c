@@ -96,11 +96,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxModuleStuffAdditions 0
 #endif
 #if mxECMAScript2025
-<<<<<<< HEAD
-	#define mxECMAScript2025Additions 30
-=======
 	#define mxECMAScript2025Additions 32
->>>>>>> 6db03b6c0 (XS: RegExp.escape)
 #else
 	#define mxECMAScript2025Additions 0
 #endif
