@@ -12,7 +12,7 @@ const setTimeout = function(callback, delay) { return Timer.set(callback, delay)
 
 const console = Object.freeze({
 	log(...args) {
-		trace(...args, "\n");
+		trace(...args);
 	}
 });
 
@@ -34,7 +34,7 @@ export default function() {
 	try {
 		const r = new ArchiveResource(0);		// mod is in resource 0 in example. make this configurable.
 		const archive = r.archive;
-		trace(`Found mod "${archive.name}"`);
+		console.log(`Found mod "${archive.name}"`);
 
 		const globals = {
 			console,
@@ -72,7 +72,7 @@ export default function() {
 		mod.importNow("main");
 	}
 	catch (e) {
-		trace(`Error loading mod in app ${AppInfo.name}: ${e}`);
+		console.log(`Error loading mod in app "${AppInfo.name}": ${e}`);
 	}
 }
 
@@ -120,7 +120,7 @@ function dontstrip() {
 		// const ar = new ArchiveResource(4);		// mod is in 4 in pebblekit-js-weather
 		const ar = new ArchiveResource(0);		// mod is in 0 in mdbl example
 		const archive = ar.archive;
-		trace(`Found mod "${archive.name}"`);
+		console.log(`Found mod "${archive.name}"`);
 
 		const mod = new ArchiveCompartment(archive, { globals: {Timer}, modules: {} });
 		mod.importNow("main");
