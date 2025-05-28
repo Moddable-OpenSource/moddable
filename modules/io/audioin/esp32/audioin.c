@@ -518,7 +518,7 @@ void audioInLoop(void *pvParameter)
 #else
 	i2s_std_config_t rx_std_cfg = {
 		.clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(input->sampleRate),
-		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO),
+		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
 		.gpio_cfg = {
 			.mclk = I2S_GPIO_UNUSED,
 			.bclk = MODDEF_AUDIOIN_I2S_BCK_PIN,

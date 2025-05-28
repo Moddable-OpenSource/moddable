@@ -8,27 +8,25 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/pins/smbus/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/sensors/mpu6886/manifest.json"
+		"$(MODULES)/drivers/button/manifest.json"
 	],
 	"modules": {
+		"*": [
+			"../m5stack_fire/m5button"
+		],
 		"setup/target": "./setup-target",
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
-		"*": [
-			"$(MODULES)/drivers/mpu6886/*",
-			"../m5stack_fire/m5button"
-		]
+		"pins/smbus": "$(MODULES)/pins/smbus/smbus"
 	},
 	"preload": [
 		"pins/audioout",
 		"audioin",
 		"setup/target",
-		"mpu6886",
 		"m5button"
 	],
 	"config": {
@@ -56,25 +54,23 @@
 	},
 	"defines": {
 		"i2c": {
-			"sda_pin": 38,
-			"scl_pin": 39
+			"sda_pin": 45,
+			"scl_pin": 0
 		},
 		"spi": {
 			"mosi_pin":21,
-			"sck_pin": 17
+			"sck_pin": 15
 		},
 		"ili9341": {
 			"hz": 27000000,
 			"width": 128,
 			"height": 128,
-			"cs_pin": 15,
-			"dc_pin": 33,
-			"rst_pin": 34,
+			"cs_pin": 14,
+			"rst_pin": 48,
+			"dc_pin": 42,
 			"column_offset": 0,
 			"row_offset": 32,
 			"spi_port": "SPI3_HOST",
-			"backlight_pin": 16,
-			"backlight_on": 1,
 			"registers": [
 				"0xFE, 0,",
 				"kDelayMS, 10,",
