@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023  Moddable Tech, Inc.
+ * Copyright (c) 2020-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,6 +53,10 @@ export default function (done) {
 		}
 	});
 
+	// init M5Atomic Echo Base
+	new ES8311();
+	new PI4IOE5V6408();
+
 	// start-up sound
 	if (config.startupSound) {
 		const speaker = new AudioOut({streams: 1});
@@ -64,9 +68,6 @@ export default function (done) {
 		};
 		speaker.done = done;
 		done = undefined;
-
-                new ES8311();
-                new PI4IOE5V6408();
 
 		speaker.enqueue(0, AudioOut.Silence, 16000); // enqueue silence for no audio output (1 sec) of ES8311 I2S initial setup
        		speaker.enqueue(0, AudioOut.Samples, new Resource(config.startupSound), 1);
@@ -127,8 +128,9 @@ class ES8311 {
         	es.writeByte(0x32, volume); // ES8311_DAC_REG32
 
         	// microphone
-                es.writeByte(0x17, 0xFF); // ES8311_ADC_REG17
+                es.writeByte(0x17, 0xFF); // ES8311_ADC_REG17 (ADC volume)
                 es.writeByte(0x14, 0x1A); // ES8311_SYSTEM_REG14
+                es.writeByte(0x16, 0x01); // ES8311_ADC_REG16 (6DB)
 
         	es.close();
         }

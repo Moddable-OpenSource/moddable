@@ -12,8 +12,6 @@
 		"*": [
 			"$(MODULES)/drivers/neopixel/*",
 			"$(MODULES)/drivers/neopixel/esp32/*",
-			"$(MODULES)/pins/audioin/*",
-                        "$(MODULES)/pins/audioin/esp32/*",
 			"../m5stack_fire/m5button"
 		],
 		"setup/target": "./setup-target",
@@ -70,14 +68,13 @@
                         }
                 },
                 "audioIn": {
-                        "sampleRate": 11025,
+                        "sampleRate": 16000,
                         "bitsPerSample": 16,
                         "i2s": {
                                 "num": 0,
                                 "bck_pin": 33,
                                 "lr_pin": 19,
-                                "datain": 23,
-                                "pdm": 1
+                                "datain": 23
                         }
                 }
 	}
