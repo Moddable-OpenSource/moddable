@@ -51,6 +51,7 @@
 // #include "semphr.h"
 
 #include "applib/app_logging.h"
+#include "services/common/evented_timer.h"
 #include "system/passert.h"
 
 #ifndef MODDEF_XS_MODS
@@ -426,14 +427,14 @@ void modMachineTaskWake(xsMachine *the)
 	promises
 */
 
-static void doRunPromiseJobs(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+static void doRunPromiseJobs(void *machine)
 {
 	fxRunPromiseJobs((txMachine *)machine);
 }
 
 void fxQueuePromiseJobs(txMachine* the)
 {
-	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
+  evented_timer_register(0, false, doRunPromiseJobs, the);
 }
 
 /*
