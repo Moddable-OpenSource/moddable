@@ -41,6 +41,7 @@ typedef struct {
 	EventServiceInfo	commSessionEvent;
 	EventedTimerID		initial;
 	uint8_t				active;
+	uint8_t				inReceiveCallback;		// avoid stumbling over apparent bug in appmessage
 } PebbleMessageRecord, *PebbleMessage;
 
 void xs_appmessage_destructor(void *data)
@@ -187,6 +188,9 @@ void xs_appmessage_write(xsMachine *the)
 	xsSlot tmp;
 	int length, i;
 
+	if (pm->inReceiveCallback)
+		xsUnknownError("cannot safely write from read callback");
+
 	xsmcVars(3);
 
 	xsmcGet(tmp, xsArg(1), xsID_length);
@@ -262,6 +266,8 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 {
 	PebbleMessage pm = context;
 
+	pm->inReceiveCallback = 1;
+
 	xsBeginHost(pm->the);
 
 		xsmcVars(3);
@@ -310,6 +316,8 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 		}
 
 	xsEndHost(pm->the);
+
+	pm->inReceiveCallback = 0;
 }
 
 void messageSent(DictionaryIterator *iterator, void *context)
