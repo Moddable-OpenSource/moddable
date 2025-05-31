@@ -139,6 +139,7 @@ class HTTPClient {
 	#headers;
 	#line;
 	#status;
+	#statusText;
 	#remaining;
 	#requestBody;
 	#chunk;
@@ -221,10 +222,12 @@ class HTTPClient {
 
 			switch (this.#state) {
 				case "receiveResponseStatus": {
-					const status = this.#line.split(" ");
-					if (status.length < 3)
-						throw new Error("");
-					this.#status = parseInt(status[1]);
+					let i = this.#line.indexOf(" ");
+					let j = this.#line.indexOf(" ", i + 1);
+					if ((i < 0) || (j < 0))
+						this.#error(new Error("bad response"));
+					this.#status = parseInt(this.#line.slice(i + 1, j));
+					this.#statusText = this.#line.slice(j + 1); 
 					this.#line = "";
 					this.#state = "receiveHeader";
 					this.#headers = new Map;
@@ -255,7 +258,7 @@ class HTTPClient {
 						else if (undefined === this.#remaining)
 							this.#remaining = Infinity;
 
-						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers);
+						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers, this.#statusText);
 						if (!this.#current) return;			// closed in callback
 
 						this.#headers = undefined;
