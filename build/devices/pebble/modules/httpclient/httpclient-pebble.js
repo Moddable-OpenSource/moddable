@@ -233,6 +233,7 @@ class HTTPClient {
 						this.#state = "receiveHeaders";
 						current.headers = [];
 					}
+					current.statusText = message.get(11);
 					break;
 
 					case "receiveHeaders": {
@@ -249,7 +250,7 @@ class HTTPClient {
 							const [key, value] = header.split(":");
 							map.set(key, value);
 						});
-						current.onHeaders?.call(current.request, current.status, map);
+						current.onHeaders?.call(current.request, current.status, map, current.statusText);
 						this.#state = "receiveBody";
 						current.response = [];
 						current.response.byteLength = 0;
