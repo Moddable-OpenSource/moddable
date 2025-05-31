@@ -50,6 +50,7 @@
 	#include "modPreference.h"
 #endif
 
+#include "applib/app_logging.h"
 #include "system/logging.h"
 
 #define XSDEBUG_NONE	0,0,0,0
@@ -208,7 +209,8 @@ void fxAbort(txMachine* the, int status)
 		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
 			reason = the->stack->value.string;
 	}
-	PBL_LOG(LOG_LEVEL_ALWAYS, "fxAbort %s: %s", msg, reason);
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "fxAbort %s: %s", msg, reason);
 
 	c_exit(status);
 }
