@@ -818,8 +818,10 @@ void fxMeasureReference(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBu
 			if (theSlot->value.host.variant.destructor != fxReleaseSharedChunk)
 				fxMeasureThrow(the, theBuffer, "read only object");
 	}
-	else if ((theSlot->flag & XS_MARK_FLAG) == 0)
+	else if ((theSlot->flag & XS_MARK_FLAG) == 0) {
+		mxCheckCStack();
 		fxMeasureSlot(the, theSlot, theBuffer, alien);
+	}
 }
 
 void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer, txBoolean alien)
