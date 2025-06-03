@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -95,7 +95,7 @@ class EventSource {
 	#headers;
 	#body;
 	
-	constructor(href, options) {
+	constructor(href, options = {}) {
 		const url = new URL(href);
 		const protocol = url.protocol;
 		this.#host = url.hostname;
@@ -117,7 +117,7 @@ class EventSource {
 			path += query;
 		this.#path = path;
 		this.#url = url.href;
-		this.#method = options.method || "GET";
+		this.#method = options.method ?? "GET";
 		this.#headers = new Headers();
 		this.#headers.set("accept", "text/event-stream");
 		options.headers?.forEach((value, name) => this.#headers.set(name.toLowerCase(), value));
@@ -348,7 +348,7 @@ class EventSource {
 			this.#data += value + "\n";
 			break;
 		case "id":
-			if (value.index("\0") < 0)
+			if (value.indexOf("\0") < 0)
 				this.#lastEventID = value;
 			break;
 		case "retry":
