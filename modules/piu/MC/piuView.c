@@ -542,7 +542,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 	PocoBitmap mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
 	if (mask) {
 		if (bits) {
-			if (kCommodettoBitmapMonochrome == bits->format) {
+			if ((kCommodettoBitmapMonochrome == bits->format) || (kCommodettoBitmapMonochromeAligned == bits->format)) {
 				PocoColor black = PocoMakeColor((*self)->poco, 0, 0, 0);
 				PocoColor white = PocoMakeColor((*self)->poco, 255, 255, 255);
 				PocoColor background, foreground;
