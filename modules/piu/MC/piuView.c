@@ -181,8 +181,12 @@ void PiuViewBegin(PiuView* self)
 	w = poco->width;
 	h = poco->height;
 	rotateCoordinatesAndDimensions(poco->width, poco->height, x, y, w, h);
-	
-	poco->next = (PocoCommand)poco->displayList;
+
+#if kPocoFrameBuffer
+	if (!(poco->flags & kPocoFlagFrameBuffer))
+#endif
+		poco->next = (PocoCommand)poco->displayList;
+
 	poco->flags &= ~(kPocoFlagErrorDisplayListOverflow | kPocoFlagErrorStackProblem | kPocoFlagGCDisabled);
 	poco->stackDepth = 0;
 	poco->xOrigin = poco->yOrigin = 0;
@@ -1371,8 +1375,8 @@ void PiuView_create(xsMachine* the)
 	(*self)->_continue = xsGet(xsArg(2), xsID_continue);
 	(*self)->_end = xsGet(xsArg(2), xsID_end);
 	(*self)->_send = xsGet(xsArg(2), xsID_send);
+	(*self)->poco->next = C_NULL;
 #ifdef piuGPU
-	(*self)->poco->next = NULL;
 	(*self)->dirty = 0;
 	(*self)->ready = 1;
 #else
