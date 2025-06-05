@@ -39,7 +39,7 @@ PiuBoolean PiuRegionCombine(PiuRegion* region0, PiuRegion* region1, PiuRegion* r
 	PiuCoordinate* current0 = (*region0)->data;
 	PiuCoordinate* limit0 = current0 + (*region0)->available;
 	PiuCoordinate left0, top0, right0, bottom0;	
-	PiuCoordinate* span0;	
+	PiuCoordinate* span0 = C_NULL;;	
 	PiuCoordinate segmentCount0;	
 	
 	PiuCoordinate* current1 = (*region1)->data;
@@ -424,7 +424,7 @@ PiuBoolean PiuRegionXOR(PiuRegion* region0, PiuRegion* region1, PiuRegion* regio
 	PiuCoordinate* current0 = (*region0)->data;
 	PiuCoordinate* limit0 = current0 + (*region0)->available;
 	PiuCoordinate left0, top0, right0, bottom0;	
-	PiuCoordinate* span0;	
+	PiuCoordinate* span0 = NULL;	
 	PiuCoordinate segmentCount0;	
 	
 	PiuCoordinate* current1 = (*region1)->data;

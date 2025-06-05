@@ -1054,8 +1054,10 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			PiuViewFillTextureAux(self, command->texture, command->color, command->blend, command->x, command->y, command->w, command->h, command->sx, command->sy, command->sw, command->sh);
 			PIUBreak;
 		PIUCase(PopClipCommand)
-#if defined(__GNUC__)
+#if defined(__clang__)
 			#pragma unused (command)
+#else
+			(void)command;
 #endif
 			PocoClipPop(poco);
 			PIUBreak;
@@ -1078,8 +1080,10 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			}
 			PIUBreak;
 		PIUCase(EndCommand)
-#if defined(__GNUC__)
+#if defined(__clang__)
 			#pragma unused (command)
+#else
+			(void)command;
 #endif
 			goto done;
 			PIUBreak;
