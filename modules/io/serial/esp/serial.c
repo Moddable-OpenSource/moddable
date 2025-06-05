@@ -20,7 +20,6 @@
 
 /*
 	to do:
-		!! format: ascii
 		onError - framing errors?
 		drain transmit? (onWritable when threshold is 0)
 		flush transmit, flush receive?

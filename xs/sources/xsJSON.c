@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -779,7 +779,7 @@ void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txIn
 void fxStringifyJSONNumber(txMachine* the, txJSONStringifier* theStringifier, txNumber theNumber)
 {
 	int fpclass = c_fpclassify(theNumber);
-	if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE)) {
+	if ((fpclass != C_FP_NAN) && (fpclass != C_FP_INFINITE)) {
 		char aBuffer[256];
 		fxNumberToString(the, theNumber, aBuffer, sizeof(aBuffer), 0, 0);
 		fxStringifyJSONChars(the, theStringifier, aBuffer, (txSize)c_strlen(aBuffer));

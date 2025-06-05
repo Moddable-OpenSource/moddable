@@ -63,7 +63,7 @@ class SNTP  {
 function request(address) {
 	const packet = new Uint8Array(48);
 	packet[0] = (4 << 3) | (3 << 0);		// version 4, mode 3 (client)
-	this.write(address, 123, packet);
+	this.write(packet, address, 123);
 }
 
 export default SNTP;

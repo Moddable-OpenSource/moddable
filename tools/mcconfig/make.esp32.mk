@@ -24,6 +24,7 @@ DEBUGGER_SPEED ?= 460800
 
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+XSBUG_LOG_PORT ?= 5002
 
 USE_USB ?= 0
 # USE_USB = 1 - TinyUSB - uses a custom VID/PID
@@ -110,7 +111,12 @@ PROJ_DIR = $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)
 BLD_DIR = $(PROJ_DIR)/build
 
 ifeq ($(MAKEFLAGS_JOBS),)
-	MAKEFLAGS_JOBS = --jobs -l 2.5
+	ifeq ($(HOST_OS),Darwin)
+		CORES := $(shell sysctl -n hw.ncpu)
+	else
+		CORES := $(shell nproc)
+	endif
+	MAKEFLAGS_JOBS = --jobs=$(CORES)
 endif
 
 IDF_BUILD_OPTIONS =
@@ -365,8 +371,7 @@ C_COMMON_FLAGS ?= -c -Os -g \
 
 ifeq ("$(ESP_ARCH)","riscv")
 C_COMMON_FLAGS +=	\
-	-march=rv32imc	\
-	-D_NO_ATOMICS
+	-march=rv32imc
 else
 C_COMMON_FLAGS +=	\
  	-mlongcalls \
@@ -490,15 +495,15 @@ ifeq ($(DEBUG),1)
 			ifeq ($(USE_USB),1)
 				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
 				DO_LAUNCH = $(PLATFORM_DIR)/config/waitForNewSerial $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)
-				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			else
 				# USE_USB == 2
 				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
-				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE) ; echo ; bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
-				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE) ; echo ; bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
+				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			endif
 
-			LOG_LAUNCH = bash -c \"serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
+			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		endif
 
 		ifeq ("$(XSBUG_LAUNCH)","log")
@@ -532,17 +537,17 @@ ifeq ($(DEBUG),1)
 			ifeq ($(USE_USB),1)
 				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
 				DO_LAUNCH = $(PLATFORM_DIR)/config/waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)
-				CONNECT_XSBUG = $(DO_LAUNCH) && serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
+				CONNECT_XSBUG = $(DO_LAUNCH) && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			else
 				# USE_USB == 2 doesn't use PROGRAMMING_MODE
 				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)"
 				DO_LAUNCH =
-				CONNECT_XSBUG = serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
+				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
 
 			ifeq ("$(XSBUG_LAUNCH)","log")
 				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE); echo ; \
-			 		XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
+			 		XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
 					cd $(MODDABLE)/tools/xsbug-log && node xsbug-log 	\
 					 serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
@@ -600,7 +605,7 @@ xsbug:
 prepareOutput:
 	-@rm $(PROJ_DIR)/xs_esp32.elf 2>/dev/null
 	-@rm $(BIN_DIR)/xs_esp32.elf 2>/dev/null
-	-@rm $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)/main/idf_component.yml
+#	-@rm $(TMP_DIR)/xsProj-$(ESP32_SUBCLASS)/main/idf_component.yml
 
 DUMP_VARS:
 	echo "#\n#\n# vars\n#\n#\n"
@@ -613,7 +618,7 @@ DUMP_VARS:
 
 dependencies: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)/../xs_idf_deps.txt
 	echo "# Configure dependencies..."
-	-rm -f $(PROJ_DIR)/main/idf_component.yml
+#	-rm -f $(PROJ_DIR)/main/idf_component.yml
 	cd $(PROJ_DIR) ; $(BUILD_DEPENDENCIES)
 
 precursor: prepareOutput idfVersionCheck $(PROJ_DIR_FILES) bootloaderCheck $(BLE) dependencies $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a

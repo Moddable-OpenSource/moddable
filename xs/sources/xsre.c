@@ -936,7 +936,7 @@ void* fxCharSetNot(txPatternParser* parser, txCharSet* set)
 void* fxCharSetOperand(txPatternParser* parser, txInteger* kind)
 {
 	void* result = NULL;
-	if (parser->character == EOF) {
+	if (parser->character == C_EOF) {
 		fxPatternParserError(parser, gxErrors[mxInvalidRange]);
 	}
 	else if (parser->character == '[') {
@@ -1214,7 +1214,7 @@ void* fxCharSetStrings(txPatternParser* parser)
 	fxPatternParserNext(parser);
 	length = 0;	
 	for (;;) {
-		if (parser->character == EOF)
+		if (parser->character == C_EOF)
 			fxPatternParserError(parser, gxErrors[mxInvalidEscape]);	
 		if ((parser->character == '}') || (parser->character == '|')) {
 			if (length > 1) {
@@ -3044,8 +3044,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						mxBreak;
 					mxCase(cxEmptyStep):
 						step = *pointer;
-						if ((offset != stop) && firstState)
-							goto mxPopState;
+// 						if ((offset != stop) && firstState)
+// 							goto mxPopState;
 						mxBreak;
 					mxCase(cxLineBeginStep):
 						step = *pointer;

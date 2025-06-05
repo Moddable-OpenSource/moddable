@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -645,7 +645,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (tool.windows)
 				this.line("TSCONFIG:");
 			else
-				this.line(temporaries.join(" "), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
+				this.line(temporaries.join(" ").replaceAll("#", tool.escapedHash), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
 			this.echo(tool, "tsc ", "tsconfig.json");
 			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
 			this.line("");
@@ -764,19 +764,14 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 		}
 		if ("esp32" == tool.platform) {
-			var dep, did = 0;
-			let depStr = "BUILD_DEPENDENCIES = ";
-			for (dep of tool.dependencies) {
-				if (did++)
-					depStr += "& ";
-				depStr += `idf.py add-dependency \"${dep.namespace}/${dep.name}${dep.version}\" `;
-			}
-			if (tool.environment.USE_USB == 1) {
-				if (did++)
-					depStr += "& ";
-				depStr += "idf.py add-dependency \"espressif/esp_tinyusb\"";
-			}
-			this.line(depStr);
+			let dep;
+			let depStr = []
+			const idf_component = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}main${tool.slash}idf_component.yml`;
+			for (dep of tool.dependencies)
+				depStr.push(`grep -q '${dep.namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${dep.namespace}/${dep.name}${dep.version ?? ""}"`);
+			if (tool.environment.USE_USB == 1)
+				depStr.push(`grep -q 'espressif/esp_tinyusb' ${idf_component} || idf.py add-dependency "espressif/esp_tinyusb"`);
+			this.line("BUILD_DEPENDENCIES = " + depStr.join("& "));
 			this.line();
 
 			let cmakeTweakFile = tool.outputConfigDirectory + tool.slash + "xs_idf_deps.txt";
@@ -1119,9 +1114,9 @@ export class TSConfigFile extends FILE {
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2022"],
+				lib: ["es2024"],
 				sourceMap: true,
-				target: "ES2022",
+				target: "es2024",
 				...tool.typescript.tsconfig?.compilerOptions
 			},
 			files: [

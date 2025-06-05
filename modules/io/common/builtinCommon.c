@@ -131,7 +131,7 @@ void builtinGetFormat(xsMachine *the, uint8_t format)
 	if ((0 == format) || (format > kIOFormatBufferDisposable))
 		xsRangeError("bad format");
 
-	xsmcSetString(xsResult, (char *)gFormats[format - 1]);
+	xsmcSetStringX(xsResult, (char *)gFormats[format - 1]);
 }
 
 uint8_t builtinSetFormat(xsMachine *the)

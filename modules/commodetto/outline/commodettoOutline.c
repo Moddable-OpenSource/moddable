@@ -259,6 +259,40 @@ void xs_outline_scale(xsMachine *the)
 	xsResult = xsThis;
 }
 
+void xs_outline_transform(xsMachine *the)
+{
+	struct FT_Outline_ outline;
+	PocoOutline buffer = (PocoOutline)xsGetHostDataValidate(xsThis, xs_outline_destructor);
+	int argc = xsToInteger(xsArgc);
+	xsIntegerValue cx = xs_argToFixed(the, argc, 0, "cx");
+	xsIntegerValue cy = xs_argToFixed(the, argc, 1, "cy");
+	xsNumberValue a = xsToNumber(xsArg(2));
+	xsNumberValue sx = xsToNumber(xsArg(3));
+	xsNumberValue sy = xsToNumber(xsArg(4));
+	xsIntegerValue tx = xs_argToFixed(the, argc, 5, "tx");
+	xsIntegerValue ty = xs_argToFixed(the, argc, 6, "ty");
+	FT_Vector *points;
+	int i;
+	xsNumberValue sina = c_sin(a);
+	xsNumberValue cosa = c_cos(a);
+	xsIntegerValue c0r0 = sx * cosa * 256;
+	xsIntegerValue c0r1 = sy * sina * 256;
+	xsIntegerValue c1r0 = sx * sina * 256;
+	xsIntegerValue c1r1 = sy * cosa * 256;
+
+#if (90 == kPocoRotation) || (180 == kPocoRotation) || (270 == kPocoRotation)
+	PocoOutlineUnrotate(buffer);
+#endif
+	bufferToFTOutline(buffer, &outline);
+	for (i = outline.n_points, points = outline.points; i > 0; i -= 1, points += 1) {
+		xsIntegerValue x = points->x - cx, y = points->y - cy;
+		points->x = (((x * c0r0) + (y * c0r1)) >> 8) + tx;
+		points->y = (((y * c1r1) - (x * c1r0)) >> 8) + ty;
+	}
+	buffer->cboxValid = 0;
+	xsResult = xsThis;
+}
+
 void xs_outline_translate(xsMachine *the)
 {
 	struct FT_Outline_ outline;
@@ -418,12 +452,11 @@ void xs_outline_stroke(xsMachine* the)
 	struct FT_Outline_ outline;
 	xsVars(2);
 
-	width = (argc > 1) ? xsToNumber(xsArg(1)) : 1;
+	width = (argc > 1) ? xs_argToFixed(the, argc, 1, "weight") : 1;
 	cap = (argc > 2) ? xsToInteger(xsArg(2)) : FT_STROKER_LINECAP_ROUND;
 	join = (argc > 3) ? xsToInteger(xsArg(3)) : FT_STROKER_LINEJOIN_ROUND;
 	miterlimit = (argc > 4) ? xsToNumber(xsArg(4)) : width;
 	
-	width = width * 64;
 	miterlimit = miterlimit * 65536;
 
 	memory.alloc = ftAlloc;
@@ -1065,6 +1098,16 @@ typedef struct {
 	xsNumberValue number;
 } SVGPathParserRecord, *SVGPathParser;
 
+static void xs_outline_SVGPath_close(xsMachine* the)
+{
+	void *data = xsToArrayBuffer(xsVar(0));
+	xsIntegerValue byteLength = xsGetArrayBufferLength(xsVar(0));
+	byteLength = *(uint32_t *)(byteLength - sizeof(uint32_t) + (uintptr_t)data);
+	xsSetArrayBufferLength(xsVar(0), byteLength + sizeof(uint32_t));
+	data = xsToArrayBuffer(xsVar(0));
+	*(uint32_t *)(byteLength + (uintptr_t)data) = byteLength;
+}
+
 static void xs_outline_SVGPath_next(xsMachine* the, SVGPathParser parser)
 {
 	char buffer[32];
@@ -1155,6 +1198,18 @@ static xsNumberValue xs_outline_SVGPath_number(xsMachine* the, SVGPathParser par
 	return result;
 }
 
+static void xs_outline_SVGPath_open(xsMachine* the, xsIntegerValue x, xsIntegerValue y)
+{
+	if (xsTest(xsVar(0)))
+		xs_outline_SVGPath_close(the);
+	xsVar(0) = xsArrayBufferResizable(NULL, sizeof(uint32_t), 0x7FFFFFFF);
+	xsCall1(xsThis, xsID_push, xsVar(0));
+	int32_t *subpath = getSubpathSpace(the, 3);
+	*subpath++ = 1;
+	*subpath++ = x;
+	*subpath++ = y;
+}
+
 static xsBooleanValue xs_outline_SVGPath_test(xsMachine* the, SVGPathParser parser)
 {
 	xsBooleanValue result = 0;
@@ -1179,15 +1234,22 @@ void xs_outline_SVGPath(xsMachine* the)
 	xs_outline_SVGPath_next(the, parser);
 	for (;;) {
 		xsIntegerValue token = parser->token;
-		if (token == 0)
+		if (token == 0) {
+			xs_outline_SVGPath_close(the);
 			break;
+		}
 		xs_outline_SVGPath_next(the, parser);
 		if ((token != 'M') && (token != 'm')) {
 			if (!xsTest(xsVar(0)))
 				xsSyntaxError("path must start with M");
 		}
 		if ((token == 'Z') || (token == 'z'))  {
-			xs_outline_path_renewSubpath(the);
+			int32_t* initial = (int32_t*)xsToArrayBuffer(xsVar(0));
+			initial[0] = 0;
+			fx = ((xsNumberValue)initial[1]) / 64;
+			fy = ((xsNumberValue)initial[2]) / 64;
+			if ((parser->token != 0) && (parser->token != 'M') && (parser->token != 'm'))
+				xs_outline_SVGPath_open(the, fx*64, fx*64);
 		}
 		else if ((token == 'M') || (token == 'm') || (token == 'L') || (token == 'l'))  {
 			do {
@@ -1200,7 +1262,7 @@ void xs_outline_SVGPath(xsMachine* the)
 					y += fy;
 				}
 				if ((token == 'M') || (token == 'm'))
-					xs_outline_path_newSubpath(the, x*64, y*64, 1);
+					xs_outline_SVGPath_open(the, x*64, y*64);
 				else
 					xs_outline_subpath_push1(the, x*64, y*64);
 				fx1 = x;

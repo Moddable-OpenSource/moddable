@@ -26,6 +26,8 @@
 
 #include <AVFoundation/AVFoundation.h>
 #include <Accelerate/Accelerate.h>
+#include <CoreImage/CoreImage.h>
+#import <CoreImage/CIFilterBuiltins.h>
 
 typedef struct CameraRecord CameraRecord;
 typedef struct CameraRecord *Camera;
@@ -55,6 +57,8 @@ struct CameraRecord {
 	xsSlot object;
 	xsSlot *onReadable;
 	
+	AVCaptureDevice *device;
+	
     CameraDelegate *delegate;
     dispatch_queue_t dispatch_queue;
 	AVCaptureSession *session;
@@ -76,7 +80,14 @@ struct CameraRecord {
 	uint32_t height;
 	uint32_t imageType;
 	
-	CommodettoConverter yuvToRGB;
+	int32_t brightness;
+	int32_t contrast;
+	int32_t saturation;
+	
+	CommodettoConverter converter;
+	CIFilter<CIColorControls> *filter;
+	CVPixelBufferRef filterBuffer;
+	CIContext* filterContext;
 	
 	uint32_t size;
 	uint8_t* data;
@@ -198,13 +209,19 @@ xsBooleanValue xs_camera_releaseBuffer(Camera camera, void* data)
 	}
 	
 	CVImageBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-	CVBufferRetain(pixelBuffer);
+    CVBufferRetain(pixelBuffer);
 	CVPixelBufferLockBaseAddress(pixelBuffer, 0);
 	buffer->pixelBuffer = pixelBuffer;
 	buffer->data = CVPixelBufferGetBaseAddress(pixelBuffer);
 	buffer->size = CVPixelBufferGetDataSize(pixelBuffer);
-	if (camera->yuvToRGB)
-		(camera->yuvToRGB)(camera->width * camera->height, buffer->data, buffer->data, NULL);
+
+	if (camera->converter) {
+		camera->filter.inputImage = [[CIImage alloc] initWithCVImageBuffer:pixelBuffer];
+		[camera->filterContext render:camera->filter.outputImage toCVPixelBuffer:camera->filterBuffer];
+		CVPixelBufferLockBaseAddress(camera->filterBuffer, 0);
+		(camera->converter)(camera->width * camera->height, CVPixelBufferGetBaseAddress(camera->filterBuffer), buffer->data, NULL);
+		CVPixelBufferUnlockBaseAddress(camera->filterBuffer, 0);
+	}
 		
 	pthread_mutex_lock(&(camera->mainMutex));
 	if (camera->mainBuffer == C_NULL) {
@@ -236,7 +253,7 @@ void xs_camera_constructor(xsMachine *the)
 	int32_t height = 240;
 	uint8_t format = kIOFormatBuffer;
 	uint8_t imageType = kCommodettoBitmapRGB565LE;
-	CommodettoConverter yuvToRGB = NULL;
+	CommodettoConverter converter = NULL;
 	uint16_t queueLength = 3;
 	
 	Camera camera = NULL;
@@ -260,13 +277,14 @@ void xs_camera_constructor(xsMachine *the)
 			imageType = xsmcToInteger(xsVar(0));
 		}
 		if (imageType == kCommodettoBitmapRGB565LE)
-			yuvToRGB = CommodettoPixelsConverterGet(kCommodettoBitmapYUV422, kCommodettoBitmapRGB565LE);
+			converter = CommodettoPixelsConverterGet(kCommodettoBitmap24RGB, kCommodettoBitmapRGB565LE);
 		else if (imageType != kCommodettoBitmapYUV422)
 			xsRangeError("invalid imageType");
 	
 		AVCaptureDevice *device = [[AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo] autorelease];
 		if (!device)
 			xsUnknownError("no camera");
+			
 		
 		int32_t minWidth = 0x7FFFFFFF;
 		int32_t minHeight = 0x7FFFFFFF;
@@ -319,8 +337,15 @@ void xs_camera_constructor(xsMachine *the)
 		camera->width = width;
 		camera->height = height;
 		camera->imageType = imageType;
-		camera->yuvToRGB = yuvToRGB;
-
+		
+		camera->device = [device retain];
+		if (converter) {
+			camera->converter = converter;
+			camera->filter = [[CIFilter colorControlsFilter] retain];
+			CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_24RGB, NULL, &(camera->filterBuffer));
+			camera->filterContext = [[CIContext context] retain];
+		}
+		
 		camera->queueLength = queueLength;
 		for (index = 0; index < queueLength; index++)
 			xs_camera_enqueueBuffer(&(camera->threadBuffer), &(camera->queueBuffers[index]));
@@ -378,6 +403,14 @@ void xs_camera_destructor(void *it)
 		pthread_cond_destroy(&(camera->threadCondition));
 		pthread_mutex_destroy(&(camera->threadMutex));
 		pthread_mutex_destroy(&(camera->mainMutex));
+	
+		if (camera->filterContext)
+			[camera->filterContext release];
+		if (camera->filterBuffer)
+			CVPixelBufferRelease(camera->filterBuffer);
+		if (camera->filter)
+			[camera->filter release];
+		[camera->device release];
 	
 		c_free(camera);
 	}
@@ -478,4 +511,50 @@ void xs_camera_get_imageType(xsMachine *the)
 {
 	Camera camera = (Camera)xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
 	xsmcSetInteger(xsResult, camera->imageType);
+}
+
+void xs_camera_get_identification(xsMachine *the)
+{
+	Camera camera = (Camera)xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+	xsmcVars(1);
+	xsmcSetNewObject(xsResult);
+	xsmcSetString(xsVar(0), (xsStringValue)[camera->device.localizedName UTF8String]);
+	xsmcSet(xsResult, xsID_model, xsVar(0));
+}
+
+void xs_camera_get_configuration(xsMachine *the)
+{
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+    xsSlot tmp;
+	xsmcSetNewObject(xsResult);
+	xsmcSetInteger(tmp, camera->brightness);
+	xsmcDefine(xsResult, xsID_brightness, tmp, xsDefault);
+	xsmcSetInteger(tmp, camera->contrast);
+	xsmcDefine(xsResult, xsID_contrast, tmp, xsDefault);
+	xsmcSetInteger(tmp, camera->saturation);
+	xsmcDefine(xsResult, xsID_saturation, tmp, xsDefault);
+}
+
+void xs_camera_configure(xsMachine *the)
+{
+    Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+    xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_brightness)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_brightness);
+		camera->brightness = xsmcToInteger(xsVar(0));
+		if (camera->filter)
+			camera->filter.brightness = ((double)camera->brightness) / 100.0;
+	}
+	if (xsmcHas(xsArg(0), xsID_contrast)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_contrast);
+		camera->contrast = xsmcToInteger(xsVar(0));
+		if (camera->filter)
+			camera->filter.contrast = 1.0 + (((double)camera->contrast) / 100.0);
+	}
+	if (xsmcHas(xsArg(0), xsID_saturation)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_saturation);
+		camera->saturation = xsmcToInteger(xsVar(0));
+		if (camera->filter)
+			camera->filter.saturation = 1.0 + (((double)camera->saturation) / 100.0);
+	}
 }

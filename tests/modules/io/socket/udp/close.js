@@ -19,6 +19,6 @@ u.close();
 u.close();
 
 assert.throws(SyntaxError, () => u.read());
-assert.throws(SyntaxError, () => u.write(address, port, Uint8Array.of(1)));
+assert.throws(SyntaxError, () => u.write(Uint8Array.of(1), address, port));
 
 $DONE();

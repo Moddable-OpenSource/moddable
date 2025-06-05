@@ -141,7 +141,7 @@ void xs_ble_client_initialize(xsMachine *the)
 		xsUnknownError("ble initialization failed");
     
 	// Stack is ready
-	xsCall1(gBLE->obj, xsID_callback, xsString("onReady"));
+	xsCall1(gBLE->obj, xsID_callback, xsStringX("onReady"));
 }
 
 void xs_ble_client_close(xsMachine *the)
@@ -425,9 +425,9 @@ static void charSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 			xsmcSetString(xsVar(2), (char*)char_names[index].type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
-		xsCall2(csr->obj, xsID_callback, xsString("onCharacteristic"), xsVar(0));
+		xsCall2(csr->obj, xsID_callback, xsStringX("onCharacteristic"), xsVar(0));
 	}
-	xsCall1(csr->obj, xsID_callback, xsString("onCharacteristic"));
+	xsCall1(csr->obj, xsID_callback, xsStringX("onCharacteristic"));
 	c_free(csr);
 	xsEndHost(gBLE->the);
 }
@@ -467,11 +467,11 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 		}
 		else {
 			c_free(csr);
-			xsCall1(xsThis, xsID_callback, xsString("onCharacteristic"));
+			xsCall1(xsThis, xsID_callback, xsStringX("onCharacteristic"));
 		}
 	}
 	else
-		xsCall1(xsThis, xsID_callback, xsString("onCharacteristic"));
+		xsCall1(xsThis, xsID_callback, xsStringX("onCharacteristic"));
 }
 
 typedef struct {
@@ -503,9 +503,9 @@ static void descSearchResultEvent(void *the, void *refcon, uint8_t *message, uin
 			xsmcSetString(xsVar(2), (char*)char_names[index].type);
 			xsmcSet(xsVar(0), xsID_type, xsVar(2));
 		}
-		xsCall2(dsr->obj, xsID_callback, xsString("onDescriptor"), xsVar(0));
+		xsCall2(dsr->obj, xsID_callback, xsStringX("onDescriptor"), xsVar(0));
 	}
-	xsCall1(dsr->obj, xsID_callback, xsString("onDescriptor"));
+	xsCall1(dsr->obj, xsID_callback, xsStringX("onDescriptor"));
 	c_free(dsr);
 	xsEndHost(gBLE->the);
 }
@@ -535,11 +535,11 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 		}
 		else {
 			c_free(dsr);
-			xsCall1(xsThis, xsID_callback, xsString("onDescriptor"));
+			xsCall1(xsThis, xsID_callback, xsStringX("onDescriptor"));
 		}
 	}
 	else
-		xsCall1(xsThis, xsID_callback, xsString("onDescriptor"));
+		xsCall1(xsThis, xsID_callback, xsStringX("onDescriptor"));
 }
 
 void xs_gatt_characteristic_write_without_response(xsMachine *the)
@@ -732,7 +732,7 @@ static void localPrivacyCompleteEvent(void *the, void *refcon, uint8_t *message,
 	xsmcSet(xsVar(0), xsID_bonding, xsVar(1));
 	xsmcSetBoolean(xsVar(1), gBLE->mitm);
 	xsmcSet(xsVar(0), xsID_mitm, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onSecurityParameters"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onSecurityParameters"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -752,7 +752,7 @@ static void scanResultEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
 	xsmcSetInteger(xsVar(1), scan_rst->rssi);
 	xsmcSet(xsVar(0), xsID_rssi, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onDiscovered"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onDiscovered"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -763,7 +763,7 @@ static void rssiCompleteEvent(void *the, void *refcon, uint8_t *message, uint16_
 	modBLEConnection connection = modBLEConnectionFindByAddress(read_rssi_cmpl->remote_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall2(connection->objConnection, xsID_callback, xsString("onRSSI"), xsInteger(read_rssi_cmpl->rssi));
+	xsCall2(connection->objConnection, xsID_callback, xsStringX("onRSSI"), xsInteger(read_rssi_cmpl->rssi));
 	xsEndHost(gBLE->the);
 }
 
@@ -782,7 +782,7 @@ static void gapPasskeyConfirmEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSetInteger(xsVar(2), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(2));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onPasskeyConfirm"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onPasskeyConfirm"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -797,7 +797,7 @@ static void gapPasskeyNotifyEvent(void *the, void *refcon, uint8_t *message, uin
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), key_notif->passkey);
 	xsmcSet(xsVar(0), xsID_passkey, xsVar(1));
-	xsCall2(connection->objConnection, xsID_callback, xsString("onPasskeyDisplay"), xsVar(0));
+	xsCall2(connection->objConnection, xsID_callback, xsStringX("onPasskeyDisplay"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -809,7 +809,7 @@ static void gapPasskeyRequestEvent(void *the, void *refcon, uint8_t *message, ui
 	modBLEConnection connection = modBLEConnectionFindByAddress(ble_req->bd_addr);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsResult = xsCall1(connection->objConnection, xsID_callback, xsString("onPasskeyRequested"));
+	xsResult = xsCall1(connection->objConnection, xsID_callback, xsStringX("onPasskeyRequested"));
 	passkey = xsmcToInteger(xsResult);
 	xsEndHost(gBLE->the);
 	esp_ble_passkey_reply(ble_req->bd_addr, true, passkey);
@@ -827,7 +827,7 @@ static void gapAuthCompleteEvent(void *the, void *refcon, uint8_t *message, uint
 	xsVar(0) = xsmcNewObject();
 	xsmcSetBoolean(xsVar(1), auth_cmpl->auth_mode & ESP_LE_AUTH_BOND);
 	xsmcSet(xsVar(0), xsID_bonded, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onAuthenticated"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onAuthenticated"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -842,7 +842,7 @@ static void gapRemoveBondCompleteEvent(void *the, void *refcon, uint8_t *message
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), kBLEAddressTypePublic);	// @@
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(gBLE->obj, xsID_callback, xsString("onBondingDeleted"), xsVar(0));
+	xsCall2(gBLE->obj, xsID_callback, xsStringX("onBondingDeleted"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -982,7 +982,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSetInteger(xsVar(1), 0);
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-		xsCall2(gBLE->obj, xsID_callback, xsString("onConnected"), xsVar(0));
+		xsCall2(gBLE->obj, xsID_callback, xsStringX("onConnected"), xsVar(0));
 	}
 	else {
 #if LOG_GATTC
@@ -1000,7 +1000,7 @@ static void gattcOpenEvent(void *the, void *refcon, uint8_t *message, uint16_t m
 		xsmcSet(xsVar(0), xsID_address, xsVar(1));
 		xsmcSetInteger(xsVar(1), connection->addressType);
 		xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-		xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+		xsCall2(connection->objConnection, xsID_callback, xsStringX("onDisconnected"), xsVar(0));
 		xsForget(connection->objConnection);
 		modBLEConnectionRemove(connection);
 	}
@@ -1026,7 +1026,7 @@ static void gattcCloseEvent(void *the, void *refcon, uint8_t *message, uint16_t 
 	xsmcSet(xsVar(0), xsID_address, xsVar(1));
 	xsmcSetInteger(xsVar(1), connection->addressType);
 	xsmcSet(xsVar(0), xsID_addressType, xsVar(1));
-	xsCall2(connection->objConnection, xsID_callback, xsString("onDisconnected"), xsVar(0));
+	xsCall2(connection->objConnection, xsID_callback, xsStringX("onDisconnected"), xsVar(0));
 	xsForget(connection->objConnection);
 	modBLEConnectionRemove(connection);
 bail:
@@ -1051,7 +1051,7 @@ static void gattcSearchResultEvent(void *the, void *refcon, uint8_t *message, ui
 	xsmcSet(xsVar(0), xsID_uuid, xsVar(1));
 	xsmcSet(xsVar(0), xsID_start, xsVar(2));
 	xsmcSet(xsVar(0), xsID_end, xsVar(3));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onService"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsStringX("onService"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -1062,7 +1062,7 @@ static void gattcSearchCompleteEvent(void *the, void *refcon, uint8_t *message, 
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(search_cmpl->conn_id);
 	if (!connection)
 		xsUnknownError("connection not found");
-	xsCall1(OBJ_CLIENT(connection), xsID_callback, xsString("onService"));
+	xsCall1(OBJ_CLIENT(connection), xsID_callback, xsStringX("onService"));
 	xsEndHost(gBLE->the);
 }
 
@@ -1117,7 +1117,7 @@ static void gattcDescWrittenEvent(void *the, void *refcon, uint8_t *message, uin
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), written->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onDescriptorWritten"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsStringX("onDescriptorWritten"), xsVar(0));
 bail:
 	xsEndHost(gBLE->the);
 }
@@ -1140,7 +1140,7 @@ static void gattcRegisterNotifyEvent(void *the, void *refcon, uint8_t *message, 
 		xsVar(0) = xsmcNewObject();
 		xsmcSetInteger(xsVar(1), reg_for_notify->handle);
 		xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-		xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotificationEnabled"), xsVar(0));
+		xsCall2(OBJ_CLIENT(connection), xsID_callback, xsStringX("onCharacteristicNotificationEnabled"), xsVar(0));
 		xsEndHost(gBLE->the);
 	}
 }
@@ -1154,7 +1154,7 @@ static void gattcUnregisterNotifyEvent(void *the, void *refcon, uint8_t *message
 	xsVar(0) = xsmcNewObject();
 	xsmcSetInteger(xsVar(1), unreg_for_notify->handle);
 	xsmcSet(xsVar(0), xsID_handle, xsVar(1));
-	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsString("onCharacteristicNotificationDisabled"), xsVar(0));
+	xsCall2(OBJ_CLIENT(connection), xsID_callback, xsStringX("onCharacteristicNotificationDisabled"), xsVar(0));
 	xsEndHost(gBLE->the);
 }
 
@@ -1167,7 +1167,7 @@ static void gattcConfigMTUEvent(void *the, void *refcon, uint8_t *message, uint1
 	
 	connection->mtu_exchange_pending = 0;
 	xsBeginHost(gBLE->the);
-		xsCall2(connection->objConnection, xsID_callback, xsString("onMTUExchanged"), xsInteger(cfg_mtu->mtu));
+		xsCall2(connection->objConnection, xsID_callback, xsStringX("onMTUExchanged"), xsInteger(cfg_mtu->mtu));
 	xsEndHost(gBLE->the);
 }
 

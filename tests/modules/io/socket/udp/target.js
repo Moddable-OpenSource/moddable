@@ -27,6 +27,6 @@ assert.sameValue(u.target, target, "bad target after instantiation");
 
 const sntpPacket = new Uint8Array(48);
 sntpPacket[0] = (4 << 3) | (3 << 0);		// version 4, mode 3 (client)
-u.write(address, 123, sntpPacket);
-u.write(address, 123, sntpPacket);
-u.write(address, 123, sntpPacket);
+u.write(sntpPacket, address, 123);
+u.write(sntpPacket, address, 123);
+u.write(sntpPacket, address, 123);

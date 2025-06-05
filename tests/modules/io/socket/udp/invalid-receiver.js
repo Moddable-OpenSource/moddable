@@ -29,7 +29,7 @@ function callWithInvalidReceivers(obj, functionName, ...args)
 }
 
 callWithInvalidReceivers(u, "write", address, port, new ArrayBuffer(1));
-u.write(address, port, new ArrayBuffer(1));
+u.write(new ArrayBuffer(1), address, port);
 
 assert(await readable >= 1, "expected at least 1 packet readable");
 

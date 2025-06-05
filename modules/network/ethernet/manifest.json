@@ -10,6 +10,15 @@
             "build": {
                 "ETHERNETDRIVER": "$(IDF_PATH)/examples/ethernet/enc28j60/components/eth_enc28j60"
             },
+			"dependency": [
+				{
+					"name": "enc28j60",
+					"version": "^1.0.1",
+					"includes": [
+						"include"
+					]
+				}
+			],
             "include": [
                 "$(MODULES)/pins/spi/manifest.json"
             ],
@@ -17,8 +26,7 @@
                 "*": [
                     "$(ETHERNET)/*",
                     "$(ETHERNET)/esp32/*",
-                    "$(ETHERNET)/esp32/drivers/enc28j60/*",
-                    "$(ETHERNETDRIVER)/*"
+                    "$(ETHERNET)/esp32/drivers/enc28j60/*"
                 ]
             }
         },

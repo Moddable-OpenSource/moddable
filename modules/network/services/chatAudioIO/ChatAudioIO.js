@@ -27,11 +27,25 @@ function computeLevel(buffer) @ "xs_computeLevel";
 class ChatAudioIO {
 	static FAILED = -1;
 	static DISCONNECTED = 0;
-	static CONNECTING = 3;
 	static DISCONNECTING = 1;
-	static SPEAKING = 2;		// user is speaking (transmitting audio to cloud)
-	static LISTENING = 4;		// user is listening (receiving audio from cloud) 
-	static WAITING = 5;
+	static CONNECTING = 2;
+	static CONNECTED = 3;
+	static SPEAKING = 4;		// user is speaking (sending audio to cloud)
+	static LISTENING = 5;		// user is listening (receiving audio from cloud) 
+	static WAITING = 6;
+	static states = [
+		"DISCONNECTED",
+		"DISCONNECTING",
+		"CONNECTING",
+		"CONNECTED",
+		"SPEAKING",
+		"LISTENING",
+		"WAITING"
+	];
+	static {
+		ChatAudioIO.states[-1] = "FAILED";
+		Object.freeze(ChatAudioIO.states);
+	}
 
 	constructor(options) {
 		this.error = "";
@@ -134,6 +148,8 @@ class ChatAudioIO {
 		this.onStateChanged(this.state);
 	}
 	connected() {
+		this.state = ChatAudioIO.CONNECTED;
+		this.onStateChanged(this.state);
 		this.state = ChatAudioIO.SPEAKING;
 		if (this.ready)
 			this.onStateChanged(this.state);
@@ -175,11 +191,15 @@ class ChatAudioIO {
 	receiveOutputText(message) {
 		this.onOutputTranscript(message.text, message.more);
 	}
-	sendFunctionResult(call, result) {
-		this.worker.postMessage({ id: "sendFunctionResult", call, result });
+	sendFunctionResult(call, name, result) {
+		this.worker.postMessage({ id: "sendFunctionResult", call, name, result });
 	}
 	sendText(text) {
-		this.data.worker.postMessage({  id: "sendText", text });
+		if (this.state < ChatAudioIO.CONNECTED)
+			throw new Error("not connected");
+		if (this.state > ChatAudioIO.SPEAKING)
+			throw new Error("listening");
+		this.worker.postMessage({  id: "sendText", text });
 	}
 	speak() {
 		this.state = ChatAudioIO.WAITING;

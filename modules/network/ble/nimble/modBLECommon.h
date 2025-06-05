@@ -27,8 +27,4 @@ int modBLEPlatformTerminate(void);
 void modBLEClientBondingRemoved(char *address, uint8_t addressType);
 void modBLEServerBondingRemoved(char *address, uint8_t addressType);
 
-#define xsStringX(_VALUE) \
-	(fxStringX(the, &the->scratch, (xsStringValue)(_VALUE)), \
-	the->scratch)
-
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -225,12 +225,14 @@ void xs_udp_write(xsMachine *the)
 		return;
 	}
 
+	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
+
 	dest_addr.sin_family = AF_INET;
-	dest_addr.sin_addr.s_addr = inet_addr(xsmcToString(xsArg(0)));
-	port = xsmcToInteger(xsArg(1));
+	dest_addr.sin_addr.s_addr = inet_addr(xsmcToString(xsArg(1)));
+	port = xsmcToInteger(xsArg(2));
 	dest_addr.sin_port = htons(port);
 
-	xsmcGetBufferReadable(xsArg(2), &buffer, &byteLength);
+	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
 	int result = sendto(udp->skt, buffer, byteLength, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	if (result < 0)
 		xsUnknownError("sendto failed");

@@ -2,6 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODULES)/files/preference/manifest.json",
 		"$(MODDABLE)/modules/network/services/chatAudioIO/manifest.json"
 	],
 	"config": {
@@ -9,6 +10,7 @@
 			"rainbow": false
 		},
 		"startupSound": false,
+		"elevenLabsKey": "",
 		"geminiAPIKey": "",
 		"openAIKey": "",
 		"humeAIKey": ""
@@ -44,8 +46,11 @@
 		"model",
 		"Common",
 		"Home",
+		"Options",
 		"Personas",
-		"Splash"
+		"Services",
+		"Splash",
+		"Voices"
 	],
 	"resources":{
 		"*": [

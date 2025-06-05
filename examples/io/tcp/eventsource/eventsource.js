@@ -209,7 +209,7 @@ class EventSource {
 		let method = this.#method;
 		let headers = this.#headers;
 		let body = this.#body;
-		let length = body.byteLength;
+		let length = body?.byteLength ?? 0;
 		let offset = 0;
 		let buffer = null;
 		let index = 0, nameStart, nameStop, valueStart, valueStop;

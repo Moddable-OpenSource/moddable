@@ -176,22 +176,24 @@ class HomeBehavior extends View.Behavior {
 	onTranscript(container, Template, data, text, more) {
 		const view = this.view;
 		const column = view.TRANSCRIPT_COLUMN;
-		if (data) {
-			data.string = data.string.slice(0, -3);
-			data.string += text;
-			if (more)
-				data.string += "...";
-			if (data.string.length)
-				data.ROW.behavior.onUpdate(data.ROW);
-			else
-				column.remove(data.ROW);
-		}
-		else {
-			data = { string:text, skin:this.view.skins.bubble, style:this.view.styles.bubble };
-			if (more)
-				data.string += "...";
-			if (data.string.length)
-				column.add(new Template(data));
+		if (column) {
+			if (data) {
+				data.string = data.string.slice(0, -3);
+				data.string += text;
+				if (more)
+					data.string += "...";
+				if (data.string.length)
+					data.ROW.behavior.onUpdate(data.ROW);
+				else
+					column.remove(data.ROW);
+			}
+			else {
+				data = { string:text, skin:this.view.skins.bubble, style:this.view.styles.bubble };
+				if (more)
+					data.string += "...";
+				if (data.string.length)
+					column.add(new Template(data));
+			}
 		}
 		if (more)
 			return data;

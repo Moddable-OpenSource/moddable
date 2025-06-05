@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Moddable Tech, Inc.
+ * Copyright (c) 2018-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -42,7 +42,7 @@ class MDNS extends Socket {
 
 		this.services = [];
 		this.monitors = [];
-		this.client = callback ? callback : function() {};
+		this.client = callback ?? function() {};
 
 		if (dictionary.hostName) {
 			this.hostName = dictionary.hostName;
@@ -58,8 +58,7 @@ class MDNS extends Socket {
 		while (this.monitors.length)
 			this.remove(this.monitors[0].service.substring(0, this.monitors[0].service.length - 6));
 
-		if (this.probeTimer)
-			Timer.clear(this.probeTimer);
+		Timer.clear(this.probeTimer);
 
 		super.close();
 	}
@@ -70,8 +69,7 @@ class MDNS extends Socket {
 		if (this.probing)
 			throw new Error("not ready");
 
-		if (!service.txt)
-			service.txt = {};
+		service.txt ??= {};
 		this.services.push(service);
 
 		this.write(MDNS.IP, MDNS.PORT, this.reply(null, 0x1F | 0x8000, service, true));		// remove before adding to clear stale state in clients
@@ -135,10 +133,8 @@ class MDNS extends Socket {
 				// write fails if socket closed
 			}
 
-			if (service.timer) {
-				Timer.clear(service.timer);
-				delete service.timer;
-			}
+			Timer.clear(service.timer);
+			delete service.timer;
 		}
 	}
 	monitor(service, callback) {
@@ -584,8 +580,6 @@ MDNS.UNICAST = 0x8000;
 MDNS.hostName = 1;
 MDNS.retry = 2;
 MDNS.error = -1;
-
-Object.freeze(MDNS.prototype);
 
 /*
 function dumpPacket(packet, address)

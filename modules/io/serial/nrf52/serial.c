@@ -20,7 +20,6 @@
 
 /*
 	to do:
-		!! format: ascii
 		onError - framing errors?
 		flush transmit, flush receive?
 		other pins, hardware flow control

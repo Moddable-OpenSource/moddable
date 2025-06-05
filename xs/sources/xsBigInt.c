@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -103,7 +103,7 @@ void fx_BigInt(txMachine* the)
 	if (mxResult->kind == XS_NUMBER_KIND) {
 		int fpclass = c_fpclassify(mxResult->value.number);
 		txNumber check = c_trunc(mxResult->value.number);
-		if ((fpclass != FP_NAN) && (fpclass != FP_INFINITE) && (mxResult->value.number == check))
+		if ((fpclass != C_FP_NAN) && (fpclass != C_FP_INFINITE) && (mxResult->value.number == check))
 			fxNumberToBigInt(the, mxResult);
 		else
 			mxRangeError("cannot coerce number to bigint");
@@ -341,7 +341,7 @@ txBoolean fxBigIntCompare(txMachine* the, txBoolean less, txBoolean equal, txBoo
 	if ((right->kind != XS_BIGINT_KIND) && (right->kind != XS_BIGINT_X_KIND)) {
 		fxToNumber(the, right);
 		result = c_fpclassify(right->value.number);
-		if (result == FP_NAN)
+		if (result == C_FP_NAN)
 			return less & more & !equal;
 		if (result == C_FP_INFINITE)
 			return (right->value.number > 0) ? less : more;
