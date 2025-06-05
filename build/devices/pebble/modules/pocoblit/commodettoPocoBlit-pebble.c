@@ -32,8 +32,8 @@
 	#error Poco frame buffer required on pebble
 #endif
 
-#define MODDEF_POCO_PEBBLE_CLIPSTACK (16)
-#define MODDEF_POCO_PEBBLE_ORIGINSTACK (16)
+#define MODDEF_POCO_PEBBLE_CLIPSTACK (8)
+#define MODDEF_POCO_PEBBLE_ORIGINSTACK (8)
 
 typedef struct {
 	PocoCoordinate	x;
@@ -42,6 +42,7 @@ typedef struct {
 
 struct PocoPebbleRecord {
 	GContext 				*ctx;
+	Window					*window;
 
 	uint8_t					clipDepth;
 	uint8_t					originDepth;
@@ -60,6 +61,8 @@ static PocoPebble getPocoPebble(Poco poco)
 
 	PocoPebble pp = c_calloc(1, sizeof(PocoPebbleRecord));		//@@ orphaned
 	pp->ctx = app_state_get_graphics_context();
+
+	pp->window = window_stack_get_top_window(app_state_get_window_stack());		//@@ incorrect for offscreen buffers
 
 	poco->next = (void *)pp;
 	return pp;
@@ -94,6 +97,8 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 
 void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
+	PBL_LOG(LOG_LEVEL_ALWAYS, "bitmap draw %d format", (int)bits->format);
+
 	PBL_ASSERT(kCommodettoBitmapPebble == bits->format, "pebble bitmap required");
 
 	PocoPebble pp = getPocoPebble(poco);
@@ -147,7 +152,7 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	if (kCommodettoBitmapMonochromeAligned == bits->format) {		// special case for text
-		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeground, color, color, x, y, sx, sy, sw, sh);
+		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeAndBackground, GColorBlack.argb, GColorWhite.argb, x, y, sx, sy, sw, sh);
 		return;
 	}
 	
@@ -300,6 +305,9 @@ int PocoDrawingEndFrameBuffer(Poco poco)
 	PBL_ASSERT(!(poco->flags & kPocoFlagErrorStackProblem), "clip or origin stack failure");
 
 	ctx->draw_state.clip_box = ctx->dest_bitmap.bounds;
+
+	if (pp->window)
+		window_schedule_render(pp->window);
 
 	return 0;
 }

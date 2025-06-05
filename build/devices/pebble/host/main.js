@@ -4,6 +4,7 @@ import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
 import KV from "embedded:storage/key-value";
 import WebStorage from "webstorage";
+import {} from "piu/MC"
 
 const clearImmediate = Timer.clear;
 const setImmediate = function(callback) { return Timer.set(callback) };
@@ -11,9 +12,7 @@ const setInterval = function(callback, delay) { return Timer.repeat(callback, de
 const setTimeout = function(callback, delay) { return Timer.set(callback, delay) };
 
 const console = Object.freeze({
-	log(...args) {
-		trace(...args);
-	}
+	log: trace
 });
 
 class AppInfo {
@@ -28,13 +27,23 @@ const blockedWatchFace = Object.freeze([
 	"pebble/button"
 ]);
 
+class TextureArchive extends Texture {
+	constructor (options) {
+		if ("object" !== typeof options)
+			super({path: options, archive: state.archive});
+		else
+			super({...options, archive: state.archive});
+	}
+}
+//@@ need to do the same for Resource
+
 export default function() {
 	const rocky = new Rocky({});
 
 	try {
 		const r = new ArchiveResource(0);		// mod is in resource 0 in example. make this configurable.
-		const archive = r.archive;
-		console.log(`Found mod "${archive.name}"`);
+		state.archive = r.archive;
+		console.log(`Found mod "${state.archive.name}"`);
 
 		const globals = {
 			console,
@@ -47,7 +56,16 @@ export default function() {
 			rocky,
 			screen,
 			Date,
-			Math
+			Math,
+
+			// Piu
+			// application,
+			Application,
+			Behavior,
+			Container,
+			Content,
+			Skin,
+			Texture: TextureArchive
 		};
 
 		Object.defineProperty(globals, "localStorage", {
@@ -59,12 +77,12 @@ export default function() {
 			}
 		});
 
-		const mod = new ArchiveCompartment(archive, {
+		const mod = new ArchiveCompartment(state.archive, {
 			globals,
 			modules: {},
 			loadNowHook(specifier) {
 				if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
-					throw new Error(blockedWatchFace + " blocked in watchface");
+					throw new Error(specifier + " blocked in watchface");
 
 				return {namespace: specifier};		// map through host modules
 			}
