@@ -294,6 +294,8 @@ void PocoDrawingBeginFrameBuffer(Poco poco, PocoCoordinate x, PocoCoordinate y, 
 	ctx->draw_state.clip_box = GRect(x, y, w, h);
 
 	poco->flags |= kPocoFlagDidBegin;
+
+	poco->xOrigin = poco->yOrigin = 0;
 }
 
 int PocoDrawingEndFrameBuffer(Poco poco)
