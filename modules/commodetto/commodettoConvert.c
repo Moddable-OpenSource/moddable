@@ -149,6 +149,7 @@ static void cc32RGBAtoRGB565LE(uint32_t pixelCount, void *src, void *dst, void *
 static void cc32RGBAtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoARGB4444(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoBGRA32(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void cc32RGBAtoMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
 static void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
@@ -259,7 +260,7 @@ static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-mu
 	NULL,					// toCLUT32
 	NULL,					// toColorCell
 	NULL,					// toYUV22
-	NULL,					// toMonochromeAligned
+	cc32RGBAtoMonochromeAligned,// toMonochromeAligned
 };
 
 static const CommodettoConverter gFromYUV422[] ICACHE_XS6RO2_ATTR = { // YUYV
@@ -801,6 +802,31 @@ void cc32RGBAtoBGRA32(uint32_t pixelCount, void *srcPixels, void *dstPixels, voi
 		src += 4;
 		dst += 4;
 	}
+}
+
+void cc32RGBAtoMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mono = 0;
+	uint8_t mask = 0x01;
+
+	while (pixelCount--) {
+		uint8_t gray = toGray(src[0], src[1], src[2]);
+		src += 4;
+		if (gray >= 128)
+			mono |= mask;
+
+		mask <<= 1;
+		if (0 == mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x01;
+		}
+	}
+
+	if (0x01 != mask)
+		*dst++ = mono;
 }
 
 #if 1

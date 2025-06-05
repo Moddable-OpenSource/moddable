@@ -901,7 +901,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (!alphaTarget)
 				this.write(" -c");
 			if (result.monochrome)
-				this.write(" -m -4");
+				this.write((1 == result.monochrome) ? " -m -4" : " -ma -4");
 			else {
 				this.write(" -f ");
 				if (result.format)
