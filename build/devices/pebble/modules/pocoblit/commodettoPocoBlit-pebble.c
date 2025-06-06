@@ -97,8 +97,6 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 
 void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
-	PBL_LOG(LOG_LEVEL_ALWAYS, "bitmap draw %d format", (int)bits->format);
-
 	PBL_ASSERT(kCommodettoBitmapPebble == bits->format, "pebble bitmap required");
 
 	PocoPebble pp = getPocoPebble(poco);
@@ -152,7 +150,7 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	if (kCommodettoBitmapMonochromeAligned == bits->format) {		// special case for text
-		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeAndBackground, GColorBlack.argb, GColorWhite.argb, x, y, sx, sy, sw, sh);
+		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeground, color, color, x, y, sx, sy, sw, sh);
 		return;
 	}
 	
