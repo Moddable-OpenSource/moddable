@@ -1,4 +1,5 @@
 import Timer from "timer"
+import Resource from "Resource"
 import {Rocky} from "pebble/graphics"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
@@ -35,7 +36,18 @@ class TextureArchive extends Texture {
 			super({...options, archive: state.archive});
 	}
 }
-//@@ need to do the same for Resource
+
+class ResourceArchive extends Resource {
+	constructor(path) {
+		super(path, state.archive);
+	}
+}
+
+class StyleArchive extends Style {
+	constructor(options) {
+		super({...options, archive: state.archive});
+	}
+}
 
 export default function() {
 	const rocky = new Rocky({});
@@ -57,6 +69,7 @@ export default function() {
 			screen,
 			Date,
 			Math,
+			Resource: ResourceArchive,
 
 			// Piu
 			// application,
@@ -64,7 +77,10 @@ export default function() {
 			Behavior,
 			Container,
 			Content,
+			Link,
 			Skin,
+			Style: StyleArchive,
+			Text,
 			Texture: TextureArchive
 		};
 
