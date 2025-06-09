@@ -712,7 +712,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.write(face.name + `-${face.size}.fnt`);
 					this.write("\\\n\t$(RESOURCES_DIR)");
 					this.write(tool.slash);
-					this.write(face.name + `-${face.size}-alpha.bmp`);
+					this.write(face.name + `-${face.size}-alpha.bm4`);
 				}
 				else if ("-mask" === face.suffix) {
 					this.write(face.name + `-${face.size}.bf4`);
@@ -1037,8 +1037,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${tool.localsName}.txt`);
 				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
 				if ("-alpha" === face.suffix) {
-					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bm4", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) -4 ${face.monochrome ? "-ma" : ""} -r `, tool.rotation, " -t");
 				}
 				else if ("-mask" === face.suffix) {
 					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
