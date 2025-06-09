@@ -105,7 +105,7 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 	x += poco->xOrigin, y += poco->yOrigin;
 
 	GRect saveClip = ctx->draw_state.clip_box;
-	ctx->draw_state.compositing_mode = GCompOpAssign;
+	ctx->draw_state.compositing_mode = GCompOpSet;		// OpSet allows alpha transparency to work. unsure it is always correct. we'll see.... from a Poco perspecive... it shoudl be DrawMasked that handles alpha
 	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
 
 	graphics_draw_bitmap_in_rect_processed(ctx, (GBitmap *)bits->pixels, &GRect(x - sx, y - sy, sw + sx, sh + sy), C_NULL);
@@ -167,15 +167,21 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 {
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
+	GBitmap src;
+	GBitmap *gb;
 
-	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == bits->format, "monochromealigned required");
-	GBitmap src = {
-		.addr = bits->pixels,
-		.row_size_bytes = ((bits->width + 31) >> 5) * 4,
-		.info.format = GBitmapFormat1Bit,
-		.info.version = GBITMAP_VERSION_1,
-		.bounds = GRect(sx, sy, sw, sh)
-	};
+	if (kCommodettoBitmapPebble == bits->format)
+		gb = (GBitmap *)bits->pixels;
+	else if (kCommodettoBitmapMonochromeAligned == bits->format) {
+		src.addr = bits->pixels;
+		src.row_size_bytes = ((bits->width + 31) >> 5) * 4;
+		src.info.format = GBitmapFormat1Bit;
+		src.info.version = GBITMAP_VERSION_1;
+		src.bounds = GRect(sx, sy, sw, sh);
+		gb = &src;
+	}
+	else
+		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
 
 	GCompOp saveMode = ctx->draw_state.compositing_mode;
 	GRect saveClip = ctx->draw_state.clip_box;
@@ -187,7 +193,7 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 	x += poco->xOrigin, y += poco->yOrigin;
 	for (int py = y ; py < (y + h); py += sh) {
 		for (int px = x ; px < (x + w); px += sw)
-			graphics_draw_bitmap_in_rect_processed(ctx, &src, &GRect(px, py, sw, sh), C_NULL);
+			graphics_draw_bitmap_in_rect_processed(ctx, gb, &GRect(px, py, sw, sh), C_NULL);
 	}
 
 	ctx->draw_state.clip_box = saveClip;
