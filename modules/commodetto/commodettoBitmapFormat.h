@@ -22,6 +22,7 @@
 #ifndef __commodetto_BitmapFormat_h__
 #define __commodetto_BitmapFormat_h__
 
+#define kCommodettoBitmapNone (0)
 #define kCommodettoBitmapDefault (1)		// maps to kCommodettoBitmapFormat
 
 #define kCommodettoBitmapMonochrome (3)
