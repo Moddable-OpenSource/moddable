@@ -4,6 +4,7 @@ import {Rocky} from "pebble/graphics"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
 import KV from "embedded:storage/key-value";
+import Poco from "commodetto/Poco";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
 
@@ -29,11 +30,18 @@ const blockedWatchFace = Object.freeze([
 ]);
 
 class TextureArchive extends Texture {
-	constructor (options) {
-		if ("object" !== typeof options)
-			super({path: options, archive: state.archive});
-		else
-			super({...options, archive: state.archive});
+	constructor (options, alphaBitmap, colorBitmap) {
+		if (alphaBitmap || colorBitmap)
+			super(options, alphaBitmap, colorBitmap);
+		else {
+			const t = typeof options;
+			if ("number" === t)
+				super(undefined, undefined, new Poco.PebbleBitmap(options));
+			else if ("object" === t)
+				super({...options, archive: state.archive});
+			else
+				super({path: options, archive: state.archive});
+		}
 	}
 }
 
@@ -72,7 +80,6 @@ export default function() {
 			Resource: ResourceArchive,
 
 			// Piu
-			// application,
 			Application,
 			Behavior,
 			Container,
