@@ -1643,6 +1643,7 @@ void fx_Array_prototype_filter(txMachine* the)
 				mxPop();
 			}
 			index++;
+			mxCheckMetering();
 		}
 	}
 	mxPop();
