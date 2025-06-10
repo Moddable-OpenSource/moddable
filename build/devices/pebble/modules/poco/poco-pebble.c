@@ -29,9 +29,7 @@
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
 #include "applib/graphics/graphics_line.h"
-#include "applib/rockyjs/api/rocky_api_graphics_text.h"
 
-extern const RockyAPISystemFontDefinition s_font_definitions[];
 extern GContext *getPocoGContext(xsMachine *the);
 
 void xs_pocopebble_Font_destructor(void *data)
@@ -40,20 +38,9 @@ void xs_pocopebble_Font_destructor(void *data)
 
 void xs_pocopebble_Font(xsMachine *the)
 {
-	const char *fontName = xsmcToString(xsArg(0));
-	const RockyAPISystemFontDefinition *font_definition = NULL;
-	const RockyAPISystemFontDefinition *walker = s_font_definitions;
-	while (walker->js_name) {
-		if (c_strcmp(fontName, walker->js_name) == 0) {
-			font_definition = walker;
-			break;
-		}
-		walker++;
-	}
-	if (!font_definition)
-		xsUnknownError("invalid font");
-
-	GFont font = fonts_get_system_font(font_definition->res_key);
+	int size = xsmcToInteger(xsArg(1));
+	const char *family = xsmcToString(xsArg(0));
+	GFont font = modFindPebbleFont(family, size);
 	if (!font)
 		xsUnknownError("invalid font");
 

@@ -22,7 +22,7 @@ import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap"
 
 Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
-	constructor(name) @ "xs_pocopebble_Font"
+	constructor(name, size) @ "xs_pocopebble_Font"
 }
 
 Poco.prototype.getTextWidth = function(text, font) @ "xs_pocopebble_getTextWidth";

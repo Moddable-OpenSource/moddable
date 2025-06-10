@@ -42,10 +42,12 @@
 #include <stddef.h>
 #include "errno.h"
 
-#include "util/time/time.h"
+#include "applib/graphics/gcontext.h"
+#include "applib/graphics/gtypes.h"
 #include "applib/pbl_std/pbl_std.h"
-#include "system/passert.h"
 #include "drivers/rtc.h"
+#include "system/passert.h"
+#include "util/time/time.h"
 
 
 //#include "FreeRTOS.h"
@@ -580,6 +582,9 @@ void modRemoveOnSleepCallback(modOnSleepCallback callback, uint32_t refCon);
 void modRunOnSleepCallbacks(void);
 
 void pebble_reset(void);
+
+GFont modFindPebbleFont(const char *family, int size);
+
 
 #ifdef __cplusplus
 }

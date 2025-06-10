@@ -155,7 +155,7 @@ void PiuTexture_create(xsMachine* the)
 
 #if pebble
 		if (kCommodettoBitmapPebble == self->bits.format)
-			cb->format = kCommodettoBitmapInvalid;			// take ownership of native GBitmap
+			cb->format = kCommodettoBitmapNone;			// take ownership of native GBitmap
 #endif
 	}
 	xsSetHostChunk(xsThis, self, sizeof(record));

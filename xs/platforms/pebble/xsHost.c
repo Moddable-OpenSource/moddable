@@ -920,3 +920,53 @@ void * bsearch(const void *key, const void *base, size_t nel, size_t width, int 
 
 int errno;
 int *__errno(void) { return &errno; };
+
+
+#include "piuAll.h"
+#include "applib/fonts/fonts.h"
+
+struct PebbleFontRecord {
+	const char		*family;
+	uint16_t			size;
+	const char		*res_key;
+};
+typedef struct PebbleFontRecord PebbleFontRecord;
+typedef struct PebbleFontRecord *PebbleFont;
+
+static const PebbleFontRecord gFonts[] = {
+	{.family = "Gothic-Bold", .size = 18, .res_key = FONT_KEY_GOTHIC_18_BOLD},
+	{.family = "Gothic-Regular", .size = 14, .res_key = FONT_KEY_GOTHIC_14},
+	{.family = "Gothic-Bold", .size = 14, .res_key = FONT_KEY_GOTHIC_14_BOLD},
+	{.family = "Gothic-Regular", .size = 18, .res_key = FONT_KEY_GOTHIC_18},
+	{.family = "Gothic-Regular", .size = 24, .res_key = FONT_KEY_GOTHIC_24},
+	{.family = "Gothic-Bold", .size = 24, .res_key = FONT_KEY_GOTHIC_24_BOLD},
+	{.family = "Gothic-Regular", .size = 28, .res_key = FONT_KEY_GOTHIC_28},
+	{.family = "Gothic-Bold", .size = 28, .res_key = FONT_KEY_GOTHIC_28_BOLD},
+	{.family = "Bitham-Black", .size = 30, .res_key = FONT_KEY_BITHAM_30_BLACK},
+	{.family = "Bitham-Bold", .size = 42, .res_key = FONT_KEY_BITHAM_42_BOLD},
+	{.family = "Bitham-Light", .size = 42, .res_key = FONT_KEY_BITHAM_42_LIGHT},
+	{.family = "Bitham-Regular", .size = 42, .res_key = FONT_KEY_BITHAM_42_MEDIUM_NUMBERS},
+	{.family = "Bitham-Regular", .size = 34, .res_key = FONT_KEY_BITHAM_34_MEDIUM_NUMBERS},
+	{.family = "Roboto-Condensed", .size = 21, .res_key = FONT_KEY_ROBOTO_CONDENSED_21},
+	{.family = "Roboto-Bold", .size = 49, .res_key = FONT_KEY_ROBOTO_BOLD_SUBSET_49},
+	{.family = "Droid-serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
+	{.family = "Leco-Bold", .size = 20, .res_key = FONT_KEY_LECO_20_BOLD_NUMBERS},
+	{.family = "Leco-Bold", .size = 26, .res_key = FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM},
+	{.family = "Leco-Bold", .size = 32, .res_key = FONT_KEY_LECO_32_BOLD_NUMBERS},
+	{.family = "Leco-Bold", .size = 36, .res_key = FONT_KEY_LECO_36_BOLD_NUMBERS},
+	{.family = "Leco-Bold", .size = 38, .res_key = FONT_KEY_LECO_38_BOLD_NUMBERS},
+	{.family = "Leco-Bold", .size = 42, .res_key = FONT_KEY_LECO_42_NUMBERS},
+	{.family = "Leco-Light", .size = 28, .res_key = FONT_KEY_LECO_28_LIGHT_NUMBERS},
+	{ 0 }
+};
+
+GFont modFindPebbleFont(const char *family, int size)
+{
+	for (PebbleFont f = (PebbleFont)gFonts; C_NULL != f; f++) {
+		if ((size != f->size) || c_strcmp(family, f->family))
+			continue;
+		return fonts_get_system_font(f->res_key);
+	}
+
+	return 0;
+}
