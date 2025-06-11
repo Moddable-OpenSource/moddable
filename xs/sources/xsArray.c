@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1509,6 +1509,7 @@ void fx_Array_prototype_every(txMachine* the)
 				break;
 		}
 		index++;
+		mxCheckMetering();
 	}
 }
 
@@ -1613,6 +1614,7 @@ void fx_Array_prototype_filter(txMachine* the)
 				mxPop();
 			}
 			index++;
+			mxCheckMetering();
 		}
 		fxSetIndexSize(the, resultArray, resultLength, XS_CHUNK);
 		resultSlot = resultArray->value.array.address;
@@ -1796,6 +1798,7 @@ void fx_Array_prototype_forEach(txMachine* the)
 		if (fxCallThisItem(the, function, index, C_NULL))
 			mxPop();
 		index++;
+		mxCheckMetering();
 	}
 }
 
@@ -2037,6 +2040,7 @@ void fx_Array_prototype_map(txMachine* the)
 				mxPop();
 			}
 			index++;
+			mxCheckMetering();
 		}
 		if (resultLength < length) {
 			fxSetIndexSize(the, resultArray, resultLength, XS_CHUNK);
@@ -2051,6 +2055,7 @@ void fx_Array_prototype_map(txMachine* the)
 				mxPop();
 			}
 			index++;
+			mxCheckMetering();
 		}
 	}
 }
@@ -2395,6 +2400,7 @@ void fx_Array_prototype_some(txMachine* the)
 				break;
 		}
 		index++;
+		mxCheckMetering();
 	}
 }
 
