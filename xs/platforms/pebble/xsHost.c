@@ -949,7 +949,7 @@ static const PebbleFontRecord gFonts[] = {
 	{.family = "Bitham-Regular", .size = 34, .res_key = FONT_KEY_BITHAM_34_MEDIUM_NUMBERS},
 	{.family = "Roboto-Condensed", .size = 21, .res_key = FONT_KEY_ROBOTO_CONDENSED_21},
 	{.family = "Roboto-Bold", .size = 49, .res_key = FONT_KEY_ROBOTO_BOLD_SUBSET_49},
-	{.family = "Droid-serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
+	{.family = "Droid Serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
 	{.family = "Leco-Bold", .size = 20, .res_key = FONT_KEY_LECO_20_BOLD_NUMBERS},
 	{.family = "Leco-Bold", .size = 26, .res_key = FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM},
 	{.family = "Leco-Bold", .size = 32, .res_key = FONT_KEY_LECO_32_BOLD_NUMBERS},
@@ -960,12 +960,20 @@ static const PebbleFontRecord gFonts[] = {
 	{ 0 }
 };
 
-GFont modFindPebbleFont(const char *family, int size)
+GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *descent, int32_t *leading)
 {
-	for (PebbleFont f = (PebbleFont)gFonts; C_NULL != f; f++) {
+	for (PebbleFont f = (PebbleFont)gFonts; C_NULL != f->family; f++) {
 		if ((size != f->size) || c_strcmp(family, f->family))
 			continue;
-		return fonts_get_system_font(f->res_key);
+
+		GFont font = fonts_get_system_font(f->res_key);;
+		if (font) {
+			*ascent = fonts_get_font_height(font);
+			*descent = 0;
+			*leading = 0;
+		}
+
+		return font;			
 	}
 
 	return 0;

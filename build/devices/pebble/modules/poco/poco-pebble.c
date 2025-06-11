@@ -40,16 +40,17 @@ void xs_pocopebble_Font(xsMachine *the)
 {
 	int size = xsmcToInteger(xsArg(1));
 	const char *family = xsmcToString(xsArg(0));
-	GFont font = modFindPebbleFont(family, size);
+	int32_t ascent, descent, leading;
+	GFont font = modFindPebbleFont(family, size, &ascent, &descent, &leading);
 	if (!font)
 		xsUnknownError("invalid font");
 
 	xsmcSetHostData(xsThis, font);
 
 	xsSlot tmp;
-	xsmcSetInteger(tmp, fonts_get_font_height(font));
+	xsmcSetInteger(tmp, ascent + descent + leading);
 	xsmcDefine(xsThis, xsID_height, tmp, xsDontDelete | xsDontSet);
-	xsmcSetInteger(tmp, 0);		//@@
+	xsmcSetInteger(tmp, ascent);
 	xsmcDefine(xsThis, xsID_ascent, tmp, xsDontDelete | xsDontSet);
 }
 
@@ -66,7 +67,7 @@ void xs_pocopebble_getTextWidth(xsMachine *the)
 	GSize size = graphics_text_layout_get_max_used_size(
 				ctx, xsmcToString(xsArg(0)),
 				font, GRect(0, 0, 10000, 100),
-				GTextOverflowModeWordWrap,
+				GTextOverflowModeTrailingEllipsis,
 				GTextAlignmentLeft, NULL);
 
 	xsmcSetInteger(xsResult, size.w);
@@ -87,7 +88,7 @@ void xs_pocopebbble_drawText(xsMachine *the)
 	GColor saveTextColor = ctx->draw_state.text_color; 
 	ctx->draw_state.text_color.argb = xsmcToInteger(xsArg(2));
 	graphics_draw_text(ctx, xsmcToString(xsArg(0)), font, box,
-		GTextOverflowModeWordWrap, GTextAlignmentLeft, C_NULL);
+		GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, C_NULL);
 	ctx->draw_state.text_color = saveTextColor;
 }
 

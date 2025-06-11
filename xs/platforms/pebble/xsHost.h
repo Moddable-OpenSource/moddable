@@ -583,8 +583,7 @@ void modRunOnSleepCallbacks(void);
 
 void pebble_reset(void);
 
-GFont modFindPebbleFont(const char *family, int size);
-
+GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *descent, int32_t *leading);
 
 #ifdef __cplusplus
 }

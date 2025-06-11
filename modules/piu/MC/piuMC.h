@@ -52,6 +52,9 @@ struct PiuFontStruct {
 	PiuDimension height;
 	PiuDimension ascent;
 	PiuTexture* texture;
+#if pebble
+	void *gfont;
+#endif
 };
 
 #define PiuGlyphPart \

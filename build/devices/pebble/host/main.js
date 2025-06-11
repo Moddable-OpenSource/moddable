@@ -84,6 +84,7 @@ export default function() {
 			Behavior,
 			Container,
 			Content,
+			Label,
 			Link,
 			Skin,
 			Style: StyleArchive,

@@ -415,7 +415,36 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	xsIntegerValue character = 0;
 	PiuGlyph glyph;
 	PiuCoordinate advance;
-	
+
+#if pebble
+	if ((*font)->gfont) {
+		extern GContext *getPocoPebbleGContext(Poco poco);
+		
+		char tmp[100];
+
+		GContext *ctx = getPocoPebbleGContext(poco);		// might cache this in PiuView
+		text += offset;
+		if ((-1 != length) && text[length]) {
+			if (length >= (xsIntegerValue)sizeof(tmp))
+				length = sizeof(tmp) - 1;
+			c_memmove(tmp, text, length);
+			tmp[length] = 0;
+			text = tmp;
+		}
+
+
+		GRect box = GRect(x, y, stringWidth ? stringWidth : 10000, 100);
+
+		GColor saveTextColor = ctx->draw_state.text_color; 
+		ctx->draw_state.text_color.argb = color;
+		graphics_draw_text(ctx, text, (*font)->gfont, box,
+			GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, C_NULL);
+		ctx->draw_state.text_color = saveTextColor;
+
+		return;
+	}
+#endif
+
 	static const char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
 	static const char *ellipsisFallback = "...";
 	const char *ellipsis;

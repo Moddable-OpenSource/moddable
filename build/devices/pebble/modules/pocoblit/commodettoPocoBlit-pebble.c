@@ -68,6 +68,11 @@ static PocoPebble getPocoPebble(Poco poco)
 	return pp;
 }
 
+GContext *getPocoPebbleGContext(Poco poco)
+{
+	return getPocoPebble(poco)->ctx;
+}
+
 GContext *getPocoGContext(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
