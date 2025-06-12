@@ -968,9 +968,10 @@ GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *
 
 		GFont font = fonts_get_system_font(f->res_key);;
 		if (font) {
-			*ascent = fonts_get_font_height(font);
-			*descent = 0;
-			*leading = 0;
+			uint16_t height = fonts_get_font_height(font);
+			*descent = fonts_get_font_cap_offset(font);
+			*leading = 1;
+			*ascent = height - *descent - *leading;
 		}
 
 		return font;			

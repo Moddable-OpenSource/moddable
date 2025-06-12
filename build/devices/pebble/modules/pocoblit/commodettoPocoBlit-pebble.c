@@ -159,7 +159,7 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		return;
 	}
 	
-	PBL_CROAK("unexpected bitmap");
+	PBL_CROAK("unexpected PocoGrayBitmapDraw");
 }
 
 void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh,

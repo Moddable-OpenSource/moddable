@@ -432,8 +432,12 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 			text = tmp;
 		}
 
-
-		GRect box = GRect(x, y, stringWidth ? stringWidth : 10000, 100);
+		
+		GRect box = GRect(
+				x,
+				y - fonts_get_font_cap_offset((*font)->gfont) + 1,	// +1 for leading applied by modFindPebbleFont
+				stringWidth ? stringWidth : 10000,
+				127);
 
 		GColor saveTextColor = ctx->draw_state.text_color; 
 		ctx->draw_state.text_color.argb = color;

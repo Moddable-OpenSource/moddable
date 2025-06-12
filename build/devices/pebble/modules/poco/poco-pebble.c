@@ -83,7 +83,10 @@ void xs_pocopebbble_drawText(xsMachine *the)
 	GFont font = xsmcGetHostData(xsArg(1));
 	GContext *ctx = getPocoGContext(the);
 
-	GRect box = GRect(xsmcToInteger(xsArg(3)), xsmcToInteger(xsArg(4)), 10000, 100);
+	GRect box = GRect(xsmcToInteger(
+			xsArg(3)),
+			xsmcToInteger(xsArg(4)) - fonts_get_font_cap_offset(font) + 1,	// +1 for leading applied by modFindPebbleFont
+			10000, 127);
 
 	GColor saveTextColor = ctx->draw_state.text_color; 
 	ctx->draw_state.text_color.argb = xsmcToInteger(xsArg(2));
