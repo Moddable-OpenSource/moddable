@@ -421,7 +421,6 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 		extern GContext *getPocoPebbleGContext(Poco poco);
 		
 		char tmp[100];
-
 		GContext *ctx = getPocoPebbleGContext(poco);		// might cache this in PiuView
 		text += offset;
 		if ((-1 != length) && text[length]) {
@@ -431,7 +430,6 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 			tmp[length] = 0;
 			text = tmp;
 		}
-
 		
 		GRect box = GRect(
 				x,

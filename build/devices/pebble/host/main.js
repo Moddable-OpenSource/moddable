@@ -86,6 +86,7 @@ export default function() {
 			Content,
 			Label,
 			Link,
+			Port,
 			Skin,
 			Style: StyleArchive,
 			Text,
