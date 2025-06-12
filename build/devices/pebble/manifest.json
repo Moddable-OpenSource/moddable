@@ -18,10 +18,10 @@
 	"creation": {
 		"static": 32768,
 		"chunk": {
-			"initial": 4096
+			"initial": 8192
 		},
 		"heap": {
-			"initial": 256
+			"initial": 512
 		},
 		"stack": 256
 },
