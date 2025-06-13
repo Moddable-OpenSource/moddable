@@ -21,6 +21,7 @@
 import config from "mc/config"
 import ChatWebSocketWorker from "ChatWebSocketWorker";
 import Timer from "timer";
+import {Encode} from "ChatAudioIO/Codecs";
 
 class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 	constructor(options) {
@@ -44,12 +45,12 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 			experimental: true,
 			audio: {
 				input: {
-					encoding: "linear16",
-					sample_rate: 24000
+					encoding: "alaw",
+					sample_rate: 8000
 				},
 				output: { 
 					encoding: "linear16",
-					sample_rate: 24000,
+					sample_rate: 16000,
 				}
 			},
 			agent: {
@@ -88,7 +89,8 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 	sendAudio(message) {
 // 		trace(`=> sendAudio ${ message.offset } ${ message.size }\n`);
 		const data = new Uint8Array(this.inputBuffer, message.offset, message.size);
-		this.write(data, { binary: true });
+		Encode.toAlaw(data, data);
+		this.write(data.subarray(0, message.size >> 1), { binary: true });
 	}
 	sendFunctionResult(message) {
 		const { call, name, result } = message;
@@ -145,4 +147,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 	}
 }
 
-new DeepgramVoiceAgentModel({});
+new DeepgramVoiceAgentModel({
+	inputSampleRate: 8000,
+	outputSampleRate: 16000
+});

@@ -1,6 +1,5 @@
 #include "xsmc.h"
 
-
 static void encode(uint8_t *out, const int16_t *in, size_t len)
 {
     uint8_t alaw = 0;
@@ -54,7 +53,6 @@ static void encode(uint8_t *out, const int16_t *in, size_t len)
         *out++ = alaw ^ 0xD5;
     }
 }
-
 
 void xs_alaw_encode(xsMachine *the)
 {
