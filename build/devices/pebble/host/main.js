@@ -82,11 +82,13 @@ export default function() {
 			// Piu
 			Application,
 			Behavior,
+			Column,
 			Container,
 			Content,
 			Label,
 			Link,
 			Port,
+			Row,
 			Skin,
 			Style: StyleArchive,
 			Text,
