@@ -28,6 +28,9 @@ Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
 Poco.prototype.getTextWidth = function(text, font) @ "xs_pocopebble_getTextWidth";
 Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_pocopebbble_drawText";
 Poco.prototype.drawLine = function(x0, y0, x1, y1, color, width) @ "xs_pocopebbble_drawLine";
+Poco.prototype.drawRoundRect = function(x0, y0, x1, y1, color, radius, corners) @ "xs_pocopebbble_drawRoundRect";
+Poco.prototype.frameRoundRect = function(x0, y0, x1, y1, color, radius) @ "xs_pocopebbble_frameRoundRect";
+Poco.prototype.drawCircle = function(color, x, y, r, from, to) @ "xs_pocopebbble_drawCircle";
 
 function build(id) @ "xs_pebblebitmap_build"
 

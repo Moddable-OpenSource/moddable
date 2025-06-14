@@ -28,7 +28,9 @@
 
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
+#include "applib/graphics/graphics.h"
 #include "applib/graphics/graphics_line.h"
+#include "util/trig.h"
 
 extern GContext *getPocoGContext(xsMachine *the);
 
@@ -116,6 +118,74 @@ void xs_pocopebbble_drawLine(xsMachine *the)
 	ctx->draw_state.stroke_color = saveStrokeColor;
 	ctx->draw_state.stroke_width = saveStrokeWidth;
 }
+
+void xs_pocopebbble_drawRoundRect(xsMachine *the)
+{
+	GContext *ctx = getPocoGContext(the);
+	GRect r = {
+		.origin.x = xsmcToInteger(xsArg(0)),
+		.origin.y = xsmcToInteger(xsArg(1)),
+		.size.w = xsmcToInteger(xsArg(2)),
+		.size.h = xsmcToInteger(xsArg(3)),
+	};
+	int color = xsmcToInteger(xsArg(4));
+	int radius = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 4;
+	int corners = (xsmcArgc > 6) ? xsmcToInteger(xsArg(6)) : GCornersAll;
+
+	GColor saveColor = ctx->draw_state.fill_color;
+	ctx->draw_state.fill_color.argb = color;
+	graphics_fill_round_rect(ctx, &r, radius, corners);
+	ctx->draw_state.fill_color = saveColor;
+}
+
+void xs_pocopebbble_frameRoundRect(xsMachine *the)
+{
+	GContext *ctx = getPocoGContext(the);
+	GRect r = {
+		.origin.x = xsmcToInteger(xsArg(0)),
+		.origin.y = xsmcToInteger(xsArg(1)),
+		.size.w = xsmcToInteger(xsArg(2)),
+		.size.h = xsmcToInteger(xsArg(3)),
+	};
+	int color = xsmcToInteger(xsArg(4));
+	int radius = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 4;
+
+	GColor saveColor = ctx->draw_state.stroke_color;
+	ctx->draw_state.stroke_color.argb = color;
+	graphics_draw_round_rect(ctx, &r, radius);
+	ctx->draw_state.stroke_color = saveColor;
+}
+
+void xs_pocopebbble_drawCircle(xsMachine *the)
+{
+	GContext *ctx = getPocoGContext(the);
+	int color = xsmcToInteger(xsArg(0));
+	GPoint center = {
+		.x = xsmcToInteger(xsArg(1)),
+		.y = xsmcToInteger(xsArg(2)),
+	};
+	int radius = xsmcToInteger(xsArg(3));
+	int from = (xsmcArgc > 4) ? DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(4))) : 0;
+	int to = (xsmcArgc > 5) ? DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(5))) : TRIG_MAX_ANGLE;
+
+	GColor saveColor = ctx->draw_state.fill_color;
+	ctx->draw_state.fill_color.argb = color;
+	if ((0 == from) && (TRIG_MAX_ANGLE == to)) {
+		graphics_fill_circle(ctx, center, radius);
+	}
+	else {
+		GRect r = {
+			.origin.x = center.x - radius,
+			.origin.y = center.y - radius,
+			.size.w = radius << 1,
+			.size.h = radius << 1,
+		};
+		const int32_t inset_thickness = MAX(ABS(r.size.h), ABS(r.size.w));
+		graphics_fill_radial(ctx, r, GOvalScaleModeFillCircle, inset_thickness, from, to);
+	}
+	ctx->draw_state.fill_color = saveColor;
+}
+
 
 void xs_pebblebitmap_build(xsMachine *the)
 {
