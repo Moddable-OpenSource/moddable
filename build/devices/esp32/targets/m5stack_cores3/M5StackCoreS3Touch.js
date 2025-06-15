@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -29,35 +29,28 @@ import Touch from "embedded:sensor/Touch/FT6x06";
 class M5StackCoreTouch extends Touch {
   #captured; // undefined or pressed button instance
 
-	constructor(options) {
-		super({
-			sensor: {
-				...device.I2C.internal,
-				io: device.io.SMBus
-			}
-		});
-	}
+  constructor(options) {
+    super(options);
+  }
 
-  read(points) {
-    super.read(points);
-
-    if (!globalThis.button) {
-      return;
-    }
-    if (this.#captured) {
-      if (0 === points[0].state) {
-        this.#captured.write(0);
-        this.#captured = undefined;
+  sample() {
+    const points = super.sample();
+    if (globalThis.button && points) {
+      if (this.#captured) {
+        if (0 === points.length) {
+          this.#captured.write(0);
+          this.#captured = undefined;
+        }
+      } else if (points.length && points[0].y >= 200) {
+        this.#captured =
+          button[
+            String.fromCharCode("a".charCodeAt() + Math.idiv(points[0].x, 107))
+          ];
+        this.#captured?.write(1);
       }
-    } else if (1 === points[0].state && points[0].y >= 200) {
-      this.#captured =
-        button[
-          String.fromCharCode("a".charCodeAt() + Math.idiv(points[0].x, 107))
-        ];
-      this.#captured?.write(1);
     }
 
-    if (this.#captured) points[0].state = 0;
+    return points;
   }
 }
 
