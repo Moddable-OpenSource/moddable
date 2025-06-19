@@ -50,47 +50,9 @@
 #include "util/time/time.h"
 
 
-//#include "FreeRTOS.h"
-//#include "freertos_types.h"
-//#include "semphr.h"
-//#include "task.h"
-//#include "queue.h"
-#if !defined (portMAX_DELAY)
-typedef uint32_t TickType_t;
-#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
-
-#define pdTRUE				(1)
-#define pdMS_TO_TICKS(x)	(x)
-typedef uint32_t portBASE_TYPE;
-typedef void * QueueSetMemberHandle_t;
-typedef void * StaticSemaphore_t;
-typedef void * SemaphoreHandle_t;
-typedef void * TaskHandle_t;
-
-void vPortFree();
-void xQueueAddToSet();
-void *xQueueCreate(int, int);
-void *xQueueCreateSet();
-void vQueueDelete();
-void *xQueueSendToBack();
-void *xQueueSendToBackFromISR();
-void *xQueueSelectFromSet();
-void *xQueueReceive();
-void xQueueRemoveFromSet();
-SemaphoreHandle_t *xSemaphoreCreateMutex();
-StaticSemaphore_t *xSemaphoreCreateMutexStatic(void *x);
-void vSemaphoreDelete();
-void xSemaphoreGive();
-void xSemaphoreTake();
-void vTaskDelay();
-void taskYIELD();
-void *xTaskGetCurrentTaskHandle();
-void *xTaskGetIdleTaskHandle();
-void xTaskNotifyGive();
-uint32_t ulTaskNotifyTake();
-uint32_t xPortGetFreeHeapSize();
-#endif
-
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 
 
 #include "mc.defines.h"

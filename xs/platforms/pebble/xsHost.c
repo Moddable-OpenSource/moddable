@@ -46,9 +46,9 @@
 
 #include <stdio.h>
 
-// #include "FreeRTOS.h"
-// #include "queue.h"
-// #include "semphr.h"
+#include "FreeRTOS.h"
+#include "light_mutex.h"
+#include "queue.h"
 
 #include "applib/app_logging.h"
 #include "services/common/evented_timer.h"
@@ -105,7 +105,7 @@
 		(char *)" percent",
 	};
 
-	SemaphoreHandle_t gInstrumentMutex;
+	LightMandle_t gInstrumentMutex;
 #endif
 
 int pbl_gettimeofday(void *tvp, void *unusedTZ)
@@ -126,8 +126,8 @@ int pbl_gettimeofday(void *tvp, void *unusedTZ)
 
 void modLog_transmit(const char *msg)
 {
-//  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
-	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", msg);
+  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
+//	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", msg);
 }
 
 /*
@@ -180,7 +180,7 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
 
-	gInstrumentMutex = xSemaphoreCreateMutex();
+	gInstrumentMutex = xLightMutexCreate();
 
 #if INSTRUMENT_CPULOAD
 	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
@@ -197,8 +197,7 @@ void espInitInstrumentation(txMachine *the)
 #endif
 }
 
-extern SemaphoreHandle_t gDebugMutex;
-#include "semphr.h"
+extern LightMutexHandle_t gDebugMutex;
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
@@ -367,12 +366,12 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #define kDebugQueueLength (4)
 
-static SemaphoreHandle_t gFlashMutex = NULL;
+static LightMutexHandle_t gFlashMutex = NULL;
 
 void modMachineTaskInit(xsMachine *the)
 {
 	if (NULL == gFlashMutex)
-		gFlashMutex = xSemaphoreCreateMutex();
+		gFlashMutex = xLightMutexCreate();
 
 	the->task = (void *)modTaskGetCurrent();
 	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
@@ -892,28 +891,9 @@ void undefinedFail(const char *what) {
 	 modLog_transmit(msg);
 }
 
-// void vPortFree() {undefinedFail();}
-// void xQueueAddToSet() {undefinedFail();}
-void *xQueueCreate(int, int) { undefinedFail("xQueueCreate"); return NULL; }
-//void *xQueueCreateSet() {undefinedFail(); return NULL; }
-// void vQueueDelete() {undefinedFail(); }
-void *xQueueSendToBack() {undefinedFail("xQueueSendToBack"); return NULL; }
-void *xQueueSendToBackFromISR() {undefinedFail("xQueueSendToBackFromISR"); return NULL; }
-// void *xQueueSelectFromSet() {undefinedFail(); return NULL; }
-void *xQueueReceive() { undefinedFail("xQueueReceive"); return NULL; }
-// void xQueueRemoveFromSet() {undefinedFail(); }
-SemaphoreHandle_t *xSemaphoreCreateMutex() { undefinedFail("xSemaphoreCreateMutex"); return NULL; }
-StaticSemaphore_t *xSemaphoreCreateMutexStatic(void *x) { undefinedFail("xSemaphoreCreateMutexStatic"); return NULL; }
 void vSemaphoreDelete() {undefinedFail("vSemaphoreDelete"); }
 void xSemaphoreGive() {undefinedFail("xSemaphoreGive"); }
 void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
-// void vTaskDelay() {undefinedFail(); }
-void taskYIELD() {undefinedFail("taskYIELD"); }
-// void *xTaskGetCurrentTaskHandle() {undefinedFail(); return NULL; }
-// void *xTaskGetIdleTaskHandle() {undefinedFail(); return NULL; }
-void xTaskNotifyGive() {undefinedFail("xTaskNotifyGive"); }
-uint32_t ulTaskNotifyTake() {undefinedFail("ulTaskNotifyTake"); return 0; }
-uint32_t xPortGetFreeHeapSize() {undefinedFail("xPortGetFreeHeapSize"); return 0; }
 
 void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
 void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }

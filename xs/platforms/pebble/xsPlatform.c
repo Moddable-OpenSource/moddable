@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,6 +45,7 @@
 
 #include "xs.h"
 #include "xsHosts.h"
+#include "FreeRTOS.h"
 
 #ifdef mxDebug
 	#include "modPreference.h"
@@ -76,9 +77,9 @@ void fxReceiveLoop(void);
 #if defined (FREERTOS)
 	#include "semphr.h"
 
-	SemaphoreHandle_t gDebugMutex;
-	#define mxDebugMutexTake() xSemaphoreTake(gDebugMutex, portMAX_DELAY)
-	#define mxDebugMutexGive() xSemaphoreGive(gDebugMutex)
+	LightMutexHandle_t gDebugMutex;
+	#define mxDebugMutexTake() xLightMutexLock(gDebugMutex, portMAX_DELAY)
+	#define mxDebugMutexGive() xLightMutexUnlock(gDebugMutex)
 	#define mxDebugMutexAllocated() (NULL != gDebugMutex)
 #else
 	#define mxDebugMutexTake()
@@ -100,7 +101,7 @@ void fxCreateMachinePlatform(txMachine* the)
 #ifdef mxDebug
 	the->connection = (txSocket)mxNoSocket;
 	if (!gDebugMutex) {
-		gDebugMutex = xSemaphoreCreateMutex();
+		gDebugMutex = xLightMutexCreate();
 	}
 #endif
 }
