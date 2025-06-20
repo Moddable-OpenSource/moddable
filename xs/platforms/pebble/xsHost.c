@@ -749,39 +749,6 @@ uint8_t *espFindUnusedFlashStart(void)
 }
 #endif	// MDK
 
-#if MY_MALLOC
-char synergyDebugStr[256];
-void *my_calloc(size_t nitems, size_t size) {
-	void *ret;
-	ret = calloc(nitems, size);
-	if (NULL == ret) {
-//		sprintf(synergyDebugStr, "# calloc failed %ld\n", size);
-	}
-	return ret;
-}
-
-void *my_realloc(void *ptr, size_t size) {
-	void *ret;
-	ret = realloc(ptr, size);
-	if (NULL == ret) {
-//		sprintf(synergyDebugStr, "# realloc failed %ld\n", size);
-	}
-	return ret;
-}
-
-void *my_malloc(size_t size) {
-	void *ret;
-	ret = malloc(size);
-	if (NULL == ret) {
-//		sprintf(synergyDebugStr, "# malloc failed %ld\n", size);
-	}
-	return ret;
-}
-
-void my_free(void *ptr) {
-}
-#endif
-
 void nrf52_reboot(uint32_t kind)
 {
 	pebble_reset();
@@ -824,64 +791,6 @@ uint32_t espRead32be(const void *addr)
 		case 3:	result = (p[0] >> 24) | (p[1] <<  8); break;
 	}
 	return (result << 24) | ((result & 0xff00) << 8)  | ((result >> 8) & 0xff00) | (result >> 24);
-}
-
-
-modOnSleepRecord *modOnSleepCallbacks = NULL;
-
-void modAddOnSleepCallback(modOnSleepCallback callback, uint32_t refCon)
-{
-	modOnSleep onSleep = modOnSleepCallbacks;
-
-	while (onSleep) {
-		if (onSleep->callback == callback && onSleep->refCon == refCon)
-			break;
-		onSleep = onSleep->next;
-	}
-
-	if (!onSleep) {
-		onSleep = c_calloc(1, sizeof(modOnSleepRecord));
-		if (!onSleep)
-			return;
-		onSleep->next = modOnSleepCallbacks;
-		modOnSleepCallbacks = onSleep;
-	}
-
-	onSleep->callback = callback;
-	onSleep->refCon = refCon;
-}
-
-void modRemoveOnSleepCallback(modOnSleepCallback callback, uint32_t refCon)
-{
-	modOnSleep onSleep = modOnSleepCallbacks, last;
-
-	if (!onSleep)
-		return;
-
-	if (onSleep->callback == callback && onSleep->refCon == refCon)
-		modOnSleepCallbacks = onSleep->next;
-	else {
-		while (NULL != (last = onSleep)) {	// intentional set of last
-			onSleep = onSleep->next;
-			if (onSleep && onSleep->callback == callback && onSleep->refCon == refCon) {
-				last->next = onSleep->next;
-				break;
-			}
-		}
-	}
-
-	if (onSleep)
-		c_free(onSleep);
-}
-
-void modRunOnSleepCallbacks()
-{
-	modOnSleep onSleep = modOnSleepCallbacks;
-
-	while (onSleep) {
-		onSleep->callback(onSleep->refCon);
-		onSleep = onSleep->next;
-	}
 }
 
 void undefinedFail(const char *what) {
