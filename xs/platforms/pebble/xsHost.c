@@ -285,10 +285,8 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-#if 0	// PEBBLE
 	if (pdTRUE == xQueueSendToBack(the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
 		return 0;
-#endif
 
 	if (msg.message)
 		c_free(msg.message);
