@@ -170,9 +170,8 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 
 	GColor saveColor = ctx->draw_state.fill_color;
 	ctx->draw_state.fill_color.argb = color;
-	if ((0 == from) && (TRIG_MAX_ANGLE == to)) {
+	if ((0 == from) && (TRIG_MAX_ANGLE == to))
 		graphics_fill_circle(ctx, center, radius);
-	}
 	else {
 		GRect r = {
 			.origin.x = center.x - radius,
@@ -185,7 +184,6 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 	}
 	ctx->draw_state.fill_color = saveColor;
 }
-
 
 void xs_pebblebitmap_build(xsMachine *the)
 {
