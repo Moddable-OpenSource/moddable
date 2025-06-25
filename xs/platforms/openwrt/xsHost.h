@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -228,6 +228,7 @@ typedef va_list c_va_list;
 #define c_free free
 #define c_malloc malloc
 #define c_qsort qsort
+#define c_bsearch bsearch
 #define c_realloc realloc
 #define c_strtod strtod
 #define c_strtol strtol

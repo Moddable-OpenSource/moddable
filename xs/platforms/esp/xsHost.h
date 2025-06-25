@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -389,6 +389,7 @@ typedef va_list c_va_list;
 #define c_malloc malloc
 void selectionSort(void *base, size_t num, size_t width, int (*compare )(const void *, const void *));
 #define c_qsort selectionSort
+#define c_bsearch bsearch
 #define c_realloc realloc
 #define c_strtod strtod
 #define c_strtol strtol

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -3374,7 +3374,7 @@ txInteger fxGetCombinationOrder(txInteger character)
 	}
 	combination.count = 1;
 	combination.order = 0;
-	it = (txCombination*)bsearch(&combination, index, count, sizeof(txCombination), fxCompareCombination);
+	it = (txCombination*)c_bsearch(&combination, index, count, sizeof(txCombination), fxCompareCombination);
 	if (it)
 		return it->order;
 	return 0;
@@ -3396,7 +3396,7 @@ txInteger fxGetCompositionPairs(txInteger character, txU2** pairs, txInteger* pa
 		data = (txU2*)gxCompositionData1;
 		code = (txU2)(character & 0xFFFF);
 	}
-	it = (txU2*)bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
+	it = (txU2*)c_bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
 	if (it) {
 		*pairs = data + (it[1] << 1);
 		*pairCount = it[3] - it[1];
@@ -3417,7 +3417,7 @@ txInteger fxGetCompositionStarterCode(txInteger character, txU2* pairs, txIntege
 		code = (txU2)(character & 0xFFFF);
 		plane = 0x10000;
 	}
-	it = (txU2*)bsearch(&code, pairs, pairCount, sizeof(txU2) << 1, fxCompareComposition);
+	it = (txU2*)c_bsearch(&code, pairs, pairCount, sizeof(txU2) << 1, fxCompareComposition);
 	if (it)
 		return ((txInteger)it[1]) | plane;
 	return 0;
@@ -3446,7 +3446,7 @@ txInteger fxGetDecompositionBuffer(txInteger character, txInteger* buffer, txFla
 		data = (txString)gxDecompositionData2;
 		code = (txU2)(character & 0xFFFF);
 	}
-	it = (txU2*)bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
+	it = (txU2*)c_bsearch(&code, index, (count - 1) >> 1, sizeof(txU2) << 1, fxCompareComposition);
 	if (it) {
 		txInteger offset = it[1];
 		txString p, q;
