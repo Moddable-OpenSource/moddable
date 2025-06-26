@@ -270,6 +270,7 @@ extern void my_free(void *ptr);
 
 #define c_exit(n) PBL_CROAK("xs exit %d", (int)n)
 #define c_qsort qsort
+#define c_bsearch bsearch
 #define c_strtod strtod
 #define c_strtol strtol
 #define c_strtoul strtoul
