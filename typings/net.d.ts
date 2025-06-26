@@ -26,11 +26,11 @@ declare module "net" {
     /**
      * The IP address of the network connection as a `String`, e.g. "10.0.1.4"
      */
-    get(what: "IP"): string;
+    get(what: "IP", mode?: "station" | "ap" | "ethernet"): string;
     /**
      * The MAC address of the device as a `String`, e.g. "A4:D1:8C:DB:C0:20"
      */
-    get(what: "MAC"): string;
+    get(what: "MAC", mode?: "station" | "ap"| "ethernet"): string;
     /**
      * The name of the Wi-Fi access point as a `String`, e.g. "Moddable Wi-Fi"
      */

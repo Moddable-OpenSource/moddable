@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,51 +23,6 @@
 import Timer from "timer";
 import Headers from "headers";
 import URL from "url";
-
-const statusTexts = {
-	100: "Continue",
-	101: "Switching Protocols",
-	200: "OK",
-	201: "Created",
-	202: "Accepted",
-	203: "Non-Authoritative Information",
-	204: "No Content",
-	205: "Reset Content",
-	206: "Partial Content",
-	300: "Multiple Choices",
-	301: "Moved Permanently",
-	302: "Found",
-	303: "See Other",
-	304: "Not Modified",
-	305: "Use Proxy",
-	307: "Temporary Redirect",
-	400: "Bad Request",
-	401: "Unauthorized",
-	402: "Payment Required",
-	403: "Forbidden",
-	404: "Not Found",
-	405: "Method Not Allowed",
-	406: "Not Acceptable",
-	407: "Proxy Authentication Required",
-	408: "Request Timeout",
-	409: "Conflict",
-	410: "Gone",
-	411: "Length Required",
-	412: "Precondition Failed",
-	413: "Payload Too Large",
-	414: "URI Too Long",
-	415: "Unsupported Media Type",
-	416: "Range Not Satisfiable",
-	417: "Expectation Failed",
-	426: "Upgrade Required",
-	500: "Internal Server Error",
-	501: "Not Implemented",
-	502: "Bad Gateway",
-	503: "Service Unavailable",
-	504: "Gateway Timeout",
-	505: "HTTP Version Not Supported",
-};
-Object.freeze(statusTexts);
 
 const CR = -1;
 const BODY = 0;
@@ -95,7 +50,7 @@ class EventSource {
 	#headers;
 	#body;
 	
-	constructor(href, options) {
+	constructor(href, options = {}) {
 		const url = new URL(href);
 		const protocol = url.protocol;
 		this.#host = url.hostname;
@@ -117,7 +72,7 @@ class EventSource {
 			path += query;
 		this.#path = path;
 		this.#url = url.href;
-		this.#method = options.method || "GET";
+		this.#method = options.method ?? "GET";
 		this.#headers = new Headers();
 		this.#headers.set("accept", "text/event-stream");
 		options.headers?.forEach((value, name) => this.#headers.set(name.toLowerCase(), value));
@@ -218,7 +173,7 @@ class EventSource {
 			method,
 			path,
 			headers,
-			onHeaders: (status, headers) => {
+			onHeaders: (status, headers, statusText) => {
 				if ((status == 200) && (headers.get("content-type").indexOf("text/event-stream") >= 0)) {
 					this.#readystate = this.OPEN;
 					const event = { type:"open" };
@@ -226,7 +181,7 @@ class EventSource {
 				}
 				else {
 					client.close();
-					this.#onError({status: status, statusText:statusTexts[status]});
+					this.#onError({status, statusText});
 				}
 			},
 			onWritable(count) {
@@ -348,7 +303,7 @@ class EventSource {
 			this.#data += value + "\n";
 			break;
 		case "id":
-			if (value.index("\0") < 0)
+			if (value.indexOf("\0") < 0)
 				this.#lastEventID = value;
 			break;
 		case "retry":

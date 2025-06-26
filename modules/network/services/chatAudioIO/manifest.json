@@ -37,10 +37,12 @@
 		"*": [
 			"./ChatAudioIO",
 			"./workers/*"
-		]
+		],
+		"ChatAudioIO/Codecs": "./codecs/audio-codecs"
 	},
 	"preload": [
 		"ChatAudioIO",
+		"ChatAudioIO/Codecs",
 		"ChatWorker",
 		"ChatWebSocketWorker",
 		"JSONBase64Parser",

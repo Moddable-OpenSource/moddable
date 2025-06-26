@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *        
  *   This file is part of the Moddable SDK Runtime.
  *        
@@ -331,6 +331,7 @@ extern void *my_malloc(size_t size);
 #define c_free free
 
 #define c_qsort qsort
+#define c_bsearch bsearch
 #define c_strtod strtod
 #define c_strtol strtol
 #define c_strtoul strtoul

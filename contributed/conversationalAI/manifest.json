@@ -10,6 +10,7 @@
 			"rainbow": false
 		},
 		"startupSound": false,
+		"deepgramKey": "" ,
 		"elevenLabsKey": "",
 		"geminiAPIKey": "",
 		"openAIKey": "",

@@ -2516,6 +2516,11 @@ void fxArrowExpression(txParser* parser, txUnsigned flag)
 		fxAssignmentExpression(parser);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_RETURN, aLine);
 		fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
+		if (!(flags & mxAsyncFlag) && (flag & mxAsyncFlag)) {
+			if (parser->states[0].token == XS_TOKEN_AWAIT) {
+				parser->states[0].token = XS_TOKEN_IDENTIFIER;
+			}
+		}
 	}
 	fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
 	parser->root->flags = parser->flags & (mxStrictFlag | mxFieldFlag | mxNotSimpleParametersFlag | mxArrowFlag | mxSuperFlag | flag);

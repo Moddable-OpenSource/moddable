@@ -574,16 +574,16 @@ txInteger fxCharCaseCanonicalize(txInteger character, txBoolean flag)
 		charCase.code = (txU2)character;
 		charCase.count = 1;
 		if (flag)
-			it = (txCharCase*)bsearch(&charCase, gxCharCaseFold0, mxCharCaseFold0Count, sizeof(txCharCase), fxCharCaseCompare);
+			it = (txCharCase*)c_bsearch(&charCase, gxCharCaseFold0, mxCharCaseFold0Count, sizeof(txCharCase), fxCharCaseCompare);
 		else
-			it = (txCharCase*)bsearch(&charCase, gxCharCaseIgnore0, mxCharCaseIgnore0Count, sizeof(txCharCase), fxCharCaseCompare);
+			it = (txCharCase*)c_bsearch(&charCase, gxCharCaseIgnore0, mxCharCaseIgnore0Count, sizeof(txCharCase), fxCharCaseCompare);
 		
 	}
 	else {
 		charCase.code = (txU2)(character & 0xFFFF);
 		charCase.count = 1;
 		if (flag)
-			it = (txCharCase*)bsearch(&charCase, gxCharCaseFold1, mxCharCaseFold1Count, sizeof(txCharCase), fxCharCaseCompare);
+			it = (txCharCase*)c_bsearch(&charCase, gxCharCaseFold1, mxCharCaseFold1Count, sizeof(txCharCase), fxCharCaseCompare);
 		else
 			it = C_NULL;
 	}
@@ -10798,19 +10798,19 @@ void* fxCharSetUnicodeProperty(txPatternParser* parser)
 		fxPatternParserError(parser, gxErrors[mxInvalidEscape]);
 	if (value) {
 		if (!c_strcmp(name, "General_Category") || !c_strcmp(name, "gc"))
-			it = (txCharSetUnicodeProperty*)bsearch(value, gxCharSet_General_Category, mxCharSet_General_Category, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
+			it = (txCharSetUnicodeProperty*)c_bsearch(value, gxCharSet_General_Category, mxCharSet_General_Category, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
 		else if (!c_strcmp(name, "Script") || !c_strcmp(name, "sc"))
-			it = (txCharSetUnicodeProperty*)bsearch(value, gxCharSet_Script, mxCharSet_Script, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
+			it = (txCharSetUnicodeProperty*)c_bsearch(value, gxCharSet_Script, mxCharSet_Script, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
 		else if (!c_strcmp(name, "Script_Extensions") || !c_strcmp(name, "scx"))
-			it = (txCharSetUnicodeProperty*)bsearch(value, gxCharSet_Script_Extensions, mxCharSet_Script_Extensions, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
+			it = (txCharSetUnicodeProperty*)c_bsearch(value, gxCharSet_Script_Extensions, mxCharSet_Script_Extensions, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
 	}
 	else {
-		it = (txCharSetUnicodeProperty*)bsearch(name, gxCharSet_General_Category, mxCharSet_General_Category, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
+		it = (txCharSetUnicodeProperty*)c_bsearch(name, gxCharSet_General_Category, mxCharSet_General_Category, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
 		if (!it)
-			it = (txCharSetUnicodeProperty*)bsearch(name, gxCharSet_Binary_Property, mxCharSet_Binary_Property, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
+			it = (txCharSetUnicodeProperty*)c_bsearch(name, gxCharSet_Binary_Property, mxCharSet_Binary_Property, sizeof(txCharSetUnicodeProperty), fxCharSetUnicodePropertyCompare);
 		if (parser->flags & XS_REGEXP_V) {
 			if (!it) {
-				it = (txCharSetUnicodeProperty*)bsearch(name, gxCharSet_String_Property, mxCharSet_String_Property, sizeof(txCharSetUnicodeStringProperty), fxCharSetUnicodePropertyCompare);
+				it = (txCharSetUnicodeProperty*)c_bsearch(name, gxCharSet_String_Property, mxCharSet_String_Property, sizeof(txCharSetUnicodeStringProperty), fxCharSetUnicodePropertyCompare);
 				isStringProperty = 1;
 			}
 		}
@@ -11015,13 +11015,13 @@ void fx_String_prototype_toCase(txMachine* the, txBoolean flag)
 				txCharCase charCase;
 				charCase.code = (txU2)c;
 				charCase.count = 1;
-				it = (txCharCase*)bsearch(&charCase, index0, count0, sizeof(txCharCase), fxCharCaseCompare);
+				it = (txCharCase*)c_bsearch(&charCase, index0, count0, sizeof(txCharCase), fxCharCaseCompare);
 			}
 			else {
 				txCharCase charCase;
 				charCase.code = (txU2)(c & 0xFFFF);
 				charCase.count = 1;
-				it = (txCharCase*)bsearch(&charCase, index1, count1, sizeof(txCharCase), fxCharCaseCompare);
+				it = (txCharCase*)c_bsearch(&charCase, index1, count1, sizeof(txCharCase), fxCharCaseCompare);
 			}
 			if (it) {
 				txU1 operand = it->operand;

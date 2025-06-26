@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -306,6 +306,7 @@ extern void *pvPortRealloc(void *ptr, size_t size);
 
 #define c_exit(n) { nrf52_reset(); }
 #define c_qsort qsort
+#define c_bsearch bsearch
 #define c_strtod strtod
 #define c_strtol strtol
 #define c_strtoul strtoul
