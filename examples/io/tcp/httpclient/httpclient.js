@@ -205,7 +205,7 @@ class HTTPClient {
 	#onReadable(count) {
 		this.#readable = count;
 
-		while (this.#readable) {
+		do {
 			if (undefined !== this.#line) {
 				this.#socket.format = "number";
 			readable:
@@ -218,7 +218,7 @@ class HTTPClient {
 
 								if ((name !== "content-length") && (name !== "transfer-encoding") && (false === this.#current.headersMask?.includes(name))) {
 									this.#headers.name = -1;
-									this.#line = undefined;
+									this.#line = 0;
 									this.#state = "skipHeaderValue";
 								}
 								else {
@@ -230,7 +230,7 @@ class HTTPClient {
 							else {
 								this.#line += String.fromCharCode(c);
 								if (10 === c)
-									break readable;
+									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
 							}
 							break;
 						case "skipHeaderValue":
@@ -241,7 +241,7 @@ class HTTPClient {
 							else
 								this.#line = c;
 							break;
-						default:		// include "receiveHeaderValue"
+						default:		// includes "receiveHeaderValue"
 							this.#line += String.fromCharCode(c);
 							if (10 === c)
 								break readable;
@@ -341,7 +341,7 @@ class HTTPClient {
 				default:
 					throw new Error;		//@@ unexpected
 			}
-		}
+		} while (this.#readable);
 	}
 	#onWritable(count) {
 		this.#writable = count;
