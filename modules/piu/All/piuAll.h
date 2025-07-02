@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -813,28 +813,6 @@ extern xsBooleanValue fxFindResult(xsMachine* the, xsSlot* slot, xsIdentifier id
 #define xsFindNumber(_THIS,_ID,_RESULT) fxFindNumber(the, &_THIS, _ID, _RESULT)
 #define xsFindString(_THIS,_ID,_RESULT) fxFindString(the, &_THIS, _ID, _RESULT)
 #define xsFindResult(_THIS,_ID) fxFindResult(the, &_THIS, _ID)
-
-#define xsNewFunction0(_FUNCTION) \
-	(xsOverflow(-XS_FRAME_COUNT-0), \
-	fxPush(_FUNCTION), \
-	fxNew(the), \
-	fxRunCount(the, 0), \
-	fxPop())
-#define xsNewFunction1(_FUNCTION,_SLOT0) \
-	(xsOverflow(-XS_FRAME_COUNT-1), \
-	fxPush(_FUNCTION), \
-	fxNew(the), \
-	fxPush(_SLOT0), \
-	fxRunCount(the, 1), \
-	fxPop())
-#define xsNewFunction2(_FUNCTION,_SLOT0,_SLOT1) \
-	(xsOverflow(-XS_FRAME_COUNT-2), \
-	fxPush(_FUNCTION), \
-	fxNew(the), \
-	fxPush(_SLOT0), \
-	fxPush(_SLOT1), \
-	fxRunCount(the, 2), \
-	fxPop())
 
 #define PiuMarkHandle(THE, HANDLE) if (HANDLE) (*markRoot)(THE, (*((PiuHandle*)(HANDLE)))->reference)
 #define PiuMarkReference(THE, REFERENCE) if (REFERENCE) (*markRoot)(THE, REFERENCE)
