@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: March 25, 2025
+Revised: July 2, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -801,6 +801,9 @@ This section describes the macros related to accessing properties of objects (or
       <td><code>xsNew0</code> ... <code>xsNew7, xsmcNew</code></td>
       <td>Calls the constructor referred to by a property of an instance</td>
     </tr>
+      <td><code>xsNewFunction0</code> ... <code>xsNewFunction2</code></td>
+      <td>Calls the constructor</td>
+    </tr>
     <tr>
       <td><code>xsTest, xsmcTest</code></td>
       <td>Takes a value of any type and determines whether it is true or false</td>
@@ -1455,6 +1458,37 @@ xsmcSetInteger(xsVar(2), 3);
 xsmcNew(xsResult, xsGlobal, xsID_foo, &xsVar(0), NULL);
 xsmcNew(xsResult, xsThis, xsID("foo"), &xsVar(0), NULL);
 xsmcNew(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
+```
+
+***
+
+<a id="xsnewfunction"></a>
+#### xsNewFunction*
+
+Given a reference to a constructor, you can call the constructor with one of the `xsNewFunction*` macros (where `*` is `0` through `2`, representing the number of parameter slots passed). If it is not a reference to a constructor, the `xsNewFunction*` macro throws an exception.
+
+**`xsSlot xsNewFunction0(xsSlot function)`**<BR>
+**`xsSlot xsNewFunction1(xsSlot function, xsSlot theParam0)`**<BR>
+**`xsSlot xsNewFunction2(xsSlot function, xsSlot theParam0, xsSlot theParam1)`**<BR>
+
+
+##### In ECMAScript:
+
+```javascript
+class C {};
+let c = foo(C, 1);
+
+function foo(C, x) {
+	return new C(x);
+}
+```
+
+##### In C:
+
+```c
+void xs_foo(xsMachine* the) {
+	xsResult = xsNewFunction1(xsArg(0), xsArg(1));
+}
 ```
 
 ***
