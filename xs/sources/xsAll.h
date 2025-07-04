@@ -1909,6 +1909,7 @@ extern void fxAsyncGeneratorRejectYield(txMachine* the);
 extern void fxAsyncGeneratorResolveAwait(txMachine* the);
 extern void fxAsyncGeneratorResolveYield(txMachine* the);
 extern void fxAsyncFromSyncIteratorDone(txMachine* the);
+extern void fxAsyncFromSyncIteratorFailed(txMachine* the);
 
 /* xsPromise.c */
 mxExport void fx_Promise(txMachine* the);
