@@ -52,7 +52,7 @@
             "int_pin": 33,
             "spi": {
                 "cs_pin": 27,
-                "port": "VSPI_HOST",
+                "port": "SPI3_HOST",
                 "miso_pin": 35,
                 "mosi_pin": 26,
                 "sck_pin": 0
