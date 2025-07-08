@@ -8,6 +8,12 @@ import Poco from "commodetto/Poco";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
 
+import HTTPClient from "embedded:network/http/client";
+import WebSocketClient from "embedded:network/websocket/client";
+import { fetch } from "fetch";
+import { URL, URLSearchParams } from "url";
+import WebSocket from "WebSocket";
+
 const clearImmediate = Timer.clear;
 const setImmediate = function(callback) { return Timer.set(callback) };
 const setInterval = function(callback, delay) { return Timer.repeat(callback, delay) };
@@ -57,6 +63,27 @@ class StyleArchive extends Style {
 	}
 }
 
+globalThis.device = Object.freeze({
+	network: {
+		http: {
+			io: HTTPClient,
+			protocol: "http"			
+		},
+		https: {
+			io: HTTPClient,
+			protocol: "https"			
+		},
+		ws: {
+			io: WebSocketClient,
+			secure: false		// cannot use protocol as property name
+		},
+		wss: {
+			io: WebSocketClient,
+			secure: true
+		}
+	}
+}, true);
+
 export default function() {
 	const rocky = new Rocky({});
 
@@ -78,6 +105,13 @@ export default function() {
 			Date,
 			Math,
 			Resource: ResourceArchive,
+
+			// network
+			device,
+			fetch,
+			URL,
+			URLSearchParams,
+			WebSocket,
 
 			// Piu
 			Application,

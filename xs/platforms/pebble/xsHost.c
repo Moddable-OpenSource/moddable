@@ -791,23 +791,13 @@ uint32_t espRead32be(const void *addr)
 	return (result << 24) | ((result & 0xff00) << 8)  | ((result >> 8) & 0xff00) | (result >> 24);
 }
 
-void undefinedFail(const char *what) {
-	char msg[64];
-	c_strcpy(msg, "unimplemented: ");
-	c_strcat(msg, what);
-	 modLog_transmit(msg);
+double nearbyint(double x)
+{
+	return c_floor(x);		//@@ really not correct.
 }
-
-void vSemaphoreDelete() {undefinedFail("vSemaphoreDelete"); }
-void xSemaphoreGive() {undefinedFail("xSemaphoreGive"); }
-void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
-
-void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
-void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
 
 int errno;
 int *__errno(void) { return &errno; };
-
 
 #include "piuAll.h"
 #include "applib/fonts/fonts.h"
@@ -821,48 +811,63 @@ typedef struct PebbleFontRecord PebbleFontRecord;
 typedef struct PebbleFontRecord *PebbleFont;
 
 static const PebbleFontRecord gFonts[] = {
-	{.family = "Gothic-Bold", .size = 18, .res_key = FONT_KEY_GOTHIC_18_BOLD},
-	{.family = "Gothic-Regular", .size = 14, .res_key = FONT_KEY_GOTHIC_14},
-	{.family = "Gothic-Bold", .size = 14, .res_key = FONT_KEY_GOTHIC_14_BOLD},
-	{.family = "Gothic-Regular", .size = 18, .res_key = FONT_KEY_GOTHIC_18},
-	{.family = "Gothic-Regular", .size = 24, .res_key = FONT_KEY_GOTHIC_24},
-	{.family = "Gothic-Bold", .size = 24, .res_key = FONT_KEY_GOTHIC_24_BOLD},
-	{.family = "Gothic-Regular", .size = 28, .res_key = FONT_KEY_GOTHIC_28},
-	{.family = "Gothic-Bold", .size = 28, .res_key = FONT_KEY_GOTHIC_28_BOLD},
-	{.family = "Bitham-Black", .size = 30, .res_key = FONT_KEY_BITHAM_30_BLACK},
-	{.family = "Bitham-Bold", .size = 42, .res_key = FONT_KEY_BITHAM_42_BOLD},
-	{.family = "Bitham-Light", .size = 42, .res_key = FONT_KEY_BITHAM_42_LIGHT},
-	{.family = "Bitham-Regular", .size = 42, .res_key = FONT_KEY_BITHAM_42_MEDIUM_NUMBERS},
-	{.family = "Bitham-Regular", .size = 34, .res_key = FONT_KEY_BITHAM_34_MEDIUM_NUMBERS},
-	{.family = "Roboto-Condensed", .size = 21, .res_key = FONT_KEY_ROBOTO_CONDENSED_21},
-	{.family = "Roboto-Bold", .size = 49, .res_key = FONT_KEY_ROBOTO_BOLD_SUBSET_49},
-	{.family = "Droid Serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
-	{.family = "Leco-Bold", .size = 20, .res_key = FONT_KEY_LECO_20_BOLD_NUMBERS},
-	{.family = "Leco-Bold", .size = 26, .res_key = FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM},
-	{.family = "Leco-Bold", .size = 32, .res_key = FONT_KEY_LECO_32_BOLD_NUMBERS},
-	{.family = "Leco-Bold", .size = 36, .res_key = FONT_KEY_LECO_36_BOLD_NUMBERS},
-	{.family = "Leco-Bold", .size = 38, .res_key = FONT_KEY_LECO_38_BOLD_NUMBERS},
-	{.family = "Leco-Bold", .size = 42, .res_key = FONT_KEY_LECO_42_NUMBERS},
-	{.family = "Leco-Light", .size = 28, .res_key = FONT_KEY_LECO_28_LIGHT_NUMBERS},
-	{ 0 }
+    {.family = "Gothic-Bold", .size = 18, .res_key = FONT_KEY_GOTHIC_18_BOLD},
+    {.family = "Gothic-Regular", .size = 9,  .res_key = FONT_KEY_GOTHIC_09},
+    {.family = "Gothic-Regular", .size = 14, .res_key = FONT_KEY_GOTHIC_14},
+    {.family = "Gothic-Bold", .size = 14, .res_key = FONT_KEY_GOTHIC_14_BOLD},
+    {.family = "Gothic-Regular", .size = 18, .res_key = FONT_KEY_GOTHIC_18},
+    {.family = "Gothic-Regular", .size = 24, .res_key = FONT_KEY_GOTHIC_24},
+    {.family = "Gothic-Bold", .size = 24, .res_key = FONT_KEY_GOTHIC_24_BOLD},
+    {.family = "Gothic-Regular", .size = 28, .res_key = FONT_KEY_GOTHIC_28},
+    {.family = "Gothic-Bold", .size = 28, .res_key = FONT_KEY_GOTHIC_28_BOLD},
+    {.family = "Gothic-Regular", .size = 36, .res_key = FONT_KEY_GOTHIC_36},
+    {.family = "Gothic-Bold", .size = 36, .res_key = FONT_KEY_GOTHIC_36_BOLD},
+
+    {.family = "Bitham-Black", .size = 30, .res_key = FONT_KEY_BITHAM_30_BLACK},
+    {.family = "Bitham-Bold", .size = 42, .res_key = FONT_KEY_BITHAM_42_BOLD},
+    {.family = "Bitham-Light", .size = 42, .res_key = FONT_KEY_BITHAM_42_LIGHT},
+    {.family = "Bitham-Medium", .size = 42, .res_key = FONT_KEY_BITHAM_42_MEDIUM_NUMBERS},
+    {.family = "Bitham-Medium", .size = 34, .res_key = FONT_KEY_BITHAM_34_MEDIUM_NUMBERS},
+    {.family = "Bitham-Light", .size = 34, .res_key = FONT_KEY_BITHAM_34_LIGHT_SUBSET},
+    {.family = "Bitham-Light", .size = 18, .res_key = FONT_KEY_BITHAM_18_LIGHT_SUBSET},
+
+    {.family = "Roboto-Condensed", .size = 21, .res_key = FONT_KEY_ROBOTO_CONDENSED_21},
+    {.family = "Roboto-Bold", .size = 49, .res_key = FONT_KEY_ROBOTO_BOLD_SUBSET_49},
+
+    {.family = "Droid Serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
+
+    {.family = "Leco-Bold", .size = 20, .res_key = FONT_KEY_LECO_20_BOLD_NUMBERS},
+    {.family = "Leco-Bold", .size = 26, .res_key = FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM},
+    {.family = "Leco-Bold", .size = 32, .res_key = FONT_KEY_LECO_32_BOLD_NUMBERS},
+    {.family = "Leco-Bold", .size = 36, .res_key = FONT_KEY_LECO_36_BOLD_NUMBERS},
+    {.family = "Leco-Bold", .size = 38, .res_key = FONT_KEY_LECO_38_BOLD_NUMBERS},
+    {.family = "Leco-Regular", .size = 42, .res_key = FONT_KEY_LECO_42_NUMBERS},
+    {.family = "Leco-Light", .size = 28, .res_key = FONT_KEY_LECO_28_LIGHT_NUMBERS},
+
+	 {0}
 };
 
 GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *descent, int32_t *leading)
 {
-	for (PebbleFont f = (PebbleFont)gFonts; C_NULL != f->family; f++) {
-		if ((size != f->size) || c_strcmp(family, f->family))
-			continue;
+	PebbleFont f = (PebbleFont)gFonts;
 
-		GFont font = fonts_get_system_font(f->res_key);;
-		if (font) {
-			uint16_t height = fonts_get_font_height(font);
-			*descent = fonts_get_font_cap_offset(font);
-			*leading = 1;
-			*ascent = height - *descent - *leading;
-		}
-
-		return font;			
+	for (; C_NULL != f->family; f++) {
+		if ((size == f->size) && !c_strcmp(family, f->family))
+			break;
 	}
 
-	return 0;
+	GFont font = C_NULL;
+	if (f)
+		font = fonts_get_system_font(f->res_key);
+	if (!font) {
+		font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
+		if (!font)
+			return C_NULL;
+	}
+
+	uint16_t height = fonts_get_font_height(font);
+	*descent = fonts_get_font_cap_offset(font);
+	*leading = 1;
+	*ascent = height - *descent - *leading;
+	return font;
 }

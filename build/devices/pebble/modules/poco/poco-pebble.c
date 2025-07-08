@@ -27,10 +27,18 @@
 #include "commodettoPocoBlit.h"
 
 #include "applib/graphics/gcontext.h"
+#include "applib/graphics/gdraw_command_image.h"
+#include "applib/graphics/gdraw_command_sequence.h"
+#include "applib/graphics/gdraw_command_transforms.h"
 #include "applib/graphics/gtypes.h"
 #include "applib/graphics/graphics.h"
 #include "applib/graphics/graphics_line.h"
 #include "util/trig.h"
+
+/*
+	ORIGIN
+	CLIPPING
+*/
 
 extern GContext *getPocoGContext(xsMachine *the);
 
@@ -185,6 +193,33 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 	ctx->draw_state.fill_color = saveColor;
 }
 
+void xs_pocopebbble_drawDCI(xsMachine *the)
+{
+	GContext *ctx = getPocoGContext(the);
+	GPoint offset = {
+		.x = xsmcToInteger(xsArg(1)),
+		.y = xsmcToInteger(xsArg(2)),
+	};
+	xsDestructor d = xsGetHostDestructor(xsArg(0));
+	if (d == xs_pebbledci_destructor) {
+		GDrawCommandImage *dci = xsmcGetHostDataValidate(xsArg(0), xs_pebbledci_destructor);
+		gdraw_command_image_draw(ctx, dci, offset);
+	}
+	else if (d == xs_pebbledcs_destructor) {
+		GDrawCommandSequence *dcs = xsmcGetHostDataValidate(xsArg(0), xs_pebbledcs_destructor);
+		xsmcGet(xsResult, xsArg(0), xsID_time);
+		xsIntegerValue time = xsmcToInteger(xsResult);
+		GDrawCommandFrame *frame = gdraw_command_sequence_get_frame_by_elapsed(dcs, time);
+		gdraw_command_frame_draw(ctx, dcs, frame, offset);
+	}
+	else {
+		GDrawCommandList *list = xsmcGetHostDataValidate(xsArg(0), xs_pebbledcl_destructor);
+		graphics_context_move_draw_box(ctx, offset);
+		gdraw_command_list_draw(ctx, list);
+		graphics_context_move_draw_box(ctx, GPoint(-offset.x, -offset.y));
+	}
+}
+
 void xs_pebblebitmap_build(xsMachine *the)
 {
 	int id = xsmcToInteger(xsArg(1));
@@ -201,4 +236,188 @@ void xs_pebblebitmap_build(xsMachine *the)
 	cb->havePointer = true;
 	cb->bufferSlot = C_NULL;
 	cb->byteLength = 0;
+
+	xsResult = xsArg(0);
+}
+
+void xs_pebbledci_destructor(void *data)
+{
+	if (data)
+		gdraw_command_image_destroy((GDrawCommandImage *)data);
+}
+
+void xs_pebbledci(xsMachine *the)
+{
+	int id = xsmcToInteger(xsArg(0));
+	GDrawCommandImage *dc = gdraw_command_image_create_with_resource(id);
+	if (!dc)
+		xsUnknownError("not found");
+	
+	xsmcSetHostData(xsThis, dc);
+}
+
+void xs_pebbledci_get_width(xsMachine *the)
+{
+	GDrawCommandImage *dc = xsmcGetHostDataValidate(xsThis, xs_pebbledci_destructor);
+	GSize size = gdraw_command_image_get_bounds_size(dc);
+	xsmcSetInteger(xsResult, size.w);
+}
+
+void xs_pebbledci_get_height(xsMachine *the)
+{
+	GDrawCommandImage *dc = xsmcGetHostDataValidate(xsThis, xs_pebbledci_destructor);
+	GSize size = gdraw_command_image_get_bounds_size(dc);
+	xsmcSetInteger(xsResult, size.h);
+}
+
+void xs_pebbledcs_destructor(void *data)
+{
+	if (data)
+		gdraw_command_sequence_destroy((GDrawCommandSequence *)data);
+}
+
+void xs_pebbledcs(xsMachine *the)
+{
+	int id = xsmcToInteger(xsArg(0));
+	GDrawCommandSequence *cs = gdraw_command_sequence_create_with_resource(id);
+	if (!cs)
+		xsUnknownError("not found");
+
+	xsSlot tmp;
+	xsmcSetInteger(tmp, 0);
+	xsmcSet(xsThis, xsID_time, tmp);
+
+	xsmcSetHostData(xsThis, cs);
+}
+
+void xs_pebbledcs_get_width(xsMachine *the)
+{
+	GDrawCommandSequence *cs = xsmcGetHostDataValidate(xsThis, xs_pebbledcs_destructor);
+	GSize size = gdraw_command_sequence_get_bounds_size(cs);
+	xsmcSetInteger(xsResult, size.w);
+}
+
+void xs_pebbledcs_get_height(xsMachine *the)
+{
+	GDrawCommandSequence *cs = xsmcGetHostDataValidate(xsThis, xs_pebbledcs_destructor);
+	GSize size = gdraw_command_sequence_get_bounds_size(cs);
+	xsmcSetInteger(xsResult, size.h);
+}
+
+void xs_pebbledcs_get_duration(xsMachine *the)
+{
+	GDrawCommandSequence *cs = xsmcGetHostDataValidate(xsThis, xs_pebbledcs_destructor);
+	uint32_t duration = gdraw_command_sequence_get_total_duration(cs);
+	if (PLAY_DURATION_INFINITE == duration)
+		xsmcSetNumber(xsResult, C_INFINITY);
+	else
+		xsmcSetInteger(xsResult, duration);
+}
+
+void xs_pebbledcs_get_frameDuration(xsMachine *the)
+{
+	GDrawCommandSequence *cs = xsmcGetHostDataValidate(xsThis, xs_pebbledcs_destructor);
+	xsmcGet(xsResult, xsThis, xsID_time);
+	xsIntegerValue time = xsmcToInteger(xsResult);
+	GDrawCommandFrame *frame = gdraw_command_sequence_get_frame_by_elapsed(cs, time);
+	xsmcSetInteger(xsResult, (xsIntegerValue)gdraw_command_frame_get_duration(frame));
+}
+
+void xs_pebbledci_clone(xsMachine *the)
+{
+	GDrawCommandList *list;
+	xsDestructor d = xsGetHostDestructor(xsThis);
+	if (d == xs_pebbledci_destructor) {
+		GDrawCommandImage *dci = xsmcGetHostDataValidate(xsThis, xs_pebbledci_destructor);
+		list = gdraw_command_image_get_command_list(dci);
+	}
+	else {
+		GDrawCommandSequence *cs = xsmcGetHostDataValidate(xsThis, xs_pebbledcs_destructor);
+		xsmcGet(xsResult, xsThis, xsID_time);
+		xsIntegerValue time = xsmcToInteger(xsResult);
+		GDrawCommandFrame *frame = gdraw_command_sequence_get_frame_by_elapsed(cs, time);
+		list = gdraw_command_frame_get_command_list(frame);
+	}
+
+	list = gdraw_command_list_clone(list);
+	xsResult = xsNewHostInstance(xsArg(0));
+	xsmcSetHostData(xsResult, list);
+}
+
+static xsIntegerValue xs_argToFixed(xsMachine* the, xsIntegerValue c, xsIntegerValue i, xsStringValue name)
+{
+	if (c <= i) xsTypeError("missing %s", name);
+	xsType t = xsmcTypeOf(xsArg(i)); 
+	if (xsIntegerType == t) {
+		return xsmcToInteger(xsArg(i)) << 8;
+	}
+	if (xsNumberType == t) {
+		xsNumberValue value = xsmcToNumber(xsArg(i));
+		if (c_isfinite(value))
+			return value * 256;
+	}
+
+	xsTypeError("invalid %s", name);
+}
+
+void xs_pebbledcl_destructor(void *data)
+{
+	gdraw_command_list_destroy((GDrawCommandList *)data);
+}
+
+void xs_pebbledcl_scale(xsMachine *the)
+{
+	GDrawCommandList *list = xsmcGetHostDataValidate(xsThis, xs_pebbledcl_destructor);
+	xsIntegerValue c = xsmcArgc;
+	xsIntegerValue x = xs_argToFixed(the, c, 0, "x");
+	xsIntegerValue y = (c < 2) ? x : xs_argToFixed(the, c, 1, "y");
+	GSize from = {.w = 256, .h = 256};
+	GSize to = {.w = x, .h = y};
+	
+	gdraw_command_list_scale(list, from, to);
+
+	xsResult = xsThis;
+}
+
+struct DCLRotateRecord {
+	xsIntegerValue angleSin;
+	xsIntegerValue angleCos;
+	xsIntegerValue cx;
+	xsIntegerValue cy; 
+};
+typedef struct DCLRotateRecord DCLRotateRecord;
+typedef struct DCLRotateRecord *DCLRotate;
+
+static bool doRotate(GDrawCommand *command, uint32_t index, void *context)
+{
+	DCLRotate rr = context;
+	const uint16_t numPoints = gdraw_command_get_num_points(command);
+	for (uint16_t i = 0; i < numPoints; i++) {
+		GPoint p = gdraw_command_get_point(command, i);
+		xsIntegerValue x = p.x - rr->cx, y = p.y - rr->cy;
+		p.x = (((x * rr->angleCos) + (y * rr->angleSin)) >> 8) + rr->cx;
+		p.y = (((y * rr->angleCos) - (x * rr->angleSin)) >> 8) + rr->cy;
+		gdraw_command_set_point(command, i, p);
+	}
+
+	return true;
+}
+
+void xs_pebbledcl_rotate(xsMachine *the)
+{
+	GDrawCommandList *list = xsmcGetHostDataValidate(xsThis, xs_pebbledcl_destructor);
+	xsNumberValue angle = xsmcToNumber(xsArg(0));
+	DCLRotateRecord rr = {
+		.angleSin = c_sin(angle) * 256,
+		.angleCos = c_cos(angle) * 256,
+	};
+
+	if (xsmcArgc >= 3) {
+		rr.cx = xsmcToInteger(xsArg(1)) << 3;		// 13.3 fixed!
+		rr.cy = xsmcToInteger(xsArg(2)) << 3;
+	}
+
+	gdraw_command_list_iterate(list, doRotate, &rr);
+
+	xsResult = xsThis;
 }

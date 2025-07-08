@@ -15,7 +15,8 @@
 		"$(MODDABLE)/build/devices/pebble/modules/battery/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/compass/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json",
-		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json"
+		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json"
 	],
 	"config": {
 		"screen": "pebble/display",
@@ -26,13 +27,15 @@
 			"./main",
 			"./main-appinfo",
 			"$(MODDABLE)/examples/io/storage/webstorage/webstorage.js",
-			"$(MODDABLE)/examples/io/tcp/fetch/fetch.js"
+			"$(MODDABLE)/examples/io/tcp/fetch/fetch.js",
+			"$(MODDABLE)/examples/io/tcp/websocket/WebSocket.js"
 		]
 	},
 	"preload": [
 		"main",
 		"webstorage",
-		"fetch"
+		"fetch",
+		"WebSocket"
 	],
 	"strip": [
 		"Proxy",

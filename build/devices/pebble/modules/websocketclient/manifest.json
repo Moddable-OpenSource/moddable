@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"embedded:network/websocket/client": "./websocketclient-pebble.js"
+	},
+	"preload": "embedded:network/websocket/client"
+}

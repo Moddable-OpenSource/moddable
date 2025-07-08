@@ -114,12 +114,13 @@ class HTTPClient {
 		this.#messages.writable = false;
 	}
 	close () {
-			this.#messages?.close();
-			this.#messages = this.#current = this.#requests = this.#headers = this.#state = undefined;
+		this.#messages?.close();
+		this.#messages = this.#current = this.#requests = this.#headers = this.#state = undefined;
 	}
 	request(options) {
-		const {method, path, headers, onHeaders, onReadable, onWritable, onDone} = options;
-		options = {method, path, headers, onHeaders, onReadable, onWritable, onDone, id: ++id};
+		const {method, path, headers, onHeaders, onReadable, onWritable, onDone, headersMask} = options;
+		options = {method, path, headers, onHeaders, onReadable, onWritable, onDone, headersMask, id: ++id};
+
 		this.#requests.push(options);
 		if (("connected" === this.#state) && (1 === this.#requests.length))
 			this.#next();
@@ -142,9 +143,6 @@ class HTTPClient {
 		const current = this.#current;
 		if (!current) return;
 
-		const m = new Map;
-		m.set(1, current.id);
-
 		while (true) {
 			let remain = this.#remain;
 			if (remain) {
@@ -152,6 +150,8 @@ class HTTPClient {
 				if (use > (bufferSize - bufferOverhead))
 					use = bufferSize - bufferOverhead;
 
+				const m = new Map;
+				m.set(1, current.id);
 				m.set(remain.part, remain.subarray(remain.position, remain.position + use))
 				remain.position += use;
 				if (remain.position === remain.byteLength) {
@@ -165,7 +165,7 @@ class HTTPClient {
 
 			switch (this.#state) {
 				case "sendRequest":
-					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${bufferSize}`);
+					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${bufferSize}:${current.headersMask ? current.headersMask.join(",") : ""}`);
 					this.#remain = new Uint8Array(this.#remain);
 					this.#remain.part = 2;
 					this.#remain.position = 0;
