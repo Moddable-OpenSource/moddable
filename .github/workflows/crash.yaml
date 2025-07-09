@@ -1,0 +1,26 @@
+name: Crash
+
+on:
+  push:
+    branches: ['public']
+  pull_request:
+
+jobs:
+  crash:
+    runs-on: ubuntu-22.04
+    name: 'Run on bundles'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: wget https://github.com/Moddable-OpenSource/moddable/releases/download/5.8.0/xst-lin64.zip
+      - run: unzip xst-lin64.zip
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
+      - run: ls bundles/tempout.*cjs | xargs -n1 ./xst
