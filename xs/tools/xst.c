@@ -46,6 +46,8 @@ struct sxSharedTimer {
 	txThread thread;
 	txNumber when;
 	txNumber interval;
+	uint8_t cleared;
+	uint8_t inCallback;
 	txSharedTimerCallback callback;
 	txInteger refconSize;
 	char refcon[1];
@@ -678,12 +680,6 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 	txMachine* the = job->the;
 	fxBeginHost(the);
 	mxTry(the) {
-		if (timer->interval == 0) {
-			fxAccess(the, &job->self);
-			*mxResult = the->scratch;
-			fxSetHostData(the, mxResult, NULL);
-		}
-
 		mxPushUndefined();
 		mxPush(job->function);
 		mxCall();
@@ -694,11 +690,6 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 	mxCatch(the) {
 		*((txSlot*)the->rejection) = mxException;
 		timer->interval = 0;
-	}
-	if (timer->interval == 0) {
-		fxAccess(the, &job->self);
-		*mxResult = the->scratch;
-		fxForget(the, &job->self);
 	}
 	fxEndHost(the);
 }
@@ -712,21 +703,28 @@ void fx_clearTimer(txMachine* the)
 	if (hooks == &gxTimerHooks) {
 		txSharedTimer* timer = fxGetHostData(the, mxArgv(0));
 		if (timer) {
-			txJob* job = (txJob*)&(timer->refcon[0]);
-			fxForget(the, &job->self);
-			fxSetHostData(the, mxArgv(0), NULL);
-			fxUnscheduleSharedTimer(timer);
+			timer->cleared = 1;
+			if (!timer->inCallback) {
+				txJob* job = (txJob*)&(timer->refcon[0]);
+				fxForget(the, &job->self);
+				fxSetHostData(the, mxArgv(0), NULL);
+				fxUnscheduleSharedTimer(timer);
+			}
 		}
 	}
 }
 
 void fx_destroyTimer(void* data)
 {
+	if (data) {
+		fxUnscheduleSharedTimer(data:)		// this should only happen if VM exits with active timer
 }
 
 void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot)
 {
-	txJob* job = it;
+	txSharedTimer* timer = it;
+	txJob* job = (txJob*)timer->refcon;
+
 	if (job) {
 		(*markRoot)(the, &job->function);
 		(*markRoot)(the, &job->argument);
@@ -891,9 +889,15 @@ void fxRunLoop(txMachine* the)
 		}
 		fxUnlockMutex(&(gxSharedTimers.mutex));
 		if (timer) {
+			timer->inCallback = 1;
 			(timer->callback)(timer, timer->refcon, timer->refconSize);
-			if (timer->interval == 0)
+			timer->inCallback = 0;
+			if ((timer->interval == 0) || timer->cleared) {
+				txJob* job = (txJob*)&(timer->refcon[0]);
+				fxSetHostData(the, &job->self, NULL);
+				fxForget(the, &job->self);
 				fxUnscheduleSharedTimer(timer);
+			}
 			else
 				timer->when += timer->interval;
 			continue;
