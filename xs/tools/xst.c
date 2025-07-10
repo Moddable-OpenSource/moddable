@@ -46,8 +46,6 @@ struct sxSharedTimer {
 	txThread thread;
 	txNumber when;
 	txNumber interval;
-	uint8_t cleared;
-	uint8_t inCallback;
 	txSharedTimerCallback callback;
 	txInteger refconSize;
 	char refcon[1];
@@ -678,54 +676,60 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 {
 	txJob* job = (txJob*)refcon;
 	txMachine* the = job->the;
-	fxBeginHost(the);
-	mxTry(the) {
-		mxPushUndefined();
-		mxPush(job->function);
-		mxCall();
-		mxPush(job->argument);
-		mxRunCount(1);
-		mxPop();
+	if (the) {
+		fxBeginHost(the);
+		mxTry(the) {
+			mxPushUndefined();
+			mxPush(job->function);
+			mxCall();
+			mxPush(job->argument);
+			mxRunCount(1);
+			mxPop();
+		}
+		mxCatch(the) {
+			*((txSlot*)the->rejection) = mxException;
+			timer->interval = 0;
+		}
+		if (job->the) {
+			if (timer->interval == 0) {
+				fxAccess(the, &job->self);
+				*mxResult = the->scratch;
+				fxForget(the, &job->self);
+				fxSetHostData(the, mxResult, NULL);
+				job->the = NULL;
+			}
+		}
+		else
+			timer->interval = 0;
+		fxEndHost(the);
 	}
-	mxCatch(the) {
-		*((txSlot*)the->rejection) = mxException;
+	else
 		timer->interval = 0;
-	}
-	fxEndHost(the);
 }
 
 void fx_clearTimer(txMachine* the)
 {
 	if ((0 == mxArgc) || (XS_REFERENCE_KIND != mxArgv(0)->kind) || (C_NULL == fxGetHostDataIf(the, mxArgv(0))))
 		return;
-
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
-		txSharedTimer* timer = fxGetHostData(the, mxArgv(0));
-		if (timer) {
-			timer->cleared = 1;
-			if (!timer->inCallback) {
-				txJob* job = (txJob*)&(timer->refcon[0]);
-				fxForget(the, &job->self);
-				fxSetHostData(the, mxArgv(0), NULL);
-				fxUnscheduleSharedTimer(timer);
-			}
+		txJob* job = fxGetHostData(the, mxArgv(0));
+		if (job) {
+			fxForget(the, &job->self);
+			fxSetHostData(the, mxArgv(0), NULL);
+			job->the = NULL;
 		}
 	}
 }
 
 void fx_destroyTimer(void* data)
 {
-	if (data)
-		fxUnscheduleSharedTimer(data);		// this should only happen if VM exits with active timer
 }
 
 void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot)
 {
-	txSharedTimer* timer = it;
-
-	if (timer) {
-		txJob* job = (txJob*)timer->refcon;
+	txJob* job = it;
+	if (job) {
 		(*markRoot)(the, &job->function);
 		(*markRoot)(the, &job->argument);
 	}
@@ -761,7 +765,7 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 		job->argument = *mxArgv(2);
 	else
 		job->argument = mxUndefined;
-	fxSetHostData(the, &job->self, timer);
+	fxSetHostData(the, &job->self, job);
 	fxSetHostHooks(the, &job->self, &gxTimerHooks);
 	fxRemember(the, &job->self);
 	fxAccess(the, &job->self);
@@ -889,15 +893,9 @@ void fxRunLoop(txMachine* the)
 		}
 		fxUnlockMutex(&(gxSharedTimers.mutex));
 		if (timer) {
-			timer->inCallback = 1;
 			(timer->callback)(timer, timer->refcon, timer->refconSize);
-			timer->inCallback = 0;
-			if ((timer->interval == 0) || timer->cleared) {
-				txJob* job = (txJob*)&(timer->refcon[0]);
-				fxSetHostData(the, &job->self, NULL);
-				fxForget(the, &job->self);
+			if (timer->interval == 0)
 				fxUnscheduleSharedTimer(timer);
-			}
 			else
 				timer->when += timer->interval;
 			continue;
