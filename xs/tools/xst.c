@@ -716,16 +716,16 @@ void fx_clearTimer(txMachine* the)
 
 void fx_destroyTimer(void* data)
 {
-	if (data) {
-		fxUnscheduleSharedTimer(data:)		// this should only happen if VM exits with active timer
+	if (data)
+		fxUnscheduleSharedTimer(data);		// this should only happen if VM exits with active timer
 }
 
 void fx_markTimer(txMachine* the, void* it, txMarkRoot markRoot)
 {
 	txSharedTimer* timer = it;
-	txJob* job = (txJob*)timer->refcon;
 
-	if (job) {
+	if (timer) {
+		txJob* job = (txJob*)timer->refcon;
 		(*markRoot)(the, &job->function);
 		(*markRoot)(the, &job->argument);
 	}
