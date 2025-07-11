@@ -718,6 +718,8 @@ void fx_clearTimer(txMachine* the)
 			fxForget(the, &job->self);
 			fxSetHostData(the, mxArgv(0), NULL);
 			job->the = NULL;
+			txSharedTimer* timer = (txSharedTimer*)(((txByte*)job) - offsetof(txSharedTimer, refcon));
+			fxRescheduleSharedTimer(timer, 0, 0);
 		}
 	}
 }
