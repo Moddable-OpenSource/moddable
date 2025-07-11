@@ -1,0 +1,13 @@
+{
+	"platforms": {
+		"esp32": {
+			"include": "./esp32/manifest.json"
+		},
+		"mac": {
+			"include": "./mac/manifest.json"
+		},
+		"...": {
+			"error": "ECMA-419 BLE client not yet supported"
+		}
+	}
+}

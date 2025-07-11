@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/ble/client/manifest.json",
+		"$(MODDABLE)/modules/io/storage/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
