@@ -60,6 +60,7 @@ struct BLEScannerRecord {
     NSMutableDictionary* already;
     NSMutableArray* services;
 	xsBooleanValue scanning;
+	xsSlot *advertisementConstructor;
 	xsSlot *advertisement;
 	int8_t useCount;
 };
@@ -115,23 +116,6 @@ static void BLEClientServiceDestructor(void *it)
 		[service release];
 	}
 }
-
-static void BLEClientPeripheralDestructor(void *it)
-{
-	if (it) {
-		CBPeripheral *peripheral = it;
-		[peripheral release];
-	}
-}
-
-static void BLEClientAdvertisementDestructor(void *it)
-{
-	if (it) {
-		NSDictionary *advertisementData = it;
-		[advertisementData release];
-	}
-}
-
 
 static void BLEClientRequestFailed(BLEClient client, NSError* error)
 {
@@ -196,20 +180,8 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 	xsmcVars(1);
 	xsThis = xsAccess(scanner->object);
 
-	xsResult = xsNewHostObject(BLEClientAdvertisementDestructor);
+	xsResult = xsNewFunction0(xsReference(scanner->advertisementConstructor));
 	xsmcSetHostData(xsResult, [advertisementData retain]);
-
-	extern void BLEAdvertisement_getType(xsMachine *the);
-
-	xsVar(0) = xsNewHostFunction(BLEAdvertisement_getType, 1);
-	xsmcDefine(xsResult, xsID_getType, xsVar(0), xsDefault);
-
-
-//@@	NSNumber *isConnectable = advertisementData[CBAdvertisementDataIsConnectable];	// maybe set connectable property on advertisement
-
-//	xsmcSetNewObject(xsResult);
-	xsVar(0) = xsString([name UTF8String]);
-	xsmcDefine(xsResult, xsID_name, xsVar(0), xsDontDelete | xsDontSet);
 	xsmcSetInteger(xsVar(0), [RSSI integerValue]);
 	xsmcDefine(xsResult, xsID_rssi, xsVar(0), xsDontDelete | xsDontSet);
 	xsVar(0) = xsString([uuid.UUIDString UTF8String]);
@@ -437,6 +409,110 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 }
 @end
 
+void BLEAdvertisement_constructor(xsMachine* the)
+{
+}
+
+void BLEAdvertisement_destructor(void* it)
+{
+	if (it) {
+		NSDictionary *advertisementData = it;
+		[advertisementData release];
+	}
+}
+
+void BLEAdvertisement_get(xsMachine *the)
+{
+	int type = xsmcToInteger(xsArg(0));
+	NSDictionary<NSString *, id> *advertisementData = (NSDictionary<NSString *, id> *)xsmcGetHostDataValidate(xsThis, BLEAdvertisement_destructor);
+	if ((3 == type) || (5 == type) || (7 == type)) {
+		NSArray<CBUUID *> *mainUUIDs = advertisementData[CBAdvertisementDataServiceUUIDsKey];
+		NSArray<CBUUID *> *overflowUUIDs = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey];
+		if (!mainUUIDs && !overflowUUIDs)
+			return;
+
+		if (!mainUUIDs) mainUUIDs = @[];
+		if (!overflowUUIDs) overflowUUIDs = @[];
+		NSArray<CBUUID *> *allUUIDs = [mainUUIDs arrayByAddingObjectsFromArray:overflowUUIDs];
+
+		NSMutableData *uuids = [NSMutableData data];
+		for (CBUUID *uuid in allUUIDs) {
+			NSUInteger len = uuid.data.length;
+			if (((3 == type) && (2 == len)) || ((5 == type) && (4 == len)) || ((7 == type) && (16 == len)))
+				[uuids appendData:uuid.data];
+		}
+
+		if ([uuids length])
+			xsmcSetArrayBuffer(xsResult, (void *)[uuids bytes], [uuids length]);
+	}
+	else if (255 == type) {
+		NSData *manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey];
+		if (manufacturerData)
+			xsmcSetArrayBuffer(xsResult, (void *)[manufacturerData bytes], [manufacturerData length]);
+	}
+	else if (10 == type) {
+		NSNumber *txPower = advertisementData[CBAdvertisementDataTxPowerLevelKey];
+		if (txPower) {
+			uint8_t powerValue = (uint8_t)[txPower integerValue];
+			xsmcSetArrayBuffer(xsResult, &powerValue, sizeof(powerValue));
+		}
+	}
+	else if (9 == type) {
+		NSString *localName = advertisementData[CBAdvertisementDataLocalNameKey];
+		if (localName) {
+			NSData *name = [localName dataUsingEncoding:NSUTF8StringEncoding];
+			xsmcSetArrayBuffer(xsResult, (void *)[name bytes], [name length]);
+		}
+	}
+//@@ CBAdvertisementDataServiceDataKey]
+//@@ CBAdvertisementDataSolicitedServiceUUIDsKey
+}
+
+void BLEAdvertisement_get_name(xsMachine *the)
+{
+	NSDictionary<NSString *, id> *advertisementData = (NSDictionary<NSString *, id> *)xsmcGetHostDataValidate(xsThis, BLEAdvertisement_destructor);
+	NSString *localName = advertisementData[CBAdvertisementDataLocalNameKey];
+	if (!localName)
+		return;
+	xsResult = xsString([localName UTF8String]);
+}
+
+void BLEAdvertisement_get_services(xsMachine *the)
+{
+	xsmcVars(1);
+	NSDictionary<NSString *, id> *advertisementData = (NSDictionary<NSString *, id> *)xsmcGetHostDataValidate(xsThis, BLEAdvertisement_destructor);
+	NSArray<CBUUID *> *mainUUIDs = advertisementData[CBAdvertisementDataServiceUUIDsKey];
+	NSArray<CBUUID *> *overflowUUIDs = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey];
+	if (!mainUUIDs && !overflowUUIDs)
+		return;
+	xsResult = xsmcNewArray(0);
+	for (CBUUID *uuid in mainUUIDs) {
+		xsVar(0) = xsString([uuid.UUIDString UTF8String]);
+		xsCall1(xsResult, xsID_push, xsVar(0));
+	}
+	for (CBUUID *uuid in overflowUUIDs) {
+		xsVar(0) = xsString([uuid.UUIDString UTF8String]);
+		xsCall1(xsResult, xsID_push, xsVar(0));
+	}
+}
+
+void BLEAdvertisement_get_manufacturerData(xsMachine *the)
+{
+	xsmcVars(1);
+	NSDictionary<NSString *, id> *advertisementData = (NSDictionary<NSString *, id> *)xsmcGetHostDataValidate(xsThis, BLEAdvertisement_destructor);
+	NSData *manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey];
+	if (!manufacturerData)
+		return;
+	NSUInteger length = manufacturerData.length;
+	if (length < 2)
+		return;
+	xsmcSetNewObject(xsResult);
+	uint8_t* bytes = (uint8_t*)manufacturerData.bytes;
+	xsVar(0) = xsInteger(bytes[0] | (bytes[1] << 8));
+	xsmcDefine(xsResult, xsID_manufacturer, xsVar(0), xsDontDelete | xsDontSet);
+	xsmcSetArrayBuffer(xsVar(0), (void *)(bytes + 2), length - 2);
+	xsmcDefine(xsResult, xsID_data, xsVar(0), xsDontDelete | xsDontSet);
+}
 
 static NSMutableArray* xsToCBUUIDArray(xsMachine* the)
 {
@@ -486,6 +562,7 @@ void BLEScanner_constructor(xsMachine* the)
 	scanner->object = xsThis;
 	xsRemember(scanner->object);
 	scanner->onReadable = builtinGetCallback(the, xsID_onReadable);
+	scanner->advertisementConstructor = xsmcToReference(xsArg(1));
 	
 	scanner->useCount = 1;
 	scanner->central = [central retain];
@@ -527,6 +604,8 @@ void BLEScanner_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	BLEScanner scanner = it;
 	if (scanner->onReadable)
 		(*markRoot)(the, scanner->onReadable);
+	if (scanner->advertisementConstructor)
+		(*markRoot)(the, scanner->advertisementConstructor);
 	if (scanner->advertisement)
 		(*markRoot)(the, scanner->advertisement);
 }
@@ -753,51 +832,4 @@ void BLEClient_get_maximumWrite(xsMachine *the)
 	BLEClient client = (BLEClient)xsmcGetHostDataValidate(xsThis, (void *)&BLEClientHooks);
 	NSUInteger length = [client->peripheral maximumWriteValueLengthForType:CBCharacteristicWriteWithResponse];
 	xsmcSetInteger(xsResult, length);
-}
-
-void BLEAdvertisement_getType(xsMachine *the)
-{
-	int type = xsmcToInteger(xsArg(0));
-	NSDictionary<NSString *, id> *advertisementData = (NSDictionary<NSString *, id> *)xsmcGetHostDataValidate(xsThis, BLEClientAdvertisementDestructor);
-	if ((3 == type) || (5 == type) || (7 == type)) {
-		NSArray<CBUUID *> *mainUUIDs = advertisementData[CBAdvertisementDataServiceUUIDsKey];
-		NSArray<CBUUID *> *overflowUUIDs = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey];
-		if (!mainUUIDs && !overflowUUIDs)
-			return;
-
-		if (!mainUUIDs) mainUUIDs = @[];
-		if (!overflowUUIDs) overflowUUIDs = @[];
-		NSArray<CBUUID *> *allUUIDs = [mainUUIDs arrayByAddingObjectsFromArray:overflowUUIDs];
-
-		NSMutableData *uuids = [NSMutableData data];
-		for (CBUUID *uuid in allUUIDs) {
-			NSUInteger len = uuid.data.length;
-			if (((3 == type) && (2 == len)) || ((5 == type) && (4 == len)) || ((7 == type) && (16 == len)))
-				[uuids appendData:uuid.data];
-		}
-
-		if ([uuids length])
-			xsmcSetArrayBuffer(xsResult, (void *)[uuids bytes], [uuids length]);
-	}
-	else if (255 == type) {
-		NSData *manufacturerData = advertisementData[CBAdvertisementDataManufacturerDataKey];
-		if (manufacturerData)
-			xsmcSetArrayBuffer(xsResult, (void *)[manufacturerData bytes], [manufacturerData length]);
-	}
-	else if (10 == type) {
-		NSNumber *txPower = advertisementData[CBAdvertisementDataTxPowerLevelKey];
-		if (txPower) {
-			uint8_t powerValue = (uint8_t)[txPower integerValue];
-			xsmcSetArrayBuffer(xsResult, &powerValue, sizeof(powerValue));
-		}
-	}
-	else if (9 == type) {
-		NSString *localName = advertisementData[CBAdvertisementDataLocalNameKey];
-		if (localName) {
-			NSData *name = [localName dataUsingEncoding:NSUTF8StringEncoding];
-			xsmcSetArrayBuffer(xsResult, (void *)[name bytes], [name length]);
-		}
-	}
-//@@ CBAdvertisementDataServiceDataKey]
-//@@ CBAdvertisementDataSolicitedServiceUUIDsKey
 }

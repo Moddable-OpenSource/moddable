@@ -18,14 +18,9 @@
  *
  */
 
-class BLEScanner @ "BLEScanner_destructor" {
-	constructor(options) @ "BLEScanner_constructor"
-	close() @ "BLEScanner_close"
-	read() @ "BLEScanner_read"
-}
-
 const features = Object.freeze({
-	constructor(options) @ "BLEClient_constructor",
+	buildScanner(options) @ "BLEScanner_constructor",
+	buildClient(options) @ "BLEClient_constructor",
 	close() @ "BLEClient_close",
 	connect(request) @ "BLEClient_connect",
 	disconnect(request) @ "BLEClient_disconnect",
@@ -37,6 +32,22 @@ const features = Object.freeze({
 	write(request, what, options) @ "BLEClient_write",
 	enableNotifications(request, characteristic, enable) @ "BLEClient_enableNotifications",
 });
+
+class BLEAdvertisement @ "BLEAdvertisement_destructor" {
+	constructor() @ "BLEAdvertisement_constructor"
+	get(type) @ "BLEAdvertisement_get"
+	get name() @ "BLEAdvertisement_get_name"
+	get services() @ "BLEAdvertisement_get_services"
+	get manufacturerData() @ "BLEAdvertisement_get_manufacturerData"
+}
+
+class GAPClient @ "BLEScanner_destructor" {
+	constructor(options) {
+		features.buildScanner.call(this, options, BLEAdvertisement);
+	}
+	close() @ "BLEScanner_close"
+	read() @ "BLEScanner_read"
+}
 
 class GATTClient @ "BLEClient_destructor" {
 	#closing = false;
@@ -87,7 +98,7 @@ class GATTClient @ "BLEClient_destructor" {
 		options.onReadable = (count) => {
 			this.#onReadable?.call(this, count);
 		}
-		features.constructor.call(this, options);
+		features.buildClient.call(this, options);
 		const onConnected = (error, result) => {
 			if (error)
 				this.#onError?.call(this, error);
@@ -141,5 +152,5 @@ class GATTClient @ "BLEClient_destructor" {
 	})
 }
 
-export { BLEScanner as GAPClient, GATTClient };
+export { GAPClient, GATTClient };
 
