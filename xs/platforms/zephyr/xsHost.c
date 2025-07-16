@@ -1,0 +1,775 @@
+/*
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *       Copyright (C) 2010-2016 Marvell International Ltd.
+ *       Copyright (C) 2002-2010 Kinoma, Inc.
+ *
+ *       Licensed under the Apache License, Version 2.0 (the "License");
+ *       you may not use this file except in compliance with the License.
+ *       You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *       Unless required by applicable law or agreed to in writing, software
+ *       distributed under the License is distributed on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *       See the License for the specific language governing permissions and
+ *       limitations under the License.
+ */
+
+#include <_ansi.h>
+#include <setjmp.h>
+#include "xsAll.h"
+#include "xs.h"
+#include "xsScript.h"
+#include "xsPlatform.h"
+#include "xsHosts.h"
+#include "mc.defines.h"
+
+#include <stdio.h>
+
+#ifndef MODDEF_XS_MODS
+	#define MODDEF_XS_MODS	0
+#endif
+
+#ifdef mxInstrument
+	#include "modTimer.h"
+	#include "modInstrumentation.h"
+
+	#define INSTRUMENT_CPULOAD 1
+	#define kTargetCPUCount 1
+
+	#if INSTRUMENT_CPULOAD
+		#include "nrf_drv_timer.h"
+
+		static uint32_t gCPUCounts[kTargetCPUCount * 2];
+		static TaskHandle_t gIdles[kTargetCPUCount];
+		static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context);
+
+		volatile uint32_t gCPUTime;
+		static nrf_drv_timer_t cpuTimer = NRF_DRV_TIMER_INSTANCE(3);
+		#define CPUTIMER_US 800
+	#endif
+
+	static void espInitInstrumentation(txMachine *the);
+	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
+
+	#define espInstrumentCount kModInstrumentationSlotHeapSize - kModInstrumentationPixelsDrawn
+	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)"Pixels drawn",
+		(char *)"Frames drawn",
+		(char *)"Timers",
+		(char *)"Files",
+		(char *)"Poco display list used",
+		(char *)"Piu command List used",
+		(char *)"Event loop",
+		(char *)"System bytes free",
+		(char *)"CPU",
+	};
+
+	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
+		(char *)" pixels",
+		(char *)" frames",
+		(char *)" timers",
+		(char *)" files",
+		(char *)" bytes",
+		(char *)" bytes",
+		(char *)" turns",
+		(char *)" bytes",
+		(char *)" percent",
+	};
+
+	struct k_mutex gInstrumentMutex;
+#endif
+
+void modLog_transmit(const char *msg)
+{
+	printf("%s", msg);
+}
+
+/*
+	Instrumentation
+*/
+
+#ifdef mxInstrument
+
+void modInstrumentationSetup(xsMachine *the)
+{
+	espInitInstrumentation(the);
+	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
+}
+
+static int32_t modInstrumentationSystemFreeMemory(void *theIn)
+{
+	txMachine *the = theIn;
+	return (int32_t)zephyr_memory_remaining();
+}
+
+#if INSTRUMENT_CPULOAD
+static int32_t modInstrumentationCPU0(void *theIn)
+{
+	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
+	if (!total)
+		return 0;
+	result = (100 * gCPUCounts[0]) / total;
+	gCPUCounts[0] = gCPUCounts[1] = 0;
+	return result;
+}
+#endif
+
+void espInitInstrumentation(txMachine *the)
+{
+#if MODDEF_XS_TEST
+	static uint8_t initialized = 0;
+	if (initialized)
+		return;
+	initialized = 1;
+#endif
+
+	modInstrumentationInit();
+	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
+
+	modInstrumentationSetCallback(SlotHeapSize, (ModInstrumentationGetter)modInstrumentationSlotHeapSize);
+	modInstrumentationSetCallback(ChunkHeapSize, (ModInstrumentationGetter)modInstrumentationChunkHeapSize);
+	modInstrumentationSetCallback(KeysUsed, (ModInstrumentationGetter)modInstrumentationKeysUsed);
+	modInstrumentationSetCallback(GarbageCollectionCount, (ModInstrumentationGetter)modInstrumentationGarbageCollectionCount);
+	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
+	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
+	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
+
+	k_mutex_init(&gInstrumentMutex);
+
+#if INSTRUMENT_CPULOAD
+	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
+
+	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
+	nrf_drv_timer_init(&cpuTimer, &timer_cfg, cpuTimerHandler);
+	uint32_t ticks = nrf_drv_timer_us_to_ticks(&cpuTimer, CPUTIMER_US);
+	nrf_drv_timer_extended_compare(&cpuTimer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+
+	gIdles[0] = xTaskGetIdleTaskHandle();
+
+	nrf_drv_timer_clear(&cpuTimer);
+	nrf_drv_timer_enable(&cpuTimer);
+#endif
+}
+
+extern struct k_mutex gDebugMutex;
+
+void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
+{
+	txInteger values[espInstrumentCount];
+	int what;
+	xsMachine *the = *(xsMachine **)refcon;
+
+	k_mutex_lock(&gInstrumentMutex, K_TICKS_FOREVER);
+
+	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
+		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
+
+	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
+		values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;		// ignore the turn that generates instrumentation
+
+	fxSampleInstrumentation(the, espInstrumentCount, values);
+
+	modInstrumentationSet(PixelsDrawn, 0);
+	modInstrumentationSet(FramesDrawn, 0);
+	modInstrumentationSet(PocoDisplayListUsed, 0);
+	modInstrumentationSet(PiuCommandListUsed, 0);
+	modInstrumentationSet(Turns, 0);
+	modInstrumentMachineReset(the);
+
+	k_mutex_unlock(&gInstrumentMutex);
+}
+
+#if INSTRUMENT_CPULOAD
+static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
+{
+	switch (event_type) {
+		case NRF_TIMER_EVENT_COMPARE0:
+			gCPUCounts[0 + (xTaskGetCurrentTaskHandle() == gIdles[0])] += 1;
+			gCPUTime += 1250;
+			break;
+	}
+}
+#endif
+#endif
+
+/*
+	messages
+*/
+#ifndef MODDEF_TASK_QUEUEWAIT
+	#ifdef mxDebug
+		#define MODDEF_TASK_QUEUEWAIT	(k_ticks_t)(1000)
+	#else
+		#define MODDEF_TASK_QUEUEWAIT	K_FOREVER
+	#endif
+#endif
+typedef struct modMessageRecord modMessageRecord;
+typedef modMessageRecord *modMessage;
+
+struct modMessageRecord {
+	uint8_t				*message;
+	modMessageDeliver   callback;
+	void                *refcon;
+	uint16_t            length;
+};
+
+int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
+{
+	modMessageRecord msg;
+
+#ifdef mxDebug
+	if (0xffff == messageLength) {
+		msg.message = NULL;
+		msg.callback = callback;
+		msg.refcon = refcon;
+		msg.length = 0;
+//		xQueueSendToBack(the->dbgQueue, &msg, K_TICKS_FOREVER);
+		k_msgq_put(*the->dbgQueue, &msg, MODDEF_TASK_QUEUEWAIT);
+		return 0;
+	}
+#endif
+
+	if (message && messageLength) {
+		msg.message = c_malloc(messageLength);
+		if (!msg.message) return -1;
+
+		c_memmove(msg.message, message, messageLength);
+	}
+	else
+		msg.message = NULL;
+	msg.length = messageLength;
+	msg.callback = callback;
+	msg.refcon = refcon;
+
+	if (k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
+		return 0;
+
+	if (msg.message)
+		c_free(msg.message);
+
+	return -2;
+}
+
+int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
+{
+	modMessageRecord msg;
+
+	msg.message = NULL;
+	msg.length = 0;
+	msg.callback = callback;
+	msg.refcon = refcon;
+
+	k_msgq_put(&the->msgQueue, &msg, K_NO_WAIT);
+
+	return 0;
+}
+
+void modMessageService(xsMachine *the, int maxDelayMS)
+{
+#if 0	// MDK
+	modMessageRecord msg;
+
+#if !mxDebug
+	modWatchDogReset();
+	if (maxDelayMS >= NRFX_WDT_CONFIG_RELOAD_VALUE) {
+		#if NRFX_WDT_CONFIG_RELOAD_VALUE <= 1000
+			maxDelayMS = 500;
+		#else
+			maxDelayMS = NRFX_WDT_CONFIG_RELOAD_VALUE - 1000;
+		#endif
+	}
+#endif
+
+#ifdef mxDebug
+	while (true) {
+		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, ((uint64_t)maxDelayMS << 10) / 1000);
+		if (!queue)
+			break;
+
+		if (!xQueueReceive(queue, &msg, 0))
+			break;
+
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		if (msg.message)
+			c_free(msg.message);
+
+		maxDelayMS = 0;
+	}
+#else
+	while (0 == k_msgq_get(&the->msgQueue, &msg, Z_TIMEOUT_MS(((uint64_t)maxDelayMS << 10) / 1000))) {
+		(msg.callback)(the, msg.refcon, msg.message, msg.length);
+		if (msg.message)
+			c_free(msg.message);
+
+		maxDelayMS = 0;
+	}
+#endif
+
+	modWatchDogReset();
+#endif // MDK
+}
+
+#ifndef modTaskGetCurrent
+	#error make sure MOD_TASKS and modTaskGetCurrent are defined
+#endif
+
+#ifndef MODDEF_TASK_QUEUELENGTH
+	#define MODDEF_TASK_QUEUELENGTH	(10)
+#endif
+
+#define kDebugQueueLength (4)
+
+static struct k_mutex gFlashMutex;
+static uint8_t gFlashMutex_initialized = 0;
+static struct k_event taskEvents;
+
+void modMachineTaskInit(xsMachine *the)
+{
+	if (!gFlashMutex_initialized) {
+		k_mutex_init(&gFlashMutex);
+		gFlashMutex_initialized = 1;
+	}
+
+	the->task = (void *)modTaskGetCurrent();
+	k_msgq_alloc_init(&the->msgQueue, sizeof(modMessageRecord), MODDEF_TASK_QUEUELENGTH);
+#ifdef mxDebug
+	k_msgq_alloc_init(&the->dbgQueue, sizeof(modMessageRecord), kDebugQueueLength);
+
+//	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
+//	xQueueAddToSet(the->msgQueue, the->queues);
+//	xQueueAddToSet(the->dbgQueue, the->queues);
+#endif
+	k_event_init(&taskEvents);
+}
+
+void modMachineTaskUninit(xsMachine *the)
+{
+	modMessageRecord msg;
+
+	while (0 == k_msgq_get(&the->msgQueue, &msg, K_NO_WAIT)) {
+		if (msg.message)
+			c_free(msg.message);
+	}
+
+#ifdef mxDebug
+//		xQueueRemoveFromSet(the->msgQueue, the->queues);
+#endif
+	k_msgq_cleanup(&the->msgQueue);
+
+#ifdef mxDebug
+	if (the->dbgQueue) {
+		while (0 == k_msgq_get(&the->dbgQueue, &msg, K_NO_WAIT))
+			;
+//		xQueueRemoveFromSet(the->dbgQueue, the->queues);
+		k_msgq_cleanup(&the->dbgQueue);
+	}
+//	if (the->queues)
+//		vQueueDelete(the->queues);
+#endif
+}
+
+void modMachineTaskWait(xsMachine *the)
+{
+	k_event_wait(&taskEvents, 0x01, false, MODDEF_TASK_QUEUEWAIT);
+}
+
+void modMachineTaskWake(xsMachine *the)
+{
+	k_event_post(&taskEvents, 0x01);
+}
+
+/*
+	promises
+*/
+
+static void doRunPromiseJobs(void *machine)
+{
+	fxRunPromiseJobs((txMachine *)machine);
+}
+
+void fxQueuePromiseJobs(txMachine* the)
+{
+	modMessagePostToMachine(the, NULL, 0, doRunPromiseJobs, NULL);
+}
+
+/*
+	 user installable modules
+*/
+
+#if MODDEF_XS_MODS
+static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
+{
+	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
+}
+
+static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
+{
+	offset += (uintptr_t)dst;
+
+	if ((offset + kFlashSectorSize) > (uintptr_t)kModulesEnd)
+		return 0;		// attempted write beyond end of available space
+
+	if (!(offset & (kFlashSectorSize - 1))) {		// if offset is at start of a sector, erase that sector
+		if (!modSPIErase(offset - (uintptr_t)kFlashStart, kFlashSectorSize))
+			return 0;
+	}
+
+	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
+}
+
+void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
+{
+	txPreparation *preparation = preparationIn;
+	void *result = NULL;
+
+	if (!gFlashMutex_initialized) {
+		k_mutex_init(&gFlashMutex);
+		gFlashMutex_initialized = 1;
+	}
+
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
+		result = (void *)kModulesStart;
+		fxSetArchive(the, result);
+	}
+
+	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart))) {
+		*status = *(8 + (uint8_t *)kModulesStart);
+		modLog("mod failed");
+	}
+	else
+		*status = 0;
+
+	return result;
+}
+
+#endif /* MODDEF_XS_MODS */
+
+#ifndef MODDEF_FILE_LFS_PARTITION_SIZE
+	#define MODDEF_FILE_LFS_PARTITION_SIZE (65536)
+#endif
+
+uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
+{
+	uint32_t offset, size;
+	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
+		uint32_t modSize = 0, storageSize = 0;
+
+		offset = kModulesStart;
+
+#if MODDEF_XS_MODS
+		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
+			modSize = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
+#else
+		if (which == kPartitionMod)
+			return 0;
+#endif
+
+		if ((kModulesEnd - (offset + modSize)) >= MODDEF_FILE_LFS_PARTITION_SIZE)
+			storageSize = (((MODDEF_FILE_LFS_PARTITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
+
+		if (kPartitionStorage == which) {
+			offset = kModulesEnd - storageSize;
+			size = storageSize;
+		}
+		else {
+//			offset = kModulesStart;		// set above
+			size = (kModulesEnd - offset) - MODDEF_FILE_LFS_PARTITION_SIZE;
+		}
+	}
+	else if (kPartitionBLEState == which) {
+		offset = (uintptr_t)&_FSTORAGE_start;
+		size = &_FSTORAGE_end - &_FSTORAGE_start;
+	}
+	else
+		return 0;
+
+	if (offsetOut) *offsetOut = offset;
+	if (sizeOut) *sizeOut = size;
+
+	return 1;
+}
+
+/*
+	flash
+ */
+#if 0	// MDK
+#include "nrf_fstorage_sd.h"
+
+NRF_FSTORAGE_DEF(nrf_fstorage_t fstorage) =
+{
+//    .evt_handler = NULL,		// don't need this?
+    .start_addr = 1,
+    .end_addr   = 0x100000,
+};
+
+uint8_t modSPIFlashInit(void)
+{
+	if (!fstorage.start_addr)
+		return 1;
+
+	fstorage.start_addr = 0;
+    if (NRF_SUCCESS != nrf_fstorage_init(&fstorage, &nrf_fstorage_sd, NULL))
+		return 0;
+
+	fstorage.start_addr = 1;
+
+	return 1;
+}
+
+static void wait_for_flash_ready(void)
+{
+    while (nrf_fstorage_is_busy(&fstorage))
+		sd_app_evt_wait();
+}
+
+uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
+{
+	uint8_t temp[4] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
+
+	if (!modSPIFlashInit()) {
+		k_mutex_unlock(&gFlashMutex);
+		return 0;
+	}
+
+	if (offset & 3) {		// long align offset
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4)) {
+			k_mutex_unlock(&gFlashMutex);
+			return 0;
+		}
+		wait_for_flash_ready();
+
+		toAlign = 4 - (offset & 3);
+		c_memcpy(dst, temp + 4 - toAlign, (size < toAlign) ? size : toAlign);
+
+		if (size <= toAlign)
+			goto done;
+
+		dst += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+	}
+
+	toAlign = size & ~3;
+	if (toAlign) {
+//@@ need case here for misaligned destination
+		size -= toAlign;
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign)) {
+			k_mutex_unlock(&gFlashMutex);
+			return 0;
+		}
+		wait_for_flash_ready();
+
+		dst += toAlign;
+		offset += toAlign;
+	}
+
+	if (size) {				// long align tail
+		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4)) {
+			k_mutex_unlock(&gFlashMutex);
+			return 0;
+		}
+		wait_for_flash_ready();
+
+		c_memcpy(dst, temp, size);
+	}
+
+done:
+	k_mutex_unlock(&gFlashMutex);
+	return 1;
+}
+
+uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
+{
+	uint8_t temp[512] __attribute__ ((aligned (4)));
+	uint32_t toAlign;
+
+	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
+
+	if (!modSPIFlashInit()) {
+		k_mutex_unlock(&gFlashMutex);
+		return 0;
+	}
+
+	if (offset & 3) {		// long align offset
+		toAlign = 4 - (offset & 3);
+		c_memset(temp, 0xFF, 4);
+		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL)) {
+			k_mutex_unlock(&gFlashMutex);
+			return 0;
+		}
+		wait_for_flash_ready();
+
+		if (size <= toAlign) {
+			k_mutex_unlock(&gFlashMutex);
+			return 1;
+		}
+
+		src += toAlign;
+		offset += toAlign;
+		size -= toAlign;
+	}
+
+	toAlign = size & ~3;
+	if (toAlign) {
+		size -= toAlign;
+		if (3 & (uintptr_t)src) {	// src is not long aligned, copy through stack
+			while (toAlign) {
+				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
+				c_memcpy(temp, src, use);
+				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL)) {
+					k_mutex_unlock(&gFlashMutex);
+					return 0;
+				}
+				wait_for_flash_ready();
+
+				toAlign -= use;
+				src += use;
+				offset += use;
+			}
+		}
+		else {
+			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL)) {
+				k_mutex_unlock(&gFlashMutex);
+				return 0;
+			}
+			wait_for_flash_ready();
+
+			src += toAlign;
+			offset += toAlign;
+		}
+	}
+
+	if (size) {			// long align tail
+		c_memset(temp, 0xFF, 4);
+		c_memcpy(temp, src, size);
+		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL)) {
+			k_mutex_unlock(&gFlashMutex);
+			return 0;
+		}
+		wait_for_flash_ready();
+	}
+
+	k_mutex_unlock(&gFlashMutex);
+	return 1;
+}
+
+uint8_t modSPIErase(uint32_t offset, uint32_t size)
+{
+	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
+
+	if (!modSPIFlashInit()) {
+		k_mutex_unlock(&gFlashMutex);
+		return 0;
+	}
+
+	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1))) {
+		k_mutex_unlock(&gFlashMutex);
+		return 0;
+	}
+
+	size /= fstorage.p_flash_info->erase_unit;
+
+	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL)) {
+		k_mutex_unlock(&gFlashMutex);
+		return 0;
+	}
+	wait_for_flash_ready();
+
+	k_mutex_unlock(&gFlashMutex);
+	return 1;
+}
+
+uint8_t *espFindUnusedFlashStart(void)
+{
+	uintptr_t modStart;
+	extern uint32_t __start_unused_space;
+
+	if (!modSPIFlashInit())
+		return NULL;
+
+	modStart = (uintptr_t)&__start_unused_space;
+	modStart += fstorage.p_flash_info->erase_unit - 1;
+	modStart -= modStart % fstorage.p_flash_info->erase_unit;
+
+	/*
+		this assumes:
+		- the .data. section follows the application image
+		- it is no bigger than 4096 bytes
+		- empty space follows the .data. section
+	*/
+	modStart += 4096;
+
+	return (uint8_t *)modStart;
+}
+#endif	// MDK
+
+//---------- alignment for memory
+
+uint16_t espRead16be(const void *addr)
+{
+	uint16_t result = 0;
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 3:	result = (uint16_t)((*p >> 24) | (p[1] << 8)); break;
+		case 2:	result = (uint16_t) (*p >> 16); break;
+		case 1:	result = (uint16_t) (*p >>  8); break;
+		case 0:	result = (uint16_t) (*p); break;
+}
+
+	return (result >> 8) | (result << 8);
+}
+
+uint32_t espRead32be(const void *addr)
+{
+	uint32_t result = 0;
+	const uint32_t *p = (const uint32_t *)(~3 & (uint32_t)addr);
+	switch (3 & (uint32_t)addr) {
+		case 0:	result = *p; break;
+		case 1:	result = (p[0] >>  8) | (p[1] << 24); break;
+		case 2:	result = (p[0] >> 16) | (p[1] << 16); break;
+		case 3:	result = (p[0] >> 24) | (p[1] <<  8); break;
+	}
+	return (result << 24) | ((result & 0xff00) << 8)  | ((result >> 8) & 0xff00) | (result >> 24);
+}
+
+void undefinedFail(const char *what) {
+	char msg[64];
+	c_strcpy(msg, "unimplemented: ");
+	c_strcat(msg, what);
+	 modLog_transmit(msg);
+}
+
+void vSemaphoreDelete() {undefinedFail("vSemaphoreDelete"); }
+void xSemaphoreGive() {undefinedFail("xSemaphoreGive"); }
+void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
+
+void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
+void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
+
+// int errno;
+// int *__errno(void) { return &errno; };
+
