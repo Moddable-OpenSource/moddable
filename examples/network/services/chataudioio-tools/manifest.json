@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/network/services/chatAudioIO/manifest.json"
+	],
+	"config": {
+		"led": {
+			"rainbow": false
+		},
+		"startupSound": false
+	},
+	"modules": {
+		"*": "./main"
+	}
+}
