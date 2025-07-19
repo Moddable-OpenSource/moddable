@@ -314,11 +314,7 @@ class BluetoothDevice {
 			return target.promise;
 		}
 		getCharacteristics(ids) {
-			if (!ids || ids.length === 0) {
-				ids = undefined;
-			} else {
-				ids = ids.map(id => BluetoothUUID.getCharacteristic(id));
-			}
+			ids = ids ? ids.map(id => BluetoothUUID.getCharacteristic(id)) : undefined;
 
 			const target = Promise.withResolvers();
 			this.device.#bleClient.getCharacteristics(this.#bleService, ids, (error, results) => {
