@@ -458,7 +458,7 @@ class BluetoothDevice {
 		}
 	
 		get properties() {
-			return new new BluetoothDevice.#BluetoothCharacteristicProperties(this.#bleCharacteristic.properties);
+			return new BluetoothDevice.#BluetoothCharacteristicProperties(this.#bleCharacteristic.properties);
 		}
 		get service() {
 			return this.#service;
