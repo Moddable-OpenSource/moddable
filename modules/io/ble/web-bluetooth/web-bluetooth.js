@@ -368,7 +368,7 @@ class BluetoothDevice {
 			return target.promise;
 		}
 		getDescriptors(ids) {
-			ids = ids?.map(id => BluetoothUUID.getDescriptor(id));		//@@
+			ids = ids?.map(id => BluetoothUUID.getDescriptor(id));
 			const target = Promise.withResolvers();
 			this.service.device.#bleClient.getDescriptors(this.#bleCharacteristic, ids, (error, results) => {
 				if (!error && !results.length)
