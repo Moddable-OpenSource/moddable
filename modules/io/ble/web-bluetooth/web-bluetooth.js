@@ -208,7 +208,7 @@ class BluetoothDevice {
 	get name() {
 		return this.#name;
 	}
-	
+
 	static #BluetoothRemoteGATTServer = class {
 		#device;
 		#connected = false;
@@ -270,7 +270,7 @@ class BluetoothDevice {
 			return target.promise;
 		}
 		getPrimaryServices(ids) {
-			ids = ids.map(id => BluetoothUUID.getService(id));
+			ids = ids?.map(id => BluetoothUUID.getService(id));
 			const target = Promise.withResolvers();
 			const device = this.device;
 			device.#bleClient.getPrimaryServices(ids, (error, results) => {
@@ -314,8 +314,7 @@ class BluetoothDevice {
 			return target.promise;
 		}
 		getCharacteristics(ids) {
-			ids = ids ? ids.map(id => BluetoothUUID.getCharacteristic(id)) : undefined;
-
+			ids = ids?.map(id => BluetoothUUID.getCharacteristic(id));
 			const target = Promise.withResolvers();
 			this.device.#bleClient.getCharacteristics(this.#bleService, ids, (error, results) => {
 				if (!error && !results.length)
@@ -338,7 +337,7 @@ class BluetoothDevice {
 			return this.#device;
 		}
 	}
-	
+
 	static #BluetoothRemoteGATTCharacteristic = class {
 		#service;
 		#bleCharacteristic;
@@ -369,7 +368,7 @@ class BluetoothDevice {
 			return target.promise;
 		}
 		getDescriptors(ids) {
-			ids = ids.map(id => BluetoothUUID.getDescriptor(id));
+			ids = ids?.map(id => BluetoothUUID.getDescriptor(id));		//@@
 			const target = Promise.withResolvers();
 			this.service.device.#bleClient.getDescriptors(this.#bleCharacteristic, ids, (error, results) => {
 				if (!error && !results.length)
@@ -432,7 +431,7 @@ class BluetoothDevice {
 			});
 			return target.promise;
 		}
-		
+
 		writeValue(value) {
 			return this.writeValueWithOutResponse(value);
 		}
@@ -456,7 +455,7 @@ class BluetoothDevice {
 			});
 			return target.promise;
 		}
-	
+
 		get properties() {
 			return new BluetoothDevice.#BluetoothCharacteristicProperties(this.#bleCharacteristic.properties);
 		}
@@ -473,7 +472,7 @@ class BluetoothDevice {
 			// nop
 		}
 	}
-	
+
 	static #BluetoothRemoteGATTDescriptor = class {
 		#characteristic;
 		#bleDescriptor;
@@ -517,7 +516,7 @@ class BluetoothDevice {
 			// nop
 		}
 	}
-	
+
 	static #BluetoothCharacteristicProperties = class {
 		#flags;
 		constructor(flags) {
