@@ -75,6 +75,7 @@ struct BLEClientRecord {
 	BLEClientDelegate *delegate;
 	xsSlot *request;
 	xsSlot *param;
+	CBCharacteristic *completion;
 	CBCharacteristic *notification;
 	NSMutableArray* uuids;
 };
@@ -341,21 +342,15 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 	else {
 		xsBeginHost(client->the);
 		xsmcVars(1);
-		if (client->request && client->param) {
-			xsVar(0) = xsReference(client->param);
-			xsDestructor destructor = xsGetHostDestructor(xsVar(0));
-			if (destructor == BLEClientCharacteristicDestructor) {
-				CBCharacteristic* param = (CBCharacteristic*)xsmcGetHostData(xsVar(0));
-				if (param == characteristic) {
-					xsVar(0) = xsReference(client->request);
-					client->request = NULL;
-					client->param = NULL;
-					NSData* data = characteristic.value;
-					xsmcSetArrayBuffer(xsResult, (xsStringValue)[data bytes], (xsIntegerValue)[data length]);
-					xsCall2(xsVar(0), xsID_executed, xsNull, xsResult);
-					goto bail;
-				}
-			}
+		if (client->completion == characteristic) {
+			xsVar(0) = xsReference(client->request);
+			client->request = NULL;
+			client->param = NULL;
+			client->completion = NULL;
+			NSData* data = characteristic.value;
+			xsmcSetArrayBuffer(xsResult, (xsStringValue)[data bytes], (xsIntegerValue)[data length]);
+			xsCall2(xsVar(0), xsID_executed, xsNull, xsResult);
+			goto bail;
 		}
 		if (characteristic.isNotifying) {
 			xsResult = xsAccess(client->object);
@@ -779,6 +774,7 @@ void BLEClient_read(xsMachine *the)
 		CBCharacteristic* characteristic = (CBCharacteristic*)xsmcGetHostData(xsArg(1));
 		client->request = xsmcToReference(xsArg(0));
 		client->param = xsmcToReference(xsArg(1));
+		client->completion = characteristic;
 		[client->peripheral readValueForCharacteristic:characteristic];
 	}
 	else if (destructor == BLEClientDescriptorDestructor) {
