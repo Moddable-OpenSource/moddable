@@ -397,7 +397,7 @@ class BluetoothDevice {
 			if (event != "characteristicvaluechanged")
 				throw new Error("no such event");
 			const listeners = this.#listeners;
-			let index = listeners.find(item => item === listener);
+			const index = listeners.indexOf(listener);
 			if (index >= 0)
 				listeners.splice(index, 1);
 		}
