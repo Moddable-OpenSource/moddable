@@ -232,7 +232,7 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 			if ((client->uuids == nil) || [client->uuids containsObject: service.UUID]) {
 				xsVar(1) = xsNewHostObject(BLEClientServiceDestructor);
 				xsmcSetHostData(xsVar(1), [service retain]);
-				xsVar(2) = xsString([service.UUID.UUIDString UTF8String]);
+				xsVar(2) = xsString([[service.UUID.UUIDString lowercaseString] UTF8String]);
 				xsmcDefine(xsVar(1), xsID_uuid, xsVar(2), xsDontDelete | xsDontSet);
 				xsCall1(xsResult, xsID_push, xsVar(1));
 			}
@@ -266,7 +266,7 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 				xsmcSetHostData(xsVar(1), [characteristic retain]);
 				xsVar(2) = xsReference(client->param);
 				xsmcDefine(xsVar(1), xsID_service, xsVar(2), xsDontDelete | xsDontSet);
-				xsVar(2) = xsString([characteristic.UUID.UUIDString UTF8String]);
+				xsVar(2) = xsString([[characteristic.UUID.UUIDString lowercaseString] UTF8String]);
 				xsmcDefine(xsVar(1), xsID_uuid, xsVar(2), xsDontDelete | xsDontSet);
 				xsVar(2) = xsInteger(characteristic.properties);
 				xsmcDefine(xsVar(1), xsID_properties, xsVar(2), xsDontDelete | xsDontSet);
@@ -304,7 +304,7 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 				xsmcSetHostData(xsVar(1), [descriptor retain]);
 				xsVar(2) = xsReference(client->param);
 				xsmcDefine(xsVar(1), xsID_characteristic, xsVar(2), xsDontDelete | xsDontSet);
-				xsVar(2) = xsString([descriptor.UUID.UUIDString UTF8String]);
+				xsVar(2) = xsString([[descriptor.UUID.UUIDString lowercaseString] UTF8String]);
 				xsmcDefine(xsVar(1), xsID_uuid, xsVar(2), xsDontDelete | xsDontSet);
 				xsmcSetIndex(xsResult, index, xsVar(1));
 			}
@@ -482,11 +482,11 @@ void BLEAdvertisement_get_services(xsMachine *the)
 		return;
 	xsResult = xsmcNewArray(0);
 	for (CBUUID *uuid in mainUUIDs) {
-		xsVar(0) = xsString([uuid.UUIDString UTF8String]);
+		xsVar(0) = xsString([[uuid.UUIDString lowercaseString] UTF8String]);
 		xsCall1(xsResult, xsID_push, xsVar(0));
 	}
 	for (CBUUID *uuid in overflowUUIDs) {
-		xsVar(0) = xsString([uuid.UUIDString UTF8String]);
+		xsVar(0) = xsString([[uuid.UUIDString lowercaseString] UTF8String]);
 		xsCall1(xsResult, xsID_push, xsVar(0));
 	}
 }
