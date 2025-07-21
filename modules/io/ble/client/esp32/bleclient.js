@@ -134,6 +134,9 @@ class GATTClient @ "xs_gattclient_destructor" {
 	};
 
 	constructor(options) {
+		if (options.target)
+			this.target = options.target;
+
 		this.#onReadable = options.onReadable;
 
 		features.constructor.call(this, options);
