@@ -543,7 +543,7 @@ class BluetoothDevice {
 		get write() {
 			return (this.#flags & (1 << 3)) != 0;
 		}
-		get writeWithOutResponse() {
+		get writeWithoutResponse() {
 			return (this.#flags & (1 << 2)) != 0;
 		}
 	}
