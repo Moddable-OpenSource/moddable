@@ -548,6 +548,8 @@ void BLEScanner_constructor(xsMachine* the)
 			xsUnknownError("already scanning");
 	}
 
+	builtinInitializeTarget(the);
+
 	scanner = (BLEScanner)c_calloc(1, sizeof(BLEScannerRecord));
 	if (!scanner)
 		xsRangeError("not enough memory");
@@ -649,6 +651,8 @@ void BLEClient_constructor(xsMachine *the)
 	if (!delegate)
 		xsUnknownError("cannot create delegate");
 	
+	builtinInitializeTarget(the);
+
 	BLEClient client = (BLEClient)c_calloc(1, sizeof(BLEClientRecord));
 	if (!client)
 		xsRangeError("not enough memory");
