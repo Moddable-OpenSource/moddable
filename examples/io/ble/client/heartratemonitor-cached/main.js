@@ -18,7 +18,7 @@ import KVP from "embedded:storage/key-value"
 const scan = new GAPClient({
 	filters: {
 		services: [
-			"180D"		// heart-rate monitor
+			"180d"		// heart-rate monitor
 		]
 	},
 	onReadable(count) {

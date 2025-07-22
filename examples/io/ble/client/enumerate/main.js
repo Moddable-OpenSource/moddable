@@ -17,7 +17,7 @@ import {GAPClient, GATTClient} from "embedded:io/bluetoothle/central"
 const scan = new GAPClient({
 	filters: {
 		services: [
-			"180D"		// heart-rate monitor
+			"180d"		// heart-rate monitor
 		]
 	},
 	onReadable(count) {

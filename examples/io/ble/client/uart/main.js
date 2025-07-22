@@ -18,7 +18,7 @@ function scan() {
 	const scanner = new GAPClient({
 		filters: {
 			services:[
-				"6E400001-B5A3-F393-E0A9-E50E24DCCA9E",		// Nordic UART service
+				"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
 			]
 		},
 		onReadable(count) {
@@ -49,8 +49,8 @@ function testUART(address) {
 		},
 		onReady() {
 			trace(`onReady: maximumWrite ${ this.maximumWrite }\n`);
-			this.getPrimaryServices([ "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"], (error, services) => {
-				this.getCharacteristics(services[0], ["6E400002-B5A3-F393-E0A9-E50E24DCCA9E", "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"], (error, characteristics) => {
+			this.getPrimaryServices([ "6e400001-b5a3-f393-e0a9-e50e24dcca9e"], (error, services) => {
+				this.getCharacteristics(services[0], ["6e400002-b5a3-f393-e0a9-e50e24dcca9e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e"], (error, characteristics) => {
 					let input, output;
 					characteristics.forEach(characteristic => {
 						trace(`characteristic: ${ characteristic.uuid } ${ characteristic.handle }\n`);
