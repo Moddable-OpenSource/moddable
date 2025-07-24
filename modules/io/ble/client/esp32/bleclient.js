@@ -31,14 +31,14 @@ class Advertisement extends ArrayBuffer {
 		if (s) {
 			s = new Uint8Array(s);
 			for (let j = 0; j < s.byteLength; j += 2)
-				services.push((s[j] + (s[j + 1] << 8)).toString(16).toUpperCase().padStart(4, "0"));
+				services.push((s[j] + (s[j + 1] << 8)).toString(16).padStart(4, "0"));
 		}
 
 		s = this.get(5) ?? this.get(4);			// 32
 		if (s) {
 			s = new Uint8Array(s);
 			for (let j = 0; j < s.byteLength; j += 4)
-				services.push((s[j] + (s[j + 1] << 8) + (s[j + 2] << 16) + (s[j + 3] << 24)).toString(16).toUpperCase().padStart(8, "0"));
+				services.push((s[j] + (s[j + 1] << 8) + (s[j + 2] << 16) + (s[j + 3] << 24)).toString(16).padStart(8, "0"));
 		}
 
 		s = this.get(7) ?? this.get(6);			// 128
