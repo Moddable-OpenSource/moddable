@@ -15,13 +15,13 @@
 import { GAPClient, GATTClient } from "embedded:io/bluetoothle/central";
 
 function scan() {
-	const scanner = new GAPClient({
+	new GAPClient({
 		filters: {
 			services:[
 				"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
 			]
 		},
-		onReadable(count) {
+		onReadable() {
 			const advertisement = this.read();
 			this.close();
 			testUART(advertisement.address);
@@ -31,27 +31,25 @@ function scan() {
 scan();
 
 function testUART(address) {
-	const client = new GATTClient({ 
+	new GATTClient({ 
 		address,
 		onError(error) {
 			trace(`onError: ${ error }\n`);
 			scan();
 		},
 		onReadable(count) {
-			const value = this.read();
 			while (count--) { 
 				const value = this.read();
 				if (value.handle !== this.input.handle)
-					return;
-				const view = new Uint8Array(value);
-				trace(`UART: ${view[0]} ${view[1]} ${view[2]} ${view[3]}\n`);
+					continue;
+				const bytes = new Uint8Array(value);
+				trace(`UART: ${bytes.toHex()}\n`);
 			}
 		},
 		onReady() {
 			trace(`onReady: maximumWrite ${ this.maximumWrite }\n`);
 			this.getPrimaryServices([ "6e400001-b5a3-f393-e0a9-e50e24dcca9e"], (error, services) => {
 				this.getCharacteristics(services[0], ["6e400002-b5a3-f393-e0a9-e50e24dcca9e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e"], (error, characteristics) => {
-					let input, output;
 					characteristics.forEach(characteristic => {
 						trace(`characteristic: ${ characteristic.uuid } ${ characteristic.handle }\n`);
 						if (characteristic.properties & GATTClient.properties.read)
@@ -59,11 +57,14 @@ function testUART(address) {
 						if (characteristic.properties & GATTClient.properties.write)
 							this.output = characteristic;
 					});
-					this.enableNotifications(this.input, true, (error, enabled) => {
-						trace(`notification: ${ this.input.uuid } ${ enabled }\n`);
+					this.enableNotifications(this.input, true, error => {
+						trace(`notification: ${ this.input.uuid } ${ error ? "error " + error : "enabled"}\n`);
 					});
-					this.write(this.output, Uint8Array.of(0, 1, 2, 3), (error, result) => {
-						trace(`write: ${ result }\n`);
+					this.write(this.output, Uint8Array.of(0, 1, 2, 3), error => {
+						trace(`write 1: ${ error ?? "no error" }\n`);
+					});
+					this.write(this.output, ArrayBuffer.fromString("Hello, BLE."), error => {
+						trace(`write 2: ${ error ?? "no error" }\n`);
 					});
 				});
 			});
