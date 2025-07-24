@@ -94,6 +94,7 @@ typedef struct {
 	struct AdvertisingPacketRecord	*packets;
 	SemaphoreHandle_t 	mutex;
 
+	int			error;
 	uint8_t		active;
 	uint8_t		inflight;
 	uint8_t		closed;
@@ -281,7 +282,8 @@ void xs_ble_ready(void)
     scan_params.filter_policy = 0;
     scan_params.limited = 0;
 
-    if (0 != ble_gap_disc(0, BLE_HS_FOREVER, &scan_params, scan_gap_event_cb, scan)) {
+	scan->error = ble_gap_disc(0, BLE_HS_FOREVER, &scan_params, scan_gap_event_cb, scan);
+    if (0 != scan->error) {
 		if (scan->onError)
 			modMessagePostToMachine(scan->the, C_NULL, 0, deliverScanError, scan);
 		return;
@@ -322,7 +324,8 @@ void deliverScanError(void *the, void *refcon, uint8_t *message, uint16_t messag
 	}
 
 	xsBeginHost(the);
-		xsCallFunction0(xsReference(scan->onError), scan->obj);
+		xsmcSetInteger(xsResult, scan->error);
+		xsCallFunction1(xsReference(scan->onError), scan->obj, xsResult);
 	xsEndHost(the);
 }
 
