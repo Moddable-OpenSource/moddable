@@ -194,6 +194,7 @@ class GATTClient @ "xs_gattclient_destructor" {
 			if (error)
 				return callback?.call(this, error);
 			write(this, characteristic, descriptors[0], enable, callback);
+			this.#requests.splice(1, 0, this.#requests.pop());		// go to the head of the line so enableNotifications fully completes before next operation in queue
 		});
 	}
 
