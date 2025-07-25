@@ -53,4 +53,5 @@ declare module "url" {
         [Symbol.iterator](): IterableIterator<[string, string]>;
     }
     export { URL, URLSearchParams }
+    export default URL;
 }
