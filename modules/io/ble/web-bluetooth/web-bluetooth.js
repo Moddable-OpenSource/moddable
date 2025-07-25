@@ -433,7 +433,7 @@ class BluetoothDevice {
 		}
 
 		writeValue(value) {
-			return this.writeValueWithOutResponse(value);
+			return this.writeValueWithoutResponse(value);
 		}
 		writeValueWithResponse(value) {
 			const target = Promise.withResolvers();
