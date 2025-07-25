@@ -69,8 +69,8 @@ function instantiateHeartRateMonitor(address) {
 		onReadable(count) {
 			while (count--) { 
 				const value = this.read();
-				if (value.handle !== this.heartRate.handle)
-					return;
+				if (!value || value.handle !== this.heartRate.handle)
+					continue;
 
 				const view = new DataView(value);
 				let offset = 1;

@@ -40,7 +40,7 @@ function testUART(address) {
 		onReadable(count) {
 			while (count--) { 
 				const value = this.read();
-				if (value.handle !== this.input.handle)
+				if (!value || (value.handle !== this.input.handle))
 					continue;
 				const bytes = new Uint8Array(value);
 				trace(`UART: ${bytes.toHex()}\n`);

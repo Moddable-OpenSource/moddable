@@ -20,7 +20,7 @@ const scan = new GAPClient({
 			"180d"		// heart rate monitor
 		]
 	},
-	onReadable(count) {
+	onReadable() {
 		const advertisement = this.read();
 		this.close();
 
@@ -52,8 +52,8 @@ function instantiateHeartRateMonitor(address) {
 		onReadable(count) {
 			while (count--) { 
 				const value = this.read();
-				if (value.handle !== this.heartRate.handle)
-					return;
+				if (!value || (value.handle !== this.heartRate.handle))
+					continue;
 
 				const view = new DataView(value);
 				let offset = 1;
