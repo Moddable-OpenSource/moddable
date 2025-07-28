@@ -857,11 +857,12 @@ GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *
 	}
 
 	GFont font = C_NULL;
-	if (f)
+	if (f->family) {
 		font = fonts_get_system_font(f->res_key);
+	}
 	if (!font) {
-		font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
-		if (!font)
+// 		font = fonts_get_system_font(FONT_KEY_FONT_FALLBACK);
+// 		if (!font)
 			return C_NULL;
 	}
 
