@@ -16,7 +16,8 @@
 		"$(MODDABLE)/build/devices/pebble/modules/compass/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
-		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json"
+		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/piu/outline/manifest.json"
 	],
 	"config": {
 		"screen": "pebble/display",

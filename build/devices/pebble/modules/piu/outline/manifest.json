@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"piu/SVGImage": "./piuSVGImage"
+	},
+	"preload": "piu/SVGImage"
+}

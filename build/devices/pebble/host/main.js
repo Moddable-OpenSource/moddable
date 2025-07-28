@@ -7,6 +7,7 @@ import KV from "embedded:storage/key-value";
 import Poco from "commodetto/Poco";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
+import {} from "piu/SVGImage"
 
 import HTTPClient from "embedded:network/http/client";
 import WebSocketClient from "embedded:network/websocket/client";
@@ -126,7 +127,9 @@ export default function() {
 			Skin,
 			Style: StyleArchive,
 			Text,
-			Texture: TextureArchive
+			Texture: TextureArchive,
+			SVGImage,
+			Transition
 		};
 
 		Object.defineProperty(globals, "localStorage", {
