@@ -834,7 +834,7 @@ static const PebbleFontRecord gFonts[] = {
     {.family = "Roboto-Condensed", .size = 21, .res_key = FONT_KEY_ROBOTO_CONDENSED_21},
     {.family = "Roboto-Bold", .size = 49, .res_key = FONT_KEY_ROBOTO_BOLD_SUBSET_49},
 
-    {.family = "Droid Serif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
+    {.family = "DroidSerif-Bold", .size = 28, .res_key = FONT_KEY_DROID_SERIF_28_BOLD},
 
     {.family = "Leco-Bold", .size = 20, .res_key = FONT_KEY_LECO_20_BOLD_NUMBERS},
     {.family = "Leco-Bold", .size = 26, .res_key = FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM},
