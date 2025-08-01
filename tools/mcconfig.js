@@ -187,6 +187,164 @@ class MakeFile extends MAKEFILE {
 	}
 }
 
+class ZephyrMakeFile extends MAKEFILE {
+	constructor(path) {
+		super(path)
+	}
+	generateManifestDefinitions(tool) {
+		var creation = tool.creation;
+		this.line("set(mCREATION -c ", 
+				creation.chunk.initial, ",", 
+				creation.chunk.incremental, ",", 
+				creation.heap.initial, ",", 
+				creation.heap.incremental, ",", 
+				creation.stack, ",", 
+				creation.keys.initial, ",", 
+				creation.keys.incremental, ",", 
+				creation.keys.name, ",", 
+				creation.keys.symbol, ",",
+				creation.parser.buffer, ",",
+				creation.parser.table, ",",
+				creation.static, ",", 
+				creation.main, ",",
+				creation.nativeStack, ")");
+		this.line("");
+		for (var result in tool.manifests.already) {
+			this.line("list(APPEND mMANIFEST ", result, ")");
+		}	
+		this.line("");
+		if (tool.strip) {
+			for (var result of tool.strip) {
+				this.line("list(APPEND mSTRIPS ", result, ")");
+			}
+		}
+		this.line("");
+	}
+	generateModulesDefinitions(tool) {
+		for (var result of [].concat(tool.nodered2mcuFiles, tool.cdvFiles)) {
+			this.write("list(APPEND mCDV_FILES ${MODULES_DIR}");
+			this.write(tool.slash);
+			this.write(result.target + ".xsb)");
+			this.line("");
+		}
+		for (var result of [].concat(tool.jsFiles, tool.tsFiles)) {
+			this.write("list(APPEND mMODULES ${MODULES_DIR}");
+			this.write(tool.slash);
+			this.write(result.target.replaceAll('#', tool.windows ? '^#' : "\\#"));
+			this.write(")");
+			this.line("");
+		}	
+		for (var result of tool.cFiles) {
+			var sourceParts = tool.splitPath(result.source);
+/*
+			this.write("list(APPEND mMODULES ${TMP_DIR}");
+			this.write(tool.slash);
+			this.write(sourceParts.name);
+			this.write(sourceParts.extension);
+			this.write(".xsi");
+			this.write(")");
+			this.line("");
+*/
+			this.write("list(APPEND mXSID_FILES ${TMP_DIR}");
+			this.write(tool.slash);
+			this.write(sourceParts.name);
+			this.write(sourceParts.extension);
+			this.write(".xsi");
+			this.write(")");
+			this.line("");
+		}
+		for (var result of tool.hFiles) {
+			var sourceParts = tool.splitPath(result);
+/*
+			this.write("list(APPEND mMODULES ${TMP_DIR}");
+			this.write(tool.slash);
+			this.write(sourceParts.name);
+			this.write(".h.xsi");
+			this.write(")");
+			this.line("");
+*/
+			this.write("list(APPEND mXSID_FILES ${TMP_DIR}");
+			this.write(tool.slash);
+			this.write(sourceParts.name);
+			this.write(".h.xsi");
+			this.write(")");
+			this.line("");
+		}
+
+		this.line("");
+		for (var result of tool.preloads) {
+			this.write("list (APPEND mPRELOADS ");
+			this.write("-p ");
+			this.write(result.replaceAll('#', tool.escapedHash));
+			this.write(")");
+			this.line("");
+		}
+		this.line("");
+	}
+	generateModulesRules(tool) {
+		super.generateModulesRules(tool);
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var sourceParts = tool.splitPath(result.source);
+
+			this.line("add_custom_command(");
+			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi\n");
+//			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
+			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}");
+			this.line("  DEPENDS ", source);
+			this.line("  VERBATIM)");
+			this.line();
+		}
+		for (var result of tool.hFiles) {
+			var sourceParts = tool.splitPath(result);
+
+			this.line("add_custom_command(");
+			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
+//			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
+			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}");
+			this.line("  DEPENDS ", source);
+			this.line("  VERBATIM)");
+			this.line();
+		}
+	}
+	generateObjectsDefinitions(tool) {
+		this.line("zephyr_library_include_directories(");
+		for (var folder of tool.cFolders) {
+			this.line("\t", folder);
+		}
+		this.line("\t", tool.tmpPath);
+		this.line(")");
+		if (tool.format) {
+			this.line("zephyr_library_compile_definitions(\"-DkCommodettoBitmapFormat=", formatValues[tool.format], "\")");
+			this.line("zephyr_library_compile_definitions(\"-DkkPocoRotation=", tool.rotation, "\")");
+		}
+		for (var header of tool.hFiles) {
+			this.line("list(APPEND mINCLUDES ", header, ")");
+		}	
+		if (tool.format) {
+			this.line("list(APPEND mINCLUDES ${TMP_DIR}", tool.slash, "mc.defines.h)");
+			this.line("list(APPEND mINCLUDES ${TMP_DIR}", tool.slash, "mc.format.h)");
+			this.line("list(APPEND mINCLUDES ${TMP_DIR}", tool.slash, "mc.rotation.h)");
+		}
+		this.line("");
+		for (var result of tool.cFiles) {
+			this.line("list(APPEND mOBJECTS ", result.source, ")");
+		}	
+		this.line("");
+	}
+	generateObjectsRules(tool) {
+		for (var result of tool.cFiles) {
+			var source = result.source;
+			var target = result.target;
+			this.line("list(APPEND mOBJECTS ", source, ")");
+			if (result.recipe) {
+				this.error("don't know what to do with the recipe");
+//				this.write(tool.recipes[result.recipe]);
+			}
+		}
+	}
+}
+
 class AndroidMakeFile extends MakeFile {
 	constructor(path) {
 		super(path)
@@ -360,66 +518,6 @@ class SynergyNMakeFile extends NMakeFile {
 			}
 		}
 	}
-}
-
-class ZephyrCMakeListsFile extends PrerequisiteFile {
-	generate(tool) {
-		this.line('# WARNING: This file is automatically generated. Do not edit.');
-		this.line("");
-		this.line("cmake_minimum_required(VERSION 3.20)");
-		this.line("cmake_policy(SET CMP0156 NEW)");
-		this.line("cmake_policy(SET CMP0181 NEW)");
-		this.line("set(CMAKE_OBJECT_PATH_MAX 1024");
-		this.line("");
-		this.line("find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})");
-		this.line("project(moddable_lib)");
-		this.line("");
-		this.line("include(file ", tool.moddablePath, "/build/devices/zephyr/CMakeLists.txt");
-		this.line("\t", tool.moddablePath, "/xs/platforms/mc/xsHosts.c");
-		this.line("");
-		this.line("add_library(tech-moddable-piu SHARED");
-		this.line("\t", tool.moddablePath, "/../moddableprojects/xs/platforms/android_xs.c");
-		var names = tool.enumerateDirectory(tool.xsPath + "/sources");
-		var c = names.length;
-		for (var i = 0; i < c; i++) {
-			var name = names[i];
-			if (name.endsWith(".c") && (name != "xsDefaults.c") && (name != "xspcre.c"))
-				this.line("\t", tool.xsPath, "/sources/", name);
-		}
-		for (var result of tool.cFiles) {
-			this.line("\t", result.source);
-		}
-		this.line("\t", tool.tmpPath, "/mc.xs.c");
-		this.line(")");
-		
-		this.line("target_compile_definitions(tech-moddable-piu PUBLIC");
-		this.line("\tINCLUDE_XSPLATFORM=1");
-		this.line("\tXSPLATFORM=\"android_xs.h\"");
-		if (tool.debug) {
-			this.line("\tmxDebug=1");
-			this.line("\tmxInstrument=1");
-		}
-		this.line(")");
-		
-		this.line("target_include_directories(tech-moddable-piu PUBLIC");
-		this.line("\t", tool.xsPath, "/includes");
-		this.line("\t", tool.xsPath, "/platforms");
-		this.line("\t", tool.moddablePath, "/../moddableprojects/xs/platforms");
-		this.line("\t", tool.xsPath, "/sources");
-		for (var folder of tool.cFolders) {
-			this.line("\t", folder);
-		}	
-		this.line("\t", tool.tmpPath);
-		this.line(")");
-
-		this.line("target_link_libraries(tech-moddable-piu");
-   		this.line("\tandroid");
-		this.line("\tlog");
-		this.line(")");
-
-		this.close();
-	}
-
 }
 
 class CMakeListsFile extends PrerequisiteFile {
@@ -873,6 +971,8 @@ export default class extends Tool {
 			path += this.slash + last;
 			this.createDirectory(path);
 		}
+		if (this.platform == "zephyr")
+			this.createDirectory(path + this.slash + "build");
 		return path;
 	}
 	filterCommonjs(commonjs) {
@@ -1241,7 +1341,12 @@ export default class extends Tool {
 
 		this.writeFileString(this.tmpPath + this.slash + "manifest_flat.json", JSON.stringify(this.manifest, undefined, "\t")); 
 
-		var path = this.tmpPath + this.slash + "makefile", file;
+		var path;
+		if (this.platform == "zephyr")
+//			path = this.tmpPath + this.slash + "build" + this.slash + "CMakeLists.txt";
+			path = this.tmpPath + this.slash + "CMakeLists.txt";
+		else
+			path = this.tmpPath + this.slash + "makefile";
 		if (this.windows) {
 			if (this.platform == "synergy")
 				file = new SynergyNMakeFile(path);
@@ -1259,9 +1364,12 @@ export default class extends Tool {
 				file = new AndroidMakeFile(path);
 			else if ((this.platform == "x-ios") || (this.platform == "x-ios-simulator"))
 				file = new IOSMakeFile(path);
+			else if (this.platform == "zephyr")
+				file = new ZephyrMakeFile(path);
 			else
 				file = new MakeFile(path);
 		}
+trace(`*** CMakeLists file: ${path}\n`);
 		file.generate(this);
 
 		if (this.tsFiles.length) {
@@ -1271,16 +1379,34 @@ export default class extends Tool {
 
 		if (this.make) {
 			let cmd;
-			if (this.buildTarget) {
-				if (this.windows)
-					cmd = ["nmake", "/nologo", "/f", path, this.buildTarget];
-				else 
-					cmd = ["make", "-f", path, this.buildTarget];
-			} else {
-				if (this.windows)
-					cmd = ["nmake", "/nologo", "/f", path];
-				else
-					cmd = ["make", "-f", path];
+			if (this.platform == "zephyr") {
+				path = `${this.moddablePath}/build/devices/zephyr/app`;
+				if (this.buildTarget == "debug") {
+					cmd = ["west", "debug", "-d", this.tmpPath + this.slash + "build" ];
+				}
+				else if (this.buildTarget == "deploy") {
+					cmd = ["west", "flash", "-d", this.tmpPath + this.slash + "build" ];
+				}
+				else {
+					if (undefined !== this.environment.BOARD)
+						cmd = ["west", "-v", "build", "-p", "-b", this.environment.BOARD, path, "-d", this.tmpPath + this.slash + "build", "--", "-DMODDABLE_BUILD_DIR=" + this.tmpPath ];
+					else
+						cmd = ["west", "-v", "build", path, "-d", this.tmpPath, "--", "-DMODDABLE_BUILD_DIR=" + this.tmpPath ];
+				}
+				trace(`***cmd: ${cmd}\n`);
+			}
+			else {
+				if (this.buildTarget) {
+					if (this.windows)
+						cmd = ["nmake", "/nologo", "/f", path, this.buildTarget];
+					else 
+						cmd = ["make", "-f", path, this.buildTarget];
+				} else {
+					if (this.windows)
+						cmd = ["nmake", "/nologo", "/f", path];
+					else
+						cmd = ["make", "-f", path];
+				}
 			}
 
 			if ("esp32" === this.platform) {

@@ -1,0 +1,15 @@
+{
+	"build": {
+		"BOARD": "stm32u5a9j_dk"
+	},
+	"include": [
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+	},
+	"defines": {
+	}
+}

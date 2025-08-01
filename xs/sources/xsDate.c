@@ -1378,9 +1378,10 @@ struct timeval {
 
 txNumber fxDateNow()
 {
-//	c_timeval tv;
 #if _ZEPHYR			//@@
 	struct timeval tv;
+#else
+	c_timeval tv;
 #endif
 	c_gettimeofday(&tv, NULL);
 	return fxDateClip(((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec / 1000)));

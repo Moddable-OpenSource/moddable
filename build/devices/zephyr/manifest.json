@@ -1,5 +1,6 @@
 {
 	"build": {
+		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
 	},
 	"include": [
 	],
@@ -8,7 +9,7 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/zephyr/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/zephyr/*"
+			"$(MODULES)/base/timer/mc/*"
 		]
 	},
 	"preload": [
