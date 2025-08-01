@@ -93,7 +93,7 @@ export class MakeFile extends FILE {
 	generateDataDefinitions(tool) {
 		if (tool.platform == "zephyr") {
 			for (var result of tool.dataFiles) {
-				this.write("set(DATA ${DATA_DIR}");
+				this.write("list(APPEND mDATA ${DATA_DIR}");
 				this.write(tool.slash);
 				this.write(result.target);
 				this.line(")");
@@ -442,8 +442,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		this.line("");
 	}
 	generateBLERules(tool) {
-		if (tool.platform == "zephyr")
+		if (tool.platform == "zephyr") {
+			//@@ zephyr
 			return;
+		}
 		let defines = tool.defines;
 		let client = false;
 		let server = false;

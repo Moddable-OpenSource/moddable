@@ -1343,7 +1343,6 @@ export default class extends Tool {
 
 		var path;
 		if (this.platform == "zephyr")
-//			path = this.tmpPath + this.slash + "build" + this.slash + "CMakeLists.txt";
 			path = this.tmpPath + this.slash + "CMakeLists.txt";
 		else
 			path = this.tmpPath + this.slash + "makefile";
