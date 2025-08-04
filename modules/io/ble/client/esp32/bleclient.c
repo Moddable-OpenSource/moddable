@@ -34,6 +34,10 @@
 #include "ble.h"
 #include "ble_hs_hci_priv.h"
 
+#if MYNEWT_VAL(BLE_ENABLE_CONN_REATTEMPT)
+	#error Espressif reconnect not supported. Disable using CONFIG_BT_NIMBLE_ENABLE_CONN_REATTEMPT in SDKCONFIG.
+#endif
+
 static void xs_ble_ready(void);
 static void xs_ble_nimble_task(void *param);
 
