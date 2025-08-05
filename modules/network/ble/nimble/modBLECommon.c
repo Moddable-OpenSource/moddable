@@ -105,3 +105,6 @@ int modBLEPlatformTerminate(void)
 	
 	return rc;
 }
+
+void __unimplemented() {}
+void ble_gatts_stop() __attribute__ ((weak, alias("__unimplemented")));
