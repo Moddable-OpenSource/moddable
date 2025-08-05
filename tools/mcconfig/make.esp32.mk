@@ -193,6 +193,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_rom/include \
 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/esp_system/include \
 	$(IDF_PATH)/components/esp_timer/include \
 	$(IDF_PATH)/components/esp_wifi/include \
