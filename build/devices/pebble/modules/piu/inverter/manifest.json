@@ -1,6 +1,6 @@
 {
 	"modules": {
-		"piu/inverter": "./piuInverter"
+		"piu/Inverter": "./piuInverter"
 	},
-	"preload": "piu/inverter"
+	"preload": "piu/Inverter"
 }
