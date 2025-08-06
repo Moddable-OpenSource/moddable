@@ -417,7 +417,7 @@ The constructor dictionary has an optional `hz` property to specify the speed of
 let sensor = new I2C({sda: 5, scl: 4, address: 0x48, hz: 1000000});
 ```
 
-The constructor dictionary also has an optional `timeout` property to specify the I2C clock stretching timeout in microseonds (μs). Support for this property is device dependent.
+The constructor dictionary also has an optional `timeout` property to specify the I2C clock stretching timeout in microseconds (μs). Support for this property is device dependent.
 
 ```js
 let sensor = new I2C({sda: 5, scl: 4, address: 0x48, timeout: 600});

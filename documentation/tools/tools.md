@@ -103,7 +103,7 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 When the `-t` flag is omitted, the default value is `all`.
 
-When using **mcconfig** with microcontrollers that use a serial port for JavaScript debuggging with xsbug, the `deploy`, `xsbug`, and `all` targets terminate the currently running instance of serial2xsbug, if there is one.
+When using **mcconfig** with microcontrollers that use a serial port for JavaScript debugging with xsbug, the `deploy`, `xsbug`, and `all` targets terminate the currently running instance of serial2xsbug, if there is one.
 
 <a id="mcrun"></a>
 ## mcrun
@@ -112,7 +112,7 @@ When using **mcconfig** with microcontrollers that use a serial port for JavaScr
 There are a few important differences between `mcrun` and `mcconfig`:
 
 - The manifest used by `mcrun` must not reference any files which build to native code (e.g. `.c` or `.cpp` files) as a mod can only contain JavaScript
-- `mcrun` supports `-t build`` (but not other [target values](#buildtargets)). 
+- `mcrun` supports `-t build`` (but not other [target values](#buildtargets)).
 - `config` properties are available from the `mod/config` module instead of `mc/config` (see the `config` section of the [Manifest](./manifest.md) documentation for more information about `config` properties)
 
 ### Arguments

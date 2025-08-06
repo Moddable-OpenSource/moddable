@@ -30,7 +30,7 @@ Vref is a reference voltage used internally by ESP32 ADCs for measuring the inpu
 
 There are [four attenuation](https://docs.espressif.com/projects/esp-idf/en/release-v4.4/esp32/api-reference/peripherals/adc.html#adc-attenuation) options.
 
-| Attenuation (dB) | Measureable input voltage range |
+| Attenuation (dB) | Measurable input voltage range |
 | :---: | :--- |
 | 0 | 100 mV ~ 950 mV
 | 2.5 | 100 mV ~ 1250 mV

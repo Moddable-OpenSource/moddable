@@ -14,7 +14,7 @@ Revised: December 10, 2018
 | **Interface** | SPI
 | **Drivers** | video [ST7735](../../documentation/drivers/st7735/st7735.md), no touch
 | **Availability** | [Adafruit 1.8" Color TFT LCD Display](https://www.adafruit.com/product/358)<BR>[HiLetgo 1.8" ST7735R](https://www.amazon.com/gp/product/B00LSG51MM/)
-| **Description** | Colorful, bright display wtih 4-wire SPI.
+| **Description** | Colorful, bright display with 4-wire SPI.
 
 
 ## Moddable example code

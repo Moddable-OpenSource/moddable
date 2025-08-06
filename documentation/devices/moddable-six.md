@@ -54,7 +54,7 @@ The ESP32-S3 module has an expansive 8 MB of flash storage memory and 8 MB PSRAM
 #### Beautiful, Fast, and Responsive screen
 The screen is 240 x 320 QVGA IPS display driven by a 8-bit wide parallel data bus. Display throughput is at least 4x faster than anything we've had before, thanks to a new hardware design and a new parallel display driver.
 
-The brightness of the display can be adjusted programatically.
+The brightness of the display can be adjusted programmatically.
 
 #### Responsive Multi-Touch
 The touch panel uses a GT911 touch controller that supports multi-touch input. The a new touch driver and hardware design enables touch interrupts to increase responsiveness and minimize CPU overhead.

@@ -105,7 +105,7 @@ This function is similar to the following `openssl` command line:
 openssl x509 -inform pem -in data.pem -out data.der -outform der
 ```
 
-`pemToDER` looks for both `-----BEGIN CERTIFICATE-----` and `-----BEGIN RSA PRIVATE KEY-----` as delimeters.
+`pemToDER` looks for both `-----BEGIN CERTIFICATE-----` and `-----BEGIN RSA PRIVATE KEY-----` as delimiters.
 
 <a id="transform-privateKeyToPrivateKeyInfo"></a>
 ### static privateKeyToPrivateKeyInfo(data[, oid])

@@ -76,8 +76,8 @@ The Moddable SDK supports devices built with the Pico. The following table lists
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="../assets/devices/pi-pico.png" width=220><BR>Rasberry Pi<BR>Pico | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
-| <img src="../assets/devices/pi-pico_w.png" width=65><BR>Rasberry Pi<BR>Pico W | `pico/pico_w` | Wi-Fi, LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico.png" width=220><BR>Raspberry Pi<BR>Pico | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_w.png" width=65><BR>Raspberry Pi<BR>Pico W | `pico/pico_w` | Wi-Fi, LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
 | <img src="../assets/devices/pico-display.png" width=80></a><BR>Pimoroni<BR>Pico Display | `pico/pico_display`<BR>`simulator/pico_display` | **1.4" IPS display**<BR>135 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display](https://pimoroni.com/picodisplay)</li> |
 | <img src="../assets/devices/pico-display-2.png" width=200></a><BR>Pimoroni<BR>Pico Display 2 | `pico/pico_display_2`<BR>`simulator/pico_display_2` | **2.0" IPS display**<BR>320 x 240<BR>16-bit color<BR>4 buttons<BR>RGB LED | <li>[Pimoroni Pico Display 2](https://shop.pimoroni.com/products/pico-display-pack-2-0)</li> |
 | <img src="../assets/devices/pico-lcd-1.3.png" width=220></a><BR>Waveshare<BR>Pico LCD 1.3 | `pico/pico_lcd_1.3` | **1.3" IPS display**<BR>240 x 240<BR>16-bit color<BR>4 buttons<BR>1 joystick | <li>[Waveshare Pico LCD 1.3](https://www.waveshare.com/wiki/Pico-LCD-1.3)</li> |
@@ -107,7 +107,7 @@ The Raspberry Pi Pico 2 has the following features:
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Rasberry Pi<BR>Pico 2 | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Raspberry Pi<BR>Pico 2 | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
 | <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/pro_micro` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
 | <img src="../assets/devices/pico-pimoroni-pico-plus-2.png" height=220></a><br>Pimoroni<br>pico plus 2 | `pico/pico_plus_2` | Qwiic/STEMMA connector | <li>[Pimoroni product page](https://shop.pimoroni.com/products/pimoroni-pico-plus-2)</li> |
 
@@ -185,7 +185,7 @@ The Raspberry Pi Pico 2 has the following features:
 	cd build
 	cmake ..
 	make
-	
+
 	cd pioasm
 	cmake $PICO_SDK_DIR/tools/pioasm
 	make
@@ -306,7 +306,7 @@ Not yet available.
 	cd build
 	cmake ..
 	make
-	
+
 	cd pioasm
 	cmake $PICO_SDK_DIR/tools/pioasm
 	make

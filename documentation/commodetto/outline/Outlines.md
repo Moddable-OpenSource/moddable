@@ -14,7 +14,7 @@ There are three steps to rendering an 2D vector graphics. This document explains
 
 Familiar programming interfaces are supported to define the shapes:
 
-- Canvas paths to build shapes programatically.
+- Canvas paths to build shapes programmatically.
 - SVG paths to use shapes built with vector graphics tools.
 
 The rendering implementation is based on FreeType [Outline Processing](https://freetype.org/freetype2/docs/reference/ft2-outline_processing.html) API.
