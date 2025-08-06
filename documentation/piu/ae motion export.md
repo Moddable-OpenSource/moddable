@@ -8,7 +8,7 @@ Adobe After Effects can be used to export motion data into a Moddable sample app
 
 Moddable motion control only supports position.
 
-In AE only layers with assets are exported and only positions are exported. Scaling, rotation, transparncy, etc. are not exported.
+In AE only layers with assets are exported and only positions are exported. Scaling, rotation, transparency, etc. are not exported.
 
 Piu interpolates linearly between values in the array. You can reduce the frame rate in After Effects to reduce the size of the arrays. Piu will animate between values based on defined time length of the motion effect.
 

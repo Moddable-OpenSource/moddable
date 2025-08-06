@@ -35,7 +35,7 @@ Export .png glyph and .fnt font metrics files in the BMFont Binary format.
 <a id="fontbm"></a>
 ## fontbm instructions
 
-To use fontbm, you must first install it on your system. Precompiled binaries are avaiable as part of the Moddable SDK [releases](https://github.com/moddable-OpenSource/moddable/releases/latest) on GitHub. Alternatively, instructions to build it yourself are provided for [macOS](https://github.com/vladimirgamalyan/fontbm#building-macos), [Linux](https://github.com/vladimirgamalyan/fontbm#building-linux), and [Windows](https://github.com/vladimirgamalyan/fontbm?tab=readme-ov-file#building-windows). If you are using xs-dev to manage your Moddable SDK installation, it automatically installs fontbm from the Moddable SDK binaries.
+To use fontbm, you must first install it on your system. Precompiled binaries are available as part of the Moddable SDK [releases](https://github.com/moddable-OpenSource/moddable/releases/latest) on GitHub. Alternatively, instructions to build it yourself are provided for [macOS](https://github.com/vladimirgamalyan/fontbm#building-macos), [Linux](https://github.com/vladimirgamalyan/fontbm#building-linux), and [Windows](https://github.com/vladimirgamalyan/fontbm?tab=readme-ov-file#building-windows). If you are using xs-dev to manage your Moddable SDK installation, it automatically installs fontbm from the Moddable SDK binaries.
 
 Once you have fontbm, you may use it from the command line to generate the .fnt and .png files needed to add fonts to the Moddable SDK.
 
@@ -127,7 +127,7 @@ The `characters` property is a string that indicates which characters to include
 ```
 
 ##### Character List Files
-The `characterFiles` property is an array of paths to UTF-8 encoded text files. All of the characters used in the file are included. 
+The `characterFiles` property is an array of paths to UTF-8 encoded text files. All of the characters used in the file are included.
 
 ```json
 "resources": {

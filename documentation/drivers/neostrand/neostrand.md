@@ -312,7 +312,7 @@ start | 0 | [0..strand.length] | index of first pixel of effect
 end | strand.length | [0..strand.length] | index of last pixel of effect
 duration | 1000 | | length time between color changes, in ms
 size | 5 | [0..strand.length] | size of each color
-max | 127 | [0..255] | maximium value of random RGB component
+max | 127 | [0..255] | maximum value of random RGB component
 
 Using *Pattern* as a starting point, we'll change the class name and constructor, set up the timeline in `activate` and provide a setter for the changing `effectValue`. The `loopPrepare` function will be called before a looping effect starts or restarts.
 

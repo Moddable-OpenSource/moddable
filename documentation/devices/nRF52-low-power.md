@@ -21,7 +21,7 @@ Warning: These notes are preliminary. Omissions and errors are likely. If you en
 
 <a id="low-power-modes"></a>
 ## Low Power Modes
-The Nordic nRF52 devices (Moddable Four) provide two low power (sleep) modes to reduce power consumption: **System ON** and **System OFF**. Applications can programatically enter and exit these power modes using Nordic APIs. The [nRF52840 Product Specification](https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf), Section 5.2 includes current consumption tables for common scenarios.
+The Nordic nRF52 devices (Moddable Four) provide two low power (sleep) modes to reduce power consumption: **System ON** and **System OFF**. Applications can programmatically enter and exit these power modes using Nordic APIs. The [nRF52840 Product Specification](https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf), Section 5.2 includes current consumption tables for common scenarios.
 
 The Moddable SDK includes APIs to configure and leverage features provided by these low power modes.
 
