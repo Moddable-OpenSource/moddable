@@ -3107,6 +3107,7 @@ void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names,
 	}
 #endif
 #ifndef mxNoConsole
+#if !pebble
 	j = 0;
 	c_printf("instruments key: ");
 	for (i = 0; i < count; i++, j++) {
@@ -3120,6 +3121,23 @@ void fxDescribeInstrumentation(txMachine* the, txInteger count, txString* names,
 		c_printf("%s", xsInstrumentNames[i]);
 	}
 	c_printf("\n");
+#else // pebble
+	j = 0;
+	modLog_transmit("instruments key: ");
+	for (i = 0; i < count; i++, j++) {
+		if (!names[i])
+			break;
+		if (j)
+			modLog_transmit(",");
+		modLog_transmit(names[i]);
+	}
+	for (i = 0; i < xsInstrumentCount; i++, j++) {
+		if (j)
+			modLog_transmit(",");
+		modLog_transmit(xsInstrumentNames[i]);
+	}
+	modLog_transmit("\n");
+#endif
 #endif
 }
 
@@ -3160,6 +3178,7 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	}
 #endif
 #ifndef mxNoConsole
+#if !pebble
 	j = 0;
 	c_printf("instruments: ");
 	for (i = 0; i < count; i++, j++) {
@@ -3173,6 +3192,25 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 		c_printf("%d", xsInstrumentValues[i]);
 	}
 	c_printf("\n");
+#else // pebble
+	j = 0;
+	modLog_transmit("instruments: ");
+	for (i = 0; i < count; i++, j++) {
+		if (j)
+			modLog_transmit(",");
+		char tmp[10];
+		fxIntegerToString(the, (int)values[i], tmp, sizeof(tmp));
+		modLog_transmit(tmp);
+	}
+	for (i = 0; i < xsInstrumentCount; i++, j++) {
+		if (j)
+			modLog_transmit(",");
+		char tmp[10];
+		fxIntegerToString(the, (int)xsInstrumentValues[i], tmp, sizeof(tmp));
+		modLog_transmit(tmp);
+	}
+	modLog_transmit("\n");
+#endif // pebble
 #endif
 }
 
