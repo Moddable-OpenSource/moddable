@@ -126,6 +126,6 @@
  
  void modTimerDelayMS(uint32_t ms)
  {
-	psleep(ms * 1000);
+	psleep(ms);
  }
  
