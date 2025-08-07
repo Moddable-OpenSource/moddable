@@ -42,6 +42,7 @@
 #include <stddef.h>
 #include "errno.h"
 
+#include "applib/app_logging.h"
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
 #include "applib/pbl_std/pbl_std.h"
@@ -274,7 +275,7 @@ extern void my_free(void *ptr);
 #define c_strtod strtod
 #define c_strtol strtol
 #define c_strtoul strtoul
-#define c_printf printf
+#define c_printf(...) APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, ##__VA_ARGS__)
 #define c_vprintf vprintf
 #define c_vsnprintf vsnprintf
 #define c_snprintf snprintf
