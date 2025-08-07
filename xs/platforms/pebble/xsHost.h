@@ -437,13 +437,18 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *));
 void *bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar)(const void *, const void*));
 
-#define _M_LN2        0.693147180559945309417
+#ifndef M_E
 #define M_E     2.7182818284590452354
+#endif
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
+
+#define _M_LN2        0.693147180559945309417
 #define M_LOG2E     1.4426950408889634074
 #define M_LOG10E    0.43429448190325182765
 #define M_LN2       _M_LN2
 #define M_LN10      2.30258509299404568402 
-#define M_PI        3.14159265358979323846
 #define M_PI_2      1.57079632679489661923
 #define M_PI_4      0.78539816339744830962
 #define M_1_PI      0.31830988618379067154
