@@ -8,6 +8,10 @@ import Poco from "commodetto/Poco";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
 import {} from "piu/SVGImage"
+import {} from "piu/Inverter"
+import {} from "piu/RoundRect"
+import Instrumentation from "instrumentation";
+import Debug from "debug";
 
 import HTTPClient from "embedded:network/http/client";
 import WebSocketClient from "embedded:network/websocket/client";
@@ -21,7 +25,9 @@ const setInterval = function(callback, delay) { return Timer.repeat(callback, de
 const setTimeout = function(callback, delay) { return Timer.set(callback, delay) };
 
 const console = Object.freeze({
-	log: trace
+	log: function (...args) {
+		trace(...args, "\n");
+	}
 });
 
 class AppInfo {
