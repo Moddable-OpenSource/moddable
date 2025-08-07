@@ -23,23 +23,9 @@
  #include "modTimer.h"
  #include "modInstrumentation.h"
  
-#if 1
-	#include "xsHost.h"
-	#include "services/common/evented_timer.h"
-	#include "kernel/util/sleep.h"
-#else
-	typedef uintptr_t EventedTimerID;
-	#define EVENTED_TIMER_INVALID_ID 0
-
-	typedef void (*EventedTimerCallback)(void* data);
-
-	static EventedTimerID evented_timer_register(uint32_t timeout_ms, bool repeating, EventedTimerCallback callback, void* callback_data) {return EVENTED_TIMER_INVALID_ID;}
-	bool evented_timer_reschedule(EventedTimerID timer, uint32_t new_timeout_ms) {return true;}
-	static void evented_timer_cancel(EventedTimerID timer) {}
-	static void *evented_timer_get_data(EventedTimerID timer) {return C_NULL;}
-
-	static void psleep(int millis) {}
-#endif
+#include "xsHost.h"
+#include "services/common/evented_timer.h"
+#include "kernel/util/sleep.h"
 
  typedef struct modTimerRecord modTimerRecord;
  typedef modTimerRecord *modTimer;
@@ -51,7 +37,7 @@
 	 modTimerCallback cb;
 	 int secondInterval;
 	 uint32_t refconSize;
-	 char refcon[1];
+	 char refcon[];
  };
 
  static void modTimerExcecuteOne(void* data)
@@ -72,7 +58,7 @@
  
  modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
  {
-	 modTimer timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
+	 modTimer timer = c_malloc(sizeof(modTimerRecord) + refconSize);
 	 if (!timer) return C_NULL;
  
 	if (firstInterval < 20)		//@@ hack-around. PebbleOS calls the timer many many times if this number is much smaller than 20
