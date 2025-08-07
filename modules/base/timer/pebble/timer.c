@@ -75,6 +75,9 @@
 	 modTimer timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
 	 if (!timer) return C_NULL;
  
+	if (firstInterval < 20)		//@@ hack-around. PebbleOS calls the timer many many times if this number is much smaller than 20
+		firstInterval = 20;
+
 	 timer->useCount = 1;
 	 timer->cb = cb;
 	 timer->refconSize = refconSize;
