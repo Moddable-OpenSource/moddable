@@ -30,11 +30,11 @@
 	#define kModInstrumentationHasSPIFlashErases 1
 #endif
 
-#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32
+#if (nrf52 && !pebble) || PICO_BUILD || defined(__ets__) || ESP32
 	#define kModInstrumentationHasTurns 1
 #endif
 
-#if nrf52 || ESP32
+#if (nrf52 && !pebble) || ESP32
 	#define kModInstrumentationHasCPU 1
 #endif
 
