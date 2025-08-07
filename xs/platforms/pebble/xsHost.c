@@ -50,6 +50,7 @@
 #include "light_mutex.h"
 #include "queue.h"
 
+#include "applib/app_heap_util.h"
 #include "applib/app_logging.h"
 #include "services/common/evented_timer.h"
 #include "system/passert.h"
@@ -62,7 +63,7 @@
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
 
-	#define INSTRUMENT_CPULOAD 1
+	#define INSTRUMENT_CPULOAD 0
 	#define kTargetCPUCount 1
 
 	#if INSTRUMENT_CPULOAD
@@ -88,9 +89,13 @@
 		(char *)"Files",
 		(char *)"Poco display list used",
 		(char *)"Piu command List used",
+#if kModInstrumentationHasTurns
 		(char *)"Event loop",
+#endif
 		(char *)"System bytes free",
+#if kModInstrumentationHasCPU
 		(char *)"CPU",
+#endif
 	};
 
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
@@ -100,12 +105,16 @@
 		(char *)" files",
 		(char *)" bytes",
 		(char *)" bytes",
+#if kModInstrumentationHasTurns
 		(char *)" turns",
+#endif
 		(char *)" bytes",
+#if kModInstrumentationHasCPU
 		(char *)" percent",
+#endif
 	};
 
-	LightMandle_t gInstrumentMutex;
+	// LightMandle_t gInstrumentMutex;
 #endif
 
 int pbl_gettimeofday(void *tvp, void *unusedTZ)
@@ -124,10 +133,27 @@ int pbl_gettimeofday(void *tvp, void *unusedTZ)
 	return 0;
 }
 
+static char gTransmitBuffer[90];		// not thread safe.... also... there is a maximum size enforced by Pebble so don't grow this without checking that...
+static char *gTransmit = gTransmitBuffer;
+
 void modLog_transmit(const char *msg)
 {
-  PBL_LOG(LOG_LEVEL_ALWAYS, "%s", msg);
-//	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", msg);
+	if (!msg) return;
+
+	do {
+		while (*msg && ((gTransmit - gTransmitBuffer) < (int)(sizeof(gTransmitBuffer) - 1)))
+			*gTransmit++ = *msg++;
+		int end = 10 == gTransmit[-1];
+		if (end)
+			gTransmit[-1] = 0;
+		if (end || ((gTransmit - gTransmitBuffer) >= (int)(sizeof(gTransmitBuffer) - 1))) {
+			*gTransmit++ = 0;
+
+//			PBL_LOG(LOG_LEVEL_ALWAYS, "%s", gTransmitBuffer);
+			APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", gTransmitBuffer);
+			gTransmit = gTransmitBuffer;
+		}
+	} while (*msg);
 }
 
 /*
@@ -144,8 +170,7 @@ void modInstrumentationSetup(xsMachine *the)
 
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
-	txMachine *the = theIn;
-	return (int32_t)nrf52_memory_remaining();
+	return 0;
 }
 
 #if INSTRUMENT_CPULOAD
@@ -180,7 +205,7 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
 
-	gInstrumentMutex = xLightMutexCreate();
+	// gInstrumentMutex = xLightMutexCreate();
 
 #if INSTRUMENT_CPULOAD
 	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
@@ -205,13 +230,15 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
 
-	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
+	// xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
 
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
 
+#if kModInstrumentationHasTurns
 	if (values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn])
 		values[kModInstrumentationTurns - kModInstrumentationPixelsDrawn] -= 1;		// ignore the turn that generates instrumentation
+#endif
 
 	fxSampleInstrumentation(the, espInstrumentCount, values);
 
@@ -219,10 +246,12 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(FramesDrawn, 0);
 	modInstrumentationSet(PocoDisplayListUsed, 0);
 	modInstrumentationSet(PiuCommandListUsed, 0);
+#if kModInstrumentationHasTurns
 	modInstrumentationSet(Turns, 0);
+#endif
 	modInstrumentMachineReset(the);
 
-	xSemaphoreGive(gInstrumentMutex);
+	// xSemaphoreGive(gInstrumentMutex);
 }
 
 #if INSTRUMENT_CPULOAD
