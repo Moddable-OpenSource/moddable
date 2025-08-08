@@ -134,6 +134,8 @@ export default function() {
 			Style: StyleArchive,
 			Text,
 			Texture: TextureArchive,
+			Inverter,
+			RoundRect,
 			SVGImage,
 			Transition
 		};
