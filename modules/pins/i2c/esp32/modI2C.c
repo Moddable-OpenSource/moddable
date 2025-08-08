@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,24 +22,23 @@
 #include "modI2C.h"
 #include "xsHost.h"
 
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 
 #if !defined(MODDEF_I2C_PULLUPS)
 	#define MODDEF_I2C_PULLUPS	1
-#endif
-
-#if !defined(MODDEF_I2C_PORT)
-	#define MODDEF_I2C_PORT	I2C_NUM_1
 #endif
 
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
 static uint8_t modI2CActivate(modI2CConfiguration config);
 
-static uint32_t gHz;		// non-zero when driver initialized
-static uint16_t gSda;
-static uint16_t gScl;
-static uint16_t gTimeout = DEFAULT_ESP32_I2C_TIMEOUT;
+static uint32_t gHz;
+static uint16_t gData;
+static uint16_t gClock;
+static uint8_t gAddress;
+
+static i2c_master_bus_handle_t gBus;
+static i2c_master_dev_handle_t gDevice;
 
 void modI2CInit(modI2CConfiguration config)
 {
@@ -47,107 +46,98 @@ void modI2CInit(modI2CConfiguration config)
 
 void modI2CUninit(modI2CConfiguration config)
 {
-	if (gHz) {
-		i2c_driver_delete(MODDEF_I2C_PORT);
-		gHz = 0;
-	}
+	if (gDevice)
+		i2c_master_bus_rm_device(gDevice);
+	if (gBus)
+		i2c_del_master_bus(gBus);
+	gBus = C_NULL;
+	gDevice = C_NULL;
 }
 
 uint8_t modI2CRead(modI2CConfiguration config, uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
-	int ret;
-	i2c_cmd_handle_t cmd;
-
 	if (modI2CActivate(config))
 		return 1;
 
-	cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (config->address << 1) | I2C_MASTER_READ, 1);
-	if (length > 1)
-		i2c_master_read(cmd, buffer, length - 1, 0);
-	i2c_master_read(cmd, buffer + length - 1, 1, 1);
-	if (sendStop)
-		i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+//@@ ignoring sendStop
+	int ret = i2c_master_receive(gDevice, buffer, length, config->timeout);
 
 	return (ESP_OK == ret) ? 0 : 1;
 }
 
 uint8_t modI2CWrite(modI2CConfiguration config, const uint8_t *buffer, uint16_t length, uint8_t sendStop)
 {
-	int ret;
-	i2c_cmd_handle_t cmd;
-
 	if (modI2CActivate(config))
 		return 1;
 
-	cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (config->address << 1) | I2C_MASTER_WRITE, 1);
-	i2c_master_write(cmd, (uint8_t *)buffer, length, 1);
-	if (sendStop)
-		i2c_master_stop(cmd);
-	ret = i2c_master_cmd_begin(MODDEF_I2C_PORT, cmd, 1000 / portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+//@@ ignoring sendStop
+	int ret = i2c_master_transmit(gDevice, buffer, length, config->timeout);
 
 	return (ESP_OK == ret) ? 0 : 1;
 }
 
 uint8_t modI2CActivate(modI2CConfiguration config)
 {
-	i2c_config_t conf;
+	int data, clock, hz;
 
 #if defined(MODDEF_I2C_SDA_PIN) && defined(MODDEF_I2C_SCL_PIN)
-	conf.sda_io_num = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
-	conf.scl_io_num = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;
+	data = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
+	clock = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;
 #else
-	if ((-1 == config->sda) || (-1 == config->scl)) {
-		modLog("invalid sda/scl");
+	if ((-1 == config->sda) || (-1 == config->scl))
 		return 1;
-	}
-	conf.sda_io_num = config->sda;
-	conf.scl_io_num = config->scl;
+
+	data = config->sda;
+	clock = config->scl;
 #endif
-	conf.master.clk_speed = config->hz ? config->hz : 100000;
+	hz = config->hz ? config->hz : 100000;
 
-	if ((conf.master.clk_speed == gHz) && (gSda == conf.sda_io_num) && (gScl == conf.scl_io_num))
-		return 0;
-
-	if (gHz) {
-		i2c_driver_delete(MODDEF_I2C_PORT);
-		gHz = 0;
+	if (gBus && ((data != gData) || (clock != gClock)))
+		modI2CUninit(config);
+	
+	if (gDevice && ((hz != gHz) || (config->address != gAddress))) {
+		i2c_master_bus_rm_device(gDevice);
+		gDevice = C_NULL;
 	}
 
-	conf.mode = I2C_MODE_MASTER;
+	if (C_NULL == gBus) {
+		i2c_master_bus_config_t busC = {
+#ifdef MODDEF_I2C_PORT
+			.i2c_port = MODDEF_I2C_PORT,
+#else
+			.i2c_port = -1,
+#endif
+			.sda_io_num = data,
+			.scl_io_num = clock,
+			.clk_source = I2C_CLK_SRC_DEFAULT
+		};
 #if MODDEF_I2C_PULLUPS
-	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+		busC.flags.enable_internal_pullup = 1;
 #else
-	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
-	conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
+		busC.flags.enable_internal_pullup = 0;
 #endif
-	conf.clk_flags = 0;
-	if (ESP_OK != i2c_param_config(MODDEF_I2C_PORT, &conf)) {
-		modLog("i2c_param_config fail");
-		return 1;
+		if (ESP_OK != i2c_new_master_bus(&busC, &gBus))
+			return 1;
+		
+		gClock = clock;
+		gData = data;
+	}
+	
+	if (C_NULL == gDevice) {
+		i2c_device_config_t deviceC = {
+			.dev_addr_length = I2C_ADDR_BIT_LEN_7,
+			.device_address = config->address,
+			.scl_speed_hz = hz,
+		};
+		if (ESP_OK != i2c_master_bus_add_device(gBus, &deviceC, &gDevice))
+			return 1;
+
+		gAddress = config->address;
+		gHz = hz;
 	}
 
-	if (ESP_OK != i2c_driver_install(MODDEF_I2C_PORT, conf.mode, 0, 0, 0)) {
-		modLog("i2c_driver_install fail");
-		return 1;
-	}
-
-	gHz = conf.master.clk_speed;
-	gSda = conf.sda_io_num;
-	gScl = conf.scl_io_num;
-
-	if (config->timeout == 0) config->timeout = DEFAULT_ESP32_I2C_TIMEOUT;
-	if (config->timeout != gTimeout){
-		i2c_set_timeout(MODDEF_I2C_PORT, config->timeout);
-		gTimeout = config->timeout;
-	}
+	if (config->timeout == 0)
+		config->timeout = 400;
 
 	return 0;
 }
