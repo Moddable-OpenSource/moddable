@@ -233,10 +233,11 @@ void xs_gapclient_read(xsMachine *the)
 	xsResult = xsNewFunction1(xsReference(scan->advertisementConstructor), tmp);
 	c_memmove(xsmcToArrayBuffer(xsResult), packet->payload, packet->byteLength);
 
-	char address[18];
-	snprintf(address, sizeof(address), "%02X:%02X:%02X:%02X:%02X:%02X",
+	char address[24];
+	snprintf(address, sizeof(address), "%02X:%02X:%02X:%02X:%02X:%02X/%02X",
          packet->address.val[5], packet->address.val[4], packet->address.val[3],
-         packet->address.val[2], packet->address.val[1], packet->address.val[0]);
+         packet->address.val[2], packet->address.val[1], packet->address.val[0],
+         packet->address.type);
 	 xsmcVars(1);
 	 xsmcSetString(xsVar(0), address);
 	 xsmcSet(xsResult, xsID_address, xsVar(0));
@@ -518,11 +519,11 @@ void xs_gattclient_constructor(xsMachine *the)
 	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_address);
-	address.type = BLE_ADDR_PUBLIC;
     if (sscanf(xsmcToString(xsVar(0)),
-               "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
+               "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx/%2hhx",
                &address.val[5], &address.val[4], &address.val[3],
-               &address.val[2], &address.val[1], &address.val[0]) != 6)
+               &address.val[2], &address.val[1], &address.val[0],
+               &address.type) != 7)
 		xsUnknownError("invalid address");
 
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
@@ -805,7 +806,7 @@ void xs_gattclient_connect(xsMachine *the)
 	ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &gc->address,
 		 BLE_HS_FOREVER, &conn_params,
 		 onGATTConnectionEvent, gc);
-	
+
 	gc->connecting = 1;
 }
 
@@ -917,7 +918,7 @@ void xs_gattclient_getCharacteristics(xsMachine *the)
 static int onGATTDescriptorDiscovered(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc, void *arg)
 {
 	GATTClient gc = arg;
-	static const ble_uuid16_t uuid_declaration = BLE_UUID16_INIT(0x2003);
+	static const ble_uuid16_t uuid_declaration = BLE_UUID16_INIT(0x2803);
 
 	if (dsc) {
 		if (ble_uuid_cmp(&dsc->uuid.u, &uuid_declaration.u) == 0) {
