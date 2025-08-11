@@ -1150,7 +1150,7 @@ void xs_gattclientservice_get_uuid(xsMachine *the)
 {
 	struct ble_gatt_svc *svc = xsmcGetHostChunkValidate(xsThis, xs_gattclientservice_destructor);
 	char buffer[BLE_UUID_STR_LEN];
-	xsmcSetString(xsResult, ble_uuid_to_str(&svc->uuid.u, buffer) + 2);
+	xsmcSetString(xsResult, ble_uuid_to_str(&svc->uuid.u, buffer));
 }
 
 void xs_gattclientcharacteristic_destructor(void *)
@@ -1161,7 +1161,7 @@ void xs_gattclientcharacteristic_get_uuid(xsMachine *the)
 {
 	GATTClientCharacteristic gcc = xsmcGetHostChunkValidate(xsThis, xs_gattclientcharacteristic_destructor);
 	char buffer[BLE_UUID_STR_LEN];
-	xsmcSetString(xsResult, ble_uuid_to_str(&gcc->chr.uuid.u, buffer) + 2);
+	xsmcSetString(xsResult, ble_uuid_to_str(&gcc->chr.uuid.u, buffer));
 }
 
 void xs_gattclientcharacteristic_get_handle(xsMachine *the)
@@ -1184,5 +1184,5 @@ void xs_gattclientdescriptor_get_uuid(xsMachine *the)
 {
 	struct ble_gatt_dsc *dsc = xsmcGetHostChunkValidate(xsThis, xs_gattclientdescriptor_destructor);
 	char buffer[BLE_UUID_STR_LEN];
-	xsmcSetString(xsResult, ble_uuid_to_str(&dsc->uuid.u, buffer) + 2);
+	xsmcSetString(xsResult, ble_uuid_to_str(&dsc->uuid.u, buffer));
 }
