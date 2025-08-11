@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: March 25, 2025
+Revised: July 2, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -672,13 +672,13 @@ if (xsIsInstanceOf(xsThis, xsObjectPrototype))
 
 In ECMAScript, the properties of an object are identified by number, string or symbol values – a.k.a. the property **key**. In XS in C you can access properties with property keys through the `xsGetAt`, `xsSetAt`, etc macros described below.
 
-If the number or string value of a property key can be converted into a 32-bit unsigned integer, XS uses the result of the conversion – a.k.a. the property **index** — to identify the property. In XS in C, you can access properties directy with property indexes through the `xsGetIndex`, `xsSetIndex`, etc macros described below. A property index can be used with all instances but is typically used to access items of `Array` instances.
+If the number or string value of a property key can be converted into a 32-bit unsigned integer, XS uses the result of the conversion – a.k.a. the property **index** — to identify the property. In XS in C, you can access properties directly with property indexes through the `xsGetIndex`, `xsSetIndex`, etc macros described below. A property index can be used with all instances but is typically used to access items of `Array` instances.
 
 ```c
 typedef uint32_t xsIndex;
 ```
 
-Otherwise the string or symbol value of a property key is stored into a table and XS uses the resulting table index – a.k.a. the property **identifier** — to identify the property. In XS in C, you can access properties directy with property identifiers through the `xsGet`, `xsSet` etc macros described below.
+Otherwise the string or symbol value of a property key is stored into a table and XS uses the resulting table index – a.k.a. the property **identifier** — to identify the property. In XS in C, you can access properties directly with property identifiers through the `xsGet`, `xsSet` etc macros described below.
 
 ```c
 typedef uint16_t xsIdentifier;
@@ -800,6 +800,9 @@ This section describes the macros related to accessing properties of objects (or
     <tr>
       <td><code>xsNew0</code> ... <code>xsNew7, xsmcNew</code></td>
       <td>Calls the constructor referred to by a property of an instance</td>
+    </tr>
+      <td><code>xsNewFunction0</code> ... <code>xsNewFunction2</code></td>
+      <td>Calls the constructor</td>
     </tr>
     <tr>
       <td><code>xsTest, xsmcTest</code></td>
@@ -999,7 +1002,7 @@ if (xsHasIndex(xsThis, 7));
 
 #### xsGet
 
-To get a property of an instance by identifer, use the `xsGet` macro.
+To get a property of an instance by identifier, use the `xsGet` macro.
 
 **`xsSlot xsGet(xsSlot theThis, xsIdentifier theID)`**
 
@@ -1455,6 +1458,37 @@ xsmcSetInteger(xsVar(2), 3);
 xsmcNew(xsResult, xsGlobal, xsID_foo, &xsVar(0), NULL);
 xsmcNew(xsResult, xsThis, xsID("foo"), &xsVar(0), NULL);
 xsmcNew(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
+```
+
+***
+
+<a id="xsnewfunction"></a>
+#### xsNewFunction*
+
+Given a reference to a constructor, you can call the constructor with one of the `xsNewFunction*` macros (where `*` is `0` through `2`, representing the number of parameter slots passed). If it is not a reference to a constructor, the `xsNewFunction*` macro throws an exception.
+
+**`xsSlot xsNewFunction0(xsSlot function)`**<BR>
+**`xsSlot xsNewFunction1(xsSlot function, xsSlot theParam0)`**<BR>
+**`xsSlot xsNewFunction2(xsSlot function, xsSlot theParam0, xsSlot theParam1)`**<BR>
+
+
+##### In ECMAScript:
+
+```javascript
+class C {};
+let c = foo(C, 1);
+
+function foo(C, x) {
+	return new C(x);
+}
+```
+
+##### In C:
+
+```c
+void xs_foo(xsMachine* the) {
+	xsResult = xsNewFunction1(xsArg(0), xsArg(1));
+}
 ```
 
 ***
@@ -1962,7 +1996,7 @@ Regarding the parameters of the machine that are specified in the `xsCreation` s
 
 - Some XS hosts attempt to grow the slot and chunk heaps without limit at runtime to accommodate the memory needs of the hosted scripts; others limit the maximum memory that may be allocated to the machine. For the latter, the `staticSize` defines the total number of bytes that may be allocated for the combination of chunks and slots, which includes the stack. In general, only hosts running on resource constrained devices implement `staticSize`.
 
-- When creating the machine also allocates a task,  `nativeStackSize` indicates the mimimum size in bytes for the native stack. 
+- When creating the machine also allocates a task,  `nativeStackSize` indicates the minimum size in bytes for the native stack.
 
 ***
 
@@ -2067,7 +2101,7 @@ A host object is an XS object that has a data pointer that can only be accessed 
 
 Host data is a pointer stored by XS in a host object. The pointer and data it points to are managed entirely by the host object's C code. XS stores the pointer but does not access it in any way. Host data is usually allocated with `malloc`/`calloc`, but this isn't required. Host data is disposed by the host object's destructor.
 
-A host chunk is memory allocated by XS in its chunk heap for use by a host object from its native C code. XS garbage collects this storage when the host object is garbage collected. The memory is relocatable (like all XS chunks), so unlike Host Data it avoids losing memory to fragmentation. However, it requires some extra attention because the pointer may be invalidated when the garbage collector compacts memory. Therefore, C code needs to refetch the pointer after any operation which might trigger a garbage collection. Because the chunk pointer can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving. The [Rectangle example](#rectangle-example) shows how to use a host chunk. 
+A host chunk is memory allocated by XS in its chunk heap for use by a host object from its native C code. XS garbage collects this storage when the host object is garbage collected. The memory is relocatable (like all XS chunks), so unlike Host Data it avoids losing memory to fragmentation. However, it requires some extra attention because the pointer may be invalidated when the garbage collector compacts memory. Therefore, C code needs to refetch the pointer after any operation which might trigger a garbage collection. Because the chunk pointer can move, it can only be used inside an XS callback; accessing it from an interrupt, for example, is unsafe because it could be moving. The [Rectangle example](#rectangle-example) shows how to use a host chunk.
 
 Implementing a host object using host data is easier than a host chunk, but potentially less memory efficient.
 

@@ -44,6 +44,7 @@ static void fx_assert_throws(xsMachine *the);
 #endif
 #if FUZZILLI
 static void fx_memoryFail(txMachine *the);
+static void fx_fuzzilli(xsMachine* the);
 #endif
 extern int gxStress;
 int gxMemoryFail;		// not thread safe
@@ -62,6 +63,8 @@ void fxBuildFuzz(xsMachine* the)
 #if FUZZILLI
 	xsResult = xsNewHostFunction(fx_memoryFail, 1);
 	xsSet(xsGlobal, xsID("memoryFail"), xsResult);
+	xsResult = xsNewHostFunction(fx_fuzzilli, 2);
+	xsSet(xsGlobal, xsID("fuzzilli"), xsResult);
 #endif
 
 	xsResult = xsNewHostFunction(fx_petrify, 1);

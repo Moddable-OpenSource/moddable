@@ -20,8 +20,7 @@
 
 import config from "mc/config"
 import ChatWebSocketWorker from "ChatWebSocketWorker";
-
-function toALaw(src, dst) @ "xs_alaw_encode";
+import {Encode} from "ChatAudioIO/Codecs";
 
 const audioPrefix = Object.freeze(new Uint8Array(ArrayBuffer.fromString(`{"type":"input_audio_buffer.append","audio":"`)), true);
 const audioSuffix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}')), true);
@@ -76,7 +75,7 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	}	
 	sendAudio(message) {
 		const buffer = new Uint8Array(this.inputBuffer, message.offset, message.size);
-		toALaw(buffer, buffer),
+		Encode.toAlaw(buffer, buffer);
 		message.size >>= 1; 
 		return super.sendAudio(message);
 	}

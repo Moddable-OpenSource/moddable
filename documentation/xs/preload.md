@@ -265,7 +265,7 @@ These objects cannot be stored in flash. However, they maybe used during preload
 
 It is possible to modify the behavior of built-in objects before they are frozen by using a preloaded module since built-in objects are not frozen until preload is complete.  This allows for the extension of built-in object behavior.
 
-For example, the `Error.protoype.name` property is an ordinary property (as specified by [ECMA-262](https://tc39.es/ecma262/#sec-error.prototype.name)), which when frozen will result in throwing an error when attempting to write to `name`:
+For example, the `Error.prototype.name` property is an ordinary property (as specified by [ECMA-262](https://tc39.es/ecma262/#sec-error.prototype.name)), which when frozen will result in throwing an error when attempting to write to `name`:
 
 
 ```js

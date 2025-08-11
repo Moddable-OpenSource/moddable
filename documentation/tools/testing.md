@@ -425,7 +425,7 @@ When writing tests that use the network, the first step is to make sure the micr
 
 ```js
 /*---
-flags: [module,aync]
+flags: [module,async]
 ---*/
 import {Client} from "http";
 await $NETWORK.connected;

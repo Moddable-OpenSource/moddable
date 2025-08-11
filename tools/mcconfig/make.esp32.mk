@@ -39,7 +39,7 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v5.4
+EXPECTED_ESP_IDF ?= v5.5
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -157,6 +157,7 @@ DRIVER_DIRS = \
 	$(IDF_PATH)/components/esp_driver_i2s/include \
 	$(IDF_PATH)/components/esp_driver_ledc/include \
 	$(IDF_PATH)/components/esp_driver_mcpwm/include \
+	$(IDF_PATH)/components/esp_driver_parlio/include \
 	$(IDF_PATH)/components/esp_driver_pcnt/include \
 	$(IDF_PATH)/components/esp_driver_rmt/include \
 	$(IDF_PATH)/components/esp_driver_sdmmc/include \
@@ -192,6 +193,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_rom/include \
 	$(IDF_PATH)/components/esp_rom/include/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/esp_rom/$(ESP32_SUBCLASS)/include/$(ESP32_SUBCLASS) \
 	$(IDF_PATH)/components/esp_system/include \
 	$(IDF_PATH)/components/esp_timer/include \
 	$(IDF_PATH)/components/esp_wifi/include \
@@ -204,8 +206,8 @@ INC_DIRS = \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos \
  	$(IDF_PATH)/components/freertos/FreeRTOS-Kernel/portable/$(ESP_ARCH)/include/freertos \
 	$(IDF_PATH)/components/freertos/esp_additions/include \
-	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/$(ESP32_SUBCLASS)/include \
+	$(IDF_PATH)/components/hal/include \
 	$(IDF_PATH)/components/hal/platform_port/include \
 	$(IDF_PATH)/components/heap/include \
 	$(IDF_PATH)/components/log/include \
@@ -540,9 +542,11 @@ ifeq ($(DEBUG),1)
 				CONNECT_XSBUG = $(DO_LAUNCH) && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			else
 				# USE_USB == 2 doesn't use PROGRAMMING_MODE
-				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)"
-				DO_LAUNCH =
-				CONNECT_XSBUG = XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
+				SET_PROGRAMMING_MODE = 
+				DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$PATH\"; \
+							echo $(BEFORE_DEBUGGING_MESSAGE)"
+				CONNECT_XSBUG = $(DO_LAUNCH) && XSBUG_HOST=$(XSBUG_HOST) \
+							serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
 
 			ifeq ("$(XSBUG_LAUNCH)","log")

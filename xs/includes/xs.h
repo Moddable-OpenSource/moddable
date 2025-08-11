@@ -884,7 +884,31 @@ typedef txU4 xsIndex;
 	fxPush(_SLOT7), \
 	fxRunCount(the, 8), \
 	fxPop())
-	
+
+#define xsNewFunction0(_FUNCTION) \
+	(xsOverflow(-XS_FRAME_COUNT-0), \
+	fxPush(_FUNCTION), \
+	fxNew(the), \
+	fxRunCount(the, 0), \
+	fxPop())
+
+#define xsNewFunction1(_FUNCTION,_SLOT0) \
+	(xsOverflow(-XS_FRAME_COUNT-1), \
+	fxPush(_FUNCTION), \
+	fxNew(the), \
+	fxPush(_SLOT0), \
+	fxRunCount(the, 1), \
+	fxPop())
+
+#define xsNewFunction2(_FUNCTION,_SLOT0,_SLOT1) \
+	(xsOverflow(-XS_FRAME_COUNT-2), \
+	fxPush(_FUNCTION), \
+	fxNew(the), \
+	fxPush(_SLOT0), \
+	fxPush(_SLOT1), \
+	fxRunCount(the, 2), \
+	fxPop())
+
 #define xsTest(_SLOT) \
 	(xsOverflow(-1), \
 	fxPush(_SLOT), \

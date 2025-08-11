@@ -583,56 +583,105 @@ txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 	return number;
 }
 
+typedef struct {
+    uint32_t k;
+    uint32_t base_to_k;
+} BaseChunk32;
+
+static const BaseChunk32 base_chunks32[] ICACHE_FLASH_ATTR = {
+    {31, 0x80000000},
+    {19, 1162261467},
+    {15, 1073741824},
+    {13, 1220703125},
+    {12, 2176782336},
+    {11, 1977326743},
+    {10, 1073741824},
+    {10, 3486784401},
+    { 9, 1000000000},		// base 10
+    { 8, 214358881},
+    { 8, 429981696},
+    { 7, 62748517},
+    { 7, 105413504},
+    { 7, 170859375},
+    { 7, 268435456},
+    { 6, 24137569},
+    { 6, 34012224},
+    { 6, 470427017},
+    { 6, 64000000},
+    { 6, 85766121},
+    { 6, 113379904},
+    { 6, 148035889},
+    { 6, 191102976},
+    { 5, 9765625},
+    { 5, 11881376},
+    { 5, 14348907},
+    { 5, 17210368},
+    { 5, 20537907},
+    { 5, 24300000},
+    { 5, 28430241},
+    { 5, 32768000},
+    { 5, 39135393},
+    { 5, 45435424},
+    { 5, 52521875},
+    { 5, 60466176}
+};
+
 void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 {
 	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
-	txU4 data[1] = { 10 };
-	txBigInt divider = { .sign=0, .size=1, .data=data };
 	txSize length, offset;
-	txBoolean minus = 0;
 	txSlot* result;
 	txSlot* stack;
-	
+	if (0 == radix) radix = 10;
+	const BaseChunk32 *bc = base_chunks32 + (radix - 2);
+
 	if (mxBigIntIsNaN(&slot->value.bigint)) {
 		fxStringX(the, slot, "NaN");
 		return;
 	}
-	
-	mxMeterSome(slot->value.bigint.size);
-	
+	mxBigInt_meter(slot->value.bigint.size);
+
 	mxPushUndefined();
 	result = the->stack;
 	
 	mxPushSlot(slot);
+	fxBigInt_dup(the, &the->stack->value.bigint);
 	stack = the->stack;
-	
-	if (radix)
-		divider.data[0] = radix;
-	
-	length = 1 + (txSize)c_ceil((txNumber)stack->value.bigint.size * 32 * c_log(2) / c_log(data[0]));
-	if (stack->value.bigint.sign) {
-		stack->value.bigint.sign = 0;
+
+	length = 1 + bc->k + (txSize)c_ceil((txNumber)stack->value.bigint.size * 32 * c_log(2) / c_log(radix));
+	if (stack->value.bigint.sign)
 		length++;
-		minus = 1;
-	}
 	offset = length;
 	result->value.string = fxNewChunk(the, length);
 	result->kind = XS_STRING_KIND;
 
 	result->value.string[--offset] = 0;
+	int32_t nonZeroWords = stack->value.bigint.size;
 	do {
-		txBigInt* remainder = NULL;
-		txBigInt* quotient = fxBigInt_udiv(the, C_NULL, &stack->value.bigint, &divider, &remainder);
-		result->value.string[--offset] = c_read8(gxDigits + remainder->data[0]);
-        stack->value.bigint = *quotient;
-        stack->kind = XS_BIGINT_KIND;
-		the->stack = stack;
-	}
-	while (!fxBigInt_iszero(&stack->value.bigint));
-	if (minus)
+		uint64_t carry = 0;
+		for (uint32_t i = stack->value.bigint.size - 1, count = nonZeroWords, base_to_k = bc->base_to_k; count > 0; --count) {
+			carry = (carry << 32) | stack->value.bigint.data[i];
+			stack->value.bigint.data[i--] = (uint32_t)(carry / base_to_k);
+			carry %= base_to_k;
+		}
+		uint32_t remainder = (uint32_t)carry, k = bc->k;
+		do {
+			result->value.string[--offset] = c_read8(gxDigits + (remainder % radix));
+            remainder /= radix;
+        } while (--k);
+
+		while (nonZeroWords && (0 == stack->value.bigint.data[stack->value.bigint.size - nonZeroWords]))
+			nonZeroWords -= 1;
+	} while (nonZeroWords);
+
+	while (('0' == result->value.string[offset]) && result->value.string[offset + 1])
+		offset++;
+
+	if (stack->value.bigint.sign)
 		result->value.string[--offset] = '-';
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
-	
+
+	mxPop();
 	mxPop();
 	mxPullSlot(slot);
 }

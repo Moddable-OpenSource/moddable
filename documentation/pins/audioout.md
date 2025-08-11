@@ -179,7 +179,7 @@ A subset of the samples in the buffer may be selected for playback by using the 
 
 #### Enqueuing tones and silence
 
-To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinty` for the sample count to play the tone until `flush`,  `stop`, or `close`.
+To `enqueue` a tone, provide the frequency and number of samples. The square wave will be generated.  The following queues 8000 samples of a 440 Hz A natural. Pass `Infinity` for the sample count to play the tone until `flush`,  `stop`, or `close`.
 
 ```js
 audio.enqueue(0, AudioOut.Tone, 440, 8000);

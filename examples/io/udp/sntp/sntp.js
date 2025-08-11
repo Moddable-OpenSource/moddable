@@ -44,7 +44,6 @@ class SNTP  {
 	close() {
 		if (this.#timer)
 			System.clearInterval(this.#timer);
-		super.close();
 	}
 	#onReadable(count) {
 		const target = this.target;

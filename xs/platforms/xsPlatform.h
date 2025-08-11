@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -224,6 +224,9 @@
 #endif
 #ifndef c_qsort
 	#define c_qsort qsort
+#endif
+#ifndef c_bsearch
+	#define c_bsearch bsearch
 #endif
 #ifndef c_realloc
 	#define c_realloc realloc
