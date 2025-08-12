@@ -720,6 +720,8 @@ static int onGATTMCUExchanged(uint16_t conn_handle, const struct ble_gatt_error 
 		gc->mtu = ble_att_mtu(gc->conn_handle);
 
 	gattClientExecuted(gc, 0);
+
+	return 0;
 }
 
 int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
@@ -782,6 +784,8 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 			}
 			} break;
 	}
+
+	return 0;
 }
 
 void xs_gattclient_connect(xsMachine *the)
