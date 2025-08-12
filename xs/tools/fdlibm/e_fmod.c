@@ -1,5 +1,4 @@
 
-/* @(#)e_fmod.c 1.3 95/01/18 */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -11,14 +10,15 @@
  * ====================================================
  */
 
-//__FBSDID("$FreeBSD: src/lib/msun/src/e_fmod.c,v 1.10 2008/02/22 02:30:34 das Exp $");
-
 /* 
  * __ieee754_fmod(x,y)
  * Return x mod y in exact arithmetic
  * Method: shift and subtract
  */
 
+#include <float.h>
+
+#include "math.h"
 #include "math_private.h"
 
 static const double one = 1.0, Zero[] = {0.0, -0.0,};
@@ -26,19 +26,19 @@ static const double one = 1.0, Zero[] = {0.0, -0.0,};
 double
 __ieee754_fmod(double x, double y)
 {
-	int32_t n,hx,hy,hz,ix,iy,sx,i;
-	u_int32_t lx,ly,lz;
+	int32_t hx, hy, hz, ix, iy, n, sx;
+	u_int32_t lx, ly, lz;
 
 	EXTRACT_WORDS(hx,lx,x);
 	EXTRACT_WORDS(hy,ly,y);
 	sx = hx&0x80000000;		/* sign of x */
-	hx ^=sx;		/* |x| */
-	hy &= 0x7fffffff;	/* |y| */
+	hx ^= sx;			/* |x| */
+	hy &= 0x7fffffff;		/* |y| */
 
     /* purge off exception values */
 	if((hy|ly)==0||(hx>=0x7ff00000)||	/* y=0,or x not finite */
 	  ((hy|((ly|-ly)>>31))>0x7ff00000))	/* or y is NaN */
-	    return (x*y)/(x*y);
+	    return nan_mix_op(x, y, *)/nan_mix_op(x, y, *);
 	if(hx<=hy) {
 	    if((hx<hy)||(lx<ly)) return x;	/* |x|<|y| return x */
 	    if(lx==ly) 
@@ -46,30 +46,16 @@ __ieee754_fmod(double x, double y)
 	}
 
     /* determine ix = ilogb(x) */
-	if(hx<0x00100000) {	/* subnormal x */
-	    if(hx==0) {
-		for (ix = -1043, i=lx; i>0; i<<=1) ix -=1;
-	    } else {
-		for (ix = -1022,i=(hx<<11); i>0; i<<=1) ix -=1;
-	    }
-	} else ix = (hx>>20)-1023;
+	if(hx<0x00100000)
+	    ix = subnormal_ilogb(hx, lx);
+	else
+	    ix = (hx>>20)-1023;
 
     /* determine iy = ilogb(y) */
-	if(hy<0x00100000) {	/* subnormal y */
-	    if(hy==0) {
-		for (iy = -1043, i=ly; i>0; i<<=1) {
-			iy -=1;
-			if(i&0x40000000)
-				break;
-		}
-	    } else {
-		for (iy = -1022,i=(hy<<11); i>0; i<<=1) {
-			iy -=1;
-			if(i&0x40000000)
-				break;
-		}
-	    }
-	} else iy = (hy>>20)-1023;
+	if(hy<0x00100000)
+	    iy = subnormal_ilogb(hy, ly);
+	else
+	    iy = (hy>>20)-1023;
 
     /* set up {hx,lx}, {hy,ly} and align y to x */
 	if(ix >= -1022) 
