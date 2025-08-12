@@ -759,7 +759,9 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 			break;
 
 		case BLE_GAP_EVENT_NOTIFY_RX: {
-			BLEGATTCharacteristicValue value = c_malloc(sizeof(BLEGATTCharacteristicValueRecord) + event->notify_rx.om->om_len);		//@@
+			BLEGATTCharacteristicValue value = c_malloc(sizeof(BLEGATTCharacteristicValueRecord) + event->notify_rx.om->om_len);
+			if (C_NULL == value)
+				esp_panic_handler();
 			value->next = C_NULL;
 			value->byteLength = event->notify_rx.om->om_len;
 			c_memmove(value->payload, event->notify_rx.om->om_data, value->byteLength);
@@ -818,6 +820,7 @@ static int onGATTServiceDiscovered(uint16_t conn_handle, const struct ble_gatt_e
 			 const struct ble_gatt_svc *svc, void *arg)
 {
 	GATTClient gc = arg;
+	int status = error->status;
 
 	if (svc) {
 		if (gc->primaryServicesUUIDsLength) {
@@ -825,15 +828,18 @@ static int onGATTServiceDiscovered(uint16_t conn_handle, const struct ble_gatt_e
 				return 0;
 		}
 
-		gc->primaryServices = c_realloc(gc->primaryServices, (gc->primaryServicesLength + 1) * sizeof(struct ble_gatt_svc));		//@@ could fail...
-		gc->primaryServices[gc->primaryServicesLength++] = *svc;
+		gc->primaryServices = c_realloc(gc->primaryServices, (gc->primaryServicesLength + 1) * sizeof(struct ble_gatt_svc));
+		if (C_NULL == gc->primaryServices)
+			status = ESP_ERR_NO_MEM;
+		else
+			gc->primaryServices[gc->primaryServicesLength++] = *svc;
 	}
 
-	if (error->status) {
+	if (status) {
 		if (BLE_HS_EDONE == error->status)
 			gattClientExecuted(gc, 0);
 		else
-			gattClientExecuted(gc, error->status);
+			gattClientExecuted(gc, status);
 	}
 
 	return 0;
@@ -869,6 +875,7 @@ void xs_gattclient_getPrimaryServices(xsMachine *the)
 static int onGATTCharacteristicDiscovered(uint16_t conn_handle, const struct ble_gatt_error *error, const struct ble_gatt_chr *chr, void *arg)
 {
 	GATTClient gc = arg;
+	int status = error->status;
 
 	if (chr) {
 		if (gc->characteristicsUUIDsLength) {
@@ -876,15 +883,18 @@ static int onGATTCharacteristicDiscovered(uint16_t conn_handle, const struct ble
 				return 0;
 		}
 
-		gc->characteristics = c_realloc(gc->characteristics, (gc->characteristicsLength + 1) * sizeof(struct ble_gatt_chr));		//@@ could fail...
-		gc->characteristics[gc->characteristicsLength++] = *chr;
+		gc->characteristics = c_realloc(gc->characteristics, (gc->characteristicsLength + 1) * sizeof(struct ble_gatt_chr));
+		if (C_NULL == gc->characteristics)
+			status = ESP_ERR_NO_MEM;
+		else
+			gc->characteristics[gc->characteristicsLength++] = *chr;
 	}
 
-	if (error->status) {
-		if (BLE_HS_EDONE == error->status)
+	if (status) {
+		if (BLE_HS_EDONE == status)
 			gattClientExecuted(gc, 0);
 		else
-			gattClientExecuted(gc, error->status);
+			gattClientExecuted(gc, status);
 	}
 
 	return 0;
@@ -922,6 +932,7 @@ void xs_gattclient_getCharacteristics(xsMachine *the)
 static int onGATTDescriptorDiscovered(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc, void *arg)
 {
 	GATTClient gc = arg;
+	int status = error->status;
 	static const ble_uuid16_t uuid_declaration = BLE_UUID16_INIT(0x2803);
 
 	if (dsc) {
@@ -935,15 +946,18 @@ static int onGATTDescriptorDiscovered(uint16_t conn_handle, const struct ble_gat
 				return 0;
 		}
 
-		gc->descriptors = c_realloc(gc->descriptors, (gc->descriptorsLength + 1) * sizeof(struct ble_gatt_dsc));		//@@ could fail...
-		gc->descriptors[gc->descriptorsLength++] = *dsc;
+		gc->descriptors = c_realloc(gc->descriptors, (gc->descriptorsLength + 1) * sizeof(struct ble_gatt_dsc));
+		if (C_NULL == gc->descriptors)
+			status = ESP_ERR_NO_MEM;
+		else
+			gc->descriptors[gc->descriptorsLength++] = *dsc;
 	}
 
-	if (error->status) {
-		if (BLE_HS_EDONE == error->status)
+	if (status) {
+		if (BLE_HS_EDONE == status)
 			gattClientExecuted(gc, 0);
 		else
-			gattClientExecuted(gc, error->status);
+			gattClientExecuted(gc, status);
 	}
 
 	return 0;
@@ -977,14 +991,18 @@ void xs_gattclient_getDescriptors(xsMachine *the)
 static int onGATTRead(uint16_t conn_handle, const struct ble_gatt_error *error, struct ble_gatt_attr *attr, void *arg)
 {
 	GATTClient gc = arg;
+	int status = error->status;
 
-	if (0 == error->status) {
+	if (0 == status) {
 		gc->readResultByteLength = OS_MBUF_PKTLEN(attr->om);
-		gc->readResult = c_malloc(gc->readResultByteLength);		//@@
-		os_mbuf_copydata(attr->om, 0, gc->readResultByteLength, gc->readResult);
+		gc->readResult = c_malloc(gc->readResultByteLength);
+		if (C_NULL == gc->readResult)
+			status = ESP_ERR_NO_MEM;
+		else
+			os_mbuf_copydata(attr->om, 0, gc->readResultByteLength, gc->readResult);
 	}
 
-	gattClientExecuted(gc, error->status);
+	gattClientExecuted(gc, status);
 
 	return 0;
 }
