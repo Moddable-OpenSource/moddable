@@ -25,7 +25,8 @@
 	],
 	"defines": {
 		"ble": {
-			"client": true
+			"client": true,
+			"server": true
 		}
 	},
 	"platforms": {
