@@ -58,16 +58,16 @@ typedef uint8_t PiuAspect;
 
 typedef uint8_t PiuBoolean;
 typedef uint32_t PiuFlags;
-typedef uint32_t PiuSize;
-typedef double PiuState;
 typedef int32_t PiuVariant;
 
 #ifdef piuPC
 	typedef double PiuTick;
 	typedef double PiuInterval;
+	typedef double PiuState;
 #else
 	typedef uint32_t PiuTick;
 	typedef int32_t PiuInterval;
+	typedef float PiuState;
 #endif
 
 typedef struct PiuCoordinatesStruct PiuCoordinatesRecord, *PiuCoordinates;
@@ -360,29 +360,25 @@ extern void PiuBehaviorOnTouchID(void* it, xsIdentifier id, xsIntegerValue index
 
 enum {
 	piuBackgroundTouch = 1 << 0,
-	piuHost = 1 << 1,
-	piuMessaging = 1 << 2,
-	piuVisible = 1 << 3,
-	piuActive = 1 << 4,
-	piuClip = 1 << 5,
-	piuExclusiveTouch = 1 << 6,
-	piuMultipleTouch = 1 << 7,
-	piuDisplaying = 1 << 8,
-	piuHasOwnStyle = 1 << 9,
-	piuContainer = 1 << 10,
-	piuIdling = 1 << 11,
-	piuPlaced = 1 << 12,
-	piuXChanged = 1 << 13,
-	piuYChanged = 1 << 14,
-	piuWidthChanged = 1 << 15,
-	piuHeightChanged = 1 << 16,
-	piuLoop = 1 << 17,
-	piuFocusable = 1 << 18,
-	piuView = 1 << 19,
-	piuContentsPlaced = 1 << 20,
-	piuContentsHorizontallyChanged = 1 << 21,
-	piuContentsVerticallyChanged = 1 << 22,
-	piuDisplayed = 1 << 23,
+	piuVisible = 1 << 1,
+	piuActive = 1 << 2,
+	piuClip = 1 << 3,
+	piuExclusiveTouch = 1 << 4,
+	piuMultipleTouch = 1 << 5,
+	piuDisplaying = 1 << 6,
+	piuHasOwnStyle = 1 << 7,
+	piuContainer = 1 << 8,
+	piuIdling = 1 << 9,
+	piuPlaced = 1 << 10,
+	piuXChanged = 1 << 11,
+	piuYChanged = 1 << 12,
+	piuWidthChanged = 1 << 13,
+	piuHeightChanged = 1 << 14,
+	piuLoop = 1 << 15,
+	piuView = 1 << 16,
+	piuContentsPlaced = 1 << 17,
+	piuContentsHorizontallyChanged = 1 << 18,
+	piuContentsVerticallyChanged = 1 << 19,
 
 	piuPositionChanged = piuXChanged | piuYChanged,
 	piuSizeChanged = piuWidthChanged | piuHeightChanged,
@@ -391,25 +387,25 @@ enum {
 	piuContentsChanged = piuContentsHorizontallyChanged | piuContentsVerticallyChanged,
 
 	/* Row, Column */
-	piuHorizontal = 1 << 24,
-	piuVertical = 1 << 25,
+	piuHorizontal = 1 << 20,
+	piuVertical = 1 << 21,
 
 	/* Label */
-	piuLabelEllipsis = 1 << 24,
+	piuLabelEllipsis = 1 << 20,
 
 	/* Scroller */
-	piuLooping = 1 << 24,
-	piuXScrolled = 1 << 25,
-	piuYScrolled = 1 << 26,
-	piuTracking = 1 << 27,
+	piuLooping = 1 << 20,
+	piuXScrolled = 1 << 21,
+	piuYScrolled = 1 << 22,
+	piuTracking = 1 << 23,
 	
 	piuScrolled = piuXScrolled | piuYScrolled,
 
 	/* Window */
-	piuAdjusting = 1 << 24,
-	piuMenusChanged = 1 << 25,
+	piuAdjusting = 1 << 20,
+	piuMenusChanged = 1 << 21,
 	
-	piuOrderChanged = 1 << 28,
+	piuOrderChanged = 1 << 22,
 };
 
 
@@ -463,11 +459,11 @@ struct PiuDispatchStruct {
 	
 #define PiuBehaviorPart \
 	xsMachine* the; \
-	PiuFlags flags; \
+	uint32_t flags:26; \
+	uint32_t touches:6; \
 	xsSlot* behavior; \
 	PiuContainer* container; \
 	PiuState state; \
-	PiuFlags touches; \
 	PiuApplication* application
 
 #define PiuContentPart \

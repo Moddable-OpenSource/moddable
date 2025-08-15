@@ -157,7 +157,7 @@ void PiuPort_set_skin(xsMachine *the)
 void PiuPort_set_state(xsMachine *the)
 {
 	PiuPort* self = PIU(Port, xsThis);
-	(*self)->state = xsToNumber(xsArg(0));
+	(*self)->state = (PiuState)xsToNumber(xsArg(0));
 }
 
 void PiuPort_set_variant(xsMachine *the)

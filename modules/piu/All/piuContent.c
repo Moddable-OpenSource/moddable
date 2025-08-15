@@ -265,7 +265,7 @@ void PiuContentDictionary(xsMachine* the, void* it)
 		}
 	}
 	if (xsFindNumber(xsArg(1), xsID_state, &number))
-		(*self)->state = number;
+		(*self)->state = (PiuState)number;
 	if (xsFindInteger(xsArg(1), xsID_variant, &integer))
 		(*self)->variant = (PiuVariant)integer;
 }
@@ -1135,7 +1135,7 @@ void PiuContent_set_skin(xsMachine *the)
 void PiuContent_set_state(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	PiuState state = xsToNumber(xsArg(0));
+	PiuState state = (PiuState)xsToNumber(xsArg(0));
 	if ((*self)->state != state) {
 		(*self)->state = state;
 		(*(*self)->dispatch->invalidate)(self, NULL);
