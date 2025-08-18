@@ -92,77 +92,73 @@ globalThis.device = Object.freeze({
 }, true);
 
 export default function() {
-	try {
-		const r = new ArchiveResource(0);		// mod is in resource 0 in example. make this configurable.
-		state.archive = r.archive;
-		console.log(`Found mod "${state.archive.name}"`);
+	Timer.delay(500);
 
-		const globals = {
-			console,
-			clearImmediate,
-			clearTimeout: clearImmediate,
-			clearInterval: clearImmediate,
-			setImmediate,
-			setInterval,
-			setTimeout,
-			screen,
-			Date,
-			Math,
-			Resource: ResourceArchive,
-			Pebble: new Pebble,
+	state.archive = (new ArchiveResource(0))?.archive;
+	console.log(`Found mod "${state.archive.name}"`);
 
-			// network
-			device,
-			fetch,
-			URL,
-			URLSearchParams,
-			WebSocket,
+	const globals = {
+		console,
+		clearImmediate,
+		clearTimeout: clearImmediate,
+		clearInterval: clearImmediate,
+		setImmediate,
+		setInterval,
+		setTimeout,
+		screen,
+		Date,
+		Math,
+		Resource: ResourceArchive,
+		Pebble: new Pebble,
 
-			// Piu
-			Application,
-			Behavior,
-			Column,
-			Container,
-			Content,
-			Label,
-			Link,
-			Port,
-			Row,
-			Skin,
-			Style: StyleArchive,
-			Text,
-			Texture: TextureArchive,
-			Inverter,
-			RoundRect,
-			SVGImage,
-			Inverter,
-			RoundRect,
-			Transition
-		};
+		// network
+		device,
+		fetch,
+		URL,
+		URLSearchParams,
+		WebSocket,
 
-		Object.defineProperty(globals, "localStorage", {
-			enumerable: true,
-			configurable: true,
-			get() {
-				state.localStorage ??= new WebStorage(KV.open({path: `local-${AppInfo.uuid}`}));
-				return state.localStorage;
-			}
-		});
+		// Piu
+		Application,
+		Behavior,
+		Column,
+		Container,
+		Content,
+		Label,
+		Link,
+		Port,
+		Row,
+		Skin,
+		Style: StyleArchive,
+		Text,
+		Texture: TextureArchive,
+		Inverter,
+		RoundRect,
+		SVGImage,
+		Inverter,
+		RoundRect,
+		Transition
+	};
 
-		const mod = new ArchiveCompartment(state.archive, {
-			globals,
-			modules: {},
-			loadNowHook(specifier) {
-				if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
-					throw new Error(specifier + " blocked in watchface");
+	Object.defineProperty(globals, "localStorage", {
+		enumerable: true,
+		configurable: true,
+		get() {
+			state.localStorage ??= new WebStorage(KV.open({path: `local-${AppInfo.uuid}`}));
+			return state.localStorage;
+		}
+	});
 
-				return {namespace: specifier};		// map through host modules
-			}
-		});
-		mod.importNow("main");
-	}
-	catch (e) {
-		console.log(`Error loading mod in app "${AppInfo.name}": ${e}`);
-		console.log(e.stack);
-	}
+	const mod = new ArchiveCompartment(state.archive, {
+		globals,
+		modules: {},
+		loadNowHook(specifier) {
+			if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
+				throw new Error(specifier + " blocked in watchface");
+
+			return {namespace: specifier};		// map through host modules
+		}
+	});
+
+	Timer.set(() => mod.importNow("main"));
 }
