@@ -121,7 +121,8 @@ XSBUG_LOG_PORT = 5002
 BASE_DIR = $(USERPROFILE)
 !ENDIF
 
-!IF [cd /D $(IDF_PATH) && git describe --always --abbrev=0 > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+# !IF [cd /D $(IDF_PATH) && git describe --always --abbrev=0 > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
+!IF [cd /D $(IDF_PATH) && idf.py --version > $(TMP_DIR)\_idf_version.tmp 2> nul] == 0
 IDF_VERSION = \
 !INCLUDE $(TMP_DIR)\_idf_version.tmp
 !IF [del $(TMP_DIR)\_idf_version.tmp] == 0
@@ -218,6 +219,7 @@ DRIVER_DIRS = \
  	-I$(IDF_PATH)\components\esp_driver_i2s\include \
  	-I$(IDF_PATH)\components\esp_driver_ledc\include \
  	-I$(IDF_PATH)\components\esp_driver_mcpwm\include \
+ 	-I$(IDF_PATH)\components\esp_driver_parlio\include \
  	-I$(IDF_PATH)\components\esp_driver_pcnt\include \
  	-I$(IDF_PATH)\components\esp_driver_rmt\include \
  	-I$(IDF_PATH)\components\esp_driver_sdmmc\include \
@@ -252,6 +254,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_rom\include \
  	-I$(IDF_PATH)\components\esp_rom\include\$(ESP32_SUBCLASS) \
  	-I$(IDF_PATH)\components\esp_rom\$(ESP32_SUBCLASS)\include \
+ 	-I$(IDF_PATH)\components\esp_rom\$(ESP32_SUBCLASS)\include\$(ESP32_SUBCLASS) \
  	-I$(IDF_PATH)\components\esp_system\include \
  	-I$(IDF_PATH)\components\esp_timer\include \
  	-I$(IDF_PATH)\components\esp_wifi\include \
@@ -608,8 +611,7 @@ DEPLOY_END:
 deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION) - continuing")
-#	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
+	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
 xidfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
