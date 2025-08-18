@@ -1,6 +1,6 @@
 import Timer from "timer"
 import Resource from "Resource"
-import {Rocky} from "pebble/graphics"
+import Pebble from "pebble/global"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
 import KV from "embedded:storage/key-value";
@@ -92,8 +92,6 @@ globalThis.device = Object.freeze({
 }, true);
 
 export default function() {
-	const rocky = new Rocky({});
-
 	try {
 		const r = new ArchiveResource(0);		// mod is in resource 0 in example. make this configurable.
 		state.archive = r.archive;
@@ -107,11 +105,11 @@ export default function() {
 			setImmediate,
 			setInterval,
 			setTimeout,
-			rocky,
 			screen,
 			Date,
 			Math,
 			Resource: ResourceArchive,
+			Pebble: new Pebble,
 
 			// network
 			device,
@@ -137,6 +135,8 @@ export default function() {
 			Inverter,
 			RoundRect,
 			SVGImage,
+			Inverter,
+			RoundRect,
 			Transition
 		};
 

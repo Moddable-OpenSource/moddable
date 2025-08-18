@@ -54,6 +54,10 @@ struct PocoPebbleRecord {
 typedef struct PocoPebbleRecord PocoPebbleRecord;
 typedef struct PocoPebbleRecord *PocoPebble;
 
+static void updateStub(Layer *layer, GContext *ctx)
+{
+}
+
 static PocoPebble getPocoPebble(Poco poco)
 {
 	if (poco->next)
@@ -63,6 +67,9 @@ static PocoPebble getPocoPebble(Poco poco)
 	pp->ctx = app_state_get_graphics_context();
 
 	pp->window = window_stack_get_top_window(app_state_get_window_stack());		//@@ incorrect for offscreen buffers
+
+	Layer *layer = window_get_root_layer(pp->window);
+	layer_set_update_proc(layer, updateStub);
 
 	poco->next = (void *)pp;
 	return pp;
