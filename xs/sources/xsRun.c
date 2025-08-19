@@ -892,6 +892,10 @@ XS_CODE_JUMP:
 							fxRunDerived(the);
 						(*(slot->value.callback.address))(the);
 						mxRestoreState;
+						if (mxCode) {
+							byte = *mxCode;
+							mxBreak;
+						}
 			#if defined(mxInstrument) || defined(mxProfile)
 						fxCheckProfiler(the, mxFrame);
 			#endif
@@ -950,6 +954,10 @@ XS_CODE_JUMP:
 #endif
 				(*(slot->value.hostFunction.builder->callback))(the);
 				mxRestoreState;
+				if (mxCode) {
+					byte = *mxCode;
+					mxBreak;
+				}
 				slot = mxFrameResult;
 				goto XS_CODE_END_ALL;
 			}
