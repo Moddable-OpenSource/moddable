@@ -10,6 +10,7 @@
 			  "$(PIU)/Pebble/piuInverter",
 			  "$(PIU)/Pebble/piuRoundRect",
 			  "$(PIU)/Pebble/piuSVGImage",
+			  "$(PIU)/Pebble/piuScreenBuffer",
 			  "$(PIU)/Pebble/piuTexture",
 			  "$(PIU)/Pebble/piuView"
 		]

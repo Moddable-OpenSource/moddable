@@ -138,6 +138,14 @@ RoundRect.bottomRight = 8;
 Object.freeze(roundRect);
 globalThis.RoundRect = RoundRect;
 
+const screenBuffer = {
+	__proto__: Content.prototype,
+	_create($, it) @ "PiuScreenBuffer_create",
+};
+export const ScreenBuffer = Template(screenBuffer);
+Object.freeze(screenBuffer);
+globalThis.ScreenBuffer = ScreenBuffer;
+
 const svgImage = {
 	__proto__: Content.prototype,
 	_create($, it) @ "PiuSVGImage_create",

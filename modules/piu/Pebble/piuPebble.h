@@ -1,6 +1,7 @@
 #include "piuAll.h"
 #include "mc.defines.h"
 
+#include "applib/graphics/bitblt.h"
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gdraw_command_image.h"
 #include "applib/graphics/gdraw_command_sequence.h"
