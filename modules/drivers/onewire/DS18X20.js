@@ -77,6 +77,7 @@ export class DS18X20 {
     for (let i = 0, length = bytes.length; i < length; i++) {
       bus.write(bytes[i]);
     }
+    bus.reset(); 
     bus.select(this.id);
     bus.write(0x48); // Copy to scratch pad
     bus.reset();

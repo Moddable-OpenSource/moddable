@@ -357,7 +357,7 @@ At wakeup, an application can check for the cause of wakeup and perform actions 
 
 `wakeup`:`register` specifies which GPIO interrupt register to use.
 
-The various Gecko devices specify port/pin combinations that will wake the device from EM4 sleep. The device's data sheet will specify what pins can be used, and what GPIO interupt register to use.
+The various Gecko devices specify port/pin combinations that will wake the device from EM4 sleep. The device's data sheet will specify what pins can be used, and what GPIO interrupt register to use.
 
 
 ### class Sleep

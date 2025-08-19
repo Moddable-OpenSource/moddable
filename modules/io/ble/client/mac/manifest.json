@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:io/bluetoothle/central": "./bleclient",
+		"*": [
+			"$(MODDABLE)/modules/io/common/builtinCommon"
+		]
+	},
+	"preload": "embedded:io/bluetoothle/central"
+}

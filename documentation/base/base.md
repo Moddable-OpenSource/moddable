@@ -1,6 +1,6 @@
 # Base
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: January 19, 2024
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: August 4, 2025
 
 ## Table of Contents
 
@@ -33,68 +33,72 @@ Each timer has two intervals: the initial interval and a repeat interval. The in
 
 If the repeat interval is zero when the timer's callback returns, the timer is automatically cleared and can no longer be used. The repeat interval may be changed by the callback using `Timer.schedule`.
 
-The `Timer.set` and `Timer.repeat` functions create a new timer and return the ID of the timer. Timer IDs are opaque that are only useful for passing to `Timer` functions.
+The `Timer.set` and `Timer.repeat` functions create a new timer and return a timer instance. Timer instances have no methods and are only useful for passing to `Timer` functions.
 
-Timer callbacks can provide the basic behaviors of `setImmediate`, `setTimeout` and `setInterval`. The [timers example]() shows how to do this.
+Timer callbacks can provide the basic behaviors of `setImmediate`, `setTimeout` and `setInterval`. The [timers example](../../examples/base/timers/) shows how to do this.
 
 ### `Timer.set(callback[, initialInterval, repeatInterval])`
 
-The `set` function requests a function be called once after a certain period. `Timer.set` returns the new timer's ID.
+The `set` function requests a function be called once after a certain period. `Timer.set` returns a new timer instance.
 
-An immediate timer is called on the next cycle through the run loop. To set an immediate timer, call `set` with a single argument.
+An immediate timer is called on the next cycle through the run loop. To set an immediate timer, call `set` with only the `callback` function.
 
 ```js
-Timer.set(id => trace("immediate fired\n"));
+Timer.set(() => trace("immediate fired\n"));
 ```
 
 A one shot timer is called once after a specified number of milliseconds. If the number of milliseconds is zero, a one shot timer is equivalent to an immediate timer.
 
 ```js
-Timer.set(id => trace("one shot fired\n"), 1000);
+Timer.set(() => trace("one shot fired\n"), 1000);
 ```
 
 Calling `set` with a `repeat` is equivalent to a repeating timer with the first callback triggered after the `interval`.
 
 ```js
-Timer.set(id => trace("repeat fired\n"), 1000, 100);
+Timer.set(() => trace("repeat fired\n"), 1000, 100);
 ```
 
-The callback function receives the timer id as the first argument.
+The callback function receives the timer instance as the first argument.
 
-If `Timer.set` is called without the initial interval and repeat interval, it is an immediate one-shot timer (initial and repeat intervals are set to 0). If `Timer.set` is called with only an initial interval, it is a one-shot timer (repeat interval is set to 0). If `Timer.set` is called with both an initial and a non-zero repeat interval, it is a repeating timer.
+- If `Timer.set` is called without the initial interval and repeat interval, it is an immediate one-shot timer (initial and repeat intervals are set to 0). 
+- If `Timer.set` is called with only an initial interval, it is a one-shot timer (repeat interval is set to 0). 
+- If `Timer.set` is called with both an initial and a non-zero repeat interval, it is a repeating timer.
 
 ***
 
 ### `Timer.repeat(callback, repeatInterval)`
 
-A repeating timer is called continuously until stopped using the `Timer.clear` function. `Timer.repeat` returns the new timer's ID.
+A repeating timer is called continuously until stopped using the `Timer.clear` function. `Timer.repeat` returns a new timer instance.
 
 ```js
-Timer.repeat(id => trace("repeat fired\n"), 1000);
+Timer.repeat(() => trace("repeat fired\n"), 1000);
 ```
 
-The callback function receives the timer id as the first argument.
+The callback function receives the timer instance as the first argument.
 
 This function sets both the initial interval and repeat interval to the value specified by `repeatInterval`. Use `Timer.set` to create a timer with an initial interval that is different from the repeat interval.
 
 ***
 
-### `Timer.schedule(id [, initialInterval[, repeatInterval]])`
+### `Timer.schedule(timer [, initialInterval[, repeatInterval]])`
 
 The `schedule` function reschedules or unschedules an existing timer.
 
-If called with an initial interval but no repeat interval, the timer behaves like a one shot timer created with `Timer.set`. If called with both an initial interval and non-zero repeat interval, it behaves like a repeating timer created with `Timer.set` with both initial interval and repeat interval arguments. If called without interval arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule` (an unscheduled timer is considered to have infinite initial and repeat intervals).
+- If called with an initial interval but no repeat interval, the timer behaves like a one shot timer created with `Timer.set`.
+- If called with both an initial interval and non-zero repeat interval, it behaves like a repeating timer created with `Timer.set` with both initial interval and repeat interval arguments. 
+- If called without interval arguments, the timer is unscheduled and will not trigger until rescheduled using `Timer.schedule` (an unscheduled timer is considered to have infinite initial and repeat intervals).
 
 In the following example, the callback function is triggered twice at one second intervals and then rescheduled to once every two seconds.
 
 ```js
 let state = 0;
-Timer.repeat(id => {
-	if (0 == state)
+Timer.repeat(timer => {
+	if (0 === state)
 		state = 1;
-	else if (1 == state) {
+	else if (1 === state) {
 		state = 2;
-		Timer.schedule(id, 2000, 2000);
+		Timer.schedule(timer, 2000, 2000);
 	}
 }, 1000);
 ```
@@ -105,18 +109,18 @@ When `Timer.schedule` is used to set the initial interval, the callback is next 
 
 ***
 
-### `Timer.clear(id)`
+### `Timer.clear(timer)`
 
-The `clear` function cancels a timer. The `Timer.set` and `Timer.repeat` functions returns the ID for a timer, which is then passed to clear.
+The `clear` function cancels a timer. The `Timer.set` and `Timer.repeat` functions returns a timer instance, which is then passed to clear.
 
 ```js
-let aTimer = Timer.set(id => trace("one shot\n"), 1000);
+let aTimer = Timer.set(() => trace("one shot\n"), 1000);
 Timer.clear(aTimer);
 ```
 
 > **Note**: Immediate and one shot timers are automatically cleared after invoking their callback function. There is no need to call `clear` except to cancel the timer before it fires.
 
-> **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the ID, no exception is generated.
+> **Note**: If `Timer.clear` is passed a value of `undefined` or `null` for the timer, no exception is generated.
 
 ***
 

@@ -676,46 +676,50 @@ void fx_callbackTimer(txSharedTimer* timer, void* refcon, txInteger refconSize)
 {
 	txJob* job = (txJob*)refcon;
 	txMachine* the = job->the;
-	fxBeginHost(the);
-	mxTry(the) {
-		if (timer->interval == 0) {
-			fxAccess(the, &job->self);
-			*mxResult = the->scratch;
-			fxSetHostData(the, mxResult, NULL);
+	if (the) {
+		fxBeginHost(the);
+		mxTry(the) {
+			mxPushUndefined();
+			mxPush(job->function);
+			mxCall();
+			mxPush(job->argument);
+			mxRunCount(1);
+			mxPop();
 		}
-
-		mxPushUndefined();
-		mxPush(job->function);
-		mxCall();
-		mxPush(job->argument);
-		mxRunCount(1);
-		mxPop();
+		mxCatch(the) {
+			*((txSlot*)the->rejection) = mxException;
+			timer->interval = 0;
+		}
+		if (job->the) {
+			if (timer->interval == 0) {
+				fxAccess(the, &job->self);
+				*mxResult = the->scratch;
+				fxForget(the, &job->self);
+				fxSetHostData(the, mxResult, NULL);
+				job->the = NULL;
+			}
+		}
+		else
+			timer->interval = 0;
+		fxEndHost(the);
 	}
-	mxCatch(the) {
-		*((txSlot*)the->rejection) = mxException;
+	else
 		timer->interval = 0;
-	}
-	if (timer->interval == 0) {
-		fxAccess(the, &job->self);
-		*mxResult = the->scratch;
-		fxForget(the, &job->self);
-	}
-	fxEndHost(the);
 }
 
 void fx_clearTimer(txMachine* the)
 {
 	if ((0 == mxArgc) || (XS_REFERENCE_KIND != mxArgv(0)->kind) || (C_NULL == fxGetHostDataIf(the, mxArgv(0))))
 		return;
-
 	txHostHooks* hooks = fxGetHostHooks(the, mxArgv(0));
 	if (hooks == &gxTimerHooks) {
-		txSharedTimer* timer = fxGetHostData(the, mxArgv(0));
-		if (timer) {
-			txJob* job = (txJob*)&(timer->refcon[0]);
+		txJob* job = fxGetHostData(the, mxArgv(0));
+		if (job) {
 			fxForget(the, &job->self);
 			fxSetHostData(the, mxArgv(0), NULL);
-			fxUnscheduleSharedTimer(timer);
+			job->the = NULL;
+			txSharedTimer* timer = (txSharedTimer*)(((txByte*)job) - offsetof(txSharedTimer, refcon));
+			fxRescheduleSharedTimer(timer, 0, 0);
 		}
 	}
 }
@@ -763,7 +767,7 @@ void fx_setTimer(txMachine* the, txNumber interval, txBoolean repeat)
 		job->argument = *mxArgv(2);
 	else
 		job->argument = mxUndefined;
-	fxSetHostData(the, &job->self, timer);
+	fxSetHostData(the, &job->self, job);
 	fxSetHostHooks(the, &job->self, &gxTimerHooks);
 	fxRemember(the, &job->self);
 	fxAccess(the, &job->self);

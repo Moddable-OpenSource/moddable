@@ -205,15 +205,50 @@ class HTTPClient {
 	#onReadable(count) {
 		this.#readable = count;
 
-		while (this.#readable) {
+		do {
 			if (undefined !== this.#line) {
 				this.#socket.format = "number";
+			readable:
 				while (this.#readable--) {
 					const c = this.#socket.read();
-					this.#line += String.fromCharCode(c);
-					if (10 === c)
-						break;
+					switch (this.#state) {
+						case "receiveHeader":
+							if (58 === c) {		// :
+								const name = this.#line = this.#line.toLowerCase();
+
+								if ((name !== "content-length") && (name !== "transfer-encoding") && (false === this.#current.headersMask?.includes(name))) {
+									this.#headers.name = -1;
+									this.#line = 0;
+									this.#state = "skipHeaderValue";
+								}
+								else {
+									this.#headers.name = name;
+									this.#line = "";
+									this.#state = "receiveHeaderValue";
+								}
+							}
+							else {
+								this.#line += String.fromCharCode(c);
+								if (10 === c)
+									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
+							}
+							break;
+						case "skipHeaderValue":
+							if ((10 === c) && (13 === this.#line)) {
+								this.#line = "";
+								this.#state = "receiveHeader";		// on to next header
+							}
+							else
+								this.#line = c;
+							break;
+						default:		// includes "receiveHeaderValue"
+							this.#line += String.fromCharCode(c);
+							if (10 === c)
+								break readable;
+							break;
+					}
 				}
+
 				this.#socket.format = "buffer";
 
 				if (!this.#line.endsWith("\r\n"))
@@ -234,21 +269,24 @@ class HTTPClient {
 					} break;
 
 				case "receiveHeader":
+				case "receiveHeaderValue":
 					if ("\r\n" !== this.#line) {
-						const position = this.#line.indexOf(":");
-						const name = this.#line.substring(0, position).trim().toLowerCase();
-						let data = this.#line.substring(position + 1).trim();
-						this.#headers.set(name, data);
+						const name = this.#headers.name;
+						if (-1 !== name) {
+							const value = this.#line.trim();
+							if (false !== this.#current.headersMask?.includes(name))
+								this.#headers.set(name, value);
 
-						if ("content-length" === name)
-							this.#remaining = parseInt(data);
-						else if ("transfer-encoding" === name) {
-							data = data.toLowerCase();
-							if ("chunked" === data)
-								this.#chunk = 0;
+							if ("content-length" === name)
+								this.#remaining = parseInt(value);
+							else if ("transfer-encoding" === name) {
+								if ("chunked" === value.toLowerCase())
+									this.#chunk = 0;
+							}
 						}
 
 						this.#line = "";
+						this.#state = "receiveHeader";
 					}
 					else {					
 						if ((204 === this.#status) || (205 === this.#status))
@@ -258,6 +296,7 @@ class HTTPClient {
 						else if (undefined === this.#remaining)
 							this.#remaining = Infinity;
 
+						delete this.#headers.name;
 						this.#current.onHeaders?.call(this.#current.request, this.#status, this.#headers, this.#statusText);
 						if (!this.#current) return;			// closed in callback
 
@@ -302,7 +341,7 @@ class HTTPClient {
 				default:
 					throw new Error;		//@@ unexpected
 			}
-		}
+		} while (this.#readable);
 	}
 	#onWritable(count) {
 		this.#writable = count;
@@ -324,7 +363,8 @@ class HTTPClient {
 					this.#next();
 					if ("sendRequest" !== this.#state)
 						break;
-				
+                    // fall through
+
 				case "sendRequest":
 					this.#pendingWrite = (this.#current.method ?? "GET") + " " + (this.#current.path || "/") + " HTTP/1.1\r\n";
 					this.#pendingWrite += "host: " + this.#host + "\r\n";

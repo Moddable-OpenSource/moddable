@@ -302,7 +302,7 @@ void PiuTextLink_get_state(xsMachine* the)
 void PiuTextLink_set_state(xsMachine* the)
 {
 	PiuTextLink* self = PIU(TextLink, xsThis);
-	double state = xsToNumber(xsArg(0));
+	PiuState state = (PiuState)xsToNumber(xsArg(0));
 	if ((*self)->state != state) {
 		(*self)->state = state;
 		PiuContentInvalidate((*self)->container, NULL);

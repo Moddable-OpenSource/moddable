@@ -1,0 +1,14 @@
+{
+	"defines": {
+		"ble": {
+			"client": true
+		}
+	},
+	"modules": {
+		"embedded:io/bluetoothle/central": "./bleclient",
+		"*": [
+			"$(MODULES)/io/common/builtinCommon"
+		]
+	},
+	"preload": "embedded:io/bluetoothle/central"
+}

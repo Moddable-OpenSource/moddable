@@ -29,6 +29,8 @@ import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
 import RTC from "embedded:RTC/BM8563"
+import Touch from "M5StackCoreS3Touch";
+
 
 const device = {
   I2C: {
@@ -94,6 +96,21 @@ const device = {
 				});
 			}
 		}
+  },
+  sensor :{
+        Touch: class {
+          constructor(options) {				
+            const result = new Touch({
+              ...options,
+              sensor: {
+                ...device.I2C.internal,
+                io: device.io.SMBus,
+              }
+            });
+            result.configure({threshold: 20});
+            return result;
+          }
+        }
   }
 };
 

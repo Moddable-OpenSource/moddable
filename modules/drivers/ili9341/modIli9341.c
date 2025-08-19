@@ -31,6 +31,11 @@
 #include "modGPIO.h"
 #include "modSPI.h"
 
+#if ESP32
+#include <hal/spi_types.h>
+#endif
+
+
 #ifndef MODDEF_ILI9341_HZ
 	#define MODDEF_ILI9341_HZ (40000000)
 #endif

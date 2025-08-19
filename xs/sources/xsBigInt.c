@@ -639,12 +639,13 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 		fxStringX(the, slot, "NaN");
 		return;
 	}
-	mxMeterSome(slot->value.bigint.size);
+	mxBigInt_meter(slot->value.bigint.size);
 
 	mxPushUndefined();
 	result = the->stack;
 	
-	fxBigInt_dup(the, &slot->value.bigint);
+	mxPushSlot(slot);
+	fxBigInt_dup(the, &the->stack->value.bigint);
 	stack = the->stack;
 
 	length = 1 + bc->k + (txSize)c_ceil((txNumber)stack->value.bigint.size * 32 * c_log(2) / c_log(radix));
@@ -680,6 +681,7 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 		result->value.string[--offset] = '-';
 	c_memmove(result->value.string, result->value.string + offset, length - offset);
 
+	mxPop();
 	mxPop();
 	mxPullSlot(slot);
 }
