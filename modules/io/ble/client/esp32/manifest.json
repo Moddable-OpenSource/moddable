@@ -1,8 +1,7 @@
 {
 	"defines": {
 		"ble": {
-			"client": true,
-			"server": true
+			"client": true
 		}
 	},
 	"modules": {
