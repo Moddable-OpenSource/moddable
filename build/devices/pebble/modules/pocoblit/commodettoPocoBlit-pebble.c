@@ -109,20 +109,36 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 
 void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
-	PBL_ASSERT(kCommodettoBitmapPebble == bits->format, "pebble bitmap required");
-
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
-
-	x += poco->xOrigin, y += poco->yOrigin;
-
+	GCompOp saveMode = ctx->draw_state.compositing_mode;
 	GRect saveClip = ctx->draw_state.clip_box;
-	ctx->draw_state.compositing_mode = GCompOpSet;		// OpSet allows alpha transparency to work. unsure it is always correct. we'll see.... from a Poco perspecive... it shoudl be DrawMasked that handles alpha
+	GBitmap src;
+	GBitmap *gb;
+	
+	if (kCommodettoBitmapPebble == bits->format) {
+		gb = (GBitmap *)bits->pixels;
+		ctx->draw_state.compositing_mode = GCompOpSet;		// OpSet allows alpha transparency to work. unsure it is always correct. we'll see.... from a Poco perspecive... it should be DrawMasked that handles alpha
+	}
+	else if (kCommodettoBitmapMonochromeAligned == bits->format) {
+		src.addr = bits->pixels;
+		src.row_size_bytes = ((bits->width + 31) >> 5) * 4;
+		src.info.format = GBitmapFormat1Bit;
+		src.info.version = GBITMAP_VERSION_1;
+		src.bounds = GRect(sx, sy, sw, sh);
+		gb = &src;
+		ctx->draw_state.compositing_mode = GCompOpAssign;
+	}
+	else
+		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
+
 	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
 
-	graphics_draw_bitmap_in_rect_processed(ctx, (GBitmap *)bits->pixels, &GRect(x - sx, y - sy, sw + sx, sh + sy), C_NULL);
+	x += poco->xOrigin, y += poco->yOrigin;
+	graphics_draw_bitmap_in_rect_processed(ctx, gb, &GRect(x - sx, y - sy, sw + sx, sh + sy), C_NULL);
 
 	ctx->draw_state.clip_box = saveClip;
+	ctx->draw_state.compositing_mode = saveMode;
 }
 
 void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mode, PocoColor fgColor, PocoColor bgColor, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
@@ -172,18 +188,47 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh,
 			PocoBitmap mask, PocoDimension mask_sx, PocoDimension mask_sy)
 {
-	PBL_CROAK("unexpected PocoBitmapDrawMasked");
+	PocoPebble pp = getPocoPebble(poco);
+	GContext *ctx = pp->ctx;
+	GBitmap gb;
+	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == bits->format, "monochromealigned bits required");
+	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == mask->format, "monochromealigned mask required");
+
+	GCompOp saveMode = ctx->draw_state.compositing_mode;
+	GRect saveClip = ctx->draw_state.clip_box;
+	GRect rect = GRect(x + poco->xOrigin, y + poco->yOrigin, sw, sh);
+	
+	gb.info.format = GBitmapFormat1Bit;
+	gb.info.version = GBITMAP_VERSION_1;
+	gb.bounds = GRect(sx, sy, sw, sh);
+	
+	gb.addr = mask->pixels;
+	gb.row_size_bytes = ((mask->width + 31) >> 5) * 4;
+	ctx->draw_state.compositing_mode = GCompOpSet;
+	graphics_draw_bitmap_in_rect_processed(ctx, &gb, &rect, C_NULL);
+	
+	gb.addr = bits->pixels;
+	gb.row_size_bytes = ((bits->width + 31) >> 5) * 4;
+	ctx->draw_state.compositing_mode = GCompOpAnd;
+	graphics_draw_bitmap_in_rect_processed(ctx, &gb, &rect, C_NULL);
+	
+	ctx->draw_state.clip_box = saveClip;
+	ctx->draw_state.compositing_mode = saveMode;
 }
 
 void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
+	GCompOp saveMode = ctx->draw_state.compositing_mode;
+	GRect saveClip = ctx->draw_state.clip_box;
 	GBitmap src;
 	GBitmap *gb;
 
-	if (kCommodettoBitmapPebble == bits->format)
+	if (kCommodettoBitmapPebble == bits->format) {
 		gb = (GBitmap *)bits->pixels;
+		ctx->draw_state.compositing_mode = GCompOpSet;		// OpSet allows alpha transparency to work. unsure it is always correct. we'll see.... from a Poco perspecive... it should be DrawMasked that handles alpha
+	}
 	else if (kCommodettoBitmapMonochromeAligned == bits->format) {
 		src.addr = bits->pixels;
 		src.row_size_bytes = ((bits->width + 31) >> 5) * 4;
@@ -191,15 +236,10 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 		src.info.version = GBITMAP_VERSION_1;
 		src.bounds = GRect(sx, sy, sw, sh);
 		gb = &src;
+		ctx->draw_state.compositing_mode = GCompOpAssign;
 	}
 	else
 		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
-
-	GCompOp saveMode = ctx->draw_state.compositing_mode;
-	GRect saveClip = ctx->draw_state.clip_box;
-
-	ctx->draw_state.compositing_mode = GCompOpAssign;
-	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, w, h));
 
 	// pattern support in graphics_draw_bitmap_in_rect_processed renders incorrectly, so loop ourselves
 	x += poco->xOrigin, y += poco->yOrigin;
