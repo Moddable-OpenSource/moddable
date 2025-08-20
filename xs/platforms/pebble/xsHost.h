@@ -47,6 +47,7 @@
 #include "applib/graphics/gtypes.h"
 #include "applib/pbl_std/pbl_std.h"
 #include "drivers/rtc.h"
+#include "syscall/syscall.h"
 #include "system/passert.h"
 #include "util/time/time.h"
 
@@ -269,7 +270,7 @@ extern void my_free(void *ptr);
 #define c_realloc realloc
 #define c_free free
 
-#define c_exit(n) PBL_CROAK("xs exit %d", (int)n)
+#define c_exit(n) sys_app_fault(n)
 #define c_qsort qsort
 #define c_bsearch bsearch
 #define c_strtod strtod

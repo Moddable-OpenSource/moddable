@@ -27,7 +27,7 @@
 #include "services/common/evented_timer.h"
 #include "kernel/util/sleep.h"
 
- typedef struct modTimerRecord modTimerRecord;
+typedef struct modTimerRecord modTimerRecord;
  typedef modTimerRecord *modTimer;
  
  struct modTimerRecord { 
