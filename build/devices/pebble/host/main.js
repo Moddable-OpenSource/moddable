@@ -4,12 +4,8 @@ import Pebble from "pebble/global"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
 import KV from "embedded:storage/key-value";
-import Poco from "commodetto/Poco";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
-import {} from "piu/SVGImage"
-import {} from "piu/Inverter"
-import {} from "piu/RoundRect"
 import Instrumentation from "instrumentation";
 import Debug from "debug";
 
@@ -49,7 +45,7 @@ class TextureArchive extends Texture {
 		else {
 			const t = typeof options;
 			if ("number" === t)
-				super(undefined, undefined, new Poco.PebbleBitmap(options));
+				super(options);
 			else if ("object" === t)
 				super({...options, archive: state.archive});
 			else
