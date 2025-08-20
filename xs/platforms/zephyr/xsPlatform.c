@@ -45,9 +45,15 @@
 
 #include "xs.h"
 #include "xsHosts.h"
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/sys/reboot.h>
 
 #ifdef mxDebug
-	#include "modPreference.h"
+//@@MDK
+//	#include "modPreference.h"
+	uint8_t modPreferenceSet(char *domain, char *key, uint8_t prefType, uint8_t *value, uint16_t byteCount) { return 0; }
+	uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut) { if (*byteCountOut) *byteCountOut = 0; }
+
 #endif
 
 #define XSDEBUG_NONE	0,0,0,0
@@ -71,6 +77,7 @@ void fxReceiveLoop(void);
 #endif
 
 #include <zephyr/kernel.h>
+void zephyr_reset();
 
 	struct k_mutex gDebugMutex;
 	uint8_t gDebugMutex_initialized = 0;
@@ -92,8 +99,9 @@ void fxCreateMachinePlatform(txMachine* the)
 	modMachineTaskInit(the);
 #ifdef mxDebug
 	the->connection = (txSocket)mxNoSocket;
-	if (!gDebugMutex_initialized) {
+	if (!mxDebugMutexAllocated()) {
 		k_mutex_init(&gDebugMutex);
+		gDebugMutex_initialized = true;
 	}
 #endif
 }
@@ -124,7 +132,7 @@ void fx_putc(void *refcon, char c)
         if (0 == c) {
             if ((txSocket)kSerialConnection == the->connection) {
                 // write xsbug log trailer
-                const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
+                static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
                 const char *cp = xsbugTrailer;
                 while (true) {
                     char c = c_read8(cp++);
@@ -243,7 +251,6 @@ void fxConnect(txMachine* the)
 			const char *cp = piReset;
 
 			modDelayMilliseconds(200);
-			taskYIELD();
 
 			while (true) {
 				char c = c_read8(cp++);
@@ -279,7 +286,7 @@ txBoolean fxIsReadable(txMachine* the)
 {
 	if ((txSocket)kSerialConnection == the->connection) {
 //		fxReceiveLoop();
-		taskYIELD();
+		k_yield();
 		return NULL != the->debugFragments;
 	}
 
@@ -298,7 +305,8 @@ void fxReceive(txMachine* the)
 				fxDisconnect(the);
 				break;
 			}
-		
+
+	k_yield();		//@@MDK
 			fxReceiveLoop();
 			if (the->debugFragments) {
 				DebugFragment f;
@@ -661,8 +669,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 		
 		case 14:  {
 			uint32_t *id = (uint32_t *)(the->echoBuffer + the->echoOffset);
-			id[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
-			id[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
+			hwinfo_get_device_id(id, 8);
 			the->echoOffset += 8;
 			} break;
 
@@ -720,7 +727,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			fxDisconnect(the);
 			modDelayMilliseconds(1000);
 
-			nrf52_reset();
+			zephyr_reset();
 
 			while (1)
 				modDelayMilliseconds(1000);
@@ -735,18 +742,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 uint32_t zephyr_memory_remaining() {
 //	struct sys_memory_stats stats;
 //	return k_mem_slab_runtime_stats_get(slab, &stats);
-	return 25 * 1024;		//@@ fix
+	return 25 * 1024;		//@@MDK fix
 }
 
-#if 0
-// eliminate linker errors of the form: "warning: _close is not implemented and will always fail" 
-void _close(void){}
-void _lseek () __attribute__ ((weak, alias ("_close")));
-void _write () __attribute__ ((weak, alias ("_close")));
-void _read () __attribute__ ((weak, alias ("_close")));
-void _fstat () __attribute__ ((weak, alias ("_close")));
-void _getpid () __attribute__ ((weak, alias ("_close")));
-void _isatty () __attribute__ ((weak, alias ("_close")));
-void _kill () __attribute__ ((weak, alias ("_close")));
-#endif
+void zephyr_reset()
+{
+	sys_reboot(SYS_REBOOT_COLD);
+}
+
 

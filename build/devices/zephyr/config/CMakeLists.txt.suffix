@@ -42,6 +42,7 @@ zephyr_library_include_directories(
         $ENV{MODDABLE}/xs/tools/fdlibm
         $ENV{MODDABLE}/modules/base/timer
         $ENV{MODDABLE}/modules/base/instrumentation
+        $ENV{MODDABLE}/modules/files/preference
         $ENV{MODDABLE}/modules/commodetto/gif
         $ENV{MODDABLE}/modules/commodetto
         $ENV{MODDABLE}/modules/io/common
@@ -49,11 +50,13 @@ zephyr_library_include_directories(
         $ENV{MODDABLE}/modules/piu/MC
 	)
 
-message(STATUS "*-*-*-*-*-*-*-*-*")
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+if (VERBOSE)
+	message(STATUS "*-*-*-*-*-*-*-*-*")
+	get_cmake_property(_variableNames VARIABLES)
+	list (SORT _variableNames)
+	foreach (_variableName ${_variableNames})
+	    message(STATUS "${_variableName}=${${_variableName}}")
+	endforeach()
+endif()
 
 # --- end suffix

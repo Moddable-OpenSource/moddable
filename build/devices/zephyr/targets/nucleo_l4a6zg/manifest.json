@@ -1,6 +1,6 @@
 {
 	"build": {
-		"BOARD": "nucleo_l4a6zg"
+		"ZEPHYR_BOARD": "nucleo_l4a6zg"
 	},
 	"include": [
 	],

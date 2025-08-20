@@ -43,5 +43,7 @@ message(" -* PATH_MAX " ${CMAKE_OBJECT_PATH_MAX})
 
 target_sources(app PRIVATE
 	src/main.c
+	src/debugger.c
+	src/serial_fifo.c
 	)
 

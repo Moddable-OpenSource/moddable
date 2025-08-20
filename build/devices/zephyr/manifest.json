@@ -2,7 +2,8 @@
 	"build": {
 		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
 	},
-	"include": [
+	"xinclude": [
+		"$(MODULES)/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -25,7 +26,10 @@
 			"initial": 512
 		},
 		"stack": 256
-},
+	},
+	"zephyrConfig": {
+		"CONFIG_TIMESLICE_PRIORITY": "5"
+	},
 	"platforms": {
 		"zephyr/*": {
 			"include": "$(BUILD)/devices/zephyr/targets/$(SUBPLATFORM)/manifest.json"

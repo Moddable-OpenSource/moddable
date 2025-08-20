@@ -54,19 +54,15 @@
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
 
-	#define INSTRUMENT_CPULOAD 1
+	#define INSTRUMENT_CPULOAD 0		//@@ zephyr
 	#define kTargetCPUCount 1
 
 	#if INSTRUMENT_CPULOAD
-		#include "nrf_drv_timer.h"
-
 		static uint32_t gCPUCounts[kTargetCPUCount * 2];
-		static TaskHandle_t gIdles[kTargetCPUCount];
+		static k_tid_t gIdles[kTargetCPUCount];
 		static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context);
 
 		volatile uint32_t gCPUTime;
-		static nrf_drv_timer_t cpuTimer = NRF_DRV_TIMER_INSTANCE(3);
-		#define CPUTIMER_US 800
 	#endif
 
 	static void espInitInstrumentation(txMachine *the);
@@ -119,8 +115,8 @@ void modInstrumentationSetup(xsMachine *the)
 
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
-	txMachine *the = theIn;
-	return (int32_t)zephyr_memory_remaining();
+//	txMachine *the = theIn;
+	return (int32_t)4096;	//@@MDK zephyr
 }
 
 #if INSTRUMENT_CPULOAD
@@ -158,6 +154,7 @@ void espInitInstrumentation(txMachine *the)
 	k_mutex_init(&gInstrumentMutex);
 
 #if INSTRUMENT_CPULOAD
+/** @@MDK zephyr
 	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
 
 	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
@@ -169,6 +166,7 @@ void espInitInstrumentation(txMachine *the)
 
 	nrf_drv_timer_clear(&cpuTimer);
 	nrf_drv_timer_enable(&cpuTimer);
+**/
 #endif
 }
 
@@ -180,7 +178,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
 
-	k_mutex_lock(&gInstrumentMutex, K_TICKS_FOREVER);
+	k_mutex_lock(&gInstrumentMutex, K_FOREVER);
 
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
@@ -203,12 +201,14 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #if INSTRUMENT_CPULOAD
 static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
 {
+/**@@MDK zephyr
 	switch (event_type) {
 		case NRF_TIMER_EVENT_COMPARE0:
 			gCPUCounts[0 + (xTaskGetCurrentTaskHandle() == gIdles[0])] += 1;
 			gCPUTime += 1250;
 			break;
 	}
+**/
 }
 #endif
 #endif
@@ -218,7 +218,7 @@ static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
 */
 #ifndef MODDEF_TASK_QUEUEWAIT
 	#ifdef mxDebug
-		#define MODDEF_TASK_QUEUEWAIT	(k_ticks_t)(1000)
+		#define MODDEF_TASK_QUEUEWAIT	K_MSEC(5)
 	#else
 		#define MODDEF_TASK_QUEUEWAIT	K_FOREVER
 	#endif
@@ -231,11 +231,13 @@ struct modMessageRecord {
 	modMessageDeliver   callback;
 	void                *refcon;
 	uint16_t            length;
+	uint8_t				embeddedMessage;
 };
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessageRecord msg;
+	int err;
 
 #ifdef mxDebug
 	if (0xffff == messageLength) {
@@ -243,20 +245,27 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 		msg.callback = callback;
 		msg.refcon = refcon;
 		msg.length = 0;
-//		xQueueSendToBack(the->dbgQueue, &msg, K_TICKS_FOREVER);
-		k_msgq_put(*the->dbgQueue, &msg, MODDEF_TASK_QUEUEWAIT);
+		err = k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT);
 		return 0;
 	}
 #endif
 
+	msg.embeddedMessage = 0;
 	if (message && messageLength) {
-		msg.message = c_malloc(messageLength);
-		if (!msg.message) return -1;
+		if (messageLength <= sizeof(msg.message)) {
+			msg.embeddedMessage = 1;
+			c_memmove(&msg.message, message, messageLength);
+		}
+		else {
+			msg.message = c_malloc(messageLength);
+			if (!msg.message) return -1;
 
-		c_memmove(msg.message, message, messageLength);
+			c_memmove(msg.message, message, messageLength);
+		}
 	}
 	else
 		msg.message = NULL;
+
 	msg.length = messageLength;
 	msg.callback = callback;
 	msg.refcon = refcon;
@@ -264,7 +273,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	if (k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
 		return 0;
 
-	if (msg.message)
+	if (msg.message && !msg.embeddedMessage)
 		c_free(msg.message);
 
 	return -2;
@@ -278,6 +287,7 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.length = 0;
 	msg.callback = callback;
 	msg.refcon = refcon;
+	msg.embeddedMessage = 0;
 
 	k_msgq_put(&the->msgQueue, &msg, K_NO_WAIT);
 
@@ -286,8 +296,14 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 
 void modMessageService(xsMachine *the, int maxDelayMS)
 {
-#if 0	// MDK
 	modMessageRecord msg;
+	uint32_t startTime = modMilliseconds();
+	uint32_t maxDuration = (uint32_t)maxDelayMS;
+	uint32_t count;
+	int err;
+
+	count = k_msgq_num_used_get(&the->msgQueue);
+	if (!count) count = 1;
 
 #if !mxDebug
 	modWatchDogReset();
@@ -300,33 +316,24 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 	}
 #endif
 
-#ifdef mxDebug
-	while (true) {
-		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, ((uint64_t)maxDelayMS << 10) / 1000);
-		if (!queue)
+	do {
+		err = k_msgq_get(&the->msgQueue, &msg, Z_TIMEOUT_MS(maxDelayMS));
+		if (0 == err) {
+			if (msg.embeddedMessage)
+				(msg.callback)(the, msg.refcon, (uint8_t *)&msg.message, msg.length);
+			else {
+				(msg.callback)(the, msg.refcon, msg.message, msg.length);
+				if (msg.message)
+					c_free(msg.message);
+			}
+		}
+
+		if (!--count)
 			break;
-
-		if (!xQueueReceive(queue, &msg, 0))
-			break;
-
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
-
 		maxDelayMS = 0;
-	}
-#else
-	while (0 == k_msgq_get(&the->msgQueue, &msg, Z_TIMEOUT_MS(((uint64_t)maxDelayMS << 10) / 1000))) {
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
-
-		maxDelayMS = 0;
-	}
-#endif
+	} while ((modMilliseconds() - startTime) < maxDuration);
 
 	modWatchDogReset();
-#endif // MDK
 }
 
 #ifndef modTaskGetCurrent
@@ -352,13 +359,6 @@ void modMachineTaskInit(xsMachine *the)
 
 	the->task = (void *)modTaskGetCurrent();
 	k_msgq_alloc_init(&the->msgQueue, sizeof(modMessageRecord), MODDEF_TASK_QUEUELENGTH);
-#ifdef mxDebug
-	k_msgq_alloc_init(&the->dbgQueue, sizeof(modMessageRecord), kDebugQueueLength);
-
-//	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
-//	xQueueAddToSet(the->msgQueue, the->queues);
-//	xQueueAddToSet(the->dbgQueue, the->queues);
-#endif
 	k_event_init(&taskEvents);
 }
 
@@ -371,31 +371,23 @@ void modMachineTaskUninit(xsMachine *the)
 			c_free(msg.message);
 	}
 
-#ifdef mxDebug
-//		xQueueRemoveFromSet(the->msgQueue, the->queues);
-#endif
 	k_msgq_cleanup(&the->msgQueue);
-
-#ifdef mxDebug
-	if (the->dbgQueue) {
-		while (0 == k_msgq_get(&the->dbgQueue, &msg, K_NO_WAIT))
-			;
-//		xQueueRemoveFromSet(the->dbgQueue, the->queues);
-		k_msgq_cleanup(&the->dbgQueue);
-	}
-//	if (the->queues)
-//		vQueueDelete(the->queues);
-#endif
 }
 
 void modMachineTaskWait(xsMachine *the)
 {
+printk("taskWait\n");
 	k_event_wait(&taskEvents, 0x01, false, MODDEF_TASK_QUEUEWAIT);
 }
 
 void modMachineTaskWake(xsMachine *the)
 {
-	k_event_post(&taskEvents, 0x01);
+	modMessageRecord msg;
+	msg.message = NULL;
+	msg.callback = NULL;
+	msg.refcon = NULL;
+	msg.length = 0;
+	k_msgq_put(&the->msgQueue, &msg, K_NO_WAIT);
 }
 
 /*
@@ -770,6 +762,137 @@ void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
 void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
 void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
 
-// int errno;
-// int *__errno(void) { return &errno; };
+
+static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
+static int16_t gDaylightSavings = 60 * 60;          // summer time
+
+static uint8_t gTimeOfDaySet = 0;
+static uint32_t gTimeOfDayOffset = 0;	// seconds to add to gMS to get TOD
+
+static modTm gTM;		//@@ eliminate with _r calls
+
+static const uint8_t gDaysInMonth[] ICACHE_XS6RO2_ATTR = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+#define isLeapYear(YEAR) (!(YEAR % 4) && ((YEAR % 100) || !(YEAR % 400)))
+
+// Get Day of Year
+int getDOY(int year, int month, int day) {
+    int dayCount[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+    int dayOfYear = dayCount[month] + day;
+    if(month > 1 && isLeapYear(year)) dayOfYear++;
+    return dayOfYear - 1;		// tm_yday is 0-365
+};
+
+struct modTm *modGmTime(const modTime_t *timep)
+{
+	uint32_t t = *timep;
+	int days = 0;
+
+	gTM.tm_sec = t % 60;
+	t /= 60;
+	gTM.tm_min = t % 60;
+	t /= 60;
+	gTM.tm_hour = t % 24;
+	t /= 24;
+	gTM.tm_wday = (t + 4) % 7;
+	gTM.tm_year = 1970;
+	while (true) {
+		int daysInYear = 365;
+		if (isLeapYear(gTM.tm_year))
+			daysInYear += 1;
+
+		if ((days + daysInYear) > t)
+			break;
+		gTM.tm_year += 1;
+		days += daysInYear;
+	}
+	t -= days;
+	gTM.tm_yday = t;
+	for (gTM.tm_mon = 0; gTM.tm_mon < 12; gTM.tm_mon++) {
+		uint8_t daysInMonth = gDaysInMonth[gTM.tm_mon];
+		if ((1 == gTM.tm_mon) && isLeapYear(gTM.tm_year))
+			daysInMonth = 29;
+		if (t < daysInMonth)
+			break;
+		t -= daysInMonth;
+	}
+	gTM.tm_mday = t + 1;
+	gTM.tm_year -= 1900;
+
+	return &gTM;
+}
+
+struct modTm *modLocalTime(const modTime_t *timep)
+{
+	modTime_t t = *timep + gTimeZoneOffset + gDaylightSavings;
+	return modGmTime(&t);
+}
+
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_15
+modTime_t modMkTime(struct modTm *tm)
+{
+	modTime_t t;
+	uint16_t yday;
+
+	yday = getDOY(tm->tm_year + 1900, tm->tm_mon, tm->tm_mday);
+
+	t =      tm->tm_sec
+		+   (tm->tm_min * 60)
+		+   (tm->tm_hour * 3600)
+		+   (yday * 86400)
+		+  ((tm->tm_year-70) * 31536000)
+		+ (((tm->tm_year-69)/4) * 86400)
+		- (((tm->tm_year-1)/100) * 86400)
+		+ (((tm->tm_year+299)/400)*86400);
+	t = t - (gTimeZoneOffset + gDaylightSavings);
+
+	return t;
+}
+
+void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
+{
+	modTime_t theTime;
+	uint32_t ms;
+
+	ms = modMilliseconds();
+	theTime = (ms / 1000) + gTimeOfDayOffset;
+
+	if (tv) {
+		tv->tv_sec = theTime;
+		tv->tv_usec = (ms % 1000) * 1000;
+	}
+	if (tz) {
+//		tz->tz_minuteswest = gTimeZoneOffset;
+//		tz->tz_dsttime = gDaylightSavings;
+	}
+}
+
+void modSetTime(uint32_t seconds)
+{
+	uint32_t ms;
+	ms = modMilliseconds();
+
+	gTimeOfDayOffset = seconds - (ms / 1000);
+}
+
+void modSetTimeZone(int32_t timeZoneOffset)
+{
+	gTimeZoneOffset = timeZoneOffset;
+}
+
+int32_t modGetTimeZone(void)
+{
+	return gTimeZoneOffset;
+}
+
+void modSetDaylightSavingsOffset(int32_t daylightSavings)
+{
+	gDaylightSavings = daylightSavings;
+}
+
+int32_t modGetDaylightSavingsOffset(void)
+{
+	return gDaylightSavings;
+}
+
 

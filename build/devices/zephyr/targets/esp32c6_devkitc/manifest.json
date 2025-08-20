@@ -1,6 +1,6 @@
 {
 	"build": {
-		"BOARD": "esp32c6_devkitc/esp32c6/hpcore"
+		"ZEPHYR_BOARD": "esp32c6_devkitc/esp32c6/hpcore"
 	},
 	"include": [
 	],

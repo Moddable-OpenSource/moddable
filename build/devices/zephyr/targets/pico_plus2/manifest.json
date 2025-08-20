@@ -1,6 +1,6 @@
 {
 	"build": {
-		"BOARD": "pico_plus2/rp2350b/m33"
+		"ZEPHYR_BOARD": "pico_plus2/rp2350b/m33"
 	},
 	"include": [
 	],

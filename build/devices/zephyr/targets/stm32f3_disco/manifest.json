@@ -1,6 +1,6 @@
 {
 	"build": {
-		"BOARD": "stm32f3_disco"
+		"ZEPHYR_BOARD": "stm32f3_disco"
 	},
 	"include": [
 	],

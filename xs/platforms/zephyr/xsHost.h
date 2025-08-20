@@ -107,8 +107,8 @@ extern void ESP_putc(int c);
     timer
 */
 
-#define modMilliseconds() (sys_clock_cycle_get_32())
-#define modMicroseconds() (sys_clock_cycle_get_32() * 1000)
+#define modMilliseconds() (k_cyc_to_ms_ceil32(sys_clock_cycle_get_32()))
+#define modMicroseconds() (k_cyc_to_us_ceil32(sys_clock_cycle_get_32()))
 
 #define modDelayMilliseconds(ms) k_msleep(ms)
 #define modDelayMicroseconds(us) k_usleep(us)
@@ -127,6 +127,43 @@ extern int modTimersNext(void);
 /*
 	date and time
 */
+typedef uint32_t modTime_t;
+
+struct modTimeVal {
+    modTime_t	tv_sec;     /* seconds */
+    uint32_t	tv_usec;    /* microseconds */
+};
+typedef struct modTimeVal modTimeVal;
+
+struct modTimeZone {
+    int32_t			tz_minuteswest;     /* minutes west of Greenwich */
+    int32_t			tz_dsttime;         /* type of DST correction */
+};
+
+struct modTm {
+  int32_t	tm_sec;
+  int32_t	tm_min;
+  int32_t	tm_hour;
+  int32_t	tm_mday;
+  int32_t	tm_mon;
+  int32_t	tm_year;
+  int32_t	tm_wday;
+  int32_t	tm_yday;
+  int32_t	tm_isdst;
+};
+typedef struct modTm modTm;
+
+void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz);
+struct modTm *modGmTime(const modTime_t *timep);
+struct modTm *modLocalTime(const modTime_t *timep);
+modTime_t modMkTime(struct modTm *tm);
+void modStrfTime(char *s, size_t max, const char *format, const struct modTm *tm);
+
+void modSetTime(uint32_t seconds);							// since 1970 - UNIX time
+int32_t modGetTimeZone(void);								// seconds
+void modSetTimeZone(int32_t timeZoneOffset);				// seconds
+int32_t modGetDaylightSavingsOffset(void);					// seconds
+void modSetDaylightSavingsOffset(int32_t daylightSavings);	// seconds
 
 /*
 	watchdog timer
@@ -150,7 +187,7 @@ void xs_loop();
 */
 
 void fxReceiveLoop(void);
-void setupDebugger(void);
+void setupDebugger(uint32_t *running);
 void flushDebugger(void);
 extern struct k_thread *gMainTask;
 

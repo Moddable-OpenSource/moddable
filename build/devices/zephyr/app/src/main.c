@@ -17,68 +17,60 @@
 #include "modTimer.h"
 void modTimersExecute(void);
 int modTimersNext(void);
+void setupDebugger(uint32_t *running);
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
 
-/* The devicetree node identifier for the "led0" alias. */
-// #define LED0_NODE DT_ALIAS(led0)
+xsMachine *gThe = NULL;
 
-
-static void startMachine(void)
+static void runLoop(void *p1, void *p2, void *p3)
 {
-	xsMachine *the = modCloneMachine(NULL, NULL);
+	uint32_t running = 0;
+	setupDebugger(&running);
 
-	modRunMachineSetup(the);
+	while (running == 0) {
+		modDelayMilliseconds(10);
+	}
 
 	while(1) {
-uint32_t ms;
-		modTimersExecute();
-ms = modTimersNext();
-printf("timernext: %d\n", ms);
-modMessageService(the, ms);
-//		modMessageService(the, modTimersNext());
-		modInstrumentationAdjust(Turns, +1);
+		gThe = modCloneMachine(NULL, NULL);
+		modRunMachineSetup(gThe);
+
+#if MODDEF_XS_TEST
+		xsMachine *the = gThe;
+		while (gThe) {
+#if mxDebug
+			fxReceiveLoop();
+#endif
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
+		xsDeleteMachine(the);
+#else
+		while (true) {
+#if mxDebug
+	//		fxReceiveLoop();
+#endif
+			modTimersExecute();
+			modMessageService(gThe, modTimersNext());
+			modInstrumentationAdjust(Turns, +1);
+		}
+#endif
 	}
 
 printf("      -- end\n");
-	xsDeleteMachine(the);
 }
 
-/*
- * A build error on this line means your board is unsupported.
- * See the sample documentation for information on how to fix this.
- */
-// static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+#define PRIORITY 3
+K_THREAD_DEFINE(main_thread, 4096, runLoop, NULL, NULL, NULL, PRIORITY, 0, 0);
 
 int main(void)
 {
 	int ret;
-	bool led_state = true;
 
-	startMachine();
+	// nuthin.
 
-#if 0
-	if (!gpio_is_ready_dt(&led)) {
-		return 0;
-	}
-
-	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return 0;
-	}
-
-
-	while (1) {
-		ret = gpio_pin_toggle_dt(&led);
-		if (ret < 0) {
-			return 0;
-		}
-
-		led_state = !led_state;
-		printf("LED state: %s\n", led_state ? "ON" : "OFF");
-		k_msleep(SLEEP_TIME_MS);
-	}
-#endif
 	return 0;
 }

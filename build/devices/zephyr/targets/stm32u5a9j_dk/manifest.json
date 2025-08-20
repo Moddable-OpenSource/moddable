@@ -1,6 +1,6 @@
 {
 	"build": {
-		"BOARD": "stm32u5a9j_dk"
+		"ZEPHYR_BOARD": "stm32u5a9j_dk"
 	},
 	"include": [
 	],

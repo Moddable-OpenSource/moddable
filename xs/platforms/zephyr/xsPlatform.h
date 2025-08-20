@@ -152,8 +152,6 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend; \
 	struct k_msgq msgQueue; \
-	struct k_msgq *dbgQueue; \
-	void *queues; \
 	void *task; \
 	mxMachineDebug \
 	mxMachineInstrument
