@@ -62,8 +62,6 @@ void PiuScreenBufferDraw(void* it, PiuView* view, PiuRectangle area)
 	PiuViewDrawContent(view, PiuScreenBufferDrawAux, it, 0, 0, bounds.width, bounds.height);
 }
 
-extern GContext *getPocoPebbleGContext(Poco poco);
-
 void PiuScreenBufferDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh)
 {
 	PiuScreenBuffer* self = it;
