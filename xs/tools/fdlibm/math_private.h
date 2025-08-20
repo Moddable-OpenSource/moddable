@@ -432,7 +432,7 @@ do {								\
  * any extra precision into the type of 'a' -- 'a' should have type float_t,
  * double_t or long double.  b's type should be no larger than 'a's type.
  * Callers should use these types with scopes as large as possible, to
- * reduce their own extra-precision and efficiciency problems.  In
+ * reduce their own extra-precision and efficiency problems.  In
  * particular, they shouldn't convert back and forth just to call here.
  */
 #ifdef DEBUG
@@ -644,25 +644,25 @@ rnintf(__float_t x)
 	return ((float)(x + 0x1.8p23F) - 0x1.8p23F);
 }
 
-// #ifdef LDBL_MANT_DIG
-// /*
-//  * The complications for extra precision are smaller for rnintl() since it
-//  * can safely assume that the rounding precision has been increased from
-//  * its default to FP_PE on x86.  We don't exploit that here to get small
-//  * optimizations from limiting the range to double.  We just need it for
-//  * the magic number to work with long doubles.  ld128 callers should use
-//  * rnint() instead of this if possible.  ld80 callers should prefer
-//  * rnintl() since for amd64 this avoids swapping the register set, while
-//  * for i386 it makes no difference (assuming FP_PE), and for other arches
-//  * it makes little difference.
-//  */
-// static inline long double
-// rnintl(long double x)
-// {
-// 	return (x + __CONCAT(0x1.8p, LDBL_MANT_DIG) / 2 -
-// 	    __CONCAT(0x1.8p, LDBL_MANT_DIG) / 2);
-// }
-// #endif /* LDBL_MANT_DIG */
+//#ifdef LDBL_MANT_DIG
+///*
+// * The complications for extra precision are smaller for rnintl() since it
+// * can safely assume that the rounding precision has been increased from
+// * its default to FP_PE on x86.  We don't exploit that here to get small
+// * optimizations from limiting the range to double.  We just need it for
+// * the magic number to work with long doubles.  ld128 callers should use
+// * rnint() instead of this if possible.  ld80 callers should prefer
+// * rnintl() since for amd64 this avoids swapping the register set, while
+// * for i386 it makes no difference (assuming FP_PE), and for other arches
+// * it makes little difference.
+// */
+//static inline long double
+//rnintl(long double x)
+//{
+//	return (x + __CONCAT(0x1.8p, LDBL_MANT_DIG) / 2 -
+//	    __CONCAT(0x1.8p, LDBL_MANT_DIG) / 2);
+//}
+//#endif /* LDBL_MANT_DIG */
 
 /*
  * irint() and i64rint() give the same result as casting to their integer
@@ -765,6 +765,27 @@ irintl(long double x)
 	(ai) = u.e;					\
 	(ar) = (x) - (ai);				\
 } while (0)
+
+/*
+ * For a double entity split into high and low parts, compute ilogb.
+ */
+static inline int32_t
+subnormal_ilogb(int32_t hi, int32_t lo)
+{
+	int32_t j;
+	uint32_t i;
+
+	j = -1022;
+	if (hi == 0) {
+	    j -= 21;
+	    i = (uint32_t)lo;
+	} else
+	    i = (uint32_t)hi << 11;
+
+	for (; i < 0x7fffffff; i <<= 1) j -= 1;
+
+	return (j);
+}
 
 #ifdef DEBUG
 #if defined(__amd64__) || defined(__i386__)

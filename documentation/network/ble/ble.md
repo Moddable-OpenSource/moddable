@@ -1745,7 +1745,7 @@ onDisconnected() {
 	this.stopMeasurements();
 	this.startAdvertising({
 		filterPolicy: GAP.AdvFilterPolicy.WHITELIST_SCANS_CONNECTIONS,
-		advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEART_RATE_SERVIE_UUID, BATTERY_SERVICE_UUID]
+		advertisingData: {flags: 6, completeName: this.deviceName, completeUUID16List: [HEART_RATE_SERVICE_UUID, BATTERY_SERVICE_UUID]
 	});
 }
 ```

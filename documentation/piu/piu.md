@@ -341,7 +341,7 @@ trace(`sampleVariable value is: ${sampleVariable}\n`);    // "sampleVariable val
 
 ### Adding Additional Properties
 
-Additional properites can be added by setting a property of the global object.
+Additional properties can be added by setting a property of the global object.
 
 ```javascript
 global.application = new Application(null, {
@@ -699,7 +699,7 @@ The `states` and `variants` properties of `texture` objects should not be confus
 
 The `state` and `variant` of a `content` can be updated at any time. This is often done when an event is triggered.
 
-```javscript
+```javascript
 let WiFiStatusIcon = Content.template($ => ({
     skin: wiFiSkin, state: $.passwordProtected, variant: 0,
     interval: 500, duration: 2500, loop: true,
@@ -4052,7 +4052,7 @@ let timeline = new Timeline();
 | Argument | Type | Description |
 | --- | --- | :--- |
 | `target` | `object` | The object that will have its properties tweened by the timeline.
-| `fromProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the starting values the properties of the `target` object will have at the begining of the tween.
+| `fromProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are the starting values the properties of the `target` object will have at the beginning of the tween.
 | `duration` | `number` | The duration of the tween in ms.
 | `easing` | `number` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
 | `delay` | `number` | The number of ms after the previous tween in the timeline completes that this one should begin. If this number is negative, the tween will begin before the prior tween completes. If no duration is provided, the tween will begin immediately upon completion of the prior tween.

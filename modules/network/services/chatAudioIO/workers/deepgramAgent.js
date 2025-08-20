@@ -105,10 +105,8 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
  		}, 5000);
 	}
 	stopKeepAlive() {
- 		if (this.keepAliveTimer) {
- 			Timer.clear(this.keepAliveTimer);
- 			this.keepAliveTimer = null;
- 		}
+		Timer.clear(this.keepAliveTimer);
+		this.keepAliveTimer = null;
 	}
 	'AgentAudioDone'(message) {
 		this.parser.copy(this.silence);

@@ -77,7 +77,7 @@ For instance, on Mac, the `mxMachinePlatform` macro adds references to a socket 
 ```c
 #include <CoreServices/CoreServices.h>
 
-#define mxMachinePlatfom \
+#define mxMachinePlatform \
 	CFSocketRef connection; \
 	CFRunLoopSourceRef connectionSource; \
 	CFRunLoopSourceRef promiseSource;
@@ -88,7 +88,7 @@ On Windows, the `mxMachinePlatform` macro adds the socket and message window han
 ```c
 #include <winsock2.h>
 
-#define mxMachinePlatfom \
+#define mxMachinePlatform \
 	SOCKET connection; \
 	HWND window;
 ```
@@ -117,7 +117,7 @@ The functions are grouped into meaningful sections. The xsPlatform.c file can al
 
 ### Debug
 
-The functions in this section are only necessary for the debug version of XS. They can be condtionally defined within:
+The functions in this section are only necessary for the debug version of XS. They can be conditionally defined within:
 
 ```c
 #ifdef mxDebug
@@ -535,7 +535,7 @@ From XS point of view, `SharedArrayBuffer` instances are host objects, i.e. inst
 
 What is a shared chunk is defined by the platform. XS atomically accesses 8-bit, 16-bit or 32-bit signed or unsigned integers inside the data of a shared chunk. XS accesses integers either thru GCC atomics, or between calls to `fxLockSharedChunk` and `fxUnlockSharedChunk`
 
-Since `Atomics.wait` and `Atomics.wake` require to synchonize the **shared cluster** of machines created or cloned by XS, platforms usually need a global synchronization mechanism, and synchronization related fields in every machine record, thru the `mxMachinePlatform` macro explained here above.
+Since `Atomics.wait` and `Atomics.wake` require to synchronize the **shared cluster** of machines created or cloned by XS, platforms usually need a global synchronization mechanism, and synchronization related fields in every machine record, thru the `mxMachinePlatform` macro explained here above.
 
 #### Shared Cluster
 

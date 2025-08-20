@@ -29,5 +29,5 @@ or
 
 open browser `http://localhost:8080`
 
-Edit any ts or css file, and on save the browser will auto-update with changes, and the `websocket` is connected to the simulator Modable server
+Edit any ts or css file, and on save the browser will auto-update with changes, and the `websocket` is connected to the simulator Moddable server
 

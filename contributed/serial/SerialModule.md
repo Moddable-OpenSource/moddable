@@ -162,4 +162,4 @@ Call `serial.poll` with no dictionary to stop polling.
 
 `drivers/sim7100/examples/sim7100gps` demonstrates setting up the SIM7100 GPS and asynchronously receiving GPS updates.
 
-`drivers/sim7100/examples/sim7100sms` demonsrates setting up the SIM7100 to send a SMS message.
+`drivers/sim7100/examples/sim7100sms` demonstrates setting up the SIM7100 to send a SMS message.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -640,8 +640,8 @@ export default class extends TOOL {
 	throwPackagePathNotExportedError() {
 		throw new Error("package path not exported!");
 	}
-	throwUnsupportedModuleFormat() {
-		throw new Error("unsupported module format");
+	throwUnsupportedModuleFormat(format) {
+		throw new Error(`unsupported module format: ${format}`);
 	}
 	throwUnsupportedModuleSpecifier() {
 		throw new Error("unsupported module specifier");
@@ -665,7 +665,7 @@ export default class extends TOOL {
 				this.throwModuleNotFoundError();
 			let format = this.ESM_FILE_FORMAT(resolved);
 			if (format !== "module")
-				this.throwUnsupportedModuleFormat();
+				this.throwUnsupportedModuleFormat(format);
 		}
 		return resolved;
 	}
@@ -883,6 +883,10 @@ export default class extends TOOL {
 		let packageURL = this.LOOKUP_PACKAGE_SCOPE(url);
 		if (packageURL) {
 			let pjson = this.READ_PACKAGE_JSON(packageURL);
+			if (undefined === pjson.type) {
+				if (url.endsWith(".js"))
+					return "commonjs";		// default for type
+			}
 			if (pjson.type == "module") {
 				if (url.endsWith(".js"))
 					return "module";

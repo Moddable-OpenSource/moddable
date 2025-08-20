@@ -311,9 +311,9 @@ void xs_ble_server_characteristic_notify_value(xsMachine *the)
 
 	om = ble_hs_mbuf_from_flat(xsmcToArrayBuffer(xsArg(2)), xsmcGetArrayBufferLength(xsArg(2)));
 	if (notify)
-		ble_gattc_notify_custom(ble->conn_id, handle, om);
+		ble_gatts_notify_custom(ble->conn_id, handle, om);
 	else
-		ble_gattc_indicate_custom(ble->conn_id, handle, om);
+		ble_gatts_indicate_custom(ble->conn_id, handle, om);
 }
 
 void xs_ble_server_set_security_parameters(xsMachine *the)

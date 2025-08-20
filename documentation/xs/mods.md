@@ -427,7 +427,7 @@ When loading the archive, XS iterates on the symbol table to build a mapped iden
 
 The atom structuring mechanism is a lightweight way of structuring binary data.
 
-Each atom begins with an 8 byte header consisting of two 32-bit big-endian values. The first value is an unsigned integer that indicates the size of the atom, including the header, in bytes.  The second value is a [four-character code](https://en.wikipedia.org/wiki/FourCC), typically consisting of human-readable ASCII values, that indentifies the content of the atom. For example, for the sole atom at the root of an XS archive file, the first value is the length of the file in bytes and the second value is `XS_A` indicating an atom containing an XS archive.
+Each atom begins with an 8 byte header consisting of two 32-bit big-endian values. The first value is an unsigned integer that indicates the size of the atom, including the header, in bytes.  The second value is a [four-character code](https://en.wikipedia.org/wiki/FourCC), typically consisting of human-readable ASCII values, that identifiers the content of the atom. For example, for the sole atom at the root of an XS archive file, the first value is the length of the file in bytes and the second value is `XS_A` indicating an atom containing an XS archive.
 
 Each atom may contain atoms and/or other data. The content of an atom is defined by its four-character code. For example, the `RSRC` atom above is defined to contain zero or more pairs of `PATH` and `DATA` atoms, whereas the `NAME` atom is defined to contain a null terminated string.
 

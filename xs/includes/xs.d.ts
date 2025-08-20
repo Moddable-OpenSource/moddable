@@ -65,6 +65,22 @@ interface ArrayBuffer {
 	concat(...buffers: ArrayBufferLike[]): ArrayBuffer;
 }
 
+interface Uint8Array {
+	toHex(): string;
+	toBase64(): string
+}
+
+interface FromBase64Options {
+	alphabet?: "base64url" | "base64";
+	lastChunkHandling?: "stop-before-partial" | "strict" | "loose";
+	omitPadding?: boolean;
+}
+
+interface Uint8ArrayConstructor {
+	fromBase64(base64: string, options?: FromBase64Options): Uint8Array;
+	fromHex(string: string): Uint8Array;
+}
+
 interface BigIntConstructor {
 	bitLength(value: BigInt): number
 	fromArrayBuffer(buffer: ArrayBufferLike): BigInt

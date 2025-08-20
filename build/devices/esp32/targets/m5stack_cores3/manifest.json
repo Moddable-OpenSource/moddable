@@ -22,7 +22,6 @@
 			"frameSize": "QVGA"
 		},
 		"virtualButton": false,
-		"touch": "M5StackCoreS3Touch",
 		"startupSound": "bflatmajor.maud"
 	},
 	"modules": {
