@@ -32,23 +32,28 @@
  
  struct modTimerRecord { 
 	 EventedTimerID eventedTimer;
-	 int8_t useCount;
-	 int8_t checkRepeat;
 	 modTimerCallback cb;
 	 int secondInterval;
-	 uint32_t refconSize;
+	 uint32_t earliest;
+	 int8_t useCount;
+	 int8_t checkRepeat;
+	 uint16_t refconSize;
 	 char refcon[];
  };
 
  static void modTimerExcecuteOne(void* data)
  {
-	 modTimer timer = data;
- 
-	 timer->useCount++;
-	 (timer->cb)(timer, timer->refcon, timer->refconSize);
-	 timer->useCount--;
- 
-	 if ((timer->useCount <= 0) || (0 == timer->secondInterval))
+	modTimer timer = data;
+	uint32_t now = modMilliseconds();
+
+	if (now > timer->earliest) {
+		timer->useCount++;
+		(timer->cb)(timer, timer->refcon, timer->refconSize);
+		timer->useCount--;
+		timer->earliest = now + timer->secondInterval - 1;
+	}
+
+	if ((timer->useCount <= 0) || (0 == timer->secondInterval))
 		 modTimerRemove(timer);
 	else if (timer->checkRepeat) {
 		timer->checkRepeat = 0;
@@ -61,12 +66,10 @@
 	 modTimer timer = c_malloc(sizeof(modTimerRecord) + refconSize);
 	 if (!timer) return C_NULL;
  
-	if (firstInterval < 20)		//@@ hack-around. PebbleOS calls the timer many many times if this number is much smaller than 20
-		firstInterval = 20;
-
 	 timer->useCount = 1;
 	 timer->cb = cb;
 	 timer->refconSize = refconSize;
+	 timer->earliest = modMilliseconds() - 1;
 	 c_memmove(timer->refcon, refcon, refconSize);
  
 	 timer->secondInterval = secondInterval;
@@ -82,6 +85,7 @@
  {
 	timer->secondInterval = secondInterval;
 	timer->checkRepeat = 1;
+	timer->earliest = modMilliseconds() - 1;
 	if (EVENTED_TIMER_INVALID_ID == timer->eventedTimer)
 		timer->eventedTimer = evented_timer_register(firstInterval, true, modTimerExcecuteOne, timer);
 	else
