@@ -469,19 +469,19 @@ void PiuView_create(xsMachine* the)
 	layer_set_update_proc(layer, doUpdate);
 	(*self)->window = window;
 	
-	if (!app_manager_is_watchface_running()) {
-		eventServiceDown.type = PEBBLE_BUTTON_DOWN_EVENT;
-		eventServiceDown.handler = buttonDownEventHandler;
-		eventServiceDown.context = application;
-		event_service_client_subscribe(&eventServiceDown);
-		
-		eventServiceUp.type = PEBBLE_BUTTON_UP_EVENT;
-		eventServiceUp.handler = buttonUpEventHandler;
-		eventServiceUp.context = application;
-		event_service_client_subscribe(&eventServiceUp);
-		
-		window_set_overrides_back_button(window, true);
-	}
+// 	if (!app_manager_is_watchface_running()) {
+// 		eventServiceDown.type = PEBBLE_BUTTON_DOWN_EVENT;
+// 		eventServiceDown.handler = buttonDownEventHandler;
+// 		eventServiceDown.context = application;
+// 		event_service_client_subscribe(&eventServiceDown);
+// 		
+// 		eventServiceUp.type = PEBBLE_BUTTON_UP_EVENT;
+// 		eventServiceUp.handler = buttonUpEventHandler;
+// 		eventServiceUp.context = application;
+// 		event_service_client_subscribe(&eventServiceUp);
+// 		
+// 		window_set_overrides_back_button(window, true);
+// 	}
 }
 
 void PiuView_onDisplayReady(xsMachine* the)
