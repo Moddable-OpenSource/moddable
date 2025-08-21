@@ -155,6 +155,10 @@ export default class extends TOOL {
 		if (!this.colorFormat) {
 			this.colorFormat = 7;
 		}
+		if (this.colorFormat == formatValues.monochromealigned) {
+			this.alphaFormat = formatValues.monochromealigned;
+			this.bm4 = true;
+		}
 		if (this.inputPaths.length == 0) {
 			throw new Error("no file!");
 		}

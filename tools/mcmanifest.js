@@ -30,7 +30,8 @@ var formatNames = {
 	rgb565be: "rgb565be",
 	clut16: "clut16",
 	argb4444: "argb4444",
-	x: "x",
+	monochromealigned: "monochromealigned",
+	x: "monochromealigned",
 };
 
 var formatValues = {
@@ -41,7 +42,7 @@ var formatValues = {
 	rgb565be: 8,
 	clut16: 11,
 	argb4444: 12,
-	x: 0,
+	monochromealigned: 21,
 };
 
 export class MakeFile extends FILE {
@@ -847,6 +848,13 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.write(" -a");
 				if (result.monochrome)
 					this.write((1 == result.monochrome) ? " -m -4" : " -ma -4");
+				else {
+					this.write(" -f ");
+					if (result.format)
+						this.write(result.format);
+					else
+						this.write(tool.format);
+				}
 				this.write(" -o $(@D) -r ");
 				this.write(tool.rotation);
 				this.line(name);
@@ -1423,18 +1431,18 @@ class ResourcesRule extends Rule {
 		if (tool.bmpAlphaFiles.already[path] || tool.bmpColorFiles.already[path] || tool.bmpMaskFiles.already[path])
 			return;
 		if (suffix == "-color") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
 		}
 		else if ((suffix == "-color-monochrome") || (suffix == "-color-monochromealigned")) {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
 			colorFile.monochrome = (suffix == "-color-monochrome") ? 1 : 2;
 		}
 		else if (suffix == "-color-argb4444") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
 			colorFile.format = "argb4444";
 		}
 		else if (suffix == "-alpha") {
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha" + tool.bitmapExtension, path, include);
 		}
 		else if ((suffix == "-alpha-monochrome") || (suffix == "-alpha-monochromealigned")) {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
@@ -1452,8 +1460,8 @@ class ResourcesRule extends Rule {
 			colorFile.alphaFile = alphaFile;
 		}
 		else {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha" + tool.bitmapExtension, path, include);
 			alphaFile.colorFile = colorFile;
 			colorFile.alphaFile = alphaFile;
 		}
@@ -1875,6 +1883,7 @@ export class Tool extends TOOL {
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";
+		this.bitmapExtension = (this.format == "monochromealigned") ? ".bm4" : ".bmp";
 		if (this.platform == "mac")
 			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
