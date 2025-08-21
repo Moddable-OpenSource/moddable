@@ -38,34 +38,6 @@ const blockedWatchFace = Object.freeze([
 	"pebble/button"
 ]);
 
-class TextureArchive extends Texture {
-	constructor (options, alphaBitmap, colorBitmap) {
-		if (alphaBitmap || colorBitmap)
-			super(options, alphaBitmap, colorBitmap);
-		else {
-			const t = typeof options;
-			if ("number" === t)
-				super(options);
-			else if ("object" === t)
-				super({...options, archive: state.archive});
-			else
-				super({path: options, archive: state.archive});
-		}
-	}
-}
-
-class ResourceArchive extends Resource {
-	constructor(path) {
-		super(path, state.archive);
-	}
-}
-
-class StyleArchive extends Style {
-	constructor(options) {
-		super({...options, archive: state.archive});
-	}
-}
-
 globalThis.device = Object.freeze({
 	network: {
 		http: {
@@ -104,7 +76,7 @@ export default function() {
 		screen,
 		Date,
 		Math,
-		Resource: ResourceArchive,
+		Resource,
 		Pebble: new Pebble,
 
 		// network
@@ -125,12 +97,13 @@ export default function() {
 		Port,
 		Row,
 		Skin,
-		Style: StyleArchive,
+		Style,
 		Text,
-		Texture: TextureArchive,
+		Texture,
 		Inverter,
 		RoundRect,
 		SVGImage,
+		ScreenBuffer,
 		Inverter,
 		RoundRect,
 		Transition

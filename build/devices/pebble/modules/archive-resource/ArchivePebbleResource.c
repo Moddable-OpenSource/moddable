@@ -59,8 +59,10 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 
 		// remapped = 0;
 		void *d = fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
+		fxSetArchive(the, self->address);
 		// if (remapped)
 		// 	xsLog("# remap archive %d\n", resource_id);
+		
 
 		mxPushReference(mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module);
 		mxGetID(xsID_Archive);
