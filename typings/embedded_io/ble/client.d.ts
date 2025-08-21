@@ -10,13 +10,9 @@ declare module "embedded:io/bluetoothle/central" {
         get(adType: number): ArrayBuffer | undefined;
     }
 
-    interface GAPClientFilters {
-        services?: string[]
-    }
-
     interface GAPClientOptions {
         target?: any;
-        filters?: GAPClientFilters;
+        services?: string[]
         onError?: (this: GAPClient, error: Error) => void;
         onReadable?: (this: GAPClient, count: number) => void;
     }

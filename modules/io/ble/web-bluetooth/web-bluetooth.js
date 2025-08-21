@@ -170,7 +170,7 @@ const bluetooth = Object.freeze({
 		});
 		const target = Promise.withResolvers();
 		const scanner = new GAPClient({
-			filters: { services },
+			services,
 			onReadable() {
 				const advertisement = this.read();
 				if (names.length && (names.indexOf(advertisement.name) < 0))

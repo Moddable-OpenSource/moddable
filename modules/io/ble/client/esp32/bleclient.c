@@ -185,13 +185,10 @@ void xs_gapclient_build(xsMachine *the)
 	scan->advertisementConstructor = xsmcToReference(xsArg(1));
 	scan->mutex = xSemaphoreCreateMutex();
 
-	xsmcVars(3);
-	if (xsmcHas(xsArg(0), xsID_filters)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_filters);
-		if (xsmcHas(xsVar(0), xsID_services)) {
-			xsmcGet(xsVar(1), xsVar(0), xsID_services);
-			getUUIDList(the, &xsVar(1), &scan->serviceFiltersLength, &scan->serviceFilters);
-		}
+	xsmcVars(1);
+	if (xsmcHas(xsArg(0), xsID_services)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_services);
+		getUUIDList(the, &xsVar(0), &scan->serviceFiltersLength, &scan->serviceFilters);
 	}
 
 	if (0 == gNimBLEInititalized++) {

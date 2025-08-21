@@ -16,11 +16,9 @@ import { GAPClient, GATTClient } from "embedded:io/bluetoothle/central";
 
 function scan() {
 	new GAPClient({
-		filters: {
-			services:[
-				"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
-			]
-		},
+		services:[
+			"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
+		],
 		onReadable() {
 			const advertisement = this.read();
 			this.close();
