@@ -7,6 +7,7 @@ struct PiuSVGImageStruct {
 	PiuBehaviorPart;
 	PiuContentPart;
 	xsIntegerValue id;
+	xsSlot* path;
 	GDrawCommandFrame* dcf;
 	GDrawCommandImage* dci;
 	GDrawCommandList* dcl;
@@ -64,35 +65,53 @@ const xsHostHooks ICACHE_FLASH_ATTR PiuSVGImageHooks = {
 	NULL
 };
 
+mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data, xsUnsignedValue *count, xsBooleanValue writable);
+
 void PiuSVGImageBind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuSVGImage* self = it;
 	xsBeginHost((*self)->the);
 	xsVars(2);
+	GDrawCommandImage *dci = NULL;
+	GDrawCommandSequence *dcs = NULL;
 	if ((*self)->id) {
-		GDrawCommandImage *dci = gdraw_command_image_create_with_resource((*self)->id);
+		dci = gdraw_command_image_create_with_resource((*self)->id);
+		if (dci == NULL)
+			dcs = gdraw_command_sequence_create_with_resource((*self)->id);
+	}
+	else if ((*self)->path) {
+		void* data;
+		xsUnsignedValue count;
+		xsVar(0) = *((*self)->path);
+		xsVar(0) = xsNew1(xsGlobal, xsID_Resource, xsVar(0));
+		_xsmcGetBuffer(the, &xsVar(0), &data, &count, 0);
+  		dci = (GDrawCommandImage *)(((uint8_t*)data) + PDCI_DATA_OFFSET);
+		if (!gdraw_command_image_validate(dci, count - PDCI_DATA_OFFSET)) {
+			dci = NULL;
+			dcs = (GDrawCommandSequence *)(((uint8_t*)data) + PDCS_DATA_OFFSET);
+			if (!gdraw_command_sequence_validate(dcs, count - PDCS_DATA_OFFSET)) {
+				dcs = NULL;
+			}
+		}
 		if (dci) {
 			(*self)->dci = dci;
 			GSize size = gdraw_command_image_get_bounds_size(dci);
 			(*self)->dataWidth = size.w;
 			(*self)->dataHeight = size.h;
 		}
-		else {
-			GDrawCommandSequence *dcs = gdraw_command_sequence_create_with_resource((*self)->id);
-			if (dcs) {
-				(*self)->dcs = dcs;
-				GSize size = gdraw_command_sequence_get_bounds_size(dcs);
-				(*self)->dataWidth = size.w;
-				(*self)->dataHeight = size.h;
-				uint32_t duration = 0;
-				uint32_t c = gdraw_command_sequence_get_num_frames(dcs);
-				for (uint32_t i = 0; i < c; i++) {
-					GDrawCommandFrame* dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
-					duration += gdraw_command_frame_get_duration(dcf);
-				}
-				(*self)->duration = duration;
-				(*self)->dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
+		else if (dcs) {
+			(*self)->dcs = dcs;
+			GSize size = gdraw_command_sequence_get_bounds_size(dcs);
+			(*self)->dataWidth = size.w;
+			(*self)->dataHeight = size.h;
+			uint32_t duration = 0;
+			uint32_t c = gdraw_command_sequence_get_num_frames(dcs);
+			for (uint32_t i = 0; i < c; i++) {
+				GDrawCommandFrame* dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
+				duration += gdraw_command_frame_get_duration(dcf);
 			}
+			(*self)->duration = duration;
+			(*self)->dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
 		}
 		(*self)->cx = (xsNumberValue)(*self)->dataWidth / 2.0;
 		(*self)->cy = (xsNumberValue)(*self)->dataHeight / 2.0;
@@ -108,15 +127,20 @@ void PiuSVGImageDictionary(xsMachine* the, void* it)
 {
 	PiuSVGImage* self = it;
 	xsBooleanValue boolean;
-	xsIntegerValue integer;
 	if (xsFindBoolean(xsArg(1), xsID_clip, &boolean)) {
 		if (boolean)
 			(*self)->flags |= piuClip;
 		else
 			(*self)->flags &= ~piuClip;
 	}
-	if (xsFindInteger(xsArg(1), xsID_path, &integer)) {
-		(*self)->id = integer;
+	if (xsFindResult(xsArg(1), xsID_path)) {
+		if (xsTypeOf(xsResult) == xsIntegerType) {
+			(*self)->id = xsToInteger(xsResult);
+		}
+		else {
+			xsSlot* path = PiuString(xsResult);
+			(*self)->path = path;
+		}
 	}
 }
 
@@ -231,7 +255,10 @@ void PiuSVGImageInvalidate(void* it, PiuRectangle area)
 
 void PiuSVGImageMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
+	PiuSVGImage self = it;
 	PiuContentMark(the, it, markRoot);
+	if (self->path)
+		PiuMarkString(the, self->path);
 }
 
 void PiuSVGImageMeasureHorizontally(void* it) 
