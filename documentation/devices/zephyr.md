@@ -36,7 +36,7 @@ The instructions below will have you verify your setup by running the `helloworl
 
 To build for a Zephyr board, run `mcconfig` with `zephyr/<board>` for the **platform identifier**. For example, to build for the ST Nucleo L4A6ZG:
 
-```shell
+```sh
 mcconfig -d -m -p zephyr/nucleo_l4a6zg
 ```
 
@@ -76,7 +76,7 @@ The Moddable SDK build for Zephyr currently uses the Zephyr SDK v4.2.0-rc1 (comm
 
 1. Create a `zephyrproject` directory in your home directory at `~/zephyrproject ` for required third-party SDKs and tools.
 	
-	```shell
+	```sh
 	mkdir ~/zephyrproject
 	cd ~/zephyrproject
 	```
@@ -94,19 +94,19 @@ The Moddable SDK build for Zephyr currently uses the Zephyr SDK v4.2.0-rc1 (comm
 
 4. Install Zephyr requirements.
 		
-	```shell
+	```sh
 	brew install cmake ninja gperf python3 python-tk ccache qemu dtc libmagic wget openocd
 	```
 
 5. Create a new virtual environment (one time).
 	
-	```shell
+	```sh
 	python3 -m venv ~/zephyrproject/.venv
 	```
 
 6. Activate the virtual environment (for each new shell).
 	
-	```shell
+	```sh
 	source ~/zephyrproject/.venv/bin/activate
 	```
 
@@ -114,13 +114,13 @@ The Moddable SDK build for Zephyr currently uses the Zephyr SDK v4.2.0-rc1 (comm
 
 7. Install the `west` tool.
 	
-	```shell
+	```sh
 	pip install west
 	```
 
 8. Get the Zephyr SDK.
 	
-	```shell
+	```sh
 	west init ~/zephyrproject
 	cd ~/zephyrproject
 	west update
@@ -131,13 +131,13 @@ Is exporting a Zephyr CMake package necessary?
 
 9. Install Python dependencies using the Zephyr west extension command `west packages`.
 	
-	```shell
+	```sh
 	west packages pip --install
 	```
 
 10. Install the Zephyr SDK.
 	
-	```shell
+	```sh
 	cd ~/zephyrproject/zephyr
 	west sdk install
 	```
@@ -154,13 +154,13 @@ Is exporting a Zephyr CMake package necessary?
 
 	You can then flash the software to run it.
 
-	```shell
+	```sh
 	west flash
 	```
 
 13. Verify the complete setup by building `helloworld` for your device target.
 
-	```shell
+	```sh
 	cd ${MODDABLE}/examples/helloworld
 	mcconfig -d -m -p zephyr/nucleo_l4a6zg
 	```
@@ -169,7 +169,7 @@ Is exporting a Zephyr CMake package necessary?
 	
 	a. Start xsbug.
 		
-	```shell
+	```sh
 	open $MODDABLE/build/bin/mac/release/xsbug.app
 	```
 		
@@ -177,13 +177,13 @@ Is exporting a Zephyr CMake package necessary?
 		
 	> Note: currently configured for 115200 baud
 		
-	```shell
+	```sh
 	serial2xsbug /dev/cu.usbmodem114433 115200 8N1
 	```
 
 15. Deploy the Zephyr application to your device.
 	
-	```shell
+	```sh
 	mcconfig -d -m -p zephyr/nucleo_l4a6zg -t deploy
 	```
 
@@ -219,7 +219,7 @@ For native code source level debugging, you can use [GDB](https://www.gnu.org/so
 
 Use the `-t debug` target to start the debugger:
 
-```shell
+```sh
 mcconfig -d -m -p zephyr/nucleo_l4a6zg -t debug
 ```
 
@@ -232,12 +232,12 @@ You can't do that when your target is `exec'
 
 Start openocd:
 
-```shell
+```sh
 openocd -s ~/zephyrproject/zephyr/boards/st/nucleo_l4a6zg/support
 ```
 
 and try to build the `-t debug` target.
 
-```shell
+```sh
 mcconfig -d -m -p zephyr/nucleo_l4a6zg -t debug
 ```
