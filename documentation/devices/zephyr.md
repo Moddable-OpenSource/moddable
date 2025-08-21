@@ -225,19 +225,19 @@ mcconfig -d -m -p zephyr/nucleo_l4a6zg -t debug
 
 > Note: if you receive this error, you may have to start `openocd` in another window if the gdb connection fails. We have encountered this on the Nucleo L4A6ZG board running with a macOS host.
 
-```
+```text
 :3333: Operation timed out.
 You can't do that when your target is `exec'
 ```
 
 Start openocd:
 
-```
-> openocd -s ~/zephyrproject/zephyr/boards/st/nucleo_l4a6zg/support
+```shell
+openocd -s ~/zephyrproject/zephyr/boards/st/nucleo_l4a6zg/support
 ```
 
 and try to build the `-t debug` target.
 
-```
+```shell
 mcconfig -d -m -p zephyr/nucleo_l4a6zg -t debug
 ```
