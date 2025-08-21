@@ -49,13 +49,13 @@ function instantiateHeartRateMonitor(address) {
 			if (heartRate) {
 				trace("using cached heartRate characteristic\n");
 				this.heartRate = this.restore(heartRate);
-				this.enableNotifications(this.heartRate, true);
+				this.subscribe(this.heartRate);
 			}
 			else {
 				this.getPrimaryServices([ "180d"], (error, services) => {
 					this.getCharacteristics(services[0], ["2a37"], (error, characteristics) => {
 						this.heartRate = characteristics[0];
-						this.enableNotifications(characteristics[0], true, error => {
+						this.subscribe(characteristics[0], error => {
 							store.write("heartRate", this.store(this.heartRate));
 							trace("heartRate characteristic cached for future connections\n");
 						});

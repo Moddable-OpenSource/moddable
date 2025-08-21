@@ -57,7 +57,7 @@ function testUART(address) {
 						if (characteristic.properties & GATTClient.properties.write)
 							this.output = characteristic;
 					});
-					this.enableNotifications(this.input, true, error => {
+					this.subscribe(this.input, error => {
 						trace(`notification: ${ this.input.uuid } ${ error ? "error " + error : "enabled"}\n`);
 					});
 					this.write(this.output, Uint8Array.of(0, 1, 2, 3), error => {

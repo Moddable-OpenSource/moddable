@@ -403,7 +403,7 @@ class BluetoothDevice {
 		}
 		startNotifications() {
 			const target = Promise.withResolvers();
-			this.service.device.#bleClient.enableNotifications(this.#bleCharacteristic, true, (error, result) => {
+			this.service.device.#bleClient.subscribe(this.#bleCharacteristic, (error, result) => {
 				if (error)
 					target.reject(error);
 				else {
@@ -421,7 +421,7 @@ class BluetoothDevice {
 		}
 		stopNotifications() {
 			const target = Promise.withResolvers();
-			this.service.device.#bleClient.enableNotifications(this.#bleCharacteristic, false, (error, result) => {
+			this.service.device.#bleClient.unsubscribe(this.#bleCharacteristic, (error, result) => {
 				if (error)
 					target.reject(error);
 				else {

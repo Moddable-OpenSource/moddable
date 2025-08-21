@@ -42,7 +42,7 @@ function instantiateHeartRateMonitor(address) {
 				this.getCharacteristics(services[0], ["2a37"], (error, characteristics) => {
 					this.heartRate = characteristics[0];
 					trace(` heartRate.handle ${this.heartRate.handle}\n`);
-					this.enableNotifications(characteristics[0], true);
+					this.subscribe(characteristics[0]);
 				});
 			});
 		},
