@@ -4,6 +4,7 @@
 #include "applib/graphics/bitblt.h"
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gdraw_command_image.h"
+#include "applib/graphics/gdraw_command_private.h"
 #include "applib/graphics/gdraw_command_sequence.h"
 #include "applib/graphics/gdraw_command_transforms.h"
 #include "applib/graphics/gtypes.h"
