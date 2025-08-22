@@ -549,4 +549,4 @@ class BluetoothDevice {
 	}
 }
 
-export { BluetoothUUID,  bluetooth }
+export { BluetoothUUID,  bluetooth, BluetoothDevice }
