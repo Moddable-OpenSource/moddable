@@ -11,7 +11,7 @@ export class Pebble {
 	static events = Object.freeze([
 		"secondchange",	
 		"minutechange",
-		"minutechange",
+		"hourchange",
 		"daychange"
 	]);
 	#events = new Map;
@@ -53,7 +53,7 @@ export class Pebble {
 		else
 			interval *= 60 * 60 * 24;
 
-		Timer.schedule(this.#timeChange, interval - (Date.now() % interval), interval);
+		Timer.schedule(this.#timeChange, interval - (Date.now() % interval) + 10, interval);		// +10 because sometimes the initial fires early otherwise
 	}
 	removeEventListener(event, callback) {
 		const list = this.#events.get(event);
