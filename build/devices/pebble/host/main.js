@@ -60,7 +60,7 @@ globalThis.device = Object.freeze({
 }, true);
 
 export default function() {
-	Timer.delay(500);
+//	Timer.delay(500);
 
 	state.archive = (new ArchiveResource(0))?.archive;
 	console.log(`Found mod "${state.archive.name}"`);
