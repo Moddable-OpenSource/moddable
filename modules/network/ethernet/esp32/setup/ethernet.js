@@ -32,6 +32,7 @@ export default function (done) {
 	}
 
     try {
+		trace("Starting Ethernet\n");
         Ethernet.start();
     } catch (error) {
         trace(`Ethernet hardware not found.\n`);
