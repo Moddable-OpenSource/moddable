@@ -18,6 +18,7 @@
  *
  */
 
+#include "esp_eth.h"
 #include "esp_eth_mac.h"
 #include "esp_eth_phy.h"
 #include "driver/spi_master.h"

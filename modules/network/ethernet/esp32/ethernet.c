@@ -23,17 +23,22 @@
 #include "xsHost.h"
 
 #include "mc.xs.h"			// for xsID_ values
-#include "mc.defines.h"
+#include "mc.defines.h"		// Moddable defines
 
 #include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
-
 #include "ethernet.h"
 #include "esp_eth_phy.h"
 
 #include "modSPI.h"
 
+#include "driver/gpio.h"
+
+#include "esp_log.h"
+
+static const char *TAG = "mod.ethernet.c";
 
 int8_t gEthernetState = -2;	// -2 = uninitialized, -1 = gpio isr initialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 int8_t	gEthernetIP = 0;		// 0x01 == IP4, 0x02 == IP6
@@ -49,6 +54,7 @@ static void uninit_spi();
 
 void xs_ethernet_start(xsMachine *the)
 {
+	ESP_LOGI(TAG,"xs_ethernet_start()");
 	esp_err_t err = initEthernet();
 	if (err != ESP_OK)
 		xsUnknownError("Ethernet device not found");
@@ -174,7 +180,7 @@ static void doEthernetEvent(void* arg, esp_event_base_t event_base, int32_t even
 	xsEthernet walker;
 
 	esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
-
+	ESP_LOGI(TAG,"doEthernetEvent: Event=%d",event_id );
 	switch (event_id) {
 		case ETHERNET_EVENT_START:
 #ifdef MODDEF_ETHERNET_HOSTNAME
@@ -236,6 +242,8 @@ esp_err_t initEthernet(void)
 	esp_eth_phy_t *phy;
 	esp_eth_handle_t eth_handle;
 
+	ESP_LOGI(TAG,"Initialize Ethernet");
+
 	if (gEthernetState > 0) return err;
 
 	esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
@@ -265,19 +273,34 @@ esp_err_t initEthernet(void)
     phy = esp_eth_phy_new_ksz8081(&phy_config);
 #endif
 #else
+	// SPI Ethernet device
 	if (gEthernetState < -1) {
 		gpio_install_isr_service(0);
 		gEthernetState = -1;
 	}
-	
+	ESP_LOGI(TAG,"Initialize Ethernet SPI");
 	spi_device_interface_config_t devcfg = {
-        .command_bits = 3,
+#ifdef MODDEF_ETHERNET_SPI_COMMAND_BITS
+		.command_bits = MODDEF_ETHERNET_SPI_COMMAND_BITS,
+#else
+		.command_bits = 3,		// requires a related change to pins/spi
+#endif
+#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
+		.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
+#else
         .address_bits = 5,
+#endif // MODDEF_ETHERNET_SPI_ADDRESS_BITS
         .mode = 0,
         .clock_speed_hz = MODDEF_ETHERNET_HZ,
         .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
         .queue_size = 20
     };
+
+#ifdef MODDEF_ETHERNET_POWER_PIN
+	// Turn ethernet phy on. This is needed if you control power to the Ethernet board.
+    gpio_set_direction(MODDEF_ETHERNET_POWER_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_level(MODDEF_ETHERNET_POWER_PIN, 1);
+#endif
 
 	init_spi();
 	mac = mod_ethernet_get_mac(devcfg, MODDEF_ETHERNET_INT_PIN);
@@ -286,6 +309,7 @@ esp_err_t initEthernet(void)
 	
 	esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
 	eth_handle = NULL;
+	ESP_LOGI(TAG,"Installing Ethernet driver");
 	err = esp_eth_driver_install(&eth_config, &eth_handle);
 	if (err != ESP_OK) {
 		if (mac)
@@ -328,15 +352,32 @@ static void init_spi() {
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
 	};
-	ESP_ERROR_CHECK(spi_bus_initialize(MODDEF_ETHERNET_SPI_PORT, &buscfg, 2));
+	int spi_dma_channel = 2;
+#ifdef MODDEF_ETHERNET_SPI_DMA_CH
+	spi_dma_channel = MODDEF_ETHERNET_SPI_DMA_CH;
+#endif
+	ESP_LOGI(TAG,"init_spi() MISO=%d MOSI=%d SCK=%d CS=%d DMS_Ch=%d PORT=%d HZ=%d", 
+		MODDEF_ETHERNET_SPI_MISO_PIN, MODDEF_ETHERNET_SPI_MOSI_PIN, MODDEF_ETHERNET_SPI_SCK_PIN, spi_dma_channel,
+		MODDEF_ETHERNET_SPI_CS_PIN, MODDEF_ETHERNET_SPI_PORT, MODDEF_ETHERNET_HZ);
+
+	ESP_ERROR_CHECK(spi_bus_initialize(MODDEF_ETHERNET_SPI_PORT, &buscfg, MODDEF_ETHERNET_SPI_DMA_CH ));
 #else
+	ESP_LOGI(TAG,"init_spi() Using internal defaults");
 	modSPIConfigurationRecord config = {0};
 	config.cs_pin = MODDEF_ETHERNET_SPI_CS_PIN;
 	config.spiPort = HSPI_HOST;
 	config.sync = 1;
 	config.hz = MODDEF_ETHERNET_HZ;
-	config.command_bits = 3; 	// requires a related change to pins/spi
-	config.address_bits = 5;
+#ifdef MODDEF_ETHERNET_SPI_COMMAND_BITS
+	config.command_bits = MODDEF_ETHERNET_SPI_COMMAND_BITS,
+#else
+	config.command_bits = 3,		// requires a related change to pins/spi
+#endif
+#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
+	config.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
+#else
+	config.address_bits = 5,
+#endif
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIInit(&config);
@@ -344,6 +385,7 @@ static void init_spi() {
 }
 
 static void uninit_spi() {
+	ESP_LOGI(TAG,"uninit_spi()");
 #ifdef MODDEF_ETHERNET_SPI_MISO_PIN
     spi_bus_free(MODDEF_ETHERNET_SPI_PORT);
 #else
@@ -352,8 +394,16 @@ static void uninit_spi() {
 	config.spiPort = HSPI_HOST;
 	config.sync = 1;
 	config.hz = MODDEF_ETHERNET_HZ;
-	config.command_bits = 3; 	// requires a related change to pins/spi
-	config.address_bits = 5;
+#ifdef MODDEF_ETHERNET_SPI_COMMAND_BITS
+	config.command_bits = MODDEF_ETHERNET_SPI_COMMAND_BITS,
+#else
+	config.command_bits = 3,		// requires a related change to pins/spi
+#endif
+#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
+	config.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
+#else
+	config.address_bits = 5,
+#endif
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIUninit(&config);
