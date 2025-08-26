@@ -1,7 +1,22 @@
 {
+	"creation": {
+		"keys": {
+			"initial": 32,
+			"incremental": 32,
+			"name": 53,
+			"symbol": 3
+		},
+		"parser": {
+			"buffer": 1024,
+			"table": 17
+		},
+		"main": "main"
+	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
+		"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json",
+		"$(MODULES)/crypt/tls.json",
+		"$(MODULES)/network/http/manifest.json"
 	],
 	"modules": {
 		"~": [
@@ -10,12 +25,19 @@
 		],
 		"*": [
 			"./main",
-			"$(MODULES)/network/http/*"
+			"$(MODULES)/network/http/*",
+			"$(MODULES)/network/sntp/*"
 		],
 		"ethernet/connection": "./ethernetconnection"
 	},
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca176"
+		]
+	},
 	"preload": [
-		"http"
+		"http",
+		"sntp"
 	],
 	"platforms": {
 		"esp32": {},
