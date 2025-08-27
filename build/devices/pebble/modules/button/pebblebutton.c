@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2025  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ * 
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ * 
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ * 
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
@@ -13,7 +33,7 @@ struct PebbleButtonRecord {
 	xsMachine						*the;
 	xsSlot	 						obj;
 	xsSlot	 						*onPush;
-	ButtonId							button;
+	uint32_t							buttons;
 };
 typedef struct PebbleButtonRecord PebbleButtonRecord;
 typedef struct PebbleButtonRecord *PebbleButton;
@@ -25,13 +45,29 @@ static EventServiceInfo	eventServiceUp;
 static void buttonEventHandler(int pushed, int button)
 {
 	PebbleButton pb;
+	char *name;
 
+	if (BUTTON_ID_BACK == button)
+		name = "back";
+	else if (BUTTON_ID_DOWN == button)
+		name = "down";
+	else if (BUTTON_ID_SELECT == button)
+		name = "select";
+	else if (BUTTON_ID_UP == button)
+		name = "up";
+	else
+		return;
+
+	button = 1 << button;
 	for (pb = gButtons; pb; pb = pb->next) {
-		if (pb->button != button)
+		if (!(pb->buttons & button))
 			continue;
 
 		xsBeginHost(pb->the);
-		xsCallFunction1(xsReference(pb->onPush), pb->obj, xsInteger(pushed));
+			xsmcVars(2);
+			xsmcSetInteger(xsVar(0), pushed);
+			xsmcSetStringX(xsVar(1), name);
+			xsCallFunction2(xsReference(pb->onPush), pb->obj, xsVar(0), xsVar(1));
 		xsEndHost(pb->the);
 	}
 }
@@ -63,7 +99,7 @@ void xs_pebblebutton_destructor(void *data)
 	}
 	
 	for (walker = gButtons; walker; walker = walker->next) {
-		if (walker->button == BUTTON_ID_BACK)
+		if (walker->buttons & (1 << BUTTON_ID_BACK))
 			break;
 	}
 	if (C_NULL == walker)
@@ -84,13 +120,10 @@ static const xsHostHooks xsPebbleButtonHooks = {
 	NULL
 };
 
-void xs_pebblebutton(xsMachine *the)
+uint32_t resolveButton(xsMachine *the, xsSlot *aType)
 {
 	ButtonId button;
-
-	xsmcVars(1);
-	xsmcGet(xsVar(0), xsArg(0), xsID_type);
-	char *type = xsmcToString(xsVar(0));
+	char *type = xsmcToString(xsVar(1));
 	if (c_strcmp(type, "back") == 0)
 		button = BUTTON_ID_BACK;
 	else if (c_strcmp(type, "down") == 0)
@@ -101,6 +134,31 @@ void xs_pebblebutton(xsMachine *the)
 		button = BUTTON_ID_UP;
 	else
 		xsUnknownError("unknown button type");
+	return 1 << button;
+}
+
+void xs_pebblebutton(xsMachine *the)
+{
+	uint32_t buttons = 0;
+
+	xsmcVars(2);
+	if (xsmcHas(xsArg(0), xsID_type)) {
+		xsmcGet(xsVar(1), xsArg(0), xsID_type);
+		buttons = resolveButton(the, &xsVar(0));
+	}
+	else {
+		xsSlot tmp;
+		xsmcGet(xsVar(0), xsArg(0), xsID_types);
+		xsmcGet(tmp, xsVar(0), xsID_length);
+		int count = xsmcToInteger(tmp);
+		if (count <= 0)
+			xsUnknownError("no buttons");
+		while (count--) {
+			xsmcGetIndex(xsVar(1), xsVar(0), count);
+			buttons |= resolveButton(the, &xsVar(0));
+		}
+
+	}
 	if (!xsmcHas(xsArg(0), xsID_onPush))
 		xsUnknownError("onPush required");
 	xsmcGet(xsVar(0), xsArg(0), xsID_onPush);
@@ -114,7 +172,7 @@ void xs_pebblebutton(xsMachine *the)
 	pb->the = the;
 	pb->obj = xsThis;
 	xsRemember(pb->obj);
-	pb->button = button;
+	pb->buttons = buttons;
 	pb->onPush = xsmcToReference(xsVar(0));
 	
 	if (NULL == gButtons) {
@@ -129,7 +187,7 @@ void xs_pebblebutton(xsMachine *the)
 	pb->next = gButtons;
 	gButtons = pb;
 
-	if (BUTTON_ID_BACK == button)
+	if ((1 << BUTTON_ID_BACK) & buttons)
 		window_set_overrides_back_button(app_window_stack_get_top_window(), true);
 }
 
