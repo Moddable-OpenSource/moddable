@@ -104,6 +104,7 @@ class View @ "PiuViewDelete" {
 	get rotation() @ "PiuView_get_rotation" 
 	get ticks() @ "PiuView_get_ticks" 
 	
+	onButton(state, which) @ "PiuView_onButton"
 	onDisplayReady() @ "PiuView_onDisplayReady"
 	onIdle() @ "PiuView_onIdle"
 	onMessage() @ "PiuView_onMessage"

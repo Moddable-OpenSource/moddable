@@ -20,12 +20,14 @@
 
 import config from "mc/config";
 import Timer from "timer";
+import Button from "pebble/button";
 
 if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
 	#timer;
+	#button;
 
 	constructor(options) {
 		super(options);
@@ -34,6 +36,14 @@ class Screen extends config.Screen {
 			this.context.onIdle();
 		}, 1, 100);
 		Timer.schedule(this.#timer);
+		
+		this.#button = new Button({
+			types: ["select", "up", "down", "back"],
+			onPush: (state, which) => {
+				trace(`${state ? "press" : "release"} ${which} ${this.context}\n`);
+				this.context.onButton(state, which);
+			}
+		});
 	}
 	get rotation() {
 		return 0;

@@ -405,51 +405,6 @@ static void doUpdate(Layer *layer, GContext *ctx)
 	(*(*application)->dispatch->update)(application, self, &area);
 }
 
-static PiuContent* buttonEventHandler(PiuApplication* self, xsIndex id)
-{
-	PiuContent* content = (*self)->focus;
-	xsBeginHost((*self)->the);
-	xsVars(3);
-	while (content) {
-		if ((*content)->behavior) {
-			xsVar(0) = xsReference((*content)->behavior);
-			if (xsFindResult(xsVar(0), id)) {
-				xsVar(1) = xsReference((*content)->reference);
-				xsVar(2) = xsCallFunction1(xsResult, xsVar(0), xsVar(1));
-				if (xsTest(xsVar(2)))
-					break;
-			}
-		}
-		content = (PiuContent*)(*content)->container;
-	}
-	xsEndHost((*self)->the);
-	return content;
-}
-
-static void buttonDownEventHandler(PebbleEvent *e, void *context)
-{
-	static xsIndex buttonIDs[4] = {
-		xsID_onPressBack,
-		xsID_onPressUp,
-		xsID_onPressSelect,
-		xsID_onPressDown,
-	};
-	PiuContent* content = buttonEventHandler(context, buttonIDs[e->button.button_id]);
-	if ((content == NULL) && (e->button.button_id == BUTTON_ID_BACK))
-		window_stack_pop_with_transition(app_state_get_window_stack(), NULL);
-}
-
-static void buttonUpEventHandler(PebbleEvent *e, void *context)
-{
-	static xsIndex buttonIDs[4] = {
-		xsID_onReleaseBack,
-		xsID_onReleaseUp,
-		xsID_onReleaseSelect,
-		xsID_onReleaseDown,
-	};
-	buttonEventHandler(context, buttonIDs[e->button.button_id]);
-}
-
 void PiuView_create(xsMachine* the) 
 {
 	PiuView* self;
@@ -468,20 +423,41 @@ void PiuView_create(xsMachine* the)
 	Layer *layer = window_get_root_layer(window);
 	layer_set_update_proc(layer, doUpdate);
 	(*self)->window = window;
-	
-// 	if (!app_manager_is_watchface_running()) {
-// 		eventServiceDown.type = PEBBLE_BUTTON_DOWN_EVENT;
-// 		eventServiceDown.handler = buttonDownEventHandler;
-// 		eventServiceDown.context = application;
-// 		event_service_client_subscribe(&eventServiceDown);
-// 		
-// 		eventServiceUp.type = PEBBLE_BUTTON_UP_EVENT;
-// 		eventServiceUp.handler = buttonUpEventHandler;
-// 		eventServiceUp.context = application;
-// 		event_service_client_subscribe(&eventServiceUp);
-// 		
-// 		window_set_overrides_back_button(window, true);
-// 	}
+}
+
+void PiuView_onButton(xsMachine* the)
+{
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	PiuContent* content = (*application)->focus;
+	xsVars(3);
+	xsBooleanValue state = xsToBoolean(xsArg(0));
+	xsStringValue which = xsToString(xsArg(1));
+	xsIndex id;
+	if (c_strcmp(which, "back") == 0)
+		id = (state) ? xsID_onPressBack : xsID_onReleaseBack;
+	else if (c_strcmp(which, "down") == 0)
+		id = (state) ? xsID_onPressDown : xsID_onReleaseDown;
+	else if (c_strcmp(which, "select") == 0)
+		id = (state) ? xsID_onPressSelect : xsID_onReleaseSelect;
+	else if (c_strcmp(which, "up") == 0)
+		id = (state) ? xsID_onPressUp : xsID_onReleaseUp;
+	else
+		xsUnknownError("unknown button");
+	while (content) {
+		if ((*content)->behavior) {
+			xsVar(0) = xsReference((*content)->behavior);
+			if (xsFindResult(xsVar(0), id)) {
+				xsVar(1) = xsReference((*content)->reference);
+				xsVar(2) = xsCallFunction1(xsResult, xsVar(0), xsVar(1));
+				if (xsTest(xsVar(2)))
+					break;
+			}
+		}
+		content = (PiuContent*)(*content)->container;
+	}
+	if ((content == NULL) && (id == xsID_onPressBack))
+		window_stack_pop_with_transition(app_state_get_window_stack(), NULL);
 }
 
 void PiuView_onDisplayReady(xsMachine* the)
