@@ -26,28 +26,46 @@ if (!config.Screen)
 	throw new Error("no screen configured");
 
 class Screen extends config.Screen {
+	#context;
 	#timer;
 	#button;
 
 	constructor(options) {
 		super(options);
-
-		this.#timer = Timer.set(() => {
-			this.context.onIdle();
-		}, 1, 100);
-		Timer.schedule(this.#timer);
-		
-		this.#button = new Button({
-			types: ["select", "up", "down", "back"],
-			onPush: (state, which) => {
-				trace(`${state ? "press" : "release"} ${which} ${this.context}\n`);
-				this.context.onButton(state, which);
+	}
+	get context() {
+		return this.#context;
+	}
+	set context(it) {
+		this.#context = it;
+		if (it) {
+			this.#timer = Timer.set(() => {
+				it.onIdle();
+			}, 1, 100);
+			Timer.schedule(this.#timer);
+			this.#button = new Button({
+				types: ["select", "up", "down", "back"],
+				onPush: (state, which) => {
+// 					trace(`${state ? "press" : "release"} ${which}\n`);
+					it.onButton(state, which);
+				}
+			});
+		}
+		else {
+			if (this.#button) {
+				this.#button.close(); 
+				this.#button = undefined; 
 			}
-		});
+			if (this.#timer) {
+				Timer.clear(this.#timer);
+				this.#timer = undefined; 
+			}
+		}
 	}
 	get rotation() {
 		return 0;
 	}
+	
 	clear() {
 	}
 	start(interval) {
