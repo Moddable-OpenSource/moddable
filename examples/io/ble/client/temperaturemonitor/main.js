@@ -46,16 +46,6 @@ function instantiateTemperatureMonitor(address) {
 			display: false,			/* or true – default false */
 			keyboard: false,		/* or true or "yes/no" – default false */
 		},
-		onReady() {
-			trace("Connected.\n");
-			this.getPrimaryServices([ "1809"], (error, services) => {
-				this.getCharacteristics(services[0], ["2a1c"], (error, characteristics) => {
-					this.temperature = characteristics[0];
-					trace(` temperature.handle ${this.temperature.handle}\n`);
-					this.subscribe(characteristics[0]);
-				});
-			});
-		},
 		onError() {
 			trace("connection error\n");
 		},
@@ -65,6 +55,14 @@ function instantiateTemperatureMonitor(address) {
 		},
 		onSecured(state) {
 			trace(`onSecured: encrypted ${state.encrypted}, authenticated ${state.authenticated}, bonded ${state.bonded}\n`);
+
+			this.getPrimaryServices([ "1809"], (error, services) => {
+				this.getCharacteristics(services[0], ["2a1c"], (error, characteristics) => {
+					this.temperature = characteristics[0];
+					trace(` temperature.handle ${this.temperature.handle}\n`);
+					this.subscribe(characteristics[0]);
+				});
+			});
 		},
 		onReadable(count) {
 			while (count--) { 
