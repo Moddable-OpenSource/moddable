@@ -412,6 +412,8 @@ typedef struct {
 	
 	xsSlot		*onReadable;
 	xsSlot		*onError;
+	xsSlot		*onSecured;
+	xsSlot		*onPasskey;
 
 	ble_addr_t	address;
 
@@ -450,6 +452,8 @@ typedef struct {
 	
 	uint8_t			isClose;
 
+	uint8_t 		secure;
+
 	BLEGATTCharacteristicValue		values;
 	uint8_t							onReadableInFlight;
 } GATTClientRecord, *GATTClient;
@@ -487,6 +491,10 @@ static void xs_gattclient_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, gc->onReadable);
 	if (gc->onError)
 		(*markRoot)(the, gc->onError);
+	if (gc->onSecured)
+		(*markRoot)(the, gc->onSecured);
+	if (gc->onPasskey)
+		(*markRoot)(the, gc->onPasskey);
 	if (gc->request)
 		(*markRoot)(the, gc->request);
 	if (gc->responsePrototype)
@@ -503,6 +511,7 @@ void xs_gattclient_constructor(xsMachine *the)
 {
 	ble_addr_t address;
 	int mtu = 0;
+	uint8_t secure = 0, manInTheMiddle = 0, bond = 0, display = 0, keyboard = 0;
 
 	xsmcVars(2);
 
@@ -525,6 +534,38 @@ void xs_gattclient_constructor(xsMachine *the)
 
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 	xsSlot *onError = builtinGetCallback(the, xsID_onError);
+	xsSlot *onSecured = builtinGetCallback(the, xsID_onSecured);
+	xsSlot *onPasskey = builtinGetCallback(the, xsID_onPasskey);
+
+	if (xsmcHas(xsArg(0), xsID_security)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_security);
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_manInTheMiddle);
+		manInTheMiddle = xsmcTest(xsVar(1));
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
+		bond = xsmcTest(xsVar(1));
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_display);
+		display = xsmcTest(xsVar(1));
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_keyboard);
+		if (xsStringType == xsmcTypeOf(xsVar(1))) {
+			if (c_strcmp("yes/no", xsmcToString(xsVar(1))))
+				xsRangeError("bad value");
+			keyboard = 2;
+			
+			if (0 == display)
+				xsUnknownError("missing display");
+		}
+		else
+			keyboard = xsmcTest(xsVar(1));
+
+		if (manInTheMiddle && !(keyboard || display))
+			xsUnknownError("manInTheMiddle requires keyboard and/or display");
+
+		secure = 1;
+	}
 
 	GATTClient gc = c_calloc(1, sizeof(GATTClientRecord));
 	if (C_NULL == gc)
@@ -536,10 +577,27 @@ void xs_gattclient_constructor(xsMachine *the)
 	gc->address = address;
 	gc->onReadable = onReadable;
 	gc->onError = onError;
+	gc->onSecured = onSecured;
+	gc->onPasskey = onPasskey;
 	gc->mtu = (uint16_t)mtu;
+	gc->secure = secure;
 
 	xsmcSetHostData(xsThis, gc);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsGATTClientHooks);
+
+	ble_hs_cfg.sm_sc = secure;
+	if (secure) {
+		if (keyboard) {
+			if (display)
+				ble_hs_cfg.sm_io_cap = (2 == keyboard) ? BLE_HS_IO_DISPLAY_YESNO : BLE_HS_IO_KEYBOARD_DISPLAY;		
+			else
+				ble_hs_cfg.sm_io_cap = BLE_HS_IO_KEYBOARD_ONLY;		
+		}
+		else
+			ble_hs_cfg.sm_io_cap = display ? BLE_HS_IO_DISPLAY_ONLY : BLE_HS_IO_NO_INPUT_OUTPUT;
+		ble_hs_cfg.sm_bonding = bond;
+		ble_hs_cfg.sm_mitm = manInTheMiddle;
+	}
 }
 
 void xs_gattclient_close(xsMachine *the)
@@ -707,6 +765,57 @@ static void deliverOnError(void *the, void *refcon, uint8_t *message, uint16_t m
 	xsEndHost(the);
 }
 
+static void deliverOnSecured(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	GATTClient gc = refcon;
+
+	struct ble_gap_conn_desc desc;
+	if (0 != ble_gap_conn_find(gc->conn_handle, &desc))
+		return;
+
+	xsBeginHost(the);
+		xsSlot tmp;
+		xsResult = xsmcNewObject();
+		xsmcSetBoolean(tmp, desc.sec_state.encrypted);
+		xsmcSet(xsResult, xsID_encrypted, tmp);
+		xsmcSetBoolean(tmp, desc.sec_state.authenticated);
+		xsmcSet(xsResult, xsID_authenticated, tmp);
+		xsmcSetBoolean(tmp, desc.sec_state.bonded);
+		xsmcSet(xsResult, xsID_bonded, tmp);
+
+		xsCallFunction1(xsReference(gc->onSecured), gc->obj, xsResult);
+	xsEndHost(the);
+}
+
+static void deliverOnPasskey(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
+{
+	GATTClient gc = refcon;
+	struct ble_gap_passkey_params *params = (struct ble_gap_passkey_params *)message;
+
+	xsBeginHost(the);
+		xsmcVars(2);
+		switch (params->action) {
+			case BLE_SM_IOACT_NONE:
+				xsmcSetStringX(xsVar(0), "none");
+				break;
+			case BLE_SM_IOACT_OOB:
+				xsmcSetStringX(xsVar(0), "outOfBand");
+				break;
+			case BLE_SM_IOACT_INPUT:
+				xsmcSetStringX(xsVar(0), "input");
+				break;
+			case BLE_SM_IOACT_DISP:
+				xsmcSetStringX(xsVar(0), "display");
+				break;
+			case BLE_SM_IOACT_NUMCMP:
+				xsmcSetStringX(xsVar(0), "compareNumber");
+				break;
+		}
+		xsmcSetInteger(xsVar(1), params->numcmp);
+		xsCallFunction2(xsReference(gc->onPasskey), gc->obj, xsVar(0), xsVar(1));
+	xsEndHost(the);
+}
+
 static int onGATTMCUExchanged(uint16_t conn_handle, const struct ble_gatt_error *error, uint16_t mtu, void *arg)
 {
 	GATTClient gc = arg;
@@ -717,6 +826,9 @@ static int onGATTMCUExchanged(uint16_t conn_handle, const struct ble_gatt_error 
 		gc->mtu = ble_att_mtu(gc->conn_handle);
 
 	gattClientExecuted(gc, 0);
+
+	if (gc->secure)
+		ble_gap_security_initiate(conn_handle);
 
 	return 0;
 }
@@ -739,6 +851,9 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 			else {
 				gc->mtu = ble_att_mtu(gc->conn_handle);
 				gattClientExecuted(gc, 0);
+
+				if (gc->secure)
+					ble_gap_security_initiate(gc->conn_handle);
 			}
 			break;
 
@@ -753,6 +868,15 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 		
 		case BLE_GAP_EVENT_MTU:
 			gc->mtu = event->mtu.value;
+			break;
+
+		case BLE_GAP_EVENT_ENC_CHANGE:
+			if (0 == event->enc_change.status)
+				modMessagePostToMachine(gc->the, C_NULL, 0, deliverOnSecured, gc);
+			break;
+		
+		case BLE_GAP_EVENT_PASSKEY_ACTION:
+			modMessagePostToMachine(gc->the, (uint8_t *)&event->passkey.params, sizeof(event->passkey.params), deliverOnPasskey, gc);
 			break;
 
 		case BLE_GAP_EVENT_NOTIFY_RX: {
@@ -1159,6 +1283,35 @@ void xs_gattclient_getCCCD(xsMachine *the)
 	
 	xsResult = xsNewHostInstance(xsArg(1));
 	xsmcSetHostChunk(xsResult, &dsc, sizeof(dsc));
+}
+
+void xs_gattclient_replyToPasskey(xsMachine *the)
+{
+	GATTClient gc = (GATTClient)xsmcGetHostDataValidate(xsThis, (void *)&xsGATTClientHooks);
+	struct ble_sm_io pkey = {0};
+	const char *action = xsmcToString(xsArg(0));
+
+	if (0 == c_strcmp(action, "input")) {
+		pkey.action = BLE_SM_IOACT_INPUT;
+		if (xsmcArgc > 1)
+			pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+		else
+			pkey.passkey = 0;
+	}
+	else if (0 == c_strcmp(action, "display")) {
+		pkey.action = BLE_SM_IOACT_DISP;
+		pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+	}
+	else if (0 == c_strcmp(action, "compareNumber")) {
+		pkey.action = BLE_SM_IOACT_NUMCMP;
+		pkey.numcmp_accept = xsmcToBoolean(xsArg(1));
+	}
+	else
+		xsUnknownError("invalid action");
+
+	int err = ble_sm_inject_io(gc->conn_handle, &pkey);
+	if (err)
+		xsUnknownError("failed");
 }
 
 void xs_gattclientservice_destructor(void *data) 

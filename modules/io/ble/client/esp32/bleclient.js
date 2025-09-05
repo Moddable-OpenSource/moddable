@@ -178,6 +178,7 @@ class GATTClient @ "xs_gattclient_destructor" {
 	unsubscribe(characteristic, callback) {
 		return this.#enableNotifications(characteristic, false, callback);
 	}
+	replyToPasskey(action, value) @ "xs_gattclient_replyToPasskey"
 	#enableNotifications(characteristic, enable, callback) {
 		function write(gatt, characteristic, descriptor, enable, callback) {
 			let flag = 0;
