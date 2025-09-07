@@ -366,19 +366,27 @@ On ESP32, the SPIFFS file system is mounted at a specified path and all files/di
 
 The `File` class implements an optional FAT32 file system for the ESP32. Unlike SPIFFS, FAT32 file systems are not flat: they have directory structures and long filenames (up to 255 characters).
 
-If the FAT32 file system has not been initialized then it is formatted when first used. As with SPIFFS, the `File` class only instantiates the FAT32 file system when necessary and it is automatically closed when not in use.
+If the FAT32 file system has not been initialized, then it is formatted when first used. As with SPIFFS, the `File` class only instantiates the FAT32 file system when necessary, and it is automatically closed when not in use.
 
-To enable the FAT32 file system, set the `fat32` [manifest define](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/defines.md) to `1`:
+There are several settings for the FAT32 file system in the  [manifest define](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/tools/defines.md) .
 
 ```JSON
 "defines": {
 	"file":{
-		"fat32": 1
+		"fat32": 1,
+      	"root": "\"/sdcard\"",
+      	"partition": "#userdata",
+      	"sdcard": 0
 	}
 }
 ```
 
-The storage partition used by the default Moddable SDK build for ESP32 does not reserve a partition for FAT32. Therefore, it is necessary to use a different partition file in projects that use FAT32. To do that, set the  `PARTITIONS_FILE` variable in the `build` section of the project manifest:
+- You need to set `fat32` to  to enable the FAT32 settings. Set this to 0 or remove it for SPIFFS file system.
+- By default, the FAT32 file system is mounted at `/mod`. To change the default root, set the `root` define in the manifest. Do not include a trailing `/` in the root name.
+- The default name for the FAT32 partition is `storage`. To use a different name, set the `partition` defined in the manifest.
+- If the file system is not on the internal ESP32 Flash, it will need to be managed externally to the File's internal software. For example, this is required for SD card support, Set the `sdcard` define to 1 to bypass using the File class's software to mount, unmount and format the file system. You will need to manage the file system externally from the `File` class.
+
+The storage partition used by the default Moddable SDK build for ESP32 does not reserve a partition for FAT32. Therefore, it is necessary to use a different partition file in projects that use FAT32. To do that, set the  `PARTITIONS_FILE` variable in the `build` section of the project manifest to point at an ESP32 partition file:
 
 ```JSON
 "build": {
@@ -397,26 +405,6 @@ xs,       0x40, 1,       0x310000, 0x040000,
 settings, data, 1,       0x350000, 0x010000,
 storage,  data, fat,     0x360000, 0x090000,
 ```
-The default name for the FAT32 partition is `storage`. To use a different name, set the `partition` define in the manifest:
-
-```JSON
-"defines": {
-	"file":{
-		"partition": "#userdata"
-	}
-}
-```
-
-By default, the FAT32 file system is mounted at `/mod`. To change the default root, set the `root` define in the manifest:
-
-```JSON
-"defines": {
-	"file":{
-		"root": "/myroot/"
-	}
-}
-```
-
 <a id="littlefs"></a>
 #### littlefs
 The [littlefs](https://github.com/littlefs-project/littlefs) file system is "a little fail-safe filesystem designed for microcontrollers." It provides a high reliability, hierarchical file system in a small code footprint (about 60 KB) using minimal memory (well under 1 KB) with a high degree of configurability. littlefs also supports long file names (up to 255 characters) and formats a new partition very quickly.

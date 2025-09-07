@@ -47,11 +47,6 @@
     #else
         #define MAX_FILENAME_LENGTH 12
     #endif
-    #ifdef CONFIG_WL_SECTOR_SIZE
-        #define SECTOR_SIZE CONFIG_WL_SECTOR_SIZE
-    #else
-        #define SECTOR_SIZE 512
-    #endif
 #else
     #include "esp_spiffs.h"
     #include "spiffs_config.h"
@@ -72,14 +67,14 @@ typedef struct {
     char path[1];
 } iteratorRecord, *iter;
 
-static int startFS(void);
+static int startFS(xsMachine *the);
 static void stopFS(void);
 
 static FILE *getFile(xsMachine *the)
 {
 	FILE *result = xsmcGetHostData(xsThis);
 	if (!result)
-		xsUnknownError("closed");
+		xsUnknownError("closed file");
 	return result;
 }
 
@@ -100,7 +95,7 @@ void xs_File(xsMachine *the)
     uint8_t write = (argc < 2) ? 0 : xsmcToBoolean(xsArg(1));
 	char *path = xsmcToString(xsArg(0));
 
-    startFS();
+    startFS(the);
 
     file = fopen(path, write ? "rb+" : "rb");
     if (NULL == file) {
@@ -197,7 +192,7 @@ void xs_file_write(xsMachine *the)
     }
 	result = fflush(file);
 	if (0 != result)
-		xsUnknownError("file flush failed");
+		xsUnknownError("file flush failed on write");
 }
 
 void xs_file_close(xsMachine *the)
@@ -235,7 +230,7 @@ void xs_file_delete(xsMachine *the)
     int32_t result;
     char *path = xsmcToString(xsArg(0));
 
-    startFS();
+    startFS(the);
 
     result = unlink(path);
 
@@ -250,7 +245,7 @@ void xs_file_exists(xsMachine *the)
     int32_t result;
     char *path = xsmcToString(xsArg(0));
 
-    startFS();
+    startFS(the);
 
     result = stat(path, &buf);
 
@@ -269,21 +264,21 @@ void xs_file_rename(xsMachine *the)
 	path = xsmcToString(xsArg(0));
 	if ('/' != toPath[0]) {
 		if (c_strchr(toPath + 1, '/'))
-			xsUnknownError("invalid to");
+			xsUnknownError("Invalid to on rename");
 		
 		char *slash = c_strrchr(path, '/');
 		if (!slash)
-			xsUnknownError("invalid from");
+			xsUnknownError("Invalid from on rename");
 
 		size_t pathLength = slash - path + 1;
 		if (pathLength >= (c_strlen(path) + sizeof(toPath)))
-			xsUnknownError("path too long");
+			xsUnknownError("Path too long on rename");
 
 		c_strcpy(toPath, path);
 		xsmcToStringBuffer(xsArg(1), toPath + pathLength, sizeof(toPath) - pathLength);
 	}
 
-    startFS();
+    startFS(the);
 
     result = rename(path, toPath);
 
@@ -326,7 +321,7 @@ void xs_File_Iterator(xsMachine *the)
 #endif
 	d->rootPathLen = i;
 
-    startFS();
+    startFS(the);
 
     if (NULL == (d->dir = opendir(d->path))) {
     	c_free(d);
@@ -367,7 +362,7 @@ void xs_file_iterator_next(xsMachine *the)
     if (DT_REG == de->d_type) {
 		c_strcpy(d->path + d->rootPathLen, de->d_name);
 		if (-1 == stat(d->path, &buf))
-			xsUnknownError("stat error");
+			xsUnknownError("stat error on iterator next");
         xsmcSetInteger(xsVar(0), buf.st_size);
         xsmcSet(xsResult, xsID_length, xsVar(0));
     }
@@ -385,7 +380,7 @@ void xs_file_system_info(xsMachine *the)
 {
     xsResult = xsmcNewObject();
 
-    startFS();
+    startFS(the);
 	size_t total = 0, used = 0;
     esp_err_t ret;
 
@@ -394,10 +389,10 @@ void xs_file_system_info(xsMachine *the)
     FATFS *fs;
     DWORD fre_clust, fre_sect, tot_sect;
     ret = f_getfree("0:", &fre_clust, &fs);
-    tot_sect = (fs->n_fatent - 2) * fs->csize;
-    fre_sect = fre_clust * fs->csize;
-    total = tot_sect * SECTOR_SIZE;
-    used = (tot_sect - fre_sect) * SECTOR_SIZE;
+    tot_sect = (fs->n_fatent - 2) * fs->csize;  // First two FAT clusters are reserved
+    fre_sect = fre_clust * fs->csize;           // Free clusters
+    total = tot_sect * fs->ssize;               // Sector size (512, 1024, 2048 or 4096)
+    used = (tot_sect - fre_sect) * fs->ssize;
 #else
 	ret = esp_spiffs_info(NULL, &total, &used);
 #endif
@@ -405,12 +400,12 @@ void xs_file_system_info(xsMachine *the)
     stopFS();
 
 	if (ret != ESP_OK)
-		xsUnknownError("system info failed");
+		xsUnknownError("System info failed");
 
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), total);
+	xsmcSetInteger(xsVar(0), (uint64_t)total);
 	xsmcSet(xsResult, xsID_total, xsVar(0));
-	xsmcSetInteger(xsVar(0), used);
+	xsmcSetInteger(xsVar(0), (uint64_t)used);
 	xsmcSet(xsResult, xsID_used, xsVar(0));
 }
 
@@ -420,12 +415,13 @@ static uint16_t gUseCount;
 static wl_handle_t wl_handle;
 #endif
 
-int startFS(void)
+int startFS(xsMachine *the)
 {
     esp_err_t ret;
 	if (0 != gUseCount++)
 		return 0;
-
+// If this is an SD card filesystem, then don't do the internal Flash partition filesystem
+#if MODDEF_FILE_SDCARD != 1
 #if MODDEF_FILE_FAT32
     esp_vfs_fat_mount_config_t conf = {
         .format_if_mount_failed = true,
@@ -433,7 +429,7 @@ int startFS(void)
         .allocation_unit_size = 512
     };
 
-    ret = esp_vfs_fat_spiflash_mount(MODDEF_FILE_ROOT, MODDEF_FILE_PARTITION, &conf, &wl_handle);
+    ret = esp_vfs_fat_spiflash_mount_rw_wl(MODDEF_FILE_ROOT, MODDEF_FILE_PARTITION, &conf, &wl_handle);
 #else
 //@@ these behaviors could be controlled by DEFINE properties
 	esp_vfs_spiffs_conf_t conf = {
@@ -451,20 +447,21 @@ int startFS(void)
 
 	if (ret != ESP_OK) {
 		if (ret == ESP_FAIL) {
-			modLog("Failed to mount or format filesystem");
+            xsUnknownError("Failed to mount or format filesystem");
 		} else if (ret == ESP_ERR_NO_MEM) {
-			modLog("Failed to allocate memory for filesystem");
+			xsUnknownError("Failed to allocate memory for filesystem");
 		} else if (ret == ESP_ERR_NOT_FOUND) {
-			modLog("Failed to find partition");
+            xsUnknownError("Failed to find partition");
         } else if (ret == ESP_ERR_INVALID_STATE) {
-            modLog("Failed because filesystem was already registered");
+            xsUnknownError("Failed because filesystem was already registered");
 		} else {
-			modLog("Failed to initialize filesystem");
+            xsUnknownError("Failed to initialize filesystem");
 		}
 
 		gUseCount--;
 	}
 
+#endif	// if file sdcard is set to 1, the don't do the internal Flash partition filesystem 
 	return 0;
 }
 
@@ -472,13 +469,14 @@ void stopFS(void)
 {
 	if (0 != --gUseCount)
 		return;
-
+#if MODDEF_FILE_SDCARD != 1
 #if MODDEF_FILE_FAT32
-    esp_vfs_fat_spiflash_unmount(MODDEF_FILE_ROOT, wl_handle);
+    esp_vfs_fat_spiflash_unmount_rw_wl(MODDEF_FILE_ROOT, wl_handle);
     wl_handle = 0;
 #else
 	esp_vfs_spiffs_unregister(NULL);
 #endif
+#endif	// if file sdcard is set to 1, the don't do the internal Flash partition filesystem   
 }
 
 
@@ -486,10 +484,10 @@ void xs_directory_create(xsMachine *the)
 {
 	char *path = xsmcToString(xsArg(0));
 
-	startFS();
+	startFS(the);
 	int result = mkdir(path, 0775);
 	if (result && (EEXIST != errno))
-		xsUnknownError("failed");
+		xsUnknownError("Directory create failed");
 	stopFS();
 }
 
@@ -497,9 +495,9 @@ void xs_directory_delete(xsMachine *the)
 {
 	char *path = xsmcToString(xsArg(0));
 
-	startFS();
+	startFS(the);
 	int result = rmdir(path);
 	if (result && (ENOENT != errno))
-		xsUnknownError("failed");
+		xsUnknownError("Directory delete failed");
 	stopFS();
 }
