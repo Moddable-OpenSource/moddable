@@ -493,9 +493,9 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define c_pow pow
 #endif
 #if ESP32
-	#define c_rand esp_random
+	#define c_rand() (0x7ffffff & esp_random())
 #else
-	#define c_rand() (*(volatile uint32_t *)0x3FF20E44)
+	#define c_rand() (0x7ffffff & (*(volatile uint32_t *)0x3FF20E44))
 #endif
 #define c_round round
 #define c_signbit signbit
