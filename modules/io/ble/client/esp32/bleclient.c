@@ -775,14 +775,15 @@ static void deliverOnSecured(void *the, void *refcon, uint8_t *message, uint16_t
 
 	xsBeginHost(the);
 		xsSlot tmp;
-		xsResult = xsmcNewObject();
+		xsmcSetNewObject(xsResult);
 		xsmcSetBoolean(tmp, desc.sec_state.encrypted);
 		xsmcSet(xsResult, xsID_encrypted, tmp);
 		xsmcSetBoolean(tmp, desc.sec_state.authenticated);
 		xsmcSet(xsResult, xsID_authenticated, tmp);
 		xsmcSetBoolean(tmp, desc.sec_state.bonded);
 		xsmcSet(xsResult, xsID_bonded, tmp);
-
+		xsmcSetInteger(tmp, desc.sec_state.key_size);
+		xsmcSet(xsResult, xsID_keySize, tmp);
 		xsCallFunction1(xsReference(gc->onSecured), gc->obj, xsResult);
 	xsEndHost(the);
 }
@@ -804,14 +805,21 @@ static void deliverOnPasskey(void *the, void *refcon, uint8_t *message, uint16_t
 			case BLE_SM_IOACT_INPUT:
 				xsmcSetStringX(xsVar(0), "input");
 				break;
-			case BLE_SM_IOACT_DISP:
+			case BLE_SM_IOACT_DISP: {
+				struct ble_sm_io pkey = {
+					.action = BLE_SM_IOACT_DISP,
+					.passkey = (c_rand() % 999999) + 1
+				};
+				ble_sm_inject_io(gc->conn_handle, &pkey);
+
 				xsmcSetStringX(xsVar(0), "display");
-				break;
+				xsmcSetInteger(xsVar(1), pkey.passkey);
+				} break;
 			case BLE_SM_IOACT_NUMCMP:
 				xsmcSetStringX(xsVar(0), "compareNumber");
+				xsmcSetInteger(xsVar(1), params->numcmp);
 				break;
 		}
-		xsmcSetInteger(xsVar(1), params->numcmp);
 		xsCallFunction2(xsReference(gc->onPasskey), gc->obj, xsVar(0), xsVar(1));
 	xsEndHost(the);
 }
@@ -871,12 +879,13 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 			break;
 
 		case BLE_GAP_EVENT_ENC_CHANGE:
-			if (0 == event->enc_change.status)
+			if ((0 == event->enc_change.status) && gc->onSecured)
 				modMessagePostToMachine(gc->the, C_NULL, 0, deliverOnSecured, gc);
 			break;
 		
 		case BLE_GAP_EVENT_PASSKEY_ACTION:
-			modMessagePostToMachine(gc->the, (uint8_t *)&event->passkey.params, sizeof(event->passkey.params), deliverOnPasskey, gc);
+			if (gc->onPasskey)
+				modMessagePostToMachine(gc->the, (uint8_t *)&event->passkey.params, sizeof(event->passkey.params), deliverOnPasskey, gc);
 			break;
 
 		case BLE_GAP_EVENT_NOTIFY_RX: {
@@ -1305,6 +1314,16 @@ void xs_gattclient_replyToPasskey(xsMachine *the)
 	else if (0 == c_strcmp(action, "compareNumber")) {
 		pkey.action = BLE_SM_IOACT_NUMCMP;
 		pkey.numcmp_accept = xsmcToBoolean(xsArg(1));
+	}
+	else if (0 == c_strcmp(action, "outOfBand")) {
+		pkey.action = BLE_SM_IOACT_OOB;
+
+		uint8_t *data;
+		xsUnsignedValue count;
+		xsmcGetBufferReadable(xsArg(1), (void **)&data, &count);
+		if (sizeof(pkey.oob) != count)
+			xsRangeError("expected 16 bytes");
+		c_memmove(pkey.oob, data, count);
 	}
 	else
 		xsUnknownError("invalid action");
