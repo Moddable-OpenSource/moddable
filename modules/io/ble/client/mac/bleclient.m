@@ -125,6 +125,7 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 	xsVar(0) = xsReference(client->request);
 	client->request = NULL;
 	client->param = NULL;
+	client->completion = NULL;
 	xsResult = xsString([[error localizedDescription] UTF8String]);
 	xsResult = xsNew1(xsGlobal, xsID_Error, xsResult);
 	xsCall2(xsVar(0), xsID_executed, xsResult, xsNull);
