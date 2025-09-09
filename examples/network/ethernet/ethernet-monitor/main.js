@@ -59,9 +59,8 @@ function setSNTPTime() {
 
 function getTime() {
 	try {
-		let date = new Date();
-		let seconds = date.getSeconds();
-		if (seconds > 0 && Number.isFinite(seconds)) {
+		// The ESP32 date needs to be set for the SSL certificates to validate
+		if (Date.now() > 1735689600000) {
 			var request = new Request({	
 				host: "timeapi.io", 
 				path: "/api/Time/current/zone?timeZone=UTC", 
@@ -80,7 +79,8 @@ function getTime() {
 				}
 			}
 		} else {
-			trace ('Time is not set and SSL will fail. Date=',date, ' seconds=',seconds,'\n');
+			let date = new Date();
+			trace ('Time is not set and SSL will fail. Date=',date, ' seconds=',date.getSeconds(),'\n');
 		}
 	}
 	catch (e) {
