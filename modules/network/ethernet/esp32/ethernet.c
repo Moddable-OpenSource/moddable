@@ -40,6 +40,14 @@
 
 static const char *TAG = "mod.ethernet.c";
 
+// If these are not defined in the manifest.json, use the default values
+#ifndef MODDEF_ETHERNET_SPI_COMMAND_BITS
+   #define MODDEF_ETHERNET_SPI_COMMAND_BITS (3)
+#endif
+#ifndef MODDEF_ETHERNET_SPI_ADDRESS_BITS
+   #define MODDEF_ETHERNET_SPI_ADDRESS_BITS (5)
+#endif
+
 int8_t gEthernetState = -2;	// -2 = uninitialized, -1 = gpio isr initialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 int8_t	gEthernetIP = 0;		// 0x01 == IP4, 0x02 == IP6
 
@@ -280,16 +288,8 @@ esp_err_t initEthernet(void)
 	}
 	ESP_LOGI(TAG,"Initialize Ethernet SPI");
 	spi_device_interface_config_t devcfg = {
-#ifdef MODDEF_ETHERNET_SPI_COMMAND_BITS
 		.command_bits = MODDEF_ETHERNET_SPI_COMMAND_BITS,
-#else
-		.command_bits = 3,		// requires a related change to pins/spi
-#endif
-#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
 		.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
-#else
-        .address_bits = 5,
-#endif // MODDEF_ETHERNET_SPI_ADDRESS_BITS
         .mode = 0,
         .clock_speed_hz = MODDEF_ETHERNET_HZ,
         .spics_io_num =  MODDEF_ETHERNET_SPI_CS_PIN,
@@ -305,7 +305,7 @@ esp_err_t initEthernet(void)
 	init_spi();
 	mac = mod_ethernet_get_mac(devcfg, MODDEF_ETHERNET_INT_PIN);
 	phy = mod_ethernet_get_phy();
-#endif
+#endif	// #ifdef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
 	
 	esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
 	eth_handle = NULL;

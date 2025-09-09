@@ -86,11 +86,11 @@ The `CMakeLists.txt` file for the target device needs to specify that it include
 
 ```add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs fatfs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
+			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs  esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
 		)
 ```
 
-Example, for the ESP32S3, you will find the file in `$MODDABLE/build/devices/esp32/xsProj-esp32s3/main/CMakeLists.txt` and the `sdkconfig.defaults` in the directory above.
+Example, for the ESP32-S3, you will find the file in `$MODDABLE/build/devices/esp32/xsProj-esp32s3/main/CMakeLists.txt` and the `sdkconfig.defaults` in the directory above.
 
 <a id="wiring"></a>
 

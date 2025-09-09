@@ -26,7 +26,7 @@ class EthernetMonitor {
 		try {
 			Ethernet.start();
 		} catch (error) {
-			trace(`EthernetMonitor-Ethernet hardware not found.\n`);
+			trace(`EthernetMonitor-Ethernet hardware not found. ${error}\n`);
 			return done();
 		}
 		
