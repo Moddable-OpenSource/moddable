@@ -1,24 +1,32 @@
 /*
 	to do:
 
-		once list for immediate callback – so can be removed in cancel called immediately
+		once list for immediate callback – so can be removed in cancel called immediately
 		#ticks relies on being called ontime... which isn't guaranteed
+
+		add event for screen updates
 */
 
 import Timer from "timer";
 
-export class Pebble {
-	static events = Object.freeze([
+const events = Object.freeze([
 		"secondchange",	
 		"minutechange",
 		"hourchange",
-		"daychange"
-	]);
+		"daychange",
+		// add non-time events after here
+		"connected"
+]);
+
+function connected() @ "xs_global_connected";
+
+export class Pebble {
 	#events = new Map;
 	#timeChange;
 
 	addEventListener(event, callback) {
-		if (!Pebble.events.includes(event))
+		const index = events.indexOf(event)
+		if (index < 0)
 			return;
 
 		if (!this.#events.has(event))
@@ -26,12 +34,22 @@ export class Pebble {
 		else
 			this.#events.get(event).push(callback);
 
-		// immediate for first one
-		Timer.set(() => {
-			callback({date: new Date});
-		});
+		if (index <= 3) {
+			// immediate for first one
+			Timer.set(() => {
+				callback({date: new Date});
+			});
 
-		this.#schedule();
+			this.#schedule();
+			return;
+		}
+
+		switch (event) {
+			case "connected":
+				if (1 === this.#events.get(event).length)
+					connected(true);
+				break;
+		}
 	}
 	#schedule() {
 		const seconds = this.#events.has("secondchange"), minutes = this.#events.has("minutechange"),
@@ -57,18 +75,27 @@ export class Pebble {
 	}
 	removeEventListener(event, callback) {
 		const list = this.#events.get(event);
-		if (!list)
-			return;
-		const index = list.inexOf(callback);
+		if (!list) return;
+
+		const index = list.indexOf(callback);
 		if (index < 0) return;
 
 		list.splice(index, 1);
-		if (0 === list.length) {
-			this.#events.delete(event);
-			this.#schedule();
+		if (0 !== list.length)
+			return;
+			
+		this.#events.delete(event);
+		switch (event) {
+			case "connected":
+				connected(false);
+				break;
+
+			default:
+				this.#schedule();		// only needed for time events
+				break;
 		}
 	}
-	#do(event, arg) {
+	do(event, arg) {
 		try {
 			this.#events.get(event)?.forEach(cb => cb(arg));
 		}
@@ -80,13 +107,17 @@ export class Pebble {
 	#tick() {
 		const now = new Date;
 		if (this.#events.has("secondchange"))
-			this.#do("secondchange", {date: new Date(now)});
+			this.do("secondchange", {date: new Date(now)});
 		if (this.#events.has("minutechange") && !now.getSeconds())
-			this.#do("minutechange", {date: new Date(now)});
+			this.do("minutechange", {date: new Date(now)});
 		if (this.#events.has("hourchange") && !now.getSeconds() && !now.getMinutes())
-			this.#do("hourchange", {date: new Date(now)});
+			this.do("hourchange", {date: new Date(now)});
 		if (this.#events.has("daychange") && !now.getSeconds() && !now.getMinutes() && !now.getHours())
-			this.#do("daychange", {date: new Date(now)});
+			this.do("daychange", {date: new Date(now)});
+	}
+
+	get connected() {
+		return connected();
 	}
 }
 

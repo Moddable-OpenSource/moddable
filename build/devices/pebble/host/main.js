@@ -65,6 +65,8 @@ export default function() {
 	state.archive = (new ArchiveResource(0))?.archive;
 	console.log(`Found mod "${state.archive.name}"`);
 
+	globalThis.Pebble = new Pebble;		// so modules (like global) can reach the instance
+
 	const globals = {
 		console,
 		clearImmediate,
@@ -77,7 +79,7 @@ export default function() {
 		Date,
 		Math,
 		Resource,
-		Pebble: new Pebble,
+		Pebble: globalThis.Pebble,
 
 		// network
 		device,
