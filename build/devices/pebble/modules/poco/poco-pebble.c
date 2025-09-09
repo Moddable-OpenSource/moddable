@@ -53,7 +53,7 @@ void xs_pocopebble_Font(xsMachine *the)
 	int32_t ascent, descent, leading;
 	GFont font = modFindPebbleFont(family, size, &ascent, &descent, &leading);
 	if (!font)
-		xsUnknownError("invalid font");
+		xsUnknownError("font not found");
 
 	xsmcSetHostData(xsThis, font);
 
