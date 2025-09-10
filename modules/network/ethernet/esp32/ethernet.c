@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -368,16 +368,8 @@ static void init_spi() {
 	config.spiPort = HSPI_HOST;
 	config.sync = 1;
 	config.hz = MODDEF_ETHERNET_HZ;
-#ifdef MODDEF_ETHERNET_SPI_COMMAND_BITS
 	config.command_bits = MODDEF_ETHERNET_SPI_COMMAND_BITS,
-#else
-	config.command_bits = 3,		// requires a related change to pins/spi
-#endif
-#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
 	config.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
-#else
-	config.address_bits = 5,
-#endif
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIInit(&config);
@@ -399,11 +391,7 @@ static void uninit_spi() {
 #else
 	config.command_bits = 3,		// requires a related change to pins/spi
 #endif
-#ifdef MODDEF_ETHERNET_SPI_ADDRESS_BITS
 	config.address_bits = MODDEF_ETHERNET_SPI_ADDRESS_BITS,
-#else
-	config.address_bits = 5,
-#endif
 	config.external = 1;
 	config.queue_size = 20;
 	modSPIUninit(&config);
