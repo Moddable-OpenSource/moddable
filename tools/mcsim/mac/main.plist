@@ -45,5 +45,10 @@
 	<string>This app requires camera access</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app requires Bluetooth access</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+	</array>
 </dict>
 </plist>
