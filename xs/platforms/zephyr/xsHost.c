@@ -78,7 +78,9 @@
 		(char *)"Piu command List used",
 		(char *)"Event loop",
 		(char *)"System bytes free",
+#if kModInstrumentationHasCPU
 		(char *)"CPU",
+#endif
 	};
 
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
@@ -90,7 +92,9 @@
 		(char *)" bytes",
 		(char *)" turns",
 		(char *)" bytes",
+#if kModInstrumentationHasCPU
 		(char *)" percent",
+#endif
 	};
 
 	struct k_mutex gInstrumentMutex;
@@ -245,7 +249,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 		msg.callback = callback;
 		msg.refcon = refcon;
 		msg.length = 0;
-		err = k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT);
+		err = k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT);		//@@ separate queue for debug msgs
 		return 0;
 	}
 #endif
@@ -367,7 +371,7 @@ void modMachineTaskUninit(xsMachine *the)
 	modMessageRecord msg;
 
 	while (0 == k_msgq_get(&the->msgQueue, &msg, K_NO_WAIT)) {
-		if (msg.message)
+		if (msg.message && !msg.embeddedMessage)
 			c_free(msg.message);
 	}
 
@@ -388,15 +392,16 @@ void modMachineTaskWake(xsMachine *the)
 	msg.refcon = NULL;
 	msg.length = 0;
 	k_msgq_put(&the->msgQueue, &msg, K_NO_WAIT);
+	//@@ I think this will crash because a callback of NULL is unexpected
 }
 
 /*
 	promises
 */
 
-static void doRunPromiseJobs(void *machine)
+static void doRunPromiseJobs(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
-	fxRunPromiseJobs((txMachine *)machine);
+	fxRunPromiseJobs((txMachine *)the);
 }
 
 void fxQueuePromiseJobs(txMachine* the)
@@ -766,7 +771,6 @@ void * bsearch(const void *key, const void *base, size_t nel, size_t width, int 
 static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
 static int16_t gDaylightSavings = 60 * 60;          // summer time
 
-static uint8_t gTimeOfDaySet = 0;
 static uint32_t gTimeOfDayOffset = 0;	// seconds to add to gMS to get TOD
 
 static modTm gTM;		//@@ eliminate with _r calls

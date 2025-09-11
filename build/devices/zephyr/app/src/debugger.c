@@ -131,7 +131,6 @@ void setupDebugger(uint32_t *running)
 
 void ESP_put(uint8_t *c, int count)
 {
-	int err;
 	while (count) {
 		ESP_putc(*c++);
 		count--;
@@ -141,7 +140,6 @@ void ESP_put(uint8_t *c, int count)
 void ESP_putc(int c)
 {
 	uint8_t ch = c;
-	int err;
 
 	uart_poll_out(uart_dev, ch);
 }

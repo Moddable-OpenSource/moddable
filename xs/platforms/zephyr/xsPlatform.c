@@ -52,7 +52,7 @@
 //@@MDK
 //	#include "modPreference.h"
 	uint8_t modPreferenceSet(char *domain, char *key, uint8_t prefType, uint8_t *value, uint16_t byteCount) { return 0; }
-	uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut) { if (*byteCountOut) *byteCountOut = 0; }
+	uint8_t modPreferenceGet(char *domain, char *key, uint8_t *type, uint8_t *value, uint16_t byteCountIn, uint16_t *byteCountOut) { if (*byteCountOut) *byteCountOut = 0; return 0;}
 
 #endif
 
@@ -534,7 +534,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 	uint16_t resultID = 0;
 	int16_t resultCode = 0;
 	uint8_t cmdID;
-	int baud = 0;
 
 	if (!cmdLen)
 		return;
@@ -613,7 +612,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 
 		case 6: {		// get preference
-			uint8_t *domain = cmd, *key = NULL, *value = NULL;
+			uint8_t *domain = cmd, *key = NULL;
 			int zeros = 0;
 			while (cmdLen--) {
 				if (!*cmd++) {
@@ -668,9 +667,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 		
 		case 14:  {
-			uint32_t *id = (uint32_t *)(the->echoBuffer + the->echoOffset);
-			hwinfo_get_device_id(id, 8);
-			the->echoOffset += 8;
+			uint8_t *id = (uint8_t *)(the->echoBuffer + the->echoOffset);
+			ssize_t result = hwinfo_get_device_id(id, 8);
+			if (result <= 0)
+				resultCode = -9;
+			else
+				the->echoOffset += result;
 			} break;
 
 #if MODDEF_XS_MODS

@@ -68,8 +68,6 @@ K_THREAD_DEFINE(main_thread, 4096, runLoop, NULL, NULL, NULL, PRIORITY, 0, 0);
 
 int main(void)
 {
-	int ret;
-
 	// nuthin.
 
 	return 0;

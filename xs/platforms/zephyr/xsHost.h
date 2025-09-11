@@ -364,7 +364,6 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 #define C_M_SQRT1_2 M_SQRT1_2
 #define C_M_SQRT2 M_SQRT2
 
-#define C_NAN NAN
 #define C_RAND_MAX RAND_MAX
 
 #define C_FP_INFINITE 1
@@ -376,7 +375,7 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 #define C_INFINITY (double)INFINITY
 #define C_MAX_SAFE_INTEGER (double)9007199254740991
 #define C_MIN_SAFE_INTEGER (double)-9007199254740991
-#define C_NAN NAN
+#define C_NAN ((double)NAN)
 #define C_RAND_MAX RAND_MAX
 
 #define c_acos acos
