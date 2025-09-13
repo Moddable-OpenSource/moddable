@@ -29,9 +29,8 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "api.openai.com";
-		this.path = `/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+		this.path = `/v1/realtime?model=gpt-realtime`;
 		this.headers = [
-			["OpenAI-Beta", "realtime=v1"],
 			["Authorization", `Bearer ${config.openAIKey}`]
 		];
         this.audioPrefix = audioPrefix;
@@ -47,18 +46,27 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 		});
  		this.session = {
 			instructions,
-			voice,
-			turn_detection: {
-				type: "server_vad",
-				threshold: 0.5,
-				prefix_padding_ms: 300,
-				silence_duration_ms: 500,
-				create_response: true
+			audio: {
+				input: {
+					format: { type: 'audio/pcma' },
+					turn_detection: {
+						type: "server_vad",
+						threshold: 0.5,
+						prefix_padding_ms: 300,
+						silence_duration_ms: 500,
+						create_response: true
+					},
+					transcription: {
+						model: 'whisper-1',
+					}
+				},
+				output: {
+					voice
+				}
 			},
-			input_audio_format: "g711_alaw",
-			input_audio_transcription: { model: 'whisper-1' },
 			tools,
 			tool_choice: "auto",
+			type: "realtime",
 		}
 	}
 	generateId(prefix, length = 21) {
@@ -71,7 +79,7 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 		return `${prefix}${str}`;
 	}
 	isBase64(result, current, name) {
-		return (result?.type == "response.audio.delta") && (name == "delta");
+		return (result?.type == "response.output_audio.delta") && (name == "delta");
 	}	
 	sendAudio(message) {
 		const buffer = new Uint8Array(this.inputBuffer, message.offset, message.size);
@@ -124,10 +132,10 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	'input_audio_buffer.committed'(message) {
 		this.post("listen");
 	}
-	'response.audio_transcript.delta'(message) {
+	'response.output_audio_transcript.delta'(message) {
 		this.postMessage({ id:"receiveOutputText", text:message.delta, more:true });
 	}
-	'response.audio_transcript.done'(message) {
+	'response.output_audio_transcript.done'(message) {
 		this.postMessage({ id:"receiveOutputText", text:"" });
 	}
 	'response.created'(message) {

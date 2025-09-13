@@ -19,9 +19,9 @@ const ws = new WebSocketClient({
 	...device.network.wss,
 	host: "api.openai.com",
 	path: "/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
+	path: "/v1/realtime?model=gpt-realtime",
 	port: 443,
 	headers: [
-		["OpenAI-Beta", "realtime=v1"],
 		["Authorization", `Bearer ${apiKey}`],
 	],
 	onReadable(count, options) {
