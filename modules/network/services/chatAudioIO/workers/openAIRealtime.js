@@ -98,6 +98,9 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 			},
 			event_id: this.generateId('event_'),
 		});
+		this.sendJSON({
+			type: 'response.create',
+		})
 	}
 	sendText(message) {
 		this.sendJSON({
@@ -143,9 +146,11 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 		this.postMessage({ id:"receiveOutputText", text:"", more:true });
 	}
 	'response.done'(message) {
-		this.parser.copy(this.silence);
-		this.parser.done();
-		this.post("speak");
+		if(message.response?.output[0]?.type === 'messaege') {
+			this.parser.copy(this.silence);
+			this.parser.done();
+			this.post("speak");
+		}
 	}
 	'response.output_item.done'(message) {
 		const { item } = message;
