@@ -45,7 +45,7 @@ class HTTPClient {
 				if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
 					throw new Error("invalid buffer");
 			}			
-			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
+			const available = Math.min(client.#readable, client.#chunk ?? ((Infinity === client.#remaining) ? client.#readable : client.#remaining));
 			if (count > available) {
 				count = available;
 				if (buffer) {
@@ -328,7 +328,7 @@ class HTTPClient {
 							this.#current.onReadable?.call(this.#current.request, min);
 					}
 					else
-						this.#current.onReadable?.call(this.#current.request, Math.min(this.#readable, this.#remaining));
+						this.#current.onReadable?.call(this.#current.request, (this.#remaining === Infinity) ? this.#readable : Math.min(this.#readable, this.#remaining));
 					return;
 				
 				case "receiveChunkTrailer":

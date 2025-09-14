@@ -11,23 +11,41 @@
  *   Mountain View, CA 94042, USA.
  *
  */
-
+import config from "mc/config";
 import Ethernet from "ethernet";
+import Net from "net";
 
 class EthernetMonitor {
 	constructor() {
+		if (config.ssid !== undefined) {
+			trace("EthernetMonitor-Skipping Ethernet setup because Wi-Fi SSID is configured.\n");
+			return done();
+		}
 		globalThis.ethernet = { connected: false };
 
-		Ethernet.start();
+		try {
+			Ethernet.start();
+		} catch (error) {
+			trace(`EthernetMonitor-Ethernet hardware not found. ${error}\n`);
+			return done();
+		}
+		
+		trace(`EthernetMonitor-Waiting for Ethernet link.\n`);
 		this.monitor = new Ethernet((msg, code) => {
 			switch (msg) {
 				case Ethernet.gotIP:
+					trace(`EthernetMonitor-IP address ${Net.get("IP", "ethernet")} MAC address: ${Net.get("MAC", "ethernet")}\n`);
 					ethernet.connected = true;
 					break;
 
-				case Ethernet.disconnected:
-					ethernet.connected = false;
-					break;
+			case "connect":
+				trace(`EthernetMonitor-Ethernet connected\n`);
+				break;
+
+			case "disconnect":
+				ethernet.connected = false;
+				trace(`EthernetMonitor-Ethernet disconnected\n`);
+				break;
 			}
 		});	
 	}

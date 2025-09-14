@@ -11,15 +11,6 @@
            "build": {
                "ETHERNET": "$(MODDABLE)/modules/network/ethernet"
 	        },
-			"dependency": [
-				{
-					"name": "enc28j60",
-					"version": "^1.0.1",
-					"includes": [
-						"include"
-					]
-				}
-			],
 			"include": [
                 "$(MODULES)/pins/spi/manifest.json"
             ],
@@ -27,7 +18,7 @@
                 "*": [
                     "$(ETHERNET)/*",
                     "$(ETHERNET)/esp32/*",
-					"$(ETHERNET)/esp32/drivers/enc28j60/*"
+					"$(ETHERNET)/esp32/drivers/w5500/*"
                 ]
             }
 	    },
@@ -49,20 +40,20 @@
     ],
     "defines": {
         "ethernet": {
-        	"enc28j60": 1,
-        	"w5500": 0,
+        	"enc28j60": 0,
+        	"w5500": 1,
 			"hostname":"\"Moddable\"",
-            "hz": 6000000,
-            "int_pin": 33,
+            "hz": 16000000,
+            "int_pin": 14,
             "spi": {
-            	"command_bits": 3,
-				"address_bits": 5,
-                "cs_pin": 27,
-                "port": "SPI3_HOST",
-                "miso_pin": 35,
-                "mosi_pin": 26,
-                "sck_pin": 0,
-                "polling_ms": 0,
+				"command_bits": 16,
+				"address_bits": 8,
+                "cs_pin": 10,
+                "port": "SPI2_HOST",
+                "miso_pin": 13,
+                "mosi_pin": 11,
+                "sck_pin": 12,
+				"polling_ms": 0,
 				"dma_ch": 3
             }
         }
