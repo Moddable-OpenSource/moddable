@@ -61,6 +61,7 @@ export class MakeFile extends FILE {
 			this.write("\"\n");
 	}
 	generate(tool) {
+		this.generateDefinitions(tool);
 		if (tool.environment?.MAKE_FRAGMENT)				// override default .mk file
 			tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
 		if (undefined === tool.fragmentPath)
@@ -70,7 +71,6 @@ export class MakeFile extends FILE {
 			var prefixPath = tool.fragmentPath + ".prefix";
 			this.write(tool.readFileString(prefixPath));
 		}
-		this.generateDefinitions(tool);
 
 		for (var result of tool.pioFiles) {
 			var source = result.source;
@@ -444,6 +444,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 	generateBLERules(tool) {
 		if (tool.platform == "zephyr") {
 			//@@ zephyr
+			this.line("# need to implement generateBLERules");
 			return;
 		}
 		let defines = tool.defines;
@@ -669,31 +670,36 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			let source = result.source;
 			let target = result.target;
 			const extension = ("typescript" === result.query?.language) ? ".ts" : ".js";
-			const output = "$(MODULES_DIR)" + tool.slash + target + extension;
+			const output = tool.modulesPath + tool.slash + target + extension;
+			let pragmas = "";
+			for (const name in result.query)
+				pragmas += " " + "-p " + name + "=" + result.query[name];
+
 			if (tool.platform == "zephyr") {
-				//@@ zephyr
+				this.line("add_custom_command(");
+				this.line("\tOUTPUT " + output);
+				this.line("\tCOMMAND cdv " + source + " -o " + tool.modulesPath + " -n " + target + pragmas);
+				this.line("\tDEPENDS " + source);
+				this.line("\tVERBATIM)");
+	
 			}
 			else {
 				this.line(output, ": ", source);
 				this.echo(tool, "cdv ", target);
-				let pragmas = "";
-				for (const name in result.query)
-					pragmas += " " + "-p " + name + "=" + result.query[name];
 				this.line("\tcdv ", source, " -o $(@D)", " -n ", target, pragmas);
-	
-				if (".js" === extension) {
-					tool.jsFiles.push({
-						source: tool.modulesPath + tool.slash + target + extension,
-						target: target + ".xsb"
-					});
-				}
-				else {
-					tool.tsFiles.push({
-						source: tool.modulesPath + tool.slash + target + extension,
-						target: target + ".xsb"
-					});
-					generatedTS.push(output);
-				}
+			}
+			if (".js" === extension) {
+				tool.jsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+			}
+			else {
+				tool.tsFiles.push({
+					source: tool.modulesPath + tool.slash + target + extension,
+					target: target + ".xsb"
+				});
+				generatedTS.push(output);
 			}
 		}
 

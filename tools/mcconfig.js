@@ -222,7 +222,7 @@ class ZephyrMakeFile extends MAKEFILE {
 	}
 	generateModulesDefinitions(tool) {
 		for (var result of [].concat(tool.nodered2mcuFiles, tool.cdvFiles)) {
-			this.write("list(APPEND mCDV_FILES ${MODULES_DIR}");
+			this.write("list(APPEND mMODULES " + tool.modulesPath);
 			this.write(tool.slash);
 			this.write(result.target + ".xsb)");
 			this.line("");
@@ -236,16 +236,7 @@ class ZephyrMakeFile extends MAKEFILE {
 		}	
 		for (var result of tool.cFiles) {
 			var sourceParts = tool.splitPath(result.source);
-/*
 			this.write("list(APPEND mMODULES ${TMP_DIR}");
-			this.write(tool.slash);
-			this.write(sourceParts.name);
-			this.write(sourceParts.extension);
-			this.write(".xsi");
-			this.write(")");
-			this.line("");
-*/
-			this.write("list(APPEND mXSID_FILES ${TMP_DIR}");
 			this.write(tool.slash);
 			this.write(sourceParts.name);
 			this.write(sourceParts.extension);
@@ -255,15 +246,8 @@ class ZephyrMakeFile extends MAKEFILE {
 		}
 		for (var result of tool.hFiles) {
 			var sourceParts = tool.splitPath(result);
-/*
+
 			this.write("list(APPEND mMODULES ${TMP_DIR}");
-			this.write(tool.slash);
-			this.write(sourceParts.name);
-			this.write(".h.xsi");
-			this.write(")");
-			this.line("");
-*/
-			this.write("list(APPEND mXSID_FILES ${TMP_DIR}");
 			this.write(tool.slash);
 			this.write(sourceParts.name);
 			this.write(".h.xsi");
@@ -282,10 +266,11 @@ class ZephyrMakeFile extends MAKEFILE {
 		this.line("");
 	}
 	generateModulesRules(tool) {
+		let result, source, sourceParts;
 		super.generateModulesRules(tool);
-		for (var result of tool.cFiles) {
-			var source = result.source;
-			var sourceParts = tool.splitPath(result.source);
+		for (result of tool.cFiles) {
+			source = result.source;
+			sourceParts = tool.splitPath(result.source);
 
 			this.line("add_custom_command(");
 			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi\n");
@@ -295,8 +280,9 @@ class ZephyrMakeFile extends MAKEFILE {
 			this.line("  VERBATIM)");
 			this.line();
 		}
-		for (var result of tool.hFiles) {
-			var sourceParts = tool.splitPath(result);
+		for (result of tool.hFiles) {
+			source = result;
+			sourceParts = tool.splitPath(source);
 
 			this.line("add_custom_command(");
 			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
@@ -1235,6 +1221,11 @@ export default class extends Tool {
 			this.environment.ARDUINO_ROOT = base + this.slash + "esp8266-2.3.0";
 			this.setenv("ARDUINO_ROOT", this.environment.ARDUINO_ROOT);
 		}
+		else if (this.platform === "zephyr") {
+			let temp;
+			temp = this.environment.ZEPHYR_BASE ?? this.getenv("ZEPHYR_BASE");
+			this.environment.ZEPHYR_BASE = temp;
+		}
 
 		this.localsName = "locals";
 		super.run();
@@ -1401,26 +1392,34 @@ export default class extends Tool {
 		if (this.make) {
 			let cmd;
 			if (this.platform == "zephyr") {
+				let command = `cd ${this.moddablePath} && `;
 				path = `${this.moddablePath}/build/devices/zephyr/app`;
-				if (this.buildTarget == "debug") {
-					cmd = ["west", "debug",
-							"-d", this.tmpPath + this.slash + "build" ];
-				}
-				else if (this.buildTarget == "deploy") {
-					cmd = ["west", "flash", "-d", this.tmpPath + this.slash + "build" ];
-				}
+				if (this.buildTarget == "clean")
+					command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
+				else if (this.buildTarget == "deploy")
+					command += `west flash -d ${this.tmpPath}${this.slash}build`;
 				else {
-					if (undefined !== this.environment.ZEPHYR_BOARD)
-						cmd = ["west", "-v",
-						"build", "-b", this.environment.ZEPHYR_BOARD,
-						path, "-d", this.tmpPath + this.slash + "build",
-						"--",
-						"-DEXTRA_CONF_FILE=" + this.tmpPath + this.slash + "zephyr.conf",
-						"-DMODDABLE_BUILD_DIR=" + this.tmpPath ];
-					else
-						cmd = ["west", "-v", "build", path, "-d", this.tmpPath, "--", "-DMODDABLE_BUILD_DIR=" + this.tmpPath ];
+					let action, secondary;
+					if (undefined === this.environment.ZEPHYR_BOARD)
+						this.error("ZEPHYR_BOARD undefined");
+						
+					if (this.buildTarget == "debug")
+						action = "debug";
+					else {
+						action = "build";
+						if (this.buildTarget == "build") {
+							secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath}`
+						}
+						else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
+							secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug $UPLOAD_PORT 115200 8N1`;
+						else
+							this.error("unknown target");
+					}
+
+					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build ` + secondary;
 				}
-//				trace(`***cmd: ${cmd}\n`);
+				trace(`*** command: ${command}\n`);
+				cmd = [ "bash", "-c", command ];
 			}
 			else {
 				if (this.buildTarget) {
