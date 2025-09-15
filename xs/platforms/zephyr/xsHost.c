@@ -274,7 +274,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 	msg.callback = callback;
 	msg.refcon = refcon;
 
-	if (k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
+	if (0 == k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
 		return 0;
 
 	if (msg.message && !msg.embeddedMessage)
@@ -352,7 +352,6 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 static struct k_mutex gFlashMutex;
 static uint8_t gFlashMutex_initialized = 0;
-static struct k_event taskEvents;
 
 void modMachineTaskInit(xsMachine *the)
 {
@@ -363,7 +362,6 @@ void modMachineTaskInit(xsMachine *the)
 
 	the->task = (void *)modTaskGetCurrent();
 	k_msgq_alloc_init(&the->msgQueue, sizeof(modMessageRecord), MODDEF_TASK_QUEUELENGTH);
-	k_event_init(&taskEvents);
 }
 
 void modMachineTaskUninit(xsMachine *the)
@@ -380,19 +378,12 @@ void modMachineTaskUninit(xsMachine *the)
 
 void modMachineTaskWait(xsMachine *the)
 {
-printk("taskWait\n");
-	k_event_wait(&taskEvents, 0x01, false, MODDEF_TASK_QUEUEWAIT);
+	// unused
 }
 
 void modMachineTaskWake(xsMachine *the)
 {
-	modMessageRecord msg;
-	msg.message = NULL;
-	msg.callback = NULL;
-	msg.refcon = NULL;
-	msg.length = 0;
-	k_msgq_put(&the->msgQueue, &msg, K_NO_WAIT);
-	//@@ I think this will crash because a callback of NULL is unexpected
+	// unused
 }
 
 /*
