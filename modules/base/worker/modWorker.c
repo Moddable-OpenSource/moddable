@@ -41,6 +41,11 @@
 	#include "task.h"
 	#include "semphr.h"
 	static void workerLoop(void *pvParameter);
+#elif __ZEPHYR__
+	#include <zephyr/kernel.h>
+	#include <zephyr/drivers/gpio.h>
+
+	static void workerLoop(void *a, void *b, void *c);
 #endif
 
 struct modWorkerRecord {
@@ -56,6 +61,11 @@ struct modWorkerRecord {
 	xsBooleanValue			shared;
 #ifdef INC_FREERTOS_H
 	TaskHandle_t			task;
+#elif __ZEPHYR__
+	struct k_thread		thread;
+	k_thread_stack_t		*stack;
+	k_tid_t					threadID;
+	struct k_sem			semaphore;
 #endif
 	char					module[1];
 };
@@ -109,6 +119,11 @@ void xs_worker_destructor(void *data)
 				worker->task = NULL;
 				vTaskDelay(1);	// necessary to allow idle task to run so task memory is freed. perhaps there's a better solution?
 			}
+#elif __ZEPHYR__
+			if (worker->threadID)
+				k_thread_abort(worker->threadID);
+			if (worker->stack)
+				k_thread_stack_free(worker->stack);
 #endif
 			if (worker->the)
 				xsDeleteMachine(worker->the);
@@ -191,6 +206,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			worker->the = target->the;
 #ifdef INC_FREERTOS_H
 			worker->task = target->task;
+#elif __ZEPHYR__
+			worker->thread = target->thread;		//@@
+			worker->stack = target->stack;
+			worker->threadID = target->threadID;
 #endif
 			doModMessagePostToMachine(the, worker->the, NULL, (modMessageDeliver)workerDeliverConnect, worker);
 			goto done;
@@ -284,7 +303,18 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 							worker, kWorkerTaskPriority, &worker->task);
 
 	modMachineTaskWait(the);
-#else // !INC_FREERTOS_H
+#elif __ZEPHYR__
+	k_sem_init(&worker->semaphore, 0, 1);
+
+	worker->stack = k_thread_stack_alloc(4096, 0);		//@@
+    if (C_NULL == worker->stack)
+		xsUnknownError("stack alloc failed");
+
+    worker->threadID = k_thread_create(&worker->thread, worker->stack, 4096,	//@@
+								workerLoop, worker, C_NULL, C_NULL, 5, 0, K_NO_WAIT);
+	k_thread_name_set(worker->threadID, worker->module);
+	k_sem_take(&worker->semaphore, K_FOREVER);
+#else // !INC_FREERTOS_H && !__ZEPHYR__
 	workerStart(worker);
 #endif
 
@@ -294,6 +324,9 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			vTaskDelete(worker->task);
 			worker->task = NULL;
 		}
+#elif __ZEPHYR__
+		k_thread_abort(worker->threadID);
+		k_thread_stack_free(worker->stack);
 #endif
 		xsUnknownError("unable to instantiate worker");
 	}
@@ -534,6 +567,26 @@ void workerLoop(void *pvParameter)
 #endif
 	}
 }
+#elif __ZEPHYR__
+
+void workerLoop(void *a, void *b, void *c)
+{
+	modWorker worker = (modWorker)a;
+
+	if (workerStart(worker)) {
+		k_sem_give(&worker->semaphore);
+		while (true)		// wait: caller deletes task
+			k_msleep(1000);
+	}
+	k_sem_give(&worker->semaphore);
+
+	while (true) {
+		modTimersExecute();
+		modMessageService(worker->the, modTimersNext());
+		modInstrumentationAdjust(Turns, +1);
+	}
+}
+
 #endif
 
 #ifdef mxInstrument
@@ -545,6 +598,8 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #ifdef INC_FREERTOS_H
 	extern SemaphoreHandle_t gInstrumentMutex;
 	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
+#elif __ZEPHYR__
+
 #endif
 
 	fxSampleInstrumentation(the, 0, NULL);
@@ -552,6 +607,8 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 
 #ifdef INC_FREERTOS_H
 	xSemaphoreGive(gInstrumentMutex);
+#elif __ZEPHYR__
+
 #endif
 }
 #endif
