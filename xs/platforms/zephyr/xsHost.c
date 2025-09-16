@@ -117,10 +117,21 @@ void modInstrumentationSetup(xsMachine *the)
 	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 }
 
+#include <zephyr/sys/sys_heap.h>
+
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
-//	txMachine *the = theIn;
-	return (int32_t)4096;	//@@MDK zephyr
+	struct k_heap *ha;
+	int n, free_bytes = 0;
+
+	n = k_heap_array_get(&ha);
+	for (int i = 0; i < n; i++) {
+		struct sys_memory_stats stats;
+		sys_heap_runtime_stats_get(&ha[i].heap, &stats);
+		free_bytes += stats.free_bytes;
+	}
+
+	return free_bytes;
 }
 
 #if INSTRUMENT_CPULOAD
