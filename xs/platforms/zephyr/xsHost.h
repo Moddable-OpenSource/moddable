@@ -251,10 +251,10 @@ extern void *my_calloc(size_t nitems, size_t size);
 extern void *my_realloc(void *ptr, size_t size);
 extern void *my_malloc(size_t size);
 extern void my_free(void *ptr);
-#define c_calloc calloc
-#define c_malloc malloc
-#define c_realloc realloc
-#define c_free free
+#define c_calloc k_calloc
+#define c_malloc k_malloc
+#define c_realloc k_realloc
+#define c_free k_free
 
 #define c_exit(n) printf("**** xs exit %d", (int)n)
 #define c_qsort qsort
