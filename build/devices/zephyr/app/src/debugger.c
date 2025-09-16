@@ -68,9 +68,10 @@ void serial_cb(const struct device *dev, void *user_data)
 		}
 	}
 
-	if (msg && (!++gNotifyOutstanding))
+	if (msg && !gNotifyOutstanding) {
+		gNotifyOutstanding = 1;
 		k_msgq_put(&dbgServiceQueue, &msg, K_NO_WAIT);
-
+	}
 }
 
 static void debugLoop(void *a, void *b, void *c)
