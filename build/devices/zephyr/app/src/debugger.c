@@ -79,15 +79,27 @@ static void debugLoop(void *a, void *b, void *c)
 	int err;
 	uint32_t msg;
 	uint32_t *running = a;
+	
+	int ret = uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
+	if (ret < 0) {
+		if (ret == -ENOTSUP) {
+			printk("Interrupt-driven UART not enabled.\n");
+		}
+		else if (ret == -ENOSYS) {
+			printk("Interrupt-driven UART not supported.\n");
+		}
+		else {
+			printk("error setting UART callback: %d\n", ret);
+		}
+		*running = -1;
+		return;
+	}
 
 	uart_irq_rx_enable(uart_dev);
 	*running = 1;
 
 	while (true) {
-		if (gNotifyOutstanding)
-			err = 0;
-		else
-			err = k_msgq_get(&dbgServiceQueue, &msg, K_MSEC(10000));
+		err = k_msgq_get(&dbgServiceQueue, &msg, K_MSEC(10000));
 		if (0 == err) {
 			gNotifyOutstanding = 0;
 #ifdef mxDebug
@@ -103,24 +115,11 @@ void setupDebugger(uint32_t *running)
 {
 	if (!device_is_ready(uart_dev)) {
 		printk("UART device not found!\n");
+		*running = -1;
 		return;
 	}
 
 	k_msgq_alloc_init(&dbgServiceQueue, sizeof(uint32_t), DEBUG_QUEUE_LEN);
-
-	int ret = uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
-	if (ret < 0) {
-		if (ret == -ENOTSUP) {
-			printk("Interrupt-driven UART not enabled.\n");
-		}
-		else if (ret == -ENOSYS) {
-			printk("Interrupt-driven UART not supported.\n");
-		}
-		else {
-			printk("error setting UART callback: %d\n", ret);
-		}
-		return;
-	}
 
 	// make fifos
 	rx_fifo_buffer = c_malloc(FIFO_SIZE);
