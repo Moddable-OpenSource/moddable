@@ -599,7 +599,8 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	extern SemaphoreHandle_t gInstrumentMutex;
 	xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
 #elif __ZEPHYR__
-
+	extern struct k_mutex gInstrumentMutex;
+	k_mutex_lock(&gInstrumentMutex, K_FOREVER);
 #endif
 
 	fxSampleInstrumentation(the, 0, NULL);
@@ -608,7 +609,7 @@ void workerSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #ifdef INC_FREERTOS_H
 	xSemaphoreGive(gInstrumentMutex);
 #elif __ZEPHYR__
-
+	k_mutex_unlock(&gInstrumentMutex);
 #endif
 }
 #endif
