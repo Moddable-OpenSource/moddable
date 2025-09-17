@@ -256,7 +256,7 @@ extern void my_free(void *ptr);
 #define c_realloc k_realloc
 #define c_free k_free
 
-#define c_exit(n) printf("**** xs exit %d", (int)n)
+#define c_exit(n) sys_reboot(SYS_REBOOT_COLD)
 #define c_qsort qsort
 #define c_bsearch bsearch
 #define c_strtod strtod
