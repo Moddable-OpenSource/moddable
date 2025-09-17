@@ -453,6 +453,7 @@ typedef struct {
 	uint8_t			isClose;
 
 	uint8_t 		secure;
+	uint8_t			lazy;
 
 	BLEGATTCharacteristicValue		values;
 	uint8_t							onReadableInFlight;
@@ -511,7 +512,7 @@ void xs_gattclient_constructor(xsMachine *the)
 {
 	ble_addr_t address;
 	int mtu = 0;
-	uint8_t secure = 0, manInTheMiddle = 0, bond = 0, display = 0, keyboard = 0;
+	uint8_t secure = 0, authenticate = 0, bond = 0, display = 0, keyboard = 0, lazy = 0;
 
 	xsmcVars(2);
 
@@ -540,8 +541,11 @@ void xs_gattclient_constructor(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_security)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_security);
 
-		xsmcGet(xsVar(1), xsVar(0), xsID_manInTheMiddle);
-		manInTheMiddle = xsmcTest(xsVar(1));
+		xsmcGet(xsVar(1), xsVar(0), xsID_authenticate);
+		authenticate = xsmcTest(xsVar(1));
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_lazy);
+		lazy = xsmcTest(xsVar(1));
 
 		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
 		bond = xsmcTest(xsVar(1));
@@ -561,8 +565,8 @@ void xs_gattclient_constructor(xsMachine *the)
 		else
 			keyboard = xsmcTest(xsVar(1));
 
-		if (manInTheMiddle && !(keyboard || display))
-			xsUnknownError("manInTheMiddle requires keyboard and/or display");
+		if (authenticate && !(keyboard || display))
+			xsUnknownError("authenticate requires keyboard and/or display");
 
 		secure = 1;
 	}
@@ -581,6 +585,7 @@ void xs_gattclient_constructor(xsMachine *the)
 	gc->onPasskey = onPasskey;
 	gc->mtu = (uint16_t)mtu;
 	gc->secure = secure;
+	gc->lazy = lazy;
 
 	xsmcSetHostData(xsThis, gc);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsGATTClientHooks);
@@ -596,7 +601,7 @@ void xs_gattclient_constructor(xsMachine *the)
 		else
 			ble_hs_cfg.sm_io_cap = display ? BLE_HS_IO_DISPLAY_ONLY : BLE_HS_IO_NO_INPUT_OUTPUT;
 		ble_hs_cfg.sm_bonding = bond;
-		ble_hs_cfg.sm_mitm = manInTheMiddle;
+		ble_hs_cfg.sm_mitm = authenticate;
 	}
 }
 
@@ -835,7 +840,7 @@ static int onGATTMCUExchanged(uint16_t conn_handle, const struct ble_gatt_error 
 
 	gattClientExecuted(gc, 0);
 
-	if (gc->secure)
+	if (gc->secure && !gc->lazy)
 		ble_gap_security_initiate(conn_handle);
 
 	return 0;
@@ -860,7 +865,7 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 				gc->mtu = ble_att_mtu(gc->conn_handle);
 				gattClientExecuted(gc, 0);
 
-				if (gc->secure)
+				if (gc->secure && !gc->lazy)
 					ble_gap_security_initiate(gc->conn_handle);
 			}
 			break;
