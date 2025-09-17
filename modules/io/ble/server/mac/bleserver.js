@@ -69,8 +69,8 @@ class GATTServer @ "BLEServer_destructor" {
 		notifyEncrypted: (1 << 8),
 		notifyAuthenticated: (1 << 8), // same as notifyEncrypted on macOS
 		
-		indicateEncrypted: (1 << 9),
-		indicateAuthenticated: (1 << 9), // same as indicateEncrypted on macOS
+		subscribeEncrypted: (1 << 9),
+		subscribeAuthenticated: (1 << 9), // same as indicateEncrypted on macOS
 		
 		readEncrypted: (1 << 10) | (1 << 1),
 		readAuthenticated: (1 << 10) | (1 << 1), // same as readEncrypted on macOS

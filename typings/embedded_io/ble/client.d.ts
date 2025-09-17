@@ -32,10 +32,28 @@ declare module "embedded:io/bluetoothle/central" {
         response?: boolean
     }
 
+    interface GATTSecurityOptions {
+        bond?: boolean,
+        authenticate?: boolean,
+        keyboard?: boolean | "yes/no",
+        display?: boolean,
+        lazy?: boolean
+    }
+
+    interface GATTSecurityState {
+        encrypted: boolean,
+        authenticated: boolean,
+        bonded: boolean,
+        keySize: number
+    }
+
     interface GATTClientOptions {
         address: string,
         target?: any;
+        security?: GATTSecurityOptions;
         onReady?: (this: GATTClient, ) => void;
+        onPasskey?: (this: GATTClient, action: string, data: number | ArrayBuffer | undefined) => void;
+        onSecured?: (this: GATTClient, state: GATTSecurityState) => void;
         onError?: (this: GATTClient, error: Error) => void;
         onReadable?: (this: GATTClient, count: number) => void;
     }
@@ -78,6 +96,8 @@ declare module "embedded:io/bluetoothle/central" {
 
         subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
         unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
+
+        replyToPasskey(action: string, data?: number | ArrayBuffer) : void;
 
         get maximumWrite(): number;
 
