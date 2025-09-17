@@ -32,8 +32,6 @@ static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
 static int gNotifyOutstanding = 0;
 struct k_msgq dbgServiceQueue;
-#define  UART_RCV	0b0001
-#define  UART_TX	0b0010
 
 void die(char *x) {
 	uint8_t DIE_BUF[256];
@@ -43,17 +41,9 @@ void die(char *x) {
 }
 #define DIE(x, ...) die(x)
 
-uint32_t fillBufFromFifo(fifo_t *fifo, uint8_t *buf, uint32_t bufSize) {
-	int i=0;
-	while (i<bufSize && (0 != fifo_get(fifo, buf + i)))
-		i++;
-	return i;
-}
-
 void serial_cb(const struct device *dev, void *user_data)
 {
 	uint32_t msg = 0;
-	int amt;
 
 	if (!uart_irq_update(uart_dev)) {
 		return;
@@ -61,8 +51,8 @@ void serial_cb(const struct device *dev, void *user_data)
 
 	while (uart_irq_rx_ready(uart_dev)) {
 		uint8_t c;
-		msg |= UART_RCV;
-		while (1 == (amt = uart_fifo_read(uart_dev, &c, 1))) {
+		msg = 1;
+		while (1 == uart_fifo_read(uart_dev, &c, 1)) {
 			if (0 != fifo_put(&m_rx_fifo, c))
 				die("rx fifo full");
 		}
@@ -100,13 +90,13 @@ static void debugLoop(void *a, void *b, void *c)
 
 	while (true) {
 		err = k_msgq_get(&dbgServiceQueue, &msg, K_MSEC(10000));
-		if (0 == err) {
-			gNotifyOutstanding = 0;
+		if (err) continue;
+
+		gNotifyOutstanding = 0;
 #ifdef mxDebug
-			if (fifo_length(&m_rx_fifo))
-				fxReceiveLoop();
+		if (fifo_length(&m_rx_fifo))
+			fxReceiveLoop();
 #endif
-		}
 	}
 }
 
