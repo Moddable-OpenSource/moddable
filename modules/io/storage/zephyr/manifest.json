@@ -1,0 +1,17 @@
+{
+	"modules": {
+		"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+		"embedded:storage/key-value": "./storage-zephyr"
+	},
+	"preload": [
+		"embedded:storage/key-value"
+	],
+	"zephyrConfig": {
+		"CONFIG_SETTINGS": "y",
+		"CONFIG_SETTINGS_RUNTIME": "y",
+		"CONFIG_SETTINGS_NVS": "y",
+		"CONFIG_NVS": "y",
+		"CONFIG_FLASH": "y",
+		"CONFIG_FLASH_MAP": "y"
+	}
+}

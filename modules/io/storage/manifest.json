@@ -5,6 +5,9 @@
 		},
 		"mac": {
 			"include": "./mac/manifest.json"
+		},
+		"zephyr": {
+			"include": "./zephyr/manifest.json"
 		}
 	}
 }
