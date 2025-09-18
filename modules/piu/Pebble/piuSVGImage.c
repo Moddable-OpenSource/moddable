@@ -110,7 +110,8 @@ void PiuSVGImageBind(void* it, PiuApplication* application, PiuView* view)
 				GDrawCommandFrame* dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
 				duration += gdraw_command_frame_get_duration(dcf);
 			}
-			(*self)->duration = duration;
+			PiuIdle selfIdle = PiuContentUseIdle(it);
+			selfIdle->duration = duration;
 			(*self)->dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
 		}
 		(*self)->cx = (xsNumberValue)(*self)->dataWidth / 2.0;
@@ -281,7 +282,7 @@ void PiuSVGImageSync(void* it)
 {
 	PiuSVGImage* self = it;
 	if ((*self)->dcs) {
-		double time = (*self)->time;
+		double time = PiuContentUseIdle(it)->time;
 		GDrawCommandFrame *dcf = gdraw_command_sequence_get_frame_by_elapsed((*self)->dcs, time);
 		if ((*self)->dcf != dcf) {
 			(*self)->dcf = dcf;
@@ -320,6 +321,7 @@ void PiuSVGImage_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuSVGImageHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuSVGImageDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuSVGImageRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuSVGImageDictionary(the, self);

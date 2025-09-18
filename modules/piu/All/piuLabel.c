@@ -193,6 +193,7 @@ void PiuLabel_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuLabelHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuLabelDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuLabelRecord));
 	(*self)->flags = piuVisible | piuLabelEllipsis;
 	PiuContentDictionary(the, self);
 	PiuLabelDictionary(the, self);

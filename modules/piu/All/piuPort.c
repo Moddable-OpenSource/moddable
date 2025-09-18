@@ -140,6 +140,7 @@ void PiuPort_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuPortHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuPortDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuPortRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuBehaviorOnCreate(self);

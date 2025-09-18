@@ -449,13 +449,21 @@ struct PiuDispatchStruct {
 	PiuContentUpdateProc update;
 };
 
+typedef struct {
+	PiuIdleLink* idleLink;
+	double duration;
+	PiuInterval interval;
+	PiuTick ticks;
+	double time;
+} PiuIdleRecord, *PiuIdle;
+
+#define PiuRecordSize(bytes) (((bytes) + 3) & ~3)
+
 #define PiuIdlePart \
-	PiuIdleLink* idleLink; \
 	PiuDispatch dispatch; \
-	double duration; \
-	PiuInterval interval; \
-	PiuTick ticks; \
-	double time
+	uint32_t recordSize:12; \
+	uint32_t nameOffset:10; \
+	uint32_t idleOffset:10
 	
 #define PiuBehaviorPart \
 	xsMachine* the; \
@@ -473,8 +481,7 @@ struct PiuDispatchStruct {
 	PiuCoordinatesRecord coordinates; \
 	PiuSkin* skin; \
 	PiuStyle* style; \
-	PiuVariant variant; \
-	xsSlot* name
+	PiuVariant variant
 
 #define PiuContainerPart \
 	PiuContent* first; \
@@ -517,7 +524,9 @@ extern void PiuContentSync(void* it);
 extern void PiuContentToApplicationCoordinates(void* it, PiuCoordinate x0, PiuCoordinate y0, PiuCoordinate *x1, PiuCoordinate *y1);
 extern void PiuContentUnbind(void* it, PiuApplication* application, PiuView* view);
 extern void PiuContentUpdate(void* it, PiuView* view, PiuRectangle area);
+extern PiuIdle PiuContentUseIdle(void* it);
 extern void PiuContent_delegateAux(xsMachine *the, PiuContent* content, xsIdentifier id, xsIntegerValue c);
+extern char *PiuContent_get_nameAux(PiuContent* self);
 
 // PiuLabel.c
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -510,6 +510,7 @@ void PiuContainer_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuContainerHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuContainerDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuContainerRecord));
 	(*self)->flags = piuVisible | piuContainer;
 	PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);
@@ -605,11 +606,9 @@ void PiuContainer_content(xsMachine *the)
 			xsStringValue string = xsToString(xsArg(0));
 			content = (*self)->first;
 			while (content) {
-				if ((*content)->name) {
-					xsStringValue name = PiuToString((*content)->name);
-					if (!c_strcmp(name, string))
-						break;
-				}
+				char *name = PiuContent_get_nameAux(content);
+				if (name && !c_strcmp(name, string))
+					break;
 				content = (*content)->next;
 			}
 		}
