@@ -2914,7 +2914,7 @@ gethex( const char **sp, U *rvp, int rounding, int sign MTd)
 		  case '-':
 			esign = 1;
 			/* no break */
-			__attribute__((fallthrough));
+			mxFallThrough;
 		  case '+':
 			s++;
 		  }
@@ -3575,12 +3575,12 @@ strtod2(const char *s00, char **se __XS__d)
 		case '-':
 			sign = 1;
 			/* no break */
-			__attribute__((fallthrough));
+			mxFallThrough;
 		case '+':
 			if (c_read8(++s))
 				goto break2;
 			/* no break */
-			__attribute__((fallthrough));
+			mxFallThrough;
 		case 0:
 			goto ret0;
 		case '\t':
@@ -3707,7 +3707,7 @@ strtod2(const char *s00, char **se __XS__d)
 		switch(c = c_read8(++s)) {
 			case '-':
 				esign = 1;
-				__attribute__((fallthrough));
+				mxFallThrough;
 			case '+':
 				c = c_read8(++s);
 			}
@@ -5381,7 +5381,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 2:
 			leftright = 0;
 			/* no break */
-			__attribute__((fallthrough));
+			mxFallThrough;
 		case 4:
 			if (ndigits <= 0)
 				ndigits = 1;
@@ -5390,7 +5390,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 3:
 			leftright = 0;
 			/* no break */
-			__attribute__((fallthrough));
+			mxFallThrough;
 		case 5:
 			i = ndigits + k + 1;
 			ilim = i;

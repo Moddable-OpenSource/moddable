@@ -295,7 +295,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_STRING_1:
 			size += ((txStringCode*)code)->length;
 			// continue
-        	__attribute__((fallthrough));
+			mxFallThrough;
 		case XS_CODE_RESERVE_1:
 		case XS_CODE_RETRIEVE_1:
 		case XS_CODE_UNWIND_1:
