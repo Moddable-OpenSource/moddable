@@ -1,11 +1,11 @@
 # --- suffix file
 
-add_custom_target(generated_module_files DEPENDS ${mMODULES})
-add_custom_target(generated_xsid_files DEPENDS generated_module_files ${mXSID_FILES})
+# add_custom_target(generated_module_files DEPENDS ${mMODULES})
 
 add_custom_command ( 
 	OUTPUT ${TMP_DIR}/mc.xs.c ${TMP_DIR}/mc.xs.h
-	DEPENDS generated_module_files generated_xsid_files ${mRESOURCES}
+#	DEPENDS generated_module_files ${mRESOURCES}
+	DEPENDS ${mMODULES} ${mRESOURCES}
 	COMMAND xsl -b ${MODULES_DIR} -o ${TMP_DIR} ${mPRELOADS} -s ${mSTRIPS} ${mCREATION} ${mMODULES}
 	VERBATIM
 )

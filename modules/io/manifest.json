@@ -20,6 +20,9 @@
 		"nrf52": {
 			"include": "./manifests/nrf52/manifest.json"
 		},
+		"zephyr": {
+			"include": "./manifests/zephyr/manifest.json"
+		},
 		"mac": {
 			"include": "./manifests/mac/manifest.json"
 		},

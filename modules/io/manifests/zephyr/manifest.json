@@ -1,0 +1,38 @@
+{
+	"build": {
+		"IO": "$(MODDABLE)/modules/io"
+	},
+	"include": [
+	],
+	"modules": {
+		"*": [
+			"$(IO)/common/builtinCommon",
+			"$(IO)/digital/$(PLATFORM)/*"
+		],
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+
+		"system": "$(IO)/system/*"
+	},
+	"preload": [
+		"embedded:*",
+		"system"
+	],
+	"platforms": {
+		"zephyr/*": {
+			"modules": {
+				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+			}
+		},
+		"zephyr": {
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
+		},
+		"...": {
+			"error": "zephyr manifest"
+		}
+	}
+}

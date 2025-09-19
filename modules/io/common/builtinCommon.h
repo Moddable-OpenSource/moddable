@@ -61,6 +61,10 @@
 	extern critical_section_t gCommonCriticalMux;
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
+#elif defined(_ZEPHYR)
+	#define kPinBanks (9)
+	#define builtinCriticalSectionBegin()	k_sched_lock()
+	#define builtinCriticalSectionEnd()		k_sched_unlock()
 #endif
 
 enum {
@@ -119,7 +123,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 #endif
 
-#if defined(PICO_BUILD)
+#if defined(PICO_BUILD) || defined(_ZEPHYR)
 	uint8_t builtinInitIO(void);
 #endif
 

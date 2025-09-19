@@ -1398,25 +1398,22 @@ export default class extends Tool {
 					command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
 				else if (this.buildTarget == "deploy")
 					command += `west flash -d ${this.tmpPath}${this.slash}build`;
+				else if (this.buildTarget == "debug")
+					command += `west debug --build ${this.tmpPath}${this.slash}build`;
 				else {
-					let action, secondary;
+					let action, secondary = "";
 					if (undefined === this.environment.ZEPHYR_BOARD)
 						this.error("ZEPHYR_BOARD undefined");
 						
-					if (this.buildTarget == "debug")
-						action = "debug";
-					else {
-						action = "build";
-						if (this.buildTarget == "build") {
-							secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath}`
-						}
-						else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-							secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug $UPLOAD_PORT 115200 8N1`;
-						else
-							this.error("unknown target");
-					}
+					action = "build";
+					if (this.buildTarget == "build")
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath}`
+					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug $UPLOAD_PORT 115200 8N1`;
+					else
+						this.error("unknown target");
 
-					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build ` + secondary;
+					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build ${secondary}`;
 				}
 				trace(`*** command: ${command}\n`);
 				cmd = [ "bash", "-c", command ];

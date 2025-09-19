@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -68,6 +68,9 @@
 		0x00000000		//@@
 #endif
 	};
+#elif _ZEPHYR
+	static uint8_t builtinInitialized = 0;
+	static uint32_t gDigitalAvailable[kPinBanks];
 #endif
 
 uint8_t builtinArePinsFree(uint32_t bank, uint32_t pins)
@@ -209,6 +212,16 @@ uint8_t builtinInitIO()
 {
 	if (!builtinInitialized) {
 		critical_section_init(&gCommonCriticalMux);
+		builtinInitialized = 1;
+	}
+}
+#elif defined(_ZEPHYR)
+uint8_t builtinInitIO()
+{
+	if (!builtinInitialized) {
+		int i;
+		for (i=0; i<kPinBanks; i++)
+			gDigitalAvailable[i] = 0xffffffff;
 		builtinInitialized = 1;
 	}
 }
