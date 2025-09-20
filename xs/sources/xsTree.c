@@ -37,7 +37,7 @@
 
 #include "xsScript.h"
 
-#define mxTreePrint 1
+//#define mxTreePrint 1
 
 #ifdef mxTreePrint
 typedef struct {

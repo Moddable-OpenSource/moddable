@@ -2180,11 +2180,36 @@ void fxCallExpression(txParser* parser)
 					   fxReportParserError(parser, aLine, "%s: argument is no string literal", access->symbol->string);
 					fxPopNode(parser);
 					fxPopNode(parser);
-					fxPushNULL(parser);
-					fxPushNULL(parser);
-					fxPushStringNode(parser, param->length, param->value, aLine);
-					fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
-					parser->root->flags |= nativeFlags;
+					if (nativeFlags & mxNativeFunctionFlag) {
+						fxPushNULL(parser);
+						fxPushNULL(parser);
+						fxPushStringNode(parser, param->length, param->value, aLine);
+						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
+						parser->root->flags |= nativeFlags;
+					}
+					else {
+						fxPushNULL(parser); // id
+							
+						fxPushNULL(parser);
+						fxPushNULL(parser);
+						fxPushStringNode(parser, param->length, param->value, aLine);
+						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);  // heritage
+						
+						fxPushNodeList(parser, 0); // features
+						fxPushNULL(parser); // constructorInitCount
+						fxPushNULL(parser); // instanceInitCount
+						
+						fxPushNULL(parser);
+						fxPushNodeList(parser, 0);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
+						fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, aLine);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
+						fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine); // constructor
+						parser->root->flags = mxStrictFlag | mxBaseFlag | mxMethodFlag | mxTargetFlag;
+						
+						fxPushNodeStruct(parser, 6, XS_TOKEN_CLASS, aLine);
+					}
 				}
 				else
 					fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
