@@ -37,7 +37,7 @@
 
 #include "xsScript.h"
 
-//#define mxCodePrint 1
+#define mxCodePrint 1
 
 #define mxByteCodePart\
 	txByteCode* nextCode;\
@@ -3513,6 +3513,10 @@ void fxHostNodeCode(void* it, void* param)
     }
 	if (self->params)
 		self->paramsCount = fxCoderCountParameters(coder, self->params);
+	else if (self->flags & mxNativeConstructorFlag)
+		self->paramsCount = -2;	
+	else if (self->flags & mxNativeFunctionFlag)
+		self->paramsCount = 0;	
 	else
 		self->paramsCount = -1;	
 	if (parser->firstHostNode)

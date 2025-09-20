@@ -2152,14 +2152,42 @@ void fxCallExpression(txParser* parser)
 				fxMatchToken(parser, XS_TOKEN_RIGHT_BRACKET);
 			}
 			else if (parser->states[0].token == XS_TOKEN_LEFT_PARENTHESIS) {
+				txUnsigned nativeFlags = 0;
+				txAccessNode* access = NULL;
 				if (parser->root->description && (parser->root->description->token == XS_TOKEN_ACCESS)) {
-					txAccessNode* access = (txAccessNode*)parser->root;
+					access = (txAccessNode*)parser->root;
 					if (access->symbol == parser->evalSymbol) {
 						parser->flags |= mxEvalFlag;
 					}
+					else if (parser->flags & mxCFlag) {
+						if (access->symbol == parser->NativeSymbol) {
+							nativeFlags = mxNativeConstructorFlag;
+						}
+						else if (access->symbol == parser->nativeSymbol) {
+							nativeFlags = mxNativeFunctionFlag;
+						}
+					}
 				}
 				fxParameters(parser);
-				fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
+				if (nativeFlags) {
+					txParamsNode* params = (txParamsNode*)parser->root;
+					if (params->items->length == 0)
+					   fxReportParserError(parser, aLine, "%s: no argument", access->symbol->string);
+					if (params->items->length > 1)
+					   fxReportParserError(parser, aLine, "%s: too many arguments", access->symbol->string);
+					txStringNode* param = (txStringNode*)(params->items->first);
+					if (param->description->token != XS_TOKEN_STRING)
+					   fxReportParserError(parser, aLine, "%s: argument is no string literal", access->symbol->string);
+					fxPopNode(parser);
+					fxPopNode(parser);
+					fxPushNULL(parser);
+					fxPushNULL(parser);
+					fxPushStringNode(parser, param->length, param->value, aLine);
+					fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
+					parser->root->flags |= nativeFlags;
+				}
+				else
+					fxPushNodeStruct(parser, 2, XS_TOKEN_CALL, aLine);
 			}
 			else if (parser->states[0].token == XS_TOKEN_TEMPLATE) {
 				if (chainFlag)

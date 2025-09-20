@@ -742,11 +742,11 @@ void fxHostNodeHoist(void* it, void* param)
 	txHostNode* self = it;
 	txHoister* hoister = param;
 	txScope* scope = hoister->bodyScope;
-	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
-		fxReportParserError(hoister->parser, self->line, "invalid host");
-	else {
-		// @@ check simple parameters
-	}
+// 	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
+// 		fxReportParserError(hoister->parser, self->line, "invalid host");
+// 	else {
+// 		// @@ check simple parameters
+// 	}
 }
 
 void fxImportNodeHoist(void* it, void* param) 

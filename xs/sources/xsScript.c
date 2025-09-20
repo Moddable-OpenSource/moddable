@@ -134,6 +134,8 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->moduleSymbol = fxNewParserSymbol(parser, "module");
 	parser->nameSymbol = fxNewParserSymbol(parser, "name");
 	parser->NaNSymbol = fxNewParserSymbol(parser, "NaN");
+	parser->NativeSymbol = fxNewParserSymbol(parser, "Native");
+	parser->nativeSymbol = fxNewParserSymbol(parser, "native");
 	parser->nextSymbol = fxNewParserSymbol(parser, "next");
 	parser->newTargetSymbol = fxNewParserSymbol(parser, "new.target");
 	parser->ofSymbol = fxNewParserSymbol(parser, "of");

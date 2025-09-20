@@ -536,6 +536,9 @@ void fxArrayCacheItem(txMachine* the, txSlot* reference, txSlot* item)
 
 /* Host Constructors, Functions and Objects */
 
+void fxNative(txMachine* the) {
+}
+
 void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* builder)
 {
 	mxPushInteger(c);
@@ -555,8 +558,12 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			fxNewHostFunction(the, builder->callback, builder->length, builder->id, XS_NO_ID);
 		#endif
 		}
-		else
+		else if (builder->length == -1)
 			fxNewHostObject(the, (txDestructor)builder->callback);
+		else {
+			fxNewHostFunction(the, fxNative, 0, XS_NO_ID, XS_NO_ID);
+			
+		}
 		fxArrayCacheItem(the, the->stack + 1, the->stack);
 		mxPop();
 		c--;

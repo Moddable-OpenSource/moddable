@@ -693,6 +693,8 @@ struct sxParser {
 	txSymbol* moduleSymbol;
 	txSymbol* nameSymbol;
 	txSymbol* NaNSymbol;
+	txSymbol* NativeSymbol;
+	txSymbol* nativeSymbol;
 	txSymbol* nextSymbol;
 	txSymbol* newTargetSymbol;
 	txSymbol* ofSymbol;
@@ -941,11 +943,13 @@ enum {
 	mxDefineNodeBoundFlag = 1 << 15,
 	mxDefineNodeCodedFlag = 1 << 16,
 	mxDeclareNodeDisposableFlag = 1 << 14,
-	
 
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,
 	mxStringLegacyFlag = 1 << 2,
+	
+	mxNativeConstructorFlag = 1 << 30,
+	mxNativeFunctionFlag = 1 << 31,
 };
 
 /* xsScript.c */
