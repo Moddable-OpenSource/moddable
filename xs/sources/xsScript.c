@@ -114,6 +114,7 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->asSymbol = fxNewParserSymbol(parser, "as");
 	parser->asyncSymbol = fxNewParserSymbol(parser, "async");
 	parser->awaitSymbol = fxNewParserSymbol(parser, "await");
+	parser->callSymbol = fxNewParserSymbol(parser, "call");
 	parser->callerSymbol = fxNewParserSymbol(parser, "caller");
 	parser->constructorSymbol = fxNewParserSymbol(parser, "constructor");
 	parser->defaultSymbol = fxNewParserSymbol(parser, "default");

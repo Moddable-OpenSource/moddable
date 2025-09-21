@@ -2165,6 +2165,7 @@ void fxCallExpression(txParser* parser)
 						}
 						else if (access->symbol == parser->nativeSymbol) {
 							nativeFlags = mxNativeFunctionFlag;
+							parser->flags |= mxNativeFlag;
 						}
 					}
 				}
@@ -2881,6 +2882,129 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	parser->flags = flags | (parser->flags & (mxArgumentsFlag));
 }
 
+static void fxOptimizeNativeFunction(txParser* parser)
+{
+	txFunctionNode* function = (txFunctionNode*)(parser->root);
+	if (function->flags & mxGetterFlag) {
+		txParamsBindingNode* args = (txParamsBindingNode*)(function->params);
+		if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
+			return;
+		if (args->items->length != 0)
+			return;
+		txBodyNode* body = (txBodyNode*)(function->body);
+		if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
+			return;
+		txStatementNode* statement = (txStatementNode*)(body->statement);
+		if (statement->description != &gxTokenDescriptions[XS_TOKEN_RETURN])
+			return;
+		txCallNewNode* call = (txCallNewNode*)(statement->expression);
+		if (call->description != &gxTokenDescriptions[XS_TOKEN_CALL])
+			return;
+		txMemberNode* member = (txMemberNode*)(call->reference);
+		if (member->description != &gxTokenDescriptions[XS_TOKEN_MEMBER])
+			return;
+		if (member->symbol != parser->callSymbol)
+			return;
+		txHostNode* host = (txHostNode*)(member->reference);
+		if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
+			return;
+		txParamsNode* params = (txParamsNode*)(call->params);
+		if (params->items->length != 1)
+			return;
+		if (params->items->first->description != &gxTokenDescriptions[XS_TOKEN_THIS])
+			return;
+		host->flags |= function->flags;
+		fxPopNode(parser);
+		fxPushNode(parser, (txNode*)host);
+	}
+	else if (function->flags & mxSetterFlag) {
+		txParamsBindingNode* args = (txParamsBindingNode*)(function->params);
+		if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
+			return;
+		if (args->items->length != 1)
+			return;
+		txDeclareNode* arg = (txDeclareNode*)(args->items->first);
+		if (arg->description != &gxTokenDescriptions[XS_TOKEN_ARG])
+			return;
+		txBodyNode* body = (txBodyNode*)(function->body);
+		if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
+			return;
+		txStatementNode* statement = (txStatementNode*)(body->statement);
+		if (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT])
+			return;
+		txCallNewNode* call = (txCallNewNode*)(statement->expression);
+		if (call->description != &gxTokenDescriptions[XS_TOKEN_CALL])
+			return;
+		txMemberNode* member = (txMemberNode*)(call->reference);
+		if (member->description != &gxTokenDescriptions[XS_TOKEN_MEMBER])
+			return;
+		if (member->symbol != parser->callSymbol)
+			return;
+		txHostNode* host = (txHostNode*)(member->reference);
+		if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
+			return;
+		txParamsNode* params = (txParamsNode*)(call->params);
+		if (params->items->length != 2)
+			return;
+		if (params->items->first->description != &gxTokenDescriptions[XS_TOKEN_THIS])
+			return;
+		txAccessNode* access = (txAccessNode*)(params->items->first->next);
+		if (access->description != &gxTokenDescriptions[XS_TOKEN_ACCESS])
+			return;
+		if (access->symbol != arg->symbol)
+			return;
+		host->flags |= function->flags;
+		fxPopNode(parser);
+		fxPushNode(parser, (txNode*)host);
+	}
+	else {
+		txParamsBindingNode* args = (txParamsBindingNode*)(function->params);
+		if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
+			return;
+		if (args->items->length != 1)
+			return;
+		txRestBindingNode* rest = (txRestBindingNode*)(args->items->first);
+		if (rest->description != &gxTokenDescriptions[XS_TOKEN_REST_BINDING])
+			return;
+		txDeclareNode* arg = (txDeclareNode*)(rest->binding);
+		if (arg->description != &gxTokenDescriptions[XS_TOKEN_ARG])
+			return;
+		txBodyNode* body = (txBodyNode*)(function->body);
+		if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
+			return;
+		txStatementNode* statement = (txStatementNode*)(body->statement);
+		if (statement->description != &gxTokenDescriptions[XS_TOKEN_RETURN])
+			return;
+		txCallNewNode* call = (txCallNewNode*)(statement->expression);
+		if (call->description != &gxTokenDescriptions[XS_TOKEN_CALL])
+			return;
+		txMemberNode* member = (txMemberNode*)(call->reference);
+		if (member->description != &gxTokenDescriptions[XS_TOKEN_MEMBER])
+			return;
+		if (member->symbol != parser->callSymbol)
+			return;
+		txHostNode* host = (txHostNode*)(member->reference);
+		if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
+			return;
+		txParamsNode* params = (txParamsNode*)(call->params);
+		if (params->items->length != 2)
+			return;
+		if (params->items->first->description != &gxTokenDescriptions[XS_TOKEN_THIS])
+			return;
+		txSpreadNode* spread = (txSpreadNode*)(params->items->first->next);
+		if (spread->description != &gxTokenDescriptions[XS_TOKEN_SPREAD])
+			return;
+		txAccessNode* access = (txAccessNode*)(spread->expression);
+		if (access->description != &gxTokenDescriptions[XS_TOKEN_ACCESS])
+			return;
+		if (access->symbol != arg->symbol)
+			return;
+		host->flags |= function->flags;
+		fxPopNode(parser);
+		fxPushNode(parser, (txNode*)host);
+	}
+}
+
 void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol, txUnsigned flag)
 {
 	txUnsigned flags = parser->flags;
@@ -2921,7 +3045,10 @@ void fxFunctionExpression(txParser* parser, txInteger theLine, txSymbol** theSym
         parser->root->flags = parser->flags & (mxStrictFlag | mxNotSimpleParametersFlag | mxTargetFlag | mxArgumentsFlag | mxEvalFlag | flag);
         if (!(flags & mxStrictFlag) && (parser->flags & mxStrictFlag))
             fxCheckStrictFunction(parser, (txFunctionNode*)parser->root);
-        parser->flags = flags;
+        if (parser->flags & mxNativeFlag) {
+        	fxOptimizeNativeFunction(parser);
+        }     
+       	parser->flags = flags;
         fxMatchToken(parser, XS_TOKEN_RIGHT_BRACE);
 	}
 }

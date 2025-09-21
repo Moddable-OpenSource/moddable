@@ -673,6 +673,7 @@ struct sxParser {
 	txSymbol* asSymbol;
 	txSymbol* asyncSymbol;
 	txSymbol* awaitSymbol;
+	txSymbol* callSymbol;
 	txSymbol* callerSymbol;
 	txSymbol* constructorSymbol;
 	txSymbol* defaultSymbol;
@@ -950,6 +951,7 @@ enum {
 	
 	mxNativeConstructorFlag = 1 << 30,
 	mxNativeFunctionFlag = 1 << 31,
+	mxNativeFlag = 1 << 15,
 };
 
 /* xsScript.c */
