@@ -4,6 +4,10 @@
 		"$(MODDABLE)/modules/io/manifest.json"
 	],
 	"modules": {
-		"*": "./main"
-	}
+		"*": "./main",
+		"embedded:io/provider/MCP23017": "$(MODDABLE)/modules/io/expander/expander"
+	},
+	"preload": [
+		"embedded:io/provider/MCP23017"
+	]
 }
