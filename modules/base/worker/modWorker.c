@@ -306,11 +306,12 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #elif __ZEPHYR__
 	k_sem_init(&worker->semaphore, 0, 1);
 
-	worker->stack = k_thread_stack_alloc(4096, 0);		//@@
+	size_t nativeStackSize = worker->creation.nativeStackSize ? worker->creation.nativeStackSize : 4096;
+	worker->stack = k_thread_stack_alloc(nativeStackSize, 0);
     if (C_NULL == worker->stack)
 		xsUnknownError("stack alloc failed");
 
-    worker->threadID = k_thread_create(&worker->thread, worker->stack, 4096,	//@@
+    worker->threadID = k_thread_create(&worker->thread, worker->stack, nativeStackSize,
 								workerLoop, worker, C_NULL, C_NULL, 5, 0, K_NO_WAIT);
 	k_thread_name_set(worker->threadID, worker->module);
 	k_sem_take(&worker->semaphore, K_FOREVER);
