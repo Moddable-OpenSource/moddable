@@ -325,6 +325,7 @@ struct sxHostNode {
 	txStringNode* at;
 	txHostNode* nextHostNode;
 	txInteger paramsCount;
+	txInteger hostIndex;
 };
 
 typedef struct {
@@ -909,26 +910,24 @@ enum {
 	/* mxStrictFlag = 1 << 4, */
 	/* mxSuperFlag = 1 << 5, */
 	/* mxTargetFlag = 1 << 6, */
-	/* mxFieldFlag = 1 << 15, */
-	/* mxFunctionFlag = 1 << 16, */
-	/* mxGeneratorFlag = 1 << 21, */
-	/* mxJSONModuleFlag = 1 << 22, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
-
 
 	mxArgumentsFlag = 1 << 7,
 	mxArrowFlag = 1 << 8,
 	mxAsyncFlag = 1 << 9,
 	mxAwaitingFlag = 1 << 10,
 	mxBaseFlag = 1 << 11,
-	mxDeclareNodeClosureFlag = 1 << 12,
-	mxDeclareNodeUseClosureFlag = 1 << 13,
 	mxDefaultFlag = 1 << 14,
+	mxNativeFlag = 1 << 12,
+	/* mxFieldFlag = 1 << 15, */
+	/* mxFunctionFlag = 1 << 16, */	
 	mxDerivedFlag = 1 << 17,
 	mxElisionFlag = 1 << 18,
 	mxExpressionNoValue = 1 << 19,
 	mxForFlag = 1 << 20,
+	/* mxGeneratorFlag = 1 << 21, */
 	mxGetterFlag = 1 << 22,
+	/*@@ mxJSONModuleFlag = 1 << 22, */
 	mxMethodFlag = 1 << 23,
 	mxNotSimpleParametersFlag = 1 << 24,
 	mxSetterFlag = 1 << 25,
@@ -941,9 +940,11 @@ enum {
 	
 	mxEvalParametersFlag = 1 << 25,
 
+	mxDeclareNodeClosureFlag = 1 << 12,
+	mxDeclareNodeUseClosureFlag = 1 << 13,
+	mxDeclareNodeDisposableFlag = 1 << 14,
 	mxDefineNodeBoundFlag = 1 << 15,
 	mxDefineNodeCodedFlag = 1 << 16,
-	mxDeclareNodeDisposableFlag = 1 << 14,
 
 	mxStringEscapeFlag = 1 << 0,
 	mxStringErrorFlag = 1 << 1,
@@ -951,7 +952,6 @@ enum {
 	
 	mxNativeConstructorFlag = 1 << 30,
 	mxNativeFunctionFlag = 1 << 31,
-	mxNativeFlag = 1 << 15,
 };
 
 /* xsScript.c */

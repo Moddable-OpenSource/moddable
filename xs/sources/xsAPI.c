@@ -566,11 +566,8 @@ void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* buil
 			fxNewHostFunction(the, builder->callback, builder->length, builder->id, XS_NO_ID);
 		#endif
 		}
-		else {
+		else
 			fxNewHostObject(the, (txDestructor)builder->callback);
-			if (builder->length == -2)
-				fxNewHostConstructor(the, fxNative, 0, XS_NO_ID);
-		}
 		fxArrayCacheItem(the, the->stack + 1, the->stack);
 		mxPop();
 		c--;

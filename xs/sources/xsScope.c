@@ -742,6 +742,7 @@ void fxHostNodeHoist(void* it, void* param)
 	txHostNode* self = it;
 	txHoister* hoister = param;
 	txScope* scope = hoister->bodyScope;
+	self->hostIndex = -1;
 // 	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
 // 		fxReportParserError(hoister->parser, self->line, "invalid host");
 // 	else {

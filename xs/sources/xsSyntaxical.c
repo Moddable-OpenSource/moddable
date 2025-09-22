@@ -2183,33 +2183,16 @@ void fxCallExpression(txParser* parser)
 					fxPopNode(parser);
 					if (nativeFlags & mxNativeFunctionFlag) {
 						fxPushNULL(parser);
-						fxPushNULL(parser);
+						fxPushNodeList(parser, 0);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
 						fxPushStringNode(parser, param->length, param->value, aLine);
 						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
-						parser->root->flags |= nativeFlags;
 					}
 					else {
-						fxPushNULL(parser); // id
-							
 						fxPushNULL(parser);
 						fxPushNULL(parser);
 						fxPushStringNode(parser, param->length, param->value, aLine);
 						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);  // heritage
-						
-						fxPushNodeList(parser, 0); // features
-						fxPushNULL(parser); // constructorInitCount
-						fxPushNULL(parser); // instanceInitCount
-						
-						fxPushNULL(parser);
-						fxPushNodeList(parser, 0);
-						fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
-						fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
-						fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, aLine);
-						fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
-						fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine); // constructor
-						parser->root->flags = mxStrictFlag | mxBaseFlag | mxMethodFlag | mxTargetFlag;
-						
-						fxPushNodeStruct(parser, 6, XS_TOKEN_CLASS, aLine);
 					}
 				}
 				else
@@ -2949,6 +2932,66 @@ static void fxOptimizeNativeFunction(txParser* parser)
 		if (params->items->first->description != &gxTokenDescriptions[XS_TOKEN_THIS])
 			return;
 		txAccessNode* access = (txAccessNode*)(params->items->first->next);
+		if (access->description != &gxTokenDescriptions[XS_TOKEN_ACCESS])
+			return;
+		if (access->symbol != arg->symbol)
+			return;
+		host->flags |= function->flags;
+		fxPopNode(parser);
+		fxPushNode(parser, (txNode*)host);
+	}
+	else if (function->flags & mxDerivedFlag) {
+		txParamsBindingNode* args = (txParamsBindingNode*)(function->params);
+		if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
+			return;
+		if (args->items->length != 1)
+			return;
+		txRestBindingNode* rest = (txRestBindingNode*)(args->items->first);
+		if (rest->description != &gxTokenDescriptions[XS_TOKEN_REST_BINDING])
+			return;
+		txDeclareNode* arg = (txDeclareNode*)(rest->binding);
+		if (arg->description != &gxTokenDescriptions[XS_TOKEN_ARG])
+			return;
+		txBodyNode* body = (txBodyNode*)(function->body);
+		if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
+			return;
+		txStatementsNode* statements = (txStatementsNode*)(body->statement);
+		if (statements->description != &gxTokenDescriptions[XS_TOKEN_STATEMENTS])
+			return;
+		if (statements->items->length != 2)
+			return;
+		txStatementNode* statement = (txStatementNode*)(statements->items->first);
+		if (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT])
+			return;
+		txSuperNode* super = (txSuperNode*)(statement->expression);
+		if (super->description != &gxTokenDescriptions[XS_TOKEN_SUPER])
+			return;
+		txParamsNode* params = (txParamsNode*)(super->params);
+		if (params->items->length != 0)
+			return;
+		statement = (txStatementNode*)(statement->next);
+		if (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT])
+			return;
+		txCallNewNode* call = (txCallNewNode*)(statement->expression);
+		if (call->description != &gxTokenDescriptions[XS_TOKEN_CALL])
+			return;
+		txMemberNode* member = (txMemberNode*)(call->reference);
+		if (member->description != &gxTokenDescriptions[XS_TOKEN_MEMBER])
+			return;
+		if (member->symbol != parser->callSymbol)
+			return;
+		txHostNode* host = (txHostNode*)(member->reference);
+		if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
+			return;
+		params = (txParamsNode*)(call->params);
+		if (params->items->length != 2)
+			return;
+		if (params->items->first->description != &gxTokenDescriptions[XS_TOKEN_THIS])
+			return;
+		txSpreadNode* spread = (txSpreadNode*)(params->items->first->next);
+		if (spread->description != &gxTokenDescriptions[XS_TOKEN_SPREAD])
+			return;
+		txAccessNode* access = (txAccessNode*)(spread->expression);
 		if (access->description != &gxTokenDescriptions[XS_TOKEN_ACCESS])
 			return;
 		if (access->symbol != arg->symbol)
