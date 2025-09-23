@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -39,6 +39,8 @@
 
 static txSlot* fxCheckFunctionInstance(txMachine* the, txSlot* slot);
 static void fxStepAsync(txMachine* the, txSlot* instance, txFlag status);
+
+static const txByte gxTailCode[1] = { XS_CODE_RUN_TAIL };
 
 void fxBuildFunction(txMachine* the)
 {
@@ -322,8 +324,8 @@ void fx_Function_prototype_apply(txMachine* the)
 			mxGetIndex(i);
 		}
 	}
-	mxRunCount(c);
-	mxPullSlot(mxResult);
+	mxPushInteger(c);
+	the->code = (txByte *)gxTailCode;
 }
 
 void fx_Function_prototype_bind(txMachine* the)
@@ -474,8 +476,14 @@ void fx_Function_prototype_bound(txMachine* the)
 	}
 	for (i = 0; i < mxArgc; i++)
 		mxPushSlot(mxArgv(i));
-	mxRunCount(c + i);
-	mxPullSlot(mxResult);
+	if (mxTarget->kind) {
+		mxRunCount(c + i);
+		mxPullSlot(mxResult);
+	}
+	else {
+		mxPushInteger(c + i);
+		the->code = (txByte *)gxTailCode;
+	}
 }
 
 void fx_Function_prototype_call(txMachine* the)
@@ -497,8 +505,8 @@ void fx_Function_prototype_call(txMachine* the)
 		mxPushSlot(mxArgv(i));
 		i++;
 	}
-	mxRunCount(i - 1);
-	mxPullSlot(mxResult);
+	mxPushInteger(i - 1);
+	the->code = (txByte *)gxTailCode;
 }
 
 void fx_Function_prototype_hasInstance(txMachine* the)

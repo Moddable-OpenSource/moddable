@@ -10,13 +10,9 @@ declare module "embedded:io/bluetoothle/central" {
         get(adType: number): ArrayBuffer | undefined;
     }
 
-    interface GAPClientFilters {
-        services?: string[]
-    }
-
     interface GAPClientOptions {
         target?: any;
-        filters?: GAPClientFilters;
+        services?: string[]
         onError?: (this: GAPClient, error: Error) => void;
         onReadable?: (this: GAPClient, count: number) => void;
     }
@@ -80,7 +76,8 @@ declare module "embedded:io/bluetoothle/central" {
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, callback?: (error: Error | null) => void): void;
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, options: GATTClientWriteOptions, callback?: (error: Error | null) => void): void;
 
-        enableNotifications(characteristic: GATTClientCharacteristic, enable: boolean, callback?: (error?: Error) => void): void;
+        subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
+        unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
 
         get maximumWrite(): number;
 

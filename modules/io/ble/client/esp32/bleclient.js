@@ -172,7 +172,14 @@ class GATTClient @ "xs_gattclient_destructor" {
 	write(what, value, options, callback = options) {
 		new GATTClient.#Request(this, features.write, callback, what, value, options === callback ? null : options);
 	}
-	enableNotifications(characteristic, enable, callback) {
+	subscribe(characteristic, callback) {
+		return this.#enableNotifications(characteristic, true, callback);
+	}
+	unsubscribe(characteristic, callback) {
+		return this.#enableNotifications(characteristic, false, callback);
+	}
+	replyToPasskey(action, value) @ "xs_gattclient_replyToPasskey"
+	#enableNotifications(characteristic, enable, callback) {
 		function write(gatt, characteristic, descriptor, enable, callback) {
 			let flag = 0;
 			if (enable) {

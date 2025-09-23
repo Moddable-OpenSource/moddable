@@ -16,11 +16,9 @@ import { GAPClient, GATTClient } from "embedded:io/bluetoothle/central";
 
 function scan() {
 	new GAPClient({
-		filters: {
-			services:[
-				"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
-			]
-		},
+		services:[
+			"6e400001-b5a3-f393-e0a9-e50e24dcca9e",		// Nordic UART service
+		],
 		onReadable() {
 			const advertisement = this.read();
 			this.close();
@@ -57,7 +55,7 @@ function testUART(address) {
 						if (characteristic.properties & GATTClient.properties.write)
 							this.output = characteristic;
 					});
-					this.enableNotifications(this.input, true, error => {
+					this.subscribe(this.input, error => {
 						trace(`notification: ${ this.input.uuid } ${ error ? "error " + error : "enabled"}\n`);
 					});
 					this.write(this.output, Uint8Array.of(0, 1, 2, 3), error => {

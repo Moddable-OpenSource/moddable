@@ -134,8 +134,11 @@ class GATTClient @ "BLEClient_destructor" {
 	write(what, value, options, callback = options) {
 		new GATTClient.#Request(this, features.write, callback, what, value, options === callback ? null : options);
 	}
-	enableNotifications(characteristic, enable, callback) {
-		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, enable);
+	subscribe(characteristic, callback) {
+		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, true);
+	}
+	unsubscribe(characteristic, callback) {
+		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, false);
 	}
 	
 	get maximumWrite() @ "BLEClient_get_maximumWrite"

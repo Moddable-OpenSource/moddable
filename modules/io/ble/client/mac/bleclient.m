@@ -34,7 +34,7 @@ typedef struct BLEClientRecord *BLEClient;
 @interface BLEScannerDelegate : NSObject <CBCentralManagerDelegate>
 @property (assign) BLEScanner scanner;
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral;
-- (void) centralManager:(CBCentralManager *) central didDisconnectPeripheral:(CBPeripheral *) peripheral error:(NSError *) error;
+- (void)centralManager:(CBCentralManager *) central didDisconnectPeripheral:(CBPeripheral *) peripheral error:(NSError *) error;
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary<NSString *,id> *)advertisementData RSSI:(NSNumber *)RSSI;
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error;
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central;
@@ -125,6 +125,7 @@ static void BLEClientRequestFailed(BLEClient client, NSError* error)
 	xsVar(0) = xsReference(client->request);
 	client->request = NULL;
 	client->param = NULL;
+	client->completion = NULL;
 	xsResult = xsString([[error localizedDescription] UTF8String]);
 	xsResult = xsNew1(xsGlobal, xsID_Error, xsResult);
 	xsCall2(xsVar(0), xsID_executed, xsResult, xsNull);
@@ -566,12 +567,9 @@ void BLEScanner_constructor(xsMachine* the)
 	scanner->delegate = [delegate retain];
 	delegate.scanner = scanner;
 	
-	if (xsmcHas(xsArg(0), xsID_filters)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_filters);
-		if (xsmcHas(xsVar(0), xsID_services)) {
-			xsmcGet(xsVar(0), xsVar(0), xsID_services);
-			scanner->services = [xsToCBUUIDArray(the) retain];
-		}
+	if (xsmcHas(xsArg(0), xsID_services)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_services);
+		scanner->services = [xsToCBUUIDArray(the) retain];
 	}
 	scanner->already = [[NSMutableDictionary dictionaryWithCapacity:16] retain];
 	if (scanner->central.state == CBManagerStatePoweredOn)
@@ -714,7 +712,10 @@ void BLEClient_connect(xsMachine *the)
 {
 	BLEClient client = (BLEClient)xsmcGetHostDataValidate(xsThis, (void *)&BLEClientHooks);
 	client->request = xsmcToReference(xsArg(0));
-	[client->central connectPeripheral:client->peripheral options:nil];
+	[client->central connectPeripheral:client->peripheral options:[NSDictionary dictionaryWithObjectsAndKeys:
+		[NSNumber numberWithBool:YES], CBConnectPeripheralOptionNotifyOnDisconnectionKey,
+		nil]
+	];
 }
 
 void BLEClient_disconnect(xsMachine *the)
