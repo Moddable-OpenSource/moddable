@@ -737,17 +737,35 @@ void fxFunctionNodeHoist(void* it, void* param)
 	hoister->functionScope = functionScope;
 }
 
+txHostNode* fxHostNodeClone(txParser* parser, txHostNode* self)
+{
+	txHostNode* node = fxNewParserChunkClear(parser, sizeof(txHostNode));
+	c_memcpy(node, self, sizeof(txHostNode));
+	return node;
+}
+
 void fxHostNodeHoist(void* it, void* param) 
 {
 	txHostNode* self = it;
 	txHoister* hoister = param;
 	txScope* scope = hoister->bodyScope;
 	self->hostIndex = -1;
-// 	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
-// 		fxReportParserError(hoister->parser, self->line, "invalid host");
-// 	else {
-// 		// @@ check simple parameters
-// 	}
+	if ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM)) {
+		txParser* parser = hoister->parser;
+		while ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
+			scope = scope->scope;
+		fxGenerateTag(parser->console, parser->buffer, parser->bufferSize, "native");
+		txSymbol* symbol = fxNewParserSymbol(parser, parser->buffer);
+		txDefineNode* definition = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
+		definition->initializer = (txNode*)fxHostNodeClone(parser, self);
+		fxScopeAddDeclareNode(scope, (txDeclareNode*)definition);
+		fxScopeAddDefineNode(scope, definition);
+		txAccessNode* access = it;
+		access->description = &gxTokenDescriptions[XS_TOKEN_ACCESS];
+		access->symbol = symbol;
+		access->initializer = C_NULL;
+		access->declaration = C_NULL;
+	}
 }
 
 void fxImportNodeHoist(void* it, void* param) 

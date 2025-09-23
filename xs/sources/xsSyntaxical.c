@@ -3975,6 +3975,7 @@ void fxCheckNativeFunction(txParser* parser)
 		param = param->next;
 	}
 	host->flags |= function->flags;
+	host->params = (txNode*)args;
 	fxPopNode(parser);
 	fxPushNode(parser, (txNode*)host);
 }
