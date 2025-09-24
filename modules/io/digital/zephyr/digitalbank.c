@@ -101,8 +101,8 @@ const struct device *get_gpio_port(const char *name)
 		return DEVICE_DT_GET(DT_NODELABEL(gpiog));
 	if (0 == strcmp("gpioh", name))
 		return DEVICE_DT_GET(DT_NODELABEL(gpioh));
-	if (0 == strcmp("gpioi", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpioi));
+//	if (0 == strcmp("gpioi", name))
+//		return DEVICE_DT_GET(DT_NODELABEL(gpioi));
 	return NULL;
 }
 
@@ -124,7 +124,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	uint8_t pin;
 	uint8_t bank, isInput = 1;
 	xsSlot *onReadable;
-	xsSlot tmp, tmp2;
+	xsSlot tmp;
 	int err;
 	char *portStr;
 

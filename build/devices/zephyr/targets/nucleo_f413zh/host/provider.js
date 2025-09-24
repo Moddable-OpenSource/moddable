@@ -64,8 +64,8 @@ const device = {
 	io: {Digital, DigitalBank},
 	pin: {
 		button: { port: "gpioc", pin: 13 },
-		led: { port: "gpiob", pin: 7 },
-		green_led: { port: "gpioc", pin: 7 },
+		led: { port: "gpiob", pin: 0 },
+		green_led: { port: "gpiob", pin: 0 },
 		blue_led: { port: "gpiob", pin: 7 },
 		red_led: { port: "gpiob", pin: 14 }
 	}
