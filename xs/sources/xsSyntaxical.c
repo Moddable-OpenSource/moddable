@@ -2193,7 +2193,7 @@ void fxCallExpression(txParser* parser)
 						fxPushNULL(parser);
 						fxPushNULL(parser);
 						fxPushStringNode(parser, param->length, param->value, aLine);
-						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);  // heritage
+						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
 					}
 				}
 				else
@@ -2573,6 +2573,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 	txInteger aCount = 0;
 	txInteger aLine = parser->states[0].line;
 	txUnsigned flags = parser->flags;
+	txUnsigned constructorFlags = mxSuperFlag;
 	txInteger constructorInitCount = 0;
 	txInteger instanceInitCount = 0;
 	parser->flags |= mxStrictFlag;
@@ -2590,6 +2591,9 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 		fxCallExpression(parser);
 		fxCheckArrowFunction(parser, 1);
 		flags |= parser->flags & mxAwaitingFlag;
+		constructorFlags |= mxDerivedFlag;
+		if (parser->root->description->token == XS_TOKEN_HOST)
+			constructorFlags |= mxHostFlag;
 		heritageFlag = 1;
 	}
 	else if (parser->states[0].token == XS_TOKEN_HOST) {
@@ -2605,10 +2609,12 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			fxPushNULL(parser);
 		}
 		fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
+		constructorFlags |= mxBaseFlag | mxHostFlag;
 //		hostFlag = 1;
 	}
 	else {
 		fxPushNULL(parser);
+		constructorFlags |= mxBaseFlag;
 	}
 	if (parser->states[0].token == XS_TOKEN_LEFT_BRACE) {
 		fxMatchToken(parser, XS_TOKEN_LEFT_BRACE);
@@ -2657,7 +2663,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				fxPopNode(parser); // symbol
 				if (constructor || (aToken2 == XS_TOKEN_GENERATOR) || (aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER) || (flag & mxAsyncFlag)) 
 					fxReportParserError(parser, parser->states[0].line, "invalid constructor");
-				fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | ((heritageFlag) ? mxDerivedFlag : mxBaseFlag));
+				fxFunctionExpression(parser, aPropertyLine, C_NULL, constructorFlags);
 				constructor = fxPopNode(parser);
 			}
 			else if (parser->states[0].token == XS_TOKEN_LEFT_PARENTHESIS) {
@@ -3909,7 +3915,7 @@ void fxCheckNativeFunction(txParser* parser)
 	if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
 		return;
 	txStatementNode* statement = (txStatementNode*)(body->statement);
-	if (function->flags & mxDerivedFlag) {
+	if ((function->flags & mxDerivedFlag) && (function->flags & mxHostFlag)) {
 		txStatementsNode* statements = (txStatementsNode*)(statement);
 		if (statements->description != &gxTokenDescriptions[XS_TOKEN_STATEMENTS])
 			return;

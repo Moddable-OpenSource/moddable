@@ -917,14 +917,12 @@ enum {
 	mxAsyncFlag = 1 << 9,
 	mxAwaitingFlag = 1 << 10,
 	mxBaseFlag = 1 << 11,
+	mxHostFlag = 1 << 13,
 	mxDefaultFlag = 1 << 14,
-	mxNativeFlag = 1 << 12,
 	/* mxFieldFlag = 1 << 15, */
 	/* mxFunctionFlag = 1 << 16, */	
 	mxDerivedFlag = 1 << 17,
 	mxElisionFlag = 1 << 18,
-	mxExpressionNoValue = 1 << 19,
-	mxForFlag = 1 << 20,
 	/* mxGeneratorFlag = 1 << 21, */
 	mxGetterFlag = 1 << 22,
 	/*@@ mxJSONModuleFlag = 1 << 22, */
@@ -934,11 +932,18 @@ enum {
 	mxShorthandFlag = 1 << 26,
 	mxSpreadFlag = 1 << 27,
 	mxStaticFlag = 1 << 28,
-	mxTailRecursionFlag = 1 << 29,
+	
+	// syntax
+	mxForFlag = 1 << 20,
+	mxNativeFlag = 1 << 12,
 	mxYieldFlag = 1 << 30,
 	mxYieldingFlag = 1 << 31,
 	
+	// code
+	mxExpressionNoValue = 1 << 19,
 	mxEvalParametersFlag = 1 << 25,
+	mxTailRecursionFlag = 1 << 29,
+	
 
 	mxDeclareNodeClosureFlag = 1 << 12,
 	mxDeclareNodeUseClosureFlag = 1 << 13,
