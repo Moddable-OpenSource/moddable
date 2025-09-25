@@ -99,21 +99,21 @@ const device = {
 		doAliases(state, parsed);
 		doGPIOBanks(state, parsed); 
 		doGPIOs(state, parsed);
-/*
-		doBus(state, parsed, {
+
+    doBus(state, parsed, {
 			prefix: "i2c@",
 			name: "I2C",
 			header: "#include <zephyr/drivers/i2c.h>",
 			static:
 `import I2C from "embedded:io/i2c";
 device.io.I2C = I2C;
-import SMBus from "embedded:io/smbus";
-device.io.SMBus = SMBus;
+// import SMBus from "embedded:io/smbus";
+// device.io.SMBus = SMBus;
 
 device.I2C = {};
 `
 		});
-*/
+
 /*
 		doBus(state, parsed, {
 			prefix: "serial@",
@@ -221,12 +221,12 @@ static const struct modZephyrGPIOBank gGPIOBank[] = {
 `;
 
 	gpios.forEach((gpio, bankIndex) => {
-		const ngpios = gpio.properties?.ngpios?.value.value[0] ?? 16;
+		const ngpios = gpio.properties?.ngpios?.value.value[0];
 		state.cCode += `	{
 		.label = "${gpio.label}",
 		.device = DEVICE_DT_GET(DT_NODELABEL(${gpio.label})),
 		.bankIndex = ${bankIndex},
-		.gpioCount = ${parseInt(ngpios)}
+		.gpioCount = ${ngpios ? parseInt(ngpios) : "GPIO_MAX_PINS_PER_PORT"}
 	},
 `;
 		state.gpioBanks.push(gpio.label);
