@@ -22,6 +22,8 @@
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>xsed</string>
+	<key>CFBundleIconFile</key>
+	<string>main.icns</string>
 	<key>CFBundleIconName</key>
 	<string>main</string>
 	<key>CFBundleShortVersionString</key>
