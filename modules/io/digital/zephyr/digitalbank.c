@@ -156,7 +156,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsRemember(digital->obj);
 
 	int activeLowFlag = (mode & kDigitalActiveLow) ? GPIO_ACTIVE_LOW : 0;
-	for (pin = 0; pin < GPIO_MAX_PINS_PER_PORT; pin++) {
+	for (pin = 0; pin < bank->gpioCount; pin++) {
 		if (!(pins & (1 << (pin & 0x1f))))
 			continue;
 
