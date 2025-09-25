@@ -24,6 +24,7 @@
 
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "mc.xs.h"			// for xsID_* values
+#include "mc.zephyr.h"
 #include "xsHost.h"			// platform support
 
 #include "builtinCommon.h"
@@ -48,18 +49,6 @@ static I2C gI2CActive = NULL;
 
 static uint8_t i2cActivate(I2C i2c);
 
-const struct device *get_i2c_port(const char *name)
-{
-	if (0 == strcmp("i2c1", name))
-		return DEVICE_DT_GET(DT_NODELABEL(i2c1));
-/*
-	if (0 == strcmp("i2c2", name))
-		return DEVICE_DT_GET(DT_NODELABEL(i2c2));
-	if (0 == strcmp("i2c3", name))
-		return DEVICE_DT_GET(DT_NODELABEL(i2c3));
-*/
-}
-
 static uint32_t hz_bit(uint32_t hz)
 {
 	if (hz <= 100000)
@@ -81,8 +70,6 @@ void _xs_i2c_constructor(xsMachine *the)
 	I2C i2c;
 	int hz, address;
 	int timeout = 200;
-	const struct device *port;
-	char *portStr;
 	xsSlot tmp;
 	uint32_t config = 0;
 
@@ -94,8 +81,7 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("address required");
 
 	xsmcGet(tmp, xsArg(0), xsID_port);
-	portStr = xsmcToString(tmp);
-	port = get_i2c_port(portStr);
+	struct modZephyrI2C *port = modZephyrGetI2C(xsmcToString(tmp));
 	if (NULL == port)
 		xsRangeError("bad port");
 
@@ -105,7 +91,7 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("invalid address");
 
 	for (i2c = gI2C; i2c; i2c = i2c->next) {
-		if ((i2c->address == address) && (i2c->port == port))
+		if ((i2c->address == address) && (i2c->port == port->device))
 			xsRangeError("duplicate address");
 	}
 
@@ -133,7 +119,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->hz = hz;
 	i2c->address = address;
 	i2c->timeout = timeout * 1000;
-	i2c->port = port;
+	i2c->port = port->device;
 	i2c->config = config;
 
 	i2c->next = gI2C;
