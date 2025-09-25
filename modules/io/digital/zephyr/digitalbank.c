@@ -86,42 +86,6 @@ static Digital gDigitals;	// pins with onReadable callbacks
 	NULL
 };
 
-<<<<<<< HEAD
-const struct device *get_gpio_port(const char *name)
-{
-	if (0 == strcmp("gpioa", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpioa));
-	if (0 == strcmp("gpiob", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpiob));
-	if (0 == strcmp("gpioc", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpioc));
-	if (0 == strcmp("gpiod", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpiod));
-	if (0 == strcmp("gpioe", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpioe));
-	if (0 == strcmp("gpiof", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpiof));
-	if (0 == strcmp("gpiog", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpiog));
-	if (0 == strcmp("gpioh", name))
-		return DEVICE_DT_GET(DT_NODELABEL(gpioh));
-//	if (0 == strcmp("gpioi", name))
-//		return DEVICE_DT_GET(DT_NODELABEL(gpioi));
-	return NULL;
-}
-
-int get_gpio_bank(const char *name)
-{
-	if (strlen(name) >= 5) {
-		int b = name[4] - 'a';
-		if (b >= 0 && b <= 10)
-			return b;
-	}
-	return -1;
-}
-
-=======
->>>>>>> 8398a962c (mczephyr  - first time)
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
