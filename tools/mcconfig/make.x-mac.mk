@@ -112,7 +112,7 @@ VPATH += $(XS_DIRECTORIES)
 	
 all: build
 
-build: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES)
+build: $(LIB_DIR) $(BIN_DIR)/Info.plist $(BIN_DIR)/MacOS/main $(RESOURCES_DIR)/main.icns $(RESOURCES_DIR)/Assets.car $(RESOURCES)
 	
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -148,6 +148,9 @@ $(TMP_DIR)/mc.xs.c: $(MODULES) $(MANIFEST)
 	
 $(RESOURCES_DIR)/main.icns: $(MAIN_DIR)/mac/main.icns
 	cp -rf $< $@
+	
+$(RESOURCES_DIR)/Assets.car: $(MAIN_DIR)/mac/main.icon
+	actool $<  --compile $(RESOURCES_DIR) --app-icon main --enable-on-demand-resources NO --development-region en --target-device mac --platform macosx --enable-icon-stack-fallback-generation=disabled --include-all-app-icons --minimum-deployment-target 10.14 --output-partial-info-plist /dev/null
 	
 MAKEFLAGS += --jobs
 ifneq ($(VERBOSE),1)
