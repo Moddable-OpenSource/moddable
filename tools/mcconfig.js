@@ -1330,6 +1330,12 @@ export default class extends Tool {
 			this.jsFiles.push({ source, target });
 			if (this.preloads.length)
 				this.preloads.push("mc" + this.slash + "config.xsb");
+			if (this.platform == "zephyr") {
+				this.jsFiles.push({ source: this.tmpPath + this.slash + "mc.zephyr.js", target: folder + this.slash + "zephyr.xsb" });
+				if (this.preloads.length)
+					this.preloads.push("mc" + this.slash + "zephyr.xsb");
+			}
+
 			file = new ConfigFile(source, this);
 			file.generate(this);
 			file = new DefinesFile(this.tmpPath + this.slash + "mc.defines.h", this);

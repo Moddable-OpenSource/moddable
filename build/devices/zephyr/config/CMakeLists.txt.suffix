@@ -21,12 +21,15 @@ add_custom_target(generated_files
 	DEPENDS ${TMP_DIR}/mc.resources.c
 	DEPENDS ${TMP_DIR}/mc.xs.c
 	DEPENDS ${TMP_DIR}/mc.xs.h
+	DEPENDS ${TMP_DIR}/mc.zephyr.c
+	DEPENDS ${TMP_DIR}/mc.zephyr.h
 	DEPENDS ${MODULES_DIR}/Resource.xsb
 )
 
 zephyr_library_add_dependencies(generated_files)
 # list(APPEND mINCLUDES ${TMP_DIR}/mc.xs.h)
 list(APPEND mOBJECTS ${TMP_DIR}/mc.xs.c)
+list(APPEND mOBJECTS ${TMP_DIR}/mc.zephyr.c)
 list(APPEND mOBJECTS ${TMP_DIR}/mc.resources.c)
 
 
@@ -58,5 +61,25 @@ if (VERBOSE)
 	    message(STATUS "${_variableName}=${${_variableName}}")
 	endforeach()
 endif()
+
+#
+# mc.zephyr.* files
+#
+
+set(ZEPHYR_DTS_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr.dts)
+
+set(MCZEPHYR_GENERATED_FILES
+    ${TMP_DIR}/mc.zephyr.c
+    ${TMP_DIR}/mc.zephyr.h
+    ${TMP_DIR}/mc.zephyr.js
+)
+
+add_custom_command(
+    OUTPUT ${MCZEPHYR_GENERATED_FILES}
+    COMMAND mczephyr ${ZEPHYR_DTS_FILE} -o ${TMP_DIR}
+    DEPENDS ${ZEPHYR_DTS_FILE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    VERBATIM
+)
 
 # --- end suffix

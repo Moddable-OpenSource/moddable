@@ -28,6 +28,7 @@
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
+#include "mc.zephyr.h"			// for xsID_* values
 
 #include "builtinCommon.h"
 
@@ -46,15 +47,17 @@ enum {
 
 	kDigitalEdgeRising = 1,
 	kDigitalEdgeFalling = 2,
+
+	kDigitalActiveLow = 16
 };
 
 struct DigitalRecord {
-	uint32_t	pins;
+	uint32_t		pins;
 	xsSlot		obj;
 	uint8_t		hasOnReadable;
 	uint8_t		isInput;
 	uint8_t		useCount;
-	uint8_t		bank;			// numeric: gpioa == 0, gpiok == 10
+	uint8_t		bank;
 	const struct device *port;
 
 	// fields after here only allocated if onReadable callback present
@@ -83,6 +86,7 @@ static Digital gDigitals;	// pins with onReadable callbacks
 	NULL
 };
 
+<<<<<<< HEAD
 const struct device *get_gpio_port(const char *name)
 {
 	if (0 == strcmp("gpioa", name))
@@ -116,48 +120,45 @@ int get_gpio_bank(const char *name)
 	return -1;
 }
 
+=======
+>>>>>>> 8398a962c (mczephyr  - first time)
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
 	int mode, pins, rises = 0, falls = 0;
-	const struct device *port;
 	uint8_t pin;
-	uint8_t bank, isInput = 1;
+	uint8_t isInput = 1;
 	xsSlot *onReadable;
 	xsSlot tmp;
 	int err;
-	char *portStr;
 
 	builtinInitIO();
 
 	if (!xsmcHas(xsArg(0), xsID_port))
 		xsUnknownError("port required");
 	xsmcGet(tmp, xsArg(0), xsID_port);
-	portStr = xsmcToString(tmp);
-	port = get_gpio_port(portStr);
-	if (NULL == port)
+	const struct modZephyrGPIOBank *bank = modZephyrGetGPIOBank(xsmcToString(tmp));
+	if (NULL == bank)
 		xsRangeError("bad port");
-	bank = get_gpio_bank(portStr);
 
-	if (xsmcHas(xsArg(0), xsID_pins)) {
-		xsmcGet(tmp, xsArg(0), xsID_pins);
-		pins = xsmcToInteger(tmp);
-	}
-	else
+	if (!xsmcHas(xsArg(0), xsID_pins))
 		xsUnknownError("invalid");
 
-	if (!builtinArePinsFree(bank, pins))
+	xsmcGet(tmp, xsArg(0), xsID_pins);
+	pins = xsmcToInteger(tmp);
+	if (!builtinArePinsFree(bank->bankIndex, pins))
 		xsUnknownError("in use");
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
 	mode = builtinGetSignedInteger(the, &tmp);
-	if (!(((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) ||
-		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
+	int tmode = mode & ~kDigitalActiveLow;
+	if (!(((kDigitalInput <= tmode) && (tmode <= kDigitalInputPullUpDown)) ||
+		(kDigitalOutput == tmode) || (kDigitalOutputOpenDrain == tmode)))
 		xsRangeError("invalid mode");
 
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	if (onReadable) {
-		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
+		if (!((kDigitalInput <= tmode) && (tmode <= kDigitalInputPullUpDown)))
 			xsRangeError("invalid mode");
 
 		if (xsmcHas(xsArg(0), xsID_rises)) {
@@ -183,38 +184,39 @@ void xs_digitalbank_constructor(xsMachine *the)
 		xsRangeError("no memory");
 
 	xsmcSetHostData(xsThis, digital);
-	digital->port = port;
+	digital->port = bank->device;
 	digital->pins = 0;
-	digital->bank = bank;
+	digital->bank = bank->bankIndex;
 	digital->obj = xsThis;
 	digital->useCount = 1;
 	xsRemember(digital->obj);
 
+	int activeLowFlag = (mode & kDigitalActiveLow) ? GPIO_ACTIVE_LOW : 0;
 	for (pin = 0; pin < GPIO_MAX_PINS_PER_PORT; pin++) {
 		if (!(pins & (1 << (pin & 0x1f))))
 			continue;
 
-		switch (mode) {
+		switch (tmode) {
 			case kDigitalInput:
-				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT);
+				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | activeLowFlag);
 				break;
 			case kDigitalInputPullUp:
-				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_UP);
+				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_UP | activeLowFlag);
 				break;
 			case kDigitalInputPullDown:
-				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_DOWN);
+				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_DOWN | activeLowFlag);
 				break;
 			case kDigitalInputPullUpDown:
 				//@@ not sure
-				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_UP | GPIO_PULL_DOWN);
+				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | GPIO_PULL_UP | GPIO_PULL_DOWN | activeLowFlag);
 				break;
 
 			case kDigitalOutput:
-				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT);
+				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | activeLowFlag);
 				isInput = 0;
 				break;
 			case kDigitalOutputOpenDrain:
-				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | GPIO_OPEN_DRAIN | activeLowFlag);
 				isInput = 0;
 				break;
 		}
@@ -259,7 +261,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->pins = pins;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
-	builtinUsePins(bank, pins);
+	builtinUsePins(digital->bank, pins);
 }
 
 void xs_digitalbank_destructor(void *data)
@@ -325,14 +327,11 @@ void xs_digitalbank_read(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
 	uint32_t result;
-	int err;
 
 	if (!digital->isInput)
 		xsUnknownError("can't read output");
 
-	err = gpio_port_get(digital->port, &result);
-	result &= digital->pins;
-
+	gpio_port_get(digital->port, &result);
 	xsmcSetInteger(xsResult, result & digital->pins);
 }
 
@@ -344,8 +343,7 @@ void xs_digitalbank_write(xsMachine *the)
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	value = xsmcToInteger(xsArg(0)) & digital->pins;
-
+	value = xsmcToInteger(xsArg(0));
 	gpio_port_set_masked(digital->port, digital->pins, value);
 }
 

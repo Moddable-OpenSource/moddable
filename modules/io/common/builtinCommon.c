@@ -208,7 +208,7 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot)
 }
 
 #if defined(PICO_BUILD)
-uint8_t builtinInitIO()
+void builtinInitIO()
 {
 	if (!builtinInitialized) {
 		critical_section_init(&gCommonCriticalMux);
@@ -216,7 +216,7 @@ uint8_t builtinInitIO()
 	}
 }
 #elif defined(_ZEPHYR)
-uint8_t builtinInitIO()
+void builtinInitIO()
 {
 	if (!builtinInitialized) {
 		int i;

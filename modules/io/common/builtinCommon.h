@@ -62,7 +62,9 @@
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
 #elif defined(_ZEPHYR)
-	#define kPinBanks (9)
+	#include "mc.zephyr.h"
+
+	#define kPinBanks kModZephyrGPIOBankCount
 	#define builtinCriticalSectionBegin()	k_sched_lock()
 	#define builtinCriticalSectionEnd()		k_sched_unlock()
 #endif
@@ -124,7 +126,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 #endif
 
 #if defined(PICO_BUILD) || defined(_ZEPHYR)
-	uint8_t builtinInitIO(void);
+	void builtinInitIO(void);
 #endif
 
 #endif

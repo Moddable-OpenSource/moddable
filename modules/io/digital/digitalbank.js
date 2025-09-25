@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -39,5 +39,7 @@ DigitalBank.InputPullUpDown = 3;
 
 DigitalBank.Output = 8;
 DigitalBank.OutputOpenDrain = 9;
+
+DigitalBank.ActiveLow = 16;
 
 export default DigitalBank;

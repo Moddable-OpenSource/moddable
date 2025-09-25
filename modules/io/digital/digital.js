@@ -62,6 +62,8 @@ Digital.InputPullUpDown = DigitalBank.InputPullUpDown;
 Digital.Output = DigitalBank.Output;
 Digital.OutputOpenDrain = DigitalBank.OutputOpenDrain;
 
+Digital.ActiveLow = DigitalBank.ActiveLow;
+
 Digital.Rising = 1;
 Digital.Falling = 2;
 
