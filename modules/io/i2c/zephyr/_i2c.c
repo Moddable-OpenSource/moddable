@@ -81,7 +81,7 @@ void _xs_i2c_constructor(xsMachine *the)
 		xsRangeError("address required");
 
 	xsmcGet(tmp, xsArg(0), xsID_port);
-	struct modZephyrI2C *port = modZephyrGetI2C(xsmcToString(tmp));
+	const struct modZephyrI2C *port = modZephyrGetI2C(xsmcToString(tmp));
 	if (NULL == port)
 		xsRangeError("bad port");
 
