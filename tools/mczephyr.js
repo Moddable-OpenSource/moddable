@@ -127,8 +127,8 @@ device.Serial = {};
 `
 		});
 */
-/*
-		doBus(state, parsed, {
+
+doBus(state, parsed, {
 			prefix: "spi@",
 			name: "SPI",
 			header: "#include <zephyr/drivers/spi.h>",
@@ -139,8 +139,8 @@ device.io.SPI = SPI;
 device.SPI = {};
 `
 		});
-*/
-		state.hCode +=
+
+    state.hCode +=
 `
 #endif /* __MC_ZEPHYR_H__ */
 `;
@@ -388,28 +388,43 @@ function doBus(state, dts, options) {
 	if (0 === nodes.length)
 		return;
 
-	state.hCode += `
+  let busSpecific = "";
+  if ("spi@" === options.prefix)
+      busSpecific = "\n	struct gpio_dt_spec cs;"
+
+  state.hCode += `
 ${options.header}
 
 struct modZephyr${options.name} {
 	const char *label;
 	const struct device *device;
-	uint8_t busIndex;
+	uint8_t busIndex;${busSpecific}
 };
 
 extern const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *label);
 
 `;
 
-	state.cCode +=`
+  state.cCode +=`
 static const struct modZephyr${options.name} g${options.name}[] = {
 `;
 
 	nodes.forEach((node, index) => {
-		state.cCode += `	{
+    busSpecific = "";
+    if ("spi@" === options.prefix) {
+        const cs = node.properties["cs-gpios"]?.value?.value;
+        if (cs) {
+          busSpecific = `\n		.cs.port = DEVICE_DT_GET(DT_NODELABEL(${cs[0].slice(1)})),
+		.cs.pin = ${parseInt(cs[1])},
+		.cs.dt_flags = ${parseInt(cs[2])},`; 
+        }
+    }
+
+
+    state.cCode += `	{
 		.label = "${node.label}",
 		.device = DEVICE_DT_GET(DT_NODELABEL(${node.label})),
-		.busIndex = ${index},
+		.busIndex = ${index},${busSpecific}
 	},
 `;
 	});
