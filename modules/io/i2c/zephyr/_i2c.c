@@ -31,6 +31,8 @@
 
 #include <zephyr/drivers/i2c.h>
 
+#if kModZephyrI2CBusCount
+
 struct I2CRecord {
 	uint32_t			hz;
 	uint32_t			timeout;
@@ -258,3 +260,17 @@ uint8_t i2cActivate(I2C i2c)
 	return 1;
 }
 
+#else // !defined(kModZephyrI2CBusCount)
+
+void _xs_i2c_constructor(xsMachine *the)
+{
+	xsUnknownError("no I2C");
+}
+
+void _xs_i2c_destructor(void *) {}
+void _xs_i2c_close(xsMachine *the) {}
+void _xs_i2c_read(xsMachine *the) {}
+void _xs_i2c_write(xsMachine *the) {}
+void _xs_i2c_writeRead(xsMachine *the) {}
+
+#endif

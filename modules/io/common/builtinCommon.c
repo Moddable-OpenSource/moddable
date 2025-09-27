@@ -24,7 +24,7 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
-#if kPinBanks
+#ifdef kPinBanks
 
 #if ESP32
 	#include "soc/soc_caps.h"

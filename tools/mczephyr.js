@@ -199,7 +199,14 @@ function doGPIOBanks(state, dts) {
 		}
 	}
 
-	state.hCode += `
+  state.hCode += `
+#define kModZephyrGPIOBankCount (${gpios.length})
+`;
+
+  if (0 === gpios.length)
+    return;
+
+  state.hCode += `
 #include <zephyr/drivers/gpio.h>
 
 struct modZephyrGPIOBank {
@@ -210,8 +217,6 @@ struct modZephyrGPIOBank {
 };
 
 extern const struct modZephyrGPIOBank *modZephyrGetGPIOBank(const char *label);
-
-#define kModZephyrGPIOBankCount (${gpios.length})
 
 `;
 
@@ -384,6 +389,10 @@ function doBus(state, dts, options) {
 			nodes.push(node);
 		}
 	}
+
+  state.hCode += `
+#define kModZephyr${options.name}BusCount (${nodes.length})
+`;
 
 	if (0 === nodes.length)
 		return;

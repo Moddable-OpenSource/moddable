@@ -113,7 +113,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 }
 #endif
 
-#if kPinBanks
+#ifdef kPinBanks
 	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))

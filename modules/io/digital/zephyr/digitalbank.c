@@ -36,6 +36,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 
+#if kModZephyrGPIOBankCount
+
 enum {
 	kDigitalInput = 0,
 	kDigitalInputPullUp = 1,
@@ -363,4 +365,16 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 	gpio_port_set_masked(digital->port, digital->pins, value);
 }
 
+#else // !defined(kModZephyrGPIOBankCount)
 
+void xs_digitalbank_constructor(xsMachine *the)
+{
+	xsUnknownError("no GPIO");
+}
+
+void xs_digitalbank_destructor(void *) {}
+void xs_digitalbank_close(xsMachine *the) {}
+void xs_digitalbank_read(xsMachine *the) {}
+void xs_digitalbank_write(xsMachine *the) {}
+
+#endif
