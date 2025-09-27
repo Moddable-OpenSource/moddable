@@ -365,7 +365,7 @@ void modDigitalBankWrite(Digital digital, uint32_t value)
 	gpio_port_set_masked(digital->port, digital->pins, value);
 }
 
-#else // !defined(kModZephyrGPIOBankCount)
+#else // !kModZephyrGPIOBankCount
 
 void xs_digitalbank_constructor(xsMachine *the)
 {

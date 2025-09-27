@@ -260,7 +260,7 @@ uint8_t i2cActivate(I2C i2c)
 	return 1;
 }
 
-#else // !defined(kModZephyrI2CBusCount)
+#else // !kModZephyrI2CBusCount
 
 void _xs_i2c_constructor(xsMachine *the)
 {

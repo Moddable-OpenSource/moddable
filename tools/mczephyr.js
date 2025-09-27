@@ -182,22 +182,45 @@ function doAliases(state, dts) {
 function doGPIOBanks(state, dts) {
 	let gpios = [];
 	const root = dts.nodes['/'];
-	const soc = root.children.soc;
-	for (let what in soc.children) {
-		if (!what.startsWith("pin-controller@"))
-			continue;
 
-		const pinController = soc.children[what] 
-		for (const bus in pinController.children) {
-			if (bus.startsWith("gpio@")) {
-				const gpio = pinController.children[bus];
-				const status = gpio.properties.status?.value?.value ?? "okay"
-				if ("okay" !== status)
-					continue;
-				gpios.push(gpio);
-			}
+  const soc = root.children.soc;
+	for (let what in soc.children) {
+		if (what.startsWith("gpio@")) {
+			const node = soc.children[what];
+			const status = node.properties.status?.value?.value ?? "okay"
+			if ("okay" !== status)
+				continue;
+
+      if ("raspberrypi,pico-gpio" === node.properties.compatible.value.value) {
+      	for (let what in node.children) {
+          const n = node.children[what];
+          if ("okay" !== (n.properties.status?.value?.value ?? "okay"))
+              continue;
+          gpios.push(n);
+        }
+      }
+      else
+        gpios.push(node);
 		}
 	}
+
+  if (0 === gpios.length) {
+    for (let what in soc.children) {
+      if (!what.startsWith("pin-controller@"))
+        continue;
+
+      const pinController = soc.children[what] 
+      for (const bus in pinController.children) {
+        if (bus.startsWith("gpio@")) {
+          const gpio = pinController.children[bus];
+          const status = gpio.properties.status?.value?.value ?? "okay"
+          if ("okay" !== status)
+            continue;
+          gpios.push(gpio);
+        }
+      }
+    }
+  }
 
   state.hCode += `
 #define kModZephyrGPIOBankCount (${gpios.length})
@@ -259,29 +282,36 @@ device.io.Digital = Digital;
 
 
 function doGPIOs(state, dts) {
-	const root = dts.nodes['/'];
-	const gpios = [];
-	["leds", "gpio_keys"].forEach(kind => {
-		const items = root.children[kind];
-		if (!items) return;
+  if (!state.gpioBanks?.length)
+      return;
 
-		for (let item in items.children) {
-			item = items.children[item];
-			const g = item.properties.gpios.value.value; 
-			const bus = g[0].slice(1);
-			const labels = item.labels ?? (item.label ? [item.label] : []);
-			gpios.push({
-				kind,
-				name: item.name,
-				labels,
-				userName: item.properties?.label?.value?.value,
-				bankIndex: state.gpioBanks.indexOf(bus),
-				bus,
-				pin: parseInt(g[1]),
-				flags: parseInt(g[2])
-			});
-		}
-	});
+  const root = dts.nodes['/'];
+	const gpios = [];
+	["gpio-leds", "gpio-keys"].forEach(kind => {
+  	for (let what in root.children) {
+      const node = root.children[what];
+      if (kind !== node.properties.compatible?.value.value)
+          continue;
+
+      for (let item in node.children) {
+        item = node.children[item];
+        const g = item.properties.gpios.value.value; 
+        const bus = g[0].slice(1);
+        const labels = item.labels ?? (item.label ? [item.label] : []);
+        gpios.push({
+          kind,
+          name: item.name,
+          labels,
+          userName: item.properties?.label?.value?.value,
+          bankIndex: state.gpioBanks.indexOf(bus),
+          bus,
+          pin: parseInt(g[1]),
+          flags: parseInt(g[2])
+        });
+      }
+      return;
+    }
+  });
 
 	if (0 === gpios.length)
 		return;
@@ -329,14 +359,14 @@ extern const struct modZephyrGPIO *modZephyrGetGPIO(const char *name);
 	const kinds = new Set();
 	gpios.forEach(gpio => {
 		let mode = [], kindName, edge;
-		if ("leds" == gpio.kind) {
+		if ("gpio-leds" == gpio.kind) {
 			mode.push("Digital.Output");
 			kindName = "led";
 			//@@ flags OutputOpenDrain
 			if (gpio.flags & (1 << 0))		// GPIO_ACTIVE_LOW
 				mode.push("Digital.ActiveLow");
 		}
-		else if ("gpio_keys" === gpio.kind) {
+		else if ("gpio-keys" === gpio.kind) {
 			mode.push("Digital.Input");
 			kindName = "button";
 			if (gpio.flags & (1 << 5))		// GPIO_PULL_DOWN
@@ -358,9 +388,9 @@ extern const struct modZephyrGPIO *modZephyrGetGPIO(const char *name);
 device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userName : ""}
 	constructor (options) {
 		return new Digital({
-			...options,
+			${edge ? "edge: " + edge + ",\n			" : ""}...options,
 			pin: {port: "${gpio.bus}", pin: ${gpio.pin}},
-			mode: ${mode},${edge ? "\n			edge: " + edge + "," : ""}
+			mode: ${mode},
 		});
 	}
 };
