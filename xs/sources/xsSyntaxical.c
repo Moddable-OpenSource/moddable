@@ -127,6 +127,7 @@ static void fxRestBinding(txParser* parser, txToken theToken, txUnsigned flag);
 static txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken theToken, txUnsigned flag);
 
 static void fxCheckArrowFunction(txParser* parser, txInteger count);
+static void fxCheckNativeConstructor(txParser* parser);
 static void fxCheckNativeFunction(txParser* parser);
 static txBoolean fxCheckReference(txParser* parser, txToken theToken);
 static void fxCheckStrictBinding(txParser* parser, txNode* node);
@@ -2191,9 +2192,27 @@ void fxCallExpression(txParser* parser)
 					}
 					else {
 						fxPushNULL(parser);
+
+						fxPushNULL(parser);
 						fxPushNULL(parser);
 						fxPushStringNode(parser, param->length, param->value, aLine);
 						fxPushNodeStruct(parser, 3, XS_TOKEN_HOST, aLine);
+						
+						fxPushNodeList(parser, 0);
+						
+						fxPushNULL(parser);
+						fxPushNULL(parser);
+						
+						fxPushNULL(parser);
+						fxPushNodeList(parser, 0);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_PARAMS_BINDING, aLine);
+						fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_STATEMENT, aLine);
+						fxPushNodeStruct(parser, 1, XS_TOKEN_BODY, aLine);
+						fxPushNodeStruct(parser, 3, XS_TOKEN_FUNCTION, aLine);
+						parser->root->flags = mxStrictFlag | mxBaseFlag | mxMethodFlag | mxTargetFlag;
+						
+						fxPushNodeStruct(parser, 6, XS_TOKEN_CLASS, aLine);
 					}
 				}
 				else
@@ -2590,6 +2609,7 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 		fxMatchToken(parser, XS_TOKEN_EXTENDS);
 		fxCallExpression(parser);
 		fxCheckArrowFunction(parser, 1);
+		fxCheckNativeConstructor(parser);
 		flags |= parser->flags & mxAwaitingFlag;
 		constructorFlags |= mxDerivedFlag;
 		if (parser->root->description->token == XS_TOKEN_HOST)
@@ -3906,6 +3926,41 @@ void fxCheckArrowFunction(txParser* parser, txInteger count)
 		count--;
 		node = node->next;
 	}
+}
+
+void fxCheckNativeConstructor(txParser* parser)
+{
+	txClassNode* root = (txClassNode*)(parser->root);
+	if (root->description != &gxTokenDescriptions[XS_TOKEN_CLASS])
+		return;
+	if (root->symbol != C_NULL)
+		return;
+	txHostNode* host = (txHostNode*)(root->heritage);
+	if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
+		return;
+	if (root->constructorInit != C_NULL)
+		return;
+	if (root->instanceInit != C_NULL)
+		return;
+	txFunctionNode* constructor = (txFunctionNode*)(root->constructor);
+	if (constructor->description != &gxTokenDescriptions[XS_TOKEN_FUNCTION])
+		return;
+	txParamsBindingNode* args = (txParamsBindingNode*)(constructor->params);
+	if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
+		return;
+	if (args->items->length != 0)
+		return;
+	txBodyNode* body = (txBodyNode*)(constructor->body);
+	if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
+		return;
+	txStatementNode* statement = (txStatementNode*)(body->statement);
+	if (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT])
+		return;
+	txNode* undefined = (txNode*)(statement->expression);
+	if (undefined->description != &gxTokenDescriptions[XS_TOKEN_UNDEFINED])
+		return;
+	fxPopNode(parser);
+	fxPushNode(parser, (txNode*)host);
 }
 
 void fxCheckNativeFunction(txParser* parser)
