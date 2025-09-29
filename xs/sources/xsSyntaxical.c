@@ -3928,6 +3928,14 @@ void fxCheckArrowFunction(txParser* parser, txInteger count)
 	}
 }
 
+static void fxReportWarning(txParser* parser, txInteger line, txString theFormat, ...)
+{
+	c_va_list arguments;
+	c_va_start(arguments, theFormat);
+    (*parser->reportWarning)(parser->console, parser->path ? parser->path->string : C_NULL, line, theFormat, arguments);
+	c_va_end(arguments);
+}
+
 void fxCheckNativeConstructor(txParser* parser)
 {
 	txClassNode* root = (txClassNode*)(parser->root);
@@ -3968,57 +3976,57 @@ void fxCheckNativeFunction(txParser* parser)
 	txFunctionNode* function = (txFunctionNode*)(parser->root);
 	txBodyNode* body = (txBodyNode*)(function->body);
 	if (body->description != &gxTokenDescriptions[XS_TOKEN_BODY])
-		return;
+		goto bail;
 	txStatementNode* statement = (txStatementNode*)(body->statement);
 	if ((function->flags & mxDerivedFlag) && (function->flags & mxHostFlag)) {
 		txStatementsNode* statements = (txStatementsNode*)(statement);
 		if (statements->description != &gxTokenDescriptions[XS_TOKEN_STATEMENTS])
-			return;
+			goto bail;
 		if (statements->items->length != 2)
-			return;
+			goto bail;
 		statement = (txStatementNode*)(statements->items->first);
 		if (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT])
-			return;
+			goto bail;
 		txSuperNode* super = (txSuperNode*)(statement->expression);
 		if (super->description != &gxTokenDescriptions[XS_TOKEN_SUPER])
-			return;
+			goto bail;
 		txParamsNode* params = (txParamsNode*)(super->params);
 		if (params->items->length != 0)
-			return;
+			goto bail;
 		statement = (txStatementNode*)(statement->next);
 	}
 	if ((statement->description != &gxTokenDescriptions[XS_TOKEN_RETURN]) && (statement->description != &gxTokenDescriptions[XS_TOKEN_STATEMENT]))
-		return;
+		goto bail;
 	txCallNewNode* call = (txCallNewNode*)(statement->expression);
 	if (call->description != &gxTokenDescriptions[XS_TOKEN_CALL])
-		return;
+		goto bail;
 	txMemberNode* member = (txMemberNode*)(call->reference);
 	if (member->description != &gxTokenDescriptions[XS_TOKEN_MEMBER])
-		return;
+		goto bail;
 	if (member->symbol != parser->callSymbol)
-		return;
+		goto bail;
 	txHostNode* host = (txHostNode*)(member->reference);
 	if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
-		return;
+		goto bail;
 	txParamsNode* params = (txParamsNode*)(call->params);
 	if (params->description != &gxTokenDescriptions[XS_TOKEN_PARAMS])
-		return;
+		goto bail;
 	txParamsBindingNode* args = (txParamsBindingNode*)(function->params);
 	if (args->description != &gxTokenDescriptions[XS_TOKEN_PARAMS_BINDING])
-		return;
+		goto bail;
 	if (params->items->length != args->items->length + 1)
-		return;
+		goto bail;
 	txNode* arg = args->items->first;
 	txNode* param = params->items->first;
 	if (param->description != &gxTokenDescriptions[XS_TOKEN_THIS])
-		return;
+		goto bail;
 	param = param->next;
 	while (arg) {
 		txDeclareNode* binding;
 		txAccessNode* access;
 		if (arg->description == &gxTokenDescriptions[XS_TOKEN_REST_BINDING]) {
 			if (param->description != &gxTokenDescriptions[XS_TOKEN_SPREAD])
-				return;
+				goto bail;
 			binding = (txDeclareNode*)(((txRestBindingNode*)arg)->binding);
 			access = (txAccessNode*)(((txSpreadNode*)param)->expression);
 		}
@@ -4027,11 +4035,11 @@ void fxCheckNativeFunction(txParser* parser)
 			access = (txAccessNode*)param;
 		}
 		if (binding->description != &gxTokenDescriptions[XS_TOKEN_ARG])
-			return;
+			goto bail;
 		if (access->description != &gxTokenDescriptions[XS_TOKEN_ACCESS])
-			return;
+			goto bail;
 		if (binding->symbol != access->symbol)
-			return;
+			goto bail;
 		arg = arg->next;
 		param = param->next;
 	}
@@ -4039,6 +4047,9 @@ void fxCheckNativeFunction(txParser* parser)
 	host->params = (txNode*)args;
 	fxPopNode(parser);
 	fxPushNode(parser, (txNode*)host);
+	return;
+bail:
+    fxReportWarning(parser, function->line, "cannot optimize native");
 }
 
 txBoolean fxCheckReference(txParser* parser, txToken theToken)
