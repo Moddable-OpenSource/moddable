@@ -754,12 +754,14 @@ void fxHostNodeHoist(void* it, void* param)
 		txParser* parser = hoister->parser;
 		while ((scope->token != XS_TOKEN_MODULE) && (scope->token != XS_TOKEN_PROGRAM))
 			scope = scope->scope;
-		fxGenerateTag(parser->console, parser->buffer, parser->bufferSize, "native");
+		snprintf(parser->buffer, parser->bufferSize, "@%s", self->at->value);
 		txSymbol* symbol = fxNewParserSymbol(parser, parser->buffer);
-		txDefineNode* definition = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
-		definition->initializer = (txNode*)fxHostNodeClone(parser, self);
-		fxScopeAddDeclareNode(scope, (txDeclareNode*)definition);
-		fxScopeAddDefineNode(scope, definition);
+		if (!fxScopeGetDeclareNode(scope, symbol)) {
+			txDefineNode* definition = fxDefineNodeNew(parser, XS_TOKEN_DEFINE, symbol);
+			definition->initializer = (txNode*)fxHostNodeClone(parser, self);
+			fxScopeAddDeclareNode(scope, (txDeclareNode*)definition);
+			fxScopeAddDefineNode(scope, definition);
+		}
 		txAccessNode* access = it;
 		access->description = &gxTokenDescriptions[XS_TOKEN_ACCESS];
 		access->symbol = symbol;
