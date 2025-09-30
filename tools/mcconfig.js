@@ -1222,8 +1222,10 @@ export default class extends Tool {
 			this.setenv("ARDUINO_ROOT", this.environment.ARDUINO_ROOT);
 		}
 		else if (this.platform === "zephyr") {
-			let temp;
-			temp = this.environment.ZEPHYR_BASE ?? this.getenv("ZEPHYR_BASE");
+			let temp = this.environment.ZEPHYR_BASE ?? this.getenv("ZEPHYR_BASE");
+			if (!temp)
+				throw new Error ("$ZEPHYR_BASE not set. See set-up instructions at https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/zephyr.md");
+
 			this.environment.ZEPHYR_BASE = temp;
 		}
 
@@ -1447,6 +1449,15 @@ export default class extends Tool {
 						cmd = ["cmd", "/C", `set IDF_EXPORT_QUIET=1 && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\\idf_cmd_init.bat" && popd && ${cmd.join(" ")}`];
 					else
 						cmd = ["bash", "-c", `export IDF_EXPORT_QUIET=1 && source $IDF_PATH/export.sh && ${cmd.join(" ")}`];
+				}
+			}
+
+			if ("zephyr" === this.platform) {
+				if (this.spawn(this.windows ? "where" : "which", "west") !== 0) { // installed but not activated
+					if (this.windows)
+						throw new Error("Zephyr SDK not activated");
+					else
+						cmd = ["bash", "-c", `source $ZEPHYR_BASE/../.venv/bin/activate && ${cmd.join(" ")}`];
 				}
 			}
 
