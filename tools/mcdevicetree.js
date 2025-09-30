@@ -43,7 +43,15 @@ export default class extends TOOL {
 				this.outputDirectory = path;
 				break;
 
-				default:
+			case "-p":
+				argi++;	
+				if (argi >= argc)
+					throw new Error("-p no platform!");
+				if ("zephyr" !== argv[argi])
+					throw new Error("Zephyr RTOS output only");
+				break;
+
+			default:
 				name = argv[argi];
 				if (this.sourcePath)
 					throw new Error("'" + name + "': too many files!");
@@ -84,7 +92,7 @@ export default class extends TOOL {
 `;
 
 		state.cCode +=
-`#include "./mc.zephyr.h"
+`#include "./mc.devicetree.h"
 #include <zephyr/device.h>
 #include "xsHost.h"
 
@@ -127,7 +135,7 @@ device.Serial = {};
 `
 		});
 */
-
+/*
 doBus(state, parsed, {
 			prefix: "spi@",
 			name: "SPI",
@@ -139,6 +147,7 @@ device.io.SPI = SPI;
 device.SPI = {};
 `
 		});
+*/
 
     state.hCode +=
 `
@@ -150,7 +159,7 @@ export default device;
 `;
 
 		const parts = {
-				name: "mc.zephyr",
+				name: "mc.devicetree",
 				directory: this.outputDirectory,
 		};
 

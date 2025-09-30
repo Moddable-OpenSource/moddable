@@ -62,7 +62,7 @@
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
 #elif defined(_ZEPHYR)
-	#include "mc.zephyr.h"
+	#include "mc.devicetree.h"
 
 	#define kPinBanks kModZephyrGPIOBankCount
 	#define builtinCriticalSectionBegin()	k_sched_lock()

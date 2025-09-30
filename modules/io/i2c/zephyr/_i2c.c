@@ -24,7 +24,7 @@
 
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "mc.xs.h"			// for xsID_* values
-#include "mc.zephyr.h"
+#include "mc.devicetree.h"
 #include "xsHost.h"			// platform support
 
 #include "builtinCommon.h"

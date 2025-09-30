@@ -18,6 +18,6 @@
  *
  */
 
-import device from "mc/zephyr"
+import device from "mc/devicetree"
 
 export default device;

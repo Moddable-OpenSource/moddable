@@ -1333,9 +1333,9 @@ export default class extends Tool {
 			if (this.preloads.length)
 				this.preloads.push("mc" + this.slash + "config.xsb");
 			if (this.platform == "zephyr") {
-				this.jsFiles.push({ source: this.tmpPath + this.slash + "mc.zephyr.js", target: folder + this.slash + "zephyr.xsb" });
+				this.jsFiles.push({ source: this.tmpPath + this.slash + "mc.devicetree.js", target: folder + this.slash + "devicetree.xsb" });
 				if (this.preloads.length)
-					this.preloads.push("mc" + this.slash + "zephyr.xsb");
+					this.preloads.push("mc" + this.slash + "devicetree.xsb");
 			}
 
 			file = new ConfigFile(source, this);
