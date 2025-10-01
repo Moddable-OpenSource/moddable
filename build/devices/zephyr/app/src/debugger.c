@@ -5,10 +5,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #include "mc.defines.h"
-
-#include "serial_fifo.h"
 
 #ifndef DEBUGGER_SPEED
 	#define DEBUGGER_SPEED 115200		// in .dts?
@@ -23,64 +22,58 @@ K_THREAD_STACK_DEFINE(gDebugStack, DEBUGGER_STACK);
 
 #define DEBUG_QUEUE_LEN			2
 
-#define FIFO_SIZE	1024
-static fifo_t	m_rx_fifo;
-static uint8_t *rx_fifo_buffer;
+#define RING_BUF_SIZE	1024
+static struct ring_buf m_rx_ringbuf;
+static uint8_t rx_ringbuf_buffer[RING_BUF_SIZE];
 
 #define UART_DEVICE_NODE DT_CHOSEN(zephyr_shell_uart)
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
-static int gNotifyOutstanding = 0;
+static uint8_t gNotifyOutstanding = 0;
 struct k_msgq dbgServiceQueue;
 
-void die(char *x) {
-	uint8_t DIE_BUF[256];
-	c_strncpy(DIE_BUF, x, 256);
-	while (1) {
-	}
+static void die(char *x) {
+	while (1)
+		;
 }
-#define DIE(x, ...) die(x)
 
 void serial_cb(const struct device *dev, void *user_data)
 {
-	uint32_t msg = 0;
-
-	if (!uart_irq_update(uart_dev)) {
+	if (!uart_irq_update(uart_dev))
 		return;
-	}
 
 	while (uart_irq_rx_ready(uart_dev)) {
-		uint8_t c;
-		msg = 1;
-		while (1 == uart_fifo_read(uart_dev, &c, 1)) {
-			if (0 != fifo_put(&m_rx_fifo, c))
-				die("rx fifo full");
-		}
-	}
+		uint8_t buf[32];
+		
+		uint32_t space = ring_buf_space_get(&m_rx_ringbuf);
+		if (space == 0)
+			die("rx ring buffer full");
 
-	if (msg && !gNotifyOutstanding) {
-		gNotifyOutstanding = 1;
-		k_msgq_put(&dbgServiceQueue, &msg, K_NO_WAIT);
+		uint32_t use = (space < sizeof(buf)) ? space : sizeof(buf);
+		uint32_t read = uart_fifo_read(uart_dev, buf, use);
+		if (read > 0) {
+			uint32_t written = ring_buf_put(&m_rx_ringbuf, buf, read);
+			if (written != read)
+				die("rx ring buffer full");
+			if (!gNotifyOutstanding) {
+				gNotifyOutstanding = 1;
+				k_msgq_put(&dbgServiceQueue, &gNotifyOutstanding, K_NO_WAIT);
+			}
+		}
 	}
 }
 
 static void debugLoop(void *a, void *b, void *c)
 {
-	int err;
 	uint32_t msg;
 	uint32_t *running = a;
 	
 	int ret = uart_irq_callback_user_data_set(uart_dev, serial_cb, NULL);
 	if (ret < 0) {
-		if (ret == -ENOTSUP) {
+		if ((ret == -ENOTSUP) || (ret == -ENOSYS))
 			printk("Interrupt-driven UART not enabled.\n");
-		}
-		else if (ret == -ENOSYS) {
-			printk("Interrupt-driven UART not supported.\n");
-		}
-		else {
+		else
 			printk("error setting UART callback: %d\n", ret);
-		}
 		*running = -1;
 		return;
 	}
@@ -89,12 +82,12 @@ static void debugLoop(void *a, void *b, void *c)
 	*running = 1;
 
 	while (true) {
-		err = k_msgq_get(&dbgServiceQueue, &msg, K_MSEC(10000));
+		int err = k_msgq_get(&dbgServiceQueue, &msg, K_MSEC(10000));
 		if (err) continue;
 
 		gNotifyOutstanding = 0;
 #ifdef mxDebug
-		if (fifo_length(&m_rx_fifo))
+		if (ring_buf_size_get(&m_rx_ringbuf) > 0)
 			fxReceiveLoop();
 #endif
 	}
@@ -109,11 +102,10 @@ void setupDebugger(uint32_t *running)
 		return;
 	}
 
-	k_msgq_alloc_init(&dbgServiceQueue, sizeof(uint32_t), DEBUG_QUEUE_LEN);
+	k_msgq_alloc_init(&dbgServiceQueue, sizeof(uint8_t), DEBUG_QUEUE_LEN);
 
-	// make fifos
-	rx_fifo_buffer = c_malloc(FIFO_SIZE);
-	fifo_init(&m_rx_fifo, rx_fifo_buffer, FIFO_SIZE);
+	// initial ringbuf
+	ring_buf_init(&m_rx_ringbuf, sizeof(rx_ringbuf_buffer), rx_ringbuf_buffer);
 
 	// make debugger thread
 	gDebugTID = k_thread_create(&gDebugThread, gDebugStack, K_THREAD_STACK_SIZEOF(gDebugStack), debugLoop, running, NULL, NULL, DEBUGGER_PRIORITY, 0, K_NO_WAIT);
@@ -137,10 +129,10 @@ void ESP_putc(int c)
 int ESP_getc(void)
 {
 	uint8_t c;
-	int err;
+	uint32_t len;
 
-	err = fifo_get(&m_rx_fifo, &c);
-	if (0 == err)
+	len = ring_buf_get(&m_rx_ringbuf, &c, 1);
+	if (1 == len)
 		return c;
 
 	return -1;
