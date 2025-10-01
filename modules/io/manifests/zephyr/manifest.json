@@ -15,6 +15,7 @@
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 
 		"system": "$(IO)/system/*"
 	},
