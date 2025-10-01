@@ -108,7 +108,7 @@ const device = {
 		doGPIOBanks(state, parsed); 
 		doGPIOs(state, parsed);
 
-    doBus(state, parsed, {
+		doBus(state, parsed, {
 			prefix: "i2c@",
 			name: "I2C",
 			header: "#include <zephyr/drivers/i2c.h>",
@@ -122,7 +122,6 @@ device.I2C = {};
 `
 		});
 
-/*
 		doBus(state, parsed, {
 			prefix: "serial@",
 			name: "Serial",
@@ -134,7 +133,7 @@ device.io.Serial = Serial;
 device.Serial = {};
 `
 		});
-*/
+
 /*
 doBus(state, parsed, {
 			prefix: "spi@",
@@ -149,7 +148,7 @@ device.SPI = {};
 		});
 */
 
-    state.hCode +=
+		state.hCode +=
 `
 #endif /* __MC_ZEPHYR_H__ */
 `;
@@ -192,7 +191,7 @@ function doGPIOBanks(state, dts) {
 	let gpios = [];
 	const root = dts.nodes['/'];
 
-  const soc = root.children.soc;
+	const soc = root.children.soc;
 	for (let what in soc.children) {
 		if (what.startsWith("gpio@")) {
 			const node = soc.children[what];
@@ -200,45 +199,45 @@ function doGPIOBanks(state, dts) {
 			if ("okay" !== status)
 				continue;
 
-      if ("raspberrypi,pico-gpio" === node.properties.compatible.value.value) {
-      	for (let what in node.children) {
-          const n = node.children[what];
-          if ("okay" !== (n.properties.status?.value?.value ?? "okay"))
-              continue;
-          gpios.push(n);
-        }
-      }
-      else
-        gpios.push(node);
+			if ("raspberrypi,pico-gpio" === node.properties.compatible.value.value) {
+				for (let what in node.children) {
+						const n = node.children[what];
+					if ("okay" !== (n.properties.status?.value?.value ?? "okay"))
+							continue;
+					gpios.push(n);
+				}
+			}
+			else
+				gpios.push(node);
 		}
 	}
 
-  if (0 === gpios.length) {
-    for (let what in soc.children) {
-      if (!what.startsWith("pin-controller@"))
-        continue;
+	if (0 === gpios.length) {
+		for (let what in soc.children) {
+			if (what.startsWith("pin-controller@"))
+				continue;
 
-      const pinController = soc.children[what] 
-      for (const bus in pinController.children) {
-        if (bus.startsWith("gpio@")) {
-          const gpio = pinController.children[bus];
-          const status = gpio.properties.status?.value?.value ?? "okay"
-          if ("okay" !== status)
-            continue;
-          gpios.push(gpio);
-        }
-      }
-    }
-  }
+			const pinController = soc.children[what] 
+			for (const bus in pinController.children) {
+				if (bus.startsWith("gpio@")) {
+					const	gpio = pinController.children[bus];
+					const status = gpio.properties.status?.value?.value ?? "okay"
+					if ("okay" !== status)
+						continue;
+					gpios.push(gpio);
+				}
+			}
+		}
+	}
 
-  state.hCode += `
+	state.hCode += `
 #define kModZephyrGPIOBankCount (${gpios.length})
 `;
 
-  if (0 === gpios.length)
-    return;
+	if (0 === gpios.length)
+		return;
 
-  state.hCode += `
+	state.hCode += `
 #include <zephyr/drivers/gpio.h>
 
 struct modZephyrGPIOBank {
@@ -291,36 +290,36 @@ device.io.Digital = Digital;
 
 
 function doGPIOs(state, dts) {
-  if (!state.gpioBanks?.length)
-      return;
+	if (!state.gpioBanks?.length)
+			return;
 
-  const root = dts.nodes['/'];
+	const root = dts.nodes['/'];
 	const gpios = [];
 	["gpio-leds", "gpio-keys"].forEach(kind => {
-  	for (let what in root.children) {
-      const node = root.children[what];
-      if (kind !== node.properties.compatible?.value.value)
-          continue;
+		for (let what in root.children) {
+			const node = root.children[what];
+			if (kind !== node.properties.compatible?.value.value)
+					continue;
 
-      for (let item in node.children) {
-        item = node.children[item];
-        const g = item.properties.gpios.value.value; 
-        const bus = g[0].slice(1);
-        const labels = item.labels ?? (item.label ? [item.label] : []);
-        gpios.push({
-          kind,
-          name: item.name,
-          labels,
-          userName: item.properties?.label?.value?.value,
-          bankIndex: state.gpioBanks.indexOf(bus),
-          bus,
-          pin: parseInt(g[1]),
-          flags: parseInt(g[2])
-        });
-      }
-      return;
-    }
-  });
+			for (let item in node.children) {
+				item = node.children[item];
+				const g = item.properties.gpios.value.value; 
+				const bus = g[0].slice(1);
+				const labels = item.labels ?? (item.label ? [item.label] : []);
+				gpios.push({
+					kind,
+					name: item.name,
+					labels,
+					userName: item.properties?.label?.value?.value,
+					bankIndex: state.gpioBanks.indexOf(bus),
+					bus,
+					pin: parseInt(g[1]),
+					flags: parseInt(g[2])
+				});
+			}
+			return;
+		}
+	});
 
 	if (0 === gpios.length)
 		return;
@@ -429,18 +428,18 @@ function doBus(state, dts, options) {
 		}
 	}
 
-  state.hCode += `
+	state.hCode += `
 #define kModZephyr${options.name}BusCount (${nodes.length})
 `;
 
 	if (0 === nodes.length)
 		return;
 
-  let busSpecific = "";
-  if ("spi@" === options.prefix)
-      busSpecific = "\n	struct gpio_dt_spec cs;"
+	let busSpecific = "";
+	if ("spi@" === options.prefix)
+			busSpecific = "\n	struct gpio_dt_spec cs;"
 
-  state.hCode += `
+	state.hCode += `
 ${options.header}
 
 struct modZephyr${options.name} {
@@ -453,23 +452,23 @@ extern const struct modZephyr${options.name} *modZephyrGet${options.name}(const 
 
 `;
 
-  state.cCode +=`
+	state.cCode +=`
 static const struct modZephyr${options.name} g${options.name}[] = {
 `;
 
 	nodes.forEach((node, index) => {
-    busSpecific = "";
-    if ("spi@" === options.prefix) {
-        const cs = node.properties["cs-gpios"]?.value?.value;
-        if (cs) {
-          busSpecific = `\n		.cs.port = DEVICE_DT_GET(DT_NODELABEL(${cs[0].slice(1)})),
+		busSpecific = "";
+		if ("spi@" === options.prefix) {
+				const cs = node.properties["cs-gpios"]?.value?.value;
+				if (cs) {
+					busSpecific = `\n		.cs.port = DEVICE_DT_GET(DT_NODELABEL(${cs[0].slice(1)})),
 		.cs.pin = ${parseInt(cs[1])},
 		.cs.dt_flags = ${parseInt(cs[2])},`; 
-        }
-    }
+				}
+		}
 
 
-    state.cCode += `	{
+		state.cCode += `	{
 		.label = "${node.label}",
 		.device = DEVICE_DT_GET(DT_NODELABEL(${node.label})),
 		.busIndex = ${index},${busSpecific}
@@ -493,7 +492,13 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 	state.jsCode += "\n" + options.static;
 
 	nodes.forEach(node => {
-		state.jsCode += `device.${options.name}.${node.label} = {io: ${options.name}, port: "${node.label}"};\n`;
+		let additional = "";
+		if ("serial@" === options.prefix) {
+			const baud = node.properties["current-speed"]?.value?.value?.[0];
+			if (baud)
+				additional += `baud: ${parseInt(baud)}`;
+		}
+		state.jsCode += `device.${options.name}.${node.label} = {io: ${options.name}, port: "${node.label}"${additional ? ", " + additional : ""}};\n`;
 		for (let i = 1; i < node.labels?.length; i++) 
 			state.jsCode += `device.${options.name}.${node.labels[i]} = device.${options.name}.${node.label};\n`;
 	});
