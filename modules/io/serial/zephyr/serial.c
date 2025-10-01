@@ -160,7 +160,7 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
 		}
 	}
 
-	if (flags && ((flags & serial->flags) != flags)) {
+	if (flags && !serial->flags) {
         serial->flags |= flags;
 		serial->useCount++;
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
