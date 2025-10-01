@@ -90,7 +90,7 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 	irq_unlock(key);
 
 	xsBeginHost(the);
-		if ((flags & kSerialReadable) && serial->onReadable) {
+		if (flags & kSerialReadable) {
 			int count = (int)ring_buf_size_get(&serial->rxRingBuffer);
 			if (count) {
 				xsmcSetInteger(xsResult, count);
@@ -98,7 +98,7 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 			}
 		}
 
-		if ((flags & kSerialWritable) && serial->onWritable) {
+		if (flags & kSerialWritable)  {
 			int count = (int)ring_buf_space_get(&serial->txRingBuffer);
 			if (count) {
 				xsmcSetInteger(xsResult, count);
@@ -106,7 +106,7 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 			}
 		}
 
-		if ((flags & kSerialError) && serial->onError) {
+		if (flags & kSerialError) {
 			xsmcSetInteger(xsResult, serial->lastError);
 			xsCallFunction1(xsReference(serial->onError), serial->obj, xsResult);
 		}
@@ -119,10 +119,12 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
     uint8_t flags = 0;
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		int error = uart_err_check(dev);
-		if (error) {
-            serial->lastError = error;
-			flags |= kSerialError;
+        if (serial->onError) {
+            int error = uart_err_check(dev);
+            if (error) {
+                serial->lastError = error;
+                flags |= kSerialError;
+            }
         }
 
 		if (uart_irq_rx_ready(dev)) {
@@ -131,10 +133,10 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
 
 			while ((bytes_read = uart_fifo_read(dev, rx_data, sizeof(rx_data))) > 0) {
 				uint32_t written = ring_buf_put(&serial->rxRingBuffer, rx_data, bytes_read);
-				if (written > 0)
+				if (serial->onReadable && (written > 0))
 					flags |= kSerialReadable;
 
-				if (written < bytes_read) {
+				if (serial->onError && (written < bytes_read)) {
 					serial->lastError = -ENOMEM;		// buffer overflow
 					flags |= kSerialError;
 				}
@@ -149,19 +151,21 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
 			if (len > 0) {
 				uart_fifo_fill(dev, tx_data, len);
 
-				if (ring_buf_space_get(&serial->txRingBuffer) > 0)    //@@ this could fire less often
+				if (serial->onWritable && (ring_buf_space_get(&serial->txRingBuffer) > 0))    //@@ this could fire less often
 					flags |= kSerialWritable;
 			}
 			else {
 				uart_irq_tx_disable(dev);
 				serial->txEnabled = false;
-                flags |= kSerialWritable;
+                if (serial->onWritable)
+                    flags |= kSerialWritable;
 			}
 		}
 	}
 
-	if (flags && !serial->flags) {
-        serial->flags |= flags;
+	uint8_t currentFlags = serial->flags;
+	serial->flags |= flags;
+	if (flags && !currentFlags) {
 		serial->useCount++;
 		modMessagePostToMachineFromISR(serial->the, serialDeliver, serial);
 	}
