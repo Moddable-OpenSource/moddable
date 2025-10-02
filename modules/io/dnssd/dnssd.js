@@ -25,7 +25,6 @@
 		unicast reponse only to addresses on same subnet
 */
 
-import UDP from "embedded:io/socket/udp";		// should come from device.
 import Parser from "dns/parser";
 import Serializer from "dns/serializer";
 import DNS from "dns";
