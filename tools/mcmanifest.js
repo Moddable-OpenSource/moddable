@@ -84,6 +84,16 @@ export class MakeFile extends FILE {
 		this.line("");
 		this.generateRules(tool)
 		if (tool.platform == "zephyr") {
+			let start_xsbug_command;
+			if (tool.currentPlatform === "mac")
+				start_xsbug_command = `open -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
+			else        // lin
+				start_xsbug_command = `nohup ${tool.buildPath}/bin/lin/release/xsbug > /dev/null 2>&1 &`;
+
+			this.line("execute_process(");
+			this.line(`  COMMAND ${start_xsbug_command}`);
+			this.line(")");
+
 			var suffixPath = tool.fragmentPath + ".suffix";
 			this.write(tool.readFileString(suffixPath));
 			this.line("");

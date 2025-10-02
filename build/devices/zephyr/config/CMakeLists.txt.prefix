@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(moddable_lib)
 
-message(" -- in moddable cmakelists.txt")
 # export all the flags used by zephyr
 zephyr_get_include_directories_for_lang_as_string(       C includes)
 zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
@@ -14,9 +13,6 @@ zephyr_get_compile_options_for_lang_as_string(           C options)
 if(DEFINED CMAKE_C_COMPILER_TARGET)
   set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
 endif()
-
-
-message(" *- source " ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/mc/xsHosts.c)
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/zephyr/xsHost.c)
@@ -72,7 +68,6 @@ list(APPEND mFLAGS "-DmxUseDefaultSharedChunks=1")
 list(APPEND mFLAGS "-DkPocoRotation=0")
 list(APPEND mFLAGS "-DkPocoFrameBuffer=1")
 list(APPEND mFLAGS "-DMODGCC=1")
-# list(APPEND mFLAGS "-DMODINSTRUMENTATION=0")
 list(APPEND mFLAGS "-DmxUseDefaultSharedChunks=1")
 list(APPEND mOPTIONS "-fshort-enums")
 list(APPEND mOPTIONS "-Wno-error=clobbered")

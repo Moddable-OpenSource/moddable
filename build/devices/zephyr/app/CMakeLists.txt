@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 set(CMAKE_OBJECT_PATH_MAX 1024)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(blinky)
+project(moddable)
 
 # export all the flags used by zephyr
 zephyr_get_include_directories_for_lang_as_string(       C includes)
@@ -21,15 +21,8 @@ set(external_project_cflags
   "${target_flag} ${includes} ${definitions} ${options} ${system_includes}"
   )
 
-# add_subdirectory("$ENV{MODDABLE}/build/devices/zephyr/config" "$ENV{MODDABLE}/build/tmp/zephyr/build")
-message("blah***" "$ENV{MODDABLE}/build/devices/zephyr/config" "$ENV{MODDABLE_BUILD_DIR}")
-# add_subdirectory("$ENV{MODDABLE}/build/devices/zephyr/config" "${MODDABLE_BUILD_DIR}/app")
-
 add_subdirectory("${MODDABLE_BUILD_DIR}" "${MODDABLE_BUILD_DIR}/app")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-
-message(" -**** app CMakeLists.txt")
-message(" -* PATH_MAX " ${CMAKE_OBJECT_PATH_MAX})
 
 # message(STATUS "*-*-*-*-*-*-*-*-*")
 # get_cmake_property(_variableNames VARIABLES)
