@@ -35,6 +35,8 @@
 
 #include <zephyr/sys/ring_buffer.h>
 
+#if kModZephyrSerialBusCount
+
 #ifndef MODDEF_SERIAL_RX_BUFSIZE
 	#define MODDEF_SERIAL_RX_BUFSIZE (256)
 #endif
@@ -371,3 +373,19 @@ void xs_serial_set_format(xsMachine *the)
 
 	serial->format = format;
 }
+
+#else // !kModZephyrSerialBusCount
+
+void xs_serial_constructor(xsMachine *the)
+{
+	xsUnknownError("no serial");
+}
+
+void xs_serial_destructor(void *) {}
+void xs_serial_close(xsMachine *the) {}
+void xs_serial_read(xsMachine *the) {}
+void xs_serial_write(xsMachine *the) {}
+void xs_serial_get_format(xsMachine *the) {}
+void xs_serial_set_format(xsMachine *the) {}
+
+#endif
