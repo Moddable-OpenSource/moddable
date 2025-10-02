@@ -18,57 +18,6 @@
  *
  */
 
-// import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-// import I2C from "embedded:io/i2c";
-// import PulseCount from "embedded:io/pulsecount";
-// import PWM from "embedded:io/pwm";
-// import Serial from "embedded:io/serial";
-// import SMBus from "embedded:io/smbus";
-// import SPI from "embedded:io/spi";
-
-const device = {
-/*
-	I2C: {
-		default: {
-			io: I2C,
-			data: 21,
-			clock: 22
-		}
-	},
-	Serial: {
-		default: {
-			io: Serial,
-			port: 1,
-			receive: 3,
-			transmit: 1
-		}
-	},
-	SPI: {
-		default: {
-			io: SPI,
-			clock: 14,
-			in: 12,
-			out: 13,
-			port: 1
-		}
-	},
-	Analog: {
-		default: {
-			io: Analog,
-			pin: 33
-		}
-	},
-*/
-//	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
-	io: {Digital, DigitalBank},
-	pin: {
-		button: { port: "gpioc", pin: 13 },
-		led: { port: "gpioe", pin: 0 },
-		green_led: { port: "gpioe", pin: 0 },
-		red_led: { port: "gpioe", pin: 1 }
-	}
-};
+import device from "mc/devicetree";
 
 export default device;

@@ -52,13 +52,13 @@ export class MakeFile extends FILE {
 		if (tool.windows)
 			this.write("\t@echo # ");
 		else
-			this.write("\t@echo \"# ");
+			this.write("\t@echo '# ");
 		for (var string of strings)
 			this.write(string);
 		if (tool.windows)
 			this.write("\n");
 		else
-			this.write("\"\n");
+			this.write("'\n");
 	}
 	generate(tool) {
 		this.generateDefinitions(tool);

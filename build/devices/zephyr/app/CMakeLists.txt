@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.20.0)
-cmake_policy(SET CMP0156 NEW)
-cmake_policy(SET CMP0181 NEW)
 
 set(CMAKE_OBJECT_PATH_MAX 1024)
 

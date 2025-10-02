@@ -1230,14 +1230,24 @@ export default class extends Tool {
 
 			temp = this.environment.UPLOAD_PORT ?? this.getenv("UPLOAD_PORT");
 			if (!temp) {
-				if (this.environment.ZEPHYR_PID && this.environment.ZEPHYR_VID)
-					temp = this.environment.ZEPHYR_VID + ":" + this.environment.ZEPHYR_PID;
+				if (this.currentPlatform === "mac") {
+					if (this.environment.ZEPHYR_PID && this.environment.ZEPHYR_VID)
+						temp = this.environment.ZEPHYR_VID + ":" + this.environment.ZEPHYR_PID;
+					else
+						temp = "0483:374b";		// STMicroelectronics dev boards
+				}
 				else
-					temp = "0483:374b";		// STMicroelectronics dev boards
-				this.environment.UPLOAD_PORT = temp;
+					temp = "/dev/ttyACM0";
 				this.setenv("UPLOAD_PORT", temp);
 				trace(`$UPLOAD_PORT not set. Using "${temp}".\n`);
 			}
+			this.environment.UPLOAD_PORT = temp;
+
+			temp = this.environment.DEBUGGER_SPEED ?? this.getenv("DEBUGGER_SPEED");
+			if (!temp)
+				temp = "115200";
+			this.environment.DEBUGGER_SPEED = temp;
+			this.setenv("DEBUGGER_SPEED", temp);
 		}
 
 		this.localsName = "locals";
@@ -1428,7 +1438,7 @@ export default class extends Tool {
 					if (this.buildTarget == "build")
 						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath}`
 					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} 115200 8N1`;
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
 					else
 						this.error("unknown target");
 
