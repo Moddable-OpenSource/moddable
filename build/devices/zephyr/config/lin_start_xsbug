@@ -1,0 +1,4 @@
+#!/bin/bash
+
+nohup $MODDABLE/build/bin/lin/release/xsbug > /dev/null 2>&1 &
+

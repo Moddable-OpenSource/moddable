@@ -87,8 +87,8 @@ export class MakeFile extends FILE {
 			let start_xsbug_command;
 			if (tool.currentPlatform === "mac")
 				start_xsbug_command = `open -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
-			else        // lin
-				start_xsbug_command = `nohup ${tool.buildPath}/bin/lin/release/xsbug > /dev/null 2>&1 &`;
+			else         // lin
+				start_xsbug_command = `${tool.buildPath}/devices/zephyr/config/lin_start_xsbug`;
 
 			this.line("execute_process(");
 			this.line(`  COMMAND ${start_xsbug_command}`);
