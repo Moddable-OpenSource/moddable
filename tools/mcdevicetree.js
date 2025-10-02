@@ -214,7 +214,7 @@ function doGPIOBanks(state, dts) {
 
 	if (0 === gpios.length) {
 		for (let what in soc.children) {
-			if (what.startsWith("pin-controller@"))
+			if (!what.startsWith("pin-controller@"))
 				continue;
 
 			const pinController = soc.children[what] 
