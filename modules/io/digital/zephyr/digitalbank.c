@@ -35,6 +35,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/atomic.h>
 
 #if kModZephyrGPIOBankCount
 
@@ -58,8 +59,8 @@ struct DigitalRecord {
 	xsSlot		obj;
 	uint8_t		hasOnReadable;
 	uint8_t		isInput;
-	uint8_t		useCount;
 	uint8_t		bank;
+	atomic_t		useCount;
 	const struct device *port;
 
 	// fields after here only allocated if onReadable callback present
@@ -154,7 +155,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	digital->pins = 0;
 	digital->bank = bank->bankIndex;
 	digital->obj = xsThis;
-	digital->useCount = 1;
+	atomic_set(&digital->useCount, 1);
 	xsRemember(digital->obj);
 
 	int activeLowFlag = (mode & kDigitalActiveLow) ? GPIO_ACTIVE_LOW : 0;
@@ -266,7 +267,7 @@ void xs_digitalbank_destructor(void *data)
 		builtinFreePins(digital->bank, digital->pins);
 	}
 
-	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST))
+	if (0 == atomic_dec(&digital->useCount))
 		c_free(data);
 }
 
@@ -324,7 +325,7 @@ void digitalISR(const struct device *port, struct gpio_callback *cb, gpio_port_p
 		uint32_t triggered = walker->triggered;
 		walker->triggered |= pins;
 		if (!triggered) {
-			__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
+			atomic_inc(&walker->useCount);
 			modMessagePostToMachineFromISR(walker->the, digitalDeliver, walker);
 		}
 		break;
@@ -336,7 +337,7 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	Digital digital = refcon;
 	uint32_t triggered;
 
-	if (0 == __atomic_sub_fetch(&digital->useCount, 1, __ATOMIC_SEQ_CST)) {
+	if (0 == atomic_dec(&digital->useCount)) {
 		c_free(digital);
 		return;
 	}
