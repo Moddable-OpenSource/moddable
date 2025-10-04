@@ -202,10 +202,10 @@ function doGPIOBanks(state, dts) {
 
 			if ("raspberrypi,pico-gpio" === node.properties.compatible.value.value) {
 				for (let what in node.children) {
-						const n = node.children[what];
-					if ("okay" !== (n.properties.status?.value?.value ?? "okay"))
-							continue;
-					gpios.push(n);
+					const gpio = node.children[what];
+					if ("okay" !== (gpio.properties.status?.value?.value ?? "okay"))
+						continue;
+					gpios.push(gpio);
 				}
 			}
 			else
@@ -230,6 +230,19 @@ function doGPIOBanks(state, dts) {
 			}
 		}
 	}
+
+	if ((0 === gpios.length) && soc.children.gpio) {
+		for (let what in soc.children.gpio.children) {
+			if (!what.startsWith("gpio@"))
+				continue;
+
+			const gpio = soc.children.gpio.children[what];
+			const status = gpio.properties.status?.value?.value ?? "okay"
+			if ("okay" !== status)
+				continue;
+			gpios.push(gpio);
+		}
+  }
 
 	state.hCode += `
 #define kModZephyrGPIOBankCount (${gpios.length})
@@ -411,10 +424,10 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 			aliasTable?.forEach(alias => {
 				state.jsCode += `device.${kindName}.${alias} = device.${kindName}.${gpio.name};\n`;
 
-      	if (("sw0" === alias) && ("gpio-keys" === gpio.kind))
-          state.jsCode += `device.pin.button = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
-      	if (("led0" === alias) && ("gpio-leds" === gpio.kind))
-          state.jsCode += `device.pin.led = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
+				if (("sw0" === alias) && ("gpio-keys" === gpio.kind))
+					state.jsCode += `device.pin.button = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
+				if (("led0" === alias) && ("gpio-leds" === gpio.kind))
+					state.jsCode += `device.pin.led = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
 			});
 		}
 	});
