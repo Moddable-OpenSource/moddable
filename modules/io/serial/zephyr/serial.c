@@ -70,21 +70,18 @@ typedef struct {
 	int lastError;
 	uint8_t format;
 	uint8_t flags;
-	uint8_t txEnabled;
+	uint8_t txEnabled:1;
+	uint8_t closed:1;
 	int8_t useCount;
 
 	uint8_t rxBuffer[MODDEF_SERIAL_RX_BUFSIZE];
 	uint8_t txBuffer[MODDEF_SERIAL_TX_BUFSIZE];
 } modSerialRecord, *modSerial;
 
+// two dangers here: the instance is closed and a callback closing the instance
 static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 {
 	modSerial serial = (modSerial)refcon;
-
-	if (--serial->useCount <= 0) {
-		c_free(serial);
-		return;
-	}
 
 	unsigned int key = irq_lock();
 	uint8_t flags = serial->flags;
@@ -92,7 +89,7 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 	irq_unlock(key);
 
 	xsBeginHost(the);
-		if (flags & kSerialReadable) {
+		if ((flags & kSerialReadable) && !serial->closed) {
 			int count = (int)ring_buf_size_get(&serial->rxRingBuffer);
 			if (count) {
 				xsmcSetInteger(xsResult, count);
@@ -100,7 +97,7 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 			}
 		}
 
-		if (flags & kSerialWritable)  {
+		if ((flags & kSerialWritable) && !serial->closed)  {
 			int count = (int)ring_buf_space_get(&serial->txRingBuffer);
 			if (count) {
 				xsmcSetInteger(xsResult, count);
@@ -108,11 +105,16 @@ static void serialDeliver(void *the, void *refcon, uint8_t *, uint16_t)
 			}
 		}
 
-		if (flags & kSerialError) {
+		if ((flags & kSerialError) && !serial->closed) {
 			xsmcSetInteger(xsResult, serial->lastError);
 			xsCallFunction1(xsReference(serial->onError), serial->obj, xsResult);
 		}
 	xsEndHost(the);
+
+	if (--serial->useCount <= 0) {
+		c_free(serial);
+		return;
+	}
 }
 
 static void serial_uart_isr(const struct device *dev, void *user_data)
@@ -159,8 +161,8 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
 			else {
 				uart_irq_tx_disable(dev);
 				serial->txEnabled = false;
-                if (serial->onWritable)
-                    flags |= kSerialWritable;
+				if (serial->onWritable)
+					flags |= kSerialWritable;
 			}
 		}
 	}
@@ -277,6 +279,7 @@ void xs_serial_close(xsMachine *the)
 {
 	modSerial serial = xsmcGetHostData(xsThis);
 	if (serial && xsmcGetHostDataValidate(xsThis, (void *)&xsSerialHooks)) {
+		serial->closed = true;
 		xs_serial_destructor(serial);
 		xsmcSetHostData(xsThis, NULL);
 		xsSetHostDestructor(xsThis, NULL);
