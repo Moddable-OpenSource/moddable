@@ -162,7 +162,7 @@ void PiuImageSync(void* it)
 	if (frameCount > 1) {
 		PiuIdle selfIdle = PiuContentUseIdle(it);
 		xsIntegerValue fromIndex = (*self)->frameIndex;
-		xsIntegerValue toIndex = (xsIntegerValue)c_round((frameCount * (*selfIdle)->time) / (*selfIdle)->duration);
+		xsIntegerValue toIndex = (xsIntegerValue)c_round((frameCount * selfIdle->time) / selfIdle->duration);
 		if (toIndex >= frameCount)
 			toIndex = frameCount - 1;
 		if (fromIndex != toIndex) {
@@ -262,11 +262,10 @@ void PiuImage_create(xsMachine* the)
 	if (frameCount > 1) {
 		uint16_t fps_numerator = c_read16(&cch->fps_numerator);
 		uint16_t fps_denominator = c_read16(&cch->fps_denominator);
-		PiuIdle selfIdle = PiuContentUseIdle(it);
-		selfIdle->duration = duration;
-		(*selfIdle)->duration = (1000 * (double)frameCount * (double)fps_numerator ) / (double)fps_denominator;
-		(*selfIdle)->interval = (1000 * (PiuInterval)fps_numerator ) / (PiuInterval)fps_denominator;
-		(*selfIdle)->time = 0;
+		PiuIdle selfIdle = PiuContentUseIdle(self);
+		selfIdle->duration = (1000 * (double)frameCount * (double)fps_numerator ) / (double)fps_denominator;
+		selfIdle->interval = (1000 * (PiuInterval)fps_numerator ) / (PiuInterval)fps_denominator;
+		selfIdle->time = 0;
 	}
 	PiuBehaviorOnCreate(self);
 }
@@ -293,7 +292,7 @@ void PiuImage_set_frameIndex(xsMachine *the)
 			frameIndex = 0;
 		else if (frameIndex >= frameCount)
 			frameIndex = frameCount - 1;
-		PiuContentSetTime((PiuContent*)self, ((double)frameIndex * (*self)->duration) / (double)frameCount);
+		PiuContentSetTime((PiuContent*)self, ((double)frameIndex * PiuContentUseIdle(self)->duration) / (double)frameCount);
 	}
 }
 
