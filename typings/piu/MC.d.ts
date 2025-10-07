@@ -74,7 +74,7 @@ declare module "piu/MC" {
   interface Behavior {}
 
   interface BehaviorConstructor {
-    new(any): Behavior;
+    new(): Behavior;
   }
 
   interface Content {
@@ -105,7 +105,7 @@ declare module "piu/MC" {
       ticks: number
     ): void;
     onTouchCancelled(content: Content, id: string): void;
-    onTouchended(
+    onTouchended( 
       content: Content,
       id: string,
       x: number,
