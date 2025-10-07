@@ -281,7 +281,7 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\lwip\port\esp32xx \
 	-I$(IDF_PATH)\components\lwip\port\esp32xx\include \
 	-I$(IDF_PATH)\components\lwip\port\freertos\include \
-	-I$(IDF_PATH)\components\mbedtls\include \
+	-I$(IDF_PATH)\components\mbedtls\mbedtls\include \
 	-I$(IDF_PATH)\components\newlib\include \
 	-I$(IDF_PATH)\components\newlib\platform_include \
 	-I$(IDF_PATH)\components\bt\host\nimble\esp-hci\include \

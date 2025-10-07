@@ -24,6 +24,8 @@
 	<string>xsed</string>
 	<key>CFBundleIconFile</key>
 	<string>main.icns</string>
+	<key>CFBundleIconName</key>
+	<string>main</string>
 	<key>CFBundleShortVersionString</key>
 	<string>xsbug 8.0</string>
 	<key>CFBundleGetInfoString</key>
