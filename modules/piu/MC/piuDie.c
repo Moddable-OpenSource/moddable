@@ -86,7 +86,7 @@ void PiuDieUpdate(void* it, PiuView* view, PiuRectangle area)
 			segmentCount--;
 			PiuCoordinate right = *region0++;
 			segmentCount--;
-			offset = region0 - regionBegin0;
+			offset = (int)(region0 - regionBegin0);
 			
 			PiuViewPushClip(view, left, top, right - left, bottom - top);
 			(*(*self)->dispatch->draw)(self, view, area);
