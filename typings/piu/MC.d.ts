@@ -291,7 +291,7 @@ declare module "piu/MC" {
     contents?: Content[];
   }
   interface ContainerConstructor {
-    new(behaviorData: any, dictionary?: ContainerDictionary);
+    new(behaviorData: any, dictionary?: ContainerDictionary): Container;
 
     template<T>(this: T, any): T;
   }
