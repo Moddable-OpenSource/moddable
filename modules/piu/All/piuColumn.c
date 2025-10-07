@@ -158,8 +158,9 @@ void PiuColumn_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuColumnHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuColumnDispatchRecord;
-	(*self)->flags = piuVisible | piuContainer;
-	PiuContentDictionary(the, self);
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuColumnRecord));
+    (*self)->flags = piuVisible | piuContainer;
+    PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);
 	PiuBehaviorOnCreate(self);
 }

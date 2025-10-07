@@ -158,6 +158,7 @@ void PiuRow_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuRowHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuRowDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuRowRecord));
 	(*self)->flags = piuVisible | piuContainer;
 	PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);

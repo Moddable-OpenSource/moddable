@@ -469,6 +469,7 @@ void PiuScroller_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuScrollerHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuScrollerDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuScrollerRecord));
 	(*self)->flags = piuVisible | piuContainer;
 	PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);

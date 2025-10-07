@@ -117,6 +117,7 @@ void PiuDie__create(xsMachine* the)
 	(*self)->the = the;
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuDieHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuDieDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuDieRecord));
 	(*self)->flags = piuVisible | piuContainer;
 	PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);

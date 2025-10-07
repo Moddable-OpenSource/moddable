@@ -209,6 +209,7 @@ void PiuQRCode_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuQRCodeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuQRCodeDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuQRCodeRecord));
 	(*self)->flags = piuVisible;
 	(*self)->maxVersion = 40;
 	PiuContentDictionary(the, self);
