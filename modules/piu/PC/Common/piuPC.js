@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
 
 import {} from "piu/All";
 
-global.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
+globalThis.__jsx__ = function(Tag, attributes) @ "Piu__jsx__"
 
 export class Component extends Behavior {
 	constructor($, it) {
@@ -40,7 +40,7 @@ export class Component extends Behavior {
 	}
 }
 Object.freeze(Component.prototype);
-global.Component = Component;
+globalThis.Component = Component;
 
 export class TextComponent {
 	constructor($, it) {
@@ -49,7 +49,7 @@ export class TextComponent {
 	}
 }
 Object.freeze(TextComponent.prototype);
-global.TextComponent = TextComponent;
+globalThis.TextComponent = TextComponent;
 
 export class LinkComponent extends TextComponent {
 	constructor($, it) {
@@ -58,7 +58,7 @@ export class LinkComponent extends TextComponent {
 	}
 }
 Object.freeze(LinkComponent.prototype);
-global.LinkComponent = LinkComponent;
+globalThis.LinkComponent = LinkComponent;
 
 // PiuTexture.c
 
@@ -68,12 +68,12 @@ export class Texture @ "PiuTextureDelete" {
 	get height() @ "PiuTexture_get_height"
 	static template(it) {
 		return function() {
-			let map = global.assetMap;
+			let map = globalThis.assetMap;
 			let texture;
 			if (map)
 				texture = map.get(it);
 			else
-				map = global.assetMap = new Map;
+				map = globalThis.assetMap = new Map;
 			if (!texture) {
 				texture = new Texture(it);
 				map.set(it, texture);
@@ -83,7 +83,7 @@ export class Texture @ "PiuTextureDelete" {
 	}
 }
 Object.freeze(Texture.prototype);
-global.Texture = Texture;
+globalThis.Texture = Texture;
 
 // PiuRoundContent.c
 
@@ -97,7 +97,7 @@ var roundContent = {
 };
 export var RoundContent = Template(roundContent);
 Object.freeze(roundContent);
-global.RoundContent = RoundContent;
+globalThis.RoundContent = RoundContent;
 
 // PiuField.c
 
@@ -115,7 +115,7 @@ var field = {
 };
 export var Field = Template(field);
 Object.freeze(field);
-global.Field = Field;
+globalThis.Field = Field;
 
 // PiuApplication.c
 
@@ -142,17 +142,17 @@ export function Application($, it = {}) {
 	it._Texture = Texture;
 	it._TouchLink = TouchLink;
 	it._View = View;
-	global.application = self;
-	global.controlKey = false;
-	global.optionKey = false;
-	global.shiftKey = false;
+	globalThis.application = self;
+	globalThis.controlKey = false;
+	globalThis.optionKey = false;
+	globalThis.shiftKey = false;
 	self._create($, it);
 	return self;
 }
 Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
-global.Application = Application;
+globalThis.Application = Application;
 
 // PiuView.c
 
@@ -174,10 +174,10 @@ export class Service @ "ServiceProxyDelete" {
 		}
 	}
 };
-global.Service = Service;
+globalThis.Service = Service;
 
 
-global.cursors = {
+globalThis.cursors = {
 	get arrow() @ "PiuCursors_get_arrow",
 	get cross() @ "PiuCursors_get_cross",
 	get iBeam() @ "PiuCursors_get_iBeam",
@@ -186,9 +186,9 @@ global.cursors = {
 	get resizeColumn() @ "PiuCursors_get_resizeColumn",
 	get resizeRow() @ "PiuCursors_get_resizeRow",
 };
-Object.freeze(global.cursors);
+Object.freeze(globalThis.cursors);
 
-global.system = {
+globalThis.system = {
 	get applicationPath() @ "PiuSystem_get_applicationPath",
 	get localDirectory() @ "PiuSystem_get_localDirectory",
 	get platform() @ "PiuSystem_get_platform",
@@ -243,7 +243,7 @@ global.system = {
 	getPathExtension(path) @ "PiuSystem_getPathExtension",
 	getPathName(path) @ "PiuSystem_getPathName",
 }
-Object.freeze(global.system);
+Object.freeze(globalThis.system);
 
 
 

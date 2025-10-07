@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2025 Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -20,7 +20,7 @@
 
 declare module "Resource" {
   class Resource extends HostBuffer {
-    constructor(path: string);
+    constructor(path: string, archive?: HostBuffer);
     slice(begin: number, end?: number): ArrayBuffer;
     slice(begin: number, end?: number, copy?: boolean): HostBuffer;
     static exists(path: string): boolean;

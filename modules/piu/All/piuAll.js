@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,15 +23,15 @@
 // PiuColor.c
 
 export function blendColors(a, c1, c2) { return native("Piu_blendColors").call(this, a, c1, c2); };
-global.blendColors = blendColors;
+globalThis.blendColors = blendColors;
 export function hsl(r, g, b) { return native("Piu_hsl").call(this, r, g, b); };
-global.hsl = hsl;
+globalThis.hsl = hsl;
 export function hsla(r, g, b, a) { return native("Piu_hsla").call(this, r, g, b, a); };
-global.hsla = hsla;
+globalThis.hsla = hsla;
 export function rgb(r, g, b) { return native("Piu_rgb").call(this, r, g, b); };
-global.rgb = rgb;
+globalThis.rgb = rgb;
 export function rgba(r, g, b, a) { return native("Piu_rgba").call(this, r, g, b, a); };
-global.rgba = rgba;
+globalThis.rgba = rgba;
 
 // PiuSkin.c
 
@@ -58,10 +58,10 @@ export class Skin extends Native("PiuSkinDelete") {
 		const it = i;
 		return function() {
 			let skin;
-			if (global.assetMap)
+			if (globalThis.assetMap)
 				skin = assetMap.get(it);
 			else
-				global.assetMap = new Map;
+				globalThis.assetMap = new Map;
 			if (!skin) {
 				skin = new Skin(it);
 				assetMap.set(it, skin);
@@ -71,7 +71,7 @@ export class Skin extends Native("PiuSkinDelete") {
 	}
 }
 Object.freeze(Skin.prototype);
-global.Skin = Skin;
+globalThis.Skin = Skin;
 
 // PiuStyle.c
 
@@ -98,10 +98,10 @@ export class Style extends Native("PiuStyleDelete") {
 		const it = i;
 		return function() {
 			let style;
-			if (global.assetMap)
+			if (globalThis.assetMap)
 				style = assetMap.get(it);
 			else
-				global.assetMap = new Map;
+				globalThis.assetMap = new Map;
 			if (!style) {
 				style = new Style(it);
 				assetMap.set(it, style);
@@ -111,16 +111,14 @@ export class Style extends Native("PiuStyleDelete") {
 	}
 }
 Object.freeze(Style.prototype);
-global.Style = Style;
+globalThis.Style = Style;
 
 // BEHAVIOR
 
 export class Behavior {
-	constructor() {
-	}
 }
 Object.freeze(Behavior.prototype);
-global.Behavior = Behavior;
+globalThis.Behavior = Behavior;
 
 // DISPATCH
 
@@ -148,7 +146,7 @@ export function template(f) {
 	result.template = template;
 	return result;
 }
-global.template = template;
+globalThis.template = template;
 
 export function Template(prototype) {
 	const proto = prototype;
@@ -161,7 +159,7 @@ export function Template(prototype) {
 	result.template = template;
 	return result;
 }
-global.Template = Template;
+globalThis.Template = Template;
 
 // CONTENTS
 
@@ -211,10 +209,10 @@ export const Content = Template(Object.freeze({
 	set backgroundTouch(it) { native("PiuContent_set_backgroundTouch").call(this, it); },
 	set behavior(it) { native("PiuContent_set_behavior").call(this, it); },
 	set coordinates(it) { native("PiuContent_set_coordinates").call(this, it); },
-	set duration() { return native("PiuContent_set_duration").call(this); },
+	set duration(it) { native("PiuContent_set_duration").call(this, it); },
 	set exclusiveTouch(it) { native("PiuContent_set_exclusiveTouch").call(this, it); },
-	set fraction() { return native("PiuContent_set_fraction").call(this); },
-	set interval() { return native("PiuContent_set_interval").call(this); },
+	set fraction(it) { native("PiuContent_set_fraction").call(this, it); },
+	set interval(it) { native("PiuContent_set_interval").call(this, it); },
 	set loop(it) { native("PiuContent_set_loop").call(this, it); },
 	set multipleTouch(it) { native("PiuContent_set_multipleTouch").call(this, it); },
 	set name(it) { native("PiuContent_set_name").call(this, it); },
@@ -224,7 +222,7 @@ export const Content = Template(Object.freeze({
 	set skin(it) { native("PiuContent_set_skin").call(this, it); },
 	set state(it) { native("PiuContent_set_state").call(this, it); },
 	set style(it) { native("PiuContent_set_style").call(this, it); },
-	set time() { return native("PiuContent_set_time").call(this); },
+	set time(it) { native("PiuContent_set_time").call(this, it); },
 	set variant(it) { native("PiuContent_set_variant").call(this, it); },
 	set visible(it) { native("PiuContent_set_visible").call(this, it); },
 	set x(it) { native("PiuContent_set_x").call(this, it); },
@@ -247,7 +245,7 @@ export const Content = Template(Object.freeze({
 	start() { native("PiuContent_start").call(this); },
 	stop() { native("PiuContent_stop").call(this); },
 }));
-global.Content = Content;
+globalThis.Content = Content;
 
 // PiuLabel.c
 
@@ -259,7 +257,7 @@ export const Label = Template(Object.freeze({
 	
 	set string(it) { native("PiuLabel_set_string").call(this, it); },
 }));
-global.Label = Label;
+globalThis.Label = Label;
 
 // PiuText.c
 
@@ -281,7 +279,7 @@ export const Text = Template(Object.freeze({
 	endBlock() { native("PiuText_endBlock").call(this); },
 	endSpan() { native("PiuText_endSpan").call(this); },
 }));
-global.Text = Text;
+globalThis.Text = Text;
 
 export const Link = Template(Object.freeze({
 	__proto__: proto,
@@ -294,7 +292,7 @@ export const Link = Template(Object.freeze({
 	
 	captureTouch(id, x, y, ticks) { native("PiuContent_captureTouch").call(this, id, x, y, ticks); },
 }));
-global.Link = Link;
+globalThis.Link = Link;
 
 // PiuPort.c
 
@@ -319,7 +317,7 @@ export const Port = Template(Object.freeze({
 	pushClip(x, y, w, h) { native("PiuPort_pushClip").call(this, x, y, w, h); },
 	measureString(string, style) { return native("PiuPort_measureString").call(this, string, style); },
 }));
-global.Port = Port;
+globalThis.Port = Port;
 
 // CONTAINERS
 
@@ -358,7 +356,7 @@ export const Container = Template(Object.freeze({
 	run(transition) { native("PiuContainer_run").call(this, transition); },
 	swap(content0, content1) { native("PiuContainer_swap").call(this, content0, content1); },
 }));
-global.Container = Container;
+globalThis.Container = Container;
 
 // PiuColumn.c
 
@@ -366,7 +364,7 @@ export const Column = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) { native("PiuColumn_create").call(this, $, it); },
 }));
-global.Column = Column;
+globalThis.Column = Column;
 
 // PiuLayout.c
 
@@ -374,7 +372,7 @@ export const Layout = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) { native("PiuLayout_create").call(this, $, it); },
 }));
-global.Layout = Layout;
+globalThis.Layout = Layout;
 
 // PiuRow.c
 
@@ -382,7 +380,7 @@ export const Row = Template(Object.freeze({
 	__proto__: Container.prototype,
 	_create($, it) { native("PiuRow_create").call(this, $, it); },
 }));
-global.Row = Row;
+globalThis.Row = Row;
 
 // PiuScroller.c
 
@@ -403,7 +401,7 @@ export const Scroller = Template(Object.freeze({
 	scrollBy(dx, dy) { native("PiuScroller_scrollBy").call(this, dx, dy); },
 	scrollTo(x, y) { native("PiuScroller_scrollTo").call(this, x, y); },
 }));
-global.Scroller = Scroller;
+globalThis.Scroller = Scroller;
 
 // DEFER
 
@@ -411,7 +409,7 @@ export class DeferLink extends Native("PiuDeferLinkDelete") {
 	constructor() { super(); native("PiuDeferLinkCreate").call(this); }
 }
 Object.freeze(DeferLink.prototype);
-global.DeferLink = DeferLink;
+globalThis.DeferLink = DeferLink;
 
 // TOUCH
 
@@ -421,7 +419,7 @@ export class TouchLink extends Native("PiuTouchLinkDelete") {
 	peek(index) { return native("PiuTouchLink_peek").call(this, index); }
 }
 Object.freeze(TouchLink.prototype);
-global.TouchLink = TouchLink;
+globalThis.TouchLink = TouchLink;
 
 // TRANSITION
 
@@ -434,15 +432,15 @@ export class Transition extends Native("PiuTransitionDelete") {
 	
 	set duration(it) { native("PiuTransition_set_duration").call(this, it); }
 	
-	onBegin(container) {
+	onBegin(/* container */) {
 	}
-	onEnd(container) {
+	onEnd(/* container */) {
 	}
-	onStep(fraction) {
+	onStep(/* fraction */) {
 	}
 }
 Object.freeze(Transition.prototype);
-global.Transition = Transition;
+globalThis.Transition = Transition;
 
 // LOCALS
 
@@ -452,7 +450,7 @@ export class Locals  extends Native("PiuLocalsDelete") {
 	constructor(name, language) { super(); native("PiuLocalsCreate").call(this, name, language); }
 	get language() { return native("PiuLocals_get_language").call(this); }
 	set language(it) { native("PiuLocals_set_language").call(this, it); }
-	get(id) { return native("PiuLocals_get").call(this, id); }
+	get() { return native("PiuLocals_get").call(this); }
 }
 Object.freeze(Locals.prototype);
-global.Locals = Locals;
+globalThis.Locals = Locals;

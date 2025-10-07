@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,13 +29,10 @@ import {} from "piu/All";
 export * from "piu/All";
 
 export class CLUT extends Resource {
-	constructor(path) {
-		super(path);
-	}
 	get colors() { return native("PiuCLUT_get_colors").call(this); }
 }
 Object.freeze(CLUT.prototype);
-global.CLUT = CLUT;
+globalThis.CLUT = CLUT;
 
 // PiuTexture.c
 
@@ -95,10 +92,10 @@ export class Texture extends Native("PiuTextureDelete") {
 		const it = i;
 		return function() {
 			let texture;
-			if (global.assetMap)
+			if (globalThis.assetMap)
 				texture = assetMap.get(it);
 			else
-				global.assetMap = new Map;
+				globalThis.assetMap = new Map;
 			if (!texture) {
 				texture = new Texture(it);
 				assetMap.set(it, texture);
@@ -108,7 +105,7 @@ export class Texture extends Native("PiuTextureDelete") {
 	}
 }
 Object.freeze(Texture.prototype);
-global.Texture = Texture;
+globalThis.Texture = Texture;
 
 // PiuDie.c
 
@@ -128,7 +125,7 @@ const die = {
 };
 export const Die = Template(die);
 Object.freeze(die);
-global.Die = Die;
+globalThis.Die = Die;
 
 // PiuApplication.c
 
@@ -156,22 +153,22 @@ export function Application($, it = {}) {
 	it._Texture = Texture;
 	it._TouchLink = TouchLink;
 	it._View = View;
-	global.application = self;
+	globalThis.application = self;
 	self._create($, it);
-	global.screen.context.onDisplayReady();
+	globalThis.screen.context.onDisplayReady();
 	return self;
 }
 Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
-global.Application = Application;
+globalThis.Application = Application;
 
 // PiuView.c
 
 class View extends Native("PiuViewDelete") {
 	constructor(application, it) {
 		super();
-		let screen = global.screen;
+		let screen = globalThis.screen;
 		it.rotation = this.rotation;
 		let poco = this.poco = new Poco(screen, it);
 		this._create(application, it, screen, poco, poco.rectangle());
