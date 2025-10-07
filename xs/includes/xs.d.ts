@@ -96,4 +96,8 @@ interface Math {
 	mod(a: number, b: number): number
 }
 
+// xs host objects, host functions
+declare function Native(name: string): new (...args: any[]) => any;
+declare function native(name: string): (...args: any[]) => any;
+
 // Compartment?
