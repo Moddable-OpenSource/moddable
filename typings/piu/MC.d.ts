@@ -19,6 +19,8 @@
  */
 
 declare module "piu/MC" {
+  import Poco from "commodetto/Poco";
+
   /* type aliases */
   type Coordinates = {
     top?: number;
