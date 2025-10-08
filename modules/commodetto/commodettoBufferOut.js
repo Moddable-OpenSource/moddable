@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,23 +27,21 @@
 
 import Bitmap from "commodetto/Bitmap";
 
-export default class BufferOut @ "xs_BufferOut_destructor"{
+export default class BufferOut extends Native("xs_BufferOut_destructor"){
 	constructor(dictionary) {
-		this.init(dictionary.width, dictionary.height, dictionary.pixelFormat, dictionary.buffer);
+		super();
+		native("xs_BufferOut_init").call(this, dictionary.width, dictionary.height, dictionary.pixelFormat, dictionary.buffer);
 		this.bitmap = new Bitmap(dictionary.width, dictionary.height, dictionary.pixelFormat, this.buffer, 0);
 	}
-	init(width, height, pixelFormat) @ "xs_BufferOut_init"
-	begin(x, y, width, height)  @ "xs_BufferOut_begin"
-	send(pixels, offsetIn, count) @ "xs_BufferOut_send"
+	begin(x, y, width, height) { return native("xs_BufferOut_begin").call(this, x, y, width, height); }
+	send(pixels, offsetIn, count) { return native("xs_BufferOut_send").call(this, pixels, offsetIn, count); }
 	end() {
 	}
 	continue() {
 		// empty implementation overrides PixelOut.continue which throws
 	}
-	pixelsToBytes(count) @ "xs_BufferOut_pixelsToBytes"
-	get width() @ "xs_BufferOut_getWidth"
-	get height() @ "xs_BufferOut_getHeight"
-	get pixelFormat() @ "xs_BufferOut_getPixelFormat"
+	pixelsToBytes(count) { return native("xs_BufferOut_pixelsToBytes").call(this, count); }
+	get width() { return native("xs_BufferOut_getWidth").call(this); }
+	get height() { return native("xs_BufferOut_getHeight").call(this); }
+	get pixelFormat() { return native("xs_BufferOut_getPixelFormat").call(this); }
 }
-
-Object.freeze(BufferOut.prototype);
