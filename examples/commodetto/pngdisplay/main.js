@@ -113,7 +113,7 @@ function fill(color) {
 }
 
 export default function() {
-	global.poco = new Poco(screen, {rotation: config.rotation});
+	globalThis.poco = new Poco(screen, {rotation: config.rotation});
 
 	if (!Net.get("SSID", "station")) {
 		WiFi.accessPoint({

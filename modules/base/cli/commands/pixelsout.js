@@ -16,7 +16,7 @@ CLI.install(function(command, parts) {
 	if ("screen" !== command)
 		return false;
 
-	if (!global.screen) {
+	if (!globalThis.screen) {
 		this.line("no screen found");
 		return true;
 	}

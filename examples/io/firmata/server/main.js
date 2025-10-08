@@ -16,7 +16,7 @@ import {FirmataSerial, FirmataTCPClient, FirmataTCPServer} from "firmataserver";
 import Poco from "commodetto/Poco";
 
 export default function() {
-	if (global.screen) {
+	if (globalThis.screen) {
 		let poco = new Poco(screen);
 		poco.begin(0, 0, screen.width, screen.height);
 		poco.fillRectangle(poco.makeColor(0, 0, 255), 0, 0, screen.width, screen.height);

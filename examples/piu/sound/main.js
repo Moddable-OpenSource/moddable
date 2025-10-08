@@ -58,8 +58,8 @@ class SoundAppBehavior extends Behavior {
 	}
 	onDisplaying(application) {
 		let data = this.data;
-		if (undefined !== global.button) { // M5Stack
-			let button = global.button;
+		if (undefined !== globalThis.button) { // M5Stack
+			let button = globalThis.button;
 			button.a.onChanged = function() {
 				if (this.read()) {
 					application.delegate("volumeDown");
@@ -77,7 +77,7 @@ class SoundAppBehavior extends Behavior {
 			}
 		}
 		
-		const Host = global.Host;
+		const Host = globalThis.Host;
 		if (undefined !== Host?.Button?.C && undefined !== Host?.Button?.E && undefined !== Host?.Button?.F) { // Kaluga buttons
 			new Host.Button.C({
 				onPush(value){

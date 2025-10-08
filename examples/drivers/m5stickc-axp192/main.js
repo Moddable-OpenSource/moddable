@@ -39,7 +39,7 @@ button.a.onChanged = function() {
 	if (brightness > 100) {
 		brightness = 0;
 	}
-	global.power.brightness = brightness;
+	globalThis.power.brightness = brightness;
 }
 
 render.begin();

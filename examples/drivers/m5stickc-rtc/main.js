@@ -26,7 +26,7 @@ button.a.onChanged = function () {
 	}
 	enabled = !enabled;
 	rtc.enabled = enabled;
-	global.power.brightness = 20 + enabled * 70;
+	globalThis.power.brightness = 20 + enabled * 70;
 }
 
 // Side button: set time from sntp

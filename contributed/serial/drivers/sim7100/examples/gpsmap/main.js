@@ -117,7 +117,7 @@ export default function() {
 		showMap(gps);
 	}
 
-	global.poco = new Poco(screen);
+	globalThis.poco = new Poco(screen);
 	let gray = poco.makeColor(20, 20, 20);
 
 	poco.begin();

@@ -26,8 +26,8 @@ const BLACK = "black";
 const BLUE = "blue";
 const WHITE = "white";
 
-global.locals = new Locals;
-global.localize = function(it) {
+globalThis.locals = new Locals;
+globalThis.localize = function(it) {
     return locals.get(it);
 }  
 

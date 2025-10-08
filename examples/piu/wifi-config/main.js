@@ -36,7 +36,7 @@ function getVariantFromSignalLevel(value) {
 
 class ApplicationBehavior extends Behavior {
 	onCreate(application) {
-		global.application = application;
+		globalThis.application = application;
 		WiFi.mode = 1;
 		this.doNext(application, "NETWORK_LIST_SCAN");
 		application.interval = 2000;
@@ -46,9 +46,9 @@ class ApplicationBehavior extends Behavior {
 		let now = Date.now();
 		if ((this.timeout) && (now > this.timeout)) {
 			trace("Attempt to connect to Wi-Fi timed out\n");
-			if (global.monitor) {
-				global.monitor.close();
-				global.monitor = undefined;
+			if (globalThis.monitor) {
+				globalThis.monitor.close();
+				globalThis.monitor = undefined;
 			}
 			WiFi.connect();
 			application.delegate("doNext", "CONNECTION_ERROR", this.nextScreenData);
@@ -85,7 +85,7 @@ class ApplicationBehavior extends Behavior {
 				application.add(new WiFiStatusSpinner({ status: "Joining network..." }));
 				this.timeout = Date.now() + 10000;
 				this.nextScreenData = nextScreenData;
-				global.monitor = new WiFi(nextScreenData, message => {
+				globalThis.monitor = new WiFi(nextScreenData, message => {
 					if (message == "gotIP"){
 					  	Net.resolve("pool.ntp.org", (name, host) => {
 							if (!host) {
@@ -94,11 +94,11 @@ class ApplicationBehavior extends Behavior {
 								return;
 							}
 							trace(`resolved ${name} to ${host}\n`);
-							global.application.behavior.timeout = Date.now() + 10000;
+							globalThis.application.behavior.timeout = Date.now() + 10000;
 							let sntp = new SNTP({host}, (message, value) => {
 								if (1 == message) {
 									Time.set(value);
-									delete global.application.behavior.timeout;
+									delete globalThis.application.behavior.timeout;
 									if (application.behavior.remoteControlEnabled) application.delegate("wsConnect", nextScreenData);
 									application.delegate("doNext", "NETWORK_LIST", { networks: application.behavior.networks, ssid: nextScreenData.ssid });
 								} else if (-1 == message) {
