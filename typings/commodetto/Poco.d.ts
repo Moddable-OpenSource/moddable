@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 Moddable Tech, Inc.
+* Copyright (c) 2020-2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -79,7 +79,7 @@ declare module "commodetto/Poco" {
     bitmapRemove(bits: Bitmap): void
     compact(): void
 
-    drawQRCode(qrcode:ArrayBuffer, x: number, y: number, scale: number, fore: number)
+    drawQRCode(qrcode:ArrayBuffer, x: number, y: number, scale: number, fore: number): void
 
     readonly width: number
     readonly height: number
@@ -96,7 +96,7 @@ declare module "commodetto/Poco" {
     new(pixelsOut: PixelsOut, options?: PocoDictionary): PocoPrototype
   }
 
-  var Poco: PocoConstructor
+  const Poco: PocoConstructor
 
   global {
     const screen: PixelsOut
