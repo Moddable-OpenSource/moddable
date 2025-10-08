@@ -64,7 +64,7 @@ class EventSource {
 			this.#port = url.port || 443;
 		}
 		else
-			throw new URLError("only http or https")
+			throw new URIError("only http or https")
 		this.#origin = url.origin;
 		let path = url.pathname;
 		let query = url.search;
@@ -79,7 +79,7 @@ class EventSource {
 		if ((this.#method == "POST") || (this.#method == "PUT")) {
 			let body = options.body;
 			if (!body) 
-				rejectResponse(new URLError(this.#method + " no body"));
+				rejectResponse(new URIError(this.#method + " no body"));
 			else if (!(body instanceof ArrayBuffer)) {
 				body = body.toString();
 				body = ArrayBuffer.fromString(body);

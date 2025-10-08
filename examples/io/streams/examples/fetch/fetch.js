@@ -193,7 +193,7 @@ function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
 		let url = new URL(href);
 		if ((url.protocol != "http:") && (url.protocol != "https:"))
-			rejectResponse(new URLError("only http or https"));
+			rejectResponse(new URIError("only http or https"));
 		let method = info.method;
 		let headers = info.headers;
 		let body = info.body;
@@ -201,7 +201,7 @@ function fetch(href, info = {}) {
 		if ((method == "POST") || (method == "PUT") || (method == "PATCH")) {
 			body = info.body;
 			if (body == undefined) 
-				rejectResponse(new URLError(method + " no body"));
+				rejectResponse(new URIError(method + " no body"));
 			else if (!(body instanceof ArrayBuffer)) {
 				body = body.toString();
 				body = ArrayBuffer.fromString(body);
