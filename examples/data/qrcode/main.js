@@ -32,11 +32,11 @@ render.drawQRCode(qr, margin, margin, pixels, render.makeColor(0, 0, 255));
 render.end();
 
 // trace QR code to console
-qr = new Uint8Array(qr);
+const cells = new Uint8Array(qr);
 
 for (let y = 0; y < size; y++) {
 	for (let x = 0; x < size; x++) {
-		if (qr[(y * size) + x])
+		if (cells[(y * size) + x])
 			trace("X");
 		else
 			trace(".");

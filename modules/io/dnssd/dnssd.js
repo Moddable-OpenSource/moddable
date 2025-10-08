@@ -222,7 +222,7 @@ class MDNS {
 		else
 			this.timer = Timer.set(mdns.monitorTask.bind(this), 30 * 60 * 1000);		//@@ calculate based on TTL elapsed (section 5.2 Continuous Multicast DNS Querying)
 	}
-	scanPacket(packet, address) {
+	scanPacket(packet) {
 		const answers = packet.answers, records = [];
 		for (let i = 0, length = answers + packet.additionals; i < length; i++)
 			records.push((i < answers) ? packet.answer(i) : packet.additional(i - answers));
@@ -328,6 +328,7 @@ class MDNS {
 							callback.call(this, monitor.service.slice(0, -6), instance);
 						}
 						catch {
+							/* this space intentionally left blank */
 						}
 					}
 				}
@@ -352,7 +353,7 @@ class MDNS {
 //		dumpPacket(packet, address);
 
 		if (packet.answers || packet.additionals)
-			this.scanPacket(packet, address);
+			this.scanPacket(packet);
 
 		this.claims.forEach(claim => {
 			if (claim.probing < 0) return;
@@ -689,12 +690,12 @@ class Discover {
 	#list;
 	#onFound;
 	#onUpdate;
-	#onLost;
+//@@	#onLost;
 	
 	constructor(options, list) {
 		this.#onFound = options.onFound;
 		this.#onUpdate = options.onUpdate;
-		this.#onLost = options.onLost;
+//@@		this.#onLost = options.onLost;
 		this.#serviceType = options.serviceType;
 
 		this.#callback = (service, instance) => {
