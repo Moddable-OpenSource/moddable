@@ -1,6 +1,6 @@
 # Piu JavaScript Reference
-Copyright 2017-2023 Moddable Tech, Inc.<BR>
-Revised: August 31, 2023
+Copyright 2017-2025 Moddable Tech, Inc.<BR>
+Revised: October 9, 2025
 
 ## About This Document
 
@@ -4097,7 +4097,7 @@ application.add(sampleColumn);
 | `target` | `object` | The object that will have its properties tweened by the timeline.
 | `onProperties` | `object` | The keys of this object are the properties of the `target` object that will be tweened by the timeline. Their values are arrays of values that the tween will ease between over the duration of the timeline.
 | `duration` | `number` | The duration of the tween in ms.
-| `easing` | `number` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
+| `easing` | `function` | An easing function to use for the tween. If `null` is provided, the tween will use a linear easing function.
 | `delay` | `number` | The number of ms after the previous tween in the timeline completes that this one should begin. If this number is negative, the tween will begin before the prior tween completes. If no duration is provided, the tween will begin immediately upon completion of the prior tween.
 
 Adds an "on tween" to the timeline. An "on tween" eases the values of the `target` object through a sequence of steps as specified by arrays in the `onProperties` object over `duration` ms.
