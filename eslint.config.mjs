@@ -67,9 +67,14 @@ export default defineConfig([{
 				QRCode: "readonly",
 				Shape: "readonly",
 			}
-		},
+		}
+	},
+	tseslint.configs.recommended,
+	{
 		rules: {
 			"no-debugger": "warn",
+			"@typescript-eslint/no-unused-vars": "warn",
+			"prefer-const": "off",
 			"no-restricted-globals": [
 				"warn",
 				{
@@ -79,14 +84,8 @@ export default defineConfig([{
 				{
 					name: "Host",
 					message: "Host global is deprecated. Functionality migrating to ECMA-419 APIs"
-				}
-			]
-		}
-	},
-	tseslint.configs.recommended,
-	{
-		rules: {
-			"@typescript-eslint/no-unused-vars": "warn",
+				},
+			],
 		}
 	}
 ]);
