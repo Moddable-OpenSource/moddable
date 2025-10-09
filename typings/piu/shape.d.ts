@@ -34,7 +34,7 @@ declare module "piu/shape" {
     new (behaviorData: any, dictionary: ShapeDictionary): Shape;
     (behaviorData: any, dictionary: ShapeDictionary): Shape;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: object) => object): T;
   }
 
   global {

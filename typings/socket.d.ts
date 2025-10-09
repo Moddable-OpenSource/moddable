@@ -67,15 +67,15 @@ declare module "socket" {
     callback: (message: MessageStatus, value?: number) => void;
   }
   class RawSocket extends SocketBase {
-    write(ip: string, data: ArrayBuffer);
+    write(ip: string, data: ArrayBuffer): void;
     write(): number;
   }
   class TCPSocket extends SocketBase {
-    write(data: WriteData, ...moreData: WriteData[]);
+    write(data: WriteData, ...moreData: WriteData[]): void;
     write(): number;
   }
   class UDPSocket extends SocketBase {
-    write(ip: string, port: number, data: ArrayBuffer);
+    write(ip: string, port: number, data: ArrayBuffer): void;
     write(): number;
   }
   export type ListenerOptions = {

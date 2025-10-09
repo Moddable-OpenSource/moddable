@@ -42,7 +42,7 @@ declare module 'pins/rmt' {
     public write(firstValue: 0 | 1, durations: number[]): void;
     public onWritable: () => void;
     public read(buffer: ArrayBuffer | ArrayBufferLike): {buffer: ArrayBuffer, count: number, phase: 0 | 1};
-    public close();
+    public close(): void;
   }
   export { RMT as default }
 }

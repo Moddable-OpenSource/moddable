@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2025 Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -56,8 +56,8 @@ declare module "file" {
   }
 
   class Directory {
-    static create(path): void;
-    static delete(path): void;
+    static create(path: string): void;
+    static delete(path: string): void;
   }
 
   class System {

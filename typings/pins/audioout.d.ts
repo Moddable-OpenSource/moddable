@@ -80,7 +80,7 @@ declare module 'pins/audioout' {
       stop(): void
       callback: AudioOutCallback
       callbacks: AudioOutCallback[]
-      readonly mix: undefined
+      mix(): never
   }
   export { AudioOut as default }
 }
