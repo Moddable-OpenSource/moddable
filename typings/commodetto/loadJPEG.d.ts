@@ -1,5 +1,4 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
 * Copyright (c) 2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
@@ -19,18 +18,8 @@
 *
 */
 
-declare module "Resource" {
-  interface ResourcePrototype extends HostBuffer {
-    slice(begin: number, end?: number): ArrayBuffer;
-    slice(begin: number, end?: number, copy?: boolean): HostBuffer;
-  }
+declare module "commodetto/loadJPEG" {
+  import Bitmap from "commodetto/Bitmap"
 
-  export interface ResourceConstructor {
-    new(path: string): ResourcePrototype;
-
-    exists(path: string): boolean;
-  }
-  const Resource: ResourceConstructor
-
-  export {Resource as default};
+  export default function (data: BufferLike, options?: {pixelFormat?: number}): Bitmap;
 }
