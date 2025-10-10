@@ -79,8 +79,6 @@ declare module "commodetto/Poco" {
     bitmapRemove(bits: Bitmap): void
     compact(): void
 
-    drawQRCode(qrcode:ArrayBuffer, x: number, y: number, scale: number, fore: number): void
-
     readonly width: number
     readonly height: number
     readonly pixelsOut: PixelsOut
