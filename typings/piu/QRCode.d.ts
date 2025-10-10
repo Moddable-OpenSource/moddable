@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 Shinya Ishikawa
+ * Copyright (c) 2025 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -18,33 +18,25 @@
  *
  */
 
-declare module "piu/Timeline" {
-  class Timeline {
-    duration: number;
-    fraction: number;
-    time: number;
-    from(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
-    on(
-      target: object,
-      onProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
-    seekTo(time: number): void;
-    to(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
+
+declare module "piu/QRCode" {
+  import { Content, ContentDictionary } from "piu/MC";
+
+  interface QRCode extends Content {
+    string: string
   }
-  export { Timeline as default }
+  interface QRCodeDictionary extends ContentDictionary {
+    string?: string,
+    maxVersion?: number,
+  }
+  interface QRCodeConstructor {
+    new(behaviorData?: any, dictionary?: QRCodeDictionary): QRCode;
+    (behaviorData?: any, dictionary?: QRCodeDictionary): QRCode;
+
+    template<T>(this: T, fn: (arg: any) => QRCodeDictionary): T;
+  }
+
+  global {
+    const QRCode: QRCodeConstructor
+  }
 }
