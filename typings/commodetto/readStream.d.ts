@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020-2025 Moddable Tech, Inc.
+* Copyright (c) 2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,8 +18,17 @@
 *
 */
 
-declare module "commodetto/parseBMF" {
-  import type {Font} from "commodetto/Poco"
+declare module "commodetto/readStream" {
 
-  export default function (bmp: BufferLike): Font
+  class Stream {
+    constructor(buffer: ArrayBuffer | HostBuffer, options?: {loop?: boolean});
+    next(): ArrayBuffer | HostBuffer
+
+    readonly width: number;
+    readonly height: number;
+    readonly pixelFormat: number;
+    readonly buffer: ArrayBuffer | HostBuffer;
+  }
+  
+  export default Stream;
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020-2025 Moddable Tech, Inc.
+* Copyright (c) 2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,7 +18,7 @@
 *
 */
 
-declare module "commodetto/parseBMF" {
+declare module "commodetto/parseNFNT" {
   import type {Font} from "commodetto/Poco"
 
   export default function (bmp: BufferLike): Font

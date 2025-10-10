@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020-2025 Moddable Tech, Inc.
+* Copyright (c) 2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,8 +18,8 @@
 *
 */
 
-declare module "commodetto/parseBMF" {
-  import type {Font} from "commodetto/Poco"
-
-  export default function (bmp: BufferLike): Font
+declare module "commodetto/Poco" {
+  interface PocoPrototype {
+    drawFrame(frame: ArrayBuffer | HostBuffer, stream: { width: number, height: number, pixelFormat: number }, x: number, y: number): void
+  }
 }
