@@ -31,7 +31,7 @@ declare module "text/decoder" {
     decode(input?: Uint8Array | ArrayBufferLike, options?: TextDecodeOptions): string;
   }
 
-  var TextDecoder: {
+  const TextDecoder: {
     prototype: TextDecoder;
     new(label?: "utf-8", options?: TextDecoderOptions): TextDecoder;
   };

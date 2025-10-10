@@ -29,7 +29,7 @@ declare module "text/encoder" {
         encodeInto(source: string, destination: Uint8Array): TextEncoderEncodeIntoResult;
     }
 
-    var TextEncoder: {
+    const TextEncoder: {
         prototype: TextEncoder;
         new(): TextEncoder;
     };
