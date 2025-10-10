@@ -61,7 +61,7 @@ class CircularButtonBehavior extends Behavior {
 		label.state = 0;
 		label.active = true;
 	}
-	select(label, state) {
+	select(label) {
 		let timeline = this.timeline = new Timeline();
 		label.skin = circleSkin;
 		timeline.to(label, { state: 1 }, 300, Math.quadEaseOut, 0);

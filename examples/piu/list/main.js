@@ -98,7 +98,7 @@ class ListBehavior extends Behavior {
 		this.state = 1;
 		this.invalidateItem(port, index);
 	}
-	onTouchCancelled(port, id, x, y) {
+	onTouchCancelled(port, id) {
 		port.time = 0;
 		port.start();
 	}

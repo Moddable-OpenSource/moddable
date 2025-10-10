@@ -12,6 +12,7 @@
  *
  */
 
+import {} from "piu/MC";
 import ColorPicker from "color-picker";
 
 const BLACK = "black";

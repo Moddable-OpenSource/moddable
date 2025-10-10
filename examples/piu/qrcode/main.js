@@ -13,6 +13,7 @@
  */
 
 import {} from "piu/MC";
+import {} from "piu/QRCode";
 
 new Application(null, {
 	skin: new Skin({
