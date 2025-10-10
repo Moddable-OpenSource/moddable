@@ -58,7 +58,7 @@ interface StringConstructor {
 
 interface ArrayBufferConstructor {
 	fromString(string: string): ArrayBuffer;
-	fromBigInt(value: BigInt): ArrayBuffer;
+	fromBigInt(value: bigint): ArrayBuffer;
 }
 
 interface ArrayBuffer {
@@ -82,8 +82,8 @@ interface Uint8ArrayConstructor {
 }
 
 interface BigIntConstructor {
-	bitLength(value: BigInt): number
-	fromArrayBuffer(buffer: ArrayBufferLike): BigInt
+	bitLength(value: bigint): number
+	fromArrayBuffer(buffer: ArrayBufferLike): bigint
 }
 
 // integer math proposal
