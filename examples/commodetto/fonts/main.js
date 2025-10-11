@@ -71,7 +71,6 @@ function drawOne(font, text) {
 		text = text.split(" ");
 		const layoutWidth = poco.width - (margin * 2); 
 		let width = layoutWidth;
-		let y = margin;
 		const spaceWidth = poco.getTextWidth(" ", font);
 		const lines = [""];
 		while (text.length) {
@@ -85,7 +84,6 @@ function drawOne(font, text) {
 			width -= wordWidth + spaceWidth;
 			if (width <= 0) {
 				width = layoutWidth;
-				y += font.height;
 				lines.push("");
 			}
 		}

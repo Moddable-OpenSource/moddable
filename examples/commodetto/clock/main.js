@@ -37,7 +37,7 @@ render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 render.end();
 
-Timer.repeat(id => {
+Timer.repeat(() => {
 	render.begin(bounds.x, bounds.y, bounds.width, bounds.height);
 		let d = new Date();
 		let h = d.getHours();

@@ -12,7 +12,7 @@ export default class WiFi  {
 	static set mode(value) {
 		trace("WiFi mode is ", value, "\n");
 	}
-	static get mode() {}
+	static get mode() {return undefined}
 	static scan(dictionary, callback) {
 		Timer.set(() => {
 			for (let i = 0; i < 12; i++)
@@ -20,9 +20,9 @@ export default class WiFi  {
 			callback(null);
 		}, 2000)
 	}
-	static connect(dictionary) {}
-	static accessPoint(dictionary) {}
-	static get status(){}
+	static connect(/* dictionary */) {}
+	static accessPoint(/* dictionary */) {}
+	static get status(){return undefined}
 }
 
 Object.freeze(WiFi.prototype);

@@ -58,7 +58,7 @@ function getTimeEstimate() {
         secure: {protocolVersion: 0x303} 
     });
 
-    request.callback = function(message, value, etc) {
+    request.callback = function(message /*, value, etc */) {
 		if (Request.status === message) {
 			flash.offset = 0;
 			flash.erase(0);

@@ -42,7 +42,6 @@ const iconSkin = new Skin({ texture:iconTexture, x: 0, y: 0, width: 120, height:
 const OpenSans52 = new Style({ font: "normal normal normal 52px Open Sans", color: GREEN, horizontal:"center", vertical:"middle" });
 const OpenSans20Cyan = new Style({ font: "semibold 20px Open Sans", color: CYAN, horizontal:"center", vertical:"middle" });
 const OpenSans20White = new Style({ font: "semibold 20px Open Sans", color: WHITE, horizontal:"center", vertical:"middle" });
-const OpenSans28 = new Style({ font: "semibold 28px Open Sans", color: BLUE, horizontal:"center", vertical:"middle" });
 
 function titleCase(str) {
   return str.split(' ').map(i => i[0].toUpperCase() + i.substring(1)).join(' ')

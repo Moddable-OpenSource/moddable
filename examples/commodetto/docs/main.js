@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -237,7 +237,7 @@ function text4() {
 	poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
 }
 
-let examples = [fillRectangle, origin, clip, monochrome, pattern, grayBitmap, offscreen, alpha, jpeg, text1, text2, text3, text4];
+let examples = [fillRectangle, origin, clip, monochrome, pattern, colorBitmap, grayBitmap, offscreen, alpha, jpeg, text1, text2, text3, text4];
 let index = 0;
 
 Timer.repeat(() => {

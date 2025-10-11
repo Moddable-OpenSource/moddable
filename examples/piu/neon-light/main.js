@@ -180,7 +180,7 @@ let NeonApplication = Application.template($ => ({
 			this.flag = !this.flag;
 			application.run(new WipeTransition(750, Math.quadEaseOut, "center"), application.first, new NeonLights({}));
 		}
-		onTransitionBeginning(application) {
+		onTransitionBeginning(/* application */) {
 		}
 		onTransitionEnded(application) {
 			application.first.delegate("onDisplayed");
