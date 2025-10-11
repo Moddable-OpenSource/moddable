@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,7 +14,7 @@
 
 import {Server} from "http";
 import MDNS from "mdns";
-import PNG from "commodetto/PNG";
+import PNG from "commodetto/ReadPNG";
 import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 import Convert from "commodetto/Convert";
@@ -97,7 +97,7 @@ function render(data) {
 
 	fill(gray);
 	for (let y = 0; y < height; y++) {
-		convert.process(png.read().buffer, scanOut);
+		convert.process(png.read(), scanOut);
 
 		reverse?.reverse();
 
