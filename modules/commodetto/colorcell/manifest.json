@@ -3,5 +3,14 @@
 		"poco": {
 			"colorcell": 1
 		}
+	},
+	"typescript": {
+		"tsconfig": {
+			"compilerOptions": {
+				"types": [
+					"./colorcell"
+				]
+			}
+		}
 	}
 }

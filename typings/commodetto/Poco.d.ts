@@ -23,7 +23,7 @@ declare module "commodetto/Poco" {
   import PixelsOut from "commodetto/PixelsOut"
   import Bitmap from "commodetto/Bitmap"
 
-  type Rectangle = {
+  export type Rectangle = {
     x: number,
     y: number,
     width: number,
@@ -37,7 +37,7 @@ declare module "commodetto/Poco" {
     readonly position: number
     readonly charCount: number,
     readonly leading: number,
-    readonly bitmap: Bitmap
+    bitmap: Bitmap
   }
 
   export interface PocoPrototype {
