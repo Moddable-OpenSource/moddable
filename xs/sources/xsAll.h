@@ -522,6 +522,7 @@ struct sxCreation {
 	txSize parserTableModulo; /* xs.h */
 	txSize staticSize; /* xs.h */
 	txSize nativeStackSize; /* xs.h */
+	txSize coreId; /* xs.h */
 };
 
 struct sxPreparation {

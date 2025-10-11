@@ -37,19 +37,28 @@ let aWorker = new Worker("simpleworker");
 The call to the `Worker` constructor returns only after execution of the specified module completes. If the worker module generates an exception during this step, an exception is propagated so that the call to `new Worker` throws an exception. This behavior means that the invoking virtual machine blocks until the new worker virtual machine has completed initialization. Consequently, any operations performed in a newly instantiated virtual machine should be relatively brief.
 
 ### Launching a worker with memory configuration
-The previous example launches the worker with the default memory creation configuration used for the main virtual machine. This may not be large enough for the worker, or may allocate more RAM than needed by the worker. An optional configuration object allows the script instantiating a new virtual machine to set the memory use.
+The previous example launches the worker with the default memory [creation](../tools/manifest.md#creation) configuration used for the main virtual machine. This may not be large enough for the worker, or may allocate more RAM than needed by the worker. An optional configuration object allows the script instantiating a new virtual machine to set the memory use.
 
 ```js
 let aWorker = new Worker("simpleworker", {
-	static: 8192,
-	stack: 64,			// JavaScript stack
-	heap: {
+	static: 8192,		// bytes
+	stack: 64,			// JavaScript stack in 16 byte slots
+	heap: {				// Values in 16 byte slots
 		initial: 64,
 		incremental: 32
 	},
-	nativeStack: 8192	// host's native "C" stack
+	nativeStack: 8192,	// host's native "C" stack, in bytes
+    coreId: 1			// For ESP32, set the execution core. 0 or 1
 });
 ```
+There are two optional settings for Workers. For systems using FreeRTOS (ESP32, Qualcomm QCA4020, and Nordic nRF52),  nativeStack sets the size of the native stack in the FreeRTOS `xTaskCreate` call.  The default `nativeStack` size allocated varies with the processor:
+
+- Espressif ESP32: 5 KB with logging disabled; 6 KB with logging enabled
+- Qualcomm QCA4020: 9 KB
+- Nordic nFS52: 10 KB
+
+For ESP32 users with multi-core processors, the `coreId` setting allows pinning the worker to a specific CPU core. By default, the ESP32 task scheduler redistributes worker tasks across cores to balance performance, which is usually the optimal setting. ESP32 normally runs Wi-Fi/BLE and system daemons on core 0, so pinning a worker on core 1 may improve real-time performance. `xsbug` displays the cores and you can visually see each processor's usage.
+
 
 ### Sending a message to a worker
 Messages to workers are JavaScript objects and binary data.
@@ -200,7 +209,7 @@ Depending on the host runtime, workers may be preemptively scheduled (e.g. run i
 
 The Web Worker specification requires assumes that all Workers are preemptively scheduled. On some microcontrollers, preemptive scheduling is impractical (too much memory required) or nearly impossible (not supported by the host RTOS).
 
-Each host of the Moddable SDK runtime decided whether to support multiple virtual machines. If it does, it then decides whether to support preemptive or cooperative scheduling.  The ESP8266 runtime is built on a cooperative task model and so implements cooperative scheduling of virtual machines. The ESP32 is built on FreeRTOS, a preemptively scheduled RTOS, an so supports preemptive scheduling. When deciding whether to use multiple virtual machines in a project, check to see what is supported by the host runtime.
+Each host of the Moddable SDK runtime decided whether to support multiple virtual machines. If it does, it then decides whether to support preemptive or cooperative scheduling.  The ESP8266 runtime is built on a cooperative task model and so implements cooperative scheduling of virtual machines. The ESP32, Qualcomm QCA4020, and Nordic nRF52 runtimes are built on FreeRTOS, a preemptively scheduled RTOS, and so support preemptive scheduling. For FreeRTOS, workers run at priority 1 (0 is the lowest level priority). When deciding whether to use multiple virtual machines in a project, check to see what is supported by the host runtime.
 
 ## xsbug support
 The debugger for the XS virtual machine, `xsbug`, supports working with multiple virtual machines simultaneously. Each virtual machine appears in a separate tab with the name of the module path used to initialize the worker.

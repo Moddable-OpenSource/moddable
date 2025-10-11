@@ -264,6 +264,10 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
 			}
 			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
+			worker->creation.coreId = -1;		// tskNO_AFFINITY
+#if ESP32	// Multicore only supported on ESP32
+			getIntegerProperty(the, &xsArg(1), xsID_coreId, &worker->creation.coreId);
+#endif
 		}
 	}
 
@@ -280,8 +284,15 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #elif nrf52
 	#define kStack (10 * 1024)
 #endif
-	xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+	// FreeRTOS Task Creation. If we are specifying a core, use that, otherwise use the FreeRTOS xTaskCreate.
+	if (worker->creation.coreId != -1) {	// Use specified core
+		xTaskCreatePinnedToCore(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+							worker, kWorkerTaskPriority, &worker->task, worker->creation.coreId);
+	}
+	else {	// Use default core
+		xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
 							worker, kWorkerTaskPriority, &worker->task);
+	}
 
 	modMachineTaskWait(the);
 #else // !INC_FREERTOS_H
