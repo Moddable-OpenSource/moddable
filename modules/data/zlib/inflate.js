@@ -20,7 +20,7 @@
  
 class Inflate extends Native("xs_inflate_destructor") {
 	chunks = [];
-	strm = {};
+	strm = {avail_in: 0};
 
 	constructor(options = {}) {
 		super();
