@@ -29,7 +29,7 @@ let digits = parseBMP(new Resource("digits-alpha.bmp"));
 const digitWidth = (digits.width / 10);
 const digitHeight = digits.height;
 const colonWidth = 16;
-let colon = 1;
+let colon = true;
 let timeWidth = (digitWidth << 2) + colonWidth;
 let bounds = { x:(render.width - timeWidth) >> 1, y:(render.height - digitHeight) >> 1, width:timeWidth, height:digitHeight };
 
