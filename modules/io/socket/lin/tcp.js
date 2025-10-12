@@ -28,7 +28,7 @@ class TCP @ "xs_tcp_destructor" {
 	get remotePort() @ "xs_tcp_get_remotePort"
 
 	get format() @ "xs_tcp_get_format"
-	set format() @ "xs_tcp_set_format"
+	set format(it) @ "xs_tcp_set_format"
 }
 
 export default TCP;
