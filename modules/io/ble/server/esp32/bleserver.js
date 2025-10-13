@@ -18,25 +18,22 @@
  *
  */
 
-class GATTServerConnection @ "xs_gattserverconnection_destructor" {
+class GATTServerConnection extends Native("xs_gattserverconnection_destructor") {
 	constructor() {throw new Error};
-	notify(characteristic, value) @ "xs_gattserverconnection_notify"
-	close() @ "xs_gattserverconnection_close"
-	get maximumWrite() @ "xs_gattserverconnection_get_maximumWrite"
-	replyToPasskey(action, value) @ "xs_gattserverconnection_replyToPasskey"
+	notify(characteristic, value) { return native("xs_gattserverconnection_notify").call(this, characteristic, value); }
+	close() { return native("xs_gattserverconnection_close").call(this); }
+	get maximumWrite() { return native("xs_gattserverconnection_get_maximumWrite").call(this); }
+	replyToPasskey(action, value) { return native("xs_gattserverconnection_replyToPasskey").call(this, action, value); }
 }
 
-class GATTServerCharacteristic @ "xs_gattservercharacteristic_destructor" {
+class GATTServerCharacteristic extends Native("xs_gattservercharacteristic_destructor") {
 	constructor() {throw new Error};
 }
 
-function build(options) @ "xs_gattserver_build";
-function configure(options) @ "xs_gattserver_configure";
-function startAdvertising(scan, response) @ "xs_gattserver_startAdvertising";
-
-class GATTServer @ "xs_gattserver_destructor" {
+class GATTServer extends Native("xs_gattserver_destructor") {
 	constructor(options) {
-		build.call(this, options, GATTServerConnection.prototype, GATTServerCharacteristic.prototype);
+		super();
+		native("xs_gattserver_build").call(this, options, GATTServerConnection.prototype, GATTServerCharacteristic.prototype);
 		const services = options.services;
 		for (let i = 0; i < services.length; i++) {
 			const service = services[i];
@@ -59,21 +56,21 @@ class GATTServer @ "xs_gattserver_destructor" {
 				else
 					options.onWarning?.(`service 1800, characteristic ${characteristic} unsupported with NimBLE`);
 			});
-			configure.call(this, name, appearance);
+			native("xs_gattserver_configure").call(this, name, appearance);
 		}
 	}
-	close() @ "xs_gattserver_close"
+	close() { return native("xs_gattserver_close").call(this); }
 
-	addService(service) @ "xs_gattserver_addService"
-	deleteService(service) @ "xs_gattserver_deleteService"
+	addService(service) { return native("xs_gattserver_addService").call(this, service); }
+	deleteService(service) { return native("xs_gattserver_deleteService").call(this, service); }
 
 	startAdvertising(scan, response) {
 		if (response)
-			startAdvertising.call(this, convert(scan), convert(response));
+			native("xs_gattserver_startAdvertising").call(this, convert(scan), convert(response));
 		else
-			startAdvertising.call(this, convert(scan));
+			native("xs_gattserver_startAdvertising").call(this, convert(scan));
 	}
-	stopAdvertising() @ "xs_gattserver_stopAdvertising"
+	stopAdvertising() { return native("xs_gattserver_stopAdvertising").call(this); }
 
 	static properties = Object.freeze({
 		authenticatedSignedWrites: (1 << 6),

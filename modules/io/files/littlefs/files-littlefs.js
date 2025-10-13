@@ -19,63 +19,57 @@
  */
  
 class Status {
-	isFile() @ "xs_stat_isFile"
-	isDirectory() @ "xs_stat_isDirectory"
-	isSymbolicLink() @ "xs_stat_isSymbolicLink"
+	isFile() { return native("xs_stat_isFile").call(this); }
+	isDirectory() { return native("xs_stat_isDirectory").call(this); }
+	isSymbolicLink() { return native("xs_stat_isSymbolicLink").call(this); }
 }
 
-function fstatus() @ "xs_filelittlefs_status"
+class File extends Native("xs_filelittlefs_destructor"){
+	constructor(options) { super(); native("xs_filelittlefs").call(this, options); }
+	close() { return native("xs_filelittlefs_close").call(this); }
 
-class File @ "xs_filelittlefs_destructor"{
-	constructor(options) @ "xs_filelittlefs"
-	close() @ "xs_filelittlefs_close"
-
-	read(buffer /* or count */, posiiton) @ "xs_filelittlefs_read"
-	write(buffer, position) @ "xs_filelittlefs_write"
+	read(buffer /* or count */, posiiton) { return native("xs_filelittlefs_read").call(this, buffer /* or count */, posiiton); }
+	write(buffer, position) { return native("xs_filelittlefs_write").call(this, buffer, position); }
 
 	status() {
-		return fstatus.call(this, new Status);
+		return native("xs_filelittlefs_status").call(this, new Status);
 	}
 
-	setSize(length) @ "xs_filelittlefs_setSize"
+	setSize(length) { return native("xs_filelittlefs_setSize").call(this, length); }
 
-	flush() @ "xs_filelittlefs_flush"
+	flush() { return native("xs_filelittlefs_flush").call(this); }
 }
 
-class DirectoryIterator @ "xs_directory_iterator_littlefs_destructor" {
-	constructor(directory, path) @ "xs_directory_iterator_littlefs"
-	next() @ "xs_directory_iterator_littlefs_next"
-	return() @ "xs_directory_iterator_littlefs_return"
+class DirectoryIterator extends Native("xs_directory_iterator_littlefs_destructor") {
+	constructor(directory, path) { super(); native("xs_directory_iterator_littlefs").call(this, directory, path); }
+	next() { return native("xs_directory_iterator_littlefs_next").call(this); }
+	return() { return native("xs_directory_iterator_littlefs_return").call(this); }
 }
 Object.setPrototypeOf(DirectoryIterator.prototype, Iterator.prototype);
 
-function openFile(options) @ "xs_directorylittlefs_openFile"
-function openDirectory(options) @ "xs_directorylittlefs_openDirectory"
-function status(path) @ "xs_directorylittlefs_status"
-
-class Directory @ "xs_directorylittlefs_destructor" {
-	constructor(options) @ "xs_directorylittlefs"
-	close() @ "xs_directorylittlefs_close"
+class Directory extends Native("xs_directorylittlefs_destructor") {
+	constructor(options) { super(); native("xs_directorylittlefs").call(this, options); }
+	close() { return native("xs_directorylittlefs_close").call(this); }
 
 	openFile(options) {
-		return openFile.call(this, options, File.prototype);
+		return native("xs_directorylittlefs_openFile").call(this, options, File.prototype);
 	}
 	openDirectory(options) {
-		return openDirectory.call(this, options, Directory.prototype);
+		return native("xs_directorylittlefs_openDirectory").call(this, options, Directory.prototype);
 	}
 
-	delete(path) @ "xs_directorylittlefs_delete"
+	delete(path) { return native("xs_directorylittlefs_delete").call(this, path); }
 
-	move(from, to) @ "xs_directorylittlefs_move"
+	move(from, to) { return native("xs_directorylittlefs_move").call(this, from, to); }
 
 	status(path) {
-		return status.call(this, path, new Status);
+		return native("xs_directorylittlefs_status").call(this, path, new Status);
 	}
 
-	createDirectory(options) @ "xs_directorylittlefs_createDirectory"
-	createLink(path, target) @ "xs_directorylittlefs_link"
+	createDirectory(options) { return native("xs_directorylittlefs_createDirectory").call(this, options); }
+	createLink(path, target) { return native("xs_directorylittlefs_link").call(this, path, target); }
 
-	readLink(path) @ "xs_directorylittlefs_link"
+	readLink(path) { return native("xs_directorylittlefs_link").call(this, path); }
 
 	scan(...path) {
 		return new DirectoryIterator(this, ...path);

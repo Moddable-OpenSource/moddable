@@ -18,21 +18,20 @@
  *
  */
 
-class GATTServerConnection @ "BLEServerConnection_destructor" {
+class GATTServerConnection extends Native("BLEServerConnection_destructor") {
 	constructor() {throw new Error};
-	close() @ "BLEServerConnection_close"
-	notify(characteristic, value) @ "BLEServerConnection_notify"
+	close() { return native("BLEServerConnection_close").call(this); }
+	notify(characteristic, value) { return native("BLEServerConnection_notify").call(this, characteristic, value); }
 }
 
-class GATTServerCharacteristic @ "BLEServerCharacteristic_destructor" {
+class GATTServerCharacteristic extends Native("BLEServerCharacteristic_destructor") {
 	constructor() {throw new Error};
 }
 
-function build(options) @ "BLEServer_build";
-
-class GATTServer @ "BLEServer_destructor" {
+class GATTServer extends Native("BLEServer_destructor") {
 	constructor(options) {
-		build.call(this, options, GATTServerConnection.prototype, GATTServerCharacteristic.prototype);
+		super();
+		native("BLEServer_build").call(this, options, GATTServerConnection.prototype, GATTServerCharacteristic.prototype);
 		const services = options.services;
 		for (let i = 0; i < services.length; i++) {
 			const service = services[i];
@@ -48,13 +47,13 @@ class GATTServer @ "BLEServer_destructor" {
 			this.addService(services[i]);
 		}
 	}
-	close() @ "BLEServer_close"
+	close() { return native("BLEServer_close").call(this); }
 
-	addService(service) @ "BLEServer_addService"
-	deleteService(service) @ "BLEServer_deleteService"
+	addService(service) { return native("BLEServer_addService").call(this, service); }
+	deleteService(service) { return native("BLEServer_deleteService").call(this, service); }
 	
-	startAdvertising(ad) @ "BLEServer_startAdvertising"
-	stopAdvertising() @ "BLEServer_stopAdvertising"
+	startAdvertising(ad) { return native("BLEServer_startAdvertising").call(this, ad); }
+	stopAdvertising() { return native("BLEServer_stopAdvertising").call(this); }
 
 	static properties = Object.freeze({
 		broadcast: (1 << 0),
