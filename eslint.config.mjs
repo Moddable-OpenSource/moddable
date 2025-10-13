@@ -23,6 +23,7 @@ export default defineConfig([{
 
 				Host: "readonly",
 				screen: "readonly",
+				backlight: "readonly",
 
 				device: "readonly",
 				System: "readonly",
@@ -73,7 +74,11 @@ export default defineConfig([{
 	{
 		rules: {
 			"no-debugger": "warn",
-			"@typescript-eslint/no-unused-vars": "warn",
+			"no-constant-condition": "warn",
+			"@typescript-eslint/no-unused-vars": ["warn", {
+				"varsIgnorePattern": "^_", 
+			}],
+			"@typescript-eslint/no-this-alias": "warn",
 			"prefer-const": "off",
 			"no-restricted-globals": [
 				"warn",
