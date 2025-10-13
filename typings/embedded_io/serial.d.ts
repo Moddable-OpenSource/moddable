@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2022-2025  Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *

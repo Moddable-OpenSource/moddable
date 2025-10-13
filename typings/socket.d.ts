@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2025  Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *

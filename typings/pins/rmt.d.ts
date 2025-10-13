@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Satoshi Tanaka
+ * Copyright (c) 2021-2025  Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK Tools.
  *

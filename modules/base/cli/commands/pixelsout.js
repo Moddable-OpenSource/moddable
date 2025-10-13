@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2016-2019 Moddable Tech, Inc.
+ *     Copyright (c) 2016-2025  Moddable Tech, Inc.
  *     All rights reserved.
  */
 
