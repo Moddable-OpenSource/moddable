@@ -15,11 +15,11 @@
 import {GAPClient, GATTClient} from "embedded:io/bluetoothle/central"
 import KVP from "embedded:storage/key-value"
 
-const scan = new GAPClient({
+new GAPClient({
 	services: [
 		"180d"		// heart-rate monitor
 	],
-	onReadable(count) {
+	onReadable(/* count */) {
 		const advertisement = this.read();
 		this.close();
 
@@ -53,7 +53,7 @@ function instantiateHeartRateMonitor(address) {
 				this.getPrimaryServices([ "180d"], (error, services) => {
 					this.getCharacteristics(services[0], ["2a37"], (error, characteristics) => {
 						this.heartRate = characteristics[0];
-						this.subscribe(characteristics[0], error => {
+						this.subscribe(characteristics[0], () => {
 							store.write("heartRate", this.store(this.heartRate));
 							trace("heartRate characteristic cached for future connections\n");
 						});

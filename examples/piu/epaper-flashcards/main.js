@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -64,10 +64,10 @@ class AppBehavior extends Behavior {
 		data["QUESTION"].string = question;
 		data["ANSWER"].string = CARDS[question];
 	}
-	onTouchBegan(application, id, x, y, ticks) {
+	onTouchBegan(application, id, x) {
 		this.startX = x;
 	}
-	onTouchMoved(application, id, x, y, ticks) {
+	onTouchMoved(application, id, x) {
 		if (this.startX - x > 150) {
 			this.startX = x;
 			this.showNextCard(application, 1);

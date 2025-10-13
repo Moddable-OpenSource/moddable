@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -57,7 +57,7 @@ class HeaderBehavior extends Behavior {
 	}
 }
 
-const Header = Label.template($ => ({
+const Header = Label.template(() => ({
 	anchor: "HEADER", top: 0, height: 40, left: 0, right: 0, Skin: HeaderSkin,
 	Behavior: HeaderBehavior
 }));
@@ -133,7 +133,7 @@ const EasingFunctionApplication = Application.template($ => ({
 		onStartAnimation(application, easeInFunction, easeOutFunction) {
 			this.data.TRANSITION_CONTAINER.delegate("onStartAnimation", easeInFunction, easeOutFunction);
 		}
-		onAnimationComplete(application) {
+		onAnimationComplete(/* application */) {
 			this.data.HEADER.delegate("onAnimationComplete");
 		}
 	}

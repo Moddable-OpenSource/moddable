@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,7 +12,7 @@
  *
  */
 
-import {} from "piu/MC";
+import {Behavior, Port} from "piu/MC";
 import lorem from "lorem";
 
 const itemSkin = new Skin({ fill:[ "#192eab", "black" ] });
@@ -24,8 +24,8 @@ const stripSkin = new Skin({
 	states: 27, variants: 28 
 });
 
-class ListBehavior extends Behavior {
-	countItems(port) {
+class ListBehavior implements Behavior<Port> {
+	countItems(/* port */) {
 		return this.data.length;
 	}
 	drawItem(port, index, x, y, width, height) {
@@ -44,7 +44,7 @@ class ListBehavior extends Behavior {
 		let delta = this.delta;
 		port.invalidate(port.x, delta * index, port.width, delta);
 	}
-	measureItem(port) {
+	measureItem(/* port */) {
 		return 40;
 	}
 	onCreate(port, data) {
@@ -54,7 +54,7 @@ class ListBehavior extends Behavior {
 		this.state = 0;
 		port.duration = 500;
 	}
-	onMeasureVertically(port, height) {
+	onMeasureVertically(port /* , height */) {
 		return this.countItems(port) * this.delta;
 	}
 	onDraw(port, x, y, width, height) {
@@ -98,12 +98,11 @@ class ListBehavior extends Behavior {
 		this.state = 1;
 		this.invalidateItem(port, index);
 	}
-	onTouchCancelled(port, id) {
+	onTouchCancelled(port) {
 		port.time = 0;
 		port.start();
 	}
-	onTouchEnded(port, id, x, y) {
-		let index = this.hit;
+	onTouchEnded(port) {
 		this.tapItem(port, this.hit);
 		port.time = 0;
 		port.start();

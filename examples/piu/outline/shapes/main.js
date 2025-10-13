@@ -113,7 +113,7 @@ class Shape4Behavior extends BallBehavior {
 	}
 }
 
-let ShapeApplication = Application.template($ => ({
+let ShapeApplication = Application.template(() => ({
 	skin:new Skin({ fill:"black" }),
 	contents: [
 		Shape(1, { right:0, top:0, width:100, height:100, Behavior: Shape4Behavior, skin:new Skin({ fill:rgba(255,255,0,0.75), stroke:rgb(255,255,0,) }) } ),

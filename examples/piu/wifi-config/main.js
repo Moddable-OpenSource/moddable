@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -95,7 +95,7 @@ class ApplicationBehavior extends Behavior {
 							}
 							trace(`resolved ${name} to ${host}\n`);
 							globalThis.application.behavior.timeout = Date.now() + 10000;
-							let sntp = new SNTP({host}, (message, value) => {
+							new SNTP({host}, (message, value) => {
 								if (1 == message) {
 									Time.set(value);
 									delete globalThis.application.behavior.timeout;
@@ -118,7 +118,8 @@ class ApplicationBehavior extends Behavior {
 			case "CONNECTION_ERROR":
 				application.add(new ConnectionErrorScreen(nextScreenData));
 				break;
-			case "SET_TIMEZONE":
+/*
+				case "SET_TIMEZONE":
 				// expected nextScreenData: { current: x } where x is the name of the current timezone, as a string
 				application.add(new SetTimezoneScreen(nextScreenData));
 				break;
@@ -128,6 +129,7 @@ class ApplicationBehavior extends Behavior {
 				nextScreenData.wsConnected = (this.ws != undefined)? 1: 0;
 				application.add(new RemoteControlSettingsScreen(nextScreenData));
 				break;
+*/
 		}
 	}
 	scan(application, isFirstScan) {

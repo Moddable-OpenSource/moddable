@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -133,7 +133,7 @@ function fetch(href, info = {}) {
 		let url = new URL(href);
 		if ((url.protocol != "http:") && (url.protocol != "https:"))
 			rejectResponse(new URIError("only http or https"));
-		const promiseBody = new Promise((resolveBody, rejectBody) => {
+		const promiseBody = new Promise((resolveBody /*, rejectBody */) => {
 			let method = info.method;
 			let headers = info.headers;
 			let body = info.body;
@@ -204,7 +204,7 @@ function fetch(href, info = {}) {
 					else
 						buffer = this.read(count);
 				},
-				onDone(error) {
+				onDone(/* error */) {
 					if (this.redirected) {
 						fetchClientRequest(url, options);
 						return;

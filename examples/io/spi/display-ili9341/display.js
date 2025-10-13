@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,7 +20,7 @@
  
 import Timer from "timer";
 
-class Display @ "xs_display_destructor" {
+class Display extends Native("xs_display_destructor") {
 	#spi;
 	#dc;
 	#state = {
@@ -30,6 +30,7 @@ class Display @ "xs_display_destructor" {
 	};
 
 	constructor(options) {
+		super();
 		let {reset, dc, display} = options;
 		this.#spi = new (display.io)({
 			hz: 40_000_000,
@@ -52,7 +53,7 @@ class Display @ "xs_display_destructor" {
 			Timer.delay(1);
 		}
 
-		initialize.call(this, this.#spi, this.#dc, this.#state);
+		native("xs_display_initialize").call(this, this.#spi, this.#dc, this.#state);
 
 		// registers for display in Moddable One and Moddable Two
 		// shouldn't be baked into the driver
@@ -93,27 +94,27 @@ class Display @ "xs_display_destructor" {
 		this.#state?.reset?.close();
 		this.#state = undefined;
 
-		initialize.call(this);
+		native("xs_display_initialize").call(this);
 	}
 	configure(options) {
 		if ("width" in options) {
 			if (!("height" in options))
 				throw new RangeError;
-			configure.call(this, 0, options.width, options.height);
+			native("xs_display_configure").call(this, 0, options.width, options.height);
 		}
 		if ("x" in options) {
 			if (!("y" in options))
 				throw new RangeError;
-			configure.call(this, 3, options.x, options.y);
+			native("xs_display_configure").call(this, 3, options.x, options.y);
 		}
 		if ("format" in options)
-			configure.call(this, 1, options.format);
+			native("xs_display_configure").call(this, 1, options.format);
 		if ("rotation" in options) {
 			const rotation = options.rotation / 90;
 			if ((0 !== rotation) && (1 !== rotation) && (2 !== rotation) && (3 !== rotation)) 
 				throw new RangeError;
 
-			configure.call(this, 2, rotation);
+			native("xs_display_configure").call(this, 2, rotation);
 
 			this.command(0x36, this.#state.mac ^ [0x00, 0x60, 0xc0, 0xa0][rotation]);
 		}
@@ -142,22 +143,20 @@ class Display @ "xs_display_destructor" {
 		if ("adaptiveBrightnessMinimum" in options)
 			this.command(0x5e, options.adaptiveBrightnessMinimum);
 		if ("async" in options)
-			configure.call(this, 4, options.async);
+			native("xs_display_configure").call(this, 4, options.async);
 	}
-	begin(options) @ "xs_display_begin"
-	send(buffer) @ "xs_display_send"
-	end() @ "xs_display_end"
-	adaptInvalid(options) @ "xs_display_adaptInvalid" 
-	get width() @ "xs_display_get_width"
-	get height() @ "xs_display_get_height"
-	command(command, data) @ "xs_display_command"
+	begin(options) { return native("xs_display_begin").call(this, options); }
+	send(buffer) { return native("xs_display_send").call(this, buffer); }
+	end() { return native("xs_display_end").call(this); }
+	adaptInvalid(options) { return native("xs_display_adaptInvalid").call(this, options); } 
+	get width() { return native("xs_display_get_width").call(this); }
+	get height() { return native("xs_display_get_height").call(this); }
+	command(command, data) { return native("xs_display_command").call(this, command, data); }
 	get c_dispatch() {
 		return this;		//@@ temporary?!
 	}
 }
 
-function initialize() @ "xs_display_initialize";
-function configure() @ "xs_display_configure";
 /*
 	0 - width / height
 	1 - format

@@ -52,7 +52,7 @@ class AnimatedTextBehavior extends Behavior {
 		port.interval = 50;
 		port.start();
 	}
-	onDraw(port, x, y, w, h) {
+	onDraw(port /* , x, y, w, h */) {
 		let color = hsl(this.hue, 1, 0.75);
 		port.drawString(this.string, this.style, color, this.leftMargin, 0, this.labelSize.width, port.height);
 		this.hue++;
@@ -62,7 +62,7 @@ class AnimatedTextBehavior extends Behavior {
 	}
 };
 
-const AnimatedText = Port.template($ => ({
+const AnimatedText = Port.template(() => ({
 	width: screen.width,
 	Behavior: AnimatedTextBehavior
 }));
@@ -78,7 +78,7 @@ class MainColBehavior extends Behavior {
 	onTimeChanged(column) {
 		this.timeline.seekTo(column.time);
 	}
-	onFinished(column) {
+	onFinished(/* column */) {
 		if (this.transitioningIn)
 			this.transitioningIn = false;
 		else
@@ -174,7 +174,7 @@ const WeatherApp = Application.template($ => ({
 			left: 20, right: 20, top: 100,
 			skin: blackSkin, style: OpenSans28, string: "Loading...",
 			Behavior: class extends Behavior {
-				onTransitionOut(label) {
+				onTransitionOut(/* label */) {
 					application.defer("onAddNextScreen");
 				}
 			}

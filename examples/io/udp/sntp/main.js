@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -20,6 +20,6 @@ new SNTP({
 		trace(new Date(value), "\n");
 	},
 	onError() {
-		debugger;
+		trace("time look-up failed\n");
 	},
 });

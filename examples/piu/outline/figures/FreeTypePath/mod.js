@@ -18,14 +18,14 @@ export default class extends Behavior {
 		fillPath.beginSubpath(40, 120, true);
 		strokePath.beginSubpath(40, 120, true);
 		switch (which) {
-		case 0:
+		case 0: {
 			const y = 120 + 100 * ((2 * f) - 1);
 			fillPath.lineTo(160, y);
 			fillPath.lineTo(280, 120);
 			strokePath.conicTo(160, y, 280, 120);
 			shape.bubble("onLabel", `FreeTypePath conicTo`);
-			break;
-		case 1:
+			} break;
+		case 1: {
 			const y1 = 120 + 100 * f;
 			const y2 = 120 - 100 * f;
 			fillPath.lineTo(120, y1);
@@ -33,7 +33,7 @@ export default class extends Behavior {
 			fillPath.lineTo(280, 120);
 			strokePath.cubicTo(120, y1, 200, y2, 280, 120);
 			shape.bubble("onLabel", `FreeTypePath cubicTo`);
-			break;
+			} break;
 		}
 		fillPath.endSubpath();
 		strokePath.endSubpath();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -19,14 +19,16 @@ const WSPublic = {
 	path: "/wsChilkatEcho.ashx",
 };
 
+/*
 const WSLocal = {
 	address: "10.0.1.11",
 	port: 8080,
 };
+*/
 
 const WebSocketClient = device.network.ws.io;
 let counter = 0;
-const ws = new WebSocketClient({
+new WebSocketClient({
 	...device.network.ws,
 	...WSPublic,
 	onReadable(count, options) {
@@ -37,7 +39,7 @@ const ws = new WebSocketClient({
 				trace("\n");
 //		});
 	},
-	onWritable(count) {
+	onWritable(/* count */) {
 		if (0 === counter) {
 			this.write(ArrayBuffer.fromString("pong"), {opcode: WebSocketClient.pong});
 			this.write(ArrayBuffer.fromString("ping!"), {opcode: WebSocketClient.ping});
@@ -57,7 +59,7 @@ const ws = new WebSocketClient({
 	},
 	onControl(opcode, data) {
 		switch (opcode) {
-			case WebSocketClient.close: 
+			case WebSocketClient.close:  {
 				trace("** Connection Closing **\n");
 				data = new Uint8Array(data);
 				const code = (data[0] << 8) | data[1];
@@ -66,7 +68,7 @@ const ws = new WebSocketClient({
 
 				Timer.clear(this.timer);
 				delete this.timer;
-				break;
+				} break;
 
 			case WebSocketClient.ping:
 				trace("PING!\n");

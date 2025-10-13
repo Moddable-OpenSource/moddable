@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -33,7 +33,6 @@ const WHITE = "#FFFFFF";
 const BLACK = "#000000";
 const CYAN = "#00FFFF";
 const GREEN = "#00FF00";
-const BLUE = "#0000FF";
 
 const blackSkin = new Skin({ fill:BLACK });
 const iconTexture = new Texture("icons-alpha.png");
@@ -83,7 +82,7 @@ let MainCol = Column.template($ => ({
 		onFinished(column) {
 	  		column.stop();
 		}
-		onTransitionOut(label) {
+		onTransitionOut(/* label */) {
 		  application.defer("onAddNextScreen");
 		}
 	}
@@ -95,7 +94,7 @@ const WeatherApp = Application.template($ => ({
 			left: 15, right: 15, top: 60, 
 			skin: blackSkin, style: OpenSans20White, string: "Loading...",
 			Behavior: class extends Behavior {
-				onTransitionOut(label) {
+				onTransitionOut(/* label */) {
 					application.defer("onAddNextScreen");
 				}
 			}
@@ -159,10 +158,10 @@ const WeatherApp = Application.template($ => ({
 							toDraw = TORNADO;
 							break;
 					}
-					this.data.city = value.name,
-					this.data.temp = value.main.temp + " F",
-					this.data.condition = titleCase(value.weather[0].description),
-					this.data.icon = toDraw
+					this.data.city = value.name;
+					this.data.temp = value.main.temp + " F";
+					this.data.condition = titleCase(value.weather[0].description);
+					this.data.icon = toDraw;
 					application.first.delegate("onTransitionOut");
 				}
 				else if (Request.error == message) {

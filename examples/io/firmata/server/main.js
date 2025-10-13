@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,7 +12,7 @@
  *
  */
 
-import {FirmataSerial, FirmataTCPClient, FirmataTCPServer} from "firmataserver";
+import {FirmataSerial /* , FirmataTCPClient, FirmataTCPServer */} from "firmataserver";
 import Poco from "commodetto/Poco";
 
 export default function() {

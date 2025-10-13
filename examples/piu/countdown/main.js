@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -18,7 +18,7 @@ import Preference from "preference";
 const digitsTexture = new Texture("digits.png");
 
 class PortBehavior extends Behavior {
-	onCreate(port, delta) {
+	onCreate(/* port, delta */) {
 		let string = Preference.get("config", "date") 
 		if (!string) {
 			const date = new Date();
@@ -34,7 +34,7 @@ class PortBehavior extends Behavior {
 		port.interval = 50;
 		port.start();
 	}
-	onDraw(port, x, y, w, h) {
+	onDraw(port /*, x, y, w, h */) {
 		let time = (this.date.valueOf() - Date.now()) / 1000;
 		if (time < 0) time = 0;
 		let seconds = Math.floor(time % 60);

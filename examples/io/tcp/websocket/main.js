@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,7 +17,7 @@ import data from "data";
 
 const ws = new WebSocket("ws://websockets.chilkat.io/wsChilkatEcho.ashx");
 ws.binaryType = "arraybuffer";
-ws.addEventListener("open", event => {
+ws.addEventListener("open", () => {
 	ws.send("Hello");
 	ws.send(data);
 	ws.send("Goodbye");

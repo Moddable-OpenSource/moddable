@@ -157,7 +157,8 @@ function alpha() {
 }
 
 function jpeg() {
-	if (0) {
+	const loadFullImage = false;
+	if (loadFullImage) {
 		/* requires more memory than many MCUs have free */
 		let piano = loadJPEG(new Resource("piano.jpg"));
 		trace(`width ${piano.width}, height ${piano.height}\n`);

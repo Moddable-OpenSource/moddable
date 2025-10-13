@@ -14,11 +14,11 @@
 
 import {GAPClient, GATTClient} from "embedded:io/bluetoothle/central"
 
-const scan = new GAPClient({
+new GAPClient({
 	services: [
 		"180d"		// heart-rate monitor
 	],
-	onReadable(count) {
+	onReadable(/* count */) {
 		const advertisement = this.read();
 		this.close();
 

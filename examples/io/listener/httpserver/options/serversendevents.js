@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -36,7 +36,7 @@ export default {
 		response.headers.set("transfer-encoding", "chunked");
 		this.respond(response);
 	},
-	onWritable(count) {
+	onWritable(/* count */) {
 		if (this.valid) {
 			delete this.valid;
 			Object.defineProperty(this, "write", {value: sseWrite});

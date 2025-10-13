@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -22,7 +22,7 @@ const expander = new Expander({
 	}
 });
 
-const input = new expander.Digital({
+new expander.Digital({
 	pin: 0,
 	mode: expander.DigitalBank.InputPullUp,
 	edge: expander.Digital.Rising | expander.Digital.Falling,
