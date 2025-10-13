@@ -857,15 +857,13 @@ modTime_t modMkTime(struct modTm *tm)
 
 void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 {
-	modTime_t theTime;
-	uint32_t ms;
+	struct timespec ts;
 
-	ms = modMilliseconds();
-	theTime = (ms / 1000) + gTimeOfDayOffset;
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 
 	if (tv) {
-		tv->tv_sec = theTime;
-		tv->tv_usec = (ms % 1000) * 1000;
+		tv->tv_sec = ts.tv_sec;
+		tv->tv_usec = ts.tv_nsec / 1000;
 	}
 	if (tz) {
 //		tz->tz_minuteswest = gTimeZoneOffset;
@@ -873,12 +871,13 @@ void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz)
 	}
 }
 
+#include <zephyr/sys/clock.h>
+
 void modSetTime(uint32_t seconds)
 {
-	uint32_t ms;
-	ms = modMilliseconds();
-
-	gTimeOfDayOffset = seconds - (ms / 1000);
+	//@@ untested?
+	struct timespec ts = { .tv_sec = seconds };
+	sys_clock_settime(SYS_CLOCK_REALTIME, &ts);
 }
 
 void modSetTimeZone(int32_t timeZoneOffset)

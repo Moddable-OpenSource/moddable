@@ -22,9 +22,15 @@
 #include "xsmc.h"
 #include "xsHost.h"
 
+#include <zephyr/sys/clock.h>
+
 void xs_time_set(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	struct timespec ts = { .tv_sec = xsmcToInteger(xsArg(0)) };
+	sys_clock_settime(SYS_CLOCK_REALTIME, &ts);
+
+	ts.tv_sec = 0;
+	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 }
 
 void xs_time_timezone_get(xsMachine *the)

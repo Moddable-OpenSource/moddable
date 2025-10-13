@@ -1369,20 +1369,9 @@ txNumber fxDateMerge(txDateTime* dt, txBoolean utc)
 	return fxDateClip(value);
 }
 
-#if _ZEPHYR			//@@
-struct timeval {
-	time_t tv_sec;
-	suseconds_t tv_usec;
-};
-#endif
-
 txNumber fxDateNow()
 {
-#if _ZEPHYR			//@@
-	struct timeval tv;
-#else
 	c_timeval tv;
-#endif
 	c_gettimeofday(&tv, NULL);
 	return fxDateClip(((txNumber)(tv.tv_sec) * 1000.0) + ((txNumber)(tv.tv_usec / 1000)));
 }

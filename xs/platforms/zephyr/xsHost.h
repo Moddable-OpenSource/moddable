@@ -275,13 +275,13 @@ extern void my_free(void *ptr);
 /* DATE */
 
 #define c_tm struct tm
-#define c_timeval struct timeval
+#define c_timeval modTimeVal
 #define c_time_t time_t
 #define c_timezone timezone
 
 extern int gettimeofday(void *tv, void *unusedTZ);
 
-#define c_gettimeofday gettimeofday
+#define c_gettimeofday modGetTimeOfDay
 #define c_gmtime gmtime
 #define c_localtime localtime
 #define c_mktime mktime
