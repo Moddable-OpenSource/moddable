@@ -3,7 +3,8 @@
 		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
 	},
 	"include": [
-		"$(MODULES)/io/manifest.json"
+		"$(MODULES)/io/manifest.json",
+		"$(MODDABLE)/build/devices/zephyr/modules/rtc/manifest.json"
 	],
 	"modules": {
 		"*": [
