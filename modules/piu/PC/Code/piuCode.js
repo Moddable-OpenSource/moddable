@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,34 +25,34 @@ import {
 
 var code = {
 	__proto__: Content.prototype,
-	_create($, it) @ "PiuCode_create",
+	_create($, it) { return native("PiuCode_create").call(this, $, it); },
 
-	get columnCount() @ "PiuCode_get_columnCount",
-	get columnWidth() @ "PiuCode_get_columnWidth",
-	get length() @ "PiuCode_get_length",
-	get lineCount() @ "PiuCode_get_lineCount",
-	get lineHeight() @ "PiuCode_get_lineHeight",
-	get resultCount() @ "PiuCode_get_resultCount",
-	get selectionBounds() @ "PiuCode_get_selectionBounds",
-	get selectionOffset() @ "PiuCode_get_selectionOffset",
-	get selectionLength() @ "PiuCode_get_selectionLength",
-	get selectionString() @ "PiuCode_get_selectionString",
-	get string() @ "PiuCode_get_string",
-	get type() @ "PiuCode_get_type",
+	get columnCount() { return native("PiuCode_get_columnCount").call(this); },
+	get columnWidth() { return native("PiuCode_get_columnWidth").call(this); },
+	get length() { return native("PiuCode_get_length").call(this); },
+	get lineCount() { return native("PiuCode_get_lineCount").call(this); },
+	get lineHeight() { return native("PiuCode_get_lineHeight").call(this); },
+	get resultCount() { return native("PiuCode_get_resultCount").call(this); },
+	get selectionBounds() { return native("PiuCode_get_selectionBounds").call(this); },
+	get selectionOffset() { return native("PiuCode_get_selectionOffset").call(this); },
+	get selectionLength() { return native("PiuCode_get_selectionLength").call(this); },
+	get selectionString() { return native("PiuCode_get_selectionString").call(this); },
+	get string() { return native("PiuCode_get_string").call(this); },
+	get type() { return native("PiuCode_get_type").call(this); },
 	
-	set string(it) @ "PiuCode_set_string",
-	set type(it) @ "PiuCode_set_type",
+	set string(it) { native("PiuCode_set_string").call(this, it); },
+	set type(it) { native("PiuCode_set_type").call(this, it); },
 
-	colorize(colors) @ "PiuCode_colorize",
-	find(pattern, mode) @ "PiuCode_find",
-	findAgain(direction) @ "PiuCode_findAgain",
-	findBlock(offset) @ "PiuCode_findBlock",
-	findLineBreak(offset, forward) @ "PiuCode_findLineBreak",
-	findWordBreak(offset, forward) @ "PiuCode_findWordBreak",
-	hitOffset(x, y) @ "PiuCode_hitOffset",
-	isSpace(offset) @ "PiuCode_isSpace",
-	locate(offset) @ "PiuCode_locate",
-	select(offset, length) @ "PiuCode_select",
+	colorize(colors) { return native("PiuCode_colorize").call(this, colors); },
+	find(pattern, mode) { return native("PiuCode_find").call(this, pattern, mode); },
+	findAgain(direction) { return native("PiuCode_findAgain").call(this, direction); },
+	findBlock(offset) { return native("PiuCode_findBlock").call(this, offset); },
+	findLineBreak(offset, forward) { return native("PiuCode_findLineBreak").call(this, offset, forward); },
+	findWordBreak(offset, forward) { return native("PiuCode_findWordBreak").call(this, offset, forward); },
+	hitOffset(x, y) { return native("PiuCode_hitOffset").call(this, x, y); },
+	isSpace(offset) { return native("PiuCode_isSpace").call(this, offset); },
+	locate(offset) { return native("PiuCode_locate").call(this, offset); },
+	select(offset, length) { return native("PiuCode_select").call(this, offset, length); },
 };
 export var Code = Template(code);
 
