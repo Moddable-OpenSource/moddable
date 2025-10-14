@@ -42,7 +42,7 @@ void xs_rtc_destructor(void *data)
 	if (!xr) return;
 
 	rtc_alarm_set_callback(xr->device, 0, NULL, NULL);
-	free(data);
+	c_free(data);
 }
 
 static void xs_rtc_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
