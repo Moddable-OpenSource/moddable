@@ -188,7 +188,7 @@ void xs_serial_destructor(void *data)
 	/* Don't free - useCount manages memory */
 }
 
-void xs_serial_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
+static void xs_serial_mark(xsMachine* the, void *it, xsMarkRoot markRoot)
 {
 	modSerial serial = (modSerial)it;
 
@@ -226,6 +226,8 @@ void xs_serial_constructor(xsMachine *the)
 	baud = xsmcToInteger(xsVar(0));
 	if ((baud <= 0) || (baud > 20000000))
 		xsRangeError("invalid baud");
+
+	builtinInitializeTarget(the);
 
 	format = builtinInitializeFormat(the, kIOFormatBuffer);
 	if ((kIOFormatBuffer != format) && (kIOFormatNumber != format))
