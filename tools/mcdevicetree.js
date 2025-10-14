@@ -135,6 +135,20 @@ device.Serial = {};
 `
 		});
 
+		let rtcs = doBus(state, parsed, {
+			prefix: "rtc@",
+			name: "RTC",
+			header: "#include <zephyr/drivers/rtc.h>",
+      js: false,
+		});
+
+    if (rtcs?.length) {
+      state.jsCode += `
+import RTC from "embedded:RTC/zephyr-builtin";
+device.rtc = {io: RTC, port: "${rtcs[0].label}"};
+`;
+    }
+
 /*
 doBus(state, parsed, {
 			prefix: "spi@",
@@ -508,9 +522,12 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 }
 `;
 
-	state.jsCode += "\n" + options.static;
+  if (false === options.js)
+      return nodes;
 
-	nodes.forEach(node => {
+  state.jsCode += "\n" + options.static;
+
+  nodes.forEach(node => {
 		let additional = "";
 		if ("serial@" === options.prefix) {
 			const baud = node.properties["current-speed"]?.value?.value?.[0];
@@ -524,6 +541,8 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 
 	// use first one as default - just a guess. always correct when there is just one bus. is there a "chosen" for this??
 	state.jsCode += `device.${options.name}.default = device.${options.name}.${nodes[0].label};\n`;
+
+  return nodes;
 }
 
 /**
