@@ -14,9 +14,9 @@
 
 import Timer from "timer";
 
-const mdns = new (device.network.mdns.io)(device.network.mdns);
+const dnssd = new (device.network.dnssd.io)(device.network.dnssd);
 
-mdns.claim({
+dnssd.claim({
 	host: "a-server",
 	onReady() {
 		trace(`a-server claimed\n`);
@@ -26,7 +26,7 @@ mdns.claim({
 	}
 });
 
-const ad = mdns.advertise({
+const ad = dnssd.advertise({
 	serviceType: "_http._tcp",
 	instanceName: "419 Web Server",
 	host: "a-server",
@@ -47,7 +47,7 @@ Timer.repeat(() => {
 	]));
 }, 1000)
 
-mdns.discover({
+dnssd.discover({
 	serviceType: "_airplay._tcp",
 	onFound(service) {
 		trace(`Found: "${service.name}" on ${service.host} @ ${service.address}:${service.port}\n`);
