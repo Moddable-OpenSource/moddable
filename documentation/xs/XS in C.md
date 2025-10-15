@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: October 2, 2025
+Revised: October 15, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -62,7 +62,7 @@ XS in C provides macros to access properties of objects. XS provides two functio
 	* [Exceptions](#exceptions)
 	* [Errors](#errors)
 	* [Debugger](#debugger)
-* [Machine](#machine): Introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with an example that demonstrates how to use XS in C to implement a JavaScript class with C functions.
+* [Machine](#machine): Introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with examples that demonstrates how to use XS in C to implement a JavaScript class with C functions.
 	* [Machine Allocation](#machine-allocation)
 	* [Context](#context)
 	* [Host](#host)
@@ -2139,7 +2139,7 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 
 This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
-A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
+A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) or [XS `Native` API](#native) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
 
 Host data is a pointer stored by XS in a host object. The pointer and data it points to are managed entirely by the host object's C code. XS stores the pointer but does not access it in any way. Host data is usually allocated with `malloc`/`calloc`, but this isn't required. Host data is disposed by the host object's destructor.
 
@@ -2357,7 +2357,7 @@ Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHos
 <a id="file-example"></a>
 ##### Example
 
-This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) to declare classes because it is simpler.
+This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) or [`Native` API](#native) to declare classes because it is simpler.
 
 This code uses the `File` class from JavaScript to open and close a file:
 
@@ -2459,6 +2459,8 @@ static void xs_file_get_isOpen(xsMachine *the)
 ### JavaScript `@` language syntax extension
 
 XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by **xsc**, the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
+
+> **Note**: The `@` language syntax extension is intentionally incompatible with standard JavaScript. The XS [`Native` API](#native) uses standard JavaScript syntax to provide equivalent functionality.
 
 <a id="rectangle-example"></a>
 
@@ -2584,18 +2586,18 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 
 <a id="native"></a>
 
-## Native
+### Native
 
-The `@` syntax extension is intentionnaly incompatible with JavaScript and only recognized by **xsc**.
+The `Native` API is an alternative to the [`@` language syntax extension](#syntax-extension). `@` is intentionally incompatible with JavaScript and only recognized by **xsc**. 
 
-For the sake of third party tools and language models, **xsc** also recognizes a syntax that is compatible with JavaScript but that **xsc** can still compile into the same byte codes.
+The `Native` API is provides compatibility with third party tools and language models, allowing many tools popular with JavaScript developers to be used with XS. **xsc** compiles the `Native` API into the same byte codes as the `@` syntax. There is no efficiency benefit to using either approach.
 
-Let us imagine two global functions:
+The `Native` API is based on two global functions:
 
-- `native(name)` takes the name of a host callback and returns a JavaScript function.
-- `Native(name)` takes the name of a host destructor and returns a JavaScript constructor.
+- `native(name)` takes the name of a host callback and returns a JavaScript function
+- `Native(name)` takes the name of a host destructor and returns a JavaScript constructor
 
-We can then rewrite the module here above:
+We can then rewrite the `Rectangle` module above:
 
 ```javascript
 class Rectangle extends Native("xs_rectangle_destructor") {
@@ -2621,23 +2623,24 @@ class Rectangle extends Native("xs_rectangle_destructor") {
 }
 export default Rectangle;
 ```
-That is more verbose but expressive enough:
+
+The `Native` API is more verbose but expressive enough:
 
 - The `Rectangle` class is a `Native` class. When `Rectangle` instances are garbage collected, XS calls the `xs_rectangle_destructor` native function.
 - The constructor calls `super` to create the host object then the `xs_rectangle` native function to allocate and initialize its host chunk.
 - The getters, setters and methods call native functions to access and to modify the host chunk.
 
-> Notice that **xsc** only recognize calls to `native` or `Native` with a single string literal argument. Other usages will throw syntax errors at compile, link or run time.
+> **Note**: **xsc** only recognize calls to `native` or `Native` with a single string literal argument. Other usages throw syntax errors at compile, link, or run time.
 
 ### Optimization
 
-Let us compare
+Let us compare using the `@` language syntax extension
 
 ```javascript
 function foo1(x) @ "foo1Callback"
 ```
 
-and
+and the `Native` API:
 
 ```javascript
 function foo2(x) {
@@ -2645,14 +2648,14 @@ function foo2(x) {
 }
 ```
 
-With the `@` syntax extension, the host callback replaces the JavaScript function. With `native`, both  would exist and more byte codes would be necessary for the JavaScript function to call the host callback.
+With the `@` syntax extension, the host callback replaces the JavaScript function. Interpreting `native` literally, both a JavaScript function and a host callback are necessary, together with byte code for the JavaScript function to call the host callback.
 
-So **xsc** also recognizes patterns in order to optimize the byte codes. Here both `foo1` and `foo2` generate exactly the same byte codes.
+ **xsc** eliminates this overhead by recognizing patterns in order to optimize the byte codes. Here both `foo1` and `foo2` generate exactly the same byte codes.
 
-The patterns are practical:
+The patterns are pragmatic:
 
 - The body of the function must only contain the call to the function returned by `native`. The return statement is optional.
-- The parameters of the function must not be initialized and must match the arguments of the call. The rest and spread operators are allowed but optional.
+- The parameters of the function must not be initialized with [default parameters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters) and must match the arguments of the call. The [rest](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) and [spread](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax) operators are allowed but optional.
 
 ```javascript
 function foo(...args) {
@@ -2662,9 +2665,7 @@ function foo(...args) {
 
 ### Opportunity
 
-With the `@` syntax extension, the parameters exist only for the sake of documentation. It is the responsibility of the host callback to check the presence of arguments and to initialize them to default values.
-
-To take advantage of JavaScript parameter initialization, we had to use an auxiliary function.
+With the `@` language syntax extension, the function's parameters exist only as documentation. The host callback is responsible for checking the presence of arguments and to initialize them to default values. Using JavaScript default parameters required an auxiliary function.
 
 ```javascript
 function foo(x = 0, y = x) {
@@ -2673,7 +2674,7 @@ function foo(x = 0, y = x) {
 function fooAux(x, y) @ "fooCallback"
 ```
 	
-Now we can just use
+The `Native` API avoids the explicit auxiliary function:
 
 ```javascript
 function foo(x = 0, y = x) {
@@ -2685,7 +2686,7 @@ Since **xsc** does not optimize that, the generated byte code is similar to the 
 
 > Instead of an auxiliary function, **xsc** creates a closure in the module body in order to initialize the host function when the module is executed
 
-That works for parameter initialization, but also for any code we want to put around the host callback.
+That works for default parameters, but also for any code we want to put around the host callback.
 
 ***
 
