@@ -167,7 +167,7 @@ Resampler.prototype.initializeBuffers = function () {
 		this.outputBuffer = new Float32Array(outputBufferSize);
 		this.lastOutput = new Float32Array(this.channels);
 	}
-	catch (error) {
+	catch {
 		this.outputBuffer = [];
 		this.lastOutput = [];
 	}

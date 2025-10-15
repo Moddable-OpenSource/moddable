@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,7 +45,7 @@ export default class CombTransition extends Transition {
 		this.height = this.die.height;
 		this.step = (this.direction) ? Math.ceil(this.width / this.count) : Math.ceil(this.height / this.count);
 	}
-	onEnd(container, former, current) {
+	onEnd(container, former /*, current */) {
 		this.die.detach();
 		container.remove(former);
 	}
