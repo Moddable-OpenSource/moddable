@@ -668,6 +668,28 @@ if (xsIsInstanceOf(xsThis, xsObjectPrototype))
 
 ***
 
+**`xsSlot xsReference(xsSlot *value)`**<BR>
+
+| Arguments | Description |
+| --- | :-- |
+| `value ` | A pointer to a reference
+
+Returns a reference slot that for the `value` slot pointer. 
+
+***
+
+**`xsSlot *xsToReference(xsSlot value)`**<BR>
+**`xsSlot *xsmcToReference(xsSlot *value)`**<BR>
+
+| Arguments | Description |
+| --- | :-- |
+| `value ` | A pointer to a reference
+
+Returns the slot pointed to by the `value` slot. The `value` slot must be a reference slot.
+
+***
+
+
 <a id="identifiers"></a>
 ### Keys, Identifiers and Indexes
 
@@ -2718,7 +2740,6 @@ That works for default parameters, but also for any code we want to put around t
 <!-- TBD:
 	- Document xsCall*_noResult, xsmcCall_noResult
 	- Document xsNewHostConstructorObject, xsNewHostFunctionObject
-	- Document: xsReference
 -->
 
 <a id="license"></a>
