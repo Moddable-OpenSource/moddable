@@ -208,10 +208,13 @@ export default class extends TOOL {
 /**/				subclass = "esp32";
 /**/			this.environment.ESP32_SUBCLASS = subclass;
 		}
-		else if ("mac" == this.platform || "win" == this.platform || "lin" == this.platform)
-			path += "sim";
-		else
-			path += this.platform;
+		else {
+			if (this.resolveDirectoryPath(this.platform + path))
+				path += this.platform;
+			else
+				path += "sim";
+
+		}
 		this.environment.BLEMODULEPATH = path;
 
 		let userHome;
