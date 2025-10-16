@@ -20,7 +20,7 @@
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"embedded:*",
+		"embedded:io/*",
 		"system"
 	],
 	"platforms": {

@@ -95,6 +95,7 @@ export default class extends TOOL {
 `#include "./mc.devicetree.h"
 #include <zephyr/device.h>
 #include "xsHost.h"
+#include "mc.defines.h"
 
 `;
 
@@ -162,6 +163,8 @@ device.SPI = {};
 `
 		});
 */
+
+    doFileSystems(state, parsed);
 
 		state.hCode +=
 `
@@ -544,6 +547,85 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 
   return nodes;
 }
+
+function doFileSystems(state, dts) {
+	const root = dts.nodes['/'];
+	const fstab = root.children.fstab;
+  if (!fstab)
+      return;
+ 
+  const nodes = []
+  for (const name in fstab.children)
+    nodes.push(fstab.children[name]);
+
+	state.hCode += `
+#define kModZephyrFSCount (${nodes.length})
+`;
+
+	if (0 === nodes.length)
+		return;
+
+	state.hCode += `
+#include <zephyr/fs/fs.h>
+
+struct modZephyrFS {
+	const char *label;
+	struct fs_mount_t *mountpoint;
+	uint8_t fsIndex;
+};
+
+extern const struct modZephyrFS *modZephyrGetFS(const char *label);
+
+`;
+
+  state.hCode += `
+#ifndef MODDEF_ZEPHYR_FILESYSTEM_DEFAULT
+	#define MODDEF_ZEPHYR_FILESYSTEM_DEFAULT "${nodes[0].label}"
+#endif
+`;
+
+  nodes.forEach(node => {
+    state.cCode += `
+FS_FSTAB_DECLARE_ENTRY(DT_NODELABEL(${node.label}));
+`;
+  });
+
+	state.cCode +=`
+static const struct modZephyrFS gFS[] = {
+`;
+
+	nodes.forEach((node, index) => {
+		state.cCode += `	{
+		.label = "${node.label}",
+		.mountpoint = &FS_FSTAB_ENTRY(DT_NODELABEL(${node.label})),
+		.fsIndex = ${index}
+	},
+`;
+	});
+
+	state.cCode += `};
+
+const struct modZephyrFS *modZephyrGetFS(const char *label)
+{
+	for (int i = 0; i < ARRAY_SIZE(gFS); i++) {
+		if (0 == c_strcmp(gFS[i].label, label))
+			return &gFS[i];
+	}
+
+	return C_NULL;
+}
+`;
+
+  state.jsCode += `
+import Modules from "modules";
+Object.defineProperty(device, "files", {
+	get() {
+		return Modules.importNow("embedded:storage/files");
+	}
+});
+`;
+}
+
 
 /**
  * Device Tree Source (.dts) Parser

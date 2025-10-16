@@ -4,7 +4,9 @@
 	},
 	"include": [
 		"$(MODULES)/io/manifest.json",
-		"$(MODDABLE)/build/devices/zephyr/modules/rtc/manifest.json"
+		"$(MODDABLE)/build/devices/zephyr/modules/rtc/manifest.json",
+		"$(MODDABLE)/modules/io/files/manifest.json",
+		"$(MODDABLE)/modules/base/modules/manifest.json"
 	],
 	"modules": {
 		"*": [
