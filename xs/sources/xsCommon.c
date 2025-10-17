@@ -547,7 +547,7 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 
 #if mxUseDefaultCStackLimit
 
-#ifdef __ets__
+#if defined(__ets__) && !defined(_ZEPHYR)
 	#if ESP32
 		#include "freertos/task.h"
 	#else
@@ -613,10 +613,10 @@ char* fxCStackLimit()
 		}
 		pthread_attr_destroy(&attrs);
 		return result;
-	#elif defined(__ets__) && !ESP32
+	#elif defined(__ets__) && !ESP32 && !defined(_ZEPHYR)
 		extern cont_t g_cont;
 		return 192 + (char *)g_cont.stack;
-	#elif defined(__ets__) && ESP32
+	#elif defined(__ets__) && ESP32 && !defined(_ZEPHYR)
 		TaskStatus_t info;
 		vTaskGetInfo(NULL, &info, pdFALSE, eReady);
 		return 512 + (char *)info.pxStackBase;

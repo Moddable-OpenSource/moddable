@@ -41,7 +41,7 @@
 				xsUnknownError("no network"); \
 			}
 	#endif
-#elif defined(__ets__)
+#elif defined(__ets__) && !defined(_ZEPHYR)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
 	#define kPinBanks (1)

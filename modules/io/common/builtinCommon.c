@@ -36,7 +36,7 @@
 		SOC_GPIO_VALID_GPIO_MASK >> 32
 #endif
 	};
-#elif defined(__ets__)
+#elif defined(__ets__) && !defined(_ZEPHYR)
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		(1 <<  0) |
 		(1 <<  1) |
