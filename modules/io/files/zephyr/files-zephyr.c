@@ -26,6 +26,8 @@
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
 
+#if kModZephyrFSCount
+
 /*
 	helpers
 */
@@ -237,24 +239,9 @@ void xs_directoryzephyr(xsMachine *the)
 
 void xs_directoryzephyr_bootstrap(xsMachine *the)
 {
-#if 0
-	xsLog("bootstrap begin\n");
-	unsigned int id = (uintptr_t)mountpoint->storage_dev;
-	const struct flash_area *pfa;
-	int rc = flash_area_open(id, &pfa);
-	xsLog("flash_area_open %d\n", rc);
-	xsLog("flash area size %d\n", (int)pfa->fa_size);
-
-	rc = flash_area_flatten(pfa, 0, pfa->fa_size);
-	xsLog("flash_area_flatten %d\n", rc);
-	flash_area_close(pfa);
-#endif
-
 	const struct modZephyrFS *fs = modZephyrGetFS(MODDEF_ZEPHYR_FILESYSTEM_DEFAULT);
 
-	xsLog("fs_mount begin\n");
-	int result = fs_mount(fs->mountpoint);
-	xsLog("fs_mount returned %d\n", result);
+	throwIf(fs_mount(fs->mountpoint));
 
 	const char *path = fs->mountpoint->mnt_point;
 	if (xsmcTest(xsArg(1)))
@@ -505,3 +492,30 @@ void xs_stat_isDirectory(xsMachine *the)
 	xsmcGet(xsResult, xsThis, xsID_mode);
 	xsmcSetBoolean(xsResult, FS_DIR_ENTRY_DIR == xsmcToInteger(xsResult));
 }
+
+#else
+void xs_directoryzephyr_bootstrap(xsMachine *) {}
+void xs_stat_isFile(xsMachine *) {}
+void xs_stat_isDirectory(xsMachine *) {}
+void xs_filezephyr_destructor(void *) {}
+void xs_filezephyr(xsMachine *) {}
+void xs_filezephyr_close(xsMachine *) {}
+void xs_filezephyr_read(xsMachine *) {}
+void xs_filezephyr_write(xsMachine *) {}
+void xs_filezephyr_status(xsMachine *) {}
+void xs_filezephyr_setSize(xsMachine *) {}
+void xs_filezephyr_flush(xsMachine *) {}
+void xs_directory_iterator_zephyr_destructor(void *) {}
+void xs_directory_iterator_zephyr(xsMachine *) {}
+void xs_directory_iterator_zephyr_next(xsMachine *) {}
+void xs_directory_iterator_zephyr_return(xsMachine *) {}
+void xs_directoryzephyr_openFile(xsMachine *) {}
+void xs_directoryzephyr_openDirectory(xsMachine *) {}
+void xs_directoryzephyr_status(xsMachine *) {}
+void xs_directoryzephyr_destructor(void *) {}
+void xs_directoryzephyr(xsMachine *) {}
+void xs_directoryzephyr_close(xsMachine *) {}
+void xs_directoryzephyr_delete(xsMachine *) {}
+void xs_directoryzephyr_move(xsMachine *) {}
+void xs_directoryzephyr_createDirectory(xsMachine *) {}
+#endif

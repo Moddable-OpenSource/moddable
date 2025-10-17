@@ -551,11 +551,8 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 function doFileSystems(state, dts) {
 	const root = dts.nodes['/'];
 	const fstab = root.children.fstab;
-  if (!fstab)
-      return;
- 
   const nodes = []
-  for (const name in fstab.children)
+  for (const name in fstab?.children)
     nodes.push(fstab.children[name]);
 
 	state.hCode += `
