@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: July 2, 2025
+Revised: October 2, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -798,6 +798,10 @@ This section describes the macros related to accessing properties of objects (or
       <td>Calls the function referred to by a property of an instance</td>
     </tr>
     <tr>
+      <td><code>xsCallFunction0</code> ... <code> xsCallFunction8</code></td>
+      <td>Calls the function with the provided instance as <code>this</code></td>
+    </tr>
+    <tr>
       <td><code>xsNew0</code> ... <code>xsNew7, xsmcNew</code></td>
       <td>Calls the constructor referred to by a property of an instance</td>
     </tr>
@@ -1344,7 +1348,7 @@ this[0](2, 3)
 
 ##### In C:
 
-```
+```c
 xsCall0(xsGlobal, xsID_foo);
 xsCall1(xsThis, xsID("foo"), xsInteger(1));
 xsCall2(xsThis, 0, xsInteger(2), xsInteger(3));
@@ -1381,6 +1385,43 @@ xsmcSetInteger(xsVar(2), 3);
 xsmcCall(xsResult, xsGlobal, xsID("foo"), &xsVar(0), NULL);
 xsmcCall(xsResult, xsThis, xsID_foo, &xsVar(0), NULL);
 xsmcCall(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
+```
+
+***
+
+#### xsCallFunction*
+
+When you have a reference to a function, you can call the function with one of the `xsCallFunction*` macros (where `*` is `0` through `7`, representing the number of parameter slots passed). If the value is not a reference to a function, the `xsCall*` macro throws an exception.
+
+**`xsSlot xsCallFunction0(xsSlot theFunction, xsSlot theThis)`**<BR>
+**`xsSlot xsCallFunction1(xsSlot theFunction, xsSlot theThis, xsSlot theParam0)`**<BR>
+**`xsSlot xsCallFunction2(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1)`**<BR>
+**`xsSlot xsCallFunction3(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)`**<BR>
+**`xsSlot xsCallFunction4(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)`**<BR>
+**`xsSlot xsCallFunction5(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)`**<BR>
+**`xsSlot xsCallFunction6(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)`**<BR>
+**`xsSlot xsCallFunction7(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theFunction` | A reference to a function instance
+| `theThis` | A reference to the instance that will be `this` when the function is called
+| `theParam0` ... `theParam6` | The parameter slots to pass to the function
+
+Returns the result slot of the function
+
+##### In ECMAScript:
+
+```javascript
+foo.call()
+foo.call(device, 12);
+```
+
+##### In C:
+
+```c
+xsCallFunction0(xsGet(xsGlobal, xsID_foo), xsGlobal);
+xsCallFunction1(xsThis, xsID("foo"), xsGet(xsGlobal, xsID("device"), xsInteger(12));
 ```
 
 ***
@@ -1841,7 +1882,7 @@ XS in C defines the following macros to throw specific exceptions.
 
 ##### In C:
 
-```
+```c
 xpt2046 xpt = calloc(1, sizeof(xpt2046Record));
 if (!xpt) xsUnknownError("out of memory");
 

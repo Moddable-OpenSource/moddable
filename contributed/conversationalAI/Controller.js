@@ -136,7 +136,7 @@ class Controller extends Behavior {
 				const service = assets.services[option.service];
 				const voiceName = option.voiceName;
 				const voice = service.voices.find(voice => voice.id == voiceName);
-				persona.voiceName = voice ? voiceName : sercice.defaultVoice;
+				persona.voiceName = voice ? voiceName : service.defaultVoice;
 			}
 		}
 	}

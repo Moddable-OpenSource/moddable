@@ -20,7 +20,7 @@
 
 import {GAPClient, GATTClient} from "embedded:io/bluetoothle/central"
 
-const scan = new GAPClient({
+new GAPClient({
 	services: [
 		"1809"		// temperature monitor
 	],
@@ -41,20 +41,21 @@ function instantiateTemperatureMonitor(address) {
 	new GATTClient({
 		address,
 		security: {		// "just works" security configuration
-			manInTheMiddle: false,	/* default – false */
+			authenticate: false,	/* default – false */
 			bond: false,			/* default – false */
 			display: false,			/* or true – default false */
 			keyboard: false,		/* or true or "yes/no" – default false */
+			lazy: true,				/* default – true */
 		},
 		onError() {
 			trace("connection error\n");
 		},
-		onPasskey(action, number) {
+		onPasskey(action, data) {
 			trace("** implement onPasskey as required by your security settings **\n");
-			this.replyToPasskey(action, number);
+			this.replyToPasskey(action, data);
 		},
 		onSecured(state) {
-			trace(`onSecured: encrypted ${state.encrypted}, authenticated ${state.authenticated}, bonded ${state.bonded}\n`);
+			trace(`onSecured: encrypted ${state.encrypted}, authenticated ${state.authenticated}, keySize ${state.keySize}, bonded ${state.bonded}\n`);
 
 			this.getPrimaryServices([ "1809"], (error, services) => {
 				this.getCharacteristics(services[0], ["2a1c"], (error, characteristics) => {

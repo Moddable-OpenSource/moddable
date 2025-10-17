@@ -158,6 +158,7 @@ struct BLEServerRecord {
 	uint8_t		advertising:1;
 	uint8_t		addressType;
 	uint8_t		secure;
+	uint8_t		lazy;
 	uint16_t	mtu;
 };
 typedef struct BLEServerRecord BLEServerRecord;
@@ -266,12 +267,15 @@ void xs_gattserver_build(xsMachine *the)
 	xsSlot *onPasskey = builtinGetCallback(the, xsID_onPasskey);
 	xsSlot *onSecured = builtinGetCallback(the, xsID_onSecured);
 
-	uint8_t secure = 0, manInTheMiddle = 0, bond = 0, display = 0, keyboard = 0;
+	uint8_t secure = 0, authenticate = 0, lazy = 0, bond = 0, display = 0, keyboard = 0;
 	if (xsmcHas(xsArg(0), xsID_security)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_security);
 
-		xsmcGet(xsVar(1), xsVar(0), xsID_manInTheMiddle);
-		manInTheMiddle = xsmcTest(xsVar(1));
+		xsmcGet(xsVar(1), xsVar(0), xsID_authenticate);
+		authenticate = xsmcTest(xsVar(1));
+
+		xsmcGet(xsVar(1), xsVar(0), xsID_lazy);
+		lazy = xsmcTest(xsVar(1));
 
 		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
 		bond = xsmcTest(xsVar(1));
@@ -291,8 +295,8 @@ void xs_gattserver_build(xsMachine *the)
 		else
 			keyboard = xsmcTest(xsVar(1));
 
-		if (manInTheMiddle && !(keyboard || display))
-			xsUnknownError("manInTheMiddle requires keyboard and/or display");
+		if (authenticate && !(keyboard || display))
+			xsUnknownError("authenticate requires keyboard and/or display");
 
 		secure = 1;
 	}
@@ -330,6 +334,7 @@ void xs_gattserver_build(xsMachine *the)
 	server->characteristicPrototype = xsmcToReference(xsArg(2));
 	server->mtu = (uint16_t)mtu;
 	server->secure = secure;
+	server->lazy = lazy;
 
 	gServer = server;
 
@@ -344,7 +349,7 @@ void xs_gattserver_build(xsMachine *the)
 		else
 			ble_hs_cfg.sm_io_cap = display ? BLE_HS_IO_DISPLAY_ONLY : BLE_HS_IO_NO_INPUT_OUTPUT;
 		ble_hs_cfg.sm_bonding = bond;
-		ble_hs_cfg.sm_mitm = manInTheMiddle;
+		ble_hs_cfg.sm_mitm = authenticate;
 	}
 
 	if (0 == gNimBLEInititalized++) {
@@ -851,13 +856,8 @@ static void deliverConnect(void *the, void *refcon, uint8_t *message, uint16_t m
 
 	ensureAdvertising(server);	// NimBLE disables advertising on connection. the client still wants it, so reenable. This will fail if all NimBLE GATT connections are used but it is the best we can do
 
-#if 0
-	//@@ doing this forces pairing on connection rather than waiting for
-	// client to access protected characteristic...
-	// ...maybe an option? "lazy pairing"?
-	if (server->secure)
+	if (server->secure && !server->lazy)
 		ble_gap_security_initiate(conn_handle);
-#endif
 }
 
 static void deliverDisconnect(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength)

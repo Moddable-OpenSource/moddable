@@ -22,6 +22,8 @@
 	<string>mcsi</string>
 	<key>CFBundleIconFile</key>
 	<string>main.icns</string>
+	<key>CFBundleIconName</key>
+	<string>main</string>
 	<key>CFBundleShortVersionString</key>
 	<string>mcsim 2.0</string>
 	<key>CFBundleGetInfoString</key>

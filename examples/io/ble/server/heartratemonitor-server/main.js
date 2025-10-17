@@ -17,7 +17,7 @@ import Timer from "timer";
 
 const deviceName = "419 HRM";
 
-let hrm = new GATTServer({
+new GATTServer({
 	mtu: 128,
 	services: [
 		// Generic Access Service
@@ -95,7 +95,7 @@ let hrm = new GATTServer({
 				}
 			]
 		},
-		// Heart Rate notification frequency – custom service and characteristic
+		// Heart Rate notification frequency – custom service and characteristic
 		{
 			uuid: "cfe6f7f2-16d2-4b7e-9253-a1d1c1577a35",
 			characteristics: [
@@ -131,7 +131,7 @@ let hrm = new GATTServer({
 		trace("disconnect!\n");
 		Timer.clear(connection.heartRateTimer);
 	},
-	onReady(connection) {
+	onReady() {
 		trace("hrm onReady\n");
 		this.startAdvertising({
 			flags: 6,
