@@ -167,6 +167,7 @@ void xs_rtc_alarm(xsMachine *the)
 
 #else /* !kModZephyrRTCBusCount - no RTC available on this board */
 
+void xs_rtc_destructor(void *data) {}
 void xs_rtc_constructor(xsMachine *the) {xsUnknownError("unavailable");}
 void xs_rtc_close(xsMachine *the) {}
 void xs_rtc_time_get(xsMachine *the) {}
