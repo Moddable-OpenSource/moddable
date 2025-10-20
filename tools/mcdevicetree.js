@@ -195,9 +195,11 @@ function doAliases(state, dts) {
 	if (!aliases?.properties)
 		return;
 
-	for (const alias in aliases.properties) {
+	for (let alias in aliases.properties) {
 		const target = aliases.properties[alias].value.value;
 		const targets = state.aliasTable.get(target);
+
+		alias = alias.replaceAll('-', '_');
 		if (targets)
 			targets.push(alias);
 		else

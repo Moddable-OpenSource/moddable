@@ -1444,7 +1444,7 @@ export default class extends Tool {
 
 					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build ${secondary}`;
 				}
-				trace(`*** command: ${command}\n`);
+//				trace(`*** command: ${command}\n`);
 				cmd = [ "bash", "-c", command ];
 			}
 			else {
