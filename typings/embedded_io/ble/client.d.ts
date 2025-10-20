@@ -37,7 +37,7 @@ declare module "embedded:io/bluetoothle/central" {
         authenticate?: boolean,
         keyboard?: boolean | "yes/no",
         display?: boolean,
-        lazy?: boolean
+        immediate?: boolean
     }
 
     interface GATTSecurityState {
