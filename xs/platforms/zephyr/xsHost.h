@@ -108,8 +108,10 @@ extern void ESP_putc(int c);
     timer
 */
 
-#define modMilliseconds() (k_cyc_to_ms_ceil32(sys_clock_cycle_get_32()))
-#define modMicroseconds() (k_cyc_to_us_ceil32(sys_clock_cycle_get_32()))
+// #define modMilliseconds() (k_cyc_to_ms_trunc32(k_cycle_get_64()))
+// #define modMicroseconds() (k_cyc_to_us_trunc32(k_cycle_get_64()))
+#define modMilliseconds() ((uint32_t)k_uptime_get())
+#define modMicroseconds() (modMilliseconds() * 1000)
 
 #define modDelayMilliseconds(ms) k_msleep(ms)
 #define modDelayMicroseconds(us) k_usleep(us)
