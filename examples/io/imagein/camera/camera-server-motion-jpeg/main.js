@@ -43,8 +43,7 @@ const camera = new Camera({
 		});
 	}
 });
-const width = camera.width;
-const height = camera.height;
+
 camera.start();
 
 const router = new Map;

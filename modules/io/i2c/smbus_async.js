@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,22 +20,22 @@
 
 import SMBus from "embedded:implementation/smbussync"
 
-SMBus.Async = class @ "_xs_smbusasync_destructor" {
-	constructor(options) @ "_xs_smbusasync_constructor"
-	close() @ "_xs_smbusasync_close"
-    readUint8(register) @ "_xs_smbusasync_readUint8"
-    readUint16(register, bigEndian) @ "_xs_smbusasync_readUint16"
-    readBuffer(register, buffer) @ "_xs_smbusasync_readBuffer" 
+SMBus.Async = class extends Native("_xs_smbusasync_destructor") {
+	constructor(options) { super(); native("_xs_smbusasync_constructor").call(this, options); }
+	close() { return native("_xs_smbusasync_close").call(this); }
+    readUint8(register) { return native("_xs_smbusasync_readUint8").call(this, register); }
+    readUint16(register, bigEndian) { return native("_xs_smbusasync_readUint16").call(this, register, bigEndian); }
+    readBuffer(register, buffer) { return native("_xs_smbusasync_readBuffer").call(this, register, buffer); } 
 
-    writeUint8(register, byte) @ "_xs_smbusasync_writeUint8" 
-    writeUint16(register, bigEndian) @ "_xs_smbusasync_writeUint16"
-    writeBuffer(register, buffer) @ "_xs_smbusasync_writeBuffer" 
+    writeUint8(register, byte) { return native("_xs_smbusasync_writeUint8").call(this, register, byte); } 
+    writeUint16(register, bigEndian) { return native("_xs_smbusasync_writeUint16").call(this, register, bigEndian); }
+    writeBuffer(register, buffer) { return native("_xs_smbusasync_writeBuffer").call(this, register, buffer); } 
 
-    sendByte(command) @ "_xs_smbusasync_sendByte"
-    receiveByte() @ "_xs_smbusasync_receiveByte"
+    sendByte(command) { return native("_xs_smbusasync_sendByte").call(this, command); }
+    receiveByte() { return native("_xs_smbusasync_receiveByte").call(this); }
 
-    readQuick() @ "_xs_smbusasync_readQuick"
-    writeQuick() @ "_xs_smbusasync_writeQuick"
+    readQuick() { return native("_xs_smbusasync_readQuick").call(this); }
+    writeQuick() { return native("_xs_smbusasync_writeQuick").call(this); }
 
 	get format() {
 		return "buffer";

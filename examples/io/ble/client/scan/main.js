@@ -20,7 +20,7 @@ const scan = new GAPClient({
 			const advertisement = this.read();
 			const name = advertisement.name;
 			const services = advertisement.services;
-			const {manufacturer, data} = advertisement.manufacturerData ?? {};
+			const {manufacturer /*, data */} = advertisement.manufacturerData ?? {};
 			
 			trace(`#${++this.advertisements}: ${advertisement.address}\n`);
 			if (name)

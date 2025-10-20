@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,7 +44,7 @@ export default function parseRLE(buffer) {
 
 */
 
-function parse() @ "xs_parseRLE";
+function parse() { return native("xs_parseRLE").call(this); }
 
 export default function (buffer) {
 	return parse(buffer, new Bitmap(1, 1, Bitmap.Default, buffer, 0));

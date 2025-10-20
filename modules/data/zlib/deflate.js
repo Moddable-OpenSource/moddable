@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,21 +19,20 @@
  */
  
 
-class Deflate @ "xs_deflate_destructor" {
+class Deflate extends Native("xs_deflate_destructor") {
 	err = 0;
 	chunks = [];
 
 	constructor(options = {}) {
-		build.call(this, options);
+		super();
+		native("xs_deflate").call(this, options);
 		this.onData = onData;
 		this.onEnd = onEnd;
 	}
-	close() @ "xs_deflate_close";
+	close() { return native("xs_deflate_close").call(this); }
 
-	push(buffer, end) @ "xs_deflate_push";
+	push(buffer, end) { return native("xs_deflate_push").call(this, buffer, end); }
 }
-
-function build(options) @ "xs_deflate";
 
 function onData(chunk) {
 	this.chunks.push(chunk);
@@ -52,8 +51,7 @@ function onEnd(err) {
 		total += chunks[i].byteLength;
 
 	this.result = new Uint8Array(total);
-	let offset = 0;
-	for (let i = 0, chunks = this.chunks, length = chunks.length; i < length; i++) {
+	for (let i = 0, offset = 0, chunks = this.chunks, length = chunks.length; i < length; i++) {
 		this.result.set(new Uint8Array(this.chunks[i]), offset);
 		offset += chunks[i].byteLength;
 	}

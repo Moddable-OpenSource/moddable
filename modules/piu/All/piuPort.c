@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -140,6 +140,7 @@ void PiuPort_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuPortHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuPortDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuPortRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuBehaviorOnCreate(self);

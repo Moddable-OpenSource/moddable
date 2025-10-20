@@ -453,7 +453,7 @@ typedef struct {
 	uint8_t			isClose;
 
 	uint8_t 		secure;
-	uint8_t			lazy;
+	uint8_t			immediate;
 
 	BLEGATTCharacteristicValue		values;
 	uint8_t							onReadableInFlight;
@@ -512,7 +512,7 @@ void xs_gattclient_constructor(xsMachine *the)
 {
 	ble_addr_t address;
 	int mtu = 0;
-	uint8_t secure = 0, authenticate = 0, bond = 0, display = 0, keyboard = 0, lazy = 0;
+	uint8_t secure = 0, authenticate = 0, bond = 0, display = 0, keyboard = 0, immediate = 0;
 
 	xsmcVars(2);
 
@@ -544,8 +544,8 @@ void xs_gattclient_constructor(xsMachine *the)
 		xsmcGet(xsVar(1), xsVar(0), xsID_authenticate);
 		authenticate = xsmcTest(xsVar(1));
 
-		xsmcGet(xsVar(1), xsVar(0), xsID_lazy);
-		lazy = xsmcTest(xsVar(1));
+		xsmcGet(xsVar(1), xsVar(0), xsID_immediate);
+		immediate = xsmcTest(xsVar(1));
 
 		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
 		bond = xsmcTest(xsVar(1));
@@ -585,7 +585,7 @@ void xs_gattclient_constructor(xsMachine *the)
 	gc->onPasskey = onPasskey;
 	gc->mtu = (uint16_t)mtu;
 	gc->secure = secure;
-	gc->lazy = lazy;
+	gc->immediate = immediate;
 
 	xsmcSetHostData(xsThis, gc);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsGATTClientHooks);
@@ -840,7 +840,7 @@ static int onGATTMCUExchanged(uint16_t conn_handle, const struct ble_gatt_error 
 
 	gattClientExecuted(gc, 0);
 
-	if (gc->secure && !gc->lazy)
+	if (gc->secure && gc->immediate)
 		ble_gap_security_initiate(conn_handle);
 
 	return 0;
@@ -865,7 +865,7 @@ int onGATTConnectionEvent(struct ble_gap_event *event, void *arg)
 				gc->mtu = ble_att_mtu(gc->conn_handle);
 				gattClientExecuted(gc, 0);
 
-				if (gc->secure && !gc->lazy)
+				if (gc->secure && gc->immediate)
 					ble_gap_security_initiate(gc->conn_handle);
 			}
 			break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,6 +29,7 @@ static void PiuContentStart(PiuContent* self);
 static void PiuContentStop(PiuContent* self);
 
 static PiuBoolean PiuContent_distributeAux(xsMachine *the, PiuContainer* container, xsIdentifier id, xsIntegerValue c);
+static void PiuContent_set_nameAux(PiuContent* self);
 
 const PiuDispatchRecord ICACHE_FLASH_ATTR PiuContentDispatchRecord = {
 	"Content",
@@ -88,6 +89,10 @@ void PiuContentDictionary(xsMachine* the, void* it)
 	xsIntegerValue integer;
 	xsNumberValue number;
 
+//@@ remove this
+if (0 == (*self)->recordSize)
+	xsUnknownError("size not initialized");
+
 	if (xsFindBoolean(xsArg(1), xsID_active, &boolean)) {
 		if (boolean)
 			(*self)->flags |= piuActive;
@@ -139,8 +144,8 @@ void PiuContentDictionary(xsMachine* the, void* it)
 		}
 	}
 	if (xsFindResult(xsArg(1), xsID_name)) {
-		xsSlot* name = PiuString(xsResult);
-		(*self)->name = name;
+		xsToString(xsResult);
+		PiuContent_set_nameAux(self);
 	}
 	
 	if (xsFindInteger(xsArg(1), xsID_left, &integer)) {
@@ -179,8 +184,6 @@ void PiuContentDictionary(xsMachine* the, void* it)
 	if (xsFindInteger(xsArg(1), xsID_interval, &integer))
 		PiuContentSetInterval(self, integer);
 #endif
-	else
-		(*self)->interval = 1;
 	if (xsFindBoolean(xsArg(1), xsID_loop, &boolean)) {
 		if (boolean)
 			(*self)->flags |= piuLoop;
@@ -326,10 +329,12 @@ void* PiuContentHit(void* it, PiuCoordinate x, PiuCoordinate y)
 void PiuContentIdle(void* it, PiuInterval interval)
 {
 	PiuContent* self = it;
-	PiuContentSetTime(self, (*self)->time + interval);
-	if ((*self)->duration && ((*self)->time == (*self)->duration)) {
+	PiuIdle selfIdle = PiuContentUseIdle(self);
+	PiuContentSetTime(self, selfIdle->time + interval);
+	selfIdle = PiuContentUseIdle(self);
+	if (selfIdle->duration && (selfIdle->time == selfIdle->duration)) {
 		if ((*self)->flags & piuLoop) {
-			(*self)->time = 0;
+			selfIdle->time = 0;
 		}
 		else {
 			PiuContentStop(self);
@@ -377,7 +382,6 @@ void PiuContentMark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	PiuMarkHandle(the, self->container);
 	PiuMarkHandle(the, self->skin);
 	PiuMarkHandle(the, self->style);
-	PiuMarkString(the, self->name);
 }
 
 void PiuContentMeasureHorizontally(void* it) 
@@ -487,15 +491,16 @@ void PiuContentSetCoordinates(void* it, PiuCoordinates coordinates)
 
 void PiuContentSetDuration(PiuContent* self, double duration)
 {
+	PiuIdle selfIdle = PiuContentUseIdle(self);
 	if (duration < 0)
 		duration = 0;
-	(*self)->duration = duration;
-	PiuContentSetTime(self, (*self)->time);
+	selfIdle->duration = duration;
+	PiuContentSetTime(self, selfIdle->time);
 }
 
 void PiuContentSetFraction(PiuContent* self, double fraction)
 {
-	double duration = (*self)->duration;
+	double duration = PiuContentUseIdle(self)->duration;
 	if (duration)
 		PiuContentSetTime(self, duration * fraction);
 }
@@ -504,18 +509,21 @@ void PiuContentSetInterval(PiuContent* self, PiuInterval interval)
 {
 	if (interval < 1)
 		interval = 1;
-	(*self)->interval = interval;
+	if ((1 == interval) && !(*self)->idleOffset)
+		return;
+	PiuContentUseIdle(self)->interval = interval;
 }
 
 void PiuContentSetTime(PiuContent* self, double time)
 {
-	double duration = (*self)->duration;
+	PiuIdle selfIdle = PiuContentUseIdle(self);
+	double duration = selfIdle->duration;
 	if (time < 0)
 		time = 0;
 	if (duration && (time > duration))
 		time = duration;
-	if ((*self)->time != time) {
-		(*self)->time = time;
+	if (selfIdle->time != time) {
+		selfIdle->time = time;
 		(*(*self)->dispatch->sync)(self);
 		PiuBehaviorOnTimeChanged(self);
 	}
@@ -643,6 +651,35 @@ void PiuContentUpdate(void* it, PiuView* view, PiuRectangle area)
 	}
 }
 
+PiuIdle PiuContentUseIdle(void* it)
+{
+	PiuContent* self = it;
+	if ((*self)->idleOffset)
+		return (PiuIdle)(((uint8_t *)*self) + (*self)->idleOffset);
+
+	size_t current = (*self)->recordSize;
+
+	size_t nameLength = (*self)->nameOffset ? (current - (*self)->nameOffset) : 0;
+	void *chunk = fxRenewChunk((*self)->the, *self, (xsIntegerValue)(current + sizeof(PiuIdleRecord)));
+	if (!chunk) {
+		chunk = fxNewChunk((*self)->the, (xsIntegerValue)(current + sizeof(PiuIdleRecord)));
+		c_memcpy(chunk, *self, current);
+		*self = chunk;
+	}
+	if ((*self)->nameOffset) {
+		(*self)->nameOffset += sizeof(PiuIdleRecord);
+		c_memcpy(((uint8_t *)chunk) + (*self)->nameOffset, ((uint8_t *)chunk) + current - nameLength, nameLength);
+		c_memset(((uint8_t *)chunk) + current - nameLength, 0, sizeof(PiuIdleRecord));
+	}
+
+	(*self)->recordSize = PiuRecordSize(current + sizeof(PiuIdleRecord));
+	(*self)->idleOffset = (uint32_t)(current - nameLength);
+
+	PiuIdle result = (PiuIdle)(((uint8_t *)*self) + (*self)->idleOffset);
+	result->interval = 1;
+	return result;
+}
+
 void PiuContent_create(xsMachine* the)
 {
 	PiuContent* self;
@@ -653,6 +690,7 @@ void PiuContent_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuContentHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuContentDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuContentRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuBehaviorOnCreate(self);
@@ -738,7 +776,10 @@ void PiuContent_get_coordinates(xsMachine *the)
 void PiuContent_get_duration(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsResult = xsNumber((*self)->duration);
+	if ((*self)->idleOffset)
+		xsResult = xsNumber(PiuContentUseIdle(self)->duration);
+	else
+		xsResult = xsNumber(0);
 }
 
 void PiuContent_get_exclusiveTouch(xsMachine *the)
@@ -750,8 +791,11 @@ void PiuContent_get_exclusiveTouch(xsMachine *the)
 void PiuContent_get_fraction(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	if ((*self)->duration)
-		xsResult = xsNumber((*self)->time / (*self)->duration);
+	if ((*self)->idleOffset) {
+		PiuIdle selfIdle = PiuContentUseIdle(self);
+		if (selfIdle->duration)
+			xsResult = xsNumber(selfIdle->time / selfIdle->duration);
+	}
 }
 
 void PiuContent_get_index(xsMachine *the)
@@ -777,10 +821,15 @@ void PiuContent_get_index(xsMachine *the)
 void PiuContent_get_interval(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
+	if (!(*self)->idleOffset) {
+		xsResult = xsInteger(1);
+		return;
+	}
+		
 #ifdef piuPC
-	xsResult = xsNumber((*self)->interval);
+	xsResult = xsNumber(PiuContentUseIdle(self)->interval);
 #else
-	xsResult = xsInteger((*self)->interval);
+	xsResult = xsInteger(PiuContentUseIdle(self)->interval);
 #endif
 }
 
@@ -799,8 +848,19 @@ void PiuContent_get_multipleTouch(xsMachine *the)
 void PiuContent_get_name(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	if ((*self)->name)
-		xsResult = *((*self)->name);
+	if ((*self)->nameOffset) {
+		size_t nameLength = c_strlen(PiuContent_get_nameAux(self));
+		xsResult = xsStringBuffer(NULL, (xsIntegerValue)nameLength);
+		c_memcpy(xsToString(xsResult), PiuContent_get_nameAux(self), nameLength); 
+	}
+}
+
+char *PiuContent_get_nameAux(PiuContent* self)
+{
+	if ((*self)->nameOffset)
+		return ((char *)*self) + (*self)->nameOffset;
+
+	return C_NULL;
 }
 
 void PiuContent_get_next(xsMachine *the)
@@ -885,7 +945,10 @@ void PiuContent_get_style(xsMachine *the)
 void PiuContent_get_time(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
-	xsResult = xsNumber((*self)->time);
+	if ((*self)->idleOffset)
+		xsResult = xsNumber(PiuContentUseIdle(self)->time);
+	else
+		xsResult = xsNumber(0);
 }
 
 void PiuContent_get_type(xsMachine *the)
@@ -1060,11 +1123,32 @@ void PiuContent_set_name(xsMachine *the)
 {
 	PiuContent* self = PIU(Content, xsThis);
 	if (xsTest(xsArg(0))) {
-		xsSlot* name = PiuString(xsArg(0));
-		(*self)->name = name;
+		xsToString(xsArg(0));
+		xsResult = xsArg(0);
+	}
+	PiuContent_set_nameAux(self);
+}
+
+void PiuContent_set_nameAux(PiuContent* self)
+{
+	xsMachine *the = (*self)->the;
+	size_t nameLength = (xsUndefinedType == xsTypeOf(xsResult)) ? 0 : PiuRecordSize(1 + c_strlen(fxToString(the, &xsResult)));
+	size_t current = (*self)->nameOffset ? (*self)->nameOffset : (*self)->recordSize;
+
+	void *chunk = fxRenewChunk(the, *self, (xsIntegerValue)(current + nameLength));
+	if (!chunk) {
+		chunk = fxNewChunk(the, (xsIntegerValue)(current + nameLength));
+		c_memcpy(chunk, *self, current);
+		*self = chunk;
+	}
+
+	(*self)->recordSize = (uint32_t)(current + nameLength);
+	if (nameLength) {
+		(*self)->nameOffset = (uint32_t)current;
+		c_strcpy(((char *)*self) + current, fxToString(the, &xsResult));
 	}
 	else
-		(*self)->name = NULL;
+		(*self)->nameOffset = 0;
 }
 
 void PiuContent_set_offset(xsMachine *the)
@@ -1417,6 +1501,3 @@ void PiuContent_stop(xsMachine *the)
 	xsAssert(self != NULL);
 	PiuContentStop(self);
 }
-
-
-

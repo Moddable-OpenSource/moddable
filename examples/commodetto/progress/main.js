@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -46,8 +46,8 @@ class Progress {
 		this.height = dictionary.height;
 		this.backgroundColor = backgroundColor;
 	}
-	update(percent) {
-		debugger;
+	update(/* percent */) {
+		throw new Error("override required")
 	}
 }
 
@@ -57,7 +57,7 @@ class ProgressBar extends Progress {
 		this.frameColor = dictionary.frameColor;
 		this.fillColor = dictionary.fillColor;
 	}
-	update(percent) {
+	update(/* percent */) {
 		let backgroundColor = this.backgroundColor;
 		let frameColor = this.frameColor;
 		render.fillRectangle(backgroundColor, this.x + 1, this.y + 1, this.width - 1, this.height - 1);
@@ -101,7 +101,7 @@ class Spinner extends Progress {
 		this.cell = 0;
 		this.count = 0;
 	}
-	update(percent) {
+	update(/* percent */) {
 		let sx = this.cell * this.width;
 		render.begin(this.x, this.y, this.width, this.height);
 			render.fillRectangle(this.backgroundColor, this.x, this.y, this.width, this.height);

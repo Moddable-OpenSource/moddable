@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -45,11 +45,11 @@ class BlinkAppBehavior extends Behavior {
 		});
 		this.led = new Host.LED.Default;
 	}
-	onTimeChanged(column) {
+	onTimeChanged(/* column */) {
 		this.state = !this.state;
 		this.led.write(this.state ? 1 : 0);
 	}
-	onClick(column) {
+	onClick(/* column */) {
 		this.editing = !this.editing;
 		this.data["VALUE"].delegate("onUpdate", this.editing);
 	}

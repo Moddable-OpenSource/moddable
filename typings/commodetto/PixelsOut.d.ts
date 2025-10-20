@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019-2020 Bradley Farias
+* Copyright (c) 2019-2025 Bradley Farias
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -19,8 +19,16 @@
 */
 
 declare module "commodetto/PixelsOut" {
+  import type {Rectangle} from "commodetto/Poco";
+
+  interface PixelsOutOptions {
+    width: number;
+    height: number;
+    pixelFormat: number;
+  }
+
   class PixelsOut {
-    constructor(width: number, height: number, pixelFormat: number);
+    constructor(options: PixelsOutOptions);
     begin(x: number, y: number, width: number, height: number): void;
     end(): void;
     continue(x: number, y: number, width: number, height: number): void;
@@ -30,7 +38,7 @@ declare module "commodetto/PixelsOut" {
       count: number
     ): void;
 
-    adaptInvalid(area: { x: number, y: number, width: number, height: number }): void;
+    adaptInvalid(area: Rectangle): void;
     pixelsToBytes(count: number): number;
     /**
      * The width of the PixelsOut instance in pixels.
@@ -49,18 +57,18 @@ declare module "commodetto/PixelsOut" {
      * Returns true if the PixelsOut supports asynchronous rendering.
      * This means pixels passed to send are not copied, and must remain unchanged through the completion of the next call to send or end.
      */
-    readonly async: boolean;
+    readonly async?: boolean;
     /**
      * Optionally returns a pointer to a HostBuffer that contains a native PixelsOutDispatchRecord.
      * Returns undefined if no native dispatch table is available.
      * The native PixelsOutDispatchRecord allows native code to call the PixelsOut's begin, send, continue, end, and adaptInvalid functions directly, without going through the XS virtual machine.
      * The native dispatch table is strictly an optimization and provides only functionality in the JavaScript API.
      */
-    readonly c_dispatch: HostBuffer | undefined;
+    readonly c_dispatch?: HostBuffer | undefined;
     /**
      * (Not documented yet)
      */
-    clut: unknown;
+    clut?: unknown;
   }
 
   export {PixelsOut as default};

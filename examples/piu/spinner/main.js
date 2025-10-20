@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -44,23 +44,23 @@ const LoadingIcon = Port.template($ => ({
       port.start();
     }
     onDraw(port) {
-      let dxy = this.dxy
+      const dxy = this.dxy
       let last6coords = this.last6coords;
       port.fillColor(this.data.color4, last6coords[10], last6coords[11], this.data.squareSize, this.data.squareSize);
       port.fillColor(this.data.color3, last6coords[6], last6coords[7], this.data.squareSize, this.data.squareSize);
       port.fillColor(this.data.color2, last6coords[2], last6coords[3], this.data.squareSize, this.data.squareSize);
       switch (this.direction) {
         case DOWN:
-          this.y += this.dxy;
+          this.y += dxy;
           break;
         case RIGHT:
-          this.x += this.dxy;
+          this.x += dxy;
           break;
         case UP:
-          this.y -= this.dxy;
+          this.y -= dxy;
           break;
         case LEFT:
-          this.x -= this.dxy;
+          this.x -= dxy;
           break;
         case PAUSE:
           break;

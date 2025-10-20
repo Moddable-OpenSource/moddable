@@ -352,6 +352,7 @@ class Connection {
 			this.#options.onDone?.call(this);
 		}
 		catch {
+			/* this space intentionally left blank */
 		}
 		this.close();
 	}

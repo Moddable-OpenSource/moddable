@@ -1,13 +1,13 @@
-class Flash @ "xs_flashstorage_destructor" {
+class Flash extends Native("xs_flashstorage_destructor") {
 	constructor() {throw new TypeError}
-	close() @ "xs_flashstorage_close"
+	close() { return native("xs_flashstorage_close").call(this); }
 
-	eraseBlock(start, end) @ "xs_flashstorage_eraseBlock"
+	eraseBlock(start, end) { return native("xs_flashstorage_eraseBlock").call(this, start, end); }
 
-	read(byteLength, byteOffset) @  "xs_flashstorage_read"
-	write(buffer, byteOffset) @  "xs_flashstorage_write"
+	read(byteLength, byteOffset) { return native("xs_flashstorage_read").call(this, byteLength, byteOffset); }
+	write(buffer, byteOffset) { return native("xs_flashstorage_write").call(this, buffer, byteOffset); }
 
-	status() @ "xs_flashstorage_status"
+	status() { return native("xs_flashstorage_status").call(this); }
 
 	get format() {
 		return "buffer";
@@ -18,12 +18,12 @@ class Flash @ "xs_flashstorage_destructor" {
 	}
 }
 
-function open(options, constructor) @ "xs_flashstorage_open"
+function open(options, constructor) { return native("xs_flashstorage_open").call(this, options, constructor); }
 
-class FlashPartitionIterator @ "xs_flashIterator_destructor" {
-	constructor() @ "xs_flashIterator_"
-	next() @ "xs_flashIterator_next"
-	return() @ "xs_flashIterator_return"
+class FlashPartitionIterator extends Native("xs_flashIterator_destructor") {
+	constructor() { super(); native("xs_flashIterator_").call(this); }
+	next() { return native("xs_flashIterator_next").call(this); }
+	return() { return native("xs_flashIterator_return").call(this); }
 }
 
 export default Object.freeze({

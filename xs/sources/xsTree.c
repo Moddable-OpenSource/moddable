@@ -113,6 +113,7 @@ static void fxAccessNodePrintNode(void* it);
 static void fxDeclareDefineNodePrintNode(void* it);
 static void fxExportNodePrintNode(void* it);
 static void fxFunctionNodePrintNode(void* it);
+static void fxHostNodePrintNode(void* it);
 static void fxImportNodePrintNode(void* it);
 static void fxIntegerNodePrintNode(void* it);
 static void fxLabelNodePrintNode(void* it);
@@ -1748,6 +1749,9 @@ void fxNodePrintTree(void* it, void* param)
 		case XS_TOKEN_EXPORT: 
 			fxExportNodePrintNode(it); 
 			break;
+		case XS_TOKEN_HOST: 
+			fxHostNodePrintNode(it); 
+			break;
 		case XS_TOKEN_IMPORT: 
 			fxImportNodePrintNode(it); 
 			break;
@@ -1861,6 +1865,16 @@ void fxFunctionNodePrintNode(void* it)
     fprintf(stderr, "%s", node->description->name);
     if (node->symbol)
         fprintf(stderr, " %s", node->symbol->string);
+}
+
+void fxHostNodePrintNode(void* it) 
+{
+	txHostNode* node = it;
+	fprintf(stderr, "%s ", node->description->name);
+	if (node->at)
+		fprintf(stderr, "\"%s\" ", node->at->value);
+	else
+		fprintf(stderr, "\"?\" ");
 }
 
 void fxImportNodePrintNode(void* it) 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,21 +12,20 @@
  *
  */
 
-class Rectangle @ "xs_rectangle_destructor" {
-	constructor(...params) @ "xs_rectangle";
+class Rectangle extends Native("xs_rectangle_destructor") {
+	constructor(...params) { super(); native("xs_rectangle").call(this, ...params); }
 
-	get x() @ "xs_rectangle_get_x";
-	set x() @ "xs_rectangle_set_x";
-	get y() @ "xs_rectangle_get_y";
-	set y() @ "xs_rectangle_set_y";
-	get w() @ "xs_rectangle_get_w";
-	set w() @ "xs_rectangle_set_w";
-	get h() @ "xs_rectangle_get_h";
-	set h() @ "xs_rectangle_set_h";
+	get x() { return native("xs_rectangle_get_x").call(this); }
+	set x(it) { native("xs_rectangle_set_x").call(this, it); }
+	get y() { return native("xs_rectangle_get_y").call(this); }
+	set y(it) { native("xs_rectangle_set_y").call(this, it); }
+	get w() { return native("xs_rectangle_get_w").call(this); }
+	set w(it) { native("xs_rectangle_set_w").call(this, it); }
+	get h() { return native("xs_rectangle_get_h").call(this); }
+	set h(it) { native("xs_rectangle_set_h").call(this, it); }
 
-	contains(x, y) @ "xs_rectangle_contains";
-
-	union(r) @ "xs_rectangle_union";
+	contains(x, y) { return native("xs_rectangle_contains").call(this, x, y); }
+	union(r) { native("xs_rectangle_union").call(this, r); }
 };
 
 export default Rectangle;

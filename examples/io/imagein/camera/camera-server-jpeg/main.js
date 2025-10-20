@@ -43,7 +43,7 @@ camera.start();
 const router = new Map;
 
 const port = 8080;
-const server = new HTTPServer({
+new HTTPServer({
 	io: Listener,
 	port,
 	onConnect(connection) {
@@ -59,13 +59,13 @@ const server = new HTTPServer({
 })
 
 router.set("/", {
-	onRequest(request) {
+	onRequest(/* request */) {
 		this.frame = frame;
 		frame.bytes ??= new Uint8Array(frame);
 		frame.inUse += 1;
 		this.position = 0;
 	},
-	onReadable(count) {
+	onReadable(/* count */) {
 		this.read();
 	},
 	onResponse(response) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,12 +18,12 @@
  *
  */
 
-class Analog @ "xs_analog_destructor_" {
-	constructor(options) @ "xs_analog_constructor_"
-	close() @ "xs_analog_close_"
-	read() @ "xs_analog_read_"
+class Analog extends Native("xs_analog_destructor_") {
+	constructor(options) { super(); native("xs_analog_constructor_").call(this, options); }
+	close() { return native("xs_analog_close_").call(this); }
+	read() { return native("xs_analog_read_").call(this); }
 
-	get resolution() @ "xs_analog_get_resolution_"
+	get resolution() { return native("xs_analog_get_resolution_").call(this); }
 
 	get format() {
 		return "number";

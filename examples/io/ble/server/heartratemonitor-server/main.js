@@ -43,7 +43,7 @@ new GATTServer({
 				{
 					uuid: "2a19",		// // battery level
 					properties: GATTServer.properties.read | GATTServer.properties.write,
-					onRead(connection) {
+					onRead(/* connection */) {
 						return Uint8Array.of(this.value ?? 50);		// last value written or default of 50%
 					},
 					onWrite(buffer, connection) {			// write support for demonstration purposes

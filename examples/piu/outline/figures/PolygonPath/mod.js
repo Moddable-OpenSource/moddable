@@ -16,7 +16,7 @@ export default class extends Behavior {
 			const cx = application.width >> 1;
 			const cy = application.height >> 1;
 			const r = Math.min(cx, cy) - 40;
-			const result = new Array();
+			const result = [];
 			const delta = 2 * Math.PI / count;
 			let angle = Math.PI / 2;
 			for (let i = 0; i < count; i++) {

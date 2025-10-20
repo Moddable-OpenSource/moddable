@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,7 +30,7 @@
 
 import Bitmap from "commodetto/Bitmap";
 
-function parse() @ "xs_parseBMP";
+function parse() { return native("xs_parseBMP").call(this); }
 
 export default function (buffer) {
 	let bitmap = new Bitmap(1, 1, Bitmap.Default, buffer, 0);

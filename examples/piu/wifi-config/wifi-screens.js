@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,7 +12,6 @@
  *
  */
 
-import WiFi from "wifi";
 import {HorizontalExpandingKeyboard} from "keyboard";
 import {KeyboardField} from "common/keyboard";
 import ASSETS from "assets";
@@ -39,7 +38,7 @@ class VerticalScrollerBehavior extends Behavior {
 /* -============ Network list screen ============- */
 /* -=============================================- */
 
-const Separator = Content.template($ => ({
+const Separator = Content.template(() => ({
 	name: "SEPARATOR", top: 0, height: 1, left: 0, right: 0, Skin: ASSETS.SeparatorGraySkin
 }))
 
@@ -57,7 +56,7 @@ class ListItemBehavior extends Behavior {
 		port.drawString(this.data.ssid, new ASSETS.OpenSans20, ASSETS.BLACK, 32, 8, 150, port.height);
 		port.drawTexture(new ASSETS.WiFiStripTexture, ASSETS.BLACK, 260, 6, this.data.xOffset, this.data.yOffset, 28, 28);
 	}
-	onTouchBegan(port, id, x, y, ticks) {
+	onTouchBegan(port, id, x, y) {
 		this.data.state = 1;
 		port.invalidate();
 		this.startY = y;
@@ -66,7 +65,7 @@ class ListItemBehavior extends Behavior {
 		this.data.state = 0;
 		port.invalidate();
 	}
-	onTouchEnded(port, id, x, y, ticks) {
+	onTouchEnded(port) {
 		this.data.state = 0;
 		port.invalidate();
 		if (this.data.yOffset > 0) application.delegate("doNext", "LOGIN", { ssid: this.data.ssid});
@@ -74,7 +73,7 @@ class ListItemBehavior extends Behavior {
 	}
 }
 
-const ListItemTemplate = Port.template($ => ({
+const ListItemTemplate = Port.template(() => ({
 	active: true, left: 0, right: 0, height: 40, 
 	Behavior: ListItemBehavior
 }));
@@ -121,7 +120,7 @@ addNetworks:
 		column.time = 0;
 		column.start();
 	}
-	onFinished(column) {
+	onFinished(/* column */) {
 		application.delegate("scan");
 	}
 }
@@ -152,10 +151,10 @@ class BackArrowBehavior extends Behavior {
 	onCreate(content, data) {
 		this.data = data;
 	}
-	onTouchBegan(content, id, x, y, ticks) {
+	onTouchBegan(content /*, id, x, y, ticks */) {
 		content.state = 1;
 	}
-	onTouchEnded(content, id, x, y, ticks) {
+	onTouchEnded(content /* , id, x, y, ticks */) {
 		content.state = 0;
 		application.delegate("doNext", "NETWORK_LIST_SCAN");
 	}
@@ -181,7 +180,7 @@ const KeyboardContainer = Column.template($ => ({
 			this.data = data;
 			this.addKeyboard();
 		}
-		onTouchEnded(column){
+		onTouchEnded(/* column */){
 			if (1 != this.data["KEYBOARD"].length)
 				this.addKeyboard();
 		}
@@ -204,10 +203,10 @@ export const LoginScreen = Column.template($ => ({
 			this.ssid = $.ssid;
 			this.data = data;
 		}
-		onKeyboardRowsContracted(column) {
+		onKeyboardRowsContracted(/* column */) {
 			// keyboard rows contracted back to 1x view
 		}
-		onKeyboardRowsExpanded(column) {
+		onKeyboardRowsExpanded(/* column */) {
 			// keyboard rows expanded
 		}
 		onKeyboardOK(column, string) {
@@ -234,13 +233,13 @@ export const ConnectionErrorScreen = Column.template($ => ({
 	left: 0, right: 0, top: 0, bottom: 0, Skin: ASSETS.WhiteSkin, Style: ASSETS.OpenSans20, contents: [
 		new ASSETS.Header({ title: "Networks", 
 			backArrowBehavior: class extends Behavior {
-				onCreate(content) {
+				onCreate(/* content */) {
 					this.data = $;
 				}
-				onTouchBegan(content, id, x, y, ticks) {
+				onTouchBegan(content /*, id, x, y, ticks */) {
 					content.state = 1;
 				}
-				onTouchEnded(content, id, x, y, ticks) {
+				onTouchEnded(content /*, id, x, y, ticks */) {
 					content.state = 0;
 					if ("password" in this.data) application.delegate("doNext", "LOGIN", this.data);
 					else application.delegate("doNext", "NETWORK_LIST_SCAN");

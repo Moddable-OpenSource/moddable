@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,27 +18,26 @@
  *
  */
 
-class DisposableHostBuffer @ "_xs_disposable_hostbuffer_destructor"{
-	close() @ "_xs_disposable_hostbuffer_close"
+class DisposableHostBuffer extends Native("_xs_disposable_hostbuffer_destructor"){
+	close() { return native("_xs_disposable_hostbuffer_close").call(this); }
 }
 // DisposableHostBuffer.prototype[Symbol.dispose] = DisposableHostBuffer.prototype.close;
 
-function constructor(options) @ "xs_camera_constructor";
-
-class Camera @ "xs_camera_destructor" {
+class Camera extends Native("xs_camera_destructor") {
 	constructor(options) {
-		constructor.call(this, {...options, prototype: DisposableHostBuffer.prototype});
+		super();
+		native("xs_camera_constructor").call(this, {...options, prototype: DisposableHostBuffer.prototype});
 	} 
-	close() @ "xs_camera_close";
-	read(samples) @ "xs_camera_read";
-	start() @ "xs_camera_start";
-	stop() @ "xs_camera_stop";
+	close() { return native("xs_camera_close").call(this); };
+	read(samples) { return native("xs_camera_read").call(this, samples); };
+	start() { return native("xs_camera_start").call(this); };
+	stop() { return native("xs_camera_stop").call(this); };
 	
-	get format() @ "xs_camera_get_format";
-	set format(it) @ "xs_camera_set_format";
-	get imageType() @ "xs_camera_get_imageType";
-	get width() @ "xs_camera_get_width";
-	get height() @ "xs_camera_get_height";
+	get format() { return native("xs_camera_get_format").call(this); };
+	set format(it) { native("xs_camera_set_format").call(this, it); };
+	get imageType() { return native("xs_camera_get_imageType").call(this); };
+	get width() { return native("xs_camera_get_width").call(this); };
+	get height() { return native("xs_camera_get_height").call(this); };
 }
 
 export default Camera;

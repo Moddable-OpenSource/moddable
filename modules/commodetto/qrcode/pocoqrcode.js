@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2023  Moddable Tech, Inc.
+* Copyright (c) 2021-2025  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -20,5 +20,4 @@
 
 import Poco from "commodetto/PocoCore";
 
-Poco.prototype.drawQRCode = function (bits, x, y, scale, fore) @ "xs_poco_drawQRCode";
-
+Poco.prototype.drawQRCode = function (bits, x, y, scale, fore) { return native("xs_poco_drawQRCode").call(this, bits, x, y, scale, fore); };

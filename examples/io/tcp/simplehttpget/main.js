@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -53,7 +53,7 @@ class HTTPGet {
 		const buffer = target.#socket.read(byteLength);
 		target.#onData(buffer);
 	}
-	writeable(byteLength) {
+	writeable(/* byteLength */) {
 		const target = this.target;
 		if (target.#path) {
 			const headers = [

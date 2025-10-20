@@ -95,6 +95,9 @@
 #ifndef mxUint8ArrayBase64
 	#define mxUint8ArrayBase64 1
 #endif
+#ifndef mxNative
+	#define mxNative 1
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,7 +152,7 @@ typedef struct {
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
 #if mxECMAScript2025
 	#define XS_MAJOR_VERSION 16
-	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64)
+	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
 #elif mxECMAScript2024
 	#define XS_MAJOR_VERSION 15
 	#define XS_MINOR_VERSION (3 + mxExplicitResourceManagement + mxUint8ArrayBase64)
@@ -841,6 +844,10 @@ enum {
 	_Function,
 #if mxModuleStuff
 	_ModuleStuff,
+#endif
+#if mxNative
+	_Native,
+	_native,
 #endif
 	_eval,
 	_AsyncFunction,

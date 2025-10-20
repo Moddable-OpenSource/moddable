@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -834,6 +834,7 @@ void PiuCode_create(xsMachine *the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuCodeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuCodeDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuCodeRecord));
 	(*self)->flags = piuVisible | piuActive;
 	PiuContentDictionary(the, self);
 	PiuTextBufferNew(the, 512);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -180,7 +180,7 @@ let NeonApplication = Application.template($ => ({
 			this.flag = !this.flag;
 			application.run(new WipeTransition(750, Math.quadEaseOut, "center"), application.first, new NeonLights({}));
 		}
-		onTransitionBeginning(application) {
+		onTransitionBeginning(/* application */) {
 		}
 		onTransitionEnded(application) {
 			application.first.delegate("onDisplayed");

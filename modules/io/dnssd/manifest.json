@@ -6,12 +6,12 @@
 		],
 		"dns/parser": "$(MODULES)/network/dns/dnsparser",
 		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
-		"embedded:network/mdns": "./dnssd",
-		"mdns/config": "./config"
+		"embedded:network/dnssd": "./dnssd",
+		"dnssd/config": "./config"
 	},
 	"preload": [
-		"mdns/config",
-		"embedded:network/mdns",
+		"dnssd/config",
+		"embedded:network/dnssd",
 		"dns",
 		"dnsparser",
 		"dnsserializer"

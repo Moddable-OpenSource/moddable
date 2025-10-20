@@ -1017,7 +1017,7 @@ void fxWriteScriptHosts(txLinkerScript* script, FILE* file)
 			txS1 length = *p++;
 			mxDecode2(p, id);
 			if (length < 0)
-				fprintf(file, "\t{ (xsCallback)%s, -1, -1 },\n", p);
+				fprintf(file, "\t{ (xsCallback)%s, %d, %d },\n", p, length, id);
 			else
 				fprintf(file, "\t{ %s, %d, %d },\n", p, length, id);
 			p += mxStringLength((char*)p) + 1;

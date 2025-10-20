@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024  Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -23,7 +23,7 @@ import Timeline from "piu/Timeline";
 const BLACK = "black";
 const LITE = "#D0D0D0";
 const GRAY = "#808080";
-const BLUE = "#192eab";
+// const BLUE = "#192eab";
 const WHITE = "#F8F8F8";
 const RED = "#c83530"
 
@@ -36,7 +36,7 @@ class FromTimelineTransition extends Transition {
 		super(0);
 		this.Timeline = Timeline;
 	}
-	onBegin(container, former, $) {
+	onBegin(container, former /*, $ */) {
 		this.timeline = new this.Timeline(former, -1);
 		this.duration = this.timeline.duration;
 	}
@@ -67,7 +67,7 @@ class ToTimelineTransition extends Transition {
 		this.timeline = new this.Timeline(former, 1);
 		this.duration = this.timeline.duration;
 	}
-	onEnd(container) {
+	onEnd(/* container */) {
 		this.timeline = null;
 	}
 	onStep(fraction) {
@@ -83,7 +83,7 @@ class BankersBehavior extends Behavior {
 		try {
 			this.sensor = new Sensor({ sensor: device.I2C.default });
 		}
-		catch(e) {
+		catch {
 			this.sensor = {
 				sample() {
  					return {

@@ -14,9 +14,9 @@
 
 import Timer from "timer";
 
-const mdns = new (device.network.mdns.io)(device.network.mdns);
+const dnssd = new (device.network.dnssd.io)(device.network.dnssd);
 
-const claim = mdns.claim({
+dnssd.claim({
 	host: "a-server",
 	onReady() {
 		trace(`a-server claimed\n`);
@@ -26,7 +26,7 @@ const claim = mdns.claim({
 	}
 });
 
-const ad = mdns.advertise({
+const ad = dnssd.advertise({
 	serviceType: "_http._tcp",
 	instanceName: "419 Web Server",
 	host: "a-server",
@@ -34,7 +34,7 @@ const ad = mdns.advertise({
 	txt: new Map([
 		["home", "/index.html"]
 	]),
-	onError(error) {
+	onError(/* error */) {
 		trace("advertise failed\n");
 	}
 });
@@ -47,7 +47,7 @@ Timer.repeat(() => {
 	]));
 }, 1000)
 
-mdns.discover({
+dnssd.discover({
 	serviceType: "_airplay._tcp",
 	onFound(service) {
 		trace(`Found: "${service.name}" on ${service.host} @ ${service.address}:${service.port}\n`);
@@ -72,7 +72,7 @@ mdns.discover({
 			if (!previous.has(key))
 				trace(`  added ${key}:${value}\n`);
 		}
-		for (const [key, value] of txt) {
+		for (const [key] of txt) {
 			if (previous.has(key) && (previous.get(key) !== txt.get(key)))
 				trace(`  changed ${key} from ${previous.get(key)} to ${txt.get(key)}\n`);
 		}
@@ -81,7 +81,7 @@ mdns.discover({
 		trace(`Lost: ${service.name}\n`);
 		this.history.delete(service.host);
 	},
-	onError(error) {
+	onError(/* error */) {
 		trace(`failed\n`);
 	}
 });

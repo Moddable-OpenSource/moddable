@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Shinya Ishikawa
+ * Copyright (c) 2020-2025 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -27,14 +27,14 @@ declare module "piu/Timeline" {
       target: object,
       fromProperties: object,
       duration: number,
-      easing?: string,
+      easing?: (fraction: number) => number,
       delay?: number
     ): Timeline;
     on(
       target: object,
       onProperties: object,
       duration: number,
-      easing?: number,
+      easing?: (fraction: number) => number,
       delay?: number
     ): Timeline;
     seekTo(time: number): void;
@@ -42,7 +42,7 @@ declare module "piu/Timeline" {
       target: object,
       fromProperties: object,
       duration: number,
-      easing?: string,
+      easing?: (fraction: number) => number,
       delay?: number
     ): Timeline;
   }

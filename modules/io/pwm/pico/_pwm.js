@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,13 +18,13 @@
  *
  */
 
-class PWM @"xs_pwm_destructor_" {
-    constructor(dictionary) @ "xs_pwm_constructor_"
-    close() @ "xs_pwm_close_"
-    write() @ "xs_pwm_write_"
+class PWM extends Native("xs_pwm_destructor_") {
+    constructor(dictionary) { super(); native("xs_pwm_constructor_").call(this, dictionary); }
+    close() { return native("xs_pwm_close_").call(this); }
+    write() { return native("xs_pwm_write_").call(this); }
     
-    get hz() @ "xs_pwm_get_hz_"
-    get resolution() @ "xs_pwm_get_resolution_"
+    get hz() { return native("xs_pwm_get_hz_").call(this); }
+    get resolution() { return native("xs_pwm_get_resolution_").call(this); }
 
     get format() {
         return "number";

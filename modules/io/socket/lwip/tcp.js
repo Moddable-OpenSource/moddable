@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,17 +18,17 @@
  *
  */
 
-class TCP @ "xs_tcp_destructor" {
-	constructor(dictionary) @ "xs_tcp_constructor";
-	close() @ "xs_tcp_close"
-	read() @ "xs_tcp_read"
-	write(byte) @ "xs_tcp_write"
-	get remoteAddress() @ "xs_tcp_get_remoteAddress"
-	get remotePort() @ "xs_tcp_get_remotePort"
+class TCP extends Native("xs_tcp_destructor") {
+	constructor(dictionary) { super(); native("xs_tcp_constructor").call(this, dictionary); };
+	close() { return native("xs_tcp_close").call(this); }
+	read() { return native("xs_tcp_read").call(this); }
+	write(byte) { return native("xs_tcp_write").call(this, byte); }
 
-	get format() @ "xs_tcp_get_format"
-	set format() @ "xs_tcp_set_format"
+	get remoteAddress() { return native("xs_tcp_get_remoteAddress").call(this); }
+	get remotePort() { return native("xs_tcp_get_remotePort").call(this); }
+
+	get format() { return native("xs_tcp_get_format").call(this); }
+	set format(it) { native("xs_tcp_set_format").call(this, it); }
 }
-Object.freeze(TCP.prototype);
 
 export default TCP;

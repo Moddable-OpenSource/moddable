@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -35,7 +35,7 @@
 
 */
 
-function parse() @ "xs_parseBMF"
+function parse() { return native("xs_parseBMF").call(this); }
 
 export default parse;
 
@@ -127,7 +127,5 @@ class Parser {
 		return buffer;
 	}
 };
-
-Object.freeze(Parser.prototype);
 
 */

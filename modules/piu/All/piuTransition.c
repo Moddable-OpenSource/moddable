@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -72,7 +72,7 @@ void PiuTransitionComplete(PiuTransition* self, PiuContainer* container)
 	PiuTransitionStep(self, 1);
 	PiuApplicationStopContent((*self)->application, self);
 	PiuTransitionEnd(self);
-	(*self)->time = -1;
+	PiuContentUseIdle(self)->time = -1;
 	(*self)->container = NULL;
 	(*self)->application = NULL;
 	self = (*self)->next;
@@ -95,9 +95,11 @@ void PiuTransitionCreate(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuTransitionHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuTransitionDispatchRecord;
-	(*self)->duration = xsToNumber(xsArg(0));
-	(*self)->interval = 1;
-	(*self)->time = -1;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuTransitionRecord));
+	PiuIdle selfIdle = PiuContentUseIdle(self);
+	selfIdle->duration = xsToNumber(xsArg(0));
+	selfIdle->interval = 1;
+	selfIdle->time = -1;
 	xsResult = xsThis;
 }
 
@@ -120,8 +122,9 @@ void PiuTransitionEnd(PiuTransition* self)
 void PiuTransitionIdle(void* it, PiuInterval interval)
 {
     PiuTransition* self = it;
-    double duration = (*self)->duration;
-    double time = (*self)->time;
+	PiuIdle selfIdle = PiuContentUseIdle(self);
+    double duration = selfIdle->duration;
+    double time = selfIdle->time;
 	if (time < 0)
     	time = 0;
     else {
@@ -129,14 +132,15 @@ void PiuTransitionIdle(void* it, PiuInterval interval)
 		if (time > duration)
 			time = duration;
     }
-	(*self)->time = time;
+	selfIdle->time = time;
 	PiuTransitionStep(self, time / duration);
 	if (time == duration) {
 		PiuContainer* container = (*self)->container;
 		PiuTransition* transition = (*container)->transition = (*self)->next;
 		PiuApplicationStopContent((*self)->application, self);
 		PiuTransitionEnd(self);
-		(*self)->time = -1;
+		selfIdle = PiuContentUseIdle(self);
+		selfIdle->time = -1;
 		(*self)->container = NULL;
 		(*self)->application = NULL;
 		if (transition) {
@@ -185,7 +189,7 @@ void PiuTransitionStep(PiuTransition* self, double fraction)
 void PiuTransition_get_duration(xsMachine *the)
 {
 	PiuTransition* self = PIU(Transition, xsThis);
-	xsResult = xsNumber((*self)->duration);
+	xsResult = xsNumber(PiuContentUseIdle(self)->duration);
 }
 
 void PiuTransition_set_duration(xsMachine *the)
@@ -194,5 +198,5 @@ void PiuTransition_set_duration(xsMachine *the)
 	xsNumberValue duration = xsToNumber(xsArg(0));
 	if (duration < 0)
 		duration = 0;
-	(*self)->duration = duration;
+	PiuContentUseIdle(self)->duration = duration;
 }

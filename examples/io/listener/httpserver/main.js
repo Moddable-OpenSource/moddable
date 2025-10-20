@@ -53,7 +53,7 @@ router.set("/", {
 		response.headers.set("content-length", reply.byteLength);
 		this.respond(response);
 	},
-	onWritable(count) {
+	onWritable(/* count */) {
 		this.write(reply);
 	},
 	onDone() {
@@ -133,7 +133,7 @@ router.set("/ws", {
 */
 const ws = new WebSocket("ws://localhost:8080/ws");
 ws.binaryType = "arraybuffer";
-ws.addEventListener("open", event => {
+ws.addEventListener("open", () => {
 	ws.send("hello");
 });
 ws.addEventListener("message", event => {

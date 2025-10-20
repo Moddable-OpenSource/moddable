@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Satoshi Tanaka
+ * Copyright (c) 2021-2025  Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -42,7 +42,7 @@ declare module 'pins/rmt' {
     public write(firstValue: 0 | 1, durations: number[]): void;
     public onWritable: () => void;
     public read(buffer: ArrayBuffer | ArrayBufferLike): {buffer: ArrayBuffer, count: number, phase: 0 | 1};
-    public close();
+    public close(): void;
   }
   export { RMT as default }
 }

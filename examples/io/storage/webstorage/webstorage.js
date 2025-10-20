@@ -35,7 +35,7 @@
 	}
 	get length() {
 		let length = 0;
-		for (let key of this.#kvp)
+		for (let _ of this.#kvp)
 			length++;
 		return length;
 	}

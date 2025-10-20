@@ -1,5 +1,5 @@
 import Modules from "modules";
-import {Outline} from "commodetto/outline";
+import {} from "commodetto/outline";
 import {} from "piu/MC";
 import {} from "piu/shape";
 

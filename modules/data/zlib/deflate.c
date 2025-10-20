@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -71,7 +71,7 @@ void xs_deflate(xsMachine *the)
 		xsmcGet(xsVar(0), xsArg(0), xsID_strategy);
 		strategy = xsmcToInteger(xsVar(0));
 		if ((strategy < 0) || (strategy > 4))
-			xsRangeError("invalid level");
+			xsRangeError("invalid strategy");
 	}
 
 	output = (uint8_t *)c_malloc(kOutputBufferSize + sizeof(z_stream));

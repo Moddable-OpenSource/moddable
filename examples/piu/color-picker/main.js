@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,6 +12,7 @@
  *
  */
 
+import {} from "piu/MC";
 import ColorPicker from "color-picker";
 
 const BLACK = "black";

@@ -58,7 +58,7 @@ interface StringConstructor {
 
 interface ArrayBufferConstructor {
 	fromString(string: string): ArrayBuffer;
-	fromBigInt(value: BigInt): ArrayBuffer;
+	fromBigInt(value: bigint): ArrayBuffer;
 }
 
 interface ArrayBuffer {
@@ -82,8 +82,8 @@ interface Uint8ArrayConstructor {
 }
 
 interface BigIntConstructor {
-	bitLength(value: BigInt): number
-	fromArrayBuffer(buffer: ArrayBufferLike): BigInt
+	bitLength(value: bigint): number
+	fromArrayBuffer(buffer: ArrayBufferLike): bigint
 }
 
 // integer math proposal
@@ -95,5 +95,9 @@ interface Math {
 	irem(a: number, b: number): number
 	mod(a: number, b: number): number
 }
+
+// xs host objects, host functions
+declare function Native(name: string): new (...args: any[]) => any;
+declare function native(name: string): (...args: any[]) => any;
 
 // Compartment?

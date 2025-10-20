@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,18 +23,18 @@
 	worker
 */
 
-class Worker @ "xs_worker_destructor" {
-	constructor(module, options) @ "xs_worker";
-	postMessage(message) @ "xs_worker_postfromworkerinstantiator";
-	terminate() @ "xs_worker_terminate";
+class Worker extends Native("xs_worker_destructor") {
+	constructor(module, options) { super(); native("xs_worker").call(this, module, options); }
+	postMessage(message) { return native("xs_worker_postfromworkerinstantiator").call(this, message); }
+	terminate() { return native("xs_worker_terminate").call(this); }
 };
 
 /*
 	shared worker
 */
 
-export class SharedWorker @ "xs_worker_destructor" {
-	constructor(module, options) @ "xs_sharedworker";
+export class SharedWorker extends Native("xs_worker_destructor") {
+	constructor(module, options) { super(); native("xs_sharedworker").call(this, module, options); }
 };
 
 export default Worker;

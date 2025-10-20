@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -40,7 +40,7 @@ let ImageContainer = Container.template($ => ({
 	]
 }));
 
-let ImageApplication = Application.template($ => ({
+let ImageApplication = Application.template(() => ({
 	Behavior: class extends Behavior {
 		onCreate(application) {
 			this.index = 0;

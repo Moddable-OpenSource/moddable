@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,10 +18,10 @@
  *
  */
 
-class PulseWidth @ "xs_pulsewidth_destructor" {
-	constructor(options) @ "xs_pulsewidth_constructor";
-	close() @ "xs_pulsewidth_close";
-	read() @ "xs_pulsewidth_read";
+class PulseWidth extends Native("xs_pulsewidth_destructor") {
+	constructor(options) { super(); native("xs_pulsewidth_constructor").call(this, options); };
+	close() { return native("xs_pulsewidth_close").call(this); };
+	read() { return native("xs_pulsewidth_read").call(this); };
 
     get format() {
         return "number";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -17,8 +17,8 @@ import JPEG from "commodetto/readJPEG";
 import Poco from "commodetto/Poco";
 
 function fetch(filename) {
-	return new Promise((resolve, reject) => {
-		let request = new Request({
+	return new Promise((resolve /*, reject */) => {
+		const request = new Request({
 			host: "test.moddable.com", 
 			path: "/example/images/"+filename,
 			response: ArrayBuffer });
@@ -35,9 +35,9 @@ function fetch(filename) {
 }
 
 function render(imageData, offset, poco) {
-	let decoder = new JPEG(imageData);		
+	const decoder = new JPEG(imageData);		
 	let block;
-	while (block = decoder.read()) {
+	while ((block = decoder.read())) {
 		poco.begin(block.x + offset, block.y+offset, block.width, block.height);
 		poco.drawBitmap(block, block.x+offset, block.y+offset);
 		poco.end();
@@ -45,8 +45,8 @@ function render(imageData, offset, poco) {
 }
 
 async function main() {
-	let poco = new Poco(screen);
-	let gray = poco.makeColor(0, 0, 0);
+	const poco = new Poco(screen);
+	const gray = poco.makeColor(0, 0, 0);
 	poco.begin();
 	poco.fillRectangle(gray, 0, 0, poco.width, poco.height);
 	poco.end();

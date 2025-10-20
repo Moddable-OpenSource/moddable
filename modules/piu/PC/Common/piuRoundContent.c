@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -104,6 +104,7 @@ void PiuRoundContent_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuRoundContentHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuRoundContentDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuRoundContentRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuRoundContentDictionary(the, self);

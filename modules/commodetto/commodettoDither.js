@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,17 +18,17 @@
  *
  */
 
-class Dither @ "xs_dither_destructor" {
-	constructor(options) @ "xs_dither"
+class Dither extends Native("xs_dither_destructor") {
+	constructor(options) { super(); native("xs_dither").call(this, options); }
 	/*
 		width,
 		pixelFormat,
 		algorithm: "atkinson"
 	*/
 	
-	close() @ "xs_dither_close"
-	reset() @ "xs_dither_reset";
-	send(lines, src, offset, dst, offset) @ "xs_dither_send";
+	close() { return native("xs_dither_close").call(this); }
+	reset() { return native("xs_dither_reset").call(this); }
+	send(lines, src, offset, dst, o) { return native("xs_dither_send").call(this, lines, src, offset, dst, o); }
 }
 
 export default Dither;

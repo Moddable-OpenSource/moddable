@@ -15,25 +15,22 @@
 import kvp from "embedded:storage/key-value";
 import WebStorage from "webstorage";
 
-// bind WebStorage to a domain in embedded:storage/key-value
-globalThis.localStorage = new WebStorage(kvp.open({path: "localStorage"}));
-
-
+// bind WebStorage to a domain "localStorage" in embedded:storage/key-value
+const localStorage = new WebStorage(kvp.open({path: "localStorage"}));
 
 localStorage.setItem(1, "one");
 localStorage.setItem(2, "two");
 localStorage.setItem(3, "three");
 
-let length = localStorage.length;
-let k = localStorage.key(1.2);
-
-let v = localStorage.getItem(3);
+trace(`length: ${localStorage.length}\n`);
+trace(`key(1.2): ${localStorage.key(1.2)}\n`);
+trace(`getItem(3): ${localStorage.getItem(3)}\n`);
 
 localStorage.clear();
 
-length = localStorage.length;
-k = localStorage.key(1.2);
-
+trace(`length: ${localStorage.length}\n`);
+trace(`key(1.2): ${localStorage.key(1.2)}\n`);
+trace(`getItem(3): ${localStorage.getItem(3)}\n`);
 
 /*
 

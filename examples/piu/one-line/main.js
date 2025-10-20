@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -16,15 +16,11 @@ import WiFi from "wifi";
 import {Server} from "websocket"
 import {} from "piu/MC";
 
-import Timeline from "piu/Timeline";
 import WipeTransition from "piu/WipeTransition";
 
 const BLACK = "black"
-const TRANSPARENT = "transparent"
 const WHITE = "white";
 
-const whiteSkin = new Skin({ fill:WHITE });
-const blackSkin = new Skin({ fill:BLACK });
 const backgroundSkin = new Skin({ fill:[WHITE, BLACK] });
 const labelStyle = new Style({ font:"600 28px Open Sans", color:[BLACK, WHITE], horizontal:"left" });
 
@@ -63,7 +59,7 @@ let LineContainer = Container.template($ => ({
 	]
 }));
 
-let LineApplication = Application.template($ => ({
+let LineApplication = Application.template(() => ({
 	style:labelStyle,
 	Behavior: class extends Behavior {
 		onCreate(application) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,11 +21,11 @@
 
 import Bitmap from "commodetto/Bitmap";
 
-export default class ColorCellOut @ "xs_colorcell_destructor" /* extends PixelsOut */ {
-	constructor(dictionary) @ "xs_colorcell";
-	begin(x, y, width, height, dictionary) @ "xs_colorcell_begin";
-	send(pixels, offsetIn, count) @ "xs_colorcell_send"
-	end() @ "xs_colorcell_end"
+export default class ColorCellOut extends Native("xs_colorcell_destructor") /* extends PixelsOut */ {
+	constructor(dictionary) { super(); return native("xs_colorcell").call(this, dictionary); }
+	begin(x, y, width, height, dictionary) { return native("xs_colorcell_begin").call(this, x, y, width, height, dictionary); }
+	send(pixels, offsetIn, count) { return native("xs_colorcell_send").call(this, pixels, offsetIn, count); }
+	end() { return native("xs_colorcell_end").call(this); }
 	pixelsToBytes(count) {
 		return count * 2;		// assumes 16-bit pixels
 	}
@@ -35,5 +35,3 @@ export default class ColorCellOut @ "xs_colorcell_destructor" /* extends PixelsO
 		this.bitmap = new Bitmap(width, height, format, pixels, 0);
 	}
 }
-
-Object.freeze(ColorCellOut.prototype);

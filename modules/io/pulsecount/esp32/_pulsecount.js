@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,11 +18,11 @@
  *
  */
 
-class PulseCount @ "xs_pulsecount_destructor_" {
-	constructor(options) @ "xs_pulsecount_constructor_";
-	close() @ "xs_pulsecount_close_";
-	read() @ "xs_pulsecount_read_";
-	write(count) @ "xs_pulsecount_write_";
+class PulseCount extends Native("xs_pulsecount_destructor_") {
+	constructor(options) { super(); native("xs_pulsecount_constructor_").call(this, options); };
+	close() { return native("xs_pulsecount_close_").call(this); };
+	read() { return native("xs_pulsecount_read_").call(this); };
+	write(count) { return native("xs_pulsecount_write_").call(this, count); };
 
     get format() {
         return "number";

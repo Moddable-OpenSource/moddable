@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -70,7 +70,7 @@ export default class WipeTransition extends Transition {
 		this.width = this.die.width;
 		this.height = this.die.height;
 	}
-	onEnd(container, former, current) {
+	onEnd(container, former /*, current */) {
 		this.die.detach();
 		container.remove(former);
 		delete this.die;

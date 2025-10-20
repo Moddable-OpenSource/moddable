@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,14 +18,14 @@
  *
  */
 
-class TweenProperty @ "xs_TweenProperty_destructor" {
-	constructor(name, from, to) @ "xs_TweenProperty";
-	tween(target, fraction) @ "xs_TweenProperty_tween";
+class TweenProperty extends Native("xs_TweenProperty_destructor") {
+	constructor(name, from, to) { super(); native("xs_TweenProperty").call(this, name, from, to); };
+	tween(target, fraction) { return native("xs_TweenProperty_tween").call(this, target, fraction); };
 }
 
-class TweenOnProperty @ "xs_TweenOnProperty_destructor" {
-	constructor(name, values) @ "xs_TweenOnProperty";
-	tween(target, fraction) @ "xs_TweenOnProperty_tween";
+class TweenOnProperty extends Native("xs_TweenOnProperty_destructor") {
+	constructor(name, values) { super(); native("xs_TweenOnProperty").call(this, name, values); };
+	tween(target, fraction) { return native("xs_TweenOnProperty_tween").call(this, target, fraction); };
 }
 
 export class Tween {

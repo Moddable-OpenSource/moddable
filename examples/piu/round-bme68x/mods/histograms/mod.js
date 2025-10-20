@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024  Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,17 +17,13 @@ import {} from "piu/MC";
 
 const BLACK = "black";
 const LITE = "#D0D0D0";
-const GRAY = "#808080";
-const BLUE = "#192eab";
 const WHITE = "#F8F8F8";
-const RED = "#ab1919"
 const CYAN = "#00FFFF"
 const MAGENTA = "#FF00FF"
 const YELLOW = "#FFFF00"
 const DARK_CYAN = "#008080"
 const DARK_MAGENTA = "#800080"
 const DARK_YELLOW = "#808000"
-const GREEN = "#19ab19"
 const MASK = "#000000A0"
 
 const valueStyle = Object.freeze({ font:"bold 20px FiraSansCondensed", color:WHITE }, true);
@@ -50,7 +46,7 @@ class HistogramsBehavior extends Behavior {
 		try {
 			this.sensor = new Sensor({ sensor: device.I2C.default });
 		}
-		catch(e) {
+		catch {
 			this.sensor = {
 				sample() {
  					return {
@@ -126,7 +122,6 @@ class HistogramBehavior extends Behavior {
 	onSensorChanged(container, data) {
 		const { which, weight } = this.data;
 		const shape = container.first;
-		const label = shape.next;
 		const { width, height } = shape;
 		const x = width >> 1;
 		const y = height >> 1;
@@ -142,8 +137,7 @@ class HistogramBehavior extends Behavior {
 		const path = new Outline.CanvasPath;
 		
 		const samples = data.samples[which];
-		let { samplesCount, samplesIndex, samplesLoop } = data;
-		const samplesLimit = samplesIndex;
+		let { samplesCount, samplesIndex } = data;
 		let angle = Math.PI / 2;
 		const delta = 2 * Math.PI / samplesCount;
 		const factor = (weight - 2) / 255;
@@ -170,7 +164,7 @@ class HistogramBehavior extends Behavior {
 };
 
 class ValuesBehavior extends Behavior {
-	onCreate(container, data) {
+	onCreate(container /*, data */) {
 		const shape = container.first
 		const path = new Outline.CanvasPath;
 		path.moveTo(120, 120);
@@ -190,7 +184,7 @@ class ValuesBehavior extends Behavior {
 };
 
 class RateBehavior extends Behavior {
-	onCreate(shape, data) {
+	onCreate(shape /*, data */) {
 		const path = new Outline.CanvasPath;
 		path.arc(15, 15, 15, 0, 2 * Math.PI, true);
 		shape.fillOutline = Outline.fill(path);

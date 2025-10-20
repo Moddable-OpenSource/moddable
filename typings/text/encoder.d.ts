@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Satoshi Tanaka
+* Copyright (c) 2022-2025  Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -29,7 +29,7 @@ declare module "text/encoder" {
         encodeInto(source: string, destination: Uint8Array): TextEncoderEncodeIntoResult;
     }
 
-    var TextEncoder: {
+    const TextEncoder: {
         prototype: TextEncoder;
         new(): TextEncoder;
     };

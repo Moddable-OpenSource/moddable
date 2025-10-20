@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,18 +17,18 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-class Camera @ "xs_camera_destructor" {
-	constructor(dictionary) @ "xs_camera_constructor";
-	close() @ "xs_camera_close";
-	read(samples) @ "xs_camera_read";
-	start() @ "xs_camera_start";
-	stop() @ "xs_camera_stop";
+class Camera extends Native("xs_camera_destructor") {
+	constructor(dictionary) { super(); native("xs_camera_constructor").call(this, dictionary); };
+	close() { return native("xs_camera_close").call(this); };
+	read(samples) { return native("xs_camera_read").call(this, samples); };
+	start() { return native("xs_camera_start").call(this); };
+	stop() { return native("xs_camera_stop").call(this); };
 	
-	get format() @ "xs_camera_get_format";
-	set format(it) @ "xs_camera_set_format";
-	get width() @ "xs_camera_get_width";
-	get height() @ "xs_camera_get_height";
-	get imageType() @ "xs_camera_get_imageType";
+	get format() { return native("xs_camera_get_format").call(this); };
+	set format(it) { native("xs_camera_set_format").call(this, it); };
+	get width() { return native("xs_camera_get_width").call(this); };
+	get height() { return native("xs_camera_get_height").call(this); };
+	get imageType() { return native("xs_camera_get_imageType").call(this); };
 }
 
 export default Camera;

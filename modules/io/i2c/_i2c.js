@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,12 +18,12 @@
  *
  */
 
-class I2C @ "_xs_i2c_destructor" {
-	constructor(options) @ "_xs_i2c_constructor"
-	close() @ "_xs_i2c_close"
-	read(count) @ "_xs_i2c_read"
-	write(buffer) @ "_xs_i2c_write"
-	writeRead(buffer, count) @ "_xs_i2c_writeRead"		// experimental extension
+class I2C extends Native("_xs_i2c_destructor") {
+	constructor(options) { super(); native("_xs_i2c_constructor").call(this, options); }
+	close() { return native("_xs_i2c_close").call(this); }
+	read(count) { return native("_xs_i2c_read").call(this, count); }
+	write(buffer) { return native("_xs_i2c_write").call(this, buffer); }
+	writeRead(buffer, count) { return native("_xs_i2c_writeRead").call(this, buffer, count); }		// experimental extension
 
 	get format() {
 		return "buffer";

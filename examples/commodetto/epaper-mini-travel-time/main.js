@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -58,7 +58,7 @@ function getTimeEstimate() {
         secure: {protocolVersion: 0x303} 
     });
 
-    request.callback = function(message, value, etc) {
+    request.callback = function(message /*, value, etc */) {
 		if (Request.status === message) {
 			flash.offset = 0;
 			flash.erase(0);

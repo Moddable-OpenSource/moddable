@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,11 +20,11 @@
 
 import I2C from "embedded:implementation/i2csync"
 
-I2C.Async = class @ "_xs_i2casync_destructor" {
-	constructor(options) @ "_xs_i2casync_constructor"
-	close() @ "_xs_i2casync_close"
-	read(count) @ "_xs_i2casync_read"
-	write(buffer) @ "_xs_i2casync_write"
+I2C.Async = class extends Native("_xs_i2casync_destructor") {
+	constructor(options) { super(); native("_xs_i2casync_constructor").call(this, options); }
+	close() { return native("_xs_i2casync_close").call(this); }
+	read(count) { return native("_xs_i2casync_read").call(this, count); }
+	write(buffer) { return native("_xs_i2casync_write").call(this, buffer); }
 }
 
 export default I2C;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020-2022 Moddable Tech, Inc.
+* Copyright (c) 2020-2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -19,16 +19,7 @@
 */
 
 declare module "commodetto/parseBMF" {
-  import Bitmap from "commodetto/Bitmap"
+  import type {Font} from "commodetto/Poco"
 
-  type Font = {
-    readonly byteLength: number
-    height: number
-    ascent: number
-    position: number
-    charCount: number,
-    bitmap: Bitmap
-  }
-    
   export default function (bmp: BufferLike): Font
 }

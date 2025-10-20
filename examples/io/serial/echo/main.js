@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -20,7 +20,7 @@ if (1) {		// using buffers
 		baud: 115200,
 		port: 2,
 		format: "buffer",
-		onReadable: function(count) {
+		onReadable: function(/* count */) {
 			this.write(this.read());
 		},
 	});

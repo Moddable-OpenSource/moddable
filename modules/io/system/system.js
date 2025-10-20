@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,10 +22,10 @@ import Timer from "timer";
 import device from "embedded:provider/builtin";
 
 class System {
-	static deepSleep() @ "xs_system_deepSleep"
-	static restart() @ "xs_system_restart"
+	static deepSleep() { return native("xs_system_deepSleep").call(this); }
+	static restart() { return native("xs_system_restart").call(this); }
 
-	static resolve(name, callback) @ "xs_system_resolve"
+	static resolve(name, callback) { return native("xs_system_resolve").call(this, name, callback); }
 
 	static setTimeout(callback, delay) {
 		return Timer.set(callback, delay);

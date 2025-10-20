@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,11 +20,11 @@
 
 const imageBuffer = {
 	__proto__: Content.prototype,
-	_create($, it) @ "PiuImageBuffer_create",
+	_create($, it) { native("PiuImageBuffer_create").call(this, $, it); },
 	
-	get buffer() @ "PiuImageBuffer_get_buffer",
-	set buffer(it) @ "PiuImageBuffer_set_buffer",
+	get buffer() { return native("PiuImageBuffer_get_buffer").call(this); },
+	set buffer(it) { native("PiuImageBuffer_set_buffer").call(this, it); },
 };
 export const ImageBuffer = Template(imageBuffer);
 Object.freeze(imageBuffer);
-global.ImageBuffer = ImageBuffer;
+globalThis.ImageBuffer = ImageBuffer;

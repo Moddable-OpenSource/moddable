@@ -230,7 +230,7 @@ class HTTPClient {
 							else {
 								this.#line += String.fromCharCode(c);
 								if (10 === c)
-									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
+									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
 							}
 							break;
 						case "skipHeaderValue":
@@ -442,6 +442,7 @@ class HTTPClient {
 			this.#onError?.(e);
 		}
 		catch {
+			/* this space intentionally left blank */
 		}
 		this.close();
 	}

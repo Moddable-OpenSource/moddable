@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,7 +17,6 @@ import Timeline from "piu/Timeline";
 import WipeTransition from "piu/WipeTransition";
 
 const whiteSkin = new Skin({ fill:"white" });
-const labelSkin = new Skin({ fill:"black", stroke:"white", top:1 });
 const labelStyle = new Style({ font:"semibold 16px Open Sans", color:"black" });
 const teamSkin = new Skin({ texture:new Texture("team.png"), x:0, y:0, width:120, height:120, variants:120 });
 const teamStrings = [
@@ -30,7 +29,7 @@ const teamStrings = [
 	"Peter Hoddie", 
 ];
 
-let BarsPort = Port.template($ => ({
+let BarsPort = Port.template(() => ({
 	Behavior: class extends Behavior {
 		drawBar(port, x, y, w, h, code) {
 			let bar = BARS[code];
@@ -46,7 +45,7 @@ let BarsPort = Port.template($ => ({
 		}
 		onDraw(port, x, y, w, h) {
 			let string = this.string;
-			let c = string.length, i, j;
+			let c = string.length, i;
 			let check = 0;
 			w = 10 + ((1 + c + 2) * 16) + 10;
 			h = port.height;
@@ -88,7 +87,7 @@ let BarsContainer = Container.template($ => ({
 	],
 }));
 
-let BarsApplication = Application.template($ => ({
+let BarsApplication = Application.template(() => ({
 	Behavior: class extends Behavior {
 		onCreate(application) {
 			this.index = 0;

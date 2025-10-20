@@ -54,7 +54,6 @@ class EventSource {
 		const url = new URL(href);
 		const protocol = url.protocol;
 		this.#host = url.hostname;
-		let config, port;
 		if (protocol == "http:") {
 			this.#config = device.network.http;
 			this.#port = url.port || 80;
@@ -64,7 +63,7 @@ class EventSource {
 			this.#port = url.port || 443;
 		}
 		else
-			throw new URLError("only http or https")
+			throw new URIError("only http or https")
 		this.#origin = url.origin;
 		let path = url.pathname;
 		let query = url.search;
@@ -79,7 +78,7 @@ class EventSource {
 		if ((this.#method == "POST") || (this.#method == "PUT")) {
 			let body = options.body;
 			if (!body) 
-				rejectResponse(new URLError(this.#method + " no body"));
+				throw new URIError(this.#method + " no body");
 			else if (!(body instanceof ArrayBuffer)) {
 				body = body.toString();
 				body = ArrayBuffer.fromString(body);
@@ -213,7 +212,7 @@ class EventSource {
 						 state = BODY;
 						 if (c == 0x0A)
 						 	break;
-						 // continue
+						 // fall through
 					case BODY:
 						if ((c == 0x0A) || (c == 0x0D)) {
 							this.#dispatchEvent();
@@ -248,7 +247,7 @@ class EventSource {
 							valueStart++;
 						 	break;
 						 }
-						 // continue
+						 // fall through
 					case VALUE:
 						if ((c == 0x0A) || (c == 0x0D)) {
 							valueStop = index;

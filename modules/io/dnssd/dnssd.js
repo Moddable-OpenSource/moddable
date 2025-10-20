@@ -34,7 +34,7 @@ import Timer from "timer";
 const LOCAL = "local";
 const TTL = 4500;
 
-class MDNS {
+class DNSSD {
 	udp;
 	services = [];
 	monitors = [];
@@ -44,7 +44,7 @@ class MDNS {
 		this.udp = new (options.socket.io)({
 			...options.socket,
 			target: this,
-			port: MDNS.PORT,
+			port: DNSSD.PORT,
 			onReadable(packets) {
 				do {
 					const packet = this.read();
@@ -52,7 +52,7 @@ class MDNS {
 				} while (--packets);
 			}
 		});
-		this.udp.add(MDNS.IP);
+		this.udp.add(DNSSD.IP);
 	}
 	close() {
 		while (this.services.length)
@@ -70,7 +70,7 @@ class MDNS {
 		this.udp?.close();
 		delete this.udp;
 	}
-	write(buffer, address = MDNS.IP, port = MDNS.PORT) {
+	write(buffer, address = DNSSD.IP, port = DNSSD.PORT) {
 		try { 
 			this.udp.write(buffer, address, port);
 		}
@@ -193,36 +193,36 @@ class MDNS {
 			monitor.service = service;
 			monitor.state = 0;
 			monitor.callbacks = [callback];
-			monitor.mdns = this;
+			monitor.dnssd = this;
 			monitor.timer = Timer.set(this.monitorTask.bind(monitor), 1);
 			this.monitors.push(monitor);
 		}
 	}
 	monitorTask() {
-		const mdns = this.mdns;
+		const dnssd = this.dnssd;
 		if ((this.state < 0) || (this.state >= 4))
 			return;
 
 		const query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
-		query.add(DNS.SECTION.QUESTION, this.service, DNS.RR.PTR, DNS.CLASS.IN | ((0 == this.state) ? MDNS.UNICAST : 0));
+		query.add(DNS.SECTION.QUESTION, this.service, DNS.RR.PTR, DNS.CLASS.IN | ((0 == this.state) ? DNSSD.UNICAST : 0));
 
 		for (let i = 0; i < this.length; i++)
 			query.add(DNS.SECTION.ANSWER, this.service, DNS.RR.PTR, DNS.CLASS.IN, TTL, this[i].name + "." + this.service);
 
-		if (!mdns.write(query.build())) {
-			this.timer = Timer.set(mdns.monitorTask.bind(this), 10 * 1000);
+		if (!dnssd.write(query.build())) {
+			this.timer = Timer.set(dnssd.monitorTask.bind(this), 10 * 1000);
 			return;
 		}
 
 		if (this.state < 3) {
-			this.timer = Timer.set(mdns.monitorTask.bind(this), (2 ** this.state) * 1000);
+			this.timer = Timer.set(dnssd.monitorTask.bind(this), (2 ** this.state) * 1000);
 			this.state += 1;
 		}
 		else
-			this.timer = Timer.set(mdns.monitorTask.bind(this), 30 * 60 * 1000);		//@@ calculate based on TTL elapsed (section 5.2 Continuous Multicast DNS Querying)
+			this.timer = Timer.set(dnssd.monitorTask.bind(this), 30 * 60 * 1000);		//@@ calculate based on TTL elapsed (section 5.2 Continuous Multicast DNS Querying)
 	}
-	scanPacket(packet, address) {
+	scanPacket(packet) {
 		const answers = packet.answers, records = [];
 		for (let i = 0, length = answers + packet.additionals; i < length; i++)
 			records.push((i < answers) ? packet.answer(i) : packet.additional(i - answers));
@@ -328,6 +328,7 @@ class MDNS {
 							callback.call(this, monitor.service.slice(0, -6), instance);
 						}
 						catch {
+							/* this space intentionally left blank */
 						}
 					}
 				}
@@ -335,9 +336,9 @@ class MDNS {
 					let query = new Serializer({query: true, opcode: DNS.OPCODE.QUERY});
 
 					if (instance.target)
-						query.add(DNS.SECTION.QUESTION, instance.target, DNS.RR.A, DNS.CLASS.IN | MDNS.UNICAST);
-					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.SRV, DNS.CLASS.IN | MDNS.UNICAST);
-					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.TXT, DNS.CLASS.IN | MDNS.UNICAST);
+						query.add(DNS.SECTION.QUESTION, instance.target, DNS.RR.A, DNS.CLASS.IN | DNSSD.UNICAST);
+					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.SRV, DNS.CLASS.IN | DNSSD.UNICAST);
+					query.add(DNS.SECTION.QUESTION, instance.name + "." + monitor.service, DNS.RR.TXT, DNS.CLASS.IN | DNSSD.UNICAST);
 
 					this.write(query.build());
 				}
@@ -352,7 +353,7 @@ class MDNS {
 //		dumpPacket(packet, address);
 
 		if (packet.answers || packet.additionals)
-			this.scanPacket(packet, address);
+			this.scanPacket(packet);
 
 		this.claims.forEach(claim => {
 			if (claim.probing < 0) return;
@@ -512,7 +513,7 @@ class MDNS {
 		const instanceName = service?.instanceName ?? host;
 
 		if (0x20 & mask)	// NSEC indicating A only
-			response.add(DNS.SECTION.ANSWER, host + "." + LOCAL, DNS.RR.NSEC, DNS.CLASS.IN | MDNS.FLUSH, TTL & bye,
+			response.add(DNS.SECTION.ANSWER, host + "." + LOCAL, DNS.RR.NSEC, DNS.CLASS.IN | DNSSD.FLUSH, TTL & bye,
 						 {next: host + "." + LOCAL, bitmaps: Uint8Array.of(0, 4, 0x40, 0, 0, 0)});
 
 		if (0x10 & mask)	// PTR for service discovery
@@ -522,14 +523,14 @@ class MDNS {
 			response.add(DNS.SECTION.ANSWER, "_" + service.name + "._" + service.protocol + "." + LOCAL, DNS.RR.PTR, DNS.CLASS.IN, TTL & bye, instanceName + "._" + service.name + "._" + service.protocol + "." + LOCAL);
 
 		if ((0x04 & mask) && service.txt)		// TXT
-			response.add(DNS.SECTION.ANSWER, instanceName + "._" + service.name + "._" + service.protocol + "." + LOCAL, DNS.RR.TXT, DNS.CLASS.IN | ((0x8000 & mask) ? MDNS.FLUSH : 0), TTL & bye, service.txt);
+			response.add(DNS.SECTION.ANSWER, instanceName + "._" + service.name + "._" + service.protocol + "." + LOCAL, DNS.RR.TXT, DNS.CLASS.IN | ((0x8000 & mask) ? DNSSD.FLUSH : 0), TTL & bye, service.txt);
 
 		if (0x02 & mask)	// SRV
 			response.add(DNS.SECTION.ANSWER, instanceName + "._" + service.name + "._" + service.protocol + "." + LOCAL, DNS.RR.SRV, DNS.CLASS.IN, 120 & bye,
 							{priority: 0, weight: 0, port: service.port, target: host + "." + LOCAL});
 
 		if (0x01 & mask)	// A
-			response.add(DNS.SECTION.ANSWER, host + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | MDNS.FLUSH, 120 & bye, Net.get("IP", from));
+			response.add(DNS.SECTION.ANSWER, host + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | DNSSD.FLUSH, 120 & bye, Net.get("IP", from));
 
 		if (!build)
 			return;
@@ -573,21 +574,21 @@ class MDNS {
 
 			trace(`probe ${claim.probing}\n`);
 			const reply = new Serializer({query: true, opcode: DNS.OPCODE.QUERY, authoritative: true});
-			reply.add(DNS.SECTION.QUESTION, claim.host + "." + LOCAL, DNS.RR.ANY, DNS.CLASS.IN | MDNS.UNICAST);	// question for DNS.RR.A, unicast response requested
-			reply.add(DNS.SECTION.ANSWER, claim.host + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | MDNS.FLUSH, 120, Net.get("IP"));	// authoritative answer for DNS.RR.A
+			reply.add(DNS.SECTION.QUESTION, claim.host + "." + LOCAL, DNS.RR.ANY, DNS.CLASS.IN | DNSSD.UNICAST);	// question for DNS.RR.A, unicast response requested
+			reply.add(DNS.SECTION.ANSWER, claim.host + "." + LOCAL, DNS.RR.A, DNS.CLASS.IN | DNSSD.FLUSH, 120, Net.get("IP"));	// authoritative answer for DNS.RR.A
 			this.write(reply.build());
 			claim.probing += 1;
 		}, 250, 10);		//@@ random initial delay
 	}
 }
-MDNS.IP = "224.0.0.251";
-MDNS.PORT = 5353;
-MDNS.FLUSH = 0x8000;
-MDNS.UNICAST = 0x8000;
+DNSSD.IP = "224.0.0.251";
+DNSSD.PORT = 5353;
+DNSSD.FLUSH = 0x8000;
+DNSSD.UNICAST = 0x8000;
 
-MDNS.hostName = 1;
-MDNS.retry = 2;
-MDNS.error = -1;
+DNSSD.hostName = 1;
+DNSSD.retry = 2;
+DNSSD.error = -1;
 
 /*
 function dumpPacket(packet, address)
@@ -663,14 +664,14 @@ class Advertise {
 			this.#service.txt = txt;
 		if (instanceName)
 			this.#service.instanceName = instanceName;
-		mdns.add(this.#service);
+		dnssd.add(this.#service);
 		
 		this.#list = list;
 		list.push(this);
 	}
 	close() {
 		if (!this.#service) return
-		mdns.remove(this.#service);
+		dnssd.remove(this.#service);
 		this.#service = undefined;
 		this.#list.splice(this.#list.indexOf(this), 1);
 	}
@@ -679,7 +680,7 @@ class Advertise {
 			this.#service.txt = txt;
 		else
 			delete this.#service.txt;
-		mdns.update(this.#service);
+		dnssd.update(this.#service);
 	}
 }
 
@@ -689,12 +690,12 @@ class Discover {
 	#list;
 	#onFound;
 	#onUpdate;
-	#onLost;
+//@@	#onLost;
 	
 	constructor(options, list) {
 		this.#onFound = options.onFound;
 		this.#onUpdate = options.onUpdate;
-		this.#onLost = options.onLost;
+//@@		this.#onLost = options.onLost;
 		this.#serviceType = options.serviceType;
 
 		this.#callback = (service, instance) => {
@@ -721,14 +722,14 @@ class Discover {
 				this.#onFound?.(found);
 			}
 		};
-		mdns.monitor(options.serviceType, this.#callback);
+		dnssd.monitor(options.serviceType, this.#callback);
 
 		this.#list = list;
 		list.push(this);
 	}
 	close() {
 		if (!this.#serviceType) return
-		mdns.remove(this.#serviceType, this.#callback);
+		dnssd.remove(this.#serviceType, this.#callback);
 		this.#list.splice(this.#list.indexOf(this), 1);
 		this.#serviceType = undefined;
 	}
@@ -744,7 +745,7 @@ class Claim  {
 	constructor(options, list) {
 		this.#onReady = options.onReady;
 		this.#onError = options.onError;
-		this.#claim = mdns.claim({
+		this.#claim = dnssd.claim({
 			...options,
 			onReady: () => this.#onReady?.(),
 			onError: () => this.#onError?.(),
@@ -754,30 +755,30 @@ class Claim  {
 	}
 	close() {
 		if (!this.#claim) return;
-		mdns.unclaim(this.#claim);
+		dnssd.unclaim(this.#claim);
 		this.#list.splice(this.#list.indexOf(this), 1);
 		this.#claim = undefined;
 	}
 }
 
-let mdns;
+let dnssd;
 
 export default class {
 	#list = [];
 
 	constructor(options) {
-		mdns ??= new MDNS(options);
-		mdns.count ??= 0;
-		mdns.count += 1;
+		dnssd ??= new DNSSD(options);
+		dnssd.count ??= 0;
+		dnssd.count += 1;
 	}
 	close() {
 		while (this.#list.length)
 			this.#list[0].close();
 
-		mdns.count -= 1;
-		if (0 === mdns.count) {
-			mdns.close();
-			mdns = undefined;
+		dnssd.count -= 1;
+		if (0 === dnssd.count) {
+			dnssd.close();
+			dnssd = undefined;
 		}
 	}
 

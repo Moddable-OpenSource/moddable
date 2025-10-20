@@ -1,5 +1,5 @@
 /*
- *     Copyright (C) 2016-2019 Moddable Tech, Inc.
+ *     Copyright (c) 2016-2025  Moddable Tech, Inc.
  *     All rights reserved.
  */
 
@@ -16,7 +16,7 @@ CLI.install(function(command, parts) {
 	if ("screen" !== command)
 		return false;
 
-	if (!global.screen) {
+	if (!globalThis.screen) {
 		this.line("no screen found");
 		return true;
 	}

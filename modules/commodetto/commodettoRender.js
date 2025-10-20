@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -31,11 +31,11 @@ export default class Render {
 		Constructor binds this renderer to a PixelOut instance
 		Provides pixels for rendering into
 	*/
-	constructor(pixelsOut, dictionary) {
+	constructor(pixelsOut /*, dictionary */) {
 		this.pixelsOut = pixelsOut;
 	}
 
-	begin(x = 0, y = 0, width = this.pixelsOut.width - x, height = this.pixelsOut.height - y) {
+	begin(/* x = 0, y = 0, width = this.pixelsOut.width - x, height = this.pixelsOut.height - y */) {
 	}
 	end() {
 	}

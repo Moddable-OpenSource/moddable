@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -160,8 +160,9 @@ void PiuImageSync(void* it)
 	PiuImage* self = it;
 	xsIntegerValue frameCount = (*self)->frameCount;
 	if (frameCount > 1) {
+		PiuIdle selfIdle = PiuContentUseIdle(it);
 		xsIntegerValue fromIndex = (*self)->frameIndex;
-		xsIntegerValue toIndex = (xsIntegerValue)c_round((frameCount * (*self)->time) / (*self)->duration);
+		xsIntegerValue toIndex = (xsIntegerValue)c_round((frameCount * selfIdle->time) / selfIdle->duration);
 		if (toIndex >= frameCount)
 			toIndex = frameCount - 1;
 		if (fromIndex != toIndex) {
@@ -218,6 +219,7 @@ void PiuImage_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuImageHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuImageDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuImageRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuImageDictionary(the, self);
@@ -260,9 +262,10 @@ void PiuImage_create(xsMachine* the)
 	if (frameCount > 1) {
 		uint16_t fps_numerator = c_read16(&cch->fps_numerator);
 		uint16_t fps_denominator = c_read16(&cch->fps_denominator);
-		(*self)->duration = (1000 * (double)frameCount * (double)fps_numerator ) / (double)fps_denominator;
-		(*self)->interval = (1000 * (PiuInterval)fps_numerator ) / (PiuInterval)fps_denominator;
-		(*self)->time = 0;
+		PiuIdle selfIdle = PiuContentUseIdle(self);
+		selfIdle->duration = (1000 * (double)frameCount * (double)fps_numerator ) / (double)fps_denominator;
+		selfIdle->interval = (1000 * (PiuInterval)fps_numerator ) / (PiuInterval)fps_denominator;
+		selfIdle->time = 0;
 	}
 	PiuBehaviorOnCreate(self);
 }
@@ -289,7 +292,7 @@ void PiuImage_set_frameIndex(xsMachine *the)
 			frameIndex = 0;
 		else if (frameIndex >= frameCount)
 			frameIndex = frameCount - 1;
-		PiuContentSetTime((PiuContent*)self, ((double)frameIndex * (*self)->duration) / (double)frameCount);
+		PiuContentSetTime((PiuContent*)self, ((double)frameIndex * PiuContentUseIdle(self)->duration) / (double)frameCount);
 	}
 }
 

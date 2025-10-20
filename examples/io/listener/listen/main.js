@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,7 @@
  */
 
 import listen from "listen";
-import { Headers, Response } from "listen";
+import { Response } from "listen";
 
 async function main() {
 	for await (const connection of listen({ port: 80 })) {

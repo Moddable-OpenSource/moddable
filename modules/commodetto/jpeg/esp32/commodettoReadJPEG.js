@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,14 +20,13 @@
 
 import Bitmap from "commodetto/Bitmap";
 
-function initialize() @ "xs_JPEG_initialize";
-
-export default class JPEG @ "xs_JPEG_destructor" {
+export default class JPEG extends Native("xs_JPEG_destructor") {
 	constructor(buffer, options) {
-		initialize.call(this, buffer, options, Bitmap)
+		super();
+		native("xs_JPEG_initialize").call(this, buffer, options, Bitmap);
 	}
-	close() @ "xs_JPEG_close"
-	push() {throw new Error("ESP32 JPEG decoder doesn't spool");}
-	read() @ "xs_JPEG_read"
-	get ready() @ "xs_JPEG_get_ready"
+	close() { return native("xs_JPEG_close").call(this); }
+	push() { throw new Error("ESP32 JPEG decoder doesn't spool"); }
+	read() { return native("xs_JPEG_read").call(this); }
+	get ready() { return native("xs_JPEG_get_ready").call(this); }
 }

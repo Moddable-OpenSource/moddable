@@ -12,7 +12,7 @@
 *
 */
 
-import {bluetooth, BluetoothUUID, BluetoothDevice} from "web-bluetooth"
+import {BluetoothDevice} from "web-bluetooth"
 import {GAPClient} from "embedded:io/bluetoothle/central"
 import Timer from "timer";
 

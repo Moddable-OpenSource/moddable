@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -172,7 +172,8 @@ void PiuApplicationIdleCheck(PiuApplication* self)
 		PiuIdleLink* link = (*self)->idleChain;
 		PiuTick ticks = PiuViewTicks((*self)->view);
 		while (link) {
-			PiuInterval interval = (*link)->ticks + (*link)->interval - ticks;
+			PiuIdle linkIdle = PiuContentUseIdle(link);
+			PiuInterval interval = linkIdle->ticks + linkIdle->interval - ticks;
 			if (interval <= 0) {
 				idle = 1;
 				goto bail;
@@ -181,7 +182,7 @@ void PiuApplicationIdleCheck(PiuApplication* self)
 				idle = interval;
 			else if (idle > interval)
 				idle = interval;
-			link = (*link)->idleLink;
+			link = linkIdle->idleLink;
 		}
 	}
 bail:
@@ -193,10 +194,11 @@ void PiuApplicationIdleContents(PiuApplication* self)
 	PiuIdleLink* link = (*self)->idleChain;
 	PiuTick ticks = PiuViewTicks((*self)->view);
 	while (link) {
-		PiuInterval interval = ticks - (*link)->ticks;
-		(*self)->idleLoop = (*link)->idleLink;
-		if ((*link)->interval <= interval) {
-			(*link)->ticks = ticks;
+		PiuIdle linkIdle = PiuContentUseIdle(link);
+		PiuInterval interval = ticks - linkIdle->ticks;
+		(*self)->idleLoop = linkIdle->idleLink;
+		if (linkIdle->interval <= interval) {
+			linkIdle->ticks = ticks;
 			(*link)->dispatch->idle(link, interval);
 		}
 		link = (*self)->idleLoop;
@@ -280,13 +282,13 @@ void PiuApplicationStartContent(PiuApplication* self, void* it)
 	while (current) {
 		if (current == link)
 			break;
-		current = (*current)->idleLink;
+		current = PiuContentUseIdle(current)->idleLink;
 	}
 	if (!current) {
-		(*link)->idleLink = (*self)->idleChain;
+		PiuContentUseIdle(link)->idleLink = (*self)->idleChain;
 		(*self)->idleChain = link;
 	}
-	(*link)->ticks = PiuViewTicks((*self)->view);
+	PiuContentUseIdle(link)->ticks = PiuViewTicks((*self)->view);
 	PiuViewReschedule((*self)->view);
 }
 
@@ -297,10 +299,10 @@ void PiuApplicationStopContent(PiuApplication* self, void* it)
 	PiuIdleLink* current = (*self)->idleChain;
 	while (current) {
 		if (current == link) {
-			link = (*current)->idleLink;
-			(*current)->idleLink = NULL;
+			link = PiuContentUseIdle(current)->idleLink;
+			PiuContentUseIdle(current)->idleLink = NULL;
 			if (former)
-				(*former)->idleLink = link;
+				PiuContentUseIdle(former)->idleLink = link;
 			else
 				(*self)->idleChain = link;
 			if ((*self)->idleLoop == current)
@@ -308,7 +310,7 @@ void PiuApplicationStopContent(PiuApplication* self, void* it)
 			break;
 		}
 		former = current;
-		current = (*current)->idleLink;
+		current = PiuContentUseIdle(current)->idleLink;
 	}
 	PiuViewReschedule((*self)->view);
 }
@@ -483,16 +485,18 @@ void PiuApplication_create(xsMachine* the)
 	PiuApplication* self;
 	xsIntegerValue c, i;
 	xsVars(5);
-// 	xsLog("application free %d\n", system_get_free_heap_size());
+
 	if (!xsFindInteger(xsArg(1), xsID_touchCount, &c))
 		c = 1;
-	xsSetHostChunk(xsThis, NULL, sizeof(PiuApplicationRecord) + ((c - 1) * sizeof(PiuTouchLink*)));
+	int size = sizeof(PiuApplicationRecord) + ((c - 1) * sizeof(PiuTouchLink*));
+	xsSetHostChunk(xsThis, NULL, size);
 	self = PIU(Application, xsThis);
 	xsSetContext(the, self);
 	(*self)->the = the;
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuApplicationHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuApplicationDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(size);
 	(*self)->flags = piuVisible | piuContainer | piuDisplaying;
 	if (!xsFindResult(xsArg(1), xsID__DeferLink))
 		xsErrorPrintf("no DeferLink");

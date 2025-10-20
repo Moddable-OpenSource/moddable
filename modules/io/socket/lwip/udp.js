@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,13 +18,13 @@
  *
  */
 
-class UDP @ "xs_udp_destructor" {
-	constructor(dictionary) @ "xs_udp_constructor";
-	close() @ "xs_udp_close"
-	read() @ "xs_udp_read"
-	write() @ "xs_udp_write"
-	add() @ "xs_udp_add"
-	remove() @ "xs_udp_remove"
+class UDP extends Native("xs_udp_destructor") {
+	constructor(dictionary) { super(); native("xs_udp_constructor").call(this, dictionary); };
+	close() { return native("xs_udp_close").call(this); }
+	read() { return native("xs_udp_read").call(this); }
+	write() { return native("xs_udp_write").call(this); }
+	add() { return native("xs_udp_add").call(this); }
+	remove() { return native("xs_udp_remove").call(this); }
 
 	get format() {
 		return "buffer";

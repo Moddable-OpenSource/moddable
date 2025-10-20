@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -14,6 +14,6 @@
 
 let counter = 0
 
-self.onmessage = function(msg) {
+self.onmessage = function(/* msg */) {
 	self.postMessage({hello: "from simple worker", counter: ++counter});
 }

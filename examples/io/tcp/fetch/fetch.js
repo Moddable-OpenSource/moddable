@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -132,8 +132,8 @@ function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
 		let url = new URL(href);
 		if ((url.protocol != "http:") && (url.protocol != "https:"))
-			rejectResponse(new URLError("only http or https"));
-		const promiseBody = new Promise((resolveBody, rejectBody) => {
+			rejectResponse(new URIError("only http or https"));
+		const promiseBody = new Promise((resolveBody /*, rejectBody */) => {
 			let method = info.method;
 			let headers = info.headers;
 			let body = info.body;
@@ -141,7 +141,7 @@ function fetch(href, info = {}) {
 			if ((method == "POST") || (method == "PUT")) {
 				body = info.body;
 				if (body == undefined) 
-					rejectResponse(new URLError(method + " no body"));
+					rejectResponse(new URIError(method + " no body"));
 				else if (!(body instanceof ArrayBuffer)) {
 					body = body.toString();
 					body = ArrayBuffer.fromString(body);
@@ -204,7 +204,7 @@ function fetch(href, info = {}) {
 					else
 						buffer = this.read(count);
 				},
-				onDone(error) {
+				onDone(/* error */) {
 					if (this.redirected) {
 						fetchClientRequest(url, options);
 						return;

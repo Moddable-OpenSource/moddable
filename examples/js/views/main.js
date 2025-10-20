@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,8 +14,8 @@
 
 import {ThreeIntegers} from "exampleView";
 
-function zero(view) @ "xs_zero";
-function increment(view) @ "xs_increment";
+function zero(view) { return native("xs_zero").call(this, view); }
+function increment(view) { return native("xs_increment").call(this, view); }
 
 const i3 = new ThreeIntegers;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -67,7 +67,7 @@ void PiuLayoutFitVertically(void* it)
 	PiuLayout* self = it;
 	PiuBehaviorOnFitVertically(self, (*self)->bounds.height);
 	PiuContainerFitVertically(it);
-}
+} 
 
 void PiuLayoutMeasureHorizontally(void* it) 
 {
@@ -101,6 +101,7 @@ void PiuLayout_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuLayoutHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuLayoutDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuLayoutRecord));
 	(*self)->flags = piuVisible | piuContainer;
 	PiuContentDictionary(the, self);
 	PiuContainerDictionary(the, self);

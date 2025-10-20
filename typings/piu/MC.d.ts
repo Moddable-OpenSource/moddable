@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-21 Shinya Ishikawa
+ * Copyright (c) 2020-2025 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -19,6 +19,8 @@
  */
 
 declare module "piu/MC" {
+  import {} from "commodetto/Poco";   // for global screen
+
   /* type aliases */
   type Coordinates = {
     top?: number;
@@ -64,18 +66,28 @@ declare module "piu/MC" {
   ) => TemplateStyle<Partial<ConstructorParameters<T>[1]>, T>;
 
   type TemplateComponent<P, C extends new (...args: any) => any> = {
-    new (dictionary: P): InstanceType<C>;
+    new (behaviorData?: any, dictionary?: P): InstanceType<C>;
     template: TemplateComponentFactory<C>;
   };
   type TemplateComponentFactory<T extends new (...args: any) => any> = (
     func: (param: any) => ConstructorParameters<T>[1]
   ) => TemplateComponent<Parameters<typeof func>[0], T>;
 
-  interface Behavior {}
-
-  interface BehaviorConstructor {
-    new(any): Behavior;
+  interface Behavior<T extends Content = Content>{
+    onCreate?(content: T, data: object, context: any): void;
+    onDisplaying?(content: T): void;
+    onFinished?(content: T): void;
+    onTimeChanged?(content: T): void;
+    onTouchBegan?(content: T, id: number, x: number, y: number, ticks: number): void;
+    onTouchCancelled?(content: T, id: number): void;
+    onTouchended?( content: T, id: number, x: number, y: number, ticks: number): void;
+    onTouchMoved?( content: T, id: number, x: number, y: number, ticks: number): void;
+    // TODO: complete callbacks
   }
+
+interface BehaviorConstructor<T extends Content = Content> {
+  new(): Behavior<T>;
+}
 
   interface Content {
     // TODO: consider type parameter to avoid any
@@ -93,33 +105,7 @@ declare module "piu/MC" {
     sizeBy(width: number, height: number): void;
     start(): void;
     stop(): void;
-    onCreate(content: Content, data: object, context: object): void;
-    onDisplaying(content: Content): void;
-    onFinished(content: Content): void;
-    onTimeChanged(content: Content): void;
-    onTouchBegan(
-      content: Content,
-      id: string,
-      x: number,
-      y: number,
-      ticks: number
-    ): void;
-    onTouchCancelled(content: Content, id: string): void;
-    onTouchended(
-      content: Content,
-      id: string,
-      x: number,
-      y: number,
-      ticks: number
-    ): void;
-    onTouchMoved(
-      content: Content,
-      id: string,
-      x: number,
-      y: number,
-      ticks: number
-    ): void;
-    // TODO: Avoid any
+
     readonly previous: Content | null;
     readonly next: Content | null;
     readonly container: Container | null;
@@ -164,17 +150,16 @@ declare module "piu/MC" {
     Behavior?: BehaviorConstructor;
     skin?: Skin | SkinDictionary;
     Skin?: SkinConstructor;
-    style?: Style;
+    style?: Style | StyleDictionary;
     Style?: StyleConstructor;
     visible?: boolean;
   }
   interface ContentConstructor {
-    new(behaviorData: any, dictionary: ContentDictionary): Content;
-    (behaviorData: any, dictionary: ContentDictionary): Content;
+    new(behaviorData?: any, dictionary?: ContentDictionary): Content;
+    (behaviorData?: any, dictionary?: ContentDictionary): Content;
     readonly prototype: Content;
 
     template: TemplateComponentFactory<typeof Content>;
-    getAll<T>(this: { new (): T }): T[];
   }
 
   interface Style {
@@ -189,7 +174,7 @@ declare module "piu/MC" {
   interface StyleConstructor {
     new(dictionary: StyleDictionary): Style;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, dictionary: StyleDictionary): T;
   }
   
   interface TextStyleDictionary extends StyleDictionaryBase {
@@ -243,7 +228,7 @@ declare module "piu/MC" {
   }
 
   interface TextureSkinDictionary extends Coordinates, Bounds {
-    texture?: Texture;
+    texture?: Texture | TextureDictionary;
     Texture?: TextureConstructor;
     color?: Color | Color[];
     states?: number;
@@ -291,9 +276,10 @@ declare module "piu/MC" {
     contents?: Content[];
   }
   interface ContainerConstructor {
-    new(behaviorData: any, dictionary?: ContainerDictionary);
+    new(behaviorData?: any, dictionary?: ContainerDictionary): Container;
+    (behaviorData?: any, dictionary?: ContainerDictionary): Container;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: any) => ContainerDictionary): T;
   }
 
   interface Label extends Content {
@@ -303,9 +289,10 @@ declare module "piu/MC" {
     string?: string;
   }
   interface LabelConstructor {
-    new(behaviorData: any, dictionary: LabelDictionary): Label;
+    new(behaviorData?: any, dictionary?: LabelDictionary): Label;
+    (behaviorData?: any, dictionary?: LabelDictionary): Label;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: any) => LabelDictionary): T;
   }
 
   interface Port extends Content {
@@ -404,12 +391,18 @@ declare module "piu/MC" {
   interface PortConstructor extends ContentConstructor {
   }
 
+  interface TextBlock {
+      behavior?: object | null;
+      style?: Style | null;
+      spans: (string | TextSpan)[] | string,
+  }
+
+  interface TextSpan extends TextBlock {
+      link?: any
+  }
+
   interface Text extends Content {
-    blocks: {
-      behavior: object | null;
-      style: Style | null;
-      spans: string | string[];
-    }[];
+    blocks: TextBlock[],
     string: string;
     begin(): void;
     beginBlock(style?: Style, behavior?: object): void;
@@ -420,17 +413,14 @@ declare module "piu/MC" {
     endSpan(): void;
   }
   interface TextDictionary extends ContentDictionary {
-    blocks?: {
-      behavior?: Behavior;
-      style?: Style;
-      spans: string | string[];
-    }[];
-    string: string;
+    blocks?: TextBlock[],
+    string?: string;
   }
-  interface TextConstructor extends ContentConstructor {
-    new(behaviorData: any, dictionary: TextDictionary): Text;
+  interface TextConstructor {
+    new(behaviorData?: any, dictionary?: TextDictionary): Text;
+    (behaviorData?: any, dictionary?: TextDictionary): Text;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: any) => TextDictionary): T;
   }
 
   interface Application extends Container {
@@ -445,9 +435,9 @@ declare module "piu/MC" {
     pixels?: number;
   }
   interface ApplicationConstructor {
-    new(behaviorData: any, dictionary: ApplicationDictionary): Application;
+    new(behaviorData?: any, dictionary?: ApplicationDictionary): Application;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: any) => ApplicationDictionary): T;
   }
 
   interface Column extends Container {
@@ -471,10 +461,11 @@ declare module "piu/MC" {
   interface ImageDictionary extends ContentDictionary {
     path: string;
   }
-  interface ImageConstructor extends ContentConstructor {
-    new(behaviorData: any, dictionary: ImageDictionary): Image;
+  interface ImageConstructor {
+    new(behaviorData?: any, dictionary?: ImageDictionary): Image;
+    (behaviorData?: any, dictionary?: ImageDictionary): Image;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: any) => ImageDictionary): T;
   }
 
   interface Die extends Layout {
@@ -510,10 +501,43 @@ declare module "piu/MC" {
   interface ScrollerDictionary extends ContainerDictionary {
     loop?: boolean;
   }
-  interface ScrollerConstructor extends ContainerConstructor {
-    new(behaviorData: any, dictionary: ScrollerDictionary): Scroller;
+  interface ScrollerConstructor {
+    new(behaviorData?: any, dictionary?: ScrollerDictionary): Scroller;
+    (behaviorData?: any, dictionary?: ScrollerDictionary): Scroller;
+
+    template<T>(this: T, fn: (arg: any) => ScrollerDictionary): T;
   }
 
+  interface LinkDictionary {
+    Behavior?: BehaviorConstructor;
+  }
+  interface Link {
+    readonly container: Container;
+    state: number;
+    captureTouch(id: number, x: number, y: number, ticks: number): void;
+  }
+  interface LinkConstructor {
+    new(behaviorData?: any, dictionary?: LinkDictionary): Link;
+    (behaviorData?: any, dictionary?: LinkDictionary): Link;
+
+    template<T>(this: T, fn: (arg: any) => LinkDictionary): T;
+  }
+
+  interface Locals {
+    new(name?: string, language?: string): Locals
+    language: string;
+    get(textToLocalize: string): string
+  }
+
+  interface blendColors {
+    (a: number, c1: number, c2: number): Color
+  }
+  interface hsl {
+    (h: number, s: number, l: number): Color
+  }
+  interface hsla {
+    (h: number, s: number, l: number, a: number): Color
+  }
   interface rgb {
     (r: number, g: number, b: number): Color
   }
@@ -534,11 +558,18 @@ declare module "piu/MC" {
     const Row: RowConstructor
     const Column: ColumnConstructor
     const Layout: LayoutConstructor
+    const Image: ImageConstructor
     const Die: DieConstructor
     const Port: PortConstructor
     const Label: LabelConstructor
     const Transition: TransitionConstructor
     const Text: TextConstructor
+    const Link: LinkConstructor
+    const application: Application
+    const Locals: Locals
+    const blendColors: blendColors
+    const hsl: hsl
+    const hsla: hsla
     const rgb: rgb
     const rgba: rgba
   }

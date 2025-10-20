@@ -158,7 +158,7 @@ struct BLEServerRecord {
 	uint8_t		advertising:1;
 	uint8_t		addressType;
 	uint8_t		secure;
-	uint8_t		lazy;
+	uint8_t		immediate;
 	uint16_t	mtu;
 };
 typedef struct BLEServerRecord BLEServerRecord;
@@ -267,15 +267,15 @@ void xs_gattserver_build(xsMachine *the)
 	xsSlot *onPasskey = builtinGetCallback(the, xsID_onPasskey);
 	xsSlot *onSecured = builtinGetCallback(the, xsID_onSecured);
 
-	uint8_t secure = 0, authenticate = 0, lazy = 0, bond = 0, display = 0, keyboard = 0;
+	uint8_t secure = 0, authenticate = 0, immediate = 0, bond = 0, display = 0, keyboard = 0;
 	if (xsmcHas(xsArg(0), xsID_security)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_security);
 
 		xsmcGet(xsVar(1), xsVar(0), xsID_authenticate);
 		authenticate = xsmcTest(xsVar(1));
 
-		xsmcGet(xsVar(1), xsVar(0), xsID_lazy);
-		lazy = xsmcTest(xsVar(1));
+		xsmcGet(xsVar(1), xsVar(0), xsID_immediate);
+		immediate = xsmcTest(xsVar(1));
 
 		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
 		bond = xsmcTest(xsVar(1));
@@ -334,7 +334,7 @@ void xs_gattserver_build(xsMachine *the)
 	server->characteristicPrototype = xsmcToReference(xsArg(2));
 	server->mtu = (uint16_t)mtu;
 	server->secure = secure;
-	server->lazy = lazy;
+	server->immediate = immediate;
 
 	gServer = server;
 
@@ -856,7 +856,7 @@ static void deliverConnect(void *the, void *refcon, uint8_t *message, uint16_t m
 
 	ensureAdvertising(server);	// NimBLE disables advertising on connection. the client still wants it, so reenable. This will fail if all NimBLE GATT connections are used but it is the best we can do
 
-	if (server->secure && !server->lazy)
+	if (server->secure && server->immediate)
 		ble_gap_security_initiate(conn_handle);
 }
 

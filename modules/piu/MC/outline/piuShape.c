@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -231,6 +231,7 @@ void PiuShape_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuShapeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuShapeDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuShapeRecord));
 	(*self)->flags = piuVisible | piuClip;
 	PiuContentDictionary(the, self);
 	PiuShapeDictionary(the, self);

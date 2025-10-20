@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -71,7 +71,6 @@ function drawOne(font, text) {
 		text = text.split(" ");
 		const layoutWidth = poco.width - (margin * 2); 
 		let width = layoutWidth;
-		let y = margin;
 		const spaceWidth = poco.getTextWidth(" ", font);
 		const lines = [""];
 		while (text.length) {
@@ -85,7 +84,6 @@ function drawOne(font, text) {
 			width -= wordWidth + spaceWidth;
 			if (width <= 0) {
 				width = layoutWidth;
-				y += font.height;
 				lines.push("");
 			}
 		}

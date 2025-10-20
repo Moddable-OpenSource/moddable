@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -58,7 +58,7 @@ const HorizontalScrollingContent = Scroller.template($ => ({
 }));
 
 class HeaderBehavior extends Behavior {
-	onCreate(label) {
+	onCreate(/* label */) {
 		this.direction = 0;
 	}
 	onTouchEnded(label) {

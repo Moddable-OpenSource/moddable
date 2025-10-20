@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -157,7 +157,8 @@ function alpha() {
 }
 
 function jpeg() {
-	if (0) {
+	const loadFullImage = false;
+	if (loadFullImage) {
 		/* requires more memory than many MCUs have free */
 		let piano = loadJPEG(new Resource("piano.jpg"));
 		trace(`width ${piano.width}, height ${piano.height}\n`);
@@ -174,7 +175,7 @@ function jpeg() {
 
 		let jpeg = new JPEG(new Resource("piano.jpg"));
 		let block;
-		while (block = jpeg.read()) {
+		while ((block = jpeg.read())) {
 			poco.begin(block.x, block.y, block.width, block.height);
 			poco.drawBitmap(block, block.x, block.y);
 			poco.end();
@@ -237,7 +238,7 @@ function text4() {
 	poco.drawText("Poco", openSans52, openSans52.mask, 0, 5);
 }
 
-let examples = [fillRectangle, origin, clip, monochrome, pattern, grayBitmap, offscreen, alpha, jpeg, text1, text2, text3, text4];
+let examples = [fillRectangle, origin, clip, monochrome, pattern, colorBitmap, grayBitmap, offscreen, alpha, jpeg, text1, text2, text3, text4];
 let index = 0;
 
 Timer.repeat(() => {

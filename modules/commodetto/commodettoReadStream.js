@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,14 +18,13 @@
  *
  */
 
-export default class Stream @ "xs_cs_destructor" {
-	constructor(buffer, dictionary) @ "xs_cs_constructor";
-	initialize(buffer, dictionary) {
+export default class Stream extends Native("xs_cs_destructor") {
+	constructor(buffer, dictionary) { super(); native("xs_cs_constructor").call(this, buffer, dictionary); }
+	initialize(buffer /*, dictionary */) {
 		this.buffer = buffer;
 	}
-	next() @ "xs_cs_next"
+	next() { return native("xs_cs_next").call(this); }
 	read(offset, size) {
 		return this.buffer.slice(offset, offset + size, false);
 	}
 }
-Object.freeze(Stream.prototype);

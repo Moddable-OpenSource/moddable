@@ -12,7 +12,7 @@
 *
 */
 
-import {bluetooth, BluetoothUUID} from "web-bluetooth"
+import {bluetooth} from "web-bluetooth"
 
 const device = await bluetooth.requestDevice({
 	filters: [{ services: ['heart_rate'] }]

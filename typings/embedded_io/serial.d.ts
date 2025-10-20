@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2022-2025  Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -52,7 +52,7 @@ declare module "embedded:io/serial" {
       dataTerminalReady?: PinSpecifier;
       requestToSend?: PinSpecifier;
       break?: boolean;
-    })
+    }): void
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }

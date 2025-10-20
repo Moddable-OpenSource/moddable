@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,11 +24,11 @@
 */
 
 class Timer {
-	static set(callback, delay, repeat) @ "xs_timer_set";
-	static repeat(callback, delay) @ "xs_timer_repeat";
-	static schedule(id, delay, repeat) @ "xs_timer_schedule";
-	static clear(id) @ "xs_timer_clear";
-	static delay(ms) @ "xs_timer_delay";
+	static set(callback, delay, repeat) { return native("xs_timer_set").call(this, callback, delay, repeat); }
+	static repeat(callback, delay) { return native("xs_timer_repeat").call(this, callback, delay); }
+	static schedule(id, delay, repeat) { return native("xs_timer_schedule").call(this, id, delay, repeat); }
+	static clear(id) { return native("xs_timer_clear").call(this, id); }
+	static delay(id) { return native("xs_timer_delay").call(this, id); }
 };
 
 export default Timer;

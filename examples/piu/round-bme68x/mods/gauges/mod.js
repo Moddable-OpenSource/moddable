@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024  Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,10 +17,6 @@ import {} from "piu/MC";
 
 const BLACK = "black";
 const LITE = "#D0D0D0";
-const GRAY = "#808080";
-const BLUE = "#192eab";
-const WHITE = "#F8F8F8";
-const RED = "#c83530"
 const CYAN = "#00FFFF"
 const MAGENTA = "#FF00FF"
 const YELLOW = "#FFFF00"
@@ -46,7 +42,7 @@ class GaugesBehavior extends Behavior {
 		try {
 			this.sensor = new Sensor({ sensor: device.I2C.default });
 		}
-		catch(e) {
+		catch {
 			this.sensor = {
 				sample() {
  					return {
@@ -111,7 +107,6 @@ class GaugesBehavior extends Behavior {
 		}
 		const sample = this.sensor.sample();
 		if (sample) {
-			const data = this.data;
 			let value, fraction;
 			value = Math.round(sample.hygrometer.humidity * 100);
 			if (this.humidity != value) {
@@ -144,7 +139,6 @@ class GaugeBehavior extends Behavior {
 			return;
 		const shape = container.first;
 		const label = shape.next;
-		const { width, height } = shape;
 		const x = radius;
 		const y = radius;
 		const r = radius;
