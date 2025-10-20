@@ -29,10 +29,13 @@
 
 #define NET_EVENT_WIFI_MASK  \
 	(NET_EVENT_WIFI_SCAN_DONE | NET_EVENT_WIFI_SCAN_RESULT | NET_EVENT_WIFI_CONNECT_RESULT |   \
-	NET_EVENT_WIFI_DISCONNECT_RESULT | \
-	NET_EVENT_IPV4_DHCP_BOUND)
+	NET_EVENT_WIFI_DISCONNECT_RESULT )
+
+#define NET_EVENT_IPv4_MASK  \
+	( NET_EVENT_IPV4_DHCP_BOUND )
 
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
+static void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
 
 typedef struct {
 	xsSlot				obj;
@@ -42,14 +45,16 @@ typedef struct {
 	atomic_t				useCount;
 	uint8_t				scanning:1;
 	uint8_t				connecting:1;
+	uint8_t				connected:1;
+	uint8_t				dhcpBound:1;
 	uint8_t				closed:1;
-	int					connectionState;	// corresponds to ECMA-419 Network Interface Class Pattern: connection property
 
 	xsSlot				*onChanged;
 	xsSlot				*onFound;
 	xsSlot				*onComplete;
 
-	struct net_mgmt_event_callback callback;
+	struct net_mgmt_event_callback callbackWiFi;
+	struct net_mgmt_event_callback callbackIPv4;
 } xsWiFiRecord, *xsWiFi;
 
 void xs_wifi_destructor(void *data)
@@ -96,7 +101,6 @@ void xs_wifi(xsMachine *the)
 	wf->obj = xsThis;
 	atomic_set(&wf->useCount, 1);
 	wf->iface = iface;
-	wf->connectionState = 200;
 	wf->onChanged = onChanged;
 
 	xsmcSetHostData(xsThis, wf);
@@ -104,8 +108,11 @@ void xs_wifi(xsMachine *the)
 
 	xsRemember(wf->obj);
 
-	net_mgmt_init_event_callback(&wf->callback, wifi_event_handler, NET_EVENT_WIFI_MASK);
-	net_mgmt_add_event_callback(&wf->callback);
+	net_mgmt_init_event_callback(&wf->callbackWiFi, wifi_event_handler, NET_EVENT_WIFI_MASK);
+	net_mgmt_add_event_callback(&wf->callbackWiFi);
+
+	net_mgmt_init_event_callback(&wf->callbackIPv4, ipv4_event_handler, NET_EVENT_IPv4_MASK);
+	net_mgmt_add_event_callback(&wf->callbackIPv4);
 }
 
 void xs_wifi_close(xsMachine *the)
@@ -113,7 +120,8 @@ void xs_wifi_close(xsMachine *the)
 	xsWiFi wf = xsmcGetHostData(xsThis);
 	wf->closed = 1;
 	xsForget(wf->obj);
-	net_mgmt_del_event_callback(&wf->callback);
+	net_mgmt_del_event_callback(&wf->callbackWiFi);
+	net_mgmt_del_event_callback(&wf->callbackIPv4);
 	xs_wifi_destructor(wf);
 	xsmcSetHostData(xsThis, C_NULL);
 	xsSetHostDestructor(xsThis, C_NULL);
@@ -161,27 +169,35 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 {
 	xsWiFi wf = refcon;
 	uint64_t mgmt_event = *(uint64_t *)msgIn;
+	uint8_t connecting = wf->connecting, connected = wf->connected, dhcpBound = wf->dhcpBound;
+
 	xsBeginHost(the);
 		if (NET_EVENT_WIFI_CONNECT_RESULT == mgmt_event) {
-			wf->connectionState = 400;
-			xsLog("connected\n");
+			wf->connecting = 0;
+			wf->connected = 1;		//@@ check status
 		}
-		else if (NET_EVENT_WIFI_DISCONNECT_RESULT == mgmt_event) {
-			wf->connectionState = 200;
-			xsLog("disconnected\n");
+		else if (NET_EVENT_WIFI_DISCONNECT_RESULT == mgmt_event)  {
+				wf->connecting = 0;
+				wf->connected = 0;
 		}
 		else if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
-			wf->connectionState = 500;
-			xsLog("DHCP bound\n");
+			// DHCP bound can be delivered before CONNECT_RESULT
+			wf->connecting = 0;
+			wf->connected = 1;
+			wf->dhcpBound = 1;
 		}
-		if (wf->onChanged)
+
+		if (wf->onChanged &&
+				((connecting != wf->connecting) ||
+				 (connected != wf->connected) ||
+				 (dhcpBound != wf->dhcpBound)))
 			xsCallFunction0(xsReference(wf->onChanged), wf->obj);
 	xsEndHost(the);	
 }
 
 void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface)
 {
-	xsWiFi wf = (xsWiFi)(((uint8_t *)cb) - offsetof(xsWiFiRecord, callback));
+	xsWiFi wf = (xsWiFi)(((uint8_t *)cb) - offsetof(xsWiFiRecord, callbackWiFi));
 
 	if (NET_EVENT_WIFI_SCAN_RESULT == mgmt_event) {
 		const struct wifi_scan_result *entry = (const struct wifi_scan_result *)cb->info;
@@ -201,7 +217,13 @@ void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 		atomic_inc(&wf->useCount);
 		modMessagePostToMachine(wf->the, (uint8_t *)&mgmt_event, sizeof(mgmt_event), wifiConnectDeliver, wf);
 	}
-	else if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
+}
+
+void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface)
+{
+	xsWiFi wf = (xsWiFi)(((uint8_t *)cb) - offsetof(xsWiFiRecord, callbackIPv4));
+
+	if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
 		atomic_inc(&wf->useCount);
 		modMessagePostToMachine(wf->the, (uint8_t *)&mgmt_event, sizeof(mgmt_event), wifiConnectDeliver, wf);
 	}
@@ -255,14 +277,12 @@ void xs_wifi_connect(xsMachine *the)
 		c_strcpy(ssidLocal, ssid);
 		params.ssid = ssidLocal;
 		params.ssid_length = c_strlen(ssidLocal);
-		xsLog("have ssid %s\n", params.ssid);
 	}
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
-		xsTrace("have password\n");
 		params.psk = xsmcToString(xsVar(0));
 		params.psk_length = c_strlen(params.psk);
-		params.security = WIFI_SECURITY_TYPE_PSK;		//@@ I think
+		params.security = WIFI_SECURITY_TYPE_PSK;
 	}
 
 	wf->connecting = 1;
@@ -271,8 +291,6 @@ void xs_wifi_connect(xsMachine *the)
 		wf->connecting = 0;
 		xsUnknownError("connect failed");
 	}
-
-	wf->connectionState = 300;
 }
 
 void xs_wifi_disconnect(xsMachine *the)
@@ -282,14 +300,25 @@ void xs_wifi_disconnect(xsMachine *the)
 	if (net_mgmt(NET_REQUEST_WIFI_DISCONNECT, wf->iface, C_NULL, 0) < 0)
 		xsUnknownError("disconnect failed");
 
+	// if (status == -EALREADY) {		// already disconnected
+
 	wf->connecting = 0;
-	wf->connectionState = 200;
 }
 
 void xs_wifi_connection_get(xsMachine *the)
 {
 	xsWiFi wf = xsmcGetHostData(xsThis);
-	xsmcSetInteger(xsResult, wf->connectionState);
+	int state = 200;
+	if (wf->connecting)
+		state = 300;
+	else if (wf->connected) {
+		if (wf->dhcpBound)
+			state = 500;
+		else
+			state = 400;
+	}
+
+	xsmcSetInteger(xsResult, state);
 }
 
 void xs_wifi_address_get(xsMachine *the)
