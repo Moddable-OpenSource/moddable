@@ -18,16 +18,16 @@
  *
  */
 
-class WiFi @ "xs_wifi_destructor"{
-	constructor(options) @ "xs_wifi";
+class WiFi extends Native("xs_wifi_destructor"){
+	constructor(options) { super(); native("xs_wifi").call(this, options); };
 
-	close() @ "xs_wifi_close"
-	scan(options) @ "xs_wifi_scan"
-	connect(options) @ "xs_wifi_connect"
-	disconnect() @ "xs_wifi_disconnect"
+	close() { return native("xs_wifi_close").call(this); }
+	scan(options) { return native("xs_wifi_scan").call(this, options); }
+	connect(options) { return native("xs_wifi_connect").call(this, options); }
+	disconnect() { return native("xs_wifi_disconnect").call(this); }
 
-	get connection() @ "xs_wifi_connection_get"
-	get address() @ "xs_wifi_address_get"
+	get connection() { return native("xs_wifi_connection_get").call(this); }
+	get address() { return native("xs_wifi_address_get").call(this); }
 };
 
 export default WiFi;

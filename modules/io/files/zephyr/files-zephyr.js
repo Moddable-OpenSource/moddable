@@ -19,63 +19,55 @@
  */
  
 class Status {
-	isFile() @ "xs_stat_isFile"
-	isDirectory() @ "xs_stat_isDirectory"
+	isFile() { return native("xs_stat_isFile").call(this); }
+	isDirectory() { return native("xs_stat_isDirectory").call(this); }
 	isSymbolicLink() {return false;}
 }
 
-function fstatus() @ "xs_filezephyr_status"
+class File extends Native("xs_filezephyr_destructor"){
+	constructor(options) { super(); native("xs_filezephyr").call(this, options); }
+	close() { return native("xs_filezephyr_close").call(this); }
 
-class File @ "xs_filezephyr_destructor"{
-	constructor(options) @ "xs_filezephyr"
-	close() @ "xs_filezephyr_close"
-
-	read(buffer /* or count */, posiiton) @ "xs_filezephyr_read"
-	write(buffer, position) @ "xs_filezephyr_write"
+	read(buffer /* or count */, posiiton) { return native("xs_filezephyr_read").call(this, buffer /* or count */, posiiton); }
+	write(buffer, position) { return native("xs_filezephyr_write").call(this, buffer, position); }
 
 	status() {
-		return fstatus.call(this, new Status);
+		return native("xs_filezephyr_status").call(this, new Status);
 	}
 
-	setSize(length) @ "xs_filezephyr_setSize"
+	setSize(length) { return native("xs_filezephyr_setSize").call(this, length); }
 
-	flush() @ "xs_filezephyr_flush"
+	flush() { return native("xs_filezephyr_flush").call(this); }
 }
 
-
-class DirectoryIterator @ "xs_directory_iterator_zephyr_destructor" {
-	constructor(directory, path) @ "xs_directory_iterator_zephyr"
-	next() @ "xs_directory_iterator_zephyr_next"
-	return() @ "xs_directory_iterator_zephyr_return"
+class DirectoryIterator extends Native("xs_directory_iterator_zephyr_destructor") {
+	constructor(directory, path) { super(); native("xs_directory_iterator_zephyr").call(this, directory, path); }
+	next() { return native("xs_directory_iterator_zephyr_next").call(this); }
+	return() { return native("xs_directory_iterator_zephyr_return").call(this); }
 }
 Object.setPrototypeOf(DirectoryIterator.prototype, Iterator.prototype);
 
-function openFile(options) @ "xs_directoryzephyr_openFile"
-function openDirectory(options) @ "xs_directoryzephyr_openDirectory"
-function status(path) @ "xs_directoryzephyr_status"
-
-class Directory @ "xs_directoryzephyr_destructor" {
-	constructor(options) @ "xs_directoryzephyr"
-	close() @ "xs_directoryzephyr_close"
+class Directory extends Native("xs_directoryzephyr_destructor") {
+	constructor(options) { super(); native("xs_directoryzephyr").call(this, options); }
+	close() { return native("xs_directoryzephyr_close").call(this); }
 
 	openFile(options) {
-		return openFile.call(this, options, File.prototype);
+		return native("xs_directoryzephyr_openFile").call(this, options, File.prototype);
 	}
 	openDirectory(options) {
-		return openDirectory.call(this, options, Directory.prototype);
+		return native("xs_directoryzephyr_openDirectory").call(this, options, Directory.prototype);
 	}
 
-	delete(path) @ "xs_directoryzephyr_delete"
+	delete(path) { return native("xs_directoryzephyr_delete").call(this, path); }
 
-	move(from, to) @ "xs_directoryzephyr_move"
+	move(from, to) { return native("xs_directoryzephyr_move").call(this, from, to); }
 
 	status(path, options) {
-		return status.call(this, path, options, new Status);
+		return native("xs_directoryzephyr_status").call(this, path, options, new Status);
 	}
 
-	createDirectory(options) @ "xs_directoryzephyr_createDirectory"
+	createDirectory(options) { return native("xs_directoryzephyr_createDirectory").call(this, options); }
 	createLink(path, target) {throw new Error("unsupported");}
-
 
 	readLink(path) {throw new Error("unsupported");}
 
