@@ -123,6 +123,15 @@ void fxDeleteMachinePlatform(txMachine* the)
 	modMachineTaskUninit(the);
 }
 
+uint8_t fxInNetworkDebugLoop(txMachine *the)
+{
+#ifdef mxDebug
+	return the->DEBUG_LOOP && the->connection && ((txSocket)kSerialConnection != the->connection);
+#else
+	return 0;
+#endif
+}
+
 void fx_putc(void *refcon, char c)
 {
 #ifdef mxDebug
