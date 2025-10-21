@@ -32,10 +32,6 @@
 
 #include "builtinCommon.h"
 
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_core.h>
-#include <zephyr/net/net_context.h>
-#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/udp.h>
 
 struct UDPPacketRecord {
@@ -71,13 +67,11 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsUDPHooks = {
 
 void xs_udp_constructor(xsMachine *the)
 {
-	UDP udp;
-	int port = 0;
-	int ttl = -1;
 	xsSlot *onReadable = builtinGetCallback(the, xsID_onReadable);
 
 	xsmcVars(1);
 
+	int port = 0;
 	if (xsmcHas(xsArg(0), xsID_port)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_port);
 		port = xsmcToInteger(xsVar(0));
@@ -85,33 +79,26 @@ void xs_udp_constructor(xsMachine *the)
 			xsRangeError("invalid port");
 	}
 
-	if (xsmcHas(xsArg(0), xsID_timeToLive)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_timeToLive);
-		ttl = xsmcToInteger(xsVar(0));
-		if ((ttl <= 0) || (ttl > 255))
-			xsRangeError("invalid timeToLive");
-	}
-
 	builtinInitializeTarget(the);
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
 
 	struct net_context *context;
-   int result = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &context);
+	int result = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (result < 0)
-		xsRangeError("no context");
+		xsUnknownError("no context");
 
 	struct sockaddr_in bind_addr;
-    bind_addr.sin_family = AF_INET;
-    bind_addr.sin_addr.s_addr = INADDR_ANY;
-    bind_addr.sin_port = htons(port);
+	bind_addr.sin_family = AF_INET;
+	bind_addr.sin_addr.s_addr = INADDR_ANY;
+	bind_addr.sin_port = htons(port);
 	result = net_context_bind(context, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 	if (result < 0) {
 		net_context_put(context);
 		xsUnknownError("bind failed");
 	}
 
-	udp = c_calloc(1, sizeof(UDPRecord));
+	UDP udp = c_calloc(1, sizeof(UDPRecord));
 	if (!udp) {
 		net_context_put(context);
 		xsRangeError("no memory");
@@ -123,7 +110,7 @@ void xs_udp_constructor(xsMachine *the)
 	udp->the = the;
 	xsRemember(udp->obj);
 
-   result = net_context_recv(context, udpReceive, K_NO_WAIT, udp);
+	result = net_context_recv(context, udpReceive, K_NO_WAIT, udp);
 	if (result < 0)
 		xsUnknownError("error");
 
@@ -208,13 +195,13 @@ void xs_udp_write(xsMachine *the)
 	struct sockaddr_in dst;
 	dst.sin_family = AF_INET;
 	dst.sin_port = htons(port);
-   if (net_addr_pton(AF_INET, xsmcToString(xsArg(1)), &dst.sin_addr) < 0)
+	if (net_addr_pton(AF_INET, xsmcToString(xsArg(1)), &dst.sin_addr) < 0)
 		xsRangeError("invalid IP dst");
 
 	xsUnsignedValue byteLength;
 	void *buffer;
 	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
-	int result = net_context_sendto(udp->context, buffer, byteLength,  (struct sockaddr *)&dst, sizeof(dst), NULL, K_NO_WAIT, NULL);
+	int result = net_context_sendto(udp->context, buffer, byteLength, (struct sockaddr *)&dst, sizeof(dst), NULL, K_NO_WAIT, NULL);
 	if (result < 0)
 		xsUnknownError("UDP send failed");
 
