@@ -171,28 +171,38 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	uint64_t mgmt_event = *(uint64_t *)msgIn;
 	uint8_t connecting = wf->connecting, connected = wf->connected, dhcpBound = wf->dhcpBound;
 
+	if (wf->closed)
+		goto bail;
+
 	xsBeginHost(the);
 		if (NET_EVENT_WIFI_CONNECT_RESULT == mgmt_event) {
 			wf->connecting = 0;
 			wf->connected = 1;		//@@ check status
 		}
 		else if (NET_EVENT_WIFI_DISCONNECT_RESULT == mgmt_event)  {
-				wf->connecting = 0;
-				wf->connected = 0;
+			wf->connecting = 0;
+			wf->connected = 0;
+			wf->dhcpBound = 0;
 		}
 		else if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
-			// DHCP bound can be delivered before CONNECT_RESULT
+			// this event may be delivered before CONNECT_RESULT
 			wf->connecting = 0;
 			wf->connected = 1;
 			wf->dhcpBound = 1;
 		}
 
 		if (wf->onChanged &&
-				((connecting != wf->connecting) ||
-				 (connected != wf->connected) ||
-				 (dhcpBound != wf->dhcpBound)))
+			((connecting != wf->connecting) ||
+			(connected != wf->connected) ||
+			(dhcpBound != wf->dhcpBound)))
 			xsCallFunction0(xsReference(wf->onChanged), wf->obj);
 	xsEndHost(the);	
+
+bail:
+	if (0 == atomic_dec(&wf->useCount)) {
+		xs_wifi_destructor(wf);
+		c_free(wf);
+	}
 }
 
 void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface)
@@ -303,22 +313,24 @@ void xs_wifi_disconnect(xsMachine *the)
 	// if (status == -EALREADY) {		// already disconnected
 
 	wf->connecting = 0;
+	wf->connected = 0;
+	wf->dhcpBound = 0;
 }
 
 void xs_wifi_connection_get(xsMachine *the)
 {
 	xsWiFi wf = xsmcGetHostData(xsThis);
-	int state = 200;
-	if (wf->connecting)
-		state = 300;
-	else if (wf->connected) {
-		if (wf->dhcpBound)
-			state = 500;
-		else
-			state = 400;
-	}
+	int connection;
+	if (wf->dhcpBound)
+		connection = 500;
+	else if (wf->connected)
+		connection = 400;
+	else if (wf->connecting)
+		connection = 300;
+	else
+		connection = 200;
 
-	xsmcSetInteger(xsResult, state);
+	xsmcSetInteger(xsResult, connection);
 }
 
 void xs_wifi_address_get(xsMachine *the)
