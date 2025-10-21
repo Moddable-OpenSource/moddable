@@ -96,6 +96,7 @@ void PiuScreenBuffer_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuScreenBufferHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuScreenBufferDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuScreenBufferRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuBehaviorOnCreate(self);

@@ -1351,7 +1351,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_CODE_KIND:
 		mxMarkChunk(theSlot->value.code.address);
 		/* continue */
-		__attribute__((fallthrough));
+		mxFallThrough;
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {

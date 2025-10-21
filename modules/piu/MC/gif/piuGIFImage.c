@@ -200,7 +200,7 @@ void PiuGIFImageSync(void* it)
 		xsBeginHost((*self)->the);
 		xsVars(1);
 		xsVar(0) = xsReference((*self)->gif);
-		time = (*self)->time;
+		time = PiuContentUseIdle(it)->time;
 		frameTime = (*self)->frameTime;
 		if (frameTime > time) {
 			(*self)->frameTime = frameTime = 0;
@@ -257,6 +257,7 @@ void PiuGIFImage_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuGIFImageHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuGIFImageDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuGIFImageRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuGIFImageDictionary(the, self);

@@ -164,6 +164,7 @@ void PiuImageBuffer_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuImageBufferHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuImageBufferDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuImageBufferRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuImageBufferDictionary(the, self);

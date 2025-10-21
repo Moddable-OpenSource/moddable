@@ -205,6 +205,9 @@ typedef txSlot* (*txBigIntToInstance)(txMachine* the, txSlot* slot);
 typedef void (*txBigintToString)(txMachine* the, txSlot* slot, txU4 radix);
 typedef txNumber (*txBigIntToNumber)(txMachine* the, txSlot* slot);
 typedef txBigInt* (*txBigIntUnary)(txMachine*, txBigInt* r, txBigInt* a);
+typedef txNumber (*txBigIntToNumber)(txMachine* the, txSlot* slot);
+typedef txS8 (*txToBigInt64)(txMachine* the, txSlot* slot);
+typedef txU8 (*txToBigUint64)(txMachine* the, txSlot* slot);
 
 typedef struct {
 	txBigIntCompare compare;
@@ -229,6 +232,8 @@ typedef struct {
 	txBigIntBinary _rem;
 	txBigIntBinary _sub;
 	txBigIntBinary _xor;
+	txToBigInt64 toBigInt64;
+	txToBigUint64 toBigUint64;
 } txTypeBigInt;
 
 

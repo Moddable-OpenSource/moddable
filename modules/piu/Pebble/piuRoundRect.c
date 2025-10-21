@@ -99,6 +99,7 @@ void PiuRoundRect_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuRoundRectHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuRoundRectDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuRoundRectRecord));
 	(*self)->flags = piuVisible;
 	(*self)->corners = 0xF;
 	(*self)->radius = 8;

@@ -137,4 +137,6 @@ const txTypeBigInt ICACHE_FLASH_ATTR gxTypeBigInt = {
 	fxBigInt_rem,
 	fxBigInt_sub,
 	fxBigInt_xor,
+	fxToBigInt64,
+	fxToBigUint64,
 };

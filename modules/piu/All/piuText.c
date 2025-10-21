@@ -288,6 +288,7 @@ void PiuTextLink_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuTextLinkHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuTextLinkDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuTextLinkRecord));
 	(*self)->flags = piuVisible | piuActive | piuExclusiveTouch;
 	PiuTextLinkDictionary(the, self);
 	PiuBehaviorOnCreate(self);
@@ -1109,6 +1110,7 @@ void PiuText_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuTextHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuTextDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuTextRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	

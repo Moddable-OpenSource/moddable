@@ -454,6 +454,7 @@ void PiuScreen_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuScreenHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuScreenDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuScreenRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuScreenDictionary(the, self);

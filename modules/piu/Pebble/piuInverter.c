@@ -78,6 +78,7 @@ void PiuInverter_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuInverterHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuInverterDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuInverterRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuBehaviorOnCreate(self);

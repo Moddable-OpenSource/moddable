@@ -570,6 +570,14 @@
 	#endif
 #endif
 
+#ifndef mxFallThrough
+	#if mxWindows
+		#define mxFallThrough (void)0
+	#else
+		#define mxFallThrough __attribute__ ((fallthrough))
+	#endif
+#endif
+
 #ifndef mxGetKeySlotID
 	#define mxGetKeySlotID(SLOT) (SLOT)->ID
 #endif

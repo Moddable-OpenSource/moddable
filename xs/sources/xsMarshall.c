@@ -155,7 +155,7 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					p += aChunk->size;
 					mxMarshallAlign(p, aChunk->size);
 				}
-				__attribute__((fallthrough));
+				mxFallThrough;
 			case XS_INSTANCE_KIND:
 				aSlot->value.instance.garbage = C_NULL;
 				break;

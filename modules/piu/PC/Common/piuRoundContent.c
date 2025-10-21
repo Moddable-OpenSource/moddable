@@ -104,6 +104,7 @@ void PiuRoundContent_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuRoundContentHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuRoundContentDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuRoundContentRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuRoundContentDictionary(the, self);

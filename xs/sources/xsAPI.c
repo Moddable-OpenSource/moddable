@@ -373,7 +373,7 @@ again:
 		theSlot->kind = XS_NUMBER_KIND;
 		theSlot->value.number = theSlot->value.integer;
 		// continue
-		__attribute__((fallthrough));
+		mxFallThrough;
 	case XS_NUMBER_KIND:
 		theSlot->kind = XS_INTEGER_KIND;
 		switch (c_fpclassify(theSlot->value.number)) {

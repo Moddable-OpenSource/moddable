@@ -231,6 +231,7 @@ void PiuShape_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuShapeHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuShapeDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuShapeRecord));
 	(*self)->flags = piuVisible | piuClip;
 	PiuContentDictionary(the, self);
 	PiuShapeDictionary(the, self);

@@ -245,6 +245,7 @@ void PiuField_create(xsMachine* the)
 	(*self)->reference = xsToReference(xsThis);
 	xsSetHostHooks(xsThis, (xsHostHooks*)&PiuFieldHooks);
 	(*self)->dispatch = (PiuDispatch)&PiuFieldDispatchRecord;
+	(*self)->recordSize = PiuRecordSize(sizeof(PiuFieldRecord));
 	(*self)->flags = piuVisible;
 	PiuContentDictionary(the, self);
 	PiuFieldDictionary(the, self);
