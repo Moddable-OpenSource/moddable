@@ -65,8 +65,10 @@
 	#include "mc.devicetree.h"
 
 	#define kPinBanks kModZephyrGPIOBankCount
-	#define builtinCriticalSectionBegin()	k_sched_lock()
-	#define builtinCriticalSectionEnd()		k_sched_unlock()
+	#define builtinCriticalSectionBegin()	\
+		unsigned int __key = irq_lock();
+	#define builtinCriticalSectionEnd() \
+		irq_unlock(__key);
 #endif
 
 enum {
