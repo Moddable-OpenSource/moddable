@@ -72,6 +72,11 @@
 	static char* const espInstrumentNames[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)"Pixels drawn",
 		(char *)"Frames drawn",
+#if kModInstrumentationHasNetwork
+		(char *)"Network bytes read",
+		(char *)"Network bytes written",
+		(char *)"Network sockets",
+#endif
 		(char *)"Timers",
 		(char *)"Files",
 		(char *)"Poco display list used",
@@ -86,6 +91,11 @@
 	static char* const espInstrumentUnits[espInstrumentCount] ICACHE_XS6RO_ATTR = {
 		(char *)" pixels",
 		(char *)" frames",
+#if kModInstrumentationHasNetwork
+		(char *)" bytes",
+		(char *)" bytes",
+		(char *)" sockets",
+#endif
 		(char *)" timers",
 		(char *)" files",
 		(char *)" bytes",

@@ -38,7 +38,7 @@
 	#define kModInstrumentationHasCPU 1
 #endif
 
-#if !nrf52 && !_ZEPHYR
+#if !nrf52
 	#define kModInstrumentationHasNetwork 1
 #endif
 
