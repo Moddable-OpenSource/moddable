@@ -184,4 +184,12 @@ extern uint32_t nrf52_memory_remaining();
 //#include "system/logging.h"
 //#define modLog_transmit(s)	PBL_LOG_SYNC(LOG_LEVEL_ALWAYS, "%s", s)
 
+#ifndef mxFallThrough
+    #if mxWindows
+        #define mxFallThrough (void)0
+    #else
+        #define mxFallThrough __attribute__ ((fallthrough))
+    #endif
+#endif
+
 #endif /* __XSPLATFORM__ */
