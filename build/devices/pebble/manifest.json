@@ -23,7 +23,7 @@
 		"heap": {
 			"initial": 512
 		},
-		"stack": 256
+		"stack": 384
 },
 	"platforms": {
 		"pebble/*": {
