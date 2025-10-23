@@ -61,6 +61,9 @@ export class MakeFile extends FILE {
 		else
 			this.write("\"\n");
 	}
+	escapePathSpaces(path) {
+		return path.replace(/ /g, "\\ ")
+	}
 	generate(tool) {
 		this.generateDefinitions(tool)
 		if (tool.environment?.MAKE_FRAGMENT)				// override default .mk file
@@ -989,7 +992,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 
 		for (var result of tool.outlineFontFiles) {
-			var source = result.source;
+			var source = this.escapePathSpaces(result.source);
 
 			if (!tool.getenv("FONTBM")) {
 				if (tool.spawn(tool.windows ? "where" : "which", "fontbm") !== 0) 
