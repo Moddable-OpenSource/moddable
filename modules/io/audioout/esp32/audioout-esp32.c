@@ -237,8 +237,8 @@ void xs_audioout_constructor_(xsMachine *the)
 		xsUnknownError("pdm already in use by audioin");
 
 	i2s_pdm_tx_config_t tx_cfg = {
-		.clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(audioOut->sampleRate),
-		.slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+		.clk_cfg = I2S_PDM_TX_CLK_DAC_DEFAULT_CONFIG(audioOut->sampleRate),
+		.slot_cfg = I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
 		.gpio_cfg = {
 			.clk = -1,
 			.dout = MODDEF_AUDIOOUT_I2S_PDM_PIN,
