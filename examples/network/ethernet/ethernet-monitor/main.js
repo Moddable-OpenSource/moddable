@@ -18,6 +18,9 @@ import SNTP from "sntp";
 import SecureSocket from "securesocket";
 import {Request} from "http";
 import EthernetMonitor from "ethernet/connection";
+
+
+// Start the Ethernet Monitor
 new EthernetMonitor();
 
 
@@ -60,21 +63,26 @@ function setSNTPTime() {
 function getTime() {
 	try {
 		// The ESP32 date needs to be set for the SSL certificates to validate
+		const host = "timeapi.io";
 		if (Date.now() > 1735689600000) {
+			trace(`getTime() Requesting time from the ${host} server\n`);
 			var request = new Request({	
-				host: "timeapi.io", 
+				host: host, 
 				path: "/api/Time/current/zone?timeZone=UTC", 
 				response: String,
 				Socket: SecureSocket,
-				port: 443 }
-			);
+				port: 443,
+				secure: {
+					protocolVersion: 0x303
+				}
+			});
 			request.callback = function(message, response) {
 				if (message == Request.responseComplete) {
 					let data = JSON.parse(response);
-					trace(`getTime() The time is ${data.dateTime} GMT\n`);
+					trace(`getTime() The ${host} time is ${data.dateTime} GMT\n`);
 					request.close();	// free the socket
 				} else if (message == Request.error) {
-					trace(`getTime() Request error\n`);
+					trace(`getTime() ${host} request error\n`);
 					request.close();	// free the socket
 				}
 			}

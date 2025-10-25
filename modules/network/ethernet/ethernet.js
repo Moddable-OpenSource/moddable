@@ -33,6 +33,8 @@ export default class Ethernet @ "xs_ethernet_destructor" {
 	}
 
 	static start() @ "xs_ethernet_start";
+	static setStaticIP(ipAddr, netmask, gateway) @ "xs_ethernet_setStaticIP";
+	static doDHCP() @ "xs_ethernet_doDHCP";
 }
 
 Ethernet.gotIP = "gotIP";

@@ -62,9 +62,11 @@ The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc
         "ethernet": {
         	"enc28j60": 1,
         	"w5500": 0,
+        	"debug": 0,
 			"hostname":"\"Moddable\"",
             "hz": 6000000,
             "int_pin": 33,
+            "power_pin": 16,
             "spi": {
             	"command_bits": 3,
 				"address_bits": 5,
@@ -82,12 +84,13 @@ The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc
 
 The drivers in `$MODDABLE/modules/network/ethernet/esp32/drivers` contain the code that calls the setup functions for the Ethernet MAC and PHY components in the Espressif SDK. The main Ethernet code is in `$MODDABLE/modules/network/ethernet/esp32/ethernet.c` and is primarily driven by the values specified in the `manifest.json` file.
 
-The `CMakeLists.txt` file for the target device needs to specify that it includes the Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
+The `CMakeLists.txt` file for the target device needs to specify that it includes the `esp_eth` and `esp_netif` Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
 
 ```add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs  esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
-		)
+	REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
+	spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
+)
 ```
 
 Example, for the ESP32-S3, you will find the file in `$MODDABLE/build/devices/esp32/xsProj-esp32s3/main/CMakeLists.txt` and the `sdkconfig.defaults` in the directory above.
