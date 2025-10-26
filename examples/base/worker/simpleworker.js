@@ -15,5 +15,6 @@
 let counter = 0
 
 self.onmessage = function(msg) {
+	trace(`simple worker: ${JSON.stringify(msg)} - message received\n`);
 	self.postMessage({hello: "from simple worker", counter: ++counter});
 }

@@ -149,6 +149,9 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	modCriticalSectionDeclare;
 	modWorker worker;
 	char *module = xsmcToString(xsArg(0));
+#ifdef INC_FREERTOS_H
+	xsIntegerValue priority = 0, core = -1;   // core tskNO_AFFINITY
+#endif
 
 	xsmcVars(2);
 
@@ -265,15 +268,14 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
 			}
 			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
-			worker->creation.coreId = -1;		// tskNO_AFFINITY
 #ifdef INC_FREERTOS_H
 #if ESP32	// Multicore only supported on ESP32
-			getIntegerProperty(the, &xsArg(1), xsID_coreId, &worker->creation.coreId);
+			getIntegerProperty(the, &xsArg(1), xsID_core, &core);
 #endif
 #define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) // Default priority is tskIDLE_PRIORITY + 1
-			getIntegerProperty(the, &xsArg(1), xsID_priority, &worker->creation.priority);
-			if (worker->creation.priority == 0)
-				worker->creation.priority = kWorkerTaskPriority;
+			getIntegerProperty(the, &xsArg(1), xsID_priority, &priority);
+			if (priority == 0)
+				priority = kWorkerTaskPriority;
 #endif
 		}
 	}
@@ -291,15 +293,15 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	#define kStack (10 * 1024)
 #endif
 	// FreeRTOS Task Creation. If we are specifying a core, use that, otherwise use the FreeRTOS xTaskCreate.
-	if (worker->creation.coreId != -1) {	// Use specified core, only for ESP32 for now
+	if (core != -1) {	// Use specified core, only for ESP32 for now
 		//ESP_LOGI(TAG, "Creating worker task on core %d with priority %d\n", worker->creation.coreId, worker->creation.priority);
 		xTaskCreatePinnedToCore(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
-							worker, worker->creation.priority, &worker->task, worker->creation.coreId);
+							worker, priority, &worker->task, core);
 	}
 	else {	// Use default core
 		//ESP_LOGI(TAG, "Creating worker task with default core and priority %d\n", worker->creation.priority);
 		xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
-							worker, worker->creation.priority, &worker->task);
+							worker, priority, &worker->task);
 	}
 
 	modMachineTaskWait(the);

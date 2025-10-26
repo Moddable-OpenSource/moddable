@@ -49,7 +49,7 @@ let aWorker = new Worker("simpleworker", {
 	},
 	nativeStack: 8192,	// host's native "C" stack, in bytes
 	priority: 3,		// For FreeRTOS, sets the Worker Task priority
-	coreId: 1			// For ESP32, set the execution core. 0 or 1
+	core: 1				// For ESP32, set the execution core. 0 or 1
 });
 ```
 For systems using FreeRTOS (ESP32, Qualcomm QCA4020, and Nordic nRF52), there are two additional settings.  `nativeStack` sets the size of the native stack in the FreeRTOS `xTaskCreate` call.  The default `nativeStack` size allocated varies with the processor:
@@ -60,7 +60,7 @@ For systems using FreeRTOS (ESP32, Qualcomm QCA4020, and Nordic nRF52), there ar
 
 `priority`  sets the worker's task priority. The default worker task priority is 1 (`tskIDLE_PRIORITY + 1`), the main Moddable JavaScript task priority is 4, and I/O tasks (serial, SPI, I2C) run at priority 10. Setting the `priority` too high could have a detrimental impact on your project's performance. 
 
-For ESP32 users with multi-core processors, the `coreId` setting allows pinning the worker to a specific CPU core. By default, the ESP32 task scheduler redistributes worker tasks across cores to balance performance, which is usually the optimal setting. ESP32 normally runs Wi-Fi/BLE and system daemons on core 0, so pinning a worker on core 1 may improve real-time performance. `xsbug` displays the cores, and you can visually see each processor's usage.
+For ESP32 users with multi-core processors, the `core` setting allows pinning the worker to a specific CPU core. By default, the ESP32 task scheduler redistributes worker tasks across cores to balance performance, which is usually the optimal setting. ESP32 normally runs Wi-Fi/BLE and system daemons on core 0, so pinning a worker on core 1 may improve real-time performance. `xsbug` displays the cores, and you can visually see each processor's usage.
 
 
 ### Sending a message to a worker

@@ -2007,8 +2007,6 @@ typedef struct {
 	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
 	xsIntegerValue nativeStackSize;
-	xsIntegerValue coreId;
-	xsIntegerValue priority;
 } xsCreation;
 ```
 
