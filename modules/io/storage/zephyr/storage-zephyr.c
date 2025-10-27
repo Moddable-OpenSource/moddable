@@ -219,7 +219,9 @@ void xs_directorystorage_read(xsMachine *the)
 	d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 
 	ssize_t valueLength = settings_get_val_len(d->path);
-	throwIf(valueLength <= 0);
+	throwIf(valueLength < 0);
+	if (0 == valueLength)
+		return;
 
 	uint8_t *value = c_malloc(valueLength);
 	throwIf(C_NULL == value);
