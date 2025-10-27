@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2022  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,118 +18,253 @@
  *
  */
 
- #include "xsmc.h"
 
- #include "modTimer.h"
- #include "modInstrumentation.h"
- 
+#include "xsmc.h"
+#include "modTimer.h"
 #include "xsHost.h"
+
+#include "modInstrumentation.h"
+
 #include "services/common/evented_timer.h"
 #include "kernel/util/sleep.h"
 
 typedef struct modTimerRecord modTimerRecord;
- typedef modTimerRecord *modTimer;
- 
- struct modTimerRecord { 
-	 EventedTimerID eventedTimer;
-	 modTimerCallback cb;
-	 int secondInterval;
-	 uint32_t earliest;
-	 int8_t useCount;
-	 int8_t checkRepeat;
-	 uint16_t refconSize;
-	 char refcon[];
- };
+typedef modTimerRecord *modTimer;
 
- static void modTimerExcecuteOne(void* data)
- {
-	modTimer timer = data;
+#define kTimerFlagFire (1 << 0)
+#define kTimerFlagUnscheduled (1 << 1)
+
+struct modTimerRecord {
+	struct modTimerRecord  *next;
+
+	uint32_t			triggerTime;			// ms
+	uint32_t			repeatInterval;			// ms
+	uint16_t			refconSize;
+	uint8_t				flags;
+	int8_t				useCount;
+	modTimerCallback 	cb;
+#if MOD_TASKS
+	uintptr_t			task;
+#endif
+	char 				refcon[1];
+};
+
+static modTimer gTimers = NULL;
+static EventedTimerID gEventedTimer = EVENTED_TIMER_INVALID_ID;
+
+static void modTimerEventedExecute(void *);
+
+static void modTimersScheduleNext(void)
+{
+	gEventedTimer = evented_timer_register_or_reschedule(gEventedTimer,
+		(uint32_t)modTimersNext(), modTimerEventedExecute, C_NULL);
+}
+
+void modTimerEventedExecute(void *)
+{
+	modTimersExecute();
+	modTimersScheduleNext();
+}
+
+void modTimersExecute(void)
+{
+	modCriticalSectionDeclare;
 	uint32_t now = modMilliseconds();
+	modTimer walker;
+#if MOD_TASKS
+	uintptr_t task = modTaskGetCurrent();
+#endif
 
-	if (now > timer->earliest) {
-		timer->useCount++;
-		(timer->cb)(timer, timer->refcon, timer->refconSize);
-		timer->useCount--;
-		timer->earliest = now + timer->secondInterval - 1;
+	// determine who is firing this time (timers added during this call are ineligible)
+	modCriticalSectionBegin();
+	for (walker = gTimers; NULL != walker; walker = walker->next) {
+		if (walker->flags & (kTimerFlagUnscheduled | kTimerFlagFire))
+			continue;
+		int32_t delta = walker->triggerTime - now;
+		if (delta <= 0)
+			walker->flags |= kTimerFlagFire;
 	}
 
-	if ((timer->useCount <= 0) || (0 == timer->secondInterval))
-		 modTimerRemove(timer);
-	else if (timer->checkRepeat) {
-		timer->checkRepeat = 0;
-		evented_timer_reschedule(timer->eventedTimer, timer->secondInterval);
-	}	
- }
- 
- modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
- {
-	 modTimer timer = c_malloc(sizeof(modTimerRecord) + refconSize);
-	 if (!timer) return C_NULL;
- 
-	 timer->useCount = 1;
-	 timer->cb = cb;
-	 timer->refconSize = refconSize;
-	 timer->earliest = modMilliseconds() - 1;
-	 c_memmove(timer->refcon, refcon, refconSize);
- 
-	 timer->secondInterval = secondInterval;
-	 timer->checkRepeat = 1;
-	 timer->eventedTimer = evented_timer_register(firstInterval, true, modTimerExcecuteOne, timer);
- 
-	 modInstrumentationAdjust(Timers, +1);
- 
-	 return timer;
- }
- 
- void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
- {
-	timer->secondInterval = secondInterval;
-	timer->checkRepeat = 1;
-	timer->earliest = modMilliseconds() - 1;
-	if (EVENTED_TIMER_INVALID_ID == timer->eventedTimer)
-		timer->eventedTimer = evented_timer_register(firstInterval, true, modTimerExcecuteOne, timer);
-	else
-		evented_timer_reschedule(timer->eventedTimer, firstInterval);
- }
- 
- void modTimerUnschedule(modTimer timer)
- {
-	evented_timer_cancel(timer->eventedTimer);
-	timer->eventedTimer = EVENTED_TIMER_INVALID_ID;
- }
- 
- //@@ remove me
- uint16_t modTimerGetID(modTimer timer)
- {
-	 return 0;
- }
- 
- int modTimerGetSecondInterval(modTimer timer)
- {
-	 return timer->secondInterval;
- }
- 
- void *modTimerGetRefcon(modTimer timer)
- {
-	 return timer->refcon;
- }
- 
- void modTimerRemove(modTimer timer)
- {
-	 timer->cb = NULL;
-	 evented_timer_cancel(timer->eventedTimer);
-	 timer->eventedTimer = EVENTED_TIMER_INVALID_ID;
- 
-	 timer->useCount--;
-	 if (timer->useCount > 0)
-	 	return;
+	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
+	for (walker = gTimers; NULL != walker; ) {
+		if (!(walker->flags & kTimerFlagFire)
+#if MOD_TASKS
+			|| (task != walker->task)
+#endif
+			) {
+			walker = walker->next;
+			continue;
+		}
 
-	c_free(timer);
-	modInstrumentationAdjust(Timers, -1);
- }
- 
- void modTimerDelayMS(uint32_t ms)
- {
-	psleep(ms);
- }
- 
+		walker->flags &= ~kTimerFlagFire;
+		walker->triggerTime += walker->repeatInterval;		// non-drifting... OK?
+
+		walker->useCount++;
+		modCriticalSectionEnd();
+		(walker->cb)(walker, walker->refcon, walker->refconSize);
+		modCriticalSectionBegin();
+		walker->useCount--;
+
+		if ((walker->useCount <= 0) || (0 == walker->repeatInterval)) {
+			modCriticalSectionEnd();
+			modTimerRemove(walker);
+			modCriticalSectionBegin();
+			walker = gTimers;
+			continue;
+		}
+
+		walker = walker->next;
+	}
+
+	modCriticalSectionEnd();
+}
+
+int modTimersNext(void)
+{
+	modCriticalSectionDeclare;
+	int next = 60 * 60 * 1000;		// an hour
+	uint32_t now = modMilliseconds();
+	modTimer walker;
+#if MOD_TASKS
+	uintptr_t task = modTaskGetCurrent();
+#endif
+
+	modCriticalSectionBegin();
+
+	for (walker = gTimers; NULL != walker; walker = walker->next) {
+		if ((walker->flags & kTimerFlagUnscheduled)
+#if MOD_TASKS
+			|| (task != walker->task)
+#endif
+			)
+			continue;
+
+		int32_t delta = walker->triggerTime - now;
+		if (delta < next) {
+			if (delta <= 0) {
+				modCriticalSectionEnd();
+				return 0;
+			}
+			next = delta;
+		}
+	}
+
+	modCriticalSectionEnd();
+
+	return next;
+}
+
+modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
+{
+	modCriticalSectionDeclare;
+	modTimer timer;
+
+	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
+	if (!timer) return NULL;
+
+	timer->next = NULL;
+	timer->triggerTime = modMilliseconds() + firstInterval;
+	timer->repeatInterval = secondInterval;
+	timer->flags = 0;
+	timer->useCount = 1;
+	timer->cb = cb;
+#if MOD_TASKS
+	timer->task = modTaskGetCurrent();
+#endif
+	timer->refconSize = refconSize;
+	c_memmove(timer->refcon, refcon, refconSize);
+
+	modCriticalSectionBegin();
+
+	if (!gTimers)
+		gTimers = timer;
+	else {
+		modTimer walker;
+
+		for (walker = gTimers; walker->next; walker = walker->next)
+			;
+		walker->next = timer;
+	}
+
+	modCriticalSectionEnd();
+
+	modInstrumentationAdjust(Timers, +1);
+
+	modTimersScheduleNext();
+
+	return timer;
+}
+
+void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
+{
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	timer->triggerTime = modMilliseconds() + firstInterval;
+	timer->repeatInterval = secondInterval;
+	timer->flags &= ~kTimerFlagUnscheduled;
+	modCriticalSectionEnd();
+
+	modTimersScheduleNext();
+}
+
+void modTimerUnschedule(modTimer timer)
+{
+	modCriticalSectionDeclare;
+	modCriticalSectionBegin();
+	timer->flags |= kTimerFlagUnscheduled;
+	timer->flags &= ~kTimerFlagFire;	
+	timer->repeatInterval = -1;
+	modCriticalSectionEnd();
+
+	modTimersScheduleNext();
+}
+
+int modTimerGetSecondInterval(modTimer timer)
+{
+	return timer->repeatInterval;
+}
+
+void *modTimerGetRefcon(modTimer timer)
+{
+	return timer->refcon;
+}
+
+void modTimerRemove(modTimer timer)
+{
+	modCriticalSectionDeclare;
+	modTimer walker, prev = NULL;
+
+	modCriticalSectionBegin();
+
+	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
+		if (timer == walker) {
+			timer->flags = kTimerFlagUnscheduled;
+
+			timer->useCount--;
+			if (timer->useCount <= 0) {
+				if (NULL == prev)
+					gTimers = walker->next;
+				else
+					prev->next = walker->next;
+				c_free(timer);
+				modInstrumentationAdjust(Timers, -1);
+			}
+			break;
+		}
+	}
+
+	modCriticalSectionEnd();
+
+	if (gTimers)
+		modTimersScheduleNext();
+	else {
+		evented_timer_cancel(gEventedTimer);
+		gEventedTimer = EVENTED_TIMER_INVALID_ID;
+	}
+}
+
+void modTimerDelayMS(uint32_t ms)
+{
+	modDelayMilliseconds(ms);
+}
+
