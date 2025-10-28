@@ -455,7 +455,7 @@ typedef struct {
 	PiuInterval interval;
 	PiuTick ticks;
 	double time;
-} PiuIdleRecord, *PiuIdle;
+} __attribute__((packed)) PiuIdleRecord, *PiuIdle;
 
 #define PiuRecordSize(bytes) (((bytes) + 3) & ~3)
 
