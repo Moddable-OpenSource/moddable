@@ -276,4 +276,5 @@ void modTimerExit(void)
 		gTimers = next;
 	}
 	evented_timer_cancel(gEventedTimer);
+	gEventedTimer = EVENTED_TIMER_INVALID_ID;
 }
