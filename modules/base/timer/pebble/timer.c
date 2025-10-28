@@ -268,3 +268,12 @@ void modTimerDelayMS(uint32_t ms)
 	modDelayMilliseconds(ms);
 }
 
+void modTimerExit(void)
+{
+	while (gTimers) {
+		modTimer next = gTimers->next;
+		c_free(gTimers);
+		gTimers = next;
+	}
+	evented_timer_cancel(gEventedTimer);
+}

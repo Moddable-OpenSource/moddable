@@ -211,7 +211,12 @@ void fxAbort(txMachine* the, int status)
 			reason = the->stack->value.string;
 	}
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "fxAbort %s: %s", msg, reason);
+	APP_LOG(APP_LOG_LEVEL_ERROR, "fxAbort %s: %s", msg, reason);
+
+	xsDeleteMachine(the);
+
+	extern void modTimerExit(void);
+	modTimerExit();
 
 	c_exit(status);
 }
