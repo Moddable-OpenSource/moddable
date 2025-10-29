@@ -669,8 +669,8 @@ PiuIdle PiuContentUseIdle(void* it)
 	if ((*self)->nameOffset) {
 		(*self)->nameOffset += sizeof(PiuIdleRecord);
 		c_memcpy(((uint8_t *)chunk) + (*self)->nameOffset, ((uint8_t *)chunk) + current - nameLength, nameLength);
-		c_memset(((uint8_t *)chunk) + current - nameLength, 0, sizeof(PiuIdleRecord));
 	}
+	c_memset(((uint8_t *)chunk) + current - nameLength, 0, sizeof(PiuIdleRecord));
 
 	(*self)->recordSize = PiuRecordSize(current + sizeof(PiuIdleRecord));
 	(*self)->idleOffset = current - nameLength;
