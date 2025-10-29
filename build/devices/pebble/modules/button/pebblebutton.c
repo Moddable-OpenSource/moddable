@@ -97,13 +97,16 @@ void xs_pebblebutton_destructor(void *data)
 		event_service_client_unsubscribe(&eventServiceUp);
 		event_service_client_unsubscribe(&eventServiceDown);
 	}
-	
-	for (walker = gButtons; walker; walker = walker->next) {
-		if (walker->buttons & (1 << BUTTON_ID_BACK))
-			break;
+
+	Window *w = app_window_stack_get_top_window();
+	if (w) {
+		for (walker = gButtons; walker; walker = walker->next) {
+			if (walker->buttons & (1 << BUTTON_ID_BACK))
+				break;
+		}
+		if (C_NULL == walker)
+			window_set_overrides_back_button(w, false);
 	}
-	if (C_NULL == walker)
-		window_set_overrides_back_button(app_window_stack_get_top_window(), false);
 
 	c_free(pb);
 }
