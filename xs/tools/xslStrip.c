@@ -401,8 +401,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Reflect)))
 		fxStripObject(linker, the, &mxReflectObject);
-	if (fxIsCallbackStripped(linker, fx_Proxy))
+	if (fxIsCallbackStripped(linker, fx_Proxy)) {
 		fxStripObject(linker, the, &mxProxyConstructor);
+		fxStripCallback(linker, fxProxyGetter);
+		fxStripCallback(linker, fxProxySetter);
+	}
 	else {
 		fxUnstripCallback(linker, fxProxyGetter);
 		fxUnstripCallback(linker, fxProxySetter);
