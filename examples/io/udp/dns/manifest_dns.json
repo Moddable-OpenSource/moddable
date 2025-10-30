@@ -12,7 +12,7 @@
 		"dns": "$(MODULES)/network/dns/dns"
 	},
 	"preload": [
-		"embedded:network/dns/resolver",
+		"embedded:network/dns/resolver/udp",
 		"dns/parser",
 		"dns/serializer",
 		"dns"
