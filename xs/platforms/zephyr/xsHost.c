@@ -332,13 +332,6 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #if !mxDebug
 	modWatchDogReset();
-	if (maxDelayMS >= NRFX_WDT_CONFIG_RELOAD_VALUE) {
-		#if NRFX_WDT_CONFIG_RELOAD_VALUE <= 1000
-			maxDelayMS = 500;
-		#else
-			maxDelayMS = NRFX_WDT_CONFIG_RELOAD_VALUE - 1000;
-		#endif
-	}
 #endif
 
 	do {
