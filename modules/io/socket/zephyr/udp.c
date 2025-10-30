@@ -166,9 +166,8 @@ void xs_udp_read(xsMachine *the)
 	if (!packet)
 		return;
 
-	uint16_t packetLength = net_pkt_get_len(packet->pkt);
+	uint16_t packetLength = net_pkt_remaining_data(packet->pkt);	
 	void *buffer = xsmcSetArrayBuffer(xsResult, C_NULL, packetLength);
-	net_pkt_cursor_init(packet->pkt);
 	if (0 != net_pkt_read(packet->pkt, buffer, packetLength)) {
 		net_pkt_unref(packet->pkt);
 		c_free(packet);
