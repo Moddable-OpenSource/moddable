@@ -159,10 +159,7 @@ static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t ms
 	xsEndHost(the);
 
 bail:
-	if (0 == atomic_dec(&wf->useCount)) {
-		xs_wifi_destructor(wf);
-		c_free(wf);
-	}
+	xs_wifi_destructor(wf);
 }
 
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
@@ -199,10 +196,7 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	xsEndHost(the);	
 
 bail:
-	if (0 == atomic_dec(&wf->useCount)) {
-		xs_wifi_destructor(wf);
-		c_free(wf);
-	}
+	xs_wifi_destructor(wf);
 }
 
 void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface)
