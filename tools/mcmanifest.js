@@ -1019,19 +1019,31 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		for (var result of tool.resourcesFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
-			this.echo(tool, "copy ", target);
-			if (tool.isDirectoryOrFile(source) < 0) {
-				if (tool.windows)
-					this.line("\tcopy /E /Y $** $@");
-				else
-					this.line("\tcp -R $< $@");
+			if (tool.platform == "zephyr") {
+				var output = "${RESOURCES_DIR}" + tool.slash + target;
+				//@@
+				this.line("add_custom_command(");
+				this.line("\tOUTPUT " + output);
+				this.line("\tCOMMAND ${CMAKE_COMMAND} -E copy " + source + " " + output )
+				this.line("\tDEPENDS " + source);
+				this.line("\tVERBATIM)");
+				this.line("");
 			}
 			else {
-				if (tool.windows)
-					this.line("\tcopy /Y $** $@");
-				else
-					this.line("\tcp $< $@");
+				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
+				this.echo(tool, "copy ", target);
+				if (tool.isDirectoryOrFile(source) < 0) {
+					if (tool.windows)
+						this.line("\tcopy /E /Y $** $@");
+					else
+						this.line("\tcp -R $< $@");
+				}
+				else {
+					if (tool.windows)
+						this.line("\tcopy /Y $** $@");
+					else
+						this.line("\tcp $< $@");
+				}
 			}
 		}
 
