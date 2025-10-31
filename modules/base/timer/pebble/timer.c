@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,6 +18,13 @@
  *
  */
 
+ /*
+ 
+	to do:
+
+		is it possible to use a repeating timer to minimze time allocations?
+ 
+ */
 
 #include "xsmc.h"
 #include "modTimer.h"
@@ -62,6 +69,7 @@ static void modTimersScheduleNext(void)
 
 void modTimerEventedExecute(void *)
 {
+	gEventedTimer = EVENTED_TIMER_INVALID_ID;
 	modTimersExecute();
 	modTimersScheduleNext();
 }
