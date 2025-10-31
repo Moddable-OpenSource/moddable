@@ -9,8 +9,8 @@ add_custom_command (
 
 add_custom_command ( 
 	OUTPUT ${TMP_DIR}/mc.resources.c
-	DEPENDS ${DATA} ${mRESOURCES} ${mMANIFEST}
-	COMMAND mcrez ${DATA} ${mRESOURCES} -o ${TMP_DIR} -r mc.resources.c
+	DEPENDS ${mDATA} ${mRESOURCES} ${mMANIFEST}
+	COMMAND mcrez ${mDATA} ${mRESOURCES} -o ${TMP_DIR} -r mc.resources.c
 	VERBATIM
 )
 
