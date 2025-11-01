@@ -24,7 +24,6 @@
 
 	To do:
 		find a way to eliminate "pending" workaround
-		use Zephyr atomics
 
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
@@ -60,9 +59,9 @@ struct TCPRecord {
 	struct net_context *context;
 	xsSlot			obj;
 	TCPBuffer		buffers;
+	atomic_t			useCount;
+	atomic_t			triggered;
 	uint8_t			triggerable;
-	uint8_t			triggered;
-	int8_t			useCount;
 	uint8_t			error;
 	uint8_t			format;
 	uint8_t			ready;
@@ -214,6 +213,7 @@ void xs_tcp_constructor(xsMachine *the)
 	tcp->obj = xsThis;
 	xsRemember(tcp->obj);
 	tcp->format = format;
+	atomic_set(&tcp->useCount, 0);
 	tcpHold(tcp);
 
 	tcp->sendBufferSize = 2048;
@@ -305,13 +305,7 @@ void doClose(xsMachine *the, xsSlot *instance)
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
-#if TCP_ATOMICS
-		modAtomicsExchange_n(&tcp->triggered, 0);
-#else
-		builtinCriticalSectionBegin();
-		tcp->triggered = 0;
-		builtinCriticalSectionEnd();
-#endif
+		atomic_set(&tcp->triggered, 0);
 		tcpRelease(tcp);
 	}
 }
@@ -483,44 +477,19 @@ void xs_tcp_set_format(xsMachine *the)
 
 void tcpHold(TCP tcp)
 {
-#if TCP_ATOMICS
-	modAtomicsAddFetch(&tcp->useCount, 1);
-#else
-	builtinCriticalSectionBegin();
-	tcp->useCount += 1;
-	builtinCriticalSectionEnd();
-#endif
+	atomic_inc(&tcp->useCount);
 }
 
 void tcpRelease(TCP tcp)
 {
-#if TCP_ATOMICS
-	if (0 == modAtomicsSubFetch(&tcp->useCount, 1))
+	if (1 == atomic_dec(&tcp->useCount))
 		xs_tcp_destructor(tcp);
-#else
-	uint8_t unused;
-
-	builtinCriticalSectionBegin();
-	tcp->useCount -= 1;
-	unused = 0 == tcp->useCount;
-	builtinCriticalSectionEnd();
-	if (unused)
-		xs_tcp_destructor(tcp);
-#endif
-
 }
 
 void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	TCP tcp = refcon;
-#if TCP_ATOMICS
-	uint8_t triggered = modAtomicsExchange_n(&tcp->triggered, 0);
-#else
-	builtinCriticalSectionBegin();
-	uint8_t triggered = tcp->triggered;
-	tcp->triggered = 0;
-	builtinCriticalSectionEnd();
-#endif
+	uint8_t triggered = atomic_set(&tcp->triggered, 0);
 	if (triggered & kTCPError) {
 		triggered &= ~kTCPWritable;
 		tcp->error = true;
@@ -627,16 +596,7 @@ void tcpSent(struct net_context *context, int status, void *user_data)
 
 void tcpTrigger(TCP tcp, uint8_t trigger)
 {
-#if TCP_ATOMICS
-	uint8_t triggered = modAtomicsFetchOr(&tcp->triggered, trigger);
-#else
-	uint8_t triggered;
-
-	builtinCriticalSectionBegin();
-	triggered = tcp->triggered;
-	tcp->triggered |= trigger;
-	builtinCriticalSectionEnd();
-#endif
+	uint8_t triggered = atomic_or(&tcp->triggered, trigger);
 	if (!triggered) {
 		tcpHold(tcp);
 		modMessagePostToMachine(tcp->the, NULL, 0, tcpDeliver, tcp);

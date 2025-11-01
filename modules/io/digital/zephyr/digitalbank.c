@@ -267,7 +267,7 @@ void xs_digitalbank_destructor(void *data)
 		builtinFreePins(digital->bank, digital->pins);
 	}
 
-	if (0 == atomic_dec(&digital->useCount))
+	if (1 == atomic_dec(&digital->useCount))
 		c_free(data);
 }
 
@@ -337,7 +337,7 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	Digital digital = refcon;
 	uint32_t triggered;
 
-	if (0 == atomic_dec(&digital->useCount)) {
+	if (1 == atomic_dec(&digital->useCount)) {
 		c_free(digital);
 		return;
 	}
