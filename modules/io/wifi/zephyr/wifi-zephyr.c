@@ -118,6 +118,8 @@ void xs_wifi(xsMachine *the)
 void xs_wifi_close(xsMachine *the)
 {
 	xsWiFi wf = xsmcGetHostData(xsThis);
+	if (!wf) return;
+	xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 	wf->closed = 1;
 	xsForget(wf->obj);
 	net_mgmt_del_event_callback(&wf->callbackWiFi);
@@ -235,7 +237,7 @@ void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 
 void xs_wifi_scan(xsMachine *the)
 {
-	xsWiFi wf = xsmcGetHostData(xsThis);
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 
 	if (wf->scanning)
 		xsUnknownError("already scanning");
@@ -255,7 +257,7 @@ void xs_wifi_scan(xsMachine *the)
 
 void xs_wifi_connect(xsMachine *the)
 {
-	xsWiFi wf = xsmcGetHostData(xsThis);
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 
 	if (wf->connecting)
 		xsUnknownError("already connecting");
@@ -299,7 +301,7 @@ void xs_wifi_connect(xsMachine *the)
 
 void xs_wifi_disconnect(xsMachine *the)
 {
-	xsWiFi wf = xsmcGetHostData(xsThis);
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 
 	if (net_mgmt(NET_REQUEST_WIFI_DISCONNECT, wf->iface, C_NULL, 0) < 0)
 		xsUnknownError("disconnect failed");
@@ -313,7 +315,7 @@ void xs_wifi_disconnect(xsMachine *the)
 
 void xs_wifi_connection_get(xsMachine *the)
 {
-	xsWiFi wf = xsmcGetHostData(xsThis);
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 	int connection;
 	if (wf->dhcpBound)
 		connection = 500;
@@ -329,7 +331,7 @@ void xs_wifi_connection_get(xsMachine *the)
 
 void xs_wifi_address_get(xsMachine *the)
 {
-	xsWiFi wf = xsmcGetHostData(xsThis);
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
 	struct in_addr *addr = net_if_ipv4_get_global_addr(wf->iface, NET_ADDR_PREFERRED);
 	if (!addr)
 		return;
