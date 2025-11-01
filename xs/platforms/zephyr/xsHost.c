@@ -217,6 +217,10 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	modInstrumentationSet(FramesDrawn, 0);
 	modInstrumentationSet(PocoDisplayListUsed, 0);
 	modInstrumentationSet(PiuCommandListUsed, 0);
+#if kModInstrumentationHasNetwork
+	modInstrumentationSet(NetworkBytesRead, 0);
+	modInstrumentationSet(NetworkBytesWritten, 0);
+#endif
 	modInstrumentationSet(Turns, 0);
 	modInstrumentMachineReset(the);
 
