@@ -23,7 +23,7 @@
 	TCP socket - uing Zephyr low-level net_context
 
 	To do:
-		write buffering hell
+		find a way to eliminate "pending" workaround
 		use Zephyr atomics
 
 		deliver details to onError (disconnect, etc)
@@ -35,6 +35,7 @@
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_* values
 #include "builtinCommon.h"
+#include "modTImer.h"
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
@@ -71,6 +72,11 @@ struct TCPRecord {
 	xsSlot			*onReadable;
 	xsSlot			*onWritable;
 	xsSlot			*onError;
+
+	uint8_t			*pending;
+	uint8_t			*pendingBuffer;
+	uint32_t			pendingBytes;
+	modTimer			pendingTimer;
 };
 typedef struct TCPRecord TCPRecord;
 typedef struct TCPRecord *TCP;
@@ -91,6 +97,7 @@ static void tcpTrigger(TCP tcp, uint8_t trigger);
 static void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void doClose(xsMachine *the, xsSlot *instance);
+static void tcpTrySend(modTimer timer, void *refcon, int refconSize);
 
 static const xsHostHooks ICACHE_RODATA_ATTR xsTCPHooks = {
 	xs_tcp_destructor,
@@ -270,6 +277,12 @@ void xs_tcp_destructor(void *data)
 		c_free(buffer);
 	}
 
+	if (tcp->pending)
+		c_free(tcp->pending);
+
+	if (tcp->pendingTimer)
+		modTimerRemove(tcp->pendingTimer);
+
 	c_free(data);
 
 	modInstrumentationAdjust(NetworkSockets, -1);
@@ -388,7 +401,7 @@ void xs_tcp_write(xsMachine *the)
 	void *buffer;
 	uint8_t value;
 
-	if (!tcp->ready)
+	if (!tcp->ready || tcp->pending)
 		xsUnknownError("not ready");
 
 	if (tcp->error || !tcp->context)
@@ -402,7 +415,7 @@ void xs_tcp_write(xsMachine *the)
 		buffer = &value;
 	}
 	int available = tcp->sendBufferSize - tcp->sendBytesInFlight;
-	if (needed > available)
+	if ((needed > available) || tcp->pending)
 		xsUnknownError("would block");
 
 	TCPWrite tw = c_malloc(sizeof(TCPWriteRecord));
@@ -412,25 +425,30 @@ void xs_tcp_write(xsMachine *the)
 	tw->byteLength = needed;
 
 	int result = net_context_send(tcp->context, buffer, needed, tcpSent, K_NO_WAIT, tw);
-	xsLog("net_context_send %d bytes, result %d\n", (int)needed, (int)result);
-	if (result < 0) {
+	if (-EAGAIN == result)
+		result = 0;
+	else if (result < 0) {
 		xsTrace("tcp write failed\n");
 		tcpTrigger(tcp, kTCPError);		//@@ correct!?!
 		return;
 	}
 
 	if (result != needed) {
-		xsLog("tried to write %d, only wrote %d\n", (int)needed, (int)result);
-		xsUnknownError("this should never happen!");
+		tcp->pending = c_malloc(needed - result);
+		if (!tcp->pending)
+			xsUnknownError("no memory");		//@@ unrecoverable
+		c_memcpy(tcp->pending, result + (uint8_t *)buffer, needed - result);
+		tcp->pendingBuffer = tcp->pending;
+		tcp->pendingBytes = needed - result;
+
+		tcp->pendingTimer = modTimerAdd(100, 50, tcpTrySend, &tcp, sizeof(tcp));
 	}
 
 	tcp->sendBytesInFlight += needed;
 	available -= needed;
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
-	
-	xsLog("write returns available %d\n", available);
-	xsmcSetInteger(xsResult, available);
+	xsmcSetInteger(xsResult, tcp->pendingBytes ? 0 : available);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -525,7 +543,7 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	if (tcp->buffers && tcp->error)
 		;		// error delivered after receive buffers empty
 	else if (!tcp->error) {
-		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->context && ((tcp->sendBufferSize - tcp->sendBytesInFlight) > 0)) {
+		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->context && ((tcp->sendBufferSize - tcp->sendBytesInFlight) > 0) && (0 == tcp->pendingBytes)) {
 			xsBeginHost(the);
 				xsmcSetInteger(xsResult, tcp->sendBufferSize - tcp->sendBytesInFlight);
 				xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
@@ -599,6 +617,7 @@ void tcpReceive(struct net_context *context, struct net_pkt *pkt, union net_ip_h
 void tcpSent(struct net_context *context, int status, void *user_data)
 {
 	TCPWrite tw = user_data;
+	if (!tw) return;
 	TCP tcp = tw->tcp;
 	tcp->sendBytesInFlight -= tw->byteLength;
 	c_free(tw);
@@ -636,6 +655,32 @@ void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		if (tcp->onError)
 			(*markRoot)(the, tcp->onError);
 	}
+}
+
+void tcpTrySend(modTimer timer, void *refcon, int refconSize)
+{
+	TCP tcp = *(TCP *)refcon;
+	int result = net_context_send(tcp->context, tcp->pendingBuffer, tcp->pendingBytes, C_NULL, K_NO_WAIT, C_NULL);
+	if (result <= 0) {
+		if (-EAGAIN == result)
+			result = 0;
+		if (result)
+			tcpTrigger(tcp, kTCPError);
+		return;
+	}
+
+	tcp->pendingBuffer += result;
+	tcp->pendingBytes -= result;
+	if (tcp->pendingBytes)
+		return;
+
+	c_free(tcp->pending);
+	tcp->pending = tcp->pendingBuffer = C_NULL;
+
+	modTimerRemove(tcp->pendingTimer);
+	tcp->pendingTimer = C_NULL;
+
+	tcpTrigger(tcp, kTCPWritable);
 }
 
 #if 0
