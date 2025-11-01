@@ -74,7 +74,8 @@
 			"modules": {
 				"setup/network": "$(BUILD)/devices/zephyr/setup/network",
 				"embedded:io/socket/tcp": "$(MODULES)/io/socket/$(PLATFORM)/tcp",
-				"embedded:io/socket/udp": "$(MODULES)/io/socket/$(PLATFORM)/udp"
+				"embedded:io/socket/udp": "$(MODULES)/io/socket/$(PLATFORM)/udp",
+				"embedded:io/socket/listener": "$(MODULES)/io/socket/$(PLATFORM)/listener"
 			},
 			"preload": [
 				"setup/network",

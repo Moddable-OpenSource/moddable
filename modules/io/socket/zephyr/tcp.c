@@ -23,7 +23,7 @@
 	TCP socket - uing Zephyr low-level net_context
 
 	To do:
-		find a way to eliminate "pending" workaround
+		find a way to eliminate "pending" workaround on write
 
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
@@ -67,15 +67,16 @@ struct TCPRecord {
 	uint8_t			ready;
 	int 				sendBufferSize;
 	int				sendBytesInFlight;
-	xsMachine		*the;
-	xsSlot			*onReadable;
-	xsSlot			*onWritable;
-	xsSlot			*onError;
 
 	uint8_t			*pending;
 	uint8_t			*pendingBuffer;
 	uint32_t			pendingBytes;
 	modTimer			pendingTimer;
+
+	xsMachine		*the;
+	xsSlot			*onReadable;
+	xsSlot			*onWritable;
+	xsSlot			*onError;
 };
 typedef struct TCPRecord TCPRecord;
 typedef struct TCPRecord *TCP;
@@ -106,21 +107,17 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsTCPHooks = {
 
 void xs_tcp_constructor(xsMachine *the)
 {
-	TCP tcp;
+	TCP tcp = C_NULL;
 	uint8_t create = xsmcArgc > 0;
-	uint8_t connect = 0, triggerable = 0, triggered = 0, nodelay = 0, format = kIOFormatBuffer, ready = 0;
+	uint8_t connect = 0, triggerable = 0, triggered = 0, nodelay = 0, format = kIOFormatBuffer;
 	xsSlot *onReadable, *onWritable, *onError;
-	int port;
-	struct net_context *context;
-	TCPBuffer buffers = NULL;
+	struct net_context *context = C_NULL;;
 	struct sockaddr_in remote;
 	int result;
 
 	xsmcVars(1);
 
 	if (create) {
-//@@	CHECK_NETWORK_SAFE();
-
 		format = builtinInitializeFormat(the, format);
 		if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 			xsRangeError("unimplemented");
@@ -141,33 +138,26 @@ void xs_tcp_constructor(xsMachine *the)
 			xsmcGet(xsVar(0), xsArg(0), xsID_nodelay);
 			nodelay = xsmcToBoolean(xsVar(0)) ? 2 : 1;
 		}
-#if 0
-		if (xsmcHas(xsArg(0), xsID_from)) {
-			TCP from;
 
+		if (xsmcHas(xsArg(0), xsID_from)) {
 			xsmcGet(xsVar(0), xsArg(0), xsID_from);
-			from = xsmcGetHostDataValidate(xsVar(0), (void *)&xsTCPHooks);
-			if (!from->skt)
+			tcp = xsmcGetHostDataValidate(xsVar(0), (void *)&xsTCPHooks);
+			context = tcp->context;
+			if (!context)
 				xsUnknownError("invalid from");
 
-			skt = from->skt;
-			buffers = from->buffers;
-			triggered = from->triggered;
-			ready = from->ready;
-			if ((triggerable & kTCPWritable) && tcp_sndbuf(skt))
+			if ((triggerable & kTCPWritable) && (tcp->sendBufferSize > tcp->sendBytesInFlight))
 				triggered |= kTCPWritable;
-			if ((triggerable & kTCPReadable) && buffers)
+			if ((triggerable & kTCPReadable) && tcp->buffers)
 				triggered |= kTCPReadable;
-			from->skt = NULL;
-			from->buffers = NULL;
-			from->triggered = 0;
-			doClose(the, &xsVar(0));
+
+			xsForget(tcp->obj);
+			xsmcSetHostData(xsVar(0), NULL);
+			xsmcSetHostDestructor(xsVar(0), NULL);
 		}
-		else
-#endif
-		{
+		else {
 			xsmcGet(xsVar(0), xsArg(0), xsID_port);
-			port = builtinGetSignedInteger(the, &xsVar(0)); 
+			int port = builtinGetSignedInteger(the, &xsVar(0)); 
 			if ((port < 0) || (port > 65535))
 				xsRangeError("invalid port");
 
@@ -191,39 +181,39 @@ void xs_tcp_constructor(xsMachine *the)
 				net_context_put(context);
 				xsUnknownError("bind failed");
 			}
+		}
+	}
 
-			connect = 1;
+	if (C_NULL == tcp) {
+		tcp = c_calloc(1, sizeof(TCPRecord));
+		if (!tcp) {
+			net_context_put(context);
+			xsRangeError("no memory");
 		}
 
-		tcp = c_calloc(1, triggerable ? sizeof(TCPRecord) : offsetof(TCPRecord, onReadable));
+		modInstrumentationAdjust(NetworkSockets, +1);
+
+		tcp->the = the;
+		tcp->format = format;
+		atomic_set(&tcp->useCount, 0);
+		tcpHold(tcp);
+
+		tcp->sendBufferSize = 2048;
+		tcp->context = context;
 	}
-	else
-		tcp = c_calloc(1, offsetof(TCPRecord, onReadable));
 
-	if (!tcp) {
-		net_context_put(context);
-		xsRangeError("no memory");
-	}
-
-	modInstrumentationAdjust(NetworkSockets, +1);
-
-	xsmcSetHostData(xsThis, tcp);
-	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
-	tcp->the = the;
 	tcp->obj = xsThis;
 	xsRemember(tcp->obj);
-	tcp->format = format;
-	atomic_set(&tcp->useCount, 0);
-	tcpHold(tcp);
+	xsmcSetHostData(xsThis, tcp);
+	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTCPHooks);
 
-	tcp->sendBufferSize = 2048;
+	if (!create)
+		return;
+
 	net_context_set_option(context, NET_OPT_SNDBUF, &tcp->sendBufferSize, sizeof(tcp->sendBufferSize));
 
 	if (net_context_get_option(context, NET_OPT_SNDBUF, &tcp->sendBufferSize, C_NULL) < 0)
 		xsUnknownError("can't get NET_OPT_SNDBUF");
-
-	if (!create)
-		return;
 
 #if 0
 	if (nodelay) {
@@ -236,14 +226,10 @@ void xs_tcp_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	tcp->context = context;
-	tcp->buffers = buffers;
-	tcp->ready = ready;
-
 	result = net_context_recv(context, tcpReceive, K_NO_WAIT, tcp);
 	if (result < 0)
 		xsUnknownError("error");
-	
+
 	tcp->triggerable = triggerable;
 	if (triggerable) {
 		tcp->onReadable = onReadable;
@@ -643,23 +629,22 @@ void tcpTrySend(modTimer timer, void *refcon, int refconSize)
 	tcpTrigger(tcp, kTCPWritable);
 }
 
-#if 0
 /*
 	Listener
 */
 
 struct ListenerPendingRecord {
 	struct ListenerPendingRecord *next;
-	struct tcp_pcb	*skt;
+	struct net_context *context;
 };
 typedef struct ListenerPendingRecord ListenerPendingRecord;
 typedef struct ListenerPendingRecord *ListenerPending;
 
 struct ListenerRecord {
-	struct tcp_pcb	*skt;
+	struct net_context *context;
 	xsSlot			obj;
 	ListenerPending	pending;
-	uint8_t			triggered;
+	atomic_t			triggered;
 	xsMachine		*the;
 	xsSlot			*onReadable;
 //	xsSlot			*onError;
@@ -667,7 +652,7 @@ struct ListenerRecord {
 typedef struct ListenerRecord ListenerRecord;
 typedef struct ListenerRecord *Listener;
 
-static err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err);
+static void listenerAccept(struct net_context *context, struct sockaddr *addr, socklen_t addrlen, int status, void *user_data);
 static void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 
 static void listenerTrigger(Listener listener, uint8_t trigger);
@@ -687,8 +672,7 @@ enum {
 void xs_listener_constructor(xsMachine *the)
 {
 	Listener listener;
-	struct tcp_pcb *skt;
-	ip_addr_t address = *(IP_ADDR_ANY);
+	struct net_context *context;
 	int port = 0;
 	xsSlot *onReadable;
 
@@ -702,7 +686,6 @@ void xs_listener_constructor(xsMachine *the)
 		if ((port < 0) || (port > 65535))
 			xsRangeError("invalid port");
 	}
-	//@@ address
 
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	// hasOnError
@@ -710,25 +693,27 @@ void xs_listener_constructor(xsMachine *the)
 	if (kIOFormatSocketTCP != builtinInitializeFormat(the, kIOFormatSocketTCP))
 		xsRangeError("unimplemented");
 
-	skt = tcp_new_safe();
-	if (!skt)
+	if (net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &context) < 0)
 		xsUnknownError("no socket");
 
-	skt->so_options |= SOF_REUSEADDR;
-	if (tcp_bind_safe(skt, &address, (uint16_t)port)) {
-		tcp_close_safe(skt);
+	struct sockaddr_in addr = {
+		.sin_family = AF_INET,
+		.sin_port = htons(port),
+		.sin_addr.s_addr = INADDR_ANY,
+	};
+	if (net_context_bind(context, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		net_context_put(context);
 		xsUnknownError("socket bind");
 	}
 
-	skt = tcp_listen_safe(skt);
-	if (!skt) {
-		tcp_close_safe(skt);
-		xsRangeError("no memory");
+	if (net_context_listen(context, 5) < 0) {
+		net_context_put(context);
+		xsRangeError("can't listen");
 	}
 
 	listener = c_calloc(1, sizeof(ListenerRecord));
 	if (!listener) {
-		tcp_close_safe(skt);
+		net_context_put(context);
 		xsRangeError("no memory");
 	}
 
@@ -737,13 +722,12 @@ void xs_listener_constructor(xsMachine *the)
 	xsmcSetHostData(xsThis, listener);
 	listener->obj = xsThis;
 	xsRemember(listener->obj);
-	listener->skt = skt;
+	listener->context = context;
 	listener->the = the;
 
 	builtinInitializeTarget(the);
 
-	tcp_arg(skt, listener);
-	tcp_accept(skt, listenerAccept);
+	net_context_accept(context, listenerAccept, K_FOREVER, listener);
 
 	listener->onReadable = onReadable;
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
@@ -754,13 +738,12 @@ void xs_listener_destructor_(void *data)
 	Listener listener = data;
 	if (!data) return;
 
-	tcp_accept(listener->skt, NULL);
-	tcp_close_safe(listener->skt);
+	net_context_put(listener->context);
 
 	while (listener->pending) {
 		ListenerPending pending = listener->pending;
 		listener->pending = pending->next;
-		tcp_close_safe(pending->skt);
+		net_context_put(pending->context);
 		c_free(pending);
 	}
 
@@ -797,34 +780,24 @@ void xs_listener_read(xsMachine *the)
 	xsResult = xsArg(0);
 	tcp = xsmcGetHostDataValidate(xsArg(0), (void *)&xsTCPHooks);
 
-	tcp->skt = pending->skt;
+	tcp->context = pending->context;
 	c_free(pending);
 
-	tcp_accepted(tcp->skt);
-
-	tcp_arg(tcp->skt, tcp);
-	tcp_err(tcp->skt, tcpError);
-	tcp_recv(tcp->skt, tcpReceive);
-	
 	tcp->ready = true;
 }
 
 void xs_listener_get_port(xsMachine *the)
 {
 	Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
+	struct sockaddr_in *local = (struct sockaddr_in *)&listener->context->local;
 
-	xsmcSetInteger(xsResult, listener->skt->local_port);
+	xsmcSetInteger(xsResult, ntohs(local->sin_port));
 }
 
 void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength)
 {
 	Listener listener = refcon;
-	uint8_t triggered;
-
-	builtinCriticalSectionBegin();
-	triggered = listener->triggered;
-	listener->triggered = 0;
-	builtinCriticalSectionEnd();
+	uint8_t triggered = atomic_set(&listener->triggered, 0);
 
 	if ((triggered & kListenerReadable) && listener->pending) {
 		ListenerPending walker;
@@ -843,27 +816,28 @@ void listenerDeliver(void *the, void *refcon, uint8_t *message, uint16_t message
 //	}
 }
 
-err_t listenerReceive(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
+static void listenerAccept(struct net_context *context, struct sockaddr *addr, socklen_t addrlen, int status, void *user_data)
 {
-	return ERR_MEM;		// wait until connection accepted
-}
-
-err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err)
-{
-	Listener listener = arg;
+	Listener listener = user_data;
 	ListenerPending pending, walker;
 
-#ifdef mxDebug
-	if (fxInNetworkDebugLoop(listener->the))
-		return ERR_ABRT;		// lwip will close
-#endif
+	net_context_accept(listener->context, listenerAccept, K_FOREVER, listener);
+
+// #ifdef mxDebug
+// 	if (fxInNetworkDebugLoop(listener->the)) {
+// 		net_context_put(context);
+// 		return;
+// 	}
+// #endif
 
 	pending = c_malloc(sizeof(ListenerPendingRecord));
+	if (C_NULL == pending) {
+		net_context_put(context);
+		//@@ listener onError
+		return;
+	}
 	pending->next = NULL;
-	pending->skt = skt;
-
-	tcp_recv(skt, listenerReceive);
-	//@@ also install error handler to know if pending socket disconnects?
+	pending->context = context;
 
 	builtinCriticalSectionBegin();
 	walker = listener->pending;
@@ -878,19 +852,11 @@ err_t listenerAccept(void *arg, struct tcp_pcb *skt, err_t err)
 
 	if (listener->onReadable)
 		listenerTrigger(listener, kListenerReadable);
-
-	return ERR_OK;
 }
 
 void listenerTrigger(Listener listener, uint8_t trigger)
 {
-	uint8_t triggered;
-
-	builtinCriticalSectionBegin();
-	triggered = listener->triggered;
-	listener->triggered |= trigger;
-	builtinCriticalSectionEnd();
-
+	uint8_t triggered = atomic_or(&listener->triggered, trigger);
 	if (!triggered)
 		modMessagePostToMachine(listener->the, NULL, 0, listenerDeliver, listener);
 }
@@ -902,4 +868,3 @@ void xs_listener_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	if (listener->onReadable)
 		(*markRoot)(the, listener->onReadable);
 }
-#endif
