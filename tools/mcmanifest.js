@@ -2393,6 +2393,7 @@ export class Tool extends TOOL {
 		all.warnings = this.concatProperty(all.warnings, platform.warning);
 		this.mergeProperties(all.run, platform.run);
 		this.mergeProperties(all.zephyrConfig, platform.zephyrConfig);
+		this.mergeProperties(all.zephyrShields, platform.zephyrShields);
 		if (platform.typescript) {
 			let tsconfig = platform.typescript.tsconfig;
 			if (tsconfig) {
@@ -2581,6 +2582,7 @@ export class Tool extends TOOL {
 			run:{},
 			typescript: {compiler: "tsc", tsconfig: {compilerOptions: {}}},
 			zephyrConfig:{},
+			zephyrShields:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 

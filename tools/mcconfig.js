@@ -1041,6 +1041,9 @@ export default class extends Tool {
 	filterZephyrConfig(config) {
 		this.mergeProperties(config, this.zephyrConfig);
 	}
+	filterZephyrShields(config) {
+		this.mergeProperties(config, this.zephyrShields);
+	}
 	filterCreation(creation) {
 		creation.chunk ??= {};
 		if (!creation.chunk.initial) creation.chunk.initial = 32768;
@@ -1269,6 +1272,7 @@ export default class extends Tool {
 		this.strip = this.manifest.strip;
 		this.typescript = this.manifest.typescript;
 		this.filterZephyrConfig(this.manifest.zephyrConfig);
+		this.filterZephyrShields(this.manifest.zephyrShields);
 		
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")
@@ -1442,9 +1446,16 @@ export default class extends Tool {
 					else
 						this.error("unknown target");
 
-					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build ${secondary}`;
+					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build`;
+
+					let shieldName;
+					for (shieldName in this.manifest.zephyrShields) {
+						command += ` --shield ${this.manifest.zephyrShields[shieldName]}`
+					}
+
+					command += ` ${secondary}`;
 				}
-//				trace(`*** command: ${command}\n`);
+				trace(`*** command: ${command}\n`);
 				cmd = [ "bash", "-c", command ];
 			}
 			else {
