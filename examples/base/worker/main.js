@@ -30,7 +30,9 @@ function start() {
 			initial: 64,
 			incremental: 32
 		},
-		stack: 64
+		stack: 64,
+		core: 1,
+		priority: 1
 	});
 
 	aWorker.postMessage({hello: "world", index: ++index});
@@ -39,9 +41,11 @@ function start() {
 
 	aWorker.onmessage = function(message) {
 		if (3 === message.counter) {
-			trace(`start worker ${index}\n`);
+			trace(`${JSON.stringify(message)} - 3rd message received, starting worker ${index}\n`);
 			aWorker.terminate();
 			start();
+		} else {
+			trace(`message: ${JSON.stringify(message)}\n`);
 		}
 	}
 }
