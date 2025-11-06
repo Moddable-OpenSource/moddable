@@ -21,7 +21,7 @@
 import config from "mc/config";
 import { Directory } from "embedded:x-files-implementation";
 
-const files = Native("xs_directoryzephyr_destructor");
+const files = new (Native("xs_directoryzephyr_destructor"));
 Object.setPrototypeOf(files, Directory.prototype);
 
 function bootstrap(files, path) { return native("xs_directoryzephyr_bootstrap").call(this, files, path); };
