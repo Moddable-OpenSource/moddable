@@ -97,7 +97,7 @@ class NTP {
 				this.#address = address;
 				this.#next();
 			},
-			onError: e => this.#next()
+			onError: () => this.#next()
 		});
 	}
 	#onReadable(count) {
