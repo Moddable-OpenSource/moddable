@@ -293,7 +293,7 @@ function fetch(href, info = {}) {
 			}
 		};
 		fetchClientRequest(url, options);
-		if (headers.get("accept") == "text/event-stream") {
+		if (headers?.get("accept") == "text/event-stream") {
 			clients.delete(url.origin);
 		}	
 	});

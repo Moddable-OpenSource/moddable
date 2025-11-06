@@ -1242,6 +1242,7 @@ struct xsCreationRecord {
 	xsIntegerValue parserTableModulo;
 	xsIntegerValue staticSize;
 	xsIntegerValue nativeStackSize;
+	xsIntegerValue coreId;
 };
 
 #define xsCreateMachine(_CREATION,_NAME,_CONTEXT) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -401,8 +401,11 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	}
 	if (!fxIsLinkerSymbolUsed(linker, mxID(_Reflect)))
 		fxStripObject(linker, the, &mxReflectObject);
-	if (fxIsCallbackStripped(linker, fx_Proxy))
+	if (fxIsCallbackStripped(linker, fx_Proxy)) {
 		fxStripObject(linker, the, &mxProxyConstructor);
+		fxStripCallback(linker, fxProxyGetter);
+		fxStripCallback(linker, fxProxySetter);
+	}
 	else {
 		fxUnstripCallback(linker, fxProxyGetter);
 		fxUnstripCallback(linker, fxProxySetter);
