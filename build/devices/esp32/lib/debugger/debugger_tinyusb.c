@@ -42,7 +42,8 @@
 
 #include "sdkconfig.h"
 #include "tinyusb.h"
-#include "tusb_cdc_acm.h"
+#include "tinyusb_cdc_acm.h"
+#include "tinyusb_default_config.h"
 
 extern void fx_putc(void *refcon, char c);		//@@
 
@@ -247,14 +248,11 @@ int ESP_getc(void) {
 uint8_t ESP_setBaud(int baud) {
 	return 0;
 }
-
 void setupDebugger(void) {
-	tinyusb_config_t tusb_cfg = {};
+	const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
 	ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 	tinyusb_config_cdcacm_t acm_cfg = {
-		.usb_dev = TINYUSB_USBDEV_0,
 		.cdc_port = TINYUSB_CDC_ACM_0,
-		.rx_unread_buf_sz = 64,
 		.callback_rx = &cdc_rx_callback,
 		.callback_rx_wanted_char = NULL,
 		.callback_line_state_changed = &line_state_callback,
@@ -269,7 +267,7 @@ void setupDebugger(void) {
 	xTaskCreate(debug_task, "debug", 2048, usbDbgQueue, 8, NULL);
 #endif
 
-	ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+	ESP_ERROR_CHECK(tinyusb_cdcacm_init(&acm_cfg));
 
 	uint32_t count;
 	for (count = 0; count < 100; count++) {
@@ -280,4 +278,3 @@ void setupDebugger(void) {
 		modDelayMilliseconds(50);	// give USB time to come up
 	}
 }
-

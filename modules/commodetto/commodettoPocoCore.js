@@ -78,14 +78,14 @@ class Rectangle extends Native("xs_rectangle_destructor") {
 	get y() { return native("xs_rectangle_get_y").call(this); }
 	get w() { return native("xs_rectangle_get_w").call(this); }
 	get h() { return native("xs_rectangle_get_h").call(this); }
-	set x() { native("xs_rectangle_set_x").call(this); }
-	set y() { native("xs_rectangle_set_y").call(this); }
-	set w() { native("xs_rectangle_set_w").call(this); }
-	set h() { native("xs_rectangle_set_h").call(this); }
+	set x(it) { native("xs_rectangle_set_x").call(this, it); }
+	set y(it) { native("xs_rectangle_set_y").call(this, it); }
+	set w(it) { native("xs_rectangle_set_w").call(this, it); }
+	set h(it) { native("xs_rectangle_set_h").call(this, it); }
 
 	// for Ecma-419 adaptInvalid
 	get width() { return native("xs_rectangle_get_w").call(this); }
 	get height() { return native("xs_rectangle_get_h").call(this); }
-	set width() { native("xs_rectangle_set_w").call(this); }
-	set height() { native("xs_rectangle_set_h").call(this); }
+	set width(it) { native("xs_rectangle_set_w").call(this, it); }
+	set height(it) { native("xs_rectangle_set_h").call(this, it); }
 }
