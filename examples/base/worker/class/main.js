@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -27,11 +27,11 @@ function start() {
 			initial: 1536,
 			incremental: 256
 		},
-		heap: {					// in 16 byte slots
-			initial: 128,		// 2K bytes
+		heap: {					// in 16 byte slots (32-bit MCU(
+			initial: 128,		// 2K bytes (32-bit MCU(
 			incremental: 32
 		},
-		stack: 128				// number of 16 byte slots
+		stack: 128				// number of 16 byte slots (32-bit MCU(
 	});
 	trace("main.js: Worker created\n");
 	aWorker.postMessage({hello: "world", index: ++index});
