@@ -1021,6 +1021,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var target = result.target;
 			if (tool.platform == "zephyr") {
 				var output = "${RESOURCES_DIR}" + tool.slash + target;
+				formatPath = "${TMP_DIR}" + tool.slash + "mc.format.h";		// cmake needs {var} not (var)
+				rotationPath = "${TMP_DIR}" + tool.slash + "mc.rotation.h";
 				//@@
 				this.line("add_custom_command(");
 				this.line("\tOUTPUT " + output);
@@ -1057,40 +1059,82 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			for (var result of tool.clutFiles) {
 				var source = result.source;
 				var target = result.target;
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
-				this.echo(tool, "buildclut ", target);
-				this.line("\tbuildclut ", source, " -o $(@D)");
+				if (tool.platform == "zephyr") {
+					this.line("add_custom_command (");
+					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
+					this.line("\tDEPENDS ", source);
+					this.line("\tCOMMAND ", tool, "buildclut ", source, " -o ${RESOURCES_DIR}");
+					this.line(")");
+				}
+				else {
+					this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
+					this.echo(tool, "buildclut ", target);
+					this.line("\tbuildclut ", source, " -o $(@D)");
+				}
 			}
 		}
 
 		for (var result of tool.bmpAlphaFiles) {
 			var target = result.target;
-			if (result.colorFile)
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
-			else {
-				var parts = tool.splitPath(target);
-				var source = result.source;
-				var sources = result.sources;
-				var manifest = "";
-				var name = " -n " + parts.name.slice(0, -6);
-				if (sources) {
-					for (var path of sources)
-						source += " " + path;
-					manifest = "  $(MANIFEST)";
+			if (tool.platform == "zephyr") {
+				if (result.colorFile) {
+//					this.line("add_custom_target (");
+//					this.line("\tOUTPUT $(RESOURCES_DIR)" + tool.slash + target);
+//					this.line("\tDEPENDS $(RESOURCES_DIR)" + tool.slash + result.colorFile.target);
+//					this.line(")");
+//					this.line();
 				}
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
-				this.echo(tool, "png2bmp ", target);
-				this.write("\tpng2bmp ");
-				this.write(source);
-				this.write(" -a");
-				if (result.monochrome)
-					this.write(" -m -4");
-				this.write(" -o $(@D) -r ");
-				this.write(tool.rotation);
-				this.line(name);
+				else {
+					var parts = tool.splitPath(target);
+					var source = result.source;
+					var sources = result.sources;
+					var manifest = "";
+					var name = " -n " + parts.name.slice(0, -6);
+					if (sources) {
+						for (var path of sources)
+							source += " " + path;
+						manifest = "  $(MANIFEST)";
+					}
+					this.line("add_custom_command (");
+					this.line("\tDEPENDS ", source, " ", rotationPath, manifest);
+					this.echo(tool, "png2bmp ", target);
+					this.write("\tCOMMAND png2bmp ", this.write(source), " -a");
+					if (result.monochrome)
+						this.write(" -m -4");
+					this.write(" -o ${RESOURCES_DIR} -r ");
+					this.write(tool.rotation);
+					this.line(")");
+					this.line("");
+				}
+			}
+			else {
+				if (result.colorFile)
+					this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, result.colorFile.target);
+				else {
+					var parts = tool.splitPath(target);
+					var source = result.source;
+					var sources = result.sources;
+					var manifest = "";
+					var name = " -n " + parts.name.slice(0, -6);
+					if (sources) {
+						for (var path of sources)
+							source += " " + path;
+						manifest = "  $(MANIFEST)";
+					}
+					this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath, manifest);
+					this.echo(tool, "png2bmp ", target);
+					this.write("\tpng2bmp ");
+					this.write(source);
+					this.write(" -a");
+					if (result.monochrome)
+						this.write(" -m -4");
+					this.write(" -o $(@D) -r ");
+					this.write(tool.rotation);
+					this.line(name);
+				}
 			}
 		}
-
+	
 		for (var result of tool.bmpColorFiles) {
 			var target = result.target;
 			var parts = tool.splitPath(target);
@@ -1106,54 +1150,101 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				manifest = "  $(MANIFEST)";
 			}
 
-			this.write("$(RESOURCES_DIR)");
-			this.write(tool.slash);
-			this.write(target);
-			this.write(": ");
-			this.write(source);
-			if (clutSource) {
-				this.write(" ");
-				this.write(clutSource);
-			}
-			this.write(" ");
-			this.write(formatPath);
-			this.write(" ");
-			this.write(rotationPath);
-			this.line(manifest);
-
-			if (tool.windows)
-				this.write("\t@echo # png2bmp ");
-			else
-				this.write("\t@echo \"# png2bmp ");
-			this.write(target);
-			if (alphaTarget) {
-				this.write(" ");
-				this.write(alphaTarget);
-			}
-			if (tool.windows)
-				this.line("");
-			else
-				this.line("\"");
-			this.write("\tpng2bmp ");
-			this.write(source);
-			if (!alphaTarget)
-				this.write(" -c");
-			if (result.monochrome)
-				this.write(" -m -4");
-			else {
-				this.write(" -f ");
-				if (result.format)
-					this.write(result.format);
-				else
-					this.write(tool.format);
+			
+			if (tool.platform == "zephyr") {
+				this.line("add_custom_command (");
+				this.write("\tOUTPUT ${RESOURCES_DIR}" + tool.slash + target);
+				if (alphaTarget)
+					this.write(" ${RESOURCES_DIR}" + tool.slash + alphaTarget);
+				this.line();
+				this.write("\tDEPENDS " + source);
 				if (clutSource) {
-					this.write(" -clut ");
+					this.write(" ");
 					this.write(clutSource);
 				}
+//				if (alphaTarget)
+//					this.write(" $(RESOURCES_DIR)" + tool.slash + alphaTarget);
+				this.write(" ");
+				this.write(formatPath);
+				this.write(" ");
+				this.write(rotationPath);
+				this.line(manifest);
+
+				this.write("\tCOMMAND png2bmp ");
+
+				this.write(source);
+				if (!alphaTarget)
+					this.write(" -c");
+				if (result.monochrome)
+					this.write(" -m -4");
+				else {
+					this.write(" -f ");
+					if (result.format)
+						this.write(result.format);
+					else
+						this.write(tool.format);
+					if (clutSource) {
+						this.write(" -clut ");
+						this.write(clutSource);
+					}
+				}
+				this.write(" -o ${RESOURCES_DIR} -r ");
+				this.write(tool.rotation);
+				this.line(name);
+				this.line("\tVERBATIM");
+				this.line(")");
+				this.line("");
 			}
-			this.write(" -o $(@D) -r ");
-			this.write(tool.rotation);
-			this.line(name);
+			else {
+				this.write("$(RESOURCES_DIR)");
+				this.write(tool.slash);
+				this.write(target);
+				this.write(": ");
+				this.write(source);
+				if (clutSource) {
+					this.write(" ");
+					this.write(clutSource);
+				}
+				this.write(" ");
+				this.write(formatPath);
+				this.write(" ");
+				this.write(rotationPath);
+				this.line(manifest);
+
+				if (tool.windows)
+					this.write("\t@echo # png2bmp ");
+				else
+					this.write("\t@echo \"# png2bmp ");
+				this.write(target);
+				if (alphaTarget) {
+					this.write(" ");
+					this.write(alphaTarget);
+				}
+				if (tool.windows)
+					this.line("");
+				else
+					this.line("\"");
+				this.write("\tpng2bmp ");
+				this.write(source);
+				if (!alphaTarget)
+					this.write(" -c");
+				if (result.monochrome)
+					this.write(" -m -4");
+				else {
+					this.write(" -f ");
+					if (result.format)
+						this.write(result.format);
+					else
+						this.write(tool.format);
+					if (clutSource) {
+						this.write(" -clut ");
+						this.write(clutSource);
+					}
+				}
+				this.write(" -o $(@D) -r ");
+				this.write(tool.rotation);
+				this.line(name);
+			}
 		}
 
 		for (var result of tool.bmpFontFiles) {
@@ -1166,12 +1257,17 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			parts = tool.splitPath(target);
 			var bmpTarget = parts.name + "-alpha.bmp";
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", bmpSource, " ", rotationPath);
-			this.echo(tool, "compressbmf ", target);
-			this.line("\tcompressbmf ", source, " -i ", bmpSource, " -o $(@D) -r ", tool.rotation);
-			this.line(bmpSource, ": ", pngSource, " ", rotationPath);
-			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\tpng2bmp ", pngSource, " -a -o $(@D) -r ", tool.rotation, " -t");
+			if (this.zephyr) {
+				trace("bmpFontFiles");
+			}
+			else {
+				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", bmpSource, " ", rotationPath);
+				this.echo(tool, "compressbmf ", target);
+				this.line("\tcompressbmf ", source, " -i ", bmpSource, " -o $(@D) -r ", tool.rotation);
+				this.line(bmpSource, ": ", pngSource, " ", rotationPath);
+				this.echo(tool, "png2bmp ", bmpTarget);
+				this.line("\tpng2bmp ", pngSource, " -a -o $(@D) -r ", tool.rotation, " -t");
+			}
 		}
 
 		for (var result of tool.bmpMaskFiles) {
@@ -1180,20 +1276,25 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var source = result.source;
 			var bmpTarget = parts.name + ".bmp";
 			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
-			this.echo(tool, "rle4encode ", target);
-			this.line("\trle4encode ", bmpSource, " -o $(@D)");
-			var sources = result.sources;
-			var manifest = "";
-			var name = " -n " + parts.name.slice(0, -6);
-			if (sources) {
-				for (var path of sources)
-					source += " " + path;
-				manifest = "  $(MANIFEST)";
+			if (this.zephyr) {
+				trace("bmpMaskFiles");
 			}
-			this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
-			this.echo(tool, "png2bmp ", bmpTarget);
-			this.line("\tpng2bmp ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
+			else {
+				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
+				this.echo(tool, "rle4encode ", target);
+				this.line("\trle4encode ", bmpSource, " -o $(@D)");
+				var sources = result.sources;
+				var manifest = "";
+				var name = " -n " + parts.name.slice(0, -6);
+				if (sources) {
+					for (var path of sources)
+						source += " " + path;
+					manifest = "  $(MANIFEST)";
+				}
+				this.line(bmpSource, ": ", source, " ", rotationPath, manifest);
+				this.echo(tool, "png2bmp ", bmpTarget);
+				this.line("\tpng2bmp ", source, " -a -o $(@D) -r ", tool.rotation, " -t ", name);
+			}
 		}
 
 		for (var result of tool.imageFiles) {
@@ -1201,20 +1302,30 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var target = result.target;
 			if (result.quality !== undefined) {
 				var temporary = target + result.quality;
-				this.line("$(RESOURCES_DIR)", tool.slash, temporary, ": ", source, " ", rotationPath);
-				this.echo(tool, "image2cs ", temporary);
-				this.line("\timage2cs ", source, " -o $(@D) -q ", result.quality, " -r ", tool.rotation);
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, temporary);
-				this.echo(tool, "copy ", target);
-				if (tool.windows)
-					this.line("\tcopy /Y $** $@");
-				else
-					this.line("\tcp $< $@");
+				if (this.zephyr) {
+					trace("imageFiles");
+				}
+				else {
+					this.line("$(RESOURCES_DIR)", tool.slash, temporary, ": ", source, " ", rotationPath);
+					this.echo(tool, "image2cs ", temporary);
+					this.line("\timage2cs ", source, " -o $(@D) -q ", result.quality, " -r ", tool.rotation);
+					this.line("$(RESOURCES_DIR)", tool.slash, target, ": $(RESOURCES_DIR)", tool.slash, temporary);
+					this.echo(tool, "copy ", target);
+					if (tool.windows)
+						this.line("\tcopy /Y $** $@");
+					else
+						this.line("\tcp $< $@");
+				}
 			}
 			else {
-				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
-				this.echo(tool, "image2cs ", target);
-				this.line("\timage2cs ", source, " -o $(@D) -r ", tool.rotation);
+				if (this.zephyr) {
+					trace("imageFiles2");
+				}
+				else {
+					this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
+					this.echo(tool, "image2cs ", target);
+					this.line("\timage2cs ", source, " -o $(@D) -r ", tool.rotation);
+				}
 			}
 		}
 
@@ -1229,6 +1340,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
+trace(`face: ${name}\n`);
 
 				const characterFiles = (("string" === typeof face.characterFiles) ? [face.characterFiles] : (face.characterFiles ?? []));
 				characterFiles.forEach((file, i) => {
