@@ -1455,7 +1455,7 @@ export default class extends Tool {
 
 					command += ` ${secondary}`;
 				}
-				trace(`*** command: ${command}\n`);
+				// trace(`*** command: ${command}\n`);
 				cmd = [ "bash", "-c", command ];
 			}
 			else {
