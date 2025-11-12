@@ -864,10 +864,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						this.line(face.name + `-${face.size}.fnt)`);
 						this.write("list(APPEND mRESOURCES ${RESOURCES_DIR}");
 						this.write(tool.slash);
-						this.line(face.name + `-${face.size}-alpha.bmp)`);
+						this.line(`face.name}-${face.size}-alpha.bmp)`);
 					}
 					else if ("-mask" === face.suffix) {
-						this.write(face.name + `-${face.size}.bf4)`);
+						this.line(`${face.name}-${face.size}.bf4)`);
 					}
 				});
 			}
@@ -1032,6 +1032,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var output = "${RESOURCES_DIR}" + tool.slash + target;
 				//@@
 				this.line("add_custom_command(");
+				this.line("\tCOMMENT copy resource file");
 				this.line("\tOUTPUT " + output);
 				this.line("\tCOMMAND ${CMAKE_COMMAND} -E copy " + source + " " + output )
 				this.line("\tDEPENDS " + source);
@@ -1068,6 +1069,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				if (tool.platform == "zephyr") {
 					this.line("add_custom_command (");
+					this.line("\tCOMMENT buildclut " + target);
 					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 					this.line("\tDEPENDS ", source);
 					this.line("\tCOMMAND buildclut ", source, " -o ${RESOURCES_DIR}");
@@ -1094,16 +1096,16 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					if (sources) {
 						for (var path of sources)
 							source += " " + path;
-						manifest = "  $(MANIFEST)";
+						manifest = " $(MANIFEST)";
 					}
 					this.line("add_custom_command (");
+					this.line("\tCOMMENT bmpAlphaFiles " + target);
 					this.line("\tOUTPUT ${RESOURCES_DIR}" + tool.slash + target);
 					this.line("\tDEPENDS ", source, " ", rotationPath, manifest);
-					this.write("\tCOMMAND png2bmp ", this.write(source), " -a");
+					this.write("\tCOMMAND png2bmp " + source + " -a");
 					if (result.monochrome)
 						this.write(" -m -4");
-					this.write(" -o ${RESOURCES_DIR} -r ");
-					this.line(tool.rotation);
+					this.line(" -o ${RESOURCES_DIR} -r ", tool.rotation);
 					this.line("\tVERBATIM)");
 					this.line("");
 				}
@@ -1141,7 +1143,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var parts = tool.splitPath(target);
 			var source = result.source;
 			var alphaTarget = result.alphaFile ? result.alphaFile.target : null;
-			var clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
+			var clutSource;
 			var sources = result.sources;
 			var manifest = "";
 			var name = " -n " + parts.name.slice(0, -6);
@@ -1153,7 +1155,9 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 			
 			if (tool.platform == "zephyr") {
+				clutSource = result.clutName ? "${RESOURCES_DIR}" + tool.slash + result.clutName + ".cct" : null;
 				this.line("add_custom_command (");
+				this.line("\tCOMMENT bmpColorFiles " + target);
 				this.write("\tOUTPUT ${RESOURCES_DIR}" + tool.slash + target);
 				if (alphaTarget)
 					this.write(" ${RESOURCES_DIR}" + tool.slash + alphaTarget);
@@ -1165,29 +1169,26 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				}
 				this.line(" " + formatPath + " " + rotationPath + manifest);
 
-				this.write("\tCOMMAND png2bmp " + source);
+				var output = "\tCOMMAND png2bmp " + source;
 				if (!alphaTarget)
-					this.write(" -c");
+					output += " -c";
 				if (result.monochrome)
-					this.write(" -m -4");
+					output += " -m -4";
 				else {
-					this.write(" -f ");
+					output += " -f ";
 					if (result.format)
-						this.write(result.format);
+						output += result.format;
 					else
-						this.write(tool.format);
-					if (clutSource) {
-						this.write(" -clut ");
-						this.write(clutSource);
-					}
+						output += tool.format;
+					if (clutSource)
+						output += " -clut " + clutSource;
 				}
-				this.write(" -o ${RESOURCES_DIR} -r ");
-				this.write(tool.rotation);
-				this.line(name);
+				this.line(output + " -o ${RESOURCES_DIR} -r " + tool.rotation + name);
 				this.line("\tVERBATIM)");
 				this.line("");
 			}
 			else {
+				clutSource = result.clutName ? "$(RESOURCES_DIR)" + tool.slash + result.clutName + ".cct" : null;
 				this.write("$(RESOURCES_DIR)");
 				this.write(tool.slash);
 				this.write(target);
@@ -1252,6 +1253,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var bmpSource = "${RESOURCES_DIR}" + tool.slash + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
 				this.line("add_custom_command(");
+				this.line("\tCOMMENT bmpFontFiles " + target);
 				this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 				this.line("\tDEPENDS ", source, " ", bmpSource, " ", rotationPath);
 				this.line("\tCOMMAND compressbmf ", source, " -i ", bmpSource, " -o ${RESOURCES_DIR} -r ", tool.rotation);
@@ -1260,7 +1262,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				// this.echo(tool, "png2bmp ", bmpTarget);
 				
 				this.line("add_custom_command(");
-				this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, bmpSource);
+				this.line("\tCOMMENT bmpFontFiles " + target);
+				this.line("\tOUTPUT ", bmpSource);
 				this.line("\tDEPENDS ", pngSource, " ", rotationPath);
 				this.line("\tCOMMAND png2bmp ", pngSource, " -a -o ${RESOURCES_DIR} -r ", tool.rotation, " -t");
 				this.line("\tVERBATIM)");
@@ -1282,9 +1285,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var parts = tool.splitPath(target);
 			var source = result.source;
 			var bmpTarget = parts.name + ".bmp";
-			var bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
+			var bmpSource;
 			if (tool.platform == "zephyr") {
+				bmpSource = "${RESOURCES_DIR}" + tool.slash + bmpTarget;
 				this.line("add_custom_command(");
+				this.line("\tCOMMENT bmpMaskFiles " + target);
 				this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 				this.line("\tDEPENDS ", bmpSource);
 				// this.echo(tool, "rle4encode ", target);
@@ -1300,6 +1305,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("\tVERBATIM)");
 				this.line();
 				this.line("add_custom_command(");
+				this.line("\tCOMMENT bmpMaskFiles " + target);
 				this.line("\tOUTPUT ", bmpSource);
 				this.line("\tDEPENDS ", source, " ", rotationPath, manifest);
 				// this.echo(tool, "png2bmp ", bmpTarget);
@@ -1308,6 +1314,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line();
 			}
 			else {
+				bmpSource = "$(RESOURCES_DIR)" + tool.slash + bmpTarget;
 				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", bmpSource);
 				this.echo(tool, "rle4encode ", target);
 				this.line("\trle4encode ", bmpSource, " -o $(@D)");
@@ -1331,7 +1338,21 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (result.quality !== undefined) {
 				var temporary = target + result.quality;
 				if (tool.platform == "zephyr") {
-					trace("imageFiles");
+					this.line("add_custom_command(");
+					this.line("\tCOMMENT imageFiles+quality" + target);
+					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, temporary);
+					this.line("\tDEPENDS ", source, " ", rotationPath);
+					// this.echo(tool, "image2cs ", temporary);
+					this.line("\tCOMMAND image2cs ", source, " -o ${RESOURCES_DIR} -q ", result.quality, " -r ", tool.rotation);
+					this.line("\tVERBATIM)");
+					this.line();
+					this.line("add_custom_command(");
+					this.line("\tCOMMENT imageFile+quality " + target);
+					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
+					this.line("\tDEPENDS ${RESOURCES_DIR}", tool.slash, temporary);
+					this.line("\tCOMMAND ${CMAKE_COMMAND} -E copy ${RESOURCES_DIR}" + tool.slash + temporary + " " + "${RESOURCES_DIR}" + tool.slash + target);
+					this.line("\tVERBATIM)");
+					this.line();
 				}
 				else {
 					this.line("$(RESOURCES_DIR)", tool.slash, temporary, ": ", source, " ", rotationPath);
@@ -1346,8 +1367,15 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				}
 			}
 			else {
-				if (this.zephyr) {
-					trace("imageFiles2");
+				if (tool.platform == "zephyr") {
+					this.line("add_custom_command(");
+					this.line("\tCOMMENT imageFiles " + target);
+					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
+					this.line("\tDEPENDS ", source, " ", rotationPath);
+					// this.echo(tool, "image2cs ", target);
+					this.line("\tCOMMAND image2cs ", source, " -o ${RESOURCES_DIR} -r ", tool.rotation);
+					this.line("\tVERBATIM)");
+					this.line();
 				}
 				else {
 					this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source, " ", rotationPath);
@@ -1376,51 +1404,112 @@ trace(`face: ${name}\n`);
 					if (!characterFiles[i])
 						throw new Error(`characterFile "${file}" not found`);
 				});
+
+				if (tool.platform == "zephyr") {
+					var s;
+					this.line("add_custom_command(");
+					this.line("\tCOMMENT outlineFontFiles ");
+					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`);
+//					this.write("\tDEPENDS " + source, " ", "${RESOURCES_DIR}", tool.slash, name + ".txt", " ", "${RESOURCES_DIR}", tool.slash, name + ".json");
+					s = "\tDEPENDS " + source + " ${RESOURCES_DIR}" + tool.slash + name + ".txt ${RESOURCES_DIR}" + tool.slash + name + ".json";
+					if (face.localization)
+						s += " " + "${RESOURCES_DIR}" + tool.slash + "locals.mhi";
+					this.line(s);
+//					this.line.apply(this, line);
+//					this.echo(tool, "fontbm ", name);
+
+					let characters = face.characters ?? "";
+					const blocks = ("string" === typeof face.blocks) ? [face.blocks] : (face.blocks ?? (characters ? [] : ["Basic Latin"]));
+					blocks.forEach(block => {
+						const info = UncodeRanges.find(info => info.category === block);
+						if (!info)
+							tool.reportWarning(NULL, 0, `Unknown Unicode block: "${block}"`);
+						const count = info.range[1] - info.range[0] + 1;
+						const c = new Array(count);
+						for (let i = 0; i < count; i++)
+							c[i] = String.fromCharCode(i + info.range[0]);
+						characters += c.join("");
+					});
 				
-				let line = Array.of("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
+					let path = tool.resourcesPath + tool.slash + name + ".txt";
+					let former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+					if (former !== characters)
+						tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
+
+					path = tool.resourcesPath + tool.slash + name + ".json";
+					let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source, rotation: tool.rotation});
+					former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+					if (former !== options)
+						tool.writeFileString(path, options);				
+
+					characterFiles.push("${RESOURCES_DIR}" + `${tool.slash}${name}.txt`);
+					if (face.localization)
+						characterFiles.push(`${RESOURCES_DIR}${tool.slash}${tool.localsName}.txt`);
+					this.line("\tCOMMAND ${FONTBM}" + ` --font-file ${source} --font-size ${face.size} --output "` + "${RESOURCES_DIR}" + `${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
+
+					if ("-mask" === face.suffix) {
+						this.line("\tCOMMAND png2bmp ${RESOURCES_DIR}", tool.slash, name + ".png", " -a -o ${RESOURCES_DIR} -r ", tool.rotation, " -t");
+						this.line("\tCOMMAND compressbmf ${RESOURCES_DIR}", tool.slash, name + ".fnt", " -i ${RESOURCES_DIR}", tool.slash, name + "-alpha.bmp", " -o ${RESOURCES_DIR} -r ", tool.rotation);
+					}
+					this.line("\tVERBATIM)");
+					this.line();
+
+					if ("-alpha" === face.suffix) {
+						this.line("add_custom_command(");
+						this.line("\tCOMMENT outlineFontFiles-alpha ");
+						this.line("\tOUTPUT ${RESOURCES_DIR)", tool.slash, name + "-alpha.bmp");
+						this.line("\tDEPENDS ${RESOURCES_DIR}", tool.slash, `${name}.fnt`);
+						this.line("\tCOMMAND png2bmp ${RESOURCES_DIR}", tool.slash, name + ".png", ` -a -o ${RESOURCES_DIR} ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+						this.line("\tVERBATIM)");
+						this.line();
+					}
+				}
+				else {
+					let line = Array.of("$(RESOURCES_DIR)", tool.slash, ("-alpha" === face.suffix) ? `${name}.fnt` : `${name}.bf4`, ": ", source,
 							" ", "$(RESOURCES_DIR)", tool.slash, name + ".txt",
 							" ", "$(RESOURCES_DIR)", tool.slash, name + ".json");
-				if (face.localization)
-					line.push(" ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
-				characterFiles.forEach(file => line.push(" ", file));
-				this.line.apply(this, line);
-				this.echo(tool, "fontbm ", name);
+					if (face.localization)
+						line.push(" ", "$(RESOURCES_DIR)", tool.slash, "locals.mhi");
+					characterFiles.forEach(file => line.push(" ", file));
+					this.line.apply(this, line);
+					this.echo(tool, "fontbm ", name);
 
-				let characters = face.characters ?? "";
-				const blocks = ("string" === typeof face.blocks) ? [face.blocks] : (face.blocks ?? (characters ? [] : ["Basic Latin"]));
-				blocks.forEach(block => {
-					const info = UncodeRanges.find(info => info.category === block);
-					if (!info)
-						tool.reportWarning(NULL, 0, `Unknown Unicode block: "${block}"`);
-					const count = info.range[1] - info.range[0] + 1;
-					const c = new Array(count);
-					for (let i = 0; i < count; i++)
-						c[i] = String.fromCharCode(i + info.range[0]);
-					characters += c.join("");
-				});
+					let characters = face.characters ?? "";
+					const blocks = ("string" === typeof face.blocks) ? [face.blocks] : (face.blocks ?? (characters ? [] : ["Basic Latin"]));
+					blocks.forEach(block => {
+						const info = UncodeRanges.find(info => info.category === block);
+						if (!info)
+							tool.reportWarning(NULL, 0, `Unknown Unicode block: "${block}"`);
+						const count = info.range[1] - info.range[0] + 1;
+						const c = new Array(count);
+						for (let i = 0; i < count; i++)
+							c[i] = String.fromCharCode(i + info.range[0]);
+						characters += c.join("");
+					});
 				
-				let path = tool.resourcesPath + tool.slash + name + ".txt";
-				let former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
-				if (former !== characters)
-					tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
+					let path = tool.resourcesPath + tool.slash + name + ".txt";
+					let former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+					if (former !== characters)
+						tool.writeFileBuffer(path, ArrayBuffer.fromString(characters));
 
-				path = tool.resourcesPath + tool.slash + name + ".json";
-				let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source, rotation: tool.rotation});
-				former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
-				if (former !== options)
-					tool.writeFileString(path, options);				
+					path = tool.resourcesPath + tool.slash + name + ".json";
+					let options = JSON.stringify({kern: face.kern ?? false, monochrome: face.monochrome ?? false, localization: face.localization ?? false, source, rotation: tool.rotation});
+					former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+					if (former !== options)
+						tool.writeFileString(path, options);				
 
-				characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${name}.txt`);
-				if (face.localization)
-					characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${tool.localsName}.txt`);
-				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
-				if ("-alpha" === face.suffix) {
-					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
-				}
-				else if ("-mask" === face.suffix) {
-					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
-					this.line("\tcompressbmf ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
+					characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${name}.txt`);
+					if (face.localization)
+						characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${tool.localsName}.txt`);
+					this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
+					if ("-alpha" === face.suffix) {
+						this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+					}
+					else if ("-mask" === face.suffix) {
+						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
+						this.line("\tcompressbmf ", "$(RESOURCES_DIR)", tool.slash, name + ".fnt", " -i ", "$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", " -o $(@D) -r ", tool.rotation);
+					}
 				}
 			});
 		}
@@ -1439,24 +1528,27 @@ trace(`face: ${name}\n`);
 		for (var result of tool.soundFiles) {
 			var source = result.source;
 			var target = result.target;
-			this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
-			this.echo(tool, "wav2maud ", target);
-			this.line("\twav2maud ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
+			if (tool.platform == "zephyr") {
+				trace("wav2maud for zephyr\n");
+			}
+			else {
+				this.line("$(RESOURCES_DIR)", tool.slash, target, ": ", source);
+				this.echo(tool, "wav2maud ", target);
+				this.line("\twav2maud ", source, " -o $(@D) -r ", sampleRate, " -c ", numChannels, " -s ", bitsPerSample, " -f ", audioFormat);
+			}
 		}
 
 		if (tool.platform == "zephyr") {
 			var depends;
-			var output;
+			var output = "";
 			output = "${RESOURCES_DIR}" + tool.slash + tool.localsName + ".mhi";
-			for (var result of tool.stringFiles)
-				depends += "${RESOURCES_DIR}" + tool.slash + tool.localsName + ".mhi";
-			this.line("add_custom_command (");
-			this.write("\tOUTPUT " + output);
 			for (var result of tool.stringFiles) {
-				depends += " " + result.source;
+				depends += "${RESOURCES_DIR}" + tool.slash + tool.localsName + ".mhi";
+				output += " ${RESOURCES_DIR}" + tool.slash + result.target;
 			}
-			this.line("");
-			this.echo(tool, "mclocal strings");
+			this.line("add_custom_command (");
+			this.line("\tOUTPUT " + output);
+			this.line("\tCOMMENT mclocal strings");
 			this.write("\tCOMMAND mclocal");
 			for (var result of tool.stringFiles) {
 				this.write(" ");
@@ -1466,8 +1558,8 @@ trace(`face: ${name}\n`);
 				this.write(" -d");
 			if (tool.format)
 				this.write(" -s");
-			this.line(" -o " + output + " -r ", tool.localsName);
-			this.line(")");
+			this.line(" -o ${RESOURCES_DIR} -r ", tool.localsName);
+			this.line("\tVERBATIM)");
 			this.line("");
 		}
 		else {

@@ -14,6 +14,8 @@ if(DEFINED CMAKE_C_COMPILER_TARGET)
   set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
 endif()
 
+set(FONTBM $ENV{FONTBM})
+
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/mc/xsHosts.c)
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/zephyr/xsHost.c)
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/zephyr/xsPlatform.c)
