@@ -211,6 +211,13 @@ void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
 
 void fxAbort(txMachine* the, int status)
 {
+#if MODDEF_XS_TEST
+	if (XS_DEBUGGER_EXIT == status) {
+		modSoftReset();
+		return;
+	}
+#endif
+
 	char *msg = (char*)fxAbortString(status);
 	char *reason = "";
 	if (XS_UNHANDLED_EXCEPTION_EXIT == status) {

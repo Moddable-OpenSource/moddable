@@ -1164,7 +1164,7 @@ done:
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewDisplayReceiver, self);
 #else
 			xsCallFunction4((*self)->_begin, xsReference((*self)->screen), xsInteger(poco->x), xsInteger(poco->y), xsInteger(poco->w), xsInteger(poco->h));
-			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewDisplayReceiver, self);
+			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
 #endif
 		}
 		if (result) goto fail;
