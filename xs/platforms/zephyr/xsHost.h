@@ -302,7 +302,7 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 		#define PATH_MAX (256)
 	#endif
 #endif
-#define C_PATH_MAX (PATH_MAX))
+#define C_PATH_MAX (PATH_MAX)
 
 /* MATH */
 #if 0	// fdlibm
