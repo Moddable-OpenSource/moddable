@@ -762,20 +762,16 @@ uint32_t espRead32be(const void *addr)
 	return (result << 24) | ((result & 0xff00) << 8)  | ((result >> 8) & 0xff00) | (result >> 24);
 }
 
-void undefinedFail(const char *what) {
+static void undefinedFail(const char *what) {
 	char msg[64];
 	c_strcpy(msg, "unimplemented: ");
 	c_strcat(msg, what);
-	 modLog_transmit(msg);
+	modLog_transmit(msg);
 }
 
 void vSemaphoreDelete() {undefinedFail("vSemaphoreDelete"); }
 void xSemaphoreGive() {undefinedFail("xSemaphoreGive"); }
 void xSemaphoreTake() {undefinedFail("xSemaphoreTake"); }
-
-void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *)) { undefinedFail("qsort"); }
-void * bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar) (const void *, const void *)) {  undefinedFail("bsearch"); return NULL; }
-
 
 static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
 static int16_t gDaylightSavings = 60 * 60;          // summer time

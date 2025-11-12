@@ -420,9 +420,6 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 #define c_tanh tanh
 #define c_trunc trunc
 
-void qsort(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *));
-void *bsearch(const void *key, const void *base, size_t nel, size_t width, int (*compar)(const void *, const void*));
-
 #define _M_LN2        0.693147180559945309417
 #define M_E     2.7182818284590452354
 #define M_LOG2E     1.4426950408889634074
