@@ -1032,7 +1032,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var output = "${RESOURCES_DIR}" + tool.slash + target;
 				//@@
 				this.line("add_custom_command(");
-				this.line("\tCOMMENT copy resource file");
+				this.line("\tCOMMENT copy-resource-file");
 				this.line("\tOUTPUT " + output);
 				this.line("\tCOMMAND ${CMAKE_COMMAND} -E copy " + source + " " + output )
 				this.line("\tDEPENDS " + source);
@@ -1069,7 +1069,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var target = result.target;
 				if (tool.platform == "zephyr") {
 					this.line("add_custom_command (");
-					this.line("\tCOMMENT buildclut " + target);
+					this.line("\tCOMMENT buildclut ");
 					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 					this.line("\tDEPENDS ", source);
 					this.line("\tCOMMAND buildclut ", source, " -o ${RESOURCES_DIR}");
@@ -1099,7 +1099,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						manifest = " $(MANIFEST)";
 					}
 					this.line("add_custom_command (");
-					this.line("\tCOMMENT bmpAlphaFiles " + target);
+					this.line("\tCOMMENT bmpAlphaFiles ");
 					this.line("\tOUTPUT ${RESOURCES_DIR}" + tool.slash + target);
 					this.line("\tDEPENDS ", source, " ", rotationPath, manifest);
 					this.write("\tCOMMAND png2bmp " + source + " -a");
@@ -1157,7 +1157,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (tool.platform == "zephyr") {
 				clutSource = result.clutName ? "${RESOURCES_DIR}" + tool.slash + result.clutName + ".cct" : null;
 				this.line("add_custom_command (");
-				this.line("\tCOMMENT bmpColorFiles " + target);
+				this.line("\tCOMMENT bmpColorFiles ");
 				this.write("\tOUTPUT ${RESOURCES_DIR}" + tool.slash + target);
 				if (alphaTarget)
 					this.write(" ${RESOURCES_DIR}" + tool.slash + alphaTarget);
@@ -1253,7 +1253,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var bmpSource = "${RESOURCES_DIR}" + tool.slash + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
 				this.line("add_custom_command(");
-				this.line("\tCOMMENT bmpFontFiles " + target);
+				this.line("\tCOMMENT bmpFontFiles ");
 				this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 				this.line("\tDEPENDS ", source, " ", bmpSource, " ", rotationPath);
 				this.line("\tCOMMAND compressbmf ", source, " -i ", bmpSource, " -o ${RESOURCES_DIR} -r ", tool.rotation);
@@ -1262,7 +1262,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				// this.echo(tool, "png2bmp ", bmpTarget);
 				
 				this.line("add_custom_command(");
-				this.line("\tCOMMENT bmpFontFiles " + target);
+				this.line("\tCOMMENT bmpFontFiles ");
 				this.line("\tOUTPUT ", bmpSource);
 				this.line("\tDEPENDS ", pngSource, " ", rotationPath);
 				this.line("\tCOMMAND png2bmp ", pngSource, " -a -o ${RESOURCES_DIR} -r ", tool.rotation, " -t");
@@ -1289,7 +1289,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (tool.platform == "zephyr") {
 				bmpSource = "${RESOURCES_DIR}" + tool.slash + bmpTarget;
 				this.line("add_custom_command(");
-				this.line("\tCOMMENT bmpMaskFiles " + target);
+				this.line("\tCOMMENT bmpMaskFiles ");
 				this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 				this.line("\tDEPENDS ", bmpSource);
 				// this.echo(tool, "rle4encode ", target);
@@ -1305,7 +1305,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("\tVERBATIM)");
 				this.line();
 				this.line("add_custom_command(");
-				this.line("\tCOMMENT bmpMaskFiles " + target);
+				this.line("\tCOMMENT bmpMaskFiles ");
 				this.line("\tOUTPUT ", bmpSource);
 				this.line("\tDEPENDS ", source, " ", rotationPath, manifest);
 				// this.echo(tool, "png2bmp ", bmpTarget);
@@ -1339,7 +1339,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var temporary = target + result.quality;
 				if (tool.platform == "zephyr") {
 					this.line("add_custom_command(");
-					this.line("\tCOMMENT imageFiles+quality" + target);
+					this.line("\tCOMMENT imageFiles+quality");
 					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, temporary);
 					this.line("\tDEPENDS ", source, " ", rotationPath);
 					// this.echo(tool, "image2cs ", temporary);
@@ -1347,7 +1347,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line("\tVERBATIM)");
 					this.line();
 					this.line("add_custom_command(");
-					this.line("\tCOMMENT imageFile+quality " + target);
+					this.line("\tCOMMENT imageFile+quality ");
 					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 					this.line("\tDEPENDS ${RESOURCES_DIR}", tool.slash, temporary);
 					this.line("\tCOMMAND ${CMAKE_COMMAND} -E copy ${RESOURCES_DIR}" + tool.slash + temporary + " " + "${RESOURCES_DIR}" + tool.slash + target);
@@ -1369,7 +1369,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			else {
 				if (tool.platform == "zephyr") {
 					this.line("add_custom_command(");
-					this.line("\tCOMMENT imageFiles " + target);
+					this.line("\tCOMMENT imageFiles ");
 					this.line("\tOUTPUT ${RESOURCES_DIR}", tool.slash, target);
 					this.line("\tDEPENDS ", source, " ", rotationPath);
 					// this.echo(tool, "image2cs ", target);
@@ -1548,7 +1548,7 @@ trace(`face: ${name}\n`);
 			}
 			this.line("add_custom_command (");
 			this.line("\tOUTPUT " + output);
-			this.line("\tCOMMENT mclocal strings");
+			this.line("\tCOMMENT mclocal");
 			this.write("\tCOMMAND mclocal");
 			for (var result of tool.stringFiles) {
 				this.write(" ");

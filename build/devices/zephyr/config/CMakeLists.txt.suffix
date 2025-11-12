@@ -1,9 +1,14 @@
 # --- suffix file
 
+LIST(LENGTH mSTRIPS stripsLen)
+if (stripsLen GREATER 0)
+	set(STRIPS -s ${mSTRIPS})
+endif()
+
 add_custom_command ( 
 	OUTPUT ${TMP_DIR}/mc.xs.c ${TMP_DIR}/mc.xs.h
 	DEPENDS ${mMODULES} ${mRESOURCES}
-	COMMAND xsl -b ${MODULES_DIR} -o ${TMP_DIR} ${mPRELOADS} -s ${mSTRIPS} ${mCREATION} ${mMODULES}
+	COMMAND xsl -b ${MODULES_DIR} -o ${TMP_DIR} ${mPRELOADS} ${STRIPS} ${mCREATION} ${mMODULES}
 	VERBATIM
 )
 
