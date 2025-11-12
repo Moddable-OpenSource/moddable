@@ -24,7 +24,7 @@ const stripSkin = new Skin({
 	states: 27, variants: 28 
 });
 
-class ListBehavior implements Behavior<Port> {
+class ListBehavior extends Port {
 	countItems(/* port */) {
 		return this.data.length;
 	}
@@ -50,7 +50,7 @@ class ListBehavior implements Behavior<Port> {
 	onCreate(port, data) {
 		this.data = data;
 		this.delta = this.measureItem(port);
-		this.hit = -1;
+		this.hitIndex = -1;
 		this.state = 0;
 		port.duration = 500;
 	}
@@ -63,14 +63,14 @@ class ListBehavior implements Behavior<Port> {
 		port.drawContent(x, y, width, height);
 
 		let delta = this.delta;
-		let hit = this.hit;
+		let hitIndex = this.hitIndex;
 		let index = Math.floor(y / delta);
 		let limit = y + height;
 		x = 0;
 		y = index * delta;
 		width = port.width;
 		while (y < limit) {
-			if (hit == index) {
+			if (hitIndex == index) {
 				port.state = this.state;
 				port.skin = itemSkin;
 				port.drawContent(x, y, width, delta);
@@ -83,18 +83,18 @@ class ListBehavior implements Behavior<Port> {
 		}
 	}
 	onFinished(port) {
-		this.hit = -1;
+		this.hitIndex = -1;
 		port.stop();
 	}
 	onTimeChanged(port) {
 		this.state = 1 - port.fraction;
-		this.invalidateItem(port, this.hit);
+		this.invalidateItem(port, this.hitIndex);
 	}
 	onTouchBegan(port, id, x, y) {
 		port.stop();
 		let delta = this.delta;
 		let index = Math.floor((y - port.y) / delta);
-		this.hit = index;
+		this.hitIndex = index;
 		this.state = 1;
 		this.invalidateItem(port, index);
 	}
@@ -103,7 +103,7 @@ class ListBehavior implements Behavior<Port> {
 		port.start();
 	}
 	onTouchEnded(port) {
-		this.tapItem(port, this.hit);
+		this.tapItem(port, this.hitIndex);
 		port.time = 0;
 		port.start();
 	}
