@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,9 +19,13 @@
  */
 
 import config from "mc/config";
+import Bitmap from "commodetto/Bitmap"
 
 export default function (done) {
-	if (!global.screen && config.Screen)
-		global.screen = new config.Screen({});
+	if (device.display?.default) {
+		globalThis.screen = new device.display.default.io(device.display.default);
+		screen.pixelFormat = Bitmap[config.format];
+		screen.configure({format: screen.pixelFormat});
+	}
 	done();
 }

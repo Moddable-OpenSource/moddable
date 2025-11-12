@@ -150,6 +150,17 @@ device.rtc = {io: RTC, port: "${rtcs[0].label}"};
 `;
     }
 
+		doBus(state, parsed, {
+			prefix: "display-controller@",
+			name: "Display",
+			hostProviderName: "display",
+			header: "#include <zephyr/drivers/display.h>",
+			static:
+`import Display from "embedded:display/zephyr";
+device.display = {};
+`
+		});
+
 /*
 doBus(state, parsed, {
 			prefix: "spi@",
@@ -531,6 +542,7 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
       return nodes;
 
   state.jsCode += "\n" + options.static;
+  const hostProviderName = options.hostProviderName ?? options.name;
 
   nodes.forEach(node => {
 		let additional = "";
@@ -539,13 +551,13 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 			if (baud)
 				additional += `baud: ${parseInt(baud)}`;
 		}
-		state.jsCode += `device.${options.name}.${node.label} = {io: ${options.name}, port: "${node.label}"${additional ? ", " + additional : ""}};\n`;
+		state.jsCode += `device.${hostProviderName}.${node.label} = {io: ${options.name}, port: "${node.label}"${additional ? ", " + additional : ""}};\n`;
 		for (let i = 1; i < node.labels?.length; i++) 
-			state.jsCode += `device.${options.name}.${node.labels[i]} = device.${options.name}.${node.label};\n`;
+			state.jsCode += `device.${hostProviderName}.${node.labels[i]} = device.${hostProviderName}.${node.label};\n`;
 	});
 
 	// use first one as default - just a guess. always correct when there is just one bus. is there a "chosen" for this??
-	state.jsCode += `device.${options.name}.default = device.${options.name}.${nodes[0].label};\n`;
+	state.jsCode += `device.${hostProviderName}.default = device.${hostProviderName}.${nodes[0].label};\n`;
 
   return nodes;
 }
@@ -1110,7 +1122,7 @@ class DTSParser {
       output += `/dts-${tree.version}/;\n\n`;
     }
     
-    for (const [nodeName, node] of Object.entries(tree.nodes)) {
+    for (const [, node] of Object.entries(tree.nodes)) {
       output += DTSParser.nodeToString(node, 0);
     }
     
@@ -1141,7 +1153,7 @@ class DTSParser {
     // Child nodes
     const childEntries = Object.entries(node.children);
     for (let i = 0; i < childEntries.length; i++) {
-      const [childName, child] = childEntries[i];
+      const [, child] = childEntries[i];
       if (i === 0 && Object.keys(node.properties).length > 0) {
         output += '\n';
       }

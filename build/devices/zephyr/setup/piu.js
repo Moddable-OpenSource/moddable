@@ -19,12 +19,13 @@
  */
 
 import config from "mc/config";
+import Bitmap from "commodetto/Bitmap"
 import Timer from "timer";
 
-if (!config.Screen)
+if (!config.Screen && !device.display?.default)
 	throw new Error("no screen configured");
 
-class Screen extends config.Screen {
+class Screen extends (config.Screen ?? device.display.default.io) {
 	#timer;
 
 	constructor(options) {
@@ -52,7 +53,9 @@ class Screen extends config.Screen {
 }
 
 export default function (done) {
-	globalThis.screen = new Screen({});		// may overwrite Commodetto screen. that's oK.
+	globalThis.screen = new Screen(config.Screen ? {} : device.display.default);		// may overwrite Commodetto screen. that's oK.
+	screen.pixelFormat = Bitmap[config.format];
+	screen.configure({format: screen.pixelFormat});
 
 	done();
 }

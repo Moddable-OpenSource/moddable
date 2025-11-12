@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"embedded:display/zephyr": "./display"
+	},
+	"preload": [
+		"embedded:display/zephyr"
+	],
+	"zephyrConfig": {
+		"CONFIG_DISPLAY": "y"
+	}
+}

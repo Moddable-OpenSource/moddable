@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -92,7 +92,8 @@ enum {
 	kPocoFlagDidBegin = 1 << 6,
 	kPocoFlagContinue = 1 << 7,
 	kPocoFlagBuffer = 1 << 8,
-	kPocoFlagErrorUnimplemented = 1 << 9
+	kPocoFlagErrorUnimplemented = 1 << 9,
+	kPocoFlag419PixelOut = 1 << 10
 };
 
 struct PocoRecord {
@@ -124,6 +125,10 @@ struct PocoRecord {
 
 	// native pixel output dispatch
 	void				*outputRefcon;
+#if MODDEF_ECMA419_ENABLED
+	void				*displayHooks;
+	void				*the;
+#endif
 
 	void				*reservedPocoJS;
 

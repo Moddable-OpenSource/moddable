@@ -47,7 +47,7 @@ export default class Poco extends Native("xs_poco_destructor") {
 		build.call(this,
 					pixelsOut.width,
 					pixelsOut.height,
-					pixelsOut.pixelsToBytes(pixels),
+					pixels,
 					pixelsOut.pixelFormat,
 					options.displayListLength ?? 1024,
 					options.rotation ?? 0,
@@ -55,7 +55,8 @@ export default class Poco extends Native("xs_poco_destructor") {
 					pixelsOut.adaptInvalid,
 					pixelsOut.c_dispatch,
 					pixelsOut.frameBuffer,
-					pixelsOut.clut);
+					pixelsOut.clut,
+					pixelsOut);
 	}
 	close() { return native("xs_poco_close").call(this); }
 
