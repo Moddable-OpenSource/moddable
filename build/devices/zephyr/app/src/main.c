@@ -10,10 +10,15 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "xsHosts.h"
+#include "mc.defines.h"
 
 #include "modInstrumentation.h"
 
 xsMachine *gThe = NULL;
+
+#if MODDEF_XS_TEST
+	uint8_t gSoftReset;
+#endif
 
 static void runLoop(void *p1, void *p2, void *p3)
 {
@@ -30,7 +35,8 @@ static void runLoop(void *p1, void *p2, void *p3)
 
 #if MODDEF_XS_TEST
 		xsMachine *the = gThe;
-		while (gThe) {
+		gSoftReset = 0;
+		while (!gSoftReset) {
 			modTimersExecute();
 			modMessageService(gThe, modTimersNext());
 			modInstrumentationAdjust(Turns, +1);
