@@ -220,6 +220,11 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #define MOD_TASKS (true)
 #define modTaskGetCurrent()		((uintptr_t)k_current_get());
 
+#if MODDEF_XS_TEST
+	extern uint8_t gSoftReset;
+	#define modSoftReset() gSoftReset = 1
+#endif
+
 /* 
 	c libraries
 */
@@ -231,11 +236,6 @@ typedef void (*modMessageDeliver)(void *the, void *refcon, uint8_t *message, uin
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifndef PATH_MAX
-#define PATH_MAX 128
-#endif
-
 
 #define c_tolower tolower
 #define c_toupper toupper
@@ -296,9 +296,13 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 #define C_EINVAL EINVAL
 
 #ifndef PATH_MAX
-	#define PATH_MAX 128
+	#if MODDEF_XS_TEST
+		#define PATH_MAX (128)
+	#else
+		#define PATH_MAX (256)
+	#endif
 #endif
-#define C_PATH_MAX 128	// PATH_MAX
+#define C_PATH_MAX (PATH_MAX))
 
 /* MATH */
 #if 0	// fdlibm
