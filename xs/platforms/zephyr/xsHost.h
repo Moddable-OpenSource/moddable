@@ -297,9 +297,9 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 
 #ifndef PATH_MAX
 	#if MODDEF_XS_TEST
-		#define PATH_MAX (128)
-	#else
 		#define PATH_MAX (256)
+	#else
+		#define PATH_MAX (128)
 	#endif
 #endif
 #define C_PATH_MAX (PATH_MAX)
