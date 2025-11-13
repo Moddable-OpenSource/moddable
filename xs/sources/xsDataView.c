@@ -2815,7 +2815,7 @@ void fxBigInt64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* sl
 {
 	txS8 value;
 #ifdef mxMisalignedSettersCrash
-	value = c_read32(data->value.arrayBuffer.address + offset);
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
 #else
 	value = *((txS8*)(data->value.arrayBuffer.address + offset));
 #endif
@@ -2847,7 +2847,7 @@ void fxBigUint64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* s
 {
 	txU8 value;
 #ifdef mxMisalignedSettersCrash
-	value = c_read32(data->value.arrayBuffer.address + offset);
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
 #else
 	value = *((txU8*)(data->value.arrayBuffer.address + offset));
 #endif
