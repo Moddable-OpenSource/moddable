@@ -3944,6 +3944,8 @@ void fxCheckNativeConstructor(txParser* parser)
 	if (root->symbol != C_NULL)
 		return;
 	txHostNode* host = (txHostNode*)(root->heritage);
+	if (host == C_NULL)
+		return;
 	if (host->description != &gxTokenDescriptions[XS_TOKEN_HOST])
 		return;
 	if (root->constructorInit != C_NULL)
