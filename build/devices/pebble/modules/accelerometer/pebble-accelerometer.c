@@ -184,14 +184,19 @@ void accelerometerData(AccelData *data, uint32_t num_samples)
 	pa->sample = *data;
 	pa->haveSample = true;
 
-	xsMachine *the = pa->the;
-	xsBeginHost(the);
-		xsCallFunction0(xsReference(pa->onSample), pa->obj);
-	xsEndHost(the);
+	if (pa->onSample) {
+		xsMachine *the = pa->the;
+		xsBeginHost(the);
+			xsCallFunction0(xsReference(pa->onSample), pa->obj);
+		xsEndHost(the);
+	}
 }
 
 static void doTap(PebbleAccelerometer pa, AccelAxisType axis, int32_t direction, xsSlot *func)
 {
+	if (!func)
+		return;
+
 	char msg[3];
 	xsMachine *the = pa->the;
 	msg[0] = (ACCEL_AXIS_X == axis) ? 'x' : ((ACCEL_AXIS_Y == axis) ? 'y' : 'z');

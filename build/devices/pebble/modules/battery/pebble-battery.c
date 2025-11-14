@@ -136,7 +136,10 @@ void xs_battery_sample(xsMachine *the)
 
 void batteryData(BatteryChargeState charge)
 {
-	PebbleBattery pb = gBattery; 
+	PebbleBattery pb = gBattery;
+	if (C_NULL == pb)
+		return;
+
 	pb->sample = charge;
 	pb->haveSample = true;
 
