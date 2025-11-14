@@ -466,23 +466,23 @@ uint32_t espRead32be(const void *addr);
 
 
 #include <string.h>
-#define c_memcpy memcpy
-#define c_memmove memmove
-#define c_memset memset
-#define c_memcmp memcmp
-#define c_strcat strcat
-#define c_strchr strchr
-#define c_strcmp strcmp
-#define c_strcpy strcpy
-#define c_strlen strlen
-#define c_strncat strncat
-#define c_strncmp strncmp
-#define c_strncpy strncpy
-#define c_strstr strstr
-#define c_strrchr strrchr
+#define c_memcpy espMemCpy
+#define c_memmove memmove	// espMemMove
+#define c_memset memset		// espMemSet
+#define c_memcmp espMemCmp
+#define c_strcat espStrCat
+#define c_strchr espStrChr
+#define c_strcmp espStrCmp
+#define c_strcpy espStrCpy
+#define c_strlen espStrLen
+#define c_strncat espStrNCat
+#define c_strncmp espStrNCmp
+#define c_strncpy espStrNCpy
+#define c_strstr espStrStr
+#define c_strrchr espStrRChr
 #define c_isEmpty(s) (!c_read8(s))
-#define c_strcspn strcspn
-#define c_strspn strspn
+#define c_strcspn espStrcspn
+#define c_strspn espStrspn
 
 /* ERROR */
 
@@ -554,6 +554,28 @@ void modRunOnSleepCallbacks(void);
 void pebble_reset(void);
 
 GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *descent, int32_t *leading);
+
+//
+
+extern uint8_t espRead8(const void *addr);
+extern uint16_t espRead16(const void *addr);
+extern uint32_t espRead32(const void *addr);
+extern uint16_t espRead16be(const void *addr);
+extern uint32_t espRead32be(const void *addr);
+extern size_t espStrLen(const void *addr);
+extern void espStrCpy(char *dst, const char *src);
+extern void espStrNCpy(char *dst, const char *src, size_t count);
+extern void espStrCat(char *dst, const char *src);
+extern void espStrNCat(char *dst, const char *src, size_t count);
+extern char *espStrChr(const char *str, int c);
+extern char *espStrRChr(const char *str, int c);
+extern char *espStrStr(const char *src, const char *search);
+extern void espMemCpy(void *dst, const void *src, size_t count);
+extern int espMemCmp(const void *a, const void *b, size_t count);
+extern int espStrCmp(const char *ap, const char *bp);
+extern int espStrNCmp(const char *ap, const char *bp, size_t count);
+extern size_t espStrcspn(const char *str, const char *strCharSet);
+extern size_t espStrspn(const char *str, const char *strCharSet);
 
 #ifdef __cplusplus
 }

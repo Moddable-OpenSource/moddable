@@ -901,3 +901,336 @@ GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *
 	*ascent = height - *descent - *leading;
 	return font;
 }
+
+
+
+// all hail gary davidian: http://opensource.apple.com//source/xnu/xnu-1456.1.26/libkern/ppc/strlen.s
+size_t espStrLen(const void *addr)
+{
+	static const uint32_t mask[] ICACHE_XS6RO2_ATTR = {0, 0x000000FF, 0x0000FFFF, 0x00FFFFFF};
+	int len = 3 & (uint32_t)addr;
+	const uint32_t *src = (const uint32_t *)(-len + (uint32_t)addr);
+	uint32_t data = *src++ | mask[len];
+
+	len = -len;
+
+	while (true) {
+		uint32_t y = data + 0xFEFEFEFF;
+		uint32_t z = ~data & 0x80808080;
+
+		if (0 != (y & z))
+			break;
+
+		len += 4;
+		data = *src++;
+	}
+
+	// three more bytes, at most, since there is a 0 somewhere in this long
+	if (data & 0x00ff) {
+		len += 1;
+		if (data & 0x00ff00) {
+			len += 1;
+			if (data & 0x00ff0000)
+				len += 1;
+		}
+	}
+
+	return (size_t)len;
+}
+
+//@@ this could be much faster, especially when both strings are aligned
+int espStrCmp(const char *ap, const char *bp)
+{
+	while (true) {
+		uint8_t a = c_read8(ap);
+		uint8_t b = c_read8(bp);
+
+		if ((a != b) || !a)
+			return a - b;
+
+		ap += 1;
+		bp += 1;
+	}
+}
+
+int espStrNCmp(const char *ap, const char *bp, size_t count)
+{
+	while (count--) {
+		uint8_t a = c_read8(ap);
+		uint8_t b = c_read8(bp);
+
+		if ((a != b) || !a)
+			return a - b;
+
+		ap += 1;
+		bp += 1;
+	}
+
+	return 0;
+}
+
+void espStrCpy(char *dst, const char *src)
+{
+	uint8_t c;
+
+	do {
+		c = c_read8(src++);
+		*dst++ = c;
+	} while (c);
+}
+
+void espStrNCpy(char *dst, const char *src, size_t count)
+{
+	char c;
+
+	if (0 == count) return;
+
+	do {
+		c = c_read8(src++);
+		*dst++ = c;
+	} while (--count && c);
+
+	while (count--)
+		*dst++ = 0;
+}
+
+void espStrCat(char *dst, const char *src)
+{
+	while (0 != c_read8(dst))
+		dst++;
+
+	espStrCpy(dst, src);
+}
+
+void espStrNCat(char *dst, const char *src, size_t count)
+{
+	while (0 != c_read8(dst))
+		dst++;
+
+	while (count--) {
+		char c = c_read8(src++);
+		if (0 == c)
+			break;
+
+		*dst++ = c;
+	}
+
+	*dst++ = 0;
+}
+
+char *espStrChr(const char *str, int c)
+{
+	do {
+		char value = c_read8(str);
+		if (!value)
+			return NULL;
+
+		if (value == (char)c)
+			return (char *)str;
+
+		str++;
+	} while (true);
+}
+
+char *espStrRChr(const char *str, int c)
+{
+	const char *result = NULL;
+
+	do {
+		str = espStrChr(str, c);
+		if (!str)
+			break;
+
+		result = str;
+		str += 1;
+	} while (true);
+
+	return (char *)result;
+}
+
+char *espStrStr(const char *src, const char *search)
+{
+	char searchFirst = c_read8(search++);
+	char c;
+
+	if (0 == searchFirst)
+		return (char *)src;
+
+	while ((c = c_read8(src++))) {
+		const char *ap, *bp;
+		uint8_t a, b;
+
+		if (c != searchFirst)
+			continue;
+
+		ap = src, bp = search;
+		while (true) {
+			b = c_read8(bp++);
+			if (!b)
+				return (char *)src - 1;
+
+			a = c_read8(ap++);
+			if ((a != b) || !a)
+				break;
+		}
+	}
+
+	return NULL;
+}
+
+// modeled on newlib
+size_t espStrcspn(const char *str, const char *strCharSet)
+{
+	const char *s = str;
+
+	while (c_read8(str)) {
+		const char *cs = strCharSet;
+		char c, sc = c_read8(str);
+
+		while (0 != (c = c_read8(cs++))) {
+			if (sc == c)
+				return str - s;
+		}
+
+		str++;
+	}
+
+	return str - s;
+}
+
+size_t espStrspn(const char *str, const char *strCharSet)
+{
+	const char *s = str;
+
+	while (c_read8(str)) {
+		const char *cs = strCharSet;
+		char c, sc = c_read8(str);
+
+		while (0 != (c = c_read8(cs++))) {
+			if (sc == c)
+				break;
+		}
+
+		if (0 == c)
+			return str - s;
+
+		str++;
+	}
+
+	return str - s;
+}
+
+void espMemCpy(void *dst, const void *src, size_t count)
+{
+	const uint8_t *s = src;
+	uint8_t *d = dst;
+
+	if (count > 8) {
+		// align source
+		uint8_t align = 3 & (uintptr_t)s;
+		uint32_t data;
+
+		if (align) {
+			data = *(uint32_t *)(~3 & (uintptr_t)s);
+			if (3 == align) {
+				d[0] = (uint8_t)(data >> 24);
+				count -= 1;
+				s += 1, d += 1;
+			}
+			else if (2 == align) {
+				d[0] = (uint8_t)(data >> 16);
+				d[1] = (uint8_t)(data >> 24);
+				count -= 2;
+				s += 2, d += 2;
+			}
+			else if (1 == align) {
+				d[0] = (uint8_t)(data >>  8);
+				d[1] = (uint8_t)(data >> 16);
+				d[2] = (uint8_t)(data >> 24);
+				count -= 3;
+				s += 3, d += 3;
+			}
+		}
+
+		// read longs and write longs
+		align = 3 & (uintptr_t)d;
+		if (0 == align) {
+			while (count >= 16) {
+				*(uint32_t *)&d[0] = *(uint32_t *)&s[0];
+				*(uint32_t *)&d[4] = *(uint32_t *)&s[4];
+				*(uint32_t *)&d[8] = *(uint32_t *)&s[8];
+				*(uint32_t *)&d[12] = *(uint32_t *)&s[12];
+				count -= 16;
+				s += 16, d += 16;
+			}
+
+			while (count >= 4) {
+				*(uint32_t *)d = *(uint32_t *)s;
+				count -= 4;
+				s += 4, d += 4;
+			}
+		}
+		else if (3 == align) {
+			data = *(uint32_t *)s;
+			*d++ = (uint8_t)(data);
+			s += 1;
+			count -= 1;
+			while (count >= 4) {
+				uint32_t next = *(uint32_t *)(3 + (uintptr_t)s);
+				*(uint32_t *)d = (data >> 8) | (next << 24);
+				count -= 4;
+				s += 4, d += 4;
+				data = next;
+			}
+		}
+		else if (2 == align) {
+			data = *(uint32_t *)s;
+			*d++ = (uint8_t)(data);
+			*d++ = (uint8_t)(data >>  8);
+			s += 2;
+			count -= 2;
+			while (count >= 4) {
+				uint32_t next = *(uint32_t *)(2 + (uintptr_t)s);
+				*(uint32_t *)d = (data >> 16) | (next << 16);
+				count -= 4;
+				s += 4, d += 4;
+				data = next;
+			}
+		}
+		else if (1 == align) {
+			data = *(uint32_t *)s;
+			*d++ = (uint8_t)(data);
+			*d++ = (uint8_t)(data >>  8);
+			*d++ = (uint8_t)(data >> 16);
+			s += 3;
+			count -= 3;
+			while (count >= 4) {
+				uint32_t next = *(uint32_t *)(1 + (uintptr_t)s);
+				*(uint32_t *)d = (data >> 24) | (next << 8);
+				count -= 4;
+				s += 4, d += 4;
+				data = next;
+			}
+		}
+	}
+
+	// tail
+	while (count--)
+		*d++ = c_read8(s++);
+}
+
+int espMemCmp(const void *a, const void *b, size_t count)
+{
+	const uint8_t *a8 = a;
+	const uint8_t *b8 = b;
+
+	while (count--) {
+		uint8_t av = c_read8(a8++);
+		uint8_t bv = c_read8(b8++);
+		if (av == bv)
+			continue;
+		return av - bv;
+	}
+
+	return 0;
+}
