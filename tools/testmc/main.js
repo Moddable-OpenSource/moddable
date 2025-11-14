@@ -200,16 +200,16 @@ globalThis.$NETWORK = {
 };
 /* *** WiFi */
 
-class HostObject @ "xs_hostobject_destructor" {
-	constructor() @ "xs_hostobject"
+class HostObject extends Native("xs_hostobject_destructor") {
+	constructor() { super(); native("xs_hostobject").call(this); }
 }
 
-class HostObjectChunk @ "xs_hostobjectchunk_destructor" {
-	constructor() @ "xs_hostobjectchunk"
+class HostObjectChunk extends Native("xs_hostobjectchunk_destructor") {
+	constructor() { super(); native("xs_hostobjectchunk").call(this); }
 }
 
-class HostBuffer @ "xs_hostbuffer_destructor" {
-	constructor() @ "xs_hostbuffer"
+class HostBuffer extends Native("xs_hostbuffer_destructor") {
+	constructor() { super(); native("xs_hostbuffer").call(this); }
 }
 
 class TestBehavior extends (globalThis.Behavior ?? Object) {
