@@ -1234,3 +1234,33 @@ int espMemCmp(const void *a, const void *b, size_t count)
 
 	return 0;
 }
+
+void *espMemMove(void *dest, const void *src, size_t n) {
+    unsigned char *d = dest;
+    const unsigned char *s = src;
+
+    if (d == s || n == 0) {
+        return dest;
+    }
+
+    if (d < s) {
+        // Safe to copy forward
+        for (size_t i = 0; i < n; i++) {
+            d[i] = s[i];
+        }
+    } else {
+        // Regions overlap; copy backward
+        for (size_t i = n; i != 0; i--) {
+            d[i - 1] = s[i - 1];
+        }
+    }
+
+    return dest;
+}
+
+void *espMemSet(void *dst, int c, size_t n) {
+    unsigned char *d = dst;
+	while (n--)
+		*d++ = c;
+    return dst;
+}

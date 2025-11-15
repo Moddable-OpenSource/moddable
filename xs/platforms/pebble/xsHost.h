@@ -467,8 +467,8 @@ uint32_t espRead32be(const void *addr);
 
 #include <string.h>
 #define c_memcpy espMemCpy
-#define c_memmove memmove	// espMemMove
-#define c_memset memset		// espMemSet
+#define c_memmove espMemMove
+#define c_memset espMemSet
 #define c_memcmp espMemCmp
 #define c_strcat espStrCat
 #define c_strchr espStrChr
@@ -557,9 +557,9 @@ GFont modFindPebbleFont(const char *family, int size, int32_t *ascent, int32_t *
 
 //
 
-extern uint8_t espRead8(const void *addr);
-extern uint16_t espRead16(const void *addr);
-extern uint32_t espRead32(const void *addr);
+//extern uint8_t espRead8(const void *addr);
+//extern uint16_t espRead16(const void *addr);
+//extern uint32_t espRead32(const void *addr);
 extern uint16_t espRead16be(const void *addr);
 extern uint32_t espRead32be(const void *addr);
 extern size_t espStrLen(const void *addr);
@@ -576,6 +576,8 @@ extern int espStrCmp(const char *ap, const char *bp);
 extern int espStrNCmp(const char *ap, const char *bp, size_t count);
 extern size_t espStrcspn(const char *str, const char *strCharSet);
 extern size_t espStrspn(const char *str, const char *strCharSet);
+extern void *espMemMove(void *dst, const void *src, size_t n);
+extern void *espMemSet(void *dst, int c, size_t n);
 
 #ifdef __cplusplus
 }
