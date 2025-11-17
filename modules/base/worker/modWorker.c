@@ -313,7 +313,7 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #endif
 	// FreeRTOS Task Creation. If we are specifying a core, use that, otherwise use the FreeRTOS xTaskCreate.
 	if (core != -1) {	// Use specified core, only for ESP32 for now
-		//ESP_LOGI(TAG, "Creating worker task on core %d with priority %d\n", worker->creation.coreId, worker->creation.priority);
+		//ESP_LOGI(TAG, "Creating worker task on core %d with priority %d\n", core, worker->creation.priority);
 		xTaskCreatePinnedToCore(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
 							worker, priority, &worker->task, core);
 	}
