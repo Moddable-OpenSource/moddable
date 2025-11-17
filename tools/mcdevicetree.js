@@ -243,20 +243,18 @@ function doGPIOBanks(state, dts) {
 		}
 	}
 
-	if (0 === gpios.length) {
-		for (let what in soc.children) {
-			if (!what.startsWith("pin-controller@"))
-				continue;
+	for (let what in soc.children) {
+		if (!what.startsWith("pin-controller@"))
+			continue;
 
-			const pinController = soc.children[what] 
-			for (const bus in pinController.children) {
-				if (bus.startsWith("gpio@")) {
-					const	gpio = pinController.children[bus];
-					const status = gpio.properties.status?.value?.value ?? "okay"
-					if ("okay" !== status)
-						continue;
-					gpios.push(gpio);
-				}
+		const pinController = soc.children[what] 
+		for (const bus in pinController.children) {
+			if (bus.startsWith("gpio@")) {
+				const	gpio = pinController.children[bus];
+				const status = gpio.properties.status?.value?.value ?? "okay"
+				if ("okay" !== status)
+					continue;
+				gpios.push(gpio);
 			}
 		}
 	}
