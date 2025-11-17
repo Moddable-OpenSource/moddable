@@ -54,7 +54,7 @@ class Screen extends (config.Screen ?? device.display.default.io) {
 
 export default function (done) {
 	globalThis.screen = new Screen(config.Screen ? {} : device.display.default);		// may overwrite Commodetto screen. that's oK.
-	screen.pixelFormat = Bitmap[config.format];
+	screen.pixelFormat ??= Bitmap[config.format];
 	screen.configure({format: screen.pixelFormat});
 
 	done();
