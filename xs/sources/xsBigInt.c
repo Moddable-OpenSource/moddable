@@ -648,7 +648,7 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	fxBigInt_dup(the, &the->stack->value.bigint);
 	stack = the->stack;
 
-	length = 1 + bc->k + (txSize)c_ceil((txNumber)stack->value.bigint.size * 32 * c_log(2) / c_log(radix));
+	length = 1 + bc->k + (txSize)c_ceil((txNumber)(stack->value.bigint.size + 1) * 32 * c_log(2) / c_log(radix));
 	if (stack->value.bigint.sign)
 		length++;
 	offset = length;
