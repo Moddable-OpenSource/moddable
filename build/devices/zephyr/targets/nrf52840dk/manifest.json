@@ -1,0 +1,18 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "nrf52840dk/nrf52840"
+	},
+	"include": [
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"zephyrConfig": {
+		"CONFIG_USERSPACE": "n"
+	},
+	"config": {
+	},
+	"defines": {
+	}
+}
