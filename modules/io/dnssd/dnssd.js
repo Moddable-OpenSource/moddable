@@ -653,7 +653,7 @@ class Advertise {
 		if (lastIndexOf < 0)
 			throw new Error("invalid serviceType");
 
-		const {txt, instanceName, serviceType} = options;
+		const {txt, name, serviceType} = options;
 		this.#service = {
 			name: serviceType.slice(1, lastIndexOf),
 			protocol: serviceType.slice(lastIndexOf + 2),
@@ -662,8 +662,8 @@ class Advertise {
 		};
 		if (txt)
 			this.#service.txt = txt;
-		if (instanceName)
-			this.#service.instanceName = instanceName;
+		if (name)
+			this.#service.instanceName = name;
 		dnssd.add(this.#service);
 		
 		this.#list = list;

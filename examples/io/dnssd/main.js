@@ -28,7 +28,7 @@ dnssd.claim({
 
 const ad = dnssd.advertise({
 	serviceType: "_http._tcp",
-	instanceName: "419 Web Server",
+	name: "419 Web Server",
 	host: "a-server",
 	port: 8080,
 	txt: new Map([
