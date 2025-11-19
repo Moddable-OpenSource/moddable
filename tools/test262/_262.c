@@ -663,3 +663,12 @@ void _262_evalScript(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
+#if _ZEPHYR
+
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+{
+//@@	LOG_PANIC();
+	sys_reboot(SYS_REBOOT_COLD);
+}
+
+#endif
