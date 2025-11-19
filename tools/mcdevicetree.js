@@ -136,7 +136,33 @@ device.Serial = {};
 `
 		});
 
-		let rtcs = doBus(state, parsed, {
+if (0) {
+		doBus(state, parsed, {
+			prefix: "adc@",
+			name: "Analog",
+			header: "#include <zephyr/drivers/adc.h>",
+			static:
+`import Analog from "embedded:io/analog";
+device.io.Analog = Analog;
+
+device.Analog = {};
+`
+		});
+
+		doBus(state, parsed, {
+			prefix: "pwm@",
+			name: "PWM",
+			header: "#include <zephyr/drivers/pwm.h>",
+			static:
+`import PWM from "embedded:io/pwm";
+device.io.PWM = PWM;
+
+device.PWM = {};
+`
+		});
+  }
+
+  let rtcs = doBus(state, parsed, {
 			prefix: "rtc@",
 			name: "RTC",
 			header: "#include <zephyr/drivers/rtc.h>",
