@@ -550,20 +550,20 @@ void xs_gattclient_constructor(xsMachine *the)
 		xsmcGet(xsVar(1), xsVar(0), xsID_bond);
 		bond = xsmcTest(xsVar(1));
 
-		xsmcGet(xsVar(1), xsVar(0), xsID_display);
-		display = xsmcTest(xsVar(1));
-
-		xsmcGet(xsVar(1), xsVar(0), xsID_keyboard);
-		if (xsStringType == xsmcTypeOf(xsVar(1))) {
-			if (c_strcmp("yes/no", xsmcToString(xsVar(1))))
-				xsRangeError("bad value");
-			keyboard = 2;
-			
-			if (0 == display)
-				xsUnknownError("missing display");
+		xsmcGet(xsVar(1), xsVar(0), xsID_ioCapabilities);
+		char *ioCap = xsmcToString(xsVar(1));
+		if (0 == c_strcmp(ioCap, "display"))
+			display = 1;
+		else if (0 == c_strcmp(ioCap, "numbers"))
+			keyboard = 1;
+		else if (0 == c_strcmp(ioCap, "display+numbers")) {
+			display = 1;
+			keyboard = 1;
 		}
-		else
-			keyboard = xsmcTest(xsVar(1));
+		else if (0 == c_strcmp(ioCap, "display+confirm")) {
+			display = 1;
+			keyboard = 2;
+		}
 
 		if (authenticate && !(keyboard || display))
 			xsUnknownError("authenticate requires keyboard and/or display");

@@ -41,11 +41,10 @@ function instantiateTemperatureMonitor(address) {
 	new GATTClient({
 		address,
 		security: {		// "just works" security configuration
-			authenticate: false,	/* default – false */
-			bond: false,			/* default – false */
-			display: false,			/* or true – default false */
-			keyboard: false,		/* or true or "yes/no" – default false */
-			lazy: true,				/* default – true */
+			authenticate: false,		/* default – false */
+			bond: false,				/* default – false */
+			ioCapabilities: "none",	/* default – none */
+			lazy: true,					/* default – true */
 		},
 		onError() {
 			trace("connection error\n");
