@@ -35,8 +35,7 @@ declare module "embedded:io/bluetoothle/central" {
     interface GATTSecurityOptions {
         bond?: boolean,
         authenticate?: boolean,
-        keyboard?: boolean | "yes/no",
-        display?: boolean,
+        ioCapabilities?: "none" | "display" | "numbers" | "display+numbers" | "display+confirm",
         immediate?: boolean
     }
 
