@@ -41,7 +41,7 @@
 				xsUnknownError("no network"); \
 			}
 	#endif
-#elif defined(__ets__) && !defined(_ZEPHYR)
+#elif defined(__ets__) && !defined(__ZEPHYR__)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
 	#define kPinBanks (1)
@@ -61,7 +61,7 @@
 	extern critical_section_t gCommonCriticalMux;
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
-#elif defined(_ZEPHYR)
+#elif defined(__ZEPHYR__)
 	#include "mc.devicetree.h"
 
 	#define kPinBanks kModZephyrGPIOBankCount
@@ -127,7 +127,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 #endif
 
-#if defined(PICO_BUILD) || defined(_ZEPHYR)
+#if defined(PICO_BUILD) || defined(__ZEPHYR__)
 	void builtinInitIO(void);
 #endif
 

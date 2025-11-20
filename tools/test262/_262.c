@@ -91,7 +91,7 @@
 	#define fxUnlockMutex(MUTEX) LeaveCriticalSection(MUTEX)
 	#define fxSleepCondition(CONDITION,MUTEX) SleepConditionVariableCS(CONDITION,MUTEX,INFINITE)
 	#define fxWakeCondition(CONDITION) WakeConditionVariable(CONDITION)
-#elif _ZEPHYR
+#elif __ZEPHYR__
 
 	typedef uint32_t txCondition;
 	typedef void *txMutex;
@@ -394,7 +394,7 @@ void _262_agent_broadcast(txMachine* the)
 		gxAgentCluster.dataValue = xsToInteger(xsArg(1));
 #if mxWindows
 	WakeAllConditionVariable(&(gxAgentCluster.dataCondition));
-#elif PICO_BUILD || _ZEPHYR
+#elif PICO_BUILD || __ZEPHYR__
 #else
 	pthread_cond_broadcast(&(gxAgentCluster.dataCondition));
 #endif
@@ -481,7 +481,7 @@ void _262_agent_sleep(txMachine* the)
 	xsIntegerValue delay = xsToInteger(xsArg(0));
 #ifdef mxUseFreeRTOSTasks
 	vTaskDelay(pdMS_TO_TICKS(delay));
-#elif PICO_BUILD || _ZEPHYR
+#elif PICO_BUILD || __ZEPHYR__
 	modDelayMilliseconds(delay);
 #elif mxWindows
 	Sleep(delay);
@@ -514,7 +514,7 @@ void _262_agent_start(txMachine* the)
 	xTaskCreate(_262_agent_start_aux, "agent", kStack, agent, 8, &(agent->thread));
 #elif mxWindows
 	agent->thread = (HANDLE)_beginthreadex(NULL, 0, _262_agent_start_aux, agent, 0, NULL);
-#elif PICO_BUILD || _ZEPHYR
+#elif PICO_BUILD || __ZEPHYR__
 	_262_agent_start_aux(agent);
 #else	
     pthread_create(&(agent->thread), NULL, &_262_agent_start_aux, agent);
@@ -601,7 +601,7 @@ void _262_agent_stop(txMachine* the)
 				#if mxWindows
 					WaitForSingleObject(agent->thread, INFINITE);
 					CloseHandle(agent->thread);
-				#elif PICO_BUILD || _ZEPHYR
+				#elif PICO_BUILD || __ZEPHYR__
 				#else
 					pthread_join(agent->thread, NULL);
 				#endif
@@ -663,7 +663,7 @@ void _262_evalScript(txMachine* the)
 	mxPullSlot(mxResult);
 }
 
-#if _ZEPHYR
+#if __ZEPHYR__
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {

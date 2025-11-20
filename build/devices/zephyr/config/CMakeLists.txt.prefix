@@ -65,7 +65,6 @@ list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsdtoa.c)
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsmc.c)
 list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsre.c)
 
-list(APPEND mFLAGS "-D_ZEPHYR=1")
 list(APPEND mFLAGS "-DmxUseDefaultSharedChunks=1")
 list(APPEND mFLAGS "-DkPocoRotation=0")
 list(APPEND mFLAGS "-DkPocoFrameBuffer=1")

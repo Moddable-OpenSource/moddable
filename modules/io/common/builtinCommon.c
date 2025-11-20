@@ -36,7 +36,7 @@
 		SOC_GPIO_VALID_GPIO_MASK >> 32
 #endif
 	};
-#elif defined(__ets__) && !defined(_ZEPHYR)
+#elif defined(__ets__) && !defined(__ZEPHYR__)
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		(1 <<  0) |
 		(1 <<  1) |
@@ -68,7 +68,7 @@
 		0x00000000		//@@
 #endif
 	};
-#elif _ZEPHYR
+#elif __ZEPHYR__
 	static uint8_t builtinInitialized = 0;
 	static uint32_t gDigitalAvailable[kPinBanks];
 #endif
@@ -215,7 +215,7 @@ void builtinInitIO()
 		builtinInitialized = 1;
 	}
 }
-#elif defined(_ZEPHYR)
+#elif defined(__ZEPHYR__)
 void builtinInitIO()
 {
 	if (!builtinInitialized) {

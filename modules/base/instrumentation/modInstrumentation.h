@@ -30,7 +30,7 @@
 	#define kModInstrumentationHasSPIFlashErases 1
 #endif
 
-#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32 || _ZEPHYR
+#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32 || __ZEPHYR__
 	#define kModInstrumentationHasTurns 1
 #endif
 
