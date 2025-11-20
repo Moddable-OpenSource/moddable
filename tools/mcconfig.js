@@ -247,7 +247,7 @@ class IOSMakeFile extends MakeFile {
 			task = "xcode"
 		this.line("TASK = ", task);
 	}
-	generateObjectsRules(tool) {
+	generateObjectsRules(/* tool */) {
 	}
 }
 
