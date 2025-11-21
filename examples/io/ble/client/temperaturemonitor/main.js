@@ -44,7 +44,7 @@ function instantiateTemperatureMonitor(address) {
 			authenticate: false,		/* default – false */
 			bond: false,				/* default – false */
 			ioCapabilities: "none",	/* default – none */
-			lazy: true,					/* default – true */
+			immediate: false,			/* default – false */
 		},
 		onError() {
 			trace("connection error\n");
