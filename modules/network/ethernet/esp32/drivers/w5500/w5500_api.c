@@ -55,20 +55,23 @@
  *
  */
 
+#include "mc.defines.h" // Moddable defines
+#if MODDEF_ETHERNET_W5500
 #include "esp_eth_phy.h"
 #include "esp_eth_mac.h"
 #include "esp_eth_com.h"
 #include "esp_eth_mac_spi.h"
 #include "esp_log.h"
-#include "mc.defines.h" // Moddable defines
 
-#if MODDEF_ETHERNET_W5500
+#ifndef MODDEF_ETHERNET_DEBUG
+	#define MODDEF_ETHERNET_DEBUG (0)
+#endif
 
 static const char *TAG = "mod.w5500_api.c";
 
 esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, int interrupt_pin)
 {
-    ESP_LOGI(TAG, "mod_ethernet_get_mac");
+    if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, "mod_ethernet_get_mac");
 	/* ESP code w5500 ethernet driver is based on spi driver
     eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     w5500_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
@@ -86,7 +89,7 @@ esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, in
 
 esp_eth_phy_t* mod_ethernet_get_phy()
 {
-    ESP_LOGI(TAG, "mod_ethernet_get_phy");
+    if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, "mod_ethernet_get_phy");
 	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     phy_config.autonego_timeout_ms = 0;
     phy_config.reset_gpio_num = -1;

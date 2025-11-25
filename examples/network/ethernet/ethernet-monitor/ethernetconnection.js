@@ -25,6 +25,10 @@ class EthernetMonitor {
 
 		try {
 			Ethernet.start();
+			//Ethernet.setStaticIP("192.168.1.190", "255.255.255.0", "192.168.1.1");
+			//trace(`EthernetMonitor-Static IP set: 192.168.1.190\n`);
+			Ethernet.doDHCP();
+			trace(`EthernetMonitor-DHCP started\n`);
 		} catch (error) {
 			trace(`EthernetMonitor-Ethernet hardware not found. ${error}\n`);
 			return done();

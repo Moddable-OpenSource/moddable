@@ -25,7 +25,7 @@ file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
 
 idf_component_register(
 			SRCS "main.c"
-			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/io ${ENV_MODDABLE}/modules/base/timer ${C_TMP_DIR}
+			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/modules/io ${ENV_MODDABLE}/modules/base/timer ${C_TMP_DIR}
 			)
 
 if (mxDebug EQUAL "1")
