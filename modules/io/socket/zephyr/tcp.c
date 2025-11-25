@@ -200,6 +200,8 @@ void xs_tcp_constructor(xsMachine *the)
 
 		tcp->sendBufferSize = 2048;
 		tcp->context = context;
+
+		connect = true;
 	}
 
 	tcp->obj = xsThis;
