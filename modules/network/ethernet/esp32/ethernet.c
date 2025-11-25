@@ -65,31 +65,16 @@ static const char *TAG = "mod.ethernet.c";
 
 int8_t gEthernetState = -2;	// -2 = uninitialized, -1 = gpio isr initialized, 0 = not started, 1 = starting, 2 = started, 3 = connecting, 4 = connected, 5 = IP address
 int8_t	gEthernetIP = 0;		// 0x01 == IP4, 0x02 == IP6
-int8_t	gUseDHCP = 1;			// 1 = use DHCP, 0 = use static IP
 
 esp_netif_t *gNetif = NULL;
 
 static esp_err_t initEthernet(xsMachine *the);
-static esp_err_t parseIPv4Address(const char *ip_str, esp_ip4_addr_t *ip_addr);
 
 // For SPI Ethernet boards, the MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS is blank and we need to use the SPI interface to talk to the Ethernet board
 #ifndef MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS
 static void init_spi();
 static void uninit_spi();
 #endif
-
-static esp_err_t parseIPv4Address(const char *ip_str, esp_ip4_addr_t *ip_addr)
-{
-	int a, b, c, d;
-	if (sscanf(ip_str, "%d.%d.%d.%d", &a, &b, &c, &d) != 4) {
-		return ESP_ERR_INVALID_ARG;
-	}
-	if (a < 0 || a > 255 || b < 0 || b > 255 || c < 0 || c > 255 || d < 0 || d > 255) {
-		return ESP_ERR_INVALID_ARG;
-	}
-	IP4_ADDR(ip_addr, a, b, c, d);
-	return ESP_OK;
-}
 
 void xs_ethernet_start(xsMachine *the)
 {
@@ -99,49 +84,37 @@ void xs_ethernet_start(xsMachine *the)
 		xsUnknownError("Ethernet.c Ethernet device not found");
 }
 
-void xs_ethernet_setStaticIP(xsMachine *the)
+void xs_ethernet_useStaticIP(xsMachine *the)
 {
-	char *ipAddr = xsmcToString(xsArg(0));
-	char *netmask = xsmcToString(xsArg(1));
-	char *gateway = xsmcToString(xsArg(2));
-	
-	if (!gNetif) {
+	if (!gNetif)
 		xsUnknownError("Ethernet not initialized");
-		return;
-	}
-	
-	if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, LOG_FMT("Setting static IP: %s, netmask: %s, gateway: %s"), ipAddr, netmask, gateway);
-	
-	// Stop DHCP client first
-	esp_netif_dhcpc_stop(gNetif);
 	
 	// Parse and set IP configuration
 	esp_netif_ip_info_t ip_info;
 	esp_err_t err;
 	
-	err = parseIPv4Address(ipAddr, &ip_info.ip);
-	if (err != ESP_OK) {
+	char *ipAddr = xsmcToString(xsArg(0));
+	err = esp_netif_str_to_ip4(ipAddr, &ip_info.ip);
+	if (err != ESP_OK)
 		xsUnknownError("Invalid IP address format");
-		return;
-	}
 	
-	err = parseIPv4Address(netmask, &ip_info.netmask);
-	if (err != ESP_OK) {
+	char *netmask = xsmcToString(xsArg(1));
+	err = esp_netif_str_to_ip4(netmask, &ip_info.netmask);
+	if (err != ESP_OK)
 		xsUnknownError("Invalid netmask format");
-		return;
-	}
 	
-	err = parseIPv4Address(gateway, &ip_info.gw);
-	if (err != ESP_OK) {
+	char *gateway = xsmcToString(xsArg(2));
+	err = esp_netif_str_to_ip4(gateway, &ip_info.gw);
+	if (err != ESP_OK)
 		xsUnknownError("Invalid gateway format");
-		return;
-	}
 	
+	// Stop DHCP client first
+	esp_netif_dhcpc_stop(gNetif);
+
 	err = esp_netif_set_ip_info(gNetif, &ip_info);
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, LOG_FMT("Failed to set static IP: %d"), err);
 		xsUnknownError("Failed to set static IP");
-		return;
 	}
 	
 	// Read back and verify the actual IP configuration
@@ -152,21 +125,18 @@ void xs_ethernet_setStaticIP(xsMachine *the)
 			IP2STR(&actual_ip_info.ip), IP2STR(&actual_ip_info.netmask), IP2STR(&actual_ip_info.gw));
 	} else {
 		ESP_LOGE(TAG, LOG_FMT("Failed to read back IP info: %d. Static IP configuration failed"), err);
-		return;
+		xsUnknownError("Failed to set static IP");
 	}
-	gUseDHCP = 0;
 	xsmcSetInteger(xsResult, 0);  // Return success if we got here
 }	// xs_ethernet_setStaticIP
 
 /*
 Switches the Ethernet interface to DHCP mode
 */
-void xs_ethernet_doDHCP(xsMachine *the)
+void xs_ethernet_useDHCP(xsMachine *the)
 {
-	if (!gNetif) {
+	if (!gNetif)
 		xsUnknownError("Ethernet not initialized");
-		return;
-	}
 	
 	if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, LOG_FMT("Switching to DHCP mode"));
 	
@@ -180,10 +150,8 @@ void xs_ethernet_doDHCP(xsMachine *the)
 	if (err != ESP_OK && err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED) {
 		ESP_LOGE(TAG, LOG_FMT("Failed to start DHCP client: %d"), err);
 		xsUnknownError("Failed to start DHCP client");
-		return;
 	}
 	
-	gUseDHCP = 1;
 	ESP_LOGI(TAG, LOG_FMT("DHCP client started successfully"));
 	xsmcSetInteger(xsResult, 0);  // Return success
 }
@@ -474,6 +442,7 @@ esp_err_t initEthernet(xsMachine *the)
 		MODDEF_ETHERNET_INTERNAL_MAC_MDC, MODDEF_ETHERNET_INTERNAL_MAC_MDIO);
 	mac = esp_eth_mac_new_esp32(&esp32_mac_config, &mac_config);
 
+#if 0
 	// Scan for PHY at all addresses to find where it's responding (diagnostic)
 	if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, LOG_FMT("Scanning for PHY on MDIO bus..."));
 	uint32_t phy_id_reg;
@@ -488,11 +457,12 @@ esp_err_t initEthernet(xsMachine *the)
 	}
 	if (found_addr < 0) {
 		ESP_LOGE(TAG, LOG_FMT("No PHY found on MDIO bus! Check wiring and clock."));
-		xsUnknownError("Ethernet.c No PHY found on MDIO bus! Check wiring and clock.");
-	} else if (found_addr != MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS) {
+		xsUnknownError("Ethernet.c No PHY found on MDIO bus! Check wiring and clock.\n");		//@@
+	}
+	if (found_addr != MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS) {
 		ESP_LOGW(TAG, LOG_FMT("PHY found at address %d but configured for %d"), found_addr, MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS);
 	}
-
+#endif
 	eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 	phy_config.phy_addr = MODDEF_ETHERNET_INTERNAL_PHY_ADDRESS;
 	phy_config.reset_gpio_num = MODDEF_ETHERNET_INTERNAL_PHY_RESET;
@@ -601,11 +571,9 @@ static void init_spi() {
 #ifdef MODDEF_ETHERNET_SPI_DMA_CH
 	spi_dma_channel = MODDEF_ETHERNET_SPI_DMA_CH;
 #endif
-#if MODDEF_ETHERNET_DEBUG
-	ESP_LOGI(TAG, LOG_FMT("MISO=%d MOSI=%d SCK=%d CS=%d DMA_Ch=%d PORT=%d HZ=%d PowerPin=%d"), 
+	if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, LOG_FMT("MISO=%d MOSI=%d SCK=%d CS=%d DMA_Ch=%d PORT=%d HZ=%d PowerPin=%d"), 
 		MODDEF_ETHERNET_SPI_MISO_PIN, MODDEF_ETHERNET_SPI_MOSI_PIN, MODDEF_ETHERNET_SPI_SCK_PIN, 
 		spi_dma_channel,MODDEF_ETHERNET_SPI_CS_PIN, MODDEF_ETHERNET_SPI_PORT, MODDEF_ETHERNET_HZ, MODDEF_ETHERNET_POWER_PIN);
-#endif
 
 	ESP_ERROR_CHECK(spi_bus_initialize(MODDEF_ETHERNET_SPI_PORT, &buscfg, MODDEF_ETHERNET_SPI_DMA_CH ));
 #else

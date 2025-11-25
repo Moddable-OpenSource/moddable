@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,8 +33,8 @@ export default class Ethernet @ "xs_ethernet_destructor" {
 	}
 
 	static start() @ "xs_ethernet_start";
-	static setStaticIP(ipAddr, netmask, gateway) @ "xs_ethernet_setStaticIP";
-	static doDHCP() @ "xs_ethernet_doDHCP";
+	static useStaticIP(ipAddr, netmask, gateway) @ "xs_ethernet_useStaticIP";
+	static useDHCP() @ "xs_ethernet_useDHCP";
 }
 
 Ethernet.gotIP = "gotIP";

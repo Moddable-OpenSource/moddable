@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,12 +25,16 @@ class EthernetMonitor {
 
 		try {
 			Ethernet.start();
-			//Ethernet.setStaticIP("192.168.1.190", "255.255.255.0", "192.168.1.1");
-			//trace(`EthernetMonitor-Static IP set: 192.168.1.190\n`);
-			Ethernet.doDHCP();
-			trace(`EthernetMonitor-DHCP started\n`);
+			if (config.ethernet.static) {
+				Ethernet.useStaticIP(config.ethernet.static.address, config.ethernet.static.mask, config.ethernet.static.gateway);
+				trace(`EthernetMonitor-using Static IP: ${config.ethernet.static.address}\n`);
+			}
+			else {
+				Ethernet.useDHCP();		// this is the default
+				trace(`EthernetMonitor-using DHCP\n`);
+			}
 		} catch (error) {
-			trace(`EthernetMonitor-Ethernet hardware not found. ${error}\n`);
+			trace(`EthernetMonitor-Ethernet initializaiton failed: ${error}\n`);
 			return done();
 		}
 		

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -21,25 +21,24 @@ import EthernetMonitor from "ethernet/connection";
 
 
 // Start the Ethernet Monitor
-new EthernetMonitor();
+const monitor = new EthernetMonitor;
 
-
-var count = 0;
-var timeSet = 0;
+let count = 0;
+let timeSet = 0;
 
 function setSNTPTime() {
-	const hosts = ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org", "pool.ntp.org"];
+	const hosts = ["time.google.com", "time.cloudflare.com", "pool.ntp.org"];
 	try {
-		// Replace with a reliable NTP server, like pool.ntp.org
 		trace(`setSNTPTime() Getting SNTP time\n`);
-		let sntp = new SNTP({host: hosts.shift()}, function(message, value) {
+		const sntp = new SNTP({host: hosts.shift()}, function(message, value) {
 			switch (message) {
 				case SNTP.time:
 					trace("setSNTPTime() Received Epoch time ", value, "\n");
 					Time.set(value);
-					let now = new Date(value * 1000);
+					const now = new Date;
 					trace('setSNTPTime() Set time to ', now.toUTCString(),'\n');
 					timeSet = 1;
+					Timer.schedule(timer, 0, 30_000);		// move to next step
 					break;
 
 				case SNTP.retry:
@@ -62,32 +61,29 @@ function setSNTPTime() {
 
 function getTime() {
 	try {
-		// The ESP32 date needs to be set for the SSL certificates to validate
+		// The ESP32 date needs to be set for the TLS certificates to validate
 		const host = "timeapi.io";
-		if (Date.now() > 1735689600000) {
-			var request = new Request({	
-				host: host, 
-				path: "/api/Time/current/zone?timeZone=UTC", 
-				response: String,
-				Socket: SecureSocket,
-				port: 443,
-				secure: {
-					protocolVersion: 0x303
-				}
-			});
-			request.callback = function(message, response) {
-				if (message == Request.responseComplete) {
-					let data = JSON.parse(response);
-					trace(`getTime() The ${host} time is ${data.dateTime} GMT\n`);
-					request.close();	// free the socket
-				} else if (message == Request.error) {
-					trace(`getTime() ${host} request error\n`);
-					request.close();	// free the socket
-				}
+		if (Date.now() < 1735689600_000)
+			throw new Error `getTime() Requesting time from the ${host} server`;
+		const request = new Request({	
+			host: host, 
+			path: "/api/Time/current/zone?timeZone=UTC", 
+			response: String,
+			Socket: SecureSocket,
+			port: 443,
+			secure: {
+				protocolVersion: 0x303
 			}
-		} else {
-			let date = new Date();
-			trace ('Time is not set and SSL will fail. Date=',date, ' seconds=',date.getSeconds(),'\n');
+		});
+		request.callback = function(message, response) {
+			if (message == Request.responseComplete) {
+				let data = JSON.parse(response);
+				trace(`getTime() The ${host} time is ${data.dateTime} GMT\n`);
+				request.close();	// free the socket
+			} else if (message == Request.error) {
+				trace(`getTime() ${host} request error\n`);
+				request.close();	// free the socket
+			}
 		}
 	}
 	catch (e) {
@@ -96,22 +92,15 @@ function getTime() {
 	}
 }
 
-
-// Now start a time to get the current time from the secure secrer.
-Timer.repeat(() => {
-	count++;
-	//eval("trace('eval Running timer\\n');");
-	var hours = count / 120.0;
+// Start a timer to periodically get the current time from the secure server.
+const timer = Timer.set(() => {
+	const hours = ++count / 120;
 	trace(`main-Running timer ${count} times, ${hours.toFixed(2)} hours\n`);
-	if (ethernet.connected === true) {
-		// If the time hasn't been set, set it now
-		if (timeSet == 0) setSNTPTime(); 
-		// We need the time to set be for SSL to work
-		if (timeSet == 1) {
-			trace(`main-Getting time\n`);
-			getTime();
-		}
-	} else {
+	if (!ethernet.connected)
 		trace(`Ethernet not connected\n`);
-	}
-}, 30000);
+	else if (timeSet === 0)
+		setSNTPTime(); 	// If the time hasn't been set, set it now
+	else
+		getTime();			// Now that time is set, we can use TLS
+
+}, 0, 30_000);
