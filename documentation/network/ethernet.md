@@ -1,6 +1,6 @@
 # Ethernet
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: September 10, 2024
+Copyright 2021-2025 Moddable Tech, Inc.<BR>
+Revised: November 24, 2025
 
 ## Overview
 
@@ -44,7 +44,8 @@ CONFIG_ETH_SPI_ETHERNET_W5500=y
 
 Using the ENC28J80 module with an ESP32, it is installed using the `dependency` feature in `$MODDABLE/modules/network/ethernet/manifest.json` to dynamically load the module and associated files for the device, including the `sdkconfig` values.
 
-```"dependency": [
+```jsonc
+"dependency": [
          {
            "name": "enc28j60",
            "version": "^1.0.1",
@@ -57,7 +58,8 @@ Using the ENC28J80 module with an ESP32, it is installed using the `dependency` 
 
 The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc28j60` and `manifest.json_w5500` file. One of these needs to be copied to `manifest.json` to define the Ethernet -SPI setup parameters for the particular chip.
 
-```"defines": {
+```json
+"defines": {
      "defines": {
         "ethernet": {
         	"enc28j60": 1,
@@ -80,13 +82,15 @@ The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc
             }
         }
     }
+}
 ```
 
 The drivers in `$MODDABLE/modules/network/ethernet/esp32/drivers` contain the code that calls the setup functions for the Ethernet MAC and PHY components in the Espressif SDK. The main Ethernet code is in `$MODDABLE/modules/network/ethernet/esp32/ethernet.c` and is primarily driven by the values specified in the `manifest.json` file.
 
 The `CMakeLists.txt` file for the target device needs to specify that it includes the `esp_eth` and `esp_netif` Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
 
-```add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
+```
+add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
 	REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
 	spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
@@ -179,6 +183,22 @@ The `start` method begins the underlying process to manage the device's connecti
 
 ```js
 Ethernet.start();
+```
+
+### `static useDHCP()`
+
+The `useDHCP` method disables the active static IP address, if any, any activates the DHCP client to maintain the device's IP address.
+
+```js
+Ethernet.useDHCP();
+```
+
+### `static useStaticIP(address, mask, gateway)`
+
+The `useDHCP` method disables the DHCPclient, if active, any uses the provided arguments for the device's IP address.
+
+```js
+Ethernet.useStaticIP("10.0.0.63", "255.255.255.0", "10.0.0.1");
 ```
 
 ### `constructor(callback)`
