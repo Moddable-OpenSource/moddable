@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2025 Moddable Tech, Inc.<BR>
-Revised: September 10, 2025
+Revised: November 24, 2025
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
@@ -92,6 +92,7 @@ The Moddable SDK supports many devices built on ESP32. The following table lists
 |  <img src="https://cdn.sparkfun.com//assets/parts/1/4/2/4/1/15663-SparkFun_Thing_Plus_-_ESP32_WROOM-01.jpg" width=125><BR>SparkFun Thing Plus | `esp32/esp32_thing_plus ` | | <li>[Product page](https://www.sparkfun.com/products/15663)</li> |
 | <img src="https://cdn.sparkfun.com//assets/parts/1/3/2/0/9/14917_-_356-ESP-WROVER-KIT_3_Edit.jpg" width=125><BR>ESP32 WRover Kit | `esp32/wrover_kit` | | <li>[Product page](https://www.adafruit.com/product/3384)</li> |
 |  <img src="https://media-cdn.seeedstudio.com/media/catalog/product/cache/b5e839932a12c6938f4f9ff16fa3726a/1/0/102991455_preview-07.png" width=125><BR> Wireless Tag WT32-ETH01 | `esp32/wt32_eth01` | **Built-in Ethernet** | <li>[Product page](http://www.wireless-tag.com/portfolio/wt32-eth01/)</li> |
+|  <img src="https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/_images/esp32-ethernet-kit-v1.2-overview.png" width=125><BR> Espressif ESP32 Ethernet Kit | `esp32/ethernet_devkit` | **Built-in Ethernet** | <li>[Product page](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/user_guide.html)</li> |
 | <img src="./../assets/devices/lilygo-ttgo.png" width=125><BR>Lilygo TTGO | `esp32/lilygo_ttgo` | **135 x 240 IPS display**<br>Button | <li>[Product page](https://www.lilygo.cc/products/lilygo%C2%AE-ttgo-t-display-1-14-inch-lcd-esp32-control-board)</li> |
 | Moddable Zero | `esp32/moddable_zero` | | <li>[Wiring guide](../displays/wiring-guide-generic-2.4-spi-esp32.md)</li> |
 
