@@ -20,47 +20,61 @@
 
 import config from "mc/config";
 import Time from "time";
-import WiFi from "embedded:network/interface/wifi";
 
 export default function (done) {
-	if (!config.ssid) {
-		trace("No Wi-Fi SSID\n");
-		return done();
-	}
+	let count = 0;
+	for (const name in device.network?.interface) {
+		let i = device.network?.interface[name];
+		if (("wifi" === i.kind) && !config.ssid) {
+			trace("No Wi-Fi SSID\n");
+			continue;
+		}
 
-	const wifi = new WiFi({
-		onChanged() {
-			trace(`Wi-Fi state:  ${this.connection}\n`);
-			if (this.connection < 500)
-				return;
+		count++;
+		const connection = new (i.io)({
+			...i,
+			onChanged() {
+				trace(`device.network.interface.${name} state:  ${this.connection}\n`);
+				if (this.connection < 500)
+					return;
 
-			trace(` IP address: ${this.address}\n`);
-			this.close();
+				trace(` IP address: ${this.address}\n`);
+				this.close();
 
-			if (Date.now() > 1672722071_000) {
-				done();
-				return;
-			}
-
-			const ntp = new device.network.ntp.client.io({
-				...device.network.ntp.client
-			});
-
-			ntp.getTime((error, value) => {
-				if (error)
-					trace("can't get time\n");
-				else {
-					trace("got time\n");
-					Time.set(value / 1000);
+				if (Date.now() > 1672722071_000) {
+					if (0 == --count)
+						done();
+					return;
 				}
-				ntp.close();
-				done();
+
+				const ntp = new device.network.ntp.client.io({
+					...device.network.ntp.client
+				});
+
+				ntp.getTime((error, value) => {
+					if (error)
+						trace("can't get time\n");
+					else {
+						trace("got time\n");
+						Time.set(value / 1000);
+					}
+					ntp.close();
+					if (0 == --count)
+						done();
+				});
+			}
+		});
+
+		if ("wifi" === i.kind) {
+			connection.connect({
+				SSID: config.ssid,
+				password: config.password
 			});
 		}
-	});
+		else
+			connection.connect({});
+	}
 
-	wifi.connect({
-		SSID: config.ssid,
-		password: config.password
-	});
+	if (0 === count)
+		done();
 };
