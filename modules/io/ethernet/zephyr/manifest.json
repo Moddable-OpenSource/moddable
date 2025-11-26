@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"embedded:network/interface/ethernet": "./ethernet-zephyr"
+	},
+	"preload": [
+		"embedded:network/interface/ethernet"
+	],
+	"zephyrConfig": {
+		"CONFIG_NETWORKING": "y",
+		"CONFIG_NET_IPV4": "y",
+		"CONFIG_NET_IPV6": "n",
+		"CONFIG_NET_L2_ETHERNET": "y",
+		"CONFIG_NET_DHCPV4": "y",
+		"CONFIG_NET_MGMT": "y"
+	}
+}
