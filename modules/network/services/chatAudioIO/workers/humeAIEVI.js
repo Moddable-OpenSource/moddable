@@ -138,7 +138,7 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
   			},
 			language_model: {
 				model_provider: "ANTHROPIC",
-				model_resource: "claude-3-7-sonnet-latest",
+				model_resource: "claude-sonnet-4-5-20250929",
 // 				temperature: 1
 			},
   		};
