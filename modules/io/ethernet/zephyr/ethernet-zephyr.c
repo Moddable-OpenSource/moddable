@@ -91,6 +91,8 @@ void xs_ethernet(xsMachine *the)
 	atomic_set(&eth->useCount, 1);
 	eth->iface = iface;
 	eth->onChanged = onChanged;
+	eth->connected = net_if_oper_state(iface) == NET_IF_OPER_UP;
+	eth->ipAddress = net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)? 1 : 0;
 
 	xsmcSetHostData(xsThis, eth);
 	xsSetHostHooks(xsThis, &xsEthernetHooks);
