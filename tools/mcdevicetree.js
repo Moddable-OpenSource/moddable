@@ -187,6 +187,8 @@ device.display = {};
 `
 		});
 
+    doNetworkInterfaces(state, parsed);
+
 /*
 doBus(state, parsed, {
 			prefix: "spi@",
@@ -659,6 +661,54 @@ Object.defineProperty(device, "files", {
 	}
 });
 `;
+}
+
+/*
+  probably needs changes for non-Espressif silicon
+*/
+function doNetworkInterfaces(state, dts) {
+	const root = dts.nodes['/'];
+  const nics = [];
+
+  if (root.children.wifi) {
+    const status = root.children.wifi.properties.status?.value?.value ?? "okay";
+    if ("okay" === status) {
+      nics.push({
+        label: root.children.wifi.label,
+        kind: "wifi",
+        name: `WiFi`,
+        import: "embedded:network/interface/wifi",
+      });
+    }
+  }
+
+  if (root.children.eth) {
+    const status = root.children.wifi.properties.status?.value?.value ?? "okay";
+    if ("okay" === status) {
+      nics.push({
+        label: root.children.eth.label,
+        kind: "ethernet",
+        name: `Ethernet`,
+        import: "embedded:network/interface/ethernet",
+      });
+    }
+  }
+
+  if (0 === nics.length)
+    return;
+
+  state.jsCode +=
+`device.network ??= {};
+device.network.interface ??= {};
+`;
+
+  nics.forEach(nic => {
+    state.jsCode += `
+import ${nic.name} from "${nic.import}";
+device.network.interface.${nic.label} = {io: ${nic.name}, kind: "${nic.kind}"};
+
+`;
+  });
 }
 
 
