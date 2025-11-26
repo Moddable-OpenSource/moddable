@@ -38,7 +38,7 @@ class ServicesBehavior extends View.Behavior {
 		const service = assets.services[name];
 		if (persona.service != name) {
 			persona.service = name
-			persona.voiceName = service.defaultVoice;
+			persona.voiceID = service.defaultVoiceID;
 			controller.writeOption(persona);
 		}
 		controller.goBack();

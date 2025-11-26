@@ -124,17 +124,17 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			audio: {
 				channels: 1,
 				encoding: "linear16",
-				sample_rate: 8000
+				sample_rate: 44100
 			},
 			system_prompt: instructions,
 			tools,
 		};
  		this.body = {
-			evi_version: "2",
+			evi_version: "3",
   			name: "Moddable",
   			voice: {
    				 provider: "HUME_AI",
-   				 name: message.voiceName ?? "ITO",
+   				 id: message.voiceName ?? "f60ecf9e-ff1e-4bae-9206-dba7c653a69e",
   			},
 			language_model: {
 				model_provider: "ANTHROPIC",
@@ -199,5 +199,6 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 }
 
 new HumeAIEVIModel({
-	inputSampleRate: 8000
+	inputSampleRate: 44100,
+	outputSampleRate: 44100
 });

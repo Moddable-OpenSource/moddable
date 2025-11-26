@@ -90,8 +90,8 @@ const OptionsContainer = Container.template($ => ({
 								onCreate(row, $) {
 									super.onCreate(row, $);
 									const service = assets.services[$.persona.service];
-									const voiceName = $.persona.voiceName;
-									const voice = service.voices.find(voice => voice.id == voiceName);
+									const voiceID = $.persona.voiceID;
+									const voice = service.voices.find(voice => voice.id == voiceID);
 									row.last.previous.last.string = voice.name;
 								}
 								onTap(row) {

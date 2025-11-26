@@ -100,11 +100,12 @@ class Controller extends Behavior {
 		this.options = JSON.parse(Preference.get("model", "options") ?? "[]");
 		this.personas = $.model.map(persona => {
 			persona = { ...persona };
+			const service = assets.services[persona.service];
+			const voiceName = persona.voiceName;
+			delete persona.voiceName;
+			const voice = service.voices.find(voice => voice.name == voiceName);
+			persona.voiceID = voice ? voice.id : service.defaultVoiceID;
 			controller.readOption(persona);
-			if (!persona.voiceName) {
-				const service = assets.services[persona.service];
-				persona.voiceName = service.defaultVoice;
-			}
 			return persona;
 		});
 	}
@@ -135,8 +136,13 @@ class Controller extends Behavior {
 				persona.service = option.service;
 				const service = assets.services[option.service];
 				const voiceName = option.voiceName;
-				const voice = service.voices.find(voice => voice.id == voiceName);
-				persona.voiceName = voice ? voiceName : service.defaultVoice;
+				const voiceID = option.voiceID;
+				let voice;
+				if (voiceName) // compatibility
+					voice = service.voices.find(voice => voice.id == voiceName);
+				else if (voiceID)
+					voice = service.voices.find(voice => voice.id == voiceID);
+				persona.voiceID = (voice) ? voice.id : service.defaultVoiceID;
 			}
 		}
 	}
@@ -148,14 +154,15 @@ class Controller extends Behavior {
 	writeOption(persona) {
 		let option = this.options.find(option => option.title == persona.title);
 		if (option) {
+			delete option.voiceName;
 			option.service = persona.service;
-			option.voiceName = persona.voiceName;
+			option.voiceID = persona.voiceID;
 		}
 		else {
 			option = {
 				title: persona.title,
 				service: persona.service,
-				voiceName: persona.voiceName,
+				voiceID: persona.voiceID,
 			};
 			this.options.push(option);
 		}
