@@ -130,7 +130,7 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			tools,
 		};
  		this.body = {
-			evi_version: "3",
+			evi_version: "4-mini",
   			name: "Moddable",
   			voice: {
    				 provider: "HUME_AI",
@@ -200,5 +200,5 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 
 new HumeAIEVIModel({
 	inputSampleRate: 44100,
-	outputSampleRate: 44100
+	outputSampleRate: 48000
 });

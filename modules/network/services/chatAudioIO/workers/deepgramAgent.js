@@ -54,13 +54,16 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				}
 			},
 			agent: {
-// 				listen: {
-// 					model: "" // optional. default 'nova-2'
-// 				},
+				listen: {
+					provider: {
+						type: "deepgram",
+						model: "flux-general-en",
+					},
+				},
 				think: {
 					provider: {
-						type: "open_ai",
-						model: "gpt-4o-mini",
+						type: "anthropic",
+						model: "claude-sonnet-4-20250514",
 					},
 					prompt,
 					functions,
