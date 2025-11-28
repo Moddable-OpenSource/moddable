@@ -105,6 +105,8 @@ class Controller extends Behavior {
 			delete persona.voiceName;
 			const voice = service.voices.find(voice => voice.name == voiceName);
 			persona.voiceID = voice ? voice.id : service.defaultVoiceID;
+			persona.providerID = service.defaultProviderID;
+			persona.modelID = service.defaultModelID;
 			controller.readOption(persona);
 			return persona;
 		});
@@ -137,12 +139,29 @@ class Controller extends Behavior {
 				const service = assets.services[option.service];
 				const voiceName = option.voiceName;
 				const voiceID = option.voiceID;
-				let voice;
+				const providerID = option.providerID;
+				const modelID = option.modelID;
+				let voice, provider, model;
 				if (voiceName) // compatibility
 					voice = service.voices.find(voice => voice.id == voiceName);
 				else if (voiceID)
 					voice = service.voices.find(voice => voice.id == voiceID);
 				persona.voiceID = (voice) ? voice.id : service.defaultVoiceID;
+				if (service.providers) {
+					if (providerID && modelID) {
+						provider = service.providers.find(provider => provider.id == providerID);
+						if (provider)
+							model = provider.models.find(model => model.id == modelID);
+					}
+				}
+				if (provider && model) {
+					persona.providerID = provider.id;
+					persona.modelID = model.id;
+				}
+				else {
+					persona.providerID = service.defaultProviderID;
+					persona.modelID = service.defaultModelID;
+				}
 			}
 		}
 	}
@@ -157,12 +176,16 @@ class Controller extends Behavior {
 			delete option.voiceName;
 			option.service = persona.service;
 			option.voiceID = persona.voiceID;
+			option.providerID = persona.providerID;
+			option.modelID = persona.modelID;
 		}
 		else {
 			option = {
 				title: persona.title,
 				service: persona.service,
 				voiceID: persona.voiceID,
+				providerID: persona.providerID,
+				modelID: persona.modelID,
 			};
 			this.options.push(option);
 		}

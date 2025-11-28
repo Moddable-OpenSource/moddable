@@ -34,7 +34,9 @@ class HomeBehavior extends View.Behavior {
 		this.chat = new ChatAudioIO({
 			specifier: view.specifier,
 			instructions: view.instructions,
-			voiceName: view.voiceID,
+			voiceID: view.voiceID,
+			providerID: view.providerID,
+			modelID: view.modelID,
 			onStateChanged: (state) => {
 				this.onStateChanged(container, state);
 			},
@@ -631,6 +633,8 @@ export default class extends View {
 		this.title = persona.title;
 		this.transcript = service.transcript;
 		this.voiceID = persona.voiceID;
+		this.providerID = persona.providerID;
+		this.modelID = persona.modelID;
 		this.skins = {
 			bubble:  new Skin({ texture: assets.textures.bubble, color:[service.color,assets.colors.WHITE], x:0, y:0, width:204, height:332, variants:204, left:24, right:24, top:12, bottom:12 }),
 			button:  new Skin({ texture:assets.textures.button, width:50, height:50, left:15, right:15, color: [assets.colors.GRAY,service.color] }),

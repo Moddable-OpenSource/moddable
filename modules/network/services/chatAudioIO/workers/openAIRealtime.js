@@ -39,7 +39,7 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	configure(message) {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
-		const voice = message.voiceName ?? "marin";
+		const voice = message.voiceID ?? "marin";
 		tools.forEach(tool => {
 			tool.type = "function";
 			tool.parameters.additionalProperties = false;

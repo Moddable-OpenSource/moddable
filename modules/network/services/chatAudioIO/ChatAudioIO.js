@@ -78,7 +78,7 @@ class ChatAudioIO {
 		this.onOutputTranscript = options.onOutputTranscript ?? callback;
 		this.onStateChanged = options.onStateChanged ?? callback;
 
-		this.createWorker(options.specifier, options.instructions, options.functions, options.voiceName);
+		this.createWorker(options.specifier, options.instructions, options.functions, options.voiceID, options.providerID, options.modelID);
 	}
 	close() {
 		this.worker?.terminate();
@@ -96,7 +96,7 @@ class ChatAudioIO {
 		if (this.output)
 			this.output.volume = volume;
 	}
-	createWorker(specifier, instructions, functions, voiceName) {
+	createWorker(specifier, instructions, functions, voiceID, providerID, modelID) {
 		this.worker = new Worker(specifier, {
 			static: 512 * 1024,
 			chunk: {
@@ -116,7 +116,9 @@ class ChatAudioIO {
 			id: "configure", 
 			instructions,
 			functions,
-			voiceName
+			voiceID,
+			providerID,
+			modelID
 		})
  		this.ensureInput();
 	}

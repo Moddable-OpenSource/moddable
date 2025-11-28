@@ -62,8 +62,8 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				},
 				think: {
 					provider: {
-						type: "anthropic",
-						model: "claude-sonnet-4-20250514",
+						type: message.providerID ?? "anthropic",
+						model: message.modelID ?? "claude-sonnet-4-20250514",
 					},
 					prompt,
 					functions,
@@ -71,7 +71,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				speak: {
 					provider: {
 						type: "deepgram",
-						model: message.voiceName ?? "aura-2-arcas-en",
+						model: message.voiceID ?? "aura-2-arcas-en",
 					},
 				}
 			}

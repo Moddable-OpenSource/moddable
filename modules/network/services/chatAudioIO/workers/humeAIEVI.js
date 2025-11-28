@@ -132,16 +132,17 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
  		this.body = {
 			evi_version: "4-mini",
   			name: "Moddable",
-  			voice: {
-   				 provider: "HUME_AI",
-   				 id: message.voiceName ?? "f60ecf9e-ff1e-4bae-9206-dba7c653a69e",
-  			},
 			language_model: {
-				model_provider: "ANTHROPIC",
-				model_resource: "claude-sonnet-4-5-20250929",
+				model_provider: message.providerID ?? "ANTHROPIC",
+				model_resource: message.modelID ?? "claude-sonnet-4-5-20250929",
 // 				temperature: 1
 			},
   		};
+		if (message.voiceID)
+			this.body.voice = {
+   				 provider: "HUME_AI",
+   				 id: message.voiceID,
+			}
 	}
 	isBase64(result, current, name) {
 		return (result?.type == "audio_output") && (name == "data") ? 44 : false;

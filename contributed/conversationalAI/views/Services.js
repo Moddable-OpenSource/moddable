@@ -39,6 +39,8 @@ class ServicesBehavior extends View.Behavior {
 		if (persona.service != name) {
 			persona.service = name
 			persona.voiceID = service.defaultVoiceID;
+			persona.providerID = service.defaultProviderID;
+			persona.modelID = service.defaultModelID;
 			controller.writeOption(persona);
 		}
 		controller.goBack();
