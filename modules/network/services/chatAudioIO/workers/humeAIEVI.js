@@ -124,7 +124,7 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			audio: {
 				channels: 1,
 				encoding: "linear16",
-				sample_rate: 44100
+				sample_rate: 8000
 			},
 			system_prompt: instructions,
 			tools,
@@ -200,6 +200,6 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 }
 
 new HumeAIEVIModel({
-	inputSampleRate: 44100,
+	inputSampleRate: 8000,
 	outputSampleRate: 48000
 });

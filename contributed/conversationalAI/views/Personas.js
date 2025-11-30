@@ -70,6 +70,12 @@ class PersonaButtonBehavior extends View.RowBehavior {
 	}
 }
 
+class LevelsButtonBehavior extends View.RowBehavior {
+	onTap(container) {
+		controller.goTo("Levels");
+	}
+}
+
 const PersonasContainer = Container.template($ => ({
 	left:0, right:0, top:0, bottom:0, skin:assets.skins.screen, style:assets.styles.screen, Behavior:PersonasBehavior,
 	contents: [
@@ -78,6 +84,7 @@ const PersonasContainer = Container.template($ => ({
 			left:0, width:240, top:0, height:38, clip:true,
 			contents: [
 				Label($, { string:"Assistants" }),
+// 				Content($, { width:50, right:0, top:0, height:50, active:true, Behavior:LevelsButtonBehavior }),
 			]
 		}),
 		Scroller($, {

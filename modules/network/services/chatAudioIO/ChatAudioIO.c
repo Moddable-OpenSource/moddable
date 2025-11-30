@@ -36,9 +36,12 @@ void xs_computeLevel(xsMachine *the)
 	samples = (int16_t*)buffer;
 	for (i = 0; i < size; i++) {
 		int16_t sample = samples[i];
-		if (sample < 0) sample = -sample;
-		average += sample;
+		if (sample < 0) 
+			average -= sample;
+		else
+			average += sample;
 	}
-	result = round(average / size);
+	average /= size;
+	result = round(average);
 	xsResult = xsInteger(result);
 }

@@ -259,8 +259,13 @@ class LevelPortBehavior extends Behavior {
     }
     onInputLevelChanged(port, level) {
     	const width = port.width;
-    	let limit = 10 * Math.idiv(level - 1000, 3000);
-    	if (limit > width)
+//     	let limit = 10 * Math.idiv(level - 1000, 3000);
+
+		let silence = 8;
+		let fraction = Math.max(0, Math.log2(level) - silence) / (15 - silence);
+	   	let limit = 10 * Math.round(fraction * 10);
+	   	
+   		if (limit > width)
     		limit = width;
         if (this.direction < 0)
         	limit = width - limit
