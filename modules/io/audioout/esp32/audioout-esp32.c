@@ -334,8 +334,7 @@ void xs_audioout_constructor_(xsMachine *the)
 
 	audioOut->dma_buf_size = tx_chan_cfg.dma_frame_num * 2;			//@@ wrong for stereo etc
 	audioOut->total_dma_buf_size = audioOut->dma_buf_size * tx_chan_cfg.dma_desc_num;
-audioOut->total_dma_buf_size >>= 1; //@@
-	audioOut->bytesWritable = audioOut->total_dma_buf_size; 
+	audioOut->bytesWritable -= audioOut->total_dma_buf_size >> 2; 
 
 #if ESP32 && defined(MODDEF_AUDIOOUT_AMPLIFIER_POWER)
 	modGPIOInit(&audioOut->amplifierPower, C_NULL, MODDEF_AUDIOOUT_AMPLIFIER_POWER, kModGPIOOutput);
@@ -664,7 +663,7 @@ esp_err_t doWrite(AudioOut audioOut, void *buffer, xsUnsignedValue requested)
 	esp_err_t err;
 	size_t bytes_written = 0;
 
-	const int kTimeout = 100;	//@@ why does this need to be so big? 0 would be nice.... maybe this is just the first write?
+	const int kTimeout = 200;	//@@ why does this need to be so big? 0 would be nice.... maybe this is just the first write?
 	if (256 == audioOut->volumeFixed) {
 		if (audioOut->started)
 			err = i2s_channel_write(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written, kTimeout);
