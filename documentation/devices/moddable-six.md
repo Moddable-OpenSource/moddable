@@ -1,7 +1,7 @@
 # Moddable Six Developer Guide
 
-Copyright 2024 Moddable Tech, Inc.<BR>
-Revised: August 16, 2024
+Copyright 2024-2025 Moddable Tech, Inc.<BR>
+Revised: December 2, 2025
 
 This document provides information about Moddable Six, including details about its pins and built-in components, how to build and deploy apps, and links to additional development resources.
 
@@ -148,17 +148,17 @@ To use the USB port:
 
 1. Connect a USB cable to the USB connector on Moddable Six
 
-2. Use the platform `-p esp32/moddable_six_cdc`
+2. Use the platform `-p esp32/moddable_six`
 
 3. Build and deploy the app with `mcconfig`
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
 
-	Use the platform `-p esp32/moddable_six_cdc`  with `mcconfig` to build for Moddable Six using the USB port. For example, to build the [`piu/balls` example](../../examples/piu/balls):
+	Use the platform `-p esp32/moddable_six`  with `mcconfig` to build for Moddable Six using the USB port. For example, to build the [`piu/balls` example](../../examples/piu/balls):
 
 	```text
 	cd $MODDABLE/examples/piu/balls
-	mcconfig -d -m -p esp32/moddable_six_cdc
+	mcconfig -d -m -p esp32/moddable_six
 	```
 
 <a id="install-over-serial"></a>
@@ -259,7 +259,7 @@ The brightness of the backlight may be set at build time in the `config` section
 You can also set the brightness on the command line when building with `mcconfig`. Here it is set to 50%.
 
 ```text
-mcconfig -d -m -p esp32/moddable_six_cdc brightness=50
+mcconfig -d -m -p esp32/moddable_six brightness=50
 ```
 
 The `setup/target` module for Moddable Six installs a global variable named `backlight` that you can use to adjust the backlight in your code. Here it is set to 80%.
@@ -346,7 +346,7 @@ A NeoPixel strip can be connected to pin RGB IO48 on the expansion header.
 
 The USB port is connected to GPIO 19 and GPIO 20. This port can be used to program and debug Moddable Six. For more information on USB on the ESP32 family see the [USB section of our ESP32 documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#using_usb).
 
-If your project does not use USB and you are not building with the target `esp32/moddable_six_cdc` you can use IO19 and IO20 on the expansion header as GPIOs.
+If your project does not use USB, you can use IO19 and IO20 on the expansion header as GPIOs.
 
 <a id="touch-panel"></a>
 #### Touch Panel
@@ -372,7 +372,7 @@ new Host.Button.Default({
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
-Moddable Six can communicate with your development computer using either its USB or Serial connector. If you are using the USB connector, build using the `esp32/moddable_six_cdc` platform. If you are using the Serial connector, build using the `esp32/moddable_six` platform.
+Moddable Six can communicate with your development computer using either its USB or Serial connector.
 
 <a id="development-resources"></a>
 ## Development Resources
@@ -523,7 +523,7 @@ xtensa-esp32s3-elf-gdb
 Some startup information will scroll by and the application will stop in `app_main()`:
 
 ```
-Thread 2 "main" hit Temporary breakpoint 1, app_main () at /Users/mkellner/moddable/build/tmp/esp32/moddable_six_cdc/debug/somafm/xsProj-esp32s3/main/main.c:477
+Thread 2 "main" hit Temporary breakpoint 1, app_main () at /Users/mkellner/moddable/build/tmp/esp32/moddable_six/debug/somafm/xsProj-esp32s3/main/main.c:477
 477		void app_main() {
 ```
 
