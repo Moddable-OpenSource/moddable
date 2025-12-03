@@ -1,7 +1,7 @@
 # Moddable Six Developer Guide
 
 Copyright 2024-2025 Moddable Tech, Inc.<BR>
-Revised: December 2, 2025
+Revised: December 3, 2025
 
 This document provides information about Moddable Six, including details about its pins and built-in components, how to build and deploy apps, and links to additional development resources.
 
@@ -23,6 +23,7 @@ This document provides information about Moddable Six, including details about i
 	- [Dynamic Frame Rate Control](#frame-rate-control)
 	- [Tearing Effect](#tearing-effect)
 	- [Amplified Audio](#amplified-audio)
+	- [Microphone](#microphone)
 	- [STEMMA QT / Qwiic / JST SH 1mm Quick Connector](#quick-connector)
 	- [NeoPixel](#neopixel)
 	- [USB](#usb)
@@ -32,6 +33,11 @@ This document provides information about Moddable Six, including details about i
 - [Development Resources](#development-resources)
 	- [Simulator](#simulator)
 	- [Examples](#examples)
+		- [Battery Monitor](#example/battery)
+		- [Color LED](#example/led-color)
+		- [SmartPlug Scheduler](#example/plug-schedule)
+		- [Speaking Clock](#example/speaking-clock)
+		- [conversationalAI](#example/conversationalAI)
 	- [Debugging](#debugging)
 		- [Debugging JavaScript and TypeScript Code](#advanced-xsbug)
 		- [Debugging Native Code](#debug-native)
@@ -321,6 +327,13 @@ The audio signal is output on GPIO 45. Pin IO45 can also be found on the expansi
 
 GPIO 46 enables the PAM8302A amplifier connected to the onboard speaker. Power to the amplifier is automatically applied when audio is playing. When no audio is playing, the amplifier is turned off.
 
+<a id="microphone"></a>
+#### Microphone
+
+Examples: [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI), [capture-sync](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/io/audioin/capture-sync)
+
+The built-in  MEMS microphone is a ([TDK T3902](https://invensense.tdk.com/products/digital/t3902/)). It high-quality audio capture through a PDM audio interface. 
+
 <a id="quick-connector"></a>
 #### STEMMA QT / Qwiic / JST SH 1mm Quick Connector
 
@@ -420,6 +433,7 @@ A suite of example apps designed for Moddable Six is in
 
 These apps are great starting points for your own projects. They can be easily adapted to communicate with your hardware, change the UI interactions, or add new features.
 
+<a id="example/battery"/>
 #### battery
 
 The [battery](../../contributed/moddable_six/battery) app is a control panel for a home battery system. It uses a simulated battery.
@@ -430,14 +444,15 @@ The app includes advanced rendering of battery levels with fluid animations and 
 
 <img width="45%" src="../assets/devices/moddable-six-battery3.png"> <img width="45%" src="../assets/devices/moddable-six-battery4.png">
 
-
+<a id="example/led-color"/>
 #### led-color
 
 The [led-color](../../contributed/moddable_six/led-color) app provides a color-picker on display for the user to choose the color displayed by the on-board Neopixel.
 
 <img width="45%" src="../assets/devices/moddable-six-led-color1.png"> <img width="45%" src="../assets/devices/moddable-six-led-color2.png">
 
-#### plug-schedule
+<a id="example/plug-schedule"/>
+#### SmartPlug Scheduler
 
 The [plug-schedule](../../contributed/moddable_six/plug-schedule) app presents an interface for an IoT plug plug.
 
@@ -448,13 +463,24 @@ This is the largest, most comprehensive of the the Moddable Six example apps. It
 <img width="45%" src="../assets/devices/moddable-six-smartplug3.png"> <img width="45%" src="../assets/devices/moddable-six-smartplug4.png">
 
 
-#### speaking-clock
+<a id="example/speaking-clock"/>
+#### Speaking Clock
 
 The [speaking-clock](../../contributed/moddable_six/speaking-clock) app is a word-clock that audibly announces the time every minute.
 
 The voice of the speaking clock is ChatGPT! The voice samples were captured from ChatGPT and built into the app. They are stored in WAVE files so you can easily replace them with any voice you like, even your own.
 
 <img width="45%" src="../assets/devices/speaking-clock.gif">
+
+<a id="example/conversationalAI"/>
+#### conversationalAI
+
+The [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) a comprehensive interactive voice chat app. It uses integrates support for all the key hardware features of Moddable Six include the touch screen, speaker, microphone, and Wi-Fi. It works with major AI and voice services including OpenAI, Google Gemini, Anthropic Claude, ElevenLabs, Deepseek, and Hume.
+
+<img width="45%" src="../assets/devices/moddable-six-conv-AI-services.png"> <img width="45%" src="../assets/devices/moddable-six-conv-AI-record.png">
+
+<img width="45%" src="../assets/devices/moddable-six-conv-AI-connecting.png"> <img width="45%" src="../assets/devices/moddable-six-conv-AI-voices.png">
+
 
 <a id="debugging"></a>
 ### Debugging
