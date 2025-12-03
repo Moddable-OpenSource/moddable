@@ -42,6 +42,8 @@ This document provides information about Moddable Six, including details about i
 <a id="about-moddable-six"></a>
 ## About Moddable Six
 
+This document describes Moddable Six revision 1.1 released in November 2025, replacing the original Moddable Six released in August 2024. Revision 1.1 adds an integrated microphone, increases audio volume, and improves audio quality.
+
 <a id="components"></a>
 ### Components
 
@@ -61,6 +63,9 @@ The touch panel uses a GT911 touch controller that supports multi-touch input. T
 
 #### Amplified Speaker
 A built-in, amplified speaker allows for audio user-interface feedback, streaming music, and voice prompts. It delivers high quality audio using a low-cost design, reducing the cost of bringing audio feedback to commercial products.
+
+#### Microphone
+A built-in  MEMS microphone ([TDK T3902](https://invensense.tdk.com/products/digital/t3902/)) supports high-quality PDM audio capture. The microphone is located behind a pinhole below the display, ideally located for interactive voice chat, such as our [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) project.
 
 #### STEMMA QT / Qwiic / JST SH 1mm Quick Connections
 Moddable Six has a JST SH connector for easy connection of I²C sensors and peripherals. This connector is called STEMMA QT by Adafruit and Qwiic by SparkFun.
@@ -121,6 +126,11 @@ Power can be supplied to Moddable Six via the following:
 * 5V - Moddable Programmer connector
 * 5V - VIN on 16 pin external header
 * 3.3V - 3.3V pin external header
+
+#### Microphone Pins
+External header pins GPIO&nbsp;2 and GPIO&nbsp;3 are connected to the microphone. You may use these pins as GPIOs by disabling the microphone by cutting the solder jumpers near the microphone.
+
+![](https://moddable.com/assets/images/m6/m6-r1.1-mic-jumper.jpg)
 
 <a id="dimensions"></a>
 ### Dimensions
