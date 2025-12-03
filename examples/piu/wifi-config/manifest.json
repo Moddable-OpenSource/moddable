@@ -105,14 +105,6 @@
 				"rotation": 90
 			}
 		},
-		"esp32/moddable_six_cdc": {
-			"creation":{
-				"static": 50000
-			},
-			"config": {
-				"rotation": 90
-			}
-		},
 		"esp32/m5stack_core2": {
 			"creation":{
 				"static": 50000

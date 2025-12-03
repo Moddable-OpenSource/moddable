@@ -135,7 +135,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="./../assets/devices/moddable-six.jpg" width=200><BR>Moddable Six | `esp32/moddable_six`<BR>`esp32/moddable_six_cdc`<br>`simulator/moddable_six` | **2.4" IPS display**<BR>240 x 320 QVGA<BR>16-bit color<BR>8-bit parallel display bus<BR>Capacitive touch<BR>Neopixel<BR>Qwiic connector<BR>Optional speaker<br><BR>20 External pins  | <li>[Moddable Six developer guide](./moddable-six.md)</li><li>[Moddable product page](https://www.moddable.com/hardware)</li> |
+| <img src="./../assets/devices/moddable-six.jpg" width=200><BR>Moddable Six | `esp32/moddable_six`<BR> `simulator/moddable_six` | **2.4" IPS display**<BR>240 x 320 QVGA<BR>16-bit color<BR>8-bit parallel display bus<BR>Capacitive touch<BR>Neopixel<BR>Qwiic connector<BR>Optional speaker<br><BR>20 External pins  | <li>[Moddable Six developer guide](./moddable-six.md)</li><li>[Moddable product page](https://www.moddable.com/hardware)</li> |
 | <img src="./../assets/devices/moddable-display-6.png" width=125><BR>Moddable Display 6 | `esp32/moddable_display_6`<BR>`simulator/moddable_six` | **2.4" IPS display**<BR>240 x 320 QVGA<BR>16-bit color<BR>8-bit parallel display bus<BR>Capacitive touch<BR>Neopixel<BR>Qwiic connector<BR>Optional speaker<br><BR>20 External pins  | <li>[Moddable Display developer guide](./moddable-display.md)</li><li>[Moddable product page](https://www.moddable.com/hardware)</li> |
 |  <img src="./../assets/devices/esp32s3-devkitc.jpg" width=125><BR>ESP32-S3-DevKitC-1-N8 | `esp32/esp32s3` | |<li>[Product page](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html)</li> |
 |  <img src="./../assets/devices/adafruit-qt-py-eps32-s3.png" width=125><BR>Adafruit QT Py ESP32-S3 | `esp32/qtpys3` | Neopixel, 1 button, STEMMA/QWIIC  | <li>[Product page](https://www.adafruit.com/product/5426)</li> |
@@ -1103,7 +1103,7 @@ These are some of the devices use this technique:
 
 | Platform | Device |
 | :---: | :--- |
-| `esp32/moddable_six_cdc` | Moddable Six |
+| `esp32/moddable_six` | Moddable Six |
 | `esp32/c3_devkit_rust` | Espressif C3 DevKit Rust |
 | `esp32/esp32c3_cdc` | Espressif C3 DevKitM |
 | `esp32/esp32s3_cdc` | Espressif ESP32-S3-DevKitC |

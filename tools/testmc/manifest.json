@@ -233,7 +233,7 @@
 				]
 			}
 		},
-		"esp32/moddable_six_cdc": {
+		"esp32/moddable_six": {
 			"include": [
 				"./manifest_net.json",
 				"./manifest_ble.json",
