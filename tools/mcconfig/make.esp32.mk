@@ -421,10 +421,14 @@ else
 	ifeq ($(USE_USB),1) 
 		DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_tinyusb.c
 	else
-		ifeq ($(USE_USB),2)
-			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+		ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart_cdc.c
 		else
-			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+			ifeq ($(USE_USB),2)
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+			else
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+			endif
 		endif
 	endif
 endif
@@ -705,6 +709,9 @@ $(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/
 
 $(PROJ_DIR)/main/debugger_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c $@
+
+$(PROJ_DIR)/main/debugger_uart_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart_cdc.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart_cdc.c $@
 
 $(PROJ_DIR)/main/debugger_tinyusb.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c $@
