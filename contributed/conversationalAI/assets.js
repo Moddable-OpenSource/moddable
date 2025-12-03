@@ -239,7 +239,7 @@ const assets = {
 				},
 			],
 			defaultProviderID: "ANTHROPIC",
-			defaultModelID: "claude-sonnet-4-5",
+			defaultModelID: "claude-haiku-4-5",
 		},
 		gemini: {
 			color: "#4e87d3",

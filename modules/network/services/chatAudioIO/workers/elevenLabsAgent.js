@@ -67,7 +67,7 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 				agent: {
 					prompt: {
 						prompt,
-						llm: message.modelID ?? "claude-sonnet-4-5",
+						llm: message.modelID ?? "claude-haiku-4-5",
 						tool_ids,
 						tools
 					},

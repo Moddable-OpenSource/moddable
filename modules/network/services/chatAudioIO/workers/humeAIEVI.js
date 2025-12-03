@@ -134,7 +134,7 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
   			name: "Moddable",
 			language_model: {
 				model_provider: message.providerID ?? "ANTHROPIC",
-				model_resource: message.modelID ?? "claude-sonnet-4-5-20250929",
+				model_resource: message.modelID ?? "claude-haiku-4-5-20251001",
 // 				temperature: 1
 			},
   		};

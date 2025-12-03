@@ -63,7 +63,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				think: {
 					provider: {
 						type: message.providerID ?? "anthropic",
-						model: message.modelID ?? "claude-sonnet-4-20250514",
+						model: message.modelID ?? "claude-3-5-haiku-latest",
 					},
 					prompt,
 					functions,
