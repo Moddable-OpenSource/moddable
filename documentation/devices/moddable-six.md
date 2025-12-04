@@ -380,6 +380,7 @@ The GT911 touch controller interrupt is connected to GPIO 38. The GT911 touch dr
 You cannot use IO4 and IO5 as GPIOs if your project uses the touch panel. You can use these pins with other I²C devices even if your project uses the touch panel as long as those devices don't use I²C addresses `0x14` or `0x5D`.
 
 <a id="flash-button"></a>
+
 #### Flash Button
 
 The flash button on the back of Moddable Six may be used as an input to your project. It is connected to GPIO0 and may be accessed using Digital Input APIs. However, it is recommended to use the global `Host` object to access it instead, as this is a bit simpler, portable to other devices, and works in the Moddable Six simulator. Here's an example:
@@ -434,6 +435,7 @@ A suite of example apps designed for Moddable Six is in
 These apps are great starting points for your own projects. They can be easily adapted to communicate with your hardware, change the UI interactions, or add new features.
 
 <a id="example/battery"/>
+
 #### battery
 
 The [battery](../../contributed/moddable_six/battery) app is a control panel for a home battery system. It uses a simulated battery.
@@ -445,6 +447,7 @@ The app includes advanced rendering of battery levels with fluid animations and 
 <img width="45%" src="../assets/devices/moddable-six-battery3.png"> <img width="45%" src="../assets/devices/moddable-six-battery4.png">
 
 <a id="example/led-color"/>
+
 #### led-color
 
 The [led-color](../../contributed/moddable_six/led-color) app provides a color-picker on display for the user to choose the color displayed by the on-board Neopixel.
@@ -452,6 +455,7 @@ The [led-color](../../contributed/moddable_six/led-color) app provides a color-p
 <img width="45%" src="../assets/devices/moddable-six-led-color1.png"> <img width="45%" src="../assets/devices/moddable-six-led-color2.png">
 
 <a id="example/plug-schedule"/>
+
 #### SmartPlug Scheduler
 
 The [plug-schedule](../../contributed/moddable_six/plug-schedule) app presents an interface for an IoT plug plug.
@@ -464,6 +468,7 @@ This is the largest, most comprehensive of the the Moddable Six example apps. It
 
 
 <a id="example/speaking-clock"/>
+
 #### Speaking Clock
 
 The [speaking-clock](../../contributed/moddable_six/speaking-clock) app is a word-clock that audibly announces the time every minute.
@@ -473,6 +478,7 @@ The voice of the speaking clock is ChatGPT! The voice samples were captured from
 <img width="45%" src="../assets/devices/speaking-clock.gif">
 
 <a id="example/conversationalAI"/>
+
 #### conversationalAI
 
 The [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) a comprehensive interactive voice chat app. It uses integrates support for all the key hardware features of Moddable Six include the touch screen, speaker, microphone, and Wi-Fi. It works with major AI and voice services including OpenAI, Google Gemini, Anthropic Claude, ElevenLabs, Deepseek, and Hume.
@@ -483,11 +489,13 @@ The [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/publ
 
 
 <a id="debugging"></a>
+
 ### Debugging
 
 Moddable Six has advanced debugging support for JavaScript, TypeScript, and native code.
 
 <a id="advanced-xsbug"></a>
+
 #### Debugging JavaScript and TypeScript Code
 
 The xsbug debugger included in the Moddable SDK is used to debug both JavaScript and TypeScript code. The [xsbug documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/xs/xsbug.md) explains the fundamentals. There's nothing special to do to debug TypeScript: xsbug support source maps, so TypeScript debugging works automatically. xsbug supports debugging multiple JavaScript virtual machines at the same time, so you can debug Web Workers too.
@@ -499,6 +507,7 @@ Once you are comfortable with the basics of xsbug, check out these blog posts to
 - [Tracepoints](https://www.moddable.com/blog/tracepoints/)
 
 <a id="debug-native"></a>
+
 #### Debugging Native Code
 
 Debugging native code on Moddable Six uses the GDB debugger.
