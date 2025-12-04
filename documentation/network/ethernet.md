@@ -1,6 +1,6 @@
 # Ethernet
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: September 10, 2024
+Copyright 2021-2025 Moddable Tech, Inc.<BR>
+Revised: November 24, 2025
 
 ## Overview
 
@@ -19,9 +19,9 @@ This document provides information about how to enable Ethernet in applications,
 
 ## Configuration
 
-The Moddable SDK supports any Ethernet module that can be wired into the hardware and integrated with the ESP-IDF. We've worked with various [Microchip ENC28J60](https://www.microchip.com/en-us/product/enc28j60) and [WIZnet W5500](https://docs.wiznet.io/Product/iEthernet/W5500/overview) SPI-to-Ethernet module breakout boards and achieved good results. 
+The Moddable SDK supports any Ethernet module that can be wired into the hardware and integrated with the ESP-IDF. We've worked with various [Microchip ENC28J60](https://www.microchip.com/en-us/product/enc28j60) and [WIZnet W5500](https://docs.wiznet.io/Product/iEthernet/W5500/overview) SPI-to-Ethernet module breakout boards and achieved good results.
 
-The [ESP32 processors and their SDK](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_eth.html) offer excellent support for Ethernet. They support both internal Ethernet MAC controllers and external SPI-to-Ethernet modules. The [WT32-ETH01](https://www.seeedstudio.com/Ethernet-module-based-on-ESP32-series-WT32-ETH01-p-4736.html?srsltid=AfmBOoq272pKrSmxaVh-1rOldlpPZ_CrkBy1VQq0xNOkn5bPJ7aETZqy) modules use the ESP32's internal MAC and an external PHY chip for Ethernet support (see [$MODDABLE/build/devices/esp32/targets\wt32_eth01](../../build/devices/esp32/targets\wt32_eth01)). You specify `esp32/wt32_eth01` as the device. The [`sdkconfig.defaults`](../tools/manifest.md#sdkconfig) file specifies whether to enable Ethernet and the type of Ethernet module or interface to use. For the WT32-ETH01 to use the internal MAC and external PHY, it requires the target device's `sdkconfig.defaults` file to contain:
+The [ESP32 processors and their SDK](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_eth.html) offer excellent support for Ethernet. They support both internal Ethernet MAC controllers and external SPI-to-Ethernet modules. The [WT32-ETH01](https://www.seeedstudio.com/Ethernet-module-based-on-ESP32-series-WT32-ETH01-p-4736.html?srsltid=AfmBOoq272pKrSmxaVh-1rOldlpPZ_CrkBy1VQq0xNOkn5bPJ7aETZqy) modules use the ESP32's internal MAC and an external PHY chip for Ethernet support (see [$MODDABLE/build/devices/esp32/targets/wt32_eth01](../../build/devices/esp32/targets/wt32_eth01)). You specify `esp32/wt32_eth01` as the device. The [`sdkconfig.defaults`](../tools/manifest.md#sdkconfig) file specifies whether to enable Ethernet and the type of Ethernet module or interface to use. For the WT32-ETH01 to use the internal MAC and external PHY, it requires the target device's `sdkconfig.defaults` file to contain:
 
 ```
 CONFIG_ETH_ENABLED=y
@@ -44,7 +44,8 @@ CONFIG_ETH_SPI_ETHERNET_W5500=y
 
 Using the ENC28J80 module with an ESP32, it is installed using the `dependency` feature in `$MODDABLE/modules/network/ethernet/manifest.json` to dynamically load the module and associated files for the device, including the `sdkconfig` values.
 
-```"dependency": [
+```jsonc
+"dependency": [
          {
            "name": "enc28j60",
            "version": "^1.0.1",
@@ -57,14 +58,17 @@ Using the ENC28J80 module with an ESP32, it is installed using the `dependency` 
 
 The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc28j60` and `manifest.json_w5500` file. One of these needs to be copied to `manifest.json` to define the Ethernet -SPI setup parameters for the particular chip.
 
-```"defines": {
+```json
+"defines": {
      "defines": {
         "ethernet": {
         	"enc28j60": 1,
         	"w5500": 0,
+			"debug": 0,
 			"hostname":"\"Moddable\"",
             "hz": 6000000,
             "int_pin": 33,
+            "power_pin": 16,
             "spi": {
             	"command_bits": 3,
 				"address_bits": 5,
@@ -78,16 +82,19 @@ The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc
             }
         }
     }
+}
 ```
 
 The drivers in `$MODDABLE/modules/network/ethernet/esp32/drivers` contain the code that calls the setup functions for the Ethernet MAC and PHY components in the Espressif SDK. The main Ethernet code is in `$MODDABLE/modules/network/ethernet/esp32/ethernet.c` and is primarily driven by the values specified in the `manifest.json` file.
 
-The `CMakeLists.txt` file for the target device needs to specify that it includes the Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
+The `CMakeLists.txt` file for the target device needs to specify that it includes the `esp_eth` and `esp_netif` Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
 
-```add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
+```
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs  esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
-		)
+add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
+	REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
+	spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
+)
 ```
 
 Example, for the ESP32-S3, you will find the file in `$MODDABLE/build/devices/esp32/xsProj-esp32s3/main/CMakeLists.txt` and the `sdkconfig.defaults` in the directory above.
@@ -100,7 +107,7 @@ This section contains wiring information for ENC28J60 modules (examples pictured
 
 <img src="./assets/enc28j60.jpeg" style="zoom:50%;" /> ![](./assets/ENC28J60-Ethernet-Module.jpeg)
 
-The ESP32 communicates with the ENC28J60 over the SPI interface. 
+The ESP32 communicates with the ENC28J60 over the SPI interface.
 
 | ENC28J60 | ESP32 |
 | :---: | :---: |
@@ -176,6 +183,22 @@ The `start` method begins the underlying process to manage the device's connecti
 
 ```js
 Ethernet.start();
+```
+
+### `static useDHCP()`
+
+The `useDHCP` method disables the active static IP address, if any, any activates the DHCP client to maintain the device's IP address.
+
+```js
+Ethernet.useDHCP();
+```
+
+### `static useStaticIP(address, mask, gateway)`
+
+The `useDHCP` method disables the DHCPclient, if active, any uses the provided arguments for the device's IP address.
+
+```js
+Ethernet.useStaticIP("10.0.0.63", "255.255.255.0", "10.0.0.1");
 ```
 
 ### `constructor(callback)`

@@ -67,6 +67,7 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 				agent: {
 					prompt: {
 						prompt,
+						llm: message.modelID ?? "claude-haiku-4-5",
 						tool_ids,
 						tools
 					},
@@ -74,7 +75,8 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 			},
 			name: "Moddable",
 		};
-		this.voiceName = message.voiceName ?? "";
+		if (message.voiceID)
+			this.body.conversation_config.tts.voice_id = message.voiceID;
 	}
 	connect(message) {
 		const client = new device.network.https.io({ 
@@ -145,22 +147,10 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 					}
 					break;
 				case 2: 
-					if (this.voiceName) {
-						request("GET", `/v2/voices?search=${this.voiceName}`, null);
-						return;
-					}
-					state++; // skip 3
-					break;
-				case 3: 
-					if (json && json.voices && (json.voices.length > 0)) {
-						this.body.conversation_config.tts.voice_id = json.voices[0].voice_id;
-					}
-					break;
-				case 4: 
 					const body = ArrayBuffer.fromString(JSON.stringify(this.body));
 					request("POST", "/v1/convai/agents/create", body);
 					return;
-				case 5: 
+				case 3: 
 					client.close();
 					this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
 					super.connect(message);

@@ -72,12 +72,12 @@
 				]
 			}
 		},
-		"esp32/moddable_six_cdc": {
+		"esp32/moddable_six": {
 			"build": {
 				"ESP32_SUBCLASS": "esp32s3",
 				"EXPECTED_ESP_IDF": "v5.5.1",
 				"USE_USB": "2",
-				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six_cdc/sdkconfig"
+				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six/sdkconfig"
 			},
 			"creation": {
 				"static": 0,

@@ -31,9 +31,6 @@
 		"esp32/moddable_six": {
 			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
 		},
-		"esp32/moddable_six_cdc": {
-			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
-		},
 		"mac/moddable_six": {
 			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
 		}
