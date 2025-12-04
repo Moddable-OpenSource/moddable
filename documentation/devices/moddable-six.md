@@ -434,8 +434,7 @@ A suite of example apps designed for Moddable Six is in
 
 These apps are great starting points for your own projects. They can be easily adapted to communicate with your hardware, change the UI interactions, or add new features.
 
-<a id="example/battery"/>
-
+<a id="example/battery"/></a>
 #### battery
 
 The [battery](../../contributed/moddable_six/battery) app is a control panel for a home battery system. It uses a simulated battery.
@@ -446,16 +445,14 @@ The app includes advanced rendering of battery levels with fluid animations and 
 
 <img width="45%" src="../assets/devices/moddable-six-battery3.png"> <img width="45%" src="../assets/devices/moddable-six-battery4.png">
 
-<a id="example/led-color"/>
-
+<a id="example/led-color"/></a>
 #### led-color
 
 The [led-color](../../contributed/moddable_six/led-color) app provides a color-picker on display for the user to choose the color displayed by the on-board Neopixel.
 
 <img width="45%" src="../assets/devices/moddable-six-led-color1.png"> <img width="45%" src="../assets/devices/moddable-six-led-color2.png">
 
-<a id="example/plug-schedule"/>
-
+<a id="example/plug-schedule"/></a>
 #### SmartPlug Scheduler
 
 The [plug-schedule](../../contributed/moddable_six/plug-schedule) app presents an interface for an IoT plug plug.
@@ -467,8 +464,7 @@ This is the largest, most comprehensive of the the Moddable Six example apps. It
 <img width="45%" src="../assets/devices/moddable-six-smartplug3.png"> <img width="45%" src="../assets/devices/moddable-six-smartplug4.png">
 
 
-<a id="example/speaking-clock"/>
-
+<a id="example/speaking-clock"/></a>
 #### Speaking Clock
 
 The [speaking-clock](../../contributed/moddable_six/speaking-clock) app is a word-clock that audibly announces the time every minute.
@@ -477,8 +473,7 @@ The voice of the speaking clock is ChatGPT! The voice samples were captured from
 
 <img width="45%" src="../assets/devices/speaking-clock.gif">
 
-<a id="example/conversationalAI"/>
-
+<a id="example/conversationalAI"/></a>
 #### conversationalAI
 
 The [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) a comprehensive interactive voice chat app. It uses integrates support for all the key hardware features of Moddable Six include the touch screen, speaker, microphone, and Wi-Fi. It works with major AI and voice services including OpenAI, Google Gemini, Anthropic Claude, ElevenLabs, Deepseek, and Hume.
