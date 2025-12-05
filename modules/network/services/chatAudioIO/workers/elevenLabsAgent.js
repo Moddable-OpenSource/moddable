@@ -37,12 +37,10 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 	}
 	configure(message) {
 		const prompt = message.instructions ?? "";
-		const tool_ids = [];
 		const tools = message.functions ?? [];
 		tools.forEach(tool => {
 			tool.type = "client";
 			tool.id = this.generateId("tool");
-			tool_ids.push(tool.id);
 		});
 		this.setup = {
 			type: "conversation_initiation_client_data",
@@ -68,7 +66,6 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 					prompt: {
 						prompt,
 						llm: message.modelID ?? "claude-haiku-4-5",
-						tool_ids,
 						tools
 					},
 				},
@@ -152,8 +149,14 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 					return;
 				case 3: 
 					client.close();
-					this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
-					super.connect(message);
+					if (json?.agent_id) {
+						this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
+						super.connect(message);
+					}
+					else {
+						this.postMessage({ id:"failed", string:json?.detail?.message ?? "failed" });
+						client.close();
+					}
 					return;
 				}
 			}
