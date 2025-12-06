@@ -185,6 +185,10 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 		this.close();
 	}
 	'tool_call'(json) {
+		if (this.speaking) {
+			this.speaking = false;
+			this.post("listen");
+		}
 		this.postMessage({ 
 			id:"receiveFunctionCall", 
 			call: json.tool_call_id,

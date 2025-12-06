@@ -193,7 +193,7 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 	}
 	sendText(message) {
 		this.sendJSON({
-			type: 'contextual_update',
+			type: 'user_message',
 			text: message.text,
 		});
 	}

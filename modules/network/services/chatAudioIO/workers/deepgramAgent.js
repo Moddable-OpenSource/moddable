@@ -100,7 +100,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 		this.sendJSON({ type:'FunctionCallResponse', id:call, name, content: result });
 	}
 	sendText(message) {
-		this.sendJSON({ type:'UpdatePrompt', prompt:message.text  });
+		this.sendJSON({ type:'InjectUserMessage', content:message.text  });
 	}
 	startKeepAlive() {
  		this.keepAliveTimer = Timer.repeat(timer => {
