@@ -119,6 +119,9 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 			},
 			event_id: this.generateId('event_'),
 		});
+		this.sendJSON({
+			type: 'response.create',
+		});
 	}
 	onJSON(json) {
 		if ("failed" === json.response?.status) {
@@ -135,7 +138,6 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 		this.close();
 	}
 	'input_audio_buffer.committed'(message) {
-		this.post("listen");
 	}
 	'response.output_audio_transcript.delta'(message) {
 		this.postMessage({ id:"receiveOutputText", text:message.delta, more:true });
@@ -146,6 +148,7 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	'response.created'(message) {
 		this.postMessage({ id:"receiveInputText", text:"", more:true });
 		this.postMessage({ id:"receiveOutputText", text:"", more:true });
+		this.post("listen");
 	}
 	'response.done'(message) {
 		this.parser.copy(this.silence);
