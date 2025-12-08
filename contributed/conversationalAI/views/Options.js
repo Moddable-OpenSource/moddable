@@ -120,44 +120,44 @@ const OptionsContainer = Container.template($ => ({
 								Content($, { left:8, width:24, skin:assets.skins.forward }),
 							]
 						}),
-// 						Row($, {
-// 							left:0, right:0, height:80, skin:assets.skins.personaRow, active:true,
-// 							Behavior: class extends View.RowBehavior {
-// 								onCreate(row, $) {
-// 									super.onCreate(row, $);
-// 									const service = assets.services[$.persona.service];
-// 									const providers = service.providers;
-// 									if (!providers) {
-// 										row.active = row.visible = false;
-// 										return;
-// 									}
-// 									const providerID = $.persona.providerID;
-// 									const modelID = $.persona.modelID;
-// 									const provider = providers.find(provider => provider.id == providerID);
-// 									const model = provider.models.find(model => model.id == modelID);
-// 									const column = row.last.previous;
-// 									const label = column.first.next.next;
-// 									label.string = provider.name;
-// 									label.next.string = model.name;
-// 								}
-// 								onTap(row) {
-// 									row.bubble("onSelectModel");
-// 								}
-// 							},
-// 							contents: [
-// 								Content($, { left:8, width:24 }),
-// 								Column($, {
-// 									left:8, right:8,
-// 									contents: [
-// 										Label($, { left:0, right:0, style:assets.styles.personaSubtitle, string:"Model" }),
-// 										Content($, { height:4 }),
-// 										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
-// 										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
-// 									]
-// 								}),
-// 								Content($, { left:8, width:24, skin:assets.skins.forward }),
-// 							]
-// 						}),
+ 						Row($, {
+ 							left:0, right:0, height:80, skin:assets.skins.personaRow, active:true,
+ 							Behavior: class extends View.RowBehavior {
+ 								onCreate(row, $) {
+ 									super.onCreate(row, $);
+ 									const service = assets.services[$.persona.service];
+ 									const providers = service.providers;
+ 									if (!providers) {
+ 										row.active = row.visible = false;
+ 										return;
+ 									}
+ 									const providerID = $.persona.providerID;
+ 									const modelID = $.persona.modelID;
+ 									const provider = providers.find(provider => provider.id == providerID);
+ 									const model = provider.models.find(model => model.id == modelID);
+ 									const column = row.last.previous;
+ 									const label = column.first.next.next;
+ 									label.string = provider.name;
+ 									label.next.string = model.name;
+ 								}
+ 								onTap(row) {
+ 									row.bubble("onSelectModel");
+ 								}
+ 							},
+ 							contents: [
+ 								Content($, { left:8, width:24 }),
+ 								Column($, {
+ 									left:8, right:8,
+ 									contents: [
+ 										Label($, { left:0, right:0, style:assets.styles.personaSubtitle, string:"Model" }),
+ 										Content($, { height:4 }),
+ 										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
+ 										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
+ 									]
+ 								}),
+ 								Content($, { left:8, width:24, skin:assets.skins.forward }),
+ 							]
+ 						}),
 					]
 				}),
 				View.VerticalScrollbar($, {}),
