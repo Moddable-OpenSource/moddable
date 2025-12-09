@@ -26,6 +26,9 @@
 		"lin": {
 			"include": "./manifests/lin/manifest.json"
 		},
+		"linemb": {
+			"include": "./manifests/lin/manifest.json"
+		},
 		"win": {
 			"include": "./manifests/win/manifest.json"
 		}

@@ -1,0 +1,14 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/base/timer/*"
+			, "$(MODULES)/base/timer/lin/*"
+			, "$(MODULES)/base/time/*"
+			, "$(MODULES)/base/time/lin/*"
+		]
+	},
+	"preload": [
+		"timer",
+		"time"
+	]
+}

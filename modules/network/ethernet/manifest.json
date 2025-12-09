@@ -34,6 +34,9 @@
         "lin": {
             "include": "$(MODULES)/network/wifi/manifest.json"
         },
+        "linemb": {
+            "include": "$(MODULES)/network/wifi/manifest.json"
+        },
         "mac": {
             "include": "$(MODULES)/network/wifi/manifest.json"
         },

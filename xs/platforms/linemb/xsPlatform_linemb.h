@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -35,43 +35,77 @@
  *       limitations under the License.
  */
 
-#ifndef __XSHOST__
-#define __XSHOST__
+#ifndef __XSPLATFORM_LINEMB__
+#define __XSPLATFORM_LINEMB__
 
+
+#undef mxLinux
+#define mxLinux 1
+#define XS_FUNCTION_NORETURN __attribute__((noreturn))
+	
+#include <ctype.h>
+#include <float.h>
+#include <math.h>
+#include <setjmp.h>
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-/*
-	link locations
-*/
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <unistd.h>
+#define mxUseGCCAtomics 1
+#define mxUsePOSIXThreads 1
 
-#define ICACHE_XS6RO_ATTR
-#define ICACHE_XS6RO2_ATTR
-#define ICACHE_RODATA_ATTR
+#define mxMachinePlatform \
+	uint8_t *heap; \
+	uint8_t *heap_ptr; \
+	uint8_t *heap_pend; \
+	void *msgQueue; \
+	void *dbgQueue; \
+	void *queues; \
+	void *task; \
+	void* waiterCondition; \
+	void* waiterData; \
+	void* waiterLink; \
+	mxMachineDebug \
+	mxMachineInstrument
 
-/*
-    report
-*/
+#define mxUseDefaultMachinePlatform 1
+#define mxUseDefaultBuildKeys 0
+#define mxUseDefaultChunkAllocation 0
+#define mxUseDefaultSlotAllocation 0
+#define mxUseDefaultFindModule 0
+#define mxUseDefaultLoadModule 0
+#define mxUseDefaultParseScript 0
+#define mxUseDefaultQueuePromiseJobs 1
+#define mxUseDefaultSharedChunks 1
+#define mxUseDefaultAbort 1
+#define mxUseDefaultDebug 1
 
-#define modLog(msg)
-
-/*
-    timer
-*/
-
-uint32_t modMilliseconds(void);
-
-#if mxWindows
-	#define modDelayMilliseconds(ms) \
-		do { \
-			timeBeginPeriod(1); \
-			Sleep(ms); \
-			timeEndPeriod(1); \
-		} while (false)
-
-	#define modDelayMicroseconds(us)  modDelayMilliseconds((((us) + 500) / 1000))
+#ifdef mxDebug // TODO
+	#define mxMachineDebug 
 #else
-	#define modDelayMicroseconds(us)  usleep(us)
-	#define modDelayMilliseconds(ms)  usleep((ms) * 1000)
+	#define mxMachineDebug
 #endif
 
+#ifdef mxInstrument
+	#define mxMachineInstrument \
+		void *instrumentationTimer; \
+		void *instrumentationCallback;
+#else
+	#define mxMachineInstrument
 #endif
+	
+#define modCriticalSectionDeclare
+#define modCriticalSectionBegin() // TODO
+#define modCriticalSectionEnd() // TODO
+
+extern void modTimersExecute(void);
+extern int modTimersNext(void);
+
+#endif /* __XSPLATFORM_LINEMB__ */

@@ -86,6 +86,10 @@
 		},
 		"wasm": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"
+		},
+		"linemb/*": {
+			"include": "$(BUILD)/devices/linemb/manifest.json",
+			"strip": []
 		}
 	}
 }
