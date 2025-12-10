@@ -4440,6 +4440,7 @@ void fxJSXElement(txParser* parser)
 	txNode* name = NULL;
 	txInteger nodeCount = parser->nodeCount;
 	txInteger propertyCount = 0;
+	fxCheckParserStack(parser, line);
 	fxPushSymbol(parser, parser->__jsx__Symbol);
 	fxPushNodeStruct(parser, 1, XS_TOKEN_ACCESS, parser->states[0].line);
 	if (parser->states[0].token == XS_TOKEN_IDENTIFIER) {
