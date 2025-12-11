@@ -11,6 +11,9 @@
 	"zephyrConfig": {
 		"CONFIG_USERSPACE": "n"
 	},
+	"zephyrOverlay": [
+		"./analog.overlay"
+	],
 	"config": {
 	},
 	"defines": {

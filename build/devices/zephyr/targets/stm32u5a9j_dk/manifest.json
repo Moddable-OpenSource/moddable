@@ -10,6 +10,9 @@
 	"preload": "setup/target",
 	"config": {
 	},
+	"zephyrShields": [
+		"st_lcd_dsi_mb1835"
+	],
 	"defines": {
 	}
 }

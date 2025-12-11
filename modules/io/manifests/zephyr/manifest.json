@@ -12,9 +12,11 @@
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
+		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/_analog",
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 		"embedded:io/i2c": "$(IO)/i2c/_i2c",
+		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 
 		"system": "$(IO)/system/*"
@@ -37,5 +39,8 @@
 		"...": {
 			"error": "zephyr manifest"
 		}
+	},
+	"zephyrConfig": {
+		"CONFIG_ADC": "y"
 	}
 }

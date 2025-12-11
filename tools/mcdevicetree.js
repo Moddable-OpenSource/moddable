@@ -159,7 +159,7 @@ device.Serial = {};
 `
 		});
 
-if (0) {
+if (1) {
 		doBus(state, parsed, {
 			prefix: "adc@",
 			name: "Analog",
