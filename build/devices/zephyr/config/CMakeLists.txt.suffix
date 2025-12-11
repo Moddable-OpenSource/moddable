@@ -77,7 +77,7 @@ set(MCDEVICETREE_GENERATED_FILES
 
 add_custom_command(
     OUTPUT ${MCDEVICETREE_GENERATED_FILES}
-    COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr
+    COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf
     DEPENDS ${ZEPHYR_DTS_FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     VERBATIM

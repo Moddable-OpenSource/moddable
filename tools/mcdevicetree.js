@@ -51,6 +51,25 @@ export default class extends TOOL {
 					throw new Error("Zephyr RTOS output only");
 				break;
 
+			case "-c":
+				argi++
+				if (argi >= argc)
+					throw new Error("-c no zephyr.conf!");
+				path = this.resolveFilePath(argv[argi]);
+				if (this.zephyrConfig)
+					throw new Error("-o '" + path + "': too many zephyr.conf!");
+				let config = this.readFileString(path);
+				this.zephyrConfig = new Map;
+				config = config.split("\n");
+				config = config.map(line => line.trim());
+				config.forEach(line => {
+					const parts = line.split("=");
+					if (2 != parts.length) return;
+					if (!parts[0].startsWith("CONFIG_")) return;
+					this.zephyrConfig.set(parts[0], parts[1]);
+				});
+				break;
+
 			default:
 				name = argv[argi];
 				if (this.sourcePath)
@@ -67,6 +86,9 @@ export default class extends TOOL {
 
 		if (!this.outputDirectory)
 			throw new Error("no output direcetory!");
+  
+		if (!this.zephyrConfig)
+			throw new Error("no zephyr.conf!");
 	}
 
 	run() {
@@ -83,6 +105,7 @@ export default class extends TOOL {
 			hCode: "",
 			jsCode: "",
 			aliasTable: new Map,
+			zephyrConfig: this.zephyrConfig
 		}
 
 		state.hCode +=
@@ -162,30 +185,35 @@ device.PWM = {};
 		});
   }
 
-  let rtcs = doBus(state, parsed, {
-			prefix: "rtc@",
-			name: "RTC",
-			header: "#include <zephyr/drivers/rtc.h>",
-      js: false,
-		});
+    if ("y" === state.zephyrConfig.get("CONFIG_RTC")) {
+      let rtcs = doBus(state, parsed, {
+          prefix: "rtc@",
+          name: "RTC",
+          header: "#include <zephyr/drivers/rtc.h>",
+          js: false,
+        });
 
-    if (rtcs?.length) {
-      state.jsCode += `
+  
+      if (rtcs?.length) {
+        state.jsCode += `
 import RTC from "embedded:RTC/zephyr-builtin";
 device.rtc = {io: RTC, port: "${rtcs[0].label}"};
-`;
+    `;
+        }
     }
 
-		doBus(state, parsed, {
-			prefix: "display-controller@",
-			name: "Display",
-			hostProviderName: "display",
-			header: "#include <zephyr/drivers/display.h>",
-			static:
+    if ("y" === state.zephyrConfig.get("CONFIG_DISPLAY")) {
+      doBus(state, parsed, {
+        prefix: "display-controller@",
+        name: "Display",
+        hostProviderName: "display",
+        header: "#include <zephyr/drivers/display.h>",
+        static:
 `import Display from "embedded:display/zephyr";
 device.display = {};
-`
-		});
+  `
+      });
+    }
 
     doNetworkInterfaces(state, parsed);
 
@@ -203,7 +231,9 @@ device.SPI = {};
 		});
 */
 
-    doFileSystems(state, parsed);
+
+    if ("y" === state.zephyrConfig.get("CONFIG_FILE_SYSTEM"))
+      doFileSystems(state, parsed);
 
 		state.hCode +=
 `
@@ -670,7 +700,7 @@ function doNetworkInterfaces(state, dts) {
 	const root = dts.nodes['/'];
   const nics = [];
 
-  if (root.children.wifi) {
+  if (root.children.wifi && ("y" === state.zephyrConfig.get("CONFIG_WIFI"))) {
     const status = root.children.wifi.properties.status?.value?.value ?? "okay";
     if ("okay" === status) {
       nics.push({
@@ -682,7 +712,7 @@ function doNetworkInterfaces(state, dts) {
     }
   }
 
-  if (root.children.eth) {
+  if (root.children.eth && ("y" === state.zephyrConfig.get("CONFIG_NET_L2_ETHERNET"))) {
     const status = root.children.wifi.properties.status?.value?.value ?? "okay";
     if ("okay" === status) {
       nics.push({
