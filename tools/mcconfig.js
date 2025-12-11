@@ -1039,10 +1039,16 @@ export default class extends Tool {
 		this.config = config;
 	}
 	filterZephyrConfig(config) {
-		this.mergeProperties(config, this.zephyrConfig);
+		if (this.platform == "zephyr")
+			this.mergeProperties(config, this.zephyrConfig);
 	}
 	filterZephyrShields(config) {
-		this.mergeProperties(config, this.zephyrShields);
+		if (this.platform == "zephyr")
+			this.mergeProperties(config, this.zephyrShields);
+	}
+	filterZephyrOverlay(config) {
+		if (this.platform == "zephyr")
+			this.mergeProperties(config, this.zephyrOverlay);
 	}
 	filterCreation(creation) {
 		creation.chunk ??= {};
@@ -1273,6 +1279,7 @@ export default class extends Tool {
 		this.typescript = this.manifest.typescript;
 		this.filterZephyrConfig(this.manifest.zephyrConfig);
 		this.filterZephyrShields(this.manifest.zephyrShields);
+		this.filterZephyrOverlay(this.manifest.zephyrOverlay);
 		
 		var name = this.environment.NAME
 		if (this.platform == "x-mac")
@@ -1423,8 +1430,14 @@ export default class extends Tool {
 		}
 
 		if (this.make) {
-			let cmd;
+			let cmd, overlay = "";
 			if (this.platform == "zephyr") {
+				if (this.zephyrOverlayFiles.length) {
+					overlay = "-DEXTRA_DTC_OVERLAY_FILE=\"";
+					for (var result of this.zephyrOverlayFiles)
+						overlay += result + " ";
+					overlay += "\"";
+				}
 				let command = `cd ${this.moddablePath} && `;
 				path = `${this.moddablePath}/build/devices/zephyr/app`;
 				if (this.buildTarget == "clean")
@@ -1440,9 +1453,9 @@ export default class extends Tool {
 						
 					action = "build";
 					if (this.buildTarget == "build")
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath}`
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay}`
 					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
 					else
 						this.error("unknown target");
 

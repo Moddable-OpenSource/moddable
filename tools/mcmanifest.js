@@ -2512,6 +2512,18 @@ export class Tool extends TOOL {
 	mergeManifest(all, manifest) {
 		var currentDirectory = this.currentDirectory;
 		this.currentDirectory = manifest.directory;
+
+		if (this.platform == "zephyr") {
+			var len = manifest.zephyrOverlay?.length;
+			for (var i = 0; i < len; i++) {
+				var path = manifest.zephyrOverlay[i];
+				if (path[0] == ".") {
+					path = this.resolvePath(manifest.directory + this.slash + path);
+					manifest.zephyrOverlay[i] = path;
+				}
+			}
+		}
+
 		this.mergePlatform(all, manifest);
 
 		if ("platforms" in manifest) {
@@ -2626,6 +2638,7 @@ export class Tool extends TOOL {
 		this.mergeProperties(all.run, platform.run);
 		this.mergeProperties(all.zephyrConfig, platform.zephyrConfig);
 		this.mergeProperties(all.zephyrShields, platform.zephyrShields);
+		this.mergeProperties(all.zephyrOverlay, platform.zephyrOverlay);
 		if (platform.typescript) {
 			let tsconfig = platform.typescript.tsconfig;
 			if (tsconfig) {
@@ -2815,6 +2828,7 @@ export class Tool extends TOOL {
 			typescript: {compiler: "tsc", tsconfig: {compilerOptions: {}}},
 			zephyrConfig:{},
 			zephyrShields:{},
+			zephyrOverlay:{},
 		};
 		this.manifests.forEach(manifest => this.mergeManifest(this.manifest, manifest));
 
@@ -2885,6 +2899,7 @@ export class Tool extends TOOL {
 		this.stringFiles.already = {};
 		this.bleServicesFiles = [];
 		this.bleServicesFiles.already = {};
+		this.zephyrOverlayFiles = [];
 		this.pioFiles = [];
 		this.pioFiles.already = {};
 
@@ -2898,7 +2913,13 @@ export class Tool extends TOOL {
 		rule.process(this.manifest.resources);
 		var rule = new BLERule(this);
 		rule.process(this.manifest.ble);
-		
+
+		if (this.platform == "zephyr") {
+			for (var result in this.manifest.zephyrOverlay) {
+				this.zephyrOverlayFiles.push(this.manifest.zephyrOverlay[result]);
+			}
+		}
+
 		if (this.signature == null) {
 			if (!this.environment.NAMESPACE)
 				this.environment.NAMESPACE = "moddable.tech"
