@@ -714,7 +714,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 
 		for (var result of tool.jsFiles) {
-			var source = result.source;
+			var source = result.source.replaceAll("#", tool.escapedHash);
 			// var sourceParts = tool.splitPath(source);
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
@@ -732,7 +732,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				if (tool.platform == "zephyr") {
 					this.line("add_custom_command(");
 					this.line("\tOUTPUT " + output);
-					this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", "\\#"));
+					this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
 					this.line("\tDEPENDS " + source);
 					this.line("\tVERBATIM)");
 					this.line("");
