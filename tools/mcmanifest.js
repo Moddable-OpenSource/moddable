@@ -714,7 +714,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 
 		for (var result of tool.jsFiles) {
-			var source = result.source.replaceAll("#", tool.escapedHash);
+			var source = result.source;
 			// var sourceParts = tool.splitPath(source);
 			var target = result.target;
 			var targetParts = tool.splitPath(target);
@@ -727,6 +727,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -c";
 
 			if (tool.platform == "zephyr") {
+				source = result.source.replaceAll("#", tool.escapedHash);
 				var output = "${MODULES_DIR}" + tool.slash + target.replaceAll("#", tool.escapedHash);
 				var outputPath = output.slice(0, output.lastIndexOf("/"));
 				if (tool.platform == "zephyr") {
