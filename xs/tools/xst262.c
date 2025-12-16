@@ -146,21 +146,24 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 13
+#define mxFeaturesCount 16
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
 	"FinalizationRegistry.prototype.cleanupSome",
- 	"Math.sumPrecise",
  	"ShadowRealm",
 	"Temporal",
 	"arbitrary-module-namespace-names",
+	"canonical-tz",
 	"decorators",
 	"import-assertions",
-	"iterator-sequencing",
+	"import-defer",
+	"joint-iteration",
 	"json-parse-with-source",
+	"nonextensible-applies-to-private",
 	"source-phase-imports",
-	"source-phase-imports-module-source"
+	"source-phase-imports-module-source",
+	"upsert",
 };
 
 int main262(int argc, char* argv[]) 

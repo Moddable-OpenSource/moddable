@@ -36,6 +36,7 @@
  */
 
 #include "xsAll.h"
+#include "xsum.h"
 
 void fxBuildMath(txMachine* the)
 {
@@ -86,6 +87,9 @@ void fxBuildMath(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_sin), 1, mxID(_sin), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_sinh), 1, mxID(_sinh), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_sqrt), 1, mxID(_sqrt), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2026
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_sumPrecise), 1, mxID(_sumPrecise), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_tan), 1, mxID(_tan), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_tanh), 1, mxID(_tanh), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Math_trunc), 1, mxID(_trunc), XS_DONT_ENUM_FLAG);
@@ -605,6 +609,49 @@ void fx_Math_sqrt(txMachine* the)
 	fxToNumber(the, mxArgv(0));
 	mxResult->kind = XS_NUMBER_KIND;
 	mxResult->value.number = c_sqrt(mxArgv(0)->value.number);
+}
+
+void fx_Math_sumPrecise(txMachine* the)
+{
+	txSlot *iterable, *iterator, *next, *value;
+	xsum_small_accumulator accumulator;
+	txInteger count = 0;
+	txBoolean flag = 1;
+	if (mxArgc < 1)
+		mxTypeError("no items");
+	iterable = mxArgv(0);
+	fxToInstance(the, iterable);
+	mxTemporary(iterator);
+	mxTemporary(next);
+	fxGetIterator(the, iterable, iterator, next, 0);	
+	xsum_small_init(&accumulator);
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			if (value->kind == XS_INTEGER_KIND) {
+				flag = 0;
+				xsum_small_add1(&accumulator, value->value.integer);
+			}
+			else if (value->kind == XS_NUMBER_KIND) {
+				if (value->value.number != -0.0) {
+					flag = 0;
+					xsum_small_add1(&accumulator, value->value.number);
+				}
+			}
+			else
+				mxTypeError("items[%d]: not a number", count);
+			count++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	if (flag)
+		mxResult->value.number = -0.0;
+	else
+		mxResult->value.number = xsum_small_round(&accumulator);
+	mxResult->kind = XS_NUMBER_KIND;
 }
 
 void fx_Math_sign(txMachine* the)

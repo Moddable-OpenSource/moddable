@@ -120,7 +120,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxNativeAdditions 0
 #endif
-#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions + mxErrorIsErrorAdditions + mxNativeAdditions )
+#if mxECMAScript2026
+	#define mxECMAScript2026Additions 2
+#else
+	#define mxECMAScript2026Additions 0
+#endif
+#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions + mxErrorIsErrorAdditions + mxNativeAdditions + mxECMAScript2026Additions )
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -718,11 +723,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxErrorIsError
 	fx_Error_isError,
 #endif
-#if mxMative
+#if mxNative
 	fx_Native,
 	fx_native,
 #endif
 	fxAsyncFromSyncIteratorFailed,
+#if mxECMAScript2026
+	fx_Iterator_concat,
+	fx_Math_sumPrecise,
+#endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];

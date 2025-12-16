@@ -1197,6 +1197,7 @@ mxExport void fx_Math_sign(txMachine* the);
 mxExport void fx_Math_sin(txMachine* the);
 mxExport void fx_Math_sinh(txMachine* the);
 mxExport void fx_Math_sqrt(txMachine* the);
+mxExport void fx_Math_sumPrecise(txMachine* the);
 mxExport void fx_Math_tan(txMachine* the);
 mxExport void fx_Math_tanh(txMachine* the);
 mxExport void fx_Math_trunc(txMachine* the);
@@ -1852,6 +1853,7 @@ extern void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt)
 extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 
 mxExport void fx_Iterator(txMachine* the);
+mxExport void fx_Iterator_concat(txMachine* the);
 mxExport void fx_Iterator_from(txMachine* the);
 mxExport void fx_Iterator_prototype_constructor_get(txMachine* the);
 mxExport void fx_Iterator_prototype_constructor_set(txMachine* the);

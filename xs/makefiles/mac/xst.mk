@@ -64,6 +64,7 @@ C_OPTIONS = \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
 	-I$(TLS_DIR)/fdlibm \
+	-I$(TLS_DIR)/xsum \
 	-I$(TMP_DIR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)
@@ -204,9 +205,10 @@ OBJECTS = \
 	$(TMP_DIR)/s_sin.o \
 	$(TMP_DIR)/s_tan.o \
 	$(TMP_DIR)/s_tanh.o \
-	$(TMP_DIR)/s_trunc.o
+	$(TMP_DIR)/s_trunc.o \
+	$(TMP_DIR)/xsum.o
 
-VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/fdlibm $(TLS_DIR)/yaml
+VPATH += $(SRC_DIR) $(TLS_DIR) $(TLS_DIR)/fdlibm $(TLS_DIR)/xsum $(TLS_DIR)/yaml
 VPATH += $(MODDABLE)/modules/data/text/decoder
 VPATH += $(MODDABLE)/modules/data/text/encoder
 VPATH += $(MODDABLE)/modules/data/base64
@@ -233,6 +235,7 @@ $(OBJECTS): $(SRC_DIR)/xsCommon.h
 $(OBJECTS): $(SRC_DIR)/xsAll.h
 $(OBJECTS): $(SRC_DIR)/xsScript.h
 $(OBJECTS): $(TLS_DIR)/fdlibm/math_private.h
+$(OBJECTS): $(TLS_DIR)/xsum/xsum.h
 $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	$(CC) $< $(C_OPTIONS) -c -o $@

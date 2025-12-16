@@ -1875,4 +1875,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #if mxErrorIsError
 	"isError",
 #endif
+#if mxECMAScript2026
+	"sumPrecise",
+#endif
 };
