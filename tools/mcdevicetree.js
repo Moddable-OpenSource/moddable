@@ -56,15 +56,10 @@ export default class extends TOOL {
 				if (argi >= argc)
 					throw new Error("-c no zephyr.conf!");
 				path = this.resolveFilePath(argv[argi]);
-				if (this.zephyrConfig)
-					throw new Error("-o '" + path + "': too many zephyr.conf!");
-				let config = this.readFileString(path);
-				this.zephyrConfig = new Map;
-				config = config.split("\n");
-				config = config.map(line => line.trim());
-				config.forEach(line => {
+				this.zephyrConfig ??= new Map;
+				this.readFileString(path).split("\n").map(line => line.trim()).forEach(line => {
 					const parts = line.split("=");
-					if (2 != parts.length) return;
+					if (2 !== parts.length) return;
 					if (!parts[0].startsWith("CONFIG_")) return;
 					this.zephyrConfig.set(parts[0], parts[1]);
 				});
@@ -161,7 +156,7 @@ device.Serial = {};
 
     const user = parsed.nodes['/'].children["zephyr,user"];
     const hasIOChannels = undefined !== user?.properties["io-channels"];
-  
+
 		if (("y" === state.zephyrConfig.get("CONFIG_ADC")) && hasIOChannels) {
 			doBus(state, parsed, {
 				prefix: "adc@",
@@ -201,7 +196,7 @@ device.PWM = {};
         state.jsCode += `
 import RTC from "embedded:RTC/zephyr-builtin";
 device.rtc = {io: RTC, port: "${rtcs[0].label}"};
-    `;
+`;
         }
     }
 
@@ -214,7 +209,7 @@ device.rtc = {io: RTC, port: "${rtcs[0].label}"};
         static:
 `import Display from "embedded:display/zephyr";
 device.display = {};
-  `
+`
       });
     }
 
