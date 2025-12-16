@@ -47,10 +47,7 @@ typedef struct AnalogRecord *Analog;
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 		!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
-	#warning "No suitable analog devicetree overlay specified"
-	#define NO_CHANNELS 1
-
-	static const struct adc_dt_spec adc_channels[0];
+	#error "No suitable analog devicetree overlay specified"
 #else
 	#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
 		ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
@@ -62,12 +59,12 @@ typedef struct AnalogRecord *Analog;
 
 static int adc_channel_idx(int channel) {
 	int i;
-#if ! NO_CHANNELS
+
 	for (i = 0; i < (sizeof(adc_channels)/sizeof(struct adc_dt_spec)); i++) {
 		if (adc_channels[i].channel_id == channel)
 			return i;
 	}
-#endif
+
 	return -1;
 }
 

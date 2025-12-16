@@ -159,18 +159,22 @@ device.Serial = {};
 `
 		});
 
-if (1) {
-		doBus(state, parsed, {
-			prefix: "adc@",
-			name: "Analog",
-			header: "#include <zephyr/drivers/adc.h>",
-			static:
+    const user = parsed.nodes['/'].children["zephyr,user"];
+    const hasIOChannels = undefined !== user?.properties["io-channels"];
+  
+		if (("y" === state.zephyrConfig.get("CONFIG_ADC")) && hasIOChannels) {
+			doBus(state, parsed, {
+				prefix: "adc@",
+				name: "Analog",
+				header: "#include <zephyr/drivers/adc.h>",
+				static:
 `import Analog from "embedded:io/analog";
 device.io.Analog = Analog;
 
 device.Analog = {};
 `
-		});
+			});
+		}
 
 		doBus(state, parsed, {
 			prefix: "pwm@",
@@ -183,7 +187,6 @@ device.io.PWM = PWM;
 device.PWM = {};
 `
 		});
-  }
 
     if ("y" === state.zephyrConfig.get("CONFIG_RTC")) {
       let rtcs = doBus(state, parsed, {
