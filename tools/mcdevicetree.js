@@ -507,9 +507,9 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 				state.jsCode += `device.${kindName}.${alias} = device.${kindName}.${gpio.name};\n`;
 
 				if (("sw0" === alias) && ("gpio-keys" === gpio.kind))
-					state.jsCode += `device.pin.button = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
+					state.jsCode += `device.pin.button = Object.freeze({port: "${gpio.bus}", pin: ${gpio.pin}});\n`;
 				if (("led0" === alias) && ("gpio-leds" === gpio.kind))
-					state.jsCode += `device.pin.led = {port: "${gpio.bus}", pin: ${gpio.pin}}\n`;
+					state.jsCode += `device.pin.led = Object.freeze({port: "${gpio.bus}", pin: ${gpio.pin}});\n`;
 			});
 		}
 	});
