@@ -95,12 +95,37 @@ export default class extends TOOL {
 		const parser = new DTSParser();
 		const parsed = parser.parse(dts);
 
+    const compatible = new Map;
+    const bindingDirectory = this.resolveDirectoryPath(this.getenv("ZEPHYR_BASE") + "/dts/bindings");
+    for (const kind of this.enumerateDirectory(bindingDirectory)) {
+        if ("." === kind.startsWith("."))
+            continue;
+        if (this.isDirectoryOrFile(bindingDirectory + "/" + kind) >= 0)
+            continue;
+        compatible.set(kind, this.enumerateDirectory(bindingDirectory + "/" + kind).filter(name => {
+            if (name.startsWith("."))
+              return;
+            if (!name.includes(","))
+              return;
+
+            if ("st,dsi-lcd-qsh-030.yaml" === name)   //@@ hack so stm32u5a9j_dk links
+              return;
+            if (("nordic,nrf-gpio-forwarder.yaml" === name) || ("nordic,nrf-gpiote.yaml" === name))   //@@ hack so raytac_mdbt53 links
+              return;
+            if ("arduino,uno-adc.yaml" === name)   //@@ hack so nrf52840dk links
+              return;
+
+            return name.endsWith(".yaml");
+        }).map(name => name.substring(0, name.length - 5)));
+    }
+
 		const state = {
 			cCode: "",
 			hCode: "",
 			jsCode: "",
 			aliasTable: new Map,
-			zephyrConfig: this.zephyrConfig
+			zephyrConfig: this.zephyrConfig,
+      compatible
 		}
 
 		state.hCode +=
@@ -129,7 +154,7 @@ const device = {
 		doGPIOs(state, parsed);
 
 		doBus(state, parsed, {
-			prefix: "i2c@",
+			binding: "i2c",
 			name: "I2C",
 			header: "#include <zephyr/drivers/i2c.h>",
 			static:
@@ -143,7 +168,7 @@ device.I2C = {};
 		});
 
 		doBus(state, parsed, {
-			prefix: "serial@",
+			binding: "serial",
 			name: "Serial",
 			header: "#include <zephyr/drivers/uart.h>",
 			static:
@@ -159,7 +184,7 @@ device.Serial = {};
 
 		if (("y" === state.zephyrConfig.get("CONFIG_ADC")) && hasIOChannels) {
 			doBus(state, parsed, {
-				prefix: "adc@",
+				binding: "adc",
 				name: "Analog",
 				header: "#include <zephyr/drivers/adc.h>",
 				static:
@@ -172,7 +197,7 @@ device.Analog = {};
 		}
 
 		doBus(state, parsed, {
-			prefix: "pwm@",
+			binding: "pwm",
 			name: "PWM",
 			header: "#include <zephyr/drivers/pwm.h>",
 			static:
@@ -185,7 +210,7 @@ device.PWM = {};
 
     if ("y" === state.zephyrConfig.get("CONFIG_RTC")) {
       let rtcs = doBus(state, parsed, {
-          prefix: "rtc@",
+          binding: "rtc",
           name: "RTC",
           header: "#include <zephyr/drivers/rtc.h>",
           js: false,
@@ -202,7 +227,7 @@ device.rtc = {io: RTC, port: "${rtcs[0].label}"};
 
     if ("y" === state.zephyrConfig.get("CONFIG_DISPLAY")) {
       doBus(state, parsed, {
-        prefix: "display-controller@",
+        binding: "display",
         name: "Display",
         hostProviderName: "display",
         header: "#include <zephyr/drivers/display.h>",
@@ -217,7 +242,7 @@ device.display = {};
 
 /*
 doBus(state, parsed, {
-			prefix: "spi@",
+			binding: "spi",
 			name: "SPI",
 			header: "#include <zephyr/drivers/spi.h>",
 			static:
@@ -256,6 +281,28 @@ export default device;
 	}
 }
 
+function getNodes(state, dts, kind) {
+  const compatibles = state.compatible.get(kind);
+  if (!compatibles)
+    return [];
+
+  return DTSParser.filter(dts, node => {
+      const compatible = node.properties?.compatible;
+      if (!compatible)
+          return;
+
+      const status = node.properties.status?.value?.value ?? "okay"
+      if ("okay" !== status)
+        return;
+
+      if ("string" === compatible.value.type)
+        return compatibles.includes(compatible.value.value);
+
+      if ("string-array" === compatible.value.type)
+        return compatible.value.value.some(value => compatibles.includes(value));
+    });
+}
+
 function doAliases(state, dts) {
 	const root = dts.nodes['/'];
 	const aliases = root.children.aliases;
@@ -275,58 +322,7 @@ function doAliases(state, dts) {
 }
 
 function doGPIOBanks(state, dts) {
-	let gpios = [];
-	const root = dts.nodes['/'];
-
-	const soc = root.children.soc;
-	for (let what in soc.children) {
-		if (what.startsWith("gpio@")) {
-			const node = soc.children[what];
-			const status = node.properties.status?.value?.value ?? "okay"
-			if ("okay" !== status)
-				continue;
-
-			if ("raspberrypi,pico-gpio" === node.properties.compatible.value.value) {
-				for (let what in node.children) {
-					const gpio = node.children[what];
-					if ("okay" !== (gpio.properties.status?.value?.value ?? "okay"))
-						continue;
-					gpios.push(gpio);
-				}
-			}
-			else
-				gpios.push(node);
-		}
-	}
-
-	for (let what in soc.children) {
-		if (!what.startsWith("pin-controller@"))
-			continue;
-
-		const pinController = soc.children[what] 
-		for (const bus in pinController.children) {
-			if (bus.startsWith("gpio@")) {
-				const	gpio = pinController.children[bus];
-				const status = gpio.properties.status?.value?.value ?? "okay"
-				if ("okay" !== status)
-					continue;
-				gpios.push(gpio);
-			}
-		}
-	}
-
-	if ((0 === gpios.length) && soc.children.gpio) {
-		for (let what in soc.children.gpio.children) {
-			if (!what.startsWith("gpio@"))
-				continue;
-
-			const gpio = soc.children.gpio.children[what];
-			const status = gpio.properties.status?.value?.value ?? "okay"
-			if ("okay" !== status)
-				continue;
-			gpios.push(gpio);
-		}
-  }
+	const gpios = getNodes(state, dts, "gpio");
 
 	state.hCode += `
 #define kModZephyrGPIOBankCount (${gpios.length})
@@ -518,18 +514,7 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 }
 
 function doBus(state, dts, options) {
-	let nodes = [];
-	const root = dts.nodes['/'];
-	const soc = root.children.soc;
-	for (let what in soc.children) {
-		if (what.startsWith(options.prefix)) {
-			const node = soc.children[what];
-			const status = node.properties.status?.value?.value ?? "okay"
-			if ("okay" !== status)
-				continue;
-			nodes.push(node);
-		}
-	}
+  const nodes = getNodes(state, dts, options.binding);
 
 	state.hCode += `
 #define kModZephyr${options.name}BusCount (${nodes.length})
@@ -539,7 +524,7 @@ function doBus(state, dts, options) {
 		return;
 
 	let busSpecific = "";
-	if ("spi@" === options.prefix)
+	if ("spi" === options.binding)
 			busSpecific = "\n	struct gpio_dt_spec cs;"
 
 	state.hCode += `
@@ -561,7 +546,7 @@ static const struct modZephyr${options.name} g${options.name}[] = {
 
 	nodes.forEach((node, index) => {
 		busSpecific = "";
-		if ("spi@" === options.prefix) {
+		if ("spi" === options.binding) {
 				const cs = node.properties["cs-gpios"]?.value?.value;
 				if (cs) {
 					busSpecific = `\n		.cs.port = DEVICE_DT_GET(DT_NODELABEL(${cs[0].slice(1)})),
@@ -600,7 +585,7 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 
   nodes.forEach(node => {
 		let additional = "";
-		if ("serial@" === options.prefix) {
+		if ("serial" === options.binding) {
 			const baud = node.properties["current-speed"]?.value?.value?.[0];
 			if (baud)
 				additional += `baud: ${parseInt(baud)}`;
@@ -610,8 +595,17 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 			state.jsCode += `device.${hostProviderName}.${node.labels[i]} = device.${hostProviderName}.${node.label};\n`;
 	});
 
-	// use first one as default - just a guess. always correct when there is just one bus. is there a "chosen" for this??
-	state.jsCode += `device.${hostProviderName}.default = device.${hostProviderName}.${nodes[0].label};\n`;
+  // use first one as default - just a guess. always correct when there is just one bus. is there a "chosen" for this??
+  let defaultLabel = nodes[0].label;
+	const chosen = dts.nodes['/'].children.chosen;
+
+  if ("display" === options.binding) {
+    const t = chosen?.properties["zephyr,display"];
+    if ("reference" === t?.value.type)
+        defaultLabel = t.value.value;
+  }
+
+	state.jsCode += `device.${hostProviderName}.default = device.${hostProviderName}.${defaultLabel};\n`;
 
   return nodes;
 }
@@ -1290,5 +1284,22 @@ class DTSParser {
       default:
         return String(value.value || '');
     }
+  }
+
+  static filter(tree, callback) {
+    const selected = [];
+    
+    function traverse(node) {
+      if (callback(node))
+        selected.push(node);
+      
+      for (const child of Object.values(node.children))
+        traverse(child);
+    }
+    
+    for (const node of Object.values(tree.nodes))
+      traverse(node);
+    
+    return selected;
   }
 }
