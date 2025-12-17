@@ -220,7 +220,7 @@ device.PWM = {};
       if (rtcs?.length) {
         state.jsCode += `
 import RTC from "embedded:RTC/zephyr-builtin";
-device.rtc = {io: RTC, port: "${rtcs[0].label}"};
+device.rtc = Object.freeze({io: RTC, port: "${rtcs[0].label}"});
 `;
         }
     }
@@ -590,7 +590,7 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 			if (baud)
 				additional += `baud: ${parseInt(baud)}`;
 		}
-		state.jsCode += `device.${hostProviderName}.${node.label} = {io: ${options.name}, port: "${node.label}"${additional ? ", " + additional : ""}};\n`;
+		state.jsCode += `device.${hostProviderName}.${node.label} = Object.freeze({io: ${options.name}, port: "${node.label}"${additional ? ", " + additional : ""}});\n`;
 		for (let i = 1; i < node.labels?.length; i++) 
 			state.jsCode += `device.${hostProviderName}.${node.labels[i]} = device.${hostProviderName}.${node.label};\n`;
 	});
@@ -727,7 +727,7 @@ device.network.interface ??= {};
   nics.forEach(nic => {
     state.jsCode += `
 import ${nic.name} from "${nic.import}";
-device.network.interface.${nic.label} = {io: ${nic.name}, kind: "${nic.kind}"};
+device.network.interface.${nic.label} = Object.freeze({io: ${nic.name}, kind: "${nic.kind}"});
 
 `;
   });
