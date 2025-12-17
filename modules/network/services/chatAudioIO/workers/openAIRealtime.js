@@ -29,7 +29,6 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "api.openai.com";
-		this.path = `/v1/realtime?model=gpt-realtime`;
 		this.headers = [
 			["Authorization", `Bearer ${config.openAIKey}`]
 		];
@@ -40,13 +39,14 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
 		const voice = message.voiceID ?? "marin";
+		const model = message.modelID ?? "gpt-realtime-mini";
+		this.path = `/v1/realtime?model=${model}`;
 		tools.forEach(tool => {
 			tool.type = "function";
 			tool.parameters.additionalProperties = false;
 		});
  		this.session = {
 			type: 'realtime',
-			model: 'gpt-realtime',
 			audio: {
 				input: {
 					format: {

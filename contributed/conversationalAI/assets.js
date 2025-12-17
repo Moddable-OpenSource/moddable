@@ -261,7 +261,7 @@ const assets = {
 			],
 			defaultVoiceID: "puck",
 			defaultProviderID: "",
-			defaultModelID: "",
+			defaultModelID: "gemini-2.5-flash-native-audio-preview-12-2025",
 		},
 		hume: {
 			color: "#9a8dea",
@@ -426,7 +426,7 @@ const assets = {
 			],
 			defaultVoiceID: "marin",
 			defaultProviderID: "",
-			defaultModelID: "",
+			defaultModelID: "gpt-realtime-mini",
 		}
 	}
 };
