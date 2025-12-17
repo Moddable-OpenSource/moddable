@@ -114,6 +114,8 @@ export default class extends TOOL {
               return;
             if ("arduino,uno-adc.yaml" === name)   //@@ hack so nrf52840dk links
               return;
+            if (("raspberrypi,pico-gpio.yaml" === name) || ("raspberrypi,pico-header.yaml" === name))  //@@ hack so pico_plus2 links
+              return;
 
             return name.endsWith(".yaml");
         }).map(name => name.substring(0, name.length - 5)));
