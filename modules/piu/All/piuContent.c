@@ -660,9 +660,9 @@ PiuIdle PiuContentUseIdle(void* it)
 	size_t current = (*self)->recordSize;
 
 	size_t nameLength = (*self)->nameOffset ? (current - (*self)->nameOffset) : 0;
-	void *chunk = fxRenewChunk((*self)->the, *self, current + sizeof(PiuIdleRecord));
+	void *chunk = fxRenewChunk((*self)->the, *self, (xsIntegerValue)(current + sizeof(PiuIdleRecord)));
 	if (!chunk) {
-		chunk = fxNewChunk((*self)->the, current + sizeof(PiuIdleRecord));
+		chunk = fxNewChunk((*self)->the, (xsIntegerValue)(current + sizeof(PiuIdleRecord)));
 		c_memcpy(chunk, *self, current);
 		*self = chunk;
 	}
@@ -673,7 +673,7 @@ PiuIdle PiuContentUseIdle(void* it)
 	c_memset(((uint8_t *)chunk) + current - nameLength, 0, sizeof(PiuIdleRecord));
 
 	(*self)->recordSize = PiuRecordSize(current + sizeof(PiuIdleRecord));
-	(*self)->idleOffset = current - nameLength;
+	(*self)->idleOffset = (uint32_t)(current - nameLength);
 
 	PiuIdle result = (PiuIdle)(((uint8_t *)*self) + (*self)->idleOffset);
 	result->interval = 1;
@@ -850,7 +850,7 @@ void PiuContent_get_name(xsMachine *the)
 	PiuContent* self = PIU(Content, xsThis);
 	if ((*self)->nameOffset) {
 		size_t nameLength = c_strlen(PiuContent_get_nameAux(self));
-		xsResult = xsStringBuffer(NULL, nameLength);
+		xsResult = xsStringBuffer(NULL, (xsIntegerValue)nameLength);
 		c_memcpy(xsToString(xsResult), PiuContent_get_nameAux(self), nameLength); 
 	}
 }
@@ -1135,16 +1135,16 @@ void PiuContent_set_nameAux(PiuContent* self)
 	size_t nameLength = (xsUndefinedType == xsTypeOf(xsResult)) ? 0 : PiuRecordSize(1 + c_strlen(fxToString(the, &xsResult)));
 	size_t current = (*self)->nameOffset ? (*self)->nameOffset : (*self)->recordSize;
 
-	void *chunk = fxRenewChunk(the, *self, current + nameLength);
+	void *chunk = fxRenewChunk(the, *self, (xsIntegerValue)(current + nameLength));
 	if (!chunk) {
-		chunk = fxNewChunk(the, current + nameLength);
+		chunk = fxNewChunk(the, (xsIntegerValue)(current + nameLength));
 		c_memcpy(chunk, *self, current);
 		*self = chunk;
 	}
 
-	(*self)->recordSize = current + nameLength;
+	(*self)->recordSize = (uint32_t)(current + nameLength);
 	if (nameLength) {
-		(*self)->nameOffset = current;
+		(*self)->nameOffset = (uint32_t)current;
 		c_strcpy(((char *)*self) + current, fxToString(the, &xsResult));
 	}
 	else

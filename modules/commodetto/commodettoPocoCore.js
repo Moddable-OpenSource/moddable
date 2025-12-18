@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -32,8 +32,9 @@
 // import Render from "Render"
 // class Poco extends Render
 
-export default class Poco @ "xs_poco_destructor" {
+export default class Poco extends Native("xs_poco_destructor") {
 	constructor(pixelsOut, options = {}) {
+		super();
 		this.pixelsOut = pixelsOut;
 
 		let pixels = pixelsOut.pixels?.(options.pixels)
@@ -56,7 +57,7 @@ export default class Poco @ "xs_poco_destructor" {
 					pixelsOut.frameBuffer,
 					pixelsOut.clut);
 	}
-	close() @ "xs_poco_close"
+	close() { return native("xs_poco_close").call(this); }
 
 	// for drawing calls, see commodettoPocoDraw.js
 
@@ -68,24 +69,23 @@ export default class Poco @ "xs_poco_destructor" {
 	}
 }
 
-function build(width, height, byteLength, pixelFormat, displayListLength, rotation) @ "xs_poco_build";
+function build(width, height, byteLength, pixelFormat, displayListLength, rotation) { return native("xs_poco_build").call(this, width, height, byteLength, pixelFormat, displayListLength, rotation); }
 
-class Rectangle @ "xs_rectangle_destructor" {
-	constructor(x, y, w, h) @ "xs_rectangle_constructor"
-	set(x, y, w, h) @ "xs_rectangle_set"
-	get x() @ "xs_rectangle_get_x"
-	get y() @ "xs_rectangle_get_y"
-	get w() @ "xs_rectangle_get_w"
-	get h() @ "xs_rectangle_get_h"
-	set x() @ "xs_rectangle_set_x"
-	set y() @ "xs_rectangle_set_y"
-	set w() @ "xs_rectangle_set_w"
-	set h() @ "xs_rectangle_set_h"
+class Rectangle extends Native("xs_rectangle_destructor") {
+	constructor(x, y, w, h) { super(); native("xs_rectangle_constructor").call(this, x, y, w, h); }
+	set(x, y, w, h) { return native("xs_rectangle_set").call(this, x, y, w, h); }
+	get x() { return native("xs_rectangle_get_x").call(this); }
+	get y() { return native("xs_rectangle_get_y").call(this); }
+	get w() { return native("xs_rectangle_get_w").call(this); }
+	get h() { return native("xs_rectangle_get_h").call(this); }
+	set x(it) { native("xs_rectangle_set_x").call(this, it); }
+	set y(it) { native("xs_rectangle_set_y").call(this, it); }
+	set w(it) { native("xs_rectangle_set_w").call(this, it); }
+	set h(it) { native("xs_rectangle_set_h").call(this, it); }
 
 	// for Ecma-419 adaptInvalid
-	get width() @ "xs_rectangle_get_w"
-	get height() @ "xs_rectangle_get_h"
-	set width() @ "xs_rectangle_set_w"
-	set height() @ "xs_rectangle_set_h"
+	get width() { return native("xs_rectangle_get_w").call(this); }
+	get height() { return native("xs_rectangle_get_h").call(this); }
+	set width(it) { native("xs_rectangle_set_w").call(this, it); }
+	set height(it) { native("xs_rectangle_set_h").call(this, it); }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,13 +20,14 @@
 
 const image = {
 	__proto__: Content.prototype,
-	_create($, it) @ "PiuImage_create",
-	
-	get frameCount() @ "PiuImage_get_frameCount",
-	get frameIndex() @ "PiuImage_get_frameIndex",
-	
-	set frameIndex(it) @ "PiuImage_set_frameIndex",
+	_create($, it) { native("PiuImage_create").call(this, $, it); },
+
+	get frameCount() { return native("PiuImage_get_frameCount").call(this); },
+	set frameCount(it) { native("PiuTransition_set_duration").call(this, it); },
+
+	get frameIndex() { return native("PiuImage_get_frameIndex").call(this); },
+	set frameIndex(it) { native("PiuImage_set_frameIndex").call(this, it); },
 };
 export const Image = Template(image);
 Object.freeze(image);
-global.Image = Image;
+globalThis.Image = Image;

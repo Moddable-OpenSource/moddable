@@ -408,6 +408,7 @@ class WebSocketClient {
 								return;
 						}
 						catch {
+							/* this space intentionally left blank */
 						}
 						if (8 === opcode) {
 							if (options.close & 1) {		// sent close, now receiving response: done

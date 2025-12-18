@@ -237,8 +237,8 @@ void xs_audioout_constructor_(xsMachine *the)
 		xsUnknownError("pdm already in use by audioin");
 
 	i2s_pdm_tx_config_t tx_cfg = {
-		.clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(audioOut->sampleRate),
-		.slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+		.clk_cfg = I2S_PDM_TX_CLK_DAC_DEFAULT_CONFIG(audioOut->sampleRate),
+		.slot_cfg = I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
 		.gpio_cfg = {
 			.clk = -1,
 			.dout = MODDEF_AUDIOOUT_I2S_PDM_PIN,
@@ -334,8 +334,7 @@ void xs_audioout_constructor_(xsMachine *the)
 
 	audioOut->dma_buf_size = tx_chan_cfg.dma_frame_num * 2;			//@@ wrong for stereo etc
 	audioOut->total_dma_buf_size = audioOut->dma_buf_size * tx_chan_cfg.dma_desc_num;
-audioOut->total_dma_buf_size >>= 1; //@@
-	audioOut->bytesWritable = audioOut->total_dma_buf_size; 
+	audioOut->bytesWritable -= audioOut->total_dma_buf_size >> 2; 
 
 #if ESP32 && defined(MODDEF_AUDIOOUT_AMPLIFIER_POWER)
 	modGPIOInit(&audioOut->amplifierPower, C_NULL, MODDEF_AUDIOOUT_AMPLIFIER_POWER, kModGPIOOutput);
@@ -664,7 +663,7 @@ esp_err_t doWrite(AudioOut audioOut, void *buffer, xsUnsignedValue requested)
 	esp_err_t err;
 	size_t bytes_written = 0;
 
-	const int kTimeout = 100;	//@@ why does this need to be so big? 0 would be nice.... maybe this is just the first write?
+	const int kTimeout = 200;	//@@ why does this need to be so big? 0 would be nice.... maybe this is just the first write?
 	if (256 == audioOut->volumeFixed) {
 		if (audioOut->started)
 			err = i2s_channel_write(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written, kTimeout);

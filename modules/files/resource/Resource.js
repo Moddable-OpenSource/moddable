@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,9 +18,9 @@
  *
  */
 
-export default class Resource @ "Resource_destructor" {
-     constructor(path) @ "Resource_constructor";
-     static exists(path) @ "Resource_exists";
-     get byteLength() @ "Resource_get_byteLength";
-     slice(begin, end) @ "Resource_slice";
+export default class Resource extends Native("Resource_destructor") {
+	constructor(path) { super(); native("Resource_constructor").call(this, path); }
+	static exists(path) { return native("Resource_exists").call(this, path); }
+	get byteLength() { return native("Resource_get_byteLength").call(this); }
+	slice(begin, end) { return native("Resource_slice").call(this, begin, end); }
 }

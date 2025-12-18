@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -44,7 +44,8 @@ d.pixelsToBytes = function(pixels) {
 d.pixelFormat = 7;
 d.async = true;
 
-if (0) {
+const patch = false;
+if (patch) {
 	//@@ patch in functions required by Piu
 	d.start = function (interval) {
 		let timer = this.timer;

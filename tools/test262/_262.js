@@ -20,26 +20,26 @@
  
 import Timer from "timer";
 
-globalThis.$MAIN = function() @ "_xsbug_main";
-globalThis["<xsbug:import>"] = function(script, path, line) @ "_xsbug_import_";
-globalThis["<xsbug:module>"] = function(script, path, line) @ "_xsbug_module_";
-globalThis["<xsbug:script>"] = function(script, path, line) @ "_xsbug_script_";
+globalThis.$MAIN = function() { return native("_xsbug_main").call(this); };
+globalThis["<xsbug:import>"] = function(script, path, line) { return native("_xsbug_import_").call(this, script, path, line); };
+globalThis["<xsbug:module>"] = function(script, path, line) { return native("_xsbug_module_").call(this, script, path, line); };
+globalThis["<xsbug:script>"] = function(script, path, line) { return native("_xsbug_script_").call(this, script, path, line); };
 
 globalThis.$262 = {
 	agent: {
-		get safeBroadcast() @ "fx_agent_get_safeBroadcast",
-		set safeBroadcast(it) @ "fx_agent_set_safeBroadcast",
-		broadcast() @ "_262_agent_broadcast",
-		getReport() @ "_262_agent_getReport",
-		monotonicNow() @ "_262_agent_monotonicNow",
-		sleep() @ "_262_agent_sleep",
-		start() @ "_262_agent_start",
-		stop() @ "_262_agent_stop",
+		get safeBroadcast() { return native("fx_agent_get_safeBroadcast").call(this); },
+		set safeBroadcast(it) { native("fx_agent_set_safeBroadcast").call(this, it); },
+		broadcast() { return native("_262_agent_broadcast").call(this); },
+		getReport() { return native("_262_agent_getReport").call(this); },
+		monotonicNow() { return native("_262_agent_monotonicNow").call(this); },
+		sleep() { return native("_262_agent_sleep").call(this); },
+		start() { return native("_262_agent_start").call(this); },
+		stop() { return native("_262_agent_stop").call(this); },
 	},
-	createRealm() @ "_262_createRealm",
-	detachArrayBuffer() @ "_262_detachArrayBuffer",
-	gc() @ "_262_gc",
-	evalScript() @ "_262_evalScript",
+	createRealm() { return native("_262_createRealm").call(this); },
+	detachArrayBuffer() { return native("_262_detachArrayBuffer").call(this); },
+	gc() { return native("_262_gc").call(this); },
+	evalScript() { return native("_262_evalScript").call(this); },
 	global: globalThis,
 }
 globalThis.clearInterval = Timer.clear;

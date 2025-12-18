@@ -45,7 +45,7 @@ class HTTPClient {
 				if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
 					throw new Error("invalid buffer");
 			}			
-			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
+			const available = Math.min(client.#readable, client.#chunk ?? ((Infinity === client.#remaining) ? client.#readable : client.#remaining));
 			if (count > available) {
 				count = available;
 				if (buffer) {
@@ -230,7 +230,7 @@ class HTTPClient {
 							else {
 								this.#line += String.fromCharCode(c);
 								if (10 === c)
-									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
+									break readable;		// this is a malformed request (end of line with no colon) – maybe error?
 							}
 							break;
 						case "skipHeaderValue":
@@ -328,7 +328,7 @@ class HTTPClient {
 							this.#current.onReadable?.call(this.#current.request, min);
 					}
 					else
-						this.#current.onReadable?.call(this.#current.request, Math.min(this.#readable, this.#remaining));
+						this.#current.onReadable?.call(this.#current.request, (this.#remaining === Infinity) ? this.#readable : Math.min(this.#readable, this.#remaining));
 					return;
 				
 				case "receiveChunkTrailer":
@@ -442,6 +442,7 @@ class HTTPClient {
 			this.#onError?.(e);
 		}
 		catch {
+			/* this space intentionally left blank */
 		}
 		this.close();
 	}

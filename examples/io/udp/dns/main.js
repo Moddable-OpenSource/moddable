@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -28,7 +28,7 @@ function resolve(host, callback) {
 	resolver.resolve({
 		host,
 		onResolved: (host, address) => callback?.(address), 
-		onError: (host) => callback?.(),
+		onError: () => callback?.(),
 	});
 }
 

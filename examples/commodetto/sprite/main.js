@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -32,7 +32,7 @@ render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 render.end();
 
-Timer.repeat(id => {
+Timer.repeat(() => {
 	let x = (render.width - spriteWidth) >> 1;
 	let y = (render.height - spriteHeight) >> 1;
 	let sx = spriteCellIndex * spriteWidth;

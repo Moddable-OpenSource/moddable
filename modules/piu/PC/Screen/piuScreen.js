@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,30 +25,30 @@ import {
 
 export const Screen = Template(Object.freeze({
 	__proto__: Content.prototype,
-	_create($, it) @ "PiuScreen_create",
+	_create($, it) { return native("PiuScreen_create").call(this, $, it); },
 	
-	get hole() @ "PiuScreen_get_hole",
-	get pixelFormat() @ "PiuScreen_get_pixelFormat",
-	get playingTouches() @ "PiuScreen_get_playingTouches",
-	get recordingTouches() @ "PiuScreen_get_recordingTouches",
-	get running() @ "PiuScreen_get_running",
-	get transparency() @ "PiuScreen_get_transparency",
+	get hole() { return native("PiuScreen_get_hole").call(this); },
+	get pixelFormat() { return native("PiuScreen_get_pixelFormat").call(this); },
+	get playingTouches() { return native("PiuScreen_get_playingTouches").call(this); },
+	get recordingTouches() { return native("PiuScreen_get_recordingTouches").call(this); },
+	get running() { return native("PiuScreen_get_running").call(this); },
+	get transparency() { return native("PiuScreen_get_transparency").call(this); },
 	
-	set hole(it) @ "PiuScreen_set_hole",
-	set playingTouches() @ "PiuScreen_set_playingTouches",
-	set recordingTouches() @ "PiuScreen_set_recordingTouches",
-	set transparency(it) @ "PiuScreen_set_transparency",
+	set hole(it) { native("PiuScreen_set_hole").call(this, it); },
+	set playingTouches(value) { native("PiuScreen_set_playingTouches").call(this, value); },
+	set recordingTouches(value) { native("PiuScreen_set_recordingTouches").call(this, value); },
+	set transparency(it) { native("PiuScreen_set_transparency").call(this, it); },
 	
-	launch(path) @ "PiuScreen_launch",
-	postMessage(json) @ "PiuScreen_postMessage",
-	quit() @ "PiuScreen_quit",
-	touch(kind, index, x, y) @ "PiuScreen_touch",
-	writePNG(path) @ "PiuScreen_writePNG",
+	launch(path) { return native("PiuScreen_launch").call(this, path); },
+	postMessage(json) { return native("PiuScreen_postMessage").call(this, json); },
+	quit() { return native("PiuScreen_quit").call(this); },
+	touch(kind, index, x, y) { return native("PiuScreen_touch").call(this, kind, index, x, y); },
+	writePNG(path) { return native("PiuScreen_writePNG").call(this, path); },
 }));
 
-export class ScreenWorker @ "PiuScreenWorkerDelete" {
-	constructor(name, screen) @ "PiuScreenWorkerCreate"
-	close()  @ "PiuScreenWorker_close"
+export class ScreenWorker extends Native("PiuScreenWorkerDelete") {
+	constructor(name, screen) { super(); native("PiuScreenWorkerCreate").call(this, name, screen); }
+	close() { return native("PiuScreenWorker_close").call(this); }
 	onmessage()  { debugger }
-	postMessage(message)  @ "PiuScreenWorker_postMessage"
+	postMessage(message) { return native("PiuScreenWorker_postMessage").call(this, message); }
 }

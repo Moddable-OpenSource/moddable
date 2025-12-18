@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -82,16 +82,16 @@ class BMPSpooler extends PixelsOut {
 		header.setUint8(offset++, 'M'.charCodeAt());
 
 		header.setUint32(offset, (this.rowBytes * this.height) + 0x46, littleEndian); offset += 4;	// fileSize
-		header.setUint16(offset, 0), offset += 2;							// reserved1
-		header.setUint16(offset, 0), offset += 2;							// reserved2
+		header.setUint16(offset, 0); offset += 2;							// reserved1
+		header.setUint16(offset, 0); offset += 2;							// reserved2
 		header.setUint32(offset, 0x46, littleEndian); offset += 4;			// imageDataOffset
 
 		header.setUint32(offset, 0x38, littleEndian); offset += 4;			// biSize
 		header.setUint32(offset, this.width, littleEndian); offset += 4;	// biWidth
 		header.setInt32(offset, -this.height, littleEndian); offset += 4;	// biHeight (negative, because we write top-to-bottom)
-		header.setUint16(offset, 1, littleEndian), offset += 2;				// biPlanes
-		header.setUint16(offset, 16, littleEndian), offset += 2;			// biBitCount
-		header.setUint32(offset, 3, littleEndian), offset += 4;				// biCompression (3 == 565 pixels (see mask below), 0 == 555 pixels)
+		header.setUint16(offset, 1, littleEndian); offset += 2;				// biPlanes
+		header.setUint16(offset, 16, littleEndian); offset += 2;			// biBitCount
+		header.setUint32(offset, 3, littleEndian); offset += 4;				// biCompression (3 == 565 pixels (see mask below), 0 == 555 pixels)
 		header.setUint32(offset, (this.rowBytes * this.height) + 2, littleEndian); offset += 4;	// biSizeImage
 
 		header.setUint32(offset, 0x0b12, littleEndian); offset += 4;		// biXPelsPerMeter

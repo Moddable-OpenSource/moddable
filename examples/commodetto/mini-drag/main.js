@@ -122,7 +122,7 @@ class Dragger {
 			this.draw();
 		render.end();
 	}
-	onTouchEnded(x, y) {
+	onTouchEnded(/* x, y */) {
 		this.state = 0;
 		this.update();
 	}

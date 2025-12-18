@@ -34,7 +34,8 @@
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 	#include "freertos/semphr.h"
-
+	//#include <esp_log.h>
+	//static const char *TAG = "modWorker";
 	static void workerLoop(void *pvParameter);
 #elif qca4020 || nrf52
 	#include "FreeRTOS.h"
@@ -148,6 +149,9 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	modCriticalSectionDeclare;
 	modWorker worker;
 	char *module = xsmcToString(xsArg(0));
+#ifdef INC_FREERTOS_H
+	xsIntegerValue priority = 0, core = -1;   // core tskNO_AFFINITY
+#endif
 
 	xsmcVars(2);
 
@@ -264,11 +268,19 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
 			}
 			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
+#ifdef INC_FREERTOS_H
+#if ESP32	// Multicore only supported on ESP32
+			getIntegerProperty(the, &xsArg(1), xsID_core, &core);
+#endif
+#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) // Default priority is tskIDLE_PRIORITY + 1
+			getIntegerProperty(the, &xsArg(1), xsID_priority, &priority);
+			if (priority == 0)
+				priority = kWorkerTaskPriority;
+#endif
 		}
 	}
 
 #ifdef INC_FREERTOS_H
-#define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) 
 #if ESP32
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
 		#define kStack ((5 * 1024) + XT_STACK_EXTRA_CLIB)
@@ -280,8 +292,17 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 #elif nrf52
 	#define kStack (10 * 1024)
 #endif
-	xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
-							worker, kWorkerTaskPriority, &worker->task);
+	// FreeRTOS Task Creation. If we are specifying a core, use that, otherwise use the FreeRTOS xTaskCreate.
+	if (core != -1) {	// Use specified core, only for ESP32 for now
+		//ESP_LOGI(TAG, "Creating worker task on core %d with priority %d\n", core, worker->creation.priority);
+		xTaskCreatePinnedToCore(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+							worker, priority, &worker->task, core);
+	}
+	else {	// Use default core
+		//ESP_LOGI(TAG, "Creating worker task with default core and priority %d\n", worker->creation.priority);
+		xTaskCreate(workerLoop, worker->module, (worker->creation.nativeStackSize ? worker->creation.nativeStackSize : kStack) / sizeof(StackType_t),
+							worker, priority, &worker->task);
+	}
 
 	modMachineTaskWait(the);
 #else // !INC_FREERTOS_H
@@ -405,11 +426,11 @@ void workerDeliverConnect(xsMachine *the, modWorker worker, uint8_t *message, ui
 	xsCall1(xsVar(0), xsID_push, xsVar(1));
 
 	xsVar(2) = xsmcNewObject();									// e = {}
-	xsmcSet(xsVar(2), xsID_ports, xsVar(0));						// e.ports = ports
+	xsmcSet(xsVar(2), xsID_ports, xsVar(0));					// e.ports = ports
 
 	xsVar(3) = xsNewHostFunction(xs_worker_postfromworker, 1);	// postMessage
 	xsmcSet(xsVar(1), xsID_postMessage, xsVar(3));				// port.postMessage = postMessage
-	xsCall1(xsGlobal, xsID_onconnect, xsVar(2));					// onconnect(e)
+	xsCall1(xsGlobal, xsID_onconnect, xsVar(2));				// onconnect(e)
 
 	//@@ this eats any exception in onconnect... should be propagated?
 	xsEndHost(the);

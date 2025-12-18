@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,7 +25,7 @@ let theString = "";
 let KeyboardApplication = Application.template($ => ({
   	skin: new Skin({ fill:"white" }),
 	Behavior: class extends Behavior {
-		onCreate(application) {
+		onCreate(/* application */) {
 			this.ws = new Client({host: "192.168.4.1"});
 			this.ws.callback = function(message, value)
 			{

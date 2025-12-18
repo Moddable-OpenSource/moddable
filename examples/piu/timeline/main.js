@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -49,7 +49,6 @@ class ToBehavior extends TimelineBehavior {
 		let timeline = this.timeline = new Timeline();
 		let one=container.first, two=one.next, three=two.next, four=container.last, size=one.width;
 		let r=container.x+container.width-size, b=container.y+container.height-size;
-		let circleWidth = one.width, startY = one.y;
 		timeline.to(one, { state: 3 }, 500, Math.quadEaseOut, 0);
 		timeline.to(two, { x: r, state: 3 }, 500, Math.quadEaseOut, -400);
 		timeline.to(three, { x: r, y: b, state: 3 }, 500, Math.quadEaseOut, -400);
@@ -63,7 +62,6 @@ class FromBehavior extends TimelineBehavior {
 		let timeline = this.timeline = new Timeline();
 		let one=container.first, two=one.next, three=two.next, four=container.last, size=one.width;
 		let r=container.x+container.width-size, b=container.y+container.height-size;
-		let circleWidth = one.width, startY = one.y;
 		timeline.from(one, { state: 3 }, 500, Math.quadEaseOut, 0);
 		timeline.from(two, { x: r, state: 3 }, 500, Math.quadEaseOut, -400);
 		timeline.from(three, { x: r, y: b, state: 3 }, 500, Math.quadEaseOut, -400);
@@ -76,7 +74,7 @@ class OnBehavior extends TimelineBehavior {
 	onDisplaying(container) {
 		let timeline = this.timeline = new Timeline();
 		let one=container.first, two=one.next, three=two.next, four=container.last, size=one.width, startX = one.x+64, startY = one.y+64;
-		one.state = 0, two.state = 1, three.state = 2, four.state = 3;
+		one.state = 0; two.state = 1; three.state = 2; four.state = 3;
 		let l=container.x, r=container.x+container.width-size, t=container.y, b=container.y+container.height-size;
 		timeline.on(one, { x: [startX, l, r, r, l], y: [startY, t, t, b, b] }, 2000, null, 0);
 		timeline.on(two, { x: [startX, l, l, r, r], y: [startY, b, t, t, b] }, 2000, null, -2000);
@@ -109,7 +107,7 @@ class OptionBehavior extends Behavior {
 	}
 }
 
-const Option = Label.template($ => ({
+const Option = Label.template(() => ({
 	active: true, top: 0, bottom: 0, right: 0, left: 0, Behavior: OptionBehavior
 }));
 

@@ -51,7 +51,7 @@ server.callback = function(message, value)
 
 		frame.bitmap ??= new Bitmap(width, height, camera.imageType, frame, 0);
 		frame.inUse += 1;
-		this.spooler = new BMPSpooler(width, height, (render, width, height) => {
+		this.spooler = new BMPSpooler(width, height, (render /*, width, height */) => {
 			render.drawBitmap(frame.bitmap, 0, 0);
 		})
 		return {headers: ["Content-Type", "image/bmp", "Content-Length", this.spooler.byteLength], body: true};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -30,7 +30,7 @@ export default function() {
 				poco.fillRectangle(black, 0, 0, poco.width, poco.height);
 			poco.end();
 
-			let localButton = new DigitalBank({
+			/* let localButton = */ new DigitalBank({
 				pins: 0x01,
 				bank: 0,
 				mode: Digital.Input,
@@ -59,7 +59,7 @@ export default function() {
 					else {									// returned touch point data
 						for (let offset = 0; offset < data.length; offset += 6) {
 							const id = data[offset + 2] >> 4;
-							const state = data[offset] >> 6;
+							// const state = data[offset] >> 6;
 							const x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
 							const y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
 							poco.begin(x - 10, y - 10, 20, 20);
@@ -76,12 +76,12 @@ export default function() {
 			i2c.read(1);					// read one byte
 		},
 		onReadyx() {
-			let poco = new this.Poco;
-			let white = poco.makeColor(255, 255, 255);
-			let black = poco.makeColor(0, 0, 0);
-			let gray = poco.makeColor(128, 128, 128);
-			let red = poco.makeColor(255, 0, 0);
-			let green = poco.makeColor(0, 255, 0);
+			const poco = new this.Poco;
+			//  const white = poco.makeColor(255, 255, 255);
+			const black = poco.makeColor(0, 0, 0);
+			const gray = poco.makeColor(128, 128, 128);
+			const red = poco.makeColor(255, 0, 0);
+			const green = poco.makeColor(0, 255, 0);
 			poco.begin();
 				poco.fillRectangle(black, 0, 0, poco.width, poco.height);
 			poco.end();
@@ -107,7 +107,7 @@ export default function() {
 //				}
 //			});
 
-			let remoteButton = new this.DigitalBank({
+			/* let remoteButton = */ new this.DigitalBank({
 				pins: 0x01,
 				bank: 0,
 				mode: this.Digital.Input,
@@ -120,7 +120,7 @@ export default function() {
 				}
 			});
 
-			let localButton = new Digital({
+			/* let localButton = */ new Digital({
 				pin: 0,
 				mode: Digital.Input,
 				edge: Digital.Rising | Digital.Falling,

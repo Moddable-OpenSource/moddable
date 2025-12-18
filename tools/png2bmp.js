@@ -26,7 +26,7 @@ import PNG from "commodetto/ReadPNG";
 import PixelsOut from "commodetto/PixelsOut";
 import File from "file";
 
-var formatNames = {
+const formatNames = {
 	monochrome: "monochrome",
 	monochromealigned: "monochromealigned",
 	gray16: "gray16",
@@ -166,7 +166,6 @@ export default class extends TOOL {
 			this.outputPath = this.splitPath(this.inputPaths[0]).directory;
 	}
 	checkPNG(png) {
-		let pngChannels = png.channels;
 		if (png.depth != 8)
 			return false;
 		if ((png.channels == 1) && (png.palette)) {
@@ -333,7 +332,7 @@ export default class extends TOOL {
 		else {
 			let pngs = new Array(c).fill();
 			let pngWidth, pngHeight;
-			for (var i = 0; i < c; i++) {
+			for (let i = 0; i < c; i++) {
 				let pngPath = inputPaths[i];
 				let png = new PNG(this.readFileBuffer(pngPath));
 				if (!this.checkPNG(png))
@@ -350,7 +349,7 @@ export default class extends TOOL {
 				}
 				pngs[i] = png;
 			}
-			let stripWidth = pngWidth * i;
+			let stripWidth = pngWidth * c;
 			if ((this.rotation == 0) || (this.rotation == 180)) {
 				width = this.pad(stripWidth);
 				height = pngHeight;
@@ -362,7 +361,7 @@ export default class extends TOOL {
 			buffer = new Uint8Array(width * height * 4);
 			while (y < pngHeight) {
 				let x = 0;
-				for (var i = 0; i < c; i++) {
+				for (let i = 0; i < c; i++) {
 					this.transferLine(pngs[i], buffer, offset);
 					offset += (pngWidth * 4);
 					x += pngWidth;
@@ -452,9 +451,9 @@ export default class extends TOOL {
 			let colorIndex = 0;
 			let alphaIndex = 0;
 			while (alphaIndex < width) {
-				let r = convertRGBA32Line[colorIndex++] = buffer[offset++];
-				let g = convertRGBA32Line[colorIndex++] = buffer[offset++];
-				let b = convertRGBA32Line[colorIndex++] = buffer[offset++];
+				/* let r = */ convertRGBA32Line[colorIndex++] = buffer[offset++];
+				/* let g = */ convertRGBA32Line[colorIndex++] = buffer[offset++];
+				/* let b = */ convertRGBA32Line[colorIndex++] = buffer[offset++];
 				let a = convertRGBA32Line[colorIndex++] = buffer[offset++];
 				convertGray256Line[alphaIndex++] = 255 - a;
 			}
@@ -493,7 +492,7 @@ class BM4Out extends PixelsOut {
 
 		this.file = new File(dictionary.path, 1);
 	}
-	begin(x, y, width, height) {
+	begin(/* x, y, width, height */) {
 		const file = this.file;
 
 		// header: 'md', version, Commodetto pixel format, width and height (big endian)

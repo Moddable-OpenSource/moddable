@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -52,7 +52,7 @@ measure("BigInt 100000000001n", () => 100000000001n);
 measure("Arrow Function () => {}",  () => {return () => {}});
 measure("Arrow Function () => {return Date}",  () => {return () => {return Date}});
 measure("Arrow Function () => {return this}",  () => {return () => {return this}});
-measure("Arrow Function closure (1 variable)",  () => {let a = 1; return () => {return a;l}});
+measure("Arrow Function closure (1 variable)",  () => {let a = 1; return () => {return a;}});
 measure("Arrow Function closure (2 variables)",  () => {let a = 1, b = 2; return () => {return a + b;}});
 measure("Arrow Function closure (3 variables)",  () => {let a = 1, b = 2, c = 3; return () => {return a + b + c;}});
 measure("Function {}",  () => {return function() {}});
@@ -112,7 +112,7 @@ function measure(name, what)
 	slots = Instrumentation.get(xsInstrumentation.slot_used);
 	chunks = Instrumentation.get(xsInstrumentation.chunk_used);
 
-	result = what();
+	result = what();		// holding result so it isn't collected before measuring
 
 	Debug.gc();
 
@@ -120,13 +120,15 @@ function measure(name, what)
 	chunks = Instrumentation.get(xsInstrumentation.chunk_used) - chunks;
 
 	if (slots && chunks)
-		trace(`${name}: ${slots / slotSize} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots + ${chunks} chunk bytes = ${slots + chunks} bytes\n`);
 	else if (slots)
-		trace(`${name}: ${slots / slotSize} slots = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${slots / slotSize} slots = ${slots + chunks} bytes\n`);
 	else if (chunks)
-		trace(`${name}: ${chunks} chunk bytes = ${slots + chunks} bytes\n`)
+		trace(`${name}: ${chunks} chunk bytes = ${slots + chunks} bytes\n`);
 	else
-		trace(`${name}: 0 bytes\n`)
+		trace(`${name}: 0 bytes\n`);
+
+	return result;
 }
 
 function empty() {}

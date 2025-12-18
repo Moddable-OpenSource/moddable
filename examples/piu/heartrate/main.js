@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -27,7 +27,7 @@ const digitsTexture = new Texture("digits.png");
 const GraphLine = Port.template($ => ({
 	bottom: 0, height: $.barHeight, left: 0, width:16,
 	Behavior: class extends Behavior {
-		onCreate(port, data) {
+		onCreate(port /*, data */) {
 			this.data = {remainder: $.remainder, fullBars: $.fullBars};
 			this.state = 0;
 			port.interval = 650;
@@ -62,7 +62,7 @@ const GraphLine = Port.template($ => ({
 	}
 }));
 
-const GraphContainer = Row.template($ => ({
+const GraphContainer = Row.template(() => ({
 	anchor: "GRAPH", bottom:0, height: 64, 
 	Behavior: class extends Behavior {
 		onCreate(row, data) {
@@ -92,7 +92,7 @@ const GraphContainer = Row.template($ => ({
 	}
 }))
 
-const DigitContainer = Port.template($ => ({
+const DigitContainer = Port.template(() => ({
 	anchor: "DIGITS", top:0, width:128, height:112,
 	Behavior: class extends Behavior {
 		onCreate(port, data) {
@@ -134,7 +134,7 @@ const HeartRateApp = Application.template($ => ({
 			application.interval = 2000;
 			application.start();
 		}
-		onTimeChanged(application) {
+		onTimeChanged(/* application */) {
 			 let randomHeartRate = Math.floor(Math.random() * (MAX_RATE - MIN_RATE + 1)) + MIN_RATE;
 			 this.data["DIGITS"].delegate("onChangeRate", randomHeartRate);
 		}

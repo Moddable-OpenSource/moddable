@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -44,15 +44,15 @@ import Bitmap from "commodetto/Bitmap";
 import BufferOut from "commodetto/BufferOut";
 import Converter from "commodetto/Convert";
 
-export default class PNG @ "xs_PNG_destructor" {
-	constructor(buffer) @ "xs_PNG_constructor"
-	read() @ "xs_PNG_read"
+export default class PNG extends Native("xs_PNG_destructor") {
+	constructor(buffer) { super(); native("xs_PNG_constructor").call(this, buffer); }
+	read() { return native("xs_PNG_read").call(this); }
 
-	get width() @ "xs_PNG_get_width"
-	get height() @ "xs_PNG_get_height"
+	get width() { return native("xs_PNG_get_width").call(this); }
+	get height() { return native("xs_PNG_get_height").call(this); }
 
-	get channels() @ "xs_PNG_get_channels"
-	get depth() @ "xs_PNG_get_depth"
+	get channels() { return native("xs_PNG_get_channels").call(this); }
+	get depth() { return native("xs_PNG_get_depth").call(this); }
 
 //	get palette()
 

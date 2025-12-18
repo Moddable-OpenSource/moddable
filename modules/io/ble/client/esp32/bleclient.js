@@ -19,11 +19,10 @@
  */
 
 class Advertisement extends ArrayBuffer {
-	get(type) @ "xs_advertisement_get"
+	get(type) { return native("xs_advertisement_get").call(this, type); }
 	get name() {
 		const data = this.get(9) ?? this.get(8);
-		if (data)
-			return String.fromArrayBuffer(data);
+		return data ? String.fromArrayBuffer(data) : "";
 	}
 	get services() {
 		const services = [];
@@ -51,56 +50,52 @@ class Advertisement extends ArrayBuffer {
 	}
 	get manufacturerData() {
 		let data = this.get(255);
-		if (!data || (data.byteLength < 2)) return;
+		if (!data || (data.byteLength < 2)) return undefined;
 		data = new Uint8Array(data);
 		const manufacturer = data[0] | (data[1] << 8);
 		return {manufacturer, data: data.slice(2).buffer};		
 	}
 }
 
-function build() @ "xs_gapclient_build";
-class GAPClient @ "xs_gapclient_destructor" {
-	constructor(options) {
-		build.call(this, options, Advertisement);
-	}
-	close() @ "xs_gapclient_close"
-	read() @ "xs_gapclient_read"
+class GAPClient extends Native("xs_gapclient_destructor") {
+	constructor(options) { super(); native("xs_gapclient_build").call(this, options, Advertisement); }
+	close() { return native("xs_gapclient_close").call(this); }
+	read() { return native("xs_gapclient_read").call(this); }
 }
 
 const features = Object.freeze({
-	constructor(options) @ "xs_gattclient_constructor",
-	close() @ "xs_gattclient_close",
-	connect(request) @ "xs_gattclient_connect",
-	getPrimaryServices(request, uuids) @ "xs_gattclient_getPrimaryServices",
-	getCharacteristics(request, service, uuids) @ "xs_gattclient_getCharacteristics",
-	getDescriptors(request, characteristic, uuids) @ "xs_gattclient_getDescriptors",
-	read(request, what, options) @ "xs_gattclient_read",
-	readValue(what) @ "xs_gattclient_readValue",
-	write(request, what, options) @ "xs_gattclient_write",
-	restore(item) @ "xs_gattclient_restore",
-	getCCCD(item) @ "xs_gattclient_getCCCD"
+	constructor(options) { native("xs_gattclient_constructor").call(this, options); },
+	close() { return native("xs_gattclient_close").call(this); },
+	connect(request) { return native("xs_gattclient_connect").call(this, request); },
+	getPrimaryServices(request, uuids) { return native("xs_gattclient_getPrimaryServices").call(this, request, uuids); },
+	getCharacteristics(request, service, uuids) { return native("xs_gattclient_getCharacteristics").call(this, request, service, uuids); },
+	getDescriptors(request, characteristic, uuids) { return native("xs_gattclient_getDescriptors").call(this, request, characteristic, uuids); },
+	read(request, what, options) { return native("xs_gattclient_read").call(this, request, what, options); },
+	readValue(what) { return native("xs_gattclient_readValue").call(this, what); },
+	write(request, what, options) { return native("xs_gattclient_write").call(this, request, what, options); },
+	restore(item) { return native("xs_gattclient_restore").call(this, item); },
+	getCCCD(item) { return native("xs_gattclient_getCCCD").call(this, item); }
 });
 
-class GATTClientService @ "xs_gattclientservice_destructor" {
+class GATTClientService extends Native("xs_gattclientservice_destructor") {
 	constructor() {throw new Error};
-	get uuid() @ "xs_gattclientservice_get_uuid"
+	get uuid() { return native("xs_gattclientservice_get_uuid").call(this); }
 }
 
-class GATTClientCharacteristic @ "xs_gattclientcharacteristic_destructor" {
+class GATTClientCharacteristic extends Native("xs_gattclientcharacteristic_destructor") {
 	constructor() {throw new Error}
-	get uuid() @ "xs_gattclientcharacteristic_get_uuid"
-	get handle() @ "xs_gattclientcharacteristic_get_handle"
-	get properties() @ "xs_gattclientcharacteristic_get_properties"
+	get uuid() { return native("xs_gattclientcharacteristic_get_uuid").call(this); }
+	get handle() { return native("xs_gattclientcharacteristic_get_handle").call(this); }
+	get properties() { return native("xs_gattclientcharacteristic_get_properties").call(this); }
 }
 
-class GATTClientDescriptor @ "xs_gattclientdescriptor_destructor" {
+class GATTClientDescriptor extends Native("xs_gattclientdescriptor_destructor") {
 	constructor() {throw new Error};
-	get uuid() @ "xs_gattclientdescriptor_get_uuid"
+	get uuid() { return native("xs_gattclientdescriptor_get_uuid").call(this); }
 }
 
-class GATTClient @ "xs_gattclient_destructor" {
+class GATTClient extends Native("xs_gattclient_destructor") {
 	#requests = [];
-	#onReadable;
 
 	static #Request = class {
 		constructor(client, feature, callback, ...params) {
@@ -134,10 +129,10 @@ class GATTClient @ "xs_gattclient_destructor" {
 	};
 
 	constructor(options) {
+		super();
+
 		if (options.target)
 			this.target = options.target;
-
-		this.#onReadable = options.onReadable;
 
 		features.constructor.call(this, options);
 
@@ -172,7 +167,14 @@ class GATTClient @ "xs_gattclient_destructor" {
 	write(what, value, options, callback = options) {
 		new GATTClient.#Request(this, features.write, callback, what, value, options === callback ? null : options);
 	}
-	enableNotifications(characteristic, enable, callback) {
+	subscribe(characteristic, callback) {
+		return this.#enableNotifications(characteristic, true, callback);
+	}
+	unsubscribe(characteristic, callback) {
+		return this.#enableNotifications(characteristic, false, callback);
+	}
+	replyToPasskey(action, value) { return native("xs_gattclient_replyToPasskey").call(this, action, value); }
+	#enableNotifications(characteristic, enable, callback) {
 		function write(gatt, characteristic, descriptor, enable, callback) {
 			let flag = 0;
 			if (enable) {
@@ -198,9 +200,9 @@ class GATTClient @ "xs_gattclient_destructor" {
 		});
 	}
 
-	get maximumWrite() @ "xs_gattclient_get_maximumWrite"
+	get maximumWrite() { return native("xs_gattclient_get_maximumWrite").call(this); }
 
-	store(item) @ "xs_gattclient_store"
+	store(item) { return native("xs_gattclient_store").call(this, item); }
 	restore(item) {
 		return features.restore.call(this, item, GATTClientService.prototype, GATTClientCharacteristic.prototype, GATTClientDescriptor.prototype);
 	}

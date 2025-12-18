@@ -967,6 +967,8 @@ mxExport void fx_encodeURI(txMachine* the);
 mxExport void fx_encodeURIComponent(txMachine* the);
 mxExport void fx_escape(txMachine* the);
 mxExport void fx_eval(txMachine* the);
+mxExport void fx_Native(txMachine* the);
+mxExport void fx_native(txMachine* the);
 mxExport void fx_trace(txMachine* the);
 mxExport void fx_trace_center(txMachine* the);
 mxExport void fx_trace_left(txMachine* the);
@@ -2860,6 +2862,10 @@ enum {
 #endif
 #if mxModuleStuff	
 #define mxModuleStuffConstructor the->stackIntrinsics[-1 - _ModuleStuff]
+#endif	
+#if mxNative	
+#define mxNativeConstructor the->stackIntrinsics[-1 - _Native]
+#define mxNativeFunction the->stackIntrinsics[-1 - _native]
 #endif	
 
 #define mxObjectPrototype the->stackIntrinsics[-1 - mxObjectPrototypeStackIndex]

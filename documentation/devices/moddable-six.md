@@ -1,7 +1,7 @@
 # Moddable Six Developer Guide
 
-Copyright 2024 Moddable Tech, Inc.<BR>
-Revised: August 16, 2024
+Copyright 2024-2025 Moddable Tech, Inc.<BR>
+Revised: December 3, 2025
 
 This document provides information about Moddable Six, including details about its pins and built-in components, how to build and deploy apps, and links to additional development resources.
 
@@ -23,6 +23,7 @@ This document provides information about Moddable Six, including details about i
 	- [Dynamic Frame Rate Control](#frame-rate-control)
 	- [Tearing Effect](#tearing-effect)
 	- [Amplified Audio](#amplified-audio)
+	- [Microphone](#microphone)
 	- [STEMMA QT / Qwiic / JST SH 1mm Quick Connector](#quick-connector)
 	- [NeoPixel](#neopixel)
 	- [USB](#usb)
@@ -32,6 +33,11 @@ This document provides information about Moddable Six, including details about i
 - [Development Resources](#development-resources)
 	- [Simulator](#simulator)
 	- [Examples](#examples)
+		- [Battery Monitor](#example/battery)
+		- [Color LED](#example/led-color)
+		- [SmartPlug Scheduler](#example/plug-schedule)
+		- [Speaking Clock](#example/speaking-clock)
+		- [conversationalAI](#example/conversationalAI)
 	- [Debugging](#debugging)
 		- [Debugging JavaScript and TypeScript Code](#advanced-xsbug)
 		- [Debugging Native Code](#debug-native)
@@ -41,6 +47,8 @@ This document provides information about Moddable Six, including details about i
 
 <a id="about-moddable-six"></a>
 ## About Moddable Six
+
+This document describes Moddable Six revision 1.1 released in November 2025, replacing the original Moddable Six released in August 2024. Revision 1.1 adds an integrated microphone, increases audio volume, and improves audio quality.
 
 <a id="components"></a>
 ### Components
@@ -61,6 +69,9 @@ The touch panel uses a GT911 touch controller that supports multi-touch input. T
 
 #### Amplified Speaker
 A built-in, amplified speaker allows for audio user-interface feedback, streaming music, and voice prompts. It delivers high quality audio using a low-cost design, reducing the cost of bringing audio feedback to commercial products.
+
+#### Microphone
+A built-in  MEMS microphone ([TDK T3902](https://invensense.tdk.com/products/digital/t3902/)) supports high-quality PDM audio capture. The microphone is located behind a pinhole below the display, ideally located for interactive voice chat, such as our [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) project.
 
 #### STEMMA QT / Qwiic / JST SH 1mm Quick Connections
 Moddable Six has a JST SH connector for easy connection of I²C sensors and peripherals. This connector is called STEMMA QT by Adafruit and Qwiic by SparkFun.
@@ -122,6 +133,11 @@ Power can be supplied to Moddable Six via the following:
 * 5V - VIN on 16 pin external header
 * 3.3V - 3.3V pin external header
 
+#### Microphone Pins
+External header pins GPIO&nbsp;2 and GPIO&nbsp;3 are connected to the microphone. You may use these pins as GPIOs by disabling the microphone by cutting the solder jumpers near the microphone.
+
+![](https://moddable.com/assets/images/m6/m6-r1.1-mic-jumper.jpg)
+
 <a id="dimensions"></a>
 ### Dimensions
 
@@ -148,17 +164,17 @@ To use the USB port:
 
 1. Connect a USB cable to the USB connector on Moddable Six
 
-2. Use the platform `-p esp32/moddable_six_cdc`
+2. Use the platform `-p esp32/moddable_six`
 
 3. Build and deploy the app with `mcconfig`
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
 
-	Use the platform `-p esp32/moddable_six_cdc`  with `mcconfig` to build for Moddable Six using the USB port. For example, to build the [`piu/balls` example](../../examples/piu/balls):
+	Use the platform `-p esp32/moddable_six`  with `mcconfig` to build for Moddable Six using the USB port. For example, to build the [`piu/balls` example](../../examples/piu/balls):
 
 	```text
 	cd $MODDABLE/examples/piu/balls
-	mcconfig -d -m -p esp32/moddable_six_cdc
+	mcconfig -d -m -p esp32/moddable_six
 	```
 
 <a id="install-over-serial"></a>
@@ -259,7 +275,7 @@ The brightness of the backlight may be set at build time in the `config` section
 You can also set the brightness on the command line when building with `mcconfig`. Here it is set to 50%.
 
 ```text
-mcconfig -d -m -p esp32/moddable_six_cdc brightness=50
+mcconfig -d -m -p esp32/moddable_six brightness=50
 ```
 
 The `setup/target` module for Moddable Six installs a global variable named `backlight` that you can use to adjust the backlight in your code. Here it is set to 80%.
@@ -311,6 +327,13 @@ The audio signal is output on GPIO 45. Pin IO45 can also be found on the expansi
 
 GPIO 46 enables the PAM8302A amplifier connected to the onboard speaker. Power to the amplifier is automatically applied when audio is playing. When no audio is playing, the amplifier is turned off.
 
+<a id="microphone"></a>
+#### Microphone
+
+Examples: [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI), [capture-sync](https://github.com/Moddable-OpenSource/moddable/tree/public/examples/io/audioin/capture-sync)
+
+The built-in  MEMS microphone is a ([TDK T3902](https://invensense.tdk.com/products/digital/t3902/)). It high-quality audio capture through a PDM audio interface. 
+
 <a id="quick-connector"></a>
 #### STEMMA QT / Qwiic / JST SH 1mm Quick Connector
 
@@ -346,7 +369,7 @@ A NeoPixel strip can be connected to pin RGB IO48 on the expansion header.
 
 The USB port is connected to GPIO 19 and GPIO 20. This port can be used to program and debug Moddable Six. For more information on USB on the ESP32 family see the [USB section of our ESP32 documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/esp32.md#using_usb).
 
-If your project does not use USB and you are not building with the target `esp32/moddable_six_cdc` you can use IO19 and IO20 on the expansion header as GPIOs.
+If your project does not use USB, you can use IO19 and IO20 on the expansion header as GPIOs.
 
 <a id="touch-panel"></a>
 #### Touch Panel
@@ -357,6 +380,7 @@ The GT911 touch controller interrupt is connected to GPIO 38. The GT911 touch dr
 You cannot use IO4 and IO5 as GPIOs if your project uses the touch panel. You can use these pins with other I²C devices even if your project uses the touch panel as long as those devices don't use I²C addresses `0x14` or `0x5D`.
 
 <a id="flash-button"></a>
+
 #### Flash Button
 
 The flash button on the back of Moddable Six may be used as an input to your project. It is connected to GPIO0 and may be accessed using Digital Input APIs. However, it is recommended to use the global `Host` object to access it instead, as this is a bit simpler, portable to other devices, and works in the Moddable Six simulator. Here's an example:
@@ -372,7 +396,7 @@ new Host.Button.Default({
 <a id="troubleshooting"></a>
 ## Troubleshooting
 
-Moddable Six can communicate with your development computer using either its USB or Serial connector. If you are using the USB connector, build using the `esp32/moddable_six_cdc` platform. If you are using the Serial connector, build using the `esp32/moddable_six` platform.
+Moddable Six can communicate with your development computer using either its USB or Serial connector.
 
 <a id="development-resources"></a>
 ## Development Resources
@@ -410,6 +434,7 @@ A suite of example apps designed for Moddable Six is in
 
 These apps are great starting points for your own projects. They can be easily adapted to communicate with your hardware, change the UI interactions, or add new features.
 
+<a id="example/battery"/></a>
 #### battery
 
 The [battery](../../contributed/moddable_six/battery) app is a control panel for a home battery system. It uses a simulated battery.
@@ -420,14 +445,15 @@ The app includes advanced rendering of battery levels with fluid animations and 
 
 <img width="45%" src="../assets/devices/moddable-six-battery3.png"> <img width="45%" src="../assets/devices/moddable-six-battery4.png">
 
-
+<a id="example/led-color"/></a>
 #### led-color
 
 The [led-color](../../contributed/moddable_six/led-color) app provides a color-picker on display for the user to choose the color displayed by the on-board Neopixel.
 
 <img width="45%" src="../assets/devices/moddable-six-led-color1.png"> <img width="45%" src="../assets/devices/moddable-six-led-color2.png">
 
-#### plug-schedule
+<a id="example/plug-schedule"/></a>
+#### SmartPlug Scheduler
 
 The [plug-schedule](../../contributed/moddable_six/plug-schedule) app presents an interface for an IoT plug plug.
 
@@ -438,7 +464,8 @@ This is the largest, most comprehensive of the the Moddable Six example apps. It
 <img width="45%" src="../assets/devices/moddable-six-smartplug3.png"> <img width="45%" src="../assets/devices/moddable-six-smartplug4.png">
 
 
-#### speaking-clock
+<a id="example/speaking-clock"/></a>
+#### Speaking Clock
 
 The [speaking-clock](../../contributed/moddable_six/speaking-clock) app is a word-clock that audibly announces the time every minute.
 
@@ -446,12 +473,24 @@ The voice of the speaking clock is ChatGPT! The voice samples were captured from
 
 <img width="45%" src="../assets/devices/speaking-clock.gif">
 
+<a id="example/conversationalAI"/></a>
+#### conversationalAI
+
+The [conversationalAI](https://github.com/Moddable-OpenSource/moddable/tree/public/contributed/conversationalAI) a comprehensive interactive voice chat app. It uses integrates support for all the key hardware features of Moddable Six include the touch screen, speaker, microphone, and Wi-Fi. It works with major AI and voice services including OpenAI, Google Gemini, Anthropic Claude, ElevenLabs, Deepseek, and Hume.
+
+<img width="45%" src="../assets/devices/moddable-six-conv-AI-services.png"> <img width="45%" src="../assets/devices/moddable-six-conv-AI-record.png">
+
+<img width="45%" src="../assets/devices/moddable-six-conv-AI-connecting.png"> <img width="45%" src="../assets/devices/moddable-six-conv-AI-voices.png">
+
+
 <a id="debugging"></a>
+
 ### Debugging
 
 Moddable Six has advanced debugging support for JavaScript, TypeScript, and native code.
 
 <a id="advanced-xsbug"></a>
+
 #### Debugging JavaScript and TypeScript Code
 
 The xsbug debugger included in the Moddable SDK is used to debug both JavaScript and TypeScript code. The [xsbug documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/xs/xsbug.md) explains the fundamentals. There's nothing special to do to debug TypeScript: xsbug support source maps, so TypeScript debugging works automatically. xsbug supports debugging multiple JavaScript virtual machines at the same time, so you can debug Web Workers too.
@@ -463,6 +502,7 @@ Once you are comfortable with the basics of xsbug, check out these blog posts to
 - [Tracepoints](https://www.moddable.com/blog/tracepoints/)
 
 <a id="debug-native"></a>
+
 #### Debugging Native Code
 
 Debugging native code on Moddable Six uses the GDB debugger.
@@ -523,7 +563,7 @@ xtensa-esp32s3-elf-gdb
 Some startup information will scroll by and the application will stop in `app_main()`:
 
 ```
-Thread 2 "main" hit Temporary breakpoint 1, app_main () at /Users/mkellner/moddable/build/tmp/esp32/moddable_six_cdc/debug/somafm/xsProj-esp32s3/main/main.c:477
+Thread 2 "main" hit Temporary breakpoint 1, app_main () at /Users/mkellner/moddable/build/tmp/esp32/moddable_six/debug/somafm/xsProj-esp32s3/main/main.c:477
 477		void app_main() {
 ```
 

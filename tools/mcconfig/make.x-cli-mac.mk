@@ -102,8 +102,8 @@ else
 endif
 C_FLAGS = $(XS_C_FLAGS)
  
-LIBRARIES = -framework CoreFoundation
-# LIBRARIES = -framework CoreFoundation -lcurl -L/opt/homebrew/opt/libpng/lib/ -lpng16
+# LIBRARIES = -framework CoreFoundation
+LIBRARIES = -framework CoreFoundation -lcurl -L/opt/homebrew/opt/libpng/lib/ -lpng16
 
 # LINK_FLAGS = -arch i386
 LINK_FLAGS = $(MACOS_ARCH)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,17 +24,17 @@
 */
 
 class Time {
-	static set(value) @ "xs_time_set";
+	static set(value) { return native("xs_time_set").call(this, value); }
 
-	static get timezone() @ "xs_time_timezone_get";
-	static set timezone(value) @ "xs_time_timezone_set";
+	static get timezone() { return native("xs_time_timezone_get").call(this); }
+	static set timezone(it) { native("xs_time_timezone_set").call(this, it); }
 
-	static get dst() @ "xs_time_dst_get";
-	static set dst(value) @ "xs_time_dst_set";
+	static get dst() { return native("xs_time_dst_get").call(this); }
+	static set dst(it) { native("xs_time_dst_set").call(this, it); }
 
-	static get ticks() @ "xs_time_ticks";
+	static get ticks() { return native("xs_time_ticks").call(this); }
 
-	static delta(start, end) @ "xs_time_delta";
+	static delta(start, end) { return native("xs_time_delta").call(this, start, end); }
 };
 
 export default Time;

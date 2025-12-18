@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -36,7 +36,7 @@ function getVariantFromSignalLevel(value) {
 
 class ApplicationBehavior extends Behavior {
 	onCreate(application) {
-		global.application = application;
+		globalThis.application = application;
 		WiFi.mode = 1;
 		this.doNext(application, "NETWORK_LIST_SCAN");
 		application.interval = 2000;
@@ -46,9 +46,9 @@ class ApplicationBehavior extends Behavior {
 		let now = Date.now();
 		if ((this.timeout) && (now > this.timeout)) {
 			trace("Attempt to connect to Wi-Fi timed out\n");
-			if (global.monitor) {
-				global.monitor.close();
-				global.monitor = undefined;
+			if (globalThis.monitor) {
+				globalThis.monitor.close();
+				globalThis.monitor = undefined;
 			}
 			WiFi.connect();
 			application.delegate("doNext", "CONNECTION_ERROR", this.nextScreenData);
@@ -85,7 +85,7 @@ class ApplicationBehavior extends Behavior {
 				application.add(new WiFiStatusSpinner({ status: "Joining network..." }));
 				this.timeout = Date.now() + 10000;
 				this.nextScreenData = nextScreenData;
-				global.monitor = new WiFi(nextScreenData, message => {
+				globalThis.monitor = new WiFi(nextScreenData, message => {
 					if (message == "gotIP"){
 					  	Net.resolve("pool.ntp.org", (name, host) => {
 							if (!host) {
@@ -94,11 +94,11 @@ class ApplicationBehavior extends Behavior {
 								return;
 							}
 							trace(`resolved ${name} to ${host}\n`);
-							global.application.behavior.timeout = Date.now() + 10000;
-							let sntp = new SNTP({host}, (message, value) => {
+							globalThis.application.behavior.timeout = Date.now() + 10000;
+							new SNTP({host}, (message, value) => {
 								if (1 == message) {
 									Time.set(value);
-									delete global.application.behavior.timeout;
+									delete globalThis.application.behavior.timeout;
 									if (application.behavior.remoteControlEnabled) application.delegate("wsConnect", nextScreenData);
 									application.delegate("doNext", "NETWORK_LIST", { networks: application.behavior.networks, ssid: nextScreenData.ssid });
 								} else if (-1 == message) {
@@ -118,7 +118,8 @@ class ApplicationBehavior extends Behavior {
 			case "CONNECTION_ERROR":
 				application.add(new ConnectionErrorScreen(nextScreenData));
 				break;
-			case "SET_TIMEZONE":
+/*
+				case "SET_TIMEZONE":
 				// expected nextScreenData: { current: x } where x is the name of the current timezone, as a string
 				application.add(new SetTimezoneScreen(nextScreenData));
 				break;
@@ -128,6 +129,7 @@ class ApplicationBehavior extends Behavior {
 				nextScreenData.wsConnected = (this.ws != undefined)? 1: 0;
 				application.add(new RemoteControlSettingsScreen(nextScreenData));
 				break;
+*/
 		}
 	}
 	scan(application, isFirstScan) {

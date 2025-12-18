@@ -1,14 +1,16 @@
 # Conversation
 Copyright 2025 Moddable Tech, Inc.<BR>
-Updated June 11, 2025
+Updated December 3, 2025
 
 ## Architecture
 
-The conversation example uses a JavaScript [worker](https://moddable.com/documentation/base/worker). The worker is in charge of networks protocols, communicating with the AI cloud services, and encoding/decoding audio samples. The application is in charge of audio input and output plus the user interface. 
+The conversation module uses a JavaScript [worker](https://moddable.com/documentation/base/worker). The worker is in charge of networks protocols, communicating with the AI cloud services, and encoding/decoding audio samples. 
 
-The application and worker communicate with [marshalled messages](https://www.moddable.com/documentation/xs/XS%20Marshalling). They share input and output audio buffers for efficiency. This document describes [the messages](#Messages).
+The conversation module and its worker communicate with [marshalled messages](https://www.moddable.com/documentation/xs/XS%20Marshalling). They share input and output audio buffers for efficiency. This document describes the [messages](#Messages).
 
-The conversation example implements support for various AI cloud services using this worker architecture:
+Because audio samples are transmitted as Base64 encoded data embedded in JSON, workers use a special parser to optimize memory usage and throughput. This document also describes the [`JSONBase64Parser`](#JSONBase64Parser). 
+
+The conversation library implements support for various AI cloud services using this worker architecture:
 
 - [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime)
 - [Google Gemini Live](https://ai.google.dev/api/multimodal-live)
@@ -16,7 +18,59 @@ The conversation example implements support for various AI cloud services using 
 - [Eleven Labs Conversational AI](https://elevenlabs.io/docs/conversational-ai/overview)
 - [Deepgram Voice Agent](https://elevenlabs.io/docs/conversational-ai/overview)
 
-Because audio samples are transmitted as Base64 encoded data embedded in JSON, workers use a special parser to optimize memory usage and throughput. This document also [describes the `JSONBase64Parser`](#JSONBase64Parser). 
+## Programming Interface
+
+The conversation module exports one class that handles worker messages and audio input/output. Applications use a cloud service thru an instance of that class.
+
+#### `constructor(options)`
+
+The `options` object selects and configures a service. Its properties are:
+
+- `specifier`: *string*, the specifier of the service, `"deepgramAgent"`, `"elevenLabsAgent"`, `"googleGeminiLive"`, `"humeAIEVI"` or `"openAIRealtime"`.
+- `instructions`: *string*, the instructions that provide guidance to the service
+- `functions`: *array* of function descriptions, optional
+- `voiceID`: *string*, the identifier of the voice, optional
+- `providerID`: *string*, the identifier of the language model provider, optional
+- `modelID`: *string*, the identifier of the language model, optional
+
+The `options` object can also provides callbacks. All callbacks are optional.
+
+- `onFunctionCall(call, name, params)`: called when a function call is received, see [receiveFunctionCall](#msg-receiveFunctionCall).
+- `onInputLevelChanged(level)`: called when the audio input level changed, `level` is an integer, the average of audio input samples.
+- `onInputTranscript(text, more)`: called when the audio input transcription is received, `text ` is a string, `more` is a boolean to tell if more text is expected.
+- `onOutputLevelChanged(level)`: called when the audio output level changed, `level` is an integer, the average of audio output samples.
+- `onOutputTranscript(text, more)`: called when the audio output transcription is received, `text ` is a string, `more` is a boolean to tell if more text is expected.
+- `onStateChanged(state)`: called when the state of the conversation changed, `state` is an integer, values are exported by the class:
+
+```
+	static FAILED = -1;
+	static DISCONNECTED = 0;
+	static DISCONNECTING = 1;
+	static CONNECTING = 2;
+	static CONNECTED = 3;
+	static SPEAKING = 4;		// user is speaking (sending audio to cloud)
+	static LISTENING = 5;		// user is listening (receiving audio from cloud) 
+	static WAITING = 6;
+```
+
+> When the state is `FAILED`, application can get details from the `error` property of the class instance.
+
+#### `connect()`
+
+Use `connect` to connect to the service. Applications have to wait for the `CONNECTED` state.
+
+#### `disconnect()`
+
+Use `disconnect` to connect to the service. Applications have to wait for the `DISCONNECTED` state.
+
+#### `sendFunctionResult(call, result)`
+
+Use `sendFunctionResult` to send the result of a function call, see [sendFunctionResult](#msg-sendFunctionResult).
+
+#### `sendText(text)`
+
+Use `sendText` to inform the service about user interactions that did not involve speech.
+
 
 <a id="Messages"></a>
 
@@ -37,6 +91,11 @@ Because audio samples are transmitted as Base64 encoded data embedded in JSON, w
 
 - `instructions`: *string*, the instructions that provide guidance to the service
 - `functions`: *array* of function descriptions, optional
+- `voiceID`: *string*, the identifier of the voice, optional
+- `providerID`: *string*, the identifier of the language model provider, optional
+- `modelID`: *string*, the identifier of the language model, optional
+
+The `voiceID`, `providerID` and `modelID` are specific to each service. Look at [ConversationalAI assets](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/conversationalAI/assets.js) to get voice, provider and model identifiers, names and descriptions by service.
 
 The format of function descriptions is a JSON schema that is more or less common to all services.
 
@@ -334,7 +393,7 @@ The application creates an audio input object which writes audio samples in the 
 
 Many AI services have a programming interfaces built on secure WebSocket with JSON payloads. For voice input and output, the JSON payloads contain PCM audio samples encoded as Base64 strings.
 
-That is quite a burden for micro-controllers! Let us focus on voice output with the Moddable SDK...
+That is quite a burden for micro-controllers! Let us focus on voice input with the Moddable SDK...
 
 Here is what the initial approach used:
 
@@ -343,7 +402,7 @@ Here is what the initial approach used:
 - `JSON.parse` to convert strings into objects
 - `Uint8Array.fromBase64` to convert properties into samples
 
-Samples in memory multiples times! Base64 encoded in the payloads, strings and properties, as binary data in the samples. Moreover, the app has to wait for the whole payload to be downloaded in order to do multiple conversions and, eventually, to play audio.
+Samples are in memory multiples times! Base64 encoded in the payloads, strings and properties, as binary data in the samples. Moreover, the app has to wait for the whole payload to be downloaded in order to do multiple conversions and, eventually, to play audio.
 
 Streaming JSON parsers like Mark Wharton's contributed [JSONParser](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/jsonparser/README.md) help, but Base64 strings would still need to be completely downloaded before being converted.
 

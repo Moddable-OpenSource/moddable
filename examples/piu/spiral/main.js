@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,7 +25,7 @@ let SpiralContainer = Container.template($ => ({
 		Port($, {
 			left:0, right:0, top:0, bottom:20, 
 			Behavior: class extends Behavior {
-				onCreate(port) {
+				onCreate(/* port */) {
 					this.reverse = false;
 				}
 				onDisplaying(port) {
@@ -108,7 +108,7 @@ let SpiralApplication = Application.template($ => ({
 		onCreate(application) {
 			application.first.delegate("onDisplayed");
 		}
-		onTransitionBeginning(application) {
+		onTransitionBeginning(/* application */) {
 		}
 		onTransitionEnded(application) {
 			application.first.delegate("onDisplayed");

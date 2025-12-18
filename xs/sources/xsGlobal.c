@@ -142,13 +142,20 @@ void fxBuildGlobal(txMachine* the)
 	mxPull(mxEvalFunction);
 	fxBuildHostFunction(the, mxCallback(fx_unescape), 1, mxID(_unescape));
 	mxPull(mxUnescapeFunction);
-	
+
 	slot = fxBuildHostFunction(the, mxCallback(fx_trace), 1, mxID(_trace));
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_center), 1, mxID(_center), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_left), 1, mxID(_left), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_trace_right), 1, mxID(_right), XS_DONT_ENUM_FLAG);
     mxPull(mxTraceFunction);
+    
+#if mxNative	
+	fxBuildHostFunction(the, mxCallback(fx_Native), 1, mxID(_Native));
+	mxPull(mxNativeConstructor);
+	fxBuildHostFunction(the, mxCallback(fx_native), 1, mxID(_native));
+	mxPull(mxNativeFunction);
+#endif	
 	
 	fxNewHostFunction(the, mxCallback(fxThrowTypeError), 0, XS_NO_ID, XS_NO_ID);
 	mxThrowTypeErrorFunction = *the->stack;
@@ -333,6 +340,16 @@ void fx_eval(txMachine* the)
 	aStream.size = mxStringLength(fxToString(the, mxArgv(0)));
 	fxRunScript(the, fxParseScript(the, &aStream, fxStringGetter, mxProgramFlag | mxEvalFlag), mxRealmGlobal(realm), C_NULL, mxRealmClosures(realm)->value.reference, C_NULL, module);
 	mxPullSlot(mxResult);
+}
+
+void fx_Native(txMachine* the)
+{
+	mxSyntaxError("invalid Native");
+}
+
+void fx_native(txMachine* the)
+{
+	mxSyntaxError("invalid native");
 }
 
 void fx_trace(txMachine* the)

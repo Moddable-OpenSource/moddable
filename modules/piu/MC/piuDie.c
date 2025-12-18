@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -86,7 +86,7 @@ void PiuDieUpdate(void* it, PiuView* view, PiuRectangle area)
 			segmentCount--;
 			PiuCoordinate right = *region0++;
 			segmentCount--;
-			offset = region0 - regionBegin0;
+			offset = (int)(region0 - regionBegin0);
 			
 			PiuViewPushClip(view, left, top, right - left, bottom - top);
 			(*(*self)->dispatch->draw)(self, view, area);

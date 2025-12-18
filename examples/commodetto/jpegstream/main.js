@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -23,7 +23,7 @@ class JPEGRequest extends Request {
 		this.resolve = dictionary.resolve;
 		this.reject = dictionary.reject;
 	}
-	callback(message, value, etc) {
+	callback(message /*, value, etc */) {
 		if (message < 0) {
 			this.reject();
 			return;
@@ -77,6 +77,7 @@ async function main() {
 			await display(poco, "test.moddable.com", paths[index]);
 		}
 		catch {
+			/* this space intentionally left blank */
 		}
 		index = (index + 1) % paths.length;
 	}

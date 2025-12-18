@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,9 +24,9 @@
 */
 
 class Instrumentation {
-	static get(what) @ "xs_instrumentation_get";
-	static map(name) @ "xs_instrumentation_map";
-	static name(index) @ "xs_instrumentation_name";
+	static get(what) { return native("xs_instrumentation_get").call(this, what); }
+	static map(name) { return native("xs_instrumentation_map").call(this, name); }
+	static name(index) { return native("xs_instrumentation_name").call(this, index); }
 };
 
 export default Instrumentation;

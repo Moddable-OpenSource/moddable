@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2025  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -18,38 +18,33 @@
 *
 */
 
-class ReadGIF @ "xs_readgif_destructor" {
-	constructor(buffer) @ "xs_readgif";
-	close() @ "xs_readgif_close";
-	first() @ "xs_readgif_first";
-	next() @ "xs_readgif_next";
-
+class ReadGIF extends Native("xs_readgif_destructor") {
+	constructor(buffer) { super(); native("xs_readgif").call(this, buffer); }
+	close() { return native("xs_readgif_close").call(this); }
+	first() { return native("xs_readgif_first").call(this); }
+	next() { return native("xs_readgif_next").call(this); }
 	// bitmap
-	get width()  @ "xs_readgif_get_width";
-	get height()  @ "xs_readgif_get_height";
-	get pixelFormat() @ "xs_readgif_get_pixelFormat"
+	get width() { return native("xs_readgif_get_width").call(this); }
+	get height() { return native("xs_readgif_get_height").call(this); }
+	get pixelFormat() { return native("xs_readgif_get_pixelFormat").call(this); }
 	get offset() {
 		return 0;
 	}
-	
 	// animation
-	get duration()  @ "xs_readgif_get_duration";
-	get frameBounds()  @ "xs_readgif_get_frameBounds";
-	get frameCount()  @ "xs_readgif_get_frameCount";
-	get frameDuration()  @ "xs_readgif_get_frameDuration";
-	get frameNumber()  @ "xs_readgif_get_frameNumber";
-	get frameX()  @ "xs_readgif_get_frameX";
-	get frameY()  @ "xs_readgif_get_frameY";
-	get frameWidth()  @ "xs_readgif_get_frameWidth";
-	get frameHeight()  @ "xs_readgif_get_frameHeight";
-	
+	get duration() { return native("xs_readgif_get_duration").call(this); }
+	get frameBounds() { return native("xs_readgif_get_frameBounds").call(this); }
+	get frameCount() { return native("xs_readgif_get_frameCount").call(this); }
+	get frameDuration() { return native("xs_readgif_get_frameDuration").call(this); }
+	get frameNumber() { return native("xs_readgif_get_frameNumber").call(this); }
+	get frameX() { return native("xs_readgif_get_frameX").call(this); }
+	get frameY() { return native("xs_readgif_get_frameY").call(this); }
+	get frameWidth() { return native("xs_readgif_get_frameWidth").call(this); }
+	get frameHeight() { return native("xs_readgif_get_frameHeight").call(this); }
 	// transparency
-	get transparent()  @ "xs_readgif_get_transparent";
-	get transparentColor()  @ "xs_readgif_get_transparentColor";
-	set transparentColor(value)  @ "xs_readgif_set_transparentColor";
-
-	get ready() @ "xs_readgif_get_ready";
-	set available(value) @ "xs_readgif_set_available";
+	get transparent() { return native("xs_readgif_get_transparent").call(this); }
+	get transparentColor() { return native("xs_readgif_get_transparentColor").call(this); }
+	set transparentColor(value) { native("xs_readgif_set_transparentColor").call(this, value); }
+	get ready() { return native("xs_readgif_get_ready").call(this); }
+	set available(value) { native("xs_readgif_set_available").call(this, value); }
 }
-
 export default ReadGIF;

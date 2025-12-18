@@ -54,13 +54,16 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				}
 			},
 			agent: {
-// 				listen: {
-// 					model: "" // optional. default 'nova-2'
-// 				},
+				listen: {
+					provider: {
+						type: "deepgram",
+						model: "flux-general-en",
+					},
+				},
 				think: {
 					provider: {
-						type: "open_ai",
-						model: "gpt-4o-mini",
+						type: message.providerID ?? "anthropic",
+						model: message.modelID ?? "claude-3-5-haiku-latest",
 					},
 					prompt,
 					functions,
@@ -68,7 +71,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 				speak: {
 					provider: {
 						type: "deepgram",
-						model: message.voiceName ?? "aura-2-arcas-en",
+						model: message.voiceID ?? "aura-2-arcas-en",
 					},
 				}
 			}
@@ -97,7 +100,7 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 		this.sendJSON({ type:'FunctionCallResponse', id:call, name, content: result });
 	}
 	sendText(message) {
-		this.sendJSON({ type:'UpdatePrompt', prompt:message.text  });
+		this.sendJSON({ type:'InjectUserMessage', content:message.text  });
 	}
 	startKeepAlive() {
  		this.keepAliveTimer = Timer.repeat(timer => {

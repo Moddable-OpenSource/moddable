@@ -1,0 +1,19 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/network/dns/moddnsparser",
+			"$(MODULES)/network/dns/dns"
+		],
+		"dns/parser": "$(MODULES)/network/dns/dnsparser",
+		"dns/serializer": "$(MODULES)/network/dns/dnsserializer",
+		"embedded:network/dnssd": "./dnssd",
+		"dnssd/config": "./config"
+	},
+	"preload": [
+		"dnssd/config",
+		"embedded:network/dnssd",
+		"dns",
+		"dnsparser",
+		"dnsserializer"
+	]
+}

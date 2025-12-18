@@ -115,6 +115,7 @@
 #define mxExplicitResourceManagement 1
 #define mxImmutableArrayBuffers 1
 #define mxModuleStuff 1
+#define mxNative 0
 
 #define mxMinusZero 1
 #define mxRegExpUnicodePropertyEscapes 1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 Moddable Tech, Inc.
+ * Copyright (c) 2018-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -94,22 +94,42 @@ class Serializer {
 
 				case DNS.RR.TXT:
 					d = 0;
-					for (let property in data) {
-						const value = data[property];
-						if (undefined === value) continue;
-						d += property.length + 1 + ArrayBuffer.fromString(value.toString()).byteLength + 1;
+					if (Array.isArray(data)) {
+						for (let property in data) {
+							const value = data[property];
+							if (undefined === value) continue;
+							d += property.length + 1 + ArrayBuffer.fromString(value.toString()).byteLength + 1;
+						}
+					}
+					else {
+						for (const [property, value] of data) {
+							if (undefined === value) continue;
+							d += property.length + 1 + ArrayBuffer.fromString(value.toString()).byteLength + 1;
+						}
 					}
 					if (d) {
 						let offset = 0;
-						let binary = new Uint8Array(d);
-						for (let property in data) {
-							let value = data[property];
-							if (undefined === value) continue;
-							value = ArrayBuffer.fromString(property + "=" + value.toString());
-							binary[offset] = value.byteLength;
-							offset += 1;
-							binary.set(new Uint8Array(value), offset);
-							offset += value.byteLength;
+						const binary = new Uint8Array(d);
+						if (Array.isArray(data)) {
+							for (let property in data) {
+								let value = data[property];
+								if (undefined === value) continue;
+								value = ArrayBuffer.fromString(property + "=" + value.toString());
+								binary[offset] = value.byteLength;
+								offset += 1;
+								binary.set(new Uint8Array(value), offset);
+								offset += value.byteLength;
+							}
+						}
+						else {
+							for (let [property, value] of data) {
+								if (undefined === value) continue;
+								value = ArrayBuffer.fromString(property + "=" + value.toString());
+								binary[offset] = value.byteLength;
+								offset += 1;
+								binary.set(new Uint8Array(value), offset);
+								offset += value.byteLength;
+							}
 						}
 						data = binary;
 					}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -61,7 +61,7 @@ class CircularButtonBehavior extends Behavior {
 		label.state = 0;
 		label.active = true;
 	}
-	select(label, state) {
+	select(label) {
 		let timeline = this.timeline = new Timeline();
 		label.skin = circleSkin;
 		timeline.to(label, { state: 1 }, 300, Math.quadEaseOut, 0);
@@ -74,7 +74,7 @@ class CircularButtonBehavior extends Behavior {
 		let time = label.time;
 		this.timeline.seekTo(time);
 	}
-	onFinished(label) {
+	onFinished(/* label */) {
 		delete this.timeline;
 	}
 }

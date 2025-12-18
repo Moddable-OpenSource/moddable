@@ -1928,7 +1928,7 @@ export class Tool extends TOOL {
 			this.includeManifestPath(this.resolveVariable(it));
 		}
 		else {
-			let { git, branch, tag, manifest = [ "manifest.json" ] } = it;
+			let { git, branch, tag, manifest = "manifest.json" } = it;
 			if (!git)
 				throw new Error("no git!");
 			let repo = this.resolveVariable(git);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023  Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -21,8 +21,7 @@ const render = new Poco(screen);
 const logo = parseBMP(new Resource("logo-color.bmp"));
 const alpha = parseBMP(new Resource("logo-alpha.bmp"));
 
-Timer.repeat(() => {
-	const gray = Math.random() * 255;
+Timer.set(() => {
 	render.begin();
 		render.fillRectangle(render.makeColor(Math.random() * 255, Math.random() * 255, Math.random() * 255),
 				0, 0, render.width, render.height);
@@ -31,4 +30,4 @@ Timer.repeat(() => {
 				0, 0, logo.width, logo.height,
 				alpha, 0, 0);
 	render.end();
-}, 250, 0);
+}, 0, 250);

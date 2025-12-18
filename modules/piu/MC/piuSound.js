@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -50,9 +50,9 @@ export default class Sound {
 		audioOut.start();
 		return audioOut;
 	}
-	static get bitsPerSample() @ "PiuSound_get_bitsPerSample";
-	static get numChannels() @ "PiuSound_get_numChannels";
-	static get sampleRate() @ "PiuSound_get_sampleRate";
+	static get bitsPerSample() { return native("PiuSound_get_bitsPerSample").call(this); };
+	static get numChannels() { return native("PiuSound_get_numChannels").call(this); };
+	static get sampleRate() { return native("PiuSound_get_sampleRate").call(this); };
 	static get volume() {
 		return this.private.volume / 256;
 	}

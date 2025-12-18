@@ -5,5 +5,14 @@
 		],
 		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore"
 	},
-	"preload": "pocostatic"
+	"preload": "pocostatic",
+	"typescript": {
+		"tsconfig": {
+			"compilerOptions": {
+				"types": [
+					"./pocostatic"
+				]
+			}
+		}
+	}
 }

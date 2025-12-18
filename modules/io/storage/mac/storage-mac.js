@@ -1,24 +1,24 @@
-class StorageDomain @ "xs_storage_domain_destructor" {
+class StorageDomain extends Native("xs_storage_domain_destructor") {
 	constructor() { throw new TypeError("use device.storage.open({ path })"); }
-	close() @ "xs_storage_domain_close"
+	close() { return native("xs_storage_domain_close").call(this); }
 
-	delete(key) @ "xs_storage_domain_delete"
-	read(key) @  "xs_storage_domain_read"
-	write(key, value) @  "xs_storage_domain_write"
+	delete(key) { return native("xs_storage_domain_delete").call(this, key); }
+	read(key) { return native("xs_storage_domain_read").call(this, key); }
+	write(key, value) { return native("xs_storage_domain_write").call(this, key, value); }
 	[Symbol.iterator]() {
 		return new StorageDomainKeyIterator(this);
 	}
 	
-	get format() @ "xs_storage_domain_get_format"
-	set format() @ "xs_storage_domain_set_format"
+	get format() { return native("xs_storage_domain_get_format").call(this); }
+	set format(value) { native("xs_storage_domain_set_format").call(this, value); }
 }
 
-function open(options, prototype) @ "xs_storage_domain_open"
+function open(options, prototype) { return native("xs_storage_domain_open").call(this, options, prototype); }
 
-class StorageDomainKeyIterator @ "xs_storage_domain_key_iterator_destructor" {
-	constructor(storage) @ "xs_storage_domain_key_iterator_constructor"
-	next() @ "xs_storage_domain_key_iterator_next"
-	return() @ "xs_storage_domain_key_iterator_return"
+class StorageDomainKeyIterator extends Native("xs_storage_domain_key_iterator_destructor") {
+	constructor(storage) { super(); native("xs_storage_domain_key_iterator_constructor").call(this, storage); }
+	next() { return native("xs_storage_domain_key_iterator_next").call(this); }
+	return() { return native("xs_storage_domain_key_iterator_return").call(this); }
 }
 
 export default Object.freeze({

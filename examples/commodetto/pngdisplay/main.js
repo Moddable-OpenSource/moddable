@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,7 +14,7 @@
 
 import {Server} from "http";
 import MDNS from "mdns";
-import PNG from "commodetto/PNG";
+import PNG from "commodetto/ReadPNG";
 import Poco from "commodetto/Poco";
 import Bitmap from "commodetto/Bitmap";
 import Convert from "commodetto/Convert";
@@ -28,6 +28,7 @@ import WiFi from "wifi";
 	Details about this application: https://blog.moddable.com/blog/pngdisplay
 */
 const HOSTNAME = "pngdisplay";
+let poco;
 
 function callback(message, value, etc) {
 	switch (message) {
@@ -50,7 +51,7 @@ function callback(message, value, etc) {
 			break;
 		case 4:
 			return undefined !== this.png;
-		case 5:
+		case 5: {
 			if (!this.png) return;
 			const data = new Uint8Array(this.read(ArrayBuffer, value));
 			this.png.set(data, this.png.position);
@@ -59,7 +60,7 @@ function callback(message, value, etc) {
 			poco.begin(0, (poco.height - 4) >> 1, poco.width * (this.png.position / this.png.byteLength), 4);
 			poco.fillRectangle(poco.makeColor(255, 255, 255), 0, 0, poco.width, poco.height);
 			poco.end();
-			break;
+			} break;
 		case 8:
 			if (!this.png)
 				return {status: 500};
@@ -72,7 +73,7 @@ function callback(message, value, etc) {
 				delete this.png;
 				return {status: 500};
 			}
-			break;
+			// break;
 	}
 }
 
@@ -96,7 +97,7 @@ function render(data) {
 
 	fill(gray);
 	for (let y = 0; y < height; y++) {
-		convert.process(png.read().buffer, scanOut);
+		convert.process(png.read(), scanOut);
 
 		reverse?.reverse();
 
@@ -113,7 +114,7 @@ function fill(color) {
 }
 
 export default function() {
-	global.poco = new Poco(screen, {rotation: config.rotation});
+	poco = new Poco(screen, {rotation: config.rotation});
 
 	if (!Net.get("SSID", "station")) {
 		WiFi.accessPoint({
@@ -122,7 +123,7 @@ export default function() {
 		});
 	}
 
-	const mdns = new MDNS({hostName: HOSTNAME}, function(message, value) {
+	/* const mdns = */ new MDNS({hostName: HOSTNAME}, function(message, value) {
 		switch (message) {
 			case 1:
 				fill(poco.makeColor(255, 255, 255));

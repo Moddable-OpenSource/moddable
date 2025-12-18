@@ -34,7 +34,9 @@ class HomeBehavior extends View.Behavior {
 		this.chat = new ChatAudioIO({
 			specifier: view.specifier,
 			instructions: view.instructions,
-			voiceName: view.voiceName,
+			voiceID: view.voiceID,
+			providerID: view.providerID,
+			modelID: view.modelID,
 			onStateChanged: (state) => {
 				this.onStateChanged(container, state);
 			},
@@ -257,8 +259,13 @@ class LevelPortBehavior extends Behavior {
     }
     onInputLevelChanged(port, level) {
     	const width = port.width;
-    	let limit = 10 * Math.idiv(level - 1000, 3000);
-    	if (limit > width)
+//     	let limit = 10 * Math.idiv(level - 1000, 3000);
+
+		let silence = 8;
+		let fraction = Math.max(0, Math.log2(level) - silence) / (15 - silence);
+	   	let limit = 10 * Math.round(fraction * 10);
+	   	
+   		if (limit > width)
     		limit = width;
         if (this.direction < 0)
         	limit = width - limit
@@ -630,7 +637,9 @@ export default class extends View {
 		this.specifier = service.specifier;
 		this.title = persona.title;
 		this.transcript = service.transcript;
-		this.voiceName = persona.voiceName;
+		this.voiceID = persona.voiceID;
+		this.providerID = persona.providerID;
+		this.modelID = persona.modelID;
 		this.skins = {
 			bubble:  new Skin({ texture: assets.textures.bubble, color:[service.color,assets.colors.WHITE], x:0, y:0, width:204, height:332, variants:204, left:24, right:24, top:12, bottom:12 }),
 			button:  new Skin({ texture:assets.textures.button, width:50, height:50, left:15, right:15, color: [assets.colors.GRAY,service.color] }),

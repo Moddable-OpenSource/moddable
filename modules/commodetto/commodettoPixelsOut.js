@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,7 +43,7 @@ export default class PixelsOut {
 		before any pixels are sent
 		area of display to update.
 	*/
-	begin(x, y, width, height) {
+	begin(/* x, y, width, height */) {
 	}
 
 	/*
@@ -63,7 +63,7 @@ export default class PixelsOut {
 		optional offset and count indicate the part of the pixels ArrayBuffer to use
 		multiple calls to send may be required to send a full frame of pixels
 	*/
-	send(pixels, offset = 0, count = pixels.byteLength - offset) {
+	send(/* pixels, offset = 0, count = pixels.byteLength - offset */) {
 	}
 
 	/*
@@ -91,7 +91,7 @@ export default class PixelsOut {
 	/*
 		Optional
 	*/
-	adaptInvalid(rectangle) {}
+	adaptInvalid(/* rectangle */) {}
 
 	get async() {return false;}
 
@@ -102,5 +102,3 @@ export default class PixelsOut {
 
 	get c_dispatch() {return null;}
 }
-
-Object.freeze(PixelsOut);

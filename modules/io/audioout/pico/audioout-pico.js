@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,27 +18,27 @@
  *
  */
 
-class AudioOut @ "xs_audioout_destructor_" {
-	constructor(dictionary) @ "xs_audioout_constructor_";
-	close() @ "xs_audioout_close_";
-	start() @ "xs_audioout_start_";
-	stop() @ "xs_audioout_stop_";
-	write(samples) @ "xs_audioout_writeSync_";
+class AudioOut extends Native("xs_audioout_destructor_") {
+	constructor(dictionary) { super(); native("xs_audioout_constructor_").call(this, dictionary); };
+	close() { return native("xs_audioout_close_").call(this); };
+	start() { return native("xs_audioout_start_").call(this); };
+	stop() { return native("xs_audioout_stop_").call(this); };
+	write(samples) { return native("xs_audioout_writeSync_").call(this, samples); };
 
-	get format() @ "xs_audioout_get_format_";
-	set format(it) @ "xs_audioout_set_format_";
+	get format() { return native("xs_audioout_get_format_").call(this); };
+	set format(it) { native("xs_audioout_set_format_").call(this, it); };
 
-	get bitsPerSample() @ "xs_audioout_get_bitsPerSample_";
-	get channels() @ "xs_audioout_get_numChannels_";
-	get sampleRate() @ "xs_audioout_get_sampleRate_";
+	get bitsPerSample() { return native("xs_audioout_get_bitsPerSample_").call(this); };
+	get channels() { return native("xs_audioout_get_numChannels_").call(this); };
+	get sampleRate() { return native("xs_audioout_get_sampleRate_").call(this); };
 	get audioType() {return "LPCM"}
 
-	get volume() @ "xs_audioout_get_volume_";
-	set volume(it) @ "xs_audioout_set_volume_";
+	get volume() { return native("xs_audioout_get_volume_").call(this); };
+	set volume(it) { native("xs_audioout_set_volume_").call(this, it); };
 }
 
 AudioOut.Async = class extends AudioOut {
-	write(samples, callback) @ "xs_audioout_writeAsync_";
+	write(samples, callback) { return native("xs_audioout_writeAsync_").call(this, samples, callback); };
 }
 
 export default AudioOut;

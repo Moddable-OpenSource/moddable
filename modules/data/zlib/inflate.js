@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,24 +18,23 @@
  *
  */
  
-class Inflate @ "xs_inflate_destructor" {
+class Inflate extends Native("xs_inflate_destructor") {
 	chunks = [];
-	strm = {};
+	strm = {avail_in: 0};
 
 	constructor(options = {}) {
-		build.call(this, options);
+		super();
+		native("xs_inflate").call(this, options);
+
 		this.onData = onData;
 		this.onEnd = onEnd;
 	}
-	close() @ "xs_inflate_close";
+	close() { return native("xs_inflate_close").call(this); }
 
 	push(buffer, end) {
-		this.strm.avail_in = push.call(this, buffer, end);
+		this.strm.avail_in = native("xs_inflate_push").call(this, buffer, end);
 	}
 }
-
-function build(options) @ "xs_inflate";
-function push(buffer, end) @ "xs_inflate_push";
 
 function onData(chunk) {
 	this.chunks.push(chunk);
@@ -55,8 +54,7 @@ function onEnd(err) {
 		total += chunks[i].byteLength;
 
 	this.result = new Uint8Array(total);
-	let offset = 0;
-	for (let i = 0; i < length; i++) {
+	for (let i = 0, offset = 0; i < length; i++) {
 		const chunk = chunks[i];
 		this.result.set(new Uint8Array(chunk), offset);
 		offset += chunk.byteLength;

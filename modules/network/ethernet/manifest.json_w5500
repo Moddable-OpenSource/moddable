@@ -1,0 +1,61 @@
+
+{
+    "build": {
+		
+	},
+    "config": {
+		"ethernet": true
+	},
+    "platforms": {
+        "esp32": {
+           "build": {
+               "ETHERNET": "$(MODDABLE)/modules/network/ethernet"
+	        },
+			"include": [
+                "$(MODULES)/pins/spi/manifest.json"
+            ],
+            "modules": { 
+                "*": [
+                    "$(ETHERNET)/*",
+                    "$(ETHERNET)/esp32/*",
+					"$(ETHERNET)/esp32/drivers/w5500/*"
+                ]
+            }
+	    },
+        "lin": {
+            "include": "$(MODULES)/network/wifi/manifest.json"
+        },
+        "mac": {
+            "include": "$(MODULES)/network/wifi/manifest.json"
+        },
+        "win": {
+            "include": "$(MODULES)/network/wifi/manifest.json"
+        },
+        "...": {
+            "error": "ethernet - unsupported platform"
+        }
+    },
+    "preload": [
+       
+    ],
+    "defines": {
+        "ethernet": {
+        	"enc28j60": 0,
+        	"w5500": 1,
+			"hostname":"\"Moddable\"",
+            "hz": 16000000,
+            "int_pin": 14,
+            "spi": {
+				"command_bits": 16,
+				"address_bits": 8,
+                "cs_pin": 10,
+                "port": "SPI2_HOST",
+                "miso_pin": 13,
+                "mosi_pin": 11,
+                "sck_pin": 12,
+				"polling_ms": 0,
+				"dma_ch": 3
+            }
+        }
+    }
+}

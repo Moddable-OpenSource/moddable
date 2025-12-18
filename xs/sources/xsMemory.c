@@ -1453,6 +1453,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_ASYNC_DISPOSABLE_STACK_KIND:
 	case XS_DISPOSABLE_STACK_KIND:
 	case XS_LIST_KIND:
+		fxCheckCStack(the);
 		aSlot = theSlot->value.list.first;
 		while (aSlot) {
 			if (!(aSlot->flag & XS_MARK_FLAG)) {

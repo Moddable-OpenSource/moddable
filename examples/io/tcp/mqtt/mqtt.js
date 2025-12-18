@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -288,7 +288,7 @@ export class Client {
 		case CONNECTING:
 		case RECONNECTING:
 			throw new Error("MQTT client connecting");
-			break;
+			// break;
 		case CONNECTED:
 			this.#endCallback = callback;
 			this.#state = ENDING;
@@ -308,7 +308,7 @@ export class Client {
 	getLastMessageId() {
 		return this.#id;
 	}
-	handleMessage(packet, callback) {
+	handleMessage(/* packet, callback */) {
 		throw new Error("no such method"); // not supported
 	}
 	publish(topic, message, options, callback) {
@@ -373,7 +373,7 @@ export class Client {
 		case ENDING:
 		case CLOSING:
 			throw new Error("MQTT client disconnecting");
-			break;
+			// break;
 		}
   		return this;
 	}

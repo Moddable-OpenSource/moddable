@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 Moddable Tech, Inc.
+* Copyright (c) 2020-2025 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -23,14 +23,22 @@ declare module "commodetto/Poco" {
   import PixelsOut from "commodetto/PixelsOut"
   import Bitmap from "commodetto/Bitmap"
 
-  type Rectangle = {
+  export type Rectangle = {
     x: number,
     y: number,
     width: number,
     height: number,
   }
 
-  type Font = any    //@@ share full interface with commodetto/parseBMF
+  export type Font = {
+    readonly byteLength: number
+    readonly height: number
+    readonly ascent: number
+    readonly position: number
+    readonly charCount: number,
+    readonly leading: number,
+    bitmap: Bitmap
+  }
 
   export interface PocoPrototype {
     close(): void
@@ -68,8 +76,6 @@ declare module "commodetto/Poco" {
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number): void
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number): void
   
-    drawFrame(frame: ArrayBuffer | HostBuffer, stream: { width: number, height: number }, x: number, y: number): void
-
     drawText(text: string, font: Font, color: number, x: number, y: number, width?: number): void
     getTextWidth(text: string, font: Font): number
 
@@ -78,8 +84,6 @@ declare module "commodetto/Poco" {
     bitmapChanged(bits: Bitmap): void
     bitmapRemove(bits: Bitmap): void
     compact(): void
-
-    drawQRCode(qrcode:ArrayBuffer, x: number, y: number, scale: number, fore: number)
 
     readonly width: number
     readonly height: number
@@ -96,7 +100,7 @@ declare module "commodetto/Poco" {
     new(pixelsOut: PixelsOut, options?: PocoDictionary): PocoPrototype
   }
 
-  var Poco: PocoConstructor
+  const Poco: PocoConstructor
 
   global {
     const screen: PixelsOut

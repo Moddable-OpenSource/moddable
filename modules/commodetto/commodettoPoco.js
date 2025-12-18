@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,43 +34,43 @@
 
 import Poco from "commodetto/PocoCore";
 
-Poco.prototype.begin = function (x, y, width, height) @ "xs_poco_begin";
-Poco.prototype.end = function () @ "xs_poco_end";
+Poco.prototype.begin = function (x, y, width, height) { return native("xs_poco_begin").call(this, x, y, width, height); };
+Poco.prototype.end = function () { return native("xs_poco_end").call(this); };
 Poco.prototype.continue = function (x, y, w, h) {
 	this.end(true);
 	this.begin(x, y, w, h);
 }
 
 // // clip and origin stacks
-Poco.prototype.clip = function (x, y, width, height) @ "xs_poco_clip";
-Poco.prototype.origin = function(x, y) @ "xs_poco_origin";
+Poco.prototype.clip = function (x, y, width, height) { return native("xs_poco_clip").call(this, x, y, width, height); };
+Poco.prototype.origin = function(x, y) { return native("xs_poco_origin").call(this, x, y); };
 
 // // rendering calls
-Poco.prototype.makeColor = function (r, g, b) @ "xs_poco_makeColor";
-Poco.prototype.fillRectangle = function(color, x, y, width, height) @ "xs_poco_fillRectangle";
-Poco.prototype.blendRectangle = function(color, blend, x, y, width, height) @ "xs_poco_blendRectangle";
-Poco.prototype.drawPixel = function(color, x, y) @ "xs_poco_drawPixel";
-Poco.prototype.drawBitmap = function(bits, x, y, sx, sy, sw, sh) @ "xs_poco_drawBitmap";
-Poco.prototype.drawMonochrome = function(monochrome, fore, back, x, y, sx, sy, sw, sh) @ "xs_poco_drawMonochrome";
-Poco.prototype.drawGray = function(bits, color, x, y, sx, sy, sw, sh, blend) @ "xs_poco_drawGray";
-Poco.prototype.drawMasked = function(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) @ "xs_poco_drawMasked";
-Poco.prototype.fillPattern = function(bits, x, y, w, h, sx, sy, sw, sh) @ "xs_poco_fillPattern";
+Poco.prototype.makeColor = function (r, g, b) { return native("xs_poco_makeColor").call(this, r, g, b); };
+Poco.prototype.fillRectangle = function(color, x, y, width, height) { return native("xs_poco_fillRectangle").call(this, color, x, y, width, height); };
+Poco.prototype.blendRectangle = function(color, blend, x, y, width, height) { return native("xs_poco_blendRectangle").call(this, color, blend, x, y, width, height); };
+Poco.prototype.drawPixel = function(color, x, y) { return native("xs_poco_drawPixel").call(this, color, x, y); };
+Poco.prototype.drawBitmap = function(bits, x, y, sx, sy, sw, sh) { return native("xs_poco_drawBitmap").call(this, bits, x, y, sx, sy, sw, sh); };
+Poco.prototype.drawMonochrome = function(monochrome, fore, back, x, y, sx, sy, sw, sh) { return native("xs_poco_drawMonochrome").call(this, monochrome, fore, back, x, y, sx, sy, sw, sh); };
+Poco.prototype.drawGray = function(bits, color, x, y, sx, sy, sw, sh, blend) { return native("xs_poco_drawGray").call(this, bits, color, x, y, sx, sy, sw, sh, blend); };
+Poco.prototype.drawMasked = function(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) { return native("xs_poco_drawMasked").call(this, bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend); };
+Poco.prototype.fillPattern = function(bits, x, y, w, h, sx, sy, sw, sh) { return native("xs_poco_fillPattern").call(this, bits, x, y, w, h, sx, sy, sw, sh); };
 
-Poco.prototype.drawFrame = function(frame, stream, x, y) @ "xs_poco_drawFrame";
+Poco.prototype.drawFrame = function(frame, stream, x, y) { return native("xs_poco_drawFrame").call(this, frame, stream, x, y); };
 
-Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_poco_drawText";
+Poco.prototype.drawText = function(text, font, color, x, y) { return native("xs_poco_drawText").call(this, text, font, color, x, y); };
 
 // // metrics
-Poco.prototype.getTextWidth = function(text, font) @ "xs_poco_getTextWidth";
+Poco.prototype.getTextWidth = function(text, font) { return native("xs_poco_getTextWidth").call(this, text, font); };
 
 // // invalidate area
-Poco.prototype.adaptInvalid = function(rectangle) @ "xs_poco_adaptInvalid";
+Poco.prototype.adaptInvalid = function(rectangle) { return native("xs_poco_adaptInvalid").call(this, rectangle); };
 
 Object.defineProperty(Poco.prototype, "width", {
-	get: function() @ "xs_poco_get_width"
+	get: function() { return native("xs_poco_get_width").call(this); }
 });
 Object.defineProperty(Poco.prototype, "height", {
-	get: function() @ "xs_poco_get_height",
+	get: function() { return native("xs_poco_get_height").call(this); },
 });
 
 export default Poco;

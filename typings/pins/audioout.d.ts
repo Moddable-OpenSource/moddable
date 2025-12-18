@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Moddable Tech, Inc.
+ * Copyright (c) 2020-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -80,7 +80,7 @@ declare module 'pins/audioout' {
       stop(): void
       callback: AudioOutCallback
       callbacks: AudioOutCallback[]
-      readonly mix: undefined
+      mix(): never
   }
   export { AudioOut as default }
 }

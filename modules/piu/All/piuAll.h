@@ -449,13 +449,23 @@ struct PiuDispatchStruct {
 	PiuContentUpdateProc update;
 };
 
+#if mxWindows
+#pragma pack(push, 1)
+#endif
 typedef struct {
 	PiuIdleLink* idleLink;
 	double duration;
 	PiuInterval interval;
 	PiuTick ticks;
 	double time;
-} PiuIdleRecord, *PiuIdle;
+}
+#if !mxWindows
+	 __attribute__((packed))
+#endif
+	PiuIdleRecord, *PiuIdle;
+#if mxWindows
+#pragma pack(pop)
+#endif
 
 #define PiuRecordSize(bytes) (((bytes) + 3) & ~3)
 

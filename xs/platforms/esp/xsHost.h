@@ -447,12 +447,7 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 #define C_MAX_SAFE_INTEGER (double)9007199254740991
 #define C_MIN_SAFE_INTEGER (double)-9007199254740991
 #define C_NAN NAN
-#if ESP32
-	#define C_RAND_MAX UINT32_MAX
-#else
-//	#define C_RAND_MAX RAND_MAX
-	#define C_RAND_MAX (0xFFFFFFFF)
-#endif
+#define C_RAND_MAX INT32_MAX
 
 #define c_acos acos
 #define c_acosh acosh
@@ -493,9 +488,9 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define c_pow pow
 #endif
 #if ESP32
-	#define c_rand esp_random
+	#define c_rand() (0x7fffffff & esp_random())
 #else
-	#define c_rand() (*(volatile uint32_t *)0x3FF20E44)
+	#define c_rand() (0x7fffffff & (*(volatile uint32_t *)0x3FF20E44))
 #endif
 #define c_round round
 #define c_signbit signbit

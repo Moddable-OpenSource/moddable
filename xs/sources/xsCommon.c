@@ -1411,6 +1411,10 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #if mxModuleStuff
 	"ModuleStuff",
 #endif
+#if mxNative
+	"Native",
+	"native",
+#endif
 	"eval",
 	"AsyncFunction",
 	"AsyncGeneratorFunction",

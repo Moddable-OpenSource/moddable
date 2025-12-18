@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,10 +12,8 @@
  *
  */
 
-import Timer from "timer";
-
 const MQTTClient = device.network.mqtt.io;
-const mqtt = new MQTTClient({
+new MQTTClient({
 	...device.network.mqtt,
 	host: "test.mosquitto.org",
 	port: 1883,
@@ -80,7 +78,7 @@ const mqtt = new MQTTClient({
 		if (MQTTClient.UNSUBACK === msg.operation)
 			trace(`UNSUBACK - ${msg.id}\n`);
 	},
-	onReadable(count, options) {
+	onReadable(count /*, options */) {
 		trace(String.fromArrayBuffer(this.read(count)) + "\n");
 	},
 	onWritable(count) {

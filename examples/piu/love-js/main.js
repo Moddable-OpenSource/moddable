@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -28,27 +28,7 @@ const logoSkin = new Skin({ texture:logoTexture, x:0, y:0, width:128, height:128
 const stripTexture = new Texture("strip.png");
 const stripSkin = new Skin({ texture:stripTexture, color:[WHITE,BLUE], x:0, y:0, width:70, height:92, variants:70 });
 
-let StripContainer = Container.template($ => ({
-	skin:whiteSkin,
-	Behavior: class extends Behavior {
-		onDisplaying(container) {
-			container.duration = 1000;
-			container.start();
-		}
-		onFinished(container) {
-			container.time = 0;
-			container.start();
-		}
-		onTimeChanged(container) {
-			container.first.variant = (17 * container.fraction);
-		}
-	},
-	contents: [
-		Content($, { skin:stripSkin, variant:0 } ),
-	]
-}));
-
-let LoveApplication = Application.template($ => ({
+const LoveApplication = Application.template($ => ({
 	skin:whiteSkin,
 	Behavior: class extends Behavior {
 		onCreate(application, anchors) {

@@ -100,11 +100,14 @@ class Controller extends Behavior {
 		this.options = JSON.parse(Preference.get("model", "options") ?? "[]");
 		this.personas = $.model.map(persona => {
 			persona = { ...persona };
+			const service = assets.services[persona.service];
+			const voiceName = persona.voiceName;
+			delete persona.voiceName;
+			const voice = service.voices.find(voice => voice.name == voiceName);
+			persona.voiceID = voice ? voice.id : service.defaultVoiceID;
+			persona.providerID = service.defaultProviderID;
+			persona.modelID = service.defaultModelID;
 			controller.readOption(persona);
-			if (!persona.voiceName) {
-				const service = assets.services[persona.service];
-				persona.voiceName = service.defaultVoice;
-			}
 			return persona;
 		});
 	}
@@ -135,8 +138,30 @@ class Controller extends Behavior {
 				persona.service = option.service;
 				const service = assets.services[option.service];
 				const voiceName = option.voiceName;
-				const voice = service.voices.find(voice => voice.id == voiceName);
-				persona.voiceName = voice ? voiceName : sercice.defaultVoice;
+				const voiceID = option.voiceID;
+				const providerID = option.providerID;
+				const modelID = option.modelID;
+				let voice, provider, model;
+				if (voiceName) // compatibility
+					voice = service.voices.find(voice => voice.id == voiceName);
+				else if (voiceID)
+					voice = service.voices.find(voice => voice.id == voiceID);
+				persona.voiceID = (voice) ? voice.id : service.defaultVoiceID;
+				if (service.providers) {
+					if (providerID && modelID) {
+						provider = service.providers.find(provider => provider.id == providerID);
+						if (provider)
+							model = provider.models.find(model => model.id == modelID);
+					}
+				}
+				if (provider && model) {
+					persona.providerID = provider.id;
+					persona.modelID = model.id;
+				}
+				else {
+					persona.providerID = service.defaultProviderID;
+					persona.modelID = service.defaultModelID;
+				}
 			}
 		}
 	}
@@ -148,14 +173,19 @@ class Controller extends Behavior {
 	writeOption(persona) {
 		let option = this.options.find(option => option.title == persona.title);
 		if (option) {
+			delete option.voiceName;
 			option.service = persona.service;
-			option.voiceName = persona.voiceName;
+			option.voiceID = persona.voiceID;
+			option.providerID = persona.providerID;
+			option.modelID = persona.modelID;
 		}
 		else {
 			option = {
 				title: persona.title,
 				service: persona.service,
-				voiceName: persona.voiceName,
+				voiceID: persona.voiceID,
+				providerID: persona.providerID,
+				modelID: persona.modelID,
 			};
 			this.options.push(option);
 		}

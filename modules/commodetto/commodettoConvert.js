@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
 
 
 
-export default class Convert @ "xs_Convert_destructor" {
-	constructor(src, dst) @ "xs_Convert";
-	process(src, dst) @ "xs_convert_process";
+export default class Convert extends Native("xs_Convert_destructor") {
+	constructor(src, dst) { super(); native("xs_Convert").call(this, src, dst); }
+	process(src, dst) { return native("xs_convert_process").call(this, src, dst); }
 }

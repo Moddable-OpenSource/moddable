@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/ble/web-bluetooth/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"defines": {
+		"main": {
+			"async": 1
+		}
+	},
+	"config": {
+		"webbluetooth": {
+			"services": [
+				["heart_rate", 6157]
+			],
+			"characteristics": [
+				["heart_rate_measurement", 10807]
+			]
+		}
+	}
+}

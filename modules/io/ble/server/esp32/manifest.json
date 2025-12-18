@@ -1,0 +1,14 @@
+{
+	"defines": {
+		"ble": {
+			"server": true
+		}
+	},
+	"modules": {
+		"*": [
+			"$(MODDABLE)/modules/io/common/builtinCommon"
+		],
+		"embedded:io/bluetoothle/peripheral": "./bleserver"
+	},
+	"preload": "embedded:io/bluetoothle/peripheral"
+}

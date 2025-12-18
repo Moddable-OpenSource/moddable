@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:io/provider/MCP23X17": "./expander"
+	},
+	"preload": [
+		"embedded:io/provider/MCP23X17"
+	]
+}

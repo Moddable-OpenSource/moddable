@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -81,14 +81,14 @@ class MQTTClient {
 		if (!this.#options.host) throw new Error("host required");
 
 		let value;
-		if (value = options.onReadable) this.#options.onReadable = value; 
-		if (value = options.onWritable) this.#options.onWritable = value; 
-		if (value = options.onControl) this.#options.onControl = value; 
-		if (value = options.onClose) this.#options.onClose = value; 
-		if (value = options.onError) this.#options.onError = value; 
-		if (value = options.user) this.#options.user = value; 
-		if (value = options.password) this.#options.password = value; 
-		if (value = options.will) this.#options.will = value; 
+		if ((value = options.onReadable)) this.#options.onReadable = value; 
+		if ((value = options.onWritable)) this.#options.onWritable = value; 
+		if ((value = options.onControl)) this.#options.onControl = value; 
+		if ((value = options.onClose)) this.#options.onClose = value; 
+		if ((value = options.onError)) this.#options.onError = value; 
+		if ((value = options.user)) this.#options.user = value; 
+		if ((value = options.password)) this.#options.password = value; 
+		if ((value = options.will)) this.#options.will = value; 
 		
 		const dns = new options.dns.io(options.dns);
 		dns.resolve({
@@ -585,6 +585,7 @@ class MQTTClient {
 					parse.state = 0x92;
 					if (parse.length)
 						break;			// more bytes
+					// intentionall fall through
 
 				case 0x92:		// ignore remaining bytes
 					if (parse.length) {

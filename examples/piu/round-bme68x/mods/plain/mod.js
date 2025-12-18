@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024  Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,7 +25,7 @@ class PlainBehavior extends Behavior {
 		try {
 			this.sensor = new Sensor({ sensor: device.I2C.default });
 		}
-		catch(e) {
+		catch {
 			this.sensor = {
 				sample() {
  					return {

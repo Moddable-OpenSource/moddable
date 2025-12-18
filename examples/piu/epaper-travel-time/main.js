@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -28,7 +28,6 @@ const arrowSkin = new Skin({
 })
 
 const openSans35 = new Style({ font: "35px Open Sans", color: [BLACK, WHITE] });
-const openSans52 = new Style({ font: "52px Open Sans", color: [BLACK, WHITE] });
 const openSans72 = new Style({ font: "72px Open Sans", color: [BLACK, WHITE] });
 
 
@@ -68,7 +67,7 @@ class AppBehavior extends Behavior {
 	}
 	onDisplaying(application) {
 		screen.configure({updateMode: "GC16"});
-		let humidityTemperature = this.humidityTemperature = new device.sensor.HumidityTemperature;
+		this.humidityTemperature = new device.sensor.HumidityTemperature;
 		this.update(application);
 		this.getTravelTime(application);
 		application.interval = 10000;
@@ -80,7 +79,7 @@ class AppBehavior extends Behavior {
 		if (this.lastTravelUpdate - now >= 1000 * 60 * 10)	// Update travel time estimate every 10 minutes
 			this.getTravelTime(application);
 	}
-	update(application) {
+	update(/* application */) {
 		let data = this.data;
 		let sample = this.humidityTemperature.sample();
 		let c = Math.round(sample.thermometer.temperature);
@@ -92,7 +91,7 @@ class AppBehavior extends Behavior {
 		str = getTimeString(d);
 		if (data["TIME"].string != str) data["TIME"].string = str;
 	}
-	getTravelTime(application) {
+	getTravelTime(/* application */) {
 		getTimeEstimate(this.direction);
 	}
 	swapDirections(application) {

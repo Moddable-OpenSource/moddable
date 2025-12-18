@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -117,7 +117,7 @@ export default function() {
 		showMap(gps);
 	}
 
-	global.poco = new Poco(screen);
+	globalThis.poco = new Poco(screen);
 	let gray = poco.makeColor(20, 20, 20);
 
 	poco.begin();

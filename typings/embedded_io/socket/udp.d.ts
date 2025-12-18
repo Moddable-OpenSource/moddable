@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2022-2025 Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -37,7 +37,6 @@ declare module "embedded:io/socket/udp" {
       address: string;
       port: number;
     };
-    read(buffer: Buffer);
     get format(): "buffer"
     set format(value: "buffer")
   }

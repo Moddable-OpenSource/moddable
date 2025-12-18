@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -48,7 +48,7 @@ function fetch(host, path = "/")
 }
 
 function scan(dictionary = {}) {
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve /*, reject */) => {
 		let result = [];
 		WiFi.scan(dictionary, item => {
 			if (!item)
@@ -69,6 +69,6 @@ resolve("moddable.tech")
 wait(3000).then(() => {
 	fetch("www.example.com")
 		.then(body => trace(body, "\n"))
-		.catch(error => trace("http get failed\n"));
+		.catch(error => trace(`http get failed with ${error}\n`));
 })
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -28,7 +28,7 @@ render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 render.end();
 
-Timer.repeat(id => {
+Timer.repeat(() => {
 	render.begin(x, y, stream.width, stream.height);
 		render.drawFrame(stream.next(), stream, x, y);
 	render.end();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -26,8 +26,8 @@ const BLACK = "black";
 const BLUE = "blue";
 const WHITE = "white";
 
-global.locals = new Locals;
-global.localize = function(it) {
+const locals = new Locals;
+const localize = function(it) {
     return locals.get(it);
 }  
 
@@ -40,7 +40,7 @@ class LanguageButtonBehavior extends Behavior {
 	onCreate(label, data) {
 		this.data = data;
 	}
-	onTouchBegan(label, id, x, y) {
+	onTouchBegan() {
 		application.distribute("onLanguageChange", this.data.code);
 	}
 }
@@ -76,12 +76,12 @@ const LanguagesContainer = Container.template($ => ({
 }));
 
 class SettingsButtonBehavior extends Behavior {
-	onTouchBegan(label, id, x, y) {
+	onTouchBegan() {
 		application.distribute("onSettings");
 	}
 }
 
-const SettingsButton = Content.template($ => ({
+const SettingsButton = Content.template(() => ({
 	skin:settingsSkin, active:true,
 	Behavior: SettingsButtonBehavior
 }));

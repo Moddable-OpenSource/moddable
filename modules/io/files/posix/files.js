@@ -21,10 +21,10 @@
 import config from "mc/config";
 import { Directory } from "embedded:x-files-implementation";
 
-const files = @ "xs_directoryposix_destructor";
+const files = new (Native("xs_directoryposix_destructor"));
 Object.setPrototypeOf(files, Directory.prototype);
 
-function bootstrap(files, path) @ "xs_directoryposix_bootstrap";
+function bootstrap(files, path) { return native("xs_directoryposix_bootstrap").call(this, files, path); };
 bootstrap(files, config.files);
 
 export default Object.freeze(files);

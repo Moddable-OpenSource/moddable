@@ -10,13 +10,9 @@ declare module "embedded:io/bluetoothle/central" {
         get(adType: number): ArrayBuffer | undefined;
     }
 
-    interface GAPClientFilters {
-        services?: string[]
-    }
-
     interface GAPClientOptions {
         target?: any;
-        filters?: GAPClientFilters;
+        services?: string[]
         onError?: (this: GAPClient, error: Error) => void;
         onReadable?: (this: GAPClient, count: number) => void;
     }
@@ -36,10 +32,27 @@ declare module "embedded:io/bluetoothle/central" {
         response?: boolean
     }
 
+    interface GATTSecurityOptions {
+        bond?: boolean,
+        authenticate?: boolean,
+        ioCapabilities?: "none" | "display" | "numbers" | "display+numbers" | "display+confirm",
+        immediate?: boolean
+    }
+
+    interface GATTSecurityState {
+        encrypted: boolean,
+        authenticated: boolean,
+        bonded: boolean,
+        keySize: number
+    }
+
     interface GATTClientOptions {
         address: string,
         target?: any;
+        security?: GATTSecurityOptions;
         onReady?: (this: GATTClient, ) => void;
+        onPasskey?: (this: GATTClient, action: string, data: number | ArrayBuffer | undefined) => void;
+        onSecured?: (this: GATTClient, state: GATTSecurityState) => void;
         onError?: (this: GATTClient, error: Error) => void;
         onReadable?: (this: GATTClient, count: number) => void;
     }
@@ -80,7 +93,10 @@ declare module "embedded:io/bluetoothle/central" {
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, callback?: (error: Error | null) => void): void;
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, options: GATTClientWriteOptions, callback?: (error: Error | null) => void): void;
 
-        enableNotifications(characteristic: GATTClientCharacteristic, enable: boolean, callback?: (error?: Error) => void): void;
+        subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
+        unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
+
+        replyToPasskey(action: string, data?: number | ArrayBuffer) : void;
 
         get maximumWrite(): number;
 

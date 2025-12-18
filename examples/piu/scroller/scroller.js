@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -30,7 +30,7 @@
 }
 
 export class HorizontalScrollerBehavior extends Behavior {
-	onTouchBegan(scroller, id, x, y) {
+	onTouchBegan(scroller, id, x /*, y */) {
 		this.anchor = scroller.scroll.x;
 		this.x = x;
 		this.waiting = true;

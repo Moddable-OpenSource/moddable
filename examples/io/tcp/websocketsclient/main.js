@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,7 +15,7 @@
 const apiKey = "[[PUT YOUR OPENAI KEY HERE]]";
 
 const WebSocketClient = device.network.wss.io;
-const ws = new WebSocketClient({
+new WebSocketClient({
 	...device.network.wss,
 	host: "api.openai.com",
 	path: "/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
@@ -29,7 +29,7 @@ const ws = new WebSocketClient({
 		if (!options.more)
 			trace("\n");
 	},
-	onControl(opcode, data) {
+	onControl(opcode /*, data */) {
 		switch (opcode) {
 			case WebSocketClient.close: 
 				trace("** Connection Closing **\n");

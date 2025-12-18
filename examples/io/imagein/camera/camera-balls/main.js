@@ -72,7 +72,7 @@ class ApplicationBehavior extends Behavior {
 	onCreate(application, data) {
 		this.data = data;
 	}
-	onQuit(application) {
+	onQuit(/* application */) {
 		this.data.camera?.close();
 	}
 }

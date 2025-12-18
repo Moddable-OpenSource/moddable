@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -194,9 +194,9 @@ void PiuTextBufferAppend(xsMachine *the, PiuTextBuffer* buffer, void* data, size
 	if (current > available) {
 		void* chunk;
 		available += size;
-		chunk = fxRenewChunk(the, *buffer, available);
+		chunk = fxRenewChunk(the, *buffer, (xsIntegerValue)available);
 		if (!chunk) {
-			chunk = fxNewChunk(the, available);
+			chunk = fxNewChunk(the, (xsIntegerValue)available);
 			c_memcpy(chunk, *buffer, former);
 			*buffer = chunk;
 		}
@@ -221,9 +221,9 @@ void PiuTextBufferGrow(xsMachine *the, PiuTextBuffer* buffer, size_t size)
 	if (current > available) {
 		void* chunk;
 		available += size;
-		chunk = fxRenewChunk(the, *buffer, available);
+		chunk = fxRenewChunk(the, *buffer, (xsIntegerValue)available);
 		if (!chunk) {
-			chunk = fxNewChunk(the, available);
+			chunk = fxNewChunk(the, (xsIntegerValue)available);
 			c_memcpy(chunk, *buffer, former);
 			*buffer = chunk;
 		}
@@ -237,7 +237,7 @@ void PiuTextBufferNew(xsMachine* the, size_t available)
 {
 	PiuTextBuffer* buffer;
 	xsResult = xsNewHostObject(NULL);
-	xsSetHostChunk(xsResult, NULL, sizeof(PiuTextBufferRecord) + available);
+	xsSetHostChunk(xsResult, NULL, (xsIntegerValue)(sizeof(PiuTextBufferRecord) + available));
 	buffer = PIU(TextBuffer, xsResult);
 	(*buffer)->reference = xsToReference(xsResult);
 	(*buffer)->available = sizeof(PiuTextBufferRecord) + available;
@@ -320,7 +320,7 @@ PiuTextKind PiuTextAdvance(xsMachine* the, xsSlot* string, PiuTextOffset offset,
 		xsIntegerValue c;
 		xsStringValue p = xsToString(*string) + offset;
 		xsStringValue q = fxUTF8Decode(p, &c);
-		length = q - p;
+		length = (PiuTextOffset)(q - p);
 		if ((c == C_EOF) || (c == 0))
 			kind = piuTextEnd;
 		if (length == 1) {
@@ -505,7 +505,7 @@ void PiuTextConcat(PiuText* self, xsSlot* slot)
 	PiuTextOffset nodeOffset = (PiuTextOffset)(*nodeBuffer)->current;
 	PiuTextNodeString node;
 	xsStringValue string = xsToString(*slot);
-	xsIntegerValue length = c_strlen(string);
+	xsIntegerValue length = (xsIntegerValue)c_strlen(string);
 	PiuTextBufferGrow(the, nodeBuffer, sizeof(PiuTextNodeStringRecord));
 	node = NODE(nodeOffset);
 	node->kind = piuTextNodeStringKind;

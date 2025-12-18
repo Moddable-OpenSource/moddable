@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Moddable Tech, Inc
+ * Copyright (c) 2022-2025 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -31,10 +31,10 @@ declare module "piu/shape" {
     string?: string;
   }
   interface ShapeConstructor {
-    new (behaviorData: any, dictionary: ShapeDictionary): Shape;
-    (behaviorData: any, dictionary: ShapeDictionary): Shape;
+    new(behaviorData?: any, dictionary?: ShapeDictionary): Shape;
+    (behaviorData?: any, dictionary?: ShapeDictionary): Shape;
 
-    template<T>(this: T, any): T;
+    template<T>(this: T, fn: (arg: object) => ShapeDictionary): T;
   }
 
   global {

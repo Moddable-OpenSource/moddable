@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,34 +12,33 @@
  *
  */
 
-Math.backEaseIn = function(fraction) @ "Math_backEaseIn";
-Math.backEaseInOut = function(fraction) @ "Math_backEaseInOut";
-Math.backEaseOut = function(fraction) @ "Math_backEaseOut";
-Math.bounceEaseIn = function(fraction) @ "Math_bounceEaseIn";
-Math.bounceEaseInOut = function(fraction) @ "Math_bounceEaseInOut";
-Math.bounceEaseOut = function(fraction) @ "Math_bounceEaseOut";
-Math.circularEaseIn = function(fraction) @ "Math_circularEaseIn";
-Math.circularEaseInOut = function(fraction) @ "Math_circularEaseInOut";
-Math.circularEaseOut = function(fraction) @ "Math_circularEaseOut";
-Math.cubicEaseIn = function(fraction) @ "Math_cubicEaseIn";
-Math.cubicEaseInOut = function(fraction) @ "Math_cubicEaseInOut";
-Math.cubicEaseOut = function(fraction) @ "Math_cubicEaseOut";
-Math.elasticEaseIn = function(fraction) @ "Math_elasticEaseIn";
-Math.elasticEaseInOut = function(fraction) @ "Math_elasticEaseInOut";
-Math.elasticEaseOut = function(fraction) @ "Math_elasticEaseOut";
-Math.exponentialEaseIn = function(fraction) @ "Math_exponentialEaseIn";
-Math.exponentialEaseInOut = function(fraction) @ "Math_exponentialEaseInOut";
-Math.exponentialEaseOut = function(fraction) @ "Math_exponentialEaseOut";
-Math.quadEaseIn = function(fraction) @ "Math_quadEaseIn";
-Math.quadEaseInOut = function(fraction) @ "Math_quadEaseInOut";
-Math.quadEaseOut = function(fraction) @ "Math_quadEaseOut";
-Math.quartEaseIn = function(fraction) @ "Math_quartEaseIn";
-Math.quartEaseInOut = function(fraction) @ "Math_quartEaseInOut";
-Math.quartEaseOut = function(fraction) @ "Math_quartEaseOut";
-Math.quintEaseIn = function(fraction) @ "Math_quintEaseIn";
-Math.quintEaseInOut = function(fraction) @ "Math_quintEaseInOut";
-Math.quintEaseOut = function(fraction) @ "Math_quintEaseOut";
-Math.sineEaseIn = function(fraction) @ "Math_sineEaseIn";
-Math.sineEaseInOut = function(fraction) @ "Math_sineEaseInOut";
-Math.sineEaseOut = function(fraction) @ "Math_sineEaseOut";
-
+Math.backEaseIn = function(fraction) { return native("Math_backEaseIn").call(this, fraction); };
+Math.backEaseInOut = function(fraction) { return native("Math_backEaseInOut").call(this, fraction); };
+Math.backEaseOut = function(fraction) { return native("Math_backEaseOut").call(this, fraction); };
+Math.bounceEaseIn = function(fraction) { return native("Math_bounceEaseIn").call(this, fraction); };
+Math.bounceEaseInOut = function(fraction) { return native("Math_bounceEaseInOut").call(this, fraction); };
+Math.bounceEaseOut = function(fraction) { return native("Math_bounceEaseOut").call(this, fraction); };
+Math.circularEaseIn = function(fraction) { return native("Math_circularEaseIn").call(this, fraction); };
+Math.circularEaseInOut = function(fraction) { return native("Math_circularEaseInOut").call(this, fraction); };
+Math.circularEaseOut = function(fraction) { return native("Math_circularEaseOut").call(this, fraction); };
+Math.cubicEaseIn = function(fraction) { return native("Math_cubicEaseIn").call(this, fraction); };
+Math.cubicEaseInOut = function(fraction) { return native("Math_cubicEaseInOut").call(this, fraction); };
+Math.cubicEaseOut = function(fraction) { return native("Math_cubicEaseOut").call(this, fraction); };
+Math.elasticEaseIn = function(fraction) { return native("Math_elasticEaseIn").call(this, fraction); };
+Math.elasticEaseInOut = function(fraction) { return native("Math_elasticEaseInOut").call(this, fraction); };
+Math.elasticEaseOut = function(fraction) { return native("Math_elasticEaseOut").call(this, fraction); };
+Math.exponentialEaseIn = function(fraction) { return native("Math_exponentialEaseIn").call(this, fraction); };
+Math.exponentialEaseInOut = function(fraction) { return native("Math_exponentialEaseInOut").call(this, fraction); };
+Math.exponentialEaseOut = function(fraction) { return native("Math_exponentialEaseOut").call(this, fraction); };
+Math.quadEaseIn = function(fraction) { return native("Math_quadEaseIn").call(this, fraction); };
+Math.quadEaseInOut = function(fraction) { return native("Math_quadEaseInOut").call(this, fraction); };
+Math.quadEaseOut = function(fraction) { return native("Math_quadEaseOut").call(this, fraction); };
+Math.quartEaseIn = function(fraction) { return native("Math_quartEaseIn").call(this, fraction); };
+Math.quartEaseInOut = function(fraction) { return native("Math_quartEaseInOut").call(this, fraction); };
+Math.quartEaseOut = function(fraction) { return native("Math_quartEaseOut").call(this, fraction); };
+Math.quintEaseIn = function(fraction) { return native("Math_quintEaseIn").call(this, fraction); };
+Math.quintEaseInOut = function(fraction) { return native("Math_quintEaseInOut").call(this, fraction); };
+Math.quintEaseOut = function(fraction) { return native("Math_quintEaseOut").call(this, fraction); };
+Math.sineEaseIn = function(fraction) { return native("Math_sineEaseIn").call(this, fraction); };
+Math.sineEaseInOut = function(fraction) { return native("Math_sineEaseInOut").call(this, fraction); };
+Math.sineEaseOut = function(fraction) { return native("Math_sineEaseOut").call(this, fraction); };

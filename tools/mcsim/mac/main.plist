@@ -22,6 +22,8 @@
 	<string>mcsi</string>
 	<key>CFBundleIconFile</key>
 	<string>main.icns</string>
+	<key>CFBundleIconName</key>
+	<string>main</string>
 	<key>CFBundleShortVersionString</key>
 	<string>mcsim 2.0</string>
 	<key>CFBundleGetInfoString</key>
@@ -45,5 +47,10 @@
 	<string>This app requires camera access</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app requires Bluetooth access</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+	</array>
 </dict>
 </plist>

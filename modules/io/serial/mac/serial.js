@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020  Moddable Tech, Inc.
+ * Copyright (c) 2020-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,15 +18,15 @@
  *
  */
 
-class Serial @ "xs_serial_destructor" {
-	constructor() @ "xs_serial_constructor";
-	close() @ "xs_serial_close";
-	read() @ "xs_serial_read";
-	write() @ "xs_serial_write";
-	set() @ "xs_serial_set";
-	get format() @ "xs_serial_format_get";
-	set format(value) @ "xs_serial_format_set";
-	purge() @ "xs_serial_purge";
+class Serial extends Native("xs_serial_destructor") {
+	constructor() { super(); native("xs_serial_constructor").call(this); };
+	close() { return native("xs_serial_close").call(this); };
+	read() { return native("xs_serial_read").call(this); };
+	write() { return native("xs_serial_write").call(this); };
+	set() { return native("xs_serial_set").call(this); };
+	get format() { return native("xs_serial_format_get").call(this); };
+	set format(value) { native("xs_serial_format_set").call(this, value); };
+	purge() { return native("xs_serial_purge").call(this); };
 }
 
 export default Serial;

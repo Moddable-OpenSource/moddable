@@ -37,12 +37,10 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 	}
 	configure(message) {
 		const prompt = message.instructions ?? "";
-		const tool_ids = [];
 		const tools = message.functions ?? [];
 		tools.forEach(tool => {
 			tool.type = "client";
 			tool.id = this.generateId("tool");
-			tool_ids.push(tool.id);
 		});
 		this.setup = {
 			type: "conversation_initiation_client_data",
@@ -67,14 +65,15 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 				agent: {
 					prompt: {
 						prompt,
-						tool_ids,
+						llm: message.modelID ?? "claude-haiku-4-5",
 						tools
 					},
 				},
 			},
 			name: "Moddable",
 		};
-		this.voiceName = message.voiceName ?? "";
+		if (message.voiceID)
+			this.body.conversation_config.tts.voice_id = message.voiceID;
 	}
 	connect(message) {
 		const client = new device.network.https.io({ 
@@ -145,25 +144,19 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 					}
 					break;
 				case 2: 
-					if (this.voiceName) {
-						request("GET", `/v2/voices?search=${this.voiceName}`, null);
-						return;
-					}
-					state++; // skip 3
-					break;
-				case 3: 
-					if (json && json.voices && (json.voices.length > 0)) {
-						this.body.conversation_config.tts.voice_id = json.voices[0].voice_id;
-					}
-					break;
-				case 4: 
 					const body = ArrayBuffer.fromString(JSON.stringify(this.body));
 					request("POST", "/v1/convai/agents/create", body);
 					return;
-				case 5: 
+				case 3: 
 					client.close();
-					this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
-					super.connect(message);
+					if (json?.agent_id) {
+						this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
+						super.connect(message);
+					}
+					else {
+						this.postMessage({ id:"failed", string:json?.detail?.message ?? "failed" });
+						client.close();
+					}
 					return;
 				}
 			}
@@ -200,7 +193,7 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 	}
 	sendText(message) {
 		this.sendJSON({
-			type: 'contextual_update',
+			type: 'user_message',
 			text: message.text,
 		});
 	}

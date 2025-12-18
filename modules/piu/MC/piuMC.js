@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -29,18 +29,16 @@ import {} from "piu/All";
 export * from "piu/All";
 
 export class CLUT extends Resource {
-	constructor(path) {
-		super(path);
-	}
-	get colors() @ "PiuCLUT_get_colors"
+	get colors() { return native("PiuCLUT_get_colors").call(this); }
 }
 Object.freeze(CLUT.prototype);
-global.CLUT = CLUT;
+globalThis.CLUT = CLUT;
 
 // PiuTexture.c
 
-export class Texture @ "PiuTextureDelete" {
+export class Texture extends Native("PiuTextureDelete") {
 	constructor(it, alphaBitmap, colorBitmap) {
+		super();
 		if (alphaBitmap || colorBitmap) {
 			this._create(alphaBitmap, colorBitmap);
 			return;
@@ -84,21 +82,20 @@ export class Texture @ "PiuTextureDelete" {
 		else if (it.endsWith("-color.bmp"))
 			colorBitmap = parseBMP(new Resource(it, archive));
 		if (alphaBitmap || colorBitmap)
-			this._create(alphaBitmap, colorBitmap);
+			native("PiuTexture_create").call(this, alphaBitmap, colorBitmap);
 		else
 			throw new URIError("Texture " + it + " not found!");
 	}
-	_create(alphaBitmap, colorBitmap) @ "PiuTexture_create"
-	get width() @ "PiuTexture_get_width"
-	get height() @ "PiuTexture_get_height"
+	get width() { return native("PiuTexture_get_width").call(this); }
+	get height() { return native("PiuTexture_get_height").call(this); }
 	static template(i) {
 		const it = i;
 		return function() {
 			let texture;
-			if (global.assetMap)
+			if (globalThis.assetMap)
 				texture = assetMap.get(it);
 			else
-				global.assetMap = new Map;
+				globalThis.assetMap = new Map;
 			if (!texture) {
 				texture = new Texture(it);
 				assetMap.set(it, texture);
@@ -108,45 +105,45 @@ export class Texture @ "PiuTextureDelete" {
 	}
 }
 Object.freeze(Texture.prototype);
-global.Texture = Texture;
+globalThis.Texture = Texture;
 
 // PiuDie.c
 
 const die = {
 	__proto__: Container.prototype,
-	_create($, it) @ "PiuDie__create",
-	and(x, y, width, height) @ "PiuDie_and",
-	attach(content) @ "PiuDie_attach",
-	cut() @ "PiuDie_cut",
-	detach() @ "PiuDie_detach",
-	empty() @ "PiuDie_empty",
-	fill() @ "PiuDie_fill",
-	or(x, y, width, height) @ "PiuDie_or",
-	set(x, y, width, height) @ "PiuDie_set",
-	sub(x, y, width, height) @ "PiuDie_sub",
-	xor(x, y, width, height) @ "PiuDie_xor",
+	_create($, it) { native("PiuDie__create").call(this, $, it); },
+	and(x, y, width, height) { return native("PiuDie_and").call(this, x, y, width, height); },
+	attach(content) { native("PiuDie_attach").call(this, content); },
+	cut() { native("PiuDie_cut").call(this); },
+	detach() { native("PiuDie_detach").call(this); },
+	empty() { return native("PiuDie_empty").call(this); },
+	fill() { return native("PiuDie_fill").call(this); },
+	or(x, y, width, height) { return native("PiuDie_or").call(this, x, y, width, height); },
+	set(x, y, width, height) { return native("PiuDie_set").call(this, x, y, width, height); },
+	sub(x, y, width, height) { return native("PiuDie_sub").call(this, x, y, width, height); },
+	xor(x, y, width, height) { return native("PiuDie_xor").call(this, x, y, width, height); },
 };
 export const Die = Template(die);
 Object.freeze(die);
-global.Die = Die;
+globalThis.Die = Die;
 
 // PiuApplication.c
 
 const application = {
 	__proto__: Container.prototype,
-	_create($, it) @ "PiuApplication_create",
+	_create($, it) { native("PiuApplication_create").call(this, $, it); },
 	
-	get clut() @ "PiuApplication_get_clut",
-	get rotation() @ "PiuApplication_get_rotation",
+	get clut() { return native("PiuApplication_get_clut").call(this); },
+	get rotation() { return native("PiuApplication_get_rotation").call(this); },
 	
-	set clut(it) @ "PiuApplication_set_clut",
-	set rotation(it) @ "PiuApplication_set_rotation",
+	set clut(it) { native("PiuApplication_set_clut").call(this, it); },
+	set rotation(it) { native("PiuApplication_set_rotation").call(this, it); },
 	
-	animateColors(colors) @ "PiuApplication_animateColors",
-	keyDown(key) @ "PiuApplication_keyDown",
-	keyUp(key) @ "PiuApplication_keyUp",
-	postMessage(json) @ "PiuApplication_postMessage",
-	purge() @ "PiuApplication_purge",
+	animateColors(colors) { native("PiuApplication_animateColors").call(this, colors); },
+	keyDown(key) { native("PiuApplication_keyDown").call(this, key); },
+	keyUp(key) { native("PiuApplication_keyUp").call(this, key); },
+	postMessage(json) { native("PiuApplication_postMessage").call(this, json); },
+	purge() { return native("PiuApplication_purge").call(this); },
 }
 export function Application($, it = {}) {
 	let self = (this) ? this : Object.create(application);
@@ -156,21 +153,22 @@ export function Application($, it = {}) {
 	it._Texture = Texture;
 	it._TouchLink = TouchLink;
 	it._View = View;
-	global.application = self;
+	globalThis.application = self;
 	self._create($, it);
-	global.screen.context.onDisplayReady();
+	globalThis.screen.context.onDisplayReady();
 	return self;
 }
 Application.prototype = application;
 Application.template = template;
 Object.freeze(application);
-global.Application = Application;
+globalThis.Application = Application;
 
 // PiuView.c
 
-class View @ "PiuViewDelete" {
+class View extends Native("PiuViewDelete") {
 	constructor(application, it) {
-		let screen = global.screen;
+		super();
+		let screen = globalThis.screen;
 		it.rotation = this.rotation;
 		let poco = this.poco = new Poco(screen, it);
 		this._create(application, it, screen, poco, poco.rectangle());
@@ -178,25 +176,18 @@ class View @ "PiuViewDelete" {
 			application.clut = new Resource("main.cct");
 		screen.context = this;
 	}
-	_create(application, it, screen, poco, rectangle) @ "PiuView_create"
+	_create(application, it, screen, poco, rectangle) { native("PiuView_create").call(this, application, it, screen, poco, rectangle); }
 	
-	get rotation() @ "PiuView_get_rotation" 
-	get ticks() @ "PiuView_get_ticks" 
+	get rotation() { return native("PiuView_get_rotation").call(this); } 
+	get ticks() { return native("PiuView_get_ticks").call(this); } 
 	
-	onDisplayReady() @ "PiuView_onDisplayReady"
-	onIdle() @ "PiuView_onIdle"
-	onMessage() @ "PiuView_onMessage"
-	onQuit() @ "PiuView_onQuit"
-	onTouchBegan(index, x, y, ticks) @ "PiuView_onTouchBegan"
-	onTouchEnded(index, x, y, ticks) @ "PiuView_onTouchEnded"
-	onTouchMoved(index, x, y, ticks) @ "PiuView_onTouchMoved"
+	onDisplayReady() { native("PiuView_onDisplayReady").call(this); }
+	onIdle() { native("PiuView_onIdle").call(this); }
+	onMessage() { native("PiuView_onMessage").call(this); }
+	onQuit() { native("PiuView_onQuit").call(this); }
+	onTouchBegan(index, x, y, ticks) { native("PiuView_onTouchBegan").call(this, index, x, y, ticks); }
+	onTouchEnded(index, x, y, ticks) { native("PiuView_onTouchEnded").call(this, index, x, y, ticks); }
+	onTouchMoved(index, x, y, ticks) { native("PiuView_onTouchMoved").call(this, index, x, y, ticks); }
 }
 Object.freeze(View.prototype);
-
-
-
-
-
-
-
 

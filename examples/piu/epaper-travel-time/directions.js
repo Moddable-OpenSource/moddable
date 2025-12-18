@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -64,7 +64,7 @@ export function getTimeEstimate(swap = false) {
         secure: {protocolVersion: 0x303} 
     });
 
-    request.callback = function(message, value, etc) {
+    request.callback = function(message, value /*, etc */) {
         if (Request.responseComplete == message) {
             let result = JSON.parse(value, ["routes", "legs", "duration", "duration_in_traffic", "text", "value"]);
             let route = result.routes[0];

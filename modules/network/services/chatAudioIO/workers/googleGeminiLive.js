@@ -37,9 +37,9 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	configure(message) {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
-		const voiceName = message.voiceName ?? "Aoede";
+		const voiceName = message.voiceID ?? "aoede";
 		this.setup = {
-			model: "models/gemini-2.0-flash-live-001",
+			model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
 			generationConfig: {
 				responseModalities: "audio",
 				speechConfig: {
@@ -54,8 +54,10 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			tools: {
 				functionDeclarations: tools
 			},
+			inputAudioTranscription: {
+			},
 			outputAudioTranscription: {
-			}
+			},
 		};
 	}
 	isBase64(result, current, name) {
@@ -112,6 +114,7 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			const part = parts.find(part => part.inlineData?.mimeType == "audio/pcm;rate=24000");
 			if (part) {
 				if (this.speaking) {
+					this.postMessage({ id:"receiveInputText", text:"" });
 					this.speaking = false;
 					this.post("listen");
 				}
@@ -125,6 +128,9 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 				this.post("speak");
 				this.postMessage({ id:"receiveOutputText", text:"" });
 			}
+		}
+		if (data.inputTranscription) {
+			this.postMessage({ id:"receiveInputText", text:data.inputTranscription.text, more:true });
 		}
 		if (data.outputTranscription) {
 			this.postMessage({ id:"receiveOutputText", text:data.outputTranscription.text, more:true });

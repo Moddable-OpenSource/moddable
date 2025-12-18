@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -57,7 +57,7 @@ class BallBehavior extends Behavior {
 };
 
 const size = Math.min(screen.width, screen.height);
-let BallApplication = Application.template($ => ({
+let BallApplication = Application.template(() => ({
 	skin:backgroundSkin,
 	contents: [
 		Content(2, { left:size >> 1, top:50, skin:ballSkin, variant:0, Behavior: BallBehavior } ),

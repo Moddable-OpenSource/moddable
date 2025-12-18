@@ -18,11 +18,20 @@
  *
  */
 
-#include "esp_eth_enc28j60.h"
 #include "mc.defines.h"
 
+#if MODDEF_ETHERNET_ENC28J60
+#include "esp_eth_enc28j60.h"
+#include "esp_log.h"
+
+#ifndef MODDEF_ETHERNET_DEBUG
+	#define MODDEF_ETHERNET_DEBUG (0)
+#endif
+
+static const char *TAG = "mod.enc28j60_api.c";
 esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, int interrupt_pin)
 {
+    if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, "mod_ethernet_get_mac");
     eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(MODDEF_ETHERNET_SPI_PORT, &spi_devcfg);
     enc28j60_config.int_gpio_num = interrupt_pin;
 
@@ -33,8 +42,11 @@ esp_eth_mac_t* mod_ethernet_get_mac(spi_device_interface_config_t spi_devcfg, in
 
 esp_eth_phy_t* mod_ethernet_get_phy()
 {
+    if (MODDEF_ETHERNET_DEBUG) ESP_LOGI(TAG, "mod_ethernet_get_phy");
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     phy_config.autonego_timeout_ms = 0;
     phy_config.reset_gpio_num = -1;
     return esp_eth_phy_new_enc28j60(&phy_config);
 }
+
+#endif

@@ -130,18 +130,19 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			tools,
 		};
  		this.body = {
-			evi_version: "2",
+			evi_version: "4-mini",
   			name: "Moddable",
-  			voice: {
-   				 provider: "HUME_AI",
-   				 name: message.voiceName ?? "ITO",
-  			},
 			language_model: {
-				model_provider: "ANTHROPIC",
-				model_resource: "claude-3-7-sonnet-latest",
+				model_provider: message.providerID ?? "ANTHROPIC",
+				model_resource: message.modelID ?? "claude-haiku-4-5-20251001",
 // 				temperature: 1
 			},
   		};
+		if (message.voiceID)
+			this.body.voice = {
+   				 provider: "HUME_AI",
+   				 id: message.voiceID,
+			}
 	}
 	isBase64(result, current, name) {
 		return (result?.type == "audio_output") && (name == "data") ? 44 : false;
@@ -184,6 +185,10 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 		this.close();
 	}
 	'tool_call'(json) {
+		if (this.speaking) {
+			this.speaking = false;
+			this.post("listen");
+		}
 		this.postMessage({ 
 			id:"receiveFunctionCall", 
 			call: json.tool_call_id,
@@ -199,5 +204,6 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 }
 
 new HumeAIEVIModel({
-	inputSampleRate: 8000
+	inputSampleRate: 8000,
+	outputSampleRate: 48000
 });

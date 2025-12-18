@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -346,7 +346,7 @@ export class Firmata {
 
 				this.write(0xF7);		// sysex end
 
-				if (global.screen)
+				if (globalThis.screen)
 					this.doSendString("hasPoco");
 				break;
 
@@ -573,7 +573,7 @@ export class Firmata {
 		this.write(0xF7);		// sysex end
 	}
 	onBuildPins() {
-		const screen = global.screen ? ReservedMode : DigitalModes;	// assume screen owns SPI pins
+		const screen = globalThis.screen ? ReservedMode : DigitalModes;	// assume screen owns SPI pins
 
 		this.pins = new Array(16);
 		this.pins.fill({modes: ReservedMode});

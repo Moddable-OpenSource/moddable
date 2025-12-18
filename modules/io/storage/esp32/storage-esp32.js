@@ -1,24 +1,24 @@
-class Storage @ "xs_directorystorage_destructor" {
+class Storage extends Native("xs_directorystorage_destructor") {
 	constructor() {throw new TypeError}
-	close() @ "xs_directorystorage_close"
+	close() { return native("xs_directorystorage_close").call(this); }
 
-	delete(key) @ "xs_directorystorage_delete"
-	read(key) @  "xs_directorystorage_read"
-	write(key, value) @  "xs_directorystorage_write"
+	delete(key) { return native("xs_directorystorage_delete").call(this, key); }
+	read(key) { return native("xs_directorystorage_read").call(this, key); }
+	write(key, value) { return native("xs_directorystorage_write").call(this, key, value); }
 	[Symbol.iterator]() {
 		return new StorageIterator(this);
 	}
 
-	get format() @ "xs_directorystorage_format_get"
-	set format() @ "xs_directorystorage_format_set"
+	get format() { return native("xs_directorystorage_format_get").call(this); }
+	set format(value) { native("xs_directorystorage_format_set").call(this, value); }
 }
 
-function open(options, prototype) @ "xs_directorystorage_open"
+function open(options, prototype) { return native("xs_directorystorage_open").call(this, options, prototype); }
 
-class StorageIterator @ "xs_storageIterator_destructor" {
-	constructor(storage) @ "xs_storageIterator_constructor"
-	next() @ "xs_storageIterator_next"
-	return() @ "xs_storageIterator_return"
+class StorageIterator extends Native("xs_storageIterator_destructor") {
+	constructor(storage) { super(); native("xs_storageIterator_constructor").call(this, storage); }
+	next() { return native("xs_storageIterator_next").call(this); }
+	return() { return native("xs_storageIterator_return").call(this); }
 }
 
 export default Object.freeze({

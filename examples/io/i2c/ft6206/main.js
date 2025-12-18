@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -27,7 +27,7 @@ touch.configure({
 System.setInterval(() => {
 	const points = touch.sample();
 
-	points?.forEach((point, i) => {
+	points?.forEach(point => {
 		const id = point.id;
 		delete point.id;
 		trace(`Point ${id}: ${JSON.stringify(point)}\n`);

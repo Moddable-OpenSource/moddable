@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -26,7 +26,7 @@ button.a.onChanged = function () {
 	}
 	enabled = !enabled;
 	rtc.enabled = enabled;
-	global.power.brightness = 20 + enabled * 70;
+	globalThis.power.brightness = 20 + enabled * 70;
 }
 
 // Side button: set time from sntp

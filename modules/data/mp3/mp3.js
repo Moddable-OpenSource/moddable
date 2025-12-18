@@ -112,7 +112,7 @@ function sync(buffer, position, end, info)
 		if (info) {
 			let length = sampleLengths[mpegVersion][layerVersion];
 			if (length) {
-				length = Math.idiv(length * (bitRate * 1000 / 8), sampleRate);
+				length = Math.idiv(length * (bitRate * 128 /* 1000 / 8 */), sampleRate);
 				if (padded)
 					length += (3 === layerVersion) ? 4 : 1;
 			}

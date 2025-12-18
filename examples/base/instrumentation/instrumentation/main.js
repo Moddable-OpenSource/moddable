@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -18,14 +18,10 @@ import Timer from "timer"
 
 Timer.set(() => {}, 5000)
 
-
 const stackIndex = Instrumentation.map("XS Stack Used");
 trace(`XS Stack Used: ${Instrumentation.get(stackIndex)}\n`);
 
-for (let i = 1; true; i++) {
-	const name = Instrumentation.name(i);
-	if (!name)
-		break;
+for (let i = 1, name; (name = Instrumentation.name(i)); i++) {
 	const value = Instrumentation.get(i);
 	trace(`${name}: ${value}\n`);
 }

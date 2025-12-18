@@ -1,28 +1,113 @@
 # Ethernet
-Copyright 2021 Moddable Tech, Inc.<BR>
-Revised: September 10, 2024
+Copyright 2021-2025 Moddable Tech, Inc.<BR>
+Revised: November 24, 2025
 
 ## Overview
 
-The Moddable SDK supports Ethernet for the ESP32. Ethernet support is an extension to our [network support](./network.md), which includes support for Wi-Fi and protocols like HTTP/HTTPS, MQTT, WebSockets, DNS, and mDNS. Most of the [networking examples](../../examples/network) in the Moddable SDK enable Wi-Fi by default, but examples that work with Wi-Fi can easily be made to use Ethernet instead.
+The Moddable SDK supports Ethernet for the ESP32. Ethernet support is an extension to our [network support](./network.md), which includes support for Wi-Fi and protocols like HTTP/HTTPS, MQTT, WebSockets, DNS, and mDNS. Most of the [networking examples](../../examples/network) in the Moddable SDK enable Wi-Fi by default; however, examples that work with Wi-Fi can easily be modified to use Ethernet instead.
 
 This document provides information about how to enable Ethernet in applications, details of the JavaScript API used to establish and monitor an Ethernet connection, and wiring instructions for a compatible Ethernet breakout board.
 
 ## Table of Contents
 
+* [Configuration](#Configuration)
 * [Wiring](#wiring)
 * [Enabling Ethernet in applications](#enabling-ethernet)
 * [Class Ethernet](#class-ethernet)
 
+<a id="Configuration"></a>
+
+## Configuration
+
+The Moddable SDK supports any Ethernet module that can be wired into the hardware and integrated with the ESP-IDF. We've worked with various [Microchip ENC28J60](https://www.microchip.com/en-us/product/enc28j60) and [WIZnet W5500](https://docs.wiznet.io/Product/iEthernet/W5500/overview) SPI-to-Ethernet module breakout boards and achieved good results.
+
+The [ESP32 processors and their SDK](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_eth.html) offer excellent support for Ethernet. They support both internal Ethernet MAC controllers and external SPI-to-Ethernet modules. The [WT32-ETH01](https://www.seeedstudio.com/Ethernet-module-based-on-ESP32-series-WT32-ETH01-p-4736.html?srsltid=AfmBOoq272pKrSmxaVh-1rOldlpPZ_CrkBy1VQq0xNOkn5bPJ7aETZqy) modules use the ESP32's internal MAC and an external PHY chip for Ethernet support (see [$MODDABLE/build/devices/esp32/targets/wt32_eth01](../../build/devices/esp32/targets/wt32_eth01)). You specify `esp32/wt32_eth01` as the device. The [`sdkconfig.defaults`](../tools/manifest.md#sdkconfig) file specifies whether to enable Ethernet and the type of Ethernet module or interface to use. For the WT32-ETH01 to use the internal MAC and external PHY, it requires the target device's `sdkconfig.defaults` file to contain:
+
+```
+CONFIG_ETH_ENABLED=y
+CONFIG_ETH_USE_ESP32_EMAC=y
+CONFIG_ETH_PHY_INTERFACE_RMII=y
+CONFIG_ETH_RMII_CLK_INPUT=y
+CONFIG_ETH_RMII_CLK_IN_GPIO=0
+CONFIG_ETH_DMA_BUFFER_SIZE=512
+CONFIG_ETH_DMA_RX_BUFFER_NUM=10
+CONFIG_ETH_DMA_TX_BUFFER_NUM=10
+```
+
+For the WIZnet W5500, it requires the `sdkconfig.defaults` in the target processor to contain:
+
+```
+CONFIG_ETH_ENABLED=y
+CONFIG_ETH_USE_SPI_ETHERNET=y
+CONFIG_ETH_SPI_ETHERNET_W5500=y
+```
+
+Using the ENC28J80 module with an ESP32, it is installed using the `dependency` feature in `$MODDABLE/modules/network/ethernet/manifest.json` to dynamically load the module and associated files for the device, including the `sdkconfig` values.
+
+```jsonc
+"dependency": [
+         {
+           "name": "enc28j60",
+           "version": "^1.0.1",
+           "includes": [
+             "include"
+           ]
+         }
+       ],
+```
+
+The `$MODDABLE/modules/network/ethernet` directory contains a `manifest.json_enc28j60` and `manifest.json_w5500` file. One of these needs to be copied to `manifest.json` to define the Ethernet -SPI setup parameters for the particular chip.
+
+```json
+"defines": {
+     "defines": {
+        "ethernet": {
+        	"enc28j60": 1,
+        	"w5500": 0,
+			"debug": 0,
+			"hostname":"\"Moddable\"",
+            "hz": 6000000,
+            "int_pin": 33,
+            "power_pin": 16,
+            "spi": {
+            	"command_bits": 3,
+				"address_bits": 5,
+                "cs_pin": 27,
+                "port": "SPI3_HOST",
+                "miso_pin": 35,
+                "mosi_pin": 26,
+                "sck_pin": 0,
+                "polling_ms": 0,
+				"dma_ch": 3
+            }
+        }
+    }
+}
+```
+
+The drivers in `$MODDABLE/modules/network/ethernet/esp32/drivers` contain the code that calls the setup functions for the Ethernet MAC and PHY components in the Espressif SDK. The main Ethernet code is in `$MODDABLE/modules/network/ethernet/esp32/ethernet.c` and is primarily driven by the values specified in the `manifest.json` file.
+
+The `CMakeLists.txt` file for the target device needs to specify that it includes the `esp_eth` and `esp_netif` Ethernet libraries from the ESP32 SDK. For the `add_prebuilt_library` line, it needs to look similar to
+
+```
+add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
+add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
+	REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash
+	spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
+)
+```
+
+Example, for the ESP32-S3, you will find the file in `$MODDABLE/build/devices/esp32/xsProj-esp32s3/main/CMakeLists.txt` and the `sdkconfig.defaults` in the directory above.
+
 <a id="wiring"></a>
+
 ## Wiring
 
-The Moddable SDK supports any Ethernet module you can wire into the hardware and integrate with the ESP-IDF. We've worked with various ENC28J60 Ethernet module breakout boards (pictured below) and had good results. This section contains wiring information for ENC28J60 modules.
+This section contains wiring information for ENC28J60 modules (examples pictured below), which is directly applicable to W5500 modules.
 
-<img src="https://www.olimex.com/Products/Modules/Ethernet/ENC28J60-H/images/thumbs/310x230/ENC28J60-H-01.jpg" height=100>
-<img src="https://www.atomsindustries.com/assets/images/items/1077/1077.jpg" height=100>
+<img src="./assets/enc28j60.jpeg" style="zoom:50%;" /> ![](./assets/ENC28J60-Ethernet-Module.jpeg)
 
-The ESP32 communicates with the ENC28J60 over SPI.
+The ESP32 communicates with the ENC28J60 over the SPI interface.
 
 | ENC28J60 | ESP32 |
 | :---: | :---: |
@@ -98,6 +183,22 @@ The `start` method begins the underlying process to manage the device's connecti
 
 ```js
 Ethernet.start();
+```
+
+### `static useDHCP()`
+
+The `useDHCP` method disables the active static IP address, if any, any activates the DHCP client to maintain the device's IP address.
+
+```js
+Ethernet.useDHCP();
+```
+
+### `static useStaticIP(address, mask, gateway)`
+
+The `useDHCP` method disables the DHCPclient, if active, any uses the provided arguments for the device's IP address.
+
+```js
+Ethernet.useStaticIP("10.0.0.63", "255.255.255.0", "10.0.0.1");
 ```
 
 ### `constructor(callback)`

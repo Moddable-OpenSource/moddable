@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -149,8 +149,8 @@ class AudioOut extends AudioOutTrack {
 			this.queue = current.next;
 		}
 	}
-	write(samples) @ "xs_audioout_write";
-	zero(buffer) @ "xs_audioout_zero";
+	write(samples) { return native("xs_audioout_write").call(this, samples); };
+	zero(buffer) { return native("xs_audioout_zero").call(this, buffer); };
 }
 
 AudioOut.Async = class extends AudioOutTrack {

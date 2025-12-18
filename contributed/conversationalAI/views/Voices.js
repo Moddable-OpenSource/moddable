@@ -38,7 +38,7 @@ class VoicesBehavior extends View.Behavior {
 			former.first.next.visible = false;
 		}
 		current.first.next.visible = true;
-		view.persona.voiceName = view.voices[current.index].id;
+		view.persona.voiceID = view.voices[current.index].id;
 		controller.writeOption(view.persona);
 		controller.goBack();
 	}
@@ -148,9 +148,9 @@ export default class extends View {
 		super();
 		const persona = data.persona
 		const voices = assets.services[persona.service].voices;
-		const name = persona.voiceName;
+		const voiceID = persona.voiceID;
 		this.persona = persona;
-		this.selection = voices.findIndex(voice => voice.id == name);
+		this.selection = voices.findIndex(voice => voice.id == voiceID);
 		this.scroll = { x:0, y:0 };
 		this.voices = voices;
 	}

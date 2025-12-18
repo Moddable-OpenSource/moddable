@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2023  Moddable Tech, Inc.
+* Copyright (c) 2021-2025  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -21,11 +21,8 @@
 import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap";
 
-function drawBitmapWithKeyColor(bits, x, y, color) @ "xs_poco_drawGIF";
 Poco.prototype.drawBitmapWithKeyColor = function(bits, x, y, color, flip) {
 	if (Bitmap.Monochrome === bits.pixelFormat)
 		return this.drawMonochrome(bits, this.makeColor(0, 0, 0), this.makeColor(255, 255, 255), x, y);
-
-	return drawBitmapWithKeyColor.call(this, bits, x, y, color, flip);
+	return native("xs_poco_drawGIF").call(this, bits, x, y, color, flip);
 }
-	

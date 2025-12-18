@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,13 +18,13 @@
  *
  */
 
-class SPI @ "xs_spi_destructor" {
-	constructor(dictionary) @ "xs_spi_constructor"
-	close() @ "xs_spi_close"
-	read(count) @ "xs_spi_read"
-	write(buffer) @ "xs_spi_write"
-	transfer(buffer) @ "xs_spi_transfer"
-	flush(deselect) @ "xs_spi_flush"
+class SPI extends Native("xs_spi_destructor") {
+	constructor(dictionary) { super(); native("xs_spi_constructor").call(this, dictionary); }
+	close() { return native("xs_spi_close").call(this); }
+	read(count) { return native("xs_spi_read").call(this, count); }
+	write(buffer) { return native("xs_spi_write").call(this, buffer); }
+	transfer(buffer) { return native("xs_spi_transfer").call(this, buffer); }
+	flush(deselect) { return native("xs_spi_flush").call(this, deselect); }
 
 	get format() {
 		return "buffer";
@@ -35,7 +35,7 @@ class SPI @ "xs_spi_destructor" {
 	}
 
 	// experimental, to support Display
-	set transform() @ "xs_spi_set_transform"
+	set transform(value) { native("xs_spi_set_transform").call(this, value); }
 }
 
 export default SPI;

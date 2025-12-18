@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -78,7 +78,7 @@ class WebSocket {
 			...options,
 			onControl: (opcode, data) => {
 				switch (opcode) {
-					case this.#client.constructor.close: 
+					case this.#client.constructor.close: {
 						this.#state = 3;
 						data = new Uint8Array(data);
 						const event = {
@@ -88,7 +88,7 @@ class WebSocket {
 						};
 						this.onclose(event);
 						this.#eventListeners.close.forEach(listener => listener.call(null, event));
-						break;
+						} break;
 
 					case this.#client.constructor.ping:
 						break;
@@ -256,6 +256,7 @@ class WebSocket {
 			this.#state = 2;
 		}
 	}
+/*
 	onclose(event) {
 	}
 	onerror(event) {
@@ -264,6 +265,7 @@ class WebSocket {
 	}
 	onopen(event) {
 	}
+*/
 	removeEventListener(event, listener) {
 		let listeners = this.#eventListeners[event];
 		if (!listeners)

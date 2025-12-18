@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2023  Moddable Tech, Inc.
+* Copyright (c) 2021-2025  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -20,4 +20,4 @@
 
 import Poco from "commodetto/PocoCore";
 
-Poco.prototype.fillStatic = function(x, y, w, h, brightness) @ "xs_poco_fillStatic";
+Poco.prototype.fillStatic = function(x, y, w, h, brightness) { return native("xs_poco_fillStatic").call(this, x, y, w, h, brightness); };

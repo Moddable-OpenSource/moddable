@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -14,13 +14,9 @@
 
 import {} from "piu/MC";
 
-import Timeline from "piu/Timeline";
-
 const BLACK = "black"
-const TRANSPARENT = "transparent"
 const WHITE = "white";
 
-const whiteSkin = new Skin({ fill:WHITE });
 const blackSkin = new Skin({ fill:BLACK });
 const backgroundSkin = new Skin({ fill:[WHITE, BLACK] });
 const einkTexture = new Texture("eink.png");
@@ -79,7 +75,7 @@ let LoveApplication = Application.template($ => ({
 			else
 				trace("WARNING: This application was designed to run on a 250 x 122 screen.\n");
 		}
-		onTimeChanged(application) {
+		onTimeChanged(/* application */) {
 			let count = steps.length;
 			let index = this.index + 1;
 			if (index == count)

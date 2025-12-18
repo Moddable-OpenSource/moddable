@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,7 +12,7 @@
  *
  */
 
-import {} from "piu/MC";
+import {Behavior, Port} from "piu/MC";
 import lorem from "lorem";
 
 const itemSkin = new Skin({ fill:[ "#192eab", "black" ] });
@@ -24,8 +24,8 @@ const stripSkin = new Skin({
 	states: 27, variants: 28 
 });
 
-class ListBehavior extends Behavior {
-	countItems(port) {
+class ListBehavior extends Port {
+	countItems(/* port */) {
 		return this.data.length;
 	}
 	drawItem(port, index, x, y, width, height) {
@@ -44,17 +44,17 @@ class ListBehavior extends Behavior {
 		let delta = this.delta;
 		port.invalidate(port.x, delta * index, port.width, delta);
 	}
-	measureItem(port) {
+	measureItem(/* port */) {
 		return 40;
 	}
 	onCreate(port, data) {
 		this.data = data;
 		this.delta = this.measureItem(port);
-		this.hit = -1;
+		this.hitIndex = -1;
 		this.state = 0;
 		port.duration = 500;
 	}
-	onMeasureVertically(port, height) {
+	onMeasureVertically(port /* , height */) {
 		return this.countItems(port) * this.delta;
 	}
 	onDraw(port, x, y, width, height) {
@@ -63,14 +63,14 @@ class ListBehavior extends Behavior {
 		port.drawContent(x, y, width, height);
 
 		let delta = this.delta;
-		let hit = this.hit;
+		let hitIndex = this.hitIndex;
 		let index = Math.floor(y / delta);
 		let limit = y + height;
 		x = 0;
 		y = index * delta;
 		width = port.width;
 		while (y < limit) {
-			if (hit == index) {
+			if (hitIndex == index) {
 				port.state = this.state;
 				port.skin = itemSkin;
 				port.drawContent(x, y, width, delta);
@@ -83,28 +83,27 @@ class ListBehavior extends Behavior {
 		}
 	}
 	onFinished(port) {
-		this.hit = -1;
+		this.hitIndex = -1;
 		port.stop();
 	}
 	onTimeChanged(port) {
 		this.state = 1 - port.fraction;
-		this.invalidateItem(port, this.hit);
+		this.invalidateItem(port, this.hitIndex);
 	}
 	onTouchBegan(port, id, x, y) {
 		port.stop();
 		let delta = this.delta;
 		let index = Math.floor((y - port.y) / delta);
-		this.hit = index;
+		this.hitIndex = index;
 		this.state = 1;
 		this.invalidateItem(port, index);
 	}
-	onTouchCancelled(port, id, x, y) {
+	onTouchCancelled(port) {
 		port.time = 0;
 		port.start();
 	}
-	onTouchEnded(port, id, x, y) {
-		let index = this.hit;
-		this.tapItem(port, this.hit);
+	onTouchEnded(port) {
+		this.tapItem(port, this.hitIndex);
 		port.time = 0;
 		port.start();
 	}

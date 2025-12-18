@@ -115,7 +115,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxErrorIsErrorAdditions 0
 #endif
-#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions  + mxErrorIsErrorAdditions )
+#if mxNative
+	#define mxNativeAdditions 2
+#else
+	#define mxNativeAdditions 0
+#endif
+#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions + mxErrorIsErrorAdditions + mxNativeAdditions )
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -711,6 +716,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #endif
 #if mxErrorIsError
 	fx_Error_isError,
+#endif
+#if mxMative
+	fx_Native,
+	fx_native,
 #endif
 	fxAsyncFromSyncIteratorFailed,
 };

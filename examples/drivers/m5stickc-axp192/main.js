@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -39,7 +39,7 @@ button.a.onChanged = function() {
 	if (brightness > 100) {
 		brightness = 0;
 	}
-	global.power.brightness = brightness;
+	globalThis.power.brightness = brightness;
 }
 
 render.begin();

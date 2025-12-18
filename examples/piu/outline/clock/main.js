@@ -42,7 +42,7 @@ class HandBehavior extends Behavior {
 }
 
 class HourBehavior extends HandBehavior {
-	onCreate(shape) {
+	onCreate(/* shape */) {
 		const path = new Outline.CanvasPath();
 		path.moveTo(-7, -22);
 		path.lineTo(7, -22);
@@ -55,7 +55,7 @@ class HourBehavior extends HandBehavior {
 }
 
 class MinuteBehavior extends HandBehavior {
-	onCreate(shape) {
+	onCreate(/* shape */) {
 		const path = new Outline.CanvasPath();
 		path.moveTo(-7, -22);
 		path.lineTo(7, -22);
@@ -68,7 +68,7 @@ class MinuteBehavior extends HandBehavior {
 }
 
 class SecondBehavior extends HandBehavior {
-	onCreate(shape) {
+	onCreate(/* shape */) {
 		const width = 2;
 		const path = new Outline.CanvasPath();
 		path.rect(-(width / 2), -30, width, 96);
@@ -86,7 +86,7 @@ class ClockApplicationBehavior extends Behavior {
 		application.interval = 33;
 		application.start();
 	}
-	onTimeChanged(application) {
+	onTimeChanged(/* application */) {
 		const date = new Date();
 		const hours = date.getHours() % 12;
 		const minutes = date.getMinutes();

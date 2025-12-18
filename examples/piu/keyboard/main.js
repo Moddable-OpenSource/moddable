@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -44,7 +44,7 @@ const KeyboardContainer = Column.template($ => ({
 		onCreate(column, data){
 			this.data = data;
 		}
-		onTouchEnded(column){
+		onTouchEnded(/* column */){
 			if (!keyboardUp){
 				keyboardUp = true;
 				this.data["KEYBOARD"].add(Keyboard(this.data, {style: new OpenSans18(), doTransition: true}));
@@ -83,7 +83,7 @@ const KeyboardApp = Application.template($ => ({
 				}
 				if (key != BACKSPACE) {
 					this.data["LABEL"].string = "*".repeat(theString.length - 1) + theString.charAt(theString.length - 1);
-					timerID = Timer.set(id => {timerID = undefined; application.first.first.string = "*".repeat(theString.length);}, 500);
+					timerID = Timer.set(() => {timerID = undefined; application.first.first.string = "*".repeat(theString.length);}, 500);
 				} else {
 					this.data["LABEL"].string = "*".repeat(theString.length);
 				}
@@ -91,7 +91,7 @@ const KeyboardApp = Application.template($ => ({
 				this.data["LABEL"].string = theString;
 			}
 		}
-		onKeyboardTransitionFinished(application) {
+		onKeyboardTransitionFinished(/* application */) {
 			let keyboard = this.data["KEYBOARD"];
 			keyboard.remove(keyboard.first);
 			keyboardUp = false;

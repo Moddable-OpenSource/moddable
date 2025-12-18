@@ -421,10 +421,14 @@ else
 	ifeq ($(USE_USB),1) 
 		DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_tinyusb.c
 	else
-		ifeq ($(USE_USB),2)
-			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+		ifeq ("$(ESP32_SUBCLASS)","esp32s3")
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart_cdc.c
 		else
-			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+			ifeq ($(USE_USB),2)
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+			else
+				DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+			endif
 		endif
 	endif
 endif
@@ -493,6 +497,7 @@ ifeq ($(DEBUG),1)
 			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
 		else
 			ifeq ($(USE_USB),1)
+				DEPLOY_CMD = idf.py -p `cat $(PORT_NAME_PATH)` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 				SET_PROGRAMMING_MODE = $(PLATFORM_DIR)/config/waitForNewSerial $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)
 				DO_LAUNCH = $(PLATFORM_DIR)/config/waitForNewSerial $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)
 				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
@@ -535,15 +540,16 @@ ifeq ($(DEBUG),1)
 
 			# USB connection
 			ifeq ($(USE_USB),1)
-				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
-				DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)"
+				DEPLOY_CMD = idf.py -p `cat $(PORT_NAME_PATH)` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
+				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
+				DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(BEFORE_DEBUGGING_MESSAGE)"
 				CONNECT_XSBUG = $(DO_LAUNCH) && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			else
-				# USE_USB == 2 doesn't use PROGRAMMING_MODE
-				SET_PROGRAMMING_MODE = 
-				DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$PATH\"; \
+				# USE_USB == 2
+				SET_PROGRAMMING_MODE = bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
+				DO_LAUNCH = bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; \
 							echo $(BEFORE_DEBUGGING_MESSAGE)"
-				CONNECT_XSBUG = $(DO_LAUNCH) && XSBUG_HOST=$(XSBUG_HOST) \
+				CONNECT_XSBUG = $(DO_LAUNCH) ; XSBUG_HOST=$(XSBUG_HOST) XSBUG_PORT=$(XSBUG_PORT) \
 							serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
 
@@ -569,9 +575,9 @@ else	# release
 					cd $(PROJ_DIR) ; $(RELEASE_LAUNCH_CMD)
 			endif
 		else
-			SET_PROGRAMMING_MODE := bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
+			SET_PROGRAMMING_MODE := bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; waitForNewSerialLinux $(PROGRAMMING_VID) $(PROGRAMMING_PID) $(PORT_NAME_PATH) 0 $(PROGRAMMING_MODE_MESSAGE)"
 			ifeq ($(INSTRUMENT),1)
-				DO_LAUNCH := bash -c "PATH=\"$(PLATFORM_DIR)/config:$(PATH)\"; waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)" ;  \
+				DO_LAUNCH := bash -c "PATH=\"$(PLATFORM_DIR)/config:$$PATH\"; waitForNewSerialLinux $(USB_VENDOR_ID) $(USB_PRODUCT_ID) $(PORT_NAME_PATH) 1 $(PROGRAMMING_MODE_MESSAGE)" ;  \
 					cd $(PROJ_DIR) ; $(RELEASE_LAUNCH_CMD)
 			endif
 		endif
@@ -703,6 +709,9 @@ $(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/
 
 $(PROJ_DIR)/main/debugger_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c $@
+
+$(PROJ_DIR)/main/debugger_uart_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart_cdc.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart_cdc.c $@
 
 $(PROJ_DIR)/main/debugger_tinyusb.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c $@

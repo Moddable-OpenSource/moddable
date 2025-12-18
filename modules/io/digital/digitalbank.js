@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,11 +18,11 @@
  *
  */
 
-class DigitalBank @ "xs_digitalbank_destructor" {
-	constructor(dictionary) @ "xs_digitalbank_constructor"
-	close() @ "xs_digitalbank_close"
-	read() @ "xs_digitalbank_read"
-	write(value) @ "xs_digitalbank_write"
+class DigitalBank extends Native("xs_digitalbank_destructor") {
+	constructor(dictionary) { super(); native("xs_digitalbank_constructor").call(this, dictionary); }
+	close() { return native("xs_digitalbank_close").call(this); }
+	read() { return native("xs_digitalbank_read").call(this); }
+	write(value) { return native("xs_digitalbank_write").call(this, value); }
 
 	get format() {
 		return "number";

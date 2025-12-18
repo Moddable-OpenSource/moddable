@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -31,11 +31,11 @@ class BallBehavior extends Behavior {
 		ball.start();
 	}
 	onTimeChanged(ball) {
-		var dx = this.dx;
-		var dy = this.dy;
+		let dx = this.dx;
+		let dy = this.dy;
 		ball.moveBy(dx, dy);
-		var x = this.x + dx;
-		var y = this.y + dy;
+		const x = this.x + dx;
+		const y = this.y + dy;
 		if ((x < 0) || (x > this.width)) dx = -dx;
 		if ((y < 0) || (y > this.height)) dy = -dy;
 		this.dx = dx;
@@ -45,7 +45,7 @@ class BallBehavior extends Behavior {
 	}
 };
 
-let BallApplication = Application.template($ => ({
+const BallApplication = Application.template(() => ({
 	skin:backgroundSkin,
 	contents: [
 		Content(6, { left:0, top:0, skin:ballSkin, variant:0, Behavior: BallBehavior } ),

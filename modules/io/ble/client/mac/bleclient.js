@@ -19,37 +19,38 @@
  */
 
 const features = Object.freeze({
-	buildScanner(options) @ "BLEScanner_constructor",
-	buildClient(options) @ "BLEClient_constructor",
-	close() @ "BLEClient_close",
-	connect(request) @ "BLEClient_connect",
-	disconnect(request) @ "BLEClient_disconnect",
-	getPrimaryServices(request, uuids) @ "BLEClient_getPrimaryServices",
-	getCharacteristics(request, service, uuids) @ "BLEClient_getCharacteristics",
-	getDescriptors(request, characteristic, uuids) @ "BLEClient_getDescriptors",
-	read(request, what, options) @ "BLEClient_read",
-	readNotification() @ "BLEClient_readNotification",
-	write(request, what, options) @ "BLEClient_write",
-	enableNotifications(request, characteristic, enable) @ "BLEClient_enableNotifications",
+	buildScanner(options) { return native("BLEScanner_constructor").call(this, options); },
+	buildClient(options) { return native("BLEClient_constructor").call(this, options); },
+	close() { return native("BLEClient_close").call(this); },
+	connect(request) { return native("BLEClient_connect").call(this, request); },
+	disconnect(request) { return native("BLEClient_disconnect").call(this, request); },
+	getPrimaryServices(request, uuids) { return native("BLEClient_getPrimaryServices").call(this, request, uuids); },
+	getCharacteristics(request, service, uuids) { return native("BLEClient_getCharacteristics").call(this, request, service, uuids); },
+	getDescriptors(request, characteristic, uuids) { return native("BLEClient_getDescriptors").call(this, request, characteristic, uuids); },
+	read(request, what, options) { return native("BLEClient_read").call(this, request, what, options); },
+	readNotification() { return native("BLEClient_readNotification").call(this); },
+	write(request, what, options) { return native("BLEClient_write").call(this, request, what, options); },
+	enableNotifications(request, characteristic, enable) { return native("BLEClient_enableNotifications").call(this, request, characteristic, enable); },
 });
 
-class BLEAdvertisement @ "BLEAdvertisement_destructor" {
-	constructor() @ "BLEAdvertisement_constructor"
-	get(type) @ "BLEAdvertisement_get"
-	get name() @ "BLEAdvertisement_get_name"
-	get services() @ "BLEAdvertisement_get_services"
-	get manufacturerData() @ "BLEAdvertisement_get_manufacturerData"
+class BLEAdvertisement extends Native("BLEAdvertisement_destructor") {
+	constructor() { super(); native("BLEAdvertisement_constructor").call(this); }
+	get(type) { return native("BLEAdvertisement_get").call(this, type); }
+	get name() { return native("BLEAdvertisement_get_name").call(this); }
+	get services() { return native("BLEAdvertisement_get_services").call(this); }
+	get manufacturerData() { return native("BLEAdvertisement_get_manufacturerData").call(this); }
 }
 
-class GAPClient @ "BLEScanner_destructor" {
+class GAPClient extends Native("BLEScanner_destructor") {
 	constructor(options) {
+		super();
 		features.buildScanner.call(this, options, BLEAdvertisement);
 	}
-	close() @ "BLEScanner_close"
-	read() @ "BLEScanner_read"
+	close() { return native("BLEScanner_close").call(this); }
+	read() { return native("BLEScanner_read").call(this); }
 }
 
-class GATTClient @ "BLEClient_destructor" {
+class GATTClient extends Native("BLEClient_destructor") {
 	#closing = false;
 	#onError = null;
 	#onReadable = null;
@@ -85,6 +86,7 @@ class GATTClient @ "BLEClient_destructor" {
 		}
 	};
 	constructor(options) {
+		super();
 		this.#onError = options.onError;
 		this.#onReadable = options.onReadable;
 		options.onError = (error) => {
@@ -99,7 +101,7 @@ class GATTClient @ "BLEClient_destructor" {
 			this.#onReadable?.call(this, count);
 		}
 		features.buildClient.call(this, options);
-		const onConnected = (error, result) => {
+		const onConnected = (error /*, result */) => {
 			if (error)
 				this.#onError?.call(this, error);
 			else
@@ -134,11 +136,14 @@ class GATTClient @ "BLEClient_destructor" {
 	write(what, value, options, callback = options) {
 		new GATTClient.#Request(this, features.write, callback, what, value, options === callback ? null : options);
 	}
-	enableNotifications(characteristic, enable, callback) {
-		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, enable);
+	subscribe(characteristic, callback) {
+		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, true);
+	}
+	unsubscribe(characteristic, callback) {
+		new GATTClient.#Request(this, features.enableNotifications, callback, characteristic, false);
 	}
 	
-	get maximumWrite() @ "BLEClient_get_maximumWrite"
+	get maximumWrite() { return native("BLEClient_get_maximumWrite").call(this); }
 
 	static properties = Object.freeze({
 		authenticatedSignedWrites: (1 << 6),

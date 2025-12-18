@@ -3498,31 +3498,34 @@ void fxHostNodeCode(void* it, void* param)
 	txHostNode* self = it;
 	txCoder* coder = param;
 	txParser* parser = coder->parser;
-    if (self->symbol) {
-        if (self->flags & mxGetterFlag) {
-            txString buffer = coder->parser->buffer;
-            c_strcpy(buffer, "get ");
-            c_strcat(buffer, self->symbol->string);
-            self->symbol = fxNewParserSymbol(coder->parser, buffer);
-        }
-        else if (self->flags & mxSetterFlag) {
-            txString buffer = coder->parser->buffer;
-            c_strcpy(buffer, "set ");
-            c_strcat(buffer, self->symbol->string);
-            self->symbol = fxNewParserSymbol(coder->parser, buffer);
-        }
-    }
-	if (self->params)
-		self->paramsCount = fxCoderCountParameters(coder, self->params);
-	else
-		self->paramsCount = -1;	
-	if (parser->firstHostNode)
-		parser->lastHostNode->nextHostNode = self;
-	else
-		parser->firstHostNode = self;
-	parser->lastHostNode = self;
-	fxCoderAddIndex(param, 1, XS_CODE_HOST, parser->hostNodeIndex);
-	parser->hostNodeIndex++;
+	if (self->hostIndex < 0) {
+		if (self->symbol) {
+			if (self->flags & mxGetterFlag) {
+				txString buffer = coder->parser->buffer;
+				c_strcpy(buffer, "get ");
+				c_strcat(buffer, self->symbol->string);
+				self->symbol = fxNewParserSymbol(coder->parser, buffer);
+			}
+			else if (self->flags & mxSetterFlag) {
+				txString buffer = coder->parser->buffer;
+				c_strcpy(buffer, "set ");
+				c_strcat(buffer, self->symbol->string);
+				self->symbol = fxNewParserSymbol(coder->parser, buffer);
+			}
+		}
+		if (self->params)
+			self->paramsCount = fxCoderCountParameters(coder, self->params);
+		else
+			self->paramsCount = -1;	
+		if (parser->firstHostNode)
+			parser->lastHostNode->nextHostNode = self;
+		else
+			parser->firstHostNode = self;
+		parser->lastHostNode = self;
+		self->hostIndex = parser->hostNodeIndex;
+		parser->hostNodeIndex++;
+	}
+	fxCoderAddIndex(param, 1, XS_CODE_HOST, self->hostIndex);
 }
 
 void fxIfNodeCode(void* it, void* param) 
@@ -4357,8 +4360,16 @@ void fxStringNodeCode(void* it, void* param)
 void fxSuperNodeCode(void* it, void* param)
 {
 	txSuperNode* self = it;
-	fxCoderAddByte(param, 3, XS_CODE_SUPER);
-	fxNodeDispatchCode(self->params, param);
+	txCoder* coder = param;
+	if (coder->classNode->heritage->description->token == XS_TOKEN_HOST) {
+		fxCoderAddByte(param, 1, XS_CODE_TARGET);
+		fxCoderAddSymbol(param, 0, XS_CODE_GET_PROPERTY, coder->parser->prototypeSymbol);
+		fxCoderAddByte(param, 0, XS_CODE_INSTANTIATE);
+	}
+	else {
+		fxCoderAddByte(param, 3, XS_CODE_SUPER);
+		fxNodeDispatchCode(self->params, param);
+	}
 	fxCoderAddByte(param, 0, XS_CODE_SET_THIS);
 	if (self->instanceInitAccess) {
 		fxCoderAddByte(param, 1, XS_CODE_GET_THIS);

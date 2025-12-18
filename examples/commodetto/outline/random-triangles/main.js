@@ -1,5 +1,4 @@
 import Poco from "commodetto/Poco";
-import {Outline} from "commodetto/outline";
 import Timer from "timer";
 
 let poco = new Poco(screen);

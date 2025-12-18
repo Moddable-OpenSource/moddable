@@ -33,7 +33,7 @@ export default class extends Behavior {
 			strokePath.ellipse(160, 120, 80, 60, 0, 0, f);
 			shape.bubble("onLabel", `CanvasPath ellipse`);
 			break;
-		case 2:
+		case 2: {
 			const y1 = 120 + 100 * f;
 			const y2 = 120 - 100 * f;
 			fillPath.moveTo(40, 120);
@@ -43,8 +43,8 @@ export default class extends Behavior {
 			strokePath.moveTo(40, 120)
 			strokePath.bezierCurveTo(120, y1, 200, y2, 280, 120);
 			shape.bubble("onLabel", `CanvasPath bezierCurveTo`);
-			break;
-		case 3:
+			} break;
+		case 3: {
 			const y = 120 + 100 * ((2 * f) - 1);
 			fillPath.moveTo(40, 120);
 			fillPath.lineTo(160, y);
@@ -52,7 +52,7 @@ export default class extends Behavior {
 			strokePath.moveTo(40, 120);
 			strokePath.quadraticCurveTo(160, y, 280, 120);
 			shape.bubble("onLabel", `CanvasPath quadraticCurveTo`);
-			break;
+			} break;
 		}
 		shape.fillOutline = Outline.stroke(fillPath, 2);
 		shape.strokeOutline = Outline.stroke(strokePath, 4);

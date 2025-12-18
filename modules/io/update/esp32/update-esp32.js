@@ -1,9 +1,9 @@
-class Update @ "xs_update_destructor" {
+class Update extends Native("xs_update_destructor") {
 	constructor() {throw new TypeError}
-	close() @ "xs_update_close"
-	complete() @ "xs_update_complete"
+	close() { return native("xs_update_close").call(this); }
+	complete() { return native("xs_update_complete").call(this); }
 
-	write(buffer, byteOffset) @  "xs_update_write"
+	write(buffer, byteOffset) { return native("xs_update_write").call(this, buffer, byteOffset); }
 
 	get format() {
 		return "buffer";
@@ -14,7 +14,7 @@ class Update @ "xs_update_destructor" {
 	}
 }
 
-function open(options, prototype) @ "xs_update_open"
+function open(options, prototype) { return native("xs_update_open").call(this, options, prototype); }
 
 export default Object.freeze({
 	open(options) {

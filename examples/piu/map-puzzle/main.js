@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -23,14 +23,14 @@ class DragBehavior extends Behavior {
 	onCreate(content, target) {
 		this.target = target;
 	}
-	onTouchBegan(content, id, x, y, ticks) {
+	onTouchBegan(content, id, x, y) {
 		let container = content.container;
 		container.swap(content, container.last);
 		let anchor = this.anchor = content.position;
 		anchor.x -= x;
 		anchor.y -= y;
 	}
-	onTouchMoved(content, id, x, y, ticks) {
+	onTouchMoved(content, id, x, y) {
 		let anchor = this.anchor;
 		let target = this.target;
 		x += anchor.x;
@@ -39,8 +39,6 @@ class DragBehavior extends Behavior {
 			content.position = target;
 		else
 			content.position = { x, y };
-	}
-	onTouchEnded(content, id, x, y, ticks) {
 	}
 }
 

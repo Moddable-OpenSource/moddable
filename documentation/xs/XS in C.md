@@ -36,7 +36,7 @@
 -->
 
 # XS in C
-Revised: July 2, 2025
+Revised: October 15, 2025
 
 **See end of document for [copyright and license](#license)**
 
@@ -62,11 +62,12 @@ XS in C provides macros to access properties of objects. XS provides two functio
 	* [Exceptions](#exceptions)
 	* [Errors](#errors)
 	* [Debugger](#debugger)
-* [Machine](#machine): Introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with an example that demonstrates how to use XS in C to implement a JavaScript class with C functions.
+* [Machine](#machine): Introduces the main structure of the XS runtime (its virtual machine) and explains how to use the runtime to build a host and to make C callbacks available to scripts. This section concludes with examples that demonstrates how to use XS in C to implement a JavaScript class with C functions.
 	* [Machine Allocation](#machine-allocation)
 	* [Context](#context)
 	* [Host](#host)
 	* [JavaScript `@` language syntax extension](#syntax-extension)
+	* [Native](#native)
 * [Glossary](#glossary): Includes all the terms defined or referenced in this document.
 * [License](#license)
 
@@ -667,6 +668,28 @@ if (xsIsInstanceOf(xsThis, xsObjectPrototype))
 
 ***
 
+**`xsSlot xsReference(xsSlot *value)`**<BR>
+
+| Arguments | Description |
+| --- | :-- |
+| `value ` | A pointer to a reference
+
+Returns a reference slot that for the `value` slot pointer. 
+
+***
+
+**`xsSlot *xsToReference(xsSlot value)`**<BR>
+**`xsSlot *xsmcToReference(xsSlot *value)`**<BR>
+
+| Arguments | Description |
+| --- | :-- |
+| `value ` | A pointer to a reference
+
+Returns the slot pointed to by the `value` slot. The `value` slot must be a reference slot.
+
+***
+
+
 <a id="identifiers"></a>
 ### Keys, Identifiers and Indexes
 
@@ -796,6 +819,10 @@ This section describes the macros related to accessing properties of objects (or
     <tr>
       <td><code>xsCall0</code> ... <code>xsCall7, xsmcCall</code></td>
       <td>Calls the function referred to by a property of an instance</td>
+    </tr>
+    <tr>
+      <td><code>xsCallFunction0</code> ... <code> xsCallFunction8</code></td>
+      <td>Calls the function with the provided instance as <code>this</code></td>
     </tr>
     <tr>
       <td><code>xsNew0</code> ... <code>xsNew7, xsmcNew</code></td>
@@ -1344,7 +1371,7 @@ this[0](2, 3)
 
 ##### In C:
 
-```
+```c
 xsCall0(xsGlobal, xsID_foo);
 xsCall1(xsThis, xsID("foo"), xsInteger(1));
 xsCall2(xsThis, 0, xsInteger(2), xsInteger(3));
@@ -1381,6 +1408,43 @@ xsmcSetInteger(xsVar(2), 3);
 xsmcCall(xsResult, xsGlobal, xsID("foo"), &xsVar(0), NULL);
 xsmcCall(xsResult, xsThis, xsID_foo, &xsVar(0), NULL);
 xsmcCall(xsResult, xsThis, 0, &xsVar(1), &xsVar(2), NULL);
+```
+
+***
+
+#### xsCallFunction*
+
+When you have a reference to a function, you can call the function with one of the `xsCallFunction*` macros (where `*` is `0` through `7`, representing the number of parameter slots passed). If the value is not a reference to a function, the `xsCall*` macro throws an exception.
+
+**`xsSlot xsCallFunction0(xsSlot theFunction, xsSlot theThis)`**<BR>
+**`xsSlot xsCallFunction1(xsSlot theFunction, xsSlot theThis, xsSlot theParam0)`**<BR>
+**`xsSlot xsCallFunction2(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1)`**<BR>
+**`xsSlot xsCallFunction3(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2)`**<BR>
+**`xsSlot xsCallFunction4(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3)`**<BR>
+**`xsSlot xsCallFunction5(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4)`**<BR>
+**`xsSlot xsCallFunction6(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5)`**<BR>
+**`xsSlot xsCallFunction7(xsSlot theFunction, xsSlot theThis, xsSlot theParam0, xsSlot theParam1, xsSlot theParam2, xsSlot theParam3, xsSlot theParam4, xsSlot theParam5, xsSlot theParam6)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theFunction` | A reference to a function instance
+| `theThis` | A reference to the instance that will be `this` when the function is called
+| `theParam0` ... `theParam6` | The parameter slots to pass to the function
+
+Returns the result slot of the function
+
+##### In ECMAScript:
+
+```javascript
+foo.call()
+foo.call(device, 12);
+```
+
+##### In C:
+
+```c
+xsCallFunction0(xsGet(xsGlobal, xsID_foo), xsGlobal);
+xsCallFunction1(xsThis, xsID("foo"), xsGet(xsGlobal, xsID("device"), xsInteger(12));
 ```
 
 ***
@@ -1841,7 +1905,7 @@ XS in C defines the following macros to throw specific exceptions.
 
 ##### In C:
 
-```
+```c
 xpt2046 xpt = calloc(1, sizeof(xpt2046Record));
 if (!xpt) xsUnknownError("out of memory");
 
@@ -2097,7 +2161,7 @@ void xsMainContext(xsMachine* theMachine, int argc, char* argv[])
 
 This section describes the host-related macros of XS in C (see Table 2). An annotated example that uses the host-related macros follows.
 
-A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
+A host object is an XS object that has a data pointer that can only be accessed in C and a native destructor that is invoked when the host object is garbage collected. Host objects are created in C using `xsNewHostObject` and in JavaScript using the [XS `@` syntax](#syntax-extension) or [XS `Native` API](#native) in JavaScript `(class Foo @ "aDestructorFunction" {}`. Internally, a host object has a dedicated slot to hold its destructor and a data pointer; non-host objects don't have this slot. Consequently, only host objects have a native destructor and data pointer that is accessible only from C. This data pointer is either host data or a host chunk.
 
 Host data is a pointer stored by XS in a host object. The pointer and data it points to are managed entirely by the host object's C code. XS stores the pointer but does not access it in any way. Host data is usually allocated with `malloc`/`calloc`, but this isn't required. Host data is disposed by the host object's destructor.
 
@@ -2315,7 +2379,7 @@ Uncaught exceptions that occur between the calls the `xsBeginHost` and `xsEndHos
 <a id="file-example"></a>
 ##### Example
 
-This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) to declare classes because it is simpler.
+This example creates a `File` class using the host macros of XS in C. This is a low-level technique that provides the most flexibility. Most projects do not create classes directly using XS in C, but instead use the [`@` syntax extension](#syntax-extension) or [`Native` API](#native) to declare classes because it is simpler.
 
 This code uses the `File` class from JavaScript to open and close a file:
 
@@ -2416,7 +2480,9 @@ static void xs_file_get_isOpen(xsMachine *the)
 <a id="syntax-extension"></a>
 ### JavaScript `@` language syntax extension
 
-XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
+XS provides the `@` language syntax extension to implement JavaScript functions in C. The language extension is only recognized by **xsc**, the XS compiler. This section introduces the language extension with a JavaScript class that implements methods with C functions.
+
+> **Note**: The `@` language syntax extension is intentionally incompatible with standard JavaScript. The XS [`Native` API](#native) uses standard JavaScript syntax to provide equivalent functionality.
 
 <a id="rectangle-example"></a>
 
@@ -2538,6 +2604,113 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 ```javascript
 	restart();
 ```
+***
+
+<a id="native"></a>
+
+### Native
+
+The `Native` API is an alternative to the [`@` language syntax extension](#syntax-extension). `@` is intentionally incompatible with JavaScript and only recognized by **xsc**. 
+
+The `Native` API is provides compatibility with third party tools and language models, allowing many tools popular with JavaScript developers to be used with XS. **xsc** compiles the `Native` API into the same byte codes as the `@` syntax. There is no efficiency benefit to using either approach.
+
+The `Native` API is based on two global functions:
+
+- `native(name)` takes the name of a host callback and returns a JavaScript function
+- `Native(name)` takes the name of a host destructor and returns a JavaScript constructor
+
+We can then rewrite the `Rectangle` module above:
+
+```javascript
+class Rectangle extends Native("xs_rectangle_destructor") {
+	constructor(...args) {
+		super();
+		native("xs_rectangle").call(this, ...args);
+	}
+	get x() { return native("xs_rectangle_get_x").call(this); }
+	set x(it) { native("xs_rectangle_set_x").call(this, it); }
+	get y() { return native("xs_rectangle_get_y").call(this); }
+	set y(it) { native("xs_rectangle_set_y").call(this, it); }
+	get w() { return native("xs_rectangle_get_w").call(this); }
+	set w(it) { native("xs_rectangle_set_w").call(this, it); }
+	get h() { return native("xs_rectangle_get_h").call(this); }
+	set h(it) { native("xs_rectangle_set_h").call(this, it); }
+	
+	contains(x, y) {
+		return native("xs_rectangle_contains").call(this, x, y);
+	}
+	union(r) {
+		return native("xs_rectangle_union").call(this, r);
+	}
+}
+export default Rectangle;
+```
+
+The `Native` API is more verbose but expressive enough:
+
+- The `Rectangle` class is a `Native` class. When `Rectangle` instances are garbage collected, XS calls the `xs_rectangle_destructor` native function.
+- The constructor calls `super` to create the host object then the `xs_rectangle` native function to allocate and initialize its host chunk.
+- The getters, setters and methods call native functions to access and to modify the host chunk.
+
+> **Note**: **xsc** only recognize calls to `native` or `Native` with a single string literal argument. Other usages throw syntax errors at compile, link, or run time.
+
+### Optimization
+
+Let us compare using the `@` language syntax extension
+
+```javascript
+function foo1(x) @ "foo1Callback"
+```
+
+and the `Native` API:
+
+```javascript
+function foo2(x) {
+ 	return native("foo2Callback").call(this, x);
+}
+```
+
+With the `@` syntax extension, the host callback replaces the JavaScript function. Interpreting `native` literally, both a JavaScript function and a host callback are necessary, together with byte code for the JavaScript function to call the host callback.
+
+ **xsc** eliminates this overhead by recognizing patterns in order to optimize the byte codes. Here both `foo1` and `foo2` generate exactly the same byte codes.
+
+The patterns are pragmatic:
+
+- The body of the function must only contain the call to the function returned by `native`. The return statement is optional.
+- The parameters of the function must not be initialized with [default parameters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters) and must match the arguments of the call. The [rest](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) and [spread](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax) operators are allowed but optional.
+
+```javascript
+function foo(...args) {
+ 	return native("foo2Callback").call(this, ..args);
+}
+```
+
+### Opportunity
+
+With the `@` language syntax extension, the function's parameters exist only as documentation. The host callback is responsible for checking the presence of arguments and to initialize them to default values. Using JavaScript default parameters required an auxiliary function.
+
+```javascript
+function foo(x = 0, y = x) {
+	return fooAux(x, y);
+}
+function fooAux(x, y) @ "fooCallback"
+```
+	
+The `Native` API avoids the explicit auxiliary function:
+
+```javascript
+function foo(x = 0, y = x) {
+	return native("fooCallback").call(this, x, y);
+}
+```
+
+Since **xsc** does not optimize that, the generated byte code is similar to the usage of an auxiliary function. 
+
+> Instead of an auxiliary function, **xsc** creates a closure in the module body in order to initialize the host function when the module is executed
+
+That works for default parameters, but also for any code we want to put around the host callback.
+
+***
 
 <a id="glossary"></a>
 ## Glossary
@@ -2567,40 +2740,39 @@ The value of `xsThis` in the implementation of `xs_restart` matches the receiver
 <!-- TBD:
 	- Document xsCall*_noResult, xsmcCall_noResult
 	- Document xsNewHostConstructorObject, xsNewHostFunctionObject
-	- Document: xsReference
 -->
 
 <a id="license"></a>
 ## License
     Copyright (c) 2016-2025  Moddable Tech, Inc.
-
+    
     This file is part of the Moddable SDK Runtime.
-
+    
     The Moddable SDK Runtime is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     The Moddable SDK Runtime is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
-
+    
     You should have received a copy of the GNU Lesser General Public License
     along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
-
+    
     This file incorporates work covered by the following copyright and
     permission notice:
-
+    
         Copyright (C) 2010-2016 Marvell International Ltd.
         Copyright (C) 2002-2010 Kinoma, Inc.
-
+    
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
         You may obtain a copy of the License at
-
+    
          http://www.apache.org/licenses/LICENSE-2.0
-
+    
         Unless required by applicable law or agreed to in writing, software
         distributed under the License is distributed on an "AS IS" BASIS,
         WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

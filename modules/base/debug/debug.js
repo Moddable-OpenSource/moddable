@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,5 +24,5 @@
 */
 
 export default class {
-	static gc(enable) @ "xs_gc";
+	static gc(enable) { return native("xs_gc").call(this, enable); }
 }

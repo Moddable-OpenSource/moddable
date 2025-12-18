@@ -19,15 +19,15 @@
  */
 
 
-class Bitmap @ "xs_Bitmap_destructor" {
-	constructor(width, height, format, buffer, offset) @ "xs_Bitmap"
-	get width() @ "xs_bitmap_get_width"
-	get height() @ "xs_bitmap_get_height"
-	get pixelFormat() @ "xs_bitmap_get_pixelFormat"
-	get offset() @ "xs_bitmap_get_offset"
-	set buffer(buffer) @ "xs_bitmap_set_buffer";
-	get buffer() @ "xs_bitmap_get_buffer";
-	static depth(pixelFormat) @ "xs_bitmap_get_depth";
+class Bitmap extends Native("xs_Bitmap_destructor") {
+	constructor(width, height, format, buffer, offset) { super(); native("xs_Bitmap").call(this, width, height, format, buffer, offset); }
+	get width() { return native("xs_bitmap_get_width").call(this); }
+	get height() { return native("xs_bitmap_get_height").call(this); }
+	get pixelFormat() { return native("xs_bitmap_get_pixelFormat").call(this); }
+	get offset() { return native("xs_bitmap_get_offset").call(this); }
+	set buffer(buffer) { native("xs_bitmap_set_buffer").call(this, buffer); }
+	get buffer() { return native("xs_bitmap_get_buffer").call(this); }
+	static depth(pixelFormat) { return native("xs_bitmap_get_depth").call(this, pixelFormat); }
 }
 
 Bitmap.Default = 1;

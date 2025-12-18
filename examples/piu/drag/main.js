@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -32,24 +32,24 @@ class DragBehavior extends Behavior {
 	onTimeChanged(content) {
 		content.state = 1 - Math.quadEaseOut(content.fraction);
 	}
-	onTouchBegan(content, id, x, y, ticks) {
+	onTouchBegan(content, id, x, y) {
 		let anchor = this.anchor = content.position;
 		anchor.x -= x;
 		anchor.y -= y;
 		content.state = 1;
 	}
-	onTouchMoved(content, id, x, y, ticks) {
+	onTouchMoved(content, id, x, y) {
 		let anchor = this.anchor;
 		content.position = { x:anchor.x + x, y:anchor.y + y };
 	}
-	onTouchEnded(content, id, x, y, ticks) {
+	onTouchEnded(content) {
 		content.duration = 250;
 		content.time = 0;
 		content.start();
 	}
 }
 
-let DragApplication = Application.template($ => ({
+const DragApplication = Application.template($ => ({
 	skin:desktopSkin, style:buttonStyle,
 	contents: [
 		Container($, {

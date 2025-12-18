@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ * Copyright (c) 2018-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,11 +18,11 @@
  *
  */
  
- class Modules {
-	static get host() @ "xs_modules_host";
-	static get archive() @ "xs_modules_archive";
-	static importNow(name) @ "xs_modules_importNow";
-	static has(name) @ "xs_modules_has";
+class Modules {
+	static get host() { return native("xs_modules_host").call(this); }
+	static get archive() { return native("xs_modules_archive").call(this); }
+	static importNow(name) { return native("xs_modules_importNow").call(this, name); }
+	static has(name) { return native("xs_modules_has").call(this, name); }
 }
 
 export default Modules;

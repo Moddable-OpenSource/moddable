@@ -2732,7 +2732,9 @@ XS_CODE_JUMP:
 			if (gxDoTrace) fxTraceIndex(the, index);
 #endif
 			mxAllocStack(1);
-			*mxStack = mxHosts;
+			variable = mxFunctionInstanceHome(mxFrameFunction->value.reference)->value.home.module;
+			variable = mxModuleInstanceHosts(variable);
+			*mxStack = *variable;
 			slot = mxBehaviorGetProperty(the, mxStack->value.reference, 0, index, XS_OWN);
 			mxStack->kind = slot->kind;
 			mxStack->value = slot->value;

@@ -537,6 +537,17 @@ void fxArrayCacheItem(txMachine* the, txSlot* reference, txSlot* item)
 
 /* Host Constructors, Functions and Objects */
 
+void fxNative(txMachine* the)
+{
+	if (mxIsUndefined(mxTarget))
+		mxPushSlot(mxFunction);
+	else
+		mxPushSlot(mxTarget);
+	mxGetID(mxID(_prototype));
+	fxNewHostInstance(the);
+	mxPullSlot(mxResult);
+}
+
 void fxBuildHosts(txMachine* the, txInteger c, const txHostFunctionBuilder* builder)
 {
 	mxPushInteger(c);

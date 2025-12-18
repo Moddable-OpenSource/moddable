@@ -25,7 +25,7 @@ file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
 
 idf_component_register(
 			SRCS "main.c"
-			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/io ${ENV_MODDABLE}/modules/base/timer ${C_TMP_DIR}
+			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/modules/io ${ENV_MODDABLE}/modules/base/timer ${C_TMP_DIR}
 			)
 
 if (mxDebug EQUAL "1")
@@ -40,11 +40,11 @@ endif()
 
 if (INSTRUMENT EQUAL "1" OR mxDebug EQUAL "1")
 	if (USE_USB EQUAL "2")
-		target_sources(${COMPONENT_TARGET} PRIVATE debugger_cdc.c)
+ 		target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart_cdc.c)
 	elseif (USE_USB EQUAL "1")
 		target_sources(${COMPONENT_TARGET} PRIVATE debugger_tinyusb.c)
 	else()
-		target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart.c)
+ 		target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart_cdc.c)
 	endif()
 else()
 	target_sources(${COMPONENT_TARGET} PRIVATE debugger_none.c)
@@ -54,7 +54,7 @@ target_compile_options(${COMPONENT_TARGET} PRIVATE -DUSE_USB=${USE_USB})
 target_compile_options(${COMPONENT_TARGET} PRIVATE -DESP32=${ESP32})
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs ${ESP_COMPONENTS}
+			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
 		)
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)

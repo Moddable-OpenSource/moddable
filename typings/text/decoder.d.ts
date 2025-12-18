@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Satoshi Tanaka
+* Copyright (c) 2022-2025  Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -31,7 +31,7 @@ declare module "text/decoder" {
     decode(input?: Uint8Array | ArrayBufferLike, options?: TextDecodeOptions): string;
   }
 
-  var TextDecoder: {
+  const TextDecoder: {
     prototype: TextDecoder;
     new(label?: "utf-8", options?: TextDecoderOptions): TextDecoder;
   };

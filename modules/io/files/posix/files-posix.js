@@ -19,64 +19,57 @@
  */
  
 class Status {
-	isFile() @ "xs_stat_isFile"
-	isDirectory() @ "xs_stat_isDirectory"
-	isSymbolicLink() @ "xs_stat_isSymbolicLink"
+	isFile() { return native("xs_stat_isFile").call(this); }
+	isDirectory() { return native("xs_stat_isDirectory").call(this); }
+	isSymbolicLink() { return native("xs_stat_isSymbolicLink").call(this); }
 }
 
-function fstatus() @ "xs_fileposix_status"
+class File extends Native("xs_fileposix_destructor"){
+	constructor(options) { super(); native("xs_fileposix").call(this, options); }
+	close() { return native("xs_fileposix_close").call(this); }
 
-class File @ "xs_fileposix_destructor"{
-	constructor(options) @ "xs_fileposix"
-	close() @ "xs_fileposix_close"
-
-	read(buffer /* or count */, posiiton) @ "xs_fileposix_read"
-	write(buffer, position) @ "xs_fileposix_write"
+	read(buffer /* or count */, posiiton) { return native("xs_fileposix_read").call(this, buffer /* or count */, posiiton); }
+	write(buffer, position) { return native("xs_fileposix_write").call(this, buffer, position); }
 
 	status() {
-		return fstatus.call(this, new Status);
+		return native("xs_fileposix_status").call(this, new Status);
 	}
 
-	setSize(length) @ "xs_fileposix_setSize"
+	setSize(length) { return native("xs_fileposix_setSize").call(this, length); }
 
-	flush() @ "xs_fileposix_flush"
+	flush() { return native("xs_fileposix_flush").call(this); }
 }
 
-
-class DirectoryIterator @ "xs_directory_iterator_posix_destructor" {
-	constructor(directory, path) @ "xs_directory_iterator_posix"
-	next() @ "xs_directory_iterator_posix_next"
-	return() @ "xs_directory_iterator_posix_return"
+class DirectoryIterator extends Native("xs_directory_iterator_posix_destructor") {
+	constructor(directory, path) { super(); native("xs_directory_iterator_posix").call(this, directory, path); }
+	next() { return native("xs_directory_iterator_posix_next").call(this); }
+	return() { return native("xs_directory_iterator_posix_return").call(this); }
 }
 Object.setPrototypeOf(DirectoryIterator.prototype, Iterator.prototype);
 
-function openFile(options) @ "xs_directoryposix_openFile"
-function openDirectory(options) @ "xs_directoryposix_openDirectory"
-function status(path) @ "xs_directoryposix_status"
-
-class Directory @ "xs_directoryposix_destructor" {
-	constructor(options) @ "xs_directoryposix"
-	close() @ "xs_directoryposix_close"
+class Directory extends Native("xs_directoryposix_destructor") {
+	constructor(options) { super(); native("xs_directoryposix").call(this, options); }
+	close() { return native("xs_directoryposix_close").call(this); }
 
 	openFile(options) {
-		return openFile.call(this, options, File.prototype);
+		return native("xs_directoryposix_openFile").call(this, options, File.prototype);
 	}
 	openDirectory(options) {
-		return openDirectory.call(this, options, Directory.prototype);
+		return native("xs_directoryposix_openDirectory").call(this, options, Directory.prototype);
 	}
 
-	delete(path) @ "xs_directoryposix_delete"
+	delete(path) { return native("xs_directoryposix_delete").call(this, path); }
 
-	move(from, to) @ "xs_directoryposix_move"
+	move(from, to) { return native("xs_directoryposix_move").call(this, from, to); }
 
 	status(path, options) {
-		return status.call(this, path, options, new Status);
+		return native("xs_directoryposix_status").call(this, path, options, new Status);
 	}
 
-	createDirectory(options) @ "xs_directoryposix_createDirectory"
-	createLink(path, target) @ "xs_directoryposix_createLink"
+	createDirectory(options) { return native("xs_directoryposix_createDirectory").call(this, options); }
+	createLink(path, target) { return native("xs_directoryposix_createLink").call(this, path, target); }
 
-	readLink(path) @ "xs_directoryposix_readLink"
+	readLink(path) { return native("xs_directoryposix_readLink").call(this, path); }
 
 	scan(...path) {
 		return new DirectoryIterator(this, ...path);

@@ -1,6 +1,6 @@
 # Commodetto
-Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: August 31, 2023
+Copyright 2016-2025 Moddable Tech, Inc.<BR>
+Revised: October 11, 2025
 
 ## About This Document
 
@@ -668,7 +668,7 @@ The PNG decoder in Commodetto supports most variations of the PNG file format, w
 To decompress PNG data to an offscreen bitmap, use the static `decompress` function.
 
 ```javascript
-import PNG from "commodetto/readPNG";
+import PNG from "commodetto/ReadPNG";
 
 let pngData = new Resource("image.png");
 let bitmap = PNG.decompress(pngData);

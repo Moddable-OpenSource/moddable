@@ -260,7 +260,6 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 	register txByte* q = p + script->codeSize;
 	register txS1 offset;
 	txU1 code;
-	txU2 index;
 	txID id;
 	while (p < q) {
 		code = *((txU1*)p);
@@ -301,16 +300,19 @@ void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)
 				fxReferenceLinkerSymbol(linker, id);
 		}
 		else if (-1 == offset) {
+			txU1 index;
 			p++;
 			index = *((txU1*)p);
 			p += 1 + index;
 		}
 		else if (-2 == offset) {
+			txU2 index;
 			p++;
 			mxDecode2(p, index);
 			p += index;
 		}
 		else if (-4 == offset) {
+			txU4 index;
 			p++;
 			mxDecode4(p, index);
 			p += index;
@@ -1015,7 +1017,7 @@ void fxWriteScriptHosts(txLinkerScript* script, FILE* file)
 			txS1 length = *p++;
 			mxDecode2(p, id);
 			if (length < 0)
-				fprintf(file, "\t{ (xsCallback)%s, -1, -1 },\n", p);
+				fprintf(file, "\t{ (xsCallback)%s, %d, %d },\n", p, length, id);
 			else
 				fprintf(file, "\t{ %s, %d, %d },\n", p, length, id);
 			p += mxStringLength((char*)p) + 1;

@@ -11,7 +11,7 @@
 			"$(MODULES)/network/http/*",
 			"$(COMMODETTO)/miniz"
 		],
-		"commodetto/PNG": "$(COMMODETTO)/commodettoReadPNG",
+		"commodetto/ReadPNG": "$(COMMODETTO)/commodettoReadPNG",
 		"commodetto/BufferOut": "$(COMMODETTO)/commodettoBufferOut",
 		"commodetto/Convert": "$(COMMODETTO)/commodettoConvert",
 		"commodetto/PixelsOut": "$(COMMODETTO)/commodettoPixelsOut"

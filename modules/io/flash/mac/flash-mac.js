@@ -1,15 +1,15 @@
 import config from "mc/config";
-class FlashPartition @ "xs_flash_partition_destructor" {
+class FlashPartition extends Native("xs_flash_partition_destructor") {
 	constructor() { throw new TypeError("use device.flash.open({ path })"); }
-	close() @ "xs_flash_partition_close"
+	close() { return native("xs_flash_partition_close").call(this); }
 
-	eraseBlock(start, end) @ "xs_flash_partition_eraseBlock"
-	read(buffer, byteOffset) @  "xs_flash_partition_read"
-	status() @ "xs_flash_partition_status"
-	write(buffer, byteOffset) @  "xs_flash_partition_write"
+	eraseBlock(start, end) { return native("xs_flash_partition_eraseBlock").call(this, start, end); }
+	read(buffer, byteOffset) { return native("xs_flash_partition_read").call(this, buffer, byteOffset); }
+	status() { return native("xs_flash_partition_status").call(this); }
+	write(buffer, byteOffset) { return native("xs_flash_partition_write").call(this, buffer, byteOffset); }
 
-	get format() @ "xs_flash_partition_get_format"
-	set format() @ "xs_flash_partition_set_format"
+	get format() { return native("xs_flash_partition_get_format").call(this); }
+	set format(value) { native("xs_flash_partition_set_format").call(this, value); }
 }
 
 class FlashPartitionIterator {
@@ -25,7 +25,7 @@ class FlashPartitionIterator {
 	}
 }
 
-function openPartition(options, prototype) @ "xs_flash_partition_open"
+function openPartition(options, prototype) { return native("xs_flash_partition_open").call(this, options, prototype); }
 
 export default {
 	open(options) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Moddable Tech, Inc.
+ * Copyright (c) 2023-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,32 +13,22 @@
  */
 
 import {
-	Screen,
-} from "piu/Screen";
-
-import {
 	ControlsColumn,
 	ButtonsRow,
-	InfoRow,
-	PopupRow,
 	SliderRow,
-	StatusRow,
 	SwitchRow,
-	TimerRow,
 } from "ControlsPane";
 
 import {
 	DeviceBehavior,
 	DeviceContainer,
 	DeviceScreen,
-	DeviceWorker,
 } from "DevicePane";
 
 const base = import.meta.uri;
-const ledSkin = { texture:{ base, path:"round-bme68x/screen.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
+	onAbort(/* container, status */) {
 		if (this.reloadOnAbort) {
 			application.defer("doReloadFile");
 			return true;
@@ -61,7 +51,7 @@ class MockupBehavior extends DeviceBehavior {
 	onDefaultButtonUp(container) {
 		this.postJSON(container, { button:0 });
 	}
-	onFinished(container) {
+	onFinished(/* container */) {
 	}
 	onHumidityChanged(container, data) {
 		this.humidity = data.value / 100;
@@ -94,13 +84,7 @@ class MockupBehavior extends DeviceBehavior {
 			}
 		});
 	}
-	onTimeChanged(container) {
-	}
-}
-
-class LEDBehavior extends Behavior {
-	onLEDChanged(content, state) {
-		content.visible = state;
+	onTimeChanged(/* container */) {
 	}
 }
 
@@ -109,7 +93,7 @@ export default {
 	title:"Round BME68X",
 	Workers: {
 	},
-	ControlsTemplate:ControlsColumn.template($ => ({
+	ControlsTemplate:ControlsColumn.template(() => ({
 		contents:[
 			SliderRow({ 
 				name: "TEMPERATURE",

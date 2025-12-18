@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2022-2025 Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -33,10 +33,10 @@ declare module "embedded:io/smbus" {
     readBuffer(register: number, byteLength: number): ArrayBuffer;
     readBuffer(register: number, buffer: Buffer): void;
     writeBuffer(register: number, buffer: Buffer): void;
-    readQuick();
-    writeQuick();
+    readQuick(): void;
+    writeQuick(): void;
     receiveByte(): number;
-    sendByte(command: number);
+    sendByte(command: number): void;
   }
 
   export default SMBus;

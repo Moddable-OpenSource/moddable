@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -141,7 +141,7 @@ async function* listen(options) {
 	const promiseQueue = [];
 	const port = options?.port ?? 80;
 	const base = "http://localhost:" + port;
-	const server = new HTTPServer({ 
+	new HTTPServer({ 
 		io: Listener,
 		port,
 		onConnect(_connection_) {
@@ -205,7 +205,7 @@ async function* listen(options) {
 							else
 								this.write();
 						},
-						onError(message) {
+						onError(error) {
 							rejectRequest(error);
 							rejectResponse(error);
 						}

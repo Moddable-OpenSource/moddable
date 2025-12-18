@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -35,16 +35,16 @@ const screenWidth = 250;
 const screenHeight = 122;
 
 export default function() {
-	global.dir = VDAC_STEP;
+	globalThis.dir = VDAC_STEP;
 
 	let flip = 0;
 	let count = 0;
 
-	global.poco = new Poco(new DESTM32S({width: screenHeight, height: screenWidth, clear: false}), {rotation:90, displayListLength:8192});
+	globalThis.poco = new Poco(new DESTM32S({width: screenHeight, height: screenWidth, clear: false}), {rotation:90, displayListLength:8192});
 
-	global.black = poco.makeColor(0, 0, 0);
-	global.white = poco.makeColor(255, 255, 255);
-	global.openSans18 = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
+	globalThis.black = poco.makeColor(0, 0, 0);
+	globalThis.white = poco.makeColor(255, 255, 255);
+	globalThis.openSans18 = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
 
 	function display(value, voltage, measured) {
 		let x, y;
@@ -82,9 +82,9 @@ export default function() {
 		display(count, expected, calcd);
 
 		if (count > max_count)
-			global.dir = -50;
+			globalThis.dir = -50;
 		if (count < 0)
-			global.dir = 50;
+			globalThis.dir = 50;
 
 		count += dir;
 		flip += 1;
