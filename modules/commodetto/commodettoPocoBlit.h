@@ -140,6 +140,10 @@ struct PocoRecord {
 	PocoPixel			*frameBuffer;
 #endif
 
+#if pebble
+	void					*pebbleState;
+#endif
+
 	PocoPixel			pixels[1];			// displayList follows pixels
 };
 

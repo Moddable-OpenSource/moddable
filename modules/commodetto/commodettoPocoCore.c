@@ -52,6 +52,11 @@ void xs_poco_destructor(void *data)
 		Poco poco = (Poco)(((uint8_t *)data) - offsetof(PocoRecord, pixels));
 		if (poco->reservedPocoJS)
 			c_free(poco->reservedPocoJS);
+#if pebble
+		if (poco->pebbleState)
+			c_free(poco->pebbleState);
+#endif
+
 #if MODDEF_POCO_DMA
 		#if ESP32
 			heap_caps_free(poco);
@@ -126,7 +131,7 @@ void xs_poco_build(xsMachine *the)
 	poco->reservedPocoJS = NULL;
 
 #if pebble
-	poco->next = NULL;
+	poco->pebbleState = NULL;
 #endif
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
