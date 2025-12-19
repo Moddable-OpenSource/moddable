@@ -18,12 +18,12 @@
  *
  */
 
-class Compass @ "xs_compass_destructor" {
-	constructor(options) @ "xs_compass"
-	close() @ "xs_compass_close"
+class Compass extends Native("xs_compass_destructor") {
+	constructor(options) { super(); native("xs_compass").call(this, options); }
+	close() { return native("xs_compass_close").call(this); }
 
-	configure(options) @ "xs_compass_configure"
-	sample() @ "xs_compass_sample"
+	configure(options) { return native("xs_compass_configure").call(this, options); }
+	sample() { return native("xs_compass_sample").call(this); }
 }
 
 export default Compass;

@@ -18,12 +18,12 @@
  *
  */
 
-class Battery @ "xs_battery_destructor" {
-	constructor(options) @ "xs_battery"
-	close() @ "xs_battery_close"
+class Battery extends Native("xs_battery_destructor") {
+	constructor(options) { super(); native("xs_battery").call(this, options); }
+	close() { return native("xs_battery_close").call(this); }
 
 	configure(options) {}
-	sample() @ "xs_battery_sample"
+	sample() { return native("xs_battery_sample").call(this); }
 }
 
 export default Battery;

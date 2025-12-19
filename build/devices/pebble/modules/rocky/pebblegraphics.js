@@ -1,53 +1,52 @@
 import Timer from "timer";
 
-class Context @ "pebble_graphics_context_destructor" {
-	constructor(options) @ "pebble_graphics_context"
-	get fillStyle() @ "pebble_graphics_context_get_fillStyle"
-	set fillStyle() @ "pebble_graphics_context_set_fillStyle"
-	get strokeStyle() @ "pebble_graphics_context_get_strokeStyle"
-	set strokeStyle() @ "pebble_graphics_context_set_strokeStyle"
-	get lineWidth() @ "pebble_graphics_context_get_lineWidth"
-	set lineWidth() @ "pebble_graphics_context_set_lineWidth"
-	clearRect() @ "pebble_graphics_context_clearRect"
-	fillRect() @ "pebble_graphics_context_fillRect"
-	rockyFillRadial() @ "pebble_graphics_context_rockyFillRadial"
-	drawImage() @ "pebble_graphics_context_drawImage"
-	beginPath() @ "pebble_graphics_context_beginPath"
-	closePath() @ "pebble_graphics_context_closePath"
-	moveTo(x, y) @ "pebble_graphics_context_moveTo"
-	lineTo(x, y) @ "pebble_graphics_context_lineTo"
-	arc() @  "pebble_graphics_context_arc"
-	rect() @  "pebble_graphics_context_rect"
-	stroke() @ "pebble_graphics_context_stroke"
-	fill() @ "pebble_graphics_context_fill"
-	save() @ "pebble_graphics_context_save"
-	restore() @ "pebble_graphics_context_restore"
+class Context extends Native("pebble_graphics_context_destructor") {
+	constructor(options) { super(); native("pebble_graphics_context").call(this, options); }
+	get fillStyle() { return native("pebble_graphics_context_get_fillStyle").call(this); }
+	set fillStyle(value) { native("pebble_graphics_context_set_fillStyle").call(this, value); }
+	get strokeStyle() { return native("pebble_graphics_context_get_strokeStyle").call(this); }
+	set strokeStyle(value) { native("pebble_graphics_context_set_strokeStyle").call(this, value); }
+	get lineWidth() { return native("pebble_graphics_context_get_lineWidth").call(this); }
+	set lineWidth(value) { native("pebble_graphics_context_set_lineWidth").call(this, value); }
+	clearRect() { return native("pebble_graphics_context_clearRect").call(this); }
+	fillRect() { return native("pebble_graphics_context_fillRect").call(this); }
+	rockyFillRadial() { return native("pebble_graphics_context_rockyFillRadial").call(this); }
+	drawImage() { return native("pebble_graphics_context_drawImage").call(this); }
+	beginPath() { return native("pebble_graphics_context_beginPath").call(this); }
+	closePath() { return native("pebble_graphics_context_closePath").call(this); }
+	moveTo(x, y) { return native("pebble_graphics_context_moveTo").call(this, x, y); }
+	lineTo(x, y) { return native("pebble_graphics_context_lineTo").call(this, x, y); }
+	arc() { return native("pebble_graphics_context_arc").call(this); }
+	rect() { return native("pebble_graphics_context_rect").call(this); }
+	stroke() { return native("pebble_graphics_context_stroke").call(this); }
+	fill() { return native("pebble_graphics_context_fill").call(this); }
+	save() { return native("pebble_graphics_context_save").call(this); }
+	restore() { return native("pebble_graphics_context_restore").call(this); }
 
-	fillText() @ "pebble_graphics_context_fillText"
-	measureText() @ "pebble_graphics_context_measureText"
-	get font() @ "pebble_graphics_context_get_font"
-	set font() @ "pebble_graphics_context_set_font"
-	get textAlign() @ "pebble_graphics_context_get_textAlign"
-	set textAlign() @ "pebble_graphics_context_set_textAlign"
+	fillText() { return native("pebble_graphics_context_fillText").call(this); }
+	measureText() { return native("pebble_graphics_context_measureText").call(this); }
+	get font() { return native("pebble_graphics_context_get_font").call(this); }
+	set font(value) { native("pebble_graphics_context_set_font").call(this, value); }
+	get textAlign() { return native("pebble_graphics_context_get_textAlign").call(this); }
+	set textAlign(value) { native("pebble_graphics_context_set_textAlign").call(this, value); }
 
 	// extended
-	get dirty() @ "pebble_graphics_context_get_dirty"
-	set dirty(value) @ "pebble_graphics_context_set_dirty"
+	get dirty() { return native("pebble_graphics_context_get_dirty").call(this); }
+	set dirty(value) { native("pebble_graphics_context_set_dirty").call(this, value); }
 }
 
 //@@ canvas.ctx = parent context
-class Canvas @ "pebble_graphics_canvas_destructor" {
-	get clientWidth() @ "pebble_graphics_canvas_get_clientWidth"
-	get clientHeight() @ "pebble_graphics_canvas_get_clientHeight"
-	get unobstructedWidth() @ "pebble_graphics_canvas_get_unobstructedWidth"
-	get unobstructedHeight() @ "pebble_graphics_canvas_get_unobstructedHeight"
+class Canvas extends Native("pebble_graphics_canvas_destructor") {
+	get clientWidth() { return native("pebble_graphics_canvas_get_clientWidth").call(this); }
+	get clientHeight() { return native("pebble_graphics_canvas_get_clientHeight").call(this); }
+	get unobstructedWidth() { return native("pebble_graphics_canvas_get_unobstructedWidth").call(this); }
+	get unobstructedHeight() { return native("pebble_graphics_canvas_get_unobstructedHeight").call(this); }
 }
 //    layer_get_unobstructed_bounds(layer, &uo_rect);
 //#define ROCKY_CANVAS_UNOBSTRUCTEDLEFT "unobstructedLeft"
 //#define ROCKY_CANVAS_UNOBSTRUCTEDTOP "unobstructedTop"
 
-function setSystemResources() @ "pebble_system_setResources";
-
+function setSystemResources() { return native("pebble_system_setResources").call(this); };
 
 export class Rocky {
 	static events = Object.freeze([
@@ -123,8 +122,8 @@ export class Rocky {
 			trace(e.stack, "\n");
 		}
 	}
-	getResource(id) @ "pebble_system_getResource"
-	getBitmap(id) @ "pebble_system_getBitmap"
+	getResource(id) { return native("pebble_system_getResource").call(this, id); }
+	getBitmap(id) { return native("pebble_system_getBitmap").call(this, id); }
 	#tick() {
 		const now = new Date;
 		if (this.#events.has("secondchange"))

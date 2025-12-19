@@ -19,7 +19,7 @@ const events = Object.freeze([
 ]);
 
 const offset = 50;		// Pebble Timer callbacks can be early... that's really bad for a watchface. So, we schedule them late by this number of milliseconds to ensure they fall in the next interval (usually second)
-function connected() @ "xs_global_connected";
+function connected() { return native("xs_global_connected").call(this); };
 
 export class Pebble {
 	#events = new Map;

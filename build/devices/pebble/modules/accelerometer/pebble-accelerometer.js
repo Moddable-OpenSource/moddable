@@ -18,12 +18,12 @@
  *
  */
 
-class Accelerometer @ "xs_accelerometer_destructor" {
-	constructor(options) @ "xs_accelerometer"
-	close() @ "xs_accelerometer_close"
+class Accelerometer extends Native("xs_accelerometer_destructor") {
+	constructor(options) { super(); native("xs_accelerometer").call(this, options); }
+	close() { return native("xs_accelerometer_close").call(this); }
 
-	configure(options) @ "xs_accelerometer_configure"
-	sample() @ "xs_accelerometer_sample"
+	configure(options) { return native("xs_accelerometer_configure").call(this, options); }
+	sample() { return native("xs_accelerometer_sample").call(this); }
 }
 
 export default Accelerometer;

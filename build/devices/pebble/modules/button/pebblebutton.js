@@ -18,9 +18,9 @@
  *
  */
 
-class PebbleButton @ "xs_pebblebutton_destructor" {
-	constructor(options) @ "xs_pebblebutton"
-	close() @ "xs_pebblebutton_close"
+class PebbleButton extends Native("xs_pebblebutton_destructor") {
+	constructor(options) { super(); native("xs_pebblebutton").call(this, options); }
+	close() { return native("xs_pebblebutton_close").call(this); }
 }
 
 export default PebbleButton;

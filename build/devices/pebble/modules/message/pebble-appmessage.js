@@ -18,15 +18,12 @@
  *
  */
 
-function read() @ "xs_appmessage_read";
-function write() @ "xs_appmessage_write";
-
-class Message @ "xs_appmessage_destructor" {
-	constructor(options) @ "xs_appmessage";
-	close() @ "xs_appmessage_close";
+class Message extends Native("xs_appmessage_destructor") {
+	constructor(options) { super(); native("xs_appmessage").call(this, options); };
+	close() { return native("xs_appmessage_close").call(this); };
 
 	read() {
-		const r = read.call(this);
+		const r = native("xs_appmessage_read").call(this);
 		const keys = r.keys, map = r.map;
 		if (keys) {
 			for (const [key, code] of keys.entries()) {
@@ -39,7 +36,7 @@ class Message @ "xs_appmessage_destructor" {
 		return map;
 	}
 	write(map) {
-		write.call(this, map, Array.from(map.keys()));
+		native("xs_appmessage_write").call(this, map, Array.from(map.keys()));
 	}
 
 	get format() {

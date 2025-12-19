@@ -1,6 +1,6 @@
 const inverter = {
 	__proto__: Content.prototype,
-	_create($, it) @ "PiuInverter_create",
+	_create($, it) { return native("PiuInverter_create").call(this, $, it); },
 };
 export const Inverter = Template(inverter);
 Object.freeze(inverter);

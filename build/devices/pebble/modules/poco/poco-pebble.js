@@ -21,19 +21,19 @@
 import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap"
 
-Poco.prototype.Font = class @ "xs_pocopebble_Font_destructor" {
-	constructor(name, size) @ "xs_pocopebble_Font"
+Poco.prototype.Font = class extends Native("xs_pocopebble_Font_destructor") {
+	constructor(name, size) { super(); native("xs_pocopebble_Font").call(this, name, size); }
 }
 
-Poco.prototype.getTextWidth = function(text, font) @ "xs_pocopebble_getTextWidth";
-Poco.prototype.drawText = function(text, font, color, x, y) @ "xs_pocopebbble_drawText";
-Poco.prototype.drawLine = function(x0, y0, x1, y1, color, width) @ "xs_pocopebbble_drawLine";
-Poco.prototype.drawRoundRect = function(x0, y0, x1, y1, color, radius, corners) @ "xs_pocopebbble_drawRoundRect";
-Poco.prototype.frameRoundRect = function(x0, y0, x1, y1, color, radius) @ "xs_pocopebbble_frameRoundRect";
-Poco.prototype.drawCircle = function(color, x, y, r, from, to) @ "xs_pocopebbble_drawCircle";
-Poco.prototype.drawDCI = function(dci, x, y) @ "xs_pocopebbble_drawDCI";
+Poco.prototype.getTextWidth = function(text, font) { return native("xs_pocopebble_getTextWidth").call(this, text, font); };
+Poco.prototype.drawText = function(text, font, color, x, y) { return native("xs_pocopebbble_drawText").call(this, text, font, color, x, y); };
+Poco.prototype.drawLine = function(x0, y0, x1, y1, color, width) { return native("xs_pocopebbble_drawLine").call(this, x0, y0, x1, y1, color, width); };
+Poco.prototype.drawRoundRect = function(x0, y0, x1, y1, color, radius, corners) { return native("xs_pocopebbble_drawRoundRect").call(this, x0, y0, x1, y1, color, radius, corners); };
+Poco.prototype.frameRoundRect = function(x0, y0, x1, y1, color, radius) { return native("xs_pocopebbble_frameRoundRect").call(this, x0, y0, x1, y1, color, radius); };
+Poco.prototype.drawCircle = function(color, x, y, r, from, to) { return native("xs_pocopebbble_drawCircle").call(this, color, x, y, r, from, to); };
+Poco.prototype.drawDCI = function(dci, x, y) { return native("xs_pocopebbble_drawDCI").call(this, dci, x, y); };
 
-function build(id) @ "xs_pebblebitmap_build"
+function build(id) { return native("xs_pebblebitmap_build").call(this, id); }
 
 Poco.PebbleBitmap = class extends Bitmap {
 	constructor(id) {
@@ -42,28 +42,27 @@ Poco.PebbleBitmap = class extends Bitmap {
 	}
 }
 
-function clone() @ "xs_pebbledci_clone"
-Poco.PebbleDrawCommandImage = class @ "xs_pebbledci_destructor" {
-	constructor(id) @ "xs_pebbledci"
-	get width() @ "xs_pebbledci_get_width"
-	get height() @ "xs_pebbledci_get_height"
+Poco.PebbleDrawCommandImage = class extends Native("xs_pebbledci_destructor") {
+	constructor(id) { super(); native("xs_pebbledci").call(this, id); }
+	get width() { return native("xs_pebbledci_get_width").call(this); }
+	get height() { return native("xs_pebbledci_get_height").call(this); }
 	clone() {
-		return clone.call(this, Poco.PebbleDrawCommandList.prototype);
+		return native("xs_pebbledci_clone").call(this, Poco.PebbleDrawCommandList.prototype);
 	}
 }
 
-Poco.PebbleDrawCommandSequence = class @ "xs_pebbledcs_destructor" {
-	constructor(id) @ "xs_pebbledcs"
-	get width() @ "xs_pebbledcs_get_width"
-	get height() @ "xs_pebbledcs_get_height"
-	get duration() @ "xs_pebbledcs_get_duration"
-	get frameDuration() @ "xs_pebbledcs_get_frameDuration"
+Poco.PebbleDrawCommandSequence = class extends Native("xs_pebbledcs_destructor") {
+	constructor(id) { super(); native("xs_pebbledcs").call(this, id); }
+	get width() { return native("xs_pebbledcs_get_width").call(this); }
+	get height() { return native("xs_pebbledcs_get_height").call(this); }
+	get duration() { return native("xs_pebbledcs_get_duration").call(this); }
+	get frameDuration() { return native("xs_pebbledcs_get_frameDuration").call(this); }
 	clone() {
-		return clone.call(this, Poco.PebbleDrawCommandList.prototype);
+		return native("xs_pebbledci_clone").call(this, Poco.PebbleDrawCommandList.prototype);
 	}
 }
 
-Poco.PebbleDrawCommandList = class @ "xs_pebbledcl_destructor" {
-	scale(x, y) @ "xs_pebbledcl_scale"
-	rotate(angle, cx, cy) @ "xs_pebbledcl_rotate"
+Poco.PebbleDrawCommandList = class extends Native("xs_pebbledcl_destructor") {
+	scale(x, y) { return native("xs_pebbledcl_scale").call(this, x, y); }
+	rotate(angle, cx, cy) { return native("xs_pebbledcl_rotate").call(this, angle, cx, cy); }
 }

@@ -14,9 +14,9 @@ const console = Object.freeze({
 });
 
 class AppInfo {
-	static get uuid() @ "xs_appinfo_get_uuid"
-	static get name() @ "xs_appinfo_get_name"
-	static get isWatchface() @ "xs_appinfo_get_isWatchface"
+	static get uuid() { return native("xs_appinfo_get_uuid").call(this); }
+	static get name() { return native("xs_appinfo_get_name").call(this); }
+	static get isWatchface() { return native("xs_appinfo_get_isWatchface").call(this); }
 }
 
 export default function() {

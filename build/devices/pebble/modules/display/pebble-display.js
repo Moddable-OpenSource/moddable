@@ -18,26 +18,26 @@
  *
  */
 
-class PebbleDisplay @ "xs_pebbledisplay_destructor" {
-	constructor(options) @ "xs_pebbledisplay";
+class PebbleDisplay extends Native("xs_pebbledisplay_destructor") {
+	constructor(options) { super(); native("xs_pebbledisplay").call(this, options); };
 
-	begin(x, y, width, height) @ "xs_pebbledisplay_begin";
-	send(pixels, offset, count) @ "xs_pebbledisplay_send";
-	end() @  "xs_pebbledisplay_end";
+	begin(x, y, width, height) { return native("xs_pebbledisplay_begin").call(this, x, y, width, height); };
+	send(pixels, offset, count) { return native("xs_pebbledisplay_send").call(this, pixels, offset, count); };
+	end() { return native("xs_pebbledisplay_end").call(this); };
 
-	adaptInvalid() @ "xs_pebbledisplay_adaptInvalid";
+	adaptInvalid() { return native("xs_pebbledisplay_adaptInvalid").call(this); };
 	continue() {}
 
-	pixelsToBytes(count) @ "xs_pebbledisplay_pixelsToBytes";
+	pixelsToBytes(count) { return native("xs_pebbledisplay_pixelsToBytes").call(this, count); };
 
-	get pixelFormat() @ "xs_pebbledisplay_get_pixelFormat";
-	get width() @ "xs_pebbledisplay_get_width";
-	get height() @ "xs_pebbledisplay_get_height";
+	get pixelFormat() { return native("xs_pebbledisplay_get_pixelFormat").call(this); };
+	get width() { return native("xs_pebbledisplay_get_width").call(this); };
+	get height() { return native("xs_pebbledisplay_get_height").call(this); };
 	get async() {return false;}
 
-	get c_dispatch() @ "xs_pebbledisplay_get_c_dispatch";
+	get c_dispatch() { return native("xs_pebbledisplay_get_c_dispatch").call(this); };
 
-	close() @ "xs_pebbledisplay_close";
+	close() { return native("xs_pebbledisplay_close").call(this); };
 }
 PebbleDisplay.prototype.frameBuffer = true
 
