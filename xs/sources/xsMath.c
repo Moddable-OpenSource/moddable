@@ -36,7 +36,8 @@
  */
 
 #include "xsAll.h"
-#include "xsum.h"
+
+#include "xsum.c"
 
 void fxBuildMath(txMachine* the)
 {
