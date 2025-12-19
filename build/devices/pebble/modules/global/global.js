@@ -18,6 +18,7 @@ const events = Object.freeze([
 		"connected"
 ]);
 
+const offset = 50;		// Pebble Timer callbacks can be early... that's really bad for a watchface. So, we schedule them late by this number of milliseconds to ensure they fall in the next interval (usually second)
 function connected() @ "xs_global_connected";
 
 export class Pebble {
@@ -60,7 +61,7 @@ export class Pebble {
 			return;
 		}
 
-		this.#timeChange ??= Timer.repeat(() => this.#tick(), 1000);
+		this.#timeChange ??= Timer.repeat(id => this.#tick(id), 1000);
 		let interval = 1000;
 		if (seconds)
 			;
@@ -71,7 +72,10 @@ export class Pebble {
 		else
 			interval *= 60 * 60 * 24;
 
-		Timer.schedule(this.#timeChange, interval - (Date.now() % interval) + 10, interval);		// +10 because sometimes the initial fires early otherwise
+		const now = new Date;
+		Timer.schedule(this.#timeChange, offset + interval - (now.valueOf() % interval), interval);
+		this.#timeChange.minutes = now.getMinutes();
+		this.#timeChange.interval = interval;
 	}
 	removeEventListener(event, callback) {
 		const list = this.#events.get(event);
@@ -104,16 +108,27 @@ export class Pebble {
 			trace(e.stack, "\n");
 		}
 	}
-	#tick() {
-		const now = new Date;
+	#tick(id) {
+		const now = new Date();
 		if (this.#events.has("secondchange"))
 			this.do("secondchange", {date: new Date(now)});
-		if (this.#events.has("minutechange") && !now.getSeconds())
-			this.do("minutechange", {date: new Date(now)});
-		if (this.#events.has("hourchange") && !now.getSeconds() && !now.getMinutes())
-			this.do("hourchange", {date: new Date(now)});
-		if (this.#events.has("daychange") && !now.getSeconds() && !now.getMinutes() && !now.getHours())
-			this.do("daychange", {date: new Date(now)});
+		const minutes = now.getMinutes();
+		if (minutes !== id.minutes) {
+			id.minutes = minutes;
+
+			if (this.#events.has("minutechange"))
+				this.do("minutechange", {date: new Date(now)});
+
+			if (!minutes) {
+				if (this.#events.has("hourchange"))
+					this.do("hourchange", {date: new Date(now)});
+				if (this.#events.has("daychange") && !now.getHours())
+					this.do("daychange", {date: new Date(now)});
+			}
+		}
+
+		const interval = id.interval;
+		Timer.schedule(id, offset + interval - (Date.now() % interval), interval);
 	}
 
 	get connected() {
