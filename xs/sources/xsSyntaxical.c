@@ -1529,8 +1529,15 @@ void fxForStatement(txParser* parser)
 #if mxExplicitResourceManagement
 	else if ((parser->states[0].token == XS_TOKEN_IDENTIFIER) && (parser->states[0].symbol == parser->usingSymbol) && (!parser->states[0].escaped)
 				&& (!parser->states[1].crlf) && ((parser->states[1].token == XS_TOKEN_IDENTIFIER) || (parser->states[1].token == XS_TOKEN_AWAIT) || (parser->states[1].token == XS_TOKEN_YIELD))) {
-		parser->states[0].token = XS_TOKEN_USING;
-		fxVariableStatement(parser, XS_TOKEN_USING, 0);
+		fxLookAheadTwice(parser);
+		if ((parser->states[1].symbol == parser->ofSymbol) && (!parser->states[1].escaped) && (parser->states[2].token != XS_TOKEN_ASSIGN)) {
+			fxCommaExpression(parser);
+			expressionFlag = 1;
+		}
+		else {
+			parser->states[0].token = XS_TOKEN_USING;
+			fxVariableStatement(parser, XS_TOKEN_USING, 0);
+		}
 	}
 	else if ((parser->states[0].token == XS_TOKEN_AWAIT)
 				&& (!parser->states[1].crlf) && (parser->states[1].token == XS_TOKEN_IDENTIFIER) && (parser->states[1].symbol == parser->usingSymbol) && (!parser->states[1].escaped)) {
@@ -1673,7 +1680,7 @@ void fxSwitchStatement(txParser* parser)
 			fxMatchToken(parser, XS_TOKEN_COLON);
 			aCaseCount = parser->nodeCount;
 			while (gxTokenFlags[parser->states[0].token] & XS_TOKEN_BEGIN_STATEMENT)
-				fxStatement(parser, 1);
+				fxStatement(parser, -1);
 			aCaseCount = parser->nodeCount - aCaseCount;
 			if (aCaseCount > 1) {
 				fxPushNodeList(parser, aCaseCount);
@@ -1692,7 +1699,7 @@ void fxSwitchStatement(txParser* parser)
 			fxMatchToken(parser, XS_TOKEN_COLON);
 			aCaseCount = parser->nodeCount;
 			while (gxTokenFlags[parser->states[0].token] & XS_TOKEN_BEGIN_STATEMENT)
-				fxStatement(parser, 1);
+				fxStatement(parser, -1);
 			aCaseCount = parser->nodeCount - aCaseCount;
 			if (aCaseCount > 1) {
 				fxPushNodeList(parser, aCaseCount);
