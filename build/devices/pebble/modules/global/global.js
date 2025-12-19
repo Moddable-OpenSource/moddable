@@ -74,7 +74,7 @@ export class Pebble {
 
 		const now = new Date;
 		Timer.schedule(this.#timeChange, offset + interval - (now.valueOf() % interval), interval);
-		this.#timeChange.minutes = now.getMinutes();
+		this.#timeChange.minutes ??= now.getMinutes();
 		this.#timeChange.interval = interval;
 	}
 	removeEventListener(event, callback) {
