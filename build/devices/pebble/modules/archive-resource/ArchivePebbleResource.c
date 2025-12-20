@@ -18,7 +18,7 @@
  *
  */
 
- #include "applib/applib_resource.h"
+#include "applib/applib_resource.h"
 #include "applib/applib_resource_private.h"
 #include "syscall/syscall.h"
 

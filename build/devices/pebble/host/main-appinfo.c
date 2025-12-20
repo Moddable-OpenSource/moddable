@@ -18,7 +18,7 @@
  *
  */
 
- #include "xsmc.h"
+#include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "process_management/app_manager.h"

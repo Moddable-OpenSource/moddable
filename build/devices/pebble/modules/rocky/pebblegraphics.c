@@ -18,7 +18,7 @@
  *
  */
 
- #include "pebblegraphics.h"
+#include "pebblegraphics.h"
 #include "mc.xs.h"      // for xsID_ values
 #include "builtinCommon.h"
 

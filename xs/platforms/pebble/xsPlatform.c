@@ -36,7 +36,6 @@
  */
 
 #include "xsAll.h"
-// #include "modTimer.h"
 #include "stdio.h"
 
 #include "xsPlatform.h"
