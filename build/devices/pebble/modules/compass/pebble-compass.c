@@ -25,6 +25,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
+#include "moddableAppState.h"
 
 #include "builtinCommon.h"
 
@@ -42,8 +43,6 @@ typedef struct {
 
 static void compassData(CompassHeadingData data);
 
-static PebbleCompass gCompass;		// no context! so....
-
 void xs_compass_destructor(void *data)
 {
 	PebbleCompass pc = data;
@@ -51,7 +50,7 @@ void xs_compass_destructor(void *data)
 
 	compass_service_unsubscribe();
 
-	gCompass = C_NULL;
+	setModdableAppState(compass, C_NULL);
 
 	c_free(pc);
 }
@@ -74,7 +73,7 @@ void xs_compass(xsMachine *the)
 {
 	PebbleCompass pc;
 	
-	if (gCompass)
+	if (getModdableAppState(compass))
 		xsUnknownError("only one");
 	
 	xsSlot *onSample = builtinGetCallback(the, xsID_onSample);
@@ -89,7 +88,7 @@ void xs_compass(xsMachine *the)
 	xsRemember(pc->obj);
 	pc->the = the;
 	pc->onSample = onSample;
-	gCompass = pc;
+	setModdableAppState(compass, pc);
 
 	xsmcSetHostData(xsThis, pc);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsCompassHooks);
@@ -153,7 +152,7 @@ void xs_compass_sample(xsMachine *the)
 void compassData(CompassHeadingData data)
 {
 #if CAPABILITY_HAS_MAGNETOMETER
-	PebbleCompass pc = gCompass; 
+	PebbleCompass pc = getModdableAppState(compass); 
 	pc->sample = data;
 	pc->haveSample = true;
 

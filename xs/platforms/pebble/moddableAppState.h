@@ -21,6 +21,9 @@ typedef struct {
 	// timer
 	void					*timers;
 	EventedTimerID		eventedTimer;
+
+	// pebble-compass
+	void					*compass;
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_rocky_memory_api_context())->FIELD)
