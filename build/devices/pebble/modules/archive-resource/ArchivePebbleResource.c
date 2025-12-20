@@ -32,7 +32,7 @@ static xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, siz
 	return 1;
 }
 
-static xsHostHooks ArchivePebbleResourceHooks = {
+static const xsHostHooks ArchivePebbleResourceHooks = {
 	ArchivePebbleResourceDelete,
 	ArchivePebbleResourceMark,
 	NULL
@@ -58,7 +58,7 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 		}
 
 		// remapped = 0;
-		void *d = fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
+		fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
 		fxSetArchive(the, self->address);
 		// if (remapped)
 		// 	xsLog("# remap archive %d\n", resource_id);
