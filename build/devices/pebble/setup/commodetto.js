@@ -21,7 +21,7 @@
 import config from "mc/config";
 
 export default function (done) {
-	if (!global.screen && config.Screen)
-		global.screen = new config.Screen({});
+	if (!globalThis.screen && config.Screen)
+		globalThis.screen = new config.Screen({});
 	done();
 }
