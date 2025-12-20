@@ -259,8 +259,15 @@ const assets = {
 				{ name:"Puck", id:"puck", gender:"Male" },
 				{ name:"Zephyr", id:"zephyr", gender:"Female" },
 			],
+			providers: [
+				{	name:"Google", id:"GOOGLE",
+					models: [
+						{ name:"Gemini 2.5 Flash Live", id:"gemini-2.5-flash-native-audio-preview-12-2025" }
+					],
+				}
+			],
 			defaultVoiceID: "puck",
-			defaultProviderID: "",
+			defaultProviderID: "GOOGLE",
 			defaultModelID: "gemini-2.5-flash-native-audio-preview-12-2025",
 		},
 		hume: {
@@ -424,8 +431,16 @@ const assets = {
 				{ name:"Shimmer", id:"shimmer" },
 				{ name:"Verse", id:"verse" },
 			],
+			providers: [
+				{	name:"OpenAI", id:"OPEN_AI",
+					models: [
+						{ name:"gpt-realtime", id:"gpt-realtime" },
+						{ name:"gpt-realtime-mini", id:"gpt-realtime-mini" }
+					],
+				}
+			],
 			defaultVoiceID: "marin",
-			defaultProviderID: "",
+			defaultProviderID: "OPEN_AI",
 			defaultModelID: "gpt-realtime-mini",
 		}
 	}
