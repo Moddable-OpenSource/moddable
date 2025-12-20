@@ -21,6 +21,8 @@
 import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap"
 
+let cache;
+
 Poco.prototype.Font = class extends Native("xs_pocopebble_Font_destructor") {
 	constructor(name, size) { super(); native("xs_pocopebble_Font").call(this, name, size); }
 }
@@ -37,13 +39,35 @@ function build(id) { return native("xs_pebblebitmap_build").call(this, id); }
 
 Poco.PebbleBitmap = class extends Bitmap {
 	constructor(id) {
-		const b = new Bitmap(0, 0, Bitmap.Pebble);
-		return build(b, id);
+		cache ??= [];
+		id = Number(id);
+		let b = cache[id];
+		if (b) {
+			b = b.deref();
+			if (b) return b;
+			delete cache[id];
+		}
+		b = build(new Bitmap(0, 0, Bitmap.Pebble), id);
+		cache[id] = new WeakRef(b);
+		return b;
 	}
 }
 
 Poco.PebbleDrawCommandImage = class extends Native("xs_pebbledci_destructor") {
-	constructor(id) { super(); native("xs_pebbledci").call(this, id); }
+	constructor(id) {
+		super();
+
+		cache ??= [];
+		id = Number(id);
+		let b = cache[id];
+		if (b) {
+			b = b.deref();
+			if (b) return b;
+			delete cache[id];
+		}
+		native("xs_pebbledci").call(this, id);
+		cache[id] = new WeakRef(this);
+	}
 	get width() { return native("xs_pebbledci_get_width").call(this); }
 	get height() { return native("xs_pebbledci_get_height").call(this); }
 	clone() {

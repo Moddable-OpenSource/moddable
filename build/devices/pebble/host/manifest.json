@@ -45,7 +45,6 @@
 		"Atomics",
 		"SharedArrayBuffer",
 		"WeakMap",
-		"WeakRef",
 		"WeakSet",
 		"BigInt",
 		"eval",
