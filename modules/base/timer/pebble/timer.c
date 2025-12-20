@@ -22,7 +22,7 @@
  
 	to do:
 
-		is it possible to use a repeating timer to minimze time allocations?
+		is it possible to use a repeating timer to minimize time allocations?
  
  */
 
