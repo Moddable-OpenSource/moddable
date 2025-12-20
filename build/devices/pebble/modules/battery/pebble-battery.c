@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
+#include "moddableAppState.h"
 
 #include "builtinCommon.h"
 
@@ -38,8 +39,6 @@ typedef struct {
 
 static void batteryData(BatteryChargeState charge);
 
-static PebbleBattery gBattery;		// no context! so....
-
 void xs_battery_destructor(void *data)
 {
 	PebbleBattery pb = data;
@@ -48,7 +47,7 @@ void xs_battery_destructor(void *data)
 	if (pb->onSample)
 		battery_state_service_unsubscribe();
 
-	gBattery = C_NULL;
+	setModdableAppState(battery, C_NULL);
 
 	c_free(pb);
 }
@@ -71,7 +70,7 @@ void xs_battery(xsMachine *the)
 {
 	PebbleBattery pb;
 	
-	if (gBattery)
+	if (getModdableAppState(battery))
 		xsUnknownError("only one");
 	
 	xsSlot *onSample = builtinGetCallback(the, xsID_onSample);
@@ -86,7 +85,7 @@ void xs_battery(xsMachine *the)
 	xsRemember(pb->obj);
 	pb->the = the;
 	pb->onSample = onSample;
-	gBattery = pb;
+	setModdableAppState(battery, pb);
 
 	xsmcSetHostData(xsThis, pb);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsBatteryHooks);
@@ -136,7 +135,7 @@ void xs_battery_sample(xsMachine *the)
 
 void batteryData(BatteryChargeState charge)
 {
-	PebbleBattery pb = gBattery;
+	PebbleBattery pb = getModdableAppState(battery);
 	if (C_NULL == pb)
 		return;
 

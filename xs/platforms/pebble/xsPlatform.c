@@ -205,6 +205,10 @@ void fxAbort(txMachine* the, int status)
 	char *msg = (char*)fxAbortString(status);
 	char *reason = "";
 	if (XS_UNHANDLED_EXCEPTION_EXIT == status) {
+		xsSlot errorStack = xsGet(xsException, mxID(_stack));
+		xsStringValue stackStr = xsToString(errorStack);
+		APP_LOG(APP_LOG_LEVEL_ERROR, "%s", stackStr);
+
 		mxPush(mxException);
 		mxGetID(mxID(_message));
 		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
@@ -213,10 +217,8 @@ void fxAbort(txMachine* the, int status)
 
 	APP_LOG(APP_LOG_LEVEL_ERROR, "fxAbort %s: %s", msg, reason);
 
-	xsDeleteMachine(the);
-
-	extern void modTimerExit(void);
-	modTimerExit();
+	extern void moddable_cleanup(void);
+	moddable_cleanup();
 
 	c_exit(status);
 }

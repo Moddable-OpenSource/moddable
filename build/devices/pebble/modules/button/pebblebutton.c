@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
+#include "moddableAppState.h"
 #include "system/logging.h"
 #include "applib/event_service_client.h"
 #include "applib/ui/window_private.h"
@@ -37,10 +38,6 @@ struct PebbleButtonRecord {
 };
 typedef struct PebbleButtonRecord PebbleButtonRecord;
 typedef struct PebbleButtonRecord *PebbleButton;
-
-static PebbleButton gButtons;
-static EventServiceInfo	eventServiceDown;
-static EventServiceInfo	eventServiceUp;
 
 static void buttonEventHandler(int pushed, int button)
 {
@@ -59,7 +56,7 @@ static void buttonEventHandler(int pushed, int button)
 		return;
 
 	button = 1 << button;
-	for (pb = gButtons; pb; pb = pb->next) {
+	for (pb = getModdableAppState(buttons); pb; pb = pb->next) {
 		if (!(pb->buttons & button))
 			continue;
 
@@ -87,20 +84,20 @@ void xs_pebblebutton_destructor(void *data)
 	PebbleButton pb = data, walker;
 	if (!pb) return;
 
-	PebbleButton *p = &gButtons;
+	PebbleButton *p = (PebbleButton *)&getModdableAppState(buttons);
 	while (*p && *p != pb)
 		p = &(*p)->next;
 	if (*p)
 		*p = pb->next;
 
-	if (NULL == gButtons) {
-		event_service_client_unsubscribe(&eventServiceUp);
-		event_service_client_unsubscribe(&eventServiceDown);
+	if (NULL == getModdableAppState(buttons)) {
+		event_service_client_unsubscribe(&getModdableAppState(eventServiceUp));
+		event_service_client_unsubscribe(&getModdableAppState(eventServiceDown));
 	}
 
 	Window *w = app_window_stack_get_top_window();
 	if (w) {
-		for (walker = gButtons; walker; walker = walker->next) {
+		for (walker = getModdableAppState(buttons); walker; walker = walker->next) {
 			if (walker->buttons & (1 << BUTTON_ID_BACK))
 				break;
 		}
@@ -178,17 +175,20 @@ void xs_pebblebutton(xsMachine *the)
 	pb->buttons = buttons;
 	pb->onPush = xsmcToReference(xsVar(0));
 	
-	if (NULL == gButtons) {
-		eventServiceDown.type = PEBBLE_BUTTON_DOWN_EVENT;
-		eventServiceDown.handler = buttonDownEventHandler;
-		eventServiceUp.type = PEBBLE_BUTTON_UP_EVENT;
-		eventServiceUp.handler = buttonUpEventHandler;
-		event_service_client_subscribe(&eventServiceUp);
-		event_service_client_subscribe(&eventServiceDown);
+	if (NULL == getModdableAppState(buttons)) {
+		EventServiceInfo *i = &getModdableAppState(eventServiceDown);
+		i->type = PEBBLE_BUTTON_DOWN_EVENT;
+		i->handler = buttonDownEventHandler;
+		event_service_client_subscribe(i);
+
+		i = &getModdableAppState(eventServiceUp);
+		i->type = PEBBLE_BUTTON_UP_EVENT;
+		i->handler = buttonUpEventHandler;
+		event_service_client_subscribe(i);
 	}
 
-	pb->next = gButtons;
-	gButtons = pb;
+	pb->next = getModdableAppState(buttons);
+	setModdableAppState(buttons, pb);
 
 	if ((1 << BUTTON_ID_BACK) & buttons)
 		window_set_overrides_back_button(app_window_stack_get_top_window(), true);

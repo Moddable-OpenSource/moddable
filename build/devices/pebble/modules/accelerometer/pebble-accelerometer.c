@@ -21,6 +21,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
+#include "moddableAppState.h"
 
 #include "builtinCommon.h"
 
@@ -41,8 +42,6 @@ static void accelerometerData(AccelData *data, uint32_t num_samples);
 static void singleTap(AccelAxisType axis, int32_t direction);
 static void doubleTap(AccelAxisType axis, int32_t direction);
 
-static PebbleAccelerometer gAccelerometer;		// no context! so....
-
 void xs_accelerometer_destructor(void *data)
 {
 	PebbleAccelerometer pa = data;
@@ -54,7 +53,7 @@ void xs_accelerometer_destructor(void *data)
 	if (pa->onDoubleTap)
 		accel_double_tap_service_unsubscribe();
 
-	gAccelerometer = C_NULL;
+	setModdableAppState(accelerometer, C_NULL);
 
 	c_free(pa);
 }
@@ -81,7 +80,7 @@ void xs_accelerometer(xsMachine *the)
 {
 	PebbleAccelerometer pa;
 	
-	if (gAccelerometer)
+	if (getModdableAppState(accelerometer))
 		xsUnknownError("only one");
 	
 	xsSlot *onSample = builtinGetCallback(the, xsID_onSample);
@@ -100,7 +99,7 @@ void xs_accelerometer(xsMachine *the)
 	pa->onSample = onSample;
 	pa->onTap = onTap;
 	pa->onDoubleTap = onDoubleTap;
-	gAccelerometer = pa;
+	setModdableAppState(accelerometer, pa);
 
 	xsmcSetHostData(xsThis, pa);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsAccelerometerHooks);
@@ -180,7 +179,7 @@ void xs_accelerometer_sample(xsMachine *the)
 
 void accelerometerData(AccelData *data, uint32_t num_samples)
 {
-	PebbleAccelerometer pa = gAccelerometer; 
+	PebbleAccelerometer pa = getModdableAppState(accelerometer); 
 	pa->sample = *data;
 	pa->haveSample = true;
 
@@ -211,12 +210,12 @@ static void doTap(PebbleAccelerometer pa, AccelAxisType axis, int32_t direction,
 
 void singleTap(AccelAxisType axis, int32_t direction)
 {
-	PebbleAccelerometer pa = gAccelerometer; 
+	PebbleAccelerometer pa = getModdableAppState(accelerometer); 
 	doTap(pa, axis, direction, pa->onTap);
 }
 
 void doubleTap(AccelAxisType axis, int32_t direction)
 {
-	PebbleAccelerometer pa = gAccelerometer; 
+	PebbleAccelerometer pa = getModdableAppState(accelerometer); 
 	doTap(pa, axis, direction, pa->onDoubleTap);
 }

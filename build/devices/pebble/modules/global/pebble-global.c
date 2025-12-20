@@ -21,13 +21,14 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
+#include "moddableAppState.h"
 
 #include "applib/connection_service.h"
 #include "process_state/app_state/app_state.h"
 
 static void connectionChanged(bool connected)
 {
-	xsMachine *the = (xsMachine *)app_state_get_rocky_memory_api_context();
+	xsMachine *the = getModdableAppState(the);
 	
 	xsBeginHost(the);
 		xsmcVars(1);

@@ -29,10 +29,10 @@
 #include "xsmc.h"
 #include "modTimer.h"
 #include "xsHost.h"
+#include "moddableAppState.h"
 
 #include "modInstrumentation.h"
 
-#include "services/common/evented_timer.h"
 #include "kernel/util/sleep.h"
 
 typedef struct modTimerRecord modTimerRecord;
@@ -53,29 +53,29 @@ struct modTimerRecord {
 #if MOD_TASKS
 	uintptr_t			task;
 #endif
-	char 				refcon[1];
+	char 				refcon[];
 };
-
-static modTimer gTimers = NULL;
-static EventedTimerID gEventedTimer = EVENTED_TIMER_INVALID_ID;
 
 static void modTimerEventedExecute(void *);
 
 static void modTimersScheduleNext(void)
 {
-	gEventedTimer = evented_timer_register_or_reschedule(gEventedTimer,
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	state->eventedTimer = evented_timer_register_or_reschedule(state->eventedTimer,
 		(uint32_t)modTimersNext(), modTimerEventedExecute, C_NULL);
 }
 
 void modTimerEventedExecute(void *)
 {
-	gEventedTimer = EVENTED_TIMER_INVALID_ID;
+	setModdableAppState(eventedTimer, EVENTED_TIMER_INVALID_ID);
 	modTimersExecute();
 	modTimersScheduleNext();
 }
 
 void modTimersExecute(void)
 {
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+
 	modCriticalSectionDeclare;
 	uint32_t now = modMilliseconds();
 	modTimer walker;
@@ -85,7 +85,7 @@ void modTimersExecute(void)
 
 	// determine who is firing this time (timers added during this call are ineligible)
 	modCriticalSectionBegin();
-	for (walker = gTimers; NULL != walker; walker = walker->next) {
+	for (walker = state->timers; NULL != walker; walker = walker->next) {
 		if (walker->flags & (kTimerFlagUnscheduled | kTimerFlagFire))
 			continue;
 		int32_t delta = walker->triggerTime - now;
@@ -94,7 +94,7 @@ void modTimersExecute(void)
 	}
 
 	// service eligible callbacks. then reschedule (repeating) or remove (one shot)
-	for (walker = gTimers; NULL != walker; ) {
+	for (walker = state->timers; NULL != walker; ) {
 		if (!(walker->flags & kTimerFlagFire)
 #if MOD_TASKS
 			|| (task != walker->task)
@@ -117,7 +117,7 @@ void modTimersExecute(void)
 			modCriticalSectionEnd();
 			modTimerRemove(walker);
 			modCriticalSectionBegin();
-			walker = gTimers;
+			walker = state->timers;
 			continue;
 		}
 
@@ -139,7 +139,7 @@ int modTimersNext(void)
 
 	modCriticalSectionBegin();
 
-	for (walker = gTimers; NULL != walker; walker = walker->next) {
+	for (walker = getModdableAppState(timers); NULL != walker; walker = walker->next) {
 		if ((walker->flags & kTimerFlagUnscheduled)
 #if MOD_TASKS
 			|| (task != walker->task)
@@ -164,10 +164,11 @@ int modTimersNext(void)
 
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
 	modCriticalSectionDeclare;
 	modTimer timer;
 
-	timer = c_malloc(sizeof(modTimerRecord) + refconSize - 1);
+	timer = c_malloc(sizeof(modTimerRecord) + refconSize);
 	if (!timer) return NULL;
 
 	timer->next = NULL;
@@ -184,12 +185,12 @@ modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb,
 
 	modCriticalSectionBegin();
 
-	if (!gTimers)
-		gTimers = timer;
+	if (!state->timers)
+		state->timers = timer;
 	else {
 		modTimer walker;
 
-		for (walker = gTimers; walker->next; walker = walker->next)
+		for (walker = state->timers; walker->next; walker = walker->next)
 			;
 		walker->next = timer;
 	}
@@ -240,18 +241,19 @@ void *modTimerGetRefcon(modTimer timer)
 void modTimerRemove(modTimer timer)
 {
 	modCriticalSectionDeclare;
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
 	modTimer walker, prev = NULL;
 
 	modCriticalSectionBegin();
 
-	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
+	for (walker = state->timers; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
 			timer->flags = kTimerFlagUnscheduled;
 
 			timer->useCount--;
 			if (timer->useCount <= 0) {
 				if (NULL == prev)
-					gTimers = walker->next;
+					state->timers = walker->next;
 				else
 					prev->next = walker->next;
 				c_free(timer);
@@ -263,11 +265,11 @@ void modTimerRemove(modTimer timer)
 
 	modCriticalSectionEnd();
 
-	if (gTimers)
+	if (state->timers)
 		modTimersScheduleNext();
 	else {
-		evented_timer_cancel(gEventedTimer);
-		gEventedTimer = EVENTED_TIMER_INVALID_ID;
+		evented_timer_cancel(state->eventedTimer);
+		state->eventedTimer = EVENTED_TIMER_INVALID_ID;
 	}
 }
 
@@ -278,11 +280,13 @@ void modTimerDelayMS(uint32_t ms)
 
 void modTimerExit(void)
 {
-	while (gTimers) {
-		modTimer next = gTimers->next;
-		c_free(gTimers);
-		gTimers = next;
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+
+	while (state->timers) {
+		modTimer next = ((modTimer)state->timers)->next;
+		c_free(state->timers);
+		state->timers = next;
 	}
-	evented_timer_cancel(gEventedTimer);
-	gEventedTimer = EVENTED_TIMER_INVALID_ID;
+	evented_timer_cancel(state->eventedTimer);
+	state->eventedTimer = EVENTED_TIMER_INVALID_ID;
 }
