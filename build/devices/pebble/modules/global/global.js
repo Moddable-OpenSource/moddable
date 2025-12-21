@@ -153,6 +153,8 @@ export class Pebble {
 	get connected() {
 		return connected();
 	}
+
+	get color() {return native("xs_global_color_get").call(this);}
 }
 
 export default Pebble;
