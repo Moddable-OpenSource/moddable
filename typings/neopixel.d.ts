@@ -20,7 +20,7 @@
 
 declare module "neopixel" {
     class NeoPixel {
-        constructor(optios?: {
+        constructor(options?: {
             pin?: number,
             length?: number,
             order?: string
