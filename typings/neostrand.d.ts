@@ -129,7 +129,7 @@ declare module "neostrand" {
     }
 
     class NeoStrand extends NeoPixel {
-        constructor(optios?: {
+        constructor(options?: {
             pin?: number,
             length?: number,
             order?: string,
