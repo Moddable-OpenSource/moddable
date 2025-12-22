@@ -50,6 +50,7 @@
 #include "syscall/syscall.h"
 #include "system/passert.h"
 #include "util/time/time.h"
+#include "kernel/pbl_malloc.h"
 
 
 #include "FreeRTOS.h"
@@ -261,14 +262,10 @@ typedef va_list c_va_list;
 #define c_va_end va_end
 #define c_va_start va_start
 
-extern void *my_calloc(size_t nitems, size_t size);
-extern void *my_realloc(void *ptr, size_t size);
-extern void *my_malloc(size_t size);
-extern void my_free(void *ptr);
-#define c_calloc calloc
-#define c_malloc malloc
-#define c_realloc realloc
-#define c_free free
+#define c_calloc(a, b) app_calloc(a, b)
+#define c_malloc(a) app_malloc(a)
+#define c_realloc(a, b) app_realloc(a, b)
+#define c_free(a) app_free(a)
 
 #define c_exit(n) sys_app_fault(n)
 #define c_qsort qsort
