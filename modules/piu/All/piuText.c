@@ -876,7 +876,7 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind
 	default:
 		line->x = x;
 		line->portion = ctx->spaceCount;
-		line->slop = ctx->blockWidth - (ctx->lineWidth - ctx->spaceSum);
+		line->slop = (ctx->spaceCount) ? ctx->blockWidth - (ctx->lineWidth - ctx->spaceSum) : 0;
 		break;	
 	}
 	if (kind == piuTextReturn) {
