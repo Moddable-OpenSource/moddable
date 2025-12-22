@@ -59,16 +59,13 @@ void xs_global_connected(xsMachine *the)
 		connection_service_unsubscribe();
 }
 
-#ifndef PBL_COLOR
-	#error no PBL_COLOR
-#endif
-
 void xs_global_color_get(xsMachine *the)
 {
-
 #if PBL_COLOR
 	xsResult = xsTrue;
-#else
+#elif PBL_BW
 	xsResult = xsFalse;
+#else
+	#error PBL_COLOR or PBL_BW expected
 #endif
 }
