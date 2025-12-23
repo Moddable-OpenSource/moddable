@@ -7,7 +7,7 @@ interface AccelerometerOptions {
 }
 
 interface AccelerometerConfigureOptions {
-  hz: 10 | 25 | 50 | 100;
+  hz?: 10 | 25 | 50 | 100;
 }
 
 interface AccelerometerSample {
