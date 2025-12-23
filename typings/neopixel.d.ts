@@ -19,7 +19,7 @@
 */
 
 declare module "neopixel" {
-    class NeoPixel {
+    class NeoPixel extends HostBuffer {
         constructor(options?: {
             pin?: number,
             length?: number,
@@ -38,7 +38,6 @@ declare module "neopixel" {
         get brightness(): number;
         set brightness(value: number);
         get length(): number;
-        get byteLength(): number;
     }
     export default NeoPixel;
 }
