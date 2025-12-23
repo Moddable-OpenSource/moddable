@@ -101,10 +101,6 @@ void xs_appmessage(xsMachine *the)
 			xsRangeError("only map");
 	}
 
-	uint8_t format = builtinInitializeFormat(the, kIOFormatBuffer);
-	if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
-		xsRangeError("invalid format");
-
 	uint32_t inbound = app_message_inbox_size_maximum(), outbound = app_message_outbox_size_maximum();
 	if (xsmcHas(xsArg(0), xsID_input)) {
 		xsmcGet(tmp, xsArg(0), xsID_input);
