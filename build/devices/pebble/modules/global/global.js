@@ -73,7 +73,7 @@ export class Pebble {
 	}
 	#schedule() {
 		const seconds = this.#events.has("secondchange"), minutes = this.#events.has("minutechange"),
-						hours = this.#events.has("hourchange"), days = this.#events.has("daychange")  
+						hours = this.#events.has("hourchange"), days = this.#events.has("daychange");
 		if (!seconds && !minutes && !hours && !days) {
 			Timer.clear(this.#timeChange);
 			this.#timeChange = undefined;
