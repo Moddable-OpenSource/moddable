@@ -1859,7 +1859,7 @@ txBoolean fx_String_prototype_withRegexp(txMachine* the, txID id, txBoolean glob
 		mxTypeError("this: null");
 	if (mxArgc > 0) {
 		txSlot* regexp = mxArgv(0);
-		if (!mxIsUndefined(regexp) && !mxIsNull(regexp)) {
+		if (mxIsReference(regexp)) {
 			if (global && fxIsRegExp(the, regexp)) {
 				mxPushSlot(regexp);
 				mxGetID(mxID(_flags));

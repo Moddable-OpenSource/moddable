@@ -518,8 +518,7 @@ void fxDecodeURI(txMachine* the, txString theSet)
 				}
 				d &= sequence->lmask;
 				if (sequence != gxUTF8Sequences) {
-					if ((sequence[-1].lmask >= (txU4)d) ||		// over-encoding
-						((d >= 0xD800) & (d <= 0xDFFF)))		// half of surrogate pair
+					if ((sequence[-1].lmask >= (txU4)d) || ((d >= 0xD800) & (d <= 0xDFFF)) || (d >= 0x110000))
 						mxURIError("invalid URI");
 				}
 
