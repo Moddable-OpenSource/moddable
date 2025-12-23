@@ -140,6 +140,7 @@ declare module "neostrand" {
             }
         });
 
+        set(idx: number, color: number, start?: number, end?: number): void;
         add(idx: number, color: number, start?: number, end?: number): void;
         sub(idx: number, color: number, start?: number, end?: number): void;
         op(idx: number, rgb: number, mode: number, start: number, end: number): void;
