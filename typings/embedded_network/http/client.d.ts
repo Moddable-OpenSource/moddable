@@ -22,10 +22,10 @@ declare module "embedded:network/http/client" {
   import type { Buffer } from "embedded:io/_common"
 
   export interface ClientOptions {
-    socket: any
-    port?:number
+    socket?: any
+    port?: number
     host: string
-    dns: any
+    dns?: any
     onError?: (err:any)=>void
   }
 

@@ -32,6 +32,7 @@ import Debug from "debug";
 import HTTPClient from "embedded:network/http/client";
 import WebSocketClient from "embedded:network/websocket/client";
 import { fetch } from "fetch";
+import Headers from "headers";
 import { URL, URLSearchParams } from "url";
 import WebSocket from "WebSocket";
 
@@ -104,6 +105,7 @@ export default function() {
 		// network
 		device,
 		fetch,
+		Headers,
 		URL,
 		URLSearchParams,
 		WebSocket,
@@ -122,8 +124,6 @@ export default function() {
 		Style,
 		Text,
 		Texture,
-		Inverter,
-		RoundRect,
 		SVGImage,
 		ScreenBuffer,
 		Inverter,

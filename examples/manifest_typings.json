@@ -24,9 +24,6 @@
 		"text/*": [
 			"$(TYPINGS)/text/*"
 		],
-		"embedded:provider/*": [
-			"$(TYPINGS)/embedded_provider/*"
-		],
 		"embedded:io/*": [
 			"$(TYPINGS)/embedded_io/*"
 		],
@@ -42,6 +39,7 @@
 		"embedded:network/mqtt/*": [
 			"$(TYPINGS)/embedded_network/mqtt/*"
 		],
+		"embedded:network/websocket/*": "$(TYPINGS)/embedded_network/websocket/*",
 		"embedded:network/dns/resolver/*": [
 			"$(TYPINGS)/embedded_network/dns/resolver/*"
 		],
@@ -50,6 +48,36 @@
 		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
-		]
+		],
+		"web/*": "$(TYPINGS)/web/*"
+	}, 
+	"platforms": {
+		"pebble": {
+			"modules": {
+				"embedded:sensor/Accelerometer": "$(TYPINGS)/pebble/accelerometer",
+				"embedded:sensor/Battery": "$(TYPINGS)/pebble/battery",
+				"embedded:sensor/Compass": "$(TYPINGS)/pebble/compass",
+				"embedded:provider/builtin": "$(TYPINGS)/pebble/device",
+				"pebble/button": "$(TYPINGS)/pebble/button",
+				"pebble/message": "$(TYPINGS)/pebble/message"
+			},
+			"typescript": {
+				"tsconfig": {
+					"compilerOptions": {
+						"types": [
+							"$(TYPINGS)/pebble/global",
+							"$(TYPINGS)/piu/MC-types"
+						]
+					}
+				}
+			}
+		},
+		"...": {
+			"modules": {
+				"embedded:provider/*": [
+					"$(TYPINGS)/embedded_provider/*"
+				]
+			}
+		}
 	}
 }
