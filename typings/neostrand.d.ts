@@ -133,7 +133,7 @@ declare module "neostrand" {
             pin?: number,
             length?: number,
             order?: string,
-            timeings?: {
+            timing?: {
                 mark: PulseTiming,
                 space: PulseTiming,
                 reset: PulseTiming
