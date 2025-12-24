@@ -150,12 +150,12 @@ declare module "neostrand" {
         hsvToRgb(h: number, s: number, v: number): number;
         rgbToHsv(r: number, g: number, b: number): { h: number; s: number; v: number };
 
-        static HueSpan: HueSpan;
-        static Sine: Sine;
-        static Marquee: Marquee;
-        static Pulse: Pulse;
-        static Pattern: Pattern;
-        static Dim: Dim;
-        static Ease: Ease;
+        static HueSpan: typeof HueSpan;
+        static Sine: typeof Sine;
+        static Marquee: typeof Marquee;
+        static Pulse: typeof Pulse;
+        static Pattern: typeof Pattern;
+        static Dim: typeof Dim;
+        static Ease: typeof Ease;
     }
 }
