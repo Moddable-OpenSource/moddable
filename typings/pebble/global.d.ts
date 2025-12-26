@@ -85,6 +85,11 @@ declare const Text: TextConstructor;
 declare const Texture: TextureConstructor;
 declare const Transition: TransitionConstructor;
 
+declare const InverterConstructor: InverterConstructor;
+declare const RoundRect: RoundRectConstructor;
+declare const ScreenBufferConstructor: ScreenBufferConstructor;
+declare const SVGImage: SVGImageConsructor;
+
 /*
   ECMA-419
 */

@@ -66,6 +66,7 @@
 					"compilerOptions": {
 						"types": [
 							"$(TYPINGS)/pebble/global",
+							"$(TYPINGS)/pebble/piu",
 							"$(TYPINGS)/piu/MC-types"
 						]
 					}
