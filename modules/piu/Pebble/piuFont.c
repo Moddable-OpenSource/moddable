@@ -2,6 +2,7 @@
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuFontListDelete(void* it);
 static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static xsHostHooks PiuFontHooks = {
@@ -11,7 +12,7 @@ static xsHostHooks PiuFontHooks = {
 };
 
 static const xsHostHooks PiuFontListHooks = {
-	NULL,
+	PiuFontListDelete,
 	PiuFontListMark,
 	NULL
 };
@@ -220,6 +221,14 @@ void PiuStyleLookupFont(PiuStyle* self)
 	(*font)->height = ascent + descent + leading;
 	
 	(*self)->font = font;
+}
+
+void PiuFontListDelete(void* it)
+{
+	if (gCFE) {
+		CFEDispose(gCFE);
+		gCFE = C_NULL;
+	}
 }
 
 void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)
