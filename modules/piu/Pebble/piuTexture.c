@@ -58,6 +58,13 @@ void PiuTextureCreate(xsMachine* the)
 
 void PiuTextureDelete(void* it)
 {
+	if (it) {
+		PiuTexture self = it;
+		if (self->gbitmap) {
+			gbitmap_destroy(self->gbitmap);
+			self->gbitmap = C_NULL;
+		}
+	}
 }
 
 void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot)
