@@ -72,17 +72,14 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 		self->size = sys_resource_size(app_num, resource_id);
 		self->address = applib_resource_mmap_or_load(app_num, resource_id, 0, self->size, false);
 
-		if (C_NULL == self->address) {
-			self->address = NULL;
+		if (C_NULL == self->address)
 			xsUnknownError("load resource failed");
-		}
 
-		// remapped = 0;
-		fxMapArchive(the, preparation, self->address, 4 * 1024, fxArchiveRead, fxArchiveWrite);
+		if (C_NULL == fxMapArchive(the, preparation, self->address, 256, fxArchiveRead, fxArchiveWrite)) {
+			self->address = NULL;
+			xsUnknownError("fxMapArchive failed");
+		}
 		fxSetArchive(the, self->address);
-		// if (remapped)
-		// 	xsLog("# remap archive %d\n", resource_id);
-		
 
 		mxPushReference(mxFunctionInstanceHome(mxFunction->value.reference)->value.home.module);
 		mxGetID(xsID_Archive);
