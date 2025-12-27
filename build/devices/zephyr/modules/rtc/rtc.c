@@ -72,7 +72,7 @@ void xs_rtc_constructor(xsMachine *the)
 	if (!rtc)
 		xsUnknownError("invalid port");
 	if (!device_is_ready(rtc->device))
-		xsUnknownError("uart not ready");
+		xsUnknownError("rtc not ready");
 
 	xsRTC xr = c_calloc(1, sizeof(xsRTCRecord));
 	if (!xr)
