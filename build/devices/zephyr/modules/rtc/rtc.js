@@ -18,18 +18,16 @@
  *
  */
 
-class RTC @ "xs_rtc_destructor" {
-	constructor(options) @ "xs_rtc_constructor"
-	close() @ "xs_rtc_close"
-	set time(value) @ "xs_rtc_time_set"
-	get time() @ "xs_rtc_time_get"
+class RTC extends Native("xs_rtc_destructor") {
+	constructor(options) { super(); native("xs_rtc_constructor").call(this, options); }
+	close() { return native("xs_rtc_close").call(this); }
+	set time(value) { native("xs_rtc_time_set").call(this, value); }
+	get time() { return native("xs_rtc_time_get").call(this); }
 	configure(value) {
 		const alarm = value?.alarm;
 		if (undefined !== alarm)
-			configure.call(this, Number(alarm));
+			native("xs_rtc_alarm").call(this, Number(alarm));
 	}
 }
-
-function configure(alarm) @ "xs_rtc_alarm"
 
 export default RTC;
