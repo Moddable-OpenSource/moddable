@@ -20,8 +20,9 @@
 
 declare module "neostrand" {
     import type NeoPixel from "neopixel";
+    import type Timeline from "piu/Timeline";
 
-    type NeoStrandEffectDictionary = {
+    export type NeoStrandEffectDictionary = {
         strand: NeoStrand;
         start?: number;
         end?: number;
@@ -32,10 +33,20 @@ declare module "neostrand" {
         size?: number;
         loop?: 0 | 1;
         tickle?: number;
+
         onComplete?: (effect: NeoStrandEffect) => void;
     }
 
-    class NeoStrandEffect {
+    export class NeoStrandEffect {
+        name: string;
+        strand: NeoStrand;
+        start: number;
+        end: number
+        size: number;
+        dur: number;
+        reverse: 0 | 1;
+        loop: 0 | 1;
+        timeline: Timeline;
         constructor(dictionary: NeoStrandEffectDictionary);
 
         reset(effect: NeoStrandEffect): void;
@@ -128,7 +139,7 @@ declare module "neostrand" {
         duration1: number;
     }
 
-    class NeoStrand extends NeoPixel {
+    export class NeoStrand extends NeoPixel {
         constructor(options?: {
             pin?: number,
             length?: number,
@@ -158,4 +169,5 @@ declare module "neostrand" {
         static Dim: typeof Dim;
         static Ease: typeof Ease;
     }
+    
 }
