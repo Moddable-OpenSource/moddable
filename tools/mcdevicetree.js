@@ -782,6 +782,16 @@ Object.defineProperty(device, "files", {
 	}
 });
 `;
+
+  state.tsCode += `
+declare module "embedded:provider/builtin" {
+	import {Directory} from "embedded:storage/files"
+
+  interface Device {
+		files: Directory
+	}
+}
+`;
 }
 
 /*

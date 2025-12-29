@@ -54,6 +54,9 @@
 		"embedded:*": [
 			"$(TYPINGS)/embedded/*"
 		],
+		"embedded:storage/*": [
+			"$(TYPINGS)/embedded/storage/*"
+		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
 		]
