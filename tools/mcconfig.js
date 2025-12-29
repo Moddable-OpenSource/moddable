@@ -299,7 +299,7 @@ class ZephyrMakeFile extends MAKEFILE {
 		this.line(")");
 		if (tool.format) {
 			this.line("zephyr_library_compile_definitions(\"-DkCommodettoBitmapFormat=", formatValues[tool.format], "\")");
-			this.line("zephyr_library_compile_definitions(\"-DkkPocoRotation=", tool.rotation, "\")");
+			this.line("zephyr_library_compile_definitions(\"-DkPocoRotation=", tool.rotation, "\")");
 		}
 		for (var header of tool.hFiles) {
 			this.line("list(APPEND mINCLUDES ", header, ")");
