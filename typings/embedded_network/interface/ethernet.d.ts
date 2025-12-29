@@ -35,6 +35,7 @@ declare module "embedded:network/interface/ethernet" {
 
 		readonly connection: number;
 		readonly address: string | undefined;
+		readonly MAC: string | undefined;
 	}
 
 	export default Ethernet;
