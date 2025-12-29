@@ -432,13 +432,15 @@ const struct modZephyrGPIOBank *modZephyrGetGPIOBank(const char *label)
 }
 `;
 
-	state.jsCode +=`
+	state.jsCode += `
 import Digital from "embedded:io/digital";
 device.io.Digital = Digital;
 
+import DigitalBank from "embedded:io/digitalbank";
+device.io.DigitalBank = DigitalBank;
+
 `;
 }
-
 
 function doGPIOs(state, dts) {
 	if (!state.gpioBanks?.length)
@@ -478,9 +480,11 @@ function doGPIOs(state, dts) {
   state.tsCode += `
 declare module "embedded:provider/builtin" {
   import Digital from "embedded:io/digital";
+  import DigitalBank from "embedded:io/digitalbank";
   
   interface DeviceIO {
     Digital: typeof Digital;
+    DigitalBank: typeof DigitalBank;
   }
 `;
 
