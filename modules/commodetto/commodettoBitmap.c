@@ -211,7 +211,7 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 1;
 	else if ((kCommodettoBitmapGray16 == format) || (kCommodettoBitmapCLUT16 == format))
 		depth = 4;
-	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format) || (kCommodettoBitmapCLUT256 == format))
+	else if ((kCommodettoBitmapGray256 == format) || (kCommodettoBitmapRGB332 == format) || (kCommodettoBitmapCLUT256 == format) || (kCommodettoBitmapARGB2222 == format))
 		depth = 8;
 	else if ((kCommodettoBitmapRGB565LE == format) || (kCommodettoBitmapRGB565BE == format) || (kCommodettoBitmapARGB4444 == format) || (kCommodettoBitmapYUV422 == format))
 		depth = 16;
@@ -223,6 +223,8 @@ uint8_t CommodettoBitmapGetDepth(CommodettoBitmapFormat format)
 		depth = 12;
 	else if (kCommodettoBitmapCLUT32 == format)
 		depth = 5;
+	else if (kCommodettoBitmapGray4 == format)
+		depth = 2;
 
 	return depth;
 }

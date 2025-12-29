@@ -38,12 +38,14 @@
 
 #if (kCommodettoBitmapFormat == kCommodettoBitmapGray16) || (kCommodettoBitmapFormat == kCommodettoBitmapCLUT16)
 	#define kCommodettoPixelSize (4)
-#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray256) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB332)
+#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray256) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB332) || (kCommodettoBitmapFormat == kCommodettoBitmapARGB2222)
 	#define kCommodettoPixelSize (8)
 #elif (kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE)
 	#define kCommodettoPixelSize (16)
 #elif (kCommodettoBitmapFormat == kCommodettoBitmapMonochrome) || (kCommodettoBitmapFormat == kCommodettoBitmapMonochromeAligned)
 	#define kCommodettoPixelSize (1)
+#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray4)
+	#define kCommodettoPixelSize (2)
 #else
 	#error
 #endif

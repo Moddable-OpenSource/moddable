@@ -37,6 +37,8 @@ const formatNames = {
 	clut16: "clut16",
 	argb4444: "argb4444",
 	bgra32: "bgra32",
+	argb2222: "argb2222",
+	gray4: "gray4",
 };
 
 var formatValues = {
@@ -50,6 +52,8 @@ var formatValues = {
 	clut16: Bitmap.CLUT16,
 	argb4444: Bitmap.ARGB4444,
 	bgra32: Bitmap.BGRA32,
+	argb2222: Bitmap.ARGB2222,
+	gray4: Bitmap.Gray4,
 };
 
 export default class extends TOOL {
@@ -157,6 +161,10 @@ export default class extends TOOL {
 		}
 		if (this.colorFormat == formatValues.monochromealigned) {
 			this.alphaFormat = formatValues.monochromealigned;
+			this.bm4 = true;
+		}
+		else if (this.colorFormat == formatValues.argb2222) {
+			this.alphaFormat = formatValues.gray4;
 			this.bm4 = true;
 		}
 		if (this.inputPaths.length == 0) {
@@ -487,7 +495,9 @@ class BM4Out extends PixelsOut {
 			(Bitmap.RGB332 != pixelFormat) &&
 			(Bitmap.CLUT16 != pixelFormat) &&
 			(Bitmap.Monochrome != pixelFormat) &&
-			(Bitmap.MonochromeAligned != pixelFormat))
+			(Bitmap.MonochromeAligned != pixelFormat) &&
+			(Bitmap.ARGB2222 != pixelFormat) &&
+			(Bitmap.Gray4 != pixelFormat))
 			throw new Error("unsupported BM4 pixel fornat");
 
 		this.file = new File(dictionary.path, 1);

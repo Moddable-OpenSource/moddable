@@ -45,6 +45,8 @@
 #define kCommodettoBitmapYUV422 (20)
 #define kCommodettoBitmapMonochromeAligned (21)
 #define kCommodettoBitmapPebble (22)
+#define kCommodettoBitmapARGB2222 (23)
+#define kCommodettoBitmapGray4 (24)
 
 #define kCommodettoBitmapPacked (0x80)
 
