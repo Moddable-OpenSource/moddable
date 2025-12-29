@@ -171,6 +171,7 @@ declare module "embedded:provider/builtin" {
 		doBus(state, parsed, {
 			binding: "i2c",
 			name: "I2C",
+      hostProviderName: "i2c",
 			header: "#include <zephyr/drivers/i2c.h>",
       moduleSpecifier: "embedded:io/i2c",
       moduleDefault: "I2C",
@@ -180,13 +181,14 @@ device.io.I2C = I2C;
 // import SMBus from "embedded:io/smbus";
 // device.io.SMBus = SMBus;
 
-device.I2C = {};
+device.i2c = {};
 `
 		});
 
 		doBus(state, parsed, {
 			binding: "serial",
 			name: "Serial",
+      hostProviderName: "serial",
 			header: "#include <zephyr/drivers/uart.h>",
       moduleSpecifier: "embedded:io/serial",
       moduleDefault: "Serial",
@@ -194,7 +196,7 @@ device.I2C = {};
 `import Serial from "embedded:io/serial";
 device.io.Serial = Serial;
 
-device.Serial = {};
+device.serial = {};
 `
 		});
 
@@ -205,12 +207,15 @@ device.Serial = {};
 			doBus(state, parsed, {
 				binding: "adc",
 				name: "Analog",
+        hostProviderName: "analog",
 				header: "#include <zephyr/drivers/adc.h>",
+        moduleSpecifier: "embedded:io/analog",
+        moduleDefault: "Analog",
 				static:
 `import Analog from "embedded:io/analog";
 device.io.Analog = Analog;
 
-device.Analog = {};
+device.analog = {};
 `
 			});
 		}
@@ -218,12 +223,15 @@ device.Analog = {};
 		doBus(state, parsed, {
 			binding: "pwm",
 			name: "PWM",
+      hostProviderName: "pwm",
 			header: "#include <zephyr/drivers/pwm.h>",
+      moduleSpecifier: "embedded:io/pwm",
+      moduleDefault: "PWM",
 			static:
 `import PWM from "embedded:io/pwm";
 device.io.PWM = PWM;
 
-device.PWM = {};
+device.pwm = {};
 `
 		});
 
@@ -263,6 +271,7 @@ device.display = {};
 doBus(state, parsed, {
 			binding: "spi",
 			name: "SPI",
+      hostProviderName: "spi",
 			header: "#include <zephyr/drivers/spi.h>",
       moduleSpecifier: "embedded:io/spi",
       moduleDefault: "SPI",
@@ -270,7 +279,7 @@ doBus(state, parsed, {
 `import SPI from "embedded:io/spi";
 device.io.SPI = SPI;
 
-device.SPI = {};
+device.spi = {};
 `
 		});
 */
@@ -665,8 +674,9 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
   state.tsCode += "\t}\n";
   state.tsCode += "\n";
   state.tsCode += "\tinterface Device {\n";
-  state.tsCode += `\t\t${options.moduleDefault.toLowerCase()}: {\n`;
+  state.tsCode += `\t\t${hostProviderName}: {\n`;
   const tsType = `${options.moduleDefault}Options`;
+  state.tsCode += `\t\t\tdefault: ${tsType};\n`;
   nodes.forEach(node => {
 		state.tsCode += `\t\t\t${node.label}: ${tsType};\n`;
 		for (let i = 1; i < node.labels?.length; i++) 
