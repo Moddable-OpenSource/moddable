@@ -88,12 +88,14 @@ add_custom_command(
 # typescript files
 #
 
-add_custom_command(
-	OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
-	COMMAND tsc -p ${MODULES_DIR}/tsconfig.json
-	DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	VERBATIM
-)
+if (TYPESCRIPT_CONVERTED_FILES)
+	add_custom_command(
+		OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
+		COMMAND tsc -p ${MODULES_DIR}/tsconfig.json
+		DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		VERBATIM
+	)
+endif()
 
 # --- end suffix
