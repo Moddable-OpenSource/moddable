@@ -45,6 +45,9 @@
 		"embedded:network/dns/resolver/*": [
 			"$(TYPINGS)/embedded_network/dns/resolver/*"
 		],
+		"embedded:network/interface/*": [
+			"$(TYPINGS)/embedded_network/interface/*"
+		],
 		"embedded:network/*": [
 			"$(TYPINGS)/embedded_network/*"
 		],
