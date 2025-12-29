@@ -31,6 +31,8 @@ var formatNames = {
 	clut16: "clut16",
 	argb4444: "argb4444",
 	monochromealigned: "monochromealigned",
+	argb2222: "argb2222",
+	gray4: "gray4",
 	x: "monochromealigned",
 };
 
@@ -43,6 +45,8 @@ var formatValues = {
 	clut16: 11,
 	argb4444: 12,
 	monochromealigned: 21,
+	argb2222: 23,
+	gray4: 24,
 };
 
 export class MakeFile extends FILE {
@@ -1048,8 +1052,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${tool.localsName}.txt`);
 				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
 				if ("-alpha" === face.suffix) {
+					let format = tool.format;
+					if ((tool.format == "argb222") && face.monochrome) {
+						format = "monochromealigned";
+					}
 					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bm4", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) -4 ${face.monochrome ? "-ma" : ""} -r `, tool.rotation, " -t");
+					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -4 -f ", format, " -r ", tool.rotation, " -t");
 				}
 				else if ("-mask" === face.suffix) {
 					this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
