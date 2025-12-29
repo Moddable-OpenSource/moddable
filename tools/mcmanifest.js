@@ -2017,6 +2017,11 @@ export class Tool extends TOOL {
 					if (partial.startsWith(head))
 						return platforms[n];
 				}
+				else if (n.startsWith("*/")) {
+					let tail = n.slice(1);
+					if (partial.endsWith(tail))
+						return platforms[n];
+				}
 				else if (partial === n)
 					return platforms[n];
 			}

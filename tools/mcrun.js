@@ -325,6 +325,7 @@ class ToDoFile extends FILE {
 export default class extends Tool {
 	constructor(argv) {
 		let checkModule = true;
+		let hackPebblePlatform = false;
 		let argi = argv.indexOf("-noCheckModule");
 		if (argi >= 0) {
 			checkModule = false;
@@ -336,13 +337,39 @@ export default class extends Tool {
 				argi++;
 				if (argi < argv.length) {
 					const name = argv[argi].toLowerCase();
-					if (name == "x")
+					if (name == "x") {
 						checkModule = false;
+						hackPebblePlatform = true;
+					}
 				}
 			}
 		}
 		super(argv);
 		this.checkModule = checkModule;
+		if (hackPebblePlatform) {
+			this.platform = "mac";
+			this.subplatform = "";
+			var path = this.resolveFilePath("../../package.json");
+			if (path) {
+				try {
+					const json = JSON.parse(this.readFileString(path));
+					this.subplatform = json.pebble?.targetPlatforms?.[0];
+				}
+				catch {
+				}
+			}
+			if (this.subplatform == "flint") 
+				this.format = "monochromealigned";
+			else if (this.subplatform == "basalt")
+				this.format = "argb2222";
+			else
+				throw new Error("unknown subplatform!");
+			this.fullplatform = this.platform + "/" + this.subplatform;
+			this.environment.PLATFORM = this.platform;
+			this.environment.SUBPLATFORM = this.subplatform;
+			this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+			this.report(`### -p ${this.fullplatform}`);
+		}
 		if (this.platform == "wasm") {
 			this.fragmentPath = null;
 		}
