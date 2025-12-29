@@ -48,6 +48,9 @@
 		"embedded:network/*": [
 			"$(TYPINGS)/embedded_network/*"
 		],
+		"embedded:*": [
+			"$(TYPINGS)/embedded/*"
+		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
 		]

@@ -249,7 +249,22 @@ device.pwm = {};
 import RTC from "embedded:RTC/zephyr-builtin";
 device.rtc = Object.freeze({io: RTC, port: "${rtcs[0].label}"});
 `;
-        }
+        state.tsCode += `
+declare module "embedded:provider/builtin" {
+	import RTC from "embedded:RTC"
+
+	type RTCOptions = ConstructorParameters<typeof RTC>[0] & {
+		io: typeof RTC
+	}
+
+	interface Device {
+		rtc: {
+			default: RTCOptions;
+		}
+	}
+}
+`;
+      }
     }
 
     if ("y" === state.zephyrConfig.get("CONFIG_DISPLAY")) {
