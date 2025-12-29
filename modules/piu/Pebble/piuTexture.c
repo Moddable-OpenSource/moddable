@@ -8,6 +8,10 @@ static xsHostHooks PiuTextureHooks = {
 	NULL
 };
 
+static GColor gBitmapGray4Palette[4] = {
+	{ argb:0xFF }, { argb:0xAA }, { argb:0x55 }, { argb:0x00 },
+};
+
 void PiuTextureCreate(xsMachine* the) 
 {
 	PiuTextureRecord record;
@@ -26,29 +30,42 @@ void PiuTextureCreate(xsMachine* the)
 	else {
 		if (xsTest(xsArg(0))) {
 			CommodettoBitmap cb = xsGetHostChunk(xsArg(0));
-			if (cb->format != kCommodettoBitmapMonochromeAligned)
-				xsUnknownError("invalid texture format");
 			self->flags |= piuTextureAlpha;
 			self->mask.addr = cb->bits.data;
-			self->mask.row_size_bytes = ((cb->w + 31) >> 5) * 4;
-			self->mask.info.format = GBitmapFormat1Bit;
 			self->mask.info.version = GBITMAP_VERSION_1;
 			self->mask.bounds = GRect(0, 0, cb->w, cb->h);
 			self->width = cb->w;
 			self->height = cb->h;
+			if (cb->format == kCommodettoBitmapMonochromeAligned) {
+				self->mask.row_size_bytes = ((cb->w + 31) >> 5) * 4;
+				self->mask.info.format = GBitmapFormat1Bit;
+			}
+			else if (cb->format == kCommodettoBitmapGray4) {
+				self->mask.row_size_bytes = (cb->w + 3) >> 2;
+				self->mask.info.format = GBitmapFormat2BitPalette;
+				self->mask.palette = gBitmapGray4Palette;
+			}
+			else
+				xsUnknownError("invalid texture format");
 		}
 		if (xsTest(xsArg(1))) {
 			CommodettoBitmap cb = xsGetHostChunk(xsArg(1));
-			if (cb->format != kCommodettoBitmapMonochromeAligned)
-				xsUnknownError("invalid texture format");
 			self->flags |= piuTextureColor;
 			self->bits.addr = cb->bits.data;
-			self->bits.row_size_bytes = ((cb->w + 31) >> 5) * 4;
-			self->bits.info.format = GBitmapFormat1Bit;
 			self->bits.info.version = GBITMAP_VERSION_1;
 			self->bits.bounds = GRect(0, 0, cb->w, cb->h);
 			self->width = cb->w;
 			self->height = cb->h;
+			if (cb->format == kCommodettoBitmapMonochromeAligned) {
+				self->bits.row_size_bytes = ((cb->w + 31) >> 5) * 4;
+				self->bits.info.format = GBitmapFormat1Bit;
+			}
+			else if (cb->format == kCommodettoBitmapARGB2222) {
+				self->bits.row_size_bytes = cb->w;
+				self->bits.info.format = GBitmapFormat8Bit;
+			}
+			else
+				xsUnknownError("invalid texture format");
 		}
 	}
 	xsSetHostChunk(xsThis, self, sizeof(record));

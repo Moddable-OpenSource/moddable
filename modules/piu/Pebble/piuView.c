@@ -180,12 +180,25 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 				graphics_draw_bitmap_in_rect_processed(ctx, bits, &rect, C_NULL);
 			}
 			else {
-				ctx->draw_state.compositing_mode = ((*self)->color.argb == GColorBlack.argb) ?  GCompOpAnd : GCompOpSet;
-				graphics_draw_bitmap_in_rect_processed(ctx, mask, &rect, C_NULL);
+				#if PBL_COLOR
+					GColor saveColor = ctx->draw_state.tint_color; 
+					ctx->draw_state.tint_color.argb = (*self)->color.argb;
+					ctx->draw_state.compositing_mode = GCompOpTint;
+					graphics_draw_bitmap_in_rect_processed(ctx, mask, &rect, C_NULL);
+					ctx->draw_state.tint_color = saveColor;
+				#elif PBL_BW
+					ctx->draw_state.compositing_mode = ((*self)->color.argb == GColorBlack.argb) ?  GCompOpAnd : GCompOpSet;
+					graphics_draw_bitmap_in_rect_processed(ctx, mask, &rect, C_NULL);
+				#else
+					#error PBL_COLOR or PBL_BW expected
+				#endif
 			}
 		}
 		else {
-			graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+			if (bits->info.format == GBitmapFormat1Bit)
+				graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+			else
+				graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect_processed(ctx, bits, &rect, C_NULL);
 		}
 	}
