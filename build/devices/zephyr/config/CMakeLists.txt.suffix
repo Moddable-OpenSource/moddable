@@ -39,20 +39,20 @@ zephyr_library_compile_definitions(${mFLAGS})
 zephyr_library_compile_options(${mOPTIONS})
 
 zephyr_library_include_directories(
-        $ENV{MODDABLE}/xs/includes
-        $ENV{MODDABLE}/xs/sources
-        $ENV{MODDABLE}/xs/platforms/mc
-        $ENV{MODDABLE}/xs/platforms/zephyr
-        $ENV{MODDABLE}/xs/tools/fdlibm
-        $ENV{MODDABLE}/modules/base/timer
-        $ENV{MODDABLE}/modules/base/instrumentation
-        $ENV{MODDABLE}/modules/files/preference
-        $ENV{MODDABLE}/modules/commodetto/gif
-        $ENV{MODDABLE}/modules/commodetto
-        $ENV{MODDABLE}/modules/io/common
-        $ENV{MODDABLE}/modules/piu/All
-        $ENV{MODDABLE}/modules/piu/MC
-	)
+	$ENV{MODDABLE}/xs/includes
+	$ENV{MODDABLE}/xs/sources
+	$ENV{MODDABLE}/xs/platforms/mc
+	$ENV{MODDABLE}/xs/platforms/zephyr
+	$ENV{MODDABLE}/xs/tools/fdlibm
+	$ENV{MODDABLE}/modules/base/timer
+	$ENV{MODDABLE}/modules/base/instrumentation
+	$ENV{MODDABLE}/modules/files/preference
+	$ENV{MODDABLE}/modules/commodetto/gif
+	$ENV{MODDABLE}/modules/commodetto
+	$ENV{MODDABLE}/modules/io/common
+	$ENV{MODDABLE}/modules/piu/All
+	$ENV{MODDABLE}/modules/piu/MC
+)
 
 if (VERBOSE)
 	message(STATUS "*-*-*-*-*-*-*-*-*")
@@ -70,17 +70,30 @@ endif()
 set(ZEPHYR_DTS_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr.dts)
 
 set(MCDEVICETREE_GENERATED_FILES
-    ${TMP_DIR}/mc.devicetree.c
-    ${TMP_DIR}/mc.devicetree.h
-    ${TMP_DIR}/mc.devicetree.js
+	${TMP_DIR}/mc.devicetree.c
+	${TMP_DIR}/mc.devicetree.h
+	${TMP_DIR}/mc.devicetree.js
+	${TMP_DIR}/mc.devicetree.d.ts
 )
 
 add_custom_command(
-    OUTPUT ${MCDEVICETREE_GENERATED_FILES}
-    COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf
-    DEPENDS ${ZEPHYR_DTS_FILE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    VERBATIM
+	OUTPUT ${MCDEVICETREE_GENERATED_FILES}
+	COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf
+	DEPENDS ${ZEPHYR_DTS_FILE}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	VERBATIM
+)
+
+#
+# typescript files
+#
+
+add_custom_command(
+	OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
+	COMMAND tsc -p ${MODULES_DIR}/tsconfig.json
+	DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	VERBATIM
 )
 
 # --- end suffix

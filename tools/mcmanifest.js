@@ -727,18 +727,15 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -c";
 
 			if (tool.platform == "zephyr") {
-				source = result.source.replaceAll("#", tool.escapedHash);
+				source = source.replaceAll("#", tool.escapedHash);
 				var output = "${MODULES_DIR}" + tool.slash + target.replaceAll("#", tool.escapedHash);
 				var outputPath = output.slice(0, output.lastIndexOf("/"));
-				if (tool.platform == "zephyr") {
-					this.line("add_custom_command(");
-					this.line("\tOUTPUT " + output);
-					this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
-					this.line("\tDEPENDS " + source);
-					this.line("\tVERBATIM)");
-					this.line("");
-				}
-
+				this.line("add_custom_command(");
+				this.line("\tOUTPUT " + output);
+				this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
+				this.line("\tDEPENDS " + source);
+				this.line("\tVERBATIM)");
+				this.line("");
 			}
 			else {
 				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash));
@@ -767,33 +764,73 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 			else
 				common = directories[0].length;
+
 			var temporaries = [];
-			for (var result of tool.tsFiles) {
-				var source = result.source;
-				var target = result.target;
-				var targetParts = tool.splitPath(target);
-				var temporary = source.slice(common, -3) + ".js"
-				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
-				this.echo(tool, "xsc ", target);
-				var options = "";
-				if (result.commonjs)
-					options += " -p";
-				if (tool.debug)
-					options += " -d";
-				if (tool.nativeCode)
-					options += " -c";
-				this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
-				if (tool.windows)
-					this.line("$(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash), ": TSCONFIG");
-				temporaries.push("%" + temporary);
+
+			if (tool.platform === "zephyr") {
+				generatedTS.push("${TMP_DIR}" + tool.slash + "mc.devicetree.d.ts");
+
+				for (const result of tool.tsFiles) {
+					let source = result.source;
+					const target = result.target;
+					const targetParts = tool.splitPath(target);
+					const temporary = source.slice(common, -3) + ".js"
+
+					let options = "";
+					if (result.commonjs)
+						options += " -p";
+					if (tool.debug)
+						options += " -d";
+					if (tool.nativeCode)
+						options += " -c";
+
+					source = source.replaceAll("#", tool.escapedHash);
+
+					this.line("list(APPEND TYPESCRIPT_SOURCE_FILES");
+					this.line("\t" + source);
+					this.line(")");
+
+					this.line("list(APPEND TYPESCRIPT_CONVERTED_FILES");
+					this.line("\t${MODULES_DIR}", temporary);
+					this.line(")");
+
+					this.line("add_custom_command(");
+					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
+					this.line("\tCOMMAND xsc ${MODULES_DIR}", temporary, options, " -e -o ${MODULES_DIR} -r ", targetParts.name.replaceAll("#", tool.escapedHash));
+					this.line("\tDEPENDS ${MODULES_DIR}", temporary);
+					this.line("\tVERBATIM");
+					this.line(")");
+					this.line("");
+				}
 			}
-			if (tool.windows)
-				this.line("TSCONFIG:");
-			else
-				this.line(temporaries.join(" ").replaceAll("#", tool.escapedHash), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
-			this.echo(tool, "tsc ", "tsconfig.json");
-			this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
-			this.line("");
+			else {
+				for (var result of tool.tsFiles) {
+					var source = result.source;
+					var target = result.target;
+					var targetParts = tool.splitPath(target);
+					var temporary = source.slice(common, -3) + ".js"
+					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
+					this.echo(tool, "xsc ", target);
+					var options = "";
+					if (result.commonjs)
+						options += " -p";
+					if (tool.debug)
+						options += " -d";
+					if (tool.nativeCode)
+						options += " -c";
+					this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
+					if (tool.windows)
+						this.line("$(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash), ": TSCONFIG");
+					temporaries.push("%" + temporary);
+				}
+				if (tool.windows)
+					this.line("TSCONFIG:");
+				else
+					this.line(temporaries.join(" ").replaceAll("#", tool.escapedHash), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
+				this.echo(tool, "tsc ", "tsconfig.json");
+				this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
+				this.line("");
+			}
 		}
 
 		for (var result of tool.pioFiles) {
@@ -1636,6 +1673,9 @@ export class TSConfigFile extends FILE {
 			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -3) ];
 			json.files.push(result.source);
+		}
+		if ("zephyr" === tool.platform) {
+			paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree.d.ts"];
 		}
 		this.write(JSON.stringify(json, null, "\t"));
 		this.close();

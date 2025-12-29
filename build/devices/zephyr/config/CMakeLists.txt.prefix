@@ -76,4 +76,10 @@ list(APPEND mOPTIONS "-Wno-error=sign-compare")
 list(APPEND mOPTIONS "-Wno-error=strict-aliasing")
 list(APPEND mOPTIONS "-Wno-misleading-indentation")
 
+set(TYPESCRIPT_SOURCE_FILES
+)
+
+set(TYPESCRIPT_CONVERTED_FILES
+)
+
 # --- end prefix ---

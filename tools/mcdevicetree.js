@@ -125,6 +125,7 @@ export default class extends TOOL {
 			cCode: "",
 			hCode: "",
 			jsCode: "",
+			tsCode: "",
 			aliasTable: new Map,
 			zephyrConfig: this.zephyrConfig,
       compatible
@@ -150,6 +151,18 @@ const device = {
 	pin: {}
 };
 `
+		state.tsCode += `
+declare module "embedded:provider/builtin" {
+  interface DeviceIO {}
+  interface DeviceNetwork {}
+
+  interface Device {
+    io: DeviceIO;
+    network: DeviceNetwork;
+  }
+}
+
+`;
 
 		doAliases(state, parsed);
 		doGPIOBanks(state, parsed); 
@@ -159,6 +172,8 @@ const device = {
 			binding: "i2c",
 			name: "I2C",
 			header: "#include <zephyr/drivers/i2c.h>",
+      moduleSpecifier: "embedded:io/i2c",
+      moduleDefault: "I2C",
 			static:
 `import I2C from "embedded:io/i2c";
 device.io.I2C = I2C;
@@ -173,6 +188,8 @@ device.I2C = {};
 			binding: "serial",
 			name: "Serial",
 			header: "#include <zephyr/drivers/uart.h>",
+      moduleSpecifier: "embedded:io/serial",
+      moduleDefault: "Serial",
 			static:
 `import Serial from "embedded:io/serial";
 device.io.Serial = Serial;
@@ -247,6 +264,8 @@ doBus(state, parsed, {
 			binding: "spi",
 			name: "SPI",
 			header: "#include <zephyr/drivers/spi.h>",
+      moduleSpecifier: "embedded:io/spi",
+      moduleDefault: "SPI",
 			static:
 `import SPI from "embedded:io/spi";
 device.io.SPI = SPI;
@@ -269,15 +288,24 @@ device.SPI = {};
 export default device;
 `;
 
-		const parts = {
+		state.tsCode += `
+declare module "embedded:provider/builtin" {
+  const device: Device
+  export default device;
+}
+`;
+
+const parts = {
 				name: "mc.devicetree",
 				directory: this.outputDirectory,
 		};
 
-		["h", "c", "js"].forEach(extension => {
+		["h", "c", "js", "ts"].forEach(extension => {
+      const value = state[extension + "Code"];
+      if ("ts" === extension) extension = "d.ts";
 			parts.extension = "." + extension;
-			let output = new FILE(this.joinPath(parts), "wb");
-			output.writeString(state[extension + "Code"]);
+			const output = new FILE(this.joinPath(parts), "wb");
+			output.writeString(value);
 			output.close();
 		});
 	}
@@ -420,47 +448,16 @@ function doGPIOs(state, dts) {
 	if (0 === gpios.length)
 		return;
 
-/*
-	state.cCode +=`
-static const struct modZephyrGPIO gGPIO[] = {
+  state.tsCode += `
+declare module "embedded:provider/builtin" {
+  import Digital from "embedded:io/digital";
+  
+  interface DeviceIO {
+    Digital: typeof Digital;
+  }
 `;
 
-	gpios.forEach(gpio => {
-		state.cCode += `	{${gpio.userName ? " // " + gpio.userName : ""}
-		.name = "${gpio.name}",
-		.dt = GPIO_DT_SPEC_GET(DT_PATH(${gpio.kind}, ${gpio.name}), gpios),
-		.bankIndex = ${gpio.bankIndex}
-	},
-`;
-	});
-
-	state.cCode += `};
-
-const struct modZephyrGPIO *modZephyrGetGPIO(const char *name)
-{
-	for (int i = 0; i < ARRAY_SIZE(gGPIO); i++) {
-		if (0 == c_strcmp(gGPIO[i].name, name))
-			return &gGPIO[i];
-	}
-
-	return C_NULL;
-}
-`;
-
-	state.hCode += `
-
-struct modZephyrGPIO {
-	const char *name;
-	const struct gpio_dt_spec dt;
-	uint8_t bankIndex;
-};
-
-extern const struct modZephyrGPIO *modZephyrGetGPIO(const char *name);
-
-`;
-*/
-
-	const kinds = new Set();
+	const kinds = new Set, leds = new Set, buttons = new Set;
 	gpios.forEach(gpio => {
 		let mode = [], kindName, edge;
 		if ("gpio-leds" == gpio.kind) {
@@ -469,6 +466,7 @@ extern const struct modZephyrGPIO *modZephyrGetGPIO(const char *name);
 			//@@ flags OutputOpenDrain
 			if (gpio.flags & (1 << 0))		// GPIO_ACTIVE_LOW
 				mode.push("Digital.ActiveLow");
+      leds.add(gpio.name);
 		}
 		else if ("gpio-keys" === gpio.kind) {
 			mode.push("Digital.Input");
@@ -480,6 +478,7 @@ extern const struct modZephyrGPIO *modZephyrGetGPIO(const char *name);
 			if (gpio.flags & (1 << 0))		// GPIO_ACTIVE_LOW
 				mode.push("Digital.ActiveLow");
 			edge = "Digital.Rising | Digital.Falling";
+      buttons.add(gpio.name);
 		}
 		mode = mode.join(" | ");
 
@@ -505,6 +504,10 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 			const aliasTable = state.aliasTable.get(target);
 			aliasTable?.forEach(alias => {
 				state.jsCode += `device.${kindName}.${alias} = device.${kindName}.${gpio.name};\n`;
+       	if ("led" === kindName)
+      		leds.add(alias);
+      	else
+      		buttons.add(alias);
 
 				if (("sw0" === alias) && ("gpio-keys" === gpio.kind))
 					state.jsCode += `device.pin.button = Object.freeze({port: "${gpio.bus}", pin: ${gpio.pin}});\n`;
@@ -513,6 +516,44 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 			});
 		}
 	});
+
+
+if (leds.size) {
+		state.tsCode += `
+  interface DeviceLEDOptions extends Omit<ConstructorParameters<typeof Digital>[0], 'pin' | 'mode' | 'port'> {}
+  interface DeviceLEDs {
+`;
+    leds.forEach(value => {
+      state.tsCode += `    ${value}: new (options?: DeviceLEDOptions) => InstanceType<typeof Digital>\n`;
+    });
+    state.tsCode +=`  }\n`;
+	}
+
+	if (buttons.size) {
+		state.tsCode += `
+  interface DeviceButtonOptions extends Omit<ConstructorParameters<typeof Digital>[0], 'pin' | 'mode' | 'port' > {
+      onReadable?: (this: Digital) => void;
+  }
+  interface DeviceButtons {
+`;
+    buttons.forEach(value => {
+      state.tsCode += `    ${value}: new (options?: DeviceButtonOptions) => InstanceType<typeof Digital>\n`;
+    });
+    state.tsCode +=`  }\n`;
+	}
+
+  if (leds.size || buttons.size) {
+		state.tsCode += `\n  interface Device {\n`;
+    if (leds.size)
+  		state.tsCode += `    leds: DeviceLEDs\n`;
+    if (buttons.size)
+  		state.tsCode += `    buttons: DeviceButtons\n`;
+		state.tsCode += `  }\n`;
+  }
+
+  state.tsCode +=
+`}
+`;
 }
 
 function doBus(state, dts, options) {
@@ -608,6 +649,32 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
   }
 
 	state.jsCode += `device.${hostProviderName}.default = device.${hostProviderName}.${defaultLabel};\n`;
+
+  if (!options.moduleDefault || !options.moduleSpecifier)
+    return nodes;   //@@
+
+  state.tsCode += `declare module "embedded:provider/builtin" {\n`;
+  state.tsCode += `\timport ${options.moduleDefault} from "${options.moduleSpecifier}"\n`;
+  state.tsCode += "\n";
+  state.tsCode += "\tinterface DeviceIO {\n";
+  state.tsCode += `\t\t${options.moduleDefault}: typeof ${options.moduleDefault}\n`;
+  state.tsCode += "\t}\n";
+  state.tsCode += "\n";
+  state.tsCode += `\ttype ${options.moduleDefault}Options = ConstructorParameters<typeof ${options.moduleDefault}>[0] & {\n`;
+  state.tsCode += `\t\tio: typeof ${options.moduleDefault}\n`;
+  state.tsCode += "\t}\n";
+  state.tsCode += "\n";
+  state.tsCode += "\tinterface Device {\n";
+  state.tsCode += `\t\t${options.moduleDefault.toLowerCase()}: {\n`;
+  const tsType = `${options.moduleDefault}Options`;
+  nodes.forEach(node => {
+		state.tsCode += `\t\t\t${node.label}: ${tsType};\n`;
+		for (let i = 1; i < node.labels?.length; i++) 
+      state.tsCode += `\t\t\t${node.labels[i]}: ${tsType};\n`;
+  });
+  state.tsCode += "\t\t}\n";
+  state.tsCode += "\t}\n";
+  state.tsCode += "}\n";
 
   return nodes;
 }
