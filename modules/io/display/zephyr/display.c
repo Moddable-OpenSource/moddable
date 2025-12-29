@@ -225,15 +225,23 @@ void xs_display_begin(xsMachine *the)
 {
 	modDisplay display = xsmcGetHostDataValidate(xsThis, (void *)&xsDisplayHooks);
 
-	xsSlot tmp;
-	xsmcGet(tmp, xsArg(0), xsID_x);
-	int x = xsmcToInteger(tmp);
-	xsmcGet(tmp, xsArg(0), xsID_y);
-	int y = xsmcToInteger(tmp);
-	xsmcGet(tmp, xsArg(0), xsID_width);
-	int width = xsmcToInteger(tmp);
-	xsmcGet(tmp, xsArg(0), xsID_height);
-	int height = xsmcToInteger(tmp);
+	int x, y, width, height;
+	if (xsmcArgc) {
+		xsSlot tmp;
+		xsmcGet(tmp, xsArg(0), xsID_x);
+		x = xsmcToInteger(tmp);
+		xsmcGet(tmp, xsArg(0), xsID_y);
+		y = xsmcToInteger(tmp);
+		xsmcGet(tmp, xsArg(0), xsID_width);
+		width = xsmcToInteger(tmp);
+		xsmcGet(tmp, xsArg(0), xsID_height);
+		height = xsmcToInteger(tmp);
+	}
+	else {
+		x = y = 0;
+		width = display->width;
+		height = display->height;
+	}
 
 	if (0 != displayBegin(display, x, y, width, height, C_NULL, C_NULL, 0))		//@@ continue flag
 		xsUnknownError("invalid");

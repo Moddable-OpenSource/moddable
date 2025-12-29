@@ -273,6 +273,9 @@ declare module "embedded:provider/builtin" {
         name: "Display",
         hostProviderName: "display",
         header: "#include <zephyr/drivers/display.h>",
+        moduleSpecifier: "embedded:display",
+        moduleDefault: "Display",
+        tsDeviceIO: false,
         static:
 `import Display from "embedded:display/zephyr";
 device.display = {};
@@ -680,10 +683,12 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
   state.tsCode += `declare module "embedded:provider/builtin" {\n`;
   state.tsCode += `\timport ${options.moduleDefault} from "${options.moduleSpecifier}"\n`;
   state.tsCode += "\n";
-  state.tsCode += "\tinterface DeviceIO {\n";
-  state.tsCode += `\t\t${options.moduleDefault}: typeof ${options.moduleDefault}\n`;
-  state.tsCode += "\t}\n";
-  state.tsCode += "\n";
+  if (options.tsDeviceIO ?? true) {
+    state.tsCode += "\tinterface DeviceIO {\n";
+    state.tsCode += `\t\t${options.moduleDefault}: typeof ${options.moduleDefault}\n`;
+    state.tsCode += "\t}\n";
+    state.tsCode += "\n";
+  }
   state.tsCode += `\ttype ${options.moduleDefault}Options = ConstructorParameters<typeof ${options.moduleDefault}>[0] & {\n`;
   state.tsCode += `\t\tio: typeof ${options.moduleDefault}\n`;
   state.tsCode += "\t}\n";
