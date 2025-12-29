@@ -12,6 +12,7 @@
 		"CONFIG_NET_IPV6": "n",
 		"CONFIG_NET_TCP": "y",
 		"CONFIG_WIFI": "y",
+		"CONFIG_NET_MGMT_EVENT_INFO": "y",
 		"CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4": "y"
 	},
 	"x-zephyrConfig": {
