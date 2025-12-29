@@ -829,6 +829,19 @@ import ${nic.name} from "${nic.import}";
 device.network.interface.${nic.label} = Object.freeze({io: ${nic.name}, kind: "${nic.kind}"});
 
 `;
+
+    state.tsCode += `
+declare module "embedded:provider/builtin" {
+  import ${nic.name} from "${nic.import}";
+	import type {PortSpecifier} from "embedded:io/_common";
+
+  interface DeviceNetwork {
+    interface: {
+      ${nic.label}: {io: typeof ${nic.name}, kind: string, port: PortSpecifier};
+    }
+  }
+}
+`;
   });
 }
 
