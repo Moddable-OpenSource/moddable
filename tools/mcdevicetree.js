@@ -306,7 +306,13 @@ device.spi = {};
     if ("y" === state.zephyrConfig.get("CONFIG_FILE_SYSTEM"))
       doFileSystems(state, parsed);
 
-		state.hCode +=
+    if ("y" === state.zephyrConfig.get("CONFIG_FLASH"))
+      doFlash(state, parsed);
+
+    if ("y" === state.zephyrConfig.get("CONFIG_SETTINGS"))
+      doKeyValue(state, parsed);
+
+      state.hCode +=
 `
 #endif /* __MC_ZEPHYR_H__ */
 `;
@@ -793,6 +799,40 @@ declare module "embedded:provider/builtin" {
 
   interface Device {
 		files: Directory
+	}
+}
+`;
+}
+
+function doFlash(state, dts) {
+  state.jsCode += `
+import flash from "embedded:storage/flash";
+device.flash = flash;
+`;
+
+  state.tsCode += `
+declare module "embedded:provider/builtin" {
+	import flash from "embedded:storage/flash";
+
+	interface Device {
+		flash: typeof flash
+	}
+}
+`;
+}
+
+function doKeyValue(state, dts) {
+  state.jsCode += `
+import keyValue from "embedded:storage/key-value";
+device.keyValue = keyValue;
+`;
+
+  state.tsCode += `
+declare module "embedded:provider/builtin" {
+	import keyValue from "embedded:storage/key-value";
+
+	interface Device {
+		keyValue: typeof keyValue
 	}
 }
 `;
