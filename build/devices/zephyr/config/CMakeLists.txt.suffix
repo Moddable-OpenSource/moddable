@@ -23,6 +23,7 @@ add_custom_target(generated_files
 	DEPENDS ${TMP_DIR}/mc.resources.c
 	DEPENDS ${TMP_DIR}/mc.xs.c
 	DEPENDS ${TMP_DIR}/mc.xs.h
+	DEPENDS ${TMP_DIR}/mc.defines.h
 	DEPENDS ${TMP_DIR}/mc.devicetree.c
 	DEPENDS ${TMP_DIR}/mc.devicetree.h
 	DEPENDS ${MODULES_DIR}/Resource.xsb
@@ -78,8 +79,8 @@ set(MCDEVICETREE_GENERATED_FILES
 
 add_custom_command(
 	OUTPUT ${MCDEVICETREE_GENERATED_FILES}
-	COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf
-	DEPENDS ${ZEPHYR_DTS_FILE}
+	COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf -d ${TMP_DIR}/mc.defines.h
+	DEPENDS ${ZEPHYR_DTS_FILE} ${TMP_DIR}/mc.defines.h
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	VERBATIM
 )

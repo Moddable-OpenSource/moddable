@@ -52,8 +52,7 @@ export default class extends TOOL {
 				break;
 
 			case "-c":
-				argi++
-				if (argi >= argc)
+				if (++argi >= argc)
 					throw new Error("-c no zephyr.conf!");
 				path = this.resolveFilePath(argv[argi]);
 				this.zephyrConfig ??= new Map;
@@ -62,6 +61,28 @@ export default class extends TOOL {
 					if (2 !== parts.length) return;
 					if (!parts[0].startsWith("CONFIG_")) return;
 					this.zephyrConfig.set(parts[0], parts[1]);
+				});
+				break;
+
+			case "-d":
+				if (++argi >= argc)
+					throw new Error("-d no mc.defines.h!");
+				path = this.resolveFilePath(argv[argi]);
+				this.defines ??= new Map;
+				this.readFileString(path).split("\n").map(line => line.trim()).forEach(line => {
+					const match = line.match(/^\s*#define\s+(\S+)\s+(.+?)\s*$/);
+					if (!match) return;
+
+					let value = match[2];
+					if (value.startsWith('(') && value.endsWith(')'))
+						value = value.slice(1, -1);
+
+					if (value.startsWith('"') && value.endsWith('"'))
+						value = value.slice(1, -1);
+					else if (/^-?\d+$/.test(value))
+						value = parseInt(value, 10);
+
+					this.defines.set(match[1], value);
 				});
 				break;
 
@@ -81,10 +102,13 @@ export default class extends TOOL {
 
 		if (!this.outputDirectory)
 			throw new Error("no output direcetory!");
-  
+
 		if (!this.zephyrConfig)
 			throw new Error("no zephyr.conf!");
-	}
+
+		if (!this.defines)
+			throw new Error("no mc.defines.h!");
+ 	}
 
 	run() {
 		let dts = String.fromArrayBuffer(this.readFileBuffer(this.sourcePath));
@@ -128,6 +152,7 @@ export default class extends TOOL {
 			tsCode: "",
 			aliasTable: new Map,
 			zephyrConfig: this.zephyrConfig,
+			defines: this.defines,
       compatible
 		}
 
@@ -306,7 +331,7 @@ device.spi = {};
     if ("y" === state.zephyrConfig.get("CONFIG_FILE_SYSTEM"))
       doFileSystems(state, parsed);
 
-    if ("y" === state.zephyrConfig.get("CONFIG_FLASH"))
+    if (("y" === state.zephyrConfig.get("CONFIG_FLASH")) && state.defines.get("MODDEF_ECMA419_FLASH"))
       doFlash(state, parsed);
 
     if ("y" === state.zephyrConfig.get("CONFIG_SETTINGS"))

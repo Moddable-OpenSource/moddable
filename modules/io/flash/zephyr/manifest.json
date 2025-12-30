@@ -9,5 +9,8 @@
 	"zephyrConfig": {
 		"CONFIG_FLASH": "y",
 		"CONFIG_FLASH_MAP": "y"
+	},
+	"defines": {
+		"ECMA419_FLASH": 1
 	}
 }
