@@ -348,28 +348,33 @@ export default class extends Tool {
 		this.checkModule = checkModule;
 		if (hackPebblePlatform) {
 			this.platform = "mac";
-			this.subplatform = "";
+			this.subplatform = "flint";
 			var path = this.resolveFilePath("../../package.json");
 			if (path) {
 				try {
 					const json = JSON.parse(this.readFileString(path));
-					this.subplatform = json.pebble?.targetPlatforms?.[0];
+					if (json.pebble && json.pebble.targetPlatforms && (json.pebble.targetPlatforms.length > 0))
+						this.subplatform = json.pebble.targetPlatforms[0];
 				}
 				catch {
 				}
 			}
-			if (this.subplatform == "flint") 
-				this.format = "monochromealigned";
-			else if (this.subplatform == "basalt")
-				this.format = "argb2222";
-			else
-				throw new Error("unknown subplatform!");
 			this.fullplatform = this.platform + "/" + this.subplatform;
 			this.environment.PLATFORM = this.platform;
 			this.environment.SUBPLATFORM = this.subplatform;
 			this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
 			this.report(`### -p ${this.fullplatform}`);
 		}
+		
+		if (this.subplatform == "flint") {
+			this.checkModule = false;
+			this.format = "monochromealigned";
+		}
+		else if (this.subplatform == "basalt") {
+			this.checkModule = false;
+			this.format = "argb2222";
+		}
+			
 		if (this.platform == "wasm") {
 			this.fragmentPath = null;
 		}
