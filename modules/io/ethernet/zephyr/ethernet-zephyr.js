@@ -27,6 +27,7 @@ class Ethernet extends Native("xs_ethernet_destructor"){
 
 	get connection() { return native("xs_ethernet_connection_get").call(this); }
 	get address() { return native("xs_ethernet_address_get").call(this); }
+	get MAC() { return native("xs_ethernet_MAC_get").call(this); }
 };
 
 export default Ethernet;

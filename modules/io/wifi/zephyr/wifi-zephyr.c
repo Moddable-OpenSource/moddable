@@ -340,3 +340,24 @@ void xs_wifi_address_get(xsMachine *the)
 	net_addr_ntop(AF_INET, addr, addr_str, sizeof(addr_str));
 	xsmcSetString(xsResult, addr_str);
 }
+
+void xs_wifi_MAC_get(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+	struct net_linkaddr *addr = net_if_get_link_addr(wf->iface);
+	if ((C_NULL == addr) || (6 != addr->len))
+		return;
+
+	static const char hex[] = "0123456789abcdef";
+	char mac[18], *s = mac;
+	
+	for (int i = 0; i < 6; i++) {
+		if (i)
+			*s++ = ':';
+		*s++ = hex[(addr->addr[i] >> 4) & 0x0F];
+		*s++ = hex[addr->addr[i] & 0x0F];
+	}
+	*s = 0;
+
+	xsmcSetString(xsResult, mac);
+}
