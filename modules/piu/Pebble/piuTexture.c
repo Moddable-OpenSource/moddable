@@ -9,7 +9,7 @@ static xsHostHooks PiuTextureHooks = {
 };
 
 static GColor gBitmapGray4Palette[4] = {
-	{ argb:0xFF }, { argb:0xAA }, { argb:0x55 }, { argb:0x00 },
+	{ argb:0xC0 }, { argb:0x80 }, { argb:0x40 }, { argb:0x00 },
 };
 
 void PiuTextureCreate(xsMachine* the) 
