@@ -24,8 +24,20 @@ const input = new AudioIn({
 	onReadable(size) {
 		const buffer = new SharedArrayBuffer(size);
 		input.read(buffer);
-		samples.push(new Uint8Array(buffer));
-		samples.total += buffer.byteLength;
+		let data = new Uint8Array(buffer);
+
+		if (this.channels === 2) {
+			// convert to mono
+			const src = new Int16Array(buffer);
+			const frames = src.length >> 1;
+			const mono = new Int16Array(frames);
+			for (let i = 0, j = 0; i < frames; i++, j += 2)
+				mono[i] = src[j];
+			data = new Uint8Array(mono.buffer);
+		}
+
+		samples.push(data);
+		samples.total += data.byteLength;
 
 		if (samples.total >= input.sampleRate * (input.bitsPerSample / 8) * 5) {
 			this.close();
