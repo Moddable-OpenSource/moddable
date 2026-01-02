@@ -19,7 +19,8 @@
 		"main": "main"
 	},
 	"include": [
-		"$(MODULES)/files/resource/manifest.json"
+		"$(MODULES)/files/resource/manifest.json",
+		"$(MODDABLE)/examples/manifest_typings.json"
 	],
 	"modules": {
 		"*": [

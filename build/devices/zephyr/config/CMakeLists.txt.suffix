@@ -99,4 +99,15 @@ if (TYPESCRIPT_CONVERTED_FILES)
 	)
 endif()
 
+if (JAVASCRIPT_SOURCE_FILES)
+	add_custom_command(
+		OUTPUT ${TYPECHECK_FILE}
+		COMMAND tsc -p ${MODULES_DIR}/tsconfig-js.json
+		DEPENDS ${MODULES_DIR}/tsconfig-js.json ${TMP_DIR}/mc.devicetree.d.ts ${JAVASCRIPT_SOURCE_FILES}
+		COMMAND ${CMAKE_COMMAND} -E touch ${TYPECHECK_FILE}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		VERBATIM
+	)
+endif()
+
 # --- end suffix

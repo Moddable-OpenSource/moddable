@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -725,6 +725,9 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				options += " -d";
 			if (tool.nativeCode)
 				options += " -c";
+			const check = (TSConfigFile.filter(tool, [{source}])).length;
+			const typeCheck = tool.typeCheck && check;
+			const lintCheck = tool.lintCheck && check;
 
 			if (tool.platform == "zephyr") {
 				source = source.replaceAll("#", tool.escapedHash);
@@ -732,19 +735,42 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var outputPath = output.slice(0, output.lastIndexOf("/"));
 				this.line("add_custom_command(");
 				this.line("\tOUTPUT " + output);
+				if (lintCheck)
+					this.line("\tCOMMAND eslint " + source + " --config ${MODDABLE}/eslint.config.mjs");
 				this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
-				this.line("\tDEPENDS " + source);
+				this.line("\tDEPENDS " + source + (typeCheck ? " ${TYPECHECK_FILE}" : ""));
+				this.line("\tWORKING_DIRECTORY ${MODDABLE}");
 				this.line("\tVERBATIM)");
 				this.line("");
 			}
 			else {
-				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash));
+				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash), typeCheck ? " $(MODULES_DIR)" + tool.slash + ".typeCheck" : "");
+				if (lintCheck) {
+					this.echo(tool, "eslint ", source.split(tool.slash).at(-1));
+					this.line("\tcd $(MODDABLE) && eslint ", source, " --config $(MODDABLE)/eslint.config.mjs");
+				}
 				this.echo(tool, "xsc ", target);
 				this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
 			}
 		}
 		this.line("");
 		
+		if (tool.typeCheck) {
+			const sources = TSConfigFile.filter(tool, tool.jsFiles);
+			if ("zephyr" === tool.platform) {
+				this.line("set(JAVASCRIPT_SOURCE_FILES");
+				sources.map(file => file.source.replaceAll("#", tool.escapedHash)).forEach(source => this.line("\t", source));
+				this.line(")");
+			}
+			else {
+				this.line("$(MODULES_DIR)", tool.slash, ".typeCheck: " + sources.map(item => item.source).join(" "));
+				this.echo(tool, "tsc ", "tsconfig-js.json", " (typeCheck JavaScript)");
+				this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig-js.json");
+				this.line("\t", "touch $(MODULES_DIR)", tool.slash, ".typeCheck");
+				this.line("");
+			}
+		}
+
 		if (tool.tsFiles.length) {
 			let directories = tool.tsFiles.map(item => tool.splitPath(item.source).directory);
 			const length = directories.length;
@@ -796,8 +822,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 					this.line("add_custom_command(");
 					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
+					if (tool.lintCheck)
+						this.line("\tCOMMAND eslint " + source + " --config ${MODDABLE}/eslint.config.mjs");
 					this.line("\tCOMMAND xsc ${MODULES_DIR}", temporary, options, " -e -o ${MODULES_DIR} -r ", targetParts.name.replaceAll("#", tool.escapedHash));
 					this.line("\tDEPENDS ${MODULES_DIR}", temporary);
+					this.line("\tWORKING_DIRECTORY ${MODDABLE}");
 					this.line("\tVERBATIM");
 					this.line(")");
 					this.line("");
@@ -810,6 +839,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					var targetParts = tool.splitPath(target);
 					var temporary = source.slice(common, -3) + ".js"
 					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
+
+					if (tool.lintCheck) {
+						this.echo(tool, "eslint ", source.split(tool.slash).at(-1));
+						this.line("\tcd $(MODDABLE) && eslint ", source, " --config $(MODDABLE)/eslint.config.mjs");
+					}
 					this.echo(tool, "xsc ", target);
 					var options = "";
 					if (result.commonjs)
@@ -1637,11 +1671,8 @@ trace(`face: ${name}\n`);
 }
 
 export class TSConfigFile extends FILE {
-	constructor(path) {
-		super(path);
-	}
-	generate(tool) {
-		let json = {
+	generate(tool, typescript = true, javascript = false) {
+		const json = {
 			...tool.typescript.tsconfig,
 			compilerOptions: {
 				baseUrl: "./",
@@ -1650,35 +1681,71 @@ export class TSConfigFile extends FILE {
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2024"],
+				lib: ["es2024", "esnext.iterator"],
 				sourceMap: true,
-				target: "es2024",
-				...tool.typescript.tsconfig?.compilerOptions
+				target: "es2024"
 			},
 			files: [
 			]
 		}
-		var paths = json.compilerOptions.paths;
-		for (var result of tool.dtsFiles) {
-			var specifier = result.target;
+		const paths = json.compilerOptions.paths;
+		for (let result of tool.dtsFiles) {
+			let specifier = result.target;
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
 			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
-		for (var result of tool.tsFiles) {
-			var specifier = result.target.slice(0, -4);
-			if (tool.windows)
-				specifier = specifier.replaceAll("\\", "/");
-			specifier = tool.unresolvePrefix(specifier);
-			paths[specifier] = [ result.source.slice(0, -3) ];
-			json.files.push(result.source);
+		if (typescript) {
+			for (let result of tool.tsFiles) {
+				let specifier = result.target.slice(0, -4);
+				if (tool.windows)
+					specifier = specifier.replaceAll("\\", "/");
+				specifier = tool.unresolvePrefix(specifier);
+				paths[specifier] = [ result.source.slice(0, -3) ];
+				json.files.push(result.source);
+			}
+		}
+		if (javascript) {
+			const sources = TSConfigFile.filter(tool, tool.jsFiles);
+			for (let result of sources) {
+				let specifier = result.target.slice(0, -4);
+				if (tool.windows)
+					specifier = specifier.replaceAll("\\", "/");
+				specifier = tool.unresolvePrefix(specifier);
+				json.files.push(result.source);
+			}
+
+			json.compilerOptions = {
+				...json.compilerOptions,
+				allowJs: true,
+				checkJs: true,
+				noEmit: true,
+				strict: true,
+				noImplicitAny: false,
+				strictNullChecks: false
+			}
 		}
 		if ("zephyr" === tool.platform) {
-			paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree.d.ts"];
+			paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
+			paths["mc/devicetree"] = [tool.tmpPath + tool.slash + "mc.devicetree.js"];
 		}
+
+		if (tool.typescript.tsconfig?.compilerOptions) {
+			json.compilerOptions = {
+				...json.compilerOptions,
+				...tool.typescript.tsconfig.compilerOptions
+			}
+		}
+
 		this.write(JSON.stringify(json, null, "\t"));
 		this.close();
+	}
+	static filter(tool, sources) {
+		const MODDABLE = tool.environment.MODDABLE;
+		const modules = MODDABLE + tool.slash + "modules" + tool.slash;
+		const build = MODDABLE + tool.slash + "build" + tool.slash;
+		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build));
 	}
 }
 
@@ -2313,6 +2380,12 @@ export class Tool extends TOOL {
 			case "-l":
 				this.xsbugLaunch = "log";
 				this.reportWarning(null, 0, "-l deprecated. use -dl instead.");				
+				break;
+			case "-tc":
+				this.typeCheck = true;
+				break;
+			case "-lc":
+				this.lintCheck = true;
 				break;
 			default:
 				name = argv[argi];

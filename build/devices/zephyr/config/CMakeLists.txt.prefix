@@ -82,4 +82,7 @@ set(TYPESCRIPT_SOURCE_FILES
 set(TYPESCRIPT_CONVERTED_FILES
 )
 
+set(TYPECHECK_FILE ${CMAKE_BINARY_DIR}/.typeCheck)
+
+
 # --- end prefix ---

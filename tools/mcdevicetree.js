@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -176,19 +176,6 @@ const device = {
 	pin: {}
 };
 `
-		state.tsCode += `
-declare module "embedded:provider/builtin" {
-  interface DeviceIO {}
-  interface DeviceNetwork {}
-
-  interface Device {
-    io: DeviceIO;
-    network: DeviceNetwork;
-  }
-}
-
-`;
-
 		doAliases(state, parsed);
 		doGPIOBanks(state, parsed); 
 		doGPIOs(state, parsed);
@@ -346,7 +333,18 @@ device.spi = {};
 export default device;
 `;
 
-		state.tsCode += `
+if (state.tsDeviceIO || state.tsDeviceNetwork) {
+  state.tsCode += `declare module "embedded:provider/builtin" {\n`;
+  state.tsCode += `\tinterface Device {\n`;
+  if (state.tsDeviceIO)
+    state.tsCode += `\t\tio: DeviceIO;\n`;
+  if (state.tsDeviceNetwork)
+    state.tsCode += `\t\tnetwork: DeviceNetwork;\n`;
+  state.tsCode += `\t}\n`;
+  state.tsCode += `}\n`;
+}
+
+state.tsCode += `
 declare module "embedded:provider/builtin" {
   const device: Device
   export default device;
@@ -518,6 +516,7 @@ declare module "embedded:provider/builtin" {
     DigitalBank: typeof DigitalBank;
   }
 `;
+  state.tsDeviceIO = true;
 
 	const kinds = new Set, leds = new Set, buttons = new Set;
 	gpios.forEach(gpio => {
@@ -582,7 +581,7 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 
 if (leds.size) {
 		state.tsCode += `
-  interface DeviceLEDOptions extends Omit<ConstructorParameters<typeof Digital>[0], 'pin' | 'mode' | 'port'> {}
+  type DeviceLEDOptions = Omit<ConstructorParameters<typeof Digital>[0], 'pin' | 'mode' | 'port'>;
   interface DeviceLEDs {
 `;
     leds.forEach(value => {
@@ -723,6 +722,7 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
     state.tsCode += `\t\t${options.moduleDefault}: typeof ${options.moduleDefault}\n`;
     state.tsCode += "\t}\n";
     state.tsCode += "\n";
+    state.tsDeviceIO = true;
   }
   state.tsCode += `\ttype ${options.moduleDefault}Options = ConstructorParameters<typeof ${options.moduleDefault}>[0] & {\n`;
   state.tsCode += `\t\tio: typeof ${options.moduleDefault}\n`;
@@ -922,6 +922,7 @@ declare module "embedded:provider/builtin" {
 }
 `;
   });
+  state.tsDeviceNetwork = true;
 }
 
 
