@@ -402,6 +402,9 @@ class WebSocketClient {
 							return;
 
 						const opcode = options.tag & 0x0F;
+						if (options.mask) {
+							Logical.xor(control.buffer, options.mask.buffer);
+						}
 						try {
 							this.#options.onControl?.call(this, opcode, control.buffer);
 							if (!this.#socket)

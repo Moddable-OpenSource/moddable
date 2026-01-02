@@ -6,13 +6,13 @@
 	],
 	"modules": {
 		"*": [ 
-			"./config",
 			"$(MODULES)/data/logical/*"
 		],
+		"websocketclient/config": "./config",
 		"embedded:network/websocket/client": "./websocketclient"
 	},
 	"preload": [
-		"config",
+		"websocketclient/config",
 		"embedded:network/websocket/client",
 		"logical"
 	]

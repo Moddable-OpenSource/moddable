@@ -20,6 +20,20 @@
  
 import Timer from "timer";
 
+const statusReasons = Object.freeze({
+    200: "OK",
+    201: "Created",
+    204: "No Content",
+    301: "Moved Permanently",
+    302: "Found",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    500: "Internal Server Error",
+    503: "Service Unavailable",
+});
+
 const more = Object.freeze({more: true});
 
 class Connection {
@@ -282,7 +296,7 @@ class Connection {
 
 			switch (this.#state) {
 				case "sendResponse":
-					this.#pendingWrite = `HTTP/1.1 ${this.#options.status} FILL_THIS_IN\r\n`;
+					this.#pendingWrite = `HTTP/1.1 ${this.#options.status} ${statusReasons[this.#options.status] ?? ""}\r\n`;
 					this.#pendingWrite = ArrayBuffer.fromString(this.#pendingWrite);
 					this.#writePosition = 0;
 

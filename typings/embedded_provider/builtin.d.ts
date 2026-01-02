@@ -18,40 +18,6 @@
 *
 */
 
-
 declare module "embedded:provider/builtin" {
-  import Digital from "embedded:io/digital";
-  import DigitalBank from "embedded:io/digitalbank";
-  import Analog from "embedded:io/analog";
-  import PWM from "embedded:io/pwm";
-  import PulseCount from "embedded:io/pulsecount";
-  import I2C from "embedded:io/i2c";
-  import SMBus from "embedded:io/smbus";
-  import SPI from "embedded:io/spi";
-  import Serial from "embedded:io/serial";
-  import type { PinSpecifier } from "embedded:io/_common";
-  const device: {
-    io: {
-      Digital: typeof Digital;
-      DigitalBank: typeof DigitalBank;
-      Analog: typeof Analog;
-      PWM: typeof PWM;
-      PulseCount: typeof PulseCount;
-      I2C: typeof I2C;
-      SMBus: typeof SMBus;
-      SPI: typeof SPI;
-      Serial: typeof Serial;
-    };
-    Digital: { default: ConstructorParameters<typeof Digital>[0] };
-    DigitalBank: { default: ConstructorParameters<typeof DigitalBank>[0] };
-    Analog: { default: ConstructorParameters<typeof Analog>[0] };
-    PWM: { default: ConstructorParameters<typeof PWM>[0] };
-    PulseCount: { default: ConstructorParameters<typeof PulseCount>[0] };
-    I2C: { default: ConstructorParameters<typeof I2C>[0] };
-    SMBus: { default: ConstructorParameters<typeof SMBus>[0] };
-    SPI: { default: ConstructorParameters<typeof SPI>[0] };
-    Serial: { default: ConstructorParameters<typeof Serial>[0] };
-    pin: { [name: string]: PinSpecifier };
-  };
   export default device;
 }

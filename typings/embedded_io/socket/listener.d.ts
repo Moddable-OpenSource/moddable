@@ -19,19 +19,25 @@
 */
 
 declare module "embedded:io/socket/listener" {
-  import TCP from "embedded:io/socket/tcp"
+  import type TCP from "embedded:io/socket/tcp";
+
+  export interface ListenerOptions {
+    port?: number;
+    address?: string;
+    onReadable?: (this: Listener, bytes: number) => void;
+    format?: "socket/tcp";
+  }
+
+  export type ListenerDevice = ListenerOptions & { io: typeof Listener };
+
   class Listener {
-    constructor(options: {
-      port?: number;
-      address?: string;
-      onReadable?: (this: Listener, requests: number) => void;
-      format?: "socket/tcp";
-      target?: any;
-    })
+    constructor(options: ListenerOptions)
     read(): TCP | undefined
     get format(): "socket/tcp"
     set format(value: "socket/tcp")
+
     readonly port: number;
   }
+  
   export default Listener;
 }

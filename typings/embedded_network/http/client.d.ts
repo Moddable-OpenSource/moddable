@@ -20,12 +20,15 @@
 
 declare module "embedded:network/http/client" {
   import type { Buffer } from "embedded:io/_common"
+  import type { TCPDevice } from "embedded:io/socket/tcp";
+  import type { TLSDevice } from "embedded:io/socket/tls";
+  import type { DNSUDPDevice } from "embedded:io/socket/dns";
 
-  export interface ClientOptions {
-    socket: any
-    port?:number
-    host: string
-    dns: any
+  export interface HTTPClientOptions {
+    socket: TCPDevice | TLSDevice;
+    port?: number;
+    host: string;
+    dns: DNSUDPDevice;
     onError?: (err:any)=>void
   }
 
@@ -39,14 +42,17 @@ declare module "embedded:network/http/client" {
     onDone?: (this: HTTPRequest, error: Error|null) => void // note: error is empty Error object
   }
 
+  export type HTTPClientDevice = HTTPClientOptions & { io: typeof HTTPClient };
+
   export interface HTTPRequest {
-    read(byteLength?: number): ArrayBuffer|undefined;
-    read(buffer: Buffer): void;
+		read(): number;
+		read(byteLength: number): ArrayBuffer;
+		read(buffer: Buffer): void;
     write(value: Buffer|undefined): void;
   }
 
   export default class HTTPClient {
-    constructor(options: ClientOptions)
+    constructor(options: HTTPClientOptions)
     request(options: RequestOptions): HTTPRequest
     close(): void
   }
