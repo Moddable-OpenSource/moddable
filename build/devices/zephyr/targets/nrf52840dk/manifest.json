@@ -9,10 +9,11 @@
 	},
 	"preload": "setup/target",
 	"zephyrConfig": {
-		"CONFIG_USERSPACE": "n"
+		"CONFIG_PWM": "y"
 	},
 	"zephyrOverlay": [
-		"./analog.overlay"
+		"./analog.overlay",
+		"./pwm.overlay"
 	],
 	"config": {
 	},

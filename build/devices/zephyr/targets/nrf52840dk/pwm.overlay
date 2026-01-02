@@ -1,0 +1,29 @@
+
+&pinctrl {
+	pwm0_custom: pwm0_custom {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>,
+					<NRF_PSEL(PWM_OUT1, 0, 14)>,
+					<NRF_PSEL(PWM_OUT2, 0, 15)>,
+					<NRF_PSEL(PWM_OUT3, 0, 16)>;
+			nordic,invert;
+		};
+	};
+	pwm0_csleep: pwm0_csleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>,
+					<NRF_PSEL(PWM_OUT1, 0, 14)>,
+					<NRF_PSEL(PWM_OUT2, 0, 15)>,
+					<NRF_PSEL(PWM_OUT3, 0, 16)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_custom>;
+	pinctrl-1 = <&pwm0_csleep>;
+	pinctrl-names = "default", "sleep";
+};
+

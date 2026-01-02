@@ -41,6 +41,7 @@
 		}
 	},
 	"zephyrConfig": {
-		"CONFIG_ADC": "y"
+		"CONFIG_ADC": "y",
+		"CONFIG_PWM": "y"
 	}
 }
