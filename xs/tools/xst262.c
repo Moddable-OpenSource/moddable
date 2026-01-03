@@ -146,7 +146,7 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 16
+#define mxFeaturesCount 15
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
@@ -159,7 +159,6 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"import-assertions",
 	"import-defer",
 	"joint-iteration",
-	"json-parse-with-source",
 	"nonextensible-applies-to-private",
 	"source-phase-imports",
 	"source-phase-imports-module-source",
