@@ -531,6 +531,7 @@ void xs_audioout_mark_(xsMachine* the, void* it, xsMarkRoot markRoot)
 static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
 {
 	AudioOut audioOut = user_ctx;
+	BaseType_t higherPriorityTaskWoken = pdFALSE;
 
 //@@ entire operation on audioOut->bytesWritable should be atomic
 	uint32_t bytesWritable = __atomic_add_fetch(&audioOut->bytesWritable, event->size, __ATOMIC_SEQ_CST);
@@ -547,7 +548,9 @@ static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void
 				break;
 			bytesAvailable += walker->bytesAvailable;
 			if (bytesAvailable >= audioOut->dma_buf_size) {
-				xTaskNotify(audioOut->task, 1, eSetValueWithOverwrite);	// wake task
+				xTaskNotifyFromISR(audioOut->task, 1, eSetValueWithOverwrite, &higherPriorityTaskWoken);	// wake task
+				if (higherPriorityTaskWoken)
+					portYIELD_FROM_ISR();
 				return false;		// won't invoke audiooutDeliver / onWritable 
 			}
 		}
@@ -556,7 +559,10 @@ static bool playedBuffer(i2s_chan_handle_t handle, i2s_event_data_t *event, void
 	if (!audioOut->callbackPending) {
 		__atomic_add_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
 		audioOut->callbackPending = true;
-		modMessagePostToMachine(audioOut->the, C_NULL, 0, audiooutDeliver, audioOut);		
+		if (0 != modMessagePostToMachineFromISR(audioOut->the, audiooutDeliver, audioOut)) {
+			audioOut->callbackPending = false;
+			__atomic_sub_fetch(&audioOut->useCount, 1, __ATOMIC_SEQ_CST);
+		}
 	}
     return false;
 }
