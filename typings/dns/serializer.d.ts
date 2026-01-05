@@ -25,14 +25,15 @@ declare module "dns/serializer" {
       opcode?: (typeof DNS.OPCODE)[keyof (typeof DNS.OPCODE)],
       query?: boolean,
       authoritative?: boolean,
-      id?: number
+      id?: number,
+      recursionDesired?: boolean,
     });
     add(
       section: (typeof DNS.SECTION)[keyof (typeof DNS.SECTION)],
       name: string,
       type: (typeof DNS.RR)[keyof (typeof DNS.RR)],
       classType: (typeof DNS.CLASS)[keyof (typeof DNS.CLASS)],
-      ttl: number,
+      ttl?: number,
       data?: ArrayBuffer
     ): void;
     build(): ArrayBuffer;

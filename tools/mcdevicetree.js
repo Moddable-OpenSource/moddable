@@ -333,13 +333,16 @@ device.spi = {};
 export default device;
 `;
 
-if (state.tsDeviceIO || state.tsDeviceNetwork) {
+if (state.tsDeviceIO || state.tsDeviceNetworkInterface) {
   state.tsCode += `declare module "embedded:provider/builtin" {\n`;
   state.tsCode += `\tinterface Device {\n`;
   if (state.tsDeviceIO)
     state.tsCode += `\t\tio: DeviceIO;\n`;
-  if (state.tsDeviceNetwork)
-    state.tsCode += `\t\tnetwork: DeviceNetwork;\n`;
+  if (state.tsDeviceNetworkInterface) {
+    state.tsCode += `\t\tnetwork: {\n`;
+    state.tsCode += `\t\t\tinterface: DeviceNetworkInterface;\n`;
+    state.tsCode += `\t\t}\n`;
+  }
   state.tsCode += `\t}\n`;
   state.tsCode += `}\n`;
 }
@@ -914,15 +917,13 @@ declare module "embedded:provider/builtin" {
   import ${nic.name} from "${nic.import}";
 	import type {PortSpecifier} from "embedded:io/_common";
 
-  interface DeviceNetwork {
-    interface: {
-      ${nic.label}: {io: typeof ${nic.name}, kind: string, port: PortSpecifier};
-    }
+  interface DeviceNetworkInterface {
+    ${nic.label}: {io: typeof ${nic.name}, kind: string, port: PortSpecifier};
   }
 }
 `;
   });
-  state.tsDeviceNetwork = true;
+  state.tsDeviceNetworkInterface = true;
 }
 
 
