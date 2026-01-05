@@ -21,11 +21,14 @@ samples.total = 0;
 trace("recording\n")
 
 const input = new AudioIn({
+	channels: 1,
 	onReadable(size) {
 		const buffer = new SharedArrayBuffer(size);
 		input.read(buffer);
-		samples.push(new Uint8Array(buffer));
-		samples.total += buffer.byteLength;
+		const data = new Uint8Array(buffer);
+
+		samples.push(data);
+		samples.total += data.byteLength;
 
 		if (samples.total >= input.sampleRate * (input.bitsPerSample / 8) * 5) {
 			this.close();
