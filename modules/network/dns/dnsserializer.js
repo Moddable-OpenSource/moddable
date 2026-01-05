@@ -51,7 +51,7 @@ class Serializer {
 					data = Uint8Array.from(data.split(".").map(value => parseInt(value)));
 					break;
 
-				case DNS.RR.NSEC:
+				case DNS.RR.NSEC: {
 					let next = data.next.split(".").map(item => ArrayBuffer.fromString(item));
 					next.push(new ArrayBuffer(0));		// trailing 0
 					d = new Uint8Array(next.reduce((value, item) => value + item.byteLength + 1, data.bitmaps.byteLength));
@@ -62,7 +62,7 @@ class Serializer {
 					}, 0);
 					d.set(new Uint8Array(data.bitmaps), offset);
 					data = d;
-					break;
+					} break;
 
 				case DNS.RR.PTR:
 					data = data.split(".").map(item => ArrayBuffer.fromString(item));
@@ -75,7 +75,7 @@ class Serializer {
 					data = d;
 					break;
 
-				case DNS.RR.SRV:
+				case DNS.RR.SRV: {
 					let target = data.target.split(".").map(item => ArrayBuffer.fromString(item));
 					d = new Uint8Array(target.reduce((value, item) => value + item.byteLength + 1, 6 + 1));
 					d[0] = data.priority >> 8;
@@ -90,7 +90,7 @@ class Serializer {
 						return offset + 1 + item.byteLength;
 					}, 6);
 					data = d;
-					break;
+				} break;
 
 				case DNS.RR.TXT:
 					d = 0;

@@ -418,9 +418,7 @@ class HTTPClient {
 					return;
 			}
 			
-			if (!this.#pendingWrite || !this.#writable)
-				break;
-		} while (true);
+		} while (this.#pendingWrite && this.#writable);
 	}
 	#error(e) {
 		if (("receivedBody" === this.#state) && this.#timer) {		// completion not reported yet. report before handling error.

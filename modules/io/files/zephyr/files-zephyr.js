@@ -67,14 +67,15 @@ class Directory extends Native("xs_directoryzephyr_destructor") {
 	}
 
 	createDirectory(options) { return native("xs_directoryzephyr_createDirectory").call(this, options); }
-	createLink(path, target) {throw new Error("unsupported");}
+	createLink(/* path, target */) {throw new Error("unsupported");}
 
-	readLink(path) {throw new Error("unsupported");}
+	readLink(/* path */) {throw new Error("unsupported");}
 
 	scan(...path) {
 		return new DirectoryIterator(this, ...path);
 	}
 }
+// @ts-expect-error assigning scan as iterator
 Directory.prototype[Symbol.iterator] = Directory.prototype.scan;
 
 export {Directory}
