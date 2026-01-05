@@ -30,7 +30,7 @@ declare module "dns/parser" {
       priority: number;
       weight: number;
       port: number;
-      target: string;
+      target: string[];
   }
 
   interface DNSAnswerA {
@@ -38,7 +38,7 @@ declare module "dns/parser" {
       qtype: 0x0001;
       qclass: number;
       ttl: number;
-      rdata?: string;
+      rdata: string;
   }
 
   interface DNSAnswerPTR {
@@ -46,7 +46,7 @@ declare module "dns/parser" {
       qtype: 0x000C;
       qclass: number;
       ttl: number;
-      rdata?: string;
+      rdata: string[];
   }
 
   interface DNSAnswerTXT {
@@ -54,7 +54,7 @@ declare module "dns/parser" {
       qtype: 0x0010;
       qclass: number;
       ttl: number;
-      rdata?: string[];
+      rdata: string[];
   }
 
   interface DNSAnswerSRV {
@@ -62,7 +62,7 @@ declare module "dns/parser" {
       qtype: 0x0021;
       qclass: number;
       ttl: number;
-      rdata?: DNSSRVData;
+      rdata: DNSSRVData;
   }
 
   interface DNSAnswerOther {
@@ -70,7 +70,7 @@ declare module "dns/parser" {
       qtype: number;
       qclass: number;
       ttl: number;
-      rdata?: "UNHANDLED";
+      rdata: "UNHANDLED";
   }
 
   type DNSAnswer = DNSAnswerA | DNSAnswerPTR | DNSAnswerTXT | DNSAnswerSRV | DNSAnswerOther;
