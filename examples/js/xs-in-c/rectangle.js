@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -25,7 +25,7 @@ class Rectangle extends Native("xs_rectangle_destructor") {
 	set h(it) { native("xs_rectangle_set_h").call(this, it); }
 
 	contains(x, y) { return native("xs_rectangle_contains").call(this, x, y); }
-	union(r) { native("xs_rectangle_union").call(this, r); }
+	union(...r) { native("xs_rectangle_union").call(this, ...r); }
 };
 
 export default Rectangle;
