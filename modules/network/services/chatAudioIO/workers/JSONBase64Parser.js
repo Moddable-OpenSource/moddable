@@ -18,10 +18,10 @@
  *
  */
 
-class JSONBase64Parser @ "JSONBase64Parser_destructor" {
-	constructor(target, data, step, minimum) @ "JSONBase64Parser_constructor"
-	read(buffer) @ "JSONBase64Parser_read"
-	reset() @ "JSONBase64Parser_reset"
+class JSONBase64Parser extends Native("JSONBase64Parser_destructor") {
+	constructor(target, data, step, minimum) { super(); native("JSONBase64Parser_constructor").call(this, target, data, step, minimum); }
+	read(buffer) { return native("JSONBase64Parser_read").call(this, buffer); }
+	reset() { return native("JSONBase64Parser_reset").call(this); }
 	
 	push(current) {
 		if (this.stack)
@@ -66,8 +66,8 @@ class JSONBase64Parser @ "JSONBase64Parser_destructor" {
 	}
 	
 	// separate binary data
-	copy(data) @ "JSONBase64Parser_copy"
-	done() @ "JSONBase64Parser_done"
+	copy(data) { return native("JSONBase64Parser_copy").call(this, data); }
+	done() { return native("JSONBase64Parser_done").call(this); }
 }
 
 export default JSONBase64Parser

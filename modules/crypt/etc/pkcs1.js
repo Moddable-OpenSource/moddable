@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -84,7 +84,7 @@ export default class PKCS1 {
 		}
 		return BigInt.fromArrayBuffer(OS);
 	};
-	static randint(max, z) {
+	static randint(max) {
 		var i = BigInt.fromArrayBuffer(RNG.get(BigInt.bitLength(max) >>> 3));
 		while (i >= max)
 			i >>>= 1;

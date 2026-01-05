@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,7 +23,7 @@ import Timeline from "piu/Timeline";
 import View from "Common";
 
 class ServicesBehavior extends View.Behavior {
-	onDisplaying(container) {
+	onDisplaying(/* container */) {
 		const view = this.view;
 		const row = view.LIST.content(view.selection);
 		row.last.previous.visible = true;
