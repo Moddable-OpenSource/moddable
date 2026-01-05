@@ -21,20 +21,11 @@ samples.total = 0;
 trace("recording\n")
 
 const input = new AudioIn({
+	channels: 1,
 	onReadable(size) {
 		const buffer = new SharedArrayBuffer(size);
 		input.read(buffer);
-		let data = new Uint8Array(buffer);
-
-		if (this.channels === 2) {
-			// convert to mono
-			const src = new Int16Array(buffer);
-			const frames = src.length >> 1;
-			const mono = new Int16Array(frames);
-			for (let i = 0, j = 0; i < frames; i++, j += 2)
-				mono[i] = src[j];
-			data = new Uint8Array(mono.buffer);
-		}
+		const data = new Uint8Array(buffer);
 
 		samples.push(data);
 		samples.total += data.byteLength;
