@@ -18,19 +18,18 @@
  *
  */
 
-
-class CRC8  @ "xs_crc8_destructor" {
-	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) @ "xs_crc8";
-	close() @ "xs_crc8_close";
-	checksum(buffer) @ "xs_crc8_checksum";
-	reset() @ "xs_crc8_reset";
+class CRC8 extends Native("xs_crc8_destructor") {
+	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) { super(); native("xs_crc8").call(this, polynomial, initial, reflectInput, reflectOutput, xorOutput); };
+	close() { return native("xs_crc8_close").call(this); };
+	checksum(buffer) { return native("xs_crc8_checksum").call(this, buffer); };
+	reset() { return native("xs_crc8_reset").call(this); };
 }
 
-class CRC16  @ "xs_crc16_destructor" {
-	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) @ "xs_crc16";
-	close() @ "xs_crc16_close";
-	checksum(buffer) @ "xs_crc16_checksum";
-	reset() @ "xs_crc16_reset";
+class CRC16 extends Native("xs_crc16_destructor") {
+	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) { super(); native("xs_crc16").call(this, polynomial, initial, reflectInput, reflectOutput, xorOutput); };
+	close() { return native("xs_crc16_close").call(this); };
+	checksum(buffer) { return native("xs_crc16_checksum").call(this, buffer); };
+	reset() { return native("xs_crc16_reset").call(this); };
 }
 
 export { CRC8 as default, CRC8, CRC16 };

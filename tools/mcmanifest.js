@@ -1723,6 +1723,7 @@ export class TSConfigFile extends FILE {
 				noEmit: true,
 				strict: true,
 				noImplicitAny: false,
+				noImplicitThis: false,
 				strictNullChecks: false
 			}
 		}
@@ -1745,7 +1746,8 @@ export class TSConfigFile extends FILE {
 		const MODDABLE = tool.environment.MODDABLE;
 		const modules = MODDABLE + tool.slash + "modules" + tool.slash;
 		const build = MODDABLE + tool.slash + "build" + tool.slash;
-		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build));
+		const node = tool.slash + "node_modules" + tool.slash;
+		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build) && !item.source.includes(node));
 	}
 }
 

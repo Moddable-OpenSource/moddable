@@ -28,7 +28,7 @@ export default class {
 			return this.xor(dst, 0xff);
 		return this.xor(dst, 0xff, count);
 	}
-	static xor(dst, src) @ "xs_logical_xor";		// optional third argument count
-	static and(dst, src) @ "xs_logical_and";		// optional third argument count
-	static or(dst, src) @ "xs_logical_or";			// optional third argument count
+	static xor(dst, src) { return native("xs_logical_xor").call(this, dst, src); };		// optional third argument count
+	static and(dst, src) { return native("xs_logical_and").call(this, dst, src); };		// optional third argument count
+	static or(dst, src) { return native("xs_logical_or").call(this, dst, src); };			// optional third argument count
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,6 +24,7 @@ class Listener extends Native("xs_listener_destructor_") {
 	constructor(options) { super(); native("xs_listener_constructor").call(this, options); };
 	close() { return native("xs_listener_close_").call(this); }
 	read() {
+		// @ts-expect-error no arguments is internal-only use of TCP constructor
 		return native("xs_listener_read").call(this, new TCP);
 	}
 

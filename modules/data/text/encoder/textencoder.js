@@ -19,6 +19,6 @@
 */
 
 export default class {
-	encode(value) @ "xs_textencoder_encode";
-	encodeInto(value, buffer) @ "xs_textencoder_encodeInto";
+	encode(value) { return native("xs_textencoder_encode").call(this, value); };
+	encodeInto(value, buffer) { return native("xs_textencoder_encodeInto").call(this, value, buffer); };
 }

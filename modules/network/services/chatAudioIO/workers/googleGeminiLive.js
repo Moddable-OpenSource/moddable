@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -136,14 +136,13 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			this.postMessage({ id:"receiveOutputText", text:data.outputTranscription.text, more:true });
 		}
 	}
-	'setupComplete'(data) {
+	'setupComplete'(/* data */) {
 		this.post("connected");
 	}
 	'toolCall'(data) {
 		const functionCalls = data.functionCalls;
 		if (functionCalls) {
 			this.post("listen");
-			const functionResponses = [];
 			for (let functionCall of functionCalls) {
 				this.postMessage({ 
 					id:"receiveFunctionCall", 

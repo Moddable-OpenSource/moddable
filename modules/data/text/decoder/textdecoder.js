@@ -18,10 +18,10 @@
 *
 */
 
-export default class @ "xs_textdecoder_destructor" {
-	constructor(label, options) @ "xs_textdecoder";
-	decode(buffer) @ "xs_textdecoder_decode";
-	get encoding() @ "xs_textdecoder_get_encoding";
-	get ignoreBOM() @ "xs_textdecoder_get_ignoreBOM";
-	get fatal() @ "xs_textdecoder_get_fatal";
+export default class extends Native("xs_textdecoder_destructor") {
+	constructor(label, options) { super(); native("xs_textdecoder").call(this, label, options); };
+	decode(buffer) { return native("xs_textdecoder_decode").call(this, buffer); };
+	get encoding() { return native("xs_textdecoder_get_encoding").call(this); };
+	get ignoreBOM() { return native("xs_textdecoder_get_ignoreBOM").call(this); };
+	get fatal() { return native("xs_textdecoder_get_fatal").call(this); };
 }

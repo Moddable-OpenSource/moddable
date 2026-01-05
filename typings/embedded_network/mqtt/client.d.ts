@@ -53,7 +53,8 @@ declare module "embedded:network/mqtt/client" {
   export default class MQTTClient {
     constructor(options: Options)
     read(count: number): ArrayBuffer
-    write(data: Buffer, options: WriteOptions): number
+    read(buffer: BufferLike): number
+    write(data: BufferLike, options: WriteOptions): number
     close(): void
 
     static CONNECT: 1
