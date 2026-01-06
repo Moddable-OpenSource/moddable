@@ -1747,7 +1747,7 @@ export class TSConfigFile extends FILE {
 		const modules = MODDABLE + tool.slash + "modules" + tool.slash;
 		const build = MODDABLE + tool.slash + "build" + tool.slash;
 		const node = tool.slash + "node_modules" + tool.slash;
-		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build) && !item.source.includes(node));
+		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build) && !item.source.includes(node) && !item.source.endsWith(".json"));
 	}
 }
 
