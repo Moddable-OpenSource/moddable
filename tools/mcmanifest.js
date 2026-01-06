@@ -731,23 +731,27 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 			if (tool.platform == "zephyr") {
 				source = source.replaceAll("#", tool.escapedHash);
+				const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
+				const fileName = source.split(tool.slash).at(-1);
 				var output = "${MODULES_DIR}" + tool.slash + target.replaceAll("#", tool.escapedHash);
 				var outputPath = output.slice(0, output.lastIndexOf("/"));
 				this.line("add_custom_command(");
 				this.line("\tOUTPUT " + output);
 				if (lintCheck)
-					this.line("\tCOMMAND eslint " + source + " --config ${MODDABLE}/eslint.config.mjs");
+					this.line(`\tCOMMAND eslint ${fileName} --config ${MODDABLE}/eslint.config.mjs`);
 				this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
 				this.line("\tDEPENDS " + source + (typeCheck ? " ${TYPECHECK_FILE}" : ""));
-				this.line("\tWORKING_DIRECTORY ${MODDABLE}");
+				this.line(`\tWORKING_DIRECTORY ${sourceDir}`);
 				this.line("\tVERBATIM)");
 				this.line("");
 			}
 			else {
 				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash), typeCheck ? " $(MODULES_DIR)" + tool.slash + ".typeCheck" : "");
 				if (lintCheck) {
-					this.echo(tool, "eslint ", source.split(tool.slash).at(-1));
-					this.line("\tcd $(MODDABLE) && eslint ", source, " --config $(MODDABLE)/eslint.config.mjs");
+					const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
+					const fileName = source.split(tool.slash).at(-1);
+					this.echo(tool, `eslint ${fileName}`);
+					this.line(`\tcd ${sourceDir} && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
 				}
 				this.echo(tool, "xsc ", target);
 				this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
@@ -766,7 +770,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("$(MODULES_DIR)", tool.slash, ".typeCheck: " + sources.map(item => item.source).join(" "));
 				this.echo(tool, "tsc ", "tsconfig-js.json", " (typeCheck JavaScript)");
 				this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig-js.json");
-				this.line("\t", "touch $(MODULES_DIR)", tool.slash, ".typeCheck");
+				if (tool.windows)
+					this.line(`\ttype nul >> $(MODULES_DIR)${tool.slash}.typeCheck`);
+				else
+					this.line("\t", "touch $(MODULES_DIR)", tool.slash, ".typeCheck");
 				this.line("");
 			}
 		}
@@ -812,6 +819,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 					source = source.replaceAll("#", tool.escapedHash);
 
+					const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
+					const fileName = source.split(tool.slash).at(-1);
 					this.line("list(APPEND TYPESCRIPT_SOURCE_FILES");
 					this.line("\t" + source);
 					this.line(")");
@@ -823,10 +832,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line("add_custom_command(");
 					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
 					if (tool.lintCheck)
-						this.line("\tCOMMAND eslint " + source + " --config ${MODDABLE}/eslint.config.mjs");
+						this.line(`\tCOMMAND eslint ${fileName} --config ${MODDABLE}/eslint.config.mjs`);
 					this.line("\tCOMMAND xsc ${MODULES_DIR}", temporary, options, " -e -o ${MODULES_DIR} -r ", targetParts.name.replaceAll("#", tool.escapedHash));
 					this.line("\tDEPENDS ${MODULES_DIR}", temporary);
-					this.line("\tWORKING_DIRECTORY ${MODDABLE}");
+					this.line(`\tWORKING_DIRECTORY ${sourceDir}`);
 					this.line("\tVERBATIM");
 					this.line(")");
 					this.line("");
@@ -841,8 +850,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
 
 					if (tool.lintCheck) {
-						this.echo(tool, "eslint ", source.split(tool.slash).at(-1));
-						this.line("\tcd $(MODDABLE) && eslint ", source, " --config $(MODDABLE)/eslint.config.mjs");
+						const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
+						const fileName = source.split(tool.slash).at(-1);
+						this.echo(tool, `eslint ${fileName}`);
+						this.line(`\tcd ${sourceDir} && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
 					}
 					this.echo(tool, "xsc ", target);
 					var options = "";

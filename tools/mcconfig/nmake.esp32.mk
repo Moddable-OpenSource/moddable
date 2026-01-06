@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2025  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -474,10 +474,14 @@ DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_none.c
 !IF "$(USE_USB)"=="1"
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_tinyusb.c
 !ELSE
+!IF "$(ESP32_SUBCLASS)"=="esp32s3"
+DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_uart_cdc.c
+!ELSE
 !IF "$(USE_USB)"=="2"
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_cdc.c
 !ELSE
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_uart.c
+!ENDIF
 !ENDIF
 !ENDIF
 !ENDIF
@@ -651,6 +655,9 @@ $(PROJ_DIR)\main\debugger_none.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\
 
 $(PROJ_DIR)\main\debugger_uart.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_uart.c
 	copy $(PLATFORM_DIR)\lib\debugger\debugger_uart.c $@
+
+$(PROJ_DIR)\main\debugger_uart_cdc.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_uart_cdc.c
+	copy $(PLATFORM_DIR)\lib\debugger\debugger_uart_cdc.c $@
 
 $(PROJ_DIR)\main\debugger_cdc.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_cdc.c
 	copy $(PLATFORM_DIR)\lib\debugger\debugger_cdc.c $@
