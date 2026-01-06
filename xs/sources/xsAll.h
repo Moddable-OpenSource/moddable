@@ -1453,6 +1453,7 @@ mxExport void fxArrayLengthSetter(txMachine* the);
 
 mxExport void fx_Array(txMachine* the);
 mxExport void fx_Array_from(txMachine* the);
+mxExport void fx_Array_fromAsync(txMachine* the);
 mxExport void fx_Array_isArray(txMachine* the);
 mxExport void fx_Array_of(txMachine* the);
 mxExport void fx_Array_prototype_at(txMachine* the);

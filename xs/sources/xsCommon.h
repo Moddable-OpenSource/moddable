@@ -1316,6 +1316,7 @@ enum {
 	_isError,
 #endif
 #if mxECMAScript2026
+	_fromAsync,
 	_sumPrecise,
 #endif
 	XS_ID_COUNT

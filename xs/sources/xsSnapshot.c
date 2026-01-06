@@ -121,7 +121,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxNativeAdditions 0
 #endif
 #if mxECMAScript2026
-	#define mxECMAScript2026Additions 2
+	#define mxECMAScript2026Additions 3
 #else
 	#define mxECMAScript2026Additions 0
 #endif
@@ -729,6 +729,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #endif
 	fxAsyncFromSyncIteratorFailed,
 #if mxECMAScript2026
+	fx_Array_fromAsync,
 	fx_Iterator_concat,
 	fx_Math_sumPrecise,
 #endif

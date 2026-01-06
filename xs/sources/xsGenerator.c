@@ -329,7 +329,7 @@ txBoolean fxGetIteratorFlattenable(txMachine* the, txSlot* iterable, txSlot* ite
 	if (!mxIsReference(iterable)) {
 		if (optional) {
 			if ((iterable->kind != XS_STRING_KIND) && (iterable->kind != XS_STRING_X_KIND))
-				mxTypeError("iterator: not an string");
+				mxTypeError("iterator: not a string");
 		}
 		else
 			mxTypeError("iterator: not an object");

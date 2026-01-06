@@ -1876,6 +1876,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"isError",
 #endif
 #if mxECMAScript2026
+	"fromAsync",
 	"sumPrecise",
 #endif
 };
