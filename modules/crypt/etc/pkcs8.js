@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -128,7 +128,6 @@ export default class PKCS8 {
 						break;
 					default:
 						throw new Error("PKCS8: unsupported encryption scheme: " + oid);
-						break;
 					}
 					var key = pkcs12gen(pass, salt, iter.toNumber(), 16, hash, v);
 					var enc = new cipher(key);

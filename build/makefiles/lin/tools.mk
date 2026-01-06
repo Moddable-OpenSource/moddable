@@ -138,6 +138,7 @@ MODULES = \
 	$(MOD_DIR)/mcmanifest.xsb \
 	$(MOD_DIR)/mcpack.xsb \
 	$(MOD_DIR)/mcrez.xsb \
+	$(MOD_DIR)/mcdevicetree.xsb \
 	$(MOD_DIR)/nodered2mcu.xsb \
 	$(MOD_DIR)/png2bmp.xsb \
 	$(MOD_DIR)/resampler.xsb \
@@ -226,6 +227,7 @@ COMMANDS = \
 	$(BIN_DIR)/mclocal \
 	$(BIN_DIR)/mcpack \
 	$(BIN_DIR)/mcrez \
+	$(BIN_DIR)/mcdevicetree \
 	$(BIN_DIR)/nodered2mcu \
 	$(BIN_DIR)/png2bmp \
 	$(BIN_DIR)/rle4encode \
@@ -354,6 +356,11 @@ $(BIN_DIR)/mchex: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mchex"
 	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mchex "$$@"' > $(BIN_DIR)/mchex
 	chmod +x $(BIN_DIR)/mchex
+
+$(BIN_DIR)/mcdevicetree: $(MAKEFILE_LIST)
+	@echo "#" $(NAME) $(GOAL) ": mcdevicetree"
+	@printf '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcdevicetree "$$@"' > $(BIN_DIR)/mcdevicetree
+	chmod +x $(BIN_DIR)/mcdevicetree
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"

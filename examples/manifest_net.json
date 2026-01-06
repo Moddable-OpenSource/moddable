@@ -1,21 +1,27 @@
 {
-	"include": [
-		"$(MODULES)/network/net/manifest.json",
-		"$(MODULES)/network/socket/manifest.json",
-		"$(MODULES)/network/sntp/manifest.json",
-		"$(MODULES)/network/wifi/manifest.json"
-	],
 	"config": {
 		"sntp": "pool.ntp.org"
 	},
 	"platforms": {
 		"esp": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
 			},
 			"preload": "setup/network"
 		},
 		"esp32": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
 			},
@@ -23,6 +29,10 @@
 		},
 		"esp32/wt32_eth01": {
 			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json",
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
 			],
 			"modules": {
@@ -34,20 +44,69 @@
 			"error": "manifest_net - no Wi-Fi or Ethernet on nRF52"
 		},
 		"pico": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/pico/setup/network"
 			},
 			"preload": "setup/network"
 		},
 		"qca4020": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/qca4020/setup/network"
 			},
 			"preload": "setup/network"
 		},	
-		"mac": {},
-		"lin": {},
-		"win": {},
+		"zephyr": {
+			"include": [
+				"$(MODDABLE)/modules/io/wifi/manifest.json"
+			],
+			"modules": {
+				"setup/network": "$(BUILD)/devices/zephyr/setup/network",
+				"embedded:io/socket/tcp": "$(MODULES)/io/socket/$(PLATFORM)/tcp",
+				"embedded:io/socket/udp": "$(MODULES)/io/socket/$(PLATFORM)/udp",
+				"embedded:io/socket/listener": "$(MODULES)/io/socket/$(PLATFORM)/listener"
+			},
+			"preload": [
+				"setup/network",
+				"embedded:io/socket/tcp",
+				"embedded:io/socket/udp"
+			]
+		},
+		"mac": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			]
+		},
+		"lin": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			]
+		},
+		"win": {
+			"include": [
+				"$(MODULES)/network/net/manifest.json",
+				"$(MODULES)/network/socket/manifest.json",
+				"$(MODULES)/network/sntp/manifest.json",
+				"$(MODULES)/network/wifi/manifest.json"
+			]
+		},
 		"...": {
 			"error": "manifest_net - unsupported platform"
 		}

@@ -1,0 +1,35 @@
+{
+	"modules": {
+		"embedded:network/interface/wifi": "./wifi-zephyr"
+	},
+	"preload": [
+		"embedded:network/interface/wifi"
+	],
+	"zephyrConfig": {
+		"CONFIG_NETWORKING": "y",
+		"CONFIG_NET_DHCPV4": "y",
+		"CONFIG_NET_IPV4": "y",
+		"CONFIG_NET_IPV6": "n",
+		"CONFIG_NET_TCP": "y",
+		"CONFIG_WIFI": "y",
+		"CONFIG_NET_MGMT_EVENT_INFO": "y",
+		"CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4": "y"
+	},
+	"x-zephyrConfig": {
+		"CONFIG_NET_LOG": "n",
+		"CONFIG_WIFI_LOG_LEVEL_ERR": "n",
+
+		"CONFIG_LOG": "y",
+		"CONFIG_LOG_MODE_IMMEDIATE": "y",
+		"CONFIG_LOG_DEFAULT_LEVEL": "2",
+		"CONFIG_LOG_OVERRIDE_LEVEL": "2",
+
+		"CONFIG_THREAD_MONITOR": "y",
+		"CONFIG_THREAD_NAME": "y",
+		"CONFIG_THREAD_STACK_INFO": "y",
+		"CONFIG_TASK_WDT": "y",
+		"CONFIG_TASK_WDT_CHANNELS": "2",
+		"CONFIG_ASSERT": "y",
+		"CONFIG_ASSERT_LEVEL": "2"
+	}
+}

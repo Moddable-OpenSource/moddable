@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,6 +27,9 @@
 #include "mc.xs.h"			// for xsID_ values
 #if !XSTOOLS
 	#include "mc.defines.h"
+#endif
+#if MODDEF_ECMA419_ENABLED
+	#include "display419.h"
 #endif
 
 #include "commodettoPoco.h"
@@ -90,15 +93,16 @@ const xsHostHooks ICACHE_RODATA_ATTR xsPocoHooks = {
 void xs_poco_build(xsMachine *the)
 {
 	Poco poco;
-	int pixelsLength = xsmcToInteger(xsArg(2));
+	int pixelsCount = xsmcToInteger(xsArg(2));
 	int pixelFormat = xsmcToInteger(xsArg(3));
+	int pixelsLength = ((pixelsCount * (int)CommodettoBitmapGetDepth(pixelFormat)) + 7) >> 3;
 	int displayListLength = xsmcToInteger(xsArg(4));
 	int rotation = xsmcToInteger(xsArg(5));
 	if (sizeof(void *) > 4)
 		displayListLength += displayListLength >> 1;		// compensate for bigger pointers on 64-bit systems
 	int byteLength = pixelsLength + displayListLength;
 
-	if (kPocoPixelFormat != pixelFormat)
+	if ((kPocoPixelFormat != pixelFormat) || (0 == pixelsLength))
 		xsErrorPrintf("unsupported pixel format");
 
 	if (rotation != kPocoRotation)
@@ -130,6 +134,25 @@ void xs_poco_build(xsMachine *the)
 	if (xsmcTest(xsArg(7)))
 		poco->flags |= kPocoFlagAdaptInvalid;
 
+#if MODDEF_ECMA419_ENABLED
+	poco->displayHooks = C_NULL;
+	poco->the = the;
+
+	if (xsmcHas(xsArg(11), xsID_configure))
+		poco->flags |= kPocoFlag419PixelOut;
+
+	xsDisplayHostHooks displayHooks = (xsDisplayHostHooks)xsGetHostHooksIf(xsArg(11));
+	if (displayHooks && (0 == c_strcmp(displayHooks->hooks.signature, "display"))) {
+		poco->displayHooks = displayHooks;
+		poco->outputRefcon = xsmcGetHostData(xsArg(11));
+
+		if (displayHooks->doAdaptInvalid)
+			poco->flags |= kPocoFlagAdaptInvalid;
+		else
+			poco->flags &= ~kPocoFlagAdaptInvalid;
+	}
+	else
+#endif
 	if (xsmcTest(xsArg(8))) {
 		PixelsOutDispatch pixelsOutDispatch;
 		poco->outputRefcon = xsmcGetHostData(xsArg(8));
@@ -142,6 +165,13 @@ void xs_poco_build(xsMachine *the)
 	else
 		poco->outputRefcon = NULL;
 
+#if MODDEF_ECMA419_ENABLED && kPocoFrameBuffer
+	if (poco->displayHooks) {
+		uint8_t frameBuffer;
+		if ((0 == ((xsDisplayHostHooks)poco->displayHooks)->doGet(poco->outputRefcon, 1, &frameBuffer) && frameBuffer))
+			poco->flags |= kPocoFlagFrameBuffer;
+	}
+#endif
 	if (xsmcTest(xsArg(9)))
 		poco->flags |= kPocoFlagFrameBuffer;
 
@@ -182,18 +212,18 @@ void xs_poco_begin(xsMachine *the)
 	PocoDimension w, h;
 
 	if (1 == argc) {
-		xsmcVars(1);
-		xsmcGet(xsVar(0), xsArg(0), xsID_x);
-		x = (PocoCoordinate)xsmcToInteger(xsVar(0));
+		xsSlot tmp;
+		xsmcGet(tmp, xsArg(0), xsID_x);
+		x = (PocoCoordinate)xsmcToInteger(tmp);
 
-		xsmcGet(xsVar(0), xsArg(0), xsID_y);
-		y = (PocoCoordinate)xsmcToInteger(xsVar(0));
+		xsmcGet(tmp, xsArg(0), xsID_y);
+		y = (PocoCoordinate)xsmcToInteger(tmp);
 
-		xsmcGet(xsVar(0), xsArg(0), xsID_w);
-		w = (PocoDimension)xsmcToInteger(xsVar(0));
+		xsmcGet(tmp, xsArg(0), xsID_w);
+		w = (PocoDimension)xsmcToInteger(tmp);
 
-		xsmcGet(xsVar(0), xsArg(0), xsID_h);
-		h = (PocoDimension)xsmcToInteger(xsVar(0));
+		xsmcGet(tmp, xsArg(0), xsID_h);
+		h = (PocoDimension)xsmcToInteger(tmp);
 	}
 	else {
 		if (argc > 1)
@@ -226,14 +256,32 @@ void xs_poco_begin(xsMachine *the)
 		PocoPixel *pixels;
 		int16_t rowBytes;
 		PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
-
+#if MODDEF_ECMA419_ENABLED
+		if (poco->displayHooks) {
+			int rowBytesInt;
+			(((xsDisplayHostHooks)poco->displayHooks)->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, (void **)&pixels, &rowBytesInt, 0);
+			rowBytes = (int16_t)rowBytesInt;
+		}
+		else
+#endif
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doBeginFrameBuffer)(poco->outputRefcon, &pixels, &rowBytes);
 		else {
 			xsUnsignedValue dataSize;
 
-#if MODDEF_DISPLAY_VERSION == 2
-			*(int *)0 = 0;		// to do
+#if MODDEF_ECMA419_ENABLED
+			xsmcVars(3);
+			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
+			xsmcSetNewObject(xsVar(1));
+			xsmcSetInteger(xsVar(2), poco->x);
+			xsmcSet(xsVar(1), xsID_x, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->y);
+			xsmcSet(xsVar(1), xsID_y, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->w);
+			xsmcSet(xsVar(1), xsID_width, xsVar(2));
+			xsmcSetInteger(xsVar(2), poco->h);
+			xsmcSet(xsVar(1), xsID_height, xsVar(2));
+			xsResult = xsCall1(xsVar(0), xsID_begin, xsVar(1));
 #else
 			xsmcVars(5);
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
@@ -272,10 +320,33 @@ static void pixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	xsCall3(xsVar(0), xsID_send, xsVar(3), xsVar(1), xsVar(2));
 }
 
+#if MODDEF_ECMA419_ENABLED
+static void displayPixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
+{
+	Poco poco = refCon;
+
+	if (poco->displayHooks) {
+		((xsDisplayHostHooks)poco->displayHooks)->doSend(poco->outputRefcon, pixels, byteLength);
+	}
+	else {
+		xsMachine *the = poco->the;
+
+		xsmcSetInteger(xsVar(1), (char *)pixels - (char *)poco->pixels);		// offset
+		xsmcSetInteger(xsVar(2), (byteLength < 0) ? -byteLength : byteLength);
+		xsCall3(xsVar(0), xsID_send, xsVar(3), xsVar(1), xsVar(2));
+	}
+}
+#endif
+
 void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
-	PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+	PixelsOutDispatch pixelsOutDispatch = 
+#if MODDEF_ECMA419_ENABLED
+		(!poco->displayHooks && poco->outputRefcon) ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+#else
+		poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
+#endif
 	int result;
 
 	if (!(poco->flags & kPocoFlagDidBegin))
@@ -284,12 +355,18 @@ void xs_poco_end(xsMachine *the)
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
 		xsmcVars(5);
 
+#if MODDEF_ECMA419_ENABLED
+		if (poco->displayHooks) {
+			(((xsDisplayHostHooks)poco->displayHooks)->doBegin(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, C_NULL, C_NULL, (poco->flags & kPocoFlagContinue) ? 1 : 0));
+		}
+		else
+#endif
 		if (pixelsOutDispatch) {
 			(pixelsOutDispatch->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h);
 		}
 		else {
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
-#if MODDEF_DISPLAY_VERSION == 2
+#if MODDEF_ECMA419_ENABLED
 			xsmcSetNewObject(xsVar(1));
 			xsmcSetInteger(xsVar(2), poco->x);
 			xsmcSet(xsVar(1), xsID_x, xsVar(2));
@@ -312,7 +389,12 @@ void xs_poco_end(xsMachine *the)
 			xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
 #endif
 		}
-
+#if MODDEF_ECMA419_ENABLED
+		if (poco->displayHooks) {
+			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, displayPixelReceiver, poco);
+		}
+		else
+#endif
 		if (poco->outputRefcon)
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, pixelsOutDispatch->doSend, poco->outputRefcon);
 		else {
@@ -351,8 +433,16 @@ void xs_poco_end(xsMachine *the)
 		poco->flags &= ~kPocoFlagGCDisabled;
 	}
 
+#if MODDEF_ECMA419_ENABLED
+	if (poco->displayHooks) {
+		(((xsDisplayHostHooks)poco->displayHooks)->doEnd)(poco->outputRefcon);
+
+		pocoInstrumentationAdjust(FramesDrawn, +1);
+	}
+	else
+#endif
 	if ((xsmcArgc > 0) && xsmcTest(xsArg(0))) {
-#if MODDEF_DISPLAY_VERSION == 2
+#if MODDEF_ECMA419_ENABLED
 		poco->flags |= kPocoFlagContinue;
 #else
 		if (pixelsOutDispatch)
@@ -362,8 +452,13 @@ void xs_poco_end(xsMachine *the)
 #endif
 	}
 	else {
-#if MODDEF_DISPLAY_VERSION == 2
+#if MODDEF_ECMA419_ENABLED
 		poco->flags &= ~kPocoFlagContinue;
+
+		if (poco->displayHooks) {
+			(((xsDisplayHostHooks)poco->displayHooks)->doEnd)(poco->outputRefcon);
+		}
+		else
 #endif
 		if (pixelsOutDispatch)
 			(pixelsOutDispatch->doEnd)(poco->outputRefcon);
@@ -983,6 +1078,20 @@ void xs_poco_adaptInvalid(xsMachine *the)
 
 	if (!(kPocoFlagAdaptInvalid & poco->flags))
 		return;
+
+#if MODDEF_ECMA419_ENABLED
+	if (poco->displayHooks) {
+		CommodettoRectangle cr = xsmcGetHostChunk(xsArg(0));
+#if 0 != kPocoRotation
+		rotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
+#endif
+		(((xsDisplayHostHooks)poco->displayHooks)->doAdaptInvalid)(poco->outputRefcon, cr);
+#if 0 != kPocoRotation
+		unrotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
+#endif
+		return;
+	}
+#endif
 
 	pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
 	if (!pixelsOutDispatch)

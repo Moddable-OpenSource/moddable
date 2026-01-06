@@ -1,0 +1,15 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "nucleo_l4a6zg"
+	},
+	"include": [
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+	},
+	"defines": {
+	}
+}

@@ -8,6 +8,8 @@
 #include "commodettoPocoOutline.h"
 
 #define STANDALONE_ 1
+#define FT_BEGIN_HEADER
+#define FT_END_HEADER
 #include "ftraster.h"
 #include "ftgrays.h"
 

@@ -1,0 +1,19 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "esp32_ethernet_kit/esp32/procpu"
+	},
+	"include": [
+		"$(MODULES)/io/ethernet/manifest.json"
+	],
+	"config": {
+	},
+	"defines": {
+	},
+	"zephyrConfig": {
+		"CONFIG_ESP_SIMPLE_BOOT": "y",
+		"CONFIG_BOOTLOADER_MCUBOOT": "n",
+
+		"CONFIG_ETH_ESP32": "y",
+		"CONFIG_NET_IF_MAX_IPV4_COUNT": 2
+	}
+}

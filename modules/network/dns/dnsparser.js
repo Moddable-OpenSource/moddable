@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Moddable Tech, Inc.
+ * Copyright (c) 2018-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,14 +22,14 @@ class Parser {
 	constructor(packet) {
 		this.buffer = (packet.byteLength >= 12) ? packet : new ArrayBuffer(12);		// too small to be valid
 	}
-	get id() @ "xs_dnspacket_get_id"
-	get flags() @ "xs_dnspacket_get_flags"
-	get questions() @ "xs_dnspacket_get_questions"
-	get answers() @ "xs_dnspacket_get_answers"
-	get authorities() @ "xs_dnspacket_get_authorities"
-	get additionals() @ "xs_dnspacket_get_additionals"
-	question(index) @ "xs_dnspacket_question"
-	answer(index) @ "xs_dnspacket_answer"
+	get id() { return native("xs_dnspacket_get_id").call(this); }
+	get flags() { return native("xs_dnspacket_get_flags").call(this); }
+	get questions() { return native("xs_dnspacket_get_questions").call(this); }
+	get answers() { return native("xs_dnspacket_get_answers").call(this); }
+	get authorities() { return native("xs_dnspacket_get_authorities").call(this); }
+	get additionals() { return native("xs_dnspacket_get_additionals").call(this); }
+	question(index) { return native("xs_dnspacket_question").call(this, index); }
+	answer(index) { return native("xs_dnspacket_answer").call(this, index); }
 	authority(index) {
 		return this.answer(this.answers + index);
 	}
@@ -37,6 +37,5 @@ class Parser {
 		return this.answer(this.answers + this.authorities + index);
 	}
 }
-Object.freeze(Parser.prototype);
 
 export default Parser;

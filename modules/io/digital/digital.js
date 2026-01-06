@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,13 +22,20 @@ import DigitalBank from "embedded:io/digitalbank";
 
 class Digital extends DigitalBank {
 	constructor(options) {
-		const pin = options.pin;
+		let port;
+		let pin = options.pin;
+
 		if (undefined === pin)
 			throw new Error("invalid");
+		if (undefined !== pin.port) {
+			port = pin.port;
+			pin = pin.pin;
+		}
 		const pins = 1 << (pin & 0x1F);
 		const edge = options.edge ?? 0;
 		const o = {
 			pins,
+			port,
 			bank: (pin >> 5) & 0xFF,
 			mode: options.mode,
 			rises: (edge & Digital.Rising) ? pins : 0,
@@ -54,6 +61,8 @@ Digital.InputPullUpDown = DigitalBank.InputPullUpDown;
 
 Digital.Output = DigitalBank.Output;
 Digital.OutputOpenDrain = DigitalBank.OutputOpenDrain;
+
+Digital.ActiveLow = DigitalBank.ActiveLow;
 
 Digital.Rising = 1;
 Digital.Falling = 2;

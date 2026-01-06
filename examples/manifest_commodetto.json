@@ -1,4 +1,7 @@
 {
+	"include": [
+		"$(MODULES)/io/display/manifest.json"	
+	],
 	"modules": {
 		"commodetto/parseBMF": "$(COMMODETTO)/commodettoParseBMF",
 		"commodetto/parseBMP": "$(COMMODETTO)/commodettoParseBMP",
@@ -46,7 +49,12 @@
 				"setup/commodetto": "$(BUILD)/devices/nrf52/setup/commodetto"
 			},
 			"preload": "setup/commodetto"
+		},
+		"zephyr": {
+			"modules": {
+				"setup/commodetto": "$(BUILD)/devices/zephyr/setup/commodetto"
+			},
+			"preload": "setup/commodetto"
 		}
-
 	}
 }

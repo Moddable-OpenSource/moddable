@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+		"embedded:storage/flash": "./flash-zephyr"
+	},
+	"preload": [
+		"embedded:storage/flash"
+	],
+	"zephyrConfig": {
+		"CONFIG_FLASH": "y",
+		"CONFIG_FLASH_MAP": "y"
+	},
+	"defines": {
+		"ECMA419_FLASH": 1
+	}
+}

@@ -1,6 +1,7 @@
 {
 	"include": [
-		"$(MODULES)/base/easing/manifest.json"
+		"$(MODULES)/base/easing/manifest.json",
+		"$(MODULES)/io/display/manifest.json"
 	],
 	"modules": {
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
@@ -61,6 +62,13 @@
 				"setup/piu": "$(BUILD)/devices/nrf52/setup/piu"
 			},
 			"preload": "setup/piu"
+		},
+		"zephyr": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/zephyr/setup/piu"
+			},
+			"preload": "setup/piu"
 		}
+
 	}
 }

@@ -22,6 +22,9 @@
 				"preference"
 			]		
 		},
+		"zephyr": {
+			"error": "Preferences module unsupported. Use ECMA-419 Key-Value storage instead"
+		},
 		"esp32": {
 			"modules": {
 				"*": [

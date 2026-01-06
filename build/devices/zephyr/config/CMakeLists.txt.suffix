@@ -1,0 +1,113 @@
+# --- suffix file
+
+LIST(LENGTH mSTRIPS stripsLen)
+if (stripsLen GREATER 0)
+	set(STRIPS -s ${mSTRIPS})
+endif()
+
+add_custom_command ( 
+	OUTPUT ${TMP_DIR}/mc.xs.c ${TMP_DIR}/mc.xs.h
+	DEPENDS ${mMODULES} ${mRESOURCES}
+	COMMAND xsl -b ${MODULES_DIR} -o ${TMP_DIR} ${mPRELOADS} ${STRIPS} ${mCREATION} ${mMODULES}
+	VERBATIM
+)
+
+add_custom_command ( 
+	OUTPUT ${TMP_DIR}/mc.resources.c
+	DEPENDS ${mDATA} ${mRESOURCES} ${mMANIFEST}
+	COMMAND mcrez ${mDATA} ${mRESOURCES} -o ${TMP_DIR} -r mc.resources.c
+	VERBATIM
+)
+
+add_custom_target(generated_files
+	DEPENDS ${TMP_DIR}/mc.resources.c
+	DEPENDS ${TMP_DIR}/mc.xs.c
+	DEPENDS ${TMP_DIR}/mc.xs.h
+	DEPENDS ${TMP_DIR}/mc.defines.h
+	DEPENDS ${TMP_DIR}/mc.devicetree.c
+	DEPENDS ${TMP_DIR}/mc.devicetree.h
+	DEPENDS ${MODULES_DIR}/Resource.xsb
+)
+
+zephyr_library_add_dependencies(generated_files)
+list(APPEND mOBJECTS ${TMP_DIR}/mc.xs.c)
+list(APPEND mOBJECTS ${TMP_DIR}/mc.devicetree.c)
+list(APPEND mOBJECTS ${TMP_DIR}/mc.resources.c)
+
+
+zephyr_library_sources(${mOBJECTS})
+zephyr_library_compile_definitions(${mFLAGS})
+zephyr_library_compile_options(${mOPTIONS})
+
+zephyr_library_include_directories(
+	$ENV{MODDABLE}/xs/includes
+	$ENV{MODDABLE}/xs/sources
+	$ENV{MODDABLE}/xs/platforms/mc
+	$ENV{MODDABLE}/xs/platforms/zephyr
+	$ENV{MODDABLE}/xs/tools/fdlibm
+	$ENV{MODDABLE}/modules/base/timer
+	$ENV{MODDABLE}/modules/base/instrumentation
+	$ENV{MODDABLE}/modules/files/preference
+	$ENV{MODDABLE}/modules/commodetto/gif
+	$ENV{MODDABLE}/modules/commodetto
+	$ENV{MODDABLE}/modules/io/common
+	$ENV{MODDABLE}/modules/piu/All
+	$ENV{MODDABLE}/modules/piu/MC
+)
+
+if (VERBOSE)
+	message(STATUS "*-*-*-*-*-*-*-*-*")
+	get_cmake_property(_variableNames VARIABLES)
+	list (SORT _variableNames)
+	foreach (_variableName ${_variableNames})
+	    message(STATUS "${_variableName}=${${_variableName}}")
+	endforeach()
+endif()
+
+#
+# mc.devicetree.* files
+#
+
+set(ZEPHYR_DTS_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr.dts)
+
+set(MCDEVICETREE_GENERATED_FILES
+	${TMP_DIR}/mc.devicetree.c
+	${TMP_DIR}/mc.devicetree.h
+	${TMP_DIR}/mc.devicetree.js
+	${TMP_DIR}/mc.devicetree.d.ts
+)
+
+add_custom_command(
+	OUTPUT ${MCDEVICETREE_GENERATED_FILES}
+	COMMAND mcdevicetree ${ZEPHYR_DTS_FILE} -o ${TMP_DIR} -p zephyr -c ${TMP_DIR}/zephyr.conf -d ${TMP_DIR}/mc.defines.h
+	DEPENDS ${ZEPHYR_DTS_FILE} ${TMP_DIR}/mc.defines.h
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	VERBATIM
+)
+
+#
+# typescript files
+#
+
+if (TYPESCRIPT_CONVERTED_FILES)
+	add_custom_command(
+		OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
+		COMMAND tsc -p ${MODULES_DIR}/tsconfig.json
+		DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		VERBATIM
+	)
+endif()
+
+if (JAVASCRIPT_SOURCE_FILES)
+	add_custom_command(
+		OUTPUT ${TYPECHECK_FILE}
+		COMMAND tsc -p ${MODULES_DIR}/tsconfig-js.json
+		DEPENDS ${MODULES_DIR}/tsconfig-js.json ${TMP_DIR}/mc.devicetree.d.ts ${JAVASCRIPT_SOURCE_FILES}
+		COMMAND ${CMAKE_COMMAND} -E touch ${TYPECHECK_FILE}
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		VERBATIM
+	)
+endif()
+
+# --- end suffix

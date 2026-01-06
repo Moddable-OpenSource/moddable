@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,7 +30,7 @@
 	#define kModInstrumentationHasSPIFlashErases 1
 #endif
 
-#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32
+#if nrf52 || PICO_BUILD || defined(__ets__) || ESP32 || __ZEPHYR__
 	#define kModInstrumentationHasTurns 1
 #endif
 

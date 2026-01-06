@@ -1,0 +1,15 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "pico_plus2/rp2350b/m33"
+	},
+	"include": [
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+	},
+	"defines": {
+	}
+}

@@ -19,41 +19,42 @@
  */
 
 declare module "embedded:network/interface/wifi" {
+	import type {PortSpecifier} from "embedded:io/_common";
+
 	export interface WiFiConstructorOptions {
+		port?: PortSpecifier;
 		onChanged?: () => void;
-		port?: string;
 	}
 
-	export interface WiFiConnectOptions {
-		SSID?: string;
-		password?: string;
-		BSSID?: string;
-	}
-
-	export interface WiFiAccessPoint {
+	export interface WiFiScanResult {
 		SSID: string;
-		RSSI: number;
 		channel: number;
-		security: string;
-		BSSID?: string;
+		RSSI: number;
+		BSSID?: ArrayBuffer;
 	}
 
 	export interface WiFiScanOptions {
-		onFound: (accessPoint: WiFiAccessPoint) => void;
-		onDone: () => void;
+		onFound?: (result: WiFiScanResult) => void;
+		onComplete?: () => void;
 	}
 
-	export default class WiFi {
-		constructor(options?: WiFiConstructorOptions);
+	export interface WiFiConnectOptions {
+		SSID: string;
+		password?: string;
+	}
+
+	class WiFi {
+		constructor(options: WiFiConstructorOptions);
+
 		close(): void;
 		scan(options: WiFiScanOptions): void;
-		connect(options?: WiFiConnectOptions): void;
+		connect(options: WiFiConnectOptions): void;
 		disconnect(): void;
-		get connection(): number;
-		get address(): string;
-		get SSID(): string;
-		get BSSID(): string;
-		get RSSI(): number;
-		get channel(): number;
+
+		readonly connection: number;
+		readonly address: string | undefined;
+		readonly MAC: string | undefined;
 	}
+
+	export default WiFi;
 }

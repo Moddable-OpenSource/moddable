@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"embedded:network/ntp/client": "./ntp",
+		"ntp/config": "./config"
+
+	},
+	"preload": [
+		"embedded:network/ntp/client",
+		"ntp/config"
+	]
+}

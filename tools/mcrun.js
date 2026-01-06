@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -485,8 +485,14 @@ export default class extends Tool {
 
 			if (this.tsFiles.length) {
 				file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig.json");
-				file.generate(this);
+				file.generate(this, true, false);
 			}
+
+			if (this.jsFiles.length) {
+				file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig-js.json");
+				file.generate(this, false, true);
+			}
+
 			var path = this.tmpPath + this.slash + "makefile";
 			file = new MakeFile(path);
 			file.generate(this);

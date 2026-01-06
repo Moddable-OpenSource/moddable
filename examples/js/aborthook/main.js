@@ -64,4 +64,4 @@ Promise.reject(new Error("exception from promise"));
 
 throw new Error("exception from module top level");
 
-trace("will never reach here\n");
+// trace("will never reach here\n");

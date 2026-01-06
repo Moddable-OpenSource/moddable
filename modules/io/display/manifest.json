@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"*": "./display419.h"
+	},
+	"platforms": {
+		"zephyr": {
+			"include": "./zephyr/manifest.json"
+		}
+	}
+}
