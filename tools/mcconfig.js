@@ -321,7 +321,7 @@ class ZephyrMakeFile extends MAKEFILE {
 			var target = result.target;
 			this.line("list(APPEND mOBJECTS ", source, ")");
 			if (result.recipe) {
-				this.error("don't know what to do with the recipe");
+				throw new Error("don't know what to do with the recipe: " + result.recipe);
 //				this.write(tool.recipes[result.recipe]);
 			}
 		}
@@ -1449,7 +1449,7 @@ export default class extends Tool {
 				else {
 					let action, secondary = "";
 					if (undefined === this.environment.ZEPHYR_BOARD)
-						this.error("ZEPHYR_BOARD undefined");
+						throw new Error("ZEPHYR_BOARD undefined");
 						
 					action = "build";
 					if (this.buildTarget == "build")
@@ -1457,7 +1457,7 @@ export default class extends Tool {
 					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
 						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
 					else
-						this.error("unknown target");
+						throw new Error("unknown target: " + this.buildTarget);
 
 					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build`;
 
