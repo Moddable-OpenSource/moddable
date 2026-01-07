@@ -28,13 +28,15 @@
 #if !XSTOOLS
 	#include "mc.defines.h"
 #endif
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	#include "display419.h"
 #endif
 
 #include "commodettoPoco.h"
 #include "commodettoPixelsOut.h"
 #include "commodettoFontEngine.h"
+
+#undef MODDEF_ECMA419_DISPLAY
 
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
@@ -134,7 +136,7 @@ void xs_poco_build(xsMachine *the)
 	if (xsmcTest(xsArg(7)))
 		poco->flags |= kPocoFlagAdaptInvalid;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	poco->displayHooks = C_NULL;
 	poco->the = the;
 
@@ -165,7 +167,7 @@ void xs_poco_build(xsMachine *the)
 	else
 		poco->outputRefcon = NULL;
 
-#if MODDEF_ECMA419_ENABLED && kPocoFrameBuffer
+#if MODDEF_ECMA419_DISPLAY && kPocoFrameBuffer
 	if (poco->displayHooks) {
 		uint8_t frameBuffer;
 		if ((0 == ((xsDisplayHostHooks)poco->displayHooks)->doGet(poco->outputRefcon, 1, &frameBuffer) && frameBuffer))
@@ -256,7 +258,7 @@ void xs_poco_begin(xsMachine *the)
 		PocoPixel *pixels;
 		int16_t rowBytes;
 		PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
 			int rowBytesInt;
 			(((xsDisplayHostHooks)poco->displayHooks)->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, (void **)&pixels, &rowBytesInt, 0);
@@ -269,7 +271,7 @@ void xs_poco_begin(xsMachine *the)
 		else {
 			xsUnsignedValue dataSize;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			xsmcVars(3);
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
 			xsmcSetNewObject(xsVar(1));
@@ -320,7 +322,7 @@ static void pixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	xsCall3(xsVar(0), xsID_send, xsVar(3), xsVar(1), xsVar(2));
 }
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 static void displayPixelReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 {
 	Poco poco = refCon;
@@ -342,7 +344,7 @@ void xs_poco_end(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	PixelsOutDispatch pixelsOutDispatch = 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		(!poco->displayHooks && poco->outputRefcon) ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
 #else
 		poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
@@ -355,7 +357,7 @@ void xs_poco_end(xsMachine *the)
 	if (!(poco->flags & kPocoFlagFrameBuffer)) {
 		xsmcVars(5);
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
 			(((xsDisplayHostHooks)poco->displayHooks)->doBegin(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, C_NULL, C_NULL, (poco->flags & kPocoFlagContinue) ? 1 : 0));
 		}
@@ -366,7 +368,7 @@ void xs_poco_end(xsMachine *the)
 		}
 		else {
 			xsmcGet(xsVar(0), xsThis, xsID_pixelsOut);
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			xsmcSetNewObject(xsVar(1));
 			xsmcSetInteger(xsVar(2), poco->x);
 			xsmcSet(xsVar(1), xsID_x, xsVar(2));
@@ -389,7 +391,7 @@ void xs_poco_end(xsMachine *the)
 			xsCall4(xsVar(0), xsID_begin, xsVar(1), xsVar(2), xsVar(3), xsVar(4));
 #endif
 		}
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, displayPixelReceiver, poco);
 		}
@@ -433,7 +435,7 @@ void xs_poco_end(xsMachine *the)
 		poco->flags &= ~kPocoFlagGCDisabled;
 	}
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	if (poco->displayHooks) {
 		(((xsDisplayHostHooks)poco->displayHooks)->doEnd)(poco->outputRefcon);
 
@@ -442,7 +444,7 @@ void xs_poco_end(xsMachine *the)
 	else
 #endif
 	if ((xsmcArgc > 0) && xsmcTest(xsArg(0))) {
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		poco->flags |= kPocoFlagContinue;
 #else
 		if (pixelsOutDispatch)
@@ -452,7 +454,7 @@ void xs_poco_end(xsMachine *the)
 #endif
 	}
 	else {
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		poco->flags &= ~kPocoFlagContinue;
 
 		if (poco->displayHooks) {
@@ -1079,7 +1081,7 @@ void xs_poco_adaptInvalid(xsMachine *the)
 	if (!(kPocoFlagAdaptInvalid & poco->flags))
 		return;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	if (poco->displayHooks) {
 		CommodettoRectangle cr = xsmcGetHostChunk(xsArg(0));
 #if 0 != kPocoRotation

@@ -6,5 +6,10 @@
 		"zephyr": {
 			"include": "./zephyr/manifest.json"
 		}
+	},
+	"defines": {
+		"ECMA419": {
+			"display": 1
+		}
 	}
 }
