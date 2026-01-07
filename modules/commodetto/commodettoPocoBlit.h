@@ -125,7 +125,7 @@ struct PocoRecord {
 
 	// native pixel output dispatch
 	void				*outputRefcon;
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	void				*displayHooks;
 	void				*the;
 #endif

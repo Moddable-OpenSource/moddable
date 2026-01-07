@@ -19,7 +19,7 @@
  */
 
 #include "piuMC.h"
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 	#include "display419.h"
 #endif
 
@@ -246,7 +246,7 @@ void PiuViewCombine(PiuView* self, PiuRectangle area, PiuCoordinate op)
 			cr->y = y;
 			cr->w = w;
 			cr->h = h;
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			if (poco->displayHooks) {
 				(((xsDisplayHostHooks)poco->displayHooks)->doAdaptInvalid)(poco->outputRefcon, cr);
 			}
@@ -317,7 +317,7 @@ void PiuViewCombineRegion(PiuView* self, PiuRegion* region, PiuCoordinate op)
 				cr->y = y;
 				cr->w = w;
 				cr->h = h;
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 				if (poco->displayHooks) {
 					(((xsDisplayHostHooks)poco->displayHooks)->doAdaptInvalid)(poco->outputRefcon, cr);
 				}
@@ -929,7 +929,7 @@ void PiuViewReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 	xsCallFunction3((*self)->_send, xsReference((*self)->screen), xsReference((*self)->pixels), xsInteger((char *)pixels - (char *)poco->pixels), xsInteger(byteLength));
 }
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 static void PiuViewDisplayReceiver(PocoPixel *pixels, int byteLength, void *refCon)
 {
 	PiuView* self = refCon;
@@ -1047,7 +1047,7 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			PocoPixel *pixels;
 			int16_t rowBytes;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			if (poco->displayHooks) {
 				int rowBytesInt;
 				(((xsDisplayHostHooks)poco->displayHooks)->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, (void **)&pixels, &rowBytesInt, 0);
@@ -1058,7 +1058,7 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			if (pixelsOutDispatch)
 				(pixelsOutDispatch->doBeginFrameBuffer)(poco->outputRefcon, &pixels, &rowBytes);
 			else {
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 				if (poco->flags & kPocoFlag419PixelOut) {
 					xsResult = xsNewObject();
 					xsSet(xsResult, xsID_x, xsInteger(poco->x));
@@ -1142,7 +1142,7 @@ done:
 	if (!(poco->flags & kPocoFlagFrameBuffer))
 #endif
 	{
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
 			(((xsDisplayHostHooks)poco->displayHooks)->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, C_NULL, C_NULL, 0);
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewDisplayReceiver, self);
@@ -1154,7 +1154,7 @@ done:
 			result = PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, pixelsOutDispatch->doSend, poco->outputRefcon);
 		}
 		else {
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			xsResult = xsNewObject();
 			xsSet(xsResult, xsID_x, xsInteger(poco->x));
 			xsSet(xsResult, xsID_y, xsInteger(poco->y));
@@ -1169,7 +1169,7 @@ done:
 		}
 		if (result) goto fail;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
 			(((xsDisplayHostHooks)poco->displayHooks)->doEnd)(poco->outputRefcon);
 
@@ -1200,7 +1200,7 @@ endStepFrameBuffer:
 			result = PocoDrawingEndFrameBuffer(poco);
 			if (result) goto fail;
 
-#if MODDEF_ECMA419_ENABLED
+#if MODDEF_ECMA419_DISPLAY
 			if (poco->displayHooks)
 				(((xsDisplayHostHooks)poco->displayHooks)->doEnd)(poco->outputRefcon);
 			else
