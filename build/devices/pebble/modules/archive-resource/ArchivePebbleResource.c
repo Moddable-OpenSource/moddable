@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,17 +27,22 @@
 #include "mc.xs.h"
 #include "mc.defines.h"
 
+#undef TARGET_QEMU
+
 typedef struct ArchivePebbleResourceStruct ArchivePebbleResourceRecord, *ArchivePebbleResource;
 struct ArchivePebbleResourceStruct {
 	xsSlot* archive;
 	void* address;
 	size_t size;
-	int file;
 };
 
-static void ArchivePebbleResourceMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+#if TARGET_QEMU
+	// use armv7m.ccm
+	#define kReservedMemory ((uint8_t *)0x10000000)
+	#define kReservedMemorySize (65536)
+#endif
 
-// static xsBooleanValue remapped = 0;
+static void ArchivePebbleResourceMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size_t size)
 {
@@ -47,7 +52,6 @@ static xsBooleanValue fxArchiveRead(void* src, size_t offset, void* buffer, size
 
 static xsBooleanValue fxArchiveWrite(void* dst, size_t offset, void* buffer, size_t size)
 {
-	// remapped = 1;
 	c_memcpy(((txU1*)dst) + offset, buffer, size);
 	return 1;
 }
@@ -70,10 +74,29 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 
 		ResAppNum app_num = sys_get_current_resource_num();
 		self->size = sys_resource_size(app_num, resource_id);
+
+#if TARGET_QEMU
+		if (self->size > kReservedMemorySize)
+			xsUnknownError("mod too big");
+		
+		self->address = kReservedMemory;
+		uint8_t *dst = self->address;
+		for (size_t offset = 0; offset < self->size; ) {
+			size_t use = 4096;
+			if (use > (self->size - offset))
+				use = self->size - offset;
+			void *address = applib_resource_mmap_or_load(app_num, resource_id, offset, use, false);
+			c_memcpy(dst, address, use);
+			applib_resource_munmap_or_free(address);
+			dst += use;
+			offset += use;
+		}
+#else
 		self->address = applib_resource_mmap_or_load(app_num, resource_id, 0, self->size, false);
 
 		if (C_NULL == self->address)
 			xsUnknownError("load resource failed");
+#endif
 
 		if (C_NULL == fxMapArchive(the, preparation, self->address, 256, fxArchiveRead, fxArchiveWrite)) {
 			self->address = NULL;
@@ -104,11 +127,15 @@ void ArchivePebbleResourceDelete(void* it)
 {
 	if (it) {
 		ArchivePebbleResource self = it;
+#if TARGET_QEMU
+		self->size = 0;
+#else
 		if (self->address) {
 			applib_resource_munmap_or_free(self->address);
 			self->address = NULL;
 			self->size = 0;
 		}
+#endif
 	}
 }
 
