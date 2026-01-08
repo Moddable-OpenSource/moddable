@@ -27,8 +27,6 @@
 #include "mc.xs.h"
 #include "mc.defines.h"
 
-#undef TARGET_QEMU
-
 typedef struct ArchivePebbleResourceStruct ArchivePebbleResourceRecord, *ArchivePebbleResource;
 struct ArchivePebbleResourceStruct {
 	xsSlot* archive;
@@ -78,7 +76,7 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 #if TARGET_QEMU
 		if (self->size > kReservedMemorySize)
 			xsUnknownError("mod too big");
-		
+
 		self->address = kReservedMemory;
 		uint8_t *dst = self->address;
 		for (size_t offset = 0; offset < self->size; ) {
@@ -127,13 +125,11 @@ void ArchivePebbleResourceDelete(void* it)
 {
 	if (it) {
 		ArchivePebbleResource self = it;
-#if TARGET_QEMU
 		self->size = 0;
-#else
+#if !TARGET_QEMU
 		if (self->address) {
 			applib_resource_munmap_or_free(self->address);
 			self->address = NULL;
-			self->size = 0;
 		}
 #endif
 	}
