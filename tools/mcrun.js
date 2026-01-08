@@ -347,7 +347,7 @@ export default class extends Tool {
 		super(argv);
 		this.checkModule = checkModule;
 		if (hackPebblePlatform) {
-			this.platform = "mac";
+//			this.platform = "mac";
 			this.subplatform = "flint";
 			var path = this.resolveFilePath("../../package.json");
 			if (path) {
@@ -371,6 +371,10 @@ export default class extends Tool {
 			this.format = "monochromealigned";
 		}
 		else if (this.subplatform == "basalt") {
+			this.checkModule = false;
+			this.format = "argb2222";
+		}
+		else if (this.subplatform == "emery") {
 			this.checkModule = false;
 			this.format = "argb2222";
 		}
