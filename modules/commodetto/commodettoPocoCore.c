@@ -36,8 +36,6 @@
 #include "commodettoPixelsOut.h"
 #include "commodettoFontEngine.h"
 
-#undef MODDEF_ECMA419_DISPLAY
-
 #include "stddef.h"		// for offsetof macro
 #include "stdint.h"
 #include "stdlib.h"

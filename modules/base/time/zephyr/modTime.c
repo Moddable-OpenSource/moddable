@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,29 +28,28 @@ void xs_time_set(xsMachine *the)
 {
 	struct timespec ts = { .tv_sec = xsmcToInteger(xsArg(0)) };
 	sys_clock_settime(SYS_CLOCK_REALTIME, &ts);
-
-	ts.tv_sec = 0;
-	sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 }
 
 void xs_time_timezone_get(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	xsmcSetInteger(xsResult, modGetTimeZone());
 }
 
 void xs_time_timezone_set(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	int32_t seconds = xsmcToInteger(xsArg(0));
+	modSetTimeZone(seconds);
 }
 
 void xs_time_dst_get(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	int32_t seconds = xsmcToInteger(xsArg(0));
+	modSetDaylightSavingsOffset(seconds);
 }
 
 void xs_time_dst_set(xsMachine *the)
 {
-	xsUnknownError("unimplemented");
+	xsmcSetInteger(xsResult, modMilliseconds());
 }
 
 void xs_time_ticks(xsMachine *the)
