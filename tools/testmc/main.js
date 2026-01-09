@@ -124,7 +124,7 @@ Object.defineProperty(globalThis, "screen", {
 		
 		if (config.Screen) { 
 			value = new config.Screen({});
-			width = value.width,
+			width = value.width;
 			height = value.height;
 		}
 		Object.defineProperty(globalThis, "screen", {
@@ -134,8 +134,8 @@ Object.defineProperty(globalThis, "screen", {
 			value
 		});
 
-		screen = new Screen({width: width ?? 240, height: height ?? 320});
-		screen.configure({show: true});
+		screen = new Screen({width: config.mc_width ?? width ?? 240, height: config.mc_height ?? height ?? 320});
+		screen.configure({show: ((undefined === config.mc_width) && (undefined === config.mc_height)) || ((width === config.mc_width) && (height === config.mc_height))});
 
 		return screen;
 	},
@@ -146,10 +146,8 @@ Object.defineProperty(globalThis, "screen", {
 			writable: true,
 			value
 		});
-
-		screen = new Screen({width: value.width, height: value.height});
-
-		return screen;
+	
+		screen = new Screen({width: config.mc_width ?? value.width, height: config.mc_height ?? value.height});
 	}
 });
 
