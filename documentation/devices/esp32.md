@@ -560,7 +560,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v5.5.1 (commit `fcae328`
 10. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 5.5.1 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects with "ESP-IDF 5.5.1 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
-	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
+	"C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars32.bat"
 	```
 
 	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the "ESP-IDF 5.5.1 CMD" shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF 5.5.1 CMD" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
@@ -572,7 +572,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v5.5.1 (commit `fcae328`
 	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" && popd"
+	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" && popd"
 	```
 
 	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.
@@ -683,7 +683,7 @@ To ensure that your build environment is up to date, perform the following steps
 6. The ESP-IDF Windows Installer provides a command prompt called "ESP-IDF 5.1 CMD" that automatically sets important environment variables and paths. We recommend building ESP32 projects using "ESP-IDF 5.1 CMD." In each new command prompt instance you will need to run the Visual Studio x86 initialization batch file manually. Adjust the path as necessary for your system.
 
 	```text
-	"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat"
+	"C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars32.bat"
 	```
 
 	**Note for experts:** If you are comfortable editing Windows shortcuts, a convenient alternative to this manual process is to modify the "ESP-IDF 5.1 CMD" shortcut to initialize both the ESP-IDF environment and the Visual Studio x86 environment. To do this, right-click the "ESP-IDF 5.1 CMD" shortcut and select "Properties." In the "Target" field of the Properties window, you should see a command that looks like:
@@ -695,7 +695,7 @@ To ensure that your build environment is up to date, perform the following steps
 	You can change the Target to include the path to `vcvars32.bat` as follows. Adjust the paths as necessary for your system.
 
 	```text
-	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" && popd"
+	%comspec% /k ""%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars32.bat" && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\idf_cmd_init.bat" && popd"
 	```
 
 	It is also convenient to update the "Start in" field of the shortcut to `%MODDABLE%` to start your Command Prompt session in the Moddable SDK directory.

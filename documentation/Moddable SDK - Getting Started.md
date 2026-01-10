@@ -186,14 +186,14 @@ The Moddable SDK tools are frequently updated with improvements and added functi
 <a id="win-requirements"></a>
 ### System Requirements
 
-The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Community 2017 or newer. We recommend Windows 10 or Windows 11 and Microsoft Visual Studio Community 2022.
+The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Community 2017 or newer. We recommend Windows 11 and Microsoft Visual Studio Community 2026.
 
 <a id="win-instructions"></a>
 ### Installing
 
-1. Download the [Microsoft Visual Studio 2022 Community installer](https://www.visualstudio.com/downloads/). 
+1. Download the [Microsoft Visual Studio 2026 Community installer](https://www.visualstudio.com/downloads/). 
 
-2. Launch the installer. On the "Workloads" tab, select the "Desktop development for C++" option. On the "Individual Components" tab, select "Windows 10 SDK (10.0.19041.0)" (this should be preselected on Windows 10 systems but must be manually included on Windows 11 systems). Proceed with the installation as configured.
+2. Launch the installer. On the "Workloads" tab, select the "Desktop development for C++" option. On the "Individual Components" tab, select "Windows 11 SDK (10.0.26100.7175)" (this should be preselected on Windows 11 systems). Proceed with the installation as configured.
 
 3. Create a `Projects` directory in your `%USERPROFILE%` directory, e.g. `C:\Users\<your-user-name>` for the Moddable SDK repository.
 
@@ -219,7 +219,7 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
 
 	> Note: Make sure you open a new Command Prompt after setting the environment variables. The new environment settings will not take effect in existing Command Prompt instances.
 	
-6. Launch the "x86 Native Tools Command Prompt for VS 2022" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
+6. Launch the "x86 Native Tools Command Prompt for VS 2026" command line console. Build the Moddable command line tools, simulator, and debugger from the command line:
 
 	```text
 	cd %MODDABLE%\build\makefiles\win
@@ -250,18 +250,18 @@ The Moddable SDK requires Windows 8.1 or newer and Microsoft Visual Studio Commu
  - If the Moddable SDK build fails with an error like "`LINK : fatal error LNK1104: cannot open file '<Moddable path>\build\bin\win\release\<tool name>.exe'`", it most likely indicates a conflict with antivirus software as described in [this document from Microsoft](https://docs.microsoft.com/en-us/cpp/error-messages/tool-errors/linker-tools-error-lnk1104?view=vs-2019). Please try excluding the `%MODDABLE%` directory from your antivirus software's live scanning capability during the build process.
 
  - If the Moddable SDK build fails with the error "`'nmake' is not recognized as an internal or external command, operable program or batch file.`" there are three potential issues and fixes:
-	1. You may not have Visual Studio installed. We recommend using the [Microsoft Visual Studio 2022 Community Edition installer](https://www.visualstudio.com/downloads/).
+	1. You may not have Visual Studio installed. We recommend using the [Microsoft Visual Studio 2026 Community Edition installer](https://www.visualstudio.com/downloads/).
 	2. When you installed Visual Studio, you may not have chosen the "Desktop development for C++" workload option. Re-run [the installer](https://www.visualstudio.com/downloads/) and choose that workload for installation.
-	3. You may have inadvertently attempted the build in the default Command Prompt rather than the "x86 Native Tools Command Prompt for VS 2022." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+	3. You may have inadvertently attempted the build in the default Command Prompt rather than the "x86 Native Tools Command Prompt for VS 2026." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
 
- - If the Moddable SDK build fails with an error like "`fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'x86'`", you have most likely attempted the build in the "x64 Native Tools Command Prompt for VS 2022" rather than the correct "x86 Native Tools Command Prompt for VS 2022." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
+ - If the Moddable SDK build fails with an error like "`fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'x86'`", you have most likely attempted the build in the "x64 Native Tools Command Prompt for VS 2026" rather than the correct "x86 Native Tools Command Prompt for VS 2026." This Command Prompt sets important environment variables for the build and can be found by searching for "x86 Native Tools" in the Start Menu.
 
 <a id="win-update"></a>
 ### Updating
 
 The Moddable SDK tools are frequently updated with improvements and added functionality. You should occasionally update your host environment by following these steps.
 
-	> Note: The following commands should all be run in the "x86 Native Tools Command Prompt for VS 2022" command line console.
+	> Note: The following commands should all be run in the "x86 Native Tools Command Prompt for VS 2026" command line console.
 
 1. Update your local clone of the [Moddable repository](https://github.com/Moddable-OpenSource/moddable):
 
