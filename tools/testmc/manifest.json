@@ -57,6 +57,11 @@
 				}
 			}
 		},
+		"zephyr": {
+			"include": [
+				"$(MODULES)/base/worker/manifest.json"
+			]
+		},
 		"pico": {
 			"defines": {
 				"audioOut": {
