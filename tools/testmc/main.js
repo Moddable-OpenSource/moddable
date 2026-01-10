@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024  Moddable Tech, Inc.
+ * Copyright (c) 2018-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -20,16 +20,13 @@
 
 import {} from "_262";
 import {} from "harness";
+import Modules from "modules";
 import ChecksumOut from "commodetto/checksumOut";
 import Timer from "timer";
 import config from "mc/config";
 import { URL, URLSearchParams } from "url";
 globalThis.URL = URL;
 globalThis.URLSearchParams = URLSearchParams;
-/* comment out the import of WiFi or Net if your platform doesn't support it */
-import WiFi from "wifi";
-import Net from "net";
-/* end network */
 
 globalThis.$DO = function(f) {
 	return function(...args) {
@@ -134,8 +131,10 @@ Object.defineProperty(globalThis, "screen", {
 			value
 		});
 
-		screen = new Screen({width: config.mc_width ?? width ?? 240, height: config.mc_height ?? height ?? 320});
-		screen.configure({show: ((undefined === config.mc_width) && (undefined === config.mc_height)) || ((width === config.mc_width) && (height === config.mc_height))});
+		const mc_width = (undefined === config.mc_width) ? undefined : Number(config.mc_width);
+		const mc_height = (undefined === config.mc_height) ? undefined : Number(config.mc_height);
+		screen = new Screen({width: mc_width ?? width ?? 240, height: mc_height ?? height ?? 320});
+		screen.configure({show: ((undefined === mc_width) && (undefined === mc_height)) || ((width === mc_width) && (height === mc_height))});
 
 		return screen;
 	},
@@ -147,15 +146,16 @@ Object.defineProperty(globalThis, "screen", {
 			value
 		});
 	
-		screen = new Screen({width: config.mc_width ?? value.width, height: config.mc_height ?? value.height});
+		const mc_width = (undefined === config.mc_width) ? undefined : Number(config.mc_width);
+		const mc_height = (undefined === config.mc_height) ? undefined : Number(config.mc_height);
+		screen = new Screen({width: mc_width ?? value.width, height: mc_height ?? value.height});
 	}
 });
 
-/* *** WiFi */
 globalThis.$NETWORK = {
-    get connected() {
-		if (WiFi === undefined)
-			return false;
+	get connected() {
+		const WiFi = Modules.importNow("wifi");
+		const Net = Modules.importNow("net");
 
 		if (WiFi.Mode.station !== WiFi.mode)
 			WiFi.mode = WiFi.Mode.station;
@@ -186,6 +186,7 @@ globalThis.$NETWORK = {
 	},
 	async resolve(domain) {
 		return new Promise((resolve, reject) => {
+			const Net = Modules.importNow("net");
 			Net.resolve(domain, (name, address) => {
 				if (address)
 					resolve(address);
@@ -196,7 +197,7 @@ globalThis.$NETWORK = {
 	},
 	invalidDomain: "fail.moddable.com",
 };
-/* *** WiFi */
+Object.freeze(globalThis.$NETWORK);
 
 class HostObject extends Native("xs_hostobject_destructor") {
 	constructor() { super(); native("xs_hostobject").call(this); }
@@ -240,7 +241,7 @@ globalThis.$TESTMC = {
 	Behavior: TestBehavior
 };
 
-Object.freeze([globalThis.$TESTMC, globalThis.$NETWORK], true);
+Object.freeze(globalThis.$TESTMC, true);
 
 export default function() {
 	const former = globalThis.assert;
