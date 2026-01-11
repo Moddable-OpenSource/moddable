@@ -325,47 +325,46 @@ class ToDoFile extends FILE {
 export default class extends Tool {
 	constructor(argv) {
 		let checkModule = true;
-		let hackPebblePlatform = false;
+// 		let hackPebblePlatform = false;
 		let argi = argv.indexOf("-noCheckModule");
 		if (argi >= 0) {
 			checkModule = false;
 			argv.splice(argi, 1);
 		}
-		else {
-			argi = argv.indexOf("-f");
-			if (argi >= 0) {
-				argi++;
-				if (argi < argv.length) {
-					const name = argv[argi].toLowerCase();
-					if (name == "x") {
-						checkModule = false;
-						hackPebblePlatform = true;
-					}
-				}
-			}
-		}
+// 		else {
+// 			argi = argv.indexOf("-f");
+// 			if (argi >= 0) {
+// 				argi++;
+// 				if (argi < argv.length) {
+// 					const name = argv[argi].toLowerCase();
+// 					if (name == "x") {
+// 						checkModule = false;
+// 						hackPebblePlatform = true;
+// 					}
+// 				}
+// 			}
+// 		}
 		super(argv);
 		this.checkModule = checkModule;
-		if (hackPebblePlatform) {
+// 		if (hackPebblePlatform) {
 //			this.platform = "mac";
-			this.subplatform = "flint";
-			var path = this.resolveFilePath("../../package.json");
-			if (path) {
-				try {
-					const json = JSON.parse(this.readFileString(path));
-					if (json.pebble && json.pebble.targetPlatforms && (json.pebble.targetPlatforms.length > 0))
-						this.subplatform = json.pebble.targetPlatforms[0];
-				}
-				catch {
-				}
-			}
-			this.fullplatform = this.platform + "/" + this.subplatform;
-			this.environment.PLATFORM = this.platform;
-			this.environment.SUBPLATFORM = this.subplatform;
-			this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
-			this.report(`### -p ${this.fullplatform}`);
-		}
-		
+// 			this.subplatform = "flint";
+// 			var path = this.resolveFilePath("../../package.json");
+// 			if (path) {
+// 				try {
+// 					const json = JSON.parse(this.readFileString(path));
+// 					if (json.pebble && json.pebble.targetPlatforms && (json.pebble.targetPlatforms.length > 0))
+// 						this.subplatform = json.pebble.targetPlatforms[0];
+// 				}
+// 				catch {
+// 				}
+// 			}
+// 			this.fullplatform = this.platform + "/" + this.subplatform;
+// 			this.environment.PLATFORM = this.platform;
+// 			this.environment.SUBPLATFORM = this.subplatform;
+// 			this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+// 		}
+		this.report(`### -p ${this.fullplatform}`);
 		if (this.subplatform == "flint") {
 			this.checkModule = false;
 			this.format = "monochromealigned";
