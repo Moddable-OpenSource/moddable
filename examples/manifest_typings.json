@@ -33,6 +33,9 @@
 		"embedded:io/audio/*": [
 			"$(TYPINGS)/embedded_io/audio/*"
 		],
+		"embedded:io/ble/*": [
+			"$(TYPINGS)/embedded_io/ble/*"
+		],
 		"embedded:io/socket/*": [
 			"$(TYPINGS)/embedded_io/socket/*"
 		],
