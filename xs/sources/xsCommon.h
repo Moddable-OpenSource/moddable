@@ -1317,6 +1317,8 @@ enum {
 #endif
 #if mxECMAScript2026
 	_fromAsync,
+	_isRawJSON,
+	_rawJSON,
 	_sumPrecise,
 #endif
 	XS_ID_COUNT

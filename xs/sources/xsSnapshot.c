@@ -121,7 +121,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxNativeAdditions 0
 #endif
 #if mxECMAScript2026
-	#define mxECMAScript2026Additions 3
+	#define mxECMAScript2026Additions 5
 #else
 	#define mxECMAScript2026Additions 0
 #endif
@@ -731,6 +731,8 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxECMAScript2026
 	fx_Array_fromAsync,
 	fx_Iterator_concat,
+	fx_JSON_isRawJSON,
+	fx_JSON_rawJSON,
 	fx_Math_sumPrecise,
 #endif
 };

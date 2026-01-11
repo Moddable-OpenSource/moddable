@@ -107,8 +107,24 @@ void fxBuildJSON(txMachine* the)
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_parse), 2, mxID(_parse), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_stringify), 3, mxID(_stringify), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2026
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_isRawJSON), 1, mxID(_isRawJSON), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_JSON_rawJSON), 1, mxID(_rawJSON), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextStringXProperty(the, slot, "JSON", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxPull(mxJSONObject);
+}
+
+#define mxIsRawJSON(THE_SLOT) \
+	((THE_SLOT) && ((THE_SLOT)->next) && ((THE_SLOT)->next->flag & XS_INTERNAL_FLAG) && ((THE_SLOT)->next->kind == XS_RAW_JSON_KIND))
+
+void fx_JSON_isRawJSON(txMachine* the)
+{
+	if (mxArgc < 1)
+		mxTypeError("no text");
+	txSlot* slot = mxArgv(0);
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = (mxIsReference(slot) && mxIsRawJSON(slot->value.reference)) ? 1 : 0;
 }
 
 void fx_JSON_parse(txMachine* the)
@@ -716,6 +732,51 @@ void fxReviveJSON(txMachine* the, txJSONParser* theParser, txSlot* reviver)
 	mxRunCount(3);
 }
 
+void fx_JSON_rawJSON(txMachine* the)
+{
+	txSlot* slot;
+	txString string;
+	txSize length;
+	txSlot* instance;
+	txSlot* property;
+	volatile txJSONParser aParser = {0};
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	slot = the->stack;
+	string = fxToString(the, slot);
+	length = (txSize)c_strlen(string);
+	if (length == 0) 
+		mxSyntaxError("empty string");
+	else {
+		char first = string[0];
+		char last = string[length - 1];
+		if ((first == 0x09) || (first == 0x0A) || (first == 0x0D) || (first == 0x20) || (last == 0x09) || (last == 0x0A) || (last == 0x0D) || (last == 0x20))
+		mxSyntaxError("invalid string");
+	}
+	aParser.slot = slot;
+	aParser.offset = 0;
+	mxPush(mxEmptyString);
+	aParser.string = the->stack;
+	aParser.line = 1;
+	fxParseJSON(the, (txJSONParser*)&aParser);
+	if (mxIsReference(the->stack))
+		mxSyntaxError("invalid string");
+	mxPop();
+	instance = fxNewInstance(the);
+	instance->flag |= XS_EXOTIC_FLAG | XS_DONT_PATCH_FLAG;
+	property = instance->next = fxNewSlot(the);
+	property->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
+	property->kind = XS_RAW_JSON_KIND;
+	property = property->next = fxNewSlot(the);
+	property->ID = mxID(_rawJSON);
+	property->flag = XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG;
+	property->kind = slot->kind;
+	property->value = slot->value;
+	mxPullSlot(mxResult);
+}
+
 void fx_JSON_stringify(txMachine* the)
 {
 	volatile txJSONStringifier aStringifier = {0};
@@ -948,6 +1009,17 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 			else if ((aSlot->kind == XS_BOOLEAN_KIND) || (aSlot->kind == XS_BIGINT_KIND) || (aSlot->kind == XS_BIGINT_X_KIND)) {
 				aValue->kind = aSlot->kind;
 				aValue->value = aSlot->value;
+			}
+			else if (aSlot->kind == XS_RAW_JSON_KIND) {
+				mxPushSlot(aValue);
+				mxGetID(mxID(_rawJSON));
+				aValue->kind = the->stack->kind;
+				aValue->value = the->stack->value;
+				the->stack = aKey;
+				fxStringifyJSONName(the, theStringifier, theFlag);
+				fxStringifyJSONChars(the, theStringifier, aValue->value.string, c_strlen(aValue->value.string));
+				mxPop(); // POP VALUE
+				return;
 			}
 		}
 	}

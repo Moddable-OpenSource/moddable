@@ -1839,7 +1839,9 @@ extern void fxCleanupFinalizationRegistries(txMachine* the);
 extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 
 /* xsJSON.c */
+mxExport void fx_JSON_isRawJSON(txMachine* the);
 mxExport void fx_JSON_parse(txMachine* the);
+mxExport void fx_JSON_rawJSON(txMachine* the);
 mxExport void fx_JSON_stringify(txMachine* the);
 
 extern void fxBuildJSON(txMachine* the);
@@ -2205,6 +2207,7 @@ enum {
 #if mxModuleStuff
 	XS_MODULE_STUFF_KIND,
 #endif
+	XS_RAW_JSON_KIND,
 };
 
 #if mxBigEndian

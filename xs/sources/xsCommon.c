@@ -1877,6 +1877,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #endif
 #if mxECMAScript2026
 	"fromAsync",
+	"isRawJSON",
+	"rawJSON",
 	"sumPrecise",
 #endif
 };
