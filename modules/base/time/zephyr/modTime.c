@@ -43,13 +43,13 @@ void xs_time_timezone_set(xsMachine *the)
 
 void xs_time_dst_get(xsMachine *the)
 {
-	int32_t seconds = xsmcToInteger(xsArg(0));
-	modSetDaylightSavingsOffset(seconds);
+	xsmcSetInteger(xsResult, modGetDaylightSavingsOffset());
 }
 
 void xs_time_dst_set(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, modMilliseconds());
+	int32_t seconds = xsmcToInteger(xsArg(0));
+	modSetDaylightSavingsOffset(seconds);
 }
 
 void xs_time_ticks(xsMachine *the)
