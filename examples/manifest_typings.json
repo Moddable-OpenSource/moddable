@@ -33,7 +33,7 @@
 		"embedded:io/audio/*": [
 			"$(TYPINGS)/embedded_io/audio/*"
 		],
-		"embedded:io/ble/*": [
+		"embedded:io/bluetoothle/*": [
 			"$(TYPINGS)/embedded_io/ble/*"
 		],
 		"embedded:io/socket/*": [
