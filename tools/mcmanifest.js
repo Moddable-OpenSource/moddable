@@ -738,7 +738,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("add_custom_command(");
 				this.line("\tOUTPUT " + output);
 				if (lintCheck)
-					this.line(`\tCOMMAND eslint ${fileName} --config ${MODDABLE}/eslint.config.mjs`);
+					this.line(`\tCOMMAND eslint ${fileName}` + " --config ${MODDABLE}/eslint.config.mjs");
 				this.line("\tCOMMAND xsc " + source + " " + options + " -e -o " + outputPath + " -r " + targetParts.name.replaceAll("#", tool.escapedHash));
 				this.line("\tDEPENDS " + source + (typeCheck ? " ${TYPECHECK_FILE}" : ""));
 				this.line(`\tWORKING_DIRECTORY ${sourceDir}`);
