@@ -6,6 +6,12 @@ declare module "embedded:io/bluetoothle/peripheral" {
         mtu?: number;
         services: GATTServerService[];
         security?: GATTSecurityOptions;
+        onReady?(): void;
+        onConnect?(connection: GATTServerConnection): void;
+        onDisconnect?(connection: GATTServerConnection): void;
+        onPasskey?(connection: GATTServerConnection, action: "input" | "display" | "compareNumber" | "outOfBand", data?: number | ArrayBuffer): void;
+        onSecured?(connection: GATTServerConnection, state: GATTSecurityState): void;
+        onWarning?(message: string): void;
     }
 
     interface GATTServerConnection {
@@ -51,12 +57,6 @@ declare module "embedded:io/bluetoothle/peripheral" {
     class GATTServer {
         constructor(options: GATTServerOptions);
 
-        onReady?(): void;
-        onConnect?(connection: GATTServerConnection): void;
-        onDisconnect?(connection: GATTServerConnection): void;
-        onPasskey?(connection: GATTServerConnection, action: "input" | "display" | "compareNumber" | "outOfBand", data?: number | ArrayBuffer): void;
-        onSecured(connection: GATTServerConnection, state: GATTSecurityState): void;
-        onWarning?(message: string): void;
         close?(): void;
         addService(service: GATTServerService): void;
         deleteService(service: GATTServerService): void;
