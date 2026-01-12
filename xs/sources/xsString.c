@@ -134,7 +134,7 @@ txSize fxCacheUTF8Length(txMachine* the, txString string)
 	txStringInfo* info = fxCacheStringInfo(the, string);
 	if (info) 
 		return info->utf8Length;
-	return c_strlen(string);
+	return (txSize)c_strlen(string);
 }
 
 txSize fxCacheUTF8ToUnicodeOffset(txMachine* the, txString string, txSize offset)

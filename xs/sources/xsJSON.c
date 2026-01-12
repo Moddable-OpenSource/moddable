@@ -1017,7 +1017,7 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 				aValue->value = the->stack->value;
 				the->stack = aKey;
 				fxStringifyJSONName(the, theStringifier, theFlag);
-				fxStringifyJSONChars(the, theStringifier, aValue->value.string, c_strlen(aValue->value.string));
+				fxStringifyJSONChars(the, theStringifier, aValue->value.string, (txSize)c_strlen(aValue->value.string));
 				mxPop(); // POP VALUE
 				return;
 			}

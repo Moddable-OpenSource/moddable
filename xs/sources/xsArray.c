@@ -220,7 +220,7 @@ txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, t
 
 	txSlot *slot = mxArgv(argi);
 	if (slot->kind != XS_INTEGER_KIND)
-		return fxArgToIndex(the, argi, index, length);
+		return (txInteger)fxArgToIndex(the, argi, index, length);
 
 	index = slot->value.integer;
 	if (index < 0) {
@@ -412,8 +412,10 @@ txIndex fxCheckArrayLength(txMachine* the, txSlot* slot)
 		txUnsigned length;
 		txNumber check;
 		mxPushSlot(slot);
-		check = fxToNumber(the, the->stack);
 		length = fxToUnsigned(the, the->stack);
+		mxPop();
+		mxPushSlot(slot);
+		check = fxToNumber(the, the->stack);
 		mxPop();
 		if (length == check)
 			return length;
@@ -1270,7 +1272,7 @@ void fx_Array_fromAsync(txMachine* the)
     {
 		mxTry(the) {
 			txSlot* function = (mxArgc > 1) ? fxArgToCallback(the, 1) : C_NULL;
-			txIndex length = 0;
+			txNumber length = 0;
 			
 			if (mxArgc == 0)
 				mxTypeError("no items");
@@ -1286,18 +1288,17 @@ void fx_Array_fromAsync(txMachine* the)
 					mxPop();
 					mxDub();
 					mxGetID(mxID(_length));
-					if (mxIsUndefined(the->stack))
-						length = 0;
-					else
-						length = fxCheckArrayLength(the, the->stack);
+					length = fxToLength(the, the->stack);
 					mxPop();
+					if (length > 0x7FFFFFFF)
+						mxRangeError("array overflow");
 					mxPush(mxIteratorPrototype);
 					property = fxLastProperty(the, fxNewIteratorInstance(the, mxArgv(0), mxID(_Array)));
-					property = fxNextIntegerProperty(the, property, length, XS_NO_ID, XS_INTERNAL_FLAG);
+					property = fxNextIntegerProperty(the, property, (txInteger)length, XS_NO_ID, XS_INTERNAL_FLAG);
 					property = fxNextHostFunctionProperty(the, property, mxCallback(fx_Array_fromAsync_items_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
 					fxNewAsyncFromSyncIteratorInstance(the);
 					mxPullSlot(iterator);
-					fxCreateArray(the, 1, length);
+					fxCreateArray(the, 1, (txIndex)length);
 				}
 				else {
 					mxCall();

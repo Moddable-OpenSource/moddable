@@ -133,9 +133,6 @@ const txCharCase gxCharCaseIgnore0[mxCharCaseIgnore0Count] ICACHE_XS6RO_ATTR = {
 	{0xA794,0x01,0x40,0x0030},{0xA797,0x13,0x90,0x0001},{0xA7B5,0x0F,0x90,0x0001},{0xA7C8,0x03,0xA0,0x0001},{0xA7CD,0x0F,0x90,0x0001},{0xA7F6,0x01,0xA0,0x0001},{0xAB53,0x01,0x80,0x03A0},{0xAB70,0x50,0x80,0x97D0},
 	{0xFF41,0x1A,0x80,0x0020},
 };
-#define mxCharCaseIgnore1Count 0
-const txCharCase gxCharCaseIgnore1[mxCharCaseIgnore1Count] ICACHE_XS6RO_ATTR = {
-};
 #define mxSpecialCharCaseToLowerCount 2
 const txInteger gxSpecialCharCaseToLower[mxSpecialCharCaseToLowerCount] ICACHE_XS6RO_ATTR = {
 	0x69,0x307,
@@ -1492,7 +1489,7 @@ void fxCaptureNameParticipate(txPatternParser* parser, txCapture* capture)
 
 txCaptureName* fxCaptureNamePut(txPatternParser* parser, txString string)
 {
-	txInteger length = c_strlen(string);
+	txInteger length = (txInteger)c_strlen(string);
 	txCaptureName** address = &(parser->firstCaptureName);
 	txCaptureName* name;
 	while ((name = *address)) {
@@ -11484,27 +11481,27 @@ void fx_RegExp_escape(txMachine* the)
 				if (e == 0)
 					*r++ = c;
 				else if (e == 1) {
-					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - (q - p));
+					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - mxPtrDiff(q - p));
 					*r++ = '\\';
 					*r++ = 'x';
 					*r++ = c_read8(gxHexLower + ((c & 0xf0) >> 4));
 					*r++ = c_read8(gxHexLower + (c & 0x0f));
 				}
 				else {
-					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 2 - (q - p));
+					stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 2 - mxPtrDiff(q - p));
 					*r++ = '\\';
 					*r++ = e;
 				}
 			}
 			else if (0x000000A0 == c) {
-				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - (q - p));
+				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 4 - mxPtrDiff(q - p));
 				*r++ = '\\';
 				*r++ = 'x';
 				*r++ = c_read8(gxHexLower + ((c & 0xf0) >> 4));
 				*r++ = c_read8(gxHexLower + (c & 0x0f));
 			}
 			else if ((0x00002028 == c) || (0x00002029 == c) || (0x0000202F == c) || ((0x0000D800 <= c) && (c <= 0x0000DFFF)) || (0x0000FEFF == c)) {
-				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 6 - (q - p));
+				stringLength = fxAdjustResultStringLength(the, slot, &q, &r, stringLength, 6 - mxPtrDiff(q - p));
 				*r++ = '\\'; 
 				*r++ = 'u'; 
 				*r++ = c_read8(gxHexLower + ((c & 0x0000f000) >> 12));
