@@ -48,7 +48,7 @@ declare module "embedded:io/bluetoothle/peripheral" {
         [ADType: number]: Buffer;
     }
 
-    class GATTTServer {
+    class GATTServer {
         constructor(options: GATTServerOptions);
 
         onReady?(): void;
@@ -88,5 +88,5 @@ declare module "embedded:io/bluetoothle/peripheral" {
         }
     }
 
-    export { GATTTServer };
+    export { GATTServer };
 }
