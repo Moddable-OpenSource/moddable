@@ -1,15 +1,11 @@
 declare module "embedded:io/bluetoothle/peripheral" {
     import type { Buffer } from "embedded:io/_common";
+    import type { GATTSecurityOptions, GATTSecurityState } from "embedded:io/bluetoothle/_common";
 
     interface GATTServerOptions {
         mtu?: number;
         services: GATTServerService[];
-        security?: {
-            authenticate?: boolean,
-            bond?: boolean,
-            immediate?: boolean,
-            ioCapabilities?: "none" | "display" | "numbers" | "display+numbers" | "display+confirm"
-        };
+        security?: GATTSecurityOptions;
     }
 
     interface GATTServerConnection {
@@ -38,7 +34,7 @@ declare module "embedded:io/bluetoothle/peripheral" {
 
     interface GATTServerDescriptor {
         uuid: string;
-        value: Buffer;
+        value?: Buffer;
 
         onRead?(connection: GATTServerConnection): Buffer;
         onWrite?(value: ArrayBuffer, connection: GATTServerConnection): void;
@@ -48,7 +44,7 @@ declare module "embedded:io/bluetoothle/peripheral" {
         name?: string;
         services?: string[];
         manufacturerData?: { manufacturer: number, data: Buffer };
-        flags?: 1 | 2 | 4 | 8 | 16;
+        flags?: number;
         [ADType: number]: Buffer;
     }
 
@@ -59,12 +55,12 @@ declare module "embedded:io/bluetoothle/peripheral" {
         onConnect?(connection: GATTServerConnection): void;
         onDisconnect?(connection: GATTServerConnection): void;
         onPasskey?(connection: GATTServerConnection, action: "input" | "display" | "compareNumber" | "outOfBand", data?: number | ArrayBuffer): void;
-        onSecured(connection: GATTServerConnection, state: { authenticated: boolean, bonded: boolean, encrypted: boolean, keySize: number }): void;
+        onSecured(connection: GATTServerConnection, state: GATTSecurityState): void;
         onWarning?(message: string): void;
         close?(): void;
         addService(service: GATTServerService): void;
         deleteService(service: GATTServerService): void;
-        startAdvertising(scan: GATTServerAdvertisingRecords, response: GATTServerAdvertisingRecords): void;
+        startAdvertising(scan: GATTServerAdvertisingRecords, response?: GATTServerAdvertisingRecords): void;
         stopAdvertising(): void;
 
         static readonly properties: {

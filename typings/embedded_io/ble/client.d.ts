@@ -1,5 +1,6 @@
 declare module "embedded:io/bluetoothle/central" {
-    import { Buffer } from "embedded:io/_common";
+    import type { Buffer } from "embedded:io/_common";
+    import type { GATTSecurityOptions, GATTSecurityState } from "embedded:io/bluetoothle/_common";
 
     interface Advertisement {
         address: string;
@@ -32,25 +33,11 @@ declare module "embedded:io/bluetoothle/central" {
         response?: boolean
     }
 
-    interface GATTSecurityOptions {
-        bond?: boolean,
-        authenticate?: boolean,
-        ioCapabilities?: "none" | "display" | "numbers" | "display+numbers" | "display+confirm",
-        immediate?: boolean
-    }
-
-    interface GATTSecurityState {
-        encrypted: boolean,
-        authenticated: boolean,
-        bonded: boolean,
-        keySize: number
-    }
-
     interface GATTClientOptions {
         address: string,
         target?: any;
         security?: GATTSecurityOptions;
-        onReady?: (this: GATTClient, ) => void;
+        onReady?: (this: GATTClient,) => void;
         onPasskey?: (this: GATTClient, action: string, data: number | ArrayBuffer | undefined) => void;
         onSecured?: (this: GATTClient, state: GATTSecurityState) => void;
         onError?: (this: GATTClient, error: Error) => void;
@@ -88,15 +75,15 @@ declare module "embedded:io/bluetoothle/central" {
 
         read(what: GATTClientCharacteristic | GATTClientDescriptor, callback: (error: Error | null, value: ArrayBuffer) => void): void;
         read(what: GATTClientCharacteristic | GATTClientDescriptor, options: object, callback: (error: Error | null, value: ArrayBuffer) => void): void;
-        read() : undefined | GATTClientNotifiedValue;
+        read(): undefined | GATTClientNotifiedValue;
 
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, callback?: (error: Error | null) => void): void;
         write(what: GATTClientCharacteristic | GATTClientDescriptor, value: Buffer, options: GATTClientWriteOptions, callback?: (error: Error | null) => void): void;
 
-        subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
-        unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void) : void;
+        subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void): void;
+        unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void): void;
 
-        replyToPasskey(action: string, data?: number | ArrayBuffer) : void;
+        replyToPasskey(action: string, data?: number | ArrayBuffer): void;
 
         get maximumWrite(): number;
 
@@ -114,6 +101,6 @@ declare module "embedded:io/bluetoothle/central" {
             writeWithOutResponse: 4;
         };
     }
- 
+
     export { GATTClient, GAPClient };
 }
