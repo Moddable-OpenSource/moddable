@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -765,8 +765,6 @@ uint32_t espRead32be(const void *addr)
 static int32_t gTimeZoneOffset = -8 * 60 * 60;      // Menlo Park
 static int16_t gDaylightSavings = 60 * 60;          // summer time
 
-static uint32_t gTimeOfDayOffset = 0;	// seconds to add to gMS to get TOD
-
 static modTm gTM;		//@@ eliminate with _r calls
 
 static const uint8_t gDaysInMonth[] ICACHE_XS6RO2_ATTR = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -820,10 +818,10 @@ struct modTm *modGmTime(const modTime_t *timep)
 	return &gTM;
 }
 
-struct modTm *modLocalTime(const modTime_t *timep)
+c_tm *modLocalTime(const c_time_t *timep)
 {
-	modTime_t t = *timep + gTimeZoneOffset + gDaylightSavings;
-	return modGmTime(&t);
+	c_time_t t = *timep + gTimeZoneOffset + gDaylightSavings;
+	return c_gmtime(&t);
 }
 
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_15

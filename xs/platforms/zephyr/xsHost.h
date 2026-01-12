@@ -158,7 +158,6 @@ typedef struct modTm modTm;
 
 void modGetTimeOfDay(struct modTimeVal *tv, struct modTimeZone *tz);
 struct modTm *modGmTime(const modTime_t *timep);
-struct modTm *modLocalTime(const modTime_t *timep);
 modTime_t modMkTime(struct modTm *tm);
 void modStrfTime(char *s, size_t max, const char *format, const struct modTm *tm);
 
@@ -285,7 +284,8 @@ extern int gettimeofday(void *tv, void *unusedTZ);
 
 #define c_gettimeofday modGetTimeOfDay
 #define c_gmtime gmtime
-#define c_localtime localtime
+c_tm *modLocalTime(const c_time_t *timep);
+#define c_localtime modLocalTime
 #define c_mktime mktime
 #define c_strftime strftime
 #define c_time time
