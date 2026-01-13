@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
 Copyright 2026 Moddable Tech, Inc.<BR>
-Updated: January 12, 2026
+Updated: January 13, 2026
 
 This document is a guide to building apps with the Zephyr SDK.
 
@@ -16,6 +16,7 @@ This document is a guide to building apps with the Zephyr SDK.
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
+* [Using Zephyr Device Tree in JavaScript](#devicetree)
 * [Debugging Native Code](#debugging-native-code)
 * [Adding a new board](#new-board)
 
@@ -294,6 +295,77 @@ Change permissions on the device noted and try again.
 ```sh
 sudo chmod a+rw /dev/bus/usb/001/077
 ```
+
+<a id="devicetree"></a>
+## Using Zephyr Device Tree in JavaScript
+Most embedded operating systems start with C code. The header files define how software accesses the hardware. Not so with Zephyr. Instead, Zephyr begins with a Device Tree stored in a `*.dts` file. The Device Tree uses its own file format, similar to XML, JSON, and YAML. It defines all the IO from clocks, timers, and GPIOs to Wi-Fi, sensors, and displays. The Device Tree was adapted from Linux.
+
+Zephyr uses the Device Tree to generate extremely efficient C code. For example, all IO is accessed through static data structures created by C macros. If a project tries to use IO that doesn't exist, it won't even run - it fails to compile or link.
+
+As powerful as the Device Tree is, it creates some challenges for a dynamic language like JavaScript. For example, JavaScript code expects to be able to discover IO capabilities at runtime by inspecting JavaScript objects. But, the capabilities depend on the development board. Fortunately, ECMA-419 has a solution for this in the opaquely named [Host Provider Instance](https://419.ecma-international.org/#-27-host-provider-instance), commonly known in JavaScript as the `device` global variable.
+
+### Examples
+For the Zephyr port, our `mcdevicetree` tool generates the JavaScript code and TypeScript declarations for the `device` global from the Device Tree. Let's look at how the Device Tree works in JavaScript. Many Zephyr development boards have a button that is mapped to the name `sw0`. Here's the JavaScript code to receive notifications when the button is pressed and released:
+
+```js
+new device.button.sw0({
+	onReadable() {
+		trace(`sw0 state: ${this.read()}\n`);
+	}
+});
+```
+
+Zephyr's [blinky sample](https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/basic/blinky/src/main.c) in JavaScript is equally straightforward:
+
+```js
+const led = new device.led.led0();
+let state = 1;
+Timer.repeat(() => {
+	state = !state;
+	led.write(state);
+}, 1000);
+```
+
+The Device Tree takes care of details like the GPIO port name and pin number to use, whether the GPIO is active high or low, and whether a pull-up resistor is needed.
+
+This simplicity extends to other kinds of IO. Here's a serial echo app (Zephyr C version [here](https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/drivers/uart/echo_bot/src/main.c)):
+
+```js
+new device.serial.usart6({
+	onReadable() {
+		this.write(this.read());
+	}
+});
+```
+
+### Determining Available IO
+The names `usart6`, `sw0`, and `led0` are from the Device Tree. Both labels (e.g. `usart6`) and aliases (e.g. `sw0`) are available in JavaScript. You can look these up in the Device Tree source file like a C programmer. Or your JavaScript code can discover them. For example, to list all the serial ports available, use the standard JavaScript [`for-in`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in) statement:
+
+```js
+for (const port in device.serial)
+	trace(port, "\n");
+```
+
+Even better, you can display them interactively in xsbug, our JavaScript debugger, by inspecting the `device` global variable.
+
+### Network
+If your Moddable SDK project manifest includes networking support, for example by including `manifest_net.json`, `mcdevicetree` includes access to all Wi-Fi and Ethernet interfaces. These objects implement the ECMA-419 [Wi-Fi](https://419.ecma-international.org/#-17-network-interface-class-pattern-wi-fi-network-interface) and [Ethernet](https://419.ecma-international.org/#-17-network-interface-class-pattern-ethernet-network-interface) APIs.
+
+If you are using Wi-Fi, you don't need to do anything special to connect to the network beyond providing the SSID and password for your Wi-Fi access point when building:
+
+```sh
+mcconfig -d -m -p zephyr/board_with_wifi ssid="My Wi-Fi" password="secret"
+```
+
+If you are using Ethernet, the Moddable SDK runtime automatically attempts to connect when launched, before your scripts are run.
+
+When using Wi-Fi and Ethernet, both will use NTP to set the device clock, if it has not already been set, immediately after connecting. This is essential for secure network communication using TLS.
+
+### Displays
+If your project uses a display, typically by including `manifest_piu.json` or `manifest_commodetto.json`, the `mcdevicetree` tool automatically creates a `Screen` global for the board's display driver, if any. This allows the Piu user interface framework and Commodetto's Poco renderer to access the screen. For boards with multiple displays, the display specified in the `chosen` section of the device tree is used.
+
+### TypeScript
+Because the `device` global is different for every Zephyr board, a single TypeScript declarations file cannot precisely define the board. Instead, `mcdevicetree` generates a TypeScript declaration (a `.d.ts` file) for the board. This is automatically used when building TypeScript code for Zephyr, ensuring that your code is correctly accessing only the hardware available on your development board.
 
 <a id="debugging-native-code"></a>
 ## Debugging Native Code
