@@ -17,6 +17,6 @@ const ntp = new device.network.ntp.client.io({
 });
 
 ntp.getTime((error, value) => {
-	trace(new Date(value), "\n");
+	trace((new Date(value)) + "\n");
 	ntp.close();
 });
