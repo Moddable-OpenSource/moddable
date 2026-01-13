@@ -2,21 +2,11 @@
 	"build": {
 		"ZEPHYR_BOARD": "nrf52840dk/nrf52840"
 	},
-	"include": [
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
 	"zephyrConfig": {
 		"CONFIG_PWM": "y"
 	},
 	"zephyrOverlay": [
 		"./analog.overlay",
 		"./pwm.overlay"
-	],
-	"config": {
-	},
-	"defines": {
-	}
+	]
 }

@@ -1,15 +1,5 @@
 {
 	"build": {
 		"ZEPHYR_BOARD": "stm32f4_disco"
-	},
-	"include": [
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
-	"config": {
-	},
-	"defines": {
 	}
 }

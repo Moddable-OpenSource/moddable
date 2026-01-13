@@ -1,15 +1,5 @@
 {
 	"build": {
 		"ZEPHYR_BOARD": "nucleo_f413zh"
-	},
-	"include": [
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
-	"config": {
-	},
-	"defines": {
 	}
 }

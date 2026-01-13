@@ -2,17 +2,7 @@
 	"build": {
 		"ZEPHYR_BOARD": "stm32u5g9j_dk1"
 	},
-	"include": [
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
-	"config": {
-	},
 	"zephyrShields": [
 		"st_lcd_dsi_mb1835"
-	],
-	"defines": {
-	}
+	]
 }

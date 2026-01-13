@@ -1,15 +1,5 @@
 {
 	"build": {
 		"ZEPHYR_BOARD": "esp32c6_devkitc/esp32c6/hpcore"
-	},
-	"include": [
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
-	"config": {
-	},
-	"defines": {
 	}
 }
