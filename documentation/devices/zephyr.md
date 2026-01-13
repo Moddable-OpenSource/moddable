@@ -3,22 +3,26 @@
 Copyright 2026 Moddable Tech, Inc.<BR>
 Updated: January 13, 2026
 
-This document is a guide to building apps with the Zephyr SDK.
+This document is a guide to building Moddable apps with the Zephyr SDK.
 
 ## Table of Contents
 
 * [Overview](#overview)
+* [Platforms](#platforms)
+	* [zephyr](#platforms-zephyr)
 * [Build Types](#builds)
 	* [Debug](#build-debug)
 	* [Instrumented](#build-instrumented)
 	* [Release](#build-release)
 * Setup instructions
+	
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
 * [Using Zephyr Device Tree in JavaScript](#devicetree)
 * [Debugging Native Code](#debugging-native-code)
 * [Adding a new board](#new-board)
+* [IO Connfiguration](#io-config)
 
 <a id="overview"></a>
 ## Overview
@@ -70,7 +74,7 @@ Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build uses Zephyr SDK v4.2.0-rc1 (commit `ffb28eed`).
+The Moddable SDK build uses Zephyr SDK v4.3 or later.
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -421,3 +425,55 @@ To add new board to Moddable:
 	cd $MODDABLE/examples/helloworld
 	mcconfig -d -m -p zephyr/new_board
 	```
+
+<a id="io-config"></a>
+## IO Configuration
+
+Zephyr uses .dts files files to define hardware IO configuration.
+Moddable uses .overlay files specified in the `zephyrOverlay` section of `manifest.json`.
+
+The Nordic [`nrf52840dk` device]( ../../build/devices/zephyr/targets/nrf52840dk/manifest.json) device manifest demonstrates:
+
+		"zephyrOverlay": [
+			"./analog.overlay",
+			"./pwm.overlay"
+		],
+
+### `analog`
+
+Use `port` and `channel` to choose which analog channel to sample from. Different devices may use a different port naming schemes.
+
+	const analogInput = new device.io.Analog({
+		port: "adc",
+		channel: 0
+	});
+
+### `digital`
+
+Use an object with `port` and `pin` to describe the pin of a Digital object.
+
+	const led = new device.io.Digital({
+		...options,
+		pin: {port: "gpioe", pin: 1},
+		mode: Digital.Output,
+	});
+
+### `pwm`
+
+Use `port` and `channel` to specify what zephyr configuration to use. You can also specify the frequncy by the `hz` property, and resolution (in number of bits) with the `resolution` property.
+
+	const led1 = new device.io.PWM({
+		port: "pwm0",
+		hz: "100",
+		resolution: "10",
+		channel: "0"
+	});
+
+### `display`
+
+Zephyr display configuration are found in shield definition files. For example, the `stm32u5a9j_dk` target's [`manifest.json`]( ../../build/devices/zephyr/targets/stm32u5a9j_dk/manifest.json) contains:
+
+    "zephyrShields": [
+        "st_lcd_dsi_mb1835"
+    ],
+
