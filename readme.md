@@ -211,7 +211,7 @@ To use the Moddable SDK with WebAssembly, you need to:
 
 We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) directory. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) directory.
 
-On the Zephyr RTOS, there is a single Moddable SDK [display driver](modules/io/display/zephyr/display.c) for all displays supported by Zephyr. The driver has been tested with displays that have 16-bit pixels. It may need to be modified to work with displays that use other pixel formats.
+On the Zephyr RTOS, there is a single Moddable SDK [display driver](./modules/io/display/zephyr/display.c) for all displays supported by Zephyr. The driver has been tested with displays that have 16-bit pixels. It may need to be modified to work with displays that use other pixel formats.
 
 ## Source tree
 
