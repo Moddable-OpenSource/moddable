@@ -24,7 +24,7 @@
 			"cs_pin": 14,
 			"dc_pin": 27,
 			"rst_pin": 33,
-			"spi_port": "VSPI_HOST",
+			"spi_port": "SPI3_HOST",
 			"backlight_pin": 32,
 			"backlight_on": 1,
 			"registers": [

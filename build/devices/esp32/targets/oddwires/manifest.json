@@ -21,7 +21,7 @@
 	},
 	"defines": {
 		"spi": {
-			"port": "VSPI_HOST",
+			"port": "SPI3_HOST",
 			"mosi_pin": 23,
 			"miso_pin": 19,
 			"sck_pin": 18
