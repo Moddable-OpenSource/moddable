@@ -8,8 +8,6 @@ This document is a guide to building apps with the Zephyr SDK.
 ## Table of Contents
 
 * [Overview](#overview)
-* [Platforms](#platforms)
-	* [zephyr](#platforms-zephyr)
 * [Build Types](#builds)
 	* [Debug](#build-debug)
 	* [Instrumented](#build-instrumented)
@@ -163,7 +161,7 @@ The Moddable SDK build uses Zephyr SDK v4.2.0-rc1 (commit `ffb28eed`).
 ### Troubleshooting
 
 #### Serial / USB Port
-Different silicon families have conenct in different ways. For many ST board, for example, the Moddable SDK build can automatically detect the correct port. For ESP boards, you specify the serial port by setting the `UPLOAD_PORT` environment variable:
+Different silicon families connect in different ways. For many ST boards, for example, the Moddable SDK build can automatically detect the correct port. For ESP boards, you specify the serial port by setting the `UPLOAD_PORT` environment variable:
 
 ```sh
 UPLOAD_PORT=/dev/tty.usbserial-1410 mcconfig -d -m -p zephyr/esp32_ethernet_kit
