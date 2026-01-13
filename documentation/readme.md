@@ -1,6 +1,6 @@
 # Moddable SDK – Documentation Overview
-Copyright 2019-2023 Moddable Tech, Inc.<BR>
-Revised: April 6, 2023
+Copyright 2019-2026 Moddable Tech, Inc.<BR>
+Revised: January 12, 2026
 
 This directory contains documentation for the Moddable SDK.
 
@@ -16,6 +16,7 @@ Guides for working with specific microcontrollers supported by the Moddable SDK 
 - [QCA4020](./devices/qca4020/README.md) by Qualcomm
 - [Pico](./devices/pico.md) by Raspberry Pi
 - [nRF52](./devices/nrf52.md) by Nordic Semiconductor
+- [Zephyr](./devices/zephyr.md) by Zephyr Project
 
 ### API Documentation for Modules
 

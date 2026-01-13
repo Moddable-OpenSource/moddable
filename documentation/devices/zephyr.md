@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
-Copyright 2025 Moddable Tech, Inc.<BR>
-Updated: October 2, 2025
+Copyright 2026 Moddable Tech, Inc.<BR>
+Updated: January 12, 2026
 
 This document is a guide to building apps with the Zephyr SDK.
 
@@ -162,6 +162,14 @@ The Moddable SDK build uses Zephyr SDK v4.2.0-rc1 (commit `ffb28eed`).
 <a id="mac-troubleshooting"></a>
 ### Troubleshooting
 
+#### Serial / USB Port
+Different silicon families have conenct in different ways. For many ST board, for example, the Moddable SDK build can automatically detect the correct port. For ESP boards, you specify the serial port by setting the `UPLOAD_PORT` environment variable:
+
+```sh
+UPLOAD_PORT=/dev/tty.usbserial-1410 mcconfig -d -m -p zephyr/esp32_ethernet_kit
+```
+
+Other silicon families may have different requirements.
 
 <a id="win"></a>
 ## Windows
@@ -324,7 +332,7 @@ mcconfig -d -m -p zephyr/nucleo_f413zh -t debug
 <a id="new-board"></a>
 ## Adding a new board
 
-Zephyr supports hundreds of development boards.
+Zephyr supports hundreds of development boards. The Moddable SDK includes support for some of them.
 
 To add new board to Moddable:
 
@@ -332,14 +340,14 @@ To add new board to Moddable:
 
 	```sh
 	cd $MODDABLE/build/devices/zephyr/targets
-	cp -r nucleo_f413zh newboard
+	cp -r nucleo_f413zh new_board
 	```
 
-2. Edit the `manifest.json` file and change the `ZEPHYR_BOARD` specifier to match the Zephyr board name (same as "newboard" above).).
+2. Edit the `manifest.json` file and change the `ZEPHYR_BOARD` specifier to match the Zephyr board name (same as "new_board" above). The `ZEPHYR_BOARD` must match the name used in the Zephyr SDK for your board.
 
 3. Use the new target:
 
 	```sh
 	cd $MODDABLE/examples/helloworld
-	mcconfig -d -m -p zephyr/newboard
+	mcconfig -d -m -p zephyr/new_board
 	```
