@@ -1,5 +1,4 @@
 declare module "embedded:io/bluetoothle/peripheral" {
-    import type { Buffer } from "embedded:io/_common";
     import type { GATTSecurityOptions, GATTSecurityState } from "embedded:io/bluetoothle/_common";
 
     interface GATTServerOptions {
@@ -29,10 +28,10 @@ declare module "embedded:io/bluetoothle/peripheral" {
     interface GATTServerCharacteristic {
         uuid: string;
         properties?: number;
-        value?: Buffer;
+        value?: ByteBuffer;
         descriptors?: GATTServerDescriptor[];
 
-        onRead?(this: GATTServerCharacteristic, connection: GATTServerConnection): Buffer;
+        onRead?(this: GATTServerCharacteristic, connection: GATTServerConnection): ByteBuffer;
         onWrite?(this: GATTServerCharacteristic, value: ArrayBuffer, connection: GATTServerConnection): void;
         onSubscribe?(this: GATTServerCharacteristic, connection: GATTServerConnection): void;
         onUnsubscribe?(cthis: GATTServerCharacteristic, onnection: GATTServerConnection): void;
@@ -40,18 +39,18 @@ declare module "embedded:io/bluetoothle/peripheral" {
 
     interface GATTServerDescriptor {
         uuid: string;
-        value?: Buffer;
+        value?: ByteBuffer;
 
-        onRead?(connection: GATTServerConnection): Buffer;
+        onRead?(connection: GATTServerConnection): ByteBuffer;
         onWrite?(value: ArrayBuffer, connection: GATTServerConnection): void;
     }
 
     interface GATTServerAdvertisingRecords {
         name?: string;
         services?: string[];
-        manufacturerData?: { manufacturer: number, data: Buffer };
+        manufacturerData?: { manufacturer: number, data: ByteBuffer };
         flags?: number;
-        [ADType: number]: Buffer;
+        [ADType: number]: ByteBuffer;
     }
 
     class GATTServer {

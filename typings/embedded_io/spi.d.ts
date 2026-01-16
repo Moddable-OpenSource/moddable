@@ -19,7 +19,7 @@
 */
 
 declare module "embedded:io/spi" {
-  import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class SPI {
     constructor(options: {
       out?: PinSpecifier;
@@ -34,9 +34,9 @@ declare module "embedded:io/spi" {
       target?: any;
     })
     read(byteLength: number): ArrayBuffer;
-    read(buffer: Buffer): void;
-    write(buffer: Buffer): void;
-    transfer(buffer: Buffer): void;
+    read(buffer: ByteBuffer): void;
+    write(buffer: ByteBuffer): void;
+    transfer(buffer: ByteBuffer): void;
     flush(deselect?: boolean): void;
     get format(): "buffer";
     set format(value: "buffer");

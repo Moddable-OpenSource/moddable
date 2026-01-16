@@ -21,5 +21,5 @@
 declare module "commodetto/loadJPEG" {
   import Bitmap from "commodetto/Bitmap"
 
-  export default function (data: BufferLike, options?: {pixelFormat?: number}): Bitmap;
+  export default function (data: ByteBuffer, options?: {pixelFormat?: number}): Bitmap;
 }

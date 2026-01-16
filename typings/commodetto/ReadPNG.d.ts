@@ -32,9 +32,9 @@ declare module "commodetto/ReadPNG" {
   }
 
   interface ReadPNGConstructor {
-    new(buffer: BufferLike, options?: { pixelFormat: number }): ReadPNG
+    new(buffer: ByteBuffer, options?: { pixelFormat: number }): ReadPNG
 
-    decompress(data: BufferLike, pixelFormat: number, alphaPixelFormat?: number): Bitmap;
+    decompress(data: ByteBuffer, pixelFormat: number, alphaPixelFormat?: number): Bitmap;
   }
 
   const ReadPNG: ReadPNGConstructor

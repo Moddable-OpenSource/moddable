@@ -56,7 +56,7 @@ declare module 'pins/audioout' {
     public enqueue(stream: number, kind: MixerVolume, volume: number): void
     
     public mix(samplesNeeded: number): HostBuffer
-    public mix(buffer: BufferLike): void
+    public mix(buffer: ByteBuffer): void
 
     public length(stream: number): number
   

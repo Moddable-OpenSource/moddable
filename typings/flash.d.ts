@@ -24,7 +24,7 @@ declare module "flash" {
     constructor(offset: number, byteLength: number);
     erase(sector: number): void;
     read(offset: number, byteLength: number, useHostBuffer?: boolean): ArrayBuffer | HostBuffer;
-    write(offset: number, byteLength: number, buffer: BufferLike): void;
+    write(offset: number, byteLength: number, buffer: ByteBuffer): void;
     readonly byteLength: number;
     readonly blockSize: number;
     map(): HostBuffer;

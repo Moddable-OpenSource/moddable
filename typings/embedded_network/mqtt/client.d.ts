@@ -1,6 +1,4 @@
 declare module "embedded:network/mqtt/client" {
-  import type { Buffer } from "embedded:io/_common"
-
   interface onReadableOptions {
     more: boolean,
     topic?: string,
@@ -11,12 +9,12 @@ declare module "embedded:network/mqtt/client" {
   interface onControlMessage {
     operation: number, // MQTTClient.CONNACK, etc...
     id: number, 
-    payload?: Buffer, // for SUBACK
+    payload?: ByteBuffer, // for SUBACK
   }
 
   interface Will {
     topic?: string,
-    message?: string|Buffer,
+    message?: string | ByteBuffer,
     QoS?: number,
     retain?: boolean,
   }
@@ -53,8 +51,8 @@ declare module "embedded:network/mqtt/client" {
   export default class MQTTClient {
     constructor(options: Options)
     read(count: number): ArrayBuffer
-    read(buffer: BufferLike): number
-    write(data: BufferLike, options: WriteOptions): number
+    read(buffer: ByteBuffer): number
+    write(data: ByteBuffer, options: WriteOptions): number
     close(): void
 
     static CONNECT: 1

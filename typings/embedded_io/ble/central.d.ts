@@ -1,5 +1,4 @@
 declare module "embedded:io/bluetoothle/central" {
-	import type { Buffer } from "embedded:io/_common";
 	import type { GATTSecurityOptions, GATTSecurityState } from "embedded:io/bluetoothle/_common";
 
     interface Advertisement {
@@ -77,8 +76,8 @@ declare module "embedded:io/bluetoothle/central" {
         read(what: GATTClientCharacteristic | GATTClientDescriptor, options: object, callback: (error: Error | null, value: ArrayBuffer) => void): void;
         read(): undefined | GATTClientNotifiedValue;
 
-        write(what: GATTClientCharacteristic | GATTClientDescriptor, value: BufferLike, callback?: (error: Error | null) => void): void;
-        write(what: GATTClientCharacteristic | GATTClientDescriptor, value: BufferLike, options: GATTClientWriteOptions, callback?: (error: Error | null) => void): void;
+        write(what: GATTClientCharacteristic | GATTClientDescriptor, value: ByteBuffer, callback?: (error: Error | null) => void): void;
+        write(what: GATTClientCharacteristic | GATTClientDescriptor, value: ByteBuffer, options: GATTClientWriteOptions, callback?: (error: Error | null) => void): void;
 
         subscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void): void;
         unsubscribe(characteristic: GATTClientCharacteristic, callback?: (error?: Error) => void): void;
@@ -88,7 +87,7 @@ declare module "embedded:io/bluetoothle/central" {
         get maximumWrite(): number;
 
         store(item: GATTClientService | GATTClientCharacteristic | GATTClientDescriptor): ArrayBuffer;
-        restore(item: BufferLike): GATTClientService | GATTClientCharacteristic | GATTClientDescriptor;
+        restore(item: ByteBuffer): GATTClientService | GATTClientCharacteristic | GATTClientDescriptor;
 
         static readonly properties: {
             authenticatedSignedWrites: 64;

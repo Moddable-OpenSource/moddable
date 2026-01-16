@@ -21,7 +21,7 @@
 declare module "securesocket" {
     import { Socket } from "socket";
 
-    type WriteData = number | string | BufferLike;
+    type WriteData = number | string | ByteBuffer;
 
     export default class SecureSocket {
         sock: typeof Socket;

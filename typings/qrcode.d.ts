@@ -24,7 +24,7 @@ declare module "qrcode" {
     }
 
     var qrCode: (options: {
-        input: string | BufferLike,
+        input: string | ByteBuffer,
         maxVersion?: number
     }) => qrcode;
 

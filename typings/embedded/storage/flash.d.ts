@@ -39,8 +39,8 @@ declare module "embedded:storage/flash" {
 		eraseBlock(start: number, end?: number): void;
 
 		read(byteLength: number, byteOffset: number): ArrayBuffer;
-		read(buffer: BufferLike, byteOffset: number): number;
-		write(buffer: BufferLike, byteOffset: number): void;
+		read(buffer: ByteBuffer, byteOffset: number): number;
+		write(buffer: ByteBuffer, byteOffset: number): void;
 
 		status(): FlashStatus;
 

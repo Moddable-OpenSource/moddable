@@ -32,8 +32,8 @@ declare module "embedded:storage/files" {
 		close(): void;
 
 		read(count: number, position: number): ArrayBuffer;
-		read(buffer: BufferLike, position: number): number;
-		write(buffer: BufferLike, position: number): void;
+		read(buffer: ByteBuffer, position: number): number;
+		write(buffer: ByteBuffer, position: number): void;
 
 		status(): Status;
 		setSize(length: number): void;

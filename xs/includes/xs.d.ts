@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 Moddable Tech, Inc
+ * Copyright (c) 2020-2026 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -35,14 +35,14 @@ interface ArrayBufferTypes {
 	HostBuffer: HostBuffer;
 }
 
-interface BufferTypes extends ArrayBufferTypes  {
+interface ByteBufferTypes extends ArrayBufferTypes  {
 	Uint8Array: Uint8Array,
 	Uint8ClampedArray: Uint8ClampedArray,
 	Int8Array: Int8Array,
 	DataView: DataView
 }
 
-type BufferLike = BufferTypes[keyof BufferTypes];
+type ByteBuffer = ByteBufferTypes[keyof ByteBufferTypes];
 
 interface ObjectConstructor {
 	freeze<T>(obj: T, freeze?: boolean | number): Readonly<T>;

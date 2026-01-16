@@ -20,7 +20,6 @@
 
 declare module "embedded:io/smbus" {
   import I2C from "embedded:io/i2c"
-  import { Buffer } from "embedded:io/_common";
 
   class SMBus extends I2C {
     constructor(options: ConstructorParameters<typeof I2C> & {
@@ -31,8 +30,8 @@ declare module "embedded:io/smbus" {
     readUint16(register: number, bigEndian?: boolean): number;
     writeUint16(register: number, value: number, bigEndian?: boolean): void;
     readBuffer(register: number, byteLength: number): ArrayBuffer;
-    readBuffer(register: number, buffer: Buffer): void;
-    writeBuffer(register: number, buffer: Buffer): void;
+    readBuffer(register: number, buffer: ByteBuffer): void;
+    writeBuffer(register: number, buffer: ByteBuffer): void;
     readQuick(): void;
     writeQuick(): void;
     receiveByte(): number;

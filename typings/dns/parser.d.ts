@@ -76,7 +76,7 @@ declare module "dns/parser" {
   type DNSAnswer = DNSAnswerA | DNSAnswerPTR | DNSAnswerTXT | DNSAnswerSRV | DNSAnswerOther;
     
   class Parser {
-    constructor(buffer: BufferLike);
+    constructor(buffer: ByteBuffer);
     get id(): number;
     get flags(): number;
     get questions(): number;

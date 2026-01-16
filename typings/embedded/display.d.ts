@@ -54,8 +54,8 @@ declare module "embedded:display" {
 
 		begin(options: DisplayBeginOptions): void;
 		begin(): void;
-		send(buffer: BufferLike): void;
-		send(buffer: BufferLike, offset: number, length: number): void;
+		send(buffer: ByteBuffer): void;
+		send(buffer: ByteBuffer, offset: number, length: number): void;
 		end(): void;
 
 		adapInvalid(rectangle: Rectangle): void;

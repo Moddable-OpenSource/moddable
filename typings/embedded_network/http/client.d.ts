@@ -19,8 +19,6 @@
 */
 
 declare module "embedded:network/http/client" {
-  import type { Buffer } from "embedded:io/_common"
-
   export interface ClientOptions {
     socket: any
     port?:number
@@ -41,8 +39,8 @@ declare module "embedded:network/http/client" {
 
   export interface HTTPRequest {
     read(byteLength?: number): ArrayBuffer|undefined;
-    read(buffer: Buffer): void;
-    write(value: Buffer|undefined): void;
+    read(buffer: ByteBuffer): void;
+    write(value: ByteBuffer|undefined): void;
   }
 
   export default class HTTPClient {
