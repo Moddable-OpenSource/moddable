@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -6413,16 +6413,25 @@ txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, tx
 
 txInteger fxNumberToInteger(txNumber theValue)
 {
-	if (c_fpclassify(theValue) == C_FP_NORMAL) {
-		#define MODULO 4294967296.0
-		txNumber aNumber = c_fmod(c_trunc(theValue), MODULO);
-		if (aNumber >= MODULO / 2)
-			aNumber -= MODULO;
-		else if (aNumber < -MODULO / 2)
-			aNumber += MODULO;
-		return (txInteger)aNumber;
-	}
-	return 0;	
+	int lb = c_ilogb(theValue);
+	if ((C_FP_ILOGB0 == lb) || (C_FP_ILOGBNAN == lb))
+		return 0;
+
+	if (lb < 31)
+		return (txInteger)theValue;
+
+	if (C_INT_MAX == lb) 
+		return 0;
+
+	theValue = c_trunc(theValue);
+	#define MODULO 4294967296.0
+	theValue = c_fmod(theValue, MODULO);
+	if (theValue >= MODULO / 2)
+		theValue -= MODULO;
+	else if (theValue < -MODULO / 2)
+		theValue += MODULO;
+
+	return (txInteger)theValue;
 }
 
 txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision)

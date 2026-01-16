@@ -301,6 +301,10 @@ extern void pico_reboot(uint32_t kind);
 #define C_NAN NAN
 #define C_RAND_MAX RAND_MAX
 
+#define C_FP_ILOGB0 FP_ILOGB0
+#define C_FP_ILOGBNAN FP_ILOGBNAN
+#define C_INT_MAX INT_MAX
+
 #define c_acos acos
 #define c_acosh acosh
 #define c_asin asin
@@ -319,6 +323,7 @@ extern void pico_reboot(uint32_t kind);
 #define c_fmod fmod
 #define c_fpclassify fpclassify
 #define c_hypot hypot
+#define c_ilogb ilogb
 #define c_isfinite isfinite
 #define c_isnormal isnormal
 #define c_isnan isnan
