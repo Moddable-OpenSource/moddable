@@ -364,12 +364,29 @@ If you are using Ethernet, the Moddable SDK runtime automatically attempts to co
 
 When using Wi-Fi and Ethernet, both set the device clock via NTP immediately after connecting. This is essential for secure network communication using TLS. If your device sets the time some other way, such as a Real-Time Clock peripheral, NTP clock synchronization is not done.
 
-### Storage – Files, Key-Value Store, and Flash
-
-@@
-
 ### Displays
 If your project uses a display, typically by including `manifest_piu.json` or `manifest_commodetto.json`, the `mcdevicetree` tool automatically creates a `Screen` global for the board's display driver, if any. This allows the Piu user interface framework and Commodetto's Poco renderer to access the screen. For boards with multiple displays, the display specified in the `chosen` section of the device tree is used.
+
+### `flash`
+To access flash memory partitions, include the ECMA-419 flash module manifest `$MODDABLE/modules/io/flash/manifest.json` in your project's manifest. That creates the `device.flash.open` function to access flash partitions by name:
+
+```js
+const partition = device.flash.open({path: "partition_name"});
+```
+
+### `file`
+To access a file system, include the ECMA-419 file module manifest `$MODDABLE/modules/io/files/manifest.json` in your project's manifest. That creates the `device.files` property to access the file system. Your Zephyr Device Tree must have a valid file system defined in the Zephyr Device Tree at `root.children.fstab`.
+
+```js
+const file = device.files.openFile({path: "directory/file.txt"});
+```
+
+### `keyValue`
+To access the Zephyr key-value pair store (settings), include the ECMA-419 storage module manifest `$MODDABLE/modules/io/storage/manifest.json` in your project's manifest. That creates the `device.keyValue.open` function to access the key-value store. Your Zephyr Device Tree must have a valid settings subsystem defined in the Zephyr Device Tree.
+
+```js
+const domain = device.keyValue.open({path: "wifi"});
+```
 
 ### TypeScript
 The `device` global is different for every Zephyr board, because every board has unique hardware capabiliites and confirmations. As a result, a universal TypeScript declarations file (a `.d.ts` file) cannot precisely define the `device` global for any single build. Instead, `mcdevicetree` generates the TypeScript declarations file for the board. These declarations are automatically used when building TypeScript code for Zephyr, ensuring that your code accesses only the hardware available on your development board.
@@ -488,25 +505,3 @@ Zephyr display configuration are found in shield definition files. For example, 
 	"st_lcd_dsi_mb1835"
 ],
 ```
-
-### `flash`
-To access flash memory partitions, include the ECMA-419 flash module manifest `$MODDABLE/modules/io/flash/manifest.json` in your project's manifest. That creates the `device.flash.open` function to access flash partitions by name:
-
-```js
-const partition = device.flash.open({path: "partition_name"});
-```
-
-### `file`
-To access a file system, include the ECMA-419 file module manifest `$MODDABLE/modules/io/files/manifest.json` in your project's manifest. That creates the `device.files` property to access the file system. Your Zephyr Device Tree must have a valid file system defined in the Zephyr Device Tree at `root.children.fstab`.
-
-```js
-const file = device.files.openFile({path: "directory/file.txt"});
-```
-
-### `keyValue`
-To access the Zephyr key-value pair store (settings), include the ECMA-419 storage module manifest `$MODDABLE/modules/io/storage/manifest.json` in your project's manifest. That creates the `device.keyValue.open` function to access the key-value store. Your Zephyr Device Tree must have a valid settings subsystem defined in the Zephyr Device Tree.
-
-```js
-const domain = device.keyValue.open({path: "wifi"});
-```
-
