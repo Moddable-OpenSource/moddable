@@ -1,9 +1,9 @@
 # Using the Moddable SDK with Zephyr
 
-Copyright 2026 Moddable Tech, Inc.<BR>
-Updated: January 13, 2026
+Copyright 2025-2026 Moddable Tech, Inc.<BR>
+Updated: January 16, 2026
 
-This document is a guide to building Moddable apps with the Zephyr SDK.
+This document is a guide to building Moddable apps with the [Zephyr Project SDK](https://github.com/zephyrproject-rtos/zephyr/).
 
 ## Table of Contents
 
@@ -15,7 +15,6 @@ This document is a guide to building Moddable apps with the Zephyr SDK.
 	* [Instrumented](#build-instrumented)
 	* [Release](#build-release)
 * Setup instructions
-	
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
@@ -363,13 +362,17 @@ mcconfig -d -m -p zephyr/board_with_wifi ssid="My Wi-Fi" password="secret"
 
 If you are using Ethernet, the Moddable SDK runtime automatically attempts to connect when launched, before your scripts are run.
 
-When using Wi-Fi and Ethernet, both will use NTP to set the device clock, if it has not already been set, immediately after connecting. This is essential for secure network communication using TLS.
+When using Wi-Fi and Ethernet, both set the device clock via NTP immediately after connecting. This is essential for secure network communication using TLS. If your device sets the time some other way, such as a Real-Time Clock peripheral, NTP clock synchronization is not done.
+
+### Storage – Files, Key-Value Store, and Flash
+
+@@
 
 ### Displays
 If your project uses a display, typically by including `manifest_piu.json` or `manifest_commodetto.json`, the `mcdevicetree` tool automatically creates a `Screen` global for the board's display driver, if any. This allows the Piu user interface framework and Commodetto's Poco renderer to access the screen. For boards with multiple displays, the display specified in the `chosen` section of the device tree is used.
 
 ### TypeScript
-Because the `device` global is different for every Zephyr board, a single TypeScript declarations file cannot precisely define the board. Instead, `mcdevicetree` generates a TypeScript declaration (a `.d.ts` file) for the board. This is automatically used when building TypeScript code for Zephyr, ensuring that your code is correctly accessing only the hardware available on your development board.
+The `device` global is different for every Zephyr board, because every board has unique hardware capabiliites and confirmations. As a result, a universal TypeScript declarations file (a `.d.ts` file) cannot precisely define the `device` global for any single build. Instead, `mcdevicetree` generates the TypeScript declarations file for the board. These declarations are automatically used when building TypeScript code for Zephyr, ensuring that your code accesses only the hardware available on your development board.
 
 <a id="debugging-native-code"></a>
 ## Debugging Native Code
@@ -434,46 +437,76 @@ Moddable uses .overlay files specified in the `zephyrOverlay` section of `manife
 
 The Nordic [`nrf52840dk` device]( ../../build/devices/zephyr/targets/nrf52840dk/manifest.json) device manifest demonstrates:
 
-		"zephyrOverlay": [
-			"./analog.overlay",
-			"./pwm.overlay"
-		],
+```jsonc
+"zephyrOverlay": [
+	"./analog.overlay",
+	"./pwm.overlay"
+],
+```
 
 ### `analog`
 
 Use `port` and `channel` to choose which analog channel to sample from. Different devices may use a different port naming schemes.
 
-	const analogInput = new device.io.Analog({
-		port: "adc",
-		channel: 0
-	});
+```js
+const analogInput = new device.io.Analog({
+	port: "adc",
+	channel: 0
+});
+```
 
 ### `digital`
 
 Use an object with `port` and `pin` to describe the pin of a Digital object.
 
-	const led = new device.io.Digital({
-		...options,
-		pin: {port: "gpioe", pin: 1},
-		mode: Digital.Output,
-	});
+```js
+const led = new device.io.Digital({
+	...options,
+	pin: {port: "gpioe", pin: 1},
+	mode: Digital.Output,
+});
+```
 
 ### `pwm`
 
 Use `port` and `channel` to specify what zephyr configuration to use. You can also specify the frequncy by the `hz` property, and resolution (in number of bits) with the `resolution` property.
 
-	const led1 = new device.io.PWM({
-		port: "pwm0",
-		hz: "100",
-		resolution: "10",
-		channel: "0"
-	});
+```js
+const led1 = new device.io.PWM({
+	port: "pwm0",
+	hz: "100",
+	resolution: "10",
+	channel: "0"
+});
+```
 
 ### `display`
-
 Zephyr display configuration are found in shield definition files. For example, the `stm32u5a9j_dk` target's [`manifest.json`]( ../../build/devices/zephyr/targets/stm32u5a9j_dk/manifest.json) contains:
 
-    "zephyrShields": [
-        "st_lcd_dsi_mb1835"
-    ],
+```jsonc
+"zephyrShields": [
+	"st_lcd_dsi_mb1835"
+],
+```
+
+### `flash`
+To access flash memory partitions, include the ECMA-419 flash module manifest `$MODDABLE/modules/io/flash/manifest.json` in your project's manifest. That creates the `device.flash.open` function to access flash partitions by name:
+
+```js
+const partition = device.flash.open({path: "partition_name"});
+```
+
+### `file`
+To access a file system, include the ECMA-419 file module manifest `$MODDABLE/modules/io/files/manifest.json` in your project's manifest. That creates the `device.files` property to access the file system. Your Zephyr Device Tree must have a valid file system defined in the Zephyr Device Tree at `root.children.fstab`.
+
+```js
+const file = device.files.openFile({path: "directory/file.txt"});
+```
+
+### `keyValue`
+To access the Zephyr key-value pair store (settings), include the ECMA-419 storage module manifest `$MODDABLE/modules/io/storage/manifest.json` in your project's manifest. That creates the `device.keyValue.open` function to access the key-value store. Your Zephyr Device Tree must have a valid settings subsystem defined in the Zephyr Device Tree.
+
+```js
+const domain = device.keyValue.open({path: "wifi"});
+```
 
