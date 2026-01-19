@@ -174,9 +174,13 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, 
 		GBitmap* mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
 		if (mask) {
 			if (bits) {
-				ctx->draw_state.compositing_mode = GCompOpSet;
-				graphics_draw_bitmap_in_rect_processed(ctx, mask, &rect, C_NULL);
-				ctx->draw_state.compositing_mode = GCompOpAnd;
+				if (bits->info.format == GBitmapFormat1Bit) {
+					ctx->draw_state.compositing_mode = GCompOpSet;
+					graphics_draw_bitmap_in_rect_processed(ctx, mask, &rect, C_NULL);
+					ctx->draw_state.compositing_mode = GCompOpAnd;
+				}
+				else
+					graphics_context_set_compositing_mode(ctx, GCompOpSet);
 				graphics_draw_bitmap_in_rect_processed(ctx, bits, &rect, C_NULL);
 			}
 			else {
