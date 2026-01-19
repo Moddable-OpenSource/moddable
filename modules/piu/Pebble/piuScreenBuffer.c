@@ -48,7 +48,7 @@ void PiuScreenBufferBind(void* it, PiuApplication* application, PiuView* view)
 	PiuScreenBuffer* self = it;
 	GContext *ctx = (*view)->ctx;
 	GBitmap* context_bitmap = graphics_context_get_bitmap(ctx);
-	GBitmap* buffer_bitmap = gbitmap_create_blank(context_bitmap->bounds.size, GBitmapFormat1Bit);
+	GBitmap* buffer_bitmap = gbitmap_create_blank(context_bitmap->bounds.size, context_bitmap->info.format);
 	bitblt_bitmap_into_bitmap(buffer_bitmap, context_bitmap, GPointZero, GCompOpAssign, GColorWhite);
 	(*self)->buffer = buffer_bitmap;
 	PiuContentBind(it, application, view);
