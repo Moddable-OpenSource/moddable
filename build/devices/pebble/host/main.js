@@ -157,8 +157,16 @@ export default function() {
 				throw new Error(specifier + " blocked in watchface");
 
 			return {namespace: specifier};		// map through host modules
+		},
+		loadHook(specifier) {
+			if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
+				throw new Error(specifier + " blocked in watchface");
+
+			return {namespace: specifier};		// map through host modules
 		}
 	});
 
-	Timer.set(() => mod.importNow("main"));
+	Timer.set(async () => {
+		await mod.import("main");
+	});
 }
