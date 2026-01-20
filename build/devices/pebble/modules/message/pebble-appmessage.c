@@ -138,8 +138,8 @@ void xs_appmessage(xsMachine *the)
 	pm->initial = EVENTED_TIMER_INVALID_ID;
 	if (pm->onWritable) {
 		if (sys_app_pp_get_comm_session())
-			pm->initial = evented_timer_register(0, false, initialOnWritable, pm);
-		
+			pm->initial = evented_timer_register(1000, false, initialOnWritable, pm);		//@@ 1000 is horrible hack because we don't know the true PKJS ready state. It should be 0, just to move the callback invokation outside the constructor.
+
 		app_message_register_outbox_sent(messageSent);
 		app_message_register_outbox_failed(messageSendFailed);
 	}
