@@ -86,7 +86,7 @@ class WebSocket {
 							reason: String.fromArrayBuffer(data.buffer.slice(2)),
 							wasClean: true,
 						};
-						this.onclose(event);
+						this.onclose?.(event);
 						this.#eventListeners.close.forEach(listener => listener.call(null, event));
 						} break;
 
@@ -122,7 +122,7 @@ class WebSocket {
 							data,
 							// ??
 						};
-						this.onmessage(event);
+						this.onmessage?.(event);
 						this.#eventListeners.message.forEach(listener => listener.call(null, event));
 					}
 				}
@@ -137,7 +137,7 @@ class WebSocket {
 					const event = {
 						// ?? 
 					};
-					this.onopen(event);
+					this.onopen?.(event);
     				this.#eventListeners.open.forEach(listener => listener.call(null, event));
 					return;
 				}
@@ -185,7 +185,7 @@ class WebSocket {
 						message: "no pong response to keepalive" 
 					};
 					trace(event.message, "\n");
-					this.onerror(event);
+					this.onerror?.(event);
 					this.#eventListeners.error.forEach(listener => listener.call(null, event));
 					this.close();
 					return;
