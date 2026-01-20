@@ -1,0 +1,20 @@
+{
+	"name": "@modddable/pebbleproxy",
+	"version": "0.1.0",
+	"description": "Proxy network protocols for PebbleOS",
+	"license": "LGPLv3",
+
+	"main": "proxy.js",
+	"exports": {
+		".": "./proxy.js"
+	},
+
+	"publishConfig": {
+		"access": "public"
+	},
+
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Moddable-OpenSource/moddable"
+	}
+}
