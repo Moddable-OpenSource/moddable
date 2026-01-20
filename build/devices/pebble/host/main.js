@@ -117,18 +117,27 @@ export default function() {
 		Container,
 		Content,
 		Label,
+		Layout,
 		Link,
 		Port,
 		Row,
+		Scroller, 
 		Skin,
 		Style,
 		Text,
 		Texture,
-		SVGImage,
-		ScreenBuffer,
+		Transition,
+			
+		blendColors, hsl, hsla, rgb, rgba, 
+		
 		Inverter,
 		RoundRect,
-		Transition
+		SVGImage,
+		ScreenBuffer,
+		
+		importNow(specifier) {
+			return mod.importNow(specifier);
+		}
 	};
 
 	Object.defineProperty(globals, "localStorage", {
