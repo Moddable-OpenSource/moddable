@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -25,7 +25,7 @@ const bufferSize = 512;
 const bufferOverhead = 32;		// a guess
 let id = 0;
 
-const BASE = 0;
+const BASE = 15000;
 
 class HTTPClient {
 	static #Request = class {

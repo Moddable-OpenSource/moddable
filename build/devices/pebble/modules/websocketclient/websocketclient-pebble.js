@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,7 +30,7 @@ const bufferOverhead = 64;		// a guess
 const none = Object.freeze({});
 let id = 0;
 
-const BASE = 0;
+const BASE = 15050;
 
 class WebSocketClient {
 	#options;
