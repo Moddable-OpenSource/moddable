@@ -30,6 +30,8 @@ const bufferOverhead = 64;		// a guess
 const none = Object.freeze({});
 let id = 0;
 
+const BASE = 0;
+
 class WebSocketClient {
 	#options;
 	#state = "connecting";
@@ -107,8 +109,8 @@ trace("ws - write\n");
 			if (WebSocketClient.close === options.opcode) {
 				trace("ws - close opcode\n");
 				const m = new Map;
-				m.set(1, this.#options.id);
-				m.set(8, buffer);
+				m.set(BASE + 1, this.#options.id);
+				m.set(BASE + 8, buffer);
 				this.#messages.write(m);
 
 				this.#messages.writable = false;
@@ -132,8 +134,8 @@ trace("ws - write\n");
 		}
 
 		const m = new Map;
-		m.set(1, this.#options.id);
-		m.set((binary ? 4 : 6) + (more ? 1 : 0), buffer);
+		m.set(BASE + 1, this.#options.id);
+		m.set(BASE + (binary ? 4 : 6) + (more ? 1 : 0), buffer);
 		// 4 - binary - no more
 		// 5 - binary - more
 		// 6 - text - no more
@@ -157,8 +159,8 @@ trace(`ws - onWritable ${this.#state}`);
 trace(`ws - write ${use}`);
 
 				const m = new Map;
-				m.set(1, this.#options.id);
-				m.set(remain.part, remain.subarray(remain.position, remain.position + use))
+				m.set(BASE + 1, this.#options.id);
+				m.set(BASE + remain.part, remain.subarray(remain.position, remain.position + use))
 				remain.position += use;
 				if (remain.position === remain.byteLength) {
 					this.#remain = undefined;
@@ -190,13 +192,13 @@ trace(`ws - connected`);
 	#onReadable() {
 trace(`ws - onReadable`);
 		const message = this.#messages.read();
-		const id = message.get(1);
+		const id = message.get(BASE + 1);
 		if (id !== this.#options.id)
 			this.#done("unexpected id " + id);
 
 		switch (this.#state) {
 				case "waitHandshake":
-					if (0 === message.get(2)) {
+					if (0 === message.get(BASE + 2)) {
 trace(`ws - onReadable - connected`);
 						this.#state = "connected";
 						Timer.set(() => {		// cannot safely write from read callback
@@ -205,14 +207,14 @@ trace(`ws - onReadable - connected`);
 					}
 					else {
 trace(`ws - onReadable - error`);
-						this.#options.onError?.call(this, new Error("handshake failed " + message.get(2)));
+						this.#options.onError?.call(this, new Error("handshake failed " + message.get(BASE + 2)));
 						this.#state = "error";
 					}
 					break;
 
 				case "connected": {
 					for (let part = 4; part < 8; part++) {
-						const fragment = message.get(part);
+						const fragment = message.get(BASE + part);
 						if (undefined !== fragment) {
 							fragment.position = 0;
 							fragment.part = part;
@@ -232,7 +234,7 @@ trace(`ws - onReadable - error`);
 						trace.log(e);
 					}
 
-					const closed = message.get(3);
+					const closed = message.get(BASE + 3);
 					if (undefined === closed)
 						this.#done("expected close part");
 					else if (closed)

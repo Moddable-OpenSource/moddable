@@ -25,6 +25,8 @@ const bufferSize = 512;
 const bufferOverhead = 32;		// a guess
 let id = 0;
 
+const BASE = 0;
+
 class HTTPClient {
 	static #Request = class {
 		#client;
@@ -96,8 +98,8 @@ class HTTPClient {
 				throw new Error("would overflow");
 
 			const m = new Map;
-			m.set(1, current.id);
-			m.set(4, buffer);
+			m.set(BASE + 1, current.id);
+			m.set(BASE + 4, buffer);
 			client.#messages.write(m);
 
 			if (true !== current.sending) {
@@ -171,8 +173,8 @@ class HTTPClient {
 					use = bufferSize - bufferOverhead;
 
 				const m = new Map;
-				m.set(1, current.id);
-				m.set(remain.part, remain.subarray(remain.position, remain.position + use))
+				m.set(BASE + 1, current.id);
+				m.set(BASE + remain.part, remain.subarray(remain.position, remain.position + use))
 				remain.position += use;
 				if (remain.position === remain.byteLength) {
 					this.#remain = undefined;
@@ -240,24 +242,24 @@ class HTTPClient {
 	#onReadable() {
 		const message = this.#messages.read();
 		const current = this.#current;
-		const id = message.get(1);
+		const id = message.get(BASE + 1);
 		if (id !== current.id)
 			this.#done("unexpected id " + id);
 
 		switch (this.#state) {
 				case "receiveStatus":
-					current.status = message.get(6);
+					current.status = message.get(BASE + 6);
 					if (current.status < 0)
 						this.#done("fail " + current.status);
 					else {
 						this.#state = "receiveHeaders";
 						current.headers = [];
 					}
-					current.statusText = message.get(11);
+					current.statusText = message.get(BASE + 11);
 					break;
 
 					case "receiveHeaders": {
-						const fragment = message.get(7);
+						const fragment = message.get(BASE + 7);
 						if (fragment) {
 							current.headers.push(fragment);
 							break;
@@ -278,7 +280,7 @@ class HTTPClient {
 					}
 
 					case "receiveBody": {
-						const fragment = message.get(8);
+						const fragment = message.get(BASE + 8);
 						if (fragment) {
 							fragment.position = 0;
 							current.response.push(fragment);
@@ -288,7 +290,7 @@ class HTTPClient {
 							break;
 						}
 
-						if (0 !== message.get(9))
+						if (0 !== message.get(BASE + 9))
 								this.#done("bad state");
 						else
 							this.#done();
