@@ -576,7 +576,7 @@ mxExport txKind fxTypeOf(txMachine*, txSlot*);
 
 mxExport void fxUndefined(txMachine*, txSlot*);
 mxExport void fxNull(txMachine*, txSlot*);
-mxExport void fxBoolean(txMachine*, txSlot*, txS1);
+mxExport void fxBoolean(txMachine*, txSlot*, txBoolean);
 mxExport txBoolean fxToBoolean(txMachine*, txSlot*);
 mxExport void fxInteger(txMachine*, txSlot*, txInteger);
 mxExport txInteger fxToInteger(txMachine*, txSlot*);

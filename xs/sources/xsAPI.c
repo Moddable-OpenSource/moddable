@@ -72,7 +72,7 @@ void fxNull(txMachine* the, txSlot* theSlot)
 	theSlot->kind = XS_NULL_KIND;
 }
 
-void fxBoolean(txMachine* the, txSlot* theSlot, txS1 theValue)
+void fxBoolean(txMachine* the, txSlot* theSlot, txBoolean theValue)
 {
 	theSlot->value.boolean = theValue;
 	theSlot->kind = XS_BOOLEAN_KIND;
