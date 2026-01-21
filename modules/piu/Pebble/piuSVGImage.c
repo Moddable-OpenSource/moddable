@@ -26,6 +26,7 @@ struct PiuSVGImageStruct {
 };
 
 static void PiuSVGImageBind(void* it, PiuApplication* application, PiuView* view);
+static void PiuSVGImageDelete(void* it);
 static void PiuSVGImageDictionary(xsMachine* the, void* it);
 static void PiuSVGImageDraw(void* it, PiuView* view, PiuRectangle area);
 static void PiuSVGImageDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordinate y, PiuDimension sw, PiuDimension sh);
@@ -60,7 +61,7 @@ const PiuDispatchRecord ICACHE_FLASH_ATTR PiuSVGImageDispatchRecord = {
 };
 
 const xsHostHooks ICACHE_FLASH_ATTR PiuSVGImageHooks = {
-	PiuContentDelete,
+	PiuSVGImageDelete,
 	PiuSVGImageMark,
 	NULL
 };
@@ -93,35 +94,55 @@ void PiuSVGImageBind(void* it, PiuApplication* application, PiuView* view)
 				dcs = NULL;
 			}
 		}
-		if (dci) {
-			(*self)->dci = dci;
-			GSize size = gdraw_command_image_get_bounds_size(dci);
-			(*self)->dataWidth = size.w;
-			(*self)->dataHeight = size.h;
-		}
-		else if (dcs) {
-			(*self)->dcs = dcs;
-			GSize size = gdraw_command_sequence_get_bounds_size(dcs);
-			(*self)->dataWidth = size.w;
-			(*self)->dataHeight = size.h;
-			uint32_t duration = 0;
-			uint32_t c = gdraw_command_sequence_get_num_frames(dcs);
-			for (uint32_t i = 0; i < c; i++) {
-				GDrawCommandFrame* dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
-				duration += gdraw_command_frame_get_duration(dcf);
-			}
-			PiuIdle selfIdle = PiuContentUseIdle(it);
-			selfIdle->duration = duration;
-			(*self)->dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
-		}
-		(*self)->cx = (xsNumberValue)(*self)->dataWidth / 2.0;
-		(*self)->cy = (xsNumberValue)(*self)->dataHeight / 2.0;
-		(*self)->sx = (*self)->sy = 1;
-		(*self)->o = 1;
-		(*self)->transforming = 1;
 	}
+	if (dci) {
+		(*self)->dci = dci;
+		GSize size = gdraw_command_image_get_bounds_size(dci);
+		(*self)->dataWidth = size.w;
+		(*self)->dataHeight = size.h;
+	}
+	else if (dcs) {
+		(*self)->dcs = dcs;
+		GSize size = gdraw_command_sequence_get_bounds_size(dcs);
+		(*self)->dataWidth = size.w;
+		(*self)->dataHeight = size.h;
+		uint32_t duration = 0;
+		uint32_t c = gdraw_command_sequence_get_num_frames(dcs);
+		for (uint32_t i = 0; i < c; i++) {
+			GDrawCommandFrame* dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
+			duration += gdraw_command_frame_get_duration(dcf);
+		}
+		PiuIdle selfIdle = PiuContentUseIdle(it);
+		selfIdle->duration = duration;
+		(*self)->dcf = gdraw_command_sequence_get_frame_by_index(dcs, 0);
+	}
+	(*self)->cx = (xsNumberValue)(*self)->dataWidth / 2.0;
+	(*self)->cy = (xsNumberValue)(*self)->dataHeight / 2.0;
+	(*self)->sx = (*self)->sy = 1;
+	(*self)->o = 1;
+	(*self)->transforming = 1;
 	xsEndHost((*self)->the);
 	PiuContentBind(it, application, view);
+}
+
+void PiuSVGImageDelete(void* it)
+{
+	PiuSVGImage self = it;
+	if (self->id) {
+		if (self->dci) {
+			gdraw_command_image_destroy(self->dci);
+			self->dci = NULL;
+		}
+		if (self->dcs) {
+			gdraw_command_sequence_destroy(self->dcs);
+			self->dcs = NULL;
+			self->dcf = NULL;
+		}
+	}
+	if (self->dcl) {
+		gdraw_command_list_destroy(self->dcl);
+		self->dcl = NULL;
+	}
 }
 
 void PiuSVGImageDictionary(xsMachine* the, void* it) 
@@ -296,14 +317,16 @@ void PiuSVGImageUnbind(void* it, PiuApplication* application, PiuView* view)
 {
 	PiuSVGImage* self = it;
 	PiuContentUnbind(it, application, view);
-	if ((*self)->dci) {
-		gdraw_command_image_destroy((*self)->dci);
-		(*self)->dci = NULL;
-	}
-	if ((*self)->dcs) {
-		gdraw_command_sequence_destroy((*self)->dcs);
-		(*self)->dcs = NULL;
-		(*self)->dcf = NULL;
+	if ((*self)->id) {
+		if ((*self)->dci) {
+			gdraw_command_image_destroy((*self)->dci);
+			(*self)->dci = NULL;
+		}
+		if ((*self)->dcs) {
+			gdraw_command_sequence_destroy((*self)->dcs);
+			(*self)->dcs = NULL;
+			(*self)->dcf = NULL;
+		}
 	}
 	if ((*self)->dcl) {
 		gdraw_command_list_destroy((*self)->dcl);
