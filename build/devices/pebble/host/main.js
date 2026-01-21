@@ -81,9 +81,7 @@ globalThis.device = Object.freeze({
 }, true);
 
 export default function() {
-//	Timer.delay(500);
-
-	state.archive = (new ArchiveResource(0))?.archive;
+	state.archive = (new ArchiveResource())?.archive;
 	console.log(`Found mod "${state.archive.name}"`);
 
 	globalThis.Pebble = new Pebble;		// so modules (like global) can reach the instance

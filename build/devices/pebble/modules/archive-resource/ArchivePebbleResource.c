@@ -21,11 +21,14 @@
 #include "applib/applib_resource.h"
 #include "applib/applib_resource_private.h"
 #include "syscall/syscall.h"
+#include "resource/resource_storage.h"
 
 #include "xsAll.h"
 #include "xs.h"
 #include "mc.xs.h"
 #include "mc.defines.h"
+
+#undef TARGET_QEMU
 
 typedef struct ArchivePebbleResourceStruct ArchivePebbleResourceRecord, *ArchivePebbleResource;
 struct ArchivePebbleResourceStruct {
@@ -68,9 +71,21 @@ void ArchivePebbleResourceCreate(xsMachine* the)
 	c_memset(self, 0, sizeof(record));
 
 	xsTry {
-		int resource_id = xsToInteger(xsArg(0)) + 1;			//@@ application resources IDs are 0 based, but here they are 1 based??
-
+		uint32_t resource_id = 0;
 		ResAppNum app_num = sys_get_current_resource_num();
+		for (uint32_t id = resource_storage_get_num_entries(app_num, 1); id >= 1; id--) {
+			uint8_t header[8];
+			const size_t read = resource_load_byte_range_system(app_num, id, 0, header, sizeof(header));
+			if (read) {
+				if (('X' == header[4]) && ('S' == header[5]) && ('_' == header[6]) && ('A' == header[7])) {
+					resource_id = id;
+					break;
+				}
+			}
+		}
+		if (!resource_id)
+			xsUnknownError("no mod");
+
 		self->size = sys_resource_size(app_num, resource_id);
 
 #if TARGET_QEMU
