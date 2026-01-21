@@ -49,7 +49,7 @@ function eventReceived(e) {
 			httpMessage(id, e);
 		}
 		catch (error) {
-			console.log("moddable pxoxy http exception" + error);
+			console.log("moddable proxy http exception" + error);
 		}
 		return true;
 	}
@@ -60,7 +60,7 @@ function eventReceived(e) {
 			wsMessage(id, e);
 		}
 		catch (error) {
-			console.log("moddable pxoxy ws exception" + error);
+			console.log("moddable proxy ws exception" + error);
 		}
 		return true;
 	}
@@ -250,7 +250,7 @@ function wsMessage(id, e) {
 			request.ws = new WebSocket(url);
 			request.ws.binaryType = "arraybuffer";
 
-			request.ws.onopen = event => {
+			request.ws.onopen = ( )=> {
 				if (state.log)
 					console.log("websocket connected to host");
 				request.state = "connected";
@@ -261,7 +261,7 @@ function wsMessage(id, e) {
 					[WS_BASE + 2]: 0						// connected. success.
 				});
 			};
-			request.ws.onerror = event => {
+			request.ws.onerror = () => {
 				if (state.log)
 					console.log("websocket connection failed");
 				request.state = "error";
