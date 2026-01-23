@@ -163,6 +163,7 @@ typedef struct DebugFragmentRecord *DebugFragment;
 	void *dbgQueue; \
 	void *queues; \
 	void *task; \
+	uint32_t kernelRemaining; \
 	mxMachineDebug \
 	mxMachineInstrument
 

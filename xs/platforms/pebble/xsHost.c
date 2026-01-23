@@ -170,7 +170,7 @@ void modInstrumentationSetup(xsMachine *the)
 
 static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 {
-	return 0;
+	return heap_bytes_free();
 }
 
 #if INSTRUMENT_CPULOAD

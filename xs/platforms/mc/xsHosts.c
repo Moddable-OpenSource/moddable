@@ -49,6 +49,7 @@
 
 #if pebble
 	#include "kernel/pbl_malloc.h"
+	#include "kernel/kernel_heap.h"
 #endif
 
 extern void *xsPreparationAndCreation(xsCreation **creation);
@@ -60,6 +61,16 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 /*
 	XS memory 
 */
+
+#if pebble
+	#define machine_alloc(size) \
+		((size <= (txSize)the->kernelRemaining) ? (the->kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
+	#define machine_free(ptr) \
+		(heap_contains_address(kernel_heap_get(), ptr) ? kernel_free(ptr) : app_free(ptr))
+#else
+	#define machine_alloc(size) c_malloc(size)
+	#define machine_free(ptr) c_free(ptr)
+#endif
 
 static void *mc_xs_slot_allocator(txMachine* the, size_t size)
 {
@@ -83,7 +94,7 @@ void *fxAllocateChunks(txMachine* the, txSize theSize)
 	}
 
 	if (NULL == the->heap)
-		return c_malloc(theSize);
+		return machine_alloc(theSize);
 
 	txBlock* block = the->firstBlock;
 	if (block) {	// reduce size by number of free bytes in current chunk heap
@@ -110,13 +121,13 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 
 	if (NULL == the->heap) {
 #ifndef modGetLargestMalloc
-		return c_malloc(needed);
+		return machine_alloc(needed);
 #else
 		extern void fxGrowSlots(txMachine* the, txSize theCount); 
 		static uint8_t *pending;		//@@ not thread safe...
 
 		if (NULL == the->stack)
-			return c_malloc(needed);
+			return machine_alloc(needed);
 
 		if (pending) {
 			txSlot *result = (txSlot *)pending;
@@ -169,7 +180,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 void fxFreeChunks(txMachine* the, void* theChunks)
 {
 	if (NULL == the->heap)
-		c_free(theChunks);
+		machine_free(theChunks);
 	else {
 		/* @@ too lazy but it should work... */
 		if ((uint8_t *)theChunks < the->heap_ptr)
@@ -181,11 +192,7 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 				context[0] = NULL;
 			}
 			// VM is terminated
-#if pebble
-			kernel_free(the->heap);
-#else
-			c_free(the->heap);
-#endif
+			machine_free(the->heap);
 		}
 	}
 }
@@ -193,7 +200,7 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 void fxFreeSlots(txMachine* the, void* theSlots)
 {
 	if (NULL == the->heap)
-		c_free(theSlots);
+		machine_free(theSlots);
 	else {
 		; /* nothing to do */
 	}
@@ -514,10 +521,17 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		uint8_t *context[2];
 
 #if pebble
-		context[0] = kernel_malloc(creation->staticSize);
-#else
-		context[0] = c_malloc(creation->staticSize);
+		the->kernelRemaining = 32 * 1024;
+		unsigned int used, free, max_free;
+		heap_calc_totals(kernel_heap_get(), &used, &free, &max_free);
+		if (max_free < the->kernelRemaining)
+			the->kernelRemaining = max_free;
+
+		// Heap *heap = kernel_heap_get();
+		// PBL_LOG(LOG_LEVEL_ERROR, "kernel free: %d", heap_size(heap) - heap->current_size);
+		// PBL_LOG(LOG_LEVEL_ERROR, "kernel max_free: %d", max_free);
 #endif
+		context[0] = machine_alloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
@@ -526,13 +540,8 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 
 		the = xsPrepareMachine(creation, preparation, (char *)name, context, NULL);
 		if (NULL == the) {
-			if (context[0]) {
-#if pebble
-				kernel_free(context[0]);
-#else
-				c_free(context[0]);
-#endif
-			}
+			if (context[0])
+				machine_free(context[0]);
 			return NULL;
 		}
 
