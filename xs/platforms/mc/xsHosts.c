@@ -63,8 +63,9 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 */
 
 #if pebble
+	static uint32_t kernelRemaining;
 	#define machine_alloc(size) \
-		((size <= (txSize)the->kernelRemaining) ? (the->kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
+		((size <= (txSize)kernelRemaining) ? (kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
 	#define machine_free(ptr) \
 		(heap_contains_address(kernel_heap_get(), ptr) ? kernel_free(ptr) : app_free(ptr))
 #else
@@ -521,11 +522,11 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		uint8_t *context[2];
 
 #if pebble
-		the->kernelRemaining = 32 * 1024;
+		kernelRemaining = 32 * 1024;
 		unsigned int used, free, max_free;
 		heap_calc_totals(kernel_heap_get(), &used, &free, &max_free);
-		if (max_free < the->kernelRemaining)
-			the->kernelRemaining = max_free;
+		if (max_free < kernelRemaining)
+			kernelRemaining = max_free;
 
 		// Heap *heap = kernel_heap_get();
 		// PBL_LOG(LOG_LEVEL_ERROR, "kernel free: %d", heap_size(heap) - heap->current_size);
@@ -552,6 +553,10 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		if (NULL == the)
 			return NULL;
 	}
+
+#if pebble
+	kernelRemaining = 0;
+#endif
 
 #if MODDEF_XS_MODS
 	uint8_t modStatus = 0;
