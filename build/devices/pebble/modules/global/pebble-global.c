@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -67,5 +67,16 @@ void xs_global_color_get(xsMachine *the)
 	xsResult = xsFalse;
 #else
 	#error PBL_COLOR or PBL_BW expected
+#endif
+}
+
+void xs_global_round_get(xsMachine *the)
+{
+#if PBL_RECT
+	xsResult = xsFalse;
+#elif PBL_ROUND
+	xsResult = xsTrue;
+#else
+	#error PBL_RECT or PBL_ROUND expected
 #endif
 }

@@ -155,6 +155,7 @@ export class Pebble {
 	}
 
 	get color() {return native("xs_global_color_get").call(this);}
+	get round() {return native("xs_global_round_get").call(this);}
 }
 
 export default Pebble;
