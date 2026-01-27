@@ -20,9 +20,10 @@
 
 declare module "ChatAudioIO" {
 	type ChatAudioIOOptions = {
-		specifier: "googleGeminiLive" | "openAIRealtime" | "humeAIEVI" | "elevenLabsAgent";
+		specifier: "googleGeminiLive" | "openAIRealtime" | "humeAIEVI" | "elevenLabsAgent" | "deepgramAgent";
 		voiceName?: string;
 		instructions?: string;
+		apiKey?: string;
 
 		onStateChanged?: (this: ChatAudioIO, state: number) => void;
 		onInputTranscript?: (this: ChatAudioIO, text: string, more: boolean) => void;
