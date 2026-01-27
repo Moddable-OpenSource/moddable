@@ -101,6 +101,8 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 				case 3: 
 					client.close();
 					this.path += `&config_id=${json.id}`;
+					this.headers.delete("content-length");
+					this.headers.delete("Content-Type");
 					super.connect(message);
 					return;
 				}
