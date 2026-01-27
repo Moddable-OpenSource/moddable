@@ -16,7 +16,7 @@ import ChatAudioIO from "ChatAudioIO";
 
 const chat = new ChatAudioIO({
 	specifier: "humeAIEVI",
-	voiceName: "Sunny",
+	voiceID: "Sunny",
 	instructions: "You're a hostile fisherman with a salty sense of humor. You dislike people and care even less for fish.",
 	onStateChanged(state) {
 		trace(`State: ${ChatAudioIO.states[state]} ${this.error ?? ""}\n`);
