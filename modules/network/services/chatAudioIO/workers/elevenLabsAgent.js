@@ -45,6 +45,11 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 		this.setup = {
 			type: "conversation_initiation_client_data",
 		}
+		const apiKey = message.apiKey ?? config.elevenLabsKey;
+		this.headers = new Map([
+			[ "xi-api-key", apiKey ],
+			[ "Content-Type", "application/json" ],
+		]);
 		this.body = {
 			conversation_config: {
 				asr: {
@@ -80,10 +85,7 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 			...device.network.https,
 			host: this.host
 		});
-		const headers = new Map([
-			[ "xi-api-key", config.elevenLabsKey ],
-			[ "Content-Type", "application/json" ],
-		]);
+		const headers = this.headers
 		const request = (method, path, body) => {
 			let buffer = null;
 			let length = 0;

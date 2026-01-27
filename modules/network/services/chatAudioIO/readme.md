@@ -4,11 +4,11 @@ Updated December 3, 2025
 
 ## Architecture
 
-The conversation module uses a JavaScript [worker](https://moddable.com/documentation/base/worker). The worker is in charge of networks protocols, communicating with the AI cloud services, and encoding/decoding audio samples. 
+The conversation module uses a JavaScript [worker](https://moddable.com/documentation/base/worker). The worker is in charge of networks protocols, communicating with the AI cloud services, and encoding/decoding audio samples.
 
 The conversation module and its worker communicate with [marshalled messages](https://www.moddable.com/documentation/xs/XS%20Marshalling). They share input and output audio buffers for efficiency. This document describes the [messages](#Messages).
 
-Because audio samples are transmitted as Base64 encoded data embedded in JSON, workers use a special parser to optimize memory usage and throughput. This document also describes the [`JSONBase64Parser`](#JSONBase64Parser). 
+Because audio samples are transmitted as Base64 encoded data embedded in JSON, workers use a special parser to optimize memory usage and throughput. This document also describes the [`JSONBase64Parser`](#JSONBase64Parser).
 
 The conversation library implements support for various AI cloud services using this worker architecture:
 
@@ -32,6 +32,7 @@ The `options` object selects and configures a service. Its properties are:
 - `voiceID`: *string*, the identifier of the voice, optional
 - `providerID`: *string*, the identifier of the language model provider, optional
 - `modelID`: *string*, the identifier of the language model, optional
+- `apiKey`: *string*, the API key of the AI cloud services, optional
 
 The `options` object can also provides callbacks. All callbacks are optional.
 
@@ -49,7 +50,7 @@ The `options` object can also provides callbacks. All callbacks are optional.
 	static CONNECTING = 2;
 	static CONNECTED = 3;
 	static SPEAKING = 4;		// user is speaking (sending audio to cloud)
-	static LISTENING = 5;		// user is listening (receiving audio from cloud) 
+	static LISTENING = 5;		// user is listening (receiving audio from cloud)
 	static WAITING = 6;
 ```
 
@@ -94,14 +95,15 @@ Use `sendText` to inform the service about user interactions that did not involv
 - `voiceID`: *string*, the identifier of the voice, optional
 - `providerID`: *string*, the identifier of the language model provider, optional
 - `modelID`: *string*, the identifier of the language model, optional
+- `apiKey`: *string*, the API key of the AI cloud services, optional
 
 The `voiceID`, `providerID` and `modelID` are specific to each service. Look at [ConversationalAI assets](https://github.com/Moddable-OpenSource/moddable/blob/public/contributed/conversationalAI/assets.js) to get voice, provider and model identifiers, names and descriptions by service.
 
 The format of function descriptions is a JSON schema that is more or less common to all services.
 
 ```javascript
-{ 
-	id:"configure", 
+{
+	id:"configure",
 	instructions: "You are a helpful lighting system bot. You can turn lights on and off. Do not perform any other tasks.",
 	functions: [
 		{
@@ -117,7 +119,7 @@ The format of function descriptions is a JSON schema that is more or less common
 				},
 				required: ["light_name"],
 			}
-		},			
+		},
 		{
 			name: "turn_light_off",
 			description: "Turn the light off. Call this whenever you need to turn off a light, for example when a customer tells 'turn bedroom light off.'",
@@ -131,7 +133,7 @@ The format of function descriptions is a JSON schema that is more or less common
 				},
 				required: ["light_name"],
 			}
-		} 				
+		}
 	]
 }
 ```
@@ -261,7 +263,7 @@ Tell the application that the worker is connected and has configured the service
 <a id="msg-disconnected"></a>
 #### disconnected
 
-Tell the application that the worker is disconnected from the service. 
+Tell the application that the worker is disconnected from the service.
 
 ```javascript
 {
@@ -293,7 +295,7 @@ Tell the application that the worker is receiving audio samples from the service
 }
 ```
 
-The application creates an audio output object which reads audio samples from the output buffer. 
+The application creates an audio output object which reads audio samples from the output buffer.
 
 <a id="msg-receiveAudio"></a>
 #### receiveAudio

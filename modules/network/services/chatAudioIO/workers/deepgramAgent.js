@@ -28,9 +28,6 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 		super(options);
 		this.host = "agent.deepgram.com";
 		this.path = `/v1/agent/converse`;
-		this.headers = [
-			["Authorization", `Token ${config.deepgramKey}`],
-		];
 		this.keepAliveTimer = null;
 	}
 	close() {
@@ -40,6 +37,10 @@ class DeepgramVoiceAgentModel extends ChatWebSocketWorker {
 	configure(message) {
 		const prompt = message.instructions ?? "";
 		const functions = message.functions ?? [];
+		const apiKey = message.apiKey ?? config.deepgramKey;
+		this.headers = [
+			["Authorization", `Token ${apiKey}`],
+		];
 		this.setup = {
 			type: "Settings",
 			experimental: true,
