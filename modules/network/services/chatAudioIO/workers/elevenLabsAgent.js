@@ -152,6 +152,8 @@ class ElevenLabsModel extends ChatWebSocketWorker {
 				case 3: 
 					client.close();
 					if (json?.agent_id) {
+						this.headers.delete("content-length");
+						this.headers.delete("Content-Type");
 						this.path = `/v1/convai/conversation?agent_id=${json.agent_id}`;
 						super.connect(message);
 					}
