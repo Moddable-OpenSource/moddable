@@ -28,7 +28,6 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "generativelanguage.googleapis.com";
-		this.path = `/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${config.geminiAPIKey}`;
 		this.headers = null;
 		this.audioPrefix = audioPrefix;
 		this.audioSuffix = audioSuffix;
@@ -39,6 +38,8 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		const tools = message.functions ?? [];
 		const voiceName = message.voiceID ?? "aoede";
 		const model = message.modelID ?? "gemini-2.5-flash-native-audio-preview-12-2025";
+		const apiKey = message.apiKey ?? config.geminiAPIKey;
+		this.path = `/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 		this.setup = {
 			model: `models/${model}`,
 			generationConfig: {

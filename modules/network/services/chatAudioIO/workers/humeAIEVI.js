@@ -28,7 +28,6 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "api.hume.ai";
-		this.path = `/v0/evi/chat?api_key=${config.humeAIKey}`;
 		this.headers = null;
 		this.audioPrefix = audioPrefix;
 		this.audioSuffix = audioSuffix;
@@ -39,10 +38,7 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			...device.network.https,
 			host: this.host
 		});
-		const headers = new Map([
-			[ "X-Hume-Api-Key", config.humeAIKey ],
-			[ "Content-Type", "application/json" ],
-		]);
+		const headers = this.headers
 		const request = (method, path, body) => {
 			let buffer = null;
 			let length = 0;
@@ -129,6 +125,12 @@ class HumeAIEVIModel extends ChatWebSocketWorker {
 			system_prompt: instructions,
 			tools,
 		};
+		const apiKey = message.apiKey ?? config.humeAIKey;
+		this.path = `/v0/evi/chat?api_key=${apiKey}`;
+		this.headers = new Map([
+			[ "X-Hume-Api-Key", apiKey ],
+			[ "Content-Type", "application/json" ],
+		]);
  		this.body = {
 			evi_version: "4-mini",
   			name: "Moddable",

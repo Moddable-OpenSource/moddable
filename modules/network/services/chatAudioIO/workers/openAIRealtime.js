@@ -29,9 +29,6 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "api.openai.com";
-		this.headers = [
-			["Authorization", `Bearer ${config.openAIKey}`]
-		];
         this.audioPrefix = audioPrefix;
 		this.audioSuffix = audioSuffix;
 	}
@@ -45,6 +42,10 @@ class OpenAIRealTimeModel extends ChatWebSocketWorker {
 			tool.type = "function";
 			tool.parameters.additionalProperties = false;
 		});
+		const apiKey = message.apiKey ?? config.openAIKey;
+		this.headers = [
+			["Authorization", `Bearer ${apiKey}`]
+		];
  		this.session = {
 			type: 'realtime',
 			audio: {
