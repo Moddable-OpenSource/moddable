@@ -2343,7 +2343,7 @@ void fxGo(txMachine* the)
 
 void fxIndexToString(txMachine* the, txIndex theIndex, txString theBuffer, txSize theSize)
 {
-	c_snprintf(theBuffer, theSize, "%u", theIndex);
+	c_snprintf(theBuffer, theSize, "%u", (unsigned int)theIndex);
 }
 
 void fxListFrames(txMachine* the)

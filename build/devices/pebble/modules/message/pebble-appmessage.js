@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,8 +23,7 @@ class Message extends Native("xs_appmessage_destructor") {
 	close() { return native("xs_appmessage_close").call(this); };
 
 	read() {
-		const r = native("xs_appmessage_read").call(this);
-		const keys = r.keys, map = r.map;
+		const {keys, map} = native("xs_appmessage_read").call(this);
 		if (keys) {
 			for (const [key, code] of keys.entries()) {
 				if (map.has(code)) {
@@ -39,12 +38,25 @@ class Message extends Native("xs_appmessage_destructor") {
 		native("xs_appmessage_write").call(this, map, Array.from(map.keys()));
 	}
 
+	match(code, keys) {		// private to implementation... maybe just pass to constructor
+		for (const value of keys.values()) {
+			if (value === code)
+				return true;
+		}
+	}
+
 	get format() {
 		return "map";
 	}
 	set format(value) {
 		if ("map" != value)
 				throw new RangeError("only map");
+	}
+	get input() {
+ 		return native("xs_appmessage_get_input").call(this);
+	}
+	get output() {
+ 		return native("xs_appmessage_get_output").call(this);		
 	}
 }
 

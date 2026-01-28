@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,6 +23,7 @@
 #include "mc.xs.h"      // for xsID_ values
 
 #include "builtinCommon.h"
+#include "moddableAppState.h"
 
 #include "applib/app_message/app_message.h"
 #include "applib/event_service_client.h"
@@ -30,28 +31,64 @@
 #include "syscall/syscall.h"
 #include "util/dict.h"
 
-typedef struct {
+#define kPKJSReadyMessage (15025)
+
+typedef struct  {
+	struct PebbleMessageRecord		*firstInstance;
+	EventServiceInfo					commSessionEvent;
+	xsSlot								*map;			// most recent received, unread message
+	EventedTimerID						invokeUpdateActivate;
+	uint16_t								inbound;
+	uint16_t								outbound;
+	uint8_t								pkjsReady;		// received read from pkjs
+	uint8_t								writable;			// an instance could send a message
+} PebbleMessageStateRecord, *PebbleMessageState;
+
+typedef struct PebbleMessageRecord PebbleMessageRecord;
+typedef PebbleMessageRecord *PebbleMessage;
+
+struct PebbleMessageRecord {
 	xsMachine			*the;
 	xsSlot				obj;
 	xsSlot				*onReadable;
 	xsSlot				*onWritable;
 	xsSlot				*onSuspend;
 	xsSlot				*keys;		// map from keys as strings to keys as integers
-	xsSlot				*map;			// most recent received, unread message
-	EventServiceInfo	commSessionEvent;
 	EventedTimerID		initial;
+	EventedTimerID		readable;
 	uint8_t				active;
-	uint8_t				inReceiveCallback;		// avoid stumbling over apparent bug in appmessage
-} PebbleMessageRecord, *PebbleMessage;
+	uint8_t				writable;
+	PebbleMessage		next;
+	PebbleMessageState	state;
+};
 
 void xs_appmessage_destructor(void *data)
 {
 	PebbleMessage pm = data;
 	if (!pm) return;
 
-	event_service_client_unsubscribe(&pm->commSessionEvent);
+	PebbleMessageState state = pm->state;
+	if (!state) return;
 
-	app_message_close();
+	if (state->firstInstance == pm)
+		state->firstInstance = pm->next;
+	else if (state->firstInstance) {
+		PebbleMessage walker = state->firstInstance;
+		while (walker && walker->next != pm)
+			walker = walker->next;
+		if (walker)
+			walker->next = pm->next;
+	}
+
+	evented_timer_cancel(pm->initial);
+	evented_timer_cancel(pm->readable);
+	
+	if (C_NULL == state->firstInstance) {
+		event_service_client_unsubscribe(&state->commSessionEvent);
+		app_message_close();
+		c_free(state);
+		setModdableAppState(appMessage, C_NULL);
+	}
 
 	c_free(pm);
 }
@@ -66,8 +103,8 @@ void xs_appmessage_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 		(*markRoot)(the, pm->onWritable);
 	if (pm->onSuspend)
 		(*markRoot)(the, pm->onSuspend);
-	if (pm->map)
-		(*markRoot)(the, pm->map);
+	if (pm->state->map)
+		(*markRoot)(the, pm->state->map);
 	if (pm->keys)
 		(*markRoot)(the, pm->keys);
 }
@@ -78,10 +115,14 @@ static const xsHostHooks xsAppMessageHooks = {
 	NULL
 };
 
-static void initialOnWritable(void *context);
+static void suspendWritable(PebbleMessage writer);
+static void invokeOnReadable(void *context);
+static void invokeOnWritable(void *context);
+static void invokeUpdateActivate(void *context);
 static void messageReceived(DictionaryIterator *iterator, void *context);
 static void messageSent(DictionaryIterator *iterator, void *context);
 static void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, void *context);
+static void updateActive(uint8_t active);
 static void commSessionEvent(PebbleEvent *e, void *unused);
 
 void xs_appmessage(xsMachine *the)
@@ -101,22 +142,58 @@ void xs_appmessage(xsMachine *the)
 			xsRangeError("only map");
 	}
 
-	uint32_t inbound = app_message_inbox_size_maximum(), outbound = app_message_outbox_size_maximum();
-	if (xsmcHas(xsArg(0), xsID_input)) {
-		xsmcGet(tmp, xsArg(0), xsID_input);
-		inbound = xsmcToInteger(tmp);
+	PebbleMessageState state = getModdableAppState(appMessage);
+
+	uint32_t inbound = state ? state->inbound : 0, outbound = state ? state->outbound : 0;
+	if (C_NULL == state) {
+		inbound = app_message_inbox_size_maximum();
+		outbound = app_message_outbox_size_maximum();
+		if (xsmcHas(xsArg(0), xsID_input)) {
+			xsmcGet(tmp, xsArg(0), xsID_input);
+			uint32_t t = xsmcToInteger(tmp);
+			if (t < inbound)
+				inbound = t;
+		}
+		if (xsmcHas(xsArg(0), xsID_output)) {
+			xsmcGet(tmp, xsArg(0), xsID_output);
+			uint32_t t = xsmcToInteger(tmp);
+			if (t < outbound)
+				outbound = t;
+		}
 	}
-	if (xsmcHas(xsArg(0), xsID_output)) {
-		xsmcGet(tmp, xsArg(0), xsID_output);
-		outbound = xsmcToInteger(tmp);
-	}
-	if (APP_MSG_OK != app_message_open(inbound, outbound))
-		xsUnknownError("app_message_open failed");
 
 	pm = c_calloc(1, sizeof(PebbleMessageRecord));
 	if (!pm)
 		xsRangeError("no memory");
 
+	if (C_NULL == state) {
+		state = c_calloc(1, sizeof(PebbleMessageStateRecord));
+		if (!state) {
+			c_free(pm);
+			xsUnknownError("no memory");
+		}
+		state->invokeUpdateActivate = EVENTED_TIMER_INVALID_ID;
+
+		if (APP_MSG_OK != app_message_open(inbound, outbound)) {
+			c_free(pm);
+			c_free(state);
+			xsUnknownError("app_message_open failed");
+		}
+
+		app_message_register_inbox_received(messageReceived);
+		app_message_register_outbox_sent(messageSent);
+		app_message_register_outbox_failed(messageSendFailed);
+
+		state->commSessionEvent.type = PEBBLE_COMM_SESSION_EVENT;
+		state->commSessionEvent.handler = commSessionEvent;
+		state->commSessionEvent.context = C_NULL;
+		event_service_client_subscribe(&state->commSessionEvent);
+
+		state->inbound = inbound;
+		state->outbound = outbound;
+	}
+
+	pm->state = state;
 	pm->obj = xsThis;
 	pm->the = the;
 	pm->onReadable = onReadable;
@@ -127,27 +204,25 @@ void xs_appmessage(xsMachine *the)
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsAppMessageHooks);
 	xsRemember(pm->obj);
 
-	app_message_set_context(pm);
-	app_message_register_inbox_received(messageReceived);
-
 	if (xsmcHas(xsArg(0), xsID_keys)) {
 		xsmcGet(tmp, xsArg(0), xsID_keys);
 		pm->keys = xsmcToReference(tmp);
 	}
 
+	if (C_NULL == state->firstInstance)
+		state->writable = sys_app_pp_get_comm_session() ? 1 : 0;
 	pm->initial = EVENTED_TIMER_INVALID_ID;
-	if (pm->onWritable) {
-		if (sys_app_pp_get_comm_session())
-			pm->initial = evented_timer_register(1000, false, initialOnWritable, pm);		//@@ 1000 is horrible hack because we don't know the true PKJS ready state. It should be 0, just to move the callback invokation outside the constructor.
-
-		app_message_register_outbox_sent(messageSent);
-		app_message_register_outbox_failed(messageSendFailed);
+	pm->readable = EVENTED_TIMER_INVALID_ID;
+	if (state->writable && state->pkjsReady) {
+		pm->writable = pm->active = true;
+		if (pm->onWritable)
+			pm->initial = evented_timer_register(1, false, invokeOnWritable, pm);
 	}
 
-	pm->commSessionEvent.type = PEBBLE_COMM_SESSION_EVENT; 
-	pm->commSessionEvent.handler = commSessionEvent; 
-	pm->commSessionEvent.context = pm;
-	event_service_client_subscribe(&pm->commSessionEvent);
+	pm->next = state->firstInstance;
+	state->firstInstance = pm;
+
+	setModdableAppState(appMessage, state);
 }
 
 void xs_appmessage_close(xsMachine *the)
@@ -165,38 +240,37 @@ void xs_appmessage_read(xsMachine *the)
 {
 	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
 
-	if (C_NULL == pm->map)
+	if (C_NULL == pm->state->map)
 		return;
 
 	xsmcSetNewObject(xsResult);
-	xsSlot tmp = xsReference(pm->map);
+	xsSlot tmp = xsReference(pm->state->map);
 	xsmcSet(xsResult, xsID_map, tmp);
 	if (pm->keys) {
 		tmp = xsReference(pm->keys);
 		xsmcSet(xsResult, xsID_keys, tmp);
 	}
-	pm->map = C_NULL;
+	pm->state->map = C_NULL;
 }
 
 void xs_appmessage_write(xsMachine *the)
 {
 	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
 	xsSlot tmp;
-	int length, i;
 
-	if (pm->inReceiveCallback)
-		xsUnknownError("cannot safely write from read callback");
+	if( !pm->writable || !pm->state->writable)
+		xsUnknownError("not writable");
 
 	xsmcVars(3);
 
 	xsmcGet(tmp, xsArg(1), xsID_length);
-	length = xsmcToInteger(tmp);
+	int length = xsmcToInteger(tmp);
 
 	DictionaryIterator *iter;
 	if (APP_MSG_OK != app_message_outbox_begin(&iter))
 		xsUnknownError("output_begin failed");
 
-	for (i = 0; i < length; i++) {
+	for (int i = 0; i < length; i++) {
 		xsmcGetIndex(xsVar(0), xsArg(1), i);
 		xsVar(1) = xsCall1(xsArg(0), xsID_get, xsVar(0));
 
@@ -224,7 +298,7 @@ void xs_appmessage_write(xsMachine *the)
 				xsUnknownError("overflow");
 		}
 		else if ((xsIntegerType == valueType) || (xsNumberType == valueType)) {
-			int32_t valueD = xsmcToNumber(xsVar(1));
+			xsNumberValue valueD = xsmcToNumber(xsVar(1));
 			if (valueD >= 2147483648.0)
 				dict_write_uint32(iter, key, (uint32_t)valueD);
 			else {
@@ -243,12 +317,70 @@ void xs_appmessage_write(xsMachine *the)
 			xsUnknownError("unexpected value");
 	}
 
+	pm->state->writable = 0;
 	app_message_outbox_send();
+
+	pm->writable = false;
+	suspendWritable(pm);
 }
 
-void initialOnWritable(void *context)
+void suspendWritable(PebbleMessage writer)
+{
+	PebbleMessageState state = getModdableAppState(appMessage);
+	for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
+		if (pm->writable && pm->active && (pm != writer)) {
+			pm->active = false;
+			pm->writable = false;
+			if (pm->onSuspend) {
+				xsBeginHost(pm->the);
+					xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
+				xsEndHost(pm-the);
+			}
+		}
+	}
+}
+
+void xs_appmessage_get_input(xsMachine *the)
+{
+	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
+	xsmcSetInteger(xsResult, pm->state->inbound);
+}
+
+void xs_appmessage_get_output(xsMachine *the)
+{
+	PebbleMessage pm = xsmcGetHostDataValidate(xsThis, (void *)&xsAppMessageHooks);
+	xsmcSetInteger(xsResult, pm->state->outbound);
+}
+
+void invokeUpdateActivate(void *context)
+{
+	PebbleMessageState state = getModdableAppState(appMessage);
+
+	evented_timer_cancel(state->invokeUpdateActivate);
+	state->invokeUpdateActivate = EVENTED_TIMER_INVALID_ID;
+
+	updateActive(1);
+}
+
+void invokeOnReadable(void *context)
 {
 	PebbleMessage pm = context;
+
+	evented_timer_cancel(pm->readable);
+	pm->readable = EVENTED_TIMER_INVALID_ID;
+
+	xsBeginHost(pm->the);
+		xsmcSetInteger(xsResult, 1);
+		xsCallFunction1(xsReference(pm->onReadable), pm->obj, xsResult);
+	xsEndHost(pm->the);
+}
+
+void invokeOnWritable(void *context)
+{
+	PebbleMessage pm = context;
+
+	if (C_NULL == pm->onWritable)
+		return;
 
 	evented_timer_cancel(pm->initial);
 	pm->initial = EVENTED_TIMER_INVALID_ID; 
@@ -260,16 +392,16 @@ void initialOnWritable(void *context)
 
 void messageReceived(DictionaryIterator *iterator, void *context)
 {
-	PebbleMessage pm = context;
+	PebbleMessageState state = getModdableAppState(appMessage);
+	PebbleMessage pm = C_NULL;
 
-	pm->inReceiveCallback = 1;
-
-	xsBeginHost(pm->the);
+	xsBeginHost(state->firstInstance->the);
 
 		xsmcVars(3);
 		xsVar(0) = xsNew0(xsGlobal, xsID_Map);
+		state->map = xsmcToReference(xsVar(0));		// overwrites unread message
 
-		for (Tuple *t = dict_read_first(iterator); NULL != t; t = dict_read_next(iterator)) {
+		for (Tuple *t = dict_read_first(iterator); C_NULL != t; t = dict_read_next(iterator)) {
 			switch (t->type) {
 				case TUPLE_CSTRING:
 					xsmcSetString(xsVar(1), t->value->cstring);
@@ -300,25 +432,52 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 				default:
 					PBL_CROAK("unhandled type");
 			}
+			if (kPKJSReadyMessage == t->key) {
+				if (!state->pkjsReady) {
+					state->pkjsReady = true;
+					if (sys_app_pp_get_comm_session())
+						state->invokeUpdateActivate = evented_timer_register(1, false, invokeUpdateActivate, C_NULL);		// cannot update active from here because the callback might try to write, which can fail from the receive callback
+				}
+				break;
+			}
 			xsmcSetInteger(xsVar(2), t->key);
 			xsCall2(xsVar(0), xsID_set, xsVar(2), xsVar(1));
+
+			// try to match this dictionary entry to an instance
+			for (PebbleMessage walker = state->firstInstance; (C_NULL == pm) && (C_NULL != walker); walker = walker->next) {
+				if (!walker->keys)
+					continue;
+				xsResult = xsCall2(walker->obj, xsID_match, xsVar(2), xsReference(walker->keys));
+				if (xsmcTest(xsResult))
+					pm = walker;
+			}
 		}
 
-		pm->map = xsmcToReference(xsVar(0));		// overwrites last message, if unread
+	xsEndHost(state->firstInstance->the);
 
-		if (pm->onReadable) {
-			xsmcSetInteger(xsResult, 1);
-			xsCallFunction1(xsReference(pm->onReadable), pm->obj, xsResult);
-		}
-
-	xsEndHost(pm->the);
-
-	pm->inReceiveCallback = 0;
+	if (pm && pm->onReadable) {
+		evented_timer_cancel(pm->readable);
+		pm->readable = evented_timer_register(1, false, invokeOnReadable, pm);		// cannot invoke onReadable from here because the callback might try to write, which can fail from this receive callback
+	}
 }
 
 void messageSent(DictionaryIterator *iterator, void *context)
 {
-	initialOnWritable(context);
+	PebbleMessageState state = getModdableAppState(appMessage);
+
+	state->writable = 1;
+
+	for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
+		if (!pm->writable) {
+			pm->active = true;
+			pm->writable = true;
+			invokeOnWritable(pm);
+			if (!state->writable) {
+				suspendWritable(pm);
+				break;		// an instance wrote, so no other instance eligible to write
+			}
+		}
+	}
 }
 
 void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, void *context)
@@ -326,23 +485,44 @@ void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, vo
 	messageSent(iterator, context);		//@@ notify of error
 }
 
-void commSessionEvent(PebbleEvent *e, void *context) {
-	PebbleMessage pm = context;
-	PebbleCommSessionEvent *pcse = &e->bluetooth.comm_session_event;
-	if (!pcse->is_system) // Need pkjs, which runs inside the Pebble app, so need system session.
-		return;
+void updateActive(uint8_t active)
+{
+	PebbleMessageState state = getModdableAppState(appMessage);
 
-	if (pcse->is_open == pm->active)
-		return;
-	
-	pm->active = pcse->is_open;
-	if (pm->active) {
-		if (pm->onWritable)
-			initialOnWritable(pm);
+	state->writable = active;
+
+	if (active) {
+		for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
+			if (pm->active && pm->writable)
+				continue;
+
+			pm->active = true;
+			pm->writable = true;
+			invokeOnWritable(pm);
+			if (!state->writable) {
+				suspendWritable(pm);
+				break;		// an instance wrote, so no other instance eligible to write
+			}
+		}
 	}
-	else if (pm->onSuspend) {
-		xsBeginHost(pm->the);
-			xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
-		xsEndHost(pm-the);
+	else {
+		for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
+			if (!pm->active)
+				continue;
+
+			pm->active = false;
+			pm->writable = false;
+			if (pm->onSuspend) {
+				xsBeginHost(pm->the);
+					xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
+				xsEndHost(pm->the);
+			}
+		}
 	}
+}
+
+void commSessionEvent(PebbleEvent *e, void *context) {
+	PebbleMessageState state = getModdableAppState(appMessage);
+	PebbleCommSessionEvent *pcse = &e->bluetooth.comm_session_event;
+	updateActive(pcse->is_open && pcse->is_system && state->pkjsReady);
 }

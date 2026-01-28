@@ -20,13 +20,15 @@
 
 console.log("moddable proxies launched");
 
+const PROXY_VERSION = 1;
 const HTTP_BASE = 15000;
+const READY_MESSAGE = 15025;
 const WS_BASE = 15050;
 
 const gHTTPRequests = new Map;
 const gWSRequests = new Map;
 
-function eventReceived(e) {
+function appMessageReceived(e) {
 	if (state.log) {
 		console.log("moddable appmessage received");
 
@@ -67,6 +69,14 @@ function eventReceived(e) {
 
 	return false;
 };
+
+function readyReceived(e) {
+	if (state.log)
+		console.log("readyReceived")
+	Pebble.sendAppMessage({
+		[READY_MESSAGE]: PROXY_VERSION
+	});
+}
 
 function httpMessage(id, e) {
 	if (state.log)
@@ -283,11 +293,13 @@ function wsMessage(id, e) {
 					console.log(`close code ${code} reason ${arrayToString(reason)}`);
 				if (reason.byteLength)
 					bytes.set(arrayToUint8Array(reason.slice(2)), 2);
-				Pebble.sendAppMessage({
+				request.messages.push({
 					[WS_BASE + 1]: request.id,
 					[WS_BASE + 3]: 0,						// disconnected clean.
 					[WS_BASE + 10]: Array.from(bytes)		// sendAppMessage wants an Array
 				});
+				if (!request.messages.sending)
+					sendRequestMessage(request);
 			};
 			request.ws.onmessage = event => {
 				let data = event.data;		// either ArrayBuffer or String
@@ -472,7 +484,8 @@ function stringToArray(str) {
 }
 
 const state = {
-	eventReceived,
+	appMessageReceived,
+	readyReceived,
 	log: false
 };
 

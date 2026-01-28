@@ -19,7 +19,6 @@
  */
 
 import Messages from "pebble/message"
-import Timer from "timer"
 
 const bufferSize = 512;
 const bufferOverhead = 32;		// a guess
@@ -94,7 +93,7 @@ class HTTPClient {
 				throw new Error("no buffer");
 			}
 
-			if (buffer.byteLength > (bufferSize - bufferOverhead))
+			if (buffer.byteLength > (client.#messages.output - bufferOverhead))
 				throw new Error("would overflow");
 
 			const m = new Map;
@@ -108,7 +107,7 @@ class HTTPClient {
 					client.#state = "endOfBody";
 			}
 
-			client.#messages.writable = false;
+			delete client.#messages.writable;
 
 			return 0;			// message buffer used up
 		}
@@ -132,8 +131,11 @@ class HTTPClient {
 			output: bufferSize,
 			onReadable: () => this.#onReadable(),
 			onWritable: () => this.#onWritable(),
+			onSuspend: () => delete this.#messages.writable,
+			keys: new Map([
+				["id", BASE + 1]
+			]),
 		});
-		this.#messages.writable = false;
 	}
 	close () {
 		this.#messages?.close();
@@ -158,7 +160,7 @@ class HTTPClient {
 		this.#nextState = "";
 
 		if (this.#messages.writable)
-			Timer.set(() => this.#onWritable());
+			this.#onWritable();
 	}
 	#onWritable() {
 		this.#messages.writable = true;
@@ -169,11 +171,11 @@ class HTTPClient {
 			let remain = this.#remain;
 			if (remain) {
 				let use = remain.byteLength - remain.position;
-				if (use > (bufferSize - bufferOverhead))
-					use = bufferSize - bufferOverhead;
+				if (use > (this.#messages.output - bufferOverhead))
+					use = this.#messages.output - bufferOverhead;
 
 				const m = new Map;
-				m.set(BASE + 1, current.id);
+				m.set("id", current.id);
 				m.set(BASE + remain.part, remain.subarray(remain.position, remain.position + use))
 				remain.position += use;
 				if (remain.position === remain.byteLength) {
@@ -181,13 +183,13 @@ class HTTPClient {
 					this.#state = this.#nextState;
 				}
 				this.#messages.write(m);
-				this.#messages.writable = false;
+				delete this.#messages.writable;
 				return;
 			}
 
 			switch (this.#state) {
 				case "sendRequest":
-					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${bufferSize}:${current.headersMask ? current.headersMask.join(",") : ""}`);
+					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${this.#messages.input}:${current.headersMask ? current.headersMask.join(",") : ""}`);
 					this.#remain = new Uint8Array(this.#remain);
 					this.#remain.part = 2;
 					this.#remain.position = 0;
@@ -214,7 +216,7 @@ class HTTPClient {
 					} break;
 				case "sendBody":
 					if (current.sending) {
-						let use = bufferSize - bufferOverhead;
+						let use = this.#messages.output - bufferOverhead;
 						if ((true !== current.sending) && (current.sending < use))
 							use = current.sending;
 						current.onWritable?.call(current.request, use);
@@ -242,9 +244,9 @@ class HTTPClient {
 	#onReadable() {
 		const message = this.#messages.read();
 		const current = this.#current;
-		const id = message.get(BASE + 1);
+		const id = message.get("id");
 		if (id !== current.id)
-			this.#done("unexpected id " + id);
+			this.#done(`expected id ${current.id}, got ${id}`);
 
 		switch (this.#state) {
 				case "receiveStatus":
