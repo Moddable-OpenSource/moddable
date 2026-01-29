@@ -172,7 +172,7 @@ class WebSocket {
 				const event = {
 					// ?? 
 				};
-				this.onerror(event);
+				this.onerror?.(event);
     			this.#eventListeners.error.forEach(listener => listener.call(null, event));
 			}
 		});

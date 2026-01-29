@@ -73,7 +73,7 @@ function appMessageReceived(e) {
 function readyReceived(e) {
 	if (state.log)
 		console.log("readyReceived")
-	Pebble.sendAppMessage({
+	sendAppMessage({
 		[READY_MESSAGE]: PROXY_VERSION
 	});
 }
@@ -199,7 +199,7 @@ function httpMessage(id, e) {
 			}
 			request.xhr.onerror = function () {
 				console.log("ON error!!!!")
-				Pebble.sendAppMessage({
+				sendAppMessage({
 					[HTTP_BASE + 1]: request.id,
 					[HTTP_BASE + 9]: -1						// done. failure.
 				});
@@ -266,7 +266,7 @@ function wsMessage(id, e) {
 				request.state = "connected";
 				request.messages = [];
 				request.messages.sending = false;
-				Pebble.sendAppMessage({
+				sendAppMessage({
 					[WS_BASE + 1]: request.id,
 					[WS_BASE + 2]: 0						// connected. success.
 				});
@@ -275,7 +275,7 @@ function wsMessage(id, e) {
 				if (state.log)
 					console.log("websocket connection failed");
 				request.state = "error";
-				Pebble.sendAppMessage({
+				sendAppMessage({
 					[WS_BASE + 1]: request.id,
 					[WS_BASE + 3]: -1						// disconnected error.
 				});
@@ -391,6 +391,47 @@ function wsMessage(id, e) {
 	}
 }
 
+const sendQueue = [];
+let sending = false;
+
+function sendAppMessageSuccess() {
+	// console.log("sendAppMessageSuccess");
+	sending = false;
+	const sent = sendQueue.shift();
+	if (sent.success)
+		sent.success();
+	if (!sending && sendQueue.length) {
+	// console.log("Send from success");
+		sending = true;
+		Pebble.sendAppMessage(sendQueue[0].message, sendAppMessageSuccess, sendAppMessageFailure);
+	}
+}
+
+function sendAppMessageFailure() {
+	// console.log("sendAppMessageFailure");
+	sending = false;
+	const sent = sendQueue.shift();
+	if (sent.failure)
+		sent.failure();
+	if (!sending && sendQueue.length) {
+	// console.log("Send from failure");
+		sending = true;
+		Pebble.sendAppMessage(sendQueue[0].message, sendAppMessageSuccess, sendAppMessageFailure);
+	}
+}
+
+function sendAppMessage(message, success, failure) {
+	// console.log("sendAppMessage");
+	sendQueue.push({message, success, failure});
+	if (sending)
+		return;
+
+	// console.log("Send initial");
+	sending = true;
+	Pebble.sendAppMessage(sendQueue[0].message, sendAppMessageSuccess, sendAppMessageFailure);
+}
+
+
 function sendRequestMessage(request) {
 	if ("http" === request.kind)
 		sendRequestMessageHTTP(request);
@@ -402,7 +443,7 @@ function sendRequestMessage(request) {
 
 function sendRequestMessageHTTP(request)
 {
-	Pebble.sendAppMessage(
+	sendAppMessage(
 		request.messages.shift(),
 		function () {
 			if (request.messages.length)
@@ -411,9 +452,9 @@ function sendRequestMessageHTTP(request)
 				request.state = "done";
 		},
 		function () {
-			console.log("message send FAILED");
+			console.log("http message send FAILED");
 
-			Pebble.sendAppMessage({
+			sendAppMessage({
 				[HTTP_BASE + 1]: request.id,
 				[HTTP_BASE + 9]: -1						// done. failure.
 			});
@@ -422,7 +463,7 @@ function sendRequestMessageHTTP(request)
 }
 
 function sendRequestMessageWS(request) {
-	Pebble.sendAppMessage(
+	sendAppMessage(
 		request.messages.shift(),
 		function () {
 			if (request.messages.length)
@@ -431,9 +472,9 @@ function sendRequestMessageWS(request) {
 				request.messages.sending = false;
 		},
 		function (e) {
-			console.log("message send FAILED " + JSON.stringify(e));
+			console.log("ws message send FAILED " + JSON.stringify(e));
 
-			Pebble.sendAppMessage({
+			sendAppMessage({
 				[WS_BASE + 1]: request.id,
 				[WS_BASE + 3]: -1						// done. failure.
 			});
@@ -486,6 +527,7 @@ function stringToArray(str) {
 const state = {
 	appMessageReceived,
 	readyReceived,
+	sendAppMessage,
 	log: false
 };
 

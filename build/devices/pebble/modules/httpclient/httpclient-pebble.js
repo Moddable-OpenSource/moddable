@@ -22,7 +22,7 @@ import Messages from "pebble/message"
 
 const bufferSize = 512;
 const bufferOverhead = 32;		// a guess
-let id = 0;
+const state = {};
 
 const BASE = 15000;
 
@@ -41,9 +41,9 @@ class HTTPClient {
 			if (!response.length)
 				return;
 
-			let available = response.byteLength, result, bytes;
-			if (undefined === count)
-				count = available;
+			const available = response.byteLength
+			let result, bytes;
+			count ??= available;
 			if ("number" === typeof count) {
 				if (count > available)
 					count = available;
@@ -82,7 +82,7 @@ class HTTPClient {
 			if ((this !== current?.request) || ("sendBody" !== client.#state))
 				throw new Error("bad state");
 
-			if (!client.#messages.writable)
+			if (!state.writable)
 				throw new Error("not writable");
 
 			if (undefined === buffer) {
@@ -93,13 +93,13 @@ class HTTPClient {
 				throw new Error("no buffer");
 			}
 
-			if (buffer.byteLength > (client.#messages.output - bufferOverhead))
+			if (buffer.byteLength > (client.messages.output - bufferOverhead))
 				throw new Error("would overflow");
 
 			const m = new Map;
 			m.set(BASE + 1, current.id);
 			m.set(BASE + 4, buffer);
-			client.#messages.write(m);
+			client.messages.write(m);
 
 			if (true !== current.sending) {
 				current.sending -= buffer.byteLength;
@@ -107,7 +107,7 @@ class HTTPClient {
 					client.#state = "endOfBody";
 			}
 
-			delete client.#messages.writable;
+			delete state.writable;
 
 			return 0;			// message buffer used up
 		}
@@ -119,31 +119,60 @@ class HTTPClient {
 	#state = "connected";
 	#nextState;
 	#current;
-	#messages;
 	#remain;
 	
 	constructor(options) {
 		const {host, port, onError, protocol} = options; 
 		this.#options = {host, port, onError, protocol};
 
-		this.#messages = new Messages({
+		state.id ??= 0;
+		state.clients ??= [];
+		state.clients.push(this);
+
+		state.messages ??= new Messages({
 			input: bufferSize,
 			output: bufferSize,
-			onReadable: () => this.#onReadable(),
-			onWritable: () => this.#onWritable(),
-			onSuspend: () => delete this.#messages.writable,
+			onReadable: () => {
+				const message = state.messages.read();
+				const id = message.get("id");
+				for (let i = 0, clients = state.clients; i < clients.length; i++) {
+					if (clients[i].#current?.id === id)
+						return clients[i].#read(message);
+				}
+			},
+			onWritable: () => {
+				state.writable = true;
+				for (let i = 0, clients = state.clients; i < clients.length; i++) {
+					if (clients[i].#current) {
+						trace(`Writable id=${clients[i].#current.id}\n`);
+						clients[i].#write();
+						if (!state.writable)
+							return;
+					}
+				}
+			},
+			onSuspend: () => delete state.writable,
 			keys: new Map([
 				["id", BASE + 1]
 			]),
 		});
 	}
 	close () {
-		this.#messages?.close();
-		this.#messages = this.#current = this.#requests = this.#headers = this.#state = undefined;
+		const i = state.clients.indexOf(this);
+		if (i >= 0) {
+			state.clients.splice(i, 1);
+			if (0 === state.clients.length) {
+				state.messages?.close();
+				delete state.clients;
+				delete state.messages;
+			}
+		}
+		this.#current = this.#headers = this.#state = this.#options = undefined;
+		this.#requests.length = 0;
 	}
 	request(options) {
 		const {method, path, headers, onHeaders, onReadable, onWritable, onDone, headersMask} = options;
-		options = {method, path, headers, onHeaders, onReadable, onWritable, onDone, headersMask, id: ++id};
+		options = {method, path, headers, onHeaders, onReadable, onWritable, onDone, headersMask, id: ++state.id};
 
 		this.#requests.push(options);
 		if (("connected" === this.#state) && (1 === this.#requests.length))
@@ -159,20 +188,18 @@ class HTTPClient {
 		this.#state = "sendRequest";
 		this.#nextState = "";
 
-		if (this.#messages.writable)
-			this.#onWritable();
+		if (state.writable)
+			this.#write();
 	}
-	#onWritable() {
-		this.#messages.writable = true;
+	#write() {
 		const current = this.#current;
-		if (!current) return;
 
 		while (true) {
 			let remain = this.#remain;
 			if (remain) {
 				let use = remain.byteLength - remain.position;
-				if (use > (this.#messages.output - bufferOverhead))
-					use = this.#messages.output - bufferOverhead;
+				if (use > (state.messages.output - bufferOverhead))
+					use = state.messages.output - bufferOverhead;
 
 				const m = new Map;
 				m.set("id", current.id);
@@ -182,14 +209,14 @@ class HTTPClient {
 					this.#remain = undefined;
 					this.#state = this.#nextState;
 				}
-				this.#messages.write(m);
-				delete this.#messages.writable;
+				state.messages.write(m);
+				delete state.writable;
 				return;
 			}
 
 			switch (this.#state) {
 				case "sendRequest":
-					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${this.#messages.input}:${current.headersMask ? current.headersMask.join(",") : ""}`);
+					this.#remain = ArrayBuffer.fromString(`${this.#options.protocol ?? "https"}:${current.method ?? "GET"}:${this.#options.host}:${this.#options.port ?? ""}:${current.path ?? "/"}:${state.messages.input}:${current.headersMask ? current.headersMask.join(",") : ""}`);
 					this.#remain = new Uint8Array(this.#remain);
 					this.#remain.part = 2;
 					this.#remain.position = 0;
@@ -216,7 +243,7 @@ class HTTPClient {
 					} break;
 				case "sendBody":
 					if (current.sending) {
-						let use = this.#messages.output - bufferOverhead;
+						let use = state.messages.output - bufferOverhead;
 						if ((true !== current.sending) && (current.sending < use))
 							use = current.sending;
 						current.onWritable?.call(current.request, use);
@@ -233,20 +260,14 @@ class HTTPClient {
 					this.#remain.position = 0;
 					this.#nextState = "receiveStatus";
 					break;
-				case "receiveStatus":
-					return;		// just wait
+
 				default:
-					trace("unexpected onWritable state " + this.#state);
 					return;
 			}
 		}
 	}
-	#onReadable() {
-		const message = this.#messages.read();
+	#read(message) {
 		const current = this.#current;
-		const id = message.get("id");
-		if (id !== current.id)
-			this.#done(`expected id ${current.id}, got ${id}`);
 
 		switch (this.#state) {
 				case "receiveStatus":

@@ -23,12 +23,11 @@
 */
 
 import Messages from "pebble/message"
-import Timer from "timer"
 
 const bufferSize = 512;
 const bufferOverhead = 64;		// a guess
 const none = Object.freeze({});
-let id = 0;
+const state = {};
 
 const BASE = 15050;
 
@@ -36,26 +35,46 @@ class WebSocketClient {
 	#options;
 	#state = "connecting";
 	#nextState;
-	#messages;
 	#remain;
 	#response = [];
 
 	constructor(options) {
-		const {host, port, path, secure, protocol, onError, onClose, onReadable, onWritable, onControl} = options; 
-		this.#options = {onError, onClose, onReadable, onWritable, onControl, id: ++id};
+		state.id ??= 0;
+		state.clients ??= [];
+		state.clients.push(this);
 
-		this.#messages = new Messages({
+		const {host, port, path, secure, protocol, onError, onClose, onReadable, onWritable, onControl} = options; 
+		this.#options = {onError, onClose, onReadable, onWritable, onControl, id: ++state.id};
+
+		state.messages ??= new Messages({
 			input: bufferSize,
 			output: bufferSize,
-			onReadable: () => this.#onReadable(),
-			onWritable: () => this.#onWritable(),
+			onReadable: () => {
+				const message = state.messages.read();
+				const id = message.get("id");
+				for (let i = 0, clients = state.clients; i < clients.length; i++) {
+					if (clients[i].#options?.id === id)
+						return clients[i].#read(message);
+				}
+			},
+			onWritable: () => {
+				state.writable = true;
+				for (let i = 0, clients = state.clients; i < clients.length; i++) {
+					trace(`Writable id=${clients[i].#options.id}\n`);
+					clients[i].#write();
+					trace(`  called write state.writable ${state.writable}\n`);
+					if (!state.writable)
+						return;
+				}
+			},
+			onSuspend: () => delete state.writable,
 			keys: new Map([
 				["id", BASE + 1]
 			]),
 		});
-		this.#messages.writable = false;
+		delete state.writable;
 
-		this.#remain = ArrayBuffer.fromString(`${secure ? "wss" : "ws"}:${protocol ?? ""}:${host}:${port ?? ""}:${path ?? "/"}:${this.#messages.input}`);
+		this.#remain = ArrayBuffer.fromString(`${secure ? "wss" : "ws"}:${protocol ?? ""}:${host}:${port ?? ""}:${path ?? "/"}:${state.messages.input}`);
 
 		this.#remain = new Uint8Array(this.#remain);
 		this.#remain.part = 2;
@@ -63,18 +82,26 @@ class WebSocketClient {
 		this.#nextState = "waitHandshake";
 	}
 	close () {
-		this.#messages?.close();
-		this.#messages = this.#state = this.#remain = this.#response = undefined;
+		const i = state.clients.indexOf(this);
+		if (i >= 0) {
+			state.clients.splice(i, 1);
+			if (0 === state.clients.length) {
+				state.messages?.close();
+				delete state.clients;
+				delete state.messages;
+			}
+		}
+
+		this.#state = this.#remain = this.#response = undefined;
 	}
 	read(count) {
 		const response = this.#response;
 		if (!response.length)
 			return;
 
-		const fragment = response[0];
-		let available = fragment.byteLength, result, bytes;
-		if (undefined === count)
-			count = available;
+		const fragment = response[0], available = fragment.byteLength;
+		let result, bytes;
+		count ??= available;
 		if ("number" === typeof count) {
 			if (count > available)
 				count = available;
@@ -102,10 +129,10 @@ class WebSocketClient {
 	}
 	write(buffer, options = none) {
 trace("ws - write\n");
-		if (!this.#messages.writable)
+		if (!state.writable)
 			throw new Error("not writable");
 
-		if (buffer.byteLength > (this.#messages.output - bufferOverhead))
+		if (buffer.byteLength > (state.messages.output - bufferOverhead))
 			throw new Error("would overflow");
 
 		if (undefined !== options.opcode) {
@@ -114,9 +141,9 @@ trace("ws - write\n");
 				const m = new Map;
 				m.set("id", this.#options.id);
 				m.set(BASE + 8, buffer);
-				this.#messages.write(m);
+				state.messages.write(m);
 
-				this.#messages.writable = false;
+				delete state.writable;
 				return;
 			}
 			throw new Error("opcode unsupported");
@@ -144,21 +171,19 @@ trace("ws - write\n");
 		// 6 - text - no more
 		// 7 - text more
 trace(`ws - write binary ${binary} more ${more} byteLength ${buffer.byteLength}\n`)
-		this.#messages.write(m);
+		state.messages.write(m);
 
-		this.#messages.writable = false;
+		delete state.writable;
 		return 0;
 	}
-	#onWritable() {
+	#write() {
 trace(`ws - onWritable ${this.#state}\n`);
-		this.#messages.writable = true;
-
 		while (true) {
 			const remain = this.#remain;
 			if (remain) {
 				let use = remain.byteLength - remain.position;
-				if (use > (this.#messages.output - bufferOverhead))
-					use = this.#messages.output - bufferOverhead;
+				if (use > (state.messages.output - bufferOverhead))
+					use = state.messages.output - bufferOverhead;
 trace(`ws - write ${use}\n`);
 
 				const m = new Map;
@@ -170,43 +195,32 @@ trace(`ws - write ${use}\n`);
 					this.#state = this.#nextState;
 trace(`ws - advance to state ${this.#state}\n`);
 				}
-				this.#messages.write(m);
-				this.#messages.writable = false;
+				state.messages.write(m);
+				delete state.writable;
 				return;
 			}
 
 			switch (this.#state) {
-				case "waitHandshake":
-trace(`ws - waitHandshake\n`);
-					break;			// just wait
-
 				case "connected":
 trace(`ws - connected\n`);
-					this.#options.onWritable?.call(this, this.#messages.output - bufferOverhead);
+					this.#options.onWritable?.call(this, state.messages.output - bufferOverhead);
 					break;
 
 				default:
-					trace("unexpected onWritable state " + this.#state + "\n");
 					break;
 			}
-			return;;
+			return;
 		}
 	}
-	#onReadable() {
+	#read(message) {
 trace(`ws - onReadable\n`);
-		const message = this.#messages.read();
-		const id = message.get("id");
-		if (id !== this.#options.id)
-			this.#done("unexpected id " + id);
-
 		switch (this.#state) {
 				case "waitHandshake":
 					if (0 === message.get(BASE + 2)) {
 trace(`ws - onReadable - connected\n`);
 						this.#state = "connected";
-						Timer.set(() => {		// cannot safely write from read callback
-							this.#options.onWritable?.call(this, this.#messages.output - bufferOverhead);
-						});
+						if (state.writable)
+							this.#options.onWritable?.call(this, state.messages.output - bufferOverhead);
 					}
 					else {
 trace(`ws - onReadable - error\n`);
@@ -256,19 +270,13 @@ trace(`ws - onReadable - error\n`);
 	#schedule(result) {
 trace(`ws - #schedule\n`)
 		if (this.#response.length && this.#options.onReadable) {
-			Timer.set(() => {
-trace(`ws - #schedule fired\n`)
-				if (!this.#response?.length)
-					return;
-
-				const fragment = this.#response[0];
-				const options = {
-					more: 0 !== (fragment.part & 1),
-					binary: fragment.part < 6
-				};
+			const fragment = this.#response[0];
+			const options = {
+				more: 0 !== (fragment.part & 1),
+				binary: fragment.part < 6
+			};
 trace(`ws - deliver onReadable more ${options.more} binary ${options.binary}\n`)
-				this.#options.onReadable.call(this, fragment.byteLength - fragment.position, options);
-			});
+			this.#options.onReadable.call(this, fragment.byteLength - fragment.position, options);
 		}
 		return result;
 	}
