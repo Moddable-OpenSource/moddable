@@ -1,6 +1,6 @@
 # XS Conformance
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: January 12, 2026
+Revised: January 31, 2026
 
 ## Caveat
 
@@ -481,7 +481,7 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
 
 ### Built-ins
 
-     36795/41457 (4610) built-ins
+     36937/41527 (4538) built-ins
          0/8 (8) AbstractModuleSource
              0/3 (3) prototype
          50/50 AggregateError
@@ -757,18 +757,18 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
              154/154 parse
              20/20 rawJSON
              130/132 stringify
-         340/373 (33) Map
+         405/405 Map
              8/8 Symbol.species
              28/28 groupBy
-             244/277 (33) prototype
+             309/309 prototype
                  2/2 Symbol.iterator
                  22/22 clear
                  22/22 delete
                  20/20 entries
                  36/36 forEach
                  22/22 get
-                 0/14 (14) getOrInsert
-                 0/19 (19) getOrInsertComputed
+                 28/28 getOrInsert
+                 37/37 getOrInsertComputed
                  22/22 has
                  20/20 keys
                  28/28 set
@@ -1501,12 +1501,12 @@ Details are here under. The numbers of skipped cases are between parentheses. Th
                  24/24 setFromHex
                  20/20 toBase64
                  14/14 toHex
-         204/243 (39) WeakMap
-             156/195 (39) prototype
+         281/281 WeakMap
+             233/233 prototype
                  44/44 delete
                  26/26 get
-                 0/17 (17) getOrInsert
-                 0/22 (22) getOrInsertComputed
+                 34/34 getOrInsert
+                 43/43 getOrInsertComputed
                  40/40 has
                  40/40 set
          58/58 WeakRef
@@ -1634,4 +1634,3 @@ Here under are the skipped features. Tests can be skipped because of several fea
 - Temporal (4380)
 - joint-iteration (78)
 - source-phase-imports (8)
-- upsert (72)
