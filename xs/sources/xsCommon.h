@@ -1317,6 +1317,8 @@ enum {
 #endif
 #if mxECMAScript2026
 	_fromAsync,
+	_getOrInsert,
+	_getOrInsertComputed,
 	_isRawJSON,
 	_rawJSON,
 	_sumPrecise,

@@ -121,7 +121,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxNativeAdditions 0
 #endif
 #if mxECMAScript2026
-	#define mxECMAScript2026Additions 5
+	#define mxECMAScript2026Additions 9
 #else
 	#define mxECMAScript2026Additions 0
 #endif
@@ -733,7 +733,11 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Iterator_concat,
 	fx_JSON_isRawJSON,
 	fx_JSON_rawJSON,
+	fx_Map_prototype_getOrInsert,
+	fx_Map_prototype_getOrInsertComputed,
 	fx_Math_sumPrecise,
+	fx_WeakMap_prototype_getOrInsert,
+	fx_Weak_prototype_getOrInsertComputed,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

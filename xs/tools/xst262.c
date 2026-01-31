@@ -146,7 +146,7 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 14
+#define mxFeaturesCount 13
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Atomics.pause",
 	"FinalizationRegistry.prototype.cleanupSome",
@@ -161,7 +161,6 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"nonextensible-applies-to-private",
 	"source-phase-imports",
 	"source-phase-imports-module-source",
-	"upsert",
 };
 
 int main262(int argc, char* argv[]) 
