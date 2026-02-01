@@ -98,7 +98,8 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	txSlot* buffer = view->next; \
 	txSlot* host = fxCheckAtomicsArrayBuffer(the, buffer, onlyShared); \
 	txU2 shift = dispatch->value.typedArray.dispatch->shift; \
-	txInteger index = fxCheckAtomicsIndex(the, 1, fxGetDataViewSize(the, view, buffer) >> shift); \
+	txInteger length = fxGetDataViewSize(the, view, buffer) >> shift; \
+	txInteger index = fxCheckAtomicsIndex(the, 1, length); \
 	txInteger offset = view->value.dataView.offset + (index << shift)
 
 void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }

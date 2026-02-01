@@ -105,6 +105,10 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_prototype_values), 0, mxID(_values), XS_DONT_ENUM_FLAG);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Map", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+#if mxECMAScript2026
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_prototype_getOrInsert), 2, mxID(_getOrInsert), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Map_prototype_getOrInsertComputed), 2, mxID(_getOrInsertComputed), XS_DONT_ENUM_FLAG);
+#endif
 	mxMapPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Map), 0, mxID(_Map));
 	mxMapConstructor = *the->stack;
@@ -165,6 +169,10 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_has), 1, mxID(_has), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_set), 2, mxID(_set), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "WeakMap", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+#if mxECMAScript2026
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_getOrInsert), 2, mxID(_getOrInsert), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_WeakMap_prototype_getOrInsertComputed), 2, mxID(_getOrInsertComputed), XS_DONT_ENUM_FLAG);
+#endif
 	mxWeakMapPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_WeakMap), 0, mxID(_WeakMap));
 	mxWeakMapConstructor = *the->stack;
@@ -407,6 +415,60 @@ void fx_Map_prototype_get(txMachine* the)
 		mxResult->kind = value->kind;
 		mxResult->value = value->value;
 	}
+}
+
+void fx_Map_prototype_getOrInsert(txMachine* the)
+{
+	txSlot* instance = fxCheckMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txSlot* key = fxCheckMapKey(the);
+	txSlot* result = fxGetEntry(the, table, key);
+	if (result) {
+		txSlot* value = result->next;
+		mxResult->kind = value->kind;
+		mxResult->value = value->value;
+		return;
+	}
+	*mxResult = (mxArgc > 1) ? *mxArgv(1) : mxUndefined;
+	fxSetEntry(the, table, list, key, mxResult);
+}
+
+void fx_Map_prototype_getOrInsertComputed(txMachine* the)
+{
+	txSlot* instance = fxCheckMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txSlot* function = fxArgToCallback(the, 1);
+	txSlot* key = fxCheckMapKey(the);
+	txSlot* result = fxGetEntry(the, table, key);
+	if (result) {
+		txSlot* value = result->next;
+		mxResult->kind = value->kind;
+		mxResult->value = value->value;
+		return;
+	}
+	mxPushUndefined();
+	mxPushSlot(function);
+	mxCall();
+	if (key->kind == XS_NUMBER_KIND) {
+		if (key->value.number == 0) {
+			key->value.number = 0;
+		}
+		else {
+			if (c_isnan(key->value.number)) {
+			#if mxCanonicalNaN
+				key->value.number = *gxCanonicalNaN64;
+			#else				
+				key->value.number = C_NAN;
+			#endif
+			}
+		}
+	}
+	mxPushSlot(key);
+	mxRunCount(1);
+	mxPullSlot(mxResult);
+	fxSetEntry(the, table, list, key, mxResult);
 }
 
 void fx_Map_prototype_has(txMachine* the)
@@ -1453,6 +1515,49 @@ void fx_WeakMap_prototype_get(txMachine* the)
 		mxResult->kind = value->kind;
 		mxResult->value = value->value;
 	}
+}
+
+void fx_WeakMap_prototype_getOrInsert(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key) : C_NULL;
+	if (result) {
+		txSlot* value = result->value.weakEntry.value;
+		mxResult->kind = value->kind;
+		mxResult->value = value->value;
+		return;
+	}
+	if (!key)
+		mxTypeError("key: not an object");
+	*mxResult = (mxArgc > 1) ? *mxArgv(1) : mxUndefined;
+	fxSetWeakEntry(the, instance->next, key, mxResult);
+}
+
+void fx_WeakMap_prototype_getOrInsertComputed(txMachine* the)
+{
+	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
+	txSlot* function = fxArgToCallback(the, 1);
+	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
+	txSlot* result = (key) ? fxGetWeakEntry(the, instance->next, key) : C_NULL;
+	if (result) {
+		txSlot* value = result->value.weakEntry.value;
+		mxResult->kind = value->kind;
+		mxResult->value = value->value;
+		return;
+	}
+	if (!key)
+		mxTypeError("key: not an object");
+	mxPushUndefined();
+	mxPushSlot(function);
+	mxCall();
+	if (key->next && (key->next->flag & XS_INTERNAL_FLAG) && (key->next->kind & XS_SYMBOL_KIND))
+		mxPushSlot(key->next);
+	else
+		mxPushReference(key);
+	mxRunCount(1);
+	mxPullSlot(mxResult);
+	fxSetWeakEntry(the, instance->next, key, mxResult);
 }
 
 void fx_WeakMap_prototype_has(txMachine* the)

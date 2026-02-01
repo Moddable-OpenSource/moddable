@@ -53,6 +53,11 @@ static void fxMoveThisItem(txMachine* the, txNumber from, txNumber to);
 static void fxReduceThisItem(txMachine* the, txSlot* function, txIndex index);
 static txBoolean fxSetArrayLength(txMachine* the, txSlot* array, txIndex target);
 static void fx_Array_from_aux(txMachine* the, txSlot* function, txSlot* value, txIndex index);
+static void fx_Array_fromAsync_items_next(txMachine* the);
+static void fx_Array_fromAsync_aux(txMachine* the, txSlot* closure);
+static void fx_Array_fromAsync_onIterated(txMachine* the);
+static void fx_Array_fromAsync_onMapped(txMachine* the);
+static void fx_Array_fromAsync_onRejected(txMachine* the);
 static txIndex fx_Array_prototype_flatAux(txMachine* the, txSlot* source, txIndex length, txIndex start, txIndex depth, txSlot* function);
 
 static txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* slot, txFlag mask);
@@ -175,6 +180,9 @@ void fxBuildArray(txMachine* the)
 	mxArrayConstructor = *the->stack;
 	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_from), 1, mxID(_from), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2026
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_fromAsync), 1, mxID(_fromAsync), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_isArray), 1, mxID(_isArray), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Array_of), 0, mxID(_of), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_species_get), C_NULL, mxID(_Symbol_species), XS_DONT_ENUM_FLAG);
@@ -212,7 +220,7 @@ txInteger fxArgToIndexInteger(txMachine* the, txInteger argi, txInteger index, t
 
 	txSlot *slot = mxArgv(argi);
 	if (slot->kind != XS_INTEGER_KIND)
-		return fxArgToIndex(the, argi, index, length);
+		return (txInteger)fxArgToIndex(the, argi, index, length);
 
 	index = slot->value.integer;
 	if (index < 0) {
@@ -1242,6 +1250,276 @@ void fx_Array_from_aux(txMachine* the, txSlot* function, txSlot* value, txIndex 
 	mxPushSlot(mxResult);
 	mxDefineIndex(index, 0, XS_GET_ONLY);
 	mxPop();
+}
+
+void fx_Array_fromAsync(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* iterator;
+	txSlot* resolveFunction;
+    txSlot* rejectFunction;
+    txSlot* promise;
+	txSlot* instance;
+	txSlot* property;
+	txSlot* home;
+	
+	mxTemporary(iterator);
+	mxTemporary(resolveFunction);
+	mxTemporary(rejectFunction);
+	mxTemporary(promise);
+	mxPush(mxPromiseConstructor);
+	fxNewPromiseCapability(the, resolveFunction, rejectFunction);
+	mxPullSlot(promise);
+    {
+		mxTry(the) {
+			txSlot* function = (mxArgc > 1) ? fxArgToCallback(the, 1) : C_NULL;
+			txNumber length = 0;
+			
+			if (mxArgc == 0)
+				mxTypeError("no items");
+				
+			mxPushSlot(mxArgv(0));
+			mxDub();
+			mxGetID(mxID(_Symbol_asyncIterator));
+			if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+				mxPop();
+				mxDub();
+				mxGetID(mxID(_Symbol_iterator));
+				if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+					mxPop();
+					mxDub();
+					mxGetID(mxID(_length));
+					length = fxToLength(the, the->stack);
+					mxPop();
+					if (length > 0x7FFFFFFF)
+						mxRangeError("array overflow");
+					mxPush(mxIteratorPrototype);
+					property = fxLastProperty(the, fxNewIteratorInstance(the, mxArgv(0), mxID(_Array)));
+					property = fxNextIntegerProperty(the, property, (txInteger)length, XS_NO_ID, XS_INTERNAL_FLAG);
+					property = fxNextHostFunctionProperty(the, property, mxCallback(fx_Array_fromAsync_items_next), 0, mxID(_next), XS_DONT_ENUM_FLAG);
+					fxNewAsyncFromSyncIteratorInstance(the);
+					mxPullSlot(iterator);
+					fxCreateArray(the, 1, (txIndex)length);
+				}
+				else {
+					mxCall();
+					mxRunCount(0);
+					fxNewAsyncFromSyncIteratorInstance(the);
+					mxPullSlot(iterator);
+					fxCreateArray(the, 0, 0);
+				}
+			}
+			else {
+				mxCall();
+				mxRunCount(0);
+				mxPullSlot(iterator);
+				fxCreateArray(the, 0, 0);
+			}
+			
+			property = instance = fxNewInstance(the);
+			
+			property = fxNextSlotProperty(the, property, resolveFunction, XS_NO_ID, XS_INTERNAL_FLAG);
+			property = fxNextSlotProperty(the, property, rejectFunction, XS_NO_ID, XS_INTERNAL_FLAG);
+		
+			function = fxNewHostFunction(the, fx_Array_fromAsync_onIterated, 1, XS_NO_ID, XS_NO_ID);
+			home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+    		property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
+			mxPop();
+			
+			function = fxNewHostFunction(the, fx_Array_fromAsync_onRejected, 1, XS_NO_ID, XS_NO_ID);
+			home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+    		property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
+			mxPop();
+			
+			property = fxNextSlotProperty(the, property, mxResult, XS_NO_ID, XS_INTERNAL_FLAG);
+			property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
+			
+			property = fxNextSlotProperty(the, property, iterator, XS_NO_ID, XS_INTERNAL_FLAG);
+			if (mxArgc > 1)
+				property = fxNextSlotProperty(the, property, mxArgv(1), XS_NO_ID, XS_INTERNAL_FLAG);
+			else
+				property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+			if (mxArgc > 2)
+				property = fxNextSlotProperty(the, property, mxArgv(2), XS_NO_ID, XS_INTERNAL_FLAG);
+			else
+				property = fxNextUndefinedProperty(the, property, XS_NO_ID, XS_INTERNAL_FLAG);
+			function = fxNewHostFunction(the, fx_Array_fromAsync_onMapped, 1, XS_NO_ID, XS_NO_ID);
+			home = mxFunctionInstanceHome(function);
+			home->value.home.object = instance;
+    		property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
+			mxPop();
+			
+			fx_Array_fromAsync_aux(the, instance);
+		}
+		mxCatch(the) {
+			fxRejectException(the, rejectFunction);
+		}
+    }
+	*mxResult = *promise;
+	the->stack = stack;
+}
+
+void fx_Array_fromAsync_aux(txMachine* the, txSlot* closure)
+{
+	txSlot* resolveFunction = closure->next;
+    txSlot* rejectFunction = resolveFunction->next;
+    txSlot* onIteratedFunction = rejectFunction->next;
+    txSlot* onRejectedFunction = onIteratedFunction->next;
+    txSlot* result = onRejectedFunction->next;
+    txSlot* index = result->next;
+    txSlot* iterator = index->next;
+
+	mxPushUndefined();
+	mxPush(mxPromiseConstructor);
+
+	mxPushSlot(iterator);
+	mxDub();
+	mxGetID(mxID(_next));
+	mxCall();
+	mxRunCount(0);
+	
+	fx_Promise_resolveAux(the);
+	mxPop();
+	mxPop();
+	fxPromiseThen(the, the->stack->value.reference, onIteratedFunction, onRejectedFunction, C_NULL, rejectFunction);
+}
+
+void fx_Array_fromAsync_items_next(txMachine* the)
+{
+	txSlot* iterator = fxCheckIteratorInstance(the, mxThis, mxID(_Array));
+	txSlot* result = iterator->next;
+	txSlot* iterable = result->next;
+	txSlot* index = iterable->next;
+	txSlot* length = index->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
+	txSlot* done = value->next;
+	if (!done->value.boolean) {
+		txIndex i = (txIndex)index->value.integer;
+		txIndex c = (txIndex)length->value.integer;
+		if (i < c) {
+			mxPushSlot(iterable);
+			mxGetIndex(i);
+			mxPullSlot(value);
+            index->value.integer = i + 1;
+		}
+		else {
+			value->kind = XS_UNDEFINED_KIND;
+			done->value.boolean = 1;
+		}
+	}
+	mxResult->kind = result->kind;
+	mxResult->value = result->value;
+}
+
+void fx_Array_fromAsync_onIterated(txMachine* the)
+{
+	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* closure = slot->value.home.object;
+	txSlot* resolveFunction = closure->next;
+    txSlot* rejectFunction = resolveFunction->next;
+    txSlot* onIteratedFunction = rejectFunction->next;
+    txSlot* onRejectedFunction = onIteratedFunction->next;
+    txSlot* result = onRejectedFunction->next;
+    txSlot* index = result->next;
+    txSlot* iterator = index->next;
+    txSlot* mapFunction = iterator->next;
+    txSlot* mapThis = mapFunction->next;
+    txSlot* onMappedFunction = mapThis->next;
+
+	mxTry(the) {
+		mxPushSlot(mxArgv(0));
+		mxGetID(mxID(_done));
+		if (fxToBoolean(the, the->stack)) {
+			mxPushSlot(index);
+			mxPushSlot(result);
+			mxSetID(mxID(_length));
+			mxPop();		
+			
+			mxPushUndefined();
+			mxPushSlot(resolveFunction);
+			mxCall();
+			mxPushSlot(result);
+			mxRunCount(1);
+			mxPop();
+			return;
+		}
+		if (!mxIsUndefined(mapFunction)) {
+			mxPushUndefined();
+			mxPush(mxPromiseConstructor);
+		
+			mxPushSlot(mapThis);
+			mxPushSlot(mapFunction);
+			mxCall();
+			mxPushSlot(mxArgv(0));
+			mxGetID(mxID(_value));
+			mxPushSlot(index);
+			mxRunCount(2);
+			
+			fx_Promise_resolveAux(the);
+			mxPop();
+			mxPop();
+			fxPromiseThen(the, the->stack->value.reference, onMappedFunction, onRejectedFunction, C_NULL, rejectFunction);
+		}
+		else {
+			mxPushSlot(mxArgv(0));
+			mxGetID(mxID(_value));
+			mxPushSlot(result);
+			mxDefineIndex(index->value.integer, 0, XS_GET_ONLY);
+			mxPop();
+			index->value.integer++;
+			fx_Array_fromAsync_aux(the, closure);
+		}
+	}
+	mxCatch(the) {
+		fxIteratorReturn(the, iterator, 1);
+		fxThrow(the, NULL, 0);
+	}
+}
+
+void fx_Array_fromAsync_onMapped(txMachine* the)
+{
+	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* closure = slot->value.home.object;
+	txSlot* resolveFunction = closure->next;
+    txSlot* rejectFunction = resolveFunction->next;
+    txSlot* onIteratedFunction = rejectFunction->next;
+    txSlot* onRejectedFunction = onIteratedFunction->next;
+    txSlot* result = onRejectedFunction->next;
+    txSlot* index = result->next;
+    txSlot* iterator = index->next;
+    
+	mxTry(the) {
+		mxPushSlot(mxArgv(0));
+		mxPushSlot(result);
+		mxDefineIndex(index->value.integer, 0, XS_GET_ONLY);
+		mxPop();
+		index->value.integer++;
+		fx_Array_fromAsync_aux(the, closure);
+	}
+	mxCatch(the) {
+		fxIteratorReturn(the, iterator, 1);
+		fxThrow(the, NULL, 0);
+	}
+}
+
+void fx_Array_fromAsync_onRejected(txMachine* the)
+{
+	txSlot* slot = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* closure = slot->value.home.object;
+	txSlot* resolveFunction = closure->next;
+    txSlot* rejectFunction = resolveFunction->next;
+    txSlot* onIteratedFunction = rejectFunction->next;
+    txSlot* onRejectedFunction = onIteratedFunction->next;
+    txSlot* result = onRejectedFunction->next;
+    txSlot* index = result->next;
+    txSlot* iterator = index->next;
+    
+	fxIteratorReturn(the, iterator, 1);
+	mxException.kind = mxArgv(0)->kind;
+	mxException.value = mxArgv(0)->value;
+	fxThrow(the, NULL, 0);
 }
 
 void fx_Array_isArray(txMachine* the)
