@@ -57,7 +57,7 @@ After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-d
 
 The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped features at the end of this document.
 
-Currently, on macOS, XS passes **98.88%** of the language tests and **88.75%** of the built-ins tests.
+Currently, on macOS, XS passes **98.88%** of the language tests and **88.94%** of the built-ins tests.
 
 Mostly because of `Temporal`, the number of skipped cases is significant. For implemented features, XS passes **99.95%** of the language tests and **99.85%** of the built-ins tests.
 
