@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -737,7 +737,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Map_prototype_getOrInsertComputed,
 	fx_Math_sumPrecise,
 	fx_WeakMap_prototype_getOrInsert,
-	fx_Weak_prototype_getOrInsertComputed,
+	fx_WeakMap_prototype_getOrInsertComputed,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
