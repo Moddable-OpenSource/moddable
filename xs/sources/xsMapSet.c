@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -1531,7 +1531,7 @@ void fx_WeakMap_prototype_getOrInsertComputed(txMachine* the)
 	mxPushUndefined();
 	mxPushSlot(function);
 	mxCall();
-	if (key->next && (key->next->flag & XS_INTERNAL_FLAG) && (key->next->kind & XS_SYMBOL_KIND))
+	if (key->next && (key->next->flag & XS_INTERNAL_FLAG) && (key->next->kind == XS_SYMBOL_KIND))
 		mxPushSlot(key->next);
 	else
 		mxPushReference(key);
