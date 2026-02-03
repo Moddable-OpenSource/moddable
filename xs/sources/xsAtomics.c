@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -370,7 +370,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	property->value.host.data = fxCreateSharedChunk((txInteger)byteLength);
 	if (!property->value.host.data) {
 		property->value.host.variant.destructor = NULL;
-		mxRangeError("cannot allocate SharedArrayBuffer insatnce");
+		mxRangeError("cannot allocate SharedArrayBuffer instance");
 	}
 	property->value.host.variant.destructor = fxReleaseSharedChunk;
 	property = property->next = fxNewSlot(the);
@@ -422,7 +422,7 @@ void fx_SharedArrayBuffer_prototype_grow(txMachine* the)
 		mxRangeError("newLength < byteLength");
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
-	mxRangeError("cannot grow SharedArrayBuffer insatnce");
+	mxRangeError("cannot grow SharedArrayBuffer instance");
 }
 
 void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
