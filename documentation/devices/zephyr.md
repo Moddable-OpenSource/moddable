@@ -15,9 +15,11 @@ This document is a guide to building Moddable apps with the [Zephyr Project SDK]
 	* [Instrumented](#build-instrumented)
 	* [Release](#build-release)
 * Setup instructions
+* 
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
+    
 * [Using Zephyr Device Tree in JavaScript](#devicetree)
 * [Debugging Native Code](#debugging-native-code)
 * [Adding a new board](#new-board)
@@ -179,8 +181,101 @@ Other silicon families may have different requirements.
 <a id="win-instructions"></a>
 ### Installing
 
-*Not yet supported*
+1. Install the Moddable SDK tools by following the instructions in the [Getting Started document](./../Moddable%20SDK%20-%20Getting%20Started.md).
 
+2. Install Zephyr for Windows by following the instructions in the Zephyr [Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html). A summary is presented below:
+
+3. Install Zephyr requirements:
+
+	```sh
+	winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
+	```
+
+4. Create an `zephyrproject` directory in your home directory at `%USERPROFILE%\zephyrproject ` for required third party SDKs and tools.
+
+	```sh
+	cd %USERPROFILE%
+	mkdir zephyrproject
+	cd zephyrproject
+	```
+
+5. Create a new virtual environment (one time):
+
+	```sh
+	python -m venv .venv
+	```
+
+6. Activate the virtual environment (for each new shell):
+
+	```sh
+	zephyrproject\.venv\Scripts\activate.bat
+	```
+
+> Note: You can deactivate the virtual environment by typing `deactivate` in your shell.
+
+7. Install the `west` tool:
+
+	```sh
+	pip install west
+	```
+
+8. Get the Zephyr source code
+
+	```sh
+	cd %USERPROFILE%
+	west init zephyrproject
+	cd zephyrproject
+	west update
+	```
+
+9. The Zephyr west extension command, west packages can be used to install Python dependencies.
+
+	```sh
+	cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
+	```
+
+10. Install the Zephyr SDK
+
+	```sh
+	cd %USERPROFILE%\zephyrproject\zephyr
+	west sdk install
+	```
+
+3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
+	- Create a User Variable called `ZEPHYR_BASE` and set it to %USERPROFILE%\zephyrproject\zephyr
+		- Variable name: `ZEPHYR_BASE`
+		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\zephyrproject\zephyr`
+
+	<a id="upload_port_win"></a>
+	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
+
+    - `UPLOAD_PORT`: the COM port for your device, e.g. `COM3`
+
+	To identify the correct serial port, launch the Windows Device Manager. Open the "Ports (COM & LPT)" section, verify the Serial port adapter is displayed, and note the associated COM port (e.g. COM3).
+
+11. Verify Zephyr SDK installation by building the `blinky` sample for your board.
+
+	```sh
+	cd %USERPROFILE%\zephyrproject\zephyr
+	west build -p always -b nucleo_f413zh samples/basic/blinky
+	```
+
+	You can then flash the software to run it.
+
+	```sh
+	west flash
+	```
+
+12. Verify the complete setup by building `helloworld` for your device target:
+
+    ```sh
+    cd %MODDABLE%\examples\helloworld
+    mcconfig -d -m -p zephyr/nucleo_f413zh
+    ```
+
+13. The device should connect to xsbug and stop at the `debugger` statement.
+	> Note: Make sure you have built the Moddable tools in the Moddable Getting Started step.
+	> Note: Make sure you have launched the `xsbug` debugger
 
 <a id="lin"></a>
 ## Linux
