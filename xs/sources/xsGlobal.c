@@ -296,12 +296,13 @@ void fx_escape(txMachine* the)
 		else
 			length = fxAddChunkSizes(the, length, 12);
 	}
+	length = fxAddChunkSizes(the, length, 1);
 	if (length == (src - mxArgv(0)->value.string)) {
 		mxResult->value.string = mxArgv(0)->value.string;
 		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-	mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, length, 1));
+	mxResult->value.string = fxNewChunk(the, length);
 	mxResult->kind = XS_STRING_KIND;
 	src = mxArgv(0)->value.string;
 	dst = mxResult->value.string;
