@@ -395,6 +395,12 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 	PebbleMessageState state = getModdableAppState(appMessage);
 	PebbleMessage pm = C_NULL;
 
+	if (!state->pkjsReady) {
+		state->pkjsReady = true;
+		if (sys_app_pp_get_comm_session())
+			state->invokeUpdateActivate = evented_timer_register(1, false, invokeUpdateActivate, C_NULL);		// cannot update active from here because the callback might try to write, which can fail during the receive callback
+	}
+
 	xsBeginHost(state->firstInstance->the);
 
 		xsmcVars(3);
@@ -432,14 +438,10 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 				default:
 					PBL_CROAK("unhandled type");
 			}
-			if (kPKJSReadyMessage == t->key) {
-				if (!state->pkjsReady) {
-					state->pkjsReady = true;
-					if (sys_app_pp_get_comm_session())
-						state->invokeUpdateActivate = evented_timer_register(1, false, invokeUpdateActivate, C_NULL);		// cannot update active from here because the callback might try to write, which can fail from the receive callback
-				}
-				break;
-			}
+
+			if (kPKJSReadyMessage == t->key)
+				break;		// ignore the proxy's ready message
+
 			xsmcSetInteger(xsVar(2), t->key);
 			xsCall2(xsVar(0), xsID_set, xsVar(2), xsVar(1));
 
