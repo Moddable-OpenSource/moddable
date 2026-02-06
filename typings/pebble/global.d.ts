@@ -56,6 +56,7 @@ interface Pebble {
   removeEventListener(event: "connected", callback: ConnectedCallback): void;
   readonly connected: ConnectionState;
   readonly color: boolean;
+  readonly round: boolean;
 }
 
 declare const Pebble: Pebble;
