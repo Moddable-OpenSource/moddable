@@ -23,7 +23,7 @@ import Resource from "Resource"
 import Pebble from "pebble/global"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
-import KV from "embedded:storage/key-value";
+import keyValue from "embedded:storage/key-value";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
 import Instrumentation from "instrumentation";
@@ -78,6 +78,7 @@ globalThis.device = Object.freeze({
 			secure: true
 		}
 	}
+	keyValue
 }, true);
 
 export default function() {
@@ -142,7 +143,7 @@ export default function() {
 		enumerable: true,
 		configurable: true,
 		get() {
-			state.localStorage ??= new WebStorage(KV.open({path: `local-${AppInfo.uuid}`}));
+			state.localStorage ??= new WebStorage(keyValue.open({path: `local-${AppInfo.uuid}`}));
 			return state.localStorage;
 		}
 	});
