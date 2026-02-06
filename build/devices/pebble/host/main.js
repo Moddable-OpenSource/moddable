@@ -140,17 +140,12 @@ export default function() {
 		
 		importNow(specifier) {
 			return mod.importNow(specifier);
-		}
-	};
-
-	Object.defineProperty(globals, "localStorage", {
-		enumerable: true,
-		configurable: true,
-		get() {
+		},
+		get localStorage() {
 			state.localStorage ??= new WebStorage(keyValue.open({path: `local-${AppInfo.uuid}`}));
 			return state.localStorage;
 		}
-	});
+	};
 
 	state.mod = new ArchiveCompartment(state.archive, {
 		globals,
