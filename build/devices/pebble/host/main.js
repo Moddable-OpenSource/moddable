@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -77,7 +77,11 @@ globalThis.device = Object.freeze({
 			io: WebSocketClient,
 			secure: true
 		}
-	}
+	},
+	get files() {
+		state.files ??= state.mod.importNow("embedded:storage/files").default;
+		return state.files;
+	},
 	keyValue
 }, true);
 
@@ -148,7 +152,7 @@ export default function() {
 		}
 	});
 
-	const mod = new ArchiveCompartment(state.archive, {
+	state.mod = new ArchiveCompartment(state.archive, {
 		globals,
 		modules: {},
 		loadNowHook(specifier) {
@@ -166,6 +170,6 @@ export default function() {
 	});
 
 	Timer.set(async () => {
-		await mod.import("main");
+		await state.mod.import("main");
 	});
 }
