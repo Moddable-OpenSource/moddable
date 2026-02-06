@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -47,6 +47,9 @@ typedef struct {
 
 	// pebble-appmessage
 	void					*appMessage;
+
+	// pebble-files
+	char					*root;
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_rocky_memory_api_context())->FIELD)

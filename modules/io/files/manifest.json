@@ -8,6 +8,9 @@
 		},
 		"esp32": {
 			"include": "./littlefs/manifest.json"
+		},
+		"pebble": {
+			"include": "./pebble/manifest.json"
 		}
 	}
 }

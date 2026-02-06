@@ -6,6 +6,7 @@
 		"$(MODDABLE)/modules/base/instrumentation/manifest.json",
 		"$(MODDABLE)/modules/data/headers/manifest.json",
 		"$(MODDABLE)/modules/data/url/manifest.json",
+		"$(MODDABLE)/modules/io/files/manifest.json",
 		"$(MODDABLE)/modules/io/storage/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/global/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/display/manifest.json",
