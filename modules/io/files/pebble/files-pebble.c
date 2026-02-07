@@ -238,6 +238,17 @@ void xs_directorypfs_destructor(void *data)
 
 #define getDirectoryPath(slot) ((xsDirectory)xsmcGetHostChunkValidate(slot, xs_directorypfs_destructor))->path
 
+static void buildFullPath(xsMachine *the, char *fullPath, const char *filePath)
+{
+	const char *dirPath = getDirectoryPath(xsThis);
+	size_t len = c_strlen(dirPath) + (filePath ? c_strlen(filePath) : 0);
+	if (len > FILE_MAX_NAME_LEN)
+		xsUnknownError("path too long");
+	c_strcpy(fullPath, dirPath);
+	if (filePath)
+		c_strcat(fullPath, filePath);
+}
+
 void xs_directorypfs(xsMachine *the)
 {
 	xsUnknownError("use openDirectory");
@@ -287,14 +298,8 @@ void xs_directorypfs_openFile(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_path);
 	char *filePath = getPath(xsVar(0));
-
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	char *dirPath = getDirectoryPath(xsThis);
-	size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-	if (len > sizeof(fullPath))
-		xsUnknownError("path too long");
-	c_strcpy(fullPath, dirPath);
-	c_strcat(fullPath, filePath);
+	buildFullPath(the, fullPath, filePath);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_round);
 	if (xsmcTest(xsVar(0)))
@@ -315,14 +320,8 @@ void xs_directorypfs_openDirectory(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_path);
 	char *filePath = getPath(xsVar(0));
-
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	char *dirPath = getDirectoryPath(xsThis);
-	size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-	if (len > sizeof(fullPath))
-		xsUnknownError("path too long");
-	c_strcpy(fullPath, dirPath);
-	c_strcat(fullPath, filePath);
+	buildFullPath(the, fullPath, filePath);
 
 	xsmcSetHostChunk(xsResult, fullPath, c_strlen(fullPath) + 1);
 }
@@ -330,14 +329,8 @@ void xs_directorypfs_openDirectory(xsMachine *the)
 void xs_directorypfs_delete(xsMachine *the)
 {
 	char *filePath = getPath(xsArg(0));
-
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	char *dirPath = getDirectoryPath(xsThis);
-	size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-	if (len > sizeof(fullPath))
-		xsUnknownError("path too long");
-	c_strcpy(fullPath, dirPath);
-	c_strcat(fullPath, filePath);
+	buildFullPath(the, fullPath, filePath);
 
 	int result = pfs_remove(fullPath);
 	if (E_DOES_NOT_EXIST == result) {
@@ -357,14 +350,9 @@ void xs_directorypfs_delete(xsMachine *the)
 
 void xs_directorypfs_status(xsMachine *the)
 {
-	char *dirPath = getDirectoryPath(xsThis);
 	char *filePath = getPath(xsArg(0));
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-	if (len > sizeof(fullPath))
-		xsUnknownError("path too long");
-	c_strcpy(fullPath, dirPath);
-	c_strcat(fullPath, filePath);
+	buildFullPath(the, fullPath, filePath);
 
 	xsmcVars(1);
 	xsResult = xsArg(2);
@@ -394,14 +382,9 @@ void xs_directorypfs_status(xsMachine *the)
 // mostly works as expected but doesn't "create" the directory (pebble can't) so a scan after this won't find it. But creating a file in the directory will succeed.
 void xs_directorypfs_createDirectory(xsMachine *the)
 {
-	char *dirPath = getDirectoryPath(xsThis);
 	char *filePath = getPath(xsArg(0));
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-	if (len > sizeof(fullPath))
-		xsUnknownError("path too long");
-	c_strcpy(fullPath, dirPath);
-	c_strcat(fullPath, filePath);
+	buildFullPath(the, fullPath, filePath);
 
 	int fd = pfs_open(fullPath, OP_FLAG_READ, FILE_TYPE_STATIC, 0);
 	if ((fd >= 0) || (E_BUSY == fd)) {
@@ -452,19 +435,8 @@ void xs_directorypfs_scan(xsMachine *the)
 	xsResult = xsmcNewArray(0);
 
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	if (xsmcArgc > 0) {
-		char *filePath = getPath(xsVar(0));
-		char *dirPath = getDirectoryPath(xsThis);
-		size_t len = c_strlen(dirPath) + c_strlen(filePath) + 1;
-		if (len > sizeof(fullPath))
-			xsUnknownError("path too long");
-		c_strcpy(fullPath, dirPath);
-		c_strcat(fullPath, filePath);
-	}
-	else {
-		char *dirPath = getDirectoryPath(xsThis);
-		c_strcpy(fullPath, dirPath);
-	}
+	char *filePath = (xsmcArgc > 0) ? getPath(xsVar(0)) : C_NULL;
+	buildFullPath(the, fullPath, filePath);
 	setModdableAppState(root, fullPath);
 
 	pfs_delete_file_list(pfs_create_file_list(pfsScan));
