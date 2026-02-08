@@ -39,10 +39,10 @@ Pebble.addEventListener('appmessage', function (e) {
 > **Note**: `require()` is necessary for compatibility with PKJS.
 
 ### Sending Messages
-The connection between PKJS and Pebble OS limits the number of messages that can be simultaneously enqueued. If too many messages are sent at about the same time, some may fail. The proxy provides an alternative API for PKJS's `sendAppMessage()`. 
+The connection between PKJS and Pebble OS limits the number of messages that can be simultaneously enqueued. If too many messages are sent at about the same time, some may fail. The proxy provides an alternative API for PKJS's `Pebble.sendAppMessage()`. 
 
 ```js
-moddableProxy.sendMessage({hello: "world"});
+moddableProxy.sendAppMessage({hello: "world"});
 ```
 
 This queues messages to be sent as soon as possible, avoiding failures due to messages being sent too quickly.
