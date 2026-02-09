@@ -139,7 +139,7 @@ export default function() {
 		ScreenBuffer,
 		
 		importNow(specifier) {
-			return mod.importNow(specifier);
+			return state.mod.importNow(specifier);
 		},
 		get localStorage() {
 			state.localStorage ??= new WebStorage(keyValue.open({path: `local-${AppInfo.uuid}`}));
