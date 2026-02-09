@@ -44,7 +44,6 @@
 		"Proxy",
 		"Reflect",
 		"Atomics",
-		"SharedArrayBuffer",
 		"WeakMap",
 		"WeakSet",
 		"BigInt",
