@@ -167,10 +167,10 @@ The Moddable SDK build uses Zephyr SDK v4.3 or later.
 ### Troubleshooting
 
 #### Serial / USB Port
-Different silicon families connect in different ways. For many ST boards, for example, the Moddable SDK build can automatically detect the correct port. For ESP boards, you specify the serial port by setting the `UPLOAD_PORT` environment variable:
+Different silicon families connect in different ways. For many ST boards, for example, the Moddable SDK build can automatically detect the correct port. For ESP boards, you specify the serial port by setting the `DEBUGGER_PORT` environment variable:
 
 ```sh
-UPLOAD_PORT=/dev/tty.usbserial-1410 mcconfig -d -m -p zephyr/esp32_ethernet_kit
+DEBUGGER_PORT=/dev/tty.usbserial-1410 mcconfig -d -m -p zephyr/esp32_ethernet_kit
 ```
 
 Other silicon families may have different requirements.
@@ -184,7 +184,9 @@ Other silicon families may have different requirements.
 1. Install the Moddable SDK tools by following the instructions in the [Getting Started document](./../Moddable%20SDK%20-%20Getting%20Started.md).
 
 2. Install Zephyr for Windows by following the instructions in the Zephyr [Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html). A summary is presented below:
-
+	
+	> Note: Moddable tools use the CMD shell. When installing Zephyr from the instructions, choose the `Batchfile` instructions.
+	
 3. Install Zephyr requirements:
 
 	```sh
@@ -210,9 +212,9 @@ Other silicon families may have different requirements.
 	```sh
 	zephyrproject\.venv\Scripts\activate.bat
 	```
-
-> Note: You can deactivate the virtual environment by typing `deactivate` in your shell.
-
+	
+	> Note: You can deactivate the virtual environment by typing `deactivate` in your shell.
+	
 7. Install the `west` tool:
 
 	```sh
@@ -241,15 +243,14 @@ Other silicon families may have different requirements.
 	west sdk install
 	```
 
-3. Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
+11. Set the environment variables `ZEPHYR_BASE` and `DEBUGGER_PORT` using the instructions below:
+
+	Open the "Environment Variables" dialog of the Control Panel app by following [these instructions](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/). From that dialog:
 	- Create a User Variable called `ZEPHYR_BASE` and set it to %USERPROFILE%\zephyrproject\zephyr
 		- Variable name: `ZEPHYR_BASE`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\zephyrproject\zephyr`
-
-	<a id="upload_port_win"></a>
-	There is one optional environment variable for advanced users: `UPLOAD_PORT`.<br><br>
-
-    - `UPLOAD_PORT`: the COM port for your device, e.g. `COM3`
+	
+    - Create a User Variable called `DEBUGGER_PORT`: the COM port for your device, e.g. `COM3`. This is used to connect your device to the `xsbug` JavaScript debugger.
 
 	To identify the correct serial port, launch the Windows Device Manager. Open the "Ports (COM & LPT)" section, verify the Serial port adapter is displayed, and note the associated COM port (e.g. COM3).
 
