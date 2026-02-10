@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -107,7 +107,11 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 	graphics_draw_pixel(ctx, GPoint(x + poco->xOrigin, y + poco->yOrigin));
 }
 
-void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
+static GColor gBitmapGray4Palette[4] = {
+	{ argb:0xC0 }, { argb:0x80 }, { argb:0x40 }, { argb:0x00 },
+};
+
+	void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
@@ -129,8 +133,18 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 		gb = &src;
 		ctx->draw_state.compositing_mode = GCompOpAssign;
 	}
+	else if (kCommodettoBitmapGray4 == bits->format) {
+		src.addr = bits->pixels;
+		src.row_size_bytes = (bits->width + 3) >> 2;
+		src.info.format = GBitmapFormat2BitPalette;
+		src.info.version = GBITMAP_VERSION_1;
+		src.palette = gBitmapGray4Palette;
+		src.bounds = GRect(sx, sy, sw, sh);
+		gb = &src;
+		ctx->draw_state.compositing_mode = GCompOpSet;
+	}
 	else
-		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
+		PBL_ASSERT(false, "monochromealigned, gray4, or PebbleBitmap required");
 
 	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
 
