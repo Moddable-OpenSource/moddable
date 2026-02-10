@@ -5,10 +5,17 @@ if (stripsLen GREATER 0)
 	set(STRIPS -s ${mSTRIPS})
 endif()
 
+foreach(the_module ${mMODULES})
+	cmake_path(CONVERT ${the_module} TO_NATIVE_PATH_LIST temp)
+	LIST(APPEND the_modules ${temp})
+endforeach()
+cmake_path(CONVERT ${MODULES_DIR} TO_NATIVE_PATH_LIST b_dir)
+cmake_path(CONVERT ${TMP_DIR} TO_NATIVE_PATH_LIST t_dir)
+
 add_custom_command ( 
 	OUTPUT ${TMP_DIR}/mc.xs.c ${TMP_DIR}/mc.xs.h
 	DEPENDS ${mMODULES} ${mRESOURCES}
-	COMMAND xsl -b ${MODULES_DIR} -o ${TMP_DIR} ${mPRELOADS} ${STRIPS} ${mCREATION} ${mMODULES}
+	COMMAND xsl -b ${b_dir} -o ${t_dir} ${preloadsNATIVE} ${STRIPS} ${mCREATION} ${the_modules}
 	VERBATIM
 )
 
@@ -89,10 +96,11 @@ add_custom_command(
 # typescript files
 #
 
+cmake_path(CONVERT "${MODULES_DIR}/tsconfig.json" TO_NATIVE_PATH_LIST ts_config_path)
 if (TYPESCRIPT_CONVERTED_FILES)
 	add_custom_command(
 		OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
-		COMMAND tsc -p ${MODULES_DIR}/tsconfig.json
+		COMMAND tsc -p ${ts_config_path}
 		DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		VERBATIM
@@ -100,9 +108,10 @@ if (TYPESCRIPT_CONVERTED_FILES)
 endif()
 
 if (JAVASCRIPT_SOURCE_FILES)
+	cmake_path(CONVERT "${MODULES_DIR}/tsconfig-js.json" TO_NATIVE_PATH_LIST ts_config_path)
 	add_custom_command(
 		OUTPUT ${TYPECHECK_FILE}
-		COMMAND tsc -p ${MODULES_DIR}/tsconfig-js.json
+		COMMAND tsc -p ${ts_config_path}
 		DEPENDS ${MODULES_DIR}/tsconfig-js.json ${TMP_DIR}/mc.devicetree.d.ts ${JAVASCRIPT_SOURCE_FILES}
 		COMMAND ${CMAKE_COMMAND} -E touch ${TYPECHECK_FILE}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

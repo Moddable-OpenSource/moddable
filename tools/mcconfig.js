@@ -19,6 +19,7 @@
  */
 
 import { MakeFile as MAKEFILE, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import { FILE } from "tool";
 
 var formatStrings = {
 	gray16: "Gray16",
@@ -41,6 +42,11 @@ var formatValues = {
 	argb4444: 12,
 	x: 0,
 };
+
+function replaceBackSlashes(value) {
+	value = value.replace(/\\/g, "/");
+	return value;
+}
 
 class MakeFile extends MAKEFILE {
 	constructor(path) {
@@ -269,10 +275,10 @@ class ZephyrMakeFile extends MAKEFILE {
 			source = result.source;
 			sourceParts = tool.splitPath(result.source);
 
+			this.line(`cmake_path(CONVERT "${source}" TO_NATIVE_PATH_LIST the_source)`);
 			this.line("add_custom_command(");
 			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi\n");
-//			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
-			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}");
+			this.line("  COMMAND xsid ${the_source} -o ${NATIVE_TMP_DIR}");
 			this.line("  DEPENDS ", source);
 			this.line("  VERBATIM)");
 			this.line();
@@ -281,10 +287,10 @@ class ZephyrMakeFile extends MAKEFILE {
 			source = result;
 			sourceParts = tool.splitPath(source);
 
+			this.line(`cmake_path(CONVERT "${source}" TO_NATIVE_PATH_LIST the_source)`);
 			this.line("add_custom_command(");
 			this.line("  OUTPUT ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
-//			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}", tool.slash, sourceParts.name, sourceParts.extension, ".xsi");
-			this.line("  COMMAND xsid ", source, " -o ${TMP_DIR}");
+			this.line("  COMMAND xsid ${the_source} -o ${NATIVE_TMP_DIR}");
 			this.line("  DEPENDS ", source);
 			this.line("  VERBATIM)");
 			this.line();
@@ -1240,12 +1246,21 @@ export default class extends Tool {
 					else
 						temp = "0483:374b";		// STMicroelectronics dev boards
 				}
+				else if (this.currentPlatform === "win")
+					temp = "COM3";
 				else
 					temp = "/dev/ttyACM0";
 				this.setenv("UPLOAD_PORT", temp);
 				trace(`$UPLOAD_PORT not set. Using "${temp}".\n`);
 			}
 			this.environment.UPLOAD_PORT = temp;
+
+			temp = this.environment.DEBUGGER_PORT ?? this.getenv("DEBUGGER_PORT");
+			if (!temp)
+				temp = this.environment.UPLOAD_PORT;
+			this.environment.DEBUGGER_PORT = temp;
+			this.setenv("DEBUGGER_PORT", temp);
+			trace(`$DEBUGGER_PORT set to "${temp}".\n`);
 
 			temp = this.environment.DEBUGGER_SPEED ?? this.getenv("DEBUGGER_SPEED");
 			if (!temp)
@@ -1362,7 +1377,7 @@ export default class extends Tool {
 			if (this.platform == "zephyr") {
 				this.jsFiles.push({ source: this.tmpPath + this.slash + "mc.devicetree.js", target: folder + this.slash + "devicetree.xsb" });
 				if (this.preloads.length)
-					this.preloads.push("mc" + this.slash + "devicetree.xsb");
+					this.preloads.push(`mc${this.slash}devicetree.xsb`);
 			}
 
 			file = new ConfigFile(source, this);
@@ -1404,6 +1419,8 @@ export default class extends Tool {
 				file = new esp32NMakeFile(path);
 			else if (this.platform == "nrf52")
 				file = new nrf52NMakeFile(path);
+			else if (this.platform == "zephyr")
+				file = new ZephyrMakeFile(path);
 			else
 				file = new NMakeFile(path);
 		}
@@ -1418,6 +1435,28 @@ export default class extends Tool {
 				file = new MakeFile(path);
 		}
 		file.generate(this);
+
+		if (this.platform == "zephyr") {
+			let infile = this.readFileString(path);
+			if (this.windows)
+				infile = replaceBackSlashes(infile);
+			const outfile = new FILE(path, "w");
+			outfile.line(`##### Generated file: ${(new Date(Date.now()).toString())}`);
+			for (var result of this.preloads) {
+				outfile.write("list(APPEND preloadsNATIVE -p ");
+				outfile.write(result.replaceAll('#', this.escapedHash).replaceAll('\\', "\\\\"));
+				outfile.line(")");
+			}
+			outfile.line(`set(NATIVE_RESOURCES_DIR ${this.resourcesPath.replaceAll('\\', "\\\\")})`);
+			outfile.line(`set(NATIVE_MODDABLE_DIR ${this.moddablePath.replaceAll('\\', "\\\\")})`);
+			outfile.line(`set(NATIVE_MODULES_DIR ${this.modulesPath.replaceAll('\\', "\\\\")})`);
+			outfile.line(`set(NATIVE_TMP_DIR ${this.tmpPath.replaceAll('\\', "\\\\")})`);
+			outfile.line("#####");
+			outfile.line();
+			
+			outfile.write(infile);
+			outfile.close();
+		}
 
 		if (this.tsFiles.length) {
 			file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig.json");
@@ -1439,9 +1478,13 @@ export default class extends Tool {
 					overlay += "\"";
 				}
 				let command = `cd ${this.moddablePath} && `;
-				path = `${this.moddablePath}/build/devices/zephyr/app`;
-				if (this.buildTarget == "clean")
-					command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
+				path = `${this.moddablePath}${this.slash}build${this.slash}devices${this.slash}zephyr${this.slash}app`;
+				if (this.buildTarget == "clean") {
+					if (this.windows)
+						command += `del /s/q/f build\\bin\\zephyr\\${this.subplatform}\\*.* build\\tmp\\zephyr\\${this.subplatform}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
+					else
+						command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
+				}
 				else if (this.buildTarget == "deploy")
 					command += `west flash -d ${this.tmpPath}${this.slash}build`;
 				else if (this.buildTarget == "debug")
@@ -1455,7 +1498,7 @@ export default class extends Tool {
 					if (this.buildTarget == "build")
 						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay}`
 					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.UPLOAD_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
 					else
 						throw new Error("unknown target: " + this.buildTarget);
 
@@ -1468,8 +1511,18 @@ export default class extends Tool {
 
 					command += ` ${secondary}`;
 				}
-				// trace(`*** command: ${command}\n`);
-				cmd = [ "bash", "-c", command ];
+				if (this.windows) {
+					const buildCmdPath = this.tmpPath + "\\doBuild.bat";
+					const buildCmdFile = new FILE(buildCmdPath, "w");
+					buildCmdFile.line(`@echo on`);
+					buildCmdFile.line('tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start xsbug)');
+					buildCmdFile.line(`bash -c "${replaceBackSlashes(command)}"`);
+					buildCmdFile.line(`echo Build done`);
+					buildCmdFile.close();
+					cmd = [ "cmd", "/C", buildCmdPath ];
+				}
+				else
+					cmd = [ "bash", "-c", command ];
 			}
 			else {
 				if (this.buildTarget) {
