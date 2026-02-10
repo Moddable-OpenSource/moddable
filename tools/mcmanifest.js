@@ -1053,7 +1053,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
 				if ("-alpha" === face.suffix) {
 					let format = tool.format;
-					if ((tool.format == "argb222") && face.monochrome) {
+					if ((tool.format == "argb2222") && face.monochrome) {
 						format = "monochromealigned";
 					}
 					this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bm4", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
