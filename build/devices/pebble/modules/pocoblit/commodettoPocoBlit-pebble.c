@@ -129,7 +129,7 @@ static GColor gBitmapGray4Palette[4] = {
 		src.row_size_bytes = ((bits->width + 31) >> 5) * 4;
 		src.info.format = GBitmapFormat1Bit;
 		src.info.version = GBITMAP_VERSION_1;
-		src.bounds = GRect(sx, sy, sw, sh);
+		src.bounds = GRect(0, 0, bits->width, bits->height);
 		gb = &src;
 		ctx->draw_state.compositing_mode = GCompOpAssign;
 	}
@@ -139,7 +139,7 @@ static GColor gBitmapGray4Palette[4] = {
 		src.info.format = GBitmapFormat2BitPalette;
 		src.info.version = GBITMAP_VERSION_1;
 		src.palette = gBitmapGray4Palette;
-		src.bounds = GRect(sx, sy, sw, sh);
+		src.bounds = GRect(0, 0, bits->width, bits->height);
 		gb = &src;
 		ctx->draw_state.compositing_mode = GCompOpSet;
 	}
