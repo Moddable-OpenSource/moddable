@@ -373,7 +373,7 @@ void xs_directorypfs_status(xsMachine *the)
 		pfs_delete_file_list(pfs_create_file_list(pfsStatus));
 
 		if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
-			xsUnknownError("not found");
+			xsmcSetInteger(xsVar(0), 0);		// not file, directory, or link
 	}
 
 	xsmcSet(xsResult, xsID_mode, xsVar(0));
