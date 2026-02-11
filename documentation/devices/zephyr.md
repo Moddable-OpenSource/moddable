@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
 Copyright 2025-2026 Moddable Tech, Inc.<BR>
-Updated: January 16, 2026
+Updated: February 11, 2026
 
 This document is a guide to building Moddable apps with the [Zephyr Project SDK](https://github.com/zephyrproject-rtos/zephyr/).
 
@@ -15,11 +15,11 @@ This document is a guide to building Moddable apps with the [Zephyr Project SDK]
 	* [Instrumented](#build-instrumented)
 	* [Release](#build-release)
 * Setup instructions
-* 
+*
     | [![Apple logo](./../assets/moddable/mac-logo.png)](#mac) | [![Windows logo](./../assets/moddable/win-logo.png)](#win) | [![Linux logo](./../assets/moddable/lin-logo.png)](#lin) |
     | :--- | :--- | :--- |
     | •  [Installing](#mac-instructions)<BR>•  [Troubleshooting](#mac-troubleshooting) | •  [Installing](#win-instructions)<BR>•  [Troubleshooting](#win-troubleshooting) | •  [Installing](#lin-instructions)<BR>•  [Troubleshooting](#lin-troubleshooting)
-    
+
 * [Using Zephyr Device Tree in JavaScript](#devicetree)
 * [Debugging Native Code](#debugging-native-code)
 * [Adding a new board](#new-board)
@@ -128,7 +128,7 @@ The Moddable SDK build uses Zephyr SDK v4.3 or later.
 	west update
 	```
 
-9. The Zephyr west extension command, west packages can be used to install Python dependencies.
+9. Install Python dependencies using `west packages`.
 
 	```sh
 	west packages pip --install
@@ -184,9 +184,9 @@ Other silicon families may have different requirements.
 1. Install the Moddable SDK tools by following the instructions in the [Getting Started document](./../Moddable%20SDK%20-%20Getting%20Started.md).
 
 2. Install Zephyr for Windows by following the instructions in the Zephyr [Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html). A summary is presented below:
-	
+
 	> Note: Moddable tools use the CMD shell. When installing Zephyr from the instructions, choose the `Batchfile` instructions.
-	
+
 3. Install Zephyr requirements:
 
 	```sh
@@ -212,9 +212,9 @@ Other silicon families may have different requirements.
 	```sh
 	zephyrproject\.venv\Scripts\activate.bat
 	```
-	
+
 	> Note: You can deactivate the virtual environment by typing `deactivate` in your shell.
-	
+
 7. Install the `west` tool:
 
 	```sh
@@ -249,7 +249,7 @@ Other silicon families may have different requirements.
 	- Create a User Variable called `ZEPHYR_BASE` and set it to %USERPROFILE%\zephyrproject\zephyr
 		- Variable name: `ZEPHYR_BASE`
 		- Variable value (Use the "Browse Directory..." button to make this selection): `C:\Users\<user>\zephyrproject\zephyr`
-	
+
     - Create a User Variable called `DEBUGGER_PORT`: the COM port for your device, e.g. `COM3`. This is used to connect your device to the `xsbug` JavaScript debugger.
 
 	To identify the correct serial port, launch the Windows Device Manager. Open the "Ports (COM & LPT)" section, verify the Serial port adapter is displayed, and note the associated COM port (e.g. COM3).
@@ -276,7 +276,6 @@ Other silicon families may have different requirements.
 
 13. The device should connect to xsbug and stop at the `debugger` statement.
 	> Note: Make sure you have built the Moddable tools in the Moddable Getting Started step.
-	> Note: Make sure you have launched the `xsbug` debugger
 
 <a id="lin"></a>
 ## Linux
@@ -493,6 +492,8 @@ The `device` global is different for every Zephyr board, because every board has
 As with all Moddable platforms, you can debug script code using `xsbug` over the USB serial interface with the Zephyr device. For more information, see the [`xsbug` documentation](../xs/xsbug.md).
 
 For native code source level debugging, you can use [GDB](https://www.gnu.org/software/gdb/documentation/).
+
+> Note: These instructions are for macOS and Linux.
 
 Use the `-t debug` target to start the debugger:
 
