@@ -18,11 +18,12 @@
  *
  */
 
-console.log("moddable proxies launched");
+console.log("@moddable/proxy launched");
 
 const PROXY_VERSION = 1;
 const HTTP_BASE = 15000;
 const READY_MESSAGE = 15025;
+const LOCATION_MESSAGE = 15026;
 const WS_BASE = 15050;
 
 const gHTTPRequests = new Map;
@@ -63,6 +64,17 @@ function appMessageReceived(e) {
 		}
 		catch (error) {
 			console.log("moddable proxy ws exception" + error);
+		}
+		return true;
+	}
+
+	id = e.payload[LOCATION_MESSAGE];
+	if (undefined !== id) {
+		try {
+			locationMessage(id, e);
+		}
+		catch (error) {
+			console.log("moddable proxy location exception" + error);
 		}
 		return true;
 	}
@@ -388,6 +400,49 @@ function wsMessage(id, e) {
 		default:
 			console.log("unexpected state " + request.state + "\n");
 			break;
+	}
+}
+
+let locationHandler = undefined;
+
+function locationMessage(message /*, e */) {
+	message = message.split(",");	// enable,enableHighAccuracy,timeout,maximumAge
+	if (parseInt(message[0])) {			// enable
+		if (undefined !== locationHandler)
+			return;
+	
+		const options = {};
+		if ((undefined !== message[1]) && message[1])
+			options.enableHighAccuracy = Boolean(message[1]);
+		if ((undefined !== message[2]) && message[2])
+			options.timeout = Number(message[2]);
+		if ((undefined !== message[3]) && message[3])
+			options.maximumAge = Number(message[3]);
+
+		function filter(value) {
+			return (undefined === value) ? "" : value;
+		}
+		locationHandler = navigator.geolocation.watchPosition(position => {
+			const c = position.coords;
+			sendAppMessage({
+				[LOCATION_MESSAGE]: `1,${c.latitude},${c.longitude},${filter(c.altitude)},${filter(c.accuracy)},${filter(c.altitudeAccuracy )},${filter(c.heading)},${filter(c.speed)},${position.timestamp}`
+			});
+		}, () => {
+			navigator.geolocation.clearWatch(locationHandler);
+			locationHandler = undefined;
+
+			sendAppMessage({
+				[LOCATION_MESSAGE]: "0"
+			});
+		},
+		options);
+	}
+	else {						// disable
+		if (undefined === locationHandler)
+			return;
+
+		navigator.geolocation.clearWatch(locationHandler);
+		locationHandler = undefined;
 	}
 }
 

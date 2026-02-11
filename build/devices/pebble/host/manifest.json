@@ -16,6 +16,7 @@
 		"$(MODDABLE)/build/devices/pebble/modules/accelerometer/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/battery/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/compass/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/location/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json",
