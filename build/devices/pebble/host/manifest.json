@@ -5,6 +5,7 @@
 		"$(MODDABLE)/modules/base/debug/manifest.json",
 		"$(MODDABLE)/modules/base/instrumentation/manifest.json",
 		"$(MODDABLE)/modules/data/headers/manifest.json",
+		"$(MODDABLE)/modules/data/qrcode/manifest.json",
 		"$(MODDABLE)/modules/data/url/manifest.json",
 		"$(MODDABLE)/modules/io/files/manifest.json",
 		"$(MODDABLE)/modules/io/storage/manifest.json",
