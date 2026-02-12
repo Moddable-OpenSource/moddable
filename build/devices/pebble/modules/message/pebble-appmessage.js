@@ -19,7 +19,17 @@
  */
 
 class Message extends Native("xs_appmessage_destructor") {
-	constructor(options) { super(); native("xs_appmessage").call(this, options); };
+	constructor(options) {
+		super();
+		const keys = options?.keys;
+		if (Array.isArray(keys)) {
+			options = {
+				...options,
+				keys: new Map(keys.map((value, index) => [value, 10000 + index]))
+			}
+		}
+		native("xs_appmessage").call(this, options);
+	};
 	close() { return native("xs_appmessage_close").call(this); };
 
 	read() {

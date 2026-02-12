@@ -25,7 +25,7 @@ interface MessageOptions {
   format?: "map";
   input?: number;
   output?: number;
-  keys?: Map<string, number>;
+  keys?: Map<string, number> | Array<string>;
 }
 
 type MessageKey = string | number;
@@ -39,6 +39,8 @@ declare class Message {
   write(map: Map<MessageKey, MessageWriteValue>): void;
   get format(): "map";
   set format(value: "map");
+  get input(): number;
+  get output(): number;
 }
 
 export default Message;
