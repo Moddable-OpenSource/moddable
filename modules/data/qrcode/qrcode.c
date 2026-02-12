@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,7 +26,7 @@
 void xs_qrcode(xsMachine *the)
 {
 	size_t bufferSize;
-	uint8_t *qr0 = NULL;
+	uint8_t *qr0 = C_NULL;
 	void *data;
 	xsType type;
 	uint8_t ok;
@@ -43,6 +43,30 @@ void xs_qrcode(xsMachine *the)
 			xsRangeError("invalid");
 	}
 
+	uint8_t padding = 0;
+	if (xsmcHas(xsArg(0), xsID_bitmap)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_bitmap);
+		if (xsBooleanType == xsmcTypeOf(xsVar(0))) {
+			if (xsmcTest(xsVar(0)))
+				padding = 8;
+		}
+		else {
+			int t = xsmcToInteger(xsVar(0));
+			if ((8 != t) && (16 != t) && (32 != t))
+				xsRangeError("invalid");
+			padding = (uint8_t)t;
+		}
+	}
+
+	uint16_t fit = 0;
+	if (padding && xsmcHas(xsArg(0), xsID_fit)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_fit);
+		int t = xsmcToInteger(xsVar(0));
+		if (t <= 0)
+			xsRangeError("invalid");
+		fit = (uint16_t)t;
+	}
+	
 	bufferSize = qrcodegen_BUFFER_LEN_FOR_VERSION(maxVersion);
 	qr0 = c_malloc(bufferSize << 1);
 	if (!qr0)
@@ -71,17 +95,40 @@ void xs_qrcode(xsMachine *the)
 			xsUnknownError("qrcode failed");
 
 		int size = qrcodegen_getSize(qr0);
+		if (0 == padding) {
+			xsmcSetArrayBuffer(xsResult, C_NULL, size * size);
 
-		xsmcSetArrayBuffer(xsResult, NULL, size * size);
+			module = xsmcToArrayBuffer(xsResult);
+			for (y = 0; y < size; y++) {
+				for (x = 0; x < size; x++)
+					*module++ = qrcodegen_getModule(qr0, x, y);
+			}
+		}
+		else {
+			int scale = fit ? (fit / size) : 1;
+			if (scale < 1)
+				xsUnknownError("can't fit");
+			int scaledSize = size * scale;
+			int rowBytes = ((scaledSize + (padding - 1)) & ~(padding - 1)) >> 3;
+			xsmcSetArrayBuffer(xsResult, C_NULL, rowBytes * scaledSize);
+
+			module = xsmcToArrayBuffer(xsResult);
+			for (y = 0; y < size; y++, module += rowBytes * scale) {
+				uint8_t *line = module;
+				for (x = 0; x < size; x++) {
+					if (qrcodegen_getModule(qr0, x, y)) {
+						for (int j = 0, xOut = x * scale; j < scale; j++, xOut++)
+							line[xOut >> 3] |= 1 << (xOut & 7);
+					}
+				}
+				for (x = 1; x < scale; x++)
+					c_memcpy(module + rowBytes * x, module, rowBytes);
+			}
+			size = scaledSize;
+		}
 
 		xsmcSetInteger(xsVar(0), size);
 		xsmcSet(xsResult, xsID_size, xsVar(0));
-
-		module = xsmcToArrayBuffer(xsResult);
-		for (y = 0; y < size; y++) {
-			for (x = 0; x < size; x++)
-				*module++ = qrcodegen_getModule(qr0, x, y);
-		}
 
 		c_free(qr0);
 	}
