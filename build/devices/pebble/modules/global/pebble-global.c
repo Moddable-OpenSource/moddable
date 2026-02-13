@@ -23,7 +23,11 @@
 #include "mc.xs.h"      // for xsID_ values
 #include "moddableAppState.h"
 
+#include "applib/app_watch_info.h"
 #include "applib/connection_service.h"
+#include "mfg/mfg_serials.h"
+#include "mfg/mfg_info.h"
+#include "applib/i18n.h"
 #include "process_state/app_state/app_state.h"
 
 static void connectionChanged(bool connected)
@@ -79,4 +83,17 @@ void xs_global_round_get(xsMachine *the)
 #else
 	#error PBL_RECT or PBL_ROUND expected
 #endif
+}
+
+void xs_global_serialNumber_get(xsMachine *the)
+{
+  char serial[MFG_SERIAL_NUMBER_SIZE + 1];
+  mfg_info_get_serialnumber(serial, sizeof(serial));
+  if (!c_isEmpty(serial))
+	  xsmcSetString(xsResult, serial);
+}
+
+void xs_global_language_get(xsMachine *the)
+{
+	xsmcSetString(xsResult, (char *)app_get_system_locale());
 }
