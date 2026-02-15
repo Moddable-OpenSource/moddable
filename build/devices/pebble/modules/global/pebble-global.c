@@ -63,28 +63,6 @@ void xs_global_connected(xsMachine *the)
 		connection_service_unsubscribe();
 }
 
-void xs_global_color_get(xsMachine *the)
-{
-#if PBL_COLOR
-	xsResult = xsTrue;
-#elif PBL_BW
-	xsResult = xsFalse;
-#else
-	#error PBL_COLOR or PBL_BW expected
-#endif
-}
-
-void xs_global_round_get(xsMachine *the)
-{
-#if PBL_RECT
-	xsResult = xsFalse;
-#elif PBL_ROUND
-	xsResult = xsTrue;
-#else
-	#error PBL_RECT or PBL_ROUND expected
-#endif
-}
-
 void xs_global_serialNumber_get(xsMachine *the)
 {
   char serial[MFG_SERIAL_NUMBER_SIZE + 1];

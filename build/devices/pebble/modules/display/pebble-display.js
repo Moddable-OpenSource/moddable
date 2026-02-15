@@ -38,6 +38,9 @@ class PebbleDisplay extends Native("xs_pebbledisplay_destructor") {
 	get c_dispatch() { return native("xs_pebbledisplay_get_c_dispatch").call(this); };
 
 	close() { return native("xs_pebbledisplay_close").call(this); };
+
+	get color() {return native("xs_pebbledisplay_color_get").call(this);}
+	get round() {return native("xs_pebbledisplay_round_get").call(this);}
 }
 PebbleDisplay.prototype.frameBuffer = true
 

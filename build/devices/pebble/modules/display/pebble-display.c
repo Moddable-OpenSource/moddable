@@ -183,6 +183,28 @@ void xs_pebbledisplay_close(xsMachine *the)
 	xsmcSetHostData(xsThis, NULL);
 }
 
+void xs_pebbledisplay_color_get(xsMachine *the)
+{
+#if PBL_COLOR
+	xsResult = xsTrue;
+#elif PBL_BW
+	xsResult = xsFalse;
+#else
+	#error PBL_COLOR or PBL_BW expected
+#endif
+}
+
+void xs_pebbledisplay_round_get(xsMachine *the)
+{
+#if PBL_RECT
+	xsResult = xsFalse;
+#elif PBL_ROUND
+	xsResult = xsTrue;
+#else
+	#error PBL_RECT or PBL_ROUND expected
+#endif
+}
+
 void pebbledisplaySend(PocoPixel *pixels, int byteLength, void *refcon)
 {
 	pblDisplay pd = refcon;

@@ -154,8 +154,6 @@ export class Pebble {
 		return connected();
 	}
 
-	get color() {return native("xs_global_color_get").call(this);}
-	get round() {return native("xs_global_round_get").call(this);}
 	get serialNumber() {return native("xs_global_serialNumber_get").call(this);}
 	get language() {return native("xs_global_language_get").call(this);}
 }
