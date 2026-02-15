@@ -134,6 +134,7 @@ export default function() {
 		blendColors, hsl, hsla, rgb, rgba, 
 		
 		Inverter,
+		QRCode,
 		RoundRect,
 		SVGImage,
 		ScreenBuffer,
