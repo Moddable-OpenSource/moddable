@@ -20,7 +20,7 @@
 
 import Timer from "timer"
 import Resource from "Resource"
-import Pebble from "pebble/global"
+import Global from "pebble/global"
 import ArchiveResource from "pebble/archive-resource";
 import ArchiveCompartment from "ArchiveCompartment"
 import keyValue from "embedded:storage/key-value";
@@ -93,7 +93,7 @@ export default function() {
 	state.archive = (new ArchiveResource())?.archive;
 	console.log(`Found mod "${state.archive.name}"`);
 
-	globalThis.Pebble = new Pebble;		// so modules (like global) can reach the instance
+	globalThis.watch = new Global;		// so modules (like global) can reach the instance
 
 	const globals = {
 		console,
@@ -107,7 +107,7 @@ export default function() {
 		Date,
 		Math,
 		Resource,
-		Pebble: globalThis.Pebble,
+		watch: globalThis.watch,
 
 		// network
 		device,

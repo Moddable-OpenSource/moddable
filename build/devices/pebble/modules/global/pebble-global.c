@@ -32,7 +32,7 @@ static void connectionChanged(bool connected)
 	
 	xsBeginHost(the);
 		xsmcVars(1);
-		xsmcGet(xsResult, xsGlobal, xsID_Pebble);
+		xsmcGet(xsResult, xsGlobal, xsID_watch);
 		xsmcSetStringX(xsVar(0), "connected");
 		xsCall1(xsResult, xsID_do, xsVar(0));
 	xsEndHost(the);
