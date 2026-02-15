@@ -153,9 +153,6 @@ export class Pebble {
 	get connected() {
 		return connected();
 	}
-
-	get serialNumber() {return native("xs_global_serialNumber_get").call(this);}
-	get language() {return native("xs_global_language_get").call(this);}
 }
 
 export default Pebble;

@@ -82,7 +82,11 @@ globalThis.device = Object.freeze({
 		state.files ??= state.mod.importNow("embedded:storage/files").default;
 		return state.files;
 	},
-	keyValue
+	keyValue,
+	info: {
+		get serialNumber() {return native("xs_device_serialNumber_get").call(this);},
+		get language() {return native("xs_device_language_get").call(this);}
+	}
 }, true);
 
 export default function() {
