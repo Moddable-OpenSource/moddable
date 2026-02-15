@@ -62,7 +62,7 @@ void xs_qrcode(xsMachine *the)
 	if (padding && xsmcHas(xsArg(0), xsID_fit)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_fit);
 		int t = xsmcToInteger(xsVar(0));
-		if (t <= 0)
+		if ((t <= 0) || (t > 32767))
 			xsRangeError("invalid");
 		fit = (uint16_t)t;
 	}
