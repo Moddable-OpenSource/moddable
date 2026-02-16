@@ -60,9 +60,9 @@ class WebSocketClient {
 			onWritable: () => {
 				state.writable = true;
 				for (let i = 0, clients = state.clients; i < clients.length; i++) {
-					trace(`Writable id=${clients[i].#options.id}\n`);
+					this.log(`Writable id=${clients[i].#options.id}`);
 					clients[i].#write();
-					trace(`  called write state.writable ${state.writable}\n`);
+					this.log(`  called write state.writable ${state.writable}`);
 					if (!state.writable)
 						return;
 				}
@@ -128,7 +128,7 @@ class WebSocketClient {
 		return this.#schedule(result);
 	}
 	write(buffer, options = none) {
-trace("ws - write\n");
+		this.log("ws - write");
 		if (!state.writable)
 			throw new Error("not writable");
 
@@ -137,7 +137,7 @@ trace("ws - write\n");
 
 		if (undefined !== options.opcode) {
 			if (WebSocketClient.close === options.opcode) {
-				trace("ws - close opcode\n");
+				this.log("ws - close opcode");
 				const m = new Map;
 				m.set("id", this.#options.id);
 				m.set(BASE + 8, buffer);
@@ -170,21 +170,21 @@ trace("ws - write\n");
 		// 5 - binary - more
 		// 6 - text - no more
 		// 7 - text more
-trace(`ws - write binary ${binary} more ${more} byteLength ${buffer.byteLength}\n`)
+		this.log(`ws - write binary ${binary} more ${more} byteLength ${buffer.byteLength}`)
 		state.messages.write(m);
 
 		delete state.writable;
 		return 0;
 	}
 	#write() {
-trace(`ws - onWritable ${this.#state}\n`);
+		this.log(`ws - onWritable ${this.#state}`);
 		while (true) {
 			const remain = this.#remain;
 			if (remain) {
 				let use = remain.byteLength - remain.position;
 				if (use > (state.messages.output - bufferOverhead))
 					use = state.messages.output - bufferOverhead;
-trace(`ws - write ${use}\n`);
+				this.log(`ws - write ${use}`);
 
 				const m = new Map;
 				m.set("id", this.#options.id);
@@ -193,7 +193,7 @@ trace(`ws - write ${use}\n`);
 				if (remain.position === remain.byteLength) {
 					this.#remain = undefined;
 					this.#state = this.#nextState;
-trace(`ws - advance to state ${this.#state}\n`);
+					this.log(`ws - advance to state ${this.#state}`);
 				}
 				state.messages.write(m);
 				delete state.writable;
@@ -202,7 +202,7 @@ trace(`ws - advance to state ${this.#state}\n`);
 
 			switch (this.#state) {
 				case "connected":
-trace(`ws - connected\n`);
+					this.log(`ws - connected`);
 					this.#options.onWritable?.call(this, state.messages.output - bufferOverhead);
 					break;
 
@@ -213,17 +213,17 @@ trace(`ws - connected\n`);
 		}
 	}
 	#read(message) {
-trace(`ws - onReadable\n`);
+		this.log(`ws - onReadable`);
 		switch (this.#state) {
 				case "waitHandshake":
 					if (0 === message.get(BASE + 2)) {
-trace(`ws - onReadable - connected\n`);
+						this.log(`ws - onReadable - connected`);
 						this.#state = "connected";
 						if (state.writable)
 							this.#options.onWritable?.call(this, state.messages.output - bufferOverhead);
 					}
 					else {
-trace(`ws - onReadable - error\n`);
+						this.log(`ws - onReadable - error`);
 						this.#options.onError?.call(this, new Error("handshake failed " + message.get(BASE + 2)));
 						this.#state = "error";
 					}
@@ -244,11 +244,11 @@ trace(`ws - onReadable - error\n`);
 
 					try {
 						message.forEach((value, key) => {
-							trace(`key ${key}\n`)
+							this.log(`ws key ${key}`)
 						});
 					}
 					catch (e) {
-						trace.log(e, "\n");
+						trace.log(e);
 					}
 
 					const closed = message.get(BASE + 3);
@@ -268,33 +268,36 @@ trace(`ws - onReadable - error\n`);
 		}			
 	}
 	#schedule(result) {
-trace(`ws - #schedule\n`)
+		this.log(`ws - #schedule`)
 		if (this.#response.length && this.#options.onReadable) {
 			const fragment = this.#response[0];
 			const options = {
 				more: 0 !== (fragment.part & 1),
 				binary: fragment.part < 6
 			};
-trace(`ws - deliver onReadable more ${options.more} binary ${options.binary}\n`)
+			this.log(`ws - deliver onReadable more ${options.more} binary ${options.binary}`)
 			this.#options.onReadable.call(this, fragment.byteLength - fragment.position, options);
 		}
 		return result;
 	}
 	#done(error) {
 		if (this.#response) {
-			trace(`ws - #done with ${this.#response.length} unread fragments${(undefined === error) ? "" : ", error " + error}\n`);
+			this.log(`ws - #done with ${this.#response.length} unread fragments${(undefined === error) ? "" : ", error " + error}`);
 			this.#response.length = 0;		//@@ drain this.#response before calling onError / onClose?
 		}
 		else
-			trace(`ws - #done with no unread fragments${(undefined === error) ? "" : ", error " + error}\n`);
+			this.log(`ws - #done with no unread fragments${(undefined === error) ? "" : ", error " + error}`);
 		if (error) {
-			trace("WebSocket error: " + error + "\n");
+			this.log("WebSocket error: " + error + "");
 			this.#options.onError?.call(this, error);
 		}
 		else
 			this.#options.onClose?.call(this);
 
 		this.#state = "disconnected";
+	}
+	log(msg) {
+		// trace(msg, "\n");
 	}
 
 	static close = 8;
