@@ -389,13 +389,28 @@ function wsMessage(id, e) {
 				let msg = new Uint8Array(total);
 				for (let i = 0, offset = 0; i < request.pendingWrite.length; offset += request.pendingWrite[i++].length)
 					msg.set(arrayToUint8Array(request.pendingWrite[i]), offset);
-				if (binary)
-					request.ws.send(msg);
-				else
-					request.ws.send(arrayToString(msg));
+
+				try {
+					if (binary)
+						request.ws.send(msg);
+					else
+						request.ws.send(arrayToString(msg));
+				}
+				catch (e) {
+					console.log("ws.send failed: " + e);		// sometiems Broken Pipe.
+					request.state = "closed";
+					sendAppMessage({
+						[WS_BASE + 1]: request.id,
+						[WS_BASE + 3]: -1						// done. failure.
+					});
+				}
 				delete request.pendingWrite;
 			}
 			} break;
+
+		case "closed":
+			// client write after close - caused by latency delivering close notification
+			break;
 
 		default:
 			console.log("unexpected state " + request.state + "\n");
