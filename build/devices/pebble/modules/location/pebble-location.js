@@ -20,7 +20,7 @@
 
 import Message from "pebble/message";
 
-let busy = false;
+let busy;
 
 class Location  {
 	#message;
@@ -82,10 +82,10 @@ class Location  {
 			}
 		});
 
-		busy = true;
+		busy = this;
 	}
 	close() {
-		busy = false;
+		busy = undefined;
 		if (!this.#message)
 			return;
 
