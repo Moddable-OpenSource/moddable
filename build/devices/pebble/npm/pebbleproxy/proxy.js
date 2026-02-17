@@ -157,7 +157,7 @@ function httpMessage(id, e) {
 			request.xhr = new XMLHttpRequest;
 			const url = `${request.protocol}://${request.host}${request.port ? ":" + request.port : ""}/${request.path}`;
 			if (state.log)
-				console.log(`   url: ${url}`);
+				console.log(`  url: ${url}`);
 			request.xhr.open(request.method, url, true);
 			request.xhr.responseType = 'arraybuffer';
 
@@ -330,7 +330,7 @@ function wsMessage(id, e) {
 
 					request.messages.push({
 						[WS_BASE + 1]: request.id,
-						[WS_BASE + part]: data
+						[WS_BASE + part]: fragment
 					});
 				}
 				
