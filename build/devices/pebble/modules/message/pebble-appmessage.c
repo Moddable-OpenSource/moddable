@@ -40,7 +40,6 @@ typedef struct  {
 	EventedTimerID						invokeUpdateActivate;
 	uint16_t								inbound;
 	uint16_t								outbound;
-	uint8_t								pkjsReady;		// received read from pkjs
 	uint8_t								writable;			// an instance could send a message
 } PebbleMessageStateRecord, *PebbleMessageState;
 
@@ -213,7 +212,13 @@ void xs_appmessage(xsMachine *the)
 		state->writable = sys_app_pp_get_comm_session() ? 1 : 0;
 	pm->initial = EVENTED_TIMER_INVALID_ID;
 	pm->readable = EVENTED_TIMER_INVALID_ID;
-	if (state->writable && state->pkjsReady) {
+	if (!getModdableAppState(notFirst)) {
+		DictionaryIterator *iter;
+		app_message_outbox_begin(&iter);
+		dict_write_int8(iter, kPKJSReadyMessage, (int8_t)1);
+		app_message_outbox_send();
+	}
+	else if (state->writable && getModdableAppState(pkjsReady)) {
 		pm->writable = pm->active = true;
 		if (pm->onWritable)
 			pm->initial = evented_timer_register(1, false, invokeOnWritable, pm);
@@ -395,8 +400,9 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 	PebbleMessageState state = getModdableAppState(appMessage);
 	PebbleMessage pm = C_NULL;
 
-	if (!state->pkjsReady) {
-		state->pkjsReady = true;
+	if (!getModdableAppState(pkjsReady)) {
+		setModdableAppState(pkjsReady, true);
+		setModdableAppState(notFirst, true);
 		if (sys_app_pp_get_comm_session())
 			state->invokeUpdateActivate = evented_timer_register(1, false, invokeUpdateActivate, C_NULL);		// cannot update active from here because the callback might try to write, which can fail during the receive callback
 	}
@@ -465,21 +471,9 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 
 void messageSent(DictionaryIterator *iterator, void *context)
 {
-	PebbleMessageState state = getModdableAppState(appMessage);
+	if (!getModdableAppState(pkjsReady)) return;
 
-	state->writable = 1;
-
-	for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
-		if (!pm->writable) {
-			pm->active = true;
-			pm->writable = true;
-			invokeOnWritable(pm);
-			if (!state->writable) {
-				suspendWritable(pm);
-				break;		// an instance wrote, so no other instance eligible to write
-			}
-		}
-	}
+	updateActive(1);
 }
 
 void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, void *context)
@@ -523,8 +517,8 @@ void updateActive(uint8_t active)
 	}
 }
 
-void commSessionEvent(PebbleEvent *e, void *context) {
-	PebbleMessageState state = getModdableAppState(appMessage);
+void commSessionEvent(PebbleEvent *e, void *context)
+{
 	PebbleCommSessionEvent *pcse = &e->bluetooth.comm_session_event;
-	updateActive(pcse->is_open && pcse->is_system && state->pkjsReady);
+	updateActive(pcse->is_open && pcse->is_system && getModdableAppState(pkjsReady));
 }

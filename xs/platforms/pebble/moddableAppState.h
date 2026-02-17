@@ -47,6 +47,8 @@ typedef struct {
 
 	// pebble-appmessage
 	void					*appMessage;
+	uint8_t				pkjsReady;
+	uint8_t				notFirst;
 
 	// pebble-files
 	char					*root;

@@ -79,6 +79,17 @@ function appMessageReceived(e) {
 		return true;
 	}
 
+	id = e.payload[READY_MESSAGE];
+	if (undefined !== id) {
+		try {
+			readyReceived();
+		}
+		catch (error) {
+			console.log("moddable proxy ready exception" + error);
+		}
+		return true;
+	}
+
 	return false;
 };
 
@@ -238,10 +249,7 @@ function wsMessage(id, e) {
 		case "configure": {
 			const [protocol, subprotocol, host, port, path, bufferSize] = arrayToString(e.payload[WS_BASE + 2]).split(":");
 			request.bufferSize = parseInt(bufferSize);
-			if ("/" === path)
-				request.path = "";
-			else
-				request.path = path || "";
+			request.path = path || "/";
 			request.port = port;
 			request.host = host;
 			request.protocol = protocol;
@@ -264,7 +272,7 @@ function wsMessage(id, e) {
 				console.log(`  bufferSize: ${request.bufferSize}`);
 			}
 
-			const url = `${request.protocol}://${request.host}${request.port ? ":" + request.port : ""}/${request.path}`;
+			const url = `${request.protocol}://${request.host}${request.port ? ":" + request.port : ""}${request.path}`;
 			if (state.log)
 				console.log(`   url: ${url}`);
 
