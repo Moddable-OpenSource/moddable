@@ -224,8 +224,7 @@ class WebSocketClient {
 					}
 					else {
 						this.log(`ws - onReadable - error`);
-						this.#options.onError?.call(this, new Error("handshake failed " + message.get(BASE + 2)));
-						this.#state = "error";
+						this.#done(new Error("handshake failed " + message.get(BASE + 2)));
 					}
 					break;
 
@@ -287,14 +286,17 @@ class WebSocketClient {
 		}
 		else
 			this.log(`ws - #done with no unread fragments${(undefined === error) ? "" : ", error " + error}`);
+
+		this.close();
 		if (error) {
 			this.log("WebSocket error: " + error + "");
+			this.#state = "error";
 			this.#options.onError?.call(this, error);
 		}
-		else
+		else {
+			this.#state = "disconnected";
 			this.#options.onClose?.call(this);
-
-		this.#state = "disconnected";
+		}
 	}
 	log(msg) {
 		// trace(msg, "\n");
