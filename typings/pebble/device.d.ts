@@ -39,6 +39,12 @@ declare module "embedded:provider/builtin" {
         secure: true;
       };
     };
+    readonly info: {
+      language: readonly string,
+      serialNumber: readonly string,
+    }
+    //@@ keyValue
+    //@@ files
   }
 
   export default device;

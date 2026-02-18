@@ -29,7 +29,7 @@ interface Console {
 declare const console:Console;
 
 /*
-  Pebble global
+  watch global
 */
 
 interface TimeChangeEvent {
@@ -49,17 +49,15 @@ type TimeChangeCallback = (event: TimeChangeEvent) => void;
 
 type ConnectedCallback = () => void;
 
-interface Pebble {
+interface watch {
   addEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   addEventListener(event: "connected", callback: ConnectedCallback): void;
   removeEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   removeEventListener(event: "connected", callback: ConnectedCallback): void;
   readonly connected: ConnectionState;
-  readonly color: boolean;
-  readonly round: boolean;
 }
 
-declare const Pebble: Pebble;
+declare const watch: watch;
 
 /*
   Resource
