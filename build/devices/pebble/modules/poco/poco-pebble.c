@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025  Moddable Tech, Inc.
+* Copyright (c) 2025-2026  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -46,16 +46,43 @@ void xs_pocopebble_Font_destructor(void *data)
 {
 }
 
+static void xs_pocopebble_Font_destructor_custom(void *data)
+{
+	if (data)
+		fonts_unload_custom_font((GFont)data);
+}
+
 void xs_pocopebble_Font(xsMachine *the)
 {
-	int size = xsmcToInteger(xsArg(1));
-	const char *family = xsmcToString(xsArg(0));
+	GFont font;
 	int32_t ascent, descent, leading;
-	GFont font = modFindPebbleFont(family, size, &ascent, &descent, &leading);
+	int type = xsmcTypeOf(xsArg(0));
+	uint8_t isNumber = (xsNumberType == type) || (xsIntegerType == type);
+	if (isNumber) {
+		ResHandle resHandle = applib_resource_get_handle(xsmcToInteger(xsArg(0)));
+		if (!resHandle)
+			xsUnknownError("resource not found");
+		font = fonts_load_custom_font(resHandle);
+	}
+	else {
+		int size = xsmcToInteger(xsArg(1));
+		const char *family = xsmcToString(xsArg(0));
+		font = modFindPebbleFont(family, size, &ascent, &descent, &leading);
+	}
+
 	if (!font)
 		xsUnknownError("font not found");
 
 	xsmcSetHostData(xsThis, font);
+	if (isNumber) {
+		xsmcSetHostDestructor(xsThis, xs_pocopebble_Font_destructor_custom);
+
+		// matches calculations in modFindPebbleFont
+		uint16_t height = fonts_get_font_height(font);
+		descent = fonts_get_font_cap_offset(font);
+		leading = 1;
+		ascent = height - descent - leading;
+	}
 
 	xsSlot tmp;
 	xsmcSetInteger(tmp, ascent + descent + leading);
@@ -66,7 +93,8 @@ void xs_pocopebble_Font(xsMachine *the)
 
 void xs_pocopebble_getTextWidth(xsMachine *the)
 {
-	if (xs_pocopebble_Font_destructor != xsGetHostDestructor(xsArg(1))) {
+	const void *destructor =xsGetHostDestructor(xsArg(1));
+	if ((xs_pocopebble_Font_destructor != destructor) && (xs_pocopebble_Font_destructor_custom != destructor)) {
 		xs_poco_getTextWidth(the);
 		return;
 	}
@@ -85,7 +113,8 @@ void xs_pocopebble_getTextWidth(xsMachine *the)
 
 void xs_pocopebbble_drawText(xsMachine *the)
 {
-	if (xs_pocopebble_Font_destructor != xsGetHostDestructor(xsArg(1))) {
+	const void *destructor =xsGetHostDestructor(xsArg(1));
+	if ((xs_pocopebble_Font_destructor != destructor) && (xs_pocopebble_Font_destructor_custom != destructor)) {
 		xs_poco_drawText(the);
 		return;
 	}
