@@ -74,7 +74,6 @@ class Rectangle {
 			r.h = v1 - r.y;
 		else
 			r.h = v2 - r.y;
-			
 		return r;
 	}
 }
@@ -134,40 +133,81 @@ class Dragger {
 }
 
 let dragger = new Dragger((render.width - button.width) >> 1, (render.height - (button.height >> 1)) >> 1, "Drag Me", button);
-if (!config.Touch) throw new Error("This example does not support ECMA-419 hosts");
-let touch = new config.Touch;
-if (!touch.read) throw new Error("This example does not support ECMA-419 touch driver");
-touch.points = [{}];
+
+const Touch = config.Touch || globalThis.device?.sensor?.Touch;
+if (!Touch) throw new Error("No touch driver configured");
+
+const onSample = () => {
+	const points = touch.sample();
+	if (!points) return;
+
+	const last = touch.points[0];
+
+	if (points.length === 0) {
+		if (last) {
+			last.target?.onTouchEnded(last.x, last.y);
+			touch.points[0] = undefined;
+		}
+		return;
+	}
+
+	const { x, y } = points[0];
+
+	if (last) {
+		last.x = x;
+		last.y = y;
+		last.target?.onTouchMoved(x, y);
+		return;
+	}
+
+	const entry = { x, y };
+	touch.points[0] = entry;
+	entry.target = dragger.contains(x, y) ? dragger : null;
+	entry.target?.onTouchBegan(x, y);
+};
+
+const touch = new Touch({ onSample })
 
 render.begin();
 	drawBackground();
 	dragger.draw();
 render.end();
 
-Timer.repeat(() => {
-	const points = touch.points;
-	touch.read(points);
-	const point = points[0];
-	switch (point.state) {
-		case 0:
-		case 3:
-			if (point.down) {
-				delete point.down;
-				point.target?.onTouchEnded(point.x, point.y);
-				delete point.x;
-				delete point.y;
-				delete point.target;
-			}
-			break;
-		case 1:
-		case 2:
-			if (!point.down) {
-				point.down = true;
-				point.target = dragger.contains(point.x, point.y) ? dragger : null;
-				point.target?.onTouchBegan(point.x, point.y);
-			}
-			else
-				point.target?.onTouchMoved(point.x, point.y);
-			break;
-	}
-}, 17);
+// ECMA-419 driver
+if (touch.sample) {
+	touch.points = new Array(1)
+	if (!touch.configuration?.interrupt)
+		Timer.repeat(onSample, 16);
+}
+else {
+	// legacy driver
+	touch.points = [{}];
+
+	Timer.repeat(() => {
+		const points = touch.points;
+		touch.read(points);
+		const point = points[0];
+		switch (point.state) {
+			case 0:
+			case 3:
+				if (point.down) {
+					delete point.down;
+					point.target?.onTouchEnded(point.x, point.y);
+					delete point.x;
+					delete point.y;
+					delete point.target;
+				}
+				break;
+			case 1:
+			case 2:
+				if (!point.down) {
+					point.down = true;
+					point.target = dragger.contains(point.x, point.y) ? dragger : null;
+					point.target?.onTouchBegan(point.x, point.y);
+				}
+				else
+					point.target?.onTouchMoved(point.x, point.y);
+				break;
+		}
+	}, 17);
+}
