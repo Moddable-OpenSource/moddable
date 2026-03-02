@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -584,46 +584,46 @@ txNumber fxBigIntToNumber(txMachine* the, txSlot* slot)
 }
 
 typedef struct {
-    uint32_t k;
-    uint32_t base_to_k;
+	uint32_t k;
+	uint32_t base_to_k;
 } BaseChunk32;
 
 static const BaseChunk32 base_chunks32[] ICACHE_FLASH_ATTR = {
-    {31, 0x80000000},
-    {19, 1162261467},
-    {15, 1073741824},
-    {13, 1220703125},
-    {12, 2176782336},
-    {11, 1977326743},
-    {10, 1073741824},
-    {10, 3486784401},
-    { 9, 1000000000},		// base 10
-    { 8, 214358881},
-    { 8, 429981696},
-    { 7, 62748517},
-    { 7, 105413504},
-    { 7, 170859375},
-    { 7, 268435456},
-    { 6, 24137569},
-    { 6, 34012224},
-    { 6, 470427017},
-    { 6, 64000000},
-    { 6, 85766121},
-    { 6, 113379904},
-    { 6, 148035889},
-    { 6, 191102976},
-    { 5, 9765625},
-    { 5, 11881376},
-    { 5, 14348907},
-    { 5, 17210368},
-    { 5, 20537907},
-    { 5, 24300000},
-    { 5, 28430241},
-    { 5, 32768000},
-    { 5, 39135393},
-    { 5, 45435424},
-    { 5, 52521875},
-    { 5, 60466176}
+	{31, 0x80000000},
+	{19, 1162261467},
+	{15, 1073741824},
+	{13, 1220703125},
+	{12, 2176782336},
+	{11, 1977326743},
+	{10, 1073741824},
+	{10, 3486784401},
+	{ 9, 1000000000},		// base 10
+	{ 8, 214358881},
+	{ 8, 429981696},
+	{ 7, 62748517},
+	{ 7, 105413504},
+	{ 7, 170859375},
+	{ 7, 268435456},
+	{ 6, 24137569},
+	{ 6, 34012224},
+	{ 6, 47045881},
+	{ 6, 64000000},
+	{ 6, 85766121},
+	{ 6, 113379904},
+	{ 6, 148035889},
+	{ 6, 191102976},
+	{ 5, 9765625},
+	{ 5, 11881376},
+	{ 5, 14348907},
+	{ 5, 17210368},
+	{ 5, 20511149},
+	{ 5, 24300000},
+	{ 5, 28629151},
+	{ 5, 33554432},
+	{ 5, 39135393},
+	{ 5, 45435424},
+	{ 5, 52521875},
+	{ 5, 60466176}
 };
 
 void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
@@ -659,7 +659,7 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 	int32_t nonZeroWords = stack->value.bigint.size;
 	do {
 		uint64_t carry = 0;
-		for (uint32_t i = stack->value.bigint.size - 1, count = nonZeroWords, base_to_k = bc->base_to_k; count > 0; --count) {
+		for (uint32_t i = nonZeroWords - 1, count = nonZeroWords, base_to_k = bc->base_to_k; count > 0; --count) {
 			carry = (carry << 32) | stack->value.bigint.data[i];
 			stack->value.bigint.data[i--] = (uint32_t)(carry / base_to_k);
 			carry %= base_to_k;
@@ -667,10 +667,10 @@ void fxBigintToString(txMachine* the, txSlot* slot, txU4 radix)
 		uint32_t remainder = (uint32_t)carry, k = bc->k;
 		do {
 			result->value.string[--offset] = c_read8(gxDigits + (remainder % radix));
-            remainder /= radix;
-        } while (--k);
+			remainder /= radix;
+		} while (--k);
 
-		while (nonZeroWords && (0 == stack->value.bigint.data[stack->value.bigint.size - nonZeroWords]))
+		while (nonZeroWords && (0 == stack->value.bigint.data[nonZeroWords - 1]))
 			nonZeroWords -= 1;
 	} while (nonZeroWords);
 
