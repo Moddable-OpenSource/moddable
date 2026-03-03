@@ -22,7 +22,7 @@ declare module "commodetto/Bitmap" {
   type PixelFormat = number
 
   class Bitmap {
-    constructor(width: number, height: number, format: PixelFormat, buffer: BufferLike, offset: number, byteLength?: number)
+    constructor(width: number, height: number, format: PixelFormat, buffer: ByteBuffer, offset: number, byteLength?: number)
 
     readonly pixelFormat: PixelFormat
     readonly offset: number

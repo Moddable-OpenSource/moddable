@@ -11,6 +11,9 @@
 		},
 		"pebble": {
 			"include": "./pebble/manifest.json"
+		},
+		"zephyr": {
+			"include": "./zephyr/manifest.json"
 		}
 	}
 }

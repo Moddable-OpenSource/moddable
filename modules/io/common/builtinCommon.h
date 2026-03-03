@@ -41,7 +41,7 @@
 				xsUnknownError("no network"); \
 			}
 	#endif
-#elif defined(__ets__)
+#elif defined(__ets__) && !defined(__ZEPHYR__)
 	#include "Arduino.h"	// mostly to get xs_rsil
 
 	#define kPinBanks (1)
@@ -61,6 +61,14 @@
 	extern critical_section_t gCommonCriticalMux;
 	#define builtinCriticalSectionBegin()	critical_section_enter_blocking(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd()		critical_section_exit(&gCommonCriticalMux)
+#elif defined(__ZEPHYR__)
+	#include "mc.devicetree.h"
+
+	#define kPinBanks kModZephyrGPIOBankCount
+	#define builtinCriticalSectionBegin()	\
+		unsigned int __key = irq_lock();
+	#define builtinCriticalSectionEnd() \
+		irq_unlock(__key);
 #endif
 
 enum {
@@ -107,7 +115,7 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 }
 #endif
 
-#if kPinBanks
+#ifdef kPinBanks
 	#define builtinIsPinFree(pin) builtinArePinsFree(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinUsePin(pin) builtinUsePins(pin >> 5, 1 << (pin & 0x1F))
 	#define builtinFreePin(pin) builtinFreePins(pin >> 5, 1 << (pin & 0x1F))
@@ -119,8 +127,8 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 	#define builtinGetPin(the, slot) builtinGetUnsignedInteger(the, slot)
 #endif
 
-#if defined(PICO_BUILD)
-	uint8_t builtinInitIO(void);
+#if defined(PICO_BUILD) || defined(__ZEPHYR__)
+	void builtinInitIO(void);
 #endif
 
 #endif

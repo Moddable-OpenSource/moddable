@@ -30,7 +30,7 @@ interface MessageOptions {
 
 type MessageKey = string | number;
 type MessageReadValue = number | string | ArrayBuffer;
-type MessageWriteValue = number | string | BufferLike | boolean;
+type MessageWriteValue = number | string | ByteBuffer | boolean;
 
 declare class Message {
   constructor(options: MessageOptions);

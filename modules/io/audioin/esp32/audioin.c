@@ -41,6 +41,12 @@
 #ifndef MODDEF_AUDIOIN_I2S_LR_PIN
 	#define MODDEF_AUDIOIN_I2S_LR_PIN		(33)
 #endif
+#ifndef MODDEF_AUDIOIN_I2S_MCK_PIN
+	#define MODDEF_AUDIOIN_I2S_MCK_PIN		(I2S_GPIO_UNUSED)
+#endif
+#ifndef MODDEF_AUDIOIN_I2S_FORMAT_I2S
+	#define MODDEF_AUDIOIN_I2S_FORMAT_I2S	(0)
+#endif
 #ifndef MODDEF_AUDIOIN_I2S_DATAIN
 	#define MODDEF_AUDIOIN_I2S_DATAIN		(27)
 #endif
@@ -55,6 +61,9 @@
 #endif
 #ifndef MODDEF_AUDIOIN_I2S_SLOT
 	#define MODDEF_AUDIOIN_I2S_SLOT (I2S_STD_SLOT_RIGHT)
+#endif
+#ifndef MODDEF_AUDIOIN_NUMCHANNELS
+	#define MODDEF_AUDIOIN_NUMCHANNELS (1)
 #endif
 
 #if MODDEF_AUDIOIN_I2S_ADC
@@ -518,9 +527,15 @@ void audioInLoop(void *pvParameter)
 #else
 	i2s_std_config_t rx_std_cfg = {
 		.clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(input->sampleRate),
-		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+#if MODDEF_AUDIOIN_I2S_FORMAT_I2S
+		.slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
+			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+#else
+		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
+			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+#endif
 		.gpio_cfg = {
-			.mclk = I2S_GPIO_UNUSED,
+			.mclk = MODDEF_AUDIOIN_I2S_MCK_PIN,
 			.bclk = MODDEF_AUDIOIN_I2S_BCK_PIN,
 			.ws = MODDEF_AUDIOIN_I2S_LR_PIN,
 			.dout = I2S_GPIO_UNUSED,
@@ -532,7 +547,9 @@ void audioInLoop(void *pvParameter)
 			}
 		}
 	};
-	rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT; 		//@@
+	rx_std_cfg.slot_cfg.slot_mask = (2 == MODDEF_AUDIOIN_NUMCHANNELS)
+		? I2S_STD_SLOT_BOTH
+		: MODDEF_AUDIOIN_I2S_SLOT; 		//@@
 
 	err = i2s_channel_init_std_mode(input->handle, &rx_std_cfg);
 	if (err) {
@@ -737,4 +754,3 @@ void xs_audioin_get_sampleRate(xsMachine *the)
 	AudioInput input = xsmcGetHostDataValidate(xsThis, (void *)&xsAudioInHooks);
 	xsmcSetInteger(xsResult, input->sampleRate);
 }
-

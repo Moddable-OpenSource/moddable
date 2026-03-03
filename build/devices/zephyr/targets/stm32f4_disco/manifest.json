@@ -1,0 +1,5 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "stm32f4_disco"
+	}
+}

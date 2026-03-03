@@ -34,6 +34,9 @@ export default class ChecksumOut {
 		Object.defineProperty(this, "pixelFormat", {value: options.pixelFormat ?? Bitmap.RGB565LE});
 	}
 	begin(x, y, width, height) {
+		if ("object" === typeof x)
+			({x, y, width, height} = x);
+
 		this.#show?.begin(x, y, width, height);
 
 		if (!this.#continue)

@@ -23,7 +23,7 @@ import model from "model" with { type:"json" };
 import assets from "assets";
 import Controller from "Controller";
 
-globalThis.importNow = function(specifier) @ "xs_importNow";
+globalThis.importNow = function(specifier) { return native("xs_importNow").call(this, specifier); };
 globalThis.localize = function(it) {
 	if (it) {
 		let result = locals.get(it);

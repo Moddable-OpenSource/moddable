@@ -22,7 +22,7 @@ declare module "commodetto/ReadGIF" {
   import Bitmap from "commodetto/Bitmap"
 
   class ReadGIF extends Bitmap {
-    constructor(buffer: BufferLike);
+    constructor(buffer: ByteBuffer);
     close(): void;
     first(): void;
     next(): void;

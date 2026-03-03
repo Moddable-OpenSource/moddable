@@ -19,20 +19,24 @@
  */
 
 declare module "embedded:network/interface/ethernet" {
+	import type {PortSpecifier} from "embedded:io/_common";
+
 	export interface EthernetConstructorOptions {
+		port?: PortSpecifier;
 		onChanged?: () => void;
-		port?: string;
 	}
 
-	export interface EthernetConnectOptions {
-	}
+	class Ethernet {
+		constructor(options: EthernetConstructorOptions);
 
-	export default class Ethernet {
-		constructor(options?: EthernetConstructorOptions);
 		close(): void;
-		connect(options?: EthernetConnectOptions): void;
+		connect(options: {}): void;
 		disconnect(): void;
-		get connection(): number;
-		get address(): string;
+
+		readonly connection: number;
+		readonly address: string | undefined;
+		readonly MAC: string | undefined;
 	}
+
+	export default Ethernet;
 }

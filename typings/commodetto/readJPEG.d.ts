@@ -27,10 +27,10 @@ declare module "commodetto/readJPEG" {
   }
 
   class JPEG {
-    constructor(buffer?: (BufferLike), options?: { pixelFormat: number })
+    constructor(buffer?: (ByteBuffer), options?: { pixelFormat: number })
 
     read(): Block
-    push(buffer: BufferLike): void
+    push(buffer: ByteBuffer): void
 
     readonly ready: boolean
   }

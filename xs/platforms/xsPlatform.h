@@ -265,6 +265,9 @@
 #ifndef c_fprintf
 	#define c_fprintf fprintf
 #endif
+#ifndef c_abort
+	#define c_abort abort
+#endif
 
 #ifndef c_signal
 	#ifdef EMSCRIPTEN
@@ -434,6 +437,9 @@
 #ifndef c_isfinite
 	#define c_isfinite isfinite
 #endif
+#ifndef c_ilogb
+	#define c_ilogb ilogb
+#endif
 #ifndef c_isnormal
 	#define c_isnormal isnormal
 #endif
@@ -490,6 +496,16 @@
 #endif
 #ifndef c_trunc
 	#define c_trunc trunc
+#endif
+
+#ifndef C_FP_ILOGB0
+	#define C_FP_ILOGB0 FP_ILOGB0
+#endif
+#ifndef C_FP_ILOGBNAN
+	#define C_FP_ILOGBNAN FP_ILOGBNAN
+#endif
+#ifndef C_INT_MAX
+	#define C_INT_MAX INT_MAX
 #endif
 
 /* STRING */

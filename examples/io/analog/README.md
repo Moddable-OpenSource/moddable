@@ -1,5 +1,30 @@
+# Analog
+Updated: December 10, 2025
+
+## Table of Contents
+
+* [Zephyr Analog constructor](#zephyr-analog)
+* [ESP32 Analog Additions](#esp32-analog)
+	* [Attenuation](#esp32-atten)
+	* [Calibrated](#esp32-calib)
+	* [Example](#esp32-example)
+
+<a id="zephyr-analog"></a>
+# Zephyr Analog
+
+## Constructor
+
+For Zephyr, use `port` and `channel` to choose which analog channel to sample from.
+
+```
+const analogInput = new device.io.Analog({
+    port: "adc",
+    channel: 0
+});
+```
+
+<a id="esp32-analog"></a>
 # ESP32 Analog Additions
-Updated: November 13, 2024
 
 ## Constructor
 
@@ -16,12 +41,14 @@ const analogInput = new device.io.Analog({
 ```
 
 
+<a id="esp32-calib"></a>
 ### `calibrated`
 
 If the `calibrated` option is included in the analog constructor, the return value of `sample()` will be a calibrated value returned from the ADC driver, with values between 0 and `((1 << analog.resolution) - 1)`. For the ESP32, the device has a resolution of 12 bits, so the range is 0 to 4095.
 
 The [ADC Calibration Driver](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32/api-reference/peripherals/adc_calibration.html) is used to provide a closer approximation to actual voltage. The voltage range measured can be adjusted with the `attenuation` option.
 
+<a id="esp32-atten"></a>
 ### `attenuation`
 
 Using the `attenuation` function adjusts the measurement range of the ADC driver.
@@ -39,6 +66,7 @@ There are [four attenuation](https://docs.espressif.com/projects/esp-idf/en/rele
 
 With an attenuation of 6 dB, 1750 mV presented at the pin will return 4095.
 
+<a id="esp32-example"></a>
 ### Example:
 
 By default, an `analog` object will provide a calibrated output with an attenuation of 12 dB. So, at 2450 mV to the pin, the `sample()` value will be 4095.

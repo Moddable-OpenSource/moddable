@@ -25,5 +25,33 @@
 	},
 	"modules": {
 		"*": "./main"
+	},
+	"platforms": {
+		"esp32/m5stack_cores3": {
+			"defines": {
+				"audioIn": {
+					"sampleRate": 24000,
+					"numChannels": 2,
+					"bitsPerSample": 16
+				},
+				"audioOut": {
+					"bitsPerSample": 16,
+					"numChannels": 1,
+					"sampleRate": 24000
+				}
+			},
+			"creation": {
+				"static": 0,
+				"chunk": {
+					"initial": 1000000,
+					"incremental": 0
+				},
+				"heap": {
+					"initial": 8192,
+					"incremental": 0
+				},
+				"stack": 1024
+			}
+		}
 	}
 }

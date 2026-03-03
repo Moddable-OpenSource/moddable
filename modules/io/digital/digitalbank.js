@@ -40,4 +40,6 @@ DigitalBank.InputPullUpDown = 3;
 DigitalBank.Output = 8;
 DigitalBank.OutputOpenDrain = 9;
 
+DigitalBank.ActiveLow = 16;
+
 export default DigitalBank;

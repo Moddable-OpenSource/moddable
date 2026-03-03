@@ -44,7 +44,7 @@ declare module "socket" {
     port: number,
     kind: "UDP",
   };
-  type WriteData = number | string | BufferLike;
+  type WriteData = number | string | ByteBuffer;
   
   type MessageError = -2;
   type MessageDisconnect = -1;

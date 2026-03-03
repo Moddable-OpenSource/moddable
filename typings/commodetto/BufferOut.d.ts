@@ -26,7 +26,7 @@ declare module "commodetto/BufferOut" {
     width: number;
     height: number;
     pixelFormat: number;
-    buffer?: BufferLike;
+    buffer?: ByteBuffer;
   }
 
   class BufferOut {
@@ -35,7 +35,7 @@ declare module "commodetto/BufferOut" {
     end(): void;
     continue(x: number, y: number, width: number, height: number): void;
     send(
-      pixels: BufferLike,
+      pixels: ByteBuffer,
       offset: number,
       count: number
     ): void;

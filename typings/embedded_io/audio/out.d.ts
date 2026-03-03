@@ -18,8 +18,6 @@
 *
 */
 declare module "embedded:io/audio/out" {
-  import { Buffer } from "embedded:io/_common";
-
   type AudioType = "LPCM";
 
   interface AudioOutOptions {
@@ -35,7 +33,7 @@ declare module "embedded:io/audio/out" {
     constructor(options?: AudioOutOptions & {
       onWritable?: (this: AudioOut, byteLength: number, sampleCount?: number) => void;
     });
-    write(buffer: Buffer): void;
+    write(buffer: ByteBuffer): void;
     start(): void;
     stop(options?: { flush?: boolean }): void;
 

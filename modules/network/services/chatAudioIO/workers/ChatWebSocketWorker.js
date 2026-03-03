@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -128,7 +128,7 @@ class ChatWebSocketWorker extends ChatWorker {
 		this.write(data, { opcode: WebSocketClient.close });	
 		this.#state = 2;
 	}
-	isBase64(result, current, name) {
+	isBase64(/* result, current, name */) {
 		debugger;
 	}
 	onBase64(offset, size) {

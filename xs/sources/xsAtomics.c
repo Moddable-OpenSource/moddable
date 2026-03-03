@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -98,7 +98,8 @@ static void fxPushAtomicsValue(txMachine* the, int i, txID id);
 	txSlot* buffer = view->next; \
 	txSlot* host = fxCheckAtomicsArrayBuffer(the, buffer, onlyShared); \
 	txU2 shift = dispatch->value.typedArray.dispatch->shift; \
-	txInteger index = fxCheckAtomicsIndex(the, 1, fxGetDataViewSize(the, view, buffer) >> shift); \
+	txInteger length = fxGetDataViewSize(the, view, buffer) >> shift; \
+	txInteger index = fxCheckAtomicsIndex(the, 1, length); \
 	txInteger offset = view->value.dataView.offset + (index << shift)
 
 void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian) { mxAtomicsHead1(txS1, fxToInteger); mxAtomicsAdd(); mxAtomicsTail(); }
@@ -369,7 +370,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	property->value.host.data = fxCreateSharedChunk((txInteger)byteLength);
 	if (!property->value.host.data) {
 		property->value.host.variant.destructor = NULL;
-		mxRangeError("cannot allocate SharedArrayBuffer insatnce");
+		mxRangeError("cannot allocate SharedArrayBuffer instance");
 	}
 	property->value.host.variant.destructor = fxReleaseSharedChunk;
 	property = property->next = fxNewSlot(the);
@@ -421,7 +422,7 @@ void fx_SharedArrayBuffer_prototype_grow(txMachine* the)
 		mxRangeError("newLength < byteLength");
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
-	mxRangeError("cannot grow SharedArrayBuffer insatnce");
+	mxRangeError("cannot grow SharedArrayBuffer instance");
 }
 
 void fx_SharedArrayBuffer_prototype_slice(txMachine* the)
@@ -726,7 +727,7 @@ void fxInitializeSharedCluster(txMachine* the)
 		gxSharedCluster->usage++;
 	}
 	else {
-		gxSharedCluster = c_calloc(1, sizeof(txSharedCluster));
+		gxSharedCluster = c_calloc(sizeof(txSharedCluster), 1);
 		if (gxSharedCluster) {
 			gxSharedCluster->mainThread = mxCurrentThread();
 			gxSharedCluster->usage++;

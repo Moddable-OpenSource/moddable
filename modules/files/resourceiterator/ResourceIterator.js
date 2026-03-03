@@ -20,7 +20,7 @@
 
 import Resource from "Resource";
 
-function index(i) @ "Resource_index";
+function index(i) { return native("Resource_index").call(this, i); };
 
 Resource[Symbol.iterator] = function() {
 	return {

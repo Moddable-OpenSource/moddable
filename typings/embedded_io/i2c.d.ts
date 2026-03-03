@@ -20,7 +20,7 @@
 
 
 declare module "embedded:io/i2c" {
-  import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class I2C {
     constructor(options: {
       data: PinSpecifier;
@@ -33,9 +33,9 @@ declare module "embedded:io/i2c" {
     });
     readonly resolution: number;
     
-    write(value: Buffer, stop?: boolean): void;
+    write(value: ByteBuffer, stop?: boolean): void;
     read(byteLength: number, stop?: boolean): ArrayBuffer;
-    read(buffer: Buffer, stop?: boolean): ArrayBuffer;
+    read(buffer: ByteBuffer, stop?: boolean): number;
     get format(): "buffer"
     set format(value: "buffer")
   }

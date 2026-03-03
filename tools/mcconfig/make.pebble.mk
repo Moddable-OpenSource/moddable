@@ -41,10 +41,6 @@ BOOTLOADER_SIZE = 0xC000
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/pebble
 
-UF2_VOLUME_NAME ?= MODDABLE4
-M4_VID ?= beef
-M4_PID ?= cafe
-
 ifeq ($(USE_USB),0)
 	ifeq ($(HOST_OS),Darwin)
 		VERS = $(shell sw_vers -productVersion | cut -f1 -d.)
@@ -544,10 +540,6 @@ endif
 
 #	$(NRF_LOG_OBJECTS)
 
-OTHER_STUFF += \
-	boards_h \
-	env_vars
-
 TOOLS_BIN = $(NRF52_GCC_ROOT)/bin
 TOOLS_PREFIX = arm-none-eabi-
 
@@ -694,14 +686,6 @@ C_DEFINES := -fshort-enums $(C_DEFINES)
 
 C_FLAGS_NODATASECTION = $(C_FLAGS)
 
-ifeq ($(USE_QSPI),1)
-	LINKER_SCRIPT := $(PLATFORM_DIR)/config/qspi_xsproj.ld
-	QSPI_COUNT = $$q
-else
-	LINKER_SCRIPT := $(PLATFORM_DIR)/config/xsproj.ld
-	QSPI_COUNT = $$f
-endif
-
 # Utility functions
 git_description = $(shell git -C  $(1) describe --tags --always --dirty 2>/dev/null)
 SRC_GIT_VERSION = $(call git_description,$(NRF_SDK_DIR)/sources)
@@ -744,13 +728,6 @@ VPATH += $(NRF_PATHS) $(SDK_GLUE_DIRS) $(XS_DIRS)
 
 all: pebble
 
-xxall: precursor $(BIN_DIR)/xs_pebble.uf2
-	$(KILL_SERIAL2XSBUG)
-	$(START_XSBUG)
-	$(SET_PROGRAMMING_MODE)
-	$(DO_PROGRAM)
-	$(CONNECT_XSBUG)
-
 deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 	$(KILL_SERIAL2XSBUG)
 	$(SET_PROGRAMMING_MODE)
@@ -758,31 +735,6 @@ deploy: precursor $(BIN_DIR)/xs_nrf52.uf2
 
 build: precursor $(BIN_DIR)/xs_nrf52.uf2
 	@echo Target built: $(BIN_DIR)/xs_nrf52.uf2
-
-SCRIPTS=\
-	$(MODDABLE_TOOLS_DIR)/findUSBLinux
-
-$(MODDABLE_TOOLS_DIR)/findUSBLinux: $(PLATFORM_DIR)/config/findUSBLinux
-	cp  $(PLATFORM_DIR)/config/findUSBLinux $(MODDABLE_TOOLS_DIR)/findUSBLinux
-
-precursor: mod_sdk $(SCRIPTS) $(BLE) $(TMP_DIR) $(LIB_DIR) $(OTHER_STUFF) $(BIN_DIR)/xs_nrf52.hex sym
-
-sdk_mod_txt="nRF5 SDK needs to be modified to support SPIM3 - See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details."
-
-sdk_mod := $(shell grep 'SPIM3' $(NRF_SDK_DIR)/integration/nrfx/legacy/apply_old_config.h > /dev/null 2>&1 ; echo $$?)
-
-mod_sdk:
-ifeq ($(sdk_mod),1)
-	$(error $(sdk_mod_txt))
-endif
-
-env_vars:
-ifndef NRF_SDK_DIR
-	$(error NRF_SDK_DIR environment variable must be defined! See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
-endif
-
-modLocation: $(TMP_DIR)/xs_nrf52.out
-	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
 
 clean:
 	echo "# Clean project"
@@ -797,83 +749,17 @@ allclean:
 	@echo "# rm $(MODDABLE)/build/tmp/nrf52"
 	-rm -rf $(MODDABLE)/build/tmp/nrf52
 
-flash: precursor $(BIN_DIR)/xs_nrf52.hex
-	@echo Flashing: $(BIN_DIR)/xs_nrf52.hex
-	"$(NRFJPROG)" $(NRFJPROG_ARGS) --program $(BIN_DIR)/xs_nrf52.hex $(NRFJPROG_ERASE)
-	"$(NRFJPROG)" $(NRFJPROG_ARGS) --verify $(BIN_DIR)/xs_nrf52.hex
-	"$(NRFJPROG)" --reset
-
-readuicr:
-	@echo Read UICR
-	"$(NRFJPROG)" $(NRFJPROG_ARGS) --readuicr $(BIN_DIR)/uicr.bin
-
 debugger:
 	@echo Starting xsbug. Reset device to connect.
 	serial2xsbug $(DEBUGGER_PORT) $(DEBUGGER_SPEED) 8N1
 
 use_jlink: flash xsbug
 
-flash_softdevice:
-	@echo Flashing: s140_nrf52_7.0.1_softdevice.hex
-	"$(NRFJPROG)" -f nrf52 --program $(SOFTDEVICE_HEX) --sectorerase
-	"$(NRFJPROG)" -f nrf52 --reset
-
-$(BIN_DIR)/xs_nrf52.uf2: $(BIN_DIR)/xs_nrf52.hex
-	@echo Making: $(BIN_DIR)/xs_nrf52.uf2 from xs_nrf52.hex
-	$(UF2CONV) $(BIN_DIR)/xs_nrf52.hex -c -f 0xADA52840 -o $(BIN_DIR)/xs_nrf52.uf2
-
-installBootloader:
-	"$(NRFJPROG)" --reset --program $(BOOTLOADER_HEX) -f nrf52 --sectoranduicrerase
-
-installSoftdevice:	
-	"$(NRFJPROG)" --program $(SOFTDEVICE_HEX) -f nrf52 --chiperase --reset
-
-erase:
-	"$(NRFJPROG)" -f nrf52 --eraseall
-
-$(BIN_DIR)/xs_nrf52-merged.hex: $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex
-	@echo "# make xs_nerf52-merged.hex"
-	@mergehex -q -m $(BOOTLOADER_HEX) $(BIN_DIR)/xs_nrf52.hex -o $@
-
-dfu-package: $(BIN_DIR)/xs_nrf52.hex
-	@echo "# Packaging $<"
-	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/dfu-package.zip
-
-## adafruit-nrfutil forces 115200
-installDFU: precursor dfu-package
-	@echo "# Flashing $<"
-	adafruit-nrfutil --verbose dfu serial --package $(BIN_DIR)/dfu-package.zip -p $(UPLOAD_PORT) -b 115200 --singlebank --touch 1200
-
-ble-package: $(BIN_DIR)/xs_nrf52.hex
-	@echo "# Packaging $< for BLE"
-	adafruit-nrfutil dfu genpkg --dev-type 0x52 --sd-req 0x100 --application $(BIN_DIR)/xs_nrf52.hex $(BIN_DIR)/ble-package.zip
-
-debugDFU: installDFU
-	$(KILL_SERIAL2XSBUG)
-	$(START_XSBUG)
-	$(CONNECT_XSBUG)
-
 xsbug:
 	@echo Starting xsbug.
 	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
 	$(CONNECT_XSBUG)
-
-xall: $(TMP_DIR) $(LIB_DIR) $(BIN_DIR)/xs_nrf52.hex
-	$(KILL_SERIAL2XSBUG)
-	$(START_XSBUG)
-	@echo Flashing xs_nrf52.hex to device.
-	"$(NRFJPROG)" -f nrf52 --program $(TMP_DIR)/xs_nrf52.hex --sectorerase
-	@echo Resetting the device.
-	"$(NRFJPROG)" -f nrf52 --reset
-
-$(NRF52_SDK_ROOT)/components/boards/moddable_four.h:
-	$(error ## Please add moddable_four.h to your nRF52 SDK. See https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/devices/moddable-four.md for details.)
-
-sym: $(TMP_DIR)/xs_nrf52.out
-	$(OBJDUMP) -t $(TMP_DIR)/xs_nrf52.out > $(BIN_DIR)/xs_nrf52.sym
-
-boards_h: $(NRF52_SDK_ROOT)/components/boards/moddable_four.h
 
 $(TMP_DIR):
 	@echo "TMP_DIR"
@@ -887,16 +773,6 @@ $(LIB_DIR): libdir
 $(TMP_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	
-$(BIN_DIR)/xs_nrf52.bin: $(TMP_DIR)/xs_nrf52.hex
-	$(OBJCOPY) -O binary $(TMP_DIR)/xs_nrf52.out $(BIN_DIR)/xs_nrf52.bin
-
-$(BIN_DIR)/xs_nrf52.hex: $(TMP_DIR)/xs_nrf52.out
-	@echo "# Version"
-	@echo "#  XS:    $(XS_GIT_VERSION)"
-	$(SIZE) -A $(TMP_DIR)/xs_nrf52.out | perl -e $(MEM_USAGE)
-	$(NM) -t d $(TMP_DIR)/xs_nrf52.out | grep __start_unused_space | perl -e $(MOD_START)
-	$(OBJCOPY) -O ihex $< $@
-
 XSLIB_OBJ:=\
 	$(XS_OBJ)	\
 	$(XS_LIB_GLUE)
@@ -922,16 +798,6 @@ pebble: $(BIN_DIR)/xslib.a
 
 $(BIN_DIR)/xslib.a: $(TMP_DIR)/mc.xs.c $(TMP_DIR)/mc.resources.c
 	@echo "js Built"
-
-# $(BIN_DIR)/xslib.a: $(XSLIB_OBJ) $(TMP_DIR)/mc.xs.c $(TMP_DIR)/mc.resources.c
-#	$(AR) $(AR_FLAGS) $(BIN_DIR)/xslib.a $^
-
-$(TMP_DIR)/xs_nrf52.out: $(FINAL_LINK_OBJ)
-	@echo "# creating xs_nrf52.out"
-#	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
-	@rm -f $(TMP_DIR)/xs_nrf52.out
-	@echo "# link to .out file"
-	$(LD) $(LDFLAGS) $(FINAL_LINK_OBJ) $(LIB_FILES) -o $@
 
 $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) $(TMP_DIR)/buildinfo.h
 	@echo "# buildinfo"

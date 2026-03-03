@@ -296,12 +296,13 @@ void fx_escape(txMachine* the)
 		else
 			length = fxAddChunkSizes(the, length, 12);
 	}
+	length = fxAddChunkSizes(the, length, 1);
 	if (length == (src - mxArgv(0)->value.string)) {
 		mxResult->value.string = mxArgv(0)->value.string;
 		mxResult->kind = mxArgv(0)->kind;
 		return;
 	}
-	mxResult->value.string = fxNewChunk(the, fxAddChunkSizes(the, length, 1));
+	mxResult->value.string = fxNewChunk(the, length);
 	mxResult->kind = XS_STRING_KIND;
 	src = mxArgv(0)->value.string;
 	dst = mxResult->value.string;
@@ -518,8 +519,7 @@ void fxDecodeURI(txMachine* the, txString theSet)
 				}
 				d &= sequence->lmask;
 				if (sequence != gxUTF8Sequences) {
-					if ((sequence[-1].lmask >= (txU4)d) ||		// over-encoding
-						((d >= 0xD800) & (d <= 0xDFFF)))		// half of surrogate pair
+					if ((sequence[-1].lmask >= (txU4)d) || ((d >= 0xD800) & (d <= 0xDFFF)) || (d >= 0x110000))
 						mxURIError("invalid URI");
 				}
 

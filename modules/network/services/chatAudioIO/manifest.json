@@ -31,6 +31,9 @@
 			"bitsPerSample": 16,
 			"numChannels": 1,
 			"sampleRate": 24000
+		},
+		"task": {
+			"queueLength": 20
 		}
 	},
 	"modules": {

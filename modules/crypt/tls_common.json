@@ -2,7 +2,6 @@
 	"include": [
 		"$(MODULES)/crypt/bin/manifest.json",
 		"$(MODULES)/crypt/digest/manifest.json",
-		"$(MODULES)/data/hex/manifest.json",
 		"$(MODULES)/files/resource/manifest.json"
 	],
 	"modules":{

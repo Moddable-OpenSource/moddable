@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -113,45 +113,6 @@ extern void ESP_putc(int c);
 #define xmodLogHex(msg)
 
 /* RESERVED MEMORY */
-#if 0
-extern uint32_t *dbl_reset_mem;
-
-#define DFU_DBL_RESET_MEM		0x200041FC		// uint32_t, defined in bootloader
-#define MOD_TIME_RESTORE_MEM	0x200041F0		// uint32_t + c_timeval
-#define MOD_WAKEUP_REASON_MEM	0x200041E4		// uint32_t + uint32_t + uint32_t
-
-#define BOOTLOADER_VER_MEM      0x200041D0  	// uint32_t
-
-/* reset */
-#define REBOOT_FAST_RESET		0x4ee5677e
-#define REBOOT_TO_PROGRAMMING	0xbeefcafe
-#define REBOOT_TO_VENDOR		0xf00dcafe
-#define REBOOT_TO_OTA			0xfeed1cee
-
-/* wake */
-#define MOD_GPIO_WAKE_MAGIC		0x04dfcfbf
-#define MOD_ANALOG_WAKE_MAGIC	0x9e60bfca
-
-void nrf52_reboot(uint32_t kind);
-
-#define nrf52_rebootToOTA()		nrf52_reboot(REBOOT_TO_OTA)
-#define nrf52_rebootToDFU()		nrf52_reboot(REBOOT_TO_PROGRAMMING)
-#define nrf52_rebootToVendor()	nrf52_reboot(REBOOT_TO_VENDOR)
-
-extern void nrf52_get_mac(uint8_t *mac);
-
-void nrf52_set_reset_reason(uint32_t resetReason);
-uint32_t nrf52_get_reset_reason(void);
-
-void nrf52_set_boot_latches(uint32_t bootLatch1, uint32_t bootLatch2);
-uint32_t nrf52_get_boot_latch(uint32_t pin);
-uint32_t *nrf52_get_boot_latches();
-void nrf52_clear_boot_latch(uint32_t pin);
-
-uint8_t nrf52_softdevice_enabled(void);
-
-#define nrf52_bootloaderVersion()	(*((uint32_t*)BOOTLOADER_VER_MEM))
-#endif
 
 #define nrf52_reset()			pebble_reset()
 
@@ -282,6 +243,8 @@ typedef va_list c_va_list;
 
 #define myprintf(a, ...) do { char out[256]; sprintf(out, __VA_ARGS__); modLogVar(out); } while (0)
 
+#define c_abort() c_exit(1)
+
 /* DATE */
 
 struct pbl_timeval {
@@ -339,6 +302,10 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define C_NAN NAN
 #define C_RAND_MAX RAND_MAX
 
+#define C_FP_ILOGB0 FP_ILOGB0
+#define C_FP_ILOGBNAN FP_ILOGBNAN
+#define C_INT_MAX INT_MAX
+
 #define C_FP_INFINITE 1
 #define C_FP_NAN 0
 #define C_FP_NORMAL 4
@@ -350,6 +317,7 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define c_isfinite isfinite
 #define c_isnormal isnormal
 #define c_isnan isnan
+#define c_ilogb ilogb
 #define c_fabs fabs
 #define c_floor floor
 #define c_sqrt sqrt
@@ -364,6 +332,10 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define C_DBL_MAX DBL_MAX
 #define C_DBL_MIN (double)5e-324
 #define C_EPSILON (double)2.2204460492503130808472633361816e-16
+
+#if !defined(M_LN2)
+#define M_LN2      0.6931471805599453094172321214581765
+#endif
 
 #else /* NOT *** fdlibm */
 #include <math.h>
@@ -391,6 +363,10 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define C_NAN NAN
 #define C_RAND_MAX RAND_MAX
 
+#define C_FP_ILOGB0 FP_ILOGB0
+#define C_FP_ILOGBNAN FP_ILOGBNAN
+#define C_INT_MAX INT_MAX
+
 #define c_acos acos
 #define c_acosh acosh
 #define c_asin asin
@@ -409,6 +385,7 @@ extern int pbl_gettimeofday(void *tv, void *unusedTZ);
 #define c_fmod fmod
 #define c_fpclassify fpclassify
 #define c_hypot hypot
+#define c_ilogb ilogb
 #define c_isfinite isfinite
 #define c_isnormal isnormal
 #define c_isnan isnan

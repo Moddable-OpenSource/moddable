@@ -21,7 +21,7 @@
 declare module "hex" {
   var Hex: {
     toBuffer: (str: string, separator?: string) => ArrayBuffer;
-    toString: (buffer: BufferLike, separator?: string) => string;
+    toString: (buffer: ByteBuffer, separator?: string) => string;
   }
   export {Hex as default};
 }

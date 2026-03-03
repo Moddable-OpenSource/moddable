@@ -20,9 +20,9 @@
 
 declare module "commodetto/Convert" {
   class Convert {
-    constructor(srcFormat: number, dstFormat: number, clut?: BufferLike);
-    process(src: BufferLike, dst: BufferLike): void;
-    process(src: BufferLike, srcOffset: number, srcCount: number, dst: BufferLike, dstOffset: number, dstCount: number): void;
+    constructor(srcFormat: number, dstFormat: number, clut?: ByteBuffer);
+    process(src: ByteBuffer, dst: ByteBuffer): void;
+    process(src: ByteBuffer, srcOffset: number, srcCount: number, dst: ByteBuffer, dstOffset: number, dstCount: number): void;
   }
 
   export {Convert as default};

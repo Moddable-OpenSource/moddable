@@ -1,0 +1,42 @@
+{
+	"build": {
+		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODDABLE)/build/devices/zephyr/modules/rtc/manifest.json",
+		"$(MODDABLE)/modules/io/files/manifest.json",
+		"$(MODDABLE)/modules/base/modules/manifest.json",
+		"$(MODDABLE)/modules/io/display/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"$(MODULES)/base/time/*",
+			"$(MODULES)/base/time/zephyr/*",
+			"$(MODULES)/base/timer/*",
+			"$(MODULES)/base/timer/mc/*"
+		]
+	},
+	"preload": [
+		"time",
+		"timer"
+	],
+	"creation": {
+		"static": 32768,
+		"chunk": {
+			"initial": 8192
+		},
+		"heap": {
+			"initial": 512
+		},
+		"stack": 256
+	},
+	"zephyrConfig": {
+		"CONFIG_TIMESLICE_PRIORITY": "5"
+	},
+	"platforms": {
+		"zephyr/*": {
+			"include": "$(BUILD)/devices/zephyr/targets/$(SUBPLATFORM)/manifest.json"
+		}
+	}
+}

@@ -19,7 +19,7 @@
 */
 
 declare module "embedded:io/serial" {
-  import { Buffer, PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class Serial {
     constructor(options: ({
       receive: PinSpecifier;
@@ -44,8 +44,8 @@ declare module "embedded:io/serial" {
     close(): void;
     read(): number | ArrayBuffer | undefined;
     read(byteLength: number): ArrayBuffer | undefined;
-    read(buffer: Buffer): number | undefined;
-    write(value: number | Buffer): void;
+    read(buffer: ByteBuffer): number | undefined;
+    write(value: number | ByteBuffer): void;
     flush(): void;
     flush(input: number, output: number): void;
     set(options: {

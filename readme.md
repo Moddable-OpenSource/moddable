@@ -1,7 +1,7 @@
 # Moddable SDK
 
-Copyright 2017-2025 Moddable Tech, Inc.<BR>
-Revised: June 11, 2025
+Copyright 2017-2026 Moddable Tech, Inc.<BR>
+Revised: January 12, 2026
 
 ## Modern software development for microcontrollers
 
@@ -105,11 +105,11 @@ The Moddable SDK supports [many devices](./documentation/devices/esp32.md#platfo
 
 | | | |
 | :---: | :---: | :---: |
-| <a href="./documentation/devices/moddable-two.md"><img src="./documentation/assets/devices/moddable-two.png" width=125></a><BR>Moddable Two<sup>[[8](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md">![ESP32](./documentation/assets/devices/esp32.png)</a><BR>Node MCU ESP32<sup>[[9](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md#platforms">![M5Stack](./documentation/assets/devices/m5stack.png)</a><BR>M5Stack
+| <a href="./documentation/devices/moddable-six.md"><img src="./documentation/assets/devices/moddable-six.png" width=125></a><BR>Moddable Six<sup>[[8](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md">![ESP32](./documentation/assets/devices/esp32.png)</a><BR>Node MCU ESP32<sup>[[9](#footnotes3)]</sup> | <a href="./documentation/devices/esp32.md#platforms">![M5Stack](./documentation/assets/devices/m5stack.png)</a><BR>M5Stack
 | <a href="./documentation/devices/esp32.md#platforms">![M5Stack Fire](./documentation/assets/devices/m5stack-fire.png)</a><BR>M5Stack Fire | <a href="./documentation/devices/esp32.md#platforms">![M5Stick C](./documentation/assets/devices/m5stick-c.png)</a><BR>M5Stick C |  <a href="./documentation/devices/esp32.md#platforms">![M5Atom](./documentation/assets/devices/m5atom.png)</a><BR>M5Atom Matrix
 
 <a id="footnotes3"></a>
-> <sup>[8]</sup> *See also: [Moddable Two Developer Guide](./documentation/devices/moddable-two.md), Moddable [product page](https://www.moddable.com/product)*<BR>
+> <sup>[8]</sup> *See also: [Moddable Six Developer Guide](./documentation/devices/moddable-six.md), Moddable [product page](https://www.moddable.com/product)*<BR>
 <sup>[9]</sup> *See also: [Using the Moddable SDK with ESP32](./documentation/devices/esp32.md)*<BR>
 
 ### Pico by Raspberry Pi
@@ -179,6 +179,21 @@ The following developer resources are also available:
 - [QCA4020 Getting Started with the Moddable SDK](https://developer.qualcomm.com/project/qca4020-getting-started-moddable-sdk) blog post on the Qualcomm Developer Network
 - [QCA4020 Modern UI Application Development with the Moddable SDK](https://developer.qualcomm.com/project/qca4020-modern-ui-application-development-moddable-sdk) blog post on the Qualcomm Developer Network
 
+### Zephyr RTOS
+
+To use the Moddable SDK with Zephyr-based devices, you need to:
+
+1. Install the [Moddable SDK](./documentation/Moddable%20SDK%20-%20Getting%20Started.md)
+2. Install [Zephyr tools](./documentation/devices/zephyr.md)
+
+The Moddable SDK supports [many devices](./documentation/devices/zephyr.md#platforms) built on Zephyr RTOS. To see a full list, run:
+
+```sh
+ls $MODDABLE/devices/zephyr/targets
+```
+
+You can also add your own Zephyr devices by following the instructions in the [Zephyr documentation](./documentation/devices/zephyr.md#new-board).
+
 ### WebAssembly (Wasm)
 
 <a href="./documentation/devices/wasm.md">![](./documentation/assets/devices/wasm.gif)</a>
@@ -195,6 +210,8 @@ To use the Moddable SDK with WebAssembly, you need to:
 <a href="http://www.moddable.com/display">![Displays](./documentation/assets/moddable/displays.jpg)</a>
 
 We have tested a variety of SPI displays with the ESP8266 and ESP32. Video demonstrations of these displays are [on our website](http://www.moddable.com/display). Wiring guides are available in the [documentation/displays](./documentation/displays) directory. The source code for the corresponding display and touch drivers is available in the [modules/drivers](./modules/drivers) directory.
+
+On the Zephyr RTOS, there is a single Moddable SDK [display driver](./modules/io/display/zephyr/display.c) for all displays supported by Zephyr. The driver has been tested with displays that have 16-bit pixels. It may need to be modified to work with displays that use other pixel formats.
 
 ## Source tree
 
@@ -246,6 +263,6 @@ To learn more about Moddable, see [our website](http://www.moddable.com).
 
 For companies interested in the benefits of using JavaScript and the Moddable SDK to power your products, Moddable provides consulting services to help you get started. We're available to help with design, implementation, training, and support.
 
-You can also reach out to us on Twitter ([@moddabletech](https://twitter.com/moddabletech)). Following us on Twitter is the best way to keep up with what we’re doing—we post announcements about new blog posts there, along with other Moddable news.
+You can also reach out to us on X (aka Twitter) ([@moddabletech](https://twitter.com/moddabletech)). Following us is the best way to keep up with what we’re doing—we post announcements about new blog posts there, along with other Moddable news.
 
 You can contact us directly by e-mail at [info@moddable.com](mailto:info@moddable.com).

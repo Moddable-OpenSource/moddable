@@ -135,6 +135,7 @@ MODULES = \
 	$(MOD_DIR)\mcmanifest.xsb \
 	$(MOD_DIR)\mcpack.xsb \
 	$(MOD_DIR)\mcrez.xsb \
+	$(MOD_DIR)\mcdevicetree.xsb \
 	$(MOD_DIR)\nodered2mcu.xsb \
 	$(MOD_DIR)\png2bmp.xsb \
 	$(MOD_DIR)\resampler.xsb \
@@ -222,6 +223,7 @@ COMMANDS = \
 	$(BIN_DIR)\mclocal.bat \
 	$(BIN_DIR)\mcpack.bat \
 	$(BIN_DIR)\mcrez.bat \
+	$(BIN_DIR)\mcdevicetree.bat \
 	$(BIN_DIR)\nodered2mcu.bat \
 	$(BIN_DIR)\png2bmp.bat \
 	$(BIN_DIR)\rle4encode.bat \
@@ -451,6 +453,9 @@ $(BIN_DIR)\mcpack.bat :
 $(BIN_DIR)\mcrez.bat :
 	@echo # mcrez.bat
 	echo @%~dp0\tools mcrez %%* 1> $(BIN_DIR)\mcrez.bat
+$(BIN_DIR)\mcdevicetree.bat :
+	@echo # mcdevicetree.bat
+	echo @%~dp0\tools mcdevicetree %%* 1> $(BIN_DIR)\mcdevicetree.bat
 $(BIN_DIR)\mcrun.bat :
 	@echo # mcrun.bat
 	echo @%~dp0\tools mcrun %%* 1> $(BIN_DIR)\mcrun.bat

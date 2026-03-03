@@ -59,7 +59,7 @@ declare module "embedded:display" {
 		configure(options: DisplayConfigureOptions): void;
 		get configuration(): DisplayConfiguration;
 		begin(options?: DisplayBeginOptions): void;
-		send(buffer: BufferLike): void;
+		send(buffer: ByteBuffer): void;
 		end(): void;
 		adapInvalid(options: DisplayRectangle): void;
 		get width(): number;

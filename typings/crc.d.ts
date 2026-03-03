@@ -22,13 +22,13 @@ declare module "crc" {
   class CRC8 {
     constructor(polynomial: number, initial_value?: number, reflectInput?: boolean, reflectOutput?: boolean, xorOutput?: number)
     close(): void
-    checksum(bytes: BufferLike): number
+    checksum(bytes: ByteBuffer): number
     reset(): this
   }
   class CRC16 {
     constructor(polynomial: number, initial_value?: number, reflectInput?: boolean, reflectOutput?: boolean, xorOutput?: number)
     close(): void
-    checksum(bytes: BufferLike): number
+    checksum(bytes: ByteBuffer): number
     reset(): this
   }
   export {CRC8 as default, CRC8, CRC16};

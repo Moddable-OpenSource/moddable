@@ -30,7 +30,7 @@
 			"rst_pin": 18,
 			"column_offset": 26,
 			"row_offset": 1,
-			"spi_port": "VSPI_HOST",
+			"spi_port": "SPI3_HOST",
 			"registers": [
                  "0x01, 0,",
                  "kDelayMS, 150,",

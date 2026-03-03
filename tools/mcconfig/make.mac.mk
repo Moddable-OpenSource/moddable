@@ -152,7 +152,7 @@ $(LIB_DIR):
 $(BIN_DIR)/mc.so: $(XS_OBJECTS) $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS) 
 	@echo "# ld mc.so"
 	$(CC) $(LINK_OPTIONS) $(LINK_LIBRARIES) $^ -o $@
-#	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang $(LINK_OPTIONS) $(LINK_LIBRARIES) $^ -Wl,-map,map.txt -v -o $@ 
+# 	$(CC) $(LINK_OPTIONS) $(LINK_LIBRARIES) $^ -o $@ -Wl,-map,map.txt -v
 
 $(XS_OBJECTS) : $(XS_HEADERS)
 $(LIB_DIR)/%.c.o: %.c
