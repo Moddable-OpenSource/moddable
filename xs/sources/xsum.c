@@ -97,8 +97,8 @@
 #ifdef PBINARY
 # include "pbinary.h"
 #else
-# define pbinary_int64(x,y) 0
-# define pbinary_double(x) 0
+# define pbinary_int64(x,y) ((void)(x), (void)(y))
+# define pbinary_double(x) ((void)(x))
 #endif
 
 
