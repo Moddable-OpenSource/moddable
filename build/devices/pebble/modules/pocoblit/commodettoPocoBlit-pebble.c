@@ -176,9 +176,20 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 	};
 
 	GCompOp saveMode = ctx->draw_state.compositing_mode;
+#if PBL_COLOR
+	GColor saveColor = ctx->draw_state.tint_color; 
+#endif
 
-	if (mode == kPocoMonochromeForeground)
+	if (mode == kPocoMonochromeForeground) {
+#if PBL_BW
 		ctx->draw_state.compositing_mode = (fgColor == GColorBlack.argb) ?  GCompOpAnd : GCompOpSet;
+#elif PBL_COLOR
+		ctx->draw_state.tint_color.argb = fgColor;
+		ctx->draw_state.compositing_mode = GCompOpTint;
+#else
+		#error PBL_COLOR or PBL_BW expected
+#endif
+	}
 	else if (mode == kPocoMonochromeBackground)
 		ctx->draw_state.compositing_mode = (bgColor == GColorWhite.argb) ? GCompOpOr : GCompOpClear;
 	else	// kPocoMonochromeForeAndBackground
@@ -187,6 +198,9 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 	graphics_draw_bitmap_in_rect_processed(ctx, &src, &GRect(x + poco->xOrigin, y + poco->yOrigin, sw, sh), C_NULL);
 
 	ctx->draw_state.compositing_mode = saveMode;
+#if PBL_COLOR
+	ctx->draw_state.tint_color = saveColor;
+#endif
 }
 
 void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t blend, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
