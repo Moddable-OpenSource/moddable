@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -106,6 +106,8 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 {
 	xsSlot slot;
 	xsmcGet(slot, xsArg(0), id);
+	if (!xsmcIsCallable(slot))
+		xsUnknownError("not a function");
 	return fxToReference(the, &slot);
 }
 
