@@ -55,10 +55,10 @@ declare module "embedded:network/websocket/client" {
     constructor(options: WebSocketClientOptions);
 
     close(): void;
-    write(data: BufferLike, options?: WebSocketWriteOptions): number;
+    write(data: ByteBuffer, options?: WebSocketWriteOptions): number;
     read(): number | ArrayBuffer;
     read(count: number): ArrayBuffer;
-    read(buffer: BufferLike): number;
+    read(buffer: ByteBuffer): number;
 
     format: "buffer" | "number";
     target?: any;

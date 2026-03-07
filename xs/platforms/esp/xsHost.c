@@ -1035,9 +1035,9 @@ int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, v
 	msg.refcon = refcon;
 	msg.embeddedMessage = 0;
 
-	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
-
-	return 0;
+	if (pdTRUE == xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore))
+		return 0;
+	return -1;
 }
 
 void modMessageService(xsMachine *the, int maxDelayMS)

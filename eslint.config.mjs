@@ -67,6 +67,8 @@ export default defineConfig([{
 				Outline: "readonly",
 				QRCode: "readonly",
 				Shape: "readonly",
+
+				assetMap: "readonly",
 			}
 		}
 	},

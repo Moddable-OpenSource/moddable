@@ -19,7 +19,8 @@
 		"main": "main"
 	},
 	"include": [
-		"$(MODULES)/files/resource/manifest.json"
+		"$(MODULES)/files/resource/manifest.json",
+		"$(MODDABLE)/examples/manifest_typings.json"
 	],
 	"modules": {
 		"*": [
@@ -55,6 +56,9 @@
 		},
 		"pico": {
 			"include": "$(BUILD)/devices/pico/manifest.json"
+		},
+		"zephyr": {
+			"include": "$(BUILD)/devices/zephyr/manifest.json"
 		},
 		"gecko": {
 			"include": "$(BUILD)/devices/gecko/manifest.json"

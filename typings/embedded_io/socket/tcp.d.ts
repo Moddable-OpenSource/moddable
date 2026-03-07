@@ -19,7 +19,6 @@
 */
 
 declare module "embedded:io/socket/tcp" {
-  import type { Buffer } from "embedded:io/_common";
   export type Options = ((({
     address: string;
   } | {
@@ -42,8 +41,8 @@ declare module "embedded:io/socket/tcp" {
     readonly remoteAddress: string | undefined;
     readonly remotePort: number | undefined;
     read(byteLength?: number): number | ArrayBuffer;
-    read(buffer: Buffer): void;
-    write(value: number | Buffer): void;
+    read(buffer: ByteBuffer): void;
+    write(value: number | ByteBuffer): void;
     close(): void;
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")

@@ -165,7 +165,7 @@ static char *_appendPath(xsMachine *the, char *dirPath, xsSlot *slot)
 	c_strcat(result, path);
 	size_t resultLen = c_strlen(result);
 	if ('/' == result[resultLen - 1])
-		result[resultLen - 1] = 0;		// remove trainling slash
+		result[resultLen - 1] = 0;		// remove trailing slash
 	return result;
 }
 

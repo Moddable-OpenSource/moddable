@@ -244,6 +244,20 @@
 					"queueLength": 4
 				}
 			}
+		},
+		"zephyr": {
+			"defines": {
+				"XS_TEST": 1
+			},
+			"modules": {
+				"*": [
+					"$(MODULES)/base/time/*",
+					"$(MODULES)/base/time/zephyr/*"
+				],
+				"~": [
+					"$(BUILD)/devices/zephyr/setup/network"
+				]
+			}
 		}
 	}
 }

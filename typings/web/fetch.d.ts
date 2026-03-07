@@ -18,7 +18,7 @@ declare module "web/fetch" {
   interface RequestInit {
     method?: string;
     headers?: Headers | Record<string, string>;
-    body?: string | BufferLike | URLSearchParams;
+    body?: string | ByteBuffer | URLSearchParams;
   }
 
   function fetch(resource: string, options?: RequestInit): Promise<Response>;

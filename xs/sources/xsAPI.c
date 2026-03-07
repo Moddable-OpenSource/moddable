@@ -72,7 +72,7 @@ void fxNull(txMachine* the, txSlot* theSlot)
 	theSlot->kind = XS_NULL_KIND;
 }
 
-void fxBoolean(txMachine* the, txSlot* theSlot, txS1 theValue)
+void fxBoolean(txMachine* the, txSlot* theSlot, txBoolean theValue)
 {
 	theSlot->value.boolean = theValue;
 	theSlot->kind = XS_BOOLEAN_KIND;
@@ -166,22 +166,7 @@ again:
 		break;
 	case XS_NUMBER_KIND:
 		theSlot->kind = XS_INTEGER_KIND;
-		switch (c_fpclassify(theSlot->value.number)) {
-		case C_FP_INFINITE:
-		case C_FP_NAN:
-		case C_FP_ZERO:
-			theSlot->value.integer = 0;
-			break;
-		default: {
-			#define MODULO 4294967296.0
-			txNumber aNumber = c_fmod(c_trunc(theSlot->value.number), MODULO);
-			if (aNumber >= MODULO / 2)
-				aNumber -= MODULO;
-			else if (aNumber < -MODULO / 2)
-				aNumber += MODULO;
-			theSlot->value.integer = (txInteger)aNumber;
-			} break;
-		}
+		theSlot->value.integer = fxNumberToInteger(theSlot->value.number);
 		mxFloatingPointOp("number to integer");
 		break;
 	case XS_STRING_KIND:

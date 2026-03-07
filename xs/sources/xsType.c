@@ -887,6 +887,8 @@ txBoolean fxOrdinarySetPrototype(txMachine* the, txSlot* instance, txSlot* slot)
 	if (instance->value.instance.prototype != prototype) {
 		if (instance->flag & XS_DONT_PATCH_FLAG)
 			return 0;
+		if (instance == mxObjectPrototype.value.reference)
+			return 0;
 		slot = prototype;
 		while (slot) {
 			if (instance == slot) 

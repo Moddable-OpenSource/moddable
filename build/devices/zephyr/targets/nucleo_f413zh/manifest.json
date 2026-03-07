@@ -1,0 +1,5 @@
+{
+	"build": {
+		"ZEPHYR_BOARD": "nucleo_f413zh"
+	}
+}

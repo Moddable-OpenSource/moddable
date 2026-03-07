@@ -24,7 +24,7 @@ declare module "qrcode" {
     }
 
     const qrCode: (options: {
-        input: string | BufferLike,
+        input: string | ByteBuffer,
         maxVersion?: number,
         bitmap?: number | boolean,
         fit?: number,

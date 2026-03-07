@@ -1,0 +1,17 @@
+{
+	"modules": {
+		"embedded:x-files-implementation": "./files-zephyr",
+		"embedded:storage/files": "./files"
+	},
+	"preload": [
+		"embedded:x-files-implementation"
+	],
+	"zephyrConfig": {
+		"CONFIG_FLASH": "y",
+		"CONFIG_FLASH_MAP": "y",
+		"CONFIG_FILE_SYSTEM": "y",
+		"CONFIG_FILE_SYSTEM_LITTLEFS": "y",
+		"CONFIG_FS_LITTLEFS_FMP_DEV": "y",
+		"CONFIG_FS_LITTLEFS_BLK_DEV": "n"
+	}
+}

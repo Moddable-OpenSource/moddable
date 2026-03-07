@@ -20,10 +20,10 @@
 
 // https://url.spec.whatwg.org/#url-class
 
-function parseURL(url) @ "fx_parseURL"
-function serializeURL(url) @ "fx_serializeURL"
-function parseQuery(query) @ "fx_parseQuery"
-function serializeQuery(pairs) @ "fx_serializeQuery"
+function parseURL(url) { return native("fx_parseURL").call(this, url); }
+function serializeURL(url) { return native("fx_serializeURL").call(this, url); }
+function parseQuery(query) { return native("fx_parseQuery").call(this, query); }
+function serializeQuery(pairs) { return native("fx_serializeQuery").call(this, pairs); }
 
 const SCHEME = 1;
 const USERNAME = 2;

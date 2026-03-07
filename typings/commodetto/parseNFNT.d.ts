@@ -21,5 +21,5 @@
 declare module "commodetto/parseNFNT" {
   import type {Font} from "commodetto/Poco"
 
-  export default function (bmp: BufferLike): Font
+  export default function (bmp: ByteBuffer): Font
 }

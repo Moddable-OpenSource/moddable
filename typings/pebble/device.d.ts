@@ -40,8 +40,8 @@ declare module "embedded:provider/builtin" {
       };
     };
     readonly info: {
-      language: readonly string,
-      serialNumber: readonly string,
+      readonly language: string,
+      readonly serialNumber: string,
     }
     //@@ keyValue
     //@@ files

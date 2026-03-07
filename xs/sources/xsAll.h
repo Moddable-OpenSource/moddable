@@ -581,7 +581,7 @@ mxExport txKind fxTypeOf(txMachine*, txSlot*);
 
 mxExport void fxUndefined(txMachine*, txSlot*);
 mxExport void fxNull(txMachine*, txSlot*);
-mxExport void fxBoolean(txMachine*, txSlot*, txS1);
+mxExport void fxBoolean(txMachine*, txSlot*, txBoolean);
 mxExport txBoolean fxToBoolean(txMachine*, txSlot*);
 mxExport void fxInteger(txMachine*, txSlot*, txInteger);
 mxExport txInteger fxToInteger(txMachine*, txSlot*);
@@ -1202,6 +1202,7 @@ mxExport void fx_Math_sign(txMachine* the);
 mxExport void fx_Math_sin(txMachine* the);
 mxExport void fx_Math_sinh(txMachine* the);
 mxExport void fx_Math_sqrt(txMachine* the);
+mxExport void fx_Math_sumPrecise(txMachine* the);
 mxExport void fx_Math_tan(txMachine* the);
 mxExport void fx_Math_tanh(txMachine* the);
 mxExport void fx_Math_trunc(txMachine* the);
@@ -1457,6 +1458,7 @@ mxExport void fxArrayLengthSetter(txMachine* the);
 
 mxExport void fx_Array(txMachine* the);
 mxExport void fx_Array_from(txMachine* the);
+mxExport void fx_Array_fromAsync(txMachine* the);
 mxExport void fx_Array_isArray(txMachine* the);
 mxExport void fx_Array_of(txMachine* the);
 mxExport void fx_Array_prototype_at(txMachine* the);
@@ -1794,6 +1796,8 @@ mxExport void fx_Map_prototype_delete(txMachine* the);
 mxExport void fx_Map_prototype_entries(txMachine* the);
 mxExport void fx_Map_prototype_forEach(txMachine* the);
 mxExport void fx_Map_prototype_get(txMachine* the);
+mxExport void fx_Map_prototype_getOrInsert(txMachine* the);
+mxExport void fx_Map_prototype_getOrInsertComputed(txMachine* the);
 mxExport void fx_Map_prototype_has(txMachine* the);
 mxExport void fx_Map_prototype_keys(txMachine* the);
 mxExport void fx_Map_prototype_set(txMachine* the);
@@ -1820,6 +1824,8 @@ mxExport void fx_SetIterator_prototype_next(txMachine* the);
 mxExport void fx_WeakMap(txMachine* the);
 mxExport void fx_WeakMap_prototype_delete(txMachine* the);
 mxExport void fx_WeakMap_prototype_get(txMachine* the);
+mxExport void fx_WeakMap_prototype_getOrInsert(txMachine* the);
+mxExport void fx_WeakMap_prototype_getOrInsertComputed(txMachine* the);
 mxExport void fx_WeakMap_prototype_has(txMachine* the);
 mxExport void fx_WeakMap_prototype_set(txMachine* the);
 mxExport void fx_WeakSet(txMachine* the);
@@ -1842,7 +1848,9 @@ extern void fxCleanupFinalizationRegistries(txMachine* the);
 extern txU4 fxSumEntry(txMachine* the, txSlot* slot); 
 
 /* xsJSON.c */
+mxExport void fx_JSON_isRawJSON(txMachine* the);
 mxExport void fx_JSON_parse(txMachine* the);
+mxExport void fx_JSON_rawJSON(txMachine* the);
 mxExport void fx_JSON_stringify(txMachine* the);
 
 extern void fxBuildJSON(txMachine* the);
@@ -1857,6 +1865,7 @@ extern void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt)
 extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 
 mxExport void fx_Iterator(txMachine* the);
+mxExport void fx_Iterator_concat(txMachine* the);
 mxExport void fx_Iterator_from(txMachine* the);
 mxExport void fx_Iterator_prototype_constructor_get(txMachine* the);
 mxExport void fx_Iterator_prototype_constructor_set(txMachine* the);
@@ -2207,6 +2216,7 @@ enum {
 #if mxModuleStuff
 	XS_MODULE_STUFF_KIND,
 #endif
+	XS_RAW_JSON_KIND,
 };
 
 #if mxBigEndian

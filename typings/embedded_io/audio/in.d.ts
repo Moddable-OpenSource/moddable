@@ -18,8 +18,6 @@
 *
 */
 declare module "embedded:io/audio/in" {
-  import { Buffer } from "embedded:io/_common";
-
   type AudioType = "LPCM";
 
   interface AudioInOptions {
@@ -36,7 +34,7 @@ declare module "embedded:io/audio/in" {
       onReadable?: (this: AudioIn, byteLength: number, sampleCount?: number) => void;
     });
     read(byteLength?: number): ArrayBuffer
-    read(buffer: Buffer): number
+    read(buffer: ByteBuffer): number
     start(): void;
     stop(options?: { flush?: boolean }): void
     close(): void;

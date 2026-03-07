@@ -263,7 +263,7 @@ class WebSocketClient {
 		switch (this.#state) {
 			case "receiveStatus":
 			case "receiveHeader":
-				do {
+				for (;;) {
 					while (count--) {
 						const c = this.#socket.read();
 						this.#line += String.fromCharCode(c);
@@ -318,7 +318,7 @@ class WebSocketClient {
 					}
 
 					this.#line = "";
-				} while (true);
+				}
 				break;
 
 			case "connected": {

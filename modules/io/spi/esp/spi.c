@@ -131,9 +131,9 @@ void xs_spi_constructor(xsMachine *the)
 #elif kCPUESP32S3
 	if ((SPI1_HOST != tmp) && (SPI2_HOST != tmp) && (SPI3_HOST != tmp))
 #else
-	if ((SPI_HOST != tmp) && (HSPI_HOST != tmp)
+	if ((SPI_HOST != tmp) && (SPI2_HOST != tmp)
 #if !defined( kCPUESP32S2 )
-		 && (VSPI_HOST != tmp)
+		 && (SPI3_HOST != tmp)
 #endif
 		)
 #endif

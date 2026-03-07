@@ -24,7 +24,7 @@ declare module "inflate" {
     constructor(options?: {windowBits?: number});
     close(): void;
 
-    push(buffer: BufferLike, end?: boolean): number;
+    push(buffer: ByteBuffer, end?: boolean): number;
 
     onData: (data: ArrayBuffer) => void;
     onEnd: (status: number) => void;

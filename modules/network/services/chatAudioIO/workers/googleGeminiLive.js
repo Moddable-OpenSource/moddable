@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,8 +38,9 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		const instructions = message.instructions ?? "";
 		const tools = message.functions ?? [];
 		const voiceName = message.voiceID ?? "aoede";
+		const model = message.modelID ?? "gemini-2.5-flash-native-audio-preview-12-2025";
 		this.setup = {
-			model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
+			model: `models/${model}`,
 			generationConfig: {
 				responseModalities: "audio",
 				speechConfig: {
@@ -136,14 +137,13 @@ class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 			this.postMessage({ id:"receiveOutputText", text:data.outputTranscription.text, more:true });
 		}
 	}
-	'setupComplete'(data) {
+	'setupComplete'(/* data */) {
 		this.post("connected");
 	}
 	'toolCall'(data) {
 		const functionCalls = data.functionCalls;
 		if (functionCalls) {
 			this.post("listen");
-			const functionResponses = [];
 			for (let functionCall of functionCalls) {
 				this.postMessage({ 
 					id:"receiveFunctionCall", 

@@ -75,6 +75,7 @@
 		"esp32/moddable_six": {
 			"build": {
 				"ESP32_SUBCLASS": "esp32s3",
+				"EXPECTED_ESP_IDF": "v5.5.1",
 				"USE_USB": "2",
 				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six/sdkconfig"
 			},
@@ -151,6 +152,22 @@
 					"$(MODULES)/base/time/win/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/win/*"
+				]
+			}
+		},
+		"zephyr": {
+			"build": {
+				"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt",
+				"ZEPHYR_BOARD": "$(SUBPLATFORM)"
+			},
+			"defines": {
+				"XS_TEST": 1
+			},
+			"modules": {
+				"*": [
+					"$(MODULES)/base/timer/*",
+					"$(MODULES)/base/timer/mc/*",
+					"$(MODULES)/files/resource/Resource"
 				]
 			}
 		}

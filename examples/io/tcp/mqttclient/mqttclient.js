@@ -75,6 +75,7 @@ class MQTTClient {
 			id: options.id ?? "",
 			clean: options.clean ?? true,
 			keepalive: options.keepAlive ?? options.keepalive ?? 0,		// for compatibilty. should eventually be removed
+			/** @type {any[] & {timer?: Timer}} */
 			pending: []
 		};
 
@@ -270,11 +271,13 @@ class MQTTClient {
 		return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
 	}
 	read(count = this.#payload) {
+		/** @type {BufferLike} */
 		let buffer;
 		if ("object" === typeof count) {
 			buffer = count;
 			count = buffer.byteLength;
 
+			// @ts-expect-error when BYTES_PER_ELEMENT is undefined, this check works as intended
 			if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
 				throw new Error("invalid buffer");
 		}

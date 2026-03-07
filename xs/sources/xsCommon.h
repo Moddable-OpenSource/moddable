@@ -68,6 +68,9 @@
 #endif
 
 // defaults ECMASScript edition and proposals to Moddable SDK
+#ifndef mxECMAScript2026
+	#define mxECMAScript2026 1
+#endif
 #ifndef mxECMAScript2025
 	#define mxECMAScript2025 1
 #endif
@@ -150,7 +153,10 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#if mxECMAScript2025
+#if mxECMAScript2026
+	#define XS_MAJOR_VERSION 17
+	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
+#elif mxECMAScript2025
 	#define XS_MAJOR_VERSION 16
 	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
 #elif mxECMAScript2024
@@ -1308,6 +1314,14 @@ enum {
 #endif
 #if mxErrorIsError
 	_isError,
+#endif
+#if mxECMAScript2026
+	_fromAsync,
+	_getOrInsert,
+	_getOrInsertComputed,
+	_isRawJSON,
+	_rawJSON,
+	_sumPrecise,
 #endif
 	XS_ID_COUNT
 };

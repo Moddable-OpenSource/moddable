@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(moddable_lib)
+
+# export all the flags used by zephyr
+zephyr_get_include_directories_for_lang_as_string(       C includes)
+zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
+zephyr_get_compile_definitions_for_lang_as_string(       C definitions)
+zephyr_get_compile_options_for_lang_as_string(           C options)
+
+if(DEFINED CMAKE_C_COMPILER_TARGET)
+  set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+endif()
+
+set(FONTBM $ENV{FONTBM})
+
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/mc/xsHosts.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/zephyr/xsHost.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/platforms/zephyr/xsPlatform.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsAPI.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsAll.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsArguments.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsArray.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsAtomics.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsBigInt.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsBoolean.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsCode.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsCommon.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsDataView.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsDate.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsDebug.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsError.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsFunction.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsGenerator.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsGlobal.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsJSON.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsLexical.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsLockdown.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsMapSet.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsMarshall.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsMath.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsMemory.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsModule.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsNumber.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsObject.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsPlatforms.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsProfile.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsPromise.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsProperty.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsProxy.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsRegExp.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsRun.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsScope.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsScript.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsSourceMap.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsString.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsSymbol.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsSyntaxical.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsTree.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsType.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsdtoa.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsmc.c)
+list(APPEND mOBJECTS $ENV{MODDABLE}/xs/sources/xsre.c)
+
+list(APPEND mFLAGS "-DmxUseDefaultSharedChunks=1")
+list(APPEND mFLAGS "-DkPocoRotation=0")
+list(APPEND mFLAGS "-DkPocoFrameBuffer=1")
+list(APPEND mFLAGS "-DMODGCC=1")
+list(APPEND mFLAGS "-DmxUseDefaultSharedChunks=1")
+list(APPEND mOPTIONS "-fshort-enums")
+list(APPEND mOPTIONS "-Wno-error=clobbered")
+list(APPEND mOPTIONS "-Wno-error=sign-compare")
+list(APPEND mOPTIONS "-Wno-error=strict-aliasing")
+list(APPEND mOPTIONS "-Wno-misleading-indentation")
+
+set(TYPESCRIPT_SOURCE_FILES
+)
+
+set(TYPESCRIPT_CONVERTED_FILES
+)
+
+set(TYPECHECK_FILE ${CMAKE_BINARY_DIR}/.typeCheck)
+
+
+# --- end prefix ---

@@ -24,7 +24,7 @@
 
 #include "builtinCommon.h"
 
-#if defined(__ets__) && !ESP32
+#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
 	extern void system_deep_sleep_instant(uint32_t time_in_us);
 
 static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
@@ -35,7 +35,7 @@ static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint1
 
 void xs_system_deepSleep(xsMachine *the)
 {
-#if defined(__ets__) && !ESP32
+#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
 	uint32_t us = 0;
 
 	if (xsmcArgc) {
@@ -53,7 +53,7 @@ void xs_system_restart(xsMachine *the)
 {
 #if ESP32
 	esp_restart();
-#elif defined(__ets__)
+#elif defined(__ets__) && !defined(__ZEPHYR__)
 	system_restart();
 #elif defined(PICO_BUILD)
 	pico_reset();
@@ -66,7 +66,7 @@ void xs_system_restart(xsMachine *the)
 /*
 	adapted from modResolve.c
 */
-#if ESP32 || defined(__ets__) || CYW43_LWIP
+#if ESP32 || (defined(__ets__) && !defined(__ZEPHYR__)) || CYW43_LWIP
 #include "lwip/tcp.h"
 
 typedef struct xsNetResolveRecord xsNetResolveRecord;

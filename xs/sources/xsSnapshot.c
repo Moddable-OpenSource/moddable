@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -120,7 +120,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxNativeAdditions 0
 #endif
-#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions + mxErrorIsErrorAdditions + mxNativeAdditions )
+#if mxECMAScript2026
+	#define mxECMAScript2026Additions 9
+#else
+	#define mxECMAScript2026Additions 0
+#endif
+#define mxCallbacksLength (497 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions + mxErrorIsErrorAdditions + mxNativeAdditions + mxECMAScript2026Additions )
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -675,6 +680,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxECMAScript2025
 	fx_Error_prototype_set_stack,
 	fx_Iterator,
+	fx_Iterator_from,
 	fx_Iterator_prototype_constructor_get,
 	fx_Iterator_prototype_constructor_set,
 	fx_Iterator_prototype_drop,
@@ -717,11 +723,22 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxErrorIsError
 	fx_Error_isError,
 #endif
-#if mxMative
+#if mxNative
 	fx_Native,
 	fx_native,
 #endif
 	fxAsyncFromSyncIteratorFailed,
+#if mxECMAScript2026
+	fx_Array_fromAsync,
+	fx_Iterator_concat,
+	fx_JSON_isRawJSON,
+	fx_JSON_rawJSON,
+	fx_Map_prototype_getOrInsert,
+	fx_Map_prototype_getOrInsertComputed,
+	fx_Math_sumPrecise,
+	fx_WeakMap_prototype_getOrInsert,
+	fx_WeakMap_prototype_getOrInsertComputed,
+#endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
 extern const txTypeAtomics gxTypeAtomics[];
@@ -1457,7 +1474,7 @@ txMachine* fxReadSnapshot(txSnapshot* snapshot, txString theName, void* theConte
 	txCreation creation;
 	txSlot* slot;
 	
-	txMachine* the = (txMachine* )c_calloc(1, sizeof(txMachine));
+	txMachine* the = (txMachine* )c_calloc(sizeof(txMachine), 1);
 	if (the) {
 		txJump aJump;
 		snapshot->error = 0;

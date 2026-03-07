@@ -64,6 +64,7 @@ C_OPTIONS = \
 	-I$(TLS_DIR) \
 	-I$(TLS_DIR)/yaml \
 	-I$(TLS_DIR)/fdlibm \
+	-I$(TLS_DIR)/xsum \
 	-I$(TMP_DIR)
 ifneq ("x$(SDKROOT)", "x")
 	C_OPTIONS += -isysroot $(SDKROOT)

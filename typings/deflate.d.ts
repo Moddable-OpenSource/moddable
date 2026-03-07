@@ -24,7 +24,7 @@ declare module "deflate" {
     constructor(options?: {windowBits?: number, level?: number, strategy?: number});
     close(): void;
 
-    push(buffer: BufferLike | string, end?: boolean): boolean;
+    push(buffer: ByteBuffer | string, end?: boolean): boolean;
 
     onData: (data: ArrayBuffer) => void;
     onEnd: (status: number) => void;

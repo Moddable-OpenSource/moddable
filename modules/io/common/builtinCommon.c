@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,7 +24,7 @@
 #include "xsHost.h"
 #include "builtinCommon.h"
 
-#if kPinBanks
+#ifdef kPinBanks
 
 #if ESP32
 	#include "soc/soc_caps.h"
@@ -36,7 +36,7 @@
 		SOC_GPIO_VALID_GPIO_MASK >> 32
 #endif
 	};
-#elif defined(__ets__)
+#elif defined(__ets__) && !defined(__ZEPHYR__)
 	static uint32_t gDigitalAvailable[kPinBanks] = {
 		(1 <<  0) |
 		(1 <<  1) |
@@ -68,6 +68,9 @@
 		0x00000000		//@@
 #endif
 	};
+#elif __ZEPHYR__
+	static uint8_t builtinInitialized = 0;
+	static uint32_t gDigitalAvailable[kPinBanks];
 #endif
 
 uint8_t builtinArePinsFree(uint32_t bank, uint32_t pins)
@@ -205,10 +208,20 @@ uint32_t builtinGetUnsignedInteger(xsMachine *the, xsSlot *slot)
 }
 
 #if defined(PICO_BUILD)
-uint8_t builtinInitIO()
+void builtinInitIO()
 {
 	if (!builtinInitialized) {
 		critical_section_init(&gCommonCriticalMux);
+		builtinInitialized = 1;
+	}
+}
+#elif defined(__ZEPHYR__)
+void builtinInitIO()
+{
+	if (!builtinInitialized) {
+		int i;
+		for (i=0; i<kPinBanks; i++)
+			gDigitalAvailable[i] = 0xffffffff;
 		builtinInitialized = 1;
 	}
 }

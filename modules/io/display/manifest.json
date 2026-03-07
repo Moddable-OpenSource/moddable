@@ -1,0 +1,15 @@
+{
+	"modules": {
+		"*": "./display419.h"
+	},
+	"platforms": {
+		"zephyr": {
+			"include": "./zephyr/manifest.json"
+		}
+	},
+	"defines": {
+		"ECMA419": {
+			"display": 1
+		}
+	}
+}

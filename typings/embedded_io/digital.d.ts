@@ -30,14 +30,16 @@ declare module "embedded:io/digital" {
     | typeof Digital.InputPullUpDown
     | typeof Digital.Output
     | typeof Digital.OutputOpenDrain
+    | typeof Digital.ActiveLow
 
   class Digital {
-    static readonly Input: unknown
-    static readonly InputPullUp: unknown
-    static readonly InputPullDown: unknown
-    static readonly InputPullUpDown: unknown
-    static readonly Output: unknown
-    static readonly OutputOpenDrain: unknown
+    static readonly Input: number
+    static readonly InputPullUp: number
+    static readonly InputPullDown: number
+    static readonly InputPullUpDown: number
+    static readonly Output: number
+    static readonly OutputOpenDrain: number
+    static readonly ActiveLow: number
     static readonly Rising: Edge;
     static readonly Falling: Edge;
 

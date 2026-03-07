@@ -21,7 +21,7 @@
 declare module "base64" {
   var Base64: {
     decode: (str: string) => ArrayBuffer;
-    encode: (source: BufferLike | string) => string;
+    encode: (source: ByteBuffer | string) => string;
   }
   export {Base64 as default};
 }

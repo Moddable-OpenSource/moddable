@@ -23,7 +23,7 @@ import assets from "assets";
 import Timeline from "piu/Timeline";
 import View from "Common";
 
-function computeLevel(buffer) @ "xs_computeLevel";
+function computeLevel(buffer) { return native("xs_computeLevel").call(this, buffer); };
 
 class LevelsBehavior extends View.Behavior {
 	onCreate(container, view) {

@@ -67,6 +67,8 @@ export default function (done) {
   // power
   globalThis.power = new Power({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
   globalThis.amp = new AW88298({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
+  globalThis.mic = new ES7210({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
+  globalThis.mic.init();
 
   // start-up sound
   if (config.startupSound) {
@@ -153,6 +155,60 @@ class AW88298 {
   }
 }
 
+/**
+ * ES7210 audio ADC (microphone)
+ */
+class ES7210 {
+  #io;
+
+  constructor(options) {
+    this.#io = new options.sensor.io ({
+      hz: 400_000,
+      address: 0x40,
+      ...options.sensor
+    });
+  }
+
+  init() {
+    const io = this.#io;
+    io.writeUint8(0x00, 0xFF); // RESET_CTL
+    const data = [
+      [0x00, 0x41], // RESET_CTL
+      [0x01, 0x1f], // CLK_ON_OFF
+      [0x06, 0x00], // DIGITAL_PDN
+      [0x07, 0x20], // ADC_OSR
+      [0x08, 0x10], // MODE_CFG
+      [0x09, 0x30], // TCT0_CHPINI
+      [0x0A, 0x30], // TCT1_CHPINI
+      [0x20, 0x0a], // ADC34_HPF2
+      [0x21, 0x2a], // ADC34_HPF1
+      [0x22, 0x0a], // ADC12_HPF2
+      [0x23, 0x2a], // ADC12_HPF1
+      [0x02, 0xC1],
+      [0x04, 0x01],
+      [0x05, 0x00],
+      [0x11, 0x60],
+      [0x40, 0x42], // ANALOG_SYS
+      [0x41, 0x70], // MICBIAS12
+      [0x42, 0x70], // MICBIAS34
+      [0x43, 0x1B], // MIC1_GAIN
+      [0x44, 0x1B], // MIC2_GAIN
+      [0x45, 0x00], // MIC3_GAIN
+      [0x46, 0x00], // MIC4_GAIN
+      [0x47, 0x00], // MIC1_LP
+      [0x48, 0x00], // MIC2_LP
+      [0x49, 0x00], // MIC3_LP
+      [0x4A, 0x00], // MIC4_LP
+      [0x4B, 0x00], // MIC12_PDN
+      [0x4C, 0xFF], // MIC34_PDN
+      [0x01, 0x14], // CLK_ON_OFF
+    ];
+    for (const [reg, value] of data) {
+      io.writeUint8(reg, value);
+    }
+  }
+}
+
 class Power {	// extends AXP2101 {
 	#axp2101;
 
@@ -166,6 +222,7 @@ class Power {	// extends AXP2101 {
 		axp2101.writeByte(0x27, 0);
 		axp2101.writeByte(0x69, 0x11);
 		axp2101.writeByte(0x10, 0x30);
+		axp2101.writeByte(0x30, 0x0f); // ADC enabled (for voltage measurement)
 
     this.expander = new AW9523({ ...options });
     this.expander.writeByte(0x02, 0b00000111);

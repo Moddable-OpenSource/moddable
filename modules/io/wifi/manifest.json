@@ -1,0 +1,10 @@
+{
+	"platforms": {
+		"zephyr": {
+			"include": "./zephyr/manifest.json"
+		},
+		"...": {
+			"error": "unsupported target"
+		}
+	}
+}
