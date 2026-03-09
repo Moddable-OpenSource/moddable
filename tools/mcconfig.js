@@ -1469,7 +1469,7 @@ export default class extends Tool {
 		}
 
 		if (this.make) {
-			let cmd, overlay = "";
+			let cmd, overlay = "", runner = "";
 			if (this.platform == "zephyr") {
 				if (this.zephyrOverlayFiles.length) {
 					overlay = "-DEXTRA_DTC_OVERLAY_FILE=\"";
@@ -1477,6 +1477,7 @@ export default class extends Tool {
 						overlay += result + " ";
 					overlay += "\"";
 				}
+
 				let command = `cd ${this.moddablePath} && `;
 				path = `${this.moddablePath}${this.slash}build${this.slash}devices${this.slash}zephyr${this.slash}app`;
 				if (this.buildTarget == "clean") {
@@ -1485,10 +1486,16 @@ export default class extends Tool {
 					else
 						command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
 				}
-				else if (this.buildTarget == "deploy")
-					command += `west flash -d ${this.tmpPath}${this.slash}build`;
-				else if (this.buildTarget == "debug")
-					command += `west debug --build ${this.tmpPath}${this.slash}build`;
+				else if (this.buildTarget == "deploy") {
+					if (NULL !== this.environment.BOARD_FLASH_RUNNER)
+						runner = `-r ${this.environment.BOARD_FLASH_RUNNER}`;
+					command += `west flash -d ${this.tmpPath}${this.slash}build ${runner}`;
+				}
+				else if (this.buildTarget == "debug") {
+					if (NULL !== this.environment.BOARD_DEBUG_RUNNER)
+						runner = `-r ${this.environment.BOARD_DEBUG_RUNNER}`;
+					command += `west debug --build ${this.tmpPath}${this.slash}build ${runner}`;
+				}
 				else {
 					let action, secondary = "";
 					if (undefined === this.environment.ZEPHYR_BOARD)

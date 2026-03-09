@@ -61,3 +61,9 @@ int main(void)
 
 	return 0;
 }
+
+#if !defined(__window_spill)
+void __window_spill(void) {}
+#endif
+
+
