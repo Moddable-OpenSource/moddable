@@ -187,7 +187,7 @@ START_SERIAL2XSBUG = echo Launching app... && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PO
 START_XSBUG =
 !ENDIF
 
-IDF_RECONFIGURE_CMD=python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE_MINGW) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) $(IDF_BUILD_OPTIONS)
+IDF_RECONFIGURE_CMD=python %IDF_PATH%\tools\idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) $(IDF_BUILD_OPTIONS)
 
 BLD_DIR = $(PROJ_DIR)\build
 
@@ -530,8 +530,11 @@ clean:
 	if exist $(PROJ_DIR) rmdir /s/q $(PROJ_DIR)
 
 dependencies: $(PROJ_DIR) $(PROJ_DIR_FILES) $(PROJ_DIR)\..\xs_idf_deps.txt
-	if exist $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)\main\idf_component.yml del $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)\main\idf_component.yml
-	echo "# Configure dependencies..." & cd $(PROJ_DIR) & $(BUILD_DEPENDENCIES)
+ 	if exist $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)\main\idf_component.yml del $(TMP_DIR)\xsProj-$(ESP32_SUBCLASS)\main\idf_component.yml
+ 	echo "# Configure dependencies..." & cd $(PROJ_DIR) & $(BUILD_DEPENDENCIES)
+
+
+# precursor: idfVersionCheck $(BLE) $(PROJ_DIR) $(PROJ_DIR_FILES) $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
 
 precursor: idfVersionCheck $(BLE) dependencies $(SDKCONFIG_H) $(LIB_DIR) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a
 	copy $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(BLD_DIR)\.
@@ -618,14 +621,7 @@ deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 idfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
-xidfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION)
-	if %ERRORLEVEL% NEQ 0 (
-		echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"
-		exit 1
-	)
-
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
@@ -651,34 +647,34 @@ $(PROJ_DIR)\main:
 	mkdir $(PROJ_DIR)\main
 
 $(PROJ_DIR)\main\debugger_none.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_none.c
-	copy $(PLATFORM_DIR)\lib\debugger\debugger_none.c $@
+	xcopy /D /Y /K $(PLATFORM_DIR)\lib\debugger\debugger_none.c $(@D)
 
 $(PROJ_DIR)\main\debugger_uart.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_uart.c
-	copy $(PLATFORM_DIR)\lib\debugger\debugger_uart.c $@
+	xcopy /D /Y /K $(PLATFORM_DIR)\lib\debugger\debugger_uart.c $(@D)
 
 $(PROJ_DIR)\main\debugger_uart_cdc.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_uart_cdc.c
-	copy $(PLATFORM_DIR)\lib\debugger\debugger_uart_cdc.c $@
+	xcopy /D /Y /K $(PLATFORM_DIR)\lib\debugger\debugger_uart_cdc.c $(@D)
 
 $(PROJ_DIR)\main\debugger_cdc.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_cdc.c
-	copy $(PLATFORM_DIR)\lib\debugger\debugger_cdc.c $@
+	xcopy /D /Y /K $(PLATFORM_DIR)\lib\debugger\debugger_cdc.c $(@D)
 
 $(PROJ_DIR)\main\debugger_tinyusb.c: $(PROJ_DIR)\main $(PLATFORM_DIR)\lib\debugger\debugger_tinyusb.c
-	copy $(PLATFORM_DIR)\lib\debugger\debugger_tinyusb.c $@
+	xcopy /D /Y /K $(PLATFORM_DIR)\lib\debugger\debugger_tinyusb.c $(@D)
 
 $(PROJ_DIR)\main\main.c: $(PROJ_DIR)\main $(BUILD_DIR)\devices\esp32\lib\main\main.c
-	copy $(BUILD_DIR)\devices\esp32\lib\main\main.c $@
+	xcopy /D /Y /K $(BUILD_DIR)\devices\esp32\lib\main\main.c $(@D)
 
 $(PROJ_DIR)\main\component.mk: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\component.mk
-	copy $(PROJ_DIR_TEMPLATE)\main\component.mk $@
+	xcopy /D /Y /K $(PROJ_DIR_TEMPLATE)\main\component.mk $(@D)
 
 $(PROJ_DIR)\main\CMakeLists.txt: $(PROJ_DIR)\main $(PROJ_DIR_TEMPLATE)\main\CMakeLists.txt
-	copy $(PROJ_DIR_TEMPLATE)\main\CMakeLists.txt $@
+	xcopy /D /Y /K $(PROJ_DIR_TEMPLATE)\main\CMakeLists.txt $(@D)
 
 $(PROJ_DIR)\CMakeLists.txt: $(PROJ_DIR_TEMPLATE)\CMakeLists.txt
-	copy $(PROJ_DIR_TEMPLATE)\CMakeLists.txt $@
+	xcopy /D /Y /K $(PROJ_DIR_TEMPLATE)\CMakeLists.txt $(@D)
 
 $(PROJ_DIR)\Makefile: $(PROJ_DIR_TEMPLATE)\Makefile
-	copy $? $@
+	xcopy /D /Y /K $(PROJ_DIR_TEMPLATE)\Makefile $(@D)
 
 $(PROJ_DIR)\components\bootloader\subproject\main\bootloader_start.c: $(PROJ_DIR) $(BOOTLOADERPATH)\subproject\main\bootloader_start.c
 	echo Using custom bootloader: $(BOOTLOADERPATH)
