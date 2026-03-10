@@ -1469,7 +1469,7 @@ export default class extends Tool {
 		}
 
 		if (this.make) {
-			let cmd, overlay = "", runner = "";
+			let cmd, overlay = "", flashRunner = "", debugRunner = "";
 			if (this.platform == "zephyr") {
 				if (this.zephyrOverlayFiles.length) {
 					overlay = "-DEXTRA_DTC_OVERLAY_FILE=\"";
@@ -1480,6 +1480,12 @@ export default class extends Tool {
 
 				let command = `cd ${this.moddablePath} && `;
 				path = `${this.moddablePath}${this.slash}build${this.slash}devices${this.slash}zephyr${this.slash}app`;
+
+				if (null !== this.environment.BOARD_FLASH_RUNNER)
+					flashRunner = `-r ${this.environment.BOARD_FLASH_RUNNER}`;
+				if (null !== this.environment.BOARD_DEBUG_RUNNER)
+					debugRunner = `-r ${this.environment.BOARD_DEBUG_RUNNER}`;
+
 				if (this.buildTarget == "clean") {
 					if (this.windows)
 						command += `del /s/q/f build\\bin\\zephyr\\${this.subplatform}\\*.* build\\tmp\\zephyr\\${this.subplatform}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
@@ -1487,14 +1493,10 @@ export default class extends Tool {
 						command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
 				}
 				else if (this.buildTarget == "deploy") {
-					if (NULL !== this.environment.BOARD_FLASH_RUNNER)
-						runner = `-r ${this.environment.BOARD_FLASH_RUNNER}`;
-					command += `west flash -d ${this.tmpPath}${this.slash}build ${runner}`;
+					command += `west flash -d ${this.tmpPath}${this.slash}build ${flashRunner}`;
 				}
 				else if (this.buildTarget == "debug") {
-					if (NULL !== this.environment.BOARD_DEBUG_RUNNER)
-						runner = `-r ${this.environment.BOARD_DEBUG_RUNNER}`;
-					command += `west debug --build ${this.tmpPath}${this.slash}build ${runner}`;
+					command += `west debug --build ${this.tmpPath}${this.slash}build ${debugRunner}`;
 				}
 				else {
 					let action, secondary = "";
@@ -1505,7 +1507,7 @@ export default class extends Tool {
 					if (this.buildTarget == "build")
 						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay}`
 					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build && serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build ${flashRunner} && serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
 					else
 						throw new Error("unknown target: " + this.buildTarget);
 
@@ -1517,6 +1519,7 @@ export default class extends Tool {
 					}
 
 					command += ` ${secondary}`;
+// trace(`command: ${command}\n`);
 				}
 				if (this.windows) {
 					const buildCmdPath = this.tmpPath + "\\doBuild.bat";
