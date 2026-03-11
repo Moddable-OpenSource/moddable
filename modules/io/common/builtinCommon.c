@@ -106,6 +106,9 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id)
 {
 	xsSlot slot;
 	xsmcGet(slot, xsArg(0), id);
+	xsType type = fxTypeOf(the, &slot);
+	if ((xsUndefinedType == type) || (xsNullType == type))
+		return C_NULL;
 	if (!xsmcIsCallable(slot))
 		xsUnknownError("not a function");
 	return fxToReference(the, &slot);

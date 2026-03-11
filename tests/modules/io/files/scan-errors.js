@@ -1,7 +1,6 @@
 /*---
 description: 
 flags: [module]
-includes: [compareArray.js]
 ---*/
 
 import files from "./files_FIXTURE.js";
