@@ -484,7 +484,7 @@ const domain = device.keyValue.open({path: "wifi"});
 ```
 
 ### TypeScript
-The `device` global is different for every Zephyr board, because every board has unique hardware capabiliites and confirmations. As a result, a universal TypeScript declarations file (a `.d.ts` file) cannot precisely define the `device` global for any single build. Instead, `mcdevicetree` generates the TypeScript declarations file for the board. These declarations are automatically used when building TypeScript code for Zephyr, ensuring that your code accesses only the hardware available on your development board.
+The `device` global is different for every Zephyr board, because every board has unique hardware capabiliites and configurations. As a result, a universal TypeScript declarations file (a `.d.ts` file) cannot precisely define the `device` global for any single build. Instead, `mcdevicetree` generates the TypeScript declarations file for the board. These declarations are automatically used when building TypeScript code for Zephyr, ensuring that your code accesses only the hardware available on your development board.
 
 <a id="debugging-native-code"></a>
 ## Debugging Native Code
