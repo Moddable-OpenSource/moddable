@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -2835,9 +2835,9 @@ void fxReport(txMachine* the, txString theFormat, ...)
 	fxVReport(the, theFormat, arguments);
 	c_va_end(arguments);
 #ifndef mxNoConsole
-char foo[128];
 	c_va_start(arguments, theFormat);
 #ifdef pebble
+char foo[128];
 c_vsnprintf(foo, 128, theFormat, arguments);
 modLog_transmit(foo);
 #else

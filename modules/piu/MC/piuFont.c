@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -310,7 +310,9 @@ void PiuStyleLookupFont(PiuStyle* self)
 	CFESetFontSize(gCFE, (*self)->size);
 	CFEGetFontMetrics(gCFE, &ascent, &descent, &leading);
     
+#if pebble
 foundFont:
+#endif
 	(*font)->flags = (*self)->flags & piuStyleBits;
 	(*font)->family = (*self)->family;
 	(*font)->size = (*self)->size;
