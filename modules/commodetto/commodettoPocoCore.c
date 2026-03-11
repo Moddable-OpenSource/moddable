@@ -55,6 +55,11 @@ void xs_poco_destructor(void *data)
 		Poco poco = (Poco)(((uint8_t *)data) - offsetof(PocoRecord, pixels));
 		if (poco->reservedPocoJS)
 			c_free(poco->reservedPocoJS);
+#if pebble
+		if (poco->pebbleState)
+			c_free(poco->pebbleState);
+#endif
+
 #if MODDEF_POCO_DMA
 		#if ESP32
 			heap_caps_free(poco);
@@ -64,6 +69,11 @@ void xs_poco_destructor(void *data)
 #else
 		c_free(poco);
 #endif
+	}
+
+	if (gCFE) {
+		CFEDispose(gCFE);
+		gCFE = C_NULL;
 	}
 }
 
@@ -123,6 +133,10 @@ void xs_poco_build(xsMachine *the)
 
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsPocoHooks);
 	poco->reservedPocoJS = NULL;
+
+#if pebble
+	poco->pebbleState = NULL;
+#endif
 
 	poco->width = (PocoDimension)xsmcToInteger(xsArg(0));
 	poco->height = (PocoDimension)xsmcToInteger(xsArg(1));
@@ -189,7 +203,7 @@ void xs_poco_build(xsMachine *the)
 	xsmcSetInteger(xsVar(0), pixelsLength);
 	xsmcDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
-	if (NULL == gCFE)
+	if (C_NULL == gCFE)
 		gCFE = CFENew();
 }
 
@@ -258,7 +272,7 @@ void xs_poco_begin(xsMachine *the)
 		PixelsOutDispatch pixelsOutDispatch = poco->outputRefcon ? *(PixelsOutDispatch *)poco->outputRefcon : NULL;
 #if MODDEF_ECMA419_DISPLAY
 		if (poco->displayHooks) {
-			int rowBytesInt;
+			int32_t rowBytesInt;
 			(((xsDisplayHostHooks)poco->displayHooks)->doBegin)(poco->outputRefcon, poco->x, poco->y, poco->w, poco->h, (void **)&pixels, &rowBytesInt, 0);
 			rowBytes = (int16_t)rowBytesInt;
 		}
@@ -933,6 +947,7 @@ void xs_poco_drawText(xsMachine *the)
 	else {
 		width = 0;
 		ellipsisWidth = 0;
+		ellipsis = C_NULL;		// appease compiler
 	}
 
 	while (true) {
@@ -1033,7 +1048,7 @@ void xs_poco_drawText(xsMachine *the)
 #endif
 				bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
-				if (kPocoPixelFormat == cb->format) {
+				if ((kCommodettoBitmapMonochrome != cb->format) && (kCommodettoBitmapMonochromeAligned != cb->format) && (kCommodettoBitmapGray16 != (cb->format & ~kCommodettoBitmapPacked))) {
 					isColor = 1;
 					if (xsReferenceType == xsmcTypeOf(xsArg(2))) {
 						isColor = 2;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2024 Satoshi Tanaka
+* Copyright (c) 2024-2026 Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -23,9 +23,11 @@ declare module "qrcode" {
         size: number;
     }
 
-    var qrCode: (options: {
+    const qrCode: (options: {
         input: string | ByteBuffer,
-        maxVersion?: number
+        maxVersion?: number,
+        bitmap?: number | boolean,
+        fit?: number,
     }) => qrcode;
 
     export { qrCode as default };

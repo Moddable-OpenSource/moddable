@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,7 +22,7 @@
 
 static void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
-static const xsHostHooks PiuTextureHoks ICACHE_RODATA_ATTR = {
+static const xsHostHooks PiuTextureHooks ICACHE_RODATA_ATTR = {
 	PiuTextureDelete,
 	PiuTextureMark,
 	NULL
@@ -30,6 +30,15 @@ static const xsHostHooks PiuTextureHoks ICACHE_RODATA_ATTR = {
 
 void PiuTextureDelete(void* it)
 {
+#if pebble
+	PiuTexture self = it;
+	if (!self) return;
+
+	if (kCommodettoBitmapPebble == self->mask.format)
+		gbitmap_destroy((GBitmap *)self->mask.pixels);
+	if (kCommodettoBitmapPebble == self->bits.format)
+		gbitmap_destroy((GBitmap *)self->bits.pixels);
+#endif
 }
 
 void PiuTextureMark(xsMachine* the, void* it, xsMarkRoot markRoot)
@@ -120,6 +129,11 @@ void PiuTexture_create(xsMachine* the)
 			self->width = cb->w;
 			self->height = cb->h;
 		#endif
+
+#if pebble
+		if (kCommodettoBitmapPebble == self->mask.format)
+			cb->format = kCommodettoBitmapNone;			// take ownership of native GBitmap
+#endif
 	}
 	if (xsTest(xsArg(1))) {
 		CommodettoBitmap cb = xsGetHostChunk(xsArg(1));
@@ -138,9 +152,14 @@ void PiuTexture_create(xsMachine* the)
 			self->width = cb->w;
 			self->height = cb->h;
 		#endif
+
+#if pebble
+		if (kCommodettoBitmapPebble == self->bits.format)
+			cb->format = kCommodettoBitmapNone;			// take ownership of native GBitmap
+#endif
 	}
 	xsSetHostChunk(xsThis, self, sizeof(record));
-	xsSetHostHooks(xsThis, &PiuTextureHoks);
+	xsSetHostHooks(xsThis, &PiuTextureHooks);
 	xsResult = xsThis;
 }
 

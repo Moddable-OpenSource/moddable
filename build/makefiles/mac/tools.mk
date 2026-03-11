@@ -388,17 +388,17 @@ $(TMP_DIR)/%.c.xsi: %.c
 
 $(BIN_DIR)/buildclut: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": buildclut"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools buildclut "$$@"' > $(BIN_DIR)/buildclut
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" buildclut "$$@"' > $(BIN_DIR)/buildclut
 	chmod +x $(BIN_DIR)/buildclut
 
 $(BIN_DIR)/cdv: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": cdv"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools cdv "$$@"' > $(BIN_DIR)/cdv
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" cdv "$$@"' > $(BIN_DIR)/cdv
 	chmod +x $(BIN_DIR)/cdv
 
 $(BIN_DIR)/mchex: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mchex"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mchex "$$@"' > $(BIN_DIR)/mchex
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mchex "$$@"' > $(BIN_DIR)/mchex
 	chmod +x $(BIN_DIR)/mchex
 
 $(BIN_DIR)/mcdevicetree: $(MAKEFILE_LIST)
@@ -408,77 +408,77 @@ $(BIN_DIR)/mcdevicetree: $(MAKEFILE_LIST)
 
 $(BIN_DIR)/colorcellencode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": colorcellencode"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" colorcellencode "$$@"' > $(BIN_DIR)/colorcellencode
 	chmod +x $(BIN_DIR)/colorcellencode
 
 $(BIN_DIR)/compressbmf: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": compressbmf"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools compressbmf "$$@"' > $(BIN_DIR)/compressbmf
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" compressbmf "$$@"' > $(BIN_DIR)/compressbmf
 	chmod +x $(BIN_DIR)/compressbmf
 
 $(BIN_DIR)/image2cs: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": image2cs"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools image2cs "$$@"' > $(BIN_DIR)/image2cs
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" image2cs "$$@"' > $(BIN_DIR)/image2cs
 	chmod +x $(BIN_DIR)/image2cs
 
 $(BIN_DIR)/mcbundle: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcbundle"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcbundle "$$@"' > $(BIN_DIR)/mcbundle
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcbundle "$$@"' > $(BIN_DIR)/mcbundle
 	chmod +x $(BIN_DIR)/mcbundle
 
 $(BIN_DIR)/mcconfig: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcconfig"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcconfig "$$@"' > $(BIN_DIR)/mcconfig
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcconfig "$$@"' > $(BIN_DIR)/mcconfig
 	chmod +x $(BIN_DIR)/mcconfig
 
 $(BIN_DIR)/mclocal: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mclocal"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mclocal "$$@"' > $(BIN_DIR)/mclocal
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mclocal "$$@"' > $(BIN_DIR)/mclocal
 	chmod +x $(BIN_DIR)/mclocal
 	
 $(BIN_DIR)/mcpack: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcpack"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcpack "$$@"' > $(BIN_DIR)/mcpack
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcpack "$$@"' > $(BIN_DIR)/mcpack
 	chmod +x $(BIN_DIR)/mcpack
 
 $(BIN_DIR)/mcprintski: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcprintski"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcprintski "$$@"' > $(BIN_DIR)/mcprintski
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcprintski "$$@"' > $(BIN_DIR)/mcprintski
 	chmod +x $(BIN_DIR)/mcprintski
 
 $(BIN_DIR)/mcrez: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrez"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcrez "$$@"' > $(BIN_DIR)/mcrez
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcrez "$$@"' > $(BIN_DIR)/mcrez
 	chmod +x $(BIN_DIR)/mcrez
 
 $(BIN_DIR)/mcrun: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": mcrun"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools mcrun "$$@"' > $(BIN_DIR)/mcrun
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" mcrun "$$@"' > $(BIN_DIR)/mcrun
 	chmod +x $(BIN_DIR)/mcrun
 
 $(BIN_DIR)/nodered2mcu: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": nodered2mcu"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools nodered2mcu "$$@"' > $(BIN_DIR)/nodered2mcu
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" nodered2mcu "$$@"' > $(BIN_DIR)/nodered2mcu
 	chmod +x $(BIN_DIR)/nodered2mcu
 
 $(BIN_DIR)/png2bmp: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": png2bmp"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools png2bmp "$$@"' > $(BIN_DIR)/png2bmp
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" png2bmp "$$@"' > $(BIN_DIR)/png2bmp
 	chmod +x $(BIN_DIR)/png2bmp
 
 $(BIN_DIR)/rle4encode: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": rle4encode"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools rle4encode "$$@"' > $(BIN_DIR)/rle4encode
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" rle4encode "$$@"' > $(BIN_DIR)/rle4encode
 	chmod +x $(BIN_DIR)/rle4encode
 
 $(BIN_DIR)/wav2maud: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": wav2maud"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools wav2maud "$$@"' > $(BIN_DIR)/wav2maud
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" wav2maud "$$@"' > $(BIN_DIR)/wav2maud
 	chmod +x $(BIN_DIR)/wav2maud
 
 $(BIN_DIR)/bles2gatt: $(MAKEFILE_LIST)
 	@echo "#" $(NAME) $(GOAL) ": bles2gatt"
-	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n$$DIR/tools bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
+	echo '#!/bin/bash\nDIR=$$(cd "$$(dirname "$$BASH_SOURCE")"; cd -P "$$(dirname "$$(readlink "$$BASH_SOURCE" || echo .)")"; pwd)\n"$$DIR/tools" bles2gatt "$$@"' > $(BIN_DIR)/bles2gatt
 	chmod +x $(BIN_DIR)/bles2gatt
 
 $(BIN_DIR)/README.txt:

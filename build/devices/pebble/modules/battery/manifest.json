@@ -1,0 +1,10 @@
+{
+	"include": [
+	],
+	"modules": {
+		"embedded:sensor/Battery": "./pebble-battery"
+	},
+	"preload": [
+		"embedded:sensor/Battery"
+	]
+}

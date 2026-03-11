@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -175,7 +175,7 @@ void fxParseJSON(txMachine* the, txJSONParser* theParser)
 
 void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 {
-	txSlot* sourceArray;
+	txSlot* sourceArray = NULL;
 	txSlot* sourceItem;
 	txSlot* valueArray;
 	txSlot* valueItem;
@@ -510,7 +510,7 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 
 void fxParseJSONObject(txMachine* the, txJSONParser* theParser)
 {
-	txSlot* sourceObject;
+	txSlot* sourceObject = NULL;
 	txSlot* valueObject;
 	txBoolean comma = 0;
 	txSlot* at;

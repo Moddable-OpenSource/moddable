@@ -1,0 +1,39 @@
+diff --git a/python_libs/pulse2/pebble/pulse2/link.py b/python_libs/pulse2/pebble/pulse2/link.py
+index bf53349..ae48d29 100644
+--- a/python_libs/pulse2/pebble/pulse2/link.py
++++ b/python_libs/pulse2/pebble/pulse2/link.py
+@@ -31,7 +31,7 @@ except ImportError:
+ logger = logging.getLogger(__name__)
+ logger.addHandler(logging.NullHandler())
+ 
+-DBGSERIAL_PORT_SETTINGS = dict(baudrate=1000000, timeout=0.1,
++DBGSERIAL_PORT_SETTINGS = dict(baudrate=115200, timeout=0.1,
+                                interCharTimeout=0.0001)
+ 
+ 
+diff --git a/src/fw/console/dbgserial.c b/src/fw/console/dbgserial.c
+index 3e5d325..e99f5c1 100644
+--- a/src/fw/console/dbgserial.c
++++ b/src/fw/console/dbgserial.c
+@@ -23,7 +23,7 @@
+ 
+ 
+ #if PULSE_EVERYWHERE
+-#define DEFAULT_SERIAL_BAUD_RATE 1000000
++#define DEFAULT_SERIAL_BAUD_RATE 115200
+ #else
+ #define DEFAULT_SERIAL_BAUD_RATE 230400
+ #endif
+diff --git a/src/fw/drivers/nrf5/uart.c b/src/fw/drivers/nrf5/uart.c
+index a40d202..ebfc82f 100644
+--- a/src/fw/drivers/nrf5/uart.c
++++ b/src/fw/drivers/nrf5/uart.c
+@@ -36,7 +36,7 @@ void uart_init(UARTDevice *dev) {
+     .p_context = (void *)dev,
+     .tx_cache = { .p_buffer = (uint8_t *) dev->state->tx_cache_buffer, .length = sizeof(dev->state->tx_cache_buffer) },
+     .rx_cache = { .p_buffer = (uint8_t *) dev->state->rx_cache_buffer, .length = sizeof(dev->state->rx_cache_buffer) },
+-    .baudrate = NRF_UARTE_BAUDRATE_1000000,
++    .baudrate = NRF_UARTE_BAUDRATE_115200,
+     .config = {
+       .hwfc = NRF_UARTE_HWFC_DISABLED,
+       .parity = NRF_UARTE_PARITY_EXCLUDED,

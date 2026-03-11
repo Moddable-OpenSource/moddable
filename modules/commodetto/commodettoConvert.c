@@ -129,6 +129,7 @@ static void ccGray256toMonochrome(uint32_t pixelCount, void *src, void *dst, voi
 static void ccGray256toGray16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void ccGray256toRGB332(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void ccGray256toRGB565LE(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void ccGray256toMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
 static void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 static void ccRGB565LEtoGray256(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
@@ -148,6 +149,10 @@ static void cc32RGBAtoRGB565LE(uint32_t pixelCount, void *src, void *dst, void *
 static void cc32RGBAtoCLUT16(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoARGB4444(uint32_t pixelCount, void *src, void *dst, void *clut);
 static void cc32RGBAtoBGRA32(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void cc32RGBAtoMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
+
+static void cc32RGBAtoARGB2222(uint32_t pixelCount, void *src, void *dst, void *clut);
+static void ccGray256toGray4(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
 static void cc32YUV422toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut);
 
@@ -163,7 +168,17 @@ static const CommodettoConverter gFromGray16[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toCLUT16
 	NULL,					// toARGB4444
 	NULL,					// toRGB444
-	NULL					// toBGRA32
+	NULL,					// toBGRA32
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	NULL,					// toMonochromeAligned
+	NULL,					// toPebble?
+	NULL,					// toARGB2222
+	NULL,					// toGray4
 };
 
 static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
@@ -178,7 +193,17 @@ static const CommodettoConverter gFromGray256[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toCLUT16
 	NULL,					// toARGB4444
 	NULL,					// toRGB444
-	NULL					// toBGRA32
+	NULL,					// toBGRA32
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	ccGray256toMonochromeAligned,	// toMonochromeAligned
+	NULL,					// toPebble?
+	NULL,					// toARGB2222
+	ccGray256toGray4,					// toGray4
 };
 
 static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
@@ -193,7 +218,17 @@ static const CommodettoConverter gFromRGB565LE[] ICACHE_XS6RO_ATTR = {
 	NULL,					// toCLUT16
 	NULL,					// toARGB4444
 	NULL,					// toRGB444
-	NULL					// toBGRA32
+	NULL,					// toBGRA32
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	NULL,					// toMonochromeAligned
+	NULL,					// toPebble?
+	NULL,					// toARGB2222
+	NULL,					// toGray4
 };
 
 static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
@@ -208,7 +243,17 @@ static const CommodettoConverter gFrom24RGB[] ICACHE_XS6RO_ATTR = {
 	cc24RGBtoCLUT16,		// toCLUT16
 	NULL,					// toARGB4444
 	NULL,					// toRGB444
-	NULL					// toBGRA32
+	NULL,					// toBGRA32,
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	NULL,					// toMonochromeAligned
+	NULL,					// toPebble?
+	NULL,					// toARGB2222
+	NULL,					// toGray4
 };
 
 static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-multiplied alpha
@@ -223,7 +268,17 @@ static const CommodettoConverter gFrom32RGBA[] ICACHE_XS6RO2_ATTR = {		// pre-mu
 	cc32RGBAtoCLUT16,		// toCLUT16
 	cc32RGBAtoARGB4444,		// toARGB4444
 	NULL,					// toRGB444
-	cc32RGBAtoBGRA32		// toBGRA32
+	cc32RGBAtoBGRA32,		// toBGRA32,
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	cc32RGBAtoMonochromeAligned,// toMonochromeAligned
+	NULL,					// toPebble?
+	cc32RGBAtoARGB2222,		// toARGB2222
+	NULL,					// toGray4
 };
 
 static const CommodettoConverter gFromYUV422[] ICACHE_XS6RO2_ATTR = { // YUYV
@@ -238,7 +293,17 @@ static const CommodettoConverter gFromYUV422[] ICACHE_XS6RO2_ATTR = { // YUYV
 	C_NULL,					// toCLUT16
 	C_NULL,					// toARGB4444
 	C_NULL,					// toRGB444
-	C_NULL					// toBGRA32
+	C_NULL,					// toBGRA32,
+	NULL,					// toJPEG
+	NULL,					// toPNG
+	NULL,					// toCLUT256
+	NULL,					// toCLUT32
+	NULL,					// toColorCell
+	NULL,					// toYUV22
+	NULL,					// toMonochromeAligned
+	NULL,					// toPebble?
+	NULL,					// toARGB2222
+	NULL,					// toGray4
 };
 
 static const CommodettoConverter *gFromConverters[] ICACHE_RODATA_ATTR = {
@@ -292,7 +357,7 @@ CommodettoConverter CommodettoPixelsConverterGet(CommodettoBitmapFormat srcForma
 	if ((srcFormat < kCommodettoBitmapMonochrome) || (dstFormat < kCommodettoBitmapMonochrome))
 		return C_NULL;
 
-	if ((srcFormat > kCommodettoBitmapYUV422) || (dstFormat > kCommodettoBitmapBGRA32))
+	if ((srcFormat > kCommodettoBitmapYUV422) || (dstFormat > kCommodettoBitmapGray4))
 		return C_NULL;
 
 	const CommodettoConverter *converters = gFromConverters[srcFormat - kCommodettoBitmapMonochrome];
@@ -375,6 +440,29 @@ void ccGray256toRGB565LE(uint32_t pixelCount, void *srcPixels, void *dstPixels, 
 		uint8_t gray256 = *src++;
 		*dst++ = ((gray256 >> 3) << 11) | ((gray256 >> 2) << 5) | (gray256 >> 3);
 	}
+}
+
+void ccGray256toMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mono = 0;
+	uint8_t mask = 0x01;
+
+	while (pixelCount--) {
+		if (*src++ >= 128)
+			mono |= mask;
+
+		mask <<= 1;
+		if (0 == mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x01;
+		}
+	}
+
+	if (0x01 != mask)
+		*dst++ = mono;
 }
 
 void ccRGB565LEtoMonochrome(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
@@ -734,6 +822,72 @@ void cc32RGBAtoBGRA32(uint32_t pixelCount, void *srcPixels, void *dstPixels, voi
 
 		src += 4;
 		dst += 4;
+	}
+}
+
+void cc32RGBAtoMonochromeAligned(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+	uint8_t mono = 0;
+	uint8_t mask = 0x01;
+
+	while (pixelCount--) {
+		uint8_t gray = toGray(src[0], src[1], src[2]);
+		src += 4;
+		if (gray >= 128)
+			mono |= mask;
+
+		mask <<= 1;
+		if (0 == mask) {
+			*dst++ = mono;
+			mono = 0;
+			mask = 0x01;
+		}
+	}
+
+	if (0x01 != mask)
+		*dst++ = mono;
+}
+
+void cc32RGBAtoARGB2222(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+
+	while (pixelCount--) {
+		*dst++ = ((src[3] >> 6) << 6) | ((src[0] >> 6) << 4) | ((src[1] >> 6) << 2) | (src[2] >> 6);
+		src += 4;
+	}
+}
+
+void ccGray256toGray4(uint32_t pixelCount, void *srcPixels, void *dstPixels, void *clut)
+{
+	uint8_t *src = srcPixels;
+	uint8_t *dst = dstPixels;
+
+	while (pixelCount >= 4) {
+		uint8_t gray256_0 = *src++;
+		uint8_t gray256_1 = *src++;
+		uint8_t gray256_2 = *src++;
+		uint8_t gray256_3 = *src++;
+		*dst++ = ((gray256_0 >> 6) << 6) | ((gray256_1 >> 6) << 4) | ((gray256_2 >> 6) << 2) | (gray256_3 >> 6);
+		pixelCount -= 4;
+	}
+	if (pixelCount == 3) {
+		uint8_t gray256_0 = *src++;
+		uint8_t gray256_1 = *src++;
+		uint8_t gray256_2 = *src++;
+		*dst++ = ((gray256_0 >> 6) << 6) | ((gray256_1 >> 6) << 4) | ((gray256_2 >> 6) << 2);
+	}
+	else if (pixelCount == 2) {
+		uint8_t gray256_0 = *src++;
+		uint8_t gray256_1 = *src++;
+		*dst++ = ((gray256_0 >> 6) << 6) | ((gray256_1 >> 6) << 4);
+	}
+	else if (pixelCount == 1) {
+		uint8_t gray256_0 = *src++;
+		*dst++ = ((gray256_0 >> 6) << 6);
 	}
 }
 

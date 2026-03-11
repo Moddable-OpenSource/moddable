@@ -184,8 +184,12 @@ void PiuViewBegin(PiuView* self)
 	w = poco->width;
 	h = poco->height;
 	rotateCoordinatesAndDimensions(poco->width, poco->height, x, y, w, h);
-	
-	poco->next = (PocoCommand)poco->displayList;
+
+#if kPocoFrameBuffer
+	if (!(poco->flags & kPocoFlagFrameBuffer))
+#endif
+		poco->next = (PocoCommand)poco->displayList;
+
 	poco->flags &= ~(kPocoFlagErrorDisplayListOverflow | kPocoFlagErrorStackProblem | kPocoFlagGCDisabled);
 	poco->stackDepth = 0;
 	poco->xOrigin = poco->yOrigin = 0;
@@ -426,7 +430,38 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 	xsIntegerValue character = 0;
 	PiuGlyph glyph;
 	PiuCoordinate advance;
-	
+
+#if pebble
+	if ((*font)->gfont) {
+		extern GContext *getPocoPebbleGContext(Poco poco);
+		
+		char tmp[100];
+		GContext *ctx = getPocoPebbleGContext(poco);		// might cache this in PiuView
+		text += offset;
+		if ((-1 != length) && text[length]) {
+			if (length >= (xsIntegerValue)sizeof(tmp))
+				length = sizeof(tmp) - 1;
+			c_memmove(tmp, text, length);
+			tmp[length] = 0;
+			text = tmp;
+		}
+		
+		GRect box = GRect(
+				x,
+				y - fonts_get_font_cap_offset((*font)->gfont) + 1,	// +1 for leading applied by modFindPebbleFont
+				stringWidth ? stringWidth : 10000,
+				127);
+
+		GColor saveTextColor = ctx->draw_state.text_color; 
+		ctx->draw_state.text_color.argb = color;
+		graphics_draw_text(ctx, text, (*font)->gfont, box,
+			GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, C_NULL);
+		ctx->draw_state.text_color = saveTextColor;
+
+		return;
+	}
+#endif
+
 	static const char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
 	static const char *ellipsisFallback = "...";
 	const char *ellipsis;
@@ -553,7 +588,7 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 	PocoBitmap mask = (flags & piuTextureAlpha) ? &((*texture)->mask) : NULL;
 	if (mask) {
 		if (bits) {
-			if (kCommodettoBitmapMonochrome == bits->format) {
+			if ((kCommodettoBitmapMonochrome == bits->format) || (kCommodettoBitmapMonochromeAligned == bits->format)) {
 				PocoColor black = PocoMakeColor((*self)->poco, 0, 0, 0);
 				PocoColor white = PocoMakeColor((*self)->poco, 255, 255, 255);
 				PocoColor background, foreground;
@@ -565,8 +600,8 @@ void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PocoColor color, 
 					background = black;
 					foreground = white;
 				}
-				PocoMonochromeBitmapDraw(poco, mask, kPocoMonochromeForeground, foreground, foreground, x, y, sx, sy, sw, sh);
-				PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeBackground, background, background, x, y, sx, sy, sw, sh);
+				PocoMonochromeBitmapDraw(poco, mask, kPocoMonochromeForeground, background, background, x, y, sx, sy, sw, sh);
+				PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeground, foreground, foreground, x, y, sx, sy, sw, sh);
 			}
 			else
 				PocoBitmapDrawMasked(poco, blend, bits, x, y, sx, sy, sw, sh, mask, sx, sy);
@@ -1105,8 +1140,10 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			PiuViewFillTextureAux(self, command->texture, command->color, command->blend, command->x, command->y, command->w, command->h, command->sx, command->sy, command->sw, command->sh);
 			PIUBreak;
 		PIUCase(PopClipCommand)
-#if defined(__GNUC__)
+#if defined(__clang__)
 			#pragma unused (command)
+#else
+			(void)command;
 #endif
 			PocoClipPop(poco);
 			PIUBreak;
@@ -1129,8 +1166,10 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 			}
 			PIUBreak;
 		PIUCase(EndCommand)
-#if defined(__GNUC__)
+#if defined(__clang__)
 			#pragma unused (command)
+#else
+			(void)command;
 #endif
 			goto done;
 			PIUBreak;
@@ -1448,8 +1487,8 @@ void PiuView_create(xsMachine* the)
 	(*self)->_continue = xsGet(xsArg(2), xsID_continue);
 	(*self)->_end = xsGet(xsArg(2), xsID_end);
 	(*self)->_send = xsGet(xsArg(2), xsID_send);
+	(*self)->poco->next = C_NULL;
 #ifdef piuGPU
-	(*self)->poco->next = NULL;
 	(*self)->dirty = 0;
 	(*self)->ready = 1;
 #else

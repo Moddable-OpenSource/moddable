@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"pebble/button": "./pebblebutton"
+	},
+	"preload": "pebble/button"
+}

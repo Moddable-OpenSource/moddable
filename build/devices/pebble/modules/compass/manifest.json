@@ -1,0 +1,10 @@
+{
+	"include": [
+	],
+	"modules": {
+		"embedded:sensor/Compass": "./pebble-compass"
+	},
+	"preload": [
+		"embedded:sensor/Compass"
+	]
+}

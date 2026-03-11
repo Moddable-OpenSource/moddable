@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021  Moddable Tech, Inc.
+* Copyright (c) 2021-2025  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -32,6 +32,13 @@ static void doDrawCLUT256(GIFDRAW *pDraw);
 static void doDrawGray16(GIFDRAW *pDraw);
 static void doDrawMonochrome(GIFDRAW *pDraw);
 static void doDrawCLUT32(GIFDRAW *pDraw);
+
+#if kCommodettoBitmapFormat == kCommodettoBitmapMonochromeAligned
+	// choose monochome format that matches the screen
+	#define kCommodettoBitmapMONOCHROME kCommodettoBitmapMonochromeAligned
+#else
+	#define kCommodettoBitmapMONOCHROME kCommodettoBitmapMonochrome
+#endif
 
 // scratch globals because gif library doesn't have way to pass state to callbacks
 static uint16_t *gBitmap;
@@ -109,7 +116,7 @@ void xs_readgif(xsMachine *the)
 		if (xsmcHas(xsArg(1), xsID_available)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_available);
 			xsUnsignedValue available = xsmcToInteger(xsVar(0));
-			if ((available < 0) || (available > bufferSize))
+			if ((((int)available) < 0) || (available > bufferSize))
 				xsUnknownError("invalid");
 		}
 
@@ -117,7 +124,7 @@ void xs_readgif(xsMachine *the)
 			xsmcGet(xsVar(0), xsArg(1), xsID_pixelFormat);
 			format = xsmcToInteger(xsVar(0));
 			if ((kCommodettoBitmapRGB565LE != format) && (kCommodettoBitmapCLUT256 != format)
-				&& (kCommodettoBitmapGray16 != format) && (kCommodettoBitmapMonochrome != format)
+				&& (kCommodettoBitmapGray16 != format) && (kCommodettoBitmapMONOCHROME != format)
 				&& (kCommodettoBitmapCLUT32 != format))
 				xsUnknownError("unsupported format");
 		}
@@ -165,7 +172,7 @@ void xs_readgif(xsMachine *the)
 					}
 				}
 				if ((3 == monochrome) && !xg->ginfo.ucHasTransparent)
-					format = kCommodettoBitmapMonochrome;
+					format = kCommodettoBitmapMONOCHROME;
 				else if ((gray16 & 0xaaaa5555) && !(gray16 & 0x5555aaaa) && gray && !xg->ginfo.ucHasTransparent)
 					format = kCommodettoBitmapGray16;
 				else if (xg->ginfo.sGlobalColorTableSize <= 32)
@@ -182,8 +189,13 @@ void xs_readgif(xsMachine *the)
 
 	xg->bitmap.w = pGIF->iCanvasWidth;
 	xg->bitmap.h = pGIF->iCanvasHeight;
-	if (kCommodettoBitmapMonochrome == format)
+	if (kCommodettoBitmapMONOCHROME == format) {
+#if kCommodettoBitmapMONOCHROME == kCommodettoBitmapMonochrome
 		xg->bitmap.w = (xg->bitmap.w + 7) & ~7;
+#else
+		xg->bitmap.w = (xg->bitmap.w + 31) & ~31;
+#endif
+	}
 	else if (kCommodettoBitmapGray16 == format)
 		xg->bitmap.w = (xg->bitmap.w + 1) & ~1;
 
@@ -209,6 +221,10 @@ void xs_readgif(xsMachine *the)
 		pGIF->pfnDraw = doDrawGray16;
 	} else if (kCommodettoBitmapMonochrome == format) {
 		xg->bitmap.bits.data = c_malloc(((xg->bitmap.w + 7) >> 3) * pGIF->iCanvasHeight);
+		xg->pixels = xg->bitmap.bits.data;
+		pGIF->pfnDraw = doDrawMonochrome;
+	} else if (kCommodettoBitmapMonochromeAligned == format) {
+		xg->bitmap.bits.data = c_malloc((((xg->bitmap.w + 31) >> 5) << 2) * pGIF->iCanvasHeight);
 		xg->pixels = xg->bitmap.bits.data;
 		pGIF->pfnDraw = doDrawMonochrome;
 	} else if (kCommodettoBitmapCLUT32 == format) {
@@ -404,7 +420,8 @@ void xs_readgif_next(xsMachine *the)
 				dst += skip;
 			} while (--h);
 		}
-		else if (kCommodettoBitmapMonochrome == xg->bitmap.format) {
+		else if (kCommodettoBitmapMONOCHROME == xg->bitmap.format) {
+#if kCommodettoBitmapMONOCHROME == kCommodettoBitmapMonochrome
 			uint8_t mask = 1 << (~xg->prevX & 7);
 			uint8_t *dst = ((xg->prevY * ((xg->bitmap.w + 7) >> 3)) + (xg->prevX >> 3)) + (uint8_t *)xg->pixels;
 			int h = xg->prevH;
@@ -430,6 +447,33 @@ void xs_readgif_next(xsMachine *the)
 
 				dst += skip;
 			} while (--h);
+#else /* kCommodettoBitmapMonochromeAligned */
+			uint8_t mask = 1 << (7 - (~xg->prevX & 7));
+			uint8_t *dst = ((xg->prevY * (((xg->bitmap.w + 31) >> 5) << 2)) + (xg->prevX >> 3)) + (uint8_t *)xg->pixels;
+			int h = xg->prevH;
+			int skip = (xg->bitmap.w - xg->prevW) >> 3;
+
+			do {
+				int w = xg->prevW;
+				uint8_t pixels = *dst;
+				do {
+					pixels &= ~mask;
+
+					mask <<= 1;
+					if (!mask) {
+						dst[0] = pixels;
+						pixels = dst[1];
+						dst += 1;
+						mask = 0x01;
+					}
+				} while (--w);
+
+				if (0x01 != mask)
+					*dst = pixels;
+
+				dst += skip;
+			} while (--h);
+#endif
 		}
 		else if (kCommodettoBitmapCLUT32 == xg->bitmap.format) {
 			uint16_t rowBytes = ((xg->bitmap.w + 7) >> 3) * 5;
@@ -461,10 +505,16 @@ void xs_readgif_next(xsMachine *the)
 		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + (pGIF->iX >> 1)) + (uint8_t *)xg->pixels);
 		gBitmapPhase = pGIF->iX & 1;
 	}
-	else if (kCommodettoBitmapMonochrome == xg->bitmap.format) {
+	else if (kCommodettoBitmapMONOCHROME == xg->bitmap.format) {
+#if kCommodettoBitmapMONOCHROME == kCommodettoBitmapMonochromeAligned
+		gBitmapStride = ((gBitmapStride + 31) >> 5) << 2;
+		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + (pGIF->iX >> 3)) + (uint8_t *)xg->pixels);
+		gBitmapPhase = 1 << (7 - (~pGIF->iX & 7));
+#else
 		gBitmapStride = (gBitmapStride + 7) >> 3;
 		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + (pGIF->iX >> 3)) + (uint8_t *)xg->pixels);
 		gBitmapPhase = 1 << (~pGIF->iX & 7);
+#endif
 	}
 	else if (kCommodettoBitmapCLUT32 == xg->bitmap.format) {
 		gBitmapStride = ((gBitmapStride + 7) >> 3) * 5;
@@ -820,6 +870,7 @@ void doDrawMonochrome(GIFDRAW *pDraw)
 	uint8_t mask = gBitmapPhase;
 	uint8_t pixels = *dst;
 
+#if kCommodettoBitmapMONOCHROME == kCommodettoBitmapMonochrome
 	if (pDraw->ucHasTransparency) {
 		uint8_t ucTransparent = pDraw->ucTransparent;
 		do {
@@ -859,6 +910,47 @@ void doDrawMonochrome(GIFDRAW *pDraw)
 
 	if (0x80 != mask)
 		*dst = pixels;
+#else /* kCommodettoBitmapMonochromeAligned */
+	if (pDraw->ucHasTransparency) {
+		uint8_t ucTransparent = pDraw->ucTransparent;
+		do {
+			uint8_t pixel = *src++;
+			if (ucTransparent != pixel) {
+				if (pixel)
+					pixels &= ~mask;
+				else
+					pixels |= mask;
+			}
+
+			mask <<= 1;
+			if (!mask) {
+				dst[0] = pixels;
+				pixels = dst[1];
+				dst += 1;
+				mask = 0x01;
+			}
+		} while (--i);
+	}
+	else {
+		do {
+			if (*src++)
+				pixels &= ~mask;
+			else
+				pixels |= mask;
+
+			mask <<= 1;
+			if (!mask) {
+				dst[0] = pixels;
+				pixels = dst[1];
+				dst += 1;
+				mask = 0x01;
+			}
+		} while (--i);
+	}
+
+	if (0x01 != mask)
+		*dst = pixels;
+#endif
 }
 
 void doDrawCLUT32(GIFDRAW *pDraw)

@@ -24,6 +24,11 @@
 
 #include <stdint.h>
 
+#if pebble
+	#include "applib/graphics/gtypes.h"
+	#include "applib/graphics/gcolor_definitions.h"
+#endif
+
 #if MODINSTRUMENTATION
 	#include "modInstrumentation.h"
 	#define pocoInstrumentationSet modInstrumentationSet
@@ -140,6 +145,10 @@ struct PocoRecord {
 	PocoPixel			*frameBuffer;
 #endif
 
+#if pebble
+	void					*pebbleState;
+#endif
+
 	PocoPixel			pixels[1];			// displayList follows pixels
 };
 
@@ -176,6 +185,8 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565LE(r, g, b)
 #elif kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelCLUT16(r, g, b)
+#elif (kCommodettoBitmapMonochromeAligned == kPocoPixelFormat) && pebble
+	#define PocoMakeColor(poco, r, g, b) (GColorFromRGB(r, g, b).argb)
 #else
 	#error
 #endif

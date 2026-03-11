@@ -123,32 +123,32 @@ void Math_quintEaseInOut(xsMachine* the)
 void Math_sineEaseIn(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber(-1 * cos(fraction * (C_M_PI / 2)) + 1);
+	xsResult = xsNumber(-1 * c_cos(fraction * (C_M_PI / 2)) + 1);
 }
 
 void Math_sineEaseOut(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber(sin(fraction * (C_M_PI / 2)));
+	xsResult = xsNumber(c_sin(fraction * (C_M_PI / 2)));
 }
 
 void Math_sineEaseInOut(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber(-1.0 / 2.0 * (cos(C_M_PI * fraction) - 1));
+	xsResult = xsNumber(-1.0 / 2.0 * (c_cos(C_M_PI * fraction) - 1));
 }
 
 void Math_circularEaseIn(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber(-1 * (sqrt(1 - fraction * fraction) - 1));
+	xsResult = xsNumber(-1 * (c_sqrt(1 - fraction * fraction) - 1));
 }
 
 void Math_circularEaseOut(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
 	fraction -= 1;
-	xsResult = xsNumber(sqrt(1 - fraction * fraction));
+	xsResult = xsNumber(c_sqrt(1 - fraction * fraction));
 }
 
 void Math_circularEaseInOut(xsMachine* the)
@@ -156,23 +156,23 @@ void Math_circularEaseInOut(xsMachine* the)
 	double fraction = xsToNumber(xsArg(0));
 	fraction *= 2;
 	if (fraction < 1)
-		xsResult = xsNumber((sqrt(1 - fraction * fraction) - 1) / -2);
+		xsResult = xsNumber((c_sqrt(1 - fraction * fraction) - 1) / -2);
 	else {
 		fraction -= 2;
-		xsResult = xsNumber((sqrt(1 - fraction * fraction) + 1) / 2);
+		xsResult = xsNumber((c_sqrt(1 - fraction * fraction) + 1) / 2);
 	}
 }
 
 void Math_exponentialEaseIn(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber((fraction == 0) ? 0 : pow(2, 10 * (fraction - 1)));
+	xsResult = xsNumber((fraction == 0) ? 0 : c_pow(2, 10 * (fraction - 1)));
 }
 
 void Math_exponentialEaseOut(xsMachine* the)
 {
 	double fraction = xsToNumber(xsArg(0));
-	xsResult = xsNumber((fraction == 1) ? 1 : (-pow(2, -10 * fraction) + 1));
+	xsResult = xsNumber((fraction == 1) ? 1 : (-c_pow(2, -10 * fraction) + 1));
 }
 
 void Math_exponentialEaseInOut(xsMachine* the)
@@ -185,9 +185,9 @@ void Math_exponentialEaseInOut(xsMachine* the)
 	else {
 		fraction *= 2;
 		if (fraction < 1)
-			xsResult = xsNumber(pow(2, 10 * (fraction - 1)) / 2);
+			xsResult = xsNumber(c_pow(2, 10 * (fraction - 1)) / 2);
 		else
-			xsResult = xsNumber((-pow(2, -10 * --fraction) + 2) / 2);
+			xsResult = xsNumber((-c_pow(2, -10 * --fraction) + 2) / 2);
 	}
 }
 
@@ -282,9 +282,9 @@ void Math_elasticEaseIn(xsMachine* the)
 			s = p / 4;
 		}
 		else 
-			s = p / (2 * C_M_PI) * asin(1 / a);
+			s = p / (2 * C_M_PI) * c_asin(1 / a);
 		fraction -= 1;
-		xsResult = xsNumber(-(a * pow(2, 10 * fraction) * sin( (fraction - s) * (2 * C_M_PI) / p )));
+		xsResult = xsNumber(-(a * c_pow(2, 10 * fraction) * c_sin( (fraction - s) * (2 * C_M_PI) / p )));
 	}
 }
 
@@ -307,8 +307,8 @@ void Math_elasticEaseOut(xsMachine* the)
 			s = p / 4;
 		} 
 		else
-			s = p / (2 * C_M_PI) * asin(1 / a);
-		xsResult = xsNumber(a * pow(2, -10 * fraction ) * sin((fraction - s) * (2 * C_M_PI) / p ) + 1);
+			s = p / (2 * C_M_PI) * c_asin(1 / a);
+		xsResult = xsNumber(a * c_pow(2, -10 * fraction ) * c_sin((fraction - s) * (2 * C_M_PI) / p ) + 1);
 	}
 }
 
@@ -332,11 +332,11 @@ void Math_elasticEaseInOut(xsMachine* the)
 			s = p / 4;
 		} 
 		else 
-			s = p / (2 * C_M_PI) * asin(1 / a);
+			s = p / (2 * C_M_PI) * c_asin(1 / a);
 		fraction -= 1;
 		if (fraction < 0)
-			xsResult = xsNumber((a * pow(2, 10 * fraction) * sin((fraction - s) * (2 * C_M_PI) / p )) / -2);
+			xsResult = xsNumber((a * c_pow(2, 10 * fraction) * c_sin((fraction - s) * (2 * C_M_PI) / p )) / -2);
 		else	
-			xsResult = xsNumber(a * pow(2, -10 * fraction) * sin((fraction - s) * 2 * C_M_PI / p ) / 2 + 1);
+			xsResult = xsNumber(a * c_pow(2, -10 * fraction) * c_sin((fraction - s) * 2 * C_M_PI / p ) / 2 + 1);
 	}
 }

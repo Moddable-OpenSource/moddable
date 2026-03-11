@@ -331,7 +331,7 @@ void PiuStyleDraw(PiuStyle* self, xsSlot* string, PiuView* view, PiuRectangle bo
 	PiuCoordinate dx = bounds->width;
 	PiuCoordinate dy = bounds->height;
 	PiuMargins margins = &((*self)->margins);
-	PiuCoordinate du, dv;
+	PiuCoordinate du = 0, dv;
 	PiuColorRecord color;
 	switch ((*self)->horizontal) {
 	case piuCenter:

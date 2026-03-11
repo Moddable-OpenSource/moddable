@@ -90,6 +90,9 @@
 		},
 		"wasm": {
 			"include": "$(BUILD_SIMULATOR)/manifest.json"
+		},
+		"pebble": {
+			"include": "$(BUILD)/devices/pebble/manifest.json"
 		}
 	}
 }

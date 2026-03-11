@@ -2914,6 +2914,7 @@ gethex( const char **sp, U *rvp, int rounding, int sign MTd)
 		  case '-':
 			esign = 1;
 			/* no break */
+			mxFallThrough;
 		  case '+':
 			s++;
 		  }
@@ -3321,7 +3322,7 @@ sulp(U *x, BCinfo *bc)
 bigcomp(U *rv, const char *s0, BCinfo *bc MTd)
 {
 	Bigint *b, *d;
-	int b2, bbits, d2, dd, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
+	int b2, bbits, d2, dd = 0, dig, dsign, i, j, nd, nd0, p2, p5, speccase;
 
 	dsign = bc->dsign;
 	nd = bc->nd;
@@ -3574,10 +3575,12 @@ strtod2(const char *s00, char **se __XS__d)
 		case '-':
 			sign = 1;
 			/* no break */
+			mxFallThrough;
 		case '+':
 			if (c_read8(++s))
 				goto break2;
 			/* no break */
+			mxFallThrough;
 		case 0:
 			goto ret0;
 		case '\t':
@@ -3704,6 +3707,7 @@ strtod2(const char *s00, char **se __XS__d)
 		switch(c = c_read8(++s)) {
 			case '-':
 				esign = 1;
+				mxFallThrough;
 			case '+':
 				c = c_read8(++s);
 			}
@@ -5377,6 +5381,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 2:
 			leftright = 0;
 			/* no break */
+			mxFallThrough;
 		case 4:
 			if (ndigits <= 0)
 				ndigits = 1;
@@ -5385,6 +5390,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		case 3:
 			leftright = 0;
 			/* no break */
+			mxFallThrough;
 		case 5:
 			i = ndigits + k + 1;
 			ilim = i;
@@ -6413,6 +6419,18 @@ txString fxIntegerToString(void* the, txInteger theValue, txString theBuffer, tx
 
 txInteger fxNumberToInteger(txNumber theValue)
 {
+#if defined(pebble)
+	if (c_fpclassify(theValue) == C_FP_NORMAL) { 
+		#define MODULO 4294967296.0
+		txNumber aNumber = c_fmod(c_trunc(theValue), MODULO);
+		if (aNumber >= MODULO / 2)
+			aNumber -= MODULO;
+		else if (aNumber < -MODULO / 2)
+			aNumber += MODULO;
+		return (txInteger)aNumber;
+	}
+	return 0;
+#else
 	int lb = c_ilogb(theValue);
 	if ((C_FP_ILOGB0 == lb) || (C_FP_ILOGBNAN == lb))
 		return 0;
@@ -6432,6 +6450,7 @@ txInteger fxNumberToInteger(txNumber theValue)
 		theValue += MODULO;
 
 	return (txInteger)theValue;
+#endif
 }
 
 txString fxNumberToString(void* the, txNumber theValue, txString theBuffer, txSize theSize, txByte theMode, txInteger thePrecision)

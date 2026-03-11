@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2017  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -273,7 +273,7 @@ void fxCheckCStack(txMachine* the)
     char x;
     char *stack = &x;
 	if (stack <= the->stackLimit) {
-		fxAbort(the, XS_NATIVE_STACK_OVERFLOW_EXIT);
+		fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
 	}
 }
 
@@ -330,8 +330,9 @@ void fxCollect(txMachine* the, txFlag theFlag)
 				if (bSlot->flag & XS_MARK_FLAG) {
 					bSlot->flag &= ~XS_MARK_FLAG; 
 					
-					if (bSlot->kind == XS_REFERENCE_KIND)
+					if (bSlot->kind == XS_REFERENCE_KIND) {
 						mxCheck(the, bSlot->value.reference->kind == XS_INSTANCE_KIND);
+					}
 					
 					aCount++;
 				}
@@ -1350,6 +1351,7 @@ void fxMarkValue(txMachine* the, txSlot* theSlot)
 	case XS_CODE_KIND:
 		mxMarkChunk(theSlot->value.code.address);
 		/* continue */
+		mxFallThrough;
 	case XS_CODE_X_KIND:
 		aSlot = theSlot->value.code.closures;
 		if (aSlot && !(aSlot->flag & XS_MARK_FLAG)) {

@@ -1,0 +1,28 @@
+{
+	"name": "@moddable/pebbleproxy",
+	"version": "0.1.8",
+	"description": "A PKJS-side HTTP and WebSocket proxy for Pebble OS apps using the Moddable SDK",
+	"homepage": "https://github.com/Moddable-OpenSource/moddable",
+	"license": "LGPL-3.0-or-later",
+	"main": "proxy.js",
+	"exports": {
+		".": "./proxy.js"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Moddable-OpenSource/moddable",
+		"directory": "build/devices/pebble/npm/pebbleproxy"
+	},
+	"keywords": [
+		"pebble",
+		"pebbleos",
+		"pkjs",
+		"moddable",
+		"websocket",
+		"http",
+		"proxy"
+	]
+}

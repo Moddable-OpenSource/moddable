@@ -1316,7 +1316,7 @@ txU4 fxSumEntry(txMachine* the, txSlot* slot)
 			}
 		}
 		else if ((XS_BIGINT_KIND == kind) || (XS_BIGINT_X_KIND == kind)) {
-			sum = fxToBigUint64(the, slot);
+			sum = gxTypeBigInt.toBigUint64(the, slot);
 		}
 		else if (XS_SYMBOL_KIND == kind) {
 			sum = slot->value.symbol;

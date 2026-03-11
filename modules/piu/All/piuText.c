@@ -549,7 +549,7 @@ void PiuTextDraw(void* it, PiuView* view, PiuRectangle area)
 	PiuTextBuffer* nodeBuffer = (*self)->nodeBuffer;
 	PiuTextOffset nodeOffset = sizeof(PiuTextBufferRecord);
 	PiuTextOffset nodeLimit = (PiuTextOffset)(*nodeBuffer)->current;
-	PiuStyle* style;
+	PiuStyle* style = C_NULL;
 	PiuTextOffset fromOffset, toOffset;
 	PiuCoordinate x, base, y;
 	xsIntegerValue portion;
@@ -876,7 +876,7 @@ void PiuTextFormatLine(PiuText* self, PiuTextFormatContext ctx, PiuTextKind kind
 	default:
 		line->x = x;
 		line->portion = ctx->spaceCount;
-		line->slop = ctx->blockWidth - (ctx->lineWidth - ctx->spaceSum);
+		line->slop = (ctx->spaceCount) ? ctx->blockWidth - (ctx->lineWidth - ctx->spaceSum) : 0;
 		break;	
 	}
 	if (kind == piuTextReturn) {
@@ -912,10 +912,10 @@ void* PiuTextHit(void* it, PiuCoordinate x, PiuCoordinate y)
 	PiuTextBuffer* nodeBuffer = (*self)->nodeBuffer;
 	PiuTextOffset nodeOffset = sizeof(PiuTextBufferRecord);
 	PiuTextOffset nodeLimit = (PiuTextOffset)(*nodeBuffer)->current;
-	PiuStyle* style;
+	PiuStyle* style = C_NULL;
 	PiuTextOffset fromOffset, toOffset;
 	xsIntegerValue portion;
-	xsIntegerValue slop;
+	xsIntegerValue slop = 0;
 	xsIntegerValue step;
 	PiuCoordinate lineLeft = 0;
 	PiuCoordinate lineRight = 0;

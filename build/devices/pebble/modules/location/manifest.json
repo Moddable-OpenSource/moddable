@@ -1,0 +1,10 @@
+{
+	"include": [
+	],
+	"modules": {
+		"embedded:sensor/Location": "./pebble-location"
+	},
+	"preload": [
+		"embedded:sensor/Location"
+	]
+}

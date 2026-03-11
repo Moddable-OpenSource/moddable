@@ -9,6 +9,9 @@
 		"esp32": {
 			"include": "./littlefs/manifest.json"
 		},
+		"pebble": {
+			"include": "./pebble/manifest.json"
+		},
 		"zephyr": {
 			"include": "./zephyr/manifest.json"
 		}

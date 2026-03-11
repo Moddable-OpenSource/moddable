@@ -265,6 +265,9 @@
 #ifndef c_fprintf
 	#define c_fprintf fprintf
 #endif
+#ifndef c_abort
+	#define c_abort abort
+#endif
 
 #ifndef c_signal
 	#ifdef EMSCRIPTEN
@@ -580,6 +583,14 @@
 		#define c_read32be(POINTER) *((txU4*)(POINTER))
 	#else
 		#define c_read32be(POINTER) ((((txU4)((txU1*)(POINTER))[0]) << 24) | (((txU4)((txU1*)(POINTER))[1]) << 16) | (((txU4)((txU1*)(POINTER))[2]) << 8) | ((txU4)((txU1*)(POINTER))[3]))
+	#endif
+#endif
+
+#ifndef mxFallThrough
+	#if mxWindows
+		#define mxFallThrough (void)0
+	#else
+		#define mxFallThrough __attribute__ ((fallthrough))
 	#endif
 #endif
 

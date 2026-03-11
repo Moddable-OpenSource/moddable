@@ -295,6 +295,7 @@ txScript* fxParserCode(txParser* parser)
 		case XS_CODE_STRING_1:
 			size += ((txStringCode*)code)->length;
 			// continue
+			mxFallThrough;
 		case XS_CODE_RESERVE_1:
 		case XS_CODE_RETRIEVE_1:
 		case XS_CODE_UNWIND_1:
@@ -2752,7 +2753,7 @@ void fxCompoundExpressionNodeCode(void* it, void* param)
 	txFlag shortcut = ((token == XS_TOKEN_AND_ASSIGN) || (token == XS_TOKEN_COALESCE_ASSIGN) || (token == XS_TOKEN_OR_ASSIGN)) ? 1 : 0;
 	txTargetCode* elseTarget = (shortcut) ? fxCoderCreateTarget(param) : C_NULL;
 	txTargetCode* endTarget = (shortcut) ? fxCoderCreateTarget(param) : C_NULL;
-	txInteger stackLevel;
+	txInteger stackLevel = 0;
 	txFlag swap = fxNodeDispatchCodeThis(self->reference, param, 1);
 	switch (self->description->token) {
 	case XS_TOKEN_AND_ASSIGN:
@@ -4136,7 +4137,7 @@ void fxParamsBindingNodeCode(void* it, void* param)
 void fxPostfixExpressionNodeCode(void* it, void* param) 
 {
 	txPostfixExpressionNode* self = it;
-	txInteger value;
+	txInteger value = 0;
 	fxNodeDispatchCodeThis(self->left, param, 1);
 	if (!(self->flags & mxExpressionNoValue)) {
 		value = fxCoderUseTemporaryVariable(param);

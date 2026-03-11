@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"pebble/global": "./global",
+		"*": "./pebble-global"
+	},
+	"preload": [
+		"pebble/global"
+	]
+}

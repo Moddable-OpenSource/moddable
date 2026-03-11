@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -47,6 +47,11 @@
 	#include "modInstrumentation.h"
 #endif
 
+#if pebble
+	#include "kernel/pbl_malloc.h"
+	#include "kernel/kernel_heap.h"
+#endif
+
 extern void *xsPreparationAndCreation(xsCreation **creation);
 
 #if MODDEF_XS_MODS
@@ -56,6 +61,17 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 /*
 	XS memory 
 */
+
+#if pebble
+	static uint32_t kernelRemaining;
+	#define machine_alloc(size) \
+		((size <= (txSize)kernelRemaining) ? (kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
+	#define machine_free(ptr) \
+		(heap_contains_address(kernel_heap_get(), ptr) ? kernel_free(ptr) : app_free(ptr))
+#else
+	#define machine_alloc(size) c_malloc(size)
+	#define machine_free(ptr) c_free(ptr)
+#endif
 
 static void *mc_xs_slot_allocator(txMachine* the, size_t size)
 {
@@ -79,7 +95,7 @@ void *fxAllocateChunks(txMachine* the, txSize theSize)
 	}
 
 	if (NULL == the->heap)
-		return c_malloc(theSize);
+		return machine_alloc(theSize);
 
 	txBlock* block = the->firstBlock;
 	if (block) {	// reduce size by number of free bytes in current chunk heap
@@ -106,13 +122,13 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 
 	if (NULL == the->heap) {
 #ifndef modGetLargestMalloc
-		return c_malloc(needed);
+		return machine_alloc(needed);
 #else
 		extern void fxGrowSlots(txMachine* the, txSize theCount); 
 		static uint8_t *pending;		//@@ not thread safe...
 
 		if (NULL == the->stack)
-			return c_malloc(needed);
+			return machine_alloc(needed);
 
 		if (pending) {
 			txSlot *result = (txSlot *)pending;
@@ -153,7 +169,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 		fxReport(the, "# Slot allocation: %d bytes returned\n", the->firstBlock->limit - the->firstBlock->current);
 #endif
 		the->maximumChunksSize -= the->firstBlock->limit - the->firstBlock->current;
-		the->heap_ptr = the->firstBlock->current;
+		the->heap_ptr = (uint8_t*)the->firstBlock->current;
 		the->firstBlock->limit = the->firstBlock->current;
 
 		result = (txSlot *)mc_xs_slot_allocator(the, needed);
@@ -165,7 +181,7 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 void fxFreeChunks(txMachine* the, void* theChunks)
 {
 	if (NULL == the->heap)
-		c_free(theChunks);
+		machine_free(theChunks);
 	else {
 		/* @@ too lazy but it should work... */
 		if ((uint8_t *)theChunks < the->heap_ptr)
@@ -176,7 +192,8 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 				uint8_t **context = the->context;
 				context[0] = NULL;
 			}
-			c_free(the->heap);		// VM is terminated
+			// VM is terminated
+			machine_free(the->heap);
 		}
 	}
 }
@@ -184,9 +201,10 @@ void fxFreeChunks(txMachine* the, void* theChunks)
 void fxFreeSlots(txMachine* the, void* theSlots)
 {
 	if (NULL == the->heap)
-		c_free(theSlots);
-	else
+		machine_free(theSlots);
+	else {
 		; /* nothing to do */
+	}
 }
 
 void fxBuildKeys(txMachine* the)
@@ -232,8 +250,8 @@ txID fxFindModule(txMachine* the, txSlot* realm, txID moduleID, txSlot* slot)
 #if MODDEF_XS_TEST
 	char extension[5] = "";
 #endif
-	char name[PATH_MAX];
-	char buffer[PATH_MAX];
+	char name[C_PATH_MAX];
+	char buffer[C_PATH_MAX];
 	txInteger dot = 0;
 	txInteger i = 0;
 	txInteger hash = 0;
@@ -503,7 +521,18 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	if (creation->staticSize) {
 		uint8_t *context[2];
 
-		context[0] = c_malloc(creation->staticSize);
+#if pebble
+		kernelRemaining = 32 * 1024;
+		unsigned int used, free, max_free;
+		heap_calc_totals(kernel_heap_get(), &used, &free, &max_free);
+		if (max_free < kernelRemaining)
+			kernelRemaining = max_free;
+
+		// Heap *heap = kernel_heap_get();
+		// PBL_LOG(LOG_LEVEL_ERROR, "kernel free: %d", heap_size(heap) - heap->current_size);
+		// PBL_LOG(LOG_LEVEL_ERROR, "kernel max_free: %d", max_free);
+#endif
+		context[0] = machine_alloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
@@ -513,7 +542,7 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 		the = xsPrepareMachine(creation, preparation, (char *)name, context, NULL);
 		if (NULL == the) {
 			if (context[0])
-				c_free(context[0]);
+				machine_free(context[0]);
 			return NULL;
 		}
 
@@ -525,11 +554,16 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 			return NULL;
 	}
 
+#if pebble
+	kernelRemaining = 0;
+#endif
+
 #if MODDEF_XS_MODS
 	uint8_t modStatus = 0;
 	modInstallMods(the, preparation, &modStatus);
 	if (modStatus) {
-		xsLog("Mod failed: %s\n", fxAbortString(modStatus));
+		extern const char *gXSAbortStrings[];
+		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
 }
 #endif
 
@@ -592,7 +626,7 @@ void modRunMachineSetup(txMachine *the)
 
 		while (scriptCount--) {
 			if (0 == c_strncmp(script->path, "setup/", 6)) {
-				char path[PATH_MAX];
+				char path[C_PATH_MAX];
 				char *dot;
 
 				c_strcpy(path, script->path);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,10 +38,14 @@
 
 #if (kCommodettoBitmapFormat == kCommodettoBitmapGray16) || (kCommodettoBitmapFormat == kCommodettoBitmapCLUT16)
 	#define kCommodettoPixelSize (4)
-#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray256) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB332)
+#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray256) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB332) || (kCommodettoBitmapFormat == kCommodettoBitmapARGB2222)
 	#define kCommodettoPixelSize (8)
 #elif (kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE) || (kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE)
 	#define kCommodettoPixelSize (16)
+#elif (kCommodettoBitmapFormat == kCommodettoBitmapMonochrome) || (kCommodettoBitmapFormat == kCommodettoBitmapMonochromeAligned)
+	#define kCommodettoPixelSize (1)
+#elif (kCommodettoBitmapFormat == kCommodettoBitmapGray4)
+	#define kCommodettoPixelSize (2)
 #else
 	#error
 #endif
@@ -57,7 +61,9 @@ typedef struct {
 	CommodettoDimension		h;
 } CommodettoRectangleRecord, *CommodettoRectangle;
 
-#if 4 == kCommodettoPixelSize
+#if 1 == kCommodettoPixelSize
+	typedef uint8_t CommodettoPixel;
+#elif 4 == kCommodettoPixelSize
 	typedef uint8_t CommodettoPixel;
 #elif 8 == kCommodettoPixelSize
 	typedef uint8_t CommodettoPixel;

@@ -40,7 +40,7 @@ export class Texture extends Native("PiuTextureDelete") {
 	constructor(it, alphaBitmap, colorBitmap) {
 		super();
 		if (alphaBitmap || colorBitmap) {
-			this._create(alphaBitmap, colorBitmap);
+			native("PiuTexture_create").call(this, alphaBitmap, colorBitmap);
 			return;
 		}
 		let archive;
@@ -49,7 +49,7 @@ export class Texture extends Native("PiuTextureDelete") {
 			if (it.alpha && it.color) {
 				alphaBitmap = parseBMP(new Resource(it.alpha, archive));
 				colorBitmap = parseBMP(new Resource(it.color, archive));
-				this._create(alphaBitmap, colorBitmap);
+				native("PiuTexture_create").call(this, alphaBitmap, colorBitmap);
 				return;
 			}
 			it = it.path;

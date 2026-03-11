@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,6 +22,7 @@
 #ifndef __commodetto_BitmapFormat_h__
 #define __commodetto_BitmapFormat_h__
 
+#define kCommodettoBitmapNone (0)
 #define kCommodettoBitmapDefault (1)		// maps to kCommodettoBitmapFormat
 
 #define kCommodettoBitmapMonochrome (3)
@@ -42,7 +43,10 @@
 #define kCommodettoBitmapCLUT32 (18)
 #define kCommodettoBitmapColorCell (19)
 #define kCommodettoBitmapYUV422 (20)
-
+#define kCommodettoBitmapMonochromeAligned (21)
+#define kCommodettoBitmapPebble (22)
+#define kCommodettoBitmapARGB2222 (23)
+#define kCommodettoBitmapGray4 (24)
 
 #define kCommodettoBitmapPacked (0x80)
 

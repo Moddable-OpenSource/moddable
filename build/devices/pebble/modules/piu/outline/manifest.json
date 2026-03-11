@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"piu/RoundRect": "./piuRoundRect",
+		"piu/SVGImage": "./piuSVGImage"
+	},
+	"preload": [
+		"piu/RoundRect",
+		"piu/SVGImage"
+	]
+}

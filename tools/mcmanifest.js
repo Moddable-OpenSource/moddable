@@ -30,7 +30,10 @@ var formatNames = {
 	rgb565be: "rgb565be",
 	clut16: "clut16",
 	argb4444: "argb4444",
-	x: "x",
+	monochromealigned: "monochromealigned",
+	argb2222: "argb2222",
+	gray4: "gray4",
+	x: "monochromealigned",
 };
 
 var formatValues = {
@@ -41,7 +44,9 @@ var formatValues = {
 	rgb565be: 8,
 	clut16: 11,
 	argb4444: 12,
-	x: 0,
+	monochromealigned: 21,
+	argb2222: 23,
+	gray4: 24,
 };
 
 export class MakeFile extends FILE {
@@ -59,6 +64,9 @@ export class MakeFile extends FILE {
 			this.write("\n");
 		else
 			this.write("'\n");
+	}
+	escapePathSpaces(path) {
+		return path.replace(/ /g, "\\ ")
 	}
 	generate(tool) {
 		this.generateDefinitions(tool);
@@ -1050,7 +1058,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						this.write(face.name + `-${face.size}.fnt`);
 						this.write("\\\n\t$(RESOURCES_DIR)");
 						this.write(tool.slash);
-						this.write(face.name + `-${face.size}-alpha.bmp`);
+						this.write(face.name + `-${face.size}-alpha${tool.bitmapExtension}`);
 					}
 					else if ("-mask" === face.suffix) {
 						this.write(face.name + `-${face.size}.bf4`);
@@ -1245,7 +1253,14 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.write(source);
 					this.write(" -a");
 					if (result.monochrome)
-						this.write(" -m -4");
+						this.write((1 == result.monochrome) ? " -m -4" : " -ma -4");
+					else {
+						this.write(" -f ");
+						if (result.format)
+							this.write(result.format);
+						else
+							this.write(tool.format);
+					}
 					this.write(" -o $(@D) -r ");
 					this.write(tool.rotation);
 					this.line(name);
@@ -1268,7 +1283,6 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				manifest = "  $(MANIFEST)";
 			}
 
-			
 			if (tool.platform == "zephyr") {
 				clutSource = result.clutName ? "${RESOURCES_DIR}/" + result.clutName + ".cct" : null;
 				this.line(`cmake_path(CONVERT "${source}" TO_NATIVE_PATH_LIST the_source)`);
@@ -1280,6 +1294,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.write(" ${RESOURCES_DIR}/" +  alphaTarget);
 				this.line();
 				this.write("\tDEPENDS " + source);
+
 				if (clutSource) {
 					this.write(" ");
 					this.write(clutSource);
@@ -1289,8 +1304,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var output = "\tCOMMAND png2bmp ${the_source}";
 				if (!alphaTarget)
 					output += " -c";
-				if (result.monochrome)
-					output += " -m -4";
+				if (result.monochrome) {
+					if (1 == result.monochrome)
+						output += " -m -4";
+					else
+						output += " -ma -4";
+				}
 				else {
 					output += " -f ";
 					if (result.format)
@@ -1339,7 +1358,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				if (!alphaTarget)
 					this.write(" -c");
 				if (result.monochrome)
-					this.write(" -m -4");
+					this.write((1 == result.monochrome) ? " -m -4" : " -ma -4");
 				else {
 					this.write(" -f ");
 					if (result.format)
@@ -1365,7 +1384,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var pngSource = tool.joinPath(parts);
 			var target = result.target;
 			parts = tool.splitPath(target);
-			var bmpTarget = parts.name + "-alpha.bmp";
+//			var bmpTarget = parts.name + "-alpha.bmp";
+			var bmpTarget = parts.name + "-alpha." + tool.bitmapExtension;
 			if (tool.platform == "zephyr") {
 				var bmpSource = "${RESOURCES_DIR}/" + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
@@ -1510,7 +1530,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 
 		for (var result of tool.outlineFontFiles) {
-			var source = result.source;
+			var source = this.escapePathSpaces(result.source);
 
 			if (!tool.getenv("FONTBM")) {
 				if (tool.spawn(tool.windows ? "where" : "which", "fontbm") !== 0) 
@@ -1520,7 +1540,6 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 			result.faces.forEach(face => {
 				const name = face.name + "-" + face.size;
-trace(`face: ${name}\n`);
 
 				const characterFiles = (("string" === typeof face.characterFiles) ? [face.characterFiles] : (face.characterFiles ?? []));
 				characterFiles.forEach((file, i) => {
@@ -1626,8 +1645,12 @@ trace(`face: ${name}\n`);
 						characterFiles.push(`$(RESOURCES_DIR)${tool.slash}${tool.localsName}.txt`);
 					this.line(`\t$(FONTBM) --font-file ${source} --font-size ${face.size} --output "$(RESOURCES_DIR)${tool.slash}${name}" --texture-crop-width --texture-crop-height --texture-name-suffix none --data-format bin ${face.kern ? "--kerning-pairs regular" : ""} ${face.monochrome ? "--monochrome" : ""} ${characterFiles.map(file => "--chars-file \"" + file + "\"").join(" ")}`);
 					if ("-alpha" === face.suffix) {
-						this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bmp", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", ` -a -o $(@D) ${face.monochrome ? "-m" : ""} -r `, tool.rotation, " -t");
+						let format = tool.format;
+						if ((tool.format == "argb2222") && face.monochrome) {
+							format = "monochromealigned";
+						}
+						this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bm4", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -4 -f ", format, " -r ", tool.rotation, " -t");
 					}
 					else if ("-mask" === face.suffix) {
 						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
@@ -2089,37 +2112,37 @@ class ResourcesRule extends Rule {
 		if (tool.bmpAlphaFiles.already[path] || tool.bmpColorFiles.already[path] || tool.bmpMaskFiles.already[path])
 			return;
 		if (suffix == "-color") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
 		}
-		else if (suffix == "-color-monochrome") {
+		else if ((suffix == "-color-monochrome") || (suffix == "-color-monochromealigned")) {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
-			colorFile.monochrome = true;
+			colorFile.monochrome = (suffix == "-color-monochrome") ? 1 : 2;
 		}
 		else if (suffix == "-color-argb4444") {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
 			colorFile.format = "argb4444";
 		}
 		else if (suffix == "-alpha") {
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha" + tool.bitmapExtension, path, include);
 		}
-		else if (suffix == "-alpha-monochrome") {
+		else if ((suffix == "-alpha-monochrome") || (suffix == "-alpha-monochromealigned")) {
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
-			alphaFile.monochrome = true;
+			alphaFile.monochrome = (suffix == "-alpha-monochrome") ? 1 : 2;
 		}
 		else if (suffix == "-mask") {
 			alphaFile = this.appendFile(tool.bmpMaskFiles, name + "-alpha.bm4", path, include);
 		}
-		else if (suffix == "-monochrome") {
+		else if ((suffix == "-monochrome") || (suffix == "-monochromealigned")) {
 			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bm4", path, include);
-			colorFile.monochrome = true;
+			colorFile.monochrome = (suffix == "-monochrome") ? 1 : 2;;
 			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bm4", path, include);
-			alphaFile.monochrome = true;
+			alphaFile.monochrome = colorFile.monochrome;
 			alphaFile.colorFile = colorFile;
 			colorFile.alphaFile = alphaFile;
 		}
 		else {
-			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color.bmp", path, include);
-			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha.bmp", path, include);
+			colorFile = this.appendFile(tool.bmpColorFiles, name + "-color" + tool.bitmapExtension, path, include);
+			alphaFile = this.appendFile(tool.bmpAlphaFiles, name + "-alpha" + tool.bitmapExtension, path, include);
 			alphaFile.colorFile = colorFile;
 			colorFile.alphaFile = alphaFile;
 		}
@@ -2547,6 +2570,7 @@ export class Tool extends TOOL {
 			this.format = null;
 		else if (!this.format)
 			this.format = "UNDEFINED";
+		this.bitmapExtension = (this.format == "monochromealigned") ? ".bm4" : ".bmp";
 		if (this.platform == "mac")
 			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
@@ -2667,6 +2691,11 @@ export class Tool extends TOOL {
 				if (n.endsWith("/*")) {
 					let head = n.slice(0, -1);
 					if (partial.startsWith(head))
+						return platforms[n];
+				}
+				else if (n.startsWith("*/")) {
+					let tail = n.slice(1);
+					if (partial.endsWith(tail))
 						return platforms[n];
 				}
 				else if (partial === n)

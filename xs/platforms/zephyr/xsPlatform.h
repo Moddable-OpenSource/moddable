@@ -164,6 +164,14 @@ void ESP_putc(int c);
 
 #define delay(x)            zephyr_delay(x)
 
+#ifndef mxFallThrough
+    #if mxWindows
+        #define mxFallThrough (void)0 
+    #else
+        #define mxFallThrough __attribute__ ((fallthrough))
+    #endif
+#endif
+
 #include <zephyr/net/net_ip.h>	// for htonl and ntohl
 
 #endif /* __XSPLATFORM__ */

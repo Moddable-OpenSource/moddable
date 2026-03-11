@@ -21,6 +21,10 @@
 #include "piuMC.h"
 #include "mc.defines.h"
 
+#if pebble
+	#include "process_state/app_state/app_state.h"
+#endif
+
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -101,6 +105,30 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 	PiuGlyph glyph;
 	PiuDimension width = 0;
 	text += offset;
+#if pebble
+	if ((*self)->gfont) {
+		char tmp[100];
+
+		GContext *ctx = app_state_get_graphics_context();
+		if ((-1 != length) && text[length]) {
+			if (length >= (xsIntegerValue)sizeof(tmp))
+				length = sizeof(tmp) - 1;
+
+			c_memmove(tmp, text, length);
+			tmp[length] = 0;
+			text = tmp;
+		}
+
+		GSize size = graphics_text_layout_get_max_used_size(
+					ctx, text,
+				(*self)->gfont, GRect(0, 0, 10000, 100),
+					GTextOverflowModeTrailingEllipsis,
+					GTextAlignmentLeft, NULL);
+
+
+		return size.w;
+	}
+#endif
 	while (length) {
 		xsStringValue formerText = text;
 #if MODDEF_CFE_KERN
@@ -231,6 +259,14 @@ void PiuStyleLookupFont(PiuStyle* self)
 	
 	PiuFontNew(the);
 	font = PIU(Font, xsResult);
+#if pebble
+	(*font)->gfont = modFindPebbleFont(path, (*self)->size, &ascent, &descent, &leading);
+	if ((*font)->gfont) {
+		buffer = C_NULL;
+		bufferSize = 0;
+		goto foundFont;
+	}
+#endif
 #if MODDEF_CFE_TTF
 	c_strcat(path, ".ttf");
 //	fprintf(stderr, "%s %d %d %d\n", path, (*self)->size, (*self)->weight, (*self)->flags & piuStyleBits);
@@ -274,6 +310,7 @@ void PiuStyleLookupFont(PiuStyle* self)
 	CFESetFontSize(gCFE, (*self)->size);
 	CFEGetFontMetrics(gCFE, &ascent, &descent, &leading);
     
+foundFont:
 	(*font)->flags = (*self)->flags & piuStyleBits;
 	(*font)->family = (*self)->family;
 	(*font)->size = (*self)->size;

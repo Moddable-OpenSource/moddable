@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"embedded:network/http/client": "./httpclient-pebble.js"
+	},
+	"preload": "embedded:network/http/client"
+}

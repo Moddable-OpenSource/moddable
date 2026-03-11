@@ -538,9 +538,12 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 	if (!fxIsCodeUsed(XS_CODE_SET_PRIVATE_1) && !fxIsCodeUsed(XS_CODE_SET_PRIVATE_2))
 		fprintf(file, "static txSlot* fxSetPrivatePropertyDeadStrip(txMachine* the, txSlot* instance, txSlot* check, txID id) { mxUnknownError(\"dead strip\"); return NULL; }\n");
 		
-	if (fxIsCallbackStripped(linker, fx_BigInt))
+	if (fxIsCallbackStripped(linker, fx_BigInt)) {
 		fprintf(file, "static void fxBigIntDecodeDeadStrip(txMachine* the, txSize size) { mxUnknownError(\"dead strip\"); }\n");
-
+		fprintf(file, "static txS8 fxToBigInt64DeadStrip(txMachine* the, txSlot* slot) { mxUnknownError(\"dead strip\"); }\n");
+		fprintf(file, "static txU8 fxToBigUint64DeadStrip(txMachine* the, txSlot* slot) { mxUnknownError(\"dead strip\"); }\n");
+	}
+	
 	fprintf(file, "\nconst txDefaults ICACHE_FLASH_ATTR gxDefaults  = {\n");
 	if (fxIsCodeUsed(XS_CODE_START_ASYNC)) {
 		fprintf(file, "\tfxNewAsyncInstance,\n");
@@ -766,6 +769,8 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tfxBigInt_rem,\n");
 		fprintf(file, "\tfxBigInt_sub,\n");
 		fprintf(file, "\tfxBigInt_xor,\n");
+		fprintf(file, "\tfxToBigInt64,\n");
+		fprintf(file, "\tfxToBigUint64,\n");
 	}
 	else {
 		fprintf(file, "\tC_NULL,\n");
@@ -789,6 +794,9 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
 		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tC_NULL,\n");
+		fprintf(file, "\tfxToBigInt64DeadStrip,\n");
+		fprintf(file, "\tfxToBigUint64DeadStrip,\n");
 	}
 	fprintf(file, "};\n\n");
 }

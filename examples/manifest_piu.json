@@ -38,6 +38,12 @@
 			},
 			"preload": "setup/piu"
 		},
+		"pebble": {
+			"modules": {
+				"setup/piu": "$(BUILD)/devices/pebble/setup/piu"
+			},
+			"preload": "setup/piu"
+		},
 		"pico": {
 			"modules": {
 				"setup/piu": "$(BUILD)/devices/pico/setup/piu"

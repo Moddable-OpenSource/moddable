@@ -214,7 +214,7 @@ void fx_Number(txMachine* the)
 		if (slot->kind == XS_REFERENCE_KIND)
 			fxToPrimitive(the, slot, XS_NUMBER_HINT);
 		if ((slot->kind == XS_BIGINT_KIND) || (slot->kind == XS_BIGINT_X_KIND))
-			value = fxBigIntToNumber(the, slot);
+			value = gxTypeBigInt.toNumber(the, slot);
 		else
 			value = fxToNumber(the, slot);
 	}

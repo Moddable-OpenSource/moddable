@@ -1607,6 +1607,7 @@ void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIn
 			break;
 		}
 		// continue
+		mxFallThrough;
 	default:
 		return term;
 	}

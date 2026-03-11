@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -184,7 +184,7 @@ void fxSourceMapLines(txParser* parser, txString mappings)
 
 txInteger fxSourceMapValue(txParser* parser, txString* p)
 {
-	txInteger continuation, digit, result = 0, shift = 0;
+	txInteger continuation, digit = 0, result = 0, shift = 0;
 	txString q = *p;
 	do {
 		char c = *q++;
