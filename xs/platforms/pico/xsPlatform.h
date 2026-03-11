@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -157,5 +157,14 @@ void ESP_putc(int c);
 extern uint32_t pico_memory_remaining();
 
 #define delay(x)            pico_delay(x)
+
+#ifndef mxFallThrough
+    #if mxWindows 
+		#define mxFallThrough   (void)0
+    #else
+		#define mxFallThrough   __attribute__ ((fallthrough))
+	#endif
+#endif
+
 
 #endif /* __XSPLATFORM__ */

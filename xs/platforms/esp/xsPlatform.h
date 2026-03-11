@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -203,6 +203,14 @@ typedef struct DebugFragmentRecord *DebugFragment;
 
 #if ESP32
     void delay(uint32_t ms);
+#endif
+
+#ifndef mxFallThrough
+	#if mxWindows
+		#define mxFallThrough (void)0
+	#else
+		#define mxFallThrough __attribute__ ((fallthrough))
+	#endif
 #endif
 
 #endif /* __XSPLATFORM__ */

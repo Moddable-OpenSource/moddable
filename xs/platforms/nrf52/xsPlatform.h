@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -177,5 +177,13 @@ extern uint32_t nrf52_milliseconds();
 extern uint32_t nrf52_memory_remaining();
 
 #define delay(x)            nrf52_delay(x)
+
+#ifndef mxFallThrough
+	#if mxWindows
+		#define mxFallThrough	(void)0
+	#else
+		#define mxFallThrough	__attribute__ ((fallthrough))
+	#endif
+#endif
 
 #endif /* __XSPLATFORM__ */
