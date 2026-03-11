@@ -1385,7 +1385,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var target = result.target;
 			parts = tool.splitPath(target);
 //			var bmpTarget = parts.name + "-alpha.bmp";
-			var bmpTarget = parts.name + "-alpha." + tool.bitmapExtension;
+			var bmpTarget = parts.name + "-alpha" + tool.bitmapExtension;
 			if (tool.platform == "zephyr") {
 				var bmpSource = "${RESOURCES_DIR}/" + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
@@ -1649,8 +1649,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						if ((tool.format == "argb2222") && face.monochrome) {
 							format = "monochromealigned";
 						}
-						this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha.bm4", ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
-						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -4 -f ", format, " -r ", tool.rotation, " -t");
+						this.line("$(RESOURCES_DIR)", tool.slash, name + "-alpha", tool.bitmapExtension, ": ", "$(RESOURCES_DIR)", tool.slash, `${name}.fnt`);
+						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -f ", format, " -r ", tool.rotation, " -t");
 					}
 					else if ("-mask" === face.suffix) {
 						this.line("\tpng2bmp ", "$(RESOURCES_DIR)", tool.slash, name + ".png", " -a -o $(@D) -r ", tool.rotation, " -t");
