@@ -18,6 +18,6 @@ assert(files.status(pathFrom).isFile());
 files.move(pathFrom, pathTo);
 
 assert(files.status(pathTo).isFile());
-assert.throws(Error, () => files.status(pathFrom));
+assert(!files.status(pathFrom).isFile());
 
 files.delete(pathTo);

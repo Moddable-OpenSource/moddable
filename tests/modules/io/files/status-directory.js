@@ -11,8 +11,8 @@ const pathDir = "testdir";
 files.delete(pathFile);
 files.delete(pathDir);
 
-assert.throws(Error, () => files.status(pathFile));
-assert.throws(Error, () => files.status(pathDir));
+assert(!files.status(pathFile).isFile());
+assert(!files.status(pathDir).isDirectory());
 
 files.createDirectory(pathDir);
 files.openFile({path: pathFile, mode: "w+"}).close();

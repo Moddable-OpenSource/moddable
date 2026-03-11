@@ -8,7 +8,7 @@ import files from "./files_FIXTURE.js";
 const path = "testfile.dat";
 
 files.delete(path);
-assert.throws(Error, () => files.status(path));
+assert(!files.status(path).isFile());
 
 let f = files.openFile({path, mode: "w+"});
 

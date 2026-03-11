@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -386,11 +386,19 @@ void xs_directoryposix_status(xsMachine *the)
 			flags = AT_SYMLINK_NOFOLLOW;
 	}
 
-	throwIf(fstatat(fd, path, &statbuf, flags));
-
 	xsResult = xsArg(2);
-
 	xsmcVars(1);
+
+	int result = fstatat(fd, path, &statbuf, flags);
+	if (result < 0) {
+		if (ENOENT != errno)
+			throwIf(result);
+
+		xsmcSetInteger(xsVar(0), 0);
+		xsmcSet(xsResult, xsID_mode, xsVar(0));
+		return;
+	}
+
 	xsmcSetInteger(xsVar(0), statbuf.st_size);
 	xsmcSet(xsResult, xsID_size, xsVar(0));
 

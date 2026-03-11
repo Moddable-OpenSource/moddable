@@ -382,11 +382,19 @@ void xs_directoryzephyr_status(xsMachine *the)
 	struct fs_dirent entry;
 	char *path = appendPath(xd->path, xsArg(0));
 
-	throwIf(fs_stat(path, &entry));
-
 	xsResult = xsArg(2);
-
 	xsmcVars(1);
+
+	int result = fs_stat(path, &entry);
+	if (result < 0) {
+		if (-ENOENT != result)
+			throwIf(result)
+
+		xsmcSetInteger(xsVar(0), 0);
+		xsmcSet(xsResult, xsID_mode, xsVar(0));
+		return;
+	}
+
 	xsmcSetInteger(xsVar(0), entry.size);
 	xsmcSet(xsResult, xsID_size, xsVar(0));
 

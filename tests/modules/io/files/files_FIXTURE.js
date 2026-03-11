@@ -15,8 +15,11 @@ function deleteTree(files, path) {
 	catch {
 		return;
 	}
-	for (const name of files.scan(path))
-		deleteTree(files, path + "/" + name);
+
+	if (files.status(path).isDirectory()) {
+		for (const name of files.scan(path))
+			deleteTree(files, path + "/" + name);
+	}
 
 	files.delete(path);
 }

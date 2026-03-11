@@ -16,6 +16,6 @@ assert(files.status(pathFrom).isDirectory());
 files.move(pathFrom, pathTo);
 
 assert(files.status(pathTo).isDirectory());
-assert.throws(Error, () => files.status(pathFrom));
+assert(!files.status(pathFrom).isDirectory());
 
 files.delete(pathTo);

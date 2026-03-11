@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -63,6 +63,8 @@ class Directory extends Native("xs_directoryposix_destructor") {
 	move(from, to) { return native("xs_directoryposix_move").call(this, from, to); }
 
 	status(path, options) {
+		if (undefined === path)
+			return native("xs_directoryposix_status").call(this);
 		return native("xs_directoryposix_status").call(this, path, options, new Status);
 	}
 

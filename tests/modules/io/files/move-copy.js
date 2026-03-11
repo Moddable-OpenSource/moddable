@@ -20,7 +20,7 @@ import {deleteTree} from "./files_FIXTURE.js";
 	subdir.move("test.bin", "test2.bin", testRoot);
 
 	assert(testRoot.status("test2.bin").isFile());
-	assert.throws(Error, () => subdir.status("test2.bin"));
+	assert(!subdir.status("test2.bin").isFile());
 }
 
 // 2 argument move
@@ -36,5 +36,5 @@ import {deleteTree} from "./files_FIXTURE.js";
 	testRoot.move("subdir/test.bin", "test2.bin");
 
 	assert(testRoot.status("test2.bin").isFile());
-	assert.throws(Error, () => testRoot.status("subdir/test2.bin"));
+	assert(!testRoot.status("subdir/test2.bin").isFile());
 }

@@ -10,7 +10,7 @@ const dirPath = "test";
 const path = "test.bin";
 
 files.delete(path);
-assert.throws(Error, () => files.status(path), "file not deleted");
+assert(!files.status(path).isFile(), "file not deleted");
 
 assert.throws(Error, () => files.openFile({path}));
 assert(!files.delete(path));

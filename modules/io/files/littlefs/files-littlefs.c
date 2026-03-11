@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -479,11 +479,19 @@ void xs_directorylittlefs_status(xsMachine *the)
 	struct lfs_info info;
 	char *path = appendPath(dirPath, xsArg(0));
 
-	throwIf(lfs_stat(&gLFS->lfs, path, &info));
-
 	xsResult = xsArg(1);
-
 	xsmcVars(1);
+
+	int result = lfs_stat(&gLFS->lfs, path, &info);
+	if (result < 0) {
+		if (LFS_ERR_NOENT != result)
+			throwIf(result);
+
+		xsmcSetInteger(xsVar(0), 0);
+		xsmcSet(xsResult, xsID_mode, xsVar(0));
+		return;
+	}
+
 	xsmcSetInteger(xsVar(0), (LFS_TYPE_REG == info.type) ? info.size : 0);		// littlefs doesn't write to size field for directory
 	xsmcSet(xsResult, xsID_size, xsVar(0));
 

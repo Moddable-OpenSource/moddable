@@ -63,6 +63,8 @@ class Directory extends Native("xs_directorylittlefs_destructor") {
 	move(from, to) { return native("xs_directorylittlefs_move").call(this, from, to); }
 
 	status(path) {
+		if (undefined === path)
+			throw new Error("path required");
 		return native("xs_directorylittlefs_status").call(this, path, new Status);
 	}
 
