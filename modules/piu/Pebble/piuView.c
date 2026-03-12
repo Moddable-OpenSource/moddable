@@ -280,9 +280,14 @@ void PiuViewFillTexture(PiuView* self, PiuTexture* texture, PiuCoordinate x, Piu
 
 void PiuViewGetSize(PiuView* self, PiuDimension *width, PiuDimension *height)
 {
-	GContext *ctx = app_state_get_graphics_context();
-	*width = ctx->dest_bitmap.bounds.size.w;
-	*height = ctx->dest_bitmap.bounds.size.h;
+//	GContext *ctx = app_state_get_graphics_context();
+//	*width = ctx->dest_bitmap.bounds.size.w;
+//	*height = ctx->dest_bitmap.bounds.size.h;
+	Layer *layer = window_get_root_layer((*self)->window);
+	GRect unobstructed_bounds;
+	layer_get_unobstructed_bounds(layer, &unobstructed_bounds);
+	*width = unobstructed_bounds.size.w;
+	*height = unobstructed_bounds.size.h;
 }
 
 void PiuViewIdleCheck(PiuView* self, PiuInterval idle)
@@ -504,6 +509,21 @@ void PiuView_onMessage(xsMachine* the)
 
 void PiuView_onQuit(xsMachine* the)
 {
+}
+
+void PiuView_onResize(xsMachine* the)
+{
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	xsVars(2);
+	PiuApplicationResize(application);
+	if ((*application)->behavior) {
+		xsVar(0) = xsReference((*application)->behavior);
+		if (xsFindResult(xsVar(0), xsID_onResize)) {
+			xsVar(1) = xsReference((*application)->reference);
+			xsCallFunction2(xsResult, xsVar(0), xsVar(1), xsArg(0));
+		}
+	}
 }
 
 void PiuView_onTouchBegan(xsMachine* the)

@@ -1,3 +1,4 @@
+
 import _Resource from "Resource";
 globalThis.Resource = _Resource;
 import parseRLE from "commodetto/parseRLE";
@@ -108,6 +109,7 @@ class View @ "PiuViewDelete" {
 	onDisplayReady() @ "PiuView_onDisplayReady"
 	onIdle() @ "PiuView_onIdle"
 	onMessage() @ "PiuView_onMessage"
+	onResize(progress) @ "PiuView_onResize"
 	onQuit() @ "PiuView_onQuit"
 	onTouchBegan(index, x, y, ticks) @ "PiuView_onTouchBegan"
 	onTouchEnded(index, x, y, ticks) @ "PiuView_onTouchEnded"
