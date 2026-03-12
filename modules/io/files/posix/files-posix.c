@@ -343,7 +343,7 @@ void xs_directoryposix_delete(xsMachine *the)
 	char *path = getPath(xsArg(0));
 
 	struct stat buf;
-	int result = fstatat(fd, path, &buf, 0);
+	int result = fstatat(fd, path, &buf, AT_SYMLINK_NOFOLLOW);
 	if (result < 0) {
 		if (ENOENT == errno) {
 			xsmcSetFalse(xsResult);
@@ -381,9 +381,11 @@ void xs_directoryposix_status(xsMachine *the)
 	int flags = 0;
 	
 	if (xsmcTest(xsArg(1))) {
-		xsmcGet(xsResult, xsArg(1), xsID_resolveTarget);
-		if (xsmcTest(xsResult))
-			flags = AT_SYMLINK_NOFOLLOW;
+		if (xsmcHas(xsArg(1), xsID_resolveTarget)) {
+			xsmcGet(xsResult, xsArg(1), xsID_resolveTarget);
+			if (!xsmcTest(xsResult))
+				flags = AT_SYMLINK_NOFOLLOW;
+		}
 	}
 
 	xsResult = xsArg(2);

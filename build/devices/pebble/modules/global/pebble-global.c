@@ -63,3 +63,27 @@ void xs_global_get_hour12(xsMachine *the)
 {
 	xsmcSetBoolean(xsResult, !clock_is_24h_style());
 }
+
+static void prv_unobstructed_change(AnimationProgress progress, void *context)
+{
+	xsMachine *the = context;
+
+	xsBeginHost(the);
+		xsmcVars(1);
+		xsmcGet(xsResult, xsGlobal, xsID_watch);
+		xsmcSetStringX(xsVar(0), "resize");
+		xsCall1(xsResult, xsID_do, xsVar(0));
+	xsEndHost(the);
+}
+
+static const UnobstructedAreaHandlers gUnobstructedHandlers = {
+  .change = prv_unobstructed_change,
+};
+
+void xs_global_obstructed(xsMachine *the)
+{
+	if (xsmcTest(xsArg(0)))
+		app_unobstructed_area_service_subscribe(gUnobstructedHandlers, the);
+	else
+		app_unobstructed_area_service_unsubscribe();
+}
