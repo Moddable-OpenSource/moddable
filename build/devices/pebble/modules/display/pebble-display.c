@@ -207,7 +207,7 @@ void xs_pebbledisplay_round_get(xsMachine *the)
 
 void pebbledisplaySend(PocoPixel *pixels, int byteLength, void *refcon)
 {
-	pblDisplay pd = refcon;
+	// pblDisplay pd = refcon;
 }
 
 
@@ -229,7 +229,7 @@ void pebbledisplayEnd(void *refcon)
 
 void pebbledisplayAdaptInvalid(void *refcon, CommodettoRectangle invalid)
 {
-	pblDisplay pd = refcon;
+	// pblDisplay pd = refcon;
 
 	// left clipped
 	if (invalid->x < 0) {
@@ -252,3 +252,33 @@ void pebbledisplayAdaptInvalid(void *refcon, CommodettoRectangle invalid)
 	}
 #endif
 }
+
+void xs_pebbledisplay_get_unobstructed_x(xsMachine *the)
+{
+	GRect bounds;
+	layer_get_unobstructed_bounds(window_get_root_layer(window_stack_get_top_window(app_state_get_window_stack())), &bounds);
+	xsmcSetInteger(xsResult, bounds.origin.x);
+}
+
+void xs_pebbledisplay_get_unobstructured_y(xsMachine *the)
+{
+	GRect bounds;
+	layer_get_unobstructed_bounds(window_get_root_layer(window_stack_get_top_window(app_state_get_window_stack())), &bounds);
+	xsmcSetInteger(xsResult, bounds.origin.y);
+}
+
+void xs_pebbledisplay_get_unobstructed_width(xsMachine *the)
+{
+	GRect bounds;
+	layer_get_unobstructed_bounds(window_get_root_layer(window_stack_get_top_window(app_state_get_window_stack())), &bounds);
+	xsmcSetInteger(xsResult, bounds.size.w);
+}
+
+void xs_pebbledisplay_get_unobstructured_height(xsMachine *the)
+{
+	GRect bounds;
+	layer_get_unobstructed_bounds(window_get_root_layer(window_stack_get_top_window(app_state_get_window_stack())), &bounds);
+	xsmcSetInteger(xsResult, bounds.size.h);
+}
+
+

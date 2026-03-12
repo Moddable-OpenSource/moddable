@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -34,11 +34,13 @@ const events = Object.freeze([
 		"hourchange",
 		"daychange",
 		// add non-time events after here
-		"connected"
+		"connected",
+		"resize"
 ]);
 
 const offset = 50;		// Pebble Timer callbacks can be early... that's really bad for a watchface. So, we schedule them late by this number of milliseconds to ensure they fall in the next interval (usually second)
 function connected() { return native("xs_global_connected").call(this); };
+function obstructed() { return native("xs_global_obstructed").call(this); };
 
 export class Pebble {
 	#events = new Map;
@@ -68,6 +70,10 @@ export class Pebble {
 			case "connected":
 				if (1 === this.#events.get(event).length)
 					connected(true);
+				break;
+			case "resize":
+				if (1 === this.#events.get(event).length)
+					obstructed(true);
 				break;
 		}
 	}
@@ -111,6 +117,10 @@ export class Pebble {
 		switch (event) {
 			case "connected":
 				connected(false);
+				break;
+
+			case "resize":
+				obstructed(false);
 				break;
 
 			default:

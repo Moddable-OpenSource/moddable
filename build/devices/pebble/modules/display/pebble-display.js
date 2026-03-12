@@ -43,5 +43,11 @@ class PebbleDisplay extends Native("xs_pebbledisplay_destructor") {
 	get round() {return native("xs_pebbledisplay_round_get").call(this);}
 }
 PebbleDisplay.prototype.frameBuffer = true
+PebbleDisplay.prototype.unobstructed = Object.freeze({
+	get x() { return native("xs_pebbledisplay_get_unobstructed_x").call(this); },
+	get y() { return native("xs_pebbledisplay_get_unobstructured_y").call(this); },
+	get width() { return native("xs_pebbledisplay_get_unobstructed_width").call(this); },
+	get height() { return native("xs_pebbledisplay_get_unobstructured_height").call(this); },
+});
 
 export default PebbleDisplay;
