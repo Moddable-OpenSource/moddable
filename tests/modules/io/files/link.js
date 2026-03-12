@@ -42,4 +42,8 @@ if (supportsLink) {
 	assert(stat.isSymbolicLink(), "expected link");
 	assert(!stat.isFile(), "expected link");
 	assert(!stat.isDirectory(), "expected link");
+
+	stat = files.status(link, {resolveTarget: true});
+	assert(stat.isFile(), "expected file");
+	assert(123 === stat.size, "expected file length of 123");
 }
