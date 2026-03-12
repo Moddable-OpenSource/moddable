@@ -126,6 +126,7 @@ export default function() {
 		Label,
 		Layout,
 		Link,
+		Locals,
 		Port,
 		Row,
 		Scroller, 
