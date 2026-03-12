@@ -153,6 +153,9 @@ export class Pebble {
 	get connected() {
 		return connected();
 	}
+	get hour12() {
+		return native("xs_global_get_hour12").call(this);
+	}
 }
 
 export default Pebble;

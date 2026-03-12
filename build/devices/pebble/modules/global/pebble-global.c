@@ -22,7 +22,7 @@
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
 #include "moddableAppState.h"
-
+#include "services/common/clock.h"
 #include "applib/connection_service.h"
 #include "process_state/app_state/app_state.h"
 
@@ -57,4 +57,9 @@ void xs_global_connected(xsMachine *the)
 	}
 	else
 		connection_service_unsubscribe();
+}
+
+void xs_global_get_hour12(xsMachine *the)
+{
+	xsmcSetBoolean(xsResult, !clock_is_24h_style());
 }
