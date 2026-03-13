@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,6 +24,10 @@ import Button from "pebble/button";
 
 if (!config.Screen)
 	throw new Error("no screen configured");
+
+function resize(progress) {
+	screen.context.onResize(progress);
+}
 
 class Screen extends config.Screen {
 	#context;
@@ -50,6 +54,7 @@ class Screen extends config.Screen {
 					it.onButton(state, which);
 				}
 			});
+			watch.addEventListener("resize", resize);
 		}
 		else {
 			if (this.#button) {
@@ -60,6 +65,7 @@ class Screen extends config.Screen {
 				Timer.clear(this.#timer);
 				this.#timer = undefined; 
 			}
+			watch.removeEventListener("resize", resize);
 		}
 	}
 	get rotation() {
@@ -80,7 +86,7 @@ class Screen extends config.Screen {
 }
 
 export default function (done) {
-	globalThis.screen = new Screen({});		// may overwrite Commodetto screen. that's oK.
+	globalThis.screen = new Screen({});		// may overwrite Commodetto screen. that's OK.
 
 	done();
 }
