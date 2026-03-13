@@ -45,6 +45,10 @@ declare module "commodetto/Bitmap" {
     static readonly RGB444 = 13
     static readonly JPEG = 14
     static readonly PNG = 15
+    static readonly MonochromeAligned = 21
+    static readonly MonochromePebble = 22
+    static readonly MonochromeARGB2222 = 23
+    static readonly MonochromeGray4 = 24
 
     static readonly RLE = 0x80
   }

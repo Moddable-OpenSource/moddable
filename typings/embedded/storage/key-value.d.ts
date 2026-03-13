@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,6 +20,7 @@
 
 declare module "embedded:storage/key-value" {
 	export interface StorageOpenOptions {
+		format?: StorageFormat;
 		path: string;
 		mode?: "r" | "r+";
 	}

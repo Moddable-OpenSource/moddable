@@ -1,5 +1,5 @@
 declare module "web/fetch" {
-  import {URLSearchParams} from "url"
+  import {URL, URLSearchParams} from "url"
   import Headers from "headers"
 
   class Response {
@@ -21,7 +21,7 @@ declare module "web/fetch" {
     body?: string | ByteBuffer | URLSearchParams;
   }
 
-  function fetch(resource: string, options?: RequestInit): Promise<Response>;
+  function fetch(resource: string | URL, options?: RequestInit): Promise<Response>;
 
   export { fetch };
   export default fetch;

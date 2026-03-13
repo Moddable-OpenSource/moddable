@@ -43,8 +43,8 @@ declare module "embedded:provider/builtin" {
       readonly language: string,
       readonly serialNumber: string,
     }
-    //@@ keyValue
-    //@@ files
+    readonly files: import("embedded:storage/files").Directory;
+    readonly keyValue: typeof import("embedded:storage/key-value").default;
   }
 
   export default device;

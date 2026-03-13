@@ -31,7 +31,8 @@ declare module "embedded:network/http/client" {
     method?: string
     path?: string
     headers?: Map<string, string|string[]>
-    onHeaders?: (this: HTTPRequest, status:number, headers: Map<String, string>) => void
+    headersMask?: Array<string>
+    onHeaders?: (this: HTTPRequest, status:number, headers: Map<string, string>, statusText: string) => void
     onReadable?: (this: HTTPRequest, count: number) => void
     onWritable?: (this: HTTPRequest, count: number) => void
     onDone?: (this: HTTPRequest, error: Error|null) => void // note: error is empty Error object

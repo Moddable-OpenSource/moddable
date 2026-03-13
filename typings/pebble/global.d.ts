@@ -43,17 +43,21 @@ interface ConnectionState {
 
 type TimeEventType = "secondchange" | "minutechange" | "hourchange" | "daychange";
 
-type PebbleEventType = TimeEventType | "connected";
+type PebbleEventType = TimeEventType | "connected" | "resize";
 
 type TimeChangeCallback = (event: TimeChangeEvent) => void;
 
 type ConnectedCallback = () => void;
 
+type ResizeCallback = (progress: number) => void;
+
 interface watch {
   addEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   addEventListener(event: "connected", callback: ConnectedCallback): void;
+  addEventListener(event: "resize", callback: ResizeCallback): void;
   removeEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   removeEventListener(event: "connected", callback: ConnectedCallback): void;
+  removeEventListener(event: "resize", callback: ResizeCallback): void;
   readonly connected: ConnectionState;
 }
 
@@ -96,6 +100,7 @@ declare const Container: ContainerConstructor;
 declare const Content: ContentConstructor;
 declare const Label: LabelConstructor;
 declare const Link: LinkConstructor;
+declare const Locals: Locals;
 declare const Port: PortConstructor;
 declare const Row: RowConstructor;
 declare const Skin: SkinConstructor;
@@ -114,3 +119,10 @@ declare const SVGImage: SVGImageConsructor;
 */
 
 // device is defined in typings/pebble/device.d.ts
+
+declare module "embedded:storage/files" {
+  interface DirectoryOpenFileOptions {
+    size?: number;
+  }
+}
+

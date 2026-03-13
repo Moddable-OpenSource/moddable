@@ -72,6 +72,7 @@
 				"embedded:sensor/Accelerometer": "$(TYPINGS)/pebble/accelerometer",
 				"embedded:sensor/Battery": "$(TYPINGS)/pebble/battery",
 				"embedded:sensor/Compass": "$(TYPINGS)/pebble/compass",
+				"embedded:sensor/Location": "$(TYPINGS)/pebble/location",
 				"embedded:provider/builtin": "$(TYPINGS)/pebble/device",
 				"pebble/button": "$(TYPINGS)/pebble/button",
 				"pebble/message": "$(TYPINGS)/pebble/message"
@@ -82,6 +83,8 @@
 						"types": [
 							"$(TYPINGS)/pebble/global",
 							"$(TYPINGS)/pebble/piu",
+							"$(TYPINGS)/pebble/poco",
+							"$(TYPINGS)/easing",
 							"$(TYPINGS)/piu/MC-types"
 						]
 					}

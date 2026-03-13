@@ -39,7 +39,7 @@ declare module "url" {
     }
 
     class URLSearchParams implements Iterable<[string, string]>{
-        constructor(it?: string[][] | Record<string, string> | string)
+        constructor(it?: string[][] | Record<string, { toString(): string }> | string)
         readonly length: number;
         append(name: string, value: string): void;
         delete(name: string, value?: string): void;
