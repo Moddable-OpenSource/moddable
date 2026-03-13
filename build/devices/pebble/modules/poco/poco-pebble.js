@@ -20,6 +20,7 @@
 
 import Poco from "commodetto/PocoCore";
 import Bitmap from "commodetto/Bitmap"
+import PebbleDisplay from "pebble/display"
 
 let cache;
 
@@ -34,6 +35,7 @@ Poco.prototype.drawRoundRect = function(x0, y0, x1, y1, color, radius, corners) 
 Poco.prototype.frameRoundRect = function(x0, y0, x1, y1, color, radius) { return native("xs_pocopebbble_frameRoundRect").call(this, x0, y0, x1, y1, color, radius); };
 Poco.prototype.drawCircle = function(color, x, y, r, from, to) { return native("xs_pocopebbble_drawCircle").call(this, color, x, y, r, from, to); };
 Poco.prototype.drawDCI = function(dci, x, y) { return native("xs_pocopebbble_drawDCI").call(this, dci, x, y); };
+Poco.prototype.unobstructed = PebbleDisplay.prototype.unobstructed;
 
 function build(id) { return native("xs_pebblebitmap_build").call(this, id); }
 
