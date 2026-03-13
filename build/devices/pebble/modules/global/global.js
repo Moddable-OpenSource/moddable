@@ -51,31 +51,31 @@ export class Pebble {
 		if (index < 0)
 			return;
 
-		if (!this.#events.has(event))
-			this.#events.set(event, [callback]);
-		else
-			this.#events.get(event).push(callback);
+		const e = this.#events.getOrInsert(event, []);
 
-		if (index <= 3) {
-			// immediate for first one
-			Timer.set(() => {
-				callback({date: new Date});
-			});
-
-			this.#schedule();
-			return;
-		}
-
-		switch (event) {
-			case "connected":
-				if (1 === this.#events.get(event).length)
+		switch (index) {
+			case 4:		// "connected":
+				if (!e.length)
 					connected(true);
 				break;
-			case "resize":
-				if (1 === this.#events.get(event).length)
-					obstructed(true);
+
+			case 5:		// "resize":
+				if (!e.length && !obstructed(true))
+					return;			// app doesn't support obstruct notification (not a watchface)
 				break;
+
+			default:
+				// always invoke time callback immediately
+				Timer.set(() => {
+					callback({date: new Date});
+				});
+
+				this.#schedule();
+				break;
+
 		}
+
+		e.push(callback)
 	}
 	#schedule() {
 		const seconds = this.#events.has("secondchange"), minutes = this.#events.has("minutechange"),

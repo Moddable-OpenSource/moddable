@@ -23,6 +23,7 @@
 #include "mc.xs.h"      // for xsID_ values
 #include "moddableAppState.h"
 #include "services/common/clock.h"
+#include "applib/app_watch_info.h"
 #include "applib/connection_service.h"
 #include "process_state/app_state/app_state.h"
 
@@ -82,8 +83,12 @@ static const UnobstructedAreaHandlers gUnobstructedHandlers = {
 
 void xs_global_obstructed(xsMachine *the)
 {
-	if (xsmcTest(xsArg(0)))
-		app_unobstructed_area_service_subscribe(gUnobstructedHandlers, the);
+	if (xsmcTest(xsArg(0))) {
+		if (app_manager_is_watchface_running()) {
+			app_unobstructed_area_service_subscribe(gUnobstructedHandlers, the);
+			xsmcSetTrue(xsResult);
+		}
+	}
 	else
 		app_unobstructed_area_service_unsubscribe();
 }
