@@ -1058,7 +1058,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						this.write(face.name + `-${face.size}.fnt`);
 						this.write("\\\n\t$(RESOURCES_DIR)");
 						this.write(tool.slash);
-						this.write(face.name + `-${face.size}-alpha${tool.bitmapExtension}`);
+						this.write(face.name + `-${face.size}-alpha.bmp`);
 					}
 					else if ("-mask" === face.suffix) {
 						this.write(face.name + `-${face.size}.bf4`);
@@ -1384,8 +1384,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var pngSource = tool.joinPath(parts);
 			var target = result.target;
 			parts = tool.splitPath(target);
-//			var bmpTarget = parts.name + "-alpha.bmp";
-			var bmpTarget = parts.name + "-alpha" + tool.bitmapExtension;
+			var bmpTarget = parts.name + "-alpha.bmp";
+//			var bmpTarget = parts.name + "-alpha" + tool.bitmapExtension;
 			if (tool.platform == "zephyr") {
 				var bmpSource = "${RESOURCES_DIR}/" + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
