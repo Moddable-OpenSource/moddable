@@ -25,6 +25,7 @@
 interface SVGImageDictionary extends ContentDictionary {
 	clip?: boolean;
 	id?: number;
+	path?: string;
 }
 
 interface SVGImage extends Content {
@@ -46,6 +47,7 @@ interface SVGImage extends Content {
 interface SVGImageConsructor {
 	new(behaviorData?: any, dictionary?: SVGImageDictionary): SVGImage;
 	template<T>(this: T, fn: (arg: any) => SVGImageDictionary): T;
+  (behaviorData?: any, dictionary?: SVGImageDictionary): SVGImage;
 }
 
 /*
@@ -65,6 +67,7 @@ interface RoundRect extends Content {
 interface RoundRectConstructor {
 	new(behaviorData?: any, dictionary?: RoundRectDictionary): RoundRect;
 	template<T>(this: T, fn: (arg: any) => RoundRectDictionary): T;
+	(behaviorData?: any, dictionary?: RoundRectDictionary): RoundRect;
 
 	readonly topLeft: 1;
 	readonly topRight: 2;
