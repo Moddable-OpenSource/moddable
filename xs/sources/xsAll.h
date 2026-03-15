@@ -2540,12 +2540,12 @@ enum {
 #define mxFunction (the->frame + 3)
 #define mxTarget (the->frame + 2)
 #define mxResult (the->frame + 1)
-#define mxArgc ((the->frame - 1)->value.integer)
-#define mxArgv(THE_INDEX) (the->frame - 2 - (THE_INDEX))
+#define mxArgc ((txInteger)(the->frame->ID))
+#define mxArgv(THE_INDEX) (the->frame - 1 - (THE_INDEX))
 #define mxVarc (the->scope->value.environment.variable.count)
 #define mxVarv(THE_INDEX) (the->scope - 1 - (THE_INDEX))
 
-#define mxFrameToEnvironment(FRAME) ((FRAME) - 1 - ((FRAME) - 1)->value.integer - 1)
+#define mxFrameToEnvironment(FRAME) ((FRAME) - 1 - (FRAME)->ID)
 
 #define mxFunctionInstanceCode(INSTANCE) 		((INSTANCE)->next)
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)

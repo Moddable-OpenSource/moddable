@@ -457,7 +457,6 @@ void fx_Function_prototype_bound(txMachine* the)
 	/* RESULT */
 	mxPushUndefined();
 	mxPushUninitialized();
-	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(mxFunctionInstanceHome(function)->next->next->next);
 	if (the->stack->kind == XS_REFERENCE_KIND) {

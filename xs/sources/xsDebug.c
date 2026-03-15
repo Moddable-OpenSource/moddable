@@ -442,8 +442,6 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 				mxPushUndefined();
 				/* FRAME */
 				mxPushUninitialized();
-				/* COUNT */
-				mxPushUninitialized();
 				mxRunCount(0);
 				mxPullSlot(result);
 				success = 1;

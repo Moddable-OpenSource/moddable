@@ -1573,7 +1573,7 @@ void fx_TypedArray(txMachine* the)
 				mxPush(mxArrayBufferConstructor);
 				/* RESULT */
 				mxPushUndefined();	
-				mxPushUninitialized();	
+				/* FRAME */
 				mxPushUninitialized();	
 				/* ARGUMENTS */
 				sourceLength = fxGetDataViewSize(the, sourceView, sourceBuffer) >> sourceShift;

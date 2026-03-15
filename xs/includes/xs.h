@@ -478,7 +478,7 @@ typedef txU4 xsIndex;
 	fxDeleteAt(the), \
 	the->stack++)
 
-#define XS_FRAME_COUNT 6 
+#define XS_FRAME_COUNT 5 
 
 #define xsCall0(_THIS,_ID) \
 	(xsOverflow(-XS_FRAME_COUNT-0), \
@@ -1046,11 +1046,17 @@ struct xsHostHooksStruct {
 #define xsFunction (the->frame[3])
 #define xsTarget (the->frame[2])
 #define xsResult (the->frame[1])
-#define xsArgc (the->frame[-1])
+
+extern xsIntegerValue fxArgc(xsMachine*);
+
+#define xsArgc ( \
+	fxInteger(the, &the->scratch, fxArgc(the)), \
+	the->scratch)
+
 #if mxBoundsCheck
-#define xsArg(_INDEX) (the->frame[-2 - fxCheckArg(the, _INDEX)])
+#define xsArg(_INDEX) (the->frame[-1 - fxCheckArg(the, _INDEX)])
 #else
-#define xsArg(_INDEX) (the->frame[-2 - (_INDEX)])
+#define xsArg(_INDEX) (the->frame[-1 - (_INDEX)])
 #endif
 #define xsVarc (the->scope[0])
 #if mxBoundsCheck
@@ -1464,6 +1470,7 @@ mxImport void fxUndefined(xsMachine*, xsSlot*);
 mxImport void fxNull(xsMachine*, xsSlot*);
 mxImport void fxBoolean(xsMachine*, xsSlot*, xsBooleanValue);
 mxImport xsBooleanValue fxToBoolean(xsMachine*, xsSlot*);
+mxImport xsIntegerValue fxArgc(xsMachine*);
 mxImport void fxInteger(xsMachine*, xsSlot*, xsIntegerValue);
 mxImport xsIntegerValue fxToInteger(xsMachine*, xsSlot*);
 mxImport void fxNumber(xsMachine*, xsSlot*, xsNumberValue);

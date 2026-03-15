@@ -111,8 +111,8 @@ static txBoolean fxToNumericNumberBinary(txMachine* the, txSlot* a, txSlot* b, t
 #define mxFrameFunction (mxFrame + 3)
 #define mxFrameTarget (mxFrame + 2)
 #define mxFrameResult (mxFrame + 1)
-#define mxFrameArgc ((mxFrame - 1)->value.integer)
-#define mxFrameArgv(THE_INDEX) (mxFrame - 2 - (THE_INDEX))
+#define mxFrameArgc ((txInteger)(mxFrame->ID))
+#define mxFrameArgv(THE_INDEX) (mxFrame - 1 - (THE_INDEX))
 
 #define mxRestoreState { \
 	mxStack = the->stack; \
@@ -780,15 +780,15 @@ XS_CODE_JUMP:
 			if (mxFrameTarget->kind)
 				goto XS_CODE_RUN_ALL;
 #ifdef mxDebug
-			slot = mxStack + offset + 4;
+			slot = mxStack + offset + 3;
 			if (!fxIsCallable(the, slot))
 				goto XS_CODE_RUN_ALL;
 #endif
-			variable = mxFrameEnd - 6 - offset;
+			variable = mxFrameEnd - 5 - offset;
 			mxScope = mxFrame->value.frame.scope;
 			mxCode = mxFrame->value.frame.code;
 			mxFrame = mxFrame->next;
-			c_memmove(variable, mxStack, (6 + offset) * sizeof(txSlot));
+			c_memmove(variable, mxStack, (5 + offset) * sizeof(txSlot));
 			mxStack = variable;
 			goto XS_CODE_RUN_ALL;
 
@@ -812,15 +812,12 @@ XS_CODE_JUMP:
 #ifdef mxTrace
 			if (gxDoTrace) fxTraceInteger(the, offset);
 #endif
-			// COUNT
 			slot = mxStack + offset;
-			slot->kind = XS_INTEGER_KIND;
-			slot->value.integer = offset;
-			slot++;
 			// FRAME
 			slot->kind = XS_FRAME_KIND;
 			slot->next = mxFrame;
 			slot->flag = XS_NO_FLAG;
+			slot->ID = (txID)offset; // COUNT
 #ifdef mxDebug
 			if (mxFrame && (mxFrame->flag & XS_STEP_INTO_FLAG))
 				slot->flag |= XS_STEP_INTO_FLAG | XS_STEP_OVER_FLAG;
@@ -854,7 +851,7 @@ XS_CODE_JUMP:
 						mxStack->ID = XS_NO_ID;
 						mxStack->value.environment.line = 0;
 			#endif
-						mxFrame = mxStack + 1 + offset + 1;
+						mxFrame = mxStack + 1 + offset;
 						mxEnvironment = mxStack;
 						mxScope = mxStack;
 						mxCode = slot->value.code.address;
@@ -873,7 +870,7 @@ XS_CODE_JUMP:
 						mxStack->ID = XS_NO_ID;
 						mxStack->value.environment.line = 0;
 			#endif
-						mxFrame = mxStack + 1 + offset + 1;
+						mxFrame = mxStack + 1 + offset;
 						mxFrame->flag |= XS_C_FLAG;
 						mxScope = mxStack;
 						mxCode = C_NULL;
@@ -913,7 +910,7 @@ XS_CODE_JUMP:
 						mxStack->ID = XS_NO_ID;
 						mxStack->value.environment.line = 0;
 			#endif
-						mxFrame = mxStack + 1 + offset + 1;
+						mxFrame = mxStack + 1 + offset;
 						mxFrame->flag |= XS_C_FLAG;
 						mxScope = mxStack;
 						mxCode = C_NULL;
@@ -939,7 +936,7 @@ XS_CODE_JUMP:
 				mxStack->ID = XS_NO_ID;
 				mxStack->value.environment.line = 0;
 #endif
-				mxFrame = mxStack + 1 + offset + 1;
+				mxFrame = mxStack + 1 + offset;
 				mxFrame->flag |= XS_C_FLAG;
 				mxScope = mxStack;
 				mxCode = C_NULL;
@@ -2418,9 +2415,8 @@ XS_CODE_JUMP:
 					mxStack->kind = XS_UNDEFINED_KIND;
 					mxBreak;
 				}
-				mxAllocStack(5);
+				mxAllocStack(4);
 				slot = mxStack;
-				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 				mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 				mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
@@ -2617,11 +2613,10 @@ XS_CODE_JUMP:
 					goto XS_CODE_SET_SKIP;
 				}
 				slot = mxStack;
-				mxAllocStack(5);
+				mxAllocStack(4);
 				mxStack->value = slot->value;
 				mxInitSlotKind(mxStack, slot->kind);
 				slot = mxStack + 1;
-				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 				mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 				slot->value = mxStack->value;
 				mxInitSlotKind(slot++, mxStack->kind);
@@ -2748,9 +2743,8 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_CALL)
 			mxNextCode(1);
-			mxAllocStack(4);
+			mxAllocStack(3);
 			slot = mxStack;
-			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 			mxInitSlotKind(slot, XS_UNDEFINED_KIND);
@@ -2758,9 +2752,8 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_NEW)
 			mxNextCode(1);
 			variable = mxStack;
-			mxAllocStack(5);
+			mxAllocStack(4);
 			slot = mxStack;
-			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 			slot->value = variable->value;
@@ -2793,9 +2786,8 @@ XS_CODE_JUMP:
 			}
             if (!mxIsConstructor(variable))
 				mxRunDebug(XS_TYPE_ERROR, "super: not a constructor");
-			mxAllocStack(6);
+			mxAllocStack(5);
 			slot = mxStack;
-			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNINITIALIZED_KIND);
 			mxInitSlotKind(slot++, XS_UNDEFINED_KIND);
 			slot->value = mxFrameTarget->value;
@@ -4127,7 +4119,6 @@ XS_CODE_JUMP:
 			/* RESULT */
 			mxPushKind(XS_UNDEFINED_KIND);
 			mxPushKind(XS_UNDEFINED_KIND);
-			mxPushKind(XS_UNDEFINED_KIND);
 			offset = 0;
 			goto XS_CODE_RUN_ALL;
 
@@ -4283,7 +4274,7 @@ XS_CODE_JUMP:
 	/* EVAL, PROGRAM & WITH */
 		mxCase(XS_CODE_EVAL)
 			offset = mxStack->value.integer;
-			slot = mxStack + 1 + offset + 4;
+			slot = mxStack + 1 + offset + 3;
 			if (mxIsReference(slot) && mxIsFunction(slot->value.reference) && (mxFunctionInstanceCode(slot->value.reference)->value.callback.address == mxFunctionInstanceCode(mxEvalFunction.value.reference)->value.callback.address)) {
 				mxSaveState;
 				gxDefaults.runEval(the);
@@ -4296,7 +4287,7 @@ XS_CODE_JUMP:
 			goto XS_CODE_RUN_ALL;
 		mxCase(XS_CODE_EVAL_TAIL)
 			offset = mxStack->value.integer;
-			slot = mxStack + 1 + offset + 4;
+			slot = mxStack + 1 + offset + 3;
 			if (mxIsReference(slot) && mxIsFunction(slot->value.reference) && (mxFunctionInstanceCode(slot->value.reference)->value.callback.address == mxFunctionInstanceCode(mxEvalFunction.value.reference)->value.callback.address)) {
 				mxSaveState;
 				gxDefaults.runEval(the);
@@ -4607,8 +4598,8 @@ void fxRunEval(txMachine* the)
 		the->stack->kind = XS_UNDEFINED_KIND;
 	else
 		the->stack += the->stack->value.integer;
-	the->stack[6] = the->stack[0];
-	the->stack += 6;
+	the->stack[5] = the->stack[0];
+	the->stack += 5;
 	if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND)) {
 		aStream.slot = the->stack;
 		aStream.offset = 0;
@@ -5054,8 +5045,6 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 				mxPushUndefined();
 				/* FRAME */
 				mxPushUninitialized();
-				/* COUNT */
-				mxPushUninitialized();
 				mxRunCount(0);
 			}
 			else {
@@ -5088,8 +5077,6 @@ void fxRunScript(txMachine* the, txScript* script, txSlot* _this, txSlot* _targe
 			/* RESULT */
             mxPushUndefined();
  			/* FRAME */
-			mxPushUninitialized();
-			/* COUNT */
 			mxPushUninitialized();
 			mxRunCount(0);
 
