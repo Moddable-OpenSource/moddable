@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -562,8 +562,7 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	uint8_t modStatus = 0;
 	modInstallMods(the, preparation, &modStatus);
 	if (modStatus) {
-		extern const char *gXSAbortStrings[];
-		xsLog("Mod failed: %s\n", gXSAbortStrings[modStatus]);
+		xsLog("Mod failed: %s\n", fxAbortString(modStatus));
 }
 #endif
 
