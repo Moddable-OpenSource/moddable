@@ -53,6 +53,8 @@ class Directory extends Native("xs_directorypfs_destructor") {
 	delete(path) { return native("xs_directorypfs_delete").call(this, path); }
 
 	status(path, options) {
+		if (undefined === path)
+			throw new Error("path required");
 		return native("xs_directorypfs_status").call(this, path, options, new Status);
 	}
 
@@ -63,8 +65,6 @@ class Directory extends Native("xs_directorypfs_destructor") {
 	}
 }
 Directory.prototype[Symbol.iterator] = Directory.prototype.scan;
-Directory.prototype.createLink = unimplemented;
-Directory.prototype.readLink = unimplemented;
 Directory.prototype.move = unimplemented;
 
 function unimplemented() {

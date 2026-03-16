@@ -64,7 +64,7 @@ class Directory extends Native("xs_directoryposix_destructor") {
 
 	status(path, options) {
 		if (undefined === path)
-			return native("xs_directoryposix_status").call(this);
+			throw new Error("path required");
 		return native("xs_directoryposix_status").call(this, path, options, new Status);
 	}
 

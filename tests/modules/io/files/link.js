@@ -6,6 +6,8 @@ flags: [module]
 import files from "./files_FIXTURE.js";
 import {deleteTree} from "./files_FIXTURE.js";
 
+const supportsLink = files.createLink ? true : false;
+
 const dirPath = "test";
 deleteTree(files, dirPath);
 const target = "test.bin";
@@ -18,16 +20,9 @@ let f = files.openFile({path: target, mode: "w"});
 f.write(new ArrayBuffer(123), 0);
 f.close();
 
-let supportsLink = true;
-try {
-	files.createLink(link, target);
-}
-catch (e) {
-	supportsLink = false;
-	trace(`createLink failed - assuming unimplemented: ${e}\n`);
-}
-
 if (supportsLink) {
+	files.createLink(link, target);
+
 	f = files.openFile({path: link, mode: "r"});
 	let stat = f.status();
 	assert(stat.isFile(), "expected file");
@@ -47,3 +42,5 @@ if (supportsLink) {
 	assert(stat.isFile(), "expected file");
 	assert(123 === stat.size, "expected file length of 123");
 }
+else
+	trace("file systenm links unsupported - skipping tests")

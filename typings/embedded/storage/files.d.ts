@@ -66,8 +66,8 @@ declare module "embedded:storage/files" {
 		status(path: string, options?: DirectoryStatusOptions): Status;
 
 		createDirectory(path: string): boolean;
-		createLink(path: string, target: string): void;
-		readLink(path: string): string;
+		createLink?(path: string, target: string): void;
+		readLink?(path: string): string;
 
 		scan(path?: string): IterableIterator<string>;
 		[Symbol.iterator](): IterableIterator<string>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -63,13 +63,12 @@ class Directory extends Native("xs_directoryzephyr_destructor") {
 	move(from, to) { return native("xs_directoryzephyr_move").call(this, from, to); }
 
 	status(path, options) {
+		if (undefined === path)
+			throw new Error("path required");
 		return native("xs_directoryzephyr_status").call(this, path, options, new Status);
 	}
 
 	createDirectory(options) { return native("xs_directoryzephyr_createDirectory").call(this, options); }
-	createLink(/* path, target */) {throw new Error("unsupported");}
-
-	readLink(/* path */) {throw new Error("unsupported");}
 
 	scan(...path) {
 		return new DirectoryIterator(this, ...path);

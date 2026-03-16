@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -21,7 +21,7 @@
 class Status {
 	isFile() { return native("xs_stat_isFile").call(this); }
 	isDirectory() { return native("xs_stat_isDirectory").call(this); }
-	isSymbolicLink() { return native("xs_stat_isSymbolicLink").call(this); }
+	isSymbolicLink() { return false; }
 }
 
 class File extends Native("xs_filelittlefs_destructor"){
@@ -69,9 +69,6 @@ class Directory extends Native("xs_directorylittlefs_destructor") {
 	}
 
 	createDirectory(options) { return native("xs_directorylittlefs_createDirectory").call(this, options); }
-	createLink(path, target) { return native("xs_directorylittlefs_link").call(this, path, target); }
-
-	readLink(path) { return native("xs_directorylittlefs_link").call(this, path); }
 
 	scan(...path) {
 		return new DirectoryIterator(this, ...path);

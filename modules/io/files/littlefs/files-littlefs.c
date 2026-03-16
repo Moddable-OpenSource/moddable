@@ -515,12 +515,6 @@ void xs_directorylittlefs_createDirectory(xsMachine *the)
 	xsmcSetTrue(xsResult);
 }
 
-void xs_directorylittlefs_link(xsMachine *the)
-{
-	getDirectory(xsThis);	// reject instance with invalid "this" first, as exepected by tests
-	xsUnknownError("unsupported");
-}
-
 /*
 	Scan
 */
