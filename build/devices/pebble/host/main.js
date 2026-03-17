@@ -89,6 +89,13 @@ globalThis.device = Object.freeze({
 	}
 }, true);
 
+const hook = function(specifier) {
+	if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
+		throw new Error(specifier + " blocked in watchface");
+
+	return {namespace: specifier};		// map through host modules
+};
+
 export default function() {
 	state.archive = (new ArchiveResource())?.archive;
 	console.log(`Found mod "${state.archive.name}"`);
@@ -156,18 +163,8 @@ export default function() {
 	state.mod = new ArchiveCompartment(state.archive, {
 		globals,
 		modules: {},
-		loadNowHook(specifier) {
-			if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
-				throw new Error(specifier + " blocked in watchface");
-
-			return {namespace: specifier};		// map through host modules
-		},
-		loadHook(specifier) {
-			if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
-				throw new Error(specifier + " blocked in watchface");
-
-			return {namespace: specifier};		// map through host modules
-		}
+		loadNowHook: hook,
+		loadHook: hook
 	});
 
 	Timer.set(async () => {
