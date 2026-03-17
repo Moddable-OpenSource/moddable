@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -62,6 +62,8 @@
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
+	#include "moddableAppState.h"
+	#include "applib/moddable/moddable.h"
 
 	#define INSTRUMENT_CPULOAD 0
 	#define kTargetCPUCount 1
@@ -165,6 +167,10 @@ void modLog_transmit(const char *msg)
 void modInstrumentationSetup(xsMachine *the)
 {
 	espInitInstrumentation(the);
+
+	if (!(getModdableAppState(creationFlags) & kModdableCreationFlagLogInstrumentation))
+		return;
+
 	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 }
 

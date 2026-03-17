@@ -27,6 +27,9 @@
 typedef struct {
 	xsMachine				*the;
 
+	// creation flags from ModdableCreationRecord
+	uint32_t				creationFlags;
+
 	// pebblebutton
 	void					*buttons;
 	EventServiceInfo		eventServiceDown;
