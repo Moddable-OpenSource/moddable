@@ -18,387 +18,387 @@
  *
  */
 
-/* type aliases */
-type Coordinates = {
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-};
-type Position = {
-  x?: number;
-  y?: number;
-};
-type Size = {
-  width?: number;
-  height?: number;
-};
-type Bounds = Position & Size;
-type Color = string;
-type ContentState = {
-  state?: number;
-  variant?: number;
-};
-type TimeProperty = {
-  time?: number;
-  duration?: number;
-  fraction?: number;
-  interval?: number;
-  loop?: boolean;
-};
-type TouchProperty = {
-  active?: boolean;
-  backgroundTouch?: boolean;
-  exclusiveTouch?: boolean;
-  multipleTouch?: boolean;
-};
+  /* type aliases */
+export type Coordinates = {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+export type Position = {
+    x?: number;
+    y?: number;
+  };
+export type Size = {
+    width?: number;
+    height?: number;
+  };
+export type Bounds = Position & Size;
+export type Color = string;
+export type ContentState = {
+    state?: number;
+    variant?: number;
+  };
+export type TimeProperty = {
+    time?: number;
+    duration?: number;
+    fraction?: number;
+    interval?: number;
+    loop?: boolean;
+  };
+export type TouchProperty = {
+    active?: boolean;
+    backgroundTouch?: boolean;
+    exclusiveTouch?: boolean;
+    multipleTouch?: boolean;
+  };
 
-// TODO: more accurate constructor parameters
-type TemplateStyle<P, C extends new (...args: any) => any> = {
-  new (dictionary?: P): InstanceType<C>;
-  template: TemplateStyleFactory<C>;
-};
-type TemplateStyleFactory<T extends new (...args: any) => any> = (
-  param: ConstructorParameters<T>[0]
-) => TemplateStyle<Partial<ConstructorParameters<T>[1]>, T>;
+  // TODO: more accurate constructor parameters
+export type TemplateStyle<P, C extends new (...args: any) => any> = {
+    new (dictionary?: P): InstanceType<C>;
+    template: TemplateStyleFactory<C>;
+  };
+export type TemplateStyleFactory<T extends new (...args: any) => any> = (
+    param: ConstructorParameters<T>[0]
+  ) => TemplateStyle<Partial<ConstructorParameters<T>[1]>, T>;
 
-type TemplateComponent<P, C extends new (...args: any) => any> = {
-  new (behaviorData?: any, dictionary?: P): InstanceType<C>;
-  template: TemplateComponentFactory<C>;
-};
-type TemplateComponentFactory<T extends new (...args: any) => any> = (
-  func: (param: any) => ConstructorParameters<T>[1]
-) => TemplateComponent<Parameters<typeof func>[0], T>;
+export type TemplateComponent<P, C extends new (...args: any) => any> = {
+    new (behaviorData?: any, dictionary?: P): InstanceType<C>;
+    template: TemplateComponentFactory<C>;
+  };
+export type TemplateComponentFactory<T extends new (...args: any) => any> = (
+    func: (param: any) => ConstructorParameters<T>[1]
+  ) => TemplateComponent<Parameters<typeof func>[0], T>;
 
-interface Behavior<T extends Content = Content>{
-  onCreate?(content: T, data: object, context: any): void;
-  onDisplaying?(content: T): void;
-  onFinished?(content: T): void;
-  onTimeChanged?(content: T): void;
-  onTouchBegan?(content: T, id: number, x: number, y: number, ticks: number): void;
-  onTouchCancelled?(content: T, id: number): void;
-  onTouchended?( content: T, id: number, x: number, y: number, ticks: number): void;
-  onTouchMoved?( content: T, id: number, x: number, y: number, ticks: number): void;
-  // TODO: complete callbacks
-}
+export interface Behavior<T extends Content = Content> {
+    onCreate?(content: T, data: object, context: any): void;
+    onDisplaying?(content: T): void;
+    onFinished?(content: T): void;
+    onTimeChanged?(content: T): void;
+    onTouchBegan?(content: T, id: number, x: number, y: number, ticks: number): void;
+    onTouchCancelled?(content: T, id: number): void;
+    onTouchended?(content: T, id: number, x: number, y: number, ticks: number): void;
+    onTouchMoved?(content: T, id: number, x: number, y: number, ticks: number): void;
+    // TODO: complete callbacks
+  }
 
-interface BehaviorConstructor<T extends Content = Content> {
-  new(): Behavior<T>;
-}
+export interface BehaviorConstructor<T extends Content = Content> {
+    new(): Behavior<T>;
+  }
 
-interface Content {
-  // TODO: consider type parameter to avoid any
-  adjust(x: number, y: number): void;
-  bubble(id: string, ...extras: any[]): void;
-  captureTouch(id: string, x: number, y: number, ticks: number): void;
-  defer(id: string, ...extras: any[]): void;
-  delegate(id: string, ...extras: any[]): void;
-  distribute(id: string, ...extras: any[]): void;
-  focus(): void;
-  hit(x: number, y: number): Content | undefined;
-  measure(): Size;
-  moveBy(x: number, y: number): void;
-  render(): void;
-  sizeBy(width: number, height: number): void;
-  start(): void;
-  stop(): void;
+export interface Content {
+    // TODO: consider type parameter to avoid any
+    adjust(x: number, y: number): void;
+    bubble(id: string, ...extras: any[]): void;
+    captureTouch(id: string, x: number, y: number, ticks: number): void;
+    defer(id: string, ...extras: any[]): void;
+    delegate(id: string, ...extras: any[]): void;
+    distribute(id: string, ...extras: any[]): void;
+    focus(): void;
+    hit(x: number, y: number): Content | undefined;
+    measure(): Size;
+    moveBy(x: number, y: number): void;
+    render(): void;
+    sizeBy(width: number, height: number): void;
+    start(): void;
+    stop(): void;
 
-  readonly previous: Content | null;
-  readonly next: Content | null;
-  readonly container: Container | null;
-  readonly index: number;
-  name: string;
-  active: boolean;
-  anchor: string;
-  behavior: object;
-  coordinates: Coordinates;
-  bounds: Bounds;
-  backgroundTouch: boolean;
-  exclusiveTouch: boolean;
-  multipleTouch: boolean;
+    readonly previous: Content | null;
+    readonly next: Content | null;
+    readonly container: Container | null;
+    readonly index: number;
+    name: string;
+    active: boolean;
+    anchor: string;
+    behavior: object;
+    coordinates: Coordinates;
+    bounds: Bounds;
+    backgroundTouch: boolean;
+    exclusiveTouch: boolean;
+    multipleTouch: boolean;
 
-  time: number;
-  duration: number;
-  fraction: number;
-  interval: number;
-  loop: boolean;
-  running: boolean;
-  offset: undefined | Position;
-  position: undefined | Position;
-  size: Size;
-  state: number;
-  variant: number;
-  skin: Skin | null;
-  style: Style | null;
-  visible: boolean;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-interface ContentDictionary
-  extends Coordinates,
-    Size,
-    ContentState,
-    TimeProperty,
-    TouchProperty {
-  name?: string;
-  anchor?: string;
-  Behavior?: BehaviorConstructor;
-  skin?: Skin | SkinDictionary;
-  Skin?: SkinConstructor;
-  style?: Style | StyleDictionary;
-  Style?: StyleConstructor;
-  visible?: boolean;
-}
-interface ContentConstructor {
-  new(behaviorData?: any, dictionary?: ContentDictionary): Content;
-  (behaviorData?: any, dictionary?: ContentDictionary): Content;
-  readonly prototype: Content;
+    time: number;
+    duration: number;
+    fraction: number;
+    interval: number;
+    loop: boolean;
+    running: boolean;
+    offset: undefined | Position;
+    position: undefined | Position;
+    size: Size;
+    state: number;
+    variant: number;
+    skin: Skin | null;
+    style: Style | null;
+    visible: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+export interface ContentDictionary
+    extends Coordinates,
+      Size,
+      ContentState,
+      TimeProperty,
+      TouchProperty {
+    name?: string;
+    anchor?: string;
+    Behavior?: BehaviorConstructor;
+    skin?: Skin | SkinDictionary;
+    Skin?: SkinConstructor;
+    style?: Style | StyleDictionary;
+    Style?: StyleConstructor;
+    visible?: boolean;
+  }
+export interface ContentConstructor {
+    new(behaviorData?: any, dictionary?: ContentDictionary): Content;
+    (behaviorData?: any, dictionary?: ContentDictionary): Content;
+    readonly prototype: Content;
 
-  template: TemplateComponentFactory<ContentConstructor>;
-}
+    template: TemplateComponentFactory<ContentConstructor>;
+  }
 
-interface Style {
-  measure(string: string): Size;
-}
-interface StyleDictionaryBase {
-  color?: Color | Color[];
-  font?: string;
-  horizontal?: string;
-  top?: number;
-}
-interface StyleConstructor {
-  new(dictionary: StyleDictionary): Style;
+export interface Style {
+    measure(string: string): Size;
+  }
+export interface StyleDictionaryBase {
+    color?: Color | Color[];
+    font?: string;
+    horizontal?: string;
+    top?: number;
+  }
+export interface StyleConstructor {
+    new(dictionary: StyleDictionary): Style;
 
-  template<T>(this: T, dictionary: StyleDictionary): T;
-}
+    template<T>(this: T, dictionary: StyleDictionary): T;
+  }
 
-interface TextStyleDictionary extends StyleDictionaryBase {
-  leading?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-}
-interface LabelStyleDictionary extends StyleDictionaryBase {
-  vertical?: string;
-}
-type StyleDictionary = LabelStyleDictionary | TextStyleDictionary;
+export interface TextStyleDictionary extends StyleDictionaryBase {
+    leading?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  }
+export interface LabelStyleDictionary extends StyleDictionaryBase {
+    vertical?: string;
+  }
+export type StyleDictionary = LabelStyleDictionary | TextStyleDictionary;
 
-interface Texture {
-  readonly height: number;
-  readonly width: number;
-}
-interface TextureDictionary {
-  path: string;
-}
-interface TextureConstructor {
-  new(path: string): Texture;
-  new(dictionary: TextureDictionary): Texture;
-  readonly prototype: Texture;
+export interface Texture {
+    readonly height: number;
+    readonly width: number;
+  }
+export interface TextureDictionary {
+    path: string;
+  }
+export interface TextureConstructor {
+    new(path: string): Texture;
+    new(dictionary: TextureDictionary): Texture;
+    readonly prototype: Texture;
 
-  template: TemplateStyleFactory<TextureConstructor>;
-}
+    template: TemplateStyleFactory<TextureConstructor>;
+  }
 
-interface Skin {
-  borders: Coordinates;
-  fill: Color | Color[];
-  stroke: Color | Color[];
-  texture: Texture;
-  color: Color;
-  bounds: Bounds;
-  height: number;
-  width: number;
-  states?: number;
-  variants?: number;
-  tiles?: Coordinates;
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-}
-interface SkinConstructor {
-  new(dictionary: SkinDictionary): Skin;
-  readonly prototype: Skin;
+export interface Skin {
+    borders: Coordinates;
+    fill: Color | Color[];
+    stroke: Color | Color[];
+    texture: Texture;
+    color: Color;
+    bounds: Bounds;
+    height: number;
+    width: number;
+    states?: number;
+    variants?: number;
+    tiles?: Coordinates;
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  }
+export interface SkinConstructor {
+    new(dictionary: SkinDictionary): Skin;
+    readonly prototype: Skin;
 
-  template: TemplateStyleFactory<SkinConstructor>;
-}
+    template: TemplateStyleFactory<SkinConstructor>;
+  }
 
-interface TextureSkinDictionary extends Coordinates, Bounds {
-  texture?: Texture | TextureDictionary;
-  Texture?: TextureConstructor;
-  color?: Color | Color[];
-  states?: number;
-  variants?: number;
-  tiles?: Coordinates;
-}
-interface ColorSkinDictionary {
-  borders?: Coordinates;
-  fill?: Color | Color[];
-  stroke?: Color | Color[];
-}
-type SkinDictionary = ColorSkinDictionary | TextureSkinDictionary;
+export interface TextureSkinDictionary extends Coordinates, Bounds {
+    texture?: Texture | TextureDictionary;
+    Texture?: TextureConstructor;
+    color?: Color | Color[];
+    states?: number;
+    variants?: number;
+    tiles?: Coordinates;
+  }
+export interface ColorSkinDictionary {
+    borders?: Coordinates;
+    fill?: Color | Color[];
+    stroke?: Color | Color[];
+  }
+export type SkinDictionary = ColorSkinDictionary | TextureSkinDictionary;
 
-interface Transition {
-  onBegin(container: Container, ...extras: any[]): void;
-  onEnd(container: Container, ...extras: any[]): void;
-  onStep(fraction: number): void;
-  duration?: number;
-}
-interface TransitionConstructor {
-  new(duration: number, interpolator?: (value: number) => number, first?: any, last?: any): Transition
-}
+export interface Transition {
+    onBegin(container: Container, ...extras: any[]): void;
+    onEnd(container: Container, ...extras: any[]): void;
+    onStep(fraction: number): void;
+    duration?: number;
+  }
+export interface TransitionConstructor {
+    new(duration: number, interpolator?: (value: number) => number, first?: any, last?: any): Transition
+  }
 
-interface Container extends Content {
-  clip: boolean;
-  readonly first: Content | null;
-  readonly last: Content | null;
-  readonly length: number;
-  readonly transitioning: boolean;
-  add(content: Content): void;
-  content(at: number | string): Content | undefined;
-  empty(start?: number, stop?: number): void;
-  firstThat(id: string, ...extras: any[]): void;
-  insert(content: Content, before: Content): void;
-  lastThat(id: string, ...extras: any[]): void;
-  remove(content: Content): void;
-  replace(content: Content, by: Content): void;
-  run(transition: Transition, ...extras: any[]): void;
-  swap(content0: Content, content1: Content): void;
-  onTransitionBeginning(container: Container): void;
-  onTransitionEnded(container: Container): void;
-}
-interface ContainerDictionary extends ContentDictionary {
-  clip?: boolean;
-  contents?: Content[];
-}
-interface ContainerConstructor {
-  new(behaviorData?: any, dictionary?: ContainerDictionary): Container;
-  (behaviorData?: any, dictionary?: ContainerDictionary): Container;
+export interface Container extends Content {
+    clip: boolean;
+    readonly first: Content | null;
+    readonly last: Content | null;
+    readonly length: number;
+    readonly transitioning: boolean;
+    add(content: Content): void;
+    content(at: number | string): Content | undefined;
+    empty(start?: number, stop?: number): void;
+    firstThat(id: string, ...extras: any[]): void;
+    insert(content: Content, before: Content): void;
+    lastThat(id: string, ...extras: any[]): void;
+    remove(content: Content): void;
+    replace(content: Content, by: Content): void;
+    run(transition: Transition, ...extras: any[]): void;
+    swap(content0: Content, content1: Content): void;
+    onTransitionBeginning(container: Container): void;
+    onTransitionEnded(container: Container): void;
+  }
+export interface ContainerDictionary extends ContentDictionary {
+    clip?: boolean;
+    contents?: Content[];
+  }
+export interface ContainerConstructor {
+    new(behaviorData?: any, dictionary?: ContainerDictionary): Container;
+    (behaviorData?: any, dictionary?: ContainerDictionary): Container;
 
-  template<T>(this: T, fn: (arg: any) => ContainerDictionary): T;
-}
+    template<T>(this: T, fn: (arg: any) => ContainerDictionary): T;
+  }
 
-interface Label extends Content {
-  string: string;
-}
-interface LabelDictionary extends ContentDictionary {
-  string?: string;
-}
-interface LabelConstructor {
-  new(behaviorData?: any, dictionary?: LabelDictionary): Label;
-  (behaviorData?: any, dictionary?: LabelDictionary): Label;
+export interface Label extends Content {
+    string: string;
+  }
+export interface LabelDictionary extends ContentDictionary {
+    string?: string;
+  }
+export interface LabelConstructor {
+    new(behaviorData?: any, dictionary?: LabelDictionary): Label;
+    (behaviorData?: any, dictionary?: LabelDictionary): Label;
 
-  template<T>(this: T, fn: (arg: any) => LabelDictionary): T;
-}
+    template<T>(this: T, fn: (arg: any) => LabelDictionary): T;
+  }
 
-interface Port extends Content {
-  drawContent(
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void;
-  drawLabel(
-    string: string,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void;
-  drawSkin(
-    skin: Skin,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    variant?: number,
-    state?: number
-  ): void;
-  drawString(
-    string: string,
-    style: Style,
-    color: Color,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void;
-  drawStyle(
-    string: string,
-    style: Style,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    ellipsis?: boolean,
-    state?: number
-  ): void;
-  drawTexture(
-    texture: Texture,
-    color: Color,
-    x: number,
-    y: number,
-    sx: number,
-    sy: number,
-    sw: number,
-    sh: number
-  ): void;
-  fillColor(
-    color: Color,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void;
-  fillTexture(
-    texture: Texture,
-    color: Color,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    sx?: number,
-    sy?: number,
-    sw?: number,
-    sh?: number
-  ): void;
-  invalidate(
-    x?: number,
-    y?: number,
-    width?: number,
-    height?: number
-  ): void;
-  measureString(string: string, style: Style): Size;
-  popClip(): void;
-  pushClip(
-    x?: number,
-    y?: number,
-    width?: number,
-    height?: number
-  ): void;
-  onDraw(
-    port: Port,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ): void;
-}
-interface PortConstructor extends ContentConstructor {
-}
+export interface Port extends Content {
+    drawContent(
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ): void;
+    drawLabel(
+      string: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ): void;
+    drawSkin(
+      skin: Skin,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      variant?: number,
+      state?: number
+    ): void;
+    drawString(
+      string: string,
+      style: Style,
+      color: Color,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ): void;
+    drawStyle(
+      string: string,
+      style: Style,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      ellipsis?: boolean,
+      state?: number
+    ): void;
+    drawTexture(
+      texture: Texture,
+      color: Color,
+      x: number,
+      y: number,
+      sx: number,
+      sy: number,
+      sw: number,
+      sh: number
+    ): void;
+    fillColor(
+      color: Color,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ): void;
+    fillTexture(
+      texture: Texture,
+      color: Color,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      sx?: number,
+      sy?: number,
+      sw?: number,
+      sh?: number
+    ): void;
+    invalidate(
+      x?: number,
+      y?: number,
+      width?: number,
+      height?: number
+    ): void;
+    measureString(string: string, style: Style): Size;
+    popClip(): void;
+    pushClip(
+      x?: number,
+      y?: number,
+      width?: number,
+      height?: number
+    ): void;
+    onDraw(
+      port: Port,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ): void;
+  }
+export interface PortConstructor extends ContentConstructor {
+  }
 
-interface TextBlock {
-    behavior?: object | null;
-    style?: Style | null;
-    spans: (string | TextSpan)[] | string,
-}
+export interface TextBlock {
+      behavior?: object | null;
+      style?: Style | null;
+      spans: (string | TextSpan)[] | string,
+  }
 
-interface TextSpan extends TextBlock {
-    link?: any
-}
+export interface TextSpan extends TextBlock {
+      link?: any
+  }
 
-interface Text extends Content {
+export interface Text extends Content {
   blocks: TextBlock[],
   string: string;
   begin(): void;
@@ -409,63 +409,63 @@ interface Text extends Content {
   endBlock(): void;
   endSpan(): void;
 }
-interface TextDictionary extends ContentDictionary {
+export interface TextDictionary extends ContentDictionary {
   blocks?: TextBlock[],
   string?: string;
 }
-interface TextConstructor {
+export interface TextConstructor {
   new(behaviorData?: any, dictionary?: TextDictionary): Text;
   (behaviorData?: any, dictionary?: TextDictionary): Text;
 
   template<T>(this: T, fn: (arg: any) => TextDictionary): T;
 }
 
-interface Application extends Container {
+export interface Application extends Container {
   displayListLength: number;
   commandListLength: number;
   touchCount: number;
 }
-interface ApplicationDictionary extends ContainerDictionary {
+export interface ApplicationDictionary extends ContainerDictionary {
   displayListLength?: number;
   commandListLength?: number;
   touchCount?: number;
   pixels?: number;
 }
-interface ApplicationConstructor {
+export interface ApplicationConstructor {
   new(behaviorData?: any, dictionary?: ApplicationDictionary): Application;
 
   template<T>(this: T, fn: (arg: any) => ApplicationDictionary): T;
 }
 
-interface Column extends Container {
+export interface Column extends Container {
 }
-interface ColumnConstructor extends ContainerConstructor {
+export interface ColumnConstructor extends ContainerConstructor {
 }
 
-interface Layout extends Container {
+export interface Layout extends Container {
   onFitHorizontally(layout: Layout, width: number): void;
   onFitVertically(layout: Layout, height: number): void;
   onMeasureHorizontally(layout: Layout, width: number): void;
   onMeasureVertically(layout: Layout, height: number): void;
 }
-interface LayoutConstructor extends ContainerConstructor {
+export interface LayoutConstructor extends ContainerConstructor {
 }
 
-interface Image extends Content {
+export interface Image extends Content {
   readonly frameCount: never;
   frameIndex: number;
 }
-interface ImageDictionary extends ContentDictionary {
+export interface ImageDictionary extends ContentDictionary {
   path: string;
 }
-interface ImageConstructor {
+export interface ImageConstructor {
   new(behaviorData?: any, dictionary?: ImageDictionary): Image;
   (behaviorData?: any, dictionary?: ImageDictionary): Image;
 
   template<T>(this: T, fn: (arg: any) => ImageDictionary): T;
 }
 
-interface Die extends Layout {
+export interface Die extends Layout {
   set(x: number, y: number, width: number, height: number): Die;
   sub(x: number, y: number, width: number, height: number): Die;
   and(x: number, y: number, width: number, height: number): Die;
@@ -477,15 +477,15 @@ interface Die extends Layout {
   attach(content: Content): void;
   detach(): void;
 }
-interface DieConstructor extends LayoutConstructor {
+export interface DieConstructor extends LayoutConstructor {
 }
 
-interface Row extends Container {
+export interface Row extends Container {
 }
-interface RowConstructor extends ContainerConstructor {
+export interface RowConstructor extends ContainerConstructor {
 }
 
-interface Scroller extends Container {
+export interface Scroller extends Container {
   readonly constraint: Position;
   loop: boolean;
   scroll: Position;
@@ -495,49 +495,52 @@ interface Scroller extends Container {
   scrollTo(x: number, y: number): void;
   onScrolled(scroller: Scroller): void;
 }
-interface ScrollerDictionary extends ContainerDictionary {
+export interface ScrollerDictionary extends ContainerDictionary {
   loop?: boolean;
 }
-interface ScrollerConstructor {
+export interface ScrollerConstructor {
   new(behaviorData?: any, dictionary?: ScrollerDictionary): Scroller;
   (behaviorData?: any, dictionary?: ScrollerDictionary): Scroller;
 
   template<T>(this: T, fn: (arg: any) => ScrollerDictionary): T;
 }
 
-interface LinkDictionary {
+export interface LinkDictionary {
   Behavior?: BehaviorConstructor;
 }
-interface Link {
+export interface Link {
   readonly container: Container;
   state: number;
   captureTouch(id: number, x: number, y: number, ticks: number): void;
 }
-interface LinkConstructor {
+export interface LinkConstructor {
   new(behaviorData?: any, dictionary?: LinkDictionary): Link;
   (behaviorData?: any, dictionary?: LinkDictionary): Link;
 
   template<T>(this: T, fn: (arg: any) => LinkDictionary): T;
 }
 
-interface Locals {
+export interface Locals {
   new(name?: string, language?: string): Locals
   language: string;
   get(textToLocalize: string): string
 }
 
-interface blendColors {
+export interface blendColors {
   (a: number, c1: number, c2: number): Color
 }
-interface hsl {
+export interface hsl {
   (h: number, s: number, l: number): Color
 }
-interface hsla {
+export interface hsla {
   (h: number, s: number, l: number, a: number): Color
 }
-interface rgb {
+export interface rgb {
   (r: number, g: number, b: number): Color
 }
-interface rgba {
+export interface rgba {
   (r: number, g: number, b: number, a: number): Color
 }
+
+
+export {};

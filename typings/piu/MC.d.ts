@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 Shinya Ishikawa
+ * Copyright (c) 2020-2026 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -18,111 +18,37 @@
  *
  */
 
-/// <reference path="./MC-types.d.ts" />
-
 declare module "piu/MC" {
   import {} from "commodetto/Poco";   // for global screen
+  import type * as MC from "piu/MC-types";
 
   global {
-    const Skin: SkinConstructor
-    const Texture: TextureConstructor
-    const Style: StyleConstructor
-    const Behavior: BehaviorConstructor
-    const Content: ContentConstructor
-    const Container: ContainerConstructor
-    const Application: ApplicationConstructor
-    const Scroller: ScrollerConstructor
-    const Row: RowConstructor
-    const Column: ColumnConstructor
-    const Layout: LayoutConstructor
-    const Image: ImageConstructor
-    const Die: DieConstructor
-    const Port: PortConstructor
-    const Label: LabelConstructor
-    const Transition: TransitionConstructor
-    const Text: TextConstructor
-    const Link: LinkConstructor
-    const application: Application
-    const Locals: Locals
-    const blendColors: blendColors
-    const hsl: hsl
-    const hsla: hsla
-    const rgb: rgb
-    const rgba: rgba
+    const Skin: MC.SkinConstructor
+    const Texture: MC.TextureConstructor
+    const Style: MC.StyleConstructor
+    const Behavior: MC.BehaviorConstructor
+    const Content: MC.ContentConstructor
+    const Container: MC.ContainerConstructor
+    const Application: MC.ApplicationConstructor
+    const Scroller: MC.ScrollerConstructor
+    const Row: MC.RowConstructor
+    const Column: MC.ColumnConstructor
+    const Layout: MC.LayoutConstructor
+    const Image: MC.ImageConstructor
+    const Die: MC.DieConstructor
+    const Port: MC.PortConstructor
+    const Label: MC.LabelConstructor
+    const Transition: MC.TransitionConstructor
+    const Text: MC.TextConstructor
+    const Link: MC.LinkConstructor
+    const application: MC.Application
+    const Locals: MC.Locals
+    const blendColors: MC.blendColors
+    const hsl: MC.hsl
+    const hsla: MC.hsla
+    const rgb: MC.rgb
+    const rgba: MC.rgba
   }
 
-  export {
-    Coordinates,
-    Position,
-    Size,
-    Bounds,
-    Color,
-    ContentState,
-    TimeProperty,
-    TouchProperty,
-    TemplateStyle,
-    TemplateStyleFactory,
-    TemplateComponent,
-    TemplateComponentFactory,
-    Behavior,
-    BehaviorConstructor,
-    Content,
-    ContentDictionary,
-    ContentConstructor,
-    Style,
-    StyleDictionaryBase,
-    StyleConstructor,
-    TextStyleDictionary,
-    LabelStyleDictionary,
-    StyleDictionary,
-    Texture,
-    TextureDictionary,
-    TextureConstructor,
-    Skin,
-    SkinConstructor,
-    TextureSkinDictionary,
-    ColorSkinDictionary,
-    SkinDictionary,
-    Transition,
-    TransitionConstructor,
-    Container,
-    ContainerDictionary,
-    ContainerConstructor,
-    Label,
-    LabelDictionary,
-    LabelConstructor,
-    Port,
-    PortConstructor,
-    TextBlock,
-    TextSpan,
-    Text,
-    TextDictionary,
-    TextConstructor,
-    Application,
-    ApplicationDictionary,
-    ApplicationConstructor,
-    Column,
-    ColumnConstructor,
-    Layout,
-    LayoutConstructor,
-    Image,
-    ImageDictionary,
-    ImageConstructor,
-    Die,
-    DieConstructor,
-    Row,
-    RowConstructor,
-    Scroller,
-    ScrollerDictionary,
-    ScrollerConstructor,
-    LinkDictionary,
-    Link,
-    LinkConstructor,
-    Locals,
-    blendColors,
-    hsl,
-    hsla,
-    rgb,
-    rgba,
-  }
+  export * from "piu/MC-types";
 }

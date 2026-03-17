@@ -85,6 +85,7 @@
 							"$(TYPINGS)/pebble/piu",
 							"$(TYPINGS)/pebble/poco",
 							"$(TYPINGS)/easing",
+							"$(TYPINGS)/piu/MC",
 							"$(TYPINGS)/piu/MC-types"
 						]
 					}

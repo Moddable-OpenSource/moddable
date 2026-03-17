@@ -93,25 +93,26 @@ declare const fetch: typeof import('fetch').fetch;
   Piu
 */
 
-declare const Application: ApplicationConstructor;
-declare const Behavior: BehaviorConstructor;
-declare const Column: ColumnConstructor;
-declare const Container: ContainerConstructor;
-declare const Content: ContentConstructor;
-declare const Label: LabelConstructor;
-declare const Link: LinkConstructor;
-declare const Locals: Locals;
-declare const Port: PortConstructor;
-declare const Row: RowConstructor;
-declare const Skin: SkinConstructor;
-declare const Style: StyleConstructor;
-declare const Text: TextConstructor;
-declare const Texture: TextureConstructor;
-declare const Transition: TransitionConstructor;
+type Application = import("piu/MC-types").Application;
+type Behavior = import("piu/MC-types").Behavior;
+type Column = import("piu/MC-types").Column;
+type Container = import("piu/MC-types").Container;
+type Content = import("piu/MC-types").Content;
+type ContentDictionary = import("piu/MC-types").ContentDictionary;
+type Label = import("piu/MC-types").Label;
+type Link = import("piu/MC-types").Link;
+type Locals = import("piu/MC-types").Locals;
+type Port = import("piu/MC-types").Port;
+type Row = import("piu/MC-types").Row;
+type Skin = import("piu/MC-types").Skin;
+type Style = import("piu/MC-types").Style;
+type Text = import("piu/MC-types").Text;
+type Texture = import("piu/MC-types").Texture;
+type Transition = import("piu/MC-types").Transition;
 
-declare const InverterConstructor: InverterConstructor;
-declare const RoundRect: RoundRectConstructor;
-declare const ScreenBufferConstructor: ScreenBufferConstructor;
+declare const Inverter: InverterConstructor;
+declare const RonndRect: RoundRectConstructor;
+declare const ScreenBuffer: ScreenBufferConstructor;
 declare const SVGImage: SVGImageConsructor;
 
 /*
