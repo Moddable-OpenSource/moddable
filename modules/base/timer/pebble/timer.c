@@ -60,7 +60,7 @@ static void modTimerEventedExecute(void *);
 
 static void modTimersScheduleNext(void)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	state->eventedTimer = evented_timer_register_or_reschedule(state->eventedTimer,
 		(uint32_t)modTimersNext(), modTimerEventedExecute, C_NULL);
 }
@@ -74,7 +74,7 @@ void modTimerEventedExecute(void *)
 
 void modTimersExecute(void)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 
 	modCriticalSectionDeclare;
 	uint32_t now = modMilliseconds();
@@ -164,7 +164,7 @@ int modTimersNext(void)
 
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	modCriticalSectionDeclare;
 	modTimer timer;
 
@@ -241,7 +241,7 @@ void *modTimerGetRefcon(modTimer timer)
 void modTimerRemove(modTimer timer)
 {
 	modCriticalSectionDeclare;
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	modTimer walker, prev = NULL;
 
 	modCriticalSectionBegin();
@@ -280,7 +280,7 @@ void modTimerDelayMS(uint32_t ms)
 
 void modTimerExit(void)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 
 	while (state->timers) {
 		modTimer next = ((modTimer)state->timers)->next;

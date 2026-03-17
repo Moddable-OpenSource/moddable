@@ -95,7 +95,7 @@ static char *_getPath(xsMachine *the, xsSlot *slot)
 
 static bool pfsStatus(const char *name)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	xsMachine *the = state->the;
 
 	if (xsUndefinedType != xsmcTypeOf(xsVar(0)))
@@ -408,7 +408,7 @@ void xs_directorypfs_createDirectory(xsMachine *the)
 
 static bool pfsScan(const char *name)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_rocky_memory_api_context();
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	xsMachine *the = state->the;
 	size_t rootLen = c_strlen(state->root);
 
