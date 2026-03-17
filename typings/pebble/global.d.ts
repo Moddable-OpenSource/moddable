@@ -85,9 +85,9 @@ declare function clearTimeout(id: number): void;
 declare const URL: typeof import('url').URL;
 declare const URLSearchParams: typeof import('url').URLSearchParams;
 declare const Headers: typeof import('headers').default;
-declare const localStorage: import('web/webstorage').default;
+declare const localStorage: import('webstorage').default;
 declare const WebSocket: typeof import('web/websocket').default;
-declare const fetch: typeof import('web/fetch').fetch;
+declare const fetch: typeof import('fetch').fetch;
 
 /*
   Piu

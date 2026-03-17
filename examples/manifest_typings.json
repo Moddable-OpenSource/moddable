@@ -4,7 +4,8 @@
 	},
 	"modules": {
 		"*": [
-			"$(TYPINGS)/*", "$(TYPINGS)/ble/*"
+			"$(TYPINGS)/*", "$(TYPINGS)/ble/*",
+			"$(TYPINGS)/web/*"
 		],
 		"commodetto/*": [
 			"$(TYPINGS)/commodetto/*"
@@ -63,8 +64,7 @@
 		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
-		],
-		"web/*": "$(TYPINGS)/web/*"
+		]
 	}, 
 	"platforms": {
 		"pebble": {
