@@ -408,7 +408,7 @@ void fxSetterThatIgnoresPrototypeProperties(txMachine* the, txSlot* reference, t
 
 void fx_Iterator(txMachine* the)
 {
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Iterator");
 	if (fxIsSameSlot(the, mxTarget, mxFunction))
 		mxTypeError("new: Iterator");
@@ -1315,7 +1315,7 @@ void fxNewGeneratorResult(txMachine* the, txBoolean done)
 
 void fx_Generator(txMachine* the)
 {
-	if (mxTarget->kind != XS_UNDEFINED_KIND)
+	if (mxHasTarget)
 		mxTypeError("new: Generator");
 }
 
@@ -1423,7 +1423,7 @@ void fx_GeneratorFunction(txMachine* the)
 	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxGeneratorFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
-	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
+	if (mxHasTarget && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxGeneratorFunctionPrototype);
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
@@ -1858,7 +1858,7 @@ txSlot* fxNewAsyncGeneratorInstance(txMachine* the)
 
 void fx_AsyncGenerator(txMachine* the)
 {
-	if (mxTarget->kind != XS_UNDEFINED_KIND)
+	if (mxHasTarget)
 		mxTypeError("new: AsyncGenerator");
 }
 
@@ -1980,7 +1980,7 @@ void fx_AsyncGeneratorFunction(txMachine* the)
 	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxGeneratorFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
-	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
+	if (mxHasTarget && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxAsyncGeneratorFunctionPrototype);
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;

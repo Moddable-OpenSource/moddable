@@ -478,7 +478,8 @@ typedef txU4 xsIndex;
 	fxDeleteAt(the), \
 	the->stack++)
 
-#define XS_FRAME_COUNT 5 
+#define XS_FRAME_COUNT 4
+#define XS_NEW_FRAME_COUNT 5
 
 #define xsCall0(_THIS,_ID) \
 	(xsOverflow(-XS_FRAME_COUNT-0), \
@@ -787,14 +788,14 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew0(_THIS,_ID) \
-	(xsOverflow(-XS_FRAME_COUNT-0), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-0), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxRunCount(the, 0), \
 	fxPop())
 
 #define xsNew1(_THIS,_ID,_SLOT0) \
-	(xsOverflow(-XS_FRAME_COUNT-1), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-1), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -802,7 +803,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew2(_THIS,_ID,_SLOT0,_SLOT1) \
-	(xsOverflow(-XS_FRAME_COUNT-2), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-2), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -811,7 +812,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew3(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2) \
-	(xsOverflow(-XS_FRAME_COUNT-3), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-3), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -821,7 +822,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew4(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3) \
-	(xsOverflow(-XS_FRAME_COUNT-4), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-4), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -832,7 +833,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew5(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4) \
-	(xsOverflow(-XS_FRAME_COUNT-5), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-5), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -844,7 +845,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew6(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5) \
-	(xsOverflow(-XS_FRAME_COUNT-6), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-6), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -857,7 +858,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew7(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6) \
-	(xsOverflow(-XS_FRAME_COUNT-7), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-7), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -871,7 +872,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNew8(_THIS,_ID,_SLOT0,_SLOT1,_SLOT2,_SLOT3,_SLOT4,_SLOT5,_SLOT6,_SLOT7) \
-	(xsOverflow(-XS_FRAME_COUNT-8), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-8), \
 	fxPush(_THIS), \
 	fxNewID(the, _ID), \
 	fxPush(_SLOT0), \
@@ -886,14 +887,14 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNewFunction0(_FUNCTION) \
-	(xsOverflow(-XS_FRAME_COUNT-0), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-0), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
 	fxRunCount(the, 0), \
 	fxPop())
 
 #define xsNewFunction1(_FUNCTION,_SLOT0) \
-	(xsOverflow(-XS_FRAME_COUNT-1), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-1), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
 	fxPush(_SLOT0), \
@@ -901,7 +902,7 @@ typedef txU4 xsIndex;
 	fxPop())
 
 #define xsNewFunction2(_FUNCTION,_SLOT0,_SLOT1) \
-	(xsOverflow(-XS_FRAME_COUNT-2), \
+	(xsOverflow(-XS_NEW_FRAME_COUNT-2), \
 	fxPush(_FUNCTION), \
 	fxNew(the), \
 	fxPush(_SLOT0), \
@@ -1042,10 +1043,14 @@ struct xsHostHooksStruct {
 
 #define xsVars(_COUNT) fxVars(the, _COUNT)
 
-#define xsThis (the->frame[4])
-#define xsFunction (the->frame[3])
-#define xsTarget (the->frame[2])
+#define xsThis (the->frame[3])
+#define xsFunction (the->frame[2])
 #define xsResult (the->frame[1])
+
+extern xsSlot* fxTarget(xsMachine*);
+
+#define xsTarget ( \
+	*fxTarget(the))
 
 extern xsIntegerValue fxArgc(xsMachine*);
 
@@ -1471,6 +1476,7 @@ mxImport void fxNull(xsMachine*, xsSlot*);
 mxImport void fxBoolean(xsMachine*, xsSlot*, xsBooleanValue);
 mxImport xsBooleanValue fxToBoolean(xsMachine*, xsSlot*);
 mxImport xsIntegerValue fxArgc(xsMachine*);
+mxImport xsSlot* fxTarget(xsMachine*);
 mxImport void fxInteger(xsMachine*, xsSlot*, xsIntegerValue);
 mxImport xsIntegerValue fxToInteger(xsMachine*, xsSlot*);
 mxImport void fxNumber(xsMachine*, xsSlot*, xsNumberValue);

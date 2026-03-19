@@ -372,23 +372,20 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 				scope = C_NULL;
 		}
 	
-		txSlot* _this = frame + 4;
+		txSlot* _this = frame + 3;
 		txSlot* environment = mxFrameToEnvironment(frame);
-		txSlot* function = frame + 3;
+		txSlot* function = frame + 2;
 		txSlot* home = (function->kind == XS_REFERENCE_KIND) ? mxFunctionInstanceHome(function->value.reference) : C_NULL;
-		txSlot* target = frame + 2;
 		txSlot* closures;
 		txSlot* property;
-	
+
 		the->debugEval = 1;
-	
-		mxOverflow(-7);
+
+		mxOverflow(-6);
 		/* THIS */
 		mxPushSlot(_this);
 		/* FUNCTION */
 		mxPushSlot(function);
-		/* TARGET */
-		mxPushSlot(target);
 		/* RESULT */
 		mxPushUndefined();
 		/* FRAME */
@@ -431,17 +428,20 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 	
 		{
 			mxTry(the) {
+				/* TARGET */
+				if (frame->flag & XS_TARGET_FLAG)
+					mxPushSlot(frame + 4);
 				/* THIS */
 				mxPushSlot(mxThis);
 				the->stack->ID = XS_NO_ID;
 				/* FUNCTION */
 				mxPushSlot(expression);
-				/* TARGET */
-				mxPushSlot(mxTarget);
 				/* RESULT */
 				mxPushUndefined();
 				/* FRAME */
 				mxPushUninitialized();
+				if (frame->flag & XS_TARGET_FLAG)
+					the->stack->flag |= XS_TARGET_FLAG;
 				mxRunCount(0);
 				mxPullSlot(result);
 				success = 1;
@@ -2316,7 +2316,7 @@ txSlot* fxFindRealm(txMachine* the)
 	txSlot* frame = fxFindFrame(the);
 	txSlot* realm = C_NULL;
 	if (frame && (!(frame->flag & XS_C_FLAG))) {
-		txSlot* function = frame + 3;
+		txSlot* function = frame + 2;
 		if (mxIsReference(function)) {
             txSlot* instance = function->value.reference;
             txSlot* home = mxFunctionInstanceHome(instance);
@@ -2405,9 +2405,10 @@ void fxListLocal(txMachine* the)
 	fxEchoFramePathLine(the, frame);
 	fxEcho(the, ">");
 	fxEchoProperty(the, frame + 1, &aList, "(return)", -1, C_NULL);
-	fxEchoProperty(the, frame + 2, &aList, "new.target", -1, C_NULL);
-	fxEchoProperty(the, frame + 3, &aList, "(function)", -1, C_NULL);
-	fxEchoProperty(the, frame + 4, &aList, "this", -1, C_NULL);
+	fxEchoProperty(the, frame + 2, &aList, "(function)", -1, C_NULL);
+	fxEchoProperty(the, frame + 3, &aList, "this", -1, C_NULL);
+	if (frame->flag & XS_TARGET_FLAG)
+		fxEchoProperty(the, frame + 4, &aList, "new.target", -1, C_NULL);
 	if (frame == the->frame)
 		scope = the->scope;
 	else {
@@ -3331,7 +3332,7 @@ void fxEchoUnsigned(txMachine* the, txUnsigned value, txInteger radix)
 txID fxFrameToProfilerID(txMachine* the, txSlot* frame)
 {
 	txProfiler* profiler = the->profiler;
-	txSlot* function = frame + 3;
+	txSlot* function = frame + 2;
 	txSlot* code = C_NULL;
 	txID id = XS_NO_ID;
 	if (function->kind == XS_REFERENCE_KIND) {

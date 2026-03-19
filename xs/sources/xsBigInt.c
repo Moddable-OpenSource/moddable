@@ -95,7 +95,7 @@ void fxBuildBigInt(txMachine* the)
 
 void fx_BigInt(txMachine* the)
 {
-	if (mxTarget->kind != XS_UNDEFINED_KIND)
+	if (mxHasTarget)
 		mxTypeError("new: BigInt");
 	if (mxArgc > 0)
 		*mxResult = *mxArgv(0);

@@ -109,7 +109,7 @@ txSlot* fxNewObjectInstance(txMachine* the)
 
 void fx_Object(txMachine* the)
 {
-	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
+	if (mxHasTarget && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxObjectPrototype);
 		fxNewObjectInstance(the);

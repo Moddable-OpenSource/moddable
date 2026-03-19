@@ -809,7 +809,7 @@ void fx_Promise(txMachine* the)
 	txSlot* status;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Promise");
 	if (mxArgc < 1)
 		mxTypeError("no executor");

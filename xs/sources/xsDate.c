@@ -157,7 +157,7 @@ void fx_Date_aux(txMachine* the, txFlag secure)
 	txInteger c = mxArgc;
 	txDateTime dt;
 	txSlot* instance;
-	if (mxIsUndefined(mxTarget)) {
+	if (!mxHasTarget) {
 		char buffer[256];
 		txString p = buffer;
 		txDateTime dt;

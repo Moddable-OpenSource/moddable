@@ -63,7 +63,7 @@ txSlot* fxNewBooleanInstance(txMachine* the)
 void fx_Boolean(txMachine* the)
 {
 	txBoolean value = (mxArgc > 0) ? fxToBoolean(the, mxArgv(0)) : 0;
-	if (mxIsUndefined(mxTarget)) {
+	if (!mxHasTarget) {
 		mxResult->kind = XS_BOOLEAN_KIND;
 		mxResult->value.boolean = value;
 	}
