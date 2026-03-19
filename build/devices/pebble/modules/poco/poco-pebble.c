@@ -207,9 +207,6 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 
 	GColor saveColor = ctx->draw_state.fill_color;
 	ctx->draw_state.fill_color.argb = color;
-	if ((0 == from) && (TRIG_MAX_ANGLE == to))
-		graphics_fill_circle(ctx, center, radius);
-	else {
 		GRect r = {
 			.origin.x = center.x - radius,
 			.origin.y = center.y - radius,
@@ -218,7 +215,6 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 		};
 		const int32_t inset_thickness = MAX(ABS(r.size.h), ABS(r.size.w));
 		graphics_fill_radial(ctx, r, GOvalScaleModeFillCircle, inset_thickness, from, to);
-	}
 	ctx->draw_state.fill_color = saveColor;
 }
 
