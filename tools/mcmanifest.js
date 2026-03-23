@@ -1058,7 +1058,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						this.write(face.name + `-${face.size}.fnt`);
 						this.write("\\\n\t$(RESOURCES_DIR)");
 						this.write(tool.slash);
-						this.write(face.name + `-${face.size}-alpha.bmp`);
+						this.write(face.name + `-${face.size}-alpha${tool.bitmapExtension}`);
 					}
 					else if ("-mask" === face.suffix) {
 						this.write(face.name + `-${face.size}.bf4`);
