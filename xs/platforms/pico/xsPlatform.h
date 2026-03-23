@@ -167,4 +167,8 @@ extern uint32_t pico_memory_remaining();
 #endif
 
 
+#ifndef c_abort
+	#define c_abort abort
+#endif
+
 #endif /* __XSPLATFORM__ */
