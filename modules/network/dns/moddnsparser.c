@@ -50,20 +50,14 @@ static void *getQuestionByIndex(xsMachine *the, uint8_t index)
 
 	position += 12;
 	while (index--) {
-		while (true) {
-			if (position >= packetEnd)
-				return NULL;
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
 			if (0xC0 == (tag & 0xC0)) {
-				if (position >= packetEnd)
-					return NULL;
 				position += 1;
 				break;
 			}
-			if (position + tag > packetEnd)
-				return NULL;
 			position += tag;
 		}
 		position += 4;
@@ -93,20 +87,14 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	while (index--) {
 		uint16_t rdlength;
 
-		while (true) {
-			if (position >= packetEnd)
-				return NULL;
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
 			if (0xC0 == (tag & 0xC0)) {
-				if (position >= packetEnd)
-					return NULL;
 				position += 1;
 				break;
 			}
-			if (position + tag > packetEnd)
-				return NULL;
 			position += tag;
 		}
 		position += 10;
@@ -127,13 +115,15 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 static int parseQname(xsMachine *the, int offset)
 {
 	uint8_t *packetEnd;
-	uint8_t *packetStart = getPacket(the, &packetEnd);
-	xsUnsignedValue packetLength = (xsUnsignedValue)(packetEnd - packetStart);
+	uint8_t *packetStart;
+	xsUnsignedValue packetLength;
 	uint8_t *position;
 	int qnameEndPosition = 0;
 	int hops = 0;
 
-	xsVar(1) = xsNewArray(0);
+	xsVar(1) = xsNewArray(0);	// do this before getPacket: xsNewArray can trigger GC
+	packetStart = getPacket(the, &packetEnd);
+	packetLength = (xsUnsignedValue)(packetEnd - packetStart);
 	position = offset + packetStart;
 	while (true) {
 		char tmp[64];
@@ -169,9 +159,12 @@ static int parseQname(xsMachine *the, int offset)
 		if (position + tag > packetEnd)
 			xsUnknownError("bad name");
 		c_memcpy(tmp, position, tag);
-		xsmcSetStringBuffer(xsVar(2), tmp, tag);
-		xsCall1(xsVar(1), xsID_push, xsVar(2));
 		offset += tag;
+		xsmcSetStringBuffer(xsVar(2), tmp, tag);	// can trigger GC
+		xsCall1(xsVar(1), xsID_push, xsVar(2));	// can trigger GC
+		// re-fetch packet pointer since GC may have moved memory
+		packetStart = getPacket(the, &packetEnd);
+		packetLength = (xsUnsignedValue)(packetEnd - packetStart);
 		position = offset + packetStart;
 	}
 
