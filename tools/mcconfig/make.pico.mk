@@ -46,7 +46,7 @@ PICO_VID ?= 2e8a
 PICO_PID ?= 000a
 
 # UF2CONV = $(PICO_SDK_DIR)/build/elf2uf2/elf2uf2
-UF2CONV = $(PICO_SDK_DIR)/build/_deps/picotool/picotool
+UF2CONV ?= $(PICO_SDK_DIR)/build/_deps/picotool/picotool
 
 PICO_SUBCLASS ?= rp2040
 
