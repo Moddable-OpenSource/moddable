@@ -280,13 +280,13 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 						uint16_t advance;
 
 						if (position >= rdataEnd)
-							break;
+							xsUnknownError("bad txt");
 						tag = *position++;
 						advance = (uint16_t)tag + 1;
 						if (advance > rdlength)
-							break;
+							xsUnknownError("bad txt");
 						if (position + tag > rdataEnd)
-							break;
+							xsUnknownError("bad txt");
 						offset += advance;
 						rdlength -= advance;
 						c_memcpy(tmp, position, tag);
