@@ -2097,7 +2097,7 @@ enum {
 
 	/* property flags */
 	XS_INTERNAL_FLAG = 1,
-	XS_ARROW_FLAG = 2,
+	/* XS_DONT_DELETE_FLAG = 2, */
 	/* XS_DONT_ENUM_FLAG = 4, */
 	/* XS_DONT_SET_FLAG = 8 ,  */
 	XS_INSPECTOR_FLAG = 16,

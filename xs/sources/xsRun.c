@@ -839,11 +839,6 @@ XS_CODE_JUMP:
 					if ((slot->kind == XS_CODE_KIND) || (slot->kind == XS_CODE_X_KIND)) {
 						if (byte && !mxIsConstructor(variable))
 							mxRunDebug(XS_TYPE_ERROR, "new: not a constructor");
-						if (!byte && (slot->flag & XS_ARROW_FLAG)) {
-							c_memmove(mxStack - 1, mxStack, (offset + 4) * sizeof(txSlot));
-							mxStack--;
-							(mxStack + offset)->flag |= XS_TARGET_FLAG;
-						}
 						variable = slot->value.code.closures;
 						if (variable) {
 							mxPushKind(XS_REFERENCE_KIND);
@@ -1330,8 +1325,10 @@ XS_CODE_JUMP:
 			mxAllocStack(1);
 			if (mxFrameHasTarget)
 				*mxStack = *mxFrameTarget;
-			else
-				mxStack->kind = XS_UNDEFINED_KIND;
+			else {
+				mxInitSlotKind(mxStack, XS_UNDEFINED_KIND);
+				mxStack->next = C_NULL;
+			}
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_THIS)
@@ -2078,12 +2075,21 @@ XS_CODE_JUMP:
 			mxScope = variable;
 			mxBreak;
 		mxCase(XS_CODE_RETRIEVE_TARGET)
-			if (mxFrameHasTarget) {
+			if (mxID(_new_target) == slot->ID) {
+				if (!mxFrameHasTarget) {
+					c_memmove(mxStack - 1, mxStack, (mxFrame + 4 - mxStack) * sizeof(txSlot));
+					mxStack--;
+					mxScope--;
+					mxEnvironment--;
+					mxFrame--;
+					mxFrame->flag |= XS_TARGET_FLAG;
+				}
 				variable = mxFrameTarget;
 				variable->kind = slot->kind;
 				variable->value = slot->value;
+
+				slot = slot->next;
 			}
-			slot = slot->next;
 			mxNextCode(1);
 			mxBreak;
 		mxCase(XS_CODE_RETRIEVE_THIS)
@@ -2137,26 +2143,21 @@ XS_CODE_JUMP:
 			slot = mxFunctionInstanceHome((mxStack + 1)->value.reference);
 			slot->value.home.object = variable->value.home.object;
 			// target
-			if (mxFrameHasTarget)
-				mxFunctionInstanceCode((mxStack + 1)->value.reference)->flag |= XS_ARROW_FLAG;
 			address = &(mxStack->value.reference->next);
 			while ((slot = *address)) {
 				address = &slot->next;
 			}
-			mxSaveState;
-			*address = slot = fxNewSlot(the);
-			mxRestoreState;
-			slot->ID = mxID(_new_target);
 			if (mxFrameHasTarget) {
+				mxSaveState;
+				*address = slot = fxNewSlot(the);
+				mxRestoreState;
+				slot->ID = mxID(_new_target);
 				variable = mxFrameTarget;
 				slot->kind = variable->kind;
 				slot->value = variable->value;
-			}
-			else {
-				slot->kind = XS_UNDEFINED_KIND;
+				address = &slot->next;
 			}
 			// this
-			address = &slot->next;
 			mxSaveState;
 			*address = slot = fxNewSlot(the);
 			mxRestoreState;
