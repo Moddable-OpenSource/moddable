@@ -23,6 +23,7 @@ A manifest is a JSON file that describes the modules and resources necessary to 
 	* [`platforms`](#platforms)
 		* [`subplatforms`](#subplatforms)
 	* [`bundle`](#bundle)
+	* [`redirect`](#redirect)
 * [How manifests are processed](#process)
 
 <a id="example"></a>
@@ -720,6 +721,91 @@ The `bundle` object is used by the [`mcbundle` command line tool](./tools.md#mcb
     ],
     "custom": "./store/custom",
     "icon": "./store/icon.png"
+}
+```
+***
+
+<a id="redirect"></a>
+### `redirect`
+
+The `redirect` array can be used to redirect (or change) manifest properties that are defined in other manifest files.  This is useful when including system manifests where properties need to be altered without editing the Moddable core files.
+
+For example, to use a private directory for sub-modules, you can use an `include` redirection like this:
+
+```json
+"redirect": {
+	"include": {
+		"from": "./targets/$(SUBPLATFORM)/manifest.json",
+		"to": "$(SRC)/targets/$(PLATFORM)/$(SUBPLATFORM)/manifest.json"
+	}
+}
+```
+
+The properties `include`, `strip`, and `preload` (which are string arrays in the manifest) expect `from` and `to` for each property to redirect.  The redirection rule can be a single object, or an array of objects:
+
+```json
+"redirect": {
+	"include": [
+		{
+			"from": "some-include-path",
+			"to": "some-redirect-path"
+		},
+		{
+			"from": "another-include-path",
+			"to": "new-path"
+		}
+	]
+}
+```
+
+The `modules`, `resources`, `data`, `build`, and `config` properties (which are objects in the manifest) expect a similar format, but with an object key qualifier:
+
+```json
+"redirect": {
+	"modules": {
+		"embedded:provider/builtin": {
+			"from": "./targets/$(SUBPLATFORM)/manifest.json",
+			"to": "$(SRC)/targets/$(SUBPLATFORM)/manifest.json"
+		}
+	}
+}
+```
+
+The value of `null` can be used as a wildcard on `from` to match all.  For example, to disable all preloads and replace them with a specific list of modules:
+
+```json
+"redirect": {
+	"preload": {
+		"from": null,
+		"to": ["engine", "unit-test"]
+	}
+}
+```
+
+`to` can also use `null` to indicate the item should be deleted (if `to` is not provided, it is assumed to be a delete).  For example, to remove all preloads:
+
+```json
+"redirect": {
+	"preload": {
+		"from": null
+	}
+}
+```
+
+You can qualify `redirect` to apply only for specific platforms by placing it inside the `platforms` property.  The following will replace the `config.rotation` value only for the `esp32/m5stick_cplus` platform:
+
+```json
+"platforms": {
+	"esp32/m5stick_cplus": {
+		"redirect": {
+			"config": {
+				"rotation": {
+					"from": "270",
+					"to": "90"
+				}
+			}
+		}
+	}
 }
 ```
 
