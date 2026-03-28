@@ -38,6 +38,11 @@
 				"USE_USB": "2"
 			}
 		},
+		"esp32/lilygo_t_camera_plus_s3": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},		
 		"esp32/lilygo_t_qt": {
 			"build": {
 				"USE_USB": "2"
@@ -94,11 +99,31 @@
 				"USE_USB": "2"
 			}
 		},
+		"esp32/m5atom_s3r": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/m5atom_s3_cam": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
+		"esp32/m5atom_s3_m12": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/m5atom_s3_lite": {
 			"build": {
 				"USE_USB": "2"
 			}
 		},
+		"esp32/m5nanoc6": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},		
 		"esp32/m5dial": {
 			"build": {
 				"USE_USB": "2"
