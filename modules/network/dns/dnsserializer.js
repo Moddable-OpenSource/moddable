@@ -36,13 +36,22 @@ class Serializer {
 		if (dictionary.id)
 			this.id = dictionary.id;
 	}
-	add(section, name, type, clss, ttl, data) {
-		const record = [];
+	splitName(name) {
+		if (!name)
+			return [];
 
+		const parts = name.split(".");
+		if ((parts.length > 1) && ("" === parts[parts.length - 1]))
+			parts.pop();
+		return parts;
+	}
+	add(section, name, type, clss, ttl, data) {
 		if (!data)
 			;
 		else if (data instanceof ArrayBuffer)
 			data = new Uint8Array(data);
+		else if (undefined !== data.byteLength)
+			data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 		else {
 			let d;
 
@@ -51,46 +60,25 @@ class Serializer {
 					data = Uint8Array.from(data.split(".").map(value => parseInt(value)));
 					break;
 
-				case DNS.RR.NSEC: {
-					let next = data.next.split(".").map(item => ArrayBuffer.fromString(item));
-					next.push(new ArrayBuffer(0));		// trailing 0
-					d = new Uint8Array(next.reduce((value, item) => value + item.byteLength + 1, data.bitmaps.byteLength));
-					let offset = next.reduce((offset, item) => {
-						d[offset] = item.byteLength;
-						d.set(new Uint8Array(item), offset + 1);
-						return offset + 1 + item.byteLength;
-					}, 0);
-					d.set(new Uint8Array(data.bitmaps), offset);
-					data = d;
-					} break;
-
-				case DNS.RR.PTR:
-					data = data.split(".").map(item => ArrayBuffer.fromString(item));
-					d = new Uint8Array(data.reduce((value, item) => value + item.byteLength + 1, 1));
-					data.reduce((offset, item) => {
-						d[offset] = item.byteLength;
-						d.set(new Uint8Array(item), offset + 1);
-						return offset + 1 + item.byteLength;
-					}, 0);
-					data = d;
+				case DNS.RR.NSEC:
+					if (data.bitmaps instanceof ArrayBuffer)
+						data = {next: this.splitName(data.next), bitmaps: new Uint8Array(data.bitmaps)};
+					else
+						data = {next: this.splitName(data.next), bitmaps: new Uint8Array(data.bitmaps.buffer, data.bitmaps.byteOffset, data.bitmaps.byteLength)};
 					break;
 
-				case DNS.RR.SRV: {
-					let target = data.target.split(".").map(item => ArrayBuffer.fromString(item));
-					d = new Uint8Array(target.reduce((value, item) => value + item.byteLength + 1, 6 + 1));
-					d[0] = data.priority >> 8;
-					d[1] = data.priority;
-					d[2] = data.weight >> 8;
-					d[3] = data.weight;
-					d[4] = data.port >> 8;
-					d[5] = data.port;
-					target.reduce((offset, item) => {
-						d[offset] = item.byteLength;
-						d.set(new Uint8Array(item), offset + 1);
-						return offset + 1 + item.byteLength;
-					}, 6);
-					data = d;
-				} break;
+				case DNS.RR.PTR:
+					data = {name: this.splitName(data)};
+					break;
+
+				case DNS.RR.SRV:
+					data = {
+						priority: data.priority,
+						weight: data.weight,
+						port: data.port,
+						target: this.splitName(data.target)
+					};
+					break;
 
 				case DNS.RR.TXT:
 					d = 0;
@@ -139,84 +127,122 @@ class Serializer {
 			}
 		}
 
-		if (name)
-			name.split(".").forEach(item => record.push(item));
-		record.push(0);
-		if (undefined !== ttl) {
-			record.push(Uint8Array.of(0, type,
-									  clss >> 8, clss,
-									  (ttl >> 24) & 0xff, (ttl >> 16) & 0xff, (ttl >> 8) & 0xff, ttl & 0xff,
-									  data ? data.byteLength >> 8 : 0, data ? data.byteLength : 0));
-			if (data)
-				record.push(data)
+		this.append(section, {
+			name: this.splitName(name),
+			type,
+			clss,
+			ttl,
+			data
+		});
+	}
+	append(section, record) {
+		this.sections[section].push(record);
+	}
+	writeU8(state, value) {
+		if (state.result)
+			state.result[state.position] = value;
+		state.position += 1;
+	}
+	writeU16(state, value) {
+		if (state.result) {
+			state.result[state.position] = (value >> 8) & 0xFF;
+			state.result[state.position + 1] = value & 0xFF;
+		}
+		state.position += 2;
+	}
+	writeU32(state, value) {
+		if (state.result) {
+			state.result[state.position] = (value >> 24) & 0xFF;
+			state.result[state.position + 1] = (value >> 16) & 0xFF;
+			state.result[state.position + 2] = (value >> 8) & 0xFF;
+			state.result[state.position + 3] = value & 0xFF;
+		}
+		state.position += 4;
+	}
+	writeBytes(state, bytes) {
+		if (state.result)
+			state.result.set(bytes, state.position);
+		state.position += bytes.byteLength;
+	}
+	writeName(state, parts) {
+		for (let i = 0; i < parts.length; i++) {
+			const suffix = parts.slice(i).join(".");
+			const target = state.nameOffsets.get(suffix);
+			if (undefined !== target) {
+				this.writeU16(state, 0xC000 | target);
+				return;
+			}
+
+			if (state.position < 0x4000)
+				state.nameOffsets.set(suffix, state.position);
+
+			const label = ArrayBuffer.fromString(parts[i]);
+			this.writeU8(state, label.byteLength);
+			this.writeBytes(state, new Uint8Array(label));
+		}
+
+		this.writeU8(state, 0);
+	}
+	writeRData(state, type, data) {
+		if (!data)
+			return;
+
+		if (data instanceof Uint8Array)
+			this.writeBytes(state, data);
+		else if (DNS.RR.PTR === type)
+			this.writeName(state, data.name);
+		else if (DNS.RR.NSEC === type) {
+			this.writeName(state, data.next);
+			this.writeBytes(state, data.bitmaps);
+		}
+		else if (DNS.RR.SRV === type) {
+			this.writeU16(state, data.priority);
+			this.writeU16(state, data.weight);
+			this.writeU16(state, data.port);
+			this.writeName(state, data.target);
 		}
 		else
-			record.push(Uint8Array.of(0, type,
-									  clss >> 8, clss));
-		this.append(section, record);
+			this.writeBytes(state, data);
 	}
-	append(section, parts) {
-		let byteLength = 0;
-		for (let i = 0; i < parts.length; i++) {
-			const value = parts[i];
-			const type = typeof value;
-			if ("number" === type)
-				byteLength += 1;
-			else if ("string" === type)
-				byteLength += 1 + ArrayBuffer.fromString(value).byteLength;
-			else
-				byteLength += value.byteLength;
-		}
+	writeRecord(state, record) {
+		this.writeName(state, record.name);
+		this.writeU16(state, record.type);
+		this.writeU16(state, record.clss);
 
-		const fragment = new Uint8Array(byteLength);
-		for (let i = 0, position = 0; i < parts.length; i++) {
-			const value = parts[i];
-			const type = typeof value;
-			if ("number" === type) {
-				fragment[position] = value;
-				position += 1;
-			}
-			else if ("string" === type) {
-				let s = ArrayBuffer.fromString(value);
-				fragment[position++] = s.byteLength;
-				fragment.set(new Uint8Array(s), position);
-				position += s.byteLength;
-			}
-			else {
-				fragment.set(value, position);
-				position += value.byteLength;
-			}
-		}
-
-/*
-		// check for duplicate answer
-		for (let i = 0; i < this.fragments.length; i++) {
-			const k = this.fragments[i];
-			if (k.byteLength !== byteLength)
-				continue;
-			for (let j = 0; j < byteLength; j++) {
-				if (fragment[j] !== k[j])
-					continue fragments;
-			}
+		if (undefined === record.ttl)
 			return;
+
+		this.writeU32(state, record.ttl);
+
+		const rdlengthPosition = state.position;
+		this.writeU16(state, 0);
+		const rdataPosition = state.position;
+		this.writeRData(state, record.type, record.data);
+		const rdlength = state.position - rdataPosition;
+
+		if (state.result) {
+			state.result[rdlengthPosition] = (rdlength >> 8) & 0xFF;
+			state.result[rdlengthPosition + 1] = rdlength & 0xFF;
 		}
-*/
-		this.sections[section].push(fragment);
+	}
+	writeSections(state) {
+		for (let i = 0; i < 4; i++) {
+			this.sections[i].forEach(record => {
+				this.writeRecord(state, record);
+			});
+		}
 	}
 	build() {
 		const sections = this.sections;
-		let byteLength = 0;
-		for (let i = 0; i < 4; i++)
-			 byteLength += sections[i].reduce((byteLength, value) => byteLength + value.byteLength, 0);
-		let position = 12;
-		let result = new Uint8Array(byteLength + position);
+		let state = {position: 12, nameOffsets: new Map};
+		this.writeSections(state);
+
+		let result = new Uint8Array(state.position);
 		const id = (undefined === this.id) ? 0 : this.id;
 		result.set(Uint8Array.of(id >> 8, id & 255, this.opcode, 0, 0, sections[0].length, 0, sections[1].length, 0, sections[2].length, 0, sections[3].length), 0);		// header
-		for (let i = 0; i < 4; i++)
-			sections[i].forEach(fragment => {
-				result.set(fragment, position);
-				position += fragment.byteLength;
-			});
+
+		state = {position: 12, nameOffsets: new Map, result};
+		this.writeSections(state);
 		return result.buffer;
 	}
 }
