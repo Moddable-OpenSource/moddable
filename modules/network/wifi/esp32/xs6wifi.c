@@ -28,6 +28,10 @@
 
 #include "esp_wifi.h"
 
+#if !defined(ESP_IF_WIFI_AP)
+#define ESP_IF_WIFI_AP WIFI_IF_AP
+#endif
+
 #ifndef MODDEF_WIFI_ESP32_CONNECT_RETRIES
 	#define MODDEF_WIFI_ESP32_CONNECT_RETRIES (5)
 #endif

@@ -67,7 +67,7 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 				return -1;
 #endif
 
-			gpio_pad_select_gpio(config->pin);
+			esp_rom_gpio_pad_select_gpio(config->pin);
 			gpio_set_direction(config->pin, (kModGPIOOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
 			gpio_set_level(config->pin, 0);
 			break;
@@ -76,7 +76,7 @@ int modGPIOSetMode(modGPIOConfiguration config, uint32_t mode)
 		case kModGPIOInputPullUp:
 		case kModGPIOInputPullDown:
 		case kModGPIOInputPullUpDown:
-			gpio_pad_select_gpio(config->pin);
+			esp_rom_gpio_pad_select_gpio(config->pin);
 			gpio_set_direction(config->pin, GPIO_MODE_INPUT);
 
 			if (kModGPIOInputPullUp == mode)

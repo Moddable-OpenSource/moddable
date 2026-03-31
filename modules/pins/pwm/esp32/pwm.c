@@ -110,7 +110,7 @@ void xs_pwm(xsMachine *the)
 	ledcConfig.speed_mode = ESP_SPEED_MODE;
 	ledcConfig.hpoint 	  = 0;
 	ledcConfig.timer_sel  = MODDEF_PWM_LEDC_TIMER;
-	ledcConfig.intr_type  = LEDC_INTR_DISABLE;
+//	ledcConfig.intr_type  = LEDC_INTR_DISABLE;
 
 	if (ESP_OK != ledc_channel_config(&ledcConfig))
 		xsUnknownError("configure ledc channel failed");

@@ -1,0 +1,39 @@
+{
+	"modules": {
+		"embedded:io/digital": "$(IO)/digital/digital",
+		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
+		"*": [
+			"$(MODULES)/io/common/builtinCommon",
+			"$(MODULES)/io/digital/$(PLATFORM)/*"
+		]
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/digital/esp/modGPIO"
+				]
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": [
+					"$(MODULES)/pins/digital/esp32/modGPIO"
+				]
+			},
+			"dependency": [
+				{ "idf": "esp_driver_gpio" }
+			]
+		},
+		"nrf52": {
+		},
+		"pico": {
+		},
+		"zephyr": {
+		}
+	},
+	"preload": [
+		"embedded:io/digital",
+		"embedded:io/digitalbank"
+	]
+}

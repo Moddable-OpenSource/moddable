@@ -12,6 +12,9 @@
 				"*": "$(MODULES)/pins/i2c/esp32/*",
 				"pins/i2c": "$(MODULES)/pins/i2c/i2c"
 			},
+			"dependency": [
+				{ "idf": "esp_driver_i2c" }
+			],
 			"preload": "pins/i2c"
 		},
 		"gecko": {

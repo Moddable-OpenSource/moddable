@@ -3,40 +3,35 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(MODULES)/pins/spi/manifest.json"
+		"$(MODULES)/pins/spi/manifest.json",
+		"$(MODDABLE)/modules/io/pulsecount/manifest.json",
+		"$(MODDABLE)/modules/io/pwm/manifest.json",
+		"$(MODDABLE)/modules/io/pulsewidth/manifest.json",
+		"$(MODDABLE)/modules/io/analog/manifest.json",
+		"$(MODDABLE)/modules/io/digital/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/digital/$(PLATFORM)/*",
 			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*",
-			"$(MODULES)/pins/digital/esp32/modGPIO"
+			"$(IO)/spi/$(PLATFORM)/*"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
-		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
-		"embedded:io/digital": "$(IO)/digital/digital",
-		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 		"embedded:io/i2c": "$(IO)/i2c/i2c_async",
 		"embedded:implementation/i2csync": "$(IO)/i2c/_i2c",
 		"embedded:io/smbus": "$(IO)/i2c/smbus_async",
 		"embedded:implementation/smbussync": "$(IO)/i2c/smbus",
-		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/spi": "$(IO)/spi/spi",
 
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"embedded:io/analog",
-		"embedded:io/digital",
-		"embedded:io/digitalbank",
 		"embedded:io/i2c",
 		"embedded:implementation/i2csync",
 		"embedded:io/smbus",
 		"embedded:io/implementation/smbussync",
-		"embedded:io/pwm",
 		"embedded:io/serial",
 		"embedded:io/spi",
 		"system"
@@ -48,16 +43,12 @@
 			],
 			"modules": {
 				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
-				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
 			},
 			"preload": [
-				"embedded:io/pulsecount",
-				"embedded:io/pulsewidth",
 				"embedded:io/socket/tcp",
 				"embedded:io/socket/udp",
 				"embedded:io/socket/listener"
@@ -147,16 +138,12 @@
 			],
 			"modules": {
 				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
-				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
-				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
 				"embedded:io/socket/listener": "$(IO)/socket/lwip/listener"
 			},
 			"preload": [
-				"embedded:io/pulsecount",
-				"embedded:io/pulsewidth",
 				"embedded:io/socket/tcp",
 				"embedded:io/socket/udp",
 				"embedded:io/socket/listener"

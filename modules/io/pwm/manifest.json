@@ -1,0 +1,50 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		},
+		"esp32": {
+			"modules": {
+				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			},
+			"dependency": [
+				{ "idf": "esp_driver_ledc" }
+			]
+		},
+		"nrf52": {
+			"modules": {
+				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		},
+		"pico": {
+			"modules": {
+				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		},
+		"zephyr": {
+			"modules": {
+				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		}
+	},
+	"preload": [
+		"embedded:io/pwm"
+	]
+}

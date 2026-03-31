@@ -1089,10 +1089,11 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			return;
 
 		if ("esp32" == tool.platform) {
+			let dep;
 			if (tool.dependencies?.length) {
 				var projBase = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}managed_components${tool.slash}`;
 				this.write("MANAGED_COMPONENT_DIRS = \\\n");
-				for (var dep of tool.dependencies) {
+				for (dep of tool.dependencies) {
  					const depBase = `${projBase}${dep.namespace}__${dep.name}${tool.slash}`;
 					var depLine = "\t";
 					if (tool.windows)
@@ -1109,13 +1110,17 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				}
 				this.write("\n");
 			}
-		}
-		if ("esp32" == tool.platform) {
-			let dep;
+
 			let depStr = []
 			const idf_component = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}main${tool.slash}idf_component.yml`;
-			for (dep of tool.dependencies)
-				depStr.push(`grep -q '${dep.namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${dep.namespace}/${dep.name}${dep.version ?? ""}"`);
+			for (dep of tool.dependencies) {
+				if (undefined !== dep.idf) {
+trace(`do we need to do something for ${dep.idf} here?\n`);
+				}
+				else {
+					depStr.push(`grep -q '${dep.namespace ?? "espressif"}/${dep.name}' ${idf_component} || idf.py add-dependency "${dep.namespace}/${dep.name}${dep.version ?? ""}"`);
+				}
+			}
 			if (tool.environment.USE_USB == 1)
 				depStr.push(`grep -q 'espressif/esp_tinyusb' ${idf_component} || idf.py add-dependency "espressif/esp_tinyusb"`);
 			this.line("BUILD_DEPENDENCIES = " + depStr.join("& "));
@@ -1123,12 +1128,17 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 
 			let cmakeTweakFile = tool.outputConfigDirectory + tool.slash + "xs_idf_deps.txt";
 			let tweakStr = "set(ESP_COMPONENTS ";
-			for (dep of tool.dependencies)
-				tweakStr += `${dep.namespace}__${dep.name} `;
+			for (dep of tool.dependencies) {
+				if (undefined !== dep.idf)
+					tweakStr += `${dep.idf} `;
+				else
+					tweakStr += `${dep.namespace}__${dep.name} `;
+			}
 			if (tool.environment.USE_USB == 1)
 				tweakStr += "espressif__esp_tinyusb";
 			tweakStr += ")\n";
 			tool.writeFileString(cmakeTweakFile, tweakStr);
+
 		}
 	}
 	generateDependencyRules(tool) {
@@ -2745,6 +2755,7 @@ export class Tool extends TOOL {
 				for (const cmp in this.manifest.dependency) {
 					if (cmp.namespace != dep.namespace) continue;
 					if (cmp.name != dep.name) continue;
+					if (cmp.idf != dep.idf) continue;
 					found = true;
 				}
 				if (!found)
@@ -2950,13 +2961,29 @@ export class Tool extends TOOL {
 						manifest.include = manifest.include.concat(platformInclude);
 					}
 				}
-				if (platform.dependency && ("esp32" == this.platform)) {
-					manifest.dependencies = [];
-					for (let i=0; i<platform.dependency.length; i++) {
-						var dep = platform.dependency[i];
-						if (undefined === dep.namespace)
-							dep.namespace = "espressif";
-						manifest.dependencies.push(dep);
+				if ("esp32" == this.platform) {
+					if (platform.dependency) {
+						manifest.dependencies = [];
+						for (let i=0; i<platform.dependency.length; i++) {
+							var dep = platform.dependency[i];
+//							if (undefined === dep.namespace)
+//								dep.namespace = "espressif";
+							manifest.dependencies.push(dep);
+						}
+					}
+					if (platform.components) {
+						var comp;
+						manifest.components = [];
+						for (let i=0; i<platform.components.length; i++) {
+							var comp = platform.components[i];
+							if (undefined === comp.name) {
+								trace(`# bad component name "${comp.name}"\n`);
+								continue;
+							}
+							if (!manifest.components.includes(comp.name))
+								manifest.components.push(comp);
+trace(`# esp32 component "${comp.name}\n`);
+						}
 					}
 				}
 			}

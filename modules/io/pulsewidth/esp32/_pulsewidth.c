@@ -126,8 +126,8 @@ void xs_pulsewidth_constructor(xsMachine *the)
         .flags.neg_edge = edges != kPulseWidthRisingToRising,
         .flags.pos_edge = edges != kPulseWidthFallingToFalling,
         // pull up internally
-        .flags.pull_up = mode == kPulseWidthPullUp,
-        .flags.pull_down = mode == kPulseWidthPullDown,
+//        .flags.pull_up = mode == kPulseWidthPullUp,
+//        .flags.pull_down = mode == kPulseWidthPullDown,
     };
 
     err = mcpwm_new_capture_channel(cap_timer, &cap_ch_conf, &cap_chan);

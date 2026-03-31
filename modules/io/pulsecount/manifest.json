@@ -1,0 +1,34 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			},
+			"dependency": [
+				{ "idf": "esp_driver_pcnt" }
+			]
+		},
+		"nrf52": {
+			"modules": {
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		},
+		"pico": {
+			"modules": {
+				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon"
+				]
+			}
+		}
+	},
+	"preload": [
+		"embedded:io/pulsecount"
+	]
+}

@@ -13,7 +13,10 @@
                 "*": [
                     "$(MODULES)/network/wifi/esp32/*"
                 ]
-            }
+            },
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			]
         },
         "pico": {
             "modules": {

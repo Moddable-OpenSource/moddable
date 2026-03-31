@@ -12,7 +12,6 @@
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
-		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/_analog",
 		"embedded:io/digital": "$(IO)/digital/digital",
 		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
 		"embedded:io/i2c": "$(IO)/i2c/_i2c",

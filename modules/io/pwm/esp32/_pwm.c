@@ -27,6 +27,7 @@
 
 #include "builtinCommon.h"
 
+#include "driver/gpio.h"
 #include "driver/ledc.h"
 
 // default is channels 4 through 7

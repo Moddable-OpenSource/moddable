@@ -9,7 +9,10 @@
 		"esp32": {
 			"modules": {
 				"*": "./esp32/*"
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_driver_rmt" }
+			]
 		},
 		"pico": {
 			"modules": {
