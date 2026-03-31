@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Moddable Tech, Inc.
+ * Copyright (c) 2018-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,8 +21,9 @@
 import DNS from "dns";
 
 class Serializer {
+	sections = [[], [], [], [], []];
+
 	constructor(dictionary) {
-		this.sections = [[], [], [], [], []];
 		let opcode = 0;
 		if (undefined !== dictionary.opcode)
 			opcode = dictionary.opcode << 3;
@@ -41,7 +42,7 @@ class Serializer {
 			return [];
 
 		const parts = name.split(".");
-		if ((parts.length > 1) && ("" === parts[parts.length - 1]))
+		if (name.endsWith("."))
 			parts.pop();
 		return parts;
 	}
@@ -138,38 +139,43 @@ class Serializer {
 	append(section, record) {
 		this.sections[section].push(record);
 	}
-	writeU8(state, value) {
+	writeU8(value) {
+		const state = this.state;
 		if (state.result)
 			state.result[state.position] = value;
 		state.position += 1;
 	}
-	writeU16(state, value) {
+	writeU16(value) {
+		const state = this.state;
 		if (state.result) {
-			state.result[state.position] = (value >> 8) & 0xFF;
-			state.result[state.position + 1] = value & 0xFF;
+			state.result[state.position] = value >> 8;
+			state.result[state.position + 1] = value;
 		}
 		state.position += 2;
 	}
-	writeU32(state, value) {
+	writeU32(value) {
+		const state = this.state;
 		if (state.result) {
-			state.result[state.position] = (value >> 24) & 0xFF;
-			state.result[state.position + 1] = (value >> 16) & 0xFF;
-			state.result[state.position + 2] = (value >> 8) & 0xFF;
-			state.result[state.position + 3] = value & 0xFF;
+			state.result[state.position] = value >> 24;
+			state.result[state.position + 1] = value >> 16;
+			state.result[state.position + 2] = value >> 8;
+			state.result[state.position + 3] = value;
 		}
 		state.position += 4;
 	}
-	writeBytes(state, bytes) {
+	writeBytes(bytes) {
+		const state = this.state;
 		if (state.result)
 			state.result.set(bytes, state.position);
 		state.position += bytes.byteLength;
 	}
-	writeName(state, parts) {
+	writeName(parts) {
+		const state = this.state;
 		for (let i = 0; i < parts.length; i++) {
 			const suffix = parts.slice(i).join(".");
 			const target = state.nameOffsets.get(suffix);
 			if (undefined !== target) {
-				this.writeU16(state, 0xC000 | target);
+				this.writeU16(0xC000 | target);
 				return;
 			}
 
@@ -177,75 +183,73 @@ class Serializer {
 				state.nameOffsets.set(suffix, state.position);
 
 			const label = ArrayBuffer.fromString(parts[i]);
-			this.writeU8(state, label.byteLength);
-			this.writeBytes(state, new Uint8Array(label));
+			this.writeU8(label.byteLength);
+			this.writeBytes(new Uint8Array(label));
 		}
 
-		this.writeU8(state, 0);
+		this.writeU8(0);
 	}
-	writeRData(state, type, data) {
+	writeRData(type, data) {
 		if (!data)
 			return;
 
 		if (data instanceof Uint8Array)
-			this.writeBytes(state, data);
+			this.writeBytes(data);
 		else if (DNS.RR.PTR === type)
-			this.writeName(state, data.name);
+			this.writeName(data.name);
 		else if (DNS.RR.NSEC === type) {
-			this.writeName(state, data.next);
-			this.writeBytes(state, data.bitmaps);
+			this.writeName(data.next);
+			this.writeBytes(data.bitmaps);
 		}
 		else if (DNS.RR.SRV === type) {
-			this.writeU16(state, data.priority);
-			this.writeU16(state, data.weight);
-			this.writeU16(state, data.port);
-			this.writeName(state, data.target);
+			this.writeU16(data.priority);
+			this.writeU16(data.weight);
+			this.writeU16(data.port);
+			this.writeName(data.target);
 		}
 		else
-			this.writeBytes(state, data);
+			this.writeBytes(data);
 	}
-	writeRecord(state, record) {
-		this.writeName(state, record.name);
-		this.writeU16(state, record.type);
-		this.writeU16(state, record.clss);
+	writeRecord(record) {
+		this.writeName(record.name);
+		this.writeU16(record.type);
+		this.writeU16(record.clss);
 
 		if (undefined === record.ttl)
 			return;
 
-		this.writeU32(state, record.ttl);
+		this.writeU32(record.ttl);
 
-		const rdlengthPosition = state.position;
-		this.writeU16(state, 0);
-		const rdataPosition = state.position;
-		this.writeRData(state, record.type, record.data);
-		const rdlength = state.position - rdataPosition;
+		const state = this.state;
+		const position = state.position;
+		this.writeU16(0);
+		let length = state.position;
+		this.writeRData(record.type, record.data);
 
 		if (state.result) {
-			state.result[rdlengthPosition] = (rdlength >> 8) & 0xFF;
-			state.result[rdlengthPosition + 1] = rdlength & 0xFF;
+			length = state.position - length;
+			state.result[position] = length >> 8;
+			state.result[position + 1] = length;
 		}
 	}
-	writeSections(state) {
-		for (let i = 0; i < 4; i++) {
-			this.sections[i].forEach(record => {
-				this.writeRecord(state, record);
-			});
-		}
+	writeSections() {
+		for (let i = 0, sections = this.sections, length = sections.length; i < length; i++)
+			sections[i].forEach(record => this.writeRecord(record));
 	}
 	build() {
 		const sections = this.sections;
-		let state = {position: 12, nameOffsets: new Map};
-		this.writeSections(state);
+		this.state = {position: 12, nameOffsets: new Map};
+		this.writeSections();
 
-		let result = new Uint8Array(state.position);
-		const id = (undefined === this.id) ? 0 : this.id;
-		result.set(Uint8Array.of(id >> 8, id & 255, this.opcode, 0, 0, sections[0].length, 0, sections[1].length, 0, sections[2].length, 0, sections[3].length), 0);		// header
+		const result = new Uint8Array(this.state.position);
+		const id = this.id ?? 0;
+		result.set(Uint8Array.of(id >> 8, id, this.opcode, 0, 0, sections[0].length, 0, sections[1].length, 0, sections[2].length, 0, sections[3].length), 0);		// header
 
-		state = {position: 12, nameOffsets: new Map, result};
-		this.writeSections(state);
+		this.state = {position: 12, nameOffsets: new Map, result};
+		this.writeSections();
+		delete this.state;
 		return result.buffer;
 	}
 }
-Object.freeze(Serializer.prototype);
 
 export default Serializer;
