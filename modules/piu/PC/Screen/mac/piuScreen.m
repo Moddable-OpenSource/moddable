@@ -128,6 +128,7 @@ enum {
 	}
 }
 - (void)drawRect:(NSRect)rect {
+	if (!screen) return;
 	CGRect dstRect = NSRectToCGRect(self.bounds);
 	CGRect srcRect = CGRectMake(0, 0, screen->width, screen->height);
 	CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] CGContext];
