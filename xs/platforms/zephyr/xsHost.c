@@ -46,10 +46,6 @@
 
 #include <stdio.h>
 
-#ifndef MODDEF_XS_MODS
-	#define MODDEF_XS_MODS	0
-#endif
-
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
@@ -368,16 +364,8 @@ void modMessageService(xsMachine *the, int maxDelayMS)
 
 #define kDebugQueueLength (4)
 
-static struct k_mutex gFlashMutex;
-static uint8_t gFlashMutex_initialized = 0;
-
 void modMachineTaskInit(xsMachine *the)
 {
-	if (!gFlashMutex_initialized) {
-		k_mutex_init(&gFlashMutex);
-		gFlashMutex_initialized = 1;
-	}
-
 	the->task = (void *)modTaskGetCurrent();
 	k_msgq_alloc_init(&the->msgQueue, sizeof(modMessageRecord), MODDEF_TASK_QUEUELENGTH);
 }
@@ -423,9 +411,15 @@ void fxQueuePromiseJobs(txMachine* the)
 */
 
 #if MODDEF_XS_MODS
+
+static struct flash_area *gModFlashArea = C_NULL;
+static uint32_t gModFlashBlockSize = 0;
+static const void *gPartitionAddress = C_NULL;
+uint8_t gModWriteAlign = 0;
+
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
-	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
+	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)gPartitionAddress, size, buffer);
 }
 
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
@@ -436,302 +430,166 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 		return 0;		// attempted write beyond end of available space
 
 	if (!(offset & (kFlashSectorSize - 1))) {		// if offset is at start of a sector, erase that sector
-		if (!modSPIErase(offset - (uintptr_t)kFlashStart, kFlashSectorSize))
+		if (!modSPIErase(offset - (uintptr_t)gPartitionAddress, kFlashSectorSize))
 			return 0;
 	}
 
-	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
+	return modSPIWrite(offset - (uintptr_t)gPartitionAddress, size, buffer);
 }
 
 void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 {
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
+	int sectorSize = kFlashSectorSize;
+	if (0 == sectorSize)
+		return 0;
 
-	if (!gFlashMutex_initialized) {
-		k_mutex_init(&gFlashMutex);
-		gFlashMutex_initialized = 1;
-	}
-
-	if (fxMapArchive(the, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, sectorSize, spiRead, spiWrite)) {
 		result = (void *)kModulesStart;
 		fxSetArchive(the, result);
 	}
 
-	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart))) {
+	if (XS_ATOM_ERROR == c_read32be((void *)(4 + kModulesStart)))
 		*status = *(8 + (uint8_t *)kModulesStart);
-		modLog("mod failed");
-	}
 	else
 		*status = 0;
 
 	return result;
 }
 
-#endif /* MODDEF_XS_MODS */
-
-#ifndef MODDEF_FILE_LFS_PARTITION_SIZE
-	#define MODDEF_FILE_LFS_PARTITION_SIZE (65536)
-#endif
-
-uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
-{
-	uint32_t offset, size;
-	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
-		uint32_t modSize = 0, storageSize = 0;
-
-		offset = kModulesStart;
-
-#if MODDEF_XS_MODS
-		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
-			modSize = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
-#else
-		if (which == kPartitionMod)
-			return 0;
-#endif
-
-		if ((kModulesEnd - (offset + modSize)) >= MODDEF_FILE_LFS_PARTITION_SIZE)
-			storageSize = (((MODDEF_FILE_LFS_PARTITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
-
-		if (kPartitionStorage == which) {
-			offset = kModulesEnd - storageSize;
-			size = storageSize;
-		}
-		else {
-//			offset = kModulesStart;		// set above
-			size = (kModulesEnd - offset) - MODDEF_FILE_LFS_PARTITION_SIZE;
-		}
-	}
-	else if (kPartitionBLEState == which) {
-		offset = (uintptr_t)&_FSTORAGE_start;
-		size = &_FSTORAGE_end - &_FSTORAGE_start;
-	}
-	else
-		return 0;
-
-	if (offsetOut) *offsetOut = offset;
-	if (sizeOut) *sizeOut = size;
-
-	return 1;
-}
-
 /*
 	flash
  */
-#if 0	// MDK
-#include "nrf_fstorage_sd.h"
 
-NRF_FSTORAGE_DEF(nrf_fstorage_t fstorage) =
-{
-//    .evt_handler = NULL,		// don't need this?
-    .start_addr = 1,
-    .end_addr   = 0x100000,
-};
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+
+#if defined(CONFIG_SOC_SERIES_ESP32) || \
+    defined(CONFIG_SOC_SERIES_ESP32S2) || \
+    defined(CONFIG_SOC_SERIES_ESP32S3) || \
+    defined(CONFIG_SOC_SERIES_ESP32C1) || \
+    defined(CONFIG_SOC_SERIES_ESP32C3) || \
+    defined(CONFIG_SOC_SERIES_ESP32C6) || \
+    defined(CONFIG_SOC_SERIES_ESP32H2)	 
+	#define CONFIG_SOC_FAMILY_ESP32 1
+#endif
+
+#ifdef CONFIG_SOC_FAMILY_ESP32
+	#include <spi_flash_mmap.h>
+#endif
 
 uint8_t modSPIFlashInit(void)
 {
-	if (!fstorage.start_addr)
+	if (gModFlashArea)
 		return 1;
 
-	fstorage.start_addr = 0;
-    if (NRF_SUCCESS != nrf_fstorage_init(&fstorage, &nrf_fstorage_sd, NULL))
+	int gModPartitionID = FIXED_PARTITION_ID(xs_mod);
+	const struct flash_area *fa;
+	if (0 != flash_area_open(gModPartitionID, &fa))
 		return 0;
 
-	fstorage.start_addr = 1;
+	gModFlashArea = (struct flash_area *)fa;
+	gModWriteAlign = flash_area_align(gModFlashArea);
+
+	struct flash_pages_info page_info;
+	if (flash_get_page_info_by_offs(gModFlashArea->fa_dev, gModFlashArea->fa_off, &page_info) < 0) {
+		flash_area_close(gModFlashArea);		
+		return 0;
+	}
+	gModFlashBlockSize = page_info.size;
+
+#if defined(CONFIG_SOC_FAMILY_ESP32)
+	spi_flash_mmap_handle_t handle;
+	spi_flash_mmap(gModFlashArea->fa_off, gModFlashArea->fa_size, SPI_FLASH_MMAP_DATA, &gPartitionAddress, &handle);
+#elif defined(CONFIG_SOC_FAMILY_STM32)
+	gPartitionAddress = (void *)(0x08000000 + gModFlashArea->fa_off);
+#else // fallback - load into RAM
+	uint32_t modSize;
+	if (!modSPIRead(0, sizeof(uint32_t), (uint8_t *)&modSize))
+		return 0;
+	modSize = c_read32be(&modSize);
+	gPartitionAddress = c_malloc(modSize);
+	if (C_NULL == gPartitionAddress)
+		return 0;
+	if (!modSPIRead(0, modSize, (uint8_t *)gPartitionAddress)) {
+		c_free(gPartitionAddress);
+		gPartitionAddress = C_NULL;
+		return 0;
+	}
+#endif
 
 	return 1;
 }
 
-static void wait_for_flash_ready(void)
+uint32_t modGetFlashStart(void)
 {
-    while (nrf_fstorage_is_busy(&fstorage))
-		sd_app_evt_wait();
+	if (!modSPIFlashInit())
+		return 0;
+
+	return (uintptr_t)gPartitionAddress;
+}
+
+uint32_t modGetFlashSectorSize(void)
+{
+	if (!modSPIFlashInit())
+		return 0;
+
+	return gModFlashBlockSize;
+}
+
+uint32_t modGetModulesStart(void)
+{
+	if (!modSPIFlashInit())
+		return 0;
+
+	return (uintptr_t)gPartitionAddress;
+}
+
+uint32_t modGetModulesEnd(void)
+{
+	if (!modSPIFlashInit())
+		return 0;
+
+	return (uintptr_t)gPartitionAddress + gModFlashArea->fa_size;
 }
 
 uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 {
-	uint8_t temp[4] __attribute__ ((aligned (4)));
-	uint32_t toAlign;
-
-	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
-
-	if (!modSPIFlashInit()) {
-		k_mutex_unlock(&gFlashMutex);
+	if (!modSPIFlashInit())
 		return 0;
-	}
 
-	if (offset & 3) {		// long align offset
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4)) {
-			k_mutex_unlock(&gFlashMutex);
-			return 0;
-		}
-		wait_for_flash_ready();
-
-		toAlign = 4 - (offset & 3);
-		c_memcpy(dst, temp + 4 - toAlign, (size < toAlign) ? size : toAlign);
-
-		if (size <= toAlign)
-			goto done;
-
-		dst += toAlign;
-		offset += toAlign;
-		size -= toAlign;
-	}
-
-	toAlign = size & ~3;
-	if (toAlign) {
-//@@ need case here for misaligned destination
-		size -= toAlign;
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign)) {
-			k_mutex_unlock(&gFlashMutex);
-			return 0;
-		}
-		wait_for_flash_ready();
-
-		dst += toAlign;
-		offset += toAlign;
-	}
-
-	if (size) {				// long align tail
-		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4)) {
-			k_mutex_unlock(&gFlashMutex);
-			return 0;
-		}
-		wait_for_flash_ready();
-
-		c_memcpy(dst, temp, size);
-	}
-
-done:
-	k_mutex_unlock(&gFlashMutex);
+	if (flash_area_read(gModFlashArea, offset, dst, size) < 0)
+		return 0;
+	
 	return 1;
 }
 
 uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 {
-	uint8_t temp[512] __attribute__ ((aligned (4)));
-	uint32_t toAlign;
-
-	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
-
-	if (!modSPIFlashInit()) {
-		k_mutex_unlock(&gFlashMutex);
+	if (!modSPIFlashInit())
 		return 0;
-	}
 
-	if (offset & 3) {		// long align offset
-		toAlign = 4 - (offset & 3);
-		c_memset(temp, 0xFF, 4);
-		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
-		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL)) {
-			k_mutex_unlock(&gFlashMutex);
-			return 0;
-		}
-		wait_for_flash_ready();
+	size = (size + gModWriteAlign - 1) & ~(gModWriteAlign - 1);		// ugly hack, but works for mods. the alternative is to make all writers aware of gModWriteAlign
 
-		if (size <= toAlign) {
-			k_mutex_unlock(&gFlashMutex);
-			return 1;
-		}
+	if (flash_area_write(gModFlashArea, offset, src, size) < 0)
+		return 0;
 
-		src += toAlign;
-		offset += toAlign;
-		size -= toAlign;
-	}
-
-	toAlign = size & ~3;
-	if (toAlign) {
-		size -= toAlign;
-		if (3 & (uintptr_t)src) {	// src is not long aligned, copy through stack
-			while (toAlign) {
-				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
-				c_memcpy(temp, src, use);
-				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL)) {
-					k_mutex_unlock(&gFlashMutex);
-					return 0;
-				}
-				wait_for_flash_ready();
-
-				toAlign -= use;
-				src += use;
-				offset += use;
-			}
-		}
-		else {
-			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL)) {
-				k_mutex_unlock(&gFlashMutex);
-				return 0;
-			}
-			wait_for_flash_ready();
-
-			src += toAlign;
-			offset += toAlign;
-		}
-	}
-
-	if (size) {			// long align tail
-		c_memset(temp, 0xFF, 4);
-		c_memcpy(temp, src, size);
-		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL)) {
-			k_mutex_unlock(&gFlashMutex);
-			return 0;
-		}
-		wait_for_flash_ready();
-	}
-
-	k_mutex_unlock(&gFlashMutex);
-	return 1;
+		return 1;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
 {
-	k_mutex_lock(&gFlashMutex, K_TICKS_FOREVER);
-
-	if (!modSPIFlashInit()) {
-		k_mutex_unlock(&gFlashMutex);
+	if (!modSPIFlashInit())
 		return 0;
-	}
 
-	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1))) {
-		k_mutex_unlock(&gFlashMutex);
+	if (flash_area_erase(gModFlashArea, offset, size) < 0)
 		return 0;
-	}
 
-	size /= fstorage.p_flash_info->erase_unit;
-
-	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL)) {
-		k_mutex_unlock(&gFlashMutex);
-		return 0;
-	}
-	wait_for_flash_ready();
-
-	k_mutex_unlock(&gFlashMutex);
 	return 1;
 }
 
-uint8_t *espFindUnusedFlashStart(void)
-{
-	uintptr_t modStart;
-	extern uint32_t __start_unused_space;
-
-	if (!modSPIFlashInit())
-		return NULL;
-
-	modStart = (uintptr_t)&__start_unused_space;
-	modStart += fstorage.p_flash_info->erase_unit - 1;
-	modStart -= modStart % fstorage.p_flash_info->erase_unit;
-
-	/*
-		this assumes:
-		- the .data. section follows the application image
-		- it is no bigger than 4096 bytes
-		- empty space follows the .data. section
-	*/
-	modStart += 4096;
-
-	return (uint8_t *)modStart;
-}
-#endif	// MDK
+#endif /* MODDEF_XS_MODS */
 
 //---------- alignment for memory
 

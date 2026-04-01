@@ -483,43 +483,28 @@ uint32_t espRead32be(const void *addr);
 #define c_read16be espRead16be
 #define c_read32be espRead32be
 
-#if 0
-/* FLASH */
+/* MODS */
 
-extern nrf_fstorage_t fstorage;
-
-// it appears that the flash offsets are placed into the memory map without any offset
-#define kFlashStart ((uintptr_t)0)
-#define kFlashSectorSize (modSPIFlashInit() ? fstorage.p_flash_info->erase_unit : 0)
-#endif
-
-#define kFlashSectorSize (4096)
-
-extern uint8_t *espFindUnusedFlashStart(void);
-#define kModulesStart ((uintptr_t)espFindUnusedFlashStart())
-
-extern uint8_t _MODPREF_start;		// from linker
-extern uint32_t _MODDABLE_start;	// from linker
-extern uint32_t _MODDABLE_end;		// from linker
-// #define kModulesEnd ((uintptr_t)&_MODPREF_start)
-extern uint8_t _FSTORAGE_start;		// from linker
-extern uint8_t _FSTORAGE_end;		// from linker
-
-#define kModulesEnd ((uintptr_t)&_MODDABLE_end)
+#define kFlashStart (modGetFlashStart())
+#define kFlashSectorSize (modGetFlashSectorSize())
+// modSPI* calls operate on the mod partition only
+#define kModulesStart (modGetModulesStart())
+#define kModulesEnd (modGetModulesEnd())
 #define kModulesByteLength (kModulesEnd - kModulesStart)
+#define kModulesWriteAlign (gModWriteAlign)
 
-enum {
-	kPartitionMod = 1,
-	kPartitionStorage,
-	kPartitionBLEState
-};
-
-extern uint8_t modGetPartition(uint8_t which, uint32_t *offset, uint32_t *size);
+/* FLASH */
 
 extern uint8_t modSPIFlashInit(void);
 extern uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst);
 extern uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src);
 extern uint8_t modSPIErase(uint32_t offset, uint32_t size);
+
+extern uint32_t modGetFlashStart(void);
+extern uint32_t modGetModulesStart(void);
+extern uint32_t modGetModulesEnd(void);
+extern uint32_t modGetFlashSectorSize(void);
+extern uint8_t gModWriteAlign;
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
