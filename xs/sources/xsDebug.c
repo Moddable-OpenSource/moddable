@@ -2420,9 +2420,9 @@ void fxListLocal(txMachine* the)
 	}
 	if (frame->flag & XS_C_FLAG) {
 		txInteger aCount, anIndex;
-		aCount = (frame - 1)->value.integer;
+		aCount = (txInteger)(frame->ID);
 		for (anIndex = 0; anIndex < aCount; anIndex++) {
-			fxEchoProperty(the, (frame - 2 - anIndex), &aList, "arg(", anIndex, ")");
+			fxEchoProperty(the, (frame - 1 - anIndex), &aList, "arg(", anIndex, ")");
 		}
 		if (scope) {
 			aCount = scope->value.environment.variable.count;
