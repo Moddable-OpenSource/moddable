@@ -262,7 +262,6 @@ struct modMessageRecord {
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
 	modMessageRecord msg;
-	int err;
 
 #ifdef mxDebug
 	if (0xffff == messageLength) {
@@ -270,8 +269,7 @@ int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLe
 		msg.callback = callback;
 		msg.refcon = refcon;
 		msg.length = 0;
-		err = k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT);		//@@ separate queue for debug msgs
-		return 0;
+		return k_msgq_put(&the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT);		//@@ separate queue for debug msgs
 	}
 #endif
 
