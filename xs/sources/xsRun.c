@@ -2077,8 +2077,8 @@ XS_CODE_JUMP:
 		mxCase(XS_CODE_RETRIEVE_TARGET)
 			if (mxID(_new_target) == slot->ID) {
 				if (!mxFrameHasTarget) {
-					c_memmove(mxStack - 1, mxStack, (mxFrame + 4 - mxStack) * sizeof(txSlot));
-					mxStack--;
+					mxAllocStack(1);
+					c_memmove(mxStack, mxStack + 1, (mxFrame + 3 - mxStack) * sizeof(txSlot));
 					mxScope--;
 					mxEnvironment--;
 					mxFrame--;
