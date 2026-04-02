@@ -512,10 +512,10 @@ void PiuViewCreate(xsMachine* the)
 
  	[nsWindow setAcceptsMouseMovedEvents:YES];
 	[nsWindow setContentView:nsView];
-    [nsWindow setDelegate:(id<NSWindowDelegate>)[[NSApplication sharedApplication] delegate]];
-    [nsWindow registerForDraggedTypes:[NSArray arrayWithObjects:@"NSFilenamesPboardType",nil]];
-    if (![nsWindow setFrameUsingName:@"PiuWindow"])
-        [nsWindow cascadeTopLeftFromPoint:NSMakePoint(20, 20)];
+	[nsWindow setDelegate:(id<NSWindowDelegate>)[[NSApplication sharedApplication] delegate]];
+	[nsWindow registerForDraggedTypes:[NSArray arrayWithObjects:@"NSFilenamesPboardType",nil]];
+	if (![nsWindow setFrameUsingName:@"PiuWindow"])
+		[nsWindow cascadeTopLeftFromPoint:NSMakePoint(20, 20)];
 	[nsWindow setFrameAutosaveName:@"PiuWindow"]; 
 	if ([nsWindow respondsToSelector:@selector(setTabbingMode:)])
 		[nsWindow setTabbingMode:NSWindowTabbingModeDisallowed];
@@ -523,15 +523,15 @@ void PiuViewCreate(xsMachine* the)
 		xsResult = xsGet(xsResult, xsID_title);
 		nsWindow.title = [NSString stringWithUTF8String:xsToString(xsResult)];
 	}
-	
+
 	(*self)->nsView = nsView;
-    nsView.piuView = self;
-    
+	nsView.piuView = self;
+
 	(*self)->nsWindow = nsWindow;
-	
+
 	(*self)->colorSpace = CGColorSpaceCreateDeviceRGB();
 	(*self)->appearanceChanged = 1;
-	
+
 	xsResult = xsThis;
 }
 
