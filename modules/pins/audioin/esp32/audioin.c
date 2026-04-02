@@ -122,7 +122,7 @@ void xs_audioin(xsMachine *the)
     };
 
 	adc_digi_pattern_config_t adc_pattern[1] = {0};
-	adc_pattern[0].atten = ADC_ATTEN_DB_11;		// if this is ADC_ATTEN_DB_0 M5Stack Fire is overdriven like crazy
+	adc_pattern[0].atten = ADC_ATTEN_DB_12;		// if this is ADC_ATTEN_DB_0 M5Stack Fire is overdriven like crazy
 	adc_pattern[0].channel = ADC_CHANNEL_6;		//@@ config
 	adc_pattern[0].unit = ADC_UNIT_1;				//@@ config
 	adc_pattern[0].bit_width = ADC_BITWIDTH_12;

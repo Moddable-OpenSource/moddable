@@ -7,6 +7,13 @@
 		]
 	},
 	"preload": "st7789_p8",
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_lcd" }
+			]
+		}
+	},
 	"defines": {
 		"ili9341p8": {
 			"hz": 20000000,

@@ -12,7 +12,10 @@
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/pins/pwm/esp32/*"
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_driver_ledc" }
+			]
 		},
 		"nrf52": {
 			"modules": {

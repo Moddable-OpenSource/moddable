@@ -21,7 +21,7 @@
 			"cs_pin": 22,
 			"dc_pin": 21,
 			"rst_pin": 18,
-			"spi_port": "HSPI_HOST",
+			"spi_port": "SPI2_HOST",
 			"backlight_pin": 5,
 			"backlight_on": 0
 		}

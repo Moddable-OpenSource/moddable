@@ -1089,12 +1089,13 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			return;
 
 		if ("esp32" == tool.platform) {
-			let dep;
+			let dep, namespace;
 			if (tool.dependencies?.length) {
 				var projBase = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}managed_components${tool.slash}`;
 				this.write("MANAGED_COMPONENT_DIRS = \\\n");
 				for (dep of tool.dependencies) {
- 					const depBase = `${projBase}${dep.namespace}__${dep.name}${tool.slash}`;
+					namespace = dep.namespace ?? "espressif";
+ 					const depBase = `${projBase}${namespace}__${dep.name}${tool.slash}`;
 					var depLine = "\t";
 					if (tool.windows)
 						depLine += "-I";
@@ -1114,11 +1115,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			let depStr = []
 			const idf_component = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}main${tool.slash}idf_component.yml`;
 			for (dep of tool.dependencies) {
+				namespace = dep.namespace ?? "espressif";
 				if (undefined !== dep.idf) {
 trace(`do we need to do something for ${dep.idf} here?\n`);
 				}
 				else {
-					depStr.push(`grep -q '${dep.namespace ?? "espressif"}/${dep.name}' ${idf_component} || idf.py add-dependency "${dep.namespace}/${dep.name}${dep.version ?? ""}"`);
+					depStr.push(`grep -q '${namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${namespace}/${dep.name}${dep.version ?? ""}"`);
 				}
 			}
 			if (tool.environment.USE_USB == 1)
@@ -1129,10 +1131,11 @@ trace(`do we need to do something for ${dep.idf} here?\n`);
 			let cmakeTweakFile = tool.outputConfigDirectory + tool.slash + "xs_idf_deps.txt";
 			let tweakStr = "set(ESP_COMPONENTS ";
 			for (dep of tool.dependencies) {
+				namespace = dep.namespace ?? "espressif";
 				if (undefined !== dep.idf)
 					tweakStr += `${dep.idf} `;
 				else
-					tweakStr += `${dep.namespace}__${dep.name} `;
+					tweakStr += `${namespace}__${dep.name} `;
 			}
 			if (tool.environment.USE_USB == 1)
 				tweakStr += "espressif__esp_tinyusb";

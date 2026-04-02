@@ -43,7 +43,7 @@
 			"hz": 40000000,
 			"cs_pin": 15,
 			"dc_pin": 2,
-			"spi_port": "HSPI_HOST",
+			"spi_port": "SPI2_HOST",
 			"registers_append": [
 				"0x36, 1, 0xF0,",
 				"0x21, 0,",

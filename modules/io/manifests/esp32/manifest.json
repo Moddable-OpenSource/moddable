@@ -3,35 +3,29 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(MODULES)/pins/spi/manifest.json",
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/pins/spi/manifest.json",
 		"$(MODDABLE)/modules/io/pulsecount/manifest.json",
 		"$(MODDABLE)/modules/io/pwm/manifest.json",
 		"$(MODDABLE)/modules/io/pulsewidth/manifest.json",
 		"$(MODDABLE)/modules/io/analog/manifest.json",
-		"$(MODDABLE)/modules/io/digital/manifest.json"
+		"$(MODDABLE)/modules/io/digital/manifest.json",
+		"$(MODDABLE)/modules/io/i2c/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/i2c/$(PLATFORM)/*",
 			"$(IO)/spi/$(PLATFORM)/*"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
+		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
 
-		"embedded:io/i2c": "$(IO)/i2c/i2c_async",
-		"embedded:implementation/i2csync": "$(IO)/i2c/_i2c",
-		"embedded:io/smbus": "$(IO)/i2c/smbus_async",
-		"embedded:implementation/smbussync": "$(IO)/i2c/smbus",
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"embedded:io/spi": "$(IO)/spi/spi",
 
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"embedded:io/i2c",
-		"embedded:implementation/i2csync",
-		"embedded:io/smbus",
-		"embedded:io/implementation/smbussync",
 		"embedded:io/serial",
 		"embedded:io/spi",
 		"system"

@@ -1,6 +1,9 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/monitor/manifest.json"
+		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/audioin/manifest.json",
+		"$(MODULES)/pins/i2s/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json"
 	],
 	"build": {
 		"UPLOAD_SPEED": "1500000",
@@ -11,22 +14,12 @@
 	},
 	"modules": {
 		"*": [
-			"$(MODULES)/drivers/neopixel/*",
-			"$(MODULES)/drivers/neopixel/esp32/*",
-
-			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*",
-
 			"../m5stack_fire/m5button"
 		],
-		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"audioin",
 		"m5button",
-		"neopixel",
-		"pins/audioout",
 		"setup/target"
 	],
 	"creation": {

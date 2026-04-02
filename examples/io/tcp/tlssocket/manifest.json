@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/crypt/tls_419.json"
 	],
 	"modules": {

@@ -10,19 +10,17 @@
 		"$(MODULES)/pins/smbus/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json"
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/drivers/neopixel/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(MODULES)/drivers/neopixel/*",
-			"$(MODULES)/drivers/neopixel/esp32/*",
 			"../m5stack_fire/m5button"
 		],
 		"setup/target": "./setup-target"
 	},
 	"preload": [
 		"setup/target",
-		"neopixel",
 		"m5button"
 	],
 	"creation": {

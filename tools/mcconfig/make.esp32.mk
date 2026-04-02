@@ -677,6 +677,7 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) dependencies
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
+$(TMP_DIR)/buildinfo.c:
 $(TMP_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
