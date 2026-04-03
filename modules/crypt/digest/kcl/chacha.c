@@ -49,8 +49,8 @@
 	 x[a] += x[b], x[d] = ROTL32(x[d] ^ x[a], 8), \
 	 x[c] += x[d], x[b] = ROTL32(x[b] ^ x[c], 7))
 
-static const char sigma[16] ICACHE_XS6RO_ATTR = "expand 32-byte k";
-static const char tau[16] ICACHE_XS6RO_ATTR = "expand 16-byte k";
+static const char sigma[] ICACHE_XS6RO_ATTR = "expand 32-byte k";
+static const char tau[] ICACHE_XS6RO_ATTR = "expand 16-byte k";
 
 #ifdef CHACHA_DEBUG
 #include <stdio.h>

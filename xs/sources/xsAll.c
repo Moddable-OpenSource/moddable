@@ -93,13 +93,12 @@ again:
 
 void fxBufferFrameName(txMachine* the, txString buffer, txSize size, txSlot* frame, txString suffix)
 {
-	txSlot* target = frame + 2; 
-	txSlot* function = frame + 3; 
-	txSlot* _this = frame + 4;
+	txSlot* function = frame + 2;
+	txSlot* _this = frame + 3;
 	if (function->kind == XS_REFERENCE_KIND) {
 		function = function->value.reference;
 		if (mxIsFunction(function)) {
-			if (target->kind == XS_UNDEFINED_KIND) {
+			if (!(frame->flag & XS_TARGET_FLAG)) {
 				txSlot* home = mxFunctionInstanceHome(function)->value.home.object;
 				if (home) {
 					if (mxIsFunction(home)) {

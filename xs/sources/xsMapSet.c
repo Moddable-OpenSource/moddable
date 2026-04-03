@@ -275,7 +275,7 @@ txSlot* fxNewMapInstance(txMachine* the)
 void fx_Map(txMachine* the)
 {
 	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Map");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxMapPrototype);
@@ -696,7 +696,7 @@ void fxSetRecordKeys(txMachine* the, txSlot* other, txSlot* otherKeys, txSlot** 
 void fx_Set(txMachine* the)
 {
 	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Set");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxSetPrototype);
@@ -1441,7 +1441,7 @@ txSlot* fxNewWeakMapInstance(txMachine* the)
 void fx_WeakMap(txMachine* the)
 {
 	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: WeakMap");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakMapPrototype);
@@ -1607,7 +1607,7 @@ txSlot* fxNewWeakSetInstance(txMachine* the)
 void fx_WeakSet(txMachine* the)
 {
 	txSlot *function, *iterable, *iterator, *next, *value;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: WeakSet");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakSetPrototype);
@@ -1807,7 +1807,7 @@ void fx_WeakRef(txMachine* the)
 {
 	txSlot* target;
 	txSlot* instance;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: WeakRef");
 	if (mxArgc < 1)
 		mxTypeError("no target");
@@ -1861,7 +1861,7 @@ void fx_FinalizationRegistry(txMachine* the)
 	txSlot* property;
 	txSlot* registry;
 	txSlot* slot;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: FinalizationRegistry");
 	if (mxArgc < 1)
 		mxTypeError("no callback");

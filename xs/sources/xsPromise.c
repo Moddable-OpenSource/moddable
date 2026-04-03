@@ -809,7 +809,7 @@ void fx_Promise(txMachine* the)
 	txSlot* status;
 	txSlot* resolveFunction;
 	txSlot* rejectFunction;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Promise");
 	if (mxArgc < 1)
 		mxTypeError("no executor");
@@ -1252,7 +1252,7 @@ void fxQueueJob(txMachine* the, txInteger count, txSlot* promise)
 	if (mxPendingJobs.value.reference->next == NULL) {
 		fxQueuePromiseJobs(the);
 	}
-	count += 6;
+	count += 4;
 	item = stack = the->stack + count;
 	slot = job = fxNewInstance(the);
 	while (count > 0) {
@@ -1291,7 +1291,7 @@ void fxRunPromiseJobs(txMachine* the)
 				count++;
 				slot = slot->next;
 			}
-			mxRunCount(count - 6);
+			mxRunCount(count - 4);
 			mxPop();
 			if (mxDuringJobs.kind == XS_REFERENCE_KIND)
 				mxDuringJobs.value.reference->next = C_NULL;

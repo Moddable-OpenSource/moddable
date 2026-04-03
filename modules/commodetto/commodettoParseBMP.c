@@ -69,9 +69,10 @@ void xs_parseBMP(xsMachine *the)
 				xsUnknownError("8-bit bitmap width must be multiple of 4");
 
 			for (palette = size + 14, gray = 0; gray < 256; gray++, palette += 4) {
-				if ((gray != c_read8(bytes + palette + 0)) || (gray != c_read8(bytes + palette + 1)) || (gray != c_read8(bytes + palette + 2)))
+				if ((gray != c_read8(bytes + palette + 0)) || (gray != c_read8(bytes + palette + 1)) || (gray != c_read8(bytes + palette + 2))) {
 					bitmap->format = kCommodettoBitmapRGB332;		//@@ CHECK PALETTE
 					return;
+				}
 			}
 
 			bitmap->format = kCommodettoBitmapGray256;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -20,8 +20,10 @@
 
 #include "serial2xsbug.h"
 
-#define kInstallInitialFragmentSize (4)
-#define kInstallSkipFragmentSize (4)
+// the initial size needs to be big enough for flash that has a minimum write size (STM32 can be 16, for example). It also needs to be an integer multiple of the minimum write size
+// we could return this value from get install space but that feels like overkill
+#define kInstallInitialFragmentSize (64)
+#define kInstallSkipFragmentSize (gInstallFragmentSize - kInstallInitialFragmentSize)
 #define kInstallFragmentSizeMax (4096)
 
 static void fxCommandReceived(txSerialTool self, void *buffer, int size);
@@ -858,7 +860,7 @@ void fxInstallFragment(txSerialTool self)
 
 	sprintf(preamble, "\r\n<?xs#%8.8X?>", self->currentMachine->value);
 	fxWriteSerial(self, preamble, strlen(preamble));
-
+	
 	out[0] = ((use + 7) >> 8) & 0xff;		// length high
 	out[1] = (use + 7) & 0xff;		// length low
 	out[2] = 3;		// install cmd
@@ -871,6 +873,8 @@ void fxInstallFragment(txSerialTool self)
 
 	fxWriteSerial(self, out, use + 4 + 5);
 
+	if (0 == gInstallOffset)
+		gInstallOffset += kInstallSkipFragmentSize;
 	gInstallOffset += use;
 }
 

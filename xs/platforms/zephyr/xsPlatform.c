@@ -598,8 +598,16 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			else if (firstSector != lastSector)
 				modSPIErase((firstSector + 1) * kFlashSectorSize, kFlashSectorSize * (lastSector - firstSector));	// crosses into a new sector
 
-			if (!modSPIWrite(offset, cmdLen, cmd)) {
+			int write = cmdLen - (cmdLen % kModulesWriteAlign);
+			if (!modSPIWrite(offset, write, cmd))
 				resultCode = -1;
+			else if (write < cmdLen) {
+				uint8_t *buf = c_malloc(kModulesWriteAlign);
+				modSPIRead(offset + write, kModulesWriteAlign, buf);
+				c_memcpy(buf, cmd + write, cmdLen - write);
+				if (!modSPIWrite(offset + write, kModulesWriteAlign, buf))
+					resultCode = -1;
+				c_free(buf);
 			}
 			} // end of case 3
 			break;
@@ -693,11 +701,12 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 #if MODDEF_XS_MODS
 		case 15: {
-			uint32_t transferSize = 4096;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
+			uint32_t transferSize = kFlashSectorSize ? 4096 : 0;
+			uint32_t length = kModulesByteLength;
+			the->echoBuffer[the->echoOffset++] = length >> 24;
+			the->echoBuffer[the->echoOffset++] = length >> 16;
+			the->echoBuffer[the->echoOffset++] = length >>  8;
+			the->echoBuffer[the->echoOffset++] = length;
 
 			the->echoBuffer[the->echoOffset++] = transferSize >> 24;
 			the->echoBuffer[the->echoOffset++] = transferSize >> 16;

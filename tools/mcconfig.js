@@ -1481,9 +1481,9 @@ export default class extends Tool {
 				let command = `cd ${this.moddablePath} && `;
 				path = `${this.moddablePath}${this.slash}build${this.slash}devices${this.slash}zephyr${this.slash}app`;
 
-				if (null !== this.environment.BOARD_FLASH_RUNNER)
+				if (undefined !== this.environment.BOARD_FLASH_RUNNER)
 					flashRunner = `-r ${this.environment.BOARD_FLASH_RUNNER}`;
-				if (null !== this.environment.BOARD_DEBUG_RUNNER)
+				if (undefined !== this.environment.BOARD_DEBUG_RUNNER)
 					debugRunner = `-r ${this.environment.BOARD_DEBUG_RUNNER}`;
 
 				if (this.buildTarget == "clean") {

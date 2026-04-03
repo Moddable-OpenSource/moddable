@@ -339,7 +339,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	txS8 byteLength;
 	txS8 maxByteLength = -1;
 	txSlot* property;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: SharedArrayBuffer");
 	byteLength = fxArgToSafeByteLength(the, 0, 0);
 	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {

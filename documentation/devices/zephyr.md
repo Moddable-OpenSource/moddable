@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
 Copyright 2025-2026 Moddable Tech, Inc.<BR>
-Updated: February 11, 2026
+Updated: April 2, 2026
 
 This document is a guide to building Moddable apps with the [Zephyr Project SDK](https://github.com/zephyrproject-rtos/zephyr/).
 
@@ -24,6 +24,7 @@ This document is a guide to building Moddable apps with the [Zephyr Project SDK]
 * [Debugging Native Code](#debugging-native-code)
 * [Adding a new board](#new-board)
 * [IO Connfiguration](#io-config)
+* [Patches](#patches)
 
 <a id="overview"></a>
 ## Overview
@@ -602,3 +603,21 @@ Zephyr display configuration are found in shield definition files. For example, 
 	"st_lcd_dsi_mb1835"
 ],
 ```
+
+<a id="patches"></a>
+## Patches
+
+### ESP32 setjmp
+
+On ESP32 targets, each time `setjmp` is called several lines are logged to the console. This indicates some kind of processor fault. Fortunately, the setjmp still seems to succeeed because a later longjmp works. Because the XS JavaScript engine in the Moddable SDK uses `setjmp` to implement JavaScript exceptions, this can happen often enough that execution is slowed significantly. There [does not appear](https://github.com/zephyrproject-rtos/zephyr/issues/68524) to be a simple solution. As a workaround, you can comment out most of the exception log. Unfortunately, removing all of it cuases the system to hang. The patch is in `arch/xtensa/core/vector_handlers.c` on the following lines 
+
+```c
+	case EXCCAUSE_SYSCALL:
+		/* Just report it to the console for now */
+		EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
+			(void *)bsa->ps, (void *)bsa->pc);
+		xtensa_dump_stack(interrupted_stack);
+```
+
+Comment out the call to `xtensa_dump_stack`.
+

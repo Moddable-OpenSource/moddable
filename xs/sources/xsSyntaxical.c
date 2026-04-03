@@ -3904,9 +3904,10 @@ txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken t
 	}
 	if (!expression)
 		return NULL;
-// 	if ((theToken == XS_TOKEN_BINDING) && ((expression->description->token == XS_TOKEN_MEMBER) || (expression->description->token == XS_TOKEN_MEMBER_AT)))
-// 		binding = expression;
-// 	else {			
+/* 	if ((theToken == XS_TOKEN_BINDING) && ((expression->description->token == XS_TOKEN_MEMBER) || (expression->description->token == XS_TOKEN_MEMBER_AT)))
+ 		binding = expression;
+ 	else */
+ 	{
 		binding = fxBindingFromExpression(parser, expression, theToken);
 		if (!binding) {
 			parser->errorSymbol = parser->SyntaxErrorSymbol;
@@ -3920,7 +3921,7 @@ txNode* fxRestBindingFromExpression(txParser* parser, txNode* theNode, txToken t
 			fxReportParserError(parser, parser->states[0].line, "invalid rest");
 			return NULL;
 		}
-// 	}
+ 	}
 	theNode->description = &gxTokenDescriptions[XS_TOKEN_REST_BINDING];
 	((txRestBindingNode*)theNode)->binding = binding;
 	return theNode;

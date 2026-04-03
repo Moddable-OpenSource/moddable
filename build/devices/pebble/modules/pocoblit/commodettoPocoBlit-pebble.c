@@ -111,7 +111,7 @@ static GColor gBitmapGray4Palette[4] = {
 	{ argb:0xC0 }, { argb:0x80 }, { argb:0x40 }, { argb:0x00 },
 };
 
-	void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
+void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh)
 {
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
@@ -248,6 +248,25 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 		src.row_size_bytes = ((bits->width + 31) >> 5) * 4;
 		src.info.format = GBitmapFormat1Bit;
 		src.info.version = GBITMAP_VERSION_1;
+		src.bounds = GRect(sx, sy, sw, sh);
+		gb = &src;
+		ctx->draw_state.compositing_mode = GCompOpAssign;
+	}
+	else if (kCommodettoBitmapARGB2222 == bits->format) {
+		src.addr = bits->pixels;
+		src.row_size_bytes = bits->width;
+		src.info.format = GBitmapFormat8Bit;
+		src.info.version = GBITMAP_VERSION_1;
+		src.bounds = GRect(sx, sy, sw, sh);
+		gb = &src;
+		ctx->draw_state.compositing_mode = GCompOpAssign;
+	}
+	else if (kCommodettoBitmapGray4 == bits->format) {
+		src.addr = bits->pixels;
+		src.row_size_bytes = (bits->width + 3) >> 2;
+		src.info.format = GBitmapFormat2BitPalette;
+		src.info.version = GBITMAP_VERSION_1;
+		src.palette = gBitmapGray4Palette;
 		src.bounds = GRect(sx, sy, sw, sh);
 		gb = &src;
 		ctx->draw_state.compositing_mode = GCompOpAssign;

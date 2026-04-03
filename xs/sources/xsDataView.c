@@ -510,7 +510,7 @@ void fx_ArrayBuffer(txMachine* the)
 	txS8 byteLength;
 	txS8 maxByteLength = -1;
 	txSlot* property;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: ArrayBuffer");
 	byteLength = fxArgToSafeByteLength(the, 0, 0);
 	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {
@@ -940,7 +940,7 @@ void fx_DataView(txMachine* the)
 	txSlot* instance;
 	txSlot* view;
 	txSlot* buffer;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: DataView");
 	if ((mxArgc > 0) && (mxArgv(0)->kind == XS_REFERENCE_KIND)) {
 		slot = mxArgv(0)->value.reference->next;
@@ -1453,7 +1453,7 @@ txSlot* fxConstructTypedArray(txMachine* the)
 	txSlot* prototype;
 	txSlot* dispatch;
 	txSlot* instance;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: TypedArray");
 	dispatch = mxFunctionInstanceHome(mxFunction->value.reference);
 	dispatch = dispatch->next;
@@ -1565,16 +1565,17 @@ void fx_TypedArray(txMachine* the)
 				txInteger sourceOffset = sourceView->value.dataView.offset;
 				txInteger offset = 0;
 				txInteger size = sourceLength << shift;
-				/* THIS */
-				mxPushUninitialized();	
-				/* FUNCTION */
-				mxPush(mxArrayBufferConstructor);
 				/* TARGET */
 				mxPush(mxArrayBufferConstructor);
+				/* THIS */
+				mxPushUninitialized();
+				/* FUNCTION */
+				mxPush(mxArrayBufferConstructor);
 				/* RESULT */
-				mxPushUndefined();	
-				mxPushUninitialized();	
-				mxPushUninitialized();	
+				mxPushUndefined();
+				/* FRAME */
+				mxPushUninitialized();
+				the->stack->flag |= XS_TARGET_FLAG;	
 				/* ARGUMENTS */
 				sourceLength = fxGetDataViewSize(the, sourceView, sourceBuffer) >> sourceShift;
 				size = sourceLength << shift;

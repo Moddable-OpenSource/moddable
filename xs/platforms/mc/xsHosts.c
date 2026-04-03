@@ -561,9 +561,8 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 #if MODDEF_XS_MODS
 	uint8_t modStatus = 0;
 	modInstallMods(the, preparation, &modStatus);
-	if (modStatus) {
+	if (modStatus)
 		xsLog("Mod failed: %s\n", fxAbortString(modStatus));
-}
 #endif
 
 	return the;

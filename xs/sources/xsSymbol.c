@@ -88,7 +88,7 @@ void fx_Symbol(txMachine* the)
 	txSlot* instance;
 	txSlot* slot;
 	txSlot* property;
-	if (mxTarget->kind != XS_UNDEFINED_KIND)
+	if (mxHasTarget)
 		mxTypeError("new: Symbol");
 	instance = fxNewInstance(the);
 	property = fxNextUndefinedProperty(the, instance, XS_NO_ID, XS_INTERNAL_FLAG);
