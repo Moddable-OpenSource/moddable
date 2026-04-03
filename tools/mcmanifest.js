@@ -1384,8 +1384,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			var pngSource = tool.joinPath(parts);
 			var target = result.target;
 			parts = tool.splitPath(target);
-			var bmpTarget = parts.name + "-alpha.bmp";
-//			var bmpTarget = parts.name + "-alpha" + tool.bitmapExtension;
+			var bmpTarget = parts.name + "-alpha" + tool.bitmapExtension;
 			if (tool.platform == "zephyr") {
 				var bmpSource = "${RESOURCES_DIR}/" + bmpTarget;
 				// this.echo(tool, "compressbmf ", target);
