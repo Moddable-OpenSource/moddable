@@ -2878,7 +2878,7 @@ void fx_Compartment(txMachine* the)
 	
 	if (!module) module = mxProgram.value.reference;
 	mxTry(the) {
-		if (mxIsUndefined(mxTarget))
+		if (!mxHasTarget)
 			mxTypeError("call: Compartment");
 			
 		mxPushSlot(mxTarget);
@@ -3271,7 +3271,7 @@ void fx_ModuleSource(txMachine* the)
 	txSlot* slot;
 	txStringStream stream;
 	txScript* script;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: ModuleSource");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxModuleSourcePrototype);
@@ -3617,7 +3617,7 @@ void fx_ModuleStuff(txMachine* the)
 	txSlot* importMetaHook;
 	txSlot* importNowHook;
 	txSlot* slot;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: ModuleStuff");
 	if ((mxArgc < 1) || (!mxIsReference(mxArgv(0))))
 		mxTypeError("source: not an object");

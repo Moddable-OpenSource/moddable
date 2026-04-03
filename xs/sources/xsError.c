@@ -273,7 +273,7 @@ txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
 {
 	txSlot* instance;
 	txSlot* slot;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxPushSlot(mxFunction);
 	else
 		mxPushSlot(mxTarget);
@@ -521,7 +521,7 @@ void fx_DisposableStack(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* property;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: DisposableStack");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxDisposableStackPrototype);
@@ -726,7 +726,7 @@ void fx_AsyncDisposableStack(txMachine* the)
 	txSlot* property;
 	txSlot* function;
 	txSlot* home;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: AsyncDisposableStack");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxAsyncDisposableStackPrototype);

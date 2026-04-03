@@ -218,7 +218,7 @@ void fx_Number(txMachine* the)
 		else
 			value = fxToNumber(the, slot);
 	}
-	if (mxIsUndefined(mxTarget)) {
+	if (!mxHasTarget) {
         mxResult->kind = XS_NUMBER_KIND;
         mxResult->value.number = value;
         fx_Math_toInteger(the);

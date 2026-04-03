@@ -288,7 +288,7 @@ void fx_Function(txMachine* the)
 	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxFunctionFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
-	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
+	if (mxHasTarget && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxFunctionPrototype);
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;
@@ -439,24 +439,24 @@ void fx_Function_prototype_bound(txMachine* the)
 	txSlot* boundArguments;
 	txInteger c, i;
 	txSlot* argument;
+	/* TARGET */
+	if (mxHasTarget) {
+		if (fxIsSameSlot(the, mxFunction, mxTarget)) {
+			mxPushSlot(mxFunctionInstanceHome(function)->next);
+		}
+		else
+			mxPushSlot(mxTarget);
+	}
 	/* THIS */
-	if (mxTarget->kind == XS_UNDEFINED_KIND) {
+	if (!mxHasTarget) {
 		mxPushSlot(mxFunctionInstanceHome(function)->next->next);
 	}
 	else
 		mxPushUninitialized();
 	/* FUNCTION */
 	mxPushSlot(mxFunctionInstanceHome(function)->next);
-	/* TARGET */
-	if (fxIsSameSlot(the, mxFunction, mxTarget)) {
-		txSlot* slot = the->stack;
-		mxPushSlot(slot);
-	}
-	else
-		mxPushSlot(mxTarget);
 	/* RESULT */
 	mxPushUndefined();
-	mxPushUninitialized();
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(mxFunctionInstanceHome(function)->next->next->next);
@@ -476,7 +476,7 @@ void fx_Function_prototype_bound(txMachine* the)
 	}
 	for (i = 0; i < mxArgc; i++)
 		mxPushSlot(mxArgv(i));
-	if (mxTarget->kind) {
+	if (mxHasTarget) {
 		mxRunCount(c + i);
 		mxPullSlot(mxResult);
 	}
@@ -752,7 +752,7 @@ void fx_AsyncFunction(txMachine* the)
 	stream.size = mxStringLength(the->stack->value.string);
 	fxRunScript(the, fxParseScript(the, &stream, fxStringGetter, mxProgramFlag | mxFunctionFlag), C_NULL, C_NULL, C_NULL, C_NULL, module);
 	mxPullSlot(mxResult);
-	if (!mxIsUndefined(mxTarget) && !fxIsSameSlot(the, mxTarget, mxFunction)) {
+	if (mxHasTarget && !fxIsSameSlot(the, mxTarget, mxFunction)) {
 		mxPushSlot(mxTarget);
 		fxGetPrototypeFromConstructor(the, &mxAsyncFunctionPrototype);
 		mxResult->value.reference->value.instance.prototype = the->stack->value.reference;

@@ -323,13 +323,9 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 	mxPushSlot(_this);
 	/* FUNCTION */
 	mxPushReference(instance);
-	/* TARGET */
-	mxPushUndefined();
 	/* RESULT */
 	mxPushUndefined();
 	/* FRAME */
-	mxPushUninitialized();
-	/* COUNT */
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);
@@ -347,17 +343,15 @@ void fxOrdinaryCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* arg
 void fxOrdinaryConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlot* target)
 {
     txIndex c, i;
+	/* TARGET */
+	mxPushSlot(target);
 	/* THIS */
 	mxPushUninitialized();
 	/* FUNCTION */
 	mxPushReference(instance);
-	/* TARGET */
-	mxPushSlot(target);
 	/* RESULT */
 	mxPushUndefined();
 	/* FRAME */
-	mxPushUninitialized();
-	/* COUNT */
 	mxPushUninitialized();
 	/* ARGUMENTS */
 	mxPushSlot(arguments);

@@ -221,7 +221,7 @@ void fx_RegExp(txMachine* the)
 	txSlot* flags = ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) ? mxArgv(1) : C_NULL;
 	txBoolean patternIsRegExp = (pattern && fxIsRegExp(the, pattern)) ? 1 : 0;
 	
-	if (mxTarget->kind == XS_UNDEFINED_KIND) {
+	if (!mxHasTarget) {
 		if (patternIsRegExp && !flags) {
 			mxPushSlot(pattern);
 			mxGetID(mxID(_constructor));

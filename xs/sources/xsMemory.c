@@ -1959,7 +1959,7 @@ void fxSweep(txMachine* the)
 	while (aSlot) {
 		mxCheck(the, aSlot->kind == XS_FRAME_KIND);
 		if ((aSlot->flag & XS_C_FLAG) == 0) {
-			bSlot = (aSlot + 3)->value.reference->next;
+			bSlot = (aSlot + 2)->value.reference->next;
 			if (bSlot->kind == XS_CODE_KIND) {
 				current = bSlot->value.code.address;
 				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);
@@ -1980,12 +1980,12 @@ void fxSweep(txMachine* the)
 		aCodeAddress = &(aSlot->value.frame.code);
 		aSlot = aSlot->next;
 	}
-	
+
 	jump = the->firstJump;
 	while (jump) {
 		if (jump->flag) {
 			aSlot = jump->frame;
-			bSlot = (aSlot + 3)->value.reference->next;
+			bSlot = (aSlot + 2)->value.reference->next;
 			if (bSlot->kind == XS_CODE_KIND) {
 				current = bSlot->value.code.address;
 				temporary = (txByte*)(((txChunk*)(current - sizeof(txChunk)))->temporary);

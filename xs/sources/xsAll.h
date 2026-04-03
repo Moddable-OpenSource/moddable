@@ -2076,7 +2076,7 @@ enum {
 	XS_ANY = 1,
 
 	/* frame flags */
-	/* ? = 1, */
+	XS_TARGET_FLAG = 1,
 	XS_C_FLAG = 2,
 	XS_FIELD_FLAG = 4,
 	XS_STEP_INTO_FLAG = 8,
@@ -2352,7 +2352,7 @@ enum {
 #endif
 
 #define mxCall() \
-	(mxOverflow(-4), \
+	(mxOverflow(-3), \
 	fxCall(the))
 	
 #define mxDefineAll(ID, INDEX, FLAG, MASK) \
@@ -2399,7 +2399,7 @@ enum {
 	(mxMeterOne(), fxHasIndex(the, INDEX))
 	
 #define mxNew() \
-	(mxOverflow(-5), \
+	(mxOverflow(-4), \
 	fxNew(the))
 	
 #define mxRunCount(_COUNT) \
@@ -2536,16 +2536,17 @@ enum {
 
 
 
-#define mxThis (the->frame + 4)
-#define mxFunction (the->frame + 3)
-#define mxTarget (the->frame + 2)
+#define mxThis (the->frame + 3)
+#define mxFunction (the->frame + 2)
 #define mxResult (the->frame + 1)
-#define mxArgc ((the->frame - 1)->value.integer)
-#define mxArgv(THE_INDEX) (the->frame - 2 - (THE_INDEX))
+#define mxTarget (the->frame + 4)
+#define mxHasTarget (the->frame->flag & XS_TARGET_FLAG)
+#define mxArgc ((txInteger)(the->frame->ID))
+#define mxArgv(THE_INDEX) (the->frame - 1 - (THE_INDEX))
 #define mxVarc (the->scope->value.environment.variable.count)
 #define mxVarv(THE_INDEX) (the->scope - 1 - (THE_INDEX))
 
-#define mxFrameToEnvironment(FRAME) ((FRAME) - 1 - ((FRAME) - 1)->value.integer - 1)
+#define mxFrameToEnvironment(FRAME) ((FRAME) - 1 - (FRAME)->ID)
 
 #define mxFunctionInstanceCode(INSTANCE) 		((INSTANCE)->next)
 #define mxFunctionInstanceHome(INSTANCE) 		((INSTANCE)->next->next)

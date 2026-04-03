@@ -1122,7 +1122,7 @@ void fx_Array(txMachine* the)
 	txIndex index = 0;
 	txSlot* slot;
 	
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxPushSlot(mxFunction);
 	else
 		mxPushSlot(mxTarget);

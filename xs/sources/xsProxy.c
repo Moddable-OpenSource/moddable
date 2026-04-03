@@ -770,7 +770,7 @@ void fx_Proxy(txMachine* the)
 	txSlot* proxy;
 	txSlot* target;
 	txSlot* handler;
-	if (mxIsUndefined(mxTarget))
+	if (!mxHasTarget)
 		mxTypeError("call: Proxy");
 	mxPushUndefined();
 	instance = fxNewProxyInstance(the);

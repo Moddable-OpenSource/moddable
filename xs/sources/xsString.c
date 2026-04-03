@@ -551,7 +551,7 @@ void fx_String(txMachine* the)
 	txSlot* instance;
 	if (mxArgc > 0) {
 		slot = mxArgv(0);
-		if ((mxTarget->kind == XS_UNDEFINED_KIND) && (slot->kind == XS_SYMBOL_KIND)) {
+		if (!mxHasTarget && (slot->kind == XS_SYMBOL_KIND)) {
 			fxSymbolToString(the, slot);
 			*mxResult = *slot;
 			return;
@@ -561,7 +561,7 @@ void fx_String(txMachine* the)
 	else {
 		slot = &mxEmptyString;
 	}
-	if (mxTarget->kind == XS_UNDEFINED_KIND) {
+	if (!mxHasTarget) {
 		*mxResult = *slot;
 		return;
 	}
