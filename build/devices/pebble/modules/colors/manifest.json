@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"pebble/colors": "./pebble-colors"
+	},
+	"preload": "pebble/colors"
+}
