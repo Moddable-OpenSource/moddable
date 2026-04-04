@@ -4,6 +4,9 @@
 	],
 	"platforms": {
 		"lin": {
+			"build": {
+				"LINUX_AUDIO_LIBS": "-lasound"
+			},
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
 				"embedded:io/audio/out": "./lin/audioout_"
