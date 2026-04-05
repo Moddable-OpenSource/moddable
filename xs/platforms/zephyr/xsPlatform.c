@@ -593,6 +593,8 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
 
 			int firstSector = offset / kFlashSectorSize, lastSector = (offset + cmdLen) / kFlashSectorSize;
+			if (!((offset + cmdLen) % kFlashSectorSize))	// ends on sector boundary, don't fall into next sector
+				lastSector -= 1;
 			if (!(offset % kFlashSectorSize))			// starts on sector boundary
 				modSPIErase(offset, kFlashSectorSize * ((lastSector - firstSector) + 1));
 			else if (firstSector != lastSector)
@@ -701,13 +703,13 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 #if MODDEF_XS_MODS
 		case 15: {
-			uint32_t transferSize = kFlashSectorSize ? 4096 : 0;
 			uint32_t length = kModulesByteLength;
 			the->echoBuffer[the->echoOffset++] = length >> 24;
 			the->echoBuffer[the->echoOffset++] = length >> 16;
 			the->echoBuffer[the->echoOffset++] = length >>  8;
 			the->echoBuffer[the->echoOffset++] = length;
 
+			uint32_t transferSize = kFlashSectorSize;
 			the->echoBuffer[the->echoOffset++] = transferSize >> 24;
 			the->echoBuffer[the->echoOffset++] = transferSize >> 16;
 			the->echoBuffer[the->echoOffset++] = transferSize >>  8;
