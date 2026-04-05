@@ -190,8 +190,8 @@ const device = {
 			static:
 `import I2C from "embedded:io/i2c";
 device.io.I2C = I2C;
-// import SMBus from "embedded:io/smbus";
-// device.io.SMBus = SMBus;
+import SMBus from "embedded:io/smbus";
+device.io.SMBus = SMBus;
 
 device.i2c = {};
 `
