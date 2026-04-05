@@ -1,0 +1,6 @@
+{
+  "modules": {
+    "embedded:sensor/Touch/FT3168": "./ft3168"
+  },
+  "preload": ["embedded:sensor/Touch/FT3168"]
+}

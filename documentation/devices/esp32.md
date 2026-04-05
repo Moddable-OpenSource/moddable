@@ -149,6 +149,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 | <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-Display-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
 | <img src="./../assets/devices/xiao-esp32c3.png" width=125><BR>Seeed Studio<BR>XIAO ESP32S3 | `esp32/xiao_esp32s3` | 1 button | <li>[Product page](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html)</li>|
 | <img src="../assets/devices/xiao-qtpy-ili9341-thumbnail.png" width=140></a><BR>ili9341 | `esp32/qtpys3_ili9341`<br>`esp32/xiao_esp32s3_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
+| Waveshare<BR>ESP32-S3-Touch-AMOLED-2.06 | `esp32/waveshare_amoled_206` | 2.06" AMOLED display<BR>410 x 502<BR>16-bit color<BR>QSPI display bus<BR>Capacitive touch<BR>IMU<BR>RTC<BR>PMU | <li>[Product page](https://www.waveshare.com/esp32-s3-touch-amoled-2.06.htm)</li> |
 
 <a id="platforms-esp32-s3-cameras"></a>
 ### ESP32-S3 Cameras
