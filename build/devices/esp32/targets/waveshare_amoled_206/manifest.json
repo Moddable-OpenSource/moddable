@@ -1,0 +1,90 @@
+{
+  "build": {
+    "ESP32_SUBCLASS": "esp32s3",
+    "USE_USB": "2",
+    "SDKCONFIGPATH": "./sdkconfig",
+    "PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+    "PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the BOOT button, then press and release the PWR button.",
+    "BEFORE_DEBUGGING_MESSAGE": "Press the PWR button to restart."
+  },
+  "include": [
+    "$(MODDABLE)/modules/io/manifest.json",
+    "$(MODDABLE)/modules/io/audioout/manifest.json",
+    "$(MODDABLE)/modules/io/audioin/manifest.json",
+    "$(MODDABLE)/modules/drivers/co5300/manifest.json",
+    "$(MODDABLE)/modules/drivers/sensors/ft3168/manifest.json",
+    "$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json",
+    "$(MODDABLE)/modules/drivers/peripherals/pcf85063/manifest.json",
+    "$(MODDABLE)/modules/drivers/sensors/qmi8658/manifest.json",
+    "$(MODULES)/drivers/button/manifest.json"
+  ],
+  "modules": {
+    "setup/target": "./setup-target"
+  },
+  "preload": ["setup/target"],
+  "config": {
+    "screen": "co5300"
+  },
+  "creation": {
+    "static": 0,
+    "chunk": {
+      "initial": 78848,
+      "incremental": 0
+    },
+    "heap": {
+      "initial": 4928,
+      "incremental": 0
+    },
+    "stack": 512
+  },
+  "defines": {
+    "i2c": {
+      "sda_pin": 15,
+      "scl_pin": 14
+    },
+    "co5300": {
+      "width": 410,
+      "height": 502,
+      "hz": 40000000,
+      "cs_pin": 12,
+      "sck_pin": 11,
+      "data0_pin": 4,
+      "data1_pin": 5,
+      "data2_pin": 6,
+      "data3_pin": 7,
+      "rst_pin": 8,
+      "column_offset": 22,
+      "row_offset": 0,
+      "spi_port": "SPI2_HOST"
+    },
+    "audioOut": {
+      "bitsPerSample": 16,
+      "numChannels": 1,
+      "sampleRate": 16000,
+      "i2s": {
+        "bitsPerSample": 16,
+        "bck_pin": 41,
+        "lr_pin": 45,
+        "mck_pin": 16,
+        "dataout_pin": 40,
+        "slot": "I2S_STD_SLOT_LEFT",
+        "format_i2s": 1
+      },
+      "amplifier_power": 46
+    },
+    "audioIn": {
+      "sampleRate": 16000,
+      "bitsPerSample": 16,
+      "numChannels": 2,
+      "i2s": {
+        "num": 0,
+        "bck_pin": 41,
+        "lr_pin": 45,
+        "mck_pin": 16,
+        "datain": 42,
+        "slot": "I2S_STD_SLOT_BOTH",
+        "format_i2s": 1
+      }
+    }
+  }
+}

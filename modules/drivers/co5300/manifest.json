@@ -1,0 +1,20 @@
+{
+  "include": ["$(MODULES)/pins/digital/manifest.json"],
+  "defines": {
+    "co5300": {
+      "width": 410,
+      "height": 502,
+      "hz": 40000000,
+      "column_offset": 22,
+      "row_offset": 0
+    },
+    "poco": {
+      "dma": 1
+    }
+  },
+  "modules": {
+    "*": "./*",
+    "commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+  },
+  "preload": ["co5300", "commodetto/Bitmap"]
+}

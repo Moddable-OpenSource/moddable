@@ -1,0 +1,6 @@
+{
+  "modules": {
+    "embedded:sensor/Accelerometer-Gyroscope/QMI8658": "$(MODDABLE)/modules/drivers/sensors/qmi8658/qmi8658"
+  },
+  "preload": ["embedded:sensor/Accelerometer-Gyroscope/QMI8658"]
+}
