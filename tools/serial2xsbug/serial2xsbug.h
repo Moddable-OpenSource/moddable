@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -165,6 +165,7 @@ struct txSerialToolStruct {
 	int state;
 	uint8_t trace;
 	uint8_t traceCommands;
+	uint8_t traceUnrecognized;
 	char buffer[mxBufferSize + 1];
 };
 

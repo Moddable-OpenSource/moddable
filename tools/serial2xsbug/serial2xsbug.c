@@ -24,7 +24,6 @@
 // we could return this value from get install space but that feels like overkill
 #define kInstallInitialFragmentSize (64)
 #define kInstallSkipFragmentSize (gInstallFragmentSize - kInstallInitialFragmentSize)
-#define kInstallFragmentSizeMax (4096)
 
 static void fxCommandReceived(txSerialTool self, void *buffer, int size);
 static int fxInitializeTarget(txSerialTool self);
@@ -377,11 +376,8 @@ void fxCommandReceived(txSerialTool self, void *bufferIn, int size)
 		installSpace = (buffer[5] << 24) | (buffer[6] << 16) | (buffer[7] << 8) | buffer[8];
 		
 		gInstallFragmentSize = 512;
-		if (size >= 13) {
+		if (size >= 13)
 			gInstallFragmentSize = (buffer[9] << 24) | (buffer[10] << 16) | (buffer[11] << 8) | buffer[12];
-			if (gInstallFragmentSize > kInstallFragmentSizeMax)
-				gInstallFragmentSize = kInstallFragmentSizeMax;
-		}
 
 		if (self->traceCommands)
 			fprintf(stderr, "### installSpace: %d, fragment size %d\n", (int)installSpace, (int)gInstallFragmentSize);
@@ -843,7 +839,7 @@ void fxSetTime(txSerialTool self, txSerialMachine machine)
 void fxInstallFragment(txSerialTool self)
 {
 	char preamble[32];
-	char out[kInstallFragmentSizeMax + 16];
+	char *out = malloc(gInstallFragmentSize + 16);
 	int use = (0 == gInstallOffset) ? kInstallInitialFragmentSize : gInstallFragmentSize;
 	uint8_t id = 0xe0;
 
@@ -879,6 +875,8 @@ void fxInstallFragment(txSerialTool self)
 	if (0 == gInstallOffset)
 		gInstallOffset += kInstallSkipFragmentSize;
 	gInstallOffset += use;
+
+	free(out);
 }
 
 int mapHex(char c)
