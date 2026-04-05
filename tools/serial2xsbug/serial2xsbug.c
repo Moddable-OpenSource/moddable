@@ -240,6 +240,9 @@ int fxArguments(txSerialTool self, int argc, char* argv[])
 		else if (!strcmp(argv[argi], "-tracecommands")) {
 			self->traceCommands = 1;
 		}
+		else if (!strcmp(argv[argi], "-hideunrecognized")) {
+			self->traceUnrecognized = 0;
+		}
 		else {
 			fprintf(stderr, "### unexpected option '%s'\n", argv[argi]);
 			return 1;
@@ -638,7 +641,7 @@ void fxReadSerialBuffer(txSerialTool self, char* buffer, int size)
 					continue;
 				}
 
-				if (offset > 2) fprintf(stderr, "%s\n", self->buffer);				
+				if ((offset > 2) && self->traceUnrecognized) fprintf(stderr, "%s\n", self->buffer);				
 
 				if (TOOLS_BIN && elfPath && strstr(self->buffer, "gdb stub")) {
 					gdbMode = 1;
