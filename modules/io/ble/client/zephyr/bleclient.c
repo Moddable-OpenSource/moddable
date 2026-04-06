@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -53,10 +53,25 @@ static void getUUIDList(xsMachine *the, xsSlot *items, int *length, struct bt_uu
 	if (!*uuids)
 		xsUnknownError("no memory");
 
+    static const uint8_t uuidBase[] = {0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00};
+
 	for (int i = 0; i < *length; i++) {
 		xsmcGetIndex(tmp, *items, i);
-		if (bt_uuid_from_str(&(*uuids)[i].uuid, xsmcToString(tmp)))
+		struct bt_uuid_128 *u = &(*uuids)[i]; 
+		if (bt_uuid_from_str(&u->uuid, xsmcToString(tmp)))
 			xsUnknownError("invalid uuid");
+
+		// convert 128-bit form to 16 or 32-bit aliases (some Zephyr BLE APIs require this)
+		uint8_t *v = u->val;
+		if (!c_memcmp(v, uuidBase, sizeof(uuidBase))) {
+			if (!v[14] && !v[15]) {
+				u->uuid.type = BT_UUID_TYPE_16;
+				((struct bt_uuid_16 *)u)->val = sys_get_le16(&v[12]);
+			} else {
+				u->uuid.type = BT_UUID_TYPE_32;
+				((struct bt_uuid_32 *)u)->val = sys_get_le32(&v[12]);
+			}
+		}
 	}
 }
 
