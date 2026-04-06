@@ -1072,6 +1072,8 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			resultCode = -3;
 			if (partition) {
 				int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
+				if (!((offset + cmdLen) % SPI_FLASH_SEC_SIZE))	// ends on sector boundary, don't fall into next sector
+					lastSector -= 1;
 				if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
 					esp_partition_erase_range(partition, offset, SPI_FLASH_SEC_SIZE * ((lastSector - firstSector) + 1));
 				else if (firstSector != lastSector)
