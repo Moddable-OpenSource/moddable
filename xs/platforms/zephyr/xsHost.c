@@ -424,11 +424,12 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 {
 	offset += (uintptr_t)dst;
 
-	if ((offset + kFlashSectorSize) > (uintptr_t)kModulesEnd)
+	if ((offset + size) > (uintptr_t)kModulesEnd)
 		return 0;		// attempted write beyond end of available space
 
-	if (!(offset & (kFlashSectorSize - 1))) {		// if offset is at start of a sector, erase that sector
-		if (!modSPIErase(offset - (uintptr_t)gPartitionAddress, kFlashSectorSize))
+	// depends on fxMapArchive writng one sector at a time
+	if (!(offset & (gModFlashBlockSize - 1))) {		// offset at start of a sector, erase sector
+		if (!modSPIErase(offset - (uintptr_t)gPartitionAddress, gModFlashBlockSize))
 			return 0;
 	}
 
@@ -437,13 +438,12 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 
 void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 {
-	txPreparation *preparation = preparationIn;
-	void *result = NULL;
-	int sectorSize = kFlashSectorSize;
-	if (0 == sectorSize)
+	if (!modSPIFlashInit() || (0 == gModFlashBlockSize))
 		return 0;
 
-	if (fxMapArchive(the, preparation, (void *)kModulesStart, sectorSize, spiRead, spiWrite)) {
+	txPreparation *preparation = preparationIn;
+	void *result = NULL;
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, gModFlashBlockSize, spiRead, spiWrite)) {
 		result = (void *)kModulesStart;
 		fxSetArchive(the, result);
 	}
@@ -573,7 +573,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	if (flash_area_write(gModFlashArea, offset, src, size) < 0)
 		return 0;
 
-		return 1;
+	return 1;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
