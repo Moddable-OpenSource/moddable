@@ -18,6 +18,9 @@
 		"zephyr": {
 		}
 	},
+	"zephyrConfig": {
+		"CONFIG_ADC": "y"
+	},
 	"preload": [
 		"embedded:io/analog"
 	]

@@ -3,20 +3,17 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
+		"$(IO)/analog/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json",
+		"$(IO)/serial/manifest.json"
 	],
 	"modules": {
 		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(IO)/digital/$(PLATFORM)/*",
-			"$(IO)/i2c/$(PLATFORM)/*"
+			"$(IO)/common/builtinCommon"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-
-		"embedded:io/digital": "$(IO)/digital/digital",
-		"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
-		"embedded:io/i2c": "$(IO)/i2c/_i2c",
-		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
-		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 
 		"system": "$(IO)/system/*"
 	},
@@ -38,9 +35,5 @@
 		"...": {
 			"error": "zephyr manifest"
 		}
-	},
-	"zephyrConfig": {
-		"CONFIG_ADC": "y",
-		"CONFIG_PWM": "y"
 	}
 }

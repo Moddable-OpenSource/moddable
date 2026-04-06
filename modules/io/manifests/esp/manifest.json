@@ -4,21 +4,16 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/pins/spi/manifest.json"
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json",
+		"$(IO)/serial/manifest.json",
+		"$(IO)/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/i2c/$(PLATFORM)/*",
-			"$(IO)/spi/$(PLATFORM)/*",
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-
-		"embedded:io/i2c": "$(IO)/i2c/_i2c",
-		"embedded:io/smbus": "$(IO)/i2c/smbus",
-		"embedded:io/pwm": "$(IO)/pwm/$(PLATFORM)/*",
-		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
-		"embedded:io/spi": "$(IO)/spi/spi",
 
 		"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 		"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",

@@ -2,8 +2,8 @@
 	"platforms": {
 		"esp32": {
 			"dependency": [
-				"idf": "esp_fifi"
-			],
+				{ "idf": "esp_wifi" }
+			]
 		},
 		"zephyr": {
 			"include": "./zephyr/manifest.json"

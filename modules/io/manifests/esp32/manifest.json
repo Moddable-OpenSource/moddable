@@ -4,30 +4,25 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/spi/manifest.json",
-		"$(MODDABLE)/modules/io/pulsecount/manifest.json",
-		"$(MODDABLE)/modules/io/pwm/manifest.json",
-		"$(MODDABLE)/modules/io/pulsewidth/manifest.json",
-		"$(MODDABLE)/modules/io/analog/manifest.json",
-		"$(MODDABLE)/modules/io/digital/manifest.json",
-		"$(MODDABLE)/modules/io/i2c/manifest.json"
+		"$(IO)/analog/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pulsewidth/manifest.json",
+		"$(IO)/pulsecount/manifest.json",
+		"$(IO)/pwm/manifest.json",
+		"$(IO)/serial/manifest.json",
+		"$(IO)/spi/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(IO)/common/builtinCommon",
-			"$(IO)/spi/$(PLATFORM)/*"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
 
-		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
-		"embedded:io/spi": "$(IO)/spi/spi",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
-		"embedded:io/serial",
-		"embedded:io/spi",
 		"system"
 	],
 	"platforms": {
