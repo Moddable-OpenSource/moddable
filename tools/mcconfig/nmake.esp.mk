@@ -65,7 +65,7 @@ XSBUG_LOG_PORT = 5002
 !ENDIF
 
 !IF "$(XSBUG_LOG)"=="1"
-START_SERIAL2XSBUG= echo "Starting serial2xsbug..." && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
+START_SERIAL2XSBUG= echo "Starting serial2xsbug..." && set "XSBUG_LOG_PORT=$(XSBUG_LOG_PORT)" && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && set "XSBUG_PROJECT=$(MAIN_DIR)" && cd $(MODDABLE)\tools\xsbug-log && node xsbug-log $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf
 START_XSBUG=
 !ELSE
 START_SERIAL2XSBUG= echo "Starting serial2xsbug..." && set "XSBUG_PORT=$(XSBUG_PORT)" && set "XSBUG_HOST=$(XSBUG_HOST)" && $(BUILD_DIR)\bin\win\release\serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(TMP_DIR)\main.elf

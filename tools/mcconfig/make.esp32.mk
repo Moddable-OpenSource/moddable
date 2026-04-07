@@ -494,7 +494,7 @@ ifeq ($(DEBUG),1)
 
 		ifeq ($(USE_USB),0)
 			DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
-			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
+			LOG_LAUNCH = serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb
 		else
 			ifeq ($(USE_USB),1)
 				DEPLOY_CMD = idf.py -p `cat $(PORT_NAME_PATH)` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
@@ -508,11 +508,11 @@ ifeq ($(DEBUG),1)
 				CONNECT_XSBUG = $(DO_LAUNCH) && bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb"
 			endif
 
-			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb\"
+			LOG_LAUNCH = serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -elf $(PROJ_DIR)/build/xs_esp32.elf -bin $(GXX_PREFIX)-elf-gdb
 		endif
 
 		ifeq ("$(XSBUG_LAUNCH)","log")
-			DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
+			DO_LAUNCH := export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && export XSBUG_PROJECT=$(MAIN_DIR) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 		endif
 
 	### Linux
@@ -528,10 +528,10 @@ ifeq ($(DEBUG),1)
 
 		ifeq ($(USE_USB),0)
 			# serial connection
-			LOG_LAUNCH = bash -c \"XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1\"
+			LOG_LAUNCH = serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1
 
 			ifeq ("$(XSBUG_LAUNCH)","log")
-				DO_LAUNCH := cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
+				DO_LAUNCH := export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && export XSBUG_PROJECT=$(MAIN_DIR) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(LOG_LAUNCH)
 			else
 				DO_LAUNCH = bash -c "XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(SERIAL2XSBUG_PORT) $(DEBUGGER_SPEED) 8N1"
 			endif
@@ -555,7 +555,7 @@ ifeq ($(DEBUG),1)
 
 			ifeq ("$(XSBUG_LAUNCH)","log")
 				DO_LAUNCH = echo ; echo $(BEFORE_DEBUGGING_MESSAGE); echo ; \
-			 		XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) \
+			 		XSBUG_LOG_PORT=$(XSBUG_LOG_PORT) XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) XSBUG_PROJECT=$(MAIN_DIR) \
 					cd $(MODDABLE)/tools/xsbug-log && node xsbug-log 	\
 					 serial2xsbug `cat $(PORT_NAME_PATH)` $(DEBUGGER_SPEED) 8N1
 			endif
