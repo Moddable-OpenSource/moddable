@@ -92,20 +92,22 @@ export class MakeFile extends FILE {
 		this.line("");
 		this.generateRules(tool)
 		if (tool.platform == "zephyr") {
-			let start_xsbug_command;
-			if (tool.currentPlatform === "mac")
-				start_xsbug_command = `open -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
-			else if (tool.currentPlatform == "win")
-				start_xsbug_command = "echo start xsbug";
+			if (tool.xsbugLaunch !== "log") {
+				let start_xsbug_command;
+				if (tool.currentPlatform === "mac")
+					start_xsbug_command = `open --env XSBUG_PROJECT=${tool.mainPath} -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
+				else if (tool.currentPlatform == "win")
+					start_xsbug_command = "echo start xsbug";
 //				start_xsbug_command = 'tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start ${NATIVE_XSBUG})';
 //				start_xsbug_command = `cmd.exe /C xsbug`;
 //				start_xsbug_command = `${tool.buildPath}/devices/zephyr/config/win_start_xsbug`;
-			else         // lin
-				start_xsbug_command = `${tool.buildPath}/devices/zephyr/config/lin_start_xsbug`;
+				else         // lin
+					start_xsbug_command = `env XSBUG_PROJECT=${tool.mainPath} ${tool.buildPath}/devices/zephyr/config/lin_start_xsbug`;
 
-			this.line("execute_process(");
-			this.line(`  COMMAND ${start_xsbug_command}`);
-			this.line(")");
+				this.line("execute_process(");
+				this.line(`  COMMAND ${start_xsbug_command}`);
+				this.line(")");
+			}
 
 			var suffixPath = tool.fragmentPath + ".suffix";
 			this.write(tool.readFileString(suffixPath));
