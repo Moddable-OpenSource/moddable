@@ -1498,6 +1498,21 @@ export default class extends Tool {
 				else if (this.buildTarget == "debug") {
 					command += `west debug --build ${this.tmpPath}${this.slash}build ${debugRunner}`;
 				}
+				else if (this.buildTarget == "xsbug") {
+					let start_xsbug_cmd = "";
+					if (this.xsbugLaunch !== "log" && !this.windows) {
+						if (this.currentPlatform === "mac")
+							start_xsbug_cmd = `open --env XSBUG_PROJECT=${this.mainPath} -a ${this.buildPath}/bin/mac/release/xsbug.app -g && `;
+						else if (this.currentPlatform === "lin")
+							start_xsbug_cmd = `env XSBUG_PROJECT=${this.mainPath} ${this.buildPath}/devices/zephyr/config/lin_start_xsbug && `;
+					}
+					
+					let debugger_cmd = `serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+					if (this.xsbugLaunch === "log") {
+						debugger_cmd = `export XSBUG_LOG_PORT=${this.environment.XSBUG_LOG_PORT || 5002} && export XSBUG_PORT=${this.environment.XSBUG_PORT || 5002} && export XSBUG_HOST=${this.environment.XSBUG_HOST || "localhost"} && export XSBUG_PROJECT=${this.mainPath} && cd ${this.moddablePath}/tools/xsbug-log && node xsbug-log serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+					}
+					command += start_xsbug_cmd + debugger_cmd;
+				}
 				else {
 					let action, secondary = "";
 					if (undefined === this.environment.ZEPHYR_BOARD)
