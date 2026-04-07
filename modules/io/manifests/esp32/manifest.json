@@ -18,7 +18,6 @@
 			"$(IO)/common/builtinCommon"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-		"commodetto/PocoCore": "$(COMMODETTO)/commodettoPocoCore",
 
 		"system": "$(IO)/system/*"
 	},
