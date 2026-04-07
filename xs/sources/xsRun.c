@@ -325,9 +325,9 @@ static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode)
 static void fxTraceCode(txMachine* the, txSlot* stack, txU1 theCode) 
 {
 	if (((XS_NO_CODE < theCode) && (theCode < XS_CODE_COUNT)))
-		fprintf(stderr, "\n%ld: %s", the->stackTop - stack, gxCodeNames[theCode]);
+		fprintf(stderr, "\n%ld: %s", (long int)(the->stackTop - stack), gxCodeNames[theCode]);
 	else
-		fprintf(stderr, "\n%ld: ?", the->stackTop - stack);
+		fprintf(stderr, "\n%ld: ?", (long int)(the->stackTop - stack));
 }
 #endif
 
@@ -341,7 +341,7 @@ static void fxTraceID(txMachine* the, txID id, txIndex index)
 			fprintf(stderr, " [?]");
 	}
 	else
-		fprintf(stderr, " [%d]", index);
+		fprintf(stderr, " [%d]", (int)index);
 }
 
 static void fxTraceIndex(txMachine* the, txU2 theIndex) 
