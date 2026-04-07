@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -195,17 +195,20 @@ class ApplicationBehavior extends Behavior {
 		}
 	}
 	onAppearanceChanged(application, which) {
-		buildAssets(which);
-		if (application.first) {
-			this.quitScreen();
-			application.replace(application.first, new MainContainer(this));
-			this.reloadDevices(application);
-			this.launchScreen();
-		}
-	}
-	onAppearanceChanged(application, which) {
 		this.appearance = which;
 		this.onColorsChanged(application);
+		if (!application.first) {
+			application.add(new MainContainer(this));
+			if (this.devicesPath)
+				this.reloadDevices(application);
+			else
+				this.selectDevice(application, -1);
+
+			if (this.onOpenFileList)
+				application.defer("onOpenFileCallback");
+			else
+				this.launchScreen();
+		}
 	}
 	onColorsChanged(application) {
 		let appearance = this.colors;
@@ -219,14 +222,7 @@ class ApplicationBehavior extends Behavior {
 			this.launchScreen();
 		}
 	}
-	onDisplaying(application) {
-		application.add(new MainContainer(this));
-		if (this.devicesPath)
-			this.reloadDevices(application);
-		else
-			this.selectDevice(application, -1);
-		this.launchScreen();
-	}
+	// onDisplaying deferred to onAppearanceChanged so that appearance is known
 	onKeyDown(application, key) {
 		if (this.keys[key])
 			return;
@@ -373,15 +369,17 @@ class ApplicationBehavior extends Behavior {
 		}
 	}
 	onOpenFileCallback(application) {
-		const paths = this.onOpenFileList;
+		if (!application.first) return;
+		
+		const paths = this.onOpenFileList ?? [];
 		delete this.onOpenFileList;
 		this.quitScreen();
 		this.screenOnce = true;
 		for (let path of paths) {
 			let info = system.getFileInfo(path);
-			if (info.directory)
+			if (info?.directory)
 				this.doLocateSimulatorsCallback(application, path);
-			else
+			else if (info)
 				this.doOpenFileCallback(application, path);
 		}
 		delete this.screenOnce;
@@ -479,7 +477,7 @@ class ApplicationBehavior extends Behavior {
 	doOpenFile() {
 		system.openFile({ prompt:"Open File", path:system.documentsDirectory }, path => { if (path) application.defer("doOpenFileCallback", new String(path)); });
 	}
-	doOpenFileCallback(application, path, flag = true) {
+	doOpenFileCallback(application, path) {
 		let extension = (system.platform == "win") ? ".dll" : ".so";
 		if (path.endsWith(extension)) {
 			this.quitScreen();
