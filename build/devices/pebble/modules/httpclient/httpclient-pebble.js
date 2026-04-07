@@ -93,13 +93,13 @@ class HTTPClient {
 				throw new Error("no buffer");
 			}
 
-			if (buffer.byteLength > (client.messages.output - bufferOverhead))
+			if (buffer.byteLength > (state.messages.output - bufferOverhead))
 				throw new Error("would overflow");
 
 			const m = new Map;
 			m.set(BASE + 1, current.id);
 			m.set(BASE + 4, buffer);
-			client.messages.write(m);
+			state.messages.write(m);
 
 			if (true !== current.sending) {
 				current.sending -= buffer.byteLength;
@@ -144,7 +144,7 @@ class HTTPClient {
 				state.writable = true;
 				for (let i = 0, clients = state.clients; i < clients.length; i++) {
 					if (clients[i].#current) {
-						trace(`Writable id=${clients[i].#current.id}\n`);
+						// trace(`Writable id=${clients[i].#current.id}\n`);
 						clients[i].#write();
 						if (!state.writable)
 							return;
