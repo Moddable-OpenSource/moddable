@@ -26,8 +26,6 @@ import ArchiveCompartment from "ArchiveCompartment"
 import keyValue from "embedded:storage/key-value";
 import WebStorage from "webstorage";
 import {} from "piu/MC"
-import Instrumentation from "instrumentation";
-import Debug from "debug";
 
 import HTTPClient from "embedded:network/http/client";
 import WebSocketClient from "embedded:network/websocket/client";
@@ -82,7 +80,16 @@ globalThis.device = Object.freeze({
 		state.files ??= state.mod.importNow("embedded:storage/files").default;
 		return state.files;
 	},
-	keyValue,
+	keyValue: {
+		open(options) {
+			if (undefined === options?.path)
+				throw new Error("path required")
+			return keyValue.open({
+				...options,
+				path: `${AppInfo.uuid}-${options.path}`
+			});
+		}
+	},
 	info: {
 		get serialNumber() {return native("xs_device_serialNumber_get").call(this);},
 		get language() {return native("xs_device_language_get").call(this);}
@@ -92,6 +99,8 @@ globalThis.device = Object.freeze({
 const hook = function(specifier) {
 	if (AppInfo.isWatchface && blockedWatchFace.includes(specifier))
 		throw new Error(specifier + " blocked in watchface");
+	if (specifier === "embedded:storage/key-value")
+		throw new Error("use device.keyValue.open()");
 
 	return {namespace: specifier};		// map through host modules
 };
