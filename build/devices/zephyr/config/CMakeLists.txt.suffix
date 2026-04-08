@@ -2,7 +2,7 @@
 
 LIST(LENGTH mSTRIPS stripsLen)
 if (stripsLen GREATER 0)
-	set(STRIPS -s ${mSTRIPS})
+	set(STRIPS ${mSTRIPS})
 endif()
 
 foreach(the_module ${mMODULES})
