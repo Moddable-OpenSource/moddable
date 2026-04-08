@@ -1118,10 +1118,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			const idf_component = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}main${tool.slash}idf_component.yml`;
 			for (dep of tool.dependencies) {
 				namespace = dep.namespace ?? "espressif";
-				if (undefined !== dep.idf) {
-trace(`do we need to do something for ${dep.idf} here?\n`);
-				}
-				else {
+				if (undefined === dep.idf) {
 					depStr.push(`grep -q '${namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${namespace}/${dep.name}${dep.version ?? ""}"`);
 				}
 			}

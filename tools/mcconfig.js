@@ -1531,7 +1531,7 @@ export default class extends Tool {
 					else
 						throw new Error("unknown target: " + this.buildTarget);
 
-					command = `cd ${this.moddablePath} && west -v -z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build`;
+					command = `cd ${this.moddablePath} && west ${this.verbose ? "-v " : ""}-z ${this.environment.ZEPHYR_BASE} ${action} -b ${this.environment.ZEPHYR_BOARD} -d ${this.tmpPath}${this.slash}build`;
 
 					let shieldName;
 					for (shieldName in this.manifest.zephyrShields) {
