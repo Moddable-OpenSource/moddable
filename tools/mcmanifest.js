@@ -1757,7 +1757,7 @@ export class TSConfigFile extends FILE {
 		const json = {
 			...tool.typescript.tsconfig,
 			compilerOptions: {
-				baseUrl: "./",
+				rootDir: tool.mainPath,
 				forceConsistentCasingInFileNames: true,
 				module: "es2022",
 				outDir: tool.modulesPath,
