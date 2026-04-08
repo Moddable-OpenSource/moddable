@@ -92,20 +92,22 @@ export class MakeFile extends FILE {
 		this.line("");
 		this.generateRules(tool)
 		if (tool.platform == "zephyr") {
-			let start_xsbug_command;
-			if (tool.currentPlatform === "mac")
-				start_xsbug_command = `open -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
-			else if (tool.currentPlatform == "win")
-				start_xsbug_command = "echo start xsbug";
+			if (tool.xsbugLaunch !== "log") {
+				let start_xsbug_command;
+				if (tool.currentPlatform === "mac")
+					start_xsbug_command = `open --env XSBUG_PROJECT=${tool.mainPath} -a ${tool.buildPath}/bin/mac/release/xsbug.app -g `;
+				else if (tool.currentPlatform == "win")
+					start_xsbug_command = "echo start xsbug";
 //				start_xsbug_command = 'tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start ${NATIVE_XSBUG})';
 //				start_xsbug_command = `cmd.exe /C xsbug`;
 //				start_xsbug_command = `${tool.buildPath}/devices/zephyr/config/win_start_xsbug`;
-			else         // lin
-				start_xsbug_command = `${tool.buildPath}/devices/zephyr/config/lin_start_xsbug`;
+				else         // lin
+					start_xsbug_command = `env XSBUG_PROJECT=${tool.mainPath} ${tool.buildPath}/devices/zephyr/config/lin_start_xsbug`;
 
-			this.line("execute_process(");
-			this.line(`  COMMAND ${start_xsbug_command}`);
-			this.line(")");
+				this.line("execute_process(");
+				this.line(`  COMMAND ${start_xsbug_command}`);
+				this.line(")");
+			}
 
 			var suffixPath = tool.fragmentPath + ".suffix";
 			this.write(tool.readFileString(suffixPath));
@@ -866,7 +868,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line("\t${MODULES_DIR}", temporary);
 					this.line(")");
 
-					this.line(`cmake_path(CONVERT "${MODULES_DIR}${temporary}" TO_NATIVE_PATH_LIST the_source)`);
+					this.line('cmake_path(CONVERT "${MODULES_DIR}', temporary, '" TO_NATIVE_PATH_LIST the_source)');
 					this.line("add_custom_command(");
 					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
 					if (tool.lintCheck)
@@ -1768,15 +1770,15 @@ export class TSConfigFile extends FILE {
 		const json = {
 			...tool.typescript.tsconfig,
 			compilerOptions: {
-				baseUrl: "./",
+				rootDir: tool.mainPath,
 				forceConsistentCasingInFileNames: true,
 				module: "es2022",
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2024", "esnext.iterator"],
+				lib: ["es2025", "esnext.iterator"],
 				sourceMap: true,
-				target: "es2024"
+				target: "es2025"
 			},
 			files: [
 			]

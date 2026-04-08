@@ -625,9 +625,17 @@ void screen_animateColors(xsMachine* the)
 void screen_begin(xsMachine* the)
 {
 	txScreen* screen = xsGetHostData(xsThis);
-	xsIntegerValue x = xsToInteger(xsArg(0));
-	xsIntegerValue y = xsToInteger(xsArg(1));
-	xsIntegerValue width = xsToInteger(xsArg(2));
+	xsIntegerValue x, y, width;
+	if (1 == xsToInteger(xsArgc)) {
+		x = xsToInteger(xsGet(xsArg(0), xsID_x));
+		y = xsToInteger(xsGet(xsArg(0), xsID_y));
+		width = xsToInteger(xsGet(xsArg(0), xsID_width));
+	}
+	else {
+		x = xsToInteger(xsArg(0));
+		y = xsToInteger(xsArg(1));
+		width = xsToInteger(xsArg(2));
+	}
 	screen->rowAddress = screen->buffer + (y * screen->width * screenBytesPerPixel) + (x * screenBytesPerPixel);
 	screen->rowCount = width;
 	screen->rowDelta = (screen->width - width) * screenBytesPerPixel;

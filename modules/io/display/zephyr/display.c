@@ -339,6 +339,17 @@ int displaySend(void *hostData, void *buffer, uint32_t length)
 	if (rows > display->updateHeight)
 		return -3;
 
+	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
+		uint8_t *pixels = buffer;
+		uint32_t remain = length >> 1;
+		while (remain--) {
+			uint8_t t = pixels[0];
+			pixels[0] = pixels[1];
+			pixels[1] = t;
+			pixels += 2;
+		}
+	}
+
 	struct display_buffer_descriptor desc = {
 		.buf_size = length,
 		.width = display->updateWidth,

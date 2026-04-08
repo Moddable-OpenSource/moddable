@@ -57,14 +57,12 @@ class Screen extends config.Screen {
 			watch.addEventListener("resize", resize);
 		}
 		else {
-			if (this.#button) {
-				this.#button.close(); 
-				this.#button = undefined; 
-			}
-			if (this.#timer) {
-				Timer.clear(this.#timer);
-				this.#timer = undefined; 
-			}
+			this.#button?.close(); 
+			this.#button = undefined; 
+
+			Timer.clear(this.#timer);
+			this.#timer = undefined; 
+
 			watch.removeEventListener("resize", resize);
 		}
 	}

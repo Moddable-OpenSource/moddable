@@ -218,7 +218,7 @@ class ZephyrMakeFile extends MAKEFILE {
 		this.line("");
 		if (tool.strip) {
 			for (let result of tool.strip) {
-				this.line("list(APPEND mSTRIPS ", result, ")");
+				this.line("list(APPEND mSTRIPS -s ", result, ")");
 			}
 		}
 		this.line("");
@@ -1498,6 +1498,21 @@ export default class extends Tool {
 				else if (this.buildTarget == "debug") {
 					command += `west debug --build ${this.tmpPath}${this.slash}build ${debugRunner}`;
 				}
+				else if (this.buildTarget == "xsbug") {
+					let start_xsbug_cmd = "";
+					if (this.xsbugLaunch !== "log" && !this.windows) {
+						if (this.currentPlatform === "mac")
+							start_xsbug_cmd = `open --env XSBUG_PROJECT=${this.mainPath} -a ${this.buildPath}/bin/mac/release/xsbug.app -g && `;
+						else if (this.currentPlatform === "lin")
+							start_xsbug_cmd = `env XSBUG_PROJECT=${this.mainPath} ${this.buildPath}/devices/zephyr/config/lin_start_xsbug && `;
+					}
+					
+					let debugger_cmd = `serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+					if (this.xsbugLaunch === "log") {
+						debugger_cmd = `export XSBUG_LOG_PORT=${this.environment.XSBUG_LOG_PORT || 5002} && export XSBUG_PORT=${this.environment.XSBUG_PORT || 5002} && export XSBUG_HOST=${this.environment.XSBUG_HOST || "localhost"} && export XSBUG_PROJECT=${this.mainPath} && cd ${this.moddablePath}/tools/xsbug-log && node xsbug-log serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+					}
+					command += start_xsbug_cmd + debugger_cmd;
+				}
 				else {
 					let action, secondary = "";
 					if (undefined === this.environment.ZEPHYR_BOARD)
@@ -1506,8 +1521,13 @@ export default class extends Tool {
 					action = "build";
 					if (this.buildTarget == "build")
 						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay}`
-					else if (this.buildTarget == "all" || undefined === this.buildTarget)  					/* all */
-						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build ${flashRunner} && serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+					else if (this.buildTarget == "all" || undefined === this.buildTarget) { 					/* all */
+						let debugger_cmd = `serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+						if (this.xsbugLaunch === "log") {
+							debugger_cmd = `export XSBUG_LOG_PORT=${this.environment.XSBUG_LOG_PORT || 5002} && export XSBUG_PORT=${this.environment.XSBUG_PORT || 5002} && export XSBUG_HOST=${this.environment.XSBUG_HOST || "localhost"} && export XSBUG_PROJECT=${this.mainPath} && cd ${this.moddablePath}/tools/xsbug-log && node xsbug-log serial2xsbug ${this.environment.DEBUGGER_PORT} ${this.environment.DEBUGGER_SPEED} 8N1`;
+						}
+						secondary = `${path} -d ${this.tmpPath}${this.slash}build -- -DEXTRA_CONF_FILE=${this.tmpPath}${this.slash}zephyr.conf -DMODDABLE_BUILD_DIR=${this.tmpPath} ${overlay} && west -z ${this.environment.ZEPHYR_BASE} flash -d ${this.tmpPath}${this.slash}build ${flashRunner} && ${debugger_cmd}`;
+					}
 					else
 						throw new Error("unknown target: " + this.buildTarget);
 
@@ -1525,7 +1545,10 @@ export default class extends Tool {
 					const buildCmdPath = this.tmpPath + "\\doBuild.bat";
 					const buildCmdFile = new FILE(buildCmdPath, "w");
 					buildCmdFile.line(`@echo on`);
-					buildCmdFile.line('tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start xsbug)');
+					buildCmdFile.line(`set "XSBUG_PROJECT=${this.mainPath}"`);
+					if (this.xsbugLaunch !== "log") {
+						buildCmdFile.line('tasklist /nh /fi "imagename eq xsbug.exe" | find /i "xsbug.exe" > nul || (start xsbug)');
+					}
 					buildCmdFile.line(`bash -c "${replaceBackSlashes(command)}"`);
 					buildCmdFile.line(`echo Build done`);
 					buildCmdFile.close();

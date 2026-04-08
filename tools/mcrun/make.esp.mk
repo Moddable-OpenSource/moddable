@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2023 Moddable Tech, Inc.
+# Copyright (c) 2016-2026 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -52,24 +52,35 @@ else
 endif
 endif
 
+KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
+SERIAL_CMD = serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+DO_MOD_UPLOAD = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && $(SERIAL_CMD)
+
 ifeq ($(DEBUG),1)
-	ifeq ($(HOST_OS),Darwin)
-		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-	else
-		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	ifeq ("$(XSBUG_LAUNCH)","app")
+		ifeq ($(HOST_OS),Darwin)
+			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
+		else
+			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+		endif
+	endif
+
+	ifeq ("$(XSBUG_LAUNCH)","log")
+		START_XSBUG =
+		DO_MOD_UPLOAD = export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SERIAL_CMD)
 	endif
 endif
 
 all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
+	$(KILL_SERIAL2XSBUG)
 	$(START_XSBUG)
-	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	$(DO_MOD_UPLOAD)
 
 release: $(ARCHIVE)
-	$(shell pkill serial2xsbug)
-	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	$(KILL_SERIAL2XSBUG)
+	$(DO_MOD_UPLOAD)
 
 build: $(ARCHIVE)
 	@echo "# Target built: $(BIN_DIR)/$(NAME).xsa"

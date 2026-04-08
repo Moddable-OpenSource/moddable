@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2023 Moddable Tech, Inc.
+# Copyright (c) 2016-2026 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -60,17 +60,33 @@ PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
-DO_MOD_UPLOAD = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi && XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+ifeq ($(USE_USB),0)
+	PORT_CHECK = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi &&
+	SERIAL_CMD = serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+else
+	ifeq ($(HOST_OS),Darwin)
+		PORT_CHECK = echo "\nPress <RESET> if necessary." ;
+		SERIAL_CMD = serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
+	else
+		PORT_CHECK = if [[ ! -c "$(UPLOAD_PORT)" ]]; then echo "No port." ; exit 1; fi &&
+		SERIAL_CMD = serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
+	endif
+endif
+
+DO_MOD_UPLOAD = $(PORT_CHECK) XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) $(SERIAL_CMD)
 
 ifeq ($(DEBUG),1)
-	ifeq ($(HOST_OS),Darwin)
-		START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
-		ifneq ($(USE_USB),0)
-			DO_MOD_UPLOAD = echo "\nPress <RESET> if necessary." ; XSBUG_PORT=$(XSBUG_PORT) XSBUG_HOST=$(XSBUG_HOST) serial2xsbug $(USB_VENDOR_ID):$(USB_PRODUCT_ID) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE) -norestart
+	ifeq ("$(XSBUG_LAUNCH)","app")
+		ifeq ($(HOST_OS),Darwin)
+			START_XSBUG = open -a $(BUILD_DIR)/bin/mac/release/xsbug.app -g
 		else
+			START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
 		endif
-	else
-		START_XSBUG = $(shell nohup $(BUILD_DIR)/bin/lin/release/xsbug > /dev/null 2>&1 &)
+	endif
+
+	ifeq ("$(XSBUG_LAUNCH)","log")
+		START_XSBUG =
+		DO_MOD_UPLOAD = $(PORT_CHECK) export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && cd $(MODDABLE)/tools/xsbug-log && node xsbug-log $(SERIAL_CMD)
 	endif
 endif
 
