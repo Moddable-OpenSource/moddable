@@ -1763,9 +1763,9 @@ export class TSConfigFile extends FILE {
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2024", "esnext.iterator"],
+				lib: ["es2025", "esnext.iterator"],
 				sourceMap: true,
-				target: "es2024"
+				target: "es2025"
 			},
 			files: [
 			]
