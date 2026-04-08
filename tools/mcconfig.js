@@ -218,7 +218,7 @@ class ZephyrMakeFile extends MAKEFILE {
 		this.line("");
 		if (tool.strip) {
 			for (let result of tool.strip) {
-				this.line("list(APPEND mSTRIPS ", result, ")");
+				this.line("list(APPEND mSTRIPS -s ", result, ")");
 			}
 		}
 		this.line("");
