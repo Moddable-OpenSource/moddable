@@ -176,7 +176,7 @@ export default function() {
 		loadHook: hook
 	});
 
-	Timer.set(async () => {
-		await state.mod.import("main");
+	Timer.set(() => {
+		state.mod.import("main").then(undefined, e => trace("Exception loading main: " + e + "\n"));
 	});
 }
