@@ -868,7 +868,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line("\t${MODULES_DIR}", temporary);
 					this.line(")");
 
-					this.line(`cmake_path(CONVERT "${MODULES_DIR}${temporary}" TO_NATIVE_PATH_LIST the_source)`);
+					this.line('cmake_path(CONVERT "${MODULES_DIR}', temporary, '" TO_NATIVE_PATH_LIST the_source)');
 					this.line("add_custom_command(");
 					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
 					if (tool.lintCheck)
