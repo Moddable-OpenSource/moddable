@@ -582,8 +582,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("INSTRUMENT = 1");
 			if (tool.verbose)
 				this.line("VERBOSE = 1");
-			for (var result in tool.environment)
-				this.line(result, " = ", tool.environment[result].replace(/ /g, "\\ "));
+			for (var result in tool.environment) {
+				if (result == "C_FLAGS")
+					this.line(`${result} = ${tool.environment[result]}`);
+				else
+					this.line(result, " = ", tool.environment[result].replace(/ /g, "\\ "));
+			}
 			this.line("");
 	
 			this.line("BIN_DIR = ", tool.binPath);
@@ -2896,7 +2900,15 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (name !== "ZEPHYR_BOARD") {
+				if (name == "ZEPHYR_BOARD")
+					this.environment[name] = value;
+				else if (name == "LIBRARIES" || name == "C_FLAGS") {
+					if (undefined == this.environment[name])
+						this.environment[name] = value;
+					else
+						this.environment[name] = `${this.environment[name]} ${value}`;
+				}
+				else {
 					if (typeof value == "string") {
 						const dotSlash = "." + this.slash;
 						value = this.resolveVariable(value);
@@ -2912,8 +2924,6 @@ export class Tool extends TOOL {
 					}
 					this.environment[name] = value;
 				}
-				else
-					this.environment[name] = value;
 			}
 		}
 	}

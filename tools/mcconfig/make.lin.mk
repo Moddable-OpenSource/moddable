@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2025  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -125,7 +125,7 @@ endif
 C_INCLUDES += $(DIRECTORIES)
 C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 
-C_FLAGS = -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
+C_FLAGS += -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
 ifeq ($(DEBUG),)
 	C_FLAGS += -D_RELEASE=1 -O3
 else
@@ -133,7 +133,7 @@ else
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
-LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -lpthread
+LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -lpthread $(LIBRARIES)
 
 LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 

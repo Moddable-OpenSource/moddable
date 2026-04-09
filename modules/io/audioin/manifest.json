@@ -10,6 +10,9 @@
 			}
 		},
 		"lin": {
+			"build": {
+				"LIBRARIES": "-lasound"
+			},
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
 				"embedded:io/audio/in": "./lin/audioin"
