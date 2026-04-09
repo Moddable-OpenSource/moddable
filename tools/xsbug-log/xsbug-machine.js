@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -58,7 +58,6 @@ class Machine {
 	}
 	
 	onStartElement(name, attributes) {
-// 		console.log(`onStartElement ${name} ${JSON.stringify(attributes)}`);
 		const parent = this.current;
 		const current = attributes;
 		switch (name) {
@@ -101,11 +100,11 @@ class Machine {
 		this.current = current;
 	}
 	onEndElement(name) {
-// 		console.log(`onEndElement ${name}`);
 		const current = this.current;
 		this.current = null;
 		switch (name) {
 		case 'xsbug':
+			this.onParsed?.();
 			break;
 		case 'breakpoint':
 		case 'instrument':
@@ -116,10 +115,13 @@ class Machine {
 			break;
 		case 'node':
 		case 'property':
+			let isRoot = (current.parent && current.parent.name === 'xsbug');
 			this.current = current.parent;
 			delete current.parent;
 			if (current.children.length == 0)
 				delete current.children;
+			if (isRoot)
+				this.onViewChanged('property', [current]);
 			break;
 			
 		case 'break':
@@ -198,7 +200,7 @@ class Machine {
 		this.doCommand(`clear-all-breakpoints`);
 	}
 	doClearBreakpoint(path, line) {
-		this.doCommand(`clear-breakpoint path="${path}" line="${line}"`);
+		this.doCommand(`clear-breakpoint path="${path}" line="${line}" id="@0"`);
 	}
 	doGo() {
 		this.doCommand(`go`);
@@ -224,17 +226,17 @@ class Machine {
 	doSetAllBreakpoint(breakpoints, atStart, atExceptions) {
 		let string = `\r\n<set-all-breakpoints>`;
 		if (atStart)
-			string += `<breakpoint path="start" line="0"/>`;
+			string += `<breakpoint path="start" line="0" id="@0"/>`;
 		if (atExceptions)
-			string += `<breakpoint path="exceptions" line="0"/>`;
+			string += `<breakpoint path="exceptions" line="0" id="@0"/>`;
 		for (let breakpoint of breakpoints) {
 			string += `<breakpoint path="${breakpoint.path}" line="${breakpoint.line}"/>`;
 		}
-		string += `<set-all-breakpoints/>\r\n`;
+		string += `</set-all-breakpoints>\r\n`;
 		this.output.write(this.encoder.encode(string));
 	}
 	doSetBreakpoint(path, line) {
-		this.doCommand(`set-breakpoint path="${path}" line="${line}"`);
+		this.doCommand(`set-breakpoint path="${path}" line="${line}" id="@0"`);
 	}
 	doSelect(value) {
 		this.doCommand(`select id="${value}"`);
