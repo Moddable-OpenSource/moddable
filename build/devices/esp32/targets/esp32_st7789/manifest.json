@@ -30,7 +30,7 @@
 			"rst_pin": 26,
 			"backlight_pin": 0,
 			"backlight_on": 1,
-			"spi_port": "HSPI_HOST",
+			"spi_port": "SPI2_HOST",
 			"hz": 20000000,
 			"width": 240,
 			"height": 240

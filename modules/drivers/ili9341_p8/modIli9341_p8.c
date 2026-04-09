@@ -228,8 +228,8 @@ void xs_ILI9341p8(xsMachine *the)
         .max_transfer_bytes = 65536,
         
         .clk_src = LCD_CLK_SRC_DEFAULT,
-        .psram_trans_align = 64,
-        .sram_trans_align = 4,        
+//        .psram_trans_align = 64,
+//        .sram_trans_align = 4,        
     };
 
     err = esp_lcd_new_i80_bus(&bus_config, &sd->i80_bus_handle);
@@ -280,7 +280,7 @@ void xs_ILI9341p8(xsMachine *the)
 #endif
 
 #ifdef MODDEF_ILI9341P8_TEARINGEFFECT_PIN
-	gpio_pad_select_gpio(MODDEF_ILI9341P8_TEARINGEFFECT_PIN);
+	esp_rom_gpio_pad_select_gpio(MODDEF_ILI9341P8_TEARINGEFFECT_PIN);
 	gpio_set_direction(MODDEF_ILI9341P8_TEARINGEFFECT_PIN, GPIO_MODE_INPUT);
 	gpio_set_pull_mode(MODDEF_ILI9341P8_TEARINGEFFECT_PIN, GPIO_FLOATING);
 	gpio_install_isr_service(0);

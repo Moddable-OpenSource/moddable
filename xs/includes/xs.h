@@ -128,6 +128,7 @@
 		#define _setjmp setjmp
 	#else
 		#include <errno.h>
+		#include <stddef.h>
 	#endif
 
 	#ifdef __GNUC__

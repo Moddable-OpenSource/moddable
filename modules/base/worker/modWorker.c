@@ -605,7 +605,9 @@ void workerLoop(void *a, void *b, void *c)
 	while (true) {
 		modTimersExecute();
 		modMessageService(worker->the, modTimersNext());
+#ifdef mxInstrument
 		modInstrumentationAdjust(Turns, +1);
+#endif
 	}
 }
 

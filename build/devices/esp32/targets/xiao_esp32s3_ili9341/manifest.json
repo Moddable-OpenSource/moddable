@@ -46,7 +46,8 @@
 		},
 		"ili9341": {
 			"cs_pin": 44,
-			"dc_pin": 43
+			"dc_pin": 43,
+			"spi_port": "SPI3_HOST"
 		}
 	}
 }

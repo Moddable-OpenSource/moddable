@@ -1,7 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
+		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json",
+		"$(MODDABLE)/modules/pins/i2s/manifest.json"
 	],
 	"config": {
 		"screen": "m5stack/screen",
@@ -71,7 +72,6 @@
 		"*": [
 			"../m5stack_fire/m5button"
 		],
-		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"setup/target": "./setup-target",
 		"m5stack/screen": "./screen"
 	},

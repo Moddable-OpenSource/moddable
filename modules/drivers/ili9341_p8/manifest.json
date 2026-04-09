@@ -21,5 +21,12 @@
 	"preload": [
 		"ili9341_p8",
 		"commodetto/Bitmap"
-	]
+	],
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_lcd" }
+			]
+		}
+	}
 }

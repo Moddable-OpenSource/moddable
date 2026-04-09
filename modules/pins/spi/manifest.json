@@ -8,7 +8,10 @@
 		"esp32": {
 			"modules": {
 				"*": "$(MODULES)/pins/spi/esp32/*"
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_driver_spi" }
+			]
 		},
 		"pico": {
 			"modules": {

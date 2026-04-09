@@ -26,6 +26,7 @@
 #include "builtinCommon.h"
 
 #include "driver/gpio.h"
+#include "rom/gpio.h"
 
 #include "soc/gpio_periph.h"
 #include "hal/gpio_hal.h"
@@ -173,7 +174,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		if (!(pins & (1 << (pin & 0x1f))))
 			continue;
 
-		gpio_pad_select_gpio(pin);
+		esp_rom_gpio_pad_select_gpio(pin);
 		switch (mode) {
 			case kDigitalInput:
 			case kDigitalInputPullUp:

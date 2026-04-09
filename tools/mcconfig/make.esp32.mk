@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2025  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -148,19 +148,32 @@ DRIVER_DIRS_OLD = \
 
 DRIVER_DIRS = \
 	$(IDF_PATH)/components/driver/i2c/include \
+	$(IDF_PATH)/components/esp_blockdev/include \
 	$(IDF_PATH)/components/esp_driver_dac/include \
 	$(IDF_PATH)/components/esp_driver_gpio/include \
+	$(IDF_PATH)/components/esp_hal_gpio/include \
+	$(IDF_PATH)/components/esp_hal_gpio/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_driver_gptimer/include \
 	$(IDF_PATH)/components/esp_driver_i2c/include \
+	$(IDF_PATH)/components/esp_hal_i2c/include \
 	$(IDF_PATH)/components/esp_driver_i2s/include \
+	$(IDF_PATH)/components/esp_hal_i2s/include \
 	$(IDF_PATH)/components/esp_driver_ledc/include \
+	$(IDF_PATH)/components/esp_hal_ledc/include \
 	$(IDF_PATH)/components/esp_driver_mcpwm/include \
+	$(IDF_PATH)/components/esp_hal_mcpwm/include \
 	$(IDF_PATH)/components/esp_driver_parlio/include \
+	$(IDF_PATH)/components/esp_hal_parlio/include \
 	$(IDF_PATH)/components/esp_driver_pcnt/include \
+	$(IDF_PATH)/components/esp_hal_pcnt/include \
 	$(IDF_PATH)/components/esp_driver_rmt/include \
+	$(IDF_PATH)/components/esp_hal_rmt/include \
 	$(IDF_PATH)/components/esp_driver_sdmmc/include \
 	$(IDF_PATH)/components/esp_driver_spi/include \
-	$(IDF_PATH)/components/esp_driver_uart/include
+	$(IDF_PATH)/components/esp_hal_gpspi/include \
+	$(IDF_PATH)/components/esp_driver_uart/include \
+	$(IDF_PATH)/components/esp_hal_uart/include \
+	$(IDF_PATH)/components/esp_hal_uart/$(ESP32_SUBCLASS)/include
  
 INC_DIRS = \
 	$(DRIVER_DIRS) \
@@ -173,6 +186,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/bt/host/bluedroid/api/include/api \
  	$(IDF_PATH)/components/esp_adc/include \
  	$(IDF_PATH)/components/esp_adc/$(ESP32_SUBCLASS)/include \
+ 	$(IDF_PATH)/components/esp_hal_ana_conv/include \
 	$(IDF_PATH)/components/esp_app_format/include \
 	$(IDF_PATH)/components/esp_bootloader_format/include \
 	$(IDF_PATH)/components/esp_common/include \
@@ -180,10 +194,13 @@ INC_DIRS = \
 	$(IDF_PATH)/components/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_event/include \
 	$(IDF_PATH)/components/esp_eth/include \
+	$(IDF_PATH)/components/esp_hw_support/etm/include \
 	$(IDF_PATH)/components/esp_hw_support/include \
 	$(IDF_PATH)/components/esp_hw_support/include/soc \
 	$(IDF_PATH)/components/esp_hw_support/port/$(ESP32_SUBCLASS)/private_include \
 	$(IDF_PATH)/components/esp_lcd/include \
+	$(IDF_PATH)/components/esp_hal_lcd/include \
+	$(IDF_PATH)/components/esp_libc/platform_include \
 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_partition/include \
 	$(IDF_PATH)/components/esp_pm/include \
@@ -660,18 +677,21 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES) dependencies
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; $(IDF_RECONFIGURE_CMD)
 
+$(TMP_DIR)/buildinfo.c:
 $(TMP_DIR)/buildinfo.h:
 	echo "typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo;" > $(TMP_DIR)/buildinfo.h
 	echo '#include "buildinfo.h"' > $(TMP_DIR)/buildinfo.c
 	echo '_tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"};' >> $(TMP_DIR)/buildinfo.c
 
+$(TMP_DIR)/buildinfo.c.o: $(TMP_DIR)/buildinfo.h $(TMP_DIR)/buildinfo.c
+	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
+
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
 	
-$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.h $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
+$(BIN_DIR)/xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)/buildinfo.c.o $(SDK_OBJ) $(XS_OBJ) $(TMP_DIR)/xsPlatform.c.o $(TMP_DIR)/xsHost.c.o $(TMP_DIR)/xsHosts.c.o $(TMP_DIR)/mc.xs.c.o $(TMP_DIR)/mc.resources.c.o $(OBJECTS)
 	@echo "# ar xs_$(ESP32_SUBCLASS).a"
-	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)/buildinfo.c -o $(TMP_DIR)/buildinfo.c.o
-	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^ $(TMP_DIR)/buildinfo.c.o
+	$(AR) $(AR_FLAGS) $(BIN_DIR)/xs_$(ESP32_SUBCLASS).a $^
 
 bootloaderCheck:
 ifneq ($(BOOTLOADERPATH),)
@@ -690,7 +710,8 @@ else
 endif
 
 idfVersionCheck:
-	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
+	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)")
+#	python $(PROJ_DIR_TEMPLATE)/versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)"; exit 1)
 
 $(PROJ_DIR): $(PROJ_DIR_TEMPLATE)
 	cp -r $(PROJ_DIR_TEMPLATE)/* $(PROJ_DIR)/

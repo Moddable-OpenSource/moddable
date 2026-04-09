@@ -1,14 +1,13 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital/manifest.json",
+		"$(MODULES)/pins/i2s/manifest.json",
+		"$(MODULES)/pins/audioin/manifest.json"
 	],
 	"modules": {
 		"*": [
 			"$(MODULES)/pins/digital/monitor/*",
-			"$(MODULES)/pins/digital/monitor/esp32/*",
-
-			"$(MODULES)/pins/audioin/*",
-			"$(MODULES)/pins/audioin/esp32/*"
+			"$(MODULES)/pins/digital/monitor/esp32/*"
 		],
 		"setup/target": "./setup-target"
 	},

@@ -474,8 +474,10 @@ void xs_ls013b4dn04_destructor(void *data)
 	ls013b4dn04 ls = (ls013b4dn04)data;
 	if (!ls) return;
 
+#ifdef MODDEF_LS013B4DN04_DISP_PIN
 	if (!ls->first)
 		SCREEN_DISP_OFF;
+#endif
 	if (ls->pixelBuffer)
 		c_free(ls->pixelBuffer);
 	modSPIUninit(&ls->spiConfig);

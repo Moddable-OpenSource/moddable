@@ -1,0 +1,27 @@
+{
+	"modules": {
+		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
+		"*": [
+			"$(MODULES)/io/common/builtinCommon",
+			"$(MODULES)/io/digital/$(PLATFORM)/*"
+		]
+	},
+	"platforms": {
+		"esp": {
+		},
+		"esp32": {
+		},
+		"nrf52": {
+		},
+		"pico": {
+		},
+		"zephyr": {
+		}
+	},
+	"zephyrConfig": {
+		"CONFIG_ADC": "y"
+	},
+	"preload": [
+		"embedded:io/analog"
+	]
+}

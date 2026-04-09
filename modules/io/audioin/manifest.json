@@ -28,7 +28,10 @@
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
 				"embedded:io/audio/in": "./esp32/audioin"
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_driver_i2s" }
+			]
 		},
 		"...": {
 			"error": "Experimental TC53 IO modules"

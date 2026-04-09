@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020-2025 Moddable Tech, Inc.
+# Copyright (c) 2020-2026 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -54,8 +54,9 @@ target_compile_options(${COMPONENT_TARGET} PRIVATE -DUSE_USB=${USE_USB})
 target_compile_options(${COMPONENT_TARGET} PRIVATE -DESP32=${ESP32})
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
-			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs esp_driver_gpio esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
+			REQUIRES ${ESP_COMPONENTS}
 		)
+#			REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs esp_driver_spi esp_eth esp_netif log ${ESP_COMPONENTS}
 
 target_link_libraries(${COMPONENT_LIB} PRIVATE xsesp32)
 

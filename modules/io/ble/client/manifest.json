@@ -1,7 +1,10 @@
 {
 	"platforms": {
 		"esp32": {
-			"include": "./esp32/manifest.json"
+			"include": "./esp32/manifest.json",
+			"dependency": [
+				{ "idf": "bt" }
+			]
 		},
 		"mac": {
 			"include": "./mac/manifest.json"

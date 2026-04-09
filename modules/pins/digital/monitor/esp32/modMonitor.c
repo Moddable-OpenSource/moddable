@@ -120,7 +120,7 @@ void xs_digital_monitor(xsMachine *the)
 
 	xsmcSetHostData(xsThis, monitor);
 
-	gpio_pad_select_gpio(pin);
+	esp_rom_gpio_pad_select_gpio(pin);
 	gpio_set_direction(pin, GPIO_MODE_INPUT);
 
 	if (kModGPIOInputPullUp == mode)

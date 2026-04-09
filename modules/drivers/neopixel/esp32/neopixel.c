@@ -47,7 +47,7 @@
 	#define countPixels(what, value)
 #endif
 
-static uint8_t rmt_num;
+//static uint8_t rmt_num;
 
 static void displayTask(void *param);
 
@@ -60,9 +60,9 @@ rmt_transmit_config_t tx_config = {
 };
 
 int neopixel_init(pixel_settings_t *px) {
-	if (rmt_num == (SOC_RMT_GROUPS * SOC_RMT_TX_CANDIDATES_PER_GROUP))
-		return -1;
-	rmt_num++;
+//	if (rmt_num == (SOC_RMT_GROUPS * SOC_RMT_TX_CANDIDATES_PER_GROUP))
+//		return -1;
+//	rmt_num++;
 	px->neopixel_msgQueue = xQueueCreate(NP_QUEUE_LEN, NP_QUEUE_ITEM_SIZE);
 	px->caller_task = xTaskGetCurrentTaskHandle();
 
@@ -139,7 +139,7 @@ void neopixel_deinit(pixel_settings_t *px) {
 
 		vQueueDelete(px->neopixel_msgQueue);
 
-		rmt_num--;
+//		rmt_num--;
 		px->initialized = false;
 	}
 }

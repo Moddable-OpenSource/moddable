@@ -10,6 +10,11 @@
 		"pins/audioout"
 	],
 	"platforms": {
+		"esp32": {
+            "dependency": [
+                { "idf": "esp_driver_dac" }
+            ]
+		},
 		"pico": {
 			"modules": {
 				"*": [

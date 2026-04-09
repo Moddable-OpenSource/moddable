@@ -1,6 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/manifest_net.json"
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/modules/io/serial/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -9,14 +10,12 @@
 		],
 		"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lin/tcp",
 		"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/lin/listener",
-		"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lin/udp",
-		"embedded:io/serial": "$(MODDABLE)/modules/io/serial/lin/serial"
+		"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lin/udp"
 	},
 	"preload": [
 		"system",
 		"embedded:io/socket/tcp",
 		"embedded:io/socket/listener",
-		"embedded:io/socket/udp",
-		"embedded:io/serial"
+		"embedded:io/socket/udp"
 	]
 }
