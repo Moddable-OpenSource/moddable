@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"embedded:sensor/Touch/pebble": "./pebble-touch"
+	},
+	"preload": "embedded:sensor/Touch/pebble"
+}
