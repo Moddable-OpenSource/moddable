@@ -1,6 +1,6 @@
 {
 	"build": {
-		"EXPECTED_ESP_IDF": "v5.5.1"
+		"EXPECTED_ESP_IDF": "v6.0"
 	},
 	"include": [
 		"$(MODULES)/files/preference/manifest.json"
