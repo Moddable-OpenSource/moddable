@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "piuPebble.h"
 
 static void PiuViewDrawTextureAux(PiuView* self, PiuTexture* texture, PiuCoordinate x, PiuCoordinate y, PiuCoordinate sx, PiuCoordinate sy, PiuDimension sw, PiuDimension sh);
@@ -497,9 +517,9 @@ void PiuView_onIdle(xsMachine* the)
 	PiuApplicationDeferContents(the, application);
 	PiuApplicationIdleContents(application);
 	PiuApplicationTouchIdle(application);
-// 	PiuApplicationAdjust(application);
+ 	PiuApplicationAdjust(application);
 // 	(*self)->updating = 0;
-// 	PiuApplicationIdleCheck(application);
+ 	PiuApplicationIdleCheck(application);
 // 	(*self)->idleTicks = 0;
 }
 
@@ -528,14 +548,52 @@ void PiuView_onResize(xsMachine* the)
 
 void PiuView_onTouchBegan(xsMachine* the)
 {
+	PiuView* self = PIU(View, xsThis);
+	PiuApplication* application = (*self)->application;
+	if (!application) return;
+	xsIntegerValue index = xsToInteger(xsArg(0));
+	PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+	PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
+	xsNumberValue ticks = xsToNumber(xsArg(3));
+//    (*self)->updating = 1;
+//    (*self)->idleTicks = (PiuTick)ticks;
+    PiuApplicationTouchBegan(application, index, x, y, ticks);
+    PiuApplicationAdjust(application);
+//    (*self)->updating = 0;
+//    PiuViewUpdate(self, application);
+    PiuApplicationIdleCheck(application);
+//    (*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchEnded(xsMachine* the)
 {
+    PiuView* self = PIU(View, xsThis);
+    PiuApplication* application = (*self)->application;
+    if (!application) return;
+    xsIntegerValue index = xsToInteger(xsArg(0));
+    PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+    PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
+    xsNumberValue ticks = xsToNumber(xsArg(3));
+//    (*self)->updating = 1;
+//    (*self)->idleTicks = (PiuTick)ticks;
+    PiuApplicationTouchEnded(application, index, x, y, ticks);
+    PiuApplicationAdjust(application);
+//    (*self)->updating = 0;
+//    PiuViewUpdate(self, application);
+    PiuApplicationIdleCheck(application);
+//    (*self)->idleTicks = 0;
 }
 
 void PiuView_onTouchMoved(xsMachine* the)
 {
+    PiuView* self = PIU(View, xsThis);
+    PiuApplication* application = (*self)->application;
+    if (!application) return;
+    xsIntegerValue index = xsToInteger(xsArg(0));
+    PiuCoordinate x = xsToPiuCoordinate(xsArg(1));
+    PiuCoordinate y = xsToPiuCoordinate(xsArg(2));
+    xsNumberValue ticks = xsToNumber(xsArg(3));
+    PiuApplicationTouchMoved(application, index, x, y, ticks);
 }
 
 void PiuView_get_rotation(xsMachine* the) 

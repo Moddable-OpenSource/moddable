@@ -21,11 +21,12 @@
 		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/touch/manifest.json",
 		"$(MODDABLE)/modules/piu/Pebble/manifest.json"
 	],
 	"config": {
 		"screen": "pebble/display",
-		"touchCount": 0
+		"touchCount": 1
 	},
 	"modules": {
 		"*": [
