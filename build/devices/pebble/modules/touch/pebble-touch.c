@@ -29,6 +29,7 @@
 #include "services/common/touch/touch_client.h"
 
 #include "services/common/event_service.h"
+#include "drivers/touch/touch_sensor.h"
 
 #include "moddableAppState.h"
 
@@ -55,7 +56,9 @@ static const xsHostHooks xsTouchHooks = {
 };
 
 #if CAPABILITY_HAS_TOUCHSCREEN
+
 #else
+	void touch_sensor_set_enabled(bool enabled);
 	void touch_reset(void) {}
 	void touch_dispatch_touch_events(TouchIdx touch_idx, TouchEventHandler event_handler, void *context) {}
 #endif
@@ -63,6 +66,7 @@ void xs_touch_destructor(void *data)
 {
 	PebbleTouch pt = data;
 	if (!pt) return;
+	touch_sensor_set_enabled(false);
 	event_service_client_unsubscribe(&pt->event_info);
 	setModdableAppState(touch, C_NULL);
 	c_free(pt);
@@ -90,6 +94,7 @@ void xs_touch(xsMachine *the)
 	pt->event_info.type = PEBBLE_TOUCH_EVENT;
 	pt->event_info.handler = prv_handle_touch_event;
 	pt->event_info.context = pt;
+	touch_sensor_set_enabled(true);
 	touch_reset();
 	event_service_client_subscribe(&pt->event_info);
 }
