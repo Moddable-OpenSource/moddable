@@ -93,12 +93,12 @@ class DebugMachine extends Machine {
 			const subcmds = ['breakpoints', 'locals', 'globals', 'modules', 'module', 'instruments', 'exceptions', 'start', 'threads'];
 			if (argCount === 2) {
 				const hits = subcmds.filter(c => c.startsWith(prefix));
-				return [hits.length ? hits : [], prefix];
+				return [hits.map(h => `${cmd} ${h}`), line];
 			}
 			if (argCount === 3 && (args[1] === 'module')) {
 				if (this.view.modules) {
 					const names = this.view.modules.map(m => m.name).filter(n => n !== '(map)' && n.startsWith(prefix));
-					return [names, prefix];
+					return [names.map(n => `${cmd} ${args[1]} ${n}`), line];
 				}
 			}
 		}
@@ -106,7 +106,7 @@ class DebugMachine extends Machine {
 		if (cmd === 'delete' || cmd === 'clear') {
 			if (argCount === 2) {
 				const hits = ['all'].filter(c => c.startsWith(prefix));
-				return [hits.length ? hits : [], prefix];
+				return [hits.map(h => `${cmd} ${h}`), line];
 			}
 		}
 
@@ -114,7 +114,7 @@ class DebugMachine extends Machine {
 			if (argCount === 2) {
 				const subcmds = ['exceptions', 'output', 'mcsim', 'start'];
 				const hits = subcmds.filter(c => c.startsWith(prefix));
-				return [hits.length ? hits : [], prefix];
+				return [hits.map(h => `${cmd} ${h}`), line];
 			}
 			if (argCount === 3) {
 				let options = [];
@@ -123,7 +123,7 @@ class DebugMachine extends Machine {
 				else if (args[1] === 'mcsim' || args[1] === 'start') options = ['on', 'off'];
 				
 				const hits = options.filter(c => c.startsWith(prefix));
-				return [hits.length ? hits : [], prefix];
+				return [hits.map(h => `${cmd} ${args[1]} ${h}`), line];
 			}
 		}
 
