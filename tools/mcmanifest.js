@@ -417,8 +417,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					options.push({ name: "CONFIG_BTDM_CTRL_MODE_BLE_ONLY", value: "y" });
 					options.push({ name: "CONFIG_BT_NIMBLE_SM_LEGACY", value: "y" });
 					options.push({ name: "CONFIG_BT_NIMBLE_SM_SC", value: "y" });
-					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_PERIPHERAL", value: "y" });
-					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_CENTRAL", value: "y" });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_PERIPHERAL", value: (server ? "y" : "n") });
+					options.push({ name: "CONFIG_BT_NIMBLE_ROLE_CENTRAL", value: (client ? "y" : "n") });
 				}
 				else {
 					options.push({ name: "CONFIG_BT_BLUEDROID_ENABLED", value: "y" });
