@@ -115,7 +115,7 @@ try {
     process.exit(1);
 }
 
-const isEmbedded = !['mac', 'win', 'lin'].includes(target.toLowerCase());
+const isEmbedded = !['mac', 'win', 'lin'].includes(target.toLowerCase()) && target.toLowerCase() !== 'sim' && !target.toLowerCase().startsWith('sim/');
 const examplesDir = customDir ? path.resolve(customDir) : path.join(moddableDir, 'examples');
 
 if (target.startsWith('esp32/')) {
@@ -159,7 +159,7 @@ if (target.startsWith('esp32/')) {
             process.stdout.write("Probing ESP32 hardware via esptool.py... ");
             const portArg = process.env.UPLOAD_PORT ? ` --port ${process.env.UPLOAD_PORT}` : '';
             const esptoolOut = require('child_process').execSync(`esptool.py${portArg} chip_id`, { encoding: 'utf-8', env: process.env, stdio: ['ignore', 'pipe', 'ignore'] });
-            const portMatch = esptoolOut.match(/Serial port\s+(.+)/);
+            const portMatch = esptoolOut.match(/Serial port\s+([^\r\n:]+)/);
             const chipMatch = esptoolOut.match(/Chip is\s+(.+)/);
             const featuresMatch = esptoolOut.match(/Features:\s+(.+)/);
             
@@ -241,6 +241,18 @@ function runTest(examplePath) {
         
         console.log(`\n========= Testing ${examplePath} =========`);
 
+        let originalXsdbConfig = null;
+        let xsdbConfigExisted = false;
+        const xsdbConfigPath = require('path').join(examplePath, '.xsdb.json');
+        
+        try {
+            if (require('fs').existsSync(xsdbConfigPath)) {
+                xsdbConfigExisted = true;
+                originalXsdbConfig = require('fs').readFileSync(xsdbConfigPath, 'utf8');
+            }
+            require('fs').writeFileSync(xsdbConfigPath, JSON.stringify({ exceptionsMode: 'off', outputFormat: 'json' }));
+        } catch {}
+
         const runMainBuild = () => {
             const child = spawn('mcconfig', mcArgs, {
                 cwd: examplePath,
@@ -262,8 +274,15 @@ function runTest(examplePath) {
         let openBraces = 0;
         let inJson = false;
         
+        let pendingAbortText = null;
+        
         function handleEvent(obj) {
             if (obj.event === 'stopped') {
+                if (pendingAbortText) {
+                    exceptionOccurred = true;
+                    finish(false, 'XS Abort detected: ' + pendingAbortText);
+                    return;
+                }
                 if (obj.data && typeof obj.data.reason === 'string') {
                     const reason = obj.data.reason;
                     if (reason === '# Break: breakpoint!' || reason === '# Break: step!' || reason === '# Break: debugger!') {
@@ -278,6 +297,11 @@ function runTest(examplePath) {
                     }
                 } else {
                     child.stdin.write("c\n");
+                }
+            } else if (obj.event === 'log') {
+                if (obj.data && typeof obj.data.text === 'string' && obj.data.text.includes('XS abort')) {
+                    exceptionOccurred = true;
+                    finish(false, 'XS Abort detected');
                 }
             } else if (obj.event === 'info_instruments') {
                 if (ipDetected && obj.data && typeof obj.data.historyCount === 'number') {
@@ -305,6 +329,14 @@ function runTest(examplePath) {
             if (finished) return;
             finished = true;
             cleanup();
+
+            try {
+                if (xsdbConfigExisted && originalXsdbConfig !== null) {
+                    require('fs').writeFileSync(xsdbConfigPath, originalXsdbConfig);
+                } else if (!xsdbConfigExisted && require('fs').existsSync(xsdbConfigPath)) {
+                    require('fs').unlinkSync(xsdbConfigPath);
+                }
+            } catch {}
             
             if (child.stdin && child.stdin.writable) {
                 try { child.stdin.write("quit\n"); } catch {}
@@ -315,6 +347,9 @@ function runTest(examplePath) {
                 try { child.kill('SIGKILL'); } catch {}
                 try { 
                      require('child_process').execSync('killall -9 mcsim 2>/dev/null', { stdio: 'ignore', timeout: 2000 }); 
+                     require('child_process').execSync('killall -9 xsl 2>/dev/null', { stdio: 'ignore', timeout: 2000 });
+                     require('child_process').execSync('killall -9 serial2xsbug 2>/dev/null', { stdio: 'ignore', timeout: 2000 });
+                     require('child_process').execSync('pkill -9 -f serial2xsbug 2>/dev/null', { stdio: 'ignore', timeout: 2000 });
                      require('child_process').execSync('pkill -9 -f xsbug-log 2>/dev/null', { stdio: 'ignore', timeout: 2000 });
                      require('child_process').execSync('pkill -9 -f xsdb 2>/dev/null', { stdio: 'ignore', timeout: 2000 });
                 } catch {}
@@ -363,13 +398,15 @@ function runTest(examplePath) {
                 ipDetected = true;
             }
 
+
+
             // Setup xsdb on first connection
-            if (!isSetup && outputBuf.includes('(xsdb)')) {
+            if (!isSetup && (outputBuf.includes('(xsdb)') || outputBuf.includes('xsdb listening on port'))) {
                 isSetup = true;
                 
                 // Switch from Build Timeout to Launch Timeout
                 clearTimeout(runTimeout);
-                // Give it 30 seconds to launch and collect data (plus extra 15s if it needs wifi connection)
+                // Give it 30 seconds to launch and collect data (plus extra 30s if it needs wifi connection)
                 const timeoutMs = isNet && isEmbedded ? 60000 : 30000;
                 launchTimeout = setTimeout(() => {
                     let reason = 'Run timeout (application hung or no instrumentation received)';
@@ -379,10 +416,6 @@ function runTest(examplePath) {
                     finish(false, reason);
                 }, timeoutMs);
 
-                // Initialize xsdb behavior
-                child.stdin.write("set output json\n");
-                child.stdin.write("set exceptions on\n");
-                
                 // Start polling instruments
                 instrumentPoller = setInterval(() => {
                     child.stdin.write("info instruments\n");
