@@ -39,7 +39,10 @@
 				"ble": {
 					"max_connections": 2
 				}
-			}
+			},
+			"dependency": [
+				{ "idf": "bt" }
+			]
 		},
 		"nrf52": {
 			"modules": {

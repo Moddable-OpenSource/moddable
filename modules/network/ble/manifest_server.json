@@ -31,7 +31,10 @@
 				"*": [
 					"$(BLEMODULEPATH)/modBLECommon"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "bt" }
+			]
 		},
 		"nrf52": {
 			"modules": {
