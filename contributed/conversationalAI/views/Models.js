@@ -157,14 +157,14 @@ const ModelsContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:38, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:38, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:38, height:38, skin:assets.skins.back, active:true, Behavior:View.BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:"Models" }),
 			]
 		}),
 		Scroller($, {
-			left:0, width:240, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { anchor:"LIST", left:0, right:0, top:0, Behavior:ModelsColumnBehavior }),
 				Container($, { anchor:"HOLDER", left:0, right:0, top:0, height:30, Behavior:ModelsHolderBehavior }),
@@ -182,14 +182,14 @@ const ProviderTable = Column.template($ => ({
 }));
 
 const ProviderHeader = Row.template($ => ({
-	left:0, width:240, height:30, skin: assets.skins.providerRow, Behavior:ProviderHeaderBehavior,
+	left:0, width:screen.width, height:30, skin: assets.skins.providerRow, Behavior:ProviderHeaderBehavior,
 	contents: [
 		Label($, { left:8, right:8, style:assets.styles.personaTitle, string:$.name }),
 	],
 }));
 
 const ModelRow = Row.template($ => ({
-	left:0, width:240, height:45, skin: assets.skins.personaRow, active:true, Behavior:ModelRowBehavior,
+	left:0, width:screen.width, height:45, skin: assets.skins.personaRow, active:true, Behavior:ModelRowBehavior,
 	contents: [
 		Content($, { width:16 }),
 		Label($, { left:8, right:8, style:assets.styles.personaSubtitle, string:$.name }),

@@ -59,14 +59,14 @@ const ServicesContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:38, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:38, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:38, height:38, skin:assets.skins.back, active:true, Behavior:View.BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:"Services" }),
 			]
 		}),
 		Scroller($, {
-			left:0, width:240, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { 
 					anchor:"LIST", left:0, right:0, top:0, 
@@ -84,7 +84,7 @@ const ServicesContainer = Container.template($ => ({
 }));
 
 const ServiceRow = Row.template($ => ({
-	left:0, width:240, height:45, skin: assets.skins.personaRow, active:true, Behavior:ServiceRowBehavior,
+	left:0, width:screen.width, height:45, skin: assets.skins.personaRow, active:true, Behavior:ServiceRowBehavior,
 	contents: [
 		Content($, { left:8, width:24, skin:$.iconSmall }),
 		Label($, { left:8, right:8, style:assets.styles.personaTitle, string:$.title }),
@@ -94,7 +94,7 @@ const ServiceRow = Row.template($ => ({
 }));
 
 const NoServiceRow = Row.template($ => ({
-	left:0, width:240, height:65, skin: assets.skins.personaRow, active:true, Behavior:ServiceRowBehavior,
+	left:0, width:screen.width, height:65, skin: assets.skins.personaRow, active:true, Behavior:ServiceRowBehavior,
 	contents: [
 		Content($, { left:8, width:24, skin:$.iconSmall }),
 		Column($, {

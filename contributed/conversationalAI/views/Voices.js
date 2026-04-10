@@ -97,7 +97,7 @@ const VoicesContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:38, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:38, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:38, height:38, skin:assets.skins.back, active:true, Behavior:View.BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:"Voices" }),
@@ -105,7 +105,7 @@ const VoicesContainer = Container.template($ => ({
 			]
 		}),
 		Scroller($, {
-			left:0, width:240, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { 
 					anchor:"LIST", left:0, right:0, top:0, 
@@ -118,7 +118,7 @@ const VoicesContainer = Container.template($ => ({
 }));
 
 const VoiceRow = Layout.template($ => ({
-	left:0, width:240, skin: assets.skins.personaRow, active:true, Behavior:VoiceRowBehavior,
+	left:0, width:screen.width, skin: assets.skins.personaRow, active:true, Behavior:VoiceRowBehavior,
 	contents: [
 		Label($, { left:8, right:44, top:12, style:assets.styles.personaTitle, string:$.name }),
 		Content($, { width:24, right:20, top:10, height:20, skin:assets.skins.check, visible:false }),

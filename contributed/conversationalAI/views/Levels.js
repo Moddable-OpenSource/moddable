@@ -93,14 +93,14 @@ const LevelsContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:50, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:50, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:50, height:50, skin:assets.skins.back, active:true, Behavior:View.BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:"Levels" }),
 			]
 		}),
 		Container($, {
-			left:0, width:240, top:0, bottom:0, 
+			left:0, width:screen.width, top:0, bottom:0, 
 			contents: [
 				Content($, { bottom:60, skin:assets.skins.microphone }),
 				Port($, { anchor:"LEVEL", width:100, height:30, bottom:20, Behavior:LevelPortBehavior }),

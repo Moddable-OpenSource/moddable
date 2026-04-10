@@ -38,7 +38,7 @@ const SplashContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Container($, {
-			left:0, width:240, top:0, bottom:0, 
+			left:0, width:screen.width, top:0, bottom:0, 
 			contents: [
 				Column($, {
 					contents: [

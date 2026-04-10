@@ -61,14 +61,14 @@ const OptionsContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:38, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:38, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:38, height:38, skin:assets.skins.back, active:true, Behavior:View.BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:$.persona.title }),
 			]
 		}),
 		Scroller($, {
-			left:0, width:240, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { 
 					left:0, right:0, top:0, 
@@ -90,7 +90,7 @@ const OptionsContainer = Container.template($ => ({
 										Label($, { left:0, right:0, style:assets.styles.personaTitle, string:assets.services[$.persona.service].title }),
 									]
 								}),
-								Content($, { left:8, width:24, skin:assets.skins.forward }),
+								Content($, { right:20, width:24, skin:assets.skins.forward }),
 							]
 						}),
 						Row($, {
@@ -117,7 +117,7 @@ const OptionsContainer = Container.template($ => ({
 										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
 									]
 								}),
-								Content($, { left:8, width:24, skin:assets.skins.forward }),
+								Content($, { right:20, width:24, skin:assets.skins.forward }),
 							]
 						}),
  						Row($, {
@@ -155,7 +155,7 @@ const OptionsContainer = Container.template($ => ({
  										Label($, { left:0, right:0, style:assets.styles.personaTitle }),
  									]
  								}),
- 								Content($, { left:8, width:24, skin:assets.skins.forward }),
+ 								Content($, { right:20, width:24, skin:assets.skins.forward }),
  							]
  						}),
 					]

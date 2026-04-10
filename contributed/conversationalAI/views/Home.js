@@ -522,7 +522,7 @@ const TranscriptContainer = Container.template($ => ({
 	anchor:"TRANSCRIPT", visible:false, left:0, right:0, top:50, bottom:0,
 	contents: [
 		Scroller($, {
-			left:0, width:240, top:0, bottom:0, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:0, bottom:0, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { 
 					anchor:"TRANSCRIPT_COLUMN", left:0, right:0, top:0, 
@@ -594,14 +594,14 @@ const HomeContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Row($, {
-			left:0, width:240, top:0, height:50, skin:assets.skins.homeTitle,
+			left:screen.corner, width:screen.width - (screen.corner << 1), top:0, height:50, skin:assets.skins.homeTitle,
 			contents: [
 				Content($, { width:50, height:50, skin:assets.skins.back, active:true, Behavior:BackButtonBehavior }),
 				Text($, { left:0, right:0, style:assets.styles.homeTitle, string:$.title }),
 			]
 		}),
 		Container($, {
-			left:0, width:240, top:0, bottom:0, 
+			left:0, width:screen.width, top:0, bottom:0, 
 			contents: [
 				DisconnectedContainer($, {}),
 				FailedContainer($, {}),

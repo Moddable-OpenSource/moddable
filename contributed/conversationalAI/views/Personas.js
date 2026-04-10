@@ -81,14 +81,14 @@ const PersonasContainer = Container.template($ => ({
 	contents: [
 		$.constructor.StarsContainer($, {}),
 		Container($, {
-			left:0, width:240, top:0, height:38, clip:true,
+			left:0, width:screen.width, top:0, height:38, clip:true,
 			contents: [
 				Label($, { string:"Assistants" }),
 // 				Content($, { width:50, right:0, top:0, height:50, active:true, Behavior:LevelsButtonBehavior }),
 			]
 		}),
 		Scroller($, {
-			left:0, width:240, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
+			left:0, width:screen.width, top:38, bottom:0, skin:assets.skins.personaRow, clip:true, active:true, backgroundTouch:true, Behavior:View.VerticalScrollerBehavior,
 			contents: [
 				Column($, { 
 					left:0, right:0, top:0, 
@@ -101,7 +101,7 @@ const PersonasContainer = Container.template($ => ({
 }));
 
 const PersonaRow = Row.template($ => ({
-	left:0, width:240, height:84, skin: assets.skins.personaRow, active:true, Behavior:PersonaRowBehavior,
+	left:0, width:screen.width, height:84, skin: assets.skins.personaRow, active:true, Behavior:PersonaRowBehavior,
 	contents: [
 		Content($, { left:8, width:24, skin:assets.services[$.service].iconSmall }),
 		Column($, {
