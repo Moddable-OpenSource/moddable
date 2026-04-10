@@ -96,12 +96,16 @@ add_custom_command(
 # typescript files
 #
 
-cmake_path(CONVERT "${MODULES_DIR}/tsconfig.json" TO_NATIVE_PATH_LIST ts_config_path)
 if (TYPESCRIPT_CONVERTED_FILES)
+	set(tsc_commands "")
+	foreach(tsconfig_file ${TYPESCRIPT_TSCONFIG_FILES})
+		cmake_path(CONVERT "${tsconfig_file}" TO_NATIVE_PATH_LIST ts_config_path)
+		list(APPEND tsc_commands COMMAND tsc -p ${ts_config_path})
+	endforeach()
 	add_custom_command(
 		OUTPUT ${TYPESCRIPT_CONVERTED_FILES}
-		COMMAND tsc -p ${ts_config_path}
-		DEPENDS ${MODULES_DIR}/tsconfig.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
+		${tsc_commands}
+		DEPENDS ${MODULES_DIR}/tsconfig-base.json ${TMP_DIR}/mc.devicetree.d.ts ${TYPESCRIPT_SOURCE_FILES}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		VERBATIM
 	)

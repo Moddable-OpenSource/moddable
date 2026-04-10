@@ -822,27 +822,6 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 		}
 
 		if (tool.tsFiles.length) {
-			let directories = tool.tsFiles.map(item => tool.splitPath(item.source).directory);
-			const length = directories.length;
-			let common;
-			if (length > 1) {
-				directories.sort();
-				let first = directories[0].split(tool.slash);
-				let last = directories[length - 1].split(tool.slash);
-				const c = Math.min(first.length, last.length);
-				let i = 0;
-				while (i < c) {
-					if (first[i] != last[i])
-						break;
-					i++;
-				}
-				common = first.slice(0, i).join(tool.slash).length;
-			}
-			else
-				common = directories[0].length;
-
-			var temporaries = [];
-
 			if (tool.platform === "zephyr") {
 				generatedTS.push("${TMP_DIR}/mc.devicetree.d.ts");
 
@@ -850,7 +829,12 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					let source = result.source;
 					const target = result.target;
 					const targetParts = tool.splitPath(target);
-					const temporary = source.slice(common, -3) + ".js"
+					const lastSlash = target.lastIndexOf(tool.slash);
+					const targetDir = lastSlash >= 0 ? target.slice(0, lastSlash) : "";
+					const sourceParts = tool.splitPath(source);
+					const targetNoExt = target.slice(0, -4);
+					const sourceNoExt = tool.windows ? source.slice(3, -3) : source.slice(0, -3);
+					const temporary = tool.slash + "tsc" + tool.slash + targetNoExt + sourceNoExt + ".js";
 
 					let options = "";
 					if (result.commonjs)
@@ -869,16 +853,25 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					this.line(")");
 
 					this.line("list(APPEND TYPESCRIPT_CONVERTED_FILES");
-					this.line("\t${MODULES_DIR}", temporary);
+					this.line("\t${TMP_DIR}", temporary);
 					this.line(")");
 
-					this.line('cmake_path(CONVERT "${MODULES_DIR}', temporary, '" TO_NATIVE_PATH_LIST the_source)');
+					const targetName = lastSlash >= 0 ? target.slice(lastSlash + tool.slash.length, -4) : target.slice(0, -4);
+					const tsconfigRelative = (targetDir ? targetDir + tool.slash : "") + targetName + "-tsconfig.json";
+					this.line("list(APPEND TYPESCRIPT_TSCONFIG_FILES");
+					this.line('\t"${MODULES_DIR}/', tsconfigRelative, '"');
+					this.line(")");
+
+					this.line('cmake_path(CONVERT "${TMP_DIR}', temporary, '" TO_NATIVE_PATH_LIST the_source)');
+					var output = "${MODULES_DIR}" + tool.slash + target.replaceAll("#", tool.escapedHash);
+					var outputPath = output.slice(0, output.lastIndexOf(tool.slash));
+					this.line(`cmake_path(CONVERT "${outputPath}" TO_NATIVE_PATH_LIST the_output)`);
 					this.line("add_custom_command(");
-					this.line("\tOUTPUT ${MODULES_DIR}", temporary.slice(0,-3), ".xsb");
+					this.line("\tOUTPUT ", output.slice(0,-4), ".xsb");
 					if (tool.lintCheck)
 						this.line(`\tCOMMAND eslint ${fileName} --config ${NATIVE_MODDABLE}" + tool.slash + eslint.config.mjs`);
-					this.line("\tCOMMAND xsc ${the_source} ", options, " -e -o ${NATIVE_MODULES_DIR} -r ", targetParts.name.replaceAll("#", tool.escapedHash));
-					this.line("\tDEPENDS ${MODULES_DIR}", temporary);
+					this.line("\tCOMMAND xsc ${the_source} ", options, " -e -o ${the_output} -r ", targetParts.name.replaceAll("#", tool.escapedHash));
+					this.line("\tDEPENDS ${TMP_DIR}", temporary);
 					this.line(`\tWORKING_DIRECTORY ${sourceDir}`);
 					this.line("\tVERBATIM");
 					this.line(")");
@@ -890,8 +883,13 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					var source = result.source;
 					var target = result.target;
 					var targetParts = tool.splitPath(target);
-					var temporary = source.slice(common, -3) + ".js"
-					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash));
+					var lastSlash = target.lastIndexOf(tool.slash);
+					var targetDir = lastSlash >= 0 ? target.slice(0, lastSlash) : "";
+					var sourceParts = tool.splitPath(source);
+					var targetNoExt = target.slice(0, -4);
+					var sourceNoExt = tool.windows ? source.slice(3, -3) : source.slice(0, -3);
+					var temporary = tool.slash + "tsc" + tool.slash + targetNoExt + sourceNoExt + ".js";
+					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash));
 
 					if (tool.lintCheck) {
 						const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
@@ -907,18 +905,16 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						options += " -d";
 					if (tool.nativeCode)
 						options += " -c";
-					this.line("\txsc $(MODULES_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
-					if (tool.windows)
-						this.line("$(MODULES_DIR)", temporary.replaceAll("#", tool.escapedHash), ": TSCONFIG");
-					temporaries.push("%" + temporary);
+					this.line("\txsc $(TMP_DIR)", temporary, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
+
+					var targetName = lastSlash >= 0 ? target.slice(lastSlash + tool.slash.length, -4) : target.slice(0, -4);
+					var tsconfigRelative = (targetDir ? targetDir + tool.slash : "") + targetName + "-tsconfig.json";
+
+					this.line("$(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash), " : ", source.replaceAll("#", tool.escapedHash), " $(MODULES_DIR)", tool.slash, "tsconfig-base.json ", generatedTS.join(" "));
+					this.echo(tool, "tsc ", sourceParts.name, ".ts");
+					this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, tsconfigRelative);
+					this.line("");
 				}
-				if (tool.windows)
-					this.line("TSCONFIG:");
-				else
-					this.line(temporaries.join(" ").replaceAll("#", tool.escapedHash), " : ", "%", tool.slash, "tsconfig.json ", generatedTS.join(" "));
-				this.echo(tool, "tsc ", "tsconfig.json");
-				this.line("\t", tool.typescript.compiler, " -p $(MODULES_DIR)", tool.slash, "tsconfig.json");
-				this.line("");
 			}
 		}
 
@@ -1766,8 +1762,108 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 	}
 }
 
-export class TSConfigFile extends FILE {
+export class PrerequisiteFile {
+	constructor(path, tool) {
+		this.path = path;
+		this.tool = tool;
+		this.former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
+		this.current = ""
+	}
+	close() {
+		if (this.former.localeCompare(this.current))
+			this.tool.writeFileString(this.path, this.current);
+	}
+	line(...strings) {
+		for (var string of strings)
+			this.write(string);
+		this.write("\n");
+	}
+	write(string) {
+		this.current += string;
+	}
+}
+
+export class TSConfigFile extends PrerequisiteFile {
 	generate(tool, typescript = true, javascript = false) {
+		if (typescript) {
+			// Build paths map for type resolution
+			const paths = {};
+			for (let result of tool.dtsFiles) {
+				let specifier = result.target;
+				if (tool.windows)
+					specifier = specifier.replaceAll("\\", "/");
+				specifier = tool.unresolvePrefix(specifier);
+				paths[specifier] = [ result.source.slice(0, -5) ];
+			}
+			for (let result of tool.tsFiles) {
+				let specifier = result.target.slice(0, -4);
+				if (tool.windows)
+					specifier = specifier.replaceAll("\\", "/");
+				specifier = tool.unresolvePrefix(specifier);
+				paths[specifier] = [ result.source.slice(0, -3) ];
+			}
+			for (let result of tool.jsFiles) {
+				let specifier = result.target.slice(0, -4);
+				if (tool.windows)
+					specifier = specifier.replaceAll("\\", "/");
+				specifier = tool.unresolvePrefix(specifier);
+				if (!(specifier in paths))
+					paths[specifier] = [ result.source.slice(0, -3) ];
+			}
+			if ("zephyr" === tool.platform) {
+				paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
+				paths["mc/devicetree"] = [tool.tmpPath + tool.slash + "mc.devicetree.js"];
+			}
+
+			// Build base compilerOptions
+			const compilerOptions = {
+				forceConsistentCasingInFileNames: true,
+				module: "es2022",
+				paths,
+				lib: ["es2025", "esnext.iterator"],
+				sourceMap: true,
+				target: "es2025"
+			};
+			if (tool.typescript.tsconfig?.compilerOptions)
+				Object.assign(compilerOptions, tool.typescript.tsconfig.compilerOptions);
+
+			// Write base config (this file = tsconfig-base.json)
+			const baseJson = { ...tool.typescript.tsconfig, compilerOptions };
+			delete baseJson.files;
+			const baseContent = JSON.stringify(baseJson, null, "\t");
+			this.write(baseContent);
+			this.close();
+
+			// Generate per-file tsconfigs with isolated output directories
+			const basePath = tool.modulesPath + tool.slash + "tsconfig-base.json";
+			const tscDir = tool.tmpPath + tool.slash + "tsc";
+			for (let result of tool.tsFiles) {
+				const target = result.target;
+				const targetNoExt = target.slice(0, -4);
+				const lastSlash = target.lastIndexOf(tool.slash);
+				const targetName = lastSlash >= 0 ? target.slice(lastSlash + 1, -4) : target.slice(0, -4);
+				const sourceParts = tool.splitPath(result.source);
+				const outDir = tscDir + tool.slash + targetNoExt;
+				const tsconfigDir = tool.modulesPath + (lastSlash >= 0 ? tool.slash + target.slice(0, lastSlash) : "");
+				const tsconfigPath = tsconfigDir + tool.slash + targetName + "-tsconfig.json";
+
+				const perFileJson = {
+					extends: basePath,
+					compilerOptions: {
+						rootDir: tool.windows ? result.source.slice(0, 3) : "/",
+						outDir: outDir
+					},
+					files: [result.source]
+				};
+				const perFileContent = JSON.stringify(perFileJson, null, "\t");
+				const perFileExisting = tool.isDirectoryOrFile(tsconfigPath) ? tool.readFileString(tsconfigPath) : "";
+				if (perFileExisting.localeCompare(perFileContent))
+					tool.writeFileString(tsconfigPath, perFileContent);
+			}
+			return;
+		}
+
+		// JavaScript typeCheck case (tsconfig-js.json) - unchanged
 		const json = {
 			...tool.typescript.tsconfig,
 			compilerOptions: {
@@ -1792,49 +1888,34 @@ export class TSConfigFile extends FILE {
 			specifier = tool.unresolvePrefix(specifier);
 			paths[specifier] = [ result.source.slice(0, -5) ];
 		}
-		if (typescript) {
-			for (let result of tool.tsFiles) {
-				let specifier = result.target.slice(0, -4);
-				if (tool.windows)
-					specifier = specifier.replaceAll("\\", "/");
-				specifier = tool.unresolvePrefix(specifier);
-				paths[specifier] = [ result.source.slice(0, -3) ];
-				json.files.push(result.source);
-			}
+		const sources = TSConfigFile.filter(tool, tool.jsFiles);
+		for (let result of sources) {
+			let specifier = result.target.slice(0, -4);
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
+			json.files.push(result.source);
 		}
-		if (javascript) {
-			const sources = TSConfigFile.filter(tool, tool.jsFiles);
-			for (let result of sources) {
-				let specifier = result.target.slice(0, -4);
-				if (tool.windows)
-					specifier = specifier.replaceAll("\\", "/");
-				specifier = tool.unresolvePrefix(specifier);
-				json.files.push(result.source);
-			}
-
-			json.compilerOptions = {
-				...json.compilerOptions,
-				allowJs: true,
-				checkJs: true,
-				noEmit: true,
-				strict: true,
-				noImplicitAny: false,
-				noImplicitThis: false,
-				strictNullChecks: false
-			}
+		json.compilerOptions = {
+			...json.compilerOptions,
+			allowJs: true,
+			checkJs: true,
+			noEmit: true,
+			strict: true,
+			noImplicitAny: false,
+			noImplicitThis: false,
+			strictNullChecks: false
 		}
 		if ("zephyr" === tool.platform) {
 			paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
 			paths["mc/devicetree"] = [tool.tmpPath + tool.slash + "mc.devicetree.js"];
 		}
-
 		if (tool.typescript.tsconfig?.compilerOptions) {
 			json.compilerOptions = {
 				...json.compilerOptions,
 				...tool.typescript.tsconfig.compilerOptions
 			}
 		}
-
 		this.write(JSON.stringify(json, null, "\t"));
 		this.close();
 	}
@@ -1844,27 +1925,6 @@ export class TSConfigFile extends FILE {
 		const build = MODDABLE + tool.slash + "build" + tool.slash;
 		const node = tool.slash + "node_modules" + tool.slash;
 		return sources.filter(item => !item.source.startsWith(modules) && !item.source.startsWith(build) && !item.source.includes(node) && !item.source.endsWith(".json"));
-	}
-}
-
-export class PrerequisiteFile {
-	constructor(path, tool) {
-		this.path = path;
-		this.tool = tool;
-		this.former = tool.isDirectoryOrFile(path) ? tool.readFileString(path) : "";
-		this.current = ""
-	}
-	close() {
-		if (this.former.localeCompare(this.current))
-			this.tool.writeFileString(this.path, this.current);
-	}
-	line(...strings) {
-		for (var string of strings)
-			this.write(string);
-		this.write("\n");
-	}
-	write(string) {
-		this.current += string;
 	}
 }
 

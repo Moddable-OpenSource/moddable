@@ -1459,12 +1459,12 @@ export default class extends Tool {
 		}
 
 		if (this.tsFiles.length) {
-			file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig.json");
+			file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig-base.json", this);
 			file.generate(this, true, false);
 		}
 
 		if (this.jsFiles.length) {
-			file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig-js.json");
+			file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig-js.json", this);
 			file.generate(this, false, true);
 		}
 
