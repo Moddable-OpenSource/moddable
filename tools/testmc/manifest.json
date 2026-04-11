@@ -106,49 +106,6 @@
 			}
 		},
 		"esp32": {
-			"defines": {
-				"audioOut": {
-					"bitsPerSample": 16,
-					"numChannels": 1,
-					"sampleRate": 12000,
-					"streams": 2,
-					"queueLength": 4
-				}
-			},
-			"include": [
-				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
-			],
-			"config": {
-				"digital": [0, 1, 2, 3, 18, 19],
-				"flashPartition": "xs_test",
-				"i2c": {
-					"hz": 100000,
-					"address": 53,
-					"unusedAddress": 99
-				},
-				"pwm": {
-					"from": true,
-					"pins": [16, 20, 21],
-					"ports": [4, 5],
-					"invalidPorts": [0, 1],
-					"resolutions": [10, 11, 12],
-					"hzs": [10000, 200, 17]
-				},
-				"spi": {
-					"select": 9,
-					"ports": [0, 1],
-					"invalidPorts": [3, -1],
-					"hzs": [1000, 10000, 20000]
-				},
-			 	"invalidPins": [
-					-10,
-					500
-				]
-			}
-		},
-		"esp32": {
 			"include": [
 				"./manifest_net.json",
 				"./manifest_ble.json",
@@ -176,51 +133,6 @@
 				"pwm": {
 					"from": true,
 					"pins": [18, 12, 13],
-					"ports": [4, 5],
-					"invalidPorts": [0, 1],
-					"resolutions": [10, 11, 12],
-					"hzs": [10000, 200, 17]
-				},
-				"spi": {
-					"select": 18,
-					"ports": [1, 2],
-					"invalidPorts": [3, -1],
-					"hzs": [1000, 10000, 20000]
-				},
-			 	"invalidPins": [
-					-10,
-					500
-				]
-			}
-		},
-		"esp32/moddable_six": {
-			"include": [
-				"./manifest_net.json",
-				"./manifest_ble.json",
-				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
-			],
-			"defines": {
-				"audioOut": {
-					"bitsPerSample": 16,
-					"numChannels": 1,
-					"sampleRate": 12000,
-					"streams": 2,
-					"queueLength": 4
-				}
-			},
-			"config": {
-				"digital": [16, 17, 0, 1, 2, 3],
-				"flashPartition": "xs_test",
-				"i2c": {
-					"hz": 100000,
-					"address": 53,
-					"unusedAddress": 99
-				},
-				"pwm": {
-					"from": true,
-					"pins": [1, 16],
 					"ports": [4, 5],
 					"invalidPorts": [0, 1],
 					"resolutions": [10, 11, 12],
