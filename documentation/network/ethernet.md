@@ -1,6 +1,6 @@
 # Ethernet
-Copyright 2021-2025 Moddable Tech, Inc.<BR>
-Revised: November 24, 2025
+Copyright 2021-2026 Moddable Tech, Inc.<BR>
+Revised: April 10, 2026
 
 ## Overview
 
@@ -26,9 +26,6 @@ The [ESP32 processors and their SDK](https://docs.espressif.com/projects/esp-idf
 ```
 CONFIG_ETH_ENABLED=y
 CONFIG_ETH_USE_ESP32_EMAC=y
-CONFIG_ETH_PHY_INTERFACE_RMII=y
-CONFIG_ETH_RMII_CLK_INPUT=y
-CONFIG_ETH_RMII_CLK_IN_GPIO=0
 CONFIG_ETH_DMA_BUFFER_SIZE=512
 CONFIG_ETH_DMA_RX_BUFFER_NUM=10
 CONFIG_ETH_DMA_TX_BUFFER_NUM=10
