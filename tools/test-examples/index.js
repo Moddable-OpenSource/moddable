@@ -200,7 +200,8 @@ function findExamples(dir) {
 function needsNetwork(manifestPath) {
     try {
         const raw = fs.readFileSync(manifestPath, 'utf-8');
-        return raw.includes('manifest_net.json');
+        //@@ manifest_httpclient and manifest_httpserver are hacks – the right answer would be to resolve the included manifests, but that's too much work
+        return raw.includes('manifest_net.json') || raw.includes('manifest_httpclient.json') || raw.includes('manifest_httpserver.json');
     } catch {
         return false;
     }
@@ -209,6 +210,7 @@ function needsNetwork(manifestPath) {
 function runTest(examplePath) {
     return new Promise((resolve) => {
         const startTime = Date.now();
+        console.log(`\n========= Testing ${examplePath} =========`);
         const manifestPath = path.join(examplePath, 'manifest.json');
         
         let manifestRaw = '';
@@ -239,7 +241,6 @@ function runTest(examplePath) {
             }
         }
         
-        console.log(`\n========= Testing ${examplePath} =========`);
 
         let originalXsdbConfig = null;
         let xsdbConfigExisted = false;
