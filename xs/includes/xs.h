@@ -1048,6 +1048,10 @@ struct xsHostHooksStruct {
 #define xsFunction (the->frame[2])
 #define xsResult (the->frame[1])
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern xsSlot* fxTarget(xsMachine*);
 
 #define xsTarget ( \
@@ -1058,6 +1062,10 @@ extern xsIntegerValue fxArgc(xsMachine*);
 #define xsArgc ( \
 	fxInteger(the, &the->scratch, fxArgc(the)), \
 	the->scratch)
+
+#ifdef __cplusplus
+}
+#endif
 
 #if mxBoundsCheck
 #define xsArg(_INDEX) (the->frame[-1 - fxCheckArg(the, _INDEX)])

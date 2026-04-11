@@ -193,38 +193,34 @@ BLD_DIR = $(PROJ_DIR)\build
 
 PLATFORM_DIR = $(BUILD_DIR)\devices\esp32
 
-DRIVER_DIRS_OLD = \
- 	-I$(IDF_PATH)\components\driver\dac\include \
- 	-I$(IDF_PATH)\components\driver\gpio\include \
- 	-I$(IDF_PATH)\components\driver\gptimer\include \
- 	-I$(IDF_PATH)\components\driver\i2c\include \
- 	-I$(IDF_PATH)\components\driver\i2s\include \
- 	-I$(IDF_PATH)\components\driver\ledc\include \
- 	-I$(IDF_PATH)\components\driver\mcpwm\include \
- 	-I$(IDF_PATH)\components\driver\pcnt\include \
- 	-I$(IDF_PATH)\components\driver\rmt\include \
- 	-I$(IDF_PATH)\components\driver\spi\include \
- 	-I$(IDF_PATH)\components\driver\uart\include \
- 	-I$(IDF_PATH)\components\driver\include \
-	-I$(IDF_PATH)\components\driver\include\driver \
-	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include \
-	-I$(IDF_PATH)\components\driver\$(ESP32_SUBCLASS)\include\driver
-
 DRIVER_DIRS = \
  	-I$(IDF_PATH)\components\driver\i2c\include \
+ 	-I$(IDF_PATH)\components\esp_blockdev\include \
  	-I$(IDF_PATH)\components\esp_driver_dac\include \
  	-I$(IDF_PATH)\components\esp_driver_gpio\include \
+ 	-I$(IDF_PATH)\components\esp_hal_gpio\include \
+ 	-I$(IDF_PATH)\components\esp_hal_gpio\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\esp_driver_gptimer\include \
  	-I$(IDF_PATH)\components\esp_driver_i2c\include \
+ 	-I$(IDF_PATH)\components\esp_hal_i2c\include \
  	-I$(IDF_PATH)\components\esp_driver_i2s\include \
+ 	-I$(IDF_PATH)\components\esp_hal_i2s\include \
  	-I$(IDF_PATH)\components\esp_driver_ledc\include \
+ 	-I$(IDF_PATH)\components\esp_hal_ledc\include \
  	-I$(IDF_PATH)\components\esp_driver_mcpwm\include \
+ 	-I$(IDF_PATH)\components\esp_hal_mcpwm\include \
  	-I$(IDF_PATH)\components\esp_driver_parlio\include \
+ 	-I$(IDF_PATH)\components\esp_hal_parlio\include \
  	-I$(IDF_PATH)\components\esp_driver_pcnt\include \
+ 	-I$(IDF_PATH)\components\esp_hal_pcnt\include \
  	-I$(IDF_PATH)\components\esp_driver_rmt\include \
+ 	-I$(IDF_PATH)\components\esp_hal_rmt\include \
  	-I$(IDF_PATH)\components\esp_driver_sdmmc\include \
  	-I$(IDF_PATH)\components\esp_driver_spi\include \
- 	-I$(IDF_PATH)\components\esp_driver_uart\include
+ 	-I$(IDF_PATH)\components\esp_hal_gpspi\include \
+ 	-I$(IDF_PATH)\components\esp_driver_uart\include \
+ 	-I$(IDF_PATH)\components\esp_hal_uart\include \
+ 	-I$(IDF_PATH)\components\esp_hal_uart\$(ESP32_SUBCLASS)\include
 
 INC_DIRS = \
 	$(DRIVER_DIRS) \
@@ -238,16 +234,20 @@ INC_DIRS = \
 	-I$(IDF_PATH)\components\esp_app_format\include \
 	-I$(IDF_PATH)\components\esp_adc\include \
 	-I$(IDF_PATH)\components\esp_adc\$(ESP32_SUBCLASS)\include \
+	-I$(IDF_PATH)\components\esp_hal_ana_conv\include \
 	-I$(IDF_PATH)\components\esp_bootloader_format\include \
 	-I$(IDF_PATH)\components\esp_common\include \
  	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS)\include \
 	-I$(IDF_PATH)\components\$(ESP32_SUBCLASS) \
  	-I$(IDF_PATH)\components\esp_event\include \
 	-I$(IDF_PATH)\components\esp_eth\include \
+	-I$(IDF_PATH)\components\esp_hw_support\etm\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include \
 	-I$(IDF_PATH)\components\esp_hw_support\include\soc \
 	-I$(IDF_PATH)\components\esp_hw_support\port\$(ESP32_SUBCLASS)\private_include \
  	-I$(IDF_PATH)\components\esp_lcd\include \
+ 	-I$(IDF_PATH)\components\esp_hal_lcd\include \
+ 	-I$(IDF_PATH)\components\esp_libc\platform_include \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_partition\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
@@ -632,12 +632,17 @@ $(SDKCONFIG_H): $(SDKCONFIG_FILE)
 $(LIB_DIR):
 	if not exist $(LIB_DIR)\$(NULL) mkdir $(LIB_DIR)
 
-$(BIN_DIR)\xs_$(ESP32_SUBCLASS).a: $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
-	@echo # ld xs_esp32.bin
+$(TMP_DIR)\buildinfo.c:
+$(TMP_DIR)\buildinfo.h:
 	echo typedef struct { const char *date, *time, *src_version, *env_version;} _tBuildInfo; extern _tBuildInfo _BuildInfo; > $(TMP_DIR)\buildinfo.h
 	echo #include "buildinfo.h" > $(TMP_DIR)\buildinfo.c
 	echo _tBuildInfo _BuildInfo = {"$(BUILD_DATE)","$(BUILD_TIME)","$(SRC_GIT_VERSION)","$(ESP_GIT_VERSION)"}; >> $(TMP_DIR)\buildinfo.c
+
+$(TMP_DIR)\buildinfo.c.o: $(TMP_DIR)\buildinfo.h $(TMP_DIR)\buildinfo.c
 	$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $(TMP_DIR)\buildinfo.c -o $(TMP_DIR)\buildinfo.c.o
+
+$(BIN_DIR)\xs_$(ESP32_SUBCLASS).a: $(TMP_DIR)\buildinfo.c.o $(PROJ_DIR)\main\main.c $(SDKCONFIG_H) $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS)
+	@echo # ld xs_esp32.bin
 	$(AR) $(AR_OPTIONS) $(BIN_DIR)\xs_$(ESP32_SUBCLASS).a $(XS_OBJ) $(TMP_DIR)\mc.xs.o $(TMP_DIR)\mc.resources.o $(OBJECTS) $(TMP_DIR)\buildinfo.c.o
 
 $(PROJ_DIR) : $(PROJ_DIR_TEMPLATE)
