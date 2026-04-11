@@ -16,5 +16,12 @@
     "*": "./*",
     "commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
   },
-  "preload": ["co5300", "commodetto/Bitmap"]
+  "preload": ["co5300", "commodetto/Bitmap"],
+  "platforms": {
+    "esp32": {
+      "dependency": [
+        { "idf": "esp_lcd" }
+      ]
+    }
+  }
 }
