@@ -18,6 +18,12 @@
 		"timer"
 	],
 	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "log" },
+				{ "idf": "efuse" }
+			]
+		},
 		"esp32/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"
 		}
