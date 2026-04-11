@@ -273,6 +273,8 @@ function runTest(examplePath) {
         let jsonBuffer = '';
         let openBraces = 0;
         let inJson = false;
+        let inString = false;
+        let escapeNext = false;
         
         let pendingAbortText = null;
         
@@ -425,17 +427,32 @@ function runTest(examplePath) {
             // Stream parse JSON blocks
             for (let i = 0; i < str.length; i++) {
                 const c = str[i];
-                if (c === '{') {
-                    if (openBraces === 0) {
-                        inJson = true;
-                        jsonBuffer = '';
+
+                if (inJson) {
+                    if (escapeNext) {
+                        escapeNext = false;
+                    } else if (c === '\\') {
+                        escapeNext = true;
+                    } else if (c === '"') {
+                        inString = !inString;
                     }
-                    openBraces++;
                 }
+
+                if (!inString) {
+                    if (c === '{') {
+                        if (openBraces === 0) {
+                            inJson = true;
+                            jsonBuffer = '';
+                        }
+                        openBraces++;
+                    }
+                }
+
                 if (inJson) {
                     jsonBuffer += c;
                 }
-                if (c === '}') {
+
+                if (!inString && c === '}') {
                     openBraces--;
                     if (openBraces === 0 && inJson) {
                         inJson = false;
