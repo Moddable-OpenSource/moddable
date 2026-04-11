@@ -515,7 +515,8 @@ function launch() {
 
 		// Spawn exactly the explicit child process while deliberately stripping its
 		// stdin authority to cleanly preserve native readline logic underneath xsdb.
-		const child = spawn(targetBin, targetArgs, { stdio: ['ignore', 'inherit', 'inherit'] });
+		// We also 'ignore' stdout so raw C logs don't double-print over xsdb's natively parsed TCP XML log traces.
+		const child = spawn(targetBin, targetArgs, { stdio: ['ignore', 'ignore', 'inherit'] });
 
 		child.on('error', (err) => {
 			console.log(`\n#xsbug-log child process error: ${err.message}`);
