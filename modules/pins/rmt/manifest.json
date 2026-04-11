@@ -6,7 +6,7 @@
 		"pins/rmt"
 	],
 	"platforms": {
-		"esp32": {
+		"x-esp32": {
 			"modules": {
 				"*": "$(MODULES)/pins/rmt/esp32/*"
 			}
