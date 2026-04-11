@@ -11,12 +11,6 @@
 		"pins/pulsecount"
 	],
 	"platforms":{
-		"esp32": {
-			"modules": {
-				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
-				"*": "$(MODULES)/pins/pulsecount/esp32/*"
-			}
-		},
 		"nrf52": {
 			"modules": {
 				"pins/pulsecount": "$(MODULES)/pins/pulsecount/pulsecount",
@@ -25,6 +19,9 @@
 			"preload": [
 				"pins/pulsecount"
 			]
+		},
+		"...": {
+			"error": "'pins/pulsecount' is not supported on this platform. Try ECMA-419 'embedded:io/pulsecount' instead"
 		}
 	}
 }
