@@ -30,15 +30,18 @@ export default function (done) {
 			continue;
 		}
 
+		if ("wifi" === i.kind)
+			trace(`Connecting to Wi-Fi "${config.ssid}"...\n`);
+
 		count++;
 		const connection = new (i.io)({
 			...i,
 			onChanged() {
-				trace(`device.network.interface.${name} state:  ${this.connection}\n`);
+				trace(`device.network.interface.${name} state: ${this.connection}\n`);
 				if (this.connection < 500)
 					return;
 
-				trace(` IP address: ${this.address}\n`);
+				trace(`  IP address: ${this.address}\n`);
 				this.close();
 
 				if (Date.now() > 1672722071_000) {
