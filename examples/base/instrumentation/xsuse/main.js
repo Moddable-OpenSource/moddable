@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -56,7 +56,7 @@ measure("Arrow Function closure (1 variable)",  () => {let a = 1; return () => {
 measure("Arrow Function closure (2 variables)",  () => {let a = 1, b = 2; return () => {return a + b;}});
 measure("Arrow Function closure (3 variables)",  () => {let a = 1, b = 2, c = 3; return () => {return a + b + c;}});
 measure("Function {}",  () => {return function() {}});
-measure("Function {return Date;]",  () => {return function() {return Date;}});
+measure("Function {return Date;}",  () => {return function() {return Date;}});
 measure("Function {return this;}",  () => {return function() {return this;}});
 measure("Function closure (1 variable)",  () => {let a = 1; return function() {return a;}});
 measure("Function closure (2 variables)",  () => {let a = 1, b = 2; return function() {return a + b;}});
