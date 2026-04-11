@@ -36,6 +36,10 @@
 	#define MODDEF_AUDIOOUT_I2S_SLOT I2S_STD_SLOT_RIGHT
 #endif
 
+#ifndef MODDEF_AUDIOOUT_I2S_MCK_PIN
+	#define MODDEF_AUDIOOUT_I2S_MCK_PIN I2S_GPIO_UNUSED
+#endif
+
 #ifndef MODDEF_AUDIOOUT_I2S_FORMAT_I2S
 	#define MODDEF_AUDIOOUT_I2S_FORMAT_I2S 0
 #endif
@@ -254,11 +258,7 @@ void xs_audioout_constructor_(xsMachine *the)
 #elif MODDEF_AUDIOOUT_I2S_BCK_PIN
 	i2s_std_config_t i2s_config = {
 		.gpio_cfg = {
-#ifdef MODDEF_AUDIOOUT_I2S_MCK_PIN
 			.mclk = MODDEF_AUDIOOUT_I2S_MCK_PIN,
-#else
-			.mclk = I2S_GPIO_UNUSED,
-#endif
 			.bclk = MODDEF_AUDIOOUT_I2S_BCK_PIN,
 			.ws = MODDEF_AUDIOOUT_I2S_LR_PIN,
 			.dout = MODDEF_AUDIOOUT_I2S_DATAOUT_PIN,
