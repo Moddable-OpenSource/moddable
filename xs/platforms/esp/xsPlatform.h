@@ -206,11 +206,7 @@ typedef struct DebugFragmentRecord *DebugFragment;
 #endif
 
 #ifndef mxFallThrough
-	#if mxWindows
-		#define mxFallThrough (void)0
-	#else
-		#define mxFallThrough __attribute__ ((fallthrough))
-	#endif
+	#define mxFallThrough (void)0
 #endif
 
 #endif /* __XSPLATFORM__ */
