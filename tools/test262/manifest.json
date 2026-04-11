@@ -52,7 +52,11 @@
 					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/esp32/*"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "log" },
+				{ "idf": "efuse" }
+			]
 		},
 		"esp32/esp32s3": {
 			"build": {
@@ -70,7 +74,11 @@
 					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/esp32/*"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "log" },
+				{ "idf": "efuse" }
+			]
 		},
 		"esp32/moddable_six": {
 			"build": {
@@ -113,7 +121,11 @@
 					"$(MODULES)/files/preference/*",
 					"$(MODULES)/files/preference/esp32/*"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "log" },
+				{ "idf": "efuse" }
+			]
 		},
 		"lin": {
 			"build": {
