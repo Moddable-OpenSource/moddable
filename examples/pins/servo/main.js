@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -15,7 +15,11 @@
 import Servo from "pins/servo";
 import Timer from "timer";
 
-let servo = new Servo({pin: 5});
+const servoPin = undefined;		// define pin number here
+if (undefined === servoPin)
+	throw new Error("servoPin not configured");
+
+const servo = new Servo({pin: servoPin});
 
 let angle = 0;
 Timer.repeat(() => {

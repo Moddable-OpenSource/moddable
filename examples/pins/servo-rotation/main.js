@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Satoshi Tanaka
+ * Copyright (c) 2021-2026  Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK.
  *
@@ -15,7 +15,11 @@
 import Servo from "pins/servo";
 import Timer from "timer";
 
-let servo = new Servo({pin: 26});
+const servoPin = undefined;		// define pin number here
+if (undefined === servoPin)
+	throw new Error("servoPin not configured");
+
+const servo = new Servo({pin: servoPin});
 let increase = 1;
 let pulseWidth = 1500;
 
