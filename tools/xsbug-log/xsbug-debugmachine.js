@@ -23,7 +23,6 @@
 */
 
 const fs = require('node:fs');
-const { Buffer } = require('node:buffer');
 const { Machine } = require('./xsbug-machine.js');
 
 class DebugMachine extends Machine {
@@ -52,9 +51,6 @@ class DebugMachine extends Machine {
 
 	// User breakpoints: array of { path, line }
 	breakpoints = [];
-
-	// Temporary breakpoint for "until": { path, line } or undefined (not present)
-//	temporaryBreakpoint = null;
 
 	// Source file cache: path -> lines array
 	sourceCache = {};
@@ -325,7 +321,6 @@ class DebugMachine extends Machine {
 		if (name === 'property') {
 			if (items && items.length > 0) {
 				const prop = items[0];
-// removed dbg_trace
 				if (prop && prop.value) {
 					const hydrateNode = (nodes, visited = new Set()) => {
 						if (!nodes) return;
@@ -534,9 +529,9 @@ class DebugMachine extends Machine {
 
 			if (data.reason === '# Break: breakpoint!') {
 				const bpIndex = this.breakpoints.findIndex(b => {
-					if (parseInt(b.line) === 0)
+					if (b.line == 0)
 						return b.path === data.name;
-					return b.path === data.path && parseInt(b.line) === parseInt(data.line);
+					return b.path === data.path && b.line == data.line;
 				});
 				const bpNum = bpIndex >= 0 ? this.breakpoints[bpIndex].id : '?';
 				console.log(`Breakpoint ${bpNum}, ${loc}`);
@@ -1851,7 +1846,6 @@ class DebugMachine extends Machine {
 		else {
 			// Need to descend into children
 			if (this.isExpandable(found) && !found.children) {
-// removed dump_pass
 				const alias = this.findExpandedAlias(found.value, this.view.global) || this.findExpandedAlias(found.value, this.view.local);
 				if (alias) {
 					if (this.currentCommand === 'print' || this.currentCommand === 'p') {
@@ -1928,14 +1922,12 @@ class DebugMachine extends Machine {
 	}
 
 	resolveGlobalPath(parts) {
-// removed dbg_trace
 		this.searchGlobalItems(this.view.global, parts);
 	}
 
 	// Walk the global hierarchy: check items at this level, then
 	// recurse into (..) nodes which link up the prototype chain.
 	searchGlobalItems(items, parts) {
-// removed dbg_trace
 		if (!items || items.length === 0) {
 			this.commandError(`No variable "${parts[0]}" in current scope.`);
 			return;
@@ -2337,7 +2329,7 @@ class DebugMachine extends Machine {
 				{
 					title: "Settings",
 					items: [
-						{ keys: "set exceptions on|off|silent", desc: "Toggle break-on-exceptions (silent suppresses logs)" },
+						{ keys: "set exceptions on|off|silent", desc: "Break on exceptions (off shows logs, silent hides them)" },
 						{ keys: "info exceptions", desc: "Show break-on-exceptions setting" },
 						{ keys: "set start on|off", desc: "Toggle break-on-start" },
 						{ keys: "info start", desc: "Show break-on-start setting" },
