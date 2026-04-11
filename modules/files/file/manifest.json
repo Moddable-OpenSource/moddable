@@ -27,7 +27,10 @@
 				"file": {
 					"partition": "#storage"
 				}
-			}
+			},
+			"dependency": [
+				{ "idf": "spiffs" }
+			]
 		},
 		"mac": {
 			"modules": {

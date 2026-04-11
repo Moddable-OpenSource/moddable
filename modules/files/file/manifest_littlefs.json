@@ -28,7 +28,10 @@
 				"file": {
 					"partition": "#storage"
 				}
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_partition" }
+			]
 		}
 	}
 }
