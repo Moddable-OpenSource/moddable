@@ -810,14 +810,18 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line(")");
 			}
 			else {
+				this.line();
 				this.line("$(MODULES_DIR)", tool.slash, ".typeCheck: " + sources.map(item => item.source).join(" "));
 				this.echo(tool, "tsc ", "tsconfig-js.json", " (typeCheck JavaScript)");
-				this.write(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}tsconfig-js.json ; if [ $$? -ne 0 ]; then echo "# typescript compile failure" && exit 1; else `);
-				if (tool.windows)
-					this.write(`type nul >> $(MODULES_DIR)${tool.slash}.typeCheck`);
-				else
+				if (tool.windows) {
+					this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}tsconfig-js.json || ( echo "# typescript compile failure" && exit 1 ) `);
+					this.line(`\ttype nul >> $(MODULES_DIR)${tool.slash}.typeCheck`);
+				}
+				else {
+					this.write(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}tsconfig-js.json ; if [ $$? -ne 0 ]; then echo "# typescript compile failure" && exit 1; else `);
 					this.write(`touch $(MODULES_DIR)${tool.slash}.typeCheck`);
-				this.line("; fi");
+					this.line("; fi");
+				}
 				this.line("");
 			}
 		}
@@ -888,7 +892,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					var targetDir = lastSlash >= 0 ? target.slice(0, lastSlash) : "";
 					var sourceParts = tool.splitPath(source);
 					var targetNoExt = target.slice(0, -4);
-					var sourceNoExt = tool.windows ? source.slice(3, -3) : source.slice(0, -3);
+					var sourceNoExt = tool.windows ? source.slice(2, -3) : source.slice(0, -3);
 					var temporary = tool.slash + "tsc" + tool.slash + targetNoExt + sourceNoExt + ".js";
 					this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": $(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash));
 
@@ -911,9 +915,13 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					var targetName = lastSlash >= 0 ? target.slice(lastSlash + tool.slash.length, -4) : target.slice(0, -4);
 					var tsconfigRelative = (targetDir ? targetDir + tool.slash : "") + targetName + "-tsconfig.json";
 
+					this.line();
 					this.line("$(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash), " : ", source.replaceAll("#", tool.escapedHash), " $(MODULES_DIR)", tool.slash, "tsconfig-base.json ", generatedTS.join(" "));
 					this.echo(tool, "tsc ", sourceParts.name, ".ts");
-					this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}${tsconfigRelative} ; if [ $$? -ne 0 ]; then echo "# typescript compile failure" && exit 1; fi`);
+					if (tool.windows)
+						this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}${tsconfigRelative} || ( echo "# typescript compile failure" && exit 1 ) `);
+					else
+						this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}${tsconfigRelative} ; if [ $$? -ne 0 ]; then echo "# typescript compile failure" && exit 1; fi`);
 					this.line("");
 				}
 			}
