@@ -71,7 +71,186 @@ class DebugMachine extends Machine {
 	// command output format "text" or "JSON"
 	outputFormat = 'text';
 
-	completer(line) {
+	completionsShown = false;
+
+	completer(line, callback) {
+		const finish = (result) => {
+			let [completions, matched] = result;
+			// Nothing to complete if only match is what's already typed
+			if (completions.length === 1 && completions[0] === matched)
+				completions = [];
+			if (completions.length > 1 && !this.completionsShown) {
+				this._displayCompletions(completions);
+			}
+			callback(null, [completions, matched]);
+		};
+		if (this.broken) {
+			const args = line.trimStart().split(/\s+/);
+			const cmd = args[0];
+			if (cmd === 'print' || cmd === 'p') {
+				const expr = line.substring(line.indexOf(cmd) + cmd.length).trimLeft();
+				if (expr && expr.includes('.')) {
+					this._expandForCompletion(expr, () => {
+						finish(this._syncCompleter(line));
+					});
+					return;
+				}
+				if (expr) {
+					// Expand (..) in globals so built-ins are available for completion
+					this._expandGlobalPrototype(() => {
+						finish(this._syncCompleter(line));
+					});
+					return;
+				}
+			}
+		}
+		finish(this._syncCompleter(line));
+	}
+
+	_displayCompletions(completions) {
+		const width = process.stdout.columns || 80;
+		const maxLen = Math.max(...completions.map(c => c.length)) + 2;
+		const cols = Math.max(1, Math.floor(width / maxLen));
+		let out = '';
+		for (let i = 0; i < completions.length; i++) {
+			out += completions[i].padEnd(maxLen);
+			if ((i + 1) % cols === 0) out += '\r\n';
+		}
+		if (completions.length % cols !== 0) out += '\r\n';
+		// Count lines written (initial newline + completion rows)
+		const linesDown = (out.match(/\n/g) || []).length + 1;
+		// Write completions below, move cursor back up to prompt
+		process.stdout.write(`\r\n${out}\x1b[${linesDown}A`);
+		// Position cursor at end of current input
+		const col = (this.rl._prompt || '').length + this.rl.line.length;
+		process.stdout.write(`\r\x1b[${col}C`);
+		this.completionsShown = true;
+		// Clear completions on next non-TAB keypress
+		const handler = (str, key) => {
+			if (key && key.name === 'tab')
+				return;
+			const col = (this.rl._prompt || '').length + this.rl.line.length;
+			process.stdout.write(`\r\n\x1b[J\x1b[A\r\x1b[${col}C`);
+			this.completionsShown = false;
+			process.stdin.removeListener('keypress', handler);
+		};
+		process.stdin.on('keypress', handler);
+	}
+
+	_expandGlobalPrototype(callback) {
+		const globals = this.view.global || [];
+		const dotdot = globals.find(i => i.name === '(..)');
+		if (dotdot && this.isExpandable(dotdot) && !dotdot.children) {
+			this.toggleOpen(dotdot, () => this._expandGlobalPrototype(callback));
+			return;
+		}
+		callback();
+	}
+
+	_expandForCompletion(expr, callback) {
+		const parts = [];
+		const regex = /\["([^"]*)"?\]?|\['([^']*)'?\]?|\[`([^`]*)`?\]?|(\[[0-9]*\]?)|\.([^.\[]*)|^([^.\[]+)/g;
+		let match;
+		while ((match = regex.exec(expr)) !== null) {
+			let val;
+			if (match[1] !== undefined) val = match[1];
+			else if (match[2] !== undefined) val = match[2];
+			else if (match[3] !== undefined) val = match[3];
+			else if (match[4] !== undefined) val = match[4];
+			else if (match[5] !== undefined) val = match[5];
+			else if (match[6] !== undefined) val = match[6];
+			if (val !== undefined) parts.push(val);
+		}
+		if (parts.length < 2) {
+			callback();
+			return;
+		}
+
+		const locals = this.view.local || [];
+		const globals = this.view.global || [];
+
+		let items;
+		let startIndex;
+		if (parts[0] === 'globalThis' || parts[0] === 'global') {
+			items = globals;
+			startIndex = 1;
+		} else {
+			let root = locals.find(i => i.name === parts[0]);
+			if (!root) root = globals.find(i => i.name === parts[0]);
+			if (!root) {
+				// Search globals as if globalThis — Date, Math, etc. live there
+				items = globals;
+				startIndex = 0;
+			} else {
+				if (this.isExpandable(root) && !root.children) {
+					this.toggleOpen(root, () => this._expandForCompletion(expr, callback));
+					return;
+				}
+				items = root.children;
+				startIndex = 1;
+			}
+		}
+
+		this._expandPath(expr, items, parts, startIndex, callback);
+	}
+
+	_expandPath(expr, items, parts, index, callback) {
+		if (!items || index >= parts.length - 1) {
+			// At the final level, expand private containers for #field completion
+			// but NOT (..) — property completion shows only own properties
+			if (items) {
+				const needsExpand = items.find(c =>
+					this.isPrivateContainer(c) && this.isExpandable(c) && !c.children
+				);
+				if (needsExpand) {
+					this.toggleOpen(needsExpand, () => {
+						this._expandForCompletion(expr, callback);
+					});
+					return;
+				}
+			}
+			callback();
+			return;
+		}
+
+		const name = parts[index];
+
+		// Expand unexpanded private containers before searching #fields
+		if (name.startsWith('#')) {
+			const unexpandedContainer = items.find(i =>
+				this.isPrivateContainer(i) && this.isExpandable(i) && !i.children
+			);
+			if (unexpandedContainer) {
+				this.toggleOpen(unexpandedContainer, () => this._expandForCompletion(expr, callback));
+				return;
+			}
+		}
+
+		// Expand (..) if it's needed but not yet expanded
+		const dotdot = items.find(i => i.name === '(..)');
+		if (dotdot && this.isExpandable(dotdot) && !dotdot.children) {
+			// Only expand if the name isn't found directly
+			if (!items.find(i => i.name === name)) {
+				this.toggleOpen(dotdot, () => this._expandForCompletion(expr, callback));
+				return;
+			}
+		}
+
+		const item = this.findProperty(items, name);
+		if (!item) {
+			callback();
+			return;
+		}
+
+		if (this.isExpandable(item) && !item.children) {
+			this.toggleOpen(item, () => this._expandForCompletion(expr, callback));
+			return;
+		}
+
+		this._expandPath(expr, item.children, parts, index + 1, callback);
+	}
+
+	_syncCompleter(line) {
 		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'info', 'list', 'backtrace', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
 		const args = line.trimStart().split(/\s+/);
 		
@@ -129,8 +308,9 @@ class DebugMachine extends Machine {
 			
 			const expr = line.substring(cmd.length).trimLeft();
 			if (!expr) {
-				let options = [...new Set([...locals.map(i=>i.name), ...globals.map(i=>i.name)])];
-				return [options.map(opt => `${cmd} ${opt}`), line];
+				let options = [...new Set([...this.getCompletableNames(locals, ''), ...this.getCompletableNames(globals, '')])];
+				options.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+				return [options, ''];
 			}
 			
 			const parts = [];
@@ -149,48 +329,15 @@ class DebugMachine extends Machine {
 			}
 			
 			const resolveDotPathCompletion = (items, partsArr, partIndex) => {
-				const name = partsArr[partIndex];
 				if (partIndex === partsArr.length - 1) {
-					let matches = items.map(i => i.name).filter(n => n && n.startsWith(name) && !n.startsWith('('));
-					
-					const classNodes = items.filter(i => i.name.startsWith('(') && i.name.endsWith(')') && !['(..)', '(return)', '(function)'].includes(i.name));
-					for (let cNode of classNodes) {
-						if (cNode.children) {
-							matches = matches.concat(cNode.children.map(i => i.name).filter(n => n && n.startsWith(name)));
-						}
-					}
-					
-					const dotdot = items.find(i => i.name === '(..)');
-					if (dotdot && dotdot.children)
-						matches = matches.concat(resolveDotPathCompletion(dotdot.children, partsArr, partIndex));
-
-					if (dotdot && 'prototype'.startsWith(name) && !items.find(i => i.name === 'prototype')) {
-						matches.push('prototype');
-					}
-
-					return matches;
+					// Top-level: follow (..) to find built-ins like Date, Math
+					// Property level: show only own properties
+					const followPrototype = (partIndex === 0);
+					return this.getCompletableNames(items, partsArr[partIndex], followPrototype);
 				}
-				let item = items.find(i => i.name === name);
-				if (!item && name === 'prototype') {
-					item = items.find(i => i.name === '(..)');
-				}
-				if (!item && name.startsWith('#')) {
-					const classNodes = items.filter(i => i.name.startsWith('(') && i.name.endsWith(')') && !['(..)', '(return)', '(function)'].includes(i.name));
-					for (let cNode of classNodes) {
-						if (cNode.children) {
-							item = cNode.children.find(i => i.name === name);
-							if (item) break;
-						}
-					}
-				}
-				
-				if (item && item.children) {
+				const item = this.findProperty(items, partsArr[partIndex]);
+				if (item && item.children)
 					return resolveDotPathCompletion(item.children, partsArr, partIndex + 1);
-				}
-				const dotdot = items.find(i => i.name === '(..)');
-				if (dotdot && dotdot.children) {
-					return resolveDotPathCompletion(dotdot.children, partsArr, partIndex);
-				}
 				return [];
 			};
 
@@ -208,33 +355,11 @@ class DebugMachine extends Machine {
 						options = resolveDotPathCompletion(globals, parts, 0);
 					}
 				}
+				options = [...new Set(options)];
 			}
-			
-			let prefixStr = '';
-			if (parts.length > 1) {
-				prefixStr = parts.slice(0, -1).map((p, i) => {
-					if (i === 0) return p;
-					if (/^\[[0-9]+\]?$/.test(p)) return p;
-					if (!/^[a-zA-Z_$#][0-9a-zA-Z_$]*$/.test(p)) return `["${p}"]`;
-					return `.${p}`;
-				}).join('');
-			}
-			
-			const hits = options.map(opt => {
-				const isIdentifier = /^[a-zA-Z_$#][0-9a-zA-Z_$]*$/.test(opt);
-				const isNumericBracket = /^\[[0-9]+\]$/.test(opt);
-				let optStr;
-				if (parts.length === 1) {
-					optStr = opt;
-				} else {
-					if (isIdentifier) optStr = `.${opt}`;
-					else if (isNumericBracket) optStr = opt;
-					else optStr = `["${opt}"]`;
-				}
-				return `${cmd} ${prefixStr}${optStr}`;
-			});
-			
-			return [hits, line];
+
+			options.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+			return [options, parts[parts.length - 1]];
 		}
 
 		return [[], line];
@@ -576,6 +701,80 @@ class DebugMachine extends Machine {
 		return items.find(item => item.name === name) || null;
 	}
 
+	// Shared property resolution: find a named property in items,
+	// handling prototype→(..), #private containers, and (..) chain.
+	// Returns the found item or null.
+	findProperty(items, name) {
+		if (!items)
+			return null;
+
+		// Direct lookup
+		let found = items.find(i => i.name === name);
+		if (found)
+			return found;
+
+		// Map 'prototype' to (..)
+		if (name === 'prototype')
+			return items.find(i => i.name === '(..)') || null;
+
+		// Search #private in (ClassName) containers
+		if (name.startsWith('#')) {
+			for (const c of items) {
+				if (this.isPrivateContainer(c) && c.children) {
+					found = c.children.find(i => i.name === name);
+					if (found)
+						return found;
+				}
+			}
+			return null;
+		}
+
+		// Walk (..) prototype chain
+		const dotdot = items.find(i => i.name === '(..)');
+		if (dotdot && dotdot.children)
+			return this.findProperty(dotdot.children, name);
+
+		return null;
+	}
+
+	// Shared completion: collect all visible property names matching a prefix.
+	// Traverses own properties, private containers, (..) chain, and adds synthetic 'prototype'.
+	// followPrototype: true to recurse into (..) chain (for top-level variable lookup),
+	// false to show only own properties + private fields + synthetic prototype (for dot-path properties).
+	getCompletableNames(items, prefix, followPrototype = true) {
+		if (!items)
+			return [];
+
+		let names = [];
+
+		// Own non-internal properties
+		for (const item of items) {
+			if (item.name && item.name.startsWith(prefix) && !item.name.startsWith('('))
+				names.push(item.name);
+		}
+
+		// Private fields from (ClassName) containers
+		for (const item of items) {
+			if (this.isPrivateContainer(item) && item.children) {
+				for (const child of item.children) {
+					if (child.name && child.name.startsWith(prefix))
+						names.push(child.name);
+				}
+			}
+		}
+
+		// Synthetic 'prototype' when (..) exists and no real 'prototype' property
+		const dotdot = items.find(i => i.name === '(..)');
+		if (dotdot && 'prototype'.startsWith(prefix) && !items.find(i => i.name === 'prototype'))
+			names.push('prototype');
+
+		// Recurse into (..) chain only when requested (top-level variable completion)
+		if (followPrototype && dotdot && dotdot.children)
+			names = names.concat(this.getCompletableNames(dotdot.children, prefix, true));
+
+		return names;
+	}
+
 	// Toggle an item open (expand it). After the view updates, fires callback.
 	// viewName optionally specifies which view to wait for (e.g. 'modules').
 	toggleOpen(item, callback, viewName) {
@@ -806,7 +1005,7 @@ class DebugMachine extends Machine {
 			return `${p.name}: ${val}`;
 		});
 		
-		if (protoNode) {
+		if (protoNode && !props.find(p => p.name === 'prototype')) {
 			parts.push(`prototype: (..)`);
 		}
 		
@@ -1721,17 +1920,9 @@ class DebugMachine extends Machine {
 
 	resolveDotPath(items, parts, partIndex, fallbackToGlobals, toggledIds = new Set()) {
 		const name = parts[partIndex];
-		if (name.startsWith('#')) {
-			this.searchPrivateField(items, parts, partIndex, toggledIds);
-			return;
-		}
 
-		let found = this.findItem(items, name);
-		
-		// Map 'prototype' to internal '(..)' for instances that don't have an explicit 'prototype' property
-		if (!found && name === 'prototype') {
-			found = this.findItem(items, '(..)');
-		}
+		// Use findProperty for unified lookup (direct, prototype→(..), #private, (..) chain)
+		let found = this.findProperty(items, name);
 
 		// Handle compound names like "new.target", "import.meta" — if not
 		// found, try joining with subsequent parts to match XS internal names
@@ -1762,6 +1953,7 @@ class DebugMachine extends Machine {
 		}
 
 		if (!found) {
+			// findProperty already walked the (..) chain, but those nodes may need expanding
 			const proto = this.findItem(items, '(..)');
 			if (proto) {
 				if (this.isExpandable(proto) && !proto.children) {
@@ -1791,6 +1983,17 @@ class DebugMachine extends Machine {
 					}
 					toggledIds.add(proto.value);
 					this.resolveDotPath(proto.children, parts, partIndex, false, toggledIds);
+					return;
+				}
+			}
+
+			// Check if #private containers need expanding
+			if (name.startsWith('#')) {
+				const unexpanded = items?.filter(i =>
+					this.isPrivateContainer(i) && this.isExpandable(i) && !i.children
+				);
+				if (unexpanded && unexpanded.length > 0) {
+					this.searchPrivateField(items, parts, partIndex, toggledIds);
 					return;
 				}
 			}
@@ -1893,12 +2096,27 @@ class DebugMachine extends Machine {
 			if (found) {
 				// Found the private field — continue resolving remaining parts
 				const isLast = (partIndex === parts.length - 1);
-				if (isLast) {
-					this.printVariable(found, 0);
-					this.showPrompt();
+				if (isLast && this.isExpandable(found) && !found.children) {
+					this.toggleOpen(found, () => {
+						this.cmdPrint([parts.join('.')]);
+					});
+				}
+				else if (isLast) {
+					this.report('eval_print', { variable: found }, undefined, (data) => {
+						this.printVariable(data.variable, 0);
+						this.showPrompt();
+					});
+				}
+				else if (this.isExpandable(found) && !found.children) {
+					this.toggleOpen(found, () => {
+						this.cmdPrint([parts.join('.')]);
+					});
+				}
+				else if (found.children) {
+					this.resolveDotPath(found.children, parts, partIndex + 1, false, toggledIds);
 				}
 				else {
-					this.resolveDotPath(c.children, parts, partIndex, false, toggledIds);
+					this.commandError(`"${parts.slice(0, partIndex + 1).join('.')}" has no properties.`);
 				}
 			}
 			else {
@@ -1925,22 +2143,50 @@ class DebugMachine extends Machine {
 		this.searchGlobalItems(this.view.global, parts);
 	}
 
-	// Walk the global hierarchy: check items at this level, then
-	// recurse into (..) nodes which link up the prototype chain.
+	// Walk the global hierarchy using findProperty for unified lookup.
+	// If a property is found (directly, via prototype→(..), #private, or (..) chain),
+	// delegates to resolveDotPath. Otherwise expands (..) and retries.
 	searchGlobalItems(items, parts) {
 		if (!items || items.length === 0) {
 			this.commandError(`No variable "${parts[0]}" in current scope.`);
 			return;
 		}
-		// Check non-(..) items at this level
 		const name = parts[0];
-		for (const item of items) {
-			if (item.name !== '(..)' && item.name === name) {
+
+		// Use findProperty for unified lookup
+		const found = this.findProperty(items, name);
+		if (found) {
+			// Find which items list contains the result so resolveDotPath starts correctly
+			// If found directly or via prototype mapping, use items directly
+			if (items.find(i => i.name === name) || (name === 'prototype' && items.find(i => i.name === '(..)'))) {
 				this.resolveDotPath(items, parts, 0, false);
-				return;
+			} else {
+				// Found in (..) chain — walk to the level that contains it
+				const walkToLevel = (searchItems) => {
+					if (searchItems.find(i => i.name === name) || (name === 'prototype' && searchItems.find(i => i.name === '(..)'))) {
+						this.resolveDotPath(searchItems, parts, 0, false);
+						return;
+					}
+					if (name.startsWith('#')) {
+						for (const c of searchItems) {
+							if (this.isPrivateContainer(c) && c.children && c.children.find(i => i.name === name)) {
+								this.resolveDotPath(searchItems, parts, 0, false);
+								return;
+							}
+						}
+					}
+					const dd = searchItems.find(i => i.name === '(..)');
+					if (dd && dd.children)
+						walkToLevel(dd.children);
+					else
+						this.resolveDotPath(items, parts, 0, false);
+				};
+				walkToLevel(items);
 			}
+			return;
 		}
-		// Not found here — look inside (..) to go up the chain
+
+		// Not found — (..) may need expanding
 		const dotdot = this.findItem(items, '(..)');
 		if (!dotdot) {
 			this.commandError(`No variable "${name}" in current scope.`);
@@ -1953,12 +2199,8 @@ class DebugMachine extends Machine {
 				return;
 			}
 			this.toggleOpen(dotdot, () => {
-				// View rebuilt after toggle — re-resolve from fresh global view
 				this.resolveGlobalPath(parts);
 			});
-		}
-		else if (dotdot.children) {
-			this.searchGlobalItems(dotdot.children, parts);
 		}
 		else {
 			this.commandError(`No variable "${name}" in current scope.`);

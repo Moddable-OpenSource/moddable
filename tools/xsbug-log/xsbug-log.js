@@ -149,13 +149,24 @@ const xsdbRouter = {
 			input: process.stdin,
 			output: process.stdout,
 			prompt: '(xsdb) ',
-			completer: (line) => {
+			completer: (line, callback) => {
 				const m = this.getMachine(this.activeThreadId);
 				if (m && typeof m.completer === 'function')
-					return m.completer(line);
-				return [[], line];
+					m.completer(line, callback);
+				else
+					callback(null, [[], line]);
 			}
 		});
+
+		// Suppress TAB processing while completions are displayed
+		const origTabComplete = this.rl._tabComplete;
+		this.rl._tabComplete = function(lastKeypressWasTab) {
+			const m = this.completer && this._router?.getMachine(this._router.activeThreadId);
+			if (m && m.completionsShown)
+				return;
+			origTabComplete.call(this, lastKeypressWasTab);
+		};
+		this.rl._router = this;
 
 		this.rl.on('line', (line) => {
 			const active = this.getMachine(this.activeThreadId);
