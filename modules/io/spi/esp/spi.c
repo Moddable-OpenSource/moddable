@@ -253,9 +253,11 @@ void xs_spi_write(xsMachine *the)
 	if (count > 65535)
 		xsRangeError("unsupported byteLength");
 
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 	if (spi->transform)
 		modSPITxSwap16(&spi->config, (uint8_t *)data, (uint16_t)count);
 	else
+#endif
 		modSPITx(&spi->config, (uint8_t *)data, (uint16_t)count);
 }
 
