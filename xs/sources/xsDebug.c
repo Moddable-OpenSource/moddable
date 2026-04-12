@@ -381,7 +381,7 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 
 		the->debugEval = 1;
 
-		mxOverflow(-6);
+		mxOverflow(-5);
 		/* THIS */
 		mxPushSlot(_this);
 		/* FUNCTION */
@@ -390,14 +390,12 @@ txBoolean fxDebugEvalExpression(txMachine* the, txSlot* frame, txSlot* expressio
 		mxPushUndefined();
 		/* FRAME */
 		(--the->stack)->next = the->frame;
-		the->stack->ID = XS_NO_ID;
+		the->stack->ID = 0;
 		the->stack->flag = XS_C_FLAG | (frame->flag & (XS_STRICT_FLAG | XS_FIELD_FLAG));
 		the->stack->kind = XS_FRAME_KIND;
 		the->stack->value.frame.code = the->code;
 		the->stack->value.frame.scope = the->scope;
 		the->frame = the->stack;
-		/* COUNT */
-		mxPushInteger(0);
 		/* ENVIRONMENT */
 		mxPushUndefined();
 		closures = fxNewEnvironmentInstance(the, C_NULL);
