@@ -251,7 +251,7 @@ class DebugMachine extends Machine {
 	}
 
 	_syncCompleter(line) {
-		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'info', 'list', 'backtrace', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
+		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
 		const args = line.trimStart().split(/\s+/);
 		
 		if (args.length === 1 && !line.match(/\s$/)) {
@@ -1285,7 +1285,7 @@ class DebugMachine extends Machine {
 			case 'list': case 'l':
 				this.cmdList(args);
 				break;
-			case 'backtrace': case 'bt':
+			case 'backtrace': case 'bt': case 'where':
 				this.cmdBacktrace();
 				break;
 			case 'frame': case 'f':
@@ -2558,7 +2558,7 @@ class DebugMachine extends Machine {
 					title: "Inspection & Navigation",
 					items: [
 						{ keys: "list, l [file:]<line>", desc: "Show source around line (default: current)" },
-						{ keys: "backtrace, bt", desc: "Print call stack" },
+						{ keys: "backtrace, bt, where", desc: "Print call stack" },
 						{ keys: "frame <n>, f <n>", desc: "Select stack frame" },
 						{ keys: "print, p [expr]", desc: "Print variable (see below)" },
 						{ keys: "info locals", desc: "Print local variables" },
