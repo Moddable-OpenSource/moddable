@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -219,6 +219,13 @@ class ApplicationBehavior extends DebugBehavior {
 	onAppearanceChanged(application, which) {
 		this.appearance = which;
 		this.onColorsChanged(application);
+		if (!application.first) {
+			application.add(new MainContainer(this));
+			this.doOpenView();
+			
+			if (this.onOpenFileList)
+				application.defer("onOpenFileCallback");
+		}
 	}
 	onColorsChanged(application) {
 		let appearance = this.colors;
@@ -232,10 +239,7 @@ class ApplicationBehavior extends DebugBehavior {
 			application.distribute("onMachineSelected", this.currentMachine, this.currentTab);
 		}
 	}
-	onDisplaying(application) {
-		application.add(new MainContainer(this));
-		this.doOpenView();
-	}
+	// onDisplaying deferred to onAppearanceChanged so that appearance is known
 	selectMachine(machine, tab = 0) {
 		if ((this.currentMachine != machine) || (this.currentTab != tab)) {
 			application.distribute("onMachineDeselected", this.currentMachine, this.currentTab);
@@ -291,11 +295,22 @@ class ApplicationBehavior extends DebugBehavior {
 		application.invalidateMenus();
 	}
 	onOpenFile(application, path) {
-		let info = system.getFileInfo(path);
-		if (info.directory)
-			application.defer("doOpenDirectoryCallback", new String(path));
-		else {
-			application.defer("doOpenFileCallback", new String(path));
+		if (this.onOpenFileList)
+			this.onOpenFileList.push(new String(path));
+		else
+			this.onOpenFileList = [new String(path)];
+	}
+	onOpenFileCallback(application) {
+		if (!application.first) return;
+		
+		const paths = this.onOpenFileList ?? [];
+		delete this.onOpenFileList;
+		for (let path of paths) {
+			let info = system.getFileInfo(path);
+			if (info?.directory)
+				this.doOpenDirectoryCallback(application, path);
+			else if (info)
+				this.doOpenFileCallback(application, path);
 		}
 	}
 	onPathChanged(application, path) {
