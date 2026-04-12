@@ -209,7 +209,7 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 	slot->value.instance.prototype = C_NULL;
 	while (frame->next) {
 		txSlot* environment = mxFrameToEnvironment(frame);
-		txSlot* function = frame + 3; 
+		txSlot* function = frame + 2;
 		if (function->kind == XS_REFERENCE_KIND) {
 			function = function->value.reference;
 			if (mxIsFunction(function)) {

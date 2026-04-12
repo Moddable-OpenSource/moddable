@@ -204,7 +204,7 @@ void fxDeleteProfiler(txMachine* the, void* stream)
 txProfilerRecord* fxFrameToProfilerRecord(txMachine* the, txSlot* frame)
 {
 	txProfiler* profiler = the->profiler;
-	txSlot* function = frame + 3;
+	txSlot* function = frame + 2;
 	if (function->kind == XS_REFERENCE_KIND) {
 		function = function->value.reference;
 		if (mxIsFunction(function)) {
