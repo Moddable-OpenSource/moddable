@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -25,7 +25,7 @@ static txBoolean fx_deepEqualInstances(txMachine* the, txSlot* limit, txBoolean 
 static txBoolean fx_deepEqualProperties(txMachine* the, txSlot* limit, txBoolean strict, txID id);
 static txBoolean fx_deepEqualSlots(txMachine* the, txSlot* limit, txBoolean strict);
 
-static txBoolean ICACHE_RODATA_ATTR gxSpecialKinds[XS_IDS_KIND + 1] = {
+static txBoolean ICACHE_RODATA_ATTR gxSpecialKinds[XS_RAW_JSON_KIND + 1] = {
 	0, // XS_UNDEFINED_KIND
 	0, // XS_NULL_KIND
 	1, // XS_BOOLEAN_KIND
@@ -91,6 +91,14 @@ static txBoolean ICACHE_RODATA_ATTR gxSpecialKinds[XS_IDS_KIND + 1] = {
 	0, // XS_BUFFER_INFO_KIND
 	0, // XS_MODULE_SOURCE_KIND
 	0, // XS_IDS_KIND
+//
+	0, // XS_DISPOSABLE_STACK_KIND,
+	0, // XS_ASYNC_DISPOSABLE_STACK_KIND,
+	0, // XS_BREAKPOINT_KIND,
+#if mxModuleStuff
+	0, //XS_MODULE_STUFF_KIND,
+#endif
+	0, // XS_RAW_JSON_KIND,
 };
 
 void fx_deepEqual(txMachine* the)
