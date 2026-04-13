@@ -113,7 +113,7 @@ When using **mcconfig** with microcontrollers that use a serial port for JavaScr
 There are a few important differences between `mcrun` and `mcconfig`:
 
 - The manifest used by `mcrun` must not reference any files which build to native code (e.g. `.c` or `.cpp` files) as a mod can only contain JavaScript
-- `mcrun` supports `-t build`` (but not other [target values](#buildtargets)).
+- `mcrun` supports `-t build` (but not other [target values](#buildtargets)).
 - `config` properties are available from the `mod/config` module instead of `mc/config` (see the `config` section of the [Manifest](./manifest.md) documentation for more information about `config` properties)
 
 ### Arguments
@@ -398,7 +398,6 @@ Workers are how JavaScript implements native threads. xsdb follows the model of 
 
 ```shell
 (xsdb) info threads
-(xsdb) ino threads
   Id   Name               State
 * 1    simple             Stopped at /Users/peter/Projects/moddable/examples/base/worker/simple/main.js:23
   3973 simpleworker       Running
@@ -422,7 +421,7 @@ xsdb supports debugging TypeScript, just as xsbug does.
 
 <a id="test-examples"></a>
 ## test-examples
-The text-examples tool batch tests Moddable SDK examples or any collection of Moddable SDK projects. The tool works by building, installing, and launching each project found in a recursive search of the specified directory. This is valuable when making significant changes to a host platform, such as updating the host API (ESP-IDF, Zephyr) to a significant new version. It can also identify issues with changes to the Moddable SDK itself (the XS engine, build system, etc.).
+The test-examples tool batch tests Moddable SDK examples or any collection of Moddable SDK projects. The tool works by building, installing, and launching each project found in a recursive search of the specified directory. This is valuable when making significant changes to a host platform, such as updating the host API (ESP-IDF, Zephyr) to a significant new version. It can also identify issues with changes to the Moddable SDK itself (the XS engine, build system, etc.).
 
 Launching the example is not an in-depth test. Still, it identifies many problems, including host API conflicts that cause a project to fail to launch, significant changes in memory requirements, and API incompatibilities. A successful launch is evaluated by the absence of an unhandled exception or Promise rejection over several seconds of normal execution. Normal execution is detected by the presence of expected instrumentation logs at one-second intervals. This is imperfect, but a useful first-level test. Future work may expand this to allow for more precise results. If an embedded project uses the network, test-examples waits for an IP address to be acquired before considering the application launched.
 
