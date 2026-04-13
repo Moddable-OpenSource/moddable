@@ -67,7 +67,7 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 
 - `manifest`: the manifest file. Defaults to the `manifest.json` file in the current directory or in the parent directory of the current directory.
 - `-d`: to build a debug instrumented version and launch the default debugger (usually xsbug)
-- `-dx`: to build a debug instrumented version and launch the [xsbug](./xs/xsbug.md) debugger
+- `-dx`: to build a debug instrumented version and launch the [xsbug](../xs/xsbug.md) debugger
 - `-dl`: to build a debug instrumented version and launch the [xsdb](#xsdb) debugger
 - `-dn`: to build a debug instrumented version and not launch any debugger
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
@@ -355,7 +355,7 @@ When using the simulator for debugging, the  `xsbug` debugger shows are two tabs
 <a id="xsdb"></a>
 ## xsdb
 
-xsdb is a command-line JavaScript debugger modeled on the venerable [gdb](https://en.wikipedia.org/wiki/GNU_Debugger). xsdb complements the Moddable SDK's [xsbug GUI debugger](./xs/xsbug.md). xsdb works with JavaScript running on embedded devices and in the Moddable SDK simulator.
+xsdb is a command-line JavaScript debugger modeled on the venerable [gdb](https://en.wikipedia.org/wiki/GNU_Debugger). xsdb complements the Moddable SDK's [xsbug GUI debugger](../xs/xsbug.md). xsdb works with JavaScript running on embedded devices and in the Moddable SDK simulator.
 
 xsdb is designed for three audiences:
 
@@ -363,7 +363,7 @@ xsdb is designed for three audiences:
 2. **Developers creating tools** and workflows that need to interact with an on-device debugger
 3. **Code generators**, such as LLMs, that need to inspect the device state during execution
 
-**Note**: xsdb is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/xsbug-log` directory. 
+**Note**: xsdb is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/xsbug-log` directory.
 
 ### Invoking xsdb
 To use xsdb, pass `-dl` to `mcconfig` and `mcconfig` when building your project:
@@ -428,7 +428,7 @@ Launching the example is not an in-depth test. Still, it identifies many problem
 
 
 ### Running
-**Note**: test-examples is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/test-examples` directory. 
+**Note**: test-examples is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/test-examples` directory.
 
 To run test-examples:
 
