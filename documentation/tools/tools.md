@@ -354,7 +354,7 @@ When using the simulator for debugging, the  `xsbug` debugger shows are two tabs
 <a id="xsdb"></a>
 ## xsdb
 
-xsdb is a command line JavaScript debugger modeled on the venerable [gdb](https://en.wikipedia.org/wiki/GNU_Debugger). xsdb complements the Moddable SDK's [xsbug GUI debugger](./xs/xsbug.md). xsdb works with JavaScript running on embedded devices and in the Moddable SDK simulator.
+xsdb is a command-line JavaScript debugger modeled on the venerable [gdb](https://en.wikipedia.org/wiki/GNU_Debugger). xsdb complements the Moddable SDK's [xsbug GUI debugger](./xs/xsbug.md). xsdb works with JavaScript running on embedded devices and in the Moddable SDK simulator.
 
 xsdb is designed for three audiences:
 
@@ -367,13 +367,13 @@ To use xsdb, pass `-dl` to `mcconfig` and `mcconfig` when building your project:
 
 ```shell
 mcconfig -dl -m -p esp32/moddable_six
-mcrun -dl -p -p sim
+mcrun -dl -p sim
 ```
 
 Note that `mcrun` does not yet support `xsdb` on all targets.
 
 ### Output mode
-To support these diverse uses, xsdb has two output modes: test and JSON. Text mode generates output similar to gdb. JSON mode outputs structured JSON data which can be reliably parsed by code without the usually fragility of text scraping. JSON output mode adapts gdb's "machine mode" to the JavaScript ecosystem  To set the output mode:
+To support these diverse uses, xsdb has two output modes: test and JSON. Text mode generates output similar to gdb. JSON mode outputs structured JSON data which can be reliably parsed by code without the usual fragility of text scraping. JSON output mode adapts gdb's "machine mode" to the JavaScript ecosystem.  To set the output mode:
 
 ```shell
 set output text
@@ -381,7 +381,7 @@ set output json
 ```
 
 ### Saved state
-xsdb automatically saves certain configuration settings and restores them on the next session. The state is saved in the project directory in a hidden `.xsdb` file. The state is per-session so each project has its own sesssion state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether ot break on start-up, and some other more obscure settings.
+xsdb automatically saves certain configuration settings and restores them on the next session. The state is saved in the project directory in a hidden `.xsdb` file. The state is per-session so each project has its own session state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether to break on start-up, and some other more obscure settings.
 
 ### xsdb commands
 The built-in help provides a complete list of available xsdb commands. The commands are divided into control flow, breakpoints, inspection, navigation, settings, and control.
@@ -402,7 +402,7 @@ Workers are how JavaScript implements native threads. xsdb follows the model of 
 ```
 
 ### Source files
-There are signficant differences between the JavaScript runtime used by the XS JavaScript engine and the native runtime gdb expects. This difference becomes apparent when setting breakpoints using a file name. gdb "knows" the files your project uses because they are loaded by the runtime. xsdb only learns which files are in use when execute. This means that you sometimes need to provide xsdb a full path, especially at start-up before your target JavaScript has executed.
+There are significant differences between the JavaScript runtime used by the XS JavaScript engine and the native runtime gdb expects. This difference becomes apparent when setting breakpoints using a file name. gdb "knows" the files your project uses because they are loaded by the runtime. xsdb only learns which files are in use when executed. This means that you sometimes need to provide xsdb a full path, especially at start-up before your target JavaScript has executed.
 
 When you set a breakpoint with a relative path, xsdb tries to find the file by checking the JavaScript source files that have executed. If that fails, it searches your project directory. If your source file isn't found, you can specify it using the full path.
 
@@ -416,4 +416,3 @@ These same rules apply to the `list` command.
 
 ### TypeScript
 xsdb supports debugging TypeScript, just as xsbug does.
-
