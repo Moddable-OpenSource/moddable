@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: January 12, 2026
+Revised: April 13, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
@@ -32,7 +32,7 @@ This document provides a guide to building apps for the ESP32 line of SoCs from 
 	* [Build configuration](#usb_build)
 	* [TinyUSB](#usb_tinyusb) (esp32s2, esp32s3)
 	* [Serial-JTAG](#usb_serial_jtag) (esp32s3, esp32c3, esp32c6, esp32h2)
-* [Using ESP Registry components](#idf-components)
+* [Using Components from the ESP Component Registry and ESP-IDF](#idf-components)
 
 
 <a id="overview"></a>
@@ -1114,8 +1114,9 @@ These are some of the devices use this technique:
 
 <a id="idf-components"></a>
 
-## Using ESP Registry components
+## Using Components from the ESP Component Registry and ESP-IDF
 
+### ESP Component Registry
 The [ESP Component Registry](https://components.espressif.com/) contains many components and libraries for the Espressif devices.
 
 You can write modules that expose the functionality of these components to your JavaScript modules.
@@ -1135,3 +1136,18 @@ Add a `dependency` property in the `platforms`:`esp32` section of the manifest:
 The library and include files from the dependencies will be loaded from the ESP Registry automatically and made available to your project. You can then write your module with a native part to interface with the component.
 
 The [onewire module](https://github.com/Moddable-OpenSource/moddable/tree/public/modules/drivers/onewire) demonstrates the use of `dependency`.
+
+### ESP-IDF
+
+Components built into the ESP-IDF can be added as a dependency to your build using `dependency` property in the `platforms`:`esp32` section of the manifest:
+
+```json
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_driver_i2c" }
+			]
+		}
+	}
+```
+The [ST7789 P8](https://github.com/Moddable-OpenSource/moddable/blob/public/modules/drivers/st7789_p8/st7789_p8.js) module demonstrates this use of `dependency`.
