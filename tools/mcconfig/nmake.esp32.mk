@@ -17,6 +17,7 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 HOST_OS = win
 
 !IF "$(IDF_PATH)"==""
@@ -28,10 +29,12 @@ HOST_OS = win
 !CMDSWITCHES -S
 CMAKE_LOG_LEVEL = VERBOSE
 IDF_PY_LOG_FLAG = -v
+KCONFIG_REPORT_VERBOSITY = verbose
 !ELSE
 !CMDSWITCHES +S
 CMAKE_LOG_LEVEL = ERROR
 IDF_PY_LOG_FLAG = -n
+KCONFIG_REPORT_VERBOSITY = quiet
 !ENDIF
 
 !IF "$(ESP32_SUBCLASS)"==""
