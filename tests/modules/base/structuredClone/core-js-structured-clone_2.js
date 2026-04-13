@@ -1,7 +1,6 @@
 /*---
 description: adapted from https://github.com/zloirock/core-js/blob/master/tests/tests/web.structured-clone.js
 flags: [module]
-includes: [compareArray.js]
 ---*/
 
 import { structuredClone, GLOBAL, NODE, from, assign, getPrototypeOf, keys, fromSource, QUnit, cloneTest, cloneObjectTest } from "./core-js-structured-clone_FIXTURE.js"
