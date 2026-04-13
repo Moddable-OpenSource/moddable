@@ -21,7 +21,8 @@ To build the tools themselves, and to build and run apps in the Moddable simulat
 * [mcbundle](#mcbundle)
 * [mchex](#mchex)
 * [Simulator](#simulator) (mcsim)
-* [xsdb](xsdb)
+* [xsdb](#xsdb)
+* [test-examples](#test-examples)
 
 <a id="mcconfig"></a>
 ## mcconfig
@@ -362,6 +363,8 @@ xsdb is designed for three audiences:
 2. **Developers creating tools** and workflows that need to interact with an on-device debugger
 3. **Code generators**, such as LLMs, that need to inspect the device state during execution
 
+**Note**: xsdb is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/xsbug-log` directory. 
+
 ### Invoking xsdb
 To use xsdb, pass `-dl` to `mcconfig` and `mcconfig` when building your project:
 
@@ -416,3 +419,60 @@ These same rules apply to the `list` command.
 
 ### TypeScript
 xsdb supports debugging TypeScript, just as xsbug does.
+
+<a id="test-examples"></a>
+## test-examples
+The text-examples tool batch tests Moddable SDK examples or any collection of Moddable SDK projects. The tool works by building, installing, and launching each project found in a recursive search of the specified directory. This is valuable when making significant changes to a host platform, such as updating the host API (ESP-IDF, Zephyr) to a significant new version. It can also identify issues with changes to the Moddable SDK itself (the XS engine, build system, etc.).
+
+Launching the example is not an in-depth test. Still, it identifies many problems, including host API conflicts that cause a project to fail to launch, significant changes in memory requirements, and API incompatibilities. A successful launch is evaluated by the absence of an unhandled exception or Promise rejection over several seconds of normal execution. Normal execution is detected by the presence of expected instrumentation logs at one-second intervals. This is imperfect, but a useful first-level test. Future work may expand this to allow for more precise results. If an embedded project uses the network, test-examples waits for an IP address to be acquired before considering the application launched.
+
+
+### Running
+**Note**: test-examples is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/test-examples` directory. 
+
+To run test-examples:
+
+```shell
+cd $MODDABLE/tools/test-examples
+node ./test-examples ./index.js esp32/moddable_six --dir $MODDABLE/examples/base ```
+```
+
+After a run is complete, test-examples stores `report.json` in with a complete summary of each test. This includes a detailed log, which can be invaluable in diagnosing failures.
+
+You can also run on the simulator:
+
+```shell
+node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base ```
+```
+
+If you have set `$UPLOAD_PORT` in your environment, test-examples respects the setting. This is particularly useful when testing with several devices connected to your computer.
+
+To run a single example, use `--example` in place of `--dir`:
+
+```shell
+node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base/timers ```
+```
+
+If you terminate a test run before it is complete, you can resume execution using `--continue`. This depends on the `report.json` generated when test-examples exists.
+
+
+```shell
+node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base --continue
+```
+
+Sometimes you only want to build, and not install and launch. Other times you may want to guarantee a clean build (the default is incremental builds, which is faster for re-testing). Use the `--mode` and `--clean` options.
+
+```shell
+node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base --mode build --clean
+```
+
+For tests that run on an embedded device using Wi-Fi, it may be necessary to provide the Wi-Fi credentials. These are passed on to `mcconfig` when building the project.
+
+```shell
+node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/network.http --ssid "My Wi-Fi" --password "[secret]"
+```
+
+### Implementation notes
+
+test-examples uses [xsdb](#xsdb) to monitor the execution of the example being tested.
+
