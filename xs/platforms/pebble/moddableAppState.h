@@ -56,9 +56,6 @@ typedef struct {
 	// pebble-files
 	char					*root;
 
-	// pebble-touch
-	void				*touch;
-
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD)

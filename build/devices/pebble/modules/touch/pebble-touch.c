@@ -31,8 +31,6 @@
 #include "services/common/event_service.h"
 #include "drivers/touch/touch_sensor.h"
 
-#include "moddableAppState.h"
-
 typedef struct {
 	xsMachine *the;
 	xsSlot obj;
@@ -68,7 +66,6 @@ void xs_touch_destructor(void *data)
 	if (!pt) return;
 	touch_sensor_set_enabled(false);
 	event_service_client_unsubscribe(&pt->event_info);
-	setModdableAppState(touch, C_NULL);
 	c_free(pt);
 }
 
@@ -133,10 +130,7 @@ void xs_touch_sample(xsMachine *the)
 		xsmcSet(xsVar(0), xsID_id, xsVar(1));
 	}
 
-	if (TouchEvent_Liftoff == pt->type) {
-		pt->haveSample = 0;
-		return;
-	}
+	pt->haveSample = 0;
 }
 
 void prv_handle_touch_event(PebbleEvent *event, void *context)
