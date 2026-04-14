@@ -2995,7 +2995,15 @@ export class Tool extends TOOL {
 						this.environment[name] = `${this.environment[name]} ${value}`;
 				}
 				else {
-					if (typeof value == "string") {
+					// If the shell already provides this variable and it hasn't been set
+					// by the tool internally, prefer the shell value over the manifest
+					// default so user-configured paths (e.g. xs-dev install locations)
+					// are not overridden by the manifest's default assumptions.
+					const shellValue = this.getenv(name);
+					if (shellValue !== undefined && !(name in this.environment)) {
+						value = shellValue;
+					}
+					else if (typeof value == "string") {
 						const dotSlash = "." + this.slash;
 						value = this.resolveVariable(value);
 						if (value.startsWith(dotSlash)) {
