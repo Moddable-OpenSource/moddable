@@ -90,6 +90,7 @@ static uint8_t buffer1[128];
 
 static int8_t isUART = 0;		// 0 CDC, 1 UART
 static int8_t gProbing = 1;
+static int8_t gCDCDisconnected = 0;
 
 static const char *strstr_l(const char *src, int src_l, const char *search)
 {
@@ -242,10 +243,13 @@ WEAK void ESP_put(uint8_t *c, int count)
 	if (gProbing || isUART)
 		uart_write_bytes(USE_UART, (char *)c, count);
 	if (gProbing || !isUART) {
+		if (gCDCDisconnected) return;
 		while (count > 0) {
 			int sent = usb_serial_jtag_write_bytes(c, count, 10);
-			if (sent <= 0)
+			if (sent <= 0) {
+				gCDCDisconnected = 1;		// if write fails, we're doomed because we don't retry. It proabbly means the CDC connection is down, so stop using it
 				break;
+			}
 			c += sent;
 			count -= sent;
 		}
