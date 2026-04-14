@@ -53,7 +53,7 @@ static const xsHostHooks xsTouchHooks = {
 	NULL
 };
 
-#if CAPABILITY_HAS_TOUCHSCREEN
+#if CONFIG_TOUCH
 
 #else
 	void touch_sensor_set_enabled(bool enabled);
