@@ -1326,6 +1326,10 @@ class DebugMachine extends Machine {
 		console.log('Continuing.');
 		this.resume();
 		this.doGo();
+		// doStep() from ^C sets breakOnStartFlag on the device when there's no JS frame.
+		// doGo() doesn't clear it, so explicitly clear the stale flag if breakOnStart is off.
+		if (!this.breakOnStart)
+			this.doClearBreakpoint("start", "0");
 	}
 
 	cmdNext() {
