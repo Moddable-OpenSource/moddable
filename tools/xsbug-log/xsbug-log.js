@@ -480,6 +480,9 @@ function launch() {
 					else if (xsdbRouter.rl)
 						xsdbRouter.rl.prompt(true);
 				}
+
+				if (!xsdbRouter.machines.some(m => m))
+					xsdbRouter.nextThreadId = 1;
 			}
 
 			if ((0 === --connections) && autoexit)
