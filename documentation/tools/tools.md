@@ -433,7 +433,7 @@ To run test-examples:
 
 ```shell
 cd $MODDABLE/tools/test-examples
-node ./test-examples ./index.js esp32/moddable_six --dir $MODDABLE/examples/base ```
+node ./index.js esp32/moddable_six --dir $MODDABLE/examples/base
 ```
 
 After a run is complete, test-examples stores `report.json` in with a complete summary of each test. This includes a detailed log, which can be invaluable in diagnosing failures.
@@ -441,7 +441,7 @@ After a run is complete, test-examples stores `report.json` in with a complete s
 You can also run on the simulator:
 
 ```shell
-node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base ```
+node ./index.js sim/moddable_six --dir $MODDABLE/examples/base
 ```
 
 If you have set `$UPLOAD_PORT` in your environment, test-examples respects the setting. This is particularly useful when testing with several devices connected to your computer.
@@ -449,26 +449,26 @@ If you have set `$UPLOAD_PORT` in your environment, test-examples respects the s
 To run a single example, use `--example` in place of `--dir`:
 
 ```shell
-node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base/timers ```
+node ./index.js sim/moddable_six --dir $MODDABLE/examples/base/timers
 ```
 
 If you terminate a test run before it is complete, you can resume execution using `--continue`. This depends on the `report.json` generated when test-examples exists.
 
 
 ```shell
-node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base --continue
+node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --continue
 ```
 
 Sometimes you only want to build, and not install and launch. Other times you may want to guarantee a clean build (the default is incremental builds, which is faster for re-testing). Use the `--mode` and `--clean` options.
 
 ```shell
-node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/base --mode build --clean
+node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --mode build --clean
 ```
 
 For tests that run on an embedded device using Wi-Fi, it may be necessary to provide the Wi-Fi credentials. These are passed on to `mcconfig` when building the project.
 
 ```shell
-node ./test-examples ./index.js sim/moddable_six --dir $MODDABLE/examples/network.http --ssid "My Wi-Fi" --password "[secret]"
+node ./index.js sim/moddable_six --dir $MODDABLE/examples/network.http --ssid "My Wi-Fi" --password "[secret]"
 ```
 
 ### Implementation notes
