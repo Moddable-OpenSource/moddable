@@ -509,6 +509,12 @@ extern uint8_t gModWriteAlign;
 
 char *getModAtom(uint32_t atomTypeIn, int *atomSizeOut);
 
+/* Debug connection */
+
+#ifdef __XS__
+	extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
