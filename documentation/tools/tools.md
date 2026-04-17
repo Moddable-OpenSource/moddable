@@ -465,7 +465,7 @@ If you have set `$UPLOAD_PORT` in your environment, test-examples respects the s
 To run a single example, use `--example` in place of `--dir`:
 
 ```shell
-node ./index.js sim/moddable_six --dir $MODDABLE/examples/base/timers
+node ./index.js sim/moddable_six --example $MODDABLE/examples/base/timers
 ```
 
 If you terminate a test run before it is complete, you can resume execution using `--continue`. This depends on the `report.json` generated when test-examples exists.
@@ -474,7 +474,7 @@ If you terminate a test run before it is complete, you can resume execution usin
 node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --continue
 ```
 
-Sometimes you only want to build, and not install and launch. Other times you may want to guarantee a clean build (the default is incremental builds, which is faster for re-testing). Use the `--mode` and `--clean` options.
+Sometimes you only want to build, but not install and launch. Other times you may want to guarantee a clean build (the default is incremental builds, which is faster for re-testing). Use the `--mode` and `--clean` options.
 
 ```shell
 node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --mode build --clean
