@@ -159,24 +159,22 @@ void modSPIInit(modSPIConfiguration config)
 		spi_bus_config_t buscfg;
         uint8_t i;
 
-        gSPITransactionBuffer[0] = heap_caps_malloc(SPI_BUFFER_SIZE * kTransactions, MALLOC_CAP_DMA);      // use DMA capable memory for SPI driver
-        for (i = 1; i < kTransactions; i++)
-            gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
-		memset(&buscfg, 0, sizeof(buscfg));
+		gSPITransactionBuffer[0] = heap_caps_malloc(SPI_BUFFER_SIZE * kTransactions, MALLOC_CAP_DMA);      // use DMA capable memory for SPI driver
+		for (i = 1; i < kTransactions; i++)
+			gSPITransactionBuffer[i] = (uint32_t *)(SPI_BUFFER_SIZE + (uint8_t *)gSPITransactionBuffer[i - 1]);
+		c_memset(&buscfg, 0, sizeof(buscfg));
 		buscfg.miso_io_num = (254 == config->miso_pin) ? MODDEF_SPI_MISO_PIN : ((255 == config->miso_pin) ? -1 : config->miso_pin);
 		buscfg.mosi_io_num = (254 == config->mosi_pin) ? MODDEF_SPI_MOSI_PIN : ((255 == config->mosi_pin) ? -1 : config->mosi_pin);
 		buscfg.sclk_io_num = (254 == config->clock_pin) ? MODDEF_SPI_SCK_PIN : ((255 == config->clock_pin) ? -1 : config->clock_pin);
 		buscfg.quadwp_io_num = -1;
 		buscfg.quadhd_io_num = -1;
-        buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;
+		buscfg.max_transfer_sz = MODDEF_SPI_ESP32_TRANSACTIONSIZE;
 
-	#if kCPUESP32S3 || kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
+	 #if kCPUESP32S2
+	 	ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
+	 #else
 		ret = spi_bus_initialize(config->spiPort, &buscfg, SPI_DMA_CH_AUTO);
-	#elif kCPUESP32S2
-		ret = spi_bus_initialize(config->spiPort, &buscfg, config->spiPort);
-	#else
-		ret = spi_bus_initialize(config->spiPort, &buscfg, 1);
-	#endif
+	 #endif
 		if (ret) {
             free(gSPITransactionBuffer[0]);
             gSPITransactionBuffer[0] = NULL;
@@ -190,8 +188,8 @@ void modSPIInit(modSPIConfiguration config)
 		xTaskCreate(spiLoop, "spiLoop", 2048 + XT_STACK_EXTRA_CLIB, NULL, 10, &gSPITask);
 	}
 
-    spi_device_interface_config_t devcfg;
-	memset(&devcfg, 0, sizeof(devcfg));
+	spi_device_interface_config_t devcfg;
+	c_memset(&devcfg, 0, sizeof(devcfg));
 	devcfg.clock_speed_hz = config->hz;
 	devcfg.mode = config->mode & 3;
 	devcfg.spics_io_num = config->cs_pin;		// set to -1 if none
@@ -199,6 +197,7 @@ void modSPIInit(modSPIConfiguration config)
 	devcfg.pre_cb = NULL;
 	devcfg.post_cb = postTransfer;
 	devcfg.input_delay_ns = config->miso_delay;
+	devcfg.flags = SPI_DEVICE_NO_DUMMY;		// allow faster speeds
 
 	ret = spi_bus_add_device(config->spiPort, &devcfg, &config->spi_dev);
 	if (ret) {
@@ -512,7 +511,7 @@ void modSPITxRx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 
 	modSPIActivateConfiguration(config);
 
-	memset(&t, 0, sizeof(t));
+	c_memset(&t, 0, sizeof(t));
 	t.length = 8 * count;
 	t.tx_buffer = data;
 
