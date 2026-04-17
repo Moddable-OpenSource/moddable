@@ -34,7 +34,7 @@
 	#define kModInstrumentationHasTurns 1
 #endif
 
-#if (nrf52 && !pebble) || ESP32
+#if (nrf52 && !pebble) || ESP32 || (__ZEPHYR__ && IS_ENABLED(CONFIG_CPU_LOAD))
 	#define kModInstrumentationHasCPU 1
 #endif
 
