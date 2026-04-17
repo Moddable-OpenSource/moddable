@@ -11424,10 +11424,10 @@ txInteger fxFinalSigmaToLower(txMachine* the, txInteger where, txInteger charact
     s += where + 2;
     for (;;) {
 		s = mxStringByteDecode(s, &character);
-    	if (character == C_EOF)
-    		return 0x03c2;
+		if (character == C_EOF)
+			return 0x03c2;
 		if (!fxIsInCharSet(character, gxCharSet_Binary_Property_Case_Ignorable, mxCharSet_Binary_Property_Case_Ignorable))
-            break;
+			break;
     }
 	if (!fxIsInCharSet(character, gxCharSet_Binary_Property_Cased, mxCharSet_Binary_Property_Cased))
 		return 0x03c2;
