@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -83,9 +83,21 @@ void xs_BufferOut_init(xsMachine *the)
 void xs_BufferOut_begin(xsMachine *the)
 {
 	xsBufferOut bo = xsmcGetHostData(xsThis);
-	int x = xsmcToInteger(xsArg(0));
-	int y = xsmcToInteger(xsArg(1));
-	int width = xsmcToInteger(xsArg(2));
+	int x, y, width;
+	if (1 == xsmcArgc) {
+		xsSlot tmp;
+		xsmcGet(tmp, xsArg(0), xsID_x);
+		x = xsmcToInteger(tmp);
+		xsmcGet(tmp, xsArg(0), xsID_y);
+		y = xsmcToInteger(tmp);
+		xsmcGet(tmp, xsArg(0), xsID_width);
+		width = xsmcToInteger(tmp);
+	}
+	else {
+		x = xsmcToInteger(xsArg(0));
+		y = xsmcToInteger(xsArg(1));
+		width = xsmcToInteger(xsArg(2));
+	}
 
 	bo->offset = pixelsToBytes((bo->width * y) + x);
 	bo->windowWidth = pixelsToBytes(width);
