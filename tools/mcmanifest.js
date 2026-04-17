@@ -1148,7 +1148,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			if (tool.environment.USE_USB == 1)
 				tweakStr += "espressif__esp_tinyusb";
 			tweakStr += ")\n";
-			tool.writeFileString(cmakeTweakFile, tweakStr);
+			if (tool.isDirectoryOrFile(cmakeTweakFile) != 1 || tool.readFileString(cmakeTweakFile) != tweakStr)
+				tool.writeFileString(cmakeTweakFile, tweakStr);
 
 		}
 	}
