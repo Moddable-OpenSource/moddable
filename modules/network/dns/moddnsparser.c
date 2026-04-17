@@ -187,7 +187,7 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 				c_memcpy(ip, position, 4);
 				xsVar(1) = xsStringBuffer(NULL, 4 * 5);
 				out = xsmcToString(xsVar(1));
-#ifndef __ets__
+#if !defined(__ets__) || __ZEPHYR__
 				c_snprintf(out, 4 * 5, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #else
 				itoa(ip[0], out, 10); out += c_strlen(out); *out++ = '.';
