@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: April 13, 2026
+Revised: April 17, 2026
 
 ## About this Document
 
@@ -363,7 +363,12 @@ xsdb is designed for three audiences:
 2. **Developers creating tools** and workflows that need to interact with an on-device debugger
 3. **Code generators**, such as LLMs, that need to inspect the device state during execution
 
-**Note**: xsdb is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/xsbug-log` directory.
+**Note**: xsdb is implemented using Node. Before running it the first time, you must execute `npm install`.
+
+```
+cd $MODDABLE/tools/xsbug-log
+npm install
+```
 
 ### Invoking xsdb
 To use xsdb, pass `-dl` to `mcconfig` and `mcconfig` when building your project:
@@ -376,7 +381,7 @@ mcrun -dl -p sim
 Note that `mcrun` does not yet support `xsdb` on all targets.
 
 ### Output mode
-To support these diverse uses, xsdb has two output modes: test and JSON. Text mode generates output similar to gdb. JSON mode outputs structured JSON data which can be reliably parsed by code without the usual fragility of text scraping. JSON output mode adapts gdb's "machine mode" to the JavaScript ecosystem.  To set the output mode:
+To support diverse uses, xsdb has two output modes: test and JSON. Text mode generates output similar to gdb. JSON mode outputs structured JSON data which can be reliably parsed by code without the fragility of text scraping. JSON output mode adapts gdb's "machine mode" to the JavaScript ecosystem.  To set the output mode:
 
 ```shell
 set output text
@@ -384,7 +389,7 @@ set output json
 ```
 
 ### Saved state
-xsdb automatically saves certain configuration settings and restores them on the next session. The state is saved in the project directory in a hidden `.xsdb` file. The state is per-session so each project has its own session state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether to break on start-up, and some other more obscure settings.
+xsdb automatically saves certain configuration settings and restores them on the next session. State is saved in the project directory in a hidden `.xsdb` file. State is per-session so each project has its own session state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether to break at start-up, and some other more obscure settings.
 
 ### xsdb commands
 The built-in help provides a complete list of available xsdb commands. The commands are divided into control flow, breakpoints, inspection, navigation, settings, and control.
@@ -393,8 +398,11 @@ The built-in help provides a complete list of available xsdb commands. The comma
 (xsdb) help
 ```
 
+### Exiting
+The `quit` or `q` command is the preferred way to exit xsdb. You can also use `^D` (disconnect). Note that `^C` attempts to break execution of the running JavaScript, so it cannot be used to exit xsdb.
+
 ### Threads / Workers
-Workers are how JavaScript implements native threads. xsdb follows the model of gdb and calls these threads:
+Workers are how JavaScript implements native threads. xsdb follows the model of gdb and calls these workers "threads":
 
 ```shell
 (xsdb) info threads
@@ -423,11 +431,19 @@ xsdb supports debugging TypeScript, just as xsbug does.
 ## test-examples
 The test-examples tool batch tests Moddable SDK examples or any collection of Moddable SDK projects. The tool works by building, installing, and launching each project found in a recursive search of the specified directory. This is valuable when making significant changes to a host platform, such as updating the host API (ESP-IDF, Zephyr) to a significant new version. It can also identify issues with changes to the Moddable SDK itself (the XS engine, build system, etc.).
 
-Launching the example is not an in-depth test. Still, it identifies many problems, including host API conflicts that cause a project to fail to launch, significant changes in memory requirements, and API incompatibilities. A successful launch is evaluated by the absence of an unhandled exception or Promise rejection over several seconds of normal execution. Normal execution is detected by the presence of expected instrumentation logs at one-second intervals. This is imperfect, but a useful first-level test. Future work may expand this to allow for more precise results. If an embedded project uses the network, test-examples waits for an IP address to be acquired before considering the application launched.
+A successful launch is evaluated by the absence of an unhandled exception or Promise rejection over several seconds of normal execution. Normal execution is detected by the presence of expected instrumentation logs at expected one-second intervals. This is imperfect, but a useful test. It identifies many problems, including host API conflicts that cause a project to fail to launch, significant increases in memory requirements, and API incompatibilities. Future work may expand this to allow for more precise results.
 
+If an embedded project uses the network, test-examples waits for an IP address to be acquired before considering the application launched and beginning to count instrumentation logs.
 
 ### Running
-**Note**: test-examples is implemented using Node. Before running it for the first time, you must execute "npm install" in the `$MODDABLE/tools/test-examples` directory.
+**Note**: test-examples is implemented using Node. Before running it for the first time, you must execute `npm install` in the `$MODDABLE/tools/test-examples` directory. Because test-examples uses xsdb (aka xsbug-log), you must execute `npm install` on it too.
+
+```shell
+cd $MODDABLE/tools/test-examples
+npm install
+cd $MODDABLE/tools/xsbug-log
+npm install
+```
 
 To run test-examples:
 
@@ -454,7 +470,6 @@ node ./index.js sim/moddable_six --dir $MODDABLE/examples/base/timers
 
 If you terminate a test run before it is complete, you can resume execution using `--continue`. This depends on the `report.json` generated when test-examples exists.
 
-
 ```shell
 node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --continue
 ```
@@ -465,13 +480,12 @@ Sometimes you only want to build, and not install and launch. Other times you ma
 node ./index.js sim/moddable_six --dir $MODDABLE/examples/base --mode build --clean
 ```
 
-For tests that run on an embedded device using Wi-Fi, it may be necessary to provide the Wi-Fi credentials. These are passed on to `mcconfig` when building the project.
+For tests that run on an embedded device using Wi-Fi, provide the Wi-Fi credentials to test-example and it relays them to `mcconfig` when building the project.
 
 ```shell
 node ./index.js sim/moddable_six --dir $MODDABLE/examples/network.http --ssid "My Wi-Fi" --password "[secret]"
 ```
 
 ### Implementation notes
-
 test-examples uses [xsdb](#xsdb) to monitor the execution of the example being tested.
 
