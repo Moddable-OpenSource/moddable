@@ -91,7 +91,7 @@ class Serializer {
 						}
 					}
 					else {
-						for (const [property, value] of data) {
+						for (const [property, value] in data) {
 							if (undefined === value) continue;
 							d += property.length + 1 + ArrayBuffer.fromString(value.toString()).byteLength + 1;
 						}
@@ -111,7 +111,7 @@ class Serializer {
 							}
 						}
 						else {
-							for (let [property, value] of data) {
+							for (let [property, value] in data) {
 								if (undefined === value) continue;
 								value = ArrayBuffer.fromString(property + "=" + value.toString());
 								binary[offset] = value.byteLength;
