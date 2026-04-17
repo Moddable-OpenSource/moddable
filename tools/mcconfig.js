@@ -1488,9 +1488,9 @@ export default class extends Tool {
 
 				if (this.buildTarget == "clean") {
 					if (this.windows)
-						command += `del /s/q/f build\\bin\\zephyr\\${this.subplatform}\\*.* build\\tmp\\zephyr\\${this.subplatform}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
+						command += `del /s/q/f ${this.binPath}\\*.* ${this.tmpPath}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
 					else
-						command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
+						command += `rm -rf ${this.binPath} ${this.tmpPath} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
 				}
 				else if (this.buildTarget == "deploy") {
 					command += `west flash -d ${this.tmpPath}${this.slash}build ${flashRunner}`;
