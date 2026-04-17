@@ -29,9 +29,6 @@
 			"$(MODULES)/crypt/data/ca107"
 		]
 	},
-	"creation": {
-		"static":53000
-	},
 	"config": {
 		"sntp": "pool.ntp.org"
 	},
