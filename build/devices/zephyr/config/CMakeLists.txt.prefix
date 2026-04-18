@@ -1,7 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.20.0)
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+find_package(Zephyr-sdk 1.0.1 REQUIRED)
+if (Zephyr-sdk_FOUND)
+	message(STATUS "Found Zephyr SDK version: ${Zephyr-sdk_VERSION}")
+else()
+	message(ERROR "Zephyr SDK not found.")
+endif()
+
+find_package(Zephyr 4.4.0 REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
 project(moddable_lib)
 
 # export all the flags used by zephyr
