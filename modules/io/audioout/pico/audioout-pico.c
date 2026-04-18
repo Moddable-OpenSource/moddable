@@ -31,6 +31,19 @@
 #include "pico/audio_i2s.h"
 #include "modTimer.h"
 
+#ifndef MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE
+	#define MODDEF_AUDIOOUT_I2S_BITSPERSAMPLE 16
+#endif
+#ifndef MODDEF_AUDIOOUT_I2S_DATAOUT_PIN
+	#define MODDEF_AUDIOOUT_I2S_DATAOUT_PIN PICO_AUDIO_I2S_DATA_PIN
+#endif
+#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
+	#define MODDEF_AUDIOOUT_I2S_BCK_PIN PICO_AUDIO_I2S_CLOCK_PIN_BASE
+#endif
+#ifndef MODDEF_AUDIOOUT_I2S_LR_PIN
+	#define MODDEF_AUDIOOUT_I2S_LR_PIN (MODDEF_AUDIOOUT_I2S_BCK_PIN + 1)
+#endif
+
 typedef struct AudioOutElementRecord AudioOutElementRecord;
 typedef struct AudioOutElementRecord *AudioOutElement;
 
@@ -576,7 +589,7 @@ int doWrite(AudioOut audioOut, void *audioData, xsUnsignedValue requested)
 		int16_t volumeFixed = audioOut->volumeFixed;
 		int requestedSamples = amt >> 1;		//@@ broken for stereo & 8 bit
 		int16_t *src = (int16_t *)audioData;
-		int16_t *samples = buffer->buffer->bytes + audioOut->bufferPendingPos;
+		int16_t *samples = (int16_t *)(buffer->buffer->bytes + audioOut->bufferPendingPos);
 		int i;
 		for (i=0; i<requestedSamples; i++)
 			samples[i] = (*src++ * volumeFixed) >> 8;
