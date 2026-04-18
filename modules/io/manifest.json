@@ -15,6 +15,12 @@
 			"include": "./manifests/esp32/manifest.json"
 		},
 		"pico": {
+			"include": "./manifests/pico/manifest.json"
+		},
+		"pico/pico_w": {
+			"include": "./manifests/pico/manifest_net.json"
+		},
+		"pico/pico_2_w": {
 			"include": "./manifests/pico/manifest_net.json"
 		},
 		"nrf52": {
