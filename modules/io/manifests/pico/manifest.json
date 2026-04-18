@@ -6,7 +6,7 @@
 		"$(IO)/analog/manifest.json",
 		"$(IO)/audioout/manifest.json",
 		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(IO)/i2c/manifest.json",
 		"$(IO)/pulsecount/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
@@ -18,7 +18,6 @@
 			"$(MODULES)/pins/digital/pico/modGPIO"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
-
 		"system": "$(IO)/system/*"
 	},
 	"preload": [
