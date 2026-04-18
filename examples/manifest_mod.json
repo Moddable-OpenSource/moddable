@@ -89,6 +89,11 @@
 				"DEBUGGER_SPEED": "1500000"
 			}
 		},
+		"esp32/m5atom_echo_s3r": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/m5atom_s3": {
 			"build": {
 				"USE_USB": "2"
