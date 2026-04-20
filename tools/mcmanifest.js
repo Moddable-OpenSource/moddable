@@ -1145,6 +1145,10 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				else
 					tweakStr += `${namespace}__${dep.name} `;
 			}
+			if (this.debug)
+				tweakStr += "efuse log ";
+			else
+				tweakStr += "efuse ";
 			if (tool.environment.USE_USB == 1)
 				tweakStr += "espressif__esp_tinyusb";
 			tweakStr += ")\n";
