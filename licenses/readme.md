@@ -1,7 +1,7 @@
 # Moddable SDK – Licenses
-Copyright 2017-2022 Moddable Tech, Inc.
+Copyright 2017-2026 Moddable Tech, Inc.
 
-Revised: February 14, 2022
+Revised: April 20, 2026
 
 This directory contains documents related to licensing.
 
@@ -14,7 +14,7 @@ The majority of software in the Moddable SDK is provided under the GPL 3.0 or LG
 
 As a general rule, software for build tools is licensed under GPL 3.0 and runtime software is licensed under LGPL 3.0.
 
-The GPL 3.0 and LGPL 3.0 give product developers and product users very broad rights. We believe this is good for everyone. We also recognize that because of the far reaching freedoms granted by these licenses, not all developers are yet able or willing to use code carrying these licenses in their products. For these situations, Moddable also offers a conventional commercial software license for the Moddable SDK.
+The GPL 3.0 and LGPL 3.0 give product developers and product users very broad rights. We believe this is good for everyone. We also recognize that because of the far reaching freedoms granted by these licenses, not all developers are yet able or willing to use code carrying these licenses in their products. For these situations, Moddable also offers a conventional [commercial software license](https://www.moddable.com/license) for the Moddable SDK.
 
 ### Creative Commons
 The example code in the Moddable SDK is provided under the Creative Commons [Attribution 4.0 International](http://creativecommons.org/licenses/by/4.0/) license.
@@ -31,3 +31,5 @@ Some of the fonts in the Moddable SDK are provided under the SIL OPEN FONT LICEN
 Moddable welcomes third party contributions to the Moddable SDK. Before we can accept a change, we ask that you complete a Contributor License Agreement. This ensures all users of the Moddable SDK that you have the right to make the contribution, and that they can continue to use the Moddable SDK with your changes under the existing licenses. The contributor license agreements are in the files [Moddable CLA - individual.pdf](Moddable%20CLA%20-%20individual.pdf) and [Moddable CLA - corporate.pdf](Moddable%20CLA%20-%20corporate.pdf).
 
 The Moddable CLAs are based on the [individual](https://www.apache.org/licenses/icla.pdf) and [corporate](https://www.apache.org/licenses/cla-corporate.pdf) Apache CLAs, which are also used by [Google](https://cla.developers.google.com/about).
+
+Please email your completed CLA to [info@moddable.com](mailto:info@moddable.com?subject=Moddable%20CLA).
