@@ -1,0 +1,1 @@
+This placeholder is for the Node-RED MCU Plugin which expects a targets directory.
