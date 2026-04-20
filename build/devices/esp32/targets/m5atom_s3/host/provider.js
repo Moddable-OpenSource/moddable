@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -27,6 +27,7 @@ import PWM from "embedded:io/pwm";
 import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
 
 const device = {
 	I2C: {
@@ -61,6 +62,26 @@ const device = {
 		backlight: 16,
 		displayDC: 33,
 		displaySelect: 15
+	},
+	sensor: {
+		IMU: class extends MPU6886 {
+			constructor(options) {
+				super({
+					...options,
+					sensor: {
+						...device.I2C.internal,
+						io: device.io.SMBus
+					}
+				});
+			}
+			sample() {
+				const sample = super.sample();
+				sample.accelerometer.x *= -1;
+				sample.accelerometer.y *= -1;
+				sample.gyroscope.x *= -1;
+				return sample;
+			}
+		}
 	}
 };
 

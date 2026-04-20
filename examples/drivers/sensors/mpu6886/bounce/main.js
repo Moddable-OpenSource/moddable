@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2026  Moddable Tech, Inc.
+ * Copyright (c) 2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -12,19 +12,20 @@
  *
  */
 
+import config from "mc/config";
+import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
-import config from "mc/config";
-import Timer from "timer";
+import device from "embedded:provider/builtin";
+import Accelerometer from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
 
-const GYRO_SCALER = 0.002;
+const width = screen.width;
+const height = screen.height;
 
-const render = new Poco(screen, {rotation: config?.rotation ?? screen.rotation});
-const width = render.width, height = render.height;
-
-const font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
+const render = new Poco(screen);
+const font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
 
 const ball = parseBMP(new Resource("ball-color.bmp"));
 ball.alpha = parseBMP(new Resource("ball-alpha.bmp"));
@@ -44,61 +45,50 @@ render.begin();
 	render.fillRectangle(ball.backgroundColor, 0, ball.yMin, width, height);
 render.end();
 
-const imu = new device.sensor.IMU()
-imu.configure({
-	"GYRO_SCALER": (2000.0 / 32768.0) * GYRO_SCALER
-})
+const sensor = new Accelerometer({
+	sensor: {
+		...device.I2C.default,
+		io: device.io.SMBus
+	}
+});
+
 Timer.repeat(() => {
-	const sample = imu.sample();
-	if(flag) {
-		onReading(sample.accelerometer, "a");
-	} else {
-		onReading(sample.gyroscope, "g");
+	const values = sensor.sample();
+
+	if (180 === parseInt(config.orientation)) {
+		values.accelerometer.x = -values.accelerometer.x;
 	}
-}, 17)
 
-let flag = true;
-
-globalThis.button.a.onChanged = () =>{
-	const value = globalThis.button.a.read();
-	if (value) {
-		flag = !flag;
-	}
-}
-
-function onReading(values, labelPrefix){
-	const { x, y, z } = values;
-	// trace(`${labelPrefix}X: ${formatValue(x)} - ${labelPrefix}Y: ${formatValue(y)} - ${labelPrefix}Z: ${formatValue(z)}\n`);
 	render.begin(0, 0, width, ball.yMin);
-	render.fillRectangle(backgroundColor, 0, 0, width, height);
+		render.fillRectangle(backgroundColor, 0, 0, width, height);
 
-	drawBar(`${labelPrefix}X`, x, 0, 0, width, font.height);
-	drawBar(`${labelPrefix}Y`, y, 0, font.height, width, font.height);
-	drawBar(`${labelPrefix}Z`, z, 0, font.height * 2, width, font.height);
+		drawBar("X", values.accelerometer.x, 0, 0, width, font.height);
+		drawBar("Y", values.accelerometer.y, 0, font.height, width, font.height);
+		drawBar("Z", values.accelerometer.z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx + x) * 0.98;
-	ball.vy = (ball.vy - y) * 0.98;
-	let nx = ball.x + ball.vx;
-	let ny = ball.y + ball.vy;
-	if (nx < 0) {
-		nx = -nx;
-		ball.vx = -ball.vx * 0.7;
+	ball.vx = (ball.vx + values.accelerometer.y) * 0.98;
+	ball.vy = (ball.vy + values.accelerometer.x) * 0.98;
+	let x = ball.x + ball.vx;
+	let y = ball.y + ball.vy;
+	if (x < 0) {
+		x = -x;
+		ball.vx = -ball.vx;
 	}
-	else if (nx > (width - ball.width)) {
-		nx = width - ball.width;
-		ball.vx = -ball.vx * 0.7;
+	else if (x > (width - ball.width)) {
+		x = width - ball.width;
+		ball.vx = -ball.vx;
 	}
-	if (ny < ball.yMin) {
-		ny = ball.yMin;
-		ball.vy = -ball.vy * 0.7;
+	if (y < ball.yMin) {
+		y = ball.yMin;
+		ball.vy = -ball.vy;
 	}
-	else if (ny > (height - ball.height)) {
-		ny = height - ball.height;
-		ball.vy = -ball.vy * 0.7;
+	else if (y > (height - ball.height)) {
+		y = height - ball.height;
+		ball.vy = -ball.vy;
 	}
-	moveBallTo(nx, ny)
-}
+	moveBallTo(x, y)
+}, 17);
 
 function formatValue(value) {
 	if (!value)
@@ -117,7 +107,7 @@ function drawBar(label, value, x, y, width, height) {
 	else
 		render.fillRectangle(barColor, x + halfWidth + barWidth, y, -barWidth, height);
 
-	render.drawText(label, font, textColor, x + 50, y);
+	render.drawText(`${label} ${formatValue(value)}`, font, textColor, x + 50, y);
 }
 
 function moveBallTo(x, y) {
