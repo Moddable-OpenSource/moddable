@@ -5,7 +5,6 @@ import config from "mc/config";
 import Timer from "timer";
 import Button from "button";
 import I2C from "pins/i2c";
-import MPU6886 from "mpu6886";
 import AudioOut from "pins/audioout";
 import Resource from "Resource";
 import SMBus from "pins/smbus";
@@ -60,12 +59,6 @@ export default function (done) {
 		speaker.start();
 
         }
-
-
-	// accelerometer and gyrometer
-        const sensor = new MPU6886;
-        globalThis.accelerometer = new Accelerometer(sensor);
-        globalThis.gyro = new Gyro(sensor);
 
         done?.();
 }
@@ -148,55 +141,3 @@ class PI4IOE5V6408 {
         }
 }
 
-
-class Accelerometer {
-        #sensor;
-        #timer;
-
-        constructor(sensor) {
-                this.#sensor = sensor;
-        }
-        start(frequency) {
-                this.stop();
-                this.#timer = Timer.repeat(id => {
-                        if (!this.onreading)
-                                return;
-
-                        this.#sensor.configure({ operation: "accelerometer" });
-                        const sample = this.#sensor.sample();
-                        if (sample)
-                                this.onreading({x: sample.x, y: -sample.y, z: -sample.z});
-                }, frequency);
-        }
-        stop() {
-                if (undefined !== this.#timer)
-                        Timer.clear(this.#timer);
-                this.#timer = undefined;
-        }
-}
-
-class Gyro {
-        #sensor;
-        #timer;
-
-        constructor(sensor) {
-                this.#sensor = sensor;
-        }
-        start(frequency) {
-                this.stop();
-                this.#timer = Timer.repeat(id => {
-                        if (!this.onreading)
-                                return;
-
-                        this.#sensor.configure({ operation: "gyroscope" });
-                        const sample = this.#sensor.sample();
-                        if (sample)
-                                this.onreading({x: -sample.y, y: -sample.x, z: -sample.z});
-                }, frequency);
-        }
-        stop() {
-                if (undefined !== this.#timer)
-                        Timer.clear(this.#timer);
-                this.#timer = undefined;
-        }
-}
