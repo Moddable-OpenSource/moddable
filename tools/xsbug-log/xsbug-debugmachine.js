@@ -251,7 +251,7 @@ class DebugMachine extends Machine {
 	}
 
 	_syncCompleter(line) {
-		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
+		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'condition', 'trace', 'hitcount', 'eval', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
 		const args = line.trimStart().split(/\s+/);
 		
 		if (args.length === 1 && !line.match(/\s$/)) {
@@ -514,6 +514,34 @@ class DebugMachine extends Machine {
 	}
 
 	onFrameChanged(name, value) {
+		this.currentFrameValue = value;
+	}
+
+	onResult(items, data) {
+		let result;
+		if (items.length === 0) {
+			result = data;
+		}
+		else {
+			const prop = items[0];
+			if (!prop.children || prop.children.length === 0)
+				result = prop.value;
+			else {
+				let parts = [];
+				for (const child of prop.children) {
+					if (child.name && child.name !== "(..)")
+						parts.push(`${child.name}: ${child.value}`);
+					if (parts.length > 20) {
+						parts.push("…");
+						break;
+					}
+				}
+				result = "{ " + parts.join(", ") + " }";
+			}
+		}
+		this.clearLine();
+		console.log(result);
+		this.showPrompt();
 	}
 
 	onBroken(path, line, text) {
@@ -1282,6 +1310,15 @@ class DebugMachine extends Machine {
 			case 'clear':
 				this.cmdClear(args);
 				break;
+			case 'condition':
+				this.cmdCondition(args);
+				break;
+			case 'trace':
+				this.cmdTrace(args);
+				break;
+			case 'hitcount':
+				this.cmdHitcount(args);
+				break;
 			case 'list': case 'l':
 				this.cmdList(args);
 				break;
@@ -1293,6 +1330,9 @@ class DebugMachine extends Machine {
 				break;
 			case 'print': case 'p':
 				this.cmdPrint(args);
+				break;
+			case 'eval':
+				this.cmdEval(line.slice(line.indexOf('eval') + 5));
 				break;
 			case 'info':
 				this.cmdInfo(args);
@@ -1526,11 +1566,59 @@ class DebugMachine extends Machine {
 	}
 
 
+	// Build protocol options {condition, hitCount, trace} from a breakpoint's stored expressions.
+	buildBreakpointOptions(bp) {
+		const options = {};
+		if (bp.conditionExpr) {
+			try {
+				options.condition = Machine.compileExpression(bp.conditionExpr);
+			}
+			catch (e) {
+				this.commandError(e.message);
+				return null;
+			}
+		}
+		if (bp.hitCountExpr)
+			options.hitCount = bp.hitCountExpr;
+		if (bp.traceExpr) {
+			try {
+				options.trace = Machine.compileExpression(bp.traceExpr);
+			}
+			catch (e) {
+				this.commandError(e.message);
+				return null;
+			}
+		}
+		if (options.condition || options.hitCount || options.trace)
+			return options;
+		return undefined;
+	}
+
+	// Re-send a breakpoint to the target (clear + set with current options).
+	resendBreakpoint(bp) {
+		this.doClearBreakpoint(bp.path, bp.line);
+		const options = this.buildBreakpointOptions(bp);
+		if (options === null) return; // compile error
+		this.doSetBreakpoint(bp.path, bp.line, options);
+	}
+
 	cmdBreak(args) {
 		if (args.length < 1) {
 			// No args: list breakpoints
 			this.cmdInfoBreakpoints();
 			return;
+		}
+
+		// Parse "if <expr>" suffix from args
+		let conditionExpr = null;
+		const ifIndex = args.indexOf('if');
+		if (ifIndex > 0) {
+			conditionExpr = args.slice(ifIndex + 1).join(' ');
+			args = args.slice(0, ifIndex);
+			if (!conditionExpr) {
+				this.commandError('Missing expression after "if".');
+				return;
+			}
 		}
 
 		let path, line;
@@ -1583,20 +1671,155 @@ class DebugMachine extends Machine {
 		const existing = this.breakpoints.find(bp => bp.path === path && bp.line === line);
 		if (!existing) {
 			bpId = this.getNextBreakpointId ? this.getNextBreakpointId() : 1;
-			this.breakpoints.push({ id: bpId, path, line });
+			const bp = { id: bpId, path, line };
+			if (conditionExpr)
+				bp.conditionExpr = conditionExpr;
+			this.breakpoints.push(bp);
 		} else {
 			bpId = existing.id;
+			if (conditionExpr)
+				existing.conditionExpr = conditionExpr;
 		}
 
-		this.doSetBreakpoint(path, line);
-		this.report('break', { id: bpId, path, line, shortPath: this.shortPath(path) }, undefined, (data) => {
+		const bp = this.breakpoints.find(b => b.id === bpId);
+		const options = this.buildBreakpointOptions(bp);
+		if (options === null) return; // compile error already reported
+
+		this.doSetBreakpoint(path, line, options);
+		this.report('break', { id: bpId, path, line, shortPath: this.shortPath(path), conditionExpr: bp.conditionExpr }, undefined, (data) => {
 			this.clearLine();
 			if (data.line === 0)
 				console.log(`Breakpoint ${data.id} set on function ${data.path}`);
 			else
 				console.log(`Breakpoint ${data.id} set at ${data.shortPath}:${data.line}`);
+			if (data.conditionExpr)
+				console.log(`  stop only if ${data.conditionExpr}`);
 			this.showPrompt();
 		});
+	}
+
+	cmdCondition(args) {
+		if (args.length < 1) {
+			this.commandError('Syntax: condition <id> [expr]');
+			return;
+		}
+		const id = parseInt(args[0]);
+		const bp = this.breakpoints.find(b => b.id === id);
+		if (!bp) {
+			this.commandError(`No breakpoint number ${id}.`);
+			return;
+		}
+		if (args.length < 2) {
+			// Clear condition
+			delete bp.conditionExpr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id} condition cleared.`);
+			this.showPrompt();
+		}
+		else {
+			const expr = args.slice(1).join(' ');
+			// Verify it compiles
+			try {
+				Machine.compileExpression(expr);
+			}
+			catch (e) {
+				this.commandError(e.message);
+				return;
+			}
+			bp.conditionExpr = expr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id}: stop only if ${expr}`);
+			this.showPrompt();
+		}
+	}
+
+	cmdTrace(args) {
+		if (args.length < 1) {
+			this.commandError('Syntax: trace <id> [expr]');
+			return;
+		}
+		const id = parseInt(args[0]);
+		const bp = this.breakpoints.find(b => b.id === id);
+		if (!bp) {
+			this.commandError(`No breakpoint number ${id}.`);
+			return;
+		}
+		if (args.length < 2) {
+			delete bp.traceExpr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id} trace cleared.`);
+			this.showPrompt();
+		}
+		else {
+			const expr = args.slice(1).join(' ');
+			try {
+				Machine.compileExpression(expr);
+			}
+			catch (e) {
+				this.commandError(e.message);
+				return;
+			}
+			bp.traceExpr = expr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id}: trace ${expr}`);
+			this.showPrompt();
+		}
+	}
+
+	cmdHitcount(args) {
+		if (args.length < 1) {
+			this.commandError('Syntax: hitcount <id> [op count]  (op: = < <= > >= %)');
+			return;
+		}
+		const id = parseInt(args[0]);
+		const bp = this.breakpoints.find(b => b.id === id);
+		if (!bp) {
+			this.commandError(`No breakpoint number ${id}.`);
+			return;
+		}
+		if (args.length < 2) {
+			delete bp.hitCountExpr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id} hit count cleared.`);
+			this.showPrompt();
+		}
+		else {
+			// Accept ">=5" or ">= 5" or "> 5"
+			const expr = args.slice(1).join('');
+			if (!/^[%<>=]+\d+$/.test(expr)) {
+				this.commandError('Invalid hit count. Use: = < <= > >= % followed by a number (e.g. ">=5", "%10").');
+				return;
+			}
+			bp.hitCountExpr = expr;
+			this.resendBreakpoint(bp);
+			console.log(`Breakpoint ${id}: hit count ${expr}`);
+			this.showPrompt();
+		}
+	}
+
+	cmdEval(source) {
+		source = source.trim();
+		if (!source) {
+			this.commandError('Syntax: eval <expression>');
+			return;
+		}
+		if (!this.requireBroken()) {
+			this.showPrompt();
+			return;
+		}
+		if (!this.currentFrameValue) {
+			this.commandError('No frame selected.');
+			return;
+		}
+		let compiled;
+		try {
+			compiled = Machine.compileExpression(source);
+		}
+		catch (e) {
+			this.commandError(e.message);
+			return;
+		}
+		this.doEval(this.currentFrameValue, compiled);
 	}
 
 	cmdDelete(args) {
@@ -2266,9 +2489,12 @@ class DebugMachine extends Machine {
 			id: bp.id,
 			path: bp.path,
 			line: bp.line,
-			shortPath: this.shortPath(bp.path)
+			shortPath: this.shortPath(bp.path),
+			conditionExpr: bp.conditionExpr,
+			hitCountExpr: bp.hitCountExpr,
+			traceExpr: bp.traceExpr
 		}));
-		
+
 		this.report('info_breakpoints', { breakpoints: bpData, exceptionsMode: this.exceptionsMode }, undefined, (data) => {
 			if (data.breakpoints.length === 0) {
 				this.print('No breakpoints.');
@@ -2279,6 +2505,12 @@ class DebugMachine extends Machine {
 						console.log(`  ${bp.id}: function ${bp.path}`);
 					else
 						console.log(`  ${bp.id}: ${bp.shortPath}:${bp.line}`);
+					if (bp.conditionExpr)
+						console.log(`       stop only if ${bp.conditionExpr}`);
+					if (bp.hitCountExpr)
+						console.log(`       hit count ${bp.hitCountExpr}`);
+					if (bp.traceExpr)
+						console.log(`       trace ${bp.traceExpr}`);
 				});
 			}
 			if (data.exceptionsMode === 'on')
@@ -2550,7 +2782,10 @@ class DebugMachine extends Machine {
 				{
 					title: "Breakpoints",
 					items: [
-						{ keys: "break [file:]<l>|<fn>|+l|-l", desc: "Set breakpoint (JS functions only)" },
+						{ keys: "break [file:]<l>|<fn> [if expr]", desc: "Set breakpoint with optional condition" },
+						{ keys: "condition <id> [expr]", desc: "Set/clear condition on breakpoint" },
+						{ keys: "hitcount <id> [op count]", desc: "Set/clear hit count (op: = < <= > >= %)" },
+						{ keys: "trace <id> [expr]", desc: "Set/clear trace expression (logs without stopping)" },
 						{ keys: "delete [id1 id2...]", desc: "Delete breakpoint(s) by ID" },
 						{ keys: "delete all", desc: "Clear all breakpoints" },
 						{ keys: "clear [file:]<l>|<fn>|+l|-l", desc: "Clear breakpoint by location" },
@@ -2564,9 +2799,10 @@ class DebugMachine extends Machine {
 						{ keys: "list, l [file:]<line>", desc: "Show source around line (default: current)" },
 						{ keys: "backtrace, bt, where", desc: "Print call stack" },
 						{ keys: "frame <n>, f <n>", desc: "Select stack frame" },
-						{ keys: "print, p [expr]", desc: "Print variable (see below)" },
+						{ keys: "print, p [expr]", desc: "Print variable (examples below)" },
 						{ keys: "info locals", desc: "Print local variables" },
 						{ keys: "info globals", desc: "Print global variables" },
+						{ keys: "eval <expr>", desc: "Evaluate JavaScript expression in current frame" },
 						{ keys: "info modules", desc: "List loaded modules" },
 						{ keys: "info module name", desc: "Show exports" },
 						{ keys: "info modules.name.path", desc: "Navigate into module exports" }
@@ -2593,7 +2829,7 @@ class DebugMachine extends Machine {
 				{
 					title: "Print examples",
 					items: [
-						{ keys: "p", desc: "All locals (objects auto-expanded)" },
+						{ keys: "p", desc: "All locals" },
 						{ keys: "p name", desc: "Variable (local or global)" },
 						{ keys: "p obj.prop", desc: "Property of object" },
 						{ keys: "p globalThis.name", desc: "Global variable" },

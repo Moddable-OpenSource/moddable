@@ -366,10 +366,10 @@ const xsdbRouter = {
 		const baseDoClearBreakpoint = Machine.prototype.doClearBreakpoint;
 		const baseDoClearAllBreakpoints = Machine.prototype.doClearAllBreakpoints;
 
-		m.doSetBreakpoint = (path, line) => {
+		m.doSetBreakpoint = (path, line, options) => {
 			this.machines.forEach(mach => {
 				if (mach && mach.connected)
-					baseDoSetBreakpoint.call(mach, path, line);
+					baseDoSetBreakpoint.call(mach, path, line, options);
 			});
 		};
 
@@ -424,6 +424,24 @@ const xsdbRouter = {
 		const originalCmdDelete = m.cmdDelete.bind(m);
 		m.cmdDelete = (args) => {
 			originalCmdDelete(args);
+			this.savePrefs();
+		};
+
+		const originalCmdCondition = m.cmdCondition.bind(m);
+		m.cmdCondition = (args) => {
+			originalCmdCondition(args);
+			this.savePrefs();
+		};
+
+		const originalCmdTrace = m.cmdTrace.bind(m);
+		m.cmdTrace = (args) => {
+			originalCmdTrace(args);
+			this.savePrefs();
+		};
+
+		const originalCmdHitcount = m.cmdHitcount.bind(m);
+		m.cmdHitcount = (args) => {
+			originalCmdHitcount(args);
 			this.savePrefs();
 		};
 
