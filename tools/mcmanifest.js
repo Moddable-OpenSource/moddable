@@ -2562,8 +2562,9 @@ export class Tool extends TOOL {
 			default:
 				name = argv[argi];
 				let split = name.split("=");
-				if (split.length == 2) {
-					this.config[split[0]] = split[1];
+				if (split.length >= 2) {
+					const property = split.shift();
+					this.config[property] = split.join("=");
 				}
 				else {
 					if (this.manifestPath)
