@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 Moddable Tech, Inc.
+ * Copyright (c) 2019-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -193,6 +193,22 @@ void xs_udp_read(xsMachine *the)
 	c_free(packet);
 }
 
+static void resolveIP(xsMachine *the, char *src, ip_addr_t *dst)
+{
+#if ESP32
+	if (!ipaddr_aton(src, dst))
+		xsRangeError("invalid IP address");
+#else
+	char ipAddress[40];
+	if (c_strlen(src) >= sizeof(ipAddress))
+		xsRangeError("invalid IP address");
+
+	c_strcpy(ipAddress, src);
+	if (!ipaddr_aton(ipAddress, dst))
+		xsRangeError("invalid IP address");
+#endif
+}
+
 void xs_udp_write(xsMachine *the)
 {
 	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
@@ -202,10 +218,7 @@ void xs_udp_write(xsMachine *the)
 	err_t err;
 	void *buffer;
 
-	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
-
-	if (!ipaddr_aton(xsmcToString(xsArg(1)), &dst))
-		xsRangeError("invalid IP address");
+	resolveIP(the, xsmcToString(xsArg(1)), &dst);
 	port = xsmcToInteger(xsArg(2));
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &byteLength);
@@ -221,8 +234,7 @@ void xs_udp_add(xsMachine *the)
 	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	ip_addr_t multicastIP;
 
-	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
-		xsUnknownError("invalid IP address");
+	resolveIP(the, xsmcToString(xsArg(0)), &multicastIP);
 
 #if LWIP_IPV4 && LWIP_IPV6
 	if (!IP_IS_V4(&multicastIP))
@@ -263,8 +275,7 @@ void xs_udp_remove(xsMachine *the)
 	UDP udp = xsmcGetHostDataValidate(xsThis, (void *)&xsUDPHooks);
 	ip_addr_t multicastIP;
 
-	if (!ipaddr_aton(xsmcToString(xsArg(0)), &multicastIP))
-		xsUnknownError("invalid IP address");
+	resolveIP(the, xsmcToString(xsArg(0)), &multicastIP);
 
 #if ESP32
 	esp_netif_t *ifc = NULL;
