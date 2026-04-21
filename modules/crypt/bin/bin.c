@@ -88,8 +88,8 @@ void xs_crypt_bin_comp(xsMachine *the)
 		n = sizeA;
 	}
 	for (i = 0; i < n; i++) {
-		if (dataA[i] != dataB[i]) {
-			result = dataA[i] - dataB[i];
+		if (c_read8(&dataA[i]) != c_read8(&dataB[i])) {
+			result = c_read8(&dataA[i]) - c_read8(&dataB[i]);
 			break;
 		}
 	}
