@@ -4,6 +4,8 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
+		"$(IO)/analog/manifest.json",
+		"$(IO)/digital/manifest.json",
 		"$(IO)/i2c/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
@@ -11,7 +13,7 @@
 	],
 	"modules": {
 		"*": [
-			"$(IO)/common/builtinCommon",
+			"$(IO)/common/builtinCommon"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
