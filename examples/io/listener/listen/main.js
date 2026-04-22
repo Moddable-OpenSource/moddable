@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -15,17 +15,13 @@
 import listen from "listen";
 import { Response } from "listen";
 
-async function main() {
-	for await (const connection of listen({ port: 80 })) {
-		const request = connection.request;
-		trace(`${request.method}\n`);
-		trace(`${request.url}\n`);
-		for (const [header, value] of request.headers)
-			trace(`${header}: ${value}\n`);		
-		const body = await request.text();
-		trace(`${body}\n`);		
-		connection.respondWith(new Response("1 2 3 4 5 6 7 8\n", { status: 200 }));		
-	}
+for await (const connection of listen({ port: 80 })) {
+	const request = connection.request;
+	trace(`${request.method}\n`);
+	trace(`${request.url}\n`);
+	for (const [header, value] of request.headers)
+		trace(`${header}: ${value}\n`);		
+	const body = await request.text();
+	trace(`${body}\n`);		
+	connection.respondWith(new Response("1 2 3 4 5 6 7 8\n", { status: 200 }));		
 }
-
-main();
