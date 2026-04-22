@@ -97,14 +97,7 @@ globalThis.device = Object.freeze({
 		get language() {return native("xs_device_language_get").call(this);}
 	},
 	sensor: {
-		Touch: class {
-			constructor(options) {
-				const result = new Touch({
-					...options
-				});
-				return result;
-			}
-		}
+		Touch
 	}
 }, true);
 
