@@ -42,7 +42,7 @@
 	},
 	"platforms": {
 		"esp/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	},
 	"defines": {

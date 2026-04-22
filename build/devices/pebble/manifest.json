@@ -27,7 +27,7 @@
 },
 	"platforms": {
 		"pebble/*": {
-			"include": "$(BUILD)/devices/pebble/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

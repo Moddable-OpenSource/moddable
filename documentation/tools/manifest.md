@@ -1,6 +1,6 @@
 # Manifest
-Copyright 2017-2025 Moddable Tech, Inc.<BR>
-Revised: March 25, 2025
+Copyright 2017-2026 Moddable Tech, Inc.<BR>
+Revised: April 22, 2026
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -692,6 +692,16 @@ The `SUBPLATFORM` variable is automatically defined by `mcconfig`. A wildcard is
 	"platforms": {
 		"esp32/*": {
 			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+		}
+	}
+```
+
+The `SUBPLATFORMMANIEST` variable is the full path of the subplatform manuifest. The `SUBPLATFORMDIRECTORY` is the full path of the directory ontaining the subplatform manifest.
+
+```json
+	"platforms": {
+		"esp32/*": {
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 ```

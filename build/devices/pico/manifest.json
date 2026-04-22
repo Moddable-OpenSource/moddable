@@ -32,7 +32,7 @@
 	],
 	"platforms": {
 		"pico/*": {
-			"include": "$(BUILD)/devices/pico/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

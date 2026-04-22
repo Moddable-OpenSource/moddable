@@ -28,7 +28,7 @@
 	],
 	"platforms": {
 		"qca4020/*": {
-			"include": "$(BUILD)/devices/qca4020/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

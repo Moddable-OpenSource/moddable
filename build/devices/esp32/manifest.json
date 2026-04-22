@@ -19,7 +19,7 @@
 	],
 	"platforms": {
 		"esp32/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

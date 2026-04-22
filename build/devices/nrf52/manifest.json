@@ -16,7 +16,7 @@
 	],
 	"platforms": {
 		"nrf52/*": {
-			"include": "$(BUILD)/devices/nrf52/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

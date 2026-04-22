@@ -26,7 +26,7 @@
 	"platforms": {
 		"nrf52/*": {
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
 			}
 		},
 		"nrf52": {

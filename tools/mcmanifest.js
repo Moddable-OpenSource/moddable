@@ -519,7 +519,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			this.write(" -s ");
 			this.write(sdkconfigFile);
 			if (tool.windows) {
-				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.platform + "\\" + tool.subplatform + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				if (sdkconfigFile  !== undefined){
@@ -2484,21 +2484,40 @@ export class Tool extends TOOL {
 				if (this.platform)
 					throw new Error("-p '" + name + "': too many platforms!");
 				name = name.toLowerCase();
-				let parts = name.split("/");
+
+				const slashIndex = name.indexOf("/"), colonIndex = name.indexOf(":");
+				const splitOn = ((colonIndex > 0) && ((slashIndex < 0) || (colonIndex < slashIndex))) ? ":" : "/";
+				const parts = name.split(splitOn);
 				if ("esp8266" === parts[0])
 					parts[0] = "esp";
 				else if ((parts[0] == "sim") || (parts[0] == "simulator"))
 					parts[0] = this.currentPlatform;
 				this.platform = parts[0];
 				if (parts[1]) {
-					this.subplatform = parts[1];
-					this.environment.SUBPLATFORM = this.subplatform;
-					this.fullplatform = this.platform + "/" + this.subplatform;
-					this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+					if ("/" === splitOn) {
+						this.subplatform = parts[1];
+						this.environment.SUBPLATFORM = this.subplatform;
+						this.environment.SUBPLATFORMDIRECTORY = this.buildPath + this.slash + "devices" + this.slash + this.platform + this.slash + "targets" + this.slash + this.subplatform;
+						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
+						this.fullplatform = this.platform + "/" + this.subplatform;
+					}
+					else if (":" == splitOn) {
+						this.environment.SUBPLATFORMDIRECTORY = this.resolveDirectoryPath(parts[1]);
+						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
+						try {
+							const manifest = JSON.parse(this.readFileString(this.environment.SUBPLATFORMMANIFEST));
+							this.subplatform = manifest.build.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
+						}
+						catch {
+							throw new Error("invalid subplatform manfest: " + parts[1]);
+						}
+
+						this.environment.SUBPLATFORM = this.subplatform;
+						this.fullplatform = this.platform + "/" + this.subplatform;
+					}
 				}
 				else {
 					this.fullplatform = this.platform;
-					this.environment.PLATFORMPATH = this.platform;
 				}
 				this.environment.PLATFORM = this.platform;
 				this.environment.FULLPLATFORM = this.fullplatform;
@@ -2584,7 +2603,6 @@ export class Tool extends TOOL {
 			this.fullplatform = this.platform = this.currentPlatform;
 			this.environment.PLATFORM = this.platform;
 			this.environment.FULLPLATFORM = this.platform;
-			this.environment.PLATFORMPATH = this.platform;
 		}
 		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
 		if ("esp32" == this.platform) {
