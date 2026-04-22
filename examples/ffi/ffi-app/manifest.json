@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"../ffi-lib/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

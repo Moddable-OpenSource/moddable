@@ -122,6 +122,7 @@ MODULES = \
 	$(MOD_DIR)/commodetto/ReadPNG.xsb \
 	$(MOD_DIR)/commodetto/RLE4Out.xsb \
 	$(MOD_DIR)/wavreader.xsb \
+	$(MOD_DIR)/ffi.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/cdv.xsb \
 	$(MOD_DIR)/colorcellencode.xsb \
@@ -169,6 +170,7 @@ PRELOADS =\
 	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
+	-p ffi.xsb
 	-p file.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,0,1993,127,32768,1993,0,main
 

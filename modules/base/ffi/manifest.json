@@ -1,0 +1,16 @@
+{
+	"modules": {
+		"*": [
+			"./ffi",
+			"$(MODDABLE)/xs/sources/xsffi"
+		]
+	},
+	"platforms":{
+		"mac": {
+			"modules": {
+				"*": "./sim/ffi"
+			}
+		}
+	},
+	"preload": "ffi"
+}

@@ -1,0 +1,34 @@
+{
+	"ffi": {
+		"sources": [
+			"./add.c",
+			"./hello.c"
+		],
+		"functions": {
+			"add": {
+				"arguments": [ "int32_t", "int32_t" ],
+				"returns": "int32_t"
+			},
+			"addSquares": {
+				"arguments": [ "int32_t", "int32_t" ],
+				"returns": "int32_t"
+			},
+			"hello": {
+				"arguments": [ "char *", "uint8_t*", "uint32_t" ],
+				"returns": "void"
+			},
+			"catenate": {
+				"arguments": [ "char*", "char*" ],
+				"returns": "char*"
+			},
+			"nameDay": {
+				"arguments": [ "uint8_t" ],
+				"returns": "const char*"
+			},
+			"abcToString": {
+				"arguments": [ "void*" ],
+				"returns": "char*"
+			}
+		}
+	}
+}
