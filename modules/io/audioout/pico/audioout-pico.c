@@ -89,6 +89,16 @@ enum {
 //	kStateTerminated = 3
 };
 
+#ifndef MODDEF_AUDIOOUT_I2S_DATAOUT_PIN
+	#define MODDEF_AUDIOOUT_I2S_DATAOUT_PIN 22
+#endif
+#ifndef MODDEF_AUDIOOUT_I2S_LR_PIN
+	#define MODDEF_AUDIOOUT_I2S_LR_PIN 27
+#endif
+#ifndef MODDEF_AUDIOOUT_I2S_BCK_PIN
+	#define MODDEF_AUDIOOUT_I2S_BCK_PIN 26
+#endif
+
 //static int i2s_enabled = 0;
 
 static void audiooutDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLength);
