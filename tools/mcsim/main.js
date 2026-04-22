@@ -370,9 +370,10 @@ class ApplicationBehavior extends Behavior {
 	}
 	onOpenFileCallback(application) {
 		if (!application.first) return;
-		
+
 		const paths = this.onOpenFileList ?? [];
 		delete this.onOpenFileList;
+		if (!paths.length) return;
 		this.quitScreen();
 		this.screenOnce = true;
 		for (let path of paths) {
