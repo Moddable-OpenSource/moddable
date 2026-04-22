@@ -10,6 +10,11 @@
 			"modules": {
 				"*": "./sim/ffi"
 			}
+		},
+		"pebble": {
+			"modules": {
+				"*": "./pebble/ffi"
+			}
 		}
 	},
 	"preload": "ffi"
