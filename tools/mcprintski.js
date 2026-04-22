@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -71,7 +71,6 @@ export default class extends TOOL {
 		}
 		
 		const f1 = new FILE(`${dataPath}/ca.ski`, "wb");
-		f1.write(new ArrayBuffer(20));
 		for (let i = 0; i < certs.length; i++) {
 			const crt = this.readFileBuffer(`${dataPath}/${certs[i]}`);
 			let ski = X509.decodeSKI(crt);
@@ -81,6 +80,7 @@ export default class extends TOOL {
 			if (ski.byteLength < 20) {
 				const buf = new Uint8Array(20);
 				buf.set(new Uint8Array(ski), 20 - ski.byteLength);
+				ski = buf;
 			}
 			else
 				ski = new Uint8Array(ski);
