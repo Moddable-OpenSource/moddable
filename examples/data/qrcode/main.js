@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -15,7 +15,10 @@ import qrCode from "qrcode";
 import Poco from "commodetto/Poco";
 
 // generate QR code
-let qr = qrCode({input: "Welcome to the QRCode example in the Moddable SDK. The JavaScript date is now " + (new Date())});
+let qr = qrCode({
+	input: "Welcome to the QRCode example in the Moddable SDK. The JavaScript date is now " + (new Date()),
+	maxVersion: 8
+});
 let size = qr.size;
 
 // render QR code to screen
