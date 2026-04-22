@@ -1,0 +1,66 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the button until the LED lights.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"es8311": {
+			"volume": 200
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 16000,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 17,
+				"lr_pin": 3,
+				"mck_pin": 11,
+				"dataout_pin": 48,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1
+			}
+		},
+		"audioIn": {
+			"sampleRate": 16000,
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"i2s": {
+				"num": 0,
+				"bck_pin": 17,
+				"lr_pin": 3,
+				"mck_pin": 11,
+				"datain": 4,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1
+			}
+		}
+	}
+}

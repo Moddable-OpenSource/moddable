@@ -20,6 +20,10 @@
 
 const { Profile } = require('./xsbug-profile.js');
 const Saxophone = require('saxophone');
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 class Machine {
 	constructor(input, output) {
@@ -83,6 +87,11 @@ class Machine {
 		case 'log':
 		case 'ps':
 		case 'samples':
+			current.data = "";
+			break;
+
+		case 'result':
+			current.children = [];
 			current.data = "";
 			break;
 
@@ -164,6 +173,9 @@ class Machine {
 		case 'log':
 			this.onLogged(current.path, current.line, current.data);
 			break;
+		case 'result':
+			this.onResult(current.children, current.data);
+			break;
 		case 'login':
 			this.onTitleChanged(current.name, current.value);
 			break;
@@ -199,6 +211,9 @@ class Machine {
 	doClearAllBreakpoints() {
 		this.doCommand(`clear-all-breakpoints`);
 	}
+	doEval(frame, compiled) {
+		this.doCommand(`eval id="${frame}" path="${compiled}" line="0"`);
+	}
 	doClearBreakpoint(path, line) {
 		this.doCommand(`clear-breakpoint path="${path}" line="${line}" id="@0"`);
 	}
@@ -230,13 +245,53 @@ class Machine {
 		if (atExceptions)
 			string += `<breakpoint path="exceptions" line="0" id="@0"/>`;
 		for (let breakpoint of breakpoints) {
-			string += `<breakpoint path="${breakpoint.path}" line="${breakpoint.line}"/>`;
+			// Compile expression strings on-the-fly if needed
+			let condition = breakpoint.condition;
+			let hitCount = breakpoint.hitCount || breakpoint.hitCountExpr;
+			let trace = breakpoint.trace;
+			try {
+				if (!condition && breakpoint.conditionExpr)
+					condition = Machine.compileExpression(breakpoint.conditionExpr);
+				if (!trace && breakpoint.traceExpr)
+					trace = Machine.compileExpression(breakpoint.traceExpr);
+			}
+			catch (e) {
+				// Skip advanced features for this breakpoint if compilation fails
+				condition = undefined;
+				trace = undefined;
+			}
+			if (condition || hitCount || trace) {
+				string += `<breakpoint path="${breakpoint.path}" line="${breakpoint.line}" id="@1">`;
+				if (condition)
+					string += `<breakpoint-condition path="${condition}"/>`;
+				if (hitCount)
+					string += `<breakpoint-hit-count path="${hitCount}"/>`;
+				if (trace)
+					string += `<breakpoint-trace path="${trace}"/>`;
+				string += `</breakpoint>`;
+			}
+			else {
+				string += `<breakpoint path="${breakpoint.path}" line="${breakpoint.line}"/>`;
+			}
 		}
 		string += `</set-all-breakpoints>\r\n`;
 		this.output.write(this.encoder.encode(string));
 	}
-	doSetBreakpoint(path, line) {
-		this.doCommand(`set-breakpoint path="${path}" line="${line}" id="@0"`);
+	doSetBreakpoint(path, line, options) {
+		if (options && (options.condition || options.hitCount || options.trace)) {
+			let string = `\r\n<set-breakpoint path="${path}" line="${line}" id="@1">`;
+			if (options.condition)
+				string += `<breakpoint-condition path="${options.condition}"/>`;
+			if (options.hitCount)
+				string += `<breakpoint-hit-count path="${options.hitCount}"/>`;
+			if (options.trace)
+				string += `<breakpoint-trace path="${options.trace}"/>`;
+			string += `</set-breakpoint>\r\n`;
+			this.output.write(this.encoder.encode(string));
+		}
+		else {
+			this.doCommand(`set-breakpoint path="${path}" line="${line}" id="@0"`);
+		}
 	}
 	doSelect(value) {
 		this.doCommand(`select id="${value}"`);
@@ -268,6 +323,8 @@ class Machine {
 	onBubbled(path, line, id, flags, message) {
 	}
 	onEval(path, source) {
+	}
+	onResult(items, data) {
 	}
 	onFileChanged(path, line) {
 	}
@@ -357,5 +414,30 @@ class Machine {
 		}
 	}
 }
+
+// Compile a JavaScript expression to hex-encoded XS bytecode using xsc.
+// Returns uppercase hex string or throws on compilation error.
+Machine.compileExpression = function(expression) {
+	const tmpDir = os.tmpdir();
+	const srcFile = path.join(tmpDir, 'xsdb_expr.js');
+	const xsbFile = path.join(tmpDir, 'xsdb_expr.xsb');
+
+	fs.writeFileSync(srcFile, expression);
+	try {
+		execFileSync('xsc', [srcFile, '-p', '-d', '-eval', '-e', '-o', tmpDir, '-r', 'xsdb_expr'], {
+			stdio: ['pipe', 'pipe', 'pipe'],
+			timeout: 5000
+		});
+	}
+	catch (e) {
+		const msg = e.stderr ? e.stderr.toString().trim() : e.message;
+		throw new Error(`Compilation failed: ${msg}`);
+	}
+
+	const binary = fs.readFileSync(xsbFile);
+	fs.unlinkSync(srcFile);
+	fs.unlinkSync(xsbFile);
+	return binary.toString('hex').toUpperCase();
+};
 
 exports.Machine = Machine;

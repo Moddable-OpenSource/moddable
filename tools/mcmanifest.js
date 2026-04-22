@@ -1145,10 +1145,15 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				else
 					tweakStr += `${namespace}__${dep.name} `;
 			}
+			if (this.debug)
+				tweakStr += "efuse log ";
+			else
+				tweakStr += "efuse ";
 			if (tool.environment.USE_USB == 1)
 				tweakStr += "espressif__esp_tinyusb";
 			tweakStr += ")\n";
-			tool.writeFileString(cmakeTweakFile, tweakStr);
+			if (tool.isDirectoryOrFile(cmakeTweakFile) != 1 || tool.readFileString(cmakeTweakFile) != tweakStr)
+				tool.writeFileString(cmakeTweakFile, tweakStr);
 
 		}
 	}
@@ -2557,8 +2562,9 @@ export class Tool extends TOOL {
 			default:
 				name = argv[argi];
 				let split = name.split("=");
-				if (split.length == 2) {
-					this.config[split[0]] = split[1];
+				if (split.length >= 2) {
+					const property = split.shift();
+					this.config[property] = split.join("=");
 				}
 				else {
 					if (this.manifestPath)

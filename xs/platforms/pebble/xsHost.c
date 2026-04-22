@@ -151,8 +151,8 @@ void modLog_transmit(const char *msg)
 		if (end || ((gTransmit - gTransmitBuffer) >= (int)(sizeof(gTransmitBuffer) - 1))) {
 			*gTransmit++ = 0;
 
-			PBL_LOG_ERR("%s", gTransmitBuffer);
-//			APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", gTransmitBuffer);
+//			PBL_LOG_ERR("%s", gTransmitBuffer);
+			APP_LOG(APP_LOG_LEVEL_DEBUG_VERBOSE, "%s", gTransmitBuffer);
 			gTransmit = gTransmitBuffer;
 		}
 	} while (*msg);

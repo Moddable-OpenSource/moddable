@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -12,9 +12,17 @@
  *
  */
 
+if (!globalThis.device?.io?.PulseCount)
+   throw new Error("No PulseCount constructor");
+
+const signal = undefined;     // set the signal pin
+const control = undefined;    // set control signal pin
+if ((undefined === signal) || (undefined === control))
+   throw new Error("Configure signal and control pins");
+
 new device.io.PulseCount({
-   signal: 6,
-   control: 8,
+   signal,
+   control,
    onReadable() {
       const count = this.read();
       trace(`count: ${count}\n`);

@@ -302,9 +302,10 @@ class ApplicationBehavior extends DebugBehavior {
 	}
 	onOpenFileCallback(application) {
 		if (!application.first) return;
-		
+
 		const paths = this.onOpenFileList ?? [];
 		delete this.onOpenFileList;
+		if (!paths.length) return;
 		for (let path of paths) {
 			let info = system.getFileInfo(path);
 			if (info?.directory)

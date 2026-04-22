@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,17 +41,11 @@ typedef uint8_t (*modSPIBufferLoader)(uint8_t *data, uint8_t bytes);
 
 static uint8_t modSpiLoadBufferAsIs(uint8_t *data, uint8_t bytes);
 
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 	static uint8_t modSpiLoadBufferSwap16(uint8_t *data, uint8_t bytes);
-#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB332
 	static uint8_t modSpiLoadBufferRGB332To16BE(uint8_t *data, uint8_t bytes);
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray256
 	static uint8_t modSpiLoadBufferGray256To16BE(uint8_t *data, uint8_t bytes);
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray16
 	static uint8_t modSpiLoadBufferGray16To16BE(uint8_t *data, uint8_t bytes);
-#elif kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
 	static uint8_t modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint8_t bytes);
-#endif
 
 static uint32_t frequencyToSPIClock(uint32_t freq);
 
@@ -62,9 +56,7 @@ static modSPIConfiguration gConfig;
 static uint8_t *gSPIData;
 static volatile int16_t gSPIDataCount = -1;
 static modSPIBufferLoader gSPIBufferLoader;
-#if kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
-	static uint16_t *gCLUT16;
-#endif
+static uint16_t *gCLUT16;
 
 #define SPI_CTRL1(i) (REG_SPI_BASE(i) + 0xc)
 #define SPI_CS_HOLD_DELAY 0xf
@@ -180,7 +172,6 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferAsIs(uint8_t *data, uint8_t bytes)
 	return bytes;
 }
 
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 uint8_t ICACHE_RAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint8_t bytes)
 {
 	uint32_t *from = (uint32_t *)data, *to = (uint32_t *)SPI_FLASH_C0(HSPI);
@@ -218,8 +209,6 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferSwap16(uint8_t *data, uint8_t bytes)
 
 	return bytes;
 }
-
-#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB332
 
 uint8_t ICACHE_RAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint8_t bytes)
 {
@@ -267,7 +256,6 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferRGB332To16BE(uint8_t *data, uint8_t byte
 	return bytes;		// input bytes consumed
 }
 
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray256
 uint8_t ICACHE_RAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint8_t bytes)
 {
 	uint8_t *from = (uint8_t *)data;
@@ -306,7 +294,7 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferGray256To16BE(uint8_t *data, uint8_t byt
 
 	return bytes;		// input bytes consumed
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray16
+
 uint8_t ICACHE_RAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint8_t bytes)
 {
 	uint8_t *from = (uint8_t *)data;
@@ -342,7 +330,7 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferGray16To16BE(uint8_t *data, uint8_t byte
 
 	return bytes;		// input bytes consumed
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
+
 uint8_t ICACHE_RAM_ATTR modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint8_t bytes)
 {
 	uint8_t *from = (uint8_t *)data;
@@ -382,7 +370,6 @@ uint8_t ICACHE_RAM_ATTR modSpiLoadBufferCLUT16To16BE(uint8_t *data, uint8_t byte
 
 	return bytes;		// input bytes consumed
 }
-#endif
 
 static void modSPIReadFromBuffer(uint8_t *data, uint8_t bytes)
 {
@@ -482,33 +469,31 @@ void modSPITx(modSPIConfiguration config, uint8_t *data, uint16_t count)
 	modSPITxCommon(config, data, count, kSPIEndianLittle, modSpiLoadBufferAsIs);
 }
 
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 void modSPITxSwap16(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	modSPITxCommon(config, data, count, kSPIEndianBig, modSpiLoadBufferSwap16);
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB332
+
 void modSPITxRGB332To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	modSPITxCommon(config, data, count, kSPIEndianBig, modSpiLoadBufferRGB332To16BE);
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray256
+
 void modSPITxGray256To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	modSPITxCommon(config, data, count, kSPIEndianBig, modSpiLoadBufferGray256To16BE);
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapGray16
+
 void modSPITxGray16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count)
 {
 	modSPITxCommon(config, data, count, kSPIEndianBig, modSpiLoadBufferGray16To16BE);
 }
-#elif kCommodettoBitmapFormat == kCommodettoBitmapCLUT16
+
 void modSPITxCLUT16To16BE(modSPIConfiguration config, uint8_t *data, uint16_t count, uint16_t *colors)
 {
 	gCLUT16 = colors;		//@@ should wait for current transmit to finish before setting this
 	modSPITxCommon(config, data, count, kSPIEndianBig, modSpiLoadBufferCLUT16To16BE);
 }
-#endif
 
 /*
 	clock calculations from Arduino for ESP code (actually, from Espressif SDK)

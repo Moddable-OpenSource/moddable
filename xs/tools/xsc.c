@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -330,6 +330,8 @@ int main(int argc, char* argv[])
 				flags |= mxDebugFlag;
 			else if (!strcmp(argv[argi], "-e"))
 				embed = 1;
+			else if (!strcmp(argv[argi], "-eval"))
+				flags |= mxEvalFlag | mxStrictFlag;
 			else if (!strcmp(argv[argi], "-o")) {
 				argi++;
 				if (argi >= argc)
@@ -376,7 +378,8 @@ int main(int argc, char* argv[])
 			c_longjmp(parser->firstJump->jmp_buf, 1);
 			
 		name = NULL;
-		parser->origin = parser->path = fxNewParserSymbol(parser, input);
+		if (!(flags & mxEvalFlag))
+			parser->origin = parser->path = fxNewParserSymbol(parser, input);
 		file = fopen(input, "r");
 		mxParserThrowElse(file);
 		

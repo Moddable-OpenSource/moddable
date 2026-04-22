@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,6 +30,7 @@
 
 // N.B. Cannot save pointer to modI2CConfiguration as it is allowed to move (stored in relocatable block)
 
+__attribute__((weak)) uint8_t i2cActivate(void *);	// ECMA-419 I2C
 static uint8_t modI2CActivate(modI2CConfiguration config);
 
 static uint32_t gHz;
@@ -80,6 +81,9 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 {
 	int data, clock, hz;
 
+	if (i2cActivate)
+		i2cActivate(C_NULL);		// make ECMA-419 release bus
+
 #if defined(MODDEF_I2C_SDA_PIN) && defined(MODDEF_I2C_SCL_PIN)
 	data = (-1 == config->sda) ? MODDEF_I2C_SDA_PIN : config->sda;
 	clock = (-1 == config->scl) ? MODDEF_I2C_SCL_PIN : config->scl;
@@ -116,7 +120,7 @@ uint8_t modI2CActivate(modI2CConfiguration config)
 #else
 		busC.flags.enable_internal_pullup = 0;
 #endif
-		if (ESP_OK != i2c_new_master_bus(&busC, &gBus))
+	if (ESP_OK != i2c_new_master_bus(&busC, &gBus))
 			return 1;
 		
 		gClock = clock;

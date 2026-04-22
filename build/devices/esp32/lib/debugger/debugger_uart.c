@@ -84,6 +84,7 @@ extern void fx_putc(void *refcon, char c);		//@@
 	extern xsMachine *gThe;		// copied in from main
 #endif
 
+#ifdef mxDebug
 static void debug_task(void *pvParameter)
 {
 	while (true) {
@@ -97,6 +98,7 @@ static void debug_task(void *pvParameter)
 			fxReceiveLoop();
 	}
 }
+#endif
 
 /*
 	Required functions provided by application

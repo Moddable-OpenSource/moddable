@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -49,10 +49,13 @@ void xs_crypt_bin_xor(xsMachine *the)
 	
 	xsmcGetBufferReadable(xsArg(0), (void **)&dataA, &sizeA);
 	xsmcGetBufferReadable(xsArg(1), (void **)&dataB, &sizeB);
-	xsmcGetBufferReadable(xsResult, (void **)&dataR, &sizeR);
-	
+	xsmcGetBufferWritable(xsResult, (void **)&dataR, &sizeR);
+
+	if (sizeB < sizeA)
+		xsUnknownError("mismatch");
+
 	for (i = 0; i < sizeA; i++)
-		dataR[i] = dataA[i] ^ dataB[i % sizeB];
+		dataR[i] = c_read8(&dataA[i]) ^ c_read8(&dataB[i % sizeB]);
 }
 
 void xs_crypt_bin_comp(xsMachine *the)
@@ -88,8 +91,8 @@ void xs_crypt_bin_comp(xsMachine *the)
 		n = sizeA;
 	}
 	for (i = 0; i < n; i++) {
-		if (dataA[i] != dataB[i]) {
-			result = dataA[i] - dataB[i];
+		if (c_read8(&dataA[i]) != c_read8(&dataB[i])) {
+			result = c_read8(&dataA[i]) - c_read8(&dataB[i]);
 			break;
 		}
 	}

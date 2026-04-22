@@ -50,17 +50,6 @@
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
 
-	#define INSTRUMENT_CPULOAD 0		//@@ zephyr
-	#define kTargetCPUCount 1
-
-	#if INSTRUMENT_CPULOAD
-		static uint32_t gCPUCounts[kTargetCPUCount * 2];
-		static k_tid_t gIdles[kTargetCPUCount];
-		static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context);
-
-		volatile uint32_t gCPUTime;
-	#endif
-
 	static void espInitInstrumentation(txMachine *the);
 	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
 
@@ -140,16 +129,22 @@ static int32_t modInstrumentationSystemFreeMemory(void *theIn)
 	return free_bytes;
 }
 
-#if INSTRUMENT_CPULOAD
+#if kModInstrumentationHasCPU
+#include <zephyr/sys/cpu_load.h>
+
 static int32_t modInstrumentationCPU0(void *theIn)
 {
-	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
-	if (!total)
-		return 0;
-	result = (100 * gCPUCounts[0]) / total;
-	gCPUCounts[0] = gCPUCounts[1] = 0;
-	return result;
+	int percent = cpu_load_get(0);
+	return (percent <= 0) ? 0 : percent;
 }
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+static int32_t modInstrumentationCPU1(void *theIn)
+{
+	int percent = cpu_load_get(1);
+	return (percent <= 0) ? 0 : percent;
+}
+#endif
 #endif
 
 void espInitInstrumentation(txMachine *the)
@@ -172,23 +167,14 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
 
-	k_mutex_init(&gInstrumentMutex);
-
-#if INSTRUMENT_CPULOAD
-/** @@MDK zephyr
+#if kModInstrumentationHasCPU
 	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
-
-	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-	nrf_drv_timer_init(&cpuTimer, &timer_cfg, cpuTimerHandler);
-	uint32_t ticks = nrf_drv_timer_us_to_ticks(&cpuTimer, CPUTIMER_US);
-	nrf_drv_timer_extended_compare(&cpuTimer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
-
-	gIdles[0] = xTaskGetIdleTaskHandle();
-
-	nrf_drv_timer_clear(&cpuTimer);
-	nrf_drv_timer_enable(&cpuTimer);
-**/
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	modInstrumentationSetCallback(CPU1, modInstrumentationCPU1);
 #endif
+#endif
+
+	k_mutex_init(&gInstrumentMutex);
 }
 
 extern struct k_mutex gDebugMutex;
@@ -223,19 +209,6 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	k_mutex_unlock(&gInstrumentMutex);
 }
 
-#if INSTRUMENT_CPULOAD
-static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
-{
-/**@@MDK zephyr
-	switch (event_type) {
-		case NRF_TIMER_EVENT_COMPARE0:
-			gCPUCounts[0 + (xTaskGetCurrentTaskHandle() == gIdles[0])] += 1;
-			gCPUTime += 1250;
-			break;
-	}
-**/
-}
-#endif
 #endif
 
 /*

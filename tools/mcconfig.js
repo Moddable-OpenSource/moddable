@@ -1488,9 +1488,9 @@ export default class extends Tool {
 
 				if (this.buildTarget == "clean") {
 					if (this.windows)
-						command += `del /s/q/f build\\bin\\zephyr\\${this.subplatform}\\*.* build\\tmp\\zephyr\\${this.subplatform}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
+						command += `del /s/q/f ${this.binPath}\\*.* ${this.tmpPath}\\*.* ${this.environment.ZEPHYR_BASE}\\build\\*.*`;
 					else
-						command += `rm -rf build/bin/zephyr/${this.subplatform} build/tmp/zephyr/${this.subplatform} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
+						command += `rm -rf ${this.binPath} ${this.tmpPath} ${this.environment.ZEPHYR_BASE}${this.slash}build`;
 				}
 				else if (this.buildTarget == "deploy") {
 					command += `west flash -d ${this.tmpPath}${this.slash}build ${flashRunner}`;
@@ -1577,7 +1577,7 @@ export default class extends Tool {
 
 				if (this.spawn(this.windows ? "where" : "which", "idf.py") !== 0) { // IDF installed but not sourced
 					if (this.windows)
-						cmd = ["cmd", "/C", `set IDF_EXPORT_QUIET=1 && pushd %IDF_PATH% && "%IDF_TOOLS_PATH%\\idf_cmd_init.bat" && popd && ${cmd.join(" ")}`];
+						cmd = ["cmd", "/C", `set IDF_EXPORT_QUIET=1 && pushd %IDF_PATH% && "%IDF_PATH%\\export.bat" && popd && ${cmd.join(" ")}`];
 					else
 						cmd = ["bash", "-c", `export IDF_EXPORT_QUIET=1 && source $IDF_PATH/export.sh && ${cmd.join(" ")}`];
 				}

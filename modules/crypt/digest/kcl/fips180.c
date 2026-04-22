@@ -131,17 +131,17 @@ sha1_update(struct sha1 *s, const void *data, uint32_t size)
 	if (r > 0) {
 		uint32_t n = SHA1_BLKSIZE - r;
 		if (size < n) {
-			memcpy(s->buf + r, p, size);
+			c_memcpy(s->buf + r, p, size);
 			return;
 		}
-		memcpy(s->buf + r, p, n);
+		c_memcpy(s->buf + r, p, n);
 		size -= n;
 		p += n;
 		sha1_process(s, s->buf);
 	}
 	for (; size >= SHA1_BLKSIZE; size -= SHA1_BLKSIZE, p += SHA1_BLKSIZE)
 		sha1_process(s, p);
-	memcpy(s->buf, p, size);
+	c_memcpy(s->buf, p, size);
 }
 
 void
@@ -274,17 +274,17 @@ sha256_update(struct sha256 *s, const void *data, uint32_t size)
 	if (r > 0) {
 		uint32_t n = SHA256_BLKSIZE - r;
 		if (size < n) {
-			memcpy(s->buf + r, p, size);
+			c_memcpy(s->buf + r, p, size);
 			return;
 		}
-		memcpy(s->buf + r, p, n);
+		c_memcpy(s->buf + r, p, n);
 		size -= n;
 		p += n;
 		sha256_process(s, s->buf);
 	}
 	for (; size >= SHA256_BLKSIZE; size -= SHA256_BLKSIZE, p += SHA256_BLKSIZE)
 		sha256_process(s, p);
-	memcpy(s->buf, p, size);
+	c_memcpy(s->buf, p, size);
 }
 
 void
@@ -356,7 +356,7 @@ sha224_fin(struct sha256 *s, uint8_t *dgst)
 	uint8_t dgst256[SHA256_DGSTSIZE];
 
 	sha256_fin(s, dgst256);
-	memcpy(dgst, dgst, SHA224_DGSTSIZE);
+	c_memcpy(dgst, dgst256, SHA224_DGSTSIZE);
 }
 
 static const uint64_t sha512_k[] ICACHE_XS6RO_ATTR = {
@@ -472,17 +472,17 @@ sha512_update(struct sha512 *s, const void *data, uint32_t size)
 	if (r > 0) {
 		uint32_t n = SHA512_BLKSIZE - r;
 		if (size < n) {
-			memcpy(s->buf + r, p, size);
+			c_memcpy(s->buf + r, p, size);
 			return;
 		}
-		memcpy(s->buf + r, p, n);
+		c_memcpy(s->buf + r, p, n);
 		size -= n;
 		p += n;
 		sha512_process(s, s->buf);
 	}
 	for (; size >= SHA512_BLKSIZE; size -= SHA512_BLKSIZE, p += SHA512_BLKSIZE)
 		sha512_process(s, p);
-	memcpy(s->buf, p, size);
+	c_memcpy(s->buf, p, size);
 }
 
 void
@@ -567,5 +567,5 @@ sha384_fin(struct sha512 *s, uint8_t *dgst)
 	uint8_t dgst512[SHA512_DGSTSIZE];
 
 	sha512_fin(s, dgst512);
-	memcpy(dgst, dgst512, SHA384_DGSTSIZE);
+	c_memcpy(dgst, dgst512, SHA384_DGSTSIZE);
 }

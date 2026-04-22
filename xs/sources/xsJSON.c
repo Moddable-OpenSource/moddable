@@ -175,8 +175,8 @@ void fxParseJSON(txMachine* the, txJSONParser* theParser)
 
 void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 {
-	txSlot* sourceArray = NULL;
-	txSlot* sourceItem;
+	txSlot* sourceArray = C_NULL;
+	txSlot* sourceItem = C_NULL;
 	txSlot* valueArray;
 	txSlot* valueItem;
 	txIndex length;
@@ -203,7 +203,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 		}	
 		fxParseJSONValue(the, theParser);
 		length++;
-		if (theParser->sourceFlag) {
+		if (sourceItem) {
 			sourceItem->next = fxNewSlot(the);
 			sourceItem = sourceItem->next;
 			sourceItem->kind = the->stack->kind;
@@ -218,7 +218,7 @@ void fxParseJSONArray(txMachine* the, txJSONParser* theParser)
 	}
 	valueArray->next->value.array.length = length;
 	fxCacheArray(the, valueArray);
-	if (theParser->sourceFlag) {
+	if (sourceItem) {
 		sourceArray->next->value.array.length = length;
 		fxCacheArray(the, sourceArray);
 	}

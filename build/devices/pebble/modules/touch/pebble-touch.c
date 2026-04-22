@@ -24,12 +24,7 @@
 
 #include "builtinCommon.h"
 
-#include "services/common/touch/touch.h"
-#include "services/common/touch/touch_event.h"
-#include "services/common/touch/touch_client.h"
-
-#include "services/common/event_service.h"
-#include "drivers/touch/touch_sensor.h"
+#include "applib/touch_service.h"
 
 typedef struct {
 	xsMachine *the;
@@ -39,10 +34,8 @@ typedef struct {
 	uint16_t x;
 	uint16_t y;
 	uint8_t haveSample;
-	EventServiceInfo event_info;
 } PebbleTouchRecord, *PebbleTouch;
 
-static void prv_handle_touch_event(PebbleEvent *event, void *context);
 static void prv_touch_event_handler(const TouchEvent *event, void *context);
 static void xs_touch_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 void xs_touch_destructor(void *data);
@@ -53,19 +46,11 @@ static const xsHostHooks xsTouchHooks = {
 	NULL
 };
 
-#if CONFIG_TOUCH
-
-#else
-	void touch_sensor_set_enabled(bool enabled);
-	void touch_reset(void) {}
-	void touch_dispatch_touch_events(TouchIdx touch_idx, TouchEventHandler event_handler, void *context) {}
-#endif
 void xs_touch_destructor(void *data)
 {
 	PebbleTouch pt = data;
 	if (!pt) return;
-	touch_sensor_set_enabled(false);
-	event_service_client_unsubscribe(&pt->event_info);
+	touch_service_unsubscribe();
 	c_free(pt);
 }
 
@@ -88,12 +73,7 @@ void xs_touch(xsMachine *the)
 	xsmcSetHostData(xsThis, pt);
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsTouchHooks);
 
-	pt->event_info.type = PEBBLE_TOUCH_EVENT;
-	pt->event_info.handler = prv_handle_touch_event;
-	pt->event_info.context = pt;
-	touch_sensor_set_enabled(true);
-	touch_reset();
-	event_service_client_subscribe(&pt->event_info);
+	touch_service_subscribe(prv_touch_event_handler, pt);
 }
 
 void xs_touch_close(xsMachine *the)
@@ -133,18 +113,12 @@ void xs_touch_sample(xsMachine *the)
 	pt->haveSample = 0;
 }
 
-void prv_handle_touch_event(PebbleEvent *event, void *context)
-{
-	PebbleTouchEvent *touch = &event->touch;
-	touch_dispatch_touch_events(touch->touch_idx, prv_touch_event_handler, context);
-}
-
 void prv_touch_event_handler(const TouchEvent *event, void *context)
 {
 	PebbleTouch pt = context;
 	pt->type = event->type;
-	pt->x = event->start_pos.x + event->diff_pos.x;
-	pt->y = event->start_pos.y + event->diff_pos.y;
+	pt->x = event->x;
+	pt->y = event->y;
 	pt->haveSample = 1;
 	if (pt->onSample) {
 		xsMachine *the = pt->the;

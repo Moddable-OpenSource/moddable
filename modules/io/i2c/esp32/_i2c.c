@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 Moddable Tech, Inc.
+ * Copyright (c) 2019-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -56,7 +56,8 @@ static I2C gI2CActive;
 static i2c_master_bus_handle_t 	gBus;
 static i2c_master_dev_handle_t	gDevice;
 
-static uint8_t i2cActivate(I2C i2c);
+__attribute__((weak)) void modI2CUninit(void *);	// pins I2C
+uint8_t i2cActivate(I2C i2c);
 static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 static void _xs_i2c_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -81,7 +82,7 @@ void _xs_i2c_constructor(xsMachine *the)
 	I2C i2c;
 	int data, clock, hz, address;
 	int timeout = 32000;		// 400 ms (same as default I2C_SLAVE_TIMEOUT_DEFAULT)
-	uint8_t pullup = GPIO_PULLUP_ENABLE;
+	uint8_t pullup = 1;
 	int port = I2C_NUM_0;
 
 	if (NULL == gI2CMutex)
@@ -117,7 +118,10 @@ void _xs_i2c_constructor(xsMachine *the)
 			xsRangeError("duplicate address");
 	}
 
-	xsmcGet(xsVar(0), xsArg(0), xsID_hz);
+	if (!GPIO_IS_VALID_OUTPUT_GPIO(clock) || !GPIO_IS_VALID_OUTPUT_GPIO(data))
+		xsRangeError("unusable pins");
+
+xsmcGet(xsVar(0), xsArg(0), xsID_hz);
 	hz = xsmcToInteger(xsVar(0));
 	if ((hz <= 0) || (hz > 20000000))
 		xsRangeError("invalid hz");
@@ -129,7 +133,7 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_pullup);
-		pullup = xsmcToBoolean(xsVar(0)) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
+		pullup = xsmcToBoolean(xsVar(0));
 	}
 
 	if (xsmcHas(xsArg(0), xsID_port)) {
@@ -318,13 +322,16 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 uint8_t i2cActivate(I2C i2c)
 {
+	if (C_NULL == gI2CMutex)		//@@ this check only needed for "make pins release bus" case below.
+		return 1;
+
 	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
 
 	if (gI2CActive) {
 		if (i2c == gI2CActive)
 			return 1;
 
-			i2c_master_bus_rm_device(gDevice);
+		i2c_master_bus_rm_device(gDevice);
 		i2c_del_master_bus(gBus);
 		gBus = NULL;
 		gDevice = NULL;
@@ -332,12 +339,15 @@ uint8_t i2cActivate(I2C i2c)
 	}
 
 	if (i2c) {
+		if (modI2CUninit)
+			modI2CUninit(C_NULL);		// make pins release bus
+
 		i2c_master_bus_config_t busC = {
 			.i2c_port = i2c->port,
 			.sda_io_num = i2c->data,
 			.scl_io_num = i2c->clock,
 			.clk_source = I2C_CLK_SRC_DEFAULT,
-	      .glitch_ignore_cnt = 7,
+			.glitch_ignore_cnt = 7,
 			.flags.enable_internal_pullup = i2c->pullup,
 		};
 		if (ESP_OK != i2c_new_master_bus(&busC, &gBus)) {
