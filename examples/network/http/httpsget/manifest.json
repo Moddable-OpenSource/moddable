@@ -12,10 +12,7 @@
 	},
 	"resources": {
 		"*": [
-			"$(MODULES)/crypt/data/ca68",
-			"$(MODULES)/crypt/data/ca106",
-			"$(MODULES)/crypt/data/ca170",
-			"$(MODULES)/crypt/data/ca171"
+			"$(MODULES)/crypt/data/ca67"
 		]
 	},
 	"config": {
