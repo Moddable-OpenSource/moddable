@@ -670,7 +670,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) | $(PROJ_DIR_FILES)
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; bash -c "export KCONFIG_REPORT_VERBOSITY=quiet; $(IDF_RECONFIGURE_CMD)"
 
