@@ -25,13 +25,14 @@
 #include "xsffi.h"
 #include "screen.h"
 
-extern txAPI _XS;
+extern txAPI gxAPI;
 
 void FFI_constructor(txMachine* the)
 {
 	txScreen* screen = the->host;
-	if (screen->buildFFI)
-		(*screen->buildFFI)(the, &_XS);
+	if (!screen->buildFFI)
+		xsUnknownError("no ffi");
+	(*screen->buildFFI)(the, &gxAPI);
 }
 
 void FFI_destructor(void* it)

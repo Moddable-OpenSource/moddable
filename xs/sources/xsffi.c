@@ -37,8 +37,8 @@ char** fxToStringHandle(txMachine* the, txSlot* slot)
 	return &(slot->value.string);
 }
 
-extern txAPI _XS;
-txAPI _XS = {
+extern txAPI gxAPI;
+txAPI gxAPI = {
 	fxThis,
 	fxArgc,
 	fxArgv,

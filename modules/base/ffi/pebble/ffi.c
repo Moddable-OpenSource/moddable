@@ -28,13 +28,13 @@
 
 void FFI_constructor(xsMachine* the)
 {
-	extern txAPI XS;
+	extern txAPI gxAPI;
 
 	txBuildFFI fxBuildFFI = getModdableAppState(fxBuildFFI);
 	if (!fxBuildFFI)
 		xsUnknownError("no ffi");
 
-	(fxBuildFFI)(the, &XS);
+	(fxBuildFFI)(the, &gxAPI);
 }
 
 void FFI_destructor(void* /* it */)

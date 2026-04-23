@@ -34,7 +34,7 @@ import Headers from "headers";
 import { URL, URLSearchParams } from "url";
 import WebSocket from "WebSocket";
 
-// import Touch from "embedded:sensor/Touch/pebble";
+import Touch from "embedded:sensor/Touch/pebble";
 
 const clearImmediate = Timer.clear;
 const setImmediate = function(callback) { return Timer.set(callback) };
@@ -97,15 +97,14 @@ globalThis.device = Object.freeze({
 		get language() {return native("xs_device_language_get").call(this);}
 	},
 	sensor: {
-		//@@ simplify!
-		// Touch: class {
-		// 	constructor(options) {
-		// 		const result = new Touch({
-		// 			...options
-		// 		});
-		// 		return result;
-		// 	}
-		// }
+		Touch: class {
+			constructor(options) {
+				const result = new Touch({
+					...options
+				});
+				return result;
+			}
+		}
 	}
 }, true);
 

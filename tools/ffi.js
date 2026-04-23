@@ -267,8 +267,8 @@ class FFIGlue {
 			file.line(`txAPI* XS = NULL;`);
 		}
 		else {
-			file.line(`extern txAPI _XS;`);
-			file.line(`txAPI* XS = &_XS;`);
+			file.line(`extern txAPI gxAPI;`);
+			file.line(`txAPI* XS = &gxAPI;`);
 		}
 		file.line();
 		for (let signature of signatures) {

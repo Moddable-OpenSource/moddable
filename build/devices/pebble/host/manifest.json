@@ -21,7 +21,7 @@
 		"$(MODDABLE)/build/devices/pebble/modules/archive-resource/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json",
-
+        "$(MODDABLE)/build/devices/pebble/modules/touch/manifest.json",
 		"$(MODDABLE)/modules/base/ffi/manifest.json",
 		"$(MODDABLE)/modules/piu/Pebble/manifest.json"
 	],
