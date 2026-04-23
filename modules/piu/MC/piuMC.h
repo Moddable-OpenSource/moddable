@@ -66,7 +66,8 @@ struct PiuFontStruct {
 	uint16_t dx; \
 	uint16_t dy; \
 	PocoBitmap bits; \
-	PocoBitmap mask
+	PocoBitmap mask; \
+	const char *substitute
 
 struct PiuGlyphStruct {
 	PiuGlyphPart;

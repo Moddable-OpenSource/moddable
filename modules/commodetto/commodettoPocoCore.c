@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -869,26 +869,37 @@ void xs_poco_drawFrame(xsMachine *the)
 void xs_poco_getTextWidth(xsMachine *the)
 {
 	const unsigned char *text = (const unsigned char *)xsmcToString(xsArg(0));
-	const char *fontData;
+	void *fontData;
+	xsUnsignedValue fontDataLength;
 	int width = 0;
 #if MODDEF_CFE_KERN
 	uint32_t previousUnicode = 0;
 #endif
 
-	fontData = xsmcGetHostData(xsArg(1));
-	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
+	xsmcGetBufferReadable(xsArg(1), &fontData, &fontDataLength);
+	CFESetFontData(gCFE, fontData, fontDataLength);
 
+	const char *substitute = C_NULL;
 	while (true) {
-		CFEGlyph glyph;
-		uint32_t unicode = PocoNextFromUTF8((uint8_t **)&text);
-		if (!unicode) {
-			if (!c_read8(text - 1))
+		uint32_t unicode;
+
+		if (substitute) {
+			unicode = PocoNextFromUTF8((uint8_t **)&substitute);
+			if (!c_read8(substitute))
+				substitute = C_NULL;
+		}
+		else {
+			unicode = PocoNextFromUTF8((uint8_t **)&text);
+			if (!unicode)
 				break;
-			continue;
 		}
 
-		glyph = CFEGetGlyphFromUnicode(gCFE, unicode, false);
+		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, unicode, false);
 		if (glyph) {
+			if (glyph->substitute) {
+				substitute = glyph->substitute;
+				continue;
+			}
 			width += glyph->advance;
 #if MODDEF_CFE_KERN
 			if (previousUnicode)
@@ -912,10 +923,11 @@ void xs_poco_drawText(xsMachine *the)
 	PocoBitmapRecord bits;
 	static const unsigned char *ellipsisFallback = (unsigned char *)"...";
 	static const unsigned char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
-	const unsigned char *ellipsis;
-	PocoDimension ellipsisWidth;
+	const unsigned char *ellipsis = C_NULL;
+	PocoDimension ellipsisWidth = 0;
 	int width;
-	const unsigned char *fontData;
+	void *fontData;
+	xsUnsignedValue fontDataLength;
 	uint8_t isColor;
 	PocoBitmapRecord mask;
 #if MODDEF_CFE_KERN
@@ -927,12 +939,12 @@ void xs_poco_drawText(xsMachine *the)
 
 	xsmcVars(2);
 
-	fontData = xsmcGetHostData(xsArg(1));
-	CFESetFontData(gCFE, fontData, xsmcGetHostBufferLength(xsArg(1)));
+	xsmcGetBufferReadable(xsArg(1), &fontData, &fontDataLength);
+	CFESetFontData(gCFE, fontData, fontDataLength);
 
 	if (argc > 5) {
 		CFEGlyph glyph = CFEGetGlyphFromUnicode(gCFE, 0x2026, false);
-		if (glyph) {
+		if (glyph && !glyph->substitute) {
 			ellipsisWidth = glyph->advance;
 			ellipsis = ellipsisUTF8;
 		}
@@ -950,20 +962,38 @@ void xs_poco_drawText(xsMachine *the)
 		ellipsis = C_NULL;		// appease compiler
 	}
 
+	const char *substitute = C_NULL;
 	while (true) {
 		PocoCoordinate cx, cy, sx, sy;
 		PocoDimension sw, sh;
 		CFEGlyph glyph;
-		uint32_t unicode = PocoNextFromUTF8((uint8_t **)&text);
-		if (!unicode) {
-			if (!c_read8(text - 1))
-				break;
-			continue;
-		}
+		uint32_t unicode;
 
-		glyph = CFEGetGlyphFromUnicode(gCFE, unicode, true);
-		if (NULL == glyph)
-			continue;
+		if (substitute) {
+			unicode = PocoNextFromUTF8((uint8_t **)&substitute);
+			if (!c_read8(substitute))
+				substitute = C_NULL;
+
+			glyph = CFEGetGlyphFromUnicode(gCFE, unicode, true);
+			if (NULL == glyph)
+				continue;
+		}
+		else { 
+			unicode = PocoNextFromUTF8((uint8_t **)&text);
+			if (!unicode) {
+				if (!c_read8(text - 1))
+					break;
+				continue;
+			}
+
+			glyph = CFEGetGlyphFromUnicode(gCFE, unicode, true);
+			if (NULL == glyph)
+				continue;
+			if (glyph->substitute) {
+				substitute = glyph->substitute;
+				continue;
+			}
+		}
 
 #if MODDEF_CFE_KERN
 		if (previousUnicode) {

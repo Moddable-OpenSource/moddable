@@ -464,11 +464,11 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 
 	static const char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
 	static const char *ellipsisFallback = "...";
-	const char *ellipsis;
-	PocoDimension ellipsisWidth;
+	const char *ellipsis = C_NULL;
+	PocoDimension ellipsisWidth = 0;
 	if (width) {
 		PiuGlyph glyph = PiuFontGetGlyph(font, 0x2026, 0);
-		if (glyph) {
+		if (glyph && !glyph->substitute) {
 			ellipsisWidth = glyph->advance;
 			ellipsis = (char *)ellipsisUTF8;
 		}
@@ -478,27 +478,39 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 				ellipsisWidth = 3 * glyph->advance;
 				ellipsis = ellipsisFallback;
 			}
-			else
-				ellipsisWidth = 0;
 		}
-	}
-	else {
-		ellipsis = NULL;
-		ellipsisWidth = 0;
 	}
 
 	text += offset;
-	while (length) {
-		xsStringValue formerText = text;
+	const char *substitute = C_NULL;
+	while (length || substitute) {
 #if MODDEF_CFE_KERN
 		xsIntegerValue formerCharacter = character;
-#endif
-		text = fxUTF8Decode(text, &character);
-		if (character <= 0)
-			break;
-		length -= text - formerText;
-			
-		glyph = PiuFontGetGlyph(font, character, 1);
+#endif		
+		if (substitute) {
+			substitute = fxUTF8Decode((char *)substitute, &character);
+			if (!c_read8(substitute))
+				substitute = C_NULL;
+
+			glyph = PiuFontGetGlyph(font, character, 1);
+		}
+		else {
+			xsStringValue formerText = text;
+
+			text = fxUTF8Decode(text, &character);
+			if (character <= 0)
+				break;
+			length -= text - formerText;
+
+			glyph = PiuFontGetGlyph(font, character, 1);
+			if (glyph->substitute) {
+				substitute = glyph->substitute;
+#if MODDEF_CFE_KERN
+				character = formerCharacter;
+#endif		
+				continue;
+			}
+		}
 		if (!glyph) {
 			character = '?';
 			glyph = PiuFontGetGlyph(font, character, 1);
@@ -517,6 +529,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 			if (stringWidth > width) {
 				length = 3;
 				text = (xsStringValue)ellipsis;
+				substitute = C_NULL;
 #if MODDEF_CFE_KERN
 				character = formerCharacter;
 #endif

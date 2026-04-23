@@ -60,6 +60,10 @@ PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPi
 	CFESetFontSize(gCFE, (*self)->size);
 	cfeGlyph = CFEGetGlyphFromUnicode(gCFE, character, needPixels);
 	if (cfeGlyph) {
+		piuGlyph.substitute = cfeGlyph->substitute;
+		if (piuGlyph.substitute)
+			return &piuGlyph;
+		
 		piuGlyph.advance = cfeGlyph->advance;
 		if (needPixels) {
 			piuGlyph.dx = cfeGlyph->dx;
@@ -129,16 +133,34 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 		return size.w;
 	}
 #endif
-	while (length) {
+	const char *substitute = C_NULL;
+	while (length || substitute) {
 		xsStringValue formerText = text;
 #if MODDEF_CFE_KERN
 		xsIntegerValue formerCharacter = character;
 #endif
-		text = fxUTF8Decode(text, &character);
-		if (character <= 0)
-			break;
-		length -= text - formerText;
-		glyph = PiuFontGetGlyph(self, character, 0);
+		if (substitute) {
+			substitute = fxUTF8Decode((char *)substitute, &character);
+			if (!c_read8(substitute))
+				substitute = C_NULL;
+
+			glyph = PiuFontGetGlyph(self, character, 0);
+		}
+		else {
+			text = fxUTF8Decode(text, &character);
+			if (character <= 0)
+				break;
+			length -= text - formerText;
+
+			glyph = PiuFontGetGlyph(self, character, 0);
+			if (glyph && glyph->substitute) {
+				substitute = glyph->substitute;
+#if MODDEF_CFE_KERN
+				character = formerCharacter;
+#endif		
+				continue;
+			}
+		}
 		if (!glyph) {
 			character = '?';
 			glyph = PiuFontGetGlyph(self, character, 0);

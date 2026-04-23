@@ -41,6 +41,8 @@ struct CFEGlyphRecord {
 
 	uint16_t				sx;
 	uint16_t				sy;
+
+	const char				*substitute;
 };
 #endif
 
