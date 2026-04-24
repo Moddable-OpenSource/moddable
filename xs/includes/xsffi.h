@@ -60,8 +60,6 @@ struct sxAPI {
 	void (*_unsigned)(txMachine* the, txSlot* slot, txUnsigned value);
 };
 
-extern txInteger fxArgc(txMachine*);
-
 #if mxWindows
 extern __declspec( dllexport ) void fxBuildFFI(txMachine* the, txAPI* api);
 #else

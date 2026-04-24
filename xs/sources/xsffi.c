@@ -1,6 +1,8 @@
 #include "xsAll.h"
 #include "xsffi.h"
 
+extern txInteger fxArgc(txMachine*);
+
 txSlot* fxArgv(txMachine* the, txInteger index) {
 	return the->frame - 1 - fxCheckArg(the, index);
 }
