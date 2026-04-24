@@ -3,6 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/base/debug/manifest.json",
+		"$(MODDABLE)/modules/base/ffi/manifest.json",
 		"$(MODDABLE)/modules/base/instrumentation/manifest.json",
 		"$(MODDABLE)/modules/data/headers/manifest.json",
 		"$(MODDABLE)/modules/data/qrcode/manifest.json",
