@@ -224,9 +224,8 @@ class ApplicationBehavior extends DebugBehavior {
 		if (!application.first) {
 			application.add(new MainContainer(this));
 			this.doOpenView();
-			
-			if (this.onOpenFileList)
-				application.defer("onOpenFileCallback");
+
+			application.defer("onOpenFileCallback");
 		}
 	}
 	onColorsChanged(application) {
