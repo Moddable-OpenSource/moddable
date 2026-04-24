@@ -3,6 +3,8 @@
 #include "string.h"
 #include "stdio.h"
 
+// note: this code does not work as-is on ESP8266 because it does not support uint8_t or uint16_t reads from flash
+
 void hello(char* string, uint8_t* buffer, uint32_t length)
 {
 	uint32_t i = 0;
@@ -50,7 +52,7 @@ char* abcToString(void* ptr)
 {
 	ABC* abc = ptr;
 	char buffer[256];
-	int len = snprintf(buffer, sizeof(buffer), "a: %d b: %d c: %ld", abc->a, abc->b, abc->c);
+	int len = snprintf(buffer, sizeof(buffer), "a: %d b: %d c: %ld", abc->a, abc->b, (long)abc->c);
 	abc->a = 3;
 	abc->b = 4;
 	abc->c = 5;
