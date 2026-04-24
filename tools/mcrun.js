@@ -91,7 +91,7 @@ class MakeFile extends MAKEFILE {
 		if (tool.cFolders) {
 			this.write("DIRECTORIES =");
 			for (var folder of tool.cFolders) {
-				this.write("\\\n\t");
+				this.write("\\\n\t-I");
 				this.write(folder);
 			}	
 			this.line("");
@@ -109,12 +109,23 @@ class MakeFile extends MAKEFILE {
 		}
 	}
 	generateObjectsRules(tool) {
-		for (var result of tool.cFiles) {
-			var source = result.source;
-			var target = result.target;
-			this.line("$(TMP_DIR)/", target, ": ", source);
-			this.echo(tool, "cc ", target);
-			this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@");
+		if (tool.windows) {
+			for (var result of tool.cFiles) {
+				var source = result.source;
+				var target = result.target;
+				this.line("$(TMP_DIR)\\", target, ": ", source);
+				this.echo(tool, "cl ", target);
+				this.line("\tcl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " /Fo$@");
+			}
+		}
+		else {
+			for (var result of tool.cFiles) {
+				var source = result.source;
+				var target = result.target;
+				this.line("$(TMP_DIR)/", target, ": ", source);
+				this.echo(tool, "cc ", target);
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@");
+			}
 		}
 	}
 }

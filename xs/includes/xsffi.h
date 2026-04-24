@@ -62,9 +62,7 @@ struct sxAPI {
 
 extern txInteger fxArgc(txMachine*);
 
-#if mxMacOSX
-extern __attribute__ ((visibility("default"))) void fxBuildFFI(txMachine* the, txAPI* api);
-#elif mxWindows
+#if mxWindows
 extern __declspec( dllexport ) void fxBuildFFI(txMachine* the, txAPI* api);
 #else
 extern void fxBuildFFI(txMachine* the, txAPI* api);

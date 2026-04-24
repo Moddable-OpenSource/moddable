@@ -41,6 +41,7 @@ struct PiuScreenStruct {
 	void* library;
 	int archiveFile;
 	size_t archiveSize;
+	void* ffiLibrary;
 	guint timer;
 	gboolean timerRunning;
 	gboolean touching;
@@ -386,6 +387,10 @@ void PiuScreenQuit(PiuScreen* self)
         g_source_remove((*self)->timer);
         (*self)->timerRunning = FALSE;
 	}
+	if ((*self)->ffiLibrary) {
+		dlclose((*self)->ffiLibrary);
+		(*self)->ffiLibrary = NULL;
+	}
 	if (screen->archive) {
 		munmap(screen->archive, (*self)->archiveSize);
 		close((*self)->archiveFile);
@@ -535,15 +540,21 @@ void PiuScreen_launch(xsMachine* the)
 	PiuScreen* self = PIU(Screen, xsThis);
 	xsStringValue libraryPath = NULL;
 	xsStringValue archivePath = NULL;
+	xsStringValue ffiPath = NULL;
 	void* library = NULL;
 	txScreenLaunchProc launch;
 	int archiveFile = -1;
 	size_t archiveSize = 0;
 	void* archive = NULL;
+	void* ffiLibrary = NULL;
+	txScreenBuildFFIProc buildFFI;
 	xsTry {
 		libraryPath = xsToString(xsArg(0));
 		if (xsToInteger(xsArgc) > 1)
 			archivePath = xsToString(xsArg(1));
+		if (xsToInteger(xsArgc) > 2)
+			ffiPath = xsToString(xsArg(2));
+			
 		library = dlopen(libraryPath, RTLD_NOW);
 		if (library == NULL) {
 			xsUnknownError("%s", dlerror());
@@ -565,14 +576,28 @@ void PiuScreen_launch(xsMachine* the)
 				archive = NULL;
 				xsUnknownError("%s", strerror(errno));
 			}
+			if (ffiPath) {
+				ffiLibrary = dlopen(ffiPath, RTLD_NOW);
+				if (ffiLibrary == NULL) {
+					xsUnknownError("%s", dlerror());
+				}
+				buildFFI = (txScreenBuildFFIProc)dlsym(ffiLibrary, "fxBuildFFI");
+				if (buildFFI == NULL) {
+					xsUnknownError("%s", dlerror());
+				}
+			}
 		}
 		(*self)->library = library;
 		(*self)->archiveFile = archiveFile;
 		(*self)->archiveSize = archiveSize;
+		(*self)->ffiLibrary = ffiLibrary;
 		(*self)->screen->archive = archive;
+		(*self)->screen->buildFFI = buildFFI;
 		(*launch)((*self)->screen);
 	}
 	xsCatch {
+		if (ffiLibrary != NULL)
+			dlclose(ffiLibrary);
 		if (archive)
 			munmap(archive, archiveSize);
 		if (archiveFile >= 0)

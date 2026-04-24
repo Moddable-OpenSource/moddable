@@ -20,27 +20,27 @@
 ARCHIVE = $(BIN_DIR)/mc.xsa
 FFI = $(BIN_DIR)/mc.ffi.so
 
-MACOS_ARCH ?=
+PKGCONFIG = $(shell which pkg-config)
 
-C_DEFINES = -DmxMacOSX=1
+C_DEFINES = -DmxLinux=1
 
 C_INCLUDES += $(DIRECTORIES) $(TMP_DIR)
 
-C_FLAGS = -c $(MACOS_ARCH)
+C_FLAGS += -fPIC -shared -c $(shell $(PKGCONFIG) --cflags gio-2.0)
 ifeq ($(DEBUG),)
 	C_FLAGS += -D_RELEASE=1 -O3
 else
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 endif
 
-LINK_LIBRARIES =
+LINK_LIBRARIES = -lm -lc $(shell $(PKGCONFIG) --libs gio-2.0) -lpthread $(LIBRARIES)
 
-LINK_OPTIONS = -dynamiclib -flat_namespace -undefined dynamic_lookup -Wl,-exported_symbol,_fxBuildFFI -Wl,-dead_strip -lobjc $(MACOS_ARCH)
+LINK_OPTIONS = -fPIC -shared -Wl,-Bdynamic\,-Bsymbolic
 
 .PHONY: all	build clean xsbug
 
 all: build
-	open -a $(SIMULATOR) $(ARCHIVE)
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
 
 build: $(ARCHIVE) $(FFI)
 
@@ -50,7 +50,7 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	
 xsbug:
-	open -a $(SIMULATOR) $(ARCHIVE)
+	$(shell nohup $(SIMULATOR) $(ARCHIVE) > /dev/null 2>&1 &)
 
 $(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"

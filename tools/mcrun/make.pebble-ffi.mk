@@ -18,31 +18,13 @@
 #
 
 ARCHIVE = $(BIN_DIR)/mc.xsa
-FFI = $(BIN_DIR)/mc.ffi.so
-
-MACOS_ARCH ?=
-
-C_DEFINES = -DmxMacOSX=1
-
-C_INCLUDES += $(DIRECTORIES) $(TMP_DIR)
-
-C_FLAGS = -c $(MACOS_ARCH)
-ifeq ($(DEBUG),)
-	C_FLAGS += -D_RELEASE=1 -O3
-else
-	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-endif
-
-LINK_LIBRARIES =
-
-LINK_OPTIONS = -dynamiclib -flat_namespace -undefined dynamic_lookup -Wl,-exported_symbol,_fxBuildFFI -Wl,-dead_strip -lobjc $(MACOS_ARCH)
 
 .PHONY: all	build clean xsbug
 
 all: build
 	open -a $(SIMULATOR) $(ARCHIVE)
 
-build: $(ARCHIVE) $(FFI)
+build: $(ARCHIVE)
 
 clean:
 	@echo "# Clean project"
@@ -52,13 +34,9 @@ clean:
 xsbug:
 	open -a $(SIMULATOR) $(ARCHIVE)
 
-$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
+$(BIN_DIR)/mc.xsa: $(DATA) $(MODULES) $(RESOURCES)
 	@echo "# xsl mc.xsa"
 	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
-
-$(FFI): $(OBJECTS) 
-	@echo '# link mc.ffi.so'
-	$(CC) $(LINK_OPTIONS) $(LINK_LIBRARIES) $^ -o $@
 
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

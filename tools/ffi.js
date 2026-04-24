@@ -143,7 +143,7 @@ class FFIGlue {
 	addMCConfigCFile(tool, signatures) {
 		const source = tool.tmpPath + tool.slash + "mc.ffi.c";
 		const file = new TabFile(source, tool);
-		this.generateCFile(file, signatures, false);
+		this.generateCFile(file, signatures, false, false);
 		file.close();
 		const target = "mc.ffi.c.o";
 		tool.cFiles.push({ target, source });
@@ -163,7 +163,7 @@ class FFIGlue {
 	addMCRunCFile(tool, signatures) {
 		const source = tool.tmpPath + tool.slash + "mc.ffi.c";
 		const file = new TabFile(source, tool);
-		this.generateCFile(file, signatures, true);
+		this.generateCFile(file, signatures, true, tool.windows);
 		file.close();
 		const target = "mc.ffi.c.o";
 		tool.cFiles.push({ target, source });
@@ -258,7 +258,7 @@ class FFIGlue {
 		}
 		return signatures;
 	}
-	generateCFile(file, signatures, mod) {
+	generateCFile(file, signatures, mod, windows) {
 		file.line(`/* FFI GENERATED FILE; DO NOT EDIT! */`);
 		file.line();
 		file.line(`#include "xsffi.h"`);
@@ -352,9 +352,20 @@ class FFIGlue {
 			throw new Error("No FFI support!");
 		tool.fragmentPath = path;
 		const signatures = this.parseSignatures(description.functions);
-		this.addSources(tool, description.sources);
-		this.addMCRunCFile(tool, signatures);
-		this.addMCRunCFolder(tool);
+		if (tool.platform == "pebble") {
+			path = tool.mainPath + tool.slash + ".." + tool.slash + "c";
+			path = tool.resolveDirectoryPath(path);
+			if (!path)
+				throw new Error("No c directory!");
+			const file = new TabFile(path + tool.slash + "mc.ffi.c", tool);
+			this.generateCFile(file, signatures, true, false);
+			file.close();
+		}
+		else {
+			this.addSources(tool, description.sources);
+			this.addMCRunCFile(tool, signatures);
+			this.addMCRunCFolder(tool);
+		}
 	}
 }
 

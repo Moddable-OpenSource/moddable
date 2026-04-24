@@ -6,14 +6,24 @@
 		]
 	},
 	"platforms":{
+		"pebble": {
+			"modules": {
+				"*": "./pebble/ffi"
+			}
+		},
+		"lin": {
+			"modules": {
+				"*": "./sim/ffi"
+			}
+		},
 		"mac": {
 			"modules": {
 				"*": "./sim/ffi"
 			}
 		},
-		"pebble": {
+		"win": {
 			"modules": {
-				"*": "./pebble/ffi"
+				"*": "./sim/ffi"
 			}
 		}
 	},
