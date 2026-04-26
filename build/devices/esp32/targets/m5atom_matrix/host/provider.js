@@ -77,8 +77,7 @@ const device = {
 				const sample = super.sample();
 				sample.accelerometer.y *= -1;
 				sample.accelerometer.z *= -1;
-				sample.gyroscope.x = sample.gyroscope.y * -1;
-				sample.gyroscope.y = sample.gyroscope.x;
+				[sample.gyroscope.x, sample.gyroscope.y] = [sample.gyroscope.y * -1, sample.gyroscope.x];
 				sample.gyroscope.z *= -1;
 				return sample;
 			}
