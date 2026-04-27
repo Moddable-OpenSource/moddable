@@ -37,6 +37,27 @@
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
 static void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
 
+static void formatMAC(const uint8_t *mac, char *out)
+{
+	static const char hex[] = "0123456789abcdef";
+	for (int i = 0; i < 6; i++) {
+		if (i) *out++ = ':';
+		*out++ = hex[(mac[i] >> 4) & 0x0F];
+		*out++ = hex[mac[i] & 0x0F];
+	}
+	*out = 0;
+}
+
+static const char *securityToString(int security)
+{
+	switch (security) {
+		case WIFI_SECURITY_TYPE_NONE: return "none";
+		case WIFI_SECURITY_TYPE_PSK: return "wpa2_psk";
+		case WIFI_SECURITY_TYPE_SAE: return "wpa3_psk";
+		default: return "unknown";
+	}
+}
+
 typedef struct {
 	xsSlot				obj;
 	xsMachine			*the;
@@ -113,6 +134,12 @@ void xs_wifi(xsMachine *the)
 
 	net_mgmt_init_event_callback(&wf->callbackIPv4, ipv4_event_handler, NET_EVENT_IPv4_MASK);
 	net_mgmt_add_event_callback(&wf->callbackIPv4);
+
+	struct in_addr *addr = net_if_ipv4_get_global_addr(wf->iface, NET_ADDR_PREFERRED);
+	if (addr) {
+		wf->connected = 1;
+		wf->dhcpBound = 1;
+	}
 }
 
 void xs_wifi_close(xsMachine *the)
@@ -152,10 +179,15 @@ static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t ms
 			xsmcSet(xsResult, xsID_channel, xsVar(0));
 			xsmcSetInteger(xsVar(0), entry->rssi);
 			xsmcSet(xsResult, xsID_RSSI, xsVar(0));
-			if (entry->mac_length) {
-				xsmcSetArrayBuffer(xsVar(0), entry->mac, entry->mac_length);
-				xsmcSet(xsResult, xsID_BSSID, xsVar(0));
-			}
+
+			char bssidStr[18];
+			formatMAC(entry->mac, bssidStr);
+			xsmcSetString(xsVar(0), bssidStr);
+			xsmcSet(xsResult, xsID_BSSID, xsVar(0));
+
+			xsmcSetStringX(xsVar(0), (char *)securityToString(entry->security));
+			xsmcSet(xsResult, xsID_security, xsVar(0));
+
 			xsCallFunction1(xsReference(wf->onFound), wf->obj, xsResult);
 		}
 	xsEndHost(the);
@@ -243,6 +275,8 @@ void xs_wifi_scan(xsMachine *the)
 		xsUnknownError("already scanning");
 
 	wf->onFound = builtinGetCallback(the, xsID_onFound);
+	if (!wf->onFound)
+		xsUnknownError("onFound required");
 	wf->onComplete = builtinGetCallback(the, xsID_onComplete);
 
 	wf->scanning = 1;
@@ -348,16 +382,60 @@ void xs_wifi_MAC_get(xsMachine *the)
 	if ((C_NULL == addr) || (6 != addr->len))
 		return;
 
-	static const char hex[] = "0123456789abcdef";
-	char mac[18], *s = mac;
-	
-	for (int i = 0; i < 6; i++) {
-		if (i)
-			*s++ = ':';
-		*s++ = hex[(addr->addr[i] >> 4) & 0x0F];
-		*s++ = hex[addr->addr[i] & 0x0F];
-	}
-	*s = 0;
-
+	char mac[18];
+	formatMAC(addr->addr, mac);
 	xsmcSetString(xsResult, mac);
+}
+
+void xs_wifi_SSID_get(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+	if (!wf->connected) return;
+
+	struct wifi_iface_status status = { 0 };
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, wf->iface, &status, sizeof(status)))
+		return;
+
+	if (status.ssid_len) {
+		status.ssid[status.ssid_len] = 0;
+		xsmcSetString(xsResult, (char *)status.ssid);
+	}
+}
+
+void xs_wifi_BSSID_get(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+	if (!wf->connected) return;
+
+	struct wifi_iface_status status = { 0 };
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, wf->iface, &status, sizeof(status)))
+		return;
+
+	char bssid[18];
+	formatMAC(status.bssid, bssid);
+	xsmcSetString(xsResult, bssid);
+}
+
+void xs_wifi_RSSI_get(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+	if (!wf->connected) return;
+
+	struct wifi_iface_status status = { 0 };
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, wf->iface, &status, sizeof(status)))
+		return;
+
+	xsmcSetInteger(xsResult, status.rssi);
+}
+
+void xs_wifi_channel_get(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+	if (!wf->connected) return;
+
+	struct wifi_iface_status status = { 0 };
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, wf->iface, &status, sizeof(status)))
+		return;
+
+	xsmcSetInteger(xsResult, status.channel);
 }

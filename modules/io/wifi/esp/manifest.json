@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:network/interface/wifi": "./wifi-esp"
+	},
+	"preload": [
+		"embedded:network/interface/wifi"
+	]
+}

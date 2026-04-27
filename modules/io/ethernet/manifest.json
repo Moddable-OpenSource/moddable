@@ -1,5 +1,11 @@
 {
 	"platforms": {
+		"esp32": {
+			"include": "./esp32/manifest.json",
+			"dependency": [
+				{ "idf": "esp_eth" }
+			]
+		},
 		"zephyr": {
 			"include": "./zephyr/manifest.json"
 		},

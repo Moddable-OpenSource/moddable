@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:network/interface/ethernet": "./ethernet-esp32"
+	},
+	"preload": [
+		"embedded:network/interface/ethernet"
+	]
+}
