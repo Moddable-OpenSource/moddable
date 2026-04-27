@@ -2502,14 +2502,17 @@ export class Tool extends TOOL {
 						this.fullplatform = this.platform + "/" + this.subplatform;
 					}
 					else if (":" == splitOn) {
-						this.environment.SUBPLATFORMDIRECTORY = this.resolveDirectoryPath(parts[1]);
+						let dir = parts[1];
+						if (dir.startsWith("~" + this.slash) && this.getenv("HOME"))
+							dir = dir.replace("~", this.getenv("HOME"));
+						this.environment.SUBPLATFORMDIRECTORY = this.resolveDirectoryPath(dir);
 						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
 						try {
 							const manifest = JSON.parse(this.readFileString(this.environment.SUBPLATFORMMANIFEST));
 							this.subplatform = manifest.build.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
 						}
 						catch {
-							throw new Error("invalid subplatform manfest: " + parts[1]);
+							throw new Error("invalid subplatform manfest path: " + parts[1]);
 						}
 
 						this.environment.SUBPLATFORM = this.subplatform;
