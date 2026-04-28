@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -523,7 +523,6 @@ void fxQueuePromiseJobs(txMachine* the)
 */
 
 #if MODDEF_XS_MODS
-
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
 	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
@@ -549,7 +548,7 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
 
-	if (fxMapArchive(the, preparation, (void *)kModulesStart, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
+	if (fxMapArchive(the, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
 		result = (void *)kModulesStart;
 		fxSetArchive(the, result);
 	}
