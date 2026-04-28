@@ -2972,7 +2972,7 @@ export class Tool extends TOOL {
 					functions: {},
 				};
 			}
-			let property = platform.ffi.sources;
+			let property = platform.ffi.sources ?? [];
 			if (property instanceof Array)
 				property = property.map(item => this.resolveSource(item));
 			else if (typeof property == "string")
