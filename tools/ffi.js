@@ -225,7 +225,7 @@ class FFIGlue {
 					let resultType = this.normalizeType(signature.returns || "void"); 
 					let Constructor = ResultConstructors[resultType];
 					if (!Constructor)
-						tool.reportError(null, 0, `functions.${ name }.returns: invalid type!`);
+						tool.reportError(null, 0, `functions.${ name }.returns: invalid type ${signature.returns}!`);
 					else
 						resultType = new Constructor(resultType);
 					
@@ -239,7 +239,7 @@ class FFIGlue {
 								let argumentType = this.normalizeType(argumentTypes[i]);
 								let Constructor = ArgumentConstructors[argumentType];
 								if (!Constructor)
-									tool.reportError(null, 0, `functions.${ name }.arguments[${ i }]: invalid type!`);
+									tool.reportError(null, 0, `functions.${ name }.arguments[${ i }]: invalid type ${argumentTypes[i]}!`);
 								else
 									argumentTypes[i] = new Constructor(argumentType);
 							}
