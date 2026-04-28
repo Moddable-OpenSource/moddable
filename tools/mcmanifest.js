@@ -2509,7 +2509,7 @@ export class Tool extends TOOL {
 						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
 						try {
 							const manifest = JSON.parse(this.readFileString(this.environment.SUBPLATFORMMANIFEST));
-							this.subplatform = manifest.build.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
+							this.subplatform = manifest.build?.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
 						}
 						catch {
 							throw new Error("invalid subplatform manfest path: " + parts[1]);
