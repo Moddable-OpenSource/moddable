@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2023  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -18,16 +18,22 @@
 #
 
 HOST_OS := $(shell uname)
+PICO_VID ?= 2e8a
+# PICO_PID ?= 000a		# RP2040
+PICO_PID ?= 0009		# RP2350
+
 ifeq ($(HOST_OS),Darwin)
-UPLOAD_PORT ?= /dev/cu.usbmodem0000000000001
+	UPLOAD_PORT ?= $(PICO_VID):$(PICO_PID)
 else
-UPLOAD_PORT ?= /dev/ttyUSB0
+	UPLOAD_PORT ?= /dev/ttyUSB0
 endif
 
 ARCHIVE = $(BIN_DIR)/$(NAME).xsa
 
 XSBUG_HOST ?= localhost
 XSBUG_PORT ?= 5002
+
+DEBUGGER_SPEED ?= 460800
 
 ifeq ($(DEBUG),1)
 	LAUNCH = debug
@@ -39,11 +45,11 @@ all: $(LAUNCH)
 	
 debug: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 release: $(ARCHIVE)
 	$(shell pkill serial2xsbug)
-	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) 921600 8N1 -install $(ARCHIVE)
+	export XSBUG_PORT=$(XSBUG_PORT) && export XSBUG_HOST=$(XSBUG_HOST) && serial2xsbug $(UPLOAD_PORT) $(DEBUGGER_SPEED) 8N1 -install $(ARCHIVE)
 
 build: $(ARCHIVE)
 	@echo "# Target built: $(ARCHIVE)"
