@@ -19,7 +19,7 @@
  */
 
 #include "process_state/app_state/app_state.h"
-#include "services/common/evented_timer.h"
+#include "services/evented_timer.h"
 #include "applib/event_service_client.h"
 
 #include "xs.h"

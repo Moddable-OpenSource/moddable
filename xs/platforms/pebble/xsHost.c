@@ -52,7 +52,7 @@
 
 #include "applib/app_heap_util.h"
 #include "applib/app_logging.h"
-#include "services/common/evented_timer.h"
+#include "services/evented_timer.h"
 #include "system/passert.h"
 
 #ifndef MODDEF_XS_MODS

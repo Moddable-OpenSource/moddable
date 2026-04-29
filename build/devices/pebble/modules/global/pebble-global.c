@@ -22,7 +22,9 @@
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
 #include "moddableAppState.h"
-#include "services/common/clock.h"
+#include "services/clock.h"
+#include "applib/app_launch_reason.h"
+#include "applib/app_light.h"
 #include "applib/app_watch_info.h"
 #include "applib/connection_service.h"
 #include "process_state/app_state/app_state.h"

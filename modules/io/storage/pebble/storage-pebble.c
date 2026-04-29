@@ -23,7 +23,7 @@
 #include "mc.xs.h"      // for xsID_ values
 #include "builtinCommon.h"
 
-#include "services/normal/settings/settings_file.h"
+#include "services/settings/settings_file.h"
 
 struct xsStorageIteratorRecord {
 	struct xsStorageIteratorRecord *next;
