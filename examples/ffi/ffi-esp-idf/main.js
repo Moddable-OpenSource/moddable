@@ -8,7 +8,7 @@ const targetGPIO = 0;
 
 // get / set drive capability
 
-let uint32 = new Uint32Array(1), drive;
+let uint32 = new Uint32Array(1);
 gpio.gpio_get_drive_capability(targetGPIO, uint32.buffer);
 trace(`GPIO drive ${uint32[0]}\n`);		// default - expect 2 (GPIO_DRIVE_CAP_DEFAULT)
 
