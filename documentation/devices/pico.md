@@ -16,16 +16,16 @@ This document describes how to start building Moddable applications for the Rasp
 - [About Raspberry Pi Pico](#about-pico)
 - [Overview](#overview)
 - [Platforms](#platforms)
-- [macOS](#mac)
-  - [SDK and Host Environment Setup - macOS](#macos-setup)
+- macOS
+  - [SDK and Host Environment Setup - macOS](#macOS-setup)
   - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
-  - [Troubleshooting](#mac-troubleshooting)
-- [Windows](#win)
-  - [SDK and Host Environment Setup - Windows](#windows-setup)
-  - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
-- [Linux](#lin)
-  - [SDK and Host Environment Setup - Linux](#linux-setup)
-  - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
+  - [Troubleshooting](#macOS-troubleshooting)
+- Windows
+  - [SDK and Host Environment Setup - Windows](#win-setup)
+  - [Building and Deploying apps - Windows](#win-building-and-deploying-apps)
+- Linux
+  - [SDK and Host Environment Setup - Linux](#lin-setup)
+  - [Building and Deploying apps - Linux](#lin-building-and-deploying-apps)
 - [Using mods](#using-mods)
 - [Debugging Native Code](#debugging-native-code)
 - [Reference Documents](#reference)
@@ -114,7 +114,7 @@ The Raspberry Pi Pico 2 has the following features:
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-<a id="mac"></a>
+<a id="macOS-setup"></a>
 
 ### macOS Setup
 
@@ -221,14 +221,14 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
-<a id="mac-troubleshooting"></a>
+<a id="macOS-troubleshooting"></a>
 ### Troubleshooting
 
 - If the macOS **DISK NOT EJECTED PROPERLY** remain on your screen, you can download and use the [`ejectfix.py`](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/ejectfix.py) tool to make them auto-dismiss.
 
    See the [article at the Adafruit blog](https://blog.adafruit.com/2021/05/11/how-to-tone-down-macos-big-surs-circuitpy-eject-notifications/) for details.
 
-<a id="win"></a>
+<a id="win-setup"></a>
 
 ### Windows Setup
 
@@ -240,7 +240,7 @@ Not yet available.
 Not yet available.
 
 
-<a id="lin"></a>
+<a id="lin-setup"></a>
 
 ### Linux setup
 
@@ -313,7 +313,7 @@ Not yet available.
 	```
 
 
-<a id="linux-building-and-deploying-apps"></a>
+<a id="lin-building-and-deploying-apps"></a>
 ### Building and Deploying Apps on Linux
 
 After you've setup your Linux host environment, take the following steps to install an application on your Pico.
