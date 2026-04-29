@@ -1,10 +1,7 @@
 {
 	"build": {
-		"PICO_SUBCLASS":"rp2350",
-		"USE_SFE":"1",
-		"SFE_CS_PIN":"47",
-		"SFE_DIR":"$(MODDABLE)/build/devices/pico/lib/sparkfun-pico",
-		"PICO_BOARD_FILE":"$(SFE_DIR)/sparkfun_pico/sfe_pico.h"
+		"PICO_BOARD": "pimoroni_pico_plus2_rp2350",
+		"PICO_SUBCLASS":"rp2350"
 	},
 	"include": [
 		"$(MODULES)/io/manifest.json",

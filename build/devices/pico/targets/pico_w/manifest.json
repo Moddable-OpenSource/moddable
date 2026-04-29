@@ -1,11 +1,11 @@
 {
-	"modules": {
-		"setup/target": "./setup-target"
-	},
 	"build": {
+		"PICO_BOARD": "pico_w",
+		"PICO_BOARD_FILE": "$(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h",
 		"WIFI_GPIO":"1"
 	},
 	"modules": {
+		"setup/target": "./setup-target",
 		"*": [
 			"$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver/cyw43_bus_pio_spi.pio"
 		]
