@@ -34,6 +34,7 @@ class Type {
 }
 
 class IntegerType extends Type {
+	get tsType() { return "number"; }
 	writeArgumentConversion(file, i) {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toInteger(the, mxArgv(${ i }));`);
 	}
@@ -43,6 +44,7 @@ class IntegerType extends Type {
 }
 
 class NumberType extends Type {
+	get tsType() { return "number"; }
 	writeArgumentConversion(file, i) {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toNumber(the, mxArgv(${ i }));`);
 	}
@@ -52,6 +54,7 @@ class NumberType extends Type {
 }
 
 class PointerType extends Type {
+	get tsType() { return "ArrayBuffer"; }
 	writeArgument(file, i) {
 		file.write(`(${ this.name })*arg${ i }`);
 	}
@@ -61,6 +64,7 @@ class PointerType extends Type {
 }
 
 class StringType extends Type {
+	get tsType() { return "string"; }
 	writeArgument(file, i) {
 		file.write(`*arg${ i }`);
 	}
@@ -83,6 +87,7 @@ class StringType extends Type {
 }
 
 class UnsignedType extends Type {
+	get tsType() { return "number"; }
 	writeArgumentConversion(file, i) {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toUnsigned(the, mxArgv(${ i }));`);
 	}
@@ -92,6 +97,7 @@ class UnsignedType extends Type {
 }
 
 class VoidType extends Type {
+	get tsType() { return "void"; }
 	constructor() {
 		super("void");
 	}
@@ -148,6 +154,14 @@ class FFIGlue {
 		const target = "mc.ffi.c.o";
 		tool.cFiles.push({ target, source });
 	}
+	addMCConfigDTSFile(tool, signatures) {
+		const source = tool.tmpPath + tool.slash + "mc.ffi.d.ts";
+		const file = new TabFile(source, tool);
+		this.generateDTSFile(file, signatures, "mc/ffi");
+		file.close();
+		const target = "mc" + tool.slash + "ffi";
+		tool.dtsFiles.push({ target, source });
+	}
 	addMCConfigJSFile(tool, description) {
 		const folder = "mc";
 		tool.createDirectory(tool.modulesPath + tool.slash + folder);
@@ -175,6 +189,14 @@ class FFIGlue {
 			folders.already[directory] = true;
 			folders.push(directory);
 		}
+	}
+	addMCRunDTSFile(tool, signatures) {
+		const source = tool.tmpPath + tool.slash + "mc.ffi.d.ts";
+		const file = new TabFile(source, tool);
+		this.generateDTSFile(file, signatures, "ffi");
+		file.close();
+		const target = "ffi";
+		tool.dtsFiles.push({ target, source });
 	}
 	addSources(tool, sources) {
 		const files = tool.cFiles;
@@ -328,6 +350,23 @@ class FFIGlue {
 		file.tab(-1);
 		file.line(`}`);
 	}
+	generateDTSFile(file, signatures, moduleName) {
+		file.line(`/* FFI GENERATED FILE; DO NOT EDIT! */`);
+		file.line();
+		file.line(`declare module "${ moduleName }" {`);
+		file.tab(1);
+		file.line(`export default class FFI {`);
+		file.tab(1);
+		file.line(`constructor();`);
+		for (let signature of signatures) {
+			let args = signature.argumentTypes.map((type, i) => `arg${ i }: ${ type.tsType }`).join(", ");
+			file.line(`${ signature.name }(${ args }): ${ signature.resultType.tsType };`);
+		}
+		file.tab(-1);
+		file.line(`}`);
+		file.tab(-1);
+		file.line(`}`);
+	}
 	generateMCConfigJSFile(file) {
 		file.line(`/* FFI GENERATED FILE; DO NOT EDIT! */`);
 		file.line();
@@ -344,6 +383,7 @@ class FFIGlue {
 		this.addSources(tool, description.sources);
 		this.addMCConfigJSFile(tool);
 		this.addMCConfigCFile(tool, signatures);
+		this.addMCConfigDTSFile(tool, signatures);
 	}
 	mcRun(tool, description) {
 		let path = tool.fragmentPath.slice(0, -3) + "-ffi.mk";
@@ -366,6 +406,7 @@ class FFIGlue {
 			this.addMCRunCFile(tool, signatures);
 			this.addMCRunCFolder(tool);
 		}
+		this.addMCRunDTSFile(tool, signatures);
 	}
 }
 
