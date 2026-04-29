@@ -129,6 +129,8 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #if defined(PICO_BUILD) || defined(__ZEPHYR__)
 	void builtinInitIO(void);
+#else
+	#define builtinInitIO()
 #endif
 
 #endif

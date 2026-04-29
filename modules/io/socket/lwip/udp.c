@@ -96,6 +96,7 @@ void xs_udp_constructor(xsMachine *the)
 			xsRangeError("invalid timeToLive");
 	}
 
+	builtinInitIO();
 	builtinInitializeTarget(the);
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
