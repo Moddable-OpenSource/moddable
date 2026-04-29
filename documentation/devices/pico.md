@@ -1,12 +1,11 @@
 # Getting Started with Raspberry Pi Pico
-Copyright 2021-2024 Moddable Tech, Inc.<BR>
-Revised: December 18, 2024
+Copyright 2021-2026 Moddable Tech, Inc.<BR>
+Revised: April 29, 2026
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 > Note: The Pico port is solid and mostly complete. Possible future work includes:
 >
-> - Mods
 > - JavaScript Atomics
 > - Web Workers making use of the second core
 > - PIO integration
@@ -27,6 +26,7 @@ This document describes how to start building Moddable applications for the Rasp
 - [Linux](#lin)
   - [SDK and Host Environment Setup - Linux](#linux-setup)
   - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
+- [Using mods](#using-mods)
 - [Debugging Native Code](#debugging-native-code)
 - [Reference Documents](#reference)
 
@@ -156,19 +156,19 @@ The Raspberry Pi Pico 2 has the following features:
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.0.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
@@ -277,19 +277,19 @@ Not yet available.
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.0.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
@@ -344,6 +344,44 @@ After you've setup your Linux host environment, take the following steps to inst
 	```
 
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
+
+
+
+<a id="using-mods"></a>
+## Using mods
+
+[Moddable Mods](../xs/mods.md) are user installed extensions.
+
+A mod is built and run using the `mcrun` command line tool which connects to the device and sends the mod to it.
+
+Some pico devices aren't automatically recognized and you may have to identify the device connection and set the `UPLOAD_PORT` environment variable.
+
+For example, if you use mcrun and it appears to hang:
+
+```
+user % mcrun -d -m -p pico/pico_w
+### -p pico/pico_w
+# xsc example.xsb
+# xsc check.xsb
+# xsl helloworld.xsa
+   < nothing else happens >
+```
+
+Type `ctrl-c` to stop. Look for the path of your device and set the `UPLOAD_PORT` environment variable.
+
+```
+user % ls /dev/cu.usb*
+/dev/cu.usbmodem11332301
+user % export UPLOAD_PORT=/dev/cu.usbmodem11332301
+```
+
+Try the `mcrun` command again:
+
+```
+user % mcrun -d -m -p pico/pico_w
+### -p pico/pico_w
+Installing mod...complete
+```
 
 
 
