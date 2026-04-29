@@ -1,0 +1,61 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json"
+	],
+	"modules": {
+		"*": [
+			"./main",
+			{
+				"source": "./gpio_t.h",
+				"transform": "cdv",
+				"get": true,
+				"set": false,
+				"json": true
+			}
+		]
+	},
+	"preload": [
+		"gpio_t"
+	],
+	"ffi": {
+		"functions": {
+			"gpio_set_level": {
+				"arguments": [ "int32_t", "uint32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_get_level": {
+				"arguments": [ "int32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_pullup_en": {
+				"arguments": [ "int32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_pullup_dis": {
+				"arguments": [ "int32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_set_direction": {
+				"arguments": [ "int32_t", "int32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_set_drive_capability": {
+				"arguments": [ "int32_t", "uint32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_get_drive_capability": {
+				"arguments": [ "int32_t", "uint32_t *" ],
+				"returns": "int32_t"
+			},
+			"gpio_reset_pin": {
+				"arguments": [ "int32_t" ],
+				"returns": "int32_t"
+			},
+			"gpio_get_io_config": {
+				"arguments": [ "int32_t", "uint8_t *" ],
+				"returns": "int32_t"
+			}
+		}
+	}
+}
+
