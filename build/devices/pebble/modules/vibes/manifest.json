@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"pebble/vibes": "./vibes"
+	},
+	"preload": [
+		"pebble/vibes"
+	]
+}

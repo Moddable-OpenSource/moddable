@@ -22,6 +22,9 @@
 		"$(MODDABLE)/build/devices/pebble/modules/httpclient/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/websocketclient/manifest.json",
 		"$(MODDABLE)/build/devices/pebble/modules/touch/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/vibes/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/wakeup/manifest.json",
+		"$(MODDABLE)/build/devices/pebble/modules/dictation/manifest.json",
 		"$(MODDABLE)/modules/piu/Pebble/manifest.json"
 	],
 	"config": {

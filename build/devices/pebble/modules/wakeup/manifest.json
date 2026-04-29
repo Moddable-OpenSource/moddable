@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"pebble/wakeup": "./wakeup"
+	},
+	"preload": [
+		"pebble/wakeup"
+	]
+}

@@ -78,7 +78,10 @@
 				"embedded:sensor/Location": "$(TYPINGS)/pebble/location",
 				"embedded:provider/builtin": "$(TYPINGS)/pebble/device",
 				"pebble/button": "$(TYPINGS)/pebble/button",
-				"pebble/message": "$(TYPINGS)/pebble/message"
+				"pebble/dictation": "$(TYPINGS)/pebble/dictation",
+				"pebble/message": "$(TYPINGS)/pebble/message",
+				"pebble/vibes": "$(TYPINGS)/pebble/vibes",
+				"pebble/wakeup": "$(TYPINGS)/pebble/wakeup"
 			},
 			"typescript": {
 				"tsconfig": {

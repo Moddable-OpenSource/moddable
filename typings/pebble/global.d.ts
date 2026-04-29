@@ -41,9 +41,25 @@ interface ConnectionState {
   pebblekit: boolean;
 }
 
+interface FirmwareVersion {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
+interface LaunchInfo {
+  reason: number;
+  arguments: number;
+}
+
+interface WakeupEvent {
+  id: number;
+  cookie: number;
+}
+
 type TimeEventType = "secondchange" | "minutechange" | "hourchange" | "daychange";
 
-type PebbleEventType = TimeEventType | "connected" | "resize";
+type PebbleEventType = TimeEventType | "connected" | "resize" | "willFocus" | "didFocus" | "wakeup";
 
 type TimeChangeCallback = (event: TimeChangeEvent) => void;
 
@@ -51,14 +67,30 @@ type ConnectedCallback = () => void;
 
 type ResizeCallback = (progress: number) => void;
 
+type FocusCallback = (inFocus: boolean) => void;
+
+type WakeupCallback = (event: WakeupEvent) => void;
+
 interface watch {
   addEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   addEventListener(event: "connected", callback: ConnectedCallback): void;
   addEventListener(event: "resize", callback: ResizeCallback): void;
+  addEventListener(event: "willFocus", callback: FocusCallback): void;
+  addEventListener(event: "didFocus", callback: FocusCallback): void;
+  addEventListener(event: "wakeup", callback: WakeupCallback): void;
   removeEventListener(event: TimeEventType, callback: TimeChangeCallback): void;
   removeEventListener(event: "connected", callback: ConnectedCallback): void;
   removeEventListener(event: "resize", callback: ResizeCallback): void;
+  removeEventListener(event: "willFocus", callback: FocusCallback): void;
+  removeEventListener(event: "didFocus", callback: FocusCallback): void;
+  removeEventListener(event: "wakeup", callback: WakeupCallback): void;
+  light(enable?: boolean): void;
   readonly connected: ConnectionState;
+  readonly hour12: boolean;
+  readonly model: number;
+  readonly firmwareVersion: FirmwareVersion;
+  readonly launch: LaunchInfo;
+  readonly wake: WakeupEvent | undefined;
 }
 
 declare const watch: watch;
