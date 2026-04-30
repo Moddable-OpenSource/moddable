@@ -1,5 +1,6 @@
 {
 	"build": {
+		"EXPECTED_PICO_SDK": "2.2.0",
 		"PICO_EXTRAS_DIR": "$(HOME)/pico/pico-extras",
 		"PICO_EXAMPLES_DIR": "$(HOME)/pico/pico-examples"
 	},
