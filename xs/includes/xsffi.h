@@ -42,22 +42,31 @@ struct sxAPI {
 	txSlot* (*_this)(txMachine* the);
 	txInteger (*argc)(txMachine* the);
 	txSlot* (*argv)(txMachine* the, txInteger index);
-	void (*defineID)(txMachine* the, txID id, txFlag flag, txFlag mask);
-	txID (*id)(txMachine* the, txString name);
-	void (*integer)(txMachine* the, txSlot* slot, txInteger value);
-	txSlot* (*newHostFunction)(txMachine* the, txCallback callback, txInteger length, txInteger name, txInteger profileID);
-	void (*number)(txMachine* the, txSlot* slot, txNumber value);
 	void (*pop)(txMachine* the);
 	void (*push)(txMachine* the, txSlot* slot);
 	txSlot* (*result)(txMachine* the);
-	void (*string)(txMachine* the, txSlot* slot, char* value);
-	void (*stringX)(txMachine* the, txSlot* slot, char* value);
-	void** (*toArrayBufferHandle)(txMachine* the, txSlot* slot);
+
+	void (*defineID)(txMachine* the, txID id, txFlag flag, txFlag mask);
+	txID (*id)(txMachine* the, txString name);
+	txSlot* (*newHostFunction)(txMachine* the, txCallback callback, txInteger length, txInteger name, txInteger profileID);
+	
+	void (*fromBigInt64)(txMachine* the, txSlot* slot, int64_t value);
+	void (*fromBigUint64)(txMachine* the, txSlot* slot, uint64_t value);
+	void (*fromInteger)(txMachine* the, txSlot* slot, txInteger value);
+	void (*fromNumber)(txMachine* the, txSlot* slot, txNumber value);
+	void (*fromUnsigned)(txMachine* the, txSlot* slot, txUnsigned value);
+	
+	int64_t (*toBigInt64)(txMachine* the, txSlot* slot);
+	uint64_t (*toBigUint64)(txMachine* the, txSlot* slot);
 	txInteger (*toInteger)(txMachine* the, txSlot* slot);
 	txNumber (*toNumber)(txMachine* the, txSlot* slot);
-	char** (*toStringHandle)(txMachine* the, txSlot* slot);
 	txUnsigned (*toUnsigned)(txMachine* the, txSlot* slot);
-	void (*_unsigned)(txMachine* the, txSlot* slot, txUnsigned value);
+	
+	void (*fromString)(txMachine* the, txSlot* slot, char* value);
+	void (*fromStringX)(txMachine* the, txSlot* slot, char* value);
+	char** (*toStringHandle)(txMachine* the, txSlot* slot);
+	
+	void** (*toArrayBufferHandle)(txMachine* the, txSlot* slot);
 };
 
 #if mxWindows

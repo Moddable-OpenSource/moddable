@@ -33,13 +33,33 @@ class Type {
 	}
 }
 
+class BigInt64Type extends Type {
+	get tsType() { return "number"; }
+	writeArgumentConversion(file, i) {
+		file.line(`${ this.name } arg${ i } = XS->toBigInt64(the, mxArgv(${ i }));`);
+	}
+	writeResultConversion(file) {
+		file.line("XS->fromBigInt64(the, mxResult, result);");
+	}
+}
+
+class BigUint64Type extends Type {
+	get tsType() { return "number"; }
+	writeArgumentConversion(file, i) {
+		file.line(`${ this.name } arg${ i } = XS->toBigUint64(the, mxArgv(${ i }));`);
+	}
+	writeResultConversion(file) {
+		file.line("XS->fromBigUint64(the, mxResult, result);");
+	}
+}
+
 class IntegerType extends Type {
 	get tsType() { return "number"; }
 	writeArgumentConversion(file, i) {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toInteger(the, mxArgv(${ i }));`);
 	}
 	writeResultConversion(file) {
-		file.line("XS->integer(the, mxResult, (txInteger)result);");
+		file.line("XS->fromInteger(the, mxResult, (txInteger)result);");
 	}
 }
 
@@ -49,7 +69,7 @@ class NumberType extends Type {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toNumber(the, mxArgv(${ i }));`);
 	}
 	writeResultConversion(file) {
-		file.line("XS->number(the, mxResult, (txNumber)result);");
+		file.line("XS->fromNumber(the, mxResult, (txNumber)result);");
 	}
 }
 
@@ -73,12 +93,12 @@ class StringType extends Type {
 	}
 	writeResultConversion(file) {
 		if (this.name.startsWith("const ")) {
-			file.line("XS->stringX(the, mxResult, (txString)result);");
+			file.line("XS->fromStringX(the, mxResult, (txString)result);");
 		}
 		else {
 			file.line("if (result) {");
 			file.tab(1);
-			file.line("XS->string(the, mxResult, (txString)result);");
+			file.line("XS->fromString(the, mxResult, (txString)result);");
 			file.line("free(result);");
 			file.tab(-1);
 			file.line("}");
@@ -92,7 +112,7 @@ class UnsignedType extends Type {
 		file.line(`${ this.name } arg${ i } = (${ this.name })XS->toUnsigned(the, mxArgv(${ i }));`);
 	}
 	writeResultConversion(file) {
-		file.line("XS->_unsigned(the, mxResult, (txUnsigned)result);");
+		file.line("XS->fromUnsigned(the, mxResult, (txUnsigned)result);");
 	}
 }
 
@@ -119,12 +139,16 @@ const ArgumentConstructors = {
 	"int16_t*": PointerType,
 	"int32_t": IntegerType,
 	"int32_t*": PointerType,
+	"int64_t": BigInt64Type,
+	"int64_t*": PointerType,
 	"uint8_t": UnsignedType,
 	"uint8_t*": PointerType,
 	"uint16_t": UnsignedType,
 	"uint16_t*": PointerType,
 	"uint32_t": UnsignedType,
 	"uint32_t*": PointerType,
+	"uint64_t": BigUint64Type,
+	"uint64_t*": PointerType,
 	"void*": PointerType,
 };
 
