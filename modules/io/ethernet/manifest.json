@@ -10,7 +10,7 @@
 			"include": "./zephyr/manifest.json"
 		},
 		"...": {
-			"error": "unsupported target"
+			"error": "ethernet: unsupported platform"
 		}
 	}
 }
