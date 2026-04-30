@@ -5,13 +5,13 @@
 			"./hello.c"
 		],
 		"functions": {
-			"add": {
+			"add32_t": {
 				"arguments": [ "int32_t", "int32_t" ],
 				"returns": "int32_t"
 			},
-			"addSquares": {
-				"arguments": [ "int32_t", "int32_t" ],
-				"returns": "int32_t"
+			"add64_t": {
+				"arguments": [ "int64_t", "int64_t" ],
+				"returns": "int64_t"
 			},
 			"hello": {
 				"arguments": [ "char *", "uint8_t*", "uint32_t" ],

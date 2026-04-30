@@ -2,9 +2,13 @@ import FFI from "ffi";
 
 try {
 	const test = new FFI;
+	let result;
 	
-	trace(`test.add(2, 3) = ${ test.add(2, 3) }\n`);
-	trace(`test.addSquares(3, 4) = ${ test.addSquares(3, 4) }\n`);
+	result = test.add32_t(1111_1111, 2222_2222)
+	trace(`${ result }\n`);
+	result = test.add64_t(1111_1111_1111_1111n, 2222_2222_2222_2222n)
+	trace(`${ result }\n`);
+
 	const bytes = new Uint8Array(5);
 	test.hello("hello", bytes.buffer, bytes.length);
 	trace(`bytes = ${ bytes }\n`);

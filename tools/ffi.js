@@ -160,9 +160,11 @@ const ResultConstructors = {
 	"int8_t": IntegerType,
 	"int16_t": IntegerType,
 	"int32_t": IntegerType,
+	"int64_t": BigInt64Type,
 	"uint8_t": UnsignedType,
 	"uint16_t": UnsignedType,
 	"uint32_t": UnsignedType,
+	"uint64_t": BigUint64Type,
 	"void": VoidType,
 };
 
