@@ -33,6 +33,19 @@ struct sxMachine {
 #define mxArgc XS->argc(the)
 #define mxArgv(INDEX) XS->argv(the, (INDEX))
 
+enum {
+	XS_DEBUGGER_EXIT = 0,
+	XS_NOT_ENOUGH_MEMORY_EXIT,
+	XS_JAVASCRIPT_STACK_OVERFLOW_EXIT,
+	XS_FATAL_CHECK_EXIT,
+	XS_DEAD_STRIP_EXIT,
+	XS_UNHANDLED_EXCEPTION_EXIT,
+	XS_NO_MORE_KEYS_EXIT,
+	XS_TOO_MUCH_COMPUTATION_EXIT,
+	XS_UNHANDLED_REJECTION_EXIT,
+	XS_NATIVE_STACK_OVERFLOW_EXIT,
+};
+
 #endif
 
 typedef struct sxAPI txAPI;
@@ -46,6 +59,7 @@ struct sxAPI {
 	void (*push)(txMachine* the, txSlot* slot);
 	txSlot* (*result)(txMachine* the);
 
+	void (*abort)(txMachine* the, int status);
 	void (*defineID)(txMachine* the, txID id, txFlag flag, txFlag mask);
 	txID (*id)(txMachine* the, txString name);
 	txSlot* (*newHostFunction)(txMachine* the, txCallback callback, txInteger length, txInteger name, txInteger profileID);

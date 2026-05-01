@@ -48,6 +48,7 @@ txAPI gxAPI = {
 	fxPush,
 	fxResult,
 
+	fxAbort,
 	fxDefineID,
 	fxID,
 	fxNewHostFunction,

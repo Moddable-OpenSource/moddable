@@ -1,8 +1,9 @@
 {
 	"ffi": {
 		"sources": [
-			"./add.c",
-			"./hello.c"
+			"./integers.c",
+			"./strings.c",
+			"./pointers.c"
 		],
 		"functions": {
 			"add32_t": {
@@ -13,21 +14,25 @@
 				"arguments": [ "int64_t", "int64_t" ],
 				"returns": "int64_t"
 			},
-			"hello": {
-				"arguments": [ "char *", "uint8_t*", "uint32_t" ],
-				"returns": "void"
+			"nameDay": {
+				"arguments": [ "uint8_t" ],
+				"returns": "const char*"
 			},
 			"catenate": {
 				"arguments": [ "char*", "char*" ],
 				"returns": "char*"
 			},
-			"nameDay": {
-				"arguments": [ "uint8_t" ],
-				"returns": "const char*"
+			"sumBytes": {
+				"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+				"returns": "uint64_t"
 			},
-			"abcToString": {
+			"fillRandom": {
+				"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+				"returns": "void"
+			},
+			"sampleABCSensor": {
 				"arguments": [ "void*" ],
-				"returns": "char*"
+				"returns": "void"
 			}
 		}
 	}

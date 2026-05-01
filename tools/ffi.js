@@ -121,6 +121,10 @@ class StringType extends Type {
 			file.line("XS->fromString(the, mxResult, (txString)result);");
 			file.line("free(result);");
 			file.tab(-1);
+			file.line("} else {");
+			file.tab(1);
+			file.line("XS->abort(the, XS_NOT_ENOUGH_MEMORY_EXIT);");
+			file.tab(-1);
 			file.line("}");
 		}
 	}
@@ -390,7 +394,7 @@ class FFIGlue {
 			let length = signature.argumentTypes.length;
 			file.line(`XS->newHostFunction(the, xs_${ signature.name }, ${ length }, 0, 0);`);
 			file.line(`XS->push(the, mxThis);`);
-			file.line(`XS->defineID(the, XS->id(the, "${ signature.name }"), 0, 0);`);
+			file.line(`XS->defineID(the, XS->id(the, "${ signature.name }"), 0, 0x0E);`);
 			file.line(`XS->pop(the);`);
 		}
 		file.tab(-1);

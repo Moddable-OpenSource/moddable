@@ -19,7 +19,6 @@
 		"WeakMap",
 		"WeakRef",
 		"WeakSet",
-		"BigInt",
 		"eval",
 		"Function",
 		"Generator"
