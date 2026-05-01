@@ -448,12 +448,12 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 		nameLen = c_strlen(name);
 
 	while (true) {
-		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, NULL);
+		int aNameLen;
+		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, &aNameLen);
 		if (!aName)
 			break;
-		if (0 == c_strncmp(name, aName, nameLen)) {
+		if (((aNameLen - 1) == nameLen) && (0 == c_strncmp(name, aName, nameLen)))
 			return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index, mods, modsSize, modSize);
-		}
 	}
 
 	return NULL;
