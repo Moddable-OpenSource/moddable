@@ -171,6 +171,7 @@ DRIVER_DIRS = \
 	$(IDF_PATH)/components/esp_driver_sdmmc/include \
 	$(IDF_PATH)/components/esp_driver_spi/include \
 	$(IDF_PATH)/components/esp_hal_gpspi/include \
+	$(IDF_PATH)/components/esp_hal_timg/include \
 	$(IDF_PATH)/components/esp_driver_uart/include \
 	$(IDF_PATH)/components/esp_hal_uart/include \
 	$(IDF_PATH)/components/esp_hal_uart/$(ESP32_SUBCLASS)/include
