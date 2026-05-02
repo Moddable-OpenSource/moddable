@@ -281,10 +281,7 @@ void xs_directorystorage_read(xsMachine *the)
 			esp_err_t err = nvs_get_u32(handle, key, &value);
 			if (ESP_ERR_NVS_NOT_FOUND == err) return;
 			throwIf(err);
-			if (value >> 31)
-				xsmcSetNumber(xsResult, value);
-			else
-				xsmcSetInteger(xsResult, value);
+			xsmcSetUnsigned(xsResult, value);
 			} break;
 
 		case kIOFormatInt32: {
@@ -360,7 +357,7 @@ void xs_directorystorage_write(xsMachine *the)
 			break;
 		
 		case kIOFormatUint32:
-			throwIf(nvs_set_u32(handle, key, (uint32_t)xsmcToInteger(xsArg(1))));
+			throwIf(nvs_set_u32(handle, key, xsmcToUnsigned(xsArg(1))));
 			break;
 
 		case kIOFormatInt32:

@@ -149,13 +149,13 @@ void xs_appmessage(xsMachine *the)
 		outbound = app_message_outbox_size_maximum();
 		if (xsmcHas(xsArg(0), xsID_input)) {
 			xsmcGet(tmp, xsArg(0), xsID_input);
-			uint32_t t = xsmcToInteger(tmp);
+			uint32_t t = xsmcToUnsigned(tmp);
 			if (t < inbound)
 				inbound = t;
 		}
 		if (xsmcHas(xsArg(0), xsID_output)) {
 			xsmcGet(tmp, xsArg(0), xsID_output);
-			uint32_t t = xsmcToInteger(tmp);
+			uint32_t t = xsmcToUnsigned(tmp);
 			if (t < outbound)
 				outbound = t;
 		}
@@ -289,7 +289,7 @@ void xs_appmessage_write(xsMachine *the)
 			if (xsmcTypeOf(xsVar(0)) == xsUndefinedType)
 				xsUnknownError("unmapped key");
 		}
-		uint32_t key = (uint32_t)xsmcToInteger(xsVar(0));
+		uint32_t key = xsmcToUnsigned(xsVar(0));
 		int valueType = xsmcTypeOf(xsVar(1));
 		if ((xsStringType == valueType) || (xsStringXType == valueType)) {
 			if (dict_write_cstring(iter, key, xsmcToString(xsVar(1))))

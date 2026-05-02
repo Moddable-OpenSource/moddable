@@ -148,7 +148,7 @@ void xs_sleep_deep(xsMachine *the)
 	if (argc > 0) {
 		// System ON sleep, RAM powered off during sleep, wake on RTC or configured interrupt source
 		
-		uint32_t ms = xsmcToInteger(xsArg(0));
+		uint32_t ms = xsmcToUnsigned(xsArg(0));
 		uint32_t waitTicks = (((uint64_t)ms) << 10) / 1000;
 		
 		// Stop tick events
@@ -237,7 +237,7 @@ void xs_sleep_get_reset_reason(xsMachine *the)
 
 void xs_sleep_get_latch(xsMachine *the)
 {
-	uint32_t pin = xsmcToInteger(xsArg(0));
+	uint32_t pin = xsmcToUnsigned(xsArg(0));
 	xsmcSetInteger(xsResult, nrf52_get_boot_latch(pin));
 }
 

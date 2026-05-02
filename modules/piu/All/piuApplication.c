@@ -470,7 +470,7 @@ void PiuTouchLink_get_length(xsMachine* the)
 void PiuTouchLink_peek(xsMachine* the)
 {
 	PiuTouchLink* link = PIU(TouchLink, xsThis);
-	uint32_t index = (uint32_t)xsToInteger(xsArg(0));
+	uint32_t index = xsToUnsigned(xsArg(0));
 	if (index < (*link)->index) {
 		PiuTouchSampleRecord sample = (*link)->samples[index];
 		xsResult = xsNewObject();

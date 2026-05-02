@@ -106,7 +106,7 @@ void xs_storage_domain_read(xsMachine *the)
 				case kIOFormatUint32: {
 					uint32_t number = 0;
 					CFNumberGetValue(value, kCFNumberSInt32Type, &number);
-					fxUnsigned(the, &xsResult, number);
+					xsResult = xsUnsigned(number);
 				} break;
 				case kIOFormatUint64: {
 					uint64_t number = 0;
@@ -191,7 +191,7 @@ void xs_storage_domain_write(xsMachine *the)
 			value = CFNumberCreate(NULL, kCFNumberSInt16Type, &number);
 		} break;
 		case kIOFormatUint32: {
-			uint32_t number = (uint32_t)fxToUnsigned(the, &xsArg(1));
+			uint32_t number = (uint32_t)xsToUnsigned(xsArg(1));
 			value = CFNumberCreate(NULL, kCFNumberSInt32Type, &number);
 		} break;
 		case kIOFormatUint64: {

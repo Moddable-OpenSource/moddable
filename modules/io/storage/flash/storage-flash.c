@@ -639,7 +639,7 @@ void xs_directorystorage_read(xsMachine *the)
 
 		case kIOFormatUint32:
 			storageGive();
-			fxUnsigned(the, &xsResult, c_read32(buffer + 1));
+			xsmcSetUnsigned(xsResult, c_read32(buffer + 1));
 			break;
 
 		case kIOFormatInt32:
@@ -718,7 +718,7 @@ void xs_directorystorage_write(xsMachine *the)
 			} break;
 
 		case kIOFormatUint32: {
-			uint32_t value = fxToUnsigned(the, &xsArg(1));
+			uint32_t value = xsToUnsigned(xsArg(1));
 			success = writeEntry(domain, key, format, (uint8_t *)&value, 4);
 			} break;
 

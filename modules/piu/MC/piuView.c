@@ -1459,7 +1459,7 @@ void PiuCLUT_get_colors(xsMachine* the)
 		c0.g = (g << 2) | (g >> 4);
 		c0.b = (b << 3) | (b >> 2);
 		c0.a = 0xFF;
-		fxUnsigned(the, &xsVar(0), ((uint32_t)c0.r << 24) | ((uint32_t)c0.g << 16) | ((uint32_t)c0.b << 8) | ((uint32_t)c0.a));
+		xsVar(0) = xsUnsigned(((uint32_t)c0.r << 24) | ((uint32_t)c0.g << 16) | ((uint32_t)c0.b << 8) | ((uint32_t)c0.a));
 		xsSetAt(xsResult, xsInteger(i), xsVar(0));
 		clut++;
 		i++;

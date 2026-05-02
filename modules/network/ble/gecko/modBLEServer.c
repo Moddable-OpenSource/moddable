@@ -237,7 +237,7 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 void xs_ble_server_passkey_input(xsMachine *the)
 {
 //	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint32_t passkey = xsmcToInteger(xsArg(1));
+	uint32_t passkey = xsmcToUnsigned(xsArg(1));
 	gecko_cmd_sm_enter_passkey(gBLE->connection, passkey);
 }
 

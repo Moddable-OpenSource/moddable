@@ -95,7 +95,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_bank)) {
 		uint32_t b;
 		xsmcGet(tmp, xsArg(0), xsID_bank);
-		b = (uint32_t)xsmcToInteger(tmp);
+		b = xsmcToUnsigned(tmp);
 		if (b >= kPinBanks)
 			xsUnknownError("invalid bank");
 		bank = (uint8_t)b;

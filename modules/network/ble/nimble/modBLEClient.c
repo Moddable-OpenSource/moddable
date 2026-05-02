@@ -313,8 +313,8 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	modBLE ble = getBLEClient();
 	uint8_t active = xsmcToBoolean(xsArg(0));
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
-	uint32_t interval = xsmcToInteger(xsArg(2));
-	uint32_t window = xsmcToInteger(xsArg(3));
+	uint32_t interval = xsmcToUnsigned(xsArg(2));
+	uint32_t window = xsmcToUnsigned(xsArg(3));
 	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint8_t own_addr_type;
 	struct ble_gap_disc_params disc_params;

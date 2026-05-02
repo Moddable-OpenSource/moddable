@@ -93,7 +93,7 @@ void PiuColorDictionary(xsMachine *the, xsSlot* slot, PiuColor color)
 {
 	xsType type = xsTypeOf(*slot);
 	if ((type == xsIntegerType) || (type == xsNumberType)) {
-		uint32_t value = fxToUnsigned(the, slot);
+		uint32_t value = xsToUnsigned(*slot);
 		color->r = (value >> 24) & 0xFF;
 		color->g = (value >> 16) & 0xFF;
 		color->b = (value >> 8) & 0xFF;
@@ -175,7 +175,7 @@ void PiuColorsSerialize(xsMachine *the, PiuColor colors)
 	(void)xsCall0(xsResult, xsID_fill);
 	for (i = 0; i < 4; i++) {
 		PiuColor color = &colors[i];
-		fxUnsigned(the, &xsVar(0), ((uint32_t)color->r << 24) | ((uint32_t)color->g << 16) | ((uint32_t)color->b << 8) | ((uint32_t)color->a));
+		xsVar(0) = xsUnsigned(((uint32_t)color->r << 24) | ((uint32_t)color->g << 16) | ((uint32_t)color->b << 8) | ((uint32_t)color->a));
 		xsSetAt(xsResult, xsInteger(i), xsVar(0));
 	}
 }
@@ -258,7 +258,7 @@ void Piu_blendColors(xsMachine* the)
 	c0.g = (uint8_t)c_round(((double)c1.g * minus) + ((double)c2.g * plus));
 	c0.b = (uint8_t)c_round(((double)c1.b * minus) + ((double)c2.b * plus));
 	c0.a = (uint8_t)c_round(((double)c1.a * minus) + ((double)c2.a * plus));
-	fxUnsigned(the, &xsResult, ((uint32_t)c0.r << 24) | ((uint32_t)c0.g << 16) | ((uint32_t)c0.b << 8) | ((uint32_t)c0.a));
+	xsResult = xsUnsigned(((uint32_t)c0.r << 24) | ((uint32_t)c0.g << 16) | ((uint32_t)c0.b << 8) | ((uint32_t)c0.a));
 }
 
 void Piu_hsl(xsMachine* the)
@@ -266,7 +266,7 @@ void Piu_hsl(xsMachine* the)
 	PiuColorRecord color;
 	PiuHSL2RGB(the, &color);
     color.a = 255;
-	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
+	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
 void Piu_hsla(xsMachine* the)
@@ -274,7 +274,7 @@ void Piu_hsla(xsMachine* the)
 	PiuColorRecord color;
 	PiuHSL2RGB(the, &color);
     color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.f), 255);
-	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
+	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
 void Piu_rgb(xsMachine* the)
@@ -284,7 +284,7 @@ void Piu_rgb(xsMachine* the)
 	color.g = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(1)), 255);
 	color.b = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(2)), 255);
 	color.a = 255;
-	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
+	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
 void Piu_rgba(xsMachine* the)
@@ -294,7 +294,7 @@ void Piu_rgba(xsMachine* the)
 	color.g = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(1)), 255);
 	color.b = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(2)), 255);
 	color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.f), 255);
-	fxUnsigned(the, &xsResult, ((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
+	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
 

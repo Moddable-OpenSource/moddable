@@ -100,7 +100,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	if (xsmcHas(xsArg(0), xsID_bank)) {
 		uint32_t b;
 		xsmcGet(tmp, xsArg(0), xsID_bank);
-		b = (uint32_t)xsmcToInteger(tmp);
+		b = xsmcToUnsigned(tmp);
 		if (b >= kPinBanks)
 			xsUnknownError("invalid bank");
 		bank = (uint8_t)b;
@@ -326,7 +326,7 @@ void xs_digitalbank_write(xsMachine *the)
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	uint32_t value = xsmcToInteger(xsArg(0));
+	uint32_t value = xsmcToUnsigned(xsArg(0));
 	modDigitalBankWrite(digital, value);
 }
 

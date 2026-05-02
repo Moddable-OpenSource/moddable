@@ -95,7 +95,7 @@ void xs_Serial_destructor(void *data) {
 }
 
 void xs_Serial_setBaudrate(xsMachine *the) {
-	uint32_t baud = xsmcToInteger(xsArg(0));
+	uint32_t baud = xsmcToUnsigned(xsArg(0));
 	USART_BaudrateAsyncSet(SERIAL_USART, 0, baud, usartOVS16);
 }
 

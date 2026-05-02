@@ -197,7 +197,7 @@ void xs_global_launch_get(xsMachine *the)
 	xsmcSetNewObject(xsResult);
 	xsmcSetInteger(tmp, app_launch_reason());
 	xsmcSet(xsResult, xsID_reason, tmp);
-	fxUnsigned(the, &tmp, app_launch_get_args());
+	xsmcSetUnsigned(tmp, app_launch_get_args());
 	xsmcSet(xsResult, xsID_arguments, tmp);
 }
 

@@ -380,7 +380,7 @@ void xs_digitalbank_write(xsMachine *the)
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	uint32_t value = xsmcToInteger(xsArg(0)) & digital->pins;
+	uint32_t value = xsmcToUnsigned(xsArg(0)) & digital->pins;
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
 	if (digital->pins & 0x10000)

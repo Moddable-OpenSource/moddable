@@ -753,7 +753,7 @@ void xs_crypt_streamcipher_process(xsMachine *the)
 		resolveBuffer(the, &xsArg(0), NULL, &count);
 
 	if ((argc >= 3) && (xsUndefinedType != xsmcTypeOf(xsArg(2)))) {
-		uint32_t request = xsmcToInteger(xsArg(2));
+		uint32_t request = xsmcToUnsigned(xsArg(2));
 		if (request < count)
 			count = request;
 	}

@@ -81,10 +81,7 @@ void BitsView_prototype_getUintBits(xsMachine *the)
 		bitsOffset += part;
 	}
 
-	if (bitsValue & 0x80000000)
-		xsmcSetNumber(xsResult, bitsValue);
-	else
-		xsmcSetInteger(xsResult, bitsValue);
+	xsmcSetUnsigned(xsResult, bitsValue);
 }
 
 void BitsView_prototype_setIntBits(xsMachine *the)
@@ -96,7 +93,7 @@ void BitsView_prototype_setUintBits(xsMachine *the)
 {
 	int bitsOffset = xsmcToInteger(xsArg(0));
 	int bitsSize = xsmcToInteger(xsArg(1));
-	uint32_t bitsValue = (uint32_t)xsmcToInteger(xsArg(2));
+	uint32_t bitsValue = xsmcToUnsigned(xsArg(2));
 	int byteLength;
 	uint8_t *bytes;
 	uint8_t littleEndian = true;

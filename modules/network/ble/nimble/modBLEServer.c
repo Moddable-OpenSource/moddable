@@ -335,7 +335,7 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 void xs_ble_server_passkey_input(xsMachine *the)
 {
 	modBLE ble = validateInstance(the);
-	uint32_t passkey = xsmcToInteger(xsArg(1));
+	uint32_t passkey = xsmcToUnsigned(xsArg(1));
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
 	if (0 == c_memcmp(address, ble->remote_bda.val, 6)) {
 		struct ble_sm_io pkey = {0};

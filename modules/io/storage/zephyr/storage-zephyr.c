@@ -36,7 +36,7 @@ struct xsDirectoryRecord {
 	uint8_t		format;
 	uint8_t		readOnly;
 	uint8_t		directoryLength;
-	char			path[];
+	char		path[];
 };
 typedef struct xsDirectoryRecord xsDirectoryRecord;
 typedef struct xsDirectoryRecord *xsDirectory;
@@ -273,10 +273,7 @@ void xs_directorystorage_read(xsMachine *the)
 
 			case kIOFormatUint32: {
 				uint32_t i = *(uint32_t *)(value + 1);
-				if (i >> 31)
-					xsmcSetNumber(xsResult, i);
-				else
-					xsmcSetInteger(xsResult, i);
+				xsmcSetUnsigned(xsResult, i);
 				} break;
 
 			case kIOFormatInt32:
@@ -372,7 +369,7 @@ void xs_directorystorage_write(xsMachine *the)
 			break;
 		
 		case kIOFormatUint32:
-			*(uint32_t *)(buffer + 1) = (uint32_t)xsmcToInteger(xsArg(1));
+			*(uint32_t *)(buffer + 1) = xsmcToUnsigned(xsArg(1));
 			d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 			throwIf(settings_save_one(d->path, buffer, 1 + 4));
 			break;
