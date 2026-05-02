@@ -58,7 +58,7 @@ struct xsDirectoryRecord {
 	uint8_t		format;
 	uint8_t		readOnly;
 	uint8_t		domainLength;
-	char		domain[];
+	char			domain[];
 };
 typedef struct xsDirectoryRecord xsDirectoryRecord;
 typedef struct xsDirectoryRecord *xsDirectory;
@@ -505,14 +505,12 @@ void xs_directorystorage_open(xsMachine *the)
 
 void xs_directorystorage_delete(xsMachine *the)
 {
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
+	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	if (d->readOnly)
 		xsUnknownError("read-only");
-
-	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
-	d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 
 	storageTake();
 
@@ -522,7 +520,7 @@ void xs_directorystorage_delete(xsMachine *the)
 	storageGive();
 
 	if (!success)
-		xsUnknownError("can't delete");
+		xsUnknownError("delete failed");
 }
 
 void xs_directorystorage_read(xsMachine *the)
@@ -757,7 +755,6 @@ void xs_directorystorage_format_get(xsMachine *the)
 void xs_directorystorage_format_set(xsMachine *the)
 {
 	static const uint8_t formats[] = {kIOFormatBuffer, kIOFormatString, kIOFormatUint8, kIOFormatInt8, kIOFormatUint16, kIOFormatInt16, kIOFormatUint32, kIOFormatInt32, kIOFormatUint64, kIOFormatInt64, kIOFormatInvalid};
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	uint8_t format = builtinSetFormat(the), i = 0;
 
 	while (kIOFormatInvalid != formats[i]) {

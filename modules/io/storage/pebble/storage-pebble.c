@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -278,7 +278,7 @@ void xs_directorystorage_write(xsMachine *the)
 	}
 
 	uint8_t *buf = C_NULL;
-	// xsTry / xsCatch block to dispose on error
+	int err = 0;
 
 	switch (format) {
 		case kIOFormatBuffer: {
@@ -287,9 +287,13 @@ void xs_directorystorage_write(xsMachine *the)
 
 			xsmcGetBufferReadable(xsArg(1), &data, &length);
 			buf = c_malloc(length + 1);
+			if (!buf) {
+				err = -1;
+				goto bail;
+			}
 			buf[0] = kIOFormatBuffer;
 			c_memmove(&buf[1], data, length);
-			throwIf(settings_file_set(&d->file, key, c_strlen(key), buf, length + 1));
+			err = settings_file_set(&d->file, key, c_strlen(key), buf, length + 1);
 		} break;
 
 		case kIOFormatString: {
@@ -299,10 +303,14 @@ void xs_directorystorage_write(xsMachine *the)
 			data = xsmcToString(xsArg(1));
 			length = c_strlen(data);
 			buf = c_malloc(length + 1);
+			if (!buf) {
+				err = -1;
+				goto bail;
+			}
 			buf[0] = kIOFormatString;
 			c_memmove(&buf[1], data, length);
 			d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);		// refresh as xsmcToString could move / close
-			throwIf(settings_file_set(&d->file, key, c_strlen(key), buf, length + 1));
+			err = settings_file_set(&d->file, key, c_strlen(key), buf, length + 1);
 		} break;
 
 		default:
@@ -310,8 +318,11 @@ void xs_directorystorage_write(xsMachine *the)
 			break;
 	}
 
+bail:
 	if (buf)
 		c_free(buf);
+
+	throwIf(err);
 }
 
 void xs_directorystorage_format_get(xsMachine *the)
@@ -323,11 +334,11 @@ void xs_directorystorage_format_get(xsMachine *the)
 void xs_directorystorage_format_set(xsMachine *the)
 {
 	static const uint8_t formats[] = {kIOFormatBuffer, kIOFormatString, kIOFormatInvalid};
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	uint8_t format = builtinSetFormat(the), i = 0;
 
 	while (kIOFormatInvalid != formats[i]) {
 		if (formats[i++] == format) {
+			xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 			if (d->isPebbleNative && (kIOFormatBuffer != format))
 				xsRangeError("format must be buffer");
 			d->format = format;

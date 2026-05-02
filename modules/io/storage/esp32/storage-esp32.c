@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #include "xsmc.h"
 #include "xsHost.h"
@@ -159,13 +178,12 @@ void xs_directorystorage_open(xsMachine *the)
 
 void xs_directorystorage_delete(xsMachine *the)
 {
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
+	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	if (d->readOnly)
 		xsUnknownError("read-only");
-
-	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
 	esp_err_t err = nvs_erase_key(d->handle, key);
 	if (ESP_ERR_NVS_NOT_FOUND == err) err = ESP_OK;
@@ -176,13 +194,12 @@ void xs_directorystorage_delete(xsMachine *the)
 
 void xs_directorystorage_read(xsMachine *the)
 {
+	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
+
 	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	nvs_handle handle = d->handle;
-	uint8_t format = d->format;
-	char key[64];
-
-	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
-	switch (format) {
+	switch (d->format) {
 		case kIOFormatBuffer: {
 			void *data;
 			size_t length;
@@ -302,18 +319,18 @@ void xs_directorystorage_read(xsMachine *the)
 
 void xs_directorystorage_write(xsMachine *the)
 {
+	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
+
 	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	nvs_handle handle = d->handle;
-	uint8_t format = d->format;
-	char key[64];
 
 	if (d->readOnly)
 		xsUnknownError("read-only");
 
 		//@@ ERASE_KEY here if type changes
 
-	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
-	switch (format) {
+	switch (d->format) {
 		case kIOFormatBuffer: {
 			void *data;
 			xsUnsignedValue length;
@@ -377,11 +394,11 @@ void xs_directorystorage_format_get(xsMachine *the)
 void xs_directorystorage_format_set(xsMachine *the)
 {
 	static const uint8_t formats[] = {kIOFormatBuffer, kIOFormatString, kIOFormatUint8, kIOFormatInt8, kIOFormatUint16, kIOFormatInt16, kIOFormatUint32, kIOFormatInt32, kIOFormatUint64, kIOFormatInt64, kIOFormatInvalid};
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	uint8_t format = builtinSetFormat(the), i = 0;
 
 	while (kIOFormatInvalid != formats[i]) {
 		if (formats[i++] == format) {
+			xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 			d->format = format;
 			return;
 		}
