@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:storage/key-value": "./storage-flash",
+		"*": "$(MODDABLE)/modules/io/common/builtinCommon"
+	},
+	"preload": [
+		"embedded:storage/key-value"
+	]
+}

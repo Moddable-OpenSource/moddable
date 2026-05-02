@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -447,11 +447,25 @@ fail:
 
 int getPrefSize(const uint8_t *pref)
 {
-	switch (*(uint8_t *)pref) {
+	uint8_t type = *pref;
+
+	switch (type) {
 		case kPrefsTypeBoolean: return 1 + 1;
 		case kPrefsTypeInteger: return 1 + 4;
 		case kPrefsTypeString:  return 1 + c_strlen(pref + 1) + 1;
 		case kPrefsTypeBuffer:  return 1 + 2 + c_read16(pref + 1);
+	}
+
+	if (type >= 0x80) {
+		// key-value storage module offset-encoded formats sharing this flash region
+		uint8_t format = type - 0x80;
+		switch (format) {
+			case 5: case 6:   return 1 + 1;		// uint8, int8
+			case 7: case 8:   return 1 + 2;		// uint16, int16
+			case 9: case 10:  return 1 + 4;		// uint32, int32
+			case 11: case 12: return 1 + 8;		// uint64, int64
+			case 2: case 3:   return 1 + 2 + c_read16(pref + 1);	// buffer, string
+		}
 	}
 
 	return kFlashSectorSize;		// force to skip to end of preferences
