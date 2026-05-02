@@ -50,10 +50,8 @@
 
 	portMUX_TYPE gCriticalMux = portMUX_INITIALIZER_UNLOCKED;
 
-	#if (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 3)
+	#ifdef mxInstrument	
 		#define INSTRUMENT_CPULOAD 1
-	#else
-		volatile uint32_t gCPUTime;
 	#endif
 	#if INSTRUMENT_CPULOAD
 		#include "driver/gptimer.h"
