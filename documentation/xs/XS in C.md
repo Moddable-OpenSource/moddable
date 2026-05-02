@@ -1,5 +1,5 @@
 <!--
- | Copyright (c) 2016-2025  Moddable Tech, Inc.
+ | Copyright (c) 2016-2026  Moddable Tech, Inc.
  |
  |   This file is part of the Moddable SDK Runtime.
  |
@@ -323,6 +323,38 @@ Returns the value contained in the slot
 | `theValue` | The integer value to set
 
 Sets the slot value to an integer
+
+***
+
+**`xsSlot xsUnsigned(xsUnsignedValue theValue)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theValue` | The value to be contained in the slot
+
+Returns an integer or number slot
+
+***
+
+**`xsUnsignedValue xsToUnsigned(xsSlot theSlot)`**<BR>
+**`xsUnsignedValue xsmcToUnsigned(xsSlot theSlot)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to coerce to unsigned
+
+Returns the value contained in the slot
+
+***
+
+**`void xsmcSetUnsigned(xsSlot theSlot, xsUnsignedValue theValue)`**
+
+| Arguments | Description |
+| --- | :-- |
+| `theSlot` | The slot to set
+| `theValue` | The unsigned value to set
+
+Sets the slot value to an integer or number
 
 ***
 
