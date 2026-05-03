@@ -35,5 +35,8 @@
 				"returns": "void"
 			}
 		}
+	},
+	"modules": {
+		"*": "./test"
 	}
 }

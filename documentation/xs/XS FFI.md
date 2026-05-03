@@ -124,7 +124,7 @@ cd $MODDABLE/examples/ffi/ffi-host
 mcconfig -d -m
 ```
 
-That will launch the simulator and traces `no mods` in **xsbug**.
+That will launch the simulator and traces `No mod installed` in **xsbug**.
 
 ### ffi-mod
 
@@ -399,23 +399,24 @@ Here is its usage:
 You can use such a low level function to provide a friendly programming pattern, conformant to the [419 Sensor Class Pattern](https://419.ecma-international.org/#-13-sensor-class-pattern)
 
 ```
-class ABCSensor {
-	constructor() {
-		this.view = new DataView(new ArrayBuffer(16));
-		this.result = { a:0, b:0, c:0 };
+	class ABCSensor {
+		#view;
+		constructor() {
+			this.#view = new DataView(new ArrayBuffer(16));
+		}
+		sample() {
+			const view = this.#view;
+			test.sampleABCSensor(view.buffer);
+			return {
+				a: view.getInt32(0, 1, true),
+				b: view.getInt32(4, 1, true),
+				c: view.getFloat64(8, 1, true),
+			};
+		}
 	}
-	sample() {
-		const { view, result } = this;
-		test.sampleABCSensor(view.buffer);
-		result.a = view.getInt32(0, 1, true);
-		result.b = view.getInt32(4, 1, true);
-		result.c = view.getFloat64(8, 1, true);
-		return result;
-	}
-}
 ```
 
-> The constructor allocates the view and the result, so the sample function does not allocate anything.
+> The `ABCSensor` class allocates the view in its contructor to avoid allocations in its `sample` method.
 
 Now you can use the class the standard way:
 
