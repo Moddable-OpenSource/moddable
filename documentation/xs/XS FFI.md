@@ -272,11 +272,11 @@ In C, buffers are accessed thru pointers.
 
 ### Blind Pointers
 
-The glue code will convert ArrayBuffer instances into pointers to their contents. You can pass other arguments for view offset and length.
+The glue code will convert ArrayBuffer instances into pointers to their contents. As usual in C, there are no guarantees on the buffer size. You can of course check that in JavaScript, see **Arguments** here under.
 
 #### Reading Bytes
 
-Arguments can be pointers to all integer and floating point types, or `void*`. 
+Arguments can be pointers to all integer and floating point types, or `void*`. You can pass other arguments for view offset and length.
 
 Here is a function that sum bytes:
 
@@ -359,7 +359,22 @@ If you want to provide default arguments, you can easily patch functions in Java
 	trace(`add32_t ${ result }\n`);
 ```
 
-The same technique can be used to check arguments ranges and types for instance, or to convert results.
+The same technique can be used to check arguments ranges and types. For instance:
+
+```
+	const fillRandom = test.fillRandom;
+	test.fillRandom = function(buffer, offset, length) {
+		if (buffer.byteLength < offset + length)
+			throw new RangeError("invalid buffer");
+		return fillRandom(buffer, offset, length);
+	}
+	try {
+		test.fillRandom(new ArrayBuffer(0), 0, 1);
+	}
+	catch (e) {
+		trace(`fillRandom ${ e }\n`);
+	}
+```
 
 ## Programming Patterns
 

@@ -29,6 +29,19 @@ export default function(test) {
 	result = test.add32_t(4)
 	trace(`add32_t ${ result }\n`);
 	
+	const fillRandom = test.fillRandom;
+	test.fillRandom = function(buffer, offset, length) {
+		if (buffer.byteLength < offset + length)
+			throw new RangeError("invalid buffer");
+		return fillRandom(buffer, offset, length);
+	}
+	try {
+		test.fillRandom(new ArrayBuffer(0), 0, 1);
+	}
+	catch (e) {
+		trace(`fillRandom ${ e }\n`);
+	}
+	
 	const view = new DataView(new ArrayBuffer(16));
 	test.sampleABCSensor(view.buffer);
 	trace(`sampleABCSensor ${ view.getInt32(0, 1, true) }, ${ view.getInt32(4, 1, true) }, ${ view.getFloat64(8, 1, true) }\n`);
