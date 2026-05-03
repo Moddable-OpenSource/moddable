@@ -99,12 +99,13 @@ void xs_cs_next(xsMachine *the)
 	}
 
 	xsResult = xsCall2(xsThis, xsID_read, xsInteger(cs->offset), xsInteger(nextFrameSize + 2));
-	cs->offset += nextFrameSize + 2;
 
 	if (xsmcIsInstanceOf(xsResult, xsArrayBufferPrototype))
 		data = (uint8_t *)xsmcToArrayBuffer(xsResult);
 	else
 		data = xsmcGetHostData(xsResult);
+	cs = xsmcGetHostChunk(xsThis);
+	cs->offset += nextFrameSize + 2;
 	c_memcpy(&nextFrameSize, data + nextFrameSize, sizeof(nextFrameSize));
 	cs->nextFrameSize = nextFrameSize;
 }

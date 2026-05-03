@@ -1018,10 +1018,10 @@ void PiuCode_find(xsMachine *the)
 	xsBooleanValue caseless = 0;
 	PiuTextBuffer* results = (*self)->results;
 	PiuCodeResult result;
-	if (argc > 0)
-		pattern = xsToString(xsArg(0));
 	if (argc > 1)
 		caseless = xsToBoolean(xsArg(1));
+	if (argc > 0)
+		pattern = xsToString(xsArg(0));
 	if ((*self)->code || (*self)->data) {
 		fxDeleteRegExp(NULL, (*self)->code, (*self)->data);
 		(*self)->code = NULL;

@@ -918,7 +918,6 @@ void xs_poco_drawText(xsMachine *the)
 {
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
-	const unsigned char *text = (const unsigned char *)xsmcToString(xsArg(0));
 	PocoCoordinate x, y;
 	PocoColor color;
 	CommodettoBitmap cb = NULL;
@@ -927,17 +926,26 @@ void xs_poco_drawText(xsMachine *the)
 	static const unsigned char ellipsisUTF8[4] = {0xE2, 0x80, 0xA6, 0};		// 0x2026
 	const unsigned char *ellipsis = C_NULL;
 	PocoDimension ellipsisWidth = 0;
-	int width;
+	int width = 0;
 	void *fontData;
 	xsUnsignedValue fontDataLength;
-	uint8_t isColor;
+	uint8_t isColor = 0;
 	PocoBitmapRecord mask;
 #if MODDEF_CFE_KERN
 	uint32_t previousUnicode = 0;
 #endif
+	const unsigned char *text;
 
 	x = (PocoCoordinate)xsmcToInteger(xsArg(3)) + poco->xOrigin;
 	y = (PocoCoordinate)xsmcToInteger(xsArg(4)) + poco->yOrigin;
+
+	if (argc > 5)
+		width = xsmcToInteger(xsArg(5));
+
+	if (xsReferenceType != xsmcTypeOf(xsArg(2)))
+		color = (PocoColor)xsmcToInteger(xsArg(2));
+
+	text = (const unsigned char *)xsmcToString(xsArg(0));
 
 	xsmcVars(2);
 
@@ -955,11 +963,8 @@ void xs_poco_drawText(xsMachine *the)
 			ellipsisWidth = glyph ? glyph->advance * 3 : 0;
 			ellipsis = ellipsisFallback;
 		}
-
-		width = xsmcToInteger(xsArg(5));
 	}
 	else {
-		width = 0;
 		ellipsisWidth = 0;
 		ellipsis = C_NULL;		// appease compiler
 	}
@@ -1047,7 +1052,6 @@ void xs_poco_drawText(xsMachine *the)
 
 		if (glyph->format) {
 			if (NULL == cb) {
-				color = (PocoColor)xsmcToInteger(xsArg(2));
 				cb = (void *)1;
 			}
 #if (0 == kPocoRotation) || (180 == kPocoRotation)
@@ -1098,7 +1102,6 @@ void xs_poco_drawText(xsMachine *the)
 				}
 				else {
 					isColor = 0;
-					color = (PocoColor)xsmcToInteger(xsArg(2));
 				}
 			}
 
@@ -1157,8 +1160,10 @@ void xs_poco_adaptInvalid(xsMachine *the)
 	rotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
 	if (pixelsOutDispatch)
 		(pixelsOutDispatch->doAdaptInvalid)(poco->outputRefcon, cr);
-	else
+	else {
 		xsCall1(xsResult, xsID_adaptInvalid, xsArg(0));
+		cr = xsmcGetHostChunk(xsArg(0));
+	}
 	unrotateCoordinatesAndDimensions(poco->width, poco->height, cr->x, cr->y, cr->w, cr->h);
 	}
 #endif
@@ -1250,36 +1255,42 @@ void xs_rectangle_get_h(xsMachine *the)
 
 void xs_rectangle_set_x(xsMachine *the)
 {
+	PocoCoordinate x = (PocoCoordinate)xsmcToInteger(xsArg(0));
 	CommodettoRectangle cr = xsmcGetHostChunk(xsThis);
-	cr->x = (PocoCoordinate)xsmcToInteger(xsArg(0));
+	cr->x = x;
 }
 
 void xs_rectangle_set_y(xsMachine *the)
 {
+	PocoCoordinate y = (PocoCoordinate)xsmcToInteger(xsArg(0));
 	CommodettoRectangle cr = xsmcGetHostChunk(xsThis);
-	cr->y = (PocoCoordinate)xsmcToInteger(xsArg(0));
+	cr->y = y;
 }
 
 void xs_rectangle_set_w(xsMachine *the)
 {
+	PocoDimension w = (PocoDimension)xsmcToInteger(xsArg(0));
 	CommodettoRectangle cr = xsmcGetHostChunk(xsThis);
-	cr->w = (PocoDimension)xsmcToInteger(xsArg(0));
+	cr->w = w;
 }
 
 void xs_rectangle_set_h(xsMachine *the)
 {
+	PocoDimension h = (PocoDimension)xsmcToInteger(xsArg(0));
 	CommodettoRectangle cr = xsmcGetHostChunk(xsThis);
-	cr->h = (PocoDimension)xsmcToInteger(xsArg(0));
+	cr->h = h;
 }
 
 void xs_rectangle_set(xsMachine *the)
 {
+	CommodettoRectangleRecord r = {
+		.x = (PocoCoordinate)xsmcToInteger(xsArg(0)),
+		.y = (PocoCoordinate)xsmcToInteger(xsArg(1)),
+		.w = (PocoDimension)xsmcToInteger(xsArg(2)),
+		.h = (PocoDimension)xsmcToInteger(xsArg(3))
+	};
 	CommodettoRectangle cr = xsmcGetHostChunk(xsThis);
-
-	cr->x = (PocoCoordinate)xsmcToInteger(xsArg(0));
-	cr->y = (PocoCoordinate)xsmcToInteger(xsArg(1));
-	cr->w = (PocoDimension)xsmcToInteger(xsArg(2));
-	cr->h = (PocoDimension)xsmcToInteger(xsArg(3));
+	*cr = r;
 }
 
 void xs_rectangle_destructor(void *data)

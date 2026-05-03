@@ -278,11 +278,11 @@ void xs_advertisement_get(xsMachine *the)
 {
 	uint8_t *data;
 	xsUnsignedValue count;
-	xsmcGetBufferReadable(xsThis, (void **)&data, &count);
 	int type = xsmcToInteger(xsArg(0));
 	if ((type < 0) || (type > 255))
 		xsUnknownError("invalid");
 
+	xsmcGetBufferReadable(xsThis, (void **)&data, &count);
 	for (int offset = 0; offset < count - 3; offset += 1 + data[offset]) {
 		int size = data[offset];
 		if ((size < 2) || (size > (count - offset)))

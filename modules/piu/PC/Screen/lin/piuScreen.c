@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -542,8 +542,6 @@ void PiuScreen_launch(xsMachine* the)
 	void* archive = NULL;
 	xsTry {
 		libraryPath = xsToString(xsArg(0));
-		if (xsToInteger(xsArgc) > 1)
-			archivePath = xsToString(xsArg(1));
 		library = dlopen(libraryPath, RTLD_NOW);
 		if (library == NULL) {
 			xsUnknownError("%s", dlerror());
@@ -552,6 +550,8 @@ void PiuScreen_launch(xsMachine* the)
 		if (launch == NULL) {
 			xsUnknownError("%s", dlerror());
 		}
+		if (xsToInteger(xsArgc) > 1)
+			archivePath = xsToString(xsArg(1));
 		if (archivePath) {
 			archiveFile = open(archivePath, O_RDWR);
 			if (archiveFile < 0) {

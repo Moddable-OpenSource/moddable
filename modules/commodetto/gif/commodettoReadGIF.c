@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2025  Moddable Tech, Inc.
+* Copyright (c) 2021-2026  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -98,26 +98,15 @@ void xs_readgif_destructor(void *data)
 
 void xs_readgif(xsMachine *the)
 {
-	xsGIF xg = xsmcSetHostChunk(xsThis, NULL, sizeof(xsGIFRecord));
-	void *buffer;
-	xsUnsignedValue bufferSize;
-	xsIntegerValue available;
+	xsIntegerValue availableIn = -1;
 	int format = kCommodettoBitmapDefault;
-
-	xsmcGetBufferReadable(xsArg(0), &buffer, &bufferSize);
-	available = (xsIntegerValue)bufferSize;
-
-	xg = xsmcGetHostChunk(xsThis);
-	xg->bufferSize = bufferSize;
 
 	if (xsmcArgc > 1) {
 		xsmcVars(1);
 
 		if (xsmcHas(xsArg(1), xsID_available)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_available);
-			xsUnsignedValue available = xsmcToInteger(xsVar(0));
-			if ((((int)available) < 0) || (available > bufferSize))
-				xsUnknownError("invalid");
+			availableIn = xsmcToInteger(xsVar(0));
 		}
 
 		if (xsmcHas(xsArg(1), xsID_pixelFormat)) {
@@ -128,6 +117,22 @@ void xs_readgif(xsMachine *the)
 				&& (kCommodettoBitmapCLUT32 != format))
 				xsUnknownError("unsupported format");
 		}
+	}
+
+	xsGIF xg = xsmcSetHostChunk(xsThis, NULL, sizeof(xsGIFRecord));
+	void *buffer;
+	xsUnsignedValue bufferSize;
+
+	xsmcGetBufferReadable(xsArg(0), &buffer, &bufferSize);
+	xsIntegerValue available = (xsIntegerValue)bufferSize;
+
+	xg = xsmcGetHostChunk(xsThis);
+	xg->bufferSize = bufferSize;
+
+	if (availableIn >= 0) {
+		available = availableIn;
+		if (available > bufferSize)
+			xsUnknownError("invalid");
 	}
 
 	GIFIMAGE *pGIF = &xg->gi;
@@ -267,8 +272,8 @@ void xs_readgif_get_ready(xsMachine *the)
 
 void xs_readgif_set_available(xsMachine *the)
 {
-	xsGIF xg = xsmcGetHostChunk(xsThis);
 	int32_t iSize = xsmcToInteger(xsArg(0));
+	xsGIF xg = xsmcGetHostChunk(xsThis);
 	if ((iSize < 0) || (iSize > xg->bufferSize))
 		xsUnknownError("out of range");
 	if (xg->reduced)
@@ -706,12 +711,11 @@ void xs_readgif_get_transparentColor(xsMachine *the)
 
 void xs_readgif_set_transparentColor(xsMachine *the)
 {
+	int transparentColor = xsmcToInteger(xsArg(0));
 	xsGIF xg = xsmcGetHostChunk(xsThis);
 
 	if (kCommodettoBitmapRGB565LE != xg->bitmap.format)
 		return;
-
-	int transparentColor = xsmcToInteger(xsArg(0));
 	uint16_t prev = xg->transparentColor;
 	xg->transparentColor = (uint16_t)transparentColor;
 	xg->hasTransparentColor = true;

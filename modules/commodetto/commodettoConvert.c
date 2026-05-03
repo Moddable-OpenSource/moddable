@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -86,14 +86,16 @@ void xs_convert_process(xsMachine *the)
 	uint8_t *src, *dst;
 	xsUnsignedValue srcLength, dstLength, pixelCount;
 
-	xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
-	if (xsmcArgc < 6) 
+	if (xsmcArgc < 6)  {
+		xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 		xsmcGetBufferWritable(xsArg(1), (void **)&dst, &dstLength);
+	}
 	else {
 		xsIntegerValue srcOffset = xsmcToInteger(xsArg(1));
 		xsIntegerValue srcCount = xsmcToInteger(xsArg(2));
 		xsIntegerValue dstOffset = xsmcToInteger(xsArg(4));
 		xsIntegerValue dstCount = xsmcToInteger(xsArg(5));
+		xsmcGetBufferReadable(xsArg(0), (void **)&src, &srcLength);
 		xsmcGetBufferWritable(xsArg(3), (void **)&dst, &dstLength);
 		if ((srcOffset < 0) || ((xsUnsignedValue)(srcOffset + srcCount) > srcLength) ||  
 			(dstOffset < 0) || ((xsUnsignedValue)(dstOffset + dstCount) > dstLength))

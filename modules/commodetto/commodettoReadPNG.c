@@ -77,13 +77,13 @@ typedef struct {
 
 static void *zAlloc(void *opaque, size_t items, size_t size)
 {
-	return malloc(items * size);
+	return c_malloc(items * size);
 }
 
 static void zFree(void *opaque, void *address)
 {
 	if (address)
-		free(address);
+		c_free(address);
 }
 
 void pngClose(PNG png)
@@ -93,7 +93,7 @@ void pngClose(PNG png)
 		png->zlibInited = 0;
 	}
 	if (png->scanBuffers) {
-		free(png->scanBuffers);
+		c_free(png->scanBuffers);
 		png->scanBuffers = NULL;
 	}
 }
@@ -103,7 +103,7 @@ void xs_PNG_destructor(void *data)
 	PNG png = data;
 	if (png) {
 		pngClose(png);
-		free(png);
+		c_free(png);
 	}
 }
 
@@ -181,7 +181,7 @@ void xs_PNG_constructor(xsMachine *the)
 	int8_t colorType, compressionMethod, filterMethod, interlaceMethod, bitsPerPixel;
 	xsUnsignedValue dataSize;
 
-	png = calloc(1, sizeof(PNGRecord));
+	png = c_calloc(1, sizeof(PNGRecord));
 	if (!png)
 		xsErrorPrintf("no memory for PNG");
 	xsmcSetHostData(xsThis, png);
@@ -254,7 +254,7 @@ void xs_PNG_constructor(xsMachine *the)
 				//@@ check for supported combinations
 
 				png->scanLineByteCount = (png->width * bitsPerPixel + 7) >> 3;
-				png->scanBuffers = malloc((png->scanLineByteCount + kScanLineSlop) * 2);
+				png->scanBuffers = c_malloc((png->scanLineByteCount + kScanLineSlop) * 2);
 				if (!png->scanBuffers)
 					xsErrorPrintf("no memory for scan line buffers");
 
@@ -277,11 +277,16 @@ void xs_PNG_constructor(xsMachine *the)
 
 			case 'PLTE': {
 				int colors = tagLen / 3;
-				const unsigned char *src = pngBytes;
+				const unsigned char *src;
 				unsigned char *dst;
+				int offset = pngBytes - pngBytesInitial;
 
 				xsmcSetArrayBuffer(xsVar(0), NULL, colors * 4);
 				xsmcSet(xsThis, xsID_palette, xsVar(0));
+				
+				xsmcGetBufferReadable(xsArg(0), (void **)&pngBytesInitial, &dataSize);
+				pngBytes = pngBytesInitial + offset;
+				src = pngBytes;
 				dst = xsmcToArrayBuffer(xsVar(0));
 
 				while (colors--) {
@@ -290,11 +295,15 @@ void xs_PNG_constructor(xsMachine *the)
 					*dst++ = *src++;		// b
 					*dst++ = 255;			// a
 				}
-				}
-				break;
+				} break;
 
-			case 'tRNS':
+			case 'tRNS': {
+				int offset = pngBytes - pngBytesInitial;
 				xsmcGet(xsVar(0), xsThis, xsID_palette);
+
+				xsmcGetBufferReadable(xsArg(0), (void **)&pngBytesInitial, &dataSize);
+				pngBytes = pngBytesInitial + offset;
+
 				if (xsmcTest(xsVar(0))) {
 					int colors = tagLen;
 					const unsigned char *src = pngBytes;
@@ -305,7 +314,7 @@ void xs_PNG_constructor(xsMachine *the)
 						dst += 4;
 					}
 				}
-				break;
+				} break;
 
 			case 'IEND':
 				xsErrorPrintf("no IDAT");
@@ -381,6 +390,9 @@ void xs_PNG_read(xsMachine *the)
 	png->scanLine[kScanLineSlop - 1] = 0;
 	gFilters[filter](png->scanLine + kScanLineSlop, png->prevScanLine + kScanLineSlop, png->scanLineByteCount, png->filterBytesPerPixel);
 
+	// update source data offset
+	png->byteOffset = pngBytes - pngBytesInitial;
+
 	// return a scan line of data
 	xsmcGet(xsResult, xsThis, xsID_data);
 	xsmcSetHostBuffer(png->scanLineSlot, png->scanLine + kScanLineSlop, png->scanLineByteCount);
@@ -390,8 +402,6 @@ void xs_PNG_read(xsMachine *the)
 	png->prevScanLine = png->scanLine;
 	png->scanLine = swap;
 
-	// update source data offset
-	png->byteOffset = pngBytes - pngBytesInitial;
 }
 
 void xs_PNG_get_width(xsMachine *the)

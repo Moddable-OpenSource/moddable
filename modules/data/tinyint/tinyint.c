@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -53,11 +53,13 @@ void BitsView_prototype_getUintBits(xsMachine *the)
 	if ((bitsOffset < 0) || ((bitsOffset + bitsSize) > (byteLength << 3)))
 		xsRangeError("invalid offset");
 
+	xsmcGet(xsVar(0), xsThis, xsID_byteOffset);
+	int byteOffset = xsmcToInteger(xsVar(0));
+
 	xsmcGet(xsVar(0), xsThis, xsID_buffer);
 	bytes = xsmcToArrayBuffer(xsVar(0));
 
-	xsmcGet(xsVar(0), xsThis, xsID_byteOffset);
-	bytes += xsmcToInteger(xsVar(0));
+	bytes += byteOffset;
 	bytes += bitsOffset >> 3;
 	while (bitsSize) {
 		uint8_t mask;
@@ -117,11 +119,13 @@ void BitsView_prototype_setUintBits(xsMachine *the)
 	if ((bitsOffset < 0) || ((bitsOffset + bitsSize) > (byteLength << 3)))
 		xsRangeError("invalid offset");
 
+	xsmcGet(xsVar(0), xsThis, xsID_byteOffset);
+	int byteOffset = xsmcToInteger(xsVar(0));
+
 	xsmcGet(xsVar(0), xsThis, xsID_buffer);
 	bytes = xsmcToArrayBuffer(xsVar(0));
 
-	xsmcGet(xsVar(0), xsThis, xsID_byteOffset);
-	bytes += xsmcToInteger(xsVar(0));
+	bytes += byteOffset;
 	bytes += bitsOffset >> 3;
 	while (bitsSize) {
 		uint8_t mask;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -109,18 +109,23 @@ void xs_pebbledisplay_send(xsMachine *the)
 	int argc = xsmcArgc;
 	const uint8_t *data;
 	xsUnsignedValue count;
+	xsIntegerValue offset = 0;
+	xsIntegerValue c = -1;
+
+	if (argc > 1) {
+		offset = xsmcToInteger(xsArg(1));
+		if (argc > 2)
+			c = xsmcToInteger(xsArg(2));
+	}
 
 	xsmcGetBufferReadable(xsArg(0), (void **)&data, &count);
 
 	if (argc > 1) {
-		xsIntegerValue offset = xsmcToInteger(xsArg(1));
-
 		if ((xsUnsignedValue)offset >= count)
 			xsUnknownError("bad offset");
 		data += offset;
 		count -= offset;
 		if (argc > 2) {
-			xsIntegerValue c = xsmcToInteger(xsArg(2));
 			if (c > (xsIntegerValue)count)
 				xsUnknownError("bad count");
 			count = c;

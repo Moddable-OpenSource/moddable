@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,8 +43,8 @@ void xs_TweenProperty(xsMachine *the)
 
 void xs_TweenProperty_tween(xsMachine *the)
 {
-	TweenProperty tr = (TweenProperty)xsGetHostChunk(xsThis);
 	xsNumberValue fraction = xsToNumber(xsArg(1));
+	TweenProperty tr = (TweenProperty)xsGetHostChunk(xsThis);
 	xsNumberValue result = tr->from + (fraction * tr->range);
 
 	xsSet(xsArg(0), tr->id, xsNumber(result));
@@ -91,20 +91,19 @@ void xs_TweenOnProperty(xsMachine *the)
 
 void xs_TweenOnProperty_tween(xsMachine *the)
 {
-	TweenOnProperty tr = (TweenOnProperty)xsGetHostChunk(xsThis);
-	int fromI, toI;
 	xsNumberValue fraction = xsToNumber(xsArg(1));
-	xsNumberValue index, from, range, result;
+	TweenOnProperty tr = (TweenOnProperty)xsGetHostChunk(xsThis);
+	xsIdentifier id = tr->id;
 
 	xsVars(1);
 	xsVar(0) = xsReference(tr->values);
 
-	index = tr->length * fraction;
-	fromI = (int)c_floor(index);
-	toI = ((fromI + 1) < tr->length) ? (fromI + 1) : tr->length;
+	xsNumberValue index = tr->length * fraction;
+	int fromI = (int)c_floor(index);
+	int toI = ((fromI + 1) < tr->length) ? (fromI + 1) : tr->length;
 
-	from = xsToNumber(xsGetIndex(xsVar(0), fromI));
-	range = xsToNumber(xsGetIndex(xsVar(0), toI)) - from;
-	result = from + ((index - fromI) * range);
-	xsSet(xsArg(0), tr->id, xsNumber(result));
+	xsNumberValue from = xsToNumber(xsGetIndex(xsVar(0), fromI));
+	xsNumberValue range = xsToNumber(xsGetIndex(xsVar(0), toI)) - from;
+	xsNumberValue result = from + ((index - fromI) * range);
+	xsSet(xsArg(0), id, xsNumber(result));
 }
