@@ -30,6 +30,7 @@ import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
 import RTC from "embedded:RTC/BM8563"
 import Touch from "M5StackCoreS3Touch";
+import IMU from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 
 
 const device = {
@@ -110,7 +111,19 @@ const device = {
             result.configure({threshold: 20});
             return result;
           }
-        }
+        },
+		IMU: class {
+			constructor(options) {
+				return new IMU({
+					...options,
+					sensor: {
+						...device.I2C.internal,
+						address: 0x69,
+						io: device.io.SMBus
+					}
+				});
+			}
+		}
   }
 };
 

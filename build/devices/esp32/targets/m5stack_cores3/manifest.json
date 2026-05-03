@@ -12,6 +12,7 @@
 		"$(MODDABLE)/modules/io/audioout/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/bm8563/manifest.json"
 	],
