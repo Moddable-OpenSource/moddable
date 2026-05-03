@@ -98,9 +98,9 @@ All the code snippets are available in `$MODDABLE/examples/ffi` folders:
 
 ### ffi-lib
 
-This folder contains the C files and a manifest with the descriptions of the C functions.
+This folder contains the C files and a manifest with the descriptions of the C functions. That manifest is included by both app and mod examples.
 
-That manifest is included by both app and mod examples.
+This folder also contains a module to test the C functions, whihc is used by both app and mod examples.
 
 ### ffi-app
 
@@ -176,9 +176,9 @@ Here are their usage:
 
 ```
 	result = test.add32_t(1111_1111, 2222_2222)
-	trace(`${ result }\n`);
+	trace(`add32_t ${ result }\n`);
 	result = test.add64_t(1111_1111_1111_1111n, 2222_2222_2222_2222n)
-	trace(`${ result }\n`);
+	trace(`add64_t ${ result }\n`);
 ```
 > Notice that the 64-bit version requires BigInt values.
 
@@ -224,7 +224,7 @@ In that case, the glue code will allocate nothing and JavaScript will use the st
 ```
 	const date = new Date();
 	result = test.nameDay(date.getDay());
-	trace(`${ result }\n`);
+	trace(`nameDay ${ result }\n`);
 ```
 
 ### New Strings
@@ -261,20 +261,22 @@ If the new string cannot be created, the C function must return `NULL` and the g
 
 ```
 	result = test.catenate("a", "bc");
-	trace(`${ result }\n`);
+	trace(`catenate ${ result }\n`);
 ```
 
 ## Buffers
 
-In JavaScript, buffers are instances of `ArrayBuffer` or `SharedArrayBuffer`. Their contents are usually accessed thru views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length.
+In JavaScript, buffers are instances of `ArrayBuffer`. Their contents are usually accessed thru views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length.
 
 In C, buffers are accessed thru pointers. 
 
 ### Blind Pointers
 
-Arguments can be pointers to all integer and floating point types, or `void*`. The glue code will convert ArrayBuffer instances into pointers to their contents. You can pass other arguments for view offset and length.
+The glue code will convert ArrayBuffer instances into pointers to their contents. You can pass other arguments for view offset and length.
 
 #### Reading Bytes
+
+Arguments can be pointers to all integer and floating point types, or `void*`. 
 
 Here is a function that sum bytes:
 
@@ -305,7 +307,7 @@ Here is its usage:
 ```
 	result = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 	result = test.sumBytes(result.buffer, result.byteOffset, result.byteLength);
-	trace(`${ result }\n`);
+	trace(`sumBytes ${ result }\n`);
 ```
 
 #### Writing Bytes
@@ -339,7 +341,7 @@ Here is its usage:
 ```
 	result = new Uint8Array(new ArrayBuffer(10), 3, 5);
 	test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
-	trace(`${ result }\n`);
+	trace(`fillRandom ${ result }\n`);
 ```
 
 ## Arguments
@@ -349,12 +351,12 @@ All arguments are required. The glue code will throw if arguments are ommitted.
 If you want to provide default arguments, you can easily patch functions in JavaScript:
 
 ```
-import FFI from "mc/ffi";
-const test = new FFI;
-const add = test.add;
-test.add = function(a, b = 1) {
-	return add(a, b);
-}
+	const add32_t = test.add32_t;
+	test.add32_t = function(a, b = 1) {
+		return add32_t(a, b);
+	}
+	result = test.add32_t(4)
+	trace(`add32_t ${ result }\n`);
 ```
 
 The same technique can be used to check arguments ranges and types for instance, or to convert results.
@@ -416,7 +418,7 @@ You can use such a low level function to provide a friendly programming pattern,
 	}
 ```
 
-> The `ABCSensor` class allocates the view in its contructor to avoid allocations in its `sample` method.
+> The `ABCSensor` class creates its buffer and view in its contructor to avoid allocations every time its `sample` method is called.
 
 Now you can use the class the standard way:
 
