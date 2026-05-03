@@ -27,6 +27,7 @@
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuFontListDelete(void* it);
 static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
@@ -36,7 +37,7 @@ static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 };
 
 static const xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
-	NULL,
+	PiuFontListDelete,
 	PiuFontListMark,
 	NULL
 };
@@ -242,7 +243,9 @@ void PiuStyleLookupFont(PiuStyle* self)
 		}
 	}
 	else {
-		gCFE = CFENew();
+		gCFEUseCount++;
+		if (!gCFE)
+			gCFE = CFENew();
 		PiuFontListNew(the);
 		xsSet(xsGlobal, xsID_fonts, xsResult);
 		fontList = PIU(FontList, xsResult);
@@ -352,6 +355,16 @@ void PiuFontListLockCache(xsMachine* the)
 {
 	if (gCFE)
 		CFELockCache(gCFE, 1);
+}
+
+void PiuFontListDelete(void *data)
+{
+	if (data && gCFE) {
+		if (--gCFEUseCount == 0) {
+			CFEDispose(gCFE);
+			gCFE = C_NULL;
+		}
+	}
 }
 
 void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)

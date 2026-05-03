@@ -46,6 +46,7 @@
 #endif
 
 CommodettoFontEngine gCFE;
+int16_t gCFEUseCount;
 
 static PocoPixel *pocoGetBitmapPixels(xsMachine *the, Poco poco, CommodettoBitmap cb, int arg);
 
@@ -71,7 +72,7 @@ void xs_poco_destructor(void *data)
 #endif
 	}
 
-	if (gCFE) {
+	if (gCFE && (0 == --gCFEUseCount)) {
 		CFEDispose(gCFE);
 		gCFE = C_NULL;
 	}
@@ -203,6 +204,7 @@ void xs_poco_build(xsMachine *the)
 	xsmcSetInteger(xsVar(0), pixelsLength);
 	xsmcDefine(xsThis, xsID_byteLength, xsVar(0), xsDefault);
 
+	gCFEUseCount++;
 	if (C_NULL == gCFE)
 		gCFE = CFENew();
 }
