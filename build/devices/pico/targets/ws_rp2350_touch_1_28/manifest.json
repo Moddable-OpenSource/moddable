@@ -1,0 +1,44 @@
+{
+	"build": {
+		"PICO_SUBCLASS": "rp2350"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/gc9a01/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json",
+		"$(MODULES)/drivers/sensors/cst816s/manifest.json",
+		"$(MODULES)/drivers/sensors/qmi8658/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "gc9a01",
+		"backlight": 25,
+		"brightness": 50,
+		"touch": ""
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 6,
+			"scl_pin": 7,
+			"port": 1
+		},
+		"spi": {
+			"mosi_pin": 11,
+			"sck_pin": 10
+		},
+		"ili9341": {
+			"cs_pin": 9,
+			"dc_pin": 8,
+			"rst_pin": 13,
+			"spi_port": 1,
+			"backlight_pin": 25,
+			"backlight_on": 1,
+			"flipx": true
+		}
+	}
+}
