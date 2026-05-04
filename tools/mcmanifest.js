@@ -3007,7 +3007,7 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (name == "ZEPHYR_BOARD")
+				if (name == "ZEPHYR_BOARD")	
 					this.environment[name] = value;
 				else if (name == "LIBRARIES" || name == "C_FLAGS") {
 					if (undefined == this.environment[name])
@@ -3017,15 +3017,25 @@ export class Tool extends TOOL {
 				}
 				else {
 					if (typeof value == "string") {
-						const dotSlash = "." + this.slash;
-						value = this.resolveVariable(value);
-						if (value.startsWith(dotSlash)) {
-							const path = this.resolveDirectoryPath(dotSlash);
-							if (path) {
-								if (dotSlash == value)
-									value = path;
-								else
-									value = path + value.slice(1);
+						let shellValue;
+						if (name.endsWith(" ?=") && !(name in this.environment)) {
+							name = name.slice(0, -3);;
+
+							shellValue = this.getenv(name);
+							if (undefined !== shellValue)
+								value = shellValue;
+						}
+						if (undefined === shellValue) {
+							const dotSlash = "." + this.slash;
+							value = this.resolveVariable(value);
+							if (value.startsWith(dotSlash)) {
+								const path = this.resolveDirectoryPath(dotSlash);
+								if (path) {
+									if (dotSlash == value)
+										value = path;
+									else
+										value = path + value.slice(1);
+								}
 							}
 						}
 					}
