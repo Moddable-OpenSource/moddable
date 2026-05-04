@@ -21,10 +21,16 @@ HOST_OS := $(shell uname)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
 
+
 PICO_ROOT ?= $(HOME)/pico
 PICO_SDK_DIR ?= $(HOME)/pico/pico-sdk
 PICO_EXTRAS_DIR ?= $(HOME)/pico/pico-extras
 PICO_GCC_ROOT ?= /usr/local
+
+PICO_SDK_VERSION := $(shell bash -c "cd $(PICO_SDK_DIR) && git describe --tags --always --abbrev=0")
+ifeq ($(PICO_SDK_VERSION),)
+$(error Could not detect Pico SDK version at $$PICO_SDK_DIR: $(PICO_SDK_DIR).)
+endif
 
 PIOASM ?= $(HOME)/pico/pico-sdk/build/pioasm/pioasm
 
@@ -912,6 +918,7 @@ OBJECTS += \
 	$(PICO_OBJ)
 
 OTHER_STUFF += \
+	sdkVersionCheck \
 	env_vars	\
 	pio_headers
 
@@ -1062,6 +1069,10 @@ INCS:
 SRCS:
 	@echo $(ekoSrcDirs)
 	cat $(BIN_DIR)/xs_pico.dirs2
+
+sdkVersionCheck:
+	[[ '$(PICO_SDK_VERSION)' == '$(EXPECTED_PICO_SDK)' ]] && (echo "Found expected SDK $(EXPECTED_PICO_SDK)") || (echo "******\n*** Expected PICO SDK $(EXPECTED_PICO_SDK), found $(PICO_SDK_VERSION)\n******\n"; exit 1)
+
 
 $(BIN_DIR)/xs_pico.ind: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_pico.ind"
