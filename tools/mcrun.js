@@ -419,6 +419,13 @@ export default class extends Tool {
 		this.localsName = "modLocals";
 		super.run();
 
+		if (this.manifest.preload?.length) {
+			trace("Preload detected:\n")
+			this.manifest.preload.forEach(item => trace(`  ${item}\n`));
+			trace("Mods cannot use preload. \n");
+			throw new Error("mod cannot use preload");
+		}
+
 		if (this.cFiles?.length) {
 			trace("Native code detected:\n")
 			this.cFiles.forEach(item => trace(`  ${item.source}\n`));
