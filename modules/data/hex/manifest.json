@@ -7,5 +7,10 @@
 	},
 	"preload": [
 		"hex"
-	]
+	],
+	"platforms": {
+		"...": {
+			"warning": "Hex module deprecated. Use Uint8Array toHex, fromHex, setFromHex"
+		}
+	}
 }
