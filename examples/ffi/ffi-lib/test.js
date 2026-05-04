@@ -22,6 +22,17 @@ export default function(test) {
 	test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
 	trace(`fillRandom ${ result }\n`);
 
+	result = new Uint32Array([0, 1, 2]);
+	result = test.newTriple(result.buffer, 3);
+	trace(`newTriple ${ new Uint32Array(result) }\n`);
+	
+	try {
+		test.newTriple(new ArrayBuffer(3));
+	}
+	catch (e) {
+		trace(`newTriple ${ e }\n`);
+	}
+
 	const add32_t = test.add32_t;
 	test.add32_t = function(a, b = 1) {
 		return add32_t(a, b);

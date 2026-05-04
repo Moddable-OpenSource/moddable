@@ -30,6 +30,10 @@
 				"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
 				"returns": "void"
 			},
+			"newTriple": {
+				"arguments": [ "uint32_t[3]", "uint32_t" ],
+				"returns": "uint32_t[3]"
+			},
 			"sampleABCSensor": {
 				"arguments": [ "void*" ],
 				"returns": "void"

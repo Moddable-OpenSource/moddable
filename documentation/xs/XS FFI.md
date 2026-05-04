@@ -210,7 +210,7 @@ const char* nameDay(uint8_t i)
 }
 ```
 
-The signature of the function must use `const char*`  in the FFI description:
+The function description must return `const char*`:
 
 ```
 	"nameDay": {
@@ -246,7 +246,7 @@ char* catenate(char* arg0, char* arg1)
 }
 ```
 
-The signature of the function must use `char*`  in the FFI description:
+The function description must return `char*`:
 
 ```
 	"catenate": {
@@ -266,13 +266,15 @@ If the new string cannot be created, the C function must return `NULL` and the g
 
 ## Buffers
 
-In JavaScript, buffers are instances of `ArrayBuffer`. Their contents are usually accessed thru views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length.
+In JavaScript, buffers are instances of `ArrayBuffer`. Their data are usually accessed thru views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length. Buffers can also be detached, i.e. without data.
 
-In C, buffers are accessed thru pointers. 
+In C, buffers are accessed thru pointers. The glue code will convert buffers into pointers to their data. 
 
 ### Blind Pointers
 
-The glue code will convert ArrayBuffer instances into pointers to their contents. As usual in C, there are no guarantees on the buffer size. You can of course check that in JavaScript, see **Arguments** here under.
+If the buffer is detached, the pointer is `NULL`. There are no guarantees on the data size.
+
+You can of course check all that in JavaScript, see **Arguments** here under.
 
 #### Reading Bytes
 
@@ -293,7 +295,7 @@ uint64_t sumBytes(uint8_t* buffer, uint32_t offset, uint32_t length)
 }
 ```
 
-Here is its signature:
+Here is its description:
 
 ```
 	"sumBytes": {
@@ -312,7 +314,7 @@ Here is its usage:
 
 #### Writing Bytes
 
-A C function cannot return a new pointer since the buffer size would be unknown. Instead pass a buffer that the C function will fill.
+A C function cannot return a new pointer since its data size would be unknown. Instead pass a buffer that the C function will fill.
 
 Here is a function that fill bytes with random integers:
 
@@ -327,7 +329,7 @@ void fillRandom(uint8_t* buffer, uint32_t offset, uint32_t length)
 }
 ```
 
-Here is its signature:
+Here is its description:
 
 ```
 	"fillRandom": {
@@ -343,6 +345,48 @@ Here is its usage:
 	test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
 	trace(`fillRandom ${ result }\n`);
 ```
+
+### Pointers with Size
+
+Descriptions can also use integer and floating point types followed by a positive integer between brackets. For instance `uint32_t[3]`.
+
+- For arguments, the glue code will check that the buffer is not detached and that its data size is sufficient. 
+
+- When the function description returns a pointer with size, the C function must return a pointer to new data allocated with `malloc`, `calloc`. The glue code will creare a new buffer with the new data, then delete the new data with `free`. If the new data cannot be created, the C function must return `NULL` and the glue code will abort with `"not enough memory"`.
+
+Here is a function that returns a new buffer with incremented values:
+
+```
+uint32_t* newTriple(uint32_t* buffer, uint32_t delta)
+{
+	uint32_t* result = malloc(3 * sizeof(uint32_t));
+	if (result) {
+		result[0] = buffer[0] + delta;
+		result[1] = buffer[1] + delta;
+		result[2] = buffer[2] + delta;
+	}
+	return result;
+}
+```
+
+Here is its description:
+
+```
+	"newTriple": {
+		"arguments": [ "uint32_t[3]", "uint32_t" ],
+		"returns": "uint32_t[3]"
+	}
+```
+
+Here is its usage:
+
+```
+	result = new Uint32Array([0, 1, 2]);
+	result = test.newTriple(result.buffer, 3);
+	trace(`newTriple ${ new Uint32Array(result) }\n`);
+```
+
+> Notice that the signature of the C function itself still uses `uint32_t*`. 
 
 ## Arguments
 
@@ -396,7 +440,7 @@ void sampleABCSensor(void* ptr)
 }
 ```
 
-Here is its signature:
+Here is its description:
 
 ```
 	"sampleABCSensor": {

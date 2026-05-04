@@ -24,6 +24,17 @@ void fillRandom(uint8_t* buffer, uint32_t offset, uint32_t length)
 	}
 }
 
+uint32_t* newTriple(uint32_t* buffer, uint32_t delta)
+{
+	uint32_t* result = malloc(3 * sizeof(uint32_t));
+	if (result) {
+		result[0] = buffer[0] + delta;
+		result[1] = buffer[1] + delta;
+		result[2] = buffer[2] + delta;
+	}
+	return result;
+}
+
 typedef struct {
 	uint32_t a;
 	uint32_t b;

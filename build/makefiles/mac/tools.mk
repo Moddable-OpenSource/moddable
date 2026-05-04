@@ -53,6 +53,7 @@ XS_HEADERS = \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
+	$(XS_DIR)/includes/xsffi.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsScript.h

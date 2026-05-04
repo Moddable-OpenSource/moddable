@@ -80,7 +80,8 @@ struct sxAPI {
 	void (*fromStringX)(txMachine* the, txSlot* slot, char* value);
 	char** (*toStringHandle)(txMachine* the, txSlot* slot);
 	
-	void** (*toArrayBufferHandle)(txMachine* the, txSlot* slot);
+	void* (*fromArrayBuffer)(txMachine* the, txSlot* slot, void* data, txInteger byteLength, txInteger maxByteLength);
+	void** (*toArrayBufferHandle)(txMachine* the, txSlot* slot, size_t size);
 };
 
 #if mxWindows

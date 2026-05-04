@@ -18,7 +18,7 @@
  *
  */
  
- import { PrerequisiteFile} from "mcmanifest";
+import { PrerequisiteFile} from "mcmanifest";
 
 class TabFile extends PrerequisiteFile {
 	constructor(path, tool) {
@@ -99,7 +99,34 @@ class PointerType extends Type {
 		file.write(`(${ this.name })*arg${ i }`);
 	}
 	writeArgumentConversion(file, i) {
-		file.line(`void** arg${ i } = XS->toArrayBufferHandle(the, mxArgv(${ i }));`);
+		file.line(`void** arg${ i } = XS->toArrayBufferHandle(the, mxArgv(${ i }), 0);`);
+	}
+}
+
+class PointerSizeType extends Type {
+	get tsType() { return "ArrayBuffer"; }
+	constructor(name) {
+		const bracket = name.indexOf("[");
+		super(name.slice(0, bracket) + "*");
+		this.count = parseInt(name.slice(bracket + 1, -1));
+	}
+	writeArgument(file, i) {
+		file.write(`(${ this.name })*arg${ i }`);
+	}
+	writeArgumentConversion(file, i) {
+		file.line(`void** arg${ i } = XS->toArrayBufferHandle(the, mxArgv(${ i }), ${ this.count } * sizeof(${ this.name.slice(0, -1) }));`);
+	}
+	writeResultConversion(file) {
+		file.line("if (result) {");
+		file.tab(1);
+		file.line(`XS->fromArrayBuffer(the, mxResult, result, ${ this.count } * sizeof(${ this.name.slice(0, -1) }), -1);`);
+		file.line("free(result);");
+		file.tab(-1);
+		file.line("} else {");
+		file.tab(1);
+		file.line("XS->abort(the, XS_NOT_ENOUGH_MEMORY_EXIT);");
+		file.tab(-1);
+		file.line("}");
 	}
 }
 
@@ -151,46 +178,67 @@ class VoidType extends Type {
 	}
 }
 
-const ArgumentConstructors = {
+const ArgumentConstructors = Object.freeze({
 	"char*": StringType,
 	"double": NumberType,
 	"double*": PointerType,
+	"double[]": PointerSizeType,
 	"float": NumberType,
 	"float*": PointerType,
+	"float[]": PointerSizeType,
 	"int8_t": IntegerType,
 	"int8_t*": PointerType,
+	"int8_t[]": PointerSizeType,
 	"int16_t": IntegerType,
 	"int16_t*": PointerType,
+	"int16_t[]": PointerSizeType,
 	"int32_t": IntegerType,
 	"int32_t*": PointerType,
+	"int32_t[]": PointerSizeType,
 	"int64_t": BigInt64Type,
 	"int64_t*": PointerType,
+	"int64_t[]": PointerSizeType,
 	"uint8_t": UnsignedType,
 	"uint8_t*": PointerType,
+	"uint8_t[]": PointerSizeType,
 	"uint16_t": UnsignedType,
 	"uint16_t*": PointerType,
+	"uint16_t[]": PointerSizeType,
 	"uint32_t": UnsignedType,
 	"uint32_t*": PointerType,
+	"uint32_t[]": PointerSizeType,
+	"uint32_t[]": PointerSizeType,
 	"uint64_t": BigUint64Type,
 	"uint64_t*": PointerType,
+	"uint64_t[]": PointerSizeType,
 	"void*": PointerType,
-};
+}, true);
 
-const ResultConstructors = {
+const ResultConstructors =  Object.freeze({
 	"char*": StringType,
 	"const char*": StringType,
 	"double": NumberType,
+	"double[]": PointerSizeType,
 	"float": NumberType,
+	"float[]": PointerSizeType,
 	"int8_t": IntegerType,
+	"int8_t[]": PointerSizeType,
 	"int16_t": IntegerType,
+	"int16_t[]": PointerSizeType,
 	"int32_t": IntegerType,
+	"int32_t[]": PointerSizeType,
 	"int64_t": BigInt64Type,
+	"int64_t[]": PointerSizeType,
 	"uint8_t": UnsignedType,
+	"uint8_t[]": PointerSizeType,
 	"uint16_t": UnsignedType,
+	"uint16_t[]": PointerSizeType,
 	"uint32_t": UnsignedType,
+	"uint32_t[]": PointerSizeType,
 	"uint64_t": BigUint64Type,
+	"uint64_t[]": PointerSizeType,
 	"void": VoidType,
-};
+}, true);
 
 class FFIGlue {
 	constructor(tool) {
@@ -275,8 +323,18 @@ class FFIGlue {
 		}
 	}
 	normalizeType(type) {
+		this.count = undefined;
 		if (type.endsWith(" *")) {
 			type = type.slice(0, -2) + "*";
+		}
+		else if (type.endsWith("]")) {
+			const bracket = type.indexOf("[");
+			if (bracket > 0) {
+				const count = type.slice(bracket + 1, -1);
+				if (/^[1-9][0-9]*$/.test(count)) {
+					type = type.slice(0, bracket) + "[]";
+				}
+			}
 		}
 		return type;
 	}
@@ -284,36 +342,36 @@ class FFIGlue {
 		const tool = this.tool;
 		const signatures = [];
 		if (!(typeof(functions) == "object")) {
-			tool.reportError(null, 0, `functions: not an object!`);
+			tool.reportError(null, 0, `functions: not an object`);
 		}
 		else {
 			for (let name in functions) {
 				const signature = functions[name];
 				if (!(typeof(signature) == "object")) {
-					tool.reportError(null, 0, `functions.${ name }: not an object!`);
+					tool.reportError(null, 0, `functions.${ name }: not an object`);
 					signatures.push({ name });
 				}
 				else {
-					let resultType = this.normalizeType(signature.returns || "void"); 
-					let Constructor = ResultConstructors[resultType];
+					let resultType = signature.returns || "void"; 
+					let Constructor = ResultConstructors[this.normalizeType(resultType)];
 					if (!Constructor)
-						tool.reportError(null, 0, `functions.${ name }.returns: invalid type ${signature.returns}!`);
+						tool.reportError(null, 0, `functions.${ name }.returns: invalid type ${resultType}`);
 					else
-						resultType = new Constructor(resultType);
+						resultType = new Constructor(resultType, this.count);
 					
 					const argumentTypes = signature.arguments;
 					if (argumentTypes) {
 						if (!Array.isArray(argumentTypes)) {
-							tool.reportError(null, 0, `functions.${ name }.arguments: not an array!`);
+							tool.reportError(null, 0, `functions.${ name }.arguments: not an array`);
 						}
 						else {
 							for (let i = 0; i < argumentTypes.length; i++) {
-								let argumentType = this.normalizeType(argumentTypes[i]);
-								let Constructor = ArgumentConstructors[argumentType];
+								let argumentType = argumentTypes[i];
+								let Constructor = ArgumentConstructors[this.normalizeType(argumentType)];
 								if (!Constructor)
-									tool.reportError(null, 0, `functions.${ name }.arguments[${ i }]: invalid type ${argumentTypes[i]}!`);
+									tool.reportError(null, 0, `functions.${ name }.arguments[${ i }]: invalid type ${argumentType}`);
 								else
-									argumentTypes[i] = new Constructor(argumentType);
+									argumentTypes[i] = new Constructor(argumentType, this.count);
 							}
 						}
 					}
@@ -323,10 +381,10 @@ class FFIGlue {
 				}
 			}
 			if (signatures.length == 0)
-				tool.reportError(null, 0, `functions: empty object!`);
+				tool.reportError(null, 0, `functions: empty object`);
 		}
 		if (tool.errorCount) {
-			throw new Error(`Invalid functions: ${ tool.errorCount } error(s)!`);
+			throw new Error(`Invalid functions: ${ tool.errorCount } error(s)`);
 		}
 		return signatures;
 	}
