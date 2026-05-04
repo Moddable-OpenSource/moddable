@@ -1,6 +1,6 @@
 # XS FFI
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: May 1, 2026
+Revised: May 4, 2026
 
 ## About
 
@@ -100,7 +100,7 @@ All the code snippets are available in `$MODDABLE/examples/ffi` folders:
 
 This folder contains the C files and a manifest with the descriptions of the C functions. That manifest is included by both app and mod examples.
 
-This folder also contains a module to test the C functions, whihc is used by both app and mod examples.
+This folder also contains a module to test the C functions, which is used by both app and mod examples.
 
 ### ffi-app
 
