@@ -26,7 +26,7 @@ import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import Touch from "embedded:sensor/Touch/CST328";
+import Touch from "embedded:sensor/Touch/CST816S";
 import RTC from "embedded:RTC/PCF85063";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
@@ -45,7 +45,7 @@ class Backlight {
 			value = 0;
 		else if (value >= 1)
 			value = 1023;
-		else 
+		else
 			value *= 1023;
 		this.#io.write(value);
 	}
@@ -60,6 +60,12 @@ const device = {
 			io: I2C,
 			data: 6,
 			clock: 7,
+			port: 0
+		},
+		external: {
+			io: I2C,
+			data: 26,
+			clock: 27,
 			port: 1
 		}
 	},
@@ -67,6 +73,7 @@ const device = {
 		default: {
 			io: SPI,
 			clock: 10,
+			in: 12,
 			out: 11,
 			port: 1
 		}
@@ -74,13 +81,16 @@ const device = {
 	Analog: {
 		default: {
 			io: Analog,
-			pin: 26
+			pin: 29
 		}
 	},
 	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, SMBus, SPI },
 	pin: {
-		backlight: 16
-	} ,
+		backlight: 25,
+		displayDC: 8,
+		displaySelect: 9,
+		batteryADC: 29
+	},
 	peripheral: {
 		Backlight: class {
 			constructor() {
@@ -111,15 +121,15 @@ const device = {
 					reset: {
 						io: Digital,
 						mode: Digital.Output,
-						pin: 17
+						pin: 22
 					},
 					interrupt: {
 						io: Digital,
 						mode: Digital.Input,
-						pin: 18
+						pin: 21
 					}
 				});
-				result.configure({});
+				result.configure({ });
 				return result;
 			}
 		},

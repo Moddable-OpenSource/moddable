@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2026  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -24,10 +24,12 @@ import DigitalBank from "embedded:io/digitalbank";
 import I2C from "embedded:io/i2c";
 import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
+import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
-import Touch from "embedded:sensor/Touch/CST328";
-import RTC from "embedded:RTC/PCF85063";
+import Touch from "embedded:sensor/Touch/CST816S";
+import PulseWidth from "embedded:io/pulsewidth";
+import PCF85063 from "embedded:RTC/PCF85063";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
 class Backlight {
@@ -45,11 +47,11 @@ class Backlight {
 			value = 0;
 		else if (value >= 1)
 			value = 1023;
-		else 
+		else
 			value *= 1023;
 		this.#io.write(value);
 	}
-	write(value) {		// compatibility
+	write(value) {
 		this.brightness = value / 100;
 	}
 }
@@ -58,39 +60,42 @@ const device = {
 	I2C: {
 		default: {
 			io: I2C,
-			data: 6,
-			clock: 7,
-			port: 1
+			data: 11,
+			clock: 10
+		}
+	},
+	Serial: {
+		default: {
+			io: Serial,
+			port: 1,
+			receive: 44,
+			transmit: 43
 		}
 	},
 	SPI: {
 		default: {
 			io: SPI,
-			clock: 10,
-			out: 11,
-			port: 1
+			clock: 6,
+			in: -1,
+			out: 7,
+			port: 2
 		}
 	},
-	Analog: {
-		default: {
-			io: Analog,
-			pin: 26
-		}
-	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, SMBus, SPI },
+	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
-		backlight: 16
-	} ,
+		//@@ button
+		button: 0,
+		backlight: 15
+	},
 	peripheral: {
 		Backlight: class {
 			constructor() {
-				return new Backlight({pin: device.pin.backlight });
+				return new Backlight({pin: device.pin.backlight});
 			}
 		},
 		RTC: class {
-			constructor(options) {
-				return new RTC({
-					...options,
+			constructor() {
+				return new PCF85063({
 					clock: {
 						...device.I2C.default,
 						io: device.io.SMBus
@@ -101,7 +106,7 @@ const device = {
 	},
 	sensor: {
 		Touch: class {
-			constructor(options) {
+			constructor(options) {				
 				const result = new Touch({
 					...options,
 					sensor: {
@@ -111,12 +116,12 @@ const device = {
 					reset: {
 						io: Digital,
 						mode: Digital.Output,
-						pin: 17
+						pin: 13
 					},
 					interrupt: {
 						io: Digital,
 						mode: Digital.Input,
-						pin: 18
+						pin: 14
 					}
 				});
 				result.configure({});
@@ -139,4 +144,3 @@ const device = {
 };
 
 export default device;
-

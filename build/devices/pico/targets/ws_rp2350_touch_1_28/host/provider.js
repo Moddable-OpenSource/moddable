@@ -40,7 +40,6 @@ class Backlight {
 		this.#io = undefined;
 	}
 	set brightness(value) {
-//		value = 1 - value;		// PWM is inverted
 		if (value <= 0)
 			value = 0;
 		else if (value >= 1)
