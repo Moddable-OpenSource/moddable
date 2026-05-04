@@ -1,7 +1,7 @@
 {
 	"build": {
-		"PICO_EXTRAS_DIR": "$(HOME)/pico/pico-extras",
-		"PICO_EXAMPLES_DIR": "$(HOME)/pico/pico-examples"
+		"PICO_EXTRAS_DIR ?=": "$(HOME)/pico/pico-extras",
+		"PICO_EXAMPLES_DIR ?=": "$(HOME)/pico/pico-examples"
 	},
 	"include": [
 		"$(MODULES)/files/preference/manifest.json"

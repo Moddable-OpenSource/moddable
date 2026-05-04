@@ -38,35 +38,35 @@ const fetchGlobal = {
 	snippet: `
 import { fetch } from "fetch";
 globalThis.fetch = fetch;
-`	
+`
 };
 const headersGlobal = {
 	include: "$(MODDABLE)/modules/data/headers/manifest.json",
 	snippet: `
 import Headers from "headers";
 globalThis.Headers = Headers;
-`	
+`
 };
 const structuredCloneGlobal = {
 	include: "$(MODDABLE)/modules/base/structuredClone/manifest.json",
 	snippet: `
 import structuredClone from "structuredClone";
 globalThis.structuredClone = structuredClone;
-`	
+`
 };
 const textDecoderGlobal = {
 	include: "$(MODDABLE)/modules/data/text/decoder/manifest.json",
 	snippet: `
 import TextDecoder from "text/decoder";
 globalThis.TextDecoder = TextDecoder;
-`	
+`
 };
 const textEncoderGlobal = {
 	include: "$(MODDABLE)/modules/data/text/encoder/manifest.json",
 	snippet: `
 import TextEncoder from "text/encoder";
 globalThis.TextEncoder = TextEncoder;
-`	
+`
 };
 const timerGlobal = {
 	snippet: `
@@ -75,7 +75,7 @@ globalThis.clearImmediate = globalThis.clearInterval = globalThis.clearTimeout =
 globalThis.setImmediate = function(callback) { return Timer.set(callback) };
 globalThis.setInterval = function(callback, delay) { return Timer.repeat(callback, delay) };
 globalThis.setTimeout = function(callback, delay) { return Timer.set(callback, delay) };
-`	
+`
 };
 const urlGlobal = {
 	include: "$(MODDABLE)/modules/data/url/manifest.json",
@@ -83,7 +83,7 @@ const urlGlobal = {
 import { URL, URLSearchParams } from "url";
 globalThis.URL = URL;
 globalThis.URLSearchParams = URLSearchParams;
-`	
+`
 };
 const workerGlobal = {
 	include: "$(MODDABLE)/modules/base/worker/manifest.json",
@@ -92,7 +92,7 @@ import Worker from "worker";
 globalThis.Worker = Worker;
 import {SharedWorker} from "worker";
 globalThis.SharedWorker = SharedWorker;
-`	
+`
 };
 
 export default class extends TOOL {
@@ -112,11 +112,11 @@ export default class extends TOOL {
 		this.modulesPath = this.moddablePath + this.slash + "modules";
 		this.outputPath = null;
 		this.environment = {
-			MODDABLE:this.moddablePath,
-			MODULES:this.modulesPath,
-			COMMODETTO:this.modulesPath + this.slash + "commodetto",
+			MODDABLE: this.moddablePath,
+			MODULES: this.modulesPath,
+			COMMODETTO: this.modulesPath + this.slash + "commodetto",
 		};
-		
+
 		let name, path;
 		let argc = argv.length;
 		let argi = 1;
@@ -145,51 +145,51 @@ export default class extends TOOL {
 		else {
 			throw new Error("no action!");
 		}
-		
+
 		argi++;
 		this.argv = argv.slice(argi);
 		for (; argi < argc; argi++) {
 			var option = argv[argi];
 			switch (option) {
-			case "-o":
-				argi++;
-				if (argi >= argc)
-					throw new Error("-o: no directory!");
-				name = argv[argi];
-				if (this.outputPath)
-					throw new Error("-o '" + name + "': too many directories!");
-				path = this.resolveDirectoryPath(name);
-				if (!path)
-					throw new Error("-o '" + name + "': directory not found!");
-				this.outputPath = path;
-				break;
-			case "-p":
-				argi++;
-				if (argi >= argc)
-					throw new Error("-p: no platform!");
-				name = argv[argi];
-				if (this.platform)
-					throw new Error("-p '" + name + "': too many platforms!");
-				name = name.toLowerCase();
-				let parts = name.split("/");
-				if ("esp8266" === parts[0])
-					parts[0] = "esp";
-				else if ((parts[0] == "sim") || (parts[0] == "simulator"))
-					parts[0] = this.currentPlatform;
-				this.platform = parts[0];
-				if (parts[1]) {
-					this.subplatform = parts[1];
-					this.environment.SUBPLATFORM = this.subplatform;
-					this.fullplatform = this.platform + "/" + this.subplatform;
-					this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
-				}
-				else {
-					this.fullplatform = this.platform;
-					this.environment.PLATFORMPATH = this.platform;
-				}
-				this.environment.PLATFORM = this.platform;
-				this.environment.FULLPLATFORM = this.fullplatform;
-				break;
+				case "-o":
+					argi++;
+					if (argi >= argc)
+						throw new Error("-o: no directory!");
+					name = argv[argi];
+					if (this.outputPath)
+						throw new Error("-o '" + name + "': too many directories!");
+					path = this.resolveDirectoryPath(name);
+					if (!path)
+						throw new Error("-o '" + name + "': directory not found!");
+					this.outputPath = path;
+					break;
+				case "-p":
+					argi++;
+					if (argi >= argc)
+						throw new Error("-p: no platform!");
+					name = argv[argi];
+					if (this.platform)
+						throw new Error("-p '" + name + "': too many platforms!");
+					name = name.toLowerCase();
+					let parts = name.split("/");
+					if ("esp8266" === parts[0])
+						parts[0] = "esp";
+					else if ((parts[0] == "sim") || (parts[0] == "simulator"))
+						parts[0] = this.currentPlatform;
+					this.platform = parts[0];
+					if (parts[1]) {
+						this.subplatform = parts[1];
+						this.environment.SUBPLATFORM = this.subplatform;
+						this.fullplatform = this.platform + "/" + this.subplatform;
+						this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+					}
+					else {
+						this.fullplatform = this.platform;
+						this.environment.PLATFORMPATH = this.platform;
+					}
+					this.environment.PLATFORM = this.platform;
+					this.environment.FULLPLATFORM = this.fullplatform;
+					break;
 			}
 		}
 		if (!this.fullplatform) {
@@ -198,7 +198,7 @@ export default class extends TOOL {
 			this.environment.FULLPLATFORM = this.platform;
 			this.environment.PLATFORMPATH = this.platform;
 		}
-		
+
 		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
 		if ("esp32" == this.platform) {
 			let bluedroid = this.getenv("ESP32_BLUEDROID") === "1";
@@ -218,27 +218,27 @@ export default class extends TOOL {
 		this.environment.BLEMODULEPATH = path;
 
 		let userHome;
-		if ("win" == this.currentPlatform){
+		if ("win" == this.currentPlatform) {
 			userHome = this.getenv("USERPROFILE");
-		}else if ("mac" == this.currentPlatform || "lin" == this.currentPlatform){
+		} else if ("mac" == this.currentPlatform || "lin" == this.currentPlatform) {
 			userHome = this.getenv("HOME");
 		}
-		if (userHome !== undefined) this.environment.USERHOME = userHome; 
-		
+		if (userHome !== undefined) this.environment.USERHOME = userHome;
+
 		if (this.platform == "mac")
 			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/mac/${this.build}/mcsim.app`;
 		else if (this.platform == "win")
 			this.environment.SIMULATOR = `${this.moddablePath}\\build\\bin\\win\\${this.build}\\mcsim.exe`;
 		else if (this.platform == "lin")
 			this.environment.SIMULATOR = `${this.moddablePath}/build/bin/lin/${this.build}/mcsim`;
-			
+
 		this.environment.BUILD_SIMULATOR = this.moddablePath + this.slash + "build" + this.slash + "simulators";
-		
+
 		if (!this.outputPath)
 			this.outputPath = this.buildPath;
-		
+
 		this.verbose = this.argv.indexOf("-v") >= 0;
-		
+
 		this.includes = {
 			"piu/MC": "$(MODDABLE)/examples/manifest_piu.json",
 		}
@@ -290,8 +290,8 @@ export default class extends TOOL {
 		path += this.slash + segments[segments.length - 1];
 		this.writeFileString(path, string);
 	}
-	
-	listSpecifiers(path) @ "Tool_prototype_listSpecifiers"
+
+	listSpecifiers(path) @"Tool_prototype_listSpecifiers"
 	parseModule(module) {
 		let path = this.urlToFilePath(module.fileURL);
 		let infos = this.listSpecifiers(path);
@@ -326,13 +326,13 @@ export default class extends TOOL {
 								item.specifiers.push(from);
 						}
 						else {
-							item = { fileURL, packageURL, packageName, specifiers: [ from ] };
+							item = { fileURL, packageURL, packageName, specifiers: [from] };
 							this.modules.set(fileURL, item);
 							this.queue.push(item);
 						}
 					}
 				}
-				catch(e) {
+				catch (e) {
 					this.reportError(path, specifier.line, e.message);
 				}
 			}
@@ -389,7 +389,7 @@ export default class extends TOOL {
 		this.builtins = this.mapBuiltins(this.getPlatformBuiltins());
 		if (this.hasCreationMain) {
 			const specifier = "moddable:mc/config";
-			this.builtins.set(specifier, { specifier, manifests:[] });
+			this.builtins.set(specifier, { specifier, manifests: [] });
 		}
 		this.importedBuiltinSpecifiers = [];
 
@@ -407,7 +407,7 @@ export default class extends TOOL {
 		if (this.hasCreationMain)
 			this.manifest.include.push("$(MODDABLE)/examples/manifest_base.json");
 		else
-			this.require = [ "$(MODDABLE)/examples/manifest_base.json" ];
+			this.require = ["$(MODDABLE)/examples/manifest_base.json"];
 		try {
 			let packageJSON = this.READ_PACKAGE_JSON(packageURL);
 			if (packageJSON == null)
@@ -422,7 +422,7 @@ export default class extends TOOL {
 			else
 				this.throwModuleNotFoundError();
 		}
-		catch(e) {
+		catch (e) {
 			this.reportError(null, 0, e.message);
 		}
 		if (this.errorCount == 0) {
@@ -440,18 +440,18 @@ export default class extends TOOL {
 			let path = tmpPath + this.slash + "globals.js";
 			this.writeFileString(path, source);
 			this.manifest.modules.globals = "./globals";
-			this.manifest.preload = [ "globals" ];
+			this.manifest.preload = ["globals"];
 		}
 		if (this.errorCount == 0) {
 			let async = false;
 			this.modules.forEach(item => {
-				
+
 				let fileURL = item.fileURL;
 				let packageName = item.packageName;
 				let packageURL = item.packageURL;
 				if (this.verbose)
-					this.report(`### ${ fileURL } ${ packageURL }`);
-				
+					this.report(`### ${fileURL} ${packageURL}`);
+
 				let manifestPath = this.manifests.get(packageURL);
 				if (manifestPath === undefined) {
 					let manifestURL = packageURL + "/manifest.json";
@@ -470,7 +470,7 @@ export default class extends TOOL {
 					}
 					this.manifests.set(packageURL, manifestPath);
 				}
-				
+
 				let from = packageName + "/" + fileURL.slice(packageURL.length + 1);
 				let source = fileURL.slice(this.windows ? 8 : 7);
 				let target = from.slice(0, from.lastIndexOf('.'));
@@ -492,21 +492,21 @@ export default class extends TOOL {
 				this.manifest.modules[target] = `${source}`;
 				if (this.hasCreationMain && (fileURL == mainURL)) {
 					this.manifest.creation = { main: target };
-// 					if (item.async)
-// 						this.manifest.defines = { main: { async: 1 } };
+					// 					if (item.async)
+					// 						this.manifest.defines = { main: { async: 1 } };
 				}
 				async |= item.async;
 			});
 			if (this.hasCreationMain && async)
 				this.manifest.defines = { main: { async: 1 } };
-			
+
 			const currentDirectory = this.currentDirectory;
 			this.manifests = [];
 			this.manifests.already = {};
 			this.manifest.include.forEach(include => this.includeManifest(include, include, tmpPath));
 			const packageBuiltins = this.mapBuiltins(this.getBuiltins(this.manifests));
 			this.currentDirectory = currentDirectory;
-			
+
 			this.importedBuiltinSpecifiers = this.importedBuiltinSpecifiers.filter(specifier => {
 				if (packageBuiltins.get(specifier))
 					return false;
@@ -515,7 +515,7 @@ export default class extends TOOL {
 					if (builtin.manifests.length == 0)
 						return false;
 					if (builtin.manifests.length == 1) {
-						const include = "$(MODDABLE)" + builtin.manifests[0]; 
+						const include = "$(MODDABLE)" + builtin.manifests[0];
 						if (this.hasCreationMain) {
 							if (this.manifest.include.indexOf(include) < 0) {
 								this.report(`# mcpack include: ${include}`);
@@ -556,11 +556,11 @@ export default class extends TOOL {
 				this.then("mcrun", this.manifestPath, ...this.argv);
 		}
 		else
-			this.report(`### ${ this.errorCount } error(s)`);
+			this.report(`### ${this.errorCount} error(s)`);
 	}
-	
-	
-// URL
+
+
+	// URL
 
 	getParentURL(href) {
 		const url = new URL(href);
@@ -622,9 +622,9 @@ export default class extends TOOL {
 		catch {
 		}
 	}
-	
-// https://nodejs.org/api/esm.html#resolution-algorithm-specification
-	
+
+	// https://nodejs.org/api/esm.html#resolution-algorithm-specification
+
 	throwInvalidModuleSpecifierError() {
 		throw new Error("invalid module specifier");
 	}
@@ -676,13 +676,13 @@ export default class extends TOOL {
 		let packageName;
 		if (packageSpecifier === "")
 			this.throwInvalidModuleSpecifierError();
-//		If packageSpecifier is a Node.js builtin module name, then
-//			Return the string "node:" concatenated with packageSpecifier.
+		//		If packageSpecifier is a Node.js builtin module name, then
+		//			Return the string "node:" concatenated with packageSpecifier.
 		if (packageSpecifier.startsWith("embedded:"))
 			return packageSpecifier;
 		if (packageSpecifier.startsWith("moddable:"))
 			return packageSpecifier;
-		if (this.builtins.get("moddable:" + packageSpecifier))	
+		if (this.builtins.get("moddable:" + packageSpecifier))
 			return "moddable:" + packageSpecifier;
 		if (!packageSpecifier.startsWith("@")) {
 			let slash = packageSpecifier.indexOf('/');
@@ -853,7 +853,7 @@ export default class extends TOOL {
 							continue;
 						return resolved;
 					}
-					catch(e) {
+					catch (e) {
 						error = e;
 					}
 				}
@@ -920,8 +920,8 @@ export default class extends TOOL {
 		this.packages.set(packageURL, pjson);
 		return pjson;
 	}
-	
-// BUILT-INS
+
+	// BUILT-INS
 
 	concatProperties(object, properties, flag) {
 		if (properties) {
@@ -941,7 +941,7 @@ export default class extends TOOL {
 		if ((value instanceof Array) || (typeof value == "string"))
 			return array.concat(value);
 		return array;
-	}	
+	}
 	filterManifestFile(path) {
 		const parts = this.splitPath(path);
 		if ("tls" === parts.name) parts.name = "manifest";		// workaround for tls.json which doesn't follow naming convention
@@ -969,7 +969,7 @@ export default class extends TOOL {
 			this.dtsFiles = [];
 			this.dtsFiles.already = {};
 			rule.process(result);
-			
+
 			let path = manifest.from.slice(this.moddablePath.length);
 			if (this.windows)
 				path = path.replaceAll('\\', '/');
@@ -981,7 +981,7 @@ export default class extends TOOL {
 				if (builtin)
 					builtin.manifests.push(path);
 				else
-					builtins.push({ specifier, manifests:[path] });
+					builtins.push({ specifier, manifests: [path] });
 			}
 		}
 		builtins.sort((a, b) => a.specifier.localeCompare(b.specifier));
@@ -1005,18 +1005,18 @@ export default class extends TOOL {
 		else if ((platform == "lin") || (platform == "mac") || (platform == "win"))
 			cachePath = this.createDirectories(cachePath, "mc");
 		cachePath += this.slash + "mcpack-cache.json";
-// 		if (this.isDirectoryOrFile(cachePath) == 1) {
-// 			try {
-// 				const cacheBuffer = this.readFileString(cachePath);
-// 				const cacheJSON = JSON.parse(cacheBuffer);
-// 				if (cacheJSON.version == version) {
-// 					return cacheJSON.builtins;
-// 				}
-// 			}
-// 			catch {
-// 			}
-// 		}
-		
+		// 		if (this.isDirectoryOrFile(cachePath) == 1) {
+		// 			try {
+		// 				const cacheBuffer = this.readFileString(cachePath);
+		// 				const cacheJSON = JSON.parse(cacheBuffer);
+		// 				if (cacheJSON.version == version) {
+		// 					return cacheJSON.builtins;
+		// 				}
+		// 			}
+		// 			catch {
+		// 			}
+		// 		}
+
 		const currentDirectory = this.currentDirectory;
 		this.manifests = [];
 		this.manifests.already = {};
@@ -1034,11 +1034,11 @@ export default class extends TOOL {
 		this.recurseDirectory(this.modulesPath, this.filterManifestFile, this.parseManifest);
 		const builtins = this.getBuiltins(this.manifests);
 		this.currentDirectory = currentDirectory;
-		
+
 		const cacheJSON = { version, builtins };
 		const cacheBuffer = JSON.stringify(cacheJSON, null, "\t");
 		this.writeFileString(cachePath, cacheBuffer);
-		
+
 		return builtins;
 	}
 	includeManifest(include, from, directory) {
@@ -1082,13 +1082,14 @@ export default class extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				// If the shell already provides this variable and it hasn't been set
-				// by the tool internally, prefer the shell value over the manifest
-				// default so user-configured paths (e.g. xs-dev install locations)
-				// are not overridden by the manifest's default assumptions.
-				const shellValue = this.getenv(name);
-				if (shellValue !== undefined && !(name in this.environment)) {
-					value = shellValue;
+				const cleanName = name.replaceAll(' ?=', '');
+				const isConditional = name !== cleanName;
+
+				if (isConditional) {
+					const shellValue = this.getenv(cleanName);
+					if (shellValue !== undefined && !(cleanName in this.environment)) {
+						value = shellValue;
+					}
 				}
 				else if (typeof value == "string") {
 					const dotSlash = "." + this.slash;
@@ -1103,7 +1104,7 @@ export default class extends TOOL {
 						}
 					}
 				}
-				this.environment[name] = value;
+				this.environment[cleanName] = value;
 			}
 		}
 	}
@@ -1118,17 +1119,17 @@ export default class extends TOOL {
 		manifest.path = path;
 		manifest.from = from ?? path;
 		this.manifests.already[path] = manifest;
-		
+
 		this.parseBuild(manifest);
 		if (manifest.error) {
 			if ("string" === typeof manifest.error)
-				manifest.error = [ manifest.error ];
+				manifest.error = [manifest.error];
 		}
 		else
 			manifest.error = [];
 		if (manifest.include) {
 			if ("string" === typeof manifest.include)
-				manifest.include = [ manifest.include ];
+				manifest.include = [manifest.include];
 		}
 		else
 			manifest.include = [];
@@ -1190,9 +1191,9 @@ export default class extends TOOL {
 			result = directory + result.slice(slash);
 			if ("string" == typeof sourceIn)
 				return result;
-			return {...sourceIn, source: result};
+			return { ...sourceIn, source: result };
 		}
-		catch(e) {
+		catch (e) {
 			this.reportError(this.currentPath, 1, e.message);
 		}
 		return null;
@@ -1276,7 +1277,7 @@ class Rule {
 				if ((".ts" === parts.extension) && parts.name.endsWith(".d")) {
 					parts.name = parts.name.slice(0, parts.name.length - 2);
 					parts.extension = ".d.ts";
-				} 
+				}
 				if (star >= 0) {
 					if (prefix) {
 						if (parts.name.startsWith(prefix))
@@ -1294,7 +1295,7 @@ class Rule {
 						continue;
 				}
 				var kind = tool.isDirectoryOrFile(path);
-				var query = (typeof sourceIn === "string") ? {} : {...sourceIn};
+				var query = (typeof sourceIn === "string") ? {} : { ...sourceIn };
 				if (straight)
 					this.appendSource(target, path, include, suffix, parts, kind, query);
 				else
@@ -1383,7 +1384,6 @@ class ModulesRule extends Rule {
 		this.appendFolder(this.tool.jsFolders, target);
 	}
 	noFilesMatch(source, star) {
-// 		this.tool.reportWarning(null, 0, "no modules match: " + source);
+		// 		this.tool.reportWarning(null, 0, "no modules match: " + source);
 	}
 };
-
