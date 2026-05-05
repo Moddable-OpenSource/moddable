@@ -4,32 +4,33 @@ Revised: May 4, 2026
 
 ## About
 
-**XS Foreign Function Interface** is a mechanism for JavaScript modules to call functions implemented in other languages. Currently XS supports the mechanism for functions implemented in C.
+**XS Foreign Function Interface** (FFI) is a mechanism for JavaScript modules to call functions implemented in other languages. Currently XS supports the mechanism for functions implemented in C.
 
-XS always provided a comprehensive C programming interface, [XS in C](./XS in C.md), which allows to implement JavaScript classes, functions and objects in C. That is how the Moddable SDK itself is implemented. 
+XS has always provided a comprehensive C programming interface, [XS in C](./XS in C.md), for implementing JavaScript classes, functions, and objects in C. That is how the Moddable SDK itself is implemented. 
 
-XS in C requires to understand how XS works (machine, slots, chunks, stack, heaps, garbage collection, etc) in order to represent complex hardware and software features in JavaScript. 
+Using XS in C requires understanding how XS works (machine, slots, chunks, stack, heaps, garbage collection, etc.) in order to represent complex hardware and software features in JavaScript.
 
-XS FFI enables C developers to define plain C functions and to describe their signatures. Then tools generate efficient glue code to bind such C functions to JavaScript.
+XS FFI enables C developers to define plain C functions by describing their signatures. Tools then generate efficient glue code to bind the C functions to JavaScript.
 
-XS FFI is of course less expressive than XS in C, but is more convenient for C developers that want to supplement the Moddable SDK without learning a new programming interface.
+XS FFI is less expressive than XS in C, but is more convenient for C developers that want to supplement the Moddable SDK without learning a new programming interface.
 
-The Moddable SDK provides FFI for apps (buiilt with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS and Windows
+The Moddable SDK provides FFI for apps (built with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS and Windows
 
 This document explains how to use XS FFI with the Moddable SDK.
 
 ## Caveat
 
-XS and the Moddable SDK are extensively tested (manually and automatically) to find bugs and prevent exploits. Available features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).  
+XS and the Moddable SDK are tested extensively tested (manually and automatically) to find bugs and prevent exploits. The goal is that features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).  
 
-Once you define functions in C, you can crash your device or inadvertently provide ways to attack your device. So, as usual, code defensively and test again and again...
+By implementing functions in C, you can crash your device or inadvertently provide ways to attack your device. So, as usual, code defensively and test, again and again...
 
 ## Overview
 
 Let us define a C function that adds two integers:
 
 #### add.c
-```
+
+```c
 #include "stdint.h"
 
 extern int32_t add(int32_t arg0, int32_t arg1);
@@ -41,10 +42,11 @@ int32_t add(int32_t arg0, int32_t arg1)
 
 ```
 
-In the manifest, let us reference its source and describe its signature:
+The manifest reference its source code and describe its signature:
 
 #### manifest.json
-```
+
+```json
 {
 	"ffi": {
 		"sources": [
@@ -62,31 +64,33 @@ In the manifest, let us reference its source and describe its signature:
 }
 ```
 
-In the main module, let us call the function:
+And finally, call the function from the main module.
 
 #### main.js
-```
+
+```javascript
 import FFI from "mc/ffi";
+
 const test = new FFI;
 const result = test.add(1, 2); // 3
 debugger
 ```
 
-In the folder which contains the three files here above, execute:
+In the directory which contains the three files here above, execute:
 
-```
+```shell
 mcconfig -d -m
 ```
 
-to build and run the app. That will launch the simulator and break in **xsbug** where you can see that `result` is `3` indeed.
+to build and run the app. That launches the simulator and breaks in **xsbug** where you can see that `result` is `3` indeed.
 
 #### mc.ffi.c
 
-If you are curious, you can have a look at the generated glue code in
+If you are curious, have a look at the generated glue code in
 
 `$MODDABLE/build/tmp/<platform>/mc/debug/<name>/mc.ffi.c`
 
-where `<platform>` is your development platform: `lin`, `mac` or `win` and `<name>` is the name of the folder that contains the three files.
+where `<platform>` is your development platform: `lin`, `mac` or `win` and `<name>` is the name of the directory that contains the three files.
 
 The generated glue code is internal to XS. Do not use similar code elsewhere!
 
@@ -94,53 +98,54 @@ The generated glue code is internal to XS. Do not use similar code elsewhere!
 
 In the following sections, we will present supported C types and how they relate to JavaScript values.
 
-All the code snippets are available in `$MODDABLE/examples/ffi` folders:
+All the code snippets in this document are available in `$MODDABLE/examples/ffi` directories:
 
 ### ffi-lib
 
-This folder contains the C files and a manifest with the descriptions of the C functions. That manifest is included by both app and mod examples.
+This directory contains the C files and a manifest with the descriptions of the C functions. That manifest is included by both app and mod examples.
 
-This folder also contains a module to test the C functions, which is used by both app and mod examples.
+This directory also contains a module to test the C functions, which is used by both app and mod examples.
 
 ### ffi-app
 
-This folder contains the app example.
+This directory contains the app example.
 
 To build and run the app, execute:
 
-```
+```shel
 cd $MODDABLE/examples/ffi/ffi-app
 mcconfig -d -m
 ```
 
 ### ffi-host
 
-This folder contains the host for the mod example:
+This directory contains the host for the mod example:
 
 To build and run the host, execute:
 
-```
+```shell
 cd $MODDABLE/examples/ffi/ffi-host
 mcconfig -d -m
 ```
 
-That will launch the simulator and traces `No mod installed` in **xsbug**.
+That launches the simulator and traces `No mod installed` in **xsbug**.
 
 ### ffi-mod
 
-This folder contains the mod example. 
+This directory contains the mod example. 
 
-Firstly build and launch the host here above, then, to build the mod, execute:
+First, build and launch the host here above, then, to build the mod, execute:
 
-```
+```shell
 cd $MODDABLE/examples/ffi/ffi-mod
 mcrun -d -m
 ```
+
 ## Integer and Floating Point Types
 
 In JavaScript, there are two types of primitive numeric values: `Number` and `BigInt`. Internally XS also uses integer values to avoid floating point operations as much as possible.
 
-According to the signature description, the glue code ensures the conversion from JavaScript values to standard C integer and floating point types, and vice versa: 
+The glue code uses the function signature to convert from JavaScript values to standard C integer and floating point types, and vice versa: 
 
 - signed integers: `int8_t`, `int16_t`, `int32_t`, `int64_t`
 - unsigned integers:`uint8_t`, `uint16_t`, `uint32_t`, `uint64_t`
@@ -148,11 +153,12 @@ According to the signature description, the glue code ensures the conversion fro
 
 Here are two C functions that add 32-bit and 64-bit integers: 
 
-```
+```c
 int32_t add32_t(int32_t arg0, int32_t arg1)
 {
 	return arg0 + arg1;
 }
+
 int64_t add64_t(int64_t arg0, int64_t arg1)
 {
 	return arg0 + arg1;
@@ -161,31 +167,31 @@ int64_t add64_t(int64_t arg0, int64_t arg1)
 
 Here are their description:
 
-```
-	"add32_t": {
-		"arguments": [ "int32_t", "int32_t" ],
-		"returns": "int32_t"
-	},
-	"add64_t": {
-		"arguments": [ "int64_t", "int64_t" ],
-		"returns": "int64_t"
-	}
+```jsonc
+"add32_t": {
+	"arguments": [ "int32_t", "int32_t" ],
+	"returns": "int32_t"
+},
+"add64_t": {
+	"arguments": [ "int64_t", "int64_t" ],
+	"returns": "int64_t"
+}
 ```
 
-Here are their usage:
+Here are their use from JavaScript:
 
-```
-	result = test.add32_t(1111_1111, 2222_2222)
-	trace(`add32_t ${ result }\n`);
-	result = test.add64_t(1111_1111_1111_1111n, 2222_2222_2222_2222n)
-	trace(`add64_t ${ result }\n`);
+```javascript
+result = test.add32_t(1111_1111, 2222_2222)
+trace(`add32_t ${ result }\n`);
+result = test.add64_t(1111_1111_1111_1111n, 2222_2222_2222_2222n)
+trace(`add64_t ${ result }\n`);
 ```
 > Notice that the 64-bit version requires BigInt values.
 
 
 ## Strings
 
-In JavaScript, strings are primitive values and their contents are read-only. That is especially true with the Moddable SDK where a lot of JavaScript strings are stored in read-only memory. If you try to modify their contents in C, your code will crash.
+In JavaScript, strings are primitive values and their contents are read-only. That is especially true with the Moddable SDK where many JavaScript strings are stored in read-only memory. If you try to modify their contents in C, your code will crash.
 
 Internally XS stores strings as UTF-8 encoded C strings. The zero character is escaped by the two bytes sequence `0xC0 0x80`. If your C code returns strings, it is your responsibility to ensure their proper encoding.
 
@@ -193,7 +199,7 @@ Internally XS stores strings as UTF-8 encoded C strings. The zero character is e
 
 C functions can return a static string:
 
-```
+```c
 const char* days[7] = {
 	"dimanche",
 	"lundi",
@@ -212,26 +218,26 @@ const char* nameDay(uint8_t i)
 
 The function description must return `const char*`:
 
-```
-	"nameDay": {
-		"arguments": [ "uint8_t" ],
-		"returns": "const char*"
-	}
+```jsonc
+"nameDay": {
+	"arguments": [ "uint8_t" ],
+	"returns": "const char*"
+}
 ```
 
-In that case, the glue code will allocate nothing and JavaScript will use the static string itself.
+In that case, the glue code does no allocation and JavaScript uses the static string itself.
 
-```
-	const date = new Date();
-	result = test.nameDay(date.getDay());
-	trace(`nameDay ${ result }\n`);
+```javascript
+const date = new Date();
+result = test.nameDay(date.getDay());
+trace(`nameDay ${ result }\n`);
 ```
 
 ### New Strings
 
 C functions can return a new string, created with `malloc`, `calloc` or `strdup`:
 
-```
+```c
 char* catenate(char* arg0, char* arg1)
 {
 	size_t len0 = strlen(arg0);
@@ -248,41 +254,41 @@ char* catenate(char* arg0, char* arg1)
 
 The function description must return `char*`:
 
-```
-	"catenate": {
-		"arguments": [ "char*", "char*" ],
-		"returns": "char*"
-	}
+```jsonc
+"catenate": {
+	"arguments": [ "char*", "char*" ],
+	"returns": "char*"
+}
 ```
 
 In that case, the glue code will allocate memory in the XS heap, then copy the new string into the allocated memory, then delete the new string with `free`.
 
 If the new string cannot be created, the C function must return `NULL` and the glue code will abort with `"not enough memory"`.
 
-```
-	result = test.catenate("a", "bc");
-	trace(`catenate ${ result }\n`);
+```javascript
+result = test.catenate("a", "bc");
+trace(`catenate ${ result }\n`);
 ```
 
 ## Buffers
 
-In JavaScript, buffers are instances of `ArrayBuffer`. Their data are usually accessed thru views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length. Buffers can also be detached, i.e. without data.
+In JavaScript, buffers are instances of `ArrayBuffer`. Their data are usually accessed through views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length. Buffers can also be detached, i.e. without data.
 
-In C, buffers are accessed thru pointers. The glue code will convert buffers into pointers to their data. 
+In C, buffers are accessed through pointers. The glue code  converts buffers into pointers to their data. 
 
 ### Blind Pointers
 
 If the buffer is detached, the pointer is `NULL`. There are no guarantees on the data size.
 
-You can of course check all that in JavaScript, see **Arguments** here under.
+You can of course check all that in JavaScript, see [Arguments](#arguments) here under.
 
 #### Reading Bytes
 
 Arguments can be pointers to all integer and floating point types, or `void*`. You can pass other arguments for view offset and length.
 
-Here is a function that sum bytes:
+Here is a function that sums bytes:
 
-```
+```c
 uint64_t sumBytes(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
 	uint64_t result = 0;
@@ -297,28 +303,28 @@ uint64_t sumBytes(uint8_t* buffer, uint32_t offset, uint32_t length)
 
 Here is its description:
 
-```
-	"sumBytes": {
-		"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
-		"returns": "uint64_t"
-	}
+```jsonc
+"sumBytes": {
+	"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+	"returns": "uint64_t"
+}
 ```
 
 Here is its usage:
 
-```
-	result = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-	result = test.sumBytes(result.buffer, result.byteOffset, result.byteLength);
-	trace(`sumBytes ${ result }\n`);
+```javascript
+result = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+result = test.sumBytes(result.buffer, result.byteOffset, result.byteLength);
+trace(`sumBytes ${ result }\n`);
 ```
 
 #### Writing Bytes
 
 A C function cannot return a new pointer since its data size would be unknown. Instead pass a buffer that the C function will fill.
 
-Here is a function that fill bytes with random integers:
+Here is a function that fills bytes with random integers:
 
-```
+```c
 void fillRandom(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
 	uint32_t i = 0;
@@ -331,20 +337,22 @@ void fillRandom(uint8_t* buffer, uint32_t offset, uint32_t length)
 
 Here is its description:
 
-```
-	"fillRandom": {
-		"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
-		"returns": "void"
-	}
+```jsonc
+"fillRandom": {
+	"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+	"returns": "void"
+}
 ```
 
 Here is its usage:
 
+```javascript
+result = new Uint8Array(new ArrayBuffer(10), 3, 5);
+test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
+trace(`fillRandom ${ result }\n`);
 ```
-	result = new Uint8Array(new ArrayBuffer(10), 3, 5);
-	test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
-	trace(`fillRandom ${ result }\n`);
-```
+
+<a id="arguments"></a>
 
 ### Pointers with Size
 
@@ -390,41 +398,41 @@ Here is its usage:
 
 ## Arguments
 
-All arguments are required. The glue code will throw if arguments are ommitted.
+All arguments are required. The glue code throw if any argument is omitted.
 
 If you want to provide default arguments, you can easily patch functions in JavaScript:
 
-```
-	const add32_t = test.add32_t;
-	test.add32_t = function(a, b = 1) {
-		return add32_t(a, b);
-	}
-	result = test.add32_t(4)
-	trace(`add32_t ${ result }\n`);
+```javascript
+const add32_t = test.add32_t;
+test.add32_t = function(a, b = 1) {
+	return add32_t(a, b);
+}
+result = test.add32_t(4)
+trace(`add32_t ${ result }\n`);
 ```
 
 The same technique can be used to check arguments ranges and types. For instance:
 
-```
-	const fillRandom = test.fillRandom;
-	test.fillRandom = function(buffer, offset, length) {
-		if (buffer.byteLength < offset + length)
-			throw new RangeError("invalid buffer");
-		return fillRandom(buffer, offset, length);
-	}
-	try {
-		test.fillRandom(new ArrayBuffer(0), 0, 1);
-	}
-	catch (e) {
-		trace(`fillRandom ${ e }\n`);
-	}
+```javascript
+const fillRandom = test.fillRandom;
+test.fillRandom = function(buffer, offset, length) {
+	if (buffer.byteLength < offset + length)
+		throw new RangeError("invalid buffer");
+	return fillRandom(buffer, offset, length);
+}
+try {
+	test.fillRandom(new ArrayBuffer(0), 0, 1);
+}
+catch (e) {
+	trace(`fillRandom ${ e }\n`);
+}
 ```
 
 ## Programming Patterns
 
-Let us have a sensor that returns samples with two `uint32_t` and one `double`. Here is the C function that fill a buffer with the corresponding structure 
+Consider a sensor implemented in C that provides samples that consist of two `uint32_t` values and one `double`. Here is the C function that fill a buffer with the corresponding structure .
 
-```
+```c
 typedef struct {
 	uint32_t a;
 	uint32_t b;
@@ -442,46 +450,47 @@ void sampleABCSensor(void* ptr)
 
 Here is its description:
 
+```jsonc
+"sampleABCSensor": {
+	"arguments": [ "void*" ],
+	"returns": "void"
+}
 ```
-	"sampleABCSensor": {
-		"arguments": [ "void*" ],
-		"returns": "void"
+
+Here is its use in JavaScript:
+
+```javascript
+const view = new DataView(new ArrayBuffer(16));
+test.sampleABCSensor(view.buffer);
+trace(`${ view.getInt32(0, 1, true) }, ${ view.getInt32(4, 1, true) }, ${ view.getFloat64(8, 1, true) }\n`);
+```
+
+You can use such a low level function to implement a friendly programming pattern, conformant to the [ECMA-419 Sensor Class Pattern](https://419.ecma-international.org/#-13-sensor-class-pattern)
+
+```javascript
+class ABCSensor {
+	#view;
+
+	constructor() {
+		this.#view = new DataView(new ArrayBuffer(16));
 	}
-```
-
-Here is its usage:
-
-```
-	const view = new DataView(new ArrayBuffer(16));
-	test.sampleABCSensor(view.buffer);
-	trace(`${ view.getInt32(0, 1, true) }, ${ view.getInt32(4, 1, true) }, ${ view.getFloat64(8, 1, true) }\n`);
-```
-
-You can use such a low level function to provide a friendly programming pattern, conformant to the [419 Sensor Class Pattern](https://419.ecma-international.org/#-13-sensor-class-pattern)
-
-```
-	class ABCSensor {
-		#view;
-		constructor() {
-			this.#view = new DataView(new ArrayBuffer(16));
-		}
-		sample() {
-			const view = this.#view;
-			test.sampleABCSensor(view.buffer);
-			return {
-				a: view.getInt32(0, 1, true),
-				b: view.getInt32(4, 1, true),
-				c: view.getFloat64(8, 1, true),
-			};
-		}
+	sample() {
+		const view = this.#view;
+		test.sampleABCSensor(view.buffer);
+		return {
+			a: view.getInt32(0, 1, true),
+			b: view.getInt32(4, 1, true),
+			c: view.getFloat64(8, 1, true),
+		};
 	}
+}
 ```
 
-> The `ABCSensor` class creates its buffer and view in its contructor to avoid allocations every time its `sample` method is called.
+> The `ABCSensor` class creates its buffer and view in its constructor to avoid allocations each time its `sample` method is called.
 
 Now you can use the class the standard way:
 
-```
+```javascript
 const abcSensor = new ABCSensor();
 result = abcSensor.sample();
 trace(`${ result.a }, ${ result.b }, ${ result.c }\n`);
