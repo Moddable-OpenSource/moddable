@@ -14,15 +14,13 @@ XS FFI enables C developers to define plain C functions by describing their sign
 
 XS FFI is less expressive than XS in C, but is more convenient for C developers that want to supplement the Moddable SDK without learning a new programming interface.
 
-The Moddable SDK provides FFI for apps (built with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS,
-
- and Windows.
+The Moddable SDK provides FFI for apps (built with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS, and Windows.
 
 This document explains how to use XS FFI with the Moddable SDK.
 
 ## Caveat
 
-XS and the Moddable SDK are extensively tested (manually and automatically) to find bugs and prevent exploits. The goal is that features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).  
+XS and the Moddable SDK are extensively tested (manually and automatically) to find bugs and prevent exploits. The goal is that features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).
 
 By implementing functions in C, you can crash your device or inadvertently provide ways to attack your device. So, as usual, code defensively and test, again and again...
 
