@@ -191,7 +191,7 @@ void xs_storage_domain_write(xsMachine *the)
 			value = CFNumberCreate(NULL, kCFNumberSInt16Type, &number);
 		} break;
 		case kIOFormatUint32: {
-			uint32_t number = (uint32_t)xsToUnsigned(xsArg(1));
+			uint32_t number = (uint32_t)xsmcToUnsigned(xsArg(1));
 			value = CFNumberCreate(NULL, kCFNumberSInt32Type, &number);
 		} break;
 		case kIOFormatUint64: {
