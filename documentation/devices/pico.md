@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2026 Moddable Tech, Inc.<BR>
-Revised: April 29, 2026
+Revised: May 4, 2026
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -107,9 +107,15 @@ The Raspberry Pi Pico 2 has the following features:
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Raspberry Pi<BR>Pico 2 | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
-| <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/pro_micro` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
+| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Raspberry Pi<BR>Pico 2 | `pico_2` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_2_w.png" width=220><BR>Raspberry Pi<BR>Pico 2 W | `pico_2_w` | WiFi, LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/sparkfun_rp2350` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
 | <img src="../assets/devices/pico-pimoroni-pico-plus-2.png" height=220></a><br>Pimoroni<br>pico plus 2 | `pico/pico_plus_2` | Qwiic/STEMMA connector | <li>[Pimoroni product page](https://shop.pimoroni.com/products/pimoroni-pico-plus-2)</li> |
+| <img src="../assets/devices/pico-pimoroni-tiny2350.png" width=220></a><br>Pimoroni<br>Tiny2350 | `pico/tiny2350` | Qwiic/STEMMA connector | <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2350)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-128.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 1.28 | `pico/ws_rp2350_touch_1_28` | 1.28" IPS 240x240<br>Touch Display<br>QMI8658 IMU<br>expansion pins | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.28.htm)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-169.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 1.69 | `pico/ws_rp2350_touch_1_69` | 1.69" IPS 240x280<br>Touch Display<br>QMI8658 IMU<br>Real Time Clock | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.69.htm)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-2.8.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 2.8 | `pico/ws_rp2350_touch_2_8` | 2.8" IPS 240x320<br>Touch Display<br>QMI8658 IMU<br>Real Time Clock<br>Speakers<br>expansion pins | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.69.htm)</li> |
+| <img src="../assets/devices/xiao-rp2350.png" width=150></a><br>Seeed Studio<br>XIAO RP2350 | `pico/xiao_rp2350` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/Seeed-XIAO-RP2350-p-5944.html)</li> |
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
