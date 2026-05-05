@@ -35,6 +35,7 @@ import { URL, URLSearchParams } from "url";
 import WebSocket from "WebSocket";
 
 import Touch from "embedded:sensor/Touch/pebble";
+import FFI from "ffi";
 
 const clearImmediate = Timer.clear;
 const setImmediate = function(callback) { return Timer.set(callback) };
@@ -173,6 +174,9 @@ export default function() {
 			return state.localStorage;
 		}
 	};
+
+	const Natives = new FFI;
+	if (Natives) globals.Natives = Natives;
 
 	state.mod = new ArchiveCompartment(state.archive, {
 		globals,

@@ -1,0 +1,46 @@
+{
+	"ffi": {
+		"sources": [
+			"./integers.c",
+			"./strings.c",
+			"./pointers.c"
+		],
+		"functions": {
+			"add32_t": {
+				"arguments": [ "int32_t", "int32_t" ],
+				"returns": "int32_t"
+			},
+			"add64_t": {
+				"arguments": [ "int64_t", "int64_t" ],
+				"returns": "int64_t"
+			},
+			"nameDay": {
+				"arguments": [ "uint8_t" ],
+				"returns": "const char*"
+			},
+			"catenate": {
+				"arguments": [ "char*", "char*" ],
+				"returns": "char*"
+			},
+			"sumBytes": {
+				"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+				"returns": "uint64_t"
+			},
+			"fillRandom": {
+				"arguments": [ "uint8_t*", "uint32_t", "uint32_t" ],
+				"returns": "void"
+			},
+			"newTriple": {
+				"arguments": [ "uint32_t[3]", "uint32_t" ],
+				"returns": "uint32_t[3]"
+			},
+			"sampleABCSensor": {
+				"arguments": [ "void*" ],
+				"returns": "void"
+			}
+		}
+	},
+	"modules": {
+		"*": "./test"
+	}
+}

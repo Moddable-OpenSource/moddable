@@ -1,0 +1,87 @@
+#
+# Copyright (c) 2016-2023  Moddable Tech, Inc.
+#
+#   This file is part of the Moddable SDK Tools.
+# 
+#   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+# 
+#   The Moddable SDK Tools is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+!IF "$(VERBOSE)"=="1"
+!CMDSWITCHES -S
+!ELSE
+!CMDSWITCHES +S
+!ENDIF
+
+ARCHIVE = $(BIN_DIR)\mc.xsa
+FFI = $(BIN_DIR)\mc.ffi.dll
+	
+C_DEFINES = /D mxWindows=1
+
+C_INCLUDES = $(DIRECTORIES) /I$(TMP_DIR)
+
+C_FLAGS = \
+	/c \
+	/D _CONSOLE \
+	/D WIN32 \
+	/D _CRT_SECURE_NO_DEPRECATE \
+	/D HAVE_MEMMOVE=1 \
+	/nologo \
+	/MP
+!IF "$(DEBUG)"=="1"
+C_FLAGS = $(C_FLAGS) \
+	/D _DEBUG \
+	/D mxDebug=1 \
+	/Fp$(TMP_DIR)\ \
+	/Od \
+	/W3 \
+	/Z7
+!ELSE
+C_FLAGS = $(C_FLAGS) \
+	/D NDEBUG \
+	/Fp$(TMP_DIR)\ \
+	/O2 \
+	/W0
+!ENDIF
+	
+LINK_LIBRARIES = ws2_32.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib kernel32.lib user32.lib ole32.lib dsound.lib wlanapi.lib Iphlpapi.lib winmm.lib Mfplat.lib Mf.lib Mfreadwrite.lib Mfuuid.lib
+
+LINK_OPTIONS = /incremental:no /nologo /dll
+!IF "$(DEBUG)"=="1"
+LINK_OPTIONS = $(LINK_OPTIONS) /debug
+!ENDIF
+
+all: build
+	start $(SIMULATOR) $(ARCHIVE)
+
+build: $(ARCHIVE) $(FFI)
+
+clean:
+	@echo "# Clean project"
+	del /s/q/f $(BIN_DIR)\*.* > NUL
+	rmdir /s/q $(BIN_DIR)
+	del /s/q/f $(TMP_DIR)\*.* > NUL
+	rmdir /s/q $(TMP_DIR)
+	if exist $(LIB_DIR) del /s/q/f $(LIB_DIR)\*.* > NUL
+	if exist $(LIB_DIR) rmdir /s/q $(LIB_DIR)
+
+xsbug:
+	start $(SIMULATOR) $(ARCHIVE)
+
+$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
+	@echo # xsl mc.xsa
+	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+
+$(FFI): $(OBJECTS) 
+	@echo # link mc.ffi.dll
+	link $(LINK_OPTIONS) $(LINK_LIBRARIES) $(OBJECTS) /implib:$(TMP_DIR)\mc.ffi.lib /out:$@

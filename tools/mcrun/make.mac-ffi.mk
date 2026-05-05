@@ -1,0 +1,66 @@
+#
+# Copyright (c) 2016-2023 Moddable Tech, Inc.
+#
+#   This file is part of the Moddable SDK Tools.
+# 
+#   The Moddable SDK Tools is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+# 
+#   The Moddable SDK Tools is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+ARCHIVE = $(BIN_DIR)/mc.xsa
+FFI = $(BIN_DIR)/mc.ffi.so
+
+MACOS_ARCH ?=
+
+C_DEFINES = -DmxMacOSX=1
+
+C_INCLUDES += $(DIRECTORIES) $(TMP_DIR)
+
+C_FLAGS = -c $(MACOS_ARCH)
+ifeq ($(DEBUG),)
+	C_FLAGS += -D_RELEASE=1 -O3
+else
+	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+endif
+
+LINK_LIBRARIES =
+
+LINK_OPTIONS = -dynamiclib -flat_namespace -undefined dynamic_lookup -Wl,-exported_symbol,_fxBuildFFI -Wl,-dead_strip -lobjc $(MACOS_ARCH)
+
+.PHONY: all	build clean xsbug
+
+all: build
+	open -a $(SIMULATOR) $(ARCHIVE)
+
+build: $(ARCHIVE) $(FFI)
+
+clean:
+	@echo "# Clean project"
+	-rm -rf $(BIN_DIR) 2>/dev/null
+	-rm -rf $(TMP_DIR) 2>/dev/null
+	
+xsbug:
+	open -a $(SIMULATOR) $(ARCHIVE)
+
+$(ARCHIVE): $(DATA) $(MODULES) $(RESOURCES)
+	@echo "# xsl mc.xsa"
+	xsl -a -b $(MODULES_DIR) -n $(DOT_SIGNATURE) -o $(BIN_DIR) $(DATA) $(MODULES) $(RESOURCES)
+
+$(FFI): $(OBJECTS) 
+	@echo '# link mc.ffi.so'
+	$(CC) $(LINK_OPTIONS) $(LINK_LIBRARIES) $^ -o $@
+
+ifneq ($(VERBOSE),1)
+MAKEFLAGS += --silent
+endif
+

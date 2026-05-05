@@ -44,6 +44,7 @@ struct PiuScreenStruct {
 	HMODULE library;
 	HANDLE archiveFile;
 	HANDLE archiveMapping;
+	HMODULE ffiLibrary;
 	PiuRectangleRecord hole;
 	xsIntegerValue rotation;
 	xsNumberValue transparency;
@@ -399,6 +400,19 @@ void PiuScreenQuit(PiuScreen* self)
 		UnmapViewOfFile((*self)->screen->archive);
 		(*self)->screen->archive = NULL;
 	}
+	if ((*self)->ffiLibrary) {
+		wchar_t path[MAX_PATH];
+		HANDLE file;
+		GetModuleFileNameW((*self)->ffiLibrary, path, 1024);
+		FreeLibrary((*self)->ffiLibrary);
+		file = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		while (file == INVALID_HANDLE_VALUE) {
+			Sleep(1);
+			file = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
+		CloseHandle(file);
+		(*self)->ffiLibrary = NULL;
+	}
 	if ((*self)->archiveMapping) {
 		CloseHandle((*self)->archiveMapping);
 		(*self)->archiveMapping = INVALID_HANDLE_VALUE;
@@ -550,16 +564,21 @@ void PiuScreen_launch(xsMachine* the)
 	PiuScreen* self = PIU(Screen, xsThis);
 	wchar_t* libraryPath = NULL;
 	wchar_t* archivePath = NULL;
+	wchar_t* ffiPath = NULL;
 	HMODULE library = NULL;
 	txScreenLaunchProc launch;
 	HANDLE archiveFile = INVALID_HANDLE_VALUE;
 	DWORD size;
 	HANDLE archiveMapping = INVALID_HANDLE_VALUE;
 	void* archive = NULL;
+	HMODULE ffiLibrary = NULL;
+	txScreenBuildFFIProc buildFFI;
 	xsTry {
 		libraryPath = xsToStringCopyW(xsArg(0));
 		if (xsToInteger(xsArgc) > 1)
 			archivePath = xsToStringCopyW(xsArg(1));
+		if (xsToInteger(xsArgc) > 2)
+			ffiPath = xsToStringCopyW(xsArg(2));
 		library = LoadLibraryW(libraryPath);
 		xsElseThrow(library != NULL);
 		launch = (txScreenLaunchProc)GetProcAddress(library, "fxScreenLaunch");
@@ -573,17 +592,29 @@ void PiuScreen_launch(xsMachine* the)
 			xsElseThrow(archiveMapping != INVALID_HANDLE_VALUE);
 			archive = MapViewOfFile(archiveMapping, FILE_MAP_WRITE, 0, 0, (SIZE_T)size);
 			xsElseThrow(archive != NULL);
+			if (ffiPath) {
+				ffiLibrary = LoadLibraryW(ffiPath);
+				xsElseThrow(ffiLibrary != NULL);
+				buildFFI = (txScreenBuildFFIProc)GetProcAddress(ffiLibrary, "fxBuildFFI");
+				xsElseThrow(buildFFI != NULL);
+			}
 		}
 		(*self)->library = library;
 		(*self)->archiveFile = archiveFile;
 		(*self)->archiveMapping = archiveMapping;
+		(*self)->ffiLibrary = ffiLibrary;
 		(*self)->screen->archive = archive;
+		(*self)->screen->buildFFI = buildFFI;
 		(*launch)((*self)->screen);
+		if (ffiPath)
+			free(ffiPath);
 		if (archivePath)
 			free(archivePath);
 		free(libraryPath);
 	}
 	xsCatch {
+		if (ffiLibrary != NULL)
+			FreeLibrary(ffiLibrary);
 		if (archive)
 			UnmapViewOfFile(archive);
 		if (archiveMapping)
@@ -592,6 +623,8 @@ void PiuScreen_launch(xsMachine* the)
 			CloseHandle(archiveFile);
 		if (library != NULL)
 			FreeLibrary(library);
+		if (ffiPath != NULL)
+			free(ffiPath);
 		if (archivePath != NULL)
 			free(archivePath);
 		if (libraryPath != NULL)

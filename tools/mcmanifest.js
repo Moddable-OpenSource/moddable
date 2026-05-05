@@ -2986,6 +2986,21 @@ export class Tool extends TOOL {
 
 			all.typescript.compiler = platform.typescript.compiler ?? all.typescript.compiler;
 		}
+		if (platform.ffi) {
+			if (!all.ffi) {
+				all.ffi = {
+					sources: [],
+					functions: {},
+				};
+			}
+			let property = platform.ffi.sources ?? [];
+			if (property instanceof Array)
+				property = property.map(item => this.resolveSource(item));
+			else if (typeof property == "string")
+				property = this.resolveSource(property);
+			all.ffi.sources = all.ffi.sources.concat(property);
+			this.mergeProperties(all.ffi.functions, platform.ffi.functions);
+		}
 		return;
 	}
 	mergeProperties(targets, sources, exclude) {

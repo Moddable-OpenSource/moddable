@@ -19,7 +19,8 @@
  */
 
 import { FILE } from "tool";
-import { MakeFile, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import { MakeFile as MAKEFILE, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import FFIGlue from "ffi";
 
 var formatStrings = {
 	gray16: "Gray16",
@@ -79,6 +80,53 @@ class ConfigFile extends PrerequisiteFile {
 		}
 		this.line("};");
 		this.close();
+	}
+}
+
+class MakeFile extends MAKEFILE {
+	constructor(path) {
+		super(path)
+	}
+	generateObjectsDefinitions(tool) {
+		if (tool.cFolders) {
+			this.write("DIRECTORIES =");
+			for (var folder of tool.cFolders) {
+				this.write("\\\n\t-I");
+				this.write(folder);
+			}	
+			this.line("");
+			this.line("");
+		}
+		if (tool.cFiles) {
+			this.write("OBJECTS =");
+			for (var result of tool.cFiles) {
+				this.write("\\\n\t$(TMP_DIR)");
+				this.write(tool.slash);
+				this.write(result.target);
+			}	
+			this.line("");
+			this.line("");
+		}
+	}
+	generateObjectsRules(tool) {
+		if (tool.windows) {
+			for (var result of tool.cFiles) {
+				var source = result.source;
+				var target = result.target;
+				this.line("$(TMP_DIR)\\", target, ": ", source);
+				this.echo(tool, "cl ", target);
+				this.line("\tcl $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) ", source, " /Fo$@");
+			}
+		}
+		else {
+			for (var result of tool.cFiles) {
+				var source = result.source;
+				var target = result.target;
+				this.line("$(TMP_DIR)/", target, ": ", source);
+				this.echo(tool, "cc ", target);
+				this.line("\t$(CC) $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) $< -o $@");
+			}
+		}
 	}
 }
 
@@ -509,6 +557,11 @@ export default class extends Tool {
 			if (this.jsFiles.length) {
 				file = new TSConfigFile(this.modulesPath + this.slash + "tsconfig-js.json", this);
 				file.generate(this, false, true);
+			}
+			
+			if (this.manifest.ffi) {
+				const glue = new FFIGlue(this);
+				glue.mcRun(this, this.manifest.ffi);
 			}
 
 			var path = this.tmpPath + this.slash + "makefile";

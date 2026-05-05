@@ -176,6 +176,8 @@ class ApplicationBehavior extends Behavior {
 		this.localLibraryPath = system.buildPath(system.localDirectory, "mc", extension);
 		this.archivePath = "";
 		this.localArchivePath = system.buildPath(system.localDirectory, "mc", "xsa");
+		this.ffiPath = "";
+		this.localFFIPath = system.buildPath(system.localDirectory, "mc.ffi", extension);
 		
 		this.readPreferences();
 		
@@ -240,7 +242,12 @@ class ApplicationBehavior extends Behavior {
 			system.copyFile(this.libraryPath, this.localLibraryPath);
 			if (this.archivePath) {
 				system.copyFile(this.archivePath, this.localArchivePath);
-				this.SCREEN.launch(this.localLibraryPath, this.localArchivePath);
+				if (this.ffiPath) {
+					system.copyFile(this.ffiPath, this.localFFIPath);
+					this.SCREEN.launch(this.localLibraryPath, this.localArchivePath, this.localFFIPath);
+				}
+				else
+					this.SCREEN.launch(this.localLibraryPath, this.localArchivePath);
 			}
 			else
 				this.SCREEN.launch(this.localLibraryPath);
@@ -254,6 +261,8 @@ class ApplicationBehavior extends Behavior {
 			return;
 		if (this.SCREEN)
 			this.SCREEN.quit();
+		if (system.fileExists(this.localFFIPath))
+			system.deleteFile(this.localFFIPath);
 		if (system.fileExists(this.localArchivePath))
 			system.deleteFile(this.localArchivePath);
 		if (system.fileExists(this.localLibraryPath))
@@ -346,6 +355,7 @@ class ApplicationBehavior extends Behavior {
 	
 /* EVENTS */
 	onAbort(application, status, reason) {
+		this.ffiPath = "";
 		this.archivePath = "";
 		this.libraryPath = "";
 		this.quitScreen();
@@ -471,6 +481,7 @@ class ApplicationBehavior extends Behavior {
 		this.launchScreen();
 	}
 	doCloseMod() {
+		this.ffiPath = "";
 		this.archivePath = "";
 		this.quitScreen();
 		this.launchScreen();
@@ -495,6 +506,10 @@ class ApplicationBehavior extends Behavior {
 		if (path.endsWith(".xsa")) {
 			this.quitScreen();
 			this.archivePath = path;
+			const directory = system.getPathDirectory(path);
+			path = system.buildPath(directory, "mc.ffi", extension.slice(1));
+			if (system.fileExists(path))
+				this.ffiPath = path;
 			this.launchScreen();
 		}
 	}

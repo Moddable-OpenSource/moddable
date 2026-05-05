@@ -1,0 +1,26 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/base/ffi/manifest.json"
+	],
+	"creation": {
+		"main": "host"
+	},
+	"modules": {
+		"*": "./host"
+	},
+	"defines": {
+		"XS_MODS": 1
+	},
+	"strip": [
+		"Proxy",
+		"Reflect",
+		"Atomics",
+		"WeakMap",
+		"WeakRef",
+		"WeakSet",
+		"eval",
+		"Function",
+		"Generator"
+  	]
+}

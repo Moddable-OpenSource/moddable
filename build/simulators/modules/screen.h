@@ -72,6 +72,7 @@ typedef struct sxScreen txScreen;
 
 typedef void (*txScreenAbortProc)(txScreen* screen, int status);
 typedef void (*txScreenBufferChangedProc)(txScreen* screen);
+typedef void (*txScreenBuildFFIProc)(void* machine, void* api);
 typedef void (*txScreenFormatChangedProc)(txScreen* screen);
 typedef void (*txScreenIdleProc)(txScreen* screen);
 typedef void (*txScreenKeyProc)(txScreen* screen, int kind, char* string, int modifiers, double when);
@@ -94,6 +95,7 @@ struct sxScreen {
 	void* archive;
 	txScreenAbortProc abort;
 	txScreenBufferChangedProc bufferChanged;
+	txScreenBuildFFIProc buildFFI;
 	txScreenFormatChangedProc formatChanged;
 	txScreenIdleProc idle;
 	txScreenMessageProc invoke;

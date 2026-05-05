@@ -60,6 +60,8 @@ typedef struct {
 	uint8_t				willFocus:1;
 	uint8_t				didFocus:1;
 
+	// XS FFI
+	void					*fxBuildFFI;
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD)
