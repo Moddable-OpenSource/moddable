@@ -1,0 +1,36 @@
+{
+	"build": {
+        "PICO_SUBCLASS":"rp2350",
+        "PICO_BOARD_FILE":"$(PICO_SDK_DIR)/src/boards/include/boards/pimoroni_tiny2350.h"
+	},
+	"include": [
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "",
+		"touch": "",
+		"rgb_r": 18,
+		"rgb_g": 19,
+		"rgb_b": 20
+	},
+	"defines": {
+		"buttons": {
+			"boot": 23
+		},
+		"i2c": {
+			"sda_pin": 12,
+			"scl_pin": 13
+		},
+		"spi": {
+			"miso_pin": 28,
+			"mosi_pin": 27,
+			"sck_pin": 26,
+			"cs_pin": 29
+		}
+	}
+}
