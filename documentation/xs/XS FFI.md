@@ -14,13 +14,15 @@ XS FFI enables C developers to define plain C functions by describing their sign
 
 XS FFI is less expressive than XS in C, but is more convenient for C developers that want to supplement the Moddable SDK without learning a new programming interface.
 
-The Moddable SDK provides FFI for apps (built with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS and Windows
+The Moddable SDK provides FFI for apps (built with **mcconfig**) and, on some platforms, for [mods](./mods.md) (built with **mcrun**). Currently, the mechanism works for apps on all platforms, and for mods on Pebble and, in the simulator, on Linux, macOS,
+
+ and Windows.
 
 This document explains how to use XS FFI with the Moddable SDK.
 
 ## Caveat
 
-XS and the Moddable SDK are tested extensively tested (manually and automatically) to find bugs and prevent exploits. The goal is that features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).  
+XS and the Moddable SDK are extensively tested (manually and automatically) to find bugs and prevent exploits. The goal is that features should be safe to use, especially in mods executed by a host in a [compartment](./XS Compartment.md).  
 
 By implementing functions in C, you can crash your device or inadvertently provide ways to attack your device. So, as usual, code defensively and test, again and again...
 
@@ -42,7 +44,7 @@ int32_t add(int32_t arg0, int32_t arg1)
 
 ```
 
-The manifest reference its source code and describe its signature:
+The manifest reference its source code and describes its signature:
 
 #### manifest.json
 
@@ -112,7 +114,7 @@ This directory contains the app example.
 
 To build and run the app, execute:
 
-```shel
+```shell
 cd $MODDABLE/examples/ffi/ffi-app
 mcconfig -d -m
 ```
@@ -193,7 +195,7 @@ trace(`add64_t ${ result }\n`);
 
 In JavaScript, strings are primitive values and their contents are read-only. That is especially true with the Moddable SDK where many JavaScript strings are stored in read-only memory. If you try to modify their contents in C, your code will crash.
 
-Internally XS stores strings as UTF-8 encoded C strings. The zero character is escaped by the two bytes sequence `0xC0 0x80`. If your C code returns strings, it is your responsibility to ensure their proper encoding.
+Internally XS stores strings as UTF-8 encoded C strings. The zero character is escaped by the two-byte sequence `0xC0 0x80`. If your C code returns strings, it is your responsibility to ensure their proper encoding.
 
 ### Static Strings
 
@@ -274,13 +276,13 @@ trace(`catenate ${ result }\n`);
 
 In JavaScript, buffers are instances of `ArrayBuffer`. Their data are usually accessed through views, i.e. instances of `DataView` or `TypedArray`. Several views can share the same buffer with distinct offset and length. Buffers can also be detached, i.e. without data.
 
-In C, buffers are accessed through pointers. The glue code  converts buffers into pointers to their data. 
+In C, buffers are accessed through pointers. The glue code converts buffers into pointers to their data. 
 
 ### Blind Pointers
 
 If the buffer is detached, the pointer is `NULL`. There are no guarantees on the data size.
 
-You can of course check all that in JavaScript, see [Arguments](#arguments) here under.
+You can, of course, check for detached buffers and ensure properly sized buffers in JavaScript. The [Arguments](#arguments) section below shows a technique for wrapping native C functions in a JavaScript function to perform such checks.
 
 #### Reading Bytes
 
@@ -352,19 +354,16 @@ test.fillRandom(result.buffer, result.byteOffset, result.byteLength);
 trace(`fillRandom ${ result }\n`);
 ```
 
-<a id="arguments"></a>
-
 ### Pointers with Size
 
 Descriptions can also use integer and floating point types followed by a positive integer between brackets. For instance `uint32_t[3]`.
 
-- For arguments, the glue code will check that the buffer is not detached and that its data size is sufficient. 
-
-- When the function description returns a pointer with size, the C function must return a pointer to new data allocated with `malloc`, `calloc`. The glue code will creare a new buffer with the new data, then delete the new data with `free`. If the new data cannot be created, the C function must return `NULL` and the glue code will abort with `"not enough memory"`.
+- For arguments, the glue code checks that the buffer is not detached and that its data size is sufficient. 
+- When the function description returns a pointer with size, the C function must return a pointer to new data allocated with `malloc`, `calloc`. The glue code creates a new buffer with the new data, then deletes the new data with `free`. If the new data cannot be created, the C function must return `NULL` and the glue code will abort with `"not enough memory"`.
 
 Here is a function that returns a new buffer with incremented values:
 
-```
+```c
 uint32_t* newTriple(uint32_t* buffer, uint32_t delta)
 {
 	uint32_t* result = malloc(3 * sizeof(uint32_t));
@@ -379,26 +378,28 @@ uint32_t* newTriple(uint32_t* buffer, uint32_t delta)
 
 Here is its description:
 
-```
-	"newTriple": {
-		"arguments": [ "uint32_t[3]", "uint32_t" ],
-		"returns": "uint32_t[3]"
-	}
+```jsonc
+"newTriple": {
+	"arguments": [ "uint32_t[3]", "uint32_t" ],
+	"returns": "uint32_t[3]"
+}
 ```
 
 Here is its usage:
 
-```
-	result = new Uint32Array([0, 1, 2]);
-	result = test.newTriple(result.buffer, 3);
-	trace(`newTriple ${ new Uint32Array(result) }\n`);
+```javascript
+result = new Uint32Array([0, 1, 2]);
+result = test.newTriple(result.buffer, 3);
+trace(`newTriple ${ new Uint32Array(result) }\n`);
 ```
 
 > Notice that the signature of the C function itself still uses `uint32_t*`. 
 
+<a id="arguments"></a>
+
 ## Arguments
 
-All arguments are required. The glue code throw if any argument is omitted.
+All arguments are required. The glue code throws if any argument is omitted.
 
 If you want to provide default arguments, you can easily patch functions in JavaScript:
 
@@ -430,7 +431,7 @@ catch (e) {
 
 ## Programming Patterns
 
-Consider a sensor implemented in C that provides samples that consist of two `uint32_t` values and one `double`. Here is the C function that fill a buffer with the corresponding structure .
+Consider a sensor implemented in C that provides samples that consist of two `uint32_t` values and one `double`. Here is the C function that fills a buffer with the corresponding structure .
 
 ```c
 typedef struct {
@@ -462,7 +463,7 @@ Here is its use in JavaScript:
 ```javascript
 const view = new DataView(new ArrayBuffer(16));
 test.sampleABCSensor(view.buffer);
-trace(`${ view.getInt32(0, 1, true) }, ${ view.getInt32(4, 1, true) }, ${ view.getFloat64(8, 1, true) }\n`);
+trace(`${ view.getInt32(0, true) }, ${ view.getInt32(4, true) }, ${ view.getFloat64(8, true) }\n`);
 ```
 
 You can use such a low level function to implement a friendly programming pattern, conformant to the [ECMA-419 Sensor Class Pattern](https://419.ecma-international.org/#-13-sensor-class-pattern)
@@ -478,15 +479,15 @@ class ABCSensor {
 		const view = this.#view;
 		test.sampleABCSensor(view.buffer);
 		return {
-			a: view.getInt32(0, 1, true),
-			b: view.getInt32(4, 1, true),
-			c: view.getFloat64(8, 1, true),
+			a: view.getInt32(0, true),
+			b: view.getInt32(4, true),
+			c: view.getFloat64(8, true),
 		};
 	}
 }
 ```
 
-> The `ABCSensor` class creates its buffer and view in its constructor to avoid allocations each time its `sample` method is called.
+> The `ABCSensor` class creates its buffer and view in its constructor to avoid allocations each time its `sample()` method is called.
 
 Now you can use the class the standard way:
 
