@@ -221,6 +221,7 @@ DRIVER_DIRS = \
  	-I$(IDF_PATH)\components\esp_driver_sdmmc\include \
  	-I$(IDF_PATH)\components\esp_driver_spi\include \
  	-I$(IDF_PATH)\components\esp_hal_gpspi\include \
+ 	-I$(IDF_PATH)\components\esp_hal_timg\include \
  	-I$(IDF_PATH)\components\esp_driver_uart\include \
  	-I$(IDF_PATH)\components\esp_hal_uart\include \
  	-I$(IDF_PATH)\components\esp_hal_uart\$(ESP32_SUBCLASS)\include
@@ -624,7 +625,7 @@ deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 idfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE)
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(PROJ_DIR_FILES)
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 
