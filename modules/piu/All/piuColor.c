@@ -23,8 +23,7 @@
 static void PiuHSL2RGB(xsMachine* the, PiuColor color);
 static uint32_t PiuStringHexToNum(const char *string, uint32_t i);
 
-#define PiuColorCount 18
-static const char* const PiuColorNames[PiuColorCount] ICACHE_RODATA_ATTR = {
+static const char* const PiuColorNames[] ICACHE_RODATA_ATTR = {
 	"black",
 	"silver",
 	"gray",
@@ -42,10 +41,15 @@ static const char* const PiuColorNames[PiuColorCount] ICACHE_RODATA_ATTR = {
 	"teal",
 	"aqua",
 	"orange",
-	"transparent"
+	"transparent",
+#if defined(MODDEF_COLOR_NAMES) && defined(MODDEF_COLOR_VALUES)
+	MODDEF_COLOR_NAMES
+#endif
 };
 
-static const PiuColorRecord ICACHE_FLASH_ATTR PiuColorValues[PiuColorCount] = {
+#define PiuColorCount ((int)(sizeof(PiuColorNames) / sizeof(PiuColorNames[0])))
+
+static const PiuColorRecord ICACHE_FLASH_ATTR PiuColorValues[] = {
 	{ 0x00, 0x00, 0x00, 0xff },
 	{ 0xc0, 0xc0, 0xc0, 0xff },
 	{ 0x80, 0x80, 0x80, 0xff },
@@ -63,7 +67,10 @@ static const PiuColorRecord ICACHE_FLASH_ATTR PiuColorValues[PiuColorCount] = {
 	{ 0x00, 0x80, 0x80, 0xff },
 	{ 0x00, 0xff, 0xff, 0xff },
 	{ 0xff, 0xa5, 0x00, 0xff },
-	{ 0x00, 0x00, 0x00, 0x00 }
+	{ 0x00, 0x00, 0x00, 0x00 },
+#if defined(MODDEF_COLOR_NAMES) && defined(MODDEF_COLOR_VALUES)
+	MODDEF_COLOR_VALUES
+#endif
 };
 
 void PiuColorsBlend(PiuColor colors, double state, PiuColor color)

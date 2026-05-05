@@ -493,13 +493,83 @@ void xs_poco_end(xsMachine *the)
 	}
 }
 
+typedef struct {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+} ColorRecord;
+
+static const char* const gColorNames[] ICACHE_RODATA_ATTR = {
+	"black",
+	"silver",
+	"gray",
+	"white",
+	"maroon",
+	"red",
+	"purple",
+	"fuchsia",
+	"green",
+	"lime",
+	"olive",
+	"yellow",
+	"navy",
+	"blue",
+	"teal",
+	"aqua",
+	"orange",
+	"transparent",
+#if defined(MODDEF_COLOR_NAMES) && defined(MODDEF_COLOR_VALUES)
+	MODDEF_COLOR_NAMES
+#endif
+};
+
+static const ColorRecord ICACHE_FLASH_ATTR gColorValues[] = {
+	{ 0x00, 0x00, 0x00, 0xff },
+	{ 0xc0, 0xc0, 0xc0, 0xff },
+	{ 0x80, 0x80, 0x80, 0xff },
+	{ 0xff, 0xff, 0xff, 0xff },
+	{ 0x80, 0x00, 0x00, 0xff },
+	{ 0xff, 0x00, 0x00, 0xff },
+	{ 0x80, 0x00, 0x80, 0xff },
+	{ 0xff, 0x00, 0xff, 0xff },
+	{ 0x00, 0x80, 0x00, 0xff },
+	{ 0x00, 0xff, 0x00, 0xff },
+	{ 0x80, 0x80, 0x00, 0xff },
+	{ 0xff, 0xff, 0x00, 0xff },
+	{ 0x00, 0x00, 0x80, 0xff },
+	{ 0x00, 0x00, 0xff, 0xff },
+	{ 0x00, 0x80, 0x80, 0xff },
+	{ 0x00, 0xff, 0xff, 0xff },
+	{ 0xff, 0xa5, 0x00, 0xff },
+	{ 0x00, 0x00, 0x00, 0x00 },
+#if defined(MODDEF_COLOR_NAMES) && defined(MODDEF_COLOR_VALUES)
+	MODDEF_COLOR_VALUES
+#endif
+};
+
 void xs_poco_makeColor(xsMachine *the)
 {
 	int r, g, b, color;
 
-	r = xsmcToInteger(xsArg(0));
-	g = xsmcToInteger(xsArg(1));
-	b = xsmcToInteger(xsArg(2));
+	if (xsStringType == xsmcTypeOf(xsArg(0))) {
+		const char *name = xsmcToString(xsArg(0));
+		for (int i = 0; true; i++) {
+			if (!c_strcmp(name, gColorNames[i])) {
+				if (!*gColorNames[i])
+					xsUnknownError("invalid color");
+				r = gColorValues[i].r;
+				g = gColorValues[i].g;
+				b = gColorValues[i].b;
+				break;
+			}
+		}
+	}
+	else {
+		r = xsmcToInteger(xsArg(0));
+		g = xsmcToInteger(xsArg(1));
+		b = xsmcToInteger(xsArg(2));
+	}
 
 	color = PocoMakeColor(xsmcGetHostDataPoco(xsThis), r, g, b);
 
