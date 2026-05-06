@@ -25,7 +25,7 @@ declare module "webstorage" {
     key(index: number): string | null;
     getItem(key: string): string | null;
     setItem(key: string, value: string): void;
-    remove(key: string): void;
+    removeItem(key: string): void;
     clear(): void;
   }
 
