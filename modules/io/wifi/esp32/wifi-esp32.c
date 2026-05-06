@@ -183,6 +183,13 @@ void xs_wifi419_close(xsMachine *the)
 
 static void initWiFi(void)
 {
+	wifi_mode_t mode;
+	if (ESP_OK == esp_wifi_get_mode(&mode)) {
+		if (!gStation)
+			gStation = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+		return;
+	}
+
 	if (gStation) return;
 
 	esp_netif_init();
