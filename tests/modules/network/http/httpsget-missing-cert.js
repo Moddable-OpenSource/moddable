@@ -9,7 +9,7 @@ import Resource from "Resource";
 
 await $NETWORK.connected;
 
-const host = "www.yahoo.com";
+const host = "ya.ru";
 
 function next() {
 	let request = new Request({host, path: "/",
