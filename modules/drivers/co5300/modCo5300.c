@@ -76,6 +76,7 @@
 */
 #define CO5300_CMD(reg)      ((0x02 << 24) | ((reg) << 8))
 #define CO5300_COLOR_CMD     ((0x32 << 24) | (0x2C << 8))
+#define CO5300_ROTATE_BUFFER_PIXELS	((((MODDEF_CO5300_WIDTH) > (MODDEF_CO5300_HEIGHT)) ? (MODDEF_CO5300_WIDTH) : (MODDEF_CO5300_HEIGHT)) * 2)
 
 typedef struct {
 	PixelsOutDispatch			dispatch;
@@ -85,6 +86,9 @@ typedef struct {
 #endif
 
 	int updateWidth;
+	int updateHeight;
+	int updateX;
+	int updateY;
 	int updateLinesRemaining;
 	int yMin;
 	int yMax;
@@ -92,6 +96,8 @@ typedef struct {
 	uint8_t nothingSent;
 	uint8_t firstFrame;
 	uint8_t brightnessValue;
+	uint8_t rotation;				// 0, 1, 2, 3 => 0, 90, 180, 270
+	uint8_t colorSlotReserved;
 
 	SemaphoreHandle_t			colorsInFlight;
 	esp_lcd_panel_io_handle_t	io_handle;
@@ -100,9 +106,14 @@ typedef struct {
 	int							opZero;
 
 	uint8_t data[32];
+	uint16_t					*rotateBuffer;
 } co5300DisplayRecord, *co5300Display;
 
 static void co5300Init(co5300Display sd);
+static void co5300SetWindow(co5300Display sd, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+static void co5300WaitForColors(co5300Display sd);
+static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLength);
+static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength);
 
 #define co5300Command(sd, command, data, count) \
 	(esp_lcd_panel_io_tx_param(sd->io_handle, command, data, count))
@@ -143,6 +154,9 @@ void xs_co5300_destructor(void *data)
 	if (sd->colorsInFlight)
 		vSemaphoreDelete(sd->colorsInFlight);
 
+	if (sd->rotateBuffer)
+		c_free(sd->rotateBuffer);
+
 	c_free(data);
 }
 
@@ -177,6 +191,13 @@ void xs_co5300(xsMachine *the)
 
 	xsmcSetHostData(xsThis, sd);
 
+	sd->rotateBuffer = c_malloc(CO5300_ROTATE_BUFFER_PIXELS * sizeof(uint16_t));
+	if (!sd->rotateBuffer) {
+		c_free(sd);
+		xsmcSetHostData(xsThis, NULL);
+		xsUnknownError("no memory");
+	}
+
 	spi_bus_config_t buscfg = {
 		.sclk_io_num = MODDEF_CO5300_SCK_PIN,
 		.data0_io_num = MODDEF_CO5300_DATA0_PIN,
@@ -189,6 +210,7 @@ void xs_co5300(xsMachine *the)
 
 	int err = spi_bus_initialize(MODDEF_CO5300_SPI_PORT, &buscfg, SPI_DMA_CH_AUTO);
 	if (err) {
+		c_free(sd->rotateBuffer);
 		c_free(sd);
 		xsmcSetHostData(xsThis, NULL);
 		xsUnknownError("spi_bus_initialize failed");
@@ -212,6 +234,7 @@ void xs_co5300(xsMachine *the)
 	err = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)MODDEF_CO5300_SPI_PORT, &io_config, &sd->io_handle);
 	if (err) {
 		spi_bus_free(MODDEF_CO5300_SPI_PORT);
+		c_free(sd->rotateBuffer);
 		c_free(sd);
 		xsmcSetHostData(xsThis, NULL);
 		xsUnknownError("esp_lcd_new_panel_io_spi failed");
@@ -295,17 +318,36 @@ void xs_co5300_get_pixelFormat(xsMachine *the)
 
 void xs_co5300_get_width(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_CO5300_WIDTH);
+	co5300Display sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_CO5300_HEIGHT : MODDEF_CO5300_WIDTH);
 }
 
 void xs_co5300_get_height(xsMachine *the)
 {
-	xsmcSetInteger(xsResult, MODDEF_CO5300_HEIGHT);
+	co5300Display sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_CO5300_WIDTH : MODDEF_CO5300_HEIGHT);
 }
 
 void xs_co5300_get_c_dispatch(xsMachine *the)
 {
 	xsResult = xsThis;
+}
+
+void xs_co5300_get_rotation(xsMachine *the)
+{
+	co5300Display sd = xsmcGetHostData(xsThis);
+	xsmcSetInteger(xsResult, sd->rotation * 90);
+}
+
+void xs_co5300_set_rotation(xsMachine *the)
+{
+	co5300Display sd = xsmcGetHostData(xsThis);
+	int32_t rotation = xsmcToInteger(xsArg(0));
+
+	if ((0 != rotation) && (90 != rotation) && (180 != rotation) && (270 != rotation))
+		xsRangeError("invalid rotation");
+
+	sd->rotation = (uint8_t)(rotation / 90);
 }
 
 void xs_co5300_command(xsMachine *the)
@@ -365,8 +407,14 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 	}
 #endif
 
+	if (sd->rotation) {
+		co5300SendRotated(sd, (uint16_t *)pixels, byteLength);
+		return;
+	}
+
 	{
 		int one = 1;
+		sd->colorSlotReserved = 0;
 		xQueueSend(sd->ops, &one, portMAX_DELAY);
 		esp_lcd_panel_io_tx_color(sd->io_handle, CO5300_COLOR_CMD, pixels, byteLength);
 
@@ -442,6 +490,105 @@ void co5300Init(co5300Display sd)
 	sd->brightnessValue = 0;
 }
 
+static void co5300SetWindow(co5300Display sd, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+	uint16_t xMin = x + MODDEF_CO5300_COLUMN_OFFSET;
+	uint16_t yMin = y + MODDEF_CO5300_ROW_OFFSET;
+	uint16_t xMax = xMin + w - 1;
+	uint16_t yMax = yMin + h - 1;
+	uint8_t data[4];
+
+	data[0] = (xMin >> 8) & 0xff;
+	data[1] = xMin & 0xff;
+	data[2] = (xMax >> 8) & 0xff;
+	data[3] = xMax & 0xff;
+	co5300Command(sd, CO5300_CMD(0x2a), data, 4);
+
+	data[0] = (yMin >> 8) & 0xff;
+	data[1] = yMin & 0xff;
+	data[2] = (yMax >> 8) & 0xff;
+	data[3] = yMax & 0xff;
+	co5300Command(sd, CO5300_CMD(0x2b), data, 4);
+}
+
+static void co5300WaitForColors(co5300Display sd)
+{
+	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
+	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
+	xSemaphoreGive(sd->colorsInFlight);
+	xSemaphoreGive(sd->colorsInFlight);
+}
+
+static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLength)
+{
+	int one = 1;
+
+	if (sd->colorSlotReserved)
+		sd->colorSlotReserved = 0;
+	else
+		xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
+
+	xQueueSend(sd->ops, &one, portMAX_DELAY);
+	esp_lcd_panel_io_tx_color(sd->io_handle, CO5300_COLOR_CMD, pixels, byteLength);
+	co5300WaitForColors(sd);
+}
+
+static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength)
+{
+	int lines = (byteLength >> 1) / sd->updateWidth;
+	int row = sd->updateHeight - sd->updateLinesRemaining;
+	uint16_t *src = pixels;
+
+	while (lines > 0) {
+		int rows = (lines > 1) ? 2 : 1;
+		uint16_t *out = sd->rotateBuffer;
+		uint16_t x, y, w, h;
+
+		switch (sd->rotation) {
+			case 1:
+				for (int col = 0; col < sd->updateWidth; col++) {
+					for (int r = rows - 1; r >= 0; r--)
+						*out++ = src[(r * sd->updateWidth) + col];
+				}
+				x = MODDEF_CO5300_WIDTH - (sd->updateY + row + rows);
+				y = sd->updateX;
+				w = rows;
+				h = sd->updateWidth;
+				break;
+
+			case 2:
+				for (int r = rows - 1; r >= 0; r--) {
+					for (int col = sd->updateWidth - 1; col >= 0; col--)
+						*out++ = src[(r * sd->updateWidth) + col];
+				}
+				x = MODDEF_CO5300_WIDTH - (sd->updateX + sd->updateWidth);
+				y = MODDEF_CO5300_HEIGHT - (sd->updateY + row + rows);
+				w = sd->updateWidth;
+				h = rows;
+				break;
+
+			default:	// 270 degrees
+				for (int col = sd->updateWidth - 1; col >= 0; col--) {
+					for (int r = 0; r < rows; r++)
+						*out++ = src[(r * sd->updateWidth) + col];
+				}
+				x = sd->updateY + row;
+				y = MODDEF_CO5300_HEIGHT - (sd->updateX + sd->updateWidth);
+				w = rows;
+				h = sd->updateWidth;
+				break;
+		}
+
+		co5300SetWindow(sd, x, y, w, h);
+		co5300SendColorSync(sd, sd->rotateBuffer, (int)((out - sd->rotateBuffer) * sizeof(uint16_t)));
+
+		src += rows * sd->updateWidth;
+		row += rows;
+		lines -= rows;
+		sd->updateLinesRemaining -= rows;
+	}
+}
+
 void co5300AdaptInvalid(void *refcon, CommodettoRectangle r)
 {
 	// CO5300 requires even-aligned coordinates for partial updates
@@ -460,37 +607,30 @@ void co5300AdaptInvalid(void *refcon, CommodettoRectangle r)
 void co5300Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h)
 {
 	co5300Display sd = refcon;
-	uint16_t xMin, xMax, yMin, yMax;
+	uint16_t yMin, yMax;
 
-	if (sd->nothingSent)
+	if (sd->nothingSent && sd->colorSlotReserved) {
 		xSemaphoreGive(sd->colorsInFlight);
+		sd->colorSlotReserved = 0;
+	}
 	sd->nothingSent = 1;
 
-	xMin = x + MODDEF_CO5300_COLUMN_OFFSET;
 	yMin = y + MODDEF_CO5300_ROW_OFFSET;
-
-	xMax = xMin + w - 1;
 	yMax = yMin + h - 1;
 
+	sd->updateX = x;
+	sd->updateY = y;
 	sd->updateWidth = w;
+	sd->updateHeight = h;
 	sd->updateLinesRemaining = h;
 	sd->yMin = yMin;
 	sd->yMax = yMax;
 
-	uint8_t data[4];
-	data[0] = (xMin >> 8) & 0xff;
-	data[1] = xMin & 0xff;
-	data[2] = (xMax >> 8) & 0xff;
-	data[3] = xMax & 0xff;
-	co5300Command(sd, CO5300_CMD(0x2a), data, 4);
-
-	data[0] = (yMin >> 8) & 0xff;
-	data[1] = yMin & 0xff;
-	data[2] = (yMax >> 8) & 0xff;
-	data[3] = yMax & 0xff;
-	co5300Command(sd, CO5300_CMD(0x2b), data, 4);
+	if (!sd->rotation)
+		co5300SetWindow(sd, x, y, w, h);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);
+	sd->colorSlotReserved = 1;
 }
 
 void co5300Continue(void *refcon)
@@ -512,7 +652,10 @@ void co5300End(void *refcon)
 	}
 
 	if (sd->nothingSent) {
-		xSemaphoreGive(sd->colorsInFlight);
+		if (sd->colorSlotReserved) {
+			xSemaphoreGive(sd->colorsInFlight);
+			sd->colorSlotReserved = 0;
+		}
 		sd->nothingSent = 0;
 	}
 }
