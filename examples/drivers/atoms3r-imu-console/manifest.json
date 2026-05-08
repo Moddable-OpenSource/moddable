@@ -1,0 +1,16 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"platforms": {
+		"esp32/m5atom_s3r": {},
+		"esp32/m5atom_s3r_cam": {},
+		"esp32/m5atom_s3r_m12": {},
+		"...": {
+			"error": "esp32/m5atom_s3r, esp32/m5atom_s3r_cam, and esp32/m5atom_s3r_m12 only"
+		}
+	}
+}
