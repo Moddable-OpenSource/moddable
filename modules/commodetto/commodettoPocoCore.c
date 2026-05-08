@@ -989,7 +989,6 @@ void xs_poco_drawText(xsMachine *the)
 	Poco poco = xsmcGetHostDataPoco(xsThis);
 	int argc = xsmcArgc;
 	PocoCoordinate x, y;
-	PocoColor color;
 	CommodettoBitmap cb = NULL;
 	PocoBitmapRecord bits;
 	static const unsigned char *ellipsisFallback = (unsigned char *)"...";
@@ -1012,8 +1011,7 @@ void xs_poco_drawText(xsMachine *the)
 	if (argc > 5)
 		width = xsmcToInteger(xsArg(5));
 
-	if (xsReferenceType != xsmcTypeOf(xsArg(2)))
-		color = (PocoColor)xsmcToInteger(xsArg(2));
+	PocoColor color = (xsReferenceType != xsmcTypeOf(xsArg(2))) ? (PocoColor)xsmcToInteger(xsArg(2)) : 0;
 
 	text = (const unsigned char *)xsmcToString(xsArg(0));
 
