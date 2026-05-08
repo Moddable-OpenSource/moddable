@@ -91,7 +91,7 @@ class MPU6886  {
 
         this.#view = new DataView(new ArrayBuffer(14));
         this.operation = "gyroscope";
-        if (io.readUint8(REGISTERS.WHO_AM_I) != EXPECTED_WHO_AM_I)
+        if (io.readUint8(REGISTERS.WHO_AM_I) !== EXPECTED_WHO_AM_I)
 			throw new Error("unrecognized")
 
         Timer.delay(1);
@@ -129,7 +129,7 @@ class MPU6886  {
 		this.#io = undefined;
 	}
     configure(dictionary) {		//@@ revisit
-        for (let property in dictionary) {
+        for (const property in dictionary) {
             switch (property) {
                 case "GYRO_SCALER":
                     this.#gyroScale = dictionary.GYRO_SCALER;

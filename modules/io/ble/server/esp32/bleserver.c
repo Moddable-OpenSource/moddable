@@ -1162,13 +1162,13 @@ void xs_gattserverconnection_replyToPasskey(xsMachine *the)
 	if (0 == c_strcmp(action, "input")) {
 		pkey.action = BLE_SM_IOACT_INPUT;
 		if (xsmcArgc > 1)
-			pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+			pkey.passkey = xsmcToUnsigned(xsArg(1));
 		else
 			pkey.passkey = 0;
 	}
 	else if (0 == c_strcmp(action, "display")) {
 		pkey.action = BLE_SM_IOACT_DISP;
-		pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+		pkey.passkey = xsmcToUnsigned(xsArg(1));
 	}
 	else if (0 == c_strcmp(action, "compareNumber")) {
 		pkey.action = BLE_SM_IOACT_NUMCMP;

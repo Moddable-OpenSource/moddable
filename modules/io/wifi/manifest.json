@@ -1,9 +1,16 @@
 {
 	"platforms": {
 		"esp32": {
+			"include": "./esp32/manifest.json",
 			"dependency": [
 				{ "idf": "esp_wifi" }
 			]
+		},
+		"esp": {
+			"include": "./esp/manifest.json"
+		},
+		"pico": {
+			"include": "./pico/manifest.json"
 		},
 		"zephyr": {
 			"include": "./zephyr/manifest.json"

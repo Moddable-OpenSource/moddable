@@ -1,7 +1,6 @@
 {
 	"build": {
-		"PICO_SUBCLASS":"rp2350",
-		"PICO_BOARD_FILE":"$(PICO_SDK_DIR)/src/boards/include/boards/pico2.h"
+		"PICO_SUBCLASS":"rp2350"
 	},
 	"include": [
 		"$(MODULES)/io/manifest.json",

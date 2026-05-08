@@ -1,4 +1,7 @@
 {
+	"build": {
+		"PICO_BOARD": "pico"
+	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
 		"$(MODULES)/drivers/led/manifest.json",

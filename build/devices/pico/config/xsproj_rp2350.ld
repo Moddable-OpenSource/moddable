@@ -319,3 +319,11 @@ SECTIONS
     /* todo assert on extra code */
 }
 
+SECTIONS
+{   
+    .end_of_image :
+    {
+        PROVIDE(__start_unused_space = .);
+    } > FLASH
+}    
+

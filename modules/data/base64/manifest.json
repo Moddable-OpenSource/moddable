@@ -7,5 +7,10 @@
 	},
 	"preload": [
 		"base64"
-	]
+	],
+	"platforms": {
+		"...": {
+			"warning": "Base64 module deprecated. Use Uint8Array toBase64, fromBas64, setFromBas64"
+		}
+	}
 }

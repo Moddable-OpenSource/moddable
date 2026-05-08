@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -60,6 +60,7 @@ CommodettoFontEngine CFENew(void)
 	glyph->dy = 0;
 	glyph->advance = 8;
 	glyph->format = kCommodettoBitmapMonochrome;
+	glyph->substitute = C_NULL;
 
 	return tf;
 }

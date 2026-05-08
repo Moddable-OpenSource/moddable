@@ -411,7 +411,7 @@ void xs_ble_server_passkey_input(xsMachine *the)
 {
 	qapi_BLE_GAP_LE_Authentication_Response_Information_t GAP_LE_Authentication_Response_Information;
 	//uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint32_t passkey = xsmcToInteger(xsArg(1));
+	uint32_t passkey = xsmcToUnsigned(xsArg(1));
 	GAP_LE_Authentication_Response_Information.GAP_LE_Authentication_Type = QAPI_BLE_LAR_PASSKEY_E;
 	GAP_LE_Authentication_Response_Information.Authentication_Data_Length = sizeof(uint32_t);
 	GAP_LE_Authentication_Response_Information.Authentication_Data.Passkey = passkey;											

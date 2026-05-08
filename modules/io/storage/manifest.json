@@ -1,13 +1,22 @@
 {
 	"platforms": {
+		"esp": {
+			"include": "./flash/manifest.json"
+		},
 		"esp32": {
 			"include": "./esp32/manifest.json"
 		},
 		"mac": {
 			"include": "./mac/manifest.json"
 		},
+		"nrf52": {
+			"include": "./flash/manifest.json"
+		},
 		"pebble": {
 			"include": "./pebble/manifest.json"
+		},
+		"pico": {
+			"include": "./flash/manifest.json"
 		},
 		"zephyr": {
 			"include": "./zephyr/manifest.json"

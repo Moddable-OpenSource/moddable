@@ -1,0 +1,89 @@
+{
+	"build": {
+		"PICO_SUBCLASS": "rp2350"
+	},
+	"include": [
+		"$(MODULES)/drivers/st7789/manifest.json",
+		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
+		"$(MODULES)/drivers/sensors/cst328/manifest.json",
+		"$(MODULES)/drivers/peripherals/pcf85063/manifest.json",
+		"$(MODULES)/drivers/led/manifest.json",
+		"$(MODULES)/drivers/button/manifest.json",
+		"$(MODULES)/pins/pwm/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": "setup/target",
+	"config": {
+		"screen": "st7789",
+		"backlight": 16,
+		"brightness": 50
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 44100,
+			"volume_divider": 1,
+			"i2s": {
+				"bitsPerSample": 16,
+				"bck_pin": 2,
+				"lr_pin": 3,
+				"dataout_pin": 4
+			}
+		},
+		"i2c": {
+			"sda_pin": 6,
+			"scl_pin": 7,
+			"port": 1
+		},
+		"spi": {
+			"mosi_pin": 11,
+			"miso_pin": -1,
+			"sck_pin": 10,
+			"xbuffersize": 540
+		},
+		"ili9341": {
+			"hz": 32000000,
+			"width": 240,
+			"height": 320,
+			"cs_pin": 13,
+			"dc_pin": 14,
+			"rst_pin": 15,
+			"spi_port": 1,
+			"backlight_pin": 16,
+			"backlight_on": 1,
+			"column_offset": 0,
+			"row_offset": 0,
+			"registers": [
+				"0x29, 0,",
+				"0xff, 10,",
+				"0x11, 0,",
+				"0xff, 10,",
+				"0x36, 1, 0x00,",
+				"0x3A, 1, 0x05,",
+				"0xB0, 1, 0xE8,",
+				"0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,",
+				"0xB7, 1, 0x75,",
+				"0xBB, 1, 0x1A,",
+				"0xC0, 1, 0x2C,",
+				"0xC2, 2, 0x01, 0xFF,",
+				"0xC3, 1, 0x13,",
+				"0xC4, 1, 0x20,",
+				"0xC6, 1, 0x0F,",
+				"0xD0, 2, 0xA4, 0xA1,",
+				"0xD6, 1, 0xA1,",
+				"0xE0, 14, 0xD0, 0x0D, 0x14, 0x0D, 0x0D, 0x09, 0x38, 0x44, 0x4E, 0x3A, 0x17, 0x18, 0x2F, 0x30,",
+				"0xE1, 14, 0xD0, 0x09, 0x0F, 0x08, 0x07, 0x14, 0x37, 0x44, 0x4D, 0x38, 0x15, 0x16, 0x2C, 0x2E,",
+				"0x21, 0,",
+				"0x29, 0,",
+                "0x2B, 4, 0x00, 0x35, 0x00, 0xbb,",
+                "0x2A, 4, 0x00, 0x28, 0x01, 0x17,",
+				"0x2C, 0,",
+				"0xff, 100,",
+				"0xff, 0,"
+			]
+		}
+	}
+}

@@ -53,6 +53,7 @@ XS_HEADERS = \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
+	$(XS_DIR)/includes/xsffi.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsScript.h
@@ -129,6 +130,7 @@ MODULES = \
 	$(MOD_DIR)/ecp.xsb \
 	$(MOD_DIR)/modular.xsb \
 	$(MOD_DIR)/x509.xsb \
+	$(MOD_DIR)/ffi.xsb \
 	$(MOD_DIR)/file.xsb \
 	$(MOD_DIR)/buildclut.xsb \
 	$(MOD_DIR)/cdv.xsb \
@@ -203,6 +205,7 @@ PRELOADS =\
 	-p resampler.xsb\
 	-p transform.xsb\
 	-p unicode-ranges.xsb\
+	-p ffi.xsb\
 	-p file.xsb\
 	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,0,1993,127,32768,1993,0,main

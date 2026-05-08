@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -37,7 +37,7 @@ render.begin();
 	render.fillRectangle(backgroundColor, 0, 0, render.width, render.height);
 render.end();
 
-Timer.repeat(() => {
+Timer.set(() => {
 	render.begin(bounds.x, bounds.y, bounds.width, bounds.height);
 		let d = new Date();
 		let h = d.getHours();
@@ -59,5 +59,5 @@ Timer.repeat(() => {
 		render.drawGray(digits, digitsColor, x, y, (m % 10) * digitWidth, 0, digitWidth, digitHeight);
 		colon = !colon;
 	render.end();
-}, 500);
+}, 0, 1000);
 

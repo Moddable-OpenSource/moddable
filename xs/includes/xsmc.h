@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -51,11 +51,13 @@ extern "C" {
 
 #undef xsToBoolean
 #undef xsToInteger
+#undef xsToUnsigned
 #undef xsToNumber
 #undef xsToString
 #undef xsToStringBuffer
 #define xsmcToBoolean(_SLOT)	fxToBoolean(the, &_SLOT)
 #define xsmcToInteger(_SLOT)	fxToInteger(the, &_SLOT)
+#define xsmcToUnsigned(_SLOT)	fxToUnsigned(the, &_SLOT)
 #define xsmcToNumber(_SLOT)	fxToNumber(the, &_SLOT)
 #define xsmcToString(_SLOT)	fxToString(the, &_SLOT)
 #define xsmcToStringBuffer(_SLOT,_BUFFER,_SIZE)	fxToStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
@@ -66,6 +68,7 @@ extern "C" {
 #define xsmcSetTrue(_SLOT)	fxBoolean(the, &_SLOT, 1)
 #define xsmcSetBoolean(_SLOT, _VALUE)	 fxBoolean(the, &_SLOT, _VALUE)
 #define xsmcSetInteger(_SLOT, _VALUE)	fxInteger(the, &_SLOT, _VALUE)
+#define xsmcSetUnsigned(_SLOT, _VALUE)	fxUnsigned(the, &_SLOT, _VALUE)
 #define xsmcSetNumber(_SLOT, _VALUE)	fxNumber(the, &_SLOT, _VALUE)
 #define xsmcSetString(_SLOT, _VALUE)	fxString(the, &_SLOT, _VALUE)
 #define xsmcSetStringBuffer(_SLOT, _BUFFER,_SIZE)	fxStringBuffer(the, &_SLOT, _BUFFER ,_SIZE)
@@ -208,6 +211,7 @@ mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data
 	#pragma GCC poison xsIsCallable
 	#pragma GCC poison xsToBoolean
 	#pragma GCC poison xsToInteger
+	#pragma GCC poison xsToUnsigned
 	#pragma GCC poison xsToNumber
 	#pragma GCC poison xsToString
 	#pragma GCC poison xsToStringBuffer

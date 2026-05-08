@@ -27,12 +27,12 @@ const value = {
 		return 0;
 	}
 };
-render.drawText(value, font, value, value, value, value);
-assert.sameValue(5, count, "drawText coerces");
+render.drawText(value, font, 0 /* color */, value, value, value);
+assert.sameValue(4, count, "drawText coerces");
 
-assert.throws(SyntaxError, () => render.drawText("a", "12", 0, 0, 0), "invalid font");
-assert.throws(SyntaxError, () => render.drawText("a", new ArrayBuffer, 0, 0, 0), "invalid font");
-assert.throws(SyntaxError, () => render.drawText("a", Uint8Array.of(32), 0, 0, 0), "invalid font");
+assert.throws(TypeError, () => render.drawText("a", "12", 0, 0, 0), "invalid font");
+assert.throws(TypeError, () => render.drawText("a", new Date, 0, 0, 0), "invalid font");
+assert.throws(TypeError, () => render.drawText("a", Uint32Array.of(32), 0, 0, 0), "invalid font");
 
 assert.sameValue(undefined, render.drawText("a", font, 0, 0, 0), "drawText returns undefined");
 

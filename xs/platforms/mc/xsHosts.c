@@ -448,12 +448,12 @@ static uint8_t *findMod(txMachine *the, char *name, int *modSize)
 		nameLen = c_strlen(name);
 
 	while (true) {
-		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, NULL);
+		int aNameLen;
+		uint8_t *aName = findNthAtom(FOURCC('P', 'A', 'T', 'H'), ++index, mods, modsSize, &aNameLen);
 		if (!aName)
 			break;
-		if (0 == c_strncmp(name, aName, nameLen)) {
+		if (((aNameLen - 1) == nameLen) && (0 == c_strncmp(name, aName, nameLen)))
 			return findNthAtom(FOURCC('C', 'O', 'D', 'E'), index, mods, modsSize, modSize);
-		}
 	}
 
 	return NULL;
@@ -518,20 +518,17 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	if (!name)
 		name = ((txPreparation *)preparation)->main;
 
+#if pebble
+	kernelRemaining = 32 * 1024;
+	unsigned int used, free, max_free;
+	heap_calc_totals(kernel_heap_get(), &used, &free, &max_free);
+	if (max_free < kernelRemaining)
+		kernelRemaining = max_free;
+#endif
+
 	if (creation->staticSize) {
 		uint8_t *context[2];
 
-#if pebble
-		kernelRemaining = 32 * 1024;
-		unsigned int used, free, max_free;
-		heap_calc_totals(kernel_heap_get(), &used, &free, &max_free);
-		if (max_free < kernelRemaining)
-			kernelRemaining = max_free;
-
-		// Heap *heap = kernel_heap_get();
-		// PBL_LOG(LOG_LEVEL_ERROR, "kernel free: %d", heap_size(heap) - heap->current_size);
-		// PBL_LOG(LOG_LEVEL_ERROR, "kernel max_free: %d", max_free);
-#endif
 		context[0] = machine_alloc(creation->staticSize);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");

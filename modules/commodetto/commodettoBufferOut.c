@@ -119,13 +119,14 @@ void xs_BufferOut_send(xsMachine *the)
 	if (argc > 2)
 		count = xsmcToInteger(xsArg(2));
 
+	xsmcGet(bufferSlot, xsThis, xsID_buffer);
+
 	xsmcGetBufferReadable(xsArg(0), (void **)&src, &available);
 	if (((xsUnsignedValue)offsetIn >= available) || (offsetIn < 0) || ((xsUnsignedValue)(offsetIn + count) > available) || (count <= 0))
 		xsUnknownError("invalid");
 	if (argc <= 2)
 		count = available - offsetIn;
 
-	xsmcGet(bufferSlot, xsThis, xsID_buffer);
 	xsmcGetBufferWritable(bufferSlot, (void **)&dst, &available);
 
 	offsetOut = bo->offset;

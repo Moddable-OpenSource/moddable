@@ -109,6 +109,8 @@ void xs_tcp_constructor(xsMachine *the)
 	if (create) {
 		CHECK_NETWORK_SAFE();
 
+		builtinInitIO();
+
 		format = builtinInitializeFormat(the, format);
 		if ((kIOFormatNumber != format) && (kIOFormatBuffer != format))
 			xsRangeError("unimplemented");

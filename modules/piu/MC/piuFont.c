@@ -27,6 +27,7 @@
 
 static void PiuFontDelete(void* it);
 static void PiuFontMark(xsMachine* the, void* it, xsMarkRoot markRoot);
+static void PiuFontListDelete(void* it);
 static void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
@@ -36,7 +37,7 @@ static const xsHostHooks PiuFontHooks ICACHE_RODATA_ATTR = {
 };
 
 static const xsHostHooks PiuFontListHooks ICACHE_RODATA_ATTR = {
-	NULL,
+	PiuFontListDelete,
 	PiuFontListMark,
 	NULL
 };
@@ -60,6 +61,10 @@ PiuGlyph PiuFontGetGlyph(PiuFont* self, xsIntegerValue character, uint8_t needPi
 	CFESetFontSize(gCFE, (*self)->size);
 	cfeGlyph = CFEGetGlyphFromUnicode(gCFE, character, needPixels);
 	if (cfeGlyph) {
+		piuGlyph.substitute = cfeGlyph->substitute;
+		if (piuGlyph.substitute)
+			return &piuGlyph;
+		
 		piuGlyph.advance = cfeGlyph->advance;
 		if (needPixels) {
 			piuGlyph.dx = cfeGlyph->dx;
@@ -129,16 +134,34 @@ PiuDimension PiuFontGetWidth(PiuFont* self, xsSlot* string, xsIntegerValue offse
 		return size.w;
 	}
 #endif
-	while (length) {
+	const char *substitute = C_NULL;
+	while (length || substitute) {
 		xsStringValue formerText = text;
 #if MODDEF_CFE_KERN
 		xsIntegerValue formerCharacter = character;
 #endif
-		text = fxUTF8Decode(text, &character);
-		if (character <= 0)
-			break;
-		length -= text - formerText;
-		glyph = PiuFontGetGlyph(self, character, 0);
+		if (substitute) {
+			substitute = fxUTF8Decode((char *)substitute, &character);
+			if (!c_read8(substitute))
+				substitute = C_NULL;
+
+			glyph = PiuFontGetGlyph(self, character, 0);
+		}
+		else {
+			text = fxUTF8Decode(text, &character);
+			if (character <= 0)
+				break;
+			length -= text - formerText;
+
+			glyph = PiuFontGetGlyph(self, character, 0);
+			if (glyph && glyph->substitute) {
+				substitute = glyph->substitute;
+#if MODDEF_CFE_KERN
+				character = formerCharacter;
+#endif		
+				continue;
+			}
+		}
 		if (!glyph) {
 			character = '?';
 			glyph = PiuFontGetGlyph(self, character, 0);
@@ -220,7 +243,9 @@ void PiuStyleLookupFont(PiuStyle* self)
 		}
 	}
 	else {
-		gCFE = CFENew();
+		gCFEUseCount++;
+		if (!gCFE)
+			gCFE = CFENew();
 		PiuFontListNew(the);
 		xsSet(xsGlobal, xsID_fonts, xsResult);
 		fontList = PIU(FontList, xsResult);
@@ -330,6 +355,16 @@ void PiuFontListLockCache(xsMachine* the)
 {
 	if (gCFE)
 		CFELockCache(gCFE, 1);
+}
+
+void PiuFontListDelete(void *data)
+{
+	if (data && gCFE) {
+		if (--gCFEUseCount == 0) {
+			CFEDispose(gCFE);
+			gCFE = C_NULL;
+		}
+	}
 }
 
 void PiuFontListMark(xsMachine* the, void* it, xsMarkRoot markRoot)

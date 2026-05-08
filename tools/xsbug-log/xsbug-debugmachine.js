@@ -194,10 +194,22 @@ class DebugMachine extends Machine {
 		this._expandPath(expr, items, parts, startIndex, callback);
 	}
 
+	_expandNextPrototype(items, expr, callback, visited = new Set()) {
+		const dotdot = items.find(i => i.name === '(..)');
+		if (!dotdot || !dotdot.value) return false;
+		if (visited.has(dotdot.value)) return false;
+		visited.add(dotdot.value);
+		if (this.isExpandable(dotdot) && !dotdot.children) {
+			this.toggleOpen(dotdot, () => this._expandForCompletion(expr, callback));
+			return true;
+		}
+		if (dotdot.children)
+			return this._expandNextPrototype(dotdot.children, expr, callback, visited);
+		return false;
+	}
+
 	_expandPath(expr, items, parts, index, callback) {
 		if (!items || index >= parts.length - 1) {
-			// At the final level, expand private containers for #field completion
-			// but NOT (..) — property completion shows only own properties
 			if (items) {
 				const needsExpand = items.find(c =>
 					this.isPrivateContainer(c) && this.isExpandable(c) && !c.children
@@ -208,6 +220,8 @@ class DebugMachine extends Machine {
 					});
 					return;
 				}
+				if (this._expandNextPrototype(items, expr, callback))
+					return;
 			}
 			callback();
 			return;
@@ -330,10 +344,7 @@ class DebugMachine extends Machine {
 			
 			const resolveDotPathCompletion = (items, partsArr, partIndex) => {
 				if (partIndex === partsArr.length - 1) {
-					// Top-level: follow (..) to find built-ins like Date, Math
-					// Property level: show only own properties
-					const followPrototype = (partIndex === 0);
-					return this.getCompletableNames(items, partsArr[partIndex], followPrototype);
+					return this.getCompletableNames(items, partsArr[partIndex], true);
 				}
 				const item = this.findProperty(items, partsArr[partIndex]);
 				if (item && item.children)
@@ -745,6 +756,21 @@ class DebugMachine extends Machine {
 		if (name === 'prototype')
 			return items.find(i => i.name === '(..)') || null;
 
+		// Synthetic 'length' from (array) node value "N items"
+		if (name === 'length') {
+			const arr = items.find(i => i.name === '(array)');
+			if (arr && arr.value) {
+				const m = arr.value.match(/^(\d+)\s+item/);
+				if (m)
+					return { name: 'length', value: m[1], flags: ' ' };
+			}
+		}
+
+		// Accessor properties: "get X" matches lookup for "X"
+		found = items.find(i => i.name === 'get ' + name);
+		if (found)
+			return found;
+
 		// Search #private in (ClassName) containers
 		if (name.startsWith('#')) {
 			for (const c of items) {
@@ -767,8 +793,6 @@ class DebugMachine extends Machine {
 
 	// Shared completion: collect all visible property names matching a prefix.
 	// Traverses own properties, private containers, (..) chain, and adds synthetic 'prototype'.
-	// followPrototype: true to recurse into (..) chain (for top-level variable lookup),
-	// false to show only own properties + private fields + synthetic prototype (for dot-path properties).
 	getCompletableNames(items, prefix, followPrototype = true) {
 		if (!items)
 			return [];
@@ -777,8 +801,23 @@ class DebugMachine extends Machine {
 
 		// Own non-internal properties
 		for (const item of items) {
-			if (item.name && item.name.startsWith(prefix) && !item.name.startsWith('('))
+			if (!item.name || item.name.startsWith('('))
+				continue;
+			if (item.name.startsWith(prefix))
 				names.push(item.name);
+			// Accessor "get X" / "set X" → expose "X"
+			if (item.name.startsWith('get ')) {
+				const stripped = item.name.slice(4);
+				if (stripped.startsWith(prefix))
+					names.push(stripped);
+			}
+		}
+
+		// Synthetic 'length' from (array) node
+		if ('length'.startsWith(prefix)) {
+			const arr = items.find(i => i.name === '(array)');
+			if (arr && arr.value && /^\d+\s+item/.test(arr.value))
+				names.push('length');
 		}
 
 		// Private fields from (ClassName) containers

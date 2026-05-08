@@ -29,7 +29,7 @@
 			"build": {
 				"MAKE_FRAGMENT": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/make.$(SUBPLATFORM).mk"
 			},
-			"include": "$(BUILD)/devices/gecko/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

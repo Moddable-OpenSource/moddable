@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2025  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 #
@@ -21,12 +21,19 @@ HOST_OS := $(shell uname)
 
 XS_GIT_VERSION ?= $(shell git -C $(MODDABLE) describe --tags --always --dirty 2> /dev/null)
 
+# these are vestigial – the devices/pico/manifest.json sets them
 PICO_ROOT ?= $(HOME)/pico
-PICO_SDK_DIR ?= $(HOME)/pico/pico-sdk
-PICO_EXTRAS_DIR ?= $(HOME)/pico/pico-extras
+PICO_SDK_DIR ?= $(PICO_ROOT)/pico-sdk
+PICO_EXTRAS_DIR ?= $(PICO_ROOT)/pico-extras
+
 PICO_GCC_ROOT ?= /usr/local
 
-PIOASM ?= $(HOME)/pico/pico-sdk/build/pioasm/pioasm
+PICO_SDK_VERSION := $(shell bash -c "cd $(PICO_SDK_DIR) && git describe --tags --always --abbrev=0")
+ifeq ($(PICO_SDK_VERSION),)
+$(error Could not detect Pico SDK version at $$PICO_SDK_DIR: $(PICO_SDK_DIR).)
+endif
+
+PIOASM ?= $(PICO_SDK_DIR)/build/pioasm/pioasm
 
 PLATFORM_DIR = $(MODDABLE)/build/devices/pico
 
@@ -129,7 +136,7 @@ endif
 
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m0
-ASMFLAGS += -mthumb -mabi=aapcs
+ASMFLAGS += -mabi=aapcs
 ASMFLAGS += $(FP_OPTS)
 
 # Linker flags
@@ -137,7 +144,6 @@ ASMFLAGS += $(FP_OPTS)
 LDFLAGS += \
 	-mcpu=cortex-m0plus			\
 	-mthumb						\
-	-march=armv6-m				\
 	-Wl,--build-id=none			\
 	-Wl,-Map=$(BIN_DIR)/xs_pico.map		\
 	--specs=nosys.specs			\
@@ -313,73 +319,82 @@ LDFLAGS += \
 	-Wl,--wrap=getchar
 
 LIB_FILES += \
-	-lc -lnosys -lm 
+#	-lc -lnosys -lm 
 
 LIB_FILES += \
 	-L$(PICO_SDK_DIR)/build
 
 INC_DIRS = \
 	$(TMP_DIR)	\
-	$(PICO_SDK_DIR)/src/boards/include	\
-	$(PICO_SDK_DIR)/src/common/boot_picobin_headers/include	\
-	$(PICO_SDK_DIR)/src/common/boot_picoboot_headers/include	\
-	$(PICO_SDK_DIR)/src/common/hardware_claim/include	\
-	$(PICO_SDK_DIR)/src/common/pico_base_headers/include	\
-	$(PICO_SDK_DIR)/src/common/pico_binary_info/include	\
-	$(PICO_SDK_DIR)/src/common/pico_bit_ops/include	\
-	$(PICO_SDK_DIR)/src/common/pico_divider/include	\
-	$(PICO_SDK_DIR)/src/common/pico_stdlib_headers/include	\
-	$(PICO_SDK_DIR)/src/common/pico_sync/include	\
-	$(PICO_SDK_DIR)/src/common/pico_time/include	\
-	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface_headers/include		\
-	$(PICO_SDK_DIR)/src/common/pico_util/include	\
-	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/hardware_regs/include \
-	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/hardware_structs/include \
-	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/pico_platform/include \
-	$(PICO_SDK_DIR)/src/host/pico_platform/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_base/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_boot_lock/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_dcp/include \
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_divider/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_flash/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_irq/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_pll/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_spi/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_sync/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_sync_spin_lock/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_ticks/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_timer/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_uart/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_vreg/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/hardware_xosc/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_atomic/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_async_context/include \
-	$(PICO_SDK_DIR)/src/rp2_common/pico_bootrom/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_double/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_float/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_flash/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_compiler/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_panic/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_sections/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_printf/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_rand/include \
-	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime_init/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_time_adapter/include	\
-	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_atomic/include		\
+	$(PICO_SDK_DIR)/src/common/pico_stdlib_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_gpio/include		\
+	$(PICO_SDK_DIR)/src/common/pico_base_headers/include		\
+	$(PICO_EXAMPLES_DIR)/build/generated/pico_base		\
+	$(PICO_SDK_DIR)/src/boards/include		\
+	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/pico_platform/include		\
+	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/hardware_regs/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_base/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_common/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_compiler/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_panic/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_sections/include		\
+	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/hardware_structs/include		\
+	$(PICO_SDK_DIR)/src/common/hardware_claim/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_sync/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_sync_spin_lock/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_irq/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_uart/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pll/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_vreg/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_ticks/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_bootrom/include		\
+	$(PICO_SDK_DIR)/src/common/boot_picoboot_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/boot_bootrom_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_boot_lock/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_flash/include		\
+	$(PICO_SDK_DIR)/src/common/pico_time/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_timer/include		\
+	$(PICO_SDK_DIR)/src/common/pico_sync/include		\
+	$(PICO_SDK_DIR)/src/common/pico_util/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_time_adapter/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_xosc/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_divider/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_runtime_init/include		\
+	$(PICO_SDK_DIR)/src/common/pico_bit_ops_headers/include		\
+	$(PICO_SDK_DIR)/src/common/pico_divider_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_double/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_float/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_malloc/include		\
+	$(PICO_SDK_DIR)/src/common/pico_binary_info/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_printf/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_multicore/include		\
+	$(PICO_SDK_DIR)/src/common/boot_picobin \
 	$(PICO_SDK_DIR)/lib/tinyusb/src	 \
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_flash/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_rand/include \
+	$(PICO_SDK_DIR)/src/rp2_common/pico_async_context/include \
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_adc/include	\
+	$(PICO_SDK_DIR)/src/common/boot_picobin_headers/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dma/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_xip_cache/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id/include	\
+	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_spi/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2			\
+	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/boot_stage2/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/include	\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_pwm/include	\
 	$(XS_DIR)/../modules/files/preference \
 	$(XS_DIR)/../modules/base/instrumentation \
 	$(XS_DIR)/../modules/base/timer \
@@ -387,6 +402,12 @@ INC_DIRS = \
 	$(PLATFORM_DIR)/base \
 	$(PLATFORM_DIR)/config \
 	$(LIB_DIR)
+
+ifeq ("$(PICO_SUBCLASS)","rp2350")
+INC_DIRS += \
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_dcp/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_rcp/include	
+endif
 
 ifeq ($(WIFI_GPIO),1)
 INC_DIRS += \
@@ -465,13 +486,14 @@ HEADERS += $(XS_HEADERS)
 PICO_OBJ = \
 	$(LIB_DIR)/adc.c.o \
 	$(LIB_DIR)/async_context_base.c.o \
-	$(LIB_DIR)/async_context_poll.c.o \
 	$(LIB_DIR)/atomic.c.o \
 	$(LIB_DIR)/bs2_default_padded_checksummed.S.o \
 	$(LIB_DIR)/bit_ops_aeabi.S.o \
 	$(LIB_DIR)/bootrom.c.o \
+	$(LIB_DIR)/bootrom_lock.c.o \
 	$(LIB_DIR)/claim.c.o \
 	$(LIB_DIR)/clocks.c.o \
+	$(LIB_DIR)/common.c.o \
 	$(LIB_DIR)/critical_section.c.o \
 	$(LIB_DIR)/crt0.S.o \
 	$(LIB_DIR)/datetime.c.o \
@@ -517,6 +539,7 @@ PICO_OBJ = \
  	$(LIB_DIR)/unique_id.c.o \
 	$(LIB_DIR)/vreg.c.o \
 	$(LIB_DIR)/watchdog.c.o \
+	$(LIB_DIR)/xip_cache.c.o \
 	$(LIB_DIR)/xosc.c.o \
 	\
 	$(LIB_DIR)/dcd_rp2040.c.o \
@@ -527,7 +550,9 @@ PICO_OBJ = \
 	$(LIB_DIR)/vendor_device.c.o \
 	$(LIB_DIR)/tusb.c.o \
 	$(LIB_DIR)/tusb_fifo.c.o  \
-	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o
+	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
+	$(LIB_DIR)/async_context_threadsafe_background.c.o
+#	$(LIB_DIR)/async_context_poll.c.o
 
 
 ifeq ($(WIFI_GPIO),1)
@@ -587,7 +612,8 @@ PICO_WIFI_OBJ += \
 	$(LIB_DIR)/cyw43_ll.c.o	\
 	$(LIB_DIR)/cyw43_stats.c.o	\
 	$(LIB_DIR)/lwip_nosys.c.o	\
-	$(LIB_DIR)/cyw43_arch_poll.c.o
+	$(LIB_DIR)/cyw43_arch_threadsafe_background.c.o
+#	$(LIB_DIR)/cyw43_arch_poll.c.o
 endif
 
 PICO_OBJ_RP2040 =\
@@ -602,15 +628,19 @@ PICO_OBJ_RP2040 =\
 	$(LIB_DIR)/mem_ops_aeabi.S.o
 
 PICO_OBJ_RP2350 =\
+	$(LIB_DIR)/divider.c.o \
+	$(LIB_DIR)/divider_compiler.c.o \
 	$(LIB_DIR)/double_aeabi_dcp.S.o \
 	$(LIB_DIR)/double_fma_dcp.S.o \
 	$(LIB_DIR)/double_sci_m33.S.o	\
 	$(LIB_DIR)/double_conv_m33.S.o	\
-	$(LIB_DIR)/float_sci_m33_vfp.S.o \
-	$(LIB_DIR)/float_conv_m33.S.o
+	$(LIB_DIR)/float_conv32_vfp.S.o	\
+	$(LIB_DIR)/float_common_m33.S.o	\
+	$(LIB_DIR)/float_sci_m33_vfp.S.o
 
 PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/pico_platform	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_platform_common		\
 	$(PICO_SDK_DIR)/src/common/hardware_claim		\
 	$(PICO_SDK_DIR)/src/common/pico_sync				\
 	$(PICO_SDK_DIR)/src/common/pico_time				\
@@ -642,6 +672,7 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_bootrom			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_crt0			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_clib_interface	\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_divider			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_double			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_int64_ops		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_float			\
@@ -658,7 +689,8 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_standard_link	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb		\
-	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2			\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_xip_cache	\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/portable/raspberrypi/rp2040		\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/device				\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/class/cdc			\
@@ -744,35 +776,37 @@ PICO_SDK_DEFINES= \
 	-DPICO_STDIO_DEFAULT_CRLF=0 \
 	-DPICO_DEFAULT_UART_BAUD_RATE=$(DEBUGGER_SPEED) \
 	-DPICO_HEAP_SIZE=0xC000 \
--DPICO_AUDIO_I2S_MONO_INPUT=1 \
--DPICO_MAX_SHARED_IRQ_HANDLERS=6u
+	-DPICO_AUDIO_I2S_MONO_INPUT=1 \
+	-DPICO_MAX_SHARED_IRQ_HANDLERS=6u
 
 PICO_C_DEFINES += \
 	$(PICO_SDK_DEFINES) \
 	-DCFG_TUSB_DEBUG=0 \
+	-DCFG_TUSB_MCU=OPT_MCU_RP2040	\
 	-DCFG_TUSB_OS=OPT_OS_PICO \
-	-DLIB_PICO_ATOMIC=1		\
+	-DLIB_BOOT_STAGE2_HEADERS=1	\
+	-DLIB_PICO_ATOMIC=1	\
 	-DLIB_PICO_BIT_OPS=1	\
 	-DLIB_PICO_BIT_OPS_PICO=1	\
--DLIB_PICO_CLIB_INTERFACE=1	\
--DLIB_PICO_CRT0=1	\
--DLIB_PICO_CXX_OPTIONS=1	\
+	-DLIB_PICO_CLIB_INTERFACE=1	\
+	-DLIB_PICO_CRT0=1	\
+	-DLIB_PICO_CXX_OPTIONS=1	\
 	-DLIB_PICO_DIVIDER=1	\
-	-DLIB_PICO_DIVIDER_HARDWARE=1	\
 	-DLIB_PICO_DOUBLE=1	\
 	-DLIB_PICO_DOUBLE_PICO=1	\
--DLIB_PICO_FIX_RP2040_USB_DEVICE_ENUMERATION=1	\
+	-DLIB_PICO_FIX_RP2040_USB_DEVICE_ENUMERATION=1	\
+	-DLIB_PICO_FLASH=1	\
 	-DLIB_PICO_FLOAT=1	\
 	-DLIB_PICO_FLOAT_PICO=1	\
 	-DLIB_PICO_INT64_OPS=1	\
-	-DLIB_PICO_INT64_OPS_PICO=1	\
+	-DLIB_PICO_MALLOC=1	\
 	-DLIB_PICO_MEM_OPS=1	\
-	-DLIB_PICO_MEM_OPS_PICO=1	\
--DLIB_NEWLIB_INTERFACE=1	\
+	-DLIB_PICO_NEWLIB_INTERFACE=1	\
 	-DLIB_PICO_PLATFORM=1	\
--DLIB_PICO_PLATFORM_COMPILER=1	\
--DLIB_PICO_PLATFORM_PANIC=1	\
--DLIB_PICO_PLATFORM_SECTIONS=1	\
+	-DLIB_PICO_PLATFORM_COMMON=1	\
+	-DLIB_PICO_PLATFORM_COMPILER=1	\
+	-DLIB_PICO_PLATFORM_PANIC=1	\
+	-DLIB_PICO_PLATFORM_SECTIONS=1	\
 	-DLIB_PICO_PRINTF=1	\
 	-DLIB_PICO_PRINTF_PICO=1	\
 	-DLIB_PICO_RUNTIME=1	\
@@ -788,13 +822,12 @@ PICO_C_DEFINES += \
 	-DLIB_PICO_SYNC_SEM=1	\
 	-DLIB_PICO_TIME=1	\
 	-DLIB_PICO_TIME_ADAPTER=1	\
-	-DLIB_PICO_UNIQUE_ID=1	\
 	-DLIB_PICO_UTIL=1	\
--DPICO_32BIT=1	\
+	-DPICO_32BIT=1	\
 	-DPICO_BUILD=1	\
 	-DPICO_COPY_TO_RAM=0	\
 	-DPICO_CXX_ENABLE_EXCEPTIONS=0	\
--DPICO_EXTRAS=1		\
+	-DPICO_EXTRAS=1	\
 	-DPICO_NO_FLASH=0	\
 	-DPICO_NO_HARDWARE=0	\
 	-DPICO_ON_DEVICE=1	\
@@ -802,34 +835,56 @@ PICO_C_DEFINES += \
 	-DPICO_TARGET_NAME=\"$(NAME)\"	\
 	-DPICO_USE_BLOCKED_RAM=0
 
-PICO_C_DEFINES += \
-	-DLIB_PICO_FIX_RP2040_USB_DEVICE_ENUMERATION=1	\
-	-DCFG_TUSB_MCU=OPT_MCU_RP2040
 
 ifeq ("$(PICO_SUBCLASS)","rp2350")
-
-# 	-DSPARKFUN_PROMICRO_RP2350
-
 PICO_C_DEFINES += \
-	-DPICO_BOARD=\"pico2\" \
+	-DPICO_RP2040_USB_DEVICE_UFRAME_FIX=1	\
+	-DPICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS=3000	\
+	-DPICO_PLATFORM=rp2350 \
 	-DPICO_RP2350=1 \
+	-DLIB_PICO_DIVIDER_COMPILER=1	\
+	-DLIB_PICO_FLOAT_PICO_VFP=1	\
+	-DLIB_PICO_INT64_OPS_COMPILER=1	\
+	-DLIB_PICO_MEM_OPS_COMPILER=1	\
 	-mcpu=cortex-m33	\
 	-march=armv8-m.main+fp+dsp	\
-	-mfloat-abi=softfp	\
+	-mfloat-abi=softfp \
 	-mcmse
 PICO_OBJ += $(PICO_OBJ_RP2350)
 LINKER_SCRIPT ?= $(MODDABLE)/build/devices/pico/config/xsproj_rp2350.ld
-PICO_BOARD_FILE ?= $(PICO_SDK_DIR)/src/boards/include/boards/pico2.h
 PICO_FAMILY = "rp2350-arm-s"
 UF2_VOLUME_NAME = RP2350
 PICO_PID = 0009
 
+ifeq ($(WIFI_GPIO),1)			# pico2_w
+PICO_C_DEFINES += \
+	-DCYW43_LWIP=1				\
+	-DLIB_PICO_CYW43_ARCH=1		\
+	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
+#	-DPICO_CYW43_ARCH_POLL=1
+PICO_OBJ += $(PICO_WIFI_OBJ)
+
+ifeq ("$(PICO_BOARD_FILE)","")
+	PICO_BOARD_FILE := "$(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h"
+endif
+
+else
+
+ifeq ("$(PICO_BOARD_FILE)","")
+	PICO_BOARD_FILE := "$(PICO_SDK_DIR)/src/boards/include/boards/pico2.h"
+endif
+
+endif
+
 else							# RP2040
 
 PICO_C_DEFINES += \
+	-DPICO_PLATFORM=rp2040 \
 	-DPICO_RP2040=1	\
-	-mcpu=cortex-m0plus	\
-	-march=armv6-m
+	-DLIB_PICO_DIVIDER_HARDWARE=1	\
+	-DLIB_PICO_INT64_OPS_PICO=1	\
+	-DLIB_PICO_MEM_OPS_PICO=1	\
+	-mcpu=cortex-m0plus
 PICO_OBJ += $(PICO_OBJ_RP2040)
 LINKER_SCRIPT ?= $(MODDABLE)/build/devices/pico/config/xsproj_rp2040.ld
 PICO_FAMILY = "rp2040"
@@ -838,48 +893,41 @@ ifeq ($(WIFI_GPIO),1)			# pico_w
 PICO_C_DEFINES += \
 	-DCYW43_LWIP=1				\
 	-DLIB_PICO_CYW43_ARCH=1		\
-	-DPICO_CYW43_ARCH_POLL=1
-	-DPICO_BOARD=\"pico_w\"		\
-	-DWIFI_GPIO=1
-PICO_BOARD_FILE ?= $(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h
+	-DPICO_CYW43_ARCH_THREADSAFE_BACKGROUND=1
 PICO_OBJ += $(PICO_WIFI_OBJ)
 
-else							# pico
+ifeq ("$(PICO_BOARD_FILE)","")
+	PICO_BOARD_FILE := "$(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h"
+endif
 
-PICO_C_DEFINES += \
-	-DPICO_BOARD=\"pico\"
-PICO_BOARD_FILE ?= $(PICO_SDK_DIR)/src/boards/include/boards/pico_w.h
+else
+
+ifeq ("$(PICO_BOARD_FILE)","")
+	PICO_BOARD_FILE := "$(PICO_SDK_DIR)/src/boards/include/boards/pico.h"
+endif
 
 endif
 endif
 
 
-BOARD_INCLUDE = -include $(PICO_BOARD_FILE)
-
+BOARD_INCLUDE =\
+	-include $(PLATFORM_DIR)/base/pico_glue.h  \
+	-include $(PICO_BOARD_FILE)  \
+	-include $(PLATFORM_DIR)/base/unglue_pico.h
 
 OBJECTS += \
 	$(PICO_OBJ)
 
 OTHER_STUFF += \
+	sdkVersionCheck \
 	env_vars	\
 	pio_headers
-
 
 C_FLAGS=\
 	-c	\
 	-std=gnu11 \
 	-mthumb	\
 	-ffunction-sections -fdata-sections
-
-
-ifeq ("$(PICO_SUBCLASS)","rp2040")
-PICO_C_DEFINES += \
-	-DPICO_RP2040=1	\
-	-DCFG_TUSB_MCU=OPT_MCU_RP2040
-else
-PICO_C_DEFINES += \
-	-DPICO_RP2350=1
-endif
 
 
 C_DEFINES = \
@@ -1023,6 +1071,10 @@ SRCS:
 	@echo $(ekoSrcDirs)
 	cat $(BIN_DIR)/xs_pico.dirs2
 
+sdkVersionCheck:
+	[[ '$(PICO_SDK_VERSION)' == '$(EXPECTED_PICO_SDK)' ]] && (echo "Found expected SDK $(EXPECTED_PICO_SDK)") || (echo "******\n*** Expected PICO SDK $(EXPECTED_PICO_SDK), found $(PICO_SDK_VERSION)\n******\n"; exit 1)
+
+
 $(BIN_DIR)/xs_pico.ind: $(FINAL_LINK_OBJ)
 	@echo "# creating xs_pico.ind"
 #	 @echo "# FINAL LINK OBJ: $(FINAL_LINK_OBJ)"
@@ -1110,7 +1162,7 @@ $(LIB_DIR)/cyw43_resource.o: $(CYW43_FW_PATH)
 		$@
 
 ##@@ force to 1 while porting
-#MAKEFLAGS_JOBS = --jobs 1
+# MAKEFLAGS_JOBS = --jobs 1
 MAKEFLAGS += $(MAKEFLAGS_JOBS)
 ifneq ($(VERBOSE),1)
 MAKEFLAGS += --silent

@@ -148,6 +148,8 @@ const items = [
 ];
 
 class ApplicationBehavior extends DebugBehavior {
+	onOpenFileList = [];
+
 	onCreate(application) {
 		global.model = this;
 		super.onCreate(application);
@@ -222,9 +224,8 @@ class ApplicationBehavior extends DebugBehavior {
 		if (!application.first) {
 			application.add(new MainContainer(this));
 			this.doOpenView();
-			
-			if (this.onOpenFileList)
-				application.defer("onOpenFileCallback");
+
+			application.defer("onOpenFileCallback");
 		}
 	}
 	onColorsChanged(application) {
@@ -296,23 +297,24 @@ class ApplicationBehavior extends DebugBehavior {
 	}
 	onOpenFile(application, path) {
 		if (this.onOpenFileList)
-			this.onOpenFileList.push(new String(path));
-		else
-			this.onOpenFileList = [new String(path)];
+			this.onOpenFileList.push(path);
+		else {
+			const info = system.getFileInfo(path);
+			if (info) {
+				if (info.directory)
+					this.doOpenDirectoryCallback(application, path);
+				else
+					this.doOpenFileCallback(application, path);
+			}
+		}
 	}
 	onOpenFileCallback(application) {
-		if (!application.first) return;
-
-		const paths = this.onOpenFileList ?? [];
+		const onOpenFileList = this.onOpenFileList;
 		delete this.onOpenFileList;
-		if (!paths.length) return;
-		for (let path of paths) {
-			let info = system.getFileInfo(path);
-			if (info?.directory)
-				this.doOpenDirectoryCallback(application, path);
-			else if (info)
-				this.doOpenFileCallback(application, path);
-		}
+		if (!onOpenFileList)
+			return;
+		for (const path of onOpenFileList)
+			this.onOpenFile(application, path);
 	}
 	onPathChanged(application, path) {
 		application.invalidateMenus();

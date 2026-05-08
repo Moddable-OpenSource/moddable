@@ -33,8 +33,8 @@
 #include "moddableAppState.h"
 
 #include "applib/app.h"
-#include "services/normal/filesystem/app_file.h"
-#include "services/normal/filesystem/pfs.h"
+#include "services/filesystem/app_file.h"
+#include "services/filesystem/pfs.h"
 
 /*
 	helpers

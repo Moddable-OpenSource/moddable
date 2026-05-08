@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -130,6 +130,7 @@ CFEGlyph CFEGetGlyphFromGlyphID(CommodettoFontEngine tf, uint16_t glyphID, uint8
 	glyph->sx = c_read16be(tf->bitmapLocationTable + glyphID);
 	glyph->w = c_read16be(tf->bitmapLocationTable + glyphID + 1) - glyph->sx;
 	glyph->h = tf->height;
+	glyph->substitute = C_NULL;
 
 	return glyph;
 }

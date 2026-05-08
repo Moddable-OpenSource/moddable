@@ -30,7 +30,7 @@ declare module "embedded:network/interface/wifi" {
 		SSID: string;
 		channel: number;
 		RSSI: number;
-		BSSID?: ArrayBuffer;
+		BSSID?: string;
 	}
 
 	export interface WiFiScanOptions {

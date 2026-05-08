@@ -1,0 +1,8 @@
+{
+	"include": [
+		"../ffi-lib/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

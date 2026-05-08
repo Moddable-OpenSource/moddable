@@ -56,9 +56,9 @@ void xs_time_delta(xsMachine *the)
 {
 	uint32_t start, end;
 	
-	start = (uint32_t)xsmcToInteger(xsArg(0));
+	start = xsmcToUnsigned(xsArg(0));
 	if (xsmcArgc > 1)
-		end = (uint32_t)xsmcToInteger(xsArg(1));
+		end = xsmcToUnsigned(xsArg(1));
 	else
 		end = modMilliseconds();
 	xsmcSetInteger(xsResult, end - start);

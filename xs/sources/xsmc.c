@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,10 +37,6 @@
 
 #include "xsAll.h"
 #include <stdio.h>
-
-#ifndef ICACHE_XS6STRING_ATTR
-	#define ICACHE_XS6STRING_ATTR
-#endif
 
 #define fxPop() (*(the->stack++))
 #define fxPush(_SLOT) (*(--the->stack) = (_SLOT))
@@ -223,10 +219,9 @@ txInteger fxIncrementalVars(txMachine* the, txInteger theCount)
 	txSlot* aStack = the->scope;
 	txInteger aVar;
 
-	if (aStack - aStack->value.integer != the->stack) {
-		static const char msg[] ICACHE_XS6STRING_ATTR = "C: xsVars: too late";
-		mxSyntaxError((char *)msg);
-	}
+	if (aStack - aStack->value.integer != the->stack)
+		mxSyntaxError("C: xsVars: too late");
+
 	mxOverflow(theCount);
 	aVar = aStack->value.integer;
 	aStack->value.integer += theCount;
@@ -318,15 +313,8 @@ txInteger _xsmcGetBuffer(txMachine *the, txSlot *slot, void **data, txUnsigned *
 			*data = (uint8_t *)slot->value.host.data;
 			*count = bufferInfo->value.bufferInfo.length;
 		}
-		else {
-			// for compatibility. should throw eventually.
-			txSlot tmp, ref;
-			fxReport(the, "# Use xsmcSetHostBuffer instead of xsmcSetHostData\n");
-			fxReference(the, &ref, instance);
-			_xsGet(the, &tmp, &ref, _byteLength);
-			*data = (uint8_t *)slot->value.host.data;
-			*count = (txUnsigned)fxToInteger(the, &tmp);
-		}
+		else
+			mxTypeError("not host buffer");		// Use xsmcSetHostBuffer instead of xsmcSetHostData
 		return xsBufferNonrelocatable;
 	}
 

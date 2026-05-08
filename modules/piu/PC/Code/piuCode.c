@@ -1013,15 +1013,15 @@ void PiuCode_colorize(xsMachine *the)
 void PiuCode_find(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
-	uint32_t argc = xsToInteger(xsArgc);
+	uint32_t argc = xsToUnsigned(xsArgc);
 	xsStringValue pattern = NULL;
 	xsBooleanValue caseless = 0;
 	PiuTextBuffer* results = (*self)->results;
 	PiuCodeResult result;
-	if (argc > 0)
-		pattern = xsToString(xsArg(0));
 	if (argc > 1)
 		caseless = xsToBoolean(xsArg(1));
+	if (argc > 0)
+		pattern = xsToString(xsArg(0));
 	if ((*self)->code || (*self)->data) {
 		fxDeleteRegExp(NULL, (*self)->code, (*self)->data);
 		(*self)->code = NULL;
@@ -1055,7 +1055,7 @@ void PiuCode_findAgain(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
 	PiuTextBuffer* results = (*self)->results;
-	uint32_t argc = xsToInteger(xsArgc);
+	uint32_t argc = xsToUnsigned(xsArgc);
 	xsIntegerValue direction = 1;
 	int32_t count, index;
 	PiuCodeResult result, wrap;
@@ -1139,7 +1139,7 @@ bail:
 void PiuCode_findLineBreak(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
-	uint32_t argc = xsToInteger(xsArgc);
+	uint32_t argc = xsToUnsigned(xsArgc);
 	int32_t result = xsToInteger(xsArg(0));
 	int32_t direction = (argc > 1) ? (xsToBoolean(xsArg(1)) ? +1 : -1) : + 1;
 	if ((direction < 0) && (result == 0))
@@ -1179,7 +1179,7 @@ void PiuCode_findLineBreak(xsMachine *the)
 void PiuCode_findWordBreak(xsMachine *the)
 {
 	PiuCode* self = PIU(Code, xsThis);
-	uint32_t argc = xsToInteger(xsArgc);
+	uint32_t argc = xsToUnsigned(xsArgc);
 	int32_t offset = xsToInteger(xsArg(0));
 	int32_t direction = (argc > 1) ? (xsToBoolean(xsArg(1)) ? +1 : -1) : +1;
 	xsResult = xsInteger(PiuCodeFindWordBreak(self, offset, direction));

@@ -1,7 +1,10 @@
 {
 	"build": {
-		"PICO_EXTRAS_DIR": "$(HOME)/pico/pico-extras",
-		"PICO_EXAMPLES_DIR": "$(HOME)/pico/pico-examples"
+		"EXPECTED_PICO_SDK": "2.2.0",
+		"PICO_ROOT ?=": "$(HOME)/pico",
+		"PICO_SDK_DIR ?=": "$(PICO_ROOT/pico-sdk",
+		"PICO_EXTRAS_DIR ?=": "$(PICO_ROOT)/pico-extras",
+		"PICO_EXAMPLES_DIR ?=": "$(PICO_ROOT)/pico-examples"
 	},
 	"include": [
 		"$(MODULES)/files/preference/manifest.json"
@@ -32,7 +35,7 @@
 	],
 	"platforms": {
 		"pico/*": {
-			"include": "$(BUILD)/devices/pico/targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)"
 		}
 	}
 }

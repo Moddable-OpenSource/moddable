@@ -614,7 +614,7 @@ void xs_ble_server_set_security_parameters(xsMachine *the)
 void xs_ble_server_passkey_input(xsMachine *the)
 {
 //	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint32_t digits = xsmcToInteger(xsArg(1));
+	uint32_t digits = xsmcToUnsigned(xsArg(1));
 	char passkey[BLE_GAP_PASSKEY_LEN + 1];
 	
 	itoa(digits, passkey, 10);

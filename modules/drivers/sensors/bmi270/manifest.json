@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270": "$(MODDABLE)/modules/drivers/sensors/bmi270/bmi270"
+	},
+	"preload": [
+		"embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270"
+	]
+}
+

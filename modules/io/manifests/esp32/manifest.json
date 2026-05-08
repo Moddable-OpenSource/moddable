@@ -47,7 +47,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
@@ -64,7 +64,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
@@ -81,7 +81,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
@@ -98,7 +98,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",
@@ -112,12 +112,12 @@
 		},
 		"esp32/esp32h2": {
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
 			}
 		},
 		"esp32/esp32h2_cdc": {
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider"
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
 			}
 		},
 		"esp32/*": {
@@ -125,7 +125,7 @@
 				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
-				"embedded:provider/builtin": "$(BUILD)/devices/$(PLATFORM)/targets/$(SUBPLATFORM)/host/provider",
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider",
 
 				"embedded:io/socket/tcp": "$(IO)/socket/lwip/tcp",
 				"embedded:io/socket/udp": "$(IO)/socket/lwip/udp",

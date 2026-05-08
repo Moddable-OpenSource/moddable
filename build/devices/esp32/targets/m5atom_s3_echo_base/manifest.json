@@ -8,6 +8,7 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/pins/smbus/manifest.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
@@ -20,7 +21,6 @@
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
-			"$(MODULES)/drivers/mpu6886/*",
 			"../m5stack_fire/m5button"
 		]
 	},
@@ -28,7 +28,6 @@
 		"pins/audioout",
 		"audioin",
 		"setup/target",
-		"mpu6886",
 		"m5button"
 	],
 	"config": {

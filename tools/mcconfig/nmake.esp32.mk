@@ -221,6 +221,7 @@ DRIVER_DIRS = \
  	-I$(IDF_PATH)\components\esp_driver_sdmmc\include \
  	-I$(IDF_PATH)\components\esp_driver_spi\include \
  	-I$(IDF_PATH)\components\esp_hal_gpspi\include \
+ 	-I$(IDF_PATH)\components\esp_hal_timg\include \
  	-I$(IDF_PATH)\components\esp_driver_uart\include \
  	-I$(IDF_PATH)\components\esp_hal_uart\include \
  	-I$(IDF_PATH)\components\esp_hal_uart\$(ESP32_SUBCLASS)\include

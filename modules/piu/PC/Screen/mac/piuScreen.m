@@ -47,6 +47,7 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 	void* library;
 	int archiveFile;
 	int archiveSize;
+	void* ffiLibrary;
 	txScreen* screen;
     NSTimeInterval time;
 	NSTimer *timer;
@@ -55,11 +56,12 @@ typedef struct PiuScreenMessageStruct  PiuScreenMessageRecord, *PiuScreenMessage
 @property (assign) void* library;
 @property (assign) int archiveFile;
 @property (assign) int archiveSize;
+@property (assign) void* ffiLibrary;
 @property (assign) txScreen *screen;
 @property (assign) NSTimeInterval time;
 @property (assign) NSTimer *timer;
 - (void)abortMachine:(NSObject *)object;
-- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath;
+- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath and:(NSString*)archivePath;
 - (void)quitMachine;
 @end
 
@@ -102,10 +104,13 @@ enum {
 @synthesize library;
 @synthesize archiveFile;
 @synthesize archiveSize;
+@synthesize ffiLibrary;
 @synthesize screen;
 @synthesize time;
 @synthesize timer;
 - (void)dealloc {
+	if (ffiLibrary)
+    	dlclose(ffiLibrary);
 	if (library)
     	dlclose(library);
     [super dealloc];
@@ -170,7 +175,7 @@ enum {
 		}
 	}
 }
-- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath {
+- (void)launchMachine:(NSString*)libraryPath with:(NSString*)archivePath and:(NSString*)ffiPath {
 	NSString *name = nil;
 	NSString *info = nil;
 	txScreenLaunchProc launch;
@@ -203,10 +208,28 @@ enum {
 			info = [NSString stringWithFormat:@"%s", strerror(errno)];
 			goto bail;
 		}
+		if (ffiPath) {
+			self.ffiLibrary = dlopen([ffiPath UTF8String], RTLD_NOW | RTLD_LOCAL);
+			if (!self.ffiLibrary) {
+				name = ffiPath;
+				info = [NSString stringWithFormat:@"%s", dlerror()];
+				goto bail;
+			}
+			self.screen->buildFFI = (txScreenBuildFFIProc)dlsym(self.ffiLibrary, "fxBuildFFI");
+			if (!self.screen->buildFFI) {
+				name = ffiPath;
+				info = [NSString stringWithFormat:@"%s", dlerror()];
+				goto bail;
+			}
+		}
 	}
 	(*launch)(self.screen);
 	return;
 bail:
+	if (self.ffiLibrary) {
+		dlclose(self.ffiLibrary);
+		self.ffiLibrary = nil;
+	}
 	if (self.screen->archive) {
 		munmap(self.screen->archive, self.archiveSize);
 		self.screen->archive = NULL;
@@ -292,6 +315,10 @@ bail:
 - (void)quitMachine {
 	if (self.screen->quit) 
 		(*self.screen->quit)(self.screen);
+	if (self.ffiLibrary) {
+    	dlclose(self.ffiLibrary);
+    	self.ffiLibrary = nil;
+    }
 	if (self.screen->archive) {
 		munmap(self.screen->archive, self.archiveSize);
 		close(self.archiveFile);
@@ -576,8 +603,10 @@ void PiuScreen_launch(xsMachine* the)
 	PiuScreen* self = PIU(Screen, xsThis);
 	xsStringValue libraryPath = xsToString(xsArg(0));
 	xsStringValue archivePath = (xsToInteger(xsArgc) > 1) ? xsToString(xsArg(1)) : NULL;
+	xsStringValue ffiPath = (xsToInteger(xsArgc) > 2) ? xsToString(xsArg(2)) : NULL;
     [(*self)->nsScreenView launchMachine:[NSString stringWithUTF8String:libraryPath] 
-    	with:archivePath ? [NSString stringWithUTF8String:archivePath] : NULL];
+    	with:archivePath ? [NSString stringWithUTF8String:archivePath] : NULL 
+    	and:ffiPath ? [NSString stringWithUTF8String:ffiPath] : NULL];
 }
 	
 void PiuScreen_postMessage(xsMachine* the)

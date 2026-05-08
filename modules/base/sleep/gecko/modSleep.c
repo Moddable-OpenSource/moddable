@@ -33,7 +33,7 @@ int setMaxSleep(int sleepLevel);
 
 void xs_get_persistent_value(xsMachine *the) {
 #if MODDEF_SLEEP_RETENTION_MEMORY
-	uint32_t reg = xsToInteger(xsArg(0));
+	uint32_t reg = xsToUnsigned(xsArg(0));
 	uint32_t val;
 	val = geckoGetPersistentValue(reg);
 	xsResult = xsInteger(val);
@@ -44,8 +44,8 @@ void xs_get_persistent_value(xsMachine *the) {
 
 void xs_set_persistent_value(xsMachine *the) {
 #if MODDEF_SLEEP_RETENTION_MEMORY
-	uint32_t reg = xsToInteger(xsArg(0));
-	uint32_t val = xsToInteger(xsArg(1));
+	uint32_t reg = xsToUnsigned(xsArg(0));
+	uint32_t val = xsToUnsigned(xsArg(1));
 	geckoSetPersistentValue(reg, val);
 #else
 	xsUnknownError("retention values off");
@@ -53,7 +53,7 @@ void xs_set_persistent_value(xsMachine *the) {
 }
 
 void xs_sleep_enter_em4(xsMachine *the) {
-	uint32_t delay = xsToInteger(xsArg(0));
+	uint32_t delay = xsToUnsigned(xsArg(0));
 	geckoSleepEM4(delay);
 }
 
@@ -98,6 +98,6 @@ void xs_sleep_get_idle_sleep_level(xsMachine *the) {
 }
 
 void xs_sleep_set_idle_sleep_level(xsMachine *the) {
-	uint32_t level = xsToInteger(xsArg(0));
+	uint32_t level = xsToUnsigned(xsArg(0));
 	xsResult = xsInteger(setMaxSleep(level));
 }

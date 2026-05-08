@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -1043,6 +1043,8 @@ export default class extends TOOL {
 	}
 	includeManifest(include, from, directory) {
 		this.currentDirectory = directory;
+		if ("string" !== typeof include)
+			return;
 		let path = this.resolveFilePath(this.resolveVariable(include));
 		if (!path)
 			throw new Error("'" + include + "': manifest not found!");
@@ -1081,21 +1083,29 @@ export default class extends TOOL {
 			for (let name in properties) {
 				let value = properties[name];
 				if (typeof value == "string") {
-					const dotSlash = "." + this.slash;
-					value = this.resolveVariable(value);
-					if (value.startsWith(dotSlash)) {
-						const path = this.resolveDirectoryPath(dotSlash);
-						if (path) {
-							if (dotSlash == value)
-								value = path;
-							else
-								value = path + value.slice(1);
+					let shellValue;
+					if (name.endsWith(" ?=") && !(name in this.environment)) {
+						name = name.slice(0, -3);;
+
+						shellValue = this.getenv(name);
+						if (undefined !== shellValue)
+							value = shellValue;
+					}
+					if (undefined === shellValue) {
+						const dotSlash = "." + this.slash;
+						value = this.resolveVariable(value);
+						if (value.startsWith(dotSlash)) {
+							const path = this.resolveDirectoryPath(dotSlash);
+							if (path) {
+								if (dotSlash == value)
+									value = path;
+								else
+									value = path + value.slice(1);
+							}
 						}
 					}
-					this.environment[name] = value;
 				}
-				else
-					this.environment[name] = value;
+				this.environment[name] = value;
 			}
 		}
 	}

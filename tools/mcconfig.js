@@ -18,8 +18,9 @@
  *
  */
 
-import { MakeFile as MAKEFILE, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
 import { FILE } from "tool";
+import { MakeFile as MAKEFILE, TSConfigFile, PrerequisiteFile, FormatFile, RotationFile, Tool } from "mcmanifest";
+import FFIGlue from "ffi";
 
 var formatStrings = {
 	gray16: "Gray16",
@@ -1393,6 +1394,11 @@ export default class extends Tool {
 			if (this.platform == "zephyr") {
 				file = new ZephyrConfigFile(this.tmpPath + this.slash + "zephyr.conf", this);
 				file.generate(this);
+			}
+			
+			if (this.manifest.ffi) {
+				const glue = new FFIGlue(this);
+				glue.mcConfig(this, this.manifest.ffi);
 			}
 		}
 		for (var folder of this.dataFolders)

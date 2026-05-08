@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -253,7 +253,14 @@ typedef txU4 xsUnsignedValue;
 	(the->scratch = (_SLOT), \
 	fxToInteger(the, &(the->scratch)))
 
-#define xsNumber(_VALUE) \
+#define xsUnsigned(_VALUE) \
+	(fxUnsigned(the, &the->scratch, _VALUE), \
+	the->scratch)
+#define xsToUnsigned(_SLOT) \
+	(the->scratch = (_SLOT), \
+	fxToUnsigned(the, &(the->scratch)))
+
+	#define xsNumber(_VALUE) \
 	(fxNumber(the, &the->scratch, _VALUE), \
 	the->scratch)
 #define xsToNumber(_SLOT) \

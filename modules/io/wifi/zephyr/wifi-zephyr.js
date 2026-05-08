@@ -29,6 +29,10 @@ class WiFi extends Native("xs_wifi_destructor"){
 	get connection() { return native("xs_wifi_connection_get").call(this); }
 	get address() { return native("xs_wifi_address_get").call(this); }
 	get MAC() { return native("xs_wifi_MAC_get").call(this); }
+	get SSID() { return native("xs_wifi_SSID_get").call(this); }
+	get BSSID() { return native("xs_wifi_BSSID_get").call(this); }
+	get RSSI() { return native("xs_wifi_RSSI_get").call(this); }
+	get channel() { return native("xs_wifi_channel_get").call(this); }
 };
 
 export default WiFi;

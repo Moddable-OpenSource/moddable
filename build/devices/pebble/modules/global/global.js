@@ -35,12 +35,17 @@ const events = Object.freeze([
 		"daychange",
 		// add non-time events after here
 		"connected",
-		"resize"
+		"resize",
+		"willFocus",
+		"didFocus",
+		"wakeup",
 ]);
 
 const offset = 50;		// Pebble Timer callbacks can be early... that's really bad for a watchface. So, we schedule them late by this number of milliseconds to ensure they fall in the next interval (usually second)
 function connected() { return native("xs_global_connected").call(this); };
 function obstructed() { return native("xs_global_obstructed").call(this); };
+function focus() { return native("xs_global_focus").call(this); };
+function wakeup() { return native("xs_global_wakeup").call(this); };
 
 export class Pebble {
 	#events = new Map;
@@ -62,6 +67,18 @@ export class Pebble {
 			case 5:		// "resize":
 				if (!e.length && !obstructed(true))
 					return;			// app doesn't support obstruct notification (not a watchface)
+				break;
+
+			case 6:		// "willFocus":
+				focus(1);
+				break;
+
+			case 7:		// "didFocus":
+				focus(2);
+				break;
+
+			case 8:		// "wakeup":
+				wakeup(true);
 				break;
 
 			default:
@@ -123,6 +140,18 @@ export class Pebble {
 				obstructed(false);
 				break;
 
+			case "willFocus":		// "willFocus":
+				focus(-1);
+				break;
+
+			case "didFocus":		// "didFocus":
+				focus(-2);
+				break;
+
+			case "wakeup":
+				wakeup(false);
+				break;
+
 			default:
 				this.#schedule();		// only needed for time events
 				break;
@@ -160,12 +189,19 @@ export class Pebble {
 		Timer.schedule(id, offset + interval - (Date.now() % interval), interval);
 	}
 
+	light(enable) { return native("xs_global_light").call(this, enable); }
+
 	get connected() {
 		return connected();
 	}
 	get hour12() {
 		return native("xs_global_get_hour12").call(this);
 	}
+	get model() {return native("xs_global_model_get").call(this);}
+	get firmwareVersion() {return native("xs_global_firmwareVersion_get").call(this);}
+	get launch() {return native("xs_global_launch_get").call(this);}
+	get wake() {return native("xs_global_wake_get").call(this);}
+
 }
 
 export default Pebble;

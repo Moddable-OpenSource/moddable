@@ -250,11 +250,11 @@ void xs_advertisement_get(xsMachine *the)
 {
 	uint8_t *data;
 	xsUnsignedValue count;
-	xsmcGetBufferReadable(xsThis, (void **)&data, &count);
 	int type = xsmcToInteger(xsArg(0));
 	if ((type < 0) || (type > 255))
 		xsUnknownError("invalid");
 
+	xsmcGetBufferReadable(xsThis, (void **)&data, &count);
 	for (int offset = 0; offset < count - 3; offset += 1 + data[offset]) {
 		int size = data[offset];
 		if ((size < 2) || (size > (count - offset)))
@@ -1308,13 +1308,13 @@ void xs_gattclient_replyToPasskey(xsMachine *the)
 	if (0 == c_strcmp(action, "input")) {
 		pkey.action = BLE_SM_IOACT_INPUT;
 		if (xsmcArgc > 1)
-			pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+			pkey.passkey = xsmcToUnsigned(xsArg(1));
 		else
 			pkey.passkey = 0;
 	}
 	else if (0 == c_strcmp(action, "display")) {
 		pkey.action = BLE_SM_IOACT_DISP;
-		pkey.passkey = (uint32_t)xsmcToNumber(xsArg(1));
+		pkey.passkey = xsmcToUnsigned(xsArg(1));
 	}
 	else if (0 == c_strcmp(action, "compareNumber")) {
 		pkey.action = BLE_SM_IOACT_NUMCMP;

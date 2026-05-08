@@ -74,6 +74,17 @@ const device = {
         result.configure({ length: 1 })
         return result
       }
+    },
+    IMU: class {
+      constructor(options) {
+        return new IMU({
+          ...options,
+          sensor: {
+            ...device.I2C.default,
+            io: device.io.SMBus
+          }
+        })
+      }
     }
   },
   peripheral: {
@@ -95,17 +106,6 @@ const device = {
           clock: {
             ...device.I2C.default,
             io: SMBus
-          }
-        })
-      }
-    },
-    IMU: class {
-      constructor(options) {
-        return new IMU({
-          ...options,
-          sensor: {
-            ...device.I2C.default,
-            io: device.io.SMBus
           }
         })
       }

@@ -296,8 +296,8 @@ void xs_ble_client_start_scanning(xsMachine *the)
 {
 	uint8_t active = xsmcToBoolean(xsArg(0));
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
-	uint32_t interval = xsmcToInteger(xsArg(2));
-	uint32_t window = xsmcToInteger(xsArg(3));
+	uint32_t interval = xsmcToUnsigned(xsArg(2));
+	uint32_t window = xsmcToUnsigned(xsArg(3));
 	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	uint32_t result;
 	
@@ -457,7 +457,7 @@ void xs_gap_connection_initialize(xsMachine *the)
 	
 void xs_gap_connection_disconnect(xsMachine *the)
 {
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	modBLEConnection connection = modBLEConnectionFindByConnectionID(conn_id);
 	qapi_BLE_BD_ADDR_t remote_addr;
 	if (!connection)
@@ -484,7 +484,7 @@ void xs_gap_connection_exchange_mtu(xsMachine *the)
 
 void xs_gatt_client_discover_primary_services(xsMachine *the)
 {
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	uint16_t argc = xsmcArgc;
 	modBLEClientConnection connection = (modBLEClientConnection)modBLEConnectionFindByConnectionID(conn_id);
 	if (!connection) return;
@@ -505,7 +505,7 @@ void xs_gatt_client_discover_primary_services(xsMachine *the)
 void xs_gatt_service_discover_characteristics(xsMachine *the)
 {
 	uint16_t argc = xsmcArgc;
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	uint16_t start = xsmcToInteger(xsArg(1));
 	uint16_t end = xsmcToInteger(xsArg(2));
 	CharacteristicDiscoveryRequest *request;
@@ -535,7 +535,7 @@ void xs_gatt_service_discover_characteristics(xsMachine *the)
 
 void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *the)
 {
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 	DescriptorDiscoveryRequest *request;
 	qapi_BLE_GATT_UUID_t uuid;
@@ -563,7 +563,7 @@ void xs_gatt_characteristic_discover_all_characteristic_descriptors(xsMachine *t
 
 void xs_gatt_characteristic_read_value(xsMachine *the)
 {
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 #if 0
 	uint16_t argc = xsmcArgc;
@@ -582,7 +582,7 @@ void xs_gatt_characteristic_read_value(xsMachine *the)
 
 void xs_gatt_descriptor_read_value(xsMachine *the)
 {
-	uint32_t conn_id = xsmcToInteger(xsArg(0));
+	uint32_t conn_id = xsmcToUnsigned(xsArg(0));
 	uint16_t handle = xsmcToInteger(xsArg(1));
 #if 0
 	uint16_t argc = xsmcArgc;

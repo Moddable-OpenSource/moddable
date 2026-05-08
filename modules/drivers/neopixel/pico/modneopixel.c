@@ -217,7 +217,7 @@ void xs_neopixel_setPixel(xsMachine *the)
 {
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
 	int index = xsmcToInteger(xsArg(0));
-	uint32_t color = xsmcToInteger(xsArg(1));
+	uint32_t color = xsmcToUnsigned(xsArg(1));
 
 	if ((index >= np->length) || (index < 0))
 		xsRangeError("invalid");
@@ -229,7 +229,7 @@ void xs_neopixel_fill(xsMachine *the)
 {
 	int argc = xsmcArgc;
 	xsNeoPixel np = xsmcGetHostDataNeoPixel(xsThis);
-	uint32_t color = xsmcToInteger(xsArg(0));
+	uint32_t color = xsmcToUnsigned(xsArg(0));
 	int index = 0, count = np->length;
 
 	if (argc > 1) {

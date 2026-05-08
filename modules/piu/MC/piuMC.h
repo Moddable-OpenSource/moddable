@@ -66,7 +66,8 @@ struct PiuFontStruct {
 	uint16_t dx; \
 	uint16_t dy; \
 	PocoBitmap bits; \
-	PocoBitmap mask
+	PocoBitmap mask; \
+	const char *substitute
 
 struct PiuGlyphStruct {
 	PiuGlyphPart;
@@ -77,6 +78,7 @@ extern void PiuFontListLockCache(xsMachine* the);
 extern void PiuFontListUnlockCache(xsMachine* the);
 
 extern CommodettoFontEngine gCFE;
+extern int16_t gCFEUseCount;
 
 // PiuTexture.c
 

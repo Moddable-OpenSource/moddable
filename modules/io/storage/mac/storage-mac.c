@@ -1,4 +1,24 @@
-#include "xsmc.h"
+/*
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
+ *
+ *   This file is part of the Moddable SDK Runtime.
+ *
+ *   The Moddable SDK Runtime is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Moddable SDK Runtime is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+ #include "xsmc.h"
 #include "mc.xs.h"
 #include "mc.defines.h"
 #include "builtinCommon.h"
@@ -86,7 +106,7 @@ void xs_storage_domain_read(xsMachine *the)
 				case kIOFormatUint32: {
 					uint32_t number = 0;
 					CFNumberGetValue(value, kCFNumberSInt32Type, &number);
-					fxUnsigned(the, &xsResult, number);
+					xsResult = xsUnsigned(number);
 				} break;
 				case kIOFormatUint64: {
 					uint64_t number = 0;
@@ -171,7 +191,7 @@ void xs_storage_domain_write(xsMachine *the)
 			value = CFNumberCreate(NULL, kCFNumberSInt16Type, &number);
 		} break;
 		case kIOFormatUint32: {
-			uint32_t number = (uint32_t)fxToUnsigned(the, &xsArg(1));
+			uint32_t number = (uint32_t)xsmcToUnsigned(xsArg(1));
 			value = CFNumberCreate(NULL, kCFNumberSInt32Type, &number);
 		} break;
 		case kIOFormatUint64: {

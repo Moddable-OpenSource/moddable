@@ -34,7 +34,7 @@
 	#define builtinCriticalSectionBegin() portENTER_CRITICAL(&gCommonCriticalMux)
 	#define builtinCriticalSectionEnd() portEXIT_CRITICAL(&gCommonCriticalMux)
 
-	#if ESP32 && (ESP_IDF_VERSION_MAJOR >= 5) && (ESP_IDF_VERSION_MINOR >= 1)
+	#if ESP32
 		// IDF invokes abort() when creating socket if no network configured
 		#define CHECK_NETWORK_SAFE() \
 			if (!esp_netif_get_default_netif()) { \
@@ -129,6 +129,8 @@ xsSlot *builtinGetCallback(xsMachine *the, xsIdentifier id);
 
 #if defined(PICO_BUILD) || defined(__ZEPHYR__)
 	void builtinInitIO(void);
+#else
+	#define builtinInitIO()
 #endif
 
 #endif

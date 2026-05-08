@@ -519,7 +519,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			this.write(" -s ");
 			this.write(sdkconfigFile);
 			if (tool.windows) {
-				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.environment.PLATFORMPATH + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
+				let idfBuildDir = tool.outputPath + "\\tmp\\" + tool.platform + "\\" + tool.subplatform + "\\" + (tool.debug ? "debug\\idf" : "release\\idf");
 				let idfBuildDirMinGW = idfBuildDir.replace(/\\/g, "/");
 				tool.setenv("IDF_BUILD_DIR_MINGW", idfBuildDirMinGW);
 				if (sdkconfigFile  !== undefined){
@@ -2484,21 +2484,43 @@ export class Tool extends TOOL {
 				if (this.platform)
 					throw new Error("-p '" + name + "': too many platforms!");
 				name = name.toLowerCase();
-				let parts = name.split("/");
+
+				const slashIndex = name.indexOf("/"), colonIndex = name.indexOf(":");
+				const splitOn = ((colonIndex > 0) && ((slashIndex < 0) || (colonIndex < slashIndex))) ? ":" : "/";
+				const parts = name.split(splitOn);
 				if ("esp8266" === parts[0])
 					parts[0] = "esp";
 				else if ((parts[0] == "sim") || (parts[0] == "simulator"))
 					parts[0] = this.currentPlatform;
 				this.platform = parts[0];
 				if (parts[1]) {
-					this.subplatform = parts[1];
-					this.environment.SUBPLATFORM = this.subplatform;
-					this.fullplatform = this.platform + "/" + this.subplatform;
-					this.environment.PLATFORMPATH = this.platform + this.slash + this.subplatform;
+					if ("/" === splitOn) {
+						this.subplatform = parts[1];
+						this.environment.SUBPLATFORM = this.subplatform;
+						this.environment.SUBPLATFORMDIRECTORY = this.buildPath + this.slash + "devices" + this.slash + this.platform + this.slash + "targets" + this.slash + this.subplatform;
+						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
+						this.fullplatform = this.platform + "/" + this.subplatform;
+					}
+					else if (":" == splitOn) {
+						let dir = parts[1];
+						if (dir.startsWith("~" + this.slash) && this.getenv("HOME"))
+							dir = dir.replace("~", this.getenv("HOME"));
+						this.environment.SUBPLATFORMDIRECTORY = this.resolveDirectoryPath(dir);
+						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
+						try {
+							const manifest = JSON.parse(this.readFileString(this.environment.SUBPLATFORMMANIFEST));
+							this.subplatform = manifest.build?.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
+						}
+						catch {
+							throw new Error("invalid subplatform manfest path: " + parts[1]);
+						}
+
+						this.environment.SUBPLATFORM = this.subplatform;
+						this.fullplatform = this.platform + "/" + this.subplatform;
+					}
 				}
 				else {
 					this.fullplatform = this.platform;
-					this.environment.PLATFORMPATH = this.platform;
 				}
 				this.environment.PLATFORM = this.platform;
 				this.environment.FULLPLATFORM = this.fullplatform;
@@ -2584,7 +2606,6 @@ export class Tool extends TOOL {
 			this.fullplatform = this.platform = this.currentPlatform;
 			this.environment.PLATFORM = this.platform;
 			this.environment.FULLPLATFORM = this.platform;
-			this.environment.PLATFORMPATH = this.platform;
 		}
 		path = this.environment.MODDABLE + this.slash + "modules" + this.slash + "network" + this.slash + "ble" + this.slash;
 		if ("esp32" == this.platform) {
@@ -2965,6 +2986,21 @@ export class Tool extends TOOL {
 
 			all.typescript.compiler = platform.typescript.compiler ?? all.typescript.compiler;
 		}
+		if (platform.ffi) {
+			if (!all.ffi) {
+				all.ffi = {
+					sources: [],
+					functions: {},
+				};
+			}
+			let property = platform.ffi.sources ?? [];
+			if (property instanceof Array)
+				property = property.map(item => this.resolveSource(item));
+			else if (typeof property == "string")
+				property = this.resolveSource(property);
+			all.ffi.sources = all.ffi.sources.concat(property);
+			this.mergeProperties(all.ffi.functions, platform.ffi.functions);
+		}
 		return;
 	}
 	mergeProperties(targets, sources, exclude) {
@@ -2986,7 +3022,7 @@ export class Tool extends TOOL {
 		if (properties) {
 			for (let name in properties) {
 				let value = properties[name];
-				if (name == "ZEPHYR_BOARD")
+				if (name == "ZEPHYR_BOARD")	
 					this.environment[name] = value;
 				else if (name == "LIBRARIES" || name == "C_FLAGS") {
 					if (undefined == this.environment[name])
@@ -2996,15 +3032,25 @@ export class Tool extends TOOL {
 				}
 				else {
 					if (typeof value == "string") {
-						const dotSlash = "." + this.slash;
-						value = this.resolveVariable(value);
-						if (value.startsWith(dotSlash)) {
-							const path = this.resolveDirectoryPath(dotSlash);
-							if (path) {
-								if (dotSlash == value)
-									value = path;
-								else
-									value = path + value.slice(1);
+						let shellValue;
+						if (name.endsWith(" ?=") && !(name in this.environment)) {
+							name = name.slice(0, -3);;
+
+							shellValue = this.getenv(name);
+							if (undefined !== shellValue)
+								value = shellValue;
+						}
+						if (undefined === shellValue) {
+							const dotSlash = "." + this.slash;
+							value = this.resolveVariable(value);
+							if (value.startsWith(dotSlash)) {
+								const path = this.resolveDirectoryPath(dotSlash);
+								if (path) {
+									if (dotSlash == value)
+										value = path;
+									else
+										value = path + value.slice(1);
+								}
 							}
 						}
 					}

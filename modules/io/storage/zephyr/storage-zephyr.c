@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -36,7 +36,7 @@ struct xsDirectoryRecord {
 	uint8_t		format;
 	uint8_t		readOnly;
 	uint8_t		directoryLength;
-	char			path[];
+	char		path[];
 };
 typedef struct xsDirectoryRecord xsDirectoryRecord;
 typedef struct xsDirectoryRecord *xsDirectory;
@@ -197,26 +197,25 @@ void xs_directorystorage_open(xsMachine *the)
 
 void xs_directorystorage_delete(xsMachine *the)
 {
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
+	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
+	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	if (d->readOnly)
 		xsUnknownError("read-only");
 
-	xsmcToStringBuffer(xsArg(0), d->path + d->directoryLength, 64);
-	d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
+	c_strcpy(d->path + d->directoryLength, key);
 
 	throwIf(settings_delete(d->path));
-
-//@@	throwIf(settings_commit_subtree(d->path));
 }
 
 void xs_directorystorage_read(xsMachine *the)
 {
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
-	uint8_t format = d->format;
+	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
-	xsmcToStringBuffer(xsArg(0), d->path + d->directoryLength, 64);
-	d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
+	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
+	c_strcpy(d->path + d->directoryLength, key);
 
 	ssize_t valueLength = settings_get_val_len(d->path);
 	throwIf(valueLength < 0);
@@ -232,10 +231,10 @@ void xs_directorystorage_read(xsMachine *the)
 
 		valueLength -= 1;
 
-		if (value[0] != format)
+		if (value[0] != d->format)
 			xsTypeError("mismatch");
 
-		switch (format) {
+		switch (d->format) {
 			case kIOFormatBuffer: {
 				if (xsmcArgc > 1) {
 					void *data;
@@ -273,10 +272,7 @@ void xs_directorystorage_read(xsMachine *the)
 
 			case kIOFormatUint32: {
 				uint32_t i = *(uint32_t *)(value + 1);
-				if (i >> 31)
-					xsmcSetNumber(xsResult, i);
-				else
-					xsmcSetInteger(xsResult, i);
+				xsmcSetUnsigned(xsResult, i);
 				} break;
 
 			case kIOFormatInt32:
@@ -306,17 +302,18 @@ void xs_directorystorage_read(xsMachine *the)
 
 void xs_directorystorage_write(xsMachine *the)
 {
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
-	uint8_t format = d->format;
-	uint8_t buffer[16];
+	char key[64];
+	xsmcToStringBuffer(xsArg(0), key, sizeof(key));
 
+	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	if (d->readOnly)
 		xsUnknownError("read-only");
 
-	xsmcToStringBuffer(xsArg(0), d->path + d->directoryLength, 64);
+	c_strcpy(d->path + d->directoryLength, key);
 
-	buffer[0] = format;
-	switch (format) {
+	uint8_t buffer[16];
+	buffer[0] = d->format;
+	switch (d->format) {
 		case kIOFormatBuffer: {
 			void *data;
 			xsUnsignedValue dataLength;
@@ -325,7 +322,7 @@ void xs_directorystorage_write(xsMachine *the)
 			uint8_t *value = c_malloc(dataLength + 1);
 			if (C_NULL == value)
 				xsUnknownError("no memory");
-			value[0] = format;
+			value[0] = d->format;
 			c_memmove(value + 1, data, dataLength);
 			int err = settings_save_one(d->path, value, 1 + dataLength);
 			c_free(value);
@@ -340,7 +337,7 @@ void xs_directorystorage_write(xsMachine *the)
 			uint8_t *value = c_malloc(dataLength + 1);
 			if (C_NULL == value)
 				xsUnknownError("no memory");
-			value[0] = format;
+			value[0] = d->format;
 			c_memmove(value + 1, data, dataLength);
 			int err = settings_save_one(d->path, value, 1 + dataLength);
 			c_free(value);
@@ -372,7 +369,7 @@ void xs_directorystorage_write(xsMachine *the)
 			break;
 		
 		case kIOFormatUint32:
-			*(uint32_t *)(buffer + 1) = (uint32_t)xsmcToInteger(xsArg(1));
+			*(uint32_t *)(buffer + 1) = xsmcToUnsigned(xsArg(1));
 			d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 			throwIf(settings_save_one(d->path, buffer, 1 + 4));
 			break;
@@ -412,11 +409,11 @@ void xs_directorystorage_format_get(xsMachine *the)
 void xs_directorystorage_format_set(xsMachine *the)
 {
 	static const uint8_t formats[] = {kIOFormatBuffer, kIOFormatString, kIOFormatUint8, kIOFormatInt8, kIOFormatUint16, kIOFormatInt16, kIOFormatUint32, kIOFormatInt32, kIOFormatUint64, kIOFormatInt64, kIOFormatInvalid};
-	xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 	uint8_t format = builtinSetFormat(the), i = 0;
 
 	while (kIOFormatInvalid != formats[i]) {
 		if (formats[i++] == format) {
+			xsDirectory d = (xsDirectory)xsmcGetHostChunkValidate(xsThis, xs_directorystorage_destructor);
 			d->format = format;
 			return;
 		}

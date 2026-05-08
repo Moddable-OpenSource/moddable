@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: April 17, 2026
+Revised: April 22, 2026
 
 ## About this Document
 
@@ -73,9 +73,9 @@ mcconfig [manifest] [-d] [-f format] [-i] [-m] [-o directory] [-p platform] [-r 
 - `-f format`: to select the screen pixel format: `gray16`, `gray256`, `rgb332`, `rgb565be` or `rgb565le`. Defaults to `rgb565le`. See [png2bmp](#png2bmp) for more detail.
 - `-i`: to build a release instrumented version.
 - `-x`: overrides the default host and port (localhost:5002) debug builds use to connect to xsbug.
-- `-m`: to run `make` automatically, otherwise **mcconfig** just generates the make file.
+- `-m`: to run `make` automatically, otherwise **mcconfig** only generates the make file.
 - `-o directory`: the output directory. Defaults to the `$MODDABLE/build` directory.
-- `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp`, `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `sim/moddable_one`, `sim/moddable_two`, `sim/moddable_three`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`.
+- `-p platform`: to select the platform. Consult the documentation for your device target for its platform identifier. The supported values include: `esp` (or `esp8266`), `esp/moddable_one`, `esp/moddable_three`, `esp32`, `esp32/moddable_two`, `win`, `lin`, `mac`, `sim/moddable_one`, `sim/moddable_two`, `sim/moddable_three`, and `wasm`.  Defaults to the host build platform:`mac`, `win` or `lin`. To use a subplatform defined outside the Moddable SDK, specify its directory after the platform identifier (e.g. `-p esp32:/Users/developer/Projects/mydevice`).
 - `-r rotation`: to select the screen rotation: `0`, `90`, `180` or `270`. Defaults to `0`. See [png2bmp](#png2bmp) for more detail.
 - `-t target`: to select the build target: `build`, `deploy`, `xsbug`, `clean`, or `all`. Defaults to `all`. See [Build Targets](#buildtargets) for more detail.
 - `-v`: to trace all commands executed by `make`

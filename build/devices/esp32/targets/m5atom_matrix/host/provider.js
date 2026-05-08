@@ -28,6 +28,7 @@ import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
+import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
 
 const device = {
 	I2C: {
@@ -56,9 +57,31 @@ const device = {
 			pin: 33
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
+	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI },
 	pin: {
 		button: 39
+	},
+	
+ 	sensor: {
+		IMU: class extends MPU6886 {
+			constructor(options) {
+				super({
+					...options,
+					sensor: {
+						...device.I2C.internal,
+						io: device.io.SMBus
+					}
+				});
+			}
+			sample() {
+				const sample = super.sample();
+				sample.accelerometer.y *= -1;
+				sample.accelerometer.z *= -1;
+				[sample.gyroscope.x, sample.gyroscope.y] = [sample.gyroscope.y * -1, sample.gyroscope.x];
+				sample.gyroscope.z *= -1;
+				return sample;
+			}
+		}
 	}
 };
 

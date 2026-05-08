@@ -328,8 +328,8 @@ void xs_ble_client_start_scanning(xsMachine *the)
 	ret_code_t err_code;
 	uint8_t active = xsmcToBoolean(xsArg(0));
 	uint8_t duplicates = xsmcToBoolean(xsArg(1));
-	uint32_t interval = xsmcToInteger(xsArg(2));
-	uint32_t window = xsmcToInteger(xsArg(3));
+	uint32_t interval = xsmcToUnsigned(xsArg(2));
+	uint32_t window = xsmcToUnsigned(xsArg(3));
 	uint16_t filterPolicy = xsmcToInteger(xsArg(4));
 	ble_gap_scan_params_t *scan_params = &gBLE->scan_params;
 	nrf_ble_scan_init_t *scan_init = &gBLE->scan_init;
@@ -461,7 +461,7 @@ void xs_ble_client_set_security_parameters(xsMachine *the)
 void xs_ble_client_passkey_reply(xsMachine *the)
 {
 	uint8_t *address = (uint8_t*)xsmcToArrayBuffer(xsArg(0));
-	uint32_t digits = xsmcToInteger(xsArg(1));
+	uint32_t digits = xsmcToUnsigned(xsArg(1));
 	char passkey[7];
 	
 	modBLEConnection connection = modBLEConnectionFindByAddress(address);

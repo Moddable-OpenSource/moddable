@@ -109,7 +109,7 @@ void xs_analog_read(xsMachine *the) {
 }
 
 void xs_analog_static_read(xsMachine *the) {
-	uint32_t ret, chan = xsmcToInteger(xsArg(0));
+	uint32_t ret, chan = xsmcToUnsigned(xsArg(0));
 	int inputChan;
 
 	inputChan = adc_channel(chan);

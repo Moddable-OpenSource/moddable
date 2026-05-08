@@ -19,7 +19,7 @@
  */
 
 #include "process_state/app_state/app_state.h"
-#include "services/common/evented_timer.h"
+#include "services/evented_timer.h"
 #include "applib/event_service_client.h"
 
 #include "xs.h"
@@ -56,6 +56,12 @@ typedef struct {
 	// pebble-files
 	char					*root;
 
+	// app-focus service
+	uint8_t				willFocus:1;
+	uint8_t				didFocus:1;
+
+	// XS FFI
+	void					*fxBuildFFI;
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD)

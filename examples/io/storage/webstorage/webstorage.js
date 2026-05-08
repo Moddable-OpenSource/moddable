@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 20252-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -56,6 +56,10 @@
 		this.#kvp.write(key, value);
 	}
 	remove(key) {
+		trace("localStorage.remove()  deprecated. Use localStorage.removeItem() instead\n");
+		return this.removeItem(key);
+	}
+	removeItem(key) {
 		this.#kvp.delete(key);
 	}
 	clear() {

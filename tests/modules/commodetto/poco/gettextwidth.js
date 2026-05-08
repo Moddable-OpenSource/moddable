@@ -20,9 +20,9 @@ const throwArgument = {
 };
 assert.throws(Test262Error, () => render.getTextWidth(throwArgument, font), "coerces string");
 
-assert.throws(SyntaxError, () => render.getTextWidth("12", {}), "invalid font");
-assert.throws(SyntaxError, () => render.getTextWidth(new ArrayBuffer, {}), "invalid font");
-assert.throws(SyntaxError, () => render.getTextWidth(Uint8Array.of(32), {}), "invalid font");
+assert.throws(TypeError, () => render.getTextWidth("12", {}), "invalid font");
+assert.throws(TypeError, () => render.getTextWidth(new ArrayBuffer, {}), "invalid font");
+assert.throws(TypeError, () => render.getTextWidth(Uint8Array.of(32), {}), "invalid font");
 
 assert.sameValue(27, render.getTextWidth("123", font));
 assert.sameValue(27, render.getTextWidth(123, font));

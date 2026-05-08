@@ -1,12 +1,11 @@
 # Getting Started with Raspberry Pi Pico
-Copyright 2021-2024 Moddable Tech, Inc.<BR>
-Revised: December 18, 2024
+Copyright 2021-2026 Moddable Tech, Inc.<BR>
+Revised: May 4, 2026
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
 > Note: The Pico port is solid and mostly complete. Possible future work includes:
 >
-> - Mods
 > - JavaScript Atomics
 > - Web Workers making use of the second core
 > - PIO integration
@@ -17,16 +16,17 @@ This document describes how to start building Moddable applications for the Rasp
 - [About Raspberry Pi Pico](#about-pico)
 - [Overview](#overview)
 - [Platforms](#platforms)
-- [macOS](#mac)
-  - [SDK and Host Environment Setup - macOS](#macos-setup)
+- macOS
+  - [SDK and Host Environment Setup - macOS](#macOS-setup)
   - [Building and Deploying apps - macOS](#macOS-building-and-deploying-apps)
-  - [Troubleshooting](#mac-troubleshooting)
-- [Windows](#win)
-  - [SDK and Host Environment Setup - Windows](#windows-setup)
-  - [Building and Deploying apps - Windows](#windows-building-and-deploying-apps)
-- [Linux](#lin)
-  - [SDK and Host Environment Setup - Linux](#linux-setup)
-  - [Building and Deploying apps - Linux](#linux-building-and-deploying-apps)
+  - [Troubleshooting](#macOS-troubleshooting)
+- Windows
+  - [SDK and Host Environment Setup - Windows](#win-setup)
+  - [Building and Deploying apps - Windows](#win-building-and-deploying-apps)
+- Linux
+  - [SDK and Host Environment Setup - Linux](#lin-setup)
+  - [Building and Deploying apps - Linux](#lin-building-and-deploying-apps)
+- [Using mods](#using-mods)
 - [Debugging Native Code](#debugging-native-code)
 - [Reference Documents](#reference)
 
@@ -107,14 +107,20 @@ The Raspberry Pi Pico 2 has the following features:
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Raspberry Pi<BR>Pico 2 | `pico` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
-| <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/pro_micro` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
+| <img src="../assets/devices/pi-pico_2.png" width=220><BR>Raspberry Pi<BR>Pico 2 | `pico_2` | LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pi-pico_2_w.png" width=220><BR>Raspberry Pi<BR>Pico 2 W | `pico_2_w` | WiFi, LED, 26 external pins  | <li>[Raspberry Pi Pico documentation](https://www.raspberrypi.org/documentation/pico/getting-started/)</li> |
+| <img src="../assets/devices/pico-sparkfun-pro-micro-rp2040.png" width=220></a><br>Sparkfun<br>Pro Micro RP2040 | `pico/sparkfun_rp2350` | Qwiic/STEMMA connector, Neopixel | <li>[Sparkfun product page](https://www.sparkfun.com/products/18288)</li> |
 | <img src="../assets/devices/pico-pimoroni-pico-plus-2.png" height=220></a><br>Pimoroni<br>pico plus 2 | `pico/pico_plus_2` | Qwiic/STEMMA connector | <li>[Pimoroni product page](https://shop.pimoroni.com/products/pimoroni-pico-plus-2)</li> |
+| <img src="../assets/devices/pico-pimoroni-tiny2350.png" width=220></a><br>Pimoroni<br>Tiny2350 | `pico/tiny2350` | Qwiic/STEMMA connector | <li>[Pimoroni product page](https://shop.pimoroni.com/products/tiny-2350)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-128.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 1.28 | `pico/ws_rp2350_touch_1_28` | 1.28" IPS 240x240<br>Touch Display<br>QMI8658 IMU<br>expansion pins | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.28.htm)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-169.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 1.69 | `pico/ws_rp2350_touch_1_69` | 1.69" IPS 240x280<br>Touch Display<br>QMI8658 IMU<br>Real Time Clock | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.69.htm)</li> |
+| <img src="../assets/devices/waveshare-rp2350-touch-2.8.png" width=220></a><br>Waveshare<br>RP2350 Touch LCD 2.8 | `pico/ws_rp2350_touch_2_8` | 2.8" IPS 240x320<br>Touch Display<br>QMI8658 IMU<br>Real Time Clock<br>Speakers<br>expansion pins | <li>[Waveshare product page](https://www.waveshare.com/RP2350-Touch-LCD-1.69.htm)</li> |
+| <img src="../assets/devices/xiao-rp2350.png" width=150></a><br>Seeed Studio<br>XIAO RP2350 | `pico/xiao_rp2350` | Neopixel | <li>[Seeed Studio product page](https://www.seeedstudio.com/Seeed-XIAO-RP2350-p-5944.html)</li> |
 
 <a id="setup"></a>
 ## SDK and Host Environment Setup
 
-<a id="mac"></a>
+<a id="macOS-setup"></a>
 
 ### macOS Setup
 
@@ -156,19 +162,19 @@ The Raspberry Pi Pico 2 has the following features:
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.0.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
@@ -221,14 +227,14 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
 
-<a id="mac-troubleshooting"></a>
+<a id="macOS-troubleshooting"></a>
 ### Troubleshooting
 
 - If the macOS **DISK NOT EJECTED PROPERLY** remain on your screen, you can download and use the [`ejectfix.py`](https://github.com/Moddable-OpenSource/tools/releases/download/v1.0.0/ejectfix.py) tool to make them auto-dismiss.
 
    See the [article at the Adafruit blog](https://blog.adafruit.com/2021/05/11/how-to-tone-down-macos-big-surs-circuitpy-eject-notifications/) for details.
 
-<a id="win"></a>
+<a id="win-setup"></a>
 
 ### Windows Setup
 
@@ -240,7 +246,7 @@ Not yet available.
 Not yet available.
 
 
-<a id="lin"></a>
+<a id="lin-setup"></a>
 
 ### Linux setup
 
@@ -277,19 +283,19 @@ Not yet available.
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.0.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.0.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
@@ -313,7 +319,7 @@ Not yet available.
 	```
 
 
-<a id="linux-building-and-deploying-apps"></a>
+<a id="lin-building-and-deploying-apps"></a>
 ### Building and Deploying Apps on Linux
 
 After you've setup your Linux host environment, take the following steps to install an application on your Pico.
@@ -344,6 +350,44 @@ After you've setup your Linux host environment, take the following steps to inst
 	```
 
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
+
+
+
+<a id="using-mods"></a>
+## Using mods
+
+[Moddable Mods](../xs/mods.md) are user installed extensions.
+
+A mod is built and run using the `mcrun` command line tool which connects to the device and sends the mod to it.
+
+Some pico devices aren't automatically recognized and you may have to identify the device connection and set the `UPLOAD_PORT` environment variable.
+
+For example, if you use mcrun and it appears to hang:
+
+```
+user % mcrun -d -m -p pico/pico_w
+### -p pico/pico_w
+# xsc example.xsb
+# xsc check.xsb
+# xsl helloworld.xsa
+   < nothing else happens >
+```
+
+Type `ctrl-c` to stop. Look for the path of your device and set the `UPLOAD_PORT` environment variable.
+
+```
+user % ls /dev/cu.usb*
+/dev/cu.usbmodem11332301
+user % export UPLOAD_PORT=/dev/cu.usbmodem11332301
+```
+
+Try the `mcrun` command again:
+
+```
+user % mcrun -d -m -p pico/pico_w
+### -p pico/pico_w
+Installing mod...complete
+```
 
 
 

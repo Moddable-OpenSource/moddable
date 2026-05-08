@@ -15,7 +15,7 @@ assert.throws(TypeError, () => f.write(0, 64, "123"), "write buffer for third ar
 assert.throws(TypeError, () => f.write(0, 64, Symbol()), "write buffer for third argument, symbol");
 assert.throws(TypeError, () => f.write(0, 64, {}), "write buffer for third argument, object");
 assert.throws(TypeError, () => f.write(0, 64, []), "write buffer for third argument, array");
-assert.throws(Error, () => f.write(0, 64, new $TESTMC.HostObject), "write buffer for third argument, host object");
+assert.throws(TypeError, () => f.write(0, 64, new $TESTMC.HostObject), "write buffer for third argument, host object");
 
 f.write(0, 64, new Uint8Array(64));
 f.write(0, 64, new DataView(new ArrayBuffer(64)));

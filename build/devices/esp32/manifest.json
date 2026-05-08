@@ -18,8 +18,16 @@
 		"timer"
 	],
 	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_driver_gptimer" }
+			]
+		},
 		"esp32/*": {
-			"include": "./targets/$(SUBPLATFORM)/manifest.json"
+			"include": "$(SUBPLATFORMMANIFEST)",
+			"dependency": [
+				{ "idf": "esp_driver_gptimer" }
+			]
 		}
 	}
 }

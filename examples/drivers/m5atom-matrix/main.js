@@ -12,9 +12,12 @@
  *
  */
 
-if (!globalThis.lights || !globalThis.accelerometer || !globalThis.button)
+import Timer from "timer";
+
+if (!globalThis.lights || !device.sensor.IMU || !globalThis.button)
 	throw new Error("this M5 example requires lights, accelerometer, and a button");
 
+let accelerometer = new device.sensor.IMU({});
 let random = false;
 
 
@@ -23,7 +26,24 @@ lights.brightness = brightness;
 
 let buttonPressed = false;
 
-accelerometer.onreading = function(values) {
+// double click of button toggles random lights
+let last = 0;
+button.a.onChanged = function() {
+	buttonPressed = !button.a.read();
+	if (!buttonPressed)
+		return;
+
+	const now = Date.now();
+	if ((now - last) < 500)
+		random = !random;
+
+	last = now;
+}
+
+Timer.repeat(() => {
+	let sample = accelerometer.sample();
+	let values = sample?.accelerometer ?? sample;
+
 	if (random) {
 		// random colours
 		for (let i = 0, length = lights.length; i < length; i++)
@@ -46,20 +66,4 @@ accelerometer.onreading = function(values) {
 	}
 
 	lights.update();
-}
-
-accelerometer.start(50);
-
-// double click of button toggles random lights
-let last = 0;
-button.a.onChanged = function() {
-	buttonPressed = !button.a.read();
-	if (!buttonPressed)
-		return;
-
-	const now = Date.now();
-	if ((now - last) < 500)
-		random = !random;
-
-	last = now;
-}
+}, 17);

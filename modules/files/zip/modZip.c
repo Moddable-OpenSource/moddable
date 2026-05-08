@@ -345,7 +345,7 @@ void xs_zip_file_set_position(xsMachine *the)
 	if (NULL == zf)
 		xsErrorPrintf("file closed");
 
-	position = (uint32_t)xsmcToInteger(xsArg(0));
+	position = xsmcToUnsigned(xsArg(0));
 	if (position >= zf->position)
 		xsErrorPrintf("invalid position");
 
