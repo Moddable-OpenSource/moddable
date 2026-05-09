@@ -33,6 +33,10 @@ static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint1
 }
 #endif
 
+#if defined(CYW43_LWIP)
+	#include "lwip/dns.h"
+#endif
+
 void xs_system_deepSleep(xsMachine *the)
 {
 #if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
@@ -82,7 +86,7 @@ struct xsNetResolveRecord {
 	char			name[1];
 };
 
-static void didResolve(const char *name, ip_addr_t *ipaddr, void *arg);
+static void didResolve(const char *name, const ip_addr_t *ipaddr, void *arg);
 static void resolvedImmediate(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void resolveNext(void);
 
@@ -150,7 +154,7 @@ void resolveNext(void)
 		modMessagePostToMachine(nr->the, NULL, 0, resolvedImmediate, nr);
 }
 
-void didResolve(const char *name, ip_addr_t *ipaddr, void *arg)
+void didResolve(const char *name, const ip_addr_t *ipaddr, void *arg)
 {
 	xsNetResolve nr = arg;
 	if (ipaddr) {
