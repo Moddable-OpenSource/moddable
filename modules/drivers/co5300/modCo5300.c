@@ -76,6 +76,8 @@
 */
 #define CO5300_CMD(reg)      ((0x02 << 24) | ((reg) << 8))
 #define CO5300_COLOR_CMD     ((0x32 << 24) | (0x2C << 8))
+#define CO5300_MADCTL_MY     (0x80)
+#define CO5300_MADCTL_MX     (0x40)
 #define CO5300_ROTATE_BUFFER_PIXELS	((((MODDEF_CO5300_WIDTH) > (MODDEF_CO5300_HEIGHT)) ? (MODDEF_CO5300_WIDTH) : (MODDEF_CO5300_HEIGHT)) * 2)
 
 typedef struct {
@@ -110,10 +112,12 @@ typedef struct {
 } co5300DisplayRecord, *co5300Display;
 
 static void co5300Init(co5300Display sd);
+static void co5300SetMADCTL(co5300Display sd);
 static void co5300SetWindow(co5300Display sd, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 static void co5300WaitForColors(co5300Display sd);
 static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLength);
 static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength);
+static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int byteLength);
 
 #define co5300Command(sd, command, data, count) \
 	(esp_lcd_panel_io_tx_param(sd->io_handle, command, data, count))
@@ -328,11 +332,6 @@ void xs_co5300_get_height(xsMachine *the)
 	xsmcSetInteger(xsResult, (sd->rotation & 1) ? MODDEF_CO5300_WIDTH : MODDEF_CO5300_HEIGHT);
 }
 
-void xs_co5300_get_c_dispatch(xsMachine *the)
-{
-	xsResult = xsThis;
-}
-
 void xs_co5300_get_rotation(xsMachine *the)
 {
 	co5300Display sd = xsmcGetHostData(xsThis);
@@ -348,6 +347,12 @@ void xs_co5300_set_rotation(xsMachine *the)
 		xsRangeError("invalid rotation");
 
 	sd->rotation = (uint8_t)(rotation / 90);
+	co5300SetMADCTL(sd);
+}
+
+void xs_co5300_get_c_dispatch(xsMachine *the)
+{
+	xsResult = xsThis;
 }
 
 void xs_co5300_command(xsMachine *the)
@@ -407,8 +412,13 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 	}
 #endif
 
-	if (sd->rotation) {
+	if (1 == (sd->rotation & 1)) {
 		co5300SendRotated(sd, (uint16_t *)pixels, byteLength);
+		return;
+	}
+
+	if (2 == sd->rotation) {
+		co5300SendHardwareRotated180(sd, (uint16_t *)pixels, byteLength);
 		return;
 	}
 
@@ -449,6 +459,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 	0xFE, 1, 0x00,			// Page select (page 0)
 	0xC4, 1, 0x80,			// Set interface (QSPI)
 	0x3A, 1, 0x55,			// Pixel format: 16-bit RGB565
+	0x36, 1, 0x00,			// Memory data access control
 	0x44, 2, 0x01, 0xD1,	// Set tear scanline
 	0x35, 1, 0x00,			// Tearing effect line on
 	0x53, 1, 0x20,			// Write CTRL display value
@@ -488,6 +499,13 @@ void co5300Init(co5300Display sd)
 
 	sd->firstFrame = true;
 	sd->brightnessValue = 0;
+	sd->rotation = 0;
+}
+
+static void co5300SetMADCTL(co5300Display sd)
+{
+	uint8_t value = (2 == sd->rotation) ? (CO5300_MADCTL_MY | CO5300_MADCTL_MX) : 0;
+	co5300Command(sd, CO5300_CMD(0x36), &value, 1);
 }
 
 static void co5300SetWindow(co5300Display sd, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
@@ -544,40 +562,24 @@ static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength
 		uint16_t *out = sd->rotateBuffer;
 		uint16_t x, y, w, h;
 
-		switch (sd->rotation) {
-			case 1:
-				for (int col = 0; col < sd->updateWidth; col++) {
-					for (int r = rows - 1; r >= 0; r--)
-						*out++ = src[(r * sd->updateWidth) + col];
-				}
-				x = MODDEF_CO5300_WIDTH - (sd->updateY + row + rows);
-				y = sd->updateX;
-				w = rows;
-				h = sd->updateWidth;
-				break;
-
-			case 2:
-				for (int r = rows - 1; r >= 0; r--) {
-					for (int col = sd->updateWidth - 1; col >= 0; col--)
-						*out++ = src[(r * sd->updateWidth) + col];
-				}
-				x = MODDEF_CO5300_WIDTH - (sd->updateX + sd->updateWidth);
-				y = MODDEF_CO5300_HEIGHT - (sd->updateY + row + rows);
-				w = sd->updateWidth;
-				h = rows;
-				break;
-
-			default:	// 270 degrees
-				for (int col = sd->updateWidth - 1; col >= 0; col--) {
-					for (int r = 0; r < rows; r++)
-						*out++ = src[(r * sd->updateWidth) + col];
-				}
-				x = sd->updateY + row;
-				y = MODDEF_CO5300_HEIGHT - (sd->updateX + sd->updateWidth);
-				w = rows;
-				h = sd->updateWidth;
-				break;
+		if (1 == sd->rotation) {
+			for (int col = 0; col < sd->updateWidth; col++) {
+				for (int r = rows - 1; r >= 0; r--)
+					*out++ = src[(r * sd->updateWidth) + col];
+			}
+			x = MODDEF_CO5300_WIDTH - (sd->updateY + row + rows);
+			y = sd->updateX;
 		}
+		else {
+			for (int col = sd->updateWidth - 1; col >= 0; col--) {
+				for (int r = 0; r < rows; r++)
+					*out++ = src[(r * sd->updateWidth) + col];
+			}
+			x = sd->updateY + row;
+			y = MODDEF_CO5300_HEIGHT - (sd->updateX + sd->updateWidth);
+		}
+		w = rows;
+		h = sd->updateWidth;
 
 		co5300SetWindow(sd, x, y, w, h);
 		co5300SendColorSync(sd, sd->rotateBuffer, (int)((out - sd->rotateBuffer) * sizeof(uint16_t)));
@@ -587,6 +589,18 @@ static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength
 		lines -= rows;
 		sd->updateLinesRemaining -= rows;
 	}
+}
+
+static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int byteLength)
+{
+	int lines = (byteLength >> 1) / sd->updateWidth;
+	int row = sd->updateHeight - sd->updateLinesRemaining;
+	uint16_t x = MODDEF_CO5300_WIDTH - (sd->updateX + sd->updateWidth);
+	uint16_t y = MODDEF_CO5300_HEIGHT - (sd->updateY + row + lines);
+
+	co5300SetWindow(sd, x, y, sd->updateWidth, lines);
+	co5300SendColorSync(sd, pixels, byteLength);
+	sd->updateLinesRemaining -= lines;
 }
 
 void co5300AdaptInvalid(void *refcon, CommodettoRectangle r)
