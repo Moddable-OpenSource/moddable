@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -433,10 +433,8 @@ void xs_audioout_writeSync_(xsMachine *the)
 		xsUnknownError("full samples only");
 
 	err = doWrite(audioOut, buffer, requested);
-	if (err) {
-xsLog("error %d\n", (int)err);
-		xsUnknownError("write failed");
-	}
+	if (err)
+		xsUnknownError("write failed %d", (int)err);
 }
  
  void xs_audioout_writeAsync_(xsMachine *the)
