@@ -125,15 +125,19 @@ export default class BER {
 	}
 	_getObjectIdentifier(len) {
 		let i = this.#a[this.#i++];
-		let oid = [Math.idiv(i, 40), Math.irem(i, 40)];
+		const oid = new Uint32Array(new ArrayBuffer((2 + len) << 2, {maxByteLength: (2 + len) << 2}));
+		oid[0] = Math.idiv(i, 40);
+		oid[1] = Math.irem(i, 40);
+		let index = 2;
 		--len;
 		while (len > 0) {
 			let v = 0;
 			while (--len >= 0 && (i = this.#a[this.#i++]) >= 0x80)
 				v = (v << 7) | (i & 0x7f);
-			oid.push((v << 7) | i);
+			oid[index++] = (v << 7) | i; 
 		}
-		return Uint32Array.from(oid);
+		oid.buffer.resize(index << 2);
+		return oid;
 	}
 	getSequence() {
 		if (this.getTag() != 0x30)
