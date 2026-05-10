@@ -37,17 +37,36 @@
 
 #include "xsAll.h"
 #include "xsScript.h"
+#include <emscripten.h>
+#include <emscripten/html5.h>
+
+static void fxQueuePromiseJobsCallback(void* it);
 
 void fxCreateMachinePlatform(txMachine* the)
 {
+	the->promiseJobsTimer = 0;
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
+	if (the->promiseJobsTimer) {
+		emscripten_clear_timeout(the->promiseJobsTimer);
+		the->promiseJobsTimer = 0;
+	}
 }
 
 void fxQueuePromiseJobs(txMachine* the)
 {
+	if (the->promiseJobsTimer)
+		return;
+	the->promiseJobsTimer = emscripten_set_timeout(fxQueuePromiseJobsCallback, 0, the);
+}
+
+void fxQueuePromiseJobsCallback(void* it)
+{
+	txMachine* the = it;
+	the->promiseJobsTimer = 0;
+	fxRunPromiseJobs(the);
 }
 
 #ifdef mxDebug

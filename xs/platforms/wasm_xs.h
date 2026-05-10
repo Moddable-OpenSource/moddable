@@ -71,6 +71,7 @@
 #define mxUseDefaultSharedChunks 1
 
 #define mxMachinePlatform \
-	void* host;
+	void* host; \
+	long promiseJobsTimer;
 
 #endif /* __WASM_XS__ */
