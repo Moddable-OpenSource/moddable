@@ -1,6 +1,6 @@
 import Timer from "timer";
 
-const SENSITIVITY_REGISTERS = [0x02, 0x03, 0x04, 0x05, 0x06];
+const SENSITIVITY_REGISTERS = Uint8Array.of(0x02, 0x03, 0x04, 0x05, 0x06);
 const REG_CONFIG = 0x08;
 const REG_CONTROL = 0x09;
 const REG_REF_RESET1 = 0x0a;
@@ -11,8 +11,6 @@ const REG_CAL_HOLD1 = 0x0e;
 const REG_CAL_HOLD2 = 0x0f;
 const REG_OUTPUT1 = 0x10;
 
-const OUTPUT_NONE = 0;
-
 const TYPE_LOW = 0;
 const TYPE_HIGH = 1;
 
@@ -21,10 +19,10 @@ const LEVEL_7 = 7;
 const MIN_CHANNELS = 1;
 const MAX_CHANNELS = 12;
 
-const LOW_SENSITIVITY_VALUES = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77];
-const HIGH_SENSITIVITY_VALUES = [
-	0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
-];
+const LOW_SENSITIVITY_VALUES = Uint8Array.of(0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77);
+const HIGH_SENSITIVITY_VALUES = Uint8Array.of(
+	0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
+);
 
 class Si12T {
 	#io;
@@ -32,7 +30,6 @@ class Si12T {
 	#sensitivityType = TYPE_LOW;
 	#sensitivityLevel = LEVEL_0;
 	#channels = 3;
-	#points;
 
 	constructor(options) {
 		const {
@@ -71,9 +68,20 @@ class Si12T {
 				});
 			}
 
-			this.#enableChannel();
-			this.#setControl2();
-			this.#setControl1();
+			// enableChannel
+			io.writeUint8(REG_REF_RESET1, 0x00);
+			io.writeUint8(REG_REF_RESET2, 0x00);
+			io.writeUint8(REG_CHANNEL_HOLD1, 0x00);
+			io.writeUint8(REG_CHANNEL_HOLD2, 0x00);
+			io.writeUint8(REG_CAL_HOLD1, 0x00);
+			io.writeUint8(REG_CAL_HOLD2, 0x00);
+			// setControl2
+			io.writeUint8(REG_CONTROL, 0x0f);
+			io.writeUint8(REG_CONTROL, 0x07);
+
+			// setControl1
+			io.writeUint8(REG_CONFIG, 0x22);
+
 			this.configure({
 				active: true,
 				sensitivityType,
@@ -106,20 +114,33 @@ class Si12T {
 		if ("active" in options) {
 			const active = options.active;
 			this.#active = active;
-			if (active) this.#sleepDisable();
-			else this.#sleepEnable();
+			if (active) this.#io.writeUint8(REG_CONTROL, 0x03);
+			else this.#io.writeUint8(REG_CONTROL, 0x07);
 		}
 
 		if ("sensitivityType" in options || "sensitivityLevel" in options) {
-			this.#setSensitivity(
-				options.sensitivityType ?? this.#sensitivityType,
-				options.sensitivityLevel ?? this.#sensitivityLevel,
-			);
+			const type = options.sensitivityType ?? this.#sensitivityType;
+			const level = options.sensitivityLevel ?? this.#sensitivityLevel;
+			if (type < TYPE_LOW || type > TYPE_HIGH)
+				throw new RangeError("invalid sensitivity type");
+			if (level < LEVEL_0 || level > LEVEL_7)
+				throw new RangeError("invalid sensitivity level");
+
+			const values =
+				type === TYPE_HIGH ? HIGH_SENSITIVITY_VALUES : LOW_SENSITIVITY_VALUES;
+			const value = values[level];
+
+			this.#sensitivityType = type;
+			this.#sensitivityLevel = level;
+			for (const register of SENSITIVITY_REGISTERS)
+				this.#io.writeUint8(register, value);
 		}
 
 		if ("channels" in options) {
-			this.#channels = this.#validateChannels(options.channels);
-			this.#points = new Array(this.#channels).fill(OUTPUT_NONE);
+			const channels = options.channels;
+			if (channels < MIN_CHANNELS || channels > MAX_CHANNELS)
+				throw new RangeError("invalid channel count");
+			this.#channels = channels;
 		}
 	}
 
@@ -133,86 +154,23 @@ class Si12T {
 	}
 
 	sample() {
-		const count = Math.ceil(this.#channels / 4);
+		const channels = this.#channels;
+		const points = new Array(channels);
+		const count = Math.ceil(channels / 4);
 
-		for (let i = 0; i < count; i++)
-			this.#parseTouchByte(this.#readRegister(REG_OUTPUT1 + i), i * 4);
+		for (let i = 0; i < count; i++) {
+			const value = this.#io.readUint8(REG_OUTPUT1 + i);
+			const offset = i * 4;
+			const limit = Math.min(4, channels - offset);
 
-		return this.#points;
-	}
-
-	#readRegister(register) {
-		this.#assertOpen();
-		return this.#io.readUint8(register);
-	}
-
-	#writeRegister(register, value) {
-		this.#assertOpen();
-		this.#io.writeUint8(register, value & 0xff);
-	}
-
-	#setSensitivityValue(value) {
-		for (const register of SENSITIVITY_REGISTERS)
-			this.#writeRegister(register, value);
-	}
-
-	#setSensitivity(type, level) {
-		if (type < TYPE_LOW || type > TYPE_HIGH)
-			throw new RangeError("invalid sensitivity type");
-		if (level < LEVEL_0 || level > LEVEL_7)
-			throw new RangeError("invalid sensitivity level");
-
-		const values =
-			type === TYPE_HIGH ? HIGH_SENSITIVITY_VALUES : LOW_SENSITIVITY_VALUES;
-
-		this.#sensitivityType = type;
-		this.#sensitivityLevel = level;
-		this.#setSensitivityValue(values[level]);
-	}
-
-	#setControl1() {
-		this.#writeRegister(REG_CONFIG, 0x22);
-	}
-
-	#setControl2() {
-		this.#writeRegister(REG_CONTROL, 0x0f);
-		this.#writeRegister(REG_CONTROL, 0x07);
-	}
-
-	#sleepEnable() {
-		this.#writeRegister(REG_CONTROL, 0x07);
-	}
-
-	#sleepDisable() {
-		this.#writeRegister(REG_CONTROL, 0x03);
-	}
-
-	#enableChannel() {
-		this.#writeRegister(REG_REF_RESET1, 0x00);
-		this.#writeRegister(REG_REF_RESET2, 0x00);
-		this.#writeRegister(REG_CHANNEL_HOLD1, 0x00);
-		this.#writeRegister(REG_CHANNEL_HOLD2, 0x00);
-		this.#writeRegister(REG_CAL_HOLD1, 0x00);
-		this.#writeRegister(REG_CAL_HOLD2, 0x00);
-	}
-
-	#parseTouchByte(value, offset) {
-		const limit = Math.min(4, this.#channels - offset);
-
-		for (let i = 0; i < limit; i++) {
-			this.#points[offset + i] = (value >> (i * 2)) & 0x03;
+			for (let j = 0; j < limit; j++)
+				points[offset + j] = (value >> (j * 2)) & 0x03;
 		}
+
+		return points;
 	}
 
-	#validateChannels(value) {
-		if (value < MIN_CHANNELS || value > MAX_CHANNELS)
-			throw new RangeError("invalid channel count");
-		return value;
-	}
 
-	#assertOpen() {
-		if (!this.#io) throw new Error("Si12T is closed");
-	}
 }
 
 export default Si12T;
