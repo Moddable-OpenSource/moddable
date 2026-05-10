@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc. , Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -18,21 +18,21 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import config from "mc/config";
 
-let render = new Poco(screen, {rotation:config?.rotation});
+const render = new Poco(screen, {rotation:config?.rotation});
 
-let white = render.makeColor(255, 255, 255);
-let blue = render.makeColor(0, 0, 255);
+const white = render.makeColor(255, 255, 255);
+const blue = render.makeColor(0, 0, 255);
 
-let font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
-let text = "Press button A to change brightness...   ";
-let textWidth = render.getTextWidth(text, font);
+const font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
+const text = "Press button A to change brightness...   ";
+const textWidth = render.getTextWidth(text, font);
 let x = render.width;
 let y = (render.height - font.height) >> 1;
 
-let loop = true;	// set false to scroll text once across the screen
+const loop = true;	// set false to scroll text once across the screen
 let brightness = 50;  // screen brightness %
-button.a.onChanged = function() {
-	if (button.a.read()) {
+globalThis.button.a.onChanged = () =>{
+	if (globalThis.button.a.read()) {
 		return;
 	}
 	brightness+=10;
@@ -51,14 +51,14 @@ Timer.repeat(id => {
 		render.fillRectangle(blue, 0, 0, render.width, render.height);
 		render.drawText(text, font, white, x, y);
 		if (!loop) {
-			if (x + textWidth == 0)
+			if (x + textWidth === 0)
 				Timer.clear(id);
 		}
 		else {
 			if (x + textWidth < render.width)
 				render.drawText(text, font, white, x + textWidth, y);
 		}
-		if (x + textWidth == 0)
+		if (x + textWidth === 0)
 			x = 0;
 		else
 			--x;

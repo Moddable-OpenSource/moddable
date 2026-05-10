@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:peripheral/Power/axp192": "./axp192"
+	},
+	"preload": [
+		"embedded:peripheral/Power/axp192"
+	]
+}

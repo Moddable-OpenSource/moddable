@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc. , Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -17,15 +17,16 @@ import parseBMP from "commodetto/parseBMP";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import config from "mc/config";
+import Timer from "timer";
 
 const GYRO_SCALER = 0.002;
 
-let render = new Poco(screen, {rotation: config?.rotation ?? screen.rotation});
+const render = new Poco(screen, {rotation: config?.rotation ?? screen.rotation});
 const width = render.width, height = render.height;
 
-let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
+const font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
 
-let ball = parseBMP(new Resource("ball-color.bmp"));
+const ball = parseBMP(new Resource("ball-color.bmp"));
 ball.alpha = parseBMP(new Resource("ball-alpha.bmp"));
 ball.x = width >> 1;
 ball.y = height >> 1;
@@ -43,49 +44,48 @@ render.begin();
 	render.fillRectangle(ball.backgroundColor, 0, ball.yMin, width, height);
 render.end();
 
-accelerometer.onreading = function(values){
-	onReading(values, "a");
-}
+const imu = new device.sensor.IMU()
+imu.configure({
+	"GYRO_SCALER": (2000.0 / 32768.0) * GYRO_SCALER
+})
 
-gyro.onreading = function(values){
-	let {x, y, z} = values;
-	x *= GYRO_SCALER;
-	y *= GYRO_SCALER;
-	z *= GYRO_SCALER;
-	onReading({x,y,z}, "g");
-}
+Timer.repeat(() => {
+	const sample = imu.sample();
+	if(flag) {
+		onReading(sample.accelerometer, "a");
+	} else {
+		onReading(sample.gyroscope, "g");
+	}
+}, 17)
 
-accelerometer.start(17);
+let flag = true;
 
-button.a.onChanged = function(){
-	let value = button.a.read();
+globalThis.button.a.onChanged = () =>{
+	const value = globalThis.button.a.read();
 	if (value) {
-		accelerometer.stop();
-		gyro.stop();
-		accelerometer.start(17);
+		flag = true
 	}
 }
 
-button.b.onChanged = function(){
-	let value = button.b.read();
-	if (value){
-		accelerometer.stop();
-		gyro.stop();
-		gyro.start(17);
+globalThis.button.b.onChanged = () =>{
+	const value = globalThis.button.b.read();
+	if (value) {
+		flag = false
 	}
 }
 
 function onReading(values, labelPrefix){
-	let { x, y, z } = values;
+	const { x, y, z } = values;
+	trace(`${labelPrefix}X: ${formatValue(x)} - ${labelPrefix}Y: ${formatValue(y)} - ${labelPrefix}Z: ${formatValue(z)}\n`);
 	render.begin(0, 0, width, ball.yMin);
 	render.fillRectangle(backgroundColor, 0, 0, width, height);
 
-	drawBar(labelPrefix + "X", x, 0, 0, width, font.height);
-	drawBar(labelPrefix + "Y", y, 0, font.height, width, font.height);
-	drawBar(labelPrefix + "Z", z, 0, font.height * 2, width, font.height);
+	drawBar(`${labelPrefix}X`, x, 0, 0, width, font.height);
+	drawBar(`${labelPrefix}Y`, y, 0, font.height, width, font.height);
+	drawBar(`${labelPrefix}Z`, z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx - x) * 0.98;
+	ball.vx = (ball.vx + x) * 0.98;
 	ball.vy = (ball.vy - y) * 0.98;
 	let nx = ball.x + ball.vx;
 	let ny = ball.y + ball.vy;
@@ -114,7 +114,7 @@ function formatValue(value) {
 		return value;
 	if (value < 0)
 		return value.toFixed(3);
-	return "+" + value.toFixed(3);
+	return `+${value.toFixed(3)}`;
 }
 
 function drawBar(label, value, x, y, width, height) {

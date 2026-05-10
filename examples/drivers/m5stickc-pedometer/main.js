@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2026  Moddable Tech, Inc., Satoshi Tanaka
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -24,7 +24,7 @@ const STARTING_STEPS = 123;
 const GOAL = 200;
 const SHAKEVALUE = 3;
 
-let render = new Poco(screen, {rotation: config.rotation});
+const render = new Poco(screen, {rotation: config.rotation});
 
 const black = render.makeColor(0, 0, 0);
 const white = render.makeColor(255, 255, 255);
@@ -59,7 +59,7 @@ function redraw() {
 		let offset = (render.width-32)/2;
 		render.drawGray(steps, stepColor, 20, 7);
 		render.fillRectangle(stepColor, 10, render.height-17, render.width-20, render.height-17);
-		let fraction = stepCount / GOAL;
+		const fraction = stepCount / GOAL;
 		render.fillRectangle(barColor, 10, render.height-17, (render.width-20)*fraction, render.height-17);
 		render.drawGray(progressOverlay, backgroundColor, 0, render.height-17);
 		offset = (render.width-(render.getTextWidth(stepCount, bigFont)))/2;
@@ -69,30 +69,31 @@ function redraw() {
 
 }
 
-accelerometer.oldData = {x: 0, y: 0, z: 0, init: false};
-accelerometer.onreading = function(values) {
+const imu = new device.sensor.IMU();
+let oldData = {x: 0, y: 0, z: 0, init: false};
+function onReading(values) {
 	const {x,y,z} = values;
-	if (this.oldData.init){
-		const delta = Math.abs(x - this.oldData.x) + Math.abs(y - this.oldData.y) + Math.abs(z - this.oldData.z);
+	if (oldData.init){
+		const delta = Math.abs(x - oldData.x) + Math.abs(y - oldData.y) + Math.abs(z - oldData.z);
 		if (delta > SHAKEVALUE) {
 			stepCount++;
 			redraw();
 		}
 	}
-	this.oldData.x = x;
-	this.oldData.y = y;
-	this.oldData.z = z;
-	this.oldData.init = true;
+	oldData.x = x;
+	oldData.y = y;
+	oldData.z = z;
+	oldData.init = true;
 }
 
-button.a.onChanged = function() {
+globalThis.button.a.onChanged = function() {
 	if (this.read()) {
 		lightMode = !lightMode;
 		redraw();
 	}
 }
 
-button.b.onChanged = function() {
+globalThis.button.b.onChanged = function() {
 	if (this.read()) {
 		stepCount = 0;
 		redraw();
@@ -100,4 +101,7 @@ button.b.onChanged = function() {
 }
 
 redraw();
-accelerometer.start(17);
+Timer.repeat(() => {
+	const sample = imu.sample();
+	onReading(sample.accelerometer)
+}, 17)

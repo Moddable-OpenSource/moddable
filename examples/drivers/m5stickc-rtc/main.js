@@ -12,43 +12,29 @@
  *
  */
 
-import BM8563 from "bm8563";
 import Time from "time";
-
-
-let rtc = new BM8563;
-let enabled = 1;
-
-// Main button:  enable/disable RTC
-button.a.onChanged = function () {
-	if (button.a.read()) {
-		return;
-	}
-	enabled = !enabled;
-	rtc.enabled = enabled;
-	globalThis.power.brightness = 20 + enabled * 70;
-}
-
-// Side button: set time from sntp
-button.b.onChanged = function () {
-	if (button.b.read()) {
-		return;
-	}
-	setRTCTimeLocal();
-}
-
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
 import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import config from "mc/config";
 
+const rtc = new device.peripheral.RTC();
+
+// Main button: set time from sntp
+globalThis.button.a.onChanged = () => {
+if (globalThis.button.a.read()) {
+		return;
+	}
+	setRTCTimeLocal();
+}
+
 function setRTCTimeLocal() {
-	let d = new Date();
+	const d = new Date();
 	trace(`Set time: ${d.getTime()} ${d.toString()} tz:${Time.timezone} dst:${Time.dst}\n`);
-	rtc.seconds = d.getTime() / 1000;
-	let read = rtc.seconds;
-	let s = new Date(read * 1000);
+	rtc.time = d.getTime();
+	const read = rtc.time;
+	const s = new Date(read);
 	trace(`Get time: ${read} ${s.toString()}\n`)
 }
 
@@ -56,29 +42,27 @@ const render = new Poco(screen, {
 	rotation: config.rotation
 });
 
-let white = render.makeColor(255, 255, 255);
-let grey = render.makeColor(170, 170, 170);
-let blue = render.makeColor(0, 0, 255);
+const white = render.makeColor(255, 255, 255);
+const grey = render.makeColor(170, 170, 170);
+const blue = render.makeColor(0, 0, 255);
 
-let font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
-let text = "Press button A to set Time";
-let textWidth = render.getTextWidth(text, font);
-let x = 1;
-let y = 1;
+const font = parseBMF(new Resource("OpenSans-Semibold-16.bf4"));
+const x = 1;
+const y = 1;
 
 render.begin();
 render.fillRectangle(blue, 0, 0, render.width, render.height);
 render.end();
 
-Timer.repeat(id => {
+Timer.repeat(_id => {
 	let now = 'setting..';
 	try {
-		now = rtc.seconds;
+		now = rtc.time;
 	} catch (e) {
 		trace(e);
 	}
-	let rtc_clock = new Date(now * 1000);
-	let actual_clock = new Date();
+	const rtc_clock = new Date(now);
+	const actual_clock = new Date();
 	render.begin(0, y, render.width, render.height);
 	render.fillRectangle(blue, 0, 0, render.width, render.height);
 	render.drawText(rtc_clock.toString().slice(4, 24), font, white, x, y);
