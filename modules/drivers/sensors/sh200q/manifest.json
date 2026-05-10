@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:sensor/Accelerometer-Gyroscope/SH200Q": "$(MODDABLE)/modules/drivers/sensors/sh200q/sh200q"
+	},
+	"preload": [
+		"embedded:sensor/Accelerometer-Gyroscope/SH200Q"
+	]
+}
+
