@@ -83,6 +83,9 @@ struct AudioOutRecord {
 	uint8_t				numChannels;
 	uint8_t				bitsPerSample;
 
+	uint8_t				*stagingBuffer;
+	uint32_t			stagingOffset;
+
 	i2s_chan_handle_t	tx_handle;
 
 	xsMachine			*the;
@@ -133,6 +136,11 @@ static void audioOutRelease(AudioOut audioOut)
 		AudioOutElement element = audioOut->elements, next = element->next;
 		c_free(element);
 		audioOut->elements = next;
+	}
+
+	if (audioOut->stagingBuffer) {
+		c_free(audioOut->stagingBuffer);
+		audioOut->stagingBuffer = NULL;
 	}
 }
 
@@ -347,6 +355,12 @@ void xs_audioout_constructor_(xsMachine *the)
 	audioOut->dma_buf_size = tx_chan_cfg.dma_frame_num * 2;			//@@ wrong for stereo etc
 	audioOut->total_dma_buf_size = audioOut->dma_buf_size * (tx_chan_cfg.dma_desc_num - 1);
 	audioOut->bytesWritable = audioOut->total_dma_buf_size;
+	audioOut->stagingBuffer = c_malloc(audioOut->dma_buf_size);
+	if (!audioOut->stagingBuffer) {
+		audioOutRelease(audioOut);
+		xsForget(audioOut->obj);
+		xsRangeError("no memory");
+	}
 
 #if ESP32 && defined(MODDEF_AUDIOOUT_AMPLIFIER_POWER)
 	modGPIOInit(&audioOut->amplifierPower, C_NULL, MODDEF_AUDIOOUT_AMPLIFIER_POWER, kModGPIOOutput);
@@ -415,6 +429,7 @@ void xs_audioout_stop_(xsMachine *the)
 	i2s_channel_disable(audioOut->tx_handle);
 	audioOut->started = false;
 	audioOut->bytesWritable = audioOut->total_dma_buf_size;
+	audioOut->stagingOffset = 0;
 }
  
 void xs_audioout_writeSync_(xsMachine *the)
@@ -608,7 +623,7 @@ static void audiooutDeliver(void *theIn, void *refcon, uint8_t *message, uint16_
 
 			if (bytesWritable) {
 				xsTry {
-					xsmcSetInteger(xsResult, audioOut->bytesWritable);
+					xsmcSetInteger(xsResult, audioOut->bytesWritable - audioOut->stagingOffset);
 					xsCallFunction1(xsReference(audioOut->onWritable), audioOut->obj, xsResult);
 				}
 				xsCatch {
@@ -681,37 +696,49 @@ done:
 
 esp_err_t doWrite(AudioOut audioOut, void *buffer, xsUnsignedValue requested)
 {
-	esp_err_t err;
-	size_t bytes_written = 0;
-
+	esp_err_t err = ESP_OK;
+	uint8_t *src = (uint8_t *)buffer;
 	const int kTimeout = 200;
-	if (256 == audioOut->volumeFixed) {
-		if (audioOut->started)
-			err = i2s_channel_write(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written, kTimeout);
-		else
-			err = i2s_channel_preload_data(audioOut->tx_handle, (const char *)buffer, requested, &bytes_written);
-		__atomic_fetch_sub(&audioOut->bytesWritable, bytes_written, __ATOMIC_SEQ_CST);
-	}
-	else {
-		int16_t *src = (int16_t *)buffer;
-		int16_t volumeFixed = audioOut->volumeFixed;
-		int requestedSamples = requested >> 1;		//@@ broken for stereo & 8 bit
-		while (requestedSamples) {
-			const int samplesLength = 256;
-			int16_t samples[samplesLength];
-			int use = (samplesLength > requestedSamples) ? requestedSamples : samplesLength, i;
-			for (i = 0; i < use; i++)
-				samples[i] = (*src++ * volumeFixed) >> 8;
 
-			bytes_written = 0;
+	while (requested > 0 && ESP_OK == err) {
+		if ((256 == audioOut->volumeFixed) && (0 == audioOut->stagingOffset) && (requested >= audioOut->dma_buf_size)) {
+			size_t bytes_written;
 			if (audioOut->started)
-				err = i2s_channel_write(audioOut->tx_handle, (const char *)samples, use * 2, &bytes_written, kTimeout);
+				err = i2s_channel_write(audioOut->tx_handle, src, audioOut->dma_buf_size, &bytes_written, kTimeout);
 			else
-				err = i2s_channel_preload_data(audioOut->tx_handle, (const char *)samples, use * 2, &bytes_written);
-			if (err) break;
+				err = i2s_channel_preload_data(audioOut->tx_handle, src, audioOut->dma_buf_size, &bytes_written);
+			__atomic_fetch_sub(&audioOut->bytesWritable, audioOut->dma_buf_size, __ATOMIC_SEQ_CST);
+			src += audioOut->dma_buf_size;
+			requested -= audioOut->dma_buf_size;
+		}
+		else {
+			uint32_t stagingSpace = audioOut->dma_buf_size - audioOut->stagingOffset;
+			uint32_t use = (requested < stagingSpace) ? (uint32_t)requested : stagingSpace;
 
-			__atomic_fetch_sub(&audioOut->bytesWritable, bytes_written, __ATOMIC_SEQ_CST);
-			requestedSamples -= use;
+			if (256 == audioOut->volumeFixed)
+				c_memcpy(audioOut->stagingBuffer + audioOut->stagingOffset, src, use);
+			else {
+				int16_t *dst = (int16_t *)(audioOut->stagingBuffer + audioOut->stagingOffset);
+				int16_t *s = (int16_t *)src;
+				int16_t vol = audioOut->volumeFixed;
+				uint32_t samples = use >> 1;
+				for (uint32_t i = 0; i < samples; i++)
+					dst[i] = (s[i] * vol) >> 8;
+			}
+
+			audioOut->stagingOffset += use;
+			src += use;
+			requested -= use;
+
+			if (audioOut->stagingOffset == audioOut->dma_buf_size) {
+				size_t bytes_written;
+				if (audioOut->started)
+					err = i2s_channel_write(audioOut->tx_handle, audioOut->stagingBuffer, audioOut->dma_buf_size, &bytes_written, kTimeout);
+				else
+					err = i2s_channel_preload_data(audioOut->tx_handle, audioOut->stagingBuffer, audioOut->dma_buf_size, &bytes_written);
+				__atomic_fetch_sub(&audioOut->bytesWritable, audioOut->dma_buf_size, __ATOMIC_SEQ_CST);
+				audioOut->stagingOffset = 0;
+			}
 		}
 	}
 
