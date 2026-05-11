@@ -441,7 +441,7 @@ void xs_audioout_writeSync_(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &requested);
 
-	if (requested > audioOut->bytesWritable)
+	if (requested > (audioOut->bytesWritable - audioOut->stagingOffset))
 		xsUnknownError("insufficient space");
 
 	if (requested & 1)							//@@ broken for stereo & 8 bit
