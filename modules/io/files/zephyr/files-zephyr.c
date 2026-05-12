@@ -49,8 +49,10 @@ static char *_getPath(xsMachine *the, xsSlot *slot)
 	char *p = path;
 	int state = kPathStateSlash;
 
-	if (0 == c_read8(p))
-		return "./";
+	if (0 == c_read8(p)) {
+		xsmcSetStringX(*slot, "./");
+		return xsmcToString(*slot);
+	}
 
 	while (true) {
 		switch (c_read8(p++)) {
@@ -118,8 +120,6 @@ void xs_filezephyr_destructor(void *data)
 	}
 }
 
-#define getFile(slot) ((xsFile)xsmcGetHostChunkValidate(slot, xs_filezephyr_destructor))->fd
-
 void xs_filezephyr(xsMachine *the)
 {
 	xsUnknownError("use openFile");
@@ -137,13 +137,15 @@ void xs_filezephyr_close(xsMachine *the)
 
 void xs_filezephyr_read(xsMachine *the)
 {
-	xsFile xf = (xsFile)xsmcGetHostData(xsThis);;
+	xsFile xf = (xsFile)xsmcGetHostData(xsThis);
 	void *buffer;
 	xsUnsignedValue length;
 	int position = xsmcToInteger(xsArg(1));
 	uint8_t returnLength = 0;
+	if (0 == (xf->mode & FS_O_READ))
+		xsUnknownError("write only");
 
-	int type = xsmcTypeOf(xsArg(0));
+		int type = xsmcTypeOf(xsArg(0));
 	if ((xsIntegerType == type) || (xsNumberType == type)) {
 		length = xsmcToInteger(xsArg(0));
 		xsmcSetArrayBufferResizable(xsResult, NULL, length, length);
@@ -183,7 +185,7 @@ void xs_filezephyr_write(xsMachine *the)
 
 void xs_filezephyr_status(xsMachine *the)
 {
-	xsFile xf = (xsFile)xsmcGetHostData(xsThis);;
+	xsFile xf = (xsFile)xsmcGetHostData(xsThis);
 	struct fs_dirent entry;
 
 	throwIf(fs_stat(xf->path, &entry));
@@ -200,13 +202,13 @@ void xs_filezephyr_status(xsMachine *the)
 
 void xs_filezephyr_setSize(xsMachine *the)
 {
-	xsFile xf = (xsFile)xsmcGetHostData(xsThis);;
+	xsFile xf = (xsFile)xsmcGetHostData(xsThis);
 	throwIf(fs_truncate(&xf->fsf, xsmcToInteger(xsArg(0))));
 }
 
 void xs_filezephyr_flush(xsMachine *the)
 {
-	xsFile xf = (xsFile)xsmcGetHostData(xsThis);;
+	xsFile xf = (xsFile)xsmcGetHostData(xsThis);
 	throwIf(fs_sync(&xf->fsf));
 }
 
@@ -306,6 +308,8 @@ void xs_directoryzephyr_openFile(xsMachine *the)
 	}
 
 	xsFile xf = (xsFile)c_calloc(1, sizeof(xsFileRecord) + c_strlen(path) + 1);
+	if (C_NULL == xf)
+		xsRangeError("no memory");
 	xsmcSetHostData(xsResult, xf);
 	xf->mode = mode;
 	c_strcpy(xf->path, path);
@@ -358,7 +362,7 @@ void xs_directoryzephyr_move(xsMachine *the)
 	char *tmp = appendPath(xd->path, xsArg(0));
 	char *fromPath = c_malloc(c_strlen(tmp) + 1);
 	if (!fromPath)
-		xsUnknownError("no memory");
+		xsRangeError("no memory");
 	c_strcpy(fromPath, tmp);
 
 	xsTry {
@@ -369,6 +373,7 @@ void xs_directoryzephyr_move(xsMachine *the)
 			toPath = appendPath(xd->path, xsArg(1));
 
 		throwIf(fs_rename(fromPath, toPath));
+		c_free(fromPath);
 	}
 	xsCatch {
 		c_free(fromPath);
@@ -407,11 +412,10 @@ void xs_directoryzephyr_createDirectory(xsMachine *the)
 	xsDirectory xd = xsmcGetHostData(xsThis);
 	char *path = appendPath(xd->path, xsArg(0));
 
-	//@@ if exists and is FILE, throw error
-
 	int result = fs_mkdir(path);
 	if (result < 0) {
-		if (-EEXIST == result) {
+		struct fs_dirent entry;
+		if ((0 == fs_stat(path, &entry)) && (FS_DIR_ENTRY_DIR == entry.type)) {
 			xsmcSetFalse(xsResult);
 			return;
 		}
@@ -455,16 +459,21 @@ void xs_directory_iterator_zephyr_next(xsMachine *the)
 	xsmcSetUndefined(xsVar(1));
 	struct fs_dir_t *dir = xsmcGetHostChunk(xsThis);
 	if (dir) {
-		struct fs_dirent entry;
-	
-		if ((0 == fs_readdir(dir, &entry)) && entry.name[0]) {
-			xsmcSetFalse(xsVar(0));
-			xsmcSetString(xsVar(1), entry.name);
-		}
-		else {
-			xs_directory_iterator_zephyr_destructor(dir);
-			xsmcSetHostChunk(xsThis, NULL, 0);
-		}
+		do {
+			struct fs_dirent entry;
+		
+			if ((0 == fs_readdir(dir, &entry)) && entry.name[0]) {
+				if (('.' == entry.name[0]) && ((0 == entry.name[1]) || (('.' == entry.name[1]) && (0 == entry.name[2]))))
+					continue;
+				xsmcSetFalse(xsVar(0));
+				xsmcSetString(xsVar(1), entry.name);
+			}
+			else {
+				xs_directory_iterator_zephyr_destructor(dir);
+				xsmcSetHostChunk(xsThis, NULL, 0);
+			}
+			break;
+		} while (true);
 	}
 	xsResult = xsNewObject();
 	xsmcDefine(xsResult, xsID_done, xsVar(0), xsDefault);

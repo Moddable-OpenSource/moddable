@@ -122,8 +122,10 @@ static char *_getPath(xsMachine *the, xsSlot *slot)
 	char *p = path;
 	int state = kPathStateSlash;
 
-	if (0 == c_read8(p))
-		return "./";
+	if (0 == c_read8(p)) {
+		xsmcSetStringX(*slot, "./");
+		return xsmcToString(*slot);
+	}
 
 	while (true) {
 		switch (c_read8(p++)) {
@@ -179,6 +181,7 @@ void xs_filelittlefs_destructor(void *data)
 	lfs_file_t *f = data;
 	if (f) {
 		lfs_file_close(&gLFS->lfs, f);
+		c_free(f);
 		stopLittlefs();
 	}
 }
@@ -207,6 +210,9 @@ void xs_filelittlefs_read(xsMachine *the)
 	void *buffer;
 	xsUnsignedValue length;
 	uint8_t returnLength = 0;
+
+	if (!(LFS_O_RDONLY & file->flags))		// LFS_O_RDONLY is a bit field indicating read is enabled
+		xsUnknownError("write-only");
 
 	int type = xsmcTypeOf(xsArg(0));
 	if ((xsIntegerType == type) || (xsNumberType == type)) {
@@ -413,7 +419,7 @@ void xs_directorylittlefs_openDirectory(xsMachine *the)
 		xsUnknownError("not directory");
 
 	size_t len = c_strlen(path) + 1;
-	int needsSlash = path[len - 1] != '/';
+	int needsSlash = path[len - 2] != '/';
 	char *p = c_malloc(len + needsSlash);
 	if (!p) xsUnknownError("no memory");
 	c_memcpy(p, path, len);
@@ -447,30 +453,27 @@ void xs_directorylittlefs_delete(xsMachine *the)
 
 void xs_directorylittlefs_move(xsMachine *the)
 {
-	char *fromPath = C_NULL, *toPath = C_NULL;
+	char *fromPath = C_NULL;
 
 	xsTry {
 		char *t = getDirectory(xsThis);
 		t = appendPath(t, xsArg(0));
 		fromPath = c_malloc(c_strlen(t) + 1);
+		if (!fromPath)
+			xsUnknownError("no memory");
 		c_strcpy(fromPath, t);
 
 		t = (xsmcArgc > 2) ? getDirectory(xsArg(2)) : getDirectory(xsThis);
 		t = appendPath(t, xsArg(1));
-		toPath = c_malloc(c_strlen(t) + 1);
-		c_strcpy(toPath, t);
 
-		throwIf(lfs_rename(&gLFS->lfs, fromPath, toPath));
+		throwIf(lfs_rename(&gLFS->lfs, fromPath, t));
 
-		if (fromPath) c_free(fromPath);
-		if (toPath) c_free(toPath);
+		c_free(fromPath);
 	}
 	xsCatch {
 		if (fromPath) c_free(fromPath);
-		if (toPath) c_free(toPath);
 		xsThrow(xsException);
 	}
-
 }
 
 void xs_directorylittlefs_status(xsMachine *the)
@@ -507,8 +510,11 @@ void xs_directorylittlefs_createDirectory(xsMachine *the)
 	int result = lfs_mkdir(&gLFS->lfs, path);
 	if (result < 0) {
 		if (LFS_ERR_EXIST == result) {
-			xsmcSetFalse(xsResult);
-			return;
+			struct lfs_info info;
+			if ((0 == lfs_stat(&gLFS->lfs, path, &info)) && (LFS_TYPE_DIR == info.type)) {
+				xsmcSetFalse(xsResult);
+				return;
+			}
 		}
 		throwIf(result);
 	}
@@ -648,28 +654,19 @@ const struct lfsError gLFSErrors[] ICACHE_RODATA_ATTR = {
 
 void lfs_error(xsMachine *the, int code)
 {
-	const struct lfsError *e;
-
-	if (0 == code)
-		return;
-
-	for (e = gLFSErrors; e->code; e++) {
+	for (const struct lfsError *e = gLFSErrors; e->code; e++) {
 		if (e->code == code)
 			xsUnknownError(e->msg);
 	}
 
-	xsUnknownError("LFS ERR");
+	xsUnknownError("LFS ERR %d", code);
 }
 
 #else
 
 void lfs_error(xsMachine *the, int code)
 {
-	char msg[64];
-	xsmcSetStringX(xsResult, "LFS_ERR: ");
-	xsResult = xsCall1(xsResult, xsID_concat, xsInteger(code));
-	xsmcToStringBuffer(xsResult, msg, sizeof(msg));
-	xsUnknownError(msg);
+	xsUnknownError("LFS ERR %d", code);
 }
 
 #endif
@@ -874,8 +871,12 @@ void startLittlefs(xsMachine *the)
 	}
 #elif nrf52 || PICO_BUILD
 	uint32_t storageOffset, storageSize;
-	if (!modGetPartition(kPartitionStorage, &storageOffset, &storageSize))
+	if (!modGetPartition(kPartitionStorage, &storageOffset, &storageSize)){
+#if defined(INC_FREERTOS_H) && defined(LFS_THREADSAFE)
+		xSemaphoreGive(gLFSMutex);
+#endif
 		xsUnknownError("no storage");
+	}
 #endif
 
 	xsLittleFS lfs = (xsLittleFS)c_calloc(sizeof(xsLittleFSRecord), 1);

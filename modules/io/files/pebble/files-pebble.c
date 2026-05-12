@@ -62,8 +62,10 @@ static char *_getPath(xsMachine *the, xsSlot *slot)
 	char *p = path;
 	int state = kPathStateSlash;
 
-	if (0 == c_read8(p))
-		return "./";
+	if (0 == c_read8(p)) {
+		xsmcSetStringX(*slot, "./");
+		return xsmcToString(*slot);
+	}
 
 	while (true) {
 		switch (c_read8(p++)) {
@@ -318,6 +320,7 @@ void xs_directorypfs_openDirectory(xsMachine *the)
 {
 	xsResult = xsNewHostInstance(xsArg(1));
 
+	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_path);
 	char *filePath = getPath(xsVar(0));
 	char fullPath[FILE_MAX_NAME_LEN + 1];
@@ -397,9 +400,9 @@ void xs_directorypfs_createDirectory(xsMachine *the)
 	setModdableAppState(root, fullPath);
 	pfs_delete_file_list(pfs_create_file_list(pfsStatus));
 	if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
-		xsmcSetFalse(xsResult);		// new directoty
+		xsmcSetTrue(xsResult);		// new directory
 	else
-		xsmcSetTrue(xsResult);		// already exists
+		xsmcSetFalse(xsResult);		// already exists
 }
 
 /*
@@ -435,7 +438,7 @@ void xs_directorypfs_scan(xsMachine *the)
 	xsResult = xsmcNewArray(0);
 
 	char fullPath[FILE_MAX_NAME_LEN + 1];
-	char *filePath = (xsmcArgc > 0) ? getPath(xsVar(0)) : C_NULL;
+	char *filePath = (xsmcArgc > 0) ? getPath(xsArg(0)) : C_NULL;
 	buildFullPath(the, fullPath, filePath);
 	setModdableAppState(root, fullPath);
 
