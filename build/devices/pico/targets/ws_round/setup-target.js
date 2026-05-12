@@ -1,45 +1,33 @@
-import Digital from "pins/digital";
 import config from "mc/config";
 import Timer from "timer";
-import PWM from "pins/pwm";
-
-class Backlight extends PWM {
-	constructor(brightness = 100) {
-		super({pin: config.backlight});
-		this.write(brightness);
-	}
-	write(value) {
-		if (value <= 0)
-			value = 0;
-		else if (value >= 100)
-			value = 1023;
-		else
-			value = (value / 100) * 1023;
-		super.write(value);
-	}
-}
-
-globalThis.Host = Object.freeze({
-	Backlight
-}, true);
 
 export default function (done) {
-	if ((undefined == config.brightness) || ("none" === config.brightness))
-		Digital.write(config.backlight, 0);
-	else if ("off" === config.backlight)
-		Digital.write(config.backlight, 1);
+	const Digital = device.io.Digital;
+	const backlightPin = new Digital({ pin: config.backlight, mode: Digital.Output });
+	if ((undefined === config.brightness) || ("none" === config.brightness)) {
+		backlightPin.write(0);
+		backlightPin.close();
+	}
+	else if ("off" === config.backlight) {
+		backlightPin.write(1);
+		backlightPin.close();
+	}
 	else {
+		backlightPin.close();
 		globalThis.backlight = new device.peripheral.Backlight;
 		backlight.brightness = parseInt(config.brigtness) / 100;
 	}
+	const displayResetPin = new Digital({ pin: config.lcd_rst_pin, mode: Digital.Output });
+	const displayCSPin = new Digital({ pin: config.lcd_cs_pin, mode: Digital.Output });
 
-	Digital.write(config.lcd_rst_pin, 1);
+	displayResetPin.write(1);
 	Timer.delay(100);
-	Digital.write(config.lcd_rst_pin, 0);
+	displayResetPin.write(0);
 	Timer.delay(100);
-	Digital.write(config.lcd_rst_pin, 0);
-	Digital.write(config.lcd_cs_pin, 0);
+	displayCSPin.write(0);
 	Timer.delay(100);
+	displayResetPin.close();
+	displayCSPin.close();
 
 	done();
 }

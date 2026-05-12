@@ -26,6 +26,7 @@ import PulseCount from "embedded:io/pulsecount";
 import PWM from "embedded:io/pwm";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
+import QMI8658 from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
 class Backlight {
 	#io;
@@ -90,6 +91,27 @@ const device = {
 			constructor() {
 				if (device.pin.backlight)
 					return new Backlight({pin: device.pin.backlight });
+			}
+		}
+	},
+	sensor: {
+		IMU: class extends QMI8658 {
+			constructor(options) {
+				super({
+					...options,
+					sensor: {
+						...device.I2C.default,
+						io: device.io.SMBus
+					}
+				});
+			}
+			sample() {
+				const sample = super.sample();
+				[sample.accelerometer.x, sample.accelerometer.y] = [sample.accelerometer.y, sample.accelerometer.x];
+				sample.accelerometer.z *= -1;
+				[sample.gyroscope.x, sample.gyroscope.y] = [sample.gyroscope.y, sample.gyroscope.x];
+				sample.gyroscope.z *= -1;
+				return sample;
 			}
 		}
 	}

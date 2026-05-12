@@ -2,9 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/gc9a01/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/pins/pwm/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/qmi8658/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
@@ -19,11 +17,6 @@
 		"lcd_cs_pin": 9
 	},
 	"defines": {
-		"i2c": {
-			"sda_pin": 6,
-			"scl_pin": 7,
-			"port": 1
-		},
 		"spi": {
 			"mosi_pin": 11,
 			"sck_pin": 10
