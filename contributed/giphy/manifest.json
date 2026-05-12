@@ -71,7 +71,7 @@
 	"platforms": {
 		"esp32": {},
 		"...": {
-			"error": "unsupported target"
+			"error": "Giphy unsupported target"
 		}
 	}
 }

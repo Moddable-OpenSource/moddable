@@ -115,7 +115,7 @@
 			"error": "use build target \"x-cli-win\" instead of \"win\""
 		},
 		"...": {
-			"warning": "unsupported target"
+			"warning": "REPL unsupported target"
 		}
 	},
 	"bundle": {

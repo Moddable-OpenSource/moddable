@@ -16,7 +16,7 @@
 			]
 		},
 		"...": {
-			"error": "unsupported target"
+			"error": "HTTP OTA unsupported target"
 		}
 	}
 }

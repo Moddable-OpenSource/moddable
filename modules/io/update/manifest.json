@@ -7,7 +7,7 @@
 			"include": "./mac/manifest.json"
 		},
 		"...": {
-			"error": "unsupported target"
+			"error": "ECMA-419 OTA Update unsupported target"
 		}
 	}
 }

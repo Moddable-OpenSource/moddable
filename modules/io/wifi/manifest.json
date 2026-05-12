@@ -16,7 +16,7 @@
 			"include": "./zephyr/manifest.json"
 		},
 		"...": {
-			"error": "unsupported target"
+			"error": "ECMA-419 Wi-Fi unsupported target"
 		}
 	}
 }
