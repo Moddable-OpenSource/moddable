@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_commodetto.json",
+		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/mpu6050/manifest.json",
+		"$(MODDABLE)/modules/io/manifest.json"
+	],
+	"modules": {
+		"*": [
+			"./main"
+		]
+	},
+	"config": {
+		"orientation": "180"
+	},
+	"preload": [
+		"pins/*"
+	],
+	"resources": {
+		"*": "./ball",
+		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
+	}
+}
