@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -20,48 +20,44 @@
 
 import config from "mc/config";
 import Time from "time";
-import WiFi from "wifi";
-import Net from "net";
+import WiFi from "embedded:network/interface/wifi";
 import SNTP from "sntp";
 
 export default function (done) {
-
 	if (!config.ssid) {
 		trace("No Wi-Fi SSID\n");
 		return done();
 	}
 
-	WiFi.mode = WiFi.Mode.station;
+	const w = new WiFi({
+		onChanged(/* property */) {
+			const connection = this.connection;
+			if (connection < 500) {
+				if (connection >= 400)
+					trace(`Wi-Fi connected to "${this.SSID}"\n`);
+				else if (connection <= 200)
+					trace(`Wi-Fi disconnected\n`);		//@@ password rejected?
+				return;
+			}
 
-	new WiFi({ssid: config.ssid, password: config.password}, function(msg, code) {
-	   switch (msg) {
-		   case WiFi.gotIP:
-				trace(`IP address ${Net.get("IP")}\n`);
+			trace(`IP address ${this.address}\n`);
+			this.close();
+			if (!config.sntp || (Date.now() > 1672722071_000))
+				return done();
 
-				this.close();
-				if (!config.sntp || (Date.now() > 1672722071_000))
-					return done();
-
-				new SNTP({host: config.sntp}, function(message, value) {
-					if (SNTP.time === message) {
-						trace(`got time from ${config.sntp}\n`);
-						Time.set(value);
-					}
-					else if (SNTP.error === message)
-						trace("can't get time\n");
-					else
-						return;
-					done();
-				});
-				break;
-
-			case WiFi.connected:
-				trace(`Wi-Fi connected to "${Net.get("SSID")}"\n`);
-				break;
-
-			case WiFi.disconnected:
-				trace((-1 === code) ? "Wi-Fi password rejected\n" : "Wi-Fi disconnected\n");
-				break;
+			new SNTP({host: config.sntp}, function(message, value) {
+				if (SNTP.time === message) {
+					trace(`got unix time ${value} from ${config.sntp}\n`);
+					Time.set(value);
+				}
+				else if (SNTP.error === message)
+					trace("can't get time\n");
+				else
+					return;
+				done();
+			});
 		}
 	});
+
+	w.connect(config.password ? {SSID: config.ssid, password: config.password, secure: true} : {SSID: config.ssid});
 }

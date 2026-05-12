@@ -183,14 +183,13 @@ void xs_wifi419_close(xsMachine *the)
 
 static void initWiFi(void)
 {
+	if (gStation) return;
+
 	wifi_mode_t mode;
 	if (ESP_OK == esp_wifi_get_mode(&mode)) {
-		if (!gStation)
-			gStation = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+		gStation = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
 		return;
 	}
-
-	if (gStation) return;
 
 	esp_netif_init();
 	esp_err_t err = esp_event_loop_create_default();
@@ -350,8 +349,11 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	if (wf->onChanged &&
 		((prevConnecting != wf->connecting) ||
 		 (prevConnected != wf->connected) ||
-		 (prevIP != wf->ip)))
-		xsCallFunction0(xsReference(wf->onChanged), wf->obj);
+		 (prevIP != wf->ip))) {
+		xsSlot tmp;
+		xsmcSetStringX(tmp, "connection");
+		xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+	}
 
 	xsEndHost(the);
 

@@ -1,4 +1,7 @@
 {
+	"modules": {
+		"*": "$(MODULES)/io/common/builtinCommon"
+	},
 	"platforms": {
 		"esp32": {
 			"include": "./esp32/manifest.json",

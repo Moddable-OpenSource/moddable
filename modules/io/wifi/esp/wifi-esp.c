@@ -334,8 +334,11 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	if (wf->onChanged &&
 		((prevConnecting != wf->connecting) ||
 		 (prevConnected != wf->connected) ||
-		 (prevIP != wf->gotIP)))
-		xsCallFunction0(xsReference(wf->onChanged), wf->obj);
+		 (prevIP != wf->gotIP))) {
+		xsSlot tmp;
+		xsmcSetStringX(tmp, "connection");
+		xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+	}
 
 	xsEndHost(the);
 

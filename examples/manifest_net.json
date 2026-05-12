@@ -8,7 +8,7 @@
 				"$(MODULES)/network/net/manifest.json",
 				"$(MODULES)/network/socket/manifest.json",
 				"$(MODULES)/network/sntp/manifest.json",
-				"$(MODULES)/network/wifi/manifest.json"
+				"$(MODULES)/io/wifi/manifest.json"
 			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/esp/setup/network"
@@ -20,7 +20,7 @@
 				"$(MODULES)/network/net/manifest.json",
 				"$(MODULES)/network/socket/manifest.json",
 				"$(MODULES)/network/sntp/manifest.json",
-				"$(MODULES)/network/wifi/manifest.json"
+				"$(MODULES)/io/wifi/manifest.json"
 			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/esp32/setup/network"
@@ -32,7 +32,7 @@
 				"$(MODULES)/network/net/manifest.json",
 				"$(MODULES)/network/socket/manifest.json",
 				"$(MODULES)/network/sntp/manifest.json",
-				"$(MODULES)/network/wifi/manifest.json",
+				"$(MODULES)/io/wifi/manifest.json",
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json"
 			],
 			"modules": {
@@ -48,7 +48,7 @@
 				"$(MODULES)/network/net/manifest.json",
 				"$(MODULES)/network/socket/manifest.json",
 				"$(MODULES)/network/sntp/manifest.json",
-				"$(MODULES)/network/wifi/manifest.json"
+				"$(MODULES)/io/wifi/manifest.json"
 			],
 			"modules": {
 				"setup/network": "$(BUILD)/devices/pico/setup/network"

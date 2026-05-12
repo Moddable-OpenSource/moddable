@@ -27,8 +27,6 @@
 #include "lwip/netif.h"
 #include "lwip/ip4_addr.h"
 
-extern char gSSID[];
-
 void twoHex(uint8_t value, char *out)
 {
     static const char *gHex = "0123456789ABCDEF";
@@ -66,7 +64,13 @@ void xs_net_get(xsMachine *the)
 
 	}
 	else if (0 == c_strcmp(prop, "SSID")) {
-		xsResult = xsString(gSSID);
+		uint8_t buf[36];
+
+		if (0 == cyw43_ioctl(&cyw43_state, CYW43_IOCTL_GET_SSID, sizeof(buf), buf, CYW43_ITF_STA)) {
+			uint32_t len = c_read32(buf);
+			if (len && (len <= 32))
+				xsResult = xsStringBuffer((char *)(buf + sizeof(uint32_t)), len);
+		}
 	}
 //@@ - not yet
 /*
