@@ -26,4 +26,10 @@ function deleteTree(files, path) {
 
 files.createDirectory("tmp");
 const tmp = files.openDirectory({path: "tmp"});
-export {tmp as default, deleteTree, scan}
+
+const capabilities = {
+	createLink: typeof tmp.createLink === "function",
+	readLink:   typeof tmp.readLink   === "function",
+};
+
+export {tmp as default, capabilities, deleteTree, scan}

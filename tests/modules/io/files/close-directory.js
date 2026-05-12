@@ -21,3 +21,4 @@ if (d.readLink)
 	assert.throws(SyntaxError, () => d.readLink("123"));
 assert.throws(SyntaxError, () => d.scan("123"));
 assert.throws(SyntaxError, () => d.openDirectory({path: "123"}));
+assert.throws(SyntaxError, () => d.openFile({path: "123"}));
