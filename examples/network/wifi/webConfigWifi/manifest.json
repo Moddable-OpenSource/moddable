@@ -3,7 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
         "$(MODDABLE)/examples/manifest_net.json",
         "$(MODULES)/files/preference/manifest.json",
-        "$(MODULES)/network/mdns/manifest.json"
+        "$(MODULES)/network/mdns/manifest.json",
+		"$(MODDABLE)/modules/network/wifi/manifest.json"
 	],
 	"modules": {
 		"*": [
