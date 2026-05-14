@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json",
+		"$(MODDABLE)/modules/io/update/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"defines": {
+		"ota": {
+			"autosplit": 1
+		}
+	}
+}
