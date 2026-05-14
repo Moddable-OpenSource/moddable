@@ -11,5 +11,13 @@
 		"ota": {
 			"autosplit": 1
 		}
+	},
+	"ffi": {
+		"functions": {
+			"esp_restart": {
+				"arguments": [ ],
+				"returns": "void"
+			}
+		}
 	}
 }
