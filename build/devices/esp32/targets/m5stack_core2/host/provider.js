@@ -28,6 +28,29 @@ import Serial from "embedded:io/serial";
 import SMBus from "embedded:io/smbus";
 import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
+import BMI270 from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
+import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
+
+const ACCELERATION_SCALER = 1 / 9.80665;
+const IMU_ADDRESS = 0x68;
+const BMI270_CHIP_ID_ADDR = 0x00;
+const BMI270_CHIP_ID = 0x24;
+const MPU6886_WHO_AM_I_ADDR = 0x75;
+const MPU6886_WHO_AM_I = 0x19;
+
+class Core2BMI270 extends BMI270 {
+	sample() {
+		const sample = super.sample();
+
+		if (sample.accelerometer) {
+			sample.accelerometer.x *= ACCELERATION_SCALER;
+			sample.accelerometer.y *= ACCELERATION_SCALER;
+			sample.accelerometer.z *= ACCELERATION_SCALER;
+		}
+
+		return sample;
+	}
+}
 
 const device = {
 	I2C: {
@@ -69,7 +92,50 @@ const device = {
 	pin: {
 		displayDC: 15,
 		displaySelect: 5
+	},
+	sensor: {
+		IMU: class {
+			constructor(options) {
+				const sensor = {
+					...device.I2C.internal,
+					address: IMU_ADDRESS,
+					io: device.io.SMBus
+				};
+
+				if (MPU6886_WHO_AM_I === readIMURegister(MPU6886_WHO_AM_I_ADDR))
+					return new MPU6886({
+						...options,
+						sensor
+					});
+
+				if (BMI270_CHIP_ID === readIMURegister(BMI270_CHIP_ID_ADDR))
+					return new Core2BMI270({
+						...options,
+						sensor
+					});
+
+				throw new Error("IMU not found");
+			}
+		}
 	}
 };
+
+function readIMURegister(register) {
+	let io;
+	try {
+		io = new device.io.SMBus({
+			data: device.I2C.internal.data,
+			clock: device.I2C.internal.clock,
+			hz: 400_000,
+			address: IMU_ADDRESS
+		});
+		return io.readUint8(register);
+	}
+	catch (e) {
+	}
+	finally {
+		io?.close();
+	}
+}
 
 export default device;
