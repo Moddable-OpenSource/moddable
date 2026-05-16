@@ -20,7 +20,7 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import ILI9341 from "ili9341";
 import device from "embedded:provider/builtin";
-import Accelerometer from "embedded:sensor/Accelerometer-Gyroscope/MPU6050";
+import Accelerometer from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
 let pixelsOut = new ILI9341({});
 const width = pixelsOut.width;
