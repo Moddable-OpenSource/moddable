@@ -586,7 +586,7 @@ int doWrite(AudioOut audioOut, void *audioData, xsUnsignedValue requested)
 		int16_t volumeFixed = audioOut->volumeFixed;
 		int requestedSamples = amt >> 1;		//@@ broken for stereo & 8 bit
 		int16_t *src = (int16_t *)audioData;
-		int16_t *samples = buffer->buffer->bytes + audioOut->bufferPendingPos;
+		int16_t *samples = (int16_t *)(buffer->buffer->bytes + audioOut->bufferPendingPos);
 		int i;
 		for (i=0; i<requestedSamples; i++)
 			samples[i] = (*src++ * volumeFixed) >> 8;

@@ -89,9 +89,9 @@ class CertificateManager {
 			return -1;
 
 		const data = new Resource(name);
-		for (let i = 0; ((i + 1) * 20) <= data.byteLength; i++) {
-			if (!Bin.comp(data.slice(i * 20, (i + 1) * 20, false), target))
-				return i;
+		for (let i = 0, byteLength = data.byteLength; i < byteLength; i += 20) {
+			if (!Bin.comp(data.slice(i, i + 20, false), target))
+				return i / 20;
 		}
 		return -1;
 	}

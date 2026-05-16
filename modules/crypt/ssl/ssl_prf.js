@@ -74,7 +74,8 @@ function PRF(session, secret, label, seed, n, hash)
 			hash = session.chosenCipher.hashAlgorithm == SHA384 ? "SHA384" : "SHA256";
 		result = p_hash(new Crypt.Digest(hash), secret, label, n);
 	}
-	return result.slice(0, n);
+	result.buffer.resize(n);		// p_hash > getChunk returns resizable buffer
+	return result;
 }
 
 export default PRF;

@@ -503,7 +503,7 @@ void PiuViewDrawStringAux(PiuView* self, xsSlot* string, xsIntegerValue offset, 
 			length -= text - formerText;
 
 			glyph = PiuFontGetGlyph(font, character, 1);
-			if (glyph->substitute) {
+			if (glyph && glyph->substitute) {
 				substitute = glyph->substitute;
 #if MODDEF_CFE_KERN
 				character = formerCharacter;
