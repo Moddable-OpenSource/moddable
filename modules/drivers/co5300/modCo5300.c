@@ -78,7 +78,8 @@
 #define CO5300_COLOR_CMD     ((0x32 << 24) | (0x2C << 8))
 #define CO5300_MADCTL_MY     (0x80)
 #define CO5300_MADCTL_MX     (0x40)
-#define CO5300_ROTATE_BUFFER_PIXELS	((((MODDEF_CO5300_WIDTH) > (MODDEF_CO5300_HEIGHT)) ? (MODDEF_CO5300_WIDTH) : (MODDEF_CO5300_HEIGHT)) * 2)
+#define CO5300_ROTATE_BUFFER_LINES	16
+#define CO5300_ROTATE_BUFFER_PIXELS	((((MODDEF_CO5300_WIDTH) > (MODDEF_CO5300_HEIGHT)) ? (MODDEF_CO5300_WIDTH) : (MODDEF_CO5300_HEIGHT)) * CO5300_ROTATE_BUFFER_LINES)
 
 typedef struct {
 	PixelsOutDispatch			dispatch;
@@ -116,6 +117,7 @@ static void co5300SetMADCTL(co5300Display sd);
 static void co5300SetWindow(co5300Display sd, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 static void co5300WaitForColors(co5300Display sd);
 static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLength);
+static uint8_t co5300EnsureRotateBuffer(co5300Display sd);
 static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength);
 static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int byteLength);
 
@@ -194,13 +196,6 @@ void xs_co5300(xsMachine *the)
 		xsUnknownError("no memory");
 
 	xsmcSetHostData(xsThis, sd);
-
-	sd->rotateBuffer = c_malloc(CO5300_ROTATE_BUFFER_PIXELS * sizeof(uint16_t));
-	if (!sd->rotateBuffer) {
-		c_free(sd);
-		xsmcSetHostData(xsThis, NULL);
-		xsUnknownError("no memory");
-	}
 
 	spi_bus_config_t buscfg = {
 		.sclk_io_num = MODDEF_CO5300_SCK_PIN,
@@ -342,11 +337,15 @@ void xs_co5300_set_rotation(xsMachine *the)
 {
 	co5300Display sd = xsmcGetHostData(xsThis);
 	int32_t rotation = xsmcToInteger(xsArg(0));
+	uint8_t newRotation;
 
 	if ((0 != rotation) && (90 != rotation) && (180 != rotation) && (270 != rotation))
 		xsRangeError("invalid rotation");
 
-	sd->rotation = (uint8_t)(rotation / 90);
+	newRotation = (uint8_t)(rotation / 90);
+	if ((newRotation & 1) && !co5300EnsureRotateBuffer(sd))
+		xsUnknownError("no memory");
+	sd->rotation = newRotation;
 	co5300SetMADCTL(sd);
 }
 
@@ -551,14 +550,22 @@ static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLe
 	co5300WaitForColors(sd);
 }
 
+static uint8_t co5300EnsureRotateBuffer(co5300Display sd)
+{
+	if (!sd->rotateBuffer)
+		sd->rotateBuffer = c_malloc(CO5300_ROTATE_BUFFER_PIXELS * sizeof(uint16_t));
+	return NULL != sd->rotateBuffer;
+}
+
 static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength)
 {
 	int lines = (byteLength >> 1) / sd->updateWidth;
 	int row = sd->updateHeight - sd->updateLinesRemaining;
 	uint16_t *src = pixels;
+	int rowsPerBuffer = CO5300_ROTATE_BUFFER_PIXELS / sd->updateWidth;
 
 	while (lines > 0) {
-		int rows = (lines > 1) ? 2 : 1;
+		int rows = (lines > rowsPerBuffer) ? rowsPerBuffer : lines;
 		uint16_t *out = sd->rotateBuffer;
 		uint16_t x, y, w, h;
 
