@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Touch/Si12T": "./si12t"
+	},
+	"preload": [
+		"embedded:sensor/Touch/Si12T"
+	]
+}

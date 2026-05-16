@@ -58,6 +58,8 @@ const curves = {
 };
 Object.freeze(curves, true);
 
+const a = Object.freeze(Uint8Array.of(4).buffer);		// 4 for uncompressed
+
 export default class Curve {
 	constructor(name) {
 		if (!(name in curves))
@@ -79,13 +81,9 @@ export default class Curve {
 		else
 			G = this.G;
 		P = this.ec.mul(G, BigInt.fromArrayBuffer(x));
-		let xs = ArrayBuffer.fromBigInt(P.X, this.orderSize);
-		let ys = ArrayBuffer.fromBigInt(P.Y, this.orderSize);
-		let a = new Uint8Array(this.orderSize * 2 + 1);
-		a[0] = 0x04;	// uncompressed
-		a.set((new Uint8Array(xs)), 1);
-		a.set((new Uint8Array(ys)), this.orderSize + 1);
-		return a.buffer;
+		const xs = ArrayBuffer.fromBigInt(P.X, this.orderSize);
+		const ys = ArrayBuffer.fromBigInt(P.Y, this.orderSize);
+		return a.concat(xs, ys);
 	};
 	get orderSize() {
 		let n = BigInt.bitLength(this.n);

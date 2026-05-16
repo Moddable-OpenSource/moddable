@@ -367,6 +367,21 @@ uint16_t bmfUnicodeToGlyphID(CommodettoFontEngine bmf, uint32_t c)
 	return kInvalidGlyphID;
 }
 
+static const char kLatin1Base[96][2] = {
+    " ",  "", "c", "#",  "", "Y",  "",  "",
+     "",  "", "a","\"",  "", "-",  "",  "",
+     "",  "", "2", "3", "'",  "",  "", ".",
+     "", "1", "o","\"",  "",  "",  "",  "",
+    "A", "A", "A", "A", "A", "A",  "", "C",
+    "E", "E", "E", "E", "I", "I", "I", "I",
+    "D", "N", "O", "O", "O", "O", "O",  "",
+    "O", "U", "U", "U", "U", "Y",  "",  "",
+    "a", "a", "a", "a", "a", "a",  "", "c",
+    "e", "e", "e", "e", "i", "i", "i", "i",
+    "d", "n", "o", "o", "o", "o", "o",  "",
+    "o", "u", "u", "u", "u", "y",  "", "y",
+};
+
 typedef struct {
 	uint32_t	codepoint;
 	char		ascii[4];
@@ -374,29 +389,12 @@ typedef struct {
 
 static const UnicodeEntry TABLE[] = {
 //	{ 0x0060, "'"   },  /* GRAVE ACCENT (used as open quote)                */
-	{ 0x00A0, " "   },  /* NO-BREAK SPACE                                   */
-	{ 0x00A2, "c"   },  /* CENT SIGN                                        */
-	{ 0x00A3, "#"   },  /* POUND SIGN                                       */
-	{ 0x00A5, "Y"   },  /* YEN SIGN                                         */
 	{ 0x00A9, "(C)" },  /* COPYRIGHT SIGN                                   */
-	{ 0x00AA, "a"   },  /* FEMININE ORDINAL INDICATOR                       */
-	{ 0x00AB, "\""  },  /* LEFT-POINTING DOUBLE ANGLE QUOTATION MARK        */
-	{ 0x00AD, "-"   },  /* SOFT HYPHEN                                      */
 	{ 0x00AE, "(R)" },  /* REGISTERED SIGN                                  */
-	{ 0x00B2, "2"   },  /* SUPERSCRIPT TWO                                  */
-	{ 0x00B3, "3"   },  /* SUPERSCRIPT THREE                                */
-	{ 0x00B4, "'"   },  /* ACUTE ACCENT (used as close quote)               */
-	{ 0x00B7, "."   },  /* MIDDLE DOT                                       */
-	{ 0x00B9, "1"   },  /* SUPERSCRIPT ONE                                  */
-	{ 0x00BA, "o"   },  /* MASCULINE ORDINAL INDICATOR                      */
-	{ 0x00BB, "\""  },  /* RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK       */
 	{ 0x00C6, "AE"  },  /* LATIN CAPITAL LETTER AE                          */
-	{ 0x00D0, "D"   },  /* LATIN CAPITAL LETTER ETH                         */
-	{ 0x00D8, "O"   },  /* LATIN CAPITAL LETTER O WITH STROKE               */
 	{ 0x00DE, "Th"  },  /* LATIN CAPITAL LETTER THORN                       */
+	{ 0x00DF, "ss"  },  /* LATIN SMALL LETTER SHARP S                       */
 	{ 0x00E6, "ae"  },  /* LATIN SMALL LETTER AE                            */
-	{ 0x00F0, "d"   },  /* LATIN SMALL LETTER ETH                           */
-	{ 0x00F8, "o"   },  /* LATIN SMALL LETTER O WITH STROKE                 */
 	{ 0x00FE, "th"  },  /* LATIN SMALL LETTER THORN                         */
 	{ 0x0132, "IJ"  },  /* LATIN CAPITAL LIGATURE IJ                        */
 	{ 0x0133, "ij"  },  /* LATIN SMALL LIGATURE IJ                          */
@@ -597,6 +595,12 @@ static const UnicodeEntry TABLE[] = {
 
 const char *getASCIISubstitution(uint32_t cp)
 {
+	if ((0x00A0 <= cp) && (cp <= 0x00FF)) {
+		const char *base = kLatin1Base[cp - 0x00A0];
+		if (base[0])
+			return base;
+	}
+
 	size_t lo = 0, hi = (sizeof(TABLE) / sizeof(TABLE[0]));
 
 	while (lo < hi) {

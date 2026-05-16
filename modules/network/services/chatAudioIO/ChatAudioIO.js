@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -74,7 +74,7 @@ class ChatAudioIO {
 		this.onFunctionCall = options.onFunctionCall ?? callback;
 		this.onInputLevelChanged = options.onInputLevelChanged ?? callback;
 		this.onInputTranscript = options.onInputTranscript ?? callback;
-		this.onOutputLevelChanged = options.onOutputLevelChanged ?? callback;
+		this.onOutputLevelChanged = options.onOutputLevelChanged;
 		this.onOutputTranscript = options.onOutputTranscript ?? callback;
 		this.onStateChanged = options.onStateChanged ?? callback;
 
@@ -265,10 +265,12 @@ class ChatAudioIO {
 						if (delta > size)
 							delta = size;
 						const samples = new Uint8Array(this.outputBuffer, start, delta);
-						const samplesLevel = computeLevel(samples);
-						if (level < samplesLevel)
-							level = samplesLevel;
-						this.output.write(samples);
+						if (this.onOutputLevelChanged) {
+							const samplesLevel = computeLevel(samples);
+							if (level < samplesLevel)
+								level = samplesLevel;
+						}
+					this.output.write(samples);
 						start += delta;
 						size -= delta;
 					}
@@ -280,9 +282,11 @@ class ChatAudioIO {
 					if (delta > size)
 						delta = size;
 					const samples = new Uint8Array(this.outputBuffer, start, delta);
-					const samplesLevel = computeLevel(samples);
-					if (level < samplesLevel)
-						level = samplesLevel;
+					if (this.onOutputLevelChanged) {
+						const samplesLevel = computeLevel(samples);
+						if (level < samplesLevel)
+							level = samplesLevel;
+					}
 					this.output.write(samples);
 					start += delta;
 					size -= delta;
@@ -298,7 +302,7 @@ class ChatAudioIO {
 				}
 				if (this.level != level) {
 					this.level = level;
-					this.onOutputLevelChanged(level);
+					this.onOutputLevelChanged?.(level);
 				}
 			},
 		});

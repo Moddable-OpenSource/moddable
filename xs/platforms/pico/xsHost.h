@@ -440,6 +440,10 @@ int pico_cyw43_inited();
 void pico_unuse_cyw43();
 #endif
 
+#ifdef __XS__
+    extern uint8_t fxInNetworkDebugLoop(xsMachine *the);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
