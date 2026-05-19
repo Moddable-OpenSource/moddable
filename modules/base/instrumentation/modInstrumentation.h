@@ -42,7 +42,7 @@
 	#endif
 #endif
 
-#if !nrf52
+#if !nrf52 && !pebble
 	#define kModInstrumentationHasNetwork 1
 #endif
 
