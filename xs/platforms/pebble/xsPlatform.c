@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -41,78 +41,56 @@
 #include "xsPlatform.h"
 
 #include "mc.defines.h"
+#include "moddableAppState.h"
+#include "applib/moddable/moddable.h"
+
+#include "pbl/services/comm_session/protocol.h"
+#include "pbl/services/comm_session/session.h"
+#include "pbl/services/comm_session/session_receive_router.h"
+#include "pbl/services/comm_session/session_send_buffer.h"
+#include "pbl/services/comm_session/session_send_queue.h"
+#include "drivers/task_watchdog.h"
+#include "drivers/watchdog.h"
 
 #include "xs.h"
 #include "xsHosts.h"
 #include "FreeRTOS.h"
-
-#ifdef mxDebug
-	#include "modPreference.h"
-#endif
+#include "light_mutex.h"
+#include "semphr.h"
 
 #include "applib/app_logging.h"
 #include "system/logging.h"
 
-#define XSDEBUG_NONE	0,0,0,0
-#define XSDEBUG_SERIAL	127,0,0,7
+LightMutexHandle_t gDebugMutex;
+#define mxDebugMutexTake() xLightMutexLock(gDebugMutex, portMAX_DELAY)
+#define mxDebugMutexGive() xLightMutexUnlock(gDebugMutex)
+#define mxDebugMutexAllocated() (NULL != gDebugMutex)
 
-#ifndef DEBUG_IP
-	#define DEBUG_IP XSDEBUG_SERIAL
-#endif
+extern void modMachineTaskInit(txMachine *the);
+extern void modMachineTaskUninit(txMachine *the);
 
-uint8_t gXSBUG[4] = { DEBUG_IP };
+static void doDebugCommand(void *data);
 
+#define XSBUG_CTRL_ENDPOINT (51967)
 
-#define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
-#define kSerialConnection ((void*)0x87654321)
-
-static void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf);
-void fxReceiveLoop(void);
-
-#ifdef mxDebug
-	static void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen);
-#endif
-
-#if defined (FREERTOS)
-	#include "semphr.h"
-
-	LightMutexHandle_t gDebugMutex;
-	#define mxDebugMutexTake() xLightMutexLock(gDebugMutex, portMAX_DELAY)
-	#define mxDebugMutexGive() xLightMutexUnlock(gDebugMutex)
-	#define mxDebugMutexAllocated() (NULL != gDebugMutex)
-#else
-	#define mxDebugMutexTake()
-	#define mxDebugMutexGive()
-	#define mxDebugMutexAllocated()  (true)
-#endif
-
-int modMessagePostToMachine(txMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon);
-int modMessageService(void);
-
-void modMachineTaskInit(txMachine *the);
-void modMachineTaskUninit(txMachine *the);
-void modMachineTaskWait(txMachine *the);
-void modMachineTaskWake(txMachine *the);
+#include "system/reboot_reason.h"
 
 void fxCreateMachinePlatform(txMachine* the)
 {
 	modMachineTaskInit(the);
 #ifdef mxDebug
-	the->connection = (txSocket)mxNoSocket;
-	if (!gDebugMutex) {
+	if (!gDebugMutex)
 		gDebugMutex = xLightMutexCreate();
-	}
+	the->debugNotifyTimerID = evented_timer_register(100, true, doDebugCommand, the);
+	the->state = app_state_get_js_memory_api_context();
 #endif
 }
 
 void fxDeleteMachinePlatform(txMachine* the)
 {
 #ifdef mxDebug
-    while (the->debugFragments) {
-        DebugFragment next = the->debugFragments->next;
-        c_free(the->debugFragments);
-        the->debugFragments = next;
-    }
+	 if (EVENTED_TIMER_INVALID_ID != the->debugNotifyTimerID)
+	 	evented_timer_cancel(the->debugNotifyTimerID);
 #endif
 
 #ifdef mxInstrument
@@ -122,87 +100,14 @@ void fxDeleteMachinePlatform(txMachine* the)
 	modMachineTaskUninit(the);
 }
 
-void fx_putc(void *refcon, char c)
-{
-#ifdef mxDebug
-    txMachine* the = refcon;
-
-    if (the->inPrintf) {
-        if (0 == c) {
-            if ((txSocket)kSerialConnection == the->connection) {
-                // write xsbug log trailer
-                const static const char *xsbugTrailer = "&#10;</log></xsbug>\r\n";
-                const char *cp = xsbugTrailer;
-                while (true) {
-                    char c = c_read8(cp++);
-                    if (!c) break;
-                    ESP_putc(c);
-                }
-				mxDebugMutexGive();
-            }
-            the->inPrintf = false;
-            return;
-        }
-    }
-    else {
-        if (0 == c)
-            return;
-
-        the->inPrintf = true;
-        if ((txSocket)kSerialConnection == the->connection) {
-			mxDebugMutexTake();
-
-            // write xsbug log header
-            static const char *xsbugHeader = "<xsbug><log>";
-            const char *cp = xsbugHeader;
-			fx_putpi(the, '.', true);
-            while (true) {
-                char c = c_read8(cp++);
-                if (!c) break;
-                ESP_putc(c);
-            }
-        }
-    }
-#endif
-
-    ESP_putc(c);
-}
-
-void fx_putpi(txMachine *the, char separator, txBoolean trailingcrlf)
-{
-    static const char *xsbugHeaderStart = "\r\n<?xs";
-    static const char *xsbugHeaderEnd = "?>";
-    static const char *gHex = "0123456789ABCDEF";
-    signed char i;
-    const char *cp = xsbugHeaderStart;
-    while (true) {
-        char c = c_read8(cp++);
-        if (!c) break;
-        ESP_putc(c);
-    }
-
-    ESP_putc(separator);
-
-    for (i = 7; i >= 0; i--)
-        ESP_putc(c_read8(gHex + ((((uintptr_t)the) >> (i << 2)) & 0x0F)));
-
-    cp = xsbugHeaderEnd;
-    while (true) {
-        char c = c_read8(cp++);
-        if (!c) break;
-        ESP_putc(c);
-    }
-
-    if (trailingcrlf) {
-		ESP_putc('\r');
-		ESP_putc('\n');
-    }
-}
-
 void fxAbort(txMachine* the, int status)
 {
 	char *msg = (char*)fxAbortString(status);
 	char *reason = "";
+#ifdef mxDebug
+	if (XS_DEBUGGER_EXIT == status)
+		return;
+#endif
 	if (XS_UNHANDLED_EXCEPTION_EXIT == status) {
 		xsSlot errorStack = xsGet(xsException, mxID(_stack));
 		xsStringValue stackStr = xsToString(errorStack);
@@ -224,134 +129,81 @@ void fxAbort(txMachine* the, int status)
 
 #ifdef mxDebug
 
-static void initializeConnection(txMachine *the)
-{
-	the->connection = (txSocket)NULL;
-	c_memset(the->readers, 0, sizeof(the->readers));
-	the->readerOffset = 0;
-	the->inPrintf = 0;
-	the->debugNotifyOutstanding = 0;
-	the->DEBUG_LOOP = 0;
-	the->wsState = 0;
-	the->wsSendStart = 1;
-	while (the->debugFragments) {
-		void *tmp = the->debugFragments;
-		the->debugFragments = the->debugFragments->next;
-		c_free(tmp);
-	}
-}
-
-static void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength);
-
 void fxConnect(txMachine* the)
 {
-	extern unsigned char gXSBUG[4];
-
-	initializeConnection(the);
-
-	if (isSerialIP(gXSBUG)) {
-		static txBoolean once = false;
-
-		if (!once) {
-			static const char *piReset = "<?xs-00000000?>\r\n";
-			const char *cp = piReset;
-
-			modDelayMilliseconds(200);
-			taskYIELD();
-
-			while (true) {
-				char c = c_read8(cp++);
-				if (!c) break;
-				ESP_putc(c);
-			}
-
-			once = true;
-		}
-
-		the->connection = (txSocket)kSerialConnection;
-	}
+	if (getModdableAppState(creationFlags) & kModdableCreationFlagDebug)
+		the->connected = C_NULL != comm_session_get_system_session();
 }
 
 void fxDisconnect(txMachine* the)
 {
-	if (the->connection) {
-		mxDebugMutexTake();
-		fx_putpi(the, '-', true);
-		the->debugConnectionVerified = 0;
-		mxDebugMutexGive();
-		//@@ clear debug fragments?
+	the->echoBuffer[0] = 0;
+	the->echoOffset = 1;
+	fxSend(the, 0);
+
+	the->connected = false;
+	if (EVENTED_TIMER_INVALID_ID != the->debugNotifyTimerID) {
+		evented_timer_cancel(the->debugNotifyTimerID);
+		the->debugNotifyTimerID = EVENTED_TIMER_INVALID_ID;
 	}
-	the->connection = (txSocket)NULL;
 }
 
 txBoolean fxIsConnected(txMachine* the)
 {
-	return the->connection ? 1 : 0;
+	return the->connected;
 }
 
 txBoolean fxIsReadable(txMachine* the)
 {
-	if ((txSocket)kSerialConnection == the->connection) {
-//		fxReceiveLoop();
-		taskYIELD();
-		return NULL != the->debugFragments;
-	}
-
-	return 0;
+	return ((ModdablePebbleAppState)((ModdablePebbleAppState)the->state))->debugFragments ? 1 : 0;
 }
 
 void fxReceive(txMachine* the)
 {
-	the->debugOffset = 0;
+	ModdablePebbleAppState state = the->state;
+	if (!the->debugConnectionVerified) {
+		uint32_t start = modMilliseconds();
 
-	if ((txSocket)kSerialConnection == the->connection) {
-		uint32_t start = the->debugConnectionVerified ? 0 : modMilliseconds();
-
-		while (!the->debugOffset) {
-			if (!the->debugConnectionVerified && (((int)(modMilliseconds() - start)) >= 2000)) {
+		while (!the->debugOffset && !state->debugFragments) {
+			if (((int)(modMilliseconds() - start)) >= 2000) {
 				fxDisconnect(the);
 				break;
 			}
-		
-			fxReceiveLoop();
-			if (the->debugFragments) {
-				DebugFragment f;
-
-				mxDebugMutexTake();
-				f = the->debugFragments;
-				the->debugFragments = f->next;
-				mxDebugMutexGive();
-
-				if (!f->binary) {
-					c_memcpy(the->debugBuffer, f->bytes, f->count);
-					the->debugOffset = f->count;
-				}
-				else
-					doRemoteCommand(the, f->bytes, f->count);
-				c_free(f);
-				break;
-			}
+			vTaskDelay(10);
 		}
-		if (the->debugOffset)
-			the->debugConnectionVerified = 1;
+		the->debugConnectionVerified = 1;
+	}
+
+	DebugFragment f = state->debugFragments;
+	if (C_NULL == f) {
+		task_watchdog_pause(5);
+		vTaskDelay(10);					// 10 ms
+		return;
+	}
+
+	int space = sizeof(the->debugBuffer) - the->debugOffset;
+	if (f->remaining <= space) {
+		c_memmove(the->debugBuffer + the->debugOffset, f->bytes + f->offset, f->remaining);
+		the->debugOffset += f->remaining;
+		mxDebugMutexTake();
+		state->debugFragments = f->next;
+		kernel_free(f);
+		mxDebugMutexGive();
+	}
+	else {
+		c_memmove(the->debugBuffer + the->debugOffset, f->bytes + f->offset, space);
+		the->debugOffset += space;
+		f->offset += space;
+		f->remaining -= space;
 	}
 }
 
-void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t messageLength)
+void doDebugCommand(void *data)
 {
-	txMachine* the = machine;
+	txMachine* the = data;
 
-	the->debugNotifyOutstanding = false;
-	if ((txSocket)NULL == the->connection)
+	if (!((ModdablePebbleAppState)the->state)->debugFragments)
 		return;
-	else if ((txSocket)kSerialConnection == the->connection) {
-		if (!the->debugFragments)
-			return;
-	}
-	else {
-		if (!the->readers[0])
-			return;
-	}
 
 	fxDebugCommand(the);
 	if (the->breakOnStartFlag) {
@@ -361,400 +213,78 @@ void doDebugCommand(void *machine, void *refcon, uint8_t *message, uint16_t mess
 	}
 }
 
-void fxReceiveLoop(void)
+void xsbug_protocol_msg_callback(CommSession *session, const uint8_t* msg, size_t length)
 {
-	static const char *piBegin = "\r\n<?xs.";
-	static const char *tagEnd = ">\r\n";
-	static txMachine* current = NULL;
-	static uint8_t state = 0;
-	static uint16_t binary = 0;
-	static DebugFragment fragment = NULL;
-	static uint32_t value = 0;
-	static uint8_t bufferedBytes = 0;
-	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
-
-	if (!mxDebugMutexAllocated())
+	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
+	if (!state || !mxDebugMutexAllocated())
 		return;
 
 	mxDebugMutexTake();
 
-	while (true) {
-		int c = ESP_getc();
-		if (-1 == c)
-			break;
-
-		if ((state >= 0) && (state <= 6)) {
-			if (0 == state) {
-				current = NULL;
-				value = 0;
-				binary = 0;
-			}
-			if (c == c_read8(piBegin + state))
-				state++;
-			else
-			if ((6 == state) && ('#' == c)) {
-				binary = 1;
-				state++;
-			}
-			else
-				state = 0;
-		}
-		else if ((state >= 7) && (state <= 14)) {
-			if (('0' <= c) && (c <= '9')) {
-				state++;
-				value = (value * 16) + (c - '0');
-			}
-			else if (('a' <= c) && (c <= 'f')) {
-				state++;
-				value = (value * 16) + (10 + c - 'a');
-			}
-			else if (('A' <= c) && (c <= 'F')) {
-				state++;
-				value = (value * 16) + (10 + c - 'A');
-			}
-			else
-				state = 0;
-		}
-		else if (state == 15) {
-			if (c == '?')
-				state++; 
-			else
-				state = 0;
-		}
-		else if (state == 16) {
-			if (c == '>') {
-				current = (txMachine*)value;
-				if (binary)
-					state = 20;
-				else {
-					state++;
-					bufferedBytes = 0;
-				}
-			}
-			else
-				state = 0;
-		}
-		else if ((state >= 17) && (state <= 19)) {
-			txBoolean enqueue;
-			buffered[bufferedBytes++] = c;
-			enqueue = bufferedBytes == sizeof(buffered);
-			if (c == c_read8(tagEnd + state - 17)) {
-				if (state == 19) {
-					state = 0;
-					enqueue = true;
-				}
-				else
-					state++;
-			}
-			else
-				state = 17;
-
-			if (enqueue) {
-				fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
-				if (NULL == fragment) {
-					modLog("no fragment memory");
-					break;
-				}
-				fragment->next = NULL;
-				fragment->count = bufferedBytes;
-				fragment->binary = 0;
-				c_memcpy(fragment->bytes, buffered, bufferedBytes);
-	enqueue:
-				if (NULL == current->debugFragments)
-					current->debugFragments = fragment;
-				else {
-					DebugFragment walker = current->debugFragments;
-					while (walker->next)
-						walker = walker->next;
-					walker->next = fragment;
-				} 
-				if (!current->debugNotifyOutstanding) {
-					current->debugNotifyOutstanding = true;
-					modMessagePostToMachine(current, NULL, 0xffff, doDebugCommand, current);
-				}
-				bufferedBytes = 0;
-			}
-		}
-		else if (20 == state) {
-			binary = c << 8;
-			state = 21;
-		}
-		else if (21 == state) {
-			binary += c;
-			state = 22;
-
-			fragment = c_malloc(sizeof(DebugFragmentRecord) + binary);
-			if (NULL == fragment) {
-				state = 0;
-				continue;
-			}
-			fragment->next = NULL;
-			fragment->count = binary;
-			fragment->binary = 1;
-			binary = 0;
-		}
-		else if (22 == state) {
-			fragment->bytes[binary++] = c;
-			if (fragment->count == binary) {
-				state = 0;
-				goto enqueue;
-			}
-		}
+	DebugFragment fragment = kernel_malloc(sizeof(DebugFragmentRecord) + length);
+	if (C_NULL == fragment) {
+		if (state->the)
+			fxDisconnect(state->the);
+		mxDebugMutexGive();
+		return;
 	}
+
+	fragment->next = C_NULL;
+	fragment->remaining = length;
+	fragment->offset = 0;
+	c_memmove(fragment->bytes, msg, length);
+
+	if (NULL == state->debugFragments)
+		state->debugFragments = fragment;
+	else {
+		DebugFragment walker = state->debugFragments;
+		while (walker->next)
+			walker = walker->next;
+		walker->next = fragment;
+	}
+
 	mxDebugMutexGive();
 }
 
 void fxSend(txMachine* the, txBoolean flags)
 {
-	txBoolean more = 0 != (flags & 1);
-	txBoolean binary = 0 != (flags & 2);
-
-	if ((txSocket)kSerialConnection == the->connection) {
-		char *c;
-		txInteger count;
-
-		if (!the->inPrintf) {
-			mxDebugMutexTake();
-			if (binary) {
-				fx_putpi(the, '#', true);
-				ESP_putc((uint8_t)(the->echoOffset >> 8));
-				ESP_putc((uint8_t)the->echoOffset);
-			}
-			else
-				fx_putpi(the, '.', false);
-		}
-		the->inPrintf = more;
-
-		c = the->echoBuffer;
-		count = the->echoOffset;
-		while (count--)
-			ESP_putc(*c++);
-
-		if (!more)
-			mxDebugMutexGive();
-	}
-}
-
-void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
-{
-	uint16_t resultID = 0;
-	int16_t resultCode = 0;
-	uint8_t cmdID;
-	int baud = 0;
-
-	if (!cmdLen)
+	CommSession *session = comm_session_get_system_session();
+	if (!session)
 		return;
 
-	cmdID = *cmd++;
-	cmdLen -= 1;
-
-	if (cmdLen >= 2) {
-		resultID = (cmd[0] << 8) | cmd[1];
-		cmd += 2, cmdLen -= 2;
-
-		the->echoBuffer[0] = 5;
-		the->echoBuffer[1] = resultID >> 8;
-		the->echoBuffer[2] = resultID & 0xff;
-		the->echoBuffer[3] = 0;
-		the->echoBuffer[4] = 0;
-		the->echoOffset = 5;
-	}
-
-	switch (cmdID) {
-		case 1:		// restart
-			the->wsState = 18;
-			break;
-
-#if MODDEF_XS_MODS
-		case 2: {		// uninstall
-			uint8_t erase[16] = {0};
-			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
-			if (!modSPIWrite(offset, sizeof(erase), erase))
-				resultCode = -2;
-			} break;
-
-		case 3: {	// install some
-			uint32_t offset = c_read32be(cmd);
-			cmd += 4, cmdLen -= 4;
-			if ((offset + cmdLen) > kModulesByteLength) {
-				resultCode = -3;
-				break;
-			}
-
-			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
-
-			int firstSector = offset / kFlashSectorSize, lastSector = (offset + cmdLen) / kFlashSectorSize;
-			if (!(offset % kFlashSectorSize))			// starts on sector boundary
-				modSPIErase(offset, kFlashSectorSize * ((lastSector - firstSector) + 1));
-			else if (firstSector != lastSector)
-				modSPIErase((firstSector + 1) * kFlashSectorSize, kFlashSectorSize * (lastSector - firstSector));	// crosses into a new sector
-
-			if (!modSPIWrite(offset, cmdLen, cmd)) {
-				resultCode = -1;
-			}
-			} // end of case 3
-			break;
-#endif /* MODDEF_XS_MODS */
-
-		case 4: {	// set preference
-			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			while (cmdLen--) {
-				if (!*cmd++) {
-					if (NULL == key)
-						key = cmd;
-					else if (NULL == value) {
-						value = cmd;
-						break;
-					}
-				}
-			}
-			if (key && value) {
-				uint8_t prefType = c_read8(value++);
-				cmdLen -= 1;
-
-				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
-					resultCode = -5;
-			}
-			}
-			break;
-
-		case 6: {		// get preference
-			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			int zeros = 0;
-			while (cmdLen--) {
-				if (!*cmd++) {
-					zeros += 1;
-					if (NULL == key)
-						key = cmd;
-					else
-						break;
-				}
-			}
-			if ((2 == zeros) && key) {
-				if (NULL != c_strstr(key, "password")) {
-					resultCode = -4;
-					break;
-				}
-
-				uint8_t *buffer = the->echoBuffer + the->echoOffset;
-				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, buffer, buffer + 1, sizeof(the->echoBuffer) - (the->echoOffset + 1), &byteCountOut))
-					resultCode = -6;
-				else
-					the->echoOffset += byteCountOut + 1;
+	int remaining = the->echoOffset;
+	uint8_t *src = (uint8_t *)the->echoBuffer;
+	do {
+		if (!the->send_buffer) {
+			the->send_buffer_remain = comm_session_send_buffer_get_max_payload_length(session) - 128;
+			the->send_buffer = comm_session_send_buffer_begin_write(session, XSBUG_CTRL_ENDPOINT, the->send_buffer_remain, COMM_SESSION_DEFAULT_TIMEOUT);
+			if (!the->send_buffer) {
+				fxDisconnect(the);
+				return;
 			}
 		}
-		break;
 
-		case 9:
-#if !MODDEF_XS_DONTINITIALIZETIME
-			if (cmdLen >= 4)
-				modSetTime(c_read32be(cmd + 0));
-			if (cmdLen >= 8)
-				modSetTimeZone(c_read32be(cmd + 4));
-			if (cmdLen >= 12)
-				modSetDaylightSavingsOffset(c_read32be(cmd + 8));
-#endif
-			break;
+		int use = (remaining > the->send_buffer_remain) ? the->send_buffer_remain : remaining;
+		if (false == comm_session_send_buffer_write(the->send_buffer, src, use)) 
+			the->send_buffer_remain = 0;
+		else  {
+			the->send_buffer_remain -= use;
+			remaining -= use;
+			src += use;
+		}
 
-		case 11:
-			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
-			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
-			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
-			break;
+		if (0 == the->send_buffer_remain) {
+			comm_session_send_buffer_end_write(the->send_buffer);
+			the->send_buffer = C_NULL;
+			continue;
+		}
+	} while (remaining);
 
-		case 12:
-			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
-			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
-			break;
-
-		case 13:
-			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
-			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
-			break;
-		
-		case 14:  {
-			uint32_t *id = (uint32_t *)(the->echoBuffer + the->echoOffset);
-			id[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
-			id[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
-			the->echoOffset += 8;
-			} break;
-
-#if MODDEF_XS_MODS
-		case 15: {
-			uint32_t transferSize = 4096;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 24;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >> 16;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength >>  8;
-			the->echoBuffer[the->echoOffset++] = kModulesByteLength;
-
-			the->echoBuffer[the->echoOffset++] = transferSize >> 24;
-			the->echoBuffer[the->echoOffset++] = transferSize >> 16;
-			the->echoBuffer[the->echoOffset++] = transferSize >>  8;
-			the->echoBuffer[the->echoOffset++] = transferSize;
-			} break;
-
-		case 16: {
-			int atomSize;
-			char *atom = modGetModAtom(the, c_read32be(cmd), &atomSize);
-			if (atom && (atomSize <= (sizeof(the->echoBuffer) - the->echoOffset))) {
-				c_memcpy(the->echoBuffer + the->echoOffset, atom, atomSize);
-				the->echoOffset += atomSize;
-			}
-			} break;
-#endif
-
-		case 17:
-			the->echoBuffer[the->echoOffset++] = 'n';
-			the->echoBuffer[the->echoOffset++] = 'r';
-			the->echoBuffer[the->echoOffset++] = 'f';
-			the->echoBuffer[the->echoOffset++] = '5';
-			the->echoBuffer[the->echoOffset++] = '2';
-			break;
-
-		default:
-#if MODDEF_XS_MODS
-			resultCode = -7;
-#else
-			resultCode = -8;
-#endif
-			break;
+	txBoolean more = 0 != (flags & 1);
+	if (the->send_buffer && !more) {
+		comm_session_send_buffer_end_write(the->send_buffer);
+		the->send_buffer = C_NULL;
 	}
-
-// bail:
-	if (resultID) {
-		the->echoBuffer[3] = resultCode >> 8;
-		the->echoBuffer[4] = resultCode & 0xff;
-		fxSend(the, 2);		// send binary
-	}
-
-	// finish command after sending reply
-	switch (cmdID) {
-		case 1:		// restart
-			fxDisconnect(the);
-			modDelayMilliseconds(1000);
-
-			nrf52_reset();
-
-			while (1)
-				modDelayMilliseconds(1000);
-			break;
-	}
-
 }
 
 #endif /* mxDebug */
-
-uint32_t nrf52_memory_remaining() {
-	return xPortGetFreeHeapSize();
-}
-
-// eliminate linker errors of the form: "warning: _close is not implemented and will always fail" 
-void _close(void){}
-void _lseek () __attribute__ ((weak, alias ("_close")));
-void _write () __attribute__ ((weak, alias ("_close")));
-void _read () __attribute__ ((weak, alias ("_close")));
-void _fstat () __attribute__ ((weak, alias ("_close")));
-void _getpid () __attribute__ ((weak, alias ("_close")));
-void _isatty () __attribute__ ((weak, alias ("_close")));
-void _kill () __attribute__ ((weak, alias ("_close")));

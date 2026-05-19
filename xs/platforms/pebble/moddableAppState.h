@@ -24,6 +24,15 @@
 
 #include "xs.h"
 
+struct DebugFragmentRecord {
+	struct DebugFragmentRecord *next;
+	uint16_t remaining;
+	uint16_t offset;
+	uint8_t bytes[];
+};
+typedef struct DebugFragmentRecord DebugFragmentRecord;
+typedef struct DebugFragmentRecord *DebugFragment;
+
 typedef struct {
 	xsMachine				*the;
 
@@ -62,6 +71,8 @@ typedef struct {
 
 	// XS FFI
 	void					*fxBuildFFI;
+
+	DebugFragment		debugFragments;
 } ModdablePebbleAppStateRecord, *ModdablePebbleAppState;
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD)

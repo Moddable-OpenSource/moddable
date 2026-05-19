@@ -111,37 +111,14 @@ extern void fx_putc(void *refcon, char c);
 
 #define mxTableMinLength (1)
 
-struct DebugFragmentRecord {
-	struct DebugFragmentRecord *next;
-	uint16_t count;
-	uint8_t binary;
-	uint8_t pad;
-	uint8_t bytes[1];
-};
-typedef struct DebugFragmentRecord DebugFragmentRecord;
-typedef struct DebugFragmentRecord *DebugFragment;
-
 /* machine */
-
-#define kDebugReaderCount (8)
 
 #ifdef mxDebug
 	#define mxMachineDebug \
-		txSocket connection; \
-		void* readers[kDebugReaderCount]; \
-		uint16_t readerOffset;	\
-		uint8_t inPrintf; \
-    	uint8_t debugNotifyOutstanding; \
+		uint8_t connected; \
     	uint8_t DEBUG_LOOP; \
 		uint8_t debugConnectionVerified; \
-		uint8_t	wsState; \
-		uint8_t	wsFin; \
-		uint16_t wsLength; \
-		uint16_t wsSendStart; \
-		uint8_t	wsMask[4]; \
-		uint8_t	*wsCmd; \
-		uint8_t	*wsCmdPtr; \
-		DebugFragment debugFragments;
+    	uintptr_t debugNotifyTimerID;
 #else
 	#define mxMachineDebug
 #endif
@@ -155,14 +132,12 @@ typedef struct DebugFragmentRecord *DebugFragment;
 #endif
 
 #define mxMachinePlatform \
-	void* host; \
 	uint8_t *heap; \
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend; \
-	void *msgQueue; \
-	void *dbgQueue; \
-	void *queues; \
-	void *task; \
+	/* ModdablePebbleAppState */ void *state; \
+	void *send_buffer; \
+	int send_buffer_remain; \
 	mxMachineDebug \
 	mxMachineInstrument
 
@@ -176,7 +151,6 @@ void ESP_putc(int c);
 extern void nrf52_delay(uint32_t ms);
 #define nrf52_delay_us	nrf_delay_us
 extern uint32_t nrf52_milliseconds();
-extern uint32_t nrf52_memory_remaining();
 
 #define delay(x)            nrf52_delay(x)
 

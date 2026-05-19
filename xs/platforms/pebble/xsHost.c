@@ -168,7 +168,8 @@ void modInstrumentationSetup(xsMachine *the)
 {
 	espInitInstrumentation(the);
 
-	if (!(getModdableAppState(creationFlags) & kModdableCreationFlagLogInstrumentation))
+	int creationFlags = getModdableAppState(creationFlags);
+	if (!(creationFlags & kModdableCreationFlagLogInstrumentation) && !(creationFlags & kModdableCreationFlagDebug))
 		return;
 
 	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
@@ -295,98 +296,16 @@ struct modMessageRecord {
 
 int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
 {
-	modMessageRecord msg;
-
-#ifdef mxDebug
-	if (0xffff == messageLength) {
-		msg.message = NULL;
-		msg.callback = callback;
-		msg.refcon = refcon;
-		msg.length = 0;
-		xQueueSendToBack(the->dbgQueue, &msg, portMAX_DELAY);
-		return 0;
-	}
-#endif
-
-	if (message && messageLength) {
-		msg.message = c_malloc(messageLength);
-		if (!msg.message) return -1;
-
-		c_memmove(msg.message, message, messageLength);
-	}
-	else
-		msg.message = NULL;
-	msg.length = messageLength;
-	msg.callback = callback;
-	msg.refcon = refcon;
-
-	if (pdTRUE == xQueueSendToBack(the->msgQueue, &msg, MODDEF_TASK_QUEUEWAIT))
-		return 0;
-
-	if (msg.message)
-		c_free(msg.message);
-
-	return -2;
+	return -1;
 }
 
 int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
 {
-	modMessageRecord msg;
-	portBASE_TYPE ignore;
-
-	msg.message = NULL;
-	msg.length = 0;
-	msg.callback = callback;
-	msg.refcon = refcon;
-
-	xQueueSendToBackFromISR(the->msgQueue, &msg, &ignore);
-
-	return 0;
+	return -1;
 }
 
 void modMessageService(xsMachine *the, int maxDelayMS)
 {
-#if 0	// MDK
-	modMessageRecord msg;
-
-#if !mxDebug
-	modWatchDogReset();
-	if (maxDelayMS >= NRFX_WDT_CONFIG_RELOAD_VALUE) {
-		#if NRFX_WDT_CONFIG_RELOAD_VALUE <= 1000
-			maxDelayMS = 500;
-		#else
-			maxDelayMS = NRFX_WDT_CONFIG_RELOAD_VALUE - 1000;
-		#endif
-	}
-#endif
-
-#ifdef mxDebug
-	while (true) {
-		QueueSetMemberHandle_t queue = xQueueSelectFromSet(the->queues, ((uint64_t)maxDelayMS << 10) / 1000);
-		if (!queue)
-			break;
-
-		if (!xQueueReceive(queue, &msg, 0))
-			break;
-
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
-
-		maxDelayMS = 0;
-	}
-#else
-	while (xQueueReceive(the->msgQueue, &msg, ((uint64_t)maxDelayMS << 10) / 1000)) {
-		(msg.callback)(the, msg.refcon, msg.message, msg.length);
-		if (msg.message)
-			c_free(msg.message);
-
-		maxDelayMS = 0;
-	}
-#endif
-
-	modWatchDogReset();
-#endif // MDK
 }
 
 #ifndef modTaskGetCurrent
@@ -405,54 +324,18 @@ void modMachineTaskInit(xsMachine *the)
 {
 	if (NULL == gFlashMutex)
 		gFlashMutex = xLightMutexCreate();
-
-	the->task = (void *)modTaskGetCurrent();
-	the->msgQueue = xQueueCreate(MODDEF_TASK_QUEUELENGTH, sizeof(modMessageRecord));
-#ifdef mxDebug
-	the->dbgQueue = xQueueCreate(kDebugQueueLength, sizeof(modMessageRecord));
-
-	the->queues = xQueueCreateSet(MODDEF_TASK_QUEUELENGTH + kDebugQueueLength);
-	xQueueAddToSet(the->msgQueue, the->queues);
-	xQueueAddToSet(the->dbgQueue, the->queues);
-#endif
 }
 
 void modMachineTaskUninit(xsMachine *the)
 {
-	modMessageRecord msg;
-
-	if (the->msgQueue) {	
-		while (xQueueReceive(the->msgQueue, &msg, 0)) {
-			if (msg.message)
-				c_free(msg.message);
-		}
-
-#ifdef mxDebug
-		xQueueRemoveFromSet(the->msgQueue, the->queues);
-#endif
-		vQueueDelete(the->msgQueue);
-	}
-
-#ifdef mxDebug
-	if (the->dbgQueue) {
-		while (xQueueReceive(the->dbgQueue, &msg, 0))
-			;
-		xQueueRemoveFromSet(the->dbgQueue, the->queues);
-		vQueueDelete(the->dbgQueue);
-	}
-	if (the->queues)
-		vQueueDelete(the->queues);
-#endif
 }
 
 void modMachineTaskWait(xsMachine *the)
 {
-	ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
 void modMachineTaskWake(xsMachine *the)
 {
-	xTaskNotifyGive(the->task);
 }
 
 /*
