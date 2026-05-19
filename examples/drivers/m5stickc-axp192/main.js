@@ -42,6 +42,20 @@ globalThis.button.a.onChanged = () =>{
 	globalThis.power.brightness = brightness;
 }
 
+let displayOn = true;
+globalThis.button.power.onChanged = () =>{
+	if (globalThis.button.power.read()) {
+		return;
+	}
+	displayOn = !displayOn;
+	if(displayOn) {
+		brightness = 50
+	} else {
+		brightness = 0
+	}
+	globalThis.power.brightness = brightness;
+}
+
 render.begin();
 	render.fillRectangle(blue, 0, 0, render.width, render.height);
 render.end();

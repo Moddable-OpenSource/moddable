@@ -9,6 +9,9 @@
 	"resources": {
 		"*-mask": "$(MODDABLE)/examples/assets/fonts/OpenSans-Semibold-18"
 	},
+	"config": {
+		"enablePowerButton": true
+	},
 	"platforms": {
 		"esp32/m5stick_c": {},
 		"esp32/m5stick_cplus":{},

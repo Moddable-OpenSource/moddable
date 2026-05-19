@@ -136,7 +136,8 @@ const device = {
 				this.writeByte(0x33, 0xc0); // Enable Charging, 100mA, 4.2V End at 0.9
 				this.writeByte(0xb8, 0x80); // Enable Colume Counter
 				this.writeByte(0x12, 0x4d); // Enable DC-DC1, OLED VDD, 5B V EXT
-				this.writeByte(0x36, 0x5c); // PEK
+				this.writeByte(0x36, 0x5c); // 128ms power on, 4s power off
+				this.writeByte(0x42, 0x03); // Enable PekIRQ
 				this.writeByte(0x91, 0xA0); // Set MIC voltage to 2.8V
 				this.writeByte(0x90, 0x02); // gpio0
 			}
