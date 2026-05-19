@@ -142,6 +142,12 @@ export default class AXP192 {
     return this.#io.writeUint8(address, value);
   }
 
+  getPekState() {
+    const state = this.readByte(0x46) & 0x03;
+    if (state) this.writeByte(0x46, state);
+    return state;
+  }
+
   set chargeCurrent(state) {
     this.writeByte(0x33, (this.readByte(0x33) & 0xf0) | (state & 0x0f));
   }

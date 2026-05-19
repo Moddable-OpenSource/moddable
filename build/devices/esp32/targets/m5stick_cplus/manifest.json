@@ -14,7 +14,8 @@
 	"config": {
 		"screen": "st7789",
 		"touch": "",
-		"rotation": 270
+		"rotation": 270,
+		"enablePowerButton": false
 	},
 	"defines": {
 		"spi": {

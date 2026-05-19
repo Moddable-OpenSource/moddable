@@ -14,7 +14,8 @@
 	],
 	"config": {
 		"screen": "st7735",
-		"touch": ""
+		"touch": "",
+		"enablePowerButton": false
 	},
 	"defines": {
 		"spi": {

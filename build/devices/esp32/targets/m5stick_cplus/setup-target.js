@@ -2,6 +2,20 @@ import M5Button from "m5button";
 import config from "mc/config";
 import Timer from "timer";
 
+class PowerButton {
+	#value = 0;
+
+	read() {
+		return this.#value;
+	}
+	write(value) {
+		if (this.#value === value)
+			return;
+		this.#value = value;
+		this.onChanged?.();
+	}
+}
+
 export default function (done) {
 	globalThis.button = {
 		a: new M5Button(37),
@@ -9,6 +23,15 @@ export default function (done) {
 	};
 
 	globalThis.power = new device.peripheral.Power();
+
+	if (config.enablePowerButton) {
+		globalThis.button.power = new PowerButton();
+		// AXP192 PEK reports latched press events, so expose them as a short 1 -> 0 pulse.
+		Timer.repeat(() => {
+			const state = globalThis.power.getPekState();
+			globalThis.button.power.write(state ? 1 : 0);
+		}, 100);
+	}
 	
 	if (config.autorotate && globalThis.Application) {
 		const imu = new device.sensor.IMU();
