@@ -14,8 +14,7 @@
 	"config": {
 		"screen": "st7789",
 		"touch": "",
-		"rotation": 270,
-		"autorotate": true
+		"rotation": 270
 	},
 	"defines": {
 		"spi": {
