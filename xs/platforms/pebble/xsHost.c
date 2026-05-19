@@ -94,7 +94,7 @@
 #if kModInstrumentationHasTurns
 		(char *)"Event loop",
 #endif
-		(char *)"System bytes free",
+		(char *)"App bytes free",
 #if kModInstrumentationHasCPU
 		(char *)"CPU",
 #endif
@@ -175,7 +175,7 @@ void modInstrumentationSetup(xsMachine *the)
 	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 }
 
-static int32_t modInstrumentationSystemFreeMemory(void *theIn)
+static int32_t modInstrumentationAppFreeMemory(void *theIn)
 {
 	return heap_bytes_free();
 }
@@ -202,7 +202,7 @@ void espInitInstrumentation(txMachine *the)
 #endif
 
 	modInstrumentationInit();
-	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationSystemFreeMemory);
+	modInstrumentationSetCallback(SystemFreeMemory, modInstrumentationAppFreeMemory);
 
 	modInstrumentationSetCallback(SlotHeapSize, (ModInstrumentationGetter)modInstrumentationSlotHeapSize);
 	modInstrumentationSetCallback(ChunkHeapSize, (ModInstrumentationGetter)modInstrumentationChunkHeapSize);
