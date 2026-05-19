@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -263,7 +263,7 @@ void FILE_prototype_writeString(xsMachine* the)
 
 void Tool_prototype_get_build(xsMachine* the)
 {
-	#if mxDebug
+	#ifdef mxDebug
 		xsResult = xsString("debug");
 	#else
 		xsResult = xsString("release");
