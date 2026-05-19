@@ -727,7 +727,7 @@ void fxDebugParse(txMachine* the)
 			the->debugState = XS_START_TAG_SPACE_STATE;
 			the->nameBuffer[the->nameIndex] = 0;
 			fxDebugParseTag(the, the->nameBuffer);
-			/* continue */
+			/* fall through */
 		case XS_START_TAG_SPACE_STATE:
 			if (mxIsFirstLetter(c)) {
 				the->debugState = XS_ATTRIBUTE_NAME_STATE;
@@ -769,7 +769,7 @@ void fxDebugParse(txMachine* the)
 			}
 			else
 				the->debugAttribute = XS_UNKNOWN_ATTRIBUTE;
-			/* continue */
+			/* fall through */
 		case XS_ATTRIBUTE_SPACE_STATE:
 			if (c == '=')
 				the->debugState = XS_ATTRIBUTE_EQUAL_STATE;
@@ -855,7 +855,7 @@ void fxDebugParse(txMachine* the)
 			the->nameBuffer[the->nameIndex] = 0;
 			the->debugState = XS_END_TAG_SPACE_STATE;
 			fxDebugParseTag(the, the->nameBuffer);
-			/* continue */
+			/* fall through */
 		case XS_END_TAG_SPACE_STATE:
 			if (c == '>') {
 				the->debugState = XS_BODY_STATE;
