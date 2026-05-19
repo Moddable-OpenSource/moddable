@@ -96,6 +96,7 @@ typedef int txSocket;
 #define mxNoSocket NULL
 
 #include "xsHost.h"
+#include "modTimer.h"
 
 #ifndef true
     #define true 1
@@ -118,7 +119,7 @@ extern void fx_putc(void *refcon, char c);
 		uint8_t connected; \
     	uint8_t DEBUG_LOOP; \
 		uint8_t debugConnectionVerified; \
-    	uintptr_t debugNotifyTimerID;
+    	modTimer debugNotifyTimer;
 #else
 	#define mxMachineDebug
 #endif

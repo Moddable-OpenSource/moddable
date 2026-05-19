@@ -54,6 +54,7 @@
 
 #include "xs.h"
 #include "xsHosts.h"
+#include "modTimer.h"
 #include "FreeRTOS.h"
 #include "light_mutex.h"
 #include "semphr.h"
@@ -69,7 +70,7 @@ LightMutexHandle_t gDebugMutex;
 extern void modMachineTaskInit(txMachine *the);
 extern void modMachineTaskUninit(txMachine *the);
 
-static void doDebugCommand(void *data);
+static void doDebugCommand(modTimer timer, void *refcon, int refconSize);
 
 #define XSBUG_CTRL_ENDPOINT (51967)
 
@@ -81,7 +82,7 @@ void fxCreateMachinePlatform(txMachine* the)
 #ifdef mxDebug
 	if (!gDebugMutex)
 		gDebugMutex = xLightMutexCreate();
-	the->debugNotifyTimerID = evented_timer_register(100, true, doDebugCommand, the);
+	the->debugNotifyTimer = modTimerAdd(100, 100, doDebugCommand, &the, sizeof(the));
 	the->state = app_state_get_js_memory_api_context();
 #endif
 }
@@ -89,8 +90,8 @@ void fxCreateMachinePlatform(txMachine* the)
 void fxDeleteMachinePlatform(txMachine* the)
 {
 #ifdef mxDebug
-	 if (EVENTED_TIMER_INVALID_ID != the->debugNotifyTimerID)
-	 	evented_timer_cancel(the->debugNotifyTimerID);
+	 if (the->debugNotifyTimer)
+	 	modTimerRemove(the->debugNotifyTimer);
 #endif
 
 #ifdef mxInstrument
@@ -142,9 +143,9 @@ void fxDisconnect(txMachine* the)
 	fxSend(the, 0);
 
 	the->connected = false;
-	if (EVENTED_TIMER_INVALID_ID != the->debugNotifyTimerID) {
-		evented_timer_cancel(the->debugNotifyTimerID);
-		the->debugNotifyTimerID = EVENTED_TIMER_INVALID_ID;
+	if (the->debugNotifyTimer) {
+		modTimerRemove(the->debugNotifyTimer);
+		the->debugNotifyTimer = C_NULL;
 	}
 }
 
@@ -198,9 +199,9 @@ void fxReceive(txMachine* the)
 	}
 }
 
-void doDebugCommand(void *data)
+void doDebugCommand(modTimer timer, void *refcon, int refconSize)
 {
-	txMachine* the = data;
+	txMachine* the = *(txMachine **)refcon;
 
 	if (!((ModdablePebbleAppState)the->state)->debugFragments)
 		return;
