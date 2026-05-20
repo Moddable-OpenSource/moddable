@@ -65,21 +65,6 @@
 	#include "moddableAppState.h"
 	#include "applib/moddable/moddable.h"
 
-	#define INSTRUMENT_CPULOAD 0
-	#define kTargetCPUCount 1
-
-	#if INSTRUMENT_CPULOAD
-		#include "nrf_drv_timer.h"
-
-		static uint32_t gCPUCounts[kTargetCPUCount * 2];
-		static TaskHandle_t gIdles[kTargetCPUCount];
-		static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context);
-
-		volatile uint32_t gCPUTime;
-		static nrf_drv_timer_t cpuTimer = NRF_DRV_TIMER_INSTANCE(3);
-		#define CPUTIMER_US 800
-	#endif
-
 	static void espInitInstrumentation(txMachine *the);
 	static void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize);
 
@@ -166,11 +151,14 @@ void modLog_transmit(const char *msg)
 
 void modInstrumentationSetup(xsMachine *the)
 {
-	espInitInstrumentation(the);
-
-	int creationFlags = getModdableAppState(creationFlags);
-	if (!(creationFlags & kModdableCreationFlagLogInstrumentation) && !(creationFlags & kModdableCreationFlagDebug))
+	if (!(getModdableAppState(creationFlags) & kModdableCreationFlagLogInstrumentation) 
+#ifdef mxDebug
+			&& !the->connected
+#endif
+		)
 		return;
+
+	espInitInstrumentation(the);
 
 	modInstrumentMachineBegin(the, espSampleInstrumentation, espInstrumentCount, (char**)espInstrumentNames, (char**)espInstrumentUnits);
 }
@@ -179,18 +167,6 @@ static int32_t modInstrumentationAppFreeMemory(void *theIn)
 {
 	return heap_bytes_free();
 }
-
-#if INSTRUMENT_CPULOAD
-static int32_t modInstrumentationCPU0(void *theIn)
-{
-	int32_t result, total = (gCPUCounts[0] + gCPUCounts[1]);
-	if (!total)
-		return 0;
-	result = (100 * gCPUCounts[0]) / total;
-	gCPUCounts[0] = gCPUCounts[1] = 0;
-	return result;
-}
-#endif
 
 void espInitInstrumentation(txMachine *the)
 {
@@ -211,25 +187,7 @@ void espInitInstrumentation(txMachine *the)
 	modInstrumentationSetCallback(ModulesLoaded, (ModInstrumentationGetter)modInstrumentationModulesLoaded);
 	modInstrumentationSetCallback(StackRemain, (ModInstrumentationGetter)modInstrumentationStackRemain);
 	modInstrumentationSetCallback(PromisesSettledCount, (ModInstrumentationGetter)modInstrumentationPromisesSettledCount);
-
-	// gInstrumentMutex = xLightMutexCreate();
-
-#if INSTRUMENT_CPULOAD
-	modInstrumentationSetCallback(CPU0, modInstrumentationCPU0);
-
-	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-	nrf_drv_timer_init(&cpuTimer, &timer_cfg, cpuTimerHandler);
-	uint32_t ticks = nrf_drv_timer_us_to_ticks(&cpuTimer, CPUTIMER_US);
-	nrf_drv_timer_extended_compare(&cpuTimer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
-
-	gIdles[0] = xTaskGetIdleTaskHandle();
-
-	nrf_drv_timer_clear(&cpuTimer);
-	nrf_drv_timer_enable(&cpuTimer);
-#endif
 }
-
-extern LightMutexHandle_t gDebugMutex;
 
 void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 {
@@ -261,62 +219,7 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	// xSemaphoreGive(gInstrumentMutex);
 }
 
-#if INSTRUMENT_CPULOAD
-static void cpuTimerHandler(nrf_timer_event_t event_type, void* p_context)
-{
-	switch (event_type) {
-		case NRF_TIMER_EVENT_COMPARE0:
-			gCPUCounts[0 + (xTaskGetCurrentTaskHandle() == gIdles[0])] += 1;
-			gCPUTime += 1250;
-			break;
-	}
-}
 #endif
-#endif
-
-/*
-	messages
-*/
-#ifndef MODDEF_TASK_QUEUEWAIT
-	#ifdef mxDebug
-		#define MODDEF_TASK_QUEUEWAIT	(1000)
-	#else
-		#define MODDEF_TASK_QUEUEWAIT	(portMAX_DELAY)
-	#endif
-#endif
-typedef struct modMessageRecord modMessageRecord;
-typedef modMessageRecord *modMessage;
-
-struct modMessageRecord {
-	uint8_t				*message;
-	modMessageDeliver   callback;
-	void                *refcon;
-	uint16_t            length;
-};
-
-int modMessagePostToMachine(xsMachine *the, uint8_t *message, uint16_t messageLength, modMessageDeliver callback, void *refcon)
-{
-	return -1;
-}
-
-int modMessagePostToMachineFromISR(xsMachine *the, modMessageDeliver callback, void *refcon)
-{
-	return -1;
-}
-
-void modMessageService(xsMachine *the, int maxDelayMS)
-{
-}
-
-#ifndef modTaskGetCurrent
-	#error make sure MOD_TASKS and modTaskGetCurrent are defined
-#endif
-
-#ifndef MODDEF_TASK_QUEUELENGTH
-	#define MODDEF_TASK_QUEUELENGTH	(10)
-#endif
-
-#define kDebugQueueLength (4)
 
 static LightMutexHandle_t gFlashMutex = NULL;
 
@@ -401,51 +304,6 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 }
 
 #endif /* MODDEF_XS_MODS */
-
-#ifndef MODDEF_FILE_LFS_PARTITION_SIZE
-	#define MODDEF_FILE_LFS_PARTITION_SIZE (65536)
-#endif
-
-uint8_t modGetPartition(uint8_t which, uint32_t *offsetOut, uint32_t *sizeOut)
-{
-	uint32_t offset, size;
-	if ((kPartitionMod == which) || (kPartitionStorage == which)) {
-		uint32_t modSize = 0, storageSize = 0;
-
-		offset = kModulesStart;
-
-#if MODDEF_XS_MODS
-		if (XS_ATOM_ARCHIVE == c_read32be((void *)(4 + offset)))
-			modSize = ((c_read32be((void *)(offset)) + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize;
-#else
-		if (which == kPartitionMod)
-			return 0;
-#endif
-
-		if ((kModulesEnd - (offset + modSize)) >= MODDEF_FILE_LFS_PARTITION_SIZE)
-			storageSize = (((MODDEF_FILE_LFS_PARTITION_SIZE + kFlashSectorSize - 1) / kFlashSectorSize) * kFlashSectorSize);
-
-		if (kPartitionStorage == which) {
-			offset = kModulesEnd - storageSize;
-			size = storageSize;
-		}
-		else {
-//			offset = kModulesStart;		// set above
-			size = (kModulesEnd - offset) - MODDEF_FILE_LFS_PARTITION_SIZE;
-		}
-	}
-	else if (kPartitionBLEState == which) {
-		offset = (uintptr_t)&_FSTORAGE_start;
-		size = &_FSTORAGE_end - &_FSTORAGE_start;
-	}
-	else
-		return 0;
-
-	if (offsetOut) *offsetOut = offset;
-	if (sizeOut) *sizeOut = size;
-
-	return 1;
-}
 
 /*
 	flash
@@ -668,16 +526,6 @@ uint8_t *espFindUnusedFlashStart(void)
 void nrf52_reboot(uint32_t kind)
 {
 	pebble_reset();
-}
-
-
-uint8_t nrf52_softdevice_enabled(void)
-{
-#ifdef SOFTDEVICE_PRESENT
-//	return nrf_sdh_is_enabled();
-#else
-	return false;
-#endif
 }
 
 //---------- alignment for memory
