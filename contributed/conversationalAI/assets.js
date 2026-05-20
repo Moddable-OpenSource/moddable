@@ -262,7 +262,8 @@ const assets = {
 			providers: [
 				{	name:"Google", id:"GOOGLE",
 					models: [
-						{ name:"Gemini 2.5 Flash Live", id:"gemini-2.5-flash-native-audio-preview-12-2025" }
+						{ name:"Gemini 2.5 Flash Live", id:"gemini-2.5-flash-native-audio-preview-12-2025" },
+						{ name:"Gemini 3.1 Flash Live", id:"gemini-3.1-flash-live-preview" }
 					],
 				}
 			],
@@ -435,7 +436,8 @@ const assets = {
 				{	name:"OpenAI", id:"OPEN_AI",
 					models: [
 						{ name:"gpt-realtime", id:"gpt-realtime" },
-						{ name:"gpt-realtime-mini", id:"gpt-realtime-mini" }
+						{ name:"gpt-realtime-mini", id:"gpt-realtime-mini" },
+						{ name:"gpt-realtime-2", id:"gpt-realtime-2" },
 					],
 				}
 			],

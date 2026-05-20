@@ -21,16 +21,16 @@
 import config from "mc/config"
 import ChatWebSocketWorker from "ChatWebSocketWorker";
 
-const audioPrefix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('{"realtimeInput":{"mediaChunks":[{"mimeType":"audio/pcm;rate=24000","data":"')), true);
-const audioSuffix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}]}}')), true);
+const audioPrefixOld = Object.freeze(new Uint8Array(ArrayBuffer.fromString('{"realtimeInput":{"mediaChunks":[{"mimeType":"audio/pcm;rate=24000","data":"')), true);
+const audioSuffixOld = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}]}}')), true);
+const audioPrefix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('{"realtimeInput":{"audio":{"mimeType":"audio/pcm;rate=24000","data":"')), true);
+const audioSuffix = Object.freeze(new Uint8Array(ArrayBuffer.fromString('"}}}')), true);
 
 export default class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	constructor(options) {
 		super(options);
 		this.host = "generativelanguage.googleapis.com";
 		this.headers = null;
-		this.audioPrefix = audioPrefix;
-		this.audioSuffix = audioSuffix;
 		this.speaking = true;
 	}
 	configure(message) {
@@ -39,6 +39,15 @@ export default class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		const voiceName = message.voiceID ?? "aoede";
 		const model = message.modelID ?? "gemini-2.5-flash-native-audio-preview-12-2025";
 		const apiKey = message.apiKey ?? config.geminiAPIKey;
+
+		if(model.includes("gemini-2")) {
+			this.audioPrefix = audioPrefixOld;
+			this.audioSuffix = audioSuffixOld;
+		} else {
+			this.audioPrefix = audioPrefix;
+			this.audioSuffix = audioSuffix;
+		}
+
 		this.path = `/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 		this.setup = {
 			model: `models/${model}`,
@@ -63,7 +72,7 @@ export default class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		};
 	}
 	isBase64(result, current, name) {
-		return (current?.mimeType == "audio/pcm;rate=24000") && (name == "data");
+		return (current?.mimeType === "audio/pcm;rate=24000") && (name === "data");
 	}
 	onJSON(json) {
 		for (let key in json) {
@@ -113,7 +122,7 @@ export default class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 	'serverContent'(data) {
 		const parts = data.modelTurn?.parts;
 		if (parts) {
-			const part = parts.find(part => part.inlineData?.mimeType == "audio/pcm;rate=24000");
+			const part = parts.find(part => part.inlineData?.mimeType === "audio/pcm;rate=24000");
 			if (part) {
 				if (this.speaking) {
 					this.postMessage({ id:"receiveInputText", text:"" });
@@ -145,7 +154,7 @@ export default class GoogleGeminiLiveModel extends ChatWebSocketWorker {
 		const functionCalls = data.functionCalls;
 		if (functionCalls) {
 			this.post("listen");
-			for (let functionCall of functionCalls) {
+			for (const functionCall of functionCalls) {
 				this.postMessage({ 
 					id:"receiveFunctionCall", 
 					call:functionCall.id, 
