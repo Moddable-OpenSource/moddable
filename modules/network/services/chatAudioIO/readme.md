@@ -16,7 +16,7 @@ The conversation library implements support for various AI cloud services using 
 - [Google Gemini Live](https://ai.google.dev/api/multimodal-live)
 - [Hume Empathic Voice Interface](https://dev.hume.ai/docs/empathic-voice-interface-evi/overview)
 - [Eleven Labs Conversational AI](https://elevenlabs.io/docs/conversational-ai/overview)
-- [Deepgram Voice Agent](https://elevenlabs.io/docs/conversational-ai/overview)
+- [Deepgram Voice Agent](https://deepgram.com/product/voice-agent-api)
 
 ## Programming Interface
 
