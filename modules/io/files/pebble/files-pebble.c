@@ -29,6 +29,7 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
+#include "modInstrumentation.h"
 
 #include "moddableAppState.h"
 
@@ -125,8 +126,10 @@ typedef struct xsFileRecord *xsFile;
 void xs_filepfs_destructor(void *data)
 {
 	xsFile f = data;
-	if (f)
+	if (f) {
 		pfs_close(f->fd);
+		modInstrumentationAdjust(Files, -1);
+	}
 }
 
 #define getFile(slot) ((xsFile)xsmcGetHostChunkValidate(slot, xs_filepfs_destructor))->fd
@@ -143,6 +146,7 @@ void xs_filepfs_close(xsMachine *the)
 
 	pfs_close(getFile(xsThis));
 	xsmcSetHostData(xsThis, NULL);
+	modInstrumentationAdjust(Files, -1);
 }
 
 void xs_filepfs_read(xsMachine *the)
@@ -314,6 +318,8 @@ void xs_directorypfs_openFile(xsMachine *the)
 	throwIf(f.fd);
 
 	xsmcSetHostChunk(xsResult, &f, sizeof(f));
+
+	modInstrumentationAdjust(Files, +1);
 }
 
 void xs_directorypfs_openDirectory(xsMachine *the)
