@@ -217,8 +217,14 @@ void fxReadNetwork(txSerialMachine machine)
 void fxReadSerial(txSerialTool self)
 {
 	int size = read(self->serialConnection, self->serialBuffer, mxSerialBufferSize);
-	mxThrowElse(size > 0);
-	fxReadSerialBuffer(self, self->serialBuffer, size);
+	if (size > 0)
+		fxReadSerialBuffer(self, self->serialBuffer, size);
+	else if ((size < 0) && (errno == ENXIO)) {
+		fxCloseSerial(self);
+		self->reconnecting = 1;
+	}
+	else
+		mxThrowElse(size > 0);
 }
 
 void fxRestartSerial(txSerialTool self)
