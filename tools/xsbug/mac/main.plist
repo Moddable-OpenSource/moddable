@@ -29,7 +29,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>xsbug 8.0</string>
 	<key>CFBundleGetInfoString</key>
-	<string>xsbug 8.0 Copyright © 2017-2022 Moddable Tech, Inc.</string>
+	<string>xsbug 8.0 Copyright © 2017-2026 Moddable Tech, Inc.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

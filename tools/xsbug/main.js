@@ -347,7 +347,7 @@ class ApplicationBehavior extends DebugBehavior {
 		system.alert({ 
 			type:"about",
 			prompt:"xsbug",
-			info:"Copyright 2017-2022 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
+			info:"Copyright 2017-2026 Moddable Tech, Inc.\nAll rights reserved.\n\nThis application incorporates open source software from Marvell, Inc. and others.",
 			buttons:["OK"]
 		}, ok => {
 		});

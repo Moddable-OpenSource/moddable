@@ -62,7 +62,7 @@ BEGIN
             VALUE "FileDescription", "xsbug"
             VALUE "FileVersion", "8.0"
             VALUE "InternalName", "xsbug"
-            VALUE "LegalCopyright", "Copyright (c) 2017-2022 Moddable, Inc."
+            VALUE "LegalCopyright", "Copyright (c) 2017-2026 Moddable, Inc."
             VALUE "OriginalFilename", "xsbug.exe"
             VALUE "ProductName", "Screen Test"
             VALUE "ProductVersion", "8.0"
