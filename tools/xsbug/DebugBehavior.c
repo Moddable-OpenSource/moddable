@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -1583,29 +1583,50 @@ void PiuDebugMachine_doCommandAux(xsMachine* the, PiuDebugMachine self, void* bu
 {
 	if (self) {
 	#if mxLinux
-		GError* error = NULL;
-		if (g_socket_send(self->socket, buffer, length, NULL, &error) == -1) {
-			xsUnknownError("g_socket_send: %s", error->message);
+		{
+			const char* p = (const char*)buffer;
+			while (length > 0) {
+				GError* error = NULL;
+				gssize used = g_socket_send(self->socket, p, length, NULL, &error);
+				if (used < 0) {
+					if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
+						g_error_free(error);
+						continue;
+					}
+					xsUnknownError("g_socket_send: %s", error->message);
+				}
+				p += used;
+				length -= used;
+			}
 		}
 	#elif mxMacOSX
-	again:
-		if (send(CFSocketGetNative(self->socket), buffer, length, 0) == -1) {
-			if (errno == EINTR)
-				goto again;
-			else {
-				xsMachine* the = self->the;
-				xsUnknownError("write error: %s", strerror(errno));
+		{
+			const char* p = (const char*)buffer;
+			while (length > 0) {
+				ssize_t used = send(CFSocketGetNative(self->socket), p, length, 0);
+				if (used < 0) {
+					if ((EINTR == errno) || (EAGAIN == errno))
+						continue;
+					xsUnknownError("write error: %s", strerror(errno));
+				}
+				p += used;
+				length -= used;
 			}
 		}
 	#elif mxWindows
 		if (self->socket != INVALID_SOCKET) {
-		again:
-			int count = send(self->socket, buffer, (int)length, 0);
-			if (count < 0) {
-				if (WSAEWOULDBLOCK == WSAGetLastError()) {
-					WaitMessage();
-					goto again;
+			const char* p = (const char*)buffer;
+			while (length > 0) {
+				int used = send(self->socket, p, (int)length, 0);
+				if (used < 0) {
+					if (WSAEWOULDBLOCK == WSAGetLastError()) {
+						WaitMessage();
+						continue;
+					}
+					break;
 				}
+				p += used;
+				length -= used;
 			}
 		}
 	#endif
