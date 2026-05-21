@@ -83,7 +83,7 @@
 		"esp32/moddable_six": {
 			"build": {
 				"ESP32_SUBCLASS": "esp32s3",
-				"EXPECTED_ESP_IDF": "v5.5.1",
+				"EXPECTED_ESP_IDF": "6.0",
 				"USE_USB": "2",
 				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six/sdkconfig"
 			},
@@ -124,7 +124,8 @@
 			},
 			"dependency": [
 				{ "idf": "log" },
-				{ "idf": "efuse" }
+				{ "idf": "efuse" },
+				{ "idf": "esp_driver_gptimer" }
 			]
 		},
 		"lin": {
