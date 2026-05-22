@@ -228,7 +228,7 @@ void fxAbort(txMachine* the, int status)
 	#endif
 
 	#if MODDEF_XS_ABORTHOOK
-		if ((XS_JAVASCRIPT_STACK_OVERFLOW_EXIT != status) && (XS_NATIVE_STACK_OVERFLOW_EXIT != status) & (XS_DEBUGGER_EXIT != status)) {
+		if ((XS_JAVASCRIPT_STACK_OVERFLOW_EXIT != status) && (XS_NATIVE_STACK_OVERFLOW_EXIT != status) && (XS_DEBUGGER_EXIT != status)) {
 			xsBooleanValue ignore = false;
 			
 			fxBeginHost(the);
