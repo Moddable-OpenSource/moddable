@@ -1857,6 +1857,7 @@ void fxCommaExpression(txParser* parser)
 
 void fxAssignmentExpression(txParser* parser)
 {
+	fxCheckParserStack(parser, parser->states[0].line);
 	if (parser->states[0].token == XS_TOKEN_YIELD)
 		fxYieldExpression(parser);
 	else {
