@@ -47,11 +47,11 @@
 
 extern void	setupDebugger();
 
-//#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-//	#define kStack (8 * 1024)
-//#else
+#if MODDEF_XS_TEST
+	#define kStack (15 * 1024)
+#else
 	#define kStack (10 * 1024)
-//#endif
+#endif
 
 #if MODDEF_SOFTRESET
 	uint8_t gSoftReset;
