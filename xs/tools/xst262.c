@@ -1219,11 +1219,11 @@ bail:
 int fxRunTestCase(txPool* pool, txContext* context, char* path, txUnsigned flags, int async, char* message)
 {
 	xsCreation _creation = {
-		16 * 1024 * 1024, 	/* initialChunkSize */
-		16 * 1024 * 1024, 	/* incrementalChunkSize */
-		1 * 1024 * 1024, 	/* initialHeapCount */
-		1 * 1024 * 1024, 	/* incrementalHeapCount */
-		256 * 1024, 		/* stackCount */
+		256 * 1024, 	/* initialChunkSize */
+		1 * 1024 * 1024, 	/* incrementalChunkSize */
+		1 * 1024 * 32, 	/* initialHeapCount */
+		1 * 1024 * 32, 	/* incrementalHeapCount */
+		64 * 1024, 		/* stackCount */
 		1024, 				/* initialKeyCount */
 		1024,				/* incrementalKeyCount */
 		1993, 				/* nameModulo */
