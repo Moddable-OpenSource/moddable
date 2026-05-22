@@ -90,12 +90,12 @@
 			"creation": {
 				"static": 0,
 				"chunk": {
-					"initial": 3670016,
-					"incremental": 0 
+					"initial": 524288,
+					"incremental": 524288
 				},
 				"heap": {
-					"initial": 229376,
-					"incremental": 0 
+					"initial": 32768,
+					"incremental": 32768 
 				},
 				"stack": 16384,
 				"keys": {
