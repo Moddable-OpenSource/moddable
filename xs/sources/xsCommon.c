@@ -619,7 +619,7 @@ char* fxCStackLimit()
 	#elif defined(__ets__) && ESP32 && !defined(__ZEPHYR__)
 		TaskStatus_t info;
 		vTaskGetInfo(NULL, &info, pdFALSE, eReady);
-		return 512 + (char *)info.pxStackBase;
+		return 1024 + (char *)info.pxStackBase;
 	#else
 		return C_NULL;
 	#endif
