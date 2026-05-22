@@ -3178,12 +3178,12 @@ void fxSampleInstrumentation(txMachine* the, txInteger count, txInteger* values)
 	for (i = 0; i < count; i++, j++) {
 		if (j)
 			c_printf(",");
-		c_printf("%d", values[i]);
+		c_printf("%d", (int)values[i]);
 	}
 	for (i = 0; i < xsInstrumentCount; i++, j++) {
 		if (j)
 			c_printf(",");
-		c_printf("%d", xsInstrumentValues[i]);
+		c_printf("%d", (int)xsInstrumentValues[i]);
 	}
 	c_printf("\n");
 #elif pebble
