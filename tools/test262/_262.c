@@ -507,9 +507,9 @@ void _262_agent_start(txMachine* the)
 	c_memcpy(&(agent->script[0]), script, scriptLength + 1);
 #ifdef mxUseFreeRTOSTasks
 	#if 0 == CONFIG_LOG_DEFAULT_LEVEL
-		#define kStack ((5 * 1024) / sizeof(StackType_t))
+		#define kStack ((8 * 1024) / sizeof(StackType_t))
 	#else
-		#define kStack ((6 * 1024) / sizeof(StackType_t))
+		#define kStack ((9 * 1024) / sizeof(StackType_t))
 	#endif
 	xTaskCreate(_262_agent_start_aux, "agent", kStack, agent, 8, &(agent->thread));
 #elif mxWindows
