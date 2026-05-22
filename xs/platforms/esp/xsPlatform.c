@@ -776,7 +776,8 @@ void fxReceiveLoop(void)
 	static DebugFragment fragment = NULL;
 	static uint32_t value = 0;
 	static uint8_t bufferedBytes = 0;
-	static uint8_t buffered[28];		//@@ this must be smaller than sxMachine / debugBuffer
+	static uint8_t buffered[128];
+	typedef char _assert_buffered_fits_debugBuffer[(sizeof(buffered) < sizeof(((txMachine *)0)->debugBuffer)) ? 1 : -1];
 
 	if (!mxDebugMutexAllocated())
 		return;
@@ -860,6 +861,7 @@ void fxReceiveLoop(void)
 				fragment = c_malloc(sizeof(DebugFragmentRecord) + bufferedBytes);
 				if (NULL == fragment) {
 					modLog("no fragment memory");
+					bufferedBytes = 0;
 					break;
 				}
 				fragment->next = NULL;
