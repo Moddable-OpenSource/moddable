@@ -617,6 +617,8 @@ struct sxParserState {
 
 struct sxParser {
 	txParserChunk* first;
+	txByte* chunk;
+	txSize chunkSize;
 	txParserJump* firstJump;
 	void* console;
 	int error;

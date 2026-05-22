@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -169,14 +169,36 @@ void fxInitializeParser(txParser* parser, void* console, txSize bufferSize, txSi
 	parser->bufferSize = bufferSize;
 }
 
+#define kParserChunkSize (4096)
+
 void* fxNewParserChunk(txParser* parser, txSize size)
 {
-	txParserChunk* block = c_malloc(sizeof(txParserChunk) + size);
+	size = (size + sizeof(void *) - 1) & ~(sizeof(void *) - 1);
+	if (size <= parser->chunkSize) {
+		void *result = parser->chunk;
+		parser->chunk += size;
+		parser->chunkSize -= size;
+		return result;
+	}
+
+	if (size > (txSize)(kParserChunkSize - sizeof(txParserChunk))) {
+		txParserChunk *block = c_malloc(sizeof(txParserChunk) + size);
+		if (!block)
+			fxAbort(parser->console, XS_NOT_ENOUGH_MEMORY_EXIT);
+		parser->total += sizeof(txParserChunk) + size;
+		block->next = parser->first;
+		parser->first = block;
+		return block + 1;
+	}
+
+	txParserChunk *block = c_malloc(kParserChunkSize);
 	if (!block)
-    	fxAbort(parser->console, XS_NOT_ENOUGH_MEMORY_EXIT);
-	parser->total += sizeof(txParserChunk) + size;
+		fxAbort(parser->console, XS_NOT_ENOUGH_MEMORY_EXIT);
+	parser->total += kParserChunkSize;
 	block->next = parser->first;
 	parser->first = block;
+	parser->chunk = (txByte*)(block + 1) + size;
+	parser->chunkSize = kParserChunkSize - sizeof(txParserChunk) - size;
 	return block + 1;
 }
 
