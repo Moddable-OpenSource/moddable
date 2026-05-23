@@ -142,6 +142,15 @@ static const PixelsOutDispatchRecord gPixelsOutDispatch ICACHE_RODATA_ATTR = {
 	co5300AdaptInvalid
 };
 
+static inline uint16_t co5300DisplayPixel(uint16_t pixel)
+{
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
+	return __builtin_bswap16(pixel);
+#else
+	return pixel;
+#endif
+}
+
 void xs_co5300_destructor(void *data)
 {
 	co5300Display sd = data;
@@ -403,11 +412,11 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 	sd->nothingSent = 0;
 
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
-	{
+	if (0 == (sd->rotation & 1)) {
 		uint16_t *p = (uint16_t *)pixels;
 		int count = byteLength >> 1;
 		for (int i = 0; i < count; i++)
-			p[i] = __builtin_bswap16(p[i]);
+			p[i] = co5300DisplayPixel(p[i]);
 	}
 #endif
 
@@ -572,7 +581,7 @@ static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength
 		if (1 == sd->rotation) {
 			for (int col = 0; col < sd->updateWidth; col++) {
 				for (int r = rows - 1; r >= 0; r--)
-					*out++ = src[(r * sd->updateWidth) + col];
+					*out++ = co5300DisplayPixel(src[(r * sd->updateWidth) + col]);
 			}
 			x = MODDEF_CO5300_WIDTH - (sd->updateY + row + rows);
 			y = sd->updateX;
@@ -580,7 +589,7 @@ static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength
 		else {
 			for (int col = sd->updateWidth - 1; col >= 0; col--) {
 				for (int r = 0; r < rows; r++)
-					*out++ = src[(r * sd->updateWidth) + col];
+					*out++ = co5300DisplayPixel(src[(r * sd->updateWidth) + col]);
 			}
 			x = sd->updateY + row;
 			y = MODDEF_CO5300_HEIGHT - (sd->updateX + sd->updateWidth);
