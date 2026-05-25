@@ -1,6 +1,6 @@
 # XS FFI
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: May 4, 2026
+Revised: May 25, 2026
 
 ## About
 
@@ -119,7 +119,9 @@ mcconfig -d -m
 
 ### ffi-host
 
-This directory contains the host for the mod example:
+This directory contains the host for the mod example.
+
+> **Note**: This application loads the FFI code from a shared library/DLL. It is currently only supported on desktop simulator builds, as most microcontrollers do not support runtime loading and linking of shared libraries.
 
 To build and run the host, execute:
 
