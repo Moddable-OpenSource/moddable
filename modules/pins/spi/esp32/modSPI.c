@@ -33,13 +33,13 @@
 #include "freertos/semphr.h"
 
 #ifndef MODDEF_SPI_MISO_PIN
-	#define MODDEF_SPI_MISO_PIN	12
+	#define MODDEF_SPI_MISO_PIN (-1)
 #endif
 #ifndef MODDEF_SPI_MOSI_PIN
-	#define MODDEF_SPI_MOSI_PIN	13
+	#define MODDEF_SPI_MOSI_PIN (-1)
 #endif
 #ifndef MODDEF_SPI_SCK_PIN
-	#define MODDEF_SPI_SCK_PIN	14
+	#error SPI_SCK_PIN must be defined
 #endif
 #ifndef MODDEF_SPI_ESP32_TRANSACTIONS
 	#define MODDEF_SPI_ESP32_TRANSACTIONS (3)
