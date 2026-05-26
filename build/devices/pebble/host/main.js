@@ -186,6 +186,6 @@ export default function() {
 	});
 
 	Timer.set(() => {
-		state.mod.import("main").then(undefined, e => trace("Exception loading main: " + e + "\n"));
+		state.mod.import("main").then(undefined, e => trace(`Exception loading main: ${e}\n`));
 	});
 }
