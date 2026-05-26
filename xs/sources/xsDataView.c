@@ -469,8 +469,8 @@ void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger
 	else {
 		mxPushSlot(mxThis);
 		mxGetID(mxID(_constructor));
+		fxToSpeciesConstructor(the, &mxArrayBufferConstructor);
 	}
-	fxToSpeciesConstructor(the, &mxArrayBufferConstructor);
 	mxNew();
 	mxPushInteger(length);
 	mxRunCount(1);
