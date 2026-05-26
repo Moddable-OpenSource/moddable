@@ -35,6 +35,10 @@
 
 #include "builtinCommon.h"
 
+#ifndef MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+	#define MODDEF_ECMA419_I2C_PINS_COMPATITBLE 0
+#endif
+
 struct I2CRecord {
 	uint32_t					hz;
 	uint32_t					data;
@@ -42,22 +46,19 @@ struct I2CRecord {
 	uint32_t					timeout;
 	uint8_t						address;		// 7-bit
 	uint8_t						pullup;
-	uint8_t						port;
 	uint8_t						stop;			// SMBus
+	i2c_port_num_t				port;
 	xsSlot						obj;
 	struct I2CRecord			*next;
+
+	i2c_master_bus_handle_t 	bus;
+	i2c_master_dev_handle_t		device;
 };
 typedef struct I2CRecord I2CRecord;
 typedef struct I2CRecord *I2C;
 
 static I2C gI2C;
-static I2C gI2CActive;
 
-static i2c_master_bus_handle_t 	gBus;
-static i2c_master_dev_handle_t	gDevice;
-
-__attribute__((weak)) void modI2CUninit(void *);	// pins I2C
-uint8_t i2cActivate(I2C i2c);
 static uint8_t usingPins(uint32_t data, uint32_t clock);
 
 static void _xs_i2c_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
@@ -66,6 +67,11 @@ static SemaphoreHandle_t gI2CMutex;
 
 static void *modI2CValidate(xsMachine *the, xsSlot *instance);
 static uint8_t modI2CDeactivate(void *instanceData);
+
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+	__attribute__((weak)) void modI2CUninit(void *);	// pins I2C
+	uint8_t i2cActivate(struct I2CRecord *i2c);			// called by pins I2C with NULL
+#endif
 
 static const xsI2CHostHooksRecord ICACHE_RODATA_ATTR xsI2CHooks = {
 	.hooks = {
@@ -86,9 +92,12 @@ void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
 	int data, clock, hz, address;
-	int timeout = 32000;		// 400 ms (same as default I2C_SLAVE_TIMEOUT_DEFAULT)
+	int timeout = 400;		// ms (-1 = wait forever)
 	uint8_t pullup = 1;
-	int port = I2C_NUM_0;
+	i2c_port_num_t port = -1;			// none requested
+	uint8_t busIsNew = 0;
+	i2c_master_bus_handle_t bus = C_NULL;
+	i2c_master_dev_handle_t device = C_NULL;
 
 	if (NULL == gI2CMutex)
 		gI2CMutex = xSemaphoreCreateMutex();
@@ -133,7 +142,9 @@ void _xs_i2c_constructor(xsMachine *the)
 
 	if (xsmcHas(xsArg(0), xsID_timeout)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_timeout);
-		timeout = xsmcToInteger(xsVar(0)) * (80000000 / 1000);
+		timeout = xsmcToInteger(xsVar(0));
+		if (timeout < -1)
+			xsRangeError("invalid timeout");
 	}
 
 	if (xsmcHas(xsArg(0), xsID_pullup)) {
@@ -152,9 +163,52 @@ void _xs_i2c_constructor(xsMachine *the)
 	if (kIOFormatBuffer != builtinInitializeFormat(the, kIOFormatBuffer))
 		xsRangeError("invalid format");
 
+	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
+
+	for (i2c = gI2C; i2c; i2c = i2c->next) {
+		if (i2c->bus && (i2c->data == data) && (i2c->clock == clock) && (i2c->port == port) && (i2c->pullup == pullup)) {
+			bus = i2c->bus;
+			break;
+		}
+	}
+
+	xSemaphoreGive(gI2CMutex);
+
+	if (!bus) {
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+		if (modI2CUninit)
+			modI2CUninit(C_NULL);		// make pin release these pins
+#endif
+		i2c_master_bus_config_t busC = {
+			.i2c_port = port,
+			.sda_io_num = data,
+			.scl_io_num = clock,
+			.clk_source = I2C_CLK_SRC_DEFAULT,
+			.flags.enable_internal_pullup = pullup,
+		};
+		if (ESP_OK != i2c_new_master_bus(&busC, &bus))
+			xsUnknownError("can't create bus");
+		busIsNew = 1;
+	}
+
+	i2c_device_config_t deviceC = {
+		.dev_addr_length = I2C_ADDR_BIT_LEN_7,
+		.device_address = address,
+		.scl_speed_hz = hz,
+	};
+	if (ESP_OK != i2c_master_bus_add_device(bus, &deviceC, &device)) {
+		if (busIsNew)
+			i2c_del_master_bus(bus);
+		xsUnknownError("can't create device");
+	}
+
 	i2c = c_malloc(sizeof(I2CRecord));
-	if (!i2c)
+	if (!i2c) {
+		i2c_master_bus_rm_device(device);
+		if (busIsNew)
+			i2c_del_master_bus(bus);
 		xsRangeError("no memory");
+	}
 
 	xsmcSetHostData(xsThis, i2c);
 	i2c->obj = xsThis;
@@ -165,7 +219,9 @@ void _xs_i2c_constructor(xsMachine *the)
 	i2c->address = address;
 	i2c->timeout = timeout;
 	i2c->pullup = pullup;
-	i2c->port = (uint8_t)port;
+	i2c->port = port;
+	i2c->bus = bus;
+	i2c->device = device;
 
 	i2c->next = gI2C;
 	gI2C = i2c;
@@ -182,19 +238,29 @@ void _xs_i2c_destructor(void *data)
 	if (!i2c)
 		return;
 
-	if (i2c == gI2CActive) {
-		gI2CActive = NULL;
-
-		i2c_master_bus_rm_device(gDevice);
-		i2c_del_master_bus(gBus);
-		gDevice = NULL;
-		gBus = NULL;
+	if (i2c->device) {
+		i2c_master_bus_rm_device(i2c->device);
+		i2c->device = C_NULL;
 	}
+
+	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
+	I2C walker;
+	if (i2c->bus) {
+		int busCount = 0;
+		for (walker = gI2C; walker; walker = walker->next) {
+			if (walker->bus == i2c->bus)
+				busCount++;
+		}
+		if (1 == busCount) {
+			i2c_del_master_bus(i2c->bus);
+			i2c->bus = C_NULL;
+		}
+	}
+	xSemaphoreGive(gI2CMutex);
 
 	if (gI2C == i2c)
 		gI2C = i2c->next;
 	else {
-		I2C walker;
 		for (walker = gI2C; walker; walker = walker->next) {
 			if (walker->next == i2c) {
 				walker->next = i2c->next;
@@ -247,13 +313,14 @@ void _xs_i2c_read(xsMachine *the)
 		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	err = i2c_master_receive(gDevice, buffer, length, i2c->timeout);
-
+	err = i2c_master_receive(i2c->device, buffer, length, i2c->timeout);
 	xSemaphoreGive(gI2CMutex);
-
+#else
+	err = i2c_master_receive(i2c->device, buffer, length, i2c->timeout);
+#endif
 	if (ESP_OK != err)
 		xsUnknownError("read failed");
 }
@@ -271,15 +338,17 @@ void _xs_i2c_write(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
+#endif
 	if (length)
-		err = i2c_master_transmit(gDevice, buffer, length, i2c->timeout);
+		err = i2c_master_transmit(i2c->device, buffer, length, i2c->timeout);
 	else //@@ write quick unsupported through transmit, but probe seems similar-ish
-		err = i2c_master_probe(gBus, i2c->address, 1000);
-
+		err = i2c_master_probe(i2c->bus, i2c->address, 1000);
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
 	xSemaphoreGive(gI2CMutex);
+#endif
 
 	if (length == 0) {
 		if (ESP_OK != err)
@@ -312,71 +381,16 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
 
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
-
-	err = i2c_master_transmit_receive(gDevice, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
-
+	err = i2c_master_transmit_receive(i2c->device, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
 	xSemaphoreGive(gI2CMutex);
-
-	if (ESP_OK != err) {
-	xsLog("err %d\n", (int)err);
+#else
+	err = i2c_master_transmit_receive(i2c->device, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
+#endif
+	if (ESP_OK != err)
 		xsUnknownError("writeRead failed");
-	}
-}
-
-uint8_t i2cActivate(I2C i2c)
-{
-	if (C_NULL == gI2CMutex)		//@@ this check only needed for "make pins release bus" case below.
-		return 1;
-
-	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
-
-	if (gI2CActive) {
-		if (i2c == gI2CActive)
-			return 1;
-
-		i2c_master_bus_rm_device(gDevice);
-		i2c_del_master_bus(gBus);
-		gBus = NULL;
-		gDevice = NULL;
-		gI2CActive = NULL;
-	}
-
-	if (i2c) {
-		if (modI2CUninit)
-			modI2CUninit(C_NULL);		// make pins release bus
-
-		i2c_master_bus_config_t busC = {
-			.i2c_port = i2c->port,
-			.sda_io_num = i2c->data,
-			.scl_io_num = i2c->clock,
-			.clk_source = I2C_CLK_SRC_DEFAULT,
-			.glitch_ignore_cnt = 7,
-			.flags.enable_internal_pullup = i2c->pullup,
-		};
-		if (ESP_OK != i2c_new_master_bus(&busC, &gBus)) {
-			xSemaphoreGive(gI2CMutex);
-			return 0;
-		}
-
-		i2c_device_config_t deviceC = {
-			.dev_addr_length = I2C_ADDR_BIT_LEN_7,
-			.device_address = i2c->address,
-			.scl_speed_hz = i2c->hz,
-		};
-		if (ESP_OK != i2c_master_bus_add_device(gBus, &deviceC, &gDevice)) {
-			i2c_del_master_bus(gBus);
-			xSemaphoreGive(gI2CMutex);
-			return 0;
-		}
-
-		gI2CActive = i2c;
-	}
-	else
-		xSemaphoreGive(gI2CMutex);
-
-	return 1;
 }
 
 uint8_t usingPins(uint32_t data, uint32_t clock)
@@ -398,21 +412,93 @@ void *modI2CValidate(xsMachine *the, xsSlot *instance)
 
 uint8_t modI2CDeactivate(void *instanceData)
 {
-	I2C i2c = instanceData;
-
-	if (!gI2CActive || !i2c)
-		return 0;
-
-	if ((gI2CActive->data != i2c->data) || (gI2CActive->clock != i2c->clock))
-		return 0;			// an I2C bus is active, but not this one
-
-	if (!i2cActivate(C_NULL))	// unconditionally deactivate this bus
-		return 0;
-
-	xSemaphoreGive(gI2CMutex);
-
 	return 1;
 }
+
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+uint8_t i2cActivate(I2C i2c)
+{
+	if (C_NULL == gI2CMutex)
+		return 1;		// pins may call before any ECMA-419 I2C exists
+
+	xSemaphoreTake(gI2CMutex, portMAX_DELAY);
+
+	if (i2c) {
+		if (i2c->device)
+			return 1;	// already alive, mutex held
+
+		i2c_master_bus_handle_t bus = C_NULL;
+		I2C walker;
+		for (walker = gI2C; walker; walker = walker->next) {
+			if ((walker != i2c) && walker->bus &&
+				(walker->data == i2c->data) && (walker->clock == i2c->clock) &&
+				(walker->port == i2c->port) && (walker->pullup == i2c->pullup)) {
+				bus = walker->bus;
+				break;
+			}
+		}
+
+		uint8_t busIsNew = 0;
+		if (!bus) {
+			if (modI2CUninit)
+				modI2CUninit(C_NULL);		// make pins release these pins
+
+			i2c_master_bus_config_t busC = {
+				.i2c_port = i2c->port,
+				.sda_io_num = i2c->data,
+				.scl_io_num = i2c->clock,
+				.clk_source = I2C_CLK_SRC_DEFAULT,
+				.flags.enable_internal_pullup = i2c->pullup,
+			};
+			if (ESP_OK != i2c_new_master_bus(&busC, &bus)) {
+				xSemaphoreGive(gI2CMutex);
+				return 0;
+			}
+			busIsNew = 1;
+		}
+
+		i2c_device_config_t deviceC = {
+			.dev_addr_length = I2C_ADDR_BIT_LEN_7,
+			.device_address = i2c->address,
+			.scl_speed_hz = i2c->hz,
+		};
+		i2c_master_dev_handle_t device = C_NULL;
+		if (ESP_OK != i2c_master_bus_add_device(bus, &deviceC, &device)) {
+			if (busIsNew)
+				i2c_del_master_bus(bus);
+			xSemaphoreGive(gI2CMutex);
+			return 0;
+		}
+
+		i2c->bus = bus;
+		i2c->device = device;
+		return 1;		// mutex held
+	}
+
+	// pins asked us to step aside: tear down all persistent buses+devices
+	I2C walker;
+	for (walker = gI2C; walker; walker = walker->next) {
+		if (walker->device) {
+			i2c_master_bus_rm_device(walker->device);
+			walker->device = C_NULL;
+		}
+	}
+	for (walker = gI2C; walker; walker = walker->next) {
+		if (walker->bus) {
+			i2c_master_bus_handle_t bus = walker->bus;
+			I2C w2;
+			for (w2 = walker; w2; w2 = w2->next) {
+				if (w2->bus == bus)
+					w2->bus = C_NULL;
+			}
+			i2c_del_master_bus(bus);
+		}
+	}
+
+	xSemaphoreGive(gI2CMutex);
+	return 1;
+}
+#endif
 
 /*
 	async experiment
@@ -575,27 +661,31 @@ static void i2cTask(void *pvParameter)
 				;
 			else if (kOperationCancelled == transaction->operation)
 				transaction->err = -2;
-			else if (i2cActivate(transaction->i2c)) {
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+			else if (!i2cActivate(transaction->i2c))
+				transaction->err = -1;
+#endif
+			else {
 				I2C i2c = transaction->i2c;
 				switch (transaction->operation) {
 					case kOperationRead:
 					case kOperationReceiveByte:
 					case kOperationReadQuick:
-						transaction->err = i2c_master_receive(gDevice, transaction->buffer, transaction->bufferLength, i2c->timeout);
+						transaction->err = i2c_master_receive(i2c->device, transaction->buffer, transaction->bufferLength, i2c->timeout);
 						break;
 
 					case kOperationReadUint8:
 					case kOperationReadUint16:
 					case kOperationReadBuffer:
-						transaction->err = i2c_master_transmit_receive(gDevice, &transaction->reg, 1, transaction->buffer, transaction->bufferLength, i2c->timeout);
+						transaction->err = i2c_master_transmit_receive(i2c->device, &transaction->reg, 1, transaction->buffer, transaction->bufferLength, i2c->timeout);
 						break;
 
 					case kOperationWrite:
 					case kOperationSendByte:
 						if (transaction->bufferLength)
-							transaction->err = i2c_master_transmit(gDevice, transaction->buffer, transaction->bufferLength, i2c->timeout);
+							transaction->err = i2c_master_transmit(i2c->device, transaction->buffer, transaction->bufferLength, i2c->timeout);
 						else //@@ write quick unsupported thorugh transmit, but probe seems similar-ish
-							transaction->err = i2c_master_probe(gBus, i2c->address, 1000);
+							transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
 						break;
 
 					case kOperationWriteUint8:
@@ -605,17 +695,17 @@ static void i2cTask(void *pvParameter)
 							{.write_buffer = (uint8_t*)&transaction->reg, .buffer_size = 1},
 							{.write_buffer = (uint8_t*)transaction->buffer, .buffer_size = transaction->bufferLength},
 						};
-						transaction->err = i2c_master_multi_buffer_transmit(gDevice, buffers, 2, i2c->timeout);
+						transaction->err = i2c_master_multi_buffer_transmit(i2c->device, buffers, 2, i2c->timeout);
 						} break;
 
 					case kOperationWriteQuick:	//@@ write quick unsupported through transmit, but probe seems similar-ish
-						transaction->err = i2c_master_probe(gBus, i2c->address, 1000);
+						transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
 						break;
 				}
+#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
 				xSemaphoreGive(gI2CMutex);
+#endif
 			}
-			else
-				transaction->err = -1;
 
 			transaction->processing = 2;
 
@@ -789,14 +879,6 @@ void _xs_i2casync_read(xsMachine *the)
 		xsRemember(transaction->readBuffer);
 	}
 
-	// set-up transaction record
-	transaction = newI2CTransaction(the, i2c, kOperationRead, length, callbackIndex);
-	transaction->hasReadBuffer = hasReadBuffer;
-	if (hasReadBuffer) {
-		transaction->readBuffer = xsArg(0);
-		xsRemember(transaction->readBuffer);
-	}
-
 	queueTransaction(transaction);
 }
 
@@ -820,10 +902,6 @@ void _xs_i2casync_write(xsMachine *the)
 	}
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
-
-	// set-up transaction record
-	transaction = newI2CTransaction(the, i2c, kOperationWrite, length, callbackIndex);
-	c_memmove(transaction->buffer, buffer, length);
 
 	// set-up transaction record
 	transaction = newI2CTransaction(the, i2c, kOperationWrite, length, callbackIndex);
