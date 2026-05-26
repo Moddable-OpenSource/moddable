@@ -106,11 +106,11 @@ LINK_OPTIONS = \
 	-s ALLOW_MEMORY_GROWTH=1\
 	-s MODULARIZE=1\
 	-s EXPORT_ES6=1\
-	-s USE_ES6_IMPORT_META=0\
 	-s EXPORT_NAME=mc\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
-	-s "EXPORTED_FUNCTIONS=['_fxMainIdle', '_fxMainLaunch', '_fxMainQuit', '_fxMainTouch']"
+	-s "EXPORTED_FUNCTIONS=['_fxMainIdle', '_fxMainLaunch', '_fxMainQuit', '_fxMainTouch']"\
+	-s "EXPORTED_RUNTIME_METHODS=[HEAP8]"
 
 LINK_LIBRARIES = -ldl -lm
 

@@ -54,6 +54,7 @@ XS_HEADERS = \
 	$(XS_DIR)/platforms/xsPlatform.h \
 	$(XS_DIR)/includes/xs.h \
 	$(XS_DIR)/includes/xsmc.h \
+	$(XS_DIR)/includes/xsffi.h \
 	$(XS_DIR)/sources/xsCommon.h \
 	$(XS_DIR)/sources/xsAll.h \
 	$(XS_DIR)/sources/xsScript.h
@@ -140,6 +141,7 @@ MODULES = \
 	$(MOD_DIR)/unicode-ranges.xsb \
 	$(MOD_DIR)/wav2maud.xsb \
 	$(MOD_DIR)/bles2gatt.xsb \
+	$(MOD_DIR)/url.xsb \
 	$(TMP_DIR)/commodettoBitmap.c.xsi \
 	$(TMP_DIR)/commodettoBufferOut.c.xsi \
 	$(TMP_DIR)/commodettoColorCellOut.c.xsi \
@@ -154,7 +156,8 @@ MODULES = \
 	$(TMP_DIR)/image2cs.c.xsi \
 	$(TMP_DIR)/miniz.c.xsi \
 	$(TMP_DIR)/modInstrumentation.c.xsi \
-	$(TMP_DIR)/tool.c.xsi
+	$(TMP_DIR)/tool.c.xsi \
+	$(TMP_DIR)/url.c.xsi
 PRELOADS =\
 	-p commodetto/Bitmap.xsb\
 	-p commodetto/BMPOut.xsb\
@@ -170,8 +173,9 @@ PRELOADS =\
 	-p wavreader.xsb\
 	-p resampler.xsb\
 	-p unicode-ranges.xsb\
-	-p ffi.xsb
-	-p file.xsb
+	-p ffi.xsb\
+	-p file.xsb\
+	-p url.xsb
 CREATION = -c 134217728,16777216,8388608,1048576,16384,16384,0,1993,127,32768,1993,0,main
 
 HEADERS = \
@@ -196,7 +200,8 @@ OBJECTS = \
 	$(TMP_DIR)/miniz.c.o \
 	$(TMP_DIR)/modInstrumentation.c.o \
 	$(TMP_DIR)/tool.c.o \
-	$(TMP_DIR)/wav2maud.c.o
+	$(TMP_DIR)/wav2maud.c.o \
+	$(TMP_DIR)/url.c.o
 
 ifeq ($(wildcard $(TOOLS)/mcrun.js),) 
 else 
@@ -231,12 +236,11 @@ LINK_FLAGS =\
 	-s ALLOW_MEMORY_GROWTH=1\
 	-s MODULARIZE=1\
 	-s EXPORT_ES6=1\
-	-s USE_ES6_IMPORT_META=0\
 	-s EXPORT_NAME=$(NAME)\
 	-s INVOKE_RUN=0\
 	-s FORCE_FILESYSTEM=1\
 	-s ERROR_ON_UNDEFINED_SYMBOLS=0\
-	-s "EXPORTED_RUNTIME_METHODS=['FS', 'cwrap', 'ccall', 'callMain', 'ALLOC_NORMAL','ALLOC_STACK']"
+	-s "EXPORTED_RUNTIME_METHODS=['FS', 'cwrap', 'ccall', 'callMain']"
 ifeq ($(GOAL),release)
 	LINK_OPTIONS += -Oz
 endif
@@ -251,7 +255,7 @@ XSC = $(MODDABLE_TOOLS_DIR)/release/xsc
 XSID = $(MODDABLE_TOOLS_DIR)/release/xsid
 XSL = $(MODDABLE_TOOLS_DIR)/release/xsl
 	
-VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/wavreader $(TOOLS)
+VPATH += $(XS_DIRECTORIES) $(COMMODETTO) $(INSTRUMENTATION) $(DATA)/url $(DATA)/wavreader $(TOOLS)
 
 build: $(LIB_DIR) $(TMP_DIR) $(MOD_DIR) $(MOD_DIR)/commodetto $(BIN_DIR) $(BIN_DIR)/$(NAME)
 
@@ -290,6 +294,10 @@ $(TMP_DIR)/mc.xs.c: $(MODULES)
 $(MOD_DIR)/commodetto/%.xsb: $(COMMODETTO)/commodetto%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
 	$(XSC) $< -c -d -e -o $(MOD_DIR)/commodetto -r $*
+
+$(MOD_DIR)/%.xsb: $(DATA)/url/%.js
+	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
+	$(XSC) $< -c -d -e -o $(MOD_DIR) -r $*
 
 $(MOD_DIR)/%.xsb: $(DATA)/wavreader/%.js
 	@echo "#" $(NAME) $(GOAL) ": xsc" $(<F)
