@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -19,6 +19,8 @@ class FT6206  {
 	#timer;
 	#onError;
 	#onSample;
+	#onLength;
+	#onPoints;
 
 	constructor(options) {
 		const {sensor, reset, interrupt, onSample, target, onError} = options;
@@ -51,7 +53,7 @@ class FT6206  {
 			this.#io.readUint8(0xA8, (error, value) => {
 				if (error)
 					this.#onError?.(error);
-				else if (17 !== value)
+				else if ((17 !== value) && (1 !== value) && (2 !== value) && (0 != value))
 					this.#onError?.("unexpected vendor");
 				else {
 					this.#io.readUint8(0xA3, (error, id) => {
@@ -77,6 +79,57 @@ class FT6206  {
 					});
 				}
 			})
+		};
+
+		let length;
+		this.#onPoints = () => {
+			const io = this.#io, data = io.buffer;
+			const result = new Array(length);
+			for (let i = 0; i < length; i++) {
+				const offset = i * 6;
+				const id = data[offset + 2] >> 4;
+				if (id && (1 === io.length))
+					continue;
+
+				let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
+				let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
+
+				if (io.flipX)
+					x = 240 - x;
+
+				if (io.flipY)
+					y = 320 - y;
+
+				result[i] = {x, y, id};
+
+				if (io.weight)
+					result[i].weight = data[offset + 4];
+
+				if (io.area)
+					result[i].area = data[offset + 5] >> 4;
+			}
+
+			io.sample = result;
+
+			if (!io.interrupt)
+				Timer.schedule(this.#timer, 17, 17);		// higher polling frequency while touch active
+			this.#onSample?.();
+		}
+
+		this.#onLength = (error, value) => {
+			length = value & 0x0F;			// number of touches
+			if (!length) {
+				if (!this.#io.interrupt)
+					Timer.schedule(this.#timer, 50, 50);
+				if (this.#io.none)
+					return;
+				this.#io.sample = [];
+				this.#io.none = true;
+				this.#onSample?.();
+				return;
+			}
+			delete this.#io.none;
+			this.#io.readBuffer(0x03, this.#io.buffer, this.#onPoints);
 		};
 
 		if (reset) {
@@ -154,53 +207,12 @@ class FT6206  {
 	#doSample() {
 		if (this.#timer)
 			Timer.schedule(this.#timer);
-		this.#io.readUint8(0x02, (error, length) => {
-			length &= 0x0F;			// number of touches
-			if (!length) {
-				if (!this.#io.interrupt)
-					Timer.schedule(this.#timer, 17, 17);
-				if (this.#io.none)
-					return;
-				this.#io.sample = [];
-				this.#io.none = true;
-				this.#onSample?.();
-				return;
-			}
-			delete this.#io.none;
-			this.#io.readBuffer(0x03, this.#io.buffer, () => {
-				const io = this.#io, data = io.buffer;
-				const result = new Array(length);
-				for (let i = 0; i < length; i++) {
-					const offset = i * 6;
-					const id = data[offset + 2] >> 4;
-					if (id && (1 === io.length))
-						continue;
-
-					let x = ((data[offset] & 0x0F) << 8) | data[offset + 1];
-					let y = ((data[offset + 2] & 0x0F) << 8) | data[offset + 3];
-
-					if (io.flipX)
-						x = 240 - x;
-
-					if (io.flipY)
-						y = 320 - y;
-
-					result[i] = {x, y, id};
-
-					if (io.weight)
-						result[i].weight = data[offset + 4];
-
-					if (io.area)
-						result[i].area = data[offset + 5] >> 4;
-				}
-
-				io.sample = result;
-
-				if (!io.interrupt)
-					Timer.schedule(this.#timer, 17, 17);
-				this.#onSample?.();
-			});
-		});
+		this.#io.readUint8(0x02, this.#onLength);
+	}
+	get configuration() {
+		return {
+			interrupt: true		// always effectively true - onSample will be called when sample is available
+		};
 	}
 }
 
