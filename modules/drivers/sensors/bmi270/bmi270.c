@@ -437,12 +437,13 @@ static const uint8_t bmi270_config_file[] = {
   0x2e, 0x00, 0xc1
 };
 
-void xs_bmi270_config_file(xsMachine *the) {
-	xsmcVars(1);
+void xs_bmi270_config_file(xsMachine *the)
+{
+	xsSlot tmp;
 	xsResult = xsNewHostObject(NULL);
-	xsmcSetHostBuffer(xsResult, bmi270_config_file, sizeof(bmi270_config_file));
-	xsmcSetInteger(xsVar(0), sizeof(bmi270_config_file));
-	xsmcDefine(xsResult, xsID_byteLength, xsVar(0), xsDontDelete | xsDontSet);
+	xsmcSetHostBuffer(xsResult, (void *)bmi270_config_file, sizeof(bmi270_config_file));
+	xsmcSetInteger(tmp, sizeof(bmi270_config_file));
+	xsmcDefine(xsResult, xsID_byteLength, tmp, xsDontDelete | xsDontSet);
 	xsmcPetrifyHostBuffer(xsResult);
 }
 

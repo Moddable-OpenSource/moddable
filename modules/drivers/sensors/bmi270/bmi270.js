@@ -56,7 +56,7 @@ const Register = Object.freeze({
 		NOMO_1: 0x30,
 		NOMO_2: 0x32,
 		SIGMO_1: 0x34,
-		SIGMO_1: 0x3E,
+		SIGMO_2: 0x3E,
 		// page 6
 		SC_26: 0x32,
 		WR_GEST1: 0x36,
@@ -107,7 +107,8 @@ const Status = Object.freeze({
 	DRDY_GYR:	0b0100_0000,
 	DRDY_ACC:	0b1000_0000,
 });
-	
+
+/*
 const Config = Object.freeze({
 	Enable: {
 		Accelerometer: 0b0100,
@@ -153,6 +154,7 @@ const Config = Object.freeze({
 		DATARATE_3200_HZ:   0x0D,
 	}
 }, true);
+*/
 
 const Gconversion = 9.80665;
 const ACCEL_SCALER = Object.freeze([
@@ -256,11 +258,11 @@ export default class BMI270 {
 				this.#writeUint8_sync(Register.AUX_RD_ADDR, 0x42);			// BMM150 I2C Data X LSB
 			}
 		}
-		catch (e) {
+		catch {
+			/* this block intentionally left blank */
 		}
 		}
 
-		
 		this.#onSignificantMotion = options.onSignificantMotion;
 		this.#onStepCount = options.onStepCount;
 		this.#onActivityChange = options.onActivityChange;
@@ -277,7 +279,7 @@ export default class BMI270 {
 		this.#writeUint8_sync(Register.PWR_CTRL_ADDR, this.#enabled);
 	}
 
-	#uploadConfig(index = 0) {
+	#uploadConfig() {
 		const io = this.#io;
 		this.#writeUint8_sync(Register.INIT_CTRL_ADDR, 0x00);
 
@@ -307,7 +309,6 @@ export default class BMI270 {
 	}
 
 	configure(options) {
-		const io = this.#io;
 		let opt;
 		let value;
 
@@ -541,7 +542,7 @@ export default class BMI270 {
 		this.#enabled &= ~sensors;
 		this.#writeUint8_sync(Register.PWR_CTRL_ADDR, this.#enabled);
 	}
-
+/*
 #traceStatus(status) {
 	let a = "";
 	if (status & 0b0000_0100) a += "B";
@@ -583,6 +584,7 @@ export default class BMI270 {
 	if (error & 0b1000_0000) a + "M";
 	return a;
 }
+*/
 
 	#triggerFeatures(intstat) {
 		const io = this.#io;
@@ -635,10 +637,10 @@ export default class BMI270 {
 		const view = this.#view;
 
 		const intstat0 = io.readUint8(Register.INT_STATUS_0_ADDR);
-		const intstat1 = io.readUint8(Register.INT_STATUS_1_ADDR);
+//		const intstat1 = io.readUint8(Register.INT_STATUS_1_ADDR);
 		const ready = io.readUint8(Register.STATUS_ADDR);
-		const error = io.readUint8(Register.ERR_REG_ADDR);
-		const internalStat = io.readUint8(Register.INTERNAL_STATUS_ADDR);
+//		const error = io.readUint8(Register.ERR_REG_ADDR);
+//		const internalStat = io.readUint8(Register.INTERNAL_STATUS_ADDR);
 
 // trace(`ready: [${this.#traceStatus(ready)}] int0: [${this.#traceInt0(intstat0)}] int1: [${this.#traceInt1(intstat1)}] err: [${this.#traceError(error)}] ${internalStat}\n`);
 
@@ -686,11 +688,10 @@ export default class BMI270 {
 		return result;
 	}
 
-	BMI270_config() @ "xs_bmi270_config_file";
+	BMI270_config() { return native("xs_bmi270_config_file").call(this); }
 
 	// BMM150 connected to the BMI270
 	#auxSetupMode(addr) {
-		const io = this.#io;
 		this.#writeUint8_sync(Register.IF_CONF_ADDR, 0x20);		// enable aux i2c
 		this.#writeUint8_sync(Register.PWR_CONF_ADDR, 0x00);	// disable powersave
 		this.#writeUint8_sync(Register.PWR_CTRL_ADDR, 0x0E);	// disable aux sensor
