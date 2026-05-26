@@ -780,7 +780,7 @@ static void fx_ArrayBuffer_prototype_transferAux(txMachine* the, txFlag flag)
 	txSlot* resultBuffer;
 	if ((maxByteLength >= 0) && (newByteLength > maxByteLength))
 		mxRangeError("newLength > maxByteLength");
-	fxConstructArrayBufferResult(the, C_NULL, newByteLength);
+	fxConstructArrayBufferResult(the, &mxArrayBufferConstructor, newByteLength);
 	resultBuffer = fxCheckArrayBufferDetached(the, mxResult);
 	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis);
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
