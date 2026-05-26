@@ -67,15 +67,6 @@
 			"data7_pin": 13,
 			"tearingEffect_pin": 47
 		},
-		"ft6206": {
-			"threshold": 20,
-			"flipX": false,
-			"flipY": false,
-			"raw_left": 10,
-			"raw_right": 232,
-			"raw_top": 8,
-			"raw_bottom": 315
-		},
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
