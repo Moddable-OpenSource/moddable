@@ -54,6 +54,6 @@ void xs_wakeup_schedule(xsMachine *the)
 	bool notify_if_missed = xsmcToBoolean(xsArg(2));	
 	WakeupId id = app_wakeup_schedule(time, cookie, notify_if_missed);
 	if (id < 0)
-		xsUnknownError("app_wakeup_schedule failed");
+		xsUnknownError("app_wakeup_schedule failed %d", id);
 	xsmcSetInteger(xsResult, id);
 }
