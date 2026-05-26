@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Moddable Tech, Inc.
+ * Copyright (c) 2024-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -22,9 +22,7 @@ const format = "buffer/disposable";	// or "buffer"
 
 class CameraModel {
 	constructor() {
-		let width = 176;
-		let height = 144;
-		const imageType = Bitmap.RGB565LE;
+		const imageType = screen.pixelFormat;
 		
 		let frame;
 		const camera = new Camera({
