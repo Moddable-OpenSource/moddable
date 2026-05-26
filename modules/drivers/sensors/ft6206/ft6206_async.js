@@ -111,7 +111,7 @@ class FT6206  {
 
 			io.sample = result;
 
-			if (!io.interrupt)
+			if (this.#timer)
 				Timer.schedule(this.#timer, 17, 17);		// higher polling frequency while touch active
 			this.#onSample?.();
 		}
@@ -119,7 +119,7 @@ class FT6206  {
 		this.#onLength = (error, value) => {
 			length = value & 0x0F;			// number of touches
 			if (!length) {
-				if (!this.#io.interrupt)
+				if (this.#timer)
 					Timer.schedule(this.#timer, 50, 50);
 				if (this.#io.none)
 					return;
