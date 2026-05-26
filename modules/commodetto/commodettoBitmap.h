@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -48,6 +48,15 @@
 	#define kCommodettoPixelSize (2)
 #else
 	#error
+#endif
+
+#if defined(__GNUC__) || defined(__llvm__)
+	#define commodetto_bswap16(v) __builtin_bswap16(v)
+#elif defined(_MSC_VER)
+	#include <stdlib.h>
+	#define commodetto_bswap16(v) _byteswap_ushort(v)
+#else
+	#define commodetto_bswap16(v) ((uint16_t)((((v) & 0xFF) << 8) | (((v) >> 8) & 0xFF)))
 #endif
 
 typedef uint8_t CommodettoBitmapFormat;

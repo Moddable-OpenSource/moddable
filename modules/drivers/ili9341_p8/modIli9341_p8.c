@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -131,6 +131,19 @@ static void ili9341Init(spiDisplay sd);
 	xQueueSend(sd->ops, &sd->opZero, portMAX_DELAY); \
 	esp_lcd_panel_io_tx_color(sd->io_handle, command, data, count)
 
+static inline void setCommand16(uint8_t *data, uint16_t value)
+{
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+	data[0] = value >> 8;
+	data[1] = value & 0xff;
+#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
+	data[0] = value & 0xff;
+	data[1] = value >> 8;
+#else
+	#error unsupported pixel format
+#endif
+}
+
 static void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, CommodettoDimension w, CommodettoDimension h);
 static void ili9341End(void *refcon);
 static void ili9341Continue(void *refcon);
@@ -258,6 +271,8 @@ void xs_ILI9341p8(xsMachine *the)
 			.reverse_color_bits = 0,
 #if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 			.swap_color_bytes = 1
+#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+			.swap_color_bytes = 0
 #endif
         },
         .lcd_cmd_bits = 8,
@@ -448,12 +463,9 @@ void ili9341Send(PocoPixel *pixels, int byteLength, void *refcon)
 		sd->updateLinesRemaining -= lines;
 
 		if (sd->updateLinesRemaining) {
-			// reversing endian!
-			uint8_t *data = sd->data + (4 * (sd->ping++ & 7)); 
-			data[0] = sd->yMin & 0xff;
-			data[1] = sd->yMin >> 8;;
-			data[2] = sd->yMax & 0xff;
-			data[3] = sd->yMax >> 8;;
+			uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
+			setCommand16(data, sd->yMin);
+			setCommand16(data + 2, sd->yMax);
 			ili9341CommandAsync(sd, 0x2b, data, 4);
 		}
 	}
@@ -585,18 +597,14 @@ void ili9341Begin(void *refcon, CommodettoCoordinate x, CommodettoCoordinate y, 
 	sd->firstBuffer = !sd->firstFrame && !sd->isContinue;
 #endif
 
-	uint8_t *data = sd->data + (4 * (sd->ping++ & 7)); 
-	data[0] = xMin & 0xff;
-	data[1] = xMin >> 8;
-	data[2] = xMax & 0xff;
-	data[3] = xMax >> 8;
+	uint8_t *data = sd->data + (4 * (sd->ping++ & 7));
+	setCommand16(data, xMin);
+	setCommand16(data + 2, xMax);
 	ili9341CommandAsync(sd, 0x2a, data, 4);
 
-	data = sd->data + (4 * (sd->ping++ & 7)); 
-	data[0] = yMin & 0xff;
-	data[1] = yMin >> 8;;
-	data[2] = yMax & 0xff;
-	data[3] = yMax >> 8;
+	data = sd->data + (4 * (sd->ping++ & 7));
+	setCommand16(data, yMin);
+	setCommand16(data + 2, yMax);
 	ili9341CommandAsync(sd, 0x2b, data, 4);
 
 	xSemaphoreTake(sd->colorsInFlight, portMAX_DELAY);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -95,7 +95,11 @@ void xs_JPEG_initialize(xsMachine *the)
 	}
 
 	jpeg_dec_config_t config = {
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+		.output_type  = JPEG_PIXEL_FORMAT_RGB565_BE,
+#else
 		.output_type  = JPEG_PIXEL_FORMAT_RGB565_LE,
+#endif
 		.scale        = {.width = 0, .height = 0},
 		.clipper      = {.width = 0, .height = 0},
 		.rotate       = JPEG_ROTATE_0D,
@@ -132,7 +136,7 @@ void xs_JPEG_initialize(xsMachine *the)
 	xsmcDefine(xsThis, xsID_width, tmp, xsDontDelete | xsDontSet);
 	xsmcSetInteger(tmp, jpeg.info.height);
 	xsmcDefine(xsThis, xsID_height, tmp, xsDontDelete | xsDontSet);
-	xsmcSetInteger(tmp, kCommodettoBitmapRGB565LE);
+	xsmcSetInteger(tmp, kCommodettoBitmapFormat);
 	xsmcDefine(xsThis, xsID_pixelFormat, tmp, xsDontDelete | xsDontSet);
 
 	jpeg.input = xsmcToReference(xsArg(0));
@@ -150,7 +154,7 @@ void xs_JPEG_initialize(xsMachine *the)
 	xsmcSetHostChunk(xsThis, &jpeg, sizeof(jpeg));
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsJPEGHooks);
 
-	xsVar(0) = xsConstruct5(xsArg(2), xsInteger(0), xsInteger(0), xsInteger(kCommodettoBitmapRGB565LE), xsVar(0), xsInteger(0));
+	xsVar(0) = xsConstruct5(xsArg(2), xsInteger(0), xsInteger(0), xsInteger(kCommodettoBitmapFormat), xsVar(0), xsInteger(0));
 	JPEG j = xsmcGetHostChunkValidate(xsThis, (void *)&xsJPEGHooks);
 	j->bitmap = xsmcToReference(xsVar(0));
 	xsmcSetInteger(tmp, 0);

@@ -21,6 +21,7 @@
 	],
 	"config": {
 		"screen": "ili9341_p8",
+		"format": "RGB565BE",
 		"backlight": 14,
 		"led": {
 			"pin": 48,

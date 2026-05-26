@@ -112,7 +112,7 @@ void xs_readgif(xsMachine *the)
 		if (xsmcHas(xsArg(1), xsID_pixelFormat)) {
 			xsmcGet(xsVar(0), xsArg(1), xsID_pixelFormat);
 			format = xsmcToInteger(xsVar(0));
-			if ((kCommodettoBitmapRGB565LE != format) && (kCommodettoBitmapCLUT256 != format)
+			if ((kCommodettoBitmapFormat != format) && (kCommodettoBitmapCLUT256 != format)
 				&& (kCommodettoBitmapGray16 != format) && (kCommodettoBitmapMONOCHROME != format)
 				&& (kCommodettoBitmapCLUT32 != format))
 				xsUnknownError("unsupported format");
@@ -138,7 +138,11 @@ void xs_readgif(xsMachine *the)
 	GIFIMAGE *pGIF = &xg->gi;
 	pGIF->iError = GIF_SUCCESS;
 	pGIF->ucPaletteType = GIF_PALETTE_RGB565;
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+	pGIF->ucLittleEndian = false;
+#else
 	pGIF->ucLittleEndian = true;
+#endif
 	pGIF->pfnRead = readMem;
 	pGIF->pfnSeek = seekMem;
 	pGIF->pfnOpen = NULL;
@@ -190,7 +194,7 @@ void xs_readgif(xsMachine *the)
 	}
 
 	if (kCommodettoBitmapDefault == format)
-		format = kCommodettoBitmapRGB565LE;
+		format = kCommodettoBitmapFormat;
 
 	xg->bitmap.w = pGIF->iCanvasWidth;
 	xg->bitmap.h = pGIF->iCanvasHeight;
@@ -206,7 +210,7 @@ void xs_readgif(xsMachine *the)
 
 	xg->bitmap.havePointer = 1;
 	xg->bitmap.format = (CommodettoBitmapFormat)format;
-	if (kCommodettoBitmapRGB565LE == format) {
+	if (kCommodettoBitmapFormat == format) {
 		xg->bitmap.bits.data = c_malloc(2 * xg->bitmap.w * pGIF->iCanvasHeight);
 		xg->pixels = xg->bitmap.bits.data;
 		pGIF->pfnDraw = doDraw565LE;
@@ -369,7 +373,7 @@ void xs_readgif_next(xsMachine *the)
 		xg->background = xg->transparentColor;
 
 	if (2 == xg->disposalMethod) {
-		if (kCommodettoBitmapRGB565LE == xg->bitmap.format) {
+		if (kCommodettoBitmapFormat == xg->bitmap.format) {
 			uint16_t *dst = ((xg->prevY * xg->bitmap.w) + xg->prevX) + (uint16_t *)xg->pixels;
 			int h = xg->prevH;
 			uint16_t background = xg->background;
@@ -501,7 +505,7 @@ void xs_readgif_next(xsMachine *the)
 	}
 
 	gBitmapStride = xg->bitmap.w;
-	if (kCommodettoBitmapRGB565LE == xg->bitmap.format)
+	if (kCommodettoBitmapFormat == xg->bitmap.format)
 		gBitmap = ((pGIF->iY * xg->bitmap.w) + pGIF->iX) + (uint16_t *)xg->pixels;
 	else if (kCommodettoBitmapCLUT256 == xg->bitmap.format)
 		gBitmap = (uint16_t *)(((pGIF->iY * gBitmapStride) + pGIF->iX) + (uint8_t *)xg->pixels);
@@ -714,7 +718,7 @@ void xs_readgif_set_transparentColor(xsMachine *the)
 	int transparentColor = xsmcToInteger(xsArg(0));
 	xsGIF xg = xsmcGetHostChunk(xsThis);
 
-	if (kCommodettoBitmapRGB565LE != xg->bitmap.format)
+	if (kCommodettoBitmapFormat != xg->bitmap.format)
 		return;
 	uint16_t prev = xg->transparentColor;
 	xg->transparentColor = (uint16_t)transparentColor;

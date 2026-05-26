@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -173,6 +173,7 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 #define PocoMakePixelGray16(r, g, b) (((r << 1) + r + (g << 2) + b) >> 7)
 #define PocoMakePixelRGB332(r, g, b) (((r >> 5) << 5) | ((g >> 5) << 2) | (b >> 6))
 #define PocoMakePixelRGB565LE(r, g, b) (((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3))
+#define PocoMakePixelRGB565BE(r, g, b) ((((r) & 0xF8) | ((g) >> 5)) | (((((g) << 3) & 0xE0) | ((b) >> 3)) << 8))
 #define PocoMakePixelCLUT16(r, g, b) (((r & 0xF0) << 4) | (g & 0xF0) | (b >> 4))
 
 #if kCommodettoBitmapGray256 == kPocoPixelFormat
@@ -183,6 +184,8 @@ typedef void (*PocoRenderedPixelsReceiver)(PocoPixel *pixels, int byteCount, voi
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB332(r, g, b)
 #elif kCommodettoBitmapRGB565LE == kPocoPixelFormat
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565LE(r, g, b)
+#elif kCommodettoBitmapRGB565BE == kPocoPixelFormat
+	#define PocoMakeColor(poco, r, g, b) PocoMakePixelRGB565BE(r, g, b)
 #elif kCommodettoBitmapCLUT16 == kPocoPixelFormat
 	#define PocoMakeColor(poco, r, g, b) PocoMakePixelCLUT16(r, g, b)
 #elif (kCommodettoBitmapMonochromeAligned == kPocoPixelFormat) && pebble

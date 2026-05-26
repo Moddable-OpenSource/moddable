@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -278,6 +278,8 @@ void xs_camera_constructor(xsMachine *the)
 		}
 		if (imageType == kCommodettoBitmapRGB565LE)
 			converter = CommodettoPixelsConverterGet(kCommodettoBitmap24RGB, kCommodettoBitmapRGB565LE);
+		else if (imageType == kCommodettoBitmapRGB565BE)
+			converter = CommodettoPixelsConverterGet(kCommodettoBitmap24RGB, kCommodettoBitmapRGB565BE);
 		else if (imageType != kCommodettoBitmapYUV422)
 			xsRangeError("invalid imageType");
 	

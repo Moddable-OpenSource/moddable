@@ -361,8 +361,12 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 		uint16_t *p = (uint16_t *)pixels;
 		int count = byteLength >> 1;
 		for (int i = 0; i < count; i++)
-			p[i] = __builtin_bswap16(p[i]);
+			p[i] = commodetto_bswap16(p[i]);
 	}
+#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+	;
+#else
+	#error unsupported pixel format
 #endif
 
 	{

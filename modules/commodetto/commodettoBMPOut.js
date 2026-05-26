@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -37,7 +37,7 @@ export default class BMPOut extends PixelsOut {
 
 		this.depth = Bitmap.depth(dictionary.pixelFormat);
 
-		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat) && (Bitmap.Monochrome != dictionary.pixelFormat) &&
+		if ((Bitmap.Gray16 != dictionary.pixelFormat) && (Bitmap.Gray256 != dictionary.pixelFormat) && (Bitmap.RGB565LE != dictionary.pixelFormat) && (Bitmap.RGB565BE != dictionary.pixelFormat) && (Bitmap.RGB332 != dictionary.pixelFormat) && (Bitmap.CLUT16 != dictionary.pixelFormat) && (Bitmap.Monochrome != dictionary.pixelFormat) &&
 			(Bitmap.ARGB4444 != dictionary.pixelFormat) && (Bitmap.BGRA32 != dictionary.pixelFormat))
 			throw new Error("unsupported BMP pixel fornat");
 
@@ -79,7 +79,11 @@ export default class BMPOut extends PixelsOut {
 			// 0x46 byte header
 			this.file.write("BM");						// imageFileType
 			this.write32((rowBytes * height) + 0x46);	// fileSize
-			this.write16(0);							// reserved1
+			// Moddable-specific: 'mE' in reserved1 signals big-endian RGB565 pixels
+			if (Bitmap.RGB565BE == this.pixelFormat)
+				this.write16(0x456D);					// 'mE' (little-endian: 'm' then 'E')
+			else
+				this.write16(0);						// reserved1
 			this.write16(0);							// reserved2
 			this.write32(0x46);							// imageDataOffset
 

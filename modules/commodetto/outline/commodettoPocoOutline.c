@@ -384,6 +384,51 @@ void doOutlineOpaqueSpan(int y, int count, const FT_Span *spans, void *user)
 	} while (--count);
 }
 
+#elif kCommodettoBitmapRGB565BE == kPocoPixelFormat
+
+void doOutlineOpaqueSpan(int y, int count, const FT_Span *spans, void *user)
+{
+	xsOutlineSpan os = user;
+	PocoPixel *pixels = (PocoPixel *)(((uint8_t *)os->dst) + ((y - os->y) * os->rowBytes));
+	int src32 = commodetto_bswap16(os->color);
+	src32 |= src32 << 16;
+	src32 &= 0x07E0F81F;
+
+	pixels -= os->x;
+	do {
+		uint16_t len = spans->len;
+		PocoPixel *p = pixels + spans->x;
+		uint8_t blend = spans->coverage;
+
+		if (255 == blend) {
+			uint16_t pixel = os->color;
+			while (len--)
+				*p++ = pixel;
+		}
+		else {
+			blend >>= 3;
+
+			while (len--) {
+				int	dst, src;
+
+				dst = commodetto_bswap16(*p);
+				dst |= dst << 16;
+				dst &= 0x07E0F81F;
+				src = src32 - dst;
+				dst = blend * src + (dst << 5) - dst;
+				dst += 0x02008010;
+				dst += (dst >> 5) & 0x07E0F81F;
+				dst >>= 5;
+				dst &= 0x07E0F81F;
+				dst |= dst >> 16;
+				*p++ = (PocoPixel)commodetto_bswap16((uint16_t)dst);
+			}
+		}
+
+		spans++;
+	} while (--count);
+}
+
 #elif kCommodettoBitmapGray16 == kPocoPixelFormat
 
 void doOutlineOpaqueSpan(int y, int count, const FT_Span *spans, void *user)
@@ -507,6 +552,42 @@ void doOutlineBlendSpan(int y, int count, const FT_Span *spans, void *user)
 			dst &= 0x07E0F81F;
 			dst |= dst >> 16;
 			*p++ = (PocoPixel)dst;
+		}
+
+		spans++;
+	} while (--count);
+}
+
+#elif kCommodettoBitmapRGB565BE == kPocoPixelFormat
+
+void doOutlineBlendSpan(int y, int count, const FT_Span *spans, void *user)
+{
+	xsOutlineSpan os = user;
+	PocoPixel *pixels = (PocoPixel *)(((uint8_t *)os->dst) + ((y - os->y) * os->rowBytes));
+	int src32 = commodetto_bswap16(os->color);
+	src32 |= src32 << 16;
+	src32 &= 0x07E0F81F;
+
+	pixels -= os->x;
+	do {
+		uint16_t len = spans->len;
+		PocoPixel *p = pixels + spans->x;
+		uint8_t blend = (spans->coverage * os->blend) >> 11;
+
+		while (len--) {
+			int	dst, src;
+
+			dst = commodetto_bswap16(*p);
+			dst |= dst << 16;
+			dst &= 0x07E0F81F;
+			src = src32 - dst;
+			dst = blend * src + (dst << 5) - dst;
+			dst += 0x02008010;
+			dst += (dst >> 5) & 0x07E0F81F;
+			dst >>= 5;
+			dst &= 0x07E0F81F;
+			dst |= dst >> 16;
+			*p++ = (PocoPixel)commodetto_bswap16((uint16_t)dst);
 		}
 
 		spans++;

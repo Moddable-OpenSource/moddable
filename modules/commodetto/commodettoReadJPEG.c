@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -237,6 +237,8 @@ void xs_JPEG_read(xsMachine *the)
 	#define makePixel(r, g, b) PocoMakePixelRGB332(r, g, b)
 #elif kCommodettoBitmapRGB565LE == kPocoPixelFormat
 	#define makePixel(r, g, b) PocoMakePixelRGB565LE(r, g, b)
+#elif kCommodettoBitmapRGB565BE == kPocoPixelFormat
+	#define makePixel(r, g, b) PocoMakePixelRGB565BE(r, g, b)
 #else
 	#error
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -768,15 +768,22 @@ void screen_send(xsMachine* the)
 			pixels += (offset >> 1);
 			count >>= 1;
 			while (count) {
-				unsigned short pixel = *pixels++;
-			#if (mxLinux || mxWindows)
-				*rowAddress++ = (pixel & 0xF800) >> 8;
-				*rowAddress++ = (pixel & 0x07E0) >> 3;
-				*rowAddress++ = (pixel & 0x001F) << 3;
+				unsigned short raw = *pixels++;
+			#if defined(_MSC_VER)
+				unsigned short pixel = _byteswap_ushort(raw);
+			#elif defined(__GNUC__) || defined(__llvm__)
+				unsigned short pixel = __builtin_bswap16(raw);
 			#else
+				unsigned short pixel = (unsigned short)(((raw & 0xFF) << 8) | ((raw >> 8) & 0xFF));
+			#endif
+			#if (mxLinux || mxWindows)
 				*rowAddress++ = (pixel & 0x001F) << 3;
 				*rowAddress++ = (pixel & 0x07E0) >> 3;
 				*rowAddress++ = (pixel & 0xF800) >> 8;
+			#else
+				*rowAddress++ = (pixel & 0xF800) >> 8;
+				*rowAddress++ = (pixel & 0x07E0) >> 3;
+				*rowAddress++ = (pixel & 0x001F) << 3;
 			#endif
 				*rowAddress++ = 0xFF;
 				rowIndex++;
@@ -786,8 +793,8 @@ void screen_send(xsMachine* the)
 				}
 				count--;
 			}
-		} 
-    	break;     
+		}
+    	break;
     case gray8:
     	{
   			unsigned char* pixels = data;

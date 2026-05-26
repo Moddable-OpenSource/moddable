@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Moddable Tech, Inc.
+ * Copyright (c) 2020-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -22,6 +22,7 @@ import Poco from "commodetto/Poco";
 import BufferOut from "commodetto/BufferOut";
 import Resource from "Resource";
 import parseBMP from "commodetto/parseBMP";
+import Bitmap from "commodetto/Bitmap";
 
 const BLACK = "black";
 const WHITE = "white";
@@ -85,8 +86,7 @@ class ColorWheelBehavior extends Behavior {
 
         let buff = this.pocoOff.pixelsOut.buffer;
         let view = new DataView(buff);
-        let testcolor = view.getUint16(0, true);
-
+        let testcolor = view.getUint16(0, screen.pixelFormat !== Bitmap.RGB565BE);
         let red = ((testcolor >> 11) & 0x1F);
         let green = ((testcolor >> 5) & 0x3F);
         let blue = (testcolor & 0x1F);

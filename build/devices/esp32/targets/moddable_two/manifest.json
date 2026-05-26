@@ -13,6 +13,7 @@
 	"config": {
 		"screen": "ili9341",
 		"touch": "ft6206",
+		"format": "RGB565BE",
 		"backlight": 18
 	},
 	"creation": {

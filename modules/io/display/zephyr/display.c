@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -176,7 +176,8 @@ void xs_display_configure(xsMachine *the)
 	if (xsUndefinedType != xsmcTypeOf(xsVar(0))) {
 		enum display_pixel_format format;
 		switch (xsmcToInteger(xsVar(0))) {
-			case kCommodettoBitmapRGB565LE: format = PIXEL_FORMAT_RGB_565; break;
+			case kCommodettoBitmapRGB565LE:
+			case kCommodettoBitmapRGB565BE: format = PIXEL_FORMAT_RGB_565; break;
 			case kCommodettoBitmap24RGB: format = PIXEL_FORMAT_RGB_888; break;
 			case kCommodettoBitmapGray256: format = PIXEL_FORMAT_L_8; break;
 			default: xsUnknownError("invalid format");
@@ -213,7 +214,14 @@ void xs_display_configuration(xsMachine *the)
 
 	int format = 0;
 	switch (capabilities.current_pixel_format) {
-		case PIXEL_FORMAT_RGB_565: format = kCommodettoBitmapRGB565LE; break;
+		// Zephyr's PIXEL_FORMAT_RGB_565 doesn't distinguish endianness; report whichever 565 the build is configured for.
+		case PIXEL_FORMAT_RGB_565:
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+			format = kCommodettoBitmapRGB565BE;
+#else
+			format = kCommodettoBitmapRGB565LE;
+#endif
+			break;
 		case PIXEL_FORMAT_RGB_888: format = kCommodettoBitmap24RGB; break;
 		case PIXEL_FORMAT_L_8: format = kCommodettoBitmapGray256; break;
 	}
@@ -339,7 +347,10 @@ int displaySend(void *hostData, void *buffer, uint32_t length)
 	if (rows > display->updateHeight)
 		return -3;
 
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
 	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
+		// LE framebuffer; ST7789V wants MSB-first on the wire — software byteswap.
+		// On a BE build the framebuffer already matches the wire order, so no swap.
 		uint8_t *pixels = buffer;
 		uint32_t remain = length >> 1;
 		while (remain--) {
@@ -349,6 +360,7 @@ int displaySend(void *hostData, void *buffer, uint32_t length)
 			pixels += 2;
 		}
 	}
+#endif
 
 	struct display_buffer_descriptor desc = {
 		.buf_size = length,

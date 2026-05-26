@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2023  Moddable Tech, Inc.
+* Copyright (c) 2021-2026  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Runtime.
 *
@@ -37,9 +37,9 @@ typedef struct {
 
 
 static void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
-static void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIF565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 static void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
-static void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
+static void doGIFKey565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 static void doGIFKeyCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 static void doGIFCLUT32(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
 static void doGIFKeyCLUT32(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase);
@@ -123,7 +123,7 @@ void xs_poco_drawGIF(xsMachine *the)
 	if (flipV)
 		sy = cb->h - (sy + sh);
 
-	if (kCommodettoBitmapRGB565LE == cb->format) {
+	if (kCommodettoBitmapFormat == cb->format) {
 		pixels += (sy * cb->w) + sx;
 		if (flipV)
 			pixels += (sh - 1) * cb->w;
@@ -162,10 +162,10 @@ void xs_poco_drawGIF(xsMachine *the)
 	}
 	else if (hasKeyColor) {
 		gif.keyColor = keyColor;
-		PocoDrawExternal(poco, (kCommodettoBitmapRGB565LE == cb->format) ? doGIFKey565LE : doGIFKeyCLUT256, (void *)&gif, sizeof(gif), x, y, sw, sh);
+		PocoDrawExternal(poco, (kCommodettoBitmapFormat == cb->format) ? doGIFKey565 : doGIFKeyCLUT256, (void *)&gif, sizeof(gif), x, y, sw, sh);
 	}
 	else
-		PocoDrawExternal(poco, (kCommodettoBitmapRGB565LE == cb->format) ? doGIF565LE : doGIFCLUT256, (void *)&gif, sizeof(gif), x, y, sw, sh);
+		PocoDrawExternal(poco, (kCommodettoBitmapFormat == cb->format) ? doGIF565 : doGIFCLUT256, (void *)&gif, sizeof(gif), x, y, sw, sh);
 }
 
 #define SETUP_FLIP			 \
@@ -178,9 +178,9 @@ void xs_poco_drawGIF(xsMachine *the)
 	if (2 & gif->flip)		\
 		srcRowPixels = -srcRowPixels;
 
-#if kPocoPixelFormat == kCommodettoBitmapRGB565LE
+#if (kPocoPixelFormat == kCommodettoBitmapRGB565LE) || (kPocoPixelFormat == kCommodettoBitmapRGB565BE)
 
-void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+void doGIF565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	PocoPixel *src = gif->pixels;
@@ -202,7 +202,7 @@ void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, Poc
 	gif->pixels = src;
 }
 
-void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+void doGIFKey565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	PocoPixel *src = gif->pixels;
@@ -524,7 +524,7 @@ void doGIFGray16(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, Po
 	gif->pixels = (PocoPixel *)src;
 }
 
-void doGIF565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+void doGIF565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	uint16_t *src = (uint16_t *)gif->pixels;
@@ -573,7 +573,7 @@ void doGIFCLUT256(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, P
 	gif->pixels = (PocoPixel *)src;
 }
 
-void doGIFKey565LE(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
+void doGIFKey565(Poco poco, uint8_t *refcon, PocoPixel *dst, PocoDimension w, PocoDimension h, uint8_t xphase)
 {
 	GIF gif = (GIF)refcon;
 	uint16_t *src = (uint16_t *)gif->pixels;

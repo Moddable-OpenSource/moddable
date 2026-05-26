@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -122,6 +122,8 @@ void xs_parseBMP(xsMachine *the)
 				(0x000f == c_read32(62 + bytes)) &&
 				(0xf000 == c_read32(66 + bytes)))
 				bitmap->format = kCommodettoBitmapARGB4444;
+			else if (0x456D == c_read16(6 + bytes))	// 'mE' in bfReserved1 means RGB565BE
+				bitmap->format = kCommodettoBitmapRGB565BE;
 			else
 				bitmap->format = kCommodettoBitmapRGB565LE;
 			break;
