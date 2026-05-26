@@ -468,10 +468,8 @@ export default class extends Tool {
 		super.run();
 
 		if (this.manifest.preload?.length) {
-			trace("Preload detected:\n")
+			trace("Warning: preload is unavailable in mods. These modules request preload:\n")
 			this.manifest.preload.forEach(item => trace(`  ${item}\n`));
-			trace("Mods cannot use preload. \n");
-			throw new Error("mod cannot use preload");
 		}
 
 		if (this.cFiles?.length) {
