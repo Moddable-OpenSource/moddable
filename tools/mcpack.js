@@ -85,6 +85,13 @@ globalThis.URL = URL;
 globalThis.URLSearchParams = URLSearchParams;
 `	
 };
+const websocketGlobal = {
+	include: "$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json",
+	snippet: `
+import WebSocket from "WebSocket";
+globalThis.WebSocket = WebSocket;
+`	
+};
 const workerGlobal = {
 	include: "$(MODDABLE)/modules/base/worker/manifest.json",
 	snippet: `
@@ -281,6 +288,7 @@ export default class extends TOOL {
 			"setTimeout": timerGlobal,
 			"URL": urlGlobal,
 			"URLSearchParams": urlGlobal,
+			"WebSocket": websocketGlobal,
 			"Worker": workerGlobal,
 			"SharedWorker": workerGlobal,
 		}
