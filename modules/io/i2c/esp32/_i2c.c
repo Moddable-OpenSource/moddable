@@ -35,8 +35,8 @@
 
 #include "builtinCommon.h"
 
-#ifndef MODDEF_ECMA419_I2C_PINS_COMPATITBLE
-	#define MODDEF_ECMA419_I2C_PINS_COMPATITBLE 0
+#ifndef MODDEF_ECMA419_I2C_PINS_COMPATIBLE
+	#define MODDEF_ECMA419_I2C_PINS_COMPATIBLE 1
 #endif
 
 struct I2CRecord {
@@ -68,7 +68,7 @@ static SemaphoreHandle_t gI2CMutex;
 static void *modI2CValidate(xsMachine *the, xsSlot *instance);
 static uint8_t modI2CDeactivate(void *instanceData);
 
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 	__attribute__((weak)) void modI2CUninit(void *);	// pins I2C
 	uint8_t i2cActivate(struct I2CRecord *i2c);			// called by pins I2C with NULL
 #endif
@@ -175,9 +175,9 @@ void _xs_i2c_constructor(xsMachine *the)
 	xSemaphoreGive(gI2CMutex);
 
 	if (!bus) {
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 		if (modI2CUninit)
-			modI2CUninit(C_NULL);		// make pin release these pins
+			modI2CUninit(C_NULL);		// make pins release these pins
 #endif
 		i2c_master_bus_config_t busC = {
 			.i2c_port = port,
@@ -313,7 +313,7 @@ void _xs_i2c_read(xsMachine *the)
 		buffer = xsmcSetArrayBuffer(xsResult, NULL, length);
 	}
 
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 	err = i2c_master_receive(i2c->device, buffer, length, i2c->timeout);
@@ -338,7 +338,7 @@ void _xs_i2c_write(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &buffer, &length);
 
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 #endif
@@ -346,7 +346,7 @@ void _xs_i2c_write(xsMachine *the)
 		err = i2c_master_transmit(i2c->device, buffer, length, i2c->timeout);
 	else //@@ write quick unsupported through transmit, but probe seems similar-ish
 		err = i2c_master_probe(i2c->bus, i2c->address, 1000);
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 	xSemaphoreGive(gI2CMutex);
 #endif
 
@@ -381,7 +381,7 @@ void _xs_i2c_writeRead(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &bufferWrite, &lengthWrite);
 
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 	if (!i2cActivate(i2c))
 		xsUnknownError("activate failed");
 	err = i2c_master_transmit_receive(i2c->device, bufferWrite, lengthWrite, bufferRead, lengthRead, i2c->timeout);
@@ -415,7 +415,7 @@ uint8_t modI2CDeactivate(void *instanceData)
 	return 1;
 }
 
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 uint8_t i2cActivate(I2C i2c)
 {
 	if (C_NULL == gI2CMutex)
@@ -661,7 +661,7 @@ static void i2cTask(void *pvParameter)
 				;
 			else if (kOperationCancelled == transaction->operation)
 				transaction->err = -2;
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 			else if (!i2cActivate(transaction->i2c))
 				transaction->err = -1;
 #endif
@@ -702,7 +702,7 @@ static void i2cTask(void *pvParameter)
 						transaction->err = i2c_master_probe(i2c->bus, i2c->address, 1000);
 						break;
 				}
-#if MODDEF_ECMA419_I2C_PINS_COMPATITBLE
+#if MODDEF_ECMA419_I2C_PINS_COMPATIBLE
 				xSemaphoreGive(gI2CMutex);
 #endif
 			}
@@ -815,12 +815,12 @@ void _xs_i2casync_constructor(xsMachine *the)
 	}
 }
 
-void asyncclose(xsMachine *the, xsDestructor destructor)
+void asyncclose(xsMachine *the, const xsHostHooks *hooks)
 {
 	I2C i2c = xsmcGetHostData(xsThis);
 	if (!i2c) return;
 
-	xsmcGetHostDataValidate(xsThis, destructor);
+	xsmcGetHostDataValidate(xsThis, (xsHostHooks *)hooks);
 
 	Transaction walker, transaction = newI2CTransaction(the, i2c, kOperationClose, 0, (xsmcArgc > 0) ? 0 : -1);		// i2c transaction here is correct even for smbus instances
 
@@ -841,12 +841,12 @@ void asyncclose(xsMachine *the, xsDestructor destructor)
 
 void _xs_i2casync_close(xsMachine *the)
 {
-	asyncclose(the, _xs_i2casync_destructor);
+	asyncclose(the, (xsHostHooks *)&xsI2CHooks);
 }
 
 void _xs_i2casync_read(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2casync_destructor);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	xsUnsignedValue length;
 	uint8_t stop = true;
 	uint8_t hasCallback = false, hasReadBuffer = false;
@@ -884,7 +884,7 @@ void _xs_i2casync_read(xsMachine *the)
 
 void _xs_i2casync_write(xsMachine *the)
 {
-	I2C i2c = xsmcGetHostDataValidate(xsThis, _xs_i2casync_destructor);
+	I2C i2c = xsmcGetHostDataValidate(xsThis, (xsHostHooks *)&xsI2CHooks);
 	xsUnsignedValue length;
 	uint8_t stop = true;
 	void *buffer;
@@ -930,7 +930,7 @@ void _xs_smbusasync_constructor(xsMachine *the)
 
 void _xs_smbusasync_close(xsMachine *the)
 {
-	asyncclose(the, _xs_smbusasync_destructor);
+	asyncclose(the, (xsHostHooks *)&xsSMBusHooks);
 }
 
 void _xs_smbusasync_readUint8(xsMachine *the)
