@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -309,6 +309,18 @@ class WebSocket {
 				buffers.push({ data, options });
 			}
 		}
+	}
+
+	static CONNECTING = 0;
+	static OPEN = 1;
+	static CLOSING = 2;
+	static CLOSED = 3;
+
+	static {
+		WebSocket.prototype.CONNECTING = WebSocket.CONNECTING;
+		WebSocket.prototype.OPEN = WebSocket.OPEN;
+		WebSocket.prototype.CLOSING = WebSocket.CLOSING;
+		WebSocket.prototype.CLOSED = WebSocket.CLOSED;
 	}
 }
 
