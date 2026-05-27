@@ -2,32 +2,27 @@
 	"build": {
 		"IO": "$(MODDABLE)/modules/io"
 	},
-	"include": [
-		"$(MODULES)/pins/spi/manifest.json"
-	],
-	"modules": {
-		"*": [
-			"$(MODULES)/io/common/builtinCommon",
-			"$(MODULES)/io/spi/$(PLATFORM)/*"
-		],
-		"embedded:io/spi": "$(IO)/spi/spi"
-	},
 	"platforms": {
-		"esp": {
-		},
-		"esp32": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"include": [
+				"$(MODULES)/pins/spi/manifest.json"
+			],
+			"modules": {
+				"*": [
+					"$(MODULES)/io/common/builtinCommon",
+					"$(MODULES)/io/spi/$(PLATFORM)/*"
+				],
+				"embedded:io/spi": "$(IO)/spi/spi"
+			},
 			"dependency": [
 				{ "idf": "esp_driver_spi" }
+			],
+			"preload": [
+				"embedded:io/spi"
 			]
-		},
-		"nrf52": {
-		},
-		"pico": {
-		},
-		"zephyr": {
 		}
-	},
-	"preload": [
-		"embedded:io/spi"
-	]
+	}
 }

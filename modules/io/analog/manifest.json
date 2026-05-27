@@ -1,27 +1,22 @@
 {
-	"modules": {
-		"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
-		"*": [
-			"$(MODULES)/io/common/builtinCommon",
-			"$(MODULES)/io/digital/$(PLATFORM)/*"
-		]
-	},
 	"platforms": {
-		"esp": {
-		},
-		"esp32": {
-		},
-		"nrf52": {
-		},
-		"pico": {
-		},
-		"zephyr": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"modules": {
+				"embedded:io/analog": "$(IO)/analog/$(PLATFORM)/*",
+				"*": [
+					"$(MODULES)/io/common/builtinCommon",
+					"$(MODULES)/io/digital/$(PLATFORM)/*"
+				]
+			},
+			"preload": [
+				"embedded:io/analog"
+			]
 		}
 	},
 	"zephyrConfig": {
 		"CONFIG_ADC": "y"
-	},
-	"preload": [
-		"embedded:io/analog"
-	]
+	}
 }
