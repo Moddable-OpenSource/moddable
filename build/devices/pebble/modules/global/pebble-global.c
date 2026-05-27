@@ -27,6 +27,7 @@
 #include "applib/app_light.h"
 #include "applib/app_watch_info.h"
 #include "applib/connection_service.h"
+#include "applib/ui/app_window_stack.h"
 #include "process_state/app_state/app_state.h"
 
 static void connectionChanged(bool connected)
@@ -223,4 +224,11 @@ void xs_global_light(xsMachine *the)
 		app_light_enable_interaction();
 	else
 		app_light_enable(xsmcTest(xsArg(0)));
+}
+
+void xs_global_exit(xsMachine *the)
+{
+    if (xsmcArgc >= 1 && xsmcTest(xsArg(0)))
+        app_exit_reason_set(xsmcToInteger(xsArg(0)));
+    app_window_stack_pop_all(true);
 }
