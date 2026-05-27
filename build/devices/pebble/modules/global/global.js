@@ -202,6 +202,7 @@ export class Pebble {
 	get launch() {return native("xs_global_launch_get").call(this);}
 	get wake() {return native("xs_global_wake_get").call(this);}
 
+	exit(reason) { return native("xs_global_exit").call(this, reason); }
 }
 
 export default Pebble;
