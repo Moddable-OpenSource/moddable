@@ -1,13 +1,16 @@
 {
 	"build": {
 		"UPLOAD_SPEED": "1500000",
-		"DEBUGGER_SPEED": "921600",
+		"DEBUGGER_SPEED": "460800",
 		"SDKCONFIGPATH": "./sdkconfig",
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/ft6206/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
+		"$(MODDABLE)/modules/drivers/sensors/mpu6886/manifest.json",
 		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
 		"$(MODDABLE)/modules/drivers/axp2101/manifest.json"
 	],

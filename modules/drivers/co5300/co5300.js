@@ -38,6 +38,8 @@ export default class CO5300 @ "xs_co5300_destructor" {
 	get width() @ "xs_co5300_get_width";
 	get height() @ "xs_co5300_get_height";
 	get async() {return true;}
+	get rotation() @ "xs_co5300_get_rotation";
+	set rotation(value) @ "xs_co5300_set_rotation";
 
 	get c_dispatch() @ "xs_co5300_get_c_dispatch";
 

@@ -50,11 +50,10 @@ imu.configure({
 })
 Timer.repeat(() => {
 	const sample = imu.sample();
-	if(flag) {
-		onReading(sample.accelerometer, "a");
-	} else {
-		onReading(sample.gyroscope, "g");
-	}
+	const values = flag ? sample.accelerometer : sample.gyroscope;
+
+	if (values)
+		onReading(values, flag ? "a" : "g");
 }, 17)
 
 let flag = true;
