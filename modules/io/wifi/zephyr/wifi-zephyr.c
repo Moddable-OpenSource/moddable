@@ -26,6 +26,8 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/hostname.h>
 
 #define NET_EVENT_WIFI_MASK  \
 	(NET_EVENT_WIFI_SCAN_DONE | NET_EVENT_WIFI_SCAN_RESULT | NET_EVENT_WIFI_CONNECT_RESULT |   \
@@ -33,6 +35,11 @@
 
 #define NET_EVENT_IPv4_MASK  \
 	( NET_EVENT_IPV4_DHCP_BOUND )
+
+typedef struct {
+	uint64_t	mgmt_event;
+	uint8_t	addressChanged;
+} ZephyrEventMsg;
 
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
 static void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
@@ -199,35 +206,50 @@ bail:
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
 {
 	xsWiFi wf = refcon;
-	uint64_t mgmt_event = *(uint64_t *)msgIn;
-	uint8_t connecting = wf->connecting, connected = wf->connected, dhcpBound = wf->dhcpBound;
+	ZephyrEventMsg *msg = (ZephyrEventMsg *)msgIn;
+	uint8_t prevConnecting = wf->connecting, prevConnected = wf->connected, prevDhcpBound = wf->dhcpBound;
 
 	if (wf->closed)
 		goto bail;
 
-	xsBeginHost(the);
-		if (NET_EVENT_WIFI_CONNECT_RESULT == mgmt_event) {
-			wf->connecting = 0;
-			wf->connected = 1;		//@@ check status
-		}
-		else if (NET_EVENT_WIFI_DISCONNECT_RESULT == mgmt_event)  {
-			wf->connecting = 0;
-			wf->connected = 0;
-			wf->dhcpBound = 0;
-		}
-		else if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
-			// this event may be delivered before CONNECT_RESULT
-			wf->connecting = 0;
-			wf->connected = 1;
-			wf->dhcpBound = 1;
-		}
+	if (NET_EVENT_WIFI_CONNECT_RESULT == msg->mgmt_event) {
+		wf->connecting = 0;
+		wf->connected = 1;		//@@ check status
+	}
+	else if (NET_EVENT_WIFI_DISCONNECT_RESULT == msg->mgmt_event)  {
+		wf->connecting = 0;
+		wf->connected = 0;
+		wf->dhcpBound = 0;
+	}
+	else if (NET_EVENT_IPV4_DHCP_BOUND == msg->mgmt_event) {
+		// this event may be delivered before CONNECT_RESULT
+		wf->connecting = 0;
+		wf->connected = 1;
+		wf->dhcpBound = 1;
+	}
+	else if (NET_EVENT_IPV4_ADDR_DEL == msg->mgmt_event) {
+		// synthetic: IP cleared while link stays up
+		wf->dhcpBound = 0;
+	}
 
-		if (wf->onChanged &&
-			((connecting != wf->connecting) ||
-			(connected != wf->connected) ||
-			(dhcpBound != wf->dhcpBound)))
-			xsCallFunction0(xsReference(wf->onChanged), wf->obj);
-	xsEndHost(the);	
+	if (wf->onChanged) {
+		uint8_t connection = (prevConnecting != wf->connecting) ||
+								 (prevConnected != wf->connected) ||
+								 (prevDhcpBound != wf->dhcpBound);
+		if (connection || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connection) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			if (msg->addressChanged && !wf->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			xsEndHost(the);
+		}
+	}
 
 bail:
 	xs_wifi_destructor(wf);
@@ -252,8 +274,10 @@ void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 		if (status->status)
 			mgmt_event = NET_EVENT_WIFI_DISCONNECT_RESULT;
 
+		ZephyrEventMsg msg = {0};
+		msg.mgmt_event = mgmt_event;
 		atomic_inc(&wf->useCount);
-		modMessagePostToMachine(wf->the, (uint8_t *)&mgmt_event, sizeof(mgmt_event), wifiConnectDeliver, wf);
+		modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
 	}
 }
 
@@ -262,8 +286,11 @@ void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	xsWiFi wf = (xsWiFi)(((uint8_t *)cb) - offsetof(xsWiFiRecord, callbackIPv4));
 
 	if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
+		ZephyrEventMsg msg = {0};
+		msg.mgmt_event = mgmt_event;
+		msg.addressChanged = 1;
 		atomic_inc(&wf->useCount);
-		modMessagePostToMachine(wf->the, (uint8_t *)&mgmt_event, sizeof(mgmt_event), wifiConnectDeliver, wf);
+		modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
 	}
 }
 
@@ -309,15 +336,14 @@ void xs_wifi_connect(xsMachine *the)
 	params.bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params.verify_peer_cert = false;
 
-	if (xsmcHas(xsArg(0), xsID_SSID)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
-		char *ssid = xsmcToString(xsVar(0));
-		if (c_strlen(ssid) > WIFI_SSID_MAX_LEN)
-			xsRangeError("SSID too long");
-		c_strcpy(ssidLocal, ssid);
-		params.ssid = ssidLocal;
-		params.ssid_length = c_strlen(ssidLocal);
-	}
+	if (!xsmcHas(xsArg(0), xsID_SSID))
+		xsUnknownError("SSID required");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
+	xsmcToStringBuffer(xsVar(0), ssidLocal, sizeof(ssidLocal));
+	params.ssid = ssidLocal;
+	params.ssid_length = c_strlen(ssidLocal);
+
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
 		params.psk = xsmcToString(xsVar(0));
@@ -345,6 +371,74 @@ void xs_wifi_disconnect(xsMachine *the)
 	wf->connecting = 0;
 	wf->connected = 0;
 	wf->dhcpBound = 0;
+}
+
+void xs_wifi_configure(xsMachine *the)
+{
+	xsWiFi wf = xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		char hostname[64];
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		const char *src = xsmcToStringBuffer(xsVar(0), hostname, sizeof(hostname));
+		if (net_hostname_set((char *)src, c_strlen(src)) < 0)
+			xsUnknownError("set hostname failed");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			struct in_addr ip, netmask, gw;
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &ip) < 0)
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &netmask) < 0)
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &gw) < 0)
+				xsRangeError("invalid gateway");
+
+			net_dhcpv4_stop(wf->iface);
+
+			struct in_addr *current = net_if_ipv4_get_global_addr(wf->iface, NET_ADDR_PREFERRED);
+			if (current)
+				net_if_ipv4_addr_rm(wf->iface, current);
+
+			if (!net_if_ipv4_addr_add(wf->iface, &ip, NET_ADDR_MANUAL, 0))
+				xsUnknownError("set IP failed");
+
+			net_if_ipv4_set_netmask_by_addr(wf->iface, &ip, &netmask);
+			net_if_ipv4_set_gw(wf->iface, &gw);
+
+			if (wf->connected) {
+				ZephyrEventMsg msg = {0};
+				msg.mgmt_event = NET_EVENT_IPV4_DHCP_BOUND;
+				msg.addressChanged = 1;
+				atomic_inc(&wf->useCount);
+				modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
+			}
+		}
+		else {
+			struct in_addr *current = net_if_ipv4_get_global_addr(wf->iface, NET_ADDR_PREFERRED);
+			if (current)
+				net_if_ipv4_addr_rm(wf->iface, current);
+
+			net_dhcpv4_start(wf->iface);
+
+			if (wf->connected) {
+				ZephyrEventMsg msg = {0};
+				msg.mgmt_event = NET_EVENT_IPV4_ADDR_DEL;
+				atomic_inc(&wf->useCount);
+				modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
+			}
+		}
+	}
 }
 
 void xs_wifi_connection_get(xsMachine *the)

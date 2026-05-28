@@ -26,6 +26,7 @@
 #include "pico/cyw43_arch.h"
 #include "lwip/netif.h"
 #include "lwip/ip4_addr.h"
+#include "lwip/dhcp.h"
 
 #include "modTimer.h"
 
@@ -34,6 +35,11 @@ enum {
 	PICO_EVENT_DISCONNECTED = 2,
 	PICO_EVENT_GOT_IP = 3
 };
+
+typedef struct {
+	int32_t		event;
+	uint8_t		addressChanged;
+} WiFiEventMsg;
 
 typedef struct WiFiScanResultNode *WiFiScanResultList;
 typedef struct WiFiScanResultNode {
@@ -68,6 +74,7 @@ static xsWiFi gScan;
 static uint8_t gInited;
 static modTimer gActivityTimer;
 static WiFiScanResultList gScanResults;
+static char gHostname[64];
 
 static void wifiLinkCallback(struct netif *netif);
 static void wifiStatusCallback(struct netif *netif);
@@ -108,11 +115,11 @@ static void freeScanResults(void)
 	}
 }
 
-static void broadcastEvent(int32_t event)
+static void broadcastWiFiEvent(WiFiEventMsg *msg)
 {
 	for (xsWiFi walker = gWiFiList; walker; walker = walker->next) {
 		walker->useCount += 1;
-		modMessagePostToMachine(walker->the, (uint8_t *)&event, sizeof(event), wifiConnectDeliver, walker);
+		modMessagePostToMachine(walker->the, (uint8_t *)msg, sizeof(*msg), wifiConnectDeliver, walker);
 	}
 }
 
@@ -241,13 +248,19 @@ static void initWiFi(xsMachine *the)
 
 static void wifiLinkCallback(struct netif *netif)
 {
-	broadcastEvent(netif_is_link_up(netif) ? PICO_EVENT_CONNECTED : PICO_EVENT_DISCONNECTED);
+	WiFiEventMsg msg = {0};
+	msg.event = netif_is_link_up(netif) ? PICO_EVENT_CONNECTED : PICO_EVENT_DISCONNECTED;
+	broadcastWiFiEvent(&msg);
 }
 
 static void wifiStatusCallback(struct netif *netif)
 {
-	if (netif_ip4_addr(netif)->addr)
-		broadcastEvent(PICO_EVENT_GOT_IP);
+	if (netif_is_link_up(netif) && netif_ip4_addr(netif)->addr) {
+		WiFiEventMsg msg = {0};
+		msg.event = PICO_EVENT_GOT_IP;
+		msg.addressChanged = 1;
+		broadcastWiFiEvent(&msg);
+	}
 }
 
 static int scanResultCallback(void *env, const cyw43_ev_scan_result_t *result)
@@ -292,8 +305,11 @@ static void activityTimerCallback(modTimer timer, void *refcon, int refconSize)
 	for (xsWiFi walker = gWiFiList; walker && !anyConnecting; walker = walker->next)
 		anyConnecting = walker->connecting;
 
-	if (anyConnecting && cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) < 0)
-		broadcastEvent(PICO_EVENT_DISCONNECTED);
+	if (anyConnecting && cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA) < 0) {
+		WiFiEventMsg msg = {0};
+		msg.event = PICO_EVENT_DISCONNECTED;
+		broadcastWiFiEvent(&msg);
+	}
 
 	if (!gScan && !anyConnecting)
 		stopActivityTimer();
@@ -355,39 +371,45 @@ bail:
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
 {
 	xsWiFi wf = refcon;
-	int32_t event = *(int32_t *)msgIn;
+	WiFiEventMsg *msg = (WiFiEventMsg *)msgIn;
 	uint8_t prevConnecting = wf->connecting, prevConnected = wf->connected, prevIP = wf->gotIP;
 
 	if (wf->closed)
 		goto bail;
 
-	xsBeginHost(the);
-
-	if (PICO_EVENT_CONNECTED == event) {
+	if (PICO_EVENT_CONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 1;
 		wf->gotIP = 0;
 	}
-	else if (PICO_EVENT_DISCONNECTED == event) {
+	else if (PICO_EVENT_DISCONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 0;
 		wf->gotIP = 0;
 	}
-	else if (PICO_EVENT_GOT_IP == event) {
+	else if (PICO_EVENT_GOT_IP == msg->event) {
 		wf->connected = 1;
 		wf->gotIP = 1;
 	}
 
-	if (wf->onChanged &&
-		((prevConnecting != wf->connecting) ||
-		 (prevConnected != wf->connected) ||
-		 (prevIP != wf->gotIP))) {
-		xsSlot tmp;
-		xsmcSetStringX(tmp, "connection");
-		xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+	if (wf->onChanged) {
+		uint8_t connection = (prevConnecting != wf->connecting) ||
+								 (prevConnected != wf->connected) ||
+								 (prevIP != wf->gotIP);
+		if (connection || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connection) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			if (msg->addressChanged && !wf->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			xsEndHost(the);
+		}
 	}
-
-	xsEndHost(the);
 
 bail:
 	xs_wifi419_destructor(wf);
@@ -436,17 +458,11 @@ void xs_wifi419_connect(xsMachine *the)
 		xsUnknownError("SSID required");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
-	char *str = xsmcToString(xsVar(0));
-	if (c_strlen(str) > 32)
-		xsRangeError("SSID too long");
-	c_strcpy((char *)ssid, str);
+	xsmcToStringBuffer(xsVar(0), (char *)ssid, sizeof(ssid));
 
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
-		char *str = xsmcToString(xsVar(0));
-		if (c_strlen(str) > 64)
-			xsRangeError("password too long");
-		c_strcpy((char *)password, str);
+		xsmcToStringBuffer(xsVar(0), (char *)password, sizeof(password));
 		auth = CYW43_AUTH_WPA2_AES_PSK;
 	}
 
@@ -468,6 +484,62 @@ void xs_wifi419_disconnect(xsMachine *the)
 	wf->connecting = 0;
 	wf->connected = 0;
 	wf->gotIP = 0;
+}
+
+void xs_wifi419_configure(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+
+	if (!gInited)
+		xsUnknownError("not initialized");
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		xsmcToStringBuffer(xsVar(0), gHostname, sizeof(gHostname));
+		netif_set_hostname(netif_list, gHostname);
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			ip4_addr_t ip, netmask, gw;
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (!ip4addr_aton(xsmcToString(xsVar(1)), &ip))
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (!ip4addr_aton(xsmcToString(xsVar(1)), &netmask))
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (!ip4addr_aton(xsmcToString(xsVar(1)), &gw))
+				xsRangeError("invalid gateway");
+
+			dhcp_stop(netif_list);
+			netif_set_addr(netif_list, &ip, &netmask, &gw);
+
+			if (netif_is_link_up(netif_list)) {
+				WiFiEventMsg msg = {0};
+				msg.event = PICO_EVENT_GOT_IP;
+				msg.addressChanged = 1;
+				broadcastWiFiEvent(&msg);
+			}
+		}
+		else {
+			ip4_addr_t zero = {0};
+			netif_set_addr(netif_list, &zero, &zero, &zero);
+			dhcp_start(netif_list);
+
+			if (netif_is_link_up(netif_list)) {
+				WiFiEventMsg msg = {0};
+				msg.event = PICO_EVENT_CONNECTED;
+				broadcastWiFiEvent(&msg);
+			}
+		}
+	}
 }
 
 void xs_wifi419_connection_get(xsMachine *the)

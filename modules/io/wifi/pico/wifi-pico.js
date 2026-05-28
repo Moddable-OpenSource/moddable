@@ -25,6 +25,7 @@ class WiFi extends Native("xs_wifi419_destructor"){
 	scan(options) { return native("xs_wifi419_scan").call(this, options); }
 	connect(options) { return native("xs_wifi419_connect").call(this, options); }
 	disconnect() { return native("xs_wifi419_disconnect").call(this); }
+	configure(options) { return native("xs_wifi419_configure").call(this, options); }
 
 	get connection() { return native("xs_wifi419_connection_get").call(this); }
 	get address() { return native("xs_wifi419_address_get").call(this); }

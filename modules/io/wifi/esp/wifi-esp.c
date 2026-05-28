@@ -35,6 +35,12 @@ typedef struct {
 	char			ssid[33];
 } WiFiScanResult;
 
+typedef struct {
+	uint32_t	event;
+	uint8_t		ipInit;
+	uint8_t		addressChanged;
+} WiFiEventMsg;
+
 typedef struct xsWiFiRecord *xsWiFi;
 typedef struct xsWiFiRecord {
 	xsWiFi		next;
@@ -65,6 +71,14 @@ static void wifiScanComplete(void *arg, STATUS status);
 static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen);
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen);
 static void initWiFi(void);
+
+static void broadcastWiFiEvent(WiFiEventMsg *msg)
+{
+	for (xsWiFi walker = gWiFiList; walker; walker = walker->next) {
+		walker->useCount += 1;
+		modMessagePostToMachine(walker->the, (uint8_t *)msg, sizeof(*msg), wifiConnectDeliver, walker);
+	}
+}
 
 static void formatMAC(const uint8_t *mac, char *str)
 {
@@ -197,7 +211,6 @@ static void initWiFi(void)
 
 static void doWiFiEvent(System_Event_t *msg)
 {
-	xsWiFi walker;
 	uint32_t event = msg->event;
 
 	if ((EVENT_STAMODE_CONNECTED != event) &&
@@ -205,10 +218,19 @@ static void doWiFiEvent(System_Event_t *msg)
 		(EVENT_STAMODE_GOT_IP != event))
 		return;
 
-	for (walker = gWiFiList; walker; walker = walker->next) {
-		walker->useCount += 1;
-		modMessagePostToMachine(walker->the, (uint8_t *)&event, sizeof(event), wifiConnectDeliver, walker);
+	WiFiEventMsg wmsg = {0};
+	wmsg.event = event;
+
+	if (EVENT_STAMODE_CONNECTED == event) {
+		if (DHCP_STOPPED == wifi_station_dhcpc_status()) {
+			wmsg.ipInit = 1;
+			wmsg.addressChanged = 1;
+		}
 	}
+	else if (EVENT_STAMODE_GOT_IP == event)
+		wmsg.addressChanged = 1;
+
+	broadcastWiFiEvent(&wmsg);
 }
 
 static void wifiScanComplete(void *arg, STATUS status)
@@ -308,39 +330,45 @@ bail:
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
 {
 	xsWiFi wf = refcon;
-	uint32_t event = *(uint32_t *)msgIn;
+	WiFiEventMsg *msg = (WiFiEventMsg *)msgIn;
 	uint8_t prevConnecting = wf->connecting, prevConnected = wf->connected, prevIP = wf->gotIP;
 
 	if (wf->closed)
 		goto bail;
 
-	xsBeginHost(the);
-
-	if (EVENT_STAMODE_CONNECTED == event) {
+	if (EVENT_STAMODE_CONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 1;
-		wf->gotIP = 0;
+		wf->gotIP = msg->ipInit;
 	}
-	else if (EVENT_STAMODE_DISCONNECTED == event) {
+	else if (EVENT_STAMODE_DISCONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 0;
 		wf->gotIP = 0;
 	}
-	else if (EVENT_STAMODE_GOT_IP == event) {
+	else if (EVENT_STAMODE_GOT_IP == msg->event) {
 		wf->connected = 1;
 		wf->gotIP = 1;
 	}
 
-	if (wf->onChanged &&
-		((prevConnecting != wf->connecting) ||
-		 (prevConnected != wf->connected) ||
-		 (prevIP != wf->gotIP))) {
-		xsSlot tmp;
-		xsmcSetStringX(tmp, "connection");
-		xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+	if (wf->onChanged) {
+		uint8_t connection = (prevConnecting != wf->connecting) ||
+								 (prevConnected != wf->connected) ||
+								 (prevIP != wf->gotIP);
+		if (connection || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connection) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			if (msg->addressChanged && !wf->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			xsEndHost(the);
+		}
 	}
-
-	xsEndHost(the);
 
 bail:
 	xs_wifi419_destructor(wf);
@@ -385,19 +413,18 @@ void xs_wifi419_connect(xsMachine *the)
 
 	xsmcVars(1);
 
-	if (xsmcHas(xsArg(0), xsID_SSID)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
-		char *ssid = xsmcToString(xsVar(0));
-		if (c_strlen(ssid) > sizeof(config.ssid))
-			xsRangeError("SSID too long");
-		c_memcpy(config.ssid, ssid, c_strlen(ssid));
-	}
+	if (!xsmcHas(xsArg(0), xsID_SSID))
+		xsUnknownError("SSID required");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
+	char ssid[sizeof(config.ssid) + 1];
+	xsmcToStringBuffer(xsVar(0), ssid, sizeof(ssid));
+	c_memcpy(config.ssid, ssid, c_strlen(ssid));
 
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
-		char *password = xsmcToString(xsVar(0));
-		if (c_strlen(password) > sizeof(config.password))
-			xsRangeError("password too long");
+		char password[sizeof(config.password) + 1];
+		xsmcToStringBuffer(xsVar(0), password, sizeof(password));
 		c_memcpy(config.password, password, c_strlen(password));
 	}
 
@@ -425,6 +452,65 @@ void xs_wifi419_disconnect(xsMachine *the)
 	wf->connecting = 0;
 	wf->connected = 0;
 	wf->gotIP = 0;
+}
+
+void xs_wifi419_configure(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+
+	if (!gInited)
+		xsUnknownError("not initialized");
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		char hostname[64];
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		if (!wifi_station_set_hostname(xsmcToStringBuffer(xsVar(0), hostname, sizeof(hostname))))
+			xsUnknownError("set hostname failed");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			struct ip_info ip_info = {0};
+			char addr[16];
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (!ipaddr_aton(xsmcToStringBuffer(xsVar(1), addr, sizeof(addr)), &ip_info.ip))
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (!ipaddr_aton(xsmcToStringBuffer(xsVar(1), addr, sizeof(addr)), &ip_info.netmask))
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (!ipaddr_aton(xsmcToStringBuffer(xsVar(1), addr, sizeof(addr)), &ip_info.gw))
+				xsRangeError("invalid gateway");
+
+			wifi_station_dhcpc_stop();
+			if (!wifi_set_ip_info(STATION_IF, &ip_info))
+				xsUnknownError("set IP failed");
+
+			if (wifiStationAssociated()) {
+				WiFiEventMsg msg = {0};
+				msg.event = EVENT_STAMODE_GOT_IP;
+				msg.addressChanged = 1;
+				broadcastWiFiEvent(&msg);
+			}
+		}
+		else {
+			struct ip_info ip_info = {0};
+			wifi_set_ip_info(STATION_IF, &ip_info);
+			wifi_station_dhcpc_start();
+
+			if (wifiStationAssociated()) {
+				WiFiEventMsg msg = {0};
+				msg.event = EVENT_STAMODE_CONNECTED;
+				broadcastWiFiEvent(&msg);
+			}
+		}
+	}
 }
 
 void xs_wifi419_connection_get(xsMachine *the)

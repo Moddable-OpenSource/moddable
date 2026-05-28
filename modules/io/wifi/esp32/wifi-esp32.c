@@ -82,7 +82,16 @@ static const char *authmodeToString(wifi_auth_mode_t authmode)
 typedef struct {
 	int32_t		event_id;
 	uint8_t		ipInit;
+	uint8_t		addressChanged;
 } WiFiEventMsg;
+
+static void broadcastWiFiEvent(WiFiEventMsg *msg)
+{
+	for (xsWiFi walker = gWiFiList; walker; walker = walker->next) {
+		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
+		modMessagePostToMachine(walker->the, (uint8_t *)msg, sizeof(*msg), wifiConnectDeliver, walker);
+	}
+}
 
 void xs_wifi419_destructor(void *data)
 {
@@ -188,6 +197,8 @@ static void initWiFi(void)
 	wifi_mode_t mode;
 	if (ESP_OK == esp_wifi_get_mode(&mode)) {
 		gStation = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+		ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doWiFiEvent, C_NULL));
+		ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, doIPEvent, C_NULL));
 		return;
 	}
 
@@ -212,8 +223,6 @@ static void initWiFi(void)
 
 static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-	xsWiFi walker;
-
 	if ((WIFI_EVENT_SCAN_DONE == event_id) || (WIFI_EVENT_STA_STOP == event_id)) {
 		xsWiFi scan = gScan;
 		if (scan) {
@@ -224,13 +233,17 @@ static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id
 		return;
 	}
 
-	WiFiEventMsg msg;
-	msg.ipInit = 0;
+	WiFiEventMsg msg = {0};
 
 	if (WIFI_EVENT_STA_CONNECTED == event_id) {
 		gIP = 0;
 		if (ESP_OK != esp_netif_create_ip6_linklocal(gStation))
 			gIP = 0x02;
+		esp_netif_dhcp_status_t status;
+		if ((ESP_OK == esp_netif_dhcpc_get_status(gStation, &status)) && (ESP_NETIF_DHCP_STOPPED == status)) {
+			gIP |= 0x01;
+			msg.addressChanged = 1;
+		}
 		msg.ipInit = gIP;
 	}
 	else if (WIFI_EVENT_STA_DISCONNECTED == event_id) {
@@ -240,10 +253,7 @@ static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id
 		return;
 
 	msg.event_id = event_id;
-	for (walker = gWiFiList; walker; walker = walker->next) {
-		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
-		modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, walker);
-	}
+	broadcastWiFiEvent(&msg);
 }
 
 static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
@@ -263,13 +273,10 @@ static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, 
 	else
 		return;
 
-	WiFiEventMsg msg;
+	WiFiEventMsg msg = {0};
 	msg.event_id = event_id;
-	msg.ipInit = 0;
-	for (walker = gWiFiList; walker; walker = walker->next) {
-		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
-		modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, walker);
-	}
+	msg.addressChanged = 1;
+	broadcastWiFiEvent(&msg);
 }
 
 static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
@@ -329,8 +336,6 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	if (wf->closed)
 		goto bail;
 
-	xsBeginHost(the);
-
 	if (WIFI_EVENT_STA_CONNECTED == msg->event_id) {
 		wf->connecting = 0;
 		wf->connected = 1;
@@ -346,16 +351,24 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 		wf->ip = 0x03;
 	}
 
-	if (wf->onChanged &&
-		((prevConnecting != wf->connecting) ||
-		 (prevConnected != wf->connected) ||
-		 (prevIP != wf->ip))) {
-		xsSlot tmp;
-		xsmcSetStringX(tmp, "connection");
-		xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+	if (wf->onChanged) {
+		uint8_t connectionChanged = (prevConnecting != wf->connecting) ||
+								 (prevConnected != wf->connected) ||
+								 (prevIP != wf->ip);
+		if (connectionChanged || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connectionChanged && !wf->closed) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			if (msg->addressChanged && !wf->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
+			}
+			xsEndHost(the);
+		}
 	}
-
-	xsEndHost(the);
 
 bail:
 	xs_wifi419_destructor(wf);
@@ -404,19 +417,18 @@ void xs_wifi419_connect(xsMachine *the)
 
 	xsmcVars(1);
 
-	if (xsmcHas(xsArg(0), xsID_SSID)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
-		char *ssid = xsmcToString(xsVar(0));
-		if (c_strlen(ssid) > sizeof(config.sta.ssid))
-			xsRangeError("SSID too long");
-		c_memcpy(config.sta.ssid, ssid, c_strlen(ssid));
-	}
+	if (!xsmcHas(xsArg(0), xsID_SSID))
+		xsUnknownError("SSID required");
+
+	xsmcGet(xsVar(0), xsArg(0), xsID_SSID);
+	char ssid[sizeof(config.sta.ssid) + 1];
+	xsmcToStringBuffer(xsVar(0), ssid, sizeof(ssid));
+	c_memcpy(config.sta.ssid, ssid, c_strlen(ssid));
 
 	if (xsmcHas(xsArg(0), xsID_password)) {
 		xsmcGet(xsVar(0), xsArg(0), xsID_password);
-		char *password = xsmcToString(xsVar(0));
-		if (c_strlen(password) > sizeof(config.sta.password))
-			xsRangeError("password too long");
+		char password[sizeof(config.sta.password) + 1];
+		xsmcToStringBuffer(xsVar(0), password, sizeof(password));
 		c_memcpy(config.sta.password, password, c_strlen(password));
 	}
 
@@ -447,6 +459,73 @@ void xs_wifi419_disconnect(xsMachine *the)
 	wf->connected = 0;
 	wf->ip = 0;
 	gIP = 0;
+}
+
+void xs_wifi419_configure(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)&xsWiFiHooks);
+
+	if (!gStation)
+		xsUnknownError("not initialized");
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		if (ESP_OK != esp_netif_set_hostname(gStation, xsmcToString(xsVar(0))))
+			xsUnknownError("set hostname failed");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			esp_netif_ip_info_t ip_info = {0};
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.ip))
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.netmask))
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.gw))
+				xsRangeError("invalid gateway");
+
+			esp_netif_dhcpc_stop(gStation);
+			if (ESP_OK != esp_netif_set_ip_info(gStation, &ip_info))
+				xsUnknownError("set IP failed");
+
+			wifi_ap_record_t ap_info;
+			if (ESP_OK == esp_wifi_sta_get_ap_info(&ap_info)) {
+				gIP = 0x03;
+				WiFiEventMsg msg = {0};
+				msg.event_id = IP_EVENT_STA_GOT_IP;
+				msg.addressChanged = 1;
+				for (xsWiFi walker = gWiFiList; walker; walker = walker->next) {
+					__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
+					modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, walker);
+				}
+			}
+		}
+		else {
+			esp_netif_ip_info_t ip_info = {0};
+			esp_netif_set_ip_info(gStation, &ip_info);
+			esp_netif_dhcpc_start(gStation);
+
+			wifi_ap_record_t ap_info;
+			if (ESP_OK == esp_wifi_sta_get_ap_info(&ap_info)) {
+				gIP = 0;
+				WiFiEventMsg msg = {0};
+				msg.event_id = WIFI_EVENT_STA_CONNECTED;
+				for (xsWiFi walker = gWiFiList; walker; walker = walker->next) {
+					__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
+					modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, walker);
+				}
+			}
+		}
+	}
 }
 
 void xs_wifi419_connection_get(xsMachine *the)
