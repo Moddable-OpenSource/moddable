@@ -76,7 +76,16 @@ static void initEthernet(void);
 typedef struct {
 	int32_t		event_id;
 	uint8_t		ipInit;
+	uint8_t		addressChanged;
 } EthernetEventMsg;
+
+static void broadcastEthernetEvent(EthernetEventMsg *msg)
+{
+	for (xsEthernet walker = gEthernetList; walker; walker = walker->next) {
+		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
+		modMessagePostToMachine(walker->the, (uint8_t *)msg, sizeof(*msg), ethernetConnectDeliver, walker);
+	}
+}
 
 static void formatMAC(const uint8_t *mac, char *str)
 {
@@ -299,9 +308,7 @@ static void initEthernet(void)
 
 static void doEthernetEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-	xsEthernet walker;
-	EthernetEventMsg msg;
-	msg.ipInit = 0;
+	EthernetEventMsg msg = {0};
 
 	if (ETHERNET_EVENT_CONNECTED == event_id) {
 		gConnected = 1;
@@ -318,16 +325,11 @@ static void doEthernetEvent(void *arg, esp_event_base_t event_base, int32_t even
 		return;
 
 	msg.event_id = event_id;
-	for (walker = gEthernetList; walker; walker = walker->next) {
-		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
-		modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, walker);
-	}
+	broadcastEthernetEvent(&msg);
 }
 
 static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-	xsEthernet walker;
-
 	if (IP_EVENT_GOT_IP6 == event_id) {
 		if (0x03 == gIP) return;
 		gIP |= 0x02;
@@ -341,13 +343,10 @@ static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, 
 	else
 		return;
 
-	EthernetEventMsg msg;
+	EthernetEventMsg msg = {0};
 	msg.event_id = event_id;
-	msg.ipInit = 0;
-	for (walker = gEthernetList; walker; walker = walker->next) {
-		__atomic_add_fetch(&walker->useCount, 1, __ATOMIC_SEQ_CST);
-		modMessagePostToMachine(walker->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, walker);
-	}
+	msg.addressChanged = 1;
+	broadcastEthernetEvent(&msg);
 }
 
 static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
@@ -373,13 +372,23 @@ static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint
 		eth->ip = 0x03;
 	}
 
-	if (eth->onChanged &&
-		((prevConnected != eth->connected) ||
-		 (prevConnecting != eth->connecting) ||
-		 (prevIP != eth->ip))) {
-		xsBeginHost(the);
-		xsCallFunction0(xsReference(eth->onChanged), eth->obj);
-		xsEndHost(the);
+	if (eth->onChanged) {
+		uint8_t connectionChanged = (prevConnected != eth->connected) ||
+								 (prevConnecting != eth->connecting) ||
+								 (prevIP != eth->ip);
+		if (connectionChanged || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connectionChanged && !eth->closed) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
+			}
+			if (msg->addressChanged && !eth->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
+			}
+			xsEndHost(the);
+		}
 	}
 
 bail:
@@ -393,32 +402,13 @@ void xs_ethernet_connect(xsMachine *the)
 	if (eth->connecting)
 		xsUnknownError("already connecting");
 
-	xsmcVars(1);
-
-	if (xsmcHas(xsArg(0), xsID_static)) {
-		xsmcGet(xsVar(0), xsArg(0), xsID_static);
-
-		esp_netif_ip_info_t ip_info = {0};
-
-		xsSlot tmp;
-		xsmcGet(tmp, xsVar(0), xsID_address);
-		esp_netif_str_to_ip4(xsmcToString(tmp), &ip_info.ip);
-
-		xsmcGet(tmp, xsVar(0), xsID_mask);
-		esp_netif_str_to_ip4(xsmcToString(tmp), &ip_info.netmask);
-
-		xsmcGet(tmp, xsVar(0), xsID_gateway);
-		esp_netif_str_to_ip4(xsmcToString(tmp), &ip_info.gw);
-
-		esp_netif_dhcpc_stop(gNetif);
-		if (ESP_OK != esp_netif_set_ip_info(gNetif, &ip_info))
-			xsUnknownError("set IP failed");
-
+	esp_netif_dhcp_status_t dhcp_status;
+	if ((ESP_OK == esp_netif_dhcpc_get_status(gNetif, &dhcp_status)) && (ESP_NETIF_DHCP_STOPPED == dhcp_status)) {
 		gIP = 0x03;
 
-		EthernetEventMsg msg;
+		EthernetEventMsg msg = {0};
 		msg.event_id = IP_EVENT_ETH_GOT_IP;
-		msg.ipInit = 0;
+		msg.addressChanged = 1;
 		__atomic_add_fetch(&eth->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
 	}
@@ -434,6 +424,65 @@ void xs_ethernet_disconnect(xsMachine *the)
 
 	eth->connecting = 0;
 	eth->ip = 0;
+}
+
+void xs_ethernet_configure(xsMachine *the)
+{
+	xsmcGetHostDataValidate(xsThis, (void *)&xsEthernetHooks);
+
+	if (!gNetif)
+		xsUnknownError("not initialized");
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		if (ESP_OK != esp_netif_set_hostname(gNetif, xsmcToString(xsVar(0))))
+			xsUnknownError("set hostname failed");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			esp_netif_ip_info_t ip_info = {0};
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.ip))
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.netmask))
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (ESP_OK != esp_netif_str_to_ip4(xsmcToString(xsVar(1)), &ip_info.gw))
+				xsRangeError("invalid gateway");
+
+			esp_netif_dhcpc_stop(gNetif);
+			if (ESP_OK != esp_netif_set_ip_info(gNetif, &ip_info))
+				xsUnknownError("set IP failed");
+
+			if (gConnected) {
+				gIP = 0x03;
+				EthernetEventMsg msg = {0};
+				msg.event_id = IP_EVENT_ETH_GOT_IP;
+				msg.addressChanged = 1;
+				broadcastEthernetEvent(&msg);
+			}
+		}
+		else {
+			esp_netif_ip_info_t ip_info = {0};
+			esp_netif_set_ip_info(gNetif, &ip_info);
+			esp_netif_dhcpc_start(gNetif);
+
+			if (gConnected) {
+				gIP = 0;
+				EthernetEventMsg msg = {0};
+				msg.event_id = ETHERNET_EVENT_CONNECTED;
+				broadcastEthernetEvent(&msg);
+			}
+		}
+	}
 }
 
 void xs_ethernet_connection_get(xsMachine *the)

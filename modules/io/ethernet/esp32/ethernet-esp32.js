@@ -22,8 +22,9 @@ class Ethernet extends Native("xs_ethernet_destructor"){
 	constructor(options) { super(); native("xs_ethernet").call(this, options); };
 
 	close() { return native("xs_ethernet_close").call(this); }
-	connect(options) { return native("xs_ethernet_connect").call(this, options); }
+	connect() { return native("xs_ethernet_connect").call(this); }
 	disconnect() { return native("xs_ethernet_disconnect").call(this); }
+	configure(options) { return native("xs_ethernet_configure").call(this, options); }
 
 	get connection() { return native("xs_ethernet_connection_get").call(this); }
 	get address() { return native("xs_ethernet_address_get").call(this); }

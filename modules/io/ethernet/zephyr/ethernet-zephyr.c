@@ -26,6 +26,15 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/hostname.h>
+
+typedef struct {
+	uint64_t	mgmt_event;
+	uint8_t		addressChanged;
+} ZephyrEventMsg;
+
+static uint8_t gStaticIP;
 
 static void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event, struct net_if *iface);
 
@@ -119,30 +128,39 @@ void xs_ethernet_close(xsMachine *the)
 static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
 {
 	xsEthernet eth = refcon;
-	uint64_t mgmt_event = *(uint64_t *)msgIn;
-	uint8_t connecting = eth->connecting, connected = eth->connected, ipAddress = eth->ipAddress;
+	ZephyrEventMsg *msg = (ZephyrEventMsg *)msgIn;
+	uint8_t prevConnecting = eth->connecting, prevConnected = eth->connected, prevIpAddress = eth->ipAddress;
 
 	if (eth->closed)
 		goto bail;
 
-	xsBeginHost(the);
-		if (NET_EVENT_IPV4_ADDR_DEL == mgmt_event) {
-			eth->connecting = 0;
-			eth->connected = 0;
-			eth->ipAddress = 0;
-		}
-		else if (NET_EVENT_IPV4_ADDR_ADD == mgmt_event) {
-			eth->connecting = 0;
-			eth->connected = 1;
-			eth->ipAddress = 1;
-		}
+	if (NET_EVENT_IPV4_ADDR_ADD == msg->mgmt_event) {
+		eth->connecting = 0;
+		eth->connected = 1;
+		eth->ipAddress = 1;
+	}
+	else if (NET_EVENT_IPV4_ADDR_DEL == msg->mgmt_event) {
+		eth->ipAddress = 0;
+	}
 
-		if (eth->onChanged &&
-			((connecting != eth->connecting) ||
-			(connected != eth->connected) ||
-			(ipAddress != eth->ipAddress)))
-			xsCallFunction0(xsReference(eth->onChanged), eth->obj);
-	xsEndHost(the);	
+	if (eth->onChanged) {
+		uint8_t connection = (prevConnecting != eth->connecting) ||
+								 (prevConnected != eth->connected) ||
+								 (prevIpAddress != eth->ipAddress);
+		if (connection || msg->addressChanged) {
+			xsSlot tmp;
+			xsBeginHost(the);
+			if (connection && !eth->closed) {
+				xsmcSetStringX(tmp, "connection");
+				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
+			}
+			if (msg->addressChanged && !eth->closed) {
+				xsmcSetStringX(tmp, "address");
+				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
+			}
+			xsEndHost(the);
+		}
+	}
 
 bail:
 	xs_ethernet_destructor(eth);
@@ -154,9 +172,13 @@ void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	if (eth->iface != iface)
 		return;
 
-	if ((NET_EVENT_IPV4_ADDR_ADD == mgmt_event) ||(NET_EVENT_IPV4_ADDR_DEL == mgmt_event)) {
+	if ((NET_EVENT_IPV4_ADDR_ADD == mgmt_event) || (NET_EVENT_IPV4_ADDR_DEL == mgmt_event)) {
+		ZephyrEventMsg msg = {0};
+		msg.mgmt_event = mgmt_event;
+		if (NET_EVENT_IPV4_ADDR_ADD == mgmt_event)
+			msg.addressChanged = 1;
 		atomic_inc(&eth->useCount);
-		modMessagePostToMachine(eth->the, (uint8_t *)&mgmt_event, sizeof(mgmt_event), ethernetConnectDeliver, eth);
+		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
 	}
 }
 
@@ -167,8 +189,17 @@ void xs_ethernet_connect(xsMachine *the)
 	if (eth->connecting)
 		xsUnknownError("already connecting");
 
-	eth->connecting = 1;
-	net_dhcpv4_start(eth->iface);
+	if (gStaticIP) {
+		ZephyrEventMsg msg = {0};
+		msg.mgmt_event = NET_EVENT_IPV4_ADDR_ADD;
+		msg.addressChanged = 1;
+		atomic_inc(&eth->useCount);
+		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
+	}
+	else {
+		eth->connecting = 1;
+		net_dhcpv4_start(eth->iface);
+	}
 }
 
 void xs_ethernet_disconnect(xsMachine *the)
@@ -179,7 +210,72 @@ void xs_ethernet_disconnect(xsMachine *the)
 	eth->connected = 0;
 	eth->ipAddress = 0;
 
-	net_dhcpv4_stop(eth->iface);
+	if (!gStaticIP)
+		net_dhcpv4_stop(eth->iface);
+}
+
+void xs_ethernet_configure(xsMachine *the)
+{
+	xsEthernet eth = xsmcGetHostDataValidate(xsThis, (void *)&xsEthernetHooks);
+
+	xsmcVars(2);
+
+	if (xsmcHas(xsArg(0), xsID_hostname)) {
+		char hostname[64];
+		xsmcGet(xsVar(0), xsArg(0), xsID_hostname);
+		const char *src = xsmcToStringBuffer(xsVar(0), hostname, sizeof(hostname));
+		if (net_hostname_set((char *)src, c_strlen(src)) < 0)
+			xsUnknownError("set hostname failed");
+	}
+
+	if (xsmcHas(xsArg(0), xsID_static)) {
+		xsmcGet(xsVar(0), xsArg(0), xsID_static);
+		if (xsmcTest(xsVar(0))) {
+			struct in_addr ip, netmask, gw;
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_address);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &ip) < 0)
+				xsRangeError("invalid address");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_mask);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &netmask) < 0)
+				xsRangeError("invalid mask");
+
+			xsmcGet(xsVar(1), xsVar(0), xsID_gateway);
+			if (net_addr_pton(AF_INET, xsmcToString(xsVar(1)), &gw) < 0)
+				xsRangeError("invalid gateway");
+
+			net_dhcpv4_stop(eth->iface);
+
+			struct in_addr *current = net_if_ipv4_get_global_addr(eth->iface, NET_ADDR_PREFERRED);
+			if (current)
+				net_if_ipv4_addr_rm(eth->iface, current);
+
+			if (!net_if_ipv4_addr_add(eth->iface, &ip, NET_ADDR_MANUAL, 0))
+				xsUnknownError("set IP failed");
+
+			net_if_ipv4_set_netmask_by_addr(eth->iface, &ip, &netmask);
+			net_if_ipv4_set_gw(eth->iface, &gw);
+
+			gStaticIP = 1;
+
+			if (eth->connected) {
+				ZephyrEventMsg msg = {0};
+				msg.mgmt_event = NET_EVENT_IPV4_ADDR_ADD;
+				msg.addressChanged = 1;
+				atomic_inc(&eth->useCount);
+				modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
+			}
+		}
+		else {
+			struct in_addr *current = net_if_ipv4_get_global_addr(eth->iface, NET_ADDR_PREFERRED);
+			if (current)
+				net_if_ipv4_addr_rm(eth->iface, current);
+
+			gStaticIP = 0;
+			net_dhcpv4_start(eth->iface);
+		}
+	}
 }
 
 void xs_ethernet_connection_get(xsMachine *the)
