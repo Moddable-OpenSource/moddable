@@ -39,7 +39,7 @@
 	#define MODDEF_SPI_MOSI_PIN (-1)
 #endif
 #ifndef MODDEF_SPI_SCK_PIN
-	#error SPI_SCK_PIN must be defined
+	#define MODDEF_SPI_SCK_PIN (-1)
 #endif
 #ifndef MODDEF_SPI_ESP32_TRANSACTIONS
 	#define MODDEF_SPI_ESP32_TRANSACTIONS (3)
