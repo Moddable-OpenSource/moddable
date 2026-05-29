@@ -2844,7 +2844,8 @@ class DebugMachine extends Machine {
 						{ keys: "eval <expr>", desc: "Evaluate JavaScript expression in current frame" },
 						{ keys: "info modules", desc: "List loaded modules" },
 						{ keys: "info module name", desc: "Show exports" },
-						{ keys: "info modules.name.path", desc: "Navigate into module exports" }
+						{ keys: "info modules.name.path", desc: "Navigate into module exports" },
+						{ keys: "info instruments", desc: "Print instrument snapshots" }
 					]
 				},
 				{
