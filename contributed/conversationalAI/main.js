@@ -50,5 +50,5 @@ export default function() {
 			behavior: controller
 		}
 	);
-	screen.corner = 0;
+	screen.corner ??= 0;
 }
