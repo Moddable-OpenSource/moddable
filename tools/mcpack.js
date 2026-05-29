@@ -587,8 +587,11 @@ export default class extends TOOL {
 			else
 				this.then("mcrun", this.manifestPath, ...this.argv);
 		}
-		else
+		else {
 			this.report(`### ${ this.errorCount } error(s)`);
+			if (this.isDirectoryOrFile(this.packagePath + this.slash + "node_modules") >= 0)
+				this.report(`### "node_modules" not found. Did you run "npm install"?`);
+		}
 	}
 	
 	
