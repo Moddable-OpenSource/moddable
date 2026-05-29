@@ -615,8 +615,8 @@ static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int
 {
 	int lines = (byteLength >> 1) / sd->updateWidth;
 	int row = sd->updateHeight - sd->updateLinesRemaining;
-	uint16_t x = MODDEF_CO5300_WIDTH - (sd->updateX + sd->updateWidth);
-	uint16_t y = MODDEF_CO5300_HEIGHT - (sd->updateY + row + lines);
+	uint16_t x = sd->updateX;
+	uint16_t y = sd->updateY + row;
 
 	co5300SetWindow(sd, x, y, sd->updateWidth, lines);
 	co5300SendColorSync(sd, pixels, byteLength);
