@@ -249,8 +249,18 @@ static void initWiFi(xsMachine *the)
 static void wifiLinkCallback(struct netif *netif)
 {
 	WiFiEventMsg msg = {0};
-	msg.event = netif_is_link_up(netif) ? PICO_EVENT_CONNECTED : PICO_EVENT_DISCONNECTED;
-	broadcastWiFiEvent(&msg);
+	if (netif_is_link_up(netif)) {
+		msg.event = PICO_EVENT_CONNECTED;
+		broadcastWiFiEvent(&msg);
+		if (netif_ip4_addr(netif)->addr) {
+			msg.event = PICO_EVENT_GOT_IP;
+			broadcastWiFiEvent(&msg);
+		}
+	}
+	else {
+		msg.event = PICO_EVENT_DISCONNECTED;
+		broadcastWiFiEvent(&msg);
+	}
 }
 
 static void wifiStatusCallback(struct netif *netif)
@@ -258,7 +268,6 @@ static void wifiStatusCallback(struct netif *netif)
 	if (netif_is_link_up(netif) && netif_ip4_addr(netif)->addr) {
 		WiFiEventMsg msg = {0};
 		msg.event = PICO_EVENT_GOT_IP;
-		msg.addressChanged = 1;
 		broadcastWiFiEvent(&msg);
 	}
 }
@@ -380,7 +389,8 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	if (PICO_EVENT_CONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 1;
-		wf->gotIP = 0;
+		// Do not touch gotIP — PICO_EVENT_GOT_IP is the signal for that, and
+		// the lwIP status callback may have already fired (or not yet).
 	}
 	else if (PICO_EVENT_DISCONNECTED == msg->event) {
 		wf->connecting = 0;
@@ -393,17 +403,18 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	}
 
 	if (wf->onChanged) {
-		uint8_t connection = (prevConnecting != wf->connecting) ||
+		uint8_t connectionChanged = (prevConnecting != wf->connecting) ||
 								 (prevConnected != wf->connected) ||
 								 (prevIP != wf->gotIP);
-		if (connection || msg->addressChanged) {
+		uint8_t addressChanged = (!prevIP && wf->gotIP) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connection) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}
-			if (msg->addressChanged && !wf->closed) {
+			if (addressChanged && !wf->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}

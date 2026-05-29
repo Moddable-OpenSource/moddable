@@ -233,17 +233,18 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	}
 
 	if (wf->onChanged) {
-		uint8_t connection = (prevConnecting != wf->connecting) ||
+		uint8_t connectionChanged = (prevConnecting != wf->connecting) ||
 								 (prevConnected != wf->connected) ||
 								 (prevDhcpBound != wf->dhcpBound);
-		if (connection || msg->addressChanged) {
+		uint8_t addressChanged = (!prevDhcpBound && wf->dhcpBound) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connection) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}
-			if (msg->addressChanged && !wf->closed) {
+			if (addressChanged && !wf->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}
@@ -278,6 +279,13 @@ void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 		msg.mgmt_event = mgmt_event;
 		atomic_inc(&wf->useCount);
 		modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
+
+		if (NET_EVENT_WIFI_CONNECT_RESULT == mgmt_event &&
+			net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED)) {
+			msg.mgmt_event = NET_EVENT_IPV4_DHCP_BOUND;
+			atomic_inc(&wf->useCount);
+			modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
+		}
 	}
 }
 
@@ -288,7 +296,6 @@ void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	if (NET_EVENT_IPV4_DHCP_BOUND == mgmt_event) {
 		ZephyrEventMsg msg = {0};
 		msg.mgmt_event = mgmt_event;
-		msg.addressChanged = 1;
 		atomic_inc(&wf->useCount);
 		modMessagePostToMachine(wf->the, (uint8_t *)&msg, sizeof(msg), wifiConnectDeliver, wf);
 	}

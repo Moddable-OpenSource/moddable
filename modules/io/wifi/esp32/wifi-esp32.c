@@ -240,10 +240,8 @@ static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id
 		if (ESP_OK != esp_netif_create_ip6_linklocal(gStation))
 			gIP = 0x02;
 		esp_netif_dhcp_status_t status;
-		if ((ESP_OK == esp_netif_dhcpc_get_status(gStation, &status)) && (ESP_NETIF_DHCP_STOPPED == status)) {
+		if ((ESP_OK == esp_netif_dhcpc_get_status(gStation, &status)) && (ESP_NETIF_DHCP_STOPPED == status))
 			gIP |= 0x01;
-			msg.addressChanged = 1;
-		}
 		msg.ipInit = gIP;
 	}
 	else if (WIFI_EVENT_STA_DISCONNECTED == event_id) {
@@ -258,8 +256,6 @@ static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id
 
 static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-	xsWiFi walker;
-
 	if (IP_EVENT_GOT_IP6 == event_id) {
 		if (0x03 == gIP) return;
 		gIP |= 0x02;
@@ -275,7 +271,6 @@ static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, 
 
 	WiFiEventMsg msg = {0};
 	msg.event_id = event_id;
-	msg.addressChanged = 1;
 	broadcastWiFiEvent(&msg);
 }
 
@@ -355,14 +350,15 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 		uint8_t connectionChanged = (prevConnecting != wf->connecting) ||
 								 (prevConnected != wf->connected) ||
 								 (prevIP != wf->ip);
-		if (connectionChanged || msg->addressChanged) {
+		uint8_t addressChanged = (!(prevIP & 0x01) && (wf->ip & 0x01)) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connectionChanged && !wf->closed) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}
-			if (msg->addressChanged && !wf->closed) {
+			if (addressChanged && !wf->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}

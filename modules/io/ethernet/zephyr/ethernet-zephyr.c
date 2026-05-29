@@ -144,17 +144,18 @@ static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint
 	}
 
 	if (eth->onChanged) {
-		uint8_t connection = (prevConnecting != eth->connecting) ||
+		uint8_t connectionChanged = (prevConnecting != eth->connecting) ||
 								 (prevConnected != eth->connected) ||
 								 (prevIpAddress != eth->ipAddress);
-		if (connection || msg->addressChanged) {
+		uint8_t addressChanged = (!prevIpAddress && eth->ipAddress) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connection && !eth->closed) {
+			if (connection) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
 			}
-			if (msg->addressChanged && !eth->closed) {
+			if (addressChanged && !eth->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
 			}
@@ -175,8 +176,6 @@ void ipv4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	if ((NET_EVENT_IPV4_ADDR_ADD == mgmt_event) || (NET_EVENT_IPV4_ADDR_DEL == mgmt_event)) {
 		ZephyrEventMsg msg = {0};
 		msg.mgmt_event = mgmt_event;
-		if (NET_EVENT_IPV4_ADDR_ADD == mgmt_event)
-			msg.addressChanged = 1;
 		atomic_inc(&eth->useCount);
 		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
 	}
@@ -192,7 +191,6 @@ void xs_ethernet_connect(xsMachine *the)
 	if (gStaticIP) {
 		ZephyrEventMsg msg = {0};
 		msg.mgmt_event = NET_EVENT_IPV4_ADDR_ADD;
-		msg.addressChanged = 1;
 		atomic_inc(&eth->useCount);
 		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
 	}

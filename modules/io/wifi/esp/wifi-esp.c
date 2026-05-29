@@ -220,16 +220,6 @@ static void doWiFiEvent(System_Event_t *msg)
 
 	WiFiEventMsg wmsg = {0};
 	wmsg.event = event;
-
-	if (EVENT_STAMODE_CONNECTED == event) {
-		if (DHCP_STOPPED == wifi_station_dhcpc_status()) {
-			wmsg.ipInit = 1;
-			wmsg.addressChanged = 1;
-		}
-	}
-	else if (EVENT_STAMODE_GOT_IP == event)
-		wmsg.addressChanged = 1;
-
 	broadcastWiFiEvent(&wmsg);
 }
 
@@ -339,7 +329,6 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	if (EVENT_STAMODE_CONNECTED == msg->event) {
 		wf->connecting = 0;
 		wf->connected = 1;
-		wf->gotIP = msg->ipInit;
 	}
 	else if (EVENT_STAMODE_DISCONNECTED == msg->event) {
 		wf->connecting = 0;
@@ -352,17 +341,18 @@ static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t
 	}
 
 	if (wf->onChanged) {
-		uint8_t connection = (prevConnecting != wf->connecting) ||
+		uint8_t connectionChanged = (prevConnecting != wf->connecting) ||
 								 (prevConnected != wf->connected) ||
 								 (prevIP != wf->gotIP);
-		if (connection || msg->addressChanged) {
+		uint8_t addressChanged = (!prevIP && wf->gotIP) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connection) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}
-			if (msg->addressChanged && !wf->closed) {
+			if (addressChanged && !wf->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(wf->onChanged), wf->obj, tmp);
 			}

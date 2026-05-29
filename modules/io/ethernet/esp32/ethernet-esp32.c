@@ -345,7 +345,6 @@ static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, 
 
 	EthernetEventMsg msg = {0};
 	msg.event_id = event_id;
-	msg.addressChanged = 1;
 	broadcastEthernetEvent(&msg);
 }
 
@@ -376,14 +375,15 @@ static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint
 		uint8_t connectionChanged = (prevConnected != eth->connected) ||
 								 (prevConnecting != eth->connecting) ||
 								 (prevIP != eth->ip);
-		if (connectionChanged || msg->addressChanged) {
+		uint8_t addressChanged = (!(prevIP & 0x01) && (eth->ip & 0x01)) || msg->addressChanged;
+		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connectionChanged && !eth->closed) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
 			}
-			if (msg->addressChanged && !eth->closed) {
+			if (addressChanged && !eth->closed) {
 				xsmcSetStringX(tmp, "address");
 				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
 			}
@@ -408,7 +408,6 @@ void xs_ethernet_connect(xsMachine *the)
 
 		EthernetEventMsg msg = {0};
 		msg.event_id = IP_EVENT_ETH_GOT_IP;
-		msg.addressChanged = 1;
 		__atomic_add_fetch(&eth->useCount, 1, __ATOMIC_SEQ_CST);
 		modMessagePostToMachine(eth->the, (uint8_t *)&msg, sizeof(msg), ethernetConnectDeliver, eth);
 	}
