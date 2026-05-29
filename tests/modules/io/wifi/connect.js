@@ -33,5 +33,6 @@ const wifi = new WiFi({
 
 assert.sameValue(wifi.connection <= 200, true, "starts disconnected (<= 200)");
 wifi.connect({SSID: opts.ssid, password: opts.password});
+assert.sameValue(wifi.connection >= 300, true, "transitiions to connecting (>= 300)");
 
 $TESTMC.timeout($TESTMC.wifiConnectionTimeout);
