@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/storage/manifest.json"
+	],
+	"modules": {
+		"*": "./webstorage"
+	},
+	"preload": [
+		"webstorage"
+	]
+}

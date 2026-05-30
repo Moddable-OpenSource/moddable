@@ -47,6 +47,18 @@ import Headers from "headers";
 globalThis.Headers = Headers;
 `	
 };
+const localStorageGlobal = {
+	include: "$(MODDABLE)/examples/io/storage/webstorage/manifest_webstorage.json",
+	snippet: `
+import kvp from "embedded:storage/key-value";
+import WebStorage from "webstorage";
+
+Object.defineProperty(globalThis, "localStorage", {get: () => {
+	Object.defineProperty(globalThis, "localStorage", {value: new WebStorage(kvp.open({path: "localStorage"})), writable: false});
+	return globalThis.localStorage;
+}});
+`
+};
 const structuredCloneGlobal = {
 	include: "$(MODDABLE)/modules/base/structuredClone/manifest.json",
 	snippet: `
@@ -277,6 +289,7 @@ export default class extends TOOL {
 			"console": consoleGlobal,
 			"fetch": fetchGlobal,
 			"Headers": headersGlobal,
+			"localStorage": localStorageGlobal,
 			"structuredClone": structuredCloneGlobal,
 			"TextDecoder": textDecoderGlobal,
 			"TextEncoder": textEncoderGlobal,
