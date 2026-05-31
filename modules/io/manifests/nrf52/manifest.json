@@ -13,7 +13,7 @@
 	],
 	"modules": {
 		"*": [
-			"$(IO)/common/builtinCommon",
+			"$(IO)/common/builtinCommon"
 		],
 		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap",
 
