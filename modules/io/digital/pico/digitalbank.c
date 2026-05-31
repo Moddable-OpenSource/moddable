@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -48,6 +48,7 @@ enum {
 
 struct DigitalRecord {
 	uint32_t	pins;
+	uint32_t	activeLow;
 	xsSlot		obj;
 	uint8_t		bank;
 	uint8_t		hasOnReadable;
@@ -81,7 +82,8 @@ static const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int mode, pins, rises = 0, falls = 0;
+	int mode;
+	uint32_t pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t bank = 0, isInput = 1;
 	xsSlot *onReadable;
@@ -101,7 +103,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 #endif
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
-	pins = xsmcToInteger(tmp);
+	pins = xsmcToUnsigned(tmp);
 	if (!pins)
 		xsUnknownError("invalid");
 	if (!builtinArePinsFree(0, pins))
@@ -115,6 +117,21 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
+	uint32_t activeLow = 0;
+	if (xsmcHas(xsArg(0), xsID_activeLow)) {
+		xsmcGet(tmp, xsArg(0), xsID_activeLow);
+		if (xsmcTest(tmp))
+			activeLow = pins;
+	}
+
+	uint32_t initialValue = 0;
+	if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
+		if (xsmcHas(xsArg(0), xsID_initialValue)) {
+			xsmcGet(tmp, xsArg(0), xsID_initialValue);
+			initialValue = xsmcToUnsigned(tmp) & pins;
+		}
+	}
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	if (0 == bank) {
 		if (onReadable) {
@@ -123,14 +140,20 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 			if (xsmcHas(xsArg(0), xsID_rises)) {
 				xsmcGet(tmp, xsArg(0), xsID_rises);
-				rises = xsmcToInteger(tmp) & pins;
+				rises = xsmcToUnsigned(tmp) & pins;
 			}
 			if (xsmcHas(xsArg(0), xsID_falls)) {
 				xsmcGet(tmp, xsArg(0), xsID_falls);
-				falls = xsmcToInteger(tmp) & pins;
+				falls = xsmcToUnsigned(tmp) & pins;
 			}
 			if (!rises & !falls)
 				xsRangeError("invalid edges");
+
+			if (activeLow) {
+				uint32_t tmp = rises;
+				rises = falls;
+				falls = tmp;
+			}
 		}
 	}
 	else if (1 == bank) {
@@ -178,10 +201,8 @@ void xs_digitalbank_constructor(xsMachine *the)
 					break;
 
 				case kDigitalOutput:
-					gpio_set_dir(pin, true);
-					isInput = 0;
-					break;
 				case kDigitalOutputOpenDrain:
+					gpio_put(pin, ((initialValue ^ activeLow) >> (pin & 0x1f)) & 1);
 					gpio_set_dir(pin, true);
 					isInput = 0;
 					break;
@@ -227,6 +248,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 			case kDigitalInput:
 				break;
 			case kDigitalOutput:
+				cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, (initialValue ^ activeLow) & 1);
 				isInput = 0;
 				break;
 		}
@@ -236,6 +258,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
+	digital->activeLow = activeLow;
 	digital->bank = bank;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
@@ -331,7 +354,7 @@ void xs_digitalbank_read(xsMachine *the)
 	}
 #endif
 
-	xsmcSetInteger(xsResult, result & digital->pins);
+	xsmcSetUnsigned(xsResult, (result & digital->pins) ^ digital->activeLow);
 }
 
 void xs_digitalbank_write(xsMachine *the)
@@ -342,13 +365,13 @@ void xs_digitalbank_write(xsMachine *the)
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	value = xsmcToInteger(xsArg(0));
+	value = xsmcToInteger(xsArg(0)) ^ digital->activeLow;
 
 	if (0 == digital->bank)
 		gpio_put_masked(digital->pins, value);
 #if WIFI_GPIO
 	else
-		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, value);
+		cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, value & 1);
 #endif
 }
 
@@ -392,7 +415,7 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	builtinCriticalSectionEnd();
 
 	xsBeginHost(digital->the);
-		xsmcSetInteger(xsResult, triggered);
+		xsmcSetUnsigned(xsResult, triggered);
 		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
 	xsEndHost(digital->the);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -46,6 +46,7 @@ enum {
 
 struct DigitalRecord {
 	uint32_t					pins;
+	uint32_t					activeLow;
 	xsSlot						obj;
 	uint8_t						bank;
 	uint8_t						hasOnReadable;
@@ -89,7 +90,8 @@ static const xsDigitalBankHostHooksRecord ICACHE_RODATA_ATTR xsDigitalBankHooks 
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int mode, pins, rises = 0, falls = 0;
+	int mode;
+	uint32_t pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t bank = 0, isInput = 1;
 	xsSlot *onReadable = NULL;
@@ -108,7 +110,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 #endif
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
-	pins = xsmcToInteger(tmp);
+	pins = xsmcToUnsigned(tmp);
 #if kPinBanks > 1
 	mask = bank ? (SOC_GPIO_VALID_GPIO_MASK >> 32) : (uint32_t)SOC_GPIO_VALID_GPIO_MASK;
 #else
@@ -126,20 +128,34 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
+	uint32_t activeLow = 0;
+	if (xsmcHas(xsArg(0), xsID_activeLow)) {
+		xsmcGet(tmp, xsArg(0), xsID_activeLow);
+		if (xsmcTest(tmp))
+			activeLow = pins;
+	}
+
+	uint32_t initialValue = 0;
 	if ((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)) {
 		onReadable = builtinGetCallback(the, xsID_onReadable);
 		if (onReadable) {
 			if (xsmcHas(xsArg(0), xsID_rises)) {
 				xsmcGet(tmp, xsArg(0), xsID_rises);
-				rises = xsmcToInteger(tmp) & pins;
+				rises = xsmcToUnsigned(tmp) & pins;
 			}
 			if (xsmcHas(xsArg(0), xsID_falls)) {
 				xsmcGet(tmp, xsArg(0), xsID_falls);
-				falls = xsmcToInteger(tmp) & pins;
+				falls = xsmcToUnsigned(tmp) & pins;
 			}
 
 			if (!rises & !falls)
 				xsRangeError("invalid edges");
+
+			if (activeLow) {
+				uint32_t tmp = rises;
+				rises = falls;
+				falls = tmp;
+			}
 		}
 	}
 	else if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
@@ -150,6 +166,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 #endif
 		if (pins != (pins & mask))
 			xsRangeError("input only");
+
+		if (xsmcHas(xsArg(0), xsID_initialValue)) {
+			xsmcGet(tmp, xsArg(0), xsID_initialValue);
+			initialValue = xsmcToUnsigned(tmp) & pins;
+		}
 	}
 	else
 		xsRangeError("invalid mode");
@@ -193,7 +214,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 			case kDigitalOutput:
 			case kDigitalOutputOpenDrain:
-				gpio_set_level(pin, 0);
+				gpio_set_level(pin, ((initialValue ^ activeLow) >> (pin & 0x1f)) & 1);
 				gpio_set_direction(pin, (kDigitalOutputOpenDrain == mode) ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT);
 				isInput = 0;
 				break;
@@ -238,6 +259,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
+	digital->activeLow = activeLow;
 	digital->bank = bank;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	digital->isInput = isInput;
@@ -316,7 +338,7 @@ void xs_digitalbank_read(xsMachine *the)
 		xsUnknownError("can't read output");
 
 	uint32_t result = modDigitalBankRead(digital);
-	xsmcSetInteger(xsResult, result);
+	xsmcSetUnsigned(xsResult, result);
 }
 
 void xs_digitalbank_write(xsMachine *the)
@@ -380,7 +402,7 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	builtinCriticalSectionEnd();
 
 	xsBeginHost(digital->the);
-		xsmcSetInteger(xsResult, triggered);
+		xsmcSetUnsigned(xsResult, triggered);
 		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
 	xsEndHost(digital->the);
 }
@@ -399,14 +421,14 @@ uint32_t modDigitalBankRead(void *instanceData)
 		return 0;
 
 #if kCPUESP32C3
-	return hw->in.data & digital->pins;
+	return (hw->in.data & digital->pins) ^ digital->activeLow;
 #elif kCPUESP32C6 || kCPUESP32H2
-	return hw->in.val & digital->pins;
+	return (hw->in.val & digital->pins) ^ digital->activeLow;
 #else
-    if (digital->bank)
-        return hw->in1.data & digital->pins;
+	if (digital->bank)
+		return (hw->in1.data & digital->pins) ^ digital->activeLow;
 
-	return hw->in & digital->pins;
+	return (hw->in & digital->pins) ^ digital->activeLow;
 #endif
 }
 
@@ -414,7 +436,7 @@ void modDigitalBankWrite(void *instanceData, uint32_t value)
 {
 	Digital digital = instanceData;
 	gpio_dev_t *hw = &GPIO;
-	value &= digital->pins;
+	value = (value ^ digital->activeLow) & digital->pins;
 
 	if (digital->isInput)
 		return;

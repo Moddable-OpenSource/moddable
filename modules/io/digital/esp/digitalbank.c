@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -101,6 +101,7 @@ enum {
 
 struct DigitalRecord {
 	uint32_t	pins;
+	uint32_t	activeLow;
 	xsSlot		obj;
 	uint8_t		bank;
 	int			hasOnReadable : 1;
@@ -135,7 +136,8 @@ static uint8_t gDigitalCallbackPending;
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int mode, pins, rises = 0, falls = 0;
+	int mode;
+	uint32_t pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t bank = 0;
 	xsSlot *onReadable;
@@ -153,7 +155,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 #endif
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
-	pins = xsmcToInteger(tmp);
+	pins = xsmcToUnsigned(tmp);
 	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
@@ -163,6 +165,21 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)))
 		xsRangeError("invalid mode");
 
+	uint32_t activeLow = 0;
+	if (xsmcHas(xsArg(0), xsID_activeLow)) {
+		xsmcGet(tmp, xsArg(0), xsID_activeLow);
+		if (xsmcTest(tmp))
+			activeLow = pins;
+	}
+
+	uint32_t initialValue = 0;
+	if ((kDigitalOutput == mode) || (kDigitalOutputOpenDrain == mode)) {
+		if (xsmcHas(xsArg(0), xsID_initialValue)) {
+			xsmcGet(tmp, xsArg(0), xsID_initialValue);
+			initialValue = xsmcToUnsigned(tmp) & pins;
+		}
+	}
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	if (onReadable) {
 		if (!((kDigitalInput <= mode) && (mode <= kDigitalInputPullUpDown)))
@@ -170,15 +187,21 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		if (xsmcHas(xsArg(0), xsID_rises)) {
 			xsmcGet(tmp, xsArg(0), xsID_rises);
-			rises = xsmcToInteger(tmp) & pins;
+			rises = xsmcToUnsigned(tmp) & pins;
 		}
 		if (xsmcHas(xsArg(0), xsID_falls)) {
 			xsmcGet(tmp, xsArg(0), xsID_falls);
-			falls = xsmcToInteger(tmp) & pins;
+			falls = xsmcToUnsigned(tmp) & pins;
 		}
 
 		if (!rises & !falls)
 			xsRangeError("invalid edges");
+
+		if (activeLow) {
+			uint32_t tmp = rises;
+			rises = falls;
+			falls = tmp;
+		}
 	}
 
 	builtinInitializeTarget(the);
@@ -236,11 +259,17 @@ void xs_digitalbank_constructor(xsMachine *the)
 			case kDigitalOutput:
 			case kDigitalOutputOpenDrain:
 				if (pin < 16) {
+					if (((initialValue ^ activeLow) >> pin) & 1)
+						GPIO_SET(pin);
+					else
+						GPIO_CLEAR(pin);
 					PIN_FUNC_SELECT(gPixMuxAddr[pin], c_read8(&gPixMuxValue[pin]));
 					GPIO_INIT_OUTPUT(pin, kDigitalOutputOpenDrain == mode);
-					GPIO_CLEAR(pin);
 				}
 				else if (16 == pin) {
+					WRITE_PERI_REG(RTC_GPIO_OUT,
+								   (READ_PERI_REG(RTC_GPIO_OUT) & (uint32)0xfffffffe) | (((initialValue ^ activeLow) >> 16) & 1));	// initial level
+
 					WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
 								   (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC to output rtc_gpio0
 
@@ -291,6 +320,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	xsSetHostHooks(xsThis, (xsHostHooks *)&xsDigitalBankHooks);
 
 	digital->pins = pins;
+	digital->activeLow = activeLow;
 	digital->bank = bank;
 	digital->hasOnReadable = onReadable ? 1 : 0;
 	builtinUsePins(bank, pins);
@@ -371,7 +401,7 @@ void xs_digitalbank_read(xsMachine *the)
 			result &= ~0x10000;
 	}
 
-	xsmcSetInteger(xsResult, result);
+	xsmcSetUnsigned(xsResult, result ^ digital->activeLow);
 }
 
 void xs_digitalbank_write(xsMachine *the)
@@ -380,7 +410,7 @@ void xs_digitalbank_write(xsMachine *the)
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	uint32_t value = xsmcToUnsigned(xsArg(0)) & digital->pins;
+	uint32_t value = (xsmcToUnsigned(xsArg(0)) ^ digital->activeLow) & digital->pins;
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);
 	if (digital->pins & 0x10000)
@@ -440,7 +470,7 @@ void digitalDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messa
 
 		xsMachine *the = walker->the;
 		xsBeginHost(the);
-			xsmcSetInteger(xsResult, triggered);
+			xsmcSetUnsigned(xsResult, triggered);
 			xsCallFunction1(xsReference(walker->onReadable), walker->obj, xsResult);
 		xsEndHost(the);
 
@@ -457,12 +487,12 @@ uint32_t modDigitalBankRead(Digital digital)
 		else
 			result &= ~0x10000;
 	}
-	return result;
+	return result ^ digital->activeLow;
 }
 
 void modDigitalBankWrite(Digital digital, uint32_t value)
 {
-	value &= digital->pins;
+	value = (value ^ digital->activeLow) & digital->pins;
 
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, value);
 	GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, ~value & digital->pins);

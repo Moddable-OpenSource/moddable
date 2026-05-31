@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -43,6 +43,10 @@ class Digital extends DigitalBank {
 			onReadable: options.onReadable,
 			format: options.format
 		};
+		if ("activeLow" in options)
+			o.activeLow = options.activeLow;
+		if ("initialValue" in options)
+			o.initialValue = Number(options.initialValue) ? pins : 0;
 		if ("target" in options)
 			o.target = options.target;
 		super(o);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -92,7 +92,8 @@ static Digital gDigitals;	// pins with onReadable callbacks
 void xs_digitalbank_constructor(xsMachine *the)
 {
 	Digital digital;
-	int mode, pins, rises = 0, falls = 0;
+	int mode;
+	uint32_t pins, rises = 0, falls = 0;
 	uint8_t pin;
 	uint8_t isInput = 1;
 	xsSlot *onReadable;
@@ -112,7 +113,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		xsUnknownError("invalid");
 
 	xsmcGet(tmp, xsArg(0), xsID_pins);
-	pins = xsmcToInteger(tmp);
+	pins = xsmcToUnsigned(tmp);
 	if (!builtinArePinsFree(bank->bankIndex, pins))
 		xsUnknownError("in use");
 
@@ -123,6 +124,24 @@ void xs_digitalbank_constructor(xsMachine *the)
 		(kDigitalOutput == tmode) || (kDigitalOutputOpenDrain == tmode)))
 		xsRangeError("invalid mode");
 
+	uint8_t activeLow = 0;
+	if (mode & kDigitalActiveLow) {
+		xsTrace("digital: ActiveLow deprecated, use activeLow: true\n");
+		activeLow = 1;
+	}
+	if (xsmcHas(xsArg(0), xsID_activeLow)) {
+		xsmcGet(tmp, xsArg(0), xsID_activeLow);
+		activeLow = xsmcTest(tmp);
+	}
+
+	uint32_t initialValue = 0;
+	if ((kDigitalOutput == tmode) || (kDigitalOutputOpenDrain == tmode)) {
+		if (xsmcHas(xsArg(0), xsID_initialValue)) {
+			xsmcGet(tmp, xsArg(0), xsID_initialValue);
+			initialValue = xsmcToUnsigned(tmp) & pins;
+		}
+	}
+
 	onReadable = builtinGetCallback(the, xsID_onReadable);
 	if (onReadable) {
 		if (!((kDigitalInput <= tmode) && (tmode <= kDigitalInputPullUpDown)))
@@ -130,11 +149,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 
 		if (xsmcHas(xsArg(0), xsID_rises)) {
 			xsmcGet(tmp, xsArg(0), xsID_rises);
-			rises = xsmcToInteger(tmp) & pins;
+			rises = xsmcToUnsigned(tmp) & pins;
 		}
 		if (xsmcHas(xsArg(0), xsID_falls)) {
 			xsmcGet(tmp, xsArg(0), xsID_falls);
-			falls = xsmcToInteger(tmp) & pins;
+			falls = xsmcToUnsigned(tmp) & pins;
 		}
 
 		if (!rises & !falls)
@@ -158,11 +177,12 @@ void xs_digitalbank_constructor(xsMachine *the)
 	atomic_set(&digital->useCount, 1);
 	xsRemember(digital->obj);
 
-	int activeLowFlag = (mode & kDigitalActiveLow) ? GPIO_ACTIVE_LOW : 0;
+	int activeLowFlag = activeLow ? GPIO_ACTIVE_LOW : 0;
 	for (pin = 0; pin < bank->gpioCount; pin++) {
 		if (!(pins & (1 << (pin & 0x1f))))
 			continue;
 
+		int initFlag = (initialValue & (1u << (pin & 0x1f))) ? GPIO_OUTPUT_INIT_HIGH : GPIO_OUTPUT_INIT_LOW;
 		switch (tmode) {
 			case kDigitalInput:
 				err = gpio_pin_configure(digital->port, pin, GPIO_INPUT | activeLowFlag);
@@ -179,11 +199,11 @@ void xs_digitalbank_constructor(xsMachine *the)
 				break;
 
 			case kDigitalOutput:
-				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | activeLowFlag);
+				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | initFlag | activeLowFlag);
 				isInput = 0;
 				break;
 			case kDigitalOutputOpenDrain:
-				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | GPIO_OPEN_DRAIN | activeLowFlag);
+				err = gpio_pin_configure(digital->port, pin, GPIO_OUTPUT | GPIO_OPEN_DRAIN | initFlag | activeLowFlag);
 				isInput = 0;
 				break;
 		}
@@ -299,7 +319,7 @@ void xs_digitalbank_read(xsMachine *the)
 		xsUnknownError("can't read output");
 
 	gpio_port_get(digital->port, &result);
-	xsmcSetInteger(xsResult, result & digital->pins);
+	xsmcSetUnsigned(xsResult, result & digital->pins);
 }
 
 void xs_digitalbank_write(xsMachine *the)
@@ -348,7 +368,7 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	builtinCriticalSectionEnd();
 
 	xsBeginHost(digital->the);
-		xsmcSetInteger(xsResult, triggered);
+		xsmcSetUnsigned(xsResult, triggered);
 		xsCallFunction1(xsReference(digital->onReadable), digital->obj, xsResult);
 	xsEndHost(digital->the);
 }
