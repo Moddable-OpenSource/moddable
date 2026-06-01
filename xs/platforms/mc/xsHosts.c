@@ -64,12 +64,12 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 
 #if pebble
 	static uint32_t kernelRemaining;
-	#define machine_alloc(size) \
-		((size <= (txSize)kernelRemaining) ? (kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
+	#define machine_alloc(size, kind) \
+		(((size <= (txSize)kernelRemaining) && (kind <= 0)) ? (kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
 	#define machine_free(ptr) \
 		(heap_contains_address(kernel_heap_get(), ptr) ? kernel_free(ptr) : app_free(ptr))
 #else
-	#define machine_alloc(size) c_malloc(size)
+	#define machine_alloc(size, kind) c_malloc(size)
 	#define machine_free(ptr) c_free(ptr)
 #endif
 
@@ -95,7 +95,7 @@ void *fxAllocateChunks(txMachine* the, txSize theSize)
 	}
 
 	if (NULL == the->heap)
-		return machine_alloc(theSize);
+		return machine_alloc(theSize, 1);
 
 	txBlock* block = the->firstBlock;
 	if (block) {	// reduce size by number of free bytes in current chunk heap
@@ -122,13 +122,13 @@ txSlot *fxAllocateSlots(txMachine* the, txSize theCount)
 
 	if (NULL == the->heap) {
 #ifndef modGetLargestMalloc
-		return machine_alloc(needed);
+		return machine_alloc(needed, 0);
 #else
 		extern void fxGrowSlots(txMachine* the, txSize theCount); 
 		static uint8_t *pending;		//@@ not thread safe...
 
 		if (NULL == the->stack)
-			return machine_alloc(needed);
+			return machine_alloc(needed, 0);
 
 		if (pending) {
 			txSlot *result = (txSlot *)pending;
@@ -529,7 +529,7 @@ txMachine *modCloneMachine(xsCreation *creationIn, const char *name)
 	if (creation->staticSize) {
 		uint8_t *context[2];
 
-		context[0] = machine_alloc(creation->staticSize);
+		context[0] = machine_alloc(creation->staticSize, -1);
 		if (NULL == context[0]) {
 			modLog("failed to allocate xs block");
 			return NULL;
