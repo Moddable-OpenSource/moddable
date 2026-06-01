@@ -1152,7 +1152,7 @@ void xs_poco_drawText(xsMachine *the)
 #endif
 				bits.pixels = pocoGetBitmapPixels(the, poco, cb, 0);
 
-				if ((kCommodettoBitmapMonochrome != cb->format) && (kCommodettoBitmapMonochromeAligned != cb->format) && (kCommodettoBitmapGray16 != (cb->format & ~kCommodettoBitmapPacked))) {
+				if ((kCommodettoBitmapMonochrome != cb->format) && (kCommodettoBitmapMonochromeAligned != cb->format) && (kCommodettoBitmapGray16 != (cb->format & ~kCommodettoBitmapPacked)) && (kCommodettoBitmapGray4 != cb->format)) {
 					isColor = 1;
 					if (xsReferenceType == xsmcTypeOf(xsArg(2))) {
 						isColor = 2;

@@ -209,6 +209,43 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		PocoMonochromeBitmapDraw(poco, bits, kPocoMonochromeForeground, color, color, x, y, sx, sy, sw, sh);
 		return;
 	}
+	if (kCommodettoBitmapGray4 == bits->format) {
+		PocoPebble pp = getPocoPebble(poco);
+		GContext *ctx = pp->ctx;
+		GCompOp saveMode = ctx->draw_state.compositing_mode;
+		GRect saveClip = ctx->draw_state.clip_box;
+		GRect dstRect = GRect(x, y, sw, sh);
+#if PBL_COLOR
+		GColor saveColor = ctx->draw_state.tint_color;
+#endif
+		GBitmap src = {
+			.addr = bits->pixels,
+			.row_size_bytes = (bits->width + 3) >> 2,
+			.info.format = GBitmapFormat2BitPalette,
+			.info.version = GBITMAP_VERSION_1,
+			.palette = gBitmapGray4Palette,
+			.bounds = GRect(sx, sy, sw, sh),
+		};
+
+		grect_clip(&ctx->draw_state.clip_box, &dstRect);
+
+#if PBL_BW
+		ctx->draw_state.compositing_mode = (color == GColorBlack.argb) ? GCompOpAnd : GCompOpSet;
+#elif PBL_COLOR
+		ctx->draw_state.tint_color.argb = color;
+		ctx->draw_state.compositing_mode = GCompOpTint;
+#endif
+
+		x += poco->xOrigin, y += poco->yOrigin;
+		graphics_draw_bitmap_in_rect_processed(ctx, &src, &dstRect, C_NULL);
+
+		ctx->draw_state.clip_box = saveClip;
+		ctx->draw_state.compositing_mode = saveMode;
+#if PBL_COLOR
+		ctx->draw_state.tint_color = saveColor;
+#endif
+		return;
+	}
 	
 	PBL_CROAK("unexpected PocoGrayBitmapDraw");
 }
