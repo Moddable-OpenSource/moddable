@@ -19,8 +19,8 @@ const Digital = device.io.Digital;
 const led = new Digital({
    pin: device.pin.led,
    mode: Digital.Output,
+   initialValue: 1
 });
-led.write(1);
 
 let state = 0;
 System.setInterval(() => {

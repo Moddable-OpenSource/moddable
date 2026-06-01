@@ -52,9 +52,9 @@ class Si12T {
 			if (reset) {
 				io.reset = new reset.io({
 					...reset,
+					initialValue: 1
 				});
 
-				io.reset.write(1);
 				Timer.delay(5);
 				io.reset.write(0);
 				Timer.delay(150);

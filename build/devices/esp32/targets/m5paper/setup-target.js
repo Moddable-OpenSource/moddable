@@ -6,21 +6,20 @@ export default function (done) {
 	globalThis.power = {
 		main: new Digital({
 			pin: device.pin.powerMain,
-			mode: Digital.Output
+			mode: Digital.Output,
+			initialValue: 1
 		}),
 		external: new Digital({
 			pin: device.pin.powerExternal,
-			mode: Digital.Output
+			mode: Digital.Output,
+			initialValue: 1
 		}),
 		epd: new Digital({
 			pin: device.pin.powerEPD,
-			mode: Digital.Output
+			mode: Digital.Output,
+			initialValue: 1
 		}),
 	};
-	
-	power.main.write(1);
-	power.external.write(1);
-	power.epd.write(1);
 
 	done();
 }

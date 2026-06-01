@@ -123,9 +123,9 @@ export default function (done) {
   // Enable speaker power amplifier
   const paEnable = new Digital({
     pin: 46,
-    mode: Digital.Output
+    mode: Digital.Output,
+    initialValue: 1
   })
-  paEnable.write(1)
 
   done?.()
 }

@@ -22,8 +22,8 @@ if (undefined !== device.pin.led) {
 	led = new Digital({
 	   pin: device.pin.led,
 	   mode: Digital.Output,
+	   initialValue: 1
 	});
-	led.write(1);
 }
 
 new Digital({

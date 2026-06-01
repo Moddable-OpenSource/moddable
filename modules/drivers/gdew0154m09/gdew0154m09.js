@@ -104,20 +104,20 @@ class EPD {
 		this.select = new Digital({
 			pin: device.pin.epdSelect,
 			mode: Digital.Output,
+			initialValue: 1
 		});
-		this.select.write(1);
 
 		this.dc = new Digital({
 			pin: device.pin.epdDC,
 			mode: Digital.Output,
+			initialValue: 1
 		});
-		this.dc.write(1);
 
 		this.reset = new Digital({
 			pin: device.pin.epdReset,
 			mode: Digital.Output,
+			initialValue: 1
 		});
-		this.reset.write(1);
 
 		this.busy = new Digital({
 			pin: device.pin.epdBusy,

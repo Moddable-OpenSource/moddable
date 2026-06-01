@@ -48,10 +48,10 @@ class CST816  {
 
 			if (reset) {
 				io.reset = new reset.io({
-					...reset
+					...reset,
+					initialValue: 0
 				});
 
-				io.reset.write(0);
 				Timer.delay(5);
 				io.reset.write(1);
 				Timer.delay(150);

@@ -23,10 +23,10 @@ export default function (done) {
 	globalThis.power = {
 		main: new Digital({
 			pin: device.pin.powerMain,
-			mode: Digital.Output
+			mode: Digital.Output,
+			initialValue: 1		// latch power on
 		}),
 	};
-	power.main.write(1);	// latch power on
 
 	done();
 }

@@ -160,11 +160,10 @@ class LoRa_SX127x {
 		});
 
 		// set up pin for chip select, and set to not selected
-		this.#selectPin = new options.select.io(options.select);
-		this.#selectPin.write(1);
+		this.#selectPin = new options.select.io({...options.select, initialValue: 1});
 
 		// set up pin to reset the LoRa chip
-		this.#resetPin = new options.reset.io(options.reset);
+		this.#resetPin = new options.reset.io({...options.reset, initialValue: 1});
 		
 		this.#register = new Registers(this.#spi, this.#selectPin);
 

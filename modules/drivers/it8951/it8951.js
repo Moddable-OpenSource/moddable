@@ -109,8 +109,8 @@ class EPD {
 		this.select = new Digital({
 			pin: device.pin.epdSelect,
 			mode: Digital.Output,
+			initialValue: 1
 		});
-		this.select.write(1);
 
 		this.busy = new Digital({
 			pin: device.pin.epdBusy,

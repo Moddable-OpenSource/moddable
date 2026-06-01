@@ -7,9 +7,9 @@ export default function (done) {
 	// Enable speaker power amplifier
 	const paEnable = new device.io.Digital({
 		pin: 18,
-		mode: device.io.Digital.Output
+		mode: device.io.Digital.Output,
+		initialValue: 1
 	})
-	paEnable.write(1)
 
 	done?.();
 }

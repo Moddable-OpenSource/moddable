@@ -82,8 +82,7 @@ const LMP91000_MODE_TIA_ON = 0x7
 export default class LMP91000 extends I2C {
 	constructor(it) {
 		super(it);
-		this.enablePin = new Digital({ "pin": it.enable.pin, "port": it.enable.port, mode: Digital.Output});
-		this.enablePin.write(0);		// enabled low
+		this.enablePin = new Digital({ "pin": it.enable.pin, "port": it.enable.port, mode: Digital.Output, activeLow: true, initialValue: 1});
 		this.initialize();
 	}
 	readByte(address) {
@@ -93,13 +92,10 @@ export default class LMP91000 extends I2C {
 	initialize() {
 		while (this.readByte(LMP91000_REG_STATUS) != 1)
 			trace("waiting for LMP91000 to come ready\n");
-		this.enablePin.write(1);
+		this.enablePin.write(0);
 	}
 	enable(x) {
-		if (x)
-			this.enablePin.write(0);
-		else
-			this.enablePin.write(1);
+		this.enablePin.write(x ? 1 : 0);
 	}
 	lock(x) {
 		this.write(LMP91000_REG_LOCK, x);
