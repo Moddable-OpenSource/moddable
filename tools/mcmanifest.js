@@ -1822,7 +1822,7 @@ export class TSConfigFile extends PrerequisiteFile {
 					specifier = specifier.replaceAll("\\", "/");
 				specifier = tool.unresolvePrefix(specifier);
 				if (!(specifier in paths))
-					paths[specifier] = [ result.source.slice(0, -3) ];
+					paths[specifier] = [ result.source.slice(0, result.source.lastIndexOf(".")) ];
 			}
 			if ("zephyr" === tool.platform) {
 				paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
@@ -1833,6 +1833,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			const compilerOptions = {
 				forceConsistentCasingInFileNames: true,
 				module: "preserve",
+				resolveJsonModule: true,
 				paths,
 				lib: ["es2025", "esnext.iterator"],
 				sourceMap: true,
@@ -1884,6 +1885,7 @@ export class TSConfigFile extends PrerequisiteFile {
 				rootDir: tool.mainPath,
 				forceConsistentCasingInFileNames: true,
 				module: "preserve",
+				resolveJsonModule: true,
 				outDir: tool.modulesPath,
 				paths: {
 				},
