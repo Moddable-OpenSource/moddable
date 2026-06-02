@@ -41,6 +41,10 @@ declare module "embedded:io/digitalbank" {
       pins: number;
       mode: Mode;
       bank?: number | string;
+      activeLow?: boolean;
+      initialValue?: number;
+      rises?: number;
+      falls?: number;
       onReadable?: (this: DigitalBank, trigger: number) => void;
       format?: "number";
       target?: any;

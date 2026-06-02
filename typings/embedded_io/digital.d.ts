@@ -46,6 +46,8 @@ declare module "embedded:io/digital" {
     constructor(options: {
       pin: PinSpecifier;
       mode: Mode;
+      activeLow?: boolean;
+      initialValue?: 0 | 1;
       format?: "number";
       target?: any;
     } & ({
