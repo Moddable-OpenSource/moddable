@@ -1832,7 +1832,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			// Build base compilerOptions
 			const compilerOptions = {
 				forceConsistentCasingInFileNames: true,
-				module: "es2022",
+				module: "preserve",
 				paths,
 				lib: ["es2025", "esnext.iterator"],
 				sourceMap: true,
@@ -1883,7 +1883,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			compilerOptions: {
 				rootDir: tool.mainPath,
 				forceConsistentCasingInFileNames: true,
-				module: "es2022",
+				module: "preserve",
 				outDir: tool.modulesPath,
 				paths: {
 				},
