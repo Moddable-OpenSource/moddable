@@ -23,7 +23,7 @@ import Timer from "timer";
 // Friendly name ("Rey Skywalker") or entity_id ("light.rey_skywalker"). entity_id preferred.
 const LIGHT = "light.rey_skywalker";
 const INTERVAL = 30_000;		// milliseconds
-const ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmMzhkNGQxM2EzZWE0YTE3YmM5NDcyZWU3MDlhZjkwMSIsImlhdCI6MTc3OTgzMzY4NiwiZXhwIjoyMDk1MTkzNjg2fQ.2KGZ70IjOmVDUVIE5Hrp_AQg1ud5f7DzzfeKMDJGY9w"; 
+const ACCESS_TOKEN = "** REPLACE WITH YOUR LONG-LIVED ACCESS TOKEN **"; 
 
 const connection = await createConnection({
 		auth: createLongLivedTokenAuth("http://homeassistant.local:8123", ACCESS_TOKEN)

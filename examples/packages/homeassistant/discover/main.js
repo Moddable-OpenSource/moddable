@@ -17,7 +17,7 @@ import {
 	createLongLivedTokenAuth,
 } from "home-assistant-js-websocket";
 
-const ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmMzhkNGQxM2EzZWE0YTE3YmM5NDcyZWU3MDlhZjkwMSIsImlhdCI6MTc3OTgzMzY4NiwiZXhwIjoyMDk1MTkzNjg2fQ.2KGZ70IjOmVDUVIE5Hrp_AQg1ud5f7DzzfeKMDJGY9w"; 
+const ACCESS_TOKEN = "** REPLACE WITH YOUR LONG-LIVED ACCESS TOKEN **"; 
 
 const connection = await createConnection({
 		auth: createLongLivedTokenAuth("http://homeassistant.local:8123", ACCESS_TOKEN)
