@@ -1,5 +1,5 @@
 # Package Examples
-Updated October 4, 2023
+Updated June 2, 2026
 
 This directory contains example projects that use `package.json` to describe the build dependencies. These are intended to be used with `mcpack`, a tool in the Moddable SDK to package embedded applications. `mcpack` is front-end to the Moddable build process. It starts with `package.json`, scans the dependencies, and generates a Moddable `manifest.json` file which is built, deployed, and run using `mcconfig`.
 
@@ -10,12 +10,14 @@ This directory contains example projects that use `package.json` to describe the
 - **Well-known globals**. JavaScript developers are accustomed to using certain global variables, such as `setTimeout`, `console`, and `fetch` across JavaScript environments. `mcpack` detects use of these globals and automatically includes the required modules and defines the global. The following globals are supported.
 	- `clearImmediate`, `setImmediate`, `setInterval`, `setTimeout` - Timer functions.
 	- `console.log()` - Output to the debug console. The other capabilities of `console` are not provided
-	- `fetch` - HTTP requests.
+	- `fetch` - HTTP requests
 	- `Headers` - Map of http headers, typically used with `fetch()`
-	- `structuredClone` - Clone JavaScript objects.
-	- `TextDecoder` - Convert binary buffers to JavaScript strings.
-	- `TextEncoder` - Convert JavaScript strings to UTF-8 formatted buffers.
+	- `localStorage` - Key-value pair persistent storage of strings
+	- `structuredClone` - Clone JavaScript objects
+	- `TextDecoder` - Convert binary buffers to JavaScript strings
+	- `TextEncoder` - Convert JavaScript strings to UTF-8 formatted buffers
 	- `URL` - URL parsing
+	- `WebSocket` - Client for the WebSocket protocol
 	- `Worker`, `SharedWorker` - Use multiple independent JavaScript virtual machines (Web Workers).
 - **Top-level await (TLA)**. The Moddable SDK supports TLA but requires it to be explicitly enabled in the project. This allows projects that do not use the feature to be smaller. `mcpack` detects when TLA is used and automatically sets the `MODDEF_MAIN_ASYNC` build flag.
 
