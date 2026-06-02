@@ -34,9 +34,6 @@ const ad = dnssd.advertise({
 	txt: new Map([
 		["home", "/index.html"]
 	]),
-	onError(/* error */) {
-		trace("advertise failed\n");
-	}
 });
 ad.counter = 0;
 
@@ -81,7 +78,4 @@ dnssd.discover({
 		trace(`Lost: ${service.name}\n`);
 		this.history.delete(service.host);
 	},
-	onError(/* error */) {
-		trace(`failed\n`);
-	}
 });

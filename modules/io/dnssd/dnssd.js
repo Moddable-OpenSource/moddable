@@ -59,7 +59,7 @@ class DNSSD {
 			this.remove(this.services[0]);
 
 		while (this.monitors.length)
-			this.remove(this.monitors[0].service.substring(0, this.monitors[0].service.length - 6));
+			this.remove(this.monitors[0].service.slice(0, this.monitors[0].service.length - 6));
 
 		this.claims.forEach(claim => {
 			Timer.clear(claim.timer);
