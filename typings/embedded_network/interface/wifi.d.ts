@@ -54,6 +54,8 @@ declare module "embedded:network/interface/wifi" {
 		readonly connection: number;
 		readonly address: string | undefined;
 		readonly MAC: string | undefined;
+		readonly SSID: string | undefined;
+		readonly RSSI: number | undefined;
 	}
 
 	export default WiFi;

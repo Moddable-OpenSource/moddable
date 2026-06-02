@@ -145,6 +145,7 @@ export interface ContentDictionary
     name?: string;
     anchor?: string;
     Behavior?: BehaviorConstructor;
+    behavior?: Behavior;
     skin?: Skin | SkinDictionary;
     Skin?: SkinConstructor;
     style?: Style | StyleDictionary;
@@ -424,6 +425,7 @@ export interface Application extends Container {
   displayListLength: number;
   commandListLength: number;
   touchCount: number;
+  purge(): void;
 }
 export interface ApplicationDictionary extends ContainerDictionary {
   displayListLength?: number;

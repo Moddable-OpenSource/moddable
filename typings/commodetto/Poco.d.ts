@@ -102,8 +102,14 @@ declare module "commodetto/Poco" {
 
   const Poco: PocoConstructor
 
+  export interface Screen extends PixelsOut {
+    command?(id: number, data?: ByteBuffer): void;
+    frameRate?: number;
+    syncFrames?: number;
+  }
+
   global {
-    const screen: PixelsOut
+    const screen: Screen
   }
 
   export default Poco
