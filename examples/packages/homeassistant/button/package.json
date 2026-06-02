@@ -1,0 +1,24 @@
+{
+	"name": "@moddable/homeassistant/button",
+	"version": "1.0.0",
+	"dependencies": {
+		"home-assistant-js-websocket": "^9.0.0",
+		"@moddable/typings": "^8.0.0"
+	},
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"moddable": {
+		"manifest": {
+			"preload": [
+				"home-assistant-js-websocket",
+				"home-assistant-js-websocket/*"
+			]
+		}
+	}
+}
