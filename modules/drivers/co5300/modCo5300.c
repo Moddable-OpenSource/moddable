@@ -434,6 +434,13 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 	}
 
 	{
+		uint8_t data[4];
+		data[0] = (sd->yMin >> 8) & 0xff;
+		data[1] = sd->yMin & 0xff;
+		data[2] = (sd->yMax >> 8) & 0xff;
+		data[3] = sd->yMax & 0xff;
+		co5300Command(sd, CO5300_CMD(0x2b), data, 4);
+
 		int one = 1;
 		sd->colorSlotReserved = 0;
 		xQueueSend(sd->ops, &one, portMAX_DELAY);
@@ -442,15 +449,6 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 		int lines = (byteLength >> 1) / sd->updateWidth;
 		sd->yMin += lines;
 		sd->updateLinesRemaining -= lines;
-
-		if (sd->updateLinesRemaining) {
-			uint8_t data[4];
-			data[0] = (sd->yMin >> 8) & 0xff;
-			data[1] = sd->yMin & 0xff;
-			data[2] = (sd->yMax >> 8) & 0xff;
-			data[3] = sd->yMax & 0xff;
-			co5300Command(sd, CO5300_CMD(0x2b), data, 4);
-		}
 	}
 
 	if (sync) {
