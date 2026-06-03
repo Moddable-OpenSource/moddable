@@ -23,7 +23,9 @@
   },
   "preload": ["setup/target"],
   "config": {
-    "screen": "co5300"
+    "screen": "co5300",
+    "format": "RGB565BE",
+    "corner": 60
   },
   "creation": {
     "static": 0,

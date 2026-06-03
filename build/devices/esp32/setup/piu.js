@@ -198,6 +198,9 @@ export default function (done) {
 	if (!global.screen) {
 		globalThis.screen = new Screen({});
 
+		if (config.corner)
+			screen.corner ??= config.corner;
+
 		if (config.driverRotation) {
 			if (config.rotation)
 				screen.rotation = (config.driverRotation + config.rotation) % 360;
