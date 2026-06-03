@@ -18,8 +18,10 @@
  *
  */
 
+/// <reference path="../easing.d.ts" />
+
 declare module "piu/MC" {
-  import {} from "commodetto/Poco";   // for global screen
+  import { } from "commodetto/Poco";   // for global screen
   import type * as MC from "piu/MC-types";
 
   global {

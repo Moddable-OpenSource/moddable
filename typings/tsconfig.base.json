@@ -1,0 +1,33 @@
+{
+	"_comment": "Base tsconfig for projects using @moddable/typings. Project tsconfig.json should `extends` this and add its own outDir, include, sourceMap, etc.",
+	"compilerOptions": {
+		"lib": ["es2025"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"target": "ES2025",
+		"baseUrl": ".",
+		"paths": {
+			"embedded:io/*": ["./embedded_io/*"],
+			"embedded:io/socket/*": ["./embedded_io/socket/*"],
+			"embedded:io/audio/*": ["./embedded_io/audio/*"],
+			"embedded:io/bluetoothle/*": ["./embedded_io/ble/*"],
+			"embedded:network/*": ["./embedded_network/*"],
+			"embedded:network/http/*": ["./embedded_network/http/*"],
+			"embedded:network/interface/*": ["./embedded_network/interface/*"],
+			"embedded:network/mqtt/*": ["./embedded_network/mqtt/*"],
+			"embedded:network/websocket/*": ["./embedded_network/websocket/*"],
+			"embedded:network/dns/resolver/*": ["./embedded_network/dns/resolver/*"],
+			"embedded:network/ntp/*": ["./embedded_network/ntp/*"],
+			"embedded:storage/*": ["./embedded/storage/*"],
+			"embedded:provider/*": ["./embedded_provider/*"],
+			"embedded:*": ["./embedded/*"],
+			"mc/*": ["./mc/*"],
+			"mod/*": ["./mod/*"],
+			"pins/*": ["./pins/*"],
+			"piu/*": ["./piu/*"],
+			"commodetto/*": ["./commodetto/*"],
+			"text/*": ["./text/*"],
+			"*": ["./*"]
+		}
+	}
+}
