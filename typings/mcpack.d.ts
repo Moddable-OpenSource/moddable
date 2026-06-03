@@ -29,7 +29,6 @@
 /// <reference path="./text/encoder.d.ts" />
 
 import type Timer from "timer";
-import type WebStorage from "webstorage";
 
 interface Console {
 	log(...log: (string | number | boolean)[]):void;
@@ -43,6 +42,35 @@ declare global {
 	const setImmediate: (handler: Function) => Timer;
 	const setInterval: (handler: Function, timeout?: number) => Timer;
 	const setTimeout: (handler: Function, timeout?: number) => Timer;
-	const localStorage: WebStorage;
+
+	const localStorage: import("webstorage").default;
+
+	const WebSocket: typeof import("web/websocket").default;
+	type WebSocket = import("web/websocket").default;
+
+	const Headers: typeof import("headers").default;
+	type Headers = import("headers").default;
+
+	const fetch: typeof import("fetch").fetch;
+
+	const structuredClone: typeof import("structuredClone").default;
+
+	const TextDecoder: typeof import("text/decoder").default;
+	type TextDecoder = import("text/decoder").default;
+
+	const TextEncoder: typeof import("text/encoder").default;
+	type TextEncoder = import("text/encoder").default;
+
+	const URL: typeof import("url").URL;
+	type URL = import("url").URL;
+
+	const URLSearchParams: typeof import("url").URLSearchParams;
+	type URLSearchParams = import("url").URLSearchParams;
+
+	const Worker: typeof import("worker").default;
+	type Worker = import("worker").default;
+
+	const SharedWorker: typeof import("worker").SharedWorker;
+	type SharedWorker = import("worker").SharedWorker;
 }
 

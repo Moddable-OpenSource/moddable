@@ -338,6 +338,8 @@ export default class extends TOOL {
 	
 	listSpecifiers(path) @ "Tool_prototype_listSpecifiers"
 	parseModule(module) {
+		if (module.fileURL.endsWith(".json"))
+			return;	
 		let path = this.urlToFilePath(module.fileURL);
 		let infos = this.listSpecifiers(path);
 		if (infos) {
@@ -518,7 +520,7 @@ export default class extends TOOL {
 				
 				let from = packageName + "/" + fileURL.slice(packageURL.length + 1);
 				let source = fileURL.slice(this.windows ? 8 : 7);
-				let target = from.slice(0, from.lastIndexOf('.'));
+				let target = fileURL.endsWith(".json") ? from : from.slice(0, from.lastIndexOf('.'));
 				item.specifiers = item.specifiers.filter(specifier => {
 					if (specifier.startsWith('#'))
 						specifier = packageName + "/" + specifier;
@@ -715,7 +717,7 @@ export default class extends TOOL {
 			if (!path)
 				this.throwModuleNotFoundError();
 			let format = this.ESM_FILE_FORMAT(resolved);
-			if (format !== "module")
+			if ((format !== "module") && (format !== "json"))
 				this.throwUnsupportedModuleFormat(format);
 		}
 		return resolved;
