@@ -47,6 +47,9 @@
 		"commodetto/*",
 		"piu/Sound"
 	],
+	"config": {
+		"format": "RGB565LE"
+	},
 	"platforms": {
 		"mac": {
 			"config": {
@@ -196,7 +199,7 @@
 			}
 		}
 	},
-	"data": { 
+	"data": {
 		"*": [
 			"$(MODDABLE)/examples/assets/images/image-info",
 			"$(MODULES)/crypt/data/ca34",
