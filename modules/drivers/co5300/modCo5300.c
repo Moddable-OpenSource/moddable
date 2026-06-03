@@ -384,8 +384,7 @@ void xs_co5300_set_brightness(xsMachine *the)
 	if (percent > 100) percent = 100;
 
 	sd->brightnessValue = (uint8_t)(percent * 255 / 100);
-	uint8_t param = sd->brightnessValue;
-	co5300Command(sd, CO5300_CMD(0x51), &param, 1);
+	co5300Command(sd, CO5300_CMD(0x51), &sd->brightnessValue, 1);
 }
 
 void xs_co5300_get_brightness(xsMachine *the)
@@ -510,7 +509,7 @@ void co5300Init(co5300Display sd)
 	}
 
 	sd->firstFrame = true;
-	sd->brightnessValue = 0;
+	sd->brightnessValue = 255;
 	sd->rotation = 0;
 }
 
@@ -678,11 +677,8 @@ void co5300End(void *refcon)
 	if (sd->firstFrame) {
 		sd->firstFrame = false;
 
-		co5300CommandAsync(sd, CO5300_CMD(0x29), NULL, 0);	// Display ON
-
-		sd->brightnessValue = 255;
-		uint8_t bright = 0xFF;
-		co5300Command(sd, CO5300_CMD(0x51), &bright, 1);
+		co5300Command(sd, CO5300_CMD(0x29), NULL, 0);	// Display ON
+		co5300Command(sd, CO5300_CMD(0x51), &sd->brightnessValue, 1);
 	}
 
 	if (sd->nothingSent) {
