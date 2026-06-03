@@ -1835,7 +1835,7 @@ export class TSConfigFile extends PrerequisiteFile {
 				module: "preserve",
 				resolveJsonModule: true,
 				paths,
-				lib: ["es2025", "esnext.iterator"],
+				lib: ["es2025"],
 				sourceMap: true,
 				target: "es2025"
 			};
@@ -1889,7 +1889,7 @@ export class TSConfigFile extends PrerequisiteFile {
 				outDir: tool.modulesPath,
 				paths: {
 				},
-				lib: ["es2025", "esnext.iterator"],
+				lib: ["es2025"],
 				sourceMap: true,
 				target: "es2025"
 			},
