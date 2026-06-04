@@ -1,13 +1,13 @@
 {
 	"name": "@moddable/typings",
-	"version": "8.2.0-dev",
+	"version": "8.2.1",
 	"main": "",
 	"types": "xs",
 	"typesVersions": {
 		">=6.0.0-0": { "tsconfig.base.json": ["./tsconfig.es2025.json"] },
 		">=5.4.0-0": { "tsconfig.base.json": ["./tsconfig.es2024.json"] }
 	},
-	"author": "",
+	"author": "Moddable",
 	"license": "ISC",
 	"description": ""
 }
