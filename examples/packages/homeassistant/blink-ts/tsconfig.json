@@ -2,6 +2,7 @@
   "compilerOptions": {
     "incremental": true,
     "ignoreDeprecations": "6.0",
+    "rootDir": "src",
     "outDir": "dist",
     "lib": ["es2022"],
  	"module": "es2022",

@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"dependencies": {
 		"home-assistant-js-websocket": "^9.0.0",
-		"@moddable/typings": "^8.0.0"
+		"@moddable/typings": "^8.2.1 "
 	},
 	"main": "./dist/main.js",
 	"type": "module",
