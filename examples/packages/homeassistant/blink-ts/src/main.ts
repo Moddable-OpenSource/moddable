@@ -17,6 +17,7 @@ import {
 	createLongLivedTokenAuth,
 	callService,
 	getStates,
+	ERR_INVALID_AUTH,
 	type Connection,
 } from "home-assistant-js-websocket";
 import Timer from "timer";
@@ -47,11 +48,6 @@ const LIGHT = "light.rey_skywalker";
 const INTERVAL = 30_000;		// milliseconds
 const ACCESS_TOKEN = "** REPLACE WITH YOUR LONG-LIVED ACCESS TOKEN **"; 
 
-const connection = await createConnection({
-		auth: createLongLivedTokenAuth("http://homeassistant.local:8123", ACCESS_TOKEN)
-	}
-);
-
 async function findLight(connection: Connection, query: string): Promise<string> {
 	if (query.startsWith("light."))
 		return query;
@@ -67,7 +63,13 @@ async function findLight(connection: Connection, query: string): Promise<string>
 	return match.entity_id;
 }
 
+let connection: Connection | undefined;
 try {
+	connection = await createConnection({
+			auth: createLongLivedTokenAuth("http://homeassistant.local:8123", ACCESS_TOKEN)
+		}
+	);
+
 	const lightID = await findLight(connection, LIGHT);
 	let state: string | undefined;
 
@@ -102,6 +104,11 @@ try {
 	}, 0, INTERVAL);
 }
 catch (e) {
-	trace(`startup failed: ${(e as Error).message}\n`);
-	connection.close();
+	if (e === ERR_INVALID_AUTH)
+		trace(`Home Assistant authentication failed. Check ACCESS_TOKEN: ${ACCESS_TOKEN}.\n`);
+	else if ("number" === typeof e)
+		trace(`Home Assistant error code ${e}.\n`);
+	else
+		trace(`startup failed: ${(e as Error).message}\n`);
+	connection?.close();
 }
