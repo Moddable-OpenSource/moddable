@@ -50,7 +50,7 @@ static void *getQuestionByIndex(xsMachine *the, uint8_t index)
 
 	position += 12;
 	while (index--) {
-		while (true) {
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
@@ -75,6 +75,9 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	uint16_t answers = ((position[6] << 8) | position[7]) + ((position[8] << 8) | position[9]) + ((position[10] << 8) | position[11]);		// including authority and additional records
 	position = getQuestionByIndex(the, 0xff);
 
+	if (NULL == position)
+		return NULL;
+
 	if ((0xff != index) && (index >= answers))
 		return NULL;
 
@@ -84,7 +87,7 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	while (index--) {
 		uint16_t rdlength;
 
-		while (true) {
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
@@ -107,16 +110,28 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	return position;
 }
 
+#define kDNSQnameMaxHops 128
+
 static int parseQname(xsMachine *the, int offset)
 {
+	uint8_t *packetEnd;
+	uint8_t *packetStart;
+	xsUnsignedValue packetLength;
 	uint8_t *position;
 	int qnameEndPosition = 0;
+	int hops = 0;
 
-	xsVar(1) = xsNewArray(0);
-	position = offset + (uint8_t *)getPacket(the, NULL);;
+	xsVar(1) = xsNewArray(0);	// do this before getPacket: xsNewArray can trigger GC
+	packetStart = getPacket(the, &packetEnd);
+	packetLength = (xsUnsignedValue)(packetEnd - packetStart);
+	position = offset + packetStart;
 	while (true) {
 		char tmp[64];
-		uint8_t tag = *position++;
+		uint8_t tag;
+
+		if (position >= packetEnd)
+			xsUnknownError("bad name");
+		tag = *position++;
 		offset += 1;
 		if (0 == tag) {
 			if (0 == qnameEndPosition)
@@ -124,20 +139,33 @@ static int parseQname(xsMachine *the, int offset)
 			break;
 		}
 		if (0xC0 == (tag & 0xC0)) {
+			int ptr;
+			if (position >= packetEnd)
+				xsUnknownError("bad name");
 			if (0 == qnameEndPosition)
 				qnameEndPosition = offset + 1;
-			offset = ((tag << 8) | *position) & 0x3FFF;		//@@ range check
-			position = offset + (uint8_t *)getPacket(the, NULL);
+			ptr = ((tag << 8) | *position) & 0x3FFF;
+			if ((xsUnsignedValue)ptr >= packetLength)
+				xsUnknownError("bad name");
+			if (++hops > kDNSQnameMaxHops)
+				xsUnknownError("bad name");
+			offset = ptr;
+			position = offset + packetStart;
 			continue;
 		}
 
 		if (tag > 63)
 			xsUnknownError("bad name");
+		if (position + tag > packetEnd)
+			xsUnknownError("bad name");
 		c_memcpy(tmp, position, tag);
-		xsmcSetStringBuffer(xsVar(2), tmp, tag);
-		xsCall1(xsVar(1), xsID_push, xsVar(2));
 		offset += tag;
-		position = offset + (uint8_t *)getPacket(the, NULL);
+		xsmcSetStringBuffer(xsVar(2), tmp, tag);	// can trigger GC
+		xsCall1(xsVar(1), xsID_push, xsVar(2));	// can trigger GC
+		// re-fetch packet pointer since GC may have moved memory
+		packetStart = getPacket(the, &packetEnd);
+		packetLength = (xsUnsignedValue)(packetEnd - packetStart);
+		position = offset + packetStart;
 	}
 
 	return qnameEndPosition;
@@ -243,14 +271,24 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 			else
 			if (0x0010 == qtype) {	// TXT
 				if (rdlength > 1) {
+					uint8_t *rdataEnd;
 					xsVar(1) = xsNewArray(0);
 					position = offset + (uint8_t *)getPacket(the, NULL);
+					rdataEnd = position + rdlength;
 					while (rdlength > 1) {
 						uint8_t tag;
+						uint16_t advance;
 
+						if (position >= rdataEnd)
+							xsUnknownError("bad txt");
 						tag = *position++;
-						offset += tag + 1;		//@@ bounds check range
-						rdlength -= tag + 1;
+						advance = (uint16_t)tag + 1;
+						if (advance > rdlength)
+							xsUnknownError("bad txt");
+						if (position + tag > rdataEnd)
+							xsUnknownError("bad txt");
+						offset += advance;
+						rdlength -= advance;
 						c_memcpy(tmp, position, tag);
 						xsmcSetStringBuffer(xsVar(2), tmp, tag);
 						xsCall1(xsVar(1), xsID_push, xsVar(2));
