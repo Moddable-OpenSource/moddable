@@ -84,7 +84,7 @@ try {
 		else {
 			if (msg.a && (undefined === state)) {
 				trace(`entity "${lightID}" not found\n`);
-				connection.close();
+				connection!.close();
 			}
 			return;
 		}
@@ -100,7 +100,7 @@ try {
 
 		const service = ("on" === state) ? "turn_off" : "turn_on";
 		trace(`toggling ${lightID}: ${service}\n`);
-		callService(connection, "light", service, undefined, {entity_id: lightID});
+		callService(connection!, "light", service, undefined, {entity_id: lightID});
 	}, 0, INTERVAL);
 }
 catch (e) {
