@@ -33,6 +33,13 @@ globalThis.console = Object.freeze({
 });
 `
 };
+const eventSourceGlobal = {
+	include: "$(MODDABLE)/examples/io/tcp/eventsource/manifest_eventsource.json",
+	snippet: `
+import EventSource from "eventsource";
+globalThis.EventSource = EventSource;
+`	
+};
 const fetchGlobal = {
 	include: "$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json",
 	snippet: `
@@ -288,6 +295,7 @@ export default class extends TOOL {
 		this.globals = {
 			"console": consoleGlobal,
 			"fetch": fetchGlobal,
+			"EventSource": eventSourceGlobal,
 			"Headers": headersGlobal,
 			"localStorage": localStorageGlobal,
 			"structuredClone": structuredCloneGlobal,
