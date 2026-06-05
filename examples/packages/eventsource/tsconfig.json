@@ -1,0 +1,17 @@
+{
+  "extends": "@moddable/typings/tsconfig.base.json",
+  "compilerOptions": {
+    "incremental": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "ignoreDeprecations": "6.0",
+    "types": [
+      "./node_modules/@moddable/typings/xs",
+      "./node_modules/@moddable/typings/mcpack"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
