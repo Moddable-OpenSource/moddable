@@ -1,29 +1,25 @@
 {
-	"include": [
-		"$(MODULES)/base/easing/manifest.json"
-	],
-	"modules": {
-		"piu/*": "$(PIU)/All/piu*",
-		"piu/MC": "$(PIU)/Pebble/piuPebble",
-		"*": [
-			  "$(PIU)/Pebble/piuFont",
-			  "$(PIU)/Pebble/piuInverter",
-			  "$(PIU)/Pebble/piuRoundRect",
-			  "$(PIU)/Pebble/piuSVGImage",
-			  "$(PIU)/Pebble/piuScreenBuffer",
-			  "$(PIU)/Pebble/piuTexture",
-			  "$(PIU)/Pebble/piuView"
-		]
-	},
-	"preload": [
-		"piu/*"
-	],
-	"platforms":{
+	"platforms": {
 		"pebble": {
+			"include": "$(MODULES)/base/easing/manifest.json",
 			"modules": {
+				"piu/*": "$(PIU)/All/piu*",
+				"piu/MC": "$(PIU)/Pebble/piuPebble",
+				"*": [
+					"$(PIU)/Pebble/piuFont",
+					"$(PIU)/Pebble/piuInverter",
+					"$(PIU)/Pebble/piuRoundRect",
+					"$(PIU)/Pebble/piuSVGImage",
+					"$(PIU)/Pebble/piuScreenBuffer",
+					"$(PIU)/Pebble/piuTexture",
+					"$(PIU)/Pebble/piuView"
+				],
 				"setup/piu": "$(BUILD)/devices/pebble/setup/piu"
 			},
-			"preload": "setup/piu"
+			"preload": [
+				"piu/*",
+				"setup/piu"
+			]
 		}
 	}
 }
