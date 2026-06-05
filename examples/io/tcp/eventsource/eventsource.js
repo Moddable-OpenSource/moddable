@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -43,7 +43,7 @@ class EventSource {
 	#origin;
 	#path;
 	#port;
-	#readystate = this.CLOSED;
+	#readyState = this.CLOSED;
 	#reconnectionTime = 10000;
 	#url;
 	#method;
@@ -91,8 +91,8 @@ class EventSource {
 		}
 		this.#connect();
 	}
-	get readystate() {
-		return this.#readystate;
+	get readyState() {
+		return this.#readyState;
 	}
 	get onerror() {
 		return this.#eventHandlers.error;
@@ -145,14 +145,14 @@ class EventSource {
 		const host = this.#host;
 		const port = this.#port;
 		const path = this.#path;
-		this.#readystate = this.CONNECTING;
+		this.#readyState = this.CONNECTING;
 		const client = this.#client = new config.io({ 
 			...config,
 			host, 
 			port,  
 			onClose: () => {
 				this.#client = null;
-				this.#readystate = this.CLOSED;
+				this.#readyState = this.CLOSED;
 				Timer.set(() => { this.#connect() }, this.#reconnectionTime)
 			},
 			onError: () => {
@@ -174,7 +174,7 @@ class EventSource {
 			headers,
 			onHeaders: (status, headers, statusText) => {
 				if ((status == 200) && (headers.get("content-type").indexOf("text/event-stream") >= 0)) {
-					this.#readystate = this.OPEN;
+					this.#readyState = this.OPEN;
 					const event = { type:"open" };
 					this.#callEventListeners(event);
 				}
@@ -197,11 +197,11 @@ class EventSource {
 						this.write();
 				}
 			},
-			onReadable: (count) => {
+			onReadable: () => {
 				if (buffer)
-					buffer = buffer.concat(request.read(count));
+					buffer = buffer.concat(request.read());
 				else
-					buffer = request.read(count);
+					buffer = request.read();
 				let array = new Uint8Array(buffer);
 				let length = array.length;
 				while (index < length) {
@@ -289,7 +289,7 @@ class EventSource {
 	}
 	#onError(error) {
 		this.#client = null;
-		this.#readystate = this.CLOSED;
+		this.#readyState = this.CLOSED;
 		const event = { type:"error", ...error };
 		this.#callEventListeners(event);
 	}
@@ -322,9 +322,16 @@ class EventSource {
 			this.#eventHandlers[type] = handler;
 		}
 	}
+
+	static CONNECTING = 0;
+	static OPEN = 1;
+	static CLOSED = 2;
+
+	static {
+		EventSource.prototype.CONNECTING = EventSource.CONNECTING;
+		EventSource.prototype.OPEN = EventSource.OPEN;
+		EventSource.prototype.CLOSED = EventSource.CLOSED;
+	}
 }
-EventSource.prototype.CONNECTING = 0;
-EventSource.prototype.OPEN = 1;
-EventSource.prototype.CLOSED = 2;
 
 export default EventSource;

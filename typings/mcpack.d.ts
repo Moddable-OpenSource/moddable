@@ -18,6 +18,7 @@
  *
  */
 
+/// <reference path="./web/eventsource.d.ts" />
 /// <reference path="./web/fetch.d.ts" />
 /// <reference path="./web/headers.d.ts" />
 /// <reference path="./web/structuredClone.d.ts" />
@@ -42,6 +43,9 @@ declare global {
 	const setImmediate: (handler: Function) => Timer;
 	const setInterval: (handler: Function, timeout?: number) => Timer;
 	const setTimeout: (handler: Function, timeout?: number) => Timer;
+
+	const EventSource: typeof import("web/eventsource").default;
+	type EventSource = import("web/eventsource").default;
 
 	const localStorage: import("webstorage").default;
 
