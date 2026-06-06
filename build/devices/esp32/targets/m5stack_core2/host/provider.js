@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -30,6 +30,7 @@ import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
 import BMI270 from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
+import Touch from "M5StackCoreTouch";
 
 const ACCELERATION_SCALER = 1 / 9.80665;
 const IMU_ADDRESS = 0x68;
@@ -94,6 +95,24 @@ const device = {
 		displaySelect: 5
 	},
 	sensor: {
+		Touch: class {
+			constructor(options) {
+				const result = new Touch({
+					...options,
+					sensor: {
+						...device.I2C.internal,
+						io: device.io.SMBus,
+              		},
+					interrupt: {
+						io: Digital,
+						mode: Digital.Input,
+						pin: 39
+					}
+				});
+            	result.configure({threshold: 20});
+            	return result;
+			}
+		},
 		IMU: class {
 			constructor(options) {
 				const sensor = {
