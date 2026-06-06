@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Moddable Tech, Inc.
+ * Copyright (c) 2022-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -17,28 +17,60 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
- import Touch from "ft6206"
+
+import Touch from "embedded:sensor/Touch/FT6x06";
 
 class M5StackCoreTouch extends Touch {
 	#captured;		// undefined or pressed button instance
+	#capturedID;	// touch id captured as virtual button
 
-	read(points) {
-		super.read(points);
+	sample() {
+		const points = super.sample();
+		if (!points)
+			return points;
+
+		let capturedPointIndex = -1;
 
 		if (this.#captured) {
-			if (0 === points[0].state) {
+			for (let i = 0, length = points.length; i < length; i++) {
+				const point = points[i];
+
+				if (point.id === this.#capturedID) {
+					capturedPointIndex = i;
+					break;
+				}
+			}
+
+			if (-1 === capturedPointIndex) {
 				this.#captured.write(0);
 				this.#captured = undefined;
+				this.#capturedID = undefined;
 			}
 		}
-		else if ((1 === points[0].state) && (points[0].y >= 240)) {
-			this.#captured = button[String.fromCharCode('a'.charCodeAt() + Math.idiv(points[0].x, 107))];
-			this.#captured?.write(1);
+		else {
+			for (let i = 0, length = points.length; i < length; i++) {
+				const point = points[i];
+
+				if (point.y >= 240) {
+					const index = Math.idiv(point.x, 107);
+					this.#captured = globalThis.button[String.fromCharCode('a'.charCodeAt() + index)];
+
+					if (this.#captured) {
+						this.#capturedID = point.id;
+						this.#captured.write(1);
+						capturedPointIndex = i;
+					}
+
+					break;
+				}
+			}
 		}
 
-		if (this.#captured)
-			points[0].state = 0;
+		if (-1 !== capturedPointIndex) {
+			points.splice(capturedPointIndex, 1);
+		}
+
+		return points;
 	}
 }
 
