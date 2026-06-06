@@ -24,7 +24,8 @@
 			"frameSize": "QVGA"
 		},
 		"virtualButton": false,
-		"startupSound": "bflatmajor.maud"
+		"startupSound": "bflatmajor.maud",
+		"enablePowerButton": false
 	},
 	"modules": {
 		"setup/target": "./setup-target",

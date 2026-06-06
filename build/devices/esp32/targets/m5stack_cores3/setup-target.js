@@ -62,6 +62,8 @@ export default function (done) {
       b: new M5CoreS3Button(),
       c: new M5CoreS3Button(),
     };
+  } else {
+    globalThis.button = {}
   }
 
   // power
@@ -69,6 +71,15 @@ export default function (done) {
   globalThis.amp = new AW88298({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
   globalThis.mic = new ES7210({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
   globalThis.mic.init();
+
+  if (config.enablePowerButton) {
+    globalThis.button.power = new M5CoreS3Button();
+    // AXP2101 PEK reports latched press events, so expose them as a short 1 -> 0 pulse.
+    Timer.repeat(() => {
+      const state = globalThis.power.getPekState();
+      globalThis.button.power.write(state ? 1 : 0);
+    }, 100);
+  }
 
   // start-up sound
   if (config.startupSound) {
@@ -215,7 +226,7 @@ class Power {	// extends AXP2101 {
 	constructor(options) {
 		const axp2101 = this.#axp2101 = new AXP2101({ address:0x34, ...options });
 		axp2101.writeByte(0x90, 0xbf);
-    	axp2101.writeByte(0x92, 13);
+		axp2101.writeByte(0x92, 13);
 		axp2101.writeByte(0x93, 28);
 		axp2101.writeByte(0x94, 28);
 		axp2101.writeByte(0x95, 28);
@@ -241,7 +252,9 @@ class Power {	// extends AXP2101 {
     Timer.delay(20);
     this.expander.writeByteMask(0x03, 0b00100000, 0xff);
   }
-
+  getPekState() {
+    return this.#axp2101.getPekState();
+  }
 }
 
 /**
