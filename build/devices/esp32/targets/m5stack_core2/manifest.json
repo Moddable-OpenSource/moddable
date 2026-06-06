@@ -6,7 +6,6 @@
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
-		"$(MODDABLE)/modules/pins/smbus/manifest.json",
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
@@ -18,15 +17,9 @@
 	],
 	"config": {
 		"screen": "ili9341",
-		"startupSound": "bflatmajor.maud",
-		"startupVibration": 600,
 		"enablePowerButton": false
 	},
 	"defines": {
-		"i2c": {
-			"sda_pin": 32,
-			"scl_pin": 33
-		},
 		"spi": {
 			"mosi_pin": 23,
 			"miso_pin": 38,
@@ -84,20 +77,18 @@
 	"modules": {
 		"setup/target": "./setup-target",
 		"pins/audioout": "$(MODULES)/pins/i2s/*",
-		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
-			"$(MODULES)/drivers/mpu6886/*",
 			"./M5StackCoreTouch",
-			"./Core2Power"
+			"./Core2Power",
+			"./Core2IMU"
 		]
 	},
 	"preload": [
 		"pins/audioout",
 		"setup/target",
-		"mpu6886",
-		"pins/smbus",
 		"M5StackCoreTouch",
-		"Core2Power"
+		"Core2Power",
+		"Core2IMU"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
