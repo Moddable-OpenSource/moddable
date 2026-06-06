@@ -30,6 +30,7 @@ import SPI from "embedded:io/spi";
 import PulseWidth from "embedded:io/pulsewidth";
 import BMI270 from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
+import RTC from "embedded:RTC/BM8563";
 import Touch from "M5StackCoreTouch";
 import Core2Power from "Core2Power";
 
@@ -149,7 +150,18 @@ const device = {
 					}
 				});
 			}
-		}
+		},
+		RTC: class {
+			constructor(options) {
+				return new RTC({
+					...options,
+					clock: {
+						...device.I2C.internal,
+						io: SMBus,
+					},
+				});
+			}
+		},
 	}
 };
 

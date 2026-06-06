@@ -12,6 +12,7 @@
 		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/mpu6886/manifest.json",
+		"$(MODDABLE)/modules/drivers/peripherals/bm8563/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/axp192/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json"
 	],
