@@ -353,6 +353,12 @@ class AXP2101 {
     return ADC_LSB * this.#read12Bit(0x62) + OFFSET_DEG_C;
   }
 
+  getPekState() {
+    const state = this.readByte(0x49) & 0x0C;
+    if (state) this.writeByte(0x49, state);
+    return state;
+  }
+
   #read24Bit(address) {
     const buff = this.readBlock(address, 3);
     return (buff[0] << 16) + (buff[1] << 8) + buff[2];

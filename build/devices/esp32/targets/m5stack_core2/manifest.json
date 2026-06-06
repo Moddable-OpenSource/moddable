@@ -6,18 +6,20 @@
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
+		"$(MODDABLE)/modules/pins/smbus/manifest.json",
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/mpu6886/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp192/manifest.json",
-		"$(MODDABLE)/modules/drivers/axp2101/manifest.json"
+		"$(MODDABLE)/modules/drivers/peripherals/axp192/manifest.json",
+		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json"
 	],
 	"config": {
 		"screen": "ili9341",
 		"startupSound": "bflatmajor.maud",
-		"startupVibration": 600
+		"startupVibration": 600,
+		"enablePowerButton": false
 	},
 	"defines": {
 		"i2c": {
@@ -84,7 +86,8 @@
 		"pins/smbus": "$(MODULES)/pins/smbus/smbus",
 		"*": [
 			"$(MODULES)/drivers/mpu6886/*",
-			"./M5StackCoreTouch"
+			"./M5StackCoreTouch",
+			"./Core2Power"
 		]
 	},
 	"preload": [
@@ -92,7 +95,8 @@
 		"setup/target",
 		"mpu6886",
 		"pins/smbus",
-		"M5StackCoreTouch"
+		"M5StackCoreTouch",
+		"Core2Power"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
