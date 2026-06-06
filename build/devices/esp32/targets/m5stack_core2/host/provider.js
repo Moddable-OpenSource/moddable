@@ -31,6 +31,7 @@ import PulseWidth from "embedded:io/pulsewidth";
 import BMI270 from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
 import Touch from "M5StackCoreTouch";
+import Core2Power from "Core2Power";
 
 const ACCELERATION_SCALER = 1 / 9.80665;
 const IMU_ADDRESS = 0x68;
@@ -134,6 +135,19 @@ const device = {
 					});
 
 				throw new Error("IMU not found");
+			}
+		}
+	},
+	peripheral: {
+		Power: class {
+			constructor(options) {
+				return new Core2Power({
+					...options,
+					peripheral: {
+						...device.I2C.internal,
+						io: device.io.SMBus
+					}
+				});
 			}
 		}
 	}
