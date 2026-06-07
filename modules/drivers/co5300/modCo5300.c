@@ -119,7 +119,6 @@ static void co5300WaitForColors(co5300Display sd);
 static void co5300SendColorSync(co5300Display sd, const void *pixels, int byteLength);
 static uint8_t co5300EnsureRotateBuffer(co5300Display sd);
 static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength);
-static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int byteLength);
 
 #define co5300Command(sd, command, data, count) \
 	(esp_lcd_panel_io_tx_param(sd->io_handle, command, data, count))
@@ -428,26 +427,28 @@ void co5300Send(PocoPixel *pixels, int byteLength, void *refcon)
 		return;
 	}
 
-	if (2 == sd->rotation) {
-		co5300SendHardwareRotated180(sd, (uint16_t *)pixels, byteLength);
-		return;
-	}
-
 	{
-		uint8_t data[4];
-		data[0] = (sd->yMin >> 8) & 0xff;
-		data[1] = sd->yMin & 0xff;
-		data[2] = (sd->yMax >> 8) & 0xff;
-		data[3] = sd->yMax & 0xff;
-		co5300Command(sd, CO5300_CMD(0x2b), data, 4);
+		int lines = (byteLength >> 1) / sd->updateWidth;
+
+		if (2 == sd->rotation) {
+			int row = sd->updateHeight - sd->updateLinesRemaining;
+			co5300SetWindow(sd, sd->updateX, sd->updateY + row, sd->updateWidth, lines);
+		}
+		else {
+			uint8_t data[4];
+			data[0] = (sd->yMin >> 8) & 0xff;
+			data[1] = sd->yMin & 0xff;
+			data[2] = (sd->yMax >> 8) & 0xff;
+			data[3] = sd->yMax & 0xff;
+			co5300Command(sd, CO5300_CMD(0x2b), data, 4);
+			sd->yMin += lines;
+		}
 
 		int one = 1;
 		sd->colorSlotReserved = 0;
 		xQueueSend(sd->ops, &one, portMAX_DELAY);
 		esp_lcd_panel_io_tx_color(sd->io_handle, CO5300_COLOR_CMD, pixels, byteLength);
 
-		int lines = (byteLength >> 1) / sd->updateWidth;
-		sd->yMin += lines;
 		sd->updateLinesRemaining -= lines;
 	}
 
@@ -606,18 +607,6 @@ static void co5300SendRotated(co5300Display sd, uint16_t *pixels, int byteLength
 		lines -= rows;
 		sd->updateLinesRemaining -= rows;
 	}
-}
-
-static void co5300SendHardwareRotated180(co5300Display sd, uint16_t *pixels, int byteLength)
-{
-	int lines = (byteLength >> 1) / sd->updateWidth;
-	int row = sd->updateHeight - sd->updateLinesRemaining;
-	uint16_t x = sd->updateX;
-	uint16_t y = sd->updateY + row;
-
-	co5300SetWindow(sd, x, y, sd->updateWidth, lines);
-	co5300SendColorSync(sd, pixels, byteLength);
-	sd->updateLinesRemaining -= lines;
 }
 
 void co5300AdaptInvalid(void *refcon, CommodettoRectangle r)
