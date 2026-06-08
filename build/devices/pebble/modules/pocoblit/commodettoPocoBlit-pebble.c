@@ -95,7 +95,7 @@ void PocoRectangleFill(Poco poco, PocoColor color, uint8_t blend, PocoCoordinate
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
 	ctx->draw_state.fill_color.argb = color;
-	GRect r = GRect(x + poco->xOrigin, y + poco->yOrigin, w, h);
+	GRect r = GRect(x, y, w, h);
 	graphics_fill_rect(ctx, &r);
 }
 
@@ -104,7 +104,7 @@ void PocoPixelDraw(Poco poco, PocoColor color, PocoCoordinate x, PocoCoordinate 
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
 	ctx->draw_state.fill_color.argb = color;
-	graphics_draw_pixel(ctx, GPoint(x + poco->xOrigin, y + poco->yOrigin));
+	graphics_draw_pixel(ctx, GPoint(x, y));
 }
 
 static GColor gBitmapGray4Palette[4] = {
@@ -148,7 +148,6 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 
 	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
 
-	x += poco->xOrigin, y += poco->yOrigin;
 	graphics_draw_bitmap_in_rect_processed(ctx, gb, &GRect(x - sx, y - sy, sw + sx, sh + sy), C_NULL);
 
 	ctx->draw_state.clip_box = saveClip;
@@ -195,7 +194,7 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 	else	// kPocoMonochromeForeAndBackground
 		ctx->draw_state.compositing_mode = (fgColor == GColorBlack.argb) ? GCompOpAssign : GCompOpAssignInverted;
 
-	graphics_draw_bitmap_in_rect_processed(ctx, &src, &GRect(x + poco->xOrigin, y + poco->yOrigin, sw, sh), C_NULL);
+	graphics_draw_bitmap_in_rect_processed(ctx, &src, &GRect(x, y, sw, sh), C_NULL);
 
 	ctx->draw_state.compositing_mode = saveMode;
 #if PBL_COLOR
@@ -236,7 +235,6 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		ctx->draw_state.compositing_mode = GCompOpTint;
 #endif
 
-		x += poco->xOrigin, y += poco->yOrigin;
 		graphics_draw_bitmap_in_rect_processed(ctx, &src, &dstRect, C_NULL);
 
 		ctx->draw_state.clip_box = saveClip;
@@ -249,6 +247,8 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 	
 	PBL_CROAK("unexpected PocoGrayBitmapDraw");
 }
+// bits is kCommodettoBitmapARGB2222 (GBitmapFormat8Bit)
+// mask is kCommodettoBitmapGray4 (GBitmapFormat2BitPalette with gBitmapGray4Palette)
 
 void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordinate x, PocoCoordinate y, PocoDimension sx, PocoDimension sy, PocoDimension sw, PocoDimension sh,
 			PocoBitmap mask, PocoDimension mask_sx, PocoDimension mask_sy)
@@ -261,7 +261,7 @@ void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordin
 
 	GCompOp saveMode = ctx->draw_state.compositing_mode;
 	GRect saveClip = ctx->draw_state.clip_box;
-	GRect rect = GRect(x + poco->xOrigin, y + poco->yOrigin, sw, sh);
+	GRect rect = GRect(x, y, sw, sh);
 	
 	gb.info.format = GBitmapFormat1Bit;
 	gb.info.version = GBITMAP_VERSION_1;
@@ -326,7 +326,6 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
 
 	// pattern support in graphics_draw_bitmap_in_rect_processed renders incorrectly, so loop ourselves
-	x += poco->xOrigin, y += poco->yOrigin;
 	for (int py = y ; py < (y + h); py += sh) {
 		for (int px = x ; px < (x + w); px += sw)
 			graphics_draw_bitmap_in_rect_processed(ctx, gb, &GRect(px, py, sw, sh), C_NULL);

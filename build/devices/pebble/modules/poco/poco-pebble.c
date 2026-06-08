@@ -35,11 +35,7 @@
 #include "applib/graphics/graphics_line.h"
 #include "util/trig.h"
 
-/*
-	ORIGIN
-	CLIPPING
-*/
-
+extern GContext *getPocoPebbleGContext(Poco poco);
 extern GContext *getPocoGContext(xsMachine *the);
 
 void xs_pocopebble_Font_destructor(void *data)
@@ -113,18 +109,19 @@ void xs_pocopebble_getTextWidth(xsMachine *the)
 
 void xs_pocopebbble_drawText(xsMachine *the)
 {
-	const void *destructor =xsGetHostDestructor(xsArg(1));
+	const void *destructor = xsGetHostDestructor(xsArg(1));
 	if ((xs_pocopebble_Font_destructor != destructor) && (xs_pocopebble_Font_destructor_custom != destructor)) {
 		xs_poco_drawText(the);
 		return;
 	}
 
 	GFont font = xsmcGetHostData(xsArg(1));
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 
-	GRect box = GRect(xsmcToInteger(
-			xsArg(3)),
-			xsmcToInteger(xsArg(4)) - fonts_get_font_cap_offset(font) + 1,	// +1 for leading applied by modFindPebbleFont
+	GRect box = GRect(
+			xsmcToInteger(xsArg(3)) + poco->xOrigin,
+			xsmcToInteger(xsArg(4)) + poco->yOrigin - fonts_get_font_cap_offset(font) + 1,	// +1 for leading applied by modFindPebbleFont
 			10000, 127);
 
 	GColor saveTextColor = ctx->draw_state.text_color; 
@@ -136,12 +133,13 @@ void xs_pocopebbble_drawText(xsMachine *the)
 
 void xs_pocopebbble_drawLine(xsMachine *the)
 {
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 	GPoint from, to;
-	from.x = xsmcToInteger(xsArg(0));
-	from.y = xsmcToInteger(xsArg(1));
-	to.x = xsmcToInteger(xsArg(2));
-	to.y = xsmcToInteger(xsArg(3));
+	from.x = xsmcToInteger(xsArg(0)) + poco->xOrigin;
+	from.y = xsmcToInteger(xsArg(1)) + poco->yOrigin;
+	to.x = xsmcToInteger(xsArg(2)) + poco->xOrigin;
+	to.y = xsmcToInteger(xsArg(3)) + poco->yOrigin;
 	int color = xsmcToInteger(xsArg(4));
 	int width = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 1;
 
@@ -158,10 +156,11 @@ void xs_pocopebbble_drawLine(xsMachine *the)
 
 void xs_pocopebbble_drawRoundRect(xsMachine *the)
 {
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 	GRect r = {
-		.origin.x = xsmcToInteger(xsArg(0)),
-		.origin.y = xsmcToInteger(xsArg(1)),
+		.origin.x = xsmcToInteger(xsArg(0) + poco->xOrigin),
+		.origin.y = xsmcToInteger(xsArg(1) + poco->yOrigin),
 		.size.w = xsmcToInteger(xsArg(2)),
 		.size.h = xsmcToInteger(xsArg(3)),
 	};
@@ -177,10 +176,11 @@ void xs_pocopebbble_drawRoundRect(xsMachine *the)
 
 void xs_pocopebbble_frameRoundRect(xsMachine *the)
 {
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 	GRect r = {
-		.origin.x = xsmcToInteger(xsArg(0)),
-		.origin.y = xsmcToInteger(xsArg(1)),
+		.origin.x = xsmcToInteger(xsArg(0) + poco->xOrigin),
+		.origin.y = xsmcToInteger(xsArg(1) + poco->yOrigin),
 		.size.w = xsmcToInteger(xsArg(2)),
 		.size.h = xsmcToInteger(xsArg(3)),
 	};
@@ -195,11 +195,12 @@ void xs_pocopebbble_frameRoundRect(xsMachine *the)
 
 void xs_pocopebbble_drawCircle(xsMachine *the)
 {
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 	int color = xsmcToInteger(xsArg(0));
 	GPoint center = {
-		.x = xsmcToInteger(xsArg(1)),
-		.y = xsmcToInteger(xsArg(2)),
+		.x = xsmcToInteger(xsArg(1) + poco->xOrigin),
+		.y = xsmcToInteger(xsArg(2) + poco->yOrigin),
 	};
 	int radius = xsmcToInteger(xsArg(3));
 	int from = (xsmcArgc > 4) ? DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(4))) : 0;
@@ -220,10 +221,11 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 
 void xs_pocopebbble_drawDCI(xsMachine *the)
 {
-	GContext *ctx = getPocoGContext(the);
+	Poco poco = xsmcGetHostDataPoco(xsThis);
+	GContext *ctx = getPocoPebbleGContext(poco);
 	GPoint offset = {
-		.x = xsmcToInteger(xsArg(1)),
-		.y = xsmcToInteger(xsArg(2)),
+		.x = xsmcToInteger(xsArg(1) + poco->xOrigin),
+		.y = xsmcToInteger(xsArg(2) + poco->yOrigin),
 	};
 	xsDestructor d = xsGetHostDestructor(xsArg(0));
 	if (d == xs_pebbledci_destructor) {
