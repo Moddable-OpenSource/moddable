@@ -568,8 +568,10 @@ void i2cDeliver(void *theIn, void *refcon, uint8_t *message, uint16_t messageLen
 	} 
 	xSemaphoreGive(gI2CTaskMutex);
 
-	if (kOperationClose == operation)
+	if (kOperationClose == operation) {
+		xsForget(transaction->i2c->obj);
 		_xs_i2casync_destructor(transaction->i2c);	// all resources must be released before invoking callback ... so callback could call new again
+	}
 
 	if (transaction->hasCallback) {
 		xsBeginHost(the);

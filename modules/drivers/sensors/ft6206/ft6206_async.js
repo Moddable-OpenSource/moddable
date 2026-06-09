@@ -148,8 +148,7 @@ class FT6206  {
 	close(callback) {
 		this.#io?.reset?.close();
 		this.#io?.interrupt?.close();
-		if (callback && this.#io)
-			this.#io.close(error => callback(error));
+		this.#io?.close(error => callback?.(error));
 		this.#io = undefined;
 		Timer.clear(this.#timer);
 		this.#timer = undefined;
