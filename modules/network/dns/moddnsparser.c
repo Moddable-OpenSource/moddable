@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -33,6 +33,8 @@ static void *getPacket(xsMachine *the, uint8_t **end)
 	xsmcGetBufferReadable(xsResult, (void **)&result, &length);
 	if (end)
 		*end = length + (uint8_t *)result;
+	if (length < 12)
+		xsUnknownError("invalid packet header");
 	return result;
 }
 
@@ -50,7 +52,7 @@ static void *getQuestionByIndex(xsMachine *the, uint8_t index)
 
 	position += 12;
 	while (index--) {
-		while (true) {
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
@@ -74,6 +76,8 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	uint8_t *position = getPacket(the, &packetEnd);
 	uint16_t answers = ((position[6] << 8) | position[7]) + ((position[8] << 8) | position[9]) + ((position[10] << 8) | position[11]);		// including authority and additional records
 	position = getQuestionByIndex(the, 0xff);
+	if (!position)
+		return NULL;
 
 	if ((0xff != index) && (index >= answers))
 		return NULL;
@@ -84,7 +88,7 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 	while (index--) {
 		uint16_t rdlength;
 
-		while (true) {
+		while (position < packetEnd) {
 			uint8_t tag = *position++;
 			if (0 == tag)
 				break;
@@ -92,15 +96,19 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 				position += 1;
 				break;
 			}
+			if ((packetEnd - position) < tag)
+				return NULL;
 			position += tag;
 		}
+		if ((packetEnd - position) < 10)
+			return NULL;
 		position += 10;
-		if (position >= packetEnd)
+		if (position > packetEnd)
 			return NULL;
 
 		rdlength = (position[-2] << 8) | position[-1];
 		position += rdlength;
-		if (position >= packetEnd)
+		if (position > packetEnd)
 			return NULL;
 	}
 
@@ -109,38 +117,46 @@ static void *getAnswerByIndex(xsMachine *the, uint8_t index)
 
 static int parseQname(xsMachine *the, int offset)
 {
-	uint8_t *position;
+	uint8_t *packet, *position, *packetEnd;
 	int qnameEndPosition = 0;
 
 	xsVar(1) = xsNewArray(0);
-	position = offset + (uint8_t *)getPacket(the, NULL);;
-	while (true) {
+	packet = (uint8_t *)getPacket(the, &packetEnd);
+	position = packet + offset;
+	while (position < packetEnd) {
 		char tmp[64];
 		uint8_t tag = *position++;
 		offset += 1;
 		if (0 == tag) {
 			if (0 == qnameEndPosition)
 				qnameEndPosition = offset;
-			break;
+			return qnameEndPosition;
 		}
 		if (0xC0 == (tag & 0xC0)) {
+			if (position >= packetEnd)
+				break;
 			if (0 == qnameEndPosition)
 				qnameEndPosition = offset + 1;
-			offset = ((tag << 8) | *position) & 0x3FFF;		//@@ range check
-			position = offset + (uint8_t *)getPacket(the, NULL);
+			offset = ((tag << 8) | *position) & 0x3FFF;
+			if ((uint32_t)offset > (uint32_t)(packetEnd - packet))
+				break;
+			position = packet + offset;
 			continue;
 		}
 
-		if (tag > 63)
-			xsUnknownError("bad name");
+		if ((tag > 63) || ((packetEnd - position) < tag))
+			break;
 		c_memcpy(tmp, position, tag);
 		xsmcSetStringBuffer(xsVar(2), tmp, tag);
 		xsCall1(xsVar(1), xsID_push, xsVar(2));
 		offset += tag;
-		position = offset + (uint8_t *)getPacket(the, NULL);
+		packet = (uint8_t *)getPacket(the, &packetEnd);
+		position = packet + offset;
 	}
 
-	return qnameEndPosition;
+	xsUnknownError("bad name");
+
+	return -1;
 }
 
 static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t answer)
@@ -149,10 +165,9 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 	uint16_t qtype, qclass;
 	char tmp[256];
 
-	if (NULL == position) {
-		xsmcSetNull(xsResult);
+	xsmcSetNull(xsResult);
+	if (NULL == position)
 		return;
-	}
 
 	offset = position - (uint8_t *)getPacket(the, NULL);
 
@@ -163,7 +178,10 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 	offset = parseQname(the, offset);
 	xsmcSet(xsVar(0), xsID_qname, xsVar(1));
 
-	position = offset + (uint8_t *)getPacket(the, NULL);
+	uint8_t *packetEnd;
+	position = offset + (uint8_t *)getPacket(the, &packetEnd);
+	if ((position + 4) > packetEnd)
+		return;
 
 	qtype = (position[0] << 8) | position[1];
 	qclass = (position[2] << 8) | position[3];
@@ -174,6 +192,8 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 		uint32_t ttl;
 		uint16_t rdlength;
 
+		if ((position + 6) > packetEnd)
+			return;
 		ttl = (position[0] << 24) | (position[1] << 16) | (position[2] << 8) | position[3];
 		rdlength = (position[4] << 8) | position[5];
 
@@ -184,6 +204,8 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 			if (0x0001 == qtype) {	// A
 				uint8_t ip[4];
 				char *out;
+				if ((position + 4) > packetEnd)
+					return;
 				c_memcpy(ip, position, 4);
 				xsVar(1) = xsStringBuffer(NULL, 4 * 5);
 				out = xsmcToString(xsVar(1));
@@ -223,6 +245,9 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 			else
 #endif
 			if (0x0021 == qtype) {	// SRV
+				if ((position + 6) > packetEnd)
+					return;
+
 				uint16_t priority = (position[0] << 8) | position[1];
 				uint16_t weight = (position[2] << 8) | position[3];
 				uint16_t port = (position[4] << 8) | position[5];
@@ -244,17 +269,23 @@ static void parseQuestionOrAnswer(xsMachine *the, uint8_t *position, uint8_t ans
 			if (0x0010 == qtype) {	// TXT
 				if (rdlength > 1) {
 					xsVar(1) = xsNewArray(0);
-					position = offset + (uint8_t *)getPacket(the, NULL);
+					position = offset + (uint8_t *)getPacket(the, &packetEnd);
 					while (rdlength > 1) {
 						uint8_t tag;
+						if (position >= packetEnd)
+							return;
 
 						tag = *position++;
-						offset += tag + 1;		//@@ bounds check range
+						if (rdlength < (uint16_t)(tag + 1))
+							return;
+						offset += tag + 1;
 						rdlength -= tag + 1;
+						if ((position + tag) > packetEnd)
+							return;
 						c_memcpy(tmp, position, tag);
 						xsmcSetStringBuffer(xsVar(2), tmp, tag);
 						xsCall1(xsVar(1), xsID_push, xsVar(2));
-						position = offset + (uint8_t *)getPacket(the, NULL);
+						position = offset + (uint8_t *)getPacket(the, &packetEnd);
 					}
 					xsmcSet(xsVar(0), xsID_rdata, xsVar(1));
 				}
