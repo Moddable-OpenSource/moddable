@@ -23,6 +23,9 @@ assert.sameValue(1, Base64.decode("Zg==").byteLength, "remove extra bytes from p
 assert.sameValue(1, Base64.decode("Zg==\n\n\n\n\n\n\n\n\n\n").byteLength, "remove extra bytes from trailing garbage");
 assert.sameValue(1, Base64.decode("\n\n\n\n\n\n\n\n\n\nZg==").byteLength, "remove extra bytes from leading garbage");
 
+assert.sameValue(3, Base64.decode("AAAA=").byteLength, "stray padding after a full quantum must not overrun output");
+assert.sameValue(6, Base64.decode("AAAAAAAA==").byteLength, "stray padding after full quanta must not overrun output");
+
 let b = Base64.decode(12.21);
 assert.sameValue(b.byteLength, 3);
 b = new Uint8Array(b);

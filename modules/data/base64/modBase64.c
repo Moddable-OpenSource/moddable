@@ -109,10 +109,6 @@ void xs_base64_decode(xsMachine *the)
 	srcSize = c_strlen((char *)src);
 
 	dstSize = (srcSize / 4) * 3;
-	if (c_read8(src + srcSize - 1) == '=')
-		dstSize--;
-	if (c_read8(src + srcSize - 2) == '=')
-		dstSize--;
 	srcIndex = 0;
 
 	xsmcSetArrayBufferResizable(xsResult, NULL, dstSize, dstSize);
