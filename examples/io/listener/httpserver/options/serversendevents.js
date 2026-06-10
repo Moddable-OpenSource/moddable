@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -18,7 +18,7 @@
  *
  */
  
-export default {
+export default Object.freeze({
 	onRequest(request) {
 		this.valid =	("GET" === request.method) &&
 						("text/event-stream" === request.headers.get("accept")?.toLowerCase());
@@ -44,7 +44,8 @@ export default {
 			this.route.onConnection?.call(this);
 		}
 	}
-}
+}, true);
+
 function sseWrite(msg) {
 	let parts;
 	if (msg) {

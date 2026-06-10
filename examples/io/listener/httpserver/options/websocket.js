@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
  
 import {Digest} from "crypt";
 
-export default {
+export default Object.freeze({
 	onRequest(request) {
 		const connection = request.headers.get("connection");
 		this.key = request.headers.get("sec-websocket-key");
@@ -60,4 +60,4 @@ export default {
 	onDone() {
 		debugger;
 	},
-}
+}, true);

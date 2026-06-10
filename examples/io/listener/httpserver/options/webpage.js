@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,7 +20,7 @@
  
 import TextEncoder from "text/encoder";
 
-export default {
+export default Object.freeze({
 	onResponse(response) {
 		const route = this.route, data = route.data;
 		route.state ??= new WeakMap;
@@ -66,4 +66,4 @@ export default {
 			state.byteLength -= count;
 		}
 	}
-}
+}, true);
