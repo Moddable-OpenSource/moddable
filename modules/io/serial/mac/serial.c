@@ -196,28 +196,43 @@ void xs_serial_read(xsMachine *the)
 {
 	xsSerial s = xsmcGetHostData(xsThis);
 	int available = 0;
-	int count;
 
 	ioctl(s->fd, FIONREAD, &available);
 	if (0 == available)
 		return;
-
-	if (xsmcArgc) {
-		count = xsmcToInteger(xsArg(0));
-		if (count > available)
-			count = available;
-	}
-	else
-		count = available;
-
-	if (1 == s->bufferFormat) {
-		xsmcSetArrayBuffer(xsResult, NULL, count);
-		read(s->fd, xsmcToArrayBuffer(xsResult), count);
-	}
-	else if (2 == s->bufferFormat) {
+		
+	if (2 == s->bufferFormat) {
 		uint8_t byte;
 		read(s->fd, &byte, 1);
 		xsResult = xsInteger(byte);
+	}
+	else {
+		uint8_t *buffer;
+		int requested;
+		xsUnsignedValue byteLength;
+		uint8_t allocate = 1;
+
+		if (0 == xsmcArgc)
+			requested = available;
+		else if (xsReferenceType == xsmcTypeOf(xsArg(0))) {
+			xsResult = xsArg(0);
+			xsmcGetBufferWritable(xsResult, (void **)&buffer, &byteLength);
+			requested = (int)byteLength;
+			if (requested > available)
+				requested = available;
+			allocate = 0;
+			xsmcSetInteger(xsResult, requested);
+		}
+		else {
+			requested = xsmcToInteger(xsArg(0));
+			if (requested > available)
+				requested = available;
+		}
+		if (requested <= 0) 
+			xsUnknownError("invalid");
+		if (allocate)
+			buffer = xsmcSetArrayBuffer(xsResult, NULL, requested);
+		read(s->fd, buffer, requested);
 	}
 }
 
