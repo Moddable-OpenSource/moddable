@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020  Moddable Tech, Inc.
+ * Copyright (c) 2020-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -26,13 +26,13 @@ typedef struct CommodettoFontEngineRecord *CommodettoFontEngine;
 
 #ifndef __commodettofontengine_internal__
 struct CFEGlyphRecord {
-	uint8_t					advance;
-	int8_t					dx;
-	int8_t					dy;
+	uint16_t				advance;
+	int16_t				dx;
+	int16_t				dy;
 
-	uint8_t					format;
 	uint16_t				w;
 	uint16_t				h;
+	uint8_t				format;
 	void					*bits;
 
 #if COMMODETTO_BITMAP_ID
