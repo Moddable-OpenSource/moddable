@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Chris Midgley
+* Copyright (c) 2022-2026 Chris Midgley
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -21,7 +21,7 @@
 declare module "modules" {
     export default class Modules {
         static has(name: string): boolean;
-        static importNow(name: string): unknown;
+        static importNow(name: string, namespace?: boolean): unknown;
         static get host(): string[];
         static get archive(): string[];
     }
