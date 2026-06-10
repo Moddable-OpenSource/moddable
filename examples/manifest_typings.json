@@ -4,8 +4,7 @@
 	},
 	"modules": {
 		"*": [
-			"$(TYPINGS)/*", "$(TYPINGS)/ble/*",
-			"$(TYPINGS)/web/*"
+			"$(TYPINGS)/*", "$(TYPINGS)/ble/*"
 		],
 		"commodetto/*": [
 			"$(TYPINGS)/commodetto/*"
@@ -67,6 +66,30 @@
 		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
+		],
+		"headers": [
+			"$(TYPINGS)/web/headers"
+		],
+		"fetch": [
+			"$(TYPINGS)/web/fetch"
+		],
+		"structuredClone": [
+			"$(TYPINGS)/web/structuredClone"
+		],
+		"url": [
+			"$(TYPINGS)/web/url"
+		],
+		"webstorage": [
+			"$(TYPINGS)/web/webstorage"
+		],
+		"web/eventsource": [
+			"$(TYPINGS)/web/eventsource"
+		],
+		"web/websocket": [
+			"$(TYPINGS)/web/websocket"
+		],
+		"worker": [
+			"$(TYPINGS)/web/worker"
 		]
 	}, 
 	"platforms": {
