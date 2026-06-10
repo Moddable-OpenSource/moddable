@@ -235,7 +235,8 @@ class HTTPClient {
 							current.sending = parseInt(item.value[1]);
 						else if (("transfer-encoding" === item.value[0]) && ("chunked" === item.value[1].toLowerCase()))
 							current.sending = true;		// unknown length
-						this.#remain = ArrayBuffer.fromString(`${item.value[0]}:${item.value[1]}\n`);
+						this.#remain = ArrayBuffer.fromString(`${current.sentHeader ? "\n" : ""}${item.value[0]}:${item.value[1]}`);
+						current.sentHeader = true;
 						this.#remain = new Uint8Array(this.#remain);
 						this.#remain.part = 3;
 						this.#remain.position = 0;
