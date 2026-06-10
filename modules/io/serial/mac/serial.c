@@ -59,6 +59,7 @@ typedef struct {
 	uint8_t				hasOnReadable;
 	uint8_t				hasOnWritable;
 	uint8_t				hasOnError;
+	uint8_t				initialWritablePending;
 
 	uint8_t				writeBuffer[kWriteBufferSize];
 	uint8_t				*toWrite;
@@ -170,6 +171,7 @@ void xs_serial_constructor(xsMachine *the)
 		s->onWritable = onWritable;
 		xsRemember(s->onWritable);
 
+		s->initialWritablePending = 1;
 		s->writable = modTimerAdd(0, 0, fxSerialWritable, &s, sizeof(s));
 	}
 }
@@ -331,6 +333,9 @@ void fxSerialReadable(CFSocketRef socketRef, CFSocketCallBackType cbType, CFData
 {
 	xsSerial s = context;
 
+	if (s->initialWritablePending)
+		fxSerialWritable(s->writable, s, 0);
+
 	if (cbType & kCFSocketReadCallBack) {
 		int count, err;
 
@@ -363,6 +368,7 @@ void fxSerialWritable(modTimer timer, void *refcon, int refconSize)
 	xsSerial s = *(xsSerial *)refcon;
 
 	s->writable = NULL;
+	s->initialWritablePending = 0;
 
 	xsBeginHost(s->the);
 		xsCallFunction1(s->onWritable, s->obj, xsInteger(kWriteBufferSize));		// 1024 is the default on macOS?
