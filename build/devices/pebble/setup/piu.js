@@ -59,7 +59,7 @@ class Screen extends config.Screen {
 		}
 
 		if (this.#touch) {
-			this.#touch.context = context;
+			this.#touch.context = it;
 			return;
 		}
 
