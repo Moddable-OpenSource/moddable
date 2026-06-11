@@ -808,15 +808,15 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				this.line("");
 			}
 			else {
-				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", source.replaceAll("#", tool.escapedHash), typeCheck ? " $(MODULES_DIR)" + tool.slash + ".typeCheck" : "");
+				this.line("$(MODULES_DIR)", tool.slash, target.replaceAll("#", tool.escapedHash), ": ", this.escapePathSpaces(source.replaceAll("#", tool.escapedHash)), typeCheck ? " $(MODULES_DIR)" + tool.slash + ".typeCheck" : "");
 				if (lintCheck) {
 					const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
 					const fileName = source.split(tool.slash).at(-1);
 					this.echo(tool, `eslint ${fileName}`);
-					this.line(`\tcd ${sourceDir} && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
+					this.line(`\tcd "${sourceDir}" && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
 				}
 				this.echo(tool, "xsc ", target);
-				this.line("\txsc ", source, options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
+				this.line("\txsc ", this.escapePathSpaces(source), options, " -e -o $(@D) -r ", targetParts.name.replaceAll("#", "\\#"));
 			}
 		}
 		this.line("");
@@ -830,7 +830,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 			else {
 				this.line();
-				this.line("$(MODULES_DIR)", tool.slash, ".typeCheck: " + sources.map(item => item.source).join(" "));
+				this.line("$(MODULES_DIR)", tool.slash, ".typeCheck: " + sources.map(item => this.escapePathSpaces(item.source)).join(" "));
 				this.echo(tool, "tsc ", "tsconfig-js.json", " (typeCheck JavaScript)");
 				if (tool.windows) {
 					this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}tsconfig-js.json || ( echo "# typescript compile failure" && exit 1 ) `);
@@ -919,7 +919,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 						const sourceDir = source.slice(0, source.lastIndexOf(tool.slash));
 						const fileName = source.split(tool.slash).at(-1);
 						this.echo(tool, `eslint ${fileName}`);
-						this.line(`\tcd ${sourceDir} && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
+						this.line(`\tcd "${sourceDir}" && eslint ${fileName} --config $(MODDABLE)/eslint.config.mjs`);
 					}
 					this.echo(tool, "xsc ", target);
 					var options = "";
@@ -935,7 +935,7 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 					var tsconfigRelative = (targetDir ? targetDir + tool.slash : "") + targetName + "-tsconfig.json";
 
 					this.line();
-					this.line("$(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash), " : ", source.replaceAll("#", tool.escapedHash), " $(MODULES_DIR)", tool.slash, "tsconfig-base.json ", generatedTS.join(" "));
+					this.line("$(TMP_DIR)", temporary.replaceAll("#", tool.escapedHash), " : ", this.escapePathSpaces(source.replaceAll("#", tool.escapedHash)), " $(MODULES_DIR)", tool.slash, "tsconfig-base.json ", generatedTS.join(" "));
 					this.echo(tool, "tsc ", sourceParts.name, ".ts");
 					if (tool.windows)
 						this.line(`\t${tool.typescript.compiler} -p $(MODULES_DIR)${tool.slash}${tsconfigRelative} || ( echo "# typescript compile failure" && exit 1 ) `);
