@@ -103,7 +103,7 @@ void fxDeleteMachinePlatform(txMachine* the)
 
 void fxAbort(txMachine* the, int status)
 {
-	char *msg = (char*)fxAbortString(status);
+	char *msg = (char *)fxAbortString(status);
 	char *reason = "";
 #ifdef mxDebug
 	if (XS_DEBUGGER_EXIT == status)
@@ -114,18 +114,18 @@ void fxAbort(txMachine* the, int status)
 		xsStringValue stackStr = xsToString(errorStack);
 		APP_LOG(APP_LOG_LEVEL_ERROR, "%s", stackStr);
 
-		mxPush(mxException);
-		mxGetID(mxID(_message));
-		if ((the->stack->kind == XS_STRING_KIND) || (the->stack->kind == XS_STRING_X_KIND))
-			reason = the->stack->value.string;
+		reason = fxToString(the, &mxException);
+		char *r = c_malloc(c_strlen(reason) + 1);
+		if (r) {
+			c_strcpy(r, reason);
+			setModdableAppState(abortReason, r);
+		}
 	}
 
 	APP_LOG(APP_LOG_LEVEL_ERROR, "fxAbort %s: %s", msg, reason);
 
-	extern void moddable_cleanup(void);
-	moddable_cleanup();
-
-	c_exit(status);
+	the->exitStatus = status;
+	fxExitToHost(the);
 }
 
 #ifdef mxDebug
