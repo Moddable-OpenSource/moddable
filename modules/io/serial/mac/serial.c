@@ -334,7 +334,7 @@ void fxSerialReadable(CFSocketRef socketRef, CFSocketCallBackType cbType, CFData
 	xsSerial s = context;
 
 	if (s->initialWritablePending)
-		fxSerialWritable(s->writable, s, 0);
+		fxSerialWritable(s->writable, &s, sizeof(s));
 
 	if (cbType & kCFSocketReadCallBack) {
 		int count, err;
