@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"gdey037t03": "$(MODULES)/drivers/gdey037t03/gdey037t03",
+		"commodetto/Dither": "$(COMMODETTO)/commodettoDither",
+		"commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+	},
+	"preload": [
+		"gdey037t03",
+		"commodetto/Dither",
+		"commodetto/Bitmap"
+	]
+}
