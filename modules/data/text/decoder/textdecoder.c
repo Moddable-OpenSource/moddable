@@ -187,10 +187,17 @@ void xs_textdecoder_decode(xsMachine *the)
 			else if (first > 0xF4)	// no valid next byte
 				clen = 0;
 
+			const uint8_t *s = &utf8[1];
 			while (clen-- > 0) {
-				uint8_t c = c_read8(src);
-				if ((lower <= c) && (c <= upper))
-					src++;
+				uint8_t c = *s++;
+				if ((lower <= c) && (c <= upper)) {
+					if (bufferLength) {
+						bufferLength--;
+						buffer++;
+					}
+					else
+						src++;
+				}
 				else
 					break;
 			}
@@ -321,10 +328,17 @@ void xs_textdecoder_decode(xsMachine *the)
 			else if (first > 0xF4)	// no valid next byte
 				clen = 0;
 
+			const uint8_t *s = &utf8[1];
 			while (clen-- > 0) {
-				uint8_t c = c_read8(src);
-				if ((lower <= c) && (c <= upper))
-					src++;
+				uint8_t c = *s++;
+				if ((lower <= c) && (c <= upper)) {
+					if (bufferLength) {
+						bufferLength--;
+						buffer++;
+					}
+					else
+						src++;
+				}
 				else
 					break;
 			}

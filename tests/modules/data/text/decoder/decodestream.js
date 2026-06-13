@@ -46,3 +46,12 @@ assert.sameValue("\uFFFD", decoder.decode());
 
 assert.sameValue("", decoder.decode(Uint8Array.of(0xF0, 0x9F, 0x92), {stream: true}));
 assert.sameValue("\uFFFD", decoder.decode());
+
+// illegal sequence spanning a buffered partial lead and a short final chunk:
+// the recovery scan must consume from the buffered bytes before src and stop at the
+// end of the input. The chunk is a view whose backing store holds continuation bytes
+// (0x90) past its length, so the bytes seen are F0 80 90 90: the 0x80 is below the
+// 0x90 lower bound for an F0 lead, so it and the two trailing 0x90 each decode to U+FFFD.
+assert.sameValue("", decoder.decode(Uint8Array.of(0xF0, 0x80), {stream: true}));
+assert.sameValue("\uFFFD\uFFFD\uFFFD\uFFFD", decoder.decode(new Uint8Array(8).fill(0x90).subarray(0, 2), {stream: true}));
+assert.sameValue("", decoder.decode());
