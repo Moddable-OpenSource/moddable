@@ -273,7 +273,7 @@ void fxCheckCStack(txMachine* the)
     char x;
     char *stack = &x;
 	if (stack <= the->stackLimit) {
-		fxAbort(the, XS_JAVASCRIPT_STACK_OVERFLOW_EXIT);
+		fxAbort(the, XS_NATIVE_STACK_OVERFLOW_EXIT);
 	}
 }
 
