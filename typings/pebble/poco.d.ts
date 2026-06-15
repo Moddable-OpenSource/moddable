@@ -47,10 +47,19 @@ declare module "commodetto/Poco" {
     constructor(id: number | string);
   }
 
+  class PebbleDrawCommand {
+    readonly type: number;
+    strokeWidth: number;
+    stroke: number;
+    fill: number;
+    hidden: boolean;
+  }
+
   class PebbleDrawCommandList {
     scale(x: number, y: number): this;
     scale(scale: number): this;
     rotate(angle: number, cx: number, cy: number): this;
+    process(callback: (this: PebbleDrawCommandList, command: PebbleDrawCommand) => void): this;
   }
 
   class PebbleDrawCommandImage extends PebbleDrawCommandList {

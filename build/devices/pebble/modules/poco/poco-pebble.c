@@ -448,3 +448,87 @@ void xs_pebbledcl_rotate(xsMachine *the)
 
 	xsResult = xsThis;
 }
+
+static bool doCommand(GDrawCommand *command, uint32_t index, void *context)
+{
+	xsMachine *the = context;
+
+	xsmcSetHostData(xsArg(1), command);
+	xsCallFunction1(xsArg(0), xsThis, xsArg(1));
+
+	return true;
+}
+
+void xs_pebbledcl_process(xsMachine *the) 
+{
+	GDrawCommandList *list = xsmcGetHostDataValidate(xsThis, xs_pebbledcl_destructor);
+
+	xsTry {
+		gdraw_command_list_iterate(list, doCommand, the);
+	}
+	xsCatch {
+		xsmcSetHostData(xsArg(1), C_NULL);
+		xsThrow(xsException);
+	}
+
+	xsResult = xsThis;
+}
+
+void xs_pebbledcommand_destructor(void *)
+{
+}
+
+void xs_pebbledcs_get_type(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	xsmcSetInteger(xsResult, gdraw_command_get_type(command));
+}
+ 
+void xs_pebbledcs_get_hidden(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	xsmcSetBoolean(xsResult, gdraw_command_get_hidden(command));
+}
+
+void xs_pebbledcs_set_hidden(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	gdraw_command_set_hidden(command, xsmcTest(xsArg(0)));
+}
+
+void xs_pebbledcs_get_strokeWidth(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	xsmcSetInteger(xsResult, gdraw_command_get_stroke_width(command));
+}
+
+void xs_pebbledcs_set_strokeWidth(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	gdraw_command_set_stroke_width(command, xsmcToInteger(xsArg(0)));
+}
+
+void xs_pebbledcs_get_stroke(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	xsmcSetInteger(xsResult, gdraw_command_get_stroke_color(command).argb);
+}
+
+void xs_pebbledcs_set_stroke(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	gdraw_command_set_stroke_color(command, (GColor){.argb = xsmcToInteger(xsArg(0))});
+}
+
+void xs_pebbledcs_get_fill(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	xsmcSetInteger(xsResult, gdraw_command_get_fill_color(command).argb);
+}
+
+void xs_pebbledcs_set_fill(xsMachine *the)
+{
+	GDrawCommand *command = xsmcGetHostDataValidate(xsThis, xs_pebbledcommand_destructor);
+	gdraw_command_set_fill_color(command, (GColor){.argb = xsmcToInteger(xsArg(0))});
+}
+

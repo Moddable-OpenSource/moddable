@@ -88,7 +88,20 @@ Poco.PebbleDrawCommandSequence = class extends Native("xs_pebbledcs_destructor")
 	}
 }
 
+class Command extends Native("xs_pebbledcommand_destructor") {
+	get type() { return native("xs_pebbledcs_get_type").call(this); }
+	get strokeWidth() { return native("xs_pebbledcs_get_strokeWidth").call(this); }
+	set strokeWidth(value) { return native("xs_pebbledcs_set_strokeWidth").call(this, value); }
+	get stroke() { return native("xs_pebbledcs_get_stroke").call(this); }
+	set stroke(value) { return native("xs_pebbledcs_set_stroke").call(this, value); }
+	get fill() { return native("xs_pebbledcs_get_fill").call(this); }
+	set fill(value) { return native("xs_pebbledcs_set_fill").call(this, value); }
+	get hidden() { return native("xs_pebbledcs_get_hidden").call(this); }
+	set hidden(value) { return native("xs_pebbledcs_set_hidden").call(this, value); }
+}
+
 Poco.PebbleDrawCommandList = class extends Native("xs_pebbledcl_destructor") {
 	scale(x, y) { return native("xs_pebbledcl_scale").call(this, x, y); }
 	rotate(angle, cx, cy) { return native("xs_pebbledcl_rotate").call(this, angle, cx, cy); }
+	process(callback) { return native("xs_pebbledcl_process").call(this, callback, new Command); }
 }
