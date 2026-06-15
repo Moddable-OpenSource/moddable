@@ -216,7 +216,7 @@ export default class BMI270 {
 
 		this.#uploadConfig();
 
-		while (1 != io.readUint8(Register.INTERNAL_STATUS_ADDR))
+		while (1 !== io.readUint8(Register.INTERNAL_STATUS_ADDR))
 			Timer.delay(1);	// wait for asic init_ok
 
 		if (options.sensor.enable & Sensor.IMU_AUX) {
@@ -225,7 +225,7 @@ export default class BMI270 {
 			this.#auxSetupMode(0x10);
 			this.#auxWriteUint8(0x4B, 0x83);		// SW Reset & power on
 			this.#auxReadUint8(0x40);				// Whoami?
-			if (0x32 == this.#auxReadUint8(0x40)) {
+			if (0x32 === this.#auxReadUint8(0x40)) {
 				this.#available |= Sensor.IMU_AUX;
 
 				this.#writeUint8_sync(Register.AUX_IF_CONF_ADDR, 0x8F);		// Manual + burst 8
@@ -328,9 +328,9 @@ export default class BMI270 {
 
 			if (options.invert) {
 				for (let i=0; i<options.invert.length; i++) {
-					if (options.invert[i] == "x") value |= 0b00_000_000_100;
-					if (options.invert[i] == "y") value |= 0b00_000_100_000;
-					if (options.invert[i] == "z") value |= 0b00_100_000_000;
+					if (options.invert[i] === "x") value |= 0b00_000_000_100;
+					if (options.invert[i] === "y") value |= 0b00_000_100_000;
+					if (options.invert[i] === "z") value |= 0b00_100_000_000;
 				}
 			}
 
@@ -380,7 +380,7 @@ export default class BMI270 {
 				value &= 0b1111_1000_0000_0000;
 				value |= (opt.threshold & 0b0000_0111_1111_1111);
 			}
-			if (undefined != opt.enable) {
+			if (undefined !== opt.enable) {
 				if (opt.enable)
 					value |= 0b1000_0000_0000_0000;
 				else
@@ -484,25 +484,25 @@ export default class BMI270 {
 		opt = options.wristWakeup;
 		if (opt) {
 			if (undefined !== opt.min_angle_focus)
-				this.#writeFeature16(7, Register.WR_WAKEUP_2, opt.min_angle_focus);
+				this.#writeFeature16(7, Register.WR_WAKEUP2, opt.min_angle_focus);
 			if (undefined !== opt.min_angle_nonfocus)
-				this.#writeFeature16(7, Register.WR_WAKEUP_3, opt.min_angle_nonfocus);
+				this.#writeFeature16(7, Register.WR_WAKEUP3, opt.min_angle_nonfocus);
 			if (undefined !== opt.max_tilt_lr)
-				this.#writeFeature16(7, Register.WR_WAKEUP_4, opt.max_tilt_lr);
+				this.#writeFeature16(7, Register.WR_WAKEUP4, opt.max_tilt_lr);
 			if (undefined !== opt.max_tilt_ll)
-				this.#writeFeature16(7, Register.WR_WAKEUP_5, opt.max_tilt_ll);
+				this.#writeFeature16(7, Register.WR_WAKEUP5, opt.max_tilt_ll);
 			if (undefined !== opt.max_tilt_pd)
-				this.#writeFeature16(7, Register.WR_WAKEUP_6, opt.max_tilt_pd);
+				this.#writeFeature16(7, Register.WR_WAKEUP6, opt.max_tilt_pd);
 			if (undefined !== opt.max_tilt_pu)
-				this.#writeFeature16(7, Register.WR_WAKEUP_7, opt.max_tilt_pu);
+				this.#writeFeature16(7, Register.WR_WAKEUP7, opt.max_tilt_pu);
 			if (undefined !== opt.enable) {
 				this.#updateFeaturePage(7);
-				value = this.#readFeature16(Register.WR_WAKEUP_1);
+				value = this.#readFeature16(Register.WR_WAKEUP1);
 				if (opt.enable)
 					value |= 0b0000_0000_0001_0000;
 				else
 					value &= 0b1111_1111_1110_1111;
-				this.#writeFeature16(7, Register.WR_WAKEUP_1, value);
+				this.#writeFeature16(7, Register.WR_WAKEUP1, value);
 			}
 		}
 		// Wrist Gesture
@@ -526,7 +526,7 @@ export default class BMI270 {
 			if (undefined !== opt.min_flick_peak)
 				this.#writeFeature16(6, Register.WR_GEST2, opt.min_flick_peak);
 			if (undefined !== opt.min_flick_samples)
-				this.#writeFeature16(6, Register.WR_GEST3, opt.min_flick_peak);
+				this.#writeFeature16(6, Register.WR_GEST3, opt.min_flick_samples);
 			if (undefined !== opt.max_duration)
 				this.#writeFeature16(6, Register.WR_GEST4, opt.max_duration);
 		}
@@ -733,7 +733,7 @@ export default class BMI270 {
 		io.writeUint8(reg, data);
 
 		let retry = 3;
-		while ((io.readUint8(Register.STATUS_ADDR) & 0b100) && -retry)
+		while ((io.readUint8(Register.STATUS_ADDR) & 0b100) && retry--)
 			Timer.delay(1);
 
 		return 1;
@@ -744,7 +744,7 @@ export default class BMI270 {
 		io.writeUint16(reg, data, endian);
 
 		let retry = 3;
-		while ((io.readUint8(Register.STATUS_ADDR) & 0b100) && -retry)
+		while ((io.readUint8(Register.STATUS_ADDR) & 0b100) && retry--)
 			Timer.delay(1);
 
 		return 1;
