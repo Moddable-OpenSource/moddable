@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -90,19 +90,27 @@ void xs_inflate_close(xsMachine *the)
 
 void xs_inflate_push(xsMachine *the)
 {
-	uint8_t *output = xsmcGetHostDataValidate(xsThis, xs_inflate_destructor);
-	z_stream *zlib = (z_stream *)(kOutputBufferSize + (char *)output); 
+	uint8_t *internalOutput = xsmcGetHostDataValidate(xsThis, xs_inflate_destructor);
+	z_stream *zlib = (z_stream *)(kOutputBufferSize + (char *)internalOutput);
 	int inputOffset = 0;
-	uint8_t *input;
-	xsUnsignedValue inputRemaining, ignore;
+	uint8_t *input, *output;
+	xsUnsignedValue inputRemaining, outputSize, ignore;
 //@@int inputEnd = xsmcTest(xsArg(1));
 	int inputEnd = 0;
 	int status = Z_OK;
+	int outputProvided = (xsmcArgc > 2) && xsmcTest(xsArg(2));
+
+	if (outputProvided)
+		xsmcGetBufferWritable(xsArg(2), (void **)&output, &outputSize);
+	else {
+		output = internalOutput;
+		outputSize = kOutputBufferSize;
+	}
 
 	xsmcGetBufferReadable(xsArg(0), (void **)&input, &inputRemaining);
 	while (Z_OK == status) {
 		zlib->next_out	= output;
-		zlib->avail_out	= kOutputBufferSize;
+		zlib->avail_out	= outputSize;
 		zlib->total_out	= 0;
 
 		xsmcGetBufferReadable(xsArg(0), (void **)&input, &ignore);
@@ -119,14 +127,20 @@ void xs_inflate_push(xsMachine *the)
 		}
 
 		if (zlib->total_out) {
-			xsmcSetArrayBuffer(xsResult, output, zlib->total_out);
+			if (outputProvided) {
+				xsResult = xsArg(2);
+				if (zlib->total_out != outputSize)
+					xsResult = xsCall2(xsResult, xsID_subarray, xsInteger(0), xsInteger(zlib->total_out));
+			}
+			else
+				xsmcSetArrayBuffer(xsResult, output, zlib->total_out);
 			xsCall1(xsThis, xsID_onData, xsResult);
 		}
 
 		inputOffset += zlib->total_in;
 		inputRemaining -= zlib->total_in;
 
-		if (Z_STREAM_END == status)
+		if ((Z_STREAM_END == status) || outputProvided)
 			break;
 
 		if (Z_BUF_ERROR == status) {

@@ -31,8 +31,8 @@ class Inflate extends Native("xs_inflate_destructor") {
 	}
 	close() { return native("xs_inflate_close").call(this); }
 
-	push(buffer, end) {
-		this.strm.avail_in = native("xs_inflate_push").call(this, buffer, end);
+	push(buffer, flush, output) {
+		this.strm.avail_in = native("xs_inflate_push").call(this, buffer, flush, output);
 	}
 }
 
