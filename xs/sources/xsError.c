@@ -908,6 +908,18 @@ void fx_AsyncDisposableStack_prototype_use(txMachine* the)
 		fxAsyncDisposableStackPush(the, property);
 		mxPop();
 	}
+	else {
+		txSlot** address = &property->value.disposableStack.stack;
+		txSlot* slot;
+		
+		slot = fxNewSlot(the);
+		slot->next = *address;
+		*address = slot;
+		
+		slot = fxNewSlot(the);
+		slot->next = *address;
+		*address = slot;
+	}
 	mxPullSlot(mxResult);
 }
 
@@ -974,19 +986,23 @@ void fxAsyncDisposableStackResolve(txMachine* the)
 		mxTry(the) {
 			mxPushUndefined();
 			mxPush(mxPromiseConstructor);
-			if (dispose->flag & XS_BASE_FLAG) {
+			if (!mxIsUndefined(dispose)) {
+				if (dispose->flag & XS_BASE_FLAG) {
+					mxPushUndefined();
+					mxPushSlot(dispose);
+					mxCall();
+					mxPushSlot(resource);
+					mxRunCount(1);
+				}
+				else {
+					mxPushSlot(resource);
+					mxPushSlot(dispose);
+					mxCall();
+					mxRunCount(0);
+				}
+			}
+			else
 				mxPushUndefined();
-				mxPushSlot(dispose);
-				mxCall();
-				mxPushSlot(resource);
-				mxRunCount(1);
-			}
-			else {
-				mxPushSlot(resource);
-				mxPushSlot(dispose);
-				mxCall();
-				mxRunCount(0);
-			}
 			fx_Promise_resolveAux(the);
 			mxPop();
 			mxPop();
