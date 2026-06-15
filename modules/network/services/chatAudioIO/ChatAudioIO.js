@@ -107,7 +107,8 @@ class ChatAudioIO {
 				initial: 1024,
 				incremental: 256
 			},
-			stack: 1024
+			stack: 1024,
+			nativeStack: 12 * 1024
 		});
 		this.worker.onmessage = message => {
 			this[message.id](message);
