@@ -18,7 +18,7 @@
 *
 */
 
-type ButtonType = "back" | "up" | "down" | "select";
+export type ButtonType = "back" | "up" | "down" | "select";
 
 interface PebbleButtonSingleOptions {
   type: ButtonType;

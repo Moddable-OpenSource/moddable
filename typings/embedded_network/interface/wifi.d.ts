@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,9 +21,11 @@
 declare module "embedded:network/interface/wifi" {
 	import type {PortSpecifier} from "embedded:io/_common";
 
+	export type WiFiChangedProperty = "connection" | "address";
+
 	export interface WiFiConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: () => void;
+		onChanged?: (property: WiFiChangedProperty) => void;
 	}
 
 	export interface WiFiScanResult {
@@ -43,6 +45,17 @@ declare module "embedded:network/interface/wifi" {
 		password?: string;
 	}
 
+	export interface WiFiStaticAddress {
+		address: string;
+		mask: string;
+		gateway: string;
+	}
+
+	export interface WiFiConfigureOptions {
+		hostname?: string;
+		static?: WiFiStaticAddress | false;
+	}
+
 	class WiFi {
 		constructor(options: WiFiConstructorOptions);
 
@@ -50,6 +63,7 @@ declare module "embedded:network/interface/wifi" {
 		scan(options: WiFiScanOptions): void;
 		connect(options: WiFiConnectOptions): void;
 		disconnect(): void;
+		configure(options: WiFiConfigureOptions): void;
 
 		readonly connection: number;
 		readonly address: string | undefined;

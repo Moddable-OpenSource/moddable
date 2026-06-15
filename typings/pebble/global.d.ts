@@ -85,6 +85,7 @@ interface watch {
   removeEventListener(event: "didFocus", callback: FocusCallback): void;
   removeEventListener(event: "wakeup", callback: WakeupCallback): void;
   light(enable?: boolean): void;
+  exit(reason?: number): void;
   readonly connected: ConnectionState;
   readonly hour12: boolean;
   readonly model: number;

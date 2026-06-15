@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -21,17 +21,31 @@
 declare module "embedded:network/interface/ethernet" {
 	import type {PortSpecifier} from "embedded:io/_common";
 
+	export type EthernetChangedProperty = "connection" | "address";
+
 	export interface EthernetConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: () => void;
+		onChanged?: (property: EthernetChangedProperty) => void;
+	}
+
+	export interface EthernetStaticAddress {
+		address: string;
+		mask: string;
+		gateway: string;
+	}
+
+	export interface EthernetConfigureOptions {
+		hostname?: string;
+		static?: EthernetStaticAddress | false;
 	}
 
 	class Ethernet {
 		constructor(options: EthernetConstructorOptions);
 
 		close(): void;
-		connect(options: {}): void;
+		connect(): void;
 		disconnect(): void;
+		configure(options: EthernetConfigureOptions): void;
 
 		readonly connection: number;
 		readonly address: string | undefined;

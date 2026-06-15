@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Moddable Tech, Inc.
+* Copyright (c) 2025-2026 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -24,7 +24,7 @@ declare module "inflate" {
     constructor(options?: {windowBits?: number});
     close(): void;
 
-    push(buffer: ByteBuffer, end?: boolean): number;
+    push(buffer: ByteBuffer, flush?: boolean, output?: ByteBuffer): void;
 
     onData: (data: ArrayBuffer) => void;
     onEnd: (status: number) => void;
