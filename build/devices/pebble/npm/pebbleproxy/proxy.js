@@ -93,7 +93,7 @@ function appMessageReceived(e) {
 	return false;
 };
 
-function readyReceived(e) {
+function readyReceived(/* e */) {
 	if (state.log)
 		console.log("readyReceived")
 	sendAppMessage({
@@ -173,8 +173,10 @@ function httpMessage(id, e) {
 			request.xhr.responseType = 'arraybuffer';
 
 			request.headers.split("\n").forEach(line => {
-				const [key, value] = line.split(":");
-				request.xhr.setRequestHeader(key, value);
+				const colon = line.indexOf(":");
+				if (colon <= 0)
+					return;		// skip serializer's trailing newline
+				request.xhr.setRequestHeader(line.slice(0, colon), line.slice(colon + 1));
 			});
 
 			request.xhr.onload = function () {
