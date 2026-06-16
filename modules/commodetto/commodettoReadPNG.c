@@ -252,6 +252,8 @@ void xs_PNG_constructor(xsMachine *the)
 				png->filterBytesPerPixel = (bitsPerPixel + 7) >> 3;
 
 				//@@ check for supported combinations
+				if ((0 == png->channelCount) || (png->bitDepth > 8) || (0 == png->bitDepth))
+					xsErrorPrintf("unsupported");
 
 				png->scanLineByteCount = (png->width * bitsPerPixel + 7) >> 3;
 				png->scanBuffers = c_malloc((png->scanLineByteCount + kScanLineSlop) * 2);
