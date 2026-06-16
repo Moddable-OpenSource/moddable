@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -38,7 +38,6 @@
 #include "xsAll.h"
 
 static txSlot* fxArgToInstance(txMachine* the, txInteger i);
-static txBoolean fxCheckLength(txMachine* the, txSlot* slot, txInteger* index);
 
 static txSlot* fxCheckArrayBufferDetached(txMachine* the, txSlot* slot);
 static txSlot* fxCheckArrayBufferInstance(txMachine* the, txSlot* slot);
@@ -418,17 +417,6 @@ txSlot* fxArgToInstance(txMachine* the, txInteger i)
 		return fxToInstance(the, mxArgv(i));
 	mxTypeError("cannot coerce undefined to object");
 	return C_NULL;
-}
-
-txBoolean fxCheckLength(txMachine* the, txSlot* slot, txInteger* index)
-{
-	txNumber number = fxToNumber(the, slot);
-	txNumber check = c_trunc(number);
-	if ((number == check) && (0 <= number) && (number <= 0x7FFFFFFF)) {
-		*index = (txInteger)number;
-		return 1 ;
-	}
-	return 0;
 }
 
 txSlot* fxCheckArrayBufferDetached(txMachine* the, txSlot* slot)
@@ -857,23 +845,8 @@ txSlot* fxGetBufferInfo(txMachine* the, txSlot* buffer)
 		return bufferInfo;
 	}
 	if (arrayBuffer->kind == XS_HOST_KIND) {
-		txInteger byteLength;
 		if (bufferInfo && (bufferInfo->kind == XS_BUFFER_INFO_KIND))
 			return bufferInfo;
-		mxPushSlot(buffer);
-		mxGetID(mxID(_byteLength));
-		if (!fxCheckLength(the, the->stack, &byteLength))
-			mxTypeError("invalid byteLength");
-		fxReport(the, "# Use xsSetHostBuffer instead of xsSetHostData\n");
-		mxPop();
-		bufferInfo = fxNewSlot(the);
-		bufferInfo->next = arrayBuffer->next;
-		bufferInfo->flag = XS_INTERNAL_FLAG;
-		bufferInfo->kind = XS_BUFFER_INFO_KIND;
-		bufferInfo->value.bufferInfo.length = byteLength;
-		bufferInfo->value.bufferInfo.maxLength = -1;
-		arrayBuffer->next = bufferInfo;
-		return bufferInfo;
 	}
 	mxTypeError("invalid buffer");
 	return C_NULL;
