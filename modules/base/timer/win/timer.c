@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -30,130 +30,141 @@ typedef modTimerRecord *modTimer;
 struct modTimerRecord {
 	struct modTimerRecord  *next;
 
-	UINT_PTR idEvent;
-	int16_t id;
+	HANDLE hTimer;
+	HWND window;
+	uint32_t id;
 	int firstInterval;
 	int secondInterval;
 	int8_t useCount;
-	uint8_t rescheduled;
-	uint8_t repeating;
 	modTimerCallback cb;
-	HWND window;
 	uint32_t refconSize;
-	char refcon[1];
+	char refcon[];
 };
 
-static modTimer gTimers = NULL;
-static txS2 gTimerID = 1;		//@@ could id share with other libraries that need unique ID?
-static BOOLEAN initializedCriticalSection = FALSE;
-static CRITICAL_SECTION gCS;
+typedef struct modThreadTimers modThreadTimers;
+struct modThreadTimers {
+	HWND window;
+	modTimer head;
+	uint32_t nextId;
+};
 
+static DWORD gFlsIndex = FLS_OUT_OF_INDEXES;
+static INIT_ONCE gInitOnce = INIT_ONCE_STATIC_INIT;
+static const char kTimerWindowClass[] = "modTimerWindowClass";
+
+static modThreadTimers *getThreadTimers(BOOL create);
+static modTimer findById(modThreadTimers *t, uint32_t id);
 static void modTimerExecuteOne(modTimer timer);
-static modTimer modTimerFindNative(UINT_PTR idEvent);
-void modTimerWindowCallback(LPARAM timer);
-static void destroyTimer(modTimer timer);
-static void createTimerWindow(modTimer timer);
+static VOID CALLBACK timerQueueCallback(PVOID param, BOOLEAN timerOrWait);
+static VOID CALLBACK threadCleanup(PVOID p);
+static BOOL CALLBACK doOnce(PINIT_ONCE once, PVOID param, PVOID *ctx);
 LRESULT CALLBACK modTimerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
-static VOID CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2) {
-	modTimer timer;
-
-	timer = modTimerFindNative(uTimerID);
-	if (timer)
-		SendMessage(timer->window, WM_MODTIMER, 0, (LPARAM)timer);
-}
-
-static void modCriticalSectionBegin()
+static BOOL CALLBACK doOnce(PINIT_ONCE once, PVOID param, PVOID *ctx)
 {
-	EnterCriticalSection(&gCS);
+	WNDCLASSEX wcex = {0};
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.lpfnWndProc = modTimerWindowProc;
+	wcex.lpszClassName = kTimerWindowClass;
+	RegisterClassEx(&wcex);
+	gFlsIndex = FlsAlloc(threadCleanup);
+	return TRUE;
 }
 
-static void modCriticalSectionEnd()
+static modThreadTimers *getThreadTimers(BOOL create)
 {
-	LeaveCriticalSection(&gCS);
+	InitOnceExecuteOnce(&gInitOnce, doOnce, NULL, NULL);
+	if (FLS_OUT_OF_INDEXES == gFlsIndex)
+		return NULL;
+
+	modThreadTimers *mtt = (modThreadTimers *)FlsGetValue(gFlsIndex);
+	if (mtt || !create)
+		return mtt;
+
+	mtt = c_calloc(1, sizeof(modThreadTimers));
+	if (!mtt) return NULL;
+	mtt->nextId = 1;
+	mtt->window = CreateWindowEx(0, kTimerWindowClass, NULL, 0, 0, 0, 0, 0,
+		HWND_MESSAGE, NULL, NULL, NULL);
+	if (!mtt->window) {
+		c_free(mtt);
+		return NULL;
+	}
+	SetWindowLongPtr(mtt->window, GWLP_USERDATA, (LONG_PTR)mtt);
+	FlsSetValue(gFlsIndex, mtt);
+	return mtt;
 }
 
-void modTimerWindowCallback(LPARAM t) {
-	modTimer timer = (modTimer)t;
-	modTimerExecuteOne(timer);
+static modTimer findById(modThreadTimers *mtt, uint32_t id)
+{
+	if (0 == id) return NULL;
+	for (modTimer w = mtt->head; w; w = w->next)
+		if (w->id == id) return w;
+	return NULL;
+}
+
+static VOID CALLBACK timerQueueCallback(PVOID param, BOOLEAN timerOrWait)
+{
+	modTimer timer = (modTimer)param;
+	PostMessage(timer->window, WM_MODTIMER, (WPARAM)timer->id, 0);
+}
+
+LRESULT CALLBACK modTimerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (WM_MODTIMER == message) {
+		modThreadTimers *mtt = (modThreadTimers *)GetWindowLongPtr(window, GWLP_USERDATA);
+		if (mtt) {
+			modTimer timer = findById(mtt, (uint32_t)wParam);
+			if (timer)
+				modTimerExecuteOne(timer);
+		}
+		return 0;
+	}
+	return DefWindowProc(window, message, wParam, lParam);
 }
 
 static void modTimerExecuteOne(modTimer timer)
 {
-	timer->rescheduled = 0;
 	timer->useCount++;
 	(timer->cb)(timer, timer->refcon, timer->refconSize);
 	timer->useCount--;
 
 	if ((timer->useCount <= 0) || (0 == modTimerGetSecondInterval(timer)))
 		modTimerRemove(timer);
-	else if (!(timer->repeating) && timer->secondInterval > 0 && !(timer->rescheduled)) {
-		timer->repeating = true;
-		timer->idEvent = timeSetEvent(timer->secondInterval, 1, TimerProc, timer->id, TIME_PERIODIC);
-	}
-}
-
-static modTimer modTimerFindNative(UINT_PTR idEvent)
-{
-	modTimer walker;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; walker = walker->next)
-		if (idEvent == walker->idEvent)
-			break;
-
-	modCriticalSectionEnd();
-
-	return walker;
 }
 
 modTimer modTimerAdd(int firstInterval, int secondInterval, modTimerCallback cb, void *refcon, int refconSize)
 {
-	modTimer timer;	
+	modThreadTimers *mtt = getThreadTimers(TRUE);
+	if (!mtt) return NULL;
 
-	if (!initializedCriticalSection) {
-		InitializeCriticalSection(&gCS);
-		initializedCriticalSection = TRUE;
-	}
-
-	timer = c_calloc(1, sizeof(modTimerRecord) + refconSize - 1);
+	modTimer timer = c_calloc(1, sizeof(modTimerRecord) + refconSize);
 	if (!timer) return NULL;
 
 	timer->next = NULL;
-	timer->id = gTimerID++;
+	timer->id = mtt->nextId++;
+	if (0 == mtt->nextId) mtt->nextId = 1;	// reserve 0 as "removed"
 	timer->firstInterval = firstInterval;
 	timer->secondInterval = secondInterval;
 	timer->useCount = 1;
-	timer->repeating = 0;
 	timer->cb = cb;
-	createTimerWindow(timer);
+	timer->window = mtt->window;
 	timer->refconSize = refconSize;
 	c_memmove(timer->refcon, refcon, refconSize);
 
-	if (firstInterval == 0)
-		firstInterval = 1;
-	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);
-	if (!(timer->idEvent)) {
-		destroyTimer(timer);
-		return NULL;
-	} 
-
 	timeBeginPeriod(1);
 
-	modCriticalSectionBegin();
-
-	if (!gTimers)
-		gTimers = timer;
-	else {
-		modTimer walker;
-
-		for (walker = gTimers; walker->next; walker = walker->next)
-			;
-		walker->next = timer;
+	if (!CreateTimerQueueTimer(&timer->hTimer, NULL, timerQueueCallback, timer,
+			(DWORD)(firstInterval < 0 ? 0 : firstInterval),
+			(DWORD)(secondInterval > 0 ? secondInterval : 0),
+			WT_EXECUTEINTIMERTHREAD)) {
+		timeEndPeriod(1);
+		c_free(timer);
+		return NULL;
 	}
- 
-	modCriticalSectionEnd();
+
+	timer->next = mtt->head;
+	mtt->head = timer;
 
 	modInstrumentationAdjust(Timers, +1);
 
@@ -165,32 +176,28 @@ void modTimerReschedule(modTimer timer, int firstInterval, int secondInterval)
 	timer->firstInterval = firstInterval;
 	timer->secondInterval = secondInterval;
 
-	if (timer->idEvent)
-		timeKillEvent(timer->idEvent);
-	
-	if (firstInterval == 0)
-		firstInterval = 1;
-		
-	timer->idEvent = timeSetEvent(firstInterval, 1, TimerProc, timer->id, TIME_ONESHOT);
-	timer->rescheduled = 1;
-	timer->repeating = 0;
+	if (timer->hTimer) {
+		DeleteTimerQueueTimer(NULL, timer->hTimer, INVALID_HANDLE_VALUE);
+		timer->hTimer = NULL;
+	}
+
+	CreateTimerQueueTimer(&timer->hTimer, NULL, timerQueueCallback, timer,
+		(DWORD)(firstInterval < 0 ? 0 : firstInterval),
+		(DWORD)(secondInterval > 0 ? secondInterval : 0),
+		WT_EXECUTEINTIMERTHREAD);
 }
 
 void modTimerUnschedule(modTimer timer)
 {
-	timeKillEvent(timer->idEvent);
-	timer->idEvent = 0;
-	timer->rescheduled = 1;
-	timer->repeating = 0;
+	if (timer->hTimer) {
+		DeleteTimerQueueTimer(NULL, timer->hTimer, INVALID_HANDLE_VALUE);
+		timer->hTimer = NULL;
+	}
 }
 
 int modTimerGetSecondInterval(modTimer timer)
 {
-	if (timer->idEvent) {
-		return timer->secondInterval;
-	} else {
-		return -1;
-	}
+	return timer->hTimer ? timer->secondInterval : -1;
 }
 
 void *modTimerGetRefcon(modTimer timer)
@@ -200,32 +207,33 @@ void *modTimerGetRefcon(modTimer timer)
 
 void modTimerRemove(modTimer timer)
 {
+	modThreadTimers *mtt = getThreadTimers(FALSE);
+	if (!mtt) return;
+
 	modTimer walker, prev = NULL;
-
-	modCriticalSectionBegin();
-
-	for (walker = gTimers; NULL != walker; prev = walker, walker = walker->next) {
+	for (walker = mtt->head; NULL != walker; prev = walker, walker = walker->next) {
 		if (timer == walker) {
-			timer->id = 0;		// can't be found again by script
+			timer->id = 0;		// invalidates any queued WM_MODTIMER
 			timer->cb = NULL;
-			timeEndPeriod(1);
+
+			if (timer->hTimer) {
+				DeleteTimerQueueTimer(NULL, timer->hTimer, INVALID_HANDLE_VALUE);
+				timer->hTimer = NULL;
+			}
 
 			timer->useCount--;
 			if (timer->useCount <= 0) {
 				if (NULL == prev)
-					gTimers = walker->next;
+					mtt->head = walker->next;
 				else
 					prev->next = walker->next;
-				if (timer->idEvent)
-					timeKillEvent(timer->idEvent);
-				destroyTimer(timer);
+				timeEndPeriod(1);
+				c_free(timer);
 				modInstrumentationAdjust(Timers, -1);
 			}
 			break;
 		}
 	}
-
-	modCriticalSectionEnd();
 }
 
 void modTimerDelayMS(uint32_t ms)
@@ -235,33 +243,22 @@ void modTimerDelayMS(uint32_t ms)
 	timeEndPeriod(1);
 }
 
-LRESULT CALLBACK modTimerWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+static VOID CALLBACK threadCleanup(PVOID p)
 {
-	switch (message) {
-		case WM_MODTIMER: {
-			modTimerWindowCallback(lParam);
-			return 0;
-		} break;
-		default: 
-			return DefWindowProc(window, message, wParam, lParam);
-	}	
-}
+	modThreadTimers *mtt = (modThreadTimers *)p;
+	if (!mtt) return;
 
-static void createTimerWindow(modTimer timer)
-{
-	WNDCLASSEX wcex = {0};
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.cbWndExtra = sizeof(modTimer);
-	wcex.lpfnWndProc = modTimerWindowProc;
-	wcex.lpszClassName = "modTimerWindowClass";
-	RegisterClassEx(&wcex);
-	timer->window = CreateWindowEx(0, wcex.lpszClassName, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
-	SetWindowLongPtr(timer->window, 0, (LONG_PTR)timer);
-}
+	modTimer timer, next;
+	for (timer = mtt->head; timer; timer = next) {
+		next = timer->next;
+		if (timer->hTimer)
+			DeleteTimerQueueTimer(NULL, timer->hTimer, INVALID_HANDLE_VALUE);
+		timeEndPeriod(1);
+		c_free(timer);
+//		modInstrumentationAdjust(Timers, -1);
+	}
 
-static void destroyTimer(modTimer timer)
-{
-	if (timer->window)
-		DestroyWindow(timer->window);
-	c_free(timer);
+	if (mtt->window)
+		DestroyWindow(mtt->window);
+	c_free(mtt);
 }
