@@ -24,7 +24,8 @@
 
 extern int fuzz(int argc, char* argv[]);
 extern void fx_print(xsMachine* the);
-extern void fxBuildAgent(xsMachine* the);
+extern void modInstallTextDecoder(xsMachine *the);
+extern void modInstallTextEncoder(xsMachine *the);
 extern void fxBuildFuzz(xsMachine* the);
 extern void fxRunLoop(txMachine* the);
 extern void fxRunModuleFile(txMachine* the, txString path);
@@ -71,6 +72,10 @@ void fxBuildFuzz(xsMachine* the)
 	xsDefine(xsGlobal, xsID("petrify"), xsResult, xsDontEnum);
 	xsResult = xsNewHostFunction(fx_mutabilities, 1);
 	xsDefine(xsGlobal, xsID("mutabilities"), xsResult, xsDontEnum);
+
+	// these are installed by fxBuildAgent
+//	modInstallTextDecoder(the);
+//	modInstallTextEncoder(the);
 
 	gxStress = 0;
 	gxMemoryFail = 0;
@@ -504,6 +509,10 @@ int fuzz(int argc, char* argv[])
 				xsResult = xsNewHostFunction(fx_memoryFail, 1);
 				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
 
+				// TextEncoder/TextDecoder
+				modInstallTextDecoder(the);
+				modInstallTextEncoder(the);
+
 				// wait for the script
 				char action[4];
 				ssize_t nread = read(REPRL_CRFD, action, 4);
@@ -594,8 +603,6 @@ static xsBooleanValue xsWithinComputeLimit(xsMachine* machine, uint64_t index)
 	return 1;
 }
 #endif
-
-extern void modInstallTextDecoder(xsMachine *the);
 
 int fuzz_oss(const uint8_t *Data, size_t script_size)
 {
