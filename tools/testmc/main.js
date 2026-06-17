@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -154,30 +154,30 @@ Object.defineProperty(globalThis, "screen", {
 
 globalThis.$NETWORK = {
 	get connected() {
-		const WiFi = Modules.importNow("wifi");
-		const Net = Modules.importNow("net");
-
-		if (WiFi.Mode.station !== WiFi.mode)
-			WiFi.mode = WiFi.Mode.station;
-
-		if (Net.get("IP"))
-			return Promise.resolve();
+		const WiFi = Modules.importNow("embedded:network/interface/wifi").default;
 
 		assert(!!config.ssid, "Wi-Fi SSID missing");
 		return new Promise((resolve, reject) => {
-			trace(`Connecting to Wi-Fi SSID "${config.ssid}"...\n`);
-			let timer = Timer.set(() => {
-				$DONE("Wi-Fi connection attempt timed out");
-			}, $TESTMC.wifiConnectionTimeout);
-			new WiFi({ssid: config.ssid, password: config.password}, function(message) {
-				if (WiFi.gotIP === message) {
-					trace(`...connected.\n`);
-					Timer.clear(timer);
-					timer = undefined;
-					resolve();
-					this.close();
+			const w = new WiFi({
+				onChanged(property) {
+					if (this.address) {
+						Timer.clear(this.timer);
+						this.close();
+						resolve();
+					}
 				}
 			});
+			if (w.address) {
+				resolve();
+				return void w.close();
+			}
+
+			trace(`Connecting to Wi-Fi SSID "${config.ssid}"...\n`);
+			w.connect(config.password ? {SSID: config.ssid, password: config.password, secure: true} : {SSID: config.ssid});
+			w.timer = Timer.set(() => {
+				w.close();
+				$DONE("Wi-Fi connection attempt timed out");
+			}, $TESTMC.wifiConnectionTimeout);
 		});
 	},
 	async wifi(options) {
