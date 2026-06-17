@@ -17,6 +17,8 @@
 	],
 	"config": {
 		"screen": "ili9341",
+		"startupSound": "bflatmajor.maud",
+		"startupVibration": 600,
 		"enablePowerButton": false
 	},
 	"defines": {
