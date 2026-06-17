@@ -154,7 +154,7 @@ Object.defineProperty(globalThis, "screen", {
 
 globalThis.$NETWORK = {
 	get connected() {
-		const WiFi = Modules.importNow("embedded:network/interface/wifi").default;
+		const WiFi = Modules.importNow("embedded:network/interface/wifi");
 
 		assert(!!config.ssid, "Wi-Fi SSID missing");
 		return new Promise((resolve, reject) => {

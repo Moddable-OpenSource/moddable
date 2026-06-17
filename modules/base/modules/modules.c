@@ -70,7 +70,7 @@ void xs_modules_archive(xsMachine *the)
 void xs_modules_importNow(xsMachine *the)
 {
 	char path[C_PATH_MAX];
-	int what = ((xsToInteger(xsArgc) > 0) && xsTest(xsArg(0))) ? XS_IMPORT_NAMESPACE : XS_IMPORT_DEFAULT;
+	int what = ((xsToInteger(xsArgc) > 1) && xsTest(xsArg(1))) ? XS_IMPORT_NAMESPACE : XS_IMPORT_DEFAULT;
 
 	xsToStringBuffer(xsArg(0), path, sizeof(path));
 	xsResult = xsAwaitImport(path, what);
