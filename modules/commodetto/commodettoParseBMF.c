@@ -24,18 +24,18 @@
 #include "xsmc.h"
 #include "mc.xs.h"			// for xsID_ values
 
-//@@ can read beyond end of provided buffer on malformed data
 void xs_parseBMF(xsMachine *the)
 {
-	unsigned char *bytes, *start;
+	unsigned char *bytes, *start, *end;
 	uint32_t size;
 	xsUnsignedValue byteLength;
 	int charCount;
 
 	xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &byteLength);
 	start = bytes;
+	end = bytes + byteLength;
 
-	if ((0x42 != c_read8(bytes + 0)) || (0x4D != c_read8(bytes + 1)) || (0x46 != c_read8(bytes + 2)) || ((3 != c_read8(bytes + 3)) && (4 != c_read8(bytes + 3))))
+	if ((byteLength < 5) || (0x42 != c_read8(bytes + 0)) || (0x4D != c_read8(bytes + 1)) || (0x46 != c_read8(bytes + 2)) || ((3 != c_read8(bytes + 3)) && (4 != c_read8(bytes + 3))))
 		xsUnknownError("Invalid BMF header");
 	bytes += 4;
 
@@ -44,15 +44,24 @@ void xs_parseBMF(xsMachine *the)
 		xsUnknownError("can't find info block");
 	bytes += 1;
 
-	bytes += 4 + c_read32(bytes);
+	if ((end - bytes) < 4)
+		xsUnknownError("truncated BMF");
+	size = c_read32(bytes);
+	if (size > (uint32_t)((end - bytes) - 4))
+		xsUnknownError("truncated BMF");
+	bytes += 4 + size;
 
 	// get lineHeight from block 2
-	if (2 != c_read8(bytes))
+	if (((end - bytes) < 1) || (2 != c_read8(bytes)))
 		xsUnknownError("can't find common block");
 	bytes += 1;
 
+	if ((end - bytes) < 4)
+		xsUnknownError("truncated BMF");
 	size = c_read32(bytes);
 	bytes += 4;
+	if (((end - bytes) < 10) || (size < 8) || (size > (uint32_t)(end - bytes)))
+		xsUnknownError("truncated BMF");
 
 	xsmcSetInteger(xsResult, c_read16(bytes));
 	bytes += 2;
@@ -69,20 +78,27 @@ void xs_parseBMF(xsMachine *the)
 	bytes += size - 8;
 
 	// skip block 3
-	if (3 != c_read8(bytes))
+	if (((end - bytes) < 1) || (3 != c_read8(bytes)))
 		xsUnknownError("can't find pages block");
 	bytes += 1;
 
-	bytes += 4 + c_read32(bytes);
+	if ((end - bytes) < 4)
+		xsUnknownError("truncated BMF");
+	size = c_read32(bytes);
+	if (size > (uint32_t)((end - bytes) - 4))
+		xsUnknownError("truncated BMF");
+	bytes += 4 + size;
 
 	// use block 4
-	if (4 != c_read8(bytes))
+	if (((end - bytes) < 1) || (4 != c_read8(bytes)))
 		xsUnknownError("can't find chars block");
 	bytes += 1;
 
 	xsmcSetInteger(xsResult, bytes - start);
 	xsmcDefine(xsArg(0), xsID_position, xsResult, xsDontDelete | xsDontSet);
 
+	if ((end - bytes) < 4)
+		xsUnknownError("truncated BMF");
 	size = c_read32(bytes);
 	if (size % 20)
 		xsUnknownError("bad chars block size");
