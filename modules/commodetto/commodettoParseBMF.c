@@ -100,7 +100,7 @@ void xs_parseBMF(xsMachine *the)
 	if ((end - bytes) < 4)
 		xsUnknownError("truncated BMF");
 	size = c_read32(bytes);
-	if (size % 20)
+	if ((size % 20) || (size > (uint32_t)((end - bytes) - 4)))
 		xsUnknownError("bad chars block size");
 	charCount = size / 20;
 
