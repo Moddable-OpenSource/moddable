@@ -77,22 +77,20 @@ void CFELockCache(CommodettoFontEngine bmf, uint8_t lock)
 
 void CFESetFontData(CommodettoFontEngine bmf, const void *fontData, uint32_t fontDataSize)
 {
-	const unsigned char *bytes, *start;
-	uint32_t size;
-	uint8_t version;
-
 	if (fontData == bmf->fontData)
 		return;					// unchanged
 
 	bmf->charCount = 0;			// zero in case of failure
-
-	start = fontData;
-	bytes = start;
-
-	version = c_read8(bytes + 3);
-	if ((0x42 != c_read8(bytes + 0)) || (0x4D != c_read8(bytes + 1)) || (0x46 != c_read8(bytes + 2)) || ((3 != version) && (4 != version)))
+	if (fontDataSize < 5)
 		return;
 
+	const unsigned char *start = fontData;
+	const unsigned char *bytes = start;
+	const unsigned char *end = start + fontDataSize;
+
+	uint8_t version = c_read8(bytes + 3);
+	if ((0x42 != c_read8(bytes + 0)) || (0x4D != c_read8(bytes + 1)) || (0x46 != c_read8(bytes + 2)) || ((3 != version) && (4 != version)))
+		return;
 	bmf->isCompressed = 4 == version;
 
 	bytes += 4;
@@ -102,52 +100,58 @@ void CFESetFontData(CommodettoFontEngine bmf, const void *fontData, uint32_t fon
 		return;
 	bytes += 1;
 
-	bytes += 4 + c_read32(bytes);
+	if ((end - bytes) < 4)
+		return;
+	uint32_t size = c_read32(bytes);
+	if (size > (uint32_t)((end - bytes) - 4))
+		return;
+	bytes += 4 + size;
 
 	// get lineHeight from block 2
-	if (2 != c_read8(bytes))
+	if (((end - bytes) < 5) || (2 != c_read8(bytes)))
 		return;
 	bytes += 1;
 
 	size = c_read32(bytes);
 	bytes += 4;
+	if (((end - bytes) < 10) || (size < 8) || (size > (uint32_t)(end - bytes)))
+		return;
 
 	bmf->height = c_read16(bytes);
-	bytes += 2;
-
-	bmf->ascent = c_read16(bytes);
-	bytes += 2;
-
-	bytes += 2 + 2;		// scaleW and scaleH
-	if (1 != c_read16(bytes))	// pages
+	bmf->ascent = c_read16(bytes + 2);
+	if (1 != c_read16(bytes + 8))	// pages
 		return;
 
-	bytes += size - 8;
+	bytes += size;
 
 	// skip block 3
-	if (3 != c_read8(bytes))
+	if (((end - bytes) < 5) || (3 != c_read8(bytes)))
 		return;
 	bytes += 1;
-
-	bytes += 4 + c_read32(bytes);
-
-	// use block 4
-	if (4 != c_read8(bytes))
-		return;
-	bytes += 1;
-
-	bmf->charTable = bytes + 4;
-	bmf->isContinuous = (0x40 & c_read8(19 + bmf->charTable)) ? 1 : 0;
 
 	size = c_read32(bytes);
-	if (size % 20)
+	if (size > (uint32_t)((end - bytes) - 4))
 		return;
+	bytes += 4 + size;
+
+	// use block 4
+	if (((end - bytes) < 1) || (4 != c_read8(bytes)))
+		return;
+	bytes += 1;
+
+	if ((end - bytes) < 4)
+		return;
+	size = c_read32(bytes);
+	if ((size % 20) || (size < 20) || (size > (uint32_t)((end - bytes) - 4)))
+		return;
+	bmf->charTable = bytes + 4;
+	bmf->isContinuous = (0x40 & c_read8(19 + bmf->charTable)) ? 1 : 0;
 	bmf->charCount = size / 20;
 
 #if MODDEF_CFE_KERN
 	// block 5 - kerning
 	bytes += 4 + size;
-	if (5 == c_read8(bytes)) {
+	if (((end - bytes) >= 11) && (5 == c_read8(bytes))) {
 		bytes += 1;
 		bmf->kernCount = c_read32(bytes) / 10;
 		bmf->kernTriples = bytes + 4;
