@@ -77,7 +77,7 @@ export interface Behavior<T extends Content = Content> {
     onTimeChanged?(content: T): void;
     onTouchBegan?(content: T, id: number, x: number, y: number, ticks: number): void;
     onTouchCancelled?(content: T, id: number): void;
-    onTouchended?(content: T, id: number, x: number, y: number, ticks: number): void;
+    onTouchEnded?(content: T, id: number, x: number, y: number, ticks: number): void;
     onTouchMoved?(content: T, id: number, x: number, y: number, ticks: number): void;
     // TODO: complete callbacks
   }
@@ -259,9 +259,9 @@ export interface Container extends Content {
     add(content: Content): void;
     content(at: number | string): Content | undefined;
     empty(start?: number, stop?: number): void;
-    firstThat(id: string, ...extras: any[]): void;
+    firstThat(id: string, ...extras: any[]): Content | undefined;
     insert(content: Content, before: Content): void;
-    lastThat(id: string, ...extras: any[]): void;
+    lastThat(id: string, ...extras: any[]): Content | undefined;
     remove(content: Content): void;
     replace(content: Content, by: Content): void;
     run(transition: Transition, ...extras: any[]): void;
@@ -454,7 +454,7 @@ export interface LayoutConstructor extends ContainerConstructor {
 }
 
 export interface Image extends Content {
-  readonly frameCount: never;
+  readonly frameCount: number;
   frameIndex: number;
 }
 export interface ImageDictionary extends ContentDictionary {
