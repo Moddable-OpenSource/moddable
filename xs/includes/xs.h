@@ -1561,9 +1561,9 @@ mxImport xsIdentifier fxToID(xsMachine*, xsSlot*);
 mxImport char* fxName(xsMachine*, xsIdentifier);
 
 mxImport void fxEnumerate(xsMachine* the);
-mxImport void fxGetAt(xsMachine*);
-mxImport void fxGetID(xsMachine*, xsIdentifier);
-mxImport void fxGetIndex(xsMachine*, xsIndex);
+mxImport xsBooleanValue fxGetAt(xsMachine*);
+mxImport xsBooleanValue fxGetID(xsMachine*, xsIdentifier);
+mxImport xsBooleanValue fxGetIndex(xsMachine*, xsIndex);
 mxImport xsBooleanValue fxHasAt(xsMachine*);
 mxImport xsBooleanValue fxHasID(xsMachine*, xsIdentifier);
 mxImport xsBooleanValue fxHasIndex(xsMachine*, xsIndex);
