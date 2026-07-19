@@ -20,6 +20,10 @@
 
 #include "piuPC.h"
 
+#define piuWheelDelta 120
+/* GTK reports a standard Wayland wheel notch as 1.5 smooth scroll units. */
+#define piuSmoothScrollScale (piuWheelDelta / 1.5)
+
 struct _GtkPiuClip {
 	GtkFixed parent;
 	PiuContent* piuContent;
@@ -193,11 +197,17 @@ static gboolean gtk_piu_view_scroll_event(GtkWidget *widget, GdkEventScroll *eve
 {
 	gdouble delta_x = 0, delta_y = 0;
 	switch (event->direction) {
-	case GDK_SCROLL_LEFT: delta_x = 5; break;
-	case GDK_SCROLL_RIGHT: delta_x = -5; break;
-	case GDK_SCROLL_UP: delta_y = 5; break;
-	case GDK_SCROLL_DOWN: delta_y = -5; break;
-	case GDK_SCROLL_SMOOTH: gdk_event_get_scroll_deltas((GdkEvent*)event, &delta_x, &delta_y); break;
+	case GDK_SCROLL_LEFT: delta_x = piuWheelDelta; break;
+	case GDK_SCROLL_RIGHT: delta_x = -piuWheelDelta; break;
+	case GDK_SCROLL_UP: delta_y = piuWheelDelta; break;
+	case GDK_SCROLL_DOWN: delta_y = -piuWheelDelta; break;
+	case GDK_SCROLL_SMOOTH: {
+		if (gdk_event_get_scroll_deltas((GdkEvent*)event, &delta_x, &delta_y)) {
+			delta_x *= -piuSmoothScrollScale;
+			delta_y *= -piuSmoothScrollScale;
+		}
+		break;
+	}
 	}
 	if (delta_x || delta_y) {
 		GtkPiuView* gtkView = GTK_PIU_VIEW(widget);
