@@ -239,7 +239,12 @@ void xs_tcp_destructor(void *data)
 	if (!tcp) return;
 
 	if (tcp->skt) {
-		removeTCPCallbacks(tcp);
+		// Marshaled: TCP_EVENT_RECV reads pcb->recv and pcb->callback_arg at
+		// separate instants, so clearing the callbacks from the XS task can
+		// interleave with a dispatch already in progress on the tcpip task.
+		// Running the clears on the tcpip task itself closes that window.
+		tcp_clear_callbacks_safe(tcp->skt);
+		tcp->triggerable &= ~kTCPWritable;
 
 		tcp_close_safe(tcp->skt);
 	}
@@ -256,12 +261,13 @@ void xs_tcp_destructor(void *data)
 	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
+// Plain stores, so only safe when called from the tcpip task itself, where no
+// callback dispatch can be concurrent: tcpError and the tcpReceive error path.
+// XS-task teardown (doClose, xs_tcp_destructor) must use the marshaled
+// tcp_clear_callbacks_safe instead.
 void removeTCPCallbacks(TCP tcp)
 {
 	if (tcp->skt) {
-		// clear the argument first so a late callback observes NULL
-		// (the lwIP tcpip task can deliver segments - including refused-data
-		// redelivery - after the XS task tears this socket down)
 		tcp_arg(tcp->skt, NULL);
 		tcp_recv(tcp->skt, NULL);
 		tcp_sent(tcp->skt, NULL);
@@ -277,7 +283,8 @@ void doClose(xsMachine *the, xsSlot *instance)
 	if (tcp && xsmcGetHostDataValidate(*instance, (void *)&xsTCPHooks)) {
 		tcp->ready = false;
 
-		removeTCPCallbacks(tcp);
+		if (tcp->skt)
+			tcp_clear_callbacks_safe(tcp->skt);		// marshaled; see xs_tcp_destructor
 		tcp->triggerable = 0;
 
 		xsmcSetHostData(*instance, NULL);

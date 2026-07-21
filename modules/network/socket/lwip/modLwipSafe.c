@@ -119,6 +119,26 @@ void tcp_close_safe(struct tcp_pcb *tcpPCB)
 	tcpip_api_call(tcp_close_INLWIP, &msg.call);
 }
 
+static err_t tcp_clear_callbacks_INLWIP(struct tcpip_api_call_data *tcpMsg)
+{
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	if (msg->tcpPCB) {
+		tcp_arg(msg->tcpPCB, NULL);
+		tcp_recv(msg->tcpPCB, NULL);
+		tcp_sent(msg->tcpPCB, NULL);
+		tcp_err(msg->tcpPCB, NULL);
+	}
+	return ERR_OK;
+}
+
+void tcp_clear_callbacks_safe(struct tcp_pcb *tcpPCB)
+{
+	LwipMsgRecord msg = {
+		.tcpPCB = tcpPCB,
+	};
+	tcpip_api_call(tcp_clear_callbacks_INLWIP, &msg.call);
+}
+
 static err_t tcp_output_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
 	LwipMsg msg = (LwipMsg)tcpMsg;

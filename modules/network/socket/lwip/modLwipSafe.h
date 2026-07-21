@@ -30,6 +30,8 @@
 	#define tcp_connect_safe(skt, ipaddr, port, connected) tcp_connect(skt, ipaddr, port, connected)
 	// ESP8266 has a sort-of memory leak when using tcp_close without tcp_abort (see https://github.com/esp8266/Arduino/issues/230)
 	#define tcp_close_safe(pb) {if (CLOSED == (pb)->state) tcp_close(pb); else {tcp_close(pb); tcp_abort(pb);}}
+	// single-threaded here, so no marshaling needed
+	#define tcp_clear_callbacks_safe(pb) {tcp_arg(pb, NULL); tcp_recv(pb, NULL); tcp_sent(pb, NULL); tcp_err(pb, NULL);}
 	#define tcp_output_safe tcp_output
 	#define tcp_write_safe tcp_write
 	#define tcp_recved_safe(skt, len) tcp_recved(skt, len)
@@ -52,6 +54,7 @@
 	#include "lwip/raw.h"
 
 	struct tcp_pcb *tcp_new_safe(void);
+	void tcp_clear_callbacks_safe(struct tcp_pcb *tcpPCB);
 	err_t tcp_connect_safe(struct tcp_pcb *tcpPCB, const ip_addr_t *ipaddr, u16_t port, tcp_connected_fn connected);
 	u8_t pbuf_free_safe(struct pbuf *p);
 	err_t tcp_bind_safe(struct tcp_pcb *tcpPCB, const ip_addr_t *ipaddr, u16_t port);
