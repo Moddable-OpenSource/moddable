@@ -22,7 +22,7 @@
 #include "xsHost.h"
 #include "mc.xs.h"			// for xsID_ values
 #include "moddableAppState.h"
-#include "system/logging.h"
+#include <pbl/logging/logging.h>
 #include "applib/event_service_client.h"
 #include "applib/ui/window_private.h"
 #include "applib/ui/window_stack.h"

@@ -46,9 +46,7 @@
 
 #include <stdio.h>
 
-#include "FreeRTOS.h"
-#include "light_mutex.h"
-#include "queue.h"
+#include <pbl/kernel/mutex.h>
 
 #include "applib/app_heap_util.h"
 #include "applib/app_logging.h"
@@ -195,7 +193,6 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 	int what;
 	xsMachine *the = *(xsMachine **)refcon;
 
-	// xSemaphoreTake(gInstrumentMutex, portMAX_DELAY);
 
 	for (what = kModInstrumentationPixelsDrawn; what <= (kModInstrumentationSlotHeapSize - 1); what++)
 		values[what - kModInstrumentationPixelsDrawn] = modInstrumentationGet_(the, what);
@@ -216,17 +213,14 @@ void espSampleInstrumentation(modTimer timer, void *refcon, int refconSize)
 #endif
 	modInstrumentMachineReset(the);
 
-	// xSemaphoreGive(gInstrumentMutex);
 }
 
 #endif
 
-static LightMutexHandle_t gFlashMutex = NULL;
+static PBL_MUTEX_DEFINE(gFlashMutex);
 
 void modMachineTaskInit(xsMachine *the)
 {
-	if (NULL == gFlashMutex)
-		gFlashMutex = xLightMutexCreate();
 }
 
 void modMachineTaskUninit(xsMachine *the)
@@ -285,9 +279,6 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 	txPreparation *preparation = preparationIn;
 	void *result = NULL;
 
-	if (NULL == gFlashMutex)
-		gFlashMutex = xSemaphoreCreateMutex();
-
 	if (fxMapArchive(the, preparation, (void *)kModulesStart, kFlashSectorSize, spiRead, spiWrite)) {
 		result = (void *)kModulesStart;
 		fxSetArchive(the, result);
@@ -343,16 +334,16 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	uint8_t temp[4] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
-	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
+	pbl_mutex_lock(&gFlashMutex, PBL_FOREVER);
 
 	if (!modSPIFlashInit()) {
-		xSemaphoreGive(gFlashMutex);
+		pbl_mutex_unlock(&gFlashMutex);
 		return 0;
 	}
 
 	if (offset & 3) {		// long align offset
 		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset & ~3, temp, 4)) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 0;
 		}
 		wait_for_flash_ready();
@@ -373,7 +364,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 //@@ need case here for misaligned destination
 		size -= toAlign;
 		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, dst, toAlign)) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 0;
 		}
 		wait_for_flash_ready();
@@ -384,7 +375,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 
 	if (size) {				// long align tail
 		if (NRF_SUCCESS != nrf_fstorage_read(&fstorage, offset, temp, 4)) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 0;
 		}
 		wait_for_flash_ready();
@@ -393,7 +384,7 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 	}
 
 done:
-	xSemaphoreGive(gFlashMutex);
+	pbl_mutex_unlock(&gFlashMutex);
 	return 1;
 }
 
@@ -402,10 +393,10 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
 
-	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
+	pbl_mutex_lock(&gFlashMutex, PBL_FOREVER);
 
 	if (!modSPIFlashInit()) {
-		xSemaphoreGive(gFlashMutex);
+		pbl_mutex_unlock(&gFlashMutex);
 		return 0;
 	}
 
@@ -414,13 +405,13 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp + 4 - toAlign, src, (size < toAlign) ? size : toAlign);
 		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset & ~3, temp, 4, NULL)) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 0;
 		}
 		wait_for_flash_ready();
 
 		if (size <= toAlign) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 1;
 		}
 
@@ -437,7 +428,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 				uint32_t use = (toAlign > sizeof(temp)) ? sizeof(temp) : toAlign;
 				c_memcpy(temp, src, use);
 				if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, use, NULL)) {
-					xSemaphoreGive(gFlashMutex);
+					pbl_mutex_unlock(&gFlashMutex);
 					return 0;
 				}
 				wait_for_flash_ready();
@@ -449,7 +440,7 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		}
 		else {
 			if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, src, toAlign, NULL)) {
-				xSemaphoreGive(gFlashMutex);
+				pbl_mutex_unlock(&gFlashMutex);
 				return 0;
 			}
 			wait_for_flash_ready();
@@ -463,39 +454,39 @@ uint8_t modSPIWrite(uint32_t offset, uint32_t size, const uint8_t *src)
 		c_memset(temp, 0xFF, 4);
 		c_memcpy(temp, src, size);
 		if (NRF_SUCCESS != nrf_fstorage_write(&fstorage, offset, temp, 4, NULL)) {
-			xSemaphoreGive(gFlashMutex);
+			pbl_mutex_unlock(&gFlashMutex);
 			return 0;
 		}
 		wait_for_flash_ready();
 	}
 
-	xSemaphoreGive(gFlashMutex);
+	pbl_mutex_unlock(&gFlashMutex);
 	return 1;
 }
 
 uint8_t modSPIErase(uint32_t offset, uint32_t size)
 {
-	xSemaphoreTake(gFlashMutex, portMAX_DELAY);
+	pbl_mutex_lock(&gFlashMutex, PBL_FOREVER);
 
 	if (!modSPIFlashInit()) {
-		xSemaphoreGive(gFlashMutex);
+		pbl_mutex_unlock(&gFlashMutex);
 		return 0;
 	}
 
 	if ((offset & (fstorage.p_flash_info->erase_unit - 1)) || (size & (fstorage.p_flash_info->erase_unit - 1))) {
-		xSemaphoreGive(gFlashMutex);
+		pbl_mutex_unlock(&gFlashMutex);
 		return 0;
 	}
 
 	size /= fstorage.p_flash_info->erase_unit;
 
 	if (NRF_SUCCESS != nrf_fstorage_erase(&fstorage, offset, size, NULL)) {
-		xSemaphoreGive(gFlashMutex);
+		pbl_mutex_unlock(&gFlashMutex);
 		return 0;
 	}
 	wait_for_flash_ready();
 
-	xSemaphoreGive(gFlashMutex);
+	pbl_mutex_unlock(&gFlashMutex);
 	return 1;
 }
 

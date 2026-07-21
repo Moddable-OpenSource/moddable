@@ -29,7 +29,7 @@
 #include "applib/event_service_client.h"
 #include "services/evented_timer.h"
 #include "syscall/syscall.h"
-#include "util/dict.h"
+#include "applib/dict.h"
 
 #define kPKJSReadyMessage (15025)
 

@@ -27,7 +27,7 @@
 #include "mc.xs.h"			// for xsID_ values
 #include "mc.defines.h"
 
-#include "drivers/display/display.h" // FIXME: Need display dimensions
+#include "board/display.h"
 #include "process_state/app_state/app_state.h"
 
 #if kCommodettoBitmapMonochromeAligned != kCommodettoBitmapFormat

@@ -25,7 +25,7 @@
 #include "commodettoPoco.h"
 
 #include "process_state/app_state/app_state.h"
-#include "system/logging.h"
+#include <pbl/logging/logging.h>
 #include "system/passert.h"
 
 #if !kPocoFrameBuffer

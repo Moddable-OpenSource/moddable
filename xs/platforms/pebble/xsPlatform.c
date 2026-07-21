@@ -49,23 +49,21 @@
 #include "pbl/services/comm_session/session_receive_router.h"
 #include "pbl/services/comm_session/session_send_buffer.h"
 #include "pbl/services/comm_session/session_send_queue.h"
-#include "drivers/task_watchdog.h"
-#include "drivers/watchdog.h"
+#include <pbl/task_wdt/task_wdt.h>
 
 #include "xs.h"
 #include "xsHosts.h"
 #include "modTimer.h"
-#include "FreeRTOS.h"
-#include "light_mutex.h"
-#include "semphr.h"
+#include <pbl/kernel/mutex.h>
+#include <pbl/kernel/thread.h>
 
 #include "applib/app_logging.h"
-#include "system/logging.h"
+#include <pbl/logging/logging.h>
 
-LightMutexHandle_t gDebugMutex;
-#define mxDebugMutexTake() xLightMutexLock(gDebugMutex, portMAX_DELAY)
-#define mxDebugMutexGive() xLightMutexUnlock(gDebugMutex)
-#define mxDebugMutexAllocated() (NULL != gDebugMutex)
+static PBL_MUTEX_DEFINE(gDebugMutex);
+#define mxDebugMutexTake() pbl_mutex_lock(&gDebugMutex, PBL_FOREVER)
+#define mxDebugMutexGive() pbl_mutex_unlock(&gDebugMutex)
+#define mxDebugMutexAllocated() (1)
 
 extern void modMachineTaskInit(txMachine *the);
 extern void modMachineTaskUninit(txMachine *the);
@@ -80,8 +78,6 @@ void fxCreateMachinePlatform(txMachine* the)
 {
 	modMachineTaskInit(the);
 #ifdef mxDebug
-	if (!gDebugMutex)
-		gDebugMutex = xLightMutexCreate();
 	the->debugNotifyTimer = modTimerAdd(100, 100, doDebugCommand, &the, sizeof(the));
 	the->state = app_state_get_js_memory_api_context();
 #endif
@@ -170,15 +166,15 @@ void fxReceive(txMachine* the)
 				fxDisconnect(the);
 				break;
 			}
-			vTaskDelay(10);
+			pbl_thread_sleep(PBL_MSEC(10));
 		}
 		the->debugConnectionVerified = 1;
 	}
 
 	DebugFragment f = state->debugFragments;
 	if (C_NULL == f) {
-		task_watchdog_pause(5);
-		vTaskDelay(10);					// 10 ms
+		pbl_task_wdt_suspend(5000);
+		pbl_thread_sleep(PBL_MSEC(10));					// 10 ms
 		return;
 	}
 

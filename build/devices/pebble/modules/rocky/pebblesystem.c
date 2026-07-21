@@ -21,7 +21,7 @@
 
 #include "mc.xs.h"      // for xsID_ values
 
-#include "system/logging.h"
+#include <pbl/logging/logging.h>
 #include "resource/resource_ids.auto.h"
 #include "font_resource_table.auto.h"		//@@ normally included by system_resource, but not using that here
 #include "resource/resource_storage_impl.h"
