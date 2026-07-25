@@ -189,6 +189,7 @@ static void health(HealthEventType event, void *context)
 			case HealthEventSleepUpdate:	xsmcSetStringX(xsVar(1), "sleep"); break;
 			case HealthEventMetricAlert:	xsmcSetStringX(xsVar(1), "metric"); break;
 			case HealthEventHeartRateUpdate:	xsmcSetStringX(xsVar(1), "heart rate"); break;
+			case HealthEventHRVUpdate:		xsmcSetStringX(xsVar(1), "heart rate variability"); break;
 		}
 		xsCall2(xsResult, xsID_do, xsVar(0), xsVar(1));
 	xsEndHost(the);
