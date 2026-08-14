@@ -8,6 +8,7 @@
 		"$(MODULES)/data/base64/manifest.json",
 		"$(MODULES)/data/crc/manifest.json",
 		"$(MODULES)/data/hex/manifest.json",
+		"$(MODULES)/data/logical/manifest.json",
 		"$(MODULES)/data/qrcode/manifest.json",
 		"$(MODULES)/data/text/decoder/manifest.json",
 		"$(MODULES)/data/text/encoder/manifest.json",
@@ -42,6 +43,7 @@
 		"commodetto/*": "$(MODULES)/commodetto/commodettoPocoBlit",
 		"commodetto/cfe": "$(MODULES)/commodetto/cfeBMF",
 		"commodetto/checksumOut": "./commodettoChecksumOut",
+		"embedded:network/websocket/client": "$(MODDABLE)/examples/io/tcp/websocketclient/websocketclient",
         "piu/Sound": "$(MODULES)/piu/MC/piuSound"
 	},
 	"preload": [

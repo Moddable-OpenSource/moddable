@@ -541,11 +541,24 @@ class WebSocketClient {
 
 				message.push("", "");
 
-				//@@ if headers exceed count, send in pieces
-				message = ArrayBuffer.fromString(message.join("\r\n"));
+				options.request = new Uint8Array(ArrayBuffer.fromString(message.join("\r\n")));
+				this.#state = "sendRequest";
+				}
+			case "sendRequest": {
+				const options = this.#options;
+				const request = options.request;
+				const use = Math.min(this.#writable, request.byteLength);
+				if (!use)
+					break;
+				const message = request.subarray(0, use);
 				this.#writable = this.#socket.write(message); 
 
-				this.#state = "receiveStatus"
+				if (use < request.byteLength) {
+					options.request = request.subarray(use);
+					break;
+				}
+				delete options.request;
+				this.#state = "receiveStatus";
 				this.#line = "";
 				options.flags = 0;
 				this.#socket.format = NumberFormat;
