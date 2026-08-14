@@ -29,6 +29,7 @@ typedef struct {
 
 	err_t						err;
 	struct tcp_pcb				*tcpPCB;
+	struct tcp_pcb				**tcpPCBRef;
 	struct udp_pcb				*udpPCB;
 	ip_addr_t					*ipaddr;
 	ip_addr_t					addr;
@@ -174,19 +175,23 @@ err_t tcp_write_safe(struct tcp_pcb *tcpPCB, const void *data, u16_t len, u8_t f
 	return msg.err;
 }
 
-static void tcp_recved_INLWIP(void *ctx)
+static err_t tcp_recved_INLWIP(struct tcpip_api_call_data *tcpMsg)
 {
-	LwipMsg msg = (LwipMsg)ctx;
-	tcp_recved(msg->tcpPCB, msg->len);
-	c_free(msg);
+	LwipMsg msg = (LwipMsg)tcpMsg;
+	if (*msg->tcpPCBRef)
+		tcp_recved(*msg->tcpPCBRef, msg->len);
+	return ERR_OK;
 }
 
-void tcp_recved_safe(struct tcp_pcb *tcpPCB, u16_t len)
+void tcp_recved_safe(struct tcp_pcb **tcpPCBRef, u16_t len)
 {
-	LwipMsg msg = c_malloc(sizeof(LwipMsgRecord));
-	msg->tcpPCB = tcpPCB;
-	msg->len = len;
-	tcpip_callback_with_block(tcp_recved_INLWIP, msg, 1);
+	LwipMsgRecord msg = {
+		.tcpPCBRef = tcpPCBRef,
+		.len = len,
+	};
+	// Re-read the PCB after earlier queued network events have run. The owner
+	// stays alive because tcpip_api_call does not return until this completes.
+	tcpip_api_call(tcp_recved_INLWIP, &msg.call);
 }
 
 static err_t tcp_listen_INLWIP(struct tcpip_api_call_data *tcpMsg)
@@ -294,4 +299,3 @@ err_t dns_gethostbyname_safe(const char *hostname, ip_addr_t *addr, dns_found_ca
 }
 
 #endif
-

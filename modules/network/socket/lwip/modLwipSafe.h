@@ -34,7 +34,7 @@
 	#define tcp_clear_callbacks_safe(pb) {tcp_arg(pb, NULL); tcp_recv(pb, NULL); tcp_sent(pb, NULL); tcp_err(pb, NULL);}
 	#define tcp_output_safe tcp_output
 	#define tcp_write_safe tcp_write
-	#define tcp_recved_safe(skt, len) tcp_recved(skt, len)
+	#define tcp_recved_safe(skt, len) {if (*(skt)) tcp_recved(*(skt), len);}
 	#define udp_new_safe udp_new
 	#define udp_bind_safe udp_bind
 	#define udp_remove_safe udp_remove
@@ -61,7 +61,7 @@
 	void tcp_close_safe(struct tcp_pcb *tcpPCB);
 	void tcp_output_safe(struct tcp_pcb *tcpPCB);
 	err_t tcp_write_safe(struct tcp_pcb *tcpPCB, const void *data, u16_t len, u8_t flags);
-	void tcp_recved_safe(struct tcp_pcb *tcpPCB, u16_t len);
+	void tcp_recved_safe(struct tcp_pcb **tcpPCBRef, u16_t len);
 	struct tcp_pcb * tcp_listen_safe(struct tcp_pcb *pcb);
 	struct udp_pcb *udp_new_safe(void);
 	err_t udp_bind_safe(struct udp_pcb *udpPCB, const ip_addr_t *ipaddr, u16_t port);

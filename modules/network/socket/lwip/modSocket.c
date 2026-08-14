@@ -586,7 +586,7 @@ void xs_socket_read(xsMachine *the)
 			socketSetPending(xss, kPendingReceive);
 		else {
 			if ((kTCP == xss->kind) && xss->skt)
-				tcp_recved_safe(xss->skt, xss->pb->tot_len);
+				tcp_recved_safe(&xss->skt, xss->pb->tot_len);
 
 			pbuf_free_safe(xss->pb);
 			xss->pb = NULL;
@@ -860,7 +860,7 @@ void socketMsgDataReceived(xsSocket xss)
 		}
 
 		if ((kTCP == xss->kind) && xss->skt)	//@@
-			tcp_recved_safe(xss->skt, xss->pb->tot_len);
+			tcp_recved_safe(&xss->skt, xss->pb->tot_len);
 
 		pbuf_free_safe(xss->pb);
 		xss->pb = NULL;
@@ -1010,7 +1010,6 @@ err_t didReceive(void * arg, struct tcp_pcb * pcb, struct pbuf * p, err_t err)
 	if (!p) {		// connnection closed
 		tcp_recv(xss->skt, NULL);
 		tcp_sent(xss->skt, NULL);
-		tcp_err(xss->skt, NULL);
 
 		if (xss->reader[0] || xss->buflen)
 			xss->disconnectedWhileReading = true;
@@ -1364,4 +1363,3 @@ void *modSocketGetLWIP(xsMachine *the, xsSlot *slot)
 	}
 	return skt;
 }
-

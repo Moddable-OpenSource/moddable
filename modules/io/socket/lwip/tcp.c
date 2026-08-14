@@ -369,7 +369,7 @@ void xs_tcp_read(xsMachine *the)
 				builtinCriticalSectionBegin();
 				tcp->buffers = buffer->next;
 				builtinCriticalSectionEnd();
-				tcp_recved_safe(tcp->skt, buffer->pb->tot_len);
+				tcp_recved_safe(&tcp->skt, buffer->pb->tot_len);
 				pbuf_free_safe(buffer->pb);
 				c_free(buffer);
 				if (NULL == tcp->buffers) {
@@ -566,10 +566,9 @@ err_t tcpReceive(void *arg, struct tcp_pcb *pcb, struct pbuf *pb, err_t err)
 	}
 
 	if ((NULL == pb) || (ERR_OK != err)) {		//@@ when is err set here?
-		removeTCPCallbacks(tcp);
-#if ESP32
-//@@		tcp->skt = NULL;			// no close on socket if disconnected.
-#endif
+		tcp_recv(pcb, NULL);
+		tcp_sent(pcb, NULL);
+		tcp->triggerable &= ~kTCPWritable;
 		tcpTrigger(tcp, kTCPError);
 		return ERR_OK;
 	}
