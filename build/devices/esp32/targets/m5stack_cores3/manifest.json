@@ -10,6 +10,7 @@
 	"include": [
 		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/io/audioout/manifest.json",
+		"$(MODDABLE)/modules/io/audioin/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest_async.json",
 		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
@@ -31,6 +32,9 @@
 		"setup/target": "./setup-target",
 		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
 		"embedded:io/audio/out": "./M5StackCoreS3AudioOut",
+		"embedded:io/audio/in-original": "$(MODULES)/io/audioin/esp32/audioin",
+		"embedded:io/audio/in": "./M5StackCoreS3AudioIn",
+		"M5StackCoreS3I2SBus": "./M5StackCoreS3I2SBus",
 		"*": [
 			"./M5StackCoreS3Touch"
 		]
@@ -108,10 +112,10 @@
 			"i2s": {
 				"num": 1,
 				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1,
 				"bitsPerSample": 16,
 				"bck_pin": 34,
 				"lr_pin": 33,
-				"mck_pin": 0,
 				"dataout_pin": 13
 			}
 		},

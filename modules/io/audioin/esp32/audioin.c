@@ -88,6 +88,7 @@
 #define AUDIO_IN_TIMEOUT	50
 #define MAX_INPUT_BLOCK		2048
 #define AUDIO_IN_BUFFERSIZE	(8192 * 2)
+#define AUDIO_IN_DMA_FRAMES	240
 
 enum {
 	kStateIdle = 0,
@@ -120,6 +121,7 @@ struct AudioInputRecord {
 	uint8_t		*playPos;
 	uint8_t		*endPos;
 	uint32_t	bufferSize;
+	uint32_t	dmaReadBytes;
 	uint8_t		buffer[];
 };
 typedef struct AudioInputRecord AudioInputRecord;
@@ -168,6 +170,63 @@ static int amtReadable(AudioInput input) {
 		p += input->bufferSize;
 	return p;
 }
+
+#if !MODDEF_AUDIOIN_I2S_ADC && !MODDEF_AUDIOIN_I2S_PDM
+static void audioInCloseChannel(AudioInput input)
+{
+	if (!input->handle)
+		return;
+	if (ESP_OK == i2s_del_channel(input->handle))
+		input->handle = C_NULL;
+}
+
+static esp_err_t audioInOpenStdChannel(AudioInput input)
+{
+	esp_err_t err;
+	i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(MODDEF_AUDIOIN_I2S_NUM, I2S_ROLE_MASTER);
+	i2s_std_config_t rx_std_cfg = {
+		.clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(input->sampleRate),
+#if MODDEF_AUDIOIN_I2S_FORMAT_I2S
+		.slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
+			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+#else
+		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
+			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+#endif
+		.gpio_cfg = {
+			.mclk = MODDEF_AUDIOIN_I2S_MCK_PIN,
+			.bclk = MODDEF_AUDIOIN_I2S_BCK_PIN,
+			.ws = MODDEF_AUDIOIN_I2S_LR_PIN,
+			.dout = I2S_GPIO_UNUSED,
+			.din = MODDEF_AUDIOIN_I2S_DATAIN,
+			.invert_flags = {
+				.mclk_inv = false,
+				.bclk_inv = false,
+				.ws_inv = false,
+			}
+		}
+	};
+
+	chan_cfg.dma_desc_num = 6;
+	chan_cfg.dma_frame_num = AUDIO_IN_DMA_FRAMES;
+	input->handle = C_NULL;
+	err = i2s_new_channel(&chan_cfg, C_NULL, &input->handle);
+	if (ESP_OK != err) {
+		input->handle = C_NULL;
+		return err;
+	}
+
+	rx_std_cfg.slot_cfg.slot_mask = (2 == MODDEF_AUDIOIN_NUMCHANNELS)
+		? I2S_STD_SLOT_BOTH
+		: MODDEF_AUDIOIN_I2S_SLOT;
+	err = i2s_channel_init_std_mode(input->handle, &rx_std_cfg);
+	if (ESP_OK != err) {
+		audioInCloseChannel(input);
+		return err;
+	}
+	return ESP_OK;
+}
+#endif
 
 void xs_audioin_constructor(xsMachine *the)
 {
@@ -249,8 +308,40 @@ void xs_audioin_constructor(xsMachine *the)
 	gPDMAudioInBusy = 1;
 #endif
 
+	input->dmaReadBytes = AUDIO_IN_DMA_FRAMES * ((1 == numChannels) ? 4 : bytesPerFrame);
+
+#if !MODDEF_AUDIOIN_I2S_ADC && !MODDEF_AUDIOIN_I2S_PDM
+	{
+		esp_err_t err = audioInOpenStdChannel(input);
+		if (ESP_OK != err) {
+			xsForget(input->object);
+			c_free(input);
+			xsmcSetHostData(xsThis, C_NULL);
+			xsUnknownError("I2S input setup failed");
+		}
+	}
+#endif
+
 	input->mutex = xSemaphoreCreateMutex();
-	xTaskCreate(audioInLoop, "audioInput", 4096 + 1024, input, 10, &input->task);
+	if (!input->mutex) {
+#if !MODDEF_AUDIOIN_I2S_ADC && !MODDEF_AUDIOIN_I2S_PDM
+		audioInCloseChannel(input);
+#endif
+		xsForget(input->object);
+		c_free(input);
+		xsmcSetHostData(xsThis, C_NULL);
+		xsUnknownError("no memory for AudioIn mutex");
+	}
+	if (pdPASS != xTaskCreate(audioInLoop, "audioInput", 4096 + 1024, input, 10, &input->task)) {
+#if !MODDEF_AUDIOIN_I2S_ADC && !MODDEF_AUDIOIN_I2S_PDM
+		audioInCloseChannel(input);
+#endif
+		vSemaphoreDelete(input->mutex);
+		xsForget(input->object);
+		c_free(input);
+		xsmcSetHostData(xsThis, C_NULL);
+		xsUnknownError("AudioIn task create failed");
+	}
 }
 
 void xs_audioin_destructor(void *it)
@@ -459,6 +550,9 @@ void audioInLoop(void *pvParameter)
 	AudioInput input = pvParameter;
 	uint8_t stopped = true, enabled = false;
 
+	if (input->handle)
+		goto ready;
+
 // ### HW CONFIGURATION
 #if MODDEF_AUDIOIN_I2S_ADC
 #error untested
@@ -546,25 +640,23 @@ void audioInLoop(void *pvParameter)
 
 	err = i2s_channel_init_std_mode(input->handle, &rx_std_cfg);
 	if (err) {
-		i2s_del_channel(input->handle);
+		if (ESP_OK == i2s_del_channel(input->handle))
+			input->handle = C_NULL;
 		modLog("i2s_channel_init failed");
 	}
 #endif
 
-	err = i2s_channel_enable(input->handle);
-	if (err) {
-		i2s_del_channel(input->handle);
-		input->handle = C_NULL;
-		modLog("i2s_channel_enable failed");
-	}
-	enabled = true;
+	/* Leave the RX channel in READY until start(). Enabling here drives BCLK/WS
+	 * while the application still considers the microphone idle. */
+	enabled = false;
 #endif
 
+ready:
 	if (C_NULL == input->handle)
 		goto done;
 
 	while (true) {
-		size_t bytes_read;
+		size_t bytes_read = 0;
 
 		if (kStateRecording != input->state) {
 			uint32_t newState;
@@ -659,14 +751,21 @@ void audioInLoop(void *pvParameter)
 			input->recPos = input->buffer;
 		}
 		xSemaphoreGive(input->mutex);
+		if (input->dmaReadBytes && (amt > input->dmaReadBytes))
+			amt = input->dmaReadBytes;
 		amt = (amt > MAX_INPUT_BLOCK) ? MAX_INPUT_BLOCK : amt;
+		if (input->dmaReadBytes)
+			amt -= (amt % input->dmaReadBytes);
 		if (amt > 0) {
 			err = i2s_channel_read(input->handle, input->recPos, amt, &bytes_read, AUDIO_IN_TIMEOUT);
-			if (bytes_read) {
-				xSemaphoreTake(input->mutex, portMAX_DELAY);
-				input->recPos += bytes_read;
-				xSemaphoreGive(input->mutex);
-			}
+			if (ESP_ERR_TIMEOUT == err)
+				continue;
+			if ((ESP_OK != err) || (0 == bytes_read) ||
+				(input->dmaReadBytes && (bytes_read % input->dmaReadBytes)))
+				continue;
+			xSemaphoreTake(input->mutex, portMAX_DELAY);
+			input->recPos += bytes_read;
+			xSemaphoreGive(input->mutex);
 		}
 #endif
 
@@ -682,12 +781,14 @@ void audioInLoop(void *pvParameter)
 
 	// ## HW shutdown
 	if (input->handle) {
-#if MODDEF_AUDIOOUT_I2S_ADC
+#if MODDEF_AUDIOIN_I2S_ADC
 		adc_continuous_deinit(input->handle);
+		input->handle = C_NULL;
 #else
 		if (enabled)
 			i2s_channel_disable(input->handle);
-		i2s_del_channel(input->handle);
+		if (ESP_OK == i2s_del_channel(input->handle))
+			input->handle = C_NULL;
 #endif
 	}
 

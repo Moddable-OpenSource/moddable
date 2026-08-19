@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Shinya Ishikawa
+ * Copyright (c) 2026 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,35 +18,29 @@
  *
  */
 
-import AudioOut from "embedded:io/audio/out-original";
+import AudioIn from "embedded:io/audio/in-original";
 import { acquireI2S, releaseI2S } from "M5StackCoreS3I2SBus";
 
-/**
- * A special AudioOut implementation for M5Stack CoreS3
- * CoreS3 has an amplifier IC (AW88298).
- * The user must set the sample rate to the IC before playing audio.
- */
-export default class M5StackCoreS3AudioOut extends AudioOut {
+export default class M5StackCoreS3AudioIn extends AudioIn {
   constructor(options) {
-    acquireI2S("speaker", options && options.sampleRate);
+    acquireI2S("microphone", options && options.sampleRate);
     try {
       super(options);
     }
     catch (error) {
-      releaseI2S("speaker");
+      releaseI2S("microphone");
       throw error;
     }
-    acquireI2S("speaker", this.sampleRate);
   }
 
   start() {
-    acquireI2S("speaker", this.sampleRate);
+    acquireI2S("microphone", this.sampleRate);
     return super.start();
   }
 
   stop() {
     const result = super.stop();
-    releaseI2S("speaker");
+    releaseI2S("microphone");
     return result;
   }
 
@@ -55,7 +49,7 @@ export default class M5StackCoreS3AudioOut extends AudioOut {
       return super.close();
     }
     finally {
-      releaseI2S("speaker");
+      releaseI2S("microphone");
     }
   }
 }

@@ -136,6 +136,16 @@ class AW88298 {
     this.sampleRate = 24000;
   }
 
+  start(sampleRate) {
+    if (sampleRate)
+      this.sampleRate = sampleRate;
+    this.#io.writeUint16(0x04, 0x4040, true); // I2SEN=1 AMPPD=0 PWDN=0
+  }
+
+  stop() {
+    this.#io.writeUint16(0x04, 0x0040, true); // I2SEN=0
+  }
+
   /**
    * @note with ESP-IDF, 11025Hz and its multiples are not available for the slight gap between the clock of ESP32S3 and AW88298 PLL
    * @fixme should reset sampleRate if the different value specified in AudioOut#constructor
@@ -217,6 +227,14 @@ class ES7210 {
     for (const [reg, value] of data) {
       io.writeUint8(reg, value);
     }
+  }
+
+  start() {
+    this.init();
+  }
+
+  stop() {
+    this.#io.writeUint8(0x00, 0xFF); // RESET_CTL
   }
 }
 
