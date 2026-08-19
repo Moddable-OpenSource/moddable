@@ -1,0 +1,14 @@
+{
+	"build": {
+        "dockerfile": "Dockerfile"
+    },
+	"features": {
+		"ghcr.io/devcontainers/features/desktop-lite:1": {},
+		"ghcr.io/devcontainers/features/node:2": {}
+	},
+	"forwardPorts": [6080],
+	"remoteEnv": {
+	"MODDABLE":"/workspaces/moddable",
+    "PATH": "/workspaces/moddable/build/bin/lin/release:${containerEnv:PATH}"
+  }
+}
