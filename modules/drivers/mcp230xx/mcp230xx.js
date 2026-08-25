@@ -30,8 +30,8 @@ const INPUT_PULLUP = 1;
 const OUTPUT = 8;
 
 class Expander extends SMBus {
-  constructor(dictionary = { address: 0x20 }) {
-    super(dictionary);
+  constructor(dictionary = {}) {
+    super({ address: 0x20, ...dictionary });
 
     const {
       // User specific state initialization settings
