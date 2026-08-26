@@ -65,7 +65,7 @@ class Expander {
 		i2c.write(0x00, 0b11111111, 0b11111111);
 
 		i2c.pullups = 0b0000000000000000;		// set bit to indicate pin is pulled up
-		i2c.write(0x06, 0b00000000, 0b00000000);
+		i2c.write(0x0C, 0b00000000, 0b00000000); // GPPU
 
 		i2c.output = 0b0000000000000000;		// each bit represents the last set value of an output
 		i2c.write(0x12, 0b00000000, 0b00000000);
@@ -190,7 +190,7 @@ class InputBank extends IO {
 		this.#i2c = i2c;
 
 		i2c.pullups = (Digital.InputPullUp === options.mode) ? (i2c.pullups | pins) : (i2c.pullups & ~pins);
-		i2c.write(0x06, i2c.pullups & 255, i2c.pullups >> 8);
+		i2c.write(0x0C, i2c.pullups & 255, i2c.pullups >> 8); // GPPU
 
 		i2c.inputs |= pins;
 		i2c.write(0x00, i2c.inputs & 255, i2c.inputs >> 8);
