@@ -1,0 +1,11 @@
+{
+  "include": [
+    "$(MODDABLE)/examples/manifest_base.json",
+    "$(MODDABLE)/examples/manifest_typings.json",
+    "$(MODDABLE)/modules/io/manifest.json",
+    "$(MODDABLE)/modules/drivers/sensors/ina233/manifest.json"
+  ],
+  "modules": {
+    "*": ["./*.ts"]
+  }
+}

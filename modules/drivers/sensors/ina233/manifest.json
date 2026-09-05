@@ -1,0 +1,7 @@
+{
+  "include": ["$(MODULES)/data/text/decoder/manifest.json"],
+  "modules": {
+    "embedded:sensor/Power-Management/INA233": "./ina233"
+  },
+  "preload": ["embedded:sensor/Power-Management/INA233"]
+}
