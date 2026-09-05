@@ -133,7 +133,7 @@ MIFARE Ultralight 4-byte pages are used by `writeNDEF()`, not by `writeBlock()`.
 
 | Path | Platform |
 |---|---|
-| `examples/drivers/sensors/rfid/ui` | screen + LED; PN532 or MFRC522 |
+| `examples/drivers/sensors/rfid/ui` | screen + LED; PN532, MFRC522 or ST25R3916 |
 | `examples/drivers/sensors/rfid/log` | debugger only |
 | `examples/drivers/sensors/rfid/write` | write one URI |
 

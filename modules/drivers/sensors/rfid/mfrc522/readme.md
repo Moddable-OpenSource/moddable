@@ -108,7 +108,6 @@ MIFARE Ultralight (4-byte pages, no Crypto1) is not covered by these methods yet
 
 | Path | Platform |
 |---|---|
-| `examples/drivers/m5dial-rfid` | `esp32/m5dial` UI + write-to-block-4 test |
-| `examples/drivers/sensors/rfid/ui` | screen + LED; MFRC522 or PN532 |
+| `examples/drivers/sensors/rfid/ui` | screen + LED; MFRC522, PN532, or ST25R3916 |
 | `examples/drivers/sensors/rfid/log` | debugger only |
-| `examples/drivers/m5dial-rfid` | `esp32/m5dial` UI + Classic block write |
+| `examples/drivers/sensors/rfid/write` | write one URI |
