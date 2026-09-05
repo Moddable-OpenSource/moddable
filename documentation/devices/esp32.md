@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: September 2, 2026
+Revised: September 5, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
@@ -211,6 +211,7 @@ The Moddable SDK supports these ESP32-C5 development kits:
 | :---: | :--- | :--- | :--- |
 | ESP32-C5 | `esp32/esp32c5`<br>`esp32/esp32c5_cdc` | NeoPixel, Button | |
 |  <img src="./../assets/devices/ws_c5_147.jpg" width=125><BR>Waveshare<br>ESP32-C5-LCD-1.47 | `esp32/ws_esp32c5_1_47` | 1.47" 172x320<br>Display<br>NeoPixel, Button | <li>[Product page](https://docs.waveshare.com/ESP32-C5-LCD-1.47)</li> |
+| <img src="./../assets/devices/xiao-esp32c5.jpg" width=125><BR>Seeed Studio<BR>XIAO ESP32-C5 | `esp32/xiao_esp32c5` | User LED, 1 button<br>8MB PSRAM, 8MB flash<br>Dual-band Wi-Fi 6 | <li>[Product page](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C5-p-6609.html)</li> |
 
 <a id="platforms-esp32-c6"></a>
 ### ESP32-C6
@@ -230,6 +231,8 @@ The Moddable SDK supports these ESP32-C6 development kits:
 |  <img src="./../assets/devices/esp32-c6-devkitc.png" width=125><BR>ESP32-C6-DevKitC-1 | `esp32/esp32c6` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html)</li> |
 |  <img src="./../assets/devices/m5nanoc6.png" width=125><BR>M5NanoC6 | `esp32/m5nanoc6` | LED, NeoPixel, Button | <li>[Product page](https://docs.m5stack.com/en/core/M5NanoC6)</li> |
 |  <img src="./../assets/devices/ws_c6_147.jpg" width=125><BR>Waveshare<br>ESP32-C6-LCD-1.47 | `esp32/ws_esp32c6_1_47` | 1.47" 172x320<br>Display<br>NeoPixel, Button | <li>[Product page](https://docs.waveshare.com/ESP32-C6-LCD-1.47)</li> |
+| <img src="./../assets/devices/xiao-esp32c6.jpg" width=125><BR>Seeed Studio<BR>XIAO ESP32C6 | `esp32/xiao_esp32c6` | User LED, 1 button | <li>[Product page](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C6-p-5884.html)</li> |
+| <img src="./../assets/devices/ws-c6-zero.png" width=125><BR>Waveshare<br>ESP32-C6-Zero | `esp32/ws_esp32c6_zero` | NeoPixel, Button | <li>[Product page](https://www.waveshare.com/esp32-c6-zero.htm)</li> |
 
 <a id="platforms-esp32-h2"></a>
 ### ESP32-H2
@@ -1136,6 +1139,9 @@ These are some of the devices use this technique:
 | `esp32/esp32s3_cdc` | Espressif ESP32-S3-DevKitC |
 | `esp32/qtpyc3` | Adafruit QT Py C3 |
 | `esp32/xiao_esp32c3` | Seeed Xiao ESP32C3 |
+| `esp32/xiao_esp32c5` | Seeed Xiao ESP32-C5 |
+| `esp32/xiao_esp32c6` | Seeed Xiao ESP32C6 |
+| `esp32/ws_esp32c6_zero` | Waveshare ESP32-C6-Zero |
 
 
 <a id="idf-components"></a>
