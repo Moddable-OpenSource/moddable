@@ -249,6 +249,7 @@ The Moddable SDK supports these ESP32-H2 development kits:
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 |  <img src="./../assets/devices/esp32-h2-devkitm.png" width=125><BR>ESP32-H2-DevKitM-1 | `esp32/esp32h2` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32h2/esp32-h2-devkitm-1/user_guide.html)</li> |
+|  <img src="./../assets/devices/m5nanoh2.png" width=125><BR>M5NanoH2 | `esp32/m5nanoh2` | LED, NeoPixel, Button | <li>[Product page](https://docs.m5stack.com/en/core/NanoH2)</li> |
 
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest

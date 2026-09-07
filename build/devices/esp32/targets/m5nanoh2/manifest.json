@@ -1,0 +1,43 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32h2",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RST button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
+	},
+	"include": [
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "",
+		"led": {
+			"rgb": {
+				"rainbow": false,
+				"brightness": 32
+			}
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	}
+}
