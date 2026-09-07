@@ -682,14 +682,36 @@ void PiuScreen_touch(xsMachine* the)
 void PiuScreen_writePNG(xsMachine* the)
 {
 	PiuScreen* self = PIU(Screen, xsThis);
+	PiuMargins margins = &(*self)->margins;
 	txScreen* screen = (*self)->screen;
 	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef provider = CGDataProviderCreateWithData(nil, screen->buffer, screen->width * screen->height * screenBytesPerPixel, nil);
 	CGImageRef image = CGImageCreate(screen->width, screen->height, 8, 32, screen->width * screenBytesPerPixel, colorSpace, kCGBitmapByteOrder32Big | kCGImageAlphaNoneSkipLast, provider, nil, NO, kCGRenderingIntentDefault);
+	if ((*self)->transparency) {
+     	CGRect rect = CGRectMake(0, 0, screen->width, screen->height);
+        CGContextRef context = CGBitmapContextCreate(
+				NULL,
+				screen->width,
+				screen->height,
+				CGImageGetBitsPerComponent(image),
+				0, // Bytes per row automatically calculated
+				CGImageGetColorSpace(image),
+				CGImageGetBitmapInfo(image)
+   	 	);
+		CGContextFillRect(context, rect);
+		CGContextSetAlpha(context, 1.0 - (*self)->transparency);
+        CGContextDrawImage(context, rect, image);
+		image = CGBitmapContextCreateImage(context);
+		CGContextRelease(context);
+	}
+	if (margins->left || margins->right || margins->top || margins->bottom) {
+		CGRect rect = CGRectMake(margins->left, margins->top, screen->width - margins->left - margins->right, screen->height - margins->top - margins->bottom);
+		image = CGImageCreateWithImageInRect(image, rect);
+	}
+	
     CFStringRef path = CFStringCreateWithCString(NULL, xsToString(xsArg(0)), kCFStringEncodingUTF8);
 	CFURLRef url = CFURLCreateWithFileSystemPath(NULL, path, kCFURLPOSIXPathStyle, false);
-    CFStringRef type = CFStringCreateWithCString(NULL, "public:png", kCFStringEncodingUTF8);
-	CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, type, 1, NULL);
+	CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, NULL);
     CGImageDestinationAddImage(destination, image, NULL);
 	CGImageDestinationFinalize(destination);
 }
