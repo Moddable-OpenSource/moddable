@@ -44,7 +44,7 @@ class URL {
 			this.#parts = parseURL(href, parseURL(base));
 		else
 			this.#parts = parseURL(href);
-		this.#searchParams = new URLSearchParams(this.#parts.query, this.#parts);
+		this.#searchParams = new URLSearchParams(this.#parts.query ?? "", this.#parts);
 	}
 	get hash() {
 		return serializeURL(this.#parts, FRAGMENT);
@@ -69,7 +69,7 @@ class URL {
 	}
 	set href(it) {
 		this.#parts = parseURL(it);
-		this.#searchParams.updatePairs();
+		this.#searchParams.updatePairs(this.#parts);
 	}
 	get origin() {
 		return serializeURL(this.#parts, ORIGIN);
@@ -180,9 +180,10 @@ class URLSearchParams {
 	toString() {
 		return serializeQuery(this.#pairs);
 	}
-	updatePairs() {
-		if (this.#parts)
-			this.#pairs = parseQuery(this.#parts.query);
+	updatePairs(parts = this.#parts) {
+		this.#parts = parts;
+		if (parts)
+			this.#pairs = parseQuery(parts.query ?? "");
 	}
 	updateParts() {
 		if (this.#parts)
