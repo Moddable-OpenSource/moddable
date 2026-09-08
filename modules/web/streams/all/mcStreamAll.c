@@ -372,8 +372,8 @@ void fxNewStreamResult(txMachine* the, txBoolean done)
 	txSlot* slot;
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextSlotProperty(the, slot, value, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
-	slot = fxNextBooleanProperty(the, slot, done, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextSlotProperty(the, slot, value, mxID(_value), XS_NO_FLAG);
+	slot = fxNextBooleanProperty(the, slot, done, mxID(_done), XS_NO_FLAG);
 	mxPullSlot(value);
 }
 
