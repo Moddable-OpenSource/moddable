@@ -1,0 +1,58 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the BOOT button, then press and release the RST button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/co5300/manifest.json",
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/digital/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": ["setup/target"],
+	"config": {
+		"screen": "co5300",
+		"touch": "",
+		"format": "RGB565BE"
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"co5300": {
+			"width": 240,
+			"height": 536,
+			"hz": 40000000,
+			"column_offset": 0,
+			"row_offset": 0,
+			"cs_pin": 6,
+			"sck_pin": 47,
+			"data0_pin": 18,
+			"data1_pin": 7,
+			"data2_pin": 48,
+			"data3_pin": 5,
+			"rst_pin": 17,
+			"spi_port": "SPI2_HOST",
+			"rm67162": 1
+		},
+		"poco": {
+			"dma": 1
+		}
+	}
+}
