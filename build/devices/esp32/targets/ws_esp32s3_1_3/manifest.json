@@ -1,0 +1,85 @@
+{
+	"build": {
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"ESP32_SUBCLASS": "esp32s3"
+	},
+	"include": [
+		"$(MODULES)/io/manifest.json",
+		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
+		"$(MODULES)/drivers/st7789/manifest.json",
+		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "st7789",
+		"format": "RGB565LE",
+		"brightness": 50,
+		"led": {
+			"pin": 15,
+			"rainbow": true,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 32768
+		},
+		"heap": {
+			"initial": 16384,
+			"incremental": 16384
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 47,
+			"scl_pin": 48
+		},
+		"spi": {
+			"miso_pin": -1,
+			"mosi_pin": 41,
+			"sck_pin":  40
+		},
+		"ili9341": {
+			"width": 240,
+			"height": 240,
+			"hz": 40000000,
+			"cs_pin": 39,
+			"dc_pin": 38,
+			"rst_pin": 42,
+			"spi_port": "SPI2_HOST",
+			"spi_mode": "0",
+			"row_offset": 80,
+			"registers": [
+				"0x36, 1, 0xC0,",
+				"0x3A, 1, 0x05,",
+				"0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,",
+				"0xB7, 1, 0x35,",
+				"0xBB, 1, 0x19,",
+				"0xC0, 1, 0x2C,",
+				"0xC2, 1, 0x01,",
+				"0xC3, 1, 0x12,",
+				"0xC4, 1, 0x20,",
+				"0xC6, 1, 0x0F,",
+				"0xD0, 2, 0xA4, 0xA1,",
+				"0xE0, 14, 0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23,",
+				"0xE1, 14, 0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F, 0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23,",
+				"0x21, 0,",
+				"0x11, 0,",
+				"kDelayMS, 120,",
+				"0x29, 0,",
+				"kDelayMS, 20,",
+				"kDelayMS, 0"
+			]
+		}
+	}
+}

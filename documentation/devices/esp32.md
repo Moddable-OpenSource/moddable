@@ -155,6 +155,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 | <img src="../assets/devices/xiao-qtpy-ili9341-thumbnail.png" width=140></a><BR>ili9341 | `esp32/qtpys3_ili9341`<br>`esp32/xiao_esp32s3_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 | <img src="../assets/devices/waveshare_s3_amoled_2.06.png" width=140></a>Waveshare<BR>ESP32-S3-Touch-AMOLED-2.06 | `esp32/waveshare_amoled_206` | 2.06" AMOLED display<BR>410 x 502<BR>16-bit color<BR>QSPI display bus<BR>Capacitive touch<BR>IMU<BR>RTC<BR>PMU | <li>[Product page](https://www.waveshare.com/esp32-s3-touch-amoled-2.06.htm)</li> |
 |  <img src="./../assets/devices/ws_c6_147.jpg" width=125><BR>Waveshare<br>ESP32-S3-LCD-1.47 | `esp32/ws_esp32s3_1_47` | 1.47" 172x320<br>Display<br>IMU, NeoPixel, Button | <li>[Product page](https://www.waveshare.com/product/arduino/boards-kits/esp32-s3/esp32-s3-lcd-1.47b.htm)</li> |
+|  <img src="./../assets/devices/ws_esp32s3_1_3.jpg" width=125><BR>Waveshare<br>ESP32-S3-LCD-1.3 | `esp32/ws_esp32s3_1_3` | 1.3" 240x240<br>Display<br>IMU, NeoPixel | <li>[Product page](https://www.waveshare.com/esp32-s3-lcd-1.3.htm)</li> |
 
 <a id="platforms-esp32-s3-cameras"></a>
 ### ESP32-S3 Cameras
