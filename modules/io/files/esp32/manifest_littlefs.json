@@ -1,0 +1,20 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:x-files-implementation": "./files-vfs",
+				"embedded:storage/files": "./files"
+			},
+			"preload": "embedded:x-files-implementation",
+			"defines": {
+				"file": {
+					"partition": "#storage",
+					"littlefs": 1
+				}
+			},
+			"dependency": [
+				{ "name": "littlefs", "namespace": "joltwallet", "version": "^1.14.0" }
+			]
+		}
+	}
+}

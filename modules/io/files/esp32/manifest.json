@@ -1,0 +1,19 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:x-files-implementation": "./files-vfs",
+				"embedded:storage/files": "./files"
+			},
+			"preload": "embedded:x-files-implementation",
+			"defines": {
+				"file": {
+					"partition": "#storage"
+				}
+			},
+			"dependency": [
+				{ "idf": "spiffs" }
+			]
+		}
+	}
+}
