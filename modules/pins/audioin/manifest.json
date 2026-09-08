@@ -8,7 +8,11 @@
 					"./audioin",
 					"./esp32/audioin"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_driver_i2s" },
+				{ "idf": "esp_adc" }
+			]
 		},
 		"...": {
 			"warning": "Using AudioIn simulator",
