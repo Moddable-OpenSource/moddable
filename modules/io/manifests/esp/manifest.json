@@ -17,10 +17,12 @@
 			"$(MODULES)/pins/digital/esp/modGPIO"
 		],
 
-		"system": "$(IO)/system/*"
+		"system": "$(IO)/system/system",
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
-		"system"
+		"system",
+		"lockdown/device"
 	],
 	"platforms": {
 		"esp/*": {

@@ -3,7 +3,8 @@
 		"esp32": {
 			"include": "../../flash/manifest.json",
 			"modules": {
-				"embedded:update": "./update-esp32"
+				"embedded:update": "./update-esp32",
+				"config/update": "../config"
 			},
 			"dependency": [
 				{ "idf": "app_update" }
@@ -11,6 +12,7 @@
 		}
 	},
 	"preload": [
-		"embedded:update"
+		"embedded:update",
+		"config/update"
 	]
 }

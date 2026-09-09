@@ -10,11 +10,13 @@
 				"*": [
 					"$(MODULES)/io/common/builtinCommon",
 					"$(MODULES)/io/digital/$(PLATFORM)/*"
-				]
+				],
+				"config/digital": "./config"
 			},
 			"preload": [
 				"embedded:io/digital",
-				"embedded:io/digitalbank"
+				"embedded:io/digitalbank",
+				"config/digital"
 			],
 			"dependency": [
 				{ "idf": "esp_driver_gpio" }

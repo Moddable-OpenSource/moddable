@@ -627,8 +627,8 @@ export default class extends TOOL {
 			let source = this.snippets.join("");
 			let path = tmpPath + this.slash + "globals.js";
 			this.writeFileString(path, source);
-			this.manifest.modules.globals = "./globals";
-			this.manifest.preload = [ "globals" ];
+			this.manifest.modules["config/mcpack"] = "./globals";
+			this.manifest.preload = [ "config/mcpack" ];
 		}
 		if (this.errorCount == 0) {
 			let async = false;

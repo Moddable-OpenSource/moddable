@@ -1,17 +1,11 @@
-import "system"		// system initializes globalThis.device. this ensures it runs before this module.
-
+import device from "embedded:provider/builtin";
 import UDP from "embedded:io/socket/udp";
-import DNSSD from "embedded:network/dnssd" 
+import DNSSD from "embedded:network/dnssd";
 
-globalThis.device = Object.freeze({
-	...globalThis.device,
-	network: {
-		...globalThis.device?.network,
-		dnssd: {
-			io: DNSSD,
-			socket: {
-				io: UDP
-			}		
-		}
-	},
-}, true);
+device.network ??= {};
+device.network.dnssd = {
+	io: DNSSD,
+	socket: {
+		io: UDP
+	}
+};

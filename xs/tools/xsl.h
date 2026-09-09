@@ -199,6 +199,9 @@ struct sxLinkerScript {
 	txCallbackName* callbackNames;
 	txSize hostsCount;
 	txLinkerPreload* preload;
+	txFlag stripped;
+	txSlot* module;
+	txID moduleID;
 };
 
 struct sxLinkerStrip {

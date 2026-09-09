@@ -5,7 +5,7 @@
 		"$(MODDABLE)/modules/crypt/tls_419.json"
 	],
 	"modules": {
-		"httpsclient/config": "./config"
+		"config/httpsclient": "./config"
 	},
-	"preload": "httpsclient/config"
+	"preload": "config/httpsclient"
 }

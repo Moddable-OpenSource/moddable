@@ -3,7 +3,8 @@
 		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
 		"*": [
 			"$(MODULES)/io/common/builtinCommon"
-		]
+		],
+		"config/serial": "./config"
 	},
 	"platforms": {
 		"esp": {
@@ -24,6 +25,7 @@
 		}
 	},
 	"preload": [
-		"embedded:io/serial"
+		"embedded:io/serial",
+		"config/serial"
 	]
 }

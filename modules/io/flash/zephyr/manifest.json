@@ -3,10 +3,12 @@
 		"zephyr": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/flash": "./flash-zephyr"
+				"embedded:storage/flash": "./flash-zephyr",
+				"config/flash": "../config"
 			},
 			"preload": [
-				"embedded:storage/flash"
+				"embedded:storage/flash",
+				"config/flash"
 			],
 			"zephyrConfig": {
 				"CONFIG_FLASH": "y",

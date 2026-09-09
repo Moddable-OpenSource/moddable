@@ -3,6 +3,7 @@
 		"esp32": {
 			"modules": {
 				"embedded:storage/key-value": "./storage-esp32",
+				"config/storage": "../config",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
 				]
@@ -10,6 +11,7 @@
 		}
 	},
 	"preload": [
-		"embedded:storage/key-value"
+		"embedded:storage/key-value",
+		"config/storage"
 	]
 }

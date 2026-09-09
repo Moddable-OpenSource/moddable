@@ -1,12 +1,17 @@
 {
+	"include": [
+		"$(MODULES)/base/modules/manifest.json"
+	],
 	"platforms": {
 		"zephyr": {
 			"modules": {
 				"embedded:x-files-implementation": "./files-zephyr",
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
 			"preload": [
-				"embedded:x-files-implementation"
+				"embedded:x-files-implementation",
+				"config/files"
 			],
 			"zephyrConfig": {
 				"CONFIG_FLASH": "y",

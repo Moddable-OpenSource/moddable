@@ -3,10 +3,12 @@
 		"zephyr": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/key-value": "./storage-zephyr"
+				"embedded:storage/key-value": "./storage-zephyr",
+				"config/storage": "../config"
 			},
 			"preload": [
-				"embedded:storage/key-value"
+				"embedded:storage/key-value",
+				"config/storage"
 			],
 			"zephyrConfig": {
 				"CONFIG_SETTINGS": "y",

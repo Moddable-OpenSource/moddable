@@ -1027,10 +1027,14 @@ void fxWriteScriptHosts(txLinkerScript* script, FILE* file)
 			p += mxStringLength((char*)p) + 1;
 		}
 		fprintf(file, "};\n");
-		fprintf(file, "void xsHostModule%d(xsMachine* the)\n", script->scriptIndex);
-		fprintf(file, "{\n");
-		fprintf(file, "\txsResult = xsBuildHosts(%d, (xsHostBuilder*)gxBuilders%d);\n", c, script->scriptIndex);
-		fprintf(file, "}\n\n");
+		if (script->stripped)
+			fprintf(file, "\n");
+		else {
+			fprintf(file, "void xsHostModule%d(xsMachine* the)\n", script->scriptIndex);
+			fprintf(file, "{\n");
+			fprintf(file, "\txsResult = xsBuildHosts(%d, (xsHostBuilder*)gxBuilders%d);\n", c, script->scriptIndex);
+			fprintf(file, "}\n\n");
+		}
 	}
 }
 

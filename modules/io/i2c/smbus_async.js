@@ -18,7 +18,7 @@
  *
 */
 
-import SMBus from "embedded:implementation/smbussync"
+import SMBus from "embedded:io/smbus"
 
 SMBus.Async = class extends Native("_xs_smbusasync_destructor") {
 	constructor(options) { super(); native("_xs_smbusasync_constructor").call(this, options); }
@@ -45,5 +45,3 @@ SMBus.Async = class extends Native("_xs_smbusasync_destructor") {
 			throw new Error;
 	}
 }
-
-export default SMBus;

@@ -6,13 +6,13 @@
 	],
 	"modules": {
 		"*": [
-			"./config",
 			"./data",
 			"./main"
-		]
+		],
+		"config/mqtt": "./config"
 	},
 	"preload": [
-		"config",
+		"config/mqtt",
 		"data"
 	]
 }

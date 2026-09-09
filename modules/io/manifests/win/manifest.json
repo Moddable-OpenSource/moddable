@@ -3,9 +3,12 @@
 		"*": [
 			"./system",
 			"$(MODDABLE)/modules/io/common/builtinCommon"
-		]
+		],
+		"lockdown/device": "$(MODDABLE)/modules/io/device/lockdowndevice",
+		"embedded:provider/builtin": "$(MODDABLE)/modules/io/host/win/provider"
 	},
 	"preload": [
-		"system"
+		"system",
+		"lockdown/device"
 	]
 }

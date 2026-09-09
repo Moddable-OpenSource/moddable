@@ -18,10 +18,12 @@
 			"$(IO)/common/builtinCommon",
 			"$(MODULES)/pins/digital/pico/modGPIO"
 		],
-		"system": "$(IO)/system/*"
+		"system": "$(IO)/system/system",
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
-		"system"
+		"system",
+		"lockdown/device"
 	],
 	"platforms": {
 		"pico/*": {

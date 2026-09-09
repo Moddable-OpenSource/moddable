@@ -10,14 +10,14 @@
 			"$(MODULES)/network/dns/moddnsparser"
 		],
 		"embedded:network/http/server": "./httpserver",
-		"httpserver/config": "./config",
+		"config/httpserver": "./config",
 		"embedded:network/http/server/route/serversentevents": "./options/serversentevents",
 		"embedded:network/http/server/route/static": "./options/static",
 		"embedded:network/http/server/route/ws/handshake": "./options/websocket"
 	},
 	"preload": [
 		"embedded:network/http/server",
-		"httpserver/config",
+		"config/httpserver",
 		"embedded:network/http/server/route/serversentevents",
 		"embedded:network/http/server/route/static",
 		"embedded:network/http/server/route/ws/handshake"

@@ -7,11 +7,11 @@
 		"$(MODDABLE)/modules/io/socket/manifest.json"
 	],
 	"modules": {
-		"wsclient/config": "./config",
+		"config/wsclient": "./config",
 		"embedded:network/websocket/client": "./websocketclient"
 	},
 	"preload": [
-		"wsclient/config",
+		"config/wsclient",
 		"embedded:network/websocket/client"
 	],
 	"mcpack": true

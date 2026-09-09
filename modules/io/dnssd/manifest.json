@@ -7,10 +7,10 @@
 	],
 	"modules": {
 		"embedded:network/dnssd": "./dnssd",
-		"dnssd/config": "./config"
+		"config/dnssd": "./config"
 	},
 	"preload": [
-		"dnssd/config",
+		"config/dnssd",
 		"embedded:network/dnssd"
 	]
 }

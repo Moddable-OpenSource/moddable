@@ -6,10 +6,10 @@
 	],
 	"modules": {
 		"embedded:network/dns/resolver/udp": "./dns",
-		"dns/config": "./config"
+		"config/dns": "./config"
 	},
 	"preload": [
 		"embedded:network/dns/resolver/udp",
-		"dns/config"
+		"config/dns"
 	]
 }

@@ -1,21 +1,13 @@
-import "dns/config";
-
+import device from "embedded:provider/builtin";
+import "config/dns";
 import TCP from "embedded:io/socket/tcp";
-
 import MQTTClient from "embedded:network/mqtt/client";
 
-const dns = device.network.dns.resolver;
-globalThis.device = Object.freeze({
-	...globalThis.device,
-	network: {
-		...globalThis.device?.network,
-		mqtt: {
-			io: MQTTClient,
-			dns,
-			socket: {
-				io: TCP,
-			},		
-		},
-	},
-}, true);
-
+device.network ??= {};
+device.network.mqtt = {
+	io: MQTTClient,
+	dns: device.network.dns.resolver,
+	socket: {
+		io: TCP
+	}
+};

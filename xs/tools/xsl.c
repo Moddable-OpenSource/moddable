@@ -55,6 +55,71 @@ static void fxFreezeBuiltIns(txMachine* the);
 static void fxFreezeJSONModule(txMachine* the);
 static txScript* fxLoadScript(txMachine* the, txString path);
 
+static txInteger fxPreloadOrder(txString name)
+{
+	if (!c_strncmp(name, "config/", 7))
+		return 0;
+	if (!c_strncmp(name, "lockdown/", 9))
+		return 2;
+	return 1;
+}
+
+static void fxStripKey(txMachine* the, txID id)
+{
+	the->keyArray[id - the->keyOffset]->flag &= ~XS_DONT_DELETE_FLAG;
+}
+
+static txBoolean fxIsDeadScript(txLinkerScript* script)
+{
+	return script->stripped && script->module && (script->module->kind != XS_INSTANCE_KIND);
+}
+
+static txBoolean fxScriptsUseSymbol(txLinker* linker, txString name)
+{
+	txLinkerScript* script = linker->firstScript;
+	while (script) {
+		if (!fxIsDeadScript(script) && script->symbolsBuffer) {
+			txByte* p = script->symbolsBuffer;
+			txID c, i;
+			mxDecodeID(p, c);
+			for (i = 1; i < c; i++) {
+				if (!c_strcmp((txString)p, name))
+					return 1;
+				p += mxStringLength((txString)p) + 1;
+			}
+		}
+		script = script->nextScript;
+	}
+	return 0;
+}
+
+static void fxStripScriptKeys(txMachine* the, txLinker* linker, txLinkerScript* stripped)
+{
+	txByte* p = stripped->symbolsBuffer;
+	txID c, i;
+	if (!p)
+		return;
+	mxDecodeID(p, c);
+	for (i = 1; i < c; i++) {
+		txString name = (txString)p;
+		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, name, 0, 0);
+		p += mxStringLength(name) + 1;
+		if ((symbol->ID < XS_ID_COUNT) || symbol->flag || fxScriptsUseSymbol(linker, name))
+			continue;
+		txID id = fxFindName(the, name);
+		if (id != XS_NO_ID)
+			fxStripKey(the, id);
+	}
+}
+
+static txBoolean fxIsStrippedModule(txMachine* the, txSlot* module)
+{
+	txString name = fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id);
+	if (fxPreloadOrder(name) == 1)
+		return 0;
+	return mxModuleInstanceExports(module)->value.reference->next == C_NULL;
+}
+
 int main(int argc, char* argv[]) 
 {
 	txLinker _linker;
@@ -100,6 +165,7 @@ int main(int argc, char* argv[])
 	xsCreation* creation = &_creation;
 	xsMachine* the = NULL;
 	txInteger count;
+	txInteger scriptCount;
 	
 	txBoolean incremental = 0;
 	struct c_stat headerStat;
@@ -366,25 +432,17 @@ int main(int argc, char* argv[])
 // 							fxNewNameC(the, path + linker->baseLength);
 // 							script = script->nextScript;
 // 						}
-						preload = linker->firstPreload;
-						while (preload) {
-							if (c_strncmp(preload->name, "lockdown/", 9)) {
-								fxSlashPath(preload->name, mxSeparator, url[0]);
-								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
-								fxFreezeJSONModule(the);
-								xsCollectGarbage();
+						for (txInteger order = 0; order < 3; order++) {
+							preload = linker->firstPreload;
+							while (preload) {
+								if (fxPreloadOrder(preload->name) == order) {
+									fxSlashPath(preload->name, mxSeparator, url[0]);
+									xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
+									fxFreezeJSONModule(the);
+									xsCollectGarbage();
+								}
+								preload = preload->nextPreload;
 							}
-							preload = preload->nextPreload;
-						}
-						preload = linker->firstPreload;
-						while (preload) {
-							if (!c_strncmp(preload->name, "lockdown/", 9)) {
-								fxSlashPath(preload->name, mxSeparator, url[0]);
-								xsResult = xsAwaitImport(preload->name, XS_IMPORT_NAMESPACE);
-								fxFreezeJSONModule(the);
-								xsCollectGarbage();
-							}
-							preload = preload->nextPreload;
 						}
 						while (linker->promiseJobsFlag) {
 							linker->promiseJobsFlag = 0;
@@ -475,15 +533,52 @@ int main(int argc, char* argv[])
 				{
 					txSlot* realm = mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm;
 					txSlot* modules = mxOwnModules(realm)->value.reference;
-					txSlot* module = modules->next;
-					while (module) {
-						mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
-						module = module->next;
+					txSlot** address = &(modules->next);
+					txSlot* module;
+					txInteger stripped = 0;
+					while ((module = *address)) {
+						if (fxIsStrippedModule(the, module->value.reference)) {
+							// unlink it and let the garbage collector discard it
+							txSlot* internal = mxModuleInstanceInternal(module->value.reference);
+							txString name = fxGetKeyName(the, internal->value.module.id);
+							script = linker->firstScript;
+							while (script) {
+								if (!c_strcmp(name, script->path)) {
+									script->stripped = 1;
+									script->module = module->value.reference;
+									script->moduleID = internal->value.module.id;
+									linker->scriptCount--;
+									break;
+								}
+								script = script->nextScript;
+							}
+							*address = module->next;
+							stripped++;
+						}
+						else {
+							mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+							address = &(module->next);
+						}
 					}
 					mxModuleInstanceInternal(mxProgram.value.reference)->value.module.realm = NULL;
 					mxException.kind = XS_REFERENCE_KIND; //@@
 					mxException.value.reference = mxRealmClosures(realm)->value.reference; //@@
 					mxProgram.value.reference = modules; //@@
+					if (stripped) {
+						fxCollectGarbage(the);
+						stripped = 0;
+						script = linker->firstScript;
+						while (script) {
+							if (fxIsDeadScript(script)) {
+								fxStripKey(the, script->moduleID);
+								fxStripScriptKeys(the, linker, script);
+								stripped++;
+							}
+							script = script->nextScript;
+						}
+						if (stripped)
+							fxCollectGarbage(the);
+					}
 				}
 				if (linker->freezeFlag) {
 					fxFreezeBuiltIns(the);
@@ -614,10 +709,12 @@ int main(int argc, char* argv[])
 // 			fprintf(file, "static const txSlot* gxGlobals[mxGlobalsCount];\n");
 			script = linker->firstScript;
 			while (script) {
-				if (script->hostsBuffer)
-					fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
-				if (script->preload == C_NULL)
-					fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
+				if (!script->stripped) {
+					if (script->hostsBuffer)
+						fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
+					if (script->preload == C_NULL)
+						fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
+				}
 				script = script->nextScript;
 			}
 			fprintf(file, "#define mxScriptsCount %d\n", linker->scriptCount);
@@ -631,17 +728,22 @@ int main(int argc, char* argv[])
 			script = linker->firstScript;
 			while (script) {
 				fxWriteScriptHosts(script, file);
-				fxWriteScriptCode(script, file);
+				if (!script->stripped)
+					fxWriteScriptCode(script, file);
 				script = script->nextScript;
 			}
 		
 			fprintf(file, "static const txScript gxScripts[mxScriptsCount] = {\n");
 			script = linker->firstScript;
+			scriptCount = 0;
 			while (script) {
-				fxWriteScriptRecord(script, file);
+				if (!script->stripped) {
+					if (scriptCount)
+						fprintf(file, ",\n");
+					fxWriteScriptRecord(script, file);
+					scriptCount++;
+				}
 				script = script->nextScript;
-				if (script)
-					fprintf(file, ",\n");
 			}
 			fprintf(file, "\n};\n\n");
 		

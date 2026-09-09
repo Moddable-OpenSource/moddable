@@ -1,4 +1,7 @@
 {
+	"include": [
+		"$(MODULES)/base/modules/manifest.json"
+	],
 	"platforms": {
 		"mac-test": {
 			"modules": {
@@ -7,9 +10,13 @@
 					"./lfs_util",
 					"./lfs"
 				],
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		},
 		"esp32": {
 			"modules": {
@@ -18,14 +25,18 @@
 					"./lfs_util",
 					"./lfs"
 				],
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
 			"defines": {
 				"file": {
 					"partition": "#storage"
 				}
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		},
 		"esp": {
 			"modules": {
@@ -34,9 +45,13 @@
 					"./lfs_util",
 					"./lfs"
 				],
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		},
 		"pico": {
 			"modules": {
@@ -45,9 +60,13 @@
 					"./lfs_util",
 					"./lfs"
 				],
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		}
 	},
 	"defines": {
