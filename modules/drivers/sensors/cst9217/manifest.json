@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Touch/CST9217": "./cst9217"
+	},
+	"preload": [
+		"embedded:sensor/Touch/CST9217"
+	]
+}
