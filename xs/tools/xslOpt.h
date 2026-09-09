@@ -20,6 +20,8 @@
 
 #ifndef __XSLOPT__
 #define __XSLOPT__
+
+#define mxKeysGarbageCollection 1
 #ifdef EMSCRIPTEN
 	#undef mxLinux
 	#define mxLinux 1

@@ -2,9 +2,13 @@
 	"platforms": {
 		"esp32": {
 			"modules": {
-				"embedded:storage/flash": "./flash-esp32"
+				"embedded:storage/flash": "./flash-esp32",
+				"config/flash": "../config"
 			},
-			"preload": "embedded:storage/flash",
+			"preload": [
+				"embedded:storage/flash",
+				"config/flash"
+			],
 			"dependency": [
 				{ "idf": "app_update" }
 			]

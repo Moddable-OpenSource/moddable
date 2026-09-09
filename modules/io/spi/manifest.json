@@ -15,13 +15,15 @@
 					"$(MODULES)/io/common/builtinCommon",
 					"$(MODULES)/io/spi/$(PLATFORM)/*"
 				],
-				"embedded:io/spi": "$(IO)/spi/spi"
+				"embedded:io/spi": "$(IO)/spi/spi",
+				"config/spi": "./config"
 			},
 			"dependency": [
 				{ "idf": "esp_driver_spi" }
 			],
 			"preload": [
-				"embedded:io/spi"
+				"embedded:io/spi",
+				"config/spi"
 			]
 		}
 	}

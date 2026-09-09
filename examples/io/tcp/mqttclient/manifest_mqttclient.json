@@ -5,11 +5,11 @@
 		"$(MODDABLE)/modules/io/socket/manifest.json"
 	],
 	"modules": {
-		"mqttclient/config": "./config",
+		"config/mqttclient": "./config",
 		"embedded:network/mqtt/client": "./mqttclient"
 	},
 	"preload": [
-		"mqttclient/config",
+		"config/mqttclient",
 		"embedded:network/mqtt/client"
 	],
 	"mcpack": true

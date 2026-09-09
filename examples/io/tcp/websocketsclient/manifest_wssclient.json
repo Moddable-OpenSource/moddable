@@ -6,9 +6,9 @@
 		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
 	],
 	"modules": {
-		"wssclient/config": "./config"
+		"config/wssclient": "./config"
 	},
 	"preload": [
-		"wssclient/config"
+		"config/wssclient"
 	]
 }

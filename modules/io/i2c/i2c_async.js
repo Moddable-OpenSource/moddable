@@ -18,7 +18,7 @@
  *
  */
 
-import I2C from "embedded:implementation/i2csync"
+import I2C from "embedded:io/i2c"
 
 I2C.Async = class extends Native("_xs_i2casync_destructor") {
 	constructor(options) { super(); native("_xs_i2casync_constructor").call(this, options); }
@@ -27,5 +27,3 @@ I2C.Async = class extends Native("_xs_i2casync_destructor") {
 	write(buffer) { return native("_xs_i2casync_write").call(this, buffer); }
 	writeRead(buffer, count) { return native("_xs_i2casync_writeRead").call(this, buffer, count); }
 }
-
-export default I2C;

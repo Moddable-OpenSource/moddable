@@ -9,10 +9,12 @@
 				"*": [
 					"$(MODULES)/io/common/builtinCommon",
 					"$(MODULES)/io/digital/$(PLATFORM)/*"
-				]
+				],
+				"config/analog": "./config"
 			},
 			"preload": [
-				"embedded:io/analog"
+				"embedded:io/analog",
+				"config/analog"
 			],
 			"dependency": [
 				{ "idf": "esp_adc" }

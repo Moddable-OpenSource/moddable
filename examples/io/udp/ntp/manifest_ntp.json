@@ -6,12 +6,12 @@
 	],
 	"modules": {
 		"embedded:network/ntp/client": "./ntp",
-		"ntp/config": "./config"
+		"config/ntp": "./config"
 
 	},
 	"preload": [
 		"embedded:network/ntp/client",
-		"ntp/config"
+		"config/ntp"
 	],
 	"mcpack": true
 }

@@ -5,7 +5,8 @@
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pulsecount": "./config"
 			},
 			"dependency": [
 				{ "idf": "esp_driver_pcnt" }
@@ -16,7 +17,8 @@
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pulsecount": "./config"
 			}
 		},
 		"pico": {
@@ -24,11 +26,13 @@
 				"embedded:io/pulsecount": "$(IO)/pulsecount/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pulsecount": "./config"
 			}
 		}
 	},
 	"preload": [
-		"embedded:io/pulsecount"
+		"embedded:io/pulsecount",
+		"config/pulsecount"
 	]
 }

@@ -3,7 +3,6 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(MODDABLE)/examples/manifest_base.json",
 		"$(IO)/analog/manifest.json",
 		"$(IO)/digital/manifest.json",
 		"$(IO)/i2c/manifest.json",
@@ -19,10 +18,12 @@
 			"$(IO)/common/builtinCommon",
 			"$(MODULES)/pins/digital/esp32/modGPIO"
 		],
-		"system": "$(IO)/system/*"
+		"system": "$(IO)/system/system",
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
-		"system"
+		"system",
+		"lockdown/device"
 	],
 	"platforms": {
 		"esp32": {

@@ -5,7 +5,8 @@
 				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pwm": "./config"
 			}
 		},
 		"esp32": {
@@ -13,7 +14,8 @@
 				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pwm": "./config"
 			},
 			"dependency": [
 				{ "idf": "esp_driver_ledc" }
@@ -24,7 +26,8 @@
 				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pwm": "./config"
 			}
 		},
 		"pico": {
@@ -32,7 +35,8 @@
 				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pwm": "./config"
 			}
 		},
 		"zephyr": {
@@ -40,7 +44,8 @@
 				"embedded:io/pwm": "$(MODULES)/io/pwm/$(PLATFORM)/*",
 				"*": [
 					"$(MODULES)/io/common/builtinCommon"
-				]
+				],
+				"config/pwm": "./config"
 			}
 		}
 	},
@@ -48,6 +53,7 @@
 		"CONFIG_PWM": "y"
 	},
 	"preload": [
-		"embedded:io/pwm"
+		"embedded:io/pwm",
+		"config/pwm"
 	]
 }

@@ -5,11 +5,11 @@
 		"$(MODDABLE)/modules/io/socket/manifest.json"
 	],
 	"modules": {
-		"httpclient/config": "./config",
+		"config/httpclient": "./config",
 		"embedded:network/http/client": "./../httpclient/httpclient"
 	},
 	"preload": [
-		"httpclient/config",
+		"config/httpclient",
 		"embedded:network/http/client"
 	],
 	"mcpack": true

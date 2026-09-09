@@ -1,13 +1,16 @@
 {
 	"platforms": {
 		"mac": {
+			"include": "../../flash/manifest.json",
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:update": "./update-mac"
+				"embedded:update": "./update-mac",
+				"config/update": "../config"
 			}
 		}
 	},
 	"preload": [
-		"embedded:update"
+		"embedded:update",
+		"config/update"
 	]
 }

@@ -18,10 +18,12 @@
 			"$(MODULES)/pins/digital/nrf52/modGPIO"
 		],
 
-		"system": "$(IO)/system/*"
+		"system": "$(IO)/system/system",
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
-		"system"
+		"system",
+		"lockdown/device"
 	],
 	"platforms": {
 		"nrf52/*": {

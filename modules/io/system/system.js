@@ -18,7 +18,6 @@
  *
  */
 
-import device from "embedded:provider/builtin";
 
 class System {
 	static deepSleep() { return native("xs_system_deepSleep").call(this); }
@@ -26,4 +25,3 @@ class System {
 }
 
 globalThis.System = System;
-globalThis.device = Object.freeze(device, true);

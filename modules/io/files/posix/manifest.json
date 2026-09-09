@@ -1,18 +1,29 @@
 {
+	"include": [
+		"$(MODULES)/base/modules/manifest.json"
+	],
 	"platforms": {
 		"mac": {
 			"modules": {
 				"embedded:x-files-implementation": "./files-posix",
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		},
 		"lin": {
 			"modules": {
 				"embedded:x-files-implementation": "./files-posix",
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation"
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			]
 		}
 	}
 }

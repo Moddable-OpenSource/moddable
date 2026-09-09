@@ -3,11 +3,13 @@
 		"mac": {
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/key-value": "./storage-mac"
+				"embedded:storage/key-value": "./storage-mac",
+				"config/storage": "../config"
 			}
 		}
 	},
 	"preload": [
-		"embedded:storage/key-value"
+		"embedded:storage/key-value",
+		"config/storage"
 	]
 }
