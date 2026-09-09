@@ -315,7 +315,7 @@ export class MakeFile extends FILE {
 			if (undefined !== factoryLine) {
 				const OTADATA_SIZE = 0x2000;
 				const MODS_SIZE = 0x40000;
-				const STORAGE_SIZE = 0x10000;
+				const STORAGE_SIZE = tool.defines.file?.fat32 ? 0x90000 : 0x10000;		// FAT with wear levelling needs a much larger minimum partition than SPIFFS or littlefs
 				const TEST_SIZE = 0x10000;
 				let line = partitions[factoryLine].split(",").map(item => item.trim());
 				let size = parse(line[4]);
@@ -1124,18 +1124,19 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 				var projBase = `${tool.tmpPath}${tool.slash}xsProj-${tool.environment.ESP32_SUBCLASS}${tool.slash}managed_components${tool.slash}`;
 				this.write("MANAGED_COMPONENT_DIRS = \\\n");
 				for (dep of tool.dependencies) {
-					namespace = dep.namespace ?? "espressif";
- 					const depBase = `${projBase}${namespace}__${dep.name}${tool.slash}`;
-					var depLine = "\t";
-					if (tool.windows)
-						depLine += "-I";
-					depLine += depBase + "include \\\n";
-					if (dep.includes) {
-						for (var inc of dep.includes) {
-							if (tool.windows)
-								depLine += "-I";
-							depLine += `${depBase}${tool.resolveSlash(inc)} \\\n`;
-						}
+					let depBase;
+					if (undefined !== dep.idf)
+						depBase = `$(IDF_PATH)${tool.slash}components${tool.slash}${dep.idf}${tool.slash}`;
+					else {
+						namespace = dep.namespace ?? "espressif";
+						depBase = `${projBase}${namespace}__${dep.name}${tool.slash}`;
+					}
+					var depLine = "";
+					for (var inc of ["include", ...(dep.includes ?? [])]) {
+						depLine += "\t";
+						if (tool.windows)
+							depLine += "-I";
+						depLine += `${depBase}${tool.resolveSlash(inc)} \\\n`;
 					}
 					this.write(depLine);
 				}
