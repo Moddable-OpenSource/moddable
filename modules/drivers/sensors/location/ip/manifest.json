@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODULES)/data/text/decoder/manifest.json"
+	],
+	"modules": {
+		"embedded:sensor/Location/IP": "./ip"
+	},
+	"preload": [
+		"embedded:sensor/Location/IP"
+	]
+}
