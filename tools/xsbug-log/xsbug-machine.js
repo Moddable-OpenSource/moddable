@@ -141,7 +141,7 @@ class Machine {
 			this.onViewChanged(name, current.children);
 			break;
 		case 'bubble':
-			this.onBubbled(current.name, current.value, current.path, current.line, current.data);
+			this.onBubbled(current.path, current.line, current.name, current.value, current.data);
 			break;
 		case 'eval':
 			this.onEval(current.path, current.data);
@@ -229,13 +229,13 @@ class Machine {
 	doModule(path, wait, source) {
 		let string = `\r\n<module path="${path}" line="${wait ? 1 : 0}"><![CDATA[`;
 		string += source;
-		string += `]]><module/>\r\n`;
+		string += `]]></module>\r\n`;
 		this.output.write(this.encoder.encode(string));
 	}
 	doScript(path, wait, source) {
 		let string = `\r\n<script path="${path}" line="${wait ? 1 : 0}"><![CDATA[`;
 		string += source;
-		string += `]]><script/>\r\n`;
+		string += `]]></script>\r\n`;
 		this.output.write(this.encoder.encode(string));
 	}
 	doSetAllBreakpoint(breakpoints, atStart, atExceptions) {

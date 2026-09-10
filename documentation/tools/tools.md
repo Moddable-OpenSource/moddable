@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: April 22, 2026
+Revised: September 9, 2026
 
 ## About this Document
 
@@ -389,7 +389,7 @@ set output json
 ```
 
 ### Saved state
-xsdb automatically saves certain configuration settings and restores them on the next session. State is saved in the project directory in a hidden `.xsdb` file. State is per-session so each project has its own session state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether to break at start-up, and some other more obscure settings.
+xsdb automatically saves certain configuration settings and restores them on the next session. State is saved in the project directory in a hidden `.xsdb` file. State is per-session so each project has its own session state. The state includes breakpoints, output (text or JSON), when to break on exceptions, whether to break at start-up, the test settings, and some other more obscure settings.
 
 ### xsdb commands
 The built-in help provides a complete list of available xsdb commands. The commands are divided into control flow, breakpoints, inspection, navigation, settings, and control.
@@ -426,6 +426,35 @@ These same rules apply to the `list` command.
 
 ### TypeScript
 xsdb supports debugging TypeScript, just as xsbug does.
+
+### Running tests
+Like xsbug, xsdb is a test runner for the Moddable SDK unit tests in `$MODDABLE/tests` and for the TEST262 conformance tests. The tests run on the target (a device or the simulator) inside the `testmc` or `test262` test app, and xsdb selects the tests, runs them in the app one at a time, and collects the results. See [Testing the Moddable SDK](./testing.md) for the test apps and how to write tests.
+
+Build and launch the test app with `-dl`, then use the `test` command:
+
+```shell
+cd $MODDABLE/tools/testmc
+mcconfig -dl -m -p sim
+```
+
+```
+(xsdb) test modules/data/url
+Testing modules/data/url (harness: /Users/dev/Projects/moddable/tools/test262/harness)
+PASS modules/data/url/credentials.js
+# ...etc
+(xsdb) modules/data/url: 68 tests, FAIL 2, PASS 66, SKIP 0 (0.4s)
+Report: /Users/dev/Projects/moddable/tools/testmc/modules-data-url.txt
+```
+
+The path is a test file or a directory of tests. A relative path is looked up in `$MODDABLE/tests` first, then in the `test` directory of the test262 repository (when one is set), then in the project directory. Each test reports `PASS`, `FAIL` with the reason, or `SKIP` with the reason. Tests that use features unavailable on devices and tests that only run in sloppy mode are skipped. Because each test ends by tearing down the test app's virtual machine and creating a new one (the device does not reboot), the debugger is fully available during a run: breakpoints, stepping, and inspection all work while the tests execute.
+
+- `test stop` ends the run.
+- `info tests` shows the results of the current or most recent run, including every failure with its reason, and the test settings.
+- `set test timeout <seconds>` fails a test that does not complete in time (default 60, 0 disables). The timeout is suspended while the target is stopped in the debugger.
+- `set test log <directory>` chooses where the report file of each run is written; `set test log off` disables it. Each run writes a report file in the same format as xsbug: a summary line, a blank line, then one line per failure with its reason. The file is named after the tested path with slashes replaced by dashes (for example `modules-data.txt`) and is written to the project directory by default. Its path is printed with the run summary.
+- `set test262 <path>` names a clone of the [test262 repository](https://github.com/tc39/test262). It is used to run the TEST262 tests and for the harness files that some tests include. Without it, the copies of the harness files in `$MODDABLE/tools/test262/harness` are used, which is sufficient for the Moddable SDK tests. Use `set test262 off` to clear it.
+
+In JSON output mode the runner emits `test_start`, `test_result`, `test_summary`, and `info_tests` events, so a script can drive a run over stdin and collect the results without scraping text.
 
 <a id="test-examples"></a>
 ## test-examples

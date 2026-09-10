@@ -1,6 +1,6 @@
 # Testing the Moddable SDK
-Copyright 2020-2024 Moddable Tech, Inc.<BR>
-Revised: September 16, 2024
+Copyright 2020-2026 Moddable Tech, Inc.<BR>
+Revised: September 9, 2026
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@ Revised: September 16, 2024
 * [test262 Test App](#test262-app)
 * [testmc Test App](#testmc-app)
 * [Running Tests on the Simulator](#testing-on-simulator)
+* [Running Tests with xsdb](#testing-with-xsdb)
 * [Writing Tests for the Moddable SDK](#writing-tests)
 	* [Structure of a Test](#writing-structure)
 	* [Importing Modules to Test](#writing-importing)
@@ -31,7 +32,7 @@ This document explains how to run unit tests implemented in JavaScript in the Mo
 
 - **Tests**. The unit tests perform tests for success and failure conditions. They are implemented in JavaScript and their source code is stored in `.js` files.
 - **Test app**. The test app is responsible for running the unit tests. It executes on the device under test.
-- **Test runner**. The test runner is responsible for selecting the tests to run, coordinating with the test app to execute each test, and collecting the test results. The xsbug debugger is the test runner for the Moddable SDK.
+- **Test runner**. The test runner is responsible for selecting the tests to run, coordinating with the test app to execute each test, and collecting the test results. The xsbug and xsdb debuggers are the test runners for the Moddable SDK.
 
 The separation of the tests, test app, and test runner allows large test suites to run on resource constrained embedded devices.
 
@@ -60,13 +61,13 @@ The Moddable SDK tests are a suite of tests created by Moddable to validate the 
 
 The Moddable SDK tests are located in the Moddable SDK repository at `$MODDABLE/tests`.
 
-The Moddable SDK tests must be copied into test262 `test` directory.
+To run the Moddable SDK tests with xsbug, they must be copied into test262 `test` directory.
 
 ```
 cp -r $MODDABLE/tests <path-to-test262-repository>/test/moddable
 ```
 
-> **Note**: To run the Moddable SDK tests you must install the TEST262 tests, even if you do not intend to run the TEST262 tests.
+> **Note**: To run the Moddable SDK tests with xsbug you must install the TEST262 tests, even if you do not intend to run the TEST262 tests. This is not necessary with xsdb, which runs the tests directly from `$MODDABLE/tests`. See [Running Tests with xsdb](#testing-with-xsdb).
 
 <a id="test262-app"></a>
 ## test262 Test App
@@ -189,9 +190,35 @@ Once the testmc test app is running and the tests are in place, selecting tests,
 ## Running Tests on the Simulator
 The test262 and testmc test apps may also be run on the mcsim, the Moddable SDK's simulator. This is useful for verifying that the simulator is providing consistent results with the target device and for developing tests. Of course, tests which depend on features the simulator does not support, such as hardware I/O, will fail.
 
-The process of running on the simulator is the same in xsbug. When the simulator launches, there is one change that must be made to the simulator options.  Set the "Reload on Abort" switch to "on". If this is not set, testing will stall after the first test is run.
+The process of running on the simulator is the same in xsbug and xsdb. When the simulator launches, there is one change that must be made to the simulator options.  Set the "Reload on Abort" switch to "on". If this is not set, testing will stall after the first test is run.
 
 <img src="../assets/tools/testing/test-simulator.png" width=300>
+
+> **Note**: The test runner restarts the test app after each test. On a device the test app tears down its virtual machine and creates a new one; the microcontroller itself does not reboot, so a Wi-Fi connection is reused across tests. In the simulator the app is unloaded and launched again, which is what the "Reload on Abort" switch enables.
+
+<a id="testing-with-xsdb"></a>
+## Running Tests with xsdb
+The [xsdb](./tools.md#xsdb) command line debugger is also a test runner. It runs the test apps from the command line. Build the test app with `-dl` instead of `-d` to launch xsdb:
+
+```
+cd $MODDABLE/tools/testmc
+mcconfig -dl -m -p esp32
+```
+
+Then run tests with the `test` command. Paths are relative to `$MODDABLE/tests`, so the tests do not need to be copied into a test262 repository:
+
+```
+(xsdb) test modules/data/url
+Testing modules/data/url (harness: /Users/dev/Projects/moddable/tools/test262/harness)
+PASS modules/data/url/credentials.js
+# ...etc
+(xsdb) modules/data/url: 68 tests, FAIL 2, PASS 66, SKIP 0 (0.4s)
+Report: /Users/dev/Projects/moddable/tools/testmc/modules-data-url.txt
+```
+
+`info tests` lists the failures of the most recent run and writes a report file to the project directory (`set test log` changes the directory). To run the TEST262 tests, tell xsdb where the repository is with `set test262 <path>`; that repository's harness files are then also used for the `includes` of the Moddable SDK tests. The `test` section of [tools.md](./tools.md#xsdb) describes the `test` commands and settings.
+
+xsdb is a full debugger during a test run: breakpoints, stepping, and inspection are available.
 
 <a id="writing-tests"></a>
 ## Writing Tests for the Moddable SDK

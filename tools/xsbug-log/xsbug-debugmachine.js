@@ -24,6 +24,7 @@
 
 const fs = require('node:fs');
 const { Machine } = require('./xsbug-machine.js');
+const { TestRunner } = require('./xsbug-test.js');
 
 class DebugMachine extends Machine {
 	// View data from the protocol
@@ -274,7 +275,7 @@ class DebugMachine extends Machine {
 	}
 
 	_syncCompleter(line) {
-		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'condition', 'trace', 'hitcount', 'eval', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread'];
+		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'condition', 'trace', 'hitcount', 'eval', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread', 'test'];
 		const args = line.trimStart().split(/\s+/);
 		
 		if (args.length === 1 && !line.match(/\s$/)) {
@@ -288,7 +289,7 @@ class DebugMachine extends Machine {
 		const argCount = line.match(/\s$/) ? args.length + 1 : args.length;
 		
 		if (cmd === 'info') {
-			const subcmds = ['breakpoints', 'locals', 'globals', 'modules', 'module', 'instruments', 'exceptions', 'start', 'threads'];
+			const subcmds = ['breakpoints', 'locals', 'globals', 'modules', 'module', 'instruments', 'exceptions', 'start', 'threads', 'tests'];
 			if (argCount === 2) {
 				const hits = subcmds.filter(c => c.startsWith(prefix));
 				return [hits.map(h => `${cmd} ${h}`), line];
@@ -310,16 +311,18 @@ class DebugMachine extends Machine {
 
 		if (cmd === 'set') {
 			if (argCount === 2) {
-				const subcmds = ['exceptions', 'output', 'mcsim', 'start', 'timestamps'];
+				const subcmds = ['exceptions', 'output', 'mcsim', 'start', 'timestamps', 'test262', 'test'];
 				const hits = subcmds.filter(c => c.startsWith(prefix));
 				return [hits.map(h => `${cmd} ${h}`), line];
 			}
 			if (argCount === 3) {
 				let options = [];
 				if (args[1] === 'exceptions') options = ['on', 'off', 'silent'];
+				else if (args[1] === 'test') options = ['timeout'];
 				else if (args[1] === 'output') options = ['json', 'text'];
 				else if (args[1] === 'timestamps') options = ['on', 'off', 'time', 'delta', 'elapsed', 'iso', 'epoch'];
 				else if (args[1] === 'mcsim' || args[1] === 'start') options = ['on', 'off'];
+				else if (args[1] === 'test') options = ['timeout', 'log'];
 				
 				const hits = options.filter(c => c.startsWith(prefix));
 				return [hits.map(h => `${cmd} ${args[1]} ${h}`), line];
@@ -486,7 +489,7 @@ class DebugMachine extends Machine {
 
 		this.onTitleReady?.();
 
-		if (this.interactive)
+		if (this.interactive && !this.tests?.running)		// the test app reconnects after every test
 			this.print(`Connected to "${title}"`);
 	}
 
@@ -702,6 +705,24 @@ class DebugMachine extends Machine {
 			this.logLine = null;
 			this.logTime = null;
 		}
+	}
+
+	// Bubbles carry a conversation name. The test apps use "test262" to talk to the test runner.
+	onBubbled(path, line, id, flags, message) {
+		if (id === 'test262') {
+			this.tests?.onMessage(this, message);
+			return;
+		}
+		this.report('bubble', { name: id ?? '', flags: parseInt(flags) || 0, text: message, path, line: parseInt(line) || 0 }, undefined, (data) => {
+			this.clearLine();
+			console.log(data.name ? `${data.name}: ${data.text}` : data.text);
+			this.showPrompt();
+		});
+	}
+
+	// The engine is waiting for the source of a module the debugger was asked to import (test fixtures).
+	onImport(path) {
+		TestRunner.answerImport(this, path);
 	}
 
 	onInstrumentValues(values) {
@@ -1439,6 +1460,9 @@ class DebugMachine extends Machine {
 				break;
 			case 'run': case 'r':
 				this.cmdRun();
+				break;
+			case 'test':
+				this.cmdTest(args);
 				break;
 			default:
 				this.currentCommand = cmd;
@@ -2574,8 +2598,16 @@ class DebugMachine extends Machine {
 				this.print(`Trace timestamps: ${this.timestamps}`);
 				this.showPrompt();
 				break;
+			case 'tests':
+			case 'test':
+				if (this.tests)
+					this.tests.info();
+				else
+					this.print('No test runner.');
+				this.showPrompt();
+				break;
 			default:
-				this.commandError('Syntax: info breakpoints | locals | globals | modules[.name.path] | exceptions | start | timestamps');
+				this.commandError('Syntax: info breakpoints | locals | globals | modules[.name.path] | exceptions | start | timestamps | tests');
 				break;
 		}
 	}
@@ -2871,9 +2903,94 @@ class DebugMachine extends Machine {
 				this.commandError('Syntax: set start on|off');
 			}
 		}
-		else {
-			this.commandError('Syntax: set output [json|text] | set exceptions on|off|silent | set start on|off | set mcsim on|off | set timestamps on|off|time|delta|elapsed|iso|epoch');
+		else if (args[0] === 'test262') {
+			const value = args.slice(1).join(' ');
+			if (!this.tests)
+				this.commandError('No test runner.');
+			else if (!value || value === 'off') {
+				this.tests.test262 = null;
+				this.report('set', { test262: null }, undefined, () => {
+					console.log('test262 repository: not set');
+					this.showPrompt();
+				});
+			}
+			else {
+				const root = require('node:path').resolve(require('./xsbug-test.js').expandHome(value));
+				if (!fs.existsSync(require('node:path').join(root, 'harness')) || !fs.existsSync(require('node:path').join(root, 'test'))) {
+					this.commandError(`Not a test262 repository (no test and harness directories): ${root}`);
+					return;
+				}
+				this.tests.test262 = root;
+				this.report('set', { test262: root }, undefined, () => {
+					console.log(`test262 repository: ${root}`);
+					this.showPrompt();
+				});
+			}
 		}
+		else if (args[0] === 'test') {
+			if (!this.tests)
+				this.commandError('No test runner.');
+			else if (args[1] === 'timeout') {
+				const seconds = Number(args[2]);
+				if (!(seconds >= 0)) {
+					this.commandError('Syntax: set test timeout <seconds> (0 disables)');
+					return;
+				}
+				this.tests.timeout = seconds;
+				this.report('set', { testTimeout: seconds }, undefined, () => {
+					console.log(`Test timeout: ${seconds ? seconds + ' seconds' : 'off'}`);
+					this.showPrompt();
+				});
+			}
+			else if (args[1] === 'log') {
+				const value = require('./xsbug-test.js').expandHome(args.slice(2).join(' '));
+				if (!value || value === 'off') {
+					this.tests.logDirectory = null;
+					this.report('set', { testLog: null }, undefined, () => {
+						console.log('Test reports: off');
+						this.showPrompt();
+					});
+				}
+				else {
+					const directory = require('node:path').resolve(value);
+					if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) {
+						this.commandError(`Not a directory: ${directory}`);
+						return;
+					}
+					this.tests.logDirectory = directory;
+					this.report('set', { testLog: directory }, undefined, () => {
+						console.log(`Test reports: ${directory}`);
+						this.showPrompt();
+					});
+				}
+			}
+			else
+				this.commandError('Syntax: set test timeout <seconds> | set test log <directory>|off');
+		}
+		else {
+			this.commandError('Syntax: set output [json|text] | set exceptions on|off|silent | set start on|off | set mcsim on|off | set timestamps on|off|time|delta|elapsed|iso|epoch | set test262 <path>|off | set test timeout <seconds> | set test log <directory>|off');
+		}
+	}
+
+	// test <path>: run the tests in a file or directory using the test262 or testmc app. test stop: end the run.
+	cmdTest(args) {
+		if (!this.tests) {
+			this.commandError('No test runner.');
+			return;
+		}
+		const what = args.join(' ').trim();
+		if (!what) {
+			this.commandError('Syntax: test <path> | test stop');
+			return;
+		}
+		if (what === 'stop') {
+			if (!this.tests.stop("stopped"))
+				this.commandError('No tests running.');
+			this.showPrompt();
+			return;
+		}
+		this.tests.start(what);
+		this.showPrompt();
 	}
 
 	cmdHelp() {
@@ -2918,6 +3035,17 @@ class DebugMachine extends Machine {
 						{ keys: "info module name", desc: "Show exports" },
 						{ keys: "info modules.name.path", desc: "Navigate into module exports" },
 						{ keys: "info instruments", desc: "Print instrument snapshots" }
+					]
+				},
+				{
+					title: "Testing (with the test262 or testmc app)",
+					items: [
+						{ keys: "test <path>", desc: "Run the tests in a file or directory (relative to $MODDABLE/tests or the test262 repository)" },
+						{ keys: "test stop", desc: "Stop the test run" },
+						{ keys: "info tests", desc: "Show test results, failures, and settings" },
+						{ keys: "set test262 <path>|off", desc: "test262 repository to use for tests and harness includes" },
+						{ keys: "set test timeout <sec>", desc: "Fail a test that does not complete in time (default 60, 0 disables)" },
+						{ keys: "set test log <dir>|off", desc: "Where to write the report file of each run (default: the project directory)" }
 					]
 				},
 				{

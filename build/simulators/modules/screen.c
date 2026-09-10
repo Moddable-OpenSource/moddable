@@ -134,10 +134,11 @@ static char* gxTouchEventNames[4] = {
 	"onTouchMoved",
 };
 
+static int gxExitToHost = 1;
+
 void fxAbort(xsMachine* the, int status)
 {
-	static int exitToHost = 1;
-	if (exitToHost) {
+	if (gxExitToHost) {
 		txScreen* screen = the->host;
 		if (!screen)
 			screen = the->context;
@@ -188,8 +189,8 @@ void fxAbort(xsMachine* the, int status)
 
 		if (screen)
 			(*screen->abort)(screen, status);
-		if (exitToHost && the->firstJump) {
-			exitToHost = 0;
+		if (gxExitToHost && the->firstJump) {
+			gxExitToHost = 0;
 			fxExitToHost(the);
 		}
 	}
@@ -390,6 +391,7 @@ void fxScreenLaunch(txScreen* screen)
 	static xsStringValue signature = PIU_DOT_SIGNATURE;
 	txPreparation* preparation = xsPreparation();
 	txFlag breakOnStartFlag;
+	gxExitToHost = 1;
 	screen->machine = fxPrepareMachine(NULL, preparation, strrchr(signature, '.') + 1, screen, C_NULL);
 	if (!screen->machine)
 		return;
