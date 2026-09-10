@@ -1133,6 +1133,8 @@ void fxFunctionNodeBind(void* it, void* param)
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->body, param);
 	fxScopeBound(self->scope, param);
+	if (binder->scopeMaximum > 65535)
+		fxReportParserError(binder->parser, self->line, "too many variables");
 	self->scopeCount = binder->scopeMaximum;
 	binder->scopeMaximum = scopeMaximum;
 	binder->scopeLevel = scopeLevel;
@@ -1176,6 +1178,8 @@ void fxModuleNodeBind(void* it, void* param)
 	if (self->scope->disposableNodeCount)
 		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
+	if (binder->scopeMaximum > 65535)
+		fxReportParserError(binder->parser, self->line, "too many variables");
 	self->scopeCount = binder->scopeMaximum;
 }
 
@@ -1296,6 +1300,8 @@ void fxProgramNodeBind(void* it, void* param)
 	fxScopeBindDefineNodes(self->scope, param);
 	fxNodeDispatchBind(self->body, param);
 	fxScopeBound(self->scope, param);
+	if (binder->scopeMaximum > 65535)
+		fxReportParserError(binder->parser, self->line, "too many variables");
 	self->scopeCount = binder->scopeMaximum;
 }
 
