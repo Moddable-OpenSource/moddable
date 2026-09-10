@@ -98,7 +98,7 @@
 		"esp32/moddable_six": {
 			"build": {
 				"ESP32_SUBCLASS": "esp32s3",
-				"EXPECTED_ESP_IDF": "6.0",
+				"EXPECTED_ESP_IDF": "v6.1",
 				"USE_USB": "2",
 				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six/sdkconfig"
 			},
