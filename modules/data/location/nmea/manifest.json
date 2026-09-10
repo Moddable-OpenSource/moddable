@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"data/location/nmea": "./nmea"
+	},
+	"preload": [
+		"data/location/nmea"
+	]
+}

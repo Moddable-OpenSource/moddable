@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Location/GPS-UART": "./gps-uart"
+	},
+	"preload": [
+		"embedded:sensor/Location/GPS-UART"
+	]
+}

@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Location/GPS-I2C": "./gps-i2c"
+	},
+	"preload": [
+		"embedded:sensor/Location/GPS-I2C"
+	]
+}

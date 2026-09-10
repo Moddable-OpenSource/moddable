@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODULES)/drivers/sensors/location/gps-uart/manifest.json",
+		"$(MODULES)/data/location/nmea/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

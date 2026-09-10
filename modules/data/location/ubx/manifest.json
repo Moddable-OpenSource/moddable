@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"data/location/ubx": "./ubx"
+	},
+	"preload": [
+		"data/location/ubx"
+	]
+}
