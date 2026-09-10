@@ -1,6 +1,6 @@
 /*---
 description: 
-flags: [asymc, module]
+flags: [async, module]
 ---*/
 
 import WiFi from "wifi";
