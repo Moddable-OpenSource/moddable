@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -187,7 +187,7 @@ class URLSearchParams {
 	}
 	updateParts() {
 		if (this.#parts)
-			this.#parts.query = serializeQuery(this.#pairs);
+			this.#parts.query = this.#pairs.length ? serializeQuery(this.#pairs) : null;
 	}
 	[Symbol.iterator]() {
 		const pairs = this.#pairs
