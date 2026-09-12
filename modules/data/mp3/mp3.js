@@ -55,10 +55,10 @@ const sampleLengths = Object.freeze([
 	[1152, 1152, 384],
 ], true);
 
-export default class @ "xs_mp3_destructor" {
-	constructor() @ "xs_mp3";
-	close() @ "xs_mp3_close";
-	decode(input, output) @ "xs_mp3_decode";
+export default class MP3 extends Native("xs_mp3_destructor") {
+	constructor() { super(); native("xs_mp3").call(this); }
+	close() { return native("xs_mp3_close").call(this); }
+	decode(input, output) { return native("xs_mp3_decode").call(this, input, output); }
 	
 	static scan(buffer, start, end, info = {}) {
 		let position = sync(buffer, start, end, info);
