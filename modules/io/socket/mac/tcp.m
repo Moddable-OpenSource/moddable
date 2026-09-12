@@ -618,7 +618,7 @@ static const xsHostHooks xsListenerHooks = {
 
 void xs_listener_constructor(xsMachine *the)
 {
-	Listener listener;
+	Listener listener = C_NULL;
 	int port = 0;
 	xsSlot *onReadable;
 
@@ -678,8 +678,11 @@ void xs_listener_constructor(xsMachine *the)
 		xsSetHostHooks(xsThis, (xsHostHooks *)&xsListenerHooks);
 	}
 	xsCatch {
-		xsmcSetHostData(xsThis, NULL);
-		xs_listener_destructor_(listener);
+		if (listener) {
+			xsForget(listener->obj);
+			xsmcSetHostData(xsThis, NULL);
+			xs_listener_destructor_(listener);
+		}
 		xsThrow(xsException);
 	}
 }
