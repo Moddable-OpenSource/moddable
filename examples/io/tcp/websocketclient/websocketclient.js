@@ -237,18 +237,16 @@ class WebSocketClient {
 		if (options.mask) {
 			const mask = options.mask;
 			Logical.xor(data, mask, count);
-			if (this.#data) {
-				switch (count & 3) {
-					case 1:
-						options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
-						break;
-					case 2:
-						options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
-						break;
-					case 3:
-						options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
-						break;
-				}
+			switch (count & 3) {
+				case 1:
+					options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
+					break;
+				case 2:
+					options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
+					break;
+				case 3:
+					options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
+					break;
 			}
 		}
 
@@ -405,8 +403,12 @@ class WebSocketClient {
 							options.control.position = 0;
 						}
 						const control = options.control;
+						const mask = options.mask;
 						while (readable && (control.position < options.length)) {
-							control[control.position++] = this.#socket.read();
+							let byte = this.#socket.read();
+							if (mask)
+								byte ^= mask[control.position & 3];
+							control[control.position++] = byte;
 							readable--;
 						}
 						if (control.position !== options.length)
@@ -458,6 +460,7 @@ class WebSocketClient {
 						delete options.tag;
 						delete options.control;
 						delete options.length;
+						delete options.mask;
 						continue;
 					}
 
