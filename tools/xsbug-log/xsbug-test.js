@@ -275,6 +275,43 @@ class TestRunner {
 		roots.push(process.cwd());
 		return roots;
 	}
+	// Directories that hold tests, for completing the argument of the test command.
+	get testRoots() {
+		return this.roots.slice(0, this.test262 ? 2 : 1);
+	}
+	// Tab completion for "test <path>": directories (with a trailing separator) and test files matching the prefix.
+	complete(prefix) {
+		const name = expandHome(prefix);
+		const slash = Math.max(name.lastIndexOf("/"), name.lastIndexOf(path.sep));
+		const directory = name.slice(0, slash + 1);
+		const base = name.slice(slash + 1);
+		const parents = path.isAbsolute(directory) ? [directory] : this.testRoots.map(root => path.join(root, directory));
+		const results = new Set();
+		for (const parent of parents) {
+			let entries;
+			try {
+				entries = fs.readdirSync(parent, { withFileTypes: true });
+			}
+			catch {
+				continue;
+			}
+			for (const entry of entries) {
+				if (!entry.name.startsWith(base) || entry.name.startsWith("."))
+					continue;
+				if (entry.isDirectory())
+					results.add(prefix.slice(0, prefix.length - base.length) + entry.name + "/");
+				else if (isTestFile(entry.name))
+					results.add(prefix.slice(0, prefix.length - base.length) + entry.name);
+			}
+		}
+		return [...results].sort();
+	}
+	infoTest262() {
+		const root = this.test262;
+		const data = { test262: root, harness: root ? path.join(root, "harness") : this.resolveHarness(null) };
+		const text = root ? `test262 repository: ${root}` : `test262 repository: not set (harness includes come from ${data.harness ?? "nowhere"})`;
+		this.output("info_test262", data, text);
+	}
 	resolve(name) {
 		name = expandHome(name);
 		if (path.isAbsolute(name)) {

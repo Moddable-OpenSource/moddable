@@ -89,8 +89,18 @@ class DebugMachine extends Machine {
 			// Nothing to complete if only match is what's already typed
 			if (completions.length === 1 && completions[0] === matched)
 				completions = [];
-			if (completions.length > 1 && !this.completionsShown) {
-				this._displayCompletions(completions);
+			if (completions.length > 1) {
+				if (!this.completionsShown)
+					this._displayCompletions(completions);
+				// The list is ours to show. Hand readline only a longer common prefix to insert, never the list:
+				// on a second consecutive tab it would print its own table and redraw the prompt below it.
+				let prefix = completions[0];
+				for (const completion of completions) {
+					let i = 0;
+					while ((i < prefix.length) && (i < completion.length) && (prefix[i] === completion[i])) i++;
+					prefix = prefix.slice(0, i);
+				}
+				completions = (prefix.length > matched.length) ? [prefix] : [];
 			}
 			callback(null, [completions, matched]);
 		};
@@ -120,7 +130,7 @@ class DebugMachine extends Machine {
 	_displayCompletions(completions) {
 		const width = process.stdout.columns || 80;
 		const maxLen = Math.max(...completions.map(c => c.length)) + 2;
-		const cols = Math.max(1, Math.floor(width / maxLen));
+		const cols = Math.max(1, Math.floor((width - 1) / maxLen));	// a row must stay short of the width, or the terminal wraps before our newline and the cursor math is off by one
 		let out = '';
 		for (let i = 0; i < completions.length; i++) {
 			out += completions[i].padEnd(maxLen);
@@ -286,10 +296,10 @@ class DebugMachine extends Machine {
 		const cmd = args[0];
 		// If line ends with space, the prefix being typed is empty
 		const prefix = line.match(/\s$/) ? "" : args[args.length - 1];
-		const argCount = line.match(/\s$/) ? args.length + 1 : args.length;
+		const argCount = line.match(/\s$/) ? args.filter(Boolean).length + 1 : args.length;	// a trailing space starts a new, empty argument
 		
 		if (cmd === 'info') {
-			const subcmds = ['breakpoints', 'locals', 'globals', 'modules', 'module', 'instruments', 'exceptions', 'start', 'threads', 'tests'];
+			const subcmds = ['breakpoints', 'locals', 'globals', 'modules', 'module', 'instruments', 'exceptions', 'start', 'threads', 'tests', 'test262'];
 			if (argCount === 2) {
 				const hits = subcmds.filter(c => c.startsWith(prefix));
 				return [hits.map(h => `${cmd} ${h}`), line];
@@ -302,6 +312,13 @@ class DebugMachine extends Machine {
 			}
 		}
 		
+		if (cmd === 'test') {
+			if (argCount === 2) {
+				const hits = ['stop'].filter(c => c.startsWith(prefix)).concat(this.tests?.complete(prefix) ?? []);
+				return [hits.map(h => `${cmd} ${h}`), line];
+			}
+		}
+
 		if (cmd === 'delete' || cmd === 'clear') {
 			if (argCount === 2) {
 				const hits = ['all'].filter(c => c.startsWith(prefix));
@@ -713,6 +730,8 @@ class DebugMachine extends Machine {
 			this.tests?.onMessage(this, message);
 			return;
 		}
+		if (this.isHidden?.())		// mcsim's own traces, unless "set mcsim on"
+			return;
 		this.report('bubble', { name: id ?? '', flags: parseInt(flags) || 0, text: message, path, line: parseInt(line) || 0 }, undefined, (data) => {
 			this.clearLine();
 			console.log(data.name ? `${data.name}: ${data.text}` : data.text);
@@ -2598,6 +2617,13 @@ class DebugMachine extends Machine {
 				this.print(`Trace timestamps: ${this.timestamps}`);
 				this.showPrompt();
 				break;
+			case 'test262':
+				if (this.tests)
+					this.tests.infoTest262();
+				else
+					this.commandError('No test runner.');
+				this.showPrompt();
+				break;
 			case 'tests':
 			case 'test':
 				if (this.tests)
@@ -2607,7 +2633,7 @@ class DebugMachine extends Machine {
 				this.showPrompt();
 				break;
 			default:
-				this.commandError('Syntax: info breakpoints | locals | globals | modules[.name.path] | exceptions | start | timestamps | tests');
+				this.commandError('Syntax: info breakpoints | locals | globals | modules[.name.path] | exceptions | start | timestamps | tests | test262');
 				break;
 		}
 	}
@@ -3043,6 +3069,7 @@ class DebugMachine extends Machine {
 						{ keys: "test <path>", desc: "Run the tests in a file or directory (relative to $MODDABLE/tests or the test262 repository)" },
 						{ keys: "test stop", desc: "Stop the test run" },
 						{ keys: "info tests", desc: "Show test results, failures, and settings" },
+						{ keys: "info test262", desc: "Show the test262 repository in use" },
 						{ keys: "set test262 <path>|off", desc: "test262 repository to use for tests and harness includes" },
 						{ keys: "set test timeout <sec>", desc: "Fail a test that does not complete in time (default 60, 0 disables)" },
 						{ keys: "set test log <dir>|off", desc: "Where to write the report file of each run (default: the project directory)" }

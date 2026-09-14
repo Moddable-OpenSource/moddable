@@ -348,6 +348,11 @@ const xsdbRouter = {
 					this.rl.prompt(true);
 					return;
 				}
+				if (str === 'info test262') {
+					this.tests.infoTest262();
+					this.rl.prompt(true);
+					return;
+				}
 				if (str === 'test stop') {
 					if (!this.tests.stop("stopped"))
 						console.log('No tests running.');
@@ -477,6 +482,7 @@ const xsdbRouter = {
 		m.breakOnStart = this.globalBreakOnStart;
 		m.timestamps = this.globalTimestamps;
 		m.tests = this.tests;
+		m.isHidden = () => this.isHidden(m);
 		const originalCmdSet = m.cmdSet.bind(m);
 		m.cmdSet = (args) => {
 			originalCmdSet(args);
