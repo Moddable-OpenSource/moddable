@@ -22,8 +22,6 @@ import ChatWorker from "ChatWorker"
 import JSONBase64Parser from "JSONBase64Parser";
 import TextEncoder from "text/encoder";
 
-const WebSocketClient = device.network.ws.io;
-
 const text = Object.freeze({binary: false});
 
 class ChatWebSocketWorker extends ChatWorker {
@@ -50,6 +48,7 @@ class ChatWebSocketWorker extends ChatWorker {
 		super.connect(message);
 		this.parser = new JSONBase64Parser(this, this.outputBuffer, 2, this.outputMinimum);
 		this.parser.barrier = message.barrier;
+		const WebSocketClient = device.network.wss.io;
 		this.ws = new WebSocketClient({
 			...device.network.wss,
 			host: this.host,
@@ -123,6 +122,7 @@ class ChatWebSocketWorker extends ChatWorker {
 		});
 	}
 	disconnect() {
+		const WebSocketClient = device.network.wss.io;
 		const code = 1000;
 		const data = Uint8Array.of(code >> 8, code & 0xFF);
 		this.write(data, { opcode: WebSocketClient.close });	
