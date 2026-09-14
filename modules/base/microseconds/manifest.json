@@ -1,6 +1,6 @@
 {
 	"modules": {
-		"*": "./microseconds"
+		"config/microseconds": "./microseconds"
 	},
-	"preload": "microseconds"
+	"preload": "config/microseconds"
 }
