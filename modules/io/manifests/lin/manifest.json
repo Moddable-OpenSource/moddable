@@ -12,6 +12,7 @@
 	},
 	"preload": [
 		"system",
-		"lockdown/device"
+		"lockdown/device",
+		"embedded:provider/builtin"
 	]
 }
