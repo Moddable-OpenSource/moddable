@@ -9,7 +9,6 @@ import {
 	PopupRow,
 	SliderRow,
 	StatusRow,
-	SwitchRow,
 	TimerRow,
 } from "ControlsPane";
 
@@ -23,12 +22,6 @@ import {
 const base = import.meta.uri;
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
-		if (this.reloadOnAbort) {
-			application.defer("doReloadFile");
-			return true;
-		}
-	}
 	onConfigure(container) {
 	}
 	onCreate(container, device) {
@@ -49,9 +42,6 @@ class MockupBehavior extends DeviceBehavior {
 			if (json.xsbug == "abort")
 				application.defer("doReloadFile");
 		}
-	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
 	}
 	onTimeChanged(container) {
 	}
@@ -75,13 +65,6 @@ export default {
 				buttons: [
 					{ eventDown:"onDefaultButtonDown", eventUp:"onDefaultButtonUp", label:"Default" },
 				],
-			}),
-			SwitchRow({
-				event: "onReloadOnAbortChanged",
-				label: "Reload On Abort",
-				on: "Yes",
-				off: "No",
-				value: false
 			}),
 		]
 	})),

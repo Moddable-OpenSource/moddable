@@ -50,7 +50,8 @@
 	],
 	"strip": [],
 	"config" : {
-		"startupSound": ""
+		"startupSound": "",
+		"reloadOnAbort": true
 	},
 	"platforms": {
 		"esp": {

@@ -8,7 +8,6 @@ import {
 	PopupRow,
 	SliderRow,
 	StatusRow,
-	SwitchRow,
 	TimerRow,
 } from "ControlsPane";
 
@@ -23,15 +22,8 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"pico_display_2/led.png" }, x:0, y:0, width:48, height:48 };
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
-		if (this.reloadOnAbort) {
-			application.defer("doReloadFile");
-			return true;
-		}
-	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
-		this.reloadOnAbort = false;
 	}
 	onAButtonDown(container) {
 		this.postJSON(container, { aButton:1 });
@@ -74,9 +66,6 @@ class MockupBehavior extends DeviceBehavior {
 				application.defer("doReloadFile");
 		}
 	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
-	}
 }
 
 class LEDBehavior extends Behavior {
@@ -111,13 +100,6 @@ export default {
 					{ eventDown:"onXButtonDown", eventUp:"onXButtonUp", label:"X" },
 					{ eventDown:"onYButtonDown", eventUp:"onYButtonUp", label:"Y" },
 				],
-			}),
-			SwitchRow({ 
-				event: "onReloadOnAbortChanged",
-				label: "Reload On Abort",
-				on: "Yes",
-				off: "No",
-				value: false
 			}),
 		]
 	})),

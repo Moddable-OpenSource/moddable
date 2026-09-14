@@ -50,6 +50,9 @@
 		]
 	},
 	"strip": [],
+	"config": {
+		"reloadOnAbort": true
+	},
 	"platforms": {
 		"esp": {
 			"error": "test262 is unsupported on esp8266"

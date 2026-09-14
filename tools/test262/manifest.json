@@ -35,6 +35,9 @@
 		]
 	},
 	"strip": [],
+	"config": {
+		"reloadOnAbort": true
+	},
 	"platforms": {
 		"esp": {
 			"error": "test262 is unsupported on esp8266"
@@ -137,7 +140,8 @@
 					"$(BUILD)/simulators/modules/screen",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/lin/*"
-				]
+				],
+				"setup/sim": "$(BUILD)/simulators/modules/setup-sim"
 			}
 		},
 		"mac": {
@@ -151,7 +155,8 @@
 					"$(MODULES)/base/time/mac/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/mac/*"
-				]
+				],
+				"setup/sim": "$(BUILD)/simulators/modules/setup-sim"
 			}
 		},
 		"win": {
@@ -165,7 +170,8 @@
 					"$(MODULES)/base/time/win/*",
 					"$(MODULES)/base/timer/*",
 					"$(MODULES)/base/timer/win/*"
-				]
+				],
+				"setup/sim": "$(BUILD)/simulators/modules/setup-sim"
 			}
 		},
 		"zephyr": {

@@ -43,8 +43,16 @@ globalThis.$DO = function(f) {
 class Screen extends ChecksumOut {
 	#timer;
 	#promises = [];
+	#simulator;
 
+	constructor(options) {
+		super(options);
+		this.#simulator = options.simulator;
+	}
 	clear() {}
+	postMessage(message) {
+		this.#simulator?.postMessage(message);
+	}
 	start(interval) {
 		if (!this.#timer) {
 			this.#timer = Timer.set(() => {
@@ -148,7 +156,7 @@ Object.defineProperty(globalThis, "screen", {
 	
 		const mc_width = (undefined === config.mc_width) ? undefined : Number(config.mc_width);
 		const mc_height = (undefined === config.mc_height) ? undefined : Number(config.mc_height);
-		screen = new Screen({width: mc_width ?? value.width, height: mc_height ?? value.height});
+		screen = new Screen({width: mc_width ?? value.width, height: mc_height ?? value.height, simulator: value});
 	}
 });
 

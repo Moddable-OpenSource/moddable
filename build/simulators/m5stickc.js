@@ -6,7 +6,6 @@ import {
   PopupRow,
   SliderRow,
   StatusRow,
-  SwitchRow,
   TimerRow,
 } from 'ControlsPane';
 
@@ -21,15 +20,8 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"m5stickc/led.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
-  onAbort(container, status) {
-    if (this.reloadOnAbort) {
-      application.defer('doReloadFile');
-      return true;
-    }
-  }
   onCreate(container, device) {
     super.onCreate(container, device);
-    this.reloadOnAbort = false;
   }
 
   onAButtonDown(container) {
@@ -64,9 +56,6 @@ class MockupBehavior extends DeviceBehavior {
     if ('xsbug' in json) {
       if (json.xsbug == 'abort') application.defer('doReloadFile');
     }
-  }
-  onReloadOnAbortChanged(container, data) {
-    this.reloadOnAbort = data.value;
   }
 }
 
@@ -107,13 +96,6 @@ export default {
         value: 100,
         step: 1,
         event: 'onBatteryChanged',
-      }),
-      SwitchRow({
-        event: 'onReloadOnAbortChanged',
-        label: 'Reload On Abort',
-        on: 'Yes',
-        off: 'No',
-        value: false,
       }),
     ]
   })),

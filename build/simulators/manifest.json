@@ -6,11 +6,13 @@
 			"$(MODULES)/base/time/$(PLATFORM)/*",
 			"$(MODULES)/base/timer/timer",
 			"$(MODULES)/base/timer/$(PLATFORM)/*"
-		]
+		],
+		"setup/sim": "./modules/setup-sim"
 	},
 	"preload": [
 		"time",
-		"timer"
+		"timer",
+		"setup/sim"
 	],
 	"platforms": {
 		"lin": {

@@ -6,7 +6,6 @@ import {
   PopupRow,
   SliderRow,
   StatusRow,
-  SwitchRow,
   TimerRow,
   InfoRow
 } from 'ControlsPane';
@@ -27,15 +26,8 @@ const pins = {
 }
 
 class MockupBehavior extends DeviceBehavior {
-  onAbort(container, status) {
-    if (this.reloadOnAbort) {
-      application.defer('doReloadFile');
-      return true;
-    }
-  }
   onCreate(container, device) {
     super.onCreate(container, device);
-    this.reloadOnAbort = false;
   }
 
   onAButtonDown(container) {
@@ -86,9 +78,6 @@ class MockupBehavior extends DeviceBehavior {
       }
     }
   }
-  onReloadOnAbortChanged(container, data) {
-    this.reloadOnAbort = data.value;
-  }
 }
 
 export default {
@@ -127,13 +116,6 @@ export default {
         value: 100,
         step: 1,
         event: 'onBatteryChanged',
-      }),
-      SwitchRow({
-        event: 'onReloadOnAbortChanged',
-        label: 'Reload On Abort',
-        on: 'Yes',
-        off: 'No',
-        value: false,
       }),
       InfoRow({
         name: `POWER_INFO_${pins.powerMain}`,

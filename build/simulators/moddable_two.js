@@ -8,7 +8,6 @@ import {
 	PopupRow,
 	SliderRow,
 	StatusRow,
-	SwitchRow,
 	TimerRow,
 } from "ControlsPane";
 
@@ -23,15 +22,8 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"moddable_two/led.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
-		if (this.reloadOnAbort) {
-			application.defer("doReloadFile");
-			return true;
-		}
-	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
-		this.reloadOnAbort = false;
 	}
 	onDefaultButtonDown(container) {
 		this.postJSON(container, { button:1 });
@@ -57,9 +49,6 @@ class MockupBehavior extends DeviceBehavior {
 				application.defer("doReloadFile");
 		}
 	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
-	}
 }
 
 class LEDBehavior extends Behavior {
@@ -81,13 +70,6 @@ export default {
 				buttons: [
 					{ eventDown:"onDefaultButtonDown", eventUp:"onDefaultButtonUp", label:"Default" },
 				],
-			}),
-			SwitchRow({ 
-				event: "onReloadOnAbortChanged",
-				label: "Reload On Abort",
-				on: "Yes",
-				off: "No",
-				value: false
 			}),
 		]
 	})),

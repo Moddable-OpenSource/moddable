@@ -29,7 +29,6 @@ import {
 	PopupRow,
 	SliderRow,
 	StatusRow,
-	SwitchRow,
 	TimerRow,
 } from "ControlsPane";
 
@@ -44,12 +43,6 @@ const base = import.meta.uri;
 const ledSkin = { texture:{ base, path:"moddable_four/led.png" }, x:0, y:0, width:160, height:160 };
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
-		if (this.reloadOnAbort) {
-			application.defer("doReloadFile");
-			return true;
-		}
-	}
 	onAccelerometerChanged(container) {
 		if (this.sleeping)
 			return;
@@ -108,7 +101,6 @@ class MockupBehavior extends DeviceBehavior {
 		this.x = 0;
 		this.y = 0;
 		this.z = 1;
-		this.reloadOnAbort = false;
 		
 		this.retain = [];
 		this.sleeping = false;
@@ -184,9 +176,6 @@ class MockupBehavior extends DeviceBehavior {
 		if (this.sleeping)
 			return;
 		container.stop();
-	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
 	}
 	onSleepTimerChanged(container) {
 	}
@@ -339,13 +328,6 @@ export default {
 				name: "SLEEP_RETAIN",
 				label: "     Retain",
 				value: "",
-			}),
-			SwitchRow({
-				event: "onReloadOnAbortChanged",
-				label: "Reload On Abort",
-				on: "Yes",
-				off: "No",
-				value: false
 			}),
 		]
 	})),

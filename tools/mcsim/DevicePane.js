@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -24,12 +24,19 @@ import {
 } from "piu/Screen";
 
 export class DeviceBehavior extends Behavior {
+	onAbort(container, status, reason) {
+		if (this.reloadOnAbort) {
+			application.defer("doReloadFile");
+			return true;
+		}
+	}
 	onConfigure(container) {
 	}
 	onCreate(container, device) {
 		this.device = device;
 	}
 	onLaunch(container) {
+		this.reloadOnAbort = false;
 		if (container.application)
 			this.onConfigure(container);
 	}
@@ -37,7 +44,10 @@ export class DeviceBehavior extends Behavior {
 	}
 	onMessage(container, message) {
 		trace.right(message, "sim");
-		this.onJSON(container, JSON.parse(message));
+		const json = JSON.parse(message);
+		if ("reloadOnAbort" in json)
+			this.reloadOnAbort = json.reloadOnAbort;
+		this.onJSON(container, json);
 	}
 	postJSON(container, json) {
 		const message = JSON.stringify(json);

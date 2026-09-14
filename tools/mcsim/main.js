@@ -56,11 +56,12 @@ import {
 } from "ControlsPane";
 
 import {
+	DeviceBehavior,
 	DeviceContainer,
 	DeviceScreen,
 } from "DevicePane";
 
-class NoDeviceBehavior extends Behavior {
+class NoDeviceBehavior extends DeviceBehavior {
 }
 
 let noDevice = {

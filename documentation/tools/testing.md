@@ -190,7 +190,7 @@ Once the testmc test app is running and the tests are in place, selecting tests,
 ## Running Tests on the Simulator
 The test262 and testmc test apps may also be run on the mcsim, the Moddable SDK's simulator. This is useful for verifying that the simulator is providing consistent results with the target device and for developing tests. Of course, tests which depend on features the simulator does not support, such as hardware I/O, will fail.
 
-The process of running on the simulator is the same in xsbug and xsdb. When the simulator launches, there is one change that must be made to the simulator options.  Set the "Reload on Abort" switch to "on". If this is not set, testing will stall after the first test is run.
+Running on the simulator is the same in xsbug and xsdb. Test apps set `reloadOnAbort` in their manifest's `config` section to tell the simulator to relaunch the app for each test.
 
 <img src="../assets/tools/testing/test-simulator.png" width=300>
 

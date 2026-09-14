@@ -12,7 +12,6 @@ import {
 	PopupRow,
 	SliderRow,
 	StatusRow,
-	SwitchRow,
 	TimerRow,
 } from "ControlsPane";
 
@@ -27,15 +26,8 @@ const base = import.meta.uri;
 const ledTexture = new Texture({ base, path:"moddable_six/led.png" });
 
 class MockupBehavior extends DeviceBehavior {
-	onAbort(container, status) {
-		if (this.reloadOnAbort) {
-			application.defer("doReloadFile");
-			return true;
-		}
-	}
 	onCreate(container, device) {
 		super.onCreate(container, device);
-		this.reloadOnAbort = false;
 	}
 	onDefaultButtonDown(container) {
 		this.postJSON(container, { button:1 });
@@ -62,9 +54,6 @@ class MockupBehavior extends DeviceBehavior {
 			if (json.xsbug == "abort")
 				application.defer("doReloadFile");
 		}
-	}
-	onReloadOnAbortChanged(container, data) {
-		this.reloadOnAbort = data.value;
 	}
 }
 
@@ -153,13 +142,6 @@ export default {
 				buttons: [
 					{ eventDown:"onDefaultButtonDown", eventUp:"onDefaultButtonUp", label:"Default" },
 				],
-			}),
-			SwitchRow({ 
-				event: "onReloadOnAbortChanged",
-				label: "Reload On Abort",
-				on: "Yes",
-				off: "No",
-				value: false
 			}),
 		]
 	})),

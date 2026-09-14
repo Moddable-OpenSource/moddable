@@ -452,7 +452,9 @@ The path is a test file or a directory of tests. A relative path is looked up in
 - `info tests` shows the results of the current or most recent run, including every failure with its reason, and the test settings.
 - `set test timeout <seconds>` fails a test that does not complete in time (default 60, 0 disables). The timeout is suspended while the target is stopped in the debugger.
 - `set test log <directory>` chooses where the report file of each run is written; `set test log off` disables it. Each run writes a report file in the same format as xsbug: a summary line, a blank line, then one line per failure with its reason. The file is named after the tested path with slashes replaced by dashes (for example `modules-data.txt`) and is written to the project directory by default. Its path is printed with the run summary.
+- `info test262` shows the test262 repository in use.
 - `set test262 <path>` names a clone of the [test262 repository](https://github.com/tc39/test262). It is used to run the TEST262 tests and for the harness files that some tests include. Without it, the copies of the harness files in `$MODDABLE/tools/test262/harness` are used, which is sufficient for the Moddable SDK tests. Use `set test262 off` to clear it.
+- Tab completes the path argument of `test` against `$MODDABLE/tests` and, the test262 repository's `test` directory, when set.
 
 In JSON output mode the runner emits `test_start`, `test_result`, `test_summary`, and `info_tests` events, so a script can drive a run over stdin and collect the results without scraping text.
 
