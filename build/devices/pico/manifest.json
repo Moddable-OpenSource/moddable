@@ -7,7 +7,6 @@
 		"PICO_EXAMPLES_DIR ?=": "$(PICO_ROOT)/pico-examples"
 	},
 	"include": [
-		"$(MODULES)/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [

@@ -4,7 +4,6 @@
 		"IDF_COMPONENTS_CORE": "main esptool_py partition_table bootloader nvs_flash esp_netif"
 	},
 	"include": [
-		"$(MODULES)/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [
