@@ -572,6 +572,8 @@ void xs_listener_constructor(xsMachine *the)
 		struct sockaddr_in address = { 0 };
 
 		listener = c_calloc(sizeof(ListenerRecord), 1);
+		if (C_NULL == listener)
+			xsUnknownError("no memory");
 		listener->the = the;
 		listener->obj = xsThis;
 		xsmcSetHostData(xsThis, listener);
