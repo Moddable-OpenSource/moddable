@@ -11,8 +11,7 @@
 		"$(MODULES)/drivers/button/manifest.json",
 		"$(MODULES)/drivers/led/manifest.json",
 		"$(MODULES)/drivers/sensors/lis3dh/manifest.json",
-		"$(MODULES)/pins/smbus/manifest.json",
-		"$(MODULES)/files/preference/manifest.json"
+		"$(MODULES)/pins/smbus/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",

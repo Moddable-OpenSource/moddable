@@ -1,6 +1,5 @@
 {
 	"include": [
-        "$(MODULES)/files/preference/manifest.json"
 	],
 	"modules": {
 		"*": [

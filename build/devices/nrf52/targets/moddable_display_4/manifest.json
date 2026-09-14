@@ -9,8 +9,7 @@
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
 		"$(MODULES)/drivers/peripherals/jogdial/manifest.json",
-		"$(MODULES)/drivers/sensors/lis3dh/manifest.json",
-		"$(MODULES)/files/preference/manifest.json"
+		"$(MODULES)/drivers/sensors/lis3dh/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",

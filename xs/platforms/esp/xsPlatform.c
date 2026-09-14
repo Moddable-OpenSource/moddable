@@ -60,10 +60,6 @@
 #include "xs.h"
 #include "xsHosts.h"
 
-#ifdef mxDebug
-	#include "modPreference.h"
-#endif
-
 #define isSerialIP(ip) ((127 == ip[0]) && (0 == ip[1]) && (0 == ip[2]) && (7 == ip[3]))
 #define kSerialConnection ((void *)0x87654321)
 
@@ -1104,56 +1100,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 			break;
 #endif /* MODDEF_XS_MODS */
-
-		case 4: {	// set preference
-			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			while (cmdLen--) {
-				if (!*cmd++) {
-					if (NULL == key)
-						key = cmd;
-					else if (NULL == value) {
-						value = cmd;
-						break;
-					}
-				}
-			}
-			if (key && value) {
-				uint8_t prefType = c_read8(value++);
-				cmdLen -= 1;
-
-				if (!modPreferenceSet(domain, key, prefType, value, cmdLen))
-					resultCode = -5;
-			}
-			}
-			break;
-
-		case 6: {		// get preference
-			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-			int zeros = 0;
-			while (cmdLen--) {
-				if (!*cmd++) {
-					zeros += 1;
-					if (NULL == key)
-						key = cmd;
-					else
-						break;
-				}
-			}
-			if ((2 == zeros) && key) {
-				if (NULL != c_strstr(key, "password")) {
-					resultCode = -4;
-					break;
-				}
-
-				uint8_t *buffer = the->echoBuffer + the->echoOffset;
-				uint16_t byteCountOut;
-				if (!modPreferenceGet(domain, key, buffer, buffer + 1, sizeof(the->echoBuffer) - (the->echoOffset + 1), &byteCountOut))
-					resultCode = -6;
-				else
-					the->echoOffset += byteCountOut + 1;
-			}
-		}
-		break;
 
 		case 8:		// set baud
 			baud = c_read32be(cmd);
