@@ -1,43 +1,10 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
 	"include": [
 		"$(IO)/analog/manifest.json",
 		"$(IO)/digital/manifest.json",
 		"$(IO)/i2c/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
-		"$(IO)/spi/manifest.json",
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(MODULES)/pins/digital/esp/modGPIO"
-		],
-
-		"system": "$(IO)/system/system",
-		"lockdown/device": "$(IO)/system/lockdowndevice"
-	},
-	"preload": [
-		"system",
-		"lockdown/device",
-		"embedded:provider/builtin"
-	],
-	"platforms": {
-		"esp/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"esp": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
-		},
-		"...": {
-			"error": "ESP8266 manifest"
-		}
-	}
+		"$(IO)/spi/manifest.json"
+	]
 }

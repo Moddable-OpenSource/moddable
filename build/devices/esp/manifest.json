@@ -5,9 +5,10 @@
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
 			"$(MODULES)/base/timer/mc/*",
-			"$(MODULES)/files/preference/modPreference",
-			"$(MODULES)/files/preference/esp/modPreference"
-		]
+			"$(MODULES)/pins/digital/esp/modGPIO",
+			"$(IO)/common/builtinCommon"
+		],
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"creation": {
 		"static": 32768,
@@ -22,9 +23,10 @@
 		"stack": 256
 	},
 	"preload": [
-		"preference",
 		"time",
-		"timer"
+		"timer",
+		"lockdown/device",
+		"embedded:provider/builtin"
 	],
 	"recipes": {
 		"strings-in-flash": [
@@ -42,7 +44,10 @@
 	},
 	"platforms": {
 		"esp/*": {
-			"include": "$(SUBPLATFORMMANIFEST)"
+			"include": "$(SUBPLATFORMMANIFEST)",
+			"modules": {
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
+			}
 		}
 	},
 	"defines": {
@@ -53,3 +58,4 @@
 		}
 	}
 }
+
