@@ -504,7 +504,15 @@ DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_none.c
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_tinyusb.c
 !ELSE
 !IF "$(ESP32_SUBCLASS)"=="esp32s3"
+!IF "$(USE_USB)"=="2"
+DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_cdc.c
+!ELSE
+!IF "$(DEBUG)"=="1"
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_uart_cdc.c
+!ELSE
+DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_uart.c
+!ENDIF
+!ENDIF
 !ELSE
 !IF "$(USE_USB)"=="2"
 DEBUGGER_SRC_FILE = $(PROJ_DIR)\main\debugger_cdc.c
