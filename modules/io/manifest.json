@@ -1,28 +1,3 @@
 {
-	"platforms": {
-		"esp": {
-			"include": "./manifests/esp/manifest.json"
-		},
-		"esp32": {
-			"include": "./manifests/esp32/manifest.json"
-		},
-		"pico": {
-			"include": "./manifests/pico/manifest.json"
-		},
-		"nrf52": {
-			"include": "./manifests/nrf52/manifest.json"
-		},
-		"zephyr": {
-			"include": "./manifests/zephyr/manifest.json"
-		},
-		"mac": {
-			"include": "./manifests/mac/manifest.json"
-		},
-		"lin": {
-			"include": "./manifests/lin/manifest.json"
-		},
-		"win": {
-			"include": "./manifests/win/manifest.json"
-		}
-	}
+	"include": "./manifests/$(PLATFORM)/manifest.json"
 }
