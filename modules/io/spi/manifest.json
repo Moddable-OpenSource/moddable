@@ -1,7 +1,4 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
 	"platforms": {
 		"mac": {},
 		"win": {},
@@ -13,7 +10,8 @@
 			"modules": {
 				"*": [
 					"$(MODULES)/io/common/builtinCommon",
-					"$(MODULES)/io/spi/$(PLATFORM)/*"
+					"$(MODULES)/io/spi/$(PLATFORM)/*",
+					"$(MODULES)/commodetto/commodettoBitmap.h"
 				],
 				"embedded:io/spi": "$(IO)/spi/spi",
 				"config/spi": "./config"
