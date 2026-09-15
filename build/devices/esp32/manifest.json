@@ -3,31 +3,40 @@
 		"EXPECTED_ESP_IDF": "v6.1",
 		"IDF_COMPONENTS_CORE": "main esptool_py partition_table bootloader nvs_flash esp_netif"
 	},
-	"include": [
-	],
 	"modules": {
 		"*": [
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/mc/*"
-		]
+			"$(MODULES)/base/timer/mc/*",
+			"$(MODULES)/pins/digital/esp32/modGPIO",
+			"$(IO)/common/builtinCommon"
+		],
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
 		"time",
-		"timer"
+		"timer",
+		"lockdown/device",
+		"embedded:provider/builtin"
 	],
 	"platforms": {
 		"esp32": {
 			"dependency": [
 				{ "idf": "esp_driver_gptimer" }
-			]
+			],
+			"modules": {
+				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
+			}
 		},
 		"esp32/*": {
 			"include": "$(SUBPLATFORMMANIFEST)",
 			"dependency": [
 				{ "idf": "esp_driver_gptimer" }
-			]
+			],
+			"modules": {
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
+			}
 		}
 	}
 }

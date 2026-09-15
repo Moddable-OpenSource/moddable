@@ -1,6 +1,5 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/spi/manifest.json",
 		"$(COMMODETTO)/manifest_bitmap.json"
 	],
