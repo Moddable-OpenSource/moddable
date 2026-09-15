@@ -3,7 +3,8 @@
 		"BUILD": "$(MODDABLE)/build",
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
-		"PIU": "$(MODULES)/piu"
+		"PIU": "$(MODULES)/piu",
+		"IO": "$(MODDABLE)/modules/io"
 	},
 	"creation": {
 		"keys": {
@@ -17,6 +18,11 @@
 			"table": 17
 		},
 		"main": "main"
+	},
+	"defines": {
+		"ECMA419": {
+			"enabled": 1
+		}
 	},
 	"include": [
 		"$(MODULES)/files/resource/manifest.json",
@@ -43,7 +49,6 @@
 			"include": "$(BUILD)/devices/esp/manifest.json",
 			"modules": {
 				"*": [
-					"$(MODULES)/files/preference/esp/*",
 					"$(MODULES)/network/socket/lwip/modLwipSafe"
 				]
 			}

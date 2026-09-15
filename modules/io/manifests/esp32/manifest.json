@@ -1,7 +1,4 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
 	"include": [
 		"$(IO)/analog/manifest.json",
 		"$(IO)/digital/manifest.json",
@@ -10,71 +7,6 @@
 		"$(IO)/pulsecount/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
-		"$(IO)/spi/manifest.json",
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(MODULES)/pins/digital/esp32/modGPIO"
-		],
-		"system": "$(IO)/system/system",
-		"lockdown/device": "$(IO)/system/lockdowndevice"
-	},
-	"preload": [
-		"system",
-		"lockdown/device",
-		"embedded:provider/builtin"
-	],
-	"platforms": {
-		"esp32": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-
-			}
-		},
-		"esp32/esp32c3": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-
-			}
-		},
-		"esp32/esp32c3_cdc": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-
-			}
-		},
-		"esp32/esp32c6": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-
-			}
-		},
-		"esp32/esp32c6_cdc": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-
-			}
-		},
-		"esp32/esp32h2": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"esp32/esp32h2_cdc": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"esp32/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-
-			}
-		},
-		"...": {
-			"error": "ESP32 manifest"
-		}
-	}
+		"$(IO)/spi/manifest.json"
+	]
 }
