@@ -64,60 +64,50 @@ static txInteger fxPreloadOrder(txString name)
 	return 1;
 }
 
-static void fxStripKey(txMachine* the, txID id)
+static txBoolean fxCanStripScriptModule(txMachine* the, txLinkerScript* script)
 {
-	the->keyArray[id - the->keyOffset]->flag &= ~XS_DONT_DELETE_FLAG;
+	if (fxPreloadOrder(script->path) == 1)
+		return 0;
+	return 1; //mxModuleInstanceExports(script->module)->value.reference->next == C_NULL; // error?
 }
 
-static txBoolean fxIsDeadScript(txLinkerScript* script)
+static txBoolean fxIsScriptModuleCollected(txLinkerScript* script)
 {
 	return script->stripped && script->module && (script->module->kind != XS_INSTANCE_KIND);
 }
 
-static txBoolean fxScriptsUseSymbol(txLinker* linker, txString name)
+static void fxStripScriptKeys(txMachine* the, txLinker* linker, txLinkerScript* script)
 {
-	txLinkerScript* script = linker->firstScript;
-	while (script) {
-		if (!fxIsDeadScript(script) && script->symbolsBuffer) {
-			txByte* p = script->symbolsBuffer;
-			txID c, i;
-			mxDecodeID(p, c);
-			for (i = 1; i < c; i++) {
-				if (!c_strcmp((txString)p, name))
-					return 1;
-				p += mxStringLength((txString)p) + 1;
-			}
-		}
-		script = script->nextScript;
-	}
-	return 0;
-}
-
-static void fxStripScriptKeys(txMachine* the, txLinker* linker, txLinkerScript* stripped)
-{
-	txByte* p = stripped->symbolsBuffer;
+	txByte* p = script->symbolsBuffer;
 	txID c, i;
 	if (!p)
 		return;
 	mxDecodeID(p, c);
 	for (i = 1; i < c; i++) {
 		txString name = (txString)p;
-		txLinkerSymbol* symbol = fxNewLinkerSymbol(linker, name, 0, 0);
 		p += mxStringLength(name) + 1;
-		if ((symbol->ID < XS_ID_COUNT) || symbol->flag || fxScriptsUseSymbol(linker, name))
-			continue;
 		txID id = fxFindName(the, name);
-		if (id != XS_NO_ID)
-			fxStripKey(the, id);
+// fprintf(stderr, "strip %s %d %s %d\n", name, id, linker->symbolArray[id]->string, linker->symbolArray[id]->flag);
+		if ((id >= XS_ID_COUNT) && (linker->symbolArray[id]->flag == 0)) // not used in C
+			the->keyArray[id]->flag &= ~XS_DONT_DELETE_FLAG;
 	}
 }
 
-static txBoolean fxIsStrippedModule(txMachine* the, txSlot* module)
+static void fxUnstripScriptKeys(txMachine* the, txLinker* linker, txLinkerScript* script)
 {
-	txString name = fxGetKeyName(the, mxModuleInstanceInternal(module)->value.module.id);
-	if (fxPreloadOrder(name) == 1)
-		return 0;
-	return mxModuleInstanceExports(module)->value.reference->next == C_NULL;
+	txByte* p = script->symbolsBuffer;
+	txID c, i;
+	if (!p)
+		return;
+	mxDecodeID(p, c);
+	for (i = 1; i < c; i++) {
+		txString name = (txString)p;
+		p += mxStringLength(name) + 1;
+		txID id = fxFindName(the, name);
+// fprintf(stderr, "unstrip %s %d %s %d\n", name, id, linker->symbolArray[id]->string, linker->symbolArray[id]->flag);
+		if ((id >= XS_ID_COUNT) && (linker->symbolArray[id]->flag == 0)) // not used in C
+			the->keyArray[id]->flag |= XS_DONT_DELETE_FLAG;
+	}
 }
 
 int main(int argc, char* argv[]) 
@@ -537,26 +527,31 @@ int main(int argc, char* argv[])
 					txSlot* module;
 					txInteger stripped = 0;
 					while ((module = *address)) {
-						if (fxIsStrippedModule(the, module->value.reference)) {
-							// unlink it and let the garbage collector discard it
-							txSlot* internal = mxModuleInstanceInternal(module->value.reference);
-							txString name = fxGetKeyName(the, internal->value.module.id);
-							script = linker->firstScript;
-							while (script) {
-								if (!c_strcmp(name, script->path)) {
-									script->stripped = 1;
-									script->module = module->value.reference;
-									script->moduleID = internal->value.module.id;
-									linker->scriptCount--;
-									break;
-								}
-								script = script->nextScript;
+						txSlot* internal = mxModuleInstanceInternal(module->value.reference);
+						txString name = fxGetKeyName(the, internal->value.module.id);
+						script = linker->firstScript;
+						while (script) {
+							if (!c_strcmp(name, script->path))
+								break;
+							script = script->nextScript;
+						}
+						if (script) {
+							if (!script->preload)
+								fprintf(stderr, "### warning: %s: not in preload (%d bytes)\n", name, script->codeSize);
+							script->module = module->value.reference;
+							mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+							if (fxCanStripScriptModule(the, script)) {
+								script->stripped = 1;
+								linker->scriptCount--;
+								*address = module->next;
+								stripped++;
 							}
-							*address = module->next;
-							stripped++;
+							else {
+								address = &(module->next);
+							}
 						}
 						else {
-							mxModuleInstanceInternal(module->value.reference)->value.module.realm = NULL;
+							// error?
 							address = &(module->next);
 						}
 					}
@@ -569,11 +564,16 @@ int main(int argc, char* argv[])
 						stripped = 0;
 						script = linker->firstScript;
 						while (script) {
-							if (fxIsDeadScript(script)) {
-								fxStripKey(the, script->moduleID);
+							if (fxIsScriptModuleCollected(script)) {
 								fxStripScriptKeys(the, linker, script);
 								stripped++;
 							}
+							script = script->nextScript;
+						}
+						script = linker->firstScript;
+						while (script) {
+							if (!fxIsScriptModuleCollected(script))
+								fxUnstripScriptKeys(the, linker, script);
 							script = script->nextScript;
 						}
 						if (stripped)
@@ -710,7 +710,7 @@ int main(int argc, char* argv[])
 			script = linker->firstScript;
 			while (script) {
 				if (!script->stripped) {
-					if (script->hostsBuffer)
+					if (script->hostsBuffer && (script->module == NULL))
 						fprintf(file, "static void xsHostModule%d(xsMachine* the);\n", script->scriptIndex);
 					if (script->preload == C_NULL)
 						fprintf(file, "static const txU1 gxCode%d[%d];\n", script->scriptIndex, script->codeSize);
@@ -728,7 +728,7 @@ int main(int argc, char* argv[])
 			script = linker->firstScript;
 			while (script) {
 				fxWriteScriptHosts(script, file);
-				if (!script->stripped)
+				if (!fxIsScriptModuleCollected(script))
 					fxWriteScriptCode(script, file);
 				script = script->nextScript;
 			}
@@ -1005,7 +1005,9 @@ txBoolean fxFindScript(txMachine* the, txString path, txID* id)
 	txLinkerScript* linkerScript = linker->firstScript;
 	while (linkerScript) {
 		if (!c_strcmp(path, linkerScript->path)) {
-			*id = fxNewNameC(the, path);
+			mxPushStringC(path);
+			*id = fxNewName(the, the->stack);
+			mxPop();
 			return 1;
 		}
 		linkerScript = linkerScript->nextScript;
