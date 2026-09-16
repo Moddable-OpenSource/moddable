@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
+		"$(IO)/digital/manifest.json"
 	],
 	"build":{
 		"USE_USB": "2",

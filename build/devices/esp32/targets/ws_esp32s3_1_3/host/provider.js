@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 import QMI8658 from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
 import Backlight from "backlight";
@@ -37,14 +27,14 @@ import NeoPixel from "neopixel";
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 47,
 			clock: 48
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 44,
 			transmit: 43
@@ -52,7 +42,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 40,
 			in: -1,
 			out: 41,
@@ -61,11 +51,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 6
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		batteryADC: 6,
 		backlight: 20,
@@ -111,8 +100,8 @@ const device = {
 						io: device.io.SMBus
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: device.pin.imuInterrupt
 					}
 				});

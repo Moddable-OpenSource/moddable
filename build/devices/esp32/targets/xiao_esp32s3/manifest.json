@@ -9,7 +9,7 @@
 	},
 	"include": [
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(IO)/digital/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

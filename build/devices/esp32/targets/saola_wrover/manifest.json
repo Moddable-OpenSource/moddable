@@ -2,5 +2,8 @@
 	"build":{
 		"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/sdkconfig-s2-psram"
 	},
-	"include": "../saola_wroom/manifest.json"
+	"include": [
+		"../saola_wroom/manifest.json",
+		"$(IO)/digital/manifest.json"
+	]
 }

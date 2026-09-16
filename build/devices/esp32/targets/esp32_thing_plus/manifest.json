@@ -1,8 +1,9 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "",

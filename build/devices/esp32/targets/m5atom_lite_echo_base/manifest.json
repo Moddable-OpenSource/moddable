@@ -1,9 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/io/audioout/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json"
 	],
 	"build": {
 		"UPLOAD_SPEED": "1500000",

@@ -18,17 +18,7 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import Touch from "embedded:sensor/Touch/CST816";
-import PulseWidth from "embedded:io/pulsewidth";
 import PCF85063 from "embedded:RTC/PCF85063";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 
@@ -41,7 +31,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -53,7 +43,7 @@ class ButtonB {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -62,14 +52,14 @@ class ButtonB {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 11,
 			clock: 10
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 44,
 			transmit: 43
@@ -77,14 +67,13 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 6,
 			in: -1,
 			out: 7,
 			port: 2
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		//@@ button
 		button: 0,
@@ -121,8 +110,8 @@ const device = {
 						io: device.io.SMBus
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: device.pin.rtcInterrupt
 					}
 				});
@@ -139,13 +128,13 @@ const device = {
 						io: device.io.SMBus
 					},
 					reset: {
-						io: Digital,
-						mode: Digital.Output,
+						io: device.io.Digital,
+						mode: device.io.Digital.Output,
 						pin: device.pin.touchReset
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: device.pin.touchInterrupt
 					}
 				});
@@ -163,8 +152,8 @@ const device = {
 						io: device.io.SMBus
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: device.pin.imuInterrupt
 					}
 				});

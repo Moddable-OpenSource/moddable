@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 import RTC from "embedded:RTC/BM8563";
 import Touch from "M5StackCoreTouch";
 import Core2Power from "Core2Power";
@@ -36,19 +26,19 @@ import Core2IMU from "Core2IMU";
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 32,
 			clock: 33
 		},
 		internal: {
-			io: I2C,
+			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 3,
 			transmit: 1
@@ -56,7 +46,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 18,
 			in: 38,
 			out: 23,
@@ -65,11 +55,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 35
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		displayDC: 15,
 		displaySelect: 5
@@ -84,8 +73,8 @@ const device = {
 						io: device.io.SMBus,
               		},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: 39
 					}
 				});
@@ -140,7 +129,7 @@ const device = {
 					...options,
 					clock: {
 						...device.I2C.internal,
-						io: SMBus,
+						io: device.io.SMBus,
 					},
 				});
 			}

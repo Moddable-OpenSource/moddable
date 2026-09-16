@@ -18,18 +18,7 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import Touch from "embedded:sensor/Touch/CST816";
-import PulseWidth from "embedded:io/pulsewidth";
-
 import Backlight from "backlight";
 import Button from "button";
 import LEDneopixel from "led/neopixel";
@@ -41,7 +30,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -53,7 +42,7 @@ class ButtonB {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -62,26 +51,25 @@ class ButtonB {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 43,
 			clock: 44
 		},
 		internal: {
-			io: I2C,
+			io: "I2C",
 			data: 18,
 			clock: 17
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 12,
 			in: 13,
 			out: 11,
 			port: 1
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 0,
 		buttonA: 0,
@@ -99,10 +87,10 @@ const device = {
 		Power: {
 			LCD: class {
 				constructor() {
-					return new Digital({
-						io: Digital,
+					return new device.io.Digital({
+						io: device.io.Digital,
 						pin: device.pin.lcdPower,
-						mode: Digital.Output });
+						mode: device.io.Digital.Output });
 					}
 			}
 		},

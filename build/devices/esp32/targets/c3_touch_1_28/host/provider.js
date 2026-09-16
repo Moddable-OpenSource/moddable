@@ -18,18 +18,12 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
 import Touch from "embedded:sensor/Touch/CST816";
 
 const device = {
 	I2C: {
 		internal: {
-			io: I2C,
+			io: "I2C",
 			port: "I2C_NUM_0",
 			data: 4,
 			clock: 5
@@ -37,13 +31,12 @@ const device = {
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 20,
 			transmit: 21
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, Serial, SMBus },
 	pin: {},
 	sensor: {
 		Touch: class {
@@ -55,13 +48,13 @@ const device = {
 						io: device.io.SMBus
 					},
 					reset: {
-						io: Digital,
-						mode: Digital.Output,
+						io: device.io.Digital,
+						mode: device.io.Digital.Output,
 						pin: 1
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: 0
 					}
 				});

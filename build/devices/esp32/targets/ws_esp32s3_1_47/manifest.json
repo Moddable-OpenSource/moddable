@@ -4,10 +4,11 @@
 		"USE_USB": "2"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/st7789/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "st7789",

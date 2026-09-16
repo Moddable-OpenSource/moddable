@@ -4,14 +4,16 @@
 		"DEBUGGER_SPEED": "1500000"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/st7735/manifest.json",
 		"$(MODULES)/drivers/sensors/mpu6886/manifest.json",
 		"$(MODULES)/drivers/sensors/sh200q/manifest.json",
 		"$(MODULES)/drivers/peripherals/axp192/manifest.json",
 		"$(MODULES)/drivers/peripherals/bm8563/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "st7735",

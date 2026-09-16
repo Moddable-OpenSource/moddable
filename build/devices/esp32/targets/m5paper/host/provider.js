@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import Touch from "embedded:sensor/Touch/GT911";
 import HumidityTemperature from "embedded:sensor/Humidity-Temperature/SHT3x"
 import RTC from "embedded:RTC/PCF8563"
@@ -38,12 +29,12 @@ class M5PaperTouch extends Touch {
 		
 		// I2C address floats: try both
 		try {
-			i2c = new I2C({...device.I2C.default, address, hz: 100_000});
+			i2c = new device.io.I2C({...device.I2C.default, address, hz: 100_000});
 			i2c.read(1);
 		}
 		catch {
 			address = 0x5D;
-			i2c = new I2C({...device.I2C.default, address, hz: 100_000});
+			i2c = new device.io.I2C({...device.I2C.default, address, hz: 100_000});
 			i2c.read(1);
 		}
 		i2c.close();
@@ -51,8 +42,8 @@ class M5PaperTouch extends Touch {
 		const o = {
 			sensor: {...device.I2C.default, address},
 			interrupt: {
-				io: Digital,
-				mode: Digital.Input,
+				io: device.io.Digital,
+				mode: device.io.Digital.Input,
 				pin: device.pin.touchInterrupt
 			}
 		};
@@ -80,9 +71,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 38,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -92,9 +83,9 @@ class ButtonB {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 37,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -104,9 +95,9 @@ class ButtonC {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 39,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -115,21 +106,20 @@ class ButtonC {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 14,
 			in: 13,
 			out: 12,
 			port: 2,		// VSPI_HOST
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pin: {
 		powerMain: 2,
 		powerExternal: 5,
@@ -158,7 +148,7 @@ const device = {
 					...options,
 					clock: {
 						...device.I2C.default,
-						io: SMBus
+						io: device.io.SMBus
 					}
 				});
 			}
@@ -173,7 +163,7 @@ const device = {
 			Default: class {
 				#analog;
 				constructor() {
-					this.#analog = new Analog({pin: device.pin.batteryVoltage});
+					this.#analog = new device.io.Analog({pin: device.pin.batteryVoltage});
 				}
 				close() {
 					this.#analog?.close();

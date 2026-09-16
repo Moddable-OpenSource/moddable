@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from 'embedded:io/analog'
-import Digital from 'embedded:io/digital'
-import DigitalBank from 'embedded:io/digitalbank'
-import I2C from 'embedded:io/i2c'
-import PulseCount from 'embedded:io/pulsecount'
-import PWM from 'embedded:io/pwm'
-import Serial from 'embedded:io/serial'
-import SMBus from 'embedded:io/smbus'
-import SPI from 'embedded:io/spi'
 import Touch from 'embedded:sensor/Touch/FT3168'
 import RTC from 'embedded:RTC/PCF85063'
 import QMI8658 from 'embedded:sensor/Accelerometer-Gyroscope/QMI8658'
@@ -51,7 +42,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -63,7 +54,7 @@ class ButtonB {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -72,20 +63,19 @@ class ButtonB {
 const device = {
   I2C: {
     default: {
-      io: I2C,
+      io: "I2C",
       data: 15,
       clock: 14
     }
   },
   SPI: {
     default: {
-      io: SPI,
+      io: "SPI",
       port: 2,
       clock: 11,
       out: 4
     }
   },
-  io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI },
   pin: {
     button: 0,
 	buttonA: 0,
@@ -103,17 +93,17 @@ const device = {
       PMIC: class {
         constructor() {
           return new AXP2101({
-            sensor: { ...device.I2C.default, io: SMBus },
+            sensor: { ...device.I2C.default, io: device.io.SMBus },
             address: 0x34
           });
         }
       },
       Amplifier: class {
         constructor() {
-          return new Digital({
-            io: Digital,
+          return new device.io.Digital({
+            io: device.io.Digital,
             pin: device.pin.amplifier,
-            mode: Digital.Output,
+            mode: device.io.Digital.Output,
             initialValue: 1
           });
 		}
@@ -125,7 +115,7 @@ const device = {
           ...options,
           clock: {
             ...device.I2C.default,
-            io: SMBus
+            io: device.io.SMBus
           }
         })
       }
@@ -141,13 +131,13 @@ const device = {
             io: device.io.SMBus
           },
           reset: {
-            io: Digital,
-            mode: Digital.Output,
+            io: device.io.Digital,
+            mode: device.io.Digital.Output,
             pin: 9
           },
           interrupt: {
-            io: Digital,
-            mode: Digital.Input,
+            io: device.io.Digital,
+            mode: device.io.Digital.Input,
             pin: 38
           }
         })
@@ -179,10 +169,10 @@ const device = {
     button: {
       A: class {
         constructor(options) {
-          return new Digital({
+          return new device.io.Digital({
             ...options,
             pin: device.pin.button,
-            mode: Digital.InputPullUp
+            mode: device.io.Digital.InputPullUp
           })
         }
       }

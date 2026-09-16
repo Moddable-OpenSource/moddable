@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Backlight from "backlight";
 import Button from "button";
 import LEDneopixel from "led/neopixel";
@@ -39,7 +29,7 @@ class ButtonFlash {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -48,14 +38,14 @@ class ButtonFlash {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 42,
 			clock: 41
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 0,
 			receive: 2,
 			transmit: 1
@@ -63,7 +53,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			port: 3,
 			clock: 36,
 			in: 37,
@@ -72,11 +62,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 18
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI },
 	pin: {
 		button: 0,
 		buttonA: 0,
@@ -101,10 +90,10 @@ const device = {
 		Power: {
 			LCD: class {
 				constructor() {
-					return new Digital({
-						io: Digital,
+					return new device.io.Digital({
+						io: device.io.Digital,
 						pin: device.pin.lcdPower,
-						mode: Digital.Output });
+						mode: device.io.Digital.Output });
 				}
 			}
 		},
@@ -121,7 +110,7 @@ const device = {
 							brightness: 32
 						},
 						power: {
-							io: Digital,
+							io: device.io.Digital,
 							pin: device.pin.ledPower
 						}
 					});
