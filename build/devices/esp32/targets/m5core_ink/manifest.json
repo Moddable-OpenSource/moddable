@@ -6,21 +6,17 @@
 		"$(MODULES)/drivers/peripherals/pcf8563/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(COMMODETTO)/manifest_dither.json",
+		"$(MODULES)/drivers/gdew0154m09/manifest.json",
 		"$(IO)/digital/manifest.json",
 		"$(IO)/i2c/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/analog/manifest.json"
 	],
 	"modules": {
-		"setup/target": "./setup-target",
-		"*": [
-			"$(MODDABLE)/modules/drivers/gdew0154m09/*"
-		]
+		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"setup/target",
-		"gdew0154m09"
+		"setup/target"
 	],
 	"config": {
 		"format": "Gray256",

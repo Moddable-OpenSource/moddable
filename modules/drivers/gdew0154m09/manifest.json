@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(COMMODETTO)/manifest_bitmap.json",
+		"$(COMMODETTO)/manifest_dither.json"
+	],
+	"modules": {
+		"*": "./*"
+	},
+	"preload": [
+		"gdew0154m09"
+	]
+}
