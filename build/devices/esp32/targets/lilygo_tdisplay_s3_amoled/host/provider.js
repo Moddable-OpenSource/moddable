@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Button from "button";
 import LED from "led/digital";
 
@@ -53,9 +43,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -65,9 +55,9 @@ class ButtonB {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -76,18 +66,17 @@ class ButtonB {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 43,
 			clock: 44
 		}
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 4
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI },
 	pin: {
 		button: 0,
 		buttonA: 0,
@@ -101,9 +90,9 @@ const device = {
 			Default: class {
 				constructor() {
 					return new LED({
-						io: Digital,
+						io: device.io.Digital,
 						pin: device.pin.led,
-						mode: Digital.Output
+						mode: device.io.Digital.Output
 					});
 				}
 			}

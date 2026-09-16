@@ -3,9 +3,9 @@
 		"ESP32_SUBCLASS": "esp32s2"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
+		"$(IO)/digital/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

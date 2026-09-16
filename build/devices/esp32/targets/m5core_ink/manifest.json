@@ -3,11 +3,14 @@
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/pcf8563/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(COMMODETTO)/manifest_dither.json"
+		"$(COMMODETTO)/manifest_dither.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json",
+		"$(IO)/analog/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target",

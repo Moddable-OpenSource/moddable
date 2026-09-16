@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-// import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-// import SPI from "embedded:io/spi";
-
 import SHTC3 from "embedded:sensor/Humidity-Temperature/SHTC3";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope/ICM42670P";
 
@@ -42,7 +32,7 @@ class ButtonFlash {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -51,7 +41,7 @@ class ButtonFlash {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			port: "I2C_NUM_0",
 			data: 10,
 			clock: 8
@@ -59,7 +49,7 @@ const device = {
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 20,
 			transmit: 21
@@ -67,11 +57,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 0
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus },
 	pin: {
 		button: 9,
 		buttonA: 9,

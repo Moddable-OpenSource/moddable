@@ -9,8 +9,8 @@
 	},
 	"include": [
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODULES)/drivers/ili9341/manifest.json"
+		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(IO)/digital/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

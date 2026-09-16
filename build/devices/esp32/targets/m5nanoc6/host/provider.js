@@ -18,11 +18,6 @@
  *
  */
 
-import Digital from "embedded:io/digital";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import SMBus from "embedded:io/smbus";
-
 import Button from "button";
 import LED from "led/pwm";
 import LEDneopixel from "led/neopixel";
@@ -32,9 +27,9 @@ class ButtonFlash {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -43,12 +38,11 @@ class ButtonFlash {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 2,
 			clock: 1
 		}
 	},
-	io: {Digital, I2C, PWM, SMBus},
 	pin: {
 		button: 9,
 		buttonA: 9,
@@ -75,7 +69,7 @@ const device = {
 							brightness: 32
 						},
 						power: {
-							io: Digital,
+							io: device.io.Digital,
 							pin: device.pin.ledPower
 						}
 					});
@@ -85,7 +79,7 @@ const device = {
 				constructor(options) {
 					return new LED({
 						...options,
-						io: PWM,
+						io: device.io.PWM,
 						pin: device.pin.ledBlue
 					});
 				}

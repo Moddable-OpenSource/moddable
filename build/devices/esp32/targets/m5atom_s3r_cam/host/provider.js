@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 
 import Button from "button";
@@ -36,9 +26,9 @@ class ButtonFlash {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -47,19 +37,19 @@ class ButtonFlash {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 45,
 			clock: 0
 		},
 		internal: {
-			io: I2C,
+			io: "I2C",
 			data: 45,
 			clock: 0
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 44,
 			transmit: 43
@@ -67,14 +57,13 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 36,
 			in: 37,
 			out: 35,
 			port: 2
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 41,
 		buttonA: 41,
@@ -88,10 +77,10 @@ const device = {
 		Power: {
 			Camera: class {
 				constructor() {
-					return new Digital({
-						io: Digital,
+					return new device.io.Digital({
+						io: device.io.Digital,
 						pin: device.pin.power,
-						mode: Digital.Output
+						mode: device.io.Digital.Output
 					});
 				}
 			}

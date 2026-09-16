@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import RTC from "embedded:RTC/PCF8563"
 
 import Timer from "timer";
@@ -58,7 +49,7 @@ class Tone {
 	#timer;
 	
 	constructor() {
-		this.#io = new PWM({pin: device.pin.buzzer});
+		this.#io = new device.io.PWM({pin: device.pin.buzzer});
 	}
 	close() {
 		this.#io?.close();
@@ -67,7 +58,7 @@ class Tone {
 		this.#io = this.#timer = undefined;
 	}
 	tone(hz, duration) {
-		const io = this.#io = new PWM({from: this.#io, hz});
+		const io = this.#io = new device.io.PWM({from: this.#io, hz});
 		io.write(512);
 	
 		if (duration) {
@@ -99,9 +90,9 @@ class ButtonB {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 38,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -111,9 +102,9 @@ class ButtonUp {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 37,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -123,9 +114,9 @@ class ButtonDown {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 39,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -135,9 +126,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 5,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -147,9 +138,9 @@ class ButtonPower {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: 27,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -158,20 +149,19 @@ class ButtonPower {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 18,
 			out: 23,
 			port: 2		// VSPI_HOST
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 5,
 		buttonA: 5,
@@ -195,10 +185,10 @@ const device = {
 					...options,
 					clock: {
 						...device.I2C.default,
-						io: SMBus
+						io: device.io.SMBus
 					},
 					interrupt: {
-						io: Digital,
+						io: device.io.Digital,
 						pin: device.pin.rtcInterrupt
 					}
 				});
@@ -218,7 +208,7 @@ const device = {
 			Default: class {
 				constructor() {
 					return new LED({
-						io: PWM,
+						io: device.io.PWM,
 						pin: device.pin.led,
 						invert: true
 					});
@@ -232,7 +222,7 @@ const device = {
 			Default: class {
 				#analog;
 				constructor() {
-					this.#analog = new Analog({pin: device.pin.batteryVoltage});
+					this.#analog = new device.io.Analog({pin: device.pin.batteryVoltage});
 				}
 				close() {
 					this.#analog?.close();

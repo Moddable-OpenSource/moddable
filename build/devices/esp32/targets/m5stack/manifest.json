@@ -1,9 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json"
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "m5stack/screen",

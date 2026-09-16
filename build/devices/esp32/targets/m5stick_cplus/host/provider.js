@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 import AXP192 from "embedded:peripheral/Power/axp192";
 import MPU6886 from "embedded:sensor/Accelerometer-Gyroscope/MPU6886";
 import RTC from "embedded:RTC/BM8563";
@@ -60,9 +50,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -72,9 +62,9 @@ class ButtonB {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -83,24 +73,24 @@ class ButtonB {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 32,
 			clock: 33
 		},
 		internal: {
-			io: I2C,
+			io: "I2C",
 			data: 21,
 			clock: 22
 		},
 		hat: {
-			io: I2C,
+			io: "I2C",
 			data: 0,
 			clock: 26
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 3,
 			transmit: 1
@@ -108,7 +98,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 13,
 			out: 15,
 			port: 1
@@ -116,11 +106,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 36
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PulseWidth, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 37,
 		buttonA: 37,
@@ -221,7 +210,7 @@ const device = {
 					...options,
 					clock: {
 						...device.I2C.internal,
-						io: SMBus,
+						io: device.io.SMBus,
 					},
 				});
 			}

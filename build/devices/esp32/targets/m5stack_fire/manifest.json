@@ -5,7 +5,6 @@
 		"C_FLAGS_SUBPLATFORM": "-mfix-esp32-psram-cache-issue"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
 		"$(MODDABLE)/modules/drivers/neopixel/manifest.json",
 		"$(MODDABLE)/modules/pins/audioin/manifest.json",
