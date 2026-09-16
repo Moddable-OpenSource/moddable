@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import RTC from "embedded:RTC/BM8563";
 import Touch from "embedded:sensor/Touch/FT6x06";
 import MFRC522 from "embedded:sensor/RFID/MFRC522";
@@ -60,7 +51,7 @@ class Tone {
   #timer;
 
   constructor() {
-    this.#io = new PWM({ pin: device.pin.buzzer });
+    this.#io = new device.io.PWM({ pin: device.pin.buzzer });
   }
   close() {
     this.#io?.close();
@@ -68,7 +59,7 @@ class Tone {
     this.#io = this.#timer = undefined;
   }
   tone(hz, duration) {
-    const io = (this.#io = new PWM({ from: this.#io, hz }));
+    const io = (this.#io = new device.io.PWM({ from: this.#io, hz }));
     io.write(512);
 
     if (duration) {
@@ -97,9 +88,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -109,9 +100,9 @@ class ButtonFlash {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.buttonFlash,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -120,34 +111,23 @@ class ButtonFlash {
 const device = {
   I2C: {
     default: {
-      io: I2C,
+      io: "I2C",
       data: 13,
       clock: 15
     },
     internal: {
-      io: I2C,
+      io: "I2C",
       data: 11,
       clock: 12
     }
   },
   SPI: {
     default: {
-      io: SPI,
+      io: "SPI",
       port: 3,
       clock: 6,
       out: 5
     }
-  },
-  io: {
-    Analog,
-    Digital,
-    DigitalBank,
-    I2C,
-    PulseCount,
-    PWM,
-    Serial,
-    SMBus,
-    SPI
   },
   pin: {
     button: 42,
@@ -168,8 +148,8 @@ const device = {
             io: device.io.SMBus,
           },
           interrupt: {
-            io: Digital,
-            mode: Digital.Input,
+            io: device.io.Digital,
+            mode: device.io.Digital.Input,
             pin: 14,
           },
         });
@@ -188,8 +168,8 @@ const device = {
           sensor: {
             ...device.I2C.internal,
             io: device.io.SMBus,
-            address: 0x28,
-          },
+            address: 0x28
+          }
         });
       }
     }
@@ -213,7 +193,7 @@ const device = {
     },
     RotaryEncoder: class {
       constructor(options) {
-        return new PulseCount({
+        return new device.io.PulseCount({
           ...options,
           signal: device.pin.signal,
           control: device.pin.control
@@ -226,7 +206,7 @@ const device = {
           ...options,
           clock: {
             ...device.I2C.internal,
-            io: SMBus
+            io: device.io.SMBus
           }
         });
       }
