@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(COMMODETTO)/manifest_bitmap.json"
+	],
+	"modules": {
+		"*": "./*"
+	},
+	"preload": [
+		"it8951"
+	]
+}

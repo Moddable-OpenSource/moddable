@@ -8,16 +8,15 @@
 		"$(MODDABLE)/modules/drivers/sensors/gt911/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/button/manifest.json",
 		"$(MODDABLE)/modules/drivers/peripherals/pcf8563/manifest.json",
+		"$(MODDABLE)/modules/drivers/it8951/manifest.json",
 		"$(IO)/digital/manifest.json",
 		"$(IO)/i2c/manifest.json",
 		"$(IO)/analog/manifest.json"
 	],
 	"modules": {
-		"it8951": "$(MODDABLE)/modules/drivers/it8951/*",
 		"setup/target": "./setup-target"
 	},
 	"preload": [
-		"it8951",
 		"setup/target"
 	],
 	"config": {
