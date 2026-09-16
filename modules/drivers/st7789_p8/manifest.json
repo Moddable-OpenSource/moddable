@@ -1,5 +1,7 @@
 {
-	"include": "../st7789_p8/manifest.json",
+	"include": [
+		"../ili9341_p8/manifest.json"
+	],
 	"modules": {
 		"*": [
 			"$(MODULES)/drivers/st7789_p8/*",
