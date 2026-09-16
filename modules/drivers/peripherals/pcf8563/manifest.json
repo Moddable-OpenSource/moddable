@@ -1,5 +1,4 @@
 {
-	"include": "$(MODDABLE)/modules/io/manifest.json",
 	"modules": {
 		"embedded:RTC/PCF8563": "$(MODDABLE)/modules/drivers/peripherals/pcf8563/pcf8563"
 	},
