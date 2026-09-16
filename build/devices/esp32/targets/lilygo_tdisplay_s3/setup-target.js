@@ -18,8 +18,6 @@
  *
  */
 
-const Digital = device.io.Digital;
-
 export default function (done) {
 	globalThis.backlight = device.peripheral.Backlight;
 
