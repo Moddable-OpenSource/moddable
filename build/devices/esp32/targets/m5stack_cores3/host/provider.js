@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Shinya Ishikawa
+ * Copyright (c) 2023-2026 Shinya Ishikawa
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-import PulseWidth from "embedded:io/pulsewidth";
 import RTC from "embedded:RTC/BM8563"
 import Touch from "M5StackCoreS3Touch";
 import IMU from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
@@ -36,19 +26,19 @@ import IMU from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 const device = {
   I2C: {
     default: {
-      io: I2C,
+      io: "I2C",
       data: 2,
       clock: 1
     },
     internal: {
-      io: I2C,
+      io: "I2C",
       data: 12,
       clock: 11
     }
   },
   Serial: {
     default: {
-      io: Serial,
+      io: "Serial",
       port: 1,
       receive: 44,
       transmit: 43
@@ -56,7 +46,7 @@ const device = {
   },
   SPI: {
     default: {
-      io: SPI,
+      io: "SPI",
       clock: 36,
       in: 35,
       out: 37,
@@ -65,21 +55,9 @@ const device = {
   },
   Analog: {
     default: {
-      io: Analog,
+      io: "Analog",
       pin: 10
     }
-  },
-  io: {
-    Analog,
-    Digital,
-    DigitalBank,
-    I2C,
-    PulseCount,
-    PulseWidth,
-    PWM,
-    Serial,
-    SMBus,
-    SPI
   },
   pin: {
     displayDC: 15,
@@ -110,7 +88,7 @@ const device = {
 					...options,
 					clock: {
 						...device.I2C.internal,
-						io: SMBus
+						io: device.io.SMBus
 					}
 				});
 			}
