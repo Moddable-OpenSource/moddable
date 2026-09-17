@@ -1,9 +1,9 @@
 {
     "include": [
-		"$(MODDABLE)/modules/io/manifest.json",
-        "$(MODULES)/drivers/destm32s/manifest.json",
+		"$(MODULES)/drivers/destm32s/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/digital/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
+		"$(IO)/digital/manifest.json"
     ],
 	"build": {
 		"FLASH_MODE": "qio",
@@ -31,11 +31,5 @@
             "busy_pin": 16,
             "spi_port": "#HSPI"
         }
-    },
-	"modules": {
-		 "setup/target": "../moddable_one/setup-target"
-	},
-	 "preload": [
-		 "setup/target"
-	]
+    }
 }

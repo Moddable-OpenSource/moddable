@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Button from "button";
 import LED from "led/digital";
 
@@ -36,7 +27,7 @@ class ButtonFlash {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -45,19 +36,19 @@ class ButtonFlash {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 5,
 			clock: 4
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 14,
 			in: 13,
 			out: 12,
@@ -66,10 +57,9 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog
+			io: "Analog"
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
 	pin: {
 		button: 0,
 		led: 2,
@@ -85,7 +75,7 @@ const device = {
 			Default: class {
 				constructor() {
 					return new LED({
-						io: Digital,
+						io: device.io.Digital,
 						pin: device.pin.led,
 						invert: true
 					});

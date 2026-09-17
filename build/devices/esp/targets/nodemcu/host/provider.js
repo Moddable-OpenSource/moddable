@@ -27,7 +27,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: device.io.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
