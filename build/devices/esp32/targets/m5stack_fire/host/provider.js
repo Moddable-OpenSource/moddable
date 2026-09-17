@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -17,6 +17,50 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+import MPU6050 from "embedded:sensor/Accelerometer-Gyroscope/MPU6050";
+import MAG3110 from "embedded:sensor/Magnetometer/MAG3110";
+
+import Backlight from "backlight";
+import Button from "button";
+import LEDneopixel from "led/neopixel";
+import NeoPixel from "neopixel";
+
+class ButtonA {
+	constructor(options) {
+		return new Button({
+			...options,
+			io: device.io.Digital,
+			pin: device.pin.buttonA,
+			mode: device.io.Digital.InputPullUp,
+			activeLow: true
+		});
+	}
+}
+
+class ButtonB {
+	constructor(options) {
+		return new Button({
+			...options,
+			io: device.io.Digital,
+			pin: device.pin.buttonB,
+			mode: device.io.Digital.InputPullUp,
+			activeLow: true
+		});
+	}
+}
+
+class ButtonC {
+	constructor(options) {
+		return new Button({
+			...options,
+			io: device.io.Digital,
+			pin: device.pin.buttonC,
+			mode: device.io.Digital.InputPullUp,
+			activeLow: true
+		});
+	}
+}
 
 const device = {
 	I2C: {
@@ -51,10 +95,91 @@ const device = {
 	},
 	pin: {
 		button: 38,
-		led: 2,
+		buttonA: 39,
+		buttonB: 38,
+		buttonC: 37,
+		led: 15,
 		backlight: 32,
 		displayDC: 27,
 		displaySelect: 14
+	},
+	peripheral: {
+		Backlight: class {
+			constructor() {
+				return new Backlight({
+					io: device.io.PWM,
+					pin: device.pin.backlight
+				});
+			}
+		},
+		button: {
+			Default: ButtonB,
+			A: ButtonA,
+			B: ButtonB,
+			C: ButtonC
+		},
+		led: {
+			Default: class {
+				constructor(options) {
+					return new LEDneopixel({
+						...options,
+						neopixels: {
+							io: NeoPixel,
+							length: 10,
+							pin: device.pin.led,
+							order: "GRB",
+							brightness: 32
+						}
+					});
+				}
+			}
+		},
+		neopixel: {
+			Default: class {
+				constructor(options) {
+					return new NeoPixel({
+						...options,
+						length: 10,
+						pin: device.pin.led,
+						order: "GRB"
+					});
+				}
+			}
+		}
+	},
+	sensor: {
+		IMU: class extends MPU6050 {
+			constructor(options) {
+				super({
+					...options,
+					sensor: {
+						...device.I2C.default,
+						io: device.io.SMBus
+					}
+				});
+			}
+			sample() {
+				const sample = super.sample();
+				sample.accelerometer.y *= -1;
+				sample.accelerometer.z *= -1;
+				const {x, y, z} = sample.gyroscope;
+				sample.gyroscope.x = y * -1;
+				sample.gyroscope.y = x * -1;
+				sample.gyroscope.z = z * -1;
+				return sample;
+			}
+		},
+		Magnetometer: class {
+			constructor(options) {
+				return new MAG3110({
+					...options,
+					sensor: {
+						...device.I2C.default,
+						io: device.io.SMBus
+					}
+				});
+			}
+		}
 	}
 };
 

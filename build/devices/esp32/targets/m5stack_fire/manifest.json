@@ -6,11 +6,14 @@
 	},
 	"include": [
 		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/neopixel/manifest.json",
-		"$(MODDABLE)/modules/pins/audioin/manifest.json",
-		"$(MODDABLE)/modules/pins/i2s/manifest.json",
-		"$(MODDABLE)/modules/pins/smbus/manifest.json",
-		"$(MODDABLE)/modules/pins/digital/monitor/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
+		"$(MODULES)/drivers/sensors/mpu6050/manifest.json",
+		"$(MODULES)/drivers/sensors/mag3110/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "m5stack/screen",
@@ -64,18 +67,6 @@
 				"0xFF, 0,"
 			]
 		},
-		"neopixel": {
-			"length": 10,
-			"order": "#GRB",
-			"pin": 15
-		},
-		"audioIn": {
-			"sampleRate": 22050,
-			"bitsPerSample": 16,
-			"i2s": {
-				"adc": 1
-			}
-		},
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
@@ -86,24 +77,22 @@
 				"DAC_CHANNEL": 1,
 				"bitsPerSample": 16
 			}
+		},
+		"audioIn": {
+			"sampleRate": 22050,
+			"bitsPerSample": 16,
+			"i2s": {
+				"adc": 1
+			}
 		}
 	},
 	"modules": {
-		"*": [
-			"$(MODULES)/drivers/mpu6050/*",
-			"$(MODULES)/drivers/mag3110/*",
-			
-			"./m5button"
-		],
 		"setup/target": "./setup-target",
 		"m5stack/screen": "../m5stack/screen"
 	},
 	"preload": [
 		"setup/target",
-		"m5stack/screen",
-		"mpu6050",
-		"mag3110",
-		"m5button"
+		"m5stack/screen"
 	],
 	"resources": {
 		"*": "$(MODDABLE)/examples/assets/sounds/bflatmajor"
@@ -121,4 +110,3 @@
 		"stack": 512
 	}
 }
-
