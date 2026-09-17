@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:sensor/Magnetometer/MAG3110": "$(MODDABLE)/modules/drivers/sensors/mag3110/mag3110"
+	},
+	"preload": [
+		"embedded:sensor/Magnetometer/MAG3110"
+	]
+}

@@ -245,6 +245,7 @@ A set of examples for the following sensors, written in the TC53 [IO Class Patte
 - `lm75`
 - `lsm303dlhc`
 - `mlx90614`
+- `mag3110`
 - `mpu6050`
 - `mpu9250`
 - `ntcThermistor`

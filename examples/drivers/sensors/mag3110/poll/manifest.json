@@ -1,0 +1,12 @@
+{
+	"build": {
+		"NAME": "poll-mag3110"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/modules/drivers/sensors/mag3110/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}
