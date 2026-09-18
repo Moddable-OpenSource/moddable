@@ -32,6 +32,9 @@
 #include "builtinCommon.h"
 
 #include "hardware/gpio.h"
+#if WIFI_GPIO
+	#include "pico/cyw43_arch.h"
+#endif
 
 enum {
 	kDigitalInput = 0,
@@ -98,6 +101,10 @@ void xs_digitalbank_constructor(xsMachine *the)
 		if (b >= kPinBanks)
 			xsUnknownError("invalid bank");
 		bank = (uint8_t)b;
+#if !WIFI_GPIO
+		if (1 == bank)
+			xsUnknownError("invalid bank");
+#endif
 	}
 #endif
 
@@ -105,7 +112,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 	pins = xsmcToUnsigned(tmp);
 	if (!pins)
 		xsUnknownError("invalid");
-	if (!builtinArePinsFree(0, pins))
+	if (!builtinArePinsFree(bank, pins))
 		xsUnknownError("in use");
 
 	xsmcGet(tmp, xsArg(0), xsID_mode);
