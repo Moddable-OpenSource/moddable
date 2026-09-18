@@ -52,10 +52,6 @@
 	#include "malloc.h"
 #endif
 
-#ifdef mxDebug
-	#include "modPreference.h"
-#endif
-
 #define XSDEBUG_NONE	0,0,0,0
 #define XSDEBUG_SERIAL	127,0,0,7
 
@@ -566,7 +562,6 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 
 	cmdID = *cmd++;
 	cmdLen -= 1;
-//printf("do Remote command %d\n", cmdID);
 
 	if (cmdLen >= 2) {
 		resultID = (cmd[0] << 8) | cmd[1];
@@ -614,9 +609,9 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 #endif /* MODDEF_XS_MODS */
 
+/*
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-printf("set pref\n");
 			while (cmdLen--) {
 				if (!*cmd++) {
 					if (NULL == key)
@@ -637,7 +632,6 @@ printf("set pref\n");
 
 		case 6: {		// get preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
-printf("get pref\n");
 			int zeros = 0;
 			while (cmdLen--) {
 				if (!*cmd++) {
@@ -664,7 +658,7 @@ printf("get pref\n");
 				}
 			}
 		} break;
-
+*/
 		case 9:
 			if (cmdLen >= 4)
 				modSetTime(c_read32be(cmd + 0));
@@ -675,26 +669,22 @@ printf("get pref\n");
 			break;
 
 		case 11:
-printf("get vers\n");
 			the->echoBuffer[the->echoOffset++] = XS_MAJOR_VERSION;
 			the->echoBuffer[the->echoOffset++] = XS_MINOR_VERSION;
 			the->echoBuffer[the->echoOffset++] = XS_PATCH_VERSION;
 			break;
 
 		case 12:
-printf("get format\n");
 			the->echoBuffer[the->echoOffset++] = kCommodettoBitmapFormat;
 			the->echoBuffer[the->echoOffset++] = kPocoRotation / 90;
 			break;
 
 		case 13:
-printf("get sig\n");
 			c_strcpy(the->echoBuffer + the->echoOffset, PIU_DOT_SIGNATURE);
 			the->echoOffset += c_strlen(the->echoBuffer + the->echoOffset);
 			break;
 		
 		case 14:  {
-printf("get id\n");
 			uint8_t *id = (uint8_t *)(the->echoBuffer + the->echoOffset);
 			pico_get_mac(id);
 			the->echoOffset += 8;
