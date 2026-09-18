@@ -72,7 +72,7 @@ static unsigned int __stdcall fx_agent_start_aux(void* it);
 static void* fx_agent_start_aux(void* it);
 #endif
 static void fx_createRealm(xsMachine* the);
-static void fx_detachArrayBuffer(xsMachine* the);
+void fx_detachArrayBuffer(xsMachine* the);
 static void fx_evalScript(xsMachine* the);
 static void fx_gc(xsMachine* the);
 static void fx_isLockedDown(xsMachine* the);
@@ -429,6 +429,7 @@ void fxBuildAgent(xsMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, fx_lockdown, 0, xsID("lockdown"), XS_DONT_ENUM_FLAG);
 	
 	slot = fxNextHostFunctionProperty(the, slot, fx_unicodeCompare, 2, xsID("unicodeCompare"), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, fx_detachArrayBuffer, 1, xsID("detachArrayBuffer"), XS_DONT_ENUM_FLAG);
 
 	mxPop();
 	mxPop();

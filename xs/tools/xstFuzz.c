@@ -24,6 +24,7 @@
 
 extern int fuzz(int argc, char* argv[]);
 extern void fx_print(xsMachine* the);
+extern void fx_detachArrayBuffer(xsMachine* the);
 extern void modInstallTextDecoder(xsMachine *the);
 extern void modInstallTextEncoder(xsMachine *the);
 extern void fxBuildFuzz(xsMachine* the);
@@ -511,6 +512,8 @@ int fuzz(int argc, char* argv[])
 				xsSet(xsGlobal, xsID("doMarshall"), xsResult);				
 				xsResult = xsNewHostFunction(fx_memoryFail, 1);
 				xsSet(xsGlobal, xsID("memoryFail"), xsResult);
+				xsResult = xsNewHostFunction(fx_detachArrayBuffer, 1);
+				xsSet(xsGlobal, xsID("detachArrayBuffer"), xsResult);
 
 				// TextEncoder/TextDecoder
 				modInstallTextDecoder(the);
