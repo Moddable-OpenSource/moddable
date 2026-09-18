@@ -23,6 +23,6 @@ Timer.repeat(() => {
 	const sample = sensor.sample();
 
 	trace(`Temperature: ${sample.thermometer.temperature.toFixed(2)} C\n`);
-	trace(`Humidity: ${sample.hygrometer.humidity?.toFixed(2) ?? "n/a"} %RH\n`);
+	trace(`Humidity: ${sample.hygrometer.humidity == null ? "n/a" : (sample.hygrometer.humidity * 100).toFixed(2)} %RH\n`);
 	trace(`Pressure: ${sample.barometer.pressure.toFixed(0)} Pa\n`);
 }, 2000);

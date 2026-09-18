@@ -87,7 +87,7 @@ class SHT3x  {
 		if (vBuf[2] == this.#crc.reset().checksum(vBuf.subarray(0,2)))
 			ret.thermometer.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
 		if (vBuf[5] == this.#crc.reset().checksum(vBuf.subarray(3,5)))
-			ret.hygrometer.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
+			ret.hygrometer.humidity = (((vBuf[3] * 256.0) + vBuf[4]) / 65535);
 		return ret;
 	}
 	#writeCommand(command) {

@@ -125,7 +125,7 @@ class SHTC3  {
 			this.#onError?.("bad checksum");
 		else {
 			ret.thermometer.temperature = ((((vBuf[0] * 256.0) + vBuf[1]) * 175) / 65535) - 45;
-			ret.hygrometer.humidity = ((((vBuf[3] * 256.0) + vBuf[4]) * 100) / 65535);
+			ret.hygrometer.humidity = (((vBuf[3] * 256.0) + vBuf[4]) / 65535);
 		}
 		return ret;
 	}
