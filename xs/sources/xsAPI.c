@@ -1346,10 +1346,10 @@ void fxThrowMessage(txMachine* the, txString path, txInteger line, txError error
     va_end(arguments);
 
 	// if message ends with truncated UTF-8, remove it
-	length = (txSize)c_strlen(message) - 1;
-	while (length && (0x80 & message[length]))
-		message[length--] = 0;
-		
+	length = (txSize)c_strlen(message);
+	while (length && (0x80 & message[--length]))
+		message[length] = 0;
+
 #ifdef mxDebug
  	if (!the->debugEval) {
 		c_strncat(message, " (in ", sizeof(message) - mxStringLength(message) - 1);
