@@ -17,14 +17,6 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
 
 import Button from "button";
 import LED from "led/digital";
@@ -37,7 +29,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -46,20 +38,19 @@ class ButtonA {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 26,
 			clock: 27
 		}
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 31,
 			transmit: 30
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus},
 	pin: {
 		button: 13,
 		buttonA: 13,
@@ -82,7 +73,7 @@ const device = {
 			Default: class {
 				constructor() {
 					return new LED({
-						io: Digital,
+						io: device.io.Digital,
 						pin: device.pin.led,
 						invert: true
 					});
@@ -114,10 +105,9 @@ const device = {
 		Power: {
 			LCD: class {
 				constructor() {
-					return new Digital({
-						io: Digital,
+					return new device.io.Digital({
 						pin: device.pin.lcdPower,
-						mode: Digital.Output });
+						mode: device.io.Digital.Output });
 				}
 			}
 		}
@@ -129,7 +119,7 @@ const device = {
 					...options,
 					sensor: {
 						...device.I2C.default,
-						io: SMBus,
+						io: device.io.SMBus,
 						address: 0x19
 					}
 				});

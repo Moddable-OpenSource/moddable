@@ -6,16 +6,23 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
-			"$(MODULES)/base/timer/mc/*"
-		]
+			"$(MODULES)/base/timer/mc/*",
+			"$(IO)/common/builtinCommon"
+		],
+		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
 		"time",
-		"timer"
+		"timer",
+		"lockdown/device",
+		"embedded:provider/builtin"
 	],
 	"platforms": {
 		"nrf52/*": {
-			"include": "$(SUBPLATFORMMANIFEST)"
+			"include": "$(SUBPLATFORMMANIFEST)",
+			"modules": {
+				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
+			}
 		}
 	}
 }
