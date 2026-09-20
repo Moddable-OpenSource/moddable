@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -45,10 +45,6 @@
 
 #include "xs.h"
 #include "xsHosts.h"
-
-#ifdef mxDebug
-	#include "modPreference.h"
-#endif
 
 #include "nrf_ficr.h"
 
@@ -637,6 +633,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			break;
 #endif /* MODDEF_XS_MODS */
 
+/*
 		case 4: {	// set preference
 			uint8_t *domain = cmd, *key = NULL, *value = NULL;
 			while (cmdLen--) {
@@ -686,6 +683,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			}
 		}
 		break;
+*/
 
 		case 9:
 #if !MODDEF_XS_DONTINITIALIZETIME

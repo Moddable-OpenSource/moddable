@@ -11,13 +11,15 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/spi/manifest.json",
 				"$(COMMODETTO)/manifest_bitmap.json"
 
 			],
 			"modules": {
-				"*": "$(MODULES)/drivers/ls013b4dn04/*"
+				"*": [
+					"$(MODULES)/drivers/ls013b4dn04/*",
+					"$(MODULES)/pins/digital/esp/modGPIO"
+				]
 			},
 			"defines": {
 				"ls013b4dn04": {
@@ -29,12 +31,14 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/spi/manifest.json",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {
-				"*": "$(MODULES)/drivers/ls013b4dn04/*"
+				"*": [
+					"$(MODULES)/drivers/ls013b4dn04/*",
+					"$(MODULES)/pins/digital/esp32/modGPIO"
+				]
 			},
 			"defines": {
 				"ls013b4dn04": {
@@ -56,12 +60,14 @@
 		},
 		"nrf52": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
 				"$(MODULES)/pins/spi/manifest.json",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {
-				"*": "$(MODULES)/drivers/ls013b4dn04/*"
+				"*": [
+					"$(MODULES)/drivers/ls013b4dn04/*",
+					"$(MODULES)/pins/digital/nrf52/modGPIO"
+				]
 			}
 		}
 	}
