@@ -5,13 +5,8 @@
 	"include": [
 		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/io/manifest.json"
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": [
-		"setup/target"
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "",

@@ -137,6 +137,9 @@ endif
 # core 0 stack size; the xsproj linker scripts place the stack at the top of main RAM (SCRATCH_Y is only 4KB)
 PICO_STACK_SIZE ?= 0x1800
 ASMFLAGS += -DPICO_STACK_SIZE=$(PICO_STACK_SIZE)
+# SDK .heap section. Targets with a large SRAM framebuffer (Presto) override this;
+# SFE/PSRAM malloc still uses the leftover RAM up to the stack.
+PICO_HEAP_SIZE ?= 0xC000
 
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m0
@@ -151,6 +154,7 @@ LDFLAGS += \
 	-Wl,--build-id=none			\
 	-Wl,-Map=$(BIN_DIR)/xs_pico.map		\
 	--specs=nosys.specs			\
+	-Wl,-L$(PICO_SDK_DIR)/build/src/rp2_common/pico_standard_link
 
 LDFLAGS_RP2040 += \
 	-Wl,--wrap=__clzsi2			\
@@ -355,6 +359,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_vreg/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_ticks/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_rtc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_bootrom/include		\
 	$(PICO_SDK_DIR)/src/common/boot_picoboot_headers/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/boot_bootrom_headers/include		\
@@ -393,7 +398,8 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_i2c/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id/include	\
-	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_usb_reset/include		\
+	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface_headers/include \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_spi/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2			\
 	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/boot_stage2/include		\
@@ -521,7 +527,6 @@ PICO_OBJ = \
 	$(LIB_DIR)/printf.c.o \
 	$(LIB_DIR)/queue.c.o \
 	$(LIB_DIR)/rand.c.o \
-	$(LIB_DIR)/reset_interface.c.o \
 	$(LIB_DIR)/runtime.c.o \
 	$(LIB_DIR)/runtime_init.c.o \
 	$(LIB_DIR)/runtime_init_clocks.c.o \
@@ -557,6 +562,7 @@ PICO_OBJ = \
 	$(LIB_DIR)/rp2040_usb_device_enumeration.c.o \
 	$(LIB_DIR)/async_context_poll.c.o
 #	$(LIB_DIR)/async_context_threadsafe_background.c.o
+#	$(LIB_DIR)/reset_interface.c.o
 
 
 ifeq ($(WIFI_GPIO),1)
@@ -779,7 +785,7 @@ PICO_SDK_DEFINES= \
 	-DPICO_STDIO_USB_DEFAULT_CRLF=0 \
 	-DPICO_STDIO_DEFAULT_CRLF=0 \
 	-DPICO_DEFAULT_UART_BAUD_RATE=$(DEBUGGER_SPEED) \
-	-DPICO_HEAP_SIZE=0xC000 \
+	-DPICO_HEAP_SIZE=$(PICO_HEAP_SIZE) \
 	-DPICO_AUDIO_I2S_MONO_INPUT=1 \
 	-DPICO_MAX_SHARED_IRQ_HANDLERS=6u
 
@@ -826,6 +832,7 @@ PICO_C_DEFINES += \
 	-DLIB_PICO_SYNC_SEM=1	\
 	-DLIB_PICO_TIME=1	\
 	-DLIB_PICO_TIME_ADAPTER=1	\
+	-DLIB_PICO_USB_RESET=1	\
 	-DLIB_PICO_UTIL=1	\
 	-DPICO_32BIT=1	\
 	-DPICO_BUILD=1	\

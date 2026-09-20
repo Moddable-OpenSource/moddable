@@ -18,13 +18,6 @@
  *
  */
 
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import SMBus from "embedded:io/smbus";
-
 import Button from "button";
 import LEDneopixel from "led/neopixel";
 import NeoPixel from "neopixel";
@@ -33,9 +26,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -44,13 +37,12 @@ class ButtonA {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 16,
 			clock: 17,
 			port: 0
 		}
 	},
-	io: { Digital, DigitalBank, I2C, PulseCount, PWM, SMBus },
 	pin: {
 		button: 12,
 		buttonA: 12,

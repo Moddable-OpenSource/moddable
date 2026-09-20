@@ -3,18 +3,17 @@
 		"PICO_SUBCLASS": "rp2350"
 	},
 	"include": [
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/st7789/manifest.json",
 		"$(MODULES)/drivers/sensors/cst816s/manifest.json",
 		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
 		"$(MODULES)/drivers/peripherals/pcf85063/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json",
+		"$(IO)/i2c/manifest.json"
 	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
+	
 	"config": {
 		"screen": "ili9341",
 		"backlight": 25,

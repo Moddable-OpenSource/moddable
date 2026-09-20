@@ -3,21 +3,20 @@
 		"PICO_SUBCLASS": "rp2350"
 	},
 	"include": [
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/gc9a01/manifest.json",
 		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
 		"$(MODULES)/drivers/sensors/cst816s/manifest.json",
-		"$(MODULES)/drivers/sensors/qmi8658/manifest.json"
+		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": "setup/target",
 	"config": {
 		"screen": "gc9a01",
 		"backlight": 25,
 		"brightness": 50,
-		"touch": ""
+		"touch": "",
+		"corner": 120
 	},
 	"defines": {
 		"i2c": {

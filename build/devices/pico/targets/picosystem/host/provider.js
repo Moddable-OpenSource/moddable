@@ -18,10 +18,6 @@
  *
  */
 
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import PWM from "embedded:io/pwm";
-
 import Backlight from "backlight";
 import Button from "button";
 import LEDrgb from "led/rgb";
@@ -30,9 +26,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -44,7 +40,7 @@ class ButtonB {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -56,7 +52,7 @@ class ButtonX {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonX,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -68,7 +64,7 @@ class ButtonY {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonY,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -80,7 +76,7 @@ class ButtonUP {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonUP,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -92,7 +88,7 @@ class ButtonDOWN {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonDOWN,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -104,7 +100,7 @@ class ButtonLEFT {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonLEFT,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -116,14 +112,13 @@ class ButtonRIGHT {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonRIGHT,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
 }
 
 const device = {
-	io: { Digital, DigitalBank, PWM },
 	pin: {
 		button: 18,
 		buttonA: 18,

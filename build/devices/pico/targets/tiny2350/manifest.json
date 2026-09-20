@@ -4,9 +4,10 @@
         "PICO_BOARD_FILE":"$(PICO_SDK_DIR)/src/boards/include/boards/pimoroni_tiny2350.h"
 	},
 	"include": [
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/rgb/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json"
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

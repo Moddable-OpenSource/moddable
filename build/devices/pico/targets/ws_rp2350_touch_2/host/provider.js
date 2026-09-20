@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Touch from "embedded:sensor/Touch/CST816S";
 import Backlight from "backlight";
 import QMI8658 from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
@@ -34,7 +25,7 @@ import QMI8658 from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 12,
 			clock: 13,
 			port: 0
@@ -42,7 +33,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 18,
 			out: 19,
 			port: 0
@@ -50,11 +41,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 28
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, SMBus, SPI },
 	pin: {
 		backlight: 15,
 		imu_int: 14
@@ -79,13 +69,13 @@ const device = {
 						io: device.io.SMBus
 					},
 					reset: {
-						io: Digital,
-						mode: Digital.Output,
+						io: device.io.Digital,
+						mode: device.io.Digital.Output,
 						pin: 20
 					},
 					interrupt: {
-						io: Digital,
-						mode: Digital.Input,
+						io: device.io.Digital,
+						mode: device.io.Digital.Input,
 						pin: 29
 					}
 				});
