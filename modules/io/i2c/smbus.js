@@ -27,62 +27,62 @@ class SMBus {
 	#wordBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 2);
 	#byteBuffer = new Uint8Array(this.#writeWordBuffer.buffer, 0, 1);
 
-    constructor(options) {
-        this.#io = new I2C(options);
+	constructor(options) {
+		this.#io = new I2C(options);
 		if (options.stop)
 			this.#stop = true;
-    }
-    close() {
+	}
+	close() {
 		this.#io?.close();
 		this.#io = undefined;
-    }
+	}
 
-    readUint8(register) {
+	readUint8(register) {
 		const buffer = this.#byteBuffer;
 
-        buffer[0] = register;
-        this.#io.writeRead(buffer, buffer, this.#stop);
+		buffer[0] = register;
+		this.#io.writeRead(buffer, buffer, this.#stop);
 		return buffer[0];
-    }
+	}
 
-    readUint16(register, bigEndian) {
+	readUint16(register, bigEndian) {
 		const io = this.#io, buffer = this.#wordBuffer;
 
-        this.#byteBuffer[0] = register;
-        io.writeRead(this.#byteBuffer, buffer, this.#stop);
+		this.#byteBuffer[0] = register;
+		io.writeRead(this.#byteBuffer, buffer, this.#stop);
 
 		return bigEndian ? ((buffer[0] << 8) | buffer[1]) : ((buffer[1] << 8) | buffer[0]);
-    }
+	}
 
-    readBuffer(register, buffer) {
-        this.#byteBuffer[0] = register;
-        return this.#io.writeRead(this.#byteBuffer, buffer, this.#stop);
-    }
+	readBuffer(register, buffer) {
+		this.#byteBuffer[0] = register;
+		return this.#io.writeRead(this.#byteBuffer, buffer, this.#stop);
+	}
 
-    writeUint8(register, byte) {
+	writeUint8(register, byte) {
 		const io = this.#io, buffer = this.#wordBuffer;
 
-        buffer[0] = register;
-        buffer[1] = byte;
-        io.write(buffer);
-    }
+		buffer[0] = register;
+		buffer[1] = byte;
+		io.write(buffer);
+	}
 
-    writeUint16(register, word, bigEndian) {
+	writeUint16(register, word, bigEndian) {
 		const io = this.#io, buffer = this.#writeWordBuffer;
 
-        buffer[0] = register;
-        if (bigEndian) {
-            buffer[1] = word >> 8;
-            buffer[2] = word;
-        }
-        else {
-            buffer[1] = word;
-            buffer[2] = word >> 8;
-        }
-        io.write(buffer);
-    }
+		buffer[0] = register;
+		if (bigEndian) {
+			buffer[1] = word >> 8;
+			buffer[2] = word;
+		}
+		else {
+			buffer[1] = word;
+			buffer[2] = word >> 8;
+		}
+		io.write(buffer);
+	}
 
-    writeBuffer(register, buffer) {
+	writeBuffer(register, buffer) {
 		if (ArrayBuffer.isView(buffer)) {
 			if (buffer.BYTES_PER_ELEMENT > 1)
 				throw new TypeError;		// not a Byte Buffer
@@ -93,7 +93,7 @@ class SMBus {
 		data[0] = register;
 		data.set(buffer, 1);
 		this.#io.write(data);
-    }
+	}
 
 	sendByte(command) {
 		const io = this.#io, buffer = this.#byteBuffer;
@@ -134,32 +134,6 @@ class SMBus {
 	}
 	writeRead(buffer, count, stop = true) {
 		return this.#io.writeRead(buffer, count, stop);
-	}
-
-	// compatibility - to be removed
-	readByte(register) {
-		trace("readByte renamed to readUint8\n");
-		return this.readUint8(register);
-	}
-	writeByte(register, byte) {
-		trace("writeByte renamed to writeUint8\n");
-		this.writeUint8(register, byte);
-	}
-	readWord(...args) {
-		trace("readWord renamed to readUint16\n");
-		return this.readUint16(...args);
-	}
-	writeWord(...args) {
-		trace("writeWord renamed to writeUint16\n");
-		this.writeUint16(...args);
-	}
-	readBlock(register, buffer) {
-		trace("readBlock renamed to readBuffer\n");
-		return this.readBuffer(register, buffer);
-	}
-	writeBlock(register, buffer) {
-		trace("writeBlock renamed to writeBuffer\n");
-		this.writeBuffer(register, buffer);
 	}
 
 	static {
