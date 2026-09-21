@@ -29,6 +29,10 @@ declare module "embedded:provider/builtin" {
   import SMBus from "embedded:io/smbus";
   import SPI from "embedded:io/spi";
   import Serial from "embedded:io/serial";
+  import TCP from "embedded:io/socket/tcp";
+  import UDP from "embedded:io/socket/udp";
+  import Listener from "embedded:io/socket/listener";
+  import TLS from "embedded:io/socket/tcp/tls";
   import type { PinSpecifier } from "embedded:io/_common";
   const device: {
     io: {
@@ -41,6 +45,10 @@ declare module "embedded:provider/builtin" {
       SMBus: typeof SMBus;
       SPI: typeof SPI;
       Serial: typeof Serial;
+      TCP: typeof TCP;
+      UDP: typeof UDP;
+      Listener: typeof Listener;
+      TLS: typeof TLS;
     };
     analog: { default: ConstructorParameters<typeof Analog>[0] };
     i2c: { default: ConstructorParameters<typeof I2C>[0] };
