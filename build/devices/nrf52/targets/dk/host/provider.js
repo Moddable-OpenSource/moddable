@@ -76,14 +76,14 @@ class ButtonD {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: I2C,
 			data: 26,
 			clock: 27
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: Serial,
 			port: 1,

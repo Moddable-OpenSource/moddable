@@ -16,7 +16,7 @@ const msg = "hello world\r\n";
 
 if (1) {		// using buffers
 	let serial = new device.io.Serial({
-		...device.Serial.default,
+		...device.serial.default,
 		baud: 115200,
 		port: 2,
 		format: "buffer",
@@ -29,7 +29,7 @@ if (1) {		// using buffers
 }
 else {		// using bytes
 	let serial = new device.io.Serial({
-		...device.Serial.default,
+		...device.serial.default,
 		baud: 115200 * 8,
 		format: "number",
 		onReadable: function(count) {

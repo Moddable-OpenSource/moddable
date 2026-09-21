@@ -17,7 +17,7 @@ import config from "mc/config";
 
 let sensor = new APDS9960({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	},
 	alert: {

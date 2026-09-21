@@ -22,7 +22,7 @@ Set the interface **before** applying power. Silkscreen varies; confirm I2C, not
 
 ### Moddable Six
 
-Wire to `device.I2C.default` — the STEMMA QT / Qwiic jack **or** header `SDA IO4` / `SCL IO5`. The GT911 touch controller is already on this bus at `0x14` / `0x5D`; `0x24` does not collide.
+Wire to `device.i2c.default` — the STEMMA QT / Qwiic jack **or** header `SDA IO4` / `SCL IO5`. The GT911 touch controller is already on this bus at `0x14` / `0x5D`; `0x24` does not collide.
 
 | PN532 | Moddable Six |
 |---|---|
@@ -45,7 +45,7 @@ import PN532 from "embedded:sensor/RFID/PN532";
 
 const rfid = new PN532({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		address: 0x24,
 		hz: 100_000,
 		timeout: 1000

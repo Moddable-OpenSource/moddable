@@ -35,7 +35,7 @@ class ButtonA {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 16,

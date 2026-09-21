@@ -35,7 +35,7 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 45,
@@ -47,7 +47,7 @@ const device = {
 			clock: 0
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -55,7 +55,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 36,
@@ -93,7 +93,7 @@ const device = {
 				return new IMU({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						address: 0x69,
 						io: device.io.SMBus
 					}

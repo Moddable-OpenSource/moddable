@@ -109,7 +109,7 @@ class ButtonFlash {
 }
 
 const device = {
-  I2C: {
+  i2c: {
     default: {
       io: "I2C",
       data: 13,
@@ -121,7 +121,7 @@ const device = {
       clock: 12
     }
   },
-  SPI: {
+  spi: {
     default: {
       io: "SPI",
       port: 3,
@@ -144,7 +144,7 @@ const device = {
         const result = new Touch({
           ...options,
           sensor: {
-            ...device.I2C.internal,
+            ...device.i2c.internal,
             io: device.io.SMBus,
           },
           interrupt: {
@@ -166,7 +166,7 @@ const device = {
         return new MFRC522({
           ...options,
           sensor: {
-            ...device.I2C.internal,
+            ...device.i2c.internal,
             io: device.io.SMBus,
             address: 0x28
           }
@@ -205,7 +205,7 @@ const device = {
         return new RTC({
           ...options,
           clock: {
-            ...device.I2C.internal,
+            ...device.i2c.internal,
             io: device.io.SMBus
           }
         });

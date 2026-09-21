@@ -16,7 +16,7 @@ import Expander from "embedded:io/provider/MCP23X17";
 import Timer from "timer";
 
 const expander = new Expander({
-	i2c: device.I2C.default,
+	i2c: device.i2c.default,
 	interrupt: {
 		io: device.io.Digital,
 		pin: 0

@@ -131,7 +131,7 @@ class ButtonCENTER {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 4,
@@ -139,7 +139,7 @@ const device = {
 			port: 0
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 10,
@@ -147,7 +147,7 @@ const device = {
 			port: 1
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 26

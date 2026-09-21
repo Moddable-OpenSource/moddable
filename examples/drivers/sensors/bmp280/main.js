@@ -15,7 +15,7 @@
 import BMP280 from "embedded:sensor/Barometer-Temperature/BMP280";
 import Timer from "timer";
 
-const sensor = new BMP280({ sensor: device.I2C.default });
+const sensor = new BMP280({ sensor: device.i2c.default });
 		
 function CtoF(c) { return (c*1.8)+32; }
 function PatoInHg(Pa) { return Pa * 0.0002953; }

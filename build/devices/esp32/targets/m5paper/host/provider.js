@@ -29,18 +29,18 @@ class M5PaperTouch extends Touch {
 		
 		// I2C address floats: try both
 		try {
-			i2c = new device.io.I2C({...device.I2C.default, address, hz: 100_000});
+			i2c = new device.io.I2C({...device.i2c.default, address, hz: 100_000});
 			i2c.read(1);
 		}
 		catch {
 			address = 0x5D;
-			i2c = new device.io.I2C({...device.I2C.default, address, hz: 100_000});
+			i2c = new device.io.I2C({...device.i2c.default, address, hz: 100_000});
 			i2c.read(1);
 		}
 		i2c.close();
 		
 		const o = {
-			sensor: {...device.I2C.default, address},
+			sensor: {...device.i2c.default, address},
 			interrupt: {
 				io: device.io.Digital,
 				mode: device.io.Digital.Input,
@@ -104,14 +104,14 @@ class ButtonC {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 14,
@@ -135,7 +135,7 @@ const device = {
 			constructor(options) {
 				return new HumidityTemperature({
 					sensor: {
-						...device.I2C.default
+						...device.i2c.default
 					}
 				});
 			}
@@ -147,7 +147,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					}
 				});

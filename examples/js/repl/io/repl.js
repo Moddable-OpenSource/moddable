@@ -43,7 +43,7 @@ class REPL extends REPLCore {
 		this.#trace = trace;
 		if (!isDebug) {
 			this.#serial = new device.io.Serial({
-				...device.Serial.default,
+				...device.serial.default,
 				baud,
 				format: "buffer",
 				target: this,

@@ -40,7 +40,7 @@ export default function () {
 			try {
 				sensor = new GT911({
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						address: config.address,
 						hz: config.hz
 					},

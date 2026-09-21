@@ -17,7 +17,7 @@ import Moisture from "embedded:sensor/SoilMoistureSensor/Capacitive";
 import Timer from "timer";
 
 const sensor = new Moisture({
-	sensor: device.Analog.default
+	sensor: device.analog.default
 });
 
 sensor.configure({

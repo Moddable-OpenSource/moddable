@@ -37,14 +37,14 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 4,
 			clock: 5
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -52,7 +52,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 15,
@@ -106,7 +106,7 @@ const device = {
 					let result = 1, i;
 					try {
 						i = new device.io.I2C({
-							...device.I2C.default,
+							...device.i2c.default,
 							hz: 200_000,
 							address
 						});
@@ -121,7 +121,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.I2C,
 						address
 					},

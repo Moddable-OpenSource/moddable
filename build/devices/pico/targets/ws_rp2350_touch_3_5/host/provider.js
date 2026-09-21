@@ -24,7 +24,7 @@ import QMI8658 from "embedded:sensor/Accelerometer-Gyroscope/QMI8658";
 import Backlight from "backlight";
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 34,
@@ -32,7 +32,7 @@ const device = {
 			port: 1
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 18,
@@ -57,7 +57,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					}
 				});
@@ -70,7 +70,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					},
 					reset: {
@@ -93,7 +93,7 @@ const device = {
 				super({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						address: 0x6b,
 						io: device.io.SMBus
 					}

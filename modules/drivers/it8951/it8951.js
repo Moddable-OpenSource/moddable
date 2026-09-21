@@ -118,7 +118,7 @@ class EPD {
 		});
 
 		this.spi = new SPI({
-			...device.SPI.default,
+			...device.spi.default,
 			hz: 10_000_000
 		});
 		this.spi.buffer16 = new Uint8Array(2);

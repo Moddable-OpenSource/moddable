@@ -17,7 +17,7 @@ import RTC from "embedded:RTC/DS1307";
 
 const rtc = new RTC({
             clock: {
-                ...device.I2C.default,
+                ...device.i2c.default,
                 io: device.io.SMBus
             }
 });

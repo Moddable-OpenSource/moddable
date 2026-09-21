@@ -41,14 +41,14 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -56,7 +56,7 @@ const device = {
 			transmit: 1
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 5,
@@ -65,7 +65,7 @@ const device = {
 			port: 1
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 35
@@ -99,7 +99,7 @@ const device = {
 					return new LoRa ({
 						...options,
 						spi: {
-							...device.SPI.default,
+							...device.spi.default,
 							hz: 9_000_000,
 							mode: 0
 						},

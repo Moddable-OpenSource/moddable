@@ -23,7 +23,7 @@ import LED from "led/pwm";
 import Touch from "embedded:sensor/Touch/FT6x06";
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 4,
@@ -31,14 +31,14 @@ const device = {
 			port: 1
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			receive: 1,
 			transmit: 0
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 10,
@@ -47,7 +47,7 @@ const device = {
 			port: 1
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 26
@@ -86,7 +86,7 @@ const device = {
 			constructor(options) { 
 				const result = new Touch({
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					},
 					...options

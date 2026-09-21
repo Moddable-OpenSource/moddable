@@ -16,7 +16,7 @@ const message = ArrayBuffer.fromString("Since publication of the first edition i
 let offset = 0;
 
 new device.io.Serial({
-	...device.Serial.default,
+	...device.serial.default,
 	baud: 921600 / 2,
 	format: "buffer",
 	onWritable: function(count) {

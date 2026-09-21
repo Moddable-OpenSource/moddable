@@ -28,7 +28,7 @@ class Backlight {
 
 	constructor(options) {
 		const io = this.#io = new device.io.SMBus({
-			...device.I2C.internal,
+			...device.i2c.internal,
 			hz: 400_000,
 			address: 48
 		});
@@ -78,7 +78,7 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 2,
@@ -90,7 +90,7 @@ const device = {
 			clock: 0
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			port: 3,
@@ -98,7 +98,7 @@ const device = {
 			out: 21
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 8
@@ -129,7 +129,7 @@ const device = {
 				return new IMU({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						address: 0x69,
 						io: device.io.SMBus
 					}

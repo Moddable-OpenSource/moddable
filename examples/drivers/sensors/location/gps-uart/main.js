@@ -18,7 +18,7 @@ import config from "mc/config";
 
 const gps = new GPS({
 	sensor: {
-		...device.Serial.default,
+		...device.serial.default,
 		io: device.io.Serial,
 		baud: 9600
 	},

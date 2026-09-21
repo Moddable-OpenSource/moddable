@@ -13,7 +13,7 @@ import NMEA from "data/location/nmea";
 
 const gps = new GPS({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.I2C
 	},
 	protocol: NMEA,

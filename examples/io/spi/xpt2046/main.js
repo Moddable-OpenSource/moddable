@@ -32,7 +32,7 @@ Timer.repeat(() => {
 }, 33);
 
 const spi = new SPI({
-	...device.SPI.default,
+	...device.spi.default,
 	hz: 1_000_000,
 	select: 0,
 	active: 0

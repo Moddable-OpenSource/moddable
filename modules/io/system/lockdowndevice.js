@@ -45,4 +45,15 @@ function resolve(object) {
 }
 resolve(device);
 
+// compatibility: bus properties were incorrectly capitalized
+//@@ remove
+if (device.analog)
+	device.Analog = device.analog;
+if (device.i2c)
+	device.I2C = device.i2c;
+if (device.serial)
+	device.Serial = device.serial;
+if (device.spi)
+	device.SPI = device.spi;
+
 globalThis.device = Object.freeze(device, true);

@@ -3,14 +3,14 @@ description:
 flags: [onlyStrict]
 ---*/
 
-if (!(device?.I2C?.default) || !($TESTMC?.config?.i2c))
+if (!(device?.i2c?.default) || !($TESTMC?.config?.i2c))
     throw new Error("Default I2C device and test harness i2c configuration must be provided")
 
 if (!($TESTMC?.config.i2c.unusedAddress))
     throw new Error("Test harness must provide an unused I2C address")
 
-const I2C = device.I2C.default.io;
-const defaultConfiguration = {...device.I2C.default, ...$TESTMC.config.i2c};
+const I2C = device.i2c.default.io;
+const defaultConfiguration = {...device.i2c.default, ...$TESTMC.config.i2c};
 
 let i2c = new I2C({
     ...defaultConfiguration,

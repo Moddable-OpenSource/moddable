@@ -147,14 +147,14 @@ class ButtonPower {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 21,
 			clock: 22
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 18,
@@ -184,7 +184,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					},
 					interrupt: {

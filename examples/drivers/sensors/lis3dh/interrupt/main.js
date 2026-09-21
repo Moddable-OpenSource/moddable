@@ -19,7 +19,7 @@ const Digital = device.io.Digital;
 
 const sensor = new LIS3DH({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	},
 	alert: {

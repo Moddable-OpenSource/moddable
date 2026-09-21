@@ -15,7 +15,7 @@
 import Humidity from "embedded:sensor/Humidity-Temperature/SHTC3";
 import Timer from "timer";
 
-const sensor = new Humidity({ sensor: device.I2C.default });
+const sensor = new Humidity({ sensor: device.i2c.default });
 
 sensor.configure({
 	lowPower: true,

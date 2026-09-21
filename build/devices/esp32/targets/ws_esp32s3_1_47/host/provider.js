@@ -34,14 +34,14 @@ class ButtonA {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 32,
 			clock: 33
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -49,7 +49,7 @@ const device = {
 			transmit: 1
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 40,
@@ -57,7 +57,7 @@ const device = {
 			port: 3
 		}
 	},
-	Analog: {
+	analog: {
 	},
 	pin: {
 		button: 0,

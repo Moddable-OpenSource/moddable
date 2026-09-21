@@ -42,15 +42,10 @@ declare module "embedded:provider/builtin" {
       SPI: typeof SPI;
       Serial: typeof Serial;
     };
-    Digital: { default: ConstructorParameters<typeof Digital>[0] };
-    DigitalBank: { default: ConstructorParameters<typeof DigitalBank>[0] };
-    Analog: { default: ConstructorParameters<typeof Analog>[0] };
-    PWM: { default: ConstructorParameters<typeof PWM>[0] };
-    PulseCount: { default: ConstructorParameters<typeof PulseCount>[0] };
-    I2C: { default: ConstructorParameters<typeof I2C>[0] };
-    SMBus: { default: ConstructorParameters<typeof SMBus>[0] };
-    SPI: { default: ConstructorParameters<typeof SPI>[0] };
-    Serial: { default: ConstructorParameters<typeof Serial>[0] };
+    analog: { default: ConstructorParameters<typeof Analog>[0] };
+    i2c: { default: ConstructorParameters<typeof I2C>[0] };
+    spi: { default: ConstructorParameters<typeof SPI>[0] };
+    serial: { default: ConstructorParameters<typeof Serial>[0] };
     pin: { [name: string]: PinSpecifier };
 
     readonly network: {

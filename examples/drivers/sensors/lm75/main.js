@@ -18,7 +18,7 @@ import config from "mc/config";
 
 const sensor = new Temperature({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	},
 	alert: {

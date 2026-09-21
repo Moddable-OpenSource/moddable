@@ -19,7 +19,7 @@ import VL6180 from "embedded:sensor/AmbientLight-Proximity/VL6180";
 
 let sensor = new VL6180({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.I2C	
 	}
 });

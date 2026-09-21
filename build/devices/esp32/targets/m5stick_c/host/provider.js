@@ -72,7 +72,7 @@ class ButtonB {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 32,
@@ -89,7 +89,7 @@ const device = {
 			clock: 26
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -97,7 +97,7 @@ const device = {
 			transmit: 1
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 13,
@@ -105,7 +105,7 @@ const device = {
 			port: 1
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 36
@@ -126,7 +126,7 @@ const device = {
 				let probe;
 				try {
 					probe = new device.io.SMBus({
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus,
 						hz: 400_000,
 						address: 0x68,		// MPU6886
@@ -152,7 +152,7 @@ const device = {
 				return new IMUClass({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					}
 				});
@@ -185,7 +185,7 @@ const device = {
 				super({
 					...options,
 					peripheral: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					}
 				});
@@ -231,7 +231,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus,
 					},
 				});

@@ -11,7 +11,7 @@ import NMEA from "data/location/nmea";
 
 const gps = new GPS({
 	sensor: {
-		...device.Serial.default,
+		...device.serial.default,
 		io: device.io.Serial,
 		baud: 9600
 	},

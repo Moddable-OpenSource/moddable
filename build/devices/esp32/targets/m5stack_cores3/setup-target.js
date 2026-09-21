@@ -55,9 +55,9 @@ export default function (done) {
   }
 
   // power
-  globalThis.power = new Power({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
-  globalThis.amp = new AW88298({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
-  globalThis.mic = new ES7210({sensor: { ...device.I2C.internal, io: device.io.SMBus }});
+  globalThis.power = new Power({sensor: { ...device.i2c.internal, io: device.io.SMBus }});
+  globalThis.amp = new AW88298({sensor: { ...device.i2c.internal, io: device.io.SMBus }});
+  globalThis.mic = new ES7210({sensor: { ...device.i2c.internal, io: device.io.SMBus }});
   globalThis.mic.init();
 
   if (config.enablePowerButton) {

@@ -40,7 +40,7 @@ class GaugesBehavior extends Behavior {
 		this.rotating = 0;
 		this.centers = [{x:0,y:0},{x:0,y:0},{x:0,y:0}];
 		try {
-			this.sensor = new Sensor({ sensor: device.I2C.default });
+			this.sensor = new Sensor({ sensor: device.i2c.default });
 		}
 		catch {
 			this.sensor = {

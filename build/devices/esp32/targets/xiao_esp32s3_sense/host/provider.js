@@ -34,7 +34,7 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			port: 1,
@@ -42,7 +42,7 @@ const device = {
 			clock: 6
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 0,
@@ -50,7 +50,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			port: 1,
@@ -59,7 +59,7 @@ const device = {
 			out: 9
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 1

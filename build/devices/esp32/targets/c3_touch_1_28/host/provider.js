@@ -21,7 +21,7 @@
 import Touch from "embedded:sensor/Touch/CST816";
 
 const device = {
-	I2C: {
+	i2c: {
 		internal: {
 			io: "I2C",
 			port: "I2C_NUM_0",
@@ -29,7 +29,7 @@ const device = {
 			clock: 5
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -44,7 +44,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					},
 					reset: {

@@ -147,7 +147,7 @@ class PowerAXP2101 extends AXP2101 {
 export default class Core2Power {
     constructor(options) {
         const s = new device.io.SMBus({
-            ...device.I2C.internal,
+            ...device.i2c.internal,
             address: 0x34,
              hz: 400_000
         });

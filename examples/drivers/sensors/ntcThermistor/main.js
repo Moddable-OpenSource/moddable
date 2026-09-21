@@ -18,7 +18,7 @@ import Timer from "timer";
 import config from "mc/config";
 
 const sensor = new Thermistor({
-	sensor: device.Analog.default
+	sensor: device.analog.default
 });
 
 sensor.configure({

@@ -7,7 +7,7 @@ const SPI = device.io.SPI;
 const Digital = device.io.Digital;
 
 const options = Object.freeze({
-	...device.SPI.default,
+	...device.spi.default,
 	hz: 10_000_000
 });
 

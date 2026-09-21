@@ -14,7 +14,7 @@ The driver is **host-agnostic**. Platforms that include the reader wire it as `d
 
 | Signal | GPIO | Notes |
 |---|---|---|
-| SDA | 11 | `device.I2C.internal` |
+| SDA | 11 | `device.i2c.internal` |
 | SCL | 12 | |
 | RST | 8 | **Shared with LCD_RESET** - driver uses **soft reset only** |
 | IRQ | 10 | Unused in poll mode |
@@ -50,7 +50,7 @@ import MFRC522 from "embedded:sensor/RFID/MFRC522";
 
 const rfid = new MFRC522({
 	sensor: {
-		...device.I2C.internal,
+		...device.i2c.internal,
 		io: device.io.SMBus,
 		address: 0x28
 	}

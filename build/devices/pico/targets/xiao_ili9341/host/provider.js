@@ -24,7 +24,7 @@ import LEDneopixel from "led/neopixel";
 import NeoPixel from "neopixel";
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 6,
@@ -32,14 +32,14 @@ const device = {
 			port: 1
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			receive: 1,
 			transmit: 0
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 2,
@@ -48,7 +48,7 @@ const device = {
 			port: 0
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 26

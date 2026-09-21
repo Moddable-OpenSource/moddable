@@ -24,7 +24,7 @@ import Core2Power from "Core2Power";
 import Core2IMU from "Core2IMU";
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 32,
@@ -36,7 +36,7 @@ const device = {
 			clock: 22
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -44,7 +44,7 @@ const device = {
 			transmit: 1
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 18,
@@ -53,7 +53,7 @@ const device = {
 			port: 1
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 35
@@ -69,7 +69,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus,
               		},
 					interrupt: {
@@ -87,7 +87,7 @@ const device = {
 				return new Core2IMU({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					}
 				});
@@ -117,7 +117,7 @@ const device = {
 				return new Core2Power({
 					...options,
 					peripheral: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					}
 				});
@@ -128,7 +128,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus,
 					},
 				});

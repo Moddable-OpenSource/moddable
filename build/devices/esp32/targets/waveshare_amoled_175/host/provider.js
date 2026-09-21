@@ -59,14 +59,14 @@ class ButtonA {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 15,
 			clock: 14
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -74,7 +74,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			port: 2,
@@ -101,7 +101,7 @@ const device = {
 			PMIC: class {
 				constructor() {
 					return new AXP2101({
-						sensor: { ...device.I2C.default, io: device.io.SMBus },
+						sensor: { ...device.i2c.default, io: device.io.SMBus },
 						address: 0x34
 					});
 				}
@@ -121,7 +121,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					}
 				});
@@ -134,7 +134,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.I2C,
 						address: 0x5A
 					},
@@ -158,7 +158,7 @@ const device = {
 				super({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus,
 						address: 0x6B
 					},

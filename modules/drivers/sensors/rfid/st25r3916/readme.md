@@ -16,7 +16,7 @@ MIFARE Classic `start` / sector IO is **not** implemented. This frontend has no 
 
 ### M5Stack StackChan (built-in)
 
-[M5 StackChan pin map](https://docs.m5stack.com/en/StackChan): body I2C is CoreS3 `G12` SDA / `G11` SCL (`device.I2C.internal`). NFC is **ST25R3916-AQWT** at **0x50**, next to Si12T (`0x68`) and the PY32 expander (`0x6F`).
+[M5 StackChan pin map](https://docs.m5stack.com/en/StackChan): body I2C is CoreS3 `G12` SDA / `G11` SCL (`device.i2c.internal`). NFC is **ST25R3916-AQWT** at **0x50**, next to Si12T (`0x68`) and the PY32 expander (`0x6F`).
 
 The host provider maps `device.sensor.RFID` to this bus.
 
@@ -36,7 +36,7 @@ import ST25R3916 from "embedded:sensor/RFID/ST25R3916";
 
 const rfid = new ST25R3916({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus,
 		address: 0x50,
 		hz: 400_000

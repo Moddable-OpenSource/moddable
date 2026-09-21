@@ -20,7 +20,6 @@
 
 import Touch from "embedded:sensor/Touch/GT911";
 
-//@@ I2C, Serial, and SPI should be i2c, serial, and spi.
 import Backlight from "backlight";
 import Button from "button";
 import LED from "led/neopixel";
@@ -39,14 +38,14 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 4,
 			clock: 5
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -54,7 +53,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 15,
@@ -107,8 +106,8 @@ const device = {
 				const address = [0x14, 0x5D].find(address => {
 					let result = 1;
 					try {
-						using i = new device.I2C.default.io({
-							...device.I2C.default,
+						using i = new device.i2c.default.io({
+							...device.i2c.default,
 							hz: 200_000,
 							address
 						});
@@ -121,7 +120,7 @@ const device = {
 				const result = new Touch({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						hz: 200_000,
 						address
 					},

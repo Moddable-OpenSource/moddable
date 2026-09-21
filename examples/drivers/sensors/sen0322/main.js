@@ -20,7 +20,7 @@ const oxygenMV = 0; // The value marked on the sensor, set to 0 unless otherwise
 
 const sensor = new Sensor({
     sensor: {
-        ...device.I2C.default,
+        ...device.i2c.default,
         io: device.io.I2C
     }
 });
