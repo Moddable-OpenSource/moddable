@@ -126,6 +126,37 @@ try {
     process.exit(1);
 }
 
+// Validate paths up front, so a typo is one clear error rather than a failure per example and target.
+function checkDirectory(option, value) {
+    if (!value) {
+        console.error(`Error: ${option} requires a path.`);
+        process.exit(1);
+    }
+    const resolved = path.resolve(value);
+    let stat;
+    try {
+        stat = fs.statSync(resolved);
+    } catch {
+        console.error(`Error: ${option} directory doesn't exist: ${resolved}`);
+        process.exit(1);
+    }
+    if (!stat.isDirectory()) {
+        console.error(`Error: ${option} path is not a directory: ${resolved}`);
+        process.exit(1);
+    }
+    return resolved;
+}
+
+if (args.some(a => a === '--example' || a.startsWith('--example='))) {
+    specificExample = checkDirectory('--example', specificExample);
+    if (!fs.existsSync(path.join(specificExample, 'manifest.json')) && !fs.existsSync(path.join(specificExample, 'package.json'))) {
+        console.error(`Error: --example directory has no manifest.json or package.json: ${specificExample}`);
+        process.exit(1);
+    }
+}
+if (args.some(a => a === '--dir' || a.startsWith('--dir=')))
+    customDir = checkDirectory('--dir', customDir);
+
 const examplesDir = customDir ? path.resolve(customDir) : path.join(moddableDir, 'examples');
 
 // A wildcard in the subplatform (e.g. esp32/m5*) expands to every matching target
@@ -641,12 +672,6 @@ function runTest(examplePath, target) {
                 child.stdin.write("y\n");
             }
 
-            // Once IP is found on a network test
-            if (!ipDetected && str.match(/(?:IP address:?\s*|IP:?\s*)([0-9a-fA-F:.]+)/i)) {
-                console.log("   [Test Harness] IP Address detected.");
-                ipDetected = true;
-            }
-
 
 
             // Setup xsdb on first connection
@@ -674,6 +699,13 @@ function runTest(examplePath, target) {
                 instrumentPoller = setInterval(() => {
                     child.stdin.write("info instruments\n");
                 }, 1000);
+            }
+
+            // Once IP is found on a network test. Only meaningful once the target is running:
+            // build output (paths, tool messages) can otherwise match by accident.
+            if (!ipDetected && !onlyBuild && isSetup && str.match(/\b(?:IP address:?\s*|IP:?\s*)([0-9a-fA-F:.]+)/i)) {
+                console.log("   [Test Harness] IP Address detected.");
+                ipDetected = true;
             }
 
             // Stream parse JSON blocks
