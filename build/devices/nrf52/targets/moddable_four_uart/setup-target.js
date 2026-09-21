@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020  Moddable Tech, Inc.
+ * Copyright (c) 2018-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -19,61 +19,18 @@
  */
 
 import config from "mc/config";
-import Digital from "pins/digital";
-import Button from "button";
-import LED from "led";
-import JogDial from "jogdial";
-import LIS3DH from "lis3dh";
-
-globalThis.Host = {
-	JogDial: class {
-		constructor(options) {
-			return new JogDial({
-				...options,
-				jogdial: config.jogdial
-			});
-		}
-	},
-	Accelerometer: class {
-		constructor(options) {
-			return new LIS3DH({
-				...options,
-				address: 0x19,
-			});
-		}
-	},
-	LED: {
-		Default: class {
-			constructor(options) {
-				return new LED({
-					...options,
-					pin: config.led1_pin,
-				});
-			}
-		}
-	},
-	Button: class {
-		constructor(options) {
-			return new Button({
-				...options,
-				invert: true,
-				pin: config.button1_pin,
-				mode: Digital.InputPullUp,
-			});
-		}
-	},
-	pins: {
-		led: config.led1_pin,
-		button: config.button1_pin,
-	}
-};
-Object.freeze(Host, true);
 
 export default function (done) {
-	if (config.autobacklight)
-		Digital.write(config.lcd_power_pin, 0);
-	Digital.write(config.led1_pin, 0);
+	if (config.autobacklight && device.peripheral.Power?.LCD) {
+		globalThis.lcd_power = new device.peripheral.Power.LCD();
+		globalThis.lcd_power.write(0);
+	}
+
+	if (device.peripheral.led?.Default) {
+		const led = new device.peripheral.led.Default();
+		led.on = 0;
+		led.close();
+	}
 
 	done();
 }
-

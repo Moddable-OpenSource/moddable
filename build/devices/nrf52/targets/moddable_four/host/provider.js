@@ -127,8 +127,8 @@ const device = {
 			sample() {
 				const { x, y, z } = super.sample();
 				const accelerometer = (180 === screen?.rotation)
-					? { x: -x, y: -y, z }
-					: { x, y, z };
+					? { x: x, y: -y, z }
+					: { x: -x, y, z };
 				return { accelerometer };
 			}
 		}

@@ -17,32 +17,24 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
 import LEDrgb from "led/rgb";
 
 const device = {
 	i2c: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 4,
 			clock: 5
 		},
 		internal: {
-			io: I2C,
+			io: "I2C",
 			data: 7,
 			clock: 27
 		}
 	},
 	serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 44,
 			transmit: 43
@@ -50,14 +42,13 @@ const device = {
 	},
 	spi: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 45,
 			in: 46,
 			out: 47,
 			port: 3
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus, SPI},
 	pin: {
 		led: 6,
 		ledR: 26,
@@ -72,7 +63,7 @@ const device = {
 				constructor(options) {
 					return new LEDrgb({
 						...options,
-						io: PWM,
+						io: device.io.PWM,
 						pin: { r: device.pin.ledR, g: device.pin.ledG, b: device.pin.ledB },
 						invert: false
 					});
