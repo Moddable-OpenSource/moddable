@@ -193,6 +193,9 @@ globalThis.navigator.bluetooth = bluetooth;
 globalThis.BluetoothUUID = BluetoothUUID;
 `
 };
+const dnsGlobal = {
+	include: "$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
+};
 const httpGlobal = {
 	include: "$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json"
 };
@@ -434,6 +437,7 @@ export default class extends TOOL {
 			"WebSocketStream": webSocketStreamGlobal,
 			"navigator.serial": webSerialGlobal,
 			"navigator.bluetooth": webBluetoothGlobal,
+			"device.network.dns": dnsGlobal,
 			"device.network.http.client": httpGlobal,
 			"device.network.https.client": httpsGlobal,
 			"device.network.http.server": httpServerGlobal,
@@ -443,6 +447,26 @@ export default class extends TOOL {
 			"device.network.mqtts": mqttsGlobal,
 			"device.network.ntp": ntpGlobal,
 			"device.network.dnssd": dnssdGlobal,
+		}
+		this.providers = {
+			"device.io.Analog": "embedded:io/analog",
+			"device.io.Digital": "embedded:io/digital",
+			"device.io.DigitalBank": "embedded:io/digitalbank",
+			"device.io.I2C": "embedded:io/i2c",
+			"device.io.PulseCount": "embedded:io/pulsecount",
+			"device.io.PulseWidth": "embedded:io/pulsewidth",
+			"device.io.PWM": "embedded:io/pwm",
+			"device.io.Serial": "embedded:io/serial",
+			"device.io.SMBus": "embedded:io/smbus",
+			"device.io.SPI": "embedded:io/spi",
+			"device.analog": "embedded:io/analog",
+			"device.i2c": "embedded:io/i2c",
+			"device.serial": "embedded:io/serial",
+			"device.spi": "embedded:io/spi",
+			"device.files": "embedded:storage/files",
+			"device.flash": "embedded:storage/flash",
+			"device.keyValue": "embedded:storage/key-value",
+			"device.update": "embedded:update",
 		}
 		this.snippets = [];
 	}
@@ -489,6 +513,7 @@ export default class extends TOOL {
 					let from = specifier.from;
 					let fileURL = this.ESM_RESOLVE(from, module.fileURL);
 					if (fileURL.startsWith("embedded:") || fileURL.startsWith("moddable:")) {
+						this.explicitBuiltinSpecifiers.add(fileURL);
 						if (this.importedBuiltinSpecifiers.indexOf(fileURL) < 0)
 							this.importedBuiltinSpecifiers.push(fileURL)
 					}
@@ -525,6 +550,15 @@ export default class extends TOOL {
 			for (let string of infos.global) {
 				if (string.startsWith("globalThis."))
 					string = string.slice(11);
+				const provided = this.providers[string];
+				if (provided) {
+					if (!this.providerSpecifiers.has(provided)) {
+						this.report(`# mcpack uses: ${string} (${provided})`);
+						this.providerSpecifiers.set(provided, string);
+					}
+					if (this.importedBuiltinSpecifiers.indexOf(provided) < 0)
+						this.importedBuiltinSpecifiers.push(provided);
+				}
 				let global = this.globals[string];
 				if (global) {
 					let include = global.include;
@@ -580,6 +614,8 @@ export default class extends TOOL {
 			this.builtins.set(specifier, { specifier, manifests:[] });
 		}
 		this.importedBuiltinSpecifiers = [];
+		this.providerSpecifiers = new Map();
+		this.explicitBuiltinSpecifiers = new Set();
 
 		this.manifests = new Map();
 		this.modules = new Map();
@@ -691,7 +727,9 @@ export default class extends TOOL {
 			const currentDirectory = this.currentDirectory;
 			this.manifests = [];
 			this.manifests.already = {};
+			this.mcpackExplicit = true;		// these manifests are in the build whether or not mcpack would have chosen them
 			this.manifest.include.forEach(include => this.includeManifest(include, include, tmpPath));
+			this.mcpackExplicit = false;
 			const packageBuiltins = this.mapBuiltins(this.getBuiltins(this.manifests));
 			this.currentDirectory = currentDirectory;
 			
@@ -720,7 +758,10 @@ export default class extends TOOL {
 					}
 					return true;
 				}
-				this.reportError(null, 0, `${specifier}: manifest not found`);
+				if (this.providerSpecifiers.has(specifier) && !this.explicitBuiltinSpecifiers.has(specifier))
+					this.report(`# mcpack: ${this.providerSpecifiers.get(specifier)} is unavailable on ${this.fullplatform}`);
+				else
+					this.reportError(null, 0, `${specifier}: manifest not found`);
 				return false;
 			});
 			this.importedBuiltinSpecifiers.forEach(specifier => {
@@ -1314,7 +1355,7 @@ export default class extends TOOL {
 		this.currentDirectory = parts.directory;
 		this.currentPath = path;
 		const manifest = this.readFileJSON(path);
-		if (!(manifest.mcpack ?? this.mcpackDefault))
+		if (!this.mcpackExplicit && !(manifest.mcpack ?? this.mcpackDefault))
 			return;
 		manifest.directory = parts.directory;
 		manifest.path = path;
