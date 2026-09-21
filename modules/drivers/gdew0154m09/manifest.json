@@ -1,7 +1,9 @@
 {
 	"include": [
 		"$(COMMODETTO)/manifest_bitmap.json",
-		"$(COMMODETTO)/manifest_dither.json"
+		"$(COMMODETTO)/manifest_dither.json",
+		"$(MODULES)/io/digital/manifest.json",
+		"$(MODULES)/io/spi/manifest.json"
 	],
 	"modules": {
 		"*": "./*"

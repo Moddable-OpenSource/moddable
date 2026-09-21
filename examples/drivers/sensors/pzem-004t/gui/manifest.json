@@ -2,7 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/pzem-004t/manifest.json",
-		"$(MODDABLE)/examples/manifest_piu.json"
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/io/serial/manifest.json"
 	],
 	"modules": {
 		"*": "./main"

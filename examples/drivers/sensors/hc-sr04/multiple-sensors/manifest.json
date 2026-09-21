@@ -1,7 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/sensors/hc-sr04/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/hc-sr04/manifest.json",
+		"$(MODDABLE)/modules/io/digital/manifest.json",
+		"$(MODDABLE)/modules/io/pulsewidth/manifest.json"
 	],
 	"modules": {
 		"*": "./main"
