@@ -1,10 +1,13 @@
 {
+	"include": [
+		"$(MODDABLE)/modules/io/serial/manifest.json"
+	],
 	"modules": {
 		"*": [
 			"./system",
 			"$(MODDABLE)/modules/io/common/builtinCommon"
 		],
-		"lockdown/device": "$(MODDABLE)/modules/io/device/lockdowndevice",
+		"lockdown/device": "$(MODDABLE)/modules/io/system/lockdowndevice",
 		"embedded:provider/builtin": "$(MODDABLE)/modules/io/host/win/provider"
 	},
 	"preload": [
