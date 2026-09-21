@@ -1,8 +1,12 @@
 {
-	"modules": {
-		"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/mac/tcp",
-		"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/mac/udp",
-		"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/mac/listener"
+	"platforms": {
+		"mac": {
+			"modules": {
+				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/mac/tcp",
+				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/mac/udp",
+				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/mac/listener"
+			}
+		}
 	},
 	"preload": [
 		"embedded:io/socket/tcp",
