@@ -12,9 +12,10 @@
  *
  */
 
+import device from "embedded:provider/builtin";
 import Button from "button";
 
-globalThis.device = Object.freeze({
+Object.assign(device, {
 	i2c: {
 		default: {
 		}
@@ -24,4 +25,4 @@ globalThis.device = Object.freeze({
 			Flash: Button,
 		}
 	}
-}, true);
+});

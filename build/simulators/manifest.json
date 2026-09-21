@@ -7,12 +7,16 @@
 			"$(MODULES)/base/timer/timer",
 			"$(MODULES)/base/timer/$(PLATFORM)/*"
 		],
-		"setup/sim": "./modules/setup-sim"
+		"setup/sim": "./modules/setup-sim",
+		"lockdown/device": "$(IO)/system/lockdowndevice",
+		"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
 	},
 	"preload": [
 		"time",
 		"timer",
-		"setup/sim"
+		"setup/sim",
+		"lockdown/device",
+		"embedded:provider/builtin"
 	],
 	"platforms": {
 		"lin": {
