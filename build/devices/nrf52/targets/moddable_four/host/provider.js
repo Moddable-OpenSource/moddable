@@ -36,14 +36,14 @@ class ButtonA {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 26,
 			clock: 27
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -118,7 +118,7 @@ const device = {
 				super({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus,
 						address: 0x19
 					}

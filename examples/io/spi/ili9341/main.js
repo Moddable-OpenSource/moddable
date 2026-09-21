@@ -29,7 +29,7 @@ const dc = new Digital({
 });
 
 const spi = new SPI({
-	...device.SPI.default,
+	...device.spi.default,
 	hz: 40_000_000,
 	select: device.pin.displaySelect,
 	active: 0

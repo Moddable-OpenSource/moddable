@@ -125,7 +125,7 @@ class EPD {
 		});
 
 		this.spi = new SPI({
-			...device.SPI.default,
+			...device.spi.default,
 			hz: 10_000_000,
 			mode: 3
 		});

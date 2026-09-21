@@ -18,7 +18,7 @@ import config from "mc/config";
 
 let sensor = new PZEM004T({
 	sensor: {
-		...device.Serial.default,
+		...device.serial.default,
 		transmit: config.transmit,
 		receive: config.receive,
 		port: config.port

@@ -19,8 +19,8 @@ trace("QwiicAlphanumericDisplay create.\n");
 const display = new QwiicAlphanumericDisplay({
 	sensor: {
 		io: device.io.SMBus,
-		data: device.I2C.default.data,
-		clock: device.I2C.default.clock,
+		data: device.i2c.default.data,
+		clock: device.i2c.default.clock,
 		hz: 400_000
 	},
 	addresses: [0x70, 0x71],		// add 0x71, 0x72… for chained units (left → right)

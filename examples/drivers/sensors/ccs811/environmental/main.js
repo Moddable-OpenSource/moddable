@@ -18,11 +18,11 @@ import Timer from "timer";
 
 const sensor = new Sensor({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	}
 });
-const humidity = new Humidity({ sensor: device.I2C.default });
+const humidity = new Humidity({ sensor: device.i2c.default });
 
 while (!sensor.available)
 	Timer.delay(500);

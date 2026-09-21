@@ -62,7 +62,7 @@ export default function (done) {
 class ES8311 {
 	constructor() {
 		const es = new device.io.SMBus({
-			...device.I2C.echo,
+			...device.i2c.echo,
 			address: 0x18,
 			hz: 100_000,
 		});
@@ -116,7 +116,7 @@ class ES8311 {
 class PI4IOE5V6408 {
 	constructor() {
 		const pi = new device.io.SMBus({
-			...device.I2C.echo,
+			...device.i2c.echo,
 			address: 0x43,
 			hz: 100_000,
 		});

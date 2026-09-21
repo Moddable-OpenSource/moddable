@@ -23,7 +23,7 @@ const style = Object.freeze({ font:"semibold 40px Open Sans", color:[WHITE,BLUE]
 class PlainBehavior extends Behavior {
 	onCreate(application) {
 		try {
-			this.sensor = new Sensor({ sensor: device.I2C.default });
+			this.sensor = new Sensor({ sensor: device.i2c.default });
 		}
 		catch {
 			this.sensor = {

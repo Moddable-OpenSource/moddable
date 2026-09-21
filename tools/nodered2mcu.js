@@ -1438,7 +1438,7 @@ export default class extends TOOL {
 							case "SMBus": {
 								initialize.push(`\t\t\t\t${name}: {`);
 								if (option.bus || ((undefined === option.data) && (undefined === option.clock))) {
-									initialize.push(`\t\t\t\t\t...device.I2C.${option.bus || "default"},`);
+									initialize.push(`\t\t\t\t\t...device.i2c.${option.bus || "default"},`);
 									if ("SMBus" === option.io)
 										initialize.push(`\t\t\t\t\tio: device.io.SMBus,`);
 								}

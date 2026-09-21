@@ -17,7 +17,7 @@ import Timer from "timer";
 
 const sensor = new Sensor({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	}
 });

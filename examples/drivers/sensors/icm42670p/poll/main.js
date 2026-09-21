@@ -19,7 +19,7 @@ const sensor = device.sensor?.IMU
 	? new device.sensor.IMU()
 	: new ICM42670P({
 		sensor: {
-			...(device.I2C.internal ?? device.I2C.default),
+			...(device.i2c.internal ?? device.i2c.default),
 			io: device.io.SMBus
 		}
 	});

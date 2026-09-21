@@ -15,7 +15,7 @@
 import BMP180 from "embedded:sensor/Barometer-Temperature/BMP180";
 import Timer from "timer";
 
-const sensor = new BMP180({ sensor: device.I2C.default });
+const sensor = new BMP180({ sensor: device.i2c.default });
 
 sensor.configure({
 	mode: 3			// ULTRAHIGHRES

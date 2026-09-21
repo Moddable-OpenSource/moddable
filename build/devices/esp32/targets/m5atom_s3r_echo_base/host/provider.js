@@ -27,7 +27,7 @@ class Backlight {
 
 	constructor(options) {
 		const io = this.#io = new device.io.SMBus({
-			...device.I2C.internal,
+			...device.i2c.internal,
 			hz: 400_000,
 			address: 48,
 		});
@@ -77,7 +77,7 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 2,
@@ -95,7 +95,7 @@ const device = {
 			clock: 39,
 		},
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			port: 3,
@@ -103,7 +103,7 @@ const device = {
 			out: 21,
 		},
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 8,

@@ -16,7 +16,7 @@ import {BME68x} from "embedded:sensor/Barometer-Humidity-Temperature/BME68x";
 
 export default function() {
 	const bme = new BME68x({
-		sensor: device.I2C.default
+		sensor: device.i2c.default
 	});
 
 	try {

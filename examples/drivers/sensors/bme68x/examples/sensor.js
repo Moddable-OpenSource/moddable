@@ -17,7 +17,7 @@ import Timer from "timer";
 
 export default function() {
 	const sensor = new Sensor({
-		sensor: device.I2C.default
+		sensor: device.i2c.default
 	});
 
 	Timer.repeat(() => {

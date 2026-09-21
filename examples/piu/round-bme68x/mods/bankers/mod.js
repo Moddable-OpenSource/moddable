@@ -81,7 +81,7 @@ class BankersBehavior extends Behavior {
 		this.$ = $;
 		this.which = 1;
 		try {
-			this.sensor = new Sensor({ sensor: device.I2C.default });
+			this.sensor = new Sensor({ sensor: device.i2c.default });
 		}
 		catch {
 			this.sensor = {

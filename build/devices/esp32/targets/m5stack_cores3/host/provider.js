@@ -24,7 +24,7 @@ import IMU from "embedded:sensor/Accelerometer-Gyroscope-Magnetometer/BMI270";
 
 
 const device = {
-  I2C: {
+  i2c: {
     default: {
       io: "I2C",
       data: 2,
@@ -36,7 +36,7 @@ const device = {
       clock: 11
     }
   },
-  Serial: {
+  serial: {
     default: {
       io: "Serial",
       port: 1,
@@ -44,7 +44,7 @@ const device = {
       transmit: 43
     }
   },
-  SPI: {
+  spi: {
     default: {
       io: "SPI",
       clock: 36,
@@ -53,7 +53,7 @@ const device = {
       port: 1
     }
   },
-  Analog: {
+  analog: {
     default: {
       io: "Analog",
       pin: 10
@@ -87,7 +87,7 @@ const device = {
 				return new RTC({
 					...options,
 					clock: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						io: device.io.SMBus
 					}
 				});
@@ -100,7 +100,7 @@ const device = {
             const result = new Touch({
               ...options,
               sensor: {
-                ...device.I2C.internal,
+                ...device.i2c.internal,
                 io: device.io.SMBus,
               }
             });
@@ -113,7 +113,7 @@ const device = {
 				return new IMU({
 					...options,
 					sensor: {
-						...device.I2C.internal,
+						...device.i2c.internal,
 						address: 0x69,
 						io: device.io.SMBus
 					}

@@ -22,7 +22,7 @@ import Timer from "timer"
 
 const d = new Display({
 	display: {
-		...device.SPI.default,
+		...device.spi.default,
 		select: device.pin.displaySelect,
 		active: 0
 	},

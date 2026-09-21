@@ -39,7 +39,7 @@ class ButtonFlash {
 }
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			port: "I2C_NUM_0",
@@ -47,7 +47,7 @@ const device = {
 			clock: 8
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 			port: 1,
@@ -55,7 +55,7 @@ const device = {
 			transmit: 21
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog",
 			pin: 0
@@ -102,7 +102,7 @@ const device = {
 	sensor: {
 		Environment: class {
 			constructor(options) {
-				const sensor = new SHTC3({ sensor: device.I2C.default, address: 0x88 });
+				const sensor = new SHTC3({ sensor: device.i2c.default, address: 0x88 });
 				sensor.configure({ lowPower: true, autoSleep: true });
 				return sensor;
 			}
@@ -112,7 +112,7 @@ const device = {
 				const sensor = new IMU({
 					...options,
 					sensor: {
-						...device.I2C.default,
+						...device.i2c.default,
 						io: device.io.SMBus
 					}
 				});

@@ -17,7 +17,7 @@ export default function (done) {
 class ES8311 {
 	constructor() {
 		const es = new device.io.SMBus({
-			...device.I2C.internal,
+			...device.i2c.internal,
 			address: 0x18,
 			hz: 100_000,
 		});

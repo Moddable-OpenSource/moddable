@@ -16,7 +16,7 @@ import Proximity from "embedded:sensor/AmbientLight-Proximity/LTR553ALS";
 import Timer from "timer";
 
 const sensor = new Proximity({
-  sensor: { ...(device.I2C.internal ?? device.I2C.default), io: device.io.SMBus },
+  sensor: { ...(device.i2c.internal ?? device.i2c.default), io: device.io.SMBus },
 });
 
 Timer.repeat(() => {

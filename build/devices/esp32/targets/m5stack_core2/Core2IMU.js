@@ -50,7 +50,7 @@ class Core2BMI270 extends BMI270 {
 export class Core2IMU {
     constructor(options) {
         const s = new device.io.SMBus({
-            ...device.I2C.internal,
+            ...device.i2c.internal,
             address: 0x68,
             hz: 400_000
         });

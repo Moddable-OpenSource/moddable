@@ -19,19 +19,19 @@
  */
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: "I2C",
 			data: 13,
 			clock: 14
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: "Serial",
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: "SPI",
 			clock: 14,
@@ -40,7 +40,7 @@ const device = {
 			port: "HSPI"
 		}
 	},
-	Analog: {
+	analog: {
 		default: {
 			io: "Analog"
 		}

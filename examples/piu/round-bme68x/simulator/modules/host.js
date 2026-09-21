@@ -15,7 +15,7 @@
 import Button from "button";
 
 globalThis.device = Object.freeze({
-	I2C: {
+	i2c: {
 		default: {
 		}
 	},

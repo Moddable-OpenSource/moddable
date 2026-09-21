@@ -26,7 +26,7 @@ export default function (done) {
 
   // ES8311 codec (speaker DAC) initialization
   const es8311 = new device.io.SMBus({
-    ...device.I2C.default,
+    ...device.i2c.default,
     hz: 400_000,
     address: 0x18
   })
@@ -60,7 +60,7 @@ export default function (done) {
 
   // ES7210 codec (microphone ADC) initialization
   const es7210 = new device.io.SMBus({
-    ...device.I2C.default,
+    ...device.i2c.default,
     hz: 400_000,
     address: 0x40
   })

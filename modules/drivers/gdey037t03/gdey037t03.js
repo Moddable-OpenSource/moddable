@@ -102,7 +102,7 @@ class EPD {
       }
     });
 
-    this.spi = new SPI({ ...device.SPI.default, hz: 10_000_000, mode: 0 });
+    this.spi = new SPI({ ...device.spi.default, hz: 10_000_000, mode: 0 });
     this.spi.byte = new Uint8Array(1);
   }
   close() {

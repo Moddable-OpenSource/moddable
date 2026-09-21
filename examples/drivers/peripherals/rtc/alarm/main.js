@@ -21,7 +21,7 @@ trace(`Today's date: ${(new Date()).toGMTString()}\n`);
 
 const rtc = new RTC ({
 			clock: {
-				...device.I2C.default,
+				...device.i2c.default,
 				io: device.io.SMBus
 			},
 			interrupt: {

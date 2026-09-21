@@ -22,7 +22,7 @@ let magSensor;
 
 const sensor = new MPU9250({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	},
 	alert: {
@@ -50,7 +50,7 @@ sensor.configure({
 
 magSensor = new AK8963({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	}
 });

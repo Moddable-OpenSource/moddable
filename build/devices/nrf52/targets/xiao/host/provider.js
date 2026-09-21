@@ -28,7 +28,7 @@ import SPI from "embedded:io/spi";
 import LEDrgb from "led/rgb";
 
 const device = {
-	I2C: {
+	i2c: {
 		default: {
 			io: I2C,
 			data: 4,
@@ -40,7 +40,7 @@ const device = {
 			clock: 27
 		}
 	},
-	Serial: {
+	serial: {
 		default: {
 			io: Serial,
 			port: 1,
@@ -48,7 +48,7 @@ const device = {
 			transmit: 43
 		}
 	},
-	SPI: {
+	spi: {
 		default: {
 			io: SPI,
 			clock: 45,

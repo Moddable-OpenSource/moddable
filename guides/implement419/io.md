@@ -61,7 +61,7 @@ device.sensor.Temperature = class {
 	constructor() {
 		return new Temperature({
 			sensor: {
-				...device.I2C.default,
+				...device.i2c.default,
 				io: device.io.SMBus,
 				address: 0x49
 			}

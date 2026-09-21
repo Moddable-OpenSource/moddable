@@ -18,8 +18,8 @@ import Timer from "timer";
 const display = new TM1637({
 	sensor: {
 		io: device.io.Digital,
-		data: device.I2C.default.data,
-		clock: device.I2C.default.clock,
+		data: device.i2c.default.data,
+		clock: device.i2c.default.clock,
 	},
 	onError: error => trace(`${error}\n`)
 });

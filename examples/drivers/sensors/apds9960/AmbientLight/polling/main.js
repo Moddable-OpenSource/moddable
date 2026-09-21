@@ -17,7 +17,7 @@ import APDS9960 from "embedded:sensor/AmbientLight-Gesture-Proximity/APDS9960";
 
 let sensor = new APDS9960({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus
 	}
 });

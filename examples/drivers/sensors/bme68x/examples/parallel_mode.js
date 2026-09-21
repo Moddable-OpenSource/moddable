@@ -17,7 +17,7 @@ import Timer from "timer";
 
 export default function() {
 	const bme = new BME68x({
-		sensor: device.I2C.default
+		sensor: device.i2c.default
 	});
 
 	const heatr_conf = {

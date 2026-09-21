@@ -6,7 +6,7 @@ flags: [onlyStrict]
 const SPI = device.io.SPI;
 
 const options = {
-	...device.SPI.default,
+	...device.spi.default,
 	hz: 10_000_000
 };
 

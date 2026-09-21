@@ -17,7 +17,7 @@ import MFRC522 from "embedded:sensor/RFID/MFRC522";
 
 const rfid = new MFRC522({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus,
 		address: 0x28
 	}
@@ -33,7 +33,7 @@ import PN532 from "embedded:sensor/RFID/PN532";
 
 const rfid = new PN532({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		address: 0x24,
 		hz: 100_000,
 		timeout: 1000
@@ -50,7 +50,7 @@ import ST25R3916 from "embedded:sensor/RFID/ST25R3916";
 
 const rfid = new ST25R3916({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		io: device.io.SMBus,
 		address: 0x50,
 		hz: 400_000

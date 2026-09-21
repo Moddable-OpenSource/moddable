@@ -39,7 +39,7 @@ Override on the command line, for example:
 mcconfig -d -m -p esp32/moddable_six gps.protocol=ubx
 ```
 
-**Wiring (typical):** module TX → MCU RX (`device.Serial.default`), common GND, 3.3 V (check module).
+**Wiring (typical):** module TX → MCU RX (`device.serial.default`), common GND, 3.3 V (check module).
 
 On `onSample`, `sample()` returns a fix object or `undefined` (including **fix lost**). First fix can take minutes (sky view, cold start); the example does not set `timeout`.
 
@@ -70,7 +70,7 @@ mcconfig -d -m -p esp32/moddable_six
 mcconfig -d -m -p esp32/moddable_six gps.protocol=ubx
 ```
 
-**Wiring (typical):** u-blox DDC on `device.I2C.default`, address `0x42`.
+**Wiring (typical):** u-blox DDC on `device.i2c.default`, address `0x42`.
 
 On `onSample`, `sample()` returns a fix object or `undefined` (including **fix lost**). First fix can take minutes (sky view, cold start); the example does not set `timeout`.
 

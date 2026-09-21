@@ -50,7 +50,7 @@ render.end();
 
 let sensor = new Accelerometer({
 	sensor: {
-		...device.I2C.default,
+		...device.i2c.default,
 		address: 0x19,
 		io: device.io.SMBus
 	}

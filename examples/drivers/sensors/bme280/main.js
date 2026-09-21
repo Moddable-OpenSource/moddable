@@ -16,7 +16,7 @@ import BME280 from "embedded:sensor/Barometer-Humidity-Temperature/BME280";
 import Timer from "timer";
 
 const sensor = new BME280({
-	sensor: device.I2C.default
+	sensor: device.i2c.default
 });
 
 Timer.repeat(() => {

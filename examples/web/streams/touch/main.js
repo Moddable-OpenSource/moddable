@@ -20,7 +20,7 @@ const TouchStream = SensorStreamMixin(Touch);
 async function test() {
 	const stream = new TouchStream({
 		sensor: {
-			...device.I2C.default,
+			...device.i2c.default,
 			io: device.io.SMBus
 		},
 		interval: 33
