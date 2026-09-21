@@ -1,7 +1,8 @@
+import device from "embedded:provider/builtin";
 import Button from 'button';
 import { RTC, Battery } from 'peripherals';
 
-globalThis.device = {	
+Object.assign(device, {	
   pin: {
     powerMain: 2,
     powerExternal: 5,
@@ -43,4 +44,4 @@ globalThis.device = {
       Default: Battery,
     },
   },
-};
+});

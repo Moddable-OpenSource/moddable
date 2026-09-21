@@ -1,8 +1,9 @@
+import device from "embedded:provider/builtin";
 import Button from 'button';
 import { RTC, Battery } from 'peripherals';
 import LED from "led";
 
-globalThis.device = {
+Object.assign(device, {
   peripheral: {
     RTC: RTC,
     button: {
@@ -28,4 +29,4 @@ globalThis.device = {
     },
     LED: { Default: LED }
   },
-};
+});

@@ -3,16 +3,6 @@
 		"$(MODDABLE)/modules/io/serial/manifest.json"
 	],
 	"modules": {
-		"*": [
-			"./system",
-			"$(MODDABLE)/modules/io/common/builtinCommon"
-		],
-		"lockdown/device": "$(MODDABLE)/modules/io/system/lockdowndevice",
-		"embedded:provider/builtin": "$(MODDABLE)/modules/io/host/mac/provider"
-	},
-	"preload": [
-		"system",
-		"lockdown/device",
-		"embedded:provider/builtin"
-	]
+		"*": "$(MODDABLE)/modules/io/common/builtinCommon"
+	}
 }
