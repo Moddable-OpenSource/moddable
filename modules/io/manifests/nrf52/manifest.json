@@ -1,7 +1,4 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
 	"include": [
 		"$(IO)/analog/manifest.json",
 		"$(IO)/digital/manifest.json",
@@ -9,36 +6,6 @@
 		"$(IO)/pulsecount/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
-		"$(IO)/spi/manifest.json",
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(MODULES)/pins/digital/nrf52/modGPIO"
-		],
-
-		"system": "$(IO)/system/system",
-		"lockdown/device": "$(IO)/system/lockdowndevice"
-	},
-	"preload": [
-		"system",
-		"lockdown/device",
-		"embedded:provider/builtin"
-	],
-	"platforms": {
-		"nrf52/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"nrf52": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
-		},
-		"...": {
-			"error": "nrf52 manifest"
-		}
-	}
+		"$(IO)/spi/manifest.json"
+	]
 }
