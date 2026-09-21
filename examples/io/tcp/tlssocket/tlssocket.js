@@ -27,7 +27,7 @@ function toProtocolVersion(value) {
 	throw new RangeError(`${value}: unsupported`);
 }
 
-class TLSSocket {
+class TLS {
 	#socket;
 	#ready = false;
 	#session;
@@ -239,4 +239,4 @@ class TLSSocket {
 	}
 }
 
-export default TLSSocket;
+export default TLS;
