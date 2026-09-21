@@ -1,8 +1,12 @@
 {
-	"modules": {
-		"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/zephyr/tcp",
-		"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/zephyr/udp",
-		"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/zephyr/listener"
+	"platforms": {
+		"zephyr": {
+			"modules": {
+				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/zephyr/tcp",
+				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/zephyr/udp",
+				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/zephyr/listener"
+			}
+		}
 	},
 	"preload": [
 		"embedded:io/socket/tcp",

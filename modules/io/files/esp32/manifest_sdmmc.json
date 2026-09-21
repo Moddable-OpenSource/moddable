@@ -1,11 +1,18 @@
 {
+	"include": [
+		"$(MODULES)/base/modules/manifest.json"
+	],
 	"platforms": {
 		"esp32": {
 			"modules": {
 				"embedded:x-files-implementation": "./files-vfs",
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation",
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			],
 			"defines": {
 				"file": {
 					"sdmmc": 1
@@ -22,5 +29,6 @@
 				"CONFIG_FATFS_SECTOR_512": "y"
 			}
 		}
-	}
+	},
+	"mcpack": false
 }

@@ -1,11 +1,18 @@
 {
+	"include": [
+		"$(MODULES)/base/modules/manifest.json"
+	],
 	"platforms": {
 		"esp32": {
 			"modules": {
 				"embedded:x-files-implementation": "./files-vfs",
-				"embedded:storage/files": "./files"
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
 			},
-			"preload": "embedded:x-files-implementation",
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			],
 			"defines": {
 				"file": {
 					"partition": "#storage",
@@ -16,5 +23,6 @@
 				{ "name": "littlefs", "namespace": "joltwallet", "version": "^1.14.0" }
 			]
 		}
-	}
+	},
+	"mcpack": false
 }

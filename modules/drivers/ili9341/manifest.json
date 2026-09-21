@@ -11,10 +11,17 @@
 		}
 	},
 	"modules": {
-		"*": [
-			"$(MODULES)/drivers/ili9341/*",
-			"$(MODULES)/pins/digital/$(PLATFORM)/modGPIO"
-		]
+		"*": "$(MODULES)/drivers/ili9341/*"
+	},
+	"platforms": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"modules": {
+				"*": "$(MODULES)/pins/digital/$(PLATFORM)/modGPIO"
+			}
+		}
 	},
 	"preload": [
 		"ili9341"
