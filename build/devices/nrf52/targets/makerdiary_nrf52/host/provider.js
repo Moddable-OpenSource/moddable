@@ -17,13 +17,6 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
 import Button from "button";
 import LEDrgb from "led/rgb";
 
@@ -31,9 +24,9 @@ class ButtonA {
 	constructor(options) {
 		return new Button({
 			...options,
-			io: Digital,
+			io: device.io.Digital,
 			pin: device.pin.button,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -42,20 +35,19 @@ class ButtonA {
 const device = {
 	i2c: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 26,
 			clock: 27
 		}
 	},
 	serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 30,
 			transmit: 31
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PWM, Serial, SMBus},
 	pin: {
 		button: 18,
 		buttonA: 18,
@@ -74,7 +66,7 @@ const device = {
 				constructor(options) {
 					return new LEDrgb({
 						...options,
-						io: PWM,
+						io: device.io.PWM,
 						pin: { r: device.pin.ledR, g: device.pin.ledG, b: device.pin.ledB },
 						invert: false
 					});

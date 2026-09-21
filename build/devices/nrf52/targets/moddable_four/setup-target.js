@@ -23,7 +23,7 @@ import config from "mc/config";
 export default function (done) {
 	if (config.autobacklight && device.peripheral.Power?.LCD) {
 		globalThis.lcd_power = new device.peripheral.Power.LCD();
-		globalThis.lcd_power = 1;
+		globalThis.lcd_power.write(0);
 	}
 
 	if (device.peripheral.led?.Default) {

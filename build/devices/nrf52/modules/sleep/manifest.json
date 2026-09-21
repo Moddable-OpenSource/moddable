@@ -1,7 +1,8 @@
 {
 	"modules": {
 		"*": [
-			"$(BUILD)/devices/nrf52/modules/sleep/*"
+			"$(BUILD)/devices/nrf52/modules/sleep/*",
+			"$(MODULES)/pins/digital/nrf52/modGPIO"
 		],
 		"setup/power": "$(BUILD)/devices/nrf52/setup/power"
 	},

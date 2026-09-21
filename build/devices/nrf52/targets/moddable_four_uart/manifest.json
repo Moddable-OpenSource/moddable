@@ -6,11 +6,12 @@
 	},
 	"include": [
 		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/drivers/jogdial/manifest.json",
-		"$(MODULES)/drivers/button/manifest.json",
-		"$(MODULES)/drivers/led/manifest.json",
-		"$(MODULES)/pins/smbus/manifest.json"
+		"$(MODULES)/drivers/peripherals/button/manifest.json",
+		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
+		"$(MODULES)/drivers/peripherals/jogdial/manifest.json",
+		"$(MODULES)/drivers/sensors/lis3dh/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/i2c/manifest.json"
 	],
 	"config": {
 		"screen": "ls013b4dn04",
@@ -33,16 +34,12 @@
 			"button": 11
 		}
 	},
-   "modules": {
-		"setup/target": "./setup-target",
-		"*": [
-			"$(MODULES)/drivers/lis3dh/*"
-		]
-   },
-    "preload": [
-		"lis3dh",
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
 		"setup/target"
-   ],
+	],
 	"defines": {
 		"debugger": {
 			"tx_pin": "NRF_GPIO_PIN_MAP(0,30)",
@@ -77,4 +74,3 @@
 		}
 	}
 }
-

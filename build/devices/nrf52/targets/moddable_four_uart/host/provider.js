@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -17,27 +17,35 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
+
+import Button from "button";
+import LED from "led/digital";
+import JogDial from "jogdial";
+import LIS3DH from "embedded:sensor/Accelerometer/LIS3DH";
+
+class ButtonA {
+	constructor(options) {
+		return new Button({
+			...options,
+			io: device.io.Digital,
+			pin: device.pin.buttonA,
+			mode: device.io.Digital.InputPullUp,
+			activeLow: true
+		});
+	}
+}
 
 const device = {
 	i2c: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 26,
 			clock: 27
 		}
 	},
 	serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			port: 1,
 			receive: 31,
 			transmit: 30
@@ -45,7 +53,7 @@ const device = {
 	},
 	spi: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			hz: 2000000,
 			clock: 46,
 			in: 47,
@@ -53,11 +61,88 @@ const device = {
 			port: 3
 		}
 	},
-	io: {Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI},
 	pin: {
-		lcdPwr: 23,
 		button: 13,
-		led: 7
+		buttonA: 13,
+		lcdPower: 23,
+		led: 7,
+		jogdial: {
+			signal: 6,
+			control: 8,
+			button: 11
+		},
+		imu_int1: 14,
+		imu_int2: 16
+	},
+	peripheral: {
+		button: {
+			Default: ButtonA,
+			A: ButtonA
+		},
+		led: {
+			Default: class {
+				constructor() {
+					return new LED({
+						io: device.io.Digital,
+						pin: device.pin.led,
+						invert: true
+					});
+				}
+			}
+		},
+		JogDial: class extends JogDial {
+			#onTurn;
+			#onPushAndTurn;
+			constructor(options) {
+				super({
+					...options,
+					jogdial: device.pin.jogdial,
+					onTurn: delta => {
+//						if (180 === screen?.rotation)
+//							delta = -delta;
+						this.#onTurn?.(delta);
+					},
+					onPushAndTurn: delta => {
+//						if (180 === screen?.rotation)
+//							delta = -delta;
+						this.#onPushAndTurn?.(delta);
+					}
+				});
+				this.#onTurn = options.onTurn ?? this.onTurn;
+				this.#onPushAndTurn = options.onPushAndTurn ?? this.onPushAndTurn ?? this.#onTurn;
+			}
+		},
+		Power: {
+			LCD: class {
+				constructor() {
+					return new device.io.Digital({
+						pin: device.pin.lcdPower,
+						mode: device.io.Digital.Output
+					});
+				}
+			}
+		}
+	},
+	sensor: {
+		IMU: class extends LIS3DH {
+			constructor(options) {
+				super({
+					...options,
+					sensor: {
+						...device.i2c.default,
+						io: device.io.SMBus,
+						address: 0x19
+					}
+				});
+			}
+			sample() {
+				const { x, y, z } = super.sample();
+				const accelerometer = (180 === screen?.rotation)
+					? { x: -x, y: -y, z }
+					: { x, y, z };
+				return { accelerometer };
+			}
+		}
 	}
 };
 
