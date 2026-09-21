@@ -1,6 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/base/worker/manifest.json"
+		"$(MODULES)/base/worker/manifest.json",
+		"$(MODULES)/io/digital/manifest.json",
+		"$(MODULES)/io/i2c/manifest.json"
 	],
 	"modules": {
 		"embedded:sensor/Touch/GT911": "./gt911_async_worker",

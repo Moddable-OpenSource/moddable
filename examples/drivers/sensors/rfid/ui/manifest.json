@@ -2,7 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(COMMODETTO)/manifest_bitmap.json",
-		"$(COMMODETTO)/manifest_parsebmf.json"
+		"$(COMMODETTO)/manifest_parsebmf.json",
+		"$(MODDABLE)/modules/io/digital/manifest.json"
 	],
 	"modules": {
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",
