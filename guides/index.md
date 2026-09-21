@@ -8,7 +8,7 @@ updated: 2026-09-02
 
 A collection of code samples and walkthroughs for performing common tasks with the Moddable SDK
 
-## Bases
+## Basics
 
 - [Binary Data](./binary/index.md)
 - [Logging](./logging/index.md)
