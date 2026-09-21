@@ -30,16 +30,16 @@ declare module "embedded:io/socket/tcp/tls" {
     noDelay?: boolean
     format?: "number" | "buffer"
     target?: any
-    onReadable?: (this: TLSSocket, bytes: number) => void
-    onWritable?: (this: TLSSocket, bytes: number) => void
-    onError?: (this: TLSSocket) => void
+    onReadable?: (this: TLS, bytes: number) => void
+    onWritable?: (this: TLS, bytes: number) => void
+    onError?: (this: TLS) => void
 
     tls: TLSOptions
     /** The TCP socket this TLS socket runs over. A Moddable SDK extension. */
     TCP: { io: new (options: TCPOptions) => TCP } & Partial<TCPOptions>
   }
 
-  class TLSSocket {
+  class TLS {
     constructor(options: Options)
     close(): void
     read(): number | ArrayBuffer
@@ -49,6 +49,6 @@ declare module "embedded:io/socket/tcp/tls" {
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
   }
-  interface TLSSocket extends Disposable {}
-  export default TLSSocket;
+  interface TLS extends Disposable {}
+  export default TLS;
 }

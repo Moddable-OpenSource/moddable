@@ -3,7 +3,11 @@
 		"$(MODDABLE)/modules/crypt/tls_419.json"
 	],
 	"modules": {
-		"embedded:io/socket/tcp/tls": "./tlssocket"
+		"embedded:io/socket/tcp/tls": "./tlssocket",
+		"config/tls": "./config"
 	},
-	"preload": "embedded:io/socket/tcp/tls"
+	"preload": [
+		"embedded:io/socket/tcp/tls",
+		"config/tls"
+	]
 }

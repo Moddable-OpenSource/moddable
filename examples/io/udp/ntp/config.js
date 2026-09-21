@@ -1,7 +1,6 @@
 import device from "embedded:provider/builtin";
 import "config/dns";
 
-import UDP from "embedded:io/socket/udp";		// the NTP client's own transport
 
 import NTP from "embedded:network/ntp/client";
 
@@ -11,7 +10,7 @@ device.network.ntp.client = {
 	io: NTP,
 	dns: device.network.dns.resolver,
 	socket: {
-		io: UDP
+		io: "UDP"
 	},
 	servers: ["pool.ntp.org"]
 };

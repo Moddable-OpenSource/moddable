@@ -1,6 +1,5 @@
 import device from "embedded:provider/builtin";
 import "config/httpclient";
-import TLSSocket from "embedded:io/socket/tcp/tls";
 
 device.network ??= {};
 device.network.https ??= {};
@@ -9,7 +8,7 @@ device.network.https.client = {
 	dns: device.network.http.client.dns,
 	port: 443,
 	socket: {
-		io: TLSSocket,
+		io: "TLS",
 		TCP: device.network.http.client.socket,
 		tls: {
 			applicationLayerProtocol: "http/1.1"
