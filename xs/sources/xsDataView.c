@@ -3715,10 +3715,10 @@ void fx_Uint8Array_prototype_setFromHex(txMachine* the)
 		mxTypeError("this: not a Uint8Array instance");
 	if ((mxArgc < 1) || !mxIsStringPrimitive(mxArgv(0)))
 		mxTypeError("string: not a string");
+	dstSize = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
 	srcSize = (txSize)c_strlen(mxArgv(0)->value.string);
 	if (srcSize & 1)
 		mxSyntaxError("string: odd length");
-	dstSize = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
 	src = (txU1*)(mxArgv(0)->value.string);
 	dst = (txU1*)(buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset);
 	fxUint8ArrayFromHex(the, src, dst, &srcSize, &dstSize);
