@@ -1,6 +1,6 @@
 {
 	"build": {
-		"EXPECTED_PICO_SDK": "2.2.0",
+		"EXPECTED_PICO_SDK": "2.3.1",
 		"PICO_ROOT ?=": "$(HOME)/pico",
 		"PICO_SDK_DIR ?=": "$(PICO_ROOT/pico-sdk",
 		"PICO_EXTRAS_DIR ?=": "$(PICO_ROOT)/pico-extras",

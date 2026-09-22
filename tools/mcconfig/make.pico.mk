@@ -326,7 +326,8 @@ LIB_FILES += \
 #	-lc -lnosys -lm 
 
 LIB_FILES += \
-	-L$(PICO_SDK_DIR)/build
+	-L$(PICO_SDK_DIR)/build \
+	-L$(PICO_SDK_DIR)/build/src/rp2_common/pico_standard_link
 
 INC_DIRS = \
 	$(TMP_DIR)	\
@@ -394,6 +395,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pio/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_unique_id/include	\
 	$(PICO_SDK_DIR)/src/common/pico_usb_reset_interface_headers/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_usb_reset/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_spi/include	\
 	$(PICO_SDK_DIR)/src/rp2_common/boot_stage2			\
 	$(PICO_SDK_DIR)/src/$(PICO_SUBCLASS)/boot_stage2/include		\
@@ -521,7 +523,7 @@ PICO_OBJ = \
 	$(LIB_DIR)/printf.c.o \
 	$(LIB_DIR)/queue.c.o \
 	$(LIB_DIR)/rand.c.o \
-	$(LIB_DIR)/reset_interface.c.o \
+	$(LIB_DIR)/usb_reset.c.o \
 	$(LIB_DIR)/runtime.c.o \
 	$(LIB_DIR)/runtime_init.c.o \
 	$(LIB_DIR)/runtime_init_clocks.c.o \
@@ -693,6 +695,7 @@ PICO_SRC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/pico_standard_link	\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio			\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_usb		\
+	$(PICO_SDK_DIR)/src/rp2_common/pico_usb_reset		\
 	$(PICO_SDK_DIR)/src/rp2_common/pico_stdio_uart		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_xip_cache	\
 	$(PICO_SDK_DIR)/lib/tinyusb/src/portable/raspberrypi/rp2040		\
