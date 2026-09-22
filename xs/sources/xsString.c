@@ -866,18 +866,31 @@ void fx_String_prototype_at(txMachine* the)
 	}
 }
 
+static txInteger fxPositionToIndex(txMachine* the, txInteger argi)
+{
+	if (mxArgc <= argi)
+		return 0;
+	txSlot* slot = mxArgv(0);
+	if (slot->kind == XS_INTEGER_KIND)
+		return slot->value.integer;
+	txNumber index = fxToNumber(the, slot);
+	if (c_isnan(index) || (index == 0))
+		return 0;
+	if (index < -2147483648)
+		return -2147483648;
+	if (index > 2147483647)
+		return 2147483647;
+	return (txInteger)c_trunc(index);
+}		
+
 void fx_String_prototype_charAt(txMachine* the)
 {
 	txInteger anOffset;
 	txInteger aLength;
 	
 	fxCoerceToString(the, mxThis);
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
-		anOffset = fxToInteger(the, mxArgv(0));
-		if (anOffset < 0) goto fail;
-	}
-	else
-		anOffset = 0;
+	anOffset = fxPositionToIndex(the, 0);
+	if (anOffset < 0) goto fail;
 
 	anOffset = fxCacheUnicodeToUTF8Offset(the, mxThis->value.string, anOffset);
 	if (anOffset < 0) goto fail;
@@ -901,12 +914,8 @@ void fx_String_prototype_charCodeAt(txMachine* the)
 	txInteger anOffset;
 
 	fxCoerceToString(the, mxThis);
-	if ((mxArgc > 0) && (mxArgv(0)->kind != XS_UNDEFINED_KIND)) {
-		anOffset = fxToInteger(the, mxArgv(0));
-		if (anOffset < 0) goto fail;
-	}
-	else
-		anOffset = 0;
+	anOffset = fxPositionToIndex(the, 0);
+	if (anOffset < 0) goto fail;
 
 	anOffset = fxCacheUnicodeToUTF8Offset(the, mxThis->value.string, anOffset);
 	if (anOffset < 0) goto fail;
