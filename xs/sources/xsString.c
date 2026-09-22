@@ -1361,16 +1361,15 @@ void fx_String_prototype_repeat(txMachine* the)
 				mxRangeError("count < 0");
 		}
 		else {
-			txNumber value = c_trunc(fxToNumber(the, arg));
-			if (c_isnan(value))
+			txNumber value = fxToNumber(the, arg);
+			if (c_isnan(value) || (value == 0))
 				count = 0;
-			else {
-				if (value < 0)
-					mxRangeError("count < 0");
-				if (0x7FFFFFFF < value)
-					mxRangeError("count too big");
-				count = (txInteger)value;
-			}
+			else if (value < 0)
+				mxRangeError("count < 0");
+			else if (c_isfinite(value))
+				count = (0x7FFFFFFF < value) ? 0x7FFFFFFF : (txInteger)c_trunc(value);
+			else
+				mxRangeError("count infinite");
 		}
 	}
 	mxMeterSome(count);
