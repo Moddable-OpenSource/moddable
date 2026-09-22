@@ -353,6 +353,7 @@ INC_DIRS = \
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_resets/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_clocks/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_pll/include		\
+	$(PICO_SDK_DIR)/src/rp2_common/hardware_rtc/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_vreg/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_watchdog/include		\
 	$(PICO_SDK_DIR)/src/rp2_common/hardware_ticks/include		\
