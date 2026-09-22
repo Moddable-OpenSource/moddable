@@ -593,7 +593,7 @@ void fx_Math_round(txMachine* the)
 		return;
 	}
 	arg = fxToNumber(the, mxArgv(0));
-	if (c_isnormal(arg) && (-4503599627370495 < arg) && (arg < 4503599627370495)) { // 2 ** 52 - 1
+	if (c_isfinite(arg) && (-4503599627370495 < arg) && (arg < 4503599627370495)) { // 2 ** 52 - 1
 		if ((arg < -0.5) || (0.5 <= arg))
 			arg = c_floor(arg + 0.5);
 		else if (arg < 0)
