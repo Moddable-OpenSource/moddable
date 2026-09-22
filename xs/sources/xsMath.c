@@ -377,23 +377,28 @@ void fx_Math_imuldiv(txMachine* the)
 
 void fx_Math_irandom(txMachine* the)
 {
-	double min = 0;
-	double max = 2147483647;
-	uint32_t result;
+	txInteger min = 0;
+	txInteger max = 2147483647;
+	uint32_t result, range, delta;
 	if (mxArgc > 1) {
-		min = (double)fxToInteger(the, mxArgv(0));
-		max = (double)fxToInteger(the, mxArgv(1));
+		min = fxToInteger(the, mxArgv(0));
+		max = fxToInteger(the, mxArgv(1));
 	}
-	else if (mxArgc > 0) {
-		max = (double)fxToInteger(the, mxArgv(0));
-	}
-	result = c_rand();
-	while (result == C_RAND_MAX)
+	else if (mxArgc > 0)
+		max = fxToInteger(the, mxArgv(0));
+	do  {
 		result = c_rand();
-	if (max < min)
-		mxResult->value.integer = (txInteger)c_ceil(min + (((double)result / (double)C_RAND_MAX) * (max - min)));
-	else
-		mxResult->value.integer = (txInteger)c_floor(min + (((double)result / (double)C_RAND_MAX) * (max - min)));
+	} while (result == C_RAND_MAX);
+	if (max >= min) {
+		range = (uint32_t)max - (uint32_t)min;
+		delta = (uint32_t)(((uint64_t)result * (uint64_t)range) / (uint64_t)C_RAND_MAX);
+		mxResult->value.integer = (txInteger)((uint32_t)min + delta);
+	}
+	else {
+		range = (uint32_t)min - (uint32_t)max;
+		delta = (uint32_t)(((uint64_t)result * (uint64_t)range) / (uint64_t)C_RAND_MAX);
+		mxResult->value.integer = (txInteger)((uint32_t)min - delta);
+	}
 	mxResult->kind = XS_INTEGER_KIND;
 }
 
@@ -585,7 +590,7 @@ void fx_Math_random_secure(txMachine* the)
 
 void fx_Math_round(txMachine* the)
 {
-    txNumber arg;
+	txNumber arg;
 	mxNanResultIfNoArg;
 	if (XS_INTEGER_KIND == mxArgv(0)->kind) {
 		mxResult->kind = XS_INTEGER_KIND;
