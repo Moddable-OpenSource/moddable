@@ -111,14 +111,17 @@ void fx_Symbol(txMachine* the)
 
 void fx_Symbol_for(txMachine* the)
 {
+	txSlot* arg;
 	txString string;
 	txU1* p;
 	txU4 sum;
 	txU4 modulo;
 	txSlot* result;
 	if (mxArgc < 1)
-		mxSyntaxError("no key");
-	string = fxToString(the, mxArgv(0));
+		arg = &mxUndefinedString;
+	else
+		arg = mxArgv(0);
+	string = fxToString(the, arg);
 	p = (txU1*)string;
 	sum = 0;
 	while(*p != 0) {
@@ -137,8 +140,8 @@ void fx_Symbol_for(txMachine* the)
 		result = fxFindKey(the);
 		result->next = the->symbolTable[modulo];
 		result->flag = XS_INTERNAL_FLAG | XS_DONT_DELETE_FLAG;
-		result->kind = (mxArgv(0)->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
-		result->value.key.string = mxArgv(0)->value.string;
+		result->kind = (arg->kind == XS_STRING_X_KIND) ? XS_KEY_X_KIND : XS_KEY_KIND;
+		result->value.key.string = arg->value.string;
 		result->value.key.sum = sum;
 		the->symbolTable[modulo] = result;
 	}
