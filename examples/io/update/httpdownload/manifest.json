@@ -1,0 +1,22 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json",
+		"$(MODDABLE)/modules/io/update/manifest.json"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"data": {
+		"*": [
+			"$(MODULES)/crypt/data/ca109"
+		]
+	},
+	"defines": {
+		"ota": {
+			"autosplit": 1
+		}
+	}
+}
