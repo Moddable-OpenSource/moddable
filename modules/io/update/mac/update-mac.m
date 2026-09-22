@@ -39,7 +39,7 @@ void xs_update_complete(xsMachine *the)
 	if (update->done)
 		xsUnknownError("already complete");
 	update->done = 1;
-	if (flash->bytes[0] != 0xF9)
+	if (flash->bytes[0] != 0xE9)		// ESP32 magic byte
 		xsUnknownError("invalid image");
 }
 

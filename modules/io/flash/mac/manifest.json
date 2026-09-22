@@ -9,7 +9,14 @@
 			"preload": [
 				"embedded:storage/flash",
 				"config/flash"
-			]
+			],
+			"config": {
+				"flash": {
+					"xs_test": { "blocks":10, "blockLength":4096 },
+					"running": { "blocks":4096, "blockLength":4096, "bytes":[ 233 ] },
+					"nextota": { "blocks":4096, "blockLength":4096 }
+				}
+			}
 		}
 	}
 }
