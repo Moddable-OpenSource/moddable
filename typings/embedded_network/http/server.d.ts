@@ -54,10 +54,21 @@ declare module "embedded:network/http/server" {
         format: "buffer";
     }
 
-    export interface HTTPServerOptions {
+    export interface HTTPServerSocketProvider {
         io: typeof Listener;
+    }
+
+    export interface HTTPServerProvider {
+        io: typeof HTTPServer;
+        socket: HTTPServerSocketProvider;
+    }
+
+    export interface HTTPServerOptions extends Partial<HTTPServerProvider> {
+        socket: HTTPServerSocketProvider;
         port?: number;
-        onConnect(this: HTTPServer, connection: HTTPConnection): void;
+        keepAlive?: number;
+        onConnect?(connection: HTTPConnection): void;
+        onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
     }
 
     class HTTPServer {
