@@ -347,7 +347,12 @@ void fx_Math_imod(txMachine* the)
 			mxResult->value.integer = 0;
 		else
 #endif
-			mxResult->value.integer = (x % y + y) % y;
+		{
+			txInteger r = x % y;
+			if (r && ((r ^ y) < 0))
+				r += y;
+			mxResult->value.integer = r;
+		}
 	}
 }
 

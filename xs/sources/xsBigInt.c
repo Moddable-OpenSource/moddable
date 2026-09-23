@@ -709,12 +709,15 @@ txBigInt* fxIntegerToBigInt(txMachine* the, txSlot* slot)
 	txInteger integer = slot->value.integer;
 	txBigInt* bigint = &slot->value.bigint;
 	txU1 sign = 0;
+	txU4 uint;
 	if (integer < 0) {
-		integer = -integer;
+		uint = (-2147483648 == integer) ? 2147483648 : -integer;
 		sign = 1;
 	}
+	else
+		uint = integer;
 	bigint->data = fxNewChunk(the, sizeof(txU4));
-	bigint->data[0] = (txU4)integer;
+	bigint->data[0] = uint;
 	bigint->sign = sign;
 	bigint->size = 1;
 	slot->kind = XS_BIGINT_KIND;

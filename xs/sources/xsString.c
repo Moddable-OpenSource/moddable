@@ -1709,9 +1709,11 @@ void fx_String_prototype_substr(txMachine* the)
 	txInteger start = fxArgToIndexInteger(the, 0, 0, size);
 	txInteger stop = size;
 	if ((mxArgc > 1) && (mxArgv(1)->kind != XS_UNDEFINED_KIND)) {
-		stop = start + fxToInteger(the, mxArgv(1));
-		if (stop > size)
+		txInteger length = fxToInteger(the, mxArgv(1));
+		if (length > size - start)
 			stop = size;
+		else
+			stop = start + length;
 	}	
 	if (start < stop) {
 		txInteger length;
