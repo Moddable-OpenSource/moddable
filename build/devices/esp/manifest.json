@@ -43,6 +43,9 @@
 		]
 	},
 	"platforms": {
+		"esp": {
+			"error": "esp subplatform required (e.g. -p esp/moddable_one)"
+		},
 		"esp/*": {
 			"include": "$(SUBPLATFORMMANIFEST)",
 			"modules": {

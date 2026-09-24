@@ -37,6 +37,9 @@
 		"embedded:provider/builtin"
 	],
 	"platforms": {
+		"pico": {
+			"error": "pico subplatform required (e.g. -p pico/pico_2)"
+		},
 		"pico/*": {
 			"include": "$(SUBPLATFORMMANIFEST)",
 			"modules": {

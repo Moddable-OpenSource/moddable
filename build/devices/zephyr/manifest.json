@@ -35,6 +35,9 @@
 		"CONFIG_TIMESLICE_PRIORITY": "5"
 	},
 	"platforms": {
+		"zephyr": {
+			"error": "zephyr subplatform required"
+		},
 		"zephyr/*": {
 			"include": "$(SUBPLATFORMMANIFEST)"
 		}
