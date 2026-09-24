@@ -22,12 +22,7 @@
 	],
 	"platforms": {
 		"esp32": {
-			"dependency": [
-				{ "idf": "esp_driver_gptimer" }
-			],
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
+			"error": "esp32 subplatform required (e.g. -p esp32/moddable_two)"
 		},
 		"esp32/*": {
 			"include": "$(SUBPLATFORMMANIFEST)",
