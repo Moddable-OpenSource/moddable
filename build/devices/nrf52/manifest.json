@@ -18,6 +18,9 @@
 		"embedded:provider/builtin"
 	],
 	"platforms": {
+		"nrf52": {
+			"error": "nrf52 subplatform required (e.g. -p nrf52/moddable_four)"
+		},
 		"nrf52/*": {
 			"include": "$(SUBPLATFORMMANIFEST)",
 			"modules": {
