@@ -112,21 +112,6 @@
 			}
 		},
 		"esp32/moddable_six": {
-			"include": [
-				"$(MODDABLE)/examples/manifest_net.json"
-			],
-			"defines": {
-				"XS_TEST": 1,
-				"softreset": 1
-			},
-			"modules": {
-				"~": [
-					"$(BUILD)/devices/esp32/setup/piu",
-					"$(BUILD)/devices/esp32/setup/network"
-				]
-			}
-		},
-		"esp32/moddable_six": {
 			"build": {
 				"ESP32_SUBCLASS": "esp32s3",
 				"SDKCONFIGPATH": "$(MODDABLE)/build/devices/esp32/targets/moddable_six/sdkconfig"
