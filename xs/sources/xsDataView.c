@@ -1942,19 +1942,20 @@ void fx_TypedArray_prototype_every(txMachine* the)
 void fx_TypedArray_prototype_fill(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
-	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txInteger start = fxArgToIndexInteger(the, 1, 0, length);
-	txInteger end = fxArgToIndexInteger(the, 2, length, length);
-	txInteger offset = view->value.dataView.offset;
-	start *= delta;
-	end *= delta;
-	start += offset;
-	end += offset;
+	txInteger delta, start, end, offset;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
 	(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
+	delta = dispatch->value.typedArray.dispatch->size;
+	start = fxArgToIndexInteger(the, 1, 0, length);
+	end = fxArgToIndexInteger(the, 2, length, length);
+	offset = view->value.dataView.offset;
+	start *= delta;
+	end *= delta;
+	start += offset;
+	end += offset;
 	txInteger size = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) & ~(delta - 1);
 	if (end > offset + size)
 		end = offset + size;
