@@ -17,9 +17,12 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+import Timer from "timer";
+
 class Backlight {
 	#io;
-	#brightness = 1.0;
+	#brightness = 0;
 
 	constructor(options) {
 		this.#io = new options.io(options);
@@ -27,20 +30,43 @@ class Backlight {
 			this.#io.invert = true;
 	}
 	close() {
+		Timer.clear(this.#io?.timer);
 		this.#io?.close();
 		this.#io = undefined;
 	}
+	configure(options) {
+		if ("fade" in options)
+			this.#io.fade = options.fade;
+	}
 	set brightness(value) {
+		const io = this.#io;
+		const range = (1 << io.resolution) - 1;
 		if (value <= 0)
 			value = 0;
 		else if (value >= 1)
-			value = 1023;
+			value = range;
 		else
-			value *= 1023;
-		if (this.#io.invert)
-			value = 1023 - value;
-		this.#io.write(value);
-		this.#brightness = value / 1024;
+			value *= range;
+
+		if (io.fade) {
+			Timer.clear(io.timer);
+			delete io.timer;
+
+			const from = this.#brightness * range, to = value;
+			const start = Date.now();
+			io.timer = Timer.repeat(() => {
+				const fraction = Math.min(1, (Date.now() - start) / io.fade);
+				const value = from + ((to - from) * (fraction * fraction));
+				io.write(io.invert ? range - value : value);
+				if (fraction >= 1) {
+					Timer.clear(io.timer);
+					delete io.timer;
+				}
+			}, 20);
+		}
+		else
+			io.write(io.invert ? range - value : value);
+		this.#brightness = value / range;
 	}
 	get brightness() {
 		return this.#brightness;
