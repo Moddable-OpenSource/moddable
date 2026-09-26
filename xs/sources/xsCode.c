@@ -4406,7 +4406,11 @@ void fxSwitchNodeCode(void* it, void* param)
 	txCaseNode* caseNode;
 	txCaseNode* defaultNode = NULL;
 	txUsingContext context;
+	
+	txInteger value = fxCoderUseTemporaryVariable(param);
 	fxNodeDispatchCode(self->expression, param);
+	fxCoderAddIndex(param, 0, XS_CODE_PULL_LOCAL_1, value);
+	
 	fxScopeCodingBlock(self->scope, param);
 	if (self->scope->disposableNodeCount)
 		fxScopeCodeUsing(self->scope, coder, &context);
@@ -4422,7 +4426,7 @@ void fxSwitchNodeCode(void* it, void* param)
 	while (caseNode) {
 		caseNode->target = fxCoderCreateTarget(param);
 		if (caseNode->expression) {
-			fxCoderAddByte(param, 1, XS_CODE_DUB);
+			fxCoderAddIndex(param, 1, XS_CODE_GET_LOCAL_1, value);
 			fxNodeDispatchCode(caseNode->expression, param);
 			fxCoderAddByte(param, -1, XS_CODE_STRICT_EQUAL);
 			fxCoderAddBranch(param, -1, XS_CODE_BRANCH_IF_1, caseNode->target);
@@ -4447,7 +4451,8 @@ void fxSwitchNodeCode(void* it, void* param)
 	if (self->scope->disposableNodeCount)
 		fxScopeCodeUsed(self->scope, coder, &context);
 	fxScopeCoded(self->scope, param);
-	fxCoderAddByte(param, -1, XS_CODE_POP);
+	
+	fxCoderUnuseTemporaryVariables(param, 1);
 }
 
 void fxTemplateNodeCode(void* it, void* param) 
