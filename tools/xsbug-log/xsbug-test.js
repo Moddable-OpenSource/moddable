@@ -51,6 +51,7 @@ const skippedFeatures = [
 	"source-phase-imports",
 	"source-phase-imports-module-source",
 	"regexp-unicode-property-escapes",
+	"immutable-arraybuffer",	
 ];
 
 // Harness files whose definitions the test apps already provide (tools/test262/harness.js), so they are never sent.

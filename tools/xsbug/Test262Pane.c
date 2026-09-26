@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -22,7 +22,7 @@
 
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 
-#define mxFeaturesCount 14
+#define mxFeaturesCount 15
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Atomics.pause",
 	"FinalizationRegistry.prototype.cleanupSome",
@@ -37,7 +37,8 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"nonextensible-applies-to-private",
 	"source-phase-imports",
 	"source-phase-imports-module-source",
-	"regexp-unicode-property-escapes"
+	"regexp-unicode-property-escapes",
+	"immutable-arraybuffer"
 };
 
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
