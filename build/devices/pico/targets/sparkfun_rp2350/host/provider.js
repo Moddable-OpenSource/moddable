@@ -18,23 +18,13 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import LEDneopixel from "led/neopixel";
 import NeoPixel from "neopixel";
 
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 17,
 			clock: 16,
 			port: 0
@@ -42,14 +32,14 @@ const device = {
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			receive: 1,
 			transmit: 0
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 22,
 			in: 23,
 			out: 20,
@@ -58,27 +48,26 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 26
 		},
 		A0: {
-			io: Analog,
+			io: "Analog",
 			pin: 26
 		},
 		A1: {
-			io: Analog,
+			io: "Analog",
 			pin: 27
 		},
 		A2: {
-			io: Analog,
+			io: "Analog",
 			pin: 28
 		},
 		A3: {
-			io: Analog,
+			io: "Analog",
 			pin: 29
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus },
 	pin: {
 		led: 25
 	},

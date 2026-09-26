@@ -1,16 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/rgb/manifest.json",
-		"$(MODDABLE)/modules/drivers/st7789/manifest.json"
-	],
-	"modules": {
-		"setup/target": "./setup-target"
-	},
-	"preload": [
-		"setup/target"
+		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
+		"$(IO)/digital/manifest.json",
+		"$(IO)/pwm/manifest.json"
 	],
 	"config": {
 		"screen": "st7789",

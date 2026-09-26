@@ -1,7 +1,4 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
 	"include": [
 		"$(IO)/analog/manifest.json",
 		"$(IO)/audioout/manifest.json",
@@ -10,35 +7,6 @@
 		"$(IO)/pulsecount/manifest.json",
 		"$(IO)/pwm/manifest.json",
 		"$(IO)/serial/manifest.json",
-		"$(IO)/spi/manifest.json",
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon",
-			"$(MODULES)/pins/digital/pico/modGPIO"
-		],
-		"system": "$(IO)/system/system",
-		"lockdown/device": "$(IO)/system/lockdowndevice"
-	},
-	"preload": [
-		"system",
-		"lockdown/device",
-		"embedded:provider/builtin"
-	],
-	"platforms": {
-		"pico/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"pico": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
-		},
-		"...": {
-			"error": "pico manifest"
-		}
-	}
+		"$(IO)/spi/manifest.json"
+	]
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -24,4 +24,13 @@
 
 import ILI9341 from "ili9341";
 
-export default ILI9341;
+class GC9A01 extends ILI9341 {
+	constructor(dictionary) {
+		super(dictionary);
+		// Square GC9A01 panels are circular; corner is the disk radius.
+		if (this.width === this.height)
+			this.corner ??= this.width >> 1;
+	}
+}
+
+export default GC9A01;

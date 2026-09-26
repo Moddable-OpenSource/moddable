@@ -18,15 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Backlight from "backlight";
 import Button from "button";
 import LED from "led/pwm";
@@ -37,7 +28,7 @@ class ButtonA {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonA,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -49,7 +40,7 @@ class ButtonB {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonB,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -61,7 +52,7 @@ class ButtonX {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonX,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -73,7 +64,7 @@ class ButtonY {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonY,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -85,7 +76,7 @@ class ButtonUP {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonUP,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -97,7 +88,7 @@ class ButtonDOWN {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonDOWN,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -109,7 +100,7 @@ class ButtonLEFT {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonLEFT,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -121,7 +112,7 @@ class ButtonRIGHT {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonRIGHT,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -133,7 +124,7 @@ class ButtonCENTER {
 			...options,
 			io: device.io.Digital,
 			pin: device.pin.buttonCENTER,
-			mode: Digital.InputPullUp,
+			mode: device.io.Digital.InputPullUp,
 			activeLow: true
 		});
 	}
@@ -142,7 +133,7 @@ class ButtonCENTER {
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 4,
 			clock: 5,
 			port: 0
@@ -150,7 +141,7 @@ const device = {
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 10,
 			out: 11,
 			port: 1
@@ -158,11 +149,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 26
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, SMBus, SPI },
 	pin: {
 		button: 15,
 		buttonA: 15,

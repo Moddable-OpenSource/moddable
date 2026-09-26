@@ -18,16 +18,6 @@
  *
  */
 
-import Analog from "embedded:io/analog";
-import Digital from "embedded:io/digital";
-import DigitalBank from "embedded:io/digitalbank";
-import I2C from "embedded:io/i2c";
-import PulseCount from "embedded:io/pulsecount";
-import PWM from "embedded:io/pwm";
-import Serial from "embedded:io/serial";
-import SMBus from "embedded:io/smbus";
-import SPI from "embedded:io/spi";
-
 import Backlight from "button";
 import LED from "led/pwm";
 import Touch from "embedded:sensor/Touch/FT6x06";
@@ -35,7 +25,7 @@ import Touch from "embedded:sensor/Touch/FT6x06";
 const device = {
 	I2C: {
 		default: {
-			io: I2C,
+			io: "I2C",
 			data: 4,
 			clock: 5,
 			port: 1
@@ -43,14 +33,14 @@ const device = {
 	},
 	Serial: {
 		default: {
-			io: Serial,
+			io: "Serial",
 			receive: 1,
 			transmit: 0
 		}
 	},
 	SPI: {
 		default: {
-			io: SPI,
+			io: "SPI",
 			clock: 10,
 			in: 8,
 			out: 11,
@@ -59,11 +49,10 @@ const device = {
 	},
 	Analog: {
 		default: {
-			io: Analog,
+			io: "Analog",
 			pin: 26
 		}
 	},
-	io: { Analog, Digital, DigitalBank, I2C, PulseCount, PWM, Serial, SMBus, SPI },
 	pin: {
 		displayDC: 7,
 		displaySelect: 9,
@@ -84,7 +73,7 @@ const device = {
 				constructor(options) {
 					return new LED({
 						...options,
-						io: PWM,
+						io: device.io.PWM,
 						pin: device.pin.led,
 						invert: true
 					});

@@ -9,7 +9,6 @@
 	"include": [
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/gc9a01/manifest.json"
 	], "modules": {
 		"setup/target": "./setup-target"

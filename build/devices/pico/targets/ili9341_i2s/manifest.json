@@ -4,22 +4,19 @@
 		"PICO_BOARD": "pico_w"
 	},
     "include": [
-		"$(MODULES)/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
 		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-        "$(MODULES)/drivers/ili9341/manifest.json",
-        "$(MODULES)/drivers/xpt2046/manifest.json"
+		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(MODULES)/drivers/xpt2046/manifest.json",
+		"$(IO)/pwm/manifest.json"
     ],
 	"modules": {
-		"setup/target": "./setup-target",
+		
         "*": [
             "$(PICO_SDK_DIR)/src/rp2_common/pico_cyw43_driver/cyw43_bus_pio_spi.pio"
         ]
     },
-	"preload": [
-		"setup/target"
-	],
 	"config": {
 		"screen": "ili9341",
 		"touch": "xpt2046",
