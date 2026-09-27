@@ -29,8 +29,8 @@ declare module "neopixel" {
         close(): void;
         update(): void;
 
-        makeRGB(r: number, g: number, b: number): number;
-        makeHSB(h: number, s: number, b: number): number;
+        makeRGB(r: number, g: number, b: number, w?: number): number;
+        makeHSB(h: number, s: number, b: number, w?: number): number;
         setPixel(index: number, color: number): void;
         fill(color: number, index?: number, count?: number): void;
         getPixel(index: number): number;
