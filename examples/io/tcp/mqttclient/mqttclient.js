@@ -271,7 +271,7 @@ class MQTTClient {
 		return (this.#writable > Overhead) ? (this.#writable - Overhead) : 0;
 	}
 	read(count = this.#payload) {
-		/** @type {BufferLike} */
+		/** @type {ByteBuffer} */
 		let buffer;
 		if ("object" === typeof count) {
 			buffer = count;
