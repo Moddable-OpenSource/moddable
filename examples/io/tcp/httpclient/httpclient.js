@@ -159,6 +159,9 @@ class HTTPClient {
 		if (!host) throw new Error("host required");
 		this.#host = host;
 		this.#onError = onError;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
 
 		const dns = new options.dns.io(options.dns);
 		dns.resolve({

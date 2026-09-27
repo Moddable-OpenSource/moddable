@@ -42,6 +42,9 @@ class Resolver {
 		this.#UDP = options.socket;
 		if (!this.#UDP || !this.#servers?.length)
 			throw new Error("invalid");
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
 	}
 	close() {
 		this.#socket?.close();
