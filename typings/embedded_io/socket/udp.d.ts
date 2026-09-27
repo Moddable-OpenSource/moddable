@@ -24,7 +24,7 @@ declare module "embedded:io/socket/udp" {
       port?: number;
       address?: string;
       onReadable?: (this: UDP, packets: number) => void;
-      onError?: () => void;
+      onError?: (this: UDP) => void;
       format?: "buffer";
       target?: any;
     } & ({} | {
