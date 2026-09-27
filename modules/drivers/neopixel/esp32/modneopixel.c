@@ -280,7 +280,7 @@ void xs_neopixel_makeHSB(xsMachine *the)
 	int w = 0;
 	int rgb, r, g;
 
-	if (32 == np->px.nbits)
+	if ((32 == np->nbits) && (xsmcArgc > 3))
 		w = xsmcToInteger(xsArg(3)) << np->whiteShift;
 
 	rgb = hsb_to_rgb_int(h, s, b);
