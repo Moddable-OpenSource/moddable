@@ -50,17 +50,17 @@ export default class EC {
 		let r = this._add(a, b);
 		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
-	_add(a, b) @ "xs_ec2_add";
+	_add(a, b) { return native("xs_ec2_add").call(this, a, b); }
 	mul(a, k) {
 		let r = this._mul(a, k);
 		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
-	_mul(a, k) @ "xs_ec2_mul";
+	_mul(a, k) { return native("xs_ec2_mul").call(this, a, k); }
 	mul2(a1, k1, a2, k2) {
 		let r = this._mul2(a1, k1, a2, k2);
 		return new ECPoint(r.x, r.y, r.z == 0n, this.m);
 	}
-	_mul2(a1, k1, a2, k2) @ "xs_ec2_mul2";
+	_mul2(a1, k1, a2, k2) { return native("xs_ec2_mul2").call(this, a1, k1, a2, k2); }
 };
 
 Object.freeze(EC.prototype);

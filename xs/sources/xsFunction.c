@@ -113,16 +113,13 @@ txBoolean fxIsCallable(txMachine* the, txSlot* slot)
 
 txBoolean fxIsFunction(txMachine* the, txSlot* instance)
 {
-again:
 	if (instance) {
 		txSlot* exotic = instance->next;
 		if (exotic && (exotic->flag & XS_INTERNAL_FLAG)) {
 			if (((exotic->kind == XS_CALLBACK_KIND) || (exotic->kind == XS_CALLBACK_X_KIND) || (exotic->kind == XS_CODE_KIND) || (exotic->kind == XS_CODE_X_KIND)))
 				return 1;
-			if (exotic->kind == XS_PROXY_KIND) {
-				instance = exotic->value.proxy.target;
-				goto again;
-			}
+			if ((exotic->kind == XS_PROXY_KIND) && (instance->flag & XS_CAN_CALL_FLAG))
+				return 1;
 		}
 	}
 	return 0;

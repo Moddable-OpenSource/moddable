@@ -1328,6 +1328,7 @@ void fxSuperNodeBind(void* it, void* param)
 void fxSwitchNodeBind(void* it, void* param) 
 {
 	txSwitchNode* self = it;
+	fxBinderPushVariables(param, 1);
 	fxNodeDispatchBind(self->expression, param);
 	fxScopeBinding(self->scope, param);
 	fxScopeBindDefineNodes(self->scope, param);
@@ -1337,6 +1338,7 @@ void fxSwitchNodeBind(void* it, void* param)
 	if (self->scope->disposableNodeCount)
 		fxBinderPopVariables(param, 2);
 	fxScopeBound(self->scope, param);
+	fxBinderPopVariables(param, 1);
 }
 
 void fxTargetNodeBind(void* it, void* param)

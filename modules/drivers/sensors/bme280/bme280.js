@@ -27,7 +27,7 @@
 	ECMA-419 compound sensor:
 	  sample() → {
 	    thermometer: { temperature },   // °C
-	    hygrometer:  { humidity },      // %RH
+	    hygrometer:  { humidity },      // 0 to 1
 	    barometer:   { pressure }       // Pa
 	  }
 */
@@ -308,7 +308,7 @@ class BME280 {
 		return p;
 	}
 
-	// Bosch floating-point humidity compensation; returns %RH
+	// Bosch floating-point humidity compensation; returns 0 to 1
 	#compensateH(adcH) {
 		if (adcH === 0x8000)
 			return undefined;
@@ -325,7 +325,7 @@ class BME280 {
 		else if (h < 0)
 			h = 0;
 
-		return h;
+		return h / 100;
 	}
 
 	static {

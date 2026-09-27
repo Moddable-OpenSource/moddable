@@ -3365,7 +3365,7 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_DECREMENT)
 			if (mxStack->kind == XS_INTEGER_KIND) {
-				if (mxStack->value.integer != -2147483647)
+				if (mxStack->value.integer != -2147483648)
 					mxStack->value.integer--;
 				else {
 					mxStack->kind = XS_NUMBER_KIND;

@@ -63,5 +63,5 @@ function sseWrite(msg) {
 	
 	const buffer = ArrayBuffer.fromString(parts.join("\n"));
 //	this.queue.push(buffer);
-	this.__proto__.write.call(this, buffer);
+	Object.getPrototypeOf(this).write.call(this, buffer);
 }

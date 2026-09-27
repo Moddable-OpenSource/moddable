@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022  Moddable Tech, Inc.
+ * Copyright (c) 2018-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -17,25 +17,25 @@
  *   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-class NeoPixel @ "xs_neopixel_destructor" {
-	constructor(dictionary) @ "xs_neopixel";
+class NeoPixel extends Native("xs_neopixel_destructor") {
+	constructor(dictionary) { super(); native("xs_neopixel").call(this, dictionary); }
 
-	close() @ "xs_neopixel_close";
-	update() @ "xs_neopixel_update";
+	close() { return native("xs_neopixel_close").call(this); }
+	update() { return native("xs_neopixel_update").call(this); }
 
-	makeRGB(r, g, b) @ "xs_neopixel_makeRGB";	// r, g, b are 0 to 255
-	makeHSB(h, s, b) @ "xs_neopixel_makeHSB";	// h is 0 to 359, s and b are 0 to 1000
+	makeRGB(r, g, b, w) { return native("xs_neopixel_makeRGB").call(this, r, g, b, w); }
+	makeHSB(h, s, b, w) { return native("xs_neopixel_makeHSB").call(this, h, s, b, w); }
 
-	setPixel(index, color) @ "xs_neopixel_setPixel";
-	fill(color, index, count) @ "xs_neopixel_fill";
+	setPixel(index, color) { return native("xs_neopixel_setPixel").call(this, index, color); }
+	fill(color, index, count) { return native("xs_neopixel_fill").call(this, color, index, count); }
 
-	getPixel(index) @ "xs_neopixel_getPixel";
+	getPixel(index) { return native("xs_neopixel_getPixel").call(this, index); }
 
-	set brightness(value) @ "xs_neopixel_brightness_set";
-	get brightness() @ "xs_neopixel_brightness_get";
+	set brightness(value) { native("xs_neopixel_brightness_set").call(this, value); }
+	get brightness() { return native("xs_neopixel_brightness_get").call(this); }
 
-	get length() @ "xs_neopixel_length_get";
-	get byteLength() @ "xs_neopixel_byteLength_get";
+	get length() { return native("xs_neopixel_length_get").call(this); }
+	get byteLength() { return native("xs_neopixel_byteLength_get").call(this); }
 }
 
 export default NeoPixel;

@@ -68,7 +68,7 @@ class SI7020  {
 		let ret = { hygrometer: {}, thermometer: {} };
 
 		let humid = this.#readValue(Register.HUMID_MEASURE_HOLD);
-		ret.hygrometer.humidity = (humid * 125.0 / 65536.0) - 6.0;
+		ret.hygrometer.humidity = ((humid * 125.0 / 65536.0) - 6.0) / 100;
 
 		let temp = this.#readValue(Register.TEMP_MEASURE_HOLD);
 		ret.thermometer.temperature = (temp * 175.72 / 65536.0) - 46.85;

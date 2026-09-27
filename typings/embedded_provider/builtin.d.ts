@@ -55,6 +55,12 @@ declare module "embedded:provider/builtin" {
     spi: { default: ConstructorParameters<typeof SPI>[0] };
     serial: { default: ConstructorParameters<typeof Serial>[0] };
     pin: { [name: string]: PinSpecifier };
+
+    readonly network: {
+      readonly http: {
+        readonly server: import("embedded:network/http/server").HTTPServerProvider;
+      };
+    };
   };
   export default device;
 }

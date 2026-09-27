@@ -198,10 +198,10 @@ const X509 = {
 		
 		return names;
 	},
-	decodeExtension(buf, extid) @ "xs_x509_decodeExtension",
+	decodeExtension(buf, extid) { return native("xs_x509_decodeExtension").call(this, buf, extid); },
 };
 
-function decodeSPKI(buf) @ "xs_x509_decodeSPKI";
+function decodeSPKI(buf) { return native("xs_x509_decodeSPKI").call(this, buf); }
 
 Object.freeze(X509);
 

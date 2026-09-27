@@ -26,7 +26,7 @@ Timer.repeat(() => {
 	const sample = humidity.sample();
 
 	trace(`Temperature: ${sample.thermometer.temperature.toFixed(2)} C `);
-	trace(`Humidity: ${sample.hygrometer.humidity.toFixed(2)} %RH\n`);
+	trace(`Humidity: ${(sample.hygrometer.humidity * 100).toFixed(2)} %RH\n`);
 
 }, 2000);
 

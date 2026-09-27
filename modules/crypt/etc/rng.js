@@ -36,8 +36,8 @@
  */
 
 const RNG = {
-	'get'(n) @ "xs_rng_get",
-	init(seed) @ "xs_rng_init",
+	'get'(n) { return native("xs_rng_get").call(this, n); },
+	init(seed) { return native("xs_rng_init").call(this, seed); },
 };
 
 Object.freeze(RNG);

@@ -31,9 +31,9 @@ function CtoF(c) { return (c*1.8)+32; }
 
 Timer.repeat(() => {
 	const h = humidity.sample();
-	trace(`humidity: ${h.hygrometer.humidity?.toFixed(2)} %RH, temperature: ${CtoF(h.thermometer.temperature)?.toFixed(2)} F\n`);
+	trace(`humidity: ${h.hygrometer.humidity == null ? undefined : (h.hygrometer.humidity * 100).toFixed(2)} %RH, temperature: ${CtoF(h.thermometer.temperature)?.toFixed(2)} F\n`);
 	sensor.configure({
-		humidity: h.hygrometer.humidity,
+		humidity: h.hygrometer.humidity * 100,
 		temperature: h.thermometer.temperature
 	});
 

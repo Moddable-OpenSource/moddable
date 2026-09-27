@@ -360,8 +360,8 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	instance = fxNewObjectInstance(the);
 	mxPush(mxObjectPrototype);
 	result = fxNewObjectInstance(the);
-	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_NO_FLAG);
-	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_NO_FLAG);
+	property = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	property = fxNextBooleanProperty(the, property, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	property = fxNextSlotProperty(the, instance, the->stack, id, XS_INTERNAL_FLAG);
 	property = fxNextSlotProperty(the, property, iterable, XS_NO_ID, XS_INTERNAL_FLAG);
 	property = fxNextIntegerProperty(the, property, 0, XS_NO_ID, XS_INTERNAL_FLAG);
@@ -1308,8 +1308,8 @@ void fxNewGeneratorResult(txMachine* the, txBoolean done)
 	txSlot* slot;
 	mxPush(mxObjectPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
-	slot = fxNextSlotProperty(the, slot, value, mxID(_value), XS_NO_FLAG);
-	slot = fxNextBooleanProperty(the, slot, done, mxID(_done), XS_NO_FLAG);
+	slot = fxNextSlotProperty(the, slot, value, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextBooleanProperty(the, slot, done, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	mxPullSlot(value);
 }
 
@@ -1445,8 +1445,8 @@ void fx_Enumerator(txMachine* the)
 	mxPullSlot(mxResult);
 	mxPush(mxObjectPrototype);
 	result = fxNewObjectInstance(the);
-	slot = fxNextUndefinedProperty(the, result, mxID(_value), XS_NO_FLAG);
-	slot = fxNextBooleanProperty(the, slot, 0, mxID(_done), XS_NO_FLAG);	
+	slot = fxNextUndefinedProperty(the, result, mxID(_value), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
+	slot = fxNextBooleanProperty(the, slot, 0, mxID(_done), XS_DONT_DELETE_FLAG | XS_DONT_SET_FLAG);
 	slot = fxNextSlotProperty(the, iterator, the->stack, mxID(_result), XS_GET_ONLY);
 	mxPop();
 	

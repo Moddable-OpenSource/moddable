@@ -56,7 +56,7 @@ class AM2320  {
 
 		let humidity = this.#readValue(Register.HUMID_MEASURE);
 		if (undefined !== humidity)
-			result.hygrometer.humidity = (humidity / 10.0);
+			result.hygrometer.humidity = (humidity / 1000.0);
 
 		let temperature = this.#readValue(Register.TEMP_MEASURE);
 		if (undefined !== temperature) {

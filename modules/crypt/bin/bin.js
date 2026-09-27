@@ -69,8 +69,8 @@ const Bin = {
 		return r.buffer;
 	},
 */
-	xor (a, b) @ "xs_crypt_bin_xor",
-	comp (a, b, n) @ "xs_crypt_bin_comp"
+	xor(a, b) { return native("xs_crypt_bin_xor").call(this, a, b); },
+	comp(a, b, n) { return native("xs_crypt_bin_comp").call(this, a, b, n); },
 };
 
 Object.freeze(Bin);

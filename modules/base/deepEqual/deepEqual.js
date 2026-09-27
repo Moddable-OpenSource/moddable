@@ -18,6 +18,6 @@
  *
  */
  
-function deepEqual(a, b, options) @ "fx_deepEqual";
+function deepEqual(a, b, options) { return native("fx_deepEqual").call(this, a, b, options); }
 
 export default deepEqual;

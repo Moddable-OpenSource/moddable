@@ -39,13 +39,13 @@
 	crypt
 */
 
-export class Digest @ "xs_crypt_Digest_destructor" {
-	constructor(type) @ "xs_crypt_Digest";
-	write(data) @ "xs_crypt_Digest_write";
-	close(more) @ "xs_crypt_Digest_close";
-	reset() @ "xs_crypt_Digest_reset";
-	get blockSize() @ "xs_crypt_Digest_get_blockSize";
-	get outputSize() @ "xs_crypt_Digest_get_outputSize";
+export class Digest extends Native("xs_crypt_Digest_destructor") {
+	constructor(type) { super(); native("xs_crypt_Digest").call(this, type); }
+	write(data) { return native("xs_crypt_Digest_write").call(this, data); }
+	close(more) { return native("xs_crypt_Digest_close").call(this, more); }
+	reset() { return native("xs_crypt_Digest_reset").call(this); }
+	get blockSize() { return native("xs_crypt_Digest_get_blockSize").call(this); }
+	get outputSize() { return native("xs_crypt_Digest_get_outputSize").call(this); }
 	process() {
 		this.reset();
 		for (let i = 0; i < arguments.length; i++)
@@ -62,31 +62,31 @@ export class GHASH extends Digest {
 		super("GHASH");
 		this._init(h, aad);
 	};
-	_init(h, aad) @ "xs_ghash_init";
+	_init(h, aad) { return native("xs_ghash_init").call(this, h, aad); }
 };
 
-export class BlockCipher @ "xs_crypt_cipher_destructor" {
-	constructor(cipher, key) @ "xs_crypt_cipher_constructor";
-	encrypt(data, result) @ "xs_crypt_cipher_encrypt";
-	decrypt(data, result) @ "xs_crypt_cipher_decrypt";
-	get keySize() @ "xs_crypt_cipher_get_keySize";
-	get blockSize() @ "xs_crypt_cipher_get_blockSize";
+export class BlockCipher extends Native("xs_crypt_cipher_destructor") {
+	constructor(cipher, key) { super(); native("xs_crypt_cipher_constructor").call(this, cipher, key); }
+	encrypt(data, result) { return native("xs_crypt_cipher_encrypt").call(this, data, result); }
+	decrypt(data, result) { return native("xs_crypt_cipher_decrypt").call(this, data, result); }
+	get keySize() { return native("xs_crypt_cipher_get_keySize").call(this); }
+	get blockSize() { return native("xs_crypt_cipher_get_blockSize").call(this); }
 };
 
-export class StreamCipher @ "xs_crypt_streamcipher_destructor" {
-	constructor(cipher, key) @ "xs_crypt_streamcipher_constructor";
-	encrypt(data, result, count) @ "xs_crypt_streamcipher_process";
-	decrypt(data, result, count) @ "xs_crypt_streamcipher_process";
-	setIV(iv, counter) @ "xs_crypt_streamcipher_setIV";
+export class StreamCipher extends Native("xs_crypt_streamcipher_destructor") {
+	constructor(cipher, key, iv, counter) { super(); native("xs_crypt_streamcipher_constructor").call(this, cipher, key, iv, counter); }
+	encrypt(data, result, count) { return native("xs_crypt_streamcipher_process").call(this, data, result, count); }
+	decrypt(data, result, count) { return native("xs_crypt_streamcipher_process").call(this, data, result, count); }
+	setIV(iv, counter) { return native("xs_crypt_streamcipher_setIV").call(this, iv, counter); }
 };
 
-export class Mode @ "xs_crypt_mode_delete" {
-	constructor(mode, cipher, iv, pad) @ "xs_crypt_mode_constructor";
-	encrypt(data, result, count) @ "xs_crypt_mode_encrypt";
-	decrypt(data, result, count) @ "xs_crypt_mode_decrypt";
-	setIV(iv) @ "xs_crypt_mode_setIV";
-	get eof() @ "xs_crypt_mode_get_eof";
-	set eof() @ "xs_crypt_mode_set_eof";
+export class Mode extends Native("xs_crypt_mode_delete") {
+	constructor(mode, cipher, iv, pad) { super(); native("xs_crypt_mode_constructor").call(this, mode, cipher, iv, pad); }
+	encrypt(data, result, count) { return native("xs_crypt_mode_encrypt").call(this, data, result, count); }
+	decrypt(data, result, count) { return native("xs_crypt_mode_decrypt").call(this, data, result, count); }
+	setIV(iv) { return native("xs_crypt_mode_setIV").call(this, iv); }
+	get eof() { return native("xs_crypt_mode_get_eof").call(this); }
+	set eof(it) { native("xs_crypt_mode_set_eof").call(this, it); }
 };
 
 export default Object.freeze({Digest, BlockCipher, Mode, StreamCipher, GHASH});

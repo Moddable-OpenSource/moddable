@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -22,34 +22,34 @@
 	ili9341 and ili9163c SPI display controller
 */
 
-export default class ILI9341 @ "xs_ILI9341_destructor" {
-	constructor(dictionary) @ "xs_ILI9341";
+export default class ILI9341 extends Native("xs_ILI9341_destructor") {
+	constructor(dictionary) { super(); native("xs_ILI9341").call(this, dictionary); }
 
-	begin(x, y, width, height) @ "xs_ILI9341_begin";
-	send(pixels, offset, count) @ "xs_ILI9341_send";
-	end() @  "xs_ILI9341_end";
+	begin(x, y, width, height) { return native("xs_ILI9341_begin").call(this, x, y, width, height); }
+	send(pixels, offset, count) { return native("xs_ILI9341_send").call(this, pixels, offset, count); }
+	end() { return native("xs_ILI9341_end").call(this); }
 
-	adaptInvalid() @ "xs_ILI9341_adaptInvalid";
+	adaptInvalid(r) { return native("xs_ILI9341_adaptInvalid").call(this, r); }
 	continue() {}
 
-	pixelsToBytes(count) @ "xs_ILI9341_pixelsToBytes";
+	pixelsToBytes(count) { return native("xs_ILI9341_pixelsToBytes").call(this, count); }
 
-	get pixelFormat() @ "xs_ILI9341_get_pixelFormat";
-	get width() @ "xs_ILI9341_get_width";
-	get height() @ "xs_ILI9341_get_height";
+	get pixelFormat() { return native("xs_ILI9341_get_pixelFormat").call(this); }
+	get width() { return native("xs_ILI9341_get_width").call(this); }
+	get height() { return native("xs_ILI9341_get_height").call(this); }
 	get async() {return true;}
 
-	get clut() @ "xs_ILI9341_get_clut";
-	set clut() @ "xs_ILI9341_set_clut";
+	get clut() { return native("xs_ILI9341_get_clut").call(this); }
+	set clut(value) { native("xs_ILI9341_set_clut").call(this, value); }
 
-	get rotation() @ "xs_ILI9341_get_rotation";
-	set rotation() @ "xs_ILI9341_set_rotation";
+	get rotation() { return native("xs_ILI9341_get_rotation").call(this); }
+	set rotation(value) { native("xs_ILI9341_set_rotation").call(this, value); }
 
-	get c_dispatch() @ "xs_ILI9341_get_c_dispatch";
+	get c_dispatch() { return native("xs_ILI9341_get_c_dispatch").call(this); }
 
 	// driver specific
-	command(id, data) @ "xs_ILI9341_command";
+	command(id, data) { return native("xs_ILI9341_command").call(this, id, data); }
 
-	close() @ "xs_ILI9341_close";
+	close() { return native("xs_ILI9341_close").call(this); }
 }
 

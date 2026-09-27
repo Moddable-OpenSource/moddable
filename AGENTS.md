@@ -1,6 +1,6 @@
 # AGENTS.md
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: August 15, 2026
+Revised: September 22, 2026
 
 > **Note**: This document was written by an LLM for LLMs.
 
@@ -78,12 +78,14 @@ mcconfig -dl -m -p sim
 - `-m` run `make`. **Required with every `-t` target, not just the default.** Without it `mcconfig` writes the makefile, prints nothing, and exits 0 — which is indistinguishable from a successful build or a program that produced no output. If a command you expected to do work returns instantly and silently, this is why.
 - `-p <platform>` target platform; defaults to the host
 - `-t build|deploy|xsbug|clean|all` target, default `all`
-- trailing `key="value"` pairs merge into the manifest `config` section, readable as `import config from "mc/config"`
+- trailing `key="value"` pairs merge into the manifest `config` section, readable at runtime as `import config from "mc/config"`
 
 Two `-t` targets are worth knowing, because using them instead of the default is the difference between a fast loop and a slow one:
 
 - **`-t build` is how you check that code compiles.** It runs the real build — `xsc` and `xsl` over every module, TypeScript type-checked where present — and stops before launching anything. This is the syntax and type check for a project; there is no separate lint or check step to reach for, and nothing here corresponds to `node --check`.
-- **`-t xsbug` starts a debug session against the build that already exists**, skipping compile and deploy entirely. On a device this avoids re-flashing the binary, which dominates the edit-run cycle. Despite the name it works with `-dl` and xsdb, not just the xsbug GUI.
+- **`-t xsbug` starts a debug session against the build that already exists**, skipping compile and deploy entirely. On a device this avoids re-flashing the binary, which dominates the edit-run cycle. Despite the name it works with `-dl` and xsdb, not just the xsbug GUI. **It does nothing on `-p sim`**, where it exits successfully having printed nothing at all — which reads as a hang or a crash rather than an unsupported target. Use the default target for the simulator.
+
+Additionally, **`-t clean` removes all build artifacts** and is preferred to manually deleting build output directories.
 
 Splitting the two — `-t build` to compile, then `-t xsbug` to run — is usually the right shape for automated or scripted work: only the build is slow, and it needs no timing guesswork, while launch and connect take well under a second.
 
@@ -94,6 +96,14 @@ mcconfig -dl -m -p sim -t xsbug                          # run the build just ma
 ```
 
 The debug flag has to agree across the two: `-t xsbug` launches the build matching the flag you pass it, so a `-d`/`-dl` build is what `-dl -t xsbug` will find. A release build is not debuggable at all.
+
+**A project is identified by the name of its directory, not by its path.** `mcconfig` sets `NAME` from the last component of the project directory and uses it alone to place output, in `build/tmp/<platform>/…/<NAME>` and `build/bin/<platform>/…/<NAME>`. Two projects whose directories happen to share a name therefore build over each other, no matter where they live in the file system. Nothing warns you: the build succeeds, and the project runs the other one's code. If a project behaves as though your edits had no effect — or traces output belonging to something else entirely — check for a name collision before you debug anything else. This bites hardest when creating scratch projects, where `test`, `app`, and `client` are tempting names; give each one a distinctive directory name instead. Alternatively, override the default name with a unique `NAME` in the manifest:
+
+```json
+"build": {
+	"NAME": "scratch-test-irandom-12"
+}
+```
 
 **`mcpack`** builds projects that have a `package.json`. It generates a manifest and chains to `mcconfig` (for applications) or `mcrun` (for mods):
 
@@ -271,17 +281,36 @@ Read [documentation/xs/preload.md](./documentation/xs/preload.md) before adding 
 
 ## Tests
 
-Tests live in [tests](./tests) — `modules/` mirrors `modules/`, `xs/` covers the engine, and `contributed/`. They are written in test262 format with YAML frontmatter, and **all Moddable tests use `flags: [module]`**. Reference: [documentation/tools/testing.md](./documentation/tools/testing.md).
+Tests live in [tests](./tests) — `modules/` mirrors `modules/`, `xs/` covers the engine, and `contributed/`. They are written in test262 format with YAML frontmatter. Reference: [documentation/tools/testing.md](./documentation/tools/testing.md).
+
+**The `flags` line differs by subtree**, so copy it from a neighboring test rather than assuming one. `tests/xs` is almost entirely `flags: [onlyStrict]`, because those are language tests that run as scripts. `tests/modules` is mixed: `[module]` for the SDK module tests, `[onlyStrict]` for the Piu and web platform tests.
 
 Two things to know before trying to run them:
 
 - **Tests require a debug build.** The test runner communicates over the xsbug channel, so release builds cannot run tests.
-- **The `tests` suite runs only through the xsbug GUI test runner.** There is no headless runner for it in this repository — test selection, execution, and reporting are all xsbug UI operations. Running it also requires a test262 checkout with `$MODDABLE/tests` copied into it.
+- **Tests do not run on their own.** They execute inside a test app, which a debugger drives: [tools/test262](./tools/test262) for the language tests in `tests/xs` and for the TEST262 suite, [tools/testmc](./tools/testmc) for the SDK module tests in `tests/modules`. The two are not interchangeable — see below.
 
-What is available headless:
+### Running tests headlessly
 
-- `xst` runs test262 cases directly from the command line on the host. See [documentation/xs/xst.md](./documentation/xs/xst.md).
+**xsdb is a test runner, so the suite does not need the xsbug GUI.** Build a test app with `-dl` and use `test`. Paths are relative to `$MODDABLE/tests`, so nothing has to be copied into a test262 checkout:
+
+```shell
+cd $MODDABLE/tools/test262
+mcconfig -dl -m -p sim
+(xsdb) test xs/built-ins/Math
+xs/built-ins/Math: 6 tests, FAIL 0, PASS 6, SKIP 0 (1.2s)
+```
+
+The same commands run the tests on a device — build the app with `-p esp32/<target>` instead. `info tests` lists the failures of the last run, and every run also writes a report `.txt` into the project directory; those are untracked, so delete the ones you create. `set test262 <path>` points at a test262 checkout, whose `harness` then also supplies the `includes:` of the Moddable tests; without it the fallback copies in [tools/test262/harness](./tools/test262/harness) are used. Only the xsbug GUI requires a test262 checkout with `$MODDABLE/tests` copied into it.
+
+Also available headless:
+
+- `xst` runs test262 cases directly on the host, and is by far the fastest way to iterate while writing one. It looks for the harness at `../harness` relative to the working directory, so run it from a `test` directory that has a sibling `harness` — a scratch tree holding a copy of the harness and the cases works, and leaves the checkout alone. See [documentation/xs/xst.md](./documentation/xs/xst.md).
 - [tools/test-examples](./tools/test-examples) builds, installs, and launches every project in a tree, passing if nothing throws. It drives execution through xsdb.
+
+### The two test apps are not interchangeable
+
+**[tools/test262](./tools/test262) preloads nothing, while [tools/testmc](./tools/testmc) preloads modules — and preloading freezes the built-ins** (see [`preload`](#preload--code-that-runs-at-build-time)). Under `testmc`, `Object.isFrozen(Math)` is therefore `true` and the properties of `Math` are neither writable nor configurable; under the test262 app they are. A language test that checks property attributes passes in one app and fails in the other with `descriptor should be writable`, which reads as an engine bug rather than as the wrong app. Run `tests/xs` under the test262 app.
 
 ## Native code
 
@@ -316,4 +345,4 @@ Note that [documentation/io/io.md](./documentation/io/io.md) is *not* a referenc
 - [documentation/readme.md](./documentation/readme.md) — API reference, organized per module. **Incomplete**: it omits `documentation/io/` entirely, along with the board guides and the driver documentation. List the directory rather than trusting this index alone.
 - [examples/readme.md](./examples/readme.md) — building and running examples, screen formats, Wi-Fi configuration.
 - [documentation/tools/tools.md](./documentation/tools/tools.md) — `mcconfig`, `mcrun`, `mcrez`, `png2bmp`, `xsc`, `xsl`, the simulator, xsdb, and `test-examples`.
-- [typings](./typings) — TypeScript declarations. Projects including `examples/manifest_base.json` get them automatically; `mcconfig` compiles TypeScript itself.
+- [typings](./typings) — TypeScript declarations. Projects including `examples/manifest_base.json` get them automatically; `mcconfig` compiles TypeScript itself. `mcpack` relies on `npm run build` compiling TypeScript **before** `mcpack` run (see [ts-hello](./examples/packages/ts-hello) for an example).

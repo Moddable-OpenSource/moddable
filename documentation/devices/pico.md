@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2026 Moddable Tech, Inc.<BR>
-Revised: August 4, 2026
+Revised: September 25, 2026
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -165,19 +165,19 @@ The Raspberry Pi Pico 2 has the following features:
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.3.1 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.3.1 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.3.1 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:
@@ -286,19 +286,19 @@ Not yet available.
 
 	```text
 	cd $HOME/pico
-	git clone -b 2.2.0 https://github.com/raspberrypi/pico-sdk
+	git clone -b 2.3.1 https://github.com/raspberrypi/pico-sdk
 	cd pico-sdk
 	git submodule update --init
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-extras
+	git clone -b sdk-2.3.1 https://github.com/raspberrypi/pico-extras
 	```
 
 	```text
 	cd $HOME/pico
-	git clone -b sdk-2.2.0 https://github.com/raspberrypi/pico-examples
+	git clone -b sdk-2.3.1 https://github.com/raspberrypi/pico-examples
 	```
 
 6. Set the `PICO_SDK_DIR` environment variable to point to the Pico SDK directory:

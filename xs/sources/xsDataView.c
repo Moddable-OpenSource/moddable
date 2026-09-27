@@ -470,6 +470,10 @@ void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, txInteger
 	instance = the->stack->value.reference;
 	if (!(instance->next) || (instance->next->kind != XS_ARRAY_BUFFER_KIND))
 		mxTypeError("not an ArrayBuffer instance");
+	if (instance->next->value.arrayBuffer.address == C_NULL)
+		mxTypeError("detached buffer");
+	if (instance->next->flag & XS_DONT_SET_FLAG)
+		mxTypeError("read-only buffer");
 	if (!constructor && (mxThis->value.reference == instance))
 		mxTypeError("same ArrayBuffer instance");
 	if (instance->next->next->value.bufferInfo.length < length)
@@ -691,23 +695,26 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 		i++;
 	}
 	fxConstructArrayBufferResult(the, C_NULL, length);
-	arrayBuffer = instance->next;
-	bufferInfo = arrayBuffer->next;
 	address = mxResult->value.reference->next->value.arrayBuffer.address;
-	length = bufferInfo->value.bufferInfo.length;
-	c_memcpy(address, arrayBuffer->value.arrayBuffer.address, length);
-	address += length;
-	i = 0;
-	while (i < c) {
-		slot = mxArgv(i)->value.reference->next;
-		bufferInfo = slot->next;
-		length = bufferInfo->value.bufferInfo.length;
+	slot = instance->next;
+	i = -1;
+	while (length > 0) {
+		txByte* from;
+		txInteger count;
 		if (slot->kind == XS_ARRAY_BUFFER_KIND)
-			c_memcpy(address, slot->value.arrayBuffer.address, length);
+			from = slot->value.arrayBuffer.address;
 		else
-			c_memcpy(address, slot->value.host.data, length);
-		address += length;
-		i++;
+			from = slot->value.host.data;
+		count = (from) ? slot->next->value.bufferInfo.length : 0;
+		if (count > length)
+			count = length;
+		if (count > 0)
+			c_memmove(address, from, count);
+		address += count;
+		length -= count;
+		if (++i >= c)
+			break;
+		slot = mxArgv(i)->value.reference->next;
 	}
 }
 
@@ -750,13 +757,15 @@ void fx_ArrayBuffer_prototype_slice(txMachine* the)
 	if (stop < start) 
 		stop = start;
 	fxConstructArrayBufferResult(the, C_NULL, stop - start);
-	resultBuffer = fxCheckArrayBufferDetached(the, mxResult);
-	fxCheckArrayBufferMutable(the, mxResult);
+	resultBuffer = mxResult->value.reference->next;
 	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis);
 	bufferInfo = arrayBuffer->next;
-	if (bufferInfo->value.bufferInfo.length < stop)
-		mxTypeError("resized this");
-	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
+	length = bufferInfo->value.bufferInfo.length;
+	if (start < length) {
+		if (stop > length)
+			stop = length;
+		c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address + start, stop - start);
+	}
 }
 
 void fx_ArrayBuffer_prototype_sliceToImmutable(txMachine* the)
@@ -790,10 +799,13 @@ static void fx_ArrayBuffer_prototype_transferAux(txMachine* the, txFlag flag)
 	txInteger maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	txInteger newByteLength = fxArgToByteLength(the, 0, oldByteLength);
 	txSlot* resultBuffer;
-	fxConstructArrayBufferResult(the, &mxArrayBufferConstructor, newByteLength);
-	resultBuffer = fxCheckArrayBufferDetached(the, mxResult);
+	oldByteLength = bufferInfo->value.bufferInfo.length;	// ToIndex may have resized this
 	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis);
 	fxCheckArrayBufferMutable(the, mxThis);
+	if (!(flag & 1) && (maxByteLength >= 0) && (newByteLength > maxByteLength))
+		mxRangeError("newLength > maxByteLength");
+	fxConstructArrayBufferResult(the, &mxArrayBufferConstructor, newByteLength);
+	resultBuffer = mxResult->value.reference->next;
 	c_memcpy(resultBuffer->value.arrayBuffer.address, arrayBuffer->value.arrayBuffer.address, (newByteLength < oldByteLength) ? newByteLength : oldByteLength);
 	if (newByteLength > oldByteLength)
 		c_memset(resultBuffer->value.arrayBuffer.address + oldByteLength, 0, newByteLength - oldByteLength);
@@ -1544,7 +1556,7 @@ void fx_TypedArray(txMachine* the)
 				size = fxArgToByteLength(the, 2, -1);
 				info = fxGetBufferInfo(the, mxArgv(0));
 				if (size >= 0) {
-					txInteger delta = size << shift;		//@@ overflow
+					txInteger delta = (size <= (INT_MAX >> shift)) ? size << shift : -1;
 					txInteger end = fxAddChunkSizes(the, offset, delta);
 					if ((info->value.bufferInfo.length < end) || (end < offset))
 						mxRangeError("invalid length %ld", size);
@@ -1577,6 +1589,8 @@ void fx_TypedArray(txMachine* the)
 				txInteger sourceDelta = sourceDispatch->value.typedArray.dispatch->size;
 				txInteger sourceOffset = sourceView->value.dataView.offset;
 				txInteger offset = 0;
+				if (sourceLength > (INT_MAX >> shift))
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 				txInteger size = sourceLength << shift;
 				/* TARGET */
 				mxPush(mxArrayBufferConstructor);
@@ -1942,19 +1956,20 @@ void fx_TypedArray_prototype_every(txMachine* the)
 void fx_TypedArray_prototype_fill(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
-	txInteger delta = dispatch->value.typedArray.dispatch->size;
-	txInteger start = fxArgToIndexInteger(the, 1, 0, length);
-	txInteger end = fxArgToIndexInteger(the, 2, length, length);
-	txInteger offset = view->value.dataView.offset;
-	start *= delta;
-	end *= delta;
-	start += offset;
-	end += offset;
+	txInteger delta, start, end, offset;
 	if (mxArgc > 0)
 		mxPushSlot(mxArgv(0));
 	else
 		mxPushUndefined();
 	(*dispatch->value.typedArray.dispatch->coerce)(the, the->stack);
+	delta = dispatch->value.typedArray.dispatch->size;
+	start = fxArgToIndexInteger(the, 1, 0, length);
+	end = fxArgToIndexInteger(the, 2, length, length);
+	offset = view->value.dataView.offset;
+	start *= delta;
+	end *= delta;
+	start += offset;
+	end += offset;
 	txInteger size = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) & ~(delta - 1);
 	if (end > offset + size)
 		end = offset + size;
@@ -2375,8 +2390,8 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		else 
 			mxPushUndefined();
 		if (dispatch->value.typedArray.dispatch == sourceDispatch->value.typedArray.dispatch) {
-            if (data->value.arrayBuffer.address == C_NULL)
-                mxTypeError("detached buffer");
+			if (data->value.arrayBuffer.address == C_NULL)
+				mxTypeError("detached buffer");
 			c_memcpy(data->value.arrayBuffer.address + offset, sourceData->value.arrayBuffer.address + sourceOffset, limit - offset);
 			mxMeterSome(((txU4)(limit - offset)) * 2);
 		}
@@ -3715,10 +3730,10 @@ void fx_Uint8Array_prototype_setFromHex(txMachine* the)
 		mxTypeError("this: not a Uint8Array instance");
 	if ((mxArgc < 1) || !mxIsStringPrimitive(mxArgv(0)))
 		mxTypeError("string: not a string");
+	dstSize = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
 	srcSize = (txSize)c_strlen(mxArgv(0)->value.string);
 	if (srcSize & 1)
 		mxSyntaxError("string: odd length");
-	dstSize = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
 	src = (txU1*)(mxArgv(0)->value.string);
 	dst = (txU1*)(buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset);
 	fxUint8ArrayFromHex(the, src, dst, &srcSize, &dstSize);

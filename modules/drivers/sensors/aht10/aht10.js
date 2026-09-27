@@ -88,7 +88,7 @@ class AHT10 {
 
 		let h = (vBuf[1] << 12) | (vBuf[2] << 4) | ((vBuf[3] & 0xF0) >> 4);
 		let t = ((vBuf[3] & 0x0F) << 16) | (vBuf[4] << 8) | vBuf[5];
-		ret.hygrometer.humidity = ((h * 625) >> 16) / 100;
+		ret.hygrometer.humidity = h / 1_048_576;
 		ret.thermometer.temperature = (((t * 625) >> 15) / 100) - 50;
 
 		return ret;

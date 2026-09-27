@@ -58,12 +58,12 @@ export default class Modular {
 	mulinv(a) {
 		return this._mulinv_general(a, this.m);
 	}
-	_mulinv_general(a, m) @ "xs_mod2_mulinv_general";
-	_mulinv_euclid(a, m) @ "xs_mod2_mulinv_euclid";
+	_mulinv_general(a, m) { return native("xs_mod2_mulinv_general").call(this, a, m); }
+	_mulinv_euclid(a, m) { return native("xs_mod2_mulinv_euclid").call(this, a, m); }
 	exp(a, e) {
 		return this._exp(a, e, this.m);
 	}
-	_exp(a, e, m) @ "xs_mod2_exp";
+	_exp(a, e, m) { return native("xs_mod2_exp").call(this, a, e, m); }
 	mod(a) {
 		return a % this.m;
 	}

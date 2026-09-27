@@ -49,8 +49,8 @@ class Mont extends Modular {
 		else
 			return this._exp_SW(a, e, this.m, this.sw_param);
 	}
-	_exp_LR(a, e, m) @ "xs_mont2_exp_LR";
-	_exp_SW(a, e, m, sw_param) @ "xs_mont2_exp_SW";
+	_exp_LR(a, e, m) { return native("xs_mont2_exp_LR").call(this, a, e, m); }
+	_exp_SW(a, e, m, sw_param) { return native("xs_mont2_exp_SW").call(this, a, e, m, sw_param); }
 };
 
 Mont.prototype.LR = 0;
