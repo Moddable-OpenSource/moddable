@@ -56,14 +56,14 @@ Timer.repeat(() => {
 		return;
 
 	const sample = Uint16Array.of(CTRLX);
-	spi.transfer(sample);
+	spi.transfer(sample.buffer);
 	let x = sample[0] >> 4;
 
 	sample[0] = CTRLY;
-	spi.transfer(sample);
+	spi.transfer(sample.buffer);
 	let y = sample[0] >> 4;
 
-	spi.write(Uint32Array.of(0));
+	spi.write(Uint32Array.of(0).buffer);
 
 	spi.write(Uint8Array.of(CTRL_RESET));
 	spi.flush(true);
