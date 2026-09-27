@@ -1915,11 +1915,9 @@ export class TSConfigFile extends PrerequisiteFile {
 		const json = {
 			...tool.typescript.tsconfig,
 			compilerOptions: {
-				rootDir: tool.mainPath,
 				forceConsistentCasingInFileNames: true,
 				module: "preserve",
 				resolveJsonModule: true,
-				outDir: tool.modulesPath,
 				paths: {
 				},
 				lib: ["es2025", "esnext.disposable"],
