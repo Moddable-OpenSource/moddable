@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -28,27 +28,27 @@
 // from device measurements
 const frameRate = Uint8Array.of(114,108,102,96,91,87,83,79,76,73,70,67,65,63,61,59,57,55,53,52,50,49,48,46,45,44,43,42,41,40,39,38);
 
-export default class ILI9341 @ "xs_ILI9341p8_destructor" {
-	constructor(options) @ "xs_ILI9341p8";
+export default class ILI9341 extends Native("xs_ILI9341p8_destructor") {
+	constructor(options) { super(); native("xs_ILI9341p8").call(this, options); }
 
-	begin(x, y, width, height) @ "xs_ILI9341p8_begin";
-	send(pixels, offset, count) @ "xs_ILI9341p8_send";
-	end() @ "xs_ILI9341p8_end";
+	begin(x, y, width, height) { return native("xs_ILI9341p8_begin").call(this, x, y, width, height); }
+	send(pixels, offset, count) { return native("xs_ILI9341p8_send").call(this, pixels, offset, count); }
+	end() { return native("xs_ILI9341p8_end").call(this); }
 
 	adaptInvalid() {}
-	continue() @ "xs_ILI9341p8_continue";
+	continue() { return native("xs_ILI9341p8_continue").call(this); }
 
-	pixelsToBytes(count) @ "xs_ILI9341p8_pixelsToBytes";
+	pixelsToBytes(count) { return native("xs_ILI9341p8_pixelsToBytes").call(this, count); }
 
-	get pixelFormat() @ "xs_ILI9341p8_get_pixelFormat";
-	get width() @ "xs_ILI9341p8_get_width";
-	get height() @ "xs_ILI9341p8_get_height";
+	get pixelFormat() { return native("xs_ILI9341p8_get_pixelFormat").call(this); }
+	get width() { return native("xs_ILI9341p8_get_width").call(this); }
+	get height() { return native("xs_ILI9341p8_get_height").call(this); }
 	get async() {return true;}
 
-	get c_dispatch() @ "xs_ILI9341p8_get_c_dispatch";
+	get c_dispatch() { return native("xs_ILI9341p8_get_c_dispatch").call(this); }
 
 	// driver specific
-	command(id, data) @ "xs_ILI9341p8_command";
+	command(id, data) { return native("xs_ILI9341p8_command").call(this, id, data); }
 	set frameRate(value) {
 		let i = 0, length = frameRate.length - 1;
 		for (; i < length; i++) {
@@ -56,15 +56,15 @@ export default class ILI9341 @ "xs_ILI9341p8_destructor" {
 				break;
 		}
 		this._frameRate = frameRate[i];
-		return this.command(0xc6, Uint8Array.of(i))
+		this.command(0xc6, Uint8Array.of(i))
 	}
 	get frameRate() {
 		return this._frameRate ?? 50;
 	}
-	set syncFrames(value) @ "xs_ili9341p8_set_syncFrames";
-	get syncFrames() @ "xs_ili9341p8_get_syncFrames";
+	set syncFrames(value) { native("xs_ili9341p8_set_syncFrames").call(this, value); }
+	get syncFrames() { return native("xs_ili9341p8_get_syncFrames").call(this); }
 
-	close() @ "xs_ILI9341p8_close";
+	close() { return native("xs_ILI9341p8_close").call(this); }
 	
 	pixels(value = 0) {
 		const pixels = this.width << 5;		// 32 scan lines
