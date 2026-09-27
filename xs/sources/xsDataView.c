@@ -1556,7 +1556,7 @@ void fx_TypedArray(txMachine* the)
 				size = fxArgToByteLength(the, 2, -1);
 				info = fxGetBufferInfo(the, mxArgv(0));
 				if (size >= 0) {
-					txInteger delta = size << shift;		//@@ overflow
+					txInteger delta = (size <= (INT_MAX >> shift)) ? size << shift : -1;
 					txInteger end = fxAddChunkSizes(the, offset, delta);
 					if ((info->value.bufferInfo.length < end) || (end < offset))
 						mxRangeError("invalid length %ld", size);
@@ -1589,6 +1589,8 @@ void fx_TypedArray(txMachine* the)
 				txInteger sourceDelta = sourceDispatch->value.typedArray.dispatch->size;
 				txInteger sourceOffset = sourceView->value.dataView.offset;
 				txInteger offset = 0;
+				if (sourceLength > (INT_MAX >> shift))
+					fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
 				txInteger size = sourceLength << shift;
 				/* TARGET */
 				mxPush(mxArrayBufferConstructor);
