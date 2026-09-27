@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -577,9 +577,16 @@ static void xs_crypt_cipher_setDirection(crypt_blockcipher_t *cipher, kcl_symmet
 				des_keysched(cipher->context.des.key, direction == KCL_DIRECTION_ENCRYPTION ? des_cipher_encryption : des_cipher_decryption, cipher->context.des.subkey);
 				break;
 			case kBlockCipherTDES:
-				des_keysched(cipher->context.tdes.key, direction == KCL_DIRECTION_ENCRYPTION ? des_cipher_encryption : des_cipher_decryption, cipher->context.tdes.subkey[0]);
-				des_keysched(&cipher->context.tdes.key[8], direction == KCL_DIRECTION_ENCRYPTION ? des_cipher_decryption : des_cipher_encryption, cipher->context.tdes.subkey[1]);
-				des_keysched(&cipher->context.tdes.key[16], direction == KCL_DIRECTION_ENCRYPTION ? des_cipher_encryption : des_cipher_decryption, cipher->context.tdes.subkey[2]);
+				if (direction == KCL_DIRECTION_ENCRYPTION) {		// E(K3, D(K2, E(K1, P)))
+					des_keysched(cipher->context.tdes.key, des_cipher_encryption, cipher->context.tdes.subkey[0]);
+					des_keysched(&cipher->context.tdes.key[8], des_cipher_decryption, cipher->context.tdes.subkey[1]);
+					des_keysched(&cipher->context.tdes.key[16], des_cipher_encryption, cipher->context.tdes.subkey[2]);
+				}
+				else {		// D(K1, E(K2, D(K3, C)))
+					des_keysched(&cipher->context.tdes.key[16], des_cipher_decryption, cipher->context.tdes.subkey[0]);
+					des_keysched(&cipher->context.tdes.key[8], des_cipher_encryption, cipher->context.tdes.subkey[1]);
+					des_keysched(cipher->context.tdes.key, des_cipher_decryption, cipher->context.tdes.subkey[2]);
+				}
 				break;
 			case kBlockCipherAES:
 				cipher->context.aes.direction = direction == KCL_DIRECTION_ENCRYPTION ? aes_cipher_encryption : aes_cipher_decryption;
@@ -785,23 +792,22 @@ void xs_crypt_streamcipher_process(xsMachine *the)
 
 void xs_crypt_streamcipher_setIV(xsMachine *the)
 {
-	crypt_streamcipher_t *stream;
 	int argc = xsmcArgc;
 	uint64_t counter = 0;
 	void *iv = NULL;
 	xsIntegerValue ivSize = 0;
 
 	if (argc >= 1) {
-		if (argc >= 2)
-			counter = xsmcToInteger(xsArg(1));
-
-		if (xsmcTest(xsArg(2))) {
+		if (xsmcTest(xsArg(0))) {
 			iv = xsmcToArrayBuffer(xsArg(0));
 			ivSize = xsmcGetArrayBufferLength(xsArg(0));
 		}
+
+		if (argc >= 2)
+			counter = xsmcToInteger(xsArg(1));
 	}
 
-	stream = xsmcGetHostChunk(xsThis);
+	crypt_streamcipher_t *stream = xsmcGetHostChunk(xsThis);
 	chacha_ivsetup(&stream->context.chacha, iv, ivSize, counter);
 }
 
