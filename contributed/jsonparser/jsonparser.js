@@ -1,9 +1,9 @@
 // Copyright (c) 2023-2024 Mark Wharton
 // https://opensource.org/license/mit/
 
-export class JSONParser @ "xs_jsonparser_destructor" {
+export class JSONParser extends Native("xs_jsonparser_destructor") {
     // Constructor for the JSONParser class, invokes "xs_jsonparser_constructor".
-    constructor(options) @ "xs_jsonparser_constructor"
+    constructor(options) { super(); native("xs_jsonparser_constructor").call(this, options); }
 
     // Getter for the 'data' property, representing the matcher or patterns.
     get data() { return this.vpt.data; }
@@ -12,10 +12,10 @@ export class JSONParser @ "xs_jsonparser_destructor" {
     get root() { return this.vpt.root; }
 
     // Getter for the 'status' property, invokes "xs_jsonparser_status".
-    get status() @ "xs_jsonparser_status"
+    get status() { return native("xs_jsonparser_status").call(this); }
 
     // Closes the JSONParser instance, invokes "xs_jsonparser_close".
-    close() @ "xs_jsonparser_close"
+    close() { return native("xs_jsonparser_close").call(this); }
 
     // Creates a new JSONTree instance.
     makeJSONTree(options) {
@@ -28,7 +28,7 @@ export class JSONParser @ "xs_jsonparser_destructor" {
     }
 
     // Receives input string and parses it from the specified start to end position, invokes "xs_jsonparser_receive".
-    receive(string, start, end) @ "xs_jsonparser_receive"
+    receive(string, start, end) { return native("xs_jsonparser_receive").call(this, string, start, end); }
 }
 // Static properties representing parsing outcomes.
 JSONParser.failure = -1;

@@ -18,6 +18,6 @@
  *
  */
 
-function QRCode(dictonary) @ "xs_qrcode";
+function QRCode(dictonary) { return native("xs_qrcode").call(this, dictonary); }
 
 export default QRCode;

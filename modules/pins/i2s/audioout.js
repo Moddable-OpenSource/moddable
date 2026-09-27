@@ -18,16 +18,16 @@
  *
  */
 
-export class Mixer @ "xs_audioout_destructor" {
-	constructor(dictionary) @ "xs_audioout";
-	close() @ "xs_audioout_close";
-	enqueue(stream, kind, buffer, repeat, offset, count) @ "xs_audioout_enqueue";
-	mix(samples) @ "xs_audioout_mix";
-	length(stream) @ "xs_audioout_length";
-	get sampleRate() @ "xs_audioout_get_sampleRate"
-	get numChannels() @ "xs_audioout_get_numChannels"
-	get bitsPerSample() @ "xs_audioout_get_bitsPerSample"
-	get streams() @ "xs_audioout_get_streams"
+export class Mixer extends Native("xs_audioout_destructor") {
+	constructor(dictionary) { super(); native("xs_audioout").call(this, dictionary); }
+	close() { return native("xs_audioout_close").call(this); }
+	enqueue(stream, kind, buffer, repeat, offset, count) { return native("xs_audioout_enqueue").call(this, stream, kind, buffer, repeat, offset, count); }
+	mix(samples) { return native("xs_audioout_mix").call(this, samples); }
+	length(stream) { return native("xs_audioout_length").call(this, stream); }
+	get sampleRate() { return native("xs_audioout_get_sampleRate").call(this); }
+	get numChannels() { return native("xs_audioout_get_numChannels").call(this); }
+	get bitsPerSample() { return native("xs_audioout_get_bitsPerSample").call(this); }
+	get streams() { return native("xs_audioout_get_streams").call(this); }
 }
 Mixer.Samples = 1;
 Mixer.Flush = 2;
@@ -37,15 +37,15 @@ Mixer.RawSamples = 5;
 Mixer.Tone = 6;
 Mixer.Silence = 7;
 
-function build(dictionary) @ "xs_audioout_build";
+function build(dictionary) { return native("xs_audioout_build").call(this, dictionary); }
 
 class AudioOut extends Mixer {
 	constructor(dictionary) {
 		super(dictionary);
 		build.call(this, dictionary);
 	}
-	start() @ "xs_audioout_start"
-	stop() @ "xs_audioout_stop"
+	start() { return native("xs_audioout_start").call(this); }
+	stop() { return native("xs_audioout_stop").call(this); }
 	get mix() {}		// unavailable
 }
 

@@ -18,6 +18,6 @@
  *
  */
  
-function structuredClone(value) @ "fx_structuredClone";
+function structuredClone(value, options) { return native("fx_structuredClone").call(this, value, options); }
 
 export default structuredClone;
