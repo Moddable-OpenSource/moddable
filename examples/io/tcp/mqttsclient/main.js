@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -18,15 +18,15 @@ new MQTTClient({
 	host: "broker.hivemq.com",
 	port: 8883,
 	id: "ecma-419 mqtt test",
-	keepalive: 60_000,		// keepalive is optional for MQTT, but a non-zero value is required by test.mosquitto.org!
+	keepAlive: 60_000,		// keepAlive is optional for MQTT, but a non-zero value is required by test.mosquitto.org!
 	will: {
 		topic: "foo/bar/will",
 		message: ArrayBuffer.fromString("born @ " + Date()),
 		QoS: 0,
 		retain: 0
 	},
-	onControl(msg) {
-		if (MQTTClient.CONNACK === msg.operation) {
+	onControl(operation, msg) {
+		if (MQTTClient.CONNACK === operation) {
 			this.write(null, {
 				operation: MQTTClient.SUBSCRIBE,
 				items: [
@@ -58,24 +58,24 @@ new MQTTClient({
 				id: 1234
 			});
 		}
-		if (MQTTClient.PUBACK === msg.operation) {
+		if (MQTTClient.PUBACK === operation) {
 			trace(`PUBACK - ${msg.id}\n`);
 			if (1234 == msg.id) {
 //				this.write(null, {operation: MQTTClient.DISCONNECT});
 //				this.close();
 			}
 		}
-		if (MQTTClient.PINGRESP === msg.operation)
+		if (MQTTClient.PINGRESP === operation)
 			trace("Ping response\n");
-		if (MQTTClient.PUBREC === msg.operation)
+		if (MQTTClient.PUBREC === operation)
 			trace(`PUBREC - ${msg.id}\n`);
-		if (MQTTClient.PUBREL === msg.operation)
+		if (MQTTClient.PUBREL === operation)
 			trace(`PUBREL - ${msg.id}\n`);
-		if (MQTTClient.PUBCOMP === msg.operation)
+		if (MQTTClient.PUBCOMP === operation)
 			trace(`PUBCOMP - ${msg.id}\n`);
-		if (MQTTClient.SUBACK === msg.operation)
+		if (MQTTClient.SUBACK === operation)
 			trace(`SUBACK - ${msg.id}\n`);
-		if (MQTTClient.UNSUBACK === msg.operation)
+		if (MQTTClient.UNSUBACK === operation)
 			trace(`UNSUBACK - ${msg.id}\n`);
 	},
 	onReadable(count /*, options */) {
