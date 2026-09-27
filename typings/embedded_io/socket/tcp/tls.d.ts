@@ -40,6 +40,7 @@ declare module "embedded:io/socket/tcp/tls" {
   }
 
   class TLS {
+    target?: any
     constructor(options: Options)
     close(): void
     read(): number | ArrayBuffer

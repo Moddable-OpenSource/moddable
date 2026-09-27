@@ -21,6 +21,7 @@
 declare module "embedded:io/spi" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class SPI {
+    target?: any;
     constructor(options: {
       out?: PinSpecifier;
       in?: PinSpecifier;

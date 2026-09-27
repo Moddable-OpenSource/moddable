@@ -34,6 +34,7 @@ declare module "embedded:io/socket/tcp" {
   };
   
   class TCP {
+    target?: any;
     constructor(options: Options)
     readonly remoteAddress: string | undefined;
     readonly remotePort: number | undefined;

@@ -20,6 +20,7 @@
 
 declare module "embedded:io/socket/udp" {
   class UDP {
+    target?: any;
     constructor(options: {
       port?: number;
       address?: string;

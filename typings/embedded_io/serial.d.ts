@@ -21,6 +21,7 @@
 declare module "embedded:io/serial" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class Serial {
+    target?: any;
     constructor(options: ({
       receive: PinSpecifier;
       transmit?: PinSpecifier;

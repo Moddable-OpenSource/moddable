@@ -21,6 +21,7 @@
 declare module "embedded:io/socket/listener" {
   import TCP from "embedded:io/socket/tcp"
   class Listener {
+    target?: any;
     constructor(options: {
       port?: number;
       address?: string;

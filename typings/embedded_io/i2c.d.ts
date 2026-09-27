@@ -22,6 +22,7 @@
 declare module "embedded:io/i2c" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
   class I2C {
+    target?: any;
     constructor(options: {
       data: PinSpecifier;
       clock: PinSpecifier;

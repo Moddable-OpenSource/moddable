@@ -29,6 +29,7 @@ declare module "embedded:io/digitalbank" {
     | typeof DigitalBank.ActiveLow
 
   class DigitalBank {
+    target?: any;
     static readonly Input: number
     static readonly InputPullUp: number
     static readonly InputPullDown: number

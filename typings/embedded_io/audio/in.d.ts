@@ -30,6 +30,7 @@ declare module "embedded:io/audio/in" {
   }
 
   class AudioIn {
+    target?: any;
     constructor(options: AudioInOptions & {
       onReadable?: (this: AudioIn, byteLength: number, sampleCount?: number) => void;
     });

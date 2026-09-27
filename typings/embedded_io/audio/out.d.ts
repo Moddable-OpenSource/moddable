@@ -30,6 +30,7 @@ declare module "embedded:io/audio/out" {
   }
 
   class AudioOut {
+    target?: any;
     constructor(options?: AudioOutOptions & {
       onWritable?: (this: AudioOut, byteLength: number, sampleCount?: number) => void;
     });

@@ -32,6 +32,7 @@ declare module "embedded:RTC" {
 	}
 
 	export class RTC {
+		target?: any;
 		constructor(options: RTCOptions);
 		close(): void;
 		time: number;

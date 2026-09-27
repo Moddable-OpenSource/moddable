@@ -33,6 +33,7 @@ declare module "embedded:io/digital" {
     | typeof Digital.ActiveLow
 
   class Digital {
+    target?: any;
     static readonly Input: number
     static readonly InputPullUp: number
     static readonly InputPullDown: number
