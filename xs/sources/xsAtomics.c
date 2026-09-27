@@ -942,6 +942,8 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 		txSharedWaiter* waiter;
 		txSharedWaiter** address;
 		txSharedWaiter* link;
+		if (!resolveFunction && (gxSharedCluster->mainThread == mxCurrentThread()))
+			mxTypeError("main thread cannot wait");
 		waiter = c_calloc(1, sizeof(txSharedWaiter));
 		if (!waiter)
 			fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
@@ -965,7 +967,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 			fxAbort(the, XS_DEAD_STRIP_EXIT);
 		#endif
 		}
-		else if (gxSharedCluster->mainThread != mxCurrentThread()) {
+		else {
 			txCondition condition;
 			mxCreateCondition(&condition);
 			waiter->condition = &condition;
@@ -1018,10 +1020,7 @@ txInteger fxWaitSharedChunk(txMachine* the, void* data, txNumber timeout, txSlot
 			c_free(waiter);
 			mxDeleteCondition(&condition);
 		}
-		else {
-			mxTypeError("main thread cannot wait");
-		}
-	#endif	
+	#endif
 	}
 	else {
 		mxTypeError("no shared cluster");
