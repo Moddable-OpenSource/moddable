@@ -914,6 +914,9 @@ export default class {
 		dnssd ??= new DNSSD(options);
 		dnssd.count ??= 0;
 		dnssd.count += 1;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
 	}
 	close() {
 		while (this.#list.length)
