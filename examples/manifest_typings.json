@@ -130,6 +130,9 @@
 		"web/textencoderstream": [
 			"$(TYPINGS)/web/textencoderstream"
 		],
+		"WebSocket": [
+			"$(TYPINGS)/web/websocket"
+		],
 		"web/websocket": [
 			"$(TYPINGS)/web/websocket"
 		],
