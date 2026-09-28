@@ -18,6 +18,9 @@
 *
 */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../config/wssclient.d.ts" />
+
 declare module "web/websocket" {
   import Headers from "headers"
 

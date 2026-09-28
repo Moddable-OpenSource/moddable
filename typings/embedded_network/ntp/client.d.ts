@@ -18,6 +18,9 @@
  *
  */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/ntp.d.ts" />
+
 declare module "embedded:network/ntp/client" {
 	import type UDP from "embedded:io/socket/udp";
 	import type Resolver from "embedded:network/dns/resolver/udp";

@@ -18,6 +18,9 @@
  *
  */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/httpserver.d.ts" />
+
 declare module "embedded:network/http/server" {
     import type Listener from "embedded:io/socket/listener";
     import type TCP from "embedded:io/socket/tcp";

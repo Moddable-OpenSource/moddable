@@ -1,3 +1,6 @@
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/mqttclient.d.ts" />
+
 declare module "embedded:network/mqtt/client" {
   import type TCP from "embedded:io/socket/tcp";
   import type TLS from "embedded:io/socket/tcp/tls";

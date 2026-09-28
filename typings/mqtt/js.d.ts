@@ -1,3 +1,7 @@
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../config/mqttsclient.d.ts" />
+/// <reference path="../config/dns.d.ts" />
+
 // Adapted from https://github.com/mqttjs/MQTT.js
 //
 // The MIT License (MIT)

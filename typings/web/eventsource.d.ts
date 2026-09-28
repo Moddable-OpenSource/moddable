@@ -18,6 +18,9 @@
 *
 */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../config/httpsclient.d.ts" />
+
 declare module "web/eventsource" {
   import Headers from "headers"
 

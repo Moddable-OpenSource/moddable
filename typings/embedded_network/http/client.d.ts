@@ -18,6 +18,9 @@
 *
 */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/httpclient.d.ts" />
+
 declare module "embedded:network/http/client" {
   import type TCP from "embedded:io/socket/tcp";
   import type TLS from "embedded:io/socket/tcp/tls";
