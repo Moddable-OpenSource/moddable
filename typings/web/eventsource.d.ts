@@ -58,13 +58,13 @@ declare module "web/eventsource" {
     readonly readyState: number;
     readonly url: string;
 
-    onerror?(event: EventSourceErrorEvent): void;
-    onopen?(event: EventSourceEvent): void;
-    onmessage?(event: EventSourceMessageEvent): void;
+    onerror: ((this: EventSource, event: EventSourceErrorEvent) => void) | null;
+    onopen: ((this: EventSource, event: EventSourceEvent) => void) | null;
+    onmessage: ((this: EventSource, event: EventSourceMessageEvent) => void) | null;
 
-    addEventListener(type: "open", listener: (event: EventSourceEvent) => void): void;
-    addEventListener(type: "error", listener: (event: EventSourceErrorEvent) => void): void;
-    addEventListener(type: "message", listener: (event: EventSourceMessageEvent) => void): void;
+    addEventListener(type: "open", listener: (this: EventSource, event: EventSourceEvent) => void): void;
+    addEventListener(type: "error", listener: (this: EventSource, event: EventSourceErrorEvent) => void): void;
+    addEventListener(type: "message", listener: (this: EventSource, event: EventSourceMessageEvent) => void): void;
     addEventListener(type: string, listener: (event: EventSourceMessageEvent) => void): void;
 
     removeEventListener(type: string, listener: EventSourceEventListener): void;
@@ -73,4 +73,9 @@ declare module "web/eventsource" {
   }
 
   export default EventSource;
+}
+
+// the specifier of the module in the Moddable SDK runtime
+declare module "eventsource" {
+  export { default } from "web/eventsource";
 }

@@ -76,15 +76,15 @@ declare module "web/websocket" {
     readonly readyState: number;
     readonly url: string;
 
-    onclose?(event: WebSocketCloseEvent): void;
-    onerror?(event: WebSocketErrorEvent): void;
-    onmessage?(event: WebSocketMessageEvent): void;
-    onopen?(event: WebSocketEvent): void;
+    onclose: ((this: WebSocket, event: WebSocketCloseEvent) => void) | null;
+    onerror: ((this: WebSocket, event: WebSocketErrorEvent) => void) | null;
+    onmessage: ((this: WebSocket, event: WebSocketMessageEvent) => void) | null;
+    onopen: ((this: WebSocket, event: WebSocketEvent) => void) | null;
 
-    addEventListener(event: "close", listener: (event: WebSocketCloseEvent) => void): void;
-    addEventListener(event: "error", listener: (event: WebSocketErrorEvent) => void): void;
-    addEventListener(event: "message", listener: (event: WebSocketMessageEvent) => void): void;
-    addEventListener(event: "open", listener: (event: WebSocketEvent) => void): void;
+    addEventListener(event: "close", listener: (this: WebSocket, event: WebSocketCloseEvent) => void): void;
+    addEventListener(event: "error", listener: (this: WebSocket, event: WebSocketErrorEvent) => void): void;
+    addEventListener(event: "message", listener: (this: WebSocket, event: WebSocketMessageEvent) => void): void;
+    addEventListener(event: "open", listener: (this: WebSocket, event: WebSocketEvent) => void): void;
 
     removeEventListener(event: "close" | "error" | "message" | "open", listener: WebSocketEventListener): void;
 
@@ -93,4 +93,9 @@ declare module "web/websocket" {
   }
 
   export default WebSocket;
+}
+
+// the specifier of the module in the Moddable SDK runtime
+declare module "WebSocket" {
+  export { default } from "web/websocket";
 }

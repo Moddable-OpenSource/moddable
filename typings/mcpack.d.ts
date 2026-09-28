@@ -20,6 +20,8 @@
 
 /// <reference path="./host/index.d.ts" />
 /// <reference path="./web/abortsignal.d.ts" />
+/// <reference path="./web/bluetooth.d.ts" />
+/// <reference path="./web/serial.d.ts" />
 /// <reference path="./web/console.d.ts" />
 /// <reference path="./web/decompressionstream.d.ts" />
 /// <reference path="./web/domexception.d.ts" />
@@ -42,6 +44,15 @@
 export {};
 
 declare global {
+	interface Navigator {
+		readonly bluetooth: typeof import("web-bluetooth").bluetooth;
+		readonly serial: typeof import("web/serial").serial;
+	}
+	const navigator: Navigator;
+
+	const BluetoothUUID: typeof import("web-bluetooth").BluetoothUUID;
+	type BluetoothUUID = import("web-bluetooth").BluetoothUUID;
+
 	const EventSource: typeof import("web/eventsource").default;
 	type EventSource = import("web/eventsource").default;
 

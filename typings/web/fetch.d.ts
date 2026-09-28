@@ -43,6 +43,6 @@ declare module "fetch" {
 
   function fetch(resource: string | URL, options?: RequestInit): Promise<Response>;
 
-  export { fetch };
+  export { fetch, Headers };
   export default fetch;
 }
