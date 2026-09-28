@@ -34,7 +34,7 @@ declare module "embedded:network/websocket/client" {
     socket: { io: typeof TCP | typeof TLS; [option: string]: unknown };
   }
 
-  interface WebSocketClientOptions {
+  export interface WebSocketClientOptions {
     onReadable?: (this: WebSocketClient, count: number, options: { more: boolean; binary: boolean }) => void;
     onWritable?: (this: WebSocketClient, count: number) => void;
     onControl?: (this: WebSocketClient, opcode: number, data: ArrayBuffer) => void;
@@ -42,9 +42,7 @@ declare module "embedded:network/websocket/client" {
     onError?: (this: WebSocketClient) => void;
     format?: "buffer" | "number";
     target?: any;
-    attach?: {
-      constructor: new (options: any) => any;
-    };
+    attach?: TCP;
     host?: string;
     path?: string;
     port?: number;
@@ -58,7 +56,7 @@ declare module "embedded:network/websocket/client" {
     };
   }
 
-  interface WebSocketWriteOptions {
+  export interface WebSocketWriteOptions {
     opcode?: number;
     binary?: boolean;
     more?: boolean;

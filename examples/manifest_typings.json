@@ -54,6 +54,12 @@
 		"embedded:network/http/*": [
 			"$(TYPINGS)/embedded_network/http/*"
 		],
+		"embedded:network/http/server/route/*": [
+			"$(TYPINGS)/embedded_network/http/server/route/*"
+		],
+		"embedded:network/http/server/route/ws/*": [
+			"$(TYPINGS)/embedded_network/http/server/route/ws/*"
+		],
 		"embedded:network/mqtt/*": [
 			"$(TYPINGS)/embedded_network/mqtt/*"
 		],
