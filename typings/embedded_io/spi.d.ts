@@ -20,7 +20,7 @@
 
 declare module "embedded:io/spi" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
-  class SPI {
+  class SPI implements Disposable {
     target?: any;
     constructor(options: {
       out?: PinSpecifier;
@@ -42,7 +42,7 @@ declare module "embedded:io/spi" {
     close(): void;
     get format(): "buffer";
     set format(value: "buffer");
+    [Symbol.dispose](): void;
   }
-  interface SPI extends Disposable {}
   export default SPI;
 }

@@ -58,10 +58,10 @@ interface PebbleButtonMultipleOptions extends PebbleButtonRecognizers {
 
 type PebbleButtonOptions = PebbleButtonSingleOptions | PebbleButtonMultipleOptions;
 
-declare class PebbleButton {
+declare class PebbleButton implements Disposable {
   constructor(options: PebbleButtonOptions);
   close(): void;
+  [Symbol.dispose](): void;
 }
-interface PebbleButton extends Disposable {}
 
 export default PebbleButton;

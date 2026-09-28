@@ -57,13 +57,13 @@ declare module "embedded:network/http/client" {
     write(value: ByteBuffer|undefined): number;
   }
 
-  class HTTPClient {
+  class HTTPClient implements Disposable {
     target?: any
     constructor(options: ClientOptions)
     request(options: RequestOptions): HTTPRequest
     close(): void
+    [Symbol.dispose](): void
   }
-  interface HTTPClient extends Disposable {}
   export default HTTPClient;
 
 }

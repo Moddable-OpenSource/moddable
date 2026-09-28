@@ -76,11 +76,11 @@ interface HealthMetricAlertOptions {
   threshold: number;
 }
 
-declare class HealthMetricAlert {
+declare class HealthMetricAlert implements Disposable {
   constructor(options: HealthMetricAlertOptions);
   close(): void;
+  [Symbol.dispose](): void;
 }
-interface HealthMetricAlert extends Disposable {}
 
 interface HealthMinuteHistoryOptions {
   length: number;

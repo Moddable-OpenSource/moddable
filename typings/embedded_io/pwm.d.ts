@@ -21,7 +21,7 @@
 
 declare module "embedded:io/pwm" {
   import { PinSpecifier } from "embedded:io/_common";
-  class PWM {
+  class PWM implements Disposable {
     target?: any;
     constructor(options: {
       pin: PinSpecifier;
@@ -35,7 +35,7 @@ declare module "embedded:io/pwm" {
     close(): void;
     get format(): "number"
     set format(value: "number")
+    [Symbol.dispose](): void;
   }
-  interface PWM extends Disposable {}
   export default PWM;
 }

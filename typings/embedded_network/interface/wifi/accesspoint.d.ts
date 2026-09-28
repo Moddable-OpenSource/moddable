@@ -47,7 +47,7 @@ declare module "embedded:network/interface/wifi/accesspoint" {
 		portal?: string;
 	}
 
-	class WiFiAccessPoint {
+	class WiFiAccessPoint implements Disposable {
 		constructor(options: WiFiAccessPointConstructorOptions);
 
 		close(): void;
@@ -58,8 +58,8 @@ declare module "embedded:network/interface/wifi/accesspoint" {
 		readonly MAC: string | undefined;
 		readonly SSID: string | undefined;
 		readonly channel: number | undefined;
+		[Symbol.dispose](): void;
 	}
-	interface WiFiAccessPoint extends Disposable {}
 
 	export default WiFiAccessPoint;
 }

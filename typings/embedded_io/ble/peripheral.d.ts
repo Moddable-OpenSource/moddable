@@ -55,7 +55,7 @@ declare module "embedded:io/bluetoothle/peripheral" {
         [ADType: number]: ByteBuffer;
     }
 
-    class GATTServer {
+    class GATTServer implements Disposable {
         constructor(options: GATTServerOptions);
 
         close(): void;
@@ -87,8 +87,8 @@ declare module "embedded:io/bluetoothle/peripheral" {
             dualModeController: 8;
             dualModeHost: 16;
         }
+        [Symbol.dispose](): void;
     }
-    interface GATTServer extends Disposable {}
 
     export { GATTServer };
 }

@@ -19,7 +19,7 @@
 */
 
 declare module "embedded:io/socket/udp" {
-  class UDP {
+  class UDP implements Disposable {
     target?: any;
     constructor(options: {
       port?: number;
@@ -40,8 +40,8 @@ declare module "embedded:io/socket/udp" {
     close(): void;
     get format(): "buffer"
     set format(value: "buffer")
+    [Symbol.dispose](): void;
   }
-  interface UDP extends Disposable {}
 
   export default UDP
 }

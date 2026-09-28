@@ -75,14 +75,14 @@ declare module "embedded:network/dnssd" {
         updateTXT(txt: Map<string, string | ByteBuffer>): void;
     }
 
-    class DNSSD {
+    class DNSSD implements Disposable {
         target?: any;
         constructor(options: DNSSDOptions);
         close(): void;
         claim(options: ClaimOptions): ClaimHandle;
         discover(options: DiscoverOptions): DiscoverHandle;
         advertise(options: AdvertiseOptions): AdvertiseHandle;
+        [Symbol.dispose](): void;
     }
-    interface DNSSD extends Disposable {}
     export default DNSSD;
 }

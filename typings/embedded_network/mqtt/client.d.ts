@@ -81,7 +81,7 @@ declare module "embedded:network/mqtt/client" {
 
   type WriteOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions | AcknowledgeOptions | SessionOptions;
 
-  class MQTTClient {
+  class MQTTClient implements Disposable {
     target?: any
     constructor(options: Options)
     read(count: number): ArrayBuffer
@@ -104,7 +104,7 @@ declare module "embedded:network/mqtt/client" {
     static PINGREQ: 12
     static PINGRESP: 13
     static DISCONNECT: 14
+    [Symbol.dispose](): void
   }
-  interface MQTTClient extends Disposable {}
   export default MQTTClient;
 }

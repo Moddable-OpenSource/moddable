@@ -57,7 +57,7 @@ declare module "embedded:network/interface/wifi" {
 		static?: WiFiStaticAddress | false;
 	}
 
-	class WiFi {
+	class WiFi implements Disposable {
 		constructor(options: WiFiConstructorOptions);
 
 		close(): void;
@@ -71,8 +71,8 @@ declare module "embedded:network/interface/wifi" {
 		readonly MAC: string | undefined;
 		readonly SSID: string | undefined;
 		readonly RSSI: number | undefined;
+		[Symbol.dispose](): void;
 	}
-	interface WiFi extends Disposable {}
 
 	export default WiFi;
 }

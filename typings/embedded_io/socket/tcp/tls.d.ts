@@ -39,7 +39,7 @@ declare module "embedded:io/socket/tcp/tls" {
     TCP: { io: new (options: TCPOptions) => TCP } & Partial<TCPOptions>
   }
 
-  class TLS {
+  class TLS implements Disposable {
     target?: any
     constructor(options: Options)
     close(): void
@@ -49,7 +49,7 @@ declare module "embedded:io/socket/tcp/tls" {
     write(buffer: ByteBuffer, options?: { more?: boolean, byteLength?: number }): number
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
+    [Symbol.dispose](): void
   }
-  interface TLS extends Disposable {}
   export default TLS;
 }

@@ -61,7 +61,7 @@ declare module "embedded:network/websocket/client" {
     more?: boolean;
   }
 
-  class WebSocketClient {
+  class WebSocketClient implements Disposable {
     constructor(options: WebSocketClientOptions);
 
     close(): void;
@@ -79,8 +79,8 @@ declare module "embedded:network/websocket/client" {
     static readonly close: 8;
     static readonly ping: 9;
     static readonly pong: 10;
+    [Symbol.dispose](): void;
   }
-  interface WebSocketClient extends Disposable {}
 
   export default WebSocketClient;
 }

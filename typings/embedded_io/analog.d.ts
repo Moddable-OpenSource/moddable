@@ -21,7 +21,7 @@
 
 declare module "embedded:io/analog" {
   import { PinSpecifier } from "embedded:io/_common";
-  class Analog {
+  class Analog implements Disposable {
     constructor(options: {
       pin: PinSpecifier;
       resolution?: number;
@@ -34,7 +34,7 @@ declare module "embedded:io/analog" {
     get format(): "number"
     set format(value: "number")
     target?: any;
+    [Symbol.dispose](): void;
   }
-  interface Analog extends Disposable {}
   export default Analog;
 }

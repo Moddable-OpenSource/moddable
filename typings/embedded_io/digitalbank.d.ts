@@ -28,7 +28,7 @@ declare module "embedded:io/digitalbank" {
     | typeof DigitalBank.OutputOpenDrain
     | typeof DigitalBank.ActiveLow
 
-  class DigitalBank {
+  class DigitalBank implements Disposable {
     target?: any;
     static readonly Input: number
     static readonly InputPullUp: number
@@ -57,8 +57,8 @@ declare module "embedded:io/digitalbank" {
 
     get format(): "number"
     set format(value: "number")
+    [Symbol.dispose](): void;
   }
-  interface DigitalBank extends Disposable {}
 
   export default DigitalBank;
 }

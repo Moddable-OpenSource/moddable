@@ -72,12 +72,12 @@ declare module "embedded:network/http/server" {
         onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
     }
 
-    class HTTPServer {
+    class HTTPServer implements Disposable {
         target?: any;
         constructor(options: HTTPServerOptions);
         close(): void;
         readonly port: number;
+        [Symbol.dispose](): void;
     }
-    interface HTTPServer extends Disposable {}
     export default HTTPServer;
 }

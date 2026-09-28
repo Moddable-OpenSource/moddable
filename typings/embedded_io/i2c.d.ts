@@ -21,7 +21,7 @@
 
 declare module "embedded:io/i2c" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
-  class I2C {
+  class I2C implements Disposable {
     target?: any;
     constructor(options: {
       data: PinSpecifier;
@@ -42,8 +42,8 @@ declare module "embedded:io/i2c" {
     close(): void;
     get format(): "buffer"
     set format(value: "buffer")
+    [Symbol.dispose](): void;
   }
-  interface I2C extends Disposable {}
 
   export default I2C;
 }

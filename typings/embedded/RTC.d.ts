@@ -31,14 +31,14 @@ declare module "embedded:RTC" {
 		alarm?: number;
 	}
 
-	export class RTC {
+	export class RTC implements Disposable {
 		target?: any;
 		constructor(options: RTCOptions);
 		close(): void;
 		time: number;
 		configure(options: RTCConfigureOptions): void;
+		[Symbol.dispose](): void;
 	}
-	export interface RTC extends Disposable {}
 
 	export default RTC;
 }

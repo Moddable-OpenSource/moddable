@@ -20,7 +20,7 @@
 
 declare module "embedded:io/socket/listener" {
   import TCP from "embedded:io/socket/tcp"
-  class Listener {
+  class Listener implements Disposable {
     target?: any;
     constructor(options: {
       port?: number;
@@ -34,7 +34,7 @@ declare module "embedded:io/socket/listener" {
     get format(): "socket/tcp"
     set format(value: "socket/tcp")
     readonly port: number;
+    [Symbol.dispose](): void;
   }
-  interface Listener extends Disposable {}
   export default Listener;
 }

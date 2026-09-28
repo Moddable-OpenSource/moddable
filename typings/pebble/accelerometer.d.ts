@@ -36,12 +36,12 @@ interface AccelerometerSample {
   z: number;
 }
 
-declare class Accelerometer {
+declare class Accelerometer implements Disposable {
   constructor(options: AccelerometerOptions);
   close(): void;
   configure(options: AccelerometerConfigureOptions): void;
   sample(): AccelerometerSample;
+  [Symbol.dispose](): void;
 }
-interface Accelerometer extends Disposable {}
 
 export default Accelerometer;

@@ -27,7 +27,7 @@ declare module "embedded:storage/files" {
 		isSymbolicLink(): boolean;
 	}
 
-	export class File {
+	export class File implements Disposable {
 		// Use Directory.openFile() to create File instances
 		close(): void;
 
@@ -38,8 +38,8 @@ declare module "embedded:storage/files" {
 		status(): Status;
 		setSize(length: number): void;
 		flush(): void;
+		[Symbol.dispose](): void;
 	}
-	export interface File extends Disposable {}
 
 	export interface DirectoryOpenFileOptions {
 		path: string;
@@ -54,7 +54,7 @@ declare module "embedded:storage/files" {
 		resolveTarget?: boolean;
 	}
 
-	export class Directory {
+	export class Directory implements Disposable {
 		// use device.files to access file system root
 		close(): void;
 
@@ -72,6 +72,6 @@ declare module "embedded:storage/files" {
 
 		scan(path?: string): IterableIterator<string>;
 		[Symbol.iterator](): IterableIterator<string>;
+		[Symbol.dispose](): void;
 	}
-	export interface Directory extends Disposable {}
 }

@@ -28,12 +28,12 @@ interface BatterySample {
   plugged: boolean;
 }
 
-declare class Battery {
+declare class Battery implements Disposable {
   constructor(options: BatteryOptions);
   close(): void;
   configure(options: {}): void;
   sample(): BatterySample;
+  [Symbol.dispose](): void;
 }
-interface Battery extends Disposable {}
 
 export default Battery;

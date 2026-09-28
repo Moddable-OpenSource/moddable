@@ -45,7 +45,7 @@ declare module "embedded:display" {
 		height: number;
 	}
 
-	class Display {
+	class Display implements Disposable {
 		constructor(options: DisplayConstructorOptions);
 		close(): void;
 
@@ -62,8 +62,8 @@ declare module "embedded:display" {
 
 		get width(): number;
 		get height(): number;
+		[Symbol.dispose](): void;
 	}
-	interface Display extends Disposable {}
 
 	export default Display;
 }

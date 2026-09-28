@@ -29,7 +29,7 @@ declare module "embedded:io/audio/out" {
     target?: any;
   }
 
-  class AudioOut {
+  class AudioOut implements Disposable {
     target?: any;
     constructor(options?: AudioOutOptions & {
       onWritable?: (this: AudioOut, byteLength: number, sampleCount?: number) => void;
@@ -46,8 +46,8 @@ declare module "embedded:io/audio/out" {
     get format(): "buffer"
     set format(value: "buffer")
     volume: number;
+    [Symbol.dispose](): void;
   }
-  interface AudioOut extends Disposable {}
 
   export { AudioOut as default };
 }

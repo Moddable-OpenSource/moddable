@@ -27,7 +27,7 @@ declare module "embedded:storage/key-value" {
 
 	export type StorageFormat = "buffer" | "string" | "uint8" | "int8" | "uint16" | "int16" | "uint32" | "int32" | "uint64" | "int64";
 
-	export class Storage {
+	export class Storage implements Disposable {
 		// Use the default export's open() method to create Storage instances
 		close(): void;
 
@@ -40,8 +40,8 @@ declare module "embedded:storage/key-value" {
 		[Symbol.iterator](): IterableIterator<string>;
 
 		format: StorageFormat;
+		[Symbol.dispose](): void;
 	}
-	export interface Storage extends Disposable {}
 
 	const KeyValueStorage: {
 		open(options: StorageOpenOptions): Storage;

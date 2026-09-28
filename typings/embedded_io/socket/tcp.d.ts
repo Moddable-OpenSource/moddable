@@ -33,7 +33,7 @@ declare module "embedded:io/socket/tcp" {
     target?: any;
   };
   
-  class TCP {
+  class TCP implements Disposable {
     target?: any;
     constructor(options: Options)
     readonly remoteAddress: string | undefined;
@@ -45,7 +45,7 @@ declare module "embedded:io/socket/tcp" {
     close(): void;
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
+    [Symbol.dispose](): void;
   }
-  interface TCP extends Disposable {}
   export default TCP;
 }

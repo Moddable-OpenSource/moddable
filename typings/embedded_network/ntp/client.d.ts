@@ -39,12 +39,12 @@ declare module "embedded:network/ntp/client" {
 	
 	export type NTPCallback<T = any> = (this: NTP<T>, error: Error | null, time: number) => void;
 	
-	class NTP<T = any> {
+	class NTP<T = any> implements Disposable {
 		target?: T;
 		constructor(options: NTPOptions<T>);
 		close(): void;
 		getTime(callback: NTPCallback<T>): void;
+		[Symbol.dispose](): void;
 	}
-	interface NTP<T = any> extends Disposable {}
 	export default NTP;
 }

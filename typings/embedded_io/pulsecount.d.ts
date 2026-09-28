@@ -20,7 +20,7 @@
 
 declare module "embedded:io/pulsecount" {
   import { PinSpecifier } from "embedded:io/_common";
-  class PulseCount {
+  class PulseCount implements Disposable {
     target?: any;
     constructor (options: {
       signal: PinSpecifier;
@@ -35,8 +35,8 @@ declare module "embedded:io/pulsecount" {
     close(): void;
     get format(): "number";
     set format(value: "number");
+    [Symbol.dispose](): void;
   }
-  interface PulseCount extends Disposable {}
 
   export default PulseCount;
 }

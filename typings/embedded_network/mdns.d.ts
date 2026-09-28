@@ -70,13 +70,13 @@ declare module "embedded:network/mdns" {
 		close(): void;
 	}
 
-	class DNSSD {
+	class DNSSD implements Disposable {
 		constructor(options: DNSSDOptions);
 		close(): void;
 		claim(options: ClaimOptions): ClaimInstance;
 		advertise(options: AdvertiseOptions): AdvertiseInstance;
 		discover(options: DiscoverOptions): DiscoverInstance;
+		[Symbol.dispose](): void;
 	}
-	interface DNSSD extends Disposable {}
 	export default DNSSD;
 }

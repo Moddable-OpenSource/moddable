@@ -33,14 +33,13 @@ declare module "embedded:network/dns/resolver/udp" {
     onError?: (this: Resolver, host: string) => void
   }
 
-  class Resolver {
+  class Resolver implements Disposable {
     target?: any
     constructor(options: Record<string, any>)
     close(): void
     resolve(options: Options): void
-
+    [Symbol.dispose](): void
   }
-  interface Resolver extends Disposable {}
 
   export default Resolver
 }

@@ -20,7 +20,7 @@
 
 declare module "embedded:io/serial" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
-  class Serial {
+  class Serial implements Disposable {
     target?: any;
     constructor(options: ({
       receive: PinSpecifier;
@@ -56,8 +56,8 @@ declare module "embedded:io/serial" {
     }): void
     get format(): "number" | "buffer"
     set format(value: "number" | "buffer")
+    [Symbol.dispose](): void;
   }
-  interface Serial extends Disposable {}
 
   export default Serial;
 }
