@@ -43,6 +43,8 @@ declare module "embedded:io/socket/tcp/tls" {
     target?: any
     constructor(options: Options)
     close(): void
+    readonly remoteAddress: string | undefined
+    readonly remotePort: number | undefined
     read(): number | ArrayBuffer
     read(byteLength: number): ArrayBuffer
     read(buffer: ByteBuffer): number
