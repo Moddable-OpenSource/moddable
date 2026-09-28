@@ -53,7 +53,7 @@ interface JSON {
 }
 
 interface StringConstructor {
-	fromArrayBuffer(buffer: ArrayBufferLike): string;
+	fromArrayBuffer(buffer: ArrayBufferLike, byteOffset?: number, byteLength?: number): string;
 }
 
 interface ArrayBufferConstructor {
