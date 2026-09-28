@@ -18,19 +18,19 @@ import WebStorage from "webstorage";
 // bind WebStorage to a domain "localStorage" in embedded:storage/key-value
 const localStorage = new WebStorage(kvp.open({path: "localStorage"}));
 
-localStorage.setItem(1, "one");
-localStorage.setItem(2, "two");
-localStorage.setItem(3, "three");
+localStorage.setItem("1", "one");
+localStorage.setItem("2", "two");
+localStorage.setItem("3", "three");
 
 trace(`length: ${localStorage.length}\n`);
 trace(`key(1.2): ${localStorage.key(1.2)}\n`);
-trace(`getItem(3): ${localStorage.getItem(3)}\n`);
+trace(`getItem(3): ${localStorage.getItem("3")}\n`);
 
 localStorage.clear();
 
 trace(`length: ${localStorage.length}\n`);
 trace(`key(1.2): ${localStorage.key(1.2)}\n`);
-trace(`getItem(3): ${localStorage.getItem(3)}\n`);
+trace(`getItem(3): ${localStorage.getItem("3")}\n`);
 
 /*
 
