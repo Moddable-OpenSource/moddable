@@ -30,6 +30,7 @@ declare module "embedded:network/dnssd" {
 
     export interface DNSSDOptions {
         socket: DNSSDSocketOptions;
+        target?: any;
     }
 
     export interface ClaimOptions {
@@ -75,6 +76,7 @@ declare module "embedded:network/dnssd" {
     }
 
     class DNSSD {
+        target?: any;
         constructor(options: DNSSDOptions);
         close(): void;
         claim(options: ClaimOptions): ClaimHandle;

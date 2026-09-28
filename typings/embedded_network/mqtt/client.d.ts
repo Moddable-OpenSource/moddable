@@ -33,6 +33,7 @@ declare module "embedded:network/mqtt/client" {
     onControl?: (opcode: number, message: onControlMessage) => void,
     onClose?: () => void,
     onError?: (error: any) => void,
+    target?: any,
     dns: Record<string, any>,
     socket: Record<string, any>,
   }
@@ -49,6 +50,7 @@ declare module "embedded:network/mqtt/client" {
   }
 
   class MQTTClient {
+    target?: any
     constructor(options: Options)
     read(count: number): ArrayBuffer
     read(buffer: ByteBuffer): number

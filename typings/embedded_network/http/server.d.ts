@@ -68,10 +68,12 @@ declare module "embedded:network/http/server" {
         port?: number;
         keepAlive?: number;
         onConnect?(connection: HTTPConnection): void;
+        target?: any;
         onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
     }
 
     class HTTPServer {
+        target?: any;
         constructor(options: HTTPServerOptions);
         close(): void;
         readonly port: number;

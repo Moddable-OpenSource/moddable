@@ -27,6 +27,7 @@ declare module "embedded:network/dns/resolver/udp" {
   }
 
   class Resolver {
+    target?: any
     constructor(options: Record<string, any>)
     close(): void
     resolve(options: Options): void

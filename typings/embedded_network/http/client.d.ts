@@ -25,6 +25,7 @@ declare module "embedded:network/http/client" {
     host: string
     dns?: any
     onError?: (err:any)=>void
+    target?: any
   }
 
   export interface RequestOptions {
@@ -46,6 +47,7 @@ declare module "embedded:network/http/client" {
   }
 
   class HTTPClient {
+    target?: any
     constructor(options: ClientOptions)
     request(options: RequestOptions): HTTPRequest
     close(): void
