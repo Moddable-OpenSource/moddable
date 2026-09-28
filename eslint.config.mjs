@@ -94,5 +94,11 @@ export default defineConfig([{
 				},
 			],
 		}
+	},
+	{
+		files: ["typings/**/*.d.ts"],
+		rules: {
+			"@typescript-eslint/no-empty-object-type": ["error", { allowInterfaces: "always" }],
+		}
 	}
 ]);
