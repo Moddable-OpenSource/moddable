@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -74,4 +74,7 @@ declare module "embedded:storage/files" {
 		[Symbol.iterator](): IterableIterator<string>;
 		[Symbol.dispose](): void;
 	}
+
+	const root: Directory;
+	export default root;
 }
