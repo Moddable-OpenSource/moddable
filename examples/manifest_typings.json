@@ -9,6 +9,9 @@
 		"commodetto/*": [
 			"$(TYPINGS)/commodetto/*"
 		],
+		"config/*": [
+			"$(TYPINGS)/config/*"
+		],
 		"dns/*": [
 			"$(TYPINGS)/dns/*"
 		],

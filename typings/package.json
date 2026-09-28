@@ -4,10 +4,25 @@
 	"main": "",
 	"types": "xs",
 	"typesVersions": {
-		">=6.0.0-0": { "tsconfig.base.json": ["./tsconfig.es2025.json"] },
-		">=5.4.0-0": { "tsconfig.base.json": ["./tsconfig.es2024.json"] }
+		">=6.0.0-0": {
+			"tsconfig.base.json": [
+				"./tsconfig.es2025.json"
+			]
+		},
+		">=5.4.0-0": {
+			"tsconfig.base.json": [
+				"./tsconfig.es2024.json"
+			]
+		}
 	},
 	"author": "Moddable",
 	"license": "ISC",
-	"description": ""
+	"description": "",
+	"imports": {
+		"#host": {
+			"esp32/moddable_six": "./host/esp32/moddable_six.d.ts",
+			"esp32/moddable_two": "./host/esp32/moddable_two.d.ts",
+			"default": "./host/default.d.ts"
+		}
+	}
 }

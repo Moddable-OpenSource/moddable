@@ -18,6 +18,7 @@
  *
  */
 
+/// <reference path="./host/index.d.ts" />
 /// <reference path="./web/abortsignal.d.ts" />
 /// <reference path="./web/console.d.ts" />
 /// <reference path="./web/decompressionstream.d.ts" />
