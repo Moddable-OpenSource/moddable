@@ -403,10 +403,13 @@ txIndex fxCheckArrayLength(txMachine* the, txSlot* slot)
 			return (txIndex)slot->value.integer;
 	}
 	else if (slot->kind == XS_NUMBER_KIND) {
-		txIndex length = (txIndex)slot->value.number;
-		txNumber check = length;
-		if (slot->value.number == check)
-			return length;
+		txNumber number = slot->value.number;
+		if ((0 <= number) && (number <= 4294967295.0)) {
+			txIndex length = (txIndex)number;
+			txNumber check = length;
+			if (number == check)
+				return length;
+		}
 	}
 	else {
 		txUnsigned length;
@@ -559,7 +562,12 @@ void fxFindThisItem(txMachine* the, txSlot* function, txNumber index, txSlot* it
 	mxCall();
 	/* ARGUMENTS */
 	mxPushSlot(mxThis);
-	mxGetIndex((txIndex)index);
+	if (index < 4294967295.0)
+		mxGetIndex((txIndex)index);
+	else {
+		mxPushNumber(index);
+		mxGetAt();
+	}
 	if (item) {
 		item->kind = the->stack->kind;
 		item->value = the->stack->value;
@@ -1606,10 +1614,12 @@ void fx_Array_prototype_concat(txMachine* the)
 			}
 			if (flag) {	
 				txIndex length, index;
+				txNumber number;
 				mxPushSlot(argument);
 				mxGetID(mxID(_length));
-				length = (txIndex)fxToLength(the, the->stack);
+				number = fxToLength(the, the->stack);
 				mxPop();
+				length = (number < 4294967295.0) ? (txIndex)number : 4294967295u;
                 if (resultLength + length < resultLength)
                     mxTypeError("array overflow");
 				index = 0;
@@ -1994,7 +2004,10 @@ void fx_Array_prototype_findLastIndex(txMachine* the)
 		index--;
 		fxFindThisItem(the, function, index, C_NULL);
 		if (fxToBoolean(the, the->stack++)) {
-			fxUnsigned(the, mxResult, (txUnsigned)index);
+			if (index < 4294967296.0)
+				fxUnsigned(the, mxResult, (txUnsigned)index);
+			else
+				fxNumber(the, mxResult, index);
 			break;
 		}
 	}
@@ -2003,12 +2016,16 @@ void fx_Array_prototype_findLastIndex(txMachine* the)
 void fx_Array_prototype_flat(txMachine* the)
 {
 	txIndex length, depth = 1;
+	txNumber number;
 	mxPushSlot(mxThis);
 	mxGetID(mxID(_length));
-	length = (txIndex)fxToLength(the, the->stack);
+	number = fxToLength(the, the->stack);
+	length = (number < 4294967295.0) ? (txIndex)number : 4294967295u;
 	mxPop();
-	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0)))
-		depth = (txIndex)fxToLength(the, mxArgv(0));
+	if ((mxArgc > 0) && !mxIsUndefined(mxArgv(0))) {
+		number = fxToLength(the, mxArgv(0));
+		depth = (number < 4294967295.0) ? (txIndex)number : 4294967295u;
+	}
 	fxCreateArraySpecies(the, 0);
 	fx_Array_prototype_flatAux(the, mxThis, length, 0, depth, C_NULL);
 }

@@ -356,7 +356,7 @@ void fx_Math_imul(txMachine* the)
 	txInteger x = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
 	txInteger y = (mxArgc > 1) ? fxToInteger(the, mxArgv(1)) : 0;
 	mxResult->kind = XS_INTEGER_KIND;
-	mxResult->value.integer = x * y;
+	mxResult->value.integer = (txInteger)((txUnsigned)x * (txUnsigned)y);
 }
 
 void fx_Math_imuldiv(txMachine* the)
@@ -718,10 +718,12 @@ void fx_Math_trunc(txMachine* the)
 void fx_Math_toInteger(txMachine* the)
 {
 	txNumber number = mxResult->value.number;
-	txInteger integer = (txInteger)number;
-	txNumber check = integer;
-	if ((number == check) && (number || !c_signbit(number))) {
-		mxResult->value.integer = integer;
-		mxResult->kind = XS_INTEGER_KIND;
+	if ((-2147483648.0 <= number) && (number <= 2147483647.0)) {
+		txInteger integer = (txInteger)number;
+		txNumber check = integer;
+		if ((number == check) && (number || !c_signbit(number))) {
+			mxResult->value.integer = integer;
+			mxResult->kind = XS_INTEGER_KIND;
+		}
 	}
 }

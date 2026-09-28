@@ -299,7 +299,7 @@ C_FLAGS = -c $(MACOS_ARCH) $(MACOS_VERSION_MIN)
 ifeq ($(GOAL),debug)
 	C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_FLAGS += -D_RELEASE=1 -O3
+	C_FLAGS += -D_RELEASE=1 -O3 -fno-strict-float-cast-overflow
 endif
 
 LIBRARIES = -framework CoreServices

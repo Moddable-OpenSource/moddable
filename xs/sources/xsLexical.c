@@ -347,12 +347,14 @@ txBoolean fxGetNextIdentiferX(txParser* parser, txU4* value)
 void fxGetNextNumber(txParser* parser, txNumber theNumber)
 {
 	parser->states[2].number = theNumber;
-	parser->states[2].integer = (txInteger)parser->states[2].number;
-	theNumber = parser->states[2].integer;
-	if (parser->states[2].number == theNumber)
-		parser->states[2].token = XS_TOKEN_INTEGER;
-	else
-		parser->states[2].token = XS_TOKEN_NUMBER;
+	if ((-2147483648.0 <= theNumber) && (theNumber <= 2147483647.0)) {
+		parser->states[2].integer = (txInteger)theNumber;
+		if (theNumber == (txNumber)parser->states[2].integer) {
+			parser->states[2].token = XS_TOKEN_INTEGER;
+			return;
+		}
+	}
+	parser->states[2].token = XS_TOKEN_NUMBER;
 }
 
 void fxGetNextNumberB(txParser* parser)

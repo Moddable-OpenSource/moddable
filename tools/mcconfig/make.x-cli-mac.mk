@@ -95,7 +95,7 @@ C_INCLUDES += $(foreach dir,$(XS_DIRECTORIES) $(TMP_DIR),-I$(dir))
 MACOS_ARCH ?=
 XS_C_FLAGS = -c $(MACOS_ARCH)
 ifeq ($(DEBUG),)
-	XS_C_FLAGS += -D_RELEASE=1 -O3
+	XS_C_FLAGS += -D_RELEASE=1 -O3 -fno-strict-float-cast-overflow
 else
 	XS_C_FLAGS += -D_DEBUG=1 -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1

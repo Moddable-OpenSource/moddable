@@ -2670,7 +2670,8 @@ void fx_TypedArray_prototype_with(txMachine* the)
 {
 	mxTypedArrayDeclarations;
 	txSlot* constructor = &the->stackIntrinsics[-1 - (txInteger)dispatch->value.typedArray.dispatch->constructorID];
-	txInteger index = (txInteger)fxArgToRelativeIndex(the, 0, 0, length), count, i;
+	txNumber relative = fxArgToRelativeIndex(the, 0, 0, length);
+	txInteger index, count, i;
 	txSlot* value;
 	if (mxArgc > 1)
 		mxPushSlot(mxArgv(1));
@@ -2679,8 +2680,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	value = the->stack;	
 	(*dispatch->value.typedArray.dispatch->coerce)(the, value);
 	count = fxGetDataViewSize(the, view, buffer) >> dispatch->value.typedArray.dispatch->shift;
-	if ((index < 0) || (count <= index))
+	if (!((0 <= relative) && (relative < count)))
 		mxRangeError("invalid index");
+	index = (txInteger)relative;
 	mxPushSlot(constructor);
 	mxNew();
 	mxPushInteger(length);

@@ -317,12 +317,13 @@ void fxParseJSONToken(txMachine* the, txJSONParser* theParser)
 			c_memcpy(the->nameBuffer, s, size);
 			the->nameBuffer[size] = 0;
 			theParser->number = fxStringToNumber(the, the->nameBuffer, 0);
-			theParser->integer = (txInteger)theParser->number;
-			number = theParser->integer;
-			if ((theParser->number == number) && (theParser->number != -0))
-				theParser->token = XS_JSON_TOKEN_INTEGER;
-			else
-				theParser->token = XS_JSON_TOKEN_NUMBER;
+			theParser->token = XS_JSON_TOKEN_NUMBER;
+			if ((-2147483648.0 <= theParser->number) && (theParser->number <= 2147483647.0)) {
+				theParser->integer = (txInteger)theParser->number;
+				number = theParser->integer;
+				if ((theParser->number == number) && (theParser->number != -0))
+					theParser->token = XS_JSON_TOKEN_INTEGER;
+			}
 			break;
 		case ',':
 			p++;

@@ -193,15 +193,14 @@ void fx_parseInt(txMachine* the)
 	}
 	else {
 		aResult *= aSign;
-		aRadix = (txInteger)aResult;
-		aSign = aRadix;
-		if (aSign == aResult) {
-			mxResult->value.integer = aRadix;
-			mxResult->kind = XS_INTEGER_KIND;
-		}
-		else {
-			mxResult->value.number = aResult;
-			mxResult->kind = XS_NUMBER_KIND;
+		mxResult->value.number = aResult;
+		mxResult->kind = XS_NUMBER_KIND;
+		if ((-2147483648.0 <= aResult) && (aResult <= 2147483647.0)) {
+			aRadix = (txInteger)aResult;
+			if ((aRadix == aResult) && (aRadix || !c_signbit(aResult))) {
+				mxResult->value.integer = aRadix;
+				mxResult->kind = XS_INTEGER_KIND;
+			}
 		}
 	}
 }

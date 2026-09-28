@@ -1285,11 +1285,13 @@ txFlag fxIntegerToIndex(void* the, txInteger theInteger, txIndex* theIndex)
 
 txFlag fxNumberToIndex(void* the, txNumber number, txIndex* theIndex)
 {
-	txIndex integer = (txIndex)number;
-	txNumber check = integer;
-	if ((number == check) && (integer < 4294967295u)) {
-		*theIndex = integer;
-		return 1;
+	if ((0 <= number) && (number < 4294967295.0)) {
+		txIndex integer = (txIndex)number;
+		txNumber check = integer;
+		if (number == check) {
+			*theIndex = integer;
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -1305,13 +1307,15 @@ txFlag fxStringToIndex(void* the, txString theString, txIndex* theIndex)
 	if (('+' != c) && ('-' != c) && ('.' != c) && !(('0' <= c) && ('9' >= c)))
 		return 0;
 	number = fxStringToNumber(the, theString, 1);
-	integer = (txIndex)number;
-	check = integer;
-	if ((number == check) && (integer < 4294967295u)) {
-		fxNumberToString(the, number, buffer, sizeof(buffer), 0, 0);
-		if (!c_strcmp(theString, buffer)) {
-			*theIndex = integer;
-			return 1;
+	if ((0 <= number) && (number < 4294967295.0)) {
+		integer = (txIndex)number;
+		check = integer;
+		if (number == check) {
+			fxNumberToString(the, number, buffer, sizeof(buffer), 0, 0);
+			if (!c_strcmp(theString, buffer)) {
+				*theIndex = integer;
+				return 1;
+			}
 		}
 	}
 	return 0;

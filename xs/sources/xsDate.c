@@ -1531,7 +1531,6 @@ void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt)
 	dt->month = month;
 	dt->year = year;
 	if (!utc) {
-		txNumber former = value;
 		txInteger similar;
 		c_time_t time;
 		c_tm tm;
@@ -1549,8 +1548,9 @@ void fxDateSplit(txNumber value, txBoolean utc, txDateTime* dt)
 		dt->hours = tm.tm_hour;
 		dt->date = tm.tm_mday;
 		dt->month = tm.tm_mon;
-		dt->year = tm.tm_year + 1900 + year - similar;
-		dt->offset = (txInteger)c_trunc((fxDateMerge(dt, 1) - former) / 60000.0);
+		dt->year = tm.tm_year + 1900;
+		dt->offset = (txInteger)c_trunc((fxDateMerge(dt, 1) - value) / 60000.0);
+		dt->year += year - similar;
 	}
 	dt->value = value;
 }
