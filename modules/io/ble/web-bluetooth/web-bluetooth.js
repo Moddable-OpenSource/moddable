@@ -403,7 +403,7 @@ class BluetoothDevice {
 		}
 		startNotifications() {
 			const target = Promise.withResolvers();
-			this.service.device.#bleClient.subscribe(this.#bleCharacteristic, (error, result) => {
+			this.service.device.#bleClient.subscribe(this.#bleCharacteristic, error => {
 				if (error)
 					target.reject(error);
 				else {
@@ -414,19 +414,19 @@ class BluetoothDevice {
 						}
 						this.#listeners.forEach(listener => listener.call(null, event));
 					});
-					target.resolve(result);
+					target.resolve(this);
 				}
 			});
 			return target.promise;
 		}
 		stopNotifications() {
 			const target = Promise.withResolvers();
-			this.service.device.#bleClient.unsubscribe(this.#bleCharacteristic, (error, result) => {
+			this.service.device.#bleClient.unsubscribe(this.#bleCharacteristic, error => {
 				if (error)
 					target.reject(error);
 				else {
 					this.service.device.#notifications.delete(this.#bleCharacteristic.handle);
-					target.resolve(result);
+					target.resolve(this);
 				}
 			});
 			return target.promise;
