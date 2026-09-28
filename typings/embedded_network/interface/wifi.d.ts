@@ -25,7 +25,7 @@ declare module "embedded:network/interface/wifi" {
 
 	export interface WiFiConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: (property: WiFiChangedProperty) => void;
+		onChanged?: (this: WiFi, property: WiFiChangedProperty) => void;
 	}
 
 	export interface WiFiScanResult {
@@ -36,8 +36,8 @@ declare module "embedded:network/interface/wifi" {
 	}
 
 	export interface WiFiScanOptions {
-		onFound?: (result: WiFiScanResult) => void;
-		onComplete?: () => void;
+		onFound?: (this: WiFi, result: WiFiScanResult) => void;
+		onComplete?: (this: WiFi) => void;
 	}
 
 	export interface WiFiConnectOptions {

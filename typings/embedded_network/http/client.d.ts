@@ -24,7 +24,7 @@ declare module "embedded:network/http/client" {
     port?: number
     host: string
     dns?: any
-    onError?: (err:any)=>void
+    onError?: (this: HTTPClient, err:any)=>void
     target?: any
   }
 

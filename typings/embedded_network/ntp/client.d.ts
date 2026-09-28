@@ -29,16 +29,13 @@ declare module "embedded:network/ntp/client" {
 		target?: T;
 	}
 	
-	export interface NTPCallback {
-		(error: null, time: number): void;
-		(error: Error): void;
-	}
+	export type NTPCallback<T = any> = (this: NTP<T>, error: Error | null, time: number) => void;
 	
 	class NTP<T = any> {
 		target?: T;
 		constructor(options: NTPOptions<T>);
 		close(): void;
-		getTime(callback: NTPCallback): void;
+		getTime(callback: NTPCallback<T>): void;
 	}
 	interface NTP<T = any> extends Disposable {}
 	export default NTP;

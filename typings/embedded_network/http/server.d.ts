@@ -67,7 +67,7 @@ declare module "embedded:network/http/server" {
         socket: HTTPServerSocketProvider;
         port?: number;
         keepAlive?: number;
-        onConnect?(connection: HTTPConnection): void;
+        onConnect?(this: HTTPServer, connection: HTTPConnection): void;
         target?: any;
         onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
     }

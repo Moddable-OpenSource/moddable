@@ -22,8 +22,8 @@ declare module "embedded:network/dns/resolver/udp" {
 
   interface Options {
     host: string
-    onResolved: ((host:string, address:any) => null)
-    onError: ((host:string) => null)
+    onResolved?: (this: Resolver, host: string, address: string) => void
+    onError?: (this: Resolver, host: string) => void
   }
 
   class Resolver {

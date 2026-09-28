@@ -25,7 +25,7 @@ declare module "embedded:network/interface/ethernet" {
 
 	export interface EthernetConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: (property: EthernetChangedProperty) => void;
+		onChanged?: (this: Ethernet, property: EthernetChangedProperty) => void;
 	}
 
 	export interface EthernetStaticAddress {
