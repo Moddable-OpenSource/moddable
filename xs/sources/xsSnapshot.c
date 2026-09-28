@@ -740,7 +740,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_WeakMap_prototype_getOrInsertComputed,
 #endif
 #if mxImmutableArrayBuffers
-	fx_ArrayBuffer_prototype_sliceToImmutabls,
+	fx_ArrayBuffer_prototype_sliceToImmutable,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
