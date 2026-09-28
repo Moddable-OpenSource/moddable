@@ -1,4 +1,14 @@
 declare module "embedded:network/mqtt/client" {
+  import type TCP from "embedded:io/socket/tcp";
+  import type TLS from "embedded:io/socket/tcp/tls";
+  import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+  export interface MQTTClientProvider {
+    io: typeof MQTTClient,
+    dns: DNSResolverProvider,
+    socket: { io: typeof TCP | typeof TLS, [option: string]: unknown },
+  }
+
   interface onReadableOptions {
     more: boolean,
     topic?: string,
@@ -38,23 +48,46 @@ declare module "embedded:network/mqtt/client" {
     socket: Record<string, any>,
   }
 
-  interface WriteOptions {
-    operation?: number,
+  interface PublishOptions {
+    operation?: typeof MQTTClient.PUBLISH,
     id?: number,
     topic: string,
     QoS?: number,
     retain?: boolean,
     duplicate?: boolean,
-    byteLength?: number,
-    items?: any[], // being lazy here
+    byteLength?: number, // total payload, when larger than this first fragment
   }
+
+  interface SubscribeOptions {
+    operation: typeof MQTTClient.SUBSCRIBE,
+    id?: number,
+    items: { topic: string, QoS?: number }[],
+  }
+
+  interface UnsubscribeOptions {
+    operation: typeof MQTTClient.UNSUBSCRIBE,
+    id?: number,
+    items: { topic: string }[],
+  }
+
+  interface AcknowledgeOptions {
+    operation: typeof MQTTClient.PUBACK | typeof MQTTClient.PUBREC | typeof MQTTClient.PUBREL | typeof MQTTClient.PUBCOMP,
+    id: number,
+  }
+
+  interface SessionOptions {
+    operation: typeof MQTTClient.PINGREQ | typeof MQTTClient.DISCONNECT,
+  }
+
+  type WriteOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions | AcknowledgeOptions | SessionOptions;
 
   class MQTTClient {
     target?: any
     constructor(options: Options)
     read(count: number): ArrayBuffer
     read(buffer: ByteBuffer): number
-    write(data: ByteBuffer, options: WriteOptions): number
+    write(data: ByteBuffer): number // continues the publish in progress
+    write(data: ByteBuffer | null, options: WriteOptions): number
     close(): void
 
     static CONNECT: 1

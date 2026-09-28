@@ -1,6 +1,9 @@
-import device from "embedded:provider/builtin";
+import builtin from "embedded:provider/builtin";
 import "config/dns";
 import HTTPClient from "embedded:network/http/client";
+
+/** @type {import("embedded:provider/builtin").DeviceConfig} */
+const device = builtin;
 
 device.network ??= {};
 device.network.http ??= {};

@@ -1,5 +1,8 @@
-import device from "embedded:provider/builtin";
+import builtin from "embedded:provider/builtin";
 import Resolver from "embedded:network/dns/resolver/udp";
+
+/** @type {import("embedded:provider/builtin").DeviceConfig} */
+const device = builtin;
 
 device.network ??= {};
 device.network.dns ??= {};

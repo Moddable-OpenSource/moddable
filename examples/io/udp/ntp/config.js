@@ -1,8 +1,11 @@
-import device from "embedded:provider/builtin";
+import builtin from "embedded:provider/builtin";
 import "config/dns";
 
 
 import NTP from "embedded:network/ntp/client";
+
+/** @type {import("embedded:provider/builtin").DeviceConfig} */
+const device = builtin;
 
 device.network ??= {};
 device.network.ntp ??= {}

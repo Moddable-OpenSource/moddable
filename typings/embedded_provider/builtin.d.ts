@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2026 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -20,47 +20,40 @@
 
 
 declare module "embedded:provider/builtin" {
-  import Digital from "embedded:io/digital";
-  import DigitalBank from "embedded:io/digitalbank";
-  import Analog from "embedded:io/analog";
-  import PWM from "embedded:io/pwm";
-  import PulseCount from "embedded:io/pulsecount";
-  import I2C from "embedded:io/i2c";
-  import SMBus from "embedded:io/smbus";
-  import SPI from "embedded:io/spi";
-  import Serial from "embedded:io/serial";
-  import TCP from "embedded:io/socket/tcp";
-  import UDP from "embedded:io/socket/udp";
-  import Listener from "embedded:io/socket/listener";
-  import TLS from "embedded:io/socket/tcp/tls";
-  import type { PinSpecifier } from "embedded:io/_common";
-  const device: {
-    io: {
-      Digital: typeof Digital;
-      DigitalBank: typeof DigitalBank;
-      Analog: typeof Analog;
-      PWM: typeof PWM;
-      PulseCount: typeof PulseCount;
-      I2C: typeof I2C;
-      SMBus: typeof SMBus;
-      SPI: typeof SPI;
-      Serial: typeof Serial;
-      TCP: typeof TCP;
-      UDP: typeof UDP;
-      Listener: typeof Listener;
-      TLS: typeof TLS;
-    };
-    analog: { default: ConstructorParameters<typeof Analog>[0] };
-    i2c: { default: ConstructorParameters<typeof I2C>[0] };
-    spi: { default: ConstructorParameters<typeof SPI>[0] };
-    serial: { default: ConstructorParameters<typeof Serial>[0] };
-    pin: { [name: string]: PinSpecifier };
+  export interface Device {
+  }
+  export interface DeviceIO {
+  }
+  export interface DeviceNetwork {
+  }
 
-    readonly network: {
-      readonly http: {
-        readonly server: import("embedded:network/http/server").HTTPServerProvider;
-      };
-    };
-  };
+  export interface DeviceAnalog {
+  }
+  export interface DeviceI2C {
+  }
+  export interface DeviceSPI {
+  }
+  export interface DeviceSerial {
+  }
+
+  type Speed<T, K extends keyof T> = T extends unknown ? Omit<T, K> & Partial<Pick<T, K>> : never;
+  export type AnalogBus = ConstructorParameters<typeof import("embedded:io/analog").default>[0] & { io: typeof import("embedded:io/analog").default };
+  export type I2CBus = Speed<Omit<ConstructorParameters<typeof import("embedded:io/i2c").default>[0], "address">, "hz"> & { io: typeof import("embedded:io/i2c").default };
+  export type SPIBus = Speed<ConstructorParameters<typeof import("embedded:io/spi").default>[0], "hz"> & { io: typeof import("embedded:io/spi").default };
+  export type SerialBus = Speed<ConstructorParameters<typeof import("embedded:io/serial").default>[0], "baud"> & { io: typeof import("embedded:io/serial").default };
+
+  // any function or class
+  type Callable = ((...args: never) => unknown) | (abstract new (...args: never) => unknown);
+
+  // device after lockdown: frozen with every io resolved to a constructor
+  type Frozen<T> = T extends Callable | readonly unknown[] ? T : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T;
+
+  // device before lockdown (during preload)
+  type Provider = { io: Callable };
+  type IOName<C> = { [N in keyof DeviceIO]: DeviceIO[N] extends C ? N : never }[keyof DeviceIO];
+  type ProviderConfig<T> = T extends Callable | readonly unknown[] ? T : T extends object ? { -readonly [K in keyof T]: K extends "io" ? T[K] | IOName<T[K]> : ProviderConfig<T[K]> } : T;
+  export type DeviceConfig<T = Device> = T extends Callable | readonly unknown[] ? T : T extends Provider ? ProviderConfig<T> : T extends object ? { -readonly [K in keyof T]?: DeviceConfig<T[K]> } : T;
+
+  const device: Frozen<Device>;
   export default device;
 }

@@ -21,6 +21,16 @@
 // websocketclient.d.ts
 
 declare module "embedded:network/websocket/client" {
+  import type TCP from "embedded:io/socket/tcp";
+  import type TLS from "embedded:io/socket/tcp/tls";
+  import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+  export interface WebSocketClientProvider {
+    io: typeof WebSocketClient;
+    dns: DNSResolverProvider;
+    socket: { io: typeof TCP | typeof TLS; [option: string]: unknown };
+  }
+
   interface WebSocketClientOptions {
     onReadable?: (this: WebSocketClient, count: number, options: { more: boolean; binary: boolean }) => void;
     onWritable?: (this: WebSocketClient, count: number) => void;

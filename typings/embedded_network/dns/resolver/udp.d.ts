@@ -19,6 +19,13 @@
 */
 
 declare module "embedded:network/dns/resolver/udp" {
+  import type UDP from "embedded:io/socket/udp";
+
+  export interface DNSResolverProvider {
+    io: typeof Resolver
+    servers: string[]
+    socket: { io: typeof UDP, [option: string]: unknown }
+  }
 
   interface Options {
     host: string

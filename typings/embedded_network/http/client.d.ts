@@ -19,6 +19,17 @@
 */
 
 declare module "embedded:network/http/client" {
+  import type TCP from "embedded:io/socket/tcp";
+  import type TLS from "embedded:io/socket/tcp/tls";
+  import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+  export interface HTTPClientProvider {
+    io: typeof HTTPClient
+    dns: DNSResolverProvider
+    socket: { io: typeof TCP | typeof TLS, [option: string]: unknown }
+    port?: number
+  }
+
   export interface ClientOptions {
     socket?: any
     port?: number

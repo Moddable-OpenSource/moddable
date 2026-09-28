@@ -21,7 +21,15 @@
 declare module "embedded:network/ntp/client" {
 	import type UDP from "embedded:io/socket/udp";
 	import type Resolver from "embedded:network/dns/resolver/udp";
-	
+	import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+	export interface NTPClientProvider {
+		io: typeof NTP;
+		dns: DNSResolverProvider;
+		socket: { io: typeof UDP; [option: string]: unknown };
+		servers: string[];
+	}
+
 	export interface NTPOptions<T = any> {
 		servers: string[];
 		socket: { io: typeof UDP };
