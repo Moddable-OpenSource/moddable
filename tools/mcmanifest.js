@@ -1834,14 +1834,7 @@ export class TSConfigFile extends PrerequisiteFile {
 	generate(tool, typescript = true, javascript = false) {
 		if (typescript) {
 			// Build paths map for type resolution
-			const paths = {};
-			for (let result of tool.dtsFiles) {
-				let specifier = result.target;
-				if (tool.windows)
-					specifier = specifier.replaceAll("\\", "/");
-				specifier = tool.unresolvePrefix(specifier);
-				paths[specifier] = [ result.source.slice(0, -5) ];
-			}
+			const paths = TSConfigFile.paths(tool);
 			for (let result of tool.tsFiles) {
 				let specifier = result.target.slice(0, -4);
 				if (tool.windows)
@@ -1885,6 +1878,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			// Generate per-file tsconfigs with isolated output directories
 			const basePath = tool.modulesPath + tool.slash + "tsconfig-base.json";
 			const tscDir = tool.tmpPath + tool.slash + "tsc";
+			const companions = TSConfigFile.companions(tool);
 			for (let result of tool.tsFiles) {
 				const target = result.target;
 				const targetNoExt = target.slice(0, -4);
@@ -1901,7 +1895,7 @@ export class TSConfigFile extends PrerequisiteFile {
 						rootDir: tool.windows ? result.source.slice(0, 3) : "/",
 						outDir: outDir
 					},
-					files: [result.source]
+					files: [result.source, ...companions]
 				};
 				const perFileContent = JSON.stringify(perFileJson, null, "\t");
 				const perFileExisting = tool.isDirectoryOrFile(tsconfigPath) ? tool.readFileString(tsconfigPath) : "";
@@ -1927,14 +1921,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			files: [
 			]
 		}
-		const paths = json.compilerOptions.paths;
-		for (let result of tool.dtsFiles) {
-			let specifier = result.target;
-			if (tool.windows)
-				specifier = specifier.replaceAll("\\", "/");
-			specifier = tool.unresolvePrefix(specifier);
-			paths[specifier] = [ result.source.slice(0, -5) ];
-		}
+		const paths = json.compilerOptions.paths = TSConfigFile.paths(tool);
 		const sources = TSConfigFile.filter(tool, tool.jsFiles);
 		for (let result of sources) {
 			let specifier = result.target.slice(0, -4);
@@ -1943,6 +1930,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			specifier = tool.unresolvePrefix(specifier);
 			json.files.push(result.source);
 		}
+		json.files.push(...TSConfigFile.companions(tool));
 		json.compilerOptions = {
 			...json.compilerOptions,
 			allowJs: true,
@@ -1965,6 +1953,41 @@ export class TSConfigFile extends PrerequisiteFile {
 		}
 		this.write(JSON.stringify(json, null, "\t"));
 		this.close();
+	}
+	// support for config/*
+	static companions(tool) {
+		const specifiers = new Set([...tool.jsFiles, ...tool.tsFiles].map(item => item.target.slice(0, -4)));
+		return [...tool.dtsFiles.filter(item => specifiers.has(item.target)).flatMap(item => [item.source, ...(item.sources ?? [])]), ...TSConfigFile.host(tool)];
+	}
+	// support for host provider typings
+	static host(tool) {
+		const host = (tool.environment.TYPINGS ?? (tool.moddablePath + tool.slash + "typings")) + tool.slash + "host" + tool.slash;
+		if (tool.subplatform) {
+			if (tool.externalSubplatform) {
+				if (1 == tool.isDirectoryOrFile(tool.environment.SUBPLATFORMDIRECTORY + tool.slash + "host" + tool.slash + "provider.d.ts"))
+					return [];
+			}
+			else {
+				const path = host + tool.platform + tool.slash + tool.subplatform + ".d.ts";
+				if (1 == tool.isDirectoryOrFile(path))
+					return [path];
+			}
+		}
+		const path = host + tool.platform + ".d.ts";
+		if (1 == tool.isDirectoryOrFile(path))
+			return [path];
+		return tool.subplatform ? [host + "generic.d.ts"] : [];
+	}
+	static paths(tool) {
+		const paths = {};
+		for (let result of tool.dtsFiles) {
+			let specifier = result.target;
+			if (tool.windows)
+				specifier = specifier.replaceAll("\\", "/");
+			specifier = tool.unresolvePrefix(specifier);
+			paths[specifier] = [ result.source.slice(0, -5) ];
+		}
+		return paths;
 	}
 	static filter(tool, sources) {
 		const MODDABLE = tool.environment.MODDABLE;
@@ -2541,6 +2564,7 @@ export class Tool extends TOOL {
 							dir = dir.replace("~", this.getenv("HOME"));
 						this.environment.SUBPLATFORMDIRECTORY = this.resolveDirectoryPath(dir);
 						this.environment.SUBPLATFORMMANIFEST = this.environment.SUBPLATFORMDIRECTORY + this.slash + "manifest.json";
+						this.externalSubplatform = true;
 						try {
 							const manifest = JSON.parse(this.readFileString(this.environment.SUBPLATFORMMANIFEST));
 							this.subplatform = manifest.build?.SUBPLATFORM ?? this.environment.SUBPLATFORMDIRECTORY.split(this.slash).at(-1);
