@@ -430,7 +430,7 @@ class BluetoothDevice {
 				}
 			});
 			return target.promise;
-		}
+	}
 
 		writeValue(value) {
 			return this.writeValueWithoutResponse(value);
