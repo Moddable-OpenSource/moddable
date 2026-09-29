@@ -2368,13 +2368,13 @@ void fx_TypedArray_prototype_reverse(txMachine* the)
 void fx_TypedArray_prototype_set(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
-	txSlot* data = buffer->value.reference->next;
-	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txSlot* source = fxArgToInstance(the, 0);
-	txInteger target = fxArgToByteLength(the, 1, 0);
-	txInteger offset = view->value.dataView.offset + (target * delta);	
-	length = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 	if (source->next && (source->next->kind == XS_TYPED_ARRAY_KIND)) {
+		txSlot* data = buffer->value.reference->next;
+		txInteger delta = dispatch->value.typedArray.dispatch->size;
+		txInteger target = fxArgToByteLength(the, 1, 0);
+		txInteger offset = view->value.dataView.offset + (target * delta);	
+		length = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		txSlot* sourceDispatch = source->next;
 		txSlot* sourceView = sourceDispatch->next;
 		txSlot* sourceBuffer = sourceView->next;
@@ -2421,21 +2421,32 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		mxPop();
 	}
 	else {
-		txInteger count, index;
+		txNumber targetOffset = 0, targetLength, sourceLength;
+		txSlot *arg = mxArgv(1);
+		if ((mxArgc > 1) && (arg->kind != XS_UNDEFINED_KIND)) {
+			targetOffset = c_trunc(fxToNumber(the, arg));
+			if (c_isnan(targetOffset))
+				targetOffset = 0;
+			if (targetOffset < 0) 
+				mxRangeError("offset < 0");
+		}
 		if (fxIsDataViewOutOfBound(the, view, buffer))
 			mxTypeError("out of bound buffer");
+		targetLength = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		mxPushSlot(mxArgv(0));
 		mxGetID(mxID(_length));
-		count = fxToInteger(the, the->stack);
+		sourceLength = fxToLength(the, the->stack);
 		mxPop();
-		if (length - count < target)
+		if (sourceLength + targetOffset > targetLength)
 			mxRangeError("invalid offset");
-		index = 0;
+		txIndex count = (txIndex)sourceLength;
+		txIndex index = 0;
+		txIndex delta = (txIndex)targetOffset;
 		while (index < count) {
 			mxPushSlot(mxArgv(0));
 			mxGetIndex(index);
 			mxPushSlot(mxThis);
-			mxPushInteger(target + index);
+			mxPushInteger(delta + index);
 			mxSetAt();
 			mxPop();
 			index++;
