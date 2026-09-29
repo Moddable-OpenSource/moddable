@@ -1448,6 +1448,8 @@ void fx_Array_fromAsync_onIterated(txMachine* the)
 
 	mxTry(the) {
 		mxPushSlot(mxArgv(0));
+		if (!mxIsReference(the->stack))
+			mxTypeError("iterator result: not an object");
 		mxGetID(mxID(_done));
 		if (fxToBoolean(the, the->stack)) {
 			mxPushSlot(index);
