@@ -49,6 +49,7 @@ static txInteger fxCheckDataViewSize(txMachine* the, txSlot* view, txSlot* buffe
 static txSlot* fxNewDataViewInstance(txMachine* the);
 
 static void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index, txSlot* item);
+static void fxCheckTypedArrayContentType(txMachine* the, txSlot* dispatch, txSlot* sourceDispatch);
 static txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot);
 static txSlot* fxConstructTypedArray(txMachine* the);
 static txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txTypeAtomics* atomics);
@@ -1462,6 +1463,16 @@ void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, tx
 	mxRunCount(3);
 }
 
+void fxCheckTypedArrayContentType(txMachine* the, txSlot* dispatch, txSlot* sourceDispatch)
+{
+	txBoolean contentType = (dispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+			|| (dispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+	txBoolean sourceContentType = (sourceDispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+			|| (sourceDispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+	if (contentType != sourceContentType)
+		mxTypeError("incompatible content type");
+}
+
 txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
@@ -1619,12 +1630,7 @@ void fx_TypedArray(txMachine* the)
 				if (dispatch == sourceDispatch)
 					c_memcpy(data->value.arrayBuffer.address + offset, sourceData->value.arrayBuffer.address + sourceOffset, size);
 				else {
-					txBoolean contentType = (dispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
-							|| (dispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
-					txBoolean sourceContentType = (sourceDispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
-							|| (sourceDispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
-					if (contentType != sourceContentType)
-						mxTypeError("incompatible content type");
+					fxCheckTypedArrayContentType(the, dispatch, sourceDispatch);
 					mxPushUndefined();
 					while (offset < size) {
 						(*sourceDispatch->value.typedArray.dispatch->getter)(the, sourceData, sourceOffset, the->stack, EndianNative);
@@ -2008,6 +2014,7 @@ void fx_TypedArray_prototype_filter(txMachine* the)
 		mxResultTypedArrayDeclarations;
 		txInteger resultOffset = 0;
 		txInteger resultSize = resultDispatch->value.typedArray.dispatch->size;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < count)
 			mxTypeError("result: too small TypedArray instance");
 		slot = list->next;
@@ -2279,6 +2286,7 @@ void fx_TypedArray_prototype_map(txMachine* the)
 		mxResultTypedArrayDeclarations;
 		txU2 shift = resultDispatch->value.typedArray.dispatch->shift;
 		txInteger index = 0;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < length)
 			mxTypeError("result: too small TypedArray instance");
 		while (index < length) {
@@ -2449,6 +2457,7 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 	mxPullSlot(mxResult);
 	{
 		mxResultTypedArrayDeclarations;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < count)
 			mxTypeError("result: too small TypedArray instance");
 		if (count) {
@@ -2544,7 +2553,10 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 		mxRunCount(3);
 	}
 	mxPullSlot(mxResult);
-	fxCheckTypedArrayInstance(the, mxResult);
+	{
+		mxResultTypedArrayDeclarations;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
+	}
 }
 
 void fx_TypedArray_prototype_toLocaleString(txMachine* the)
