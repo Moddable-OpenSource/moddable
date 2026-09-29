@@ -1478,8 +1478,6 @@ txSlot* fxConstructTypedArray(txMachine* the)
 	txSlot* prototype;
 	txSlot* dispatch;
 	txSlot* instance;
-	if (!mxHasTarget)
-		mxTypeError("call: TypedArray");
 	dispatch = mxFunctionInstanceHome(mxFunction->value.reference);
 	dispatch = dispatch->next;
 	prototype = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_prototype), 0, XS_ANY);
@@ -1538,6 +1536,8 @@ txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txType
 
 void fx_TypedArray(txMachine* the)
 {
+	if (!mxHasTarget)
+		mxTypeError("call: TypedArray");
 	if (mxArgc > 0) {
 		if (mxArgv(0)->kind == XS_REFERENCE_KIND) {
 			txSlot* instance = fxConstructTypedArray(the);
@@ -1644,12 +1644,12 @@ void fx_TypedArray(txMachine* the)
 		fxToNumber(the, mxArgv(0));
 	}
 	{
+        txInteger length = fxArgToByteLength(the, 0, 0);
 		txSlot* instance = fxConstructTypedArray(the);
 		txSlot* dispatch = instance->next;
 		txSlot* view = dispatch->next;
 		txSlot* buffer = view->next;
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
-        txInteger length = fxArgToByteLength(the, 0, 0);
        if (length > (0x7FFFFFFF >> shift))
 			mxRangeError("byteLength too big");
         length <<= shift;
