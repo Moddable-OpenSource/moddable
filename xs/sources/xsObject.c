@@ -314,7 +314,6 @@ void fx_Object_prototype_toString(txMachine* the)
 	txString tag = C_NULL;
 	txSlot* instance = C_NULL;
 	txSlot* slot;
-	txSlot* target;
 	switch (mxThis->kind) {
 	case XS_UNDEFINED_KIND:
 		tag = "Undefined";
@@ -389,15 +388,8 @@ void fx_Object_prototype_toString(txMachine* the)
 						tag = "Object";
 						break;
 					case XS_PROXY_KIND:
-						while ((target = slot->value.proxy.target)) {
-							slot = target->next;
-							if (!slot || (slot->kind != XS_PROXY_KIND))
-								break;
-						}
-						if (mxIsFunction(target)) {
-							instance = target;
+						if (instance->flag & XS_CAN_CALL_FLAG)
 							tag = "Function";
-						}
 						else
 							tag = "Object";
 						break;
