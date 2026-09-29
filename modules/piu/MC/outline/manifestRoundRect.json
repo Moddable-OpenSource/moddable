@@ -1,0 +1,12 @@
+{
+	"build": {
+		"COMMODETTO_OUTLINE": "../../../commodetto/outline"
+	},
+	"include": "$(COMMODETTO_OUTLINE)/manifest.json",
+	"modules": {
+		"piu/RoundRect": "./piuRoundRect"
+	},
+	"preload": [
+		"piu/RoundRect"
+	]
+}
