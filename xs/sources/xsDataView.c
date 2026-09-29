@@ -721,16 +721,17 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 
 void fx_ArrayBuffer_prototype_resize(txMachine* the)
 {
-	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
-	fxCheckArrayBufferMutable(the, mxThis);
-	txInteger newByteLength = fxArgToByteLength(the, 0, 0);
-	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis);
+	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
+	txSlot* arrayBuffer = instance->next;
 	txSlot* bufferInfo = arrayBuffer->next;
-	txInteger maxByteLength, oldByteLength;
-	txByte* chunk;
-	maxByteLength = bufferInfo->value.bufferInfo.maxLength;
+	fxCheckArrayBufferMutable(the, mxThis);
+	txInteger maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	if (maxByteLength < 0)
 		mxTypeError("not resizable");
+	txInteger newByteLength = fxArgToByteLength(the, 0, 0);
+	fxCheckArrayBufferDetached(the, mxThis);
+	txInteger oldByteLength;
+	txByte* chunk;
 	oldByteLength = bufferInfo->value.bufferInfo.length;
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
