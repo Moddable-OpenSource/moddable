@@ -1189,7 +1189,7 @@ void fx_Array_from(txMachine* the)
 			if (mxIsUndefined(the->stack))
 				length = 0;
 			else
-				length = fxCheckArrayLength(the, the->stack);
+				length = (txIndex)fxToLength(the, the->stack);
 			mxPop();
 			fxCreateArray(the, 1, length);
 			while (index < length) {
