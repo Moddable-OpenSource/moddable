@@ -196,17 +196,27 @@ void fxAbort(xsMachine* the, int status)
 	}
 }
 
-void xs_system_exit(xsMachine* the)
+static void fxScreenExit(xsMachine* the, int status)
 {
 	txScreen* screen = the->host;
 	if (!screen)
 		screen = the->context;
 	if (screen)
-		(*screen->abort)(screen, mxScreenExitStatus);
+		(*screen->abort)(screen, status);
 	if (gxExitToHost && the->firstJump) {
 		gxExitToHost = 0;
 		fxExitToHost(the);
 	}
+}
+
+void xs_system_exit(xsMachine* the)
+{
+	fxScreenExit(the, mxScreenExitStatus);
+}
+
+void xs_system_restart(xsMachine* the)
+{
+	fxScreenExit(the, mxScreenRestartStatus);
 }
 
 void debugBreak(xsMachine* the, uint8_t stop)

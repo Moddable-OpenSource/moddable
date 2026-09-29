@@ -27,7 +27,7 @@
 
 void nrf52_delay(uint32_t delayMS) {
 
-	nrf_delay_us(delayMS * 1000);
+	nrf_delay_ms(delayMS);
 }
 
 uint32_t nrf52_milliseconds() {

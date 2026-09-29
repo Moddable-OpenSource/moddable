@@ -25,7 +25,7 @@ import {
 
 export class DeviceBehavior extends Behavior {
 	onAbort(container, status, reason) {
-		if (this.reloadOnAbort && (status >= 0)) {		// negative is System.exit()
+		if (this.reloadOnAbort && (status >= 0)) {		// negative is System.exit() or System.restart()
 			application.defer("doReloadFile");
 			return true;
 		}

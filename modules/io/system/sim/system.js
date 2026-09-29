@@ -24,6 +24,9 @@ export default Object.freeze({
 	exit(reason) {
 		return native("xs_system_exit").call(this, reason);
 	},
+	restart() {
+		return native("xs_system_restart").call(this);
+	},
 	sleep(duration) {
 		Timer.delay(duration);
 	}
