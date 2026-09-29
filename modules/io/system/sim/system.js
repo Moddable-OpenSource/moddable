@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2026  Moddable Tech, Inc.
+ * Copyright (c) 2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,10 +18,13 @@
  *
  */
 
+import Timer from "timer";
 
-class System {
-	static deepSleep() { return native("xs_system_deepSleep").call(this); }
-	static restart() { return native("xs_system_restart").call(this); }
-}
-
-globalThis.System = System;
+export default Object.freeze({
+	exit(reason) {
+		return native("xs_system_exit").call(this, reason);
+	},
+	sleep(duration) {
+		Timer.delay(duration);
+	}
+}, true);

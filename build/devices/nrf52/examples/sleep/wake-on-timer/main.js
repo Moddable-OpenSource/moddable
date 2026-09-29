@@ -12,7 +12,6 @@
  *
  */
 
-import {Sleep} from "sleep";
 import Time from "time";
 import Timer from "timer";
 import parseBMF from "commodetto/parseBMF";
@@ -37,7 +36,7 @@ Timer.repeat(id => {
 	render.end();
 	if (++count == 20) {
 		Timer.clear(id);
-		Sleep.deep(5000);
+		device.system.deepSleep(5000);
 	}
 }, 500);
 

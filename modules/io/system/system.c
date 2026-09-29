@@ -22,48 +22,32 @@
 
 #include "xsHost.h"
 
-#include "builtinCommon.h"
-
-#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
-	extern void system_deep_sleep_instant(uint32_t time_in_us);
-
-static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	system_deep_sleep_instant((uintptr_t)refcon);
-}
+#ifdef mxDebug
+	extern void fxDisconnect(xsMachine *the);
 #endif
-
-#if defined(CYW43_LWIP)
-	#include "lwip/dns.h"
-#endif
-
-void xs_system_deepSleep(xsMachine *the)
-{
-#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
-	uint32_t us = 0;
-
-	if (xsmcArgc) {
-		us = xsmcToInteger(xsArg(0));
-		if (xsmcArgc > 1) {
-			int mode = xsmcToInteger(xsArg(1));
-			system_deep_sleep_set_option(mode);
-		}
-	}
-	modMessagePostToMachine(the, NULL, 0, deepSleepDeliver, (void *)us);
-#endif
-}
 
 void xs_system_restart(xsMachine *the)
 {
-#if ESP32
+#ifdef mxDebug
+	// tell the debugger the device is going away, as its own restart command does
+	fxDisconnect(the);
+	modDelayMilliseconds(1000);
+#endif
+
+#if defined(__ZEPHYR__)
+	sys_reboot(SYS_REBOOT_COLD);
+#elif ESP32
 	esp_restart();
-#elif defined(__ets__) && !defined(__ZEPHYR__)
+#elif defined(__ets__)
 	system_restart();
 #elif defined(PICO_BUILD)
 	pico_reset();
+#elif nrf52
+	nrf52_reset();
+#else
+	#error "embedded:system restart unsupported"
 #endif
 
 	while (1)
 		modDelayMilliseconds(1000);
 }
-

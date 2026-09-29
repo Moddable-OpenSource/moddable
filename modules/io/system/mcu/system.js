@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  Moddable Tech, Inc.
+ * Copyright (c) 2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -18,17 +18,13 @@
  *
  */
 
-#include "xsmc.h"
+import Timer from "timer";
 
-#include "xsHost.h"
-
-#include "builtinCommon.h"
-
-void xs_system_deepSleep(xsMachine *the)
-{
-}
-
-void xs_system_restart(xsMachine *the)
-{
-}
-
+export default Object.freeze({
+	restart() {
+		return native("xs_system_restart").call(this);
+	},
+	sleep(duration) {
+		Timer.delay(duration);
+	}
+}, true);

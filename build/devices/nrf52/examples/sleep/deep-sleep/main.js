@@ -12,7 +12,7 @@
  *
  */
 /*
-	This application demonstrates how to use the Sleep object to put the device into System Off power saving mode (deep sleep).
+	This application demonstrates how to use device.system to put the device into System Off power saving mode (deep sleep).
 	Upon wakeup, the application re-launches and blinks the LED if the reset pin was pressed to wakeup the device.
 	Press the device reset button to wakeup from deep sleep.
 */
@@ -38,5 +38,5 @@ if (ResetReason.RESETPIN == Sleep.resetReason) {
 Timer.set(() => {
 	led.write(0);
 	led.close();
-	Sleep.deep();
+	device.system.deepSleep();
 }, 3000);

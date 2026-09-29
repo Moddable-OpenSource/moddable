@@ -196,6 +196,19 @@ void fxAbort(xsMachine* the, int status)
 	}
 }
 
+void xs_system_exit(xsMachine* the)
+{
+	txScreen* screen = the->host;
+	if (!screen)
+		screen = the->context;
+	if (screen)
+		(*screen->abort)(screen, mxScreenExitStatus);
+	if (gxExitToHost && the->firstJump) {
+		gxExitToHost = 0;
+		fxExitToHost(the);
+	}
+}
+
 void debugBreak(xsMachine* the, uint8_t stop)
 {
 #ifdef mxInstrument

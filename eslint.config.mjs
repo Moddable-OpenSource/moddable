@@ -26,7 +26,6 @@ export default defineConfig([{
 				backlight: "readonly",
 
 				device: "readonly",
-				System: "readonly",
 
 				self: "readonly",
 
@@ -86,7 +85,7 @@ export default defineConfig([{
 				"warn",
 				{
 					name: "System",
-					message: "System global is deprecated and will be removed"
+					message: "System global removed. Use ECMA-419 System object: device.system or import System from \"embedded:system\""
 				},
 				{
 					name: "Host",

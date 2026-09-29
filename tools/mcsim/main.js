@@ -361,7 +361,7 @@ class ApplicationBehavior extends Behavior {
 		this.libraryPath = "";
 		this.quitScreen();
 		this.launchScreen();
-		if (status) {
+		if (status > 0) {		// 0 is the debugger, negative is System.exit()
 			system.alert({ 
 				type:"stop",
 				prompt:"mcsim",

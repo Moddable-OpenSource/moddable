@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -145,6 +145,9 @@ void xs_timer_clear(xsMachine *the)
 
 void xs_timer_delay(xsMachine *the)
 {
-	emscripten_sleep(xsToInteger(xsArg(0)));
+	double ms = xsToNumber(xsArg(0));
+	if (!((ms >= 0) && (ms <= 0x7FFFFFFF)))
+		xsRangeError("invalid");
+	emscripten_sleep((unsigned int)ms);
 }
 

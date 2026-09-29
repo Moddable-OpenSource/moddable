@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+		"$(MODDABLE)/modules/io/system/manifest.json"
 	],
 	"modules": {
 		"*": "./main"

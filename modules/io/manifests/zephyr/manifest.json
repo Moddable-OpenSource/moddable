@@ -14,11 +14,9 @@
 		"*": [
 			"$(IO)/common/builtinCommon"
 		],
-		"system": "$(IO)/system/system",
 		"lockdown/device": "$(IO)/system/lockdowndevice"
 	},
 	"preload": [
-		"system",
 		"lockdown/device",
 		"embedded:provider/builtin"
 	],

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2026 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,13 +18,10 @@
 *
 */
 
-declare module "embedded:io/system" {
-  /**
-   * @experimental
-   */
-  class System {
-    static deepSleep(us: number, mode: number): void;
-    static restart(): void;
-  }
-  export default System;
+declare module "embedded:provider/builtin" {
+	import type System from "embedded:system";
+
+	interface Device {
+		system: typeof System;
+	}
 }

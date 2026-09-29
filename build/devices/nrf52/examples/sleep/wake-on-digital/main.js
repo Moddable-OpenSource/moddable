@@ -19,7 +19,6 @@
 */
 
 import Digital from "pins/digital";
-import {Sleep} from "sleep";
 import Timer from "timer";
 import config from "mc/config";
 
@@ -45,6 +44,6 @@ let digital = new Digital({
 Timer.set(() => {
 	led.write(0);
 	led.close();
-	Sleep.deep();
+	device.system.deepSleep();
 }, 3000);
 

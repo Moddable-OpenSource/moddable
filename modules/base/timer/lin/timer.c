@@ -23,6 +23,9 @@
 #include "modTimer.h"
 #include "modInstrumentation.h"
 
+#include <errno.h>
+#include <time.h>
+
 #define modCriticalSectionBegin()
 #define modCriticalSectionEnd()
 
@@ -189,6 +192,8 @@ void modTimerRemove(modTimer timer)
 
 void modTimerDelayMS(uint32_t ms)
 {
-	usleep(ms * 1000);
+	struct timespec delay = {.tv_sec = ms / 1000, .tv_nsec = (long)(ms % 1000) * 1000000};
+	while (nanosleep(&delay, &delay) && (EINTR == errno))
+		;
 }
 

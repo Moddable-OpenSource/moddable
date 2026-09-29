@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODULES)/pins/digital/manifest.json",
 		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+		"$(MODDABLE)/modules/io/system/manifest.json"
 	],
 	"modules": {
 		"*": "./main"
