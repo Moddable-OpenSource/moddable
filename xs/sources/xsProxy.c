@@ -216,6 +216,9 @@ void fxProxyCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* argume
 {
 	mxProxyDeclarations(_apply);
 	if (function) {
+		txIndex c, i;
+		txSlot* instance;
+		txSlot* item;
 		/* THIS */
 		mxPushSlot(handler);
 		/* FUNCTION */
@@ -224,7 +227,21 @@ void fxProxyCall(txMachine* the, txSlot* instance, txSlot* _this, txSlot* argume
 		/* ARGUMENTS */
 		mxPushSlot(target);
 		mxPushSlot(_this);
+		mxPush(mxArrayPrototype);
+		instance = fxNewArrayInstance(the);
+		item = instance->next;
 		mxPushSlot(arguments);
+		mxGetID(mxID(_length));
+		c = (txIndex)fxToLength(the, the->stack);
+		mxPop();
+		for (i = 0; i < c; i++) {
+			mxPushSlot(arguments);
+			mxGetIndex(i);
+			item = item->next = fxNewSlot(the);
+			mxPullSlot(item);
+		}
+		instance->next->value.array.length = c;
+		fxCacheArray(the, instance);
 		mxRunCount(3);
 		mxPullSlot(mxResult);
 	}
@@ -237,6 +254,9 @@ void fxProxyConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlo
 {
 	mxProxyDeclarations(_construct);
 	if (function) {
+		txIndex c, i;
+		txSlot* instance;
+		txSlot* item;
 		/* THIS */
 		mxPushSlot(handler);
 		/* FUNCTION */
@@ -244,7 +264,21 @@ void fxProxyConstruct(txMachine* the, txSlot* instance, txSlot* arguments, txSlo
 		mxCall();
 		/* ARGUMENTS */
 		mxPushSlot(target);
+		mxPush(mxArrayPrototype);
+		instance = fxNewArrayInstance(the);
+		item = instance->next;
 		mxPushSlot(arguments);
+		mxGetID(mxID(_length));
+		c = (txIndex)fxToLength(the, the->stack);
+		mxPop();
+		for (i = 0; i < c; i++) {
+			mxPushSlot(arguments);
+			mxGetIndex(i);
+			item = item->next = fxNewSlot(the);
+			mxPullSlot(item);
+		}
+		instance->next->value.array.length = c;
+		fxCacheArray(the, instance);
 		mxPushSlot(newTarget);
 		mxRunCount(3);
 		mxPullSlot(mxResult);
