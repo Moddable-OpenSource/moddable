@@ -1176,20 +1176,22 @@ void fx_Array_from(txMachine* the)
 {
 	txSlot* function = (mxArgc > 1) && !mxIsUndefined(mxArgv(1)) ? fxArgToCallback(the, 1) : C_NULL;
 	txIndex length = 0;
+	txSlot* method;
 	txSlot* iterator;
 	txSlot* next;
 	txSlot* value;
 	if (mxArgc > 0) {
 		mxPushSlot(mxArgv(0));
 		mxGetID(mxID(_Symbol_iterator));
-		if (mxIsUndefined(the->stack) || mxIsNull(the->stack)) {
+		method = the->stack;
+		if (mxIsUndefined(method) || mxIsNull(method)) {
 			txIndex index = 0;
 			mxPushSlot(mxArgv(0));
 			mxGetID(mxID(_length));
 			if (mxIsUndefined(the->stack))
 				length = 0;
 			else
-				length = fxCheckArrayLength(the, the->stack);
+				length = (txIndex)fxToLength(the, the->stack);
 			mxPop();
 			fxCreateArray(the, 1, length);
 			while (index < length) {
@@ -1200,11 +1202,22 @@ void fx_Array_from(txMachine* the)
 				index++;
 			}
 		}
-		else {
+		else if (fxIsCallable(the, method)) {
 			fxCreateArray(the, 0, 0);
+			
 			mxTemporary(iterator);
 			mxTemporary(next);
-			fxGetIterator(the, mxArgv(0), iterator, next, 0);
+			mxPushSlot(mxArgv(0));
+			mxPushSlot(method);
+			mxCall();
+			mxRunCount(0);
+			if (!mxIsReference(the->stack))
+				mxTypeError("iterator: not an object");
+			mxDub();
+			mxGetID(mxID(_next));
+			mxPullSlot(next);
+			mxPullSlot(iterator);
+			
 			mxTemporary(value);
 			length = 0;
 			while (fxIteratorNext(the, iterator, next, value)) {
@@ -1218,7 +1231,12 @@ void fx_Array_from(txMachine* the)
 				}
 			}
 			mxPop();
+			
+			mxPop();
+			mxPop();
 		}
+		else 
+			mxTypeError("items[Symbol.iterator] is not a function");
 	}
 	else {
 		mxTypeError("cannot coerce undefined to object");
@@ -1430,6 +1448,8 @@ void fx_Array_fromAsync_onIterated(txMachine* the)
 
 	mxTry(the) {
 		mxPushSlot(mxArgv(0));
+		if (!mxIsReference(the->stack))
+			mxTypeError("iterator result: not an object");
 		mxGetID(mxID(_done));
 		if (fxToBoolean(the, the->stack)) {
 			mxPushSlot(index);

@@ -49,6 +49,7 @@ static txInteger fxCheckDataViewSize(txMachine* the, txSlot* view, txSlot* buffe
 static txSlot* fxNewDataViewInstance(txMachine* the);
 
 static void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, txSlot* view, txSlot* data, txInteger index, txSlot* item);
+static void fxCheckTypedArrayContentType(txMachine* the, txSlot* dispatch, txSlot* sourceDispatch);
 static txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot);
 static txSlot* fxConstructTypedArray(txMachine* the);
 static txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txTypeAtomics* atomics);
@@ -720,16 +721,17 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 
 void fx_ArrayBuffer_prototype_resize(txMachine* the)
 {
-	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
-	fxCheckArrayBufferMutable(the, mxThis);
-	txInteger newByteLength = fxArgToByteLength(the, 0, 0);
-	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis);
+	txSlot* instance = fxCheckArrayBufferInstance(the, mxThis);
+	txSlot* arrayBuffer = instance->next;
 	txSlot* bufferInfo = arrayBuffer->next;
-	txInteger maxByteLength, oldByteLength;
-	txByte* chunk;
-	maxByteLength = bufferInfo->value.bufferInfo.maxLength;
+	fxCheckArrayBufferMutable(the, mxThis);
+	txInteger maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	if (maxByteLength < 0)
 		mxTypeError("not resizable");
+	txInteger newByteLength = fxArgToByteLength(the, 0, 0);
+	fxCheckArrayBufferDetached(the, mxThis);
+	txInteger oldByteLength;
+	txByte* chunk;
 	oldByteLength = bufferInfo->value.bufferInfo.length;
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
@@ -1462,6 +1464,16 @@ void fxCallTypedArrayItem(txMachine* the, txSlot* function, txSlot* dispatch, tx
 	mxRunCount(3);
 }
 
+void fxCheckTypedArrayContentType(txMachine* the, txSlot* dispatch, txSlot* sourceDispatch)
+{
+	txBoolean contentType = (dispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+			|| (dispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+	txBoolean sourceContentType = (sourceDispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
+			|| (sourceDispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
+	if (contentType != sourceContentType)
+		mxTypeError("incompatible content type");
+}
+
 txSlot* fxCheckTypedArrayInstance(txMachine* the, txSlot* slot)
 {
 	if (slot->kind == XS_REFERENCE_KIND) {
@@ -1478,8 +1490,6 @@ txSlot* fxConstructTypedArray(txMachine* the)
 	txSlot* prototype;
 	txSlot* dispatch;
 	txSlot* instance;
-	if (!mxHasTarget)
-		mxTypeError("call: TypedArray");
 	dispatch = mxFunctionInstanceHome(mxFunction->value.reference);
 	dispatch = dispatch->next;
 	prototype = mxBehaviorGetProperty(the, mxFunction->value.reference, mxID(_prototype), 0, XS_ANY);
@@ -1538,6 +1548,8 @@ txSlot* fxNewTypedArrayInstance(txMachine* the, txTypeDispatch* dispatch, txType
 
 void fx_TypedArray(txMachine* the)
 {
+	if (!mxHasTarget)
+		mxTypeError("call: TypedArray");
 	if (mxArgc > 0) {
 		if (mxArgv(0)->kind == XS_REFERENCE_KIND) {
 			txSlot* instance = fxConstructTypedArray(the);
@@ -1619,12 +1631,7 @@ void fx_TypedArray(txMachine* the)
 				if (dispatch == sourceDispatch)
 					c_memcpy(data->value.arrayBuffer.address + offset, sourceData->value.arrayBuffer.address + sourceOffset, size);
 				else {
-					txBoolean contentType = (dispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
-							|| (dispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
-					txBoolean sourceContentType = (sourceDispatch->value.typedArray.dispatch->constructorID == _BigInt64Array)
-							|| (sourceDispatch->value.typedArray.dispatch->constructorID == _BigUint64Array);
-					if (contentType != sourceContentType)
-						mxTypeError("incompatible content type");
+					fxCheckTypedArrayContentType(the, dispatch, sourceDispatch);
 					mxPushUndefined();
 					while (offset < size) {
 						(*sourceDispatch->value.typedArray.dispatch->getter)(the, sourceData, sourceOffset, the->stack, EndianNative);
@@ -1644,12 +1651,12 @@ void fx_TypedArray(txMachine* the)
 		fxToNumber(the, mxArgv(0));
 	}
 	{
+        txInteger length = fxArgToByteLength(the, 0, 0);
 		txSlot* instance = fxConstructTypedArray(the);
 		txSlot* dispatch = instance->next;
 		txSlot* view = dispatch->next;
 		txSlot* buffer = view->next;
 		txU2 shift = dispatch->value.typedArray.dispatch->shift;
-        txInteger length = fxArgToByteLength(the, 0, 0);
        if (length > (0x7FFFFFFF >> shift))
 			mxRangeError("byteLength too big");
         length <<= shift;
@@ -2008,6 +2015,7 @@ void fx_TypedArray_prototype_filter(txMachine* the)
 		mxResultTypedArrayDeclarations;
 		txInteger resultOffset = 0;
 		txInteger resultSize = resultDispatch->value.typedArray.dispatch->size;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < count)
 			mxTypeError("result: too small TypedArray instance");
 		slot = list->next;
@@ -2279,6 +2287,7 @@ void fx_TypedArray_prototype_map(txMachine* the)
 		mxResultTypedArrayDeclarations;
 		txU2 shift = resultDispatch->value.typedArray.dispatch->shift;
 		txInteger index = 0;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < length)
 			mxTypeError("result: too small TypedArray instance");
 		while (index < length) {
@@ -2359,13 +2368,13 @@ void fx_TypedArray_prototype_reverse(txMachine* the)
 void fx_TypedArray_prototype_set(txMachine* the)
 {
 	mxMutableTypedArrayDeclarations;
-	txSlot* data = buffer->value.reference->next;
-	txInteger delta = dispatch->value.typedArray.dispatch->size;
 	txSlot* source = fxArgToInstance(the, 0);
-	txInteger target = fxArgToByteLength(the, 1, 0);
-	txInteger offset = view->value.dataView.offset + (target * delta);	
-	length = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 	if (source->next && (source->next->kind == XS_TYPED_ARRAY_KIND)) {
+		txSlot* data = buffer->value.reference->next;
+		txInteger delta = dispatch->value.typedArray.dispatch->size;
+		txInteger target = fxArgToByteLength(the, 1, 0);
+		txInteger offset = view->value.dataView.offset + (target * delta);	
+		length = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		txSlot* sourceDispatch = source->next;
 		txSlot* sourceView = sourceDispatch->next;
 		txSlot* sourceBuffer = sourceView->next;
@@ -2412,21 +2421,32 @@ void fx_TypedArray_prototype_set(txMachine* the)
 		mxPop();
 	}
 	else {
-		txInteger count, index;
+		txNumber targetOffset = 0, targetLength, sourceLength;
+		txSlot *arg = mxArgv(1);
+		if ((mxArgc > 1) && (arg->kind != XS_UNDEFINED_KIND)) {
+			targetOffset = c_trunc(fxToNumber(the, arg));
+			if (c_isnan(targetOffset))
+				targetOffset = 0;
+			if (targetOffset < 0) 
+				mxRangeError("offset < 0");
+		}
 		if (fxIsDataViewOutOfBound(the, view, buffer))
 			mxTypeError("out of bound buffer");
+		targetLength = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE) >> dispatch->value.typedArray.dispatch->shift;
 		mxPushSlot(mxArgv(0));
 		mxGetID(mxID(_length));
-		count = fxToInteger(the, the->stack);
+		sourceLength = fxToLength(the, the->stack);
 		mxPop();
-		if (length - count < target)
+		if (sourceLength + targetOffset > targetLength)
 			mxRangeError("invalid offset");
-		index = 0;
+		txIndex count = (txIndex)sourceLength;
+		txIndex index = 0;
+		txIndex delta = (txIndex)targetOffset;
 		while (index < count) {
 			mxPushSlot(mxArgv(0));
 			mxGetIndex(index);
 			mxPushSlot(mxThis);
-			mxPushInteger(target + index);
+			mxPushInteger(delta + index);
 			mxSetAt();
 			mxPop();
 			index++;
@@ -2449,6 +2469,7 @@ void fx_TypedArray_prototype_slice(txMachine* the)
 	mxPullSlot(mxResult);
 	{
 		mxResultTypedArrayDeclarations;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
 		if (resultLength < count)
 			mxTypeError("result: too small TypedArray instance");
 		if (count) {
@@ -2544,7 +2565,10 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 		mxRunCount(3);
 	}
 	mxPullSlot(mxResult);
-	fxCheckTypedArrayInstance(the, mxResult);
+	{
+		mxResultTypedArrayDeclarations;
+		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
+	}
 }
 
 void fx_TypedArray_prototype_toLocaleString(txMachine* the)
