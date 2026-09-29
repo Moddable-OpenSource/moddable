@@ -1,7 +1,7 @@
 # Using the Moddable SDK with nRF52
 
 Copyright 2021-2024 Moddable Tech, Inc.<BR>
-Revised: December 28, 2024
+Revised: September 29, 2026
 
 This document is a guide to building apps for the nRF52840 SoC from Nordic using the Moddable SDK.
 
@@ -430,7 +430,7 @@ See below for more details on building the [bootloader](#bootloader).
 In order to install over the serial port instead of USB, use either of the targets `installDFU` or `debugDFU`.
 
 ```
-mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE> -t debugDFU
 ```
 
 `installDFU` simply installs the app to your device.
@@ -475,7 +475,7 @@ In the `"defines"` section:
 The device needs to be in firmware update mode in order to receive the installation. Double-tap the reset button to put the device into programming mode. The status LED will blink rapidly.
 
 ```
-mcconfig -d -m -p nrf52/<boardname> -t debugDFU
+mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE> -t debugDFU
 ```
 
 After the build information scrolls by, the console will progress to installing:
@@ -581,7 +581,7 @@ Build your application with the `-t ble-package` target. The build will complete
 
 ```
  % cd .../my_app
- % mcconfig -d -m -p nrf52/moddable_four -t ble-package
+ % mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE> -t ble-package
  ....
  # Packaging .../my_app/xs_nrf52.hex for BLE
 Zip created at .../my_app/ble-package.zip
@@ -604,7 +604,7 @@ Put the nRF52 device into BLE DFU update mode by calling the `nrf52_rebootToOTA(
 
 ```
 cd $MODDABLE/build/devices/nrf52/examples/BLE_DFU
-mcconfig -d -m -p nrf52/moddable_four
+mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE>
 ```
 #### Put nRF52 into Update Mode (GPIO)
 
@@ -697,7 +697,7 @@ GDB communicates with the nRF58240 device via a J-Link connection in the nRF5284
 
     ```text
     cd $MODDABLE/examples/network/ble/heart-rate-server
-    mcconfig -d -m -p nrf52/moddable_four -t build
+    mcconfig -d -m -p nrf52/<YOUR_SUBPLATFORM_HERE> -t build
     ```
 
 5. Launch the J-Link GDB server from a command line console:

@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: September 7, 2026
+Revised: September 29, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
@@ -49,10 +49,10 @@ The instructions below will have you verify your setup by running the `helloworl
 > See the [Tools documentation](./../tools/tools.md) for more information about `mcconfig`
 
 
-When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for Moddable Two:
+When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for Moddable Six:
 
 ```text
-mcconfig -d -m -p esp32/moddable_two
+mcconfig -d -m -p esp32/moddable_six
 ```
 
 A list of available ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 subplatforms and their platform identifiers is provided in the **Platforms** section below.
@@ -372,7 +372,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v6.1 (commit `fff9895c`)
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 
 	```text
-	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
+	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
 
 9. Adding the export statements to your `~/.profile` or `~/.zshrc` does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statement in your shell before proceeding.
@@ -812,7 +812,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v6.1 (commit `fff9895c`)
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 
 	```text
-	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
+	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
 
 7. Adding the export statements to your shell startup file does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.
