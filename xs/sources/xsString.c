@@ -1414,7 +1414,7 @@ void fx_String_prototype_replace(txMachine* the)
 		mxPushUndefined();
 	else
 		mxPushSlot(mxArgv(1));
-	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference)) {
+	if (fxIsCallable(the, the->stack)) {
 		function = the->stack;
 		replace = C_NULL;
 	}
@@ -1471,7 +1471,7 @@ void fx_String_prototype_replaceAll(txMachine* the)
 		mxPushUndefined();
 	else
 		mxPushSlot(mxArgv(1));
-	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference)) {
+	if (fxIsCallable(the, the->stack)) {
 		function = the->stack;
 		replace = C_NULL;
 	}

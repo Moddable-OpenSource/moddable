@@ -132,7 +132,7 @@ void fxExecuteRegExp(txMachine* the, txSlot* regexp, txSlot* argument)
 	mxPushSlot(regexp);
 	mxDub();
 	mxGetID(mxID(_exec));
-	if ((the->stack->kind != XS_REFERENCE_KIND) || (!mxIsFunction(the->stack->value.reference))) {
+	if (!fxIsCallable(the, the->stack)) {
 		the->stack->kind = mxExecuteRegExpFunction.kind;
 		the->stack->value = mxExecuteRegExpFunction.value;
 	}
@@ -838,7 +838,7 @@ void fx_RegExp_prototype_replace(txMachine* the)
 		mxPushUndefined();
 	else
 		mxPushSlot(mxArgv(1));
-	if (mxIsReference(the->stack) && mxIsFunction(the->stack->value.reference))
+	if (fxIsCallable(the, the->stack))
 		function = the->stack;
 	else {		
 		replacement = the->stack;
