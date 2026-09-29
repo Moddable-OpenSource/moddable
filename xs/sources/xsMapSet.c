@@ -589,8 +589,10 @@ txSlot* fxCheckSetRecord(txMachine* the, txInteger* otherSize, txSlot** otherHas
 	size = c_trunc(size);
 	if (size < 0)
 		mxRangeError("other.size < 0");
+	if (size > 0x7FFFFFFF)
+		size = 0x7FFFFFFF;
 	if (otherSize)
-		*otherSize= (txInteger)size;
+		*otherSize = (txInteger)size;
 	mxPop();
 	
 	mxPushSlot(other);
