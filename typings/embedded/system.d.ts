@@ -21,11 +21,15 @@
 /// <reference path="../config/system.d.ts" />
 
 declare module "embedded:system" {
+	interface RestartOptions {
+		type?: "soft" | "hard";
+	}
+
 	/**
 	 * Every method is optional: a host provides only those appropriate to it, so test for a method before calling it.
 	 */
 	interface System {
-		restart?(): never;
+		restart?(options?: RestartOptions): never;
 		shutdown?(): never;
 		exit?(reason?: unknown): never;
 		/**

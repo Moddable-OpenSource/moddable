@@ -10,7 +10,11 @@
 			"modules": {
 				"*": "./system",
 				"embedded:system": "./mcu/system"
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_hal_wdt", "includes": ["$(ESP32_SUBCLASS)/include"] },
+				{ "idf": "esp_hal_timg", "includes": ["$(ESP32_SUBCLASS)/include"] }
+			]
 		},
 		"nrf52": {
 			"include": "$(BUILD)/devices/nrf52/modules/sleep/manifest.json",

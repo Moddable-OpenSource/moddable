@@ -21,8 +21,8 @@
 import Timer from "timer";
 
 export default Object.freeze({
-	restart() {
-		return native("xs_system_restart").call(this);
+	restart(options) {
+		return native("xs_system_restart").call(this, options);
 	},
 	sleep(duration) {
 		Timer.delay(duration);
