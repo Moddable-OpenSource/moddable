@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -50,7 +50,20 @@
 #define mxPoisonSlots 0
 #endif
 
-#if mxPoisonSlots
+#if mxNoChunks
+	#if defined(__has_feature)
+		#if __has_feature(address_sanitizer)
+			#define mxPoisonChunks 1
+		#endif
+	#elif defined(__SANITIZE_ADDRESS__)
+		#define mxPoisonChunks 1
+	#endif
+#endif
+#ifndef mxPoisonChunks
+#define mxPoisonChunks 0
+#endif
+
+#if mxPoisonSlots || mxPoisonChunks
 #include <sanitizer/asan_interface.h>
 #endif
 
@@ -1763,6 +1776,9 @@ void* fxRenewChunk(txMachine* the, void* theData, txSize size)
 	txChunk* aChunk = (txChunk*)aData;
 	size = fxAdjustChunkSize(the, size);
 	if (size <= aChunk->size) {
+	#if mxPoisonChunks
+		ASAN_POISON_MEMORY_REGION(aData + size, aChunk->size - size);
+	#endif
 		aChunk->size = size;
 		return theData;
 	}
