@@ -303,8 +303,10 @@ function fetch(href, info = {}) {
 					client = fetchClientRequest(url, options);
 					return;
 				}
-				if (readableController)
+				if (readableController) {
 					readableController.close();
+					readableController = null;
+				}
 			}
 		};
 		let client = fetchClientRequest(url, options);
