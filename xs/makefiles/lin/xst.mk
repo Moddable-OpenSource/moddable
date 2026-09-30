@@ -86,8 +86,8 @@ ifeq ($(GOAL),debug)
 			C_OPTIONS += -fsanitize=memory -fsanitize-memory-track-origins
 			LINK_OPTIONS += -fsanitize=memory
 		else ifeq ($(SANITIZER), undefined)
-			C_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
-			LINK_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
+			C_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
+			LINK_OPTIONS += -fsanitize=bool,builtin,enum,float-divide-by-zero,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-divide-by-zero,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
 
 			# function and other ubsan checks not available in some arch, such as arm
 			ifneq ($(ARCH), aarch64)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -79,7 +79,7 @@ endif
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -DmxDebug=1 -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -O3
+	C_OPTIONS += -O3 -fno-strict-float-cast-overflow
 endif
 
 LIBRARIES = -framework CoreServices

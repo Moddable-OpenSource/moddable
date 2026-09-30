@@ -72,7 +72,7 @@ endif
 ifeq ($(GOAL),debug)
 	C_OPTIONS += -g -O0 -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 else
-	C_OPTIONS += -DmxMultipleThreads=1 -O3
+	C_OPTIONS += -DmxMultipleThreads=1 -O3 -fno-strict-float-cast-overflow
 endif
 
 LIBRARIES = -framework CoreServices
@@ -84,8 +84,8 @@ endif
 
 ifeq ($(GOAL),debug)
 	ifeq ($(SANITIZER), undefined)
-		C_OPTIONS += -fsanitize=bool,builtin,enum,integer-divide-by-zero,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
-		LINK_OPTIONS += -fsanitize=bool,builtin,enum,integer-divide-by-zero,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
+		C_OPTIONS += -fsanitize=bool,builtin,enum,float-cast-overflow,integer-divide-by-zero,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
+		LINK_OPTIONS += -fsanitize=bool,builtin,enum,float-cast-overflow,integer-divide-by-zero,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr -fno-sanitize-recover=bool,builtin,enum,float-cast-overflow,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr,array-bounds,function
 	else
 		C_OPTIONS += -fsanitize=address -fsanitize-blacklist=xst_no_asan.txt
 		LINK_OPTIONS += -fsanitize=address
