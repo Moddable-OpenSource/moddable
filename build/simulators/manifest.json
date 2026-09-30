@@ -5,7 +5,8 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/$(PLATFORM)/*",
 			"$(MODULES)/base/timer/timer",
-			"$(MODULES)/base/timer/$(PLATFORM)/*"
+			"$(MODULES)/base/timer/$(PLATFORM)/*",
+			"$(IO)/common/builtinCommon"
 		],
 		"setup/sim": "./modules/setup-sim",
 		"lockdown/device": "$(IO)/system/lockdowndevice",
