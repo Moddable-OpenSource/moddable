@@ -2565,10 +2565,8 @@ void fx_TypedArray_prototype_subarray(txMachine* the)
 		mxRunCount(3);
 	}
 	mxPullSlot(mxResult);
-	{
-		mxResultTypedArrayDeclarations;
-		fxCheckTypedArrayContentType(the, resultDispatch, dispatch);
-	}
+	instance = fxCheckTypedArrayInstance(the, mxResult);
+	fxCheckTypedArrayContentType(the, instance->next, dispatch);
 }
 
 void fx_TypedArray_prototype_toLocaleString(txMachine* the)
