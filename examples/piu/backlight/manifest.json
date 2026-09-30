@@ -5,14 +5,8 @@
 		"$(MODDABLE)/modules/base/modules/manifest.json"
 	],
 	"modules": {
-		"*": [
-			"./main",
-			"./check"
-		]
+		"*": "./main"
 	},
-	"preload": [
-		"check"
-	],
 	"resources":{
 		"*": [
 			"./island"
