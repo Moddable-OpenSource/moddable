@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -13,7 +13,6 @@
  */
 
 import {} from "piu/MC";
-import Preference from "preference";
 import WipeTransition from "piu/WipeTransition";
 import Timeline from "piu/Timeline";
 
@@ -49,7 +48,8 @@ class CircularButtonBehavior extends Behavior {
 	}
 	onTouchEnded(label) {
 		let pref = this.pref;
-		Preference.set("settings", "backgroundColor", pref);
+		using settings = device.keyValue.open({path: "settings", format: "int16"});
+		settings.write("backgroundColor", pref);
 		label.active = false;
 		this.select(label);
 		label.container.distribute("unselect", pref);
@@ -105,8 +105,8 @@ const PreferencesApplication = Application.template($ => ({
 			this.data = data;
 			let background = data.BACKGROUND;
 			let buttonRow = data.BUTTONS;
-			let backgroundColor = Preference.get("settings", "backgroundColor");
-			if (backgroundColor === undefined) backgroundColor = BLUE;
+			using settings = device.keyValue.open({path: "settings", format: "int16"});
+			let backgroundColor = settings.read("backgroundColor") ?? BLUE;
 			let options = [RED, GREEN, BLUE];
 			for (let i in options) {
 				let pref = options[i];

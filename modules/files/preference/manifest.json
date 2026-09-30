@@ -1,4 +1,5 @@
 {
+	"warning": "** ECMA-419 Key-Value Storage recommended over classic 'preferences' module **",
 	"platforms": {
 		"esp": {
 			"modules": {
