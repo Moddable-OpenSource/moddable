@@ -1,6 +1,6 @@
 # Testing the Moddable SDK
 Copyright 2020-2026 Moddable Tech, Inc.<BR>
-Revised: September 9, 2026
+Revised: September 30, 2026
 
 ## Table of Contents
 
@@ -191,8 +191,6 @@ Once the testmc test app is running and the tests are in place, selecting tests,
 The test262 and testmc test apps may also be run on the mcsim, the Moddable SDK's simulator. This is useful for verifying that the simulator is providing consistent results with the target device and for developing tests. Of course, tests which depend on features the simulator does not support, such as hardware I/O, will fail.
 
 Running on the simulator is the same in xsbug and xsdb. Test apps set `reloadOnAbort` in their manifest's `config` section to tell the simulator to relaunch the app for each test.
-
-<img src="../assets/tools/testing/test-simulator.png" width=300>
 
 > **Note**: The test runner restarts the test app after each test. On a device the test app tears down its virtual machine and creates a new one; the microcontroller itself does not reboot, so a Wi-Fi connection is reused across tests. In the simulator the app is unloaded and launched again, which is what the "Reload on Abort" switch enables.
 
