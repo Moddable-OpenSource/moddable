@@ -486,11 +486,23 @@
 
 #else /* !FT_DEBUG_AUTOFIT */
 
-    AF_GlyphHintsRec  hints[1];
+    AF_GlyphHints     hints;		/* MODDABLE: on the heap, see below */
     AF_LoaderRec      loader[1];
 
     FT_UNUSED( size );
 
+
+    /*
+      MODDABLE: AF_GlyphHintsRec embeds its point, contour, segment, and edge
+      arrays, about 6.7K on a 32-bit target, which upstream puts on the stack.
+      The first glyph at a new size also computes the style's metrics beneath
+      this frame, and that puts a second one on the stack (see
+      af_latin_metrics_init_widths), overflowing a microcontroller task. Both
+      come from the heap instead, as the CFF interpreter's glyph path does.
+    */
+    hints = (AF_GlyphHints)memory->alloc( memory, sizeof ( AF_GlyphHintsRec ) );
+    if ( !hints )
+      return FT_THROW( Out_Of_Memory );
 
     af_glyph_hints_init( hints, memory );
     af_loader_init( loader, hints );
@@ -500,6 +512,7 @@
 
     af_loader_done( loader );
     af_glyph_hints_done( hints );
+    memory->free( memory, hints );
 
     return error;
 

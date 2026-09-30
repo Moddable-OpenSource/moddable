@@ -1,0 +1,17 @@
+{
+	"include": [
+		"$(COMMODETTO)/manifest_cfeft.json"
+	],
+	"defines": {
+		"cfe": {
+			"ft": {
+				"hintingAuto": 1
+			}
+		}
+	},
+	"modules": {
+		"*": [
+			"$(COMMODETTO)/freetype/src/autofit/autofit"
+		]
+	}
+}
