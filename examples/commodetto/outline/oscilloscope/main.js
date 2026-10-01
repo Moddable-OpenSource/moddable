@@ -32,7 +32,7 @@ function drawSamplesOutline(samples, length, y, h) {
 	for (let i = 1; i < length; i++) {
 		let qx = px + dx;
 		let qy =  y + ((samples[i] / 255) * h);
-		path.conicTo(px + cx, py, qx - cx, qy, qx, qy);
+		path.conicTo(px + cx, py, qx - cx, qy);
 		px = qx;
 		py = qy;
 	}

@@ -105,13 +105,13 @@ class DotsScreenBehavior extends BaseScreenBehavior {
 		let data = this.data;
 		let timeline = this.timeline = new Timeline();
 		// show dots
-		timeline.from(data["RED"], { visible: false }, 20, Math.linearEase, 100);
-		timeline.from(data["GREEN"], { visible: false }, 20, Math.linearEase, 175);
-		timeline.from(data["BLUE"], { visible: false}, 20, Math.linearEase, 175);
+		timeline.from(data["RED"], { visible: false }, 20, null, 100);
+		timeline.from(data["GREEN"], { visible: false }, 20, null, 175);
+		timeline.from(data["BLUE"], { visible: false}, 20, null, 175);
 		// spiral dots to the middle
-		timeline.on(data["RED"],   { x: redDotX, y: redDotY }, 700, Math.linearEase, 275);
-		timeline.on(data["GREEN"], { x: greenDotX, y: greenDotY  }, 700, Math.linearEase, -700);
-		timeline.on(data["BLUE"],  { x: blueDotX, y: blueDotY }, 700, Math.linearEase, -700);
+		timeline.on(data["RED"],   { x: redDotX, y: redDotY }, 700, null, 275);
+		timeline.on(data["GREEN"], { x: greenDotX, y: greenDotY  }, 700, null, -700);
+		timeline.on(data["BLUE"],  { x: blueDotX, y: blueDotY }, 700, null, -700);
 		// fade out colored dots, fade in white dot and 1
 		timeline.on(data["RED"], { state: [0, 1] }, 300, Math.quadEaseOut, -200);
 		timeline.on(data["GREEN"], { state: [0, 1] }, 300, Math.quadEaseOut, -300);
@@ -200,33 +200,33 @@ class GraphScreenBehavior extends BaseScreenBehavior {
 		timeline.to(data["ONE1"], { y: 134 }, 205, Math.quadEaseOut, 1000);
 		timeline.to(data["ONE2"], { y: 143, width: 26, x: 107 }, 205, Math.quadEaseOut, -205);
 		timeline.from(data["AXIS3"], { y: application.height }, 200, Math.quadEaseOut, -200);
-		timeline.on(data["AXIS2"], { visible: [false, true] }, 5, Math.linearEase, -100);
+		timeline.on(data["AXIS2"], { visible: [false, true] }, 5, null, -100);
 		timeline.from(data["AXIS2"], { y: 255 }, 200, Math.quadEaseOut, -100);
-		timeline.on(data["AXIS1"], { visible: [false, true] }, 5, Math.linearEase, 0);
+		timeline.on(data["AXIS1"], { visible: [false, true] }, 5, null, 0);
 		timeline.from(data["AXIS1"], { y: 185 }, 200, Math.quadEaseOut, -100);
-		timeline.on(data["ONE2"], { visible: [true, false] }, 5, Math.linearEase, -200);
+		timeline.on(data["ONE2"], { visible: [true, false] }, 5, null, -200);
 		// add lines and scroll them all to the side
-		timeline.on(data["ONE1"], { x: [107, 207] }, 1485, Math.linearEase, 0);
-		timeline.from(data["LINE1"], { x: 76 }, 1485, Math.linearEase, -1485);
+		timeline.on(data["ONE1"], { x: [107, 207] }, 1485, null, 0);
+		timeline.from(data["LINE1"], { x: 76 }, 1485, null, -1485);
 		timeline.from(data["LINE1"], { height:0 }, 415, Math.quadEaseOut, -1485);
-		timeline.from(data["LINE2"], { x: 62 }, 1175, Math.linearEase, -1175);
+		timeline.from(data["LINE2"], { x: 62 }, 1175, null, -1175);
 		timeline.from(data["LINE2"], { height:0 }, 415, Math.quadEaseOut, -1175);
-		timeline.from(data["LINE3"], { x: 56 }, 690, Math.linearEase, -690);
+		timeline.from(data["LINE3"], { x: 56 }, 690, null, -690);
 		timeline.from(data["LINE3"], { height:0 }, 415, Math.quadEaseOut, -690);
-		timeline.from(data["LINE4"], { x: 33 }, 345, Math.linearEase, -345);
+		timeline.from(data["LINE4"], { x: 33 }, 345, null, -345);
 		timeline.from(data["LINE4"], { height:0}, 345, Math.quadEaseOut, -345);
 		timeline.from(data["LINE5"], { height:0 }, 310, Math.quadEaseOut, -310);
-		timeline.from(data["LINE5"], { x: -18 }, 310, Math.linearEase, -300);
+		timeline.from(data["LINE5"], { x: -18 }, 310, null, -300);
 		// fade everything out
-		timeline.on(data["ONE1"], { visible: [true, false] }, 20, Math.linearEase, 70);
-		timeline.on(data["LINE1"], { visible: [true, false] }, 20, Math.linearEase, -20);
-		timeline.on(data["AXIS3"], { state: [0, 1] }, 275, Math.linearEase, 0);
-		timeline.on(data["AXIS2"], { state: [0, 1] }, 275, Math.linearEase, -275);
-		timeline.on(data["AXIS1"], { state: [0, 1] }, 275, Math.linearEase, -275);
-		timeline.on(data["LINE2"], { visible: [true, false] }, 20, Math.linearEase, -205);
-		timeline.on(data["LINE3"], { visible: [true, false] }, 20, Math.linearEase, -135);
-		timeline.on(data["LINE4"], { visible: [true, false] }, 20, Math.linearEase, -65);
-		timeline.on(data["LINE5"], { visible: [true, false] }, 20, Math.linearEase, 5);
+		timeline.on(data["ONE1"], { visible: [true, false] }, 20, null, 70);
+		timeline.on(data["LINE1"], { visible: [true, false] }, 20, null, -20);
+		timeline.on(data["AXIS3"], { state: [0, 1] }, 275, null, 0);
+		timeline.on(data["AXIS2"], { state: [0, 1] }, 275, null, -275);
+		timeline.on(data["AXIS1"], { state: [0, 1] }, 275, null, -275);
+		timeline.on(data["LINE2"], { visible: [true, false] }, 20, null, -205);
+		timeline.on(data["LINE3"], { visible: [true, false] }, 20, null, -135);
+		timeline.on(data["LINE4"], { visible: [true, false] }, 20, null, -65);
+		timeline.on(data["LINE5"], { visible: [true, false] }, 20, null, 5);
 		timeline.seekTo(0);
 		container.duration = timeline.duration;
 		container.time = 0;
@@ -292,9 +292,9 @@ class DatesScreenBehavior extends BaseScreenBehavior {
 		timeline.from(data["Sat"], { x: -circleWidth }, 350, Math.backEaseOut, -400);
 		timeline.to(data["SCROLLER"], { y: 13 }, 1800, Math.quadEaseInOut, 0);
 		timeline.on(data["SCROLLING_CONTENT"], { y: [-280, 0] }, 1800, Math.quadEaseInOut, -1500);
-		timeline.to(data["Fri"], { state: 0 }, 20, Math.linearEase, -1400);
-		timeline.to(data["Wed"], { state: 0 }, 20, Math.linearEase, -1100);
-		timeline.to(data["Mon"], { state: 0 }, 20, Math.linearEase, -800);
+		timeline.to(data["Fri"], { state: 0 }, 20, null, -1400);
+		timeline.to(data["Wed"], { state: 0 }, 20, null, -1100);
+		timeline.to(data["Mon"], { state: 0 }, 20, null, -800);
 		timeline.seekTo(0);
 		container.duration = timeline.duration + 400;
 		container.time = 0;
@@ -363,7 +363,7 @@ class ColorPickerScreenBehavior extends BaseScreenBehavior {
 		let data = this.data;
 		let timeline = this.timeline = new Timeline();
 		timeline.from(data["COLOR"], { y: application.height }, 150, Math.quadEaseOut, 0);
-		timeline.on(data["CROSSHAIR"], { x: crosshairX, y: crosshairY }, 1700, Math.linearEase, 100);
+		timeline.on(data["CROSSHAIR"], { x: crosshairX, y: crosshairY }, 1700, null, 100);
 		timeline.to(data["COLOR"], { y: application.height }, 450, Math.quadEaseOut, -450);
 		timeline.seekTo(0);
 		container.duration = timeline.duration + 150;

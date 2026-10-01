@@ -55,6 +55,8 @@ function testUART(address) {
 						if (characteristic.properties & GATTClient.properties.write)
 							this.output = characteristic;
 					});
+					if (!this.input || !this.output)
+						throw new Error("UART characteristics not found");
 					this.subscribe(this.input, error => {
 						trace(`notification: ${ this.input.uuid } ${ error ? "error " + error : "enabled"}\n`);
 					});

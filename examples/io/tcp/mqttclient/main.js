@@ -23,7 +23,7 @@ new MQTTClient({
 		topic: "foo/bar/will",
 		message: ArrayBuffer.fromString("born @ " + Date()),
 		QoS: 0,
-		retain: 0
+		retain: false
 	},
 	onControl(operation, msg) {
 		if (MQTTClient.CONNACK === operation) {

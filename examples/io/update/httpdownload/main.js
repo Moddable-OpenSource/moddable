@@ -43,8 +43,8 @@ http.request({
 		trace(`Update complete${error ? ` with error (${error})` : ""}.\n`);
 		if (!error)
 			this.update.complete();
-		this.update.close();
-		this.options.partition.close();
+		this.update?.close();
+		this.options?.partition.close();
 		http.close();
 	}
 });

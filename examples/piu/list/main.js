@@ -24,7 +24,7 @@ const stripSkin = new Skin({
 	states: 27, variants: 28 
 });
 
-class ListBehavior extends Port {
+class ListBehavior extends Behavior {
 	countItems(/* port */) {
 		return this.data.length;
 	}

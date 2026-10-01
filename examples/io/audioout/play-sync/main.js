@@ -39,7 +39,7 @@ output.start();
 
 function loadSound(name) {
 	let snd = new MAUD(new Resource(name));
-	if (!(1 === snd.version) && ("ma" === snd.tag) && (SampleFormat.Uncompressed === snd.sampleFormat) && (16 === snd.bitPerSample)  && (1 === snd.channels))
+	if (!((1 === snd.version) && ("ma" === snd.tag) && (SampleFormat.Uncompressed === snd.sampleFormat) && (16 === snd.bitsPerSample) && (1 === snd.channels)))
 		throw new Error;
 	snd = new Uint8Array(snd.buffer, snd.byteOffset + snd.byteLength, snd.bufferSamples * 2);
 	snd.position = 0;

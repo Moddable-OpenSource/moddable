@@ -20,10 +20,10 @@ new WebSocketClient({
 	host: "api.openai.com",
 	path: "/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
 	port: 443,
-	headers: [
+	headers: new Map([
 		["OpenAI-Beta", "realtime=v1"],
 		["Authorization", `Bearer ${apiKey}`],
-	],
+	]),
 	onReadable(count, options) {
 		trace(String.fromArrayBuffer(this.read()));
 		if (!options.more)

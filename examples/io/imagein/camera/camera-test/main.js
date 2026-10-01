@@ -12,7 +12,6 @@
  *
  */
 import {} from "piu/MC";
-import Bitmap from "commodetto/Bitmap";
 import Camera from "embedded:io/image/in/camera";
 
 const applicationSkin = new Skin({ fill:"gray" });
@@ -22,6 +21,8 @@ const format = "buffer/disposable";	// or "buffer"
 
 class CameraModel {
 	constructor() {
+		let width = 176;
+		let height = 144;
 		const imageType = screen.pixelFormat;
 		
 		let frame;
