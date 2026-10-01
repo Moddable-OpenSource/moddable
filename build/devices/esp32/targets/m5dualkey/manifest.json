@@ -4,12 +4,13 @@
 		"USE_USB": "2",
 		"SDKCONFIGPATH": "./sdkconfig",
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Set the switch to center, hold Key1 (farther from the strap hole) while connecting USB, then release Key1.",
 		"BEFORE_DEBUGGING_MESSAGE": "Disconnect and reconnect the USB cable."
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
 		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
+		"$(IO)/analog/manifest.json"
 	],
 	"modules": {
 		"setup/target": "./setup-target"
