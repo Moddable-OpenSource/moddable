@@ -444,11 +444,16 @@ void xs_camera_read(xsMachine *the)
 		xs_camera_releaseBuffer(camera, camera->data);
 	}
 	else {
-		xsmcVars(1);
+		xsmcVars(3);
 		xsResult = xsNewHostObject(C_NULL);
 		xsVar(0) = xsNewHostFunction(xs_camera_buffer_close, 0);
 		xsmcDefine(xsResult, xsID_close, xsVar(0), xsDefault);
+		xsmcGet(xsVar(1), xsGlobal, xsID_Symbol);
+		xsmcGet(xsVar(1), xsVar(1), xsID_dispose);
+		xsDefineAt(xsResult, xsVar(1), xsVar(0), xsDefault);		// [Symbol.dispose] is close
 		xsmcDefine(xsResult, xsID_camera, xsThis, xsDefault);
+		xsmcSetInteger(xsVar(2), camera->size);
+		xsmcDefine(xsResult, xsID_byteLength, xsVar(2), xsDontDelete | xsDontSet);
 		xsmcSetHostBuffer(xsResult, camera->data, camera->size);
 	}
 }

@@ -142,10 +142,12 @@ function fetch(href, info = {}) {
 				body = info.body;
 				if (body == undefined) 
 					rejectResponse(new URIError(method + " no body"));
-				else if (!(body instanceof ArrayBuffer)) {
-					body = body.toString();
-					body = ArrayBuffer.fromString(body);
-				}
+				else if (ArrayBuffer.isView(body))
+					body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+				else if ((body instanceof ArrayBuffer) || (body instanceof SharedArrayBuffer))
+					body = new Uint8Array(body);
+				else
+					body = new Uint8Array(ArrayBuffer.fromString(body));
 				if (!headers)
 					headers = new Headers();
 				else {
@@ -178,7 +180,7 @@ function fetch(href, info = {}) {
 						offset = 0;
 						return;
 					}
-					resolveResponse(new Response(url, status, headers, promiseBody, redirected, statusText));
+					resolveResponse(new Response(url.href, status, headers, promiseBody, redirected, statusText));
 				},
 				onWritable(count) {
 					if (body) {
@@ -186,8 +188,7 @@ function fetch(href, info = {}) {
 						if (remain > 0) {
 							if (count > remain)
 								count = remain;
-							let view = new DataView(body, offset, count);
-							this.write(view);
+							this.write(body.subarray(offset, offset + count));
 							offset += count;
 						}
 						else
