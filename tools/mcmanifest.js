@@ -1928,6 +1928,8 @@ export class TSConfigFile extends PrerequisiteFile {
 			if (tool.windows)
 				specifier = specifier.replaceAll("\\", "/");
 			specifier = tool.unresolvePrefix(specifier);
+			if (!(specifier in paths))
+				paths[specifier] = [ result.source.slice(0, result.source.lastIndexOf(".")) ];
 			json.files.push(result.source);
 		}
 		json.files.push(...TSConfigFile.companions(tool));

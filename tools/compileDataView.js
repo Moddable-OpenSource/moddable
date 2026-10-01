@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021-2025  Moddable Tech, Inc.
+* Copyright (c) 2021-2026  Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -727,7 +727,8 @@ function compileDataView(input, pragmas = {}) {
 				}
 				start.push(jsdocClassComment);
 				exports.push(className);
-				start.push(`class ${className} extends ${superClassName ?? extendsClass} {`);
+				const baseClass = superClassName ?? ((("typescript" == language) && ("DataView" === extendsClass)) ? "DataView<ArrayBufferLike>" : extendsClass);
+				start.push(`class ${className} extends ${baseClass} {`);
 				jsdocClassComment = undefined;
 
 				let superByteLength = 0;
@@ -1232,7 +1233,7 @@ function compileDataView(input, pragmas = {}) {
 							output.push(`      return String.fromCharCode(this.getUint8(${byteOffset}));`);
 						else {
 							if ("xs" === platform)
-								output.push(`      return String.fromArrayBuffer(this.buffer.slice(this.byteOffset + ${byteOffset}, this.byteOffset + ${byteOffset + arrayCount}));`);
+								output.push(`      return String.fromArrayBuffer(this.buffer, this.byteOffset + ${byteOffset}, ${arrayCount});`);
 							else
 								output.push(`      return new TextDecoder().decode(this.buffer.slice(this.byteOffset + ${byteOffset}, this.byteOffset + ${byteOffset + arrayCount}));`);
 						}
