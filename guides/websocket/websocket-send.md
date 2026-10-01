@@ -1,7 +1,7 @@
 ---
 name: Send Message using WebSocket()
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Use `send()` to transmit messages as a string.
@@ -10,8 +10,10 @@ Use `send()` to transmit messages as a string.
 import WebSocket from "WebSocket";
 
 const ws = new WebSocket("ws://example.com/ws");
-ws.send("This is a message.");
-ws.send("This is another message. ❤️");
+ws.addEventListener("open", event => {
+	ws.send("This is a message.");
+	ws.send("This is another message. ❤️");
+});
 ```
 
 ---
@@ -22,9 +24,11 @@ To transmit binary messages with `send()` pass an `ArrayBuffer`, `DataView`, or 
 import WebSocket from "WebSocket";
 
 const ws = new WebSocket("ws://example.com/ws");
-ws.send(new ArrayBuffer(20));
-ws.send(Uint8Array.of(1, 2, 3));
-ws.send(new DataView(new ArrayBuffer(10)));
+ws.addEventListener("open", event => {
+	ws.send(new ArrayBuffer(20));
+	ws.send(Uint8Array.of(1, 2, 3));
+	ws.send(new DataView(new ArrayBuffer(10)));
+});
 ```
 
 ---

@@ -1,7 +1,7 @@
 ---
 name: Close Connection using WebSocket()
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Use the `close()` method to disconnect from the WebSocket server.
@@ -21,7 +21,7 @@ Indicate the reason for closing by passing a [status code](https://www.rfc-edito
 import WebSocket from "WebSocket";
 
 const ws = new WebSocket("ws://example.com/ws");
-ws.close(1001, "going away");
+ws.close(3000, "going away");
 ```
 
 ---

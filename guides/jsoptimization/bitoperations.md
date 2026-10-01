@@ -1,7 +1,7 @@
 ---
 name: Operate on Bits
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Embedded JavaScript developers often need to operate on the bits of an integer value. JavaScript supports this, even though it doesn't have an integer data type. The XS JavaScript engine is optimized for integer operations. With a little care, you can get the fastest possible bit operations and avoid some subtle bugs.
@@ -30,8 +30,8 @@ When shifting values, use the shift operators instead of multiplying or dividing
 
 ```js
 let value = 0x8000_0000;
-let shifted = value * 2;
-// => shifted is 8589934592
+let multiplied = value * 2;
+// => multiplied is 4294967296
 
 let value = 0x8000_0000;
 let shifted = value << 1;

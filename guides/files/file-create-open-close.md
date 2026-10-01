@@ -1,10 +1,10 @@
 ---
 name: Create, Open, and Close File
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
-To create a new file, call `openFile()` with the mode set to "w" or "w+". 
+To create a new file, call `openFile()` with the mode set to "w+". 
 
 ```js
 const help = device.files.openFile({
@@ -15,12 +15,12 @@ const help = device.files.openFile({
 
 ---
 
-To open an existing file, call `openFile()` with the mode set to "w" for write-only, "rw" for read-write, and "r" for read-only.
+To open an existing file, call `openFile()` with the mode set to "r+" for read-write, and "r" for read-only.
 
 ```js
 const help = device.files.openFile({
 	path: "docs/help.txt",
-	mode: "rw"
+	mode: "r+"
 });
 ```
 
@@ -31,7 +31,7 @@ To close an open file, call `close()`.
 ```js
 const help = device.files.openFile({
 	path: "docs/help.txt",
-	mode: "rw"
+	mode: "r+"
 });
 help.close();
 ```

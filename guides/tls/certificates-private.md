@@ -1,10 +1,10 @@
 ---
 name: Include Private Certificates
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-14
+updated: 2026-10-01
 ---
 
-A certificate can be passed directly to a network constructor as part of the options object. The easiest way to do this is to append the certificate to the platform default secure connection settings for the protocol you are using. For example, when making secure HTTP requests, you use `device.network.https.client`. That contains a `tls` property with the default TLS configuration.
+A certificate can be passed directly to a network constructor as part of the options object. The easiest way to do this is to append the certificate to the platform default secure connection settings for the protocol you are using. For example, when making secure HTTP requests, you use `device.network.https.client`. Its `socket` property contains a `tls` property with the default TLS configuration.
 
 This example passes one private certificate to be used by this HTTPS session. Certificates are always in DER format and stored in a [Byte Buffer](https://419.ecma-international.org/#byte-buffer) (see [DER and PEM Certificates](./pemdir.md)).
 
@@ -14,10 +14,12 @@ You can also pass an array of certificates for the `ca` property.
 const myPrivateCert = loadCertificate();
 const http = new device.network.https.client.io({
 	...device.network.https.client,
-	tls: {
-		...device.network.https.client.tls,
-		ca: myPrivateCert
-
+	socket: {
+		...device.network.https.client.socket,
+		tls: {
+			...device.network.https.client.socket.tls,
+			ca: myPrivateCert
+		}
 	},
 	host: "example.com"
 });
@@ -31,9 +33,12 @@ const http = new device.network.https.client.io({
 const myPrivateCert = loadCertificate();
 const wsc = new device.network.wss.io({
 	...device.network.wss,
-	tls: {
-		...device.network.wss.tls,
-		ca: myPrivateCert,
+	socket: {
+		...device.network.wss.socket,
+		tls: {
+			...device.network.wss.socket.tls,
+			ca: myPrivateCert,
+		}
 	},
 	host: "example.com",
 	path: "/ws",
@@ -48,9 +53,12 @@ Use the same technique to pass a certificate to a secure MQTT connection.
 const myPrivateCert = loadCertificate();
 new device.network.mqtts.io({
 	...device.network.mqtts,
-	tls: {
-		...device.network.mqtts.tls,
-		ca: myPrivateCert,
+	socket: {
+		...device.network.mqtts.socket,
+		tls: {
+			...device.network.mqtts.socket.tls,
+			ca: myPrivateCert,
+		}
 	},
 	host: "test.mosquitto.org"
 });
@@ -68,10 +76,13 @@ This works in the same way for secure MQTT and WebSocket connections as well.
 const {privateClientCert, privateClientKey} = loadCertificateAndKey();
 const http = new device.network.https.client.io({
 	...device.network.https.client,
-	tls: {
-		...device.network.https.client.tls,
-		clientCertificate: privateClientCert,
-		clientKey: privateClientKey
+	socket: {
+		...device.network.https.client.socket,
+		tls: {
+			...device.network.https.client.socket.tls,
+			clientCertificate: privateClientCert,
+			clientKey: privateClientKey
+		}
 	},
 	host: "example.com"
 });

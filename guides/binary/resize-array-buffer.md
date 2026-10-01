@@ -1,7 +1,7 @@
 ---
 name: Resize an ArrayBuffer
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 An `ArrayBuffer` created with with the `maxByteLength` option may be resized.
@@ -74,6 +74,6 @@ const resizableBuffer = new ArrayBuffer(512, {maxByteLength: 1024});
 
 const buffer = new ArrayBuffer(512);
 // => buffer.resizable == false
-// => buffer.maxByteLength == 0
+// => buffer.maxByteLength == 512
 // => buffer.byteLength == 512
 ```

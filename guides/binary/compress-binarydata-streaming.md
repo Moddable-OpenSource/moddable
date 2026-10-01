@@ -1,7 +1,7 @@
 ---
 name: Compress Binary Data – Streaming
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 The `Deflate` module provides [zlib](https://www.zlib.net) compression using a subset of the [Pako](https://github.com/nodeca/pako/blob/master/README.md) API.
@@ -29,7 +29,7 @@ Stream the output of `Deflate` by implementing `onData()` and `onEnd()` callback
 const deflator = new Deflate({});
 
 deflator.onData = buffer => {
-	// => buffer is Uint8Array of compressed data
+	// => buffer is an ArrayBuffer of compressed data
 };
 
 deflator.onEnd = error => {

@@ -1,8 +1,10 @@
 ---
 name: Immutable ArrayBuffers
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
+
+> Note: Immutable ArrayBuffer is not an official part of the JavaScript language yet. It is not yet enabled on all devices using the Moddable SDK.
 
 An immutable `ArrayBuffer` is a read-only instance of an `ArrayBuffer`. You create an immutable `ArrayBuffer` from a regular read/write `ArrayBuffer`.
 

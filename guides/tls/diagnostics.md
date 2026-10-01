@@ -1,7 +1,7 @@
 ---
 name: Diagnostics
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-14
+updated: 2026-10-01
 ---
 
 The TLS implementation provides two options to help diagnose problems with TLS connections. These options should never be used in production. In particular, disabling certificate validation defeats the security guarantees of a TLS connection.
@@ -13,9 +13,12 @@ The TLS implementation can log its progress through various steps of establishin
 ```js
 const http = new device.network.https.client.io({
 	...device.network.https.client,
-	tls: {
-		...device.network.https.client.tls,
-		trace: true
+	socket: {
+		...device.network.https.client.socket,
+		tls: {
+			...device.network.https.client.socket.tls,
+			trace: true
+		}
 	},
 	host: "example.com"
 });
@@ -28,9 +31,12 @@ Disable certificate validation on the TLS connection by setting `verify` to `fal
 ```js
 const http = new device.network.https.client.io({
 	...device.network.https.client,
-	tls: {
-		...device.network.https.client.tls,
-		verify: false
+	socket: {
+		...device.network.https.client.socket,
+		tls: {
+			...device.network.https.client.socket.tls,
+			verify: false
+		}
 	},
 	host: "example.com"
 });

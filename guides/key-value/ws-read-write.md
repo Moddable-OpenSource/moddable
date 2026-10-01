@@ -1,7 +1,7 @@
 ---
 name: Read and Write Values using Web Storage
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Reading and writing values with Web Storage requires a Web Storage instance, such as `localStorage`. See [Setting Up Web Storage](./index.md#setting-up-web-storage) to create one.
@@ -36,7 +36,8 @@ If you need to store structured data, JSON is a convenient option. Because the s
 const object = {one: 1, two: "two", and: {three: 3}};
 localStorage.setItem("json", JSON.stringify(object));
 const value = localStorage.getItem("json");
-trace(`${JSON.parse(value)}\n`);
+const json = JSON.parse(value);
+trace(`${JSON.stringify(json)}\n`);
 ```
 
 ---

@@ -1,7 +1,7 @@
 ---
 name: Get Microseconds
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Some platforms support retrieving the system elapsed time with microsecond precision. `Time.microseconds` is similar to `Time.ticks` but with units of microseconds instead of milliseconds
@@ -10,7 +10,6 @@ Only use microseconds when the precision is necessary as microseconds are more e
 
 ```js
 import Time from "time";
-import "microseconds";
 
 trace(`Time.microseconds ${Time.microseconds}\n`);
 ```
