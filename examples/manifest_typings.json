@@ -39,6 +39,9 @@
 		"embedded:io/audio/*": [
 			"$(TYPINGS)/embedded_io/audio/*"
 		],
+		"embedded:io/image/in/*": [
+			"$(TYPINGS)/embedded_io/image/in/*"
+		],
 		"embedded:io/bluetoothle/*": [
 			"$(TYPINGS)/embedded_io/ble/*"
 		],
@@ -64,6 +67,9 @@
 			"$(TYPINGS)/embedded_network/mqtt/*"
 		],
 		"embedded:network/websocket/*": "$(TYPINGS)/embedded_network/websocket/*",
+		"embedded:network/dns/server/*": [
+			"$(TYPINGS)/embedded_network/dns/server/*"
+		],
 		"embedded:network/dns/resolver/*": [
 			"$(TYPINGS)/embedded_network/dns/resolver/*"
 		],
@@ -93,6 +99,9 @@
 		],
 		"fetch": [
 			"$(TYPINGS)/web/fetch"
+		],
+		"web/fetch/streams": [
+			"$(TYPINGS)/web/fetch-streams"
 		],
 		"structuredClone": [
 			"$(TYPINGS)/web/structuredClone"

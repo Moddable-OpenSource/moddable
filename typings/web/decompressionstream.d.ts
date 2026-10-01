@@ -21,7 +21,7 @@
 declare module "web/decompressionstream" {
   import type { ReadableStream, WritableStream } from "web/streams";
 
-  type DecompressionFormat = "deflate" | "deflate-raw" | "gzip";
+  export type DecompressionFormat = "deflate" | "deflate-raw" | "gzip";
 
   class DecompressionStream {
     constructor(format: DecompressionFormat);

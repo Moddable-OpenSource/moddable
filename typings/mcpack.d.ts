@@ -27,6 +27,7 @@
 /// <reference path="./web/domexception.d.ts" />
 /// <reference path="./web/eventsource.d.ts" />
 /// <reference path="./web/fetch.d.ts" />
+/// <reference path="./web/fetch-streams.d.ts" />
 /// <reference path="./web/headers.d.ts" />
 /// <reference path="./web/streams.d.ts" />
 /// <reference path="./web/structuredClone.d.ts" />

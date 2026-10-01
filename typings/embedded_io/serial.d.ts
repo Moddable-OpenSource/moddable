@@ -20,13 +20,13 @@
 
 declare module "embedded:io/serial" {
   import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
-  class Serial implements Disposable {
-    target?: any;
-    constructor(options: ({
+  export type Format = "number" | "buffer";
+
+  export type Options<F extends Format = Format> = ({
       receive: PinSpecifier;
       transmit?: PinSpecifier;
     } | {
-      recevice?: PinSpecifier;
+      receive?: PinSpecifier;
       transmit: PinSpecifier;
     }) & {
       baud: number;
@@ -36,14 +36,24 @@ declare module "embedded:io/serial" {
       clearToSend?: PinSpecifier;
       dataSetReady?: PinSpecifier;
       port: PortSpecifier;
-      onReadable?: (this: Serial, bytes: number) => void;
-      onWritable?: (this: Serial, bytes: number) => void;
-      format?: "number" | "buffer";
+      onReadable?: (this: Serial<F>, bytes: number) => void;
+      onWritable?: (this: Serial<F>, bytes: number) => void;
+      format?: F;
       target?: any;
-    });
+    };
+
+  /*
+    F is the format named in the options when the serial port is created. Naming it there
+    (format: "buffer") fixes the type read() with no argument returns:
+    a byte for "number", an ArrayBuffer for "buffer".
+    When the options name no format, read() is typed as returning either, because the
+    format can be changed later through the format property.
+  */
+  interface Serial<F extends Format = Format> extends Disposable {
+    target?: any;
     readonly resolution: number;
     close(): void;
-    read(): number | ArrayBuffer | undefined;
+    read(): (F extends "number" ? number : ArrayBuffer) | undefined;
     read(byteLength: number): ArrayBuffer | undefined;
     read(buffer: ByteBuffer): number | undefined;
     write(value: number | ByteBuffer): void;
@@ -54,10 +64,15 @@ declare module "embedded:io/serial" {
       requestToSend?: PinSpecifier;
       break?: boolean;
     }): void
-    get format(): "number" | "buffer"
-    set format(value: "number" | "buffer")
+    get format(): F
+    set format(value: Format)
     [Symbol.dispose](): void;
   }
+  interface SerialConstructor {
+    new <F extends Format = Format>(options: Options<F>): Serial<F>;
+    readonly prototype: Serial;
+  }
+  const Serial: SerialConstructor;
 
   export default Serial;
 }

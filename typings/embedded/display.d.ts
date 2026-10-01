@@ -30,6 +30,7 @@ declare module "embedded:display" {
 		brightness?: number; // 0-1 range
 		rotation?: 0 | 90 | 180 | 270;
 		format?: typeof Bitmap.RGB565LE | typeof Bitmap.RGB24 | typeof Bitmap.Gray256;
+		flip?: "" | "h" | "v" | "hv";
 	}
 
 	export interface DisplayConfiguration {
@@ -43,6 +44,7 @@ declare module "embedded:display" {
 		y: number;
 		width: number;
 		height: number;
+		continue?: boolean;		// true to continue updating the same frame buffer
 	}
 
 	class Display implements Disposable {
@@ -58,7 +60,7 @@ declare module "embedded:display" {
 		send(buffer: ByteBuffer, offset: number, length: number): void;
 		end(): void;
 
-		adapInvalid(rectangle: Rectangle): void;
+		adaptInvalid(rectangle: Rectangle): void;
 
 		get width(): number;
 		get height(): number;

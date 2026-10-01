@@ -4,12 +4,13 @@
 declare module "embedded:network/mqtt/client" {
   import type TCP from "embedded:io/socket/tcp";
   import type TLS from "embedded:io/socket/tcp/tls";
+  import type { ClientSocket } from "embedded:io/socket/tcp/tls";
   import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
 
   export interface MQTTClientProvider {
     io: typeof MQTTClient,
     dns: DNSResolverProvider,
-    socket: { io: typeof TCP | typeof TLS, [option: string]: unknown },
+    socket: ClientSocket,
   }
 
   interface onReadableOptions {
@@ -39,7 +40,7 @@ declare module "embedded:network/mqtt/client" {
     password?: string,
     id?: string,
     clean?: boolean,
-    will?: any,
+    will?: Will,
     keepAlive?: number, // milliseconds
     onReadable?: (this: MQTTClient, count: number, options: onReadableOptions) => void,
     onWritable?: (this: MQTTClient, count: number) => void,
@@ -47,8 +48,8 @@ declare module "embedded:network/mqtt/client" {
     onClose?: (this: MQTTClient) => void,
     onError?: (this: MQTTClient, error: any) => void,
     target?: any,
-    dns: Record<string, any>,
-    socket: Record<string, any>,
+    dns: DNSResolverProvider,
+    socket: ClientSocket,
   }
 
   interface PublishOptions {
@@ -87,7 +88,7 @@ declare module "embedded:network/mqtt/client" {
   class MQTTClient implements Disposable {
     target?: any
     constructor(options: Options)
-    read(count: number): ArrayBuffer
+    read(count?: number): ArrayBuffer
     read(buffer: ByteBuffer): number
     write(data: ByteBuffer): number // continues the publish in progress
     write(data: ByteBuffer | null, options: WriteOptions): number

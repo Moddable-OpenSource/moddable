@@ -35,7 +35,7 @@ declare module "embedded:network/dns/resolver/udp" {
 
   class Resolver implements Disposable {
     target?: any
-    constructor(options: Record<string, any>)
+    constructor(options: Omit<DNSResolverProvider, "io"> & { target?: any })
     close(): void
     resolve(options: Options): void
     [Symbol.dispose](): void

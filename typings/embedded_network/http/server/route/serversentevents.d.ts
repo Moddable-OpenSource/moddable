@@ -40,3 +40,9 @@ declare module "embedded:network/http/server/route/serversentevents" {
     const route: HTTPConnectionHandlers;
     export default route;
 }
+
+declare module "embedded:network/http/server" {
+    interface HTTPRouteTypes {
+        serversentevents: import("embedded:network/http/server/route/serversentevents").ServerSentEventsRoute;
+    }
+}

@@ -37,6 +37,8 @@ declare module "worker" {
 			symbol?: number;
 		};
 		nativeStack?: number;
+		core?: number;
+		priority?: number;
 	}
 
 	interface MessagePort {

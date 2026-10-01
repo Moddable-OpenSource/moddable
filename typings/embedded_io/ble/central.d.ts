@@ -104,4 +104,5 @@ declare module "embedded:io/bluetoothle/central" {
     }
 
     export { GATTClient, GAPClient };
+    export type { Advertisement, GAPClientOptions, GATTClientNotifiedValue, GATTClientWriteOptions, GATTClientOptions, GATTClientService, GATTClientCharacteristic, GATTClientDescriptor };
 }

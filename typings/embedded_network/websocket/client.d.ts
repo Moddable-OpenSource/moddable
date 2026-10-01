@@ -26,21 +26,24 @@
 declare module "embedded:network/websocket/client" {
   import type TCP from "embedded:io/socket/tcp";
   import type TLS from "embedded:io/socket/tcp/tls";
+  import type { ClientSocket } from "embedded:io/socket/tcp/tls";
   import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
 
   export interface WebSocketClientProvider {
     io: typeof WebSocketClient;
     dns: DNSResolverProvider;
-    socket: { io: typeof TCP | typeof TLS; [option: string]: unknown };
+    socket: ClientSocket;
   }
 
-  export interface WebSocketClientOptions {
-    onReadable?: (this: WebSocketClient, count: number, options: { more: boolean; binary: boolean }) => void;
-    onWritable?: (this: WebSocketClient, count: number) => void;
-    onControl?: (this: WebSocketClient, opcode: number, data: ArrayBuffer) => void;
-    onClose?: (this: WebSocketClient) => void;
-    onError?: (this: WebSocketClient) => void;
-    format?: "buffer" | "number";
+  export type Format = "buffer" | "number";
+
+  export interface WebSocketClientOptions<F extends Format = Format> {
+    onReadable?: (this: WebSocketClient<F>, count: number, options: { more: boolean; binary: boolean }) => void;
+    onWritable?: (this: WebSocketClient<F>, count: number) => void;
+    onControl?: (this: WebSocketClient<F>, opcode: number, data: ArrayBuffer) => void;
+    onClose?: (this: WebSocketClient<F>) => void;
+    onError?: (this: WebSocketClient<F>) => void;
+    format?: F;
     target?: any;
     attach?: TCP;
     host?: string;
@@ -48,12 +51,8 @@ declare module "embedded:network/websocket/client" {
     port?: number;
     protocol?: string;
     headers?: Map<string, string>;
-    dns?: {
-      io: new (options: any) => any;
-    };
-    socket?: {
-      io: new (options: any) => any;
-    };
+    dns?: DNSResolverProvider;
+    socket?: ClientSocket;
   }
 
   export interface WebSocketWriteOptions {
@@ -62,26 +61,38 @@ declare module "embedded:network/websocket/client" {
     more?: boolean;
   }
 
-  class WebSocketClient implements Disposable {
-    constructor(options: WebSocketClientOptions);
-
+  /*
+    F is the format named in the options when the client is created. Naming it there
+    (format: "buffer") fixes the type read() with no argument returns:
+    a byte for "number", an ArrayBuffer for "buffer".
+    When the options name no format, read() is typed as returning either, because the
+    format can be changed later through the format property.
+  */
+  interface WebSocketClient<F extends Format = Format> extends Disposable {
     close(): void;
     write(data: ByteBuffer, options?: WebSocketWriteOptions): number;
-    read(): number | ArrayBuffer;
+    read(): F extends "number" ? number : ArrayBuffer;
     read(count: number): ArrayBuffer;
     read(buffer: ByteBuffer): number;
 
-    format: "buffer" | "number";
+    get format(): F;
+    set format(value: Format);
     protocol: string | undefined;
     target?: any;
 
-    static readonly text: 1;
-    static readonly binary: 2;
-    static readonly close: 8;
-    static readonly ping: 9;
-    static readonly pong: 10;
     [Symbol.dispose](): void;
   }
+  interface WebSocketClientConstructor {
+    new <F extends Format = Format>(options: WebSocketClientOptions<F>): WebSocketClient<F>;
+    readonly prototype: WebSocketClient;
+
+    readonly text: 1;
+    readonly binary: 2;
+    readonly close: 8;
+    readonly ping: 9;
+    readonly pong: 10;
+  }
+  const WebSocketClient: WebSocketClientConstructor;
 
   export default WebSocketClient;
 }

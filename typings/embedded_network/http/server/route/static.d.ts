@@ -33,3 +33,9 @@ declare module "embedded:network/http/server/route/static" {
     const route: HTTPConnectionHandlers;
     export default route;
 }
+
+declare module "embedded:network/http/server" {
+    interface HTTPRouteTypes {
+        static: import("embedded:network/http/server/route/static").StaticRoute;
+    }
+}

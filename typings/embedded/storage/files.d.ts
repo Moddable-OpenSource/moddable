@@ -70,8 +70,8 @@ declare module "embedded:storage/files" {
 		createLink?(path: string, target: string): void;
 		readLink?(path: string): string;
 
-		scan(path?: string): IterableIterator<string>;
-		[Symbol.iterator](): IterableIterator<string>;
+		scan(path?: string): IteratorObject<string, undefined, unknown>;
+		[Symbol.iterator](): IteratorObject<string, undefined, unknown>;
 		[Symbol.dispose](): void;
 	}
 

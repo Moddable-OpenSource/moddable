@@ -1,5 +1,5 @@
 {
-	"_comment": "ES2025 overrides on top of the ES2024 base. Used when TypeScript >= 6 (see typesVersions in package.json).",
+	"_comment": "ES2025 overrides on top of the ES2024 base. This is tsconfig.base.json (see typesVersions in package.json). TypeScript 6 or later is required.",
 	"extends": "./tsconfig.es2024.json",
 	"compilerOptions": {
 		"lib": ["es2025", "esnext.disposable"],

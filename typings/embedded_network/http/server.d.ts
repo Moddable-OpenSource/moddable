@@ -46,6 +46,10 @@ declare module "embedded:network/http/server" {
         onError?(this: HTTPConnection, error: string): void;
     }
 
+    export interface HTTPRouteTypes {
+    }
+    export type HTTPRoute = HTTPConnectionHandlers | HTTPRouteTypes[keyof HTTPRouteTypes];
+
     export interface HTTPConnection extends Disposable {
         close(): void;
         detach(): TCP;
@@ -53,7 +57,7 @@ declare module "embedded:network/http/server" {
         respond(options: HTTPResponse): void;
         read(count?: number): ArrayBuffer | undefined;
         write(bytes?: ByteBuffer): number;
-        route: HTTPConnectionHandlers;
+        route: HTTPRoute;
         format: "buffer";
         protocol?: string;
     }
@@ -73,7 +77,7 @@ declare module "embedded:network/http/server" {
         keepAlive?: number;
         onConnect?(this: HTTPServer, connection: HTTPConnection): void;
         target?: any;
-        onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
+        onRoute?(this: HTTPServer, request: HTTPRequest): HTTPRoute | undefined | null | false | void;
     }
 
     class HTTPServer implements Disposable {

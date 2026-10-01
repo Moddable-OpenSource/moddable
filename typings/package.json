@@ -8,11 +8,6 @@
 			"tsconfig.base.json": [
 				"./tsconfig.es2025.json"
 			]
-		},
-		">=5.4.0-0": {
-			"tsconfig.base.json": [
-				"./tsconfig.es2024.json"
-			]
 		}
 	},
 	"author": "Moddable",

@@ -26,15 +26,15 @@ declare module "web/websocket" {
 
   interface WebSocketClientOptions {
     url: string;
-    protocol?: string;
+    protocol?: string | string[];
     keepalive?: number;
-    headers?: Headers | Record<string, string>;
+    headers?: Headers | Map<string, string>;
     ws?: any;
     wss?: any;
   }
 
   interface WebSocketAttachOptions {
-    attach: any;
+    attach: import("embedded:io/socket/tcp").default;
   }
 
   interface WebSocketCloseEvent {
@@ -58,7 +58,7 @@ declare module "web/websocket" {
   type WebSocketEventListener = (event: any) => void;
 
   class WebSocket {
-    constructor(url: string, protocol?: string);
+    constructor(url: string, protocols?: string | string[]);
     constructor(options: WebSocketClientOptions);
     constructor(options: WebSocketAttachOptions);
 

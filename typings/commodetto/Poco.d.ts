@@ -40,6 +40,13 @@ declare module "commodetto/Poco" {
     bitmap: Bitmap
   }
 
+  // font data used directly, without parsing: a font for cfe8x8, cfeNFNT, or a scalable font for cfeFT.
+  // size selects the pixel size of a scalable font.
+  export type FontData = ByteBuffer & {
+    size?: number
+    bitmap?: Bitmap
+  }
+
   export interface PocoPrototype {
     close(): void
     begin(x?: number, y?: number, width?: number, height?: number): void
@@ -76,8 +83,8 @@ declare module "commodetto/Poco" {
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number): void
     fillPattern(bits: Bitmap, x: number, y: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number): void
   
-    drawText(text: string, font: Font, color: number, x: number, y: number, width?: number): void
-    getTextWidth(text: string, font: Font): number
+    drawText(text: string, font: Font | FontData, color: number | Bitmap, x: number, y: number, width?: number): void
+    getTextWidth(text: string, font: Font | FontData): number
 
     adaptInvalid(area: Rectangle): void
 

@@ -44,15 +44,17 @@ declare module "embedded:provider/builtin" {
 
   // any function or class
   type Callable = ((...args: never) => unknown) | (abstract new (...args: never) => unknown);
+  // values that are not remapped: functions, classes, arrays, and byte buffers
+  type Leaf = Callable | readonly unknown[] | ArrayBufferLike | ArrayBufferView;
 
   // device after lockdown: frozen with every io resolved to a constructor
-  type Frozen<T> = T extends Callable | readonly unknown[] ? T : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T;
+  type Frozen<T> = T extends Leaf ? T : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T;
 
   // device before lockdown (during preload)
   type Provider = { io: Callable };
   type IOName<C> = { [N in keyof DeviceIO]: DeviceIO[N] extends C ? N : never }[keyof DeviceIO];
-  type ProviderConfig<T> = T extends Callable | readonly unknown[] ? T : T extends object ? { -readonly [K in keyof T]: K extends "io" ? T[K] | IOName<T[K]> : ProviderConfig<T[K]> } : T;
-  export type DeviceConfig<T = Device> = T extends Callable | readonly unknown[] ? T : T extends Provider ? ProviderConfig<T> : T extends object ? { -readonly [K in keyof T]?: DeviceConfig<T[K]> } : T;
+  type ProviderConfig<T> = T extends Leaf ? T : T extends object ? { -readonly [K in keyof T]: K extends "io" ? T[K] | IOName<T[K]> : ProviderConfig<T[K]> } : T;
+  export type DeviceConfig<T = Device> = T extends Leaf ? T : T extends Provider ? ProviderConfig<T> : T extends object ? { -readonly [K in keyof T]?: DeviceConfig<T[K]> } : T;
 
   const device: Frozen<Device>;
   export default device;

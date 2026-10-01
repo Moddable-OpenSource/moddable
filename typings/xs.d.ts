@@ -19,7 +19,7 @@
  */
 
  interface Trace {
-	(...log: (string | number | boolean)[]):void;
+	(...log: unknown[]):void;
 	left(log: string | ArrayBufferLike, conversation?: string):void;
 	center(log: string | ArrayBufferLike, conversation?: string):void;
 	right(log: string | ArrayBufferLike, conversation?: string):void;
@@ -63,17 +63,26 @@ interface ArrayBufferConstructor {
 
 interface ArrayBuffer {
 	concat(...buffers: ArrayBufferLike[]): ArrayBuffer;
+
+	// immutable ArrayBuffers (not yet in every XS deployment: only where mxImmutableArrayBuffers is enabled)
+	readonly immutable: boolean;
+	sliceToImmutable(start?: number, end?: number): ArrayBuffer;
+	transferToImmutable(newByteLength?: number): ArrayBuffer;
+}
+
+interface ToBase64Options {
+	alphabet?: "base64url" | "base64";
+	omitPadding?: boolean;
 }
 
 interface Uint8Array {
 	toHex(): string;
-	toBase64(): string
+	toBase64(options?: ToBase64Options): string
 }
 
 interface FromBase64Options {
 	alphabet?: "base64url" | "base64";
 	lastChunkHandling?: "stop-before-partial" | "strict" | "loose";
-	omitPadding?: boolean;
 }
 
 interface Uint8ArrayConstructor {
@@ -101,4 +110,42 @@ interface Math {
 declare function Native(name: string): new (...args: any[]) => any;
 declare function native(name: string): (...args: any[]) => any;
 
-// Compartment?
+
+/*
+	Compartment (see documentation/xs/XS Compartment.md)
+*/
+interface ModuleDescriptor {
+	source?: string | ModuleSource | object;
+	importMeta?: object;
+	specifier?: string;
+	namespace?: string | object;
+	compartment?: Compartment;
+	archive?: object;
+	path?: string;
+}
+interface CompartmentOptions {
+	globals?: object;
+	globalLexicals?: object;
+	modules?: Record<string, ModuleDescriptor>;
+	loadHook?: (specifier: string) => Promise<ModuleDescriptor>;
+	loadNowHook?: (specifier: string) => ModuleDescriptor;
+	resolveHook?: (importSpecifier: string, referrerSpecifier: string) => string;
+}
+declare class Compartment {
+	constructor(options?: CompartmentOptions);
+	readonly globalThis: Record<PropertyKey, any>;
+	evaluate(script: string): any;
+	import(specifier: string): Promise<any>;
+	importNow(specifier: string): any;
+}
+declare class ModuleSource {
+	constructor(source: string);
+	readonly bindings: object[];
+	readonly needsImport: boolean;
+	readonly needsImportMeta: boolean;
+}
+
+/*
+	abort hook: when a function, XS calls it before aborting. Returning false ignores the abort.
+*/
+declare var abort: ((message: string, exception?: any) => boolean | void) | undefined;

@@ -26,7 +26,7 @@ declare module "web/eventsource" {
 
   interface EventSourceInit {
     method?: string;
-    headers?: Headers | Record<string, string>;
+    headers?: Headers | Map<string, string>;
     body?: string | ArrayBuffer;
   }
 
