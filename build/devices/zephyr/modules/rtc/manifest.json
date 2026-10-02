@@ -2,7 +2,7 @@
 	"modules": {
 		"embedded:RTC/zephyr-builtin": "./rtc"
 	},
-	"preload": "rtc",
+	"preload": "embedded:RTC/zephyr-builtin",
 	"zephyrConfig": {
 		"CONFIG_RTC": "y",
 		"CONFIG_RTC_ALARM": "y"
