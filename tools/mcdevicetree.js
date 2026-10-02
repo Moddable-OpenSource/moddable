@@ -884,7 +884,7 @@ function doNetworkInterfaces(state, dts) {
 	}
 
 	if (root.children.eth && ("y" === state.zephyrConfig.get("CONFIG_NET_L2_ETHERNET"))) {
-		const status = root.children.wifi.properties.status?.value?.value ?? "okay";
+		const status = root.children.eth.properties.status?.value?.value ?? "okay";
 		if ("okay" === status) {
 			nics.push({
 				label: root.children.eth.label,
