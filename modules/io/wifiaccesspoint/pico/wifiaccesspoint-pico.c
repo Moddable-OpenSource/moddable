@@ -287,7 +287,8 @@ void xs_wifiaccesspoint(xsMachine *the)
 	struct netif *apnetif = &cyw43_state.netif[CYW43_ITF_AP];
 	netif_set_addr(apnetif, ip_2_ip4(&ip), ip_2_ip4(&nm), ip_2_ip4(&ip));
 
-	dhcp_server_init(&ap->dhcpServer, &ip, &nm);
+	/* Bind to the AP netif so a later station connection does not answer DHCP. */
+	dhcp_server_init(&ap->dhcpServer, apnetif, &ip, &nm);
 
 	gAPInstance = ap;
 	ap->connection = 400;
