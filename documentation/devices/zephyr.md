@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
 Copyright 2025-2026 Moddable Tech, Inc.<BR>
-Updated: April 2, 2026
+Updated: October 2, 2026
 
 This document is a guide to building Moddable apps with the [Zephyr Project SDK](https://github.com/zephyrproject-rtos/zephyr/).
 
@@ -76,7 +76,7 @@ Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build uses Zephyr SDK v4.3 or later.
+The Moddable SDK build uses Zephyr v4.4.2 with version 1.0.1 of the Zephyr SDK toolchain.
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -121,10 +121,10 @@ The Moddable SDK build uses Zephyr SDK v4.3 or later.
 	pip install west
 	```
 
-8. Get the Zephyr SDK
+8. Get the Zephyr source code, version 4.4.2
 
 	```sh
-	west init ~/zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 ~/zephyrproject
 	cd ~/zephyrproject
 	west update
 	```
@@ -135,11 +135,11 @@ The Moddable SDK build uses Zephyr SDK v4.3 or later.
 	west packages pip --install
 	```
 
-10. Install the Zephyr SDK
+10. Install version 1.0.1 of the Zephyr SDK toolchain
 
 	```sh
 	cd ~/zephyrproject/zephyr
-	west sdk install
+	west sdk install --version 1.0.1
 	```
 
 11. Verify Zephyr SDK installation by building the `blinky` sample for your board.
@@ -222,11 +222,11 @@ Other silicon families may have different requirements.
 	pip install west
 	```
 
-8. Get the Zephyr source code
+8. Get the Zephyr source code, version 4.4.2
 
 	```sh
 	cd %USERPROFILE%
-	west init zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 zephyrproject
 	cd zephyrproject
 	west update
 	```
@@ -237,11 +237,11 @@ Other silicon families may have different requirements.
 	cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
 	```
 
-10. Install the Zephyr SDK
+10. Install version 1.0.1 of the Zephyr SDK toolchain
 
 	```sh
 	cd %USERPROFILE%\zephyrproject\zephyr
-	west sdk install
+	west sdk install --version 1.0.1
 	```
 
 11. Set the environment variables `ZEPHYR_BASE` and `DEBUGGER_PORT` using the instructions below:
@@ -327,10 +327,10 @@ Other silicon families may have different requirements.
 	pip install west
 	```
 
-8. Get the Zephyr source code
+8. Get the Zephyr source code, version 4.4.2
 
 	```sh
-	west init ~/zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 ~/zephyrproject
 	cd ~/zephyrproject
 	west update
 	```
@@ -344,11 +344,11 @@ is exporting a Zephyr CMake package necessary?
 	west packages pip --install
 	```
 
-10. Install the Zephyr SDK
+10. Install version 1.0.1 of the Zephyr SDK toolchain
 
 	```sh
 	cd ~/zephyrproject/zephyr
-	west sdk install
+	west sdk install --version 1.0.1
 	```
 
 11. Verify Zephyr SDK installation by building the `blinky` sample for your board.
@@ -589,9 +589,9 @@ Use `port` and `channel` to specify what zephyr configuration to use. You can al
 ```js
 const led1 = new device.io.PWM({
 	port: "pwm0",
-	hz: "100",
-	resolution: "10",
-	channel: "0"
+	hz: 100,
+	resolution: 10,
+	channel: 0
 });
 ```
 
