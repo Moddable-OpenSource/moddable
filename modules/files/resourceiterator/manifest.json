@@ -3,14 +3,5 @@
 	"modules": {
 		"*": "./ResourceIterator"
 	},
-	"preload": "ResourceIterator",
-	"typescript": {
-		"tsconfig": {
-			"compilerOptions": {
-				"types": [
-					"./ResourceIterator"
-				]
-			}
-		}
-	}
+	"preload": "ResourceIterator"
 }

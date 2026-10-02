@@ -1,16 +1,13 @@
 {
+	"modules": {
+		"*": [
+			"./pococolorcell"
+		]
+	},
+	"preload": "pococolorcell",
 	"defines": {
 		"poco": {
 			"colorcell": 1
-		}
-	},
-	"typescript": {
-		"tsconfig": {
-			"compilerOptions": {
-				"types": [
-					"./colorcell"
-				]
-			}
 		}
 	}
 }

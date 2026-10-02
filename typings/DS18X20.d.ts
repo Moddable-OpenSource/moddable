@@ -14,8 +14,15 @@
  */
 
 declare module "DS18X20" {
+  import type OneWire from "onewire";
+
   export default class DS18X20 {
-    constructor(dictionary: Record<string, any>);
+    // the sensor is the one with the given id (its 8 byte ROM code), else the one at index in the bus's search results, else the first
+    constructor(dictionary: {
+      bus: OneWire;
+      id?: ArrayBuffer;
+      index?: number;
+    });
     toString(): string;
     readonly family: number;
     get scratchpad() : Uint8Array;
@@ -23,7 +30,11 @@ declare module "DS18X20" {
     get resolution(): number;
     set resolution(bits: number);
     readonly present: boolean;
-    readonly temperature: number;
-    getTemperature(callback: (temp: number) => void): void;
+    // null when the CRC of the reading is wrong
+    readonly temperature: number | null;
+    // starts a conversion. with a callback, it is called with the temperature when the conversion completes.
+    // with no callback, returns the previous reading.
+    getTemperature(): number | null;
+    getTemperature(callback: (temp: number | null) => void): void;
   }
 }

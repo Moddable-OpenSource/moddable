@@ -4,14 +4,5 @@
 			"./pocostatic"
 		]
 	},
-	"preload": "pocostatic",
-	"typescript": {
-		"tsconfig": {
-			"compilerOptions": {
-				"types": [
-					"./pocostatic"
-				]
-			}
-		}
-	}
+	"preload": "pocostatic"
 }

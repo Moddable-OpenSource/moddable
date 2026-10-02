@@ -56,8 +56,6 @@ Poco.prototype.drawGray = function(bits, color, x, y, sx, sy, sw, sh, blend) { r
 Poco.prototype.drawMasked = function(bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend) { return native("xs_poco_drawMasked").call(this, bits, x, y, sx, sy, sw, sh, mask, mask_sx, mask_sy, blend); };
 Poco.prototype.fillPattern = function(bits, x, y, w, h, sx, sy, sw, sh) { return native("xs_poco_fillPattern").call(this, bits, x, y, w, h, sx, sy, sw, sh); };
 
-Poco.prototype.drawFrame = function(frame, stream, x, y) { return native("xs_poco_drawFrame").call(this, frame, stream, x, y); };
-
 Poco.prototype.drawText = function(text, font, color, x, y) { return native("xs_poco_drawText").call(this, text, font, color, x, y); };
 
 // // metrics

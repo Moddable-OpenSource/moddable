@@ -4,14 +4,5 @@
 			"./pocoqrcode"
 		]
 	},
-	"preload": "pocoqrcode",
-	"typescript": {
-		"tsconfig": {
-			"compilerOptions": {
-				"types": [
-					"./pocoqrcode"
-				]
-			}
-		}
-	}
+	"preload": "pocoqrcode"
 }
