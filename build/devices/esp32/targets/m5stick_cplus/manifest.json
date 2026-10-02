@@ -4,15 +4,15 @@
 		"DEBUGGER_SPEED": "1500000"
 	},
 	"include": [
-		"$(MODULES)/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/sensors/mpu6886/manifest.json",
-		"$(MODULES)/drivers/peripherals/axp192/manifest.json",
-		"$(MODULES)/drivers/peripherals/bm8563/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/st7789",
+		"$(MODULES)/drivers/sensors/mpu6886",
+		"$(MODULES)/drivers/peripherals/axp192",
+		"$(MODULES)/drivers/peripherals/bm8563",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"config": {
 		"screen": "st7789",

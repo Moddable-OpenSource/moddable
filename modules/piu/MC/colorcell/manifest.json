@@ -1,5 +1,5 @@
 {
-	"include": "$(MODDABLE)/modules/commodetto/colorcell/manifest.json",
+	"include": "$(MODDABLE)/modules/commodetto/colorcell",
 	"modules": {
 		"piu/Image": "./piuImage"
 	},

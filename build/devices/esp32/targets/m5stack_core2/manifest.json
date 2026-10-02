@@ -6,16 +6,16 @@
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout/manifest.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/bmi270/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/mpu6886/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/bm8563/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/axp192/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODDABLE)/modules/io/audioout",
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODDABLE)/modules/drivers/sensors/ft6206",
+		"$(MODDABLE)/modules/drivers/sensors/bmi270",
+		"$(MODDABLE)/modules/drivers/sensors/mpu6886",
+		"$(MODDABLE)/modules/drivers/peripherals/bm8563",
+		"$(MODDABLE)/modules/drivers/peripherals/axp192",
+		"$(MODDABLE)/modules/drivers/peripherals/axp2101",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"config": {
 		"screen": "ili9341",

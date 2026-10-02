@@ -15,8 +15,8 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
-		"$(MODDABLE)/modules/files/flash/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODDABLE)/modules/files/flash",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

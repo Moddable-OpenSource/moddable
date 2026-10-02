@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/base/sleep/manifest.json"
+		"$(MODULES)/base/sleep"
 	],
 	"modules": {
 		"*": [

@@ -6,10 +6,10 @@
 		"USE_USB": "2"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/sensors/bmi270/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/sensors/bmi270",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

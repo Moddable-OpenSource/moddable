@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/destm32s/manifest.json"
+		"$(MODULES)/drivers/destm32s"
 	],
 	"config": {
 		"screen": "destm32s",

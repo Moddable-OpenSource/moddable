@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODULES)/drivers/destm32s/manifest.json"
+		"$(MODULES)/drivers/destm32s"
 	],
 	"modules": {
 		"*": "./main"

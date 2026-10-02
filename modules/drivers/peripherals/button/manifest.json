@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/digital/manifest.json"
+		"$(MODULES)/io/digital"
 	],
 	"modules": {
 		"button": "$(MODULES)/drivers/peripherals/button/*"

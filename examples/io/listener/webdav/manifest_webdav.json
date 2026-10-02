@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json",
-		"$(MODDABLE)/modules/io/files/manifest.json",
-		"$(MODDABLE)/modules/data/xml/manifest.json"
+		"$(MODDABLE)/modules/io/files",
+		"$(MODDABLE)/modules/data/xml"
 	],
 	"modules": {
 		"embedded:network/http/server/route/webdav": "./webdav"

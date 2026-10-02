@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2s/manifest.json",
-		"$(MODULES)/pins/audioin/manifest.json"
+		"$(MODULES)/pins/digital",
+		"$(MODULES)/pins/i2s",
+		"$(MODULES)/pins/audioin"
 	],
 	"modules": {
 		"*": [

@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

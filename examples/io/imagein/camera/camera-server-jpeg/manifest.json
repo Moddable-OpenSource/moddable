@@ -2,10 +2,10 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io/imagein/camera/manifest.json",
+		"$(MODDABLE)/modules/io/imagein/camera",
 		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json",
-		"$(MODDABLE)/modules/data/text/encoder/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json"
+		"$(MODDABLE)/modules/data/text/encoder",
+		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {
 		"*": [

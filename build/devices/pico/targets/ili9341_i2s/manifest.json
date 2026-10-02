@@ -4,12 +4,12 @@
 		"PICO_BOARD": "pico_w"
 	},
     "include": [
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODULES)/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/xpt2046/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODULES)/drivers/ili9341",
+		"$(MODULES)/drivers/xpt2046",
+		"$(IO)/pwm"
     ],
 	"modules": {
 		

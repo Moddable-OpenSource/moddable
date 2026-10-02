@@ -10,7 +10,7 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/spi",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {
@@ -24,7 +24,7 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/spi",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {

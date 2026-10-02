@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/pins/i2c//manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODDABLE)/modules/pins/i2c/"
 	],
 	"modules": {
 		"*": [

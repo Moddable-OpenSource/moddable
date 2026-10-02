@@ -14,8 +14,8 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/digital",
+				"$(MODULES)/pins/spi",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {
@@ -31,8 +31,8 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/digital",
+				"$(MODULES)/pins/spi",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {
@@ -48,8 +48,8 @@
 		},
 		"pico": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json",
+				"$(MODULES)/pins/digital",
+				"$(MODULES)/pins/spi",
 				"$(COMMODETTO)/manifest_bitmap.json"
 			],
 			"modules": {

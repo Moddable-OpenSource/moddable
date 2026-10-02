@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/neopixel/manifest.json"
+		"$(MODULES)/drivers/neopixel"
 	],
 	"modules": {
 		"led/neopixel": "./neopixel"

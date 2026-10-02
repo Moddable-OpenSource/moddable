@@ -4,14 +4,14 @@
 		"DEBUGGER_SPEED": "115200"
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/sensors/sht3x/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/gt911/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/button/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/pcf8563/manifest.json",
-		"$(MODDABLE)/modules/drivers/it8951/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/analog/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/sht3x",
+		"$(MODDABLE)/modules/drivers/sensors/gt911",
+		"$(MODDABLE)/modules/drivers/peripherals/button",
+		"$(MODDABLE)/modules/drivers/peripherals/pcf8563",
+		"$(MODDABLE)/modules/drivers/it8951",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/analog"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

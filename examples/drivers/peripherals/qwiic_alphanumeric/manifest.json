@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/qwiic_alphanumeric/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/drivers/peripherals/qwiic_alphanumeric"
 	],
 	"modules": {
 		"*": "./main"

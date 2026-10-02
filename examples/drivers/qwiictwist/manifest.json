@@ -2,8 +2,8 @@
     "include": [
         "$(MODDABLE)/examples/manifest_base.json",
         "$(MODDABLE)/examples/manifest_piu.json",
-        "$(MODULES)/drivers/qwiictwist/manifest.json",
-        "$(MODULES)/input/color-picker/manifest.json"
+        "$(MODULES)/drivers/qwiictwist",
+        "$(MODULES)/input/color-picker"
     ],
     "creation": {
         "stack": 350

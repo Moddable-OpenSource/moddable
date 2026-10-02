@@ -1,9 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODULES)/drivers/sensors/location/gps-i2c/manifest.json",
-		"$(MODULES)/data/location/ubx/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODULES)/drivers/sensors/location/gps-i2c",
+		"$(MODULES)/data/location/ubx"
 	],
 	"modules": {
 		"*": "./main"

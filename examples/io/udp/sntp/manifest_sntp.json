@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/io/socket/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/io/socket"
 	],
 	"modules": {
 		"*": "./main",

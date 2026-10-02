@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/ssd1351/manifest.json"
+		"$(MODULES)/drivers/ssd1351"
 	],
 	"config": {
 		"screen": "ssd1351",

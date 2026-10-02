@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/base/structuredClone/manifest.json"
+		"$(MODULES)/base/structuredClone"
 	],
 	"modules": {
 		"*": [

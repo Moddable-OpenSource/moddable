@@ -10,7 +10,7 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json"
+				"$(MODULES)/pins/digital"
 			],
 			"modules": {
 				"*": "$(MODULES)/drivers/onewire/esp/*"

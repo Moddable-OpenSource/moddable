@@ -30,12 +30,12 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/base/modules/manifest.json",
-		"$(MODULES)/data/url/manifest.json",
-		"$(MODULES)/web/streams/all/manifest.json",
-		"$(MODULES)/web/streams/text/decoder/manifest.json",
-		"$(MODULES)/web/streams/text/encoder/manifest.json",
-		"$(MODULES)/web/streams/decompression/manifest.json"
+		"$(MODULES)/base/modules",
+		"$(MODULES)/data/url",
+		"$(MODULES)/web/streams/all",
+		"$(MODULES)/web/streams/text/decoder",
+		"$(MODULES)/web/streams/text/encoder",
+		"$(MODULES)/web/streams/decompression"
 	],
 	"modules": {
 		"*": [

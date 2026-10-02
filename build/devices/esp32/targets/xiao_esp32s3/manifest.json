@@ -8,8 +8,8 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the R button."
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(IO)/digital/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

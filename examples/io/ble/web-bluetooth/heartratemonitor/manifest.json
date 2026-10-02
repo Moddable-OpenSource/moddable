@@ -4,7 +4,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/ble/web-bluetooth/manifest.json"
+		"$(MODDABLE)/modules/io/ble/web-bluetooth"
 	],
 	"modules": {
 		"*": "./main"

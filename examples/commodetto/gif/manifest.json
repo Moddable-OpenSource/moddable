@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/commodetto/gif/manifest.json",
-		"$(MODDABLE)/modules/files/resourceiterator/manifest.json"
+		"$(MODDABLE)/modules/commodetto/gif",
+		"$(MODDABLE)/modules/files/resourceiterator"
 	],
 	"creation": {
 		"heap": {

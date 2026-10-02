@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital"
 	],
 	"modules": {
 		"aw3641": "$(MODULES)/drivers/aw3641/*"

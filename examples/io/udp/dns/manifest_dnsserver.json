@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/network/dns/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/network/dns"
 	],
 	"modules": {
 		"embedded:network/dns/server/udp": "./dnsserver"

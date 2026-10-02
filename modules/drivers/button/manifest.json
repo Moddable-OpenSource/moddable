@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/monitor/manifest.json"
+		"$(MODULES)/pins/digital/monitor"
 	],
 	"modules": {
 		"button": "$(MODULES)/drivers/button/*"

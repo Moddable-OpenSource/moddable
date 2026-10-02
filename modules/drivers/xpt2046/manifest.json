@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json",
-		"$(MODDABLE)/modules/files/preference/manifest.json"
+		"$(MODULES)/pins/digital",
+		"$(MODULES)/pins/spi",
+		"$(MODDABLE)/modules/files/preference"
 	],
 	"defines": {
 		"xpt2046": {

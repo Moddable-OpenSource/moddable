@@ -1,25 +1,25 @@
 {
 	"platforms": {
 		"esp": {
-			"include": "./flash/manifest.json"
+			"include": "./flash"
 		},
 		"esp32": {
-			"include": "./esp32/manifest.json"
+			"include": "./esp32"
 		},
 		"mac": {
-			"include": "./mac/manifest.json"
+			"include": "./mac"
 		},
 		"nrf52": {
-			"include": "./flash/manifest.json"
+			"include": "./flash"
 		},
 		"pebble": {
-			"include": "./pebble/manifest.json"
+			"include": "./pebble"
 		},
 		"pico": {
-			"include": "./flash/manifest.json"
+			"include": "./flash"
 		},
 		"zephyr": {
-			"include": "./zephyr/manifest.json"
+			"include": "./zephyr"
 		}
 	}
 }

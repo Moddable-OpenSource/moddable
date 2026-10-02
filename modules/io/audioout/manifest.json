@@ -49,7 +49,7 @@
 		},
 		"...": {
 			"include": [
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+				"$(MODDABLE)/modules/pins/i2s"
 			],
 			"modules": {
 				"embedded:io/audio/out": "./pins/_audioout"

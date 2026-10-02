@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/drivers/onewire/manifest.json"
+		"$(MODULES)/drivers/onewire"
 	],
 	"modules": {
 		"*": [

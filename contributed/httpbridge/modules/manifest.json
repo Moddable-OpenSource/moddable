@@ -2,11 +2,11 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/network/http/manifest.json",
-		"$(MODULES)/network/websocket/manifest.json",
-		"$(MODULES)/files/zip/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/socket/manifest.json"
+		"$(MODULES)/network/http",
+		"$(MODULES)/network/websocket",
+		"$(MODULES)/files/zip",
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/socket"
 	],
 	"modules": {
 		"*": [

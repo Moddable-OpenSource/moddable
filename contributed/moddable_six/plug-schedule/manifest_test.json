@@ -7,10 +7,10 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
-		"$(MODULES)/files/preference/manifest.json",
-		"$(MODULES)/input/expanding-keyboard/vertical/manifest.json",
-		"$(MODULES)/network/wifi/manifest.json"
+		"$(MODDABLE)/modules/piu/MC/outline",
+		"$(MODULES)/files/preference",
+		"$(MODULES)/input/expanding-keyboard/vertical",
+		"$(MODULES)/network/wifi"
 	],
 	"creation": {
 		"stack": 512

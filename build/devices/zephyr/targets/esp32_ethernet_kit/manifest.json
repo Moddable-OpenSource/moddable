@@ -3,7 +3,7 @@
 		"ZEPHYR_BOARD": "esp32_ethernet_kit/esp32/procpu"
 	},
 	"include": [
-		"$(MODULES)/io/ethernet/manifest.json"
+		"$(MODULES)/io/ethernet"
 	],
 	"zephyrConfig": {
 		"CONFIG_ESP_SIMPLE_BOOT": "y",

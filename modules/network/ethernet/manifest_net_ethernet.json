@@ -3,10 +3,10 @@
 		"ETHERNET": "$(MODDABLE)/modules/network/ethernet"
 	},
 	"include": [
-		"$(ETHERNET)/manifest.json",
-		"$(MODULES)/network/net/manifest.json",
+		"$(ETHERNET)",
+		"$(MODULES)/network/net",
 		"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-		"$(MODULES)/network/socket/manifest.json"
+		"$(MODULES)/network/socket"
 	],
 	"platforms": {
 		"esp32": {

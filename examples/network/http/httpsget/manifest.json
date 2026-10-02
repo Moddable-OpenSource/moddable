@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/crypt/tls.json",
-		"$(MODULES)/network/http/manifest.json"
+		"$(MODULES)/network/http"
 	],
 	"modules": {
 		"*": [

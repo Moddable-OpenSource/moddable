@@ -5,14 +5,14 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/wifi/manifest.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODDABLE)/modules/pins/i2c/manifest.json",
-		"$(MODDABLE)/modules/files/file/manifest.json",
-		"$(MODDABLE)/modules/files/flash/manifest.json",
-		"$(MODDABLE)/modules/base/modules/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json"
+		"$(MODDABLE)/modules/network/wifi",
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODULES)/pins/digital",
+		"$(MODDABLE)/modules/pins/i2c",
+		"$(MODDABLE)/modules/files/file",
+		"$(MODDABLE)/modules/files/flash",
+		"$(MODDABLE)/modules/base/modules",
+		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {
 		"*": [

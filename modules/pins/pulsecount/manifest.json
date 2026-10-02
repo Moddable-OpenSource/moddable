@@ -1,8 +1,8 @@
 {
 	"warning": "** ECMA-419 Pulse Count recommended over classic 'pins/pulsecount' module **",
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json"
+		"$(MODULES)/pins/digital",
+		"$(MODULES)/pins/digital/monitor"
 	],
 	"modules": {
 		"pins/pulsecount": "$(MODULES)/pins/pulsecount/*"

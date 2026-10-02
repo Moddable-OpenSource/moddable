@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/base/sleep/manifest.json"
+		"$(MODULES)/pins/digital",
+		"$(MODULES)/base/sleep"
 	],
 	"modules": {
 		"*": [
@@ -22,8 +22,8 @@
 		},
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json",
-				"$(MODULES)/drivers/radio/nrf24/manifest.json"
+				"$(MODULES)/pins/spi",
+				"$(MODULES)/drivers/radio/nrf24"
 			],
 			"modules": {
 				"*": [

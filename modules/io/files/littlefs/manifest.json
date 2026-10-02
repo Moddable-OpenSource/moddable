@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/base/modules/manifest.json"
+		"$(MODULES)/base/modules"
 	],
 	"platforms": {
 		"mac-test": {

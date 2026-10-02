@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/io/storage/manifest.json"
+		"$(MODDABLE)/modules/io/storage"
 	],
 	"modules": {
 		"*": [

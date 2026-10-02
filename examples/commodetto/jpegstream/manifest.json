@@ -5,7 +5,7 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(COMMODETTO)/manifest_bufferout.json",
 		"$(COMMODETTO)/manifest_pixelsout.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

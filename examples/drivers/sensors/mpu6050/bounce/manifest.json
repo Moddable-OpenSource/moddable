@@ -5,9 +5,9 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/mpu6050/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODDABLE)/modules/drivers/sensors/mpu6050",
+		"$(MODDABLE)/modules/io"
 	],
 	"modules": {
 		"*": [

@@ -17,7 +17,7 @@
 			]
 		},
 		"nrf52": {
-			"include": "$(BUILD)/devices/nrf52/modules/sleep/manifest.json",
+			"include": "$(BUILD)/devices/nrf52/modules/sleep",
 			"modules": {
 				"*": "./system",
 				"embedded:system": "./nrf52/system"

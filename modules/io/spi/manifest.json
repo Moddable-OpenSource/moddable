@@ -5,7 +5,7 @@
 		"lin": {},
 		"...": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json"
+				"$(MODULES)/pins/spi"
 			],
 			"modules": {
 				"*": [

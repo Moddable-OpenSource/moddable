@@ -3,11 +3,11 @@
 		"IO": "$(MODDABLE)/modules/io"
 	},
 	"include": [
-		"$(IO)/analog/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json",
-		"$(IO)/serial/manifest.json",
+		"$(IO)/analog",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm",
+		"$(IO)/serial",
 		"$(COMMODETTO)/manifest_bitmap.json"
 	],
 	"modules": {

@@ -1,9 +1,9 @@
 {
     "include": [
-		"$(MODULES)/drivers/destm32s/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
-		"$(IO)/digital/manifest.json"
+		"$(MODULES)/drivers/destm32s",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/digital",
+		"$(IO)/digital"
     ],
 	"build": {
 		"FLASH_MODE": "qio",

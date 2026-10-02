@@ -8,9 +8,9 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Disconnect and reconnect the USB cable."
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(IO)/analog/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(IO)/analog"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

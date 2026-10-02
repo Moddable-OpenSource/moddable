@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json",
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODDABLE)/modules/drivers/xpt2046",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parserle.json"
 	],

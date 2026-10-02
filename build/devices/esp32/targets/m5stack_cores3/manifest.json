@@ -8,13 +8,13 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
-		"$(MODULES)/io/audioout/manifest.json",
-		"$(MODULES)/drivers/ili9341/manifest.json",
+		"$(MODULES)/io/audioout",
+		"$(MODULES)/drivers/ili9341",
 		"$(MODULES)/drivers/sensors/ft6206/manifest_async.json",
-		"$(MODULES)/drivers/sensors/bmi270/manifest.json",
-		"$(MODULES)/drivers/peripherals/axp2101/manifest.json",
-		"$(MODULES)/drivers/peripherals/bm8563/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODULES)/drivers/sensors/bmi270",
+		"$(MODULES)/drivers/peripherals/axp2101",
+		"$(MODULES)/drivers/peripherals/bm8563",
+		"$(IO)/i2c"
 	],
 	"config": {
 		"screen": "ili9341",

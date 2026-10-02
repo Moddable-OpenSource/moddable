@@ -6,15 +6,15 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/sntp/manifest.json",
-		"$(MODDABLE)/modules/network/wifi/manifest.json",
-		"$(MODULES)/files/preference/manifest.json",
-		"$(MODULES)/network/mdns/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/drivers/rtc/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/socket/manifest.json"
+		"$(MODDABLE)/modules/network/sntp",
+		"$(MODDABLE)/modules/network/wifi",
+		"$(MODULES)/files/preference",
+		"$(MODULES)/network/mdns",
+		"$(MODULES)/pins/i2c",
+		"$(MODULES)/pins/digital/monitor",
+		"$(MODULES)/drivers/rtc",
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/socket"
 	],
 	"creation": {
 		"stack": 500,

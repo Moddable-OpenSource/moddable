@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/pins/i2s/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/pins/i2s",
+		"$(MODDABLE)/modules/io",
 		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
 		"$(MODDABLE)/examples/pins/audioout/mp3-http-stream/manifest_mp3streamer.json"
 	],

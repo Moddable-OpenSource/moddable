@@ -3,11 +3,11 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/network/ble/ams-client/manifest.json",
+		"$(MODDABLE)/modules/network/ble/ams-client",
 		"$(MODDABLE)/modules/crypt/tls.json",
 		"$(COMMODETTO)/manifest_bufferout.json",
 		"$(COMMODETTO)/manifest_pixelsout.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

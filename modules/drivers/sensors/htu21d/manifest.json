@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/data/crc/manifest.json"
+		"$(MODULES)/data/crc"
 	],
 	"modules": {
 		"embedded:sensor/Humidity-Temperature/HTU21D": "$(MODDABLE)/modules/drivers/sensors/htu21d/htu21d"

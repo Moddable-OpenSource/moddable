@@ -1,7 +1,7 @@
 {
 	"platforms": {
 		"esp32": {
-			"include": "../../flash/manifest.json",
+			"include": "../../flash",
 			"modules": {
 				"embedded:update": "./update-esp32",
 				"config/update": "../config"

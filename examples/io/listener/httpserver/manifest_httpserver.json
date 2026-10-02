@@ -1,9 +1,9 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/crypt/digest/manifest.json",
-		"$(MODDABLE)/modules/data/text/encoder/manifest.json",
-		"$(MODDABLE)/modules/io/socket/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/crypt/digest",
+		"$(MODDABLE)/modules/data/text/encoder",
+		"$(MODDABLE)/modules/io/socket"
 	],
 	"modules": {
 		"*": [ 

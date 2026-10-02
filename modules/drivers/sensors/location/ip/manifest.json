@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/data/text/decoder/manifest.json"
+		"$(MODULES)/data/text/decoder"
 	],
 	"modules": {
 		"embedded:sensor/Location/IP": "./ip"

@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/data/crc/manifest.json"
+		"$(MODDABLE)/modules/data/crc"
 	],
 	"modules": {
 		"embedded:sensor/Energy/PZEM004T": "$(MODDABLE)/modules/drivers/sensors/pzem-004t/pzem-004t"

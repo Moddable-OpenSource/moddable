@@ -2,8 +2,8 @@
 	"include": [
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_dither.json",
-		"$(MODULES)/io/digital/manifest.json",
-		"$(MODULES)/io/spi/manifest.json"
+		"$(MODULES)/io/digital",
+		"$(MODULES)/io/spi"
 	],
 	"modules": {
 		"gdey037t03": "$(MODULES)/drivers/gdey037t03/gdey037t03"

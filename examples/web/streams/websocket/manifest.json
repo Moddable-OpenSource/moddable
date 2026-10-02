@@ -4,8 +4,8 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/web/streams/all/manifest.json",
-		"$(MODULES)/web/streams/websocket/manifest.json"
+		"$(MODULES)/web/streams/all",
+		"$(MODULES)/web/streams/websocket"
 	],
 	"defines": {
 		"main": {

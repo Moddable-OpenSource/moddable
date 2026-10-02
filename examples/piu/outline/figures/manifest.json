@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/piu/MC/outline/manifest.json"
+		"$(MODDABLE)/modules/piu/MC/outline"
 	],
 	"config": {
 		"rotation": 90

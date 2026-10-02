@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/st7789",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"build": {
 		"ESP32_SUBCLASS": "esp32c6",

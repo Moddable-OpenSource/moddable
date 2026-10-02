@@ -4,7 +4,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/drivers/bmp280/manifest.json"
+		"$(MODULES)/drivers/bmp280"
 	],
 	"modules": {
 		"*": [

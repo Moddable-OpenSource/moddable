@@ -1,12 +1,12 @@
 {
 	"include": [
-		"$(MODULES)/drivers/gc9a01/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
-		"$(MODULES)/drivers/sensors/cst816/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/gc9a01",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/sensors/qmi8658",
+		"$(MODULES)/drivers/sensors/cst816",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "../ws_round/setup-target"

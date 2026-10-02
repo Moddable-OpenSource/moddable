@@ -1,5 +1,5 @@
 {
-	"include": "../moddable_four/manifest.json",
+	"include": "../moddable_four",
 	"config": {
 		"driverRotation": 180
 	},

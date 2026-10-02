@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/ble/client/manifest.json"
+		"$(MODDABLE)/modules/io/ble/client"
 	],
 	"modules": {
 		"*": "./web-bluetooth"

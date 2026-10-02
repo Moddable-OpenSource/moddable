@@ -1,6 +1,6 @@
 {
 	"include": [
-		"../../abortsignal/manifest.json"
+		"../../abortsignal"
 	],
 	"modules": {
 		"web/streams": "./mcStreamAll",

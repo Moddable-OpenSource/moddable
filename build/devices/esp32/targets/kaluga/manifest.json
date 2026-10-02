@@ -4,11 +4,11 @@
 		"ESP32_SUBCLASS": "esp32s2"
 	},
 	"include": [
-		"$(MODULES)/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/analog/manifest.json"
+		"$(MODULES)/drivers/ili9341",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(IO)/digital",
+		"$(IO)/analog"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

@@ -6,10 +6,10 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the R button."
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

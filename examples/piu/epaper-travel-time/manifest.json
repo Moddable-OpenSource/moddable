@@ -9,7 +9,7 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/crypt/tls.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODDABLE)/modules/network/http"
 	],
 	"creation": {
 		"static": 98304

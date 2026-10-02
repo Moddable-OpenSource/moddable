@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/digital/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/digital"
 	]
 }

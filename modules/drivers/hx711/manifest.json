@@ -1,5 +1,5 @@
 {
-  "include": ["$(MODDABLE)/modules/pins/digital/manifest.json"],
+  "include": ["$(MODDABLE)/modules/pins/digital"],
   "modules": {
     "*": [
       "./*"

@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
+		"$(MODDABLE)/modules/network/net",
 		"./manifest_webdav.json"
 	],
 	"modules": {

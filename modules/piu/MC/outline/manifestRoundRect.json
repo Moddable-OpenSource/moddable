@@ -2,7 +2,7 @@
 	"build": {
 		"COMMODETTO_OUTLINE": "../../../commodetto/outline"
 	},
-	"include": "$(COMMODETTO_OUTLINE)/manifest.json",
+	"include": "$(COMMODETTO_OUTLINE)",
 	"modules": {
 		"piu/RoundRect": "./piuRoundRect"
 	},

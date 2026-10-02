@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(BUILD)/devices/nrf52/modules/sleep/manifest.json"
+		"$(BUILD)/devices/nrf52/modules/sleep"
 	],
 	"modules": {
 		"*": "./main"

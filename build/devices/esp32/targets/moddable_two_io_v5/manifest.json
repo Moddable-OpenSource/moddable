@@ -1,12 +1,12 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODULES)/drivers/sensors/ft6206/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODULES)/drivers/sensors/ft6206",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

@@ -22,7 +22,7 @@
 				}
 			],
 			"include": [
-                "$(MODULES)/pins/spi/manifest.json"
+                "$(MODULES)/pins/spi"
             ],
             "modules": { 
                 "*": [
@@ -33,13 +33,13 @@
             }
 	    },
         "lin": {
-            "include": "$(MODULES)/network/wifi/manifest.json"
+            "include": "$(MODULES)/network/wifi"
         },
         "mac": {
-            "include": "$(MODULES)/network/wifi/manifest.json"
+            "include": "$(MODULES)/network/wifi"
         },
         "win": {
-            "include": "$(MODULES)/network/wifi/manifest.json"
+            "include": "$(MODULES)/network/wifi"
         },
         "...": {
             "error": "ethernet - unsupported platform"

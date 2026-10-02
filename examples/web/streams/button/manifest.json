@@ -4,8 +4,8 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/web/streams/all/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/web/streams/all"
 	],
 	"creation": {
 		"stack": 1024

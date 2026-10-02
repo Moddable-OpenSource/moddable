@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(COMMODETTO)/freetype/manifest.json"
+		"$(COMMODETTO)/freetype"
 	],
 	"modules": {
 		"commodetto/outline": "./commodettoOutline",
