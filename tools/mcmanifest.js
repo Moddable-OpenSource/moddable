@@ -2844,8 +2844,13 @@ export class Tool extends TOOL {
 	}
 	includeManifestPath(include) {
 		let path = this.resolveFilePath(include);
-		if (!path)
-			throw new Error("'" + include + "': manifest not found!");
+		if (!path) {
+			path = this.resolveDirectoryPath(include);
+			if (path)
+				path = this.resolveFilePath(path + this.slash + "manifest.json");
+			if (!path)
+				throw new Error("'" + include + "': manifest not found!");
+		}
 		if (!this.manifests.already[path]) {
 			var parts = this.splitPath(path);
 			this.currentDirectory = parts.directory;
