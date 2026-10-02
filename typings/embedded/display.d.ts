@@ -64,6 +64,9 @@ declare module "embedded:display" {
 
 		get width(): number;
 		get height(): number;
+
+		corner?: number;		// circular & roundrect displays
+
 		[Symbol.dispose](): void;
 	}
 
