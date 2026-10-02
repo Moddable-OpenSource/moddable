@@ -61,6 +61,7 @@
 #endif
 
 #define mxBigEndian 0
+#undef mxLittleEndian
 #define mxLittleEndian 1
 
 #define mxiOS 0
