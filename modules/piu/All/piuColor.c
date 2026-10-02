@@ -198,7 +198,7 @@ static xsNumberValue PiuHSL2RGBAux(xsNumberValue v1, xsNumberValue v2, xsNumberV
 	if ((2 * vH) < 1)
 		return v2;
 	if ((3 * vH) < 2)
-		return (v1 + (v2 - v1) * ((2.0f / 3) - vH) * 6);
+		return (v1 + (v2 - v1) * ((2.0 / 3.0) - vH) * 6);
 	return v1;
 }
 
@@ -280,7 +280,7 @@ void Piu_hsla(xsMachine* the)
 {
 	PiuColorRecord color;
 	PiuHSL2RGB(the, &color);
-    color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.f), 255);
+    color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.0), 255);
 	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 
@@ -300,7 +300,7 @@ void Piu_rgba(xsMachine* the)
 	color.r = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(0)), 255);
 	color.g = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(1)), 255);
 	color.b = (uint8_t)PiuMinMax(0, xsToInteger(xsArg(2)), 255);
-	color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.f), 255);
+	color.a = (uint8_t)PiuMinMax(0, (xsIntegerValue)c_round(xsToNumber(xsArg(3)) * 255.0), 255);
 	xsResult = xsUnsigned(((uint32_t)color.r << 24) | ((uint32_t)color.g << 16) | ((uint32_t)color.b << 8) | ((uint32_t)color.a));
 }
 

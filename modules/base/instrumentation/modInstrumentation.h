@@ -37,7 +37,9 @@
 #if (nrf52 && !pebble) || ESP32
 	#define kModInstrumentationHasCPU 1
 #elif __ZEPHYR__
- 	#if IS_ENABLED(CONFIG_CPU_LOAD)
+	#include "xsPlatform.h"
+
+	#if IS_ENABLED(CONFIG_CPU_LOAD)
 		#define kModInstrumentationHasCPU 1
 	#endif
 #endif

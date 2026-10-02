@@ -21,11 +21,9 @@
 import config from "mc/config";
 import Bitmap from "commodetto/Bitmap"
 import Timer from "timer";
+import Display from "embedded:display/zephyr";
 
-if (!config.Screen && !device.display?.default)
-	throw new Error("no screen configured");
-
-class Screen extends (config.Screen ?? device.display.default.io) {
+class Screen extends Display {
 	#timer;
 
 	constructor(options) {
