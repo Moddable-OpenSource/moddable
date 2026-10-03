@@ -102,21 +102,6 @@ const device = {
 				});
 			}
 		},
-		RTC: class {
-			constructor() {
-				return new PCF85063({
-					clock: {
-						...device.i2c.default,
-						io: device.io.SMBus
-					},
-					interrupt: {
-						io: device.io.Digital,
-						mode: device.io.Digital.Input,
-						pin: device.pin.rtcInterrupt
-					}
-				});
-			}
-		}
 	},
 	sensor: {
 		Touch: class {
@@ -159,6 +144,18 @@ const device = {
 				});
 			}
 		}
+	}
+};
+
+device.rtc = {
+	io: PCF85063,
+	clock: {
+		...device.i2c.default,
+		io: "SMBus"
+	},
+	interrupt: {
+		io: "Digital",
+		pin: device.pin.rtcInterrupt
 	}
 };
 

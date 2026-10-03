@@ -123,17 +123,14 @@ const device = {
 				});
 			}
 		},
-		RTC: class {
-			constructor(options) {
-				return new RTC({
-					...options,
-					clock: {
-						...device.i2c.internal,
-						io: device.io.SMBus,
-					},
-				});
-			}
-		},
+	}
+};
+
+device.rtc = {
+	io: RTC,
+	clock: {
+		...device.i2c.internal,
+		io: "SMBus"
 	}
 };
 

@@ -19,7 +19,7 @@ import Poco from "commodetto/Poco";
 import Resource from "Resource";
 import config from "mc/config";
 
-const rtc = new device.peripheral.RTC();
+const rtc = new device.rtc.io(device.rtc);
 
 // Main button: set time from sntp
 globalThis.button.a.onChanged = () => {

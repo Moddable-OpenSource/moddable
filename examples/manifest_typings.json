@@ -91,6 +91,9 @@
 		"embedded:storage/*": [
 			"$(TYPINGS)/embedded/storage/*"
 		],
+		"embedded:RTC/*": [
+			"$(TYPINGS)/embedded/RTC/*"
+		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
 		],
