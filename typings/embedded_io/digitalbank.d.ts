@@ -19,6 +19,8 @@
 */
 
 declare module "embedded:io/digitalbank" {
+  import { IOOptions } from "embedded:io/_common";
+
   type Mode = 
     | typeof DigitalBank.Input
     | typeof DigitalBank.InputPullUp
@@ -38,10 +40,11 @@ declare module "embedded:io/digitalbank" {
     static readonly OutputOpenDrain: number
     static readonly ActiveLow: number
 
-    constructor(dictionary: {
+    constructor(dictionary: IOOptions<"DigitalBank", {
+      bank?: number | string;
+    }, {
       pins: number;
       mode: Mode;
-      bank?: number | string;
       activeLow?: boolean;
       initialValue?: number;
       rises?: number;
@@ -49,7 +52,7 @@ declare module "embedded:io/digitalbank" {
       onReadable?: (this: DigitalBank, trigger: number) => void;
       format?: "number";
       target?: any;
-    })
+    }>)
 
     close(): void;
     read(): number;

@@ -20,18 +20,20 @@
 
 
 declare module "embedded:io/i2c" {
-  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier, IOOptions } from "embedded:io/_common";
   class I2C implements Disposable {
     target?: any;
-    constructor(options: {
+    constructor(options: IOOptions<"I2C", {
       data: PinSpecifier;
       clock: PinSpecifier;
+      port?: PortSpecifier;
+    }, {
       hz: number;
       address: number;
-      port?: PortSpecifier;
+      timeout?: number;	// milliseconds (Moddable SDK extension)
       format?: "buffer";
       target?: any;
-    });
+    }>);
     readonly resolution: number;
     
     write(value: ByteBuffer, stop?: boolean): void;

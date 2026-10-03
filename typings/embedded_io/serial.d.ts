@@ -19,28 +19,29 @@
 */
 
 declare module "embedded:io/serial" {
-  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier, IOOptions } from "embedded:io/_common";
   export type Format = "number" | "buffer";
 
-  export type Options<F extends Format = Format> = ({
+  export type Options<F extends Format = Format> = IOOptions<"Serial", ({
       receive: PinSpecifier;
       transmit?: PinSpecifier;
     } | {
       receive?: PinSpecifier;
       transmit: PinSpecifier;
     }) & {
-      baud: number;
-      flowControl?: "hardware" | "none";
       dataTerminalReady?: PinSpecifier;
       requestToSend?: PinSpecifier;
       clearToSend?: PinSpecifier;
       dataSetReady?: PinSpecifier;
       port: PortSpecifier;
+    }, {
+      baud: number;
+      flowControl?: "hardware" | "none";
       onReadable?: (this: Serial<F>, bytes: number) => void;
       onWritable?: (this: Serial<F>, bytes: number) => void;
       format?: F;
       target?: any;
-    };
+    }>;
 
   /*
     F is the format named in the options when the serial port is created. Naming it there
@@ -60,8 +61,8 @@ declare module "embedded:io/serial" {
     flush(): void;
     flush(input: number, output: number): void;
     set(options: {
-      dataTerminalReady?: PinSpecifier;
-      requestToSend?: PinSpecifier;
+      dataTerminalReady?: boolean;
+      requestToSend?: boolean;
       break?: boolean;
     }): void
     get format(): F

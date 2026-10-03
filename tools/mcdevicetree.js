@@ -150,6 +150,15 @@ export default class extends TOOL {
 			hCode: "",
 			jsCode: "",
 			tsCode: "",
+			// the constructor options that select the hardware of an IO class are host-dependent: on Zephyr, a port (devicetree label)
+			// takes the place of the pins, which the devicetree binds to the port. doBus and doGPIOBanks add the ports of the devicetree.
+			tsHostOptions: new Map([
+				["DigitalBank", {ports: [], options: ""}],
+				["Analog", {ports: [], options: "; channel: number"}],
+				["PWM", {ports: [], options: "; channel?: number"}],
+				["I2C", {ports: [], options: ""}],
+				["Serial", {ports: [], options: ""}]
+			]),
 			aliasTable: new Map,
 			zephyrConfig: this.zephyrConfig,
 			defines: this.defines,
@@ -160,6 +169,16 @@ export default class extends TOOL {
 `#ifndef __MC_ZEPHYR_H__
 #define __MC_ZEPHYR_H__
 
+`;
+
+		// pin and port specifiers are host-dependent: on Zephyr a pin is a GPIO port name and pin number, and a port is a devicetree label
+		state.tsCode +=
+`declare module "embedded:io/_common" {
+	interface HostSpecifiers {
+		pin: {port: string; pin: number};
+		port: string;
+	}
+}
 `;
 
 		state.cCode +=
@@ -331,21 +350,27 @@ export default device;
 			state.tsCode += `\tinterface Device {\n`;
 			if (state.tsDeviceIO)
 				state.tsCode += `\t\tio: DeviceIO;\n`;
-			if (state.tsDeviceNetworkInterface) {
-				state.tsCode += `\t\tnetwork: {\n`;
-				state.tsCode += `\t\t\tinterface: DeviceNetworkInterface;\n`;
-				state.tsCode += `\t\t}\n`;
-			}
+			if (state.tsDeviceNetworkInterface)
+				state.tsCode += `\t\tnetwork: DeviceNetwork;\n`;
 			state.tsCode += `\t}\n`;
+			if (state.tsDeviceNetworkInterface) {
+				state.tsCode += `\tinterface DeviceNetwork {\n`;
+				state.tsCode += `\t\tinterface: DeviceNetworkInterface;\n`;
+				state.tsCode += `\t}\n`;
+			}
 			state.tsCode += `}\n`;
 		}
 
-		state.tsCode += `
-declare module "embedded:provider/builtin" {
-  const device: Device
-  export default device;
-}
-`;
+		state.tsCode += `declare module "embedded:io/_common" {\n`;
+		state.tsCode += `\tinterface HostOptions {\n`;
+		state.tsHostOptions.forEach((value, name) => {
+			state.tsCode += `\t\t${name}: {port: ${value.ports.join(" | ") || "never"}${value.options}};\n`;
+		});
+		state.tsCode += `\t}\n`;
+		state.tsCode += `}\n`;
+
+		// mc.devicetree.d.ts contributes to the Device of typings/embedded_provider/builtin.d.ts, which declares
+		// the module's default export: it is the host provider typing of the target, generated from the devicetree
 
 		const parts = {
 			name: "mc.devicetree",
@@ -442,6 +467,7 @@ static const struct modZephyrGPIOBank gGPIOBank[] = {
 	},
 `;
 		state.gpioBanks.push(gpio.label);
+		state.tsHostOptions.get("DigitalBank").ports.push(`"${gpio.label}"`);
 	});
 
 	state.cCode += `};
@@ -506,7 +532,8 @@ function doGPIOs(state, dts) {
 declare module "embedded:provider/builtin" {
   import Digital from "embedded:io/digital";
   import DigitalBank from "embedded:io/digitalbank";
-  
+  import type { PinSpecifier } from "embedded:io/_common";
+
   interface DeviceIO {
     Digital: typeof Digital;
     DigitalBank: typeof DigitalBank;
@@ -514,7 +541,7 @@ declare module "embedded:provider/builtin" {
 `;
   state.tsDeviceIO = true;
 
-	const kinds = new Set, leds = new Set, buttons = new Set;
+	const kinds = new Set, leds = new Set, buttons = new Set, pins = new Set;
 	gpios.forEach(gpio => {
 		let mode = [], kindName, edge;
 		if ("gpio-leds" == gpio.kind) {
@@ -566,10 +593,14 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
       	else
       		buttons.add(alias);
 
-				if (("sw0" === alias) && ("gpio-keys" === gpio.kind))
+				if (("sw0" === alias) && ("gpio-keys" === gpio.kind)) {
 					state.jsCode += `device.pin.button = Object.freeze({port: "${gpio.bus}", pin: ${gpio.pin}});\n`;
-				if (("led0" === alias) && ("gpio-leds" === gpio.kind))
+					pins.add("button");
+				}
+				if (("led0" === alias) && ("gpio-leds" === gpio.kind)) {
 					state.jsCode += `device.pin.led = Object.freeze({port: "${gpio.bus}", pin: ${gpio.pin}});\n`;
+					pins.add("led");
+				}
 			});
 		}
 	});
@@ -599,14 +630,19 @@ device.${kindName}.${gpio.name} = class {${gpio.userName ? " // " + gpio.userNam
 		state.tsCode +=`  }\n`;
 	}
 
-	if (leds.size || buttons.size) {
-		state.tsCode += `\n  interface Device {\n`;
+	state.tsCode += `\n  interface DevicePin {\n`;
+	pins.forEach(value => {
+		state.tsCode += `    ${value}: PinSpecifier\n`;
+	});
+	state.tsCode += `  }\n`;
+
+	state.tsCode += `\n  interface Device {\n`;
 	if (leds.size)
-		state.tsCode += `    leds: DeviceLEDs\n`;
+		state.tsCode += `    led: DeviceLEDs\n`;
 	if (buttons.size)
-		state.tsCode += `    buttons: DeviceButtons\n`;
-		state.tsCode += `  }\n`;
-	}
+		state.tsCode += `    button: DeviceButtons\n`;
+	state.tsCode += `    pin: DevicePin\n`;
+	state.tsCode += `  }\n`;
 
 	state.tsCode +=
 `}
@@ -719,20 +755,35 @@ const struct modZephyr${options.name} *modZephyrGet${options.name}(const char *l
 		state.tsCode += "\n";
 		state.tsDeviceIO = true;
 	}
-	state.tsCode += `\ttype ${options.moduleDefault}Options = ConstructorParameters<typeof ${options.moduleDefault}>[0] & {\n`;
-	state.tsCode += `\t\tio: typeof ${options.moduleDefault}\n`;
+	const hostOptions = state.tsHostOptions.get(options.name);
+	if (hostOptions)
+		hostOptions.ports.push(...nodes.map(node => `"${node.label}"`));
+	else {
+		state.tsCode += `\ttype ${options.moduleDefault}Options = ConstructorParameters<typeof ${options.moduleDefault}>[0] & {\n`;
+		state.tsCode += `\t\tio: typeof ${options.moduleDefault}\n`;
+		state.tsCode += "\t}\n";
+		state.tsCode += "\n";
+	}
+	// the container is a named interface (DeviceI2C, DeviceSerial, ...) so that it merges with the one
+	// declared by typings/embedded_provider/builtin.d.ts and attached to Device by typings/config/*.d.ts
+	// with host options, an entry is typed as what the provider sets (the IO class, the port, ...). otherwise, as the constructor options.
+	const tsType = `${options.moduleDefault}Options`;
+	state.tsCode += `\tinterface Device${options.name} {\n`;
+	state.tsCode += `\t\tdefault: ${hostOptions ? `Device${options.name}["${defaultLabel}"]` : tsType};\n`;
+	nodes.forEach(node => {
+		if (hostOptions) {
+			const baud = ("serial" === options.binding) && node.properties["current-speed"]?.value?.value?.[0];
+			state.tsCode += `\t\t${node.label}: {io: typeof ${options.moduleDefault}; port: "${node.label}"${baud ? "; baud: number" : ""}};\n`;
+		}
+		else
+			state.tsCode += `\t\t${node.label}: ${tsType};\n`;
+		for (let i = 1; i < node.labels?.length; i++) 
+			state.tsCode += `\t\t${node.labels[i]}: ${hostOptions ? `Device${options.name}["${node.label}"]` : tsType};\n`;
+	});
 	state.tsCode += "\t}\n";
 	state.tsCode += "\n";
 	state.tsCode += "\tinterface Device {\n";
-	state.tsCode += `\t\t${hostProviderName}: {\n`;
-	const tsType = `${options.moduleDefault}Options`;
-	state.tsCode += `\t\t\tdefault: ${tsType};\n`;
-	nodes.forEach(node => {
-		state.tsCode += `\t\t\t${node.label}: ${tsType};\n`;
-		for (let i = 1; i < node.labels?.length; i++) 
-			state.tsCode += `\t\t\t${node.labels[i]}: ${tsType};\n`;
-	});
-	state.tsCode += "\t\t}\n";
+	state.tsCode += `\t\t${hostProviderName}: Device${options.name};\n`;
 	state.tsCode += "\t}\n";
 	state.tsCode += "}\n";
 
@@ -907,10 +958,9 @@ device.network.interface.${nic.label} = Object.freeze({io: ${nic.name}, kind: "$
 	state.tsCode += `
 declare module "embedded:provider/builtin" {
   import ${nic.name} from "${nic.import}";
-	import type {PortSpecifier} from "embedded:io/_common";
 
   interface DeviceNetworkInterface {
-    ${nic.label}: {io: typeof ${nic.name}, kind: string, port: PortSpecifier};
+    ${nic.label}: {io: typeof ${nic.name}, kind: "${nic.kind}"};
   }
 }
 `;

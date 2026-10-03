@@ -20,14 +20,15 @@
 
 
 declare module "embedded:io/analog" {
-  import { PinSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, IOOptions } from "embedded:io/_common";
   class Analog implements Disposable {
-    constructor(options: {
+    constructor(options: IOOptions<"Analog", {
       pin: PinSpecifier;
+    }, {
       resolution?: number;
       format?: "number";
       target?: any;
-    });
+    }>);
     readonly resolution: number;
     read(): number;
     close(): void;

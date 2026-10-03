@@ -1850,10 +1850,8 @@ export class TSConfigFile extends PrerequisiteFile {
 				if (!(specifier in paths))
 					paths[specifier] = [ result.source.slice(0, result.source.lastIndexOf(".")) ];
 			}
-			if ("zephyr" === tool.platform) {
-				paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
+			if ("zephyr" === tool.platform)
 				paths["mc/devicetree"] = [tool.tmpPath + tool.slash + "mc.devicetree.js"];
-			}
 
 			// Build base compilerOptions
 			const compilerOptions = {
@@ -1943,10 +1941,8 @@ export class TSConfigFile extends PrerequisiteFile {
 			noImplicitThis: false,
 			strictNullChecks: false
 		}
-		if ("zephyr" === tool.platform) {
-			paths["embedded:provider/builtin"] = [tool.tmpPath + tool.slash + "mc.devicetree"];
+		if ("zephyr" === tool.platform)
 			paths["mc/devicetree"] = [tool.tmpPath + tool.slash + "mc.devicetree.js"];
-		}
 		if (tool.typescript.tsconfig?.compilerOptions) {
 			json.compilerOptions = {
 				...json.compilerOptions,
@@ -1963,6 +1959,8 @@ export class TSConfigFile extends PrerequisiteFile {
 	}
 	// support for host provider typings
 	static host(tool) {
+		if ("zephyr" === tool.platform)		// generated from the devicetree by mcdevicetree
+			return [tool.tmpPath + tool.slash + "mc.devicetree.d.ts"];
 		const host = (tool.environment.TYPINGS ?? (tool.moddablePath + tool.slash + "typings")) + tool.slash + "host" + tool.slash;
 		if (tool.subplatform) {
 			if (tool.externalSubplatform) {
