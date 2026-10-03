@@ -22,9 +22,6 @@ declare module "embedded:provider/builtin" {
 	import type DNSSD from "embedded:network/dnssd";
 	import type { DNSSDSocketOptions } from "embedded:network/dnssd";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		dnssd: {
 			io: typeof DNSSD;

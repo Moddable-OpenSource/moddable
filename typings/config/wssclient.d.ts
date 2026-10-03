@@ -26,9 +26,6 @@
 declare module "embedded:provider/builtin" {
 	import type { WebSocketClientProvider } from "embedded:network/websocket/client";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		wss: WebSocketClientProvider;
 	}

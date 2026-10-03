@@ -24,6 +24,8 @@ declare module "embedded:provider/builtin" {
   }
   export interface DeviceIO {
   }
+  // the host typing of a target with a network attaches DeviceNetwork to Device; the network configurations
+  // in the build (config/dns, config/httpclient, ...) add their providers to it
   export interface DeviceNetwork {
   }
 

@@ -24,9 +24,6 @@
 declare module "embedded:provider/builtin" {
 	import type { HTTPServerProvider } from "embedded:network/http/server";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		http: DeviceNetworkHTTP;
 	}

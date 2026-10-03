@@ -20,3 +20,11 @@
 
 // the host provider of lin builds, including the simulator and its skins, is empty: no pins, no buses. The IO classes
 // in the build are typed by their configurations, as everywhere else. This file exists so that the generic host is not assumed.
+// The network is the computer's.
+/// <reference path="../embedded_provider/builtin.d.ts" />
+
+declare module "embedded:provider/builtin" {
+	interface Device {
+		network: DeviceNetwork;
+	}
+}

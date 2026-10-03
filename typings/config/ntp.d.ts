@@ -25,9 +25,6 @@
 declare module "embedded:provider/builtin" {
 	import type { NTPClientProvider } from "embedded:network/ntp/client";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		ntp: DeviceNetworkNTP;
 	}

@@ -24,9 +24,6 @@
 declare module "embedded:provider/builtin" {
 	import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		dns: DeviceNetworkDNS;
 	}

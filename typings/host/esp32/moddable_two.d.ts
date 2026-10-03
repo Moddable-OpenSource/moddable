@@ -30,6 +30,7 @@ declare module "embedded:provider/builtin" {
 
 	interface Device {
 		pin: DevicePin;
+		network: DeviceNetwork;
 	}
 	interface DevicePin {
 		button: PinSpecifier;

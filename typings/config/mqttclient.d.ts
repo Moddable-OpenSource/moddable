@@ -25,9 +25,6 @@
 declare module "embedded:provider/builtin" {
 	import type { MQTTClientProvider } from "embedded:network/mqtt/client";
 
-	interface Device {
-		network: DeviceNetwork;
-	}
 	interface DeviceNetwork {
 		mqtt: MQTTClientProvider;
 	}

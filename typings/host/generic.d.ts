@@ -18,7 +18,7 @@
 *
 */
 
-// a host provider of no particular target: pins by any name and a default bus of each kind in the build.
+// a host provider of no particular target: pins by any name, a default bus of each kind in the build, and a network.
 // The bus types (I2CBus, ...) are declared by the typing of embedded:provider/builtin
 /// <reference path="../embedded_provider/builtin.d.ts" />
 
@@ -27,6 +27,7 @@ declare module "embedded:provider/builtin" {
 
 	interface Device {
 		pin: DevicePin;
+		network: DeviceNetwork;
 	}
 	interface DevicePin {
 		[name: string]: PinSpecifier;
