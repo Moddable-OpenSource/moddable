@@ -34,6 +34,7 @@ type ManufacturerSpec = {
 
 declare module "btutils" {
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export class Bytes extends ArrayBuffer {
     constructor(bytes: string | ArrayBufferLike, littleEndian?: boolean)
     /**
@@ -107,11 +108,13 @@ declare module "btutils" {
    * Convert a Bluetooth UUID expressed as a hex string to a `Bytes` instance.
    * @param strings 
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export function uuid(strings: TemplateStringsArray): Bytes;
 
   /**
    * Convert a Bluetooth address expressed as a hex string to a `Bytes` instance.
    * @param strings 
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export function address(strings: TemplateStringsArray): Bytes;
 }

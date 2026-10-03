@@ -29,6 +29,7 @@ declare module 'pins/smbus' {
     | Uint8ClampedArray
     | Float32Array
     | Float64Array
+  /** @deprecated Use the ECMA-419 SMBus class, embedded:io/smbus */
   class SMBus {
     public constructor(dictionary: { address: number; scl?: number; sda?: number; hz?: number; timeout?: number })
     public constructor(port: number[], pin: number, mode: number)

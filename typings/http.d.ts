@@ -53,6 +53,7 @@ declare module "http" {
   // TODO: better
   export type HTTPRequestCallback = (message: RequestStatus, val1?: any, val2?: any) => void | number | boolean | string | ArrayBuffer;
 
+  /** @deprecated Use fetch, or the ECMA-419 embedded:network/http/client and embedded:network/http/server */
   export class Request {
     constructor(options: HTTPRequestOptions);
     close(): void;
@@ -99,6 +100,7 @@ declare module "http" {
   export type HTTPServerCallback = (this: Request, message: ServerMessages, val1?: any, val2?: any) => void | number | boolean | string |
     ArrayBuffer | { status?: number, reason?: string, headers?: string[], body: true | string | ArrayBuffer };
 
+  /** @deprecated Use fetch, or the ECMA-419 embedded:network/http/client and embedded:network/http/server */
   export class Server {
     constructor(
       options?: HTTPServerOptions

@@ -19,6 +19,7 @@
  */
 
 declare module 'pins/pwm' {
+  /** @deprecated Use the ECMA-419 PWM class, embedded:io/pwm */
   class PWM {
     public constructor(dictionary: { pin: number; port?: string })
     public write(value: number): void

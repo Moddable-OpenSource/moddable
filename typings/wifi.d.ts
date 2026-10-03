@@ -42,6 +42,7 @@ declare module "wifi" {
     max?: number
   }
 
+  /** @deprecated Use the ECMA-419 Wi-Fi network interface, embedded:network/interface/wifi */
   class WiFi {
     static readonly gotIP: "gotIP";
     static readonly lostIP: "lostIP";

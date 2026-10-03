@@ -20,6 +20,7 @@
 
 declare module "gap" {
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   const enum gapAddressTypes {
     PUBLIC = 0,
     RANDOM = 1,
@@ -27,6 +28,7 @@ declare module "gap" {
     RPA_RANDOM = 3,
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export const GAP: {
     readonly SCAN_FAST_INTERVAL: 0x0030,		// TGAP(scan_fast_interval)		30ms to 60ms
     readonly SCAN_FAST_WINDOW: 0x0030,		// TGAP(scan_fast_window)		30ms

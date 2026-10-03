@@ -19,6 +19,7 @@
  */
 
 declare module 'pins/servo' {
+  /** @deprecated The pins modules are legacy; prefer the ECMA-419 embedded:io/* classes */
   class Servo {
     public constructor(dictionary: { pin: number; min?: number; max?: number })
     public write(degrees: number): void

@@ -25,6 +25,7 @@ declare module "mdns" {
     port: number,
     txt: Record<string, string>
   };
+  /** @deprecated Use the ECMA-419 DNS-SD client, embedded:network/dnssd */
   class MDNS {
     constructor(
       options: {

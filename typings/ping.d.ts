@@ -19,6 +19,7 @@
 */
 
 declare module "ping" {
+  /** @deprecated The network modules are legacy; prefer the ECMA-419 embedded:network/* and embedded:io/socket/* modules */
   class Ping {
     constructor(
       options: {

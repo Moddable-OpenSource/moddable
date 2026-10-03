@@ -31,6 +31,7 @@ declare module "sntp" {
     SNTPRetry
   )
   type SNTPCallback = (message: SNTPCallbackMessage, value?: number) => void;
+  /** @deprecated Use the ECMA-419 NTP client, embedded:network/ntp/client */
   class SNTP {
     static readonly time: SNTPTimeRetrieved;
     static readonly retry: SNTPRetry;

@@ -186,6 +186,7 @@ declare module "bleserver" {
   /**
    * Provides access to the BLE server features.
    */
+  /** @deprecated Use the ECMA-419 Bluetooth LE peripheral, embedded:io/bluetoothle/peripheral */
   export class BLEServer {
 
     /**

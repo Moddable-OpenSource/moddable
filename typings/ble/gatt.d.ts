@@ -26,6 +26,7 @@ declare module "gatt" {
 
   type getAddressType = (typeof GAP.AddressType);
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export interface Client {
     connection: number,
     address: Bytes,
@@ -75,6 +76,7 @@ declare module "gatt" {
   /**
    * A single Peripheral GATT service.
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export interface Service {
     connection: number;
     uuid: Bytes;
@@ -108,6 +110,7 @@ declare module "gatt" {
    * 
    * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#class-characteristic
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export interface Characteristic {
     connection: number;
     uuid: Bytes;
@@ -158,6 +161,7 @@ declare module "gatt" {
    * 
    * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#class-descriptor
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export interface Descriptor {
     connection: number;
     uuid: string;

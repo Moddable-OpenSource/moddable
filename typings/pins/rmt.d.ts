@@ -18,6 +18,7 @@
  *
  */
 declare module 'pins/rmt' {
+  /** @deprecated The pins modules are legacy; prefer the ECMA-419 embedded:io/* classes */
   class RMT {
     public constructor(
       dictionary: {

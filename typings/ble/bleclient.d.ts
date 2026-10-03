@@ -40,6 +40,7 @@ declare module "bleclient" {
   /**
    * The `BLEClient` class provides access to the BLE client features.
    */
+  /** @deprecated Use the ECMA-419 Bluetooth LE central, embedded:io/bluetoothle/central */
   export class BLEClient {
 
     securityParameters: securityParameters

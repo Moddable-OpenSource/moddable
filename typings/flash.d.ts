@@ -19,6 +19,7 @@
 */
 
 declare module "flash" {
+  /** @deprecated Use the ECMA-419 flash API, embedded:storage/flash */
   class Flash {
     constructor(partition?: string);
     constructor(offset: number, byteLength: number);

@@ -19,6 +19,7 @@
 */
 
 declare module "dns/server" {
+  /** @deprecated Use the ECMA-419 DNS server, embedded:network/dns/server */
   class Server {
     constructor(callback: (message: number, value?: string) => string);
     close(): void;
