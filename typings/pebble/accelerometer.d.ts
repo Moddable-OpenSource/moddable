@@ -21,9 +21,9 @@
 type TapDirection = "+x" | "-x" | "+y" | "-y" | "+z" | "-z";
 
 interface AccelerometerOptions {
-  onSample?: () => void;
-  onTap?: (direction: TapDirection) => void;
-  onDoubleTap?: (direction: TapDirection) => void;
+  onSample?: (this: Accelerometer) => void;
+  onTap?: (this: Accelerometer, direction: TapDirection) => void;
+  onDoubleTap?: (this: Accelerometer, direction: TapDirection) => void;
 }
 
 interface AccelerometerConfigureOptions {

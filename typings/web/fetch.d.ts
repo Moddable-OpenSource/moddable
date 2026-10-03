@@ -18,9 +18,6 @@
 *
 */
 
-// the manifest that supplies this module includes the manifests of these configurations
-/// <reference path="../config/httpsclient.d.ts" />
-
 declare module "fetch" {
   import {URL, URLSearchParams} from "url"
   import Headers from "headers"

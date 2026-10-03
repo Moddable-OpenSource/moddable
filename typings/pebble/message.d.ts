@@ -19,9 +19,9 @@
 */
 
 interface MessageOptions {
-  onReadable?: () => void;
-  onWritable?: (count: number) => void;
-  onSuspend?: () => void;
+  onReadable?: (this: Message) => void;
+  onWritable?: (this: Message, count: number) => void;
+  onSuspend?: (this: Message) => void;
   format?: "map";
   input?: number;
   output?: number;

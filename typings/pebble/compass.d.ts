@@ -19,7 +19,7 @@
 */
 
 interface CompassOptions {
-  onSample?: () => void;
+  onSample?: (this: Compass) => void;
 }
 
 interface CompassConfigureOptions {

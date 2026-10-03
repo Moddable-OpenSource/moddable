@@ -60,6 +60,7 @@ declare module "commodetto/Poco" {
     origin(): void
 
     makeColor(r: number, g: number, b: number): number
+    makeColor(name: string): number
     fillRectangle(color: number, x: number, y: number, width: number, height: number): void
     blendRectangle(color: number, blend: number, x: number, y: number, width: number, height: number): void
     drawPixel(color: number, x: number, y: number): void

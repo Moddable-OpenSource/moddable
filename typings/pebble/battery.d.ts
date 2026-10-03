@@ -19,7 +19,7 @@
 */
 
 interface BatteryOptions {
-  onSample?: () => void;
+  onSample?: (this: Battery) => void;
 }
 
 interface BatterySample {

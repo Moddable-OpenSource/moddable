@@ -168,7 +168,10 @@
 				"embedded:sensor/Battery": "$(TYPINGS)/pebble/battery",
 				"embedded:sensor/Compass": "$(TYPINGS)/pebble/compass",
 				"embedded:sensor/Location": "$(TYPINGS)/pebble/location",
-				"embedded:provider/builtin": "$(TYPINGS)/pebble/device",
+				"embedded:sensor/Touch/pebble": "$(TYPINGS)/pebble/touch",
+				"embedded:provider/*": [
+					"$(TYPINGS)/embedded_provider/*"
+				],
 				"pebble/button": "$(TYPINGS)/pebble/button",
 				"pebble/dictation": "$(TYPINGS)/pebble/dictation",
 				"pebble/health": "$(TYPINGS)/pebble/health",

@@ -18,9 +18,6 @@
 *
 */
 
-// the manifest that supplies this module includes the manifests of these configurations
-/// <reference path="../../config/wsclient.d.ts" />
-
 // websocketclient.d.ts
 
 declare module "embedded:network/websocket/client" {

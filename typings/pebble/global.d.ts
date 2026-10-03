@@ -18,6 +18,13 @@
 *
 */
 
+// on Pebble, a texture may be created from the id of a GBitmap resource
+/// <reference path="./texture.d.ts" />
+// the Piu QRCode, RoundRect and SVGImage contents are the same modules as on every other target; their typings declare the globals
+/// <reference path="../piu/QRCode.d.ts" />
+/// <reference path="../piu/RoundRect.d.ts" />
+/// <reference path="../piu/SVGImage.d.ts" />
+
 /*
   console
 */
@@ -116,6 +123,35 @@ declare function setInterval(callback: () => void, delay: number): number;
 declare function clearInterval(id: number): void;
 declare function setTimeout(callback: () => void, delay: number): number;
 declare function clearTimeout(id: number): void;
+declare function setImmediate(callback: () => void): number;
+declare function clearImmediate(id: number): void;
+
+/*
+  Modules and native functions
+*/
+
+/** imports a module of the application and returns its namespace */
+declare function importNow(specifier: string): any;
+/** the application's C functions, when it has any (see XS FFI) */
+declare const Natives: Record<string, (...args: any[]) => any>;
+
+/*
+  Screen: Pebble's display adds whether it is color and round, and the area not obstructed by the system
+*/
+
+declare module "commodetto/Poco" {
+	interface Screen {
+		readonly color: boolean;
+		readonly round: boolean;
+		readonly frameBuffer: true;
+		readonly unobstructed: {
+			readonly x: number;
+			readonly y: number;
+			readonly width: number;
+			readonly height: number;
+		};
+	}
+}
 
 /*
   Web
@@ -150,15 +186,13 @@ type Texture = import("piu/MC-types").Texture;
 type Transition = import("piu/MC-types").Transition;
 
 declare const Inverter: InverterConstructor;
-declare const RonndRect: RoundRectConstructor;
 declare const ScreenBuffer: ScreenBufferConstructor;
-declare const SVGImage: SVGImageConsructor;
 
 /*
   ECMA-419
 */
 
-// device is defined in typings/pebble/device.d.ts
+// device is typed by typings/host/pebble.d.ts
 
 declare module "embedded:storage/files" {
   interface DirectoryOpenFileOptions {

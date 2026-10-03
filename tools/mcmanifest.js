@@ -1857,6 +1857,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			const compilerOptions = {
 				forceConsistentCasingInFileNames: true,
 				module: "preserve",
+				moduleDetection: "force",		// xsc compiles every source as a module, imports or not
 				resolveJsonModule: true,
 				paths,
 				lib: ["es2025", "esnext.disposable"],
@@ -1909,6 +1910,7 @@ export class TSConfigFile extends PrerequisiteFile {
 			compilerOptions: {
 				forceConsistentCasingInFileNames: true,
 				module: "preserve",
+				moduleDetection: "force",		// xsc compiles every source as a module, imports or not
 				resolveJsonModule: true,
 				paths: {
 				},
@@ -2020,11 +2022,12 @@ class Rule {
 	constructor(tool) {
 		this.tool = tool;
 	}
-	appendFile(files, target, source, include) {
+	appendFile(files, target, source, include, bySpecifier) {
 		this.count++;
 		source = this.tool.resolveFilePath(source);
-		if (!files.already[source]) {
-			files.already[source] = true;
+		const key = bySpecifier ? target + "\n" + source : source;
+		if (!files.already[key]) {
+			files.already[key] = true;
 			if (include) {
 				let result = files.find(file => file.target == target);
 				if (!result) {
@@ -2225,8 +2228,8 @@ class ModulesRule extends Rule {
 		}
 		else if (parts.extension == ".ts")
 			this.appendFile(tool.tsFiles, target + ".xsb", source, include);
-		else if (parts.extension == ".d.ts")
-			this.appendFile(tool.dtsFiles, target, source, include);
+		else if (parts.extension == ".d.ts")		// a typing may be the typing of several specifiers (WebSocket, web/websocket)
+			this.appendFile(tool.dtsFiles, target, source, include, true);
 		else if (parts.extension == ".json") {
 			// build and package configuration, never modules. they are matched by wildcards like "$(TYPINGS)/*" and would otherwise be compiled into the application
 			if (parts.name.startsWith("manifest") || parts.name.startsWith("tsconfig") || ("package" == parts.name) || ("package-lock" == parts.name))

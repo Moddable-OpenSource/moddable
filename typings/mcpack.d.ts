@@ -41,6 +41,13 @@
 /// <reference path="./web/worker.d.ts" />
 /// <reference path="./text/decoder.d.ts" />
 /// <reference path="./text/encoder.d.ts" />
+// the manifests of the web modules above and of the ECMA-419 HTTP and WebSocket clients ("mcpack": true)
+// include the manifests of these configurations. The module typings do not reference them, because a host
+// that implements the modules itself (Pebble) builds none of these configurations.
+/// <reference path="./config/httpclient.d.ts" />
+/// <reference path="./config/httpsclient.d.ts" />
+/// <reference path="./config/wsclient.d.ts" />
+/// <reference path="./config/wssclient.d.ts" />
 
 export {};
 
