@@ -115,6 +115,8 @@ function httpMessage(id, e) {
 			request.bufferSize = parseInt(bufferSize);
 			if ("/" === path)
 				request.path = "";
+			else if (path && path.startsWith("/"))
+				request.path = path.slice(1);
 			else
 				request.path = path || "";
 			request.port = port;
