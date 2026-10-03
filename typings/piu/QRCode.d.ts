@@ -36,7 +36,12 @@ declare module "piu/QRCode" {
     template<T>(this: T, fn: (arg: any) => QRCodeDictionary): T;
   }
 
+  const QRCode: QRCodeConstructor;
+
   global {
     const QRCode: QRCodeConstructor
   }
+
+  export { QRCode };
+  export default QRCode;
 }

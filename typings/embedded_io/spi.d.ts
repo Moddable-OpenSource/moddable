@@ -19,21 +19,22 @@
 */
 
 declare module "embedded:io/spi" {
-  import { PinSpecifier, PortSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, PortSpecifier, IOOptions } from "embedded:io/_common";
   class SPI implements Disposable {
     target?: any;
-    constructor(options: {
+    constructor(options: IOOptions<"SPI", {
       out?: PinSpecifier;
       in?: PinSpecifier;
       clock: PinSpecifier;
       select?: PinSpecifier;
+      port?: PortSpecifier;
+    }, {
       active?: 1 | 0;
       hz: number;
       mode?: number;
-      port?: PortSpecifier;
       format?: "buffer";
       target?: any;
-    })
+    }>)
     read(byteLength: number): ArrayBuffer;
     read(buffer: ByteBuffer): void;
     write(buffer: ByteBuffer): void;

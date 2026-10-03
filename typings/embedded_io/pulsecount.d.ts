@@ -19,17 +19,18 @@
 */
 
 declare module "embedded:io/pulsecount" {
-  import { PinSpecifier } from "embedded:io/_common";
+  import { PinSpecifier, IOOptions } from "embedded:io/_common";
   class PulseCount implements Disposable {
     target?: any;
-    constructor (options: {
+    constructor (options: IOOptions<"PulseCount", {
       signal: PinSpecifier;
       control: PinSpecifier;
+    }, {
       onReadable?: (this: PulseCount) => void;
       onError?: (this: PulseCount) => void;
       format?: "number";
       target?: any;
-    });
+    }>);
     read(): number;
     write(count: number): void;
     close(): void;
