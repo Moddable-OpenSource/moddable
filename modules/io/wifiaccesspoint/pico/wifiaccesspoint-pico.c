@@ -134,9 +134,7 @@ void xs_apstation_close(xsMachine *the)
 	if (!station) return;
 	xsmcGetHostDataValidate(xsThis, (void *)&xsStationHooks);
 
-#ifdef mxDebug
-	xsTrace("closed, but disconnect not available on pico\n");
-#endif
+	xsLogDebug("closed, but disconnect not available on pico\n");
 
 	uint8_t mac[6];
 	c_memcpy(mac, station->mac, sizeof(mac));
