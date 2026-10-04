@@ -1225,7 +1225,7 @@ struct xsJumpRecord {
 #define xsLog(...) \
 	fxReport(the, __VA_ARGS__)
 
-#if defined(mxDebug) || 1
+#if defined(mxDebug)
 	#define xsLogDebug(...) \
 		fxReport(the, __VA_ARGS__)
 #else
