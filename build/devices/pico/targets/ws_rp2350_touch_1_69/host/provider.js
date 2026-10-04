@@ -88,17 +88,6 @@ const device = {
 				});
 			}
 		},
-		RTC: class {
-			constructor(options) {
-				return new RTC({
-					...options,
-					clock: {
-						...device.i2c.default,
-						io: device.io.SMBus
-					}
-				});
-			}
-		}
 	},
 	sensor: {
 		Touch: class {
@@ -141,6 +130,14 @@ const device = {
 				return sample;
 			}
 		}
+	}
+};
+
+device.rtc = {
+	io: RTC,
+	clock: {
+		...device.i2c.default,
+		io: "SMBus"
 	}
 };
 

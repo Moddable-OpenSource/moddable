@@ -145,5 +145,8 @@ void xs_timer_clear(xsMachine *the)
 
 void xs_timer_delay(xsMachine *the)
 {
-	modTimerDelayMS(xsmcToInteger(xsArg(0)));
+	double ms = xsmcToNumber(xsArg(0));
+	if (!((ms >= 0) && (ms <= 0x7FFFFFFF)))
+		xsRangeError("invalid");
+	modTimerDelayMS((uint32_t)ms);
 }

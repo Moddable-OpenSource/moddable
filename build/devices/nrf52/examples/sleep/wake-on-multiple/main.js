@@ -80,7 +80,7 @@ switch (Sleep.resetReason) {
 Timer.set(() => {
 	led.write(0);
 	notify("sleeping", false);
-	Sleep.deep();
+	device.system.deepSleep();
 }, 3000);
 
 function notify(text, blink = true) {

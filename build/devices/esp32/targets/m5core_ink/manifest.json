@@ -3,14 +3,14 @@
 		"SDKCONFIGPATH": "./sdkconfig"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/pcf8563/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODULES)/drivers/gdew0154m09/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json",
-		"$(IO)/analog/manifest.json"
+		"$(MODULES)/drivers/peripherals/pcf8563",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODULES)/drivers/gdew0154m09",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm",
+		"$(IO)/analog"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

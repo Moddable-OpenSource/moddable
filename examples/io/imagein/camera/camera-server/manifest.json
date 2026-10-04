@@ -3,11 +3,11 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODULES)/network/http/manifest.json",
-		"$(MODDABLE)/modules/io/imagein/camera/manifest.json",
+		"$(MODULES)/network/http",
+		"$(MODDABLE)/modules/io/imagein/camera",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_pixelsout.json",
-		"$(MODDABLE)/modules/network/net/manifest.json"
+		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",

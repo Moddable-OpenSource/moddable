@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/st7789/manifest.json"
+		"$(MODULES)/drivers/st7789"
 	],
 	"config": {
 		"screen": "st7789",

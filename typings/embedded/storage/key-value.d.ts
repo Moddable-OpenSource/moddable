@@ -27,24 +27,45 @@ declare module "embedded:storage/key-value" {
 
 	export type StorageFormat = "buffer" | "string" | "uint8" | "int8" | "uint16" | "int16" | "uint32" | "int32" | "uint64" | "int64";
 
-	export class Storage {
+	// the type read() returns for each format
+	export interface StorageFormats {
+		buffer: ArrayBuffer;
+		string: string;
+		uint8: number;
+		int8: number;
+		uint16: number;
+		int16: number;
+		uint32: number;
+		int32: number;
+		uint64: bigint;
+		int64: bigint;
+	}
+
+	/*
+		F is the format named in the options passed to open(). Naming it there
+		(format: "string") fixes the type read() returns.
+		When the options name no format, read() is typed as returning any of the types,
+		because the format can be changed later through the format property.
+	*/
+	export class Storage<F extends StorageFormat = StorageFormat> implements Disposable {
 		// Use the default export's open() method to create Storage instances
 		close(): void;
 
 		delete(key: string): void;
 
-		read(key: string): ArrayBuffer | string | number | bigint | undefined;
+		read(key: string): StorageFormats[F] | undefined;
 		read(key: string, buffer: ByteBuffer): number | undefined;
 		write(key: string, value: ByteBuffer | string | number | bigint): void;
 
-		[Symbol.iterator](): IterableIterator<string>;
+		[Symbol.iterator](): Iterator<string>;
 
-		format: StorageFormat;
+		get format(): F;
+		set format(value: StorageFormat);
+		[Symbol.dispose](): void;
 	}
-	export interface Storage extends Disposable {}
 
 	const KeyValueStorage: {
-		open(options: StorageOpenOptions): Storage;
+		open<F extends StorageFormat = StorageFormat>(options: StorageOpenOptions & { format?: F }): Storage<F>;
 	};
 
 	export default KeyValueStorage;

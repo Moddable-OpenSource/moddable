@@ -43,7 +43,7 @@ class EventSource {
 	#origin;
 	#path;
 	#port;
-	#readyState = this.CLOSED;
+	#readyState = EventSource.CLOSED;
 	#reconnectionTime = 10000;
 	#url;
 	#method;
@@ -130,7 +130,7 @@ class EventSource {
 	removeEventListener(type, listener) {
 		let listeners = this.#eventListeners[type];
 		if (listeners) {
-			let index = listeners.find(item => item === listener);
+			let index = listeners.findIndex(item => item === listener);
 			if (index >= 0)
 				listeners.splice(index, 1);
 		}
@@ -138,21 +138,21 @@ class EventSource {
 	#callEventListeners(event) {
 		let listeners = this.#eventListeners[event.type];
 		if (listeners)
-			listeners.forEach(listener => listener.call(null, event));
+			listeners.slice().forEach(listener => listener.call(this, event));
 	}
 	#connect() {
 		const config = this.#config;
 		const host = this.#host;
 		const port = this.#port;
 		const path = this.#path;
-		this.#readyState = this.CONNECTING;
+		this.#readyState = EventSource.CONNECTING;
 		const client = this.#client = new config.io({ 
 			...config,
 			host, 
 			port,  
 			onClose: () => {
 				this.#client = null;
-				this.#readyState = this.CLOSED;
+				this.#readyState = EventSource.CLOSED;
 				Timer.set(() => { this.#connect() }, this.#reconnectionTime)
 			},
 			onError: () => {
@@ -174,7 +174,7 @@ class EventSource {
 			headers,
 			onHeaders: (status, headers, statusText) => {
 				if ((status == 200) && (headers.get("content-type").indexOf("text/event-stream") >= 0)) {
-					this.#readyState = this.OPEN;
+					this.#readyState = EventSource.OPEN;
 					const event = { type:"open" };
 					this.#callEventListeners(event);
 				}
@@ -289,7 +289,7 @@ class EventSource {
 	}
 	#onError(error) {
 		this.#client = null;
-		this.#readyState = this.CLOSED;
+		this.#readyState = EventSource.CLOSED;
 		const event = { type:"error", ...error };
 		this.#callEventListeners(event);
 	}
@@ -328,9 +328,7 @@ class EventSource {
 	static CLOSED = 2;
 
 	static {
-		EventSource.prototype.CONNECTING = EventSource.CONNECTING;
-		EventSource.prototype.OPEN = EventSource.OPEN;
-		EventSource.prototype.CLOSED = EventSource.CLOSED;
+		Object.assign(this.prototype, { CONNECTING: EventSource.CONNECTING, OPEN: EventSource.OPEN, CLOSED: EventSource.CLOSED });
 
 		this.prototype[Symbol.dispose] = this.prototype.close;
 	}

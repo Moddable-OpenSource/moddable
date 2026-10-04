@@ -19,20 +19,27 @@
 */
 
 declare module "embedded:network/dns/resolver/udp" {
+  import type UDP from "embedded:io/socket/udp";
+
+  export interface DNSResolverProvider {
+    io: typeof Resolver
+    servers: string[]
+    socket: { io: typeof UDP, [option: string]: unknown }
+  }
 
   interface Options {
     host: string
-    onResolved: ((host:string, address:any) => null)
-    onError: ((host:string) => null)
+    onResolved?: (this: Resolver, host: string, address: string) => void
+    onError?: (this: Resolver, host: string) => void
   }
 
-  class Resolver {
-    constructor(options: Record<string, any>)
+  class Resolver implements Disposable {
+    target?: any
+    constructor(options: Omit<DNSResolverProvider, "io"> & { target?: any })
     close(): void
     resolve(options: Options): void
-
+    [Symbol.dispose](): void
   }
-  interface Resolver extends Disposable {}
 
   export default Resolver
 }

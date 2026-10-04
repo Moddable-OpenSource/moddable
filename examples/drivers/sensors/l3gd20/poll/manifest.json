@@ -4,8 +4,8 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/sensors/l3gd20/manifest.json",
-		"$(MODDABLE)/modules/io/i2c/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/l3gd20",
+		"$(MODDABLE)/modules/io/i2c"
 	],
 	"modules": {
 		"*": "./main"

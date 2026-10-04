@@ -222,7 +222,7 @@ extern uint8_t ESP_setBaud(int baud);
 	extern volatile uint32_t gCPUTime;
 	#define modMicrosecondsInstrumentation() (gCPUTime)
 
-	#define modDelayMilliseconds(ms) vTaskDelay(pdMS_TO_TICKS(ms))
+	#define modDelayMilliseconds(ms) vTaskDelay((TickType_t)(((uint64_t)(ms) * configTICK_RATE_HZ) / 1000))		// pdMS_TO_TICKS overflows 32 bits
 	#define modDelayMicroseconds(us) vTaskDelay(pdMS_TO_TICKS(((us) + 500) / 1000))
 
 #else

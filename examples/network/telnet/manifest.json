@@ -3,8 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/telnet/manifest.json"
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/telnet"
 	],
 	"modules": {
 		"*": [
@@ -21,7 +21,7 @@
 	"platforms": {
 		"mac": {
 			"include": [
-				"$(MODDABLE)/modules/files/file/manifest.json"
+				"$(MODDABLE)/modules/files/file"
 			],
 			"modules": {
 				"cli/files": "$(MODULES)/base/cli/commands/files"
@@ -29,10 +29,10 @@
 		},
 		"esp": {
 			"include": [
-				"$(MODDABLE)/modules/files/file/manifest.json",
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODDABLE)/modules/pins/i2c/manifest.json",
-				"$(MODDABLE)/modules/network/wifi/manifest.json"
+				"$(MODDABLE)/modules/files/file",
+				"$(MODULES)/pins/digital",
+				"$(MODDABLE)/modules/pins/i2c",
+				"$(MODDABLE)/modules/network/wifi"
 			],
 			"modules": {
 				"pins/digital": "$(MODULES)/pins/digital/digital",
@@ -49,10 +49,10 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODDABLE)/modules/files/file/manifest.json",
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODDABLE)/modules/pins/i2c/manifest.json",
-				"$(MODDABLE)/modules/network/wifi/manifest.json"
+				"$(MODDABLE)/modules/files/file",
+				"$(MODULES)/pins/digital",
+				"$(MODDABLE)/modules/pins/i2c",
+				"$(MODDABLE)/modules/network/wifi"
 			],
 			"modules": {
 				"pins/digital": "$(MODULES)/pins/digital/digital",

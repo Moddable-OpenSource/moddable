@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/web/streams/text/decoder/manifest.json",
+		"$(MODULES)/web/streams/text/decoder",
 		"./manifest_fetch.json"
 	],
 	"creation": {

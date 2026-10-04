@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/gc9a01/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/backlight/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/qmi8658/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODDABLE)/modules/drivers/gc9a01",
+		"$(MODDABLE)/modules/drivers/peripherals/backlight",
+		"$(MODDABLE)/modules/drivers/sensors/qmi8658",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

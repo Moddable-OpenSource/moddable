@@ -5,7 +5,8 @@
 			"$(MODULES)/base/time/*",
 			"$(MODULES)/base/time/$(PLATFORM)/*",
 			"$(MODULES)/base/timer/timer",
-			"$(MODULES)/base/timer/$(PLATFORM)/*"
+			"$(MODULES)/base/timer/$(PLATFORM)/*",
+			"$(IO)/common/builtinCommon"
 		],
 		"setup/sim": "./modules/setup-sim",
 		"lockdown/device": "$(IO)/system/lockdowndevice",
@@ -30,7 +31,7 @@
 			"build": {
 				"SIMULATORS": "$(BUILD_SIMULATOR)"
 			},
-			"include": "./$(SUBPLATFORM)/manifest.json",
+			"include": "./$(SUBPLATFORM)",
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/modTimer"
@@ -48,7 +49,7 @@
 			"build": {
 				"SIMULATORS": "$(BUILD_SIMULATOR)"
 			},
-			"include": "./$(SUBPLATFORM)/manifest.json",
+			"include": "./$(SUBPLATFORM)",
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/modTimer"
@@ -66,7 +67,7 @@
 			"build": {
 				"SIMULATORS": "$(BUILD_SIMULATOR)"
 			},
-			"include": "./$(SUBPLATFORM)/manifest.json",
+			"include": "./$(SUBPLATFORM)",
 			"modules": {
 				"*": [
 					"$(MODULES)/base/timer/modTimer"
@@ -76,7 +77,7 @@
 		"wasm": {
 		},
 		"wasm/*": {
-			"include": "./$(SUBPLATFORM)/manifest.json"
+			"include": "./$(SUBPLATFORM)"
 		}
 	}
 }

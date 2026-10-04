@@ -1,3 +1,7 @@
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../config/mqttsclient.d.ts" />
+/// <reference path="../config/dns.d.ts" />
+
 // Adapted from https://github.com/mqttjs/MQTT.js
 //
 // The MIT License (MIT)
@@ -31,7 +35,7 @@ export interface IClientOptions /*extends ISecureClientOptions*/ {
   // protocol?: "wss" | "ws" | "mqtt" | "mqtts" | "tcp" | "ssl" | "wx" | "wxs"
 
   // wsOptions?: ClientOptions | ClientRequestArgs
-  keepalive?: number // 10 seconds, set to 0 to disable
+  keepalive?: number // 60 seconds, set to 0 to disable
   clientId?: string // 'mqttxs_' + Math.random().toString(16).substr(2, 8)
   // protocolId?: string // 'MQTT'
   // protocolVersion?: number //4
@@ -166,7 +170,7 @@ export class Client /*extends events.EventEmitter*/ {
   // public options: IClientOptions
   // public queueQoSZero: boolean
 
-  constructor(url: string, options: IClientOptions)
+  constructor(url: string, options?: IClientOptions)
 
   public on(event: "connect", cb: OnConnectCallback): this
   public on(event: "message", cb: OnMessageCallback): this
@@ -177,6 +181,18 @@ export class Client /*extends events.EventEmitter*/ {
   public on(event: "end" | "reconnect" | "offline", cb: () => void): this
   //public on(event: "end" | "reconnect" | "offline" | "outgoingEmpty", cb: () => void): this
   public on(event: string, cb: Function): this
+
+  // on and off return the client for chaining, as in MQTT.js. addEventListener and removeEventListener return nothing.
+  public addEventListener(event: "connect", cb: OnConnectCallback): void
+  public addEventListener(event: "message", cb: OnMessageCallback): void
+  //public addEventListener(event: "packetsend" | "packetreceive", cb: OnPacketCallback): void
+  //public addEventListener(event: "disconnect", cb: OnDisconnectCallback): void
+  public addEventListener(event: "error", cb: OnErrorCallback): void
+  public addEventListener(event: "close", cb: OnCloseCallback): void
+  public addEventListener(event: "end" | "reconnect" | "offline", cb: () => void): void
+  public addEventListener(event: string, cb: Function): void
+  public off(event: string, cb: Function): this
+  public removeEventListener(event: string, cb: Function): void
 
   // public once(event: "connect", cb: OnConnectCallback): this
   // public once(event: "message", cb: OnMessageCallback): this
@@ -212,11 +228,11 @@ export class Client /*extends events.EventEmitter*/ {
    */
   public publish(
     topic: string,
-    message: string | ArrayBuffer,
+    message: string | ArrayBuffer | ArrayBufferView,
     opts: IClientPublishOptions,
     callback?: PacketCallback
   ): this
-  public publish(topic: string, message: string | ArrayBuffer, callback?: PacketCallback): this
+  public publish(topic: string, message: string | ArrayBuffer | ArrayBufferView, callback?: PacketCallback): this
 
   /**
    * subscribe - subscribe to <topic>
@@ -333,5 +349,7 @@ export class Client /*extends events.EventEmitter*/ {
    */
   public getLastMessageId(): number
 }
+
+export function connect(url: string, options?: IClientOptions): Client
 
 }

@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODDABLE)/modules/drivers/xpt2046/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODDABLE)/modules/drivers/xpt2046",
+		"$(IO)/pwm"
 	],
 	"config": {
 		"screen": "ili9341",

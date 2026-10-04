@@ -1,7 +1,7 @@
 ---
 name: Resolve Multiple Names
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 A single DNS resolver may be used to resolve several DNS names by calling `resolve()` multiple times.
@@ -23,8 +23,8 @@ const dns = new Resolver({
 		dns.resolve({
 			host,
 			onResolved(host, address) {
-				trace(`Resolved ${host} to ${address}\n`),
-			}
+				trace(`Resolved ${host} to ${address}\n`);
+			},
 			onError(host) {
 				trace(`Unable to resolve ${host}\n`);
 			}

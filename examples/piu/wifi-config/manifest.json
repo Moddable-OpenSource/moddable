@@ -2,11 +2,11 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/sntp/manifest.json",
-		"$(MODDABLE)/modules/network/wifi/manifest.json",
+		"$(MODDABLE)/modules/network/sntp",
+		"$(MODDABLE)/modules/network/wifi",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json"
+		"$(MODDABLE)/modules/input/expanding-keyboard/horizontal",
+		"$(MODDABLE)/modules/network/net"
 	],
 	"creation": {
 		"stack":360,

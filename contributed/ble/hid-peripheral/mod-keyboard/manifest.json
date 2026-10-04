@@ -1,7 +1,7 @@
 {
     "include": [
         "$(MODDABLE)/examples/manifest_mod.json",
-		"$(MODDABLE)/modules/input/expanding-keyboard/vertical/manifest.json"
+		"$(MODDABLE)/modules/input/expanding-keyboard/vertical"
     ],
     "modules": {
         "UI" : "./basic-keyboard"

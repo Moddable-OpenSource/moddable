@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/commodetto/gif/manifest.json"
+		"$(MODDABLE)/modules/commodetto/gif"
 	],
 	"modules": {
 		"piu/GIFImage": "./piuGIFImage"

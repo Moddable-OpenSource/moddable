@@ -1,10 +1,10 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(BUILD)/devices/gecko/vdac/manifest.json",
-		"$(MODULES)/drivers/destm32s/manifest.json",
-		"$(MODULES)/pins/analog/manifest.json",
-		"$(MODULES)/base/sleep/manifest.json",
+		"$(BUILD)/devices/gecko/vdac",
+		"$(MODULES)/drivers/destm32s",
+		"$(MODULES)/pins/analog",
+		"$(MODULES)/base/sleep",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parsebmf.json",
 		"$(COMMODETTO)/manifest_parserle.json"

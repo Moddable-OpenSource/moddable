@@ -27,7 +27,7 @@
 		]
 	},
 	"include": [
-		"$(MODULES)/base/easing/manifest.json"
+		"$(MODULES)/base/easing"
 	],
 	"modules": {
 		"~": [

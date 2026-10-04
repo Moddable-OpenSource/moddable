@@ -19,6 +19,7 @@
  */
 
 declare module 'pins/analog' {
+  /** @deprecated Use the ECMA-419 Analog class, embedded:io/analog */
   class Analog {
     static read(pin: number): number
   }

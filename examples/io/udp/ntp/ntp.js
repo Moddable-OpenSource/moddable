@@ -88,7 +88,7 @@ class NTP {
 		if (this.#index === this.#servers.length) {
 			const callback = this.#callback;
 			this.#callback = undefined;
-			return callback(new Error);
+			return callback.call(this, new Error);
 		}
 
 		this.#dns.resolve({
@@ -111,7 +111,7 @@ class NTP {
 		const callback = this.#callback;
 		this.#callback = undefined;
 
-		callback?.(null, (packet.getUint32(40) - 2208988800) * 1000);
+		callback?.call(this, null, (packet.getUint32(40) - 2208988800) * 1000);
 	}
 
 	static {

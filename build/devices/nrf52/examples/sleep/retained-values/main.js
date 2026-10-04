@@ -65,6 +65,6 @@ else {
 		led.close();
 		for (let i = 0; i < 32; ++i)
 			Sleep.setRetainedValue(i, i + 1);
-		Sleep.deep();
+		device.system.deepSleep();
 	}, 3000);
 }

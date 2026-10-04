@@ -2,11 +2,11 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
         "$(MODDABLE)/examples/manifest_net.json",
-        "$(MODULES)/files/preference/manifest.json",
-        "$(MODULES)/network/mdns/manifest.json",
-		"$(MODDABLE)/modules/network/wifi/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+        "$(MODULES)/files/preference",
+        "$(MODULES)/network/mdns",
+		"$(MODDABLE)/modules/network/wifi",
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

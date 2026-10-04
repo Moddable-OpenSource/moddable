@@ -14,6 +14,7 @@
 			"$(MODULES)/base/time/esp/*",
 			"$(MODULES)/base/timer/*",
 			"$(MODULES)/base/timer/mc/*",
+			"$(MODULES)/pins/digital/pico/modGPIO",
 			"$(IO)/common/builtinCommon"
 		],
 		"lockdown/device": "$(IO)/system/lockdowndevice"

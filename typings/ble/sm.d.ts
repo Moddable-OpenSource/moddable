@@ -27,6 +27,7 @@ declare module "sm" {
   /**
    * @url https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md#class-sm
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export const enum IOCapability {
     NoInputNoOutput = 0,
     DisplayOnly = 1,
@@ -35,6 +36,7 @@ declare module "sm" {
     DisplayYesNo = 4,
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export const enum Authorization {
     None = 0,
     NoMITM = 1,
@@ -47,6 +49,7 @@ declare module "sm" {
    * Provides objects used to configure BLE client and server security requirements
    * and device capabilities.
    */
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export class SM {
 
 

@@ -19,7 +19,6 @@
 */
 
 import Analog from "pins/analog";
-import {Sleep} from "sleep";
 import Timer from "timer";
 
 const wakeup_pin = 5;		// AIN5
@@ -44,6 +43,6 @@ let analog = new Analog({
 Timer.set(() => {
 	led.write(0);
 	led.close();
-	Sleep.deep();
+	device.system.deepSleep();
 }, 3000);
 

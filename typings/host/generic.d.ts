@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Shinya Ishikawa
+* Copyright (c) 2026 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -18,13 +18,30 @@
 *
 */
 
-declare module "embedded:io/system" {
-  /**
-   * @experimental
-   */
-  class System {
-    static deepSleep(us: number, mode: number): void;
-    static restart(): void;
-  }
-  export default System;
+// a host provider of no particular target: pins by any name, a default bus of each kind in the build, and a network.
+// The bus types (I2CBus, ...) are declared by the typing of embedded:provider/builtin
+/// <reference path="../embedded_provider/builtin.d.ts" />
+
+declare module "embedded:provider/builtin" {
+	import type { PinSpecifier } from "embedded:io/_common";
+
+	interface Device {
+		pin: DevicePin;
+		network: DeviceNetwork;
+	}
+	interface DevicePin {
+		[name: string]: PinSpecifier;
+	}
+	interface DeviceAnalog {
+		default: AnalogBus;
+	}
+	interface DeviceI2C {
+		default: I2CBus;
+	}
+	interface DeviceSerial {
+		default: SerialBus;
+	}
+	interface DeviceSPI {
+		default: SPIBus;
+	}
 }

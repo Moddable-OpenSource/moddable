@@ -1,10 +1,10 @@
 {
 	"platforms": {
 		"esp32": {
-			"include": "./esp32/manifest.json"
+			"include": "./esp32"
 		},
 		"...": {
-			"include": "./kcl/manifest.json"
+			"include": "./kcl"
 		}
 	}
 }

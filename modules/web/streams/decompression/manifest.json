@@ -1,7 +1,7 @@
 {
 	"include": [
 		"../../../data/zlib/manifest_inflate.json",
-		"../all/manifest.json"
+		"../all"
 	],
 	"modules": {
 		"web/decompressionstream": "./DecompressionStream"

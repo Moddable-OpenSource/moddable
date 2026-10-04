@@ -19,6 +19,7 @@
 */
 
 declare module "preference" {
+  /** @deprecated Use the ECMA-419 key-value store, embedded:storage/key-value (see guides/key-value) */
   var Preference: {
     set: (domain: string, key: string, value: string | boolean | number | ArrayBuffer) => void;
     get: (domain: string, key: string) => string | boolean | number | ArrayBuffer | undefined;

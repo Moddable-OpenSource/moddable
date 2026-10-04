@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/crypt/bin/manifest.json",
-		"$(MODULES)/crypt/digest/manifest.json",
-		"$(MODULES)/files/resource/manifest.json"
+		"$(MODULES)/crypt/bin",
+		"$(MODULES)/crypt/digest",
+		"$(MODULES)/files/resource"
 	],
 	"modules":{
 		"ssl/*": "$(MODULES)/crypt/ssl/ssl_*",

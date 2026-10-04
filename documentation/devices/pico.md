@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2026 Moddable Tech, Inc.<BR>
-Revised: September 25, 2026
+Revised: September 29, 2026
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -186,17 +186,13 @@ The Raspberry Pi Pico 2 has the following features:
 	export PICO_SDK_DIR=$HOME/pico/pico-sdk
 	```
 
-7. Build some `pico` tools:
+7. Build some `pico` tools.
 
 	```text
 	cd $PICO_SDK_DIR
 	mkdir build
 	cd build
 	cmake ..
-	make
-
-	cd pioasm
-	cmake $PICO_SDK_DIR/tools/pioasm
 	make
 	```
 
@@ -210,11 +206,11 @@ After you've setup your macOS host environment, take the following steps to inst
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
 
-	Specify the platform `-p pico` with `mcconfig` to build for the Pico. Build the [`helloworld`](../../examples/helloworld) example:
+	Specify the platform for the device (like: `-p pico/pico_2`) with `mcconfig` to build for the Pico 2. Build the [`helloworld`](../../examples/helloworld) example:
 
 	```text
 	cd $MODDABLE/examples/helloworld
-	mcconfig -d -m -p pico
+	mcconfig -d -m -p pico/pico_2
 	```
 
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
@@ -223,12 +219,12 @@ The app will be built and installed. `xsbug` will be launched and connected to t
 >
 >	```text
 >	Hold the BOOTSEL button and power-cycle the device.
->	Waiting for /Volumes/RPI-RPI2.....
+>	Waiting for /Volumes/RP2350.....
 >	```
 >
 >  Put the device into programming mode by holding the __BOOTSEL__ button when powering on the Pico.
 >
->    You will know that programming mode is active when a disk named `RPI-RP2` appears on your desktop.
+>    You will know that programming mode is active when a disk named `RP2350` or `RPI-RP2` appears on your desktop.
 
 <a id="macOS-troubleshooting"></a>
 ### Troubleshooting
@@ -307,17 +303,13 @@ Not yet available.
 	export PICO_SDK_DIR=$HOME/pico/pico-sdk
 	```
 
-7. Build some `pico` tools:
+7. Build some `pico` tools.
 
 	```text
 	cd $PICO_SDK_DIR
 	mkdir build
 	cd build
 	cmake ..
-	make
-
-	cd pioasm
-	cmake $PICO_SDK_DIR/tools/pioasm
 	make
 	```
 
@@ -345,11 +337,11 @@ After you've setup your Linux host environment, take the following steps to inst
 
 	`mcconfig` is the command line tool to build and launch Moddable apps on microcontrollers and the simulator. Full documentation of `mcconfig` is available [here](../tools/tools.md).
 
-	Specify the platform `-p pico` with `mcconfig` to build for the Pico. Build the [`helloworld`](../../examples/helloworld) example:
+	Specify the platform for the device (like: `-p pico/pico_2` with `mcconfig` to build for the Pico. Build the [`helloworld`](../../examples/helloworld) example:
 
 	```text
 	cd $MODDABLE/examples/helloworld
-	mcconfig -d -m -p pico
+	mcconfig -d -m -p pico/pico_2
 	```
 
 The app will be built and installed. `xsbug` will be launched and connected to the Pico after a few seconds.
@@ -368,8 +360,8 @@ Some pico devices aren't automatically recognized and you may have to identify t
 For example, if you use mcrun and it appears to hang:
 
 ```
-user % mcrun -d -m -p pico/pico_w
-### -p pico/pico_w
+user % mcrun -d -m -p pico/pico_2
+### -p pico/pico_2
 # xsc example.xsb
 # xsc check.xsb
 # xsl helloworld.xsa
@@ -387,8 +379,8 @@ user % export UPLOAD_PORT=/dev/cu.usbmodem11332301
 Try the `mcrun` command again:
 
 ```
-user % mcrun -d -m -p pico/pico_w
-### -p pico/pico_w
+user % mcrun -d -m -p pico/pico_2
+### -p pico/pico_2
 Installing mod...complete
 ```
 

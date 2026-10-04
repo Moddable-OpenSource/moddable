@@ -161,7 +161,7 @@ void PiuSkinDraw(PiuSkin* self, PiuView* view, PiuRectangle bounds, PiuVariant v
 			PiuSkinDrawAux(self, view, bounds, variant, index, horizontal, vertical);
 			PiuViewPopColor(view);
 			if (index < state) {
-				color.a = (uint8_t)c_round((state - index) * 255.0);
+				color.a = (uint8_t)c_round((state - index) * (PiuState)255);
 				PiuViewPushColor(view, &color);
 				PiuSkinDrawAux(self, view, bounds, variant, index + 1, horizontal, vertical);
 				PiuViewPopColor(view);

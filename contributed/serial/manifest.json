@@ -3,7 +3,7 @@
 		"SERIAL": "$(MODDABLE)/contributed/serial"
 	},
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital"
 	],
 	"modules": {
 		"serial": "$(SERIAL)/serial"

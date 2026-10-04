@@ -1,12 +1,12 @@
 {
 	"include": [
-		"$(IO)/analog/manifest.json",
-		"$(IO)/audioout/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pulsecount/manifest.json",
-		"$(IO)/pwm/manifest.json",
-		"$(IO)/serial/manifest.json",
-		"$(IO)/spi/manifest.json"
+		"$(IO)/analog",
+		"$(IO)/audioout",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pulsecount",
+		"$(IO)/pwm",
+		"$(IO)/serial",
+		"$(IO)/spi"
 	]
 }

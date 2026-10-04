@@ -26,6 +26,7 @@ declare module 'pins/digital' {
   type Output = 8
   type OutputOpenDrain = 9
   export type Mode = Input | InputPullUp | InputPullDown | InputPullUpDown | Output | OutputOpenDrain
+  /** @deprecated Use the ECMA-419 Digital class, embedded:io/digital */
   export class Digital {
     public constructor(dictionary: { pin: number; mode: number; port?: string })
     public constructor(pin: number, mode: number)

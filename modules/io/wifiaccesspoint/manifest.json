@@ -4,25 +4,25 @@
 	},
 	"platforms": {
 		"esp32": {
-			"include": "./esp32/manifest.json"
+			"include": "./esp32"
 		},
 		"esp": {
-			"include": "./esp/manifest.json"
+			"include": "./esp"
 		},
 		"pico": {
-			"include": "./pico/manifest.json"
+			"include": "./pico"
 		},
 		"zephyr": {
-			"include": "./zephyr/manifest.json"
+			"include": "./zephyr"
 		},
 		"mac": {
-			"include": "./sim/manifest.json"
+			"include": "./sim"
 		},
 		"lin": {
-			"include": "./sim/manifest.json"
+			"include": "./sim"
 		},
 		"win": {
-			"include": "./sim/manifest.json"
+			"include": "./sim"
 		},
 		"...": {
 			"error": "ECMA-419 Wi-Fi access point unsupported target"

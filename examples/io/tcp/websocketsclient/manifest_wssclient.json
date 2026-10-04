@@ -1,7 +1,7 @@
 {
 	"include": [
 		"../websocketclient/manifest_websocketclient.json",
-		"../tlssocket/manifest.json",
+		"../tlssocket",
 		"$(MODDABLE)/modules/crypt/tls_419.json",
 		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
 	],

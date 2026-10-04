@@ -9,6 +9,9 @@
 		"commodetto/*": [
 			"$(TYPINGS)/commodetto/*"
 		],
+		"config/*": [
+			"$(TYPINGS)/config/*"
+		],
 		"dns/*": [
 			"$(TYPINGS)/dns/*"
 		],
@@ -24,6 +27,9 @@
 		"piu/*": [
 			"$(TYPINGS)/piu/*"
 		],
+		"ssl/*": [
+			"$(TYPINGS)/ssl/*"
+		],
 		"text/*": [
 			"$(TYPINGS)/text/*"
 		],
@@ -32,6 +38,9 @@
 		],
 		"embedded:io/audio/*": [
 			"$(TYPINGS)/embedded_io/audio/*"
+		],
+		"embedded:io/image/in/*": [
+			"$(TYPINGS)/embedded_io/image/in/*"
 		],
 		"embedded:io/bluetoothle/*": [
 			"$(TYPINGS)/embedded_io/ble/*"
@@ -48,10 +57,19 @@
 		"embedded:network/http/*": [
 			"$(TYPINGS)/embedded_network/http/*"
 		],
+		"embedded:network/http/server/route/*": [
+			"$(TYPINGS)/embedded_network/http/server/route/*"
+		],
+		"embedded:network/http/server/route/ws/*": [
+			"$(TYPINGS)/embedded_network/http/server/route/ws/*"
+		],
 		"embedded:network/mqtt/*": [
 			"$(TYPINGS)/embedded_network/mqtt/*"
 		],
 		"embedded:network/websocket/*": "$(TYPINGS)/embedded_network/websocket/*",
+		"embedded:network/dns/server/*": [
+			"$(TYPINGS)/embedded_network/dns/server/*"
+		],
 		"embedded:network/dns/resolver/*": [
 			"$(TYPINGS)/embedded_network/dns/resolver/*"
 		],
@@ -73,6 +91,9 @@
 		"embedded:storage/*": [
 			"$(TYPINGS)/embedded/storage/*"
 		],
+		"embedded:RTC/*": [
+			"$(TYPINGS)/embedded/RTC/*"
+		],
 		"mqtt/js": [
 			"$(TYPINGS)/mqtt/js"
 		],
@@ -81,6 +102,9 @@
 		],
 		"fetch": [
 			"$(TYPINGS)/web/fetch"
+		],
+		"web/fetch/streams": [
+			"$(TYPINGS)/web/fetch-streams"
 		],
 		"structuredClone": [
 			"$(TYPINGS)/web/structuredClone"
@@ -91,6 +115,12 @@
 		"webstorage": [
 			"$(TYPINGS)/web/webstorage"
 		],
+		"web-bluetooth": [
+			"$(TYPINGS)/web/bluetooth"
+		],
+		"web/serial": [
+			"$(TYPINGS)/web/serial"
+		],
 		"web/abortsignal": [
 			"$(TYPINGS)/web/abortsignal"
 		],
@@ -99,6 +129,9 @@
 		],
 		"web/decompressionstream": [
 			"$(TYPINGS)/web/decompressionstream"
+		],
+		"eventsource": [
+			"$(TYPINGS)/web/eventsource"
 		],
 		"web/eventsource": [
 			"$(TYPINGS)/web/eventsource"
@@ -114,6 +147,9 @@
 		],
 		"web/textencoderstream": [
 			"$(TYPINGS)/web/textencoderstream"
+		],
+		"WebSocket": [
+			"$(TYPINGS)/web/websocket"
 		],
 		"web/websocket": [
 			"$(TYPINGS)/web/websocket"
@@ -132,7 +168,10 @@
 				"embedded:sensor/Battery": "$(TYPINGS)/pebble/battery",
 				"embedded:sensor/Compass": "$(TYPINGS)/pebble/compass",
 				"embedded:sensor/Location": "$(TYPINGS)/pebble/location",
-				"embedded:provider/builtin": "$(TYPINGS)/pebble/device",
+				"embedded:sensor/Touch/pebble": "$(TYPINGS)/pebble/touch",
+				"embedded:provider/*": [
+					"$(TYPINGS)/embedded_provider/*"
+				],
 				"pebble/button": "$(TYPINGS)/pebble/button",
 				"pebble/dictation": "$(TYPINGS)/pebble/dictation",
 				"pebble/health": "$(TYPINGS)/pebble/health",

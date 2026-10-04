@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/sensors/rfid/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/rfid"
 	],
 	"modules": {
 		"embedded:sensor/RFID/MFRC522": "./mfrc522"

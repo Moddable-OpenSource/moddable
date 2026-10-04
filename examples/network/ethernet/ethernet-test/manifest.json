@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json",
-		"$(MODDABLE)/modules/network/net/manifest.json"
+		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {
 		"~": [

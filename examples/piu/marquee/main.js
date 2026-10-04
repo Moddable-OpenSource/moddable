@@ -23,7 +23,7 @@ const textStyle = new Style({ font: "light 42px Open Sans", color: BLACK });
 class MarqueeBehavior extends Behavior {
 	onDisplaying(label) {
 		let timeline = this.timeline = new Timeline();
-		timeline.on(label, { x: [application.width, -label.width] }, 5000, Math.linearEase, 0);
+		timeline.on(label, { x: [application.width, -label.width] }, 5000, null, 0);
 		timeline.seekTo(0);
 		label.duration = timeline.duration;
 		label.time = 0;

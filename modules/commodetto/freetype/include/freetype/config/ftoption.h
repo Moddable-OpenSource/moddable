@@ -1071,6 +1071,7 @@ FT_BEGIN_HEADER
    *               "cff": 1,              // .otf and CFF outlines
    *               "hintingBytecode": 1,  // run the TrueType bytecode interpreter
    *               "hintingAuto": 1,      // use the autofitter
+   *               "hintingAutoCJK": 1,   // autofitter CJK and Indic scripts too
    *               "variable": 1,         // OpenType variable font axes
    *               "embeddedBitmaps": 1,  // bitmap strikes inside a font
    *               "gposKern": 1          // kerning from GPOS; follows cfe.kern
@@ -1101,6 +1102,9 @@ FT_BEGIN_HEADER
 #endif
 #ifndef MODDEF_CFE_FT_HINTINGAUTO
 	#define MODDEF_CFE_FT_HINTINGAUTO (0)
+#endif
+#ifndef MODDEF_CFE_FT_HINTINGAUTOCJK
+	#define MODDEF_CFE_FT_HINTINGAUTOCJK (0)
 #endif
 /*
 	A manifest may write an option as a JSON boolean, which reaches the
@@ -1181,6 +1185,16 @@ FT_BEGIN_HEADER
 
 #if !MODDEF_CFE_FT_VARIABLE
 	#undef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+#endif
+
+  /*
+	The autofitter's CJK writing system, and the Indic one built on it, are
+	about 5K of flash that only CJK and Indic text uses. Glyphs of those
+	scripts are still drawn without them, only not hinted.
+  */
+#if !MODDEF_CFE_FT_HINTINGAUTOCJK
+	#undef AF_CONFIG_OPTION_CJK
+	#undef AF_CONFIG_OPTION_INDIC
 #endif
 
 /*

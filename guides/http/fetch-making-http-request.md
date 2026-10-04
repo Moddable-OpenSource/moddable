@@ -1,7 +1,7 @@
 ---
 name: Make Request using fetch()
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Making an HTTP request using `fetch()` is straightforward. The result is traced as text to the console.
@@ -72,7 +72,9 @@ while (true) {
 	const {done, value} = await reader.read();
 	if (value)
 		trace(value);
-	if (done)
+	if (done) {
 		trace("\n");
+		break;
+	}
 }
 ```

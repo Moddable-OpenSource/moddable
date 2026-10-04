@@ -4,8 +4,8 @@
 		"UF2_VOLUME_NAME": "MODDABLEnRF"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/led/rgb/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/rgb",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

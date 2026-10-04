@@ -25,7 +25,7 @@
 		}
 	},
 	"include": [
-		"$(MODULES)/files/resource/manifest.json",
+		"$(MODULES)/files/resource",
 		"$(MODDABLE)/examples/manifest_typings.json"
 	],
 	"modules": {
@@ -46,7 +46,7 @@
 	},
 	"platforms": {
 		"esp": {
-			"include": "$(BUILD)/devices/esp/manifest.json",
+			"include": "$(BUILD)/devices/esp",
 			"modules": {
 				"*": [
 					"$(MODULES)/network/socket/lwip/modLwipSafe"
@@ -54,25 +54,25 @@
 			}
 		},
 		"esp32": {
-			"include": "$(BUILD)/devices/esp32/manifest.json",
+			"include": "$(BUILD)/devices/esp32",
 			"modules": {
 				"*": "$(MODULES)/network/socket/lwip/modLwipSafe"
 			}
 		},
 		"pico": {
-			"include": "$(BUILD)/devices/pico/manifest.json"
+			"include": "$(BUILD)/devices/pico"
 		},
 		"zephyr": {
-			"include": "$(BUILD)/devices/zephyr/manifest.json"
+			"include": "$(BUILD)/devices/zephyr"
 		},
 		"gecko": {
-			"include": "$(BUILD)/devices/gecko/manifest.json"
+			"include": "$(BUILD)/devices/gecko"
 		},
 		"qca4020": {
-			"include": "$(BUILD)/devices/qca4020/manifest.json"
+			"include": "$(BUILD)/devices/qca4020"
 		},
 		"nrf52": {
-			"include": "$(BUILD)/devices/nrf52/manifest.json",
+			"include": "$(BUILD)/devices/nrf52",
 			"creation": {
 				"static": 131072,
 				"chunk": {
@@ -85,19 +85,19 @@
 			}
 		},
 		"lin": {
-			"include": "$(BUILD_SIMULATOR)/manifest.json"
+			"include": "$(BUILD_SIMULATOR)"
 		},
 		"mac": {
-			"include": "$(BUILD_SIMULATOR)/manifest.json"
+			"include": "$(BUILD_SIMULATOR)"
 		},
 		"win": {
-			"include": "$(BUILD_SIMULATOR)/manifest.json"
+			"include": "$(BUILD_SIMULATOR)"
 		},
 		"wasm": {
-			"include": "$(BUILD_SIMULATOR)/manifest.json"
+			"include": "$(BUILD_SIMULATOR)"
 		},
 		"pebble": {
-			"include": "$(BUILD)/devices/pebble/manifest.json"
+			"include": "$(BUILD)/devices/pebble"
 		}
 	}
 }

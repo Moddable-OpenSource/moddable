@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/pins/audioin/manifest.json",
-		"$(MODDABLE)/modules/pins/i2s/manifest.json"
+		"$(MODDABLE)/modules/pins/audioin",
+		"$(MODDABLE)/modules/pins/i2s"
 	],
 	"modules": {
 		"*": [

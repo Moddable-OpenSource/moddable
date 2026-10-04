@@ -1,7 +1,7 @@
 ---
 name: Connect to MQTT Server using MQTT()
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 To connect to an MQTT server, pass the "mqtt:" URL to the `connect()` method.
@@ -75,6 +75,7 @@ If the MQTT connection drops with auto-reconnect disabled, use `reconnect()` to 
 
 ```js
 import * as mqtt from "mqtt/js";
+import Timer from "timer";
 
 const mc = mqtt.connect("mqtt://broker.hivemq.com", {
 	reconnectPeriod: 0

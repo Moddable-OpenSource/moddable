@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODULES)/io/digital/manifest.json",
-		"$(MODULES)/io/pulsecount/manifest.json"
+		"$(MODULES)/io/digital",
+		"$(MODULES)/io/pulsecount"
 	],
 	"modules": {
 		"jogdial": "$(MODULES)/drivers/peripherals/jogdial/*"

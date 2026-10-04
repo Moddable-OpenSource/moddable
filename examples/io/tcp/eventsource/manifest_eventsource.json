@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/data/headers/manifest.json",
-		"$(MODDABLE)/modules/data/url/manifest.json",
+		"$(MODDABLE)/modules/data/headers",
+		"$(MODDABLE)/modules/data/url",
 		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json"
 	],
 	"modules": {

@@ -32,7 +32,8 @@ declare module "embedded:io/digital" {
     | typeof Digital.OutputOpenDrain
     | typeof Digital.ActiveLow
 
-  class Digital {
+  class Digital implements Disposable {
+    target?: any;
     static readonly Input: number
     static readonly InputPullUp: number
     static readonly InputPullDown: number
@@ -57,14 +58,14 @@ declare module "embedded:io/digital" {
       edge?: Edge;
     }));
 
-    write(value: 0 | 1): void;
+    write(value: number): void;
     read(): 0 | 1;
     close(): void;
 
     get format(): "number"
     set format(value: "number")
+    [Symbol.dispose](): void;
   }
-  interface Digital extends Disposable {}
 
   export default Digital;
 }

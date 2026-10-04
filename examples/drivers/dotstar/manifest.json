@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODULES)/drivers/dotstar/manifest.json"
+		"$(MODULES)/drivers/dotstar"
 	],
 	"modules": {
 		"*": "./main"

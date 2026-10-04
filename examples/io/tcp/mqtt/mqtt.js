@@ -82,8 +82,8 @@ export class Client {
 		if (options) {
 			if ("clientId" in options)
 				id = options.clientId
-			if ("keepAlive" in options)
-				keepAlive = 1000 * options.keepAlive
+			if ("keepalive" in options)		// seconds, as in MQTT.js. 0 disables.
+				keepAlive = 1000 * options.keepalive
 			if ("password" in options)
 				password = options.password
 			if ("username" in options)
@@ -575,9 +575,15 @@ export class Client {
 			}
 		}
 	}
+	off(event, listener) {
+		this.removeEventListener(event, listener);
+		return this;
+	}
+	on(event, listener) {
+		this.addEventListener(event, listener);
+		return this;
+	}
 }
-Client.prototype.off = Client.prototype.removeEventListener;
-Client.prototype.on = Client.prototype.addEventListener;
 
 function toString() {
 	return String.fromArrayBuffer(this);

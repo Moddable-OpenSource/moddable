@@ -4,11 +4,11 @@
 		"PICO_SUBCLASS": "rp2350"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(MODULES)/drivers/gc9a01/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(MODULES)/drivers/gc9a01",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"config": {
 		"screen": "ili9341",

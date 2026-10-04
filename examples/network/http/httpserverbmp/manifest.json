@@ -5,7 +5,7 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_pixelsout.json",
-		"$(MODULES)/network/http/manifest.json"
+		"$(MODULES)/network/http"
 	],
 	"modules": {
 		"commodetto/Poco": "$(COMMODETTO)/commodettoPoco",

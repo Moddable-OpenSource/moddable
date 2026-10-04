@@ -23,6 +23,7 @@ declare module "securesocket" {
 
     type WriteData = number | string | ByteBuffer;
 
+    /** @deprecated Use the ECMA-419 TLS socket, embedded:io/socket/tcp/tls */
     export default class SecureSocket {
         sock: typeof Socket;
 

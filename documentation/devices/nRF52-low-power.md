@@ -1,6 +1,6 @@
 # nRF52 Low Power Notes
-Copyright 2019-23 Moddable Tech, Inc.<br/>
-Revised: April 8, 2023
+Copyright 2019-26 Moddable Tech, Inc.<br/>
+Revised: September 29, 2026
 
 Warning: These notes are preliminary. Omissions and errors are likely. If you encounter problems, please ask for assistance.
 
@@ -14,6 +14,7 @@ Warning: These notes are preliminary. Omissions and errors are likely. If you en
 - [RAM Retention](#ram-retention)
 - [RAM Power Control](#ram-power-control)
 - [Low Power APIs](#low-power-apis)
+	- [Deep Sleep](#deep-sleep)
 	- [Class Sleep](#class-sleep)
 - [Example apps](#example-apps)
 - [Power Consumption on Moddable Four](#power-consumption-on-moddable-four)
@@ -84,12 +85,55 @@ In the graph below, power consumption was measured while waiting on a [Timer](..
 
 > Note: RAM Power Control can only be used in release builds.
 
+<a id="deep-sleep"></a>
+## Deep Sleep
+- **Source code:** [system](./../../modules/io/system)
+- **Relevant Examples:** [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep), [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer), and [many more](./../../build/devices/nrf52/examples/sleep/).
+
+Deep sleep is entered with the `deepSleep` method of the ECMA-419 System object, available as `device.system`. The `deepSleep` method is an nRF52 extension to the System object. To use it, include the System manifest in the application manifest. It includes the [Sleep](#class-sleep) manifest, so the time restore and RAM power control described below are in place.
+
+```
+"include": [
+	"$(MODDABLE)/modules/io/system/manifest.json"
+]
+```
+
+#### `device.system.deepSleep([ms])`
+
+| Argument | Type | Description |
+| --- | --- | :--- |
+| `ms` | `number` | Optional number of milliseconds to sleep
+
+Call the `deepSleep` function to enter deep sleep. When called with the milliseconds parameter, the function powers off all RAM and configures a RTC to wake-up from System ON sleep after the specified number of milliseconds have passed, or on any configured interrupt. When the `ms` parameter is omitted, the device is put into System OFF sleep. In either case, the device reboots and the application script is relaunched upon wake-up.
+
+To put the device into deep sleep with no wake-up timer:
+
+```javascript
+device.system.deepSleep();
+```
+
+To put the device into deep sleep and then wake-up after five seconds:
+
+```javascript
+device.system.deepSleep(5000);
+```
+
+The System object may also be imported directly:
+
+```javascript
+import System from "embedded:system";
+
+System.deepSleep(5000);
+```
+
+> Note: Deep sleep is only available in release builds. In debug builds, `deepSleep` logs a message and returns without sleeping.
+
 <a id="class-sleep"></a>
 ## Class Sleep
 - **Source code:** [sleep](./../../build/devices/nrf52/modules/sleep)
 - **Relevant Examples:** [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep), [ram-power-off](./../../build/devices/nrf52/examples/sleep/ram-power-off), [retained-values](./../../build/devices/nrf52/examples/sleep/retained-values), [wake-on-digital](./../../build/devices/nrf52/examples/sleep/wake-on-digital), and [many more](./../../build/devices/nrf52/examples/sleep/).
 
-The Sleep class includes static methods for setting low power modes, initiating deep sleep, and RAM retention. This section provides an overview of the available methods and features.
+The Sleep class includes static methods for setting low power modes, reading the reset reason, and RAM retention. This section provides an overview of the available methods and features.
 
 ```javascript
 import Sleep from "sleep";
@@ -99,23 +143,7 @@ import Sleep from "sleep";
 
 #### `deep([ms])`
 
-| Argument | Type | Description |
-| --- | --- | :--- |
-| `ms` | `number` | Optional number of milliseconds to sleep
-
-Call the `deep` function to enter deep sleep. When called with the milliseconds parameter, the function powers off all RAM and configures a RTC to wake-up from System ON sleep after the specified number of milliseconds have passed, or on any configured interrupt. When the `ms` parameter is omitted, the device is put into System OFF sleep. In either case, the device reboots and the application script is relaunched upon wake-up.
-
-To put the device into deep sleep with no wake-up timer:
-
-```javascript
-Sleep.deep();
-```
-
-To put the device into deep sleep and then wake-up after five seconds:
-
-```javascript
-Sleep.deep(5000);
-```
+Equivalent to [`device.system.deepSleep([ms])`](#deep-sleep), which new code should use instead.
 
 ***
 
@@ -188,7 +216,7 @@ for (let index = 0; index < 32; ++index)
 	Sleep.setRetainedValue(index, index + 1);
 
 // sleep
-Sleep.deep();
+device.system.deepSleep();
 ```
 
 #### `getRetainedValue(index)`
@@ -210,11 +238,11 @@ trace(`Retrieved value ${value} at index ${index}\n`);
 
 #### `setup()`
 
-The `setup` method is called internally by the nRF52 [power.js](./../../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `Sleep.deep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration.
+The `setup` method is called internally by the nRF52 [power.js](./../../build/devices/nrf52/setup/power.js) [setup module](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/base/setup.md) to initialize low power features at launch. This method restores the system time after waking up from deep sleep, i.e. after a call to `device.system.deepSleep` when a milliseconds timeout value is provided. The function also powers down unused RAM for applications that specify a RAM configuration.
 
 <a id="example-apps"></a>
 ## Example apps
-Example apps are provided to demonstrate the various `Sleep` class features:
+Example apps are provided to demonstrate deep sleep and the various `Sleep` class features:
 
 | Name | Description |
 | :---: | :--- |
@@ -229,7 +257,7 @@ Example apps are provided to demonstrate the various `Sleep` class features:
 
 <a id="power-consumption-on-moddable-four"></a>
 ## Power Consumption on Moddable Four
-The Moddable runtime is optimized to support the low-power features of the Moddable Four. Low power applications should use the [Sleep APIs](#class-sleep) to leverage these optimizations. The Sleep class APIs that enter System OFF sleep result in the lowest power consumption. The chart below summarizes power consumption in System OFF sleep when running the example apps on the Moddable Four.
+The Moddable runtime is optimized to support the low-power features of the Moddable Four. Low power applications should use [deep sleep](#deep-sleep) and the [Sleep APIs](#class-sleep) to leverage these optimizations. Entering System OFF sleep results in the lowest power consumption. The chart below summarizes power consumption in System OFF sleep when running the example apps on the Moddable Four.
 
 | Example app | Power Consumption | Description
 | :---: | :---: | :--- |

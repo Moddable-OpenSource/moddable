@@ -5,8 +5,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/drivers/sensors/mpu6886/manifest.json",
-		"$(MODDABLE)/modules/io/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/mpu6886",
+		"$(MODDABLE)/modules/io"
 	],
 	"modules": {
 		"*": [

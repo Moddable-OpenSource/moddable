@@ -1,6 +1,6 @@
 {
 	"include": [
-		"../ili9341_p8/manifest.json"
+		"../ili9341_p8"
 	],
 	"modules": {
 		"*": [

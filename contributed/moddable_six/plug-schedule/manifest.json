@@ -5,15 +5,15 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/manifest.json",
+		"$(MODDABLE)/modules/io",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/sntp/manifest.json",
-		"$(MODDABLE)/modules/piu/MC/outline/manifest.json",
-		"$(MODULES)/files/preference/manifest.json",
-		"$(MODULES)/input/expanding-keyboard/vertical/manifest.json",
-		"$(MODULES)/network/wifi/manifest.json",
-		"$(MODDABLE)/modules/pins/i2s/manifest.json"
+		"$(MODDABLE)/modules/network/sntp",
+		"$(MODDABLE)/modules/piu/MC/outline",
+		"$(MODULES)/files/preference",
+		"$(MODULES)/input/expanding-keyboard/vertical",
+		"$(MODULES)/network/wifi",
+		"$(MODDABLE)/modules/pins/i2s"
 	],
 	"defines": {
 		"audioOut": {

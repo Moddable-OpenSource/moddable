@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/smbus/manifest.json"
+		"$(MODULES)/pins/smbus"
 	],
 	"modules": {
 		"mcp9808": "$(MODULES)/drivers/mcp9808/*"

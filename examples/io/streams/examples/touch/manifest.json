@@ -4,7 +4,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/ft6206"
 	],
 	"creation": {
 		"stack": 1024

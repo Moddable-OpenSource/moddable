@@ -1,7 +1,7 @@
 ---
 name: Read File
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 To read a file, first open it in read mode such as "r", then call `read()`. Pass the number of bytes to read as the first argument. The position to read from the file must be passed as the second argument as there is no current position.
@@ -50,7 +50,7 @@ help.close();
 
 Instead of each read creating a new memory buffer, you can read into an existing buffer. This can reduce the load on the garbage collector and execute faster. To read into a memory buffer, pass a [Byte Buffer](https://419.ecma-international.org/#byte-buffer) to `read()`. The return value is the number of bytes read.
 
-This example reads a file 512 bytes at a time and traces them to the console. When there is no more to read, read() returns `undefined`.
+This example reads a file 512 bytes at a time and traces them to the console. When there is no more to read, `read()` returns a falsy value.
 
 ```js
 let position = 0;
@@ -61,7 +61,7 @@ const help = device.files.openFile({
 });
 do {
 	const count = help.read(bytes, position);
-	if (undefined === count)
+	if (!count)
 		break;
 	trace(`${(new Uint8Array(
 		bytes.buffer, 0, count)).toHex()}\n`);

@@ -1,5 +1,5 @@
 {
-	"include": "$(MODULES)/data/crc/manifest.json",
+	"include": "$(MODULES)/data/crc",
 	"modules": {
 		"embedded:sensor/Humidity-Temperature/AM2320": "$(MODDABLE)/modules/drivers/sensors/am2320/am2320"
 	},

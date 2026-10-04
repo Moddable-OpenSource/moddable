@@ -1,5 +1,5 @@
 {
-	"include": "$(MODDABLE)/modules/io/manifest.json",
+	"include": "$(MODDABLE)/modules/io",
 	"modules": {
 		"embedded:RTC/RV3028": "$(MODDABLE)/modules/drivers/peripherals/rv3028/rv3028"
 	},

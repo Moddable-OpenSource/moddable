@@ -3,8 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/input/keyboard/manifest.json",
-		"$(MODDABLE)/modules/network/websocket/manifest.json"
+		"$(MODULES)/input/keyboard",
+		"$(MODDABLE)/modules/network/websocket"
 	],
 	"config": {
 		"ssid": "Moddable",

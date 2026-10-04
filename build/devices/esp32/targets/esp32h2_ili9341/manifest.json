@@ -5,10 +5,10 @@
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODULES)/drivers/ili9341/manifest.json",
-		"$(IO)/digital/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(MODULES)/drivers/ili9341",
+		"$(IO)/digital"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

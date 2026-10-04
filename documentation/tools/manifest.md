@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: May 4, 2026
+Revised: October 1, 2026
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -216,6 +216,15 @@ The `include` array lists other manifests to include. It's often convenient to i
 ]
 ```
 
+A directory path includes the `manifest.json` file in that directory. The include of the BMP280 manifest above may be written as:
+
+```json
+"include": [
+	"$(MODDABLE)/examples/manifest_base.json",
+	"$(MODULES)/drivers/bmp280"
+]
+```
+
 Each example application in the Moddable SDK includes at least one of the manifests in the [examples directory](../../examples/).
 
 - `manifest_base.json` is included by each of our example applications. It includes resource, instrumentation, time, and timer modules. It also includes a `creation` object that works for many applications. The [`creation` object](#creation) is covered in more detail later in this document.
@@ -237,7 +246,7 @@ A manifest may directly include git repositories. The repositories are cloned as
 Each git repository to fetch is specified by an object in the `include` array of a manifest:
 
 - The object must have a `"git"` property, which is the git URL of the repo.
-- The object can have an `"manifest"` property, which is either the path of the manifest file to include, or the manifest object itself.
+- The object can have an `"manifest"` property, which is either the path of the manifest file to include (or of a directory containing a `manifest.json` file), or the manifest object itself.
 
 The default value of the `"manifest"` property is `"manifest.json"`.
 

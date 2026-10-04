@@ -356,12 +356,16 @@ class ApplicationBehavior extends Behavior {
 	
 /* EVENTS */
 	onAbort(application, status, reason) {
+		if (-2 === status) {		// System.restart()
+			application.defer("doReloadFile");
+			return;
+		}
 		this.ffiPath = "";
 		this.archivePath = "";
 		this.libraryPath = "";
 		this.quitScreen();
 		this.launchScreen();
-		if (status) {
+		if (status > 0) {		// 0 is the debugger, -1 is System.exit(), -2 is System.restart()
 			system.alert({ 
 				type:"stop",
 				prompt:"mcsim",

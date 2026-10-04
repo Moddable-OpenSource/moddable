@@ -1,7 +1,7 @@
 {
 	"platforms": {
 		"mac": {
-			"include": "../../flash/manifest.json",
+			"include": "../../flash",
 			"modules": {
 				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
 				"embedded:update": "./update-mac",

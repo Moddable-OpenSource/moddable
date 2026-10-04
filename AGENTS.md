@@ -1,6 +1,6 @@
 # AGENTS.md
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: September 22, 2026
+Revised: September 30, 2026
 
 > **Note**: This document was written by an LLM for LLMs.
 
@@ -120,6 +120,8 @@ mcpack mcconfig -dl -m -p sim
 **A `-d` build launches and waits for the xsbug GUI debugger.** For unattended or headless work use `-dn` to build debug without launching a debugger, or `-dl` to use xsdb.
 
 **On a device target, `-i` shows the serial console directly in the terminal.** `mcconfig -i -m -p esp32/<target>` builds instrumented, flashes, and then prints the device's serial output as it arrives — no debugger, no serial plumbing of your own. This is the way to see a native crash: a panic (core dump, `Guru Meditation`) never reaches xsdb — from the debugger's side it looks like the device silently going away — but it appears in full on the serial console. When a device under `-dl` hangs or disconnects for no visible reason, rerun with `-i` before theorizing.
+
+**Without a TTY, `-i` on ESP32 flashes and then shows nothing.** The serial console comes from ESP-IDF's monitor, which exits immediately with `Monitor requires standard input to be attached to TTY` — after the flash has succeeded, so the build looks fine and the crash output is simply lost. Commands run by an agent usually have no terminal attached. Instead, flash with `mcconfig -i -m -p esp32/<target> -t deploy`, then read the serial port yourself for a fixed time — for example, a short pyserial loop at 115200 baud that reopens the port if it disappears, since USB-JTAG boards re-enumerate on reset. When scanning that output for a crash, look only at what follows the flash's `Hard resetting` line: the ESP-IDF build compiles `abort.c` and `panic.c`, so a naive search for `abort` or `panic` matches the build log itself.
 
 ### The simulator is not a device
 

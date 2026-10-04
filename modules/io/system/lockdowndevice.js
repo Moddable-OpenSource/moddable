@@ -56,4 +56,16 @@ if (device.serial)
 if (device.spi)
 	device.SPI = device.spi;
 
+// compatibility: the real-time clock was a constructor at peripheral.RTC rather than an options object at rtc (ECMA-419 29.8)
+//@@ remove
+if (device.rtc && !device.peripheral?.RTC) {
+	const rtc = device.rtc;
+	device.peripheral ??= {};
+	device.peripheral.RTC = class {
+		constructor(options) {
+			return new rtc.io({...rtc, ...options});
+		}
+	};
+}
+
 globalThis.device = Object.freeze(device, true);

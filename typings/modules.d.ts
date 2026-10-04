@@ -21,7 +21,7 @@
 declare module "modules" {
     export default class Modules {
         static has(name: string): boolean;
-        static importNow(name: string, namespace?: boolean): unknown;
+        static importNow<T = unknown>(name: string, namespace?: boolean): T;
         static get host(): string[];
         static get archive(): string[];
     }

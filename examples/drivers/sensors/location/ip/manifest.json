@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json",
-		"$(MODULES)/drivers/sensors/location/ip/manifest.json"
+		"$(MODULES)/drivers/sensors/location/ip"
 	],
 	"modules": {
 		"*": "./main"

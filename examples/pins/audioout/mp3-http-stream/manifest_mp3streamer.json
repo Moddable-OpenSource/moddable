@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
-		"$(MODDABLE)/modules/data/mp3/manifest.json"
+		"$(MODDABLE)/modules/data/mp3"
 	],
 	"modules": {
 		"*": "./mp3streamer"

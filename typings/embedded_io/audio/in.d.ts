@@ -29,7 +29,8 @@ declare module "embedded:io/audio/in" {
     target?: any;
   }
 
-  class AudioIn {
+  class AudioIn implements Disposable {
+    target?: any;
     constructor(options: AudioInOptions & {
       onReadable?: (this: AudioIn, byteLength: number, sampleCount?: number) => void;
     });
@@ -44,8 +45,8 @@ declare module "embedded:io/audio/in" {
     readonly audioType: AudioType;
     get format(): "buffer"
     set format(value: "buffer")
+    [Symbol.dispose](): void;
   }
-  interface AudioIn extends Disposable {}
 
   export { AudioIn as default };
 }

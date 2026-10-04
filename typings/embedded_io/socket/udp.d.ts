@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Shinya Ishikawa
+* Copyright (c) 2022-2026 Shinya Ishikawa
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -19,28 +19,33 @@
 */
 
 declare module "embedded:io/socket/udp" {
-  class UDP {
+  export interface UDPPacket extends ArrayBuffer {
+    address: string;		// sender's IP address
+    port: number;			// sender's port
+  }
+
+  class UDP implements Disposable {
+    target?: any;
     constructor(options: {
       port?: number;
       address?: string;
+      timeToLive?: number;	// Moddable SDK extension
       onReadable?: (this: UDP, packets: number) => void;
-      onError?: () => void;
+      onWritable?: (this: UDP, count: number) => void;
+      onError?: (this: UDP) => void;
       format?: "buffer";
       target?: any;
-    } & ({} | {
-      multicast: string;
-      timeToLive: number;
-    }))
+    });
     write(buffer: ByteBuffer, address: string, port: number): void;
-    read(): ArrayBuffer & {
-      address: string;
-      port: number;
-    };
+    read(): UDPPacket | undefined;
+    read(buffer: ByteBuffer): number;
+    add(multicastAddress: string): void;
+    remove(multicastAddress: string): void;
     close(): void;
     get format(): "buffer"
     set format(value: "buffer")
+    [Symbol.dispose](): void;
   }
-  interface UDP extends Disposable {}
 
   export default UDP
 }

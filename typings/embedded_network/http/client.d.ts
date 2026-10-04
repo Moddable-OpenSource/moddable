@@ -19,18 +19,31 @@
 */
 
 declare module "embedded:network/http/client" {
+  import type TCP from "embedded:io/socket/tcp";
+  import type TLS from "embedded:io/socket/tcp/tls";
+  import type { ClientSocket } from "embedded:io/socket/tcp/tls";
+  import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+  export interface HTTPClientProvider {
+    io: typeof HTTPClient
+    dns: DNSResolverProvider
+    socket: ClientSocket
+    port?: number
+  }
+
   export interface ClientOptions {
-    socket?: any
+    socket: ClientSocket
     port?: number
     host: string
-    dns?: any
-    onError?: (err:any)=>void
+    dns: DNSResolverProvider
+    onError?: (this: HTTPClient, err:any)=>void
+    target?: any
   }
 
   export interface RequestOptions {
     method?: string
     path?: string
-    headers?: Map<string, string|string[]>
+    headers?: Map<string, string | string[] | number>
     headersMask?: Array<string>
     onHeaders?: (this: HTTPRequest, status:number, headers: Map<string, string>, statusText: string) => void
     onReadable?: (this: HTTPRequest, count: number) => void
@@ -40,17 +53,18 @@ declare module "embedded:network/http/client" {
 
   export interface HTTPRequest {
     read(byteLength?: number): ArrayBuffer|undefined;
-    read(buffer: ByteBuffer): void;
+    read(buffer: ByteBuffer): number | undefined;
     write(): number;
     write(value: ByteBuffer|undefined): number;
   }
 
-  class HTTPClient {
+  class HTTPClient implements Disposable {
+    target?: any
     constructor(options: ClientOptions)
     request(options: RequestOptions): HTTPRequest
     close(): void
+    [Symbol.dispose](): void
   }
-  interface HTTPClient extends Disposable {}
   export default HTTPClient;
 
 }

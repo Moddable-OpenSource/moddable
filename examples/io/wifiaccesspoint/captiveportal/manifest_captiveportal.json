@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/wifiaccesspoint/manifest.json"
+		"$(MODULES)/io/wifiaccesspoint"
 	],
 	"preload": "captiveportal",
 	"platforms": {

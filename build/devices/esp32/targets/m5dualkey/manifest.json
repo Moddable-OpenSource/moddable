@@ -1,0 +1,41 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Set the switch to center, hold Key1 (farther from the strap hole) while connecting USB, then release Key1.",
+		"BEFORE_DEBUGGING_MESSAGE": "Disconnect and reconnect the USB cable."
+	},
+	"include": [
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(IO)/analog"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "",
+		"led": {
+			"pin": 21,
+			"rainbow": false,
+			"brightness": 32
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	}
+}

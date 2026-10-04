@@ -1,11 +1,11 @@
 {
 	"include": [
         "$(MODDABLE)/modules/crypt/tls.json",
-        "$(MODDABLE)/modules/network/http/manifest.json",
-        "$(MODDABLE)/modules/network/mqtt/manifest.json",
-        "$(MODDABLE)/modules/network/ping/manifest.json",
-        "$(MODDABLE)/modules/network/websocket/manifest.json",
-        "$(MODDABLE)/modules/network/wifi/manifest.json",
-        "$(MODDABLE)/modules/network/sntp/manifest.json"
+        "$(MODDABLE)/modules/network/http",
+        "$(MODDABLE)/modules/network/mqtt",
+        "$(MODDABLE)/modules/network/ping",
+        "$(MODDABLE)/modules/network/websocket",
+        "$(MODDABLE)/modules/network/wifi",
+        "$(MODDABLE)/modules/network/sntp"
 	]
 }

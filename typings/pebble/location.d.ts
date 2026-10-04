@@ -40,12 +40,12 @@ interface LocationConfiguration {
   maximumAge?: number;
 }
 
-declare class Location {
+declare class Location implements Disposable {
   constructor(options: LocationOptions);
   close(): void;
   configure(options: LocationConfiguration): void;
   sample(): LocationSample | undefined;
+  [Symbol.dispose](): void;
 }
-interface Location extends Disposable {}
 
 export default Location;

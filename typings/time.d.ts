@@ -25,7 +25,7 @@ declare module "time" {
     ) => void,
     timezone: number;
     dst: number;
-    ticks: number;
+    readonly ticks: number;
     delta(start: number, end?: number): number;
     readonly microseconds?: number;
   }

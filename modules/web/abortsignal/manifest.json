@@ -1,6 +1,6 @@
 {
 	"include": [
-		"../domexception/manifest.json"
+		"../domexception"
 	],
 	"modules": {
 		"web/abortsignal": "./AbortSignal"

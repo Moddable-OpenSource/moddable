@@ -1,7 +1,7 @@
 {
 	"include": [
-		"../../../../data/text/decoder/manifest.json",
-		"../../all/manifest.json"
+		"../../../../data/text/decoder",
+		"../../all"
 	],
 	"modules": {
 		"web/textdecoderstream": "./TextDecoderStream"

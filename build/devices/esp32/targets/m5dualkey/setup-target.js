@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2026  Moddable Tech, Inc.
+ * Copyright (c) 2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -17,11 +17,12 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+import config from "mc/config";
 
-
-class System {
-	static deepSleep() { return native("xs_system_deepSleep").call(this); }
-	static restart() { return native("xs_system_restart").call(this); }
+export default function (done) {
+	if (config.led?.rainbow) {
+		const led = new device.peripheral.led.Default({});
+		led.rainbow(3);
+	}
+	done?.();
 }
-
-globalThis.System = System;

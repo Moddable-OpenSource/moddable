@@ -19,32 +19,46 @@
 */
 
 declare module "embedded:io/socket/tcp" {
-  export type Options = (({
+  export type Format = "number" | "buffer";
+
+  export type Options<F extends Format = Format> = (({
     address: string;
     port: number;
   }) | {
     from: TCP;
   }) & {
     noDelay?: boolean;
-    onReadable?: (this: TCP, bytes: number) => void;
-    onWritable?: (this: TCP, bytes: number) => void;
-    onError?: (this: TCP) => void;
-    format?: "number" | "buffer";
+    onReadable?: (this: TCP<F>, bytes: number) => void;
+    onWritable?: (this: TCP<F>, bytes: number) => void;
+    onError?: (this: TCP<F>) => void;
+    format?: F;
     target?: any;
   };
-  
-  class TCP {
-    constructor(options: Options)
+
+  /*
+    F is the format named in the options when the socket is created. Naming it there
+    (format: "buffer") fixes the type read() with no argument returns:
+    a byte for "number", an ArrayBuffer for "buffer".
+    When the options name no format, read() is typed as returning either, because the
+    format can be changed later through the format property.
+  */
+  interface TCP<F extends Format = Format> extends Disposable {
+    target?: any;
     readonly remoteAddress: string | undefined;
     readonly remotePort: number | undefined;
-    read(): number | ArrayBuffer;
+    read(): F extends "number" ? number : ArrayBuffer;
     read(byteLength: number): ArrayBuffer;
     read(buffer: ByteBuffer): number;
     write(value: number | ByteBuffer): number;
     close(): void;
-    get format(): "number" | "buffer"
-    set format(value: "number" | "buffer")
+    get format(): F
+    set format(value: Format)
+    [Symbol.dispose](): void;
   }
-  interface TCP extends Disposable {}
+  interface TCPConstructor {
+    new <F extends Format = Format>(options: Options<F>): TCP<F>;
+    readonly prototype: TCP;
+  }
+  const TCP: TCPConstructor;
   export default TCP;
 }

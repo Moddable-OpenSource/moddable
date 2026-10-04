@@ -3,10 +3,10 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/pins/digital/manifest.json",
-		"$(MODULES)/pins/i2c/manifest.json",
-		"$(MODULES)/pins/spi/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODULES)/pins/digital",
+		"$(MODULES)/pins/i2c",
+		"$(MODULES)/pins/spi",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

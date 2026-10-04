@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/contributed/serial/drivers/sim7100/manifest.json"
+		"$(MODDABLE)/contributed/serial/drivers/sim7100"
 	],
 	"modules": {
 		"*": [

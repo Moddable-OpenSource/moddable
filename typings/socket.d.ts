@@ -58,6 +58,7 @@ declare module "socket" {
     MessageDataReceived |
     MessageDataSent
   );
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   abstract class SocketBase {
     close(): void;
     read<T extends typeof String | typeof ArrayBuffer>(
@@ -66,14 +67,17 @@ declare module "socket" {
     ): T extends typeof String ? string : ArrayBuffer;
     callback: (message: MessageStatus, value?: number) => void;
   }
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   class RawSocket extends SocketBase {
     write(ip: string, data: ArrayBuffer): void;
     write(): number;
   }
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   class TCPSocket extends SocketBase {
     write(data: WriteData, ...moreData: WriteData[]): void;
     write(): number;
   }
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   class UDPSocket extends SocketBase {
     write(ip: string, port: number, data: ArrayBuffer): void;
     write(): number;
@@ -82,11 +86,13 @@ declare module "socket" {
     port?: number,
     address?: string
   };
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   class Listener {
     constructor(options: ListenerOptions);
     callback: (this: Listener) => void;
   }
   type Socket = RawSocket | TCPSocket | UDPSocket;
+  /** @deprecated Use the ECMA-419 sockets, embedded:io/socket/tcp, embedded:io/socket/udp and embedded:io/socket/listener */
   var Socket: {
     new <T extends RawSocketOptions | TCPSocketOptions | UDPSocketOptions>(
       dictionary: T

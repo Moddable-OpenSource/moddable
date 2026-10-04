@@ -1,7 +1,7 @@
 ---
 name: Connect to Server using WebSocket()
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 To connect to a WebSocket server, pass the "ws:" URL to the `WebSocket` constructor.
@@ -35,7 +35,7 @@ import WebSocket from "WebSocket";
 const ws = new WebSocket({
 	url: "ws://example.com/ws",
 	protocol: ["mqtt", "soap"],
-	keepalive: true,
+	keepalive: 10_000,
 	headers: new Map([
 		["custom-header", "secret"]
 	])

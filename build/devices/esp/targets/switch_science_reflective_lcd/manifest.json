@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/drivers/lpm013m126a/manifest.json"
+		"$(MODULES)/drivers/lpm013m126a"
 	],
 	"config": {
 		"screen": "lpm013m126a",

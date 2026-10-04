@@ -471,6 +471,7 @@ export default class extends TOOL {
 			"device.flash": "embedded:storage/flash",
 			"device.keyValue": "embedded:storage/key-value",
 			"device.update": "embedded:update",
+			"device.system": "embedded:system",
 		}
 		this.snippets = [];
 	}

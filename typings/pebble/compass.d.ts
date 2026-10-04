@@ -19,7 +19,7 @@
 */
 
 interface CompassOptions {
-  onSample?: () => void;
+  onSample?: (this: Compass) => void;
 }
 
 interface CompassConfigureOptions {
@@ -30,12 +30,12 @@ interface CompassSample {
   heading: number;
 }
 
-declare class Compass {
+declare class Compass implements Disposable {
   constructor(options: CompassOptions);
   close(): void;
   configure(options: CompassConfigureOptions): void;
   sample(): CompassSample;
+  [Symbol.dispose](): void;
 }
-interface Compass extends Disposable {}
 
 export default Compass;

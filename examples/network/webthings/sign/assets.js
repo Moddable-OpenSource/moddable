@@ -26,7 +26,7 @@ class MarqueeBehavior extends Behavior {
 		let timeline = this.timeline = new Timeline();
 		if (label.width > label.container.width) {
 			let duration = label.width * 15;
-			timeline.to(label, { x: -label.width }, duration, Math.linearEase, 0);
+			timeline.to(label, { x: -label.width }, duration, null, 0);
 		} else {
 			this.in = true;
 			label.x = (label.container.width - label.width)/2;

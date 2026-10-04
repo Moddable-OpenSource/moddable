@@ -20,22 +20,22 @@
 
 
 declare module "embedded:io/analog" {
-  import { PinSpecifier } from "embedded:io/_common";
-  class Analog {
-    constructor(options: {
+  import { PinSpecifier, IOOptions } from "embedded:io/_common";
+  class Analog implements Disposable {
+    constructor(options: IOOptions<"Analog", {
       pin: PinSpecifier;
+    }, {
       resolution?: number;
-      onReadable?: (this: Analog) => void;
       format?: "number";
-    });
+      target?: any;
+    }>);
     readonly resolution: number;
-    onReadable?: () => void;
     read(): number;
     close(): void;
     get format(): "number"
     set format(value: "number")
     target?: any;
+    [Symbol.dispose](): void;
   }
-  interface Analog extends Disposable {}
   export default Analog;
 }

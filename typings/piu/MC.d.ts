@@ -28,7 +28,7 @@ declare module "piu/MC" {
     const Skin: MC.SkinConstructor
     const Texture: MC.TextureConstructor
     const Style: MC.StyleConstructor
-    const Behavior: MC.BehaviorConstructor
+    const Behavior: MC.BehaviorClass
     const Content: MC.ContentConstructor
     const Container: MC.ContainerConstructor
     const Application: MC.ApplicationConstructor
@@ -43,6 +43,7 @@ declare module "piu/MC" {
     const Transition: MC.TransitionConstructor
     const Text: MC.TextConstructor
     const Link: MC.LinkConstructor
+    const CLUT: MC.CLUTConstructor
     const application: MC.Application
     const Locals: MC.Locals
     const blendColors: MC.blendColors

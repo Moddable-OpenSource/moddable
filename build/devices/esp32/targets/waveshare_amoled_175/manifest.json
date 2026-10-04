@@ -8,16 +8,16 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press the PWR button to restart."
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout/manifest.json",
-		"$(MODDABLE)/modules/io/audioin/manifest.json",
-		"$(MODDABLE)/modules/drivers/co5300/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/cst9217/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/axp2101/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/pcf85063/manifest.json",
-		"$(MODDABLE)/modules/drivers/peripherals/button/manifest.json",
-		"$(MODDABLE)/modules/drivers/sensors/qmi8658/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODDABLE)/modules/io/audioout",
+		"$(MODDABLE)/modules/io/audioin",
+		"$(MODDABLE)/modules/drivers/co5300",
+		"$(MODDABLE)/modules/drivers/sensors/cst9217",
+		"$(MODDABLE)/modules/drivers/peripherals/axp2101",
+		"$(MODDABLE)/modules/drivers/peripherals/pcf85063",
+		"$(MODDABLE)/modules/drivers/peripherals/button",
+		"$(MODDABLE)/modules/drivers/sensors/qmi8658",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

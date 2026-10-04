@@ -1,7 +1,7 @@
 {
 	"platforms": {
 		"pebble": {
-			"include": "$(MODULES)/base/easing/manifest.json",
+			"include": "$(MODULES)/base/easing",
 			"modules": {
 				"piu/*": "$(PIU)/All/piu*",
 				"piu/MC": "$(PIU)/Pebble/piuPebble",

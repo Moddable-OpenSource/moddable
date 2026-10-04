@@ -55,31 +55,29 @@ static void commodettoDitherBurkes(uint8_t *src, uint8_t *dst, uint16_t width, i
 
 void xs_dither(xsMachine *the)
 {
-	DitherRecord dither;
-	int width;
-	
 	xsmcVars(1);
 	
 	xsmcGet(xsVar(0), xsArg(0), xsID_width);
-	width = xsmcToInteger(xsVar(0));
+	int width = xsmcToInteger(xsVar(0));
 	if ((width <= 0) || (width > 65535) || (width & 7))
 		xsUnknownError("invalid");
-	dither.width = (uint16_t)width;
 
-	dither.blit = commodettoDitherAtkinson;
+	ditherBlit blit = commodettoDitherAtkinson;
 	if (xsmcGet(xsVar(0), xsArg(0), xsID_algorithm)) { 
 		char *ditherName = xsmcToString(xsVar(0));
 		if (!c_strcmp(ditherName, "none"))
-			dither.blit = commodettoDitherNone;
+			blit = commodettoDitherNone;
 		else if (!c_strcmp(ditherName, "atkinson"))
-			dither.blit = commodettoDitherAtkinson;
+			blit = commodettoDitherAtkinson;
 		else if (!c_strcmp(ditherName, "burkes"))
-			dither.blit = commodettoDitherBurkes;
+			blit = commodettoDitherBurkes;
 		else
 			xsUnknownError("invalid");
 	}
 
-	xsmcSetHostChunk(xsThis, &dither, sizeof(dither) + (getErrorBufferLength(width) * sizeof(int16_t) * 2));
+	Dither dither = xsmcSetHostChunk(xsThis, NULL, sizeof(DitherRecord) + (getErrorBufferLength(width) * sizeof(int16_t) * 2));
+	dither->blit = blit;
+	dither->width = (uint16_t)width;
 }
 
 void xs_dither_destructor(void *data)

@@ -32,7 +32,7 @@ declare module "embedded:storage/flash" {
 		eraseValue: number;
 	}
 
-	export class Flash {
+	export class Flash implements Disposable {
 		// Use the default export's open() method to create Flash instances
 		close(): void;
 
@@ -45,8 +45,8 @@ declare module "embedded:storage/flash" {
 		status(): FlashStatus;
 
 		format: "buffer";
+		[Symbol.dispose](): void;
 	}
-	export interface Flash extends Disposable {}
 
 	const FlashStorage: {
 		open(options: FlashOpenOptions): Flash;

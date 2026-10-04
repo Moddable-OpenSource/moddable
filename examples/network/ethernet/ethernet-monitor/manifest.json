@@ -2,11 +2,11 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json",
-		"$(MODDABLE)/modules/network/sntp/manifest.json",
+		"$(MODDABLE)/modules/network/sntp",
 		"$(MODULES)/crypt/tls.json",
-		"$(MODULES)/network/http/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODULES)/network/http",
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"~": [

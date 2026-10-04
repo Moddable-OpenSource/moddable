@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(COMMODETTO)/manifest_bitmap.json",
-		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
+		"$(MODULES)/drivers/ls013b4dn04",
 		"$(COMMODETTO)/manifest_parsebmf.json",
 		"$(COMMODETTO)/manifest_parsebmp.json",
 		"$(COMMODETTO)/manifest_parserle.json"

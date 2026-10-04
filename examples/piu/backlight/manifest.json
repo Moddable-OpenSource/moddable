@@ -2,17 +2,11 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/base/modules/manifest.json"
+		"$(MODDABLE)/modules/base/modules"
 	],
 	"modules": {
-		"*": [
-			"./main",
-			"./check"
-		]
+		"*": "./main"
 	},
-	"preload": [
-		"check"
-	],
 	"resources":{
 		"*": [
 			"./island"
@@ -29,10 +23,10 @@
 	},
 	"platforms": {
 		"esp32/moddable_six": {
-			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
+			"include": "$(MODDABLE)/modules/pins/i2s"
 		},
 		"mac/moddable_six": {
-			"include": "$(MODDABLE)/modules/pins/i2s/manifest.json"
+			"include": "$(MODDABLE)/modules/pins/i2s"
 		}
 	},
 	"bundle": {

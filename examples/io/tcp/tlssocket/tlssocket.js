@@ -190,6 +190,12 @@ class TLS {
 	get format() {
 		return this.#format ? "buffer" : "number";
 	}
+	get remoteAddress() {
+		return this.#socket.remoteAddress;
+	}
+	get remotePort() {
+		return this.#socket.remotePort;
+	}
 	#onWritable(count) {
 		this.#socket.writable = count;
 		if (!this.#ready)

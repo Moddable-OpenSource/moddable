@@ -58,7 +58,7 @@ function drawTime(render, when) {
 }
 
 export default function () {
-	const rtc = new device.peripheral.RTC;
+	const rtc = new device.rtc.io(device.rtc);
 	if (rtc.time !== undefined && (Date.now() > (new Date("July 1, 2021")).valueOf()))
 		rtc.time = Date.now();
 

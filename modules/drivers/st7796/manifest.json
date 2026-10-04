@@ -1,5 +1,5 @@
 {
-	"include": "../ili9341/manifest.json",
+	"include": "../ili9341",
 	"modules": {
 		"*": "$(MODULES)/drivers/st7796/*"
 	},

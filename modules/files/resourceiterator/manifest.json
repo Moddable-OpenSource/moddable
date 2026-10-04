@@ -1,16 +1,7 @@
 {
-	"include": "$(MODULES)/files/resource/manifest.json",
+	"include": "$(MODULES)/files/resource",
 	"modules": {
 		"*": "./ResourceIterator"
 	},
-	"preload": "ResourceIterator",
-	"typescript": {
-		"tsconfig": {
-			"compilerOptions": {
-				"types": [
-					"./ResourceIterator"
-				]
-			}
-		}
-	}
+	"preload": "ResourceIterator"
 }

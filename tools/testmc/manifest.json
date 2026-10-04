@@ -2,29 +2,29 @@
 	"include": [
 		"./manifest_common.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/contributed/jsonparser/manifest.json",
-		"$(MODULES)/base/deepEqual/manifest.json",
-		"$(MODULES)/base/structuredClone/manifest.json",
-		"$(MODULES)/data/base64/manifest.json",
-		"$(MODULES)/data/crc/manifest.json",
-		"$(MODULES)/data/hex/manifest.json",
-		"$(MODULES)/data/qrcode/manifest.json",
-		"$(MODULES)/data/text/decoder/manifest.json",
-		"$(MODULES)/data/text/encoder/manifest.json",
-		"$(MODULES)/data/url/manifest.json",
+		"$(MODDABLE)/contributed/jsonparser",
+		"$(MODULES)/base/deepEqual",
+		"$(MODULES)/base/structuredClone",
+		"$(MODULES)/data/base64",
+		"$(MODULES)/data/crc",
+		"$(MODULES)/data/hex",
+		"$(MODULES)/data/qrcode",
+		"$(MODULES)/data/text/decoder",
+		"$(MODULES)/data/text/encoder",
+		"$(MODULES)/data/url",
 		"$(MODULES)/data/zlib/manifest_deflate.json",
 		"$(MODULES)/data/zlib/manifest_inflate.json",
-		"$(MODULES)/files/preference/manifest.json",
-		"$(MODULES)/crypt/digest/manifest.json",
-		"$(MODDABLE)/modules/io/files/manifest.json",
-		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json",
-		"$(MODDABLE)/modules/io/flash/manifest.json",
-		"$(MODDABLE)/modules/io/storage/manifest.json",
-		"$(MODDABLE)/modules/io/audioout/manifest.json",
-		"$(MODDABLE)/modules/io/audioin/manifest.json",
-		"$(MODDABLE)/modules/io/crypt/digest/manifest.json",
-		"$(MODDABLE)/modules/io/update/manifest.json",
-		"$(MODDABLE)/modules/io/flash/manifest.json",
+		"$(MODULES)/files/preference",
+		"$(MODULES)/crypt/digest",
+		"$(MODDABLE)/modules/io/files",
+		"$(MODDABLE)/modules/piu/MC/colorcell",
+		"$(MODDABLE)/modules/io/flash",
+		"$(MODDABLE)/modules/io/storage",
+		"$(MODDABLE)/modules/io/audioout",
+		"$(MODDABLE)/modules/io/audioin",
+		"$(MODDABLE)/modules/io/crypt/digest",
+		"$(MODDABLE)/modules/io/update",
+		"$(MODDABLE)/modules/io/flash",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parsebmf.json"
 	],
@@ -63,7 +63,7 @@
 		},
 		"zephyr": {
 			"include": [
-				"$(MODULES)/base/worker/manifest.json"
+				"$(MODULES)/base/worker"
 			]
 		},
 		"pico": {
@@ -77,9 +77,9 @@
 				}
 			},
 			"include": [
-				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+				"$(MODULES)/base/worker",
+				"$(MODULES)/files/flash",
+				"$(MODDABLE)/modules/pins/i2s"
 			],
 			"config": {
 				"digital": [12, 13, 16, 17, 26, 27],
@@ -113,9 +113,9 @@
 			"include": [
 				"./manifest_net.json",
 				"./manifest_ble.json",
-				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+				"$(MODULES)/base/worker",
+				"$(MODULES)/files/flash",
+				"$(MODDABLE)/modules/pins/i2s"
 			],
 			"defines": {
 				"audioOut": {
@@ -158,9 +158,9 @@
 			"include": [
 				"./manifest_net.json",
 				"./manifest_ble.json",
-				"$(MODULES)/base/worker/manifest.json",
-				"$(MODULES)/files/flash/manifest.json",
-				"$(MODDABLE)/modules/pins/i2s/manifest.json"
+				"$(MODULES)/base/worker",
+				"$(MODULES)/files/flash",
+				"$(MODDABLE)/modules/pins/i2s"
 			],
 			"defines": {
 				"audioOut": {

@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/display/manifest.json",
+		"$(MODULES)/io/display",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parsebmf.json",
 		"$(COMMODETTO)/manifest_parsebmp.json",

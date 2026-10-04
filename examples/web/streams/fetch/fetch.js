@@ -141,6 +141,14 @@ function fetchClientRequest(url, options) {
 	return client;
 }
 
+function toBytes(body) {
+	if (ArrayBuffer.isView(body))
+		return new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+	if ((body instanceof ArrayBuffer) || (body instanceof SharedArrayBuffer))
+		return new Uint8Array(body);
+	return new Uint8Array(ArrayBuffer.fromString(body.toString()));
+}
+
 function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
 		let url = new URL(href);
@@ -172,10 +180,7 @@ function fetch(href, info = {}) {
 				headers.set("transfer-encoding", "chunked");
 			}
 			else {
-				if (!(body instanceof ArrayBuffer)) {
-					body = body.toString();
-					body = ArrayBuffer.fromString(body);
-				}
+				body = toBytes(body);
 				length = Number(headers.get("content-length") ?? body.byteLength);
 				headers.set("content-length", length);
 			}
@@ -240,7 +245,7 @@ function fetch(href, info = {}) {
 					body = readableStream.pipeThrough(new DecompressionStream(encoding));
 					headers.delete("content-encoding");
 				}
-				resolveResponse(new Response(url, status, headers, body, redirected, statusText));
+				resolveResponse(new Response(url.href, status, headers, body, redirected, statusText));
 			},
 			onWritable(count) {
 				const writeBody = () => {
@@ -248,8 +253,7 @@ function fetch(href, info = {}) {
 					if (remain > 0) {
 						if (count > remain)
 							count = remain;
-						let view = new DataView(body, offset, count);
-						this.write(view);
+						this.write(body.subarray(offset, offset + count));
 						offset += count;
 					}
 					else if (!reader)
@@ -269,11 +273,7 @@ function fetch(href, info = {}) {
 								reader.releaseLock();
 								return;
 							}
-							body = result.value;
-							if (!(body instanceof ArrayBuffer)) {
-								body = body.toString();
-								body = ArrayBuffer.fromString(body);
-							}
+							body = toBytes(result.value);
 							length = body.byteLength;
 							writeBody();
 						});

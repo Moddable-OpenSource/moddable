@@ -7,10 +7,10 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/gc9a01/manifest.json",
-		"$(MODULES)/drivers/sensors/cst816/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODDABLE)/modules/drivers/gc9a01",
+		"$(MODULES)/drivers/sensors/cst816",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

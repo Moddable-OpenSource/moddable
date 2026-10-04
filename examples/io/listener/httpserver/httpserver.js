@@ -523,6 +523,9 @@ class HTTPServer {
 		this.#keepAlive = options.keepAlive ?? 10_000;
 		if (!this.#onConnect === !this.#onRoute)
 			throw new Error("invalid");
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
 
 		this.#listener = new options.socket.io({
 			...options.socket,

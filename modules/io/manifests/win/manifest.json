@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/serial/manifest.json"
+		"$(MODDABLE)/modules/io/serial"
 	],
 	"modules": {
 		"*": "$(MODDABLE)/modules/io/common/builtinCommon"

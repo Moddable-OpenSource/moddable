@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/base/cli/manifest.json",
-		"$(MODDABLE)/modules/network/socket/manifest.json"
+		"$(MODULES)/base/cli",
+		"$(MODDABLE)/modules/network/socket"
 	],
 	"modules": {
 		"*": "./telnet"

@@ -29,7 +29,7 @@ interface DictationConfigureOptions {
   errorDialogs?: boolean;
 }
 
-declare class Dictation {
+declare class Dictation implements Disposable {
   constructor(options: DictationOptions);
   close(): void;
   configure(options: DictationConfigureOptions): void;
@@ -37,7 +37,7 @@ declare class Dictation {
   stop(): void;
   read(): string | undefined;
   readonly format: "string";
+  [Symbol.dispose](): void;
 }
-interface Dictation extends Disposable {}
 
 export default Dictation;

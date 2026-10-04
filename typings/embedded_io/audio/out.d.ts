@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Satoshi Tanaka
+* Copyright (c) 2025-2026 Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -29,8 +29,9 @@ declare module "embedded:io/audio/out" {
     target?: any;
   }
 
-  class AudioOut {
-    constructor(options?: AudioOutOptions & {
+  class AudioOut implements Disposable {
+    target?: any;
+    constructor(options: AudioOutOptions & {
       onWritable?: (this: AudioOut, byteLength: number, sampleCount?: number) => void;
     });
     write(buffer: ByteBuffer): void;
@@ -45,8 +46,15 @@ declare module "embedded:io/audio/out" {
     get format(): "buffer"
     set format(value: "buffer")
     volume: number;
+    [Symbol.dispose](): void;
   }
-  interface AudioOut extends Disposable {}
+
+  namespace AudioOut {
+    class Async extends AudioOut {
+      constructor(options: AudioOutOptions);
+      write(buffer: ByteBuffer, callback?: (this: Async, error: Error | null) => void): void;
+    }
+  }
 
   export { AudioOut as default };
 }

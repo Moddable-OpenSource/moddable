@@ -7,12 +7,12 @@
         "BEFORE_DEBUGGING_MESSAGE": "Press and release the Rst button."
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODULES)/drivers/st7789/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(MODULES)/drivers/st7789",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

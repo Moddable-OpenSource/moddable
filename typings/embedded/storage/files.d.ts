@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -27,7 +27,7 @@ declare module "embedded:storage/files" {
 		isSymbolicLink(): boolean;
 	}
 
-	export class File {
+	export class File implements Disposable {
 		// Use Directory.openFile() to create File instances
 		close(): void;
 
@@ -38,8 +38,8 @@ declare module "embedded:storage/files" {
 		status(): Status;
 		setSize(length: number): void;
 		flush(): void;
+		[Symbol.dispose](): void;
 	}
-	export interface File extends Disposable {}
 
 	export interface DirectoryOpenFileOptions {
 		path: string;
@@ -54,7 +54,7 @@ declare module "embedded:storage/files" {
 		resolveTarget?: boolean;
 	}
 
-	export class Directory {
+	export class Directory implements Disposable {
 		// use device.files to access file system root
 		close(): void;
 
@@ -70,8 +70,11 @@ declare module "embedded:storage/files" {
 		createLink?(path: string, target: string): void;
 		readLink?(path: string): string;
 
-		scan(path?: string): IterableIterator<string>;
-		[Symbol.iterator](): IterableIterator<string>;
+		scan(path?: string): IteratorObject<string, undefined, unknown>;
+		[Symbol.iterator](): IteratorObject<string, undefined, unknown>;
+		[Symbol.dispose](): void;
 	}
-	export interface Directory extends Disposable {}
+
+	const root: Directory;
+	export default root;
 }

@@ -7,9 +7,9 @@
 		"PICO_BOARD_FILE": "$(SFE_DIR)/sparkfun_pico/sfe_pico.h"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODULES)/drivers/gc9a01/manifest.json"
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(MODULES)/drivers/gc9a01"
 	], "modules": {
 		"setup/target": "./setup-target"
 	},

@@ -19,32 +19,28 @@
  */
 
 declare module "piu/Timeline" {
+  type Easing = ((fraction: number) => number) | null;
+
+  export class Tween {
+    constructor(target: object, properties: object, duration: number, easing?: Easing, delay?: number);
+    static from(target: object, fromProperties: object, duration: number, easing?: Easing, delay?: number): Tween;
+    static on(target: object, onProperties: object, duration: number, easing?: Easing, delay?: number): Tween;
+    static to(target: object, toProperties: object, duration: number, easing?: Easing, delay?: number): Tween;
+    delay: number;
+    duration: number;
+    easing: Easing;
+    seekTo(time: number): void;
+  }
+
   class Timeline {
     duration: number;
     fraction: number;
     time: number;
-    from(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
-    on(
-      target: object,
-      onProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
+    add(tween: Tween, when?: number): Timeline;
+    from(target: object, fromProperties: object, duration: number, easing?: Easing, delay?: number, when?: number): Timeline;
+    on(target: object, onProperties: object, duration: number, easing?: Easing, delay?: number, when?: number): Timeline;
     seekTo(time: number): void;
-    to(
-      target: object,
-      fromProperties: object,
-      duration: number,
-      easing?: (fraction: number) => number,
-      delay?: number
-    ): Timeline;
+    to(target: object, toProperties: object, duration: number, easing?: Easing, delay?: number, when?: number): Timeline;
   }
   export { Timeline as default }
 }

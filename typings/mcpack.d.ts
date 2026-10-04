@@ -18,12 +18,16 @@
  *
  */
 
+/// <reference path="./host/index.d.ts" />
 /// <reference path="./web/abortsignal.d.ts" />
+/// <reference path="./web/bluetooth.d.ts" />
+/// <reference path="./web/serial.d.ts" />
 /// <reference path="./web/console.d.ts" />
 /// <reference path="./web/decompressionstream.d.ts" />
 /// <reference path="./web/domexception.d.ts" />
 /// <reference path="./web/eventsource.d.ts" />
 /// <reference path="./web/fetch.d.ts" />
+/// <reference path="./web/fetch-streams.d.ts" />
 /// <reference path="./web/headers.d.ts" />
 /// <reference path="./web/streams.d.ts" />
 /// <reference path="./web/structuredClone.d.ts" />
@@ -37,10 +41,26 @@
 /// <reference path="./web/worker.d.ts" />
 /// <reference path="./text/decoder.d.ts" />
 /// <reference path="./text/encoder.d.ts" />
+// the manifests of the web modules above and of the ECMA-419 HTTP and WebSocket clients ("mcpack": true)
+// include the manifests of these configurations. The module typings do not reference them, because a host
+// that implements the modules itself (Pebble) builds none of these configurations.
+/// <reference path="./config/httpclient.d.ts" />
+/// <reference path="./config/httpsclient.d.ts" />
+/// <reference path="./config/wsclient.d.ts" />
+/// <reference path="./config/wssclient.d.ts" />
 
 export {};
 
 declare global {
+	interface Navigator {
+		readonly bluetooth: typeof import("web-bluetooth").bluetooth;
+		readonly serial: typeof import("web/serial").serial;
+	}
+	const navigator: Navigator;
+
+	const BluetoothUUID: typeof import("web-bluetooth").BluetoothUUID;
+	type BluetoothUUID = import("web-bluetooth").BluetoothUUID;
+
 	const EventSource: typeof import("web/eventsource").default;
 	type EventSource = import("web/eventsource").default;
 

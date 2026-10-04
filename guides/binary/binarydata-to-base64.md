@@ -1,7 +1,7 @@
 ---
 name: Convert Binary Data to Base64
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Use the JavaScript standard [`toBase64()` method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/toBase64) of `UInt8Array` to convert binary data to a Base64 encoded string.
@@ -9,7 +9,7 @@ Use the JavaScript standard [`toBase64()` method](https://developer.mozilla.org/
 ```js
 const bytes = Uint8Array.of(0, 1, 2, 3, 4);
 const base64 = bytes.toBase64();
-// => "AAEDBAQ="
+// => "AAECAwQ="
 ```
 
 ---

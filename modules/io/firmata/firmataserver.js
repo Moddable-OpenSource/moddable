@@ -51,6 +51,7 @@ import I2C from "embedded:io/i2c";
 import Listener from "embedded:io/socket/listener";
 import Serial from "embedded:io/serial";
 import TCP from "embedded:io/socket/tcp";
+import System from "embedded:system";
 import Poco from "commodetto/Poco";
 import Timer from "timer";
 

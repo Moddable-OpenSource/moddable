@@ -1,13 +1,14 @@
 ---
 name: Close Connection using MQTT Client
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 To cleanly disconnect from the MQTT server, write a DISCONNECT opcode and then close the instance.
 
 ```js
-const mc = new device.network.mqtt.io({
+const MQTTClient = device.network.mqtt.io;
+const mc = new MQTTClient({
 	...device.network.mqtt,
 	host: "test.mosquitto.org"
 });

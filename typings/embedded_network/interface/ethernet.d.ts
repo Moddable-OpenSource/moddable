@@ -25,7 +25,7 @@ declare module "embedded:network/interface/ethernet" {
 
 	export interface EthernetConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: (property: EthernetChangedProperty) => void;
+		onChanged?: (this: Ethernet, property: EthernetChangedProperty) => void;
 	}
 
 	export interface EthernetStaticAddress {
@@ -39,7 +39,7 @@ declare module "embedded:network/interface/ethernet" {
 		static?: EthernetStaticAddress | false;
 	}
 
-	class Ethernet {
+	class Ethernet implements Disposable {
 		constructor(options: EthernetConstructorOptions);
 
 		close(): void;
@@ -50,8 +50,8 @@ declare module "embedded:network/interface/ethernet" {
 		readonly connection: number;
 		readonly address: string | undefined;
 		readonly MAC: string | undefined;
+		[Symbol.dispose](): void;
 	}
-	interface Ethernet extends Disposable {}
 
 	export default Ethernet;
 }

@@ -37,8 +37,8 @@ declare module "commodetto/Poco" {
 			readonly height: number
 		};
 		drawLine(x0: number, y0: number, x1: number, y1: number, color: number, width: number): void;
-		drawRoundRect(x0: number, y0: number, x1: number, y1: number, color: number, radius: number, corners: number): void;
-		frameRoundRect(x0: number, y0: number, x1: number, y1: number, color: number, radius: number): void;
+		drawRoundRect(x0: number, y0: number, x1: number, y1: number, color: number, radius?: number, corners?: number): void;
+		frameRoundRect(x0: number, y0: number, x1: number, y1: number, color: number, radius?: number): void;
 		drawCircle(color: number, x: number, y: number, r: number, from: number, to: number): void;
 		drawDCI(dci: PebbleDrawCommandImage | PebbleDrawCommandSequence, x: number, y: number): void;
 	}

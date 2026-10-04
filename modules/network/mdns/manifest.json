@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/network/dns/manifest.json",
-		"$(MODDABLE)/modules/network/net/manifest.json",
-		"$(MODDABLE)/modules/network/socket/manifest.json"
+		"$(MODULES)/network/dns",
+		"$(MODDABLE)/modules/network/net",
+		"$(MODDABLE)/modules/network/socket"
 	],
 	"modules": {
 		"*": [

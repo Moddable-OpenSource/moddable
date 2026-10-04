@@ -18,6 +18,9 @@
 *
 */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../config/storage.d.ts" />
+
 declare module "webstorage" {
   class WebStorage {
     constructor(kvp: any);

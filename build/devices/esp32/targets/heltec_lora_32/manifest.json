@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/drivers/ssd1306/manifest_i2c.json",
-		"$(MODULES)/drivers/sx127x/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/pwm/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/sx127x",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/pwm",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	"config": {
 		"screen": "ssd1306",

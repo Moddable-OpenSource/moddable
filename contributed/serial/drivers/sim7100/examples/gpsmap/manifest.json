@@ -3,8 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/contributed/serial/drivers/sim7100/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODDABLE)/contributed/serial/drivers/sim7100",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"creation": {
 		"static": 53000

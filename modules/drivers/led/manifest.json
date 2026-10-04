@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/manifest.json"
+		"$(MODULES)/pins/digital"
 	],
 	"modules": {
 		"led": "$(MODULES)/drivers/led/*"

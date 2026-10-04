@@ -19,6 +19,7 @@
 */
 
 declare module "connection" {
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export class Connection {
     disconnect(): void;
   }

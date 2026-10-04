@@ -33,7 +33,6 @@ class WebSocket {
 		open:[],
 	};
 	#message = null;
-	#protocol = "";
 	#state = 0;
 	#url = "";
 	#writable = 0;
@@ -68,8 +67,6 @@ class WebSocket {
 			if (query)
 				path += query;
 			this.#url = href;
-			if (protocol)
-				this.#protocol = protocol;
 			options = { ...config, host, port, path, protocol, headers }
 		}
 		else if (!options?.attach)
@@ -87,7 +84,7 @@ class WebSocket {
 							wasClean: true,
 						};
 						this.onclose?.(event);
-						this.#eventListeners.close.forEach(listener => listener.call(null, event));
+						this.#eventListeners.close.forEach(listener => listener.call(this, event));
 						} break;
 
 					case this.#client.constructor.ping:
@@ -123,7 +120,7 @@ class WebSocket {
 							// ??
 						};
 						this.onmessage?.(event);
-						this.#eventListeners.message.forEach(listener => listener.call(null, event));
+						this.#eventListeners.message.forEach(listener => listener.call(this, event));
 					}
 				}
 			},
@@ -138,7 +135,7 @@ class WebSocket {
 						// ?? 
 					};
 					this.onopen?.(event);
-    				this.#eventListeners.open.forEach(listener => listener.call(null, event));
+    				this.#eventListeners.open.forEach(listener => listener.call(this, event));
 					return;
 				}
 				
@@ -173,7 +170,7 @@ class WebSocket {
 					// ?? 
 				};
 				this.onerror?.(event);
-    			this.#eventListeners.error.forEach(listener => listener.call(null, event));
+    			this.#eventListeners.error.forEach(listener => listener.call(this, event));
 			}
 		});
 		
@@ -186,7 +183,7 @@ class WebSocket {
 					};
 					trace(event.message, "\n");
 					this.onerror?.(event);
-					this.#eventListeners.error.forEach(listener => listener.call(null, event));
+					this.#eventListeners.error.forEach(listener => listener.call(this, event));
 					this.close();
 					return;
 				}
@@ -270,7 +267,7 @@ class WebSocket {
 		let listeners = this.#eventListeners[event];
 		if (!listeners)
 			throw new Error("no such event");
-		let index = listeners.find(item => item === listener);
+		let index = listeners.findIndex(item => item === listener);
 		if (index >= 0)
 			listeners.splice(index, 1);
 	}

@@ -36,7 +36,7 @@ const GREEN = "#00FF00";
 
 const blackSkin = new Skin({ fill:BLACK });
 const iconTexture = new Texture("icons-alpha.png");
-const iconSkin = new Skin({ texture:iconTexture, x: 0, y: 0, width: 120, height: 120, variants: 120, color: WHITE, aspect:"fit" });
+const iconSkin = new Skin({ texture:iconTexture, x: 0, y: 0, width: 120, height: 120, variants: 120, color: WHITE });
 
 const OpenSans52 = new Style({ font: "normal normal normal 52px Open Sans", color: GREEN, horizontal:"center", vertical:"middle" });
 const OpenSans20Cyan = new Style({ font: "semibold 20px Open Sans", color: CYAN, horizontal:"center", vertical:"middle" });
@@ -68,7 +68,7 @@ let MainCol = Column.template($ => ({
 			let data = this.data;
 			let duration = 6360;
 			this.timeline = (new Timeline)
-				.on(data["city"], { x: [176, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -176] }, duration, Math.linearEase, 0)
+				.on(data["city"], { x: [176, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -176] }, duration, null, 0)
 				.on(data["temp"], { x: [176, 0, 0, 0, -176] }, 530*5, Math.quadEaseInOut, -duration+530*2)
 				.on(data["icon"], { x: [176+28, 28, 28, 28, -176-28] }, 530*5, Math.quadEaseInOut, -duration+530*6)
 				.on(data["condition"], { x: [176, 0, 0, 0, -176] }, 530*5, Math.quadEaseInOut, -duration+530*6)

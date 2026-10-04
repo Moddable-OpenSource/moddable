@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Moddable Tech, Inc.
+* Copyright (c) 2025-2026 Moddable Tech, Inc.
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -19,25 +19,36 @@
 */
 
 declare module "embedded:RTC" {
-	import type {PortSpecifier} from "embedded:io/_common";
+	export interface RTCConnection {
+		io: abstract new (options: any) => object;
+		[option: string]: unknown;
+	}
 
 	export interface RTCOptions {
+		clock: RTCConnection;
+		interrupt?: RTCConnection;
+		onAlarm?: (this: RTC) => void;
 		target?: any;
-		port?: PortSpecifier;
-		onAlarm?: () => void;
 	}
 
 	export interface RTCConfigureOptions {
 		alarm?: number;
 	}
 
-	export class RTC {
+	export interface RTCConfiguration {
+		alarm?: number;
+	}
+
+	export class RTC implements Disposable {
+		target?: any;
 		constructor(options: RTCOptions);
 		close(): void;
-		time: number;
+		get time(): number | undefined;
+		set time(value: number);
 		configure(options: RTCConfigureOptions): void;
+		readonly configuration: RTCConfiguration;
+		[Symbol.dispose](): void;
 	}
-	export interface RTC extends Disposable {}
 
 	export default RTC;
 }

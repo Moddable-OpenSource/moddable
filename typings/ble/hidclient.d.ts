@@ -32,6 +32,7 @@ declare module "hidclient" {
     reports: number[],
   };
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   const enum ReportType {
     NONE = 0x00,
     INPUT = 0x01,
@@ -39,6 +40,7 @@ declare module "hidclient" {
     FEATURE = 0x03,
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   const enum UsageID {
     POINTER = 1,
     MOUSE = 2,
@@ -48,6 +50,7 @@ declare module "hidclient" {
     KEYPAD = 7,
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   const enum Appearance {
     GENERIC = 960,
     KEYBOARD = 961,
@@ -56,6 +59,7 @@ declare module "hidclient" {
     GAMEPAD = 964,
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export class BLEHIDClient extends BLEClient {
     constructor();
 
@@ -77,6 +81,7 @@ declare module "hidclient" {
 
   }
 
+  /** @deprecated The BLE modules are legacy; prefer the ECMA-419 embedded:io/bluetoothle/* modules */
   export class Bonded {
     static get(usageID: UsageID): BondedInfo;
 

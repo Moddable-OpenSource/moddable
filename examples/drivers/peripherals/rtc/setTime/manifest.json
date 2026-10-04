@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/peripherals/ds1307/manifest.json"
+		"$(MODDABLE)/modules/drivers/peripherals/ds1307"
 	],
 	"strip": [ ],
 	"modules": {

@@ -28,6 +28,7 @@ declare module "websocket" {
   }
   export type WebSocketClientCallback = (message: number, value?: any) => void;
 
+  /** @deprecated Use WebSocket, or the ECMA-419 embedded:network/websocket/client and the embedded:network/http/server/route/ws/handshake route */
   export class Client {
     static readonly connect: number;
     static readonly handshake: number;
@@ -43,6 +44,7 @@ declare module "websocket" {
   export type WebSocketServerOptions = ListenerOptions
   export type WebSocketServerCallback = (message: number, value?: any) => void;
 
+  /** @deprecated Use WebSocket, or the ECMA-419 embedded:network/websocket/client and the embedded:network/http/server/route/ws/handshake route */
   export class Server {
     static readonly connect: number;
     static readonly handshake: number;

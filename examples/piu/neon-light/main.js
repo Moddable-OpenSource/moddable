@@ -114,7 +114,6 @@ let NeonLights = Container.template($ => ({
 						 lights[index] = lights[index + 1];
 						 index++;
 					}
-					this.current = this.up;
 					let content = row.first;
 					let selection = Math.round(Math.random() * (row.length - lights.length));
 					while (content) {

@@ -1,0 +1,64 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "./system",
+				"embedded:system": "./mcu/system"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "./system",
+				"embedded:system": "./mcu/system"
+			},
+			"dependency": [
+				{ "idf": "esp_hal_wdt", "includes": ["$(ESP32_SUBCLASS)/include"] },
+				{ "idf": "esp_hal_timg", "includes": ["$(ESP32_SUBCLASS)/include"] }
+			]
+		},
+		"nrf52": {
+			"include": "$(BUILD)/devices/nrf52/modules/sleep",
+			"modules": {
+				"*": "./system",
+				"embedded:system": "./nrf52/system"
+			}
+		},
+		"pico": {
+			"modules": {
+				"*": "./system",
+				"embedded:system": "./mcu/system"
+			}
+		},
+		"zephyr": {
+			"modules": {
+				"*": "./system",
+				"embedded:system": "./mcu/system"
+			}
+		},
+		"lin": {
+			"modules": {
+				"embedded:system": "./sim/system"
+			}
+		},
+		"mac": {
+			"modules": {
+				"embedded:system": "./sim/system"
+			}
+		},
+		"win": {
+			"modules": {
+				"embedded:system": "./sim/system"
+			}
+		},
+		"...": {
+			"error": "ECMA-419 System unsupported target"
+		}
+	},
+	"modules": {
+		"config/system": "./config"
+	},
+	"preload": [
+		"embedded:system",
+		"config/system"
+	]
+}

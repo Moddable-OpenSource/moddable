@@ -1,7 +1,7 @@
 {
 	"include": [
 		"./tls_common.json",
-		"$(MODULES)/network/socket/manifest.json"
+		"$(MODULES)/network/socket"
 	],
 	"modules": {
 		"securesocket": "$(MODULES)/crypt/securesocket/*",

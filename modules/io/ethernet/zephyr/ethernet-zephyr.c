@@ -151,7 +151,7 @@ static void ethernetConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint
 		if (connectionChanged || addressChanged) {
 			xsSlot tmp;
 			xsBeginHost(the);
-			if (connection) {
+			if (connectionChanged) {
 				xsmcSetStringX(tmp, "connection");
 				xsCallFunction1(xsReference(eth->onChanged), eth->obj, tmp);
 			}

@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-		"$(MODDABLE)/modules/io/socket/manifest.json"
+		"$(MODDABLE)/modules/io/socket"
 	],
 	"modules": {
 		"config/httpclient": "./config",

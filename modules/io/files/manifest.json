@@ -1,25 +1,25 @@
 {
 	"platforms": {
 		"mac": {
-			"include": "./posix/manifest.json"
+			"include": "./posix"
 		},
 		"lin": {
-			"include": "./posix/manifest.json"
+			"include": "./posix"
 		},
 		"esp32": {
-			"include": "./littlefs/manifest.json"
+			"include": "./littlefs"
 		},
 		"esp": {
-			"include": "./littlefs/manifest.json"
+			"include": "./littlefs"
 		},
 		"pico": {
-			"include": "./littlefs/manifest.json"
+			"include": "./littlefs"
 		},
 		"pebble": {
-			"include": "./pebble/manifest.json"
+			"include": "./pebble"
 		},
 		"zephyr": {
-			"include": "./zephyr/manifest.json"
+			"include": "./zephyr"
 		}
 	}
 }

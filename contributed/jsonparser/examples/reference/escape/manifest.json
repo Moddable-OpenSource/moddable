@@ -1,7 +1,7 @@
 {
   "include": [
     "$(MODDABLE)/examples/manifest_base.json",
-    "$(MODDABLE)/contributed/jsonparser/manifest.json"
+    "$(MODDABLE)/contributed/jsonparser"
   ],
   "modules": {
     "*": [

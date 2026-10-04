@@ -1,15 +1,15 @@
 ---
 name: Write File
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
-To write a file, first open it in a write mode such as "rw", then call `write()`. Pass a [Byte Buffer](https://419.ecma-international.org/#byte-buffer) to write as the first argument. The position to write to the file must be passed as the second argument as there is no current position.
+To write a file, first open it in a write mode such as "r+", then call `write()`. Pass a [Byte Buffer](https://419.ecma-international.org/#byte-buffer) to write as the first argument. The position to write to the file must be passed as the second argument as there is no current position.
 
 ```js
 const help = device.files.openFile({
 	path: "docs/help.txt",
-	mode: "rw"
+	mode: "r+"
 });
 const bytes = Uint8Array.of(0, 1, 2, 3);
 help.write(bytes, 0);
@@ -23,7 +23,7 @@ To write a string to a file, convert the string to a buffer. This example uses `
 ```js
 const help = device.files.openFile({
 	path: "docs/help.txt",
-	mode: "rw"
+	mode: "r+"
 });
 const buffer = ArrayBuffer.fromString("hello");
 help.write(buffer, 0);
@@ -46,7 +46,7 @@ const copy = device.files.openFile({
 });
 do {
 	const buffer = help.read(512, position);
-	if (undefined === buffer)
+	if (!buffer?.byteLength)
 		break;
 	copy.write(buffer, position);
 	position += buffer.byteLength;

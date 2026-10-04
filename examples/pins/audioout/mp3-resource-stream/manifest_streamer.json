@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/data/mp3/manifest.json"
+		"$(MODDABLE)/modules/data/mp3"
 	],
 	"modules": {
 		"*": [

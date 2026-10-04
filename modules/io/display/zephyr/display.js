@@ -29,7 +29,7 @@ class Display extends Native("xs_display_destructor") {
 	send(buffer) { return native("xs_display_send").call(this, buffer); }
 	end() { return native("xs_display_end").call(this); }
 
-	adapInvalid(options) { return native("xs_display_adaptInvalid").call(this, options); }
+	adaptInvalid(options) { return native("xs_display_adaptInvalid").call(this, options); }
 
 	get width() { return native("xs_display_get_width").call(this); }
 	get height() { return native("xs_display_get_height").call(this); }

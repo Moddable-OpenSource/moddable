@@ -41,7 +41,7 @@ declare module "commodetto/ReadGIF" {
     transparentColor: number;
 
     readonly ready: boolean
-    avaiable: number
+    available: number
   }
 
   export {ReadGIF as default};

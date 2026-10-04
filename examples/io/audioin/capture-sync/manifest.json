@@ -1,9 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/manifest.json",
-		"$(MODDABLE)/modules/io/audioin/manifest.json",
-		"$(MODDABLE)/modules/io/audioout/manifest.json"
+		"$(MODDABLE)/modules/io",
+		"$(MODDABLE)/modules/io/audioin",
+		"$(MODDABLE)/modules/io/audioout"
 	],
 	"config": {
 		"led": {

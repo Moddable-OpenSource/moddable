@@ -18,6 +18,9 @@
  *
  */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/httpserver.d.ts" />
+
 declare module "embedded:network/http/server" {
     import type Listener from "embedded:io/socket/listener";
     import type TCP from "embedded:io/socket/tcp";
@@ -40,8 +43,12 @@ declare module "embedded:network/http/server" {
         onResponse?(this: HTTPConnection, response: HTTPResponse): void;
         onWritable?(this: HTTPConnection, count: number): void;
         onDone?(this: HTTPConnection): void;
-        onError?(this: HTTPConnection): void;
+        onError?(this: HTTPConnection, error: string): void;
     }
+
+    export interface HTTPRouteTypes {
+    }
+    export type HTTPRoute = HTTPConnectionHandlers | HTTPRouteTypes[keyof HTTPRouteTypes];
 
     export interface HTTPConnection extends Disposable {
         close(): void;
@@ -50,8 +57,9 @@ declare module "embedded:network/http/server" {
         respond(options: HTTPResponse): void;
         read(count?: number): ArrayBuffer | undefined;
         write(bytes?: ByteBuffer): number;
-        route: HTTPConnectionHandlers;
+        route: HTTPRoute;
         format: "buffer";
+        protocol?: string;
     }
 
     export interface HTTPServerSocketProvider {
@@ -67,15 +75,17 @@ declare module "embedded:network/http/server" {
         socket: HTTPServerSocketProvider;
         port?: number;
         keepAlive?: number;
-        onConnect?(connection: HTTPConnection): void;
-        onRoute?(this: HTTPServer, request: HTTPRequest): HTTPConnectionHandlers | undefined;
+        onConnect?(this: HTTPServer, connection: HTTPConnection): void;
+        target?: any;
+        onRoute?(this: HTTPServer, request: HTTPRequest): HTTPRoute | undefined | null | false | void;
     }
 
-    class HTTPServer {
+    class HTTPServer implements Disposable {
+        target?: any;
         constructor(options: HTTPServerOptions);
         close(): void;
         readonly port: number;
+        [Symbol.dispose](): void;
     }
-    interface HTTPServer extends Disposable {}
     export default HTTPServer;
 }

@@ -3,15 +3,15 @@
 		"PICO_SUBCLASS": "rp2350"
 	},
 	"include": [
-		"$(MODULES)/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/sensors/cst816s/manifest.json",
-		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
-		"$(MODULES)/drivers/peripherals/pcf85063/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODULES)/drivers/st7789",
+		"$(MODULES)/drivers/sensors/cst816s",
+		"$(MODULES)/drivers/sensors/qmi8658",
+		"$(MODULES)/drivers/peripherals/pcf85063",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(IO)/digital",
+		"$(IO)/pwm",
+		"$(IO)/i2c"
 	],
 	
 	"config": {

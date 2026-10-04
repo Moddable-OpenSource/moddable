@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODULES)/pins/digital/monitor/manifest.json",
-		"$(MODULES)/pins/pulsecount/manifest.json"
+		"$(MODULES)/pins/digital/monitor",
+		"$(MODULES)/pins/pulsecount"
 	],
 	"modules": {
 		"jogdial": "$(MODULES)/drivers/jogdial/*"

@@ -8,11 +8,11 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout/manifest.json",
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODDABLE)/modules/io/audioout",
+		"$(MODDABLE)/modules/drivers/ili9341",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

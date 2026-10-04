@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/data/crc/manifest.json"
+		"$(MODULES)/data/crc"
 	],
 	"modules": {
 		"embedded:sensor/Humidity-Temperature/SHTC3": "$(MODDABLE)/modules/drivers/sensors/shtc3/shtc3"

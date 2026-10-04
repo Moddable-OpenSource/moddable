@@ -1,7 +1,7 @@
 ---
 name: Scan for Access Points
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-01
 ---
 
 Scanning for access points takes several seconds. The results of the scan are deliverered to `onFound()` and `onComplete()` is called when the scan is complete. A scan cannot be canceled.
@@ -13,7 +13,7 @@ const wifi = new WiFi({});
 wifi.scan({
 	onFound(ap) {
 		trace(`Found ${ap.SSID} on channel ${ap.channel}\n`);
-		trace(` "${ap.security}" security. RSSI ${ap.RSSD}\n`);
+		trace(` "${ap.security}" security. RSSI ${ap.RSSI}\n`);
 	},
 	onComplete() {
 		trace(`Wi-Fi scan complete\n`);
@@ -40,9 +40,10 @@ wifi.scan({
 			scan.set(ap.SSID, ap);
 	},
 	onComplete() {
-		scan.forEach(ap =>
-		trace(`Found ${ap.SSID} on channel ${ap.channel}\n`);
-		trace(` "${ap.security}" security. RSSI ${ap.RSSD}\n`);
+		scan.forEach(ap => {
+			trace(`Found ${ap.SSID} on channel ${ap.channel}\n`);
+			trace(` "${ap.security}" security. RSSI ${ap.RSSI}\n`);
+		});
 	}
 });
 ```

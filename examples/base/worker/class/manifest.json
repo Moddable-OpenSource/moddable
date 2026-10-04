@@ -1,7 +1,7 @@
 {
   "include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/base/worker/manifest.json"
+		"$(MODULES)/base/worker"
 	],
   	"creation": {
 		"static": 12288,

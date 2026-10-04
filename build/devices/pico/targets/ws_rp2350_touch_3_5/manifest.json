@@ -3,16 +3,16 @@
 		"PICO_SUBCLASS": "rp2350"
 	},
 	"include": [
-		"$(MODULES)/drivers/st7796/manifest.json",
-		"$(MODULES)/drivers/sensors/qmi8658/manifest.json",
-		"$(MODULES)/drivers/sensors/ft6336/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/pcf85063/manifest.json",
-		"$(MODULES)/drivers/peripherals/axp2101/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/st7796",
+		"$(MODULES)/drivers/sensors/qmi8658",
+		"$(MODULES)/drivers/sensors/ft6336",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/pcf85063",
+		"$(MODULES)/drivers/peripherals/axp2101",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"config": {
 		"screen": "st7796",

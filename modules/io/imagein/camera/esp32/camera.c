@@ -203,8 +203,24 @@ static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t
 	if (kStateRunning != camera->state)
 		return;
 
+	// byte length of the frame read() returns next: the earliest ready frame
+	CameraFrame frame = NULL;
+	uint32_t byteLength = 0;
+	int i;
+
+	xSemaphoreTake(camera->mutex, portMAX_DELAY);
+	for (i = 0; i < kCameraFrameCount; i++) {
+		if (kCameraStateReady != camera->frames[i].state)
+			continue;
+		if ((NULL == frame) || (frame->id > camera->frames[i].id))
+			frame = &camera->frames[i];
+	}
+	if (frame)
+		byteLength = frame->dataLength;
+	xSemaphoreGive(camera->mutex);
+
 	xsBeginHost(the);
-		xsCallFunction1(xsReference(camera->onReadable), camera->object, xsInteger(0));
+		xsCallFunction1(xsReference(camera->onReadable), camera->object, xsInteger(byteLength));
 	xsEndHost(the);
 	camera->calling = 0;
 }
@@ -649,7 +665,7 @@ void xs_camera_get_configuration(xsMachine *the)
 	}
 	if (camera->sensorHas.contrast) {
 		xsmcSetInteger(tmp, sensor->status.contrast);
-		xsmcSet(xsResult, xsID_conrast, tmp);
+		xsmcSet(xsResult, xsID_contrast, tmp);
 	}
 	if (camera->sensorHas.saturation) {
 		xsmcSetInteger(tmp, sensor->status.saturation);

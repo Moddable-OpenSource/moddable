@@ -5,7 +5,6 @@
 		"module": "preserve",
 		"moduleResolution": "bundler",
 		"target": "ES2024",
-		"baseUrl": ".",
 		"paths": {
 			"embedded:io/*": ["./embedded_io/*"],
 			"embedded:io/socket/*": ["./embedded_io/socket/*"],

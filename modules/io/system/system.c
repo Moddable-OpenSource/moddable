@@ -19,51 +19,61 @@
  */
 
 #include "xsmc.h"
+#include "mc.xs.h"			// for platform xs_ids
 
 #include "xsHost.h"
 
-#include "builtinCommon.h"
-
-#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
-	extern void system_deep_sleep_instant(uint32_t time_in_us);
-
-static void deepSleepDeliver(void *notThe, void *refcon, uint8_t *message, uint16_t messageLength)
-{
-	system_deep_sleep_instant((uintptr_t)refcon);
-}
+#if ESP32
+	#include "soc/soc_caps.h"
+	#if SOC_RTC_WDT_SUPPORTED
+		#include "hal/wdt_hal.h"
+	#endif
 #endif
 
-#if defined(CYW43_LWIP)
-	#include "lwip/dns.h"
+#ifdef mxDebug
+	extern void fxDisconnect(xsMachine *the);
 #endif
-
-void xs_system_deepSleep(xsMachine *the)
-{
-#if defined(__ets__) && !ESP32 && !defined(__ZEPHYR__)
-	uint32_t us = 0;
-
-	if (xsmcArgc) {
-		us = xsmcToInteger(xsArg(0));
-		if (xsmcArgc > 1) {
-			int mode = xsmcToInteger(xsArg(1));
-			system_deep_sleep_set_option(mode);
-		}
-	}
-	modMessagePostToMachine(the, NULL, 0, deepSleepDeliver, (void *)us);
-#endif
-}
 
 void xs_system_restart(xsMachine *the)
 {
-#if ESP32
+	uint8_t hard = 0;
+
+	if (xsmcArgc && xsmcGet(xsResult, xsArg(0), xsID_type))
+		hard = !c_strcmp(xsmcToString(xsResult), "hard");
+
+#ifdef mxDebug
+	// tell the debugger the device is going away, as its own restart command does
+	fxDisconnect(the);
+	modDelayMilliseconds(1000);
+#endif
+
+	(void)hard;
+
+#if defined(__ZEPHYR__)
+	sys_reboot(hard ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
+#elif ESP32
+	#if SOC_RTC_WDT_SUPPORTED
+	if (hard) {	// the RTC watchdog's RTC reset resets the whole chip, including the RTC domain, which esp_restart does not
+				wdt_hal_context_t rtc_wdt = RWDT_HAL_CONTEXT_DEFAULT();
+		wdt_hal_write_protect_disable(&rtc_wdt);
+		wdt_hal_config_stage(&rtc_wdt, WDT_STAGE0, 100, WDT_STAGE_ACTION_RESET_RTC);
+		wdt_hal_enable(&rtc_wdt);
+		wdt_hal_write_protect_enable(&rtc_wdt);
+		while (1)		// force watchdog
+			;
+	}
+	#endif
 	esp_restart();
-#elif defined(__ets__) && !defined(__ZEPHYR__)
+#elif defined(__ets__)
 	system_restart();
 #elif defined(PICO_BUILD)
 	pico_reset();
+#elif nrf52
+	nrf52_reset();
+#else
+	#error "embedded:system restart unsupported"
 #endif
 
 	while (1)
 		modDelayMilliseconds(1000);
 }
-

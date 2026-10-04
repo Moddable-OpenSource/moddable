@@ -8,9 +8,9 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/peripherals/button/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODDABLE)/modules/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

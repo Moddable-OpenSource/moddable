@@ -89,6 +89,10 @@ typedef void (*txScreenWorkerCallbackProc)(void* machine, void* job);
 #define mxScreenIdling 1
 #define mxScreenLED 2
 
+// abort statuses of System.exit() and System.restart(), distinct from the XS abort statuses
+#define mxScreenExitStatus (-1)
+#define mxScreenRestartStatus (-2)
+
 struct sxScreen {
 	void* machine;
 	void* view;

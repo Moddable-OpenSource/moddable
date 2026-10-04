@@ -4,9 +4,9 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/drivers/sensors/ft6206/manifest.json",
-		"$(MODDABLE)/modules/web/streams/all/manifest.json",
-		"$(MODDABLE)/modules/io/i2c/manifest.json"
+		"$(MODDABLE)/modules/drivers/sensors/ft6206",
+		"$(MODDABLE)/modules/web/streams/all",
+		"$(MODDABLE)/modules/io/i2c"
 	],
 	"creation": {
 		"stack": 1024

@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/drivers/ili9341/manifest.json"
+		"$(MODDABLE)/modules/drivers/ili9341"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

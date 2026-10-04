@@ -20,21 +20,27 @@
 
 
 declare module "embedded:io/pwm" {
-  import { PinSpecifier } from "embedded:io/_common";
-  class PWM {
-    constructor(options: {
+  import { PinSpecifier, PortSpecifier, IOOptions } from "embedded:io/_common";
+  class PWM implements Disposable {
+    target?: any;
+    constructor(options: IOOptions<"PWM", {
       pin: PinSpecifier;
+      port?: PortSpecifier;	// Moddable SDK extension
+    } | {
+      from: PWM;	// Moddable SDK extension: take over the pin of an open instance, which is closed
+    }, {
       hz?: number;
+      resolution?: number;	// Moddable SDK extension
       format?: "number";
       target?: any;
-    });
+    }>);
     readonly resolution: number;
     readonly hz: number;
     write(value: number): void;
     close(): void;
     get format(): "number"
     set format(value: "number")
+    [Symbol.dispose](): void;
   }
-  interface PWM extends Disposable {}
   export default PWM;
 }

@@ -9,7 +9,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/network/ble/manifest_server.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODULES)/base/modules/manifest.json"
+		"$(MODULES)/base/modules"
 	],
 	"modules": {
 		"*": [

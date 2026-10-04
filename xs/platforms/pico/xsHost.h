@@ -68,9 +68,9 @@ extern void modTimersExecute(void);
 extern int modTimersNext(void);
 
 #define pico_milliseconds() (time_us_64() / 1000)
-#define pico_delay(delayMS)	busy_wait_us_32(delayMS * 1000)
+#define pico_delay(delayMS)	busy_wait_ms(delayMS)
 
-#define modDelayMilliseconds(ms)	busy_wait_us_32(ms * 1000)
+#define modDelayMilliseconds(ms)	busy_wait_ms(ms)
 #define modDelayMicroseconds(us)	busy_wait_us_32(us)
 #define modMilliseconds()	(uint32_t)(time_us_64() / 1000)
 #define modMicroseconds()	(uint32_t)(time_us_32())

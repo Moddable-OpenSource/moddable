@@ -6,13 +6,13 @@
 		"USE_USB": "2"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/sensors/cst816/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/st7789",
+		"$(MODULES)/drivers/sensors/cst816",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

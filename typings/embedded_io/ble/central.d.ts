@@ -17,13 +17,13 @@ declare module "embedded:io/bluetoothle/central" {
         onReadable?: (this: GAPClient, count: number) => void;
     }
 
-    class GAPClient {
+    class GAPClient implements Disposable {
         constructor(options: GAPClientOptions);
         target: any;
         close(): void;
         read(): Advertisement;
+        [Symbol.dispose](): void;
     }
-    interface GAPClient extends Disposable {}
 
     interface GATTClientNotifiedValue extends ArrayBuffer {
         handle: number
@@ -58,7 +58,7 @@ declare module "embedded:io/bluetoothle/central" {
         get uuid(): string;
     }
 
-    class GATTClient {
+    class GATTClient implements Disposable {
         constructor(options: GATTClientOptions);
         target: any;
 
@@ -100,8 +100,9 @@ declare module "embedded:io/bluetoothle/central" {
             write: 8;
             writeWithOutResponse: 4;
         };
+        [Symbol.dispose](): void;
     }
-    interface GATTClient extends Disposable {}
 
     export { GATTClient, GAPClient };
+    export type { Advertisement, GAPClientOptions, GATTClientNotifiedValue, GATTClientWriteOptions, GATTClientOptions, GATTClientService, GATTClientCharacteristic, GATTClientDescriptor };
 }

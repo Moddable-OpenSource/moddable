@@ -56,12 +56,13 @@ declare module "commodetto/outline" {
   }
 
   export class Outline {
-    clone(): Outline
+    clone(target?: Outline): Outline
     rotate(angle: number): Outline
     rotate(angle: number, cx: number, cy: number): Outline
     scale(scale: number): Outline
     scale(xScale: number, yScale: number): Outline
     translate(x: number, y: number): Outline
+    transform(cx: number, cy: number, angle: number, xScale: number, yScale: number, tx: number, ty: number): Outline
 
     readonly bounds: {
       x: number,
@@ -75,6 +76,8 @@ declare module "commodetto/outline" {
     static PolygonPath: PolygonPath
     static RoundRectPath: RoundRectPath
     static SVGPath: SVGPath
+    // font is the data of a scalable font in a host buffer (a Resource) with its size property set
+    static TextPath(font: HostBuffer & { size?: number }, text: string): CommodettoPath
 
     static fill(path: CommodettoPath, rule?: number): Outline
     static stroke(path: CommodettoPath, weight?: number, linecap?: number, linejoin?: number, miterLimit?: number): Outline

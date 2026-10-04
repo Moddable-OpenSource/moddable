@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: September 7, 2026
+Revised: September 29, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
 
@@ -49,10 +49,10 @@ The instructions below will have you verify your setup by running the `helloworl
 > See the [Tools documentation](./../tools/tools.md) for more information about `mcconfig`
 
 
-When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for Moddable Two:
+When building with `mcconfig`, you specify your device target by providing the **platform identifier** of your development board to the `-p` argument. For example, use the following command to build for Moddable Six:
 
 ```text
-mcconfig -d -m -p esp32/moddable_two
+mcconfig -d -m -p esp32/moddable_six
 ```
 
 A list of available ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 subplatforms and their platform identifiers is provided in the **Platforms** section below.
@@ -147,6 +147,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 |<img src="./../assets/devices/atoms3_lite.png" width=125><BR>AtomS3 Lite| `esp32/m5atom_s3_lite` | Neopixel, 1 button |<li>[Product page](https://docs.m5stack.com/en/core/AtomS3%20Lite)</li>|
 | <img src="./../assets/devices/m5atom_s3r.png" width=140></a><BR>M5 Atom S3R | `esp32/m5atom_s3r` | 0.85" IPS display<BR> 128 x 128 16-bit color<BR> 1 button<BR>BMI270 IMU<Br>8MB PSRAM| <li>[Product info](https://shop.m5stack.com/products/atoms3r-dev-kit)</li> |
 |<img src="./../assets/devices/m5dial.png" width=125><BR>M5Dial| `esp32/m5dial` | 1.28" IPS 240×240 Round Display, Touch, 1 button,Rotary Encoder, RTC |<li>[Product page](https://docs.m5stack.com/en/core/M5Dial)</li>|
+|<img src="./../assets/devices/m5dualkey.png" width=125><BR>M5Dualkey| `esp32/m5dualkey` | 2 button<BR>2 LED<BR>Battery |<li>[Product page](https://docs.m5stack.com/ja/chain/Chain_DualKey)</li>|
 |<img src="./../assets/devices/m5stamp_s3.png" width=125><BR>M5Stamp S3| `esp32/m5stamp_s3` | Neopixel, 1 button |<li>[Product page](https://shop.m5stack.com/products/m5stamp-esp32s3-module)</li>|
 | <img src="./../assets/devices/lilygo-qt-pro-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_t_qt` | 0.85" LCD display<br>128 x 128 16 bit color<br>2 buttons<br>Qwiic connector | <li>[Product page](https://www.lilygo.cc/products/t-qt-v1-1)</li>|
 | <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-Display-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
@@ -372,7 +373,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v6.1 (commit `fff9895c`)
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 
 	```text
-	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32
+	UPLOAD_PORT=/dev/cu.SLAB_USBtoUART mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
 
 9. Adding the export statements to your `~/.profile` or `~/.zshrc` does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statement in your shell before proceeding.
@@ -812,7 +813,7 @@ The Moddable SDK build for ESP32 currently uses ESP-IDF v6.1 (commit `fff9895c`)
 	The `UPLOAD_PORT` can also be specified on the `mcconfig` command line, which is useful when deploying to multiple ESP32 devices.
 
 	```text
-	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32
+	UPLOAD_PORT=/dev/ttyUSB0 mcconfig -d -m -p esp32/<YOUR_SUBPLATFORM_HERE>
 	```
 
 7. Adding the export statements to your shell startup file does not update the environment variables in active shell instances, so open a new shell instance (by opening a new tab/window) or manually run the export statements in your shell before proceeding.

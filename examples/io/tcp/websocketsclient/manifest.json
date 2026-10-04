@@ -3,8 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"./manifest_wssclient.json",
-		"$(MODDABLE)/modules/data/headers/manifest.json",
-		"$(MODDABLE)/modules/data/text/decoder/manifest.json"
+		"$(MODDABLE)/modules/data/headers",
+		"$(MODDABLE)/modules/data/text/decoder"
 	],
 	"modules": {
 		"*": "./main"

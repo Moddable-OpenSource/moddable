@@ -17,14 +17,15 @@ declare module "onewire" {
   export default class OneWire {
     constructor(dictionary : Record<string,any>);
     close() : void;
-    read(count : number) : number|Uint8Array;
-    write(data : number|Uint8Array) : void;
-    select(device : Uint8Array) : void;
-    search() : Uint8Array[];
-    isPresent(id : Uint8Array) : boolean;
+    // the bus identifies devices by their 8 byte ROM code, in an ArrayBuffer
+    read() : number;
+    read(count : number) : ArrayBuffer;
+    write(data : number) : void;
+    select(device : ArrayBuffer) : void;
+    search() : ArrayBuffer[];
+    isPresent(id : ArrayBuffer) : boolean;
     reset() : boolean;
-    static crc(buffer : Uint8Array) : number;
-    static hex(buffer : Uint8Array) : string;
-    static fromHexString(str : string) : Uint8Array;
+    static crc(buffer : ArrayBuffer, length? : number) : number;
+    static hex(buffer : ArrayBuffer | Uint8Array) : string;
   }
 }

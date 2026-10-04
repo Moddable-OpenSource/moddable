@@ -3,12 +3,12 @@
 		"PICO_BOARD": "pico"
 	},
 	"include": [
-		"$(MODDABLE)/modules/drivers/st7789/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/rgb/manifest.json",
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODDABLE)/modules/drivers/st7789",
+		"$(MODULES)/drivers/peripherals/led/rgb",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/pwm"
 	],
 	
 	"config": {

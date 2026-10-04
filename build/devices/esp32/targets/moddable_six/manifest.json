@@ -5,14 +5,14 @@
 		"ESP32_SUBCLASS": "esp32s3"
 	},
 	"include": [
-		"$(MODULES)/drivers/peripherals/backlight/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/neopixel/manifest.json",
-		"$(MODDABLE)/modules/drivers/ili9341_p8/manifest.json",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/neopixel",
+		"$(MODDABLE)/modules/drivers/ili9341_p8",
 		"$(MODULES)/drivers/sensors/gt911/manifest_async_worker.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

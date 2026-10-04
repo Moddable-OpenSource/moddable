@@ -11,7 +11,7 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json"
+				"$(MODULES)/pins/spi"
 
 			],
 			"modules": {
@@ -31,7 +31,7 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json"
+				"$(MODULES)/pins/spi"
 			],
 			"modules": {
 				"*": [
@@ -50,8 +50,8 @@
 		},
 		"gecko": {
 			"include": [
-				"$(MODULES)/pins/digital/manifest.json",
-				"$(MODULES)/pins/spi/manifest.json"
+				"$(MODULES)/pins/digital",
+				"$(MODULES)/pins/spi"
 			],
 			"modules": {
 				"*": [
@@ -62,7 +62,7 @@
 		},
 		"nrf52": {
 			"include": [
-				"$(MODULES)/pins/spi/manifest.json"
+				"$(MODULES)/pins/spi"
 			],
 			"modules": {
 				"*": [

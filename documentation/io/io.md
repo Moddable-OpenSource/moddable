@@ -715,7 +715,7 @@ import WakeableDigital from "embedded:io/wakeabledigital";
 
 The ESP8266 has a deep sleep feature where the microcontroller turns off, but a small amount of memory (256 bytes) is retained. When the reset pin is pulled low, for example by a sensor configured to trigger an interrupt under a certain condition, the microcontroller reboots, still retaining the small memory area. The Wakeable Digital pin provides a way for scripts to know whether the most recent boot of the microcontroller is due to a wake from deep sleep or a conventional hard reset (e.g. power applied after being off). The script uses this information to change its behavior.
 
-Putting the ESP8266 into deep sleep is out of scope for IO. The `System.deepSleep()` JavaScript function is provided for development purposes.
+Putting the ESP8266 into deep sleep is out of scope for IO.
 
 #### Constructor Properties
 | Property | Description |

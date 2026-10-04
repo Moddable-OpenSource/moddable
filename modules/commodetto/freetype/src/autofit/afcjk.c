@@ -64,7 +64,7 @@
                               FT_Face        face )
   {
     /* scan the array of segments in each direction */
-    AF_GlyphHintsRec  hints[1];
+    AF_GlyphHints     hints;		/* MODDABLE: on the heap, see af_autofitter_load_glyph */
 
 
     FT_TRACE5(( "\n" ));
@@ -73,7 +73,10 @@
     FT_TRACE5(( "===================================================\n" ));
     FT_TRACE5(( "\n" ));
 
-    af_glyph_hints_init( hints, face->memory );
+    hints = (AF_GlyphHints)face->memory->alloc( face->memory,
+                                                sizeof ( AF_GlyphHintsRec ) );
+    if ( hints )
+      af_glyph_hints_init( hints, face->memory );
 
     metrics->axis[AF_DIMENSION_HORZ].width_count = 0;
     metrics->axis[AF_DIMENSION_VERT].width_count = 0;
@@ -149,6 +152,9 @@
 
       FT_TRACE5(( "standard character: U+%04lX (glyph index %lu)\n",
                   ch, glyph_index ));
+
+      if ( !hints )		/* MODDABLE: no memory for hints, so use fallback stem widths */
+        goto Exit;
 
       error = FT_Load_Glyph( face, glyph_index, FT_LOAD_NO_SCALE );
       if ( error || face->glyph->outline.n_points <= 0 )
@@ -262,7 +268,11 @@
 
     FT_TRACE5(( "\n" ));
 
-    af_glyph_hints_done( hints );
+    if ( hints )
+    {
+      af_glyph_hints_done( hints );
+      face->memory->free( face->memory, hints );
+    }
   }
 
 

@@ -47,12 +47,12 @@ declare module "captiveportal" {
 	}
 
 	export interface CaptivePortalOptions {
-		onPage: (this: void, path: string) => CaptivePortalPage | undefined;
+		onPage: (this: CaptivePortal, path: string) => CaptivePortalPage | undefined;
 
-		onStatus?: (this: void, phase: CaptivePortalPhase, detail?: CaptivePortalAccess | CaptivePortalCredentials) => void;
-		onInfo?: (this: void, msg: any) => void;
-		onClose?: (this: void) => void;
-		onError?: (this: void, error: Error) => void;
+		onStatus?: (this: CaptivePortal, phase: CaptivePortalPhase, detail?: CaptivePortalAccess | CaptivePortalCredentials) => void;
+		onInfo?: (this: CaptivePortal, msg: any) => void;
+		onClose?: (this: CaptivePortal) => void;
+		onError?: (this: CaptivePortal, error: Error) => void;
 
 		SSID?: string;
 		password?: string;

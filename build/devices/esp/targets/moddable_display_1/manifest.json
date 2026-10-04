@@ -1,11 +1,11 @@
 {
 	"include": [
-		"$(MODULES)/drivers/ili9341/manifest.json",
-		"$(MODULES)/drivers/sensors/ft6206/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODULES)/drivers/ili9341",
+		"$(MODULES)/drivers/sensors/ft6206",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/digital",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"build": {
 		"FLASH_MODE": "qio",

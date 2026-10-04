@@ -205,6 +205,7 @@ void xs_display_configuration(xsMachine *the)
 
 	int rotation = 0;
 	switch (capabilities.current_orientation) {
+		case DISPLAY_ORIENTATION_NORMAL: break;
 		case DISPLAY_ORIENTATION_ROTATED_90: rotation = 90; break;
 		case DISPLAY_ORIENTATION_ROTATED_180:rotation = 180; break;
 		case DISPLAY_ORIENTATION_ROTATED_270:rotation = 270; break;
@@ -224,6 +225,9 @@ void xs_display_configuration(xsMachine *the)
 			break;
 		case PIXEL_FORMAT_RGB_888: format = kCommodettoBitmap24RGB; break;
 		case PIXEL_FORMAT_L_8: format = kCommodettoBitmapGray256; break;
+		default:
+			xsUnknownError("unsupported pixel format");
+			break;
 	}
 	xsmcSetInteger(xsVar(0), format);
 	xsmcSet(xsResult, xsID_format, xsVar(0));

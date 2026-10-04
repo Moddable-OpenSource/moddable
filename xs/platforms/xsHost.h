@@ -71,7 +71,7 @@ uint32_t modMilliseconds(void);
 	#define modDelayMicroseconds(us)  modDelayMilliseconds((((us) + 500) / 1000))
 #else
 	#define modDelayMicroseconds(us)  usleep(us)
-	#define modDelayMilliseconds(ms)  uleep((ms) * 1000)
+	#define modDelayMilliseconds(ms)  usleep((ms) * 1000)
 #endif
 
 #endif

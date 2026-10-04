@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/network/http/manifest.json",
-		"$(MODDABLE)/modules/base/uuid/manifest.json"
+		"$(MODDABLE)/modules/network/http",
+		"$(MODDABLE)/modules/base/uuid"
 	],
 	"modules": {
 		"*": [

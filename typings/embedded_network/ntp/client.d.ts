@@ -18,10 +18,21 @@
  *
  */
 
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/ntp.d.ts" />
+
 declare module "embedded:network/ntp/client" {
 	import type UDP from "embedded:io/socket/udp";
 	import type Resolver from "embedded:network/dns/resolver/udp";
-	
+	import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+	export interface NTPClientProvider {
+		io: typeof NTP;
+		dns: DNSResolverProvider;
+		socket: { io: typeof UDP; [option: string]: unknown };
+		servers: string[];
+	}
+
 	export interface NTPOptions<T = any> {
 		servers: string[];
 		socket: { io: typeof UDP };
@@ -29,17 +40,14 @@ declare module "embedded:network/ntp/client" {
 		target?: T;
 	}
 	
-	export interface NTPCallback {
-		(error: null, time: number): void;
-		(error: Error): void;
-	}
+	export type NTPCallback<T = any> = (this: NTP<T>, error: Error | null, time: number) => void;
 	
-	class NTP<T = any> {
+	class NTP<T = any> implements Disposable {
 		target?: T;
 		constructor(options: NTPOptions<T>);
 		close(): void;
-		getTime(callback: NTPCallback): void;
+		getTime(callback: NTPCallback<T>): void;
+		[Symbol.dispose](): void;
 	}
-	interface NTP<T = any> extends Disposable {}
 	export default NTP;
 }

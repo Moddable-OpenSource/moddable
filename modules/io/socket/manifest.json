@@ -1,25 +1,25 @@
 {
 	"platforms": {
 		"esp": {
-			"include": "./lwip/manifest.json"
+			"include": "./lwip"
 		},
 		"esp32": {
-			"include": "./lwip/manifest.json"
+			"include": "./lwip"
 		},
 		"pico": {
-			"include": "./lwip/manifest.json"
+			"include": "./lwip"
 		},
 		"zephyr": {
-			"include": "./zephyr/manifest.json"
+			"include": "./zephyr"
 		},
 		"mac": {
-			"include": "./mac/manifest.json"
+			"include": "./mac"
 		},
 		"lin": {
-			"include": "./lin/manifest.json"
+			"include": "./lin"
 		},
 		"win": {
-			"include": "./win/manifest.json"
+			"include": "./win"
 		},
 		"...": {
 			"error": "ECMA-419 socket unsupported target"

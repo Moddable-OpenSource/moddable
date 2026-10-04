@@ -1,7 +1,7 @@
 {
 	"include": [
 		"../httpclient/manifest_httpclient.json",
-		"../tlssocket/manifest.json",
+		"../tlssocket",
 		"$(MODDABLE)/modules/crypt/tls_419.json"
 	],
 	"modules": {

@@ -19,6 +19,7 @@
  */
 
 declare module 'pins/audioin' {
+  /** @deprecated Use the ECMA-419 audio input, embedded:io/audio/in */
   class AudioIn {
     public constructor()
     public close(): void

@@ -22,6 +22,7 @@ declare module "file" {
   /**
    * The `File` class provides access to files.
    */
+  /** @deprecated Use the ECMA-419 files API, embedded:storage/files */
   export class File {
     constructor(path: string, write?: boolean);
     /**
@@ -50,16 +51,19 @@ declare module "file" {
   }
   type IteratorDirectoryEntry = {name: string, length: undefined};
   type IteratorFileEntry = {name: string, length: number};
+  /** @deprecated Use the ECMA-419 files API, embedded:storage/files */
   class Iterator {
     constructor(path: string);
     next(): IteratorDirectoryEntry | IteratorFileEntry | undefined;
   }
 
+  /** @deprecated Use the ECMA-419 files API, embedded:storage/files */
   class Directory {
     static create(path: string): void;
     static delete(path: string): void;
   }
 
+  /** @deprecated Use the ECMA-419 files API, embedded:storage/files */
   class System {
     static config(): {maxPathLength: number}
     static info(): {used: number, total: number};

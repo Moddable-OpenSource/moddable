@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/network/websocket/manifest.json",
-		"$(MODDABLE)/modules/network/socket/manifest.json"
+		"$(MODULES)/network/websocket",
+		"$(MODDABLE)/modules/network/socket"
 	],
 	"modules": {
 		"*": [

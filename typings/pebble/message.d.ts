@@ -19,9 +19,9 @@
 */
 
 interface MessageOptions {
-  onReadable?: () => void;
-  onWritable?: (count: number) => void;
-  onSuspend?: () => void;
+  onReadable?: (this: Message) => void;
+  onWritable?: (this: Message, count: number) => void;
+  onSuspend?: (this: Message) => void;
   format?: "map";
   input?: number;
   output?: number;
@@ -32,7 +32,7 @@ type MessageKey = string | number;
 type MessageReadValue = number | string | ArrayBuffer;
 type MessageWriteValue = number | string | ByteBuffer | boolean;
 
-declare class Message {
+declare class Message implements Disposable {
   constructor(options: MessageOptions);
   close(): void;
   read(): Map<MessageKey, MessageReadValue>;
@@ -41,7 +41,7 @@ declare class Message {
   set format(value: "map");
   get input(): number;
   get output(): number;
+  [Symbol.dispose](): void;
 }
-interface Message extends Disposable {}
 
 export default Message;

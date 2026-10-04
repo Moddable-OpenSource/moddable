@@ -1,7 +1,7 @@
 ---
 name: Advertise Services
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-09-04
+updated: 2026-10-01
 ---
 
 These examples use a shared `dnssd` instance, as shown in [Creating a DNS-SD Instance](./index.md#creating-a-dns-sd-instance).
@@ -62,9 +62,9 @@ dnssd.advertise({
 
 ---
 
-Call `updateTxt()` to update the `txt` record to notify local devices of changes to the device. For example, a Wi-Fi speaker can use this to indicate the song being played and a printer can use it to indicate that it is currently busy printing.
+Call `updateTXT()` to update the `txt` record to notify local devices of changes to the device. For example, a Wi-Fi speaker can use this to indicate the song being played and a printer can use it to indicate that it is currently busy printing.
 
-You pass `updateTxt()` the entire `txt` record, not just the changed fields.
+You pass `updateTXT()` the entire `txt` record, not just the changed fields.
 
 ```js
 let pagesServed = 0;
@@ -82,7 +82,7 @@ const httpServerAd = dnssd.advertise({
 
 // each time a page is served
 pagesServed += 1;
-httpServerAd.updateTxt(new Map([
+httpServerAd.updateTXT(new Map([
 	["home", "/index.html"],
 	["pagesServed", pagesServed.toString()]
 ]));

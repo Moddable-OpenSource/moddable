@@ -31,7 +31,7 @@ declare module "embedded:io/crypt/digest" {
   }
   type DigestOptions = DigestOptionsBase | DigestOptionsGHASH;
 
-  class Digest {
+  class Digest implements Disposable {
     constructor(options: DigestOptions);
     write(data: ByteBuffer): void;
     read(): ArrayBuffer;
@@ -40,8 +40,8 @@ declare module "embedded:io/crypt/digest" {
     close(): void;
     readonly blockSize: number;
     readonly outputSize: number;
+    [Symbol.dispose](): void;
   }
-  interface Digest extends Disposable {}
 
   export default Digest;
 }

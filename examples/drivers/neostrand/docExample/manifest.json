@@ -1,11 +1,11 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODULES)/pins/digital/monitor/manifest.json",
+		"$(MODULES)/pins/digital/monitor",
 
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODULES)/network/mdns/manifest.json",
-		"$(MODDABLE)/modules/network/http/manifest.json"
+		"$(MODULES)/network/mdns",
+		"$(MODDABLE)/modules/network/http"
 	],
 	"modules": {
 		"*": [

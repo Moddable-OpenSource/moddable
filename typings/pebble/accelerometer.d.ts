@@ -21,9 +21,9 @@
 type TapDirection = "+x" | "-x" | "+y" | "-y" | "+z" | "-z";
 
 interface AccelerometerOptions {
-  onSample?: () => void;
-  onTap?: (direction: TapDirection) => void;
-  onDoubleTap?: (direction: TapDirection) => void;
+  onSample?: (this: Accelerometer) => void;
+  onTap?: (this: Accelerometer, direction: TapDirection) => void;
+  onDoubleTap?: (this: Accelerometer, direction: TapDirection) => void;
 }
 
 interface AccelerometerConfigureOptions {
@@ -36,12 +36,12 @@ interface AccelerometerSample {
   z: number;
 }
 
-declare class Accelerometer {
+declare class Accelerometer implements Disposable {
   constructor(options: AccelerometerOptions);
   close(): void;
   configure(options: AccelerometerConfigureOptions): void;
   sample(): AccelerometerSample;
+  [Symbol.dispose](): void;
 }
-interface Accelerometer extends Disposable {}
 
 export default Accelerometer;

@@ -17,7 +17,7 @@
 		"...": {
 			"warning": "Using AudioIn simulator",
 			"include": [
-				"$(MODDABLE)/modules/data/wavreader/manifest.json"
+				"$(MODDABLE)/modules/data/wavreader"
 			],
 			"modules": {
 				"*": "./sim/audioin"

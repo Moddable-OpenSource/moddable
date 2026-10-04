@@ -1,8 +1,8 @@
 {
 	"include": [
-		"$(MODULES)/drivers/peripherals/led/rgb/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(IO)/pwm/manifest.json"
+		"$(MODULES)/drivers/peripherals/led/rgb",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/pwm"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

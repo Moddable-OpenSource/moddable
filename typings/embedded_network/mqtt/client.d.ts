@@ -1,4 +1,18 @@
+// the manifest that supplies this module includes the manifests of these configurations
+/// <reference path="../../config/mqttclient.d.ts" />
+
 declare module "embedded:network/mqtt/client" {
+  import type TCP from "embedded:io/socket/tcp";
+  import type TLS from "embedded:io/socket/tcp/tls";
+  import type { ClientSocket } from "embedded:io/socket/tcp/tls";
+  import type { DNSResolverProvider } from "embedded:network/dns/resolver/udp";
+
+  export interface MQTTClientProvider {
+    io: typeof MQTTClient,
+    dns: DNSResolverProvider,
+    socket: ClientSocket,
+  }
+
   interface onReadableOptions {
     more: boolean,
     topic?: string,
@@ -26,33 +40,58 @@ declare module "embedded:network/mqtt/client" {
     password?: string,
     id?: string,
     clean?: boolean,
-    will?: any,
+    will?: Will,
     keepAlive?: number, // milliseconds
-    onReadable?: (count: number, options: onReadableOptions) => void,
-    onWritable?: (count: number) => void,
-    onControl?: (opcode: number, message: onControlMessage) => void,
-    onClose?: () => void,
-    onError?: (error: any) => void,
-    dns: Record<string, any>,
-    socket: Record<string, any>,
+    onReadable?: (this: MQTTClient, count: number, options: onReadableOptions) => void,
+    onWritable?: (this: MQTTClient, count: number) => void,
+    onControl?: (this: MQTTClient, opcode: number, message: onControlMessage) => void,
+    onClose?: (this: MQTTClient) => void,
+    onError?: (this: MQTTClient, error: any) => void,
+    target?: any,
+    dns: DNSResolverProvider,
+    socket: ClientSocket,
   }
 
-  interface WriteOptions {
-    operation?: number,
+  interface PublishOptions {
+    operation?: typeof MQTTClient.PUBLISH,
     id?: number,
     topic: string,
     QoS?: number,
     retain?: boolean,
     duplicate?: boolean,
-    byteLength?: number,
-    items?: any[], // being lazy here
+    byteLength?: number, // total payload, when larger than this first fragment
   }
 
-  class MQTTClient {
+  interface SubscribeOptions {
+    operation: typeof MQTTClient.SUBSCRIBE,
+    id?: number,
+    items: { topic: string, QoS?: number }[],
+  }
+
+  interface UnsubscribeOptions {
+    operation: typeof MQTTClient.UNSUBSCRIBE,
+    id?: number,
+    items: { topic: string }[],
+  }
+
+  interface AcknowledgeOptions {
+    operation: typeof MQTTClient.PUBACK | typeof MQTTClient.PUBREC | typeof MQTTClient.PUBREL | typeof MQTTClient.PUBCOMP,
+    id: number,
+  }
+
+  interface SessionOptions {
+    operation: typeof MQTTClient.PINGREQ | typeof MQTTClient.DISCONNECT,
+  }
+
+  type WriteOptions = PublishOptions | SubscribeOptions | UnsubscribeOptions | AcknowledgeOptions | SessionOptions;
+
+  class MQTTClient implements Disposable {
+    target?: any
     constructor(options: Options)
-    read(count: number): ArrayBuffer
+    read(count?: number): ArrayBuffer
     read(buffer: ByteBuffer): number
-    write(data: ByteBuffer, options: WriteOptions): number
+    write(data: ByteBuffer): number // continues the publish in progress
+    write(data: ByteBuffer | null, options: WriteOptions): number
     close(): void
 
     static CONNECT: 1
@@ -69,7 +108,7 @@ declare module "embedded:network/mqtt/client" {
     static PINGREQ: 12
     static PINGRESP: 13
     static DISCONNECT: 14
+    [Symbol.dispose](): void
   }
-  interface MQTTClient extends Disposable {}
   export default MQTTClient;
 }

@@ -179,21 +179,6 @@ const device = {
 	sensor: {
 	},
 	peripheral: {
-		RTC: class {
-			constructor(options) {
-				return new RTC({
-					...options,
-					clock: {
-						...device.i2c.default,
-						io: device.io.SMBus
-					},
-					interrupt: {
-						io: device.io.Digital,
-						pin: device.pin.rtcInterrupt
-					}
-				});
-			}
-		},
 		button: {
 			Default: ButtonA,
 			A: ButtonA,
@@ -234,6 +219,18 @@ const device = {
 				}
 			}
 		}
+	}
+};
+
+device.rtc = {
+	io: RTC,
+	clock: {
+		...device.i2c.default,
+		io: "SMBus"
+	},
+	interrupt: {
+		io: "Digital",
+		pin: device.pin.rtcInterrupt
 	}
 };
 

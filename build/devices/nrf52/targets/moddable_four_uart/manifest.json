@@ -5,13 +5,13 @@
 		"NRF52_CUSTOM_PWM_FREQ": "1"
 	},
 	"include": [
-		"$(MODULES)/drivers/ls013b4dn04/manifest.json",
-		"$(MODULES)/drivers/peripherals/button/manifest.json",
-		"$(MODULES)/drivers/peripherals/led/digital/manifest.json",
-		"$(MODULES)/drivers/peripherals/jogdial/manifest.json",
-		"$(MODULES)/drivers/sensors/lis3dh/manifest.json",
-		"$(IO)/digital/manifest.json",
-		"$(IO)/i2c/manifest.json"
+		"$(MODULES)/drivers/ls013b4dn04",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(MODULES)/drivers/peripherals/led/digital",
+		"$(MODULES)/drivers/peripherals/jogdial",
+		"$(MODULES)/drivers/sensors/lis3dh",
+		"$(IO)/digital",
+		"$(IO)/i2c"
 	],
 	"config": {
 		"screen": "ls013b4dn04",

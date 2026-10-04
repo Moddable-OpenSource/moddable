@@ -19,7 +19,6 @@
  */
  
 import assets from "assets";
-import Preference from "preference";
 
 class Controller extends Behavior {
 	constructor() {
@@ -96,8 +95,9 @@ class Controller extends Behavior {
 		}
 	}
 	onCreate(container, $) {
+		using prefs = device.keyValue.open({path: "model", format: "string"});
 		this.container = container;
-		this.options = JSON.parse(Preference.get("model", "options") ?? "[]");
+		this.options = JSON.parse(prefs.read("options") ?? "[]");
 		this.personas = $.model.map(persona => {
 			persona = { ...persona };
 			const service = assets.services[persona.service];
@@ -189,7 +189,8 @@ class Controller extends Behavior {
 			};
 			this.options.push(option);
 		}
-		Preference.set("model", "options", JSON.stringify(this.options));
+		using prefs = device.keyValue.open({path: "model", format: "string"});
+		prefs.write("options", JSON.stringify(this.options));
 	}
 	
 	updateScreen() {

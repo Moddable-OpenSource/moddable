@@ -23,28 +23,34 @@ declare module "embedded:network/interface/wifi" {
 
 	export type WiFiChangedProperty = "connection" | "address";
 
+	export type WiFiSecurity = "none" | "wep" | "wpa_psk" | "wpa2_psk" | "wpa_wpa2_psk" | "wpa3_psk" | "wpa2_wpa3_psk" | "wpa2_enterprise" | "unknown" | (string & {});
+
 	export interface WiFiConstructorOptions {
 		port?: PortSpecifier;
-		onChanged?: (property: WiFiChangedProperty) => void;
+		onChanged?: (this: WiFi, property: WiFiChangedProperty) => void;
 	}
 
 	export interface WiFiScanResult {
 		SSID: string;
-		channel: number;
+		BSSID: string;
 		RSSI: number;
-		BSSID?: string;
+		channel: number;
+		security: WiFiSecurity;
 	}
 
 	export interface WiFiScanOptions {
-		onFound?: (result: WiFiScanResult) => void;
-		onComplete?: () => void;
-	}
-
-	export interface WiFiConnectOptions {
-		SSID: string;
-		password?: string;
+		onFound: (this: WiFi, result: WiFiScanResult) => void;
+		onComplete?: (this: WiFi) => void;
+		channel?: number;
+		frequency?: 2.4 | 5;
 		secure?: boolean;
 	}
+
+	export type WiFiConnectOptions = ({ SSID: string; BSSID?: string } | { SSID?: string; BSSID: string }) & {
+		password?: string;
+		secure?: boolean;			// true to disallow connecting to an open access point
+		channel?: number;
+	};
 
 	export interface WiFiStaticAddress {
 		address: string;
@@ -52,27 +58,30 @@ declare module "embedded:network/interface/wifi" {
 		gateway: string;
 	}
 
+	// Moddable SDK extension
 	export interface WiFiConfigureOptions {
 		hostname?: string;
 		static?: WiFiStaticAddress | false;
 	}
 
-	class WiFi {
+	class WiFi implements Disposable {
 		constructor(options: WiFiConstructorOptions);
 
 		close(): void;
 		scan(options: WiFiScanOptions): void;
 		connect(options: WiFiConnectOptions): void;
 		disconnect(): void;
-		configure(options: WiFiConfigureOptions): void;
+		configure(options: WiFiConfigureOptions): void;		// Moddable SDK extension
 
 		readonly connection: number;
 		readonly address: string | undefined;
 		readonly MAC: string | undefined;
 		readonly SSID: string | undefined;
+		readonly BSSID: string | undefined;
 		readonly RSSI: number | undefined;
+		readonly channel: number | undefined;
+		[Symbol.dispose](): void;
 	}
-	interface WiFi extends Disposable {}
 
 	export default WiFi;
 }

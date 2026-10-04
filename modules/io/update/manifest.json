@@ -1,10 +1,10 @@
 {
 	"platforms": {
 		"esp32": {
-			"include": "./esp32/manifest.json"
+			"include": "./esp32"
 		},
 		"mac": {
-			"include": "./mac/manifest.json"
+			"include": "./mac"
 		},
 		"...": {
 			"error": "ECMA-419 OTA Update unsupported target"
