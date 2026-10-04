@@ -6,10 +6,19 @@ flags: [module,async]
 import {SharedWorker} from "worker";
 
 const minimumOptions = {
-	allocation: 8192,
-	stackCount: 64,
-	slotCount: 64,
-	keyCount: 7
+	static: 8192,
+	heap: {
+		initial: 64,
+		incremental: 64
+	},
+	chunk: {
+		initial: 1024,
+		incremental: 512
+	},
+	stack: 64,
+	keys: {
+		initial: 1
+	}
 };
 
 assert.throws(SyntaxError, () => new SharedWorker, "SharedWorker constructor requires 1 argument");
@@ -19,7 +28,7 @@ assert.throws(TypeError, () => SharedWorker("testsharedworker"), "SharedWorker c
 assert.throws(Error, () => new SharedWorker("invalid module specifier", minimumOptions), "SharedWorker constructor with invalid module specifier");
 assert.throws(Error, () => new SharedWorker(12, minimumOptions), "SharedWorker constructor with invalid module specifier");
 
-assert.throws(Error, () => new SharedWorker("testsharedworker", {...minimumOptions, allocation: 1024 * 1024 * 1024}), "SharedWorker with 1 GB alocation should fail on microcontroller");
+assert.throws(Error, () => new SharedWorker("testsharedworker", {...minimumOptions, static: 1024 * 1024 * 1024}), "SharedWorker with 1 GB alocation should fail on microcontroller");
 assert.throws(Error, () => new SharedWorker("testthrowworker", minimumOptions), "SharedWorker module throws");
 
 const count = 4;

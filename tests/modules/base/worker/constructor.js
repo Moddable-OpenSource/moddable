@@ -13,7 +13,6 @@ assert.throws(TypeError, () => Worker("testworker"), "Worker constructor called 
 assert.throws(Error, () => new Worker("invalid module specifier", minimumOptions), "Worker constructor with invalid module specifier");
 assert.throws(Error, () => new Worker(12, minimumOptions), "Worker constructor with invalid module specifier");
 
-assert.throws(Error, () => new Worker("testworker", {allocation: 1024 * 1024 * 1024, stackCount: 64, slotCount: 64, keyCount: 7}), "Worker with 1 GB alocation should fail on microcontroller (deprecated property names)");
 assert.throws(Error, () => new Worker("testworker", {...minimumOptions, static: 1024 * 1024 * 1024}), "Worker with 1 GB alocation should fail on microcontroller");
 assert.throws(Error, () => new Worker("testthrowworker", minimumOptions), "Worker module throws");
 

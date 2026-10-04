@@ -221,79 +221,35 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 	(void *)xsPreparationAndCreation(&creationP);
 	worker->creation = *creationP;
 	if (xsmcArgc > 1) {
-		if (xsmcHas(xsArg(1), xsID_allocation) ||
-			 xsmcHas(xsArg(1), xsID_stackCount) ||
-			 xsmcHas(xsArg(1), xsID_slotCount) ||
-		 	 xsmcHas(xsArg(1), xsID_keyCount)) {
-#ifdef mxDebug
-			xsTrace("deprecated worker creation parameters detected. update recommended.\n");
-#endif
-			xsIntegerValue allocation, stackCount, slotCount, keyCount;
-			xsmcGet(xsVar(0), xsArg(1), xsID_allocation);
-			allocation = xsmcToInteger(xsVar(0));
-
-			xsmcGet(xsVar(0), xsArg(1), xsID_stackCount);
-			stackCount = xsmcToInteger(xsVar(0));
-
-			xsmcGet(xsVar(0), xsArg(1), xsID_slotCount);
-			slotCount = xsmcToInteger(xsVar(0));
-
-			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
-			keyCount = xsmcToInteger(xsVar(0));
-
-			if (stackCount)
-				worker->creation.stackCount = stackCount;
-
-			if (slotCount)
-				worker->creation.initialHeapCount = slotCount;
-			
-			if (keyCount)
-				worker->creation.initialKeyCount = keyCount;
-
-			if (allocation) {
-				worker->creation.staticSize = allocation;
-				int available = worker->creation.staticSize - (worker->creation.stackCount * sizeof(xsSlot)) - 1024; 
-				if (worker->creation.initialChunkSize > (available / 2)) {
-					worker->creation.initialChunkSize = 512;
-					worker->creation.incrementalChunkSize = 512;
-				}
-				if (worker->creation.initialHeapCount > (available / (2 * sizeof(xsSlot))))
-					worker->creation.initialHeapCount = available / (2 * sizeof(xsSlot));
-				if (worker->creation.incrementalHeapCount > (worker->creation.initialHeapCount / 8) || !worker->creation.incrementalHeapCount)
-					worker->creation.incrementalHeapCount = 8;
-			}
+		getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
+		xsmcGet(xsVar(0), xsArg(1), xsID_chunk);
+		if (xsmcTest(xsVar(0))) {
+			getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialChunkSize);
+			getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalChunkSize);
 		}
-		else {
-			getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
-			xsmcGet(xsVar(0), xsArg(1), xsID_chunk);
-			if (xsmcTest(xsVar(0))) {
-				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialChunkSize);
-				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalChunkSize);
-			}
-			xsmcGet(xsVar(0), xsArg(1), xsID_heap);
-			if (xsmcTest(xsVar(0))) {
-				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialHeapCount);
-				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalHeapCount);
-			}
-			getIntegerProperty(the, &xsArg(1), xsID_stack, &worker->creation.stackCount);
-			xsmcGet(xsVar(0), xsArg(1), xsID_keys);
-			if (xsmcTest(xsVar(0))) {
-				getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialKeyCount);
-				getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalKeyCount);
-				getIntegerProperty(the, &xsVar(0), xsID_name, &worker->creation.nameModulo);
-				getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
-			}
-			getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
+		xsmcGet(xsVar(0), xsArg(1), xsID_heap);
+		if (xsmcTest(xsVar(0))) {
+			getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialHeapCount);
+			getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalHeapCount);
+		}
+		getIntegerProperty(the, &xsArg(1), xsID_stack, &worker->creation.stackCount);
+		xsmcGet(xsVar(0), xsArg(1), xsID_keys);
+		if (xsmcTest(xsVar(0))) {
+			getIntegerProperty(the, &xsVar(0), xsID_initial, &worker->creation.initialKeyCount);
+			getIntegerProperty(the, &xsVar(0), xsID_incremental, &worker->creation.incrementalKeyCount);
+			getIntegerProperty(the, &xsVar(0), xsID_name, &worker->creation.nameModulo);
+			getIntegerProperty(the, &xsVar(0), xsID_symbol, &worker->creation.symbolModulo);
+		}
+		getIntegerProperty(the, &xsArg(1), xsID_nativeStack, &worker->creation.nativeStackSize);
 #ifdef INC_FREERTOS_H
 #if ESP32	// Multicore only supported on ESP32
-			getIntegerProperty(the, &xsArg(1), xsID_core, &core);
+		getIntegerProperty(the, &xsArg(1), xsID_core, &core);
 #endif
 #define kWorkerTaskPriority		(tskIDLE_PRIORITY + 1) // Default priority is tskIDLE_PRIORITY + 1
-			getIntegerProperty(the, &xsArg(1), xsID_priority, &priority);
-			if (priority == 0)
-				priority = kWorkerTaskPriority;
+		getIntegerProperty(the, &xsArg(1), xsID_priority, &priority);
+		if (priority == 0)
+			priority = kWorkerTaskPriority;
 #endif
-		}
 	}
 
 #ifdef INC_FREERTOS_H
