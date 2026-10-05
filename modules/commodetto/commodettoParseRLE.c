@@ -33,6 +33,9 @@ void xs_parseRLE(xsMachine *the)
 	if (xsBufferRelocatable == xsmcGetBufferReadable(xsArg(0), (void **)&bytes, &dataSize))
 		xsUnknownError("invaild");
 
+	if (dataSize < 8)
+		xsUnknownError("invalid commodetto rle");
+
 	if ((109 != c_read8(bytes + 0)) || (100 != c_read8(bytes + 1)))		// "md"
 		xsUnknownError("invalid commodetto rle");
 
