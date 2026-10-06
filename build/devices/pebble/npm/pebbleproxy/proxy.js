@@ -113,10 +113,7 @@ function httpMessage(id, e) {
 		case "configure": {
 			const [protocol, method, host, port, path, bufferSize, headersMask] = arrayToString(e.payload[HTTP_BASE + 2]).split(":");
 			request.bufferSize = parseInt(bufferSize);
-			if ("/" === path)
-				request.path = "";
-			else
-				request.path = path || "";
+			request.path = path.startsWith("/") ? path.slice(1) : path;
 			request.port = port;
 			request.host = host;
 			request.protocol = protocol;
