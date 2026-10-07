@@ -90,7 +90,7 @@
 	#define mxFloat16 1
 #endif
 #ifndef mxImmutableArrayBuffers
-	#define mxImmutableArrayBuffers 0
+	#define mxImmutableArrayBuffers 1
 #endif
 #ifndef mxModuleStuff
 	#define mxModuleStuff 0
@@ -156,7 +156,7 @@ typedef struct {
 #if mxECMAScript2026
 	#define XS_MAJOR_VERSION 17
 	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
-	#define XS_MOD_COMPATIBLE_MINOR_VERSION (3 + mxErrorIsError + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
+	#define XS_MOD_COMPATIBLE_MINOR_VERSION (3 + mxErrorIsError + mxFloat16 + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
 #elif mxECMAScript2025
 	#define XS_MAJOR_VERSION 16
 	#define XS_MINOR_VERSION (3 + mxErrorIsError + mxExplicitResourceManagement + mxFloat16 + mxImmutableArrayBuffers + mxModuleStuff + mxUint8ArrayBase64 + mxNative)
