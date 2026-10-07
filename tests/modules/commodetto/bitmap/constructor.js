@@ -22,6 +22,8 @@ assert.throws(TypeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffe
 assert.throws(Error, () => new Bitmap(32, 32, 0, new ArrayBuffer(4096), 0), "Bitmap constructor invalid format");	// only 0 is rejected
 assert.throws(RangeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), 4096), "Bitmap constructor invalid offset");
 assert.throws(RangeError, () => new Bitmap(32, 32, Bitmap.Default, new ArrayBuffer(4096), -1), "Bitmap constructor invalid offset");
+assert.throws(RangeError, () => new Bitmap(65535, 32769, Bitmap.RGB565LE, new ArrayBuffer(65534), 0), "Bitmap constructor invalid dimensions");
+assert.throws(RangeError, () => new Bitmap(32768, 32768, Bitmap.BGRA32, new ArrayBuffer(4), 0), "Bitmap constructor invalid dimensions");
 
 // accepts string
 new Bitmap("32", 32, Bitmap.Default, new ArrayBuffer(4096), 0);

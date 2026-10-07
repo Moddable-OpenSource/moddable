@@ -63,7 +63,7 @@ void xs_Bitmap(xsMachine *the)
 	int32_t byteLength = (xsmcArgc > 5) ? xsmcToInteger(xsArg(5)) : 0;
 	CommodettoBitmapRecord cb;
 	void *data;
-	xsUnsignedValue dataSize, neededSize;
+	xsUnsignedValue dataSize, rowBytes;
 
 	cb.w = (CommodettoDimension)xsmcToInteger(xsArg(0));
 	cb.h = (CommodettoDimension)xsmcToInteger(xsArg(1));
@@ -94,10 +94,11 @@ void xs_Bitmap(xsMachine *the)
 	cb.byteLength = byteLength ?  (xsUnsignedValue)byteLength : dataSize;
 
 	if (kCommodettoBitmapPacked & cb.format)
-		neededSize = 0;
+		rowBytes = 0;
 	else
-		neededSize = (((CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3) * cb.h;
-	if ((offset < 0) || ((offset + neededSize) > cb.byteLength))
+		rowBytes = (((xsUnsignedValue)CommodettoBitmapGetDepth(cb.format) * cb.w) + 7) >> 3;
+	if ((offset < 0) || ((xsUnsignedValue)offset > cb.byteLength) ||
+		(rowBytes && (cb.h > ((cb.byteLength - (xsUnsignedValue)offset) / rowBytes))))
 		xsRangeError("invalid");
 
 	#if COMMODETTO_BITMAP_ID
