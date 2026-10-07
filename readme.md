@@ -1,8 +1,8 @@
 # Moddable SDK
 
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: August 5, 2026
-Moddable SDK: [Version 9.0.0](https://github.com/Moddable-OpenSource/moddable/releases)
+Revised: October 6, 2026
+Moddable SDK: [Version 10.0.0](https://github.com/Moddable-OpenSource/moddable/releases)
 
 ## Modern software development for microcontrollers
 
@@ -53,7 +53,7 @@ The `xsbug` JavaScript source level debugger is a full-featured debugger that su
 
 Similar to other debuggers, `xsbug` supports setting breakpoints, browsing source code, and inspection of the call stack and variables. The `xsbug` debugger additionally provides real-time instrumentation to track memory usage and profile application and resource consumption.
 
-`xsdb` is a command line (CLI) debugger modeled on gdb. It is valuable for embedded developers already familiar with gdb, for building automated debugging flows, and for LLMs to debug their code. 
+`xsdb` is a command line (CLI) debugger modeled on gdb. It is valuable for embedded developers already familiar with gdb, for building automated debugging flows, and for LLMs to debug their code.
 
 > *See also: [xsbug documentation](./documentation/xs/xsbug.md)*
 > *See also: [xsdb documentation](./documentation/tools/tools.md#xsdb)*

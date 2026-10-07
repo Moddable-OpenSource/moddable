@@ -1,6 +1,6 @@
 {
 	"name": "@moddable/typings",
-	"version": "9.5.0",
+	"version": "10.0.0",
 	"main": "",
 	"types": "xs",
 	"typesVersions": {
