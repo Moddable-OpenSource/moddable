@@ -2043,6 +2043,11 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 	txInteger i, j;
 	txSlot* capture;
 	txString s;
+	txSlot* result;
+	txSlot* group;
+	mxPushSlot(replace);
+	result = the->stack;
+	group = result;
 	r = replace->value.string;
 	l = 0;
 	flag = 0;
@@ -2092,8 +2097,9 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 								fxToString(the, the->stack);
 								delta = mxStringLength(the->stack->value.string);
 							}
-							mxPop();
 						}
+						else
+							mxPushUndefined();
 						r++;
 						flag = 1;
 					}
@@ -2143,11 +2149,11 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 		mxAddSize(l, delta);
 	}
 	if (flag) {
-		mxPushUndefined();
-		the->stack->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, l, 1));
-		the->stack->kind = XS_STRING_KIND;
+		result->value.string = (txString)fxNewChunk(the, fxAddChunkSizes(the, l, 1));
+		result->kind = XS_STRING_KIND;
+		group = result;
 		r = replace->value.string;
-		s = the->stack->value.string;
+		s = result->value.string;
 		while ((c = c_read8(r++))) {
 			if (c == '$') {
 				c = c_read8(r++);
@@ -2181,23 +2187,11 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 							r++;
 						}
 						if (d) {
-							txInteger n = mxPtrDiff(r - t);
-							txID name = XS_NO_ID;
-							if ((size_t)(n + 1) <= sizeof(the->nameBuffer)) {
-								c_memcpy(the->nameBuffer, t, n);
-								the->nameBuffer[n] = 0;
-								name = fxFindName(the, the->nameBuffer);
-							}
-							if (name) {
-								mxPushSlot(groups);
-								mxGetID(name);
-								if (!mxIsUndefined(the->stack)) {
-									fxToString(the, the->stack);
-									l = mxStringLength(the->stack->value.string);
-									c_memcpy(s, the->stack->value.string, l);
-									s += l;
-								}
-								mxPop();
+							group--;
+							if (!mxIsUndefined(group)) {
+								l = mxStringLength(group->value.string);
+								c_memcpy(s, group->value.string, l);
+								s += l;
 							}
 							r++;
 						}
@@ -2257,8 +2251,7 @@ void fxPushSubstitutionString(txMachine* the, txSlot* string, txInteger size, tx
 		}
 		*s = 0;
 	}
-	else
-		mxPushSlot(replace);
+	the->stack = result;
 }
 
 #ifdef mxStringNormalize
