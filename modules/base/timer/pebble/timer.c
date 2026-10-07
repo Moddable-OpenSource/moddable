@@ -61,8 +61,9 @@ static void modTimerEventedExecute(void *);
 static void modTimersScheduleNext(void)
 {
 	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
-	state->eventedTimer = evented_timer_register_or_reschedule(state->eventedTimer,
-		(uint32_t)modTimersNext(), modTimerEventedExecute, C_NULL);
+	evented_timer_cancel(state->eventedTimer);
+	state->eventedTimer = evented_timer_register((uint32_t)modTimersNext(), false,
+		modTimerEventedExecute, C_NULL);
 }
 
 void modTimerEventedExecute(void *)

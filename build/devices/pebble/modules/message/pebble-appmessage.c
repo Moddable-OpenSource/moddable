@@ -40,6 +40,7 @@ typedef struct  {
 	EventedTimerID						invokeUpdateActivate;
 	uint16_t								inbound;
 	uint16_t								outbound;
+	uint16_t								useCount;
 	uint8_t								writable;			// an instance could send a message
 } PebbleMessageStateRecord, *PebbleMessageState;
 
@@ -57,44 +58,69 @@ struct PebbleMessageRecord {
 	EventedTimerID		readable;
 	uint8_t				active;
 	uint8_t				writable;
+	uint8_t				closed;
 	PebbleMessage		next;
 	PebbleMessageState	state;
 };
 
-void xs_appmessage_destructor(void *data)
+static void releaseMessageState(PebbleMessageState state)
 {
-	PebbleMessage pm = data;
-	if (!pm) return;
+	if (--state->useCount)
+		return;
 
-	PebbleMessageState state = pm->state;
-	if (!state) return;
-
-	if (state->firstInstance == pm)
-		state->firstInstance = pm->next;
-	else if (state->firstInstance) {
-		PebbleMessage walker = state->firstInstance;
-		while (walker && walker->next != pm)
-			walker = walker->next;
-		if (walker)
-			walker->next = pm->next;
+	// Keep closed records linked until every dispatch has finished walking the list.
+	PebbleMessage *link = &state->firstInstance;
+	while (*link) {
+		PebbleMessage pm = *link;
+		if (pm->closed) {
+			*link = pm->next;
+			c_free(pm);
+		}
+		else
+			link = &pm->next;
 	}
 
-	evented_timer_cancel(pm->initial);
-	evented_timer_cancel(pm->readable);
-	
 	if (C_NULL == state->firstInstance) {
+		evented_timer_cancel(state->invokeUpdateActivate);
 		event_service_client_unsubscribe(&state->commSessionEvent);
 		app_message_close();
 		c_free(state);
 		setModdableAppState(appMessage, C_NULL);
+		setModdableAppState(appMessageCleanup, C_NULL);
 	}
+}
 
-	c_free(pm);
+void xs_appmessage_destructor(void *data)
+{
+	PebbleMessage pm = data;
+	if (!pm || pm->closed) return;
+
+	PebbleMessageState state = pm->state;
+	if (!state) return;
+
+	pm->closed = true;
+	evented_timer_cancel(pm->initial);
+	evented_timer_cancel(pm->readable);
+	pm->initial = pm->readable = EVENTED_TIMER_INVALID_ID;
+	state->useCount++;
+	releaseMessageState(state);
+}
+
+static void cleanupMessageState(void)
+{
+	PebbleMessageState state = getModdableAppState(appMessage);
+
+	// Fatal exits skip dispatch releases. The machine has run its host destructors.
+	state->useCount = 1;
+	for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next)
+		xs_appmessage_destructor(pm);
+	releaseMessageState(state);
 }
 
 void xs_appmessage_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 {
 	PebbleMessage pm = it;
+	if (!pm || pm->closed) return;
 
 	if (pm->onReadable)
 		(*markRoot)(the, pm->onReadable);
@@ -223,6 +249,7 @@ void xs_appmessage(xsMachine *the)
 	state->firstInstance = pm;
 
 	setModdableAppState(appMessage, state);
+	setModdableAppState(appMessageCleanup, cleanupMessageState);
 }
 
 void xs_appmessage_close(xsMachine *the)
@@ -327,17 +354,20 @@ void xs_appmessage_write(xsMachine *the)
 void suspendWritable(PebbleMessage writer)
 {
 	PebbleMessageState state = getModdableAppState(appMessage);
+	state->useCount++;
 	for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
-		if (pm->writable && pm->active && (pm != writer)) {
+		if (!pm->closed && pm->writable && pm->active && (pm != writer)) {
 			pm->active = false;
 			pm->writable = false;
 			if (pm->onSuspend) {
-				xsBeginHost(pm->the);
+				xsMachine *the = pm->the;
+				xsBeginHost(the);
 					xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
-				xsEndHost(pm-the);
+				xsEndHost(the);
 			}
 		}
 	}
+	releaseMessageState(state);
 }
 
 void xs_appmessage_get_input(xsMachine *the)
@@ -365,35 +395,46 @@ void invokeUpdateActivate(void *context)
 void invokeOnReadable(void *context)
 {
 	PebbleMessage pm = context;
+	if (pm->closed)
+		return;
 
+	PebbleMessageState state = pm->state;
+	xsMachine *the = pm->the;
+	state->useCount++;
 	evented_timer_cancel(pm->readable);
 	pm->readable = EVENTED_TIMER_INVALID_ID;
 
-	xsBeginHost(pm->the);
+	xsBeginHost(the);
 		xsmcSetInteger(xsResult, 1);
 		xsCallFunction1(xsReference(pm->onReadable), pm->obj, xsResult);
-	xsEndHost(pm->the);
+	xsEndHost(the);
+	releaseMessageState(state);
 }
 
 void invokeOnWritable(void *context)
 {
 	PebbleMessage pm = context;
-
-	if (C_NULL == pm->onWritable)
+	if (pm->closed || (C_NULL == pm->onWritable))
 		return;
 
+	PebbleMessageState state = pm->state;
+	xsMachine *the = pm->the;
+	state->useCount++;
 	evented_timer_cancel(pm->initial);
-	pm->initial = EVENTED_TIMER_INVALID_ID; 
+	pm->initial = EVENTED_TIMER_INVALID_ID;
 
-	xsBeginHost(pm->the);
+	xsBeginHost(the);
 		xsCallFunction0(xsReference(pm->onWritable), pm->obj);
-	xsEndHost(pm-the);
+	xsEndHost(the);
+	releaseMessageState(state);
 }
 
 void messageReceived(DictionaryIterator *iterator, void *context)
 {
 	PebbleMessageState state = getModdableAppState(appMessage);
 	PebbleMessage pm = C_NULL;
+	xsMachine *the = state->firstInstance->the;
+	state->useCount++;
 
 	if (!getModdableAppState(pkjsReady)) {
 		setModdableAppState(pkjsReady, true);
@@ -402,8 +443,7 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 			state->invokeUpdateActivate = evented_timer_register(1, false, invokeUpdateActivate, C_NULL);		// cannot update active from here because the callback might try to write, which can fail during the receive callback
 	}
 
-	xsBeginHost(state->firstInstance->the);
-
+	xsBeginHost(the);
 		xsmcVars(3);
 		xsVar(0) = xsNew0(xsGlobal, xsID_Map);
 		state->map = xsmcToReference(xsVar(0));		// overwrites unread message
@@ -448,20 +488,20 @@ void messageReceived(DictionaryIterator *iterator, void *context)
 
 			// try to match this dictionary entry to an instance
 			for (PebbleMessage walker = state->firstInstance; (C_NULL == pm) && (C_NULL != walker); walker = walker->next) {
-				if (!walker->keys)
+				if (walker->closed || !walker->keys)
 					continue;
 				xsResult = xsCall2(walker->obj, xsID_match, xsVar(2), xsReference(walker->keys));
-				if (xsmcTest(xsResult))
+				if (!walker->closed && xsmcTest(xsResult))
 					pm = walker;
 			}
 		}
+	xsEndHost(the);
 
-	xsEndHost(state->firstInstance->the);
-
-	if (pm && pm->onReadable) {
+	if (pm && !pm->closed && pm->onReadable) {
 		evented_timer_cancel(pm->readable);
 		pm->readable = evented_timer_register(1, false, invokeOnReadable, pm);		// cannot invoke onReadable from here because the callback might try to write, which can fail from this receive callback
 	}
+	releaseMessageState(state);
 }
 
 void messageSent(DictionaryIterator *iterator, void *context)
@@ -479,12 +519,12 @@ void messageSendFailed(DictionaryIterator *iterator, AppMessageResult reason, vo
 void updateActive(uint8_t active)
 {
 	PebbleMessageState state = getModdableAppState(appMessage);
-
+	state->useCount++;
 	state->writable = active;
 
 	if (active) {
 		for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
-			if (pm->active && pm->writable)
+			if (pm->closed || (pm->active && pm->writable))
 				continue;
 
 			pm->active = true;
@@ -498,18 +538,20 @@ void updateActive(uint8_t active)
 	}
 	else {
 		for (PebbleMessage pm = state->firstInstance; C_NULL != pm; pm = pm->next) {
-			if (!pm->active)
+			if (pm->closed || !pm->active)
 				continue;
 
 			pm->active = false;
 			pm->writable = false;
 			if (pm->onSuspend) {
-				xsBeginHost(pm->the);
+				xsMachine *the = pm->the;
+				xsBeginHost(the);
 					xsCallFunction0(xsReference(pm->onSuspend), pm->obj);
-				xsEndHost(pm->the);
+				xsEndHost(the);
 			}
 		}
 	}
+	releaseMessageState(state);
 }
 
 void commSessionEvent(PebbleEvent *e, void *context)

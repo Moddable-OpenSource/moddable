@@ -51,12 +51,14 @@ typedef struct {
 	// timer
 	void					*timers;
 	EventedTimerID		eventedTimer;
+	EventedTimerID		promiseJobTimer;
 
 	// pebble-compass
 	void					*compass;
 
 	// pebble-appmessage
 	void					*appMessage;
+	void					(*appMessageCleanup)(void);
 	uint8_t				pkjsReady;
 	uint8_t				notFirst;
 
