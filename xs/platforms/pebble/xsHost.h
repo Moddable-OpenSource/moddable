@@ -252,7 +252,7 @@ struct pbl_timeval {
 	 uint32_t	tv_usec;    /* microseconds */	
 };
 
-#define c_tm struct tm
+#define c_tm struct pbl_tm
 #define c_timeval struct pbl_timeval
 #define c_time_t time_t
 #define c_timezone timezone
