@@ -23,6 +23,15 @@
 		"format": "Gray16",
 		"screen": "it8951"
 	},
+	"defines": {
+		"sdcard": {
+			"cs": 4,
+			"miso": 13,
+			"mosi": 12,
+			"sck": 14,
+			"spi_port": "SPI3_HOST"
+		}
+	},
 	"creation": {
 		"static": 0,
 		"chunk": {

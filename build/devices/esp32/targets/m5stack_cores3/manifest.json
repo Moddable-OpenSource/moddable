@@ -63,6 +63,13 @@
 			"mosi_pin": 37,
 			"sck_pin": 36
 		},
+		"sdcard": {
+			"cs": 4,
+			"miso": 35,
+			"mosi": 37,
+			"sck": 36,
+			"spi_port": "SPI3_HOST"
+		},
 		"ili9341": {
 			"hz": 40000000,
 			"width": 320,
