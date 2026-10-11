@@ -12,7 +12,7 @@ Network services should be created after the Wi-Fi Access point is ready. These 
 
 This example creates a simple HTTP server with a welcome page.
 
-See the [HTTP Server Guide](../http-server/index.md) for more information.
+See the [HTTP Server Guide](../httpserver/index.md) for more information.
 
 ```js
 import StaticRoute from "embedded:network/http/server/route/static";
