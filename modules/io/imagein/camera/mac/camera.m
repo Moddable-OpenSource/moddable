@@ -536,22 +536,37 @@ void xs_camera_get_configuration(xsMachine *the)
 	xsmcDefine(xsResult, xsID_saturation, tmp, xsDefault);
 }
 
+static int cameraPercent(xsMachine *the, xsSlot slot)
+{
+	double value = xsmcToNumber(slot);
+
+	if ((value != value) || (value < 0) || (value > 100))
+		xsRangeError("0 to 100");
+	return (int)(value + 0.5);
+}
+
 void xs_camera_configure(xsMachine *the)
 {
     Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
-    xsmcVars(1);
-	if (xsmcGet(xsVar(0), xsArg(0), xsID_brightness)) {
-		camera->brightness = xsmcToInteger(xsVar(0));
+    xsSlot slot;
+
+	if ((xsmcArgc < 1) || (xsReferenceType != xsmcTypeOf(xsArg(0))))
+		xsTypeError("options");
+	if (xsmcHas(xsArg(0), xsID_brightness)) {
+		xsmcGet(slot, xsArg(0), xsID_brightness);
+		camera->brightness = cameraPercent(the, slot);
 		if (camera->filter)
 			camera->filter.brightness = ((double)camera->brightness) / 100.0;
 	}
-	if (xsmcGet(xsVar(0), xsArg(0), xsID_contrast)) {
-		camera->contrast = xsmcToInteger(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_contrast)) {
+		xsmcGet(slot, xsArg(0), xsID_contrast);
+		camera->contrast = cameraPercent(the, slot);
 		if (camera->filter)
 			camera->filter.contrast = 1.0 + (((double)camera->contrast) / 100.0);
 	}
-	if (xsmcGet(xsVar(0), xsArg(0), xsID_saturation)) {
-		camera->saturation = xsmcToInteger(xsVar(0));
+	if (xsmcHas(xsArg(0), xsID_saturation)) {
+		xsmcGet(slot, xsArg(0), xsID_saturation);
+		camera->saturation = cameraPercent(the, slot);
 		if (camera->filter)
 			camera->filter.saturation = 1.0 + (((double)camera->saturation) / 100.0);
 	}

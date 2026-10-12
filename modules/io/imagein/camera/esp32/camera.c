@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025  Moddable Tech, Inc.
+ * Copyright (c) 2024-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -645,9 +645,109 @@ static void ensureSensor(Camera camera)
 	camera->sensorHas.saturation = 0 == sensor->set_saturation(sensor, sensor->status.saturation);
 	camera->sensorHas.sharpness = 0 == sensor->set_sharpness(sensor, sensor->status.sharpness);
 	camera->sensorHas.denoise = 0 == sensor->set_denoise(sensor, sensor->status.denoise);
-	camera->sensorHas.wb_mode = 0 == sensor->set_whitebal(sensor, sensor->status.wb_mode);
+	camera->sensorHas.wb_mode = 0 == sensor->set_wb_mode(sensor, sensor->status.wb_mode);
+	camera->sensorHas.aec = 0 == sensor->set_exposure_ctrl(sensor, sensor->status.aec);
+	camera->sensorHas.agc = 0 == sensor->set_gain_ctrl(sensor, sensor->status.agc);
+	camera->sensorHas.aec_value = 0 == sensor->set_aec_value(sensor, sensor->status.aec_value);
+	camera->sensorHas.agc_gain = 0 == sensor->set_agc_gain(sensor, sensor->status.agc_gain);
+	camera->sensorHas.hmirror = 0 == sensor->set_hmirror(sensor, sensor->status.hmirror);
+	camera->sensorHas.vflip = 0 == sensor->set_vflip(sensor, sensor->status.vflip);
 
 	camera->sensorInitialized = true;
+}
+
+// ECMA-419 Image Input configure (Annex A, alg-image-input-prototype-configure).
+// The six standard features are numbers from 0 to 100. Each present value is
+// scaled onto the sensor step range and rounded to the nearest step. A missing
+// property is left unchanged. An unsupported property is ignored, even when
+// its value is out of range. The shared steps are brightness, contrast,
+// saturation, and sharpness -2..2 (accepted by both OV2640 and OV5640),
+// denoise 0..8, and whiteBalance as wb_mode 0..4.
+// exposure (integer 0..1200) and gain (integer 0..30) are additional options.
+// Setting exposure turns automatic exposure off. Setting gain turns automatic
+// gain off. mirror, flip, and aec are exactly 0 or 1. aec 1 also turns
+// automatic gain on. An explicit exposure or gain wins over aec in the same call.
+static int percentToRange(double percent, int minimum, int maximum)
+{
+	double span = (double)(maximum - minimum);
+	double scaled = (double)minimum + ((percent * span) / 100.0);
+	int step;
+
+	if (scaled >= 0)
+		step = (int)(scaled + 0.5);
+	else
+		step = (int)(scaled - 0.5);
+	if (step < minimum)
+		return minimum;
+	if (step > maximum)
+		return maximum;
+	return step;
+}
+
+static int percentFromRange(int value, int minimum, int maximum)
+{
+	int span = maximum - minimum;
+	int scaled;
+
+	if (span <= 0)
+		return 0;
+	scaled = ((value - minimum) * 100 + (span / 2)) / span;
+	if (scaled < 0)
+		return 0;
+	if (scaled > 100)
+		return 100;
+	return scaled;
+}
+
+static double readPercent(xsMachine *the, xsSlot slot)
+{
+	double value = xsmcToNumber(slot);
+
+	if ((value != value) || (value < 0) || (value > 100))
+		xsRangeError("0 to 100");
+	return value;
+}
+
+static int readInteger(xsMachine *the, xsSlot slot, int minimum, int maximum)
+{
+	double value = xsmcToNumber(slot);
+
+	if ((value != value) || (value < (double)minimum) || (value > (double)maximum) || ((double)(int)value != value))
+		xsRangeError("out of range");
+	return (int)value;
+}
+
+static int readSwitch(xsMachine *the, xsSlot slot)
+{
+	double value = xsmcToNumber(slot);
+
+	if ((value != 0) && (value != 1))
+		xsRangeError("0 or 1");
+	return (int)value;
+}
+
+static void rejectSensor(xsMachine *the, int err)
+{
+	if (err)
+		xsUnknownError("sensor rejected");
+}
+
+static void putInt(xsMachine *the, xsIdentifier id, int value)
+{
+	xsSlot tmp;
+
+	xsmcSetInteger(tmp, value);
+	xsmcSet(xsResult, id, tmp);
+}
+
+static void setPercent(xsMachine *the, sensor_t *sensor, int supported, xsIdentifier id, int minimum, int maximum, int (*setter)(sensor_t *, int))
+{
+	xsSlot slot;
+
+	if (!supported || !xsmcHas(xsArg(0), id))
+		return;
+	xsmcGet(slot, xsArg(0), id);
+	rejectSensor(the, setter(sensor, percentToRange(readPercent(the, slot), minimum, maximum)));
 }
 
 void xs_camera_get_configuration(xsMachine *the)
@@ -656,55 +756,76 @@ void xs_camera_get_configuration(xsMachine *the)
 	ensureSensor(camera);
 
 	sensor_t *sensor = esp_camera_sensor_get();
-	xsSlot tmp;
 
 	xsmcSetNewObject(xsResult);
-	if (camera->sensorHas.brightness) {
-		xsmcSetInteger(tmp, sensor->status.brightness);
-		xsmcSet(xsResult, xsID_brightness, tmp);
-	}
-	if (camera->sensorHas.contrast) {
-		xsmcSetInteger(tmp, sensor->status.contrast);
-		xsmcSet(xsResult, xsID_contrast, tmp);
-	}
-	if (camera->sensorHas.saturation) {
-		xsmcSetInteger(tmp, sensor->status.saturation);
-		xsmcSet(xsResult, xsID_saturation, tmp);
-	}
-	if (camera->sensorHas.sharpness) {
-		xsmcSetInteger(tmp, sensor->status.sharpness);
-		xsmcSet(xsResult, xsID_sharpness, tmp);
-	}
-	if (camera->sensorHas.denoise) {
-		xsmcSetInteger(tmp, sensor->status.denoise);
-		xsmcSet(xsResult, xsID_denoise, tmp);
-	}
-	if (camera->sensorHas.wb_mode) {
-		xsmcSetInteger(tmp, sensor->status.wb_mode);
-		xsmcSet(xsResult, xsID_whiteBalance, tmp);
-	}
+	if (camera->sensorHas.brightness)
+		putInt(the, xsID_brightness, percentFromRange(sensor->status.brightness, -2, 2));
+	if (camera->sensorHas.contrast)
+		putInt(the, xsID_contrast, percentFromRange(sensor->status.contrast, -2, 2));
+	if (camera->sensorHas.saturation)
+		putInt(the, xsID_saturation, percentFromRange(sensor->status.saturation, -2, 2));
+	if (camera->sensorHas.sharpness)
+		putInt(the, xsID_sharpness, percentFromRange(sensor->status.sharpness, -2, 2));
+	if (camera->sensorHas.denoise)
+		putInt(the, xsID_denoise, percentFromRange(sensor->status.denoise, 0, 8));
+	if (camera->sensorHas.wb_mode)
+		putInt(the, xsID_whiteBalance, percentFromRange(sensor->status.wb_mode, 0, 4));
+	if (camera->sensorHas.aec)
+		putInt(the, xsID_aec, sensor->status.aec ? 1 : 0);
+	if (camera->sensorHas.aec_value)
+		putInt(the, xsID_exposure, sensor->status.aec_value);
+	if (camera->sensorHas.agc_gain)
+		putInt(the, xsID_gain, sensor->status.agc_gain);
+	if (camera->sensorHas.hmirror)
+		putInt(the, xsID_mirror, sensor->status.hmirror ? 1 : 0);
+	if (camera->sensorHas.vflip)
+		putInt(the, xsID_flip, sensor->status.vflip ? 1 : 0);
 }
 
 void xs_camera_configure(xsMachine *the)
 {
     Camera camera = xsmcGetHostDataValidate(xsThis, (void *)&xsCameraHooks);
+	sensor_t *sensor;
+	xsSlot slot;
+
+	if ((xsmcArgc < 1) || (xsReferenceType != xsmcTypeOf(xsArg(0))))
+		xsTypeError("options");
 	ensureSensor(camera);
+	sensor = esp_camera_sensor_get();
 
-	sensor_t *sensor = esp_camera_sensor_get();
-	xsSlot tmp;
+	setPercent(the, sensor, camera->sensorHas.brightness, xsID_brightness, -2, 2, sensor->set_brightness);
+	setPercent(the, sensor, camera->sensorHas.contrast, xsID_contrast, -2, 2, sensor->set_contrast);
+	setPercent(the, sensor, camera->sensorHas.saturation, xsID_saturation, -2, 2, sensor->set_saturation);
+	setPercent(the, sensor, camera->sensorHas.sharpness, xsID_sharpness, -2, 2, sensor->set_sharpness);
+	setPercent(the, sensor, camera->sensorHas.denoise, xsID_denoise, 0, 8, sensor->set_denoise);
+	setPercent(the, sensor, camera->sensorHas.wb_mode, xsID_whiteBalance, 0, 4, sensor->set_wb_mode);
 
-	if (camera->sensorHas.brightness && xsmcGet(tmp, xsArg(0), xsID_brightness))
-		sensor->set_brightness(sensor, xsmcToInteger(tmp));
-	if (camera->sensorHas.contrast && xsmcGet(tmp, xsArg(0), xsID_contrast))
-		sensor->set_contrast(sensor, xsmcToInteger(tmp));
-	if (camera->sensorHas.saturation && xsmcGet(tmp, xsArg(0), xsID_saturation))
-		sensor->set_saturation(sensor, xsmcToInteger(tmp));
-	if (camera->sensorHas.sharpness && xsmcGet(tmp, xsArg(0), xsID_sharpness))
-		sensor->set_sharpness(sensor, xsmcToInteger(tmp));
-	if (camera->sensorHas.denoise && xsmcGet(tmp, xsArg(0), xsID_denoise))
-		sensor->set_denoise(sensor, xsmcToInteger(tmp));
-	if (camera->sensorHas.wb_mode && xsmcGet(tmp, xsArg(0), xsID_whiteBalance))
-		sensor->set_wb_mode(sensor, xsmcToInteger(tmp));
+	if (camera->sensorHas.aec && xsmcHas(xsArg(0), xsID_aec)) {
+		xsmcGet(slot, xsArg(0), xsID_aec);
+		rejectSensor(the, sensor->set_exposure_ctrl(sensor, readSwitch(the, slot)));
+		if (sensor->status.aec && camera->sensorHas.agc)
+			rejectSensor(the, sensor->set_gain_ctrl(sensor, 1));
+	}
+	if (camera->sensorHas.aec_value && xsmcHas(xsArg(0), xsID_exposure)) {
+		xsmcGet(slot, xsArg(0), xsID_exposure);
+		if (camera->sensorHas.aec)
+			rejectSensor(the, sensor->set_exposure_ctrl(sensor, 0));
+		rejectSensor(the, sensor->set_aec_value(sensor, readInteger(the, slot, 0, 1200)));
+	}
+	if (camera->sensorHas.agc_gain && xsmcHas(xsArg(0), xsID_gain)) {
+		xsmcGet(slot, xsArg(0), xsID_gain);
+		if (camera->sensorHas.agc)
+			rejectSensor(the, sensor->set_gain_ctrl(sensor, 0));
+		rejectSensor(the, sensor->set_agc_gain(sensor, readInteger(the, slot, 0, 30)));
+	}
+	if (camera->sensorHas.hmirror && xsmcHas(xsArg(0), xsID_mirror)) {
+		xsmcGet(slot, xsArg(0), xsID_mirror);
+		rejectSensor(the, sensor->set_hmirror(sensor, readSwitch(the, slot)));
+	}
+	if (camera->sensorHas.vflip && xsmcHas(xsArg(0), xsID_flip)) {
+		xsmcGet(slot, xsArg(0), xsID_flip);
+		rejectSensor(the, sensor->set_vflip(sensor, readSwitch(the, slot)));
+	}
 }
 
 /*

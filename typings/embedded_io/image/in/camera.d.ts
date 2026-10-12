@@ -27,6 +27,14 @@ declare module "embedded:io/image/in/camera" {
     close(): void;
   }
 
+  // brightness, contrast, saturation, sharpness, denoise, and whiteBalance are
+  // numbers from 0 to 100. A missing property is left unchanged. A value
+  // outside that range throws RangeError. Passing a non-object throws TypeError.
+  // On ESP32, exposure is an integer sensor line count from 0 to 1200 and turns
+  // automatic exposure off. gain is an integer sensor index from 0 to 30 and
+  // turns automatic gain off. mirror, flip, and aec are exactly 0 or 1.
+  // aec 1 also turns automatic gain on. An explicit exposure or gain wins
+  // over aec in the same call.
   export interface CameraConfiguration {
     brightness?: number;
     contrast?: number;
@@ -34,6 +42,11 @@ declare module "embedded:io/image/in/camera" {
     sharpness?: number;
     denoise?: number;
     whiteBalance?: number;
+    exposure?: number;
+    gain?: number;
+    mirror?: number;
+    flip?: number;
+    aec?: number;
   }
 
   export type Format = "buffer" | "buffer/disposable";
