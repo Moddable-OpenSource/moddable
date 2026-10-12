@@ -301,7 +301,7 @@ void xs_audioout_constructor_(xsMachine *the)
 
 #if MODDEF_AUDIOOUT_NUMCHANNELS == 2
 	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
-	i2s_config.slot_cfg.slot_mask = I2S_SLOT_MODE_BOTH;
+	i2s_config.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
 #else
 	i2s_config.slot_cfg.slot_mode = I2S_SLOT_MODE_MONO;
 	i2s_config.slot_cfg.slot_mask = MODDEF_AUDIOOUT_I2S_SLOT;
