@@ -226,6 +226,8 @@ DRIVER_DIRS = \
  	-I$(IDF_PATH)\components\esp_driver_gptimer\include \
  	-I$(IDF_PATH)\components\esp_driver_i2c\include \
  	-I$(IDF_PATH)\components\esp_hal_i2c\include \
+ 	-I$(IDF_PATH)\components\esp_hal_regi2c\include \
+ 	-I$(IDF_PATH)\components\esp_hal_regi2c\$(ESP32_SUBCLASS)\include \
  	-I$(IDF_PATH)\components\esp_driver_i2s\include \
  	-I$(IDF_PATH)\components\esp_hal_i2s\include \
  	-I$(IDF_PATH)\components\esp_driver_ledc\include \

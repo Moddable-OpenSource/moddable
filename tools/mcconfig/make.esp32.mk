@@ -180,6 +180,8 @@ DRIVER_DIRS = \
 	$(IDF_PATH)/components/esp_driver_gptimer/include \
 	$(IDF_PATH)/components/esp_driver_i2c/include \
 	$(IDF_PATH)/components/esp_hal_i2c/include \
+	$(IDF_PATH)/components/esp_hal_regi2c/include \
+	$(IDF_PATH)/components/esp_hal_regi2c/$(ESP32_SUBCLASS)/include \
 	$(IDF_PATH)/components/esp_driver_i2s/include \
 	$(IDF_PATH)/components/esp_hal_i2s/include \
 	$(IDF_PATH)/components/esp_driver_ledc/include \
