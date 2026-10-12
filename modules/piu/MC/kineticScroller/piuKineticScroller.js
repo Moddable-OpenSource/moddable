@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 Moddable Tech, Inc.
+ * Copyright (c) 2016-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -379,8 +379,9 @@ class ScrollerBehavior extends Behavior {
     scrollerStillMode.bind(this, scroller);
   }
   onDisplaying(scroller) {
-    if ("scroll" in this.data)
-      scroller.scroll = this.data.scroll;
+    const data = this.data;
+    if (data && ("object" === typeof data) && ("scroll" in data))
+      scroller.scroll = data.scroll;
   }
   onFinished(scroller) {
     this.mode.onFinished(this, scroller);
@@ -404,8 +405,9 @@ class ScrollerBehavior extends Behavior {
     this.mode.onTouchMoved(this, scroller, id, x, y, ticks, samples);
   }
   onUndisplaying(scroller) {
-    if ("scroll" in this.data)
-      this.data.scroll = scroller.scroll;
+    const data = this.data;
+    if (data && ("object" === typeof data) && ("scroll" in data))
+      data.scroll = scroller.scroll;
   }
   snap(scroller, position, direction) {
     return position;

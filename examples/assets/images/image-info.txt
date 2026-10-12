@@ -17,3 +17,7 @@ Public Domain - Prelinger Archives "Golden Gate City"
 
 Spinner graphic
 Moddable
+
+Anemometer
+CC BY-SA 3.0 - Jan Barani, https://commons.wikimedia.org/wiki/File:Anemometer_Animation.gif
+Modified: background color index changed to match the transparent color index

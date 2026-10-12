@@ -1,7 +1,7 @@
 import assets from "assets";
 import Timeline from "piu/Timeline";
 import View from "View";
-import { HorizontalScrollerBehavior, VerticalScrollerBehavior } from "ScrollerBehaviors";
+import { HorizontalScrollerBehavior, VerticalScrollerBehavior } from "piu/KineticScroller";
 
 class CommonBehavior extends Behavior {
 	onBack(container) {

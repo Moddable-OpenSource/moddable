@@ -7,6 +7,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/io",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/kineticScroller",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/network/sntp",
 		"$(MODDABLE)/modules/piu/MC/outline",
@@ -28,7 +29,6 @@
 		"*": [
 			"$(MODULES)/data/binaryMessage/*",
 			"./Controller",
-			"./ScrollerBehaviors",
 			"./Retention",
 			"./ToggleBehavior",
 			"./Transition",
@@ -46,7 +46,6 @@
 		"BinaryMessage",
 		"Controller",
 		"Retention",
-		"ScrollerBehaviors",
 		"ToggleBehavior",
 		"Transition",
 		"View",

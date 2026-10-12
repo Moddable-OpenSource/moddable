@@ -2,6 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/kineticScroller",
 		"$(MODDABLE)/modules/pins/i2s",
 		"$(MODDABLE)/modules/io",
 		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
@@ -22,13 +23,11 @@
 	"modules": {
 		"*": [
 			"./main",
-			"./channels",
-			"./ScrollerBehaviors"
+			"./channels"
 		]
 	},
 	"preload": [
-		"channels",
-		"ScrollerBehaviors"
+		"channels"
 	],
 	"resources":{
 		"*": [

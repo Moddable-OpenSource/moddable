@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Moddable Tech, Inc
+ * Copyright (c) 2022-2026 Moddable Tech, Inc
  *
  *   This file is part of the Moddable SDK Tools.
  *
@@ -28,6 +28,8 @@ declare module "piu/shape" {
     strokeOutline: Outline,
   }
   interface ShapeDictionary extends ContentDictionary {
+    clip?: boolean;
+    /** @deprecated ignored by Shape */
     string?: string;
   }
   interface ShapeConstructor {
@@ -35,6 +37,8 @@ declare module "piu/shape" {
     (behaviorData?: any, dictionary?: ShapeDictionary): Shape;
 
     template<T>(this: T, fn: (arg: object) => ShapeDictionary): T;
+
+    readonly Outline: typeof Outline;
   }
 
   global {

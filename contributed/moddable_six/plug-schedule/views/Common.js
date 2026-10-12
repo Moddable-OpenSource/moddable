@@ -1,7 +1,7 @@
 import assets from "assets";
 import Timeline from "piu/Timeline";
 import View from "View";
-import { HorizontalScrollerBehavior, VerticalScrollerBehavior } from "ScrollerBehaviors";
+import { HorizontalScrollerBehavior, VerticalScrollerBehavior } from "piu/KineticScroller";
 
 const NONE = 0;
 const LEFT = -1;

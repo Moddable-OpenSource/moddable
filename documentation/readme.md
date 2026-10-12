@@ -1,6 +1,6 @@
 # Moddable SDK – Documentation Overview
 Copyright 2019-2026 Moddable Tech, Inc.<BR>
-Revised: January 12, 2026
+Revised: October 12, 2026
 
 This directory contains documentation for the Moddable SDK.
 
@@ -38,6 +38,7 @@ The JavaScript APIs for the modules in the Moddable SDK are documented in the fo
 - [**Piu**](./piu/piu.md): User interface framework
   - [**Die cut**](./piu/die-cut.md): Using complex clipping shapes with Piu
   - [**Expanding keyboard**](./piu/expanding-keyboard.md): Adding an animated expanding keyboard to Piu projects
+  - [**Extensions**](./piu/piu-extensions.md): Extensions to Piu for GIF images, pixel buffers, mobile-style touch scrolling, QR Codes, rounded rectangles, shapes, and vector images
   - [**Keyboard**](./piu/keyboard.md): Adding a touch keyboard to Piu projects
   - [**Localization**](./piu/localization.md): Using JSON data to efficiently localize Piu applications
 

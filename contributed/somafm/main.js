@@ -17,7 +17,7 @@ import MP3Streamer from "mp3streamer";
 
 import config from "mc/config";
 import {} from "piu/MC";
-import { VerticalScrollerBehavior } from "ScrollerBehaviors";
+import { VerticalScrollerBehavior } from "piu/KineticScroller";
 import Timeline from "piu/Timeline";
 import channels from "channels";
 

@@ -3,6 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/kineticScroller",
 		"$(MODDABLE)/modules/io/storage",
 		"$(MODDABLE)/modules/network/services/chatAudioIO"
 	],
@@ -32,7 +33,6 @@
 	"modules": {
 		"*": [
 			"./Controller",
-			"./ScrollerBehaviors",
 			"./View",
 			"./assets",
 			"./main",
@@ -42,7 +42,6 @@
 	},
 	"preload": [
 		"Controller",
-		"ScrollerBehaviors",
 		"View",
 		"assets",
 		"model",

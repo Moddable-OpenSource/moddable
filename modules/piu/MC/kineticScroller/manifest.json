@@ -1,0 +1,6 @@
+{
+	"modules": {
+		"piu/KineticScroller": "./piuKineticScroller"
+	},
+	"preload": "piu/KineticScroller"
+}

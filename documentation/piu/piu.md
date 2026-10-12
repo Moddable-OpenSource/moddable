@@ -1,10 +1,12 @@
 # Piu JavaScript Reference
-Copyright 2017-2025 Moddable Tech, Inc.<BR>
-Revised: October 9, 2025
+Copyright 2017-2026 Moddable Tech, Inc.<BR>
+Revised: October 12, 2026
 
 ## About This Document
 
 Piu is a user interface framework designed to run on microcontrollers. The programming interface to Piu is a JavaScript API of global constructors, functions, and objects that define the containment hierarchy, appearance, behavior, and flow of applications. This document provides details on the objects that define the Piu API and important related concepts.
+
+Extensions to Piu are documented in [Piu Extensions](./piu-extensions.md). These include support to display animated GIFs, pixel buffers, QR Codes, rounded rectangles, shapes, and vector images, and mobile-style touch scrolling.
 
 ## Table of Contents
 
@@ -36,7 +38,7 @@ Piu is a user interface framework designed to run on microcontrollers. The progr
  	 * [Port Object](#port-object)
  	 * [Row Object](#row-object)
  	 * [Scroller Object](#scroller-object)
- 	 * [Shape Object](../commodetto/outline/Outlines.md)
+ 	 * [Shape Object](./piu-extensions.md#shape-object)
  	 * [Skin Object](#skin-object)
  	 * [Sound Object](#sound-object)
  	 * [Style Object](#style-object)

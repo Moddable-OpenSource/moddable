@@ -1,0 +1,18 @@
+{
+	"build": {
+		"NAME": "jpeghttp-piu"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_net.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json",
+		"$(MODDABLE)/modules/commodetto/jpeg",
+		"$(MODDABLE)/modules/piu/MC/imageBuffer"
+	],
+	"modules": {
+		"*": "./main",
+		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco"
+	},
+	"preload": "commodetto/Poco"
+}

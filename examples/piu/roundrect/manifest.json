@@ -1,0 +1,13 @@
+{
+	"build": {
+		"NAME": "roundrect-piu"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/outline/manifestRoundRect.json"
+	],
+	"modules": {
+		"*": "./main"
+	}
+}

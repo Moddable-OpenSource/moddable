@@ -1,0 +1,18 @@
+{
+	"build": {
+		"NAME": "gifimage-piu"
+	},
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/piu/MC/gif"
+	],
+	"modules": {
+		"*": "./main"
+	},
+	"data": {
+		"*": [
+			"$(MODDABLE)/examples/assets/images/anemometer"
+		]
+	}
+}

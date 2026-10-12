@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/examples/manifest_base.json",
+		"$(MODDABLE)/examples/manifest_piu.json",
+		"$(MODDABLE)/modules/commodetto/manifest_bufferout.json",
+		"$(MODDABLE)/modules/piu/MC/imageBuffer"
+	],
+	"modules": {
+		"*": "./main",
+		"commodetto/Poco": "$(MODULES)/commodetto/commodettoPoco"
+	},
+	"preload": "commodetto/Poco"
+}

@@ -196,8 +196,8 @@ mxImport xsIntegerValue _xsArgc(xsMachine*);
 #define xsmcArgc _xsArgc(the)
 
 enum {
-	xsBufferNonrelocatable,
-	xsBufferRelocatable
+	xsBufferNonrelocatable = 0,
+	xsBufferRelocatable = 1
 };
 
 mxImport xsIntegerValue _xsmcGetBuffer(xsMachine *the, xsSlot *slot, void **data, xsUnsignedValue *count, xsBooleanValue writable);

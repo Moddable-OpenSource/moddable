@@ -1092,7 +1092,9 @@ void PiuViewUpdateStep(PiuView* self, PocoCoordinate x, PocoCoordinate y, PocoDi
 	if (!(poco->flags & kPocoFlagFrameBuffer))
 #endif
 	{
+		uint8_t gcDisabled = poco->flags & kPocoFlagGCDisabled;
 		PocoDrawingBegin(poco, x, y, w, h);
+		poco->flags |= gcDisabled;
 		if ((0 == poco->w) || (0 == poco->h)) {
 			PocoDrawingEnd(poco, poco->pixels, poco->pixelsLength, PiuViewReceiver, self);
 			return;

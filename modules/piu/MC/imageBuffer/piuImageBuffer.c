@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -120,7 +120,8 @@ void PiuImageBufferDrawAux(void* it, PiuView* view, PiuCoordinate x, PiuCoordina
 	xsBeginHost((*self)->the);
 	xsVars(1);
 	xsVar(0) = xsReference((*self)->buffer);
-	_xsmcGetBuffer(the, &(xsVar(0)), &pixels, &count, 0);
+	if (_xsmcGetBuffer(the, &(xsVar(0)), &pixels, &count, 0))
+		PocoDisableGC((*view)->poco);
 	(*self)->bits.pixels = pixels;
 	x += (*view)->poco->xOrigin;
 	y += (*view)->poco->yOrigin;
@@ -174,7 +175,8 @@ void PiuImageBuffer_create(xsMachine* the)
 void PiuImageBuffer_get_buffer(xsMachine *the)
 {
 	PiuImageBuffer* self = PIU(ImageBuffer, xsThis);
-	xsResult = xsReference((*self)->buffer);
+	if ((*self)->buffer)
+		xsResult = xsReference((*self)->buffer);
 }
 
 void PiuImageBuffer_set_buffer(xsMachine *the)
