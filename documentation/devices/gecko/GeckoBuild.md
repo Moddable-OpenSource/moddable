@@ -548,7 +548,7 @@ Copy the particular `main.c` file into your Simplicity Studio's project, replaci
 Continue with *__Build xs_gecko.a archive__* above.
 
 ### BLE
-The Moddable SDK includes Bluetooth Low Energy (BLE) protocol support for Blue Gecko devices. Our BLE API [documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble.md) includes details for building Blue Gecko BLE apps.
+The Moddable SDK includes Bluetooth Low Energy (BLE) protocol support for Blue Gecko devices. Our BLE API [documentation](https://github.com/Moddable-OpenSource/moddable/blob/public/documentation/network/ble/ble.md) includes details for building Blue Gecko BLE apps.
 
 ### Notes and Troubleshooting
 
