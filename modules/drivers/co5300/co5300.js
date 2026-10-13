@@ -22,32 +22,32 @@
 	CO5300 QSPI AMOLED display driver
 */
 
-export default class CO5300 @ "xs_co5300_destructor" {
-	constructor(options) @ "xs_co5300";
+export default class CO5300 extends Native("xs_co5300_destructor") {
+	constructor(options) { super(); native("xs_co5300").call(this, options); }
 
-	begin(x, y, width, height) @ "xs_co5300_begin";
-	send(pixels, offset, count) @ "xs_co5300_send";
-	end() @ "xs_co5300_end";
+	begin(x, y, width, height) { return native("xs_co5300_begin").call(this, x, y, width, height); }
+	send(pixels, offset, count) { return native("xs_co5300_send").call(this, pixels, offset, count); }
+	end() { return native("xs_co5300_end").call(this); }
 
 	adaptInvalid() {}
-	continue() @ "xs_co5300_continue";
+	continue() { return native("xs_co5300_continue").call(this); }
 
-	pixelsToBytes(count) @ "xs_co5300_pixelsToBytes";
+	pixelsToBytes(count) { return native("xs_co5300_pixelsToBytes").call(this, count); }
 
-	get pixelFormat() @ "xs_co5300_get_pixelFormat";
-	get width() @ "xs_co5300_get_width";
-	get height() @ "xs_co5300_get_height";
+	get pixelFormat() { return native("xs_co5300_get_pixelFormat").call(this); }
+	get width() { return native("xs_co5300_get_width").call(this); }
+	get height() { return native("xs_co5300_get_height").call(this); }
 	get async() {return true;}
-	get rotation() @ "xs_co5300_get_rotation";
-	set rotation(value) @ "xs_co5300_set_rotation";
+	get rotation() { return native("xs_co5300_get_rotation").call(this); }
+	set rotation(value) { native("xs_co5300_set_rotation").call(this, value); }
 
-	get c_dispatch() @ "xs_co5300_get_c_dispatch";
+	get c_dispatch() { return native("xs_co5300_get_c_dispatch").call(this); }
 
-	command(id, data) @ "xs_co5300_command";
-	set brightness(value) @ "xs_co5300_set_brightness";
-	get brightness() @ "xs_co5300_get_brightness";
+	command(id, data) { return native("xs_co5300_command").call(this, id, data); }
+	set brightness(value) { native("xs_co5300_set_brightness").call(this, value); }
+	get brightness() { return native("xs_co5300_get_brightness").call(this); }
 
-	close() @ "xs_co5300_close";
+	close() { return native("xs_co5300_close").call(this); }
 
 	pixels(value = 0) {
 		const pixels = this.width << 5;
