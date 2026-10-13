@@ -1,7 +1,4 @@
 {
-	"include": [
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
 	"defines": {
 		"ili9341p8": {
 			"width": 320,
@@ -15,11 +12,12 @@
 		}
 	},
 	"modules": {
-		"*": "./*"
+		"*": [
+			"./*",
+			"$(COMMODETTO)/commodettoBitmap.h"
+		]
 	},
-	"preload": [
-		"ili9341_p8"
-	],
+	"preload": "ili9341_p8",
 	"platforms": {
 		"esp32": {
 			"dependency": [
