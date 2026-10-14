@@ -29,6 +29,7 @@
 		"esp32/m5stack_fire": {},
 		"esp32/m5stack_core2": {},
 		"esp32/m5stack_cores3": {},
+		"esp32/m5stick_s3": {},
 		"esp32/kaluga": {},
 		"esp32/moddable_six": {},
 		"esp32/moddable_two": {
