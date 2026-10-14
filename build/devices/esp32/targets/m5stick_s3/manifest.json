@@ -1,0 +1,144 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the side button until the green LED lights.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the side button."
+	},
+	"include": [
+		"$(MODULES)/drivers/st7789",
+		"$(MODULES)/drivers/sensors/bmi270",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm"
+	],
+	"config": {
+		"screen": "st7789",
+		"touch": "",
+		"rotation": 270,
+		"enablePowerButton": false
+	},
+	"modules": {
+		"setup/target": "./setup-target",
+		"m5pm1": "./M5PM1",
+		"m5stick_s3/es8311": "./M5StickS3ES8311",
+		"m5stick_s3/audio-resource": "./M5StickS3AudioResource",
+		"embedded:io/audio/in-original": "$(MODULES)/io/audioin/esp32/*",
+		"embedded:io/audio/in": "./M5StickS3AudioIn",
+		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
+		"embedded:io/audio/out": "./M5StickS3AudioOut"
+	},
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_driver_i2s" },
+				{ "idf": "esp_adc" }
+			]
+		}
+	},
+	"preload": [
+		"embedded:io/audio/in",
+		"embedded:io/audio/out",
+		"setup/target"
+	],
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"i2c": {
+			"sda_pin": 9,
+			"scl_pin": 10
+		},
+		"spi": {
+			"mosi_pin": 39,
+			"sck_pin": 40
+		},
+		"ili9341": {
+			"hz": 40000000,
+			"spi_mode": 0,
+			"width": 240,
+			"height": 135,
+			"cs_pin": 41,
+			"dc_pin": 45,
+			"rst_pin": 21,
+			"column_offset": 40,
+			"row_offset": 53,
+			"spi_port": "SPI3_HOST",
+			"backlight_pin": 38,
+			"backlight_on": 1,
+			"registers": [
+				"0x01, 0,",
+				"kDelayMS, 150,",
+				"0x11, 0,",
+				"kDelayMS, 255,",
+				"0xB2, 5, 0x0C, 0x0C, 0x00, 0x33, 0x33,",
+				"0xB6, 2, 0x0A, 0x82,",
+				"0xB7, 1, 0x35,",
+				"0xBB, 1, 0x28,",
+				"kDelayMS, 10,",
+				"0xC0, 1, 0x0C,",
+				"0xC2, 2, 0x01, 0xFF,",
+				"0xC3, 1, 0x10,",
+				"0xC4, 1, 0x20,",
+				"0xC6, 1, 0x0F,",
+				"0x20, 0,",
+				"0x36, 1, 0x78,",
+				"0x3A, 1, 0x55,",
+				"0x2A, 4, 0x00, 0x00, 0x01, 0x3F,",
+				"0x2B, 4, 0x00, 0x00, 0x00, 0xE5,",
+				"0x21, 0,",
+				"0xE0, 14, 0xD0, 0x00, 0x02, 0x07, 0x0A, 0x28, 0x32, 0x44, 0x42, 0x06, 0x0E, 0x12, 0x14, 0x17,",
+				"0xE1, 14, 0xD0, 0x00, 0x02, 0x07, 0x0A, 0x28, 0x31, 0x54, 0x47, 0x0E, 0x1C, 0x17, 0x1B, 0x1E,",
+				"0x13, 0,",
+				"kDelayMS, 10,",
+				"0x29, 0,",
+				"kDelayMS, 100,",
+				"kDelayMS, 0"
+			]
+		},
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 22050,
+			"volume_divider": 1,
+			"i2s": {
+				"num": 0,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1,
+				"bitsPerSample": 16,
+				"bck_pin": 17,
+				"lr_pin": 15,
+				"mck_pin": 18,
+				"dataout_pin": 14
+			}
+		},
+		"audioIn": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 22050,
+			"i2s": {
+				"num": 1,
+				"slot": "I2S_STD_SLOT_BOTH",
+				"format_i2s": 1,
+				"multiplier": 1,
+				"bck_pin": 17,
+				"lr_pin": 15,
+				"mck_pin": 18,
+				"datain": 16
+			}
+		}
+	}
+}

@@ -518,14 +518,17 @@ void audioInLoop(void *pvParameter)
 		modLog("i2s_channel_init_pdm_rx_mode failed");
 	}
 #else
+	// BOTH captures interleaved left/right frames even when read() returns mono.
 	i2s_std_config_t rx_std_cfg = {
 		.clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(input->sampleRate),
 #if MODDEF_AUDIOIN_I2S_FORMAT_I2S
 		.slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
-			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+			((2 == MODDEF_AUDIOIN_NUMCHANNELS) || (I2S_STD_SLOT_BOTH == MODDEF_AUDIOIN_I2S_SLOT))
+				? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
 #else
 		.slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT,
-			(2 == MODDEF_AUDIOIN_NUMCHANNELS) ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
+			((2 == MODDEF_AUDIOIN_NUMCHANNELS) || (I2S_STD_SLOT_BOTH == MODDEF_AUDIOIN_I2S_SLOT))
+				? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO),
 #endif
 		.gpio_cfg = {
 			.mclk = MODDEF_AUDIOIN_I2S_MCK_PIN,
