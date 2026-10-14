@@ -18,6 +18,8 @@
  *
  */
 
+#include <stdint.h>
+
 #include "xsAll.h"
 #include "xsmc.h"
 #include "mc.xs.h"
@@ -26,7 +28,9 @@
 #include "moddableAppState.h"
 
 #include "applib/app_logging.h"
+#include "applib/moddable/moddable_private.h"
 #include "logging/logging_private.h"
+#include "kernel/memory_layout.h"
 #include "kernel/pbl_malloc.h"
 #include "process_state/app_state/app_state.h"
 #include <pbl/kernel/syscall.h>
@@ -55,10 +59,12 @@ typedef struct {
 static FFIBinding s_ffi_bindings[FFI_MAX_BINDINGS];
 static int s_ffi_binding_count;
 
+// The machine is in App RAM, where the app can rewrite it, and its XS stack
+// may be in the kernel heap: check both against the kernel's record.
 static void prv_check_machine(txMachine *the)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
-	if (!state || state->the != the) {
+	if (!moddable_machine_is_current(the) || (the->stack < the->stackBottom) ||
+	    (the->stackTop <= the->stack)) {
 		PBL_LOG_ERR("XS API: invalid machine pointer %p", the);
 		pbl_syscall_fail();
 	}
@@ -92,20 +98,37 @@ static void prv_ffi_shim(txMachine *the)
 	pbl_user_call(prv_invoke_unprivileged, &ctx);
 }
 
-// Each trampoline elevates, validates the txMachine pointer against per-task
-// moddable state, calls the underlying fx*, and drops back. Slot-pointer
-// bounds checking is TODO; a bogus slot from a malicious app faults the
-// kernel-side fx* rather than escaping.
+// Each trampoline elevates, validates its arguments against the per-task
+// moddable state, calls the underlying fx*, and drops back. Slots must be on
+// the XS stack (the FFI only hands out this, result and arguments), and C
+// strings and buffers must be in app memory.
+
+static void prv_check_slot(txMachine *the, txSlot *slot)
+{
+	if ((slot < the->stack) || (slot >= the->stackTop) ||
+	    (((uintptr_t)slot - (uintptr_t)the->stack) % sizeof(txSlot))) {
+		PBL_LOG_ERR("XS API: invalid slot pointer %p", slot);
+		pbl_syscall_fail();
+	}
+}
+
+static void prv_check_string(txString string)
+{
+	if (!memory_layout_is_cstring_in_region(memory_layout_get_app_region(), string, SIZE_MAX)) {
+		PBL_LOG_ERR("XS API: invalid string pointer %p", string);
+		pbl_syscall_fail();
+	}
+}
 
 DEFINE_SYSCALL(txSlot *, sys_moddable_xs_this, txMachine *the) { prv_check_machine(the); return fxThis(the); }
 DEFINE_SYSCALL(txInteger, sys_moddable_xs_argc, txMachine *the) { prv_check_machine(the); return fxArgc(the); }
 DEFINE_SYSCALL(txSlot *, sys_moddable_xs_argv, txMachine *the, txInteger index) { prv_check_machine(the); return fxArgv(the, index); }
 DEFINE_SYSCALL(void, sys_moddable_xs_pop, txMachine *the) { prv_check_machine(the); fxPop(the); }
-DEFINE_SYSCALL(void, sys_moddable_xs_push, txMachine *the, txSlot *slot) { prv_check_machine(the); fxPush(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_push, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); fxPush(the, slot); }
 DEFINE_SYSCALL(txSlot *, sys_moddable_xs_result, txMachine *the) { prv_check_machine(the); return fxResult(the); }
 DEFINE_SYSCALL(void, sys_moddable_xs_abort, txMachine *the, int status) { prv_check_machine(the); fxAbort(the, status); }
 DEFINE_SYSCALL(void, sys_moddable_xs_defineID, txMachine *the, txID id, txFlag flag, txFlag mask) { prv_check_machine(the); fxDefineID(the, id, flag, mask); }
-DEFINE_SYSCALL(txID, sys_moddable_xs_id, txMachine *the, txString name) { prv_check_machine(the); return fxID(the, name); }
+DEFINE_SYSCALL(txID, sys_moddable_xs_id, txMachine *the, txString name) { prv_check_machine(the); prv_check_string(name); return fxID(the, name); }
 
 DEFINE_SYSCALL(txSlot *, sys_moddable_xs_newHostFunction, txMachine *the, txCallback user_cb, txInteger length, txInteger name, txInteger profileID)
 {
@@ -120,26 +143,33 @@ DEFINE_SYSCALL(txSlot *, sys_moddable_xs_newHostFunction, txMachine *the, txCall
 	return instance;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromInteger, txMachine *the, txSlot *slot, txInteger value) { prv_check_machine(the); fxInteger(the, slot, value); }
-DEFINE_SYSCALL(txInteger, sys_moddable_xs_toInteger, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToInteger(the, slot); }
-DEFINE_SYSCALL(void, sys_moddable_xs_fromNumber, txMachine *the, txSlot *slot, txNumber value) { prv_check_machine(the); fxNumber(the, slot, value); }
-DEFINE_SYSCALL(txNumber, sys_moddable_xs_toNumber, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToNumber(the, slot); }
-DEFINE_SYSCALL(void, sys_moddable_xs_fromUnsigned, txMachine *the, txSlot *slot, txUnsigned value) { prv_check_machine(the); fxUnsigned(the, slot, value); }
-DEFINE_SYSCALL(txUnsigned, sys_moddable_xs_toUnsigned, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToUnsigned(the, slot); }
-DEFINE_SYSCALL(void, sys_moddable_xs_fromBigInt64, txMachine *the, txSlot *slot, int64_t value) { prv_check_machine(the); fxFromBigInt64(the, slot, value); }
-DEFINE_SYSCALL(int64_t, sys_moddable_xs_toBigInt64, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToBigInt64(the, slot); }
-DEFINE_SYSCALL(void, sys_moddable_xs_fromBigUint64, txMachine *the, txSlot *slot, uint64_t value) { prv_check_machine(the); fxFromBigUint64(the, slot, value); }
-DEFINE_SYSCALL(uint64_t, sys_moddable_xs_toBigUint64, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToBigUint64(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromInteger, txMachine *the, txSlot *slot, txInteger value) { prv_check_machine(the); prv_check_slot(the, slot); fxInteger(the, slot, value); }
+DEFINE_SYSCALL(txInteger, sys_moddable_xs_toInteger, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToInteger(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromNumber, txMachine *the, txSlot *slot, txNumber value) { prv_check_machine(the); prv_check_slot(the, slot); fxNumber(the, slot, value); }
+DEFINE_SYSCALL(txNumber, sys_moddable_xs_toNumber, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToNumber(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromUnsigned, txMachine *the, txSlot *slot, txUnsigned value) { prv_check_machine(the); prv_check_slot(the, slot); fxUnsigned(the, slot, value); }
+DEFINE_SYSCALL(txUnsigned, sys_moddable_xs_toUnsigned, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToUnsigned(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromBigInt64, txMachine *the, txSlot *slot, int64_t value) { prv_check_machine(the); prv_check_slot(the, slot); fxFromBigInt64(the, slot, value); }
+DEFINE_SYSCALL(int64_t, sys_moddable_xs_toBigInt64, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToBigInt64(the, slot); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromBigUint64, txMachine *the, txSlot *slot, uint64_t value) { prv_check_machine(the); prv_check_slot(the, slot); fxFromBigUint64(the, slot, value); }
+DEFINE_SYSCALL(uint64_t, sys_moddable_xs_toBigUint64, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToBigUint64(the, slot); }
 
-// Strings and ArrayBuffers. Their XS-side backing now lives in app RAM
-// (unprivileged-readable), so the from*/to*Handle entries hand the generated
-// mc.ffi.c direct pointers into XS storage — no copy-out ABI. Slot-pointer
-// bounds checking is still the shared TODO noted above.
-DEFINE_SYSCALL(void, sys_moddable_xs_fromString, txMachine *the, txSlot *slot, char *value) { prv_check_machine(the); fxString(the, slot, value); }
-DEFINE_SYSCALL(void, sys_moddable_xs_fromStringX, txMachine *the, txSlot *slot, char *value) { prv_check_machine(the); fxStringX(the, slot, value); }
-DEFINE_SYSCALL(char **, sys_moddable_xs_toStringHandle, txMachine *the, txSlot *slot) { prv_check_machine(the); return fxToStringHandle(the, slot); }
-DEFINE_SYSCALL(void *, sys_moddable_xs_fromArrayBuffer, txMachine *the, txSlot *slot, void *data, txInteger byteLength, txInteger maxByteLength) { prv_check_machine(the); return fxArrayBuffer(the, slot, data, byteLength, maxByteLength); }
-DEFINE_SYSCALL(void **, sys_moddable_xs_toArrayBufferHandle, txMachine *the, txSlot *slot, size_t size) { prv_check_machine(the); return fxToArrayBufferHandle(the, slot, size); }
+// Strings and ArrayBuffers. Their XS-side backing lives in app RAM
+// (unprivileged-readable), so the to*Handle entries hand the generated
+// mc.ffi.c direct pointers into XS storage — no copy-out ABI. fromStringX
+// copies like fromString: the app could rewrite a string it lent to XS.
+DEFINE_SYSCALL(void, sys_moddable_xs_fromString, txMachine *the, txSlot *slot, char *value) { prv_check_machine(the); prv_check_slot(the, slot); prv_check_string(value); fxString(the, slot, value); }
+DEFINE_SYSCALL(void, sys_moddable_xs_fromStringX, txMachine *the, txSlot *slot, char *value) { prv_check_machine(the); prv_check_slot(the, slot); prv_check_string(value); fxString(the, slot, value); }
+DEFINE_SYSCALL(char **, sys_moddable_xs_toStringHandle, txMachine *the, txSlot *slot) { prv_check_machine(the); prv_check_slot(the, slot); return fxToStringHandle(the, slot); }
+DEFINE_SYSCALL(void *, sys_moddable_xs_fromArrayBuffer, txMachine *the, txSlot *slot, void *data, txInteger byteLength, txInteger maxByteLength)
+{
+	prv_check_machine(the);
+	prv_check_slot(the, slot);
+	if (data && (byteLength > 0))
+		pbl_syscall_verify_user(data, byteLength);
+	return fxArrayBuffer(the, slot, data, byteLength, maxByteLength);
+}
+DEFINE_SYSCALL(void **, sys_moddable_xs_toArrayBufferHandle, txMachine *the, txSlot *slot, size_t size) { prv_check_machine(the); prv_check_slot(the, slot); return fxToArrayBufferHandle(the, slot, size); }
 
 void FFI_constructor(xsMachine* the)
 {
