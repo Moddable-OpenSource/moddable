@@ -21,7 +21,7 @@
 #include "pebblegraphics.h"
 #include "applib/graphics/gpath.h"
 #include "kernel/pbl_malloc.h"
-#include "system/passert.h"
+#include "moddableAppState.h"
 
 #define MINIMUM_ARRAY_LEN (8)
 static void prv_try_allocate_steps(xsMachine *the, PebbleGraphicsContext pgr, const size_t num_steps_increment);
@@ -270,7 +270,8 @@ void pebble_graphics_context_fill(xsMachine *the)
   size_t points_num = 0;
 
   #define ADD_P(pt) \
-    PBL_ASSERTN(points_num < pgr->path_steps_num); \
+    if (points_num >= pgr->path_steps_num) \
+      MODDABLE_FATAL("path overflow"); \
     points[points_num++] = GPointFromGPointPrecise( \
       prv_point_add_vector_precise(&(pt).xy, &(pt).fill_delta));
 
