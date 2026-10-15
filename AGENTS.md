@@ -1,6 +1,6 @@
 # AGENTS.md
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: September 30, 2026
+Revised: October 15, 2026
 
 > **Note**: This document was written by an LLM for LLMs.
 
@@ -60,6 +60,8 @@ cd $MODDABLE/build/makefiles/mac && make                 # or lin, win, wasm
 
 The tools are built per checkout, into `$MODDABLE/build/bin/<platform>/release`. A second checkout needs its own `make` run; borrowing another checkout's binaries risks mismatching the XS version in the tree you are building.
 
+**Rebuild the tools after editing `tools/*.js`.** `mcconfig`, `mcpack`, and the other JavaScript tools are compiled into the `tools` binary, so an edit has no effect until `make` runs again in `build/makefiles/<platform>`.
+
 ESP32 work additionally needs `IDF_PATH` pointing at an ESP-IDF installation, plus `source $IDF_PATH/export.sh` in each shell. See [documentation/Moddable SDK - Getting Started.md](./documentation/Moddable%20SDK%20-%20Getting%20Started.md) and [documentation/devices/esp32.md](./documentation/devices/esp32.md). Similarly, building for other microcontroller families requires installation and configuration of their SDKs (see Getting Started).
 
 ## Build and run
@@ -86,6 +88,8 @@ Two `-t` targets are worth knowing, because using them instead of the default is
 - **`-t xsbug` starts a debug session against the build that already exists**, skipping compile and deploy entirely. On a device this avoids re-flashing the binary, which dominates the edit-run cycle. Despite the name it works with `-dl` and xsdb, not just the xsbug GUI. **It does nothing on `-p sim`**, where it exits successfully having printed nothing at all — which reads as a hang or a crash rather than an unsupported target. Use the default target for the simulator.
 
 Additionally, **`-t clean` removes all build artifacts** and is preferred to manually deleting build output directories.
+
+**Do not read `$?` after a pipe.** `mcconfig … | tail` reports the exit status of `tail`, not `mcconfig`. Redirect output to a file and test `$?`, or `set -o pipefail`.
 
 Splitting the two — `-t build` to compile, then `-t xsbug` to run — is usually the right shape for automated or scripted work: only the build is slow, and it needs no timing guesswork, while launch and connect take well under a second.
 
@@ -164,8 +168,8 @@ cd $MODDABLE/examples/piu/balls && mcconfig -dl -m -p sim
 - **There is no `xsdb` executable.** xsdb *is* [tools/xsbug-log](./tools/xsbug-log), and `mcconfig -dl` launches it for you — you never invoke it by name. `which xsdb` finding nothing means nothing is wrong; do not conclude the debugger is missing from the checkout and fall back to `trace()` and rebuilds.
 - **`help` at the `(xsdb)` prompt lists every command**, grouped into control flow, breakpoints, inspection, navigation, settings, and control. The full command surface is discoverable at runtime, so it is not reproduced here.
 - **`set output json`** switches to structured JSON output intended to be parsed rather than scraped. `set output text` gives gdb-style output. Prefer JSON when consuming output programmatically.
-- **`info instruments` prints the runtime's vital signs** — network sockets, timers, files, chunk and slot memory in use, system bytes free, garbage collections, CPU load. This is a resource canary, and using it is one of the motivations for instrumentation existing: functional tests check answers; instruments check costs. Snapshot it at baseline, after a workload, and again after the system quiesces — any value that does not return to baseline is a finding (a leak or a runaway), even when every assertion passed. A years-latent socket leak was found exactly this way. Instrumented device builds (`-i`) stream the same columns to the serial console once per second as `instruments:` lines; the `instruments key:` line printed at boot names the fields.
-- Settings persist per project in a hidden `.xsdb.json` file in the project directory — breakpoints, output mode, break-on-exception, break-at-startup. Behavior can differ between projects for this reason. The file is gitignored.
+- **`info instruments` prints the runtime's vital signs** — network sockets, timers, files, chunk and slot memory in use, system bytes free, garbage collections, CPU load. This is a resource canary, and using it is one of the motivations for instrumentation existing: functional tests check answers; instruments check costs. Snapshot it at baseline, after a workload, and again after the system quiesces — any value that does not return to baseline is a finding (a leak or a runaway), even when every assertion passed. A years-latent socket leak was found exactly this way. Instrumented device builds (`-i`) stream the same columns to the serial console once per second as `instruments:` lines; the `instruments key:` line printed at boot names the fields. `Stack used` is the depth when sampled, not a high-water mark; find a peak by bisecting `creation.stack`.
+- Settings persist per project in a hidden `.xsdb.json` file in the project directory — breakpoints, output mode, break-on-exception, break-at-startup. Behavior can differ between projects for this reason. Its breakpoints and tracepoints fire in your session too, so check it before interpreting unexpected trace output. The file is gitignored.
 - `mcrun -dl` works for mods, but not yet on all targets.
 
 Reference: the `xsdb` section of [documentation/tools/tools.md](./documentation/tools/tools.md). The GUI debugger is [documentation/xs/xsbug.md](./documentation/xs/xsbug.md).
@@ -236,16 +240,27 @@ Ignore the rest.
 
 **If you are adding or changing anything in a `manifest.json`, read [documentation/tools/manifest.md](./documentation/tools/manifest.md) first.** Manifests look like ordinary configuration files and invite editing by pattern matching on whatever JSON is nearby. They are not: the build's module list, memory configuration, per-platform behavior, and dead-stripping all live here, and mistakes surface later as failures that do not point back at the manifest.
 
-A manifest describes the modules and resources of an application. Its properties are `build`, `include`, `creation`, `defines`, `config`, `strip`, `modules`, `preload`, `resources`, `data`, `platforms`, and `bundle`. Two rules that are not obvious:
+A manifest describes the modules and resources of an application. Its properties are `build`, `include`, `creation`, `defines`, `config`, `strip`, `modules`, `preload`, `resources`, `data`, `platforms`, and `bundle`. Rules that are not obvious:
 
 - **Every module in the build must be listed in `modules`.** A file that is present on disk but unlisted is simply not in the build.
 - **Same-named properties concatenate across includes rather than replacing.** You cannot override a value inherited from an included manifest by redeclaring it.
+- **An `include` that names a directory means that directory's `manifest.json`.** Prefer this short form over spelling out `/manifest.json`.
 
 **To see what a build actually resolved to, read the generated `manifest_flat.json`** in the project's `build/tmp/<platform>/<target>/<build>/<project>/` directory, rather than reasoning about the merge by hand. It is the fully merged manifest — `modules`, `include`, `preload`, `creation`, and the rest — after every include and platform section has been applied, which is the only practical way to answer "is this module actually in the build?" or "where did this value come from?". `mcconfig` writes it even without `-m`, so it is a fast check on device targets where a real build is slow.
 
 Reach for it whenever you change `modules` or `include`, because the build will not tell you: **an `import` of a module that no manifest supplies is not a build error.** It compiles and links cleanly, and fails only at runtime when the import is evaluated. A clean `-t build` is therefore no evidence that a manifest edit was correct — grep the `modules` of `manifest_flat.json` for the paths you expect instead.
 
+**To verify a manifest refactor, diff flat manifests from before and after.** `mcconfig -d -p <platform> -o <dir>` without `-m` writes them under `<dir>/tmp/` and builds nothing. Use a separate `-o` directory per project, since projects with the same directory name overwrite each other.
+
 See also [documentation/tools/defines.md](./documentation/tools/defines.md) for how `defines` becomes `MODDEF_`-prefixed C `#define`s.
+
+### Network protocols and the network connection
+
+**Protocol manifests do not bring the network.** The `embedded:network/*` protocol modules (`modules/io/http/client`, `ntp/client`, `dns/resolver`, `mqtt/client`, `ws/client`, …) deliberately include no network interface, sockets, or DNS resolver; those are passed to their constructors, not pulled from the environment. Applications include [examples/manifest_net.json](./examples/manifest_net.json), and `mcpack` adds it automatically when a manifest in the build sets `"network": true`. Fix a missing `config/dns` or socket in the application or in `manifest_net.json`, never by adding includes to a protocol manifest.
+
+**HTTP server routes have their own manifests**, under `modules/io/http/server/route/`. The server manifest includes none of them; include only the routes the project uses.
+
+**Shared modules moved out of `examples/`** into `modules/io` and `modules/web` (October 2026). The old manifest paths remain as forwarding manifests that warn `… manifest moved to …`; when you see that warning, update the include.
 
 ### `creation` — configuring RAM
 
@@ -320,12 +335,16 @@ Much of the runtime is C beneath a JavaScript API — around 250 `.c` files unde
 
 It is not a conventional C API, and the ways it goes wrong are memory corruption rather than clean errors. In particular the garbage collector may move data, so pointers obtained from the VM must not be held across an allocation, and native data that references JavaScript objects needs the correct mark hooks. Follow the patterns in a neighboring module rather than inventing an approach — [modules/io](./modules/io) is the most current native code in the tree.
 
+**lwIP on threaded ports.** On ESP32, lwIP runs on its own task, so a pcb pointer or guard read on the XS task can be stale by the time a marshaled lwIP call runs — an RST frees the pcb, a FIN resets the receive window. Pass the address of the owner's pcb slot, and dereference and test it inside the marshal; see the `*_checked_safe` functions in [modules/network/socket/lwip/modLwipSafe.c](./modules/network/socket/lwip/modLwipSafe.c). Keep its `#if !ESP32` macro branch compiling when signatures change.
+
 ## Conventions
 
 - **Indent with tabs**, including in JSON manifests. `.editorconfig` only covers markdown, so this is not enforced by tooling.
 - **Every source file carries a license header, and it differs by tree**: LGPL "Moddable SDK Runtime" for `modules/**` and `xs/**`, GPL "Moddable SDK Tools" for `tools/**` and `typings/**`, Creative Commons BY 4.0 for `examples/**`. Copy the header from a neighboring file in the same tree rather than reconstructing it. See [licenses/readme.md](./licenses/readme.md).
 - Markdown in `documentation/` opens with an H1, then `Copyright <years> Moddable Tech, Inc.<BR>` and `Revised: <date>`. Pages in `guides/` instead use YAML frontmatter with `name`, `SPDX-FileCopyrightText`, and `updated`.
 - [eslint.config.mjs](./eslint.config.mjs) declares the SDK's implicit globals (`trace`, `device`, `screen`, the Piu surface, and others). It marks `System` and `Host` as **deprecated** — do not use them in new code.
+- ECMA-419 classes copy callbacks out of the options object when they are registered, and never keep a reference to the caller's object.
+- **Avoid caught exceptions as routine control flow in runtime code.** Developers commonly run with break-on-exceptions, which stops the VM on every throw; the device stays reachable on the network but runs no JavaScript, and looks hung.
 - Never commit build output or Node artifacts: `build/bin/`, `build/tmp/`, `node_modules/`, `report.json`. See [.gitignore](./.gitignore).
 - A signed Contributor License Agreement is required before a pull request can be accepted. See [contributing.md](./contributing.md).
 
@@ -340,7 +359,9 @@ How the guides are structured, which is not obvious from any one page:
 - **Most topics document two APIs** — a web standard one (`fetch`, `WebSocket`, `localStorage`) and a lower-level ECMA-419 one (the `Client` and `device.*` variants). Both are current; they are tiers, not old and new. The topic index explains how to choose.
 - **Start at the topic's `index.md`.** Beyond listing the guides, it explains how to choose between the available APIs, gives the build setup needed to use them — manifest include paths for `mcconfig`/`mcpack`, and module specifiers where relevant — and ends with a "Learn More" list linking the documentation, the relevant standard, runnable examples, and reference implementations.
 
-**ECMA-419 is not yet documented in this repository.** For the `embedded:*` APIs, use the standard itself: <https://419.ecma-international.org> — a single HTML page covering the whole specification. Read it rather than guessing at an API shape. The guides deep-link into it with anchors (`#http-client-class-pattern`, `#storage-keyvalue`, `#byte-buffer`, and so on), so the relevant guide topic is usually the fastest way to the right part of the spec.
+**ECMA-419 is not yet documented in this repository.** For the `embedded:*` APIs, use the standard itself: <https://419.ecma-international.org> — a single HTML page covering the whole specification. Read it rather than guessing at an API shape. The guides deep-link into it with anchors (`#http-client-class-pattern`, `#storage-keyvalue`, `#byte-buffer`, and so on), so the relevant guide topic is usually the fastest way to the right part of the spec. Download the page and search it locally rather than relying on a fetched summary: the class-pattern rules in §8 — options object required, `this` in callbacks, completion-callback arguments — are stated once, apply to every class, and are what summaries drop.
+
+**Module specifiers do not map to paths.** `embedded:storage/key-value` is implemented in `modules/io/storage`, `embedded:network/dns/resolver/udp` in `modules/io/dns/resolver`. To find an implementation, search the manifests for the quoted specifier.
 
 Note that [documentation/io/io.md](./documentation/io/io.md) is *not* a reference for ECMA-419: it is a 2021 introduction written while the IO Class Pattern was still a proposal, and it targets only ESP8266.
 
