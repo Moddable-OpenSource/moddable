@@ -558,7 +558,7 @@ void fxDeclareNodeHoist(void* it, void* param)
 	if (self->description->token == XS_TOKEN_ARG) {
 		node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
 		if (node) {
-			if ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & (mxArrowFlag | mxAsyncFlag | mxMethodFlag | mxNotSimpleParametersFlag | mxStrictFlag)))
+			if ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & (mxArrowFlag | mxMethodFlag | mxNotSimpleParametersFlag | mxStrictFlag)))
 				fxReportParserError(hoister->parser, self->line, "duplicate argument %s", self->symbol->string);
 		}
 		else {
