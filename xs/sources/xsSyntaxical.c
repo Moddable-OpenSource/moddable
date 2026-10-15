@@ -2665,10 +2665,20 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 			aStaticFlag = 0;
 			if ((parser->states[0].token == XS_TOKEN_STATIC) && (!parser->states[0].escaped)) {
 				fxGetNextToken(parser);
-				if ((parser->states[0].token == XS_TOKEN_ASSIGN) || parser->states[0].token == XS_TOKEN_SEMICOLON) {
+				if ((parser->states[0].token == XS_TOKEN_ASSIGN) || (parser->states[0].token == XS_TOKEN_SEMICOLON)) {
 					fxPushSymbol(parser, parser->staticSymbol);
 					aToken1 = XS_TOKEN_PROPERTY;
 					goto field;
+				}
+				if (parser->states[0].token == XS_TOKEN_LEFT_PARENTHESIS) {
+					fxPushSymbol(parser, parser->staticSymbol);
+					aToken1 = XS_TOKEN_PROPERTY;
+					fxFunctionExpression(parser, aPropertyLine, C_NULL, mxSuperFlag | mxMethodFlag);
+					fxPushNodeStruct(parser, 2, aToken1, aPropertyLine);
+					parser->root->flags |= mxMethodFlag;
+					instanceInitCount++;
+					aCount++;
+					continue;
 				}
 				if (parser->states[0].token == XS_TOKEN_LEFT_BRACE) {
 					txUnsigned flags = parser->flags;
@@ -2726,6 +2736,8 @@ void fxClassExpression(txParser* parser, txInteger theLine, txSymbol** theSymbol
 				aCount++;
 			}
 			else {
+				if ((aToken2 == XS_TOKEN_GETTER) || (aToken2 == XS_TOKEN_SETTER) || (aToken2 == XS_TOKEN_FUNCTION) || (aToken2 == XS_TOKEN_GENERATOR))
+					fxReportParserError(parser, parser->states[0].line, "missing (");
 				if ((aToken1 == XS_TOKEN_PRIVATE_PROPERTY) && (aSymbol == parser->privateConstructorSymbol))
 					fxReportParserError(parser, parser->states[0].line, "invalid field: #constructor");
 				if (aSymbol == parser->constructorSymbol)
