@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/network/dns"
+		"$(MODDABLE)/modules/io/dns/server"
 	],
-	"modules": {
-		"embedded:network/dns/server/udp": "./dnsserver"
-	},
-	"preload": "embedded:network/dns/server/udp"
+	"platforms": {
+		"...": {
+			"warning": "DNS Server manifest moved to $(MODDABLE)/modules/io/dns/server"
+		}
+	}
 }

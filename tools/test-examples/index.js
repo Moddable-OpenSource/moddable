@@ -283,16 +283,6 @@ function findExamples(dir) {
     return results;
 }
 
-function needsNetwork(manifestPath) {
-    try {
-        const raw = fs.readFileSync(manifestPath, 'utf-8');
-        //@@ manifest_httpclient and manifest_httpserver are hacks – the right answer would be to resolve the included manifests, but that's too much work
-        return raw.includes('manifest_net.json') || raw.includes('manifest_httpclient.json') || raw.includes('manifest_httpserver.json');
-    } catch {
-        return false;
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Failure diagnosis
 //

@@ -1,16 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/mqtt/client"
 	],
-	"modules": {
-		"config/mqttclient": "./config",
-		"embedded:network/mqtt/client": "./mqttclient"
-	},
-	"preload": [
-		"config/mqttclient",
-		"embedded:network/mqtt/client"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "MQTT Client manifest moved to $(MODDABLE)/modules/io/mqtt/client"
+		}
+	}
 }

@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json"
+		"$(MODDABLE)/modules/io/http/server"
 	],
 	"modules": {
 		"*": "./listen"

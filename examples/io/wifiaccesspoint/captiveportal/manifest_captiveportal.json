@@ -21,9 +21,9 @@
 		},
 		"...": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dnsserver.json",
-				"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json",
-				"$(MODDABLE)/examples/io/tcp/websocketclient/manifest_websocketclient.json"
+				"$(MODDABLE)/modules/io/dns/server",
+				"$(MODDABLE)/modules/io/http/server",
+				"$(MODDABLE)/modules/io/websocket/client"
 			],
 			"modules": {
 				"captiveportal": "./captiveportal"

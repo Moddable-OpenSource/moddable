@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/network/dns"
+	],
+	"modules": {
+		"embedded:network/dns/server/udp": "./dnsserver"
+	},
+	"preload": "embedded:network/dns/server/udp"
+}

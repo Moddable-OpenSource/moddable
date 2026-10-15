@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/data/url",
 		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/examples/io/tcp/websocketsclient/manifest_wssclient.json",
+		"$(MODDABLE)/modules/io/websockets/client",
 		"$(MODDABLE)/modules/web/streams/all"
 	],
 	"modules": {

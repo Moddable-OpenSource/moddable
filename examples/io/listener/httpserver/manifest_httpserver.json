@@ -1,26 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/crypt/digest",
-		"$(MODDABLE)/modules/data/text/encoder",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/http/server"
 	],
-	"modules": {
-		"*": [ 
-			"$(MODULES)/network/dns/moddnsparser"
-		],
-		"embedded:network/http/server": "./httpserver",
-		"config/httpserver": "./config",
-		"embedded:network/http/server/route/serversentevents": "./options/serversentevents",
-		"embedded:network/http/server/route/static": "./options/static",
-		"embedded:network/http/server/route/ws/handshake": "./options/websocket"
-	},
-	"preload": [
-		"embedded:network/http/server",
-		"config/httpserver",
-		"embedded:network/http/server/route/serversentevents",
-		"embedded:network/http/server/route/static",
-		"embedded:network/http/server/route/ws/handshake"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "HTTP Server manifest moved to $(MODDABLE)/modules/io/http/server"
+		}
+	}
 }

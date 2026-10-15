@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"./manifest_websocket.json"
+		"$(MODDABLE)/modules/web/websocket"
 	],
 	"modules": {
 		"*": [

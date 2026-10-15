@@ -1,16 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/ntp/client"
 	],
-	"modules": {
-		"embedded:network/ntp/client": "./ntp",
-		"config/ntp": "./config"
-
-	},
-	"preload": [
-		"embedded:network/ntp/client",
-		"config/ntp"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "NTP Client manifest moved to $(MODDABLE)/modules/io/ntp/client"
+		}
+	}
 }

@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"./manifest_wssclient.json",
+		"$(MODDABLE)/modules/io/websockets/client",
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/data/text/decoder"
 	],

@@ -1,14 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/data/headers",
-		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json"
+		"$(MODDABLE)/modules/web/fetch"
 	],
-	"modules": {
-		"*": "./fetch"
-	},
-	"preload": [
-		"fetch"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "fetch manifest moved to $(MODDABLE)/modules/web/fetch"
+		}
+	}
 }

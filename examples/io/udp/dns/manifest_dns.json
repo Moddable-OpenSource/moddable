@@ -1,14 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/network/dns",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/dns/client"
 	],
-	"modules": {
-		"embedded:network/dns/resolver/udp": "./dns",
-		"config/dns": "./config"
-	},
-	"preload": [
-		"embedded:network/dns/resolver/udp",
-		"config/dns"
-	]
+	"platforms": {
+		"...": {
+			"warning": "DNS Client manifest moved to $(MODDABLE)/modules/io/dns/client"
+		}
+	}
 }

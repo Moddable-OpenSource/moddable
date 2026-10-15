@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/http/client",
+		"$(MODDABLE)/modules/io/tls/client"
+	],
+	"modules": {
+		"config/httpsclient": "./config"
+	},
+	"preload": "config/httpsclient"
+}

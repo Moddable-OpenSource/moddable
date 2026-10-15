@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/url",
+		"$(MODDABLE)/modules/io/websockets/client"
+	],
+	"modules": {
+		"*": "./WebSocket"
+	},
+	"preload": "WebSocket"
+}

@@ -3,7 +3,7 @@
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/data/text/decoder",
 		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json"
+		"$(MODDABLE)/modules/io/https/client"
 	],
 	"modules": {
 		"*": [

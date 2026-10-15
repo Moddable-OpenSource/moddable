@@ -100,6 +100,6 @@ The default path requests only the fields this driver reads (`success`, `latitud
 
 Include `$(MODULES)/drivers/sensors/location/ip/manifest.json`.
 
-The application must also include an HTTP or HTTPS client (for example `examples/io/tcp/httpsclient/manifest_httpsclient.json`) and, for TLS, a CA resource such as `$(MODULES)/crypt/data/ca236`.
+The application must also include an HTTP or HTTPS client (for example `modules/io/https/client`) and, for TLS, a CA resource such as `$(MODULES)/crypt/data/ca236`.
 
 Example: `examples/drivers/sensors/location/ip`.

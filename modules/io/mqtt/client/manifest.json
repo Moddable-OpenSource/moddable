@@ -1,0 +1,10 @@
+{
+	"modules": {
+		"config/mqttclient": "./config",
+		"embedded:network/mqtt/client": "./mqttclient"
+	},
+	"preload": [
+		"config/mqttclient",
+		"embedded:network/mqtt/client"
+	]
+}

@@ -2,17 +2,13 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"./manifest_mqtt.json"
+		"$(MODDABLE)/modules/web/mqtt"
 	],
 	"modules": {
 		"*": [
 			"./data",
 			"./main"
-		],
-		"config/mqtt": "./config"
+		]
 	},
-	"preload": [
-		"config/mqtt",
-		"data"
-	]
+	"preload": "data"
 }

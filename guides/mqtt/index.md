@@ -1,7 +1,7 @@
 ---
 name: MQTT
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-14
 ---
 
 The high-level `MQTT()` API, modeled on the popular [MQTT.js](https://github.com/mqttjs/MQTT.js) library, and the low-level ECMA-419 embedded standard [MQTT Client](https://419.ecma-international.org/#mqtt-client-class-pattern) APIs are both available to Embedded JavaScript developers using the Moddable SDK. In fact, `MQTT()` is implemented using MQTT Client.
@@ -41,7 +41,7 @@ Using MQTT Client requires more code and a deeper understanding of the MQTT prot
 
 Include the `MQTT()` manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/examples/io/tcp/mqtt/manifest_mqtt.json
+	$(MODDABLE)/modules/web/mqtt
 
 Then, import the module in your JavaScript source code:
 
@@ -51,11 +51,11 @@ import * as mqtt from "mqtt/js";
 
 To use the MQTT Client instead, include its manifest. Including the manifest initializes the host provider `device.network.mqtt`:
 
-	$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json
+	$(MODDABLE)/modules/io/mqtt/client
 
 For secure connections over MQTTS, include the secure MQTT Client manifest instead. It initializes the host provider `device.network.mqtts`:
 
-	$(MODDABLE)/examples/io/tcp/mqttsclient/manifest_mqttsclient.json
+	$(MODDABLE)/modules/io/mqtts/client
 
 ## Building with mcpack
 
@@ -74,8 +74,8 @@ If your project accesses the MQTT Client through `device.network.mqtt` or `devic
 	- [MQTT() example](../../examples/io/tcp/mqtt/main.js) in Moddable SDK
 	- [MQTT Client example](../../examples/io/tcp/mqttclient/main.js) in Moddable SDK
 - Implementations
-	- [MQTT()](../../examples/io/tcp/mqtt/mqtt.js) in Moddable SDK
-	- [MQTT Client](../../examples/io/tcp/mqttclient/mqttclient.js) in Moddable SDK
+	- [MQTT()](../../modules/web/mqtt/mqtt.js) in Moddable SDK
+	- [MQTT Client](../../modules/io/mqtt/client/mqttclient.js) in Moddable SDK
 - TypeScript Declarations
 	- [MQTT()](../../typings/mqtt/js.d.ts) in Moddable SDK
 	- [MQTT Client](../../typings/embedded_network/mqtt/client.d.ts) in Moddable SDK

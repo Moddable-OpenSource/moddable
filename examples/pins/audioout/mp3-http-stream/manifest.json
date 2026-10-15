@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json",
+		"$(MODDABLE)/modules/io/http/client",
 		"$(MODDABLE)/modules/data/mp3",
 		"./manifest_mp3streamer.json"
 	],

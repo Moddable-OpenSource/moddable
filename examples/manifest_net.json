@@ -5,9 +5,9 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			],
 			"modules": {
@@ -17,9 +17,9 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			],
 			"modules": {
@@ -29,9 +29,9 @@
 		},
 		"esp32/wt32_eth01": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json",
 				"$(MODDABLE)/modules/io/socket"
 			],
@@ -45,9 +45,9 @@
 		},
 		"pico": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			],
 			"modules": {
@@ -71,6 +71,8 @@
 		},	
 		"zephyr": {
 			"include": [
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			],
@@ -83,25 +85,25 @@
 		},
 		"mac": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			]
 		},
 		"lin": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			]
 		},
 		"win": {
 			"include": [
-				"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-				"$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json",
-				"$(MODULES)/io/wifi",
+				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/ntp/client",
+				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
 			]
 		},

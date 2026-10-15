@@ -1,7 +1,7 @@
 ---
 name: HTTP Server
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-31
+updated: 2026-10-14
 ---
 
 The HTTP Server is the core of an HTTP 1.1 server with a routing mechanism to bind paths to request handlers. There are built-in handlers to reply to requests with static text and binary data. You can add routes for your project's needs such as downloading and uploading files, responding with dynamically generated content, and installing firmware updates.
@@ -27,7 +27,7 @@ To host WebSocket endpoints in the HTTP Server, wee the [WebSocket Server Guide]
 
 Include the HTTP Server manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json
+	$(MODDABLE)/modules/io/http/server
 
 You can then access the server through `device.network.http.server`.
 
@@ -44,7 +44,7 @@ If your project accesses the HTTP Server through `device.network.http.server`, `
 - Example
 	- [HTTP Server example](../../examples/io/listener/httpserver/main.js) in Moddable SDK
 - Implementation
-	- [HTTP Server](../../examples/io/listener/httpserver/httpserver.js) in Moddable SDK
-	- [static route](../../examples/io/listener/httpserver/options/static.js) in Moddable SDK
+	- [HTTP Server](../../modules/io/http/server/httpserver.js) in Moddable SDK
+	- [static route](../../modules/io/http/server/options/static.js) in Moddable SDK
 - TypeScript Declaration
 	- [HTTP Server](../../typings/embedded_network/http/server.d.ts) in Moddable SDK

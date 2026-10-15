@@ -1,14 +1,10 @@
 {
 	"include": [
-		"../websocketclient/manifest_websocketclient.json",
-		"../tlssocket",
-		"$(MODDABLE)/modules/crypt/tls_419.json",
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
+		"$(MODDABLE)/modules/io/websockets/client"
 	],
-	"modules": {
-		"config/wssclient": "./config"
-	},
-	"preload": [
-		"config/wssclient"
-	]
+	"platforms": {
+		"...": {
+			"warning": "WebSockets manifest moved to $(MODDABLE)/modules/io/websockets/client"
+		}
+	}
 }

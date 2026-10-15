@@ -5,8 +5,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"./manifest_httpserver.json",
-		"$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json"
+		"$(MODDABLE)/modules/io/http/server",
+		"$(MODDABLE)/modules/web/websocket"
 	],
 	"modules": {
 		"*": "./main"

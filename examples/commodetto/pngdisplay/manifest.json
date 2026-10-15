@@ -5,7 +5,7 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/io/dnssd",
 		"$(MODDABLE)/modules/io/wifiaccesspoint",
-		"$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json",
+		"$(MODDABLE)/modules/io/http/server",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_convert.json",
 		"$(COMMODETTO)/manifest_readpng.json"

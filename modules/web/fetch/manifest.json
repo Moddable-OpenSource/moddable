@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/headers",
+		"$(MODDABLE)/modules/data/url",
+		"$(MODDABLE)/modules/io/https/client"
+	],
+	"modules": {
+		"*": "./fetch"
+	},
+	"preload": [
+		"fetch"
+	]
+}

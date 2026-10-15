@@ -1,7 +1,7 @@
 ---
 name: WebSocket
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-10-14
 ---
 
 The high-level web standard [`WebSocket()`](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) API and the low-level ECMA-419 embedded standard [WebSocket Client](https://419.ecma-international.org/#websocket-client) APIs are both available to Embedded JavaScript developers using the Moddable SDK. In addition, the Web platform's experimental `WebSocketStream()` is available. Both `WebSocket()` and `WebSocketStream()` are implemented using WebSocket Client.
@@ -51,7 +51,7 @@ Using WebSocket Client requires more code and a deeper understanding of the WebS
 
 Include the `WebSocket()` manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json
+	$(MODDABLE)/modules/web/websocket
 
 Then, import the module in your JavaScript source code:
 
@@ -61,11 +61,11 @@ import WebSocket from "WebSocket";
 
 To use the WebSocket Client instead, include its manifest. Including the manifest initializes the host provider `device.network.ws`:
 
-	$(MODDABLE)/examples/io/tcp/websocketclient/manifest_websocketclient.json
+	$(MODDABLE)/modules/io/websocket/client
 
 For secure connections over WSS, include the secure WebSocket Client manifest instead. It initializes the host provider `device.network.wss`:
 
-	$(MODDABLE)/examples/io/tcp/websocketsclient/manifest_wssclient.json
+	$(MODDABLE)/modules/io/websockets/client
 
 To use `WebSocketStream()`, include its manifest in your project's `manifest.json`.
 
@@ -102,8 +102,8 @@ If your project uses the `WebSocketStream` global, `mcpack` automatically includ
 	- [WebSocketStream() example](../../examples/web/streams/websocket/main.js) in Moddable SDK
 	- [Touch over WebSocketStream() example](../../examples/web/streams/touch-websocket/main.js) in Moddable SDK
 - Implementations
-	- [WebSocket()](../../examples/io/tcp/websocket/WebSocket.js) in Moddable SDK
-	- [WebSocket Client](../../examples/io/tcp/websocketclient/websocketclient.js) in Moddable SDK
+	- [WebSocket()](../../modules/web/websocket/WebSocket.js) in Moddable SDK
+	- [WebSocket Client](../../modules/io/websocket/client/websocketclient.js) in Moddable SDK
 	- [WebSocketStream()](../../modules/web/streams/websocket/WebSocketStream.js) in Moddable SDK
 - TypeScript Declarations
 	- [WebSocket()](../../typings/web/websocket.d.ts) in Moddable SDK

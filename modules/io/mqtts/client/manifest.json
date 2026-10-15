@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/tls/client",
+		"$(MODDABLE)/modules/io/mqtt/client"
+	],
+	"modules": {
+		"config/mqttsclient": "./config"
+	},
+	"preload": [
+		"config/mqttsclient"
+	]
+}

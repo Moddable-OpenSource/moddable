@@ -1,18 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/data/logical",
-		"$(MODDABLE)/modules/data/text/decoder",
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/websocket/client"
 	],
-	"modules": {
-		"config/wsclient": "./config",
-		"embedded:network/websocket/client": "./websocketclient"
-	},
-	"preload": [
-		"config/wsclient",
-		"embedded:network/websocket/client"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "WebSocketClient manifest moved to $(MODDABLE)/modules/io/websocket/client"
+		}
+	}
 }

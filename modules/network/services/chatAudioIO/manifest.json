@@ -2,12 +2,10 @@
 	"include": [
 		"$(MODDABLE)/modules/base/worker",
 		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/examples/io/tcp/tlssocket",
-		"$(MODDABLE)/modules/crypt/tls_419.json",
+		"$(MODDABLE)/modules/io/tls/client",
 		"$(MODDABLE)/modules/data/headers",
-		"$(MODDABLE)/examples/io/tcp/httpsclient//manifest_httpsclient.json",
-		"$(MODDABLE)/examples/io/tcp/websocket//manifest_websocket.json",
-		"$(MODDABLE)/examples/io/tcp/websocketsclient//manifest_wssclient.json",
+		"$(MODDABLE)/modules/io/https/client",
+		"$(MODDABLE)/modules/io/websockets/client",
 		"$(MODDABLE)/modules/io/audioin",
 		"$(MODDABLE)/modules/io/audioout",
 		"$(MODDABLE)/modules/data/text/encoder"

@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json",
+		"$(MODDABLE)/modules/io/https/client",
 		"$(MODULES)/drivers/sensors/location/ip"
 	],
 	"modules": {

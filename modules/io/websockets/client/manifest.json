@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/websocket/client",
+		"$(MODDABLE)/modules/io/tls/client"
+	],
+	"modules": {
+		"config/wssclient": "./config"
+	},
+	"preload": [
+		"config/wssclient"
+	]
+}

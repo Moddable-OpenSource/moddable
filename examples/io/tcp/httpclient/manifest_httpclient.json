@@ -1,15 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json",
-		"$(MODDABLE)/modules/io/socket"
+		"$(MODDABLE)/modules/io/http/client"
 	],
-	"modules": {
-		"config/httpclient": "./config",
-		"embedded:network/http/client": "./../httpclient/httpclient"
-	},
-	"preload": [
-		"config/httpclient",
-		"embedded:network/http/client"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "HTTPClient manifest moved to $(MODDABLE)/modules/io/http/client"
+		}
+	}
 }

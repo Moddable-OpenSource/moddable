@@ -1,14 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/examples/io/tcp/websocketsclient/manifest_wssclient.json"
+		"$(MODDABLE)/modules/web/websocket"
 	],
-	"modules": {
-		"*": "./WebSocket"
-	},
-	"preload": [
-		"WebSocket"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "WebSocket manifest moved to $(MODDABLE)/modules/web/websocket"
+		}
+	}
 }

@@ -75,7 +75,7 @@ This example makes several HTTP requests using the `fetch()` API. In main.js, th
 # mcpack define: URL, URLSearchParams
 # mcpack include: $(MODDABLE)/modules/data/headers/manifest.json
 # mcpack define: Headers
-# mcpack include: $(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json
+# mcpack include: $(MODDABLE)/modules/io/fetch
 # mcpack define: fetch
 # mcpack define: console
 # xsc globals.xsb

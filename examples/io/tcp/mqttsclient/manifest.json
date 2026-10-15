@@ -2,8 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io",
-		"./manifest_mqttsclient.json"
+		"$(MODDABLE)/modules/io/mqtts/client"
 	],
 	"modules": {
 		"*": "./main" 

@@ -1,14 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/crypt/tls_419.json",
-		"../tlssocket",
-		"$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json",
-		"$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
+		"$(MODDABLE)/modules/io/mqtts/client"
 	],
-	"modules": {
-		"config/mqttsclient": "./config"
-	},
-	"preload": [
-		"config/mqttsclient"
-	]
+	"platforms": {
+		"...": {
+			"warning": "MQTTS Client manifest moved to $(MODDABLE)/modules/io/mqtts/client"
+		}
+	}
 }

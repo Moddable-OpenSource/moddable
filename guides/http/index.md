@@ -1,7 +1,7 @@
 ---
 name: HTTP
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-14
+updated: 2026-10-14
 ---
 
 The high-level web standard [`fetch()`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) API and the low-level ECMA-419 embedded standard [HTTP Client](https://419.ecma-international.org/#http-client-class-pattern) APIs are both available to Embedded JavaScript developers using the Moddable SDK. In fact, `fetch()` is implemented using the HTTP Client.
@@ -42,7 +42,7 @@ Using HTTP Client requires more code and a deeper understanding of the HTTP prot
 
 Include the `fetch()` manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json
+	$(MODDABLE)/modules/web/fetch
 
 Then, import the module in your JavaScript source code:
 
@@ -62,11 +62,11 @@ import { fetch } from "web/fetch/streams";
 
 To use the HTTP Client instead, include its manifest. Including the manifest initializes the host provider `device.network.http.client`:
 
-	$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json
+	$(MODDABLE)/modules/io/http/client
 
 For secure requests over HTTPS, include the HTTPS Client manifest instead. It initializes the host provider `device.network.https.client`:
 
-	$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json
+	$(MODDABLE)/modules/io/https/client
 
 ## Building with mcpack
 
@@ -88,8 +88,8 @@ If your project accesses the HTTP Client through `device.network.http.client` or
 	- [fetch() example](../../examples/io/tcp/fetch/main.js) in Moddable SDK
 	- [HTTP Client example](../../examples/io/tcp/httpclient/main.js) in Moddable SDK
 - Implementations
-	- [fetch()](../../examples/io/tcp/fetch/fetch.js) in Moddable SDK
-	- [HTTP Client](../../examples/io/tcp/httpclient/httpclient.js) in Moddable SDK
+	- [fetch()](../../modules/web/fetch/fetch.js) in Moddable SDK
+	- [HTTP Client](../../modules/io/http/client/httpclient.js) in Moddable SDK
 - TypeScript Declarations
 	- [fetch()](../../typings/web/fetch.d.ts) in Moddable SDK
 	- [HTTP Client](../../typings/embedded_network/http/client.d.ts) in Moddable SDK

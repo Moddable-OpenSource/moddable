@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/url",
+		"$(MODDABLE)/modules/io/mqtts/client"
+	],
+	"modules": {
+		"mqtt/js": "./mqtt"
+	},
+	"preload": [
+		"mqtt/js"
+	]
+}

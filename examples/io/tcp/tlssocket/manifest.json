@@ -1,13 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/crypt/tls_419.json"
+		"$(MODDABLE)/modules/io/tls/client"
 	],
-	"modules": {
-		"embedded:io/socket/tcp/tls": "./tlssocket",
-		"config/tls": "./config"
-	},
-	"preload": [
-		"embedded:io/socket/tcp/tls",
-		"config/tls"
-	]
+	"platforms": {
+		"...": {
+			"warning": "TLS Client manifest moved to $(MODDABLE)/modules/io/tls/client"
+		}
+	}
 }

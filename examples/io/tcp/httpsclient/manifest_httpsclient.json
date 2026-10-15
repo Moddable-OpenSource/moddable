@@ -1,11 +1,10 @@
 {
 	"include": [
-		"../httpclient/manifest_httpclient.json",
-		"../tlssocket",
-		"$(MODDABLE)/modules/crypt/tls_419.json"
+		"$(MODDABLE)/modules/io/https/client"
 	],
-	"modules": {
-		"config/httpsclient": "./config"
-	},
-	"preload": "config/httpsclient"
+	"platforms": {
+		"...": {
+			"warning": "HTTPSClient manifest moved to $(MODDABLE)/modules/io/https/client"
+		}
+	}
 }

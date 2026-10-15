@@ -30,14 +30,14 @@ import "web/console";
 `
 };
 const eventSourceGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/eventsource/manifest_eventsource.json",
+	include: "$(MODDABLE)/modules/web/eventsource",
 	snippet: `
 import EventSource from "eventsource";
 globalThis.EventSource = EventSource;
 `	
 };
 const fetchGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/fetch/manifest_fetch.json",
+	include: "$(MODDABLE)/modules/web/fetch",
 	snippet: `
 import { fetch } from "fetch";
 globalThis.fetch = fetch;
@@ -98,7 +98,7 @@ globalThis.URLSearchParams = URLSearchParams;
 `	
 };
 const websocketGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/websocket/manifest_websocket.json",
+	include: "$(MODDABLE)/modules/web/websocket",
 	snippet: `
 import WebSocket from "WebSocket";
 globalThis.WebSocket = WebSocket;
@@ -194,31 +194,31 @@ globalThis.BluetoothUUID = BluetoothUUID;
 `
 };
 const dnsGlobal = {
-	include: "$(MODDABLE)/examples/io/udp/dns/manifest_dns.json"
+	include: "$(MODDABLE)/modules/io/dns/client"
 };
 const httpGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/httpclient/manifest_httpclient.json"
+	include: "$(MODDABLE)/modules/io/http/client"
 };
 const httpsGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/httpsclient/manifest_httpsclient.json"
+	include: "$(MODDABLE)/modules/io/https/client"
 };
 const httpServerGlobal = {
-	include: "$(MODDABLE)/examples/io/listener/httpserver/manifest_httpserver.json"
+	include: "$(MODDABLE)/modules/io/http/server"
 };
 const wsGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/websocketclient/manifest_websocketclient.json"
+	include: "$(MODDABLE)/modules/io/websocket/client"
 };
 const wssGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/websocketsclient/manifest_wssclient.json"
+	include: "$(MODDABLE)/modules/io/websockets/client"
 };
 const mqttGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/mqttclient/manifest_mqttclient.json"
+	include: "$(MODDABLE)/modules/io/mqtt/client"
 };
 const mqttsGlobal = {
-	include: "$(MODDABLE)/examples/io/tcp/mqttsclient/manifest_mqttsclient.json"
+	include: "$(MODDABLE)/modules/io/mqtts/client"
 };
 const ntpGlobal = {
-	include: "$(MODDABLE)/examples/io/udp/ntp/manifest_ntp.json"
+	include: "$(MODDABLE)/modules/io/ntp/client"
 };
 const dnssdGlobal = {
 	include: "$(MODDABLE)/modules/io/dnssd/manifest.json"

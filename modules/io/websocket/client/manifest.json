@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/logical"
+	],
+	"modules": {
+		"config/wsclient": "./config",
+		"embedded:network/websocket/client": "./websocketclient"
+	},
+	"preload": [
+		"config/wsclient",
+		"embedded:network/websocket/client"
+	]
+}

@@ -38,8 +38,8 @@
 			"./main",
 			"./main-appinfo",
 			"$(MODDABLE)/examples/io/storage/webstorage/webstorage.js",
-			"$(MODDABLE)/examples/io/tcp/fetch/fetch.js",
-			"$(MODDABLE)/examples/io/tcp/websocket/WebSocket.js"
+			"$(MODDABLE)/modules/web/fetch/fetch.js",
+			"$(MODDABLE)/modules/web/websocket/WebSocket.js"
 		]
 	},
 	"preload": [
