@@ -4747,8 +4747,12 @@ void fxRunProxy(txMachine* the, txSlot* instance)
 		index++;
 		address++;
 	}
-	if (!mxHasTarget)
-		mxBehaviorCall(the, instance, mxThis, the->stack);
+	if (!mxHasTarget) {
+		if (instance->flag & XS_CAN_CALL_FLAG)
+			mxBehaviorCall(the, instance, mxThis, the->stack);
+		else
+			mxTypeError("new: proxy is not a function");
+	}
 	else if (instance->flag & XS_CAN_CONSTRUCT_FLAG)
 		mxBehaviorConstruct(the, instance, the->stack, mxTarget);
 	else
