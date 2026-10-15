@@ -862,11 +862,11 @@ void fx_Proxy_revocable(txMachine* the)
 	slot = instance->next;
 	slot->value.proxy.target = target;
 	slot->value.proxy.handler = handler;
-	property = fxNextSlotProperty(the, property, the->stack, mxID(_proxy), XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, the->stack, mxID(_proxy), XS_NO_FLAG);
 	
 	slot = fxLastProperty(the, fxNewHostFunction(the, mxCallback(fx_Proxy_revoke), 0, XS_NO_ID, XS_NO_ID));
 	slot = fxNextSlotProperty(the, slot, the->stack + 1, mxID(_proxy), XS_GET_ONLY);
-	property = fxNextSlotProperty(the, property, the->stack, mxID(_revoke), XS_GET_ONLY);
+	property = fxNextSlotProperty(the, property, the->stack, mxID(_revoke), XS_NO_FLAG);
 	
 	the->stack += 2;
 }
