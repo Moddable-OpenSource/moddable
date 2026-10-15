@@ -2,12 +2,11 @@
 	"include": [
 		"$(MODDABLE)/modules/io/http/server",
 		"$(MODDABLE)/modules/io/files",
-		"$(MODDABLE)/modules/data/xml"
+		"$(MODDABLE)/modules/io/http/server/route/webdav"
 	],
-	"modules": {
-		"embedded:network/http/server/route/webdav": "./webdav"
-	},
-	"preload": [
-		"embedded:network/http/server/route/webdav"
-	]
+	"platforms": {
+		"...": {
+			"warning": "WebDAV route manifest moved to $(MODDABLE)/modules/io/http/server/route/webdav"
+		}
+	}
 }
