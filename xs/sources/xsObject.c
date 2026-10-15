@@ -551,29 +551,40 @@ void fx_Object_defineProperties(txMachine* the)
 {
 	txSlot* instance;
 	txSlot* properties;
+	txSlot* keys;
+	txSlot* former;
 	txSlot* at;
 	txSlot* property;
-	txFlag mask;
+	txSlot* value;
 	if ((mxArgc < 1) || (mxArgv(0)->kind != XS_REFERENCE_KIND))
 		mxTypeError("invalid object");
 	if ((mxArgc < 2) || (mxArgv(1)->kind == XS_UNDEFINED_KIND))
 		mxTypeError("invalid properties");
 	instance = fxGetInstance(the, mxArgv(0));
 	properties = fxToInstance(the, mxArgv(1));
-	at = fxNewInstance(the);
-	mxBehaviorOwnKeys(the, properties, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
+	keys = fxNewInstance(the);
+	mxBehaviorOwnKeys(the, properties, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, keys);
 	mxPushUndefined();
 	property = the->stack;
-	while ((at = at->next)) {
+	former = keys;
+	while ((at = former->next)) {
 		if (mxBehaviorGetOwnProperty(the, properties, at->value.at.id, at->value.at.index, property) && !(property->flag & XS_DONT_ENUM_FLAG)) {
 			mxPushReference(properties);
 			mxGetAll(at->value.at.id, at->value.at.index);
-			mask = fxDescriptorToSlot(the, the->stack);
-			if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, the->stack, mask))
-				mxTypeError("invalid descriptor");
-			mxPop();
+			at->flag = fxDescriptorToSlot(the, the->stack);
+			former = at;
 		}
+		else
+			former->next = at->next;
 	}
+	at = keys;
+	value = property;
+	while ((at = at->next)) {
+		--value;
+		if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, value, at->flag))
+			mxTypeError("invalid descriptor");
+	}
+	the->stack = property;
 	mxPop();
 	mxPop();
 	*mxResult = *mxArgv(0);
