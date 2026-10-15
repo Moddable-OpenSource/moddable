@@ -1,0 +1,26 @@
+{
+	"modules": {
+		"*": [
+			"../modules/control",
+			"./host"
+		],
+		"button": "../modules/button",
+		"embedded:RTC/PCF85063": "../modules/rtc",
+		"embedded:peripheral/Power/axp2101": "../modules/power",
+		"embedded:sensor/Accelerometer-Gyroscope/QMI8658": "../modules/accelerometer-gyroscope",
+		"embedded:sensor/Touch/CST9217": "../modules/touch",
+		"embedded:provider/builtin": "$(MODDABLE)/build/devices/esp32/targets/waveshare_amoled_175/host/provider",
+		"lockdown/device": "$(IO)/system/lockdowndevice"
+	},
+	"preload": [
+		"control",
+		"button",
+		"embedded:RTC/PCF85063",
+		"embedded:peripheral/Power/axp2101",
+		"embedded:sensor/Accelerometer-Gyroscope/QMI8658",
+		"embedded:sensor/Touch/CST9217",
+		"embedded:provider/builtin",
+		"host",
+		"lockdown/device"
+	]
+}

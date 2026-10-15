@@ -26,7 +26,12 @@ export default class extends Control {
 	constructor(options) {
 		super();
 		this.#onPush = options.onPush ?? this.onPush;
-		this.#buttonKey = options.buttonKey ?? "button";
+		if (options.buttonKey != undefined)
+			this.#buttonKey = options.buttonKey;
+		else if (options.pin != undefined)
+			this.#buttonKey = `button-${options.pin}`;
+		else
+			this.#buttonKey = "button";
 		if (options.target)
 			this.target = options.target;
 	}
