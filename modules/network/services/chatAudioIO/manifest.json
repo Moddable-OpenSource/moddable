@@ -5,7 +5,7 @@
 		"$(MODDABLE)/modules/io/tls/client",
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/io/https/client",
-		"$(MODDABLE)/modules/io/websockets/client",
+		"$(MODDABLE)/modules/io/wss/client",
 		"$(MODDABLE)/modules/io/audioin",
 		"$(MODDABLE)/modules/io/audioout",
 		"$(MODDABLE)/modules/data/text/encoder"

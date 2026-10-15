@@ -206,10 +206,10 @@ const httpServerGlobal = {
 	include: "$(MODDABLE)/modules/io/http/server"
 };
 const wsGlobal = {
-	include: "$(MODDABLE)/modules/io/websocket/client"
+	include: "$(MODDABLE)/modules/io/ws/client"
 };
 const wssGlobal = {
-	include: "$(MODDABLE)/modules/io/websockets/client"
+	include: "$(MODDABLE)/modules/io/wss/client"
 };
 const mqttGlobal = {
 	include: "$(MODDABLE)/modules/io/mqtt/client"

@@ -1,7 +1,7 @@
 ---
 name: WebSocket
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 The high-level web standard [`WebSocket()`](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) API and the low-level ECMA-419 embedded standard [WebSocket Client](https://419.ecma-international.org/#websocket-client) APIs are both available to Embedded JavaScript developers using the Moddable SDK. In addition, the Web platform's experimental `WebSocketStream()` is available. Both `WebSocket()` and `WebSocketStream()` are implemented using WebSocket Client.
@@ -61,11 +61,11 @@ import WebSocket from "WebSocket";
 
 To use the WebSocket Client instead, include its manifest. Including the manifest initializes the host provider `device.network.ws`:
 
-	$(MODDABLE)/modules/io/websocket/client
+	$(MODDABLE)/modules/io/ws/client
 
 For secure connections over WSS, include the secure WebSocket Client manifest instead. It initializes the host provider `device.network.wss`:
 
-	$(MODDABLE)/modules/io/websockets/client
+	$(MODDABLE)/modules/io/wss/client
 
 To use `WebSocketStream()`, include its manifest in your project's `manifest.json`.
 
@@ -103,7 +103,7 @@ If your project uses the `WebSocketStream` global, `mcpack` automatically includ
 	- [Touch over WebSocketStream() example](../../examples/web/streams/touch-websocket/main.js) in Moddable SDK
 - Implementations
 	- [WebSocket()](../../modules/web/websocket/WebSocket.js) in Moddable SDK
-	- [WebSocket Client](../../modules/io/websocket/client/websocketclient.js) in Moddable SDK
+	- [WebSocket Client](../../modules/io/ws/client/websocketclient.js) in Moddable SDK
 	- [WebSocketStream()](../../modules/web/streams/websocket/WebSocketStream.js) in Moddable SDK
 - TypeScript Declarations
 	- [WebSocket()](../../typings/web/websocket.d.ts) in Moddable SDK

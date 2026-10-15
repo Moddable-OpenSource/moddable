@@ -23,7 +23,7 @@
 			"include": [
 				"$(MODDABLE)/modules/io/dns/server",
 				"$(MODDABLE)/modules/io/http/server",
-				"$(MODDABLE)/modules/io/websocket/client"
+				"$(MODDABLE)/modules/io/ws/client"
 			],
 			"modules": {
 				"captiveportal": "./captiveportal"
