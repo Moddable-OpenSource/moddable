@@ -5,7 +5,7 @@
 	"platforms": {
 		"esp": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -17,7 +17,7 @@
 		},
 		"esp32": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -29,7 +29,7 @@
 		},
 		"esp32/wt32_eth01": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/network/ethernet/manifest_net_ethernet.json",
@@ -45,7 +45,7 @@
 		},
 		"pico": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -71,7 +71,7 @@
 		},	
 		"zephyr": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -85,7 +85,7 @@
 		},
 		"mac": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -93,7 +93,7 @@
 		},
 		"lin": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"
@@ -101,7 +101,7 @@
 		},
 		"win": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/client",
+				"$(MODDABLE)/modules/io/dns/resolver",
 				"$(MODDABLE)/modules/io/ntp/client",
 				"$(MODDABLE)/modules/io/wifi",
 				"$(MODDABLE)/modules/io/socket"

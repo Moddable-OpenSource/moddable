@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/dns/client"
+		"$(MODDABLE)/modules/io/dns/resolver"
 	],
 	"platforms": {
 		"...": {
-			"warning": "DNS Client manifest moved to $(MODDABLE)/modules/io/dns/client"
+			"warning": "DNS Resolver manifest moved to $(MODDABLE)/modules/io/dns/resolver"
 		}
 	}
 }

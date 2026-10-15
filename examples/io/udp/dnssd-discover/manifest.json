@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/io/dns/client"
+		"$(MODDABLE)/modules/io/dns/resolver"
 	],
 	"modules": {
 		"*": "./main"

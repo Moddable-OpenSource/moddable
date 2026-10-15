@@ -194,7 +194,7 @@ globalThis.BluetoothUUID = BluetoothUUID;
 `
 };
 const dnsGlobal = {
-	include: "$(MODDABLE)/modules/io/dns/client"
+	include: "$(MODDABLE)/modules/io/dns/resolver"
 };
 const httpGlobal = {
 	include: "$(MODDABLE)/modules/io/http/client"
