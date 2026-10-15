@@ -1002,14 +1002,6 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		mxPushSlot(descriptor);
 		mxGetID(mxID(_get));
 		get = the->stack;
-	}
-	mxPushSlot(descriptor);
-	if (mxHasID(mxID(_set))) {
-		mxPushSlot(descriptor);
-		mxGetID(mxID(_set));
-		set = the->stack;
-	}
-	if (get) {
 		if (value)
 			mxTypeError("descriptor: get and value properties");
 		if (writable)
@@ -1021,7 +1013,11 @@ txFlag fxDescriptorToSlot(txMachine* the, txSlot* descriptor)
 		}
 		mask |= XS_GETTER_FLAG;
 	}
-	if (set) {
+	mxPushSlot(descriptor);
+	if (mxHasID(mxID(_set))) {
+		mxPushSlot(descriptor);
+		mxGetID(mxID(_set));
+		set = the->stack;
 		if (value)
 			mxTypeError("descriptor: set and value properties");
 		if (writable)
