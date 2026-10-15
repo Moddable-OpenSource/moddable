@@ -16,5 +16,6 @@
 		"embedded:network/http/server/route/serversentevents",
 		"embedded:network/http/server/route/static",
 		"embedded:network/http/server/route/ws/handshake"
-	]
+	],
+	"network": true
 }

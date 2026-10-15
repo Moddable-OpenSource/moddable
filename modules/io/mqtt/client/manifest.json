@@ -6,5 +6,6 @@
 	"preload": [
 		"config/mqttclient",
 		"embedded:network/mqtt/client"
-	]
+	],
+	"network": true
 }

@@ -779,6 +779,12 @@ export default class extends TOOL {
 				if (index < 0)
 					this.reportError(null, 0, `${specifier}: multiple manifests`);
 			});
+
+			if (this.hasCreationMain && this.needsNetwork(this.manifest.include, tmpPath)) {
+				const include = "$(MODDABLE)/examples/manifest_net.json";
+				this.report(`# mcpack include: ${include}`);
+				this.manifest.include.push(include);
+			}
 		}
 		if (this.errorCount == 0) {
 			let json = JSON.stringify(this.manifest, null, "\t");
@@ -1285,10 +1291,30 @@ export default class extends TOOL {
 		this.currentDirectory = directory;
 		if ("string" !== typeof include)
 			return;
-		let path = this.resolveFilePath(this.resolveVariable(include));
-		if (!path)
-			throw new Error("'" + include + "': manifest not found!");
+		const resolved = this.resolveVariable(include);
+		let path = this.resolveFilePath(resolved);
+		if (!path) {
+			path = this.resolveDirectoryPath(resolved);
+			if (path)
+				path = this.resolveFilePath(path + this.slash + "manifest.json");
+			if (!path)
+				throw new Error("'" + include + "': manifest not found!");
+		}
 		this.parseManifest(path, from);
+	}
+	needsNetwork(includes, directory) {
+		const currentDirectory = this.currentDirectory;
+		const manifests = this.manifests;
+		this.manifests = [];
+		this.manifests.already = {};
+		this.mcpackExplicit = true;
+		includes.forEach(include => this.includeManifest(include, include, directory));
+		this.mcpackExplicit = false;
+		const net = this.resolveFilePath(this.resolveVariable("$(MODDABLE)/examples/manifest_net.json"));
+		const result = !this.manifests.some(manifest => manifest.path === net) && this.manifests.some(manifest => true === manifest.network);
+		this.manifests = manifests;
+		this.currentDirectory = currentDirectory;
+		return result;
 	}
 	mapBuiltins(builtins) {
 		const map = new Map;

@@ -9,5 +9,6 @@
 	"preload": [
 		"embedded:io/socket/tcp/tls",
 		"config/tls"
-	]
+	],
+	"network": true
 }

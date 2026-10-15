@@ -6,5 +6,6 @@
 	"preload": [
 		"config/httpclient",
 		"embedded:network/http/client"
-	]
+	],
+	"network": true
 }

@@ -12,5 +12,6 @@
 	"preload": [
 		"config/dnssd",
 		"embedded:network/dnssd"
-	]
+	],
+	"network": true
 }

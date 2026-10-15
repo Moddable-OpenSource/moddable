@@ -6,5 +6,6 @@
 	"preload": [
 		"embedded:network/ntp/client",
 		"config/ntp"
-	]
+	],
+	"network": true
 }

@@ -1,5 +1,5 @@
 # Package Examples
-Updated June 2, 2026
+Updated October 14, 2026
 
 This directory contains example projects that use `package.json` to describe the build dependencies. These are intended to be used with `mcpack`, a tool in the Moddable SDK to package embedded applications. `mcpack` is front-end to the Moddable build process. It starts with `package.json`, scans the dependencies, and generates a Moddable `manifest.json` file which is built, deployed, and run using `mcconfig`.
 
@@ -19,6 +19,7 @@ This directory contains example projects that use `package.json` to describe the
 	- `URL` - URL parsing
 	- `WebSocket` - Client for the WebSocket protocol
 	- `Worker`, `SharedWorker` - Use multiple independent JavaScript virtual machines (Web Workers).
+- **Network**. When a project uses a network protocol, whether through a global (e.g. `fetch` or `WebSocket`) or by importing a module (e.g. `embedded:network/http/client`), `mcpack` includes `$(MODDABLE)/examples/manifest_net.json`. A protocol module's manifest opts in with `"network": true`.
 - **Top-level await (TLA)**. The Moddable SDK supports TLA but requires it to be explicitly enabled in the project. This allows projects that do not use the feature to be smaller. `mcpack` detects when TLA is used and automatically sets the `MODDEF_MAIN_ASYNC` build flag.
 
 The `package.json` support does not replace the Moddable SDK `manifest.json`, though for many projects `package.json` may be all that's needed. `mcpack` generates a `manifest.json` from the `package.json`, and manifests can still be used together with `package.json`.
@@ -67,18 +68,19 @@ This import is automatically detected and the `manifest_piu.json` is included in
 This example demonstrates use of the `@moddable/eventemitter3` package, a Moddable SDK port of the popular [`eventemitter3`](https://www.npmjs.com/package/eventemitter3) npm package.
 
 ### fetch
-This example makes several HTTP requests using the `fetch()` API. In main.js, the application accesses `fetch`, `URL`, `Headers`, and `console.log` globals so these are automatically included by `mcpack`.
+This example makes several HTTP requests using the `fetch()` API. In main.js, the application accesses `fetch`, `URL`, `Headers`, and `console.log` globals so these are automatically included by `mcpack`. Because `fetch` uses the network, `mcpack` also includes `manifest_net.json`.
 
 ```
 > mcpack mcconfig -d -m
-# mcpack include: $(MODDABLE)/modules/data/url/manifest.json
-# mcpack define: URL, URLSearchParams
 # mcpack include: $(MODDABLE)/modules/data/headers/manifest.json
 # mcpack define: Headers
-# mcpack include: $(MODDABLE)/modules/io/fetch
+# mcpack include: $(MODDABLE)/modules/data/url/manifest.json
+# mcpack define: URL, URLSearchParams
+# mcpack include: $(MODDABLE)/modules/web/fetch
 # mcpack define: fetch
+# mcpack include: $(MODDABLE)/modules/web/console/manifest.json
 # mcpack define: console
-# xsc globals.xsb
+# mcpack include: $(MODDABLE)/examples/manifest_net.json
 ```
 
 `mcpack` generates a `globals.js` file to initialize the global variables.

@@ -9,5 +9,6 @@
 	"preload": [
 		"embedded:network/dns/resolver/udp",
 		"config/dns"
-	]
+	],
+	"network": true
 }

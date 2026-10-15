@@ -9,5 +9,6 @@
 	"preload": [
 		"config/wsclient",
 		"embedded:network/websocket/client"
-	]
+	],
+	"network": true
 }
