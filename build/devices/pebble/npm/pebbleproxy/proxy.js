@@ -185,7 +185,7 @@ function httpMessage(id, e) {
 					[HTTP_BASE + 11]: request.xhr.statusText
 				});
 
-				const headers = request.xhr.getAllResponseHeaders().split("\r\n").filter(header => {
+				const headers = request.xhr.getAllResponseHeaders().trim().split("\r\n").filter(header => {
 					if ("*" === request.headersMask)
 						return true;			// no mask, return all
 					header = header.split(":");
