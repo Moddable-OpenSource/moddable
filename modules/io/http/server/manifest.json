@@ -1,21 +1,11 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/crypt/digest",
-		"$(MODDABLE)/modules/data/text/encoder"
-	],
 	"modules": {
 		"embedded:network/http/server": "./httpserver",
-		"config/httpserver": "./config",
-		"embedded:network/http/server/route/serversentevents": "./options/serversentevents",
-		"embedded:network/http/server/route/static": "./options/static",
-		"embedded:network/http/server/route/ws/handshake": "./options/websocket"
+		"config/httpserver": "./config"
 	},
 	"preload": [
 		"embedded:network/http/server",
-		"config/httpserver",
-		"embedded:network/http/server/route/serversentevents",
-		"embedded:network/http/server/route/static",
-		"embedded:network/http/server/route/ws/handshake"
+		"config/httpserver"
 	],
 	"network": true
 }

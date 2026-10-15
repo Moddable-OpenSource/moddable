@@ -6,6 +6,9 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/io/http/server",
+		"$(MODDABLE)/modules/io/http/server/route/serversentevents",
+		"$(MODDABLE)/modules/io/http/server/route/static",
+		"$(MODDABLE)/modules/io/http/server/route/ws/handshake",
 		"$(MODDABLE)/modules/web/websocket"
 	],
 	"modules": {

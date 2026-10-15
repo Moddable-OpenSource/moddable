@@ -23,6 +23,8 @@
 			"include": [
 				"$(MODDABLE)/modules/io/dns/server",
 				"$(MODDABLE)/modules/io/http/server",
+				"$(MODDABLE)/modules/io/http/server/route/static",
+				"$(MODDABLE)/modules/io/http/server/route/ws/handshake",
 				"$(MODDABLE)/modules/io/ws/client"
 			],
 			"modules": {

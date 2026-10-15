@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/text/encoder"
+	],
+	"modules": {
+		"embedded:network/http/server/route/static": "./static"
+	},
+	"preload": [
+		"embedded:network/http/server/route/static"
+	]
+}

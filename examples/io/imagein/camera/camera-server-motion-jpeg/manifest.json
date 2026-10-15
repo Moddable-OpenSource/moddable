@@ -4,6 +4,7 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/io/imagein/camera",
 		"$(MODDABLE)/modules/io/http/server",
+		"$(MODDABLE)/modules/io/http/server/route/static",
 		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {

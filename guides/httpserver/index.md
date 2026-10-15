@@ -1,7 +1,7 @@
 ---
 name: HTTP Server
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 The HTTP Server is the core of an HTTP 1.1 server with a routing mechanism to bind paths to request handlers. There are built-in handlers to reply to requests with static text and binary data. You can add routes for your project's needs such as downloading and uploading files, responding with dynamically generated content, and installing firmware updates.
@@ -31,9 +31,15 @@ Include the HTTP Server manifest in your project's `manifest.json`:
 
 You can then access the server through `device.network.http.server`.
 
+Each built-in route has its own manifest.
+
+	$(MODDABLE)/modules/io/http/server/route/static
+	$(MODDABLE)/modules/io/http/server/route/serversentevents
+	$(MODDABLE)/modules/io/http/server/route/ws/handshake
+
 ## Building with mcpack
 
-If your project accesses the HTTP Server through `device.network.http.server`, `mcpack` includes the necessary manifests automatically.
+If your project accesses the HTTP Server through `device.network.http.server`, `mcpack` includes the necessary manifests automatically. If your project imports a built-in route, such as `embedded:network/http/server/route/static`, `mcpack` also includes that route's manifest.
 
 ## Learn More
 
@@ -45,6 +51,6 @@ If your project accesses the HTTP Server through `device.network.http.server`, `
 	- [HTTP Server example](../../examples/io/listener/httpserver/main.js) in Moddable SDK
 - Implementation
 	- [HTTP Server](../../modules/io/http/server/httpserver.js) in Moddable SDK
-	- [static route](../../modules/io/http/server/options/static.js) in Moddable SDK
+	- [static route](../../modules/io/http/server/route/static/static.js) in Moddable SDK
 - TypeScript Declaration
 	- [HTTP Server](../../typings/embedded_network/http/server.d.ts) in Moddable SDK

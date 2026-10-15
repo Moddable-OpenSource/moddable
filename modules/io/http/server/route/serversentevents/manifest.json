@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:network/http/server/route/serversentevents": "./serversentevents"
+	},
+	"preload": [
+		"embedded:network/http/server/route/serversentevents"
+	]
+}
