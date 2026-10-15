@@ -100,7 +100,9 @@ void fxDeleteMachinePlatform(txMachine* the)
 void fxAbort(txMachine* the, int status)
 {
 	char *msg = (char *)fxAbortString(status);
-	char *reason = "";
+	char *reason = getModdableAppState(abortReason);
+	if (!reason)
+		reason = "";
 #ifdef mxDebug
 	if (XS_DEBUGGER_EXIT == status)
 		return;
@@ -121,6 +123,21 @@ void fxAbort(txMachine* the, int status)
 	APP_LOG(APP_LOG_LEVEL_ERROR, "fxAbort %s: %s", msg, reason);
 
 	the->exitStatus = status;
+	fxExitToHost(the);
+}
+
+void modFatal(const char *reason)
+{
+	if (!getModdableAppState(abortReason)) {
+		char *r = c_malloc(c_strlen(reason) + 1);
+		if (r) {
+			c_strcpy(r, reason);
+			setModdableAppState(abortReason, r);
+		}
+	}
+
+	txMachine *the = getModdableAppState(the);
+	fxAbort(the, XS_FATAL_CHECK_EXIT);
 	fxExitToHost(the);
 }
 

@@ -26,7 +26,7 @@
 
 #include "process_state/app_state/app_state.h"
 #include <pbl/logging/logging.h>
-#include "system/passert.h"
+#include "moddableAppState.h"
 
 #if !kPocoFrameBuffer
 	#error Poco frame buffer required on pebble
@@ -144,7 +144,7 @@ void PocoBitmapDraw(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordinate
 		ctx->draw_state.compositing_mode = GCompOpSet;
 	}
 	else
-		PBL_ASSERT(false, "monochromealigned, gray4, or PebbleBitmap required");
+		MODDABLE_FATAL("monochromealigned, gray4, or PebbleBitmap required");
 
 	grect_clip(&ctx->draw_state.clip_box, &GRect(x, y, sw, sh));
 
@@ -159,7 +159,8 @@ void PocoMonochromeBitmapDraw(Poco poco, PocoBitmap bits, PocoMonochromeMode mod
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
 
-	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == bits->format, "monochromealigned required");
+	if (kCommodettoBitmapMonochromeAligned != bits->format)
+		MODDABLE_FATAL("monochromealigned required");
 
 	if ((kPocoMonochromeForeAndBackground == mode) && (fgColor == bgColor)) {
 		PocoRectangleFill(poco, fgColor, 255, x, y, sw, sh);
@@ -245,7 +246,7 @@ void PocoGrayBitmapDraw(Poco poco, PocoBitmap bits, PocoColor color, uint8_t ble
 		return;
 	}
 	
-	PBL_CROAK("unexpected PocoGrayBitmapDraw");
+	MODDABLE_FATAL((bits->format & kCommodettoBitmapPacked) ? "compressed bitmaps unsupported" : "monochromealigned or gray4 required");
 }
 // bits is kCommodettoBitmapARGB2222 (GBitmapFormat8Bit)
 // mask is kCommodettoBitmapGray4 (GBitmapFormat2BitPalette with gBitmapGray4Palette)
@@ -256,8 +257,10 @@ void PocoBitmapDrawMasked(Poco poco, uint8_t blend, PocoBitmap bits, PocoCoordin
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
 	GBitmap gb;
-	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == bits->format, "monochromealigned bits required");
-	PBL_ASSERT(kCommodettoBitmapMonochromeAligned == mask->format, "monochromealigned mask required");
+	if (kCommodettoBitmapMonochromeAligned != bits->format)
+		MODDABLE_FATAL("monochromealigned bits required");
+	if (kCommodettoBitmapMonochromeAligned != mask->format)
+		MODDABLE_FATAL("monochromealigned mask required");
 
 	GCompOp saveMode = ctx->draw_state.compositing_mode;
 	GRect saveClip = ctx->draw_state.clip_box;
@@ -323,7 +326,7 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 		ctx->draw_state.compositing_mode = GCompOpAssign;
 	}
 	else
-		PBL_ASSERT(false, "monochromealigned or PebbleBitmap required");
+		MODDABLE_FATAL("monochromealigned or PebbleBitmap required");
 
 	// pattern support in graphics_draw_bitmap_in_rect_processed renders incorrectly, so loop ourselves
 	for (int py = y ; py < (y + h); py += sh) {
@@ -338,7 +341,7 @@ void PocoBitmapPattern(Poco poco, PocoBitmap bits, PocoCoordinate x, PocoCoordin
 
 void PocoDrawFrame(Poco poco, uint8_t *data, uint32_t dataSize, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
-	PBL_CROAK("unexpected PocoDrawFrame");
+	MODDABLE_FATAL("unexpected PocoDrawFrame");
 }
 
 
@@ -416,12 +419,12 @@ const uint8_t *PocoBMFGlyphFromUTF8(uint8_t **src, const uint8_t *chars, int cha
 
 void PocoDrawingBegin(Poco poco, PocoCoordinate x, PocoCoordinate y, PocoDimension w, PocoDimension h)
 {
-	PBL_CROAK("UNEXPECTED PocoDrawingBegin");
+	MODDABLE_FATAL("unexpected PocoDrawingBegin");
 }
 
 int PocoDrawingEnd(Poco poco, PocoPixel *pixels, int byteLength, PocoRenderedPixelsReceiver pixelReceiver, void *refCon)
 {
-	PBL_CROAK("UNEXPECTED PocoDrawingEnd");
+	MODDABLE_FATAL("unexpected PocoDrawingEnd");
 	return 0;
 }
 
@@ -442,8 +445,10 @@ int PocoDrawingEndFrameBuffer(Poco poco)
 	PocoPebble pp = getPocoPebble(poco);
 	GContext *ctx = pp->ctx;
 
-	PBL_ASSERT((0 == pp->clipDepth) && (0 == pp->originDepth), "clip or origin not popped");
-	PBL_ASSERT(!(poco->flags & kPocoFlagErrorStackProblem), "clip or origin stack failure");
+	if (pp->clipDepth || pp->originDepth)
+		MODDABLE_FATAL("clip or origin not popped");
+	if (poco->flags & kPocoFlagErrorStackProblem)
+		MODDABLE_FATAL("clip or origin stack failure");
 
 	ctx->draw_state.clip_box = ctx->dest_bitmap.bounds;
 

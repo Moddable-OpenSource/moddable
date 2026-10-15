@@ -76,3 +76,6 @@ typedef struct {
 
 #define getModdableAppState(FIELD) (((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD)
 #define setModdableAppState(FIELD, VALUE) ((ModdablePebbleAppState)app_state_get_js_memory_api_context())->FIELD = VALUE
+
+extern void modFatal(const char *reason) XS_FUNCTION_NORETURN;
+#define MODDABLE_FATAL(reason) modFatal(reason)
