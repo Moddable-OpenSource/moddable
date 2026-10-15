@@ -1077,14 +1077,11 @@ void fx_Object_seal(txMachine* the)
 			mxBehaviorOwnKeys(the, instance, XS_EACH_NAME_FLAG | XS_EACH_SYMBOL_FLAG, at);
 			mxPushUndefined();
 			property = the->stack;
+			property->flag |= XS_DONT_DELETE_FLAG;
+			property->kind = XS_UNINITIALIZED_KIND;
 			while ((at = at->next)) {
-				if (mxBehaviorGetOwnProperty(the, instance, at->value.at.id, at->value.at.index, property)) {
-					txFlag mask = XS_DONT_DELETE_FLAG;
-					property->flag |= XS_DONT_DELETE_FLAG;
-					property->kind = XS_UNINITIALIZED_KIND;
-					if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, mask))
-						mxTypeError("cannot configure property");
-				}
+				if (!mxBehaviorDefineOwnProperty(the, instance, at->value.at.id, at->value.at.index, property, XS_DONT_DELETE_FLAG))
+					mxTypeError("cannot configure property");
 			}
 			mxPop();
 			mxPop();
