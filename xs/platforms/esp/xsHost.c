@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -508,6 +508,16 @@ void espMemCpy(void *dst, const void *src, size_t count)
 	while (count--)
 		*d++ = c_read8(s++);
 }
+
+#if !ESP32
+void espMemMove(void *dst, const void *src, size_t count)
+{
+	if ((uintptr_t)src >= 0x40000000)
+		espMemCpy(dst, src, count);
+	else
+		memmove(dst, src, count);
+}
+#endif
 
 int espMemCmp(const void *a, const void *b, size_t count)
 {
@@ -1409,7 +1419,7 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 
 static txBoolean spiRead(void *src, size_t offset, void *buffer, size_t size)
 {
-	return modSPIRead(offset + (uintptr_t)src - (uintptr_t)kFlashStart, size, buffer);
+	return modSPIRead(offset + espMappedToFlashOffset(src), size, buffer);
 }
 
 static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
@@ -1420,11 +1430,11 @@ static txBoolean spiWrite(void *dst, size_t offset, void *buffer, size_t size)
 		return 0;		// attempted write beyond end of available space
 
 	if (!(offset & (kFlashSectorSize - 1))) {		// if offset is at start of a sector, erase that sector
-		if (!modSPIErase(offset - (uintptr_t)kFlashStart, kFlashSectorSize))
+		if (!modSPIErase(espMappedToFlashOffset(offset), kFlashSectorSize))
 			return 0;
 	}
 
-	return modSPIWrite(offset - (uintptr_t)kFlashStart, size, buffer);
+	return modSPIWrite(espMappedToFlashOffset(offset), size, buffer);
 }
 
 void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
@@ -1445,6 +1455,17 @@ void *modInstallMods(xsMachine *the, void *preparationIn, uint8_t *status)
 
 #if !ESP32
 #include "flash_utils.h"
+#include "upgrade.h"
+
+// declarations from SDK user_interface.h, which conflicts with lwIP headers
+extern uint8 system_get_flash_size_map(void);
+extern uint8 system_upgrade_userbin_check(void);
+extern uint8 system_upgrade_flag_check(void);
+extern void system_upgrade_reboot(void);
+#define FLASH_SIZE_16M_MAP_1024_1024 (5)
+#define FLASH_SIZE_32M_MAP_1024_1024 (6)
+
+extern uint8_t _MODPREF_start;		// from linker
 
 // declarations from rboot.h
 // standard rom header
@@ -1469,32 +1490,75 @@ typedef struct {
 	uint32 len; // length of irom section
 } rom_header_new;
 
+static uint8_t gFlashMap1024 = 0xFF;		// unknown until first use
+
+static uint8_t isFlashMap1024(void)
+{
+	if (0xFF == gFlashMap1024) {
+		ets_isr_mask(FLASH_INT_MASK);		// system_get_flash_size_map reads flash
+		uint8_t map = system_get_flash_size_map();
+		ets_isr_unmask(FLASH_INT_MASK);
+		gFlashMap1024 = (FLASH_SIZE_16M_MAP_1024_1024 == map) || (FLASH_SIZE_32M_MAP_1024_1024 == map);
+	}
+	return gFlashMap1024;
+}
+
+uint32_t espFlashMappedOffset(void)
+{
+	if (!isFlashMap1024())
+		return 0;
+
+	return (UPGRADE_FW_BIN2 == system_upgrade_userbin_check()) ? 0x100000 : 0;
+}
+
+// OTA requires the 1024+1024 flash map with nothing placed in the second application slot (eagle.flash.4m.ota.ld)
+uint8_t espHasOTASlots(void)
+{
+	if (!isFlashMap1024())
+		return 0;
+
+	return ((uintptr_t)&_MODPREF_start - (uintptr_t)kFlashStart) >= 0x200000;
+}
+
+void espRestart(void)
+{
+	if (UPGRADE_FLAG_FINISH == system_upgrade_flag_check())
+		system_upgrade_reboot();		// boot the other slot
+	else
+		system_restart();
+}
+
 uint8_t *espFindUnusedFlashStart(void)
 {
 	rom_header_new header;
-	uint32_t pos = APP_START_OFFSET;
+	uint32_t slot = espFlashMappedOffset();
+	uint32_t pos = slot + APP_START_OFFSET;
 
-	spi_flash_read(pos, (void *)&header, sizeof(rom_header_new));
+	modSPIRead(pos, sizeof(rom_header_new), (void *)&header);
 	if ((0xea != header.magic) || (4 != header.count)) {
 		modLog("unrecognized boot loader");
 		return NULL;
 	}
 
 	pos += header.len + sizeof(rom_header_new);
-	spi_flash_read(pos, (void *)&header, sizeof(rom_header));
+	modSPIRead(pos, sizeof(rom_header), (void *)&header);
 
 	pos += sizeof(rom_header);
 	while (header.count--) {
 		section_header_t section;
-		spi_flash_read(pos, (void *)&section, sizeof(section_header_t));
+		modSPIRead(pos, sizeof(section_header_t), (void *)&section);
 		pos += section.size + sizeof(section_header_t);
 	}
 
-	pos += (uint32_t)kFlashStart;
+	pos = (pos | 15) + 1;		// checksum byte is last in its 16 byte block
+	pos += 4;					// CRC-32 appended by esptool
+
+	pos += (uint32_t)kFlashStart - slot;
 	return (uint8 *)(((kFlashSectorSize - 1) + pos) & ~(kFlashSectorSize - 1));
 }
 
-uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
+// interrupts must be masked: the cache is disabled while reading flash, and an interrupt handler that runs code from flash (uart_isr calls esp_schedule) crashes
+static uint8_t modSPIReadUnmasked(uint32_t offset, uint32_t size, uint8_t *dst)
 {
 	uint8_t temp[512] __attribute__ ((aligned (4)));
 	uint32_t toAlign;
@@ -1542,6 +1606,26 @@ uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
 		if (SPI_FLASH_RESULT_OK != spi_flash_read(offset, (uint32_t *)temp, 4))
 			return 0;
 		c_memcpy(dst, temp, size);
+	}
+
+	return 1;
+}
+
+uint8_t modSPIRead(uint32_t offset, uint32_t size, uint8_t *dst)
+{
+	while (size) {
+		uint32_t use = (size > kFlashSectorSize) ? kFlashSectorSize : size;		// limit time with interrupts masked
+		uint8_t result;
+
+		ets_isr_mask(FLASH_INT_MASK);
+		result = modSPIReadUnmasked(offset, use, dst);
+		ets_isr_unmask(FLASH_INT_MASK);
+		if (!result)
+			return 0;
+
+		offset += use;
+		dst += use;
+		size -= use;
 	}
 
 	return 1;

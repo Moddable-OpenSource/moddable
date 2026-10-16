@@ -137,6 +137,7 @@ extern char *espStrChr(const char *str, int c);
 extern char *espStrRChr(const char *str, int c);
 extern char *espStrStr(const char *src, const char *search);
 extern void espMemCpy(void *dst, const void *src, size_t count);
+extern void espMemMove(void *dst, const void *src, size_t count);
 extern int espMemCmp(const void *a, const void *b, size_t count);
 extern int espStrCmp(const char *ap, const char *bp);
 extern int espStrNCmp(const char *ap, const char *bp, size_t count);
@@ -538,10 +539,11 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 
 #if ESP32
 	#define c_memcpy memcpy
+	#define c_memmove memmove
 #else
 	#define c_memcpy espMemCpy
+	#define c_memmove espMemMove
 #endif	
-#define c_memmove memmove
 #define c_memset memset
 #define c_memcmp espMemCmp
 #define c_strcat espStrCat
