@@ -35,7 +35,6 @@
 #include "kernel/pbl_malloc.h"
 #include "process_state/app_state/app_state.h"
 #include <pbl/kernel/syscall.h>
-#include "syscall/syscall_internal.h"
 
 // xs.h provides fxPop()/fxPush() macros that shadow the functions in xsffi.c;
 // we need the function symbols for the gxAPI table entries.
@@ -138,15 +137,7 @@ static void prv_check_slot(txMachine *the, txSlot *slot)
 	}
 }
 
-static void prv_check_string(txString string)
-{
-	if (!memory_layout_is_cstring_in_region(memory_layout_get_app_region(), string, SIZE_MAX)) {
-		PBL_LOG_ERR("XS API: invalid string pointer %p", string);
-		pbl_syscall_fail();
-	}
-}
-
-DEFINE_SYSCALL(txSlot *, sys_moddable_xs_this, txMachine *the)
+PBL_SYSCALL(txSlot *, sys_moddable_xs_this, (VAL, txMachine *, the))
 {
 	prv_enter(the);
 	txSlot *result = fxThis(the);
@@ -154,7 +145,7 @@ DEFINE_SYSCALL(txSlot *, sys_moddable_xs_this, txMachine *the)
 	return result;
 }
 
-DEFINE_SYSCALL(txInteger, sys_moddable_xs_argc, txMachine *the)
+PBL_SYSCALL(txInteger, sys_moddable_xs_argc, (VAL, txMachine *, the))
 {
 	prv_enter(the);
 	txInteger result = fxArgc(the);
@@ -162,7 +153,7 @@ DEFINE_SYSCALL(txInteger, sys_moddable_xs_argc, txMachine *the)
 	return result;
 }
 
-DEFINE_SYSCALL(txSlot *, sys_moddable_xs_argv, txMachine *the, txInteger index)
+PBL_SYSCALL(txSlot *, sys_moddable_xs_argv, (VAL, txMachine *, the), (VAL, txInteger, index))
 {
 	prv_enter(the);
 	txSlot *result = fxArgv(the, index);
@@ -170,14 +161,14 @@ DEFINE_SYSCALL(txSlot *, sys_moddable_xs_argv, txMachine *the, txInteger index)
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_pop, txMachine *the)
+PBL_SYSCALL(void, sys_moddable_xs_pop, (VAL, txMachine *, the))
 {
 	prv_enter(the);
 	fxPop(the);
 	prv_leave();
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_push, txMachine *the, txSlot *slot)
+PBL_SYSCALL(void, sys_moddable_xs_push, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -185,7 +176,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_push, txMachine *the, txSlot *slot)
 	prv_leave();
 }
 
-DEFINE_SYSCALL(txSlot *, sys_moddable_xs_result, txMachine *the)
+PBL_SYSCALL(txSlot *, sys_moddable_xs_result, (VAL, txMachine *, the))
 {
 	prv_enter(the);
 	txSlot *result = fxResult(the);
@@ -193,30 +184,29 @@ DEFINE_SYSCALL(txSlot *, sys_moddable_xs_result, txMachine *the)
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_abort, txMachine *the, int status)
+PBL_SYSCALL(void, sys_moddable_xs_abort, (VAL, txMachine *, the), (VAL, int, status))
 {
 	prv_enter(the);
 	fxAbort(the, status);
 	prv_leave();
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_defineID, txMachine *the, txID id, txFlag flag, txFlag mask)
+PBL_SYSCALL(void, sys_moddable_xs_defineID, (VAL, txMachine *, the), (VAL, txID, id), (VAL, txFlag, flag), (VAL, txFlag, mask))
 {
 	prv_enter(the);
 	fxDefineID(the, id, flag, mask);
 	prv_leave();
 }
 
-DEFINE_SYSCALL(txID, sys_moddable_xs_id, txMachine *the, txString name)
+PBL_SYSCALL(txID, sys_moddable_xs_id, (VAL, txMachine *, the), (STR, txString, name))
 {
 	prv_enter(the);
-	prv_check_string(name);
 	txID result = fxID(the, name);
 	prv_leave();
 	return result;
 }
 
-DEFINE_SYSCALL(txSlot *, sys_moddable_xs_newHostFunction, txMachine *the, txCallback user_cb, txInteger length, txInteger name, txInteger profileID)
+PBL_SYSCALL(txSlot *, sys_moddable_xs_newHostFunction, (VAL, txMachine *, the), (VAL, txCallback, user_cb), (VAL, txInteger, length), (VAL, txInteger, name), (VAL, txInteger, profileID))
 {
 	prv_enter(the);
 	if (s_ffi_binding_count >= FFI_MAX_BINDINGS)
@@ -230,7 +220,7 @@ DEFINE_SYSCALL(txSlot *, sys_moddable_xs_newHostFunction, txMachine *the, txCall
 	return instance;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromInteger, txMachine *the, txSlot *slot, txInteger value)
+PBL_SYSCALL(void, sys_moddable_xs_fromInteger, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, txInteger, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -238,7 +228,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_fromInteger, txMachine *the, txSlot *slot, 
 	prv_leave();
 }
 
-DEFINE_SYSCALL(txInteger, sys_moddable_xs_toInteger, txMachine *the, txSlot *slot)
+PBL_SYSCALL(txInteger, sys_moddable_xs_toInteger, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -247,7 +237,7 @@ DEFINE_SYSCALL(txInteger, sys_moddable_xs_toInteger, txMachine *the, txSlot *slo
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromNumber, txMachine *the, txSlot *slot, txNumber value)
+PBL_SYSCALL(void, sys_moddable_xs_fromNumber, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, txNumber, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -255,7 +245,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_fromNumber, txMachine *the, txSlot *slot, t
 	prv_leave();
 }
 
-DEFINE_SYSCALL(txNumber, sys_moddable_xs_toNumber, txMachine *the, txSlot *slot)
+PBL_SYSCALL(txNumber, sys_moddable_xs_toNumber, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -264,7 +254,7 @@ DEFINE_SYSCALL(txNumber, sys_moddable_xs_toNumber, txMachine *the, txSlot *slot)
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromUnsigned, txMachine *the, txSlot *slot, txUnsigned value)
+PBL_SYSCALL(void, sys_moddable_xs_fromUnsigned, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, txUnsigned, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -272,7 +262,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_fromUnsigned, txMachine *the, txSlot *slot,
 	prv_leave();
 }
 
-DEFINE_SYSCALL(txUnsigned, sys_moddable_xs_toUnsigned, txMachine *the, txSlot *slot)
+PBL_SYSCALL(txUnsigned, sys_moddable_xs_toUnsigned, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -281,7 +271,7 @@ DEFINE_SYSCALL(txUnsigned, sys_moddable_xs_toUnsigned, txMachine *the, txSlot *s
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromBigInt64, txMachine *the, txSlot *slot, int64_t value)
+PBL_SYSCALL(void, sys_moddable_xs_fromBigInt64, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, int64_t, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -289,7 +279,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_fromBigInt64, txMachine *the, txSlot *slot,
 	prv_leave();
 }
 
-DEFINE_SYSCALL(int64_t, sys_moddable_xs_toBigInt64, txMachine *the, txSlot *slot)
+PBL_SYSCALL(int64_t, sys_moddable_xs_toBigInt64, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -298,7 +288,7 @@ DEFINE_SYSCALL(int64_t, sys_moddable_xs_toBigInt64, txMachine *the, txSlot *slot
 	return result;
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromBigUint64, txMachine *the, txSlot *slot, uint64_t value)
+PBL_SYSCALL(void, sys_moddable_xs_fromBigUint64, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, uint64_t, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -306,7 +296,7 @@ DEFINE_SYSCALL(void, sys_moddable_xs_fromBigUint64, txMachine *the, txSlot *slot
 	prv_leave();
 }
 
-DEFINE_SYSCALL(uint64_t, sys_moddable_xs_toBigUint64, txMachine *the, txSlot *slot)
+PBL_SYSCALL(uint64_t, sys_moddable_xs_toBigUint64, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -319,25 +309,23 @@ DEFINE_SYSCALL(uint64_t, sys_moddable_xs_toBigUint64, txMachine *the, txSlot *sl
 // (unprivileged-readable), so the to*Handle entries hand the generated
 // mc.ffi.c direct pointers into XS storage — no copy-out ABI. fromStringX
 // copies like fromString: the app could rewrite a string it lent to XS.
-DEFINE_SYSCALL(void, sys_moddable_xs_fromString, txMachine *the, txSlot *slot, char *value)
+PBL_SYSCALL(void, sys_moddable_xs_fromString, (VAL, txMachine *, the), (VAL, txSlot *, slot), (STR, char *, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
-	prv_check_string(value);
 	fxString(the, slot, value);
 	prv_leave();
 }
 
-DEFINE_SYSCALL(void, sys_moddable_xs_fromStringX, txMachine *the, txSlot *slot, char *value)
+PBL_SYSCALL(void, sys_moddable_xs_fromStringX, (VAL, txMachine *, the), (VAL, txSlot *, slot), (STR, char *, value))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
-	prv_check_string(value);
 	fxString(the, slot, value);
 	prv_leave();
 }
 
-DEFINE_SYSCALL(char **, sys_moddable_xs_toStringHandle, txMachine *the, txSlot *slot)
+PBL_SYSCALL(char **, sys_moddable_xs_toStringHandle, (VAL, txMachine *, the), (VAL, txSlot *, slot))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -346,7 +334,7 @@ DEFINE_SYSCALL(char **, sys_moddable_xs_toStringHandle, txMachine *the, txSlot *
 	return result;
 }
 
-DEFINE_SYSCALL(void *, sys_moddable_xs_fromArrayBuffer, txMachine *the, txSlot *slot, void *data, txInteger byteLength, txInteger maxByteLength)
+PBL_SYSCALL(void *, sys_moddable_xs_fromArrayBuffer, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, void *, data), (VAL, txInteger, byteLength), (VAL, txInteger, maxByteLength))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
@@ -357,7 +345,7 @@ DEFINE_SYSCALL(void *, sys_moddable_xs_fromArrayBuffer, txMachine *the, txSlot *
 	return result;
 }
 
-DEFINE_SYSCALL(void **, sys_moddable_xs_toArrayBufferHandle, txMachine *the, txSlot *slot, size_t size)
+PBL_SYSCALL(void **, sys_moddable_xs_toArrayBufferHandle, (VAL, txMachine *, the), (VAL, txSlot *, slot), (VAL, size_t, size))
 {
 	prv_enter(the);
 	prv_check_slot(the, slot);
