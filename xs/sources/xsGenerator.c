@@ -620,14 +620,14 @@ void fx_Iterator_prototype_every(txMachine* the)
 				mxRunCount(2);
 				mxResult->value.boolean = fxToBoolean(the, the->stack);
 				mxPop();
-				if (!mxResult->value.boolean) {
-					fxIteratorReturn(the, iterator, 0);
-					break;
-				}
 			}
 			mxCatch(the) {
 				fxIteratorReturn(the, iterator, 1);
 				fxJump(the);
+			}
+			if (!mxResult->value.boolean) {
+				fxIteratorReturn(the, iterator, 0);
+				break;
 			}
 			counter++;
 		}
@@ -1045,16 +1045,16 @@ void fx_Iterator_prototype_some(txMachine* the)
 				mxRunCount(2);
 				mxResult->value.boolean = fxToBoolean(the, the->stack);
 				mxPop();
-				if (mxResult->value.boolean) {
-					fxIteratorReturn(the, iterator, 0);
-					break;
-				}
-				counter++;
 			}
 			mxCatch(the) {
 				fxIteratorReturn(the, iterator, 1);
 				fxJump(the);
 			}
+			if (mxResult->value.boolean) {
+				fxIteratorReturn(the, iterator, 0);
+				break;
+			}
+			counter++;
 		}
 	}
 	mxPop();

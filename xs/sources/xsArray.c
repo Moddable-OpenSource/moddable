@@ -1463,9 +1463,8 @@ void fx_Array_fromAsync_onIterated(txMachine* the)
 			mxPushSlot(result);
 			mxRunCount(1);
 			mxPop();
-			return;
 		}
-		if (!mxIsUndefined(mapFunction)) {
+		else if (!mxIsUndefined(mapFunction)) {
 			mxPushUndefined();
 			mxPush(mxPromiseConstructor);
 		
