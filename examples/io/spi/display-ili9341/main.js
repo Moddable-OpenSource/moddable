@@ -18,6 +18,8 @@
 
 import Display from "embedded:display/LCD/ILI9341"
 import Poco from "commodetto/Poco";
+import Bitmap from "commodetto/Bitmap";
+import config from "mc/config";
 import Timer from "timer"
 
 const d = new Display({
@@ -32,8 +34,9 @@ const d = new Display({
 	}
 });
 
+const pixelFormat = Bitmap[config.format];
 d.configure({
-	format: 7,		// 16-bit RGB 5:6:5 little-endian
+	format: pixelFormat,
 	async: true
 });
 
@@ -41,7 +44,7 @@ d.configure({
 d.pixelsToBytes = function(pixels) {
 	return pixels << 1;
 }
-d.pixelFormat = 7;
+d.pixelFormat = pixelFormat;
 d.async = true;
 
 const patch = false;
@@ -103,33 +106,37 @@ else {
 	let r = render.rectangle(10, 20, 50, 60);
 	render.adaptInvalid(r);
 
+	const white = render.makeColor(255, 255, 255);
+	const red = render.makeColor(255, 0, 0);
+	const green = render.makeColor(0, 255, 0);
+	const blue = render.makeColor(0, 0, 255);
 	render.begin();
-		render.fillRectangle(0xF800, 0, 0, render.width, render.height);
-		render.fillRectangle(0x001F, 30, 30, render.width - 60, render.height - 60);
-		render.fillRectangle(0x07E0, 60, 60, render.width - 120, render.height - 120);
+		render.fillRectangle(red, 0, 0, render.width, render.height);
+		render.fillRectangle(blue, 30, 30, render.width - 60, render.height - 60);
+		render.fillRectangle(green, 60, 60, render.width - 120, render.height - 120);
 	render.end();
 
 	d.configure({async: false});
 
 	const width = d.width, height = d.height;
 
-	fill(0xFFFF, 0, 0, width, height, false, false);
+	fill(white, 0, 0, width, height, false, false);
 
-	fill(0xF800, 0, 0, width, height, true, true);
+	fill(red, 0, 0, width, height, true, true);
 	d.configure({
 		invert: true
 	});
 
-	fill(0x001F, 0, 0, width, height);
+	fill(blue, 0, 0, width, height);
 	d.configure({
 		invert: false
 	});
-	fill(0x07E0, 0, 0, width, height);
+	fill(green, 0, 0, width, height);
 
-	fill(0xF81F, 0, 0, width / 2, height / 2);
-	fill(0x07FF, width / 2, height / 2, width / 2, height / 2);
+	fill(render.makeColor(255, 0, 255), 0, 0, width / 2, height / 2);
+	fill(render.makeColor(0, 255, 255), width / 2, height / 2, width / 2, height / 2);
 
-	fill(0xFFFF, 0, 0, 20, 20);
+	fill(white, 0, 0, 20, 20);
 
 	let start = Date.now();
 	stripes(0, 0, width, height);
