@@ -48,7 +48,6 @@
 #include "applib/pbl_std/pbl_std.h"
 #include <pbl/drivers/rtc.h>
 #include "syscall/syscall.h"
-#include "system/passert.h"
 #include <time.h>
 #include "kernel/pbl_malloc.h"
 

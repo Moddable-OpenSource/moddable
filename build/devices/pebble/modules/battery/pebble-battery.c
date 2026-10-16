@@ -26,7 +26,6 @@
 #include "builtinCommon.h"
 
 #include "applib/battery_state_service.h"
-#include "system/passert.h"
 
 typedef struct {
 	xsMachine			*the;
