@@ -591,7 +591,13 @@ void selectionSort(void *base, size_t num, size_t width, int (*compare )(const v
 	#define kFlashStart ((uint8_t *)0x040200000)
 	#define kFlashEnd ((uint8_t *)0x040300000)
 
+	// the 1 MB at kFlashStart maps the running application slot, which is at flash offset 0x100000 when running from OTA slot 2
+	extern uint32_t espFlashMappedOffset(void);
+	extern uint8_t espHasOTASlots(void);
+	#define espMappedToFlashOffset(address) ((uintptr_t)(address) - (uintptr_t)kFlashStart + espFlashMappedOffset())
+
 	extern uint8_t *espFindUnusedFlashStart(void);
+	extern void espRestart(void);
 	#define kModulesStart (espFindUnusedFlashStart())
 	#define kModulesEnd kFlashEnd
 	#define kModulesByteLength (kModulesEnd - kModulesStart)

@@ -80,6 +80,13 @@ FLASH_MODE = qio
 FLASH_SPEED = 80
 FLASH_LAYOUT = eagle.flash.4m.ld
 
+# 4 MB flash has two 1 MB application slots for OTA update (flash map 4MB-c1)
+!IF "$(FLASH_SIZE)"=="4M"
+ESPTOOL_FLASH_SIZE = 4MB-c1
+!ELSE
+ESPTOOL_FLASH_SIZE = $(FLASH_SIZE)B
+!ENDIF
+
 # WiFi & Debug settings
 WIFI_SSID =
 WIFI_PSK =
@@ -309,20 +316,24 @@ LAUNCH = release
 ESP_FIRMWARE_DIR = $(ESPRESSIF_SDK_ROOT)\components\esp8266\firmware
 ESP_BOOTLOADER_BIN = $(ESP_FIRMWARE_DIR)\boot_v1.7.bin
 ESP_DATA_DEFAULT_BIN = $(ESP_FIRMWARE_DIR)\esp_init_data_default.bin
+ESP_BLANK_BIN = $(ESP_FIRMWARE_DIR)\blank.bin
 
 !IF "$(FLASH_SIZE)"=="1M"
 ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0xFC000
 !ELSEIF "$(FLASH_SIZE)"=="4M"
 ESP_INIT_DATA_DEFAULT_BIN_OFFSET = 0x3FC000
+# clear SDK system parameters so the boot loader starts the application in slot 1, even after an OTA update
+ESP_SYSTEM_PARAM_BLANK = 0x3FD000 $(ESP_BLANK_BIN) 0x3FE000 $(ESP_BLANK_BIN) 0x3FF000 $(ESP_BLANK_BIN)
 !ENDIF
 
 ESPTOOL_FLASH_OPT = \
 	--flash-freq $(FLASH_SPEED)m \
 	--flash-mode $(FLASH_MODE) \
-	--flash-size $(FLASH_SIZE)B \
+	--flash-size $(ESPTOOL_FLASH_SIZE) \
 	0x0000 $(ESP_BOOTLOADER_BIN) \
 	0x1000 $(BIN_DIR)\main.bin \
-	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN)
+	$(ESP_INIT_DATA_DEFAULT_BIN_OFFSET) $(ESP_DATA_DEFAULT_BIN) \
+	$(ESP_SYSTEM_PARAM_BLANK)
 
 UPLOAD_TO_ESP = $(ESPTOOL) -b $(UPLOAD_SPEED) -p $(UPLOAD_PORT) write-flash $(ESPTOOL_FLASH_OPT)
 
@@ -392,7 +403,7 @@ $(BIN_DIR)\main.bin: $(APP_ARCHIVE) $(LIB_ARCHIVE) $(LIB_DIR)\lib_a-setjmp.o $(L
 	$(CPP) $(C_DEFINES) $(C_INCLUDES) $(CPP_FLAGS) $(LIB_DIR)\buildinfo.c -o $(LIB_DIR)\buildinfo.o
 	$(LD) -L$(BIN_DIR) $(LD_FLAGS) -Wl,--start-group $(LIB_DIR)\buildinfo.o $(LIB_DIR)\lib_a-setjmp.o $(LD_STD_LIBS) -lxslib -lxsar -Wl,--end-group -L$(LIB_DIR) -o $(TMP_DIR)\main.elf
 	$(TOOLS_BIN)\xtensa-lx106-elf-objdump -t $(TMP_DIR)\main.elf > $(BIN_DIR)\main.sym
-	$(ESPTOOL) --chip esp8266 elf2image --version=2 -o $@ $(TMP_DIR)\main.elf
+	$(ESPTOOL) --chip esp8266 elf2image --version=2 --flash-mode $(FLASH_MODE) --flash-freq $(FLASH_SPEED)m --flash-size $(ESPTOOL_FLASH_SIZE) -o $@ $(TMP_DIR)\main.elf
 
 $(LIB_DIR)\lib_a-setjmp.o: $(SYSROOT)\lib\libcirom.a
 	@echo # ar $(@F)

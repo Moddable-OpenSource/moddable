@@ -1056,7 +1056,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 			if (!partition || (ESP_OK != esp_partition_write(partition, 0, erase, sizeof(erase))))
 				resultCode = -2;
 #else
-			uint32_t offset = (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
+			uint32_t offset = espMappedToFlashOffset(kModulesStart);
 			if (!modSPIWrite(offset, sizeof(erase), erase))
 				resultCode = -2;
 #endif
@@ -1086,7 +1086,7 @@ void doRemoteCommand(txMachine *the, uint8_t *cmd, uint32_t cmdLen)
 				break;
 			}
 
-			offset += (uintptr_t)kModulesStart - (uintptr_t)kFlashStart;
+			offset += espMappedToFlashOffset(kModulesStart);
 
 			int firstSector = offset / SPI_FLASH_SEC_SIZE, lastSector = (offset + cmdLen) / SPI_FLASH_SEC_SIZE;
 			if (!(offset % SPI_FLASH_SEC_SIZE))			// starts on sector boundary
@@ -1220,7 +1220,7 @@ bail:
 #if ESP32
 			esp_restart();
 #else
-			system_restart();
+			espRestart();
 #endif
 			while (1)
 				modDelayMilliseconds(1000);
