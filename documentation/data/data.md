@@ -1,6 +1,6 @@
 # Data
-Copyright 2017-2024 Moddable Tech, Inc.<BR>
-Revised: March 29, 2024
+Copyright 2017-2026 Moddable Tech, Inc.<BR>
+Revised: October 15, 2026
 
 ## Table of Contents
 
@@ -106,13 +106,14 @@ let s0 = Hex.toString(buffer, "-", "0123456789abwxyz");
 ```
 
 <a id="crc"></a>
-## class CRC8, CRC16
+## class CRC8, CRC16, CRC32
 
-The `CRC8` and `CRC16` classes calculate CRC checksums on data.
+The `CRC8`, `CRC16`, and `CRC32` classes calculate CRC checksums on data.
 
 ```js
 import {CRC8} from "crc";
 import {CRC16} from "crc";
+import {CRC32} from "crc";
 ```
 
 Include the module's manifest to use it in a project:
@@ -125,8 +126,9 @@ Include the module's manifest to use it in a project:
 
 #### `CRC8(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
 #### `CRC16(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
+#### `CRC32(polynomial [, initial [, reflectInput [, reflectOutput [, xorOutput]]]])`
 
-The `CRC8` and `CRC16` functions take a number of options used to specify the CRC checksum to calculate.
+The `CRC8`, `CRC16`, and `CRC32` functions take a number of options used to specify the CRC checksum to calculate.
 
 | Parameter | Default | Description |
 | :---: | :---: | :--- |
@@ -136,7 +138,9 @@ The `CRC8` and `CRC16` functions take a number of options used to specify the CR
 | `reflectOutput` | `false` | If `true`, each output byte is reflected before being returned. The output reflection is done over the whole CRC value (optional) |
 | `xorOutput` | `0` | Value to XOR to the final CRC value (optional) |
 
-The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8 and 16-bit integers for CRC16.
+The `polynomial`, `initial` and `xorOutput` values are 8-bit integers for CRC8, 16-bit integers for CRC16, and 32-bit integers for CRC32.
+
+The common CRC-32 used by zlib, PNG, and Ethernet is `new CRC32(0x04C11DB7, 0xFFFFFFFF, true, true, 0xFFFFFFFF)`.
 
 The [crc example](../../examples/data/crc/main.js) demonstrates the definition of the parameters for a number of common CRC checksums:
 

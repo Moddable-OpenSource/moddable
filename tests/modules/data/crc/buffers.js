@@ -3,7 +3,7 @@ description: https://github.com/Moddable-OpenSource/moddable/issues/956
 flags: [module]
 ---*/
 
-import { CRC8, CRC16 } from "crc";
+import { CRC8, CRC16, CRC32 } from "crc";
 
 let buffer1 = Uint8Array.of(0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef);
 let buffer2 = Uint8Array.of(0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10);
@@ -28,3 +28,17 @@ assert.sameValue(0x3F82, crc, "CRC16");
 crc16.reset();
 assert.sameValue(crc, crc16.checksum(buffer3), "CRC16 multiple buffers");
 
+let crc32 = new CRC32(0x04C11DB7, 0xFFFFFFFF, true, true, 0xFFFFFFFF); // CRC-32/ISO-HDLC
+
+crc32.checksum(buffer1);
+crc = crc32.checksum(buffer2);
+assert.sameValue(0x238E665D, crc, "CRC32");
+
+crc32.reset();
+assert.sameValue(crc, crc32.checksum(buffer3), "CRC32 multiple buffers");
+
+crc32.reset();
+assert.sameValue(0xCBF43926, crc32.checksum(Uint8Array.from("123456789", c => c.charCodeAt(0))), "CRC-32/ISO-HDLC check value");
+
+crc32 = new CRC32(0x04C11DB7, 0xFFFFFFFF, false, false, 0); // CRC-32/MPEG-2
+assert.sameValue(0x16E11A02, crc32.checksum(buffer3), "CRC-32/MPEG-2");

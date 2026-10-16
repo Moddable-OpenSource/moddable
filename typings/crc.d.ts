@@ -31,5 +31,11 @@ declare module "crc" {
     checksum(bytes: ByteBuffer): number
     reset(): void
   }
-  export {CRC8 as default, CRC8, CRC16};
+  class CRC32 {
+    constructor(polynomial: number, initial_value?: number, reflectInput?: boolean, reflectOutput?: boolean, xorOutput?: number)
+    close(): void
+    checksum(bytes: ByteBuffer): number
+    reset(): void
+  }
+  export {CRC8 as default, CRC8, CRC16, CRC32};
 }

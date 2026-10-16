@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -32,4 +32,11 @@ class CRC16 extends Native("xs_crc16_destructor") {
 	reset() { return native("xs_crc16_reset").call(this); };
 }
 
-export { CRC8 as default, CRC8, CRC16 };
+class CRC32 extends Native("xs_crc32_destructor") {
+	constructor(polynomial, initial, reflectInput, reflectOutput, xorOutput) { super(); native("xs_crc32").call(this, polynomial, initial, reflectInput, reflectOutput, xorOutput); };
+	close() { return native("xs_crc32_close").call(this); };
+	checksum(buffer) { return native("xs_crc32_checksum").call(this, buffer); };
+	reset() { return native("xs_crc32_reset").call(this); };
+}
+
+export { CRC8 as default, CRC8, CRC16, CRC32 };

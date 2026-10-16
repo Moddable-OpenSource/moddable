@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Moddable Tech, Inc.
+ * Copyright (c) 2021-2026 Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -202,4 +202,93 @@ void xs_crc16_checksum(xsMachine *the)
 	if (crc16->reflectOutput)
 		crc = (reflect8(crc & 0xff) << 8) | reflect8(crc >> 8);
 	xsmcSetInteger(xsResult, crc ^ crc16->xorOutput);
+}
+
+static void make_crc32_table(uint32_t polynomial, uint32_t *crc32_table) {
+	int i, j;
+	uint32_t crc;
+
+	for (i=0; i<256; i++) {
+		for (crc=(uint32_t)i<<24, j=0; j<8; j++) {
+			if (crc & 0x80000000) {
+				crc <<= 1;
+				crc ^= polynomial;
+			}
+			else
+				crc <<= 1;
+		}
+		crc32_table[i] = crc;
+	}
+}
+
+static uint32_t checksum32(uint8_t *bytes, uint32_t length, uint32_t *crc32_table, uint32_t crc, uint8_t refIn) {
+	uint32_t i;
+
+	for (i=0; i<length; i++) {
+		uint8_t b = bytes[i];
+		if (refIn)
+			b = reflect8(b);
+		crc = crc ^ ((uint32_t)b << 24);
+		crc = ((crc << 8) ^ crc32_table[crc >> 24]);
+	}
+	return crc;
+}
+
+typedef struct {
+	uint32_t	reset;
+	uint32_t	initial;
+	uint32_t	reflectInput;
+	uint32_t	reflectOutput;
+	uint32_t	xorOutput;
+	uint32_t	table[256];
+} CRC32Record, *CRC32;
+
+void xs_crc32_destructor(void *data)
+{
+}
+
+void xs_crc32(xsMachine *the)
+{
+	int argc = xsmcArgc;
+	uint32_t polynomial = xsmcToUnsigned(xsArg(0));
+	uint32_t initial = (argc > 1) ? xsmcToUnsigned(xsArg(1)) : 0;
+	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
+	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
+	uint32_t xorOutput = (argc > 4) ? xsmcToUnsigned(xsArg(4)) : 0;
+	CRC32 crc32 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC32Record));
+
+	crc32->reset = initial;
+	crc32->initial = initial;
+	crc32->reflectInput = reflectInput;
+	crc32->reflectOutput = reflectOutput;
+	crc32->xorOutput = xorOutput;
+
+	make_crc32_table(polynomial, crc32->table);
+}
+
+void xs_crc32_close(xsMachine *the)
+{
+	xsmcSetHostData(xsThis, NULL);
+}
+
+void xs_crc32_reset(xsMachine *the)
+{
+	CRC32 crc32 = xsmcGetHostChunk(xsThis);
+
+	crc32->initial = crc32->reset;
+}
+
+void xs_crc32_checksum(xsMachine *the)
+{
+	CRC32 crc32 = xsmcGetHostChunk(xsThis);
+	uint8_t *data;
+	uint32_t length;
+
+	xsmcGetBufferReadable(xsArg(0), (void **)&data, &length);
+	crc32->initial = checksum32(data, length, crc32->table, crc32->initial, crc32->reflectInput);
+
+	uint32_t crc = crc32->initial;
+	if (crc32->reflectOutput)
+		crc = ((uint32_t)reflect8(crc & 0xff) << 24) | ((uint32_t)reflect8((crc >> 8) & 0xff) << 16) | ((uint32_t)reflect8((crc >> 16) & 0xff) << 8) | reflect8(crc >> 24);
+	xsmcSetUnsigned(xsResult, crc ^ crc32->xorOutput);
 }
