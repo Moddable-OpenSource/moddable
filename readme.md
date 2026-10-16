@@ -1,8 +1,8 @@
 # Moddable SDK
 
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: October 12, 2026
-Moddable SDK: [Version 10.0.1](https://github.com/Moddable-OpenSource/moddable/releases)
+Revised: October 16, 2026
+Moddable SDK: [Version 10.0.2](https://github.com/Moddable-OpenSource/moddable/releases)
 
 ## Modern software development for microcontrollers
 
