@@ -1,7 +1,5 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/io/socket",
 		"$(MODDABLE)/modules/data/dns",
 		"$(MODDABLE)/modules/network/net"
 	],

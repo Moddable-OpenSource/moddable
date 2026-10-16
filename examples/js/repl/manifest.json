@@ -42,7 +42,8 @@
 				"$(MODDABLE)/modules/io",
 				"$(MODULES)/pins/smbus",
 				"$(MODDABLE)/modules/network/wifi",
-				"$(MODDABLE)/modules/network/net"
+				"$(MODDABLE)/modules/network/net",
+				"$(MODDABLE)/examples/manifest_net.json"
 			],
 			"modules": {
 				"*": [

@@ -1,5 +1,4 @@
 {
-	"include": "$(MODDABLE)/examples/manifest_net.json",
 	"platforms": {
 		"esp": {
 			"modules": {
@@ -15,7 +14,10 @@
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			]
 		},
 		"esp32/wt32_eth01": {
 			"modules": {
@@ -23,7 +25,10 @@
 					"$(MODULES)/network/net/net",
 					"$(MODULES)/network/net/esp/*"
 				]
-			}
+			},
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			]
 		},
 		"nrf52": {
 			"error": "manifest_net - no Wi-Fi or Ethernet on nRF52"

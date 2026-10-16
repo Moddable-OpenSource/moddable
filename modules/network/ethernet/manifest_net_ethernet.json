@@ -2,10 +2,15 @@
 	"build": {
 		"ETHERNET": "$(MODDABLE)/modules/network/ethernet"
 	},
+	"config": {
+		"sntp": "pool.ntp.org"
+	},
 	"include": [
 		"$(ETHERNET)",
 		"$(MODULES)/network/net",
+		"$(MODDABLE)/modules/io/dns/resolver",
 		"$(MODDABLE)/modules/io/ntp/client",
+		"$(MODDABLE)/modules/io/socket",
 		"$(MODULES)/network/socket"
 	],
 	"platforms": {
