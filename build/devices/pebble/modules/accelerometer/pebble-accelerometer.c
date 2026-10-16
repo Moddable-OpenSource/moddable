@@ -26,7 +26,6 @@
 #include "builtinCommon.h"
 
 #include "applib/accel_service.h"
-#include "system/passert.h"
 
 typedef struct {
 	xsMachine			*the;

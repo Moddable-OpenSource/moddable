@@ -30,7 +30,6 @@
 #include "builtinCommon.h"
 
 #include "applib/compass_service.h"
-#include "system/passert.h"
 #include "util/trig.h"
 
 typedef struct {
