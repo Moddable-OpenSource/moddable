@@ -74,7 +74,7 @@ void xs_crc8(xsMachine *the)
 	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
 	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
-	CRC8 crc8 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC8Record));
+	CRC8 crc8 = xsmcSetHostChunk(xsThis, C_NULL, sizeof(CRC8Record));
 
 	crc8->reset = initial;
 	crc8->initial = initial;
@@ -87,12 +87,12 @@ void xs_crc8(xsMachine *the)
 
 void xs_crc8_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, NULL);
+	xsmcSetHostData(xsThis, C_NULL);
 }
 
 void xs_crc8_reset(xsMachine *the)
 {
-	CRC8 crc8 = xsmcGetHostChunk(xsThis);
+	CRC8 crc8 = xsmcGetHostChunkValidate(xsThis, xs_crc8_destructor);
 
 	crc8->initial = crc8->reset;
 	xsResult = xsThis;
@@ -100,7 +100,7 @@ void xs_crc8_reset(xsMachine *the)
 
 void xs_crc8_checksum(xsMachine *the)
 {
-	CRC8 crc8 = xsmcGetHostChunk(xsThis);
+	CRC8 crc8 = xsmcGetHostChunkValidate(xsThis, xs_crc8_destructor);
 	uint8_t *data;
 	uint32_t length;
 
@@ -166,7 +166,7 @@ void xs_crc16(xsMachine *the)
 	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
 	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
 	int xorOutput = (argc > 4) ? xsmcToInteger(xsArg(4)) : 0;
-	CRC16 crc16 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC16Record));
+	CRC16 crc16 = xsmcSetHostChunk(xsThis, C_NULL, sizeof(CRC16Record));
 
 	crc16->reset = initial;
 	crc16->initial = initial;
@@ -179,19 +179,20 @@ void xs_crc16(xsMachine *the)
 
 void xs_crc16_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, NULL);
+	xsmcSetHostData(xsThis, C_NULL);
 }
 
 void xs_crc16_reset(xsMachine *the)
 {
-	CRC16 crc16 = xsmcGetHostChunk(xsThis);
+	CRC16 crc16 = xsmcGetHostChunkValidate(xsThis, xs_crc16_destructor);
 
 	crc16->initial = crc16->reset;
+	xsResult = xsThis;
 }
 
 void xs_crc16_checksum(xsMachine *the)
 {
-	CRC16 crc16 = xsmcGetHostChunk(xsThis);
+	CRC16 crc16 = xsmcGetHostChunkValidate(xsThis, xs_crc16_destructor);
 	uint8_t *data;
 	uint32_t length;
 
@@ -255,7 +256,7 @@ void xs_crc32(xsMachine *the)
 	int reflectInput = (argc > 2) ? xsmcToInteger(xsArg(2)) : 0;
 	int reflectOutput = (argc > 3) ? xsmcToInteger(xsArg(3)) : 0;
 	uint32_t xorOutput = (argc > 4) ? xsmcToUnsigned(xsArg(4)) : 0;
-	CRC32 crc32 = xsmcSetHostChunk(xsThis, NULL, sizeof(CRC32Record));
+	CRC32 crc32 = xsmcSetHostChunk(xsThis, C_NULL, sizeof(CRC32Record));
 
 	crc32->reset = initial;
 	crc32->initial = initial;
@@ -268,19 +269,20 @@ void xs_crc32(xsMachine *the)
 
 void xs_crc32_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, NULL);
+	xsmcSetHostData(xsThis, C_NULL);
 }
 
 void xs_crc32_reset(xsMachine *the)
 {
-	CRC32 crc32 = xsmcGetHostChunk(xsThis);
+	CRC32 crc32 = xsmcGetHostChunkValidate(xsThis, xs_crc32_destructor);
 
 	crc32->initial = crc32->reset;
+	xsResult = xsThis;
 }
 
 void xs_crc32_checksum(xsMachine *the)
 {
-	CRC32 crc32 = xsmcGetHostChunk(xsThis);
+	CRC32 crc32 = xsmcGetHostChunkValidate(xsThis, xs_crc32_destructor);
 	uint8_t *data;
 	uint32_t length;
 

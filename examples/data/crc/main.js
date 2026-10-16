@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  *
@@ -14,7 +14,7 @@
 
 // crccalc.com
 
-import { CRC8, CRC16 } from "crc";
+import { CRC8, CRC16, CRC32 } from "crc";
 
 const crc8_tests = [
 	{ poly: 0x07, init: 0x00, res: 0xF4, refIn: false, refOut: false, xorOut: 0x00, name: "CRC-8" },
@@ -55,17 +55,28 @@ const crc16_tests = [
 	{ poly: 0x1021, init: 0x0000, res: 0x31C3, refIn: false, refOut: false, xorOut: 0x0000, name: "CRC-16/XMODEM" }
 ];
 
+const crc32_tests = [
+	{ poly: 0x04C11DB7, init: 0xFFFFFFFF, res: 0xCBF43926, refIn: true,  refOut: true,  xorOut: 0xFFFFFFFF, name: "CRC-32" },
+	{ poly: 0x04C11DB7, init: 0xFFFFFFFF, res: 0xFC891918, refIn: false, refOut: false, xorOut: 0xFFFFFFFF, name: "CRC-32/BZIP2" },
+	{ poly: 0x1EDC6F41, init: 0xFFFFFFFF, res: 0xE3069283, refIn: true,  refOut: true,  xorOut: 0xFFFFFFFF, name: "CRC-32C" },
+	{ poly: 0xA833982B, init: 0xFFFFFFFF, res: 0x87315576, refIn: true,  refOut: true,  xorOut: 0xFFFFFFFF, name: "CRC-32D" },
+	{ poly: 0x04C11DB7, init: 0xFFFFFFFF, res: 0x0376E6E7, refIn: false, refOut: false, xorOut: 0x00000000, name: "CRC-32/MPEG-2" },
+	{ poly: 0x04C11DB7, init: 0x00000000, res: 0x765E7680, refIn: false, refOut: false, xorOut: 0xFFFFFFFF, name: "CRC-32/POSIX" },
+	{ poly: 0x814141AB, init: 0x00000000, res: 0x3010BF7F, refIn: false, refOut: false, xorOut: 0x00000000, name: "CRC-32Q" },
+	{ poly: 0x04C11DB7, init: 0xFFFFFFFF, res: 0x340BC6D9, refIn: true,  refOut: true,  xorOut: 0x00000000, name: "CRC-32/JAMCRC" },
+	{ poly: 0x000000AF, init: 0x00000000, res: 0xBD0BE338, refIn: false, refOut: false, xorOut: 0x00000000, name: "CRC-32/XFER" }
+];
 
-let testData = Uint8Array.of(49, 50, 51, 52, 53, 54, 55, 56, 57).buffer;
+const testData = Uint8Array.of(49, 50, 51, 52, 53, 54, 55, 56, 57);
 
 crc8_tests.forEach(data => {
-	let test = new CRC8(
+	const test = new CRC8(
 				data.poly,
 				data.init,
 				data.refIn,
 				data.refOut,
 				data.xorOut);
-	let res = test.checksum(testData);
+	const res = test.checksum(testData);
 	if (res === data.res)
 		trace(`Success: ${data.name}\n`);
 	else
@@ -73,16 +84,29 @@ crc8_tests.forEach(data => {
 });
 
 crc16_tests.forEach(data => {
-	let test = new CRC16(
+	const test = new CRC16(
 				data.poly,
 				data.init,
 				data.refIn,
 				data.refOut,
 				data.xorOut);
-	let res = test.checksum(testData);
+	const res = test.checksum(testData);
 	if (res === data.res)
 		trace(`Success: ${data.name}\n`);
 	else
 		trace(`Failure: ${data.name} expected ${data.res} vs. ${res}\n`);
 });
 
+crc32_tests.forEach(data => {
+	const test = new CRC32(
+				data.poly,
+				data.init,
+				data.refIn,
+				data.refOut,
+				data.xorOut);
+	const res = test.checksum(testData);
+	if (res === data.res)
+		trace(`Success: ${data.name}\n`);
+	else
+		trace(`Failure: ${data.name} expected ${data.res} vs. ${res}\n`);
+});

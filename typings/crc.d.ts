@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021 Satoshi Tanaka
+* Copyright (c) 2021-2026 Satoshi Tanaka
 *
 *   This file is part of the Moddable SDK Tools.
 *
@@ -29,13 +29,13 @@ declare module "crc" {
     constructor(polynomial: number, initial_value?: number, reflectInput?: boolean, reflectOutput?: boolean, xorOutput?: number)
     close(): void
     checksum(bytes: ByteBuffer): number
-    reset(): void
+    reset(): this
   }
   class CRC32 {
     constructor(polynomial: number, initial_value?: number, reflectInput?: boolean, reflectOutput?: boolean, xorOutput?: number)
     close(): void
     checksum(bytes: ByteBuffer): number
-    reset(): void
+    reset(): this
   }
   export {CRC8 as default, CRC8, CRC16, CRC32};
 }
