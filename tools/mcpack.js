@@ -185,7 +185,7 @@ globalThis.navigator.serial = serial;
 `
 };
 const webBluetoothGlobal = {
-	include: "$(MODDABLE)/modules/io/ble/web-bluetooth/manifest.json",
+	include: "$(MODDABLE)/modules/web/bluetooth",
 	snippet: `
 import { bluetooth, BluetoothUUID } from "web-bluetooth";
 globalThis.navigator ??= {};

@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/ble/client"
+	],
+	"modules": {
+		"*": "./web-bluetooth"
+	},
+	"preload": "web-bluetooth"
+}

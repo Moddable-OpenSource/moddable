@@ -1,9 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/ble/client"
+		"$(MODDABLE)/modules/web/bluetooth"
 	],
-	"modules": {
-		"*": "./web-bluetooth"
-	},
-	"preload": "web-bluetooth"
+	"platforms": {
+		"...": {
+			"warning": "Web Bluetooth manifest moved to $(MODDABLE)/modules/web/bluetooth"
+		}
+	}
 }

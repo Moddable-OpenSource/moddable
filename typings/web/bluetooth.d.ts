@@ -18,7 +18,7 @@
 *
 */
 
-// Web Bluetooth (https://webbluetoothcg.github.io/web-bluetooth/): the subset implemented by modules/io/ble/web-bluetooth
+// Web Bluetooth (https://webbluetoothcg.github.io/web-bluetooth/): the subset implemented by modules/web/bluetooth
 declare module "web-bluetooth" {
   // a 16- or 32-bit alias, a full 128-bit UUID string, or a name from the GATT assigned numbers (or config.webbluetooth)
   export type BluetoothServiceUUID = number | string;
