@@ -1,7 +1,7 @@
 ---
 name: Read and Write Values using Web Storage
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-01
+updated: 2026-10-16
 ---
 
 Reading and writing values with Web Storage requires a Web Storage instance, such as `localStorage`. See [Setting Up Web Storage](./index.md#setting-up-web-storage) to create one.
@@ -10,7 +10,7 @@ Once you have a `localStorage` instance, read and write values using `getItem()`
 
 Note that domain and key names are case-sensitive and may contain any Unicode character. Most host implementations limit the length of domain and key names. For portability, limit them to 31 bytes.
 
-While the Web supports very long values, embedded implementations limit the length of the value strings and this limit varies by host. For portability, limit them to 1024 bytes.
+While the Web supports very long values, embedded implementations limit the length of the value strings and this limit varies by host. For portability, limit them to 63 bytes.
 
 ```js
 localStorage.setItem("hello", "world");
