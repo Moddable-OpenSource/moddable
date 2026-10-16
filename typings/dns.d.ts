@@ -20,7 +20,7 @@
 
 declare module "dns" {
   // pulled from
-  // const impl: typeof import('../modules/network/dns/dns'),
+  // const impl: typeof import('../modules/data/dns/dns'),
   var DNS: {
     CLASS: {
       IN: number,

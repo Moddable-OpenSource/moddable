@@ -1,15 +1,10 @@
 {
-	"modules": {
-		"*": [
-			"./moddnsparser.c"
-		],
-		"dns": "$(MODULES)/network/dns/dns",
-		"dns/parser": "$(MODULES)/network/dns/dnsparser",
-		"dns/serializer": "$(MODULES)/network/dns/dnsserializer"
-	},
-	"preload": [
-		"dns",
-		"dns/parser",
-		"dns/serializer"
-	]
+	"include": [
+		"$(MODDABLE)/modules/data/dns"
+	],
+	"platforms": {
+		"...": {
+			"warning": "DNS parser and serializer manifest moved to $(MODDABLE)/modules/data/dns"
+		}
+	}
 }

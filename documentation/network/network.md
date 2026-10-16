@@ -955,7 +955,7 @@ The SNTP constructor requires the host name or IP address of a time server. If a
 <a id="dns"></a>
 ## class DNS constants
 
-- **Source code:** [dns](../../modules/network/dns)
+- **Source code:** [dns](../../modules/data/dns)
 
 The DNS module contains constants that are useful when implementing code that interacts directly with the DNS protocol. It is used by the DNS `Parser`, DNS `Serializer`, and mDNS implementation.
 
@@ -971,7 +971,7 @@ import DNS from "dns";
 <a id="dns-parser"></a>
 ## class DNS Parser
 
-- **Source code:** [dnsparser](../../modules/network/dns)
+- **Source code:** [dnsparser](../../modules/data/dns)
 
 The DNS `Parser` class extracts JavaScript objects from a binary DNS record.
 
@@ -1055,7 +1055,7 @@ There are also `answers`, `authorities`, and `additionals` functions.
 <a id="dns-serializer"></a>
 ## class DNS Serializer
 
-- **Source code:** [dnsserializer](../../modules/network/dns)
+- **Source code:** [dnsserializer](../../modules/data/dns)
 
 The DNS `Serializer` class implements a DNS record serializer.
 

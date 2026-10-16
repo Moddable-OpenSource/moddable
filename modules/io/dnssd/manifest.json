@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/io",
 		"$(MODDABLE)/modules/io/socket",
-		"$(MODDABLE)/modules/network/dns",
+		"$(MODDABLE)/modules/data/dns",
 		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {

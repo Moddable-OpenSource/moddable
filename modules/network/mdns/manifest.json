@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/network/dns",
+		"$(MODDABLE)/modules/data/dns",
 		"$(MODDABLE)/modules/network/net",
 		"$(MODDABLE)/modules/network/socket"
 	],

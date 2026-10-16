@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/network/dns"
+		"$(MODDABLE)/modules/data/dns"
 	],
 	"modules": {
 		"embedded:network/dns/resolver/udp": "./dns",
