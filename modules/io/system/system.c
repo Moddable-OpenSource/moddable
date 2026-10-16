@@ -64,8 +64,8 @@ void xs_system_restart(xsMachine *the)
 	}
 	#endif
 	esp_restart();
-#elif defined(__ets__)
-	system_restart();
+#elif defined(ESP8266)
+	espRestart();		// boots other slot after successful OTA
 #elif defined(PICO_BUILD)
 	pico_reset();
 #elif nrf52

@@ -1,0 +1,18 @@
+{
+	"platforms": {
+		"esp": {
+			"include": [
+				"../../flash",
+				"$(MODULES)/data/crc"
+			],
+			"modules": {
+				"embedded:update": "./update-esp",
+				"config/update": "../config"
+			}
+		}
+	},
+	"preload": [
+		"embedded:update",
+		"config/update"
+	]
+}

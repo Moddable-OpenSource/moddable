@@ -1,5 +1,8 @@
 {
 	"platforms": {
+		"esp": {
+			"include": "./esp"
+		},
 		"esp32": {
 			"include": "./esp32"
 		},
