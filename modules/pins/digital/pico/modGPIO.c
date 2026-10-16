@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -23,6 +23,10 @@
 #include "hardware/gpio.h"
 
 #include "modGPIO.h"
+
+#if WIFI_GPIO
+	#include "pico/cyw43_arch.h"
+#endif
 
 /*
 	gpio
