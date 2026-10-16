@@ -22,7 +22,7 @@
             }
         },
 		"...": {
-			"error": "Experimental TC53 IO modules"
+			"error": "Pico devices only"
 		}
 	}
 }

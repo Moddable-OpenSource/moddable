@@ -35,7 +35,7 @@
 			]
 		},
 		"...": {
-			"error": "Experimental TC53 IO modules"
+			"error": "Audio In unsupported"
 		}
 	}
 }

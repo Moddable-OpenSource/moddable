@@ -51,7 +51,7 @@
 		"pico": {
 		},
 		"...": {
-			"error": "Experimental TC53 IO modules"
+			"error": "Image In unsupported"
 		}
 	}
 }
