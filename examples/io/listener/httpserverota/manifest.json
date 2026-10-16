@@ -3,7 +3,8 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/io/http/server",
-		"$(MODDABLE)/modules/io/update"
+		"$(MODDABLE)/modules/io/update",
+		"$(MODDABLE)/modules/io/system"
 	],
 	"modules": {
 		"*": "./main"
@@ -11,14 +12,6 @@
 	"defines": {
 		"ota": {
 			"autosplit": 1
-		}
-	},
-	"ffi": {
-		"functions": {
-			"esp_restart": {
-				"arguments": [ ],
-				"returns": "void"
-			}
 		}
 	}
 }

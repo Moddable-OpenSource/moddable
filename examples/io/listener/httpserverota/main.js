@@ -16,8 +16,6 @@ import OTA from "embedded:update";
 import flash from "embedded:storage/flash";
 import WiFi from "embedded:network/interface/wifi";
 import Timer from "timer";
-import FFI from "mc/ffi";
-const Natives = new FFI;
 
 const router = new Map;
 
@@ -55,7 +53,7 @@ router.set("/ota", {
 	onResponse(response) {
 		try {
 			this.updater?.complete();
-			Timer.set(Natives.esp_restart, 1000);
+			Timer.set(() => device.system.restart(), 1000);
 		}
 		catch {
 			this.status = 500;
@@ -74,4 +72,5 @@ router.set("/ota", {
 
 using wifi = new WiFi({})
 trace("OTA Server ready\n");
-trace(`  curl -T $MODDABLE/build/bin/esp32/moddable_six/debug/balls/xs_esp32.bin http://${wifi.address}:${server.port}/ota\n`);
+trace(`  curl -T <firmware image> http://${wifi.address}:${server.port}/ota\n`);
+trace("  firmware image is xs_esp32.bin for ESP32, main.bin for ESP8266\n");
