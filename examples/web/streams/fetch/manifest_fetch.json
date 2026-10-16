@@ -1,15 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/data/headers",
-		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/modules/io/https/client",
-		"$(MODULES)/web/streams/all",
-		"$(MODULES)/web/streams/decompression"
+		"$(MODDABLE)/modules/web/fetch/streams"
 	],
-	"modules": {
-		"web/fetch/streams": "./fetch"
-	},
-	"preload": [
-		"web/fetch/streams"
-	]
+	"platforms": {
+		"...": {
+			"warning": "fetch (web streams) manifest moved to $(MODDABLE)/modules/web/fetch/streams"
+		}
+	}
 }

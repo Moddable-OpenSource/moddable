@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/io",
-		"./manifest_webstorage.json"
+		"$(MODDABLE)/modules/web/webstorage"
 	],
 	"modules": {
 		"*": "./main"

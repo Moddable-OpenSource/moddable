@@ -46,7 +46,7 @@ When building with `mcpack` or developing for Alloy on Pebble OS, this step is u
 
 Include the Web Storage manifest in your project's `manifest.json`. It includes the Key-Value store, so no other manifest is needed:
 
-	$(MODDABLE)/examples/io/storage/webstorage/manifest_webstorage.json
+	$(MODDABLE)/modules/web/webstorage
 
 Then, import the module in your JavaScript source code:
 
@@ -85,7 +85,7 @@ import keyValue from "embedded:storage/key-value";
 - Example
 	- [Web Storage example](../../examples/io/storage/webstorage/main.js) in Moddable SDK
 - Implementations
-	- [Web Storage](../../examples/io/storage/webstorage/webstorage.js) in Moddable SDK
+	- [Web Storage](../../modules/web/webstorage/webstorage.js) in Moddable SDK
 	- [Key-Value store](../../modules/io/storage/) in Moddable SDK
 - TypeScript Declarations
 	- [Web Storage](../../typings/web/webstorage.d.ts) in Moddable SDK

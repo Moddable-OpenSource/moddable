@@ -6,7 +6,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODULES)/web/streams/text/decoder",
-		"./manifest_fetch.json"
+		"$(MODDABLE)/modules/web/fetch/streams"
 	],
 	"creation": {
 		"stack": 1024

@@ -21,7 +21,7 @@
 // the manifest that supplies this module includes the manifests of these configurations
 /// <reference path="../config/httpsclient.d.ts" />
 
-// fetch implemented with web streams (examples/web/streams/fetch)
+// fetch implemented with web streams (modules/web/fetch/streams)
 declare module "web/fetch/streams" {
   import {URL, URLSearchParams} from "url"
   import Headers from "headers"

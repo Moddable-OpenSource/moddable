@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/headers",
+		"$(MODDABLE)/modules/data/url",
+		"$(MODDABLE)/modules/io/https/client",
+		"$(MODDABLE)/modules/web/streams/all",
+		"$(MODDABLE)/modules/web/streams/decompression"
+	],
+	"modules": {
+		"web/fetch/streams": "./fetch"
+	},
+	"preload": "web/fetch/streams"
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 20252-2026  Moddable Tech, Inc.
+ * Copyright (c) 2025-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 

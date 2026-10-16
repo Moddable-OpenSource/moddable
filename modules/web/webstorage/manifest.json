@@ -1,0 +1,9 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/storage"
+	],
+	"modules": {
+		"*": "./webstorage"
+	},
+	"preload": "webstorage"
+}

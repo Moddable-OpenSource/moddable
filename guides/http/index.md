@@ -52,7 +52,7 @@ import { fetch } from "fetch";
 
 To use the stream-enabled version of `fetch()`, include its manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/examples/web/streams/fetch/manifest_fetch.json
+	$(MODDABLE)/modules/web/fetch/streams
 
 Then, import the module in your JavaScript source code:
 

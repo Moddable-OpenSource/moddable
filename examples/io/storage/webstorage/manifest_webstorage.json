@@ -1,12 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/storage"
+		"$(MODDABLE)/modules/web/webstorage"
 	],
-	"modules": {
-		"*": "./webstorage"
-	},
-	"preload": [
-		"webstorage"
-	],
-	"mcpack": true
+	"platforms": {
+		"...": {
+			"warning": "Web Storage manifest moved to $(MODDABLE)/modules/web/webstorage"
+		}
+	}
 }

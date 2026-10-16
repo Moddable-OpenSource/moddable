@@ -218,7 +218,7 @@ const kvp = device.keyValue.open({path: "local"});
 globalThis.localStorage = new WebStorage(kvp);
 ```
 
-[guides/key-value/index.md](./guides/key-value/index.md) explains both APIs and how to choose between them. The Web Storage implementation is [examples/io/storage/webstorage](./examples/io/storage/webstorage) with its `manifest_webstorage.json`; typings are in `typings/web/webstorage.d.ts`.
+[guides/key-value/index.md](./guides/key-value/index.md) explains both APIs and how to choose between them. The Web Storage implementation is [modules/web/webstorage](./modules/web/webstorage), and [examples/io/storage/webstorage](./examples/io/storage/webstorage) uses it; typings are in `typings/web/webstorage.d.ts`.
 
 ## Documentation that describes legacy APIs
 

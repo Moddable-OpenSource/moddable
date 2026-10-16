@@ -51,7 +51,7 @@ globalThis.Headers = Headers;
 `	
 };
 const localStorageGlobal = {
-	include: "$(MODDABLE)/examples/io/storage/webstorage/manifest_webstorage.json",
+	include: "$(MODDABLE)/modules/web/webstorage",
 	snippet: `
 import kvp from "embedded:storage/key-value";
 import WebStorage from "webstorage";
