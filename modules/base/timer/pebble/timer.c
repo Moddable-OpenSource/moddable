@@ -33,8 +33,6 @@
 
 #include "modInstrumentation.h"
 
-#include "kernel/util/sleep.h"
-
 typedef struct modTimerRecord modTimerRecord;
 typedef modTimerRecord *modTimer;
 
