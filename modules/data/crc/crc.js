@@ -23,6 +23,9 @@ class CRC8 extends Native("xs_crc8_destructor") {
 	close() { return native("xs_crc8_close").call(this); };
 	checksum(buffer) { return native("xs_crc8_checksum").call(this, buffer); };
 	reset() { return native("xs_crc8_reset").call(this); };
+	static {
+		this.prototype[Symbol.dispose] = this.prototype.close;
+	}
 }
 
 class CRC16 extends Native("xs_crc16_destructor") {
@@ -30,6 +33,9 @@ class CRC16 extends Native("xs_crc16_destructor") {
 	close() { return native("xs_crc16_close").call(this); };
 	checksum(buffer) { return native("xs_crc16_checksum").call(this, buffer); };
 	reset() { return native("xs_crc16_reset").call(this); };
+	static {
+		this.prototype[Symbol.dispose] = this.prototype.close;
+	}
 }
 
 class CRC32 extends Native("xs_crc32_destructor") {
@@ -37,6 +43,9 @@ class CRC32 extends Native("xs_crc32_destructor") {
 	close() { return native("xs_crc32_close").call(this); };
 	checksum(buffer) { return native("xs_crc32_checksum").call(this, buffer); };
 	reset() { return native("xs_crc32_reset").call(this); };
+	static {
+		this.prototype[Symbol.dispose] = this.prototype.close;
+	}
 }
 
 export { CRC8 as default, CRC8, CRC16, CRC32 };

@@ -70,7 +70,7 @@ const crc32_tests = [
 const testData = Uint8Array.of(49, 50, 51, 52, 53, 54, 55, 56, 57);
 
 crc8_tests.forEach(data => {
-	const test = new CRC8(
+	using test = new CRC8(
 				data.poly,
 				data.init,
 				data.refIn,
@@ -84,7 +84,7 @@ crc8_tests.forEach(data => {
 });
 
 crc16_tests.forEach(data => {
-	const test = new CRC16(
+	using test = new CRC16(
 				data.poly,
 				data.init,
 				data.refIn,
@@ -98,7 +98,7 @@ crc16_tests.forEach(data => {
 });
 
 crc32_tests.forEach(data => {
-	const test = new CRC32(
+	using test = new CRC32(
 				data.poly,
 				data.init,
 				data.refIn,

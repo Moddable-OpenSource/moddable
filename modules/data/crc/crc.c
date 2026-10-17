@@ -87,7 +87,10 @@ void xs_crc8(xsMachine *the)
 
 void xs_crc8_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, C_NULL);
+	if (!xsGetHostChunkIf(xsThis))
+		return;
+	(void)xsmcGetHostChunkValidate(xsThis, xs_crc8_destructor);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_crc8_reset(xsMachine *the)
@@ -179,7 +182,10 @@ void xs_crc16(xsMachine *the)
 
 void xs_crc16_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, C_NULL);
+	if (!xsGetHostChunkIf(xsThis))
+		return;
+	(void)xsmcGetHostChunkValidate(xsThis, xs_crc16_destructor);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_crc16_reset(xsMachine *the)
@@ -269,7 +275,10 @@ void xs_crc32(xsMachine *the)
 
 void xs_crc32_close(xsMachine *the)
 {
-	xsmcSetHostData(xsThis, C_NULL);
+	if (!xsGetHostChunkIf(xsThis))
+		return;
+	(void)xsmcGetHostChunkValidate(xsThis, xs_crc32_destructor);
+	xsmcSetHostData(xsThis, NULL);
 }
 
 void xs_crc32_reset(xsMachine *the)
