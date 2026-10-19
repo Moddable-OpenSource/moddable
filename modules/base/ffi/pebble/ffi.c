@@ -28,8 +28,8 @@
 #include "applib/app_logging.h"
 #include "logging/logging_private.h"
 #include "kernel/pbl_malloc.h"
-#include "mcu/privilege.h"
 #include "process_state/app_state/app_state.h"
+#include <pbl/kernel/syscall.h>
 #include "syscall/syscall_internal.h"
 
 // xs.h provides fxPop()/fxPush() macros that shadow the functions in xsffi.c;
@@ -60,7 +60,7 @@ static void prv_check_machine(txMachine *the)
 	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	if (!state || state->the != the) {
 		PBL_LOG_ERR("XS API: invalid machine pointer %p", the);
-		syscall_failed();
+		pbl_syscall_fail();
 	}
 }
 
@@ -89,7 +89,7 @@ static void prv_ffi_shim(txMachine *the)
 		xsUnknownError("FFI binding not resolved");
 
 	FFIInvokeCtx ctx = { the, user_cb };
-	mcu_call_unprivileged(prv_invoke_unprivileged, &ctx);
+	pbl_user_call(prv_invoke_unprivileged, &ctx);
 }
 
 // Each trampoline elevates, validates the txMachine pointer against per-task
@@ -151,7 +151,7 @@ void FFI_constructor(xsMachine* the)
 
 	// The user's mc.ffi.c stores this pointer as its XS global and
 	// dereferences XS->* from unprivileged thread mode (the xs_* host
-	// functions run via prv_ffi_shim → mcu_call_unprivileged). Allocate the
+	// functions run via prv_ffi_shim → pbl_user_call). Allocate the
 	// table in task-scoped heap (unprivileged-readable); it's reclaimed when
 	// the task exits.
 	txAPI *api = task_zalloc(sizeof(txAPI));
