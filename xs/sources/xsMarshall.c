@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -548,7 +548,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			c_free(aBuffer.base);
 		if (aBuffer.symbolMap)
 			c_free(aBuffer.symbolMap);
-		mxUnknownError(aBuffer.error);	
+		mxUnknownError("%s", aBuffer.error);
 	}
 	mxPop();
 	c_free(aBuffer.symbolMap);
