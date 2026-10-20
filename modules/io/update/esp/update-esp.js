@@ -126,7 +126,7 @@ class Update {
 				throw new Error("offset not allowed");
 			byteOffset = this.#position;
 		}
-		else if (!Number.isInteger(byteOffset) || (byteOffset < 0))
+		else if (byteOffset < 0)
 			throw new RangeError("invalid offset");
 
 		const byteLength = buffer.byteLength;
