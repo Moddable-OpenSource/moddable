@@ -1120,7 +1120,9 @@ void fxPrintSlot(txMachine* the, FILE* file, txSlot* slot, txFlag flag)
 		fprintf(file, ".value = { .code = { (txByte*)");
 		{
 			txChunk* chunk = (txChunk*)(slot->value.code.address - sizeof(txChunk));
-			fxWriteCData(file, slot->value.code.address, chunk->size - sizeof(txChunk));
+			txSize size = chunk->size - sizeof(txChunk);
+			fxArchiveCode(slot->value.code.address, size);
+			fxWriteCData(file, slot->value.code.address, size);
 		}
 		fprintf(file, ", ");
 		fxPrintAddress(the, file, slot->value.code.closures);

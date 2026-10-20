@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017  Moddable Tech, Inc.
+ * Copyright (c) 2016-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -255,6 +255,58 @@ txBoolean fxIsCIdentifier(txLinker* linker, txString string)
 txBoolean fxIsCodeUsed(txU1 code)
 {
 	return (gxCodeUsages[code] > 0) ? 1 : 0;
+}
+
+// after preload, archive is safe and more efficient
+void fxArchiveCode(txByte* p, txSize size)
+{
+	register const txS1* sizes = gxCodeSizes;
+	register txByte* q = p + size;
+	register txS1 offset;
+	txU1 code;
+	txU1 archive;
+	while (p < q) {
+		code = *((txU1*)p);
+		if (XS_CODE_CODE_1 == code)
+			archive = XS_CODE_CODE_ARCHIVE_1;
+		else if (XS_CODE_CODE_2 == code)
+			archive = XS_CODE_CODE_ARCHIVE_2;
+		else if (XS_CODE_CODE_4 == code)
+			archive = XS_CODE_CODE_ARCHIVE_4;
+		else if (XS_CODE_STRING_1 == code)
+			archive = XS_CODE_STRING_ARCHIVE_1;
+		else if (XS_CODE_STRING_2 == code)
+			archive = XS_CODE_STRING_ARCHIVE_2;
+		else if (XS_CODE_STRING_4 == code)
+			archive = XS_CODE_STRING_ARCHIVE_4;
+		else
+			archive = XS_NO_CODE;
+		if (archive != XS_NO_CODE)
+			*((txU1*)p) = code = archive;
+		offset = (txS1)sizes[code];
+		if (0 < offset)
+			p += offset;
+		else if (0 == offset)
+			p += 1 + sizeof(txID);
+		else if (-1 == offset) {
+			txU1 index;
+			p++;
+			index = *((txU1*)p);
+			p += 1 + index;
+		}
+		else if (-2 == offset) {
+			txU2 index;
+			p++;
+			mxDecode2(p, index);
+			p += index;
+		}
+		else if (-4 == offset) {
+			txU4 index;
+			p++;
+			mxDecode4(p, index);
+			p += index;
+		}
+	}
 }
 
 void fxMapCode(txLinker* linker, txLinkerScript* script, txID* theIDs)

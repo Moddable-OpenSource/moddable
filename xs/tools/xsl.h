@@ -235,6 +235,7 @@ extern void fx_Uint32Array(txMachine* the);
 extern void fx_Uint8ClampedArray(txMachine* the);
 
 extern void fxBaseResource(txLinker* linker, txLinkerResource* resource, txString base, txInteger baseLength);
+extern void fxArchiveCode(txByte* p, txSize size);
 extern void fxBaseScript(txLinker* linker, txLinkerScript* script, txString base, txInteger baseLength);
 extern void fxBufferMaps(txLinker* linker);
 extern void fxBufferSymbols(txLinker* linker);
