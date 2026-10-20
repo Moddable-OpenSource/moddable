@@ -508,6 +508,15 @@ void audioInLoop(void *pvParameter)
 		}
 	};
 
+#if SOC_I2S_SUPPORTS_APLL
+	pdm_rx_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+#else
+	if (input->sampleRate % 8000 != 0) {
+		err = -1;
+		modLog("incompatible I2S PDM sample rate");
+		goto done;
+	}
+#endif
 	pdm_rx_cfg.slot_cfg.slot_mask = MODDEF_AUDIOIN_I2S_SLOT;
 	pdm_rx_cfg.clk_cfg.dn_sample_mode = I2S_PDM_DSR_16S;
 
