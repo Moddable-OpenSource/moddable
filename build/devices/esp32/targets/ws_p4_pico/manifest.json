@@ -1,0 +1,72 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32p4",
+		"ESP32P4_HWVER": "hw_ver1",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RESET button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RESET button."
+	},
+	"include": [
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(MODDABLE)/modules/io/audioin",
+		"$(MODDABLE)/modules/io/audioout"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"es8311": {
+			"volume": 0.7,
+			"micGain": 3
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 16000,
+			"i2s": {
+				"num": 0,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"bitsPerSample": 16,
+				"format_i2s": 1,
+				"mck_pin": 13,
+				"bck_pin": 12,
+				"lr_pin": 10,
+				"dataout_pin": 9
+			}
+		},
+		"audioIn": {
+			"sampleRate": 16000,
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"i2s": {
+				"num": 0,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1,
+				"multiplier": 16,
+				"mck_pin": 13,
+				"bck_pin": 12,
+				"lr_pin": 10,
+				"datain": 11
+			}
+		}
+	}
+}

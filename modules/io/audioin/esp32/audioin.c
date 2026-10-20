@@ -66,6 +66,16 @@
 	#define MODDEF_AUDIOIN_NUMCHANNELS (1)
 #endif
 
+// Packed 16-bit mono DMA is 2 bytes per sample. A 4-byte step drops every other one.
+// - ESP32-P4 standard I2S. IDF stores one int16 per mono slot.
+// - Single-slot PDM after the original ESP32. Slot BOTH and the original ESP32
+//   keep the 32-bit word (low 16 bits, step 4).
+#if (ESP32 == 7 && !MODDEF_AUDIOIN_I2S_PDM) || (MODDEF_AUDIOIN_I2S_PDM && (ESP32 != 1) && (MODDEF_AUDIOIN_I2S_SLOT != I2S_STD_SLOT_BOTH))
+	#define AUDIOIN_MONO16_PACKED 1
+#else
+	#define AUDIOIN_MONO16_PACKED 0
+#endif
+
 #if MODDEF_AUDIOIN_I2S_ADC
 	#if MODDEF_AUDIOIN_SAMPLERATE < SOC_ADC_SAMPLE_FREQ_THRES_LOW
 		#warning "SOC reqires higher audioin sample rate. automatically increasing."
@@ -331,7 +341,7 @@ void xs_audioin_read(xsMachine *the)
 	available = amtReadable(input);
 	xSemaphoreGive(input->mutex);
 
-	if (input->numChannels == 1)
+	if ((input->numChannels == 1) && !(AUDIOIN_MONO16_PACKED && (16 == input->bitsPerSample)))
 		available /= 2;					// strip left channel
 
 	if (0 == available)
@@ -374,9 +384,19 @@ void xs_audioin_read(xsMachine *the)
 				remaining -= 4;
 			}
 			else {
-				*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
-				bias += *samples++;
-				input->playPos += 4;
+#if AUDIOIN_MONO16_PACKED
+				if (16 == input->bitsPerSample) {
+					*samples = *(int16_t *)input->playPos;
+					bias += *samples++;
+					input->playPos += 2;
+				}
+				else
+#endif
+				{
+					*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
+					bias += *samples++;
+					input->playPos += 4;
+				}
 				remaining -= 2;
 			}
 		}
@@ -397,9 +417,19 @@ void xs_audioin_read(xsMachine *the)
 				remaining -= 4;
 			}
 			else {
-				*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
-				bias += *samples++;
-				input->playPos += 4;
+#if AUDIOIN_MONO16_PACKED
+				if (16 == input->bitsPerSample) {
+					*samples = *(int16_t *)input->playPos;
+					bias += *samples++;
+					input->playPos += 2;
+				}
+				else
+#endif
+				{
+					*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
+					bias += *samples++;
+					input->playPos += 4;
+				}
 				remaining -= 2;
 			}
 		}
@@ -441,7 +471,7 @@ void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t messag
 	xsBeginHost(input->the);
 
 	bytes_read = amtReadable(input);
-	if (input->numChannels == 1)		// only lower 16 bits
+	if ((input->numChannels == 1) && !(AUDIOIN_MONO16_PACKED && (16 == input->bitsPerSample)))		// only lower 16 bits
 		bytes_read /= 2;
 
 	if (0 != bytes_read) {

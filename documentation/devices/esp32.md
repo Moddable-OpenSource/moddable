@@ -1,8 +1,8 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: September 29, 2026
+Revised: October 20, 2026
 
-This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), and [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2).
+This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2), and [ESP32-P4](https://www.espressif.com/en/products/socs/esp32-p4).
 
 ## Table of Contents
 
@@ -16,6 +16,7 @@ This document provides a guide to building apps for the ESP32 line of SoCs from 
 	* [ESP32-C5](#platforms-esp32-c5)
 	* [ESP32-C6](#platforms-esp32-c6)
 	* [ESP32-H2](#platforms-esp32-h2)
+	* [ESP32-P4](#platforms-esp32-p4)
 	* [Specifying ESP32 Subclass in Manifest](#platforms-manifest)
 * [Build Types](#builds)
 	* [Debug](#build-debug)
@@ -55,7 +56,7 @@ When building with `mcconfig`, you specify your device target by providing the *
 mcconfig -d -m -p esp32/moddable_six
 ```
 
-A list of available ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6 and ESP32-H2 subplatforms and their platform identifiers is provided in the **Platforms** section below.
+A list of available ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C5, ESP32-C6, ESP32-H2 and ESP32-P4 subplatforms and their platform identifiers is provided in the **Platforms** section below.
 
 <a id="platforms"></a>
 ## Platforms
@@ -255,6 +256,23 @@ The Moddable SDK supports these ESP32-H2 development kits:
 |  <img src="./../assets/devices/esp32-h2-devkitm.png" width=125><BR>ESP32-H2-DevKitM-1 | `esp32/esp32h2` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32h2/esp32-h2-devkitm-1/user_guide.html)</li> |
 |  <img src="./../assets/devices/m5nanoh2.png" width=125><BR>M5NanoH2 | `esp32/m5nanoh2` | LED, NeoPixel, Button | <li>[Product page](https://docs.m5stack.com/en/core/NanoH2)</li> |
 
+<a id="platforms-esp32-p4"></a>
+### ESP32-P4
+
+ESP32-P4 has the following features:
+
+- Dual-core RISC-V MCU, up to 400 MHz (360 MHz on revision v1)
+- 40 MHz low-power RISC-V core
+- No Wi-Fi or BLE
+- 768 KB SRAM
+- External PSRAM
+
+The Moddable SDK supports these ESP32-P4 development kits:
+
+| Name | Platform identifier | Key features | Links |
+| :---: | :--- | :--- | :--- |
+| Waveshare<br>ESP32-P4-Pico | `esp32/ws_p4_pico` | ES8311 microphone and speaker<br>32 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-Pico)</li> |
+
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest
 
@@ -276,6 +294,7 @@ The target ESP32 subclass for a build is specified using the `ESP32_SUBCLASS` pr
 | `esp32c5` | ESP32-C5 |
 | `esp32c6` | ESP32-C6 |
 | `esp32h2` | ESP32-H2 |
+| `esp32p4` | ESP32-P4 |
 
 <a id="builds"></a>
 ## Build Types
