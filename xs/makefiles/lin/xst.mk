@@ -174,6 +174,7 @@ OBJECTS = \
 	$(TMP_DIR)/xst.o \
 	$(TMP_DIR)/xst262.o \
 	$(TMP_DIR)/xstBundle.o \
+	$(TMP_DIR)/xstCoverage.o \
 	$(TMP_DIR)/xstFuzz.o \
 	$(TMP_DIR)/e_acos.o \
 	$(TMP_DIR)/e_acosh.o \
@@ -239,6 +240,11 @@ $(TMP_DIR)/%.o: %.c
 	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
 	@echo $(CC) $< $(C_OPTIONS) -c -o $@
 	$(CC) $< $(C_OPTIONS) -c -o $@
+
+# coverage callbacks run on every edge: build them optimized and uninstrumented
+$(TMP_DIR)/xstCoverage.o: xstCoverage.c
+	@echo "#" $(NAME) $(GOAL) ": cc" $(<F)
+	$(CC) $< $(filter-out -O0 -fsanitize=% -fno-sanitize-recover=% -fsanitize-memory-track-origins -fsanitize-coverage=%,$(C_OPTIONS)) -O2 -c -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)/bin/lin/debug/$(NAME)

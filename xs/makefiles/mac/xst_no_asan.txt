@@ -1,52 +1,35 @@
+# Machine creation and deletion: identical for every REPRL iteration.
+# Helpers they share with script execution are deliberately not listed.
+
 # create / delete new VM
-fun:*fxCreateMachine*
-fun:*fxDeleteMachine*
-fun:*fxCreateMachinePlatform*
-fun:*fxDeleteMachinePlatform*
-fun:*fxAllocate*
+fun:fxCreateMachine
+fun:fxDeleteMachine
+fun:fxCreateMachinePlatform
+fun:fxDeleteMachinePlatform
+fun:fxAllocate
+fun:fxGrowSlots
 
 # primordial builders
-fun:*fxBuildKeys*
-fun:*fxBuildGlobal*
-fun:*fxBuildObject*
-fun:*fxBuildFunction*
-fun:*fxBuildBoolean*
-fun:*fxBuildSymbol*
-fun:*fxBuildError*
-fun:*fxBuildNumber*
-fun:*fxBuildMath*
-fun:*fxBuildBigInt*
-fun:*fxBuildDate*
-fun:*fxBuildString*
-fun:*fxBuildRegExp*
-fun:*fxBuildArguments*
-fun:*fxBuildArray*
-fun:*fxBuildDataView*
-fun:*fxBuildAtomics*
-fun:*fxBuildMapSet*
-fun:*fxBuildJSON*
-fun:*fxBuildGenerator*
-fun:*fxBuildPromise*
-fun:*fxBuildProxy*
-fun:*fxBuildModule*
-
-# functions called (mostly) only by primordial builders
-fun:*fxNextHostFunctionProperty*
-fun:*fxLastProperty*
-fun:*fxNextHostAccessorProperty*
-fun:*fxNextUndefinedProperty*
-fun:*fxNextNullProperty*
-fun:*fxNextBooleanProperty*
-fun:*fxNextIntegerProperty*
-fun:*fxNextNumberProperty*
-fun:*fxNextReferenceProperty*
-fun:*fxNextSlotProperty*
-fun:*fxNextStringProperty*
-fun:*fxNextStringXProperty*
-fun:*fxNextSymbolProperty*
-fun:*fxNextTypeDispatchProperty*
-fun:*fxBuildHostConstructor*
-fun:*fxNewHostFunction*
-
-# initialize new slots
-fun:*fxGrowSlots*
+fun:fxBuildKeys
+fun:fxBuildGlobal
+fun:fxBuildObject
+fun:fxBuildFunction
+fun:fxBuildBoolean
+fun:fxBuildSymbol
+fun:fxBuildError
+fun:fxBuildNumber
+fun:fxBuildMath
+fun:fxBuildBigInt
+fun:fxBuildDate
+fun:fxBuildString
+fun:fxBuildRegExp
+fun:fxBuildArguments
+fun:fxBuildArray
+fun:fxBuildDataView
+fun:fxBuildAtomics
+fun:fxBuildMapSet
+fun:fxBuildJSON
+fun:fxBuildGenerator
+fun:fxBuildPromise
+fun:fxBuildProxy
+fun:fxBuildModule
