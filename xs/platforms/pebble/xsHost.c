@@ -51,6 +51,7 @@
 #include "applib/app_heap_util.h"
 #include "applib/app_logging.h"
 #include "services/evented_timer.h"
+#include "moddableAppState.h"
 
 #ifndef MODDEF_XS_MODS
 	#define MODDEF_XS_MODS	0
@@ -59,7 +60,6 @@
 #ifdef mxInstrument
 	#include "modTimer.h"
 	#include "modInstrumentation.h"
-	#include "moddableAppState.h"
 	#include "applib/moddable/moddable.h"
 
 	static void espInitInstrumentation(txMachine *the);
@@ -220,10 +220,16 @@ static PBL_MUTEX_DEFINE(gFlashMutex);
 
 void modMachineTaskInit(xsMachine *the)
 {
+	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
+	setModdableAppState(appMessageCleanup, C_NULL);
 }
 
 void modMachineTaskUninit(xsMachine *the)
 {
+	if (getModdableAppState(appMessageCleanup))
+		getModdableAppState(appMessageCleanup)();
+	evented_timer_cancel(getModdableAppState(promiseJobTimer));
+	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
 }
 
 void modMachineTaskWait(xsMachine *the)
@@ -240,12 +246,14 @@ void modMachineTaskWake(xsMachine *the)
 
 static void doRunPromiseJobs(void *machine)
 {
+	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
 	fxRunPromiseJobs((txMachine *)machine);
 }
 
 void fxQueuePromiseJobs(txMachine* the)
 {
-  evented_timer_register(0, false, doRunPromiseJobs, the);
+	if (EVENTED_TIMER_INVALID_ID == getModdableAppState(promiseJobTimer))
+		setModdableAppState(promiseJobTimer, evented_timer_register(0, false, doRunPromiseJobs, the));
 }
 
 /*
