@@ -220,14 +220,11 @@ static PBL_MUTEX_DEFINE(gFlashMutex);
 
 void modMachineTaskInit(xsMachine *the)
 {
-	setModdableAppState(appMessageCleanup, C_NULL);
 	the->promiseJobTimer = EVENTED_TIMER_INVALID_ID;
 }
 
 void modMachineTaskUninit(xsMachine *the)
 {
-	if (getModdableAppState(appMessageCleanup))
-		getModdableAppState(appMessageCleanup)();
 	evented_timer_cancel(the->promiseJobTimer);
 }
 

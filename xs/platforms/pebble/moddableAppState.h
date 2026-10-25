@@ -57,7 +57,6 @@ typedef struct {
 
 	// pebble-appmessage
 	void					*appMessage;
-	void					(*appMessageCleanup)(void);
 	uint8_t				pkjsReady;
 	uint8_t				notFirst;
 
