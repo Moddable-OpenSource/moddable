@@ -64,11 +64,19 @@ globalThis.device = Object.freeze({
 	network: {
 		http: {
 			io: HTTPClient,
-			protocol: "http"			
+			protocol: "http",
+			client: {
+				io: HTTPClient,
+				protocol: "http"
+			}
 		},
 		https: {
 			io: HTTPClient,
-			protocol: "https"			
+			protocol: "https",
+			client: {
+				io: HTTPClient,
+				protocol: "https"
+			}
 		},
 		ws: {
 			io: WebSocketClient,
