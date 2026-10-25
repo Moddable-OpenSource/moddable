@@ -135,6 +135,7 @@ extern void fx_putc(void *refcon, char c);
 	uint8_t *heap_ptr; \
 	uint8_t *heap_pend; \
 	/* ModdablePebbleAppState */ void *state; \
+	EventedTimerID		promiseJobTimer; \
 	void *send_buffer; \
 	int send_buffer_remain; \
 	mxMachineDebug \

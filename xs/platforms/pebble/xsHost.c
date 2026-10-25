@@ -220,16 +220,15 @@ static PBL_MUTEX_DEFINE(gFlashMutex);
 
 void modMachineTaskInit(xsMachine *the)
 {
-	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
 	setModdableAppState(appMessageCleanup, C_NULL);
+	the->promiseJobTimer = EVENTED_TIMER_INVALID_ID;
 }
 
 void modMachineTaskUninit(xsMachine *the)
 {
 	if (getModdableAppState(appMessageCleanup))
 		getModdableAppState(appMessageCleanup)();
-	evented_timer_cancel(getModdableAppState(promiseJobTimer));
-	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
+	evented_timer_cancel(the->promiseJobTimer);
 }
 
 void modMachineTaskWait(xsMachine *the)
@@ -246,14 +245,13 @@ void modMachineTaskWake(xsMachine *the)
 
 static void doRunPromiseJobs(void *machine)
 {
-	setModdableAppState(promiseJobTimer, EVENTED_TIMER_INVALID_ID);
+	((txMachine *)machine)->promiseJobTimer = EVENTED_TIMER_INVALID_ID;
 	fxRunPromiseJobs((txMachine *)machine);
 }
 
 void fxQueuePromiseJobs(txMachine* the)
 {
-	if (EVENTED_TIMER_INVALID_ID == getModdableAppState(promiseJobTimer))
-		setModdableAppState(promiseJobTimer, evented_timer_register(0, false, doRunPromiseJobs, the));
+	the->promiseJobTimer = evented_timer_register(0, false, doRunPromiseJobs, the);
 }
 
 /*
