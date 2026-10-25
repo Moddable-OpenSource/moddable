@@ -292,8 +292,9 @@ class HTTPClient {
 						delete current.headers;
 						const map = new Map;
 						headers.split("\n").forEach(header => {
-							const [key, value] = header.split(":");
-							map.set(key, value);
+							const colon = header.indexOf(":");
+							if (colon > 0)
+								map.set(header.slice(0, colon), header.slice(colon + 1));
 						});
 						current.onHeaders?.call(current.request, current.status, map, current.statusText);
 						this.#state = "receiveBody";
