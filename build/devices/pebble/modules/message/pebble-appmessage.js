@@ -33,7 +33,11 @@ class Message extends Native("xs_appmessage_destructor") {
 	close() { return native("xs_appmessage_close").call(this); };
 
 	read() {
-		const {keys, map} = native("xs_appmessage_read").call(this);
+		const result = native("xs_appmessage_read").call(this);
+		if (!result)
+			return;		// nothing queued
+
+		const {keys, map} = result;
 		if (keys) {
 			for (const [key, code] of keys.entries()) {
 				if (map.has(code)) {
