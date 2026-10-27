@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: October 20, 2026
+Revised: October 23, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2), and [ESP32-P4](https://www.espressif.com/en/products/socs/esp32-p4).
 
@@ -263,7 +263,7 @@ ESP32-P4 has the following features:
 
 - Dual-core RISC-V MCU, up to 400 MHz (360 MHz on revision v1)
 - 40 MHz low-power RISC-V core
-- No Wi-Fi or BLE
+- No Wi-Fi or BLE on the P4 itself. Some boards add a network coprocessor for Wi-Fi and BLE.
 - 768 KB SRAM
 - External PSRAM
 
@@ -272,6 +272,9 @@ The Moddable SDK supports these ESP32-P4 development kits:
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
 | Waveshare<br>ESP32-P4-Pico | `esp32/ws_p4_pico` | ES8311 microphone and speaker<br>32 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-Pico)</li> |
+| Waveshare<br>ESP32-P4-WIFI6-Touch-LCD-3.5 | `esp32/ws_esp32p4_wifi_3_5` | 3.5" 320 x 480 ST7796<br>FT6336 touch<br>ESP32-C6 hosted Wi-Fi and BLE<br>ES8311 microphone and speaker<br>OV5647 MIPI camera<br>microSD 4-bit (some cards need width 1)<br>16 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-WIFI6-Touch-LCD-3.5)</li> |
+
+The microSD slot on `esp32/ws_esp32p4_wifi_3_5` is 4-bit. Some cards may require width 1 (`sdcard.width` in the target manifest).
 
 <a id="platforms-manifest"></a>
 ### Specifying ESP32 Subclass in Manifest

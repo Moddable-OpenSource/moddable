@@ -1,0 +1,21 @@
+# Waveshare ESP32-P4-WIFI6-Touch-LCD-3.5. ESP32-P4NRW32, rev3.x.
+# Not interchangeable with rev1.x (hw_ver1, 360 MHz).
+# CONFIG_ESP32P4_SELECTS_REV_LESS_V3 is not set
+CONFIG_ESP32P4_REV_MIN_300=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_400=y
+
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=n
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# In-package 16-line PSRAM, 32 MB. 200 MHz matches the known-good P4 boot in this tree.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_HEX=y
+CONFIG_SPIRAM_SPEED_200M=y
+CONFIG_SPIRAM_BOOT_INIT=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_IGNORE_NOTFOUND=n
+
+# Console is the CH343 on the UART Type-C port (UART0 TX GPIO37 / RX GPIO38).
+# C6 SDIO pins are in manifest_c6.json and apply only when an app includes Wi-Fi or BLE:
+# slot 1, 4-bit, 40 MHz, CLK 18, CMD 19, D0-D3 14-17, reset GPIO54 active-high.

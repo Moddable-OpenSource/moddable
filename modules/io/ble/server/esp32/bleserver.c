@@ -28,6 +28,7 @@
 */
 
 #include "xsmc.h"
+#include <stdio.h>
 #include "xsHost.h"
 #include "mc.xs.h"
 
@@ -44,6 +45,12 @@
 #include "ble.h"
 #include "ble_hs_hci_priv.h"
 #include "esp_timer.h"
+#include "sdkconfig.h"
+#include "esp_event.h"
+#if CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
+	#include "esp_hosted.h"
+	#include "esp_hosted_event.h"
+#endif
 
 static void xs_ble_ready(void);
 static void xs_ble_nimble_task(void *param);
@@ -51,6 +58,59 @@ static void nimble_on_register(struct ble_gatt_register_ctxt *ctxt, void *arg);
 static void nimble_on_reset(int reason);
 
 static uint8_t gNimBLEInititalized = 0;
+
+#if CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
+static SemaphoreHandle_t sHostedCpInit;
+
+static void hostedOnCpInit(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+	if (sHostedCpInit)
+		xSemaphoreGive(sHostedCpInit);
+}
+
+static void hostedFail(xsMachine *the, const char *what, int err)
+{
+	char msg[48];
+	snprintf(msg, sizeof(msg), "%s (%d)", what, err);
+	xsUnknownError(msg);
+}
+
+// TX-ready is raised before the coprocessor boot-up event. Wait for that
+// event before NimBLE starts HCI.
+static void hostedBLEController(xsMachine *the)
+{
+	int err;
+	uint8_t already = is_transport_tx_ready();
+
+	if (!already) {
+		err = esp_event_loop_create_default();
+		if ((ESP_OK != err) && (ESP_ERR_INVALID_STATE != err))
+			hostedFail(the, "hosted event loop", err);
+
+		sHostedCpInit = xSemaphoreCreateBinary();
+		if (!sHostedCpInit)
+			xsUnknownError("no memory");
+		err = esp_event_handler_register(ESP_HOSTED_EVENT, ESP_HOSTED_EVENT_CP_INIT, hostedOnCpInit, NULL);
+		if (err)
+			hostedFail(the, "hosted event", err);
+	}
+
+	err = transport_drv_reconfigure();
+	if (err)
+		hostedFail(the, "hosted reconfigure", err);
+
+	if (!already) {
+		if (pdTRUE != xSemaphoreTake(sHostedCpInit, pdMS_TO_TICKS(3000)))
+			hostedFail(the, "hosted coprocessor", -1);
+		esp_event_handler_unregister(ESP_HOSTED_EVENT, ESP_HOSTED_EVENT_CP_INIT, hostedOnCpInit);
+		vSemaphoreDelete(sHostedCpInit);
+		sHostedCpInit = NULL;
+	}
+
+	// The factory coprocessor does not answer FeatureControl. NimBLE's HCI
+	// startup is the signal that the controller is already running.
+}
+#endif
 
 struct BLEGATTServerConnectionRecord {
 	struct BLEGATTServerConnectionRecord	*next;
@@ -364,6 +424,10 @@ void xs_gattserver_build(xsMachine *the)
 		}
 	}
 
+#if CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE
+	if (0 == gNimBLEInititalized)
+		hostedBLEController(the);
+#endif
 	if (0 == gNimBLEInititalized++) {
 		ble_hs_cfg.sync_cb = xs_ble_ready;
 		ble_hs_cfg.gatts_register_cb = nimble_on_register;

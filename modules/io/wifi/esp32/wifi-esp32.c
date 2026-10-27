@@ -21,13 +21,29 @@
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"
+#include "mc.defines.h"
 #include "builtinCommon.h"
 
-#if (! kCPUESP32P4) && (! kCPUESP32H2)
+// P4 has no radio. A target that sets wifi.hosted uses esp_wifi_remote.
+// H2 has no radio and no hosted coprocessor. Both keep the empty stubs below.
+#ifndef MODDEF_WIFI_HOSTED
+	#define MODDEF_WIFI_HOSTED (0)
+#endif
+#if !kCPUESP32H2 && (!kCPUESP32P4 || MODDEF_WIFI_HOSTED)
 
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "lwip/ip6_addr.h"
+
+#if MODDEF_WIFI_HOSTED
+	#include <stdio.h>
+	#include "freertos/FreeRTOS.h"
+	#include "freertos/semphr.h"
+	#include "esp_event.h"
+
+	#include "esp_hosted.h"
+	#include "esp_hosted_event.h"
+#endif
 
 typedef struct xsWiFiRecord *xsWiFi;
 typedef struct xsWiFiRecord {
@@ -56,7 +72,61 @@ static void doWiFiEvent(void *arg, esp_event_base_t event_base, int32_t event_id
 static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen);
 static void wifiConnectDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen);
-static void initWiFi(void);
+static void initWiFi(xsMachine *the);
+
+#if MODDEF_WIFI_HOSTED
+static SemaphoreHandle_t sHostedCpInit;
+
+static void hostedOnCpInit(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+	if (sHostedCpInit)
+		xSemaphoreGive(sHostedCpInit);
+}
+
+static void hostedFail(xsMachine *the, const char *what, int err)
+{
+	char msg[48];
+	snprintf(msg, sizeof(msg), "%s (%d)", what, err);
+	xsUnknownError(msg);
+}
+
+// TX-ready is raised before RPC starts. esp_wifi_init treats that flag as
+// "link up" and sends RPCs immediately. Wait for coprocessor boot-up first.
+static void hostedWiFiUp(xsMachine *the)
+{
+	esp_err_t err;
+	uint8_t already = is_transport_tx_ready();
+
+	err = esp_netif_init();
+	if ((ESP_OK != err) && (ESP_ERR_INVALID_STATE != err))
+		hostedFail(the, "netif", err);
+
+	err = esp_event_loop_create_default();
+	if ((ESP_OK != err) && (ESP_ERR_INVALID_STATE != err))
+		hostedFail(the, "hosted event loop", err);
+
+	if (!already) {
+		sHostedCpInit = xSemaphoreCreateBinary();
+		if (!sHostedCpInit)
+			xsUnknownError("no memory");
+		err = esp_event_handler_register(ESP_HOSTED_EVENT, ESP_HOSTED_EVENT_CP_INIT, hostedOnCpInit, NULL);
+		if (err)
+			hostedFail(the, "hosted event", err);
+	}
+
+	err = transport_drv_reconfigure();
+	if (err)
+		hostedFail(the, "hosted reconfigure", err);
+
+	if (!already) {
+		if (pdTRUE != xSemaphoreTake(sHostedCpInit, pdMS_TO_TICKS(3000)))
+			hostedFail(the, "hosted coprocessor", -1);
+		esp_event_handler_unregister(ESP_HOSTED_EVENT, ESP_HOSTED_EVENT_CP_INIT, hostedOnCpInit);
+		vSemaphoreDelete(sHostedCpInit);
+		sHostedCpInit = NULL;
+	}
+}
+#endif
 
 static void formatMAC(const uint8_t *mac, char *str)
 {
@@ -141,7 +211,7 @@ void xs_wifi419(xsMachine *the)
 	xsSetHostHooks(xsThis, &xsWiFiHooks);
 	xsRemember(wf->obj);
 
-	initWiFi();
+	initWiFi(the);
 
 	wifi_ap_record_t ap_info;
 	if (ESP_OK == esp_wifi_sta_get_ap_info(&ap_info)) {
@@ -203,9 +273,15 @@ void xs_wifi419_close(xsMachine *the)
 	xsSetHostDestructor(xsThis, C_NULL);
 }
 
-static void initWiFi(void)
+static void initWiFi(xsMachine *the)
 {
 	if (gStation) return;
+
+#if MODDEF_WIFI_HOSTED
+	hostedWiFiUp(the);
+#else
+	(void)the;
+#endif
 
 	wifi_mode_t mode;
 	if (ESP_OK == esp_wifi_get_mode(&mode)) {
@@ -298,44 +374,77 @@ static void doIPEvent(void *arg, esp_event_base_t event_base, int32_t event_id, 
 	broadcastWiFiEvent(&msg);
 }
 
+static void deliverScanRecord(xsMachine *the, xsWiFi wf, const wifi_ap_record_t *bss)
+{
+	xsTry {
+		xsmcSetNewObject(xsResult);
+
+		xsmcSetString(xsVar(0), (char *)bss->ssid);
+		xsmcSet(xsResult, xsID_SSID, xsVar(0));
+
+		xsVar(0) = xsStringBuffer(NULL, 17);
+		formatMAC(bss->bssid, xsmcToString(xsVar(0)));
+		xsmcSet(xsResult, xsID_BSSID, xsVar(0));
+
+		xsmcSetInteger(xsVar(0), bss->rssi);
+		xsmcSet(xsResult, xsID_RSSI, xsVar(0));
+
+		xsmcSetInteger(xsVar(0), bss->primary);
+		xsmcSet(xsResult, xsID_channel, xsVar(0));
+
+		xsmcSetStringX(xsVar(0), (char *)authmodeToString(bss->authmode));
+		xsmcSet(xsResult, xsID_security, xsVar(0));
+
+		xsCallFunction1(xsReference(wf->onFound), wf->obj, xsResult);
+	}
+	xsCatch {
+	}
+}
+
 static void wifiScanDeliver(void *the, void *refcon, uint8_t *msgIn, uint16_t msgLen)
 {
 	xsWiFi wf = refcon;
+	wifi_ap_record_t *aps = NULL;
+#if kCPUESP32P4
+	uint16_t count = 0;
+#endif
 
 	if (wf->closed || !wf->scanning)
 		goto bail;
 
 	wf->scanning = 0;
 
-	xsBeginHost(the);
-
-	wifi_ap_record_t bss;
-	xsmcVars(1);
-	while (ESP_OK == esp_wifi_scan_get_ap_record(&bss)) {
-		xsTry {
-			xsmcSetNewObject(xsResult);
-
-			xsmcSetString(xsVar(0), (char *)bss.ssid);
-			xsmcSet(xsResult, xsID_SSID, xsVar(0));
-
-			xsVar(0) = xsStringBuffer(NULL, 17);
-			formatMAC(bss.bssid, xsmcToString(xsVar(0)));
-			xsmcSet(xsResult, xsID_BSSID, xsVar(0));
-
-			xsmcSetInteger(xsVar(0), bss.rssi);
-			xsmcSet(xsResult, xsID_RSSI, xsVar(0));
-
-			xsmcSetInteger(xsVar(0), bss.primary);
-			xsmcSet(xsResult, xsID_channel, xsVar(0));
-
-			xsmcSetStringX(xsVar(0), (char *)authmodeToString(bss.authmode));
-			xsmcSet(xsResult, xsID_security, xsVar(0));
-
-			xsCallFunction1(xsReference(wf->onFound), wf->obj, xsResult);
-		}
-		xsCatch {
+#if kCPUESP32P4
+	// Hosted slaves on P4 fill esp_wifi_scan_get_ap_records and reject the one-record call.
+	esp_wifi_scan_get_ap_num(&count);
+	if (count) {
+		aps = c_malloc(sizeof(wifi_ap_record_t) * count);
+		if (!aps || (ESP_OK != esp_wifi_scan_get_ap_records(&count, aps))) {
+			esp_wifi_clear_ap_list();
+			c_free(aps);
+			aps = NULL;
+			count = 0;
 		}
 	}
+	else
+		esp_wifi_clear_ap_list();
+#endif
+
+	xsBeginHost(the);
+
+	xsmcVars(1);
+#if kCPUESP32P4
+	for (uint16_t i = 0; i < count; i++)
+		deliverScanRecord(the, wf, &aps[i]);
+#else
+	{
+		wifi_ap_record_t rec;
+		while (ESP_OK == esp_wifi_scan_get_ap_record(&rec))
+			deliverScanRecord(the, wf, &rec);
+	}
+#endif
+
+	c_free(aps);
 
 	if (wf->onComplete)
 		xsCallFunction0(xsReference(wf->onComplete), wf->obj);

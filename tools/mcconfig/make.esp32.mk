@@ -229,6 +229,7 @@ INC_DIRS = \
 	$(IDF_PATH)/components/esp_lcd/include \
 	$(IDF_PATH)/components/esp_hal_lcd/include \
 	$(IDF_PATH)/components/esp_libc/platform_include \
+	$(IDF_PATH)/components/esp_mm/include \
 	$(IDF_PATH)/components/esp_netif/include \
  	$(IDF_PATH)/components/esp_partition/include \
 	$(IDF_PATH)/components/esp_pm/include \
@@ -715,7 +716,9 @@ clean:
 	-rm -rf $(TMP_DIR) 2>/dev/null
 	-rm -rf $(LIB_DIR) 2>/dev/null	
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(wildcard $(TMP_DIR)/xs_idf_components.txt) | $(PROJ_DIR_FILES)
+# Order-only: write idf_component.yml before reconfigure. A parallel solve
+# accepts esp_hosted 3.x, which this board's coprocessor does not speak.
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(wildcard $(TMP_DIR)/xs_idf_components.txt) | $(PROJ_DIR_FILES) dependencies
 	-rm $(PROJ_DIR)/sdkconfig 2>/dev/null
 	echo "# Reconfiguring ESP-IDF..." ; cd $(PROJ_DIR) ; bash -c "export KCONFIG_REPORT_VERBOSITY=quiet; $(IDF_RECONFIGURE_CMD)"
 

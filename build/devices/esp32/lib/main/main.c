@@ -31,7 +31,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 
-#if CONFIG_BT_ENABLED
+#if CONFIG_BT_ENABLED && !defined(CONFIG_BT_CONTROLLER_DISABLED)
 	#include "esp_bt.h"
 #endif
 
@@ -128,7 +128,7 @@ void app_main() {
 		ESP_ERROR_CHECK(nvs_flash_erase());
 		ESP_ERROR_CHECK(nvs_flash_init());
 	}
-#if CONFIG_BT_ENABLED
+#if CONFIG_BT_ENABLED && !defined(CONFIG_BT_CONTROLLER_DISABLED)
 	ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
 

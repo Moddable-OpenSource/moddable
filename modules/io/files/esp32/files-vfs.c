@@ -125,6 +125,9 @@
 	#include "esp_vfs_fat.h"
 	#include "sdmmc_cmd.h"
 	#include "driver/sdmmc_host.h"
+	#if defined(MODDEF_SDCARD_LDO)
+		#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+	#endif
 
 	#if !SOC_SDMMC_HOST_SUPPORTED
 		#error "this target has no SDMMC host: use file.sdspi"
@@ -163,6 +166,9 @@ static uint16_t gUseCount;
 #endif
 #if MODDEF_FILE_SDSPI
 	static uint8_t gSPIBusOwned;
+#endif
+#if MODDEF_FILE_SDMMC && defined(MODDEF_SDCARD_LDO)
+	static sd_pwr_ctrl_handle_t gSDPower;
 #endif
 #if kMountFAT && !kMountSDCard
 	static wl_handle_t gWLHandle = WL_INVALID_HANDLE;
@@ -238,8 +244,27 @@ static void mountFS(xsMachine *the)
 		#if MODDEF_SDCARD_INTERNALPULLUP
 			slot.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
 		#endif
+		#if defined(MODDEF_SDCARD_LDO)
+			// On-chip LDO that feeds the SD IO supply (VDDPST_5 / VO4 on ESP32-P4).
+			sd_pwr_ctrl_ldo_config_t ldo = {
+				.ldo_chan_id = MODDEF_SDCARD_LDO,
+			};
+			err = sd_pwr_ctrl_new_on_chip_ldo(&ldo, &gSDPower);
+			if (ESP_OK != err) {
+				char msg[64];
+				snprintf(msg, sizeof(msg), "sd ldo: %s (0x%x)", esp_err_to_name(err), err);
+				xsUnknownError(msg);
+			}
+			host.pwr_ctrl_handle = gSDPower;
+		#endif
 
 		err = esp_vfs_fat_sdmmc_mount(MODDEF_FILE_ROOT, &host, &slot, &conf, &gCard);
+		#if defined(MODDEF_SDCARD_LDO)
+			if ((ESP_OK != err) && gSDPower) {
+				sd_pwr_ctrl_del_on_chip_ldo(gSDPower);
+				gSDPower = NULL;
+			}
+		#endif
 	#else
 		err = esp_vfs_fat_spiflash_mount_rw_wl(MODDEF_FILE_ROOT, MODDEF_FILE_PARTITION, &conf, &gWLHandle);
 	#endif
@@ -279,6 +304,12 @@ static void unmountFS(void)
 #if kMountSDCard
 	esp_vfs_fat_sdcard_unmount(MODDEF_FILE_ROOT, gCard);
 	gCard = NULL;
+	#if MODDEF_FILE_SDMMC && defined(MODDEF_SDCARD_LDO)
+		if (gSDPower) {
+			sd_pwr_ctrl_del_on_chip_ldo(gSDPower);
+			gSDPower = NULL;
+		}
+	#endif
 	#if MODDEF_FILE_SDSPI
 		if (gSPIBusOwned) {
 			spi_bus_free(MODDEF_SDCARD_SPI_PORT);

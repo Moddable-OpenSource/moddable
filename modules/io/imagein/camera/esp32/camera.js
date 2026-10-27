@@ -26,12 +26,52 @@ class DisposableHostBuffer extends Native("_xs_disposable_hostbuffer_destructor"
 	}
 }
 
+// A board that shares the camera SCCB puts the endpoint on device.i2c.camera.
+// The instance stays open for the life of the camera so other devices join its bus.
+function openCameraBus(options) {
+	let sensor = options?.sensor;
+	if (!sensor) {
+		const board = globalThis.device?.i2c?.camera;
+		if (!board)
+			return;
+		sensor = {
+			...globalThis.device.i2c.default,
+			io: globalThis.device.io.I2C,
+			hz: 400_000,
+			...board
+		};
+	}
+	if (!sensor.io)
+		return;
+	return new sensor.io({
+		hz: 400_000,
+		...sensor
+	});
+}
+
 class Camera extends Native("xs_camera_destructor") {
+	#i2c;
+
 	constructor(options) {
 		super();
-		native("xs_camera_constructor").call(this, {...options, prototype: DisposableHostBuffer.prototype});
-	} 
-	close() { return native("xs_camera_close").call(this); };
+		const i2c = openCameraBus(options);
+		const nativeOptions = {...options, prototype: DisposableHostBuffer.prototype};
+		if (i2c)
+			nativeOptions.i2c = i2c;
+		try {
+			native("xs_camera_constructor").call(this, nativeOptions);
+		}
+		catch (e) {
+			i2c?.close();
+			throw e;
+		}
+		this.#i2c = i2c;
+	}
+	close() {
+		native("xs_camera_close").call(this);
+		this.#i2c?.close();
+		this.#i2c = undefined;
+	}
 	read(samples) { return native("xs_camera_read").call(this, samples); };
 	start() { return native("xs_camera_start").call(this); };
 	stop() { return native("xs_camera_stop").call(this); };

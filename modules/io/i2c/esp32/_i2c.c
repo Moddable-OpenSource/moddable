@@ -397,6 +397,12 @@ uint8_t usingPins(uint32_t data, uint32_t clock)
 	return 0;
 }
 
+i2c_master_bus_handle_t modI2CMasterBus(xsMachine *the, xsSlot *instance)
+{
+	I2C i2c = xsmcGetHostDataValidate(*instance, (xsHostHooks *)&xsI2CHooks);
+	return i2c->bus;
+}
+
 void *modI2CValidate(xsMachine *the, xsSlot *instance)
 {
 	return xsmcGetHostDataValidate(*instance, (xsHostHooks *)&xsI2CHooks);

@@ -275,6 +275,7 @@ INC_DIRS = \
  	-I$(IDF_PATH)\components\esp_lcd\include \
  	-I$(IDF_PATH)\components\esp_hal_lcd\include \
  	-I$(IDF_PATH)\components\esp_libc\platform_include \
+	-I$(IDF_PATH)\components\esp_mm\include \
  	-I$(IDF_PATH)\components\esp_netif\include \
  	-I$(IDF_PATH)\components\esp_partition\include \
  	-I$(IDF_PATH)\components\esp_pm\include \
@@ -662,7 +663,7 @@ deploy: DEPLOY_PRE DEPLOY_START DEPLOY_END
 idfVersionCheck:
 	python $(PROJ_DIR_TEMPLATE)\versionCheck.py $(EXPECTED_ESP_IDF) $(IDF_VERSION) || (echo "Expected ESP-IDF $(EXPECTED_ESP_IDF), found $(IDF_VERSION)" && exit 1)
 
-$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(TMP_DIR)\xs_idf_components.txt
+$(SDKCONFIG_H): $(SDKCONFIG_FILE) $(TMP_DIR)\xs_idf_components.txt dependencies
 	@echo Reconfiguring ESP-IDF...
 	if exist $(PROJ_DIR)\sdkconfig del $(PROJ_DIR)\sdkconfig
 	cd $(PROJ_DIR) 

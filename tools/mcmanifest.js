@@ -1148,12 +1148,14 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			for (dep of tool.dependencies) {
 				namespace = dep.namespace ?? "espressif";
 				if (undefined === dep.idf) {
-					depStr.push(`grep -q '${namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${namespace}/${dep.name}${dep.version ?? ""}"`);
+					// Parentheses and && : `&` backgrounds one idf.py on Unix while the
+					// other solves, and a wifi_remote-only solve accepts esp_hosted 3.x.
+					depStr.push(`(grep -q '${namespace}/${dep.name}' ${idf_component} || idf.py add-dependency "${namespace}/${dep.name}${dep.version ?? ""}")`);
 				}
 			}
 			if (tool.environment.USE_USB == 1)
-				depStr.push(`grep -q 'espressif/esp_tinyusb' ${idf_component} || idf.py add-dependency "espressif/esp_tinyusb"`);
-			this.line("BUILD_DEPENDENCIES = " + depStr.join("& "));
+				depStr.push(`(grep -q 'espressif/esp_tinyusb' ${idf_component} || idf.py add-dependency "espressif/esp_tinyusb")`);
+			this.line("BUILD_DEPENDENCIES = " + depStr.join(" && "));
 			this.line();
 
 			const core = tool.environment.IDF_COMPONENTS_CORE;

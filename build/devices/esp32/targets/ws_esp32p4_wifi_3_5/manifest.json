@@ -1,0 +1,135 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32p4",
+		"ESP32P4_HWVER": "hw_ver3",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Hold the BOOT button and press then release the RESET button. Use the UART Type-C port.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RESET button."
+	},
+	"include": [
+		"$(MODULES)/drivers/st7796",
+		"$(MODULES)/drivers/sensors/ft6336",
+		"$(MODULES)/drivers/peripherals/backlight",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pwm",
+		"$(IO)/audioin",
+		"$(IO)/audioout"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "st7796",
+		"es8311": {
+			"volume": 0.7,
+			"micGain": 3
+		}
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"audioOut": {
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"sampleRate": 16000,
+			"i2s": {
+				"num": 0,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"bitsPerSample": 16,
+				"format_i2s": 1,
+				"mck_pin": 13,
+				"bck_pin": 12,
+				"lr_pin": 10,
+				"dataout_pin": 9
+			}
+		},
+		"audioIn": {
+			"sampleRate": 16000,
+			"bitsPerSample": 16,
+			"numChannels": 1,
+			"i2s": {
+				"num": 0,
+				"slot": "I2S_STD_SLOT_LEFT",
+				"format_i2s": 1,
+				"multiplier": 16,
+				"mck_pin": 13,
+				"bck_pin": 12,
+				"lr_pin": 10,
+				"datain": 11
+			}
+		},
+		"sdcard": {
+			"slot": 0,
+			"width": 4,
+			"clk": 43,
+			"cmd": 44,
+			"d0": 39,
+			"d1": 40,
+			"d2": 41,
+			"d3": 42,
+			"hz": 10000000,
+			"ldo": 4,
+			"internalPullup": 1
+		},
+		"i2c": {
+			"sda_pin": 7,
+			"scl_pin": 8
+		},
+		"spi": {
+			"miso_pin": -1,
+			"mosi_pin": 20,
+			"sck_pin": 21
+		},
+		"ili9341": {
+			"width": 320,
+			"height": 480,
+			"hz": 80000000,
+			"cs_pin": 23,
+			"dc_pin": 26,
+			"rst_pin": 27,
+			"spi_port": "SPI2_HOST",
+			"spi_mode": 0,
+			"column_offset": 0,
+			"row_offset": 0,
+			"registers": [
+				"0x11, 0,",
+				"kDelayMS, 120,",
+				"0x36, 1, 0x48,",
+				"0x3A, 1, 0x05,",
+				"0xF0, 1, 0xC3,",
+				"0xF0, 1, 0x96,",
+				"0xB4, 1, 0x01,",
+				"0xB7, 1, 0xC6,",
+				"0xC0, 2, 0x80, 0x45,",
+				"0xC1, 1, 0x13,",
+				"0xC2, 1, 0xA7,",
+				"0xC5, 1, 0x0A,",
+				"0xE8, 8, 0x40, 0x8A, 0x00, 0x00, 0x29, 0x19, 0xA5, 0x33,",
+				"0xE0, 14, 0xD0, 0x08, 0x0F, 0x06, 0x06, 0x33, 0x30, 0x33, 0x47, 0x17, 0x13, 0x13, 0x2B, 0x31,",
+				"0xE1, 14, 0xD0, 0x0A, 0x11, 0x0B, 0x09, 0x07, 0x2F, 0x33, 0x47, 0x38, 0x15, 0x16, 0x2C, 0x32,",
+				"0xF0, 1, 0x3C,",
+				"0xF0, 1, 0x69,",
+				"kDelayMS, 120,",
+				"0x21, 0,",
+				"0x29, 0,",
+				"kDelayMS, 0,"
+			]
+		}
+	}
+}

@@ -14,6 +14,28 @@
 				"CONFIG_ESP_WIFI_SOFTAP_SUPPORT": "y",
 				"CONFIG_LWIP_DHCPS": "y"
 			}
+		},
+		"esp32/ws_esp32p4_wifi_3_5": {
+			"include": "$(MODDABLE)/build/devices/esp32/targets/ws_esp32p4_wifi_3_5/manifest_c6.json",
+			"defines": {
+				"wifi": {
+					"hosted": 1
+				}
+			},
+			"modules": {
+				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-esp32"
+			},
+			"preload": [
+				"embedded:network/interface/wifi/accesspoint"
+			],
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			],
+			"esp32Config": {
+				"CONFIG_ESP_WIFI_SOFTAP_SUPPORT": "y",
+				"CONFIG_LWIP_DHCPS": "y",
+				"CONFIG_WIFI_RMT_SOFTAP_SUPPORT": "y"
+			}
 		}
 	}
 }

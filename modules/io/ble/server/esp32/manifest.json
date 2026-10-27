@@ -25,6 +25,36 @@
 				"CONFIG_BT_NIMBLE_SM_SC": "y",
 				"CONFIG_BT_NIMBLE_ROLE_PERIPHERAL": "y"
 			}
+		},
+		"esp32/ws_esp32p4_wifi_3_5": {
+			"include": "$(MODDABLE)/build/devices/esp32/targets/ws_esp32p4_wifi_3_5/manifest_c6.json",
+			"defines": {
+				"ble": {
+					"server": true
+				}
+			},
+			"modules": {
+				"*": [
+					"$(MODDABLE)/modules/io/common/builtinCommon"
+				],
+				"embedded:io/bluetoothle/peripheral": "./bleserver"
+			},
+			"preload": "embedded:io/bluetoothle/peripheral",
+			"dependency": [
+				{ "idf": "bt" }
+			],
+			"esp32Config": {
+				"CONFIG_BT_ENABLED": "y",
+				"CONFIG_BT_NIMBLE_ENABLED": "y",
+				"CONFIG_BT_BLUEDROID_ENABLED": "n",
+				"CONFIG_BT_CONTROLLER_DISABLED": "y",
+				"CONFIG_BT_NIMBLE_TRANSPORT_UART": "n",
+				"CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE": "y",
+				"CONFIG_ESP_HOSTED_NIMBLE_HCI_VHCI": "y",
+				"CONFIG_BT_NIMBLE_SM_LEGACY": "y",
+				"CONFIG_BT_NIMBLE_SM_SC": "y",
+				"CONFIG_BT_NIMBLE_ROLE_PERIPHERAL": "y"
+			}
 		}
 	}
 }
