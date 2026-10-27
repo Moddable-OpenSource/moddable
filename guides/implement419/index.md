@@ -26,20 +26,20 @@ These guides cover topics that apply to most ECMA-419 implementations. Many of t
 
 ## Sensors
 
-ECMA-419 Sensors are peripherals that obtain sample data from one or more inputs. Samples can be taken by polling or by receiving notification when a new sample is available.
-
-The `configure()` method is the primary API for configuring how a sensor obtains and reports data. The guide [Setting Options with `configure()`](./configure.md) in the Peripheral Class Pattern describes how this works.
+ECMA-419 Sensors are peripherals that obtain sample data from one or more inputs. Samples are retrieved by polling or notification that a new sample is available.
 
 - [Sensor Constructor](./sensor-constructor.md)
-- [Poll Sensor](./sensor-poll.md)
+- [Sensor Sample Polling](./sensor-poll.md)
 - [Sensor Sample Notifications](./sensor-notify.md)
 - [Sensor Sample Time](./sensor-time.md)
-- [Report Sensor Configuration](./sensor-configuration.md)
+- [Sensor Configuration Report](./sensor-configuration.md)
+
+The `configure()` method is the primary API for configuring how a sensor obtains and reports samples data. The guide [Setting Options with `configure()`](./configure.md) in the Peripheral Class Pattern describes how this works.
 
 ## Additional Guidance
 
 These guides focus on modules implemented in JavaScript. ECMA-419 modules may also be implemented in C using the Moddable SDK's [XS in C](../../documentation/xs/XS%20in%20C.md) API. Whatever language is used, the conformance requirements are the same.
 
-When implementing shared code, there is a strong tendency to try to help the user, for example by tolerating incorrectly formed inputs or making a guess to resolve an ambiguity. This kind of help is problematic for portability, as it means that two different implementations of, for example, a temperature sensor might behave differently with the same inputs. As a rule, an ECMA-419 method should throw an exception so the caller fixes their code. ECMA-419 provides complete flexibility on the error thrown, so you can provide as helpful a message as you feel is appropriate.
+When implementing shared code, there is a strong tendency to try to help the user, for example by tolerating incorrectly formed inputs or resolving an ambiguity by guessing. This kind of help is problematic for portability, as it means that two different implementations of, for example, a temperature sensor may behave differently with the same inputs. As a rule, ECMA-419 methods should throw an exception so the caller fixes their code. ECMA-419 is fleixble on the error thrown, so you can provide as helpful a message as you feel is appropriate.
 
-If at all possible, your module should be compatible with the Moddable SDK's preload feature. This allows your implementation to reside fully in flash memory, saving limited RAM space and reducing start-up time. The recommendations in these guides are compatible with preload. Check out the [preload documentation](../../documentation/xs/preload.md) for details.
+If possible, your module should be compatible with the Moddable SDK's preload feature. This allows your implementation to reside fully in flash memory, saving limited RAM space and reducing start-up time. The recommendations in these guides are compatible with preload. Check out the [preload documentation](../../documentation/xs/preload.md) for details.

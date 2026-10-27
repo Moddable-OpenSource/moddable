@@ -1,5 +1,5 @@
 ---
-name: Report Sensor Configuration
+name: Sensor Configuration Report
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
 updated: 2026-10-26
 ---
@@ -13,12 +13,14 @@ class TemperatureSensor {
 
 	configure(options) {
 		if ("highTemperature" in options) {
-			const value = (options.highTemperature / 0.0625) << 4;
+			const value = (options.highTemperature /
+				0.0625) << 4;
 			this.#io.writeUint16(0x03, value, true);
 			this.#highTemperature = options.highTemperature;
 		}
 		if ("lowTemperature" in options) {
-			const value = (options.lowTemperature / 0.0625) << 4;
+			const value = (options.lowTemperature /
+				0.0625) << 4;
 			this.#io.writeUint16(0x02, value, true);
 			this.#lowTemperature = options.lowTemperature;
 		}

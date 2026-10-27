@@ -92,4 +92,4 @@ class TemperatureSensor {
 
 ---
 
-Sensors that support `onSample` should implement the `interrupt` property of `configuration` to allow callers to detect that notifications are supported. See the [Report Sensor Configuration](./sensor-configuration.md) guide for details.
+Sensors that support `onSample` should implement the `interrupt` property of `configuration` to allow callers to detect that notifications are supported. See the [Sensor Configuration Report](./sensor-configuration.md) guide for details.

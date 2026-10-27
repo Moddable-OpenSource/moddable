@@ -90,11 +90,13 @@ class TemperatureSensor {
 	}
 	configure(options) {
 		if ("highTemperature" in options) {
-			const value = (options.highTemperature / 0.0625) << 4;
+			const value = (options.highTemperature /
+				0.0625) << 4;
 			this.#io.writeUint16(0x03, value, true);
 		}
 		if ("lowTemperature" in options) {
-			const value = (options.lowTemperature / 0.0625) << 4;
+			const value = (options.lowTemperature /
+				0.0625) << 4;
 			this.#io.writeUint16(0x02, value, true);
 		}
 	}

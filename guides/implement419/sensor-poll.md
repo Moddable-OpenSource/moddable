@@ -1,5 +1,5 @@
 ---
-name: Poll Sensor
+name: Sensor Sample Polling
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
 updated: 2026-10-26
 ---

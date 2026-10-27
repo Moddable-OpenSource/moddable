@@ -6,7 +6,7 @@ updated: 2026-10-26
 
 The time a sample was captured can be essential information when analyzing the sample, for example to recognize user gestures from accelerometers or touch panels. Because the sample may be captured before `sample()` is called, there is no way the caller can apply an accurate timestamp. Therefore, the [Provenance Sensor Class Pattern](https://419.ecma-international.org/#provenance-sensor-class-pattern-identification-property-properties-of-sample-object) defines the `time` property on a sample to indicate when the sample was captured.
 
-The following example is from [Sensor Sample Notifications](./sensor-notify.md), extended in `#getSample()` to record the `time` the sample was collected.
+The following example is modified from [Sensor Sample Notifications](./sensor-notify.md) to record the `time` the sample is collected in `#getSample()`. This works for both notification and polling.
 
 ```js
 class TemperatureSensor {
@@ -58,6 +58,6 @@ class TemperatureSensor {
 
 ---
 
-Some sensors can report timing data that allows an implementation to determine the timestamp more accurately. When this timestamp is available, it is preferred over a timestamp from the host.
+Some sensor components report timing data that allows an implementation to determine the timestamp with greater accuracy. When this timestamp is available, it is preferred over a timestamp from the host.
 
-For some applications, JavaScript's millisecond resolution may be insufficient. Timestamps are in units of milliseconds but stored in JavaScript Numbers, which are double precision floating point. JavaScript Numbers easily accommodate fractional values, which allow for more precise timing information. (Note that fractional time values passed to `new Date` are treated as integers.)
+Some applications require timestamp resolution higher than milliseconds, the default in JavaScript. While timestamps are in units of milliseconds, they are stored in JavaScript Numbers, which are double precision floating point. JavaScript Numbers easily accommodate fractional values, which allow for higher resolution timing information. (Note that fractional time values passed to `new Date` are treated as integers.)
