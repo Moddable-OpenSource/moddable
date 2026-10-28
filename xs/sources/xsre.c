@@ -20,7 +20,7 @@
 
 #include "xsAll.h"
 
-//#define mxTrace 1
+// #define mxTrace 1
 
 // COMMON
 
@@ -513,14 +513,16 @@ struct sxStateData {
 	txInteger step;
 	txInteger offset;
 	txUnsigned flags;
-	txCaptureData captures[1];
+	txCaptureData* captures;
+	txQuantifierData* quantifiers;
+	txByte data[1];
 };
 
 static txInteger fxFindCharacter(txString input, txInteger offset, txInteger direction, txInteger flags);
 static txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags);
 static txBoolean fxMatchCharacter(txInteger* characters, txInteger character);
 static txStateData* fxPopStates(txMachine* the, txStateData* fromState, txStateData* toState);
-static txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount);
+static txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount, txQuantifierData* quantifiers, txInteger quantifierCount);
 
 #ifdef mxTrace
 	static txString gxStepNames[cxModifiersStep + 1] = {
@@ -2716,9 +2718,9 @@ txStateData* fxPopStates(txMachine* the, txStateData* fromState, txStateData* to
 	return toState;
 }
 
-txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount)
+txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount, txQuantifierData* quantifiers, txInteger quantifierCount)
 {
-	txInteger size = sizeof(txStateData) + ((captureCount - 1) * sizeof(txCaptureData));
+	txInteger size = sizeof(txStateData) - 1 + (captureCount * sizeof(txCaptureData)) + (quantifierCount * sizeof(txQuantifierData));
 	txStateData* state = C_NULL;
 	if (the && ((firstState == C_NULL) || (firstState->the != C_NULL))) {
 		txByte* current = (txByte*)firstState;
@@ -2741,7 +2743,10 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 	state->step = step;
 	state->offset = offset;
 	state->flags = flags;
+	state->captures = (txCaptureData*)(state->data);
+	state->quantifiers = (txQuantifierData*)(state->data + (captureCount * sizeof(txCaptureData)));
 	c_memcpy(state->captures, captures, captureCount * sizeof(txCaptureData));
+	c_memcpy(state->quantifiers, quantifiers, quantifierCount * sizeof(txQuantifierData));
 	return state;
 }
 
@@ -2794,6 +2799,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 	txInteger captureCount = code[1];
 	txInteger nameCount = code[2];
 	txInteger assertionCount = code[3];
+	txInteger quantifierCount = code[4];
 	txCaptureData* captures = (txCaptureData*)data;
 	txInteger* names = (txInteger*)(captures + captureCount);
 	txAssertionData* assertions = (txAssertionData*)(names + nameCount);
@@ -2889,7 +2895,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						assertion->offset = offset;
 						assertion->firstState = firstState;
 						sequel = *pointer;
-						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
+						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount, quantifiers, quantifierCount);
 						if (!firstState)
 							return 0;
 						mxBreak;
@@ -3042,12 +3048,15 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 					mxCase(cxDisjunctionStep):
 						step = *pointer++;
 						sequel = *pointer;
-						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
+						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount, quantifiers, quantifierCount);
 						if (!firstState)
 							return 0;
 						mxBreak;
 					mxCase(cxEmptyStep):
 						step = *pointer;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%d %d", step, firstState->step);
+						#endif
 // 						if ((offset != stop) && firstState)
 // 							goto mxPopState;
 						mxBreak;
@@ -3097,7 +3106,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							mxBreak;
 						}
 						if (quantifier->min == 0) {
-							firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
+							firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount, quantifiers, quantifierCount);
 							if (!firstState)
 								return 0;
 						}
@@ -3126,7 +3135,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							mxBreak;
 						}
 						if (quantifier->min == 0) {
-							firstState = fxPushState(the, firstState, step, offset, flags, captures, captureCount);
+							firstState = fxPushState(the, firstState, step, offset, flags, captures, captureCount, quantifiers, quantifierCount);
 							if (!firstState)
 								return 0;
 							step = sequel;
@@ -3196,6 +3205,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						offset = firstState->offset;
 						flags = firstState->flags;
 						c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
+						c_memcpy(quantifiers, firstState->quantifiers, quantifierCount * sizeof(txQuantifierData));
 						if (firstState->the) {
 							firstState = firstState->nextState;
 						}
