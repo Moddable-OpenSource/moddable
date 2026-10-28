@@ -971,6 +971,7 @@ void* fxCharSetOperand(txPatternParser* parser, txInteger* kind)
 	}
 	else {
 		result = fxCharSetSingle(parser, parser->character);
+		result = fxCharSetCanonicalizeSingle(parser, result);
 		fxPatternParserNext(parser);
 		*kind = 0;
 	}
