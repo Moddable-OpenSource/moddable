@@ -593,11 +593,10 @@ void fx_RegExp_prototype_exec(txMachine* the)
 				indicesItem = indicesItem->next = fxNewSlot(the);
 				if (start >= 0) {
 					txInteger end = temporary->value.regexp.data[(2 * captureIndex) + 1];
-					length = end - start;
-					start = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, start);
-					end = start + fxUTF8ToUnicodeOffset(argument->value.string + start, length);
-					mxPushInteger(start);
-					mxPushInteger(end);
+					txInteger offset = fxCacheUTF8ToUnicodeOffset(the, argument->value.string, start);
+					mxPushInteger(offset);
+					offset += fxCacheUTF8ToUnicodeOffset(the, argument->value.string + start, end - start);
+					mxPushInteger(offset);
 					fxConstructArrayEntry(the, indicesItem);
 				}
 				indicesArray->next->value.array.length++;
