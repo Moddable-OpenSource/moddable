@@ -62,6 +62,20 @@ Object.defineProperty(globalThis, "localStorage", {get: () => {
 }});
 `
 };
+const cryptoGlobal = {
+	include: "$(MODDABLE)/modules/web/crypto",
+	snippet: `
+import Crypto, { SubtleCrypto, CryptoKey } from "webcrypto";
+globalThis.Crypto = Crypto;
+globalThis.SubtleCrypto = SubtleCrypto;
+globalThis.CryptoKey = CryptoKey;
+
+Object.defineProperty(globalThis, "crypto", {get: () => {
+	Object.defineProperty(globalThis, "crypto", {value: new Crypto, writable: false});
+	return globalThis.crypto;
+}});
+`
+};
 const structuredCloneGlobal = {
 	include: "$(MODDABLE)/modules/base/structuredClone/manifest.json",
 	snippet: `
@@ -397,6 +411,10 @@ export default class extends TOOL {
 		}
 		this.globals = {
 			"console": consoleGlobal,
+			"crypto": cryptoGlobal,
+			"Crypto": cryptoGlobal,
+			"CryptoKey": cryptoGlobal,
+			"SubtleCrypto": cryptoGlobal,
 			"fetch": fetchGlobal,
 			"EventSource": eventSourceGlobal,
 			"Headers": headersGlobal,

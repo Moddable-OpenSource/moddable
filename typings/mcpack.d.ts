@@ -23,6 +23,7 @@
 /// <reference path="./web/bluetooth.d.ts" />
 /// <reference path="./web/serial.d.ts" />
 /// <reference path="./web/console.d.ts" />
+/// <reference path="./web/webcrypto.d.ts" />
 /// <reference path="./web/decompressionstream.d.ts" />
 /// <reference path="./web/domexception.d.ts" />
 /// <reference path="./web/eventsource.d.ts" />
@@ -65,6 +66,17 @@ declare global {
 	type EventSource = import("web/eventsource").default;
 
 	const localStorage: import("webstorage").default;
+
+	const crypto: import("webcrypto").Crypto;
+
+	const Crypto: typeof import("webcrypto").Crypto;
+	type Crypto = import("webcrypto").Crypto;
+
+	const SubtleCrypto: typeof import("webcrypto").SubtleCrypto;
+	type SubtleCrypto = import("webcrypto").SubtleCrypto;
+
+	const CryptoKey: typeof import("webcrypto").CryptoKey;
+	type CryptoKey = import("webcrypto").CryptoKey;
 
 	const WebSocket: typeof import("web/websocket").default;
 	type WebSocket = import("web/websocket").default;

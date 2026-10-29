@@ -35,7 +35,9 @@
 		"$(MODULES)/web/streams/all",
 		"$(MODULES)/web/streams/text/decoder",
 		"$(MODULES)/web/streams/text/encoder",
-		"$(MODULES)/web/streams/decompression"
+		"$(MODULES)/web/streams/decompression",
+		"$(MODULES)/web/crypto",
+		"$(MODULES)/base/structuredClone"
 	],
 	"modules": {
 		"*": [
@@ -46,12 +48,15 @@
 			"./harness/recording-streams.js",
 			"./harness/rs-test-templates.js",
 			"./harness/rs-utils.js",
+			"./harness/crypto-helpers.js",
+			"./harness/subset-tests.js",
 			"./main"
 		]
 	},
 	"strip": [],
 	"config": {
-		"reloadOnAbort": true
+		"reloadOnAbort": true,
+		"slowTests": false
 	},
 	"platforms": {
 		"esp": {
@@ -72,8 +77,12 @@
 				]
 			},
 			"dependency": [
-				{ "idf": "log" },
-				{ "idf": "efuse" }
+				{
+					"idf": "log"
+				},
+				{
+					"idf": "efuse"
+				}
 			]
 		},
 		"esp32/esp32s3": {
@@ -94,8 +103,12 @@
 				]
 			},
 			"dependency": [
-				{ "idf": "log" },
-				{ "idf": "efuse" }
+				{
+					"idf": "log"
+				},
+				{
+					"idf": "efuse"
+				}
 			]
 		},
 		"esp32/moddable_six": {
@@ -113,7 +126,7 @@
 				},
 				"heap": {
 					"initial": 32768,
-					"incremental": 32768 
+					"incremental": 32768
 				},
 				"stack": 16384,
 				"keys": {
@@ -125,7 +138,8 @@
 					"buffer": 32768,
 					"table": 127
 				},
-				"main": "main"
+				"main": "main",
+				"nativeStack": 131072
 			},
 			"defines": {
 				"XS_TEST": 1,
@@ -141,9 +155,15 @@
 				]
 			},
 			"dependency": [
-				{ "idf": "log" },
-				{ "idf": "efuse" },
-				{ "idf": "esp_driver_gptimer" }
+				{
+					"idf": "log"
+				},
+				{
+					"idf": "efuse"
+				},
+				{
+					"idf": "esp_driver_gptimer"
+				}
 			]
 		},
 		"lin": {

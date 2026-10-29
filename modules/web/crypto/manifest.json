@@ -1,0 +1,21 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/crypt/digest",
+		"$(MODDABLE)/modules/io/crypt/cipher",
+		"$(MODDABLE)/modules/io/crypt/random",
+		"$(MODDABLE)/modules/io/crypt/key",
+		"$(MODDABLE)/modules/io/crypt/signature",
+		"$(MODDABLE)/modules/io/crypt/keyagreement",
+		"$(MODDABLE)/modules/io/crypt/mac",
+		"$(MODDABLE)/modules/io/crypt/keyderivation",
+		"$(MODDABLE)/modules/web/domexception",
+		"$(MODULES)/data/text/encoder",
+		"$(MODULES)/data/text/decoder"
+	],
+	"modules": {
+		"webcrypto": "./webcrypto"
+	},
+	"preload": [
+		"webcrypto"
+	]
+}

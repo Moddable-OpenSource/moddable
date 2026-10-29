@@ -19,6 +19,7 @@
  */
 
 import {} from "_262";
+import structuredClone from "structuredClone";
 
 function flushPromises() { return native("flushPromises").call(this); }
 const formerSetTimeout = setTimeout;
@@ -60,6 +61,17 @@ import TextEncoderStream from "web/textencoderstream";
 globalThis.TextEncoderStream = TextEncoderStream;
 import DecompressionStream from "web/decompressionstream";
 globalThis.DecompressionStream = DecompressionStream;
+import Crypto, {SubtleCrypto, CryptoKey} from "webcrypto";
+globalThis.crypto = new Crypto;
+globalThis.Crypto = Crypto;
+globalThis.SubtleCrypto = SubtleCrypto;
+globalThis.CryptoKey = CryptoKey;
+globalThis.btoa = s => Uint8Array.from(String(s), c => c.charCodeAt(0)).toBase64();
+globalThis.atob = s => String.fromCharCode(...Uint8Array.fromBase64(String(s)));
+// newer WPT testharness.js; the harness copy here predates QuotaExceededError becoming its own interface
+globalThis.assert_throws_quotaexceedederror = (func, requested, quota, description) => assert_throws_dom("QuotaExceededError", func, description);
+import config from "mc/config";
+globalThis.slowTests = config.slowTests ?? false;		// WPT PBKDF2 1000/100000-iteration cases; enable with mcconfig ... slowTests=true
 
 globalThis.readableStreamFromArray = function(array) {
   return new ReadableStream({
@@ -96,11 +108,7 @@ globalThis.createBuffer = function(type, length, opts) {
 globalThis.garbageCollect = async () => {
 	return $262.gc();
 }
-globalThis.structuredClone = function(buffer) {
-	if (buffer instanceof ArrayBuffer)
-		return buffer.transfer();
-	debugger
-}
+globalThis.structuredClone = structuredClone;
 globalThis.MessageChannel = class {
 	constructor() {
 		this.port1 = {
@@ -122,6 +130,8 @@ import { } from "test-utils";
 import { } from "rs-utils";
 import { } from "recording-streams";
 import { } from "rs-test-templates";
+import { } from "crypto-helpers";
+import { } from "subset-tests";
 
 let testCount = 0;
 let passedCount = 0;

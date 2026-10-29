@@ -19,3 +19,4 @@
  */
 
 globalThis.self = globalThis;
+globalThis.location = {search: ""};		// WPT common/subset-tests.js reads location.search at load; empty runs every subtest
