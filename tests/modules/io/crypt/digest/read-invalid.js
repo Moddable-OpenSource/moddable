@@ -5,9 +5,9 @@ flags: [module]
 
 import Digest from "./digest_FIXTURE.js";
 
-const d = new Digest({algorithm: "SHA256"});
+const d = new Digest({algorithm: "SHA-256"});
 
-// buffer too small for outputSize (SHA256 needs 32)
+// buffer too small for outputSize (SHA-256 needs 32)
 assert.throws(RangeError, () => d.read(new ArrayBuffer(0)),  "0-byte buffer");
 assert.throws(RangeError, () => d.read(new ArrayBuffer(31)), "31-byte buffer");
 assert.throws(RangeError, () => d.read(new Uint8Array(10)),  "10-byte Uint8Array");

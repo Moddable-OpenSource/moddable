@@ -40,21 +40,11 @@ import Modular from "modular";
 class Mont extends Modular {
 	constructor(dict) {
 		super(dict.m);
-		this.method = (undefined === dict.method) ? this.LR : dict.method;
-		this.sw_param = dict.sw_param;
 	}
 	exp(a, e) {
-		if (this.method === this.LR)
-			return this._exp_LR(a, e, this.m);
-		else
-			return this._exp_SW(a, e, this.m, this.sw_param);
+		return native("xs_mont2_exp_LR").call(this, a, e, this.m);
 	}
-	_exp_LR(a, e, m) { return native("xs_mont2_exp_LR").call(this, a, e, m); }
-	_exp_SW(a, e, m, sw_param) { return native("xs_mont2_exp_SW").call(this, a, e, m, sw_param); }
 };
-
-Mont.prototype.LR = 0;
-Mont.prototype.SW = 1;
 
 Object.freeze(Mont.prototype);
 

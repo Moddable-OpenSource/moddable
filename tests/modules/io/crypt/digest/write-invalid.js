@@ -5,7 +5,7 @@ flags: [module]
 
 import Digest from "./digest_FIXTURE.js";
 
-const d = new Digest({algorithm: "SHA256"});
+const d = new Digest({algorithm: "SHA-256"});
 
 // non-buffer arguments: all caught by xsmcGetBufferReadable → TypeError
 assert.throws(TypeError, () => d.write("abc"),     "string");

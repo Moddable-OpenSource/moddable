@@ -24,60 +24,130 @@
 
 #include "xsPlatform.h"
 #include "xsmc.h"
+#include <stddef.h>
 #include "mc.xs.h"			// for xsID_* values
 
-#include "fips180.h"
-#include "rfc1321.h"
-#include "ghash.h"
-
-enum {
-	kAlgMD5,
-	kAlgSHA1,
-	kAlgSHA224,
-	kAlgSHA256,
-	kAlgSHA384,
-	kAlgSHA512,
-	kAlgGHASH,
-};
+#include "digest-kcl.h"
 
 typedef struct {
-	const char *name;
 	uint8_t alg;
-	uint16_t	outputSize;
-	uint16_t	blockSize;
-} DigestAlgEntry;
-
-union DigestCtx {
-	struct md5 md5;
-	struct sha1 sha1;
-	struct sha256 sha256;		// also SHA224
-	struct sha512 sha512;		// also SHA384
-	ghash_t ghash;
-};
-
-typedef struct {
-	union DigestCtx ctx;
-	uint8_t alg;
+	union DigestCtx ctx;		// last: allocated to the algorithm's size
 } DigestRecord, *Digest;
 
-static const DigestAlgEntry gDigestAlgs[] = {
-	{ "MD5",    kAlgMD5,    MD5_DGSTSIZE,    MD5_BLKSIZE    },
-	{ "SHA1",   kAlgSHA1,   SHA1_DGSTSIZE,   SHA1_BLKSIZE   },
-	{ "SHA224", kAlgSHA224, SHA224_DGSTSIZE, SHA224_BLKSIZE },
-	{ "SHA256", kAlgSHA256, SHA256_DGSTSIZE, SHA256_BLKSIZE },
-	{ "SHA384", kAlgSHA384, SHA384_DGSTSIZE, SHA384_BLKSIZE },
-	{ "SHA512", kAlgSHA512, SHA512_DGSTSIZE, SHA512_BLKSIZE },
-	{ "GHASH",  kAlgGHASH,  GHASH_DGSTSIZE,  GHASH_BLKSIZE  },
+static const DigestAlgEntry gDigestAlgs[] = {		// in enum order: indexed by alg
+#if MODDEF_CRYPT_DIGEST_MD5
+	{ "MD5",    kAlgMD5,    MD5_DGSTSIZE,    MD5_BLKSIZE,    sizeof(struct md5) },
+#else
+	{ NULL, kAlgMD5, 0, 0, 0 },		// omitted from this build
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA1
+	{ "SHA-1",   kAlgSHA1,   SHA1_DGSTSIZE,   SHA1_BLKSIZE,   sizeof(struct sha1) },
+#else
+	{ NULL, kAlgSHA1, 0, 0, 0 },		// omitted from this build
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA224
+	{ "SHA-224", kAlgSHA224, SHA224_DGSTSIZE, SHA224_BLKSIZE, sizeof(struct sha256) },
+#else
+	{ NULL, kAlgSHA224, 0, 0, 0 },		// omitted from this build
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA256
+	{ "SHA-256", kAlgSHA256, SHA256_DGSTSIZE, SHA256_BLKSIZE, sizeof(struct sha256) },
+#else
+	{ NULL, kAlgSHA256, 0, 0, 0 },		// omitted from this build
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA384
+	{ "SHA-384", kAlgSHA384, SHA384_DGSTSIZE, SHA384_BLKSIZE, sizeof(struct sha512) },
+#else
+	{ NULL, kAlgSHA384, 0, 0, 0 },		// omitted from this build
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA512
+	{ "SHA-512", kAlgSHA512, SHA512_DGSTSIZE, SHA512_BLKSIZE, sizeof(struct sha512) },
+#else
+	{ NULL, kAlgSHA512, 0, 0, 0 },		// omitted from this build
+#endif
 	{ NULL, 0, 0, 0 }
 };
 
-static const DigestAlgEntry *findAlg(uint8_t alg)
+const DigestAlgEntry *xs_crypt_digestAlgorithm(const char *name)
 {
-	for (const DigestAlgEntry *entry = gDigestAlgs; entry->name; entry++) {
-		if (entry->alg == alg)
+	const DigestAlgEntry *entry;
+	for (entry = gDigestAlgs; entry <= &gDigestAlgs[kAlgSHA512]; entry++) {
+		if (entry->name && (0 == c_strcmp(name, entry->name)))
 			return entry;
 	}
 	return NULL;
+}
+
+void xs_crypt_digestCreate(uint8_t alg, union DigestCtx *ctx)
+{
+	switch (alg) {
+#if MODDEF_CRYPT_DIGEST_MD5
+		case kAlgMD5:    md5_create(&ctx->md5); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA1
+		case kAlgSHA1:   sha1_create(&ctx->sha1); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA224
+		case kAlgSHA224: sha224_create(&ctx->sha256); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA256
+		case kAlgSHA256: sha256_create(&ctx->sha256); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA384
+		case kAlgSHA384: sha384_create(&ctx->sha512); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA512
+		case kAlgSHA512: sha512_create(&ctx->sha512); break;
+#endif
+	}
+}
+
+void xs_crypt_digestUpdate(uint8_t alg, union DigestCtx *ctx, const void *data, uint32_t size)
+{
+	switch (alg) {
+#if MODDEF_CRYPT_DIGEST_MD5
+		case kAlgMD5:    md5_update(&ctx->md5, data, size); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA1
+		case kAlgSHA1:   sha1_update(&ctx->sha1, data, size); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA224
+		case kAlgSHA224: sha224_update(&ctx->sha256, data, size); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA256
+		case kAlgSHA256: sha256_update(&ctx->sha256, data, size); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA384
+		case kAlgSHA384: sha384_update(&ctx->sha512, data, size); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA512
+		case kAlgSHA512: sha512_update(&ctx->sha512, data, size); break;
+#endif
+	}
+}
+
+void xs_crypt_digestFinish(uint8_t alg, union DigestCtx *ctx, uint8_t *out)
+{
+	switch (alg) {
+#if MODDEF_CRYPT_DIGEST_MD5
+		case kAlgMD5:    md5_fin(&ctx->md5, out); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA1
+		case kAlgSHA1:   sha1_fin(&ctx->sha1, out); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA224
+		case kAlgSHA224: sha224_fin(&ctx->sha256, out); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA256
+		case kAlgSHA256: sha256_fin(&ctx->sha256, out); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA384
+		case kAlgSHA384: sha384_fin(&ctx->sha512, out); break;
+#endif
+#if MODDEF_CRYPT_DIGEST_SHA512
+		case kAlgSHA512: sha512_fin(&ctx->sha512, out); break;
+#endif
+	}
 }
 
 void xs_digest_destructor(void *data)
@@ -92,49 +162,14 @@ void xs_digest_constructor(xsMachine *the)
 		xsUnknownError("algorithm required");
 	char *algorithm = xsmcToString(xsVar(0));
 
-	const DigestAlgEntry *entry;
-	for (entry = gDigestAlgs; entry->name; entry++) {
-		if (0 == c_strcmp(algorithm, entry->name))
-			break;
-	}
-	if (!entry->name)
+	const DigestAlgEntry *entry = xs_crypt_digestAlgorithm(algorithm);
+	if (!entry)
 		xsUnknownError("unsupported algorithm");
 
 	DigestRecord init = { .alg = entry->alg };
+	xs_crypt_digestCreate(entry->alg, &init.ctx);
 
-	if (kAlgGHASH == entry->alg) {
-		if (!xsmcGet(xsVar(0), xsArg(0), xsID_H))
-			xsUnknownError("H required");
-		void *H;
-		xsUnsignedValue HLen;
-		xsmcGetBufferReadable(xsVar(0), &H, &HLen);
-		if (16 != HLen)
-			xsRangeError("H must be 16 bytes");
-		c_memcpy(&init.ctx.ghash.h, H, 16);
-		_ghash_fix128(&init.ctx.ghash.h);
-
-		if (xsmcGet(xsVar(0), xsArg(0), xsID_additionalData)) {
-			void *aad;
-			xsUnsignedValue aadLen;
-			xsmcGetBufferReadable(xsVar(0), &aad, &aadLen);
-			_ghash_update(&init.ctx.ghash, aad, aadLen);
-			_ghash_flush_partial(&init.ctx.ghash);
-			init.ctx.ghash.y0 = init.ctx.ghash.y;
-			init.ctx.ghash.aad_len = aadLen;
-		}
-	}
-
-	switch (entry->alg) {
-		case kAlgMD5:    md5_create(&init.ctx.md5); break;
-		case kAlgSHA1:   sha1_create(&init.ctx.sha1); break;
-		case kAlgSHA224: sha224_create(&init.ctx.sha256); break;
-		case kAlgSHA256: sha256_create(&init.ctx.sha256); break;
-		case kAlgSHA384: sha384_create(&init.ctx.sha512); break;
-		case kAlgSHA512: sha512_create(&init.ctx.sha512); break;
-		case kAlgGHASH:  _ghash_create(&init.ctx.ghash); break;
-	}
-
-	xsmcSetHostChunk(xsThis, &init, sizeof(init));
+	xsmcSetHostChunk(xsThis, &init, offsetof(DigestRecord, ctx) + entry->ctxSize);
 }
 
 void xs_digest_close(xsMachine *the)
@@ -153,21 +188,13 @@ void xs_digest_write(xsMachine *the)
 
 	xsmcGetBufferReadable(xsArg(0), &data, &size);
 
-	switch (digest->alg) {
-		case kAlgMD5:    md5_update(&digest->ctx.md5, data, (uint32_t)size); break;
-		case kAlgSHA1:   sha1_update(&digest->ctx.sha1, data, (uint32_t)size); break;
-		case kAlgSHA224: sha224_update(&digest->ctx.sha256, data, (uint32_t)size); break;
-		case kAlgSHA256: sha256_update(&digest->ctx.sha256, data, (uint32_t)size); break;
-		case kAlgSHA384: sha384_update(&digest->ctx.sha512, data, (uint32_t)size); break;
-		case kAlgSHA512: sha512_update(&digest->ctx.sha512, data, (uint32_t)size); break;
-		case kAlgGHASH:  _ghash_update(&digest->ctx.ghash, data, size); break;
-	}
+	xs_crypt_digestUpdate(digest->alg, &digest->ctx, data, (uint32_t)size);
 }
 
 void xs_digest_read(xsMachine *the)
 {
 	Digest digest = xsmcGetHostChunkValidate(xsThis, xs_digest_destructor);
-	const DigestAlgEntry *entry = findAlg(digest->alg);
+	const DigestAlgEntry *entry = &gDigestAlgs[digest->alg];
 	uint8_t *out;
 
 	if (xsmcArgc > 0) {
@@ -181,40 +208,34 @@ void xs_digest_read(xsMachine *the)
 		out = xsmcSetArrayBuffer(xsResult, NULL, entry->outputSize);
 
 	digest = xsmcGetHostChunk(xsThis);
-	union DigestCtx clone = digest->ctx;	// byte-copy for non-destructive read
-	switch (digest->alg) {
-		case kAlgMD5:    md5_fin(&clone.md5, out); break;
-		case kAlgSHA1:   sha1_fin(&clone.sha1, out); break;
-		case kAlgSHA224: sha224_fin(&clone.sha256, out); break;
-		case kAlgSHA256: sha256_fin(&clone.sha256, out); break;
-		case kAlgSHA384: sha384_fin(&clone.sha512, out); break;
-		case kAlgSHA512: sha512_fin(&clone.sha512, out); break;
-		case kAlgGHASH:  _ghash_fin(&clone.ghash, out); break;
-	}
+	union DigestCtx clone;
+	c_memcpy(&clone, &digest->ctx, entry->ctxSize);		// non-destructive read: finish a copy of the context
+	xs_crypt_digestFinish(digest->alg, &clone, out);
 }
 
 void xs_digest_reset(xsMachine *the)
 {
 	Digest digest = xsmcGetHostChunkValidate(xsThis, xs_digest_destructor);
-	switch (digest->alg) {
-		case kAlgMD5:    md5_create(&digest->ctx.md5); break;
-		case kAlgSHA1:   sha1_create(&digest->ctx.sha1); break;
-		case kAlgSHA224: sha224_create(&digest->ctx.sha256); break;
-		case kAlgSHA256: sha256_create(&digest->ctx.sha256); break;
-		case kAlgSHA384: sha384_create(&digest->ctx.sha512); break;
-		case kAlgSHA512: sha512_create(&digest->ctx.sha512); break;
-		case kAlgGHASH:  _ghash_create(&digest->ctx.ghash); break;
-	}
+	xs_crypt_digestCreate(digest->alg, &digest->ctx);
 }
 
 void xs_digest_get_blockSize(xsMachine *the)
 {
 	Digest digest = xsmcGetHostChunkValidate(xsThis, xs_digest_destructor);
-	xsmcSetInteger(xsResult, findAlg(digest->alg)->blockSize);
+	xsmcSetInteger(xsResult, gDigestAlgs[digest->alg].blockSize);
 }
 
 void xs_digest_get_outputSize(xsMachine *the)
 {
 	Digest digest = xsmcGetHostChunkValidate(xsThis, xs_digest_destructor);
-	xsmcSetInteger(xsResult, findAlg(digest->alg)->outputSize);
+	xsmcSetInteger(xsResult, gDigestAlgs[digest->alg].outputSize);
+}
+
+void xs_digest_supports(xsMachine *the)
+{
+	xsmcVars(1);
+	int supported = 0;
+	if (xsmcGet(xsVar(0), xsArg(0), xsID_algorithm) && (xsStringType == xsmcTypeOf(xsVar(0))))
+		supported = NULL != xs_crypt_digestAlgorithm(xsmcToString(xsVar(0)));
+	xsmcSetBoolean(xsResult, supported);
 }

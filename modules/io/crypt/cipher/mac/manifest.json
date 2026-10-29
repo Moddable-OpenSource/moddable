@@ -1,0 +1,6 @@
+{
+	"include": "$(MODDABLE)/modules/io/crypt/cryptokit",
+	"modules": {
+		"*": "./cipher"
+	}
+}

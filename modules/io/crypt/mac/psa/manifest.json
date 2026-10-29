@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/crypt/psa"
+	],
+	"modules": {
+		"*": "./mac"
+	},
+	"dependency": [
+		{
+			"idf": "mbedtls"
+		}
+	]
+}

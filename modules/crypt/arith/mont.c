@@ -40,7 +40,6 @@
 #include "xsBigIntEx.h"
 
 extern txBigInt *fxBigInt_mont_exp_LR(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m);
-extern txBigInt *fxBigInt_mont_exp_SW(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m, int param);
 
 void
 xs_mont2_exp_LR(xsMachine *the)
@@ -54,16 +53,3 @@ xs_mont2_exp_LR(xsMachine *the)
 	xsmcSetBigInt(xsResult, r);
 }
 
-void
-xs_mont2_exp_SW(xsMachine *the)
-{
-	txBigInt *a, *e, *m, *r;
-	int param;
-
-	a = xsmcToBigInt(xsArg(0));
-	e = xsmcToBigInt(xsArg(1));
-	m = xsmcToBigInt(xsArg(2));
-	param = xsmcToInteger(xsArg(3));
-	r = fxBigInt_mont_exp_SW(the, NULL, a, e, m, param);
-	xsmcSetBigInt(xsResult, r);
-}

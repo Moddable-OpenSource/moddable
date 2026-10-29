@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"*": [
+			"$(MODULES)/crypt/digest/kcl/fips197",
+			"$(MODULES)/crypt/digest/kcl/chacha",
+			"$(MODULES)/crypt/digest/kcl/ghash",
+			"$(MODULES)/crypt/digest/kcl/poly1305",
+			"./cipher"
+		]
+	}
+}

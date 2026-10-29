@@ -10,7 +10,7 @@
 			"embedded:io/socket/*": ["./embedded_io/socket/*"],
 			"embedded:io/audio/*": ["./embedded_io/audio/*"],
 			"embedded:io/bluetoothle/*": ["./embedded_io/ble/*"],
-			"embedded:io/crypt/*": ["./embedded_io/crypt/*"],
+			"embedded:crypt/*": ["./embedded_crypt/*"],
 			"embedded:network/*": ["./embedded_network/*"],
 			"embedded:network/http/*": ["./embedded_network/http/*"],
 			"embedded:network/interface/*": ["./embedded_network/interface/*"],

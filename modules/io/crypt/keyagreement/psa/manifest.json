@@ -1,0 +1,24 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/crypt/psa"
+	],
+	"modules": {
+		"embedded:crypt/keyagreement": "$(MODULES)/io/crypt/keyagreement/keyagreement-native",
+		"*": "./keyagreement"
+	},
+	"preload": [
+		"embedded:crypt/keyagreement"
+	],
+	"dependency": [
+		{
+			"idf": "mbedtls"
+		}
+	],
+	"platforms": {
+		"zephyr": {
+			"zephyrConfig": {
+				"CONFIG_PSA_WANT_ALG_ECDH": "y"
+			}
+		}
+	}
+}

@@ -45,8 +45,8 @@
 		"embedded:io/bluetoothle/*": [
 			"$(TYPINGS)/embedded_io/ble/*"
 		],
-		"embedded:io/crypt/*": [
-			"$(TYPINGS)/embedded_io/crypt/*"
+		"embedded:crypt/*": [
+			"$(TYPINGS)/embedded_crypt/*"
 		],
 		"embedded:io/socket/*": [
 			"$(TYPINGS)/embedded_io/socket/*"

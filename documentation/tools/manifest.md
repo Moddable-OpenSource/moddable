@@ -76,6 +76,22 @@ Environment variables may be conditionally imported from the shell by appending 
 }
 ```
 
+#### Crypto backend
+
+The ECMA-419 cryptography classes (`embedded:crypt/digest`, `embedded:crypt/cipher`, and the rest) have more than one implementation. `psa` uses PSA Crypto from mbedTLS, on ESP32 and Zephyr. `kcl` is the Moddable SDK's portable implementation, for any microcontroller. `mac` uses CryptoKit and the Security framework on macOS. Each platform has a default: `psa` on ESP32, `mac` on macOS, and `kcl` elsewhere, including Zephyr. The `CRYPT_BACKEND` variable selects another, either in an application's `build` object or from the shell.
+
+```json
+"build": {
+	"CRYPT_BACKEND": "psa"
+}
+```
+
+```text
+CRYPT_BACKEND=kcl mcconfig -d -m -p esp32/moddable_six
+```
+
+A device or target manifest that changes its platform's default uses ` ?=`, so that an application's choice still applies.
+
 When you build an application, the default output directory name is taken from the directory name containing the manifest. You can specify a different output directory name by specifying a `NAME` environment variable in the `build` object.
 
 ```json

@@ -3,11 +3,10 @@ description:
 flags: [module]
 ---*/
 
-import Digest, {algMeta, H_TC2} from "./digest_FIXTURE.js";
+import Digest, {algMeta} from "./digest_FIXTURE.js";
 
 for (const {algorithm, blockSize, outputSize} of algMeta) {
-	const options = ("GHASH" === algorithm) ? {algorithm, H: H_TC2} : {algorithm};
-	const d = new Digest(options);
+	const d = new Digest({algorithm});
 
 	assert.sameValue(d.blockSize, blockSize, `${algorithm}: blockSize`);
 	assert.sameValue(d.outputSize, outputSize, `${algorithm}: outputSize`);

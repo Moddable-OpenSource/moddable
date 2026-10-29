@@ -38,6 +38,9 @@
 #include "xsPlatform.h"
 #include "xsmc.h"
 #include "xsBigIntEx.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+#endif
 #include "mc.xs.h"
 
 extern void fxBigInt_ec_add(xsMachine *the, txECPoint *r, txECPoint *a, txECPoint *b, txECParam *ec);
@@ -45,11 +48,22 @@ extern void fxBigInt_ec_mul(xsMachine *the, txECPoint *r, txECPoint *a, txBigInt
 extern void fxBigInt_ec_mul2(xsMachine *the, txECPoint *r, txECPoint *a1, txBigInt *k1, txECPoint *a2, txBigInt *k2, txECParam *ec);
 extern void fxBigInt_ec_norm(xsMachine *the, txECPoint *r, txECPoint *a, txECParam *ec);
 extern txU4 mont_init(txBigInt *m);
+extern void fxBigInt_ec_aIsMinus3(xsMachine *the, txECParam *ec);
 extern txBigInt *mont_in(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
 extern txBigInt *mont_out(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m, txU4 u);
 
 extern txBigInt gxBigIntOne;
 
+// a build may omit curves (manifest "defines": crypt.curve.<name> 0); see modules/io/crypt/key/kcl/curves.c
+#ifndef MODDEF_CRYPT_CURVE_P256
+	#define MODDEF_CRYPT_CURVE_P256 1
+#endif
+#ifndef MODDEF_CRYPT_CURVE_P384
+	#define MODDEF_CRYPT_CURVE_P384 1
+#endif
+#define mxWeierstrass (MODDEF_CRYPT_CURVE_P256 || MODDEF_CRYPT_CURVE_P384)
+
+#if mxWeierstrass
 static void get_ec_param(xsMachine *the, txECParam *ec, int *i)
 {
 	xsmcGet(xsVar(*i), xsThis, xsID_m);
@@ -62,6 +76,7 @@ static void get_ec_param(xsMachine *the, txECParam *ec, int *i)
 	ec->b = xsmcToBigInt(xsVar(*i));
 	(*i)++;
 	ec->u = mont_init(ec->m);
+	fxBigInt_ec_aIsMinus3(the, ec);
 	ec->a = mont_in(the, NULL, ec->a, ec->m);
 	ec->b = mont_in(the, NULL, ec->b, ec->m);
 	ec->one = mont_in(the, NULL, &gxBigIntOne, ec->m);
@@ -157,3 +172,9 @@ xs_ec2_mul2(xsMachine *the)
 	fxBigInt_ec_norm(the, &r, &r, &ec);
 	set_ecp(the, &xsResult, &r, &ec);
 }
+#else
+// no Weierstrass curve in this build: the natives stay (the module references them) but the point arithmetic is not linked
+void xs_ec2_add(xsMachine *the) { xsUnknownError("curve omitted"); }
+void xs_ec2_mul(xsMachine *the) { xsUnknownError("curve omitted"); }
+void xs_ec2_mul2(xsMachine *the) { xsUnknownError("curve omitted"); }
+#endif

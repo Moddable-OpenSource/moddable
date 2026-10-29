@@ -192,7 +192,7 @@ void xs_crypt_Digest_write(xsMachine *the)
 	if (!cd)
 		xsUnknownError("crypt: can't call digest write after close");
 
-#if defined(__ets__) && !ESP32
+#if defined(ESP8266)
 	while (size) {
 		unsigned char buffer[32];
 		int use = size;
@@ -598,7 +598,7 @@ static void xs_crypt_cipher_setDirection(crypt_blockcipher_t *cipher, kcl_symmet
 
 /*
 	implementation assumes key and data buffers can be read directly
-	on __ets__ this will fail from ROM. data could be pulled into RAM.
+	on ESP8266 this will fail from ROM. data could be pulled into RAM.
 */
 static void xs_crypt_cipher_process(crypt_blockcipher_t *cipher, uint8_t *data, uint8_t *result)
 {

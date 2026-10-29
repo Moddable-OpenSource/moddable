@@ -1,10 +1,12 @@
 {
-	"platforms": {
-		"esp32": {
-			"include": "./esp32"
-		},
-		"...": {
-			"include": "./kcl"
-		}
-	}
+	"include": [
+		"$(MODDABLE)/modules/io/crypt/backend",
+		"./$(CRYPT_BACKEND)"
+	],
+	"modules": {
+		"embedded:crypt/digest": "./digest"
+	},
+	"preload": [
+		"embedded:crypt/digest"
+	]
 }

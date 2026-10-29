@@ -1,0 +1,12 @@
+{
+	"modules": {
+		"*": [
+			"./xscryptokit"
+		]
+	},
+	"recipes": {
+		"swift": [
+			"xscryptokit*"
+		]
+	}
+}

@@ -37,8 +37,11 @@
 
 #include "xsPlatform.h"
 #include "fips197.h"
+#if !XSTOOLS
+	#include "mc.defines.h"
+#endif
 
-#if defined(__ets__) && !ESP32
+#if defined(ESP8266)
 	// use 32-bits on ESP8266 to avoid more expensive c_read8
 	#define UINT8_TABLE uint32_t
 #else
@@ -265,7 +268,7 @@ static const uint32_t T3v[] ICACHE_XS6RO_ATTR = {
 	0x2c3a1616,
 };
 
-#if defined(__ets__) && !ESP32
+#if defined(ESP8266)
 	static const volatile uint32_t *T0 = T0v;
 	static const volatile uint32_t *T1 = T1v;
 	static const volatile uint32_t *T2 = T2v;
@@ -593,6 +596,23 @@ static const UINT8_TABLE ltab[] ICACHE_XS6RO_ATTR = {
 	0x8c, 0x80, 0xc0, 0xf7, 0x70, 0x07,
 };
 
+// read the byte-valued tables through volatile pointers, as T0..T3 are, so the compiler keeps the 32-bit loads (ESP8266 cannot load bytes from flash)
+static const volatile UINT8_TABLE *RSp = RS;
+static const volatile UINT8_TABLE *rconp = rcon;
+// the inverse cipher is needed only by the ECB and CBC decrypt directions; a build that omits both (see modules/io/crypt/cipher)
+// leaves its key schedule, and so its tables, out
+#ifndef MODDEF_CRYPT_CIPHER_AES_ECB
+	#define MODDEF_CRYPT_CIPHER_AES_ECB 1
+#endif
+#ifndef MODDEF_CRYPT_CIPHER_AES_CBC
+	#define MODDEF_CRYPT_CIPHER_AES_CBC 1
+#endif
+#define mxAESInverse (MODDEF_CRYPT_CIPHER_AES_ECB || MODDEF_CRYPT_CIPHER_AES_CBC)
+#if mxAESInverse
+static const volatile UINT8_TABLE *ptabp = ptab;
+static const volatile UINT8_TABLE *ltabp = ltab;
+#endif
+
 #define RotByte(w)	(((w) << 24) | ((w) >> 8))
 static inline uint32_t
 SubByte(uint32_t w)
@@ -600,15 +620,16 @@ SubByte(uint32_t w)
 	return ((T0[w & 0xff] >> 8) & 0xff) | (T0[(w >> 8) & 0xff] & 0xff00) | (T0[(w >> 16) & 0xff] & 0xff0000) | ((T0[w >> 24] << 8) & 0xff000000);
 }
 
+#if mxAESInverse
 static inline uint8_t
 bmul(uint8_t x, uint8_t y)
 {
 	if (x && y) {
-		int t = ltab[x] + ltab[y];
+		int t = ltabp[x] + ltabp[y];
 		t = (t >> 8) + (t & 0xFF);
 		if (t >= 255)
 			t -= 255;
-		return ptab[t];
+		return ptabp[t];
 	}
 	return 0;
 }
@@ -624,6 +645,7 @@ InvMixCol(uint32_t x)
 {
 	return (prod(0x0e090d0b, x) << 24) | (prod(0x0b0e090d, x) << 16) | (prod(0x0d0b0e09, x) << 8) | prod(0x090d0b0e, x);
 }
+#endif
 
 void
 aes_keysched(const uint8_t *key, int Nk, int Nb, int Nr, enum aes_cipher_direction direction, uint32_t *W)
@@ -642,12 +664,13 @@ aes_keysched(const uint8_t *key, int Nk, int Nb, int Nr, enum aes_cipher_directi
 	for (j = 0; i < n; i++) {
 		w = W[i - 1];
 		if (i % Nk == 0)
-			w = SubByte(RotByte(w)) ^ rcon[j++];
+			w = SubByte(RotByte(w)) ^ rconp[j++];
 		else if (i % Nk == 4 && Nk > 6)
 			w = SubByte(w);
 		W[i] = W[i - Nk] ^ w;
 	}
 
+#if mxAESInverse
 	if (direction == aes_cipher_decryption) {
 		for (i = Nb; i < n - Nb; i++)
 			W[i] = InvMixCol(W[i]);
@@ -660,6 +683,7 @@ aes_keysched(const uint8_t *key, int Nk, int Nb, int Nr, enum aes_cipher_directi
 			}
 		}
 	}
+#endif
 }
 
 #define LOAD(x, in)	x = *in++; x |= *in++ << 8; x |= *in++ << 16; x |= *in++ << 24;
@@ -699,7 +723,7 @@ aes_encrypt4(const uint8_t *in, uint8_t *out, int Nr, uint32_t *sk)
 }
 
 #define RROUND(a0,a1,a2,a3)	(RT0[(uint8_t)a0] ^ RT1[(uint8_t)(a1 >> 8)] ^ RT2[(uint8_t)(a2 >> 16)] ^ RT3[(uint8_t)(a3 >> 24)])
-#define RROUNDL(a0,a1,a2,a3)	(RS[(uint8_t)a0]  ^ (RS[(uint8_t)(a1 >> 8)] << 8) ^ (RS[(uint8_t)(a2 >> 16)] << 16) ^ (RS[(uint8_t)(a3 >> 24)] << 24))
+#define RROUNDL(a0,a1,a2,a3)	(RSp[(uint8_t)a0]  ^ (RSp[(uint8_t)(a1 >> 8)] << 8) ^ (RSp[(uint8_t)(a2 >> 16)] << 16) ^ (RSp[(uint8_t)(a3 >> 24)] << 24))
 
 void
 aes_decrypt4(const uint8_t *in, uint8_t *out, int Nr, uint32_t *sk)

@@ -40,10 +40,10 @@ export default class BER {
 	#i = 0;
 
 	constructor(buffer) {
-		if (buffer instanceof ArrayBuffer)
-			this.#a = new Uint8Array(buffer)
-		else if (buffer instanceof Uint8Array)
+		if (buffer instanceof Uint8Array)
 			this.#a = buffer;
+		else if ((typeof buffer === "object") && (undefined !== buffer?.byteLength) && !ArrayBuffer.isView(buffer))
+			this.#a = new Uint8Array(buffer);		// ArrayBuffer, SharedArrayBuffer, or a host buffer such as a Resource
 		else
 			this.#a = new Uint8Array(new ArrayBuffer(0, {maxByteLength: 16896}));
 	}

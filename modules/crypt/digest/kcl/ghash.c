@@ -103,8 +103,7 @@ static void
 ghash_data_block(ghash_t *ghash, const uint8_t *p16)
 {
 	uint128_t c;
-	c._64[0] = ((const uint64_t *)p16)[0];
-	c._64[1] = ((const uint64_t *)p16)[1];
+	c_memcpy(&c, p16, 16);		// the block may be unaligned (a record in place in a network buffer); 64-bit loads fault on ESP8266
 
 	uint64_t t = SWAP64(c._64[0]);
 	c._64[0] = SWAP64(c._64[1]);

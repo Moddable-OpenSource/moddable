@@ -1,0 +1,19 @@
+{
+	"platforms": {
+		"esp32": {
+			"build": {
+				"CRYPT_BACKEND ?=": "psa"
+			}
+		},
+		"mac": {
+			"build": {
+				"CRYPT_BACKEND ?=": "mac"
+			}
+		},
+		"...": {
+			"build": {
+				"CRYPT_BACKEND ?=": "kcl"
+			}
+		}
+	}
+}

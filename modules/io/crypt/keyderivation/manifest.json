@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/io/crypt/mac",
+		"$(MODDABLE)/modules/io/crypt/backend",
+		"./$(CRYPT_BACKEND)"
+	],
+	"modules": {
+		"embedded:crypt/keyderivation": "./keyderivation"
+	},
+	"preload": [
+		"embedded:crypt/keyderivation"
+	]
+}

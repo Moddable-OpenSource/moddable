@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:crypt/signature": "./signature"
+	},
+	"preload": [
+		"embedded:crypt/signature"
+	]
+}

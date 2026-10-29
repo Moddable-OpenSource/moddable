@@ -6,7 +6,7 @@ flags: [module]
 import Digest from "./digest_FIXTURE.js";
 
 // Prototype methods/getters fail brand check on non-Digest receivers.
-const proto = Object.getPrototypeOf(new Digest({algorithm: "SHA256"}));
+const proto = Object.getPrototypeOf(new Digest({algorithm: "SHA-256"}));
 const blockSizeGet = Object.getOwnPropertyDescriptor(proto, "blockSize").get;
 const outputSizeGet = Object.getOwnPropertyDescriptor(proto, "outputSize").get;
 

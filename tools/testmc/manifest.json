@@ -23,6 +23,13 @@
 		"$(MODDABLE)/modules/io/audioout",
 		"$(MODDABLE)/modules/io/audioin",
 		"$(MODDABLE)/modules/io/crypt/digest",
+		"$(MODDABLE)/modules/io/crypt/cipher",
+		"$(MODDABLE)/modules/io/crypt/random",
+		"$(MODDABLE)/modules/io/crypt/key",
+		"$(MODDABLE)/modules/io/crypt/signature",
+		"$(MODDABLE)/modules/io/crypt/keyagreement",
+		"$(MODDABLE)/modules/io/crypt/mac",
+		"$(MODDABLE)/modules/io/crypt/keyderivation",
 		"$(MODDABLE)/modules/io/update",
 		"$(MODDABLE)/modules/io/flash",
 		"$(COMMODETTO)/manifest_bitmap.json",
@@ -33,7 +40,11 @@
 			"./testworker",
 			"./testsharedworker",
 			"./testthrowworker",
-			"$(MODULES)/base/instrumentation/*"
+			"$(MODULES)/base/instrumentation/*",
+			"$(MODULES)/crypt/arith/modular",
+			"$(MODULES)/crypt/arith/mont",
+			"$(MODULES)/crypt/arith/xsBigIntEx",
+			"$(MODULES)/crypt/arith/x25519"
 		],
 		"~": [
 			"$(MODDABLE)/tools/testmc/commodettoChecksumOut-nop"
@@ -46,7 +57,10 @@
 	},
 	"preload": [
 		"commodetto/*",
-		"piu/Sound"
+		"piu/Sound",
+		"modular",
+		"mont",
+		"x25519"
 	],
 	"config": {
 		"format": "RGB565LE"

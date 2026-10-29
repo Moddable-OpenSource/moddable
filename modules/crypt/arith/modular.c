@@ -40,7 +40,6 @@
 #include "xsBigIntEx.h"
 
 extern txBigInt *fxBigInt_mod_mulinv_general(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
-extern txBigInt *fxBigInt_mod_mulinv_euclid(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m);
 extern txBigInt *fxBigInt_mod_exp_LR(xsMachine *the, txBigInt *r, txBigInt *b, txBigInt *e, txBigInt *m);
 
 void
@@ -54,16 +53,6 @@ xs_mod2_mulinv_general(xsMachine *the)
 	xsmcSetBigInt(xsResult, r);
 }
 
-void
-xs_mod2_mulinv_euclid(xsMachine *the)
-{
-	txBigInt *a, *m, *r;
-
-	a = xsmcToBigInt(xsArg(0));
-	m = xsmcToBigInt(xsArg(1));
-	r = fxBigInt_mod_mulinv_euclid(the, NULL, a, m);
-	xsmcSetBigInt(xsResult, r);
-}
 
 void
 xs_mod2_exp(xsMachine *the)

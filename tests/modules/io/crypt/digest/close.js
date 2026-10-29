@@ -5,7 +5,7 @@ flags: [module]
 
 import Digest from "./digest_FIXTURE.js";
 
-const d = new Digest({algorithm: "SHA256"});
+const d = new Digest({algorithm: "SHA-256"});
 d.close();
 
 // double close is a no-op

@@ -1,0 +1,28 @@
+{
+	"platforms": {
+		"mac": {
+			"include": "./posix"
+		},
+		"lin": {
+			"include": "./posix"
+		},
+		"win": {
+			"include": "./win"
+		},
+		"esp32": {
+			"include": "./esp32"
+		},
+		"esp": {
+			"include": "./esp"
+		},
+		"pico": {
+			"include": "./pico"
+		},
+		"zephyr": {
+			"include": "./zephyr"
+		},
+		"...": {
+			"error": "embedded:crypt/random is not implemented for this platform"
+		}
+	}
+}

@@ -55,6 +55,7 @@ typedef struct sxECParam {
 	txBigInt *m;
 	txU4 u;
 	txBigInt *one;
+	txU1 aIsMinus3;		// a == m - 3 (the NIST curves): doubling uses 3(X - Z^2)(X + Z^2) for M
 } txECParam;
 
 typedef struct sxECPoint {
