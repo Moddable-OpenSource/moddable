@@ -52,12 +52,10 @@ static void runLoop(void *p1, void *p2, void *p3)
 	}
 }
 
-#define PRIORITY 3
-K_THREAD_DEFINE(main_thread, 4096, runLoop, NULL, NULL, NULL, PRIORITY, 0, 0);
-
 int main(void)
 {
-	// nuthin.
+	// XS runs on the main thread: its stack is CONFIG_MAIN_STACK_SIZE, which mcconfig sets from the manifest's creation.nativeStack
+	runLoop(NULL, NULL, NULL);
 
 	return 0;
 }

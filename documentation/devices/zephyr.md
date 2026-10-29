@@ -609,15 +609,26 @@ Zephyr display configuration are found in shield definition files. For example, 
 
 ### ESP32 setjmp
 
-On ESP32 targets, each time `setjmp` is called several lines are logged to the console. This indicates some kind of processor fault. Fortunately, the setjmp still seems to succeeed because a later longjmp works. Because the XS JavaScript engine in the Moddable SDK uses `setjmp` to implement JavaScript exceptions, this can happen often enough that execution is slowed significantly. There [does not appear](https://github.com/zephyrproject-rtos/zephyr/issues/68524) to be a simple solution. As a workaround, you can comment out most of the exception log. Unfortunately, removing all of it cuases the system to hang. The patch is in `arch/xtensa/core/vector_handlers.c` on the following lines 
+On ESP32 targets, the `setjmp` function in ROM executes a `SYSCALL` instruction with `a2` set to 0, which asks the operating system to spill the processor's register windows to the stack. `setjmp` depends on the spill: it copies register values from the stack, and `longjmp` later restores them. ESP-IDF handles this request (see [xtensa_vectors.S](https://github.com/espressif/esp-idf/blob/v5.5/components/xtensa/xtensa_vectors.S#L847)). Zephyr does not expect a `SYSCALL` when user mode is disabled, so it prints a report of the exception, several lines long, to the console and then continues after the instruction. Zephyr's handler does not spill the register windows itself, but the function calls that print the report do as a side effect. That is why `setjmp` works with the report, slowly, and why removing the report entirely crashes the system the first time `longjmp` runs, for example when a JavaScript exception is thrown. On boards whose crash report goes to a serial port nothing is reading, the crash looks like a hang.
+
+The XS JavaScript engine in the Moddable SDK calls `setjmp` each time native code calls into JavaScript, for example to deliver a callback, and for each JavaScript `try` block. Printing the report takes about 1 ms per `setjmp` when nothing is reading the console, and about 12 ms when something is, as in a debug build. This slows execution significantly. See also [Zephyr issue 68524](https://github.com/zephyrproject-rtos/zephyr/issues/68524).
+
+The patch spills the register windows when `a2` is 0, the same way Zephyr's GDB stub does, instead of printing the report, and keeps the report for any other `SYSCALL`. With the patch, `setjmp` takes about 2 µs. The change is in `arch/xtensa/core/vector_handlers.c`:
 
 ```c
 	case EXCCAUSE_SYSCALL:
-		/* Just report it to the console for now */
-		EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
-			(void *)bsa->ps, (void *)bsa->pc);
-		xtensa_dump_stack(interrupted_stack);
+		/* SYSCALL with a2 == 0 is a register window spill request (the ESP32 ROM setjmp issues one; see ESP-IDF xtensa_vectors.S) */
+		if (bsa->a2 == 0) {
+			int32_t a0save;
+
+			__asm__ volatile("mov %0, a0;"
+					 "call0 xtensa_spill_reg_windows;"
+					 "mov a0, %0"
+					 : "=r"(a0save));
+		} else {
+			/* Just report it to the console for now */
+			EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
+				(void *)bsa->ps, (void *)bsa->pc);
+			xtensa_dump_stack(interrupted_stack);
+		}
 ```
-
-Comment out the call to `xtensa_dump_stack`.
-

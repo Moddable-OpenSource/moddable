@@ -23,8 +23,6 @@
 	TCP socket - uing Zephyr low-level net_context
 
 	To do:
-		find a way to eliminate "pending" workaround on write
-
 		deliver details to onError (disconnect, etc)
 		allow collection (xsForget) once error /  disconnect
 */
@@ -34,17 +32,31 @@
 #include "modInstrumentation.h"
 #include "mc.xs.h"			// for xsID_* values
 #include "builtinCommon.h"
-#include "modTImer.h"
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
 
+#ifndef MODDEF_TCP_SENDBUFFER
+	#define MODDEF_TCP_SENDBUFFER (2048)
+#endif
+#ifndef MODDEF_TCP_RECEIVEBUFFER		// received bytes the application has not read for which the receive window is reopened as they arrive: by default, Zephyr's receive window (tcp_rx_window in tcp.c)
+	#if CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE
+		#define MODDEF_TCP_RECEIVEBUFFER (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE)
+	#elif defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+		#define MODDEF_TCP_RECEIVEBUFFER ((CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3)
+	#else
+		#define MODDEF_TCP_RECEIVEBUFFER (CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE / 3)
+	#endif
+#endif
+
+// Zephyr's TCP gives this semaphore when the connection's send window opens, and when the connection closes; its sockets wait on it (sockets_inet.c). The declaration is in subsys/net/ip/tcp_internal.h, which is not public.
+extern struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
+
 struct TCPBufferRecord {
 	struct TCPBufferRecord *next;
 	struct net_pkt *pkt;
 	uint16_t		bytes;			// unread bytes in pkt
-	uint16_t		total;			// total bytes in pkt
 };
 typedef struct TCPBufferRecord TCPBufferRecord;
 typedef struct TCPBufferRecord *TCPBuffer;
@@ -52,13 +64,17 @@ typedef struct TCPBufferRecord *TCPBuffer;
 enum {
 	kTCPWritable = 1 << 0,
 	kTCPReadable = 1 << 1,
-	kTCPError = 1 << 2
+	kTCPError = 1 << 2,
+	kTCPOutput = 1 << 3,			// written bytes to flush
+	kTCPSendable = 1 << 4		// the wait for send space ended
 };
 
 struct TCPRecord {
 	struct net_context *context;
 	xsSlot			obj;
-	TCPBuffer		buffers;
+	TCPBuffer		buffers;		// appended by tcpReceive on the network thread, consumed by the XS thread: changed only in a critical section, as udp.c does
+	uint32_t			unread;			// bytes in buffers: changed only in a critical section
+	uint32_t			deferred;		// bytes received for which the receive window is not yet reopened: changed only in a critical section
 	atomic_t			useCount;
 	atomic_t			triggered;
 	uint8_t			triggerable;
@@ -66,12 +82,12 @@ struct TCPRecord {
 	uint8_t			format;
 	uint8_t			ready;
 	int 				sendBufferSize;
-	int				sendBytesInFlight;
 
-	uint8_t			*pending;
-	uint8_t			*pendingBuffer;
-	uint32_t			pendingBytes;
-	modTimer			pendingTimer;
+	uint8_t			*output;			// written bytes Zephyr's TCP has not queued yet: sendBufferSize bytes, while in use
+	uint32_t			outputBytes;
+	uint8_t			waiting;			// for send space: holds tcp until tcpDeliver sees kTCPSendable
+	struct k_work_poll	sendable;
+	struct k_poll_event	sendableEvent;
 
 	xsMachine		*the;
 	xsSlot			*onReadable;
@@ -81,23 +97,22 @@ struct TCPRecord {
 typedef struct TCPRecord TCPRecord;
 typedef struct TCPRecord *TCP;
 
-typedef struct {
-	TCP tcp;
-	int byteLength;
-} TCPWriteRecord, *TCPWrite;
-
 static void removeTCPCallbacks(TCP tcp);
 static void tcpHold(TCP tcp);
 static void tcpRelease(TCP tcp);
 
+static TCP tcpNew(xsMachine *the, struct net_context *context);
 static void tcpConnect(struct net_context *context, int status, void *user_data);
 static void tcpReceive(struct net_context *context, struct net_pkt *pkt, union net_ip_header *ip_hdr, union net_proto_header *proto_hdr, int status, void *user_data);
-static void tcpSent(struct net_context *context, int status, void *user_data);
+static void tcpReopen(TCP tcp);
+static void tcpWaitSendable(TCP tcp, uint8_t buffers);
+static void tcpSendable(struct k_work *work);
+static uint8_t tcpWindowOpen(TCP tcp);
+static void tcpFlush(TCP tcp);
 static void tcpTrigger(TCP tcp, uint8_t trigger);
 static void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void doClose(xsMachine *the, xsSlot *instance);
-static void tcpTrySend(modTimer timer, void *refcon, int refconSize);
 
 static const xsHostHooks ICACHE_RODATA_ATTR xsTCPHooks = {
 	xs_tcp_destructor,
@@ -143,10 +158,8 @@ void xs_tcp_constructor(xsMachine *the)
 			if (!context)
 				xsUnknownError("invalid from");
 
-			if ((triggerable & kTCPWritable) && (tcp->sendBufferSize > tcp->sendBytesInFlight))
+			if ((triggerable & kTCPWritable) && !tcp->outputBytes)
 				triggered |= kTCPWritable;
-			if ((triggerable & kTCPReadable) && tcp->buffers)
-				triggered |= kTCPReadable;
 
 			xsForget(tcp->obj);
 			xsmcSetHostData(xsVar(0), NULL);
@@ -167,6 +180,7 @@ void xs_tcp_constructor(xsMachine *the)
 			result = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &context);
 			if (result < 0)
 				xsRangeError("no socket");
+			net_context_ref(context);		// the stack's reference, released when its connection is: it uses the context through the closing handshake, after net_context_put releases ours
 
 //@@			skt->so_options |= SOF_REUSEADDR;
 			struct sockaddr_in local = {0};
@@ -182,21 +196,12 @@ void xs_tcp_constructor(xsMachine *the)
 	}
 
 	if (C_NULL == tcp) {
-		tcp = c_calloc(1, sizeof(TCPRecord));
+		tcp = tcpNew(the, context);
 		if (!tcp) {
 			net_context_put(context);
 			xsRangeError("no memory");
 		}
-
-		modInstrumentationAdjust(NetworkSockets, +1);
-
-		tcp->the = the;
 		tcp->format = format;
-		atomic_set(&tcp->useCount, 0);
-		tcpHold(tcp);
-
-		tcp->sendBufferSize = 2048;
-		tcp->context = context;
 
 		connect = true;
 	}
@@ -225,16 +230,21 @@ void xs_tcp_constructor(xsMachine *the)
 
 	builtinInitializeTarget(the);
 
-	result = net_context_recv(context, tcpReceive, K_NO_WAIT, tcp);
-	if (result < 0)
-		xsUnknownError("error");
-
-	tcp->triggerable = triggerable;
+	tcp->triggerable = triggerable;		// before net_context_recv: from then, tcpReceive may run on the network thread
 	if (triggerable) {
 		tcp->onReadable = onReadable;
 		tcp->onWritable = onWritable;
 		tcp->onError = onError;
 	}
+
+	result = net_context_recv(context, tcpReceive, K_NO_WAIT, tcp);		// an accepted connection's tcpReceive is already registered, with this tcp
+	if (result < 0)
+		xsUnknownError("error");
+
+	if ((triggerable & kTCPReadable) && tcp->buffers)		// after triggerable is set: tcpReceive triggers what arrives from then
+		triggered |= kTCPReadable;
+	if (tcp->error)		// an accepted connection may have closed before it was read from the listener
+		triggered |= kTCPError;
 
 	if (connect) {
 		if (net_context_connect(context, (struct sockaddr *)&remote, sizeof(remote), tcpConnect, K_FOREVER, tcp))
@@ -244,10 +254,33 @@ void xs_tcp_constructor(xsMachine *the)
 		tcpTrigger(tcp, triggered);
 }
 
+TCP tcpNew(xsMachine *the, struct net_context *context)
+{
+	TCP tcp = c_calloc(1, sizeof(TCPRecord));
+	if (!tcp)
+		return NULL;
+
+	modInstrumentationAdjust(NetworkSockets, +1);
+
+	tcp->the = the;
+	tcp->format = kIOFormatBuffer;
+	atomic_set(&tcp->useCount, 0);
+	tcpHold(tcp);
+	k_work_poll_init(&tcp->sendable, tcpSendable);
+
+	tcp->sendBufferSize = MODDEF_TCP_SENDBUFFER;
+	tcp->context = context;
+
+	return tcp;
+}
+
 void xs_tcp_destructor(void *data)
 {
 	TCP tcp = data;
 	if (!tcp) return;
+
+	if (tcp->waiting)		// only when the machine is torn down: otherwise the wait holds tcp
+		k_work_poll_cancel(&tcp->sendable);
 
 	if (tcp->context) {
 		removeTCPCallbacks(tcp);
@@ -255,18 +288,19 @@ void xs_tcp_destructor(void *data)
 		net_context_put(tcp->context);
 	}
 
-	while (tcp->buffers) {
-		TCPBuffer buffer = tcp->buffers;
-		tcp->buffers = buffer->next;
+	builtinCriticalSectionBegin();
+	TCPBuffer buffers = tcp->buffers;
+	tcp->buffers = NULL;
+	builtinCriticalSectionEnd();
+	while (buffers) {
+		TCPBuffer buffer = buffers;
+		buffers = buffer->next;
 		net_pkt_unref(buffer->pkt);
 		c_free(buffer);
 	}
 
-	if (tcp->pending)
-		c_free(tcp->pending);
-
-	if (tcp->pendingTimer)
-		modTimerRemove(tcp->pendingTimer);
+	if (tcp->output)
+		c_free(tcp->output);
 
 	c_free(data);
 
@@ -290,13 +324,20 @@ void doClose(xsMachine *the, xsSlot *instance)
 		xsmcSetHostData(*instance, NULL);
 		xsForget(tcp->obj);
 		xsmcSetHostDestructor(*instance, NULL);
-		atomic_set(&tcp->triggered, 0);
+		atomic_and(&tcp->triggered, kTCPSendable);		// a wait that already ended still releases its hold in tcpDeliver
+		if (tcp->waiting && (0 == k_work_poll_cancel(&tcp->sendable))) {
+			tcp->waiting = false;
+			tcpRelease(tcp);
+		}
 		tcpRelease(tcp);
 	}
 }
 
 void xs_tcp_close(xsMachine *the)
 {
+	TCP tcp = xsmcGetHostData(xsThis);
+	if (tcp && xsmcGetHostDataValidate(xsThis, (void *)&xsTCPHooks) && tcp->ready && tcp->outputBytes)
+		tcpFlush(tcp);		// what Zephyr's TCP queues now is sent; the rest is lost
 	doClose(the, &xsThis);
 }
 
@@ -341,6 +382,8 @@ void xs_tcp_read(xsMachine *the)
 		out = &value;
 	}
 
+	int consumed = requested;
+
 	//@@ not sure we need a loop... that was mostly about lwip fragments
 	while (requested) {
 		int use = requested;
@@ -357,8 +400,9 @@ void xs_tcp_read(xsMachine *the)
 		buffer->bytes -= use;
 
 		if (0 == buffer->bytes) {
+			builtinCriticalSectionBegin();		// tcpReceive may be appending to this buffer
 			tcp->buffers = buffer->next;
-			net_context_update_recv_wnd(tcp->context, buffer->total);
+			builtinCriticalSectionEnd();
 			net_pkt_unref(buffer->pkt);
 			c_free(buffer);
 			if (NULL == tcp->buffers) {
@@ -368,6 +412,11 @@ void xs_tcp_read(xsMachine *the)
 			}
 		}
 	}
+
+	builtinCriticalSectionBegin();
+	tcp->unread -= consumed;
+	builtinCriticalSectionEnd();
+	tcpReopen(tcp);		// reopens the receive window for bytes held back while unread ones filled MODDEF_TCP_RECEIVEBUFFER
 
 	if (kIOFormatNumber == tcp->format)
 		xsmcSetInteger(xsResult, value);
@@ -380,7 +429,7 @@ void xs_tcp_write(xsMachine *the)
 	void *buffer;
 	uint8_t value;
 
-	if (!tcp->ready || tcp->pending)
+	if (!tcp->ready)
 		xsUnknownError("not ready");
 
 	if (tcp->error || !tcp->context)
@@ -393,41 +442,20 @@ void xs_tcp_write(xsMachine *the)
 		value = (uint8_t)xsmcToInteger(xsArg(0));
 		buffer = &value;
 	}
-	int available = tcp->sendBufferSize - tcp->sendBytesInFlight;
-	if ((needed > available) || tcp->pending)
+	if (needed > (tcp->sendBufferSize - tcp->outputBytes))
 		xsUnknownError("would block");
 
-	TCPWrite tw = c_malloc(sizeof(TCPWriteRecord));
-	if (!tw)
-		xsUnknownError("no memory");
-	tw->tcp = tcp;
-	tw->byteLength = needed;
-
-	int result = net_context_send(tcp->context, buffer, needed, tcpSent, K_NO_WAIT, tw);
-	if (-EAGAIN == result)
-		result = 0;
-	else if (result < 0) {
-		xsTrace("tcp write failed\n");
-		tcpTrigger(tcp, kTCPError);		//@@ correct!?!
-		return;
+	if (!tcp->output) {
+		tcp->output = c_malloc(tcp->sendBufferSize);
+		if (!tcp->output)
+			xsUnknownError("no memory");
 	}
-
-	if (result != needed) {
-		tcp->pending = c_malloc(needed - result);
-		if (!tcp->pending)
-			xsUnknownError("no memory");		//@@ unrecoverable
-		c_memcpy(tcp->pending, result + (uint8_t *)buffer, needed - result);
-		tcp->pendingBuffer = tcp->pending;
-		tcp->pendingBytes = needed - result;
-
-		tcp->pendingTimer = modTimerAdd(100, 50, tcpTrySend, &tcp, sizeof(tcp));
-	}
-
-	tcp->sendBytesInFlight += needed;
-	available -= needed;
+	c_memcpy(tcp->output + tcp->outputBytes, buffer, needed);
+	tcp->outputBytes += needed;
+	tcpTrigger(tcp, kTCPOutput);		// tcpDeliver flushes what is written this turn together
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
-	xsmcSetInteger(xsResult, tcp->pendingBytes ? 0 : available);
+	xsmcSetInteger(xsResult, tcp->sendBufferSize - tcp->outputBytes);
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
@@ -481,6 +509,17 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 		tcp->ready = false;
 	}
 
+	if (triggered & kTCPSendable) {
+		tcp->waiting = false;
+		tcpRelease(tcp);		// the wait's hold: this delivery holds tcp too
+	}
+
+	if ((triggered & (kTCPOutput | kTCPSendable)) && tcp->ready && tcp->outputBytes && !tcp->waiting) {
+		tcpFlush(tcp);
+		if (!tcp->outputBytes)		// all written bytes are with Zephyr's TCP: onWritable refills while they are sent
+			triggered |= kTCPWritable;
+	}
+
 	if ((triggered & tcp->triggerable & kTCPReadable) && tcp->buffers) {
 		TCPBuffer walker;
 		int bytes = 0;
@@ -497,9 +536,9 @@ void tcpDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLengt
 	if (tcp->buffers && tcp->error)
 		;		// error delivered after receive buffers empty
 	else if (!tcp->error) {
-		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->context && ((tcp->sendBufferSize - tcp->sendBytesInFlight) > 0) && (0 == tcp->pendingBytes)) {
+		if ((triggered & tcp->triggerable & kTCPWritable) && tcp->context && !tcp->outputBytes) {
 			xsBeginHost(the);
-				xsmcSetInteger(xsResult, tcp->sendBufferSize - tcp->sendBytesInFlight);
+				xsmcSetInteger(xsResult, tcp->sendBufferSize);
 				xsCallFunction1(xsReference(tcp->onWritable), tcp->obj, xsResult);
 			xsEndHost(the);
 		}
@@ -541,17 +580,17 @@ void tcpReceive(struct net_context *context, struct net_pkt *pkt, union net_ip_h
 
 	buffer = c_malloc(sizeof(TCPBufferRecord));
 	if (!buffer) {
-		net_pkt_unref(buffer->pkt);
+		net_pkt_unref(pkt);
 		return;		//@@ are we toast here?
 	}
 
 	buffer->next = NULL;
 	buffer->pkt = pkt;
 	buffer->bytes = net_pkt_remaining_data(pkt);
-	buffer->total = buffer->bytes;
 
 	modInstrumentationAdjust(NetworkBytesRead, buffer->bytes);
 
+	builtinCriticalSectionBegin();		// the XS thread may be removing the head
 	if (tcp->buffers) {
 		TCPBuffer walker;
 
@@ -561,22 +600,87 @@ void tcpReceive(struct net_context *context, struct net_pkt *pkt, union net_ip_h
 	}
 	else
 		tcp->buffers = buffer;
+	tcp->unread += buffer->bytes;
+	tcp->deferred += buffer->bytes;
+	builtinCriticalSectionEnd();
 
-	net_context_update_recv_wnd(tcp->context, -buffer->total);
+	tcpReopen(tcp);		// Zephyr's TCP shrinks the window as it delivers data, and delays its ACK while the window is short
 
 	if (tcp->triggerable & kTCPReadable)
 		tcpTrigger(tcp, kTCPReadable);
 }
 
-void tcpSent(struct net_context *context, int status, void *user_data)
+void tcpReopen(TCP tcp)		// network thread (tcpReceive) or XS thread (xs_tcp_read)
 {
-	TCPWrite tw = user_data;
-	if (!tw) return;
-	TCP tcp = tw->tcp;
-	tcp->sendBytesInFlight -= tw->byteLength;
-	c_free(tw);
+	int32_t amount;
 
-	tcpTrigger(tcp, (status < 0) ? kTCPError : kTCPWritable);
+	builtinCriticalSectionBegin();
+	amount = MODDEF_TCP_RECEIVEBUFFER - (int32_t)(tcp->unread - tcp->deferred);		// room for more unread bytes with the window reopened
+	if (amount > (int32_t)tcp->deferred)
+		amount = tcp->deferred;
+	if (amount > 0)
+		tcp->deferred -= amount;
+	builtinCriticalSectionEnd();
+
+	if (amount > 0)		// Zephyr's TCP sends the window update (and the ACK it delayed) at once: tcp_in delivers data after updating the ACK and releasing the connection lock
+		net_context_update_recv_wnd(tcp->context, amount);
+}
+
+void tcpWaitSendable(TCP tcp, uint8_t buffers)
+{
+	int result;
+
+	if (tcp->waiting)
+		return;
+
+	tcp->waiting = true;
+	tcpHold(tcp);
+	if (buffers || !tcp->context->tcp)		// out of network buffers (or not Zephyr's native TCP): try again shortly
+		result = k_work_poll_submit(&tcp->sendable, &tcp->sendableEvent, 0, K_MSEC(10));
+	else {
+		k_poll_event_init(&tcp->sendableEvent, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, net_tcp_tx_sem_get(tcp->context));
+		result = k_work_poll_submit(&tcp->sendable, &tcp->sendableEvent, 1, K_SECONDS(1));		// the timeout is only a safety net
+	}
+	if (result)
+		tcpTrigger(tcp, kTCPSendable);
+}
+
+void tcpSendable(struct k_work *work)		// on the system work queue
+{
+	struct k_work_poll *sendable = CONTAINER_OF(work, struct k_work_poll, work);
+	tcpTrigger(CONTAINER_OF(sendable, TCPRecord, sendable), kTCPSendable);
+}
+
+uint8_t tcpWindowOpen(TCP tcp)
+{
+	return !tcp->context->tcp || k_sem_count_get(net_tcp_tx_sem_get(tcp->context));
+}
+
+void tcpFlush(TCP tcp)
+{
+	if (!tcpWindowOpen(tcp)) {
+		tcpWaitSendable(tcp, false);
+		return;
+	}
+
+	int result = net_context_send(tcp->context, tcp->output, tcp->outputBytes, C_NULL, K_NO_WAIT, C_NULL);
+	if (result < 0) {
+		if ((-EAGAIN == result) || (-ENOBUFS == result))		// window full, network buffers exhausted: both pass
+			tcpWaitSendable(tcp, -ENOBUFS == result);
+		else
+			tcpTrigger(tcp, kTCPError);
+		return;
+	}
+
+	tcp->outputBytes -= result;
+	if (tcp->outputBytes) {		// Zephyr's TCP queues only what its send window holds
+		c_memmove(tcp->output, tcp->output + result, tcp->outputBytes);
+		tcpWaitSendable(tcp, false);
+	}
+	else {
+		c_free(tcp->output);
+		tcp->output = C_NULL;
+	}
 }
 
 void tcpTrigger(TCP tcp, uint8_t trigger)
@@ -602,39 +706,13 @@ void xs_tcp_mark(xsMachine* the, void* it, xsMarkRoot markRoot)
 	}
 }
 
-void tcpTrySend(modTimer timer, void *refcon, int refconSize)
-{
-	TCP tcp = *(TCP *)refcon;
-	int result = net_context_send(tcp->context, tcp->pendingBuffer, tcp->pendingBytes, C_NULL, K_NO_WAIT, C_NULL);
-	if (result <= 0) {
-		if (-EAGAIN == result)
-			result = 0;
-		if (result)
-			tcpTrigger(tcp, kTCPError);
-		return;
-	}
-
-	tcp->pendingBuffer += result;
-	tcp->pendingBytes -= result;
-	if (tcp->pendingBytes)
-		return;
-
-	c_free(tcp->pending);
-	tcp->pending = tcp->pendingBuffer = C_NULL;
-
-	modTimerRemove(tcp->pendingTimer);
-	tcp->pendingTimer = C_NULL;
-
-	tcpTrigger(tcp, kTCPWritable);
-}
-
 /*
 	Listener
 */
 
 struct ListenerPendingRecord {
 	struct ListenerPendingRecord *next;
-	struct net_context *context;
+	TCP					tcp;		// created at accept, so that tcpReceive has data that arrives before the connection is read
 };
 typedef struct ListenerPendingRecord ListenerPendingRecord;
 typedef struct ListenerPendingRecord *ListenerPending;
@@ -693,6 +771,7 @@ void xs_listener_constructor(xsMachine *the)
 
 	if (net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &context) < 0)
 		xsUnknownError("no socket");
+	net_context_ref(context);		// the stack's reference, as for a connection
 
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET,
@@ -741,7 +820,7 @@ void xs_listener_destructor_(void *data)
 	while (listener->pending) {
 		ListenerPending pending = listener->pending;
 		listener->pending = pending->next;
-		net_context_put(pending->context);
+		tcpRelease(pending->tcp);
 		c_free(pending);
 	}
 
@@ -765,23 +844,27 @@ void xs_listener_read(xsMachine *the)
 {
 	Listener listener = xsmcGetHostDataValidate(xsThis, (void *)&xsListenerHooks);
 	ListenerPending pending;
-	TCP tcp;
+	TCP tcp, unused;
 
 	if (NULL == listener->pending)
 		return;
 
 	xsResult = xsNewFunction0(xsArg(0));
-	tcp = xsmcGetHostDataValidate(xsResult, (void *)&xsTCPHooks);
+	unused = xsmcGetHostDataValidate(xsResult, (void *)&xsTCPHooks);
 
 	builtinCriticalSectionBegin();
 	pending = listener->pending;
 	listener->pending = pending->next;
 	builtinCriticalSectionEnd();
 
-	tcp->context = pending->context;
+	tcp = pending->tcp;
 	c_free(pending);
 
-	tcp->ready = true;
+	xsmcSetHostData(xsResult, tcp);		// the instance takes the record created at accept, as the from constructor takes it from this instance
+	tcp->obj = xsResult;
+	xsRemember(tcp->obj);
+	xsForget(unused->obj);
+	tcpRelease(unused);
 }
 
 void xs_listener_get_port(xsMachine *the)
@@ -818,7 +901,12 @@ static void listenerAccept(struct net_context *context, struct sockaddr *addr, s
 {
 	Listener listener = user_data;
 	ListenerPending pending, walker;
+	TCP tcp;
 
+	if (status < 0)		// the network went down: context is the listener's own
+		return;
+
+	net_context_ref(context);		// the stack's reference, as for a connection
 	net_context_accept(listener->context, listenerAccept, K_FOREVER, listener);
 
 // #ifdef mxDebug
@@ -829,13 +917,21 @@ static void listenerAccept(struct net_context *context, struct sockaddr *addr, s
 // #endif
 
 	pending = c_malloc(sizeof(ListenerPendingRecord));
-	if (C_NULL == pending) {
+	tcp = pending ? tcpNew(listener->the, context) : NULL;
+	if (C_NULL == tcp) {
+		c_free(pending);
 		net_context_put(context);
 		//@@ listener onError
 		return;
 	}
+	tcp->ready = true;
+	if (net_context_recv(context, tcpReceive, K_NO_WAIT, tcp) < 0) {		// at once, as Zephyr's sockets do: Zephyr's TCP acknowledges and discards data that arrives while a connection has no receive callback
+		tcpRelease(tcp);
+		c_free(pending);
+		return;
+	}
 	pending->next = NULL;
-	pending->context = context;
+	pending->tcp = tcp;
 
 	builtinCriticalSectionBegin();
 	walker = listener->pending;

@@ -243,6 +243,12 @@
 				"~": [
 					"$(BUILD)/devices/zephyr/setup/network"
 				]
+			},
+			"creation": {
+				"nativeStack": 15360
+			},
+			"zephyrConfig": {
+				"CONFIG_HEAP_MEM_POOL_ADD_SIZE_MODDABLE": "131072"
 			}
 		}
 	}

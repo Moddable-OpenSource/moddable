@@ -364,6 +364,9 @@ Using this approach, the memory allocator on the microcontroller allocates the f
 
 > **Note**: The microcontroller runtime could be enhanced to allocate the chunk heap across multiple memory blocks; to-date this has not been necessary. The chunk heap is allocated before the stack and slot heap, allowing it to allocate the largest possible contiguous free block.
 
+#### `nativeStack`
+The size in bytes of the native (C) stack of the task or thread that runs the virtual machine. Native code, including cryptography libraries, runs on this stack, separate from the JavaScript `stack`. When omitted or `0`, the platform default is used: 10 KB on ESP32 (15 KB in test builds) and 8 KB on Zephyr, where it sets `CONFIG_MAIN_STACK_SIZE`.
+
 #### `keys`
 the VM allocates space for `keys.initial` runtime keys when the VM is initialized. For embedded projects, this number should be small as most keys are allocated when building, not at runtime. To prevent more keys than this being allocated at runtime, set `keys.incremental` to `0`. To allow additional keys to be allocated, provide a non-zero value for `keys.incremental`.
 

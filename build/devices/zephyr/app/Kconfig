@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# The Moddable SDK's share of the kernel heap (k_malloc): the XS machine's block and the native allocations of the
+# runtime's modules. Zephyr sizes the heap as the sum of every HEAP_MEM_POOL_ADD_SIZE_ requirement, so the share of
+# a driver, such as the ESP32 Wi-Fi driver's, adds to this rather than competing for it.
+config HEAP_MEM_POOL_ADD_SIZE_MODDABLE
+	int "Kernel heap for the Moddable SDK runtime"
+	default 65536
+
+source "Kconfig.zephyr"
