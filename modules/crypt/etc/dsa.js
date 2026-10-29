@@ -81,6 +81,8 @@ export default class DSA {
 		var q = this.q;
 		var g = this.g;
 		var y = this.x;		// as the public key
+		if ((r <= 0n) || (r >= q.m) || (s <= 0n) || (s >= q.m))
+			return false;		// r and s must be in [1, q - 1] (FIPS 186-4 section 4.7)
 		var w = q.mulinv(s);
 		var h = BigInt.fromArrayBuffer(H);
 		var u1 = q.mul(h, w);

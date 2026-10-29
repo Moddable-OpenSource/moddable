@@ -84,13 +84,15 @@ export default class ECDSA {
 		var Qu = this.u;
 		var G = this.G;
 		var n = this.n;
+		if ((r <= 0n) || (r >= n.m) || (s <= 0n) || (s >= n.m))
+			return false;		// r and s must be in [1, n - 1] (SEC 1 section 4.1.4)
 		var e = BigInt.fromArrayBuffer(H);
 		var s_inv = n.mulinv(s);
 		var u1 = n.mul(e, s_inv);
 		var u2 = n.mul(r, s_inv);
 		// var R = ec.add(ec.mul(G, u1), ec.mul(Qu, u2));
 		var R = ec.mul2(G, u1, Qu, u2);
-		return R.X === r;
+		return !R.isZero() && (n.mod(R.X) === r);
 	}
 	verify(H, sig, asn1) {
 		var r, s;

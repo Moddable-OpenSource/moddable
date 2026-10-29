@@ -48,6 +48,19 @@ import PKCS8 from "pkcs8"
 
 const globalCerts = [];
 
+const basicConstraints = Object.freeze([2, 5, 29, 19]);
+
+function isCA(cert) {		// basicConstraints cA (RFC 5280 section 4.2.1.9): SEQUENCE { cA BOOLEAN DEFAULT FALSE, pathLenConstraint INTEGER OPTIONAL }
+	const extension = X509.decodeExtension(cert, basicConstraints);
+	if (!extension)
+		return false;
+	const ber = new BER(new BER(extension).getSequence());
+	if (!ber.readable || (0x01 !== ber.getTag()))
+		return false;
+	ber.getLength();
+	return 0 !== ber.getc();
+}
+
 class CertificateManager {
 	#verify;
 	#registeredCerts = [];
@@ -115,15 +128,16 @@ class CertificateManager {
 		if (!this.#verify)
 			return true;
 
-		let length = certs.length - 1, x509, validity, now = Date.now(), spki, match;
-		const registeredCerts = this.#registeredCerts.concat(globalCerts);
-		let tls_server_name = options.tls_server_name?.toLowerCase();
-		if (!tls_server_name) {
-			trace(`tls_server_name required\n`);
+		const length = certs.length;
+		const tls_server_name = options.tls_server_name?.toLowerCase();
+		if (!length || !tls_server_name) {
+			trace(`certificate and tls_server_name required\n`);
 			return false;
 		}
 
+		// the leaf certificate names the host: a dNSName (one wildcard, in place of the leftmost label) or an IPv4 iPAddress
 		const names = X509.decodeSAN(certs[0]);
+		let match = false;
 		for (let j = 0; j < names?.length; j++) {
 			let name = names[j];
 			if (2 === name.tag) {			// dNSName
@@ -146,65 +160,61 @@ class CertificateManager {
 			}
 			if (match) break;
 		}
-
-		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
-		for (let i = 0; i < length; i++) {
-			x509 = X509.decode(certs[i]);
-
-			validity = X509.decodeTBS(x509.tbs).validity;
-			if (!((validity.from < now) && (now < validity.to))) {
-				trace("date validation failed on received certificate\n");
-				continue;
-			}
-
-			if (!this._verify(X509.decodeSPKI(certs[i + 1]), x509))
-				continue;
-			x509 = undefined;
-
-			let aki = X509.decodeAKI(certs[i + 1]);
-			for (let j = 0; j < registeredCerts.length; j++) {
-				if (Bin.comp(X509.decodeSKI(registeredCerts[j]), aki) == 0) {
-					spki = X509.decodeSPKI(registeredCerts[j]);
-					if (spki && this._verify(spki, X509.decode(certs[i + 1]))) {
-						if (!match) trace(`subjectAltName match failed for ${tls_server_name}\n`);
-						return match;
-					}
-					spki = undefined;
-				}
-			}
-
-			spki = this.findCert("ca.ski", aki);
-			aki = undefined;
-			if (spki && this._verify(spki, X509.decode(certs[i + 1]))) {
-				if (!match) trace(`subjectAltName match failed for ${tls_server_name}\n`);
-				return match;
-			}
-				// else fall thru
-			spki = undefined;
-		}
-
-		x509 = X509.decode(certs[length]);
-		validity = X509.decodeTBS(x509.tbs).validity;
-		if (!((validity.from < now) && (now < validity.to))) {
-			trace("date validation failed\n");
+		if (!match) {
+			trace(`subjectAltName match failed for ${tls_server_name}\n`);
 			return false;
 		}
 
-		spki = this.findCert("ca.ski", X509.decodeAKI(certs[length]));
-		if (spki && this._verify(spki, x509)) {
-			if (!match) trace(`subjectAltName match failed for ${tls_server_name}\n`);
-			return match;
-		}
-			// else fall thru
+		// every certificate is within its validity period and is signed either by a trusted certificate, which ends the chain,
+		// or by the certificate that follows it, which must be a CA (RFC 5280 sections 6.1 and 4.2.1.9). The trusted certificates
+		// are those registered (the certificate option) and the bundled roots, both found by the key identifier they sign with.
+		const registeredCerts = this.#registeredCerts.concat(globalCerts);
+		const now = Date.now();
+		let x509, validity, issuer, aki;
+		for (let i = 0; i < length; i++) {
+			x509 = X509.decode(certs[i]);
+			validity = X509.decodeTBS(x509.tbs).validity;
+			if (!((validity.from < now) && (now < validity.to))) {
+				trace("date validation failed on received certificate\n");
+				return false;
+			}
 
-		for (let i = 0; i < registeredCerts.length; i++) {
-			spki = X509.decodeSPKI(registeredCerts[i]);
-			if (spki && this._verify(spki, x509)) {
-				if (!match) trace(`subjectAltName match failed for ${tls_server_name}\n`);
-				return match;
+			aki = X509.decodeAKI(certs[i]);
+			if (aki) {
+				for (let j = 0; j < registeredCerts.length; j++) {
+					if (0 === Bin.comp(X509.decodeSKI(registeredCerts[j]), aki)) {
+						issuer = X509.decodeSPKI(registeredCerts[j]);
+						break;
+					}
+				}
+				if (!issuer)
+					issuer = this.findCert("ca.ski", aki);
+				aki = undefined;
+			}
+			if (issuer && this._verify(issuer, x509))
+				return true;		// signed by a trusted certificate
+			issuer = undefined;
+
+			if ((i + 1) < length) {
+				if (!isCA(certs[i + 1])) {
+					trace("issuer is not a certificate authority\n");
+					return false;
+				}
+				if (!this._verify(X509.decodeSPKI(certs[i + 1]), x509)) {
+					trace("certificate not signed by its issuer\n");
+					return false;
+				}
+				continue;
+			}
+
+			// the last certificate: a registered certificate may have signed it, or be it, without a key identifier to find it by
+			for (let j = 0; j < registeredCerts.length; j++) {
+				if (this._verify(X509.decodeSPKI(registeredCerts[j]), x509))
+					return true;
 			}
 		}
 
+		trace("certificate chain does not end at a trusted certificate\n");
 		return false;
 	}
 
@@ -238,30 +248,16 @@ class CertificateManager {
 			pk = PKCS1_5;
 			break;
 		case "1,2,840,10040,4,3":
-		case "1,3,14,3,2,27": {
-			hash = "SHA1";
-			pk = DSA;
-			// need to decode the sig value into <r, s>
-			const ber = new BER(x509.sig);
-			if (ber.getTag() !== 0x30)
-				throw new Error;
-			ber.getLength();
-			sig = (ArrayBuffer.fromBigInt(ber.getInteger())).concat(ArrayBuffer.fromBigInt(ber.getInteger()));				 
-			} break;
+		case "1,3,14,3,2,27":		// DSA with SHA1; the signature is DER SEQUENCE {r, s}, decoded and range-checked by the verifier
+			return (new DSA(spki)).verify((new Crypt.Digest("SHA1")).process(x509.tbs), sig, true);
 		case "1,2,840,10045,4,3,1":
 		case "1,2,840,10045,4,3,2":
 		case "1,2,840,10045,4,3,3":
 		case "1,2,840,10045,4,3,4": {	// ECDSA with SHA224, SHA256, SHA384, SHA512
 			hash = ["SHA224", "SHA256", "SHA384", "SHA512"][x509.algo[6] - 1];
-			pk = ECDSA;
-			// need to decode the sig value into <r, s>
-			const ber = new BER(sig);
-			if (ber.getTag() !== 0x30)
-				throw new Error;
-			ber.getLength();
-			sig = (ArrayBuffer.fromBigInt(ber.getInteger())).concat(ArrayBuffer.fromBigInt(ber.getInteger()));
-			return (new pk(spki.pub, spki.curve, false, [] /* any oid */)).verify((new Crypt.Digest(hash)).process(x509.tbs), sig);
-			} break;
+			// the signature is DER SEQUENCE {r, s}, decoded and range-checked by the verifier
+			return (new ECDSA(spki.pub, spki.curve)).verify((new Crypt.Digest(hash)).process(x509.tbs), sig, true);
+			}
 		default:
 			throw new Error("Cert: unsupported algorithm: " + x509.algo.toString());
 		}
