@@ -53,7 +53,13 @@
 #define NO_BF96
 #define NO_HEX_FP
 #define Omit_Private_Memory
-#define ROUND_BIASED
+/*
+ * ECMA-262 requires Number.prototype.toFixed, toExponential, and toPrecision to pick the
+ * larger value when two candidates are equally close, while Number parsing and toString
+ * round ties to even. dtoa.c has one switch for both, ROUND_BIASED, so it stays undefined
+ * for the IEEE defaults and the final digit of modes 2 and 3 rounds ties up under this one.
+ */
+#define XS_ROUND_TIES_UP
 
 #if mxLittleEndian
 #define IEEE_8087
@@ -6029,7 +6035,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 				  }
 #endif
 				dval(&u) += dval(&u);
-#ifdef ROUND_BIASED
+#if defined(ROUND_BIASED) || defined(XS_ROUND_TIES_UP)
 				if (dval(&u) >= ds)
 #else
 				if (dval(&u) > ds || (dval(&u) == ds && L & 1))
@@ -6124,7 +6130,11 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 		}
 #endif
 	if (ilim <= 0 && (mode == 3 || mode == 5)) {
+#ifdef XS_ROUND_TIES_UP
+		if (ilim < 0 || cmp(b,S = multadd(S,5,0 MTb)) < 0) {
+#else
 		if (ilim < 0 || cmp(b,S = multadd(S,5,0 MTb)) <= 0) {
+#endif
 			/* no digits, fcvt style */
  no_digits:
 			k = -1 - ndigits;
@@ -6264,7 +6274,7 @@ dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char
 #endif
 	b = lshift(b, 1 MTb);
 	j = cmp(b, S);
-#ifdef ROUND_BIASED
+#if defined(ROUND_BIASED) || defined(XS_ROUND_TIES_UP)
 	if (j >= 0)
 #else
 	if (j > 0 || (j == 0 && dig & 1))
