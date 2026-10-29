@@ -36,7 +36,7 @@
 #include "moddableAppState.h"
 
 #include "applib/app.h"
-#include "services/filesystem/app_file.h"
+#include "services/process_management/app_file.h"
 #include "pbl/fs/fs.h"
 #include "pbl/fs/pfs.h"
 
