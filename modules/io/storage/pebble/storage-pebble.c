@@ -148,13 +148,14 @@ void xs_directorystorage_close(xsMachine *the)
 
 void xs_directorystorage_open(xsMachine *the)
 {
-	char domain[64];
+	char path[sizeof("/") + 64] = "/";
+	char *domain = path + sizeof("/") - 1;
 	xsDirectoryRecord d = {0};
 
 	xsmcVars(1);
 	if (!xsmcGet(xsVar(0), xsArg(0), xsID_path))
 		xsUnknownError("no path");
-	xsmcToStringBuffer(xsVar(0), domain, sizeof(domain));
+	xsmcToStringBuffer(xsVar(0), domain, 64);
 	size_t length = c_strlen(domain);
 	if (0 == length) xsUnknownError("invalid");
 	if ('/' == domain[length - 1])
@@ -177,7 +178,7 @@ void xs_directorystorage_open(xsMachine *the)
 	if ((kIOFormatInvalid == d.format) || ((kIOFormatBuffer != d.format) && d.isPebbleNative))
 		xsRangeError("unsupported");
 
-	throwIf(settings_file_open(&d.file, domain, 8192));
+	throwIf(settings_file_open(&d.file, path, 8192));
 
 	xsResult = xsNewHostInstance(xsArg(1));
 	xsmcSetHostChunk(xsResult, &d, sizeof(d));
