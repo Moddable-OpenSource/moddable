@@ -3054,11 +3054,6 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						mxBreak;
 					mxCase(cxEmptyStep):
 						step = *pointer;
-						#ifdef mxTrace 
-							fprintf(stderr, " #%d %d", step, firstState->step);
-						#endif
-// 						if ((offset != stop) && firstState)
-// 							goto mxPopState;
 						mxBreak;
 					mxCase(cxLineBeginStep):
 						step = *pointer;
@@ -3161,10 +3156,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						from = *pointer++;
 						to = *pointer;
 						if ((quantifier->min == 0) && (quantifier->offset == offset)) {
-							if (from <= to)
-								c_memset(captures + from, -1, (1 + to - from) * sizeof(txCaptureData));
-							step = sequel;
-							mxBreak;
+							goto mxPopState;
 						}
 						quantifier->min = (quantifier->min == 0) ? 0 : quantifier->min - 1;
 						quantifier->max = (quantifier->max == 0x7FFFFFFF) ? 0x7FFFFFFF : (quantifier->max == 0) ? 0 : quantifier->max - 1;
