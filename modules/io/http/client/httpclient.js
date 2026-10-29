@@ -176,7 +176,7 @@ class HTTPClient {
 						port: port ?? 80,
 						onReadable: count => this.#onReadable(count),
 						onWritable: count => this.#onWritable(count),
-						onError: () => this.#error()
+						onError: error => this.#error(error)		// a TLS socket reports why
 					});
 				}
 				catch (e) {

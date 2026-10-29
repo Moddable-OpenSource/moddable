@@ -21,7 +21,6 @@
 import Session from "ssl/session";
 import Timer from "timer";
 
-const maximumSupportedVersion = 0x303;
 const defaultMinimumVersion = 0x303;
 
 function toProtocolVersion(value) {
@@ -36,11 +35,13 @@ function toProtocolVersion(value) {
 class TLS {
 	#socket;
 	#ready = false;
+	#error;
 	#session;
 	#callbacks;
 	#data;
 	#format;		// true == buffer, false = number
 	#doRead;
+	#tickets;		// the Key-Value store of TLS 1.3 session tickets, open for the life of the socket
 
 	constructor(options) {
 		const {TCP, tls, format, target, onReadable, onWritable, onError, ...tcp} = options;
@@ -51,20 +52,23 @@ class TLS {
 		if (!host)
 			throw new Error("tls.host required");
 
-		let maximumVersion = maximumSupportedVersion;
-		if (undefined !== tls.maximumVersion) {
-			maximumVersion = toProtocolVersion(tls.maximumVersion);
-			if (maximumVersion > maximumSupportedVersion)
-				maximumVersion = maximumSupportedVersion;
-		}
-		let minimumVersion = (maximumVersion < defaultMinimumVersion) ? maximumVersion : defaultMinimumVersion;
+		let maximumVersion = Session.maximumVersion ?? 0x303;		// the session's: TLS 1.2 at most for one that does not say
+		let minimumVersion;
 		if (undefined !== tls.minimumVersion) {
 			minimumVersion = toProtocolVersion(tls.minimumVersion);
-			if (minimumVersion > maximumSupportedVersion)
-				throw new RangeError("tls.minimumVersion: unsupported");
 			if (minimumVersion > maximumVersion)
-				throw new RangeError("tls.minimumVersion: greater than tls.maximumVersion");
+				throw new RangeError("tls.minimumVersion: unsupported");
 		}
+		if (undefined !== tls.maximumVersion) {
+			const version = toProtocolVersion(tls.maximumVersion);
+			if (version < maximumVersion)
+				maximumVersion = version;
+		}
+		if (undefined === minimumVersion)
+			minimumVersion = (maximumVersion < defaultMinimumVersion) ? maximumVersion : defaultMinimumVersion;
+		else if (minimumVersion > maximumVersion)
+			throw new RangeError("tls.minimumVersion: greater than tls.maximumVersion");
+		let tickets;
 
 		const session = {
 			tls_server_name: String(host),
@@ -94,6 +98,16 @@ class TLS {
 				case "clientKey":
 					session.clientKey = Array.isArray(value) ? value[0] : value;		// one client key supported
 					break;
+				case "keyShares":		// TLS 1.3: groups to send key shares for in the ClientHello (default 1; more avoids a HelloRetryRequest at the cost of generating keys the server may not use)
+					session.tls13_key_shares = value;
+					break;
+				case "tickets":		// TLS 1.3 resumption: {io, path, max}, the Key-Value store to keep session tickets in (provider and path), and how many hosts to keep (default 8)
+					if (!value.io || (undefined === value.path))
+						throw new Error("tls.tickets: io and path required");
+					if ((undefined !== value.max) && !(value.max >= 1))
+						throw new RangeError("tls.tickets.max: invalid");
+					tickets = value;
+					break;
 				case "trace":
 				case "verify":
 					session[name] = value;
@@ -106,6 +120,11 @@ class TLS {
 			this.target = target;
 		this.format = format ?? "buffer";
 
+		if (tickets) {
+			this.#tickets = tickets.io.open({path: tickets.path, format: "buffer"});
+			session.tickets = this.#tickets;
+			session.ticketsMax = tickets.max;
+		}
 		this.#session = new Session(session);
 		this.#session.initiateHandshake();
 
@@ -119,6 +138,9 @@ class TLS {
 		this.#socket.readable =
 		this.#socket.writable = 0;
 	}
+	get error() {
+		return this.#error;
+	}
 	close() {
 		if (this.#ready) {
 			try {
@@ -128,11 +150,14 @@ class TLS {
 				/* this space intentionally left blank */
 			}
 		}
+		this.#session?.release?.();		// also when the handshake did not complete (the original session has no release)
 		this.#socket?.close();
+		this.#tickets?.close();
 		Timer.clear(this.#doRead);
 
 		this.#socket =
 		this.#session = 
+		this.#tickets =
 		this.#doRead = undefined;
 	}
 	read(count) {
@@ -219,20 +244,40 @@ class TLS {
 			this.#messageHandler();
 	}
 	#onError() {
-		this.#callbacks.onError?.call(this);
+		this.#callbacks.onError?.call(this, this.#error);		// the handshake or protocol error, if there was one
 	}
 	#messageHandler(read) {
-		if (!this.#ready) {
-			if (this.#session.handshake(this.#socket)) {
-				this.#ready = true;
-				this.#onWritable(this.#socket.writable);
-			}
-			if (read)
-				this.#session.read(this.#socket);
+		if (!this.#session)		// closed while reporting the error of the previous message
 			return;
+		if (!this.#ready) {
+			try {		// the handshake runs here and in the read that follows it
+				if (this.#session.handshake(this.#socket)) {
+					this.#ready = true;
+					this.#onWritable(this.#socket.writable);
+				}
+				else if (read)
+					this.#session.read(this.#socket);
+			}
+			catch (e) {		// the handshake failed (certificate rejected, protocol error): report it, do not escape the callback
+				this.#error = e;
+				this.close();
+				this.#onError();
+				return;
+			}
+			if (!this.#ready || !this.#socket?.readable)
+				return;
+			// the handshake completed with records still buffered (a NewSessionTicket right behind the server's Finished, or data): read them now
 		}
 
-		const data = this.#session.read(this.#socket);
+		let data;
+		try {
+			data = this.#session.read(this.#socket);
+		}
+		catch (e) {		// a protocol error after the handshake (a record that fails authentication, an alert): report it, do not escape the callback
+			this.#error = e;
+			this.close();
+			return void this.#onError();
+		}
 		if (undefined === data)		// nothing to read
 			return;
 		if (null === data)		// closed

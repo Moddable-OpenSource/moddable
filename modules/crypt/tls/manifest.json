@@ -1,0 +1,39 @@
+{
+	"include": [
+		"$(MODULES)/crypt/bin",
+		"$(MODULES)/files/resource",
+		"$(MODULES)/io/crypt/cipher",
+		"$(MODULES)/io/crypt/random",
+		"$(MODULES)/io/crypt/key",
+		"$(MODULES)/io/crypt/signature",
+		"$(MODDABLE)/modules/io/crypt/keyagreement",
+		"$(MODDABLE)/modules/io/crypt/mac",
+		"$(MODDABLE)/modules/io/crypt/keyderivation"
+	],
+	"modules": {
+		"embedded:io/socket/tcp/tls": "$(MODULES)/io/tls/client/tlssocket",
+		"config/tls": "$(MODULES)/io/tls/client/config",
+		"ssl/session": "./session",
+		"ssl/*": "./ssl_*",
+		"*": "$(MODULES)/crypt/etc/x509.c",
+		"ber": "$(MODULES)/crypt/etc/ber"
+	},
+	"preload": [
+		"embedded:io/socket/tcp/tls",
+		"config/tls",
+		"ssl/session",
+		"ssl/*",
+		"ber"
+	],
+	"config": {
+		"tls": {
+			"ECDHE_RSA": true
+		}
+	},
+	"resources": {
+		"*": [
+			"$(MODULES)/crypt/data/ca"
+		]
+	},
+	"network": true
+}

@@ -31,6 +31,7 @@
 		"$(MODDABLE)/modules/io/crypt/mac",
 		"$(MODDABLE)/modules/io/crypt/keyderivation",
 		"$(MODDABLE)/modules/web/crypto",
+		"$(MODDABLE)/modules/crypt/tls",
 		"$(MODDABLE)/modules/io/update",
 		"$(MODDABLE)/modules/io/flash",
 		"$(COMMODETTO)/manifest_bitmap.json",

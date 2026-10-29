@@ -1,5 +1,6 @@
 declare module "embedded:io/socket/tcp/tls" {
   import TCP, { Options as TCPOptions } from "embedded:io/socket/tcp"
+  import type KeyValueStorage from "embedded:storage/key-value"
 
   export type TLSVersion = "TLSv1.1" | "TLSv1.2" | "TLSv1.3"
 
@@ -20,6 +21,23 @@ declare module "embedded:io/socket/tcp/tls" {
     trace?: boolean
     /** Verify the server's certificate chain. Defaults to `true`. Never disable in production. */
     verify?: boolean
+    /** TLS 1.3: the number of groups to send key shares for in the ClientHello. Defaults to `1`.
+        More avoids a HelloRetryRequest at the cost of generating keys the server may not use. */
+    keyShares?: number
+    /** TLS 1.3 session resumption. The socket opens the Key-Value store at `path` with `io`,
+        keeps the session tickets servers issue there, and offers one on the next connection
+        to the same host. Absent, no ticket is kept or offered. */
+    tickets?: TLSTickets
+  }
+
+  export type TLSTickets = {
+    /** The Key-Value storage provider the socket opens the store with. */
+    io: typeof KeyValueStorage
+    /** The path of the store, given to the provider's open(). */
+    path: string
+    /** The most hosts to keep tickets for in the store. Defaults to `8`.
+        Beyond that, the least recently received ticket is removed. */
+    max?: number
   }
 
   export type Format = "number" | "buffer"
