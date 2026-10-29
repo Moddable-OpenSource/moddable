@@ -1,6 +1,6 @@
 # AGENTS.md
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: October 15, 2026
+Revised: October 27, 2026
 
 > **Note**: This document was written by an LLM for LLMs.
 
@@ -167,8 +167,9 @@ cd $MODDABLE/examples/piu/balls && mcconfig -dl -m -p sim
 
 - **There is no `xsdb` executable.** xsdb *is* [tools/xsbug-log](./tools/xsbug-log), and `mcconfig -dl` launches it for you — you never invoke it by name. `which xsdb` finding nothing means nothing is wrong; do not conclude the debugger is missing from the checkout and fall back to `trace()` and rebuilds.
 - **`help` at the `(xsdb)` prompt lists every command**, grouped into control flow, breakpoints, inspection, navigation, settings, and control. The full command surface is discoverable at runtime, so it is not reproduced here.
+- **`interrupt` stops a running program**, as `^C` does at a terminal. It is the only way to break in when xsdb's input is piped. An idle program stops at once; one inside a long native call stops when the call returns.
 - **`set output json`** switches to structured JSON output intended to be parsed rather than scraped. `set output text` gives gdb-style output. Prefer JSON when consuming output programmatically.
-- **`info instruments` prints the runtime's vital signs** — network sockets, timers, files, chunk and slot memory in use, system bytes free, garbage collections, CPU load. This is a resource canary, and using it is one of the motivations for instrumentation existing: functional tests check answers; instruments check costs. Snapshot it at baseline, after a workload, and again after the system quiesces — any value that does not return to baseline is a finding (a leak or a runaway), even when every assertion passed. A years-latent socket leak was found exactly this way. Instrumented device builds (`-i`) stream the same columns to the serial console once per second as `instruments:` lines; the `instruments key:` line printed at boot names the fields. `Stack used` is the depth when sampled, not a high-water mark; find a peak by bisecting `creation.stack`.
+- **`info instruments` prints the runtime's vital signs** — network sockets, timers, files, chunk and slot memory in use, system bytes free, garbage collections, CPU load. This is a resource canary, and using it is one of the motivations for instrumentation existing: functional tests check answers; instruments check costs. Snapshot it at baseline, after a workload, and again after the system quiesces — any value that does not return to baseline is a finding (a leak or a runaway), even when every assertion passed. A years-latent socket leak was found exactly this way. Instrumented device builds (`-i`) stream the same columns to the serial console once per second as `instruments:` lines; the `instruments key:` line printed at boot names the fields. `Stack used` is a high-water mark: the engine lowers it at every function return, and the sample resets it, so each reading is the peak since the previous one. It does not see slots pushed by native code (big-number temporaries, for example), and a reading taken while stopped at a breakpoint includes the stack the debugger itself used, so the exact ceiling still comes from bisecting `creation.stack`.
 - Settings persist per project in a hidden `.xsdb.json` file in the project directory — breakpoints, output mode, break-on-exception, break-at-startup. Behavior can differ between projects for this reason. Its breakpoints and tracepoints fire in your session too, so check it before interpreting unexpected trace output. The file is gitignored.
 - `mcrun -dl` works for mods, but not yet on all targets.
 

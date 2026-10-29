@@ -1,6 +1,6 @@
 # Manifest
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: October 1, 2026
+Revised: October 27, 2026
 
 A manifest is a JSON file that describes the modules and resources necessary to build a Moddable app. This document explains the properties of the JSON object and how manifests are processed by the Moddable SDK build tools.
 
@@ -68,7 +68,7 @@ The `build` object defines the environment variables used to build paths in othe
 }
 ```
 
-Environment variables may be conditionally imported from the shell by appending ` ?=` to the name. This uses the value from shell environment if available, and otherwise uses the default provided.  The following example is equivalent to `IDF_PATH ?= ~/esp32/esp-idf-v6.0` in a makefile.
+Environment variables may be conditionally imported from the shell by appending ` ?=` to the name. This uses the value from shell environment if available, and otherwise uses the default provided.  The following example is equivalent to `IDF_PATH ?= ~/esp32/esp-idf-v6.0` in a makefile. As in a makefile, a variable already defined by a manifest read earlier keeps its value. An application's own manifest is read first.
 
 ```json
 "build": {

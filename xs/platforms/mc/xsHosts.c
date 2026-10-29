@@ -384,6 +384,7 @@ void fxLoadModule(txMachine* the, txSlot* module, txID moduleID)
 	}
 	
 #if defined(mxDebug) && MODDEF_XS_TEST
+	extern void fxDebugImport(txMachine* the, txSlot* module, txString path);
 	if (!c_strncmp(path, "xsbug://", 8))
 		fxDebugImport(the, module, path);
 #endif

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017  Moddable Tech, Inc.
+# Copyright (c) 2016-2026  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -17,6 +17,14 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 .NOTPARALLEL:
+
+ifndef MODDABLE
+$(error MODDABLE not set)
+endif
+
+ifneq ($(MODDABLE), $(abspath $(MODDABLE)))
+$(error MODDABLE path invalid: "$(MODDABLE)")
+endif
 
 XS_DIR ?= $(MODDABLE)/xs
 export XS_DIR

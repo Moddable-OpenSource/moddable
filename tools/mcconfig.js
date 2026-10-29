@@ -597,8 +597,13 @@ class ZephyrConfigFile extends PrerequisiteFile {
 		this.line("");
 
 		for (let name in tool.manifest.zephyrConfig) {
-			this.line(name + "=" + tool.manifest.zephyrConfig[name]);
+			let value = tool.manifest.zephyrConfig[name];
+			if ("string" === typeof value)		// $(VARIABLE) in a value, such as the path of a header; forward slashes, as a backslash escapes in a Kconfig string
+				value = value.replace(/\$\(([^\)]+)\)/g, (match, variable) => ((variable in tool.environment) ? tool.environment[variable] : (tool.getenv(variable) ?? "")).replace(/\\/g, "/"));
+			this.line(name + "=" + value);
 		}
+		if (tool.creation.nativeStack)		// XS runs on the main thread
+			this.line("CONFIG_MAIN_STACK_SIZE=" + tool.creation.nativeStack);
 
 		this.close();
 	}

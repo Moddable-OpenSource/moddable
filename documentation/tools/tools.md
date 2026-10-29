@@ -1,6 +1,6 @@
 # Tools
 Copyright 2017-2026 Moddable Tech, Inc.<BR>
-Revised: September 9, 2026
+Revised: October 27, 2026
 
 ## About this Document
 
@@ -396,6 +396,13 @@ The built-in help provides a complete list of available xsdb commands. The comma
 
 ```shell
 (xsdb) help
+```
+
+### Interrupting
+The `interrupt` command stops a running program, as `^C` does at the prompt. Use the command when xsdb's input is not a terminal, for example when xsdb is driven by a script. The program stops at once when it is idle, waiting for an event. Native code cannot be interrupted, so a program in a long native call stops when that call returns.
+
+```shell
+(xsdb) interrupt
 ```
 
 ### Exiting

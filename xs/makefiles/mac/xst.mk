@@ -17,6 +17,14 @@
 #   along with the Moddable SDK Tools.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ifndef MODDABLE
+$(error MODDABLE not set)
+endif
+
+ifneq ($(MODDABLE), $(abspath $(MODDABLE)))
+$(error MODDABLE path invalid: "$(MODDABLE)")
+endif
+
 % : %.c
 %.o : %.c
 

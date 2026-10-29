@@ -2212,6 +2212,8 @@ class ModulesRule extends Rule {
 			this.appendFile(tool.cFiles, parts.name + ".cpp.o", source, include);
 		else if (parts.extension == ".m")
 			this.appendFile(tool.cFiles, parts.name + ".m.o", source, include);
+		else if (parts.extension == ".swift")		// compiled by a recipe of the platform (tools/mcconfig/make.<platform>.swift.mk)
+			this.appendFile(tool.cFiles, parts.name + ".swift.o", source, include);
 		else if (parts.extension == ".java")
 			this.appendFile(tool.javaFiles, parts.name + ".class", source, include);
 		else if (parts.extension == ".h") {
@@ -2253,7 +2255,7 @@ class ModulesRule extends Rule {
 };
 
 var moduleExtensions = [
-	".c", ".cc", ".cpp", ".h", ".java", ".js", ".json", ".m",
+	".c", ".cc", ".cpp", ".h", ".java", ".js", ".json", ".m", ".swift",
 ];
 
 class ResourcesRule extends Rule {
@@ -3105,8 +3107,10 @@ export class Tool extends TOOL {
 				else {
 					if (typeof value == "string") {
 						let shellValue;
-						if (name.endsWith(" ?=") && !(name in this.environment)) {
-							name = name.slice(0, -3);;
+						if (name.endsWith(" ?=")) {
+							name = name.slice(0, -3);
+							if (name in this.environment)
+								continue;		// as in make, ?= assigns only a variable not yet defined (here, by a manifest parsed earlier)
 
 							shellValue = this.getenv(name);
 							if (undefined !== shellValue)

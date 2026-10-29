@@ -117,6 +117,14 @@ else
 #	C_FLAGS += -DMC_MEMORY_DEBUG=1
 endif
 
+# Swift sources (the "swift" recipe): the object carries its framework and runtime dependencies into the link
+SWIFT_FLAGS = -emit-object -parse-as-library $(MACOS_ARCH)
+ifeq ($(DEBUG),)
+	SWIFT_FLAGS += -O
+else
+	SWIFT_FLAGS += -g -Onone
+endif
+
 LINK_OPTIONS = -dynamiclib -flat_namespace -undefined dynamic_lookup -Wl,-exported_symbol,_fxScreenLaunch -Wl,-dead_strip -lobjc $(MACOS_ARCH)
 
 VPATH += $(XS_DIRECTORIES)

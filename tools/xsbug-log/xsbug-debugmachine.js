@@ -285,7 +285,7 @@ class DebugMachine extends Machine {
 	}
 
 	_syncCompleter(line) {
-		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'break', 'clear', 'delete', 'condition', 'trace', 'hitcount', 'eval', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread', 'test'];
+		const commands = ['run', 'continue', 'next', 'step', 'finish', 'until', 'interrupt', 'break', 'clear', 'delete', 'condition', 'trace', 'hitcount', 'eval', 'info', 'list', 'backtrace', 'where', 'frame', 'print', 'set', 'quit', 'help', 'thread', 'test'];
 		const args = line.trimStart().split(/\s+/);
 		
 		if (args.length === 1 && !line.match(/\s$/)) {
@@ -1432,6 +1432,9 @@ class DebugMachine extends Machine {
 			case 'until':
 				this.cmdUntil(args);
 				break;
+			case 'interrupt':
+				this.cmdInterrupt();
+				break;
 			case 'break': case 'b':
 				this.cmdBreak(args);
 				break;
@@ -1504,6 +1507,18 @@ class DebugMachine extends Machine {
 		// doGo() doesn't clear it, so explicitly clear the stale flag if breakOnStart is off.
 		if (!this.breakOnStart)
 			this.doClearBreakpoint("start", "0");
+	}
+
+	cmdInterrupt() {		// ^C as a command (gdb's name), for when the input is not a terminal: the machine stops as soon as it runs, at once when idle; a native call in progress cannot be interrupted
+		if (!this.running) {
+			this.commandError('  The program is not running.');
+			return;
+		}
+		this.report('interrupt', undefined, undefined, () => {
+			console.log('Interrupting.');
+			this.showPrompt();
+		});
+		this.doStep();
 	}
 
 	cmdNext() {
@@ -3030,7 +3045,8 @@ class DebugMachine extends Machine {
 						{ keys: "next, n", desc: "Step over" },
 						{ keys: "step, s", desc: "Step into" },
 						{ keys: "finish", desc: "Step out (return from current function)" },
-						{ keys: "until <line>|<fn>", desc: "Run to specified line or JS function" }
+						{ keys: "until <line>|<fn>", desc: "Run to specified line or JS function" },
+						{ keys: "interrupt", desc: "Stop the running program (as ^C)" }
 					]
 				},
 				{

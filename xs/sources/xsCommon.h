@@ -137,6 +137,31 @@ typedef struct {
 #define mxBigIntLowWord(x)		((txU4)(x))
 #define mxBigIntWordSize		(sizeof(txU4) * 8)
 
+/*
+	mxBigIntMulAdd(a, b, x, y, lo, hi): hi:lo = a * b + x + y for words a, b, x, y. The sum fits in 64 bits exactly.
+	A core without a high-word multiply (Xtensa LX106: MULL and MUL16U, no MULUH) would call libgcc for every txU8 product;
+	there the product is assembled from four 16 x 16 products instead. Define mxBigIntNoMulHigh to use that form anywhere.
+*/
+#if defined(ESP8266) && !defined(mxBigIntNoMulHigh)
+	#define mxBigIntNoMulHigh 1
+#endif
+#ifdef mxBigIntNoMulHigh
+	#define mxBigIntMulAdd(a, b, x, y, lo, hi) { \
+		txU4 _a0 = (txU4)(txU2)(a), _a1 = (a) >> 16, _b0 = (txU4)(txU2)(b), _b1 = (b) >> 16; \
+		txU4 _p00 = _a0 * _b0, _p01 = _a0 * _b1, _p10 = _a1 * _b0, _p11 = _a1 * _b1; \
+		txU4 _mid = (_p00 >> 16) + (txU4)(txU2)_p01 + (txU4)(txU2)_p10; \
+		txU4 _lo = (_mid << 16) | (txU4)(txU2)_p00, _hi = _p11 + (_p01 >> 16) + (_p10 >> 16) + (_mid >> 16); \
+		_lo += (x); _hi += (_lo < (x)); \
+		_lo += (y); _hi += (_lo < (y)); \
+		(lo) = _lo; (hi) = _hi; \
+	}
+#else
+	#define mxBigIntMulAdd(a, b, x, y, lo, hi) { \
+		txU8 _p = (txU8)(a) * (b) + (x) + (y); \
+		(lo) = mxBigIntLowWord(_p); (hi) = mxBigIntHighWord(_p); \
+	}
+#endif
+
 #define XS_ATOM_ARCHIVE 0x58535F41 /* 'XS_A' */
 #define XS_ATOM_BINARY 0x58535F42 /* 'XS_B' */
 #define XS_ATOM_ERROR 0x58535F45 /* 'XS_E' */

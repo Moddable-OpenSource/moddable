@@ -1557,7 +1557,7 @@ txBigInt *fxBigInt_mul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 
 txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb)
 {
-	txU8 a, b, r;
+	txU4 b;
 	txU4 *ap, *bp, *rp;
 	txU4 c = 0;
 	int i, j, n, m;
@@ -1570,16 +1570,11 @@ txBigInt *fxBigInt_umul(txMachine* the, txBigInt *rr, txBigInt *aa, txBigInt *bb
 	rp = rr->data;
 	n = bb->size;
 	for (i = 0, j = 0; i < n; i++) {
-		b = (txU8)bp[i];
+		b = bp[i];
 		c = 0;
 		m = aa->size;
-		for (j = 0; j < m; j++) {
-			a = (txU8)ap[j];
-			r = a * b + c;
-			r += (txU8)rp[i + j];
-			rp[i + j] = mxBigIntLowWord(r);
-			c = mxBigIntHighWord(r);
-		}
+		for (j = 0; j < m; j++)
+			mxBigIntMulAdd(ap[j], b, rp[i + j], c, rp[i + j], c);
 		rp[i + j] = c;
 	}
 	/* remove leading 0s */
@@ -1595,19 +1590,14 @@ txBigInt *fxBigInt_umul1(txMachine* the, txBigInt *r, txBigInt *a, txU4 b)
 	int i, n;
 	txU4 c = 0;
 	txU4 *ap, *rp;
-	txU8 wa, wr;
 
 	if (r == NULL)
 		r = fxBigInt_alloc(the, a->size + 1);
 	ap = a->data;
 	rp = r->data;
 	n = a->size;
-	for (i = 0; i < n; i++) {
-		wa = (txU8)ap[i];
-		wr = wa * b + c;
-		c = mxBigIntHighWord(wr);
-		rp[i] = mxBigIntLowWord(wr);
-	}
+	for (i = 0; i < n; i++)
+		mxBigIntMulAdd(ap[i], b, c, 0, rp[i], c);
 	if (c != 0)
 		rp[i] = c;
 	else {
@@ -1675,8 +1665,7 @@ txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
 {
 	int i, j, t;
 	txU4 *ap, *rp;
-	txU8 uv, t1, t2, t3, ai;
-	txU4 c, cc;
+	txU4 ai, c, cc;
 	txU4 overflow = 0;	/* overflow flag of 'u' */
 
 	if (r == NULL)
@@ -1687,29 +1676,31 @@ txBigInt *fxBigInt_sqr(txMachine* the, txBigInt *r, txBigInt *a)
 	rp = r->data;
 
 	for (i = 0; i < t - 1; i++) {
-		uv = (txU8)ap[i] * ap[i] + rp[i * 2];
-		rp[i * 2] = mxBigIntLowWord(uv);
-		c = mxBigIntHighWord(uv);
+		mxBigIntMulAdd(ap[i], ap[i], rp[i * 2], 0, rp[i * 2], c);
 		cc = 0;
 		ai = ap[i];
 		for (j = i + 1; j < t; j++) {
+			/* ov:hi:lo = 2 * ai * aj + cc:c + rp[k]; the sum is below 2^65 so ov is 0 or 1 */
 			int k = i + j;
-			t1 = ai * ap[j];
-			t2 = t1 + c + ((txU8)cc << mxBigIntWordSize);	/* 'cc:c' must be <= 2(b-1) so no overflow here */
-			t3 = t1 + t2;
-			uv = t3 + rp[k];
-			cc = t3 < t1 || uv < t3;
-			c = (txU4)mxBigIntHighWord(uv);
-			rp[k] = mxBigIntLowWord(uv);
+			txU4 lo, hi, ov, carry;
+			mxBigIntMulAdd(ai, ap[j], 0, 0, lo, hi);
+			ov = hi >> (mxBigIntWordSize - 1);
+			hi = (hi << 1) | (lo >> (mxBigIntWordSize - 1));
+			lo <<= 1;
+			lo += c; carry = lo < c; hi += carry; ov += hi < carry;
+			hi += cc; ov += hi < cc;
+			lo += rp[k]; carry = lo < rp[k]; hi += carry; ov += hi < carry;
+			rp[k] = lo;
+			c = hi;
+			cc = ov;
 		}
 		c += overflow;
 		rp[i + t] = c;		/* c = u */
 		overflow = cc || c < overflow;
 	}
 	/* the last loop */
-	uv = (txU8)ap[i] * ap[i] + rp[i * 2];
-	rp[i * 2] = mxBigIntLowWord(uv);
-	rp[i + t] = mxBigIntHighWord(uv) + overflow;
+	mxBigIntMulAdd(ap[i], ap[i], rp[i * 2], 0, rp[i * 2], c);
+	rp[i + t] = c + overflow;
 
 	/* remove leading 0s */
 	for (i = 2*t; --i > 0 && rp[i] == 0;)
