@@ -50,7 +50,7 @@
 #include "syscall/syscall.h"
 #include <time.h>
 #include "applib/app_malloc.h"
-#include "kernel/pbl_malloc.h"
+#include <pbl/kernel/malloc.h>
 
 
 #include <pbl/kernel/irq.h>

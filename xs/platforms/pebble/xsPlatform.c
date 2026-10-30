@@ -201,7 +201,7 @@ void fxReceive(txMachine* the)
 		the->debugOffset += f->remaining;
 		mxDebugMutexTake();
 		state->debugFragments = f->next;
-		kernel_free(f);
+		pbl_free(f);
 		mxDebugMutexGive();
 	}
 	else {
@@ -235,7 +235,7 @@ void xsbug_protocol_msg_callback(CommSession *session, const uint8_t* msg, size_
 
 	mxDebugMutexTake();
 
-	DebugFragment fragment = kernel_malloc(sizeof(DebugFragmentRecord) + length);
+	DebugFragment fragment = pbl_malloc(sizeof(DebugFragmentRecord) + length);
 	if (C_NULL == fragment) {
 		if (state->the)
 			fxDisconnect(state->the);

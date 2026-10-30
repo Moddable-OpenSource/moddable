@@ -20,7 +20,6 @@
  
 #include "pebblegraphics.h"
 #include "applib/graphics/gpath.h"
-#include "kernel/pbl_malloc.h"
 #include "moddableAppState.h"
 
 #define MINIMUM_ARRAY_LEN (8)

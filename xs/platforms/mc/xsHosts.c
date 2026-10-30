@@ -49,7 +49,6 @@
 
 #if pebble
 	#include "applib/app_malloc.h"
-	#include "kernel/pbl_malloc.h"
 	#include <pbl/kernel/heap.h>
 	#include <pbl/kernel/malloc.h>
 #endif
@@ -67,9 +66,9 @@ extern void *xsPreparationAndCreation(xsCreation **creation);
 #if pebble
 	static uint32_t kernelRemaining;
 	#define machine_alloc(size, kind) \
-		(((size <= (txSize)kernelRemaining) && (kind <= 0)) ? (kernelRemaining -= size, kernel_malloc(size)) : app_malloc(size))
+		(((size <= (txSize)kernelRemaining) && (kind <= 0)) ? (kernelRemaining -= size, pbl_malloc(size)) : app_malloc(size))
 	#define machine_free(ptr) \
-		(pbl_heap_contains(pbl_malloc_heap(), ptr) ? kernel_free(ptr) : app_free(ptr))
+		(pbl_heap_contains(pbl_malloc_heap(), ptr) ? pbl_free(ptr) : app_free(ptr))
 #else
 	#define machine_alloc(size, kind) c_malloc(size)
 	#define machine_free(ptr) c_free(ptr)
