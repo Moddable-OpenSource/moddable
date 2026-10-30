@@ -49,6 +49,7 @@
 #include <pbl/drivers/rtc.h>
 #include "syscall/syscall.h"
 #include <time.h>
+#include "applib/app_malloc.h"
 #include "kernel/pbl_malloc.h"
 
 
