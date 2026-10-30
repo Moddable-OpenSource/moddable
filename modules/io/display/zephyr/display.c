@@ -49,6 +49,7 @@ typedef struct {
 	uint8_t		format;
 	uint8_t		didBegin:1;
 	uint8_t		blank:1;
+	uint8_t		swap565:1;		// the display's 565 byte order differs from the build's: displaySend swaps
 	uint8_t		xAlignmentWidth:1;
 	uint16_t		brightness;
 
@@ -77,6 +78,8 @@ void xs_display_destructor(void *data)
 // {
 // }
 
+#define kIs565(format) ((PIXEL_FORMAT_RGB_565 == (format)) || (PIXEL_FORMAT_RGB_565X == (format)))
+static uint8_t displaySwap565(enum display_pixel_format format);
 static int displayBegin(void *hostData, int x, int y, int width, int height, void **frameBuffer, int *rowBytes, int flags);
 static int displaySend(void *hostData, void *buffer, uint32_t length);
 static int displayEnd(void *hostData);
@@ -129,6 +132,7 @@ void xs_display_constructor(xsMachine *the)
 	display->width = capabilities.x_resolution;
 	display->height = capabilities.y_resolution;
 	display->bitsPerPixel = DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format);
+	display->swap565 = displaySwap565(capabilities.current_pixel_format);
 }
 
 void xs_display_close(xsMachine *the)
@@ -176,17 +180,24 @@ void xs_display_configure(xsMachine *the)
 	if (xsUndefinedType != xsmcTypeOf(xsVar(0))) {
 		enum display_pixel_format format;
 		switch (xsmcToInteger(xsVar(0))) {
-			case kCommodettoBitmapRGB565LE:
-			case kCommodettoBitmapRGB565BE: format = PIXEL_FORMAT_RGB_565; break;
+			case kCommodettoBitmapRGB565LE: format = PIXEL_FORMAT_RGB_565; break;
+			case kCommodettoBitmapRGB565BE: format = PIXEL_FORMAT_RGB_565X; break;
 			case kCommodettoBitmap24RGB: format = PIXEL_FORMAT_RGB_888; break;
 			case kCommodettoBitmapGray256: format = PIXEL_FORMAT_L_8; break;
 			default: xsUnknownError("invalid format");
 		}
 
-		if (0 != display_set_pixel_format(display->device, format))
-			xsUnknownError("driver doesn't support format");
+		if (0 != display_set_pixel_format(display->device, format)) {
+			struct display_capabilities capabilities;
+			display_get_capabilities(display->device, &capabilities);
+			if (!kIs565(format) || !kIs565(capabilities.current_pixel_format))
+				xsUnknownError("driver doesn't support format");
+			format = capabilities.current_pixel_format;		// the other 565 byte order: displaySend swaps
+			xsLogDebug("display: build pixel format byte order differs from the display's; swapping every pixel (set the build format to match)\n");
+		}
 
 		display->bitsPerPixel = DISPLAY_BITS_PER_PIXEL(format);
+		display->swap565 = displaySwap565(format);
 	}
 }
 
@@ -215,14 +226,8 @@ void xs_display_configuration(xsMachine *the)
 
 	int format = 0;
 	switch (capabilities.current_pixel_format) {
-		// Zephyr's PIXEL_FORMAT_RGB_565 doesn't distinguish endianness; report whichever 565 the build is configured for.
-		case PIXEL_FORMAT_RGB_565:
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
-			format = kCommodettoBitmapRGB565BE;
-#else
-			format = kCommodettoBitmapRGB565LE;
-#endif
-			break;
+		case PIXEL_FORMAT_RGB_565: format = display->swap565 ? kCommodettoBitmapRGB565BE : kCommodettoBitmapRGB565LE; break;
+		case PIXEL_FORMAT_RGB_565X: format = display->swap565 ? kCommodettoBitmapRGB565LE : kCommodettoBitmapRGB565BE; break;
 		case PIXEL_FORMAT_RGB_888: format = kCommodettoBitmap24RGB; break;
 		case PIXEL_FORMAT_L_8: format = kCommodettoBitmapGray256; break;
 		default:
@@ -351,10 +356,7 @@ int displaySend(void *hostData, void *buffer, uint32_t length)
 	if (rows > display->updateHeight)
 		return -3;
 
-#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
-	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
-		// LE framebuffer; ST7789V wants MSB-first on the wire — software byteswap.
-		// On a BE build the framebuffer already matches the wire order, so no swap.
+	if (display->swap565) {
 		uint8_t *pixels = buffer;
 		uint32_t remain = length >> 1;
 		while (remain--) {
@@ -364,7 +366,6 @@ int displaySend(void *hostData, void *buffer, uint32_t length)
 			pixels += 2;
 		}
 	}
-#endif
 
 	struct display_buffer_descriptor desc = {
 		.buf_size = length,
@@ -409,6 +410,17 @@ void displayAdaptInvalid(void *hostData, CommodettoRectangle r)
 
 	r->x = 0;
 	r->w = display->width;
+}
+
+uint8_t displaySwap565(enum display_pixel_format format)
+{
+#if kCommodettoBitmapFormat == kCommodettoBitmapRGB565LE
+	return PIXEL_FORMAT_RGB_565X == format;
+#elif kCommodettoBitmapFormat == kCommodettoBitmapRGB565BE
+	return PIXEL_FORMAT_RGB_565 == format;
+#else
+	return 0;
+#endif
 }
 
 int displayGet(void *hostData, int32_t what, void *result)

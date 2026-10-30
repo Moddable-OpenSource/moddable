@@ -39,8 +39,7 @@ static void die(char *x) {
 
 void serial_cb(const struct device *dev, void *user_data)
 {
-	if (!uart_irq_update(uart_dev))
-		return;
+	uart_irq_update(uart_dev);
 
 	while (uart_irq_rx_ready(uart_dev)) {
 		uint8_t buf[32];

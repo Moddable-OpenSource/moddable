@@ -1,7 +1,7 @@
 # Using the Moddable SDK with Zephyr
 
 Copyright 2025-2026 Moddable Tech, Inc.<BR>
-Updated: October 2, 2026
+Updated: October 29, 2026
 
 This document is a guide to building Moddable apps with the [Zephyr Project SDK](https://github.com/zephyrproject-rtos/zephyr/).
 
@@ -76,7 +76,7 @@ Omitting both the `-d` and `-i` options on the `mcconfig` command line selects a
 <a id="mac"></a>
 ## macOS
 
-The Moddable SDK build uses Zephyr v4.4.2 with version 1.0.1 of the Zephyr SDK toolchain.
+The Moddable SDK build uses Zephyr v4.5.0 with version 1.0.1 of the Zephyr SDK toolchain.
 
 <a id="mac-instructions"></a>
 ### Installing
@@ -121,10 +121,10 @@ The Moddable SDK build uses Zephyr v4.4.2 with version 1.0.1 of the Zephyr SDK t
 	pip install west
 	```
 
-8. Get the Zephyr source code, version 4.4.2
+8. Get the Zephyr source code, version 4.5.0
 
 	```sh
-	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 ~/zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.5.0 ~/zephyrproject
 	cd ~/zephyrproject
 	west update
 	```
@@ -222,11 +222,11 @@ Other silicon families may have different requirements.
 	pip install west
 	```
 
-8. Get the Zephyr source code, version 4.4.2
+8. Get the Zephyr source code, version 4.5.0
 
 	```sh
 	cd %USERPROFILE%
-	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.5.0 zephyrproject
 	cd zephyrproject
 	west update
 	```
@@ -327,10 +327,10 @@ Other silicon families may have different requirements.
 	pip install west
 	```
 
-8. Get the Zephyr source code, version 4.4.2
+8. Get the Zephyr source code, version 4.5.0
 
 	```sh
-	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.2 ~/zephyrproject
+	west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.5.0 ~/zephyrproject
 	cd ~/zephyrproject
 	west update
 	```

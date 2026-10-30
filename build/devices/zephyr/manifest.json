@@ -1,5 +1,6 @@
 {
 	"build": {
+		"EXPECTED_ZEPHYR_SDK": "v4.5.0",
 		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
 	},
 	"include": [

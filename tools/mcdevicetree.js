@@ -132,7 +132,7 @@ export default class extends TOOL {
 				if (!name.includes(","))
 				  return;
 
-				if ("st,dsi-lcd-qsh-030.yaml" === name)   //@@ hack so stm32u5a9j_dk links
+				if (("st,dsi-lcd-qsh-030.yaml" === name) || ("st,dsi-lcd-qsh-030-connector.yaml" === name))   //@@ hack so stm32u5a9j_dk links
 				  return;
 				if (("nordic,nrf-gpio-forwarder.yaml" === name) || ("nordic,nrf-gpiote.yaml" === name))   //@@ hack so raytac_mdbt53 links
 				  return;

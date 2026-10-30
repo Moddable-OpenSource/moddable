@@ -122,7 +122,11 @@ static void serial_uart_isr(const struct device *dev, void *user_data)
 	modSerial serial = (modSerial)user_data;
     uint8_t flags = 0;
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+		if (!uart_irq_is_pending(dev))
+			break;
+
         if (serial->onError) {
             int error = uart_err_check(dev);
             if (error) {

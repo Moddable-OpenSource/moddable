@@ -9,7 +9,7 @@ else()
 	message(ERROR "Zephyr SDK not found.")
 endif()
 
-find_package(Zephyr 4.4.0 REQUIRED HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr 4.5.0 REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(moddable_lib)
 
