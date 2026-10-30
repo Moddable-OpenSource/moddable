@@ -48,6 +48,7 @@
 #endif
 
 #if pebble
+	#include "applib/app_malloc.h"
 	#include "kernel/pbl_malloc.h"
 	#include <pbl/kernel/heap.h>
 	#include <pbl/kernel/malloc.h>
