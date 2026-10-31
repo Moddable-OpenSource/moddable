@@ -155,8 +155,10 @@ void xs_pwm_constructor_(xsMachine *the)
 			xsUnknownError("no ledc channel");
 	}
 
-	if (pwm && (1 == gTimers[pwm->timerIndex].useCount))
+	if (pwm && (1 == gTimers[pwm->timerIndex].useCount)) {
 		freeTimer = pwm->timerIndex; // reuse, but reinitialize
+		ledc_timer_pause(kSpeedMode, freeTimer);
+	}
 	else {
 		for (i = 0; i < LEDC_TIMER_MAX; i++) {
 			if (!gTimers[i].useCount)
@@ -181,8 +183,6 @@ void xs_pwm_constructor_(xsMachine *the)
 		t.timer_num = timerIndex;
 		t.freq_hz = hz;
 		t.clk_cfg = LEDC_AUTO_CLK;
-
-		ledc_timer_pause(kSpeedMode, timerIndex);
 
 //		ledc_timer_rst(kSpeedMode, timerIndex);
 
@@ -223,7 +223,7 @@ void xs_pwm_constructor_(xsMachine *the)
 	pwm->obj = xsThis;
 
 	xsRemember(pwm->obj);
-    xsmcSetHostData(xsThis, pwm);
+	xsmcSetHostData(xsThis, pwm);
 
 	gTimers[timerIndex].useCount += 1;
 	gTimers[timerIndex].resolution = resolution;
