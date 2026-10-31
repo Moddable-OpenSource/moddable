@@ -1,7 +1,7 @@
 ---
 name: Sensor Constructor
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-26
+updated: 2026-10-27
 ---
 
 The sensor's constructor is responsible for setting up communication with the sensor. This includes initializing any IO instances and probing for the sensor hardware. (See [Constructor Sets `target`](./target.md) and [Constructor Clean-up on Failure](./cleanup.md) for universal requirements of ECMA-419 constructors.)
@@ -64,7 +64,7 @@ class TemperatureSensor {
 
 ---
 
-When resetting individual configuration options, it can be more straightforward to use the sensor's `configure()` method. This is allowed by ECMA-419.
+To reset individual configuration options, use the sensor's `configure()` method. This is allowed by ECMA-419.
 
 ```js
 class TemperatureSensor {
