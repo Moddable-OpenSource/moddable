@@ -2258,9 +2258,6 @@ enum {
 #define mxCheck(THE, THE_ASSERTION)
 #endif
 
-#define mxThrowMessage(_CODE,...) fxThrowMessage(the, C_NULL, 0, _CODE, __VA_ARGS__)
-
-#ifdef mxDebug
 #define mxUnknownError(...) fxThrowMessage(the, NULL, 0, XS_UNKNOWN_ERROR, __VA_ARGS__)
 #define mxEvalError(...) fxThrowMessage(the, NULL, 0, XS_EVAL_ERROR, __VA_ARGS__)
 #define mxRangeError(...) fxThrowMessage(the, NULL, 0, XS_RANGE_ERROR, __VA_ARGS__)
@@ -2272,19 +2269,6 @@ enum {
 	fxIDToString(the, THE_ID, the->nameBuffer, sizeof(the->nameBuffer)), \
 	fxThrowMessage(the, NULL, 0, THE_ERROR, THE_FORMAT, the->nameBuffer) \
 )
-#else
-#define mxUnknownError(...) fxThrowMessage(the, NULL, 0, XS_UNKNOWN_ERROR, __VA_ARGS__)
-#define mxEvalError(...) fxThrowMessage(the, NULL, 0, XS_EVAL_ERROR, __VA_ARGS__)
-#define mxRangeError(...) fxThrowMessage(the, NULL, 0, XS_RANGE_ERROR, __VA_ARGS__)
-#define mxReferenceError(...) fxThrowMessage(the, NULL, 0, XS_REFERENCE_ERROR, __VA_ARGS__)
-#define mxSyntaxError(...) fxThrowMessage(the, NULL, 0, XS_SYNTAX_ERROR, __VA_ARGS__)
-#define mxTypeError(...) fxThrowMessage(the, NULL, 0, XS_TYPE_ERROR, __VA_ARGS__)
-#define mxURIError(...) fxThrowMessage(the, NULL, 0, XS_URI_ERROR, __VA_ARGS__)
-#define mxDebugID(THE_ERROR, THE_FORMAT, THE_ID) ( \
-	fxIDToString(the, THE_ID, the->nameBuffer, sizeof(the->nameBuffer)), \
-	fxThrowMessage(the, NULL, 0, THE_ERROR, THE_FORMAT, the->nameBuffer) \
-)
-#endif
 
 #define mxIsUndefined(THE_SLOT) \
 	((THE_SLOT)->kind == XS_UNDEFINED_KIND)
