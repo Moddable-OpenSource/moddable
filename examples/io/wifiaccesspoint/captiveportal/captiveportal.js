@@ -138,9 +138,6 @@ class CaptivePortal {
 					options.channel = clearestChannel(found);
 				if (this.#password) options.password = this.#password;
 				this.#ap = new WiFiAccessPoint(options);
-				this.#ap.configure({
-					portal: `http://${this.#ap.address}`
-				});
 			}
 		});
 	}
@@ -161,7 +158,12 @@ class CaptivePortal {
 	#onAPChanged(name) {
 		if ("connection" !== name) return;
 		if (this.#ap.connection >= 400) {
-			this.#dnsServer ??= this.#initializeDNSServer();
+			if (!this.#dnsServer) {
+				this.#ap.configure({
+					portal: `http://${this.#ap.address}`
+				});
+				this.#dnsServer = this.#initializeDNSServer();
+			}
 			this.#httpServer ??= this.#initializeHTTPServer();
 			this.#setPhase("ready", {SSID: this.#ap.SSID, password: this.#password});
 		}
