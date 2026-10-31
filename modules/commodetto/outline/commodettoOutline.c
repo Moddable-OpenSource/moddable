@@ -165,6 +165,17 @@ static xsNumberValue xs_argToFloat(xsMachine* the, xsIntegerValue c, xsIntegerVa
 	return result;
 }
 
+// 22.10 fixed point
+#define kFactorShift (10)
+
+static xsIntegerValue xs_toFactor(xsNumberValue value)
+{
+	return (xsIntegerValue)((value * (1 << kFactorShift)) + ((value < 0) ? -0.5 : 0.5));
+}
+
+// a coordinate times a factor (or a sum of those, so it rounds once) back to a coordinate
+#define xs_fromFactor(product) (((product) + (1 << (kFactorShift - 1))) >> kFactorShift)
+
 //  OUTLINE
 
 void xs_outline_destructor(void *data)
@@ -226,8 +237,8 @@ void xs_outline_rotate(xsMachine *the)
 	PocoOutline buffer = (PocoOutline)xsGetHostDataValidate(xsThis, xs_outline_destructor);
 	int argc = xsToInteger(xsArgc);
 	xsNumberValue angle = xsToNumber(xsArg(0));
-	xsIntegerValue angleSin = c_sin(angle) * 256;
-	xsIntegerValue angleCos = c_cos(angle) * 256;
+	xsIntegerValue angleSin = xs_toFactor(c_sin(angle));
+	xsIntegerValue angleCos = xs_toFactor(c_cos(angle));
 	xsIntegerValue cx, cy;
 	FT_Vector *points;
 	int i;
@@ -248,8 +259,8 @@ void xs_outline_rotate(xsMachine *the)
 
 	for (i = outline.n_points, points = outline.points; i > 0; i -= 1, points += 1) {
 		xsIntegerValue x = points->x - cx, y = points->y - cy;
-		points->x = (((x * angleCos) + (y * angleSin)) >> 8) + cx;
-		points->y = (((y * angleCos) - (x * angleSin)) >> 8) + cy;
+		points->x = xs_fromFactor((x * angleCos) + (y * angleSin)) + cx;
+		points->y = xs_fromFactor((y * angleCos) - (x * angleSin)) + cy;
 	}
 
 	buffer->cboxValid = 0;
@@ -261,8 +272,10 @@ void xs_outline_scale(xsMachine *the)
 	struct FT_Outline_ outline;
 	PocoOutline buffer = (PocoOutline)xsGetHostDataValidate(xsThis, xs_outline_destructor);
 	xsIntegerValue c = xsToInteger(xsArgc);
-	xsIntegerValue x = xs_argToFixed(the, c, 0, "x");
-	xsIntegerValue y = (c < 2) ? x : xs_argToFixed(the, c, 1, "y");
+	xsNumberValue sx = xs_argToFloat(the, c, 0, "x");
+	xsNumberValue sy = (c < 2) ? sx : xs_argToFloat(the, c, 1, "y");
+	xsIntegerValue x = xs_toFactor(sx);
+	xsIntegerValue y = xs_toFactor(sy);
 	FT_Vector *points;
 	int i;
 
@@ -272,8 +285,8 @@ void xs_outline_scale(xsMachine *the)
 	bufferToFTOutline(buffer, &outline);
 
 	for (i = outline.n_points, points = outline.points; i > 0; i -= 1, points += 1) {
-		points->x = (x * points->x) >> 6;
-		points->y = (y * points->y) >> 6;
+		points->x = xs_fromFactor(x * points->x);
+		points->y = xs_fromFactor(y * points->y);
 	}
 
 	buffer->cboxValid = 0;
@@ -296,10 +309,10 @@ void xs_outline_transform(xsMachine *the)
 	int i;
 	xsNumberValue sina = c_sin(a);
 	xsNumberValue cosa = c_cos(a);
-	xsIntegerValue c0r0 = sx * cosa * 256;
-	xsIntegerValue c0r1 = sy * sina * 256;
-	xsIntegerValue c1r0 = sx * sina * 256;
-	xsIntegerValue c1r1 = sy * cosa * 256;
+	xsIntegerValue c0r0 = xs_toFactor(sx * cosa);
+	xsIntegerValue c0r1 = xs_toFactor(sy * sina);
+	xsIntegerValue c1r0 = xs_toFactor(sx * sina);
+	xsIntegerValue c1r1 = xs_toFactor(sy * cosa);
 
 #if (90 == kPocoRotation) || (180 == kPocoRotation) || (270 == kPocoRotation)
 	PocoOutlineUnrotate(buffer);
@@ -307,8 +320,8 @@ void xs_outline_transform(xsMachine *the)
 	bufferToFTOutline(buffer, &outline);
 	for (i = outline.n_points, points = outline.points; i > 0; i -= 1, points += 1) {
 		xsIntegerValue x = points->x - cx, y = points->y - cy;
-		points->x = (((x * c0r0) + (y * c0r1)) >> 8) + tx;
-		points->y = (((y * c1r1) - (x * c1r0)) >> 8) + ty;
+		points->x = xs_fromFactor((x * c0r0) + (y * c0r1)) + tx;
+		points->y = xs_fromFactor((y * c1r1) - (x * c1r0)) + ty;
 	}
 	buffer->cboxValid = 0;
 	xsResult = xsThis;
