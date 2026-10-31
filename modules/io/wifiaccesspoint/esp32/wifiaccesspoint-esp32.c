@@ -322,10 +322,11 @@ static void initAP(xsMachine *the)
 	}
 
 	if (!gAPEventHandlerRegistered) {
-		if (ESP_OK == esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, doAPEvent, C_NULL)) {
-			esp_event_handler_register(IP_EVENT, IP_EVENT_ASSIGNED_IP_TO_CLIENT, doAPEvent, C_NULL);
-			gAPEventHandlerRegistered = 1;
-		}
+		static const int32_t events[] = { WIFI_EVENT_AP_START, WIFI_EVENT_AP_STOP, WIFI_EVENT_AP_STACONNECTED, WIFI_EVENT_AP_STADISCONNECTED };
+		for (int i = 0; i < 4; i++)
+			esp_event_handler_register(WIFI_EVENT, events[i], doAPEvent, C_NULL);
+		esp_event_handler_register(IP_EVENT, IP_EVENT_ASSIGNED_IP_TO_CLIENT, doAPEvent, C_NULL);
+		gAPEventHandlerRegistered = 1;
 	}
 }
 
