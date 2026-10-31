@@ -6,9 +6,9 @@
 		"$(MODULES)/io/crypt/random",
 		"$(MODULES)/io/crypt/key",
 		"$(MODULES)/io/crypt/signature",
-		"$(MODDABLE)/modules/io/crypt/keyagreement",
-		"$(MODDABLE)/modules/io/crypt/mac",
-		"$(MODDABLE)/modules/io/crypt/keyderivation"
+		"$(MODULES)/io/crypt/keyagreement",
+		"$(MODULES)/io/crypt/mac",
+		"$(MODULES)/io/crypt/keyderivation"
 	],
 	"modules": {
 		"embedded:io/socket/tcp/tls": "$(MODULES)/io/tls/client/tlssocket",
