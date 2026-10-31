@@ -48,24 +48,28 @@ class Backlight {
 		else
 			value *= range;
 
-		if (io.fade) {
-			Timer.clear(io.timer);
-			delete io.timer;
+		Timer.clear(io.timer);
+		delete io.timer;
 
-			const from = this.#brightness * range, to = value;
+		if (io.fade) {
+			const from = io.level ??= this.#brightness * range, to = value;
 			const start = Date.now();
 			io.timer = Timer.repeat(() => {
 				const fraction = Math.min(1, (Date.now() - start) / io.fade);
 				const value = from + ((to - from) * (fraction * fraction));
+				io.level = value;
 				io.write(io.invert ? range - value : value);
 				if (fraction >= 1) {
 					Timer.clear(io.timer);
 					delete io.timer;
+					delete io.level;
 				}
 			}, 20);
 		}
-		else
+		else {
+			delete io.level;
 			io.write(io.invert ? range - value : value);
+		}
 		this.#brightness = value / range;
 	}
 	get brightness() {
