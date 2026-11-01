@@ -18,6 +18,7 @@
  *
  */
 
+import Time from "time";
 import Timer from "timer";
 
 class Backlight {
@@ -53,9 +54,9 @@ class Backlight {
 
 		if (io.fade) {
 			const from = io.level ??= this.#brightness * range, to = value;
-			const start = Date.now();
+			const start = Time.ticks;
 			io.timer = Timer.repeat(() => {
-				const fraction = Math.min(1, (Date.now() - start) / io.fade);
+				const fraction = Math.min(1, Time.delta(start) / io.fade);
 				const value = from + ((to - from) * (fraction * fraction));
 				io.level = value;
 				io.write(io.invert ? range - value : value);
