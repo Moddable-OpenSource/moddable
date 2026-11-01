@@ -200,8 +200,12 @@ class Connection {
 				let lineBuffer = this.#lineBuffer, position = lineBuffer.position, length = lineBuffer.length;
 				while (this.#readable--) {
 					const c = this.#socket.read();
-					if (position === length)
+					if (position === length) {
+						if (length === lineBuffer.buffer.maxByteLength)
+							return void this.#onError("badly formed");
 						lineBuffer.buffer.resize(length << 1);
+						length = lineBuffer.length;
+					}
 					lineBuffer[position++] = c;
 					if (10 === c)
 						break;
