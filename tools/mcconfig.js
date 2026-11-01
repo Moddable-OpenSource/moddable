@@ -582,7 +582,7 @@ class ConfigFile extends PrerequisiteFile {
 				this.write("\t\"");
 				this.write(key);
 				this.write("\": ");
-				this.write(JSON.stringify(tool.config[key], null, "\t"));
+				this.write(JSON.stringify(tool.config[key], (name, value) => (("string" === typeof value) && value.includes("$(")) ? tool.resolveVariable(value) : value, "\t"));
 				this.line(",");
 			}
 		}
