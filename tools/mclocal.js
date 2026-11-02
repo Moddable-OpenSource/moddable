@@ -127,12 +127,15 @@ export default class extends TOOL {
 		}
 	}
 	run() {
-		var locals = this.inputPaths.map(path => {
+		var locals = [];
+		this.inputPaths.forEach(path => {
 			var parts = this.splitPath(path);
-			return {
-				name: parts.name,
-				dictionary: JSON.parse(this.readFileString(path)),
-			};
+			var dictionary = JSON.parse(this.readFileString(path));
+			var local = locals.find(local => local.name == parts.name);
+			if (local)
+				Object.assign(local.dictionary, dictionary);
+			else
+				locals.push({ name:parts.name, dictionary });
 		});
 		var all = {}
 		locals.forEach(local => {

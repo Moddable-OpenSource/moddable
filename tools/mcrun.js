@@ -375,8 +375,7 @@ class ToDoFile extends FILE {
 		}
 		if (tool.stringFiles.length) {
 			let line = ["mclocal"];
-			for (var result of tool.stringFiles)
-				line.push(result.source);
+			line.push(...tool.stringSources);
 			if (!defines || !defines.locals || !defines.locals.all)
 				line.push("-d");
 			if (tool.format)

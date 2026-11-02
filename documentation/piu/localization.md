@@ -176,6 +176,8 @@ will generate the `locals.en.mhr`, `locals.fr.mhr` and `locals.mhi` here above.
 
 By convention, **mcconfig** will generate a make file with a rule to call **mclocal** for all JSON files in a `strings` directory.
 
+The name of a file is its language. When several files have the same name, **mclocal** merges them into the table for that language. A project that uses a library with a `strings` directory can so have a `strings` directory of its own.
+
 ### Arguments
 
 	mclocal file+ [-d] [-o directory] [-r name]

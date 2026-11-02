@@ -1754,8 +1754,8 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			}
 			var theStringFiles = [];
 			var i = 0;
-			for (var result of tool.stringFiles) {
-				this.line(`cmake_path(CONVERT ${result.source} TO_NATIVE_PATH_LIST the_string_file_${i} NORMALIZE)`);
+			for (var source of tool.stringSources) {
+				this.line(`cmake_path(CONVERT ${source} TO_NATIVE_PATH_LIST the_string_file_${i} NORMALIZE)`);
 				theStringFiles[i] = `the_string_file_${i}`;
 				i++;
 			}
@@ -1781,16 +1781,16 @@ otadata, data, ota, , ${OTADATA_SIZE},`;
 			this.write("$(RESOURCES_DIR)");
 			this.write(tool.slash);
 			this.write(tool.localsName + ".mhi: $(HEADERS)");
-			for (var result of tool.stringFiles) {
+			for (var source of tool.stringSources) {
 				this.write(" ");
-				this.write(result.source);
+				this.write(source);
 			}
 			this.line("");
 			this.echo(tool, "mclocal strings");
 			this.write("\tmclocal");
-			for (var result of tool.stringFiles) {
+			for (var source of tool.stringSources) {
 				this.write(" ");
-				this.write(result.source);
+				this.write(source);
 			}
 			if (!defines || !defines.locals || !defines.locals.all)
 				this.write(" -d");
@@ -3216,6 +3216,9 @@ export class Tool extends TOOL {
 		if ("string" == typeof sourceIn)
 			return result;
 		return {...sourceIn, source: result};
+	}
+	get stringSources() {		// each language can have several files
+		return this.stringFiles.flatMap(file => [file.source, ...(file.sources ?? [])]);
 	}
 	resolveVariable(value) {
 		value = value.replace(/\$\(([^\)]+)\)/g, (offset, value) => {

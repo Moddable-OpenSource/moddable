@@ -402,7 +402,7 @@ The `defines` object is explained more fully in the [defines document](../tools/
 <a id="config"></a>
 ### `config`
 
-The `config` object contains values that are accessible to the application's scripts.
+The `config` object contains values that are accessible to the application's scripts. A string value may use `$(NAME)` to include a variable from the `build` object or the environment, for example `"idfVersion": "$(EXPECTED_ESP_IDF)"`.
 
 It is commonly used in the manifests of target platforms to specify the screen driver, touch driver, and default rotation. These properties are used by [Commodetto](../commodetto/commodetto.md) and [Piu](../piu/piu.md) setup modules.
 
