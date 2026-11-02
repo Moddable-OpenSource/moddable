@@ -1,6 +1,6 @@
 # Piu Extensions
 Copyright 2026 Moddable Tech, Inc.<BR>
-Revised: October 12, 2026
+Revised: November 1, 2026
 
 ## About This Document
 
@@ -274,6 +274,7 @@ The kinetic scroller behaviors are `behavior` objects that scroll a `scroller` o
 
 - The contents follow the finger while it drags.
 - When the finger is lifted while moving, the contents are tossed: they continue to scroll and slow down progressively.
+- When the contents are dragged beyond their bounds, they resist, more the further they go.
 - When the contents are scrolled beyond their bounds, they bounce back.
 
 Unlike the other extensions, the kinetic scroller behaviors are not `content` objects and the module defines no global properties. The module exports two classes, `HorizontalScrollerBehavior` and `VerticalScrollerBehavior`, to scroll horizontally or vertically.
