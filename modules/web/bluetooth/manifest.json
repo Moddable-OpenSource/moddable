@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/ble/client"
+		"$(EMBEDDED)/io/bluetoothle/central"
 	],
 	"modules": {
 		"*": "./web-bluetooth"

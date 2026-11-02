@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/display",
+		"$(EMBEDDED)/display",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parsebmf.json",
 		"$(COMMODETTO)/manifest_parsebmp.json",

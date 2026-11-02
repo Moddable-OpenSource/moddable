@@ -1,0 +1,31 @@
+{
+	"modules": {
+		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
+		"*": [
+			"$(EMBEDDED)/common/builtinCommon"
+		],
+		"config/serial": "./config"
+	},
+	"platforms": {
+		"esp": {
+		},
+		"esp32": {
+		},
+		"nrf52": {
+		},
+		"pico": {
+		},
+		"zephyr": {
+		},
+		"lin": {
+		},
+		"mac": {
+		},
+		"win": {
+		}
+	},
+	"preload": [
+		"embedded:io/serial",
+		"config/serial"
+	]
+}

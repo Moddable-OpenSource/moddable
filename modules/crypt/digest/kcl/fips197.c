@@ -599,7 +599,7 @@ static const UINT8_TABLE ltab[] ICACHE_XS6RO_ATTR = {
 // read the byte-valued tables through volatile pointers, as T0..T3 are, so the compiler keeps the 32-bit loads (ESP8266 cannot load bytes from flash)
 static const volatile UINT8_TABLE *RSp = RS;
 static const volatile UINT8_TABLE *rconp = rcon;
-// the inverse cipher is needed only by the ECB and CBC decrypt directions; a build that omits both (see modules/io/crypt/cipher)
+// the inverse cipher is needed only by the ECB and CBC decrypt directions; a build that omits both (see modules/embedded/crypt/cipher)
 // leaves its key schedule, and so its tables, out
 #ifndef MODDEF_CRYPT_CIPHER_AES_ECB
 	#define MODDEF_CRYPT_CIPHER_AES_ECB 1

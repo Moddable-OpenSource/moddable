@@ -1,15 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/key-value/mac",
 	"platforms": {
-		"mac": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/key-value": "./storage-mac",
-				"config/storage": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/storage/mac/manifest.json moved to $(MODDABLE)/modules/embedded/storage/key-value/mac"
 		}
-	},
-	"preload": [
-		"embedded:storage/key-value",
-		"config/storage"
-	]
+	}
 }

@@ -1,8 +1,8 @@
 {
-	"modules": {
-		"embedded:io/provider/MCP23X17": "./expander"
-	},
-	"preload": [
-		"embedded:io/provider/MCP23X17"
-	]
+	"include": "$(MODDABLE)/modules/drivers/peripherals/mcp23x17",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/expander/manifest.json moved to $(MODDABLE)/modules/drivers/peripherals/mcp23x17"
+		}
+	}
 }

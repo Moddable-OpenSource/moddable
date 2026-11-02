@@ -1,0 +1,13 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-esp",
+				"*": "$(EMBEDDED)/network/interface/wifi/esp/wifi-esp-events"
+			},
+			"preload": [
+				"embedded:network/interface/wifi/accesspoint"
+			]
+		}
+	}
+}

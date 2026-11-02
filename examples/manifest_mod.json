@@ -3,7 +3,8 @@
 		"BUILD": "$(MODDABLE)/build",
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
-		"PIU": "$(MODULES)/piu"
+		"PIU": "$(MODULES)/piu",
+		"EMBEDDED": "$(MODULES)/embedded"
 	},
 	"platforms": {
 		"esp32/esp32c3_cdc": {

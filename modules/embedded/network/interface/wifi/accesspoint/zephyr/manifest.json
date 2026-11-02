@@ -1,0 +1,22 @@
+{
+	"platforms": {
+		"zephyr": {
+			"modules": {
+				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-zephyr"
+			},
+			"preload": [
+				"embedded:network/interface/wifi/accesspoint"
+			],
+			"zephyrConfig": {
+				"CONFIG_NETWORKING": "y",
+				"CONFIG_NET_IPV4": "y",
+				"CONFIG_NET_TCP": "y",
+				"CONFIG_NET_UDP": "y",
+				"CONFIG_WIFI": "y",
+				"CONFIG_NET_MGMT_EVENT_INFO": "y",
+				"CONFIG_NET_DHCPV4_SERVER": "y",
+				"CONFIG_NET_CONTEXT_SNDBUF": "y"
+			}
+		}
+	}
+}

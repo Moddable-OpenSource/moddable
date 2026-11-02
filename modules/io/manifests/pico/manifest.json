@@ -1,12 +1,8 @@
 {
-	"include": [
-		"$(IO)/analog",
-		"$(IO)/audioout",
-		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(IO)/pulsecount",
-		"$(IO)/pwm",
-		"$(IO)/serial",
-		"$(IO)/spi"
-	]
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/pico",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifests/pico/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/pico"
+		}
+	}
 }

@@ -1,28 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket",
 	"platforms": {
-		"esp": {
-			"include": "./lwip"
-		},
-		"esp32": {
-			"include": "./lwip"
-		},
-		"pico": {
-			"include": "./lwip"
-		},
-		"zephyr": {
-			"include": "./zephyr"
-		},
-		"mac": {
-			"include": "./mac"
-		},
-		"lin": {
-			"include": "./lin"
-		},
-		"win": {
-			"include": "./win"
-		},
 		"...": {
-			"error": "ECMA-419 socket unsupported target"
+			"warning": "$(MODDABLE)/modules/io/socket/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket"
 		}
 	}
 }

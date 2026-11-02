@@ -22,11 +22,11 @@ Building for `mac`, `lin`, or `win` — including `mcconfig -p sim` — substitu
 
 The simulated portal runs the same flow and reports the same phases, but there is **no HTTP server, no DNS server, and no WebSocket**: none of them would be useful, since no phone can join a simulated access point, and both port 53 and port 80 are privileged on a desktop.
 
-In their place a ghost client stands in for the phone. It arrives as the station the [simulated access point](../../../../modules/io/wifiaccesspoint/sim/readme.md) produces, then works through what a browser would do, a step at a time:
+In their place a ghost client stands in for the phone. It arrives as the station the [simulated access point](../../../../modules/embedded/network/interface/wifi/accesspoint/sim/readme.md) produces, then works through what a browser would do, a step at a time:
 
 1. requests `/` — the project's `onPage()` is called exactly as the HTTP server would call it
 2. requests a path that does not exist, which a real portal answers with a redirect to itself
-3. asks for a Wi-Fi scan, which the [simulated Wi-Fi station interface](../../../../modules/io/wifi/sim/readme.md) answers
+3. asks for a Wi-Fi scan, which the [simulated Wi-Fi station interface](../../../../modules/embedded/network/interface/wifi/sim/readme.md) answers
 4. chooses the network with the strongest signal and sends credentials, taking the portal through `connecting` to `provisioned`
 5. terminates the portal, which closes it and calls `onClose()`
 
@@ -34,4 +34,4 @@ The ghost checks what `onPage()` returns and reports problems to `onError()` —
 
 The whole flow takes about five seconds.
 
-The ghost always supplies a password the simulated Wi-Fi accepts, so the flow ends in `provisioned`. To see the `failed` phase instead, connect to a network that rejects it — see the reserved password in the [simulated Wi-Fi station interface](../../../../modules/io/wifi/sim/readme.md).
+The ghost always supplies a password the simulated Wi-Fi accepts, so the flow ends in `provisioned`. To see the `failed` phase instead, connect to a network that rejects it — see the reserved password in the [simulated Wi-Fi station interface](../../../../modules/embedded/network/interface/wifi/sim/readme.md).

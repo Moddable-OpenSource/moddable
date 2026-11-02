@@ -1,5 +1,3 @@
-This IO work is an experimental implementation of Ecma TC53, [ECMAScript Modules for Embedded Systems](https://ecmatc53.github.io/spec/web/spec.html).
+# modules/io
 
-It is only implemented for the ESP8266 microcontroller at this time.
-
-For details about the implementation, see the [IO documentation](../../documentation/io/io.md).
+The ECMA-419 implementations moved to [modules/embedded](../embedded), organized by module specifier. The manifests here forward to the new locations and warn when used, so existing projects keep building. Update includes to the paths named in the warnings.

@@ -1,38 +1,8 @@
 {
-	"build": {
-		"IO": "$(MODDABLE)/modules/io"
-	},
-	"include": [
-		"$(IO)/analog",
-		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(IO)/pwm",
-		"$(IO)/serial",
-		"$(COMMODETTO)/manifest_bitmap.json"
-	],
-	"modules": {
-		"*": [
-			"$(IO)/common/builtinCommon"
-		],
-		"lockdown/device": "$(IO)/system/lockdowndevice"
-	},
-	"preload": [
-		"lockdown/device",
-		"embedded:provider/builtin"
-	],
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/zephyr",
 	"platforms": {
-		"zephyr/*": {
-			"modules": {
-				"embedded:provider/builtin": "$(SUBPLATFORMDIRECTORY)/host/provider"
-			}
-		},
-		"zephyr": {
-			"modules": {
-				"embedded:provider/builtin": "$(IO)/host/$(PLATFORM)/provider"
-			}
-		},
 		"...": {
-			"error": "zephyr manifest"
+			"warning": "$(MODDABLE)/modules/io/manifests/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/zephyr"
 		}
 	}
 }

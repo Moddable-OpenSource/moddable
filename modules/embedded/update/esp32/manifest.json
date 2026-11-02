@@ -1,0 +1,18 @@
+{
+	"platforms": {
+		"esp32": {
+			"include": "$(EMBEDDED)/storage/flash",
+			"modules": {
+				"embedded:update": "./update-esp32",
+				"config/update": "../config"
+			},
+			"dependency": [
+				{ "idf": "app_update" }
+			]
+		}
+	},
+	"preload": [
+		"embedded:update",
+		"config/update"
+	]
+}

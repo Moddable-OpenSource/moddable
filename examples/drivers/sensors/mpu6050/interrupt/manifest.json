@@ -5,8 +5,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/mpu6050",
-		"$(MODDABLE)/modules/io/digital",
-		"$(MODDABLE)/modules/io/i2c"
+		"$(EMBEDDED)/io/digital",
+		"$(EMBEDDED)/io/i2c"
 	],
 	"modules": {
 		"*": "./main"

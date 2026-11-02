@@ -5,7 +5,7 @@
 		"$(MODDABLE)/modules/pins/digital",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(BUILD)/devices/nrf52/modules/sleep",
-		"$(MODDABLE)/modules/io/system"
+		"$(EMBEDDED)/system"
 	],
 	"modules": {
 		"*": "./main"

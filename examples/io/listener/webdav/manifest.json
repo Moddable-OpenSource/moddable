@@ -6,10 +6,10 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/modules/network/net",
-		"$(MODDABLE)/modules/io/files",
-		"$(MODDABLE)/modules/io/http/server",
-		"$(MODDABLE)/modules/io/http/server/route/static",
-		"$(MODDABLE)/modules/io/http/server/route/webdav"
+		"$(EMBEDDED)/storage/files",
+		"$(EMBEDDED)/network/http/server",
+		"$(EMBEDDED)/network/http/server/route/static",
+		"$(EMBEDDED)/network/http/server/route/webdav"
 	],
 	"modules": {
 		"*": "./main"

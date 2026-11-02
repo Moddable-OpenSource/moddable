@@ -1,32 +1,8 @@
 {
-	"include": [
-		"$(MODULES)/base/modules"
-	],
+	"include": "$(MODDABLE)/modules/embedded/storage/files/esp32/manifest_fat.json",
 	"platforms": {
-		"esp32": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-vfs",
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			],
-			"defines": {
-				"file": {
-					"partition": "#storage",
-					"fat32": 1
-				}
-			},
-			"dependency": [
-				{ "idf": "fatfs" },
-				{ "idf": "sdmmc" },
-				{ "idf": "esp_hal_sd" },
-				{ "idf": "esp_driver_sdspi" },
-				{ "idf": "esp_driver_sdmmc", "includes": ["legacy/include"] }
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/files/esp32/manifest_fat.json moved to $(MODDABLE)/modules/embedded/storage/files/esp32/manifest_fat.json"
 		}
-	},
-	"mcpack": false
+	}
 }

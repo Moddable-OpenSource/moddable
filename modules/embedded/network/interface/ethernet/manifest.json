@@ -1,0 +1,16 @@
+{
+	"platforms": {
+		"esp32": {
+			"include": "./esp32",
+			"dependency": [
+				{ "idf": "esp_eth" }
+			]
+		},
+		"zephyr": {
+			"include": "./zephyr"
+		},
+		"...": {
+			"error": "ethernet: unsupported platform"
+		}
+	}
+}

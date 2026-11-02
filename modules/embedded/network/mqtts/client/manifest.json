@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(EMBEDDED)/io/socket/tcp/tls",
+		"$(EMBEDDED)/network/mqtt/client"
+	],
+	"modules": {
+		"config/mqttsclient": "./config"
+	},
+	"preload": [
+		"config/mqttsclient"
+	]
+}

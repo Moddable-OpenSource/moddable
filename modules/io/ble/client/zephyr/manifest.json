@@ -1,23 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/bluetoothle/central/zephyr",
 	"platforms": {
-		"zephyr": {
-			"modules": {
-				"embedded:io/bluetoothle/central": "./bleclient",
-				"*": [
-					"$(MODULES)/io/common/builtinCommon"
-				]
-			},
-			"preload": "embedded:io/bluetoothle/central",
-			"zephyrConfig": {
-				"CONFIG_BT": "y",
-				"CONFIG_BT_OBSERVER": "y",
-				"CONFIG_BT_CENTRAL": "y",
-				"CONFIG_BT_GATT_CLIENT": "y"
-			},
-			"x-zephyrConfig" : {
-				"CONFIG_BT_LOG_LEVEL_DBG": "y",
-				"CONFIG_LOG": "y"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ble/client/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/io/bluetoothle/central/zephyr"
 		}
 	}
 }

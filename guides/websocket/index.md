@@ -61,11 +61,11 @@ import WebSocket from "WebSocket";
 
 To use the WebSocket Client instead, include its manifest. Including the manifest initializes the host provider `device.network.ws`:
 
-	$(MODDABLE)/modules/io/ws/client
+	$(MODDABLE)/modules/embedded/network/ws/client
 
 For secure connections over WSS, include the secure WebSocket Client manifest instead. It initializes the host provider `device.network.wss`:
 
-	$(MODDABLE)/modules/io/wss/client
+	$(MODDABLE)/modules/embedded/network/wss/client
 
 To use `WebSocketStream()`, include its manifest in your project's `manifest.json`.
 
@@ -103,7 +103,7 @@ If your project uses the `WebSocketStream` global, `mcpack` automatically includ
 	- [Touch over WebSocketStream() example](../../examples/web/streams/touch-websocket/main.js) in Moddable SDK
 - Implementations
 	- [WebSocket()](../../modules/web/websocket/WebSocket.js) in Moddable SDK
-	- [WebSocket Client](../../modules/io/ws/client/websocketclient.js) in Moddable SDK
+	- [WebSocket Client](../../modules/embedded/network/ws/client/websocketclient.js) in Moddable SDK
 	- [WebSocketStream()](../../modules/web/streams/websocket/WebSocketStream.js) in Moddable SDK
 - TypeScript Declarations
 	- [WebSocket()](../../typings/web/websocket.d.ts) in Moddable SDK

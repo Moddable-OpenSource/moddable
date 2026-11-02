@@ -36,7 +36,7 @@
 	"platforms": {
 		"esp32": {
 			"include": [
-				"$(MODDABLE)/modules/io",
+				"$(EMBEDDED)/io",
 				"$(MODDABLE)/modules/drivers/sensors/bme68x"
 			],
 			"creation": {

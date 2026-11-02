@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/io/expander"
+		"$(EMBEDDED)/io",
+		"$(MODDABLE)/modules/drivers/peripherals/mcp23x17"
 	],
 	"modules": {
 		"*": "./main"

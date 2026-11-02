@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/dns/server"
+		"$(EMBEDDED)/network/dns/server"
 	],
 	"platforms": {
 		"...": {
-			"warning": "DNS Server manifest moved to $(MODDABLE)/modules/io/dns/server"
+			"warning": "DNS Server manifest moved to $(MODDABLE)/modules/embedded/network/dns/server"
 		}
 	}
 }

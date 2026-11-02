@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket/zephyr",
 	"platforms": {
-		"zephyr": {
-			"modules": {
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/zephyr/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/zephyr/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/zephyr/listener",
-				"config/socket": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/socket/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket/zephyr"
 		}
-	},
-	"preload": [
-		"embedded:io/socket/tcp",
-		"embedded:io/socket/udp",
-		"embedded:io/socket/listener",
-		"config/socket"
-	]
+	}
 }

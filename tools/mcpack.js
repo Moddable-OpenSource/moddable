@@ -208,34 +208,34 @@ globalThis.BluetoothUUID = BluetoothUUID;
 `
 };
 const dnsGlobal = {
-	include: "$(MODDABLE)/modules/io/dns/resolver"
+	include: "$(MODDABLE)/modules/embedded/network/dns/resolver"
 };
 const httpGlobal = {
-	include: "$(MODDABLE)/modules/io/http/client"
+	include: "$(MODDABLE)/modules/embedded/network/http/client"
 };
 const httpsGlobal = {
-	include: "$(MODDABLE)/modules/io/https/client"
+	include: "$(MODDABLE)/modules/embedded/network/https/client"
 };
 const httpServerGlobal = {
-	include: "$(MODDABLE)/modules/io/http/server"
+	include: "$(MODDABLE)/modules/embedded/network/http/server"
 };
 const wsGlobal = {
-	include: "$(MODDABLE)/modules/io/ws/client"
+	include: "$(MODDABLE)/modules/embedded/network/ws/client"
 };
 const wssGlobal = {
-	include: "$(MODDABLE)/modules/io/wss/client"
+	include: "$(MODDABLE)/modules/embedded/network/wss/client"
 };
 const mqttGlobal = {
-	include: "$(MODDABLE)/modules/io/mqtt/client"
+	include: "$(MODDABLE)/modules/embedded/network/mqtt/client"
 };
 const mqttsGlobal = {
-	include: "$(MODDABLE)/modules/io/mqtts/client"
+	include: "$(MODDABLE)/modules/embedded/network/mqtts/client"
 };
 const ntpGlobal = {
-	include: "$(MODDABLE)/modules/io/ntp/client"
+	include: "$(MODDABLE)/modules/embedded/network/ntp/client"
 };
 const dnssdGlobal = {
-	include: "$(MODDABLE)/modules/io/dnssd/manifest.json"
+	include: "$(MODDABLE)/modules/embedded/network/dnssd/manifest.json"
 };
 
 export default class extends TOOL {

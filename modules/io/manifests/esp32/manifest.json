@@ -1,12 +1,8 @@
 {
-	"include": [
-		"$(IO)/analog",
-		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(IO)/pulsewidth",
-		"$(IO)/pulsecount",
-		"$(IO)/pwm",
-		"$(IO)/serial",
-		"$(IO)/spi"
-	]
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/esp32",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifests/esp32/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/esp32"
+		}
+	}
 }

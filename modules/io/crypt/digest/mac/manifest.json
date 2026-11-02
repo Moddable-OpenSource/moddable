@@ -1,9 +1,0 @@
-{
-	"include": "$(MODDABLE)/modules/io/crypt/cryptokit",
-	"modules": {
-		"*": [
-			"./digest",
-			"./digest-cryptokit"
-		]
-	}
-}

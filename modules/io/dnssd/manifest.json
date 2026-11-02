@@ -1,15 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/data/dns",
-		"$(MODDABLE)/modules/network/net"
-	],
-	"modules": {
-		"embedded:network/dnssd": "./dnssd",
-		"config/dnssd": "./config"
-	},
-	"preload": [
-		"config/dnssd",
-		"embedded:network/dnssd"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/dnssd",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/dnssd/manifest.json moved to $(MODDABLE)/modules/embedded/network/dnssd"
+		}
+	}
 }

@@ -1,28 +1,8 @@
 {
-	"preload": [
-		"embedded:io/image/in/camera"
-	],
+	"include": "$(MODDABLE)/modules/embedded/io/image/in/arducam_hm01b0",
 	"platforms": {
-        "pico": {
-            "include": [
-                {   
-                    "git":"https://github.com/mkellner/hm01b0-library-for-pico.git",
-					"manifest": {
-            			"modules": {
-			                "*": [
-								"./src/hm01b0.c",
-								"./src/include/"
-							]
-						}
-					}
-				}
-			],  
-			"modules": {
-                "embedded:io/image/in/camera": "./pico/*"
-            }
-        },
 		"...": {
-			"error": "Pico devices only"
+			"warning": "$(MODDABLE)/modules/io/imagein/arducam_hm01b0/manifest.json moved to $(MODDABLE)/modules/embedded/io/image/in/arducam_hm01b0"
 		}
 	}
 }

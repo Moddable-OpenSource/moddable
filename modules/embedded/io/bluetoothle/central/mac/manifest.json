@@ -1,0 +1,13 @@
+{
+	"platforms": {
+		"mac": {
+			"modules": {
+				"embedded:io/bluetoothle/central": "./bleclient",
+				"*": [
+					"$(EMBEDDED)/common/builtinCommon"
+				]
+			},
+			"preload": "embedded:io/bluetoothle/central"
+		}
+	}
+}

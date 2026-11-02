@@ -57,7 +57,7 @@ zephyr_library_include_directories(
 	$ENV{MODDABLE}/modules/files/preference
 	$ENV{MODDABLE}/modules/commodetto/gif
 	$ENV{MODDABLE}/modules/commodetto
-	$ENV{MODDABLE}/modules/io/common
+	$ENV{MODDABLE}/modules/embedded/common
 	$ENV{MODDABLE}/modules/piu/All
 	$ENV{MODDABLE}/modules/piu/MC
 )

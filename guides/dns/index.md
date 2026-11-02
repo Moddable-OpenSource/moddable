@@ -17,7 +17,7 @@ The ECMA-419 DNS Resolver is used by networking APIs, including `fetch()`, `WebS
 
 Include the DNS Resolver manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/io/dns/resolver
+	$(MODDABLE)/modules/embedded/network/dns/resolver
 
 Then, import the module in your JavaScript source code:
 
@@ -41,6 +41,6 @@ import Resolver from "embedded:network/dns/resolver/udp";
 - Example
 	- [DNS Resolver example](../../examples/io/udp/dns/main.js) in Moddable SDK
 - Implementation
-	- [DNS Resolver](../../modules/io/dns/resolver/dns.js) in Moddable SDK
+	- [DNS Resolver](../../modules/embedded/network/dns/resolver/dns.js) in Moddable SDK
 - TypeScript Declaration
 	- [DNS Resolver](../../typings/embedded_network/dns/resolver/udp.d.ts) in Moddable SDK

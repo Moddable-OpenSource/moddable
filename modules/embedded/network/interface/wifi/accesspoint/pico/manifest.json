@@ -1,0 +1,11 @@
+{
+	"platforms": {
+		"pico": {
+			"modules": {
+				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-pico",
+				"*": "$(PICO_EXAMPLES_DIR)/pico_w/wifi/access_point/dhcpserver/dhcpserver"
+			},
+			"preload": "embedded:network/interface/wifi/accesspoint"
+		}
+	}
+}

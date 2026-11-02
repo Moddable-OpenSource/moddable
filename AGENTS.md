@@ -198,11 +198,11 @@ Several parts of the SDK have been superseded. The older code still works and is
 There are roughly three tiers, newest first:
 
 1. **Web standard APIs** — [modules/web](./modules/web) and related: `fetch`, `WebSocket`, streams, `console`, timers, `localStorage`. Prefer these where they cover the task.
-2. **ECMA-419** — [modules/io](./modules/io), imported as `embedded:io/*`, `embedded:network/*`, `embedded:storage/*`, and `embedded:provider/*`. These are **not documented in this repository**; the reference is the standard itself, <https://419.ecma-international.org>, plus the relevant [guides](./guides) topic.
+2. **ECMA-419** — [modules/embedded](./modules/embedded), imported as `embedded:io/*`, `embedded:network/*`, `embedded:storage/*`, and `embedded:provider/*`. These are **not documented in this repository**; the reference is the standard itself, <https://419.ecma-international.org>, plus the relevant [guides](./guides) topic.
 3. **Legacy** — the following, which should not be used for new work:
 
 	- [**modules/pins**](./modules/pins) — superseded by `embedded:io/*` (`digital`, `analog`, `i2c`, `smbus`, `spi`, `pwm`, `pulsecount`, `pulsewidth`, `serial`). Treat the whole directory as deprecated.<BR>
-	**Exception: audio.** AudioOut is current. It already lives at [modules/io/audioout](./modules/io/audioout) as `embedded:io/audio/out`, with a `pins/` compatibility shim inside it, and [documentation/pins/audioout.md](./documentation/pins/audioout.md) remains the reference.
+	**Exception: audio.** AudioOut is current. It already lives at [modules/embedded/io/audio/out](./modules/embedded/io/audio/out) as `embedded:io/audio/out`, with a `pins/` compatibility shim inside it, and [documentation/pins/audioout.md](./documentation/pins/audioout.md) remains the reference.
 	- [**modules/files**](./modules/files) — the original `file`, `flash`, and `preference` APIs. Prefer `embedded:storage/files` and `embedded:storage/flash`.
 	- [**modules/network**](./modules/network) — the original networking stack. Prefer `embedded:io/socket/*` and `embedded:network/*`, or the web standard tier above.
 
@@ -257,11 +257,11 @@ See also [documentation/tools/defines.md](./documentation/tools/defines.md) for 
 
 ### Network protocols and the network connection
 
-**Protocol manifests do not bring the network.** The `embedded:network/*` protocol modules (`modules/io/http/client`, `ntp/client`, `dns/resolver`, `mqtt/client`, `ws/client`, …) deliberately include no network interface, sockets, or DNS resolver; those are passed to their constructors, not pulled from the environment. Applications include [examples/manifest_net.json](./examples/manifest_net.json), and `mcpack` adds it automatically when a manifest in the build sets `"network": true`. Fix a missing `config/dns` or socket in the application or in `manifest_net.json`, never by adding includes to a protocol manifest.
+**Protocol manifests do not bring the network.** The `embedded:network/*` protocol modules (`modules/embedded/network/http/client`, `ntp/client`, `dns/resolver`, `mqtt/client`, `ws/client`, …) deliberately include no network interface, sockets, or DNS resolver; those are passed to their constructors, not pulled from the environment. Applications include [examples/manifest_net.json](./examples/manifest_net.json), and `mcpack` adds it automatically when a manifest in the build sets `"network": true`. Fix a missing `config/dns` or socket in the application or in `manifest_net.json`, never by adding includes to a protocol manifest.
 
-**HTTP server routes have their own manifests**, under `modules/io/http/server/route/`. The server manifest includes none of them; include only the routes the project uses.
+**HTTP server routes have their own manifests**, under `modules/embedded/network/http/server/route/`. The server manifest includes none of them; include only the routes the project uses.
 
-**Shared modules moved out of `examples/`** into `modules/io` and `modules/web` (October 2026). The old manifest paths remain as forwarding manifests that warn `… manifest moved to …`; when you see that warning, update the include.
+**Shared modules moved out of `examples/`** into `modules/io` and `modules/web` (October 2026), and `modules/io` then became `modules/embedded`, organized by ECMA-419 specifier (November 2026). The old manifest paths remain as forwarding manifests that warn `… moved to …`; when you see that warning, update the include. Never delete a forwarding manifest: projects outside this repository may include it. Manifests refer to the tree as `$(EMBEDDED)`, defined in [examples/manifest_base.json](./examples/manifest_base.json) alongside `$(IO)`, which is `$(EMBEDDED)/io`.
 
 ### `creation` — configuring RAM
 
@@ -334,7 +334,7 @@ Also available headless:
 
 Much of the runtime is C beneath a JavaScript API — around 250 `.c` files under [modules](./modules) use the `xsmc` macros. **If you are editing C in `modules/` or `xs/`, read [XS in C](./documentation/xs/XS%20in%20C.md) first.**
 
-It is not a conventional C API, and the ways it goes wrong are memory corruption rather than clean errors. In particular the garbage collector may move data, so pointers obtained from the VM must not be held across an allocation, and native data that references JavaScript objects needs the correct mark hooks. Follow the patterns in a neighboring module rather than inventing an approach — [modules/io](./modules/io) is the most current native code in the tree.
+It is not a conventional C API, and the ways it goes wrong are memory corruption rather than clean errors. In particular the garbage collector may move data, so pointers obtained from the VM must not be held across an allocation, and native data that references JavaScript objects needs the correct mark hooks. Follow the patterns in a neighboring module rather than inventing an approach — [modules/embedded](./modules/embedded) is the most current native code in the tree.
 
 **lwIP on threaded ports.** On ESP32, lwIP runs on its own task, so a pcb pointer or guard read on the XS task can be stale by the time a marshaled lwIP call runs — an RST frees the pcb, a FIN resets the receive window. Pass the address of the owner's pcb slot, and dereference and test it inside the marshal; see the `*_checked_safe` functions in [modules/network/socket/lwip/modLwipSafe.c](./modules/network/socket/lwip/modLwipSafe.c). Keep its `#if !ESP32` macro branch compiling when signatures change.
 
@@ -362,7 +362,7 @@ How the guides are structured, which is not obvious from any one page:
 
 **ECMA-419 is not yet documented in this repository.** For the `embedded:*` APIs, use the standard itself: <https://419.ecma-international.org> — a single HTML page covering the whole specification. Read it rather than guessing at an API shape. The guides deep-link into it with anchors (`#http-client-class-pattern`, `#storage-keyvalue`, `#byte-buffer`, and so on), so the relevant guide topic is usually the fastest way to the right part of the spec. Download the page and search it locally rather than relying on a fetched summary: the class-pattern rules in §8 — options object required, `this` in callbacks, completion-callback arguments — are stated once, apply to every class, and are what summaries drop.
 
-**Module specifiers do not map to paths.** `embedded:storage/key-value` is implemented in `modules/io/storage`, `embedded:network/dns/resolver/udp` in `modules/io/dns/resolver`. To find an implementation, search the manifests for the quoted specifier.
+**Module specifiers map to directories under `modules/embedded`, approximately.** `embedded:storage/key-value` is implemented in `modules/embedded/storage/key-value`, `embedded:network/http/client` in `modules/embedded/network/http/client`. The mapping is not exact — platform implementations sit in subdirectories, `embedded:network/websocket/client` lives under `network/ws/client` (the directory follows the standard; the specifier has yet to catch up), and `https`, `mqtts`, and `wss` are bundles with no specifier of their own. When in doubt, search the manifests for the quoted specifier.
 
 Note that [documentation/io/io.md](./documentation/io/io.md) is *not* a reference for ECMA-419: it is a 2021 introduction written while the IO Class Pattern was still a proposal, and it targets only ESP8266.
 

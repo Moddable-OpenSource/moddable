@@ -1,16 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/bluetoothle/central",
 	"platforms": {
-		"esp32": {
-			"include": "./esp32"
-		},
-		"mac": {
-			"include": "./mac"
-		},
-		"zephyr": {
-			"include": "./zephyr"
-		},
 		"...": {
-			"error": "ECMA-419 BLE client not yet supported"
+			"warning": "$(MODDABLE)/modules/io/ble/client/manifest.json moved to $(MODDABLE)/modules/embedded/io/bluetoothle/central"
 		}
 	}
 }

@@ -86,7 +86,7 @@ mcconfig -d -m -p esp32/moddable_six
 Requires Wi‑Fi (or other) connectivity **before** the example runs. Includes:
 
 - `examples/manifest_net.json`
-- `modules/io/https/client`
+- `modules/embedded/network/https/client`
 - CA resource `ca236` for TLS
 
 Uses `device.network.https.client` toward `ipwho.is`. One sample per instance lifetime.

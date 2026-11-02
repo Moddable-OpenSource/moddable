@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(EMBEDDED)/network/ws/client",
+		"$(EMBEDDED)/io/socket/tcp/tls"
+	],
+	"modules": {
+		"config/wssclient": "./config"
+	},
+	"preload": [
+		"config/wssclient"
+	]
+}

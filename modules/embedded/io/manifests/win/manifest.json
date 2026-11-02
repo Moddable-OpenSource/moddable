@@ -1,0 +1,8 @@
+{
+	"include": [
+		"$(IO)/serial"
+	],
+	"modules": {
+		"*": "$(EMBEDDED)/common/builtinCommon"
+	}
+}

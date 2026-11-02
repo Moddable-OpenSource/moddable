@@ -10,7 +10,7 @@
 		"embedded:sensor/Accelerometer-Gyroscope/QMI8658": "../modules/accelerometer-gyroscope",
 		"embedded:sensor/Touch/CST9217": "../modules/touch",
 		"embedded:provider/builtin": "$(MODDABLE)/build/devices/esp32/targets/waveshare_amoled_175/host/provider",
-		"lockdown/device": "$(IO)/system/lockdowndevice"
+		"lockdown/device": "$(EMBEDDED)/system/lockdowndevice"
 	},
 	"preload": [
 		"control",

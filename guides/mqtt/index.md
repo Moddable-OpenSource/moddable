@@ -51,11 +51,11 @@ import * as mqtt from "mqtt/js";
 
 To use the MQTT Client instead, include its manifest. Including the manifest initializes the host provider `device.network.mqtt`:
 
-	$(MODDABLE)/modules/io/mqtt/client
+	$(MODDABLE)/modules/embedded/network/mqtt/client
 
 For secure connections over MQTTS, include the secure MQTT Client manifest instead. It initializes the host provider `device.network.mqtts`:
 
-	$(MODDABLE)/modules/io/mqtts/client
+	$(MODDABLE)/modules/embedded/network/mqtts/client
 
 ## Building with mcpack
 
@@ -75,7 +75,7 @@ If your project accesses the MQTT Client through `device.network.mqtt` or `devic
 	- [MQTT Client example](../../examples/io/tcp/mqttclient/main.js) in Moddable SDK
 - Implementations
 	- [MQTT()](../../modules/web/mqtt/mqtt.js) in Moddable SDK
-	- [MQTT Client](../../modules/io/mqtt/client/mqttclient.js) in Moddable SDK
+	- [MQTT Client](../../modules/embedded/network/mqtt/client/mqttclient.js) in Moddable SDK
 - TypeScript Declarations
 	- [MQTT()](../../typings/mqtt/js.d.ts) in Moddable SDK
 	- [MQTT Client](../../typings/embedded_network/mqtt/client.d.ts) in Moddable SDK

@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/modules/io/wss/client"
+		"$(EMBEDDED)/network/wss/client"
 	],
 	"modules": {
 		"*": "./WebSocket"

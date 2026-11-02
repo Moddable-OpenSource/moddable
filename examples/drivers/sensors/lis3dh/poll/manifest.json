@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/lis3dh",
-		"$(MODDABLE)/modules/io/i2c"
+		"$(EMBEDDED)/io/i2c"
 	],
 	"modules": {
 		"*": "./main"

@@ -1,20 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/pulsewidth",
 	"platforms": {
-		"esp32": {
-			"modules": {
-				"embedded:io/pulsewidth": "$(IO)/pulsewidth/$(PLATFORM)/*",
-				"*": [
-					"$(MODULES)/io/common/builtinCommon"
-				],
-				"config/pulsewidth": "./config"
-			},
-			"dependency": [
-				{ "idf": "esp_driver_mcpwm" }
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/pulsewidth/manifest.json moved to $(MODDABLE)/modules/embedded/io/pulsewidth"
 		}
-	},
-	"preload": [
-		"embedded:io/pulsewidth",
-		"config/pulsewidth"
-	]
+	}
 }

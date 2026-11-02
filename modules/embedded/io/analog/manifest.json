@@ -1,0 +1,27 @@
+{
+	"platforms": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"modules": {
+				"embedded:io/analog": "$(EMBEDDED)/io/analog/$(PLATFORM)/*",
+				"*": [
+					"$(EMBEDDED)/common/builtinCommon",
+					"$(EMBEDDED)/io/digital/$(PLATFORM)/*"
+				],
+				"config/analog": "./config"
+			},
+			"preload": [
+				"embedded:io/analog",
+				"config/analog"
+			],
+			"dependency": [
+				{ "idf": "esp_adc" }
+			]
+		}
+	},
+	"zephyrConfig": {
+		"CONFIG_ADC": "y"
+	}
+}

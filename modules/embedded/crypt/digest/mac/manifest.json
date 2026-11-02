@@ -1,0 +1,9 @@
+{
+	"include": "$(EMBEDDED)/crypt/cryptokit",
+	"modules": {
+		"*": [
+			"./digest",
+			"./digest-cryptokit"
+		]
+	}
+}

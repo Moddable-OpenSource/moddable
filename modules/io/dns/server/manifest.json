@@ -1,10 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/data/dns"
-	],
-	"modules": {
-		"embedded:network/dns/server/udp": "./dnsserver"
-	},
-	"preload": "embedded:network/dns/server/udp",
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/dns/server",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/dns/server/manifest.json moved to $(MODDABLE)/modules/embedded/network/dns/server"
+		}
+	}
 }

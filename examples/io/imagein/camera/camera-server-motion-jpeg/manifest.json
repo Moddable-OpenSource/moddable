@@ -2,9 +2,9 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io/imagein/camera",
-		"$(MODDABLE)/modules/io/http/server",
-		"$(MODDABLE)/modules/io/http/server/route/static",
+		"$(EMBEDDED)/io/image/in/camera",
+		"$(EMBEDDED)/network/http/server",
+		"$(EMBEDDED)/network/http/server/route/static",
 		"$(MODDABLE)/modules/network/net"
 	],
 	"modules": {

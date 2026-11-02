@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/audioout",
+		"$(EMBEDDED)/io/audio/out",
 		"$(MODULES)/drivers/peripherals/button",
 		"$(MODULES)/drivers/peripherals/led/neopixel",
 		"$(IO)/digital"

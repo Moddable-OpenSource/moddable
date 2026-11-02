@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/tls/client"
+		"$(EMBEDDED)/io/socket/tcp/tls"
 	],
 	"platforms": {
 		"...": {
-			"warning": "TLS Client manifest moved to $(MODDABLE)/modules/io/tls/client"
+			"warning": "TLS Client manifest moved to $(MODDABLE)/modules/embedded/io/socket/tcp/tls"
 		}
 	}
 }

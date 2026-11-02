@@ -1,10 +1,8 @@
 {
-	"include": [
-		"$(IO)/analog",
-		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(IO)/pwm",
-		"$(IO)/serial",
-		"$(IO)/spi"
-	]
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/esp",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifests/esp/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/esp"
+		}
+	}
 }

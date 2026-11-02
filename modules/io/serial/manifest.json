@@ -1,31 +1,8 @@
 {
-	"modules": {
-		"embedded:io/serial": "$(IO)/serial/$(PLATFORM)/*",
-		"*": [
-			"$(MODULES)/io/common/builtinCommon"
-		],
-		"config/serial": "./config"
-	},
+	"include": "$(MODDABLE)/modules/embedded/io/serial",
 	"platforms": {
-		"esp": {
-		},
-		"esp32": {
-		},
-		"nrf52": {
-		},
-		"pico": {
-		},
-		"zephyr": {
-		},
-		"lin": {
-		},
-		"mac": {
-		},
-		"win": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/serial/manifest.json moved to $(MODDABLE)/modules/embedded/io/serial"
 		}
-	},
-	"preload": [
-		"embedded:io/serial",
-		"config/serial"
-	]
+	}
 }

@@ -7,7 +7,7 @@
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODDABLE)/modules/drivers/ili9341",
 		"$(MODDABLE)/modules/drivers/sensors/mpu6050",
-		"$(MODDABLE)/modules/io"
+		"$(EMBEDDED)/io"
 	],
 	"modules": {
 		"*": [

@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io/ble/client",
-		"$(MODDABLE)/modules/io/storage"
+		"$(EMBEDDED)/io/bluetoothle/central",
+		"$(EMBEDDED)/storage/key-value"
 	],
 	"modules": {
 		"*": "./main"

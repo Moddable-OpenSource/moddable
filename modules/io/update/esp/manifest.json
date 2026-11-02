@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/update/esp",
 	"platforms": {
-		"esp": {
-			"include": [
-				"../../flash",
-				"$(MODULES)/data/crc"
-			],
-			"modules": {
-				"embedded:update": "./update-esp",
-				"config/update": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/update/esp/manifest.json moved to $(MODDABLE)/modules/embedded/update/esp"
 		}
-	},
-	"preload": [
-		"embedded:update",
-		"config/update"
-	]
+	}
 }

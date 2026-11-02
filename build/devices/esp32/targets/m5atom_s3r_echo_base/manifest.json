@@ -8,7 +8,7 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout",
+		"$(EMBEDDED)/io/audio/out",
 		"$(MODDABLE)/modules/drivers/ili9341",
 		"$(MODULES)/drivers/peripherals/button",
 		"$(IO)/digital",

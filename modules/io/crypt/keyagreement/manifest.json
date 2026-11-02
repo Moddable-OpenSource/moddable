@@ -1,7 +1,0 @@
-{
-	"include": [
-		"$(MODDABLE)/modules/io/crypt/key",
-		"$(MODDABLE)/modules/io/crypt/backend",
-		"./$(CRYPT_BACKEND)"
-	]
-}

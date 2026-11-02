@@ -1,0 +1,32 @@
+{
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:network/interface/wifi": "./wifi-esp32"
+			},
+			"preload": [
+				"embedded:network/interface/wifi"
+			],
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			]
+		},
+		"esp32/ws_esp32p4_wifi_3_5": {
+			"include": "$(MODDABLE)/build/devices/esp32/targets/ws_esp32p4_wifi_3_5/manifest_c6.json",
+			"defines": {
+				"wifi": {
+					"hosted": 1
+				}
+			},
+			"modules": {
+				"embedded:network/interface/wifi": "./wifi-esp32"
+			},
+			"preload": [
+				"embedded:network/interface/wifi"
+			],
+			"dependency": [
+				{ "idf": "esp_wifi" }
+			]
+		}
+	}
+}

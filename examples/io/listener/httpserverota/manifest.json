@@ -2,9 +2,9 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io/http/server",
-		"$(MODDABLE)/modules/io/update",
-		"$(MODDABLE)/modules/io/system"
+		"$(EMBEDDED)/network/http/server",
+		"$(EMBEDDED)/update",
+		"$(EMBEDDED)/system"
 	],
 	"modules": {
 		"*": "./main"

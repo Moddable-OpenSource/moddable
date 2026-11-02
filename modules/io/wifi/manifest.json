@@ -1,31 +1,8 @@
 {
-	"modules": {
-		"*": "$(MODULES)/io/common/builtinCommon"
-	},
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi",
 	"platforms": {
-		"esp32": {
-			"include": "./esp32"
-		},
-		"esp": {
-			"include": "./esp"
-		},
-		"pico": {
-			"include": "./pico"
-		},
-		"zephyr": {
-			"include": "./zephyr"
-		},
-		"mac": {
-			"include": "./sim"
-		},
-		"lin": {
-			"include": "./sim"
-		},
-		"win": {
-			"include": "./sim"
-		},
 		"...": {
-			"error": "ECMA-419 Wi-Fi unsupported target"
+			"warning": "$(MODDABLE)/modules/io/wifi/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi"
 		}
 	}
 }

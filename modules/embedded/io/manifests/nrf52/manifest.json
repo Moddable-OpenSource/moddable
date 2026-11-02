@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(IO)/analog",
+		"$(IO)/digital",
+		"$(IO)/i2c",
+		"$(IO)/pulsecount",
+		"$(IO)/pwm",
+		"$(IO)/serial",
+		"$(IO)/spi"
+	]
+}

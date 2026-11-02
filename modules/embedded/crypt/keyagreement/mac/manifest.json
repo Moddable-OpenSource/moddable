@@ -1,0 +1,9 @@
+{
+	"modules": {
+		"embedded:crypt/keyagreement": "$(EMBEDDED)/crypt/keyagreement/keyagreement-native",
+		"*": "./keyagreement"
+	},
+	"preload": [
+		"embedded:crypt/keyagreement"
+	]
+}

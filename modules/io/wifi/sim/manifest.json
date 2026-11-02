@@ -1,31 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi/sim",
 	"platforms": {
-		"mac": {
-			"modules": {
-				"*": "./hostinterface",
-				"embedded:network/interface/wifi": "./wifi-sim"
-			},
-			"preload": [
-				"embedded:network/interface/wifi"
-			]
-		},
-		"lin": {
-			"modules": {
-				"*": "./hostinterface",
-				"embedded:network/interface/wifi": "./wifi-sim"
-			},
-			"preload": [
-				"embedded:network/interface/wifi"
-			]
-		},
-		"win": {
-			"modules": {
-				"*": "./hostinterface",
-				"embedded:network/interface/wifi": "./wifi-sim"
-			},
-			"preload": [
-				"embedded:network/interface/wifi"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wifi/sim/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi/sim"
 		}
 	}
 }

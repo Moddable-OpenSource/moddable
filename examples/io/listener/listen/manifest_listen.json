@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/modules/io/http/server"
+		"$(EMBEDDED)/network/http/server"
 	],
 	"modules": {
 		"*": "./listen"

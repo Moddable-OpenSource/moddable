@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/apds9301",
 		"$(MODDABLE)/modules/drivers/sensors/vl6180",
-		"$(MODDABLE)/modules/io/i2c"
+		"$(EMBEDDED)/io/i2c"
 	],
 	"modules": {
 		"*": "./main"

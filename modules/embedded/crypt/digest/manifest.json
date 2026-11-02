@@ -1,0 +1,12 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/backend",
+		"./$(CRYPT_BACKEND)"
+	],
+	"modules": {
+		"embedded:crypt/digest": "./digest"
+	},
+	"preload": [
+		"embedded:crypt/digest"
+	]
+}

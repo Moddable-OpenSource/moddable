@@ -1,12 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi/pico",
 	"platforms": {
-		"pico": {
-			"modules": {
-				"embedded:network/interface/wifi": "./wifi-pico"
-			},
-			"preload": [
-				"embedded:network/interface/wifi"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wifi/pico/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi/pico"
 		}
 	}
 }

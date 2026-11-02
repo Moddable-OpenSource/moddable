@@ -4,11 +4,11 @@
 		"MAKE_FRAGMENT": "$(MODDABLE)/build/devices/zephyr/config/CMakeLists.txt"
 	},
 	"include": [
-		"$(MODULES)/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/build/devices/zephyr/modules/rtc",
-		"$(MODDABLE)/modules/io/files",
+		"$(EMBEDDED)/storage/files",
 		"$(MODDABLE)/modules/base/modules",
-		"$(MODDABLE)/modules/io/display"
+		"$(EMBEDDED)/display"
 	],
 	"modules": {
 		"*": [

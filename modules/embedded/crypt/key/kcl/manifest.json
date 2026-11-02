@@ -1,0 +1,30 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/digest",
+		"$(EMBEDDED)/crypt/random"
+	],
+	"modules": {
+		"embedded:crypt/key/rsa": "./rsa",
+		"*": [
+			"$(MODULES)/crypt/arith/modular",
+			"$(MODULES)/crypt/arith/mont",
+			"$(MODULES)/crypt/arith/xsBigIntEx",
+			"$(MODULES)/crypt/arith/ec",
+			"$(MODULES)/crypt/arith/x25519",
+			"$(MODULES)/crypt/arith/ecp",
+			"./curves"
+		],
+		"embedded:crypt/cipher/rsa": "./cipher-rsa",
+		"embedded:crypt/key/ec": "./ec"
+	},
+	"preload": [
+		"embedded:crypt/key/rsa",
+		"modular",
+		"mont",
+		"embedded:crypt/cipher/rsa",
+		"ec",
+		"x25519",
+		"embedded:crypt/key/ec",
+		"ecp"
+	]
+}

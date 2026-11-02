@@ -3,7 +3,7 @@
 		"$(MODULES)/drivers/peripherals/button",
 		"$(MODULES)/drivers/peripherals/led/pwm",
 		"$(MODULES)/drivers/st7735",
-		"$(MODULES)/io/imagein/arducam_hm01b0",
+		"$(EMBEDDED)/io/image/in/arducam_hm01b0",
 		"$(IO)/digital",
 		"$(IO)/pwm"
 	],

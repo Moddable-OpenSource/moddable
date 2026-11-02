@@ -2,12 +2,12 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io"
+		"$(EMBEDDED)/io"
 	],
 	"modules": {
 		"*": [
 			"./main",
-			"$(MODDABLE)/modules/io/firmata/firmataclient"
+			"$(MODDABLE)/examples/io/firmata/client/firmataclient"
 		]
 	},
 	"preload": [

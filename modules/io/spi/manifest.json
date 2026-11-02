@@ -1,28 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/spi",
 	"platforms": {
-		"mac": {},
-		"win": {},
-		"lin": {},
 		"...": {
-			"include": [
-				"$(MODULES)/pins/spi"
-			],
-			"modules": {
-				"*": [
-					"$(MODULES)/io/common/builtinCommon",
-					"$(MODULES)/io/spi/$(PLATFORM)/*",
-					"$(MODULES)/commodetto/commodettoBitmap.h"
-				],
-				"embedded:io/spi": "$(IO)/spi/spi",
-				"config/spi": "./config"
-			},
-			"dependency": [
-				{ "idf": "esp_driver_spi" }
-			],
-			"preload": [
-				"embedded:io/spi",
-				"config/spi"
-			]
+			"warning": "$(MODDABLE)/modules/io/spi/manifest.json moved to $(MODDABLE)/modules/embedded/io/spi"
 		}
 	}
 }

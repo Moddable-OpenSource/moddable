@@ -1,0 +1,12 @@
+{
+	"platforms": {
+		"pico": {
+			"modules": {
+				"embedded:network/interface/wifi": "./wifi-pico"
+			},
+			"preload": [
+				"embedded:network/interface/wifi"
+			]
+		}
+	}
+}

@@ -8,9 +8,9 @@
 	"include": [
 		"$(ETHERNET)",
 		"$(MODULES)/network/net",
-		"$(MODDABLE)/modules/io/dns/resolver",
-		"$(MODDABLE)/modules/io/ntp/client",
-		"$(MODDABLE)/modules/io/socket",
+		"$(EMBEDDED)/network/dns/resolver",
+		"$(EMBEDDED)/network/ntp/client",
+		"$(EMBEDDED)/io/socket",
 		"$(MODULES)/network/socket"
 	],
 	"platforms": {

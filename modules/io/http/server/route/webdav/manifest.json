@@ -1,11 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/data/xml"
-	],
-	"modules": {
-		"embedded:network/http/server/route/webdav": "./webdav"
-	},
-	"preload": [
-		"embedded:network/http/server/route/webdav"
-	]
+	"include": "$(MODDABLE)/modules/embedded/network/http/server/route/webdav",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/http/server/route/webdav/manifest.json moved to $(MODDABLE)/modules/embedded/network/http/server/route/webdav"
+		}
+	}
 }

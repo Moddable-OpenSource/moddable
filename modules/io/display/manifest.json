@@ -1,15 +1,8 @@
 {
-	"modules": {
-		"*": "./display419.h"
-	},
+	"include": "$(MODDABLE)/modules/embedded/display",
 	"platforms": {
-		"zephyr": {
-			"include": "./zephyr"
-		}
-	},
-	"defines": {
-		"ECMA419": {
-			"display": 1
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/display/manifest.json moved to $(MODDABLE)/modules/embedded/display"
 		}
 	}
 }

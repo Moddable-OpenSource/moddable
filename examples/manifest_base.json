@@ -4,7 +4,8 @@
 		"MODULES": "$(MODDABLE)/modules",
 		"COMMODETTO": "$(MODULES)/commodetto",
 		"PIU": "$(MODULES)/piu",
-		"IO": "$(MODDABLE)/modules/io"
+		"EMBEDDED": "$(MODDABLE)/modules/embedded",
+		"IO": "$(MODDABLE)/modules/embedded/io"
 	},
 	"creation": {
 		"keys": {

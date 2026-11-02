@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io/ws/client"
+		"$(EMBEDDED)/network/ws/client"
 	],
 	"modules": {
 		"*": "./main"

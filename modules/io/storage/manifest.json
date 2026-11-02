@@ -1,25 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/key-value",
 	"platforms": {
-		"esp": {
-			"include": "./flash"
-		},
-		"esp32": {
-			"include": "./esp32"
-		},
-		"mac": {
-			"include": "./mac"
-		},
-		"nrf52": {
-			"include": "./flash"
-		},
-		"pebble": {
-			"include": "./pebble"
-		},
-		"pico": {
-			"include": "./flash"
-		},
-		"zephyr": {
-			"include": "./zephyr"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/storage/manifest.json moved to $(MODDABLE)/modules/embedded/storage/key-value"
 		}
 	}
 }

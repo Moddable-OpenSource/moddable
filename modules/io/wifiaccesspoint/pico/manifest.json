@@ -1,11 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/pico",
 	"platforms": {
-		"pico": {
-			"modules": {
-				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-pico",
-				"*": "$(PICO_EXAMPLES_DIR)/pico_w/wifi/access_point/dhcpserver/dhcpserver"
-			},
-			"preload": "embedded:network/interface/wifi/accesspoint"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wifiaccesspoint/pico/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/pico"
 		}
 	}
 }

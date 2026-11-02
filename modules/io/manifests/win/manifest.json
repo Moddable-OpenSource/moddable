@@ -1,8 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/io/serial"
-	],
-	"modules": {
-		"*": "$(MODDABLE)/modules/io/common/builtinCommon"
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/win",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifests/win/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/win"
+		}
 	}
 }

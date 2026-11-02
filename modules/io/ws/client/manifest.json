@@ -1,14 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/data/logical"
-	],
-	"modules": {
-		"config/wsclient": "./config",
-		"embedded:network/websocket/client": "./websocketclient"
-	},
-	"preload": [
-		"config/wsclient",
-		"embedded:network/websocket/client"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/ws/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ws/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/ws/client"
+		}
+	}
 }

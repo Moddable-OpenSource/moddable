@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/psa"
+	],
+	"modules": {
+		"*": "./mac"
+	},
+	"dependency": [
+		{
+			"idf": "mbedtls"
+		}
+	]
+}

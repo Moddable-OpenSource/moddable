@@ -1,14 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/data/dns"
-	],
-	"modules": {
-		"embedded:network/dns/resolver/udp": "./dns",
-		"config/dns": "./config"
-	},
-	"preload": [
-		"embedded:network/dns/resolver/udp",
-		"config/dns"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/dns/resolver",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/dns/resolver/manifest.json moved to $(MODDABLE)/modules/embedded/network/dns/resolver"
+		}
+	}
 }

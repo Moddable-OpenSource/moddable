@@ -1,12 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/key-value/pebble",
 	"platforms": {
-		"pebble": {
-			"modules": {
-				"embedded:storage/key-value": "./storage-pebble"
-			},
-			"preload": [
-				"embedded:storage/key-value"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/storage/pebble/manifest.json moved to $(MODDABLE)/modules/embedded/storage/key-value/pebble"
 		}
 	}
 }

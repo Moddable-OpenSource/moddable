@@ -10,8 +10,8 @@
 	"include": [
 		"$(IO)/digital",
 		"$(IO)/i2c",
-		"$(MODDABLE)/modules/io/audioin",
-		"$(MODDABLE)/modules/io/audioout"
+		"$(EMBEDDED)/io/audio/in",
+		"$(EMBEDDED)/io/audio/out"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

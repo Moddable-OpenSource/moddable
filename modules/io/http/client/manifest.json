@@ -1,11 +1,8 @@
 {
-	"modules": {
-		"config/httpclient": "./config",
-		"embedded:network/http/client": "./httpclient"
-	},
-	"preload": [
-		"config/httpclient",
-		"embedded:network/http/client"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/http/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/http/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/http/client"
+		}
+	}
 }

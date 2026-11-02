@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/xml"
+	],
+	"modules": {
+		"embedded:network/http/server/route/webdav": "./webdav"
+	},
+	"preload": [
+		"embedded:network/http/server/route/webdav"
+	]
+}

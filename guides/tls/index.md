@@ -21,7 +21,7 @@ Configuration is the primary challenge when using TLS. This can be more difficul
 	- [TLS Client Socket](https://419.ecma-international.org/#io-classes-tls-client-socket) in ECMA-419
 	- [TLS 1.2 RFC](https://www.rfc-editor.org/info/rfc5246/)
 - Implementations
-	- [TLS Socket](../../modules/io/tls/client/tlssocket.js) in Moddable SDK
+	- [TLS Socket](../../modules/embedded/io/socket/tcp/tls/tlssocket.js) in Moddable SDK
 	- [TLS Session](../../modules/crypt/ssl/session_419.js) in Moddable SDK
 - TypeScript Declarations
 	- [TLS Socket](../../typings/embedded_io/socket/tcp/tls.d.ts) in Moddable SDK

@@ -1,0 +1,11 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/crypt/digest"
+	],
+	"modules": {
+		"embedded:network/http/server/route/ws/handshake": "./handshake"
+	},
+	"preload": [
+		"embedded:network/http/server/route/ws/handshake"
+	]
+}

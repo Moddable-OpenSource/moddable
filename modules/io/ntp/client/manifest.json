@@ -1,11 +1,8 @@
 {
-	"modules": {
-		"embedded:network/ntp/client": "./ntp",
-		"config/ntp": "./config"
-	},
-	"preload": [
-		"embedded:network/ntp/client",
-		"config/ntp"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/ntp/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ntp/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/ntp/client"
+		}
+	}
 }

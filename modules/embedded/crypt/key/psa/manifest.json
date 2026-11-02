@@ -1,0 +1,40 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/psa",
+		"$(EMBEDDED)/crypt/digest",
+		"$(EMBEDDED)/crypt/random"
+	],
+	"modules": {
+		"embedded:crypt/cipher/rsa": "./cipher-rsa",
+		"embedded:crypt/key/ec": "$(EMBEDDED)/crypt/key/ec-native",
+		"*": "./ec-psa"
+	},
+	"preload": [
+		"embedded:crypt/cipher/rsa",
+		"embedded:crypt/key/ec"
+	],
+	"dependency": [
+		{
+			"idf": "mbedtls"
+		}
+	],
+	"platforms": {
+		"zephyr": {
+			"zephyrConfig": {
+				"CONFIG_PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE": "y",
+				"CONFIG_PSA_WANT_ECC_SECP_R1_256": "y",
+				"CONFIG_PSA_WANT_ECC_SECP_R1_384": "y",
+				"CONFIG_PSA_WANT_ECC_MONTGOMERY_255": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT": "y",
+				"CONFIG_PSA_WANT_ALG_RSA_OAEP": "y",
+				"CONFIG_PSA_WANT_ALG_RSA_PKCS1V15_CRYPT": "y",
+				"CONFIG_MBEDTLS_ECP_NIST_OPTIM": "y"
+			}
+		}
+	}
+}

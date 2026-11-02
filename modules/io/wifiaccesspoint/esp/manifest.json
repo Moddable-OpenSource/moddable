@@ -1,13 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/esp",
 	"platforms": {
-		"esp": {
-			"modules": {
-				"embedded:network/interface/wifi/accesspoint": "./wifiaccesspoint-esp",
-				"*": "$(MODULES)/io/wifi/esp/wifi-esp-events"
-			},
-			"preload": [
-				"embedded:network/interface/wifi/accesspoint"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wifiaccesspoint/esp/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/esp"
 		}
 	}
 }

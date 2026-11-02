@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODULES)/pins/digital",
 		"$(MODULES)/pins/digital/monitor",
-		"$(MODDABLE)/modules/io/system"
+		"$(EMBEDDED)/system"
 	],
 	"modules": {
 		"*": "./main"

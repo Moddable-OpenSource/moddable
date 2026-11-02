@@ -1,0 +1,17 @@
+{
+	"platforms": {
+		"esp32": {
+		},
+		"zephyr": {
+			"zephyrConfig": {
+				"CONFIG_MBEDTLS": "y",
+				"CONFIG_MBEDTLS_PSA_CRYPTO_C": "y",
+				"CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS": "n",
+				"CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE": "\"$(EMBEDDED)/crypt/psa/tf-psa-crypto-zephyr.h\""
+			}
+		},
+		"...": {
+			"error": "the PSA crypto backend runs on esp32 and zephyr"
+		}
+	}
+}

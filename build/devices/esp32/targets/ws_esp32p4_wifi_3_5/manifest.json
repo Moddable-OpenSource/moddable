@@ -15,8 +15,8 @@
 		"$(IO)/digital",
 		"$(IO)/i2c",
 		"$(IO)/pwm",
-		"$(IO)/audioin",
-		"$(IO)/audioout"
+		"$(EMBEDDED)/io/audio/in",
+		"$(EMBEDDED)/io/audio/out"
 	],
 	"modules": {
 		"setup/target": "./setup-target"

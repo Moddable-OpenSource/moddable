@@ -3,7 +3,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/base/modules",
 		"$(MODDABLE)/modules/files/preference",
-		"$(MODDABLE)/modules/io/serial"
+		"$(EMBEDDED)/io/serial"
 	],
 	"modules": {
 		"*": [
@@ -27,7 +27,7 @@
 			"include": [
 				"$(MODULES)/base/microseconds",
 				"$(MODDABLE)/modules/files/resourceiterator",
-				"$(MODDABLE)/modules/io"
+				"$(EMBEDDED)/io"
 			],
 			"modules": {
 				"*": [
@@ -39,7 +39,7 @@
 			"include": [
 				"$(MODULES)/base/microseconds",
 				"$(MODDABLE)/modules/files/resourceiterator",
-				"$(MODDABLE)/modules/io",
+				"$(EMBEDDED)/io",
 				"$(MODULES)/pins/smbus",
 				"$(MODDABLE)/modules/network/wifi",
 				"$(MODDABLE)/modules/network/net",

@@ -6,7 +6,7 @@
 	},
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/piu/MC/kineticScroller",
 		"$(MODDABLE)/modules/piu/MC/outline",

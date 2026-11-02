@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/wss/client"
+		"$(EMBEDDED)/network/wss/client"
 	],
 	"platforms": {
 		"...": {
-			"warning": "WebSockets manifest moved to $(MODDABLE)/modules/io/wss/client"
+			"warning": "WebSockets manifest moved to $(MODDABLE)/modules/embedded/network/wss/client"
 		}
 	}
 }

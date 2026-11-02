@@ -1,0 +1,34 @@
+{
+	"include": [
+		"$(MODULES)/base/modules"
+	],
+	"platforms": {
+		"esp32": {
+			"modules": {
+				"embedded:x-files-implementation": "./files-vfs",
+				"embedded:storage/files": "./files",
+				"config/files": "../config"
+			},
+			"preload": [
+				"embedded:x-files-implementation",
+				"config/files"
+			],
+			"defines": {
+				"file": {
+					"sdspi": 1
+				}
+			},
+			"dependency": [
+				{ "idf": "fatfs" },
+				{ "idf": "sdmmc" },
+				{ "idf": "esp_hal_sd" },
+				{ "idf": "esp_driver_sdspi" },
+				{ "idf": "esp_driver_sdmmc", "includes": ["legacy/include"] }
+			],
+			"esp32Config": {
+				"CONFIG_FATFS_SECTOR_512": "y"
+			}
+		}
+	},
+	"mcpack": false
+}

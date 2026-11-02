@@ -1,22 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/flash/mac",
 	"platforms": {
-		"mac": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/flash": "./flash-mac",
-				"config/flash": "../config"
-			},
-			"preload": [
-				"embedded:storage/flash",
-				"config/flash"
-			],
-			"config": {
-				"flash": {
-					"xs_test": { "blocks":10, "blockLength":4096 },
-					"running": { "blocks":4096, "blockLength":4096, "bytes":[ 233 ] },
-					"nextota": { "blocks":4096, "blockLength":4096 }
-				}
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/flash/mac/manifest.json moved to $(MODDABLE)/modules/embedded/storage/flash/mac"
 		}
 	}
 }

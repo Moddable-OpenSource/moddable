@@ -1,0 +1,15 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:storage/flash": "./flash-esp",
+				"config/flash": "../config"
+			},
+			"preload": [
+				"embedded:storage/flash",
+				"config/flash"
+			]
+		}
+	}
+}

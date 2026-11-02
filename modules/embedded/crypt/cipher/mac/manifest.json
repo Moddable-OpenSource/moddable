@@ -1,0 +1,6 @@
+{
+	"include": "$(EMBEDDED)/crypt/cryptokit",
+	"modules": {
+		"*": "./cipher"
+	}
+}

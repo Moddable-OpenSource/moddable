@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/http/client",
+		"$(EMBEDDED)/network/http/client",
 		"$(MODDABLE)/modules/data/mp3"
 	],
 	"modules": {

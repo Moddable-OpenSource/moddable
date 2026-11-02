@@ -1,16 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/flash",
 	"platforms": {
-		"esp": {
-			"include": "./esp"
-		},
-		"esp32": {
-			"include": "./esp32"
-		},
-		"mac": {
-			"include": "./mac"
-		},
-		"zephyr": {
-			"include": "./zephyr"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/flash/manifest.json moved to $(MODDABLE)/modules/embedded/storage/flash"
 		}
 	}
 }

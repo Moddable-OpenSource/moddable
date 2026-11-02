@@ -1,0 +1,26 @@
+{
+	"platforms": {
+		"mac": {},
+		"win": {},
+		"lin": {},
+		"...": {
+			"modules": {
+				"embedded:io/digital": "$(EMBEDDED)/io/digital/digital",
+				"embedded:io/digitalbank": "$(EMBEDDED)/io/digital/digitalbank",
+				"*": [
+					"$(EMBEDDED)/common/builtinCommon",
+					"$(EMBEDDED)/io/digital/$(PLATFORM)/*"
+				],
+				"config/digital": "./config"
+			},
+			"preload": [
+				"embedded:io/digital",
+				"embedded:io/digitalbank",
+				"config/digital"
+			],
+			"dependency": [
+				{ "idf": "esp_driver_gpio" }
+			]
+		}
+	}
+}

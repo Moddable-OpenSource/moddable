@@ -6,7 +6,7 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206",
 		"$(MODDABLE)/modules/web/streams/all",
-		"$(MODDABLE)/modules/io/i2c"
+		"$(EMBEDDED)/io/i2c"
 	],
 	"creation": {
 		"stack": 1024

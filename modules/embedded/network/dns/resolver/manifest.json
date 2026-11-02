@@ -1,0 +1,14 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/dns"
+	],
+	"modules": {
+		"embedded:network/dns/resolver/udp": "./dns",
+		"config/dns": "./config"
+	},
+	"preload": [
+		"embedded:network/dns/resolver/udp",
+		"config/dns"
+	],
+	"network": true
+}

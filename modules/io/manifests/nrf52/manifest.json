@@ -1,11 +1,8 @@
 {
-	"include": [
-		"$(IO)/analog",
-		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(IO)/pulsecount",
-		"$(IO)/pwm",
-		"$(IO)/serial",
-		"$(IO)/spi"
-	]
+	"include": "$(MODDABLE)/modules/embedded/io/manifests/nrf52",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifests/nrf52/manifest.json moved to $(MODDABLE)/modules/embedded/io/manifests/nrf52"
+		}
+	}
 }

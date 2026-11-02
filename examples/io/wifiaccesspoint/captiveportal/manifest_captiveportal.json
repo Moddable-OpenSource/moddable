@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/wifiaccesspoint"
+		"$(EMBEDDED)/network/interface/wifi/accesspoint"
 	],
 	"preload": "captiveportal",
 	"platforms": {
@@ -21,11 +21,11 @@
 		},
 		"...": {
 			"include": [
-				"$(MODDABLE)/modules/io/dns/server",
-				"$(MODDABLE)/modules/io/http/server",
-				"$(MODDABLE)/modules/io/http/server/route/static",
-				"$(MODDABLE)/modules/io/http/server/route/ws/handshake",
-				"$(MODDABLE)/modules/io/ws/client"
+				"$(EMBEDDED)/network/dns/server",
+				"$(EMBEDDED)/network/http/server",
+				"$(EMBEDDED)/network/http/server/route/static",
+				"$(EMBEDDED)/network/http/server/route/ws/handshake",
+				"$(EMBEDDED)/network/ws/client"
 			],
 			"modules": {
 				"captiveportal": "./captiveportal"

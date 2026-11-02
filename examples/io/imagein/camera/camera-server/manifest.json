@@ -4,7 +4,7 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
 		"$(MODULES)/network/http",
-		"$(MODDABLE)/modules/io/imagein/camera",
+		"$(EMBEDDED)/io/image/in/camera",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_pixelsout.json",
 		"$(MODDABLE)/modules/network/net"

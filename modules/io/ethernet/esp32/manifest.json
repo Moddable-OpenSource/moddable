@@ -1,12 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/ethernet/esp32",
 	"platforms": {
-		"esp32": {
-			"modules": {
-				"embedded:network/interface/ethernet": "./ethernet-esp32"
-			},
-			"preload": [
-				"embedded:network/interface/ethernet"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ethernet/esp32/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/ethernet/esp32"
 		}
 	}
 }

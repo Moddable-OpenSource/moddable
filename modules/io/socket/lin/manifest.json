@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket/lin",
 	"platforms": {
-		"lin": {
-			"modules": {
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lin/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lin/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/lin/listener",
-				"config/socket": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/socket/lin/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket/lin"
 		}
-	},
-	"preload": [
-		"embedded:io/socket/tcp",
-		"embedded:io/socket/udp",
-		"embedded:io/socket/listener",
-		"config/socket"
-	]
+	}
 }

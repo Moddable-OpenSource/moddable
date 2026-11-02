@@ -1,13 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/bluetoothle/central/mac",
 	"platforms": {
-		"mac": {
-			"modules": {
-				"embedded:io/bluetoothle/central": "./bleclient",
-				"*": [
-					"$(MODDABLE)/modules/io/common/builtinCommon"
-				]
-			},
-			"preload": "embedded:io/bluetoothle/central"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ble/client/mac/manifest.json moved to $(MODDABLE)/modules/embedded/io/bluetoothle/central/mac"
 		}
 	}
 }

@@ -1,8 +1,8 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/io/http/client",
+		"$(EMBEDDED)/io",
+		"$(EMBEDDED)/network/http/client",
 		"$(MODDABLE)/modules/data/mp3",
 		"./manifest_mp3streamer.json"
 	],

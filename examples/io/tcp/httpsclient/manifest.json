@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io/https/client",
+		"$(EMBEDDED)/network/https/client",
 		"$(MODDABLE)/modules/data/text/decoder"
 	],
 	"modules": {

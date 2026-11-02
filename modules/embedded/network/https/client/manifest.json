@@ -1,0 +1,10 @@
+{
+	"include": [
+		"$(EMBEDDED)/network/http/client",
+		"$(EMBEDDED)/io/socket/tcp/tls"
+	],
+	"modules": {
+		"config/httpsclient": "./config"
+	},
+	"preload": "config/httpsclient"
+}

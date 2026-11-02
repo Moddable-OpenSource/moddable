@@ -1,0 +1,16 @@
+{
+	"platforms": {
+		"mac": {
+			"include": "$(EMBEDDED)/storage/flash",
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:update": "./update-mac",
+				"config/update": "../config"
+			}
+		}
+	},
+	"preload": [
+		"embedded:update",
+		"config/update"
+	]
+}

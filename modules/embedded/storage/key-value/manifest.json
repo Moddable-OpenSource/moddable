@@ -1,0 +1,25 @@
+{
+	"platforms": {
+		"esp": {
+			"include": "./flash"
+		},
+		"esp32": {
+			"include": "./esp32"
+		},
+		"mac": {
+			"include": "./mac"
+		},
+		"nrf52": {
+			"include": "./flash"
+		},
+		"pebble": {
+			"include": "./pebble"
+		},
+		"pico": {
+			"include": "./flash"
+		},
+		"zephyr": {
+			"include": "./zephyr"
+		}
+	}
+}

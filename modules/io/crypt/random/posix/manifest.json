@@ -1,9 +1,0 @@
-{
-	"modules": {
-		"embedded:crypt/random": "$(MODULES)/io/crypt/random/random",
-		"*": "./random"
-	},
-	"preload": [
-		"embedded:crypt/random"
-	]
-}

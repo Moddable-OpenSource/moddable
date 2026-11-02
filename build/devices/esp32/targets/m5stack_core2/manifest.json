@@ -6,7 +6,7 @@
 		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv"
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout",
+		"$(EMBEDDED)/io/audio/out",
 		"$(MODDABLE)/modules/drivers/ili9341",
 		"$(MODDABLE)/modules/drivers/sensors/ft6206",
 		"$(MODDABLE)/modules/drivers/sensors/bmi270",

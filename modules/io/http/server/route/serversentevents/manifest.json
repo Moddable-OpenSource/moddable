@@ -1,8 +1,8 @@
 {
-	"modules": {
-		"embedded:network/http/server/route/serversentevents": "./serversentevents"
-	},
-	"preload": [
-		"embedded:network/http/server/route/serversentevents"
-	]
+	"include": "$(MODDABLE)/modules/embedded/network/http/server/route/serversentevents",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/http/server/route/serversentevents/manifest.json moved to $(MODDABLE)/modules/embedded/network/http/server/route/serversentevents"
+		}
+	}
 }

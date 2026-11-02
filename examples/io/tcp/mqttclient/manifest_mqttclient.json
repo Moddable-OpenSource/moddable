@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/mqtt/client"
+		"$(EMBEDDED)/network/mqtt/client"
 	],
 	"platforms": {
 		"...": {
-			"warning": "MQTT Client manifest moved to $(MODDABLE)/modules/io/mqtt/client"
+			"warning": "MQTT Client manifest moved to $(MODDABLE)/modules/embedded/network/mqtt/client"
 		}
 	}
 }

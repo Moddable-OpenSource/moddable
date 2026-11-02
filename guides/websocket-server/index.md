@@ -17,8 +17,8 @@ This guide covers the process of creating a WebSocket server endpoint, accepting
 
 Include the HTTP Server and WebSocket Handshake route manifests in your project's manifest:
 
-	$(MODDABLE)/modules/io/http/server
-	$(MODDABLE)/modules/io/http/server/route/ws/handshake
+	$(MODDABLE)/modules/embedded/network/http/server
+	$(MODDABLE)/modules/embedded/network/http/server/route/ws/handshake
 
 To attach accepted connections to a WebSocket client, add the WebSocket manifest:
 
@@ -38,7 +38,7 @@ If your project accesses the HTTP Server through `device.network.http.server` an
 	- [HTTP Server example (includes WebSocket endpoint)](../../examples/io/listener/httpserver/main.js) in Moddable SDK
 	- [Captive Portal (includes WebSocket endpoint)](../../examples/io/wifiaccesspoint/captiveportal/captiveportal.js) in Moddable SDK
 - Implementation
-	- [WebSocket Handshake route](../../modules/io/http/server/route/ws/handshake/handshake.js) in Moddable SDK
+	- [WebSocket Handshake route](../../modules/embedded/network/http/server/route/ws/handshake/handshake.js) in Moddable SDK
 - TypeScript Declaration
 	- [HTTP Server](../../typings/embedded_network/http/server.d.ts) in Moddable SDK
 	- [WebSocket Client](../../typings/embedded_network/websocket/client.d.ts) in Moddable SDK

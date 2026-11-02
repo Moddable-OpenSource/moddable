@@ -15,9 +15,9 @@
 			"$(MODULES)/base/timer/*",
 			"$(MODULES)/base/timer/mc/*",
 			"$(MODULES)/pins/digital/pico/modGPIO",
-			"$(IO)/common/builtinCommon"
+			"$(EMBEDDED)/common/builtinCommon"
 		],
-		"lockdown/device": "$(IO)/system/lockdowndevice"
+		"lockdown/device": "$(EMBEDDED)/system/lockdowndevice"
 	},
 	"creation": {
 		"static": 131072,

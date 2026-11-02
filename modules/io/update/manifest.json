@@ -1,16 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/update",
 	"platforms": {
-		"esp": {
-			"include": "./esp"
-		},
-		"esp32": {
-			"include": "./esp32"
-		},
-		"mac": {
-			"include": "./mac"
-		},
 		"...": {
-			"error": "ECMA-419 OTA Update unsupported target"
+			"warning": "$(MODDABLE)/modules/io/update/manifest.json moved to $(MODDABLE)/modules/embedded/update"
 		}
 	}
 }

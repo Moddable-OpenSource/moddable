@@ -56,7 +56,7 @@ import WebStorage from "webstorage";
 
 To use the Key-Value store directly, include its manifest:
 
-	$(MODDABLE)/modules/io/storage/manifest.json
+	$(MODDABLE)/modules/embedded/storage/key-value/manifest.json
 
 Then, import the module in your JavaScript source code:
 
@@ -86,7 +86,7 @@ import keyValue from "embedded:storage/key-value";
 	- [Web Storage example](../../examples/io/storage/webstorage/main.js) in Moddable SDK
 - Implementations
 	- [Web Storage](../../modules/web/webstorage/webstorage.js) in Moddable SDK
-	- [Key-Value store](../../modules/io/storage/) in Moddable SDK
+	- [Key-Value store](../../modules/embedded/storage/key-value/) in Moddable SDK
 - TypeScript Declarations
 	- [Web Storage](../../typings/web/webstorage.d.ts) in Moddable SDK
 	- [Key-Value store](../../typings/embedded/storage/key-value.d.ts) in Moddable SDK

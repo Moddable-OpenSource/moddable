@@ -1,0 +1,7 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/key",
+		"$(EMBEDDED)/crypt/backend",
+		"./$(CRYPT_BACKEND)"
+	]
+}

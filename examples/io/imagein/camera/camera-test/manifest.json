@@ -1,9 +1,9 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/examples/manifest_piu.json",
-		"$(MODDABLE)/modules/io/imagein/camera",
+		"$(EMBEDDED)/io/image/in/camera",
 		"$(MODDABLE)/modules/piu/MC/imageBuffer"
 	],
 	"config": {

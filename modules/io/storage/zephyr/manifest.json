@@ -1,23 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/key-value/zephyr",
 	"platforms": {
-		"zephyr": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/key-value": "./storage-zephyr",
-				"config/storage": "../config"
-			},
-			"preload": [
-				"embedded:storage/key-value",
-				"config/storage"
-			],
-			"zephyrConfig": {
-				"CONFIG_SETTINGS": "y",
-				"CONFIG_SETTINGS_RUNTIME": "y",
-				"CONFIG_SETTINGS_NVS": "y",
-				"CONFIG_NVS": "y",
-				"CONFIG_FLASH": "y",
-				"CONFIG_FLASH_MAP": "y"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/storage/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/storage/key-value/zephyr"
 		}
 	}
 }

@@ -1,0 +1,41 @@
+{
+	"preload": [
+		"embedded:io/audio/in"
+	],
+	"platforms": {
+		"mac": {
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:io/audio/in": "./mac/audioin"
+			}
+		},
+		"lin": {
+			"build": {
+				"LIBRARIES": "-lasound"
+			},
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:io/audio/in": "./lin/audioin"
+			}
+		},
+		"win": {
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:io/audio/in": "./win/audioin"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(EMBEDDED)/common/builtinCommon",
+				"embedded:io/audio/in": "./esp32/audioin"
+			},
+			"dependency": [
+				{ "idf": "esp_driver_i2s" },
+				{ "idf": "esp_adc" }
+			]
+		},
+		"...": {
+			"error": "Audio In unsupported"
+		}
+	}
+}

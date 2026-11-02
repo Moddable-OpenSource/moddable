@@ -1,11 +1,8 @@
 {
-	"modules": {
-		"embedded:network/http/server": "./httpserver",
-		"config/httpserver": "./config"
-	},
-	"preload": [
-		"embedded:network/http/server",
-		"config/httpserver"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/http/server",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/http/server/manifest.json moved to $(MODDABLE)/modules/embedded/network/http/server"
+		}
+	}
 }

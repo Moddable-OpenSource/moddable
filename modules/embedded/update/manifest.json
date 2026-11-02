@@ -1,0 +1,16 @@
+{
+	"platforms": {
+		"esp": {
+			"include": "./esp"
+		},
+		"esp32": {
+			"include": "./esp32"
+		},
+		"mac": {
+			"include": "./mac"
+		},
+		"...": {
+			"error": "ECMA-419 OTA Update unsupported target"
+		}
+	}
+}

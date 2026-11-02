@@ -1,16 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/bluetoothle/peripheral",
 	"platforms": {
-		"esp32": {
-			"include": "./esp32",
-			"dependency": [
-				{ "idf": "bt" }
-			]
-		},
-		"mac": {
-			"include": "./mac"
-		},
 		"...": {
-			"error": "ECMA-419 BLE server not yet supported"
+			"warning": "$(MODDABLE)/modules/io/ble/server/manifest.json moved to $(MODDABLE)/modules/embedded/io/bluetoothle/peripheral"
 		}
 	}
 }

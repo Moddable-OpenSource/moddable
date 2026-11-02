@@ -1,10 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/io/http/client",
-		"$(MODDABLE)/modules/io/tls/client"
-	],
-	"modules": {
-		"config/httpsclient": "./config"
-	},
-	"preload": "config/httpsclient"
+	"include": "$(MODDABLE)/modules/embedded/network/https/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/https/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/https/client"
+		}
+	}
 }

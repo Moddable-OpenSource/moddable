@@ -1,7 +1,7 @@
 {
   "include": [
-    "$(MODDABLE)/modules/io",
-    "$(MODDABLE)/modules/io/http/client"
+    "$(EMBEDDED)/io",
+    "$(EMBEDDED)/network/http/client"
   ],
   "modules": {
     "*": ["./sbcstreamer"]

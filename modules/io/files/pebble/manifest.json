@@ -1,13 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/files/pebble",
 	"platforms": {
-		"pebble": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-pebble",
-				"embedded:storage/files": "./files"
-			},
-			"preload": [
-				"embedded:x-files-implementation"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/files/pebble/manifest.json moved to $(MODDABLE)/modules/embedded/storage/files/pebble"
 		}
 	}
 }

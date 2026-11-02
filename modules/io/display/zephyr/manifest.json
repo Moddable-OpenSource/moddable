@@ -1,11 +1,8 @@
 {
-	"modules": {
-		"embedded:display/zephyr": "./display"
-	},
-	"preload": [
-		"embedded:display/zephyr"
-	],
-	"zephyrConfig": {
-		"CONFIG_DISPLAY": "y"
+	"include": "$(MODDABLE)/modules/embedded/display/zephyr",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/display/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/display/zephyr"
+		}
 	}
 }

@@ -1,37 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket/lwip",
 	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lwip/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lwip/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/lwip/listener",
-				"config/socket": "../config"
-			}
-		},
-		"esp32": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lwip/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lwip/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/lwip/listener",
-				"config/socket": "../config"
-			}
-		},
-		"pico": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/lwip/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/lwip/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/lwip/listener",
-				"config/socket": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/socket/lwip/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket/lwip"
 		}
-	},
-	"preload": [
-		"embedded:io/socket/tcp",
-		"embedded:io/socket/udp",
-		"embedded:io/socket/listener",
-		"config/socket"
-	]
+	}
 }

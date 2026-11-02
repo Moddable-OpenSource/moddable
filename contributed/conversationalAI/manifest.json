@@ -4,7 +4,7 @@
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_piu.json",
 		"$(MODDABLE)/modules/piu/MC/kineticScroller",
-		"$(MODDABLE)/modules/io/storage",
+		"$(EMBEDDED)/storage/key-value",
 		"$(MODDABLE)/modules/network/services/chatAudioIO"
 	],
 	"config": {

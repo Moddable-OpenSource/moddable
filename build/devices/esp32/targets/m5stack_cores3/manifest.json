@@ -8,7 +8,7 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press and release the Reset button."
 	},
 	"include": [
-		"$(MODULES)/io/audioout",
+		"$(EMBEDDED)/io/audio/out",
 		"$(MODULES)/drivers/ili9341",
 		"$(MODULES)/drivers/sensors/ft6206/manifest_async.json",
 		"$(MODULES)/drivers/sensors/bmi270",
@@ -29,7 +29,7 @@
 	},
 	"modules": {
 		"setup/target": "./setup-target",
-		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
+		"embedded:io/audio/out-original": "$(EMBEDDED)/io/audio/out/esp32/*",
 		"embedded:io/audio/out": "./M5StackCoreS3AudioOut",
 		"*": [
 			"./M5StackCoreS3Touch"

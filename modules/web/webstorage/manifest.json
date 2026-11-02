@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/storage"
+		"$(EMBEDDED)/storage/key-value"
 	],
 	"modules": {
 		"*": "./webstorage"

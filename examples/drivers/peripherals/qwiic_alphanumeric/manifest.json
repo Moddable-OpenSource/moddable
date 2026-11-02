@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/modules/drivers/peripherals/qwiic_alphanumeric"
 	],
 	"modules": {

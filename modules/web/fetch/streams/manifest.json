@@ -2,7 +2,7 @@
 	"include": [
 		"$(MODDABLE)/modules/data/headers",
 		"$(MODDABLE)/modules/data/url",
-		"$(MODDABLE)/modules/io/https/client",
+		"$(EMBEDDED)/network/https/client",
 		"$(MODDABLE)/modules/web/streams/all",
 		"$(MODDABLE)/modules/web/streams/decompression"
 	],

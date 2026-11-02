@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket/win",
 	"platforms": {
-		"win": {
-			"modules": {
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/win/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/win/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/win/listener",
-				"config/socket": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/socket/win/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket/win"
 		}
-	},
-	"preload": [
-		"embedded:io/socket/tcp",
-		"embedded:io/socket/udp",
-		"embedded:io/socket/listener",
-		"config/socket"
-	]
+	}
 }

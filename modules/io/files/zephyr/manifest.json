@@ -1,26 +1,8 @@
 {
-	"include": [
-		"$(MODULES)/base/modules"
-	],
+	"include": "$(MODDABLE)/modules/embedded/storage/files/zephyr",
 	"platforms": {
-		"zephyr": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-zephyr",
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			],
-			"zephyrConfig": {
-				"CONFIG_FLASH": "y",
-				"CONFIG_FLASH_MAP": "y",
-				"CONFIG_FILE_SYSTEM": "y",
-				"CONFIG_FILE_SYSTEM_LITTLEFS": "y",
-				"CONFIG_FS_LITTLEFS_FMP_DEV": "y",
-				"CONFIG_FS_LITTLEFS_BLK_DEV": "n"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/files/zephyr/manifest.json moved to $(MODDABLE)/modules/embedded/storage/files/zephyr"
 		}
 	}
 }

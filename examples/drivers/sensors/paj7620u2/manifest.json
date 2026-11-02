@@ -1,7 +1,7 @@
  {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/modules/drivers/sensors/paj7620u2"
 	],
 	"modules": {

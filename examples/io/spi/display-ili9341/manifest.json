@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_parsebmf.json",
 		"$(COMMODETTO)/manifest_parsebmp.json",

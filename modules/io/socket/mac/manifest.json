@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/socket/mac",
 	"platforms": {
-		"mac": {
-			"modules": {
-				"embedded:io/socket/tcp": "$(MODDABLE)/modules/io/socket/mac/tcp",
-				"embedded:io/socket/udp": "$(MODDABLE)/modules/io/socket/mac/udp",
-				"embedded:io/socket/listener": "$(MODDABLE)/modules/io/socket/mac/listener",
-				"config/socket": "../config"
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/socket/mac/manifest.json moved to $(MODDABLE)/modules/embedded/io/socket/mac"
 		}
-	},
-	"preload": [
-		"embedded:io/socket/tcp",
-		"embedded:io/socket/udp",
-		"embedded:io/socket/listener",
-		"config/socket"
-	]
+	}
 }

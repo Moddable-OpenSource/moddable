@@ -87,14 +87,14 @@ In the graph below, power consumption was measured while waiting on a [Timer](..
 
 <a id="deep-sleep"></a>
 ## Deep Sleep
-- **Source code:** [system](./../../modules/io/system)
+- **Source code:** [system](./../../modules/embedded/system)
 - **Relevant Examples:** [deep-sleep](./../../build/devices/nrf52/examples/sleep/deep-sleep), [wake-on-timer](./../../build/devices/nrf52/examples/sleep/wake-on-timer), and [many more](./../../build/devices/nrf52/examples/sleep/).
 
 Deep sleep is entered with the `deepSleep` method of the ECMA-419 System object, available as `device.system`. The `deepSleep` method is an nRF52 extension to the System object. To use it, include the System manifest in the application manifest. It includes the [Sleep](#class-sleep) manifest, so the time restore and RAM power control described below are in place.
 
 ```
 "include": [
-	"$(MODDABLE)/modules/io/system/manifest.json"
+	"$(MODDABLE)/modules/embedded/system/manifest.json"
 ]
 ```
 

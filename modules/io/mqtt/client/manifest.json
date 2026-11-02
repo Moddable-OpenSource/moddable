@@ -1,11 +1,8 @@
 {
-	"modules": {
-		"config/mqttclient": "./config",
-		"embedded:network/mqtt/client": "./mqttclient"
-	},
-	"preload": [
-		"config/mqttclient",
-		"embedded:network/mqtt/client"
-	],
-	"network": true
+	"include": "$(MODDABLE)/modules/embedded/network/mqtt/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/mqtt/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/mqtt/client"
+		}
+	}
 }

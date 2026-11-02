@@ -1,0 +1,12 @@
+{
+	"platforms": {
+		"pebble": {
+			"modules": {
+				"embedded:storage/key-value": "./storage-pebble"
+			},
+			"preload": [
+				"embedded:storage/key-value"
+			]
+		}
+	}
+}

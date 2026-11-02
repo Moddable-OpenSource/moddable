@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"config/httpclient": "./config",
+		"embedded:network/http/client": "./httpclient"
+	},
+	"preload": [
+		"config/httpclient",
+		"embedded:network/http/client"
+	],
+	"network": true
+}

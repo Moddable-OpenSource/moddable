@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/update/esp32",
 	"platforms": {
-		"esp32": {
-			"include": "../../flash",
-			"modules": {
-				"embedded:update": "./update-esp32",
-				"config/update": "../config"
-			},
-			"dependency": [
-				{ "idf": "app_update" }
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/update/esp32/manifest.json moved to $(MODDABLE)/modules/embedded/update/esp32"
 		}
-	},
-	"preload": [
-		"embedded:update",
-		"config/update"
-	]
+	}
 }

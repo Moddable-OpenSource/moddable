@@ -8,7 +8,7 @@
 		"$(MODDABLE)/modules/drivers/ili9341",
 		"$(MODDABLE)/modules/drivers/sensors/lis3dh",
 		"$(MODDABLE)/modules/drivers/sensors/hmc5883",
-		"$(MODDABLE)/modules/io"
+		"$(EMBEDDED)/io"
 	],
 	"modules": {
 		"*": [

@@ -1,0 +1,18 @@
+{
+	"platforms": {
+		"zephyr": {
+			"modules": {
+				"embedded:io/socket/tcp": "$(EMBEDDED)/io/socket/zephyr/tcp",
+				"embedded:io/socket/udp": "$(EMBEDDED)/io/socket/zephyr/udp",
+				"embedded:io/socket/listener": "$(EMBEDDED)/io/socket/zephyr/listener",
+				"config/socket": "../config"
+			}
+		}
+	},
+	"preload": [
+		"embedded:io/socket/tcp",
+		"embedded:io/socket/udp",
+		"embedded:io/socket/listener",
+		"config/socket"
+	]
+}

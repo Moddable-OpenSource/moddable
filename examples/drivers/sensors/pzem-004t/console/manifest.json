@@ -5,7 +5,7 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/sensors/pzem-004t",
-		"$(MODDABLE)/modules/io/serial"
+		"$(EMBEDDED)/io/serial"
 	],
 	"modules": {
 		"*": "./main"

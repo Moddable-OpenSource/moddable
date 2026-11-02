@@ -1,0 +1,13 @@
+{
+	"include": [
+		"$(MODULES)/base/modules",
+		"$(EMBEDDED)/crypt/backend",
+		"./$(CRYPT_BACKEND)"
+	],
+	"modules": {
+		"embedded:crypt/cipher": "./cipher"
+	},
+	"preload": [
+		"embedded:crypt/cipher"
+	]
+}

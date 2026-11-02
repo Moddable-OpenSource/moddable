@@ -1,37 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/key-value/flash",
 	"platforms": {
-		"esp": {	
-			"modules": {
-				"embedded:storage/key-value": "./storage-flash",
-				"config/storage": "../config",
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon"
-			},
-			"preload": [
-				"embedded:storage/key-value",
-				"config/storage"
-			]
-		},
-		"nrf52": {	
-			"modules": {
-				"embedded:storage/key-value": "./storage-flash",
-				"config/storage": "../config",
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon"
-			},
-			"preload": [
-				"embedded:storage/key-value",
-				"config/storage"
-			]
-		},
-		"pico": {	
-			"modules": {
-				"embedded:storage/key-value": "./storage-flash",
-				"config/storage": "../config",
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon"
-			},
-			"preload": [
-				"embedded:storage/key-value",
-				"config/storage"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/storage/flash/manifest.json moved to $(MODDABLE)/modules/embedded/storage/key-value/flash"
 		}
 	}
 }

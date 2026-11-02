@@ -1,0 +1,25 @@
+{
+	"platforms": {
+		"mac": {
+			"include": "./posix"
+		},
+		"lin": {
+			"include": "./posix"
+		},
+		"esp32": {
+			"include": "./littlefs"
+		},
+		"esp": {
+			"include": "./littlefs"
+		},
+		"pico": {
+			"include": "./littlefs"
+		},
+		"pebble": {
+			"include": "./pebble"
+		},
+		"zephyr": {
+			"include": "./zephyr"
+		}
+	}
+}

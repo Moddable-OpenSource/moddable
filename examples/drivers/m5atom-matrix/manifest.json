@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io"
+		"$(EMBEDDED)/io"
 	],
 	"modules": {
 		"*": "./main"

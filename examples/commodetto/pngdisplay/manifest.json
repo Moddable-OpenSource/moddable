@@ -3,9 +3,9 @@
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
 		"$(MODDABLE)/examples/manifest_commodetto.json",
-		"$(MODDABLE)/modules/io/dnssd",
-		"$(MODDABLE)/modules/io/wifiaccesspoint",
-		"$(MODDABLE)/modules/io/http/server",
+		"$(EMBEDDED)/network/dnssd",
+		"$(EMBEDDED)/network/interface/wifi/accesspoint",
+		"$(EMBEDDED)/network/http/server",
 		"$(COMMODETTO)/manifest_bitmap.json",
 		"$(COMMODETTO)/manifest_convert.json",
 		"$(COMMODETTO)/manifest_readpng.json"

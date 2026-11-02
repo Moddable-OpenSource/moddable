@@ -1,0 +1,37 @@
+{
+	"platforms": {
+		"esp": {	
+			"modules": {
+				"embedded:storage/key-value": "./storage-flash",
+				"config/storage": "../config",
+				"*": "$(EMBEDDED)/common/builtinCommon"
+			},
+			"preload": [
+				"embedded:storage/key-value",
+				"config/storage"
+			]
+		},
+		"nrf52": {	
+			"modules": {
+				"embedded:storage/key-value": "./storage-flash",
+				"config/storage": "../config",
+				"*": "$(EMBEDDED)/common/builtinCommon"
+			},
+			"preload": [
+				"embedded:storage/key-value",
+				"config/storage"
+			]
+		},
+		"pico": {	
+			"modules": {
+				"embedded:storage/key-value": "./storage-flash",
+				"config/storage": "../config",
+				"*": "$(EMBEDDED)/common/builtinCommon"
+			},
+			"preload": [
+				"embedded:storage/key-value",
+				"config/storage"
+			]
+		}
+	}
+}

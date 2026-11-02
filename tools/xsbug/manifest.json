@@ -1,7 +1,8 @@
 {
 	"build": {
 		"MODULES": "$(MODDABLE)/modules",
-		"PIU": "$(MODULES)/piu"
+		"PIU": "$(MODULES)/piu",
+		"EMBEDDED": "$(MODULES)/embedded"
 	},
 	"creation": {
 		"chunk": {
@@ -62,7 +63,7 @@
 		"x-lin": {
 			"modules": {
 				"io/*": [
-					"$(MODDABLE)/modules/io/serial/lin/*"
+					"$(EMBEDDED)/io/serial/lin/*"
 				],
 				"piu/*": [
 					"$(PIU)/PC/lin/piu*"
@@ -78,7 +79,7 @@
 		"x-mac": {
 			"modules": {
 				"io/*": [
-					"$(MODDABLE)/modules/io/serial/mac/*"
+					"$(EMBEDDED)/io/serial/mac/*"
 				],
 				"piu/*": [
 					"$(PIU)/PC/mac/piu*"
@@ -94,7 +95,7 @@
 		"x-win": {
 			"modules": {
 				"io/*": [
-					"$(MODDABLE)/modules/io/serial/win/*"
+					"$(EMBEDDED)/io/serial/win/*"
 				],
 				"piu/*": [
 					"$(PIU)/PC/win/piu*"

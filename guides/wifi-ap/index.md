@@ -8,7 +8,7 @@ The Wi-Fi Access Point APIs create a Wi-Fi base station running on an embedded d
 
 Most microcontrollers allow a device to be a Wi-Fi Access Point and at the same time also be connected to another Wi-Fi Access Point. Wi-Fi performance is often reduced when both are in use.
 
-The Moddable SDK provides Wi-Fi Access Point support for ESP32, ESP8266, Raspberry Pi Pico, and Zephyr. There is a [simulator implementation](../../modules/io/wifiaccesspoint/sim/readme.md) to exercise Wi-Fi Access Point APIs without hardware.
+The Moddable SDK provides Wi-Fi Access Point support for ESP32, ESP8266, Raspberry Pi Pico, and Zephyr. There is a [simulator implementation](../../modules/embedded/network/interface/wifi/accesspoint/sim/readme.md) to exercise Wi-Fi Access Point APIs without hardware.
 
 ## Using ECMA-419 Wi-Fi Access Point Network Interface
 
@@ -23,7 +23,7 @@ The Moddable SDK provides Wi-Fi Access Point support for ESP32, ESP8266, Raspber
 
 Include the Wi-Fi Access Point Network Interface manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/io/wifiaccesspoint/manifest.json
+	$(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/manifest.json
 
 Then, import the module in your JavaScript source code:
 
@@ -44,7 +44,7 @@ import WiFiAccessPoint from "embedded:network/interface/wifi/accesspoint";
 - Standard
 	- [Network Interface Class Pattern](https://419.ecma-international.org/#network-interface-class-pattern) in ECMA-419
 - Implementation
-	- [Wi-Fi Access Point Network Interface](../../modules/io/wifiaccesspoint/) in Moddable SDK
+	- [Wi-Fi Access Point Network Interface](../../modules/embedded/network/interface/wifi/accesspoint/) in Moddable SDK
 - Examples
 	- [Wi-Fi Access Point](../../examples/io/wifiaccesspoint/basic/main.js) in Moddable SDK
 	- [Captive Portal](../../examples/io/wifiaccesspoint/captiveportal/captiveportal.js) in Moddable SDK

@@ -1,16 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/ethernet",
 	"platforms": {
-		"esp32": {
-			"include": "./esp32",
-			"dependency": [
-				{ "idf": "esp_eth" }
-			]
-		},
-		"zephyr": {
-			"include": "./zephyr"
-		},
 		"...": {
-			"error": "ethernet: unsupported platform"
+			"warning": "$(MODDABLE)/modules/io/ethernet/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/ethernet"
 		}
 	}
 }

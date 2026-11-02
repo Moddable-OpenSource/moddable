@@ -1,0 +1,37 @@
+{
+	"platforms": {
+		"esp": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
+				"embedded:io/socket/tcp": "$(EMBEDDED)/io/socket/lwip/tcp",
+				"embedded:io/socket/udp": "$(EMBEDDED)/io/socket/lwip/udp",
+				"embedded:io/socket/listener": "$(EMBEDDED)/io/socket/lwip/listener",
+				"config/socket": "../config"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
+				"embedded:io/socket/tcp": "$(EMBEDDED)/io/socket/lwip/tcp",
+				"embedded:io/socket/udp": "$(EMBEDDED)/io/socket/lwip/udp",
+				"embedded:io/socket/listener": "$(EMBEDDED)/io/socket/lwip/listener",
+				"config/socket": "../config"
+			}
+		},
+		"pico": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/network/socket/lwip/modLwipSafe",
+				"embedded:io/socket/tcp": "$(EMBEDDED)/io/socket/lwip/tcp",
+				"embedded:io/socket/udp": "$(EMBEDDED)/io/socket/lwip/udp",
+				"embedded:io/socket/listener": "$(EMBEDDED)/io/socket/lwip/listener",
+				"config/socket": "../config"
+			}
+		}
+	},
+	"preload": [
+		"embedded:io/socket/tcp",
+		"embedded:io/socket/udp",
+		"embedded:io/socket/listener",
+		"config/socket"
+	]
+}

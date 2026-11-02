@@ -1,0 +1,31 @@
+{
+	"modules": {
+		"*": "$(EMBEDDED)/common/builtinCommon"
+	},
+	"platforms": {
+		"esp32": {
+			"include": "./esp32"
+		},
+		"esp": {
+			"include": "./esp"
+		},
+		"pico": {
+			"include": "./pico"
+		},
+		"zephyr": {
+			"include": "./zephyr"
+		},
+		"mac": {
+			"include": "./sim"
+		},
+		"lin": {
+			"include": "./sim"
+		},
+		"win": {
+			"include": "./sim"
+		},
+		"...": {
+			"error": "ECMA-419 Wi-Fi access point unsupported target"
+		}
+	}
+}

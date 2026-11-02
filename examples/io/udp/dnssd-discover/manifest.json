@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/examples/manifest_net.json",
-		"$(MODDABLE)/modules/io",
-		"$(MODDABLE)/modules/io/dns/resolver"
+		"$(EMBEDDED)/io",
+		"$(EMBEDDED)/network/dns/resolver"
 	],
 	"modules": {
 		"*": "./main"

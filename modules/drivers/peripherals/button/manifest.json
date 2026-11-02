@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODULES)/io/digital"
+		"$(EMBEDDED)/io/digital"
 	],
 	"modules": {
 		"button": "$(MODULES)/drivers/peripherals/button/*"

@@ -1,13 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/network/interface/wifi/esp",
 	"platforms": {
-		"esp": {
-			"modules": {
-				"embedded:network/interface/wifi": "./wifi-esp",
-				"*": "./wifi-esp-events"
-			},
-			"preload": [
-				"embedded:network/interface/wifi"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wifi/esp/manifest.json moved to $(MODDABLE)/modules/embedded/network/interface/wifi/esp"
 		}
 	}
 }

@@ -1,0 +1,16 @@
+{
+	"platforms": {
+		"esp32": {
+			"include": "./esp32",
+			"dependency": [
+				{ "idf": "bt" }
+			]
+		},
+		"mac": {
+			"include": "./mac"
+		},
+		"...": {
+			"error": "ECMA-419 BLE server not yet supported"
+		}
+	}
+}

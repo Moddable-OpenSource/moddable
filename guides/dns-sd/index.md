@@ -32,7 +32,7 @@ dnssd.close();
 
 Include the DNS-SD manifest in your project's `manifest.json`. Including the manifest initializes the host provider `device.network.dnssd`:
 
-	$(MODDABLE)/modules/io/dnssd/manifest.json
+	$(MODDABLE)/modules/embedded/network/dnssd/manifest.json
 
 
 ## Building with mcpack
@@ -52,6 +52,6 @@ import DNSSD from "embedded:network/dnssd";
 - Example
 	- [DNS-SD example](../../examples/io/dnssd/main.js) in Moddable SDK
 - Implementation
-	- [DNS-SD](../../modules/io/dnssd/dnssd.js) in Moddable SDK
+	- [DNS-SD](../../modules/embedded/network/dnssd/dnssd.js) in Moddable SDK
 - TypeScript Declaration
 	- [DNS-SD](../../typings/embedded_network/dnssd.d.ts) in Moddable SDK

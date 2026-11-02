@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODDABLE)/modules/web/streams/all"
 	],
 	"modules": {

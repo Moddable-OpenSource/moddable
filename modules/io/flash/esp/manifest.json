@@ -1,15 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/flash/esp",
 	"platforms": {
-		"esp": {
-			"modules": {
-				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
-				"embedded:storage/flash": "./flash-esp",
-				"config/flash": "../config"
-			},
-			"preload": [
-				"embedded:storage/flash",
-				"config/flash"
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/flash/esp/manifest.json moved to $(MODDABLE)/modules/embedded/storage/flash/esp"
 		}
 	}
 }

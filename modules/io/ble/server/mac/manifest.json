@@ -1,18 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/bluetoothle/peripheral/mac",
 	"platforms": {
-		"mac": {
-			"defines": {
-				"ble": {
-					"server": true
-				}
-			},
-			"modules": {
-				"*": [
-					"$(MODDABLE)/modules/io/common/builtinCommon"
-				],
-				"embedded:io/bluetoothle/peripheral": "./bleserver"
-			},
-			"preload": "embedded:io/bluetoothle/peripheral"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/ble/server/mac/manifest.json moved to $(MODDABLE)/modules/embedded/io/bluetoothle/peripheral/mac"
 		}
 	}
 }

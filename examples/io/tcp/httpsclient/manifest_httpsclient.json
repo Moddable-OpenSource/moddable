@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/https/client"
+		"$(EMBEDDED)/network/https/client"
 	],
 	"platforms": {
 		"...": {
-			"warning": "HTTPSClient manifest moved to $(MODDABLE)/modules/io/https/client"
+			"warning": "HTTPSClient manifest moved to $(MODDABLE)/modules/embedded/network/https/client"
 		}
 	}
 }

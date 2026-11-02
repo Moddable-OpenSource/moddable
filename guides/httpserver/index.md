@@ -27,15 +27,15 @@ To host WebSocket endpoints in the HTTP Server, wee the [WebSocket Server Guide]
 
 Include the HTTP Server manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/io/http/server
+	$(MODDABLE)/modules/embedded/network/http/server
 
 You can then access the server through `device.network.http.server`.
 
 Each built-in route has its own manifest.
 
-	$(MODDABLE)/modules/io/http/server/route/static
-	$(MODDABLE)/modules/io/http/server/route/serversentevents
-	$(MODDABLE)/modules/io/http/server/route/ws/handshake
+	$(MODDABLE)/modules/embedded/network/http/server/route/static
+	$(MODDABLE)/modules/embedded/network/http/server/route/serversentevents
+	$(MODDABLE)/modules/embedded/network/http/server/route/ws/handshake
 
 ## Building with mcpack
 
@@ -50,7 +50,7 @@ If your project accesses the HTTP Server through `device.network.http.server`, `
 - Example
 	- [HTTP Server example](../../examples/io/listener/httpserver/main.js) in Moddable SDK
 - Implementation
-	- [HTTP Server](../../modules/io/http/server/httpserver.js) in Moddable SDK
-	- [static route](../../modules/io/http/server/route/static/static.js) in Moddable SDK
+	- [HTTP Server](../../modules/embedded/network/http/server/httpserver.js) in Moddable SDK
+	- [static route](../../modules/embedded/network/http/server/route/static/static.js) in Moddable SDK
 - TypeScript Declaration
 	- [HTTP Server](../../typings/embedded_network/http/server.d.ts) in Moddable SDK

@@ -1,0 +1,33 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/psa"
+	],
+	"modules": {
+		"*": "./cipher"
+	},
+	"dependency": [
+		{
+			"idf": "mbedtls"
+		}
+	],
+	"esp32Config": {
+		"CONFIG_MBEDTLS_CHACHA20_C": "y",
+		"CONFIG_MBEDTLS_POLY1305_C": "y",
+		"CONFIG_MBEDTLS_CHACHAPOLY_C": "y"
+	},
+	"platforms": {
+		"zephyr": {
+			"zephyrConfig": {
+				"CONFIG_PSA_WANT_KEY_TYPE_AES": "y",
+				"CONFIG_PSA_WANT_KEY_TYPE_CHACHA20": "y",
+				"CONFIG_PSA_WANT_ALG_ECB_NO_PADDING": "y",
+				"CONFIG_PSA_WANT_ALG_CBC_NO_PADDING": "y",
+				"CONFIG_PSA_WANT_ALG_CTR": "y",
+				"CONFIG_PSA_WANT_ALG_GCM": "y",
+				"CONFIG_PSA_WANT_ALG_STREAM_CIPHER": "y",
+				"CONFIG_PSA_WANT_ALG_CHACHA20_POLY1305": "y",
+				"CONFIG_MBEDTLS_AES_ROM_TABLES": "y"
+			}
+		}
+	}
+}

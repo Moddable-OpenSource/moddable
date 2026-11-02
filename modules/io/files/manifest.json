@@ -1,25 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/files",
 	"platforms": {
-		"mac": {
-			"include": "./posix"
-		},
-		"lin": {
-			"include": "./posix"
-		},
-		"esp32": {
-			"include": "./littlefs"
-		},
-		"esp": {
-			"include": "./littlefs"
-		},
-		"pico": {
-			"include": "./littlefs"
-		},
-		"pebble": {
-			"include": "./pebble"
-		},
-		"zephyr": {
-			"include": "./zephyr"
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/files/manifest.json moved to $(MODDABLE)/modules/embedded/storage/files"
 		}
 	}
 }

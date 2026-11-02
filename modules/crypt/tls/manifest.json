@@ -2,17 +2,17 @@
 	"include": [
 		"$(MODULES)/crypt/bin",
 		"$(MODULES)/files/resource",
-		"$(MODULES)/io/crypt/cipher",
-		"$(MODULES)/io/crypt/random",
-		"$(MODULES)/io/crypt/key",
-		"$(MODULES)/io/crypt/signature",
-		"$(MODULES)/io/crypt/keyagreement",
-		"$(MODULES)/io/crypt/mac",
-		"$(MODULES)/io/crypt/keyderivation"
+		"$(EMBEDDED)/crypt/cipher",
+		"$(EMBEDDED)/crypt/random",
+		"$(EMBEDDED)/crypt/key",
+		"$(EMBEDDED)/crypt/signature",
+		"$(EMBEDDED)/crypt/keyagreement",
+		"$(EMBEDDED)/crypt/mac",
+		"$(EMBEDDED)/crypt/keyderivation"
 	],
 	"modules": {
-		"embedded:io/socket/tcp/tls": "$(MODULES)/io/tls/client/tlssocket",
-		"config/tls": "$(MODULES)/io/tls/client/config",
+		"embedded:io/socket/tcp/tls": "$(EMBEDDED)/io/socket/tcp/tls/tlssocket",
+		"config/tls": "$(EMBEDDED)/io/socket/tcp/tls/config",
 		"ssl/session": "./session",
 		"ssl/*": "./ssl_*",
 		"*": "$(MODULES)/crypt/etc/x509.c",

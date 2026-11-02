@@ -1,26 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/io/digital",
 	"platforms": {
-		"mac": {},
-		"win": {},
-		"lin": {},
 		"...": {
-			"modules": {
-				"embedded:io/digital": "$(IO)/digital/digital",
-				"embedded:io/digitalbank": "$(IO)/digital/digitalbank",
-				"*": [
-					"$(MODULES)/io/common/builtinCommon",
-					"$(MODULES)/io/digital/$(PLATFORM)/*"
-				],
-				"config/digital": "./config"
-			},
-			"preload": [
-				"embedded:io/digital",
-				"embedded:io/digitalbank",
-				"config/digital"
-			],
-			"dependency": [
-				{ "idf": "esp_driver_gpio" }
-			]
+			"warning": "$(MODDABLE)/modules/io/digital/manifest.json moved to $(MODDABLE)/modules/embedded/io/digital"
 		}
 	}
 }

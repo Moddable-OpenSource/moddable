@@ -1,13 +1,13 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/http/server",
-		"$(MODDABLE)/modules/io/http/server/route/serversentevents",
-		"$(MODDABLE)/modules/io/http/server/route/static",
-		"$(MODDABLE)/modules/io/http/server/route/ws/handshake"
+		"$(EMBEDDED)/network/http/server",
+		"$(EMBEDDED)/network/http/server/route/serversentevents",
+		"$(EMBEDDED)/network/http/server/route/static",
+		"$(EMBEDDED)/network/http/server/route/ws/handshake"
 	],
 	"platforms": {
 		"...": {
-			"warning": "HTTP Server manifest moved to $(MODDABLE)/modules/io/http/server"
+			"warning": "HTTP Server manifest moved to $(MODDABLE)/modules/embedded/network/http/server"
 		}
 	}
 }

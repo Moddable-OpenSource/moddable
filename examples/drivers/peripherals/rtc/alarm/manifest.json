@@ -2,8 +2,8 @@
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
 		"$(MODDABLE)/modules/drivers/peripherals/pcf8563",
-		"$(MODDABLE)/modules/io/digital",
-		"$(MODDABLE)/modules/io/i2c"
+		"$(EMBEDDED)/io/digital",
+		"$(EMBEDDED)/io/i2c"
 	],
 	"strip": [ ],
 	"modules": {

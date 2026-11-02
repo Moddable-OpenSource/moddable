@@ -54,7 +54,7 @@ extern txBigInt *mont_out(xsMachine *the, txBigInt *r, txBigInt *a, txBigInt *m,
 
 extern txBigInt gxBigIntOne;
 
-// a build may omit curves (manifest "defines": crypt.curve.<name> 0); see modules/io/crypt/key/kcl/curves.c
+// a build may omit curves (manifest "defines": crypt.curve.<name> 0); see modules/embedded/crypt/key/kcl/curves.c
 #ifndef MODDEF_CRYPT_CURVE_P256
 	#define MODDEF_CRYPT_CURVE_P256 1
 #endif

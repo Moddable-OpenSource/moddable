@@ -1,7 +1,7 @@
 {
 	"include": [
 		"$(MODDABLE)/examples/manifest_base.json",
-		"$(MODDABLE)/modules/io",
+		"$(EMBEDDED)/io",
 		"$(MODULES)/drivers/sensors/location/gps-i2c",
 		"$(MODULES)/data/location/ubx"
 	],

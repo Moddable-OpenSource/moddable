@@ -41,7 +41,7 @@ entries:
 idf_component_register(
 			SRCS "main.c"
 			LDFRAGMENTS ${CMAKE_CURRENT_BINARY_DIR}/xs.lf
-			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/base/timer ${ENV_MODDABLE}/modules/io ${C_TMP_DIR}
+			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/base/timer ${ENV_MODDABLE}/modules/embedded ${C_TMP_DIR}
 			)
 
 if (mxDebug EQUAL "1")

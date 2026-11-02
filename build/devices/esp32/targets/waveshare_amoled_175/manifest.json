@@ -8,8 +8,8 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press the PWR button to restart."
 	},
 	"include": [
-		"$(MODDABLE)/modules/io/audioout",
-		"$(MODDABLE)/modules/io/audioin",
+		"$(EMBEDDED)/io/audio/out",
+		"$(EMBEDDED)/io/audio/in",
 		"$(MODDABLE)/modules/drivers/co5300",
 		"$(MODDABLE)/modules/drivers/sensors/cst9217",
 		"$(MODDABLE)/modules/drivers/peripherals/axp2101",

@@ -1,0 +1,19 @@
+{
+	"include": [
+		"$(EMBEDDED)/crypt/digest",
+		"$(EMBEDDED)/crypt/random",
+		"$(EMBEDDED)/crypt/cryptokit"
+	],
+	"modules": {
+		"embedded:crypt/cipher/rsa": "./cipher-rsa",
+		"embedded:crypt/key/ec": "$(EMBEDDED)/crypt/key/ec-native",
+		"*": [
+			"./ec-cryptokit",
+			"./seckey-rsa"
+		]
+	},
+	"preload": [
+		"embedded:crypt/cipher/rsa",
+		"embedded:crypt/key/ec"
+	]
+}

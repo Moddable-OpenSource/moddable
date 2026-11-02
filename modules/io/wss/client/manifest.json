@@ -1,12 +1,8 @@
 {
-	"include": [
-		"$(MODDABLE)/modules/io/ws/client",
-		"$(MODDABLE)/modules/io/tls/client"
-	],
-	"modules": {
-		"config/wssclient": "./config"
-	},
-	"preload": [
-		"config/wssclient"
-	]
+	"include": "$(MODDABLE)/modules/embedded/network/wss/client",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/wss/client/manifest.json moved to $(MODDABLE)/modules/embedded/network/wss/client"
+		}
+	}
 }

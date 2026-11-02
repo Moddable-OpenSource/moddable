@@ -1,83 +1,8 @@
 {
-	"include": [
-		"$(MODULES)/base/modules"
-	],
+	"include": "$(MODDABLE)/modules/embedded/storage/files/littlefs",
 	"platforms": {
-		"mac-test": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-littlefs",
-				"*": [
-					"./lfs_util",
-					"./lfs"
-				],
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			]
-		},
-		"esp32": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-littlefs",
-				"*": [
-					"./lfs_util",
-					"./lfs"
-				],
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"defines": {
-				"file": {
-					"partition": "#storage"
-				}
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			]
-		},
-		"esp": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-littlefs",
-				"*": [
-					"./lfs_util",
-					"./lfs"
-				],
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			]
-		},
-		"pico": {
-			"modules": {
-				"embedded:x-files-implementation": "./files-littlefs",
-				"*": [
-					"./lfs_util",
-					"./lfs"
-				],
-				"embedded:storage/files": "./files",
-				"config/files": "../config"
-			},
-			"preload": [
-				"embedded:x-files-implementation",
-				"config/files"
-			]
-		}
-	},
-	"defines": {
-		"file": {
-			"lfs": {
-				"read_size": 16,
-				"prog_size": 16,
-				"cache_size": 16,
-				"lookahead_size": 16,
-				"block_cycles": 500
-			}
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/files/littlefs/manifest.json moved to $(MODDABLE)/modules/embedded/storage/files/littlefs"
 		}
 	}
 }

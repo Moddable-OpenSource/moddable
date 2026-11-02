@@ -1,7 +1,7 @@
 {
 	"include": [
-		"$(MODULES)/io/digital",
-		"$(MODULES)/io/pulsecount"
+		"$(EMBEDDED)/io/digital",
+		"$(EMBEDDED)/io/pulsecount"
 	],
 	"modules": {
 		"jogdial": "$(MODULES)/drivers/peripherals/jogdial/*"

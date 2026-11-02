@@ -1,0 +1,11 @@
+{
+	"modules": {
+		"embedded:network/http/server": "./httpserver",
+		"config/httpserver": "./config"
+	},
+	"preload": [
+		"embedded:network/http/server",
+		"config/httpserver"
+	],
+	"network": true
+}

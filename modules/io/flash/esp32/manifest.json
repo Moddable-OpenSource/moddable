@@ -1,17 +1,8 @@
 {
+	"include": "$(MODDABLE)/modules/embedded/storage/flash/esp32",
 	"platforms": {
-		"esp32": {
-			"modules": {
-				"embedded:storage/flash": "./flash-esp32",
-				"config/flash": "../config"
-			},
-			"preload": [
-				"embedded:storage/flash",
-				"config/flash"
-			],
-			"dependency": [
-				{ "idf": "app_update" }
-			]
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/flash/esp32/manifest.json moved to $(MODDABLE)/modules/embedded/storage/flash/esp32"
 		}
 	}
 }

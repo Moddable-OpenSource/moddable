@@ -1,0 +1,69 @@
+{
+	"build": {
+		"EMBEDDED": "$(MODDABLE)/modules/embedded",
+		"IO": "$(MODDABLE)/modules/embedded/io"
+	},
+	"modules": {
+		"*": [
+			"$(EMBEDDED)/common/builtinCommon"
+		]
+	},
+	"platforms": {
+		"esp": {
+			"modules": {
+				"embedded:io/i2c": "$(EMBEDDED)/io/i2c/_i2c",
+				"embedded:io/smbus": "$(EMBEDDED)/io/i2c/smbus",
+				"*": "$(EMBEDDED)/io/i2c/$(PLATFORM)/*",
+				"config/i2c": "./config"
+			}
+		},
+		"esp32": {
+			"modules": {
+				"embedded:io/i2c": "$(EMBEDDED)/io/i2c/_i2c",
+				"config/i2c-async": "$(EMBEDDED)/io/i2c/i2c_async",
+				"embedded:io/smbus": "$(EMBEDDED)/io/i2c/smbus",
+				"config/smbus-async": "$(EMBEDDED)/io/i2c/smbus_async",
+				"*": "$(EMBEDDED)/io/i2c/$(PLATFORM)/*",
+				"config/i2c": "./config"
+			},
+			"dependency": [
+				{ "idf": "esp_driver_i2c" }
+			],
+			"preload": [
+				"config/i2c-async",
+				"config/smbus-async"
+			]
+		},
+		"nrf52": {
+			"modules": {
+				"embedded:io/i2c": "$(EMBEDDED)/io/i2c/_i2c",
+				"embedded:io/smbus": "$(EMBEDDED)/io/i2c/smbus",
+				"*": "$(EMBEDDED)/io/i2c/$(PLATFORM)/*",
+				"config/i2c": "./config"
+			}
+		},
+		"pico": {
+			"modules": {
+				"embedded:io/i2c": "$(EMBEDDED)/io/i2c/_i2c",
+				"embedded:io/smbus": "$(EMBEDDED)/io/i2c/smbus",
+				"*": "$(EMBEDDED)/io/i2c/$(PLATFORM)/*",
+				"config/i2c": "./config"
+			}
+		},
+		"zephyr": {
+			"modules": {
+				"embedded:io/i2c": "$(EMBEDDED)/io/i2c/_i2c",
+				"embedded:io/smbus": "$(EMBEDDED)/io/i2c/smbus",
+				"*": "$(EMBEDDED)/io/i2c/$(PLATFORM)/*",
+				"config/i2c": "./config"
+			}
+		},
+		"...": {
+		}
+	},
+	"preload": [
+		"embedded:io/i2c",
+		"embedded:io/smbus",
+		"config/i2c"
+	]
+}

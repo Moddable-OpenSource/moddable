@@ -1,0 +1,15 @@
+{
+	"include": [
+		"$(MODDABLE)/modules/data/dns",
+		"$(MODDABLE)/modules/network/net"
+	],
+	"modules": {
+		"embedded:network/dnssd": "./dnssd",
+		"config/dnssd": "./config"
+	},
+	"preload": [
+		"config/dnssd",
+		"embedded:network/dnssd"
+	],
+	"network": true
+}

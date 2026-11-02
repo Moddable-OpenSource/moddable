@@ -50,7 +50,7 @@ The remaining features require additional modules:
 | Feature | Import | Manifest |
 |---------|--------|----------|
 | Microsecond precision (`Time.microseconds`) | none (adds `microseconds` to `Time`) | `$(MODDABLE)/modules/base/microseconds/manifest.json` |
-| Network Time (`device.network.ntp.client`) | `embedded:network/ntp/client` | `$(MODDABLE)/modules/io/ntp/client` |
+| Network Time (`device.network.ntp.client`) | `embedded:network/ntp/client` | `$(MODDABLE)/modules/embedded/network/ntp/client` |
 
 When building with `mcconfig`, add the manifests needed to your project.
 

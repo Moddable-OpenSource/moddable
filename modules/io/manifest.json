@@ -1,3 +1,8 @@
 {
-	"include": "./manifests/$(PLATFORM)"
+	"include": "$(MODDABLE)/modules/embedded/io",
+	"platforms": {
+		"...": {
+			"warning": "$(MODDABLE)/modules/io/manifest.json moved to $(MODDABLE)/modules/embedded/io"
+		}
+	}
 }

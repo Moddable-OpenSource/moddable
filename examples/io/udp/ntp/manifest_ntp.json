@@ -1,10 +1,10 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/io/ntp/client"
+		"$(EMBEDDED)/network/ntp/client"
 	],
 	"platforms": {
 		"...": {
-			"warning": "NTP Client manifest moved to $(MODDABLE)/modules/io/ntp/client"
+			"warning": "NTP Client manifest moved to $(MODDABLE)/modules/embedded/network/ntp/client"
 		}
 	}
 }

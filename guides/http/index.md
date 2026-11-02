@@ -62,11 +62,11 @@ import { fetch } from "web/fetch/streams";
 
 To use the HTTP Client instead, include its manifest. Including the manifest initializes the host provider `device.network.http.client`:
 
-	$(MODDABLE)/modules/io/http/client
+	$(MODDABLE)/modules/embedded/network/http/client
 
 For secure requests over HTTPS, include the HTTPS Client manifest instead. It initializes the host provider `device.network.https.client`:
 
-	$(MODDABLE)/modules/io/https/client
+	$(MODDABLE)/modules/embedded/network/https/client
 
 ## Building with mcpack
 
@@ -89,7 +89,7 @@ If your project accesses the HTTP Client through `device.network.http.client` or
 	- [HTTP Client example](../../examples/io/tcp/httpclient/main.js) in Moddable SDK
 - Implementations
 	- [fetch()](../../modules/web/fetch/fetch.js) in Moddable SDK
-	- [HTTP Client](../../modules/io/http/client/httpclient.js) in Moddable SDK
+	- [HTTP Client](../../modules/embedded/network/http/client/httpclient.js) in Moddable SDK
 - TypeScript Declarations
 	- [fetch()](../../typings/web/fetch.d.ts) in Moddable SDK
 	- [HTTP Client](../../typings/embedded_network/http/client.d.ts) in Moddable SDK
