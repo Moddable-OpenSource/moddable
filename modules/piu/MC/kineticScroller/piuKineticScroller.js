@@ -28,11 +28,13 @@ const easeOut = function(start, stop, fraction) {
   v0	:	initial velocity
   v1	:	terminating velocity
   k	:	coefficient of kinetic friction
+  c	:	coefficient of resistance past the ends of a drag
 */
 class ScrollerMode {
   constructor() {
     this.absV1 = 0.005;
     this.k = 0.0015;
+    this.c = 0.65;
   }
   bind(behavior, scroller) {
     behavior.mode = this;
@@ -59,6 +61,26 @@ class ScrollerMode {
       coordinate = range;
     return coordinate;
   }
+  applyResistance(behavior, scroller, position) {
+    if (scroller.looping)
+      return position;
+    var maximum = Math.max(0, behavior.range - behavior.size);
+    if (position < 0)
+      return -Math.round(this.evaluateOverscroll(-position, behavior.size, this.c));
+    if (position > maximum)
+      return maximum + Math.round(this.evaluateOverscroll(position - maximum, behavior.size, this.c));
+    return position;
+  }
+  removeResistance(behavior, scroller, position) {
+    if (scroller.looping)
+      return position;
+    var maximum = Math.max(0, behavior.range - behavior.size);
+    if (position < 0)
+      return -this.evaluateOverscrollDistance(-position, behavior.size, this.c);
+    if (position > maximum)
+      return maximum + this.evaluateOverscrollDistance(position - maximum, behavior.size, this.c);
+    return position;
+  }
   evaluateBounceback(v0, duration, time) {
     if (time >= duration)	
       return 0
@@ -66,6 +88,12 @@ class ScrollerMode {
       return v0 * time * Math.exp(-10.0 * time / duration)
     else 													
       return NaN											
+  }
+  evaluateOverscroll(distance, size, c) {		// less and less for each px of drag, approaching size
+    return (distance * size * c) / (size + (c * distance));
+  }
+  evaluateOverscrollDistance(overscroll, size, c) {		// the drag that gives this overscroll
+    return (Math.min(overscroll, size - 1) * size) / (c * (size - Math.min(overscroll, size - 1)));
   }
   evaluatePositionAtTime(v0, v1, k, t) {
     if (t >= this.computeDuration(v0, v1, k))
@@ -133,6 +161,7 @@ class ScrollerStillMode extends ScrollerMode {
     behavior.range = behavior.selectSize(scroller.first.size);
     behavior.size = behavior.selectSize(scroller.size);
     behavior.start = behavior.stop = behavior.selectPosition(scroller.scroll);
+    behavior.start = this.removeResistance(behavior, scroller, behavior.start);		// a touch caught it past an end
   }
   onTouchMoved(behavior, scroller, id, x, y, ticks, samples) {
     var delta = Math.abs(behavior.selectParameter(x, y) - behavior.anchor);
@@ -190,7 +219,7 @@ class ScrollerScrollMode extends ScrollerMode {
       }
       behavior.last = { previous: behavior.last, coordinate: coordinate, ticks: ticks };
     }
-    behavior.stop = behavior.start - behavior.last.coordinate + behavior.anchor;
+    behavior.stop = this.applyResistance(behavior, scroller, behavior.start - behavior.last.coordinate + behavior.anchor);
     behavior.scrollTo(scroller, behavior.stop);
     //behavior.predictTo(scroller, this.computePrediction(behavior, behavior.stop));
   }
@@ -277,6 +306,7 @@ class ScrollerTossMode extends ScrollerMode {
         behavior.range = behavior.selectSize(scroller.first.size);
         behavior.size = behavior.selectSize(scroller.size);
         behavior.start = behavior.stop = behavior.selectPosition(scroller.scroll);
+        behavior.start = this.removeResistance(behavior, scroller, behavior.start);		// a touch caught it past an end
     
         behavior.anchor = behavior.selectParameter(x, y);
         behavior.antiAnchor = behavior.selectParameter(y, x);
