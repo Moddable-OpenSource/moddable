@@ -531,9 +531,8 @@ class DNSSD {
 
 				switch (question.qtype) {
 					case DNS.RR.ANY:
-						if (service) {
-							if ((2 === name.length) && (LOCAL === name[1].toLowerCase()) && (service.hostLower === name[0].toLowerCase()))
-								mask[question.qclass >> 15] |= 0x1F;
+						if (service && (2 === name.length) && (LOCAL === name[1]) && (service.hostLower === name[0])) {
+							mask[question.qclass >> 15] |= 0x1F;
 							break;
 						}
 						// fallthrough to DNS.RR.A
