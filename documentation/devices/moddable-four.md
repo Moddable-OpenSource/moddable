@@ -27,7 +27,7 @@ This document provides information about Moddable Four, including details about 
 
 <img src="../assets/devices/moddable-four.png">
 
-Moddable Four is a low-power, Bluetooth LE development board that makes it easy for developers to experiment with the Moddable SDK. It is available to purchase on the [Moddable website](http://www.moddable.com/purchase).
+Moddable Four is a low-power, Bluetooth LE development board that makes it easy for developers to experiment with the Moddable SDK. It is available to purchase on the [Moddable website](https://www.moddable.com/moddable-four).
 
 <a id="components"></a>
 ### Components
