@@ -38,6 +38,22 @@ psa_key_type_t xs_crypt_ecKeyType(const char *curve, size_t *bits, uint8_t isPri
 	return isPrivate ? PSA_KEY_TYPE_ECC_KEY_PAIR(family) : PSA_KEY_TYPE_ECC_PUBLIC_KEY(family);
 }
 
+// hash name -> PSA algorithm, and digest length. Here, as Signature includes Key, so both RSA cipher and Signature have it
+psa_algorithm_t xs_crypt_hashAlgorithm(const char *name, int *length)
+{
+	static const struct { const char *name; psa_algorithm_t alg; int length; } hashes[] = {
+		{ "MD5", PSA_ALG_MD5, 16 }, { "SHA-1", PSA_ALG_SHA_1, 20 }, { "SHA-224", PSA_ALG_SHA_224, 28 },
+		{ "SHA-256", PSA_ALG_SHA_256, 32 }, { "SHA-384", PSA_ALG_SHA_384, 48 }, { "SHA-512", PSA_ALG_SHA_512, 64 }, { NULL, 0, 0 }
+	};
+	for (int i = 0; hashes[i].name; i++) {
+		if (0 == c_strcmp(name, hashes[i].name)) {
+			if (length) *length = hashes[i].length;
+			return hashes[i].alg;
+		}
+	}
+	return PSA_ALG_NONE;
+}
+
 static void psaCheck(xsMachine *the, psa_status_t status, const char *what)
 {
 	if (PSA_SUCCESS != status) {

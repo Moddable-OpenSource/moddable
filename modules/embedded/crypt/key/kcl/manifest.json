@@ -1,5 +1,6 @@
 {
 	"include": [
+		"$(EMBEDDED)/crypt/cipher",
 		"$(EMBEDDED)/crypt/digest",
 		"$(EMBEDDED)/crypt/random"
 	],
