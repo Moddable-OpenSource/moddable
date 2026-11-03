@@ -76,9 +76,9 @@ class ScrollerMode {
       return position;
     var maximum = Math.max(0, behavior.range - behavior.size);
     if (position < 0)
-      return -this.evaluateOverscrollDistance(-position, behavior.size, this.c);
+      return -Math.round(this.evaluateOverscrollDistance(-position, behavior.size, this.c));
     if (position > maximum)
-      return maximum + this.evaluateOverscrollDistance(position - maximum, behavior.size, this.c);
+      return maximum + Math.round(this.evaluateOverscrollDistance(position - maximum, behavior.size, this.c));
     return position;
   }
   evaluateBounceback(v0, duration, time) {
@@ -213,8 +213,9 @@ class ScrollerScrollMode extends ScrollerMode {
         var direction = (coordinate > behavior.last.coordinate) ? -1 : 1
         if (behavior.direction != direction) {
           behavior.boost = 1;
+          if (behavior.direction)
+            behavior.first = behavior.last = { previous: null, coordinate: coordinate, ticks: ticks };
           behavior.direction = direction;
-          behavior.first = behavior.last = { previous: null, coordinate: coordinate, ticks: ticks };
         }
       }
       behavior.last = { previous: behavior.last, coordinate: coordinate, ticks: ticks };
