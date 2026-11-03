@@ -1,6 +1,6 @@
 # Moddable SDK – Documentation Overview
 Copyright 2019-2026 Moddable Tech, Inc.<BR>
-Revised: October 12, 2026
+Revised: November 3, 2026
 
 This directory contains documentation for the Moddable SDK.
 
