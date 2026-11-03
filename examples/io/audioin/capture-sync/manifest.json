@@ -13,14 +13,14 @@
 	},
 	"defines": {
 		"audioIn": {
-			"sampleRate": 22050,
+			"sampleRate": 16000,
 			"numChannels": 1,
 			"bitsPerSample": 16
 		},
 		"audioOut": {
 			"bitsPerSample": 16,
 			"numChannels": 1,
-			"sampleRate": 22050
+			"sampleRate": 16000
 		}
 	},
 	"modules": {
