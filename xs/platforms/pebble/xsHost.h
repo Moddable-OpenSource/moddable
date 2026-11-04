@@ -46,7 +46,7 @@
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
 #include "applib/pbl_std/pbl_std.h"
-#include <pbl/drivers/rtc.h>
+#include <pbl/kernel/time.h>
 #include "syscall/syscall.h"
 #include <time.h>
 #include "applib/app_malloc.h"
@@ -84,11 +84,6 @@ extern "C" {
 extern void modLog_transmit(const char *msg);
 extern void ESP_putc(int c);
 
-//@@ MDK I'm using a local variable for scratch below to force the string into
-// ram so EasyDMA can access it.
-//		static const char scratch[] = msg ; 
-//		char scratch[] = msg; 
-
 #define modLog(msg) \
 	do { \
 		modLog_transmit(msg); \
@@ -119,8 +114,8 @@ extern void ESP_putc(int c);
     timer
 */
 
-#define modMilliseconds() ((uint32_t)(rtc_get_ticks()))
-#define modMicroseconds() ((uint32_t)(rtc_get_ticks() * 1000))
+#define modMilliseconds() ((uint32_t)(pbl_uptime_ms()))
+#define modMicroseconds() ((uint32_t)(pbl_uptime_ms() * 1000))
 
 #define modDelayMilliseconds(ms) pbl_thread_sleep(PBL_MSEC(ms))
 #define modDelayMicroseconds(us) pbl_thread_sleep(PBL_MSEC(((us) + 500) / 1000))
