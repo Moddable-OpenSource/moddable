@@ -17,8 +17,8 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
-import {Digest} from "crypt";
+
+import Digest from "embedded:crypt/digest";
 
 export default Object.freeze({
 	onRequest(request) {
@@ -39,14 +39,15 @@ export default Object.freeze({
 			return;
 		}
 
-		const sha1 = new Digest("SHA1");
-		sha1.write(this.key);
-		sha1.write("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+		const digest = new Digest({algorithm: "SHA-1"});
+		digest.write(ArrayBuffer.fromString(this.key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
+		const accept = new Uint8Array(digest.read()).toBase64();
+		digest.close();
 
 		response.status = 101;		// " Web Socket Protocol Handshake" - status msg
 		response.headers.set("connection", "upgrade");
 		response.headers.set("upgrade", "websocket");
-		response.headers.set("sec-websocket-accept", (new Uint8Array(sha1.close())).toBase64());
+		response.headers.set("sec-websocket-accept", accept);
 
 		if (this.protocol)
 			response.headers.set("sec-websocket-protocol", this.protocol);

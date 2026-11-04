@@ -1,6 +1,6 @@
 {
 	"include": [
-		"$(MODDABLE)/modules/crypt/digest"
+		"$(EMBEDDED)/crypt/digest"
 	],
 	"modules": {
 		"embedded:network/http/server/route/ws/handshake": "./handshake"
