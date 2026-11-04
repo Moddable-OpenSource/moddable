@@ -272,8 +272,8 @@ The Moddable SDK supports these ESP32-P4 development kits:
 
 | Name | Platform identifier | Key features | Links |
 | :---: | :--- | :--- | :--- |
-| Waveshare<br>ESP32-P4-Pico | `esp32/ws_p4_pico` | ES8311 microphone and speaker<br>32 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-Pico)</li> |
-| Waveshare<br>ESP32-P4-WIFI6-Touch-LCD-3.5 | `esp32/ws_esp32p4_wifi_3_5` | 3.5" 320 x 480 ST7796<br>FT6336 touch<br>ESP32-C6 hosted Wi-Fi and BLE<br>ES8311 microphone and speaker<br>OV5647 MIPI camera<br>microSD 4-bit (some cards need width 1)<br>16 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-WIFI6-Touch-LCD-3.5)</li> |
+| <img src="./../assets/devices/ws_p4_pico.png" width=125><br>Waveshare<br>ESP32-P4-Pico | `esp32/ws_p4_pico` | ES8311 microphone and speaker<br>32 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-Pico)</li> |
+| <img src="./../assets/devices/ws_esp32p4_wifi_3_5.png" width=125><br>Waveshare<br>ESP32-P4-WIFI6-Touch-LCD-3.5 | `esp32/ws_esp32p4_wifi_3_5` | 3.5" 320 x 480 ST7796<br>FT6336 touch<br>ESP32-C6 hosted Wi-Fi and BLE<br>ES8311 microphone and speaker<br>OV5647 MIPI camera<br>microSD 4-bit (some cards need width 1)<br>16 MB flash<br>32 MB PSRAM | <li>[Product page](https://docs.waveshare.com/ESP32-P4-WIFI6-Touch-LCD-3.5)</li> |
 
 The microSD slot on `esp32/ws_esp32p4_wifi_3_5` is 4-bit. Some cards may require width 1 (`sdcard.width` in the target manifest).
 
