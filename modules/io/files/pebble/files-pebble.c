@@ -26,6 +26,8 @@
 		- openFile can create a file with the name of an existing directory (to avoid it is a full scan of the file system)
  */
 
+#include <errno.h>
+
 #include "xsmc.h"
 #include "xsHost.h"
 #include "mc.xs.h"      // for xsID_ values
@@ -34,8 +36,9 @@
 #include "moddableAppState.h"
 
 #include "applib/app.h"
-#include "services/filesystem/app_file.h"
-#include "services/filesystem/pfs.h"
+#include "services/process_management/app_file.h"
+#include "pbl/fs/fs.h"
+#include "pbl/fs/pfs.h"
 
 /*
 	helpers
@@ -49,6 +52,10 @@
 	}
 
 #define getPath(s) _getPath(the, &s)
+
+#define kMountPoint "/"
+#define kMountPointLength (sizeof(kMountPoint) - 1)
+#define kMaxPathLength (kMountPointLength + PBL_FS_NAME_MAX)
 
 enum {
 	kPathStateAny,
@@ -96,21 +103,51 @@ static char *_getPath(xsMachine *the, xsSlot *slot)
 	return NULL;		// can never reach here
 }
 
-static bool pfsStatus(const char *name)
+typedef void (*scanEntry)(xsMachine *the, const char *name, const char *root);
+
+struct scanState {
+	struct pbl_fs_dir dir;
+	struct pbl_fs_dirent entry;
+};
+
+// root is a full path; names in the mount are relative to it
+static void scanFiles(xsMachine *the, const char *root, scanEntry callback)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
-	xsMachine *the = state->the;
+	struct scanState *scan = c_malloc(sizeof(*scan));
+	if (!scan)
+		xsUnknownError("no memory");
 
+	int err = pbl_fs_opendir(&scan->dir, kMountPoint);
+	if (err) {
+		c_free(scan);
+		throwIf(err);
+	}
+
+	const char *relativeRoot = root + kMountPointLength;
+	xsTry {
+		while ((0 == pbl_fs_readdir(&scan->dir, &scan->entry)) && scan->entry.name[0])
+			callback(the, scan->entry.name, relativeRoot);
+	}
+	xsCatch {
+		pbl_fs_closedir(&scan->dir);
+		c_free(scan);
+		xsThrow(xsException);
+	}
+
+	pbl_fs_closedir(&scan->dir);
+	c_free(scan);
+}
+
+static void pfsStatus(xsMachine *the, const char *name, const char *root)
+{
 	if (xsUndefinedType != xsmcTypeOf(xsVar(0)))
-		return false;
+		return;
 
-	size_t rootLen = c_strlen(state->root);
-	if (0 == c_strncmp(name, state->root, rootLen)) {
+	size_t rootLen = c_strlen(root);
+	if (0 == c_strncmp(name, root, rootLen)) {
 		if ('/' == name[rootLen])
 			xsmcSetInteger(xsVar(0), 2);		// directory
 	}
-
-	return false;
 }
 
 /*
@@ -118,7 +155,7 @@ static bool pfsStatus(const char *name)
 */
 
 struct xsFileRecord {
-	int		fd;
+	struct pbl_fs_file	file;
 };
 typedef struct xsFileRecord xsFileRecord;
 typedef struct xsFileRecord *xsFile;
@@ -127,12 +164,13 @@ void xs_filepfs_destructor(void *data)
 {
 	xsFile f = data;
 	if (f) {
-		pfs_close(f->fd);
+		pbl_fs_close(&f->file);
 		modInstrumentationAdjust(Files, -1);
 	}
 }
 
-#define getFile(slot) ((xsFile)xsmcGetHostChunkValidate(slot, xs_filepfs_destructor))->fd
+// the host chunk can move on allocation, so get the file right before using it
+#define getFile(slot) (&((xsFile)xsmcGetHostChunkValidate(slot, xs_filepfs_destructor))->file)
 
 void xs_filepfs(xsMachine *the)
 {
@@ -144,14 +182,13 @@ void xs_filepfs_close(xsMachine *the)
 	if (!xsGetHostChunkIf(xsThis)) 
 		return;
 
-	pfs_close(getFile(xsThis));
+	pbl_fs_close(getFile(xsThis));
 	xsmcSetHostData(xsThis, NULL);
 	modInstrumentationAdjust(Files, -1);
 }
 
 void xs_filepfs_read(xsMachine *the)
 {
-	int fd = getFile(xsThis);
 	void *buffer;
 	xsUnsignedValue length;
 	int position = xsmcToInteger(xsArg(1));
@@ -170,9 +207,10 @@ void xs_filepfs_read(xsMachine *the)
 		returnLength = 1;
 	}
 
-	throwIf(pfs_seek(fd, position, FSeekSet));
+	struct pbl_fs_file *file = getFile(xsThis);
+	throwIf(pbl_fs_seek(file, position, PBL_FS_SEEK_SET));
 
-	int result = pfs_read(fd, buffer, length);
+	int result = pbl_fs_read(file, buffer, length);
 	throwIf(result);
 
 	if (returnLength)
@@ -183,21 +221,25 @@ void xs_filepfs_read(xsMachine *the)
 
 void xs_filepfs_write(xsMachine *the)
 {
-	int fd = getFile(xsThis);
 	int position = xsmcToInteger(xsArg(1));
 	void *buffer;
 	xsUnsignedValue length;
 	xsmcGetBufferWritable(xsArg(0), &buffer, &length);
 
+	struct pbl_fs_file *file = getFile(xsThis);
+
 	// verify the write can succeed
 	uint32_t offset = 0, remain = length;
 	while (remain) {
-		uint8_t bytes[FILE_MAX_NAME_LEN + 1];
+		uint8_t bytes[256];
 		uint32_t use = remain;
 		if (use > sizeof(bytes))
 			use = sizeof(bytes);
-		throwIf(pfs_seek(fd, position + offset, FSeekSet));
-		throwIf(pfs_read(fd, bytes, use));
+		throwIf(pbl_fs_seek(file, position + offset, PBL_FS_SEEK_SET));
+		int result = pbl_fs_read(file, bytes, use);
+		throwIf(result);
+		if ((uint32_t)result != use)
+			xsUnknownError("write past end of file");
 		
 		for (uint32_t j = 0; j < use; j++) {
 			uint8_t byte = ((uint8_t *)buffer)[offset + j];
@@ -210,8 +252,8 @@ void xs_filepfs_write(xsMachine *the)
 	}
 
 	// write
-	throwIf(pfs_seek(fd, position, FSeekSet));
-	int result = pfs_write(fd, buffer, length);
+	throwIf(pbl_fs_seek(file, position, PBL_FS_SEEK_SET));
+	int result = pbl_fs_write(file, buffer, length);
 	throwIf(result);
 	if ((xsUnsignedValue)result != length)
 		xsUnknownError("partial write");
@@ -219,12 +261,12 @@ void xs_filepfs_write(xsMachine *the)
 
 void xs_filepfs_status(xsMachine *the)
 {
-	int fd = getFile(xsThis);
+	int size = (int)pbl_fs_size(getFile(xsThis));
 
 	xsResult = xsArg(0);
 
 	xsmcVars(1);
-	xsmcSetInteger(xsVar(0), (int)pfs_get_file_size(fd));
+	xsmcSetInteger(xsVar(0), size);
 	xsmcSet(xsResult, xsID_size, xsVar(0));
 
 	xsmcSetInteger(xsVar(0), (int)1);
@@ -251,7 +293,7 @@ static void buildFullPath(xsMachine *the, char *fullPath, const char *filePath)
 {
 	const char *dirPath = getDirectoryPath(xsThis);
 	size_t len = c_strlen(dirPath) + (filePath ? c_strlen(filePath) : 0);
-	if (len > FILE_MAX_NAME_LEN)
+	if (len > kMaxPathLength)
 		xsUnknownError("path too long");
 	c_strcpy(fullPath, dirPath);
 	if (filePath)
@@ -265,8 +307,9 @@ void xs_directorypfs(xsMachine *the)
 
 void xs_directorypfs_bootstrap(xsMachine *the)
 {	
-	char path[APP_FILE_NAME_PREFIX_LENGTH * 2 + 1];
-	app_file_name_make(path, sizeof(path), app_get_app_id(), "xs/", 3);
+	char path[kMountPointLength + APP_FILE_NAME_PREFIX_LENGTH * 2 + 1];
+	c_strcpy(path, kMountPoint);
+	app_file_name_make(path + kMountPointLength, sizeof(path) - kMountPointLength, app_get_app_id(), "xs/", 3);
 	xsmcSetHostChunk(xsArg(0), path, c_strlen(path) + 1);
 }
 
@@ -283,42 +326,49 @@ void xs_directorypfs_openFile(xsMachine *the)
 
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_mode);
-	uint8_t op_flags;
+	uint32_t flags;
 	if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
-		op_flags = OP_FLAG_READ;
+		flags = PBL_FS_O_READ;
 	else {
 		char *modestr = xsmcToString(xsVar(0));
 		if (!c_strcmp(modestr, "r"))
-			op_flags = OP_FLAG_READ;
+			flags = PBL_FS_O_READ;
 		else if (!c_strcmp(modestr, "r+"))
-			op_flags = OP_FLAG_READ | OP_FLAG_WRITE;
+			flags = PBL_FS_O_RDWR | PBL_FS_O_CREATE;
 		else if (!c_strcmp(modestr, "w+"))
-			op_flags = OP_FLAG_READ | OP_FLAG_WRITE;
+			flags = PBL_FS_O_RDWR | PBL_FS_O_CREATE;
 		else if (!c_strcmp(modestr, "overwrite"))
-			op_flags = OP_FLAG_OVERWRITE;
+			flags = PBL_FS_O_REPLACE;
 		else
 			xsUnknownError("invalid mode");
 	}
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_size);
-	int size = xsmcToInteger(xsVar(0));		// if not present, this will be zero which is fine for existing files and will throw for new files from pfs_open... all correct
+	int size = xsmcToInteger(xsVar(0));		// if not present, this will be zero which is fine for existing files and will throw for new files... all correct
 	if (size < 0)
 		xsUnknownError("invalid size");
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_path);
 	char *filePath = getPath(xsVar(0));
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	buildFullPath(the, fullPath, filePath);
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_round);
-	if (xsmcTest(xsVar(0)))
-		size = pfs_sector_optimal_size(size, c_strlen(fullPath));
+	if (xsmcTest(xsVar(0))) {
+		size = pbl_fs_pfs_optimal_size(fullPath, size);
+		throwIf(size);
+	}
 
 	//@@ check for a directory with this name
 
 	xsFileRecord f;
-	f.fd = pfs_open(fullPath, op_flags, FILE_TYPE_STATIC, size);
-	throwIf(f.fd);
+	int err = pbl_fs_open(&f.file, fullPath, flags);
+	if ((0 == err) && (0 == pbl_fs_size(&f.file))) {
+		err = size ? pbl_fs_truncate(&f.file, size) : -EINVAL;
+		if (err)
+			pbl_fs_close(&f.file);
+	}
+	throwIf(err);
 
 	xsmcSetHostChunk(xsResult, &f, sizeof(f));
 
@@ -332,7 +382,7 @@ void xs_directorypfs_openDirectory(xsMachine *the)
 	xsmcVars(1);
 	xsmcGet(xsVar(0), xsArg(0), xsID_path);
 	char *filePath = getPath(xsVar(0));
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	buildFullPath(the, fullPath, filePath);
 
 	xsmcSetHostChunk(xsResult, fullPath, c_strlen(fullPath) + 1);
@@ -341,16 +391,15 @@ void xs_directorypfs_openDirectory(xsMachine *the)
 void xs_directorypfs_delete(xsMachine *the)
 {
 	char *filePath = getPath(xsArg(0));
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	buildFullPath(the, fullPath, filePath);
 
-	int result = pfs_remove(fullPath);
-	if (E_DOES_NOT_EXIST == result) {
+	int result = pbl_fs_unlink(fullPath);
+	if (-ENOENT == result) {
 		xsmcSetFalse(xsResult);
 
 		xsmcVars(1);
-		setModdableAppState(root, fullPath);
-		pfs_delete_file_list(pfs_create_file_list(pfsStatus));
+		scanFiles(the, fullPath, pfsStatus);
 		if (xsUndefinedType != xsmcTypeOf(xsVar(0)))
 			xsUnknownError("non-empty directory");
 	}
@@ -363,26 +412,27 @@ void xs_directorypfs_delete(xsMachine *the)
 void xs_directorypfs_status(xsMachine *the)
 {
 	char *filePath = getPath(xsArg(0));
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	buildFullPath(the, fullPath, filePath);
 
 	xsmcVars(1);
 	xsResult = xsArg(2);
 
-	int fd = pfs_open(fullPath, OP_FLAG_READ, FILE_TYPE_STATIC, 0);
-	if ((fd >= 0) || (E_BUSY == fd)) {
-		if (E_BUSY != fd) {
-			xsmcSetInteger(xsVar(0), (int)pfs_get_file_size(fd));
-			pfs_close(fd);
-			xsmcSet(xsResult, xsID_size, xsVar(0));
-		}
+	struct pbl_fs_dirent *entry = c_malloc(sizeof(*entry));
+	if (!entry)
+		xsUnknownError("no memory");
+	int err = pbl_fs_stat(fullPath, entry);
+	size_t size = entry->size;
+	c_free(entry);
+
+	if (0 == err) {
+		xsmcSetInteger(xsVar(0), (int)size);
+		xsmcSet(xsResult, xsID_size, xsVar(0));
 
 		xsmcSetInteger(xsVar(0), 1);		// file
 	}
 	else {	// could be a directory. 
-		setModdableAppState(root, fullPath);
-
-		pfs_delete_file_list(pfs_create_file_list(pfsStatus));
+		scanFiles(the, fullPath, pfsStatus);
 
 		if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
 			xsmcSetInteger(xsVar(0), 0);		// not file, directory, or link
@@ -395,19 +445,19 @@ void xs_directorypfs_status(xsMachine *the)
 void xs_directorypfs_createDirectory(xsMachine *the)
 {
 	char *filePath = getPath(xsArg(0));
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	buildFullPath(the, fullPath, filePath);
 
-	int fd = pfs_open(fullPath, OP_FLAG_READ, FILE_TYPE_STATIC, 0);
-	if ((fd >= 0) || (E_BUSY == fd)) {
-		if (fd >= 0)
-			pfs_close(fd);
+	struct pbl_fs_dirent *entry = c_malloc(sizeof(*entry));
+	if (!entry)
+		xsUnknownError("no memory");
+	int err = pbl_fs_stat(fullPath, entry);
+	c_free(entry);
+	if (0 == err)
 		xsUnknownError("file exists");
-	}
 
 	xsmcVars(1);
-	setModdableAppState(root, fullPath);
-	pfs_delete_file_list(pfs_create_file_list(pfsStatus));
+	scanFiles(the, fullPath, pfsStatus);
 	if (xsUndefinedType == xsmcTypeOf(xsVar(0)))
 		xsmcSetTrue(xsResult);		// new directory
 	else
@@ -418,14 +468,12 @@ void xs_directorypfs_createDirectory(xsMachine *the)
 	Scan
 */
 
-static bool pfsScan(const char *name)
+static void pfsScan(xsMachine *the, const char *name, const char *root)
 {
-	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
-	xsMachine *the = state->the;
-	size_t rootLen = c_strlen(state->root);
+	size_t rootLen = c_strlen(root);
 
-	if (0 == c_strncmp(name, state->root, rootLen)) {
-		char entry[FILE_MAX_NAME_LEN];
+	if (0 == c_strncmp(name, root, rootLen)) {
+		char entry[PBL_FS_NAME_MAX + 1];
 		c_strcpy(entry, name + rootLen);
 		char *slash = c_strchr(entry, '/');
 		if (slash)
@@ -437,8 +485,6 @@ static bool pfsScan(const char *name)
 			xsCall1(xsResult, xsID_push, xsVar(0));
 //@@		xsmcCall_noResult(xsResult, xsID_push, xsVar(0));
 	}
-
-	return false;
 }
 
 void xs_directorypfs_scan(xsMachine *the)
@@ -446,10 +492,9 @@ void xs_directorypfs_scan(xsMachine *the)
 	xsmcVars(2);
 	xsResult = xsmcNewArray(0);
 
-	char fullPath[FILE_MAX_NAME_LEN + 1];
+	char fullPath[kMaxPathLength + 1];
 	char *filePath = (xsmcArgc > 0) ? getPath(xsArg(0)) : C_NULL;
 	buildFullPath(the, fullPath, filePath);
-	setModdableAppState(root, fullPath);
 
-	pfs_delete_file_list(pfs_create_file_list(pfsScan));
+	scanFiles(the, fullPath, pfsScan);
 }
