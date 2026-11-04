@@ -46,7 +46,7 @@
 #include "applib/graphics/gcontext.h"
 #include "applib/graphics/gtypes.h"
 #include "applib/pbl_std/pbl_std.h"
-#include <pbl/drivers/rtc.h>
+#include <pbl/kernel/time.h>
 #include "syscall/syscall.h"
 #include <time.h>
 #include "kernel/pbl_malloc.h"
@@ -118,8 +118,8 @@ extern void ESP_putc(int c);
     timer
 */
 
-#define modMilliseconds() ((uint32_t)(rtc_get_ticks()))
-#define modMicroseconds() ((uint32_t)(rtc_get_ticks() * 1000))
+#define modMilliseconds() ((uint32_t)pbl_uptime_ms())
+#define modMicroseconds() ((uint32_t)(pbl_uptime_ms() * 1000))
 
 #define modDelayMilliseconds(ms) pbl_thread_sleep(PBL_MSEC(ms))
 #define modDelayMicroseconds(us) pbl_thread_sleep(PBL_MSEC(((us) + 500) / 1000))
