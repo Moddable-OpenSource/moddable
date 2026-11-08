@@ -406,6 +406,217 @@ void fx_Number_prototype_toPrecision(txMachine* the)
 	fxCopyStringC(the, mxResult, buffer);
 }
 
+#define mxRadixBigLimbs 72
+#define mxRadixDigits 1100
+
+// Multi-precision helpers for Number.prototype.toString(radix): little-endian arrays of 16-bit limbs.
+static void fxRadixBigFromInteger(txU2* big, txNumber integer)
+{
+	txInteger i;
+	for (i = 0; i < mxRadixBigLimbs; i++) {
+		txNumber limb = c_fmod(integer, 65536.0);
+		big[i] = (txU2)limb;
+		integer = (integer - limb) / 65536.0;
+	}
+}
+
+static void fxRadixBigMultiply(txU2* big, txInteger multiplier)
+{
+	txInteger i;
+	txU4 carry = 0;
+	for (i = 0; i < mxRadixBigLimbs; i++) {
+		txU4 product = ((txU4)big[i] * (txU4)multiplier) + carry;
+		big[i] = (txU2)product;
+		carry = product >> 16;
+	}
+}
+
+static txInteger fxRadixBigDivide(txU2* big, txInteger divisor)
+{
+	txInteger i;
+	txU4 remainder = 0;
+	for (i = mxRadixBigLimbs - 1; i >= 0; i--) {
+		txU4 dividend = (remainder << 16) | big[i];
+		big[i] = (txU2)(dividend / divisor);
+		remainder = dividend % divisor;
+	}
+	return (txInteger)remainder;
+}
+
+static txInteger fxRadixBigIsZero(txU2* big)
+{
+	txInteger i;
+	for (i = 0; i < mxRadixBigLimbs; i++) {
+		if (big[i])
+			return 0;
+	}
+	return 1;
+}
+
+static txInteger fxRadixBigCompare(txU2* a, txU2* b)
+{
+	txInteger i;
+	for (i = mxRadixBigLimbs - 1; i >= 0; i--) {
+		if (a[i] != b[i])
+			return (a[i] < b[i]) ? -1 : 1;
+	}
+	return 0;
+}
+
+static void fxRadixBigSubtract(txU2* a, txU2* b)
+{
+	txInteger i;
+	txInteger borrow = 0;
+	for (i = 0; i < mxRadixBigLimbs; i++) {
+		txInteger difference = (txInteger)a[i] - (txInteger)b[i] - borrow;
+		borrow = (difference < 0) ? 1 : 0;
+		a[i] = (txU2)(difference + (borrow << 16));
+	}
+}
+
+static void fxRadixBigIncrement(txU2* big)
+{
+	txInteger i;
+	for (i = 0; i < mxRadixBigLimbs; i++) {
+		if (++big[i] != 0)
+			break;
+	}
+}
+
+// Exact conversion of a finite, nonzero number to a string in the given radix.
+// The digits are chosen as in Number::toString (ECMA-262 6.1.6.1.20) step 5: they
+// are the shortest sequence whose value rounds back to the number. The fraction
+// digits are produced with exact integer arithmetic (see issue #1810).
+static void fxNumberToRadixString(txMachine* the, txSlot* result, txNumber value, txInteger radix)
+{
+	static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
+	txU2 integer[mxRadixBigLimbs];
+	txU2 fraction[mxRadixBigLimbs];
+	txU2 scale[mxRadixBigLimbs];
+	txU2 product[mxRadixBigLimbs];
+	txU2 bound[mxRadixBigLimbs];
+	txNumber mantissa, whole, fractionPart;
+	txInteger exponent = 0;
+	txInteger minus = 0;
+	txInteger boundary, limbs, shift, count = 0, base, i, j, digit, length, start, end;
+	txString buffer;
+	int roundUp = 0;
+	if (value < 0) {
+		minus = 1;
+		value = -value;
+	}
+	// value = mantissa * 2^exponent, with mantissa an integer
+	mantissa = value;
+	while (mantissa >= 9007199254740992.0) {
+		mantissa /= 2;
+		exponent++;
+	}
+	while ((mantissa < 4503599627370496.0) && (exponent > -1074)) {
+		mantissa *= 2;
+		exponent--;
+	}
+	// a power of two has a smaller gap below it than above it
+	boundary = (mantissa == 4503599627370496.0) && (exponent > -1074);
+	buffer = fxNewChunk(the, (2 * mxRadixDigits) + 2);
+	base = mxRadixDigits;
+	whole = c_floor(value);
+	fractionPart = value - whole;
+	fxRadixBigFromInteger(integer, whole);
+	if (fractionPart != 0) {
+		// fraction = F / 2^(16 * limbs), with 2^(16 * limbs) >= 2^-exponent
+		txInteger k = -exponent;
+		limbs = (k + 15) / 16;
+		shift = (16 * limbs) - k;
+		for (i = 0; i < mxRadixBigLimbs; i++) {
+			fraction[i] = 0;
+			scale[i] = 0;
+		}
+		for (i = 0; i < limbs; i++) {
+			txNumber scaled = fractionPart * 65536.0;
+			txNumber limb = c_floor(scaled);
+			fraction[limbs - 1 - i] = (txU2)limb;
+			fractionPart = scaled - limb;
+		}
+		// scale = 2^shift * radix^count, the weight of one unit in the last digit
+		scale[0] = (txU2)(1 << shift);
+		for (;;) {
+			// generate the next digit: F = F * radix, the digit is the part above 2^(16 * limbs)
+			fxRadixBigMultiply(fraction, radix);
+			digit = fraction[limbs];
+			fraction[limbs] = 0;
+			fxRadixBigMultiply(scale, radix);
+			buffer[base + 1 + count] = (char)digit;
+			count++;
+			// truncating here is within the lower half gap: 4F < 2 * scale (1 * scale at a boundary)
+			for (i = 0; i < mxRadixBigLimbs; i++) {
+				product[i] = fraction[i];
+				bound[i] = scale[i];
+			}
+			fxRadixBigMultiply(product, 4);
+			fxRadixBigMultiply(bound, boundary ? 1 : 2);
+			if (fxRadixBigCompare(product, bound) < 0)
+				break;
+			// rounding up here is within the upper half gap: 4 * (2^(16 * limbs) - F) < 2 * scale
+			for (i = 0; i < mxRadixBigLimbs; i++) {
+				product[i] = 0;
+				bound[i] = scale[i];
+			}
+			product[limbs] = 1;
+			fxRadixBigSubtract(product, fraction);
+			fxRadixBigMultiply(product, 4);
+			fxRadixBigMultiply(bound, 2);
+			if (fxRadixBigCompare(product, bound) < 0) {
+				roundUp = 1;
+				break;
+			}
+			if (count >= mxRadixDigits - 1)
+				break;
+		}
+		if (roundUp) {
+			j = count;
+			for (;;) {
+				if (j == 0) {
+					fxRadixBigIncrement(integer);
+					break;
+				}
+				digit = buffer[base + j] + 1;
+				if (digit < radix) {
+					buffer[base + j] = (char)digit;
+					break;
+				}
+				buffer[base + j] = 0;
+				j--;
+			}
+		}
+		while ((count > 0) && (buffer[base + count] == 0))
+			count--;
+	}
+	// integer digits, least significant first, ending just before the dot
+	i = 0;
+	do {
+		buffer[base - 1 - i] = (char)fxRadixBigDivide(integer, radix);
+		i++;
+	} while (!fxRadixBigIsZero(integer));
+	start = base - i;
+	for (j = start; j < base; j++)
+		buffer[j] = gxDigits[(txInteger)buffer[j]];
+	if (count > 0) {
+		buffer[base] = '.';
+		for (j = base + 1; j <= base + count; j++)
+			buffer[j] = gxDigits[(txInteger)buffer[j]];
+		end = base + count + 1;
+	}
+	else
+		end = base;
+	if (minus)
+		buffer[--start] = '-';
+	buffer[end] = 0;
+	length = end - start + 1;
+	c_memmove(buffer, buffer + start, length);
+	result->value.string = fxRenewChunk(the, buffer, length);
+	result->kind = XS_STRING_KIND;
+}
+
 void fx_Number_prototype_toString(txMachine* the)
 {
 	txInteger radix;
@@ -437,99 +648,10 @@ void fx_Number_prototype_toString(txMachine* the)
 		case C_FP_ZERO:
 			fxStringX(the, mxResult, "0");
 			break;
-		default: {
-			// Thanks Google V8 for the fraction part
-			static const char gxDigits[] ICACHE_FLASH_ATTR = "0123456789abcdefghijklmnopqrstuvwxyz";
-			txInteger minus;
-			txNumber integer;
-			txNumber fraction;
-			txNumber next;
-			txU8* nextCast = (txU8*)&next;
-			txNumber delta;
-			txSize length;
-			txString string;
-			txNumber modulo;
-			if (value < 0) {
-				minus = 1;
-				value = -value;
-			} 
-			else
-				minus = 0;
-			integer = c_floor(value);
-			fraction = value - integer;
-			next = value;
-			*nextCast = *nextCast + 1;
-			delta = 0.5 * (next - value);
-			next = 0;
-			*nextCast = *nextCast + 1;
-			if (delta < next)
-				delta = next;
-			length = minus + ((integer)? (txSize)c_round(c_log1p(integer) / c_log(radix)) : 0) + 1;
-			if (fraction >= delta) {
-				#define mxFractionPartLength 2048
-				txString dot;
-				txInteger i = 0;
-				txInteger digit;
-				string = mxResult->value.string = fxNewChunk(the, length + 1 + mxFractionPartLength + 1);
-				dot = string + length;
-				dot[i++] = '.';
-				do {
-					fraction *= radix;
-					delta *= radix;
-					digit = (txInteger)fraction;
-					dot[i++] = c_read8(gxDigits + digit);
-					fraction -= digit;
-					if (fraction > 0.5 || (fraction == 0.5 && (digit & 1))) {
-						if (fraction + delta > 1) {
-							for (;;) {
-								char c;
-								i--;
-								if (i == 0) {
-									integer += 1;
-									break;
-								}
-								c = dot[i];
-								digit = c > '9' ? (c - 'a' + 10) : (c - '0');
-								if (digit + 1 < radix) {
-									dot[i++] = c_read8(gxDigits + digit + 1);
-									break;
-								}
-							}
-							break;
-						}
-					}
-				} while ((fraction >= delta) && (i < mxFractionPartLength));
-				dot[i++] = 0;
-				length += i;
-				string = dot;
-			}
-			else {
-				length += 1;
-				string = mxResult->value.string = fxNewChunk(the, length);
-				string += length;
-				*(--string) = 0;
-			}
-			modulo = C_MAX_SAFE_INTEGER * radix;
-			while (integer > modulo) {
-				*(--string) = '0';
-				integer = integer / radix;
-			}
-			do {
-				modulo = c_fmod(integer, radix);
-				*(--string) = c_read8(gxDigits + (txInteger)modulo);
-				integer = (integer - modulo) / radix;
-			} while (integer >= 1);
-			if (minus) {
-				*(--string) = '-';
-			}
-			minus = (txInteger)(string - mxResult->value.string);
-			if (minus > 0) {
-				length -= minus;
-				c_memmove(mxResult->value.string, string, length);
-			}
-			mxResult->value.string = fxRenewChunk(the, mxResult->value.string, length);
-			mxResult->kind = XS_STRING_KIND;
-		}}
+		default:
+			fxNumberToRadixString(the, mxResult, value, radix);
+			break;
+		}
 	}
 }
 
