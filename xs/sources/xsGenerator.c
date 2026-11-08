@@ -1673,6 +1673,29 @@ void fxAsyncGeneratorResolveYield(txMachine* the)
 		mxPop();
 	}
 	
+	if ((state->value.integer == XS_CODE_END) && current) {
+		/* AsyncGeneratorDrainQueue: resolve the remaining next() requests in this job */
+		while (current) {
+			txSlot* resolveFunction = current->value.reference->next;
+			txSlot* rejectFunction = resolveFunction->next;
+			txSlot* status = rejectFunction->next;
+			if (status->value.integer != XS_NO_STATUS)
+				break;
+			mxPushUndefined();
+			mxPushSlot(resolveFunction);
+			mxCall();
+			mxPushUndefined();
+			fxNewGeneratorResult(the, 1);
+
+			queue->value.list.first = current = current->next;
+			if (current == C_NULL)
+				queue->value.list.last = C_NULL;
+
+			mxRunCount(1);
+			mxPop();
+		}
+	}
+
 	if (current) {
 		txSlot* resolveFunction = current->value.reference->next;
 		txSlot* rejectFunction = resolveFunction->next;
