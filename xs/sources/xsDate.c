@@ -1072,7 +1072,21 @@ void fx_Date_prototype_toISOString(txMachine* the)
 	txSlot* slot = fxDateCheck(the);
 	if (fx_Date_prototype_get_aux(the, &dt, 1, slot)) {
 		txString p = buffer;
-		p = fxDatePrintYear(p, (txInteger)dt.year);
+		if ((0 <= dt.year) && (dt.year <= 9999))
+			p = fxDatePrint4Digits(p, (txInteger)dt.year);
+		else {
+			// expanded year: sign followed by 6 digits (ECMA-262 Expanded Years)
+			txInteger value = (txInteger)dt.year;
+			*p++ = (value < 0) ? '-' : '+';
+			if (value < 0)
+				value = -value;
+			*p++ = '0' + (value / 100000) % 10;
+			*p++ = '0' + (value / 10000) % 10;
+			*p++ = '0' + (value / 1000) % 10;
+			*p++ = '0' + (value / 100) % 10;
+			*p++ = '0' + (value / 10) % 10;
+			*p++ = '0' + value % 10;
+		}
 		*p++ = '-';
 		p = fxDatePrint2Digits(p, (txInteger)dt.month + 1);
 		*p++ = '-';
