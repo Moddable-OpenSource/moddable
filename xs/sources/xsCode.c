@@ -3182,8 +3182,8 @@ void fxForNodeCode(void* it, void* param)
 	coder->firstContinueTarget = continueTarget->nextTarget;
 	continueTarget->nextTarget = C_NULL;
 	
+	fxScopeCodeRefresh(self->scope, param);
 	if (self->iteration) {
-		fxScopeCodeRefresh(self->scope, param);
 		self->iteration->flags |= mxExpressionNoValue;
 		fxNodeDispatchCode(self->iteration, param);
 		fxCoderAddByte(param, -1, XS_CODE_POP);
