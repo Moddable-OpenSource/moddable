@@ -922,8 +922,11 @@ void fxStringifyJSONName(txMachine* the, txJSONStringifier* theStringifier, txIn
 		fxStringifyJSONChars(the, theStringifier, ",", 1);
 		fxStringifyJSONIndent(the, theStringifier);
 	}
-	else
+	else {
 		*theFlag |= 1;
+		if (*theFlag & 2)
+			fxStringifyJSONIndent(the, theStringifier);
+	}
 	if (*theFlag & 2) {
 		if (aSlot->kind == XS_INTEGER_KIND) {
 			fxStringifyJSONChars(the, theStringifier, "\"", 1);
@@ -1091,7 +1094,6 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 					}
 					if (at->next) {
 						theStringifier->level++;
-						fxStringifyJSONIndent(the, theStringifier);
 						aFlag = 2;
 						mxPushUndefined();
 						property = the->stack;
@@ -1110,7 +1112,8 @@ void fxStringifyJSONProperty(txMachine* the, txJSONStringifier* theStringifier, 
 						mxPop();
 						mxPop();
 						theStringifier->level--;
-						fxStringifyJSONIndent(the, theStringifier);
+						if (aFlag & 1)
+							fxStringifyJSONIndent(the, theStringifier);
 					}
 					mxPop();
 				}
