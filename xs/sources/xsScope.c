@@ -600,7 +600,8 @@ void fxDeclareNodeHoist(void* it, void* param)
 			fxReportParserError(hoister->parser, self->line, "duplicate variable %s", self->symbol->string);
 		else {
 			node = fxScopeGetDeclareNode(hoister->functionScope, self->symbol);
-			if (!node || ((node->description->token != XS_TOKEN_ARG) && (node->description->token != XS_TOKEN_VAR)))
+			/* with parameter expressions, a body var redeclaring a parameter gets its own binding, so closures in the parameter list still see the parameter */
+			if (!node || ((node->description->token != XS_TOKEN_ARG) && (node->description->token != XS_TOKEN_VAR)) || ((node->description->token == XS_TOKEN_ARG) && (hoister->functionScope->node->flags & mxNotSimpleParametersFlag)))
 				fxScopeAddDeclareNode(hoister->bodyScope, self);
 			scope = hoister->scope;
 			while (scope != hoister->bodyScope) {
