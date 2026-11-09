@@ -1840,12 +1840,14 @@ void fx_TypedArray_of(txMachine* the)
 void fx_TypedArray_prototype_at(txMachine* the)
 {
 	mxTypedArrayDeclarations;
-	txInteger index = (mxArgc > 0) ? fxToInteger(the, mxArgv(0)) : 0;
+	txNumber index = (mxArgc > 0) ? c_trunc(fxToNumber(the, mxArgv(0))) : C_NAN;
+	if (c_isnan(index) || (index == 0))
+		index = 0;
 	if (index < 0)
 		index = length + index;
 	if ((0 <= index) && (index < length)) {
 		mxPushSlot(mxThis);
-		mxGetIndex(index);
+		mxGetIndex((txInteger)index);
 		mxPullSlot(mxResult);
 	}
 }
