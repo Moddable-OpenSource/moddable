@@ -1021,7 +1021,8 @@ void fxArrayLengthSetter(txMachine* the)
 		else
 			return;
 	}
-	fxSetArrayLength(the, array, length);
+	if (!fxSetArrayLength(the, array, length) && (the->frame->next->flag & XS_STRICT_FLAG))
+		mxTypeError("set length: cannot delete non-configurable element");
 }
 
 txBoolean fxArrayDefineOwnProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txSlot* descriptor, txFlag mask) 
