@@ -632,7 +632,7 @@ export default class extends TOOL {
 							throw new Error(`unexpected set type: ${rule.pt}`);
 					}
 					else if ("change" === rule.t) {
-						const from = this.resolveValue(rule.fromt, rule.from);
+						const from = ("re" === rule.fromt) ? `new RegExp(${JSON.stringify(rule.from)}, "g")` : this.resolveValue(rule.fromt, rule.from);		// Node-RED replaces every match
 						const to = this.resolveValue(rule.tot, rule.to);
 						if ("msg" === rule.pt) {
 							this.createPropPath(rule.p, change, "\t\t\t");
@@ -817,7 +817,12 @@ export default class extends TOOL {
 					range.push(`function (msg, done) {`);
 				else
 					range.push(`function (msg) {`);
-				range.push(`\t\t\tlet value = msg${this.prepareProp(property)};`);
+				range.push(`\t\t\tlet value = Number(msg${this.prepareProp(property)});`);
+				range.push(`\t\t\tif (isNaN(value)) {`);
+				if (dones)
+					range.push(`\t\t\t\tdone();`);
+				range.push(`\t\t\t\treturn;`);
+				range.push(`\t\t\t}`);
 				if ("clamp" === action) {
 					range.push(`\t\t\tif (value < ${minin})`);
 					range.push(`\t\t\t\tvalue = ${minin};`);
@@ -875,23 +880,20 @@ export default class extends TOOL {
 							case "string":
 							case "number":
 							case "boolean":
-							case "object":
 							case "undefined":
-							case "null":
 								test = `"${config.v}" === typeof value`;
+								break;
+							case "object":
+								test = `("object" === typeof value) && (null !== value) && !Array.isArray(value) && !(value instanceof Uint8Array)`;
+								break;
+							case "null":
+								test = `null === value`;
 								break;
 							case "array":
 								test = `Array.isArray(value)`;
 								break;
 							case "json":
-								doSwitch.push(`\t\t\ttry {`);
-								doSwitch.push(`\t\t\t\tJSON.parse(value);`);
-								doSwitch.push(`\t\t\t\tvalue = true;`);
-								doSwitch.push(`\t\t\t}`);
-								doSwitch.push(`\t\t\tcatch {`);
-								doSwitch.push(`\t\t\t\tvalue = false;`);
-								doSwitch.push(`\t\t\t}`);
-								test = `value`;
+								test = `this.isJSON(value)`;		// must not change value: later rules test it too
 								break;
 							case "buffer":
 								test = `value instanceof Uint8Array`;
@@ -906,7 +908,7 @@ export default class extends TOOL {
 
 						switch (config.t) {
 							case "btwn":
-								test = `(${v} <= value) && (value <= ${v2})`;
+								test = `((${v} <= value) && (value <= ${v2})) || ((${v2} <= value) && (value <= ${v}))`;
 								break;
 							case "eq":
 								test = `value == ${v}`;
@@ -945,7 +947,7 @@ export default class extends TOOL {
 								test = `!this.empty(value)`;
 								break;							
 							case "hask":
-								test = `("object" === typeof value) && (${v} in value)`;
+								test = `(undefined !== value) && (null !== value) && Object.hasOwn(value, ${v})`;
 								break;							
 							case "else":
 								if (hasElse) {
@@ -1164,15 +1166,17 @@ export default class extends TOOL {
 			} break;
 			
 			case "tls-config": {
-				if (config.alpnprotocol)
-					throw new Error("ALPN not yet implemented");
+				if (config.alpnprotocol) {
+					config.alpnprotocol = config.alpnprotocol.trim();
+					if (!config.alpnprotocol)
+						delete config.alpnprotocol;
+				}
 
 				delete config.ca;				// processed separately
 				delete config.cert;				// processed separately
 				delete config.key;				// processed separately
 				delete config.credentials;		// processed separately
 
-				delete config.alpnprotocol;
 				delete config.certname;
 				delete config.keyname;
 				delete config.caname;
