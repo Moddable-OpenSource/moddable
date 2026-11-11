@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025  Moddable Tech, Inc.
+ * Copyright (c) 2021-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -87,37 +87,42 @@ class Response {
 }
 
 let clients;
-function fetchClientRequest(url, options) {
+function fetchClientRequest(url, options, embedded) {
 	clients ??= new Map;
-	let origin = url.origin;
+	const origin = url.origin;
+	const protocol = url.protocol;
+	const tls = ("https:" === protocol) ? embedded?.tls : undefined;
 	let client = clients.get(origin);
+	if (client && (client.tls !== tls))
+		client = undefined;		// TLS options differ (by identity): don't reuse
 	if (!client) {
-		const protocol = url.protocol;
 		const host = url.hostname;
+		function onError() {
+			if (clients.get(origin) === this)
+				clients.delete(origin);
+			this.close();
+		}
 		if (protocol == "http:") {
 			const port = url.port || 80;
-			client = new device.network.http.client.io({ 
+			client = new device.network.http.client.io({
 				...device.network.http.client,
-				host, 
-				port,  
-				onError() {
-					clients.delete(origin);
-					this.close();
-				}
+				host,
+				port,
+				onError
 			});
 		}
 		else {
 			const port = url.port || 443;
-			client = new device.network.https.client.io({ 
-				...device.network.https.client,
-				host, 
-				port,  
-				onError() {
-					clients.delete(origin);
-					this.close();
-				}
+			const https = device.network.https.client;
+			client = new https.io({
+				...https,
+				...(tls && {socket: {...https.socket, tls: {...https.socket.tls, ...tls}}}),
+				host,
+				port,
+				onError
 			});
 		}
+		client.tls = tls;
 		clients.set(origin, client);
 	}
 	let path = url.pathname;
@@ -125,23 +130,28 @@ function fetchClientRequest(url, options) {
 	if (query)
 		path += query;
 	options.path = path;
+	options.client = client;
+	options.origin = origin;
 	client.request(options);
+	if (("close" === options.headers?.get?.("connection")?.toLowerCase()) && (clients.get(origin) === client))
+		clients.delete(origin);
 }
 
 function fetch(href, info = {}) {
 	return new Promise((resolveResponse, rejectResponse) => {
 		let url = new URL(href);
 		if ((url.protocol != "http:") && (url.protocol != "https:"))
-			rejectResponse(new URIError("only http or https"));
-		const promiseBody = new Promise((resolveBody /*, rejectBody */) => {
+			return void rejectResponse(new URIError("only http or https"));
+		let responded = false;
+		const promiseBody = new Promise((resolveBody, rejectBody) => {
 			let method = info.method;
 			let headers = info.headers;
-			let body = info.body;
-			let length = 0;
-			if ((method == "POST") || (method == "PUT")) {
+			let body;
+			let length = 0, chunked = false;
+			if ((method !== undefined) && (method !== "GET") && (method !== "HEAD")) {
 				body = info.body;
-				if (body == undefined) 
-					rejectResponse(new URIError(method + " no body"));
+				if (body == undefined)
+					body = new Uint8Array(0);		// no body: send an empty one, as the Fetch standard
 				else if (ArrayBuffer.isView(body))
 					body = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
 				else if ((body instanceof ArrayBuffer) || (body instanceof SharedArrayBuffer))
@@ -159,27 +169,40 @@ function fetch(href, info = {}) {
 					}
 				}
 				length = headers.get("content-length");
-				if (length == undefined) {
+				if (undefined === length) {
 					length = body.byteLength;
 					const transferEncoding = headers.get("transfer-encoding");
-					if (transferEncoding?.toLowerCase() != "chunked")
+					chunked = transferEncoding?.toLowerCase() == "chunked";
+					if (!chunked)
 						headers.set("content-length", length);
 				}
 			}
 			
-			let redirected = false;
+			let redirected = false, redirects = 0, failed = false;
 			let offset = 0;
 			let buffer = null;
 			const options = {
 				method,
 				headers,
 				onHeaders(status, headers, statusText) {
-					if ((301 === status) || (308 === status) || (302 === status) || (303 === status) || (307 === status)) {
-						url = new URL(headers.get("location"));
-						redirected = this.redirected = true;
+					options.close = ("close" === headers.get("connection")?.toLowerCase()) || ("close" === options.headers?.get?.("connection")?.toLowerCase());
+					const location = headers.get("location");
+					if (location && ((301 === status) || (308 === status) || (302 === status) || (303 === status) || (307 === status))) {		// without a location, the redirect is the response
+						this.redirected = true;
+						try {
+							if (++redirects > 20)
+								throw new TypeError("too many redirects");
+							url = new URL(location, url.href);		// relative to the current URL, as the Fetch standard
+						}
+						catch (e) {		// called from the HTTP client: report, never throw
+							failed = true;
+							return void rejectResponse(e);
+						}
+						redirected = true;
 						offset = 0;
 						return;
 					}
+					responded = true;
 					resolveResponse(new Response(url.href, status, headers, promiseBody, redirected, statusText));
 				},
 				onWritable(count) {
@@ -191,8 +214,10 @@ function fetch(href, info = {}) {
 							this.write(body.subarray(offset, offset + count));
 							offset += count;
 						}
-						else
+						else if (chunked && (offset !== Infinity)) {
+							offset = Infinity;
 							this.write();
+						}
 					}
 				},
 				onReadable(count) {
@@ -205,16 +230,28 @@ function fetch(href, info = {}) {
 					else
 						buffer = this.read(count);
 				},
-				onDone(/* error */) {
+				onDone(error) {
+					if (error) {
+						if (responded)
+							rejectBody(error);
+						else
+							rejectResponse(error)
+						return;
+					}
+					if (options.close && (clients.get(options.origin) === options.client))
+						clients.delete(options.origin);
+					if (failed)
+						return;
 					if (this.redirected) {
-						fetchClientRequest(url, options);
+						fetchClientRequest(url, options, info.embedded);
 						return;
 					}
 					resolveBody(buffer ?? new ArrayBuffer);
 				}
 			};
-			fetchClientRequest(url, options);
+			fetchClientRequest(url, options, info.embedded);
 		});
+		promiseBody.catch(() => {});
 	});
 }
 
