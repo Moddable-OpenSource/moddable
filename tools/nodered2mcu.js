@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023  Moddable Tech, Inc.
+ * Copyright (c) 2022-2026  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Tools.
  * 
@@ -701,18 +701,26 @@ export default class extends TOOL {
 				switch (config.spltType) {
 					case "bin":
 						if (config.splt.startsWith("["))
-							config.splt = Uint8Array.from(JSON.parse(config.splt));
+							config.spltBytes = Uint8Array.from(JSON.parse(config.splt));
 						else
-							config.splt = new Uint8Array(ArrayBuffer.fromString(config.splt));
+							config.spltBytes = new Uint8Array(ArrayBuffer.fromString(config.splt));
+						try {
+							config.spltString = String.fromArrayBuffer(config.spltBytes.buffer);
+						}
+						catch {
+						}
 						break;
 					case "str":
+						config.spltString = config.splt;
+						config.spltBytes = new Uint8Array(ArrayBuffer.fromString(config.splt));
 						break;
 					case "len":
-						config.splt = parseInt(config.splt);
+						config.spltString = config.spltBytes = parseInt(config.splt);
 						break;
 					default:
 						throw new Error("unrecognized spltType: " + config.spltType);
 				}
+				delete config.splt;
 			} break;
 			
 			case "join": {
@@ -729,7 +737,13 @@ export default class extends TOOL {
 				config.count = Number(config.count || 0);
 				config.joinerType = config.joinerType || "str";
 
-				if (config.joinerType === "str")
+				if (config.joinerType === "bin") {
+					const joiner = JSON.parse(config.joiner || "[]");
+					if (!Array.isArray(joiner))
+						throw new Error("join: binary joiner must be array");
+					config.joiner = Uint8Array.from(joiner);
+				}
+				else if (config.joinerType === "str")
 					config.joiner = (config.joiner ?? "").replace(/\\n/g,"\n").replace(/\\r/g,"\r").replace(/\\t/g,"\t").replace(/\\e/g,"\e").replace(/\\f/g,"\f").replace(/\\0/g,"\0");	// adapted from 17-split.js
 
 				config.getter = `function (msg) {return msg${this.prepareProp(config.property)};}`;
@@ -908,7 +922,10 @@ export default class extends TOOL {
 
 						switch (config.t) {
 							case "btwn":
-								test = `((${v} <= value) && (value <= ${v2})) || ((${v2} <= value) && (value <= ${v}))`;
+								if (("num" === config.vt) && ("num" === config.v2t))		// constant bounds: order them here
+									test = `(${Math.min(v, v2)} <= value) && (value <= ${Math.max(v, v2)})`;
+								else
+									test = `((${v} <= value) && (value <= ${v2})) || ((${v2} <= value) && (value <= ${v}))`;
 								break;
 							case "eq":
 								test = `value == ${v}`;
@@ -1043,10 +1060,31 @@ export default class extends TOOL {
 
 				if (("msg" !== config.fieldType) || ("payload" !== config.field))
 					throw new Error("unsupported property");
+
+				if (!config.template)
+					delete config.template;
 				
 				delete config.format;
 				delete config.fieldType;
 				delete config.field;
+			} break;
+
+			case "file":
+			case "file in": {
+				// changed from Node-RED 2.x to 3.x
+				const type = config.filenameType || (config.filename ? "str" : "msg");
+				const name = config.filenameType ? config.filename : (config.filename || "filename");
+				if ("str" === type)
+					config.filename = name;
+				else if (("msg" === type) && ("filename" === name))
+					delete config.filename;
+				else if ("jsonata" === type)
+					throw new Error("JSONata filename unimplemented");
+				else {
+					config.getFilename = `function (msg) {return ${this.resolveValue(type, name)};}`;
+					delete config.filename;
+				}
+				delete config.filenameType;
 			} break;
 
 			case "http in": {
@@ -1123,7 +1161,20 @@ export default class extends TOOL {
 							break;
 					}
 					
-					config.broker = config.broker.slice(index + 3);
+					let host = config.broker.slice(index + 3);
+					const slash = host.indexOf("/");
+					if (slash >= 0)
+						host = host.slice(0, slash);
+					const colon = host.lastIndexOf(":");
+					if (colon > host.lastIndexOf("]")) {		// not inside an IPv6 address
+						config.port = host.slice(colon + 1);
+						host = host.slice(0, colon);
+					}
+					else if ("mqtt" === scheme)
+						config.port = "1883";
+					else if ("mqtts" === scheme)
+						config.port = "8883";
+					config.broker = host;
 				}
 				
 				if (!config.usetls) {
@@ -1131,7 +1182,8 @@ export default class extends TOOL {
 					delete config.tls;
 				}
 
-				config.keepalive = (parseInt(config.keepalive) || 60) * 1000;
+				const keepalive = parseInt(config.keepalive);
+				config.keepalive = (isNaN(keepalive) ? 60 : keepalive) * 1000;		// 0 disables keepalive
 
 			} break;
 
@@ -1166,11 +1218,9 @@ export default class extends TOOL {
 			} break;
 			
 			case "tls-config": {
-				if (config.alpnprotocol) {
-					config.alpnprotocol = config.alpnprotocol.trim();
-					if (!config.alpnprotocol)
-						delete config.alpnprotocol;
-				}
+				config.alpnprotocol = config.alpnprotocol?.trim();
+				if (!config.alpnprotocol)
+					delete config.alpnprotocol;
 
 				delete config.ca;				// processed separately
 				delete config.cert;				// processed separately
