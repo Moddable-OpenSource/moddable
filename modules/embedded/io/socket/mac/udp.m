@@ -322,7 +322,7 @@ void socketCallback(CFSocketRef s, CFSocketCallBackType cbType, CFDataRef addr, 
 		return;		// closed socket
 
 	byteLength = recvfrom(udp->skt, data, sizeof(data), MSG_DONTWAIT, (struct sockaddr *)&srcAddr, &srcAddrLen);
-	if (byteLength <= 0) return;
+	if (byteLength < 0) return;
 
 	packet = malloc(sizeof(UDPPacketRecord) + byteLength);
 	if (!packet) return;

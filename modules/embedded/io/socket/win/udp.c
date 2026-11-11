@@ -263,7 +263,7 @@ void udpTask(modTimer timer, void *refcon, int refconSize)
 		return;		// closed socket
 
 	byteLength = recvfrom(udp->skt, data, sizeof(data), 0, (struct sockaddr *)&srcAddr, &srcAddrLen);
-	if (byteLength <= 0) return;
+	if (byteLength < 0) return;
 
 	packet = malloc(sizeof(UDPPacketRecord) + byteLength);
 	if (!packet) return;
