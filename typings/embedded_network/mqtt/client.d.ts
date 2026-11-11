@@ -17,6 +17,7 @@ declare module "embedded:network/mqtt/client" {
     more: boolean,
     topic?: string,
     QoS?: number,
+    retain?: boolean,
     byteLength?: number,
   }
 
