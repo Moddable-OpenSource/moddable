@@ -71,13 +71,15 @@ class WebSocketClient {
 		this.#options.host = options.host; 
 		this.#options.path = options.path; 
 		this.#options.port = options.port ?? 80; 
+		if ((options.socket.tls ? 443 : 80) !== Number(this.#options.port))
+			this.#options.host += ":" + this.#options.port;
 		this.#options.protocol = options.protocol; 
 		this.#options.headers = options.headers; 
 
 		const dns = new options.dns.io(options.dns);
 		this.#state = "resolving";
 		dns.resolve({
-			host: this.#options.host, 
+			host: options.host, 
 
 			onResolved: (host, address) => {
 				try {
