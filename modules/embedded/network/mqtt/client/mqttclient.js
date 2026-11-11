@@ -295,6 +295,9 @@ class MQTTClient {
 			}
 		}
 
+		if (!count && !buffer)
+			return new ArrayBuffer(0);
+
 		this.#readable -= count;
 		this.#payload -= count;
 		this.#socket.format = BufferFormat;
@@ -475,13 +478,14 @@ class MQTTClient {
 					break;
 
 				case 0x36:
-					if (parse.remaining) {
+					if (parse.remaining || (undefined !== parse.topic)) {
 						const options = {};
-						if (parse.topic) {
+						if (undefined !== parse.topic) {
 							options.topic = parse.topic;
 							delete parse.topic;
 							options.byteLength = parse.remaining;
 							options.QoS = parse.QoS;
+							options.retain = parse.retain;
 						}
 
 						count += 1;
