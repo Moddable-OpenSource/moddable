@@ -1,7 +1,7 @@
 ---
 name: Receive Messages using MQTT Client
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 To receive MQTT messages, first [subscribe](./mqclient-subscribe.md) to one or more topics. Then `onReadable()` is called when messages are received. A single message may be split across several fragments, which results in multiple calls to `onReadable()` for a single message. This example reassembles fragments into a `Uint8Array`.
@@ -30,6 +30,7 @@ new MQTTClient({
 			trace(`receiving message on ${options.topic}\n`);
 			trace(` byteLength ${options.byteLength}\n`);
 			trace(` QoS ${options.QoS}\n`);
+			trace(` retain ${options.retain}\n`);
 		}
 
 		if ((null === payload) && (false === options.more))
