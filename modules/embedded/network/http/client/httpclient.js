@@ -430,7 +430,7 @@ class HTTPClient {
 			
 		} while (this.#pendingWrite && this.#writable);
 	}
-	#error(e) {
+	#error(e = new Error) {
 		if (("receivedBody" === this.#state) && this.#timer) {		// completion not reported yet. report before handling error.
 			Timer.clear(this.#timer);
 			this.#done();
@@ -441,11 +441,11 @@ class HTTPClient {
 		try {
 			const current = this.#current;
 			this.#current = undefined;
-			current?.onDone?.call(current.request, new Error);
+			current?.onDone?.call(current.request, e);
 
 			while (this.#requests.length) {
-				const request = this.#requests.shift(); 
-				request.onDone?.call(request.request, new Error);
+				const request = this.#requests.shift();
+				request.onDone?.call(request.request, e);
 			}
 			this.#onError?.(e);
 		}
