@@ -1,7 +1,7 @@
 ---
 name: Files
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-09-07
+updated: 2026-11-11
 ---
 
 The ECMA-419 embedded standard [Files](https://419.ecma-international.org/#storage-files) API works with both files and directories. The API is modeled on POSIX file semantics, so it is familiar to most developers.
@@ -35,7 +35,7 @@ Paths are [subpath strings](https://419.ecma-international.org/#storage-file-sub
 
 Include the Files manifest in your project's `manifest.json`. Including the manifest initializes the host provider `device.files`:
 
-	$(MODDABLE)/modules/embedded/storage/files/manifest.json
+	$(MODDABLE)/modules/embedded/storage/files
 
 The manifest selects the implementation for your target: POSIX on macOS and Linux, LittleFS on ESP32, ESP8266, and Raspberry Pi Pico; and platform file systems on Pebble OS and Zephyr.
 

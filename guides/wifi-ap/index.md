@@ -1,7 +1,7 @@
 ---
 name: Wi-Fi Access Point
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-10
+updated: 2026-11-11
 ---
 
 The Wi-Fi Access Point APIs create a Wi-Fi base station running on an embedded device. Other devices can connect to the access point to access its services. Wi-Fi Access Points on embedded devices are commonly used for local device provisioning flows. The Moddable SDK provides the [Captive Portal module](../../examples/io/wifiaccesspoint/captiveportal/) for provisioning, building on a Wi-Fi Access Point. The Wi-Fi Access Point APIs are an [ECMA-419 Network Interface](https://419.ecma-international.org/#network-interface-class-pattern) with extensions that are expected to be defined as part of ECMA-419 5th Edition.
@@ -23,7 +23,7 @@ The Moddable SDK provides Wi-Fi Access Point support for ESP32, ESP8266, Raspber
 
 Include the Wi-Fi Access Point Network Interface manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint/manifest.json
+	$(MODDABLE)/modules/embedded/network/interface/wifi/accesspoint
 
 Then, import the module in your JavaScript source code:
 

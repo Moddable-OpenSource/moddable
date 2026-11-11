@@ -1,7 +1,7 @@
 ---
 name: Key-Value Storage
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 Key-value storage lets a project store small pieces of data, such as settings and state, that persist across restarts. The Moddable SDK provides two APIs: the high-level web standard [Web Storage](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) API (`localStorage`), and the low-level ECMA-419 embedded standard [Key-Value store](https://419.ecma-international.org/#storage-keyvalue). Both organize data into named domains, each holding a set of key-value pairs. In fact, Web Storage is implemented using the Key-Value store.
@@ -56,7 +56,7 @@ import WebStorage from "webstorage";
 
 To use the Key-Value store directly, include its manifest:
 
-	$(MODDABLE)/modules/embedded/storage/key-value/manifest.json
+	$(MODDABLE)/modules/embedded/storage/key-value
 
 Then, import the module in your JavaScript source code:
 

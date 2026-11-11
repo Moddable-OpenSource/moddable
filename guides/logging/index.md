@@ -1,7 +1,7 @@
 ---
 name: Logging
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 The Web platform Console APIs (e.g. [`console.log`](https://developer.mozilla.org/en-US/docs/Web/API/console/log_static)) and the Moddable SDK's `trace()` are both available to Embedded JavaScript developers using the Moddable SDK. In fact, the Web platform's Console API is implemented using the Moddable SDK's `trace()` function.
@@ -24,7 +24,7 @@ The two APIs are equivalent for most purposes. Use whichever is most comfortable
 
 To use the Web platform's Console APIs, include their manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/web/console/manifest.json
+	$(MODDABLE)/modules/web/console
 
 The `console` global is initialized by the module.
 

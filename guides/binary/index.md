@@ -1,7 +1,7 @@
 ---
 name: Binary Data
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 These guides cover working with binary data in Embedded JavaScript — the standard [`ArrayBuffer`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) and [`TypedArray`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray) objects, conversions to and from strings, Base64, and hexadecimal, checksums, and compression.
@@ -47,9 +47,9 @@ Other operations are provided by Moddable SDK modules.
 
 | Feature | Import | Manifest |
 |---------|--------|----------|
-| `TextEncoder` | `text/encoder` | `$(MODDABLE)/modules/data/text/encoder/manifest.json` |
-| `TextDecoder` | `text/decoder` | `$(MODDABLE)/modules/data/text/decoder/manifest.json` |
-| CRC (`CRC8`, `CRC16`) | `crc` | `$(MODDABLE)/modules/data/crc/manifest.json` |
+| `TextEncoder` | `text/encoder` | `$(MODDABLE)/modules/data/text/encoder` |
+| `TextDecoder` | `text/decoder` | `$(MODDABLE)/modules/data/text/decoder` |
+| CRC (`CRC8`, `CRC16`) | `crc` | `$(MODDABLE)/modules/data/crc` |
 | Compression (`Deflate`) | `deflate` | `$(MODDABLE)/modules/data/zlib/manifest_deflate.json` |
 | Decompression (`Inflate`) | `inflate` | `$(MODDABLE)/modules/data/zlib/manifest_inflate.json` |
 

@@ -1,7 +1,7 @@
 ---
 name: Time
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-14
+updated: 2026-11-11
 ---
 
 Embedded JavaScript projects work with time in several ways, and these guides cross a range of APIs — from the standard JavaScript `Date` object to Moddable SDK modules and ECMA-419 device drivers.
@@ -49,7 +49,7 @@ The remaining features require additional modules:
 
 | Feature | Import | Manifest |
 |---------|--------|----------|
-| Microsecond precision (`Time.microseconds`) | none (adds `microseconds` to `Time`) | `$(MODDABLE)/modules/base/microseconds/manifest.json` |
+| Microsecond precision (`Time.microseconds`) | none (adds `microseconds` to `Time`) | `$(MODDABLE)/modules/base/microsecondsjson` |
 | Network Time (`device.network.ntp.client`) | `embedded:network/ntp/client` | `$(MODDABLE)/modules/embedded/network/ntp/client` |
 
 When building with `mcconfig`, add the manifests needed to your project.

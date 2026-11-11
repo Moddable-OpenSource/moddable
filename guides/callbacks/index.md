@@ -1,7 +1,7 @@
 ---
 name: Time Callbacks
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 The web standard Timers API (e.g. [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)) and the Moddable SDK's [`Timer`](../../documentation/base/base.md#timer) module are both available to Embedded JavaScript developers using the Moddable SDK. In fact, the Web platform's Timers API is implemented using the Moddable SDK's `Timer` module.
@@ -32,7 +32,7 @@ import Timer from "timer";
 
 To use the Web platform's Timers API, include its manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/web/timers/manifest.json
+	$(MODDABLE)/modules/web/timers
 
 The `setTimeout()` family of functions is installed as globals by the module, so no import is required.
 

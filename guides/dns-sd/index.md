@@ -1,7 +1,7 @@
 ---
 name: DNS Service Discovery
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 DNS Service Discovery (DNS-SD) lets devices advertise and discover services, such as HTTP servers or AirPlay speakers, on a local network. It works over Multicast DNS (mDNS), so no central server is required. The ECMA-419 embedded standard [DNS-SD](https://419.ecma-international.org/#dns-sd) API is available to Embedded JavaScript developers using the Moddable SDK, accessed through the host provider as `device.network.dnssd`.
@@ -32,7 +32,7 @@ dnssd.close();
 
 Include the DNS-SD manifest in your project's `manifest.json`. Including the manifest initializes the host provider `device.network.dnssd`:
 
-	$(MODDABLE)/modules/embedded/network/dnssd/manifest.json
+	$(MODDABLE)/modules/embedded/network/dnssd
 
 
 ## Building with mcpack

@@ -1,7 +1,7 @@
 ---
 name: Wi-Fi
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-10
+updated: 2026-11-11
 ---
 
 Wi-Fi provides the network connection for the majority of Embedded JavaScript projects. The ECMA-419 embedded standard [Wi-Fi Network Interface](https://419.ecma-international.org/#network-interface-class-pattern-wi-fi-network-interface) is available scans for access points, connects to a network, and monitors the connection.
@@ -22,7 +22,7 @@ The Moddable SDK provides Wi-Fi implementations for ESP32, ESP8266, Raspberry Pi
 
 The Wi-Fi Network Interface is part of the standard networking manifest, `manifest_net.json`, so most networked projects already include it. To add it directly, include its manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/embedded/network/interface/wifi/manifest.json
+	$(MODDABLE)/modules/embedded/network/interface/wifi
 
 Then, import the module in your JavaScript source code:
 

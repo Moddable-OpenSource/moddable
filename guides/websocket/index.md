@@ -1,7 +1,7 @@
 ---
 name: WebSocket
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-10-15
+updated: 2026-11-11
 ---
 
 The high-level web standard [`WebSocket()`](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) API and the low-level ECMA-419 embedded standard [WebSocket Client](https://419.ecma-international.org/#websocket-client) APIs are both available to Embedded JavaScript developers using the Moddable SDK. In addition, the Web platform's experimental `WebSocketStream()` is available. Both `WebSocket()` and `WebSocketStream()` are implemented using WebSocket Client.
@@ -69,7 +69,7 @@ For secure connections over WSS, include the secure WebSocket Client manifest in
 
 To use `WebSocketStream()`, include its manifest in your project's `manifest.json`.
 
-	$(MODDABLE)/modules/web/streams/websocket/manifest.json
+	$(MODDABLE)/modules/web/streams/websocket
 
 Then, import the module in your JavaScript source code:
 

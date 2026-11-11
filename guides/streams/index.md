@@ -1,7 +1,7 @@
 ---
 name: Streams
 SPDX-FileCopyrightText: Copyright (c) 2026 Moddable Tech, Inc.
-updated: 2026-08-04
+updated: 2026-11-11
 ---
 
 The Moddable SDK provides a full implementation of WHATWG Streams as widely used on the Web platform. Streams are optimized for use on embedded devices. The implementation is deeply integrated with the XS JavaScript engine to minimize its code footprint and memory use, and to optimize performance. Developers can work with streams in exactly the same way as they do on the web because the implementation conforms to the relevant Web Platform Tests at a level comparable to web browsers.
@@ -23,7 +23,7 @@ The stream classes are implemented across several modules.
 
 Include the core streams manifest in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/web/streams/all/manifest.json
+	$(MODDABLE)/modules/web/streams/all
 
 Then, import the required constructors in your JavaScript source code:
 
@@ -47,9 +47,9 @@ import {
 
 To use the `DecompressionStream`, `TextDecoderStream`, and `TextEncoderStream` constructors, include their manifests in your project's `manifest.json`:
 
-	$(MODDABLE)/modules/web/streams/decompression/manifest.json
-	$(MODDABLE)/modules/web/streams/text/decoder/manifest.json
-	$(MODDABLE)/modules/web/streams/text/encoder/manifest.json
+	$(MODDABLE)/modules/web/streams/decompression
+	$(MODDABLE)/modules/web/streams/text/decoder
+	$(MODDABLE)/modules/web/streams/text/encoder
 
 Then, import the required constructors in your JavaScript source code:
 
