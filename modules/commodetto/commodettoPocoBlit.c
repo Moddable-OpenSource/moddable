@@ -3844,7 +3844,6 @@ void logDisplayList(Poco poco)
 		"DrawBitmap",
 		"DrawMonochromeBitmapPart",
 		"DrawMonochromeForegroundBitmapPart",
-		"DrawMonochromeBothBitmapPart",
 		"DrawGray16BitmapPart",
 		"DrawGray16RLEBitmapPart",
 		"DrawGray16RLEBlendBitmapPart",
