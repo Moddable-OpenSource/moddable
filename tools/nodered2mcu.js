@@ -183,12 +183,20 @@ export default class extends TOOL {
 				config.z = "__config"; 
 		});
 
-		// map from node ID to config and delete disabled and Comment nodes
+		// map from node ID to config; delete disabled and Comment nodes; delete nodes of disabled flows
 		const nodes = new Map;
+		const disabledFlows = new Set(flows.filter(config => ("tab" === config.type) && config.disabled).map(config => config.id));
 		for (let i = 0; i < flows.length; i++) {
 			const config = flows[i];
 			if ("tab" === config.type)
 				continue;
+			if (("subflow" === config.type) || config.type?.startsWith("subflow:"))
+				throw new Error(`Error translating node ID "${config.id}", type "${config.type}": subflows unimplemented`);
+			if (disabledFlows.has(config.z)) {
+				flows.splice(i, 1);
+				i -= 1;
+				continue;
+			}
 			if(("comment" === config.type)&&(config.name?.startsWith("moddable_import"))&&(config.info?.startsWith("{"))){
 				const arr = JSON.parse(config.info);
 				for(let key in arr) {
@@ -234,11 +242,43 @@ export default class extends TOOL {
 			}
 		}
 
-		// remove group nodes with empty environments
-		//  (unobservable except for NR_GROUP_NAME & NR_GROUP_ID environment variables)
+		// global environment variables (Node-RED 3.1 global-config node): each flow inherits them, unless it defines the same name
 		for (let i = 0; i < flows.length; i++) {
 			const config = flows[i];
-			if (("group" === config.type) && !config.env?.length) {
+			if ("global-config" !== config.type)
+				continue;
+			const env = config.env ?? [];
+			flows.forEach(flow => {
+				if (("tab" === flow.type) && env.length)
+					flow.env = [...(flow.env ?? []), ...env.filter(e => !flow.env?.some(f => f.name === e.name))];
+			});
+			nodes.delete(config.id);
+			flows.splice(i, 1);
+			i -= 1;
+		}
+
+		// Catch and Status "group" scope (Node-RED 3.1): the nodes in the group and its nested groups (resolved before groups are removed)
+		flows.forEach(config => {
+			if ((("catch" !== config.type) && ("status" !== config.type)) || ("group" !== config.scope))
+				return;
+			if (!config.g) {
+				config.scope = null;		// not in a group: the whole flow
+				return;
+			}
+			config.scope = flows.filter(node => {
+				for (let g = node.g; g; g = nodes.get(g)?.g) {
+					if (g === config.g)
+						return true;
+				}
+			}).map(node => node.id);
+		});
+
+		// remove group nodes with empty environments
+		//  (unobservable except for NR_GROUP_NAME & NR_GROUP_ID environment variables, so kept if a flow uses those)
+		const groupNames = flows.some(config => ("group" !== config.type) && JSON.stringify(config).includes("NR_GROUP_"));
+		for (let i = 0; i < flows.length; i++) {
+			const config = flows[i];
+			if (("group" === config.type) && !config.env?.length && !groupNames) {
 				const g = config.g;
 				const id = config.id;
 				nodes.delete(config.id);
@@ -303,7 +343,7 @@ export default class extends TOOL {
 						if ((config.z !== z) || (config.type !== "status"))
 							return;
 
-						return !config.scope || config.scope.includes(id);
+						return !config.scope || (config.scope.includes(id) && !config.wires?.flat().includes(id));		// Node-RED 4: a node the status node is wired to is not in scope (avoids a loop)
 					}).map(config => config.id);
 
 					// enabled completion nodes for this node
@@ -311,7 +351,7 @@ export default class extends TOOL {
 						if ((config.z !== z) || (config.type !== "complete"))
 							return;
 
-						return config.scope.includes(id);
+						return config.scope?.includes(id) && !config.wires?.flat().includes(id);		// Node-RED 4: a node the complete node is wired to is not in scope (avoids a loop)
 					}).map(config => config.id);
 
 					// enabled catch nodes for this node
@@ -433,7 +473,7 @@ export default class extends TOOL {
 			} break;
 
 			case "group": {
-				const env = this.prepareEnv(config.env);
+				const env = this.prepareEnv(config.env ?? []);
 				config.env = `[[JSON]]{\n` + env.join("\n") + "\n}"
 			
 				delete config.nodes;
@@ -446,34 +486,33 @@ export default class extends TOOL {
 				if ("jsonata" === config.targetType)
 					throw new Error("jsonata unimplemented");
 
-				const getter = [];
-				getter.push(`function (msg) {`);
-				if ("true" === config.complete)
-					getter.push(`\t\t\treturn msg;`);
-				else {
-					let name = config.complete;
-					if ("false" === name)
-						name = "payload";
-					getter.push(`\t\t\treturn msg${this.prepareProp(name)};`);
-				}
-				getter.push(`\t\t}`);
-				config.getter = getter.join("\n");
+				const property = name => {		// as getMessageProperty in Node-RED's debug node: a missing parent gives undefined
+					const parts = this.splitProp(name);
+					return `function (msg) {\n\t\t\treturn msg${parts[0]}${parts.slice(1).map(part => ("." === part[0]) ? "?" + part : "?." + part).join("")};\n\t\t}`;
+				};
+				let complete = String(config.complete || "payload");
+				if ("false" === complete)
+					complete = "payload";
+				config.getter = ("true" === complete) ? `function (msg) {\n\t\t\treturn msg;\n\t\t}` : property(complete);
+				if ("true" !== complete)
+					config.property = complete;		// the sidebar output shows {[property]: value}
 
 				if (config.tostatus) {
 					const statusType = config.statusType ?? "auto";
-					if ("auto" === statusType)
-						config.statusVal = config.getter;
-					else if ("msg" === statusType) {
-						getter.length = 1;
-						getter.push(`\t\t\treturn msg.${config.statusVal};`);
-						getter.push(`\t\t}`);
-						config.statusVal = getter.join("\n");
-					}
+					if ("auto" === statusType)		// the complete message shows its payload
+						config.statusVal = ("true" === complete) ? property("payload") : config.getter;
+					else if ("msg" === statusType)
+						config.statusVal = property(config.statusVal || complete);
 					else
-						throw new Error(`unimplemented statusType: ${config.statusType}`); 
+						throw new Error(`unimplemented statusType: ${config.statusType}`);
+					config.statusType = statusType;
+				}
+				else {
+					delete config.statusType;
+					delete config.statusVal;
 				}
 
-				config.active = !!config.active;
+				config.active = (null == config.active) || !!config.active;		// as Node-RED: active unless set
 			} break;
 
 			case "Blockly":
@@ -499,6 +538,12 @@ export default class extends TOOL {
 				else
 					delete config.libs;
 
+				if (/\bnode\.linkcall\b/.test(config.func) || /\bnode\.linkcall\b/.test(config.initialize))		// Node-RED 5
+					throw new Error("node.linkcall unimplemented");
+				const usesURL = /\bnew\s+URL(SearchParams)?\s*\(|(?<![.\w$])URL\s*\.\s*(canParse|parse|createObjectURL|revokeObjectURL)\b/;
+				if (!/\bURL(SearchParams)?\b/.test(libs) && (usesURL.test(config.func) || usesURL.test(config.initialize)))		// Node-RED 4 (unless the Setup tab provides them)
+					throw new Error("URL and URLSearchParams unavailable in function node");
+
 				if (config.func) {
 					config.func = `function (msg, ${params}) {\n${libs}${config.func}\n}`;
 
@@ -519,8 +564,8 @@ export default class extends TOOL {
 				} break;
 
 			case "inject": {
-				if (config.chrontab)
-					throw new Error("chrontab unimplemented");
+				if (config.crontab)
+					throw new Error("crontab unimplemented");
 
 				const trigger = [];
 				trigger.push(`function () {`);
@@ -688,6 +733,12 @@ export default class extends TOOL {
 			} break;
 
 			case "split": {
+				if (config.property && ("payload" !== config.property))		// Node-RED 4
+					throw new Error("split property other than msg.payload unimplemented");
+				delete config.property;
+				if (/[.[]/.test(config.addname))		// Node-RED 4 sets a nested property
+					throw new Error("split key property path unimplemented");
+
 				if (("splt" in config) && !config.spltType)		// historic: https://cookbook.nodered.org/basic/split-text
 					config.spltType = "str";
 				if (!config.arraySpltType) {		// 		// historic: https://cookbook.nodered.org/basic/split-text
@@ -728,6 +779,8 @@ export default class extends TOOL {
 					throw new Error("reduce unimplemented");
 
 				config.mode = config.mode||"auto";
+				if (("custom" !== config.mode) || (false !== config.useparts))		// Node-RED 4: manual mode may ignore msg.parts
+					delete config.useparts;
 				config.property = config.property||"payload";
 				config.propertyType = config.propertyType||"msg";
 				if (config.propertyType === 'full') {
@@ -755,6 +808,10 @@ export default class extends TOOL {
 				config.op2 = config.op2 || "0";
 				config.op1type = config.op1type || "str";
 				config.op2type = config.op2type || "str";
+				if (("date" === config.op1type) && ("1" === config.op1))		// Node-RED 4: earlier editors wrote these for a timestamp; date values are now formats
+					config.op1 = "";
+				if (("date" === config.op2type) && ("0" === config.op2))
+					config.op2 = "";
 
 				if ((config.op1type === "num") && (!isNaN(config.op1))) { config.op1 = Number(config.op1); }
 				if ((config.op2type === "num") && (!isNaN(config.op2))) { config.op2 = Number(config.op2); }
@@ -817,27 +874,49 @@ export default class extends TOOL {
 			} break;
 
 			case "range": {
-				const maxin = parseFloat(config.maxin);
-				const maxout = parseFloat(config.maxout);
-				const minin = parseFloat(config.minin);
-				const minout = parseFloat(config.minout);
-				const scale = (maxout - minout) / (maxin - minin);
+				let maxin = parseFloat(config.maxin);
+				let maxout = parseFloat(config.maxout);
+				let minin = parseFloat(config.minin);
+				let minout = parseFloat(config.minout);
 				const action = config.action;
 				const property = config.property ?? "payload";
 				const round = config.round;
+				if (minin > maxin) {		// Node-RED 4: a reversed input range swaps both ranges
+					[minin, maxin] = [maxin, minin];
+					[minout, maxout] = [maxout, minout];
+				}
+				if (round) {		// Node-RED 4
+					maxout = Math.floor(maxout);
+					minout = Math.ceil(minout);
+				}
+				const scale = (maxout - minout) / (maxin - minin);
 
 				const range = [];
 				if (dones)
 					range.push(`function (msg, done) {`);
 				else
 					range.push(`function (msg) {`);
-				range.push(`\t\t\tlet value = Number(msg${this.prepareProp(property)});`);
+				range.push(`\t\t\tlet value = msg${this.prepareProp(property)};`);		// as getMessageProperty, a missing parent throws
+				range.push(`\t\t\tif (undefined === value) {`);		// Node-RED: passed on unchanged
+				if (dones)
+					range.push(`\t\t\t\tdone();`);
+				range.push(`\t\t\t\treturn msg;`);
+				range.push(`\t\t\t}`);
+				range.push(`\t\t\tif ("number" !== typeof value)`);		// Node-RED 5: numbers, numeric strings and booleans (1/0) are scaled
+				range.push(`\t\t\t\tvalue = (("boolean" === typeof value) || (("string" === typeof value) && value.trim())) ? Number(value) : NaN;`);
 				range.push(`\t\t\tif (isNaN(value)) {`);
 				if (dones)
 					range.push(`\t\t\t\tdone();`);
 				range.push(`\t\t\t\treturn;`);
 				range.push(`\t\t\t}`);
-				if ("clamp" === action) {
+				if ("drop" === action) {
+					range.push(`\t\t\tif ((value < ${minin}) || (value > ${maxin})) {`);
+					if (dones)
+						range.push(`\t\t\t\tdone();`);
+					range.push(`\t\t\t\treturn;`);
+					range.push(`\t\t\t}`);
+				}
+				else if ("clamp" === action) {
 					range.push(`\t\t\tif (value < ${minin})`);
 					range.push(`\t\t\t\tvalue = ${minin};`);
 					range.push(`\t\t\tif (value > ${maxin})`);
@@ -1007,6 +1086,9 @@ export default class extends TOOL {
 			case "link out":
 				config.links = config.links?.filter(link => nodes.has(link));	// remove broken links
 				if ("link call" === type) {
+					if ("dynamic" === config.linkType)
+						throw new Error("dynamic link call unimplemented");
+					delete config.linkType;
 					config.timeout = parseFloat(config.timeout || 30) * 1000;		// logic from 60_link.js
 					if (isNaN(config.timeout))
 						config.timeout = 30_000;
@@ -1033,6 +1115,10 @@ export default class extends TOOL {
 			} break;
 
 			case "csv": {
+				if ("rfc" === config.spec)		// Node-RED 4; "" (or missing) is the legacy parser
+					throw new Error("RFC 4180 CSV parser unimplemented: use legacy parser");
+				delete config.spec;
+
 				config.template = (config.temp || "");
 				config.sep = (config.sep || ',').replaceAll("\\t","\t").replaceAll("\\n","\n").replaceAll("\\r","\r");
 				config.quo = '"';
@@ -1090,11 +1176,14 @@ export default class extends TOOL {
 			case "http in": {
 				if (config.upload)
 					throw new Error("upload unimplemented");
-				
+				if (config.skipBodyParsing)		// Node-RED 4
+					throw new Error("skip body parsing unimplemented");
+
 				config.method = config.method.toUpperCase();
 
 				delete config.swaggerDoc;
 				delete config.upload;
+				delete config.skipBodyParsing;
 			} break;
 
 			case "http response": {
@@ -1218,6 +1307,15 @@ export default class extends TOOL {
 			} break;
 			
 			case "tls-config": {
+				if (config.certType && ("files" !== config.certType))		// Node-RED 5: "pfx" or "env"
+					throw new Error(`tls-config certificate type "${config.certType}" unimplemented`);
+				delete config.certType;
+				delete config.p12;
+				delete config.p12name;
+				delete config.caEnv;
+				delete config.certEnv;
+				delete config.keyEnv;
+
 				config.alpnprotocol = config.alpnprotocol?.trim();
 				if (!config.alpnprotocol)
 					delete config.alpnprotocol;
@@ -1233,6 +1331,23 @@ export default class extends TOOL {
 
 				if (!config.servername)
 					delete config.servername;
+			} break;
+
+			case "delay": {
+				if ("burst" === config.pauseType)		// Node-RED 5
+					throw new Error("burst unimplemented");
+			} break;
+
+			case "batch": {
+				if (config.honourParts)		// Node-RED 4
+					throw new Error("batch honour parts unimplemented");
+				delete config.honourParts;
+			} break;
+
+			case "websocket-client": {
+				if (config.headers?.some(header => ("other" === header.keyType) ? header.keyValue : header.keyType))		// Node-RED 4 (entries without a name are not sent)
+					throw new Error("websocket-client headers unimplemented");
+				delete config.headers;
 			} break;
 
 			case "rpi-gpio in": {
@@ -1739,8 +1854,14 @@ export default class extends TOOL {
 			case "nul":
 			case "null":
 				return null;
-			case "date":
-				return "Date.now()";
+			case "date":		// Node-RED 4: the value is the format
+				if (!value)
+					return "Date.now()";
+				if ("object" === value)
+					return "new Date()";
+				if ("iso" === value)
+					return "(new Date()).toISOString()";
+				throw new Error(`date format "${value}" unimplemented`);
 			case "json":
 				if (!value)
 					throw new Error("missing value");
