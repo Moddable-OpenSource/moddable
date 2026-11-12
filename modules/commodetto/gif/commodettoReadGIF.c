@@ -128,7 +128,7 @@ void xs_readgif(xsMachine *the)
 
 	if (availableIn >= 0) {
 		available = availableIn;
-		if (available > bufferSize)
+		if ((xsUnsignedValue)available > bufferSize)
 			xsUnknownError("invalid");
 	}
 
