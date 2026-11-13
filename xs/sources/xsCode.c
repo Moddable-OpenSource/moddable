@@ -2536,6 +2536,24 @@ void fxBodyNodeCode(void* it, void* param)
 	if ((self->flags & mxEvalFlag) && !(self->flags & mxStrictFlag))
 		coder->evalFlag = 1;
 	fxScopeCodingBody(self->scope, param);
+	if (self->scope->scope && (self->scope->scope->token == XS_TOKEN_FUNCTION)) {
+		/* a body var redeclaring a parameter starts with the parameter's value; this runs after the body vars are initialized to undefined */
+		txScope* functionScope = self->scope->scope;
+		txDeclareNode* declaration = self->scope->firstDeclareNode;
+		while (declaration) {
+			if (declaration->description->token == XS_TOKEN_VAR) {
+				txDeclareNode* parameter = functionScope->firstDeclareNode;
+				while (parameter && ((parameter->symbol != declaration->symbol) || (parameter->description->token != XS_TOKEN_ARG)))
+					parameter = parameter->nextDeclareNode;
+				if (parameter) {
+					fxCoderAddIndex(param, 1, (parameter->flags & mxDeclareNodeClosureFlag) ? XS_CODE_GET_CLOSURE_1 : XS_CODE_GET_LOCAL_1, parameter->index);
+					fxCoderAddIndex(param, 0, (declaration->flags & mxDeclareNodeClosureFlag) ? XS_CODE_SET_CLOSURE_1 : XS_CODE_SET_LOCAL_1, declaration->index);
+					fxCoderAddByte(param, -1, XS_CODE_POP);
+				}
+			}
+			declaration = declaration->nextDeclareNode;
+		}
+	}
 	fxScopeCodeDefineNodes(self->scope, param);
 	fxScopeCodeUsingStatement(self->scope, param, self->statement);
 	fxScopeCodedBody(self->scope, param);
