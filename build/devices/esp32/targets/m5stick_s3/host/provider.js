@@ -135,9 +135,8 @@ const device = {
 				const sample = super.sample();
 				if (sample.accelerometer) {
 					const accelerometerX = sample.accelerometer.x;
-					sample.accelerometer.x = -sample.accelerometer.y;
-					sample.accelerometer.y = accelerometerX;
-					sample.accelerometer.z = -sample.accelerometer.z;
+					sample.accelerometer.x = sample.accelerometer.y;
+					sample.accelerometer.y = -accelerometerX;
 				}
 				if (sample.gyroscope) {
 					const gyroscopeX = sample.gyroscope.x;

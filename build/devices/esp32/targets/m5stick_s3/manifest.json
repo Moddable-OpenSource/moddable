@@ -27,9 +27,9 @@
 		"m5pm1": "./M5PM1",
 		"m5stick_s3/es8311": "./M5StickS3ES8311",
 		"m5stick_s3/audio-resource": "./M5StickS3AudioResource",
-		"embedded:io/audio/in-original": "$(MODULES)/io/audioin/esp32/*",
+		"embedded:io/audio/in-original": "$(MODULES)/embedded/io/audio/in/esp32/*",
 		"embedded:io/audio/in": "./M5StickS3AudioIn",
-		"embedded:io/audio/out-original": "$(MODULES)/io/audioout/esp32/*",
+		"embedded:io/audio/out-original": "$(MODULES)/embedded/io/audio/out/esp32/*",
 		"embedded:io/audio/out": "./M5StickS3AudioOut"
 	},
 	"platforms": {

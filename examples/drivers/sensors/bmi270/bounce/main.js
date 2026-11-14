@@ -61,8 +61,9 @@ Timer.repeat(() => {
 		drawBar("Z", z, 0, font.height * 2, width, font.height);
 	render.end();
 
-	ball.vx = (ball.vx + x) * 0.98;
-	ball.vy = (ball.vy - y) * 0.98;
+	// Gravity is opposite to the stationary accelerometer reading; screen Y points down.
+	ball.vx = (ball.vx - x) * 0.98;
+	ball.vy = (ball.vy + y) * 0.98;
 	let nx = ball.x + ball.vx;
 	let ny = ball.y + ball.vy;
 	if (nx < 0) {
