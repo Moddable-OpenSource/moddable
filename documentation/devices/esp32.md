@@ -236,6 +236,7 @@ The Moddable SDK supports these ESP32-C6 development kits:
 | :---: | :--- | :--- | :--- |
 |  <img src="./../assets/devices/esp32-c6-devkitc.png" width=125><BR>ESP32-C6-DevKitC-1 | `esp32/esp32c6` | NeoPixel, Button | <li>[Product page](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html)</li> |
 |  <img src="./../assets/devices/m5nanoc6.png" width=125><BR>M5NanoC6 | `esp32/m5nanoc6` | LED, NeoPixel, Button | <li>[Product page](https://docs.m5stack.com/en/core/M5NanoC6)</li> |
+| <img src="./../assets/devices/nesso-n1.png" width=125 alt="Arduino Nesso N1"><BR>Arduino Nesso N1 | `esp32/nesso_n1` | 1.14" touch LCD<BR>135 x 240 16-bit color<BR>2 buttons<BR>BMI270 IMU<BR>Buzzer<BR>16 MB flash<BR>Battery monitoring | <li>[Arduino documentation](https://docs.arduino.cc/hardware/nesso-n1/)</li> |
 |  <img src="./../assets/devices/ws_c6_147.jpg" width=125><BR>Waveshare<br>ESP32-C6-LCD-1.47 | `esp32/ws_esp32c6_1_47` | 1.47" 172x320<br>Display<br>NeoPixel, Button | <li>[Product page](https://docs.waveshare.com/ESP32-C6-LCD-1.47)</li> |
 | <img src="./../assets/devices/xiao-esp32c6.jpg" width=125><BR>Seeed Studio<BR>XIAO ESP32C6 | `esp32/xiao_esp32c6` | User LED, 1 button | <li>[Product page](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C6-p-5884.html)</li> |
 | <img src="./../assets/devices/ws-c6-zero.png" width=125><BR>Waveshare<br>ESP32-C6-Zero | `esp32/ws_esp32c6_zero` | NeoPixel, Button | <li>[Product page](https://www.waveshare.com/esp32-c6-zero.htm)</li> |
@@ -1170,6 +1171,7 @@ These are some of the devices use this technique:
 | `esp32/xiao_esp32c5` | Seeed Xiao ESP32-C5 |
 | `esp32/xiao_esp32c6` | Seeed Xiao ESP32C6 |
 | `esp32/ws_esp32c6_zero` | Waveshare ESP32-C6-Zero |
+| `esp32/nesso_n1` | Arduino Nesso N1 |
 
 
 <a id="idf-components"></a>

@@ -1,0 +1,69 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32c6",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PROGRAMMING_MODE_MESSAGE": "Hold the left power button until the blue LED blinks, then release it.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the left power button."
+	},
+	"include": [
+		"$(IO)/i2c",
+		"$(IO)/pwm",
+		"$(MODULES)/drivers/peripherals/led/digital",
+		"$(MODULES)/drivers/ili9341",
+		"$(MODULES)/drivers/sensors/ft6336",
+		"$(MODULES)/drivers/sensors/bmi270"
+	],
+	"modules": {
+		"setup/target": "./setup-target",
+		"NessoN1Expander": "./expander",
+		"NessoN1Led": "./led",
+		"NessoN1Screen": "./screen",
+		"NessoN1Power": "./power"
+	},
+	"preload": [
+		"setup/target",
+		"NessoN1Expander",
+		"NessoN1Led",
+		"NessoN1Screen",
+		"NessoN1Power"
+	],
+	"config": {
+		"screen": "NessoN1Screen",
+		"rotation": 270
+	},
+	"defines": {
+		"spi": {
+			"miso_pin": 22,
+			"mosi_pin": 21,
+			"sck_pin": 20
+		},
+		"ili9341": {
+			"width": 240,
+			"height": 135,
+			"cs_pin": 17,
+			"dc_pin": 16,
+			"spi_port": "SPI2_HOST",
+			"spi_mode": 0,
+			"column_offset": 40,
+			"row_offset": 53,
+			"registers": [
+				"kDelayMS, 200,",
+				"0x01, 0,",
+				"kDelayMS, 150,",
+				"0x11, 0,",
+				"kDelayMS, 150,",
+				"0x3A, 1, 0x55,",
+				"kDelayMS, 10,",
+				"0x36, 1, 0x60,",
+				"0x21, 0,",
+				"kDelayMS, 10,",
+				"0x13, 1, 0x00,",
+				"kDelayMS, 10,",
+				"0x29, 0,",
+				"kDelayMS, 20,",
+				"kDelayMS, 0"
+			]
+		}
+	}
+}

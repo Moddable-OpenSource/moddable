@@ -173,6 +173,11 @@
 				"USE_USB": "2"
 			}
 		},
+		"esp32/nesso_n1": {
+			"build": {
+				"USE_USB": "2"
+			}
+		},
 		"esp32/qtpyc3": {
 			"build": {
 				"USE_USB": "2"
