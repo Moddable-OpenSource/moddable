@@ -117,7 +117,7 @@ void xs_compass_configure(xsMachine *the)
 
 	if (xsmcGet(tmp, xsArg(0), xsID_filter)) {
 		int filter = xsmcToNumber(tmp);
-		compass_service_set_heading_filter(normalize_angle(DEG_TO_TRIGANGLE(filter)));
+		compass_service_set_heading_filter(normalize_angle(PBL_DEG_TO_TRIGANGLE(filter)));
 	}
 }
 
@@ -142,7 +142,7 @@ void xs_compass_sample(xsMachine *the)
 	xsSlot tmp;
 	xsmcSetNewObject(xsResult);
 	
-	xsmcSetNumber(tmp, TRIGANGLE_TO_DEG(data.magnetic_heading));
+	xsmcSetNumber(tmp, PBL_TRIGANGLE_TO_DEG(data.magnetic_heading));
 	xsmcSet(xsResult, xsID_heading, tmp);
 #endif
 }
