@@ -247,10 +247,10 @@ void pebble_graphics_context_rockyFillRadial(xsMachine *the)
   center.x.raw_value -= FIXED_S16_3_HALF.raw_value;
   center.y.raw_value -= FIXED_S16_3_HALF.raw_value;
 
-  radius1.raw_value = MAX(0, radius1.raw_value);
-  radius2.raw_value = MAX(0, radius2.raw_value);
-  const Fixed_S16_3 inner_radius = Fixed_S16_3(MIN(radius1.raw_value, radius2.raw_value));
-  const Fixed_S16_3 outer_radius = Fixed_S16_3(MAX(radius1.raw_value, radius2.raw_value));
+  radius1.raw_value = PBL_MAX(0, radius1.raw_value);
+  radius2.raw_value = PBL_MAX(0, radius2.raw_value);
+  const Fixed_S16_3 inner_radius = Fixed_S16_3(PBL_MIN(radius1.raw_value, radius2.raw_value));
+  const Fixed_S16_3 outer_radius = Fixed_S16_3(PBL_MAX(radius1.raw_value, radius2.raw_value));
 
   graphics_fill_radial_precise_internal(pgr->ctx, center, inner_radius, outer_radius,
                                         (int32_t)angle_1, (int32_t)angle_2);

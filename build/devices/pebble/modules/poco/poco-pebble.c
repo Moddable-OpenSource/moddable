@@ -203,8 +203,8 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 		.y = xsmcToInteger(xsArg(2) + poco->yOrigin),
 	};
 	int radius = xsmcToInteger(xsArg(3));
-	int from = (xsmcArgc > 4) ? DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(4))) : 0;
-	int to = (xsmcArgc > 5) ? DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(5))) : TRIG_MAX_ANGLE;
+	int from = (xsmcArgc > 4) ? PBL_DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(4))) : 0;
+	int to = (xsmcArgc > 5) ? PBL_DEG_TO_TRIGANGLE(xsmcToInteger(xsArg(5))) : TRIG_MAX_ANGLE;
 
 	GColor saveColor = ctx->draw_state.fill_color;
 	ctx->draw_state.fill_color.argb = color;
@@ -214,7 +214,7 @@ void xs_pocopebbble_drawCircle(xsMachine *the)
 			.size.w = radius << 1,
 			.size.h = radius << 1,
 		};
-		const int32_t inset_thickness = MAX(ABS(r.size.h), ABS(r.size.w));
+		const int32_t inset_thickness = PBL_MAX(PBL_ABS(r.size.h), PBL_ABS(r.size.w));
 		graphics_fill_radial(ctx, r, GOvalScaleModeFillCircle, inset_thickness, from, to);
 	ctx->draw_state.fill_color = saveColor;
 }
