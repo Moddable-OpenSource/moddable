@@ -1,6 +1,6 @@
 # Using the Moddable SDK with ESP32
 Copyright 2016-2026 Moddable Tech, Inc.<BR>
-Revised: October 23, 2026
+Revised: November 23, 2026
 
 This document provides a guide to building apps for the ESP32 line of SoCs from Espressif. The Moddable SDK supports [ESP32](https://www.espressif.com/en/products/socs/esp32), [ESP32-S2](https://www.espressif.com/en/products/socs/esp32-s2), [ESP32-S3](https://www.espressif.com/en/products/socs/esp32-s3), [ESP32-C3](https://www.espressif.com/en/products/socs/esp32-c3), [ESP32-C5](https://www.espressif.com/en/products/socs/esp32-c5), [ESP32-C6](https://www.espressif.com/en/products/socs/esp32-c6), [ESP32-H2](https://www.espressif.com/en/products/socs/esp32-h2), and [ESP32-P4](https://www.espressif.com/en/products/socs/esp32-p4).
 
@@ -154,6 +154,7 @@ The Moddable SDK supports devices built on ESP32-S3. The following table lists e
 | <img src="./../assets/devices/lilygo-qt-pro-s3.png" width=100><BR>Lilygo T-QT ESP32-S3 | `esp32/lilygo_t_qt` | 0.85" LCD display<br>128 x 128 16 bit color<br>2 buttons<br>Qwiic connector | <li>[Product page](https://www.lilygo.cc/products/t-qt-v1-1)</li>|
 | <img src="./../assets/devices/lilygo-t-display-s3.png" width=100><BR>Lilygo T-Display-S3 | `esp32/lilygo_tdisplay_s3` | 1.9" LCD display<br>170 x 320 16 bit color<br>8-bit parallel display<br>Touch<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3)</li>|
 | <img src="./../assets/devices/lilygo-t-display-s3-amoled.png" width=100><BR>Lilygo T-Display-S3 AMOLED | `esp32/lilygo_tdisplay_s3_amoled` | 1.91" AMOLED display<br>240 x 536 16 bit color<br>QSPI display<br>2 buttons<br>Qwiic connector<br> | <li>[Product page](https://www.lilygo.cc/products/t-display-s3-amoled)</li>|
+| <img src="./../assets/devices/lilygo-t-display-s3-amoled-143.png" width=100 alt="Lilygo T-Display-S3 AMOLED 1.43"><BR>Lilygo T-Display-S3 AMOLED 1.43 | `esp32/lilygo_tdisplay_s3_amoled_143` | 1.43" round AMOLED display<BR>466 x 466 16-bit color<BR>QSPI display<BR>Capacitive touch<BR>PCF8563 RTC<BR>SD card slot<BR>16MB Flash / 8MB PSRAM | <li>[Board guide](./lilygo-t-display-s3-amoled-143.md)</li><li>[Product page](https://lilygo.cc/en-us/products/t-display-s3-amoled-1-64?variant=44507650556085)</li> |
 | <img src="./../assets/devices/xiao-esp32c3.png" width=125><BR>Seeed Studio<BR>XIAO ESP32S3 | `esp32/xiao_esp32s3` | 1 button | <li>[Product page](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html)</li>|
 | <img src="../assets/devices/xiao-qtpy-ili9341-thumbnail.png" width=140></a><BR>ili9341 | `esp32/qtpys3_ili9341`<br>`esp32/xiao_esp32s3_ili9341` | ili9341 QVGA display<BR>320 x 240<BR>16-bit color | <li>[Wiring Guide](../displays/images/xiao-qtpy-ili9341-wiring.png)</li> |
 | <img src="./../assets/devices/waveshare_s3_amoled_1.75.jpg" width=140><BR>Waveshare<BR>ESP32-S3-Touch-AMOLED-1.75 | `esp32/waveshare_amoled_175` | 1.75" round AMOLED display<BR>466 x 466<BR>16-bit color<BR>QSPI display bus<BR>CST9217 capacitive touch<BR>IMU<BR>RTC<BR>PMU<BR>Speaker | <li>[Product page](https://www.waveshare.com/esp32-s3-touch-amoled-1.75.htm)</li> |
