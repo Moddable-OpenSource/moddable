@@ -87,6 +87,9 @@ typedef struct {
 #ifdef MODDEF_CO5300_RST_PIN
 	modGPIOConfigurationRecord	rst;
 #endif
+#ifdef MODDEF_CO5300_EN_PIN
+	modGPIOConfigurationRecord	en;
+#endif
 
 	int updateWidth;
 	int updateHeight;
@@ -152,6 +155,10 @@ void xs_co5300_destructor(void *data)
 
 #ifdef MODDEF_CO5300_RST_PIN
 	modGPIOUninit(&sd->rst);
+#endif
+
+#ifdef MODDEF_CO5300_EN_PIN
+	modGPIOUninit(&sd->en);
 #endif
 
 	if (sd->ops)
@@ -467,6 +474,11 @@ void co5300Init(co5300Display sd)
 {
 	const uint8_t *cmds;
 
+#ifdef MODDEF_CO5300_EN_PIN
+	modGPIOInit(&sd->en, NULL, MODDEF_CO5300_EN_PIN, kModGPIOOutput);
+	modGPIOWrite(&sd->en, 1);
+	modDelayMilliseconds(10);
+#endif
 #ifdef MODDEF_CO5300_RST_PIN
 	modGPIOWrite(&sd->rst, 0);
 	modDelayMilliseconds(20);

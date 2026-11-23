@@ -1,0 +1,70 @@
+{
+	"build": {
+		"ESP32_SUBCLASS": "esp32s3",
+		"USE_USB": "2",
+		"SDKCONFIGPATH": "./sdkconfig",
+		"PARTITIONS_FILE_FOR_TARGET": "./sdkconfig/partitions.csv",
+		"PROGRAMMING_MODE_MESSAGE": "INSTRUCTIONS: Press and hold the BOOT button, then press and release the RST button.",
+		"BEFORE_DEBUGGING_MESSAGE": "Press and release the RST button."
+	},
+	"include": [
+		"$(MODULES)/drivers/co5300",
+		"$(MODULES)/drivers/sensors/cst9217",
+		"$(MODULES)/drivers/peripherals/pcf8563",
+		"$(MODULES)/drivers/peripherals/button",
+		"$(IO)/digital",
+		"$(IO)/i2c"
+	],
+	"modules": {
+		"setup/target": "./setup-target"
+	},
+	"preload": [
+		"setup/target"
+	],
+	"config": {
+		"screen": "co5300",
+		"format": "RGB565BE",
+		"corner": 233
+	},
+	"creation": {
+		"static": 0,
+		"chunk": {
+			"initial": 78848,
+			"incremental": 0
+		},
+		"heap": {
+			"initial": 4928,
+			"incremental": 0
+		},
+		"stack": 512
+	},
+	"defines": {
+		"co5300": {
+			"width": 466,
+			"height": 466,
+			"hz": 6500000,
+			"column_offset": 6,
+			"row_offset": 0,
+			"cs_pin": 10,
+			"sck_pin": 12,
+			"data0_pin": 11,
+			"data1_pin": 13,
+			"data2_pin": 14,
+			"data3_pin": 15,
+			"rst_pin": 17,
+			"en_pin": 16,
+			"spi_port": "SPI2_HOST"
+		},
+		"poco": {
+			"dma": 1
+		},
+		"sdcard": {
+			"cs": 38,
+			"mosi": 39,
+			"miso": 40,
+			"sck": 41,
+			"spi_port": "SPI3_HOST",
+			"hz": 10000000
+		}
+	}
+}
