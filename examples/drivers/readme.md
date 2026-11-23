@@ -140,6 +140,12 @@ Draws a basic digital clock on an ePaper display that updates once a minute. Onl
 
 ***
 
+### [`m5stack-stopwatch`](./m5stack-stopwatch)
+
+Checks the display, touch, buttons, power controller, microphone, and speaker on the [M5StopWatch](../../documentation/devices/m5stack-stopwatch.md).
+
+***
+
 ### [`m5stickc-axp192`](./m5stickc-axp192)
 
 [Commodetto](../../documentation/commodetto/commodetto.md) app for the [M5Stick-C](https://www.adafruit.com/product/4290). Demonstrates how to change the screen brightness to save power.
