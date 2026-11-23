@@ -19,9 +19,9 @@
  */
 
 import Timer from "timer";
-import ES8311 from "embedded:peripheral/Audio/ES8311";
-import AudioInput from "embedded:io/audio/in";
-import AudioOutput from "embedded:io/audio/out";
+import ES8311 from "m5stack_stopwatch/es8311";
+import AudioInput from "embedded:io/audio/in-original";
+import AudioOutput from "embedded:io/audio/out-original";
 
 let owner;
 let expander;
@@ -46,7 +46,7 @@ function audioClass(Base, output) {
 			if (owner)
 				throw new Error("close the active M5StopWatch audio input or output first");
 
-			super(options);
+			super({...options, sampleRate: 16000, channels: 1, bitsPerSample: 16});
 			owner = this;
 			try {
 				if (output) {
@@ -56,7 +56,7 @@ function audioClass(Base, output) {
 				}
 				expander.write(3, 1);
 				Timer.delay(10);
-				this.#codec = new ES8311({...device.i2c.default, io: device.io.SMBus});
+				this.#codec = new ES8311({...device.i2c.internal, io: device.io.SMBus});
 				this.#codec.configure({input: true, output: true});
 			}
 			catch (error) {
@@ -161,8 +161,8 @@ function audioClass(Base, output) {
 	};
 }
 
-const Input = audioClass(AudioInput, false);
-const Output = audioClass(AudioOutput, true);
+export const Input = audioClass(AudioInput, false);
+export const Output = audioClass(AudioOutput, true);
 Output.Async = audioClass(AudioOutput.Async, true);
 
 export default {Input, Output};

@@ -19,41 +19,78 @@
  */
 
 import Timer from "timer";
-import M5PM1 from "embedded:peripheral/Power/M5PM1";
-import M5IOE1 from "embedded:peripheral/IOExpander/M5IOE1";
+import M5PM1 from "m5stack_stopwatch/m5pm1";
+import M5IOE1 from "m5stack_stopwatch/m5ioe1";
 import {setAudioExpander} from "m5stack_stopwatch/audio";
 
+function findExpanderAddress(bus) {
+	const empty = new ArrayBuffer;
+	for (const address of [0x4F, 0x6F]) {
+		const probe = new device.io.I2C({...bus, address, hz: 100_000});
+		try {
+			if (probe.write(empty)) {
+				// A sleeping M5IOE1 can wake on the first address probe.
+				Timer.delay(10);
+				if (probe.write(empty))
+					continue;
+			}
+			return address;
+		}
+		finally {
+			probe.close();
+		}
+	}
+	throw new Error("M5IOE1 not found");
+}
+
 export default function(done) {
-	const bus = {...device.i2c.default, io: device.io.SMBus};
-	globalThis.power = new M5PM1(bus);
+	const bus = {...device.i2c.internal, io: device.io.SMBus};
+	const power = new M5PM1(bus);
+	let expander;
+	try {
+		power.configure();
 
-	const Digital = device.io.Digital;
-	const cs = new Digital({pin: 39, mode: Digital.Output, initialValue: 1});
-	cs.close();
-	Timer.delay(50);
+		const Digital = device.io.Digital;
+		const cs = new Digital({pin: 39, mode: Digital.Output, initialValue: 1});
+		cs.close();
+		Timer.delay(50);
 
-	const expander = new M5IOE1(bus);
-	expander.write(9, 0);
-	expander.write(10, 0);
-	for (const pin of [1, 3, 4, 5, 8, 9, 10])
-		expander.configure({pin});
+		const address = findExpanderAddress(device.i2c.internal);
+		expander = new M5IOE1({...bus, address});
+		expander.disableIdleSleep();
+		expander.write(1, 0);	// Select UART on the rear expansion connector.
+		expander.write(9, 0);
+		expander.write(10, 0);
+		for (const pin of [1, 3, 4, 5, 8, 9, 10])
+			expander.configure({pin});
 
-	expander.write(8, 0);
-	Timer.delay(20);
-	for (const pin of [1, 4, 5, 8])
-		expander.write(pin, 1);
-	expander.write(3, 0);
-	expander.write(9, 0);
-	expander.write(10, 0);
-	Timer.delay(10);
+		expander.write(8, 0);
+		Timer.delay(20);
+		for (const pin of [4, 5, 8])
+			expander.write(pin, 1);
+		expander.write(3, 0);
+		expander.write(9, 0);
+		expander.write(10, 0);
+		Timer.delay(10);
 
-	expander.write(4, 0);
-	expander.write(5, 0);
-	Timer.delay(8);
-	expander.write(4, 1);
-	expander.write(5, 1);
-	Timer.delay(80);
+		expander.write(4, 0);
+		expander.write(5, 0);
+		Timer.delay(8);
+		expander.write(4, 1);
+		expander.write(5, 1);
+		Timer.delay(80);
+	}
+	catch (error) {
+		try {
+			expander?.close();
+		}
+		finally {
+			power.close();
+		}
+		throw error;
+	}
 
+	globalThis.power = power;
 	setAudioExpander(expander);
 	done?.();
 }

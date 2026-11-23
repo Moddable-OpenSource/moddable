@@ -1,8 +1,0 @@
-{
-	"modules": {
-		"embedded:peripheral/Power/M5PM1": "./m5pm1"
-	},
-	"preload": [
-		"embedded:peripheral/Power/M5PM1"
-	]
-}

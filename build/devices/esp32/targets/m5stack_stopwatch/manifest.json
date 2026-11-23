@@ -8,23 +8,35 @@
 		"BEFORE_DEBUGGING_MESSAGE": "Press the PWR button to restart."
 	},
 	"include": [
-		"$(EMBEDDED)/io/audio/out",
-		"$(EMBEDDED)/io/audio/in",
 		"$(MODULES)/drivers/co5300",
 		"$(MODULES)/drivers/sensors/cst820",
 		"$(MODULES)/drivers/sensors/cst9217",
-		"$(MODULES)/drivers/peripherals/m5pm1",
-		"$(MODULES)/drivers/peripherals/m5ioe1",
 		"$(MODULES)/drivers/peripherals/button",
 		"$(IO)/digital",
-		"$(IO)/i2c",
-		"$(MODULES)/drivers/peripherals/es8311"
+		"$(IO)/i2c"
 	],
 	"modules": {
 		"setup/target": "./setup-target",
-		"m5stack_stopwatch/audio": "./host/audio-provider"
+		"m5stack_stopwatch/m5ioe1": "./M5IOE1",
+		"m5stack_stopwatch/m5pm1": "./M5PM1",
+		"m5stack_stopwatch/es8311": "./ES8311",
+		"m5stack_stopwatch/audio": "./host/audio-provider",
+		"embedded:io/audio/in-original": "$(EMBEDDED)/io/audio/in/esp32/audioin",
+		"embedded:io/audio/out-original": "$(EMBEDDED)/io/audio/out/esp32/audioout-esp32",
+		"embedded:io/audio/in": "./host/audio-in",
+		"embedded:io/audio/out": "./host/audio-out"
+	},
+	"platforms": {
+		"esp32": {
+			"dependency": [
+				{ "idf": "esp_driver_i2s" },
+				{ "idf": "esp_adc" }
+			]
+		}
 	},
 	"preload": [
+		"embedded:io/audio/in",
+		"embedded:io/audio/out",
 		"setup/target"
 	],
 	"config": {

@@ -77,7 +77,7 @@ class Touch {
 		if (this.#scale !== 1 && this.#scale !== 2)
 			throw new RangeError("coordinateScale must be 1 or 2");
 
-		const bus = device.i2c.default;
+		const bus = device.i2c.internal;
 		const probe = new device.io.I2C({...bus, address: 0x5A, hz: 100_000});
 		let cst9217;
 		try {
@@ -128,11 +128,13 @@ class Touch {
 	}
 }
 
+const externalI2C = {io: "I2C", data: 10, clock: 11};
 const device = {
 	audio,
 	i2c: {
-		default: {io: "I2C", data: 47, clock: 48},
-		external: {io: "I2C", data: 10, clock: 11}
+		default: externalI2C,
+		external: externalI2C,
+		internal: {io: "I2C", data: 47, clock: 48}
 	},
 	pin: {button: 2, buttonA: 2, buttonB: 1, touchInterrupt: 13, displayTE: 38},
 	peripheral: {button: {Default: ButtonA, A: ButtonA, B: ButtonB}, Backlight},

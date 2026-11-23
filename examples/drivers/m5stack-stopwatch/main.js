@@ -16,6 +16,8 @@ import Poco from "commodetto/Poco";
 import parseBMF from "commodetto/parseBMF";
 import Resource from "Resource";
 import Timer from "timer";
+import AudioIn from "embedded:io/audio/in";
+import AudioOut from "embedded:io/audio/out";
 
 const render = new Poco(screen, {displayListLength: 2048});
 const font = parseBMF(new Resource("OpenSans-Semibold-18.bf4"));
@@ -50,7 +52,7 @@ function drawScreen() {
 function record() {
 	let recording = false;
 	let recorded = 0;
-	const input = audio = new device.audio.Input({
+	const input = audio = new AudioIn({
 		...audioFormat,
 		onReadable(size) {
 			if (!recording) {
@@ -103,7 +105,7 @@ function play(recorded, peak) {
 		samples[i] *= gain;
 	samples.fill(0, recordingEnd, end);
 	let offset = 0;
-	const output = audio = new device.audio.Output({
+	const output = audio = new AudioOut({
 		...audioFormat,
 		onWritable(size) {
 			const count = Math.min(size >> 1, end - offset);

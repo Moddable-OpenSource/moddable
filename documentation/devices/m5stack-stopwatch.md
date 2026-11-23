@@ -9,7 +9,7 @@ Use the `esp32/m5stack_stopwatch` target for the M5StopWatch. The ESP32-S3 board
 Set up the [ESP32 toolchain](./esp32.md). From the SDK checkout, build the hardware example without writing to the device.
 
 ```sh
-cd "$MODDABLE/examples/devices/m5stack-stopwatch"
+cd "$MODDABLE/examples/drivers/m5stack-stopwatch"
 mcconfig -m -p esp32/m5stack_stopwatch -t build
 ```
 
@@ -37,6 +37,10 @@ mcconfig -m -p esp32/m5stack_stopwatch -t deploy
 | Touch controller | `device.sensor.Touch` |
 | A and B buttons | `device.peripheral.button.A`, `device.peripheral.button.B` |
 | M5PM1 power controller | `power.status` |
-| ES8311 audio | `device.audio.Input`, `device.audio.Output`, `device.audio.Output.Async` |
+| PORT.A I²C | `device.i2c.default` |
+| Board I²C | `device.i2c.internal` |
+| ES8311 audio | `embedded:io/audio/in`, `embedded:io/audio/out` |
 
-The audio endpoints use 16 kHz, mono, 16-bit PCM. Close the active endpoint before opening the other direction. Use these board endpoints for the built-in microphone and speaker. They initialize the codec and control the amplifier.
+The audio endpoints use 16 kHz, mono, 16-bit PCM. Encode PCM resources in that format before playing them. Close the active endpoint before opening the other direction. The standard audio modules initialize the built-in codec and amplifier. The same constructors are available as `device.audio.Input`, `device.audio.Output`, and `device.audio.Output.Async`.
+
+The rear expansion connector uses UART by default.
