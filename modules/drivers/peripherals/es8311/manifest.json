@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:peripheral/Audio/ES8311": "./es8311"
+	},
+	"preload": [
+		"embedded:peripheral/Audio/ES8311"
+	]
+}

@@ -1,0 +1,8 @@
+{
+	"modules": {
+		"embedded:peripheral/IOExpander/M5IOE1": "./m5ioe1"
+	},
+	"preload": [
+		"embedded:peripheral/IOExpander/M5IOE1"
+	]
+}
