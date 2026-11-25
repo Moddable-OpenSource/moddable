@@ -543,7 +543,7 @@ static const uint8_t gInit[] ICACHE_RODATA_ATTR = {
 
 void ili9341Init(spiDisplay sd)
 {
-	uint8_t data[16] __attribute__((aligned(4)));
+	uint8_t data[256] __attribute__((aligned(4)));
 	const uint8_t *cmds;
 
 #ifdef MODDEF_ILI9341_RST_PIN
