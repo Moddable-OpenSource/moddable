@@ -70,7 +70,9 @@
 // - ESP32-P4 standard I2S. IDF stores one int16 per mono slot.
 // - Single-slot PDM after the original ESP32. Slot BOTH and the original ESP32
 //   keep the 32-bit word (low 16 bits, step 4).
-#if (ESP32 == 7 && !MODDEF_AUDIOIN_I2S_PDM) || (MODDEF_AUDIOIN_I2S_PDM && (ESP32 != 1) && (MODDEF_AUDIOIN_I2S_SLOT != I2S_STD_SLOT_BOTH))
+#if MODDEF_AUDIOIN_I2S_PDM && (ESP32 != 1)
+	#define AUDIOIN_MONO16_PACKED (MODDEF_AUDIOIN_I2S_SLOT != I2S_PDM_SLOT_BOTH)
+#elif (ESP32 == 7) && !MODDEF_AUDIOIN_I2S_PDM
 	#define AUDIOIN_MONO16_PACKED 1
 #else
 	#define AUDIOIN_MONO16_PACKED 0
@@ -384,14 +386,12 @@ void xs_audioin_read(xsMachine *the)
 				remaining -= 4;
 			}
 			else {
-#if AUDIOIN_MONO16_PACKED
-				if (16 == input->bitsPerSample) {
+				if (AUDIOIN_MONO16_PACKED && (16 == input->bitsPerSample)) {
 					*samples = *(int16_t *)input->playPos;
 					bias += *samples++;
 					input->playPos += 2;
 				}
 				else
-#endif
 				{
 					*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
 					bias += *samples++;
@@ -417,14 +417,12 @@ void xs_audioin_read(xsMachine *the)
 				remaining -= 4;
 			}
 			else {
-#if AUDIOIN_MONO16_PACKED
-				if (16 == input->bitsPerSample) {
+				if (AUDIOIN_MONO16_PACKED && (16 == input->bitsPerSample)) {
 					*samples = *(int16_t *)input->playPos;
 					bias += *samples++;
 					input->playPos += 2;
 				}
 				else
-#endif
 				{
 					*samples = (*(uint32_t*)input->playPos) & 0xffff;		// take the bottom 16 bits
 					bias += *samples++;
