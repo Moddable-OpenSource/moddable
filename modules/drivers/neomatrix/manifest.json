@@ -1,0 +1,33 @@
+{
+  "config": {
+		"screen": "neomatrix-render",
+    "touch": ""
+  },
+  "defines": {
+    "neomatrix": {
+      "pin": 21,
+      "width": 16,
+      "height": 16,
+      "brightness": 128
+    }
+  },
+  "modules": {
+    "*": [
+      "$(MODULES)/drivers/neopixel/*",
+      "./neomatrix",
+      "./neomatrix-render"
+    ],
+    "commodetto/Bitmap": "$(COMMODETTO)/commodettoBitmap"
+  },
+  "preload": ["commodetto/*", "neopixel", "neomatrix", "neomatrix-render"],
+  "platforms": {
+    "esp32": {
+      "modules": {
+        "*": "$(MODULES)/drivers/neopixel/esp32/*"
+      }
+    },
+    "...": {
+      "error": "unsupported platform"
+    }
+  }
+}
