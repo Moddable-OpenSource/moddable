@@ -44,11 +44,10 @@
 #include "moddableAppState.h"
 #include "applib/moddable/moddable.h"
 
-#include "pbl/services/comm_session/protocol.h"
-#include "pbl/services/comm_session/session.h"
-#include "pbl/services/comm_session/session_receive_router.h"
-#include "pbl/services/comm_session/session_send_buffer.h"
-#include "pbl/services/comm_session/session_send_queue.h"
+#include <pbl/pp/protocol.h>
+#include <pbl/pp/session.h>
+#include <pbl/pp/endpoint.h>
+#include <pbl/pp/send.h>
 #include <pbl/task_wdt/task_wdt.h>
 
 #include "xs.h"
@@ -70,7 +69,6 @@ extern void modMachineTaskUninit(txMachine *the);
 
 static void doDebugCommand(modTimer timer, void *refcon, int refconSize);
 
-#define XSBUG_CTRL_ENDPOINT (51967)
 
 #include "system/reboot_reason.h"
 
@@ -146,7 +144,7 @@ void modFatal(const char *reason)
 void fxConnect(txMachine* the)
 {
 	if (getModdableAppState(creationFlags) & kModdableCreationFlagDebug)
-		the->connected = C_NULL != comm_session_get_system_session();
+		the->connected = C_NULL != pbl_pp_session_get_system();
 }
 
 void fxDisconnect(txMachine* the)
@@ -227,7 +225,7 @@ void doDebugCommand(modTimer timer, void *refcon, int refconSize)
 	}
 }
 
-void xsbug_protocol_msg_callback(CommSession *session, const uint8_t* msg, size_t length)
+void xsbug_protocol_msg_callback(struct pbl_pp_session *session, const uint8_t* msg, size_t length)
 {
 	ModdablePebbleAppState state = (ModdablePebbleAppState)app_state_get_js_memory_api_context();
 	if (!state || !mxDebugMutexAllocated())
@@ -262,7 +260,7 @@ void xsbug_protocol_msg_callback(CommSession *session, const uint8_t* msg, size_
 
 void fxSend(txMachine* the, txBoolean flags)
 {
-	CommSession *session = comm_session_get_system_session();
+	struct pbl_pp_session *session = pbl_pp_session_get_system();
 	if (!session)
 		return;
 
@@ -270,8 +268,8 @@ void fxSend(txMachine* the, txBoolean flags)
 	uint8_t *src = (uint8_t *)the->echoBuffer;
 	do {
 		if (!the->send_buffer) {
-			the->send_buffer_remain = comm_session_send_buffer_get_max_payload_length(session) - 128;
-			the->send_buffer = comm_session_send_buffer_begin_write(session, XSBUG_CTRL_ENDPOINT, the->send_buffer_remain, COMM_SESSION_DEFAULT_TIMEOUT);
+			the->send_buffer_remain = pbl_pp_send_buffer_max_payload(session) - 128;
+			the->send_buffer = pbl_pp_send_buffer_begin(session, PBL_PP_ENDPOINT_XSBUG, the->send_buffer_remain, PBL_PP_DEFAULT_TIMEOUT_MS);
 			if (!the->send_buffer) {
 				fxDisconnect(the);
 				return;
@@ -279,7 +277,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 
 		int use = (remaining > the->send_buffer_remain) ? the->send_buffer_remain : remaining;
-		if (false == comm_session_send_buffer_write(the->send_buffer, src, use)) 
+		if (false == pbl_pp_send_buffer_write(the->send_buffer, src, use)) 
 			the->send_buffer_remain = 0;
 		else  {
 			the->send_buffer_remain -= use;
@@ -288,7 +286,7 @@ void fxSend(txMachine* the, txBoolean flags)
 		}
 
 		if (0 == the->send_buffer_remain) {
-			comm_session_send_buffer_end_write(the->send_buffer);
+			pbl_pp_send_buffer_end(the->send_buffer);
 			the->send_buffer = C_NULL;
 			continue;
 		}
@@ -296,7 +294,7 @@ void fxSend(txMachine* the, txBoolean flags)
 
 	txBoolean more = 0 != (flags & 1);
 	if (the->send_buffer && !more) {
-		comm_session_send_buffer_end_write(the->send_buffer);
+		pbl_pp_send_buffer_end(the->send_buffer);
 		the->send_buffer = C_NULL;
 	}
 }
